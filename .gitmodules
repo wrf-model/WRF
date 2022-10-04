@@ -1,0 +1,3 @@
+[submodule "phys/noahmp"]
+	path = phys/noahmp
+	url = https://github.com/NCAR/noahmp

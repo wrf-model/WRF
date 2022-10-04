@@ -14,6 +14,10 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
    integer :: i,j,icode
    character (len=14)   :: ob_name
 
+   ! thinning variables
+   integer  :: istart,iend,jstart,jend
+   real     :: rlonlat(4)
+
    if (trace_use) call da_trace_entry("da_setup_obs_structures")
 
 ! Default values for fmt_info, fmt_srfc, and fmt_each(YRG, 02/25/2009):
@@ -95,7 +99,7 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       use_ssmisobs .OR. use_hirs4obs .OR. use_mhsobs .OR. use_pseudo_rad .OR. &
       use_mwtsobs  .OR. use_mwhsobs .OR. use_atmsobs .OR. use_simulated_rad .OR. &
       use_iasiobs .OR. use_seviriobs .OR. use_amsr2obs .OR. use_goesimgobs .OR. &
-      use_ahiobs .OR. use_mwhs2obs) then
+      use_ahiobs .OR. use_mwhs2obs .OR. use_gmiobs) then
       use_rad = .true.
    else
       use_rad = .false.
@@ -169,6 +173,38 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       rtminit_sensor   = pseudo_rad_senid
    end if
 
+   obs_use(1:num_ob_indexes) = .false.
+   if ( use_airepobs ) obs_use(airep) = .true.
+   if ( use_bogusobs ) obs_use(bogus) = .true.
+   if ( use_buoyobs ) obs_use(buoy) = .true.
+   if ( use_geoamvobs ) obs_use(geoamv) = .true.
+   if ( use_gpsephobs ) obs_use(gpseph) = .true.
+   if ( use_gpsrefobs ) obs_use(gpsref) = .true.
+   if ( use_gpsztdobs .or. use_gpspwobs ) obs_use(gpspw) = .true.
+   if ( use_metarobs ) obs_use(metar) = .true.
+   if ( use_mtgirsobs ) obs_use(mtgirs) = .true.
+   if ( use_pilotobs ) obs_use(pilot) = .true.
+   if ( use_polaramvobs ) obs_use(polaramv) = .true.
+   if ( use_profilerobs ) obs_use(profiler) = .true.
+   if ( use_qscatobs ) obs_use(qscat) = .true.
+   if ( use_radarobs ) obs_use(radar) = .true.
+   if ( use_rainobs ) obs_use(rain) = .true.
+   if ( use_satemobs ) obs_use(satem) = .true.
+   if ( use_shipsobs ) obs_use(ships) = .true.
+   if ( use_soundobs ) then
+      obs_use(sound) = .true.
+      obs_use(sonde_sfc) = .true.
+   end if
+   if ( use_ssmiretrievalobs ) obs_use(ssmi_rv) = .true.
+   if ( use_ssmitbobs ) obs_use(ssmi_tb) = .true.
+   if ( use_ssmt1obs ) obs_use(ssmt1) = .true.
+   if ( use_ssmt2obs ) obs_use(ssmt2) = .true.
+   if ( use_synopobs ) obs_use(synop) = .true.
+   if ( use_tamdarobs ) then
+      obs_use(tamdar) = .true.
+      obs_use(tamdar_sfc) = .true.
+   end if
+
    if (sfc_assi_options < 1 .OR. sfc_assi_options > 2) then
       write(unit=message(1),fmt='(A,I3)') &
          'Invalid sfc_assi_option = ', sfc_assi_options
@@ -235,6 +271,72 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       !to avoid errors when writing out filtered_obs for undefined variables
       anal_type_qcobs = .false.
    end if
+
+   if ( thin_conv .or. thin_conv_ascii ) then
+     thin_conv_opt(gpseph) = no_thin
+     thin_conv_opt(radar) = no_thin
+     thin_conv_opt(radiance) = no_thin
+     thin_conv_opt(rain) = no_thin
+     if ( thin_conv .and. ob_format==ob_format_bufr ) then
+        ! gpsref horizontal thinning is not implemented for bufr input
+        thin_conv_opt(gpsref) = no_thin
+     end if
+     do i = 1, num_ob_indexes
+        ! resetting thin_conv_opt to no_thin for ob types that are not used
+        if ( thin_conv_opt(i) > no_thin .and. &
+             (.not. obs_use(i)) ) then
+           thin_conv_opt(i) = no_thin
+        end if
+     end do
+     if ( thin_conv .and. ob_format==ob_format_bufr .and. &
+          all(thin_conv_opt(:) <= no_thin) ) thin_conv = .false.
+     if ( thin_conv_ascii .and. ob_format==ob_format_ascii .and. &
+          all(thin_conv_opt(:) <= no_thin) ) thin_conv_ascii = .false.
+   end if
+   if ( ((.not. thin_conv) .and. ob_format==ob_format_bufr) .or. &
+        ((.not. thin_conv_ascii) .and. ob_format==ob_format_ascii) ) then
+     thin_conv_opt(:) = no_thin
+   end if
+   write(message(1),'(a,30i2)') 'thin_conv_opt = ', thin_conv_opt(:)
+   call da_message(message(1:1))
+
+   ! get lat/lon info (rlat_min,rlat_max,rlon_min,rlon_max,dlat_grid,dlon_grid)
+   ! to be used for making thinning grids for conv (ascii/bufr), radiance and rain ob types.
+   call init_constants_derived
+   rlat_min =  r999
+   rlat_max = -r999
+   rlon_min =  r999
+   rlon_max = -r999
+   istart=MINVAL( grid%i_start(1:grid%num_tiles) )
+   iend  =MAXVAL( grid%i_end  (1:grid%num_tiles) )
+   jstart=MINVAL( grid%j_start(1:grid%num_tiles) )
+   jend  =MAXVAL( grid%j_end  (1:grid%num_tiles) )
+   do i = istart, iend
+      do j = jstart, jend
+         rlat_min=min(rlat_min, grid%xb%lat(i,j))
+         rlat_max=max(rlat_max, grid%xb%lat(i,j))
+         if( grid%xb%lon(i,j) < 0.0) then
+           rlon_min=min(rlon_min, (r360+grid%xb%lon(i,j)))
+           rlon_max=max(rlon_max, (r360+grid%xb%lon(i,j)))
+         else
+           rlon_min=min(rlon_min, grid%xb%lon(i,j))
+           rlon_max=max(rlon_max, grid%xb%lon(i,j))
+         endif
+      enddo
+   enddo
+#ifdef DM_PARALLEL
+   call mpi_reduce(rlat_min, rlonlat(1), 1, true_mpi_real, mpi_min, root, comm, ierr)
+   call mpi_reduce(rlon_min, rlonlat(2), 1, true_mpi_real, mpi_min, root, comm, ierr)
+   call mpi_reduce(rlat_max, rlonlat(3), 1, true_mpi_real, mpi_max, root, comm, ierr)
+   call mpi_reduce(rlon_max, rlonlat(4), 1, true_mpi_real, mpi_max, root, comm, ierr)
+   CALL mpi_bcast( rlonlat, 4 , true_mpi_real , root , comm, ierr )
+   rlat_min = rlonlat(1)
+   rlon_min = rlonlat(2)
+   rlat_max = rlonlat(3)
+   rlon_max = rlonlat(4)
+#endif
+   dlat_grid = rlat_max - rlat_min
+   dlon_grid = rlon_max - rlon_min
 
    !---------------------------------------------------------------------------      
    ! [1.0] Setup and read in fields from first guess:
@@ -309,6 +411,9 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       if ( use_amsr2obs ) then
          call da_message((/'Using AMSR2 radiance input in HDF5 format'/))
       end if
+      if ( use_gmiobs ) then
+         call da_message((/'Using GMI radiance input in HDF5 format'/))
+      end if
       call da_setup_radiance_structures(grid, ob, iv)
 #else
       call da_error(__FILE__,__LINE__,(/"options to use radiance data are turned on in wrfvar4 namelist, the code needs to be compiled with CRTM or RTTOV library"/))
@@ -323,13 +428,9 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
 
    write(unit=stdout, fmt='(a)')  'Observation summary'
    do i=1,num_fgat_time
-      write(unit=stdout, fmt='(3x,a,i2)') 'ob time ', i
+      write(unit=stdout, fmt='(3x,2(a,i3))') 'ob time', i,' num_ob_indexes=',num_ob_indexes
       do j=1,num_ob_indexes
-         if(j.eq.27 &
-#if (WRF_CHEM == 1)
-            .or. j.eq.29 .or. j.eq.30 &
-#endif
-         )cycle
+         if(j.eq.27) cycle        ! skip tamdar_sfc (HA)
          if (use_gpsztdobs .and.obs_names(j) == 'gpspw         ' ) then
             ob_name = 'gpsztd        '
          else
@@ -344,10 +445,10 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
                iv%info(j)%thin_plocal(i) - iv%info(j)%thin_plocal(i-1), ' local (post-thinning)'
          else
 #if (WRF_CHEM == 1)
-            write(unit=stdout, fmt='(6x,a,i10,a,i8,a,i8,a,i8,a)') &
-               ob_name, iv%info(j)%ptotal(i) - iv%info(j)%ptotal(i-1), ' global,', &
+            write(unit=stdout, fmt='(i3,3x,a,i10,a,i8,a,i8,a,i8,a)') &
+               j,ob_name, iv%info(j)%ptotal(i) - iv%info(j)%ptotal(i-1), ' global,', &
                iv%info(j)%plocal(i) - iv%info(j)%plocal(i-1), ' local', &
-               iv%info(chemic_surf)%ntotal, 'chem total', iv%info(chemic_surf)%nlocal, 'chem local'
+               iv%info(chemic_surf)%ntotal, ' chem total', iv%info(chemic_surf)%nlocal, ' chem local'
 #else
             write(unit=stdout, fmt='(6x,a,i10,a,i8,a)') &
                ob_name, iv%info(j)%ptotal(i) - iv%info(j)%ptotal(i-1), ' global,', &

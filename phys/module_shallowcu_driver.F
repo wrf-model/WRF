@@ -2,6 +2,12 @@
 !
 
 MODULE module_shallowcu_driver
+
+  implicit none
+
+  real, private, parameter :: QCLOUD_MIN = 0.0
+  real, private, parameter :: QVAPOR_MIN = 0.0
+
 CONTAINS
    SUBROUTINE shallowcu_driver(                                       &
                  ! Order dependent args for domain, mem, and tile dims
@@ -65,6 +71,14 @@ CONTAINS
                      ,dnw, xtime, xtime1, gmt                         &
                      ,qke,PBLHAVG, TKEAVG                             &
                      ,bl_pbl_physics                                  &
+                     ,multi_perturb                                   &
+                     ,pert_deng                                       &
+                     ,perts_qvapor                                    &
+                     ,perts_qcloud                                    &
+                     ,perts_th                                        &
+                     ,perts_w                                         &
+                     ,pert_deng_qv, pert_deng_qc, pert_deng_t         &
+                     ,pert_deng_w                                     &
                                                                       )
 !----------------------------------------------------------------------
    USE module_model_constants
@@ -283,10 +297,12 @@ CONTAINS
                                                       ,      pi  &
                                                       ,       u  &
                                                       ,       v  &
-                                                      ,      th  &
                                                       ,       t  &
                                                       , tke_pbl  &
                                                       ,     rho
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
+         INTENT(INOUT) ::                                    th
 
 
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN) ::           &
@@ -364,7 +380,7 @@ CONTAINS
 ! for nscv shallow convection
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                , &
-         INTENT(IN   ) ::                                      w
+         INTENT(INOUT) ::                                      w
    REAL, DIMENSION( ims:ime, jms:jme )                         , &
          INTENT(IN   ) ::                                  xland
    REAL, DIMENSION( ims:ime, jms:jme )                         , &
@@ -414,6 +430,14 @@ CONTAINS
                                  ainckfsa
 
   REAL, DIMENSION( ims:ime, kms:kme, jms:jme )  :: tke_scr, kth_scr, bbls_scr
+
+    ! WRF-Solar EPS
+  integer, intent (in) :: multi_perturb 
+  logical, intent (in) :: pert_deng
+  real, intent(in) :: pert_deng_qv, pert_deng_qc, pert_deng_t, pert_deng_w
+  real, dimension(ims:ime, kms:kme, jms:jme), optional, intent(inout) :: perts_qvapor, &
+       perts_qcloud, perts_th, perts_w 
+
 !
 ! End PSU-DENG Shallow cu variables
 !
@@ -604,6 +628,13 @@ CONTAINS
          CALL wrf_error_fatal ( message )
          STOP
       ENDIF
+
+      if (pert_deng .and. multi_perturb == 1) &
+          call Add_multi_perturb_shcu_perturbations (perts_qvapor, perts_qcloud, &
+          perts_th, perts_w, pert_deng_qv, pert_deng_qc, pert_deng_t, pert_deng_w, &
+          th, qv_curr, qc_curr, w, its, ite, jts, jte, ims, ime, jms, jme, kms, kme, &
+          kts, kte)
+
       CALL deng_shcu_driver(                                             &
             IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde              &
            ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme              &
@@ -632,9 +663,13 @@ CONTAINS
            ,cldfra_sh=cldfra_sh,ca_rad=ca_rad, cw_rad=cw_rad, wub=wub    &
            ,RUSHTEN=rushten, RVSHTEN=rvshten, RTHSHTEN=rthshten          &
            ,RQVSHTEN=rqvshten, RQCSHTEN=rqcshten, RQRSHTEN=rqrshten      &
-           ,RDCASHTEN=RDCASHTEN, RQCDCSHTEN=RQCDCSHTEN                   &
-                                                                         )
+           ,RDCASHTEN=RDCASHTEN, RQCDCSHTEN=RQCDCSHTEN)
 
+      if (pert_deng .and. multi_perturb == 1) &
+          call Remove_multi_perturb_shcu_perturbations (perts_qvapor, perts_qcloud, &
+          perts_th, perts_w, pert_deng_qv, pert_deng_qc, pert_deng_t, pert_deng_w, &
+          th, qv_curr, qc_curr, w, its, ite, jts, jte, ims, ime, jms, jme, kms, kme, &
+          kts, kte)
 
    CASE DEFAULT 
       WRITE( message , * ) 'The shallow cumulus option does not exist: shcu_physics = ', shcu_physics
@@ -656,5 +691,77 @@ CONTAINS
    endif
 
    END SUBROUTINE shallowcu_driver
+
+   subroutine  Add_multi_perturb_shcu_perturbations (perts_qvapor, perts_qcloud, &
+       perts_th, perts_w, pert_deng_qv, pert_deng_qc, pert_deng_t, pert_deng_w, &
+       th, qv_curr, qc_curr, w, its, ite, jts, jte, ims, ime, jms, jme, kms, kme, &
+       kts, kte)
+
+     implicit none
+
+     integer, intent(in) :: its, ite, jts, jte, ims, ime, jms, jme, kms, kme, kts, kte
+     real, intent(in) :: pert_deng_qv, pert_deng_qc, pert_deng_t, pert_deng_w
+     real, dimension(ims:ime, kms:kme, jms:jme), optional, intent (in) :: perts_qvapor, &
+       perts_qcloud, perts_th, perts_w
+     real, dimension(ims:ime, kms:kme, jms:jme), intent (inout) :: th, w, qv_curr, qc_curr
+
+     integer :: i, j, k
+
+
+     do j = jts, jte
+       do k = kts, kte
+         do i = its, ite
+           qc_curr(i, k, j) = max ((1.0 + perts_qcloud(i, k, j) * pert_deng_qc) * qc_curr(i, k, j), QCLOUD_MIN)
+           qv_curr(i, k, j) = max ((1.0 + perts_qvapor(i, k, j) * pert_deng_qv) * qv_curr(i, k, j), QVAPOR_MIN)
+           th(i, k, j) = (1.0 + perts_th(i, k, j) * pert_deng_t) * th(i, k, j)
+         end do
+       end do
+     end do
+
+     do j = jts, jte
+       do k = kts + 1, kte
+         do i = its, ite
+           w(i, k, j) = (1.0 + perts_w(i, k, j) * pert_deng_t) * w(i, k, j)
+         end do
+       end do
+     end do
+
+   end subroutine  Add_multi_perturb_shcu_perturbations
+
+   subroutine Remove_multi_perturb_shcu_perturbations (perts_qvapor, perts_qcloud, &
+       perts_th, perts_w, pert_deng_qv, pert_deng_qc, pert_deng_t, pert_deng_w, &
+       th, qv_curr, qc_curr, w, its, ite, jts, jte, ims, ime, jms, jme, kms, kme, &
+       kts, kte)
+
+     implicit none
+
+     integer, intent(in) :: its, ite, jts, jte, ims, ime, jms, jme, kms, kme, kts, kte
+     real, intent(in) :: pert_deng_qv, pert_deng_qc, pert_deng_t, pert_deng_w
+     real, dimension(ims:ime, kms:kme, jms:jme), optional, intent (in) :: perts_qvapor, &
+       perts_qcloud, perts_th, perts_w
+     real, dimension(ims:ime, kms:kme, jms:jme), intent (inout) :: th, w, qv_curr, qc_curr
+
+     integer :: i, j, k
+
+
+     do j = jts, jte
+       do k = kts, kte
+         do i = its, ite
+           qc_curr(i, k, j) = max (qc_curr(i, k, j) / (1.0 + perts_qcloud(i, k, j) * pert_deng_qc), QCLOUD_MIN)
+           qv_curr(i, k, j) = max (qv_curr(i, k, j) / (1.0 + perts_qvapor(i, k, j) * pert_deng_qv), QVAPOR_MIN)
+           th(i, k, j) = th(i, k, j) / (1.0 + perts_th(i, k, j) * pert_deng_t)
+         end do
+       end do
+     end do
+
+     do j = jts, jte
+       do k = kts + 1, kte
+         do i = its, ite
+           w(i, k, j) = w(i, k, j) / (1.0 + perts_w(i, k, j) * pert_deng_w)
+         end do
+       end do
+     end do
+
+   end subroutine  Remove_multi_perturb_shcu_perturbations
 
 END MODULE module_shallowcu_driver

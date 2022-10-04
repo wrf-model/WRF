@@ -117,12 +117,12 @@ CONTAINS
       ddvel(i,j,p_msa)  = real( dvel(1,1),kind=4 )
       
       depvelocity(i,j) = ddvel(i,j,p_dust_5)
-! drydep [ug/m2/s] = dvel [m/s] * chem [ug/kg] * airden [kg/m3]
-      dustdrydep_1(i,j)=-dvel(1,1)*chem(i,1,j,p_dust_1)*airden(1,1)
-      dustdrydep_2(i,j)=-dvel(1,1)*chem(i,1,j,p_dust_2)*airden(1,1)
-      dustdrydep_3(i,j)=-dvel(1,1)*chem(i,1,j,p_dust_3)*airden(1,1)
-      dustdrydep_4(i,j)=-dvel(1,1)*chem(i,1,j,p_dust_4)*airden(1,1)
-      dustdrydep_5(i,j)=-dvel(1,1)*chem(i,1,j,p_dust_5)*airden(1,1)   
+!drydep [kg/m2] = drydep [kg/m2]+1.e-9*dt[s]*dvel [m/s] * chem [ug/kg] * airden [kg/m3]
+      dustdrydep_1(i,j)=dustdrydep_1(i,j)+1.e-9*dtstep*dvel(1,1)*chem(i,1,j,p_dust_1)*airden(1,1)
+      dustdrydep_2(i,j)=dustdrydep_2(i,j)+1.e-9*dtstep*dvel(1,1)*chem(i,1,j,p_dust_2)*airden(1,1)
+      dustdrydep_3(i,j)=dustdrydep_3(i,j)+1.e-9*dtstep*dvel(1,1)*chem(i,1,j,p_dust_3)*airden(1,1)
+      dustdrydep_4(i,j)=dustdrydep_4(i,j)+1.e-9*dtstep*dvel(1,1)*chem(i,1,j,p_dust_4)*airden(1,1)
+      dustdrydep_5(i,j)=dustdrydep_5(i,j)+1.e-9*dtstep*dvel(1,1)*chem(i,1,j,p_dust_5)*airden(1,1)
       
     enddo
   enddo

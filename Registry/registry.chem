@@ -214,16 +214,16 @@ state    real  setvel_2      ij       misc         1         -       r      "set
 state    real  setvel_3      ij       misc         1         -       r      "setvel_3"     "dust gravitational settling velocity for size 3"    "m/s"
 state    real  setvel_4      ij       misc         1         -       r      "setvel_4"     "dust gravitational settling velocity for size 4"    "m/s"
 state    real  setvel_5      ij       misc         1         -       r      "setvel_5"     "effective gravitational settling velocity for total"    "m/s"
-state    real  dustgraset_1  ij       misc         1         -       r      "graset_1"     "dust gravitational settling  for size 1"        "ug/m2/s"
-state    real  dustgraset_2  ij       misc         1         -       r      "graset_2"     "dust gravitational settling  for size 2"        "ug/m2/s"
-state    real  dustgraset_3  ij       misc         1         -       r      "graset_3"     "dust gravitational settling  for size 3"        "ug/m2/s"
-state    real  dustgraset_4  ij       misc         1         -       r      "graset_4"     "dust gravitational settling  for size 4"        "ug/m2/s"
-state    real  dustgraset_5  ij       misc         1         -       r      "graset_5"     "dust gravitational settling  for size 5"        "ug/m2/s"
-state    real  dustdrydep_1   ij      misc        1         -       r      "drydep_1"     "dust dry deposition for size 1"        "ug/m2/s"
-state    real  dustdrydep_2   ij      misc        1         -       r      "drydep_2"     "dust dry deposition for size 2"        "ug/m2/s"
-state    real  dustdrydep_3   ij      misc        1         -       r      "drydep_3"     "dust dry deposition for size 3"        "ug/m2/s"
-state    real  dustdrydep_4   ij      misc        1         -       r      "drydep_4"     "dust dry deposition for size 4"        "ug/m2/s"
-state    real  dustdrydep_5   ij      misc        1         -       r      "drydep_5"     "dust dry deposition for size 5"        "ug/m2/s"
+state    real  dustgraset_1  ij       misc         1         -       r      "graset_1"     "Accumulated dust gravitational settling  for size 1"        "kg/m2"
+state    real  dustgraset_2  ij       misc         1         -       r      "graset_2"     "Accumulated dust gravitational settling  for size 2"        "kg/m2"
+state    real  dustgraset_3  ij       misc         1         -       r      "graset_3"     "Accumulated dust gravitational settling  for size 3"        "kg/m2"
+state    real  dustgraset_4  ij       misc         1         -       r      "graset_4"     "Accumulated dust gravitational settling  for size 4"        "kg/m2"
+state    real  dustgraset_5  ij       misc         1         -       r      "graset_5"     "Accumulated dust gravitational settling  for size 5"        "kg/m2"
+state    real  dustdrydep_1   ij      misc        1         -       r      "drydep_1"     "Accumulated dust dry deposition for size 1"        "kg/m2"
+state    real  dustdrydep_2   ij      misc        1         -       r      "drydep_2"     "Accumulated dust dry deposition for size 2"        "kg/m2"
+state    real  dustdrydep_3   ij      misc        1         -       r      "drydep_3"     "Accumulated dust dry deposition for size 3"        "kg/m2"
+state    real  dustdrydep_4   ij      misc        1         -       r      "drydep_4"     "Accumulated dust dry deposition for size 4"        "kg/m2"
+state    real  dustdrydep_5   ij      misc        1         -       r      "drydep_5"     "Accumulated dust dry deposition for size 5"        "kg/m2"
 state    real  dustwd_1       ikj      misc        1         -      r       "dustwd_1"       "dust loss by wet deposition for size 1"        "ug/kg-dryair"
 state    real  dustwd_2       ikj      misc        1         -      r       "dustwd_2"       "dust loss by wet deposition for size 2"        "ug/kg-dryair"
 state    real  dustwd_3       ikj      misc        1         -      r       "dustwd_3"       "dust loss by wet deposition for size 3"        "ug/kg-dryair"
@@ -3816,6 +3816,7 @@ rconfig   real        lambda_cutoff       namelist,chem          max_domains    
 # for cloud handling in TUV photolysis scheme
 rconfig   integer     cld_od_opt          namelist,chem          max_domains    1       rh    "cld_od_opt"          ""      ""
 rconfig   integer     pht_cldfrc_opt      namelist,chem          max_domains    1       rh    "pht_cldfrc_opt"      ""      ""
+rconfig   logical     phot_blcld          namelist,chem          max_domains    .false. rh    "phot_blcld"          ""      ""
 rconfig   integer     vertmix_onoff       namelist,chem          max_domains    1       rh    "vertmix_onoff"       ""      ""
 rconfig   integer     chem_in_opt         namelist,chem          max_domains    0       rh    "chem_in_opt"         ""      ""
 rconfig   integer     phot_opt            namelist,chem          max_domains    0       rh    "phot_opt"            ""      ""
@@ -4034,7 +4035,7 @@ package   cri_mosaic_4bin_aq_kpp  chem_opt==611          -             chem:dms,
 #emission package definitions
 #
 package   eradm           emiss_opt==2                   -             emis_ant:e_iso,e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_nh3
-package   eradmsorg       emiss_opt==3                   -             emis_ant:e_iso,e_so2,e_no,e_no2,e_co,e_ch4,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_nh3,e_pm25i,e_pm25j,e_pm_10,e_eci,e_ecj,e_orgi,e_orgj,e_so4i,e_so4j,e_no3i,e_no3j,e_naaj,e_naai,e_orgi_a,e_orgj_a,e_orgi_bb,e_orgj_bb,e_hcl,e_cli,e_clj,e_ch3cl
+package   eradmsorg       emiss_opt==3                   -             emis_ant:e_iso,e_so2,e_no,e_no2,e_co,e_ch4,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_nh3,e_terp,e_hono,e_co2,e_pm25i,e_pm25j,e_pm_10,e_eci,e_ecj,e_orgi,e_orgj,e_so4i,e_so4j,e_no3i,e_no3j,e_naaj,e_naai,e_orgi_a,e_orgj_a,e_orgi_bb,e_orgj_bb,e_hcl,e_cli,e_clj,e_ch3cl
 package   ecbmz_mosaic    emiss_opt==4                   -             emis_ant:e_iso,e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_nh3,e_no2,e_ch3oh,e_c2h5oh,e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_so4i,e_so4j,e_no3i,e_no3j,e_so4c,e_no3c,e_orgc,e_ecc
 package   ecptec          emiss_opt==5                   -             emis_ant:e_iso,e_so2,e_no,e_no2,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_nh3,e_pm_25,e_pm_10,e_oc,e_sulf,e_bc
 package   gocart_ecptec   emiss_opt==6                   -             emis_ant:e_so2,e_sulf,e_bc,e_oc,e_pm_25,e_pm_10

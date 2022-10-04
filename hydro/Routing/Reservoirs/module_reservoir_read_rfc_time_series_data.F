@@ -159,7 +159,7 @@ contains
         write(forecast_file_resolution_string, "(I2)") forecast_file_resolution_minutes
 
         ! Negative for going back in time
-        forecast_file_resolution_seconds = forecast_file_resolution_minutes * 60 * -1
+        forecast_file_resolution_seconds = forecast_file_resolution_minutes * 60 * (-1)
 
         ! Loop through the total time series periods to look for and read time series files
         do time_series_file_index = 1, total_time_series_file_periods
@@ -223,7 +223,7 @@ contains
 
         call read_timeslice_netcdf_integer_1D_variables(ncid, 'synthetic_values', time_series_file, this%synthetic_values)
 
-        this%synthetic_values_logical = this%synthetic_values
+        this%synthetic_values_logical = (this%synthetic_values /= 0)
 
         this%forecast_found = .true.
 

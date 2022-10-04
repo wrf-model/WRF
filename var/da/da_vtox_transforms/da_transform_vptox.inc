@@ -43,6 +43,7 @@ subroutine da_transform_vptox(grid, vp, be, ep)
    ! [2] Impose statistical balance constraints:
    !--------------------------------------------------------------------------
 
+if ( jb_factor > 0.0 ) then
    !$OMP PARALLEL DO &
    !$OMP PRIVATE ( ij, k1, k, j, i)
    do ij = 1 , grid%num_tiles
@@ -307,6 +308,7 @@ subroutine da_transform_vptox(grid, vp, be, ep)
       enddo
       !$OMP END PARALLEL DO
    end if ! use_cv_w
+end if ! jb_factor > 0.0
 
 !   !---------------------------------------------------------------------------
 !   !  [4] Add flow-dependent increments in model space (grid%xa):

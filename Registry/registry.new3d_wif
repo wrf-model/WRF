@@ -1,4 +1,4 @@
-/##############################################################################
+###############################################################################
 #	This is an example registry.  
 #	It has the necessary pieces to allow a set of input fields to come
 #	into the real program from metgrid.  These fields are assumed to
@@ -9,12 +9,17 @@
 #		The output from real is placed into the scalar arrays.
 ###############################################################################
 
-###   Thompson Water Ice Friendly Aerosols WIF
+###   Thompson Water Ice Black-Carbon Friendly Aerosols WIF (updated in 4.4)
 
 dimspec  wif    2     namelist=num_wif_levels          z     num_wif_levels
 
-rconfig   integer num_wif_levels    namelist,domains	   1              27      irh    "num_wif_levels" "number of levels in the Thompson Water Ice Friendly Aerosols" ""
+rconfig   integer num_wif_levels    namelist,domains	   1              30      irh    "num_wif_levels" "number of levels in the Thompson Water Ice Friendly Aerosols" ""
 rconfig   integer wif_input_opt     namelist,domains       1              0       irh    "wif_input_opt"  "0=do not process the Water Ice Friendly Aerosol input from metgrid"
+
+state    real       qnwfa_gc       i{wif}j      dyn_em      1        Z     i1         "QNWFA"   "water-friendly aerosol  num concentration"   "# kg-1"
+state    real       qnifa_gc       i{wif}j      dyn_em      1        Z     i1         "QNIFA"   "water-friendly aerosol  num concentration"   "# kg-1"
+state    real       qnbca_gc       i{wif}j      dyn_em      1        Z     i1         "QNBCA"   "black carbon   aerosol  num concentration"   "# kg-1"
+state    real       p_wif_gc       i{wif}j      dyn_em      1        Z     i1         "P_WIF"       "Pressure for first guess aerosol fields from metgrid"   "Pa" 
 
 state    real       p_wif_now      i{wif}j      dyn_em      1        Z     -          "P_WIF_NOW"   "Pressure for Water Ice Friendly Aerosols Now"   "Pa"
 state    real       p_wif_jan      i{wif}j      dyn_em      1        Z     i1         "P_WIF_JAN"   "Pressure for Water Ice Friendly Aerosols Jan"   "Pa"
@@ -58,15 +63,38 @@ state    real       i_wif_oct      i{wif}j      dyn_em      1        Z     i1   
 state    real       i_wif_nov      i{wif}j      dyn_em      1        Z     i1         "I_WIF_NOV"   "Background Ice   Friendly Aerosol option Nov"   "# kg-1"
 state    real       i_wif_dec      i{wif}j      dyn_em      1        Z     i1         "I_WIF_DEC"   "Background Ice   Friendly Aerosol option Dec"   "# kg-1"
 
-package   use_wif_input       wif_input_opt==1             -             state:p_wif_now,p_wif_jan,p_wif_feb,p_wif_mar,p_wif_apr,p_wif_may,p_wif_jun,p_wif_jul,p_wif_aug,p_wif_sep,p_wif_oct,p_wif_nov,p_wif_dec,w_wif_now,w_wif_jan,w_wif_feb,w_wif_mar,w_wif_apr,w_wif_may,w_wif_jun,w_wif_jul,w_wif_aug,w_wif_sep,w_wif_oct,w_wif_nov,w_wif_dec,i_wif_now,i_wif_jan,i_wif_feb,i_wif_mar,i_wif_apr,i_wif_may,i_wif_jun,i_wif_jul,i_wif_aug,i_wif_sep,i_wif_oct,i_wif_nov,i_wif_dec
+state    real       b_wif_now      i{wif}j      dyn_em      1        Z     -          "B_WIF_NOW"  "Background Black Carbon Aerosol option Now"   "# kg-1"
+state    real       b_wif_jan      i{wif}j      dyn_em      1        Z     i1         "B_WIF_JAN"  "Background Black Carbon Aerosol option Jan"   "# kg-1"
+state    real       b_wif_feb      i{wif}j      dyn_em      1        Z     i1         "B_WIF_FEB"  "Background Black Carbon Aerosol option Feb"   "# kg-1"
+state    real       b_wif_mar      i{wif}j      dyn_em      1        Z     i1         "B_WIF_MAR"  "Background Black Carbon Aerosol option Mar"   "# kg-1"
+state    real       b_wif_apr      i{wif}j      dyn_em      1        Z     i1         "B_WIF_APR"  "Background Black Carbon Aerosol option Apr"   "# kg-1"
+state    real       b_wif_may      i{wif}j      dyn_em      1        Z     i1         "B_WIF_MAY"  "Background Black Carbon Aerosol option May"   "# kg-1"
+state    real       b_wif_jun      i{wif}j      dyn_em      1        Z     i1         "B_WIF_JUN"  "Background Black Carbon Aerosol option Jun"   "# kg-1"
+state    real       b_wif_jul      i{wif}j      dyn_em      1        Z     i1         "B_WIF_JUL"  "Background Black Carbon Aerosol option Jul"   "# kg-1"
+state    real       b_wif_aug      i{wif}j      dyn_em      1        Z     i1         "B_WIF_AUG"  "Background Black Carbon Aerosol option Aug"   "# kg-1"
+state    real       b_wif_sep      i{wif}j      dyn_em      1        Z     i1         "B_WIF_SEP"  "Background Black Carbon Aerosol option Sep"   "# kg-1"
+state    real       b_wif_oct      i{wif}j      dyn_em      1        Z     i1         "B_WIF_OCT"  "Background Black Carbon Aerosol option Oct"   "# kg-1"
+state    real       b_wif_nov      i{wif}j      dyn_em      1        Z     i1         "B_WIF_NOV"  "Background Black Carbon Aerosol option Nov"   "# kg-1"
+state    real       b_wif_dec      i{wif}j      dyn_em      1        Z     i1         "B_WIF_DEC"  "Background Black Carbon Aerosol option Dec"   "# kg-1"
+
+package   use_wif_input       wif_input_opt==1             -             state:p_wif_gc,p_wif_now,p_wif_jan,p_wif_feb,p_wif_mar,p_wif_apr,p_wif_may,p_wif_jun,p_wif_jul,p_wif_aug,p_wif_sep,p_wif_oct,p_wif_nov,p_wif_dec,qnwfa_gc,w_wif_now,w_wif_jan,w_wif_feb,w_wif_mar,w_wif_apr,w_wif_may,w_wif_jun,w_wif_jul,w_wif_aug,w_wif_sep,w_wif_oct,w_wif_nov,w_wif_dec,qnifa_gc,i_wif_now,i_wif_jan,i_wif_feb,i_wif_mar,i_wif_apr,i_wif_may,i_wif_jun,i_wif_jul,i_wif_aug,i_wif_sep,i_wif_oct,i_wif_nov,i_wif_dec
+
+package   use_wif_input_bc    wif_input_opt==2             -             scalar:qnbca;state:qnbca2d,p_wif_gc,p_wif_now,p_wif_jan,p_wif_feb,p_wif_mar,p_wif_apr,p_wif_may,p_wif_jun,p_wif_jul,p_wif_aug,p_wif_sep,p_wif_oct,p_wif_nov,p_wif_dec,qnwfa_gc,w_wif_now,w_wif_jan,w_wif_feb,w_wif_mar,w_wif_apr,w_wif_may,w_wif_jun,w_wif_jul,w_wif_aug,w_wif_sep,w_wif_oct,w_wif_nov,w_wif_dec,qnifa_gc,i_wif_now,i_wif_jan,i_wif_feb,i_wif_mar,i_wif_apr,i_wif_may,i_wif_jun,i_wif_jul,i_wif_aug,i_wif_sep,i_wif_oct,i_wif_nov,i_wif_dec,b_wif_now,b_wif_jan,b_wif_feb,b_wif_mar,b_wif_apr,b_wif_may,b_wif_jun,b_wif_jul,b_wif_aug,b_wif_sep,b_wif_oct,b_wif_nov,b_wif_dec
+
+package   emit_oc_bb          aer_fire_emit_opt==1         -             state:qnocbb2d
+package   emit_ocbc_bb        aer_fire_emit_opt==2         -             state:qnocbb2d,qnbcbb2d
 
 state   real    qnwfa          ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QNWFA"         "water-friendly aerosol number con" "# kg(-1)"
 state   real    qnifa          ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QNIFA"         "ice-friendly aerosol number con"   "# kg(-1)"
+state   real    qnbca          ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "QNBCA"         "black carbon aerosol number con"   "# kg(-1)"
 
 state   real    dfi_qnwfa      ikjftb  dfi_scalar      1         -     \
    i0rhusdf=(bdy_interp:dt) "DFI_QNWFA"     "DFI water-friendly aerosol number con" "# kg(-1)"
 state   real    dfi_qnifa      ikjftb  dfi_scalar      1         -     \
    i0rhusdf=(bdy_interp:dt) "DFI_QNIFA"     "DFI ice-friendly aerosol number con"   "# kg(-1)"
+state   real    dfi_qnbca      ikjftb  dfi_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt) "DFI_QNBCA"     "DFI black carbon aerosol number con"   "# kg(-1)"
 

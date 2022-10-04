@@ -92,6 +92,7 @@ subroutine da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv &
    ! [1.0]: perform vv = u_h cv transform:
    !-------------------------------------------------------------------------
 
+if ( cv_size > 0 ) then
    if (global) then
       call da_transform_vtovv_global_adj(cv_size, xbx, be, cv, vv)
    else if ( (fg_format == fg_format_wrf_arw_regional .or. &
@@ -108,6 +109,7 @@ subroutine da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv &
       end if
 #endif
    end if
+end if
 
    if (trace_use) call da_trace_exit("da_transform_vtox_adj")
 

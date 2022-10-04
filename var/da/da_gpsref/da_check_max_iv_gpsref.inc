@@ -24,6 +24,7 @@ subroutine da_check_max_iv_gpsref(iv,it, num_qcstat_conv, opt)
    integer, intent(in) :: opt ! 1: only counting, 2: print out  (sychen add)
    integer, parameter :: qc_below = -31, qc_middle = -32, qc_above = -33
    integer, parameter :: qc_step1 = -34, qc_step2  = -35  ! refer to Poli et al. (2009)
+   integer, parameter :: qc_cutoff = -36
 
    if (trace_use_dull) call da_trace_entry("da_check_max_iv_gpsref")
 
@@ -56,6 +57,7 @@ subroutine da_check_max_iv_gpsref(iv,it, num_qcstat_conv, opt)
              ( iv%gpsref(n)%ref(k)%qc == qc_above ) .or. &
              ( iv%gpsref(n)%ref(k)%qc == qc_step1 ) .or. &
              ( iv%gpsref(n)%ref(k)%qc == qc_step2 ) .or. &
+             ( iv%gpsref(n)%ref(k)%qc == qc_cutoff ) .or. & !hcl-202006
              ( iv%gpsref(n)%ref(k)%qc == missing_data ) ) then 
              failed=.true.
         endif

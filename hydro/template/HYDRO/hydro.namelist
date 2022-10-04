@@ -147,6 +147,9 @@ channel_option = 3
 ! This option is currently only supported if using reach-based routing with UDMP=1.
 compound_channel = .FALSE.
 
+! Switch to activate channel-loss option (0=no, 1=yes) [Requires Kchan in RouteLink]
+! channel_loss_option = 0
+
 ! Specify the lake parameter file (e.g.: "LAKEPARM.nc").
 ! Note REQUIRED if lakes are on.
 route_lake_f = "./DOMAIN/LAKEPARM.nc"

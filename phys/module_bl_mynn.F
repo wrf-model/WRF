@@ -2766,25 +2766,25 @@ CONTAINS
        &u,v,th,tk,qv,qc,qi,qnc,qni,        &
        &p,exner,                           &
        &thl,sqv,sqc,sqi,sqw,               &
-       &qnwfa,qnifa,                       &
+       &qnwfa,qnifa,qnbca,                 &
        &ust,flt,flq,flqv,flqc,wspd,qcg,    &
        &uoce,voce,                         &
        &tsq,qsq,cov,                       &
        &tcd,qcd,                           &
        &dfm,dfh,dfq,                       &
        &Du,Dv,Dth,Dqv,Dqc,Dqi,Dqnc,Dqni,   &
-       &Dqnwfa,Dqnifa,                     &
+       &Dqnwfa,Dqnifa,Dqnbca,              &
        &vdfg1,diss_heat,                   &
        &s_aw,s_awthl,s_awqt,s_awqv,s_awqc, &
        &s_awu,s_awv,                       &
        &s_awqnc,s_awqni,                   &
-       &s_awqnwfa,s_awqnifa,               &
+       &s_awqnwfa,s_awqnifa,s_awqnbca,     &
        &sub_thl,sub_sqv,                   &
        &sub_u,sub_v,                       &
        &det_thl,det_sqv,det_sqc,           &
        &det_u,det_v,                       &
        &FLAG_QC,FLAG_QI,FLAG_QNC,FLAG_QNI, &
-       &FLAG_QNWFA,FLAG_QNIFA,             &
+       &FLAG_QNWFA,FLAG_QNIFA,FLAG_QNBCA,  &
        &cldfra_bl1d,                       &
        &bl_mynn_cloudmix,                  &
        &bl_mynn_mixqt,                     &
@@ -2805,7 +2805,7 @@ CONTAINS
                            bl_mynn_edmf,bl_mynn_edmf_mom, &
                            bl_mynn_mixscalars
     LOGICAL, INTENT(IN) :: FLAG_QI,FLAG_QNI,FLAG_QC,FLAG_QNC,&
-                           FLAG_QNWFA,FLAG_QNIFA
+                           FLAG_QNWFA,FLAG_QNIFA,FLAG_QNBCA
 
 !! grav_settling = 1 or 2 for gravitational settling of droplets
 !! grav_settling = 0 otherwise
@@ -2817,16 +2817,17 @@ CONTAINS
 
 ! mass-flux plumes
     REAL, DIMENSION(kts:kte+1), INTENT(in) :: s_aw,s_awthl,s_awqt,&
-         &s_awqnc,s_awqni,s_awqv,s_awqc,s_awu,s_awv,s_awqnwfa,s_awqnifa
+         &s_awqnc,s_awqni,s_awqv,s_awqc,s_awu,s_awv,s_awqnwfa,s_awqnifa,&
+                                                    s_awqnbca
 ! tendencies from mass-flux environmental subsidence and detrainment
     REAL, DIMENSION(kts:kte), INTENT(in) :: sub_thl,sub_sqv,  &
          &sub_u,sub_v,det_thl,det_sqv,det_sqc,det_u,det_v
     REAL, DIMENSION(kts:kte), INTENT(in) :: u,v,th,tk,qv,qc,qi,qni,qnc,&
          &rho,p,exner,dfq,dz,tsq,qsq,cov,tcd,qcd,cldfra_bl1d,diss_heat
     REAL, DIMENSION(kts:kte), INTENT(inout) :: thl,sqw,sqv,sqc,sqi,&
-         &qnwfa,qnifa,dfm,dfh
+         &qnwfa,qnifa,qnbca,dfm,dfh
     REAL, DIMENSION(kts:kte), INTENT(inout) :: du,dv,dth,dqv,dqc,dqi,&
-         &dqni,dqnc,dqnwfa,dqnifa
+         &dqni,dqnc,dqnwfa,dqnifa,dqnbca
     REAL, INTENT(IN) :: delt,ust,flt,flq,flqv,flqc,wspd,uoce,voce,qcg
 
 !    REAL, INTENT(IN) :: delt,ust,flt,flq,qcg,&
@@ -2836,7 +2837,7 @@ CONTAINS
 
     REAL, DIMENSION(kts:kte) :: dtz,vt,vq,dfhc,dfmc !Kh for clouds (Pr < 2)
     REAL, DIMENSION(kts:kte) :: sqv2,sqc2,sqi2,sqw2,qni2,qnc2, & !AFTER MIXING
-                                qnwfa2,qnifa2
+                                qnwfa2,qnifa2,qnbca2
     REAL, DIMENSION(kts:kte) :: zfac,plumeKh
     REAL, DIMENSION(kts:kte) :: a,b,c,d,x
     REAL, DIMENSION(kts:kte+1) :: rhoz, & !rho on model interface
@@ -3477,6 +3478,48 @@ ELSE
     qnifa2=qnifa
 ENDIF
 
+!============================================
+! Black carbon aerosols ( qnbca ).
+!============================================
+IF (bl_mynn_cloudmix > 0 .AND. FLAG_QNBCA .AND. &
+      bl_mynn_mixscalars > 0) THEN
+
+   k=kts
+
+    a(k)=  -dtz(k)*khdz(k)/rho(k)
+    b(k)=1.+dtz(k)*(khdz(k) + khdz(k+1))/rho(k) - &
+           &    0.5*dtz(k)*s_aw(k+1)*nonloc
+    c(k)=  -dtz(k)*khdz(k+1)/rho(k) - 0.5*dtz(k)*s_aw(k+1)*nonloc
+    d(k)=qnbca(k)  - dtz(k)*s_awqnbca(k+1)*nonloc
+
+    DO k=kts+1,kte-1
+       a(k)=  -dtz(k)*khdz(k)/rho(k)     + 0.5*dtz(k)*s_aw(k)*nonloc
+       b(k)=1.+dtz(k)*(khdz(k) + khdz(k+1))/rho(k) + &
+           &    0.5*dtz(k)*(s_aw(k)-s_aw(k+1))*nonloc
+       c(k)=  -dtz(k)*khdz(k+1)/rho(k) - 0.5*dtz(k)*s_aw(k+1)*nonloc
+       d(k)=qnbca(k) + dtz(k)*(s_awqnbca(k)-s_awqnbca(k+1))*nonloc
+    ENDDO
+
+! prescribed value
+    a(kte)=0.
+    b(kte)=1.
+    c(kte)=0.
+    d(kte)=qnbca(kte)
+
+!    CALL tridiag(kte,a,b,c,d)
+!    CALL tridiag2(kte,a,b,c,d,x)
+    CALL tridiag3(kte,a,b,c,d,x)
+
+    DO k=kts,kte
+       !qnbca2(k)=d(k-kts+1)
+       qnbca2(k)=x(k)
+    ENDDO
+
+ELSE
+    !If not mixing aerosols, set "updated" array equal to original array
+    qnbca2=qnbca
+ENDIF
+
 
 !!============================================
 !! Compute tendencies and convert to mixing ratios for WRF.
@@ -3634,11 +3677,18 @@ ENDIF
           ! Ice-friendly aerosols
           !=====================
           Dqnifa(k)=(qnifa2(k) - qnifa(k))/delt
+          IF (FLAG_QNBCA) THEN
+             !=====================
+             ! Black carbon aerosols
+             !=====================
+             Dqnbca(k)=(qnbca2(k) - qnbca(k))/delt
+          ENDIF
        ENDDO
     ELSE
        DO k=kts,kte
           Dqnwfa(k)=0.
           Dqnifa(k)=0.
+          Dqnbca(k)=0.
        ENDDO
     ENDIF
 
@@ -3877,7 +3927,7 @@ ENDIF
        &grav_settling,                  &
        &delt,dz,dx,znt,                 &
        &u,v,w,th,qv,qc,qi,qnc,qni,      &
-       &qnwfa,qnifa,                    &
+       &qnwfa,qnifa,qnbca,              &
        &p,exner,rho,T3D,                &
        &xland,ts,qsfc,qcg,ps,           &
        &ust,ch,hfx,qfx,rmol,wspd,       &
@@ -3894,6 +3944,7 @@ ENDIF
        &RQVBLTEN,RQCBLTEN,RQIBLTEN,     &
        &RQNCBLTEN,RQNIBLTEN,            &
        &RQNWFABLTEN,RQNIFABLTEN,        &
+       &RQNBCABLTEN,                    &
        &exch_h,exch_m,                  &
        &Pblh,kpbl,                      & 
        &el_pbl,                         &
@@ -3916,7 +3967,8 @@ ENDIF
        &spp_pbl,pattern_spp_pbl,        &
        &RTHRATEN,                       &
        &FLAG_QC,FLAG_QI,FLAG_QNC,       &
-       &FLAG_QNI,FLAG_QNWFA,FLAG_QNIFA  &
+       &FLAG_QNI,FLAG_QNWFA,FLAG_QNIFA, &
+       &FLAG_QNBCA                      &
        &,IDS,IDE,JDS,JDE,KDS,KDE        &
        &,IMS,IME,JMS,JME,KMS,KME        &
        &,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -3941,7 +3993,7 @@ ENDIF
     INTEGER, INTENT(in) :: icloud_bl
 
     LOGICAL, INTENT(IN) :: FLAG_QI,FLAG_QNI,FLAG_QC,FLAG_QNC,&
-                           FLAG_QNWFA,FLAG_QNIFA
+                           FLAG_QNWFA,FLAG_QNIFA,FLAG_QNBCA
     
     INTEGER,INTENT(IN) :: &
          & IDS,IDE,JDS,JDE,KDS,KDE &
@@ -3970,7 +4022,7 @@ ENDIF
     REAL, DIMENSION(IMS:IME,KMS:KME,JMS:JME), INTENT(in) :: dz,&
          &u,v,w,th,qv,p,exner,rho,T3D
     REAL, DIMENSION(IMS:IME,KMS:KME,JMS:JME), OPTIONAL, INTENT(in)::&
-         &qc,qi,qni,qnc,qnwfa,qnifa
+         &qc,qi,qni,qnc,qnwfa,qnifa,qnbca
     REAL, DIMENSION(IMS:IME,JMS:JME), INTENT(in) :: xland,ust,&
          &ch,rmol,ts,qsfc,qcg,ps,hfx,qfx,wspd,uoce,voce,vdfg,znt
 
@@ -3982,7 +4034,7 @@ ENDIF
     REAL, DIMENSION(IMS:IME,KMS:KME,JMS:JME), INTENT(inout) :: &
          &RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN,&
          &RQIBLTEN,RQNIBLTEN,RTHRATEN,RQNCBLTEN, &
-         &RQNWFABLTEN,RQNIFABLTEN
+         &RQNWFABLTEN,RQNIFABLTEN,RQNBCABLTEN
 
     REAL, DIMENSION(IMS:IME,KMS:KME,JMS:JME), INTENT(out) :: &
          &exch_h,exch_m
@@ -4039,7 +4091,8 @@ ENDIF
 
     REAL, DIMENSION(KTS:KTE) :: thetav,sh,u1,v1,w1,p1,ex1,dz1,th1,tk1,rho1,&
            & qke1,tsq1,qsq1,cov1,qv1,qi1,qc1,du1,dv1,dth1,dqv1,dqc1,dqi1, &
-           & k_m1,k_h1,qni1,dqni1,qnc1,dqnc1,qnwfa1,qnifa1,dqnwfa1,dqnifa1 
+           & k_m1,k_h1,qni1,dqni1,qnc1,dqnc1,qnwfa1,qnifa1,qnbca1, &
+                                             dqnwfa1,dqnifa1,dqnbca1
 
 !JOE: mass-flux variables
     REAL, DIMENSION(KTS:KTE) :: dth1mf,dqv1mf,dqc1mf,du1mf,dv1mf
@@ -4049,7 +4102,7 @@ ENDIF
                         det_thl,det_sqv,det_sqc,det_u,det_v
     REAL,DIMENSION(KTS:KTE+1) :: s_aw1,s_awthl1,s_awqt1,&
                   s_awqv1,s_awqc1,s_awu1,s_awv1,s_awqke1,&
-                  s_awqnc1,s_awqni1,s_awqnwfa1,s_awqnifa1
+                  s_awqnc1,s_awqni1,s_awqnwfa1,s_awqnifa1,s_awqnbca1
 
     REAL, DIMENSION(KTS:KTE+1) :: zw
     REAL :: cpm,sqcg,flt,flq,flqv,flqc,pmz,phh,exnerg,zet,&
@@ -4152,6 +4205,7 @@ ENDIF
        dqnc1(kts:kte)=0.0
        dqnwfa1(kts:kte)=0.0
        dqnifa1(kts:kte)=0.0
+       dqnbca1(kts:kte)=0.0
        qc_bl1D(kts:kte)=0.0
        qi_bl1D(kts:kte)=0.0
        cldfra_bl1D(kts:kte)=0.0
@@ -4362,6 +4416,7 @@ ENDIF
              dqnc1(k)=0.0
              dqnwfa1(k)=0.0
              dqnifa1(k)=0.0
+             dqnbca1(k)=0.0
              IF(PRESENT(qi) .AND. FLAG_QI)THEN
                 qi1(k)= qi(i,k,j)
                 sqi(k)= qi(i,k,j)/(1.+qv(i,k,j))
@@ -4424,6 +4479,11 @@ ENDIF
              ELSE
                 qnifa1(k)=0.0
              ENDIF
+             IF (PRESENT(qnbca) .AND. FLAG_QNBCA ) THEN
+                qnbca1(k)=qnbca(i,k,j)
+             ELSE
+                qnbca1(k)=0.0
+             ENDIF
              p1(k) = p(i,k,j)
              ex1(k)= exner(i,k,j)
              el(k) = el_pbl(i,k,j)
@@ -4455,6 +4515,7 @@ ENDIF
              s_awqni1(k)=0.
              s_awqnwfa1(k)=0.
              s_awqnifa1(k)=0.
+             s_awqnbca1(k)=0.
              sub_thl(k)=0.
              sub_sqv(k)=0.
              sub_u(k)=0.
@@ -4513,6 +4574,7 @@ ENDIF
           s_awqni1(kte+1)=0.
           s_awqnwfa1(kte+1)=0.
           s_awqnifa1(kte+1)=0.
+          s_awqnbca1(kte+1)=0.
 #if (WRF_CHEM == 1)
           DO ic = 1,nchem
              s_awchem1(kte+1,ic)=0.
@@ -4690,7 +4752,7 @@ ENDIF
                &bl_mynn_mixscalars,               &
                &u1,v1,w1,th1,thl,thetav,tk1,      &
                &sqw,sqv,sqc,qke1,                 &
-               &qnc1,qni1,qnwfa1,qnifa1,          &
+               &qnc1,qni1,qnwfa1,qnifa1,qnbca1,   &
                &ex1,Vt,Vq,sgm,                    &
                &ust(i,j),flt,flq,flqv,flqc,       &
                &PBLH(i,j),KPBL(i,j),DX,           &
@@ -4706,6 +4768,7 @@ ENDIF
                & s_awu1,s_awv1,s_awqke1,          &
                & s_awqnc1,s_awqni1,               &
                & s_awqnwfa1,s_awqnifa1,           &
+               & s_awqnbca1,                      &
                & sub_thl,sub_sqv,                 &
                & sub_u,sub_v,                     &
                & det_thl,det_sqv,det_sqc,         &
@@ -4717,7 +4780,7 @@ ENDIF
                & qc_bl1D_old,cldfra_bl1D_old,     &
                & FLAG_QC,FLAG_QI,                 &
                & FLAG_QNC,FLAG_QNI,               &
-               & FLAG_QNWFA,FLAG_QNIFA,           &
+               & FLAG_QNWFA,FLAG_QNIFA,FLAG_QNBCA,&
                & Psig_shcu(i,j),                  &
                & nupdraft(i,j),ktop_plume(i,j),   &
                & maxmf(i,j),ztop_plume,           &
@@ -4764,7 +4827,7 @@ ENDIF
                &u1, v1, th1, tk1, qv1,           &
                &qc1, qi1, qnc1, qni1,            &
                &p1, ex1, thl, sqv, sqc, sqi, sqw,&
-               &qnwfa1, qnifa1,                  &
+               &qnwfa1, qnifa1, qnbca1,          &
                &ust(i,j),flt,flq,flqv,flqc,      &
                &wspd(i,j),qcg(i,j),              &
                &uoce(i,j),voce(i,j),             &
@@ -4773,19 +4836,21 @@ ENDIF
                &dfm, dfh, dfq,                   &
                &Du1, Dv1, Dth1, Dqv1,            &
                &Dqc1, Dqi1, Dqnc1, Dqni1,        &
-               &Dqnwfa1, Dqnifa1,                &
+               &Dqnwfa1, Dqnifa1, Dqnbca1,       &
                &vdfg(i,j), diss_heat,            &
                ! mass flux components
                &s_aw1,s_awthl1,s_awqt1,          &
                &s_awqv1,s_awqc1,s_awu1,s_awv1,   &
                &s_awqnc1,s_awqni1,               &
                &s_awqnwfa1,s_awqnifa1,           &
+               &s_awqnbca1,                      &
                &sub_thl,sub_sqv,                 &
                &sub_u,sub_v,                     &
                &det_thl,det_sqv,det_sqc,         &
                &det_u,det_v,                     &
                &FLAG_QC,FLAG_QI,FLAG_QNC,        &
                &FLAG_QNI,FLAG_QNWFA,FLAG_QNIFA,  &
+               &FLAG_QNBCA,                      &
                &cldfra_bl1d,                     &
                &bl_mynn_cloudmix,                &
                &bl_mynn_mixqt,                   &
@@ -4839,11 +4904,13 @@ ENDIF
                IF (PRESENT(qni) .AND. FLAG_QNI) RQNIBLTEN(i,k,j)=dqni1(k)
                IF (PRESENT(qnwfa) .AND. FLAG_QNWFA) RQNWFABLTEN(i,k,j)=dqnwfa1(k)
                IF (PRESENT(qnifa) .AND. FLAG_QNIFA) RQNIFABLTEN(i,k,j)=dqnifa1(k)
+               IF (PRESENT(qnbca) .AND. FLAG_QNBCA) RQNBCABLTEN(i,k,j)=dqnbca1(k)
              ELSE
                IF (PRESENT(qnc) .AND. FLAG_QNC) RQNCBLTEN(i,k,j)=0.
                IF (PRESENT(qni) .AND. FLAG_QNI) RQNIBLTEN(i,k,j)=0.
                IF (PRESENT(qnwfa) .AND. FLAG_QNWFA) RQNWFABLTEN(i,k,j)=0.
                IF (PRESENT(qnifa) .AND. FLAG_QNIFA) RQNIFABLTEN(i,k,j)=0.
+               IF (PRESENT(qnbca) .AND. FLAG_QNBCA) RQNBCABLTEN(i,k,j)=0.
              ENDIF
 
              IF(icloud_bl > 0)THEN
@@ -5196,7 +5263,7 @@ ENDIF
                  & scalar_opt,              &
                  & u,v,w,th,thl,thv,tk,     &
                  & qt,qv,qc,qke,            &
-                 qnc,qni,qnwfa,qnifa,       &
+                 qnc,qni,qnwfa,qnifa,qnbca, &
                  & exner,vt,vq,sgm,         &
                  & ust,flt,flq,flqv,flqc,   &
                  & pblh,kpbl,DX,landsea,ts, &
@@ -5210,6 +5277,7 @@ ENDIF
                  & s_awu,s_awv,s_awqke,     &
                  & s_awqnc,s_awqni,         &
                  & s_awqnwfa,s_awqnifa,     &
+                 & s_awqnbca,               &
                  & sub_thl,sub_sqv,         &
                  & sub_u,sub_v,             &
                  & det_thl,det_sqv,det_sqc, &
@@ -5223,7 +5291,7 @@ ENDIF
             ! inputs - flags for moist arrays
                  & F_QC,F_QI,               &
                  F_QNC,F_QNI,               &
-                 & F_QNWFA,F_QNIFA,         &
+                 & F_QNWFA,F_QNIFA,F_QNBCA, &
                  & Psig_shcu,               &
             ! output info
                  &nup2,ktop,maxmf,ztop,     &
@@ -5243,11 +5311,11 @@ ENDIF
      REAL, DIMENSION(KTS:KTE)      :: rstoch_col
 
      REAL,DIMENSION(KTS:KTE), INTENT(IN) :: U,V,W,TH,THL,TK,QT,QV,QC,&
-                      exner,dz,THV,P,qke,qnc,qni,qnwfa,qnifa
+                      exner,dz,THV,P,qke,qnc,qni,qnwfa,qnifa,qnbca
      REAL,DIMENSION(KTS:KTE+1), INTENT(IN) :: ZW  !height at full-sigma
      REAL, INTENT(IN) :: DT,UST,FLT,FLQ,FLQV,FLQC,PBLH,&
                          DX,Psig_shcu,landsea,ts
-     LOGICAL, OPTIONAL :: F_QC,F_QI,F_QNC,F_QNI,F_QNWFA,F_QNIFA
+     LOGICAL, OPTIONAL :: F_QC,F_QI,F_QNC,F_QNI,F_QNWFA,F_QNIFA,F_QNBCA
 
   ! outputs - updraft properties
      REAL,DIMENSION(KTS:KTE), INTENT(OUT) :: edmf_a,edmf_w,        &
@@ -5267,6 +5335,7 @@ ENDIF
                                s_awqni,      &
                              s_awqnwfa,      &
                              s_awqnifa,      &
+                             s_awqnbca,      &
                                  s_awu,      &
                                  s_awv,      &
                                s_awqke, s_aw2
@@ -5281,7 +5350,7 @@ ENDIF
   ! first model layer
      REAL,DIMENSION(KTS:KTE+1,1:NUP) :: UPW,UPTHL,UPQT,UPQC,UPQV, &
                                         UPA,UPU,UPV,UPTHV,UPQKE,UPQNC, &
-                                        UPQNI,UPQNWFA,UPQNIFA
+                                        UPQNI,UPQNWFA,UPQNIFA,UPQNBCA
   ! entrainment variables
      REAL,DIMENSION(KTS:KTE,1:NUP) :: ENT,ENTf
      INTEGER,DIMENSION(KTS:KTE,1:NUP) :: ENTi
@@ -5289,7 +5358,7 @@ ENDIF
      INTEGER :: K,I,k50
      REAL :: fltv,wstar,qstar,thstar,sigmaW,sigmaQT,sigmaTH,z0,    &
              pwmin,pwmax,wmin,wmax,wlv,Psig_w,maxw,maxqc,wpbl
-     REAL :: B,QTn,THLn,THVn,QCn,Un,Vn,QKEn,QNCn,QNIn,QNWFAn,QNIFAn, &
+     REAL :: B,QTn,THLn,THVn,QCn,Un,Vn,QKEn,QNCn,QNIn,QNWFAn,QNIFAn,QNBCAn, &
              Wn2,Wn,EntEXP,EntW,BCOEFF,THVkm1,THVk,Pk
 
   ! w parameters
@@ -5394,6 +5463,7 @@ ENDIF
   UPQNI=0.
   UPQNWFA=0.
   UPQNIFA=0.
+  UPQNBCA=0.
 #if (WRF_CHEM == 1)
     IF (bl_mynn_mixchem == 1) THEN
       UPCHEM(KTS:KTE+1,1:NUP,1:nchem)=0.0
@@ -5425,6 +5495,7 @@ ENDIF
   s_awqni=0.
   s_awqnwfa=0.
   s_awqnifa=0.
+  s_awqnbca=0.
 #if (WRF_CHEM == 1)
     IF (bl_mynn_mixchem == 1) THEN
       s_awchem(kts:kte+1,1:nchem) = 0.0
@@ -5626,6 +5697,7 @@ ENDIF
        UPQNI(1,I)=(QNI(KTS)*DZ(KTS+1)+QNI(KTS+1)*DZ(KTS))/(DZ(KTS)+DZ(KTS+1))
        UPQNWFA(1,I)=(QNWFA(KTS)*DZ(KTS+1)+QNWFA(KTS+1)*DZ(KTS))/(DZ(KTS)+DZ(KTS+1))
        UPQNIFA(1,I)=(QNIFA(KTS)*DZ(KTS+1)+QNIFA(KTS+1)*DZ(KTS))/(DZ(KTS)+DZ(KTS+1))
+       UPQNBCA(1,I)=(QNBCA(KTS)*DZ(KTS+1)+QNBCA(KTS+1)*DZ(KTS))/(DZ(KTS)+DZ(KTS+1))
     ENDDO
 
 #if (WRF_CHEM == 1)
@@ -5686,6 +5758,7 @@ ENDIF
           QNIn=UPQNI(k-1,I)*(1.-EntExp) + QNI(k)*EntExp
           QNWFAn=UPQNWFA(k-1,I)*(1.-EntExp) + QNWFA(k)*EntExp
           QNIFAn=UPQNIFA(k-1,I)*(1.-EntExp) + QNIFA(k)*EntExp
+          QNBCAn=UPQNBCA(k-1,I)*(1.-EntExp) + QNBCA(k)*EntExp
 
           !capture the updated qc, qt & thl modified by entranment alone,
           !since they will be modified later if condensation occurs.
@@ -5834,6 +5907,7 @@ ENDIF
              UPQNI(K,I)=QNIn
              UPQNWFA(K,I)=QNWFAn
              UPQNIFA(K,I)=QNIFAn
+             UPQNBCA(K,I)=QNBCAn
              UPA(K,I)=UPA(K-1,I)
 #if (WRF_CHEM == 1)
     IF (bl_mynn_mixchem == 1) THEN
@@ -5923,6 +5997,7 @@ ENDIF
           s_awqni(k+1)= s_awqni(K+1) + UPA(K,i)*UPW(K,i)*UPQNI(K,i)*Psig_w
           s_awqnwfa(k+1)= s_awqnwfa(K+1) + UPA(K,i)*UPW(K,i)*UPQNWFA(K,i)*Psig_w
           s_awqnifa(k+1)= s_awqnifa(K+1) + UPA(K,i)*UPW(K,i)*UPQNIFA(K,i)*Psig_w
+          s_awqnbca(k+1)= s_awqnbca(K+1) + UPA(K,i)*UPW(K,i)*UPQNBCA(K,i)*Psig_w
         ENDDO
       ENDDO
     ENDIF
@@ -5952,6 +6027,7 @@ ENDIF
        s_awqni= s_awqni*adjustment
        s_awqnwfa= s_awqnwfa*adjustment
        s_awqnifa= s_awqnifa*adjustment
+       s_awqnbca= s_awqnbca*adjustment
        IF (momentum_opt > 0) THEN
           s_awu  = s_awu*adjustment
           s_awv  = s_awv*adjustment

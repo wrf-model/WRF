@@ -190,6 +190,7 @@
     CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 
     IF ( ( dryrun .AND. ( use_package(io_form) .EQ. IO_NETCDF .OR. &
+                          use_package(io_form) .EQ. IO_NETCDFPAR .OR. &
                           use_package(io_form) .EQ. IO_PIO    .OR. &
                           use_package(io_form) .EQ. IO_PNETCDF ) ) .OR. &
                         ( use_package(io_form) .EQ. IO_PHDF5  )   ) THEN
@@ -221,8 +222,7 @@
 ! TBH:         "XLAT_V" for EM_CORE.  We need a more general way to handle 
 ! TBH:         this, possibly via the Registry.  
 ! TBH:  TODO:  Use dimnames(*) == south_north || west_east instead of 
-! TBH:         MemoryOrder and Stagger?  It would also work for both ARW 
-! TBH:         and NMM and be easier to handle via Registry...  
+! TBH:         MemoryOrder and Stagger? 
 
       IF ( ( TRIM(MemoryOrder) == 'XY' ) .AND. &
          ( ( TRIM(Var) == 'XLONG'   ) .OR. &

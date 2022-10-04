@@ -14,64 +14,67 @@ subroutine da_setup_obs_structures_bufr(grid, ob, iv)
 
    character(len=filename_len) :: filename
    integer                     :: n,i,j
-   
-   ! thinning variables
-   integer  :: istart,iend,jstart,jend
-   real     :: rlonlat(4)
+   integer :: nplev
+   logical :: has_errtable
+   integer :: junit, iost, itype, ivar, k
+   integer :: isize
 
    if (trace_use) call da_trace_entry("da_setup_obs_structures_bufr")
 
    !-------------------------------
    ! 0.0 Make thinning grids
    !------------------------------
-   call init_constants_derived
 
    if ( thin_conv ) then
-      rlat_min =  r999
-      rlat_max = -r999
-      rlon_min =  r999
-      rlon_max = -r999
-
-      istart=MINVAL( grid%i_start(1:grid%num_tiles) )
-      iend  =MAXVAL( grid%i_end  (1:grid%num_tiles) )
-      jstart=MINVAL( grid%j_start(1:grid%num_tiles) )
-      jend  =MAXVAL( grid%j_end  (1:grid%num_tiles) ) 
-
-      do i = istart, iend
-         do j = jstart, jend
-            rlat_min=min(rlat_min, grid%xb%lat(i,j))
-            rlat_max=max(rlat_max, grid%xb%lat(i,j))
-            if( grid%xb%lon(i,j) < 0.0) then
-              rlon_min=min(rlon_min, (r360+grid%xb%lon(i,j)))
-              rlon_max=max(rlon_max, (r360+grid%xb%lon(i,j)))
-            else
-              rlon_min=min(rlon_min, grid%xb%lon(i,j))
-              rlon_max=max(rlon_max, grid%xb%lon(i,j))
-            endif
-         enddo
-      enddo
-
-#ifdef DM_PARALLEL
-      call mpi_reduce(rlat_min, rlonlat(1), 1, true_mpi_real, mpi_min, root, comm, ierr)
-      call mpi_reduce(rlon_min, rlonlat(2), 1, true_mpi_real, mpi_min, root, comm, ierr)
-      call mpi_reduce(rlat_max, rlonlat(3), 1, true_mpi_real, mpi_max, root, comm, ierr)
-      call mpi_reduce(rlon_max, rlonlat(4), 1, true_mpi_real, mpi_max, root, comm, ierr)
-
-      CALL mpi_bcast( rlonlat, 4 , true_mpi_real , root , comm, ierr )
-
-      rlat_min = rlonlat(1)
-      rlon_min = rlonlat(2)
-      rlat_max = rlonlat(3)
-      rlon_max = rlonlat(4)
-#endif
-
-      dlat_grid = rlat_max - rlat_min
-      dlon_grid = rlon_max - rlon_min
-
       allocate(thinning_grid_conv(num_ob_indexes))
       do n = 1, num_ob_indexes
-         call make3grids (n,thin_mesh_conv(n))
+         if ( use_satwnd_bufr .and. n==polaramv ) cycle ! handled separately below
+         if ( thin_conv_opt(n) > no_thin ) then
+            call make3grids (n,thin_mesh_conv(n))
+         end if
       end do
+      if ( rootproc ) then ! for satwnd_bufr, thinning is done on rootproc
+         if ( use_satwnd_bufr .and. thin_conv_opt(polaramv) > no_thin ) then
+            if ( thin_conv_opt(polaramv) /= thin_superob_hv ) then
+               call make3grids (polaramv, thin_mesh_conv(polaramv))
+            else
+               ! thin_superob_hv
+               nplev = int(1200/thin_mesh_vert_conv(polaramv))
+               call make3grids (polaramv, thin_mesh_conv(polaramv), thin_3d=.true., nlev=nplev)
+            end if
+         end if
+      end if ! rootproc
+   end if
+
+   ! check for external obs error table
+   inquire(file='obs_errtable', exist=has_errtable)
+   if ( has_errtable ) then
+      allocate (oetab(300,33,6))
+   end if
+   if ( rootproc ) then ! only rootproc reads the file
+     if ( has_errtable ) then
+       call da_get_unit(junit)
+       open(unit=junit, file='obs_errtable', form='formatted', status='old', &
+            iostat=iost)
+       write(unit=message(1),fmt='(A)') "Reading obs_errtable file"
+       call da_message(message(1:1))
+       read_loop: do while ( iost == 0 )
+         read (junit,'(1x,i3)',iostat=iost) itype
+         if ( itype < 100 .or. itype > 300 ) then
+            call da_warning(__FILE__,__LINE__, (/'Error reading obs_errtable'/))
+         end if
+         do k = 1, 33 ! levels
+            ! 6 columns (p coord in hPa, t, q, uv, p, pw)
+            read (junit,'(1x,6e12.5)',iostat=iost) (oetab(itype,k,ivar),ivar=1,6)
+         end do
+       end do read_loop
+       close(junit)
+       call da_free_unit(junit)
+     end if ! has_errtable
+   end if ! rootproc
+   if ( has_errtable ) then
+     isize = 300*33*6
+     call wrf_dm_bcast_real(oetab, isize)
    end if
 
    !--------------------------------------------------------------------------
@@ -91,10 +94,31 @@ subroutine da_setup_obs_structures_bufr(grid, ob, iv)
       call da_read_obs_bufrgpsro_eph(iv)
    end if
 
+   if ( use_satwnd_bufr ) then
+      call da_read_obs_bufr_satwnd('satwnd.bufr', iv, ob)
+   end if
+
+   if ( has_errtable ) then
+      deallocate (oetab)
+   end if
+
    if ( thin_conv ) then
       do n = 1, num_ob_indexes
-         call destroygrids_conv (n)
+         if ( use_satwnd_bufr .and. n==polaramv ) cycle ! handled separately below
+         if ( thin_conv_opt(n) > no_thin ) then
+            call destroygrids_conv (n)
+         end if
       end do
+      if ( rootproc ) then ! for satwnd_bufr, thinning is done on rootproc
+         if ( use_satwnd_bufr .and. thin_conv_opt(polaramv) > no_thin ) then
+            if ( thin_conv_opt(polaramv) /= thin_superob_hv ) then
+               call destroygrids_conv (polaramv)
+            else
+               ! thin_superob_hv
+               call destroygrids_conv (polaramv, thin_3d=.true.)
+            end if
+         end if
+      end if ! rootproc
       deallocate(thinning_grid_conv)
    end if
 

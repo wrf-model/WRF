@@ -51,11 +51,11 @@ endif
 RM		=	rm -f  
 RMD		=	rm -f    
 COMPILER90=	mpif90
-F90FLAGS  =     -Mfree -c -byteswapio -O2 -Kieee 
+F90FLAGS  =     -g -Mfree -c -byteswapio -O2 -Kieee 
 LDFLAGS  =      $(F90FLAGS)
-MODFLAG	=	-I./ -I ../../MPP -I ../MPP -I ../mod 
+MODFLAG	=	-I./ -I ../../MPP -I ../MPP -I ../mod -I ../../mod -I ../../../mod
 LDFLAGS	=	
-CPPINVOKE	=
+CPPINVOKE	= -Mpreprocess
 CPPFLAGS	=  -DMPP_LAND -I../Data_Rec $(HYDRO_D) $(SPATIAL_SOIL) $(WRF_HYDRO_NUDGING) $(OUTPUT_CHAN_CONN) $(PRECIP_DOUBLE)
 LIBS 	=	
 NETCDFINC	=	$(NETCDF_INC) 

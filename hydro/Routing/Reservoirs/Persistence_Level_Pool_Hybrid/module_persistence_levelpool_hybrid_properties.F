@@ -12,6 +12,7 @@ module module_persistence_levelpool_hybrid_properties
                                           handle_err
     use module_reservoir, only: reservoir_properties
     use netcdf
+    use iso_fortran_env, only: int64
     implicit none
 
     ! Extend/derive hybrid properties from the abstract base
@@ -48,7 +49,7 @@ contains
         real,    intent(in)          :: lake_area                    ! area of lake (km^2)
         real,    intent(in)          :: lake_max_water_elevation     ! max water elevation (meters)
         real,    intent(in)          :: orifice_elevation            ! orifice elevation (meters AMSL)
-        integer, intent(in)          :: lake_number                  ! lake number
+        integer(kind=int64), intent(in)  :: lake_number                  ! lake number
         integer, intent(in)          :: reservoir_type               ! reservoir type
         integer, intent(in)          :: observation_lookback_hours
         integer, intent(in)          :: observation_update_time_interval_seconds

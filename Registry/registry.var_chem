@@ -124,14 +124,96 @@ state   real   oc_a04      ijkftb   chem        1         -   i0{12}rhusdf=(bdy_
 state   real   bc_a04      ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "bc_a04"        "Black carbon, aerosol bin 04"      "ug/kg-dryair"
 #state   real   hysw_a04    ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "hysw_a04"      "Hysteresis water, aerosol bin 04"    "ug/kg-dryair"
 #
+
+## aerosol variables for RACM_SOA_VBS
+state   real   so4aj      ijkftb    chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "so4aj"         "Sulfate conc. Acc. mode"       "ug/kg-dryair"
+state   real   so4ai      ijkftb    chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "so4ai"         "Sulfate conc. Aitken mode"       "ug/kg-dryair"
+state   real   nh4aj      ijkftb    chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "nh4aj"         "Ammonium conc. Acc. mode"       "ug/kg-dryair"
+state   real   nh4ai      ijkftb    chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "nh4ai"         "Ammonium  conc. Aitken mode"       "ug/kg-dryair"
+state   real   no3aj      ijkftb    chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "no3aj"         "Nitrate  conc. Acc. mode"       "ug/kg-dryair"
+state   real   no3ai      ijkftb    chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "no3ai"         "Nitrate  conc. Aitken mode"       "ug/kg-dryair"
+state   real   naaj       ijkftb    chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "naaj"          "Sodium   conc. Acc. mode"       "ug/kg-dryair"
+state   real   naai       ijkftb    chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "naai"          "Sodium   conc. Aitken mode"       "ug/kg-dryair"
+state   real   claj       ijkftb    chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "claj"          "Chloride conc. Acc. mode"       "ug/kg-dryair"
+state   real   clai       ijkftb    chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "clai"          "Chloride conc. Aitken mode"       "ug/kg-dryair"
+state   real   orgpaj     ijkftb    chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "orgpaj"        "Prim. anth. org. conc. from aromatics Acc. mode"       "ug/kg-dryair"
+state   real   orgpai     ijkftb    chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "orgpai"        "Prim. anth. org. conc. from aromatics Aitken mode"     "ug/kg-dryair"
+state   real   ecj        ijkftb    chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ecj"           "Elemental carbon Acc. mode"         "ug/kg-dryair"
+state   real   eci        ijkftb    chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "eci"           "Elemental carbon Aitken mode"         "ug/kg-dryair"
+state   real   p25j       ijkftb    chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "p25j"          "Primary PM2.5 Acc. mode"        "ug/kg-dryair"
+state   real   p25i       ijkftb    chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "p25i"          "Primary PM2.5 Aitken mode"        "ug/kg-dryair"
+state   real   antha      ijkftb    chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "antha"         "Coarse anthropogenic aerosols"       "ug/kg-dryair"
+state   real   seas       ijkftb    chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "seas"          "Coarse marine aerosols"        "ug/kg-dryair"
+state   real   soila      ijkftb    chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "soila"         "Coarse soil-derived aerosols"       "ug/kg-dryair"
+state   real   nu0        ijkftb    chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "nu0"           "Aitken mode number"         "#/kg-dryair"
+state   real   ac0        ijkftb    chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ac0"           "Accumulation mode number"         "#/kg-dryair"
+state   real   corn       ijkftb    chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "corn"          "Coarse mode number"        "#/kg-dryair"
+state   real   asoa1j     ijkftb    chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "asoa1j"       "SOA Anth. org. conc. with  C* value=1    ug/m^3 Acc. mode"      "ug/kg-dryair"
+state   real   asoa1i     ijkftb    chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "asoa1i"       "SOA Anth. org. conc. with  C* value=1    ug/m^3 Aitken mode"    "ug/kg-dryair"
+state   real   asoa2j     ijkftb    chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "asoa2j"       "SOA Anth. org. conc. with  C* value=10   ug/m^3 Acc. mode"      "ug/kg-dryair"
+state   real   asoa2i     ijkftb    chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "asoa2i"       "SOA Anth. org. conc. with  C* value=10   ug/m^3 Aitken mode"    "ug/kg-dryair"
+state   real   asoa3j     ijkftb    chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "asoa3j"       "SOA Anth. org. conc. with  C* value=100  ug/m^3 Acc. mode"      "ug/kg-dryair"
+state   real   asoa3i     ijkftb    chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "asoa3i"       "SOA Anth. org. conc. with  C* value=100  ug/m^3 Aitken mode"    "ug/kg-dryair"
+state   real   asoa4j     ijkftb    chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "asoa4j"       "SOA Anth. org. conc. with  C* value=1000 ug/m^3 Acc. mode"      "ug/kg-dryair"
+state   real   asoa4i     ijkftb    chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "asoa4i"       "SOA Anth. org. conc. with  C* value=1000 ug/m^3 Aitken mode"    "ug/kg-dryair"
+state   real   bsoa1j     ijkftb    chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "bsoa1j"       "SOA Biog. org. conc. with  C* value=1    ug/m^3 Acc. mode"      "ug/kg-dryair"
+state   real   bsoa1i     ijkftb    chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "bsoa1i"       "SOA Biog. org. conc. with  C* value=1    ug/m^3 Aitken mode"    "ug/kg-dryair"
+state   real   bsoa2j     ijkftb    chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "bsoa2j"       "SOA Biog. org. conc. with  C* value=10   ug/m^3 Acc. mode"      "ug/kg-dryair"
+state   real   bsoa2i     ijkftb    chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "bsoa2i"       "SOA Biog. org. conc. with  C* value=10   ug/m^3 Aitken mode"    "ug/kg-dryair"
+state   real   bsoa3j     ijkftb    chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "bsoa3j"       "SOA Biog. org. conc. with  C* value=100  ug/m^3 Acc. mode"      "ug/kg-dryair"
+state   real   bsoa3i     ijkftb    chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "bsoa3i"       "SOA Biog. org. conc. with  C* value=100  ug/m^3 Aitken mode"    "ug/kg-dryair"
+state   real   bsoa4j     ijkftb    chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "bsoa4j"       "SOA Biog. org. conc. with  C* value=1000 ug/m^3 Acc. mode"      "ug/kg-dryair"
+state   real   bsoa4i     ijkftb    chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "bsoa4i"       "SOA Biog. org. conc. with  C* value=1000 ug/m^3 Aitken mode"    "ug/kg-dryair"
+#
+##cloud-phase aerosol
+#state   real   so4cwj      ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "so4cwj"         "Sulfate conc. Acc. mode in cloud"       "ug/kg-dryair"
+#state   real   so4cwi      ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "so4cwi"         "Sulfate conc. Aitken mode in cloud"       "ug/kg-dryair"
+#state   real   nh4cwj      ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "nh4cwj"         "Ammonium conc. Acc. mode in cloud"       "ug/kg-dryair"
+#state   real   nh4cwi      ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "nh4cwi"         "Ammonium  conc. Aitken mode in cloud"       "ug/kg-dryair"
+#state   real   no3cwj      ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "no3cwj"         "Nitrate  conc. Acc. mode in cloud"       "ug/kg-dryair"
+#state   real   no3cwi      ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "no3cwi"         "Nitrate  conc. Aitken mode in cloud"       "ug/kg-dryair"
+#state   real   nacwj       ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "nacwj"          "Sodium  conc. Acc. mode in cloud"       "ug/kg-dryair"
+#state   real   nacwi       ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "nacwi"          "Sodium  conc. Aitken mode in cloud"       "ug/kg-dryair"
+#state   real   clcwj       ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "clcwj"          "Chloride  conc. Acc. mode in cloud"       "ug/kg-dryair"
+#state   real   clcwi       ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "clcwi"          "Chloride  conc. Aitken mode in cloud"       "ug/kg-dryair"
+#state   real   orgaro1cwj  ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "orgaro1cwj"     "SOA Anth. org. conc. from aromatics Acc. mode in cloud"    "ug/kg-dryair"
+#state   real   orgaro1cwi  ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "orgaro1cwi"     "SOA Anth. org. conc. from aromatics Aitken mode in cloud"    "ug/kg-dryair"
+#state   real   orgaro2cwj  ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "orgaro2cwj"     "SOA Anth. org. conc. from aromatics Acc. mode in cloud"    "ug/kg-dryair"
+#state   real   orgaro2cwi  ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "orgaro2cwi"     "SOA Anth. org. conc. from aromatics Aitken mode in cloud"    "ug/kg-dryair"
+#state   real   orgalk1cwj  ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "orgalk1cwj"     "SOA Anth. org. conc. from alkanes and others except aromatics Acc. mode in cloud"    "ug/kg-dryair"
+#state   real   orgalk1cwi  ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "orgalk1cwi"     "SOA Anth. org. conc. from alkanes and others except aromatics Aitken mode in cloud"    "ug/kg-dryair"
+#state   real   orgole1cwj  ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "orgole1cwj"     "SOA Anth. org. conc. from alkenes and others except aromatics Acc. mode in cloud"    "ug/kg-dryair"
+#state   real   orgole1cwi  ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "orgole1cwi"     "SOA Anth. org. conc. from alkenes and others except aromatics Aitken mode in cloud"    "ug/kg-dryair"
+#state   real   orgba1cwj   ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "orgba1cwj"      "SOA Biog. org. conc. from aromatics Acc. mode in cloud"     "ug/kg-dryair"
+#state   real   orgba1cwi   ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "orgba1cwi"      "SOA Biog. org. conc. from aromatics Aitken mode in cloud"     "ug/kg-dryair"
+#state   real   orgba2cwj   ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "orgba2cwj"      "SOA Biog. org. conc. from aromatics Acc. mode in cloud"     "ug/kg-dryair"
+#state   real   orgba2cwi   ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "orgba2cwi"      "SOA Biog. org. conc. from aromatics Aitken mode in cloud"     "ug/kg-dryair"
+#state   real   orgba3cwj   ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "orgba3cwj"      "SOA Biog. org. conc. from aromatics Acc. mode in cloud"     "ug/kg-dryair"
+#state   real   orgba3cwi   ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "orgba3cwi"      "SOA Biog. org. conc. from aromatics Aitken mode in cloud"     "ug/kg-dryair"
+#state   real   orgba4cwj   ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "orgba4cwj"      "SOA Biog. org. conc. from aromatics Acc. mode in cloud"     "ug/kg-dryair"
+#state   real   orgba4cwi   ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "orgba4cwi"      "SOA Biog. org. conc. from aromatics Aitken mode in cloud"     "ug/kg-dryair"
+#state   real   orgpacwj    ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "orgpacwj"       "Prim. anth. org. conc. from aromatics Acc. mode in cloud"      "ug/kg-dryair"
+#state   real   orgpacwi    ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "orgpacwi"       "Prim. anth. org. conc. from aromatics Aitken mode in cloud"      "ug/kg-dryair"
+#state   real   eccwj       ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "eccwj"          "Elemental carbon Acc. mode in cloud"         "ug/kg-dryair"
+#state   real   eccwi       ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "eccwi"          "Elemental carbon Aitken mode in cloud"         "ug/kg-dryair"
+#state   real   p25cwj      ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "p25cwj"         "Primary PM2.5 Acc. mode in cloud"        "ug/kg-dryair"
+#state   real   p25cwi      ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "p25cwi"         "Primary PM2.5 Aitken mode in cloud"        "ug/kg-dryair"
+#state   real   anthcw      ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "anthcw"         "Coarse anthropogenic aerosols in cloud"       "ug/kg-dryair"
+#state   real   seascw      ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "seascw"         "Coarse marine aerosols in cloud"        "ug/kg-dryair"
+#state   real   soilcw      ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "soilcw"         "Coarse soil-derived aerosols in cloud"       "ug/kg-dryair"
+#state   real   nu0cw       ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "nu0cw"          "Aitken mode number in cloud"         "#/kg-dryair"
+#state   real   ac0cw       ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ac0cw"          "Accumulation mode number in cloud"         "#/kg-dryair"
+#state   real   corncw      ijkftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "corncw"         "Coarse mode number in cloud"        "#/kg-dryair"
+#
+
 rconfig   integer   io_style_emissions      namelist,chem        1              1       r       "io_style_emissions"    ""      ""
 
 # Namelist variables specific to DA-Chem
-rconfig   integer   chem_cv_options         namelist,wrfvarchem  1  0        - "chem_cv_options"          "0:off, 10:gocart, 20:mosaic "  ""
+rconfig   integer   chem_cv_options         namelist,wrfvarchem  1  0        - "chem_cv_options"          "0:off, 10:gocart, 20:mosaic 108:racm_soa_vbs "  ""
 rconfig   integer   chemicda_opt            namelist,wrfvarchem  1  1        - "chemicda_opt"             " "   " "
-rconfig   real      var_scaling12           namelist,wrfvarchem  36*max_outer_iterations  1.0   - "var_scaling12"            ""  ""
-rconfig   real      len_scaling12           namelist,wrfvarchem  36*max_outer_iterations  1.0   - "len_scaling12"            ""  ""
-rconfig   real      max_vert_var12          namelist,wrfvarchem  36*1                     99.0  - "max_vert_var12"          ""  ""
+rconfig   real      var_scaling12           namelist,wrfvarchem  45*max_outer_iterations  1.0   - "var_scaling12"            ""  ""
+rconfig   real      len_scaling12           namelist,wrfvarchem  45*max_outer_iterations  1.0   - "len_scaling12"            ""  ""
+rconfig   real      max_vert_var12          namelist,wrfvarchem  45*1                     99.0  - "max_vert_var12"          ""  ""
 rconfig   logical   test_transformsch       namelist,wrfvarchem  1  .false.  - "test_transformsch"       ""  ""
 rconfig   logical   use_chemic_surfobs      namelist,wrfvarchem  1  .true.   - "use_chemic_surfobs"      ""  ""
 rconfig   real      max_error_chemic_surf   namelist,wrfvarchem  1  500.0    - "max_error_chemic_surf"   ""  ""
@@ -189,6 +271,44 @@ typedef xchem_type real chem_ic_oin_a01         ijkf          chem_ic     1   - 
 typedef xchem_type real chem_ic_oin_a02         ijkf          chem_ic     1   -   -
 typedef xchem_type real chem_ic_oin_a03         ijkf          chem_ic     1   -   -
 typedef xchem_type real chem_ic_oin_a04         ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_so4aj           ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_so4ai           ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_nh4aj           ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_nh4ai           ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_no3aj           ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_no3ai           ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_naaj            ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_naai            ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_claj            ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_clai            ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_orgpaj          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_orgpai          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_ecj             ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_eci             ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_p25j            ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_p25i            ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_antha           ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_seas            ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_soila           ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_nu0             ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_ac0             ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_corn            ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_asoa1j          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_asoa1i          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_asoa2j          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_asoa2i          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_asoa3j          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_asoa3i          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_asoa4j          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_asoa4i          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_bsoa1j          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_bsoa1i          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_bsoa2j          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_bsoa2i          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_bsoa3j          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_bsoa3i          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_bsoa4j          ijkf          chem_ic     1   -   -
+typedef xchem_type real chem_ic_bsoa4i          ijkf          chem_ic     1   -   -
 
 ##END XCHEM_TYPE DEFINITION
 
@@ -201,9 +321,10 @@ state xchem_type vchem2  -  -
 #CHEMISTRY PACKAGE DEFINITIONS
 package    gocart_test       chem_cv_options==10     -           chem:sulf,p10,p25,so2,no2,o3,co,bc1,bc2,oc1,oc2,dust_1,dust_2,dust_3,dust_4,seas_1,seas_2,seas_3,seas_4;chem_ic:chem_ic_sulf,chem_ic_p10,chem_ic_p25,chem_ic_so2,chem_ic_no2,chem_ic_o3,chem_ic_co,chem_ic_bc1,chem_ic_bc2,chem_ic_oc1,chem_ic_oc2,chem_ic_dust_1,chem_ic_dust_2,chem_ic_dust_3,chem_ic_dust_4,chem_ic_seas_1,chem_ic_seas_2,chem_ic_seas_3,chem_ic_seas_4
 package    mosaic_test       chem_cv_options==20     -           chem:bc_a01,bc_a02,bc_a03,bc_a04,oc_a01,oc_a02,oc_a03,oc_a04,so4_a01,so4_a02,so4_a03,so4_a04,no3_a01,no3_a02,no3_a03,no3_a04,nh4_a01,nh4_a02,nh4_a03,nh4_a04,cl_a01,cl_a02,cl_a03,cl_a04,na_a01,na_a02,na_a03,na_a04,oin_a01,oin_a02,oin_a03,oin_a04,so2,no2,o3,co;chem_ic:chem_ic_bc_a01,chem_ic_bc_a02,chem_ic_bc_a03,chem_ic_bc_a04,chem_ic_oc_a01,chem_ic_oc_a02,chem_ic_oc_a03,chem_ic_oc_a04,chem_ic_so4_a01,chem_ic_so4_a02,chem_ic_so4_a03,chem_ic_so4_a04,chem_ic_no3_a01,chem_ic_no3_a02,chem_ic_no3_a03,chem_ic_no3_a04,chem_ic_nh4_a01,chem_ic_nh4_a02,chem_ic_nh4_a03,chem_ic_nh4_a04,chem_ic_cl_a01,chem_ic_cl_a02,chem_ic_cl_a03,chem_ic_cl_a04,chem_ic_na_a01,chem_ic_na_a02,chem_ic_na_a03,chem_ic_na_a04,chem_ic_oin_a01,chem_ic_oin_a02,chem_ic_oin_a03,chem_ic_oin_a04,chem_ic_so2,chem_ic_no2,chem_ic_o3,chem_ic_co
+package    racm_soa_vbs_da   chem_cv_options==108     -          chem:so2,no2,o3,co,so4aj,so4ai,nh4aj,nh4ai,no3aj,no3ai,naaj,naai,claj,clai,asoa1j,asoa1i,asoa2j,asoa2i,asoa3j,asoa3i,asoa4j,asoa4i,bsoa1j,bsoa1i,bsoa2j,bsoa2i,bsoa3j,bsoa3i,bsoa4j,bsoa4i,orgpaj,orgpai,ecj,eci,p25j,p25i,antha,seas,soila;chem_ic:chem_ic_so2,chem_ic_no2,chem_ic_o3,chem_ic_co,chem_ic_so4aj,chem_ic_so4ai,chem_ic_nh4aj,chem_ic_nh4ai,chem_ic_no3aj,chem_ic_no3ai,chem_ic_naaj,chem_ic_naai,chem_ic_claj,chem_ic_clai,chem_ic_asoa1j,chem_ic_asoa1i,chem_ic_asoa2j,chem_ic_asoa2i,chem_ic_asoa3j,chem_ic_asoa3i,chem_ic_asoa4j,chem_ic_asoa4i,chem_ic_bsoa1j,chem_ic_bsoa1i,chem_ic_bsoa2j,chem_ic_bsoa2i,chem_ic_bsoa3j,chem_ic_bsoa3i,chem_ic_bsoa4j,chem_ic_bsoa4i,chem_ic_orgpaj,chem_ic_orgpai,chem_ic_ecj,chem_ic_eci,chem_ic_p25j,chem_ic_p25i,chem_ic_antha,chem_ic_seas,chem_ic_soila
 
 ### surface chem obs ###
-state    real   -                   f  chemic_surf               -         -      -       -   "Chem IC Surface Obs."  ""
+state    real   -                   f  chemic_surf               -         -      -       -  "Chem IC Surface Obs."  ""
 state    real   chemsi_pm25         f  chemic_surf               1         -      h{19}      "chems_pm25"   "pm25 observation"           "ug/m^3"
 state    real   chemsi_pm10         f  chemic_surf               1         -      h{19}      "chems_pm10"   "pm10 observation"           "ug/m^3"
 state    real   chemsi_so2          f  chemic_surf               1         -      h{19}      "chems_so2"    "so2 observation"            "ug/m^3"

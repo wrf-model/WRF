@@ -181,11 +181,27 @@ NATURAL
 CROP
 12
 LCZ_1
-24
+31
 LCZ_2
-26
+32
 LCZ_3
-99
+33
+LCZ_4
+34
+LCZ_5
+35
+LCZ_6
+36
+LCZ_7
+37
+LCZ_8
+38
+LCZ_9
+39
+LCZ_10
+40
+LCZ_11
+41
 Vegetation Parameters
 USGS-RUC
 28,1, 'ALBEDO    Z0   LEMI     PC   SHDFAC IFOR   RS      RGL      HS      SNUP    LAI    MAXALB'

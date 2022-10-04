@@ -466,6 +466,15 @@ module da_control
                                            ! data calibration
       Other_check             =  88        ! passed other quality check
 
+   ! QC flags for gpsref
+   integer, parameter :: qcflag_pcnt_below  = -31
+   integer, parameter :: qcflag_pcnt_middle = -32
+   integer, parameter :: qcflag_pcnt_above  = -33
+   integer, parameter :: qcflag_dndz        = -34
+   integer, parameter :: qcflag_dndz2       = -35
+   integer, parameter :: qcflag_cutoff      = -36
+   integer, parameter :: qcflag_height      = -77
+
    ! Observations:
 
    integer                :: num_procs            ! Number of total processors.
@@ -680,5 +689,13 @@ module da_control
    logical :: global
 
    logical, allocatable :: fgat_rain_flags(:)
+
+   integer, parameter :: no_thin           = 0  ! no thinning
+   integer, parameter :: thin_single       = 1  ! keep one ob within a thinning box
+   integer, parameter :: thin_multi        = 2  ! keep multiple obs within a thinning box
+   integer, parameter :: thin_superob      = 3  ! superob in 2-D thinning boxes
+   integer, parameter :: thin_superob_hv   = 4  ! superob in horizontal and vertical
+
+   integer, parameter :: error_opt_nml     = 1  ! ob error specified in namelist
 
 end module da_control

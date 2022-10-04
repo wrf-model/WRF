@@ -29,6 +29,7 @@
    USE module_sf_noahmpdrv, ONLY : groundwater_init
    USE module_lightning_driver, ONLY : lightning_init
    USE module_fr_fire_driver_wrf, ONLY : fire_driver_em_init
+   USE module_firebrand_spotting, ONLY : firebrand_spotting_em_init
    USE module_stoch, ONLY : setup_rand_perturb, rand_seed, update_stoch, initialize_stoch
    USE module_trajectory, ONLY : trajectory_init
 #if (WRF_CHEM == 1)
@@ -1025,6 +1026,7 @@ endif
                       grid%rublten,grid%rvblten,grid%rthblten,               &
                       grid%rqvblten,grid%rqcblten,grid%rqiblten,             &
                       grid%rthraten,grid%rthratenlw,grid%rthratensw,         &
+                      grid%this_is_an_ideal_run,                             &
                       !BSINGH - For WRFCuP scheme(11/12/2013)
                       grid%cupflag,grid%cldfra_cup,grid%cldfratend_cup,      & !wig, 18-Sep-2006
                       grid%shall,                                            & !wig, 18-Sep-2006
@@ -1033,7 +1035,8 @@ endif
                       grid%stepbl,grid%stepra,grid%stepcu,                   &
                       grid%w0avg, grid%rainnc, grid%rainc, grid%raincv, grid%rainncv,  &
                       grid%snownc, grid%snowncv, grid%graupelnc, grid%graupelncv,  &
-                      z_at_q, grid%alt, grid%qnwfa2d, scalar(ims,kms,jms,1), num_scalar,         & ! G. Thompson
+                      z_at_q, grid%alt, grid%qnwfa2d, grid%qnbca2d,     & ! G. Thompson
+                      scalar(ims,kms,jms,1), num_scalar,                & ! G. Thompson
                       grid%re_cloud, grid%re_ice, grid%re_snow,         & ! G. Thompson
                       grid%has_reqc, grid%has_reqi, grid%has_reqs,      & ! G. Thompson
                       grid%phb,grid%ph_2,grid%p,grid%pb,                & ! for ntu3m
@@ -1126,7 +1129,7 @@ endif
                       config_flags%opt_irr, config_flags%opt_irrm,                              &   ! Optional Noah-MP
                       grid%IRNUMSI, grid%IRNUMMI, grid%IRNUMFI, grid%IRWATSI, grid%IRWATMI,     &   ! Optional Noah-MP
                       grid%IRWATFI, grid%IRELOSS, grid%IRSIVOL, grid%IRMIVOL, grid%IRFIVOL,     &   ! Optional Noah-MP
-                      grid%IRRSPLH,                                                             &   ! Optional Noah-MP
+                      grid%IRRSPLH, grid%qtdrain,                                               &   ! Optional Noah-MP
                       grid%gecros_state,                                                        &   ! Optional gecros crop
                       grid%XSAIXY,grid%LAI,                                                     &   ! Optional Noah-MP
                       grid%T2MVXY, grid%T2MBXY, grid%CHSTARXY,                                  &   ! Optional Noah-MP
@@ -1171,6 +1174,7 @@ endif
                       grid%tkdry3d,      grid%tksatu3d,     grid%lake2d,                            & !lake
                       config_flags%lakedepth_default,        config_flags%lake_min_elev, grid%lake_depth,     & !lake
                       grid%lakemask,        grid%lakeflag,  grid%LAKE_DEPTH_FLAG, grid%use_lakedepth,     & !lake
+                      grid%water_depth,  grid%BATHYMETRY_FLAG, grid%shalwater_z0,grid%shalwater_depth, & ! bathymetry 
                       config_flags%sf_surface_mosaic, config_flags%mosaic_cat, config_flags%num_land_cat, & ! Noah tiling
                       config_flags%maxpatch,           &   ! start of CLM variables
               grid%numc,grid%nump,grid%snl,grid%snowdp,&   !
@@ -1255,6 +1259,7 @@ endif
                       ,grid%ccn_conc                                          & ! RAS
                       ,grid%QKE                                               &!JOE-for mynn
                       ,grid%pep_pbl                                           & ! EEPS
+                      ,grid%ghi_accum                                         & ! Solar diagnostics
                       ,grid%landusef,grid%landusef2,grid%mosaic_cat_index                            & ! danli mosaic
                       ,grid%TSK_mosaic,grid%TSLB_mosaic,grid%SMOIS_mosaic,grid%SH2O_mosaic           & ! danli mosaic
                       ,grid%CANWAT_mosaic,grid%SNOW_mosaic,grid%SNOWH_mosaic,grid%SNOWC_mosaic       & ! danli mosaic
@@ -1284,8 +1289,9 @@ endif
                  config_flags%num_soil_layers, grid%dzs, grid%isltyp, grid%ivgtyp, config_flags%wtddt , &
                  grid%fdepthxy   , grid%ht     , grid%riverbedxy, grid%eqzwt     ,                      &
                  grid%rivercondxy, grid%pexpxy , grid%areaxy    , grid%zwtxy     ,                      &
-                 grid%smois      , grid%sh2o   , grid%smoiseq   , grid%smcwtdxy  , grid%deeprechxy,     &
-                 grid%rechxy     , grid%qslatxy, grid%qrfsxy    , grid%qspringsxy,                      &
+                 grid%smois      , grid%sh2o   , grid%smoiseq   , grid%smcwtdxy  ,                      &
+                 grid%qlatxy     , grid%qslatxy, grid%qrfxy     , grid%qrfsxy    ,                      &
+                 grid%deeprechxy , grid%rechxy , grid%qspringxy , grid%qspringsxy,                      &
                  grid%rechclim   ,                                                                      &
                  ids,ide, jds,jde, kds,kde,                                                             &
                  ims,ime, jms,jme, kms,kme,                                                             &
@@ -2174,6 +2180,48 @@ if(config_flags%ifire.eq.2)then
             ,ips,ipe, kps,kpe, jps,jpe )
 
    CALL wrf_debug ( 100 , 'start_domain_em: After call to fire_driver_em_init' )
+
+!-----------------------------------------------------------------------
+! fire spotting (passive Lagrangian particle transport, tracks 
+! firebrand physics properties)
+!-----------------------------------------------------------------------
+
+   IF (config_flags%fs_firebrand_gen_lim > 0) THEN
+
+       IF (config_flags%max_dom == grid%id) THEN 
+
+           WRITE (message,*) 'SPFire_init: In inner most grid_id: ', grid%id, ' of ', config_flags%max_dom
+           CALL wrf_debug ( 100 ,  message)
+           CALL wrf_debug ( 100 , 'start_em: calling firebrand_spotting_em_init ...' )
+
+           CALL firebrand_spotting_em_init ( &
+               grid          = grid,                &
+               cf            = config_flags,        &
+               fs_p_id       = grid%fs_p_id,        &
+               fs_p_dt       = grid%fs_p_dt,        &
+               fs_p_x        = grid%fs_p_x,         &
+               fs_p_y        = grid%fs_p_y,         &
+               fs_p_z        = grid%fs_p_z,         &
+               fs_p_mass     = grid%fs_p_mass,      &  
+               fs_p_diam     = grid%fs_p_diam,      & 
+               fs_p_effd     = grid%fs_p_effd,      & 
+               fs_p_temp     = grid%fs_p_temp,      & 
+               fs_p_tvel     = grid%fs_p_tvel,      & 
+               fs_last_gen_dt= grid%fs_last_gen_dt, &
+               fs_gen_idmax  = grid%fs_gen_idmax,   &
+               fs_count_landed_all   = grid%fs_count_landed_all, &
+               fs_count_landed_hist  = grid%fs_count_landed_hist,&
+               fs_landing_mask       = grid%fs_landing_mask,     &
+               fs_spotting_lkhd      = grid%fs_spotting_lkhd,    &
+               fs_frac_landed        = grid%fs_frac_landed,      &
+               fs_count_reset        = grid%fs_count_reset)
+           
+           CALL wrf_debug ( 100 , 'start_em: firebrand_spotting_em_init ok ' )
+       ENDIF
+
+   ENDIF
+!-----------------------------------------------------------------------
+
 endif
 
 #if ( WRFPLUS != 1 )

@@ -4,7 +4,7 @@ PROGRAM real_data
 
    USE module_machine
 #ifdef DM_PARALLEL
-   USE module_dm, ONLY : wrf_dm_initialize
+   USE module_dm, ONLY : wrf_dm_initialize, mpi_comm_allcompute
 #endif
    USE module_domain, ONLY : domain, alloc_and_configure_domain, &
         domain_clock_set, head_grid, program_name, domain_clockprint, &
@@ -56,9 +56,9 @@ PROGRAM real_data
 
    INTEGER :: max_dom, domain_id , grid_id , parent_id , parent_id1 , id
    INTEGER :: e_we , e_sn , i_parent_start , j_parent_start
-   INTEGER :: idum1, idum2 
+   INTEGER :: idum1, idum2
 #ifdef DM_PARALLEL
-   INTEGER                 :: nbytes
+   INTEGER                 :: nbytes, save_comm
    INTEGER, PARAMETER      :: configbuflen = 4* CONFIG_BUF_LEN
    INTEGER                 :: configbuf( configbuflen )
    LOGICAL , EXTERNAL      :: wrf_dm_on_monitor
@@ -119,6 +119,8 @@ real::t1,t2
    !  The configuration switches mostly come from the NAMELIST input.
 
 #ifdef DM_PARALLEL
+   CALL wrf_get_dm_communicator( save_comm )
+   CALL wrf_set_dm_communicator( mpi_comm_allcompute )
    IF ( wrf_dm_on_monitor() ) THEN
       CALL initial_config
    END IF
@@ -126,6 +128,7 @@ real::t1,t2
    CALL wrf_dm_bcast_bytes( configbuf, nbytes )
    CALL set_config_as_buffer( configbuf, configbuflen )
    CALL wrf_dm_initialize
+   CALL wrf_set_dm_communicator( save_comm )
 #else
    CALL initial_config
 #endif
@@ -394,7 +397,8 @@ real::t1,t2,t3,t4
       internal_time_loop = loop
       IF ( ( grid%id .GT. 1 ) .AND. ( loop .GT. 1 ) .AND. &
            ( model_config_rec%grid_fdda(grid%id) .EQ. 0 ) .AND. &
-           ( model_config_rec%sst_update .EQ. 0 ) ) EXIT
+           ( model_config_rec%sst_update .EQ. 0 ) .AND. &
+           ( model_config_rec%qna_update .EQ. 0 ) ) EXIT
 
       print *,' '
       print *,'-----------------------------------------------------------------------------'
@@ -693,8 +697,8 @@ SUBROUTINE assemble_output ( grid , config_flags , loop , time_loop_max , curren
    INTEGER :: ijds , ijde , spec_bdy_width
    INTEGER :: i , j , k , idts
 
-   INTEGER :: id1 , interval_seconds , ierr, rc, sst_update, grid_fdda
-   INTEGER , SAVE :: id, id2,  id4 
+   INTEGER :: id1 , interval_seconds , ierr, rc, sst_update, qna_update, grid_fdda
+   INTEGER , SAVE :: id, id2,  id4, id17
    CHARACTER (LEN=256) :: inpname , bdyname
    CHARACTER(LEN= 4) :: loop_char
    CHARACTER (LEN=256) :: message
@@ -706,7 +710,7 @@ character *24 :: temp24 , temp24b
    REAL , DIMENSION(:,:,:) , ALLOCATABLE , SAVE :: mbdy2dtemp1
    REAL , DIMENSION(:,:,:) , ALLOCATABLE , SAVE :: ubdy3dtemp2 , vbdy3dtemp2 , tbdy3dtemp2 , pbdy3dtemp2 , qbdy3dtemp2
    REAL , DIMENSION(:,:,:) , ALLOCATABLE , SAVE :: mbdy2dtemp2
-   REAL , DIMENSION(:,:,:) , ALLOCATABLE , SAVE :: qn1bdy3dtemp1, qn1bdy3dtemp2, qn2bdy3dtemp1, qn2bdy3dtemp2
+   REAL , DIMENSION(:,:,:) , ALLOCATABLE , SAVE :: qn1bdy3dtemp1, qn1bdy3dtemp2, qn2bdy3dtemp1, qn2bdy3dtemp2, qn3bdy3dtemp1, qn3bdy3dtemp2
 real::t1,t2
 
    INTEGER                                :: open_status
@@ -744,6 +748,7 @@ real::t1,t2
    spec_bdy_width = model_config_rec%spec_bdy_width
    interval_seconds = model_config_rec%interval_seconds
    sst_update = model_config_rec%sst_update
+   qna_update = model_config_rec%qna_update
    grid_fdda = model_config_rec%grid_fdda(grid%id)
 
    !  Domain check.  We cannot decompose the domain into pieces that are
@@ -797,7 +802,7 @@ real::t1,t2
          ALLOCATE ( qbdy3dtemp2(ims:ime,kms:kme,jms:jme) )
          ALLOCATE ( mbdy2dtemp2(ims:ime,1:1,    jms:jme) )
 
-         IF (config_flags%mp_physics.eq.THOMPSONAERO .AND.  config_flags%use_aero_icbc) THEN
+         IF (config_flags%mp_physics.eq.THOMPSONAERO .AND.  config_flags%aer_init_opt .gt. 0) THEN
             IF ( ALLOCATED ( qn1bdy3dtemp1 ) ) DEALLOCATE ( qn1bdy3dtemp1 )
             IF ( ALLOCATED ( qn2bdy3dtemp1 ) ) DEALLOCATE ( qn2bdy3dtemp1 )
             IF ( ALLOCATED ( qn1bdy3dtemp2 ) ) DEALLOCATE ( qn1bdy3dtemp2 )
@@ -806,6 +811,12 @@ real::t1,t2
             ALLOCATE ( qn2bdy3dtemp1(ims:ime,kms:kme,jms:jme) )
             ALLOCATE ( qn1bdy3dtemp2(ims:ime,kms:kme,jms:jme) )
             ALLOCATE ( qn2bdy3dtemp2(ims:ime,kms:kme,jms:jme) )
+            IF ( ( config_flags%wif_input_opt .EQ. 2 ) .AND. ( f_qnbca ) ) THEN
+               IF ( ALLOCATED ( qn3bdy3dtemp1 ) ) DEALLOCATE ( qn3bdy3dtemp1 )
+               IF ( ALLOCATED ( qn3bdy3dtemp2 ) ) DEALLOCATE ( qn3bdy3dtemp2 )
+               ALLOCATE ( qn3bdy3dtemp1(ims:ime,kms:kme,jms:jme) )
+               ALLOCATE ( qn3bdy3dtemp2(ims:ime,kms:kme,jms:jme) )
+            END IF
          END IF
 
       END IF
@@ -830,6 +841,15 @@ real::t1,t2
               CALL wrf_error_fatal( 'REAL: error opening wrflowinp for writing' )
            END IF
            CALL output_auxinput4 ( id4, grid , config_flags , ierr )
+         END IF
+
+         IF(qna_update .EQ. 1)THEN
+           CALL construct_filename1( inpname , 'wrfqnainp' , grid%id , 2 )
+           CALL open_w_dataset ( id17, TRIM(inpname) , grid , config_flags , output_auxinput17 , "DATASET=AUXINPUT17", ierr )
+           IF ( ierr .NE. 0 ) THEN
+              CALL wrf_error_fatal( 'real: error opening wrfqnainp for writing' )
+           END IF
+           CALL output_auxinput17 ( id17, grid , config_flags , ierr )
          END IF
       END IF
 
@@ -865,13 +885,18 @@ real::t1,t2
             END DO
          END DO
 
-         IF (config_flags%mp_physics.eq.THOMPSONAERO .AND.  config_flags%use_aero_icbc) THEN
+         IF (config_flags%mp_physics.eq.THOMPSONAERO .AND.  config_flags%aer_init_opt .gt. 0) THEN
             CALL couple ( grid%mu_2 , grid%mub , qn1bdy3dtemp1 , grid%scalar(:,:,:,P_QNWFA)      , 't' , grid%msfty , &
                        grid%c1h, grid%c2h, grid%c1h, grid%c2h, &
                        ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
             CALL couple ( grid%mu_2 , grid%mub , qn2bdy3dtemp1 , grid%scalar(:,:,:,P_QNIFA)      , 't' , grid%msfty , &
                        grid%c1h, grid%c2h, grid%c1h, grid%c2h, &
                        ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
+            IF ( ( config_flags%wif_input_opt .EQ. 2 ) .AND. ( f_qnbca ) ) THEN
+               CALL couple ( grid%mu_2 , grid%mub , qn3bdy3dtemp1 , grid%scalar(:,:,:,P_QNBCA)      , 't' , grid%msfty , &
+                          grid%c1h, grid%c2h, grid%c1h, grid%c2h, &
+                          ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
+            END IF
          END IF
 
       END IF
@@ -940,7 +965,7 @@ real::t1,t2
                                                                     ims , ime , jms , jme , 1 , 1 , &
                                                                     ips , ipe , jps , jpe , 1 , 1 )
 
-         IF (config_flags%mp_physics.eq.THOMPSONAERO .AND.  config_flags%use_aero_icbc) THEN
+         IF (config_flags%mp_physics.eq.THOMPSONAERO .AND.  config_flags%aer_init_opt .gt. 0) THEN
             CALL stuff_bdy     ( qn1bdy3dtemp1 , grid%scalar_bxs(:,:,:,P_QNWFA), grid%scalar_bxe(:,:,:,P_QNWFA),     &
                                             grid%scalar_bys(:,:,:,P_QNWFA), grid%scalar_bye(:,:,:,P_QNWFA),     &
                                                               'T' , spec_bdy_width      ,               &
@@ -953,6 +978,14 @@ real::t1,t2
                                                                     ids , ide , jds , jde , kds , kde , &
                                                                     ims , ime , jms , jme , kms , kme , &
                                                                     ips , ipe , jps , jpe , kps , kpe )
+            IF ( ( config_flags%wif_input_opt .EQ. 2 ) .AND. ( f_qnbca ) ) THEN
+               CALL stuff_bdy     ( qn3bdy3dtemp1 , grid%scalar_bxs(:,:,:,P_QNBCA), grid%scalar_bxe(:,:,:,P_QNBCA),     &
+                                               grid%scalar_bys(:,:,:,P_QNBCA), grid%scalar_bye(:,:,:,P_QNBCA),     &
+                                                                 'T' , spec_bdy_width      ,               &
+                                                                       ids , ide , jds , jde , kds , kde , &
+                                                                       ims , ime , jms , jme , kms , kme , &
+                                                                       ips , ipe , jps , jpe , kps , kpe )
+            END IF
          END IF
       END IF
 
@@ -961,6 +994,10 @@ real::t1,t2
 
       IF(sst_update .EQ. 1)THEN
         CALL output_auxinput4 ( id4, grid , config_flags , ierr )
+      END IF
+
+      IF(qna_update .EQ. 1)THEN
+        CALL output_auxinput17 ( id17, grid , config_flags , ierr )
       END IF
 
       !  Open the boundary and the fdda file.
@@ -1034,13 +1071,18 @@ real::t1,t2
             END DO
          END DO
 
-         IF (config_flags%mp_physics.eq.THOMPSONAERO .AND.  config_flags%use_aero_icbc) THEN
+         IF (config_flags%mp_physics.eq.THOMPSONAERO .AND.  config_flags%aer_init_opt .gt. 0) THEN
             CALL couple ( grid%mu_2 , grid%mub , qn1bdy3dtemp2 , grid%scalar(:,:,:,P_QNWFA)      , 't' , grid%msfty , &
                        grid%c1h, grid%c2h, grid%c1h, grid%c2h, &
                        ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
             CALL couple ( grid%mu_2 , grid%mub , qn2bdy3dtemp2 , grid%scalar(:,:,:,P_QNIFA)      , 't' , grid%msfty , &
                        grid%c1h, grid%c2h, grid%c1h, grid%c2h, &
                        ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
+            IF ( ( config_flags%wif_input_opt .EQ. 2 ) .AND. ( f_qnbca ) ) THEN
+               CALL couple ( grid%mu_2 , grid%mub , qn3bdy3dtemp2 , grid%scalar(:,:,:,P_QNBCA)      , 't' , grid%msfty , &
+                          grid%c1h, grid%c2h, grid%c1h, grid%c2h, &
+                          ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
+            END IF
          END IF
 
       END IF
@@ -1126,7 +1168,7 @@ real::t1,t2
                                                                ids , ide , jds , jde , 1 , 1 , &
                                                                ims , ime , jms , jme , 1 , 1 , &
                                                                ips , ipe , jps , jpe , 1 , 1 )
-         IF (config_flags%mp_physics.eq.THOMPSONAERO .AND.  config_flags%use_aero_icbc) THEN
+         IF (config_flags%mp_physics.eq.THOMPSONAERO .AND.  config_flags%aer_init_opt .gt. 0) THEN
             CALL stuff_bdytend ( qn1bdy3dtemp2 , qn1bdy3dtemp1 , REAL(interval_seconds) ,                 &
                                                                grid%scalar_btxs(:,:,:,P_QNWFA), grid%scalar_btxe(:,:,:,P_QNWFA), &
                                                                grid%scalar_btys(:,:,:,P_QNWFA), grid%scalar_btye(:,:,:,P_QNWFA), &
@@ -1143,6 +1185,16 @@ real::t1,t2
                                                                ids , ide , jds , jde , kds , kde , &
                                                                ims , ime , jms , jme , kms , kme , &
                                                                ips , ipe , jps , jpe , kps , kpe )
+            IF ( ( config_flags%wif_input_opt .EQ. 2 ) .AND. ( f_qnbca ) ) THEN
+               CALL stuff_bdytend ( qn3bdy3dtemp2 , qn3bdy3dtemp1 , REAL(interval_seconds) ,                 &
+                                                                  grid%scalar_btxs(:,:,:,P_QNBCA), grid%scalar_btxe(:,:,:,P_QNBCA), &
+                                                                  grid%scalar_btys(:,:,:,P_QNBCA), grid%scalar_btye(:,:,:,P_QNBCA), &
+                                                                  'T' , &
+                                                                  spec_bdy_width      , &
+                                                                  ids , ide , jds , jde , kds , kde , &
+                                                                  ims , ime , jms , jme , kms , kme , &
+                                                                  ips , ipe , jps , jpe , kps , kpe )
+            END IF
          END IF
       END IF
 
@@ -1254,7 +1306,7 @@ real::t1,t2
                END DO
             END DO
 
-            IF (config_flags%mp_physics.eq.THOMPSONAERO .AND.  config_flags%use_aero_icbc) THEN
+            IF (config_flags%mp_physics.eq.THOMPSONAERO .AND.  config_flags%aer_init_opt .gt. 0) THEN
                DO j = jps , jpe
                   DO k = kps , kpe
                      DO i = ips , ipe
@@ -1331,7 +1383,7 @@ real::t1,t2
                                                                        ims , ime , jms , jme , 1 , 1 , &
                                                                        ips , ipe , jps , jpe , 1 , 1 )
 
-            IF (config_flags%mp_physics.eq.THOMPSONAERO .AND.  config_flags%use_aero_icbc) THEN
+            IF (config_flags%mp_physics.eq.THOMPSONAERO .AND.  config_flags%aer_init_opt .gt. 0) THEN
                CALL stuff_bdy     ( qn1bdy3dtemp1 , grid%scalar_bxs(:,:,:,P_QNWFA), grid%scalar_bxe(:,:,:,P_QNWFA),     &
                                                     grid%scalar_bys(:,:,:,P_QNWFA), grid%scalar_bye(:,:,:,P_QNWFA),     &
                                                                  'T' , spec_bdy_width      ,               &
@@ -1344,6 +1396,14 @@ real::t1,t2
                                                                        ids , ide , jds , jde , kds , kde , &
                                                                        ims , ime , jms , jme , kms , kme , &
                                                                        ips , ipe , jps , jpe , kps , kpe )
+               IF ( ( config_flags%wif_input_opt .EQ. 2 ) .AND. ( f_qnbca ) ) THEN
+                  CALL stuff_bdy     ( qn3bdy3dtemp1 , grid%scalar_bxs(:,:,:,P_QNBCA), grid%scalar_bxe(:,:,:,P_QNBCA),     &
+                                                       grid%scalar_bys(:,:,:,P_QNBCA), grid%scalar_bye(:,:,:,P_QNBCA),     &
+                                                                    'T' , spec_bdy_width      ,               &
+                                                                          ids , ide , jds , jde , kds , kde , &
+                                                                          ims , ime , jms , jme , kms , kme , &
+                                                                          ips , ipe , jps , jpe , kps , kpe )
+               END IF
             END IF
    
          END IF
@@ -1368,6 +1428,10 @@ real::t1,t2
 
          IF(sst_update .EQ. 1)THEN
             CALL close_dataset ( id4 , config_flags , "DATASET=AUXINPUT4" )
+         END IF
+
+         IF(qna_update .EQ. 1)THEN
+            CALL close_dataset ( id17 , config_flags , "DATASET=AUXINPUT17" )
          END IF
 
       END IF

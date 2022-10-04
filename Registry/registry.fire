@@ -5,36 +5,48 @@
 #
 # declare fire package and choose which fire scheme
 #
+# ------------------------------------------------------------------------------------------------------------------------
 #<key>   <package       <associated               <package        <associated 4d scalars>
 #         name>          namelist choice>          state vars>
+# ------------------------------------------------------------------------------------------------------------------------
 # 
-package   fire_sfire    ifire==2                    -             state:avg_fuel_frac,bbb,betafl,burnt_area_dt,canhfx,canqfx,dzdxf,dzdyf,fcanhfx,fcanqfx,fgip,fgrnhfx,fgrnqfx,fire_area,fire_smoke,flame_length,fmc_equi,fmc_g,fmc_gc,fmep,fmc_lag,fmoist_lasttime,fmoist_nexttime,fuel_frac,fuel_time,fxlat,fxlong,fz0,grnhfx,grnhfx_fu,grnqfx,grnqfx_fu,iboros,ischap,lfn,lfn_0,lfn_1,lfn_2,lfn_hist,lfn_s0,lfn_s1,lfn_s2,lfn_s3,lfn_time,nfuel_cat,phiwc,psfc_old,q2_old,r_0,rain_old,rh_fire,ros,ros_front,rqvfrten,rthfrten,t2_old,tign_g,uah,uf,vah,vf,zsf
+
+package   fire_sfire    ifire==2                    -             state:avg_fuel_frac,bbb,betafl,burnt_area_dt,canhfx,canqfx,dzdxf,dzdyf,fcanhfx,fcanqfx,fgip,fgrnhfx,fgrnqfx,fire_area,fire_smoke,flame_length,fmc_equi,fmc_g,fmc_gc,fmep,fmc_lag,fmoist_lasttime,fmoist_nexttime,fuel_frac,fuel_time,fxlat,fxlong,fz0,grnhfx,grnhfx_fu,grnqfx,grnqfx_fu,iboros,ischap,lfn,lfn_0,lfn_1,lfn_2,lfn_hist,lfn_s0,lfn_s1,lfn_s2,lfn_s3,lfn_time,nfuel_cat,phiwc,psfc_old,q2_old,r_0,rain_old,rh_fire,ros,ros_front,rqvfrten,rthfrten,t2_old,tign_g,uah,uf,vah,vf,zsf,fs_last_gen_dt,fs_gen_idmax,fs_count_reset,fs_fire_ROSdt,fs_fire_area,fs_fuel_spotting_risk,fs_count_landed_all,fs_count_landed_hist,fs_landing_mask,fs_gen_inst,fs_frac_landed,fs_spotting_lkhd 
 
 package  fire_fmoist_run   fmoisti_run==1           -             state:fmc_gc,fmep,fmc_equi,fmc_lag,rain_old,t2_old,psfc_old,rh_fire
 package  fire_fmoist_interp fmoisti_interp==1       -             state:fmc_gc
 
+# ------------------------------------------------------------------------------------------------------------------------
+#<Table> <Type>  <Sym>           <Dims>   <Use>   <NumTLev> <Stagger>  <IO>     <DNAME>      <DESCRIP>     <UNITS>   
+# ------------------------------------------------------------------------------------------------------------------------
+#
+# ------------------------------------------------------------------------------------------------------------------------
 # level function history support
+#
 dimspec   ign   2           constant=1      z    i_lfn_history
 state     real  lfn_hist    *i*j        fire   1    Z   i012hr     "LFN_HIST"    "level function history" "1"
 state     real  lfn_time    {ign}       fire   1    -   i012hr     "LFN_TIME"    "level function history time" "s"
 
-
+# ------------------------------------------------------------------------------------------------------------------------
 # fire variables on fire grid
 #
-#<Table> <Type> <Sym>       <Dims>   <Use>   <NumTLev> <Stagger> <IO>     <DNAME>             <DESCRIP>     <UNITS>   
 state    real  nfuel_cat *i*j     fire        1         z     i012hr        "NFUEL_CAT"        "fuel data"   
 state    real     zsf       *i*j     fire        1         z   i012hr   "ZSF"      "height of surface above sea level" "m"
 state    real     dzdxf     *i*j     fire        1         z   i012hr   "DZDXF"    "surface gradient x" "1"
 state    real     dzdyf     *i*j     fire        1         z   i012hr   "DZDYF"    "surface gradient y" "1"
 state    real     tign_g    *i*j     fire        1         z     hr   "TIGN_G"   "ignition time on ground" "s"
 
+# ------------------------------------------------------------------------------------------------------------------------
 # fire variables on atm grid
+#
 #
 # outputs to atm model
 state    real     rthfrten  ikj      fire        1         z     hr   "RTHFRTEN" "temperature tendency" "K/s"
 state    real     rqvfrten  ikj      fire        1         z     hr   "RQVFRTEN" "humidity tendency" 
 
+# ------------------------------------------------------------------------------------------------------------------------
 # diagnostics only
+#
 state    real     avg_fuel_frac  ij       fire        1         z     hr   "AVG_FUEL_FRAC" "fuel remaining averaged to atmospheric grid" "1"
 state    real     grnhfx         ij       fire        1         z     hr   "GRNHFX"   "heat flux from ground fire" "W/m^2"
 state    real     grnqfx         ij       fire        1         z     hr   "GRNQFX"   "moisture flux from ground fire" "W/m^2"
@@ -45,7 +57,10 @@ state    real     vah            ij       fire        1         Y     hr   "VAH"
 state    real     grnhfx_fu      ij       fire        1         z     r   "GRNHFX_FU"   "heat flux from ground fire (feedback unsensitive)" "W/m^2" 
 state    real     grnqfx_fu      ij       fire        1         z     r   "GRNQFX_FU"   "moisture flux from ground fire (feedback unsensitive)" "W/m^2"
 
+# ------------------------------------------------------------------------------------------------------------------------
 # sfire variables on fire grid
+#
+#
 # (also using tign_g,zs,z_at_w,dz8w,nfuel_cat,fluxes,zsf)
 #
 state    real     lfn       *i*j      fire        1         z    hr    "LFN" "level function" "1"
@@ -69,13 +84,16 @@ state    real     ros       *i*j      fire        1         z    r    "ROS" "rat
 state    real     burnt_area_dt *i*j      fire        1         z    hr    "BURNT_AREA_DT" "fraction of cell area burnt on current dt" "-"
 state    real     flame_length  *i*j      fire        1         z    hr    "FLAME_LENGTH"     "fire flame length" "m"
 state    real     ros_front     *i*j      fire        1         z    hr    "ROS_FRONT"     "rate of spread at fire front" "m/s"
-
+# 
+# ------------------------------------------------------------------------------------------------------------------------
 # fuel moisture variables
+#
 state    real     fmc_g     *i*j      fire        1         z   i102hr "FMC_G"     "ground fuel moisture contents" "1"
-
+#
 # fuel moisture model section
 dimspec  num_fmc    -   namelist=nfmc              z      fuel_moisture_classes 
 dimspec  num_fmep    -   constant=2                z      fuel_moisture_extended_parameters
+#
 rconfig  integer  nfmc  namelist,fire  1    5  -   "nfmc" "number of fuel moisture classes"
 state    real     fmc_gc  i{num_fmc}j fire      1           z   ihr   "FMC_GC"  "fuel moisture contents by class" "1"
 state    real     fmep    i{num_fmep}j fire      1         z    ihr   "FMEP"  "fuel moisture extended model parameters" "1"
@@ -96,11 +114,14 @@ rconfig logical   fmoist_only       namelist,fire  max_domains   .false.       h
 rconfig integer   fmoist_freq       namelist,fire  max_domains    0       hr   "fmoist_freq"    "frequency to run moisture model 0: use fmoist_dt, k>0: every k timesteps" "1"
 rconfig real      fmoist_dt         namelist,fire  max_domains    600     hr   "fmoist_dt  "    "moisture model time step" "s"
 rconfig real      fmep_decay_tlag   namelist,fire  1              999999  hr   "fmep_decay_tlag" "time constant of assimilated adjustments of equilibria decay" "1"
+#
 halo      HALO_FIRE_MFG dyn_em 24:fmc_g
 halo      HALO_FIRE_MAG dyn_em 8:fmc_gc
+#
 
-
+# ------------------------------------------------------------------------------------------------------------------------
 # constant data arrays
+#
 state    real     fxlong    *i*j      fire        1         z   ihr    "FXLONG"    "longitude of midpoints of fire cells" "degrees"
 state    real     fxlat     *i*j      fire        1         z   ihr    "FXLAT"     "latitude of midpoints of fire cells" "degrees"
 state    real     fuel_time *i*j      fire        1         z    hr    "FUEL_TIME" "fuel"
@@ -113,13 +134,20 @@ state    real     ischap    *i*j      fire        1         z    hr    "ISCHAP" 
 state    real     fz0        *i*j      fire        1         z   ihr    "FZ0"        "roughness length of fire cells" "m"
 state    real     iboros     *i*j      fire        1         z    hr    "IBOROS"     "fire intensity over rate of spread" "kJ/m^2"
 
-#
+
+# ========================================================================================================================
 # fire configure namelist variables
+# ========================================================================================================================
 #
+# ------------------------------------------------------------------------------------------------------------------------
 #<Table>  <Type>  <Sym>                   <How set>          <Nentries>   <Default>
+# ------------------------------------------------------------------------------------------------------------------------
 rconfig   integer ifire                  namelist,fire         max_domains           0
 rconfig   integer fire_boundary_guard    namelist,fire         max_domains           8       -      "fire_boundary_guard" "cells to stop when fire close to domain boundary"
+#
+# ------------------------------------------------------------------------------------------------------------------------
 # ignition for WRF-Fire
+#
 rconfig   integer fire_num_ignitions     namelist,fire         max_domains           0       -      "fire_num_ignitions" "number of ignition lines" 
 rconfig   real    fire_ignition_ros1        namelist,fire      max_domains           0.01    -      "fire_ignition_ros1" "rate of spread during ignition" "m/s"
 rconfig   real    fire_ignition_start_lon1  namelist,fire      max_domains           0.      -      "fire_ignition_start_long1" "long coord of start of ignition line" "deg"
@@ -181,7 +209,10 @@ rconfig   real    fire_ignition_start_x5  namelist,fire        max_domains      
 rconfig   real    fire_ignition_start_y5  namelist,fire        max_domains           0.      -      "fire_ignition_start_y5" "y coord of start of ignition line" "m"
 rconfig   real    fire_ignition_end_x5    namelist,fire        max_domains           0.      -      "fire_ignition_end_x5"   "x coord of end of ignition line" "m"
 rconfig   real    fire_ignition_end_y5    namelist,fire        max_domains           0.      -      "fire_ignition_end_y5"   "y coord of end of ignition line" "m"
+#
+# ------------------------------------------------------------------------------------------------------------------------
 # variables from old cawfe code
+#
 rconfig   real    fire_lat_init          namelist,fire         max_domains           0.      -      "fire_lat_init"    "latitude to start fire"           "degrees"
 rconfig   real    fire_lon_init          namelist,fire         max_domains           0.      -      "fire_lon_init"    "longitude to start fire"          "degrees"
 rconfig   real    fire_ign_time          namelist,fire         max_domains           0.      -      "fire_ign_time"    "time when fire should be ignited" "min"
@@ -193,11 +224,17 @@ rconfig   real    fire_ext_crwn          namelist,fire         max_domains      
 rconfig   real    fire_wind_height       namelist,fire         max_domains           6.096   -      "fire_wind_height" "height of uah,vah wind in fire spread formula" "m"
 rconfig   integer fire_fuel_read         namelist,fire         max_domains           -1      -      "fire_fuel_read"   "fuel categories are set by: if 0, uniform; if 1, user-presc; if 2, read from file"   ""
 rconfig   integer fire_fuel_cat          namelist,fire         max_domains           1       -      "fire_fuel_cat"     "fuel category if ifuelread=0"              ""
+#
+# ------------------------------------------------------------------------------------------------------------------------
 # sfire switches
+#
 rconfig   integer fire_fmc_read          namelist,fire         max_domains           1       -      "fire_fmc_read"    "ground fuel moisture is set by: if 0, in wrfinput; if 1, user-presc; if 2, read from file"   ""
 rconfig   integer fire_print_msg         namelist,fire         max_domains           0       -      "fire_write_msg"    "write fire statistics, 0 no writes, 1+ for more"  ""
 rconfig   integer fire_print_file        namelist,fire         max_domains           0       -      "fire_write_file"   "write fire output text files, 0 no writes, 1+ for more" ""
+#
+# ------------------------------------------------------------------------------------------------------------------------
 # method selection
+#
 rconfig   integer fire_fuel_left_method  namelist,fire         max_domains           1       -      "fire_fuel_left_method"   "1 or 2, compute fuel_left" ""
 rconfig   integer fire_fuel_left_irl     namelist,fire         max_domains           2       -      "fire_fuel_left_irl"   "submesh to compute fuel lwft, even, at least 2" ""
 rconfig   integer fire_fuel_left_jrl     namelist,fire         max_domains           2       -      "fire_fuel_left_jrl"   "submesh to compute fuel lwft, even, at least 2" ""
@@ -208,7 +245,10 @@ rconfig   real    fire_viscosity         namelist,fire         max_domains      
 rconfig   real    fire_lfn_ext_up        namelist,fire         max_domains           1.0     -      "fire_lfn_ext_up"   "0.=extend level set function at boundary by reflection, 1.=always up" "1"
 rconfig   integer fire_topo_from_atm     namelist,fire         max_domains            1      -      "fire_topo_from_atm" "0 = do nothing, 1 = populate ZSF by interpolating from atmosphere" "1"
 rconfig   integer fire_advection         namelist,fire         max_domains            1      -      "fire_advection" "0 = fire spread computed from normal wind speed/slope, 1 = fireline particle speed projected on normal" "0"
+#
+# ------------------------------------------------------------------------------------------------------------------------
 # experiments
+#
 rconfig   integer fire_test_steps        namelist,fire         max_domains            0      -      "fire_test_steps" ">0 = on first call, do specified number of steps and terminate (testing only)" "1"
 rconfig   real    fire_const_time        namelist,fire         max_domains          -1.      -      "fire_const_time"   "time from ignition to freeze fire, <0 never" "s"
 rconfig   real    fire_const_grnhfx      namelist,fire         max_domains           0.      -      "fire_const_grnhfx"   "if both >=0, the amount of constant heat flux" "1"
@@ -225,30 +265,48 @@ rconfig   real    xrad_perturbation      namelist,fire         max_domains      
 rconfig   real    yrad_perturbation      namelist,fire         max_domains           0.      -      "yrad_perturbation" "horizontal radius of the perturbation in N-S direction" "m"
 rconfig   real    zrad_perturbation      namelist,fire         max_domains           0.      -      "zrad_perturbation" "vertical radius of the perturbation (bubble) direction" "m"
 rconfig   real    hght_perturbation      namelist,fire         max_domains           0.      -      "hght_perturbation" "height at which the perturbation (bubble) will be suspended" "m"
+#
+# ------------------------------------------------------------------------------------------------------------------------
 # grid stretching
+#
 rconfig   logical stretch_grd            namelist,fire         max_domains           .true.  -      "stretch_grd" "vertical grid stretching (on/off)" ""
 rconfig   logical stretch_hyp            namelist,fire         max_domains           .false. -      "stretch_hyp" "hyperbolic tang grid stretching (more levels at the surface)" ""
 rconfig   real    z_grd_scale            namelist,fire         max_domains           0.40    -      "z_grd_scale" "zscale parameter for hyperbolic grid streching" "m"
+#
+# ------------------------------------------------------------------------------------------------------------------------
 # surface initialization
+#
 rconfig   logical sfc_full_init          namelist,fire         max_domains           .false. -      "sfc_full_init" "full surface initialization  (on/off)" ""
 rconfig   integer sfc_lu_index           namelist,fire         max_domains             28    -      "sfc_lu_index" "USGS landuse index definig sfc record from LANDUSE.TBL" ""
 rconfig   real    sfc_tsk                namelist,fire         max_domains          285.0    -      "sfc_tsk" "surface skin temperature (TSK)" "K"
 rconfig   real    sfc_tmn                namelist,fire         max_domains          285.0    -      "sfc_tmn" "soil temperature at lower boundary (TMN)" "K"
+#
+# ------------------------------------------------------------------------------------------------------------------------
 # landuse data from files - overwrite constants
+#
 rconfig   logical fire_read_lu           namelist,fire         max_domains           .false. -      "fire_read_lu" "read land use data from file input_lu" ""
 rconfig   logical fire_read_tsk          namelist,fire         max_domains           .false. -      "fire_read_tsk" "read file input_tsk" ""
 rconfig   logical fire_read_tmn          namelist,fire         max_domains           .false. -      "fire_read_tmn" "read file input_tmn" ""
+#
+# ------------------------------------------------------------------------------------------------------------------------
 # topography data from files 
+#
 rconfig   logical fire_read_atm_ht       namelist,fire         max_domains           .false. -      "fire_read_atm_ht" "read terrain height on atm mesh from file" ""
 rconfig   logical fire_read_fire_ht      namelist,fire         max_domains           .false. -      "fire_read_fire_ht" "read terrain height on fire mesh from file" ""
 rconfig   logical fire_read_atm_grad     namelist,fire         max_domains           .false. -      "fire_read_atm_grad" "read terrain gradient on atm mesh from file" ""
 rconfig   logical fire_read_fire_grad    namelist,fire         max_domains           .false. -      "fire_read_fire_grad" "read terrain gradient on fire mesh from file" ""
+#
+# ------------------------------------------------------------------------------------------------------------------------
 # additional data required by Noah LSM scheme
+#
 rconfig   real    sfc_vegfra             namelist,fire         max_domains            0.5    -      "sfc_vegfra" "vegetation fraction" ""
 rconfig   real    sfc_canwat             namelist,fire         max_domains              0    -      "sfc_canwat" "canopy water" ""
 rconfig   integer sfc_ivgtyp             namelist,fire         max_domains             18    -      "sfc_ivgtyp" "dominant vegetation category in the LSM scheme" ""
 rconfig   integer sfc_isltyp             namelist,fire         max_domains              7    -      "sfc_isltyp" "dominant soil category in the LSM scheme" ""
+#
+# ------------------------------------------------------------------------------------------------------------------------
 # namelist options for new WRF-Fire capabilities DME
+#
 rconfig  logical  fire_lsm_reinit           namelist,fire         max_domains          .true.       -     "flag to activate reinitialization of level set method"
 rconfig  integer  fire_lsm_reinit_iter      namelist,fire         max_domains               1       -     "number of iterations for the reinitialization PDE"
 rconfig  integer  fire_upwinding_reinit     namelist,fire         max_domains               4       -     "numerical scheme (space) for reinitialization PDE: 1=WENO3, 2=WENO5, 3=hybrid WENO3-ENO1, 4=hybrid WENO5-ENO1"
@@ -261,11 +319,85 @@ rconfig  real     fire_viscosity_bg         namelist,fire         max_domains   
 rconfig  real     fire_viscosity_band       namelist,fire         max_domains             0.5       -     "fire_viscosity_band"   "number of times the hybrid advection band to transition from fire_viscosity_bg to fire_viscosity" "1"
 rconfig  integer  fire_viscosity_ngp        namelist,fire         max_domains               2       -     "number of grid points around lfn=0 where low artificial viscosity is used = fire_viscosity_bg"
 rconfig  real     fire_slope_factor         namelist,fire         max_domains             1.0       -     "slope correction factor" "-"
+# ------------------------------------------------------------------------------------------------------------------------
 # tracers for WRF-Fire
+#
 state    real            -          ikjftb  tracer        1         -     -    -
 state    real         fire_smoke    ikjftb  tracer        1         -     irhusdf=(bdy_interp:dt)    "fire_smoke"         "fire_smoke"     "g_smoke/kg_air"
 package  tracer_fire  tracer_opt==3       -             tracer:fire_smoke
 #
+# ========================================================================================================================
+# Firebrand Spotting for WRF-Fire (Frediani et al 2022)
+# ========================================================================================================================
+#
+# variables for Firebrand Spotting: fs_[variable_name]
+# Note: There is no input stream or restart output for these variables 
+#       Firebrands live for a few minutes, so it does not make sense to restart them
+#       Restart runs will initialize these variables from zero
+#       the *only* IO flag is 'h'
+#       Pls do not modify them.
+# ------------------------------------------------------------------------------------------------------------------------
+# Namelist 
+#
+rconfig   integer fs_array_maxsize               namelist,fire  1  100000       -      "fs_array_maxsize"              "Max number of active firebrands allowed"
+rconfig   integer fs_firebrand_gen_lim           namelist,fire  1       0       -      "fs_firebrand_gen_lim"          "Limit number of firebrands generated at any given time (set it to 0 to turn spotting off)" 
+rconfig   integer fs_firebrand_gen_dt            namelist,fire  1       5       -      "fs_firebrand_gen_dt"           "Interval between consecutive generation cycles (dt is a factor applied to the model's time_step)" 
+rconfig   integer fs_firebrand_gen_levels        namelist,fire  1       5       -      "fs_firebrand_gen_levels"       "Number of vertical levels to generate firebrands (levels are distributed between 1 meter AGL and max height)"
+rconfig   integer fs_firebrand_gen_maxhgt        namelist,fire  1      50       -      "fs_firebrand_gen_maxhgt"       "Max height to generate firebrands (in meters and greater than 1)"
+rconfig   logical fs_firebrand_gen_levrand       namelist,fire  1    .false.    -      "fs_firebrand_gen_levrand"      "Flag to generate firebrands at random heights between 1m AGL and maxhgt"
+rconfig   integer fs_firebrand_gen_levrand_seed  namelist,fire  1       1       -      "fs_firebrand_gen_levrand_seed" "Seed used for fs_firebrand_gen_levrand"
+rconfig   integer fs_firebrand_gen_mom3d_dt      namelist,fire  1       4       -      "fs_firebrand_gen_mom3d_dt"     "Number of timesteps for firebrands to build 3-D momentum after generation (i.e., massless particle transport)"
+rconfig   real    fs_firebrand_gen_prop_diam     namelist,fire  1      10.0     -      "fs_firebrand_gen_prop_diam"    "Firebrand initial proporty: Diameter [mm]"
+rconfig   real    fs_firebrand_gen_prop_effd     namelist,fire  1      10.0     -      "fs_firebrand_gen_prop_effd"    "Firebrand initial proporty: Effective Diameter [mm]"
+rconfig   real    fs_firebrand_gen_prop_temp     namelist,fire  1     900.0     -      "fs_firebrand_gen_prop_temp"    "Firebrand initial proporty: Temperature [K]"
+rconfig   real    fs_firebrand_gen_prop_tvel     namelist,fire  1       0.0     -      "fs_firebrand_gen_prop_tvel"    "Firebrand initial proporty: Terminal Velocity [m/s] (set to zero for top of trajectory)"
+rconfig   real    fs_firebrand_dens              namelist,fire  1  513000.0     -      "fs_firebrand_dens"             "Density of firebrands [g/m3]"
+rconfig   real    fs_firebrand_dens_char         namelist,fire  1  299000.0     -      "fs_firebrand_dens_char"        "Density of char [g/m3]"
+rconfig   integer fs_firebrand_max_life_dt       namelist,fire  1     600       -      "fs_firebrand_max_life_dt"      "Max lifetime of firebrands (in sec)"                                                 
+rconfig   real    fs_firebrand_land_hgt          namelist,fire  1       0.15    -      "fs_firebrand_land_hgt"         "AGL height that firebrands land (in meters)"
+rconfig  logical  fuel_crosswalk                 namelist,fire  max_domains .false. -  "flag - artifact from COFPS used in firebrand_spotting - it does not crosswalk between fuel models."
+#
+# ------------------------------------------------------------------------------------------------------------------------
+# Dimensions
+#
+dimspec   fs_maxsize  -  namelist=fs_array_maxsize           c        fs_maxsize
+#
+# ------------------------------------------------------------------------------------------------------------------------
+# State 
+#<Table> <Type> <Sym>                 <Dims>       <Use>   <NumTLev> <Stagger> <IO> <DNAME>  <DESCRIP>     <UNITS>   
+#
+state integer  fs_last_gen_dt            -         dyn_em      1         -      -  "fs_last_gen_dt"       "cycles since last firebrand generation" "count"
+state integer  fs_gen_idmax              -         dyn_em      1         -      -  "fs_gen_idmax"         "highest ID number assigned to particle" "ID"
+state logical  fs_count_reset            -         dyn_em      1         -      -  "fs_count_reset"       "flag to reset deposit count"
+state  real    fs_fire_ROSdt	         *i*j      fire        1         z      -  "fs_fire_ROSdt"	  "fire rate of spread (on fire refined grid) between generation cycles"
+state  real    fs_fire_area	         ij        misc        1         -      h  "fs_fire_area"	  "fire area on meteorological grid"
+state  real    fs_fuel_spotting_risk	 ij        misc        1         -      h  "fs_fuel_spotting_risk" "fuel risk for spotting likelihood"
+state  real    fs_count_landed_all       ij        misc        1         -      h  "fs_count_landed_all"  "firebrand count: landed since sim start"
+state  real    fs_count_landed_hist      ij        misc        1         -      h  "fs_count_landed_hist" "firebrand count: landed during history interval"
+state  integer fs_landing_mask           ij        misc        1         -      h  "fs_landing_mask"      "valid landing gridpoints"
+state  integer fs_gen_inst 	         ij        misc        1         -      h  "fs_gen_inst"	  "firebrand number generation - instantaneous"
+state  real    fs_frac_landed            ij        misc        1         -      h  "fs_frac_landed"       "fraction of firebrand landed (pt/total) during history interval"
+state  real    fs_spotting_lkhd          ij        misc        1         -      h  "fs_spotting_lkhd"     "fire spotting likelihood"
+#
+# ------------------------------------------------------------------------------------------------------------------------
+# Particle properties: fs_p_[property_name]
+# 
+state integer  fs_p_id             {fs_maxsize}    dyn_em      1         -      -  "fs_p_id"	          "particle unique ID" "ID"
+state integer  fs_p_dt             {fs_maxsize}    dyn_em      1         -      -  "fs_p_dt"	          "particle active time steps" "count"
+state  real    fs_p_x              {fs_maxsize}    dyn_em      1         -      -  "fs_p_x"	          "particle x position" "index"
+state  real    fs_p_y              {fs_maxsize}    dyn_em      1         -      -  "fs_p_y"	          "particle y position" "index"
+state  real    fs_p_z              {fs_maxsize}    dyn_em      1         -      -  "fs_p_z"	          "particle z position" "index"
+state  real    fs_p_mass	   {fs_maxsize}    dyn_em      1         -      -  "fs_p_mass"	          "firebrand mass"                  "g"
+state  real    fs_p_diam	   {fs_maxsize}    dyn_em      1         -      -  "fs_p_diam"	          "firebrand diameter"              "mm"
+state  real    fs_p_effd	   {fs_maxsize}    dyn_em      1         -      -  "fs_p_effd"	          "firebrand effective diameter"    "mm"
+state  real    fs_p_temp	   {fs_maxsize}    dyn_em      1         -      -  "fs_p_temp"	          "firebrand temp"                  "K"
+state  real    fs_p_tvel	   {fs_maxsize}    dyn_em      1         -      -  "fs_p_tvel"	          "firebrand terminal velocity"     "m/s"
+# ------------------------------------------------------------------------------------------------------------------------
+# ========================================================================================================================
+# End of Firebrand Spotting section
+# ========================================================================================================================
+
+
 # Fire halo descriptions
 #
 halo      HALO_FIRE_LFN dyn_em 48:lfn

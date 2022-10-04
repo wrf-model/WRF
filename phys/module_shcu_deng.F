@@ -64,8 +64,10 @@ CONTAINS
    INTEGER,      DIMENSION( ims:ime , jms:jme ),                 &
                  INTENT(INOUT) :: ltopb, kdcldtop, kdcldbas
    REAL,         DIMENSION( ims:ime , kms:kme , jms:jme )         , &
-                 INTENT(INOUT) :: W0AVG, TKEAVG, QC,                &
+                 INTENT(INOUT) :: W0AVG, TKEAVG,                    &
                                   cldareaa, cldareab, cldliqa, cldliqb,  wub 
+   REAL,         DIMENSION( ims:ime , kms:kme , jms:jme )         , &
+                 INTENT(IN   ) :: QC
    REAL,         DIMENSION( ims:ime , kms:kme , jms:jme )         , &
                  INTENT(  OUT) :: ca_rad, cw_rad, cldfra_sh
    REAL,         DIMENSION( ims:ime , kms:kme , jms:jme ),           &

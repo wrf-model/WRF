@@ -37,13 +37,13 @@ MODULE module_wrf_error
   !   write(0,...).  If FALSE, messages are not sent to stderr.
   !   This is set to FALSE automatically when buffering is enabled.
 
-  ! Defaults: Non-MPI configurations and HWRF turn OFF stderr.
-  !    MPI configurations other than HWRF turn ON stderr.
+  ! Defaults: Non-MPI configurations turn OFF stderr.
+  !    MPI configurations turn ON stderr.
 
-#if defined( DM_PARALLEL ) && ! defined( STUBMPI ) && !(HWRF == 1)
+#if defined( DM_PARALLEL ) && ! defined( STUBMPI )
   integer :: stderrlog=1 ! 1/T = send to write(0,...) if buffered=0
 #else
-  integer :: stderrlog=0! 1/T = send to write(0,...) if buffered=0
+  integer :: stderrlog=0 ! 1/T = send to write(0,...) if buffered=0
 #endif
 
   INTEGER, PARAMETER :: wrf_log_flush=0, wrf_log_set_buffer_size=1, &
@@ -95,10 +95,10 @@ CONTAINS
     io_servers_silent=.false.
     buffer_size=0
 
-    ! MPI configurations default to stderr logging, except for HWRF.
+    ! MPI configurations default to stderr logging.
     ! Non-MPI does not log to stderr.  (Note that fatal errors always
     ! are sent to both stdout and stderr regardless of config.)
-#if defined( DM_PARALLEL ) && ! defined( STUBMPI ) && !(HWRF == 1)
+#if defined( DM_PARALLEL ) && ! defined( STUBMPI )
     stderr_logging=1
 #else
     stderr_logging=0

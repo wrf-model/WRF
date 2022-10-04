@@ -47,6 +47,7 @@
     INTEGER sf_urban_physics, w_damping, smooth_option, feedback, surface_input_source, sst_update
     INTEGER skebs_on, sppt_on, rand_perturb_on, nens,ISEED_SKEBS,ISEED_SPPT,ISEED_RAND_PERT
     INTEGER skebs_vertstruc, sppt_vertstruc, rand_pert_vertstruc
+    INTEGER ghg_input
     INTEGER LMINFORC,LMAXFORC,KMINFORC,KMAXFORC,LMINFORCT,LMAXFORCT,KMINFORCT,KMAXFORCT
     INTEGER NTASKS_X, NTASKS_Y
     REAL    gridpt_stddev_rand_pert,stddev_cutoff_rand_pert,timescale_rand_pert
@@ -177,6 +178,7 @@
     call nl_get_swrad_scat           ( 1      ,  swrad_scat           )
     call nl_get_sf_urban_physics     ( grid%id,  sf_urban_physics     )
     call nl_get_w_damping            ( 1      ,  w_damping            )
+    call nl_get_ghg_input            ( 1      ,  ghg_input            )
 
 #if (EM_CORE == 1)
     call nl_get_hypsometric_opt    ( 1, hypsometric_opt           )
@@ -345,11 +347,7 @@
     CALL wrf_put_dom_ti_char ( fid , 'START_DATE', TRIM(start_date) , ierr )
     IF ( switch .EQ. input_only) THEN
        CALL wrf_put_dom_ti_char ( fid , 'SIMULATION_START_DATE', TRIM(start_date) , ierr )
-#if ( HWRF == 1 )
-    ELSE
-#else
     ELSE IF ( ( switch .EQ. restart_only ) .OR. ( switch .EQ. history_only ) ) THEN
-#endif
        CALL nl_get_simulation_start_year   ( 1, simulation_start_year   )
        CALL nl_get_simulation_start_month  ( 1, simulation_start_month  )
        CALL nl_get_simulation_start_day    ( 1, simulation_start_day    )
@@ -469,11 +467,6 @@ endif
        CALL wrf_put_dom_ti_real ( fid , 'DX' , config_flags%dx , 1 , ierr )
        CALL wrf_put_dom_ti_real ( fid , 'DY' , config_flags%dy , 1 , ierr )
     END IF
-#endif
-
-#if (NMM_CORE == 1)
-    CALL wrf_put_dom_ti_real ( fid , 'WBD0' , grid%wbd0 , 1 , ierr )
-    CALL wrf_put_dom_ti_real ( fid , 'SBD0' , grid%sbd0 , 1 , ierr )
 #endif
 
     CALL wrf_put_dom_ti_integer( fid, 'AERCU_OPT'          , config_flags%aercu_opt          , 1, ierr )
@@ -613,9 +606,6 @@ endif
 #endif
 
 ! added this metadatum for H. Chuan, NCEP, 030417, JM
-#if (NMM_CORE == 1)
-          CALL wrf_put_dom_ti_char ( fid , 'GRIDTYPE',  'E' , ierr )
-#endif
 #if (EM_CORE == 1)
           CALL wrf_put_dom_ti_char ( fid , 'GRIDTYPE',  'C' , ierr )
 #endif
@@ -652,11 +642,13 @@ endif
 
     ! added netcdf-specific metadata:
     IF ( ( use_package( io_form ) == IO_NETCDF ) .OR. &
+         ( use_package( io_form ) == IO_NETCDFPAR  ) .OR. &
          ( use_package( io_form ) == IO_PHDF5  ) .OR. &
          ( use_package( io_form ) == IO_PIO    ) .OR. &
          ( use_package( io_form ) == IO_PNETCDF ) ) THEN
       CALL wrf_put_dom_ti_integer ( fid, 'SURFACE_INPUT_SOURCE', surface_input_source , 1 , ierr )
       CALL wrf_put_dom_ti_integer ( fid, 'SST_UPDATE', sst_update , 1 , ierr )
+      CALL wrf_put_dom_ti_integer ( fid, 'GHG_INPUT', ghg_input , 1 , ierr )
 #if (EM_CORE == 1)
       CALL wrf_put_dom_ti_integer ( fid, 'GRID_FDDA', grid_fdda , 1 , ierr )
       CALL wrf_put_dom_ti_integer ( fid, 'GFDDA_INTERVAL_M', gfdda_interval_m , 1 , ierr )
@@ -773,6 +765,8 @@ endif
       CALL wrf_put_dom_ti_integer   ( fid, 'SCALAR_PBLMIX', scalar_pblmix , 1 , ierr )
       CALL wrf_put_dom_ti_integer   ( fid, 'YSU_TOPDOWN_PBLMIX', ysu_topdown_pblmix , 1 , ierr )
       CALL wrf_put_dom_ti_integer   ( fid, 'GRAV_SETTLING', grav_settling , 1 , ierr )
+      CALL wrf_put_dom_ti_integer   ( fid, 'CLDOVRLP', config_flags%cldovrlp , 1 , ierr )
+      CALL wrf_put_dom_ti_integer   ( fid, 'IDCOR',    config_flags%idcor ,    1 , ierr )
 
 #endif
 
@@ -955,11 +949,7 @@ endif
     CALL wrf_put_dom_ti_integer ( fid , 'ISURBAN' ,  config_flags%isurban , 1 , ierr )
     CALL wrf_put_dom_ti_integer ( fid , 'ISOILWATER' ,  config_flags%isoilwater , 1 , ierr )
 ! added these fields for restarting of moving nests, JM
-!For HWRF: zhang
-#if ( HWRF == 1 )
-    CALL wrf_put_dom_ti_integer ( fid , 'I_PARENT_START' ,  grid%i_parent_start  , 1 , ierr )
-    CALL wrf_put_dom_ti_integer ( fid , 'J_PARENT_START' ,  grid%j_parent_start  , 1 , ierr )
-#elif ! defined(EM_CORE)
+#if ! defined(EM_CORE)
     CALL wrf_put_dom_ti_integer ( fid , 'I_PARENT_START' ,  config_flags%i_parent_start  , 1 , ierr )
     CALL wrf_put_dom_ti_integer ( fid , 'J_PARENT_START' ,  config_flags%j_parent_start  , 1 , ierr )
 #endif

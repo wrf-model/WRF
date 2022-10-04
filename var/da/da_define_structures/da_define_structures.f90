@@ -636,6 +636,7 @@ module da_define_structures
       real,    pointer     :: vegtyp(:)
       real,    pointer     :: vegfra(:)
       real,    pointer     :: clwp(:) ! model/guess clwp
+      real,    pointer     :: cip(:)  ! model/guess cloud-ice path
       real,    pointer     :: clw(:)  ! currently AMSR2 only
       real,    pointer     :: ps_jacobian(:,:) ! only RTTOV
       real,    pointer     :: ts_jacobian(:,:) ! only over water CRTM

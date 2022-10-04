@@ -30,8 +30,7 @@ PROGRAM real_data
 #endif
    USE module_utility, ONLY : WRFU_finalize
 
-   IMPLICIT NONE
-   
+   IMPLICIT NONE   
 
 #if ( WRF_CHEM == 1 )
   ! interface

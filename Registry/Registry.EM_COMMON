@@ -3145,6 +3145,7 @@ package   gdscheme       cu_physics==93              -             -
 package   sasscheme      cu_physics==94              -             -
 package   osasscheme     cu_physics==95               -             -
 package   kfscheme       cu_physics==99              -             state:w0avg
+package   risticscheme   cu_physics==147             -             -
 
 package   g3tave         cu_diag==1                  -             state:GD_CLOUD,GD_CLOUD2,GD_CLDFR,GD_CLOUD_A,GD_CLOUD2_A,kbcon_deep,ktop_deep,k22_deep
 

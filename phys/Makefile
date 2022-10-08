@@ -80,6 +80,7 @@ MODULES = \
 	module_cu_scalesas.o \
 	module_cu_osas.o \
 	module_cu_kfcup.o \
+	module_cu_ristic.o \
 	module_madwrf.o \
 	module_mp_radar.o \
 	module_mp_kessler.o \

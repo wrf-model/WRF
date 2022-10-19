@@ -1088,7 +1088,9 @@ CONTAINS
 !     INTEGER :: MPI_INTEGER,MPI_MAX
 !
       REAL :: SM,X,ZETA1,ZETA2,ZRNG1,ZRNG2
+#ifdef aarch64_x86_correctness_fix
       DOUBLE PRECISION :: X2
+#endif
 !
       REAL :: PIHF=3.1415926/2.,EPS=1.E-6
 !----------------------------------------------------------------------
@@ -1210,10 +1212,11 @@ CONTAINS
 !----------------------------------------------------------------------
           X=SQRT(SQRT(1.-16.*ZETA1))
 !
-          ! there is difference in last position with glibc 2.26 library with atan on aarch64 and x86
-          ! sensative parameter and small difference will be magnify in later computations  
+          PSIM1(K)=-2.*LOG((X+1.)/2.)-LOG((X*X+1.)/2.)+2.*ATAN(X)-PIHF
+#ifdef aarch64_x86_correctness_fix
           X2 = dble(X)
           PSIM1(K)=real(-2.d0 * log((X2+1.d0)/2.d0)-log((X2*X2+1.d0)/2.d0)+2.d0*atan(X2)-dble(PIHF))
+#endif
           PSIH1(K)=-2.*LOG((X*X+1.)/2.)
 !
 !----------------------------------------------------------------------
@@ -1250,10 +1253,11 @@ CONTAINS
 !
           X=SQRT(SQRT(1.-16.*ZETA2))
 !
-          ! there is difference in last position with glibc 2.26 library with atan on aarch64 and x86
-          ! sensative parameter and small difference will be magnify in later computations  
+          PSIM2(K)=-2.*LOG((X+1.)/2.)-LOG((X*X+1.)/2.)+2.*ATAN(X)-PIHF
+#ifdef aarch64_x86_correctness_fix
           X2 = dble(X)
           PSIM2(K)=real(-2.d0*LOG((X2+1.d0)/2.d0)-LOG((X2*X2+1.d0)/2.d0)+2.*ATAN(X2)-dble(PIHF))
+#endif
           PSIH2(K)=-2.*LOG((X*X+1.)/2.)
 !----------------------------------------------------------------------
 !***  STABLE RANGE

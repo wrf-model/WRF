@@ -1212,8 +1212,9 @@ CONTAINS
 !----------------------------------------------------------------------
           X=SQRT(SQRT(1.-16.*ZETA1))
 !
+#ifndef aarch64_x86_correctness_fix
           PSIM1(K)=-2.*LOG((X+1.)/2.)-LOG((X*X+1.)/2.)+2.*ATAN(X)-PIHF
-#ifdef aarch64_x86_correctness_fix
+#else
           X2 = dble(X)
           PSIM1(K)=real(-2.d0 * log((X2+1.d0)/2.d0)-log((X2*X2+1.d0)/2.d0)+2.d0*atan(X2)-dble(PIHF))
 #endif
@@ -1253,8 +1254,9 @@ CONTAINS
 !
           X=SQRT(SQRT(1.-16.*ZETA2))
 !
+#ifndef aarch64_x86_correctness_fix
           PSIM2(K)=-2.*LOG((X+1.)/2.)-LOG((X*X+1.)/2.)+2.*ATAN(X)-PIHF
-#ifdef aarch64_x86_correctness_fix
+#else
           X2 = dble(X)
           PSIM2(K)=real(-2.d0*LOG((X2+1.d0)/2.d0)-LOG((X2*X2+1.d0)/2.d0)+2.*ATAN(X2)-dble(PIHF))
 #endif

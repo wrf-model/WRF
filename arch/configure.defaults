@@ -793,7 +793,7 @@ CFLAGS_LOCAL    =       -w -O3 -c  # -DRSL0_ONLY
 LDFLAGS_LOCAL   =       
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
-FCOPTIM         =       -O2 -ftree-vectorize -funroll-loops
+FCOPTIM         =       -O2 -ftree-vectorize -funroll-loops # -Daarch64_x86_correctness_fix
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT		=       -O0
 FCDEBUG         =       # -g $(FCNOOPT) # -ggdb -fbacktrace -fcheck=bounds,do,mem,pointer -ffpe-trap=invalid,zero,overflow
@@ -2089,9 +2089,9 @@ PROMOTION       =
 ARCH_LOCAL      =
 CFLAGS_LOCAL    =      -w -O3 -c
 LDFLAGS_LOCAL   =      -fopenmp
-FCOPTIM         =      -Ofast -mcpu=native -funroll-loops -fno-expensive-optimizations -fno-reciprocal-math -fsigned-zeros -fno-unsafe-math-optimizations
+FCOPTIM         =      -Ofast -mcpu=native -funroll-loops -fno-expensive-optimizations -fno-reciprocal-math -fsigned-zeros -fno-unsafe-math-optimizations -Daarch64_x86_correctness_fix
 # for graviton 2 use the folowing flag
-#FCOPTIM         =      -Ofast -march=armv8.2-a+fp16+rcpc+dotprod -funroll-loops -fno-expensive-optimizations -fno-reciprocal-math -fsigned-zeros -fno-unsafe-math-optimizations
+#FCOPTIM         =      -Ofast -march=armv8.2-a+fp16+rcpc+dotprod -funroll-loops -fno-expensive-optimizations -fno-reciprocal-math -fsigned-zeros -fno-unsafe-math-optimizations -Daarch64_x86_correctness_fix
 FCREDUCEDOPT    =      $(FCOPTIM)
 FCNOOPT         =      -O0 -fopenmp -frecursive
 FCDEBUG         =      -g $(FCNOOPT)

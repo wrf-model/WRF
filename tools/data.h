@@ -75,7 +75,7 @@ typedef struct node_struct {
   char pkg_4dscalars[NAMELEN_LONG] ;
 
 /* fields used by Comm (halo, period, xpose)  nodes */
-  char comm_define[2*8192] ;
+  char comm_define[4*8192] ;
 
 /* marker */
   int mark ;

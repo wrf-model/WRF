@@ -406,13 +406,13 @@ Namelist variables for controlling the adaptive time step option:
                                                   max(vert cfl, horiz cfl) <= target_cfl, then the time
                                                   will increase by max_step_increase_pct. Use something 
                                                   large for nests (51% suggested)
- starting_time_step(max_dom)         = -1,-1    ! flag = -1 implies use 6 * dx (defined in start_em), 
+ starting_time_step(max_dom)         = -1,-1    ! flag = -1 implies use 4*dx (defined in start_em), 
                                                   starting_time_step = 100 means the starting time step
                                                   for the coarse grid is 100 s
- max_time_step(max_dom)              = -1,-1    ! flag = -1 implies max time step is 3 * starting_time_step,
+ max_time_step(max_dom)              = -1,-1    ! flag = -1 implies max time step is 8*dx,
                                                   max_time_step = 100 means that the time step will not
                                                   exceed 100 s
- min_time_step(max_dom)              = -1,-1    ! flag = -1 implies max time step is 0.5 * starting_time_step,
+ min_time_step(max_dom)              = -1,-1    ! flag = -1 implies max time step is 3*dx,
                                                   min_time_step = 100 means that the time step will not
                                                   be less than 100 s
  adaptation_domain                   = 1        ! default, all fine grid domains adaptive dt driven by coarse-grid

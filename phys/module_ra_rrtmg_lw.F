@@ -11701,9 +11701,8 @@ CONTAINS
 
 !  Ozone
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
-         OPTIONAL                                               , &
-         INTENT(IN   ) :: O33D
-   INTEGER, OPTIONAL, INTENT(IN ) :: o3input
+         INTENT(INOUT) :: O33D
+   INTEGER, INTENT(IN ) :: o3input
 
       real, parameter :: thresh=1.e-9
       real slope
@@ -12011,7 +12010,7 @@ CONTAINS
             QV1D(K)=max(0.,QV1D(K))
          ENDDO
 
-         IF (PRESENT(O33D)) THEN
+         IF (o3input.eq.2) THEN
             DO K=kts,kte
                O31D(K)=O33D(I,K,J)
             ENDDO
@@ -12401,26 +12400,30 @@ CONTAINS
          call inirad (o3mmr,plev,kts,nlay-1)
 
 ! Steven Cavallo: Changed to nlayers from kte+1
-        if(present(o33d)) then
+        if(o3input.eq.2) then
          do k = kts, nlayers
             o3vmr(ncol,k) = o3mmr(k) * amdo
-            IF ( PRESENT( O33D ) ) THEN
-            if(o3input .eq. 2)then
-               if(k.le.kte)then
-                 o3vmr(ncol,k) = o31d(k)
-               else
+            if(k.le.kte)then
+               o3vmr(ncol,k) = o31d(k)
+            else
 ! apply shifted climatology profile above model top
-                 o3vmr(ncol,k) = o31d(kte) - o3mmr(kte)*amdo + o3mmr(k)*amdo
-                 if(o3vmr(ncol,k) .le. 0.)o3vmr(ncol,k) = o3mmr(k)*amdo
-               endif
+               o3vmr(ncol,k) = o31d(kte) - o3mmr(kte)*amdo + o3mmr(k)*amdo
+               if(o3vmr(ncol,k) .le. 0.)o3vmr(ncol,k) = o3mmr(k)*amdo
             endif
-            ENDIF
          enddo
         else
          do k = kts, nlayers
             o3vmr(ncol,k) = o3mmr(k) * amdo
+            o31d(k) = o3vmr(ncol,k)
          enddo
         endif
+
+! output o3 for o3input=0
+        IF (o3input.ne.2) THEN
+            DO K=kts,kte
+               O33D(I,K,J)=O31D(K)
+            ENDDO
+        ENDIF
 
 ! Set surface emissivity in each RRTMG longwave band
          do nb = 1, nbndlw

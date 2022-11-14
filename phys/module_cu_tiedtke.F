@@ -2935,7 +2935,7 @@ contains
             zzmzk = -(pgeoh(jl,ikh)-pgeoh(jl,kk))*zrg
             ztmzk = -(pgeoh(jl,ikh)-pgeoh(jl,ikt))*zrg
             arg = 3.1415*(zzmzk/ztmzk)*0.5
-#ifndef aarch64_x86_correctness_fix
+#ifndef AARCH64_X86_CORRECTNESS_FIX
             zorgde = tan(arg)*3.1415*0.5/ztmzk
 #else
             zorgde = real(tan(dble(arg))*3.1415*0.5/dble(ztmzk))

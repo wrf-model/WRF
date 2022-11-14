@@ -1088,7 +1088,7 @@ CONTAINS
 !     INTEGER :: MPI_INTEGER,MPI_MAX
 !
       REAL :: SM,X,ZETA1,ZETA2,ZRNG1,ZRNG2
-#ifdef aarch64_x86_correctness_fix
+#ifdef AARCH64_X86_CORRECTNESS_FIX
       DOUBLE PRECISION :: X2
 #endif
 !
@@ -1212,7 +1212,7 @@ CONTAINS
 !----------------------------------------------------------------------
           X=SQRT(SQRT(1.-16.*ZETA1))
 !
-#ifndef aarch64_x86_correctness_fix
+#ifndef AARCH64_X86_CORRECTNESS_FIX
           PSIM1(K)=-2.*LOG((X+1.)/2.)-LOG((X*X+1.)/2.)+2.*ATAN(X)-PIHF
 #else
           X2 = dble(X)
@@ -1254,7 +1254,7 @@ CONTAINS
 !
           X=SQRT(SQRT(1.-16.*ZETA2))
 !
-#ifndef aarch64_x86_correctness_fix
+#ifndef AARCH64_X86_CORRECTNESS_FIX
           PSIM2(K)=-2.*LOG((X+1.)/2.)-LOG((X*X+1.)/2.)+2.*ATAN(X)-PIHF
 #else
           X2 = dble(X)

@@ -197,7 +197,7 @@ SUBROUTINE wrf_ioexit( Status )
   CALL ext_ncdpar_ioexit  ( ierr(13) )
 #endif
 #ifdef ADIOS2
-  CALL ext_adios2_ioexit  ( ierr(13) )
+  CALL ext_adios2_ioexit  ( ierr(14) )
 #endif
  
   IF ( use_output_servers() ) THEN
@@ -2137,6 +2137,12 @@ LOGICAL FUNCTION on_stream ( mask , switch )
 END FUNCTION on_stream
 
 SUBROUTINE wrf_start_io_timestep (DataHandle, Status)
+!<DESCRIPTION>
+!<PRE>
+! Signals to I/O library that an I/O time step is starting, and allows the
+! I/O library to partition events into separate logical time steps.
+!</PRE>
+!</DESCRIPTION>
   IMPLICIT NONE
   INTEGER, INTENT(IN)    :: DataHandle
   INTEGER, INTENT(OUT)   :: Status
@@ -2157,6 +2163,12 @@ SUBROUTINE wrf_start_io_timestep (DataHandle, Status)
 END SUBROUTINE
 
 SUBROUTINE wrf_end_io_timestep (DataHandle, Status)
+!<DESCRIPTION>
+!<PRE>
+! Signals to I/O library that an I/O time step is ending, and allows the
+! I/O library to partition events into separate logical time steps.
+!</PRE>
+!</DESCRIPTION>
   IMPLICIT NONE
   INTEGER, INTENT(IN)    :: DataHandle
   INTEGER, INTENT(OUT)   :: Status

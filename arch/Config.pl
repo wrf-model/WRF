@@ -562,7 +562,7 @@ while ( <CONFIGURE_DEFAULTS> )
     if ( $sw_adios2_path ) 
       { $_ =~ s/CONFIGURE_WRFIO_ADIOS2/wrfio_adios2/g ; 
 	      $_ =~ s:CONFIGURE_ADIOS2_FLAG:-DADIOS2: ;
-        $_ =~ s:CONFIGURE_ADIOS2_LIB_PATH:-L\$\(WRF_SRC_ROOT_DIR\)/external/io_adios2 -lwrfio_adios2 -L$sw_adios2_path/lib64 -ladios2_fortran_mpi -ladios2_fortran:;
+        $_ =~ s:CONFIGURE_ADIOS2_LIB_PATH:-L\$\(WRF_SRC_ROOT_DIR\)/external/io_adios2 -lwrfio_adios2 -L$sw_adios2_path/lib -ladios2_fortran_mpi -ladios2_fortran:;
       }
     else                   
       { $_ =~ s/CONFIGURE_WRFIO_ADIOS2//g ;
@@ -573,11 +573,11 @@ while ( <CONFIGURE_DEFAULTS> )
     if ( $sw_hdf5_path ) 
       { $_ =~ s:CONFIGURE_HDF5_LIB_PATH:-L$sw_hdf5_path/lib -lhdf5hl_fortran -lhdf5_hl -lhdf5_fortran -lhdf5 -lm -lz: ;
         $_ =~ s:CONFIGURE_HDF5_FLAG:-DHDF5: ;
-    }
+         }
     else
       { $_ =~ s:CONFIGURE_HDF5_LIB_PATH::g ;
         $_ =~ s:CONFIGURE_HDF5_FLAG::g ;
-    }
+         }
 
     if ( $sw_phdf5_path ) 
 
@@ -933,7 +933,7 @@ while ( <ARCH_PREAMBLE> )
     if ( $sw_adios2_path ) 
       { $_ =~ s/CONFIGURE_WRFIO_ADIOS2/wrfio_adios2/g ; 
 	      $_ =~ s:CONFIGURE_ADIOS2_FLAG:-DADIOS2: ;
-        $_ =~ s:CONFIGURE_ADIOS2_LIB_PATH:-L\$\(WRF_SRC_ROOT_DIR\)/external/io_adios2 -lwrfio_adios2 -L$sw_adios2_path/lib64 -ladios2_fortran_mpi -ladios2_fortran:;
+        $_ =~ s:CONFIGURE_ADIOS2_LIB_PATH:-L\$\(WRF_SRC_ROOT_DIR\)/external/io_adios2 -lwrfio_adios2 -L$sw_adios2_path/lib -ladios2_fortran_mpi -ladios2_fortran:;
       }
     else                   
       { $_ =~ s/CONFIGURE_WRFIO_ADIOS2//g ;

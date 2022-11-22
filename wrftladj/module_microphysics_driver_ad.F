@@ -54,7 +54,7 @@ SUBROUTINE A_MICROPHYSICS_DRIVER(th, thb, rho, rhob, pi_phy, pi_phyb, p&
 
    USE module_state_description, ONLY :                                  &
                      KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME    &
-                    ,WSM6SCHEME, WSM6SSCHEME, ETAMPNEW, THOMPSON, MORR_TWO_MOMENT     &
+                    ,WSM6SCHEME, WSM6RSCHEME, ETAMPNEW, THOMPSON, MORR_TWO_MOMENT     &
                     ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME, NSSL_2MOM, NSSL_2MOMCCN  &
                     ,NSSL_1MOM,NSSL_1MOMLFO & ! ,NSSL_3MOM       &
                     ,MILBRANDT2MOM, LSCONDSCHEME, MKESSLERSCHEME, CAMMGMPSCHEME, NTU  !,MILBRANDT3MOM, ntu3m
@@ -69,7 +69,7 @@ SUBROUTINE A_MICROPHYSICS_DRIVER(th, thb, rho, rhob, pi_phy, pi_phyb, p&
    USE module_mp_nconvp    !  added by Zhuxiao
    USE a_module_mp_nconvp    !  added by Zhuxiao
    USE a_module_mp_mkessler
-   USE a_module_mp_wsm6s
+   USE a_module_mp_wsm6r
 
 ! For checking model timestep is history time (for radar reflectivity)
    USE module_utility, ONLY: WRFU_Clock, WRFU_Alarm
@@ -430,7 +430,7 @@ SUBROUTINE A_MICROPHYSICS_DRIVER(th, thb, rho, rhob, pi_phy, pi_phyb, p&
         CALL PUSHCONTROL1B(1)
       END IF
       SELECT CASE  (mp_physics) 
-      CASE (WSM6SSCHEME)
+      CASE (WSM6RSCHEME)
            IF ( PRESENT( QV_CURR ) .AND. PRESENT( QC_CURR ) .AND. &
                 PRESENT( QR_CURR ) .AND. PRESENT( QI_CURR ) .AND. &
                 PRESENT( QS_CURR ) .AND. PRESENT( QG_CURR ) .AND. &
@@ -510,8 +510,8 @@ SUBROUTINE A_MICROPHYSICS_DRIVER(th, thb, rho, rhob, pi_phy, pi_phyb, p&
                                                                  )
         ENDIF
         IF (branch .EQ. 4) THEN
-            CALL wrf_debug ( 100 , 'microphysics_driver_ad: calling a_wsm6s' )
-            CALL a_wsm6s( &
+            CALL wrf_debug ( 100 , 'microphysics_driver_ad: calling a_wsm6r' )
+            CALL a_wsm6r( &
                   th  =th,         a_th  =thb,      &
                   q   =qv_curr,    a_q   =qv_currb, &
                   qc  =qc_curr,    a_qc  =qc_currb, &

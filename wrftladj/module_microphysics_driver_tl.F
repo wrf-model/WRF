@@ -50,7 +50,7 @@ SUBROUTINE G_MICROPHYSICS_DRIVER(th, thd, rho, rhod, pi_phy, pi_phyd, p&
 ! Framework
    USE module_state_description, ONLY :                                  &
                      KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME    &
-                    ,WSM6SCHEME, WSM6SSCHEME, ETAMPNEW, THOMPSON, MORR_TWO_MOMENT     &
+                    ,WSM6SCHEME, WSM6RSCHEME, ETAMPNEW, THOMPSON, MORR_TWO_MOMENT     &
                     ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME, NSSL_2MOM, NSSL_2MOMCCN, NSSL_2MOMG  &
                     ,NSSL_1MOM,NSSL_1MOMLFO & ! ,NSSL_3MOM       &
                     ,MILBRANDT2MOM, LSCONDSCHEME, MKESSLERSCHEME, CAMMGMPSCHEME, NTU  !,MILBRANDT3MOM, ntu3m
@@ -64,7 +64,7 @@ SUBROUTINE G_MICROPHYSICS_DRIVER(th, thd, rho, rhod, pi_phy, pi_phyd, p&
 
    USE g_module_mp_nconvp    !  added by Zhuxiao
    USE g_module_mp_mkessler
-   USE g_module_mp_wsm6s
+   USE g_module_mp_wsm6r
 
 ! For checking model timestep is history time (for radar reflectivity)
    USE module_utility, ONLY: WRFU_Clock, WRFU_Alarm
@@ -438,14 +438,14 @@ SUBROUTINE G_MICROPHYSICS_DRIVER(th, thd, rho, rhod, pi_phy, pi_phyd, p&
                 CALL wrf_error_fatal ( 'arguments not present for calling g_mkessler' )
              ENDIF
 
-        CASE (WSM6SSCHEME)
-             CALL wrf_debug ( 100 , 'microphysics_driver: calling g_wsm6' )
+        CASE (WSM6RSCHEME)
+             CALL wrf_debug ( 100 , 'microphysics_driver: calling g_wsm6r' )
              IF ( PRESENT( QV_CURR ) .AND. PRESENT( QC_CURR ) .AND.  &
                   PRESENT( QR_CURR ) .AND. PRESENT( QS_CURR ) .AND.  &
                                            PRESENT( QG_CURR ) .AND.  &
                   PRESENT( RAINNC  ) .AND. PRESENT( RAINNCV ) )  THEN
 
-                 CALL g_wsm6s( &
+                 CALL g_wsm6r( &
                        th  =th,         g_th  =thd, &
                        q   =qv_curr,    g_q   =qv_currd,&
                        qc  =qc_curr,    g_qc  =qc_currd,&
@@ -464,7 +464,7 @@ SUBROUTINE G_MICROPHYSICS_DRIVER(th, thd, rho, rhod, pi_phy, pi_phyd, p&
                        ims=ims, ime=ime, jms=jms, jme=jme, kms=kms, kme=kme, &
                        its=its, ite=ite, jts=jts, jte=jte, kts=kts, kte=kte)
              ELSE
-                CALL wrf_error_fatal ( 'arguments not present for calling g_wsm6' )
+                CALL wrf_error_fatal ( 'arguments not present for calling g_wsm6r' )
              ENDIF
 
       CASE (lscondscheme) 

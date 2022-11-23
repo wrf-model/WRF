@@ -5473,9 +5473,9 @@ BENCH_START(adj_micro_driver_tim)
       &        , QV_CURR=moist(ims,kms,jms,P_QV),QV_CURRB=a_moist(ims,kms,jms,P_QV), F_QV=F_QV               &
       &        , QC_CURR=moist(ims,kms,jms,P_QC),QC_CURRB=a_moist(ims,kms,jms,P_QC), F_QC=F_QC               &
       &        , QR_CURR=moist(ims,kms,jms,P_QR),QR_CURRB=a_moist(ims,kms,jms,P_QR), F_QR=F_QR               &
-      &        , QI_CURR=moist(ims,kms,jms,P_QI), F_QI=F_QI               &
-      &        , QS_CURR=moist(ims,kms,jms,P_QS), F_QS=F_QS               &
-      &        , QG_CURR=moist(ims,kms,jms,P_QG), F_QG=F_QG               &
+      &        , QI_CURR=moist(ims,kms,jms,P_QI),QI_CURRB=a_moist(ims,kms,jms,P_QI), F_QI=F_QI               &
+      &        , QS_CURR=moist(ims,kms,jms,P_QS),QS_CURRB=a_moist(ims,kms,jms,P_QS), F_QS=F_QS               &
+      &        , QG_CURR=moist(ims,kms,jms,P_QG),QG_CURRB=a_moist(ims,kms,jms,P_QG), F_QG=F_QG               &
       &        , QH_CURR=moist(ims,kms,jms,P_QH), F_QH=F_QH               & ! for milbrandt2mom
       &        , QNDROP_CURR=scalar(ims,kms,jms,P_QNDROP), F_QNDROP=F_QNDROP &
 #if (WRF_CHEM==1)

@@ -45,6 +45,8 @@ PHYS_MODS = \
 	module_cu_du_ad.o \
 	module_mp_mkessler_tl.o \
 	module_mp_mkessler_ad.o \
+	module_mp_wsm6r_tl.o \
+	module_mp_wsm6r_ad.o \
 	module_mp_nconvp_tl.o \
 	module_mp_nconvp_ad.o \
 	module_physics_addtendc_tl.o \

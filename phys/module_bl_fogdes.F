@@ -1,11 +1,12 @@
 MODULE module_bl_fogdes
 
   USE module_model_constants
-  USE module_bl_mynn, only: qcgmin, gno, gpw
 
 !-------------------------------------------------------------------
   IMPLICIT NONE
 !-------------------------------------------------------------------
+  REAL, PARAMETER :: gno=1.0  !original value seems too aggressive: 4.64158883361278196
+  REAL, PARAMETER :: gpw=5./3., qcgmin=1.e-8
 
 CONTAINS
 

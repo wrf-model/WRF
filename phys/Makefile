@@ -42,7 +42,9 @@ MODULES = \
 	module_bl_myjpbl.o \
 	module_bl_qnsepbl.o \
 	module_bl_acm.o \
-	module_bl_mynn.o \
+        module_bl_mynn_common.o \
+        module_bl_mynn.o \
+        module_bl_mynn_wrapper.o \
 	module_bl_fogdes.o \
 	module_bl_gwdo.o \
 	module_bl_gwdo_gsl.o \

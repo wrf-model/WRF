@@ -64,7 +64,7 @@ SUBROUTINE G_PBL_DRIVER(itimestep, dt, u_frame, v_frame, bldt, curr_secs&
 
    USE module_state_description, ONLY :                            &
                    YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME,&
-                   QNSEPBLSCHEME,MYNNPBLSCHEME2,MYNNPBLSCHEME3,BOULACSCHEME,&
+                   QNSEPBLSCHEME,MYNNPBLSCHEME,BOULACSCHEME,&
                    CAMUWPBLSCHEME,BEPSCHEME,BEP_BEMSCHEME,MYJSFCSCHEME, &
                    SURFDRAGSCHEME, TEMFPBLSCHEME, &
                    p_qi,param_first_scalar 

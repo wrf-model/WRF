@@ -68,7 +68,6 @@ CONTAINS
 !-- jte           end index for j in tile
 !-- kts           start index for k in tile
 !-- kte           end index for k in tile
-!******************************************************************
 !------------------------------------------------------------------
 
    INTEGER, INTENT(IN)                       :: ims,ime,jms,jme,kms,kme &

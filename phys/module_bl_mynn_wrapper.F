@@ -103,7 +103,7 @@ SUBROUTINE mynnedmf_wrapper_run(                 &
      &  det_thl3d,det_sqv3d,                     &
      &  nupdraft,maxMF,ktop_plume,               &
      &  rthraten,                                &
-     &  bl_mynn_tkebudget,  bl_mynn_tkeadvect,   &
+     &  tke_budget,         bl_mynn_tkeadvect,   &
      &  bl_mynn_cloudpdf,   bl_mynn_mixlength,   &
      &  icloud_bl,          bl_mynn_edmf,        &
      &  bl_mynn_edmf_mom,   bl_mynn_edmf_tke,    &
@@ -145,7 +145,6 @@ SUBROUTINE mynnedmf_wrapper_run(                 &
 ! NAMELIST OPTIONS (INPUT):
      logical, intent(in) ::                                 &
      &       bl_mynn_tkeadvect,                             &
-     &       bl_mynn_tkebudget,                             &
      &       cycling
       integer, intent(in) ::                                &
      &       bl_mynn_cloudpdf,                              &
@@ -158,7 +157,8 @@ SUBROUTINE mynnedmf_wrapper_run(                 &
      &       bl_mynn_mixqt,                                 &
      &       bl_mynn_output,                                &
      &       bl_mynn_mixscalars,                            &
-     &       spp_pbl
+     &       spp_pbl,                                       &
+     &       tke_budget
       real, intent(in) ::                                   &
      &       bl_mynn_closure
 
@@ -283,7 +283,7 @@ SUBROUTINE mynnedmf_wrapper_run(                 &
       allocate(det_thl2d(ims:ime,kms:kme))
       allocate(det_sqv2d(ims:ime,kms:kme))
    endif
-   if (bl_mynn_tkebudget) then
+   if (tke_budget .eq. 1) then
       allocate(dqke2d(ims:ime,kms:kme))
       allocate(qWT2d(ims:ime,kms:kme))
       allocate(qSHEAR2d(ims:ime,kms:kme))
@@ -461,7 +461,7 @@ SUBROUTINE mynnedmf_wrapper_run(                 &
       if (debug) then
          print*
          write(0,*)"===CALLING mynn_bl_driver; input:"
-         print*,"bl_mynn_tkebudget=",bl_mynn_tkebudget
+         print*,"tke_budget=",tke_budget
          print*,"bl_mynn_tkeadvect=",bl_mynn_tkeadvect
          print*,"bl_mynn_cloudpdf=",bl_mynn_cloudpdf
          print*,"bl_mynn_mixlength=",bl_mynn_mixlength
@@ -536,7 +536,7 @@ SUBROUTINE mynnedmf_wrapper_run(                 &
      &        qBUOY=qBUOY2d,qDISS=qDISS2d,                             & !output
      &        qc_bl=qc_bl2d,qi_bl=qi_bl2d,cldfra_bl=cldfra_bl2d,       & !output
      &        bl_mynn_tkeadvect=bl_mynn_tkeadvect,                     & !input parameter
-     &        bl_mynn_tkebudget=bl_mynn_tkebudget,                     & !input parameter
+     &        tke_budget=tke_budget,                                   & !input parameter
      &        bl_mynn_cloudpdf=bl_mynn_cloudpdf,                       & !input parameter
      &        bl_mynn_mixlength=bl_mynn_mixlength,                     & !input parameter
      &        icloud_bl=icloud_bl,                                     & !input parameter
@@ -585,7 +585,7 @@ SUBROUTINE mynnedmf_wrapper_run(                 &
          enddo
       endif
 
-      if (bl_mynn_tkebudget) then
+      if (tke_budget .eq. 1) then
          do k=kts,ktf
          do i=its,itf
             dqke(i,k,j)     = dqke2d(i,k)
@@ -672,7 +672,7 @@ SUBROUTINE mynnedmf_wrapper_run(                 &
       deallocate(det_thl2d)
       deallocate(det_sqv2d)
    endif
-   if (bl_mynn_tkebudget) then
+   if (tke_budget .eq. 1) then
       deallocate(dqke2d)
       deallocate(qwt2d)
       deallocate(qshear2d)

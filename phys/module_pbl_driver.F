@@ -565,14 +565,14 @@ CONTAINS
                                      bl_mynn_output,           &
                                      bl_mynn_cloudmix,         &
                                      bl_mynn_mixqt,            &
-                                     icloud_bl
+                                     icloud_bl,                &
+                                     tke_budget
 
    REAL, OPTIONAL, INTENT(IN)  :: bl_mynn_closure
 
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), &
         & INTENT(INOUT) :: qke_adv
-   LOGICAL, OPTIONAL, INTENT(IN) :: bl_mynn_tkeadvect,         &
-                                    tke_budget
+   LOGICAL, OPTIONAL, INTENT(IN) :: bl_mynn_tkeadvect
 
 ! Katata-added -
    REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,              &
@@ -1667,7 +1667,7 @@ CONTAINS
                    &ktop_plume=ktop_plume,                               &
                    &RTHRATEN=RTHRATEN,                                   &
                    &bl_mynn_tkeadvect=bl_mynn_tkeadvect,                 &
-                   &bl_mynn_tkebudget=tke_budget,                        &
+                   &tke_budget=tke_budget,                               &
                    &bl_mynn_cloudpdf=bl_mynn_cloudpdf,                   &
                    &bl_mynn_mixlength=bl_mynn_mixlength,                 &
                    &icloud_bl=icloud_bl,                                 &

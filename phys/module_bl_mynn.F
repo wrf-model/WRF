@@ -400,7 +400,7 @@ CONTAINS
        &dqke,qwt,qshear,qbuoy,qdiss,    &
        &qc_bl,qi_bl,cldfra_bl,          &
        &bl_mynn_tkeadvect,              &
-       &bl_mynn_tkebudget,              &
+       &tke_budget,                     &
        &bl_mynn_cloudpdf,               &
        &bl_mynn_mixlength,              &
        &icloud_bl,                      &
@@ -429,8 +429,8 @@ CONTAINS
 
     INTEGER, INTENT(in) :: initflag
     !INPUT NAMELIST OPTIONS:
-    LOGICAL, INTENT(IN) :: restart,cycling
-    LOGICAL, INTENT(in) :: bl_mynn_tkebudget
+    LOGICAL, INTENT(in) :: restart,cycling
+    INTEGER, INTENT(in) :: tke_budget
     INTEGER, INTENT(in) :: bl_mynn_cloudpdf
     INTEGER, INTENT(in) :: bl_mynn_mixlength
     INTEGER, INTENT(in) :: bl_mynn_edmf
@@ -512,7 +512,7 @@ CONTAINS
 
     REAL, DIMENSION(IMS:IME,KMS:KME), optional, INTENT(out) :: &
          &qwt,qshear,qbuoy,qdiss,dqke
-    ! 3D budget arrays are not allocated when bl_mynn_tkebudget == .false.
+    ! 3D budget arrays are not allocated when tke_budget == 0
     ! 1D (local) budget arrays are used for passing between subroutines.
     REAL, DIMENSION(kts:kte) :: qwt1,qshear1,qbuoy1,qdiss1, &
          &dqke1,diss_heat
@@ -713,7 +713,7 @@ CONTAINS
           ENDDO
        ENDDO
 
-       IF ( bl_mynn_tkebudget ) THEN
+       IF (tke_budget .eq. 1) THEN
           DO k=KTS,KTE
              DO i=ITS,ITF
                 qWT(i,k)=0.
@@ -889,7 +889,7 @@ CONTAINS
     DO i=ITS,ITF
        DO k=KTS,KTE !KTF
             !JOE-TKE BUDGET
-             IF ( bl_mynn_tkebudget ) THEN
+             IF (tke_budget .eq. 1) THEN
                 dqke(i,k)=qke(i,k)
              END IF
              IF (icloud_bl > 0) THEN
@@ -1282,7 +1282,7 @@ CONTAINS
                &Tcd,Qcd,Pdk,                     &
                &Pdt,Pdq,Pdc,                     &
                &qWT1,qSHEAR1,qBUOY1,qDISS1,      &
-               &bl_mynn_tkebudget,               &
+               &tke_budget,                      &
                &Psig_bl(i),Psig_shcu(i),         &
                &cldfra_bl1D,bl_mynn_mixlength,   &
                &edmf_w1,edmf_a1,edmf_qc1,bl_mynn_edmf,   &
@@ -1298,7 +1298,7 @@ CONTAINS
                &el, dfq, rho1, pdk, pdt, pdq, pdc,&
                &Qke1, Tsq1, Qsq1, Cov1,          &
                &s_aw1, s_awqke1, bl_mynn_edmf_tke,&
-               &qWT1, qDISS1,bl_mynn_tkebudget) !! TKE budget  (Puhales, 2020)
+               &qWT1, qDISS1,tke_budget          ) !! TKE budget  (Puhales, 2020)
 
           if (dheat_opt > 0) then
              DO k=kts,kte-1
@@ -1435,7 +1435,7 @@ CONTAINS
              sm3d(i,k)=sm(k)
           enddo !end-k
 
-          if ( bl_mynn_tkebudget ) then
+          if (tke_budget .eq. 1) then
              !! TKE budget is now given in m**2/s**-3 (Puhales, 2020)
              !! Lower boundary condtions (using similarity relationships such as the prognostic equation for Qke)
              k=kts
@@ -2727,7 +2727,7 @@ CONTAINS
 !! - Production terms of TKE,\f$\theta^{'2}\f$,\f$q^{'2}\f$, and \f$\theta^{'}q^{'}\f$
 !! are calculated.
 !! - Eddy diffusivity \f$K_h\f$ and eddy viscosity \f$K_m\f$ are calculated.
-!! - TKE budget terms are calculated (if the namelist parameter \p bl_mynn_tkebudget 
+!! - TKE budget terms are calculated (if the namelist parameter \p tke_budget 
 !! is set to True)
   SUBROUTINE  mym_turbulence (                                &
     &            kts,kte,                                     &
@@ -2743,7 +2743,7 @@ CONTAINS
     &            El,                                          &
     &            Dfm, Dfh, Dfq, Tcd, Qcd, Pdk, Pdt, Pdq, Pdc, &
     &		 qWT1D,qSHEAR1D,qBUOY1D,qDISS1D,              &
-    &            bl_mynn_tkebudget,                           &
+    &            tke_budget,                                  &
     &            Psig_bl,Psig_shcu,cldfra_bl1D,bl_mynn_mixlength,&
     &            edmf_w1,edmf_a1,edmf_qc1,bl_mynn_edmf,       &
     &            TKEprodTD,                                   &
@@ -2758,7 +2758,7 @@ CONTAINS
 # define kte HARDCODE_VERTICAL
 #endif
 
-    INTEGER, INTENT(IN)   :: bl_mynn_mixlength,bl_mynn_edmf
+    INTEGER, INTENT(IN)   :: bl_mynn_mixlength,bl_mynn_edmf,tke_budget
     REAL, INTENT(IN)      :: closure
     REAL, DIMENSION(kts:kte), INTENT(in) :: dz
     REAL, DIMENSION(kts:kte+1), INTENT(in) :: zw
@@ -2775,7 +2775,6 @@ CONTAINS
     REAL :: q3sq_old,dlsq1,qWTP_old,qWTP_new
     REAL :: dudz,dvdz,dTdz,&
             upwp,vpwp,Tpwp
-    LOGICAL, INTENT(in) :: bl_mynn_tkebudget
 
     REAL, DIMENSION(kts:kte) :: qkw,dtl,dqw,dtv,gm,gh,sm,sh
 
@@ -3201,7 +3200,7 @@ CONTAINS
        dfq(k) =     dfm(k)
 !  Modified: Dec/22/2005, up to here
 
-   IF ( bl_mynn_tkebudget ) THEN
+   IF (tke_budget .eq. 1) THEN
        !TKE BUDGET
 !       dudz = ( u(k)-u(k-1) )/dzk
 !       dvdz = ( v(k)-v(k-1) )/dzk
@@ -3324,7 +3323,7 @@ CONTAINS
        &            pdk, pdt, pdq, pdc,                                 &
        &            qke, tsq, qsq, cov,                                 &
        &            s_aw,s_awqke,bl_mynn_edmf_tke,                      &
-       &            qWT1D, qDISS1D,bl_mynn_tkebudget)  !! TKE budget  (Puhales, 2020)
+       &            qWT1D, qDISS1D,tke_budget)  !! TKE budget  (Puhales, 2020)
 
 !-------------------------------------------------------------------
     INTEGER, INTENT(IN) :: kts,kte    
@@ -3335,7 +3334,7 @@ CONTAINS
 #endif
 
     REAL, INTENT(IN)    :: closure
-    INTEGER, INTENT(IN) :: bl_mynn_edmf_tke
+    INTEGER, INTENT(IN) :: bl_mynn_edmf_tke, tke_budget
     REAL, INTENT(IN)    :: delt
     REAL, DIMENSION(kts:kte), INTENT(IN) :: dz, dfq, el, rho
     REAL, DIMENSION(kts:kte), INTENT(INOUT) :: pdk, pdt, pdq, pdc
@@ -3346,7 +3345,6 @@ CONTAINS
     
     !!  TKE budget  (Puhales, 2020, WRF 4.2.1)  << EOB 
     REAL, DIMENSION(kts:kte), INTENT(OUT) :: qWT1D, qDISS1D  
-    LOGICAL, INTENT(IN) :: bl_mynn_tkebudget  
     REAL, DIMENSION(kts:kte) :: tke_up,dzinv  
     !! >> EOB
     
@@ -3487,7 +3485,7 @@ CONTAINS
       
    
 !!  TKE budget  (Puhales, 2020, WRF 4.2.1)  << EOB 
-    IF (bl_mynn_tkebudget) THEN
+    IF (tke_budget .eq. 1) THEN
        !! TKE Vertical transport << EOBvt
         tke_up=0.5*qke
         dzinv=1./dz

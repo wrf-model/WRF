@@ -82,10 +82,9 @@ SUBROUTINE mynnedmf_wrapper_run(                 &
      &  qke,qke_adv,sh3d,sm3d,                   &
 !--- chem/smoke
 #if (WRF_CHEM == 1)
-     &  chem3d,vd3d,nchem,kdevl,                 &
+     &  mix_chem,chem3d,vd3d,nchem,kdvel,        &
      &  ndvel,num_vert_mix,                      &
-     &  frp_mean,emis_ant_no,                    &
-     &  mix_chem,enh_mix,                        &
+!     &  frp_mean,emis_ant_no,enh_mix,            & !to be included soon
 #endif
 !--- end chem/smoke 
      &  Tsq,Qsq,Cov,                             &
@@ -128,18 +127,20 @@ SUBROUTINE mynnedmf_wrapper_run(                 &
 
      !smoke/chem
 #if (WRF_CHEM == 1)
-     logical, intent(in) :: mix_chem, enh_mix
-     integer, intent(in) :: nchem, ndvel, kdvel
+     logical, intent(in) :: mix_chem
+     integer, intent(in) :: nchem, ndvel, kdvel, num_vert_mix
      logical, parameter ::                                  &
      &       rrfs_sd    =.false.,                           &
-     &       smoke_dbg  =.false.
+     &       smoke_dbg  =.false.,                           &
+     &       enh_mix    =.false.
 #else
      logical, parameter ::                                  &
      &       mix_chem   =.false.,                           &
      &       enh_mix    =.false.,                           &
      &       rrfs_sd    =.false.,                           &
      &       smoke_dbg  =.false.
-     integer, parameter :: nchem=2, ndvel=2, kdvel=1
+     integer, parameter :: nchem=2, ndvel=2, kdvel=1,       &
+             num_vert_mix = 1
 #endif
 
 ! NAMELIST OPTIONS (INPUT):
@@ -170,7 +171,7 @@ SUBROUTINE mynnedmf_wrapper_run(                 &
 !MYNN-1D
       REAL,    intent(in) :: delt, dxc
       LOGICAL, intent(in) :: restart
-      INTEGER :: i, j, k, itf, jtf, ktf
+      INTEGER :: i, j, k, itf, jtf, ktf, n
       INTEGER, intent(in) :: initflag,                      &
      &           IDS,IDE,JDS,JDE,KDS,KDE,                   &
      &           IMS,IME,JMS,JME,KMS,KME,                   &
@@ -218,17 +219,15 @@ SUBROUTINE mynnedmf_wrapper_run(                 &
 
 !smoke/chem arrays - no if-defs in module_bl_mynn.F, so must define arrays
 #if (WRF_CHEM == 1)
-      real, dimension(ims:ime, kms:kme, jms:jme), intent(inout), optional ::  &                                     
-     &         qgrs_smoke_conc, qgrs_dust_conc
-      real, allocatable, dimension(:,:,:,:) :: chem3d
-      real, dimension(ims:ime, kdvel, jms:jme, ndvel), intent(in), optional :: vd3d
-      real, dimension(ims:ime, jms:jme),   intent(in), optional :: frp_mean, emis_ant_no
+      real, dimension(ims:ime,kms:kme,jms:jme,nchem), intent(in) :: chem3d
+      real, dimension(ims:ime,kdvel,jms:jme, ndvel), intent(in)  :: vd3d
+      real, dimension(ims:ime,kms:kme,nchem) :: chem
+      real, dimension(ims:ime,ndvel)         :: vd
+      real, dimension(ims:ime)               :: frp_mean, emis_ant_no
 #else
-      real, dimension(ims:ime,kms:kme,jms:jme)       ::                &
-     &         qgrs_smoke_conc, qgrs_dust_conc
-      real, allocatable, dimension(:,:,:) :: chem3d
-      real, dimension(ims:ime,ndvel)      :: vd3d
-      real, dimension(ims:ime)            :: frp_mean, emis_ant_no
+      real, dimension(ims:ime,kms:kme,nchem) :: chem
+      real, dimension(ims:ime,ndvel)         :: vd
+      real, dimension(ims:ime) :: frp_mean, emis_ant_no
 #endif
 
 !MYNN-2D
@@ -398,32 +397,31 @@ SUBROUTINE mynnedmf_wrapper_run(                 &
          enddo
          enddo
       endif
+
 #if (WRF_CHEM == 1)
       if (mix_chem) then
-         allocate ( chem3d(ime,kme,nchem) )
+         do n=1,nchem
          do k=kts,ktf
          do i=its,itf
-            chem3d(i,k,1)=qgrs_smoke_conc(i,k,j)
-            chem3d(i,k,2)=qgrs_dust_conc(i,k,j)
+            chem(i,k,n)=chem3d(i,k,j,n)
+         enddo
+         enddo
+         enddo
+
+         !set kdvel =1
+         do n=1,ndvel
+         do i=its,itf
+            vd(i,n)  =vd3d(i,1,j,n)
          enddo
          enddo
       endif
+      frp_mean = 0.0
+      emis_ant_no = 0.0
 #else
-      ! initializing chem3d should be done at higher level...
-      qgrs_smoke_conc = 1.0
-      qgrs_dust_conc  = 1.0
-      frp_mean        = 0.0
-      EMIS_ANT_NO = 0.
-      vd3d = 0. ! hli for chem dry deposition, 0 temporarily
-      if (mix_chem) then
-         allocate ( chem3d(ims:ime,kms:kme,nchem) )
-         do k=kts,ktf
-         do i=its,itf
-            chem3d(i,k,1)=qgrs_smoke_conc(i,k,j)
-            chem3d(i,k,2)=qgrs_dust_conc (i,k,j)
-         enddo
-         enddo
-      endif
+      chem     = 0.0
+      vd       = 0.0
+      frp_mean = 0.0
+      emis_ant_no = 0.0
 #endif
 
       ! Check incoming moist species to ensure non-negative values
@@ -516,7 +514,7 @@ SUBROUTINE mynnedmf_wrapper_run(                 &
      &        qke=QKE(:,:,j),qke_adv=qke_adv(:,:,j),                   & !output
      &        sh3d=Sh3d(:,:,j),sm3d=Sm3d(:,:,j),                       & !output
      &        nchem=nchem,kdvel=kdvel,ndvel=ndvel,                     & !chem/smoke
-     &        Chem3d=chem3d,Vdep=vd3d,                                 &
+     &        Chem3d=chem,Vdep=vd,                                     &
      &        FRP=frp_mean,EMIS_ANT_NO=emis_ant_no,                    &
      &        mix_chem=mix_chem,enh_mix=enh_mix,                       &
      &        rrfs_sd=rrfs_sd,smoke_dbg=smoke_dbg,                     & !end chem/smoke
@@ -657,9 +655,6 @@ SUBROUTINE mynnedmf_wrapper_run(                 &
    enddo  !end j-loop 
 
    !Deallocate all temporary interface arrays
-   if (mix_chem) then
-      deallocate(chem3d)
-   endif
    if (bl_mynn_output > 0) then
       deallocate(edmf_a2d)
       deallocate(edmf_w2d)

@@ -134,7 +134,8 @@ CONTAINS
      &        ,tracer,tracer_tend,num_tracer                         &
      &        ,scalar_pblmix,tracer_pblmix                           &
 #if (WRF_CHEM == 1)
-               ,chem,vd,nchem,kdvel,ndvel,num_vert_mix             &
+              ,mynn_chem_vertmx,chem,vd,nchem,kdvel                  &
+     &        ,ndvel,num_vert_mix                                    &
 #endif
 !
 ! FASDAS
@@ -761,6 +762,7 @@ CONTAINS
     INTEGER, INTENT(IN) :: nchem, kdvel,ndvel,num_vert_mix
     REAL, INTENT(INOUT),  DIMENSION( ims:ime, kms:kme, jms:jme,nchem ) :: CHEM
     REAL, INTENT(IN)   ,  DIMENSION( ims:ime, kdvel, jms:jme, ndvel )  :: VD
+    LOGICAL, INTENT(IN) :: mynn_chem_vertmx
 #endif
 
 !  LOCAL  VAR
@@ -1641,10 +1643,11 @@ CONTAINS
                    &uoce=uoce,voce=voce,                                 & !Ocean currents
                    &Qke=qke,qke_adv=qke_adv,Sh3d=Sh3d,Sm3d=Sm3d,         &
 #if (WRF_CHEM == 1)
+                   &mix_chem=mynn_chem_vertmx,                           &
                    &chem3d=chem,vd3d=vd,nchem=nchem,kdvel=kdvel,         &
                    &ndvel=ndvel,num_vert_mix=num_vert_mix,               &
-                   &FRP_MEAN=FRP_MEAN,EMIS_ANT_NO=EMIS_ANT_NO,           &
-                   &mix_chem=mynn_chem_vertmx,fire_turb=enh_vermix,      &
+!                   &FRP_MEAN=FRP_MEAN,EMIS_ANT_NO=EMIS_ANT_NO,           & !to be included soon
+!                   &fire_turb=enh_vermix,                                & !to be included soon
 #endif
                    &Tsq=tsq,Qsq=qsq,Cov=cov,                             &
                    &RUBLTEN=rublten,RVBLTEN=rvblten,RTHBLTEN=rthblten,   &

@@ -1276,7 +1276,7 @@ BENCH_START(pbl_driver_tim)
      &        ,pert_mynn_qke=config_flags%pert_mynn_qke                   &
 !Variables required for camuwpbl scheme
      &        ,Z_AT_W=grid%z_at_w,CLDFRA_OLD_MP=grid%cldfra_old_mp        &
-     &        ,CLDFRA=grid%cldfra                                        &
+     &        ,CLDFRA=grid%cldfra                                         &
      &        ,RTHRATENLW=grid%rthratenlw,TAURESX2D=grid%tauresx2d        &
      &        ,TAURESY2D=grid%tauresy2d                                   &
      &        ,TPERT2D=grid%tpert2d,QPERT2D=grid%qpert2d                  &
@@ -1292,15 +1292,16 @@ BENCH_START(pbl_driver_tim)
 ! for pbl mixing of scalars and tracers
      &        ,SCALAR=scalar,SCALAR_TEND=scalar_tend,NUM_SCALAR=num_scalar&
      &        ,TRACER=tracer,TRACER_TEND=tracer_tend,NUM_TRACER=num_tracer&
-     &        ,SCALAR_PBLMIX=config_flags%scalar_pblmix                  &
-     &        ,TRACER_PBLMIX=config_flags%tracer_pblmix                  &
+     &        ,SCALAR_PBLMIX=config_flags%scalar_pblmix                   &
+     &        ,TRACER_PBLMIX=config_flags%tracer_pblmix                   &
 #if (WRF_CHEM == 1)
-     &        ,CHEM=chem,VD=grid%dep_vel                                 &
-     &        ,NCHEM=num_chem,kdvel=config_flags%kdepvel                 &
-     &        ,ndvel=config_flags%ndepvel                                &
-     &        ,NUM_VERT_MIX=grid%num_vert_mix                            &
+     &        ,mynn_chem_vertmx=config_flags%mynn_chem_vertmx             &
+     &        ,CHEM=chem,VD=grid%dep_vel                                  &
+     &        ,NCHEM=num_chem,kdvel=config_flags%kdepvel                  &
+     &        ,ndvel=config_flags%ndepvel                                 &
+     &        ,NUM_VERT_MIX=grid%num_vert_mix                             &
 #endif
-     &        ,QNORM=grid%QNORM, fasdas=config_flags%fasdas              & !fasdas
+     &        ,QNORM=grid%QNORM, fasdas=config_flags%fasdas               & !fasdas
      &        )
 
 #if (WRF_CHEM == 1)

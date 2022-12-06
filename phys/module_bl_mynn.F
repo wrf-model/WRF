@@ -526,10 +526,8 @@ CONTAINS
 
 ! smoke/chemical arrays
     INTEGER, INTENT(IN   ) ::   nchem, kdvel, ndvel
-!    REAL,    DIMENSION( ims:ime, kms:kme, nchem ), INTENT(INOUT), optional :: chem3d
-!    REAL,    DIMENSION( ims:ime, kdvel, ndvel ), INTENT(IN), optional :: vdep
     REAL,    DIMENSION(ims:ime, kms:kme, nchem), INTENT(INOUT), optional :: chem3d
-    REAL,    DIMENSION(ims:ime, ndvel),   INTENT(IN),    optional :: vdep
+    REAL,    DIMENSION(ims:ime, ndvel),   INTENT(IN),   optional :: vdep
     REAL,    DIMENSION(ims:ime),     INTENT(IN),    optional :: frp,EMIS_ANT_NO
     !local
     REAL,    DIMENSION(kts:kte  ,nchem) :: chem1

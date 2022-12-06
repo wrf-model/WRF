@@ -164,7 +164,7 @@ subroutine da_qc_ahi (it, i, nchan, ob, iv)
 
       if ( isflg > 0 ) then         
          do k = 1, nchan                
-            if ( k /= 2 .and. k /= 3 .and. k /= 4 ) then ! This is questionable...
+            if ( k /= 2 .and. k /= 3 .and. k /= 4 ) then
             if (only_sea_rad) then
                tb_qc(k) = qc_bad
                nrej_land = nrej_land + 1
@@ -216,7 +216,7 @@ subroutine da_qc_ahi (it, i, nchan, ob, iv)
             tb_ob(:,n)
          if (crtm_cloud ) then
             if (print_cld_debug) write(stdout,'(A,I8,*(2x,F10.4:))') 'PIXEL_DEBUG4: ', n, &
-               tb_xb_clr(:,n) ! CSS could be a bug; variable not initialized.
+               iv%instid(i)%tb_xb_clr(:,n)
          end if
 
          if (print_cld_debug) write(stdout,'(A,I8,8F12.4,2x,A)') 'PIXEL_DEBUG5: ', n, &
@@ -475,7 +475,7 @@ subroutine da_qc_ahi (it, i, nchan, ob, iv)
 
       ! ---------------------------calculate and save ca_mean for crtm_cloud and crtm_clr
       ! 5.0 assigning obs errors
-	   ! tb_xb_clr => iv%instid(i)%tb_xb_clr ! commented out; doesn't seem to be needed
+	   ! tb_xb_clr => iv%instid(i)%tb_xb_clr ! currently not used
       if (.not. crtm_cloud ) then
          do k = 1, nchan
             if (use_error_factor_rad) then

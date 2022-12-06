@@ -299,6 +299,7 @@ module_microphysics_driver_tl.o: \
 		module_mp_nconvp_tl.o                      \
 		module_mp_mkessler.o                      \
 		module_mp_mkessler_tl.o                      \
+		module_mp_wsm6r_tl.o                      \
 		../frame/module_driver_constants.o \
 		../frame/module_state_description.o \
 		../frame/module_wrf_error.o \
@@ -310,6 +311,7 @@ module_microphysics_driver_ad.o: \
 		module_mp_nconvp_ad.o                      \
 		module_mp_mkessler.o                      \
 		module_mp_mkessler_ad.o                      \
+		module_mp_wsm6r_ad.o                      \
 		../frame/module_driver_constants.o \
 		../frame/module_state_description.o \
 		../frame/module_wrf_error.o \
@@ -321,6 +323,12 @@ module_mp_mkessler_tl.o: \
 
 module_mp_mkessler_ad.o: \
 		module_mp_mkessler.o
+
+module_mp_wsm6r_tl.o: \
+		../phys/module_mp_wsm6r.o
+
+module_mp_wsm6r_ad.o: \
+		../phys/module_mp_wsm6r.o
 
 module_cumulus_driver_tl.o: \
 		module_cu_du_tl.o \

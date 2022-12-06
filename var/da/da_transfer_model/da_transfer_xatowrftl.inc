@@ -258,7 +258,7 @@ subroutine da_transfer_xatowrftl(grid, config_flags, filnam, timestr)
       end do
    end do
 
-   if ( config_flags%mp_physics_ad == warmrain_ad ) then
+   !if ( config_flags%mp_physics_ad == warmrain_ad ) then
       if ( f_g_qc .and. cloud_cv_options >= 1 ) then
          grid%g_moist(is:ie,js:je,ks:ke,p_g_qc) = grid%xa%qcw(is:ie,js:je,ks:ke)
       end if
@@ -267,17 +267,17 @@ subroutine da_transfer_xatowrftl(grid, config_flags, filnam, timestr)
       end if
       !placeholder
       !if ( config_flags%mp_physics_ad == icecld_ad ) then
-      !   if ( f_g_qi .and. cloud_cv_options >= 2 ) then
-      !      grid%g_moist(is:ie,js:je,ks:ke,p_g_qi) = grid%xa%qci(is:ie,js:je,ks:ke)
-      !   end if
-      !   if ( f_g_qs .and. cloud_cv_options >= 2 ) then
-      !      grid%g_moist(is:ie,js:je,ks:ke,p_g_qs) = grid%xa%qsn(is:ie,js:je,ks:ke)
-      !   end if
-      !   if ( f_g_qg .and. cloud_cv_options >= 2 ) then
-      !      grid%g_moist(is:ie,js:je,ks:ke,p_g_qg) = grid%xa%qgr(is:ie,js:je,ks:ke)
-      !   end if
+         if ( f_g_qi .and. cloud_cv_options >= 2 ) then
+            grid%g_moist(is:ie,js:je,ks:ke,p_g_qi) = grid%xa%qci(is:ie,js:je,ks:ke)
+         end if
+         if ( f_g_qs .and. cloud_cv_options >= 2 ) then
+            grid%g_moist(is:ie,js:je,ks:ke,p_g_qs) = grid%xa%qsn(is:ie,js:je,ks:ke)
+         end if
+         if ( f_g_qg .and. cloud_cv_options >= 2 ) then
+            grid%g_moist(is:ie,js:je,ks:ke,p_g_qg) = grid%xa%qgr(is:ie,js:je,ks:ke)
+         end if
       !end if
-   end if
+   !end if
 
    call da_transfer_wrftl_lbc_t0 ( grid )
 

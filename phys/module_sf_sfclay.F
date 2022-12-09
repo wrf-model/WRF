@@ -326,13 +326,12 @@ CONTAINS
 
       REAL,     DIMENSION( ims:ime )                             , &
                 INTENT(INOUT)   ::                                 &
-                                                              QGH
+                                                         QSFC,QGH
 
       REAL,     DIMENSION( ims:ime )                             , &
                 INTENT(OUT)     ::                        U10,V10, &
-                                                TH2,T2,Q2,QSFC,LH
+                                                     TH2,T2,Q2,LH
 
-                                    
       REAL,     INTENT(IN   )               ::   CP,G,ROVCP,R,XLV
 
       REAL,     DIMENSION( its:ite ),  INTENT(IN   )   ::      DX

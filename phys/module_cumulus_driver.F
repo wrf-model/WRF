@@ -403,7 +403,6 @@ CONTAINS
    !BSINGH - ENDS
 #endif
 
-
    INTEGER,      INTENT(IN   )    ::                 cu_physics  
    INTEGER,      INTENT(IN   )    ::   STEPCU
    LOGICAL,      INTENT(IN   )    ::   warm_rain

@@ -89,12 +89,12 @@ static destroy_list( list, dfcn )
   if ( list == NULL ) return(0) ;
   if ( *list == NULL ) return(0) ;
   for ( p = *list ; p != NULL ; )
-    {
-      if ( dfcn != NULL ) (*dfcn)( p->data ) ;
-      trash = p ;
-      p = p->next ;
-      RSL_FREE( trash ) ;
-    }
+  {
+    if ( dfcn != NULL ) (*dfcn)( p->data ) ;
+    trash = p ;
+    p = p->next ;
+    RSL_FREE( trash ) ;
+  }
   *list = NULL ;
   return(0) ;
 }

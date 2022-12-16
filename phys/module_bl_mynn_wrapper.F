@@ -118,14 +118,15 @@ SUBROUTINE mynnedmf_wrapper_run(                 &
      &  its,ite,jts,jte,kts,kte                  )
 
 !     use module_gfs_machine,  only : kind_phys
-!     use module_bl_mynn_common, only: xlvcp, xlscp
      use module_bl_mynn, only: mynn_bl_driver
 
 !------------------------------------------------------------------- 
      implicit none
 !------------------------------------------------------------------- 
 
-     !smoke/chem
+     !smoke/chem: disclaimer: all smoke-related variables are still
+     !considered under development in CCPP. Until that work is
+     !completed, these flags/arrays must be kept hard-coded as is.
 #if (WRF_CHEM == 1)
      logical, intent(in) :: mix_chem
      integer, intent(in) :: nchem, ndvel, kdvel, num_vert_mix

@@ -3,8 +3,6 @@
 !WRF:MODEL_LAYER:PHYSICS
 !
 ! To improve cloud and precipitation forecast we developed new convective
-! scheme and we implemented it in WRF model.
-! To improve cloud and precipitation forecast we developed new convective
 ! scheme and we implemented it in WRF model. Convective clouds have always
 ! been a great challenge for meteorologists, among other things, due to
 ! the inability to describe processes of cloud formation, development and
@@ -151,7 +149,7 @@ CONTAINS
             TCOL(K)=T(I,KFLIP,J)
             PCOL(K)=PMID(I,KFLIP,J)
             DPCOL(K)=RHO(I,KFLIP,J)*G*DZ8W(I,KFLIP,J)
-            WCOL(K)=0.5*(W(I,KFLIP,J)+W(I,KFLIP+1,J))
+            WCOL(K)=0.5*(W(I,KFLIP,J)+W(I,KFLIP+1,J))*DT/200.
             CWMCOL(K)=QC(I,KFLIP,J)
           ENDDO
 !-----------------------------------------------------------------------
@@ -496,7 +494,7 @@ CONTAINS
       TGS=TT
       QW=QSAT(PP,TGS,0.,0.)
       FO=TGS+RCP*ELWV*QW-RP
-      TG1=TGS-.5*FO
+      TG1=AMAX1(TGS/2.,TGS-.5*FO)
       TGUESS=TGS
       ITCNT=0
    10 QW=QSAT(PP,TG1,0.,0.)

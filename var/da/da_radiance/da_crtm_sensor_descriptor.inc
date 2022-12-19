@@ -33,6 +33,7 @@ subroutine da_crtm_sensor_descriptor(nsensor,sensor_descriptor)
         if (satellite_id == 1) crtm_sat='m08'
         if (satellite_id == 2) crtm_sat='m09'
         if (satellite_id == 3) crtm_sat='m10'
+        if (satellite_id == 4) crtm_sat='m11'
      else if (trim(crtm_platform_name(platform_id)) == 'gcom-w') then
         if (satellite_id == 1) crtm_sat='gcom-w1'
      else
@@ -47,11 +48,11 @@ subroutine da_crtm_sensor_descriptor(nsensor,sensor_descriptor)
      elseif ( trim(crtm_sensor_name(sensor_id)) == 'hirs' ) then
         if (satellite_id <= 14) crtm_sensor='hirs2'
         if (satellite_id >= 15 .and. satellite_id <= 17) crtm_sensor='hirs3'
-        if (satellite_id == 18) crtm_sensor='hirs4'
+        if (satellite_id == 18 .or. satellite_id == 19) crtm_sensor='hirs4'
      elseif ( trim(crtm_sensor_name(sensor_id)) == 'avhrr' ) then
         if (satellite_id <= 14) crtm_sensor='avhrr2'
         if (satellite_id >= 15 .and. satellite_id <= 17) crtm_sensor='avhrr3'
-        if (satellite_id == 18) crtm_sensor='avhrr4'
+        if (satellite_id == 18 .or. satellite_id == 19) crtm_sensor='avhrr4'
      else
         crtm_sensor=crtm_sensor_name(sensor_id)
      end if

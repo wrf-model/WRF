@@ -202,9 +202,9 @@ state    real   soilenergy ij      -       1      -     hd=(interp_mask_land_fie
 state    real   snowenergy ij      -       1      -     hd=(interp_mask_land_field:lu_index)u=(copy_fcnm)        "snowenergy" "energy content in snow relative to 273.16" "kJ/m2"
 
 state    real   acc_ssoil     ij      -       1      -     rd=(interp_mask_land_field:lu_index)u=(copy_fcnm)       "acc_ssoil"     "accumulated SSOIL between dt_soil"    "W/m2"
-state    real   acc_qinsur    ij      -       1      -     rd=(interp_mask_land_field:lu_index)u=(copy_fcnm)       "acc_qinsur"    "accumulated QINSUR between dt_soil"   "mm/s"
-state    real   acc_qseva     ij      -       1      -     rd=(interp_mask_land_field:lu_index)u=(copy_fcnm)       "acc_qseva"     "accumulated QSEVA between dt_soil"    "mm/s"
-state    real   acc_etrani   ilj      -       1      -     rd=(interp_mask_land_field:lu_index)u=(copy_fcnm)       "acc_etrani"    "accumulated ETRANI between dt_soil"   "mm/s"
+state    real   acc_qinsur    ij      -       1      -     rd=(interp_mask_land_field:lu_index)u=(copy_fcnm)       "acc_qinsur"    "accumulated QINSUR between dt_soil"   "m/s*dt_soil/dt_noahmp"
+state    real   acc_qseva     ij      -       1      -     rd=(interp_mask_land_field:lu_index)u=(copy_fcnm)       "acc_qseva"     "accumulated QSEVA between dt_soil"    "m/s*dt_soil/dt_noahmp"
+state    real   acc_etrani   ilj      -       1      -     rd=(interp_mask_land_field:lu_index)u=(copy_fcnm)       "acc_etrani"    "accumulated ETRANI between dt_soil"   "m/s*dt_soil/dt_noahmp"
 state    real   aceflxb       ij      -       1      -     rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)       "aceflxb "     "accumulated bottom soil heat flux"    "kJ/m2"
 state    real   eflxbxy       ij      -       1      -     rd=(interp_mask_land_field:lu_index)u=(copy_fcnm)       "eflxbxy "      "bottom soil heat flux"                "W/m2"
 state    real   acc_dwaterxy  ij      -       1      -     rd=(interp_mask_land_field:lu_index)u=(copy_fcnm)       "acc_dwater"    "accumulated canopy,snow,soil water change between dt_soil"   "mm"

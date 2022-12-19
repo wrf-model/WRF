@@ -575,10 +575,9 @@ CONTAINS
         & INTENT(INOUT) :: qke_adv
    LOGICAL, OPTIONAL, INTENT(IN) :: bl_mynn_tkeadvect
 
-! Katata-added -
    REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,              &
         &    INTENT(INOUT)::                               vdfg
-! Katata-end
+
    INTEGER, OPTIONAL, DIMENSION( ims:ime , jms:jme ),           &
         &    INTENT(OUT) ::               nupdraft,ktop_plume
    REAL, OPTIONAL, DIMENSION( ims:ime , jms:jme ),              &

@@ -53,8 +53,6 @@ CONTAINS
 
   END FUNCTION calc_rh
 
-
-
   !!!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!!!
   !~ 
   !~ Name:
@@ -110,8 +108,6 @@ CONTAINS
      theta = t * ( (p0/p)**(Rd/Cp) )
   
   END FUNCTION Theta
-
-
 
   !!!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!!!
   !~
@@ -500,7 +496,6 @@ CONTAINS
       INTEGER                 :: i, j, k    !~ Dummy iterator
       INTEGER                 :: lfclev     !~ Level of LFC
       INTEGER                 :: ellev      !~ Level of EL. Modified by Zhixiao.
-      INTEGER                 :: lcllev     !~ Level of LCL. Modified by Zhixiao.
       INTEGER                 :: prcl       !~ Internal parcel type indicator
       INTEGER                 :: mlev       !~ Level for ML calculation
       INTEGER                 :: lyrcnt     !~ Number of layers in mean layer
@@ -628,17 +623,6 @@ CONTAINS
       tlclK = TLCL ( tK(srclev), rh(srclev) )
       plcl  = p(srclev) * ( (tlclK/tK(srclev))**(Cp/Rd) )
       
-      !Add caculation for LCL. Modified by Zhixiao
-      lcllev = -1 !Modified by Zhixiao
-      flag=.false. !Modified by Zhixiao
-      DO k=sfc,nz !zhixiao search the layer of LCL
-         IF (p (k) <= plcl) THEN !Modified by Zhixiao
-             lcllev=k !Modified by Zhixiao
-             flag=.true. !Modified by Zhixiao
-         END IF !Modified by Zhixiao
-         IF (flag) EXIT !Modified by Zhixiao
-      END DO !Modified by Zhixiao  
-      flag=.false. !Modified by Zhixiao
       !~ Now lift the parcel
       !  -------------------
    
@@ -759,7 +743,6 @@ CONTAINS
       ellev = -1 !Modified by Zhixiao
       DO k = sfc, nz !Modified by Zhixiao
          !~ LFC is defiend as the highest level when negative buyancy turns postive.
-         ! Let us ignore the lower LFCs, and keep the highest LFC as the final result
          !  -----------------------------------
          IF ( .not. flag .and. buoy (k) > REAL (0) .and. p (k) <= plcl ) THEN !Modified by Zhixiao
             flag = .true.
@@ -772,15 +755,25 @@ CONTAINS
                ellev = k !Modified by Zhixiao
             END IF
          END IF
+         ! When buoy turns negative again, reset LFC flag and keep the highest LFC as the effective output
+         IF (buoy (k) < REAL (0) .and. flag) THEN 
+            flag = .false.
+         END IF
       END DO
       IF (ellev >= 0) THEN !Modified by Zhixiao
          pel = p(ellev) !Modified by Zhixiao
          CIN=REAL ( 0 ) !Modified by Zhixiao
-         DO k = sfc+1, nz !Modified by Zhixiao
-            ! CAPE and CIN is defined as integrated positive and negative buoyant energy between LCL and EL, respectively. Modified by Zhixiao
-            IF ( p (k) <= plcl .and. p (k) >= pel) THEN !Modified by Zhixiao
-               CAPE = CAPE + MAX ( buoy (k), 0.0 ) * ( hgt (k) - hgt (k-1) ) !Modified by Zhixiao
-               CIN  = CIN  + MIN ( buoy (k), 0.0 ) * ( hgt (k) - hgt (k-1) ) !Modified by Zhixiao
+         DO k = sfc+1, nz
+            ! Make CAPE and CIN consistent with AMS definition
+            ! https://glossary.ametsoc.org/wiki/Convective_available_potential_energy
+            ! https://glossary.ametsoc.org/wiki/Convective_inhibition
+            IF ( p (k) <= plcl .and. p (k) > plfc) THEN !Modified by Zhixiao
+               ! CIN is the vertically integrated negative buoyant energy between LCL and LFC
+               CIN  = CIN  + MIN ( buoy (k), 0.0 ) * ( hgt (k) - hgt (k-1) )
+            END IF
+            IF ( p (k) <= plfc .and. p (k) > pel) THEN !Modified by Zhixiao
+               ! CAPE is the vertically integrated positive buoyant energy between LFC and EL
+               CAPE = CAPE + MAX ( buoy (k), 0.0 ) * ( hgt (k) - hgt (k-1) )
             END IF !Modified by Zhixiao         
          END DO !Modified by Zhixiao
       END IF !Modified by Zhixiao

@@ -1225,9 +1225,9 @@ state    real    CUPPT           ij     misc        1         -      r        "C
 state    real   rswtoa           ij     misc        1         -      -
 state    real   rlwtoa           ij     misc        1         -      -
 state    real   czmean           ij     misc        1         -      -
-state    real   cfracl           ij     misc        1         -      -
-state    real   cfracm           ij     misc        1         -      -
-state    real   cfrach           ij     misc        1         -      -
+state    real   cfracl           ij     misc        1         -     rh       "CFRACL"    "Low cloud fraction"                   ""
+state    real   cfracm           ij     misc        1         -     rh       "CFRACM"    "Middle cloud fraction"                ""
+state    real   cfrach           ij     misc        1         -     rh       "CFRACH"    "High cloud fraction"                  ""
 state    real   acfrst           ij     misc        1         -      -
 state integer   ncfrst           ij     misc        1         -      -
 state    real   acfrcv           ij     misc        1         -      -
@@ -1304,6 +1304,12 @@ state   real    F_ICE_PHY      ikj     misc         1         -      rhdu     "F
 state   real    F_RAIN_PHY     ikj     misc         1         -      rhdu     "F_RAIN_PHY"           "FRACTION OF RAIN "         ""
 state   real    F_RIMEF_PHY    ikj     misc         1         -      rhdu     "F_RIMEF_PHY"          "MASS RATIO OF RIMED ICE "         ""
 state   real    qndropsource   ikj     misc         1         -      r        "qndropsource"         "Droplet number source"   "#/kg/s"
+# ivanr microphysics variables
+state    real    cld           ikj    misc        1         -      r        "CLD"                  "CLOUD FRACTION"         "0 - 1 fraction"
+state    real    tw2           ikj    misc        1         -      r        "TW2"                  "T from previous timestep"         "K"
+state    real    pw2           ikj    misc        1         -      r        "PW2"                  "P from previous timestep"         "Pa"
+state    real    qw2           ikj    misc        1         -      r        "QW2"                  "Q from previous timestep"         "kg kg-1"
+state    real    f_snow        ikj    misc        1         -      r        "F_SNOW"               "FRACTION OF SNOW"         "0 - 1 fraction"
 
 # cyl 3DPWP variables
 state   real    OM_TMP        i{nocnl}j      misc         1        Z     i012rhdu=(copy_fcnm)f=(c2f_interp:grid_id)    "OM_TMP" "temperature"   "k"
@@ -2994,6 +3000,7 @@ package   p3_1category_nc mp_physics==51               -             moist:qv,qc
 package   p3_2category    mp_physics==52               -             moist:qv,qc,qr,qi,qi2;scalar:qnc,qni,qnr,qir,qib,qni2,qir2,qib2;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,vmi3d_2,rhopo3d_2,di3d_2,refl_10cm,th_old,qv_old
 package   p3_1cat_3mom    mp_physics==53               -             moist:qv,qc,qr,qi;scalar:qnc,qni,qnr,qir,qib,qzi;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,refl_10cm,th_old,qv_old
 package   morr_tm_aero    mp_physics==40               -             moist:qv,qc,qr,qi,qs,qg;scalar:qnc,qni,qns,qnr,qng;state:rqrcuten,rqscuten,rqicuten,EFCG,EFIG,EFSG,WACT,CCN1_GS,CCN2_GS,CCN3_GS,CCN4_GS,CCN5_GS,CCN6_GS,CCN7_GS,re_cloud,re_ice,re_snow,mskf_refl_10cm
+package   ivanr_micro     mp_physics==150               -             moist:qv,qc,qr,qs;scalar:qt;state:cld,tw2,pw2,qw2,f_snow
 package   jensen_ishmael  mp_physics==55               -             moist:qv,qc,qr,qi,qi2,qi3;scalar:qnr,qni,qvoli,qaoli,qni2,qvoli2,qaoli2,qni3,qvoli3,qaoli3;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,phii3d,itype,vmi3d_2,rhopo3d_2,di3d_2,phii3d_2,itype_2,vmi3d_3,rhopo3d_3,di3d_3,phii3d_3,itype_3,refl_10cm
 package   ntu             mp_physics==56               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh,qdcn,qtcn,qccn,qrcn,qnin,fi,fs,vi,vs,vg,ai,as,ag,ah,i3m
 package   etampnew        mp_physics==95               -             moist:qv,qc,qr,qs;scalar:qt;state:f_ice_phy,f_rain_phy,f_rimef_phy
@@ -3038,6 +3045,7 @@ package   jensen_ishmael_dfi  mp_physics_dfi==55         -         dfi_moist:dfi
 package   ntu_dfi           mp_physics_dfi==56       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;dfi_scalar:dfi_qnc,dfi_qnr,dfi_qni,dfi_qns,dfi_qng,dfi_qnh,dfi_qdcn,dfi_qtcn,dfi_qccn,dfi_qrcn,dfi_qnin,dfi_fi,dfi_fs,dfi_vi,dfi_vs,dfi_vg,dfi_ai,dfi_as,dfi_ag,dfi_ah,dfi_i3m
 package   etampnew_dfi      mp_physics_dfi==95       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qs;dfi_scalar:dfi_qt
 package   gsfcgcescheme_dfi   mp_physics_dfi==97     -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg
+package   ivanr_micro_dfi     mp_physics_dfi==150    -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qs;dfi_scalar:dfi_qt
 
 package   noprogn       progn==0                     -             -
 package   progndrop     progn==1                     -             scalar:qndrop;dfi_scalar:dfi_qndrop;state:qndropsource

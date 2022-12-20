@@ -132,6 +132,7 @@ SUBROUTINE microphysics_driver(                                          &
                       ,ri_curr                                           &
                       ,diagflag,   do_radar_ref                          &
                       ,ke_diag                                           &
+                      ,cld, tw2, pw2, qw2, f_snow                        & ! w2id
                       ,re_cloud, re_ice, re_snow                         & ! G. Thompson
                       ,has_reqc, has_reqi, has_reqs                      & ! G. Thompson
                       ,ccn_conc                                          & ! RAS
@@ -171,7 +172,7 @@ SUBROUTINE microphysics_driver(                                          &
                     ,WSM7SCHEME, WDM7SCHEME &
                     ,NUWRF4ICESCHEME &
                     ,MILBRANDT2MOM , CAMMGMPSCHEME,FULL_KHAIN_LYNN, P3_1CATEGORY, P3_1CATEGORY_NC, P3_2CATEGORY, P3_1CAT_3MOM &
-                    ,MORR_TM_AERO, JENSEN_ISHMAEL, SPRINKLER, NTU !,MILBRANDT3MOM
+                    ,MORR_TM_AERO, JENSEN_ISHMAEL, SPRINKLER, NTU, IVANR_MICRO !,MILBRANDT3MOM
 #if ( WRFPLUS == 1 )
    USE module_state_description, ONLY : LSCONDSCHEME, MKESSLERSCHEME
 #endif
@@ -216,6 +217,7 @@ SUBROUTINE microphysics_driver(                                          &
    USE module_mp_wsm6
    USE module_mp_wsm7
    USE module_mp_etanew
+   USE module_mp_ivanr_micro
    USE module_mp_fer_hires
    USE module_mp_thompson
    USE module_mp_full_sbm
@@ -726,6 +728,8 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
    INTEGER, OPTIONAL, INTENT(IN) :: ke_diag ! tells reflectivity calculation whether to do full depth or only k=1
    REAL, INTENT(IN) :: ccn_conc ! RAS
    INTEGER, OPTIONAL, INTENT(IN) :: do_radar_ref
+   REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) ::  & ! w2id
+                 cld, tw2, pw2, qw2, f_snow 
    REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) ::  & ! G. Thompson
                  re_cloud, re_ice, re_snow
    INTEGER, INTENT(IN):: has_reqc, has_reqi, has_reqs
@@ -964,6 +968,35 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 #endif
 
      micro_select: SELECT CASE(mp_physics)
+        CASE (IVANR_MICRO)    !-- Operational 4-km High-Resolution Window (HRW)version IVANR_MICRO
+             CALL wrf_debug ( 100 , 'microphysics_driver: calling ivanr_micro')
+
+             IF ( PRESENT( qv_curr ) .AND. PRESENT( qt_curr ) .AND. &
+                  PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) ) THEN
+               CALL IVANRM_NEW(                                      &
+                  ITIMESTEP=itimestep,DT=dt                         &
+                 ,DZ8W=dz8w,RHO_PHY=rho,P_PHY=p,PI_PHY=pi_phy,TH_PHY=th &
+                 ,QV=qv_curr                                        &
+                 ,QT=qt_curr                                        &
+                 ,SR=SR                                             &
+                 ,QC=qc_curr                                        &
+                 ,QS=qs_curr                                        &
+                 ,QR=qr_curr                                        &
+                 ,xland=xland                                       &
+                 ,CLD=cld                                           &
+                 ,T0=tw2                                            &
+                 ,P0=pw2                                            &
+                 ,Q0=qw2                                            &
+                 ,F_SNOW=f_snow                                     &
+                 ,RAINNC=rainnc,RAINNCV=rainncv                     &
+                 ,SNOWNC=snownc,SNOWNCV=snowncv                     &
+                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
+                                                                    )
+             ELSE
+                CALL wrf_error_fatal ( 'arguments not present for calling ivanr_micro' )
+             ENDIF
 
         CASE (KESSLERSCHEME)
              CALL wrf_debug ( 100 , 'microphysics_driver: calling kessler' )

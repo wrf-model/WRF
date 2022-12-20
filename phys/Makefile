@@ -90,6 +90,7 @@ MODULES = \
 	module_mp_wsm6.o \
 	module_mp_wsm7.o \
 	module_mp_etanew.o \
+	module_mp_ivanr_micro.o \
 	module_mp_fer_hires.o \
 	module_mp_thompson.o \
         module_fire_emis.o \

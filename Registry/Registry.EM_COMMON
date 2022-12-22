@@ -3121,7 +3121,7 @@ package   temfpblscheme  bl_pbl_physics==10          -             state:te_temf
 package   shinhongscheme bl_pbl_physics==11          -             state:el_pbl,tke_pbl
 package   gbmpblscheme   bl_pbl_physics==12          -             state:exch_tke,el_pbl,tke_pbl
 package   eepsscheme     bl_pbl_physics==16          -             scalar:pek_adv,pep_adv;state:tke_pbl,pep_pbl
-package   kepsscheme    bl_pbl_physics==17           -             scalar:tke_adv,diss_adv,tpe_adv;state:tpe_pbl,diss_pbl,tke_pbl,wu_tur,wv_tur,wt_tur,wq_tur
+package   kepsscheme     bl_pbl_physics==17          -             scalar:tke_adv,diss_adv,tpe_adv;state:tpe_pbl,diss_pbl,tke_pbl,wu_tur,wv_tur,wt_tur,wq_tur
 package   mrfscheme      bl_pbl_physics==99          -             -
 
 package   mynn_tkebudget bl_mynn_tkebudget==1        -             state:qSHEAR,qBUOY,qDISS,qWT,dqke

@@ -710,8 +710,20 @@ while ( <CONFIGURE_DEFAULTS> )
 
     if ( $sw_adios2_path ) 
       { $_ =~ s/CONFIGURE_WRFIO_ADIOS2/wrfio_adios2/g ; 
-	      $_ =~ s:CONFIGURE_ADIOS2_FLAG:-DADIOS2: ;
-        $_ =~ s:CONFIGURE_ADIOS2_LIB_PATH:-L\$\(WRF_SRC_ROOT_DIR\)/external/io_adios2 -lwrfio_adios2 -L$sw_adios2_path/lib -L$sw_adios2_path/lib64 -ladios2_fortran_mpi -ladios2_fortran:;
+        $_ =~ s:CONFIGURE_ADIOS2_FLAG:-DADIOS2: ;
+        if ( -d "$sw_adios2_path/lib" )
+          {
+            $adios2_libdir = "$sw_adios2_path/lib" ;
+          }
+        elsif ( -d "$sw_adios2_path/lib64" )
+          {
+            $adios2_libdir = "$sw_adios2_path/lib64" ;
+          }
+        else
+          {
+            die "ADIOS2 environment variable was set, but neither $sw_adios2_path/lib nor $sw_adios2_path/lib64 were found." ;
+          }
+        $_ =~ s:CONFIGURE_ADIOS2_LIB_PATH:-L\$\(WRF_SRC_ROOT_DIR\)/external/io_adios2 -lwrfio_adios2 -L$adios2_libdir -ladios2_fortran_mpi -ladios2_fortran:;
       }
     else                   
       { $_ =~ s/CONFIGURE_WRFIO_ADIOS2//g ;
@@ -1086,8 +1098,20 @@ while ( <ARCH_PREAMBLE> )
 
     if ( $sw_adios2_path ) 
       { $_ =~ s/CONFIGURE_WRFIO_ADIOS2/wrfio_adios2/g ; 
-	      $_ =~ s:CONFIGURE_ADIOS2_FLAG:-DADIOS2: ;
-        $_ =~ s:CONFIGURE_ADIOS2_LIB_PATH:-L\$\(WRF_SRC_ROOT_DIR\)/external/io_adios2 -lwrfio_adios2 -L$sw_adios2_path/lib -L$sw_adios2_path/lib64 -ladios2_fortran_mpi -ladios2_fortran:;
+        $_ =~ s:CONFIGURE_ADIOS2_FLAG:-DADIOS2: ;
+        if ( -d "$sw_adios2_path/lib" )
+          {
+            $adios2_libdir = "$sw_adios2_path/lib" ;
+          }
+        elsif ( -d "$sw_adios2_path/lib64" )
+          {
+            $adios2_libdir = "$sw_adios2_path/lib64" ;
+          }
+        else
+          {
+            die "ADIOS2 environment variable was set, but neither $sw_adios2_path/lib nor $sw_adios2_path/lib64 were found." ;
+          }
+        $_ =~ s:CONFIGURE_ADIOS2_LIB_PATH:-L\$\(WRF_SRC_ROOT_DIR\)/external/io_adios2 -lwrfio_adios2 -L$adios2_libdir -ladios2_fortran_mpi -ladios2_fortran:;
       }
     else                   
       { $_ =~ s/CONFIGURE_WRFIO_ADIOS2//g ;

@@ -4852,6 +4852,7 @@ BENCH_END(bc_2d_tim)
                cf            = config_flags,        &
                grid          = grid,                &
                fs_p_id       = grid%fs_p_id,        &
+               fs_p_src      = grid%fs_p_src,      &
                fs_p_dt       = grid%fs_p_dt,        &
                fs_p_x        = grid%fs_p_x,         &
                fs_p_y        = grid%fs_p_y,         &

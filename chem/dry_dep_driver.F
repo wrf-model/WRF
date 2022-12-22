@@ -51,6 +51,7 @@ CONTAINS
                                          sorgam_vbs_mixactivate, soa_vbs_mixactivate
   USE module_aer_drydep
   USE module_aerosols_soa_vbs, only: soa_vbs_depdriver
+  USE module_aerosols_soa_vbs_het, only: soa_vbs_het_depdriver
 
   USE module_cam_mam_drydep, only:  cam_mam_drydep_driver
   
@@ -569,9 +570,20 @@ CONTAINS
                ims,ime, jms,jme, kms,kme,                               &
                its,ite, jts,jte, kts,kte                                )
 !!! TUCCELLA
-     CASE ( RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP,RACM_SOA_VBS_HET_KPP )
+     CASE ( RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP )
        CALL wrf_debug(15,'DOING DRY DEP VELOCITIES FOR SOA_VBS AEROSOLS')
        call soa_vbs_depdriver (id,config_flags,ktau,dtstep,             &
+               ust,t_phy,moist,p8w,t8w,rmol,znt,pbl,                    &
+               alt,p_phy,chem,rho_phy,dz8w,rh,z,z_at_w,                 &
+               h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,               &
+               aer_res,ddvel(:,:,numgas+1:num_chem),                    &
+               num_chem-numgas,                                         &
+               ids,ide, jds,jde, kds,kde,                               &
+               ims,ime, jms,jme, kms,kme,                               &
+               its,ite, jts,jte, kts,kte                                )
+     CASE ( RACM_SOA_VBS_HET_KPP )
+       CALL wrf_debug(15,'DOING DRY DEP VELOCITIES FOR SOA_VBS_HET AEROSOLS')
+       call soa_vbs_het_depdriver (id,config_flags,ktau,dtstep,             &
                ust,t_phy,moist,p8w,t8w,rmol,znt,pbl,                    &
                alt,p_phy,chem,rho_phy,dz8w,rh,z,z_at_w,                 &
                h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,               &

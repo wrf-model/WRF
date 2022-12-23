@@ -41,7 +41,7 @@ MODULE module_firebrand_spotting
 
     INTEGER, PARAMETER :: dp = KIND(0.d0)      ! double precision
 
-    INTEGER, PARAMETER :: wrfdbg = 0    
+    INTEGER, PARAMETER :: wrfdbg = 10    
     ! Fuel parameters must match values from module_fr_phys.F: SUBROUTINE set_fuel_params(nfuel_cat0, nfuel_cat)
     INTEGER, PARAMETER :: no_fuel_cat = 14
     INTEGER, PARAMETER :: nf_sb = 204          ! maximum category on

@@ -4103,7 +4103,7 @@
       DOUBLE PRECISION, DIMENSION(nbr):: vr, N_r
       DOUBLE PRECISION:: N0_r, N0_g, lam_exp, lamg, lamr
       DOUBLE PRECISION:: massg, massr, dvg, dvr, t1, t2, z1, z2, y1, y2
-      LOGICAL force_read_thompson, write_thompson_tables
+      LOGICAL force_read_thompson, write_thompson_tables, write_thompson_mp38table
       LOGICAL lexist,lopen
       INTEGER good
       LOGICAL, EXTERNAL :: wrf_dm_on_monitor
@@ -4112,6 +4112,7 @@
 
       CALL nl_get_force_read_thompson(1,force_read_thompson)
       CALL nl_get_write_thompson_tables(1,write_thompson_tables)
+      CALL nl_get_write_thompson_mp38table(1,write_thompson_mp38table)
 
       if (is_hail_aware) then
          ! Table for mp=38
@@ -4158,6 +4159,9 @@
         ELSE
           IF( force_read_thompson ) THEN
             CALL wrf_error_fatal("Non-existent "//qr_acr_qg_name//". Aborting because force_read_thompson is .true.")
+          ENDIF
+          IF( (is_hail_aware) .AND. (.NOT. write_thompson_mp38table)) THEN
+            CALL wrf_error_fatal("Non-existent "//qr_acr_qg_name//". Aborting because write_thompson_mp38table is .false.")
           ENDIF
         ENDIF
       ENDIF

@@ -2371,6 +2371,7 @@ rconfig   real    rankine_lid          namelist,tc      1              -999.   i
 rconfig   character  physics_suite        namelist,physics      1           "none" rh "Physics suite selection" "physics suite to use for all domains: CONUS, tropical, or none" "character string"
 rconfig   logical  force_read_thompson   namelist,physics      1           .false.
 rconfig   logical  write_thompson_tables   namelist,physics     1           .true.
+rconfig   logical  write_thompson_mp38table   namelist,physics     1           .false.
 rconfig   integer     mp_physics          namelist,physics	max_domains    -1     irh       "mp_physics"            ""      ""
 #rconfig   integer     milbrandt_ccntype   namelist,physics      max_domains    0       rh       "milbrandt select maritime(1)/continental(2)"  ""      ""
 rconfig   real     nssl_cccn              namelist,physics      max_domains  0.5e9    rh       "Base CCN concentration for NSSL microphysics"  ""      ""

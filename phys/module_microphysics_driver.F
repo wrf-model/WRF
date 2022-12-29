@@ -1123,7 +1123,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
              ENDIF
 !
         CASE (THOMPSONGH)
-             CALL wrf_debug ( 100 , 'microphysics_driver: calling thompson' )
+             CALL wrf_debug ( 100 , 'microphysics_driver: calling thompsongh' )
              IF ( PRESENT( QV_CURR ) .AND. PRESENT ( QC_CURR )   .AND.  &
                   PRESENT( QR_CURR ) .AND. PRESENT ( QI_CURR )   .AND.  &
                   PRESENT( QS_CURR ) .AND. PRESENT ( QG_CURR )   .AND.  &

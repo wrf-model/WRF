@@ -1381,7 +1381,7 @@ contains
                 if(temp.gt.T0) then
 
   !.. Melting: ice shapes become more spherical
-                   qmlt(cc)=2.*PI*(kt*fh(cc)*(T0-temp)+rhoair(cc)*xxlv*dv*fv(cc)*(qs0-qv(k)))/   & 
+                   qmlt(cc)=2.*PI*(kt*fh(cc)*(T0-temp)+rhoair(k)*xxlv*dv*fv(cc)*(qs0-qv(k)))/   & 
                         xxlf*(ni(cc,k)*NU*max(ani(cc),cni(cc))) - &
                         (CPW/xxlf*(temp-T0)*(rimetotal(cc)/rhoair(k) + dQImltri(cc)))
                    

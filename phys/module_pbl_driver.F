@@ -27,7 +27,6 @@ CONTAINS
                  ,stepbl,warm_rain                                 &
                  ,kpbl,mixht,ct,lh,snow,xice                       &
                  ,znu, znw, mut, p_top                             &
-! paj
                  ,ctopo,ctopo2,windfarm_opt,power                  &
                  ,ysu_topdown_pblmix                               &
                  ,shinhong_tke_diag                                &

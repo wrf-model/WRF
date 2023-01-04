@@ -23,8 +23,8 @@ module module_mp_jensen_ishmael
   ! Last modified: 07 June 2019 (ISHMAEL version 0.1)                                                    !
   !------------------------------------------------------------------------------------------------------!
 
-  use module_wrf_error   
-
+  use module_wrf_error
+  
   implicit none !.. You are welcome
 
   !.. Constants
@@ -4709,4 +4709,3 @@ SUBROUTINE AVINT(X,Y,N,XLO,XUP,ANS)
 end module module_mp_jensen_ishmael
 
   !.. Full stop
-

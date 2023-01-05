@@ -12,9 +12,6 @@
 !     do j = 1, Jend; do k = 1, Kend; do i = 1, Iend; A(i, k, j); end do; end do; end do
 !-------------------------------------------------------------------------------
 
-!=============================================================
-!=============================================================
-
 MODULE module_firebrand_spotting_mpi
 
     USE module_domain,       ONLY : get_ijk_from_grid, domain               ! grid

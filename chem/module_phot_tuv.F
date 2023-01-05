@@ -158,7 +158,7 @@
    REAL,     INTENT(IN   ) ::                        gmt
 
    REAL, DIMENSION( ims:ime, jme:jme ),                         &
-         OPTIONAL,INTENT(IN ) ::                   o3_gfs_du
+         OPTIONAL,INTENT(IN ) ::                    o3_gfs_du
 
    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
 

@@ -10932,7 +10932,7 @@ CONTAINS
         else
          do k = kts, kte+1
             o3vmr(ncol,k) = o3mmr(k) * amdo
-            o31d(k) = o3vmr(ncol,k)
+            if (k.le.kte) o31d(k) = o3vmr(ncol,k)
          enddo
         endif
 

@@ -172,6 +172,7 @@ SUBROUTINE microphysics_driver(                                          &
                     ,NUWRF4ICESCHEME &
                     ,MILBRANDT2MOM , CAMMGMPSCHEME,FULL_KHAIN_LYNN, P3_1CATEGORY, P3_1CATEGORY_NC, P3_2CATEGORY, P3_1CAT_3MOM &
                     ,MORR_TM_AERO, JENSEN_ISHMAEL, SPRINKLER, NTU !,MILBRANDT3MOM
+   USE module_state_description, ONLY : WSM6RSCHEME
 #if ( WRFPLUS == 1 )
    USE module_state_description, ONLY : LSCONDSCHEME, MKESSLERSCHEME
 #endif
@@ -214,6 +215,7 @@ SUBROUTINE microphysics_driver(                                          &
    USE module_mp_wsm3
    USE module_mp_wsm5
    USE module_mp_wsm6
+   USE module_mp_wsm6r, ONLY:wsm6r
    USE module_mp_wsm7
    USE module_mp_etanew
    USE module_mp_fer_hires
@@ -2530,6 +2532,28 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                                                                     )
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling wsm6' )
+             ENDIF
+
+        CASE (WSM6RSCHEME)
+             CALL wrf_debug ( 100 , 'microphysics_driver: calling wsm6r' )
+             IF ( PRESENT( QV_CURR ) .AND. PRESENT( QR_CURR ) .AND. &
+                  PRESENT( QC_CURR ) .AND. PRESENT( QS_CURR ) .AND. &
+                  PRESENT( QI_CURR ) .AND. PRESENT( QG_CURR ) .AND. &
+                  PRESENT( RAINNC  ) .AND. PRESENT( RAINNCV )) THEN
+               CALL wsm6r(                                          &
+                  TH=th                                             &
+                 ,Q =qv_curr,Qc=qc_curr,Qi=qi_curr                   &
+                 ,Qr=qr_curr,Qs=qs_curr,Qg=qg_curr                   &
+                 ,DEN=rho, PII=pi_phy                               &
+                 ,P=p                                               &
+                 ,DELZ=dz8w, DELT=dt &
+                 ,RAIN=rainnc,RAINNCV=rainncv                     &
+                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
+                                                                    )
+             ELSE
+                CALL wrf_error_fatal ( 'arguments not present for calling wsm6r' )
              ENDIF
 
         CASE (WSM7SCHEME)

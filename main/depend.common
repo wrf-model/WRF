@@ -576,6 +576,7 @@ module_physics_init.o : \
 		module_mp_wsm3.o		\
 		module_mp_wsm5.o		\
 		module_mp_wsm6.o		\
+		module_mp_wsm6r.o		\
 		module_mp_etanew.o		\
 		module_mp_fer_hires.o 		\
 		module_mp_fast_sbm.o		\
@@ -613,6 +614,7 @@ module_microphysics_driver.o: \
 		$(PHYS_MP) \
 		module_mp_wsm3.o module_mp_wsm5.o \
 		module_mp_wsm6.o module_mp_etanew.o \
+		module_mp_wsm6r.o \
 		module_mp_fer_hires.o \
 		module_mp_thompson.o            \
 		module_mp_gsfcgce.o 		\

@@ -1474,6 +1474,7 @@ BENCH_START(cu_driver_tim)
      !BSINGH -ENDS
      &             ,KFETA_TRIGGER=config_flags%kfeta_trigger              &
      &             ,NSAS_DX_FACTOR=config_flags%nsas_dx_factor            &
+     &             ,NTIEDTKE_DX_OPT=config_flags%ntiedtke_dx_opt          &
                  ! Dimension arguments
      &             ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde     &
      &             ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme     &

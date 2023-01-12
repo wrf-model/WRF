@@ -1043,9 +1043,9 @@ contains
            ztau = max(ztmst,ztau)
            ztau = max(360.,ztau)
            if(ntiedtke_dx_opt.eq.1) then
-           ztau = min(43200.,ztau)
+             ztau = min(43200.,ztau)
            else
-           ztau = min(10800.,ztau)
+             ztau = min(10800.,ztau)
            end if
            if(nonequil) then
              zcape2(jl)= max(0.,zcape2(jl))
@@ -2261,7 +2261,7 @@ contains
       zcons2=3./(g*ztmst)
       zfacbuo = 0.5/(1.+0.5)
       if(ntiedtke_dx_opt.eq.1) then
-      zprcdgw = cprcon*zrg/(scale_fac(jl)**(1./3.))
+        zprcdgw = cprcon*zrg/(scale_fac(jl)**(1./3.))
       else
       zprcdgw = cprcon*zrg
       end if

@@ -11962,7 +11962,7 @@ CONTAINS
 ! Pressures are in mb
 !
 
-!ccc Read time-varying trace gases concentrations and interpolate them to run date.
+! Read time-varying trace gases concentrations and interpolate them to run date.
 !
    IF ( GHG_INPUT .EQ. 1 ) THEN 
       CALL read_CAMgases(yr,julian,.false.,"RRTMG",co2,n2o,ch4,cfc11,cfc12)
@@ -11982,8 +11982,6 @@ CONTAINS
       cfc11 = 0.251e-9
       cfc12 = 0.538e-9
    END IF
-
-!ccc
 
 ! latitude loop
   j_loop: do j = jts,jte

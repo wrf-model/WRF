@@ -11647,10 +11647,9 @@ CONTAINS
          INTENT(IN   )  ::                                 XLAND, &
                                                             XICE, &
                                                             SNOW
-!ccc Added for time-varying trace gases.
+! Added for time-varying trace gases.
    INTEGER, INTENT(IN    ) ::                                 yr
    REAL, INTENT(IN    ) ::                                julian
-!ccc
 
 !
 ! Optional

@@ -89,12 +89,12 @@ contains
 
         if (this%pointer_allocation_guard .eqv. .false. ) then
 
-            if (reservoir_type .ne. 4) then
+            if (reservoir_type .ne. 4 .and. reservoir_type .ne. 5) then
                 ! Call hydro_stop if reservoir_type is not RFC Forecast.
                 write(lake_number_string, "(I15)") lake_number
                 write(reservoir_type_string, "(I15)") reservoir_type
                 call hydro_stop("ERROR: Incorrect reservoir type for reservoir " // trim(ADJUSTL(lake_number_string)) // &
-                ". Expected reservoir type 4 and instead received reservoir type " // reservoir_type_string // "." )
+                ". Expected reservoir type 4 or 5 and instead received reservoir type " // reservoir_type_string // "." )
             end if
 
             ! try to allocate input
@@ -130,7 +130,7 @@ contains
                 // trim(ADJUSTL(lake_number_string)) // ".")
             else
                 ! initialize rfc forecasts properties
-                call this%properties%init(lake_number, reservoir_parameter_file)
+                call this%properties%init(lake_area, lake_max_water_elevation, lake_number, reservoir_type, reservoir_parameter_file)
             end if
             this%pointer_allocation_guard = .true.
 
@@ -276,10 +276,11 @@ contains
 
         ! Update state water elevation
         this%state%water_elevation = water_elevation
+        this%state%levelpool_water_elevation = water_elevation
 
         ! Run levelpool reservoir
         call this%state%levelpool_ptr%run(previous_timestep_inflow, inflow, &
-        lateral_inflow, this%state%water_elevation, levelpool_outflow, routing_period, this%state%levelpool_reservoir_type, &
+        lateral_inflow, this%state%levelpool_water_elevation, levelpool_outflow, routing_period, this%state%levelpool_reservoir_type, &
         this%state%levelpool_assimilated_value, this%state%levelpool_assimilated_source_file)
 
         ! Check if Routing Period is greater than 1 hour, and if true, set forecast_found to false.
@@ -308,8 +309,31 @@ contains
 
             end if
 
-            ! Set outflow to corresponding discharge from array
-            this%output%outflow = this%state%discharges(this%state%time_series_index)
+            ! If reservoir_type is 4 for CONUS RFC reservoirs
+            if (this%properties%reservoir_type == 4) then
+
+                ! Set outflow to corresponding discharge from array
+                this%output%outflow = this%state%discharges(this%state%time_series_index)
+
+            ! Else reservoir_type 5 for for Alaska RFC glacier outflows
+            else
+
+                ! Set outflow to sum inflow and corresponding discharge from array
+                this%output%outflow = this%input%inflow + this%state%discharges(this%state%time_series_index)
+            end if
+
+            ! Update water elevation
+            this%state%water_elevation = this%state%water_elevation + &
+            ((this%input%inflow - this%output%outflow) / this%properties%lake_area) * routing_period
+
+            ! Ensure that the water elevation is within the minimum and maximum elevation
+            if (this%state%water_elevation < 0.0) then
+                this%state%water_elevation = 0.0
+
+            else if (this%state%water_elevation > this%properties%max_water_elevation) then
+                this%state%water_elevation = this%properties%max_water_elevation
+
+            end if
 
             ! Set dynamic_reservoir_type to RFC Forecasts Type
             this%state%dynamic_reservoir_type = this%properties%reservoir_type
@@ -330,7 +354,18 @@ contains
                 end do
 
                 if (this%output%outflow < 0) then
-                    this%output%outflow = levelpool_outflow
+
+                    ! If reservoir_type is 4 for CONUS RFC reservoirs
+                    if (this%properties%reservoir_type == 4) then
+                        this%output%outflow = levelpool_outflow
+
+                    ! Else reservoir_type 5 for for Alaska RFC glacier outflows
+                    else
+                        this%output%outflow = this%input%inflow
+                    end if
+
+                    ! Update water elevation to levelpool water elevation
+                    this%state%water_elevation = this%state%levelpool_water_elevation
 
                     ! Set dynamic_reservoir_type to levelpool type
                     this%state%dynamic_reservoir_type = this%state%levelpool_reservoir_type
@@ -345,7 +380,17 @@ contains
             end if
 
         else
-            this%output%outflow = levelpool_outflow
+            ! If reservoir_type is 4 for CONUS RFC reservoirs
+            if (this%properties%reservoir_type == 4) then
+                this%output%outflow = levelpool_outflow
+
+            ! Else reservoir_type 5 for for Alaska RFC glacier outflows
+            else
+                this%output%outflow = this%input%inflow
+            end if
+
+            ! Update water elevation to levelpool water elevation
+            this%state%water_elevation = this%state%levelpool_water_elevation
 
             ! Set dynamic_reservoir_type to levelpool type
             this%state%dynamic_reservoir_type = this%state%levelpool_reservoir_type

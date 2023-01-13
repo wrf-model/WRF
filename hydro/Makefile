@@ -1,5 +1,10 @@
 # Makefile 
-all:
+#
+CMD = Run/wrf_hydro.exe
+
+all: $(CMD)
+
+$(CMD):
 	@if [ ! -d "Run" ]; then \
 		(mkdir Run);\
 	fi
@@ -16,9 +21,19 @@ all:
 	fi
 
 	@if [ -d "LandModel" ]; then \
-	(cd LandModel; make ; rm -f ../../Run/wrf_hydro.exe; mv run/hrldas.exe  ../../Run/wrf_hydro.exe  ) \
+	(cd LandModel; make ) \
 	fi
 
+debug:: 
+	@echo 'F90FLAGS := $$(DEBUGFLAGS) $$(F90FLAGS)' >> ./macros 
+	@echo 'F90FLAGS := $$(DEBUGFLAGS) $$(F90FLAGS)' >> ./LandModel/user_build_options
+debug:: $(CMD)
+
+install:
+	-rm -f ./Run/wrf_hydro.exe; \
+	mv LandModel/run/hrldas.exe  ./Run/wrf_hydro.exe
+test:
+	@echo "No libraries or utilities are built, skip testing." 
 clean:
 	@if [ -d "LandModel_cpl" ]; then \
 	(cd LandModel_cpl; make clean) \

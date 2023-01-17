@@ -1235,6 +1235,8 @@ state integer   ncfrcv           ij     misc        1         -      -
 
 # new rad variables
 state    real   o3rad           ikj     misc        1         -      rdf=(p2c)      "o3rad"    "RADIATION 3D OZONE" "ppmv"
+# GFS Total ozone
+state   real    o3_gfs_du       ij      misc        1         -      i012rh         "o3_gfs_du"    "Total ozone from GFS" "Dobson Units"
 
 # incoming optical depth derived from aerosol data
 state  real   aerodm    i{lsa}jm{ty}    misc        1    -   -     -

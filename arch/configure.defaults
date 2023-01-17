@@ -2091,7 +2091,7 @@ CFLAGS_LOCAL    =       -w -O3
 LDFLAGS_LOCAL   =
 CPLUSPLUSLIB    =
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
-FCOPTIM         =       -O3 #-fastsse -Mvect=noaltcode -Msmartalloc -Mprefetch=distance:8 -Mfprelaxed # -Minfo=all =Mneginfo=all
+FCOPTIM         =       -O3 -fast -Mvect=noaltcode -Mprefetch=distance:8 # -Mfprelaxed # -Minfo=all =Mneginfo=all
 FCREDUCEDOPT  =       $(FCOPTIM)
 FCNOOPT               =       -O0
 FCDEBUG         =       # -g $(FCNOOPT)  # -C -Ktrap=fp -traceback

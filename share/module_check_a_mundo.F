@@ -2404,6 +2404,7 @@
         IF ( model_config_rec%SF_SURFACE_PHYSICS(i) == CLMSCHEME .and. &
              model_config_rec%SF_URBAN_PHYSICS(i) >= 1 .and. &
              model_config_rec%SF_URBAN_PHYSICS(i) <= 3 ) THEN
+             oops = oops + 1 
         ENDIF
       ENDDO
       IF ( oops .GT. 0 ) THEN

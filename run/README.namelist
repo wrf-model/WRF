@@ -10,7 +10,7 @@ Description of namelist variables
  run_hours                           = 0,	! run time in hours
                                                   Note: if it is more than 1 day, one may use both run_days and run_hours
                                                   or just run_hours. e.g. if the total run length is 36 hrs, you may
-                                                  set run_days = 1, and run_hours = 12, or run_days = 0, and run_hours = 36
+                                                  set run_days = 1, and run_hours = 12, or run_days = 0, and run_hours = 36.
  run_minutes                         = 0,	! run time in minutes
  run_seconds                         = 0,	! run time in seconds
  start_year (max_dom)                = 2001,	! four digit year of starting time

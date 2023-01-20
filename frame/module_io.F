@@ -128,6 +128,10 @@ SUBROUTINE wrf_ioinit( Status )
 #ifdef NETCDFPAR
   CALL ext_ncdpar_ioinit( SysDepInfo, ierr(13) )
 #endif
+#ifdef ADIOS2
+  CALL ext_adios2_ioinit  ( SysDepInfo, ierr(14) )
+#endif
+
   minerr = MINVAL(ierr)
   maxerr = MAXVAL(ierr)
   IF ( minerr < 0 ) THEN
@@ -191,6 +195,9 @@ SUBROUTINE wrf_ioexit( Status )
 #endif
 #ifdef NETCDFPAR
   CALL ext_ncdpar_ioexit  ( ierr(13) )
+#endif
+#ifdef ADIOS2
+  CALL ext_adios2_ioexit  ( ierr(14) )
 #endif
  
   IF ( use_output_servers() ) THEN
@@ -302,6 +309,23 @@ SUBROUTINE wrf_open_for_write_begin( FileName , grid, SysDepInfo, &
           ENDIF
 
 #endif
+#ifdef ADIOS2
+      CASE (IO_ADIOS2  )
+        WRITE(tstr,"(A,',ADIOS ADIOS NTASKS_X=',i10,',MYTASK_X=',i10,',LOCAL_COMMUNICATOR_X=',i10)") &
+              TRIM(SysDepInfo),ntasks_x,mytask_x,local_communicator_x
+        j=1
+        t1 = " "
+        DO i=1,len(TRIM(tstr))
+          IF ( tstr(i:i) .NE. ' ' ) THEN
+            t1(j:j) = tstr(i:i)
+            j = j + 1
+          ENDIF
+        ENDDO
+        tstr = t1
+        CALL ext_adios2_open_for_write_begin( FileName, tstr,         &
+                                            Dataset, Hndl, Status)
+#endif
+
 #ifdef PHDF5
       CASE (IO_PHDF5  )
         CALL ext_phdf5_open_for_write_begin( FileName, Comm_compute, Comm_io, SysDepInfo, &
@@ -496,6 +520,10 @@ SUBROUTINE wrf_open_for_write_commit( DataHandle , Status )
       CASE ( IO_PNETCDF  )
         CALL ext_pnc_open_for_write_commit ( Hndl , Status )
 #endif
+#ifdef ADIOS2
+      CASE ( IO_ADIOS2  )
+        CALL ext_adios2_open_for_write_commit ( Hndl , Status )
+#endif
 #ifdef PIO
       CASE ( IO_PIO )
         CALL ext_pio_open_for_write_commit ( Hndl , Status )
@@ -619,6 +647,11 @@ SUBROUTINE wrf_open_for_read_begin( FileName , grid, SysDepInfo, &
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
         CALL ext_pnc_open_for_read_begin ( FileName , Comm_compute, Comm_io, SysDepInfo, &
+                                            Hndl , Status )
+#endif
+#ifdef ADIOS2
+      CASE ( IO_ADIOS2   )
+        CALL ext_adios2_open_for_read_begin ( FileName , SysDepInfo, &
                                             Hndl , Status )
 #endif
 #ifdef PIO
@@ -747,6 +780,10 @@ SUBROUTINE wrf_open_for_read_commit( DataHandle , Status )
         CASE ( IO_PNETCDF )
           CALL ext_pnc_open_for_read_commit ( Hndl , Status )
 #endif
+#ifdef ADIOS2
+        CASE ( IO_ADIOS2 )
+          CALL ext_adios2_open_for_read_commit ( Hndl , Status )
+#endif
 #ifdef PIO
         CASE ( IO_PIO )
           CALL ext_pio_open_for_read_commit ( Hndl , Status )
@@ -849,6 +886,11 @@ SUBROUTINE wrf_open_for_read ( FileName , grid, SysDepInfo, &
 #ifdef PNETCDF
     CASE ( IO_PNETCDF  )
       CALL ext_pnc_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo, &
+                               Hndl , Status )
+#endif
+#ifdef ADIOS2
+    CASE ( IO_ADIOS2  )
+      CALL ext_adios2_open_for_read ( FileName , SysDepInfo, &
                                Hndl , Status )
 #endif
 #ifdef PIO
@@ -996,6 +1038,10 @@ SUBROUTINE wrf_inquire_opened ( DataHandle, FileName , FileStatus, Status )
       CASE ( IO_PNETCDF   )
           CALL ext_pnc_inquire_opened ( Hndl, FileName , FileStatus, Status )
 #endif
+#ifdef ADIOS2
+      CASE ( IO_ADIOS2   )
+          CALL ext_adios2_inquire_opened ( Hndl, FileName , FileStatus, Status )
+#endif
 #ifdef PIO
       CASE ( IO_PIO )
           CALL ext_pio_inquire_opened ( Hndl, FileName , FileStatus, Status )
@@ -1099,6 +1145,10 @@ SUBROUTINE wrf_inquire_filename ( DataHandle, FileName , FileStatus, Status )
 #ifdef PNETCDF
         CASE ( IO_PNETCDF   )
           CALL ext_pnc_inquire_filename ( Hndl, FileName , FileStatus, Status )
+#endif
+#ifdef ADIOS2
+        CASE ( IO_ADIOS2   )
+          CALL ext_adios2_inquire_filename ( Hndl, FileName , FileStatus, Status )
 #endif
 #ifdef PIO
         CASE ( IO_PIO )
@@ -1267,6 +1317,10 @@ SUBROUTINE wrf_ioclose ( DataHandle, Status )
         CASE ( IO_PNETCDF  )
           CALL ext_pnc_ioclose( Hndl, Status )
 #endif
+#ifdef ADIOS2
+        CASE ( IO_ADIOS2  )
+          CALL ext_adios2_ioclose( Hndl, Status )
+#endif
 #ifdef PIO
         CASE ( IO_PIO )
           CALL ext_pio_ioclose( Hndl, Status )
@@ -1382,6 +1436,10 @@ SUBROUTINE wrf_get_next_time ( DataHandle, DateStr, Status )
             CALL wrf_dm_bcast_string ( DateStr , len_of_str )
           ENDIF
 #endif
+#ifdef ADIOS2
+        CASE ( IO_ADIOS2   )
+          CALL ext_adios2_get_next_time( Hndl, DateStr, Status )
+#endif
 #ifdef PHDF5
         CASE ( IO_PHDF5   )
           CALL ext_phdf5_get_next_time( Hndl, DateStr, Status )
@@ -1493,6 +1551,10 @@ SUBROUTINE wrf_get_previous_time ( DataHandle, DateStr, Status )
         CASE ( IO_PIO )
           CALL ext_pio_get_previous_time( Hndl, DateStr, Status )
 #endif
+#ifdef ADIOS2
+        CASE ( IO_ADIOS2   )
+          CALL ext_adios2_get_previous_time( Hndl, DateStr, Status )
+#endif
 #ifdef PHDF5
         CASE ( IO_PHDF5   )
           CALL ext_phdf5_get_previous_time( Hndl, DateStr, Status )
@@ -1600,6 +1662,10 @@ SUBROUTINE wrf_set_time ( DataHandle, DateStr, Status )
 #ifdef PIO
         CASE ( IO_PIO )
           CALL ext_pio_set_time( Hndl, DateStr, Status )
+#endif
+#ifdef ADIOS2
+        CASE ( IO_ADIOS2  )
+          CALL ext_adios2_set_time( Hndl, DateStr, Status )
 #endif
 #ifdef XXX
         CASE ( IO_XXX   )
@@ -1788,6 +1854,13 @@ SUBROUTINE wrf_get_var_info ( DataHandle , VarName , NDim , MemoryOrder , Stagge
                                       DomainStart , DomainEnd ,                &
                                       Status )
 #endif
+#ifdef ADIOS2
+        CASE ( IO_ADIOS2)
+          CALL ext_adios2_get_var_info ( Hndl , VarName , NDim ,            &
+                                      MemoryOrder , Stagger ,                  &
+                                      DomainStart , DomainEnd ,                &
+                                      Status )
+#endif
 #ifdef XXX
         CASE ( IO_XXX )
           CALL ext_xxx_get_var_info ( Hndl , VarName , NDim ,            &
@@ -1894,6 +1967,10 @@ SUBROUTINE add_new_handle( Hndl, Hopened, for_out, DataHandle )
 #ifdef PIO
       CASE ( IO_PIO )
         CALL wrf_error_fatal( 'add_new_handle:  multiple output files not supported for PIO' )
+#endif
+#ifdef ADIOS2
+      CASE ( IO_ADIOS2  )
+        CALL wrf_error_fatal( 'add_new_handle:  multiple output files not supported for ADIOS2' )
 #endif
 #ifdef ESMFIO
       CASE ( IO_ESMF )
@@ -2059,6 +2136,58 @@ LOGICAL FUNCTION on_stream ( mask , switch )
   on_stream = ( result .NE. 0 )
 END FUNCTION on_stream
 
+SUBROUTINE wrf_start_io_timestep (DataHandle, Status)
+!<DESCRIPTION>
+!<PRE>
+! Signals to I/O library that an I/O time step is starting, and allows the
+! I/O library to partition events into separate logical time steps.
+!</PRE>
+!</DESCRIPTION>
+  IMPLICIT NONE
+  INTEGER, INTENT(IN)    :: DataHandle
+  INTEGER, INTENT(OUT)   :: Status
+  INTEGER                :: Hndl
+  INTEGER                :: io_form 
+  LOGICAL                :: for_out
+  INTEGER, EXTERNAL      :: use_package
+#include "wrf_status_codes.h"
+  CALL get_handle ( Hndl, io_form , for_out, DataHandle )
+  SELECT CASE ( use_package( io_form ) )
+#ifdef ADIOS2 
+    CASE ( IO_ADIOS2 )
+      CALL ext_adios2_start_io_timestep(Hndl, Status)
+#endif
+    CASE DEFAULT
+      Status = 0
+  END SELECT
+END SUBROUTINE
+
+SUBROUTINE wrf_end_io_timestep (DataHandle, Status)
+!<DESCRIPTION>
+!<PRE>
+! Signals to I/O library that an I/O time step is ending, and allows the
+! I/O library to partition events into separate logical time steps.
+!</PRE>
+!</DESCRIPTION>
+  IMPLICIT NONE
+  INTEGER, INTENT(IN)    :: DataHandle
+  INTEGER, INTENT(OUT)   :: Status
+  INTEGER                :: Hndl
+  INTEGER                :: io_form 
+  LOGICAL                :: for_out
+  INTEGER, EXTERNAL      :: use_package
+#include "wrf_status_codes.h"
+  CALL get_handle ( Hndl, io_form , for_out, DataHandle )
+  SELECT CASE ( use_package( io_form ) )
+#ifdef ADIOS2 
+    CASE ( IO_ADIOS2 )
+      CALL ext_adios2_end_io_timestep(Hndl, Status)
+#endif
+    CASE DEFAULT
+      Status = 0
+  END SELECT
+END SUBROUTINE
+
 END MODULE module_io
 
 
@@ -2184,6 +2313,9 @@ SUBROUTINE wrf_read_field1 ( DataHandle , DateStr , VarName , Field , FieldType 
 #ifdef PIO
   EXTERNAL     ext_pio_read_field
 #endif
+#ifdef ADIOS2
+  EXTERNAL     ext_adios2_read_field
+#endif
 #ifdef ESMFIO
   EXTERNAL     ext_esmf_read_field
 #endif
@@ -2270,6 +2402,16 @@ SUBROUTINE wrf_read_field1 ( DataHandle , DateStr , VarName , Field , FieldType 
                                   MemoryStart , MemoryEnd ,                             &
                                   PatchStart , PatchEnd ,                               &
                                   Status)
+#endif
+#ifdef ADIOS2
+        CASE ( IO_ADIOS2)
+          CALL ext_adios2_read_field   (                   &
+                                     Hndl , DateStr , VarName , Field , FieldType , &
+                                     DomainDesc , MemoryOrder , Stagger , DimNames ,              &
+                                     DomainStart , DomainEnd ,                                    &
+                                     MemoryStart , MemoryEnd ,                                    &
+                                     PatchStart , PatchEnd ,                                      &
+                                     Status )
 #endif
 #ifdef ESMFIO
         CASE ( IO_ESMF )
@@ -2456,6 +2598,9 @@ SUBROUTINE wrf_write_field1 ( DataHandle , DateStr , VarName , Field , FieldType
 #ifdef PIO
   EXTERNAL     ext_pio_write_field
 #endif
+#ifdef ADIOS2
+  EXTERNAL     ext_adios2_write_field
+#endif
 #ifdef ESMFIO
   EXTERNAL     ext_esmf_write_field
 #endif
@@ -2545,6 +2690,28 @@ SUBROUTINE wrf_write_field1 ( DataHandle , DateStr , VarName , Field , FieldType
 
                CALL ext_pnc_write_field(                  &
                                        Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
+                                       DomainDesc , MemoryOrder , Stagger , DimNames ,              &
+                                       DomainStart , DomainEnd ,                                    &
+                                       MemoryStart , MemoryEnd ,                                    &
+                                       starts , ends ,                                      &
+                                       Status )
+#endif
+#ifdef ADIOS2
+        CASE ( IO_ADIOS2 )
+          CALL lower_case( MemoryOrder, MemOrd )
+          okay_to_call = .TRUE.
+          IF ((TRIM(MemOrd).EQ.'xsz' .OR. TRIM(MemOrd).EQ.'xs').AND. .NOT. bdy_mask(P_XSB)) okay_to_call = .FALSE.
+          IF ((TRIM(MemOrd).EQ.'xez' .OR. TRIM(MemOrd).EQ.'xe').AND. .NOT. bdy_mask(P_XEB)) okay_to_call = .FALSE.
+          IF ((TRIM(MemOrd).EQ.'ysz' .OR. TRIM(MemOrd).EQ.'ys').AND. .NOT. bdy_mask(P_YSB)) okay_to_call = .FALSE.
+          IF ((TRIM(MemOrd).EQ.'yez' .OR. TRIM(MemOrd).EQ.'ye').AND. .NOT. bdy_mask(P_YEB)) okay_to_call = .FALSE.
+          IF ( okay_to_call ) THEN
+             starts(1:3) = PatchStart(1:3) ; ends(1:3) = PatchEnd(1:3)
+          ELSE
+             starts(1:3) = PatchStart(1:3) ; ends(1:3) = PatchStart(1:3)-1
+          ENDIF
+
+               CALL ext_adios2_write_field(                  &
+                                       Hndl , DateStr , VarName , Field , FieldType , &
                                        DomainDesc , MemoryOrder , Stagger , DimNames ,              &
                                        DomainStart , DomainEnd ,                                    &
                                        MemoryStart , MemoryEnd ,                                    &

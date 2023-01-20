@@ -88,7 +88,7 @@ gen_args1 ( FILE * fp , char * outstr , char * structname ,
   int tag ;
   char post[NAMELEN] ;
   char fname[NAMELEN] ;
-  char x[NAMELEN], y[NAMELEN] ;
+  char x[NAMELEN + 4], y[NAMELEN] ;
   char indices[NAMELEN] ;
   int lenarg ; 
   int only4d = 0 ;

@@ -41,6 +41,9 @@ For a sample main or calling program see the end of this file.
 
 #define HASHSIZE 1024
 
+#include "sym.h"
+int hash(char * name);
+
 /*  commented out 2-29-90
 static char * symtab[HASHSIZE] ;	
 */
@@ -49,7 +52,7 @@ void * malloc() ;
 void * calloc() ;
 */
 
-char * symget(char *name,char *(*newnode)(),char **(*nodename)(char *),char **(*nodenext)(char *), char *symtab[], int flag) /* flag = 1 is create if not there, 0 return NULL if not there */
+sym_nodeptr symget(char *name,char *(*newnode)(),char **(*nodename)(char *),char **(*nodenext)(char *), char *symtab[], int flag) /* flag = 1 is create if not there, 0 return NULL if not there */
 {
     int index ; 
     int found ;
@@ -90,7 +93,7 @@ char * symget(char *name,char *(*newnode)(),char **(*nodename)(char *),char **(*
       }
     }
 
-    return(p) ;
+    return ((sym_nodeptr) p) ;
 }
 
 int hash(char * name )

@@ -7,10 +7,10 @@
 #include <strings.h>
 #include <ctype.h>
 
-int  nChmOpts = 0;
-char rxt_tbl[5][1000][128];
-char chm_scheme[5][128];
-int  rxt_cnt[5];
+short int  nChmOpts = 0;
+char rxt_tbl[5][1000][128] = { '\0' };
+char chm_scheme[5][128] = { '\0' };
+short int  rxt_cnt[5];
 
 void strip_blanks( char *instring, char *outstring )
 {
@@ -39,7 +39,7 @@ int AppendReg( char *chem_opt, int ndx )
    char *strt, *end;
    char *token;
    char *wstrg1;
-   char path[256];
+   char path[256 * 2 + 25];
    char fname[256];
    char inln[1024],winln[1024],s[1024];
    char rxtstr[128];
@@ -72,6 +72,7 @@ int AppendReg( char *chem_opt, int ndx )
 
    if( fp_reg == NULL ) {
      fprintf(stderr,"Can not open registry.irr_diag for writing\n");
+     fclose(fp_eqn);
      return(-2);
    }
    strcpy( buffer,"\"Integrated Reaction Rate\"  \"\"");
@@ -176,7 +177,7 @@ int AppendReg( char *chem_opt, int ndx )
           for( i=0; i < slen; i++ )
           {
             if( ! strncmp( rxtsym+i, "+", 1 ) )
-              strncpy( rxtsym+i, "_", 1 );
+              strncpy( rxtsym+i, "_", 2 );
           }
           strcat( rxtsym,"_IRR" );
 //
@@ -202,11 +203,11 @@ int AppendReg( char *chem_opt, int ndx )
 int irr_diag_scalar_indices( char *dirname )
 {
    int Nrxt;
-   int i, j;
+   short int i, j;
    int first, flush, s1;
    char fname[256];
-   char line[132];
-   char piece[132];
+   char line[135];
+   char piece[135];
    char *blank = "                                                           ";
    FILE *fp_inc;
 
@@ -267,18 +268,18 @@ int irr_diag_scalar_indices( char *dirname )
    sprintf( line,"  chm_opts_ndx(:nchm_opts) = (/ ");
    for( i = 0; i < nChmOpts; i++ ) {
      if( i == 0 ) 
-       sprintf( piece,"%s_kpp",chm_scheme[i]);
+       snprintf( piece,135,"%.128s_kpp",chm_scheme[i]);
      else
-       sprintf( piece," ,%s_kpp",chm_scheme[i]);
+       snprintf( piece,135," ,%.128s_kpp",chm_scheme[i]);
      strcat( line,piece );
    }
    strcat( line," /)\n" );
    fprintf( fp_inc,line );
    fprintf( fp_inc," \n");
 
-   for( i = 0; i < nChmOpts,rxt_cnt[i] > 0; i++ ) {
+   for( i = 0; /*i < nChmOpts &&*/ rxt_cnt[i] > 0; i++ ) {
      for( j = 0; j < rxt_cnt[i]; j++ ) {
-       sprintf( line,"     rxtsym(%d,%d) = '%s'\n",j+1,i+1,rxt_tbl[i][j]);
+       snprintf( line,132,"     rxtsym(%d,%d) = '%s'\n",j+1,i+1,rxt_tbl[i][j]);
        fprintf( fp_inc,"%s",line);
      }
      fprintf( fp_inc," \n");

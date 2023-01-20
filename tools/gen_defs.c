@@ -90,7 +90,7 @@ int
 gen_i1_decls ( char * dn )
 {
   FILE * fp ;
-  char  fname[NAMELEN], post[NAMELEN] ;
+  char  fname[NAMELEN+6], post[NAMELEN+6] ;
   char * fn = "i1_decl.inc" ;
   char * dimspec ;
   node_t * p ; 
@@ -140,7 +140,7 @@ gen_decls ( FILE * fp , node_t * node , int sw_ranges, int sw_point , int mask ,
   node_t * p ; 
   int tag, ipass ;
   char fname[NAMELEN], post[NAMELEN] ;
-  char * dimspec ;
+  char * dimspec = "";
   int bdyonly = 0 ;
 
   if ( node == NULL ) return(1) ;

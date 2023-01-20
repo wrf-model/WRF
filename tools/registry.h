@@ -1,4 +1,8 @@
 #ifndef REGISTRY_H
+#include <stdlib.h>
+#include <ctype.h>
+#include <sys/unistd.h>
+
 #define NAMELEN 512
 #define NAMELEN_LONG 125000
 #define MAXDIMS 21

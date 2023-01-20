@@ -34,7 +34,7 @@
                   SUBRTSWCRT, OVRTSWCRT, AGGFACTRT, &
                   GWBASESWCRT, GW_RESTART,RSTRT_SWC,TERADJ_SOLAR, &
                   sys_cpl, gwChanCondSw, GwPreCycles, GwSpinCycles, GwPreDiagInterval, &
-                  gwsoilcpl, UDMP_OPT, bucket_loss
+                  gwsoilcpl, UDMP_OPT, bucket_loss, imperv_adj
           logical:: GwPreDiag, GwSpinUp
           real:: DTRT_TER,DTRT_CH, DTCT, dxrt0,  gwChanCondConstIn, gwChanCondConstOut, gwIhShift
           character(len=256) :: route_topo_f=""
@@ -73,6 +73,8 @@
           integer ::outlake                   ! Netcdf grid of lake
           integer :: rtFlag
           integer ::khour
+
+          logical :: channel_bypass = .FALSE.
 
 !#ifdef WRF_HYDRO_NUDGING
        character(len=256) :: nudgingParamFile

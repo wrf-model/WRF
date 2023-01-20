@@ -34,6 +34,7 @@ TBOT_OPTION                       = 2
 TEMP_TIME_SCHEME_OPTION           = 3
 GLACIER_OPTION                    = 2
 SURFACE_RESISTANCE_OPTION         = 4
+IMPERV_OPTION                     = 9  !(0->none; 1->total; 2->Alley&Veenhuis; 9->orig)
 
 ! Timesteps in units of seconds
 FORCING_TIMESTEP = 3600
@@ -74,4 +75,9 @@ rst_bi_out = 0     !0: use netcdf output restart file
 !    10=Channel+Bucket only forcing, see hydro.namelist output_channelBucket_influxes
 FORC_TYP = 1
 
+/
+
+&CROCUS_nlist
+  crocus_opt = 0   ! 0 model is off, 1 model is on
+  act_lev = 40     ! 20-40 normal range, 1-50 acceptable
 /

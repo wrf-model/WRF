@@ -34,6 +34,7 @@ subroutine da_radiance_init(iv,ob)
  integer             :: iunit
  character(len=filename_len)  :: filename
  character(len=20)   :: cdum
+ character(len=12)   :: cdum12
  real                :: error_cld
 
 ! local variables for tuning error factor
@@ -195,6 +196,14 @@ subroutine da_radiance_init(iv,ob)
 
    satinfo(n) % error_cld(:) = 500.0 !initialize
 
+   ! Allocate additional fields for AHI
+   if ( index(iv%instid(n)%rttovid_string, 'ahi') > 0 ) then
+      allocate ( satinfo(n) % BTLim(nchanl(n)) )
+      allocate ( satinfo(n) % ca1(nchanl(n)) )
+      allocate ( satinfo(n) % ca2(nchanl(n)) )
+      allocate ( satinfo(n) % clearSkyBias(nchanl(n)) )
+   endif
+
    read(iunit,*)
    do j = 1, nchanl(n)
       read(iunit,'(1x,5i5,2e18.10,a20)') &
@@ -224,6 +233,31 @@ subroutine da_radiance_init(iv,ob)
             satinfo(n)%error_cld(j) = error_cld
          end if
       end if
+
+      ! If AHI, read some extra things
+      ! Unfortunately, we need to read everything again...
+      if ( index(iv%instid(n)%rttovid_string, 'ahi') > 0 ) then
+         backspace(iunit)
+	 read(iunit,'(1x,5i5,2e18.10,a12,f8.2,2f6.2,f9.3)') &
+                     wmo_sensor_id, &
+               satinfo(n)%ichan(j), &
+                       sensor_type, &
+               satinfo(n)%iuse(j) , &
+                              idum, &
+               satinfo(n)%error(j), &
+               satinfo(n)%polar(j), &
+               cdum12,              &
+               satinfo(n)%BTLim(j), &
+               satinfo(n)%ca1(j)  , &
+               satinfo(n)%ca2(j)  , &
+               satinfo(n)%clearSkyBias(j)
+         if ( j == 1 ) then
+            write(*,*)'Reading extra data for AHI'
+            write(*,*)'Channel       BTLim      ca1     ca2     clearSkyBias'
+         endif
+         write(*,fmt='(i7,6x,4f9.3)') satinfo(n)%ichan(j), satinfo(n)%BTLim(j), satinfo(n)%ca1(j), satinfo(n)%ca2(j), satinfo(n)%clearSkyBias(j)
+      endif
+
      iv%instid(n)%ichan(j) = satinfo(n)%ichan(j)
      ob%instid(n)%ichan(j) = satinfo(n)%ichan(j)
    end do

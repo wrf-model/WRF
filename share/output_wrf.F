@@ -645,6 +645,7 @@ endif
          ( use_package( io_form ) == IO_NETCDFPAR  ) .OR. &
          ( use_package( io_form ) == IO_PHDF5  ) .OR. &
          ( use_package( io_form ) == IO_PIO    ) .OR. &
+         ( use_package( io_form ) == IO_ADIOS2 ) .OR. &
          ( use_package( io_form ) == IO_PNETCDF ) ) THEN
       CALL wrf_put_dom_ti_integer ( fid, 'SURFACE_INPUT_SOURCE', surface_input_source , 1 , ierr )
       CALL wrf_put_dom_ti_integer ( fid, 'SST_UPDATE', sst_update , 1 , ierr )
@@ -1004,6 +1005,7 @@ endif
           switch .EQ. restart_only    ) THEN
       newswitch = switch
       p => grid%head_statevars%next
+      CALL wrf_start_io_timestep(fid, ierr)
       DO WHILE ( ASSOCIATED( p ) )
         IF ( p%ProcOrient .NE. 'X' .AND. p%ProcOrient .NE. 'Y' ) THEN   ! no I/O for xposed variables
           IF ( p%Ndim .EQ. 0 ) THEN
@@ -1516,10 +1518,13 @@ endif
         ENDIF
         p => p%next
       ENDDO
+      CALL wrf_end_io_timestep(fid, ierr)
     ELSE
        IF ( switch .EQ. boundary_only ) THEN
+         CALL wrf_start_io_timestep(fid, ierr)
          CALL wrf_debug ( 300 , 'output_wrf: calling code in wrf_bdyout.inc' )
          CALL wrf_bdyout( fid , grid , config_flags, switch, dryrun,  ierr )
+         CALL wrf_end_io_timestep(fid, ierr)
        ENDIF
     ENDIF
 

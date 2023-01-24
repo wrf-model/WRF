@@ -852,6 +852,9 @@ Namelist variables for controlling the adaptive time step option:
                                      = 3, for small grid distances (DX < 5 km)
  nsas_dx_factor                      = 0, ! default option
                                      = 1,   NSAS grid-distance dependent option
+ ntiedtke_dx_opt                     = 0, default option
+                                     = 1, new Tiedtke grid-distance dependent option (scale-aware)
+                                          when grid size falls below 15 km
  For KF-CuP scheme: recommended to use with cu_rad_feedback
  shallowcu_forced_ra(max_dom)        radiative impact of shallow Cu by a prescribed maximum cloud fraction
                                      = .false., option off, default

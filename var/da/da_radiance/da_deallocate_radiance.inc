@@ -30,6 +30,18 @@
          deallocate (satinfo(i) % bcoef0)
          deallocate (satinfo(i) % error_std)
 
+	 ! Deallocate extra variables for AHI
+         if ( index(iv%instid(i)%rttovid_string, 'ahi') > 0 ) then
+	    deallocate ( satinfo(i) % BTLim)
+	    deallocate ( satinfo(i) % ca1)
+	    deallocate ( satinfo(i) % ca2)
+	    deallocate ( satinfo(i) % clearSkyBias)
+         endif
+
+         if (use_error_factor_rad) then
+            deallocate (satinfo(i) % error_factor)
+         endif
+
          deallocate (ob%instid(i) % ichan)
          deallocate (iv%instid(i) % ichan)
 
@@ -111,6 +123,7 @@
             deallocate (iv%instid(i)%tb_xb)
             if ( crtm_cloud ) then
                deallocate (iv%instid(i)%tb_xb_clr)
+               deallocate (iv%instid(i)%cip)
             end if
             deallocate (iv%instid(i)%tb_qc)
             deallocate (iv%instid(i)%tb_inv)

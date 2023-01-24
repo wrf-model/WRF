@@ -88,6 +88,7 @@ subroutine da_allocate_rad_iv (i, nchan, iv)
       allocate (iv%instid(i)%tb_xb(nchan,iv%instid(i)%num_rad))
       if ( crtm_cloud ) then
          allocate (iv%instid(i)%tb_xb_clr(nchan,iv%instid(i)%num_rad))
+         allocate (iv%instid(i)%cip(iv%instid(i)%num_rad))
       end if
       allocate (iv%instid(i)%tb_qc(nchan,iv%instid(i)%num_rad))
       allocate (iv%instid(i)%tb_inv(nchan,iv%instid(i)%num_rad))

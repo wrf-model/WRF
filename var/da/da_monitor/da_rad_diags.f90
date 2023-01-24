@@ -60,8 +60,12 @@ program da_rad_diags
    real*4,  dimension(:), allocatable     :: ret_clw
    real*4,  dimension(:), allocatable     :: satzen, satazi, solzen, solazi, t2m, mr2m, u10, v10, ps, ts
    real*4,  dimension(:), allocatable     :: smois, tslb, snowh, vegfra, clwp, cloud_frac
+   real*4,  dimension(:), allocatable     :: cip ! cloud-ice path
+   integer, dimension(:), allocatable     :: cloudflag ! cloudflag from L2 AHI
    integer, dimension(:,:), allocatable   :: tb_qc
    real*4,  dimension(:,:), allocatable   :: tb_obs, tb_bak, tb_inv, tb_oma, tb_err, ems, ems_jac
+   real*4,  dimension(:,:), allocatable   :: tb_bak_clr ! clear-sky brightness temp
+   real*4,  dimension(:,:), allocatable   :: weightfunc_peak ! peak of weighting function
    real*4,  dimension(:,:), allocatable   :: prf_pfull, prf_phalf, prf_t, prf_q, prf_water
    real*4,  dimension(:,:), allocatable   :: prf_ice, prf_rain, prf_snow, prf_grau, prf_hail
    real*4,  dimension(:,:), allocatable   :: prf_water_reff, prf_ice_reff, prf_rain_reff
@@ -248,9 +252,13 @@ ntime_loop: do itime = 1, ntime
             allocate (       vegfra(1:total_npixel) )
             allocate (         elev(1:total_npixel) )
             allocate (         clwp(1:total_npixel) ) !model/guess clwp
+            allocate (         cip(1:total_npixel) ) ! model/guess cloud-ice path
+            allocate (   cloudflag(1:total_npixel) ) ! AHI Level-2 cloud flag
             allocate (   cloud_frac(1:total_npixel) )
             allocate ( tb_obs(1:nchan,1:total_npixel) )
             allocate ( tb_bak(1:nchan,1:total_npixel) )
+            allocate ( tb_bak_clr(1:nchan,1:total_npixel) )
+            allocate ( weightfunc_peak(1:nchan,1:total_npixel) )
             allocate ( tb_inv(1:nchan,1:total_npixel) )
             allocate ( tb_oma(1:nchan,1:total_npixel) )
             allocate ( tb_err(1:nchan,1:total_npixel) )
@@ -320,11 +328,14 @@ ntime_loop: do itime = 1, ntime
             ! initialize
             tb_obs = missing_r
             tb_bak = missing_r
+            tb_bak_clr = missing_r
+            weightfunc_peak = missing_r
             tb_inv = missing_r
             tb_oma = missing_r
             tb_err = missing_r
             ncname = 'diags_'//trim(instid(iinst))//"_"//datestr1(itime)//'.nc'
-            ios = NF_CREATE(trim(ncname), NF_CLOBBER, ncid)  ! NF_CLOBBER specifies the default behavior of
+            ios = NF_CREATE(trim(ncname), NF_NETCDF4, ncid)  ! Change to output netcdf4 files
+           !ios = NF_CREATE(trim(ncname), NF_CLOBBER, ncid)  ! NF_CLOBBER specifies the default behavior of
                                                              ! overwritting any existing dataset with the 
                                                              ! same file name
             if ( ios /= 0 ) then
@@ -349,15 +360,23 @@ ntime_loop: do itime = 1, ntime
                lat(ipixel), lon(ipixel), satzen(ipixel), satazi(ipixel), solzen(ipixel), &
                solazi(ipixel), ret_clw(ipixel)
 
-            read(unit=iunit(iproc),fmt='(14x,9f10.2,3i3,3f10.2,f15.5)',iostat=ios)  &
+            read(unit=iunit(iproc),fmt='(14x,9f10.2,3i3,3f10.2,f15.5,f15.5,i7)',iostat=ios)  &
                t2m(ipixel), mr2m(ipixel), u10(ipixel), v10(ipixel), ps(ipixel), ts(ipixel), &
                smois(ipixel), tslb(ipixel), snowh(ipixel), isflg(ipixel), soiltyp(ipixel),  &
-               vegtyp(ipixel), vegfra(ipixel), elev(ipixel), clwp(ipixel), cloud_frac(ipixel)
+               vegtyp(ipixel), vegfra(ipixel), elev(ipixel), clwp(ipixel), cloud_frac(ipixel), cip(ipixel), cloudflag(ipixel)
             read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf           ! OBS
             read(unit=iunit(iproc),fmt='(10f11.2)',iostat=ios) tb_obs(:,ipixel)
             read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf           ! BAK
             read(unit=iunit(iproc),fmt='(10f11.2)',iostat=ios) tb_bak(:,ipixel)
-            read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf           ! IVBC
+            read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf           ! IVBC or BAK_clr or WEIGHTFUNC_PEAK
+            if ( buf(1:7) == "BAK_clr" ) then
+               read(unit=iunit(iproc),fmt='(10f11.2)',iostat=ios) tb_bak_clr(:,ipixel)
+               read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf        ! IVBC or WEIGHTFUNC_PEAK
+            end if
+            if ( buf(1:15) == "WEIGHTFUNC_PEAK" ) then
+               read(unit=iunit(iproc),fmt='(10f11.2)',iostat=ios) weightfunc_peak(:,ipixel)
+               read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf        ! IVBC
+            end if
             read(unit=iunit(iproc),fmt='(10f11.2)',iostat=ios) tb_inv(:,ipixel)
             read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf           ! OMA or EMS
             if ( buf(1:3) == "OMA" ) then
@@ -490,6 +509,10 @@ ntime_loop: do itime = 1, ntime
       ios = NF_PUT_ATT_REAL(ncid, varid, 'missing_value', NF_FLOAT, 1, missing_r)
       ios = NF_DEF_VAR(ncid, 'tb_bak', NF_FLOAT, 2, ishape(1:2), varid)
       ios = NF_PUT_ATT_REAL(ncid, varid, 'missing_value', NF_FLOAT, 1, missing_r)
+      ios = NF_DEF_VAR(ncid, 'tb_bak_clr', NF_FLOAT, 2, ishape(1:2), varid)
+      ios = NF_PUT_ATT_REAL(ncid, varid, 'missing_value', NF_FLOAT, 1, missing_r)
+      ios = NF_DEF_VAR(ncid, 'weightfunc_peak', NF_FLOAT, 2, ishape(1:2), varid)
+      ios = NF_PUT_ATT_REAL(ncid, varid, 'missing_value', NF_FLOAT, 1, missing_r)
       ios = NF_DEF_VAR(ncid, 'tb_inv', NF_FLOAT, 2, ishape(1:2), varid)
       ios = NF_PUT_ATT_REAL(ncid, varid, 'missing_value', NF_FLOAT, 1, missing_r)
       ios = NF_DEF_VAR(ncid, 'tb_oma', NF_FLOAT, 2, ishape(1:2), varid)
@@ -601,6 +624,8 @@ ntime_loop: do itime = 1, ntime
       ios = NF_DEF_VAR(ncid, 'vegfra',       NF_FLOAT, 1, ishape(1), varid)
       ios = NF_DEF_VAR(ncid, 'elev',         NF_FLOAT, 1, ishape(1), varid)
       ios = NF_DEF_VAR(ncid, 'clwp',         NF_FLOAT, 1, ishape(1), varid)
+      ios = NF_DEF_VAR(ncid, 'cip',          NF_FLOAT, 1, ishape(1), varid)
+      ios = NF_DEF_VAR(ncid, 'cloudflag',    NF_INT,   1, ishape(1), varid)
       if ( amsr2 ) then
          ios = NF_DEF_VAR(ncid, 'ret_clw',   NF_FLOAT, 1, ishape(1), varid)
       end if
@@ -626,6 +651,10 @@ ntime_loop: do itime = 1, ntime
       ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), tb_obs)
       ios = NF_INQ_VARID (ncid, 'tb_bak', varid)
       ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), tb_bak)
+      ios = NF_INQ_VARID (ncid, 'tb_bak_clr', varid)
+      ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), tb_bak_clr)
+      ios = NF_INQ_VARID (ncid, 'weightfunc_peak', varid)
+      ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), weightfunc_peak)
       ios = NF_INQ_VARID (ncid, 'tb_inv', varid)
       ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), tb_inv)
       ios = NF_INQ_VARID (ncid, 'tb_oma', varid)
@@ -809,6 +838,10 @@ ntime_loop: do itime = 1, ntime
       ios = NF_PUT_VARA_REAL(ncid,  varid, istart(2), icount(2), elev)
       ios = NF_INQ_VARID (ncid, 'clwp', varid)
       ios = NF_PUT_VARA_REAL(ncid,  varid, istart(2), icount(2), clwp)
+      ios = NF_INQ_VARID (ncid, 'cip', varid)
+      ios = NF_PUT_VARA_REAL(ncid,  varid, istart(2), icount(2), cip)
+      ios = NF_INQ_VARID (ncid, 'cloudflag', varid)
+      ios = NF_PUT_VARA_INT(ncid,  varid, istart(2), icount(2), cloudflag)
       if ( amsr2 ) then
          ios = NF_INQ_VARID (ncid, 'ret_clw', varid)
          ios = NF_PUT_VARA_REAL(ncid,  varid, istart(2), icount(2), ret_clw)
@@ -848,10 +881,14 @@ ntime_loop: do itime = 1, ntime
       deallocate ( vegfra )
       deallocate ( elev )
       deallocate ( clwp )
+      deallocate ( cip )
+      deallocate ( cloudflag )
       deallocate ( cloud_frac )
       deallocate ( ret_clw )
       deallocate ( tb_obs )
       deallocate ( tb_bak )
+      deallocate ( tb_bak_clr )
+      deallocate ( weightfunc_peak )
       deallocate ( tb_inv )
       deallocate ( tb_oma )
       deallocate ( ems )

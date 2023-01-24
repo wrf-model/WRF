@@ -20,7 +20,7 @@ module module_persistence_levelpool_hybrid_properties
     type, extends(reservoir_properties) :: hybrid_properties_interface
         real    :: min_storage                  ! minimum storage (cubic meters)
         real    :: max_storage                  ! maximum storage (cubic meters)
-        real    :: lake_area                    ! area of reservoir (km^2)
+        real    :: lake_area                    ! area of reservoir (meters^2)
         real    :: orifice_elevation            ! orifice elevation (meters AMSL)
         integer :: lake_number                  ! lake number
         integer :: reservoir_type               ! reservoir type
@@ -59,6 +59,7 @@ contains
         integer                      :: number_of_weights, number_of_lakes
         real, allocatable, dimension(:,:) :: temp_real_2D_array
 
+        ! Convert from km^2 to meters^2
         this%lake_area = lake_area * 1.0E6
 
         this%orifice_elevation = orifice_elevation

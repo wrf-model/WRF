@@ -39,11 +39,11 @@ CONTAINS
                  ,exch_temf,cf3d_temf,cfm_temf                    &
                  ,flhc,flqc                                        &
               ! MYNN
-                 ,qke,Sh3d                                         &
+                 ,qke,Sh3d,Sm3d                                    &
                  ,qke_adv,bl_mynn_tkeadvect                        & !ACF for QKE advection
                  ,tsq,qsq,cov,rmol,ch,qcg,grav_settling            & 
-                 ,dqke,qWT,qSHEAR,qBUOY,qDISS,bl_mynn_tkebudget    &
-                 ,bl_mynn_cloudpdf                                 &
+                 ,dqke,qWT,qSHEAR,qBUOY,qDISS,tke_budget           &
+                 ,bl_mynn_closure,bl_mynn_cloudpdf                 &
                  ,bl_mynn_mixlength                                &
                  ,icloud_bl,qc_bl,qi_bl,cldfra_bl                  &
                  ,bl_mynn_edmf,bl_mynn_edmf_mom,bl_mynn_edmf_tke   &
@@ -134,7 +134,8 @@ CONTAINS
      &        ,tracer,tracer_tend,num_tracer                         &
      &        ,scalar_pblmix,tracer_pblmix                           &
 #if (WRF_CHEM == 1)
-               ,chem,vd,nchem,kdvel,ndvel,num_vert_mix             &
+              ,mynn_chem_vertmx,chem,vd,nchem,kdvel                  &
+     &        ,ndvel,num_vert_mix                                    &
 #endif
 !
 ! FASDAS
@@ -149,7 +150,7 @@ CONTAINS
 #if (EM_CORE==1)
    USE module_state_description, ONLY :                            &
                    YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME,&
-                   QNSEPBLSCHEME,MYNNPBLSCHEME2,MYNNPBLSCHEME3,BOULACSCHEME,&
+                   QNSEPBLSCHEME,MYNNPBLSCHEME,BOULACSCHEME,         &
                    CAMUWPBLSCHEME,BEPSCHEME,BEP_BEMSCHEME,MYJSFCSCHEME, &
                    FITCHSCHEME,SHINHONGSCHEME,                       &
                    TEMFPBLSCHEME,GBMPBLSCHEME,EEPSSCHEME,                  &
@@ -191,7 +192,7 @@ CONTAINS
    USE module_bl_mfshconvpbl
    USE module_bl_gbmpbl
 #if (EM_CORE==1)
-   USE module_bl_mynn
+   USE module_bl_mynn_wrapper
    USE module_bl_eeps
    USE module_bl_fogdes
    USE module_wind_fitch
@@ -545,7 +546,7 @@ CONTAINS
 !MYNN
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ),     &
           INTENT(INOUT) ::        tsq,qsq,cov, & !,k_m,k_h,k_q &
-                                  qke,Sh3d,                    &
+                                  qke,Sh3d,Sm3d,               &
                                   dqke,qWT,qSHEAR,qBUOY,qDISS, &
                                   qc_bl,qi_bl,cldfra_bl
 
@@ -555,8 +556,7 @@ CONTAINS
                                    sub_thl3D,sub_sqv3D,        &
                                    det_thl3D,det_sqv3D
 
-   INTEGER, OPTIONAL, INTENT(IN)  :: bl_mynn_tkebudget,        &
-                                     grav_settling,            &
+   INTEGER, OPTIONAL, INTENT(IN)  :: grav_settling,            &
                                      bl_mynn_cloudpdf,         &
                                      bl_mynn_mixlength,        &
                                      bl_mynn_edmf,             &
@@ -566,17 +566,18 @@ CONTAINS
                                      bl_mynn_output,           &
                                      bl_mynn_cloudmix,         &
                                      bl_mynn_mixqt,            &
-                                     icloud_bl
+                                     icloud_bl,                &
+                                     tke_budget
 
-!ACF-QKE advection start
+   REAL, OPTIONAL, INTENT(IN)  :: bl_mynn_closure
+
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), &
         & INTENT(INOUT) :: qke_adv
    LOGICAL, OPTIONAL, INTENT(IN) :: bl_mynn_tkeadvect
-!ACF-QKE advection end
-! Katata-added -
+
    REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,              &
         &    INTENT(INOUT)::                               vdfg
-! Katata-end
+
    INTEGER, OPTIONAL, DIMENSION( ims:ime , jms:jme ),           &
         &    INTENT(OUT) ::               nupdraft,ktop_plume
    REAL, OPTIONAL, DIMENSION( ims:ime , jms:jme ),              &
@@ -760,6 +761,7 @@ CONTAINS
     INTEGER, INTENT(IN) :: nchem, kdvel,ndvel,num_vert_mix
     REAL, INTENT(INOUT),  DIMENSION( ims:ime, kms:kme, jms:jme,nchem ) :: CHEM
     REAL, INTENT(IN)   ,  DIMENSION( ims:ime, kdvel, jms:jme, ndvel )  :: VD
+    LOGICAL, INTENT(IN) :: mynn_chem_vertmx
 #endif
 
 !  LOCAL  VAR
@@ -951,9 +953,9 @@ CONTAINS
                call wrf_message("WARNING: When using an adaptive time-step the boundary layer"// &
                                 " time-step should be 0 (i.e., equivalent to model time-step).  ")
                call wrf_message("In order to proceed, for boundary layer calculations, the "// &
-                                "boundary layer time-step"// &
-                                 " will be rounded to the nearest minute," )
-                call wrf_message("possibly resulting in innacurate results.")
+                                "boundary layer time-step "// &
+                                "will be rounded to the nearest minute," )
+               call wrf_message("possibly resulting in innacurate results.")
             END IF
             DTBL=bldt*60
          else
@@ -1595,7 +1597,7 @@ CONTAINS
 
 #if (EM_CORE==1)
 
-        CASE (MYNNPBLSCHEME2, MYNNPBLSCHEME3)
+        CASE (MYNNPBLSCHEME)
 
            IF ( PRESENT( qv_curr )  .AND. PRESENT( qc_curr )  .AND. &
                 PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
@@ -1603,14 +1605,9 @@ CONTAINS
                 PRESENT( rqniblten ) .AND. PRESENT( qni_curr ) .AND.&
                 PRESENT(qke) .AND. PRESENT(tsq) .AND.               &
                 PRESENT(qsq) .AND. PRESENT(cov) .AND.               &
-                PRESENT(rmol) .AND.                                 &
-                PRESENT(qcg) .AND. PRESENT(ch) .AND.                &
-                PRESENT(grav_settling) .AND.                        &
-                PRESENT(bl_mynn_tkebudget) .AND.                    &
-!ACF,JOE-QKE advection
-                PRESENT(qke_adv) .AND. PRESENT(bl_mynn_tkeadvect) .AND.&
-!ACF,JOE-end
-                PRESENT(vdfg) ) THEN
+                PRESENT(rmol) .AND. PRESENT(ch) .AND.               &
+                PRESENT(tke_budget) .AND. PRESENT(qke_adv) .AND.    &
+                PRESENT(bl_mynn_tkeadvect)  ) THEN
 
               CALL wrf_debug(100,'in MYNNPBL')
 
@@ -1623,30 +1620,33 @@ CONTAINS
               if (pert_mynn .and. multi_perturb == 1) then
                 allocate (qke_tmp(its:ite, kts:kte, jts:jte))
 
-                call Add_multi_perturb_pbl_perturbations (perts_qvapor, perts_qcloud, &
-                  perts_th, perts_tke, pert_mynn_qv, pert_mynn_qc, pert_mynn_t, pert_mynn_qke, &
-                  th_phy, qke, qke_adv, qv_curr, qc_curr, bl_mynn_tkeadvect, qke_tmp, its, ite, jts, jte, &
+                call Add_multi_perturb_pbl_perturbations (               &
+                  perts_qvapor, perts_qcloud, perts_th, perts_tke,       &
+                  pert_mynn_qv, pert_mynn_qc, pert_mynn_t, pert_mynn_qke,&
+                  th_phy, qke, qke_adv, qv_curr, qc_curr,                &
+                  bl_mynn_tkeadvect, qke_tmp, its, ite, jts, jte,        &
                   ims, ime, jms, jme, kms, kme, kts, kte)
               end if
 
-              CALL  mynn_bl_driver(&
+              CALL mynnedmf_wrapper_run(                                 &
                    &initflag=initflag,restart=restart,cycling=cycling,   &
-                   &grav_settling=grav_settling,                         &
-                   &delt=dtbl,dz=dz8w,dx=dx,znt=znt,                     &
+                   &delt=dtbl,dz=dz8w,dxc=dx,znt=znt,                    &
                    &u=u_phy,v=v_phy,w=w,th=th_phy,qv=qv_curr,            &
                    &qc=qc_curr,qi=qi_curr,                               &
                    &qnc=qnc_curr,qni=qni_curr,                           &
                    &QNWFA=qnwfa_curr,QNIFA=qnifa_curr,QNBCA=qnbca_curr,  &
+!                   &ozone=ozone,                                         &
                    &p=p_phy,exner=pi_phy,rho=rho,T3D=t_phy,              &
-                   &xland=xland,ts=tsk,qsfc=qsfc,qcg=qcg,ps=psfc,        &
+                   &xland=xland,ts=tsk,qsfc=qsfc,ps=psfc,                &
                    &ust=ust,ch=ch,hfx=hfx,qfx=qfx,rmol=rmol,wspd=wspd,   &
                    &uoce=uoce,voce=voce,                                 & !Ocean currents
-                   &vdfg=vdfg,                                           & !Katata -added
-                   &Qke=qke,Sh3d=Sh3d,                                   &
-                   &qke_adv=qke_adv,bl_mynn_tkeadvect=bl_mynn_tkeadvect, &
+                   &Qke=qke,qke_adv=qke_adv,Sh3d=Sh3d,Sm3d=Sm3d,         &
 #if (WRF_CHEM == 1)
-                   &chem3d=chem,vd3d=vd,nchem=nchem,kdvel=kdvel,         & ! WA 7/31/15
+                   &mix_chem=mynn_chem_vertmx,                           &
+                   &chem3d=chem,vd3d=vd,nchem=nchem,kdvel=kdvel,         &
                    &ndvel=ndvel,num_vert_mix=num_vert_mix,               &
+!                   &FRP_MEAN=FRP_MEAN,EMIS_ANT_NO=EMIS_ANT_NO,           & !to be included soon
+!                   &fire_turb=enh_vermix,                                & !to be included soon
 #endif
                    &Tsq=tsq,Qsq=qsq,Cov=cov,                             &
                    &RUBLTEN=rublten,RVBLTEN=rvblten,RTHBLTEN=rthblten,   &
@@ -1654,51 +1654,54 @@ CONTAINS
                    &RQNCBLTEN=rqncblten,RQNIBLTEN=rqniblten,             &
                    &RQNWFABLTEN=rqnwfablten,RQNIFABLTEN=rqnifablten,     &
                    &RQNBCABLTEN=rqnbcablten,                             &
+!                   &Ro3BLTEN=ro3blten,                                   &
                    &EXCH_H=exch_h,EXCH_M=exch_m,                         &
-                   &pblh=pblh,KPBL=KPBL                                  &
-                   &,el_pbl=el_pbl                                       &
-                   &,dqke=dqke                                           &
-                   &,qWT=qWT,qSHEAR=qSHEAR,qBUOY=qBUOY,qDISS=qDISS       &
-                   &,WSTAR=wstar,DELTA=delta                             & ! for grims shallow-cu
-                   &,bl_mynn_tkebudget=bl_mynn_tkebudget                 &
-                   &,bl_mynn_cloudpdf=bl_mynn_cloudpdf                   &
-                   &,bl_mynn_mixlength=bl_mynn_mixlength                 &
-                   &,icloud_bl=icloud_bl,qc_bl=qc_bl,qi_bl=qi_bl         &
-                   &,cldfra_bl=cldfra_bl                                 &
-                   &,bl_mynn_edmf=bl_mynn_edmf                           &
-                   &,bl_mynn_edmf_mom=bl_mynn_edmf_mom                   &
-                   &,bl_mynn_edmf_tke=bl_mynn_edmf_tke                   &
-                   &,bl_mynn_mixscalars=bl_mynn_mixscalars               &
-                   &,bl_mynn_output=bl_mynn_output                       &
-                   &,bl_mynn_cloudmix=bl_mynn_cloudmix                   &
-                   &,bl_mynn_mixqt=bl_mynn_mixqt                         &
-                   &,edmf_a=edmf_a,edmf_w=edmf_w,edmf_qt=edmf_qt         &
-                   &,edmf_thl=edmf_thl,edmf_ent=edmf_ent,edmf_qc=edmf_qc &
-                   &,sub_thl3D=sub_thl3D,sub_sqv3D=sub_sqv3D             &                                                                               
-                   &,det_thl3D=det_thl3D,det_sqv3D=det_sqv3D             &
-                   &,nupdraft=nupdraft,maxMF=maxMF                       &
-                   &,ktop_plume=ktop_plume                               &
-                   &,spp_pbl=spp_pbl,pattern_spp_pbl=pattern_spp_pbl     &
-                   &,RTHRATEN=RTHRATEN                                   &
-                   &,FLAG_QC=flag_qc,FLAG_QI=flag_qi                     &
-                   &,FLAG_QNC=flag_qnc,FLAG_QNI=flag_qni                 &
-                   &,FLAG_QNWFA=flag_qnwfa,FLAG_QNIFA=flag_qnifa         &
-                   &,FLAG_QNBCA=flag_qnbca                               &
-                   ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
-                   ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
-                   ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
-                   )
+                   &pblh=pblh,KPBL=KPBL,                                 &
+                   &el_pbl=el_pbl,                                       &
+                   &dqke=dqke,                                           &
+                   &qWT=qWT,qSHEAR=qSHEAR,qBUOY=qBUOY,qDISS=qDISS,       &
+                   &qc_bl=qc_bl,qi_bl=qi_bl,cldfra_bl=cldfra_bl,         &
+                   &edmf_a=edmf_a,edmf_w=edmf_w,edmf_qt=edmf_qt,         &
+                   &edmf_thl=edmf_thl,edmf_ent=edmf_ent,edmf_qc=edmf_qc, &
+                   &sub_thl3D=sub_thl3D,sub_sqv3D=sub_sqv3D,             &
+                   &det_thl3D=det_thl3D,det_sqv3D=det_sqv3D,             &
+                   &nupdraft=nupdraft,maxMF=maxMF,                       &
+                   &ktop_plume=ktop_plume,                               &
+                   &RTHRATEN=RTHRATEN,                                   &
+                   &bl_mynn_tkeadvect=bl_mynn_tkeadvect,                 &
+                   &tke_budget=tke_budget,                               &
+                   &bl_mynn_cloudpdf=bl_mynn_cloudpdf,                   &
+                   &bl_mynn_mixlength=bl_mynn_mixlength,                 &
+                   &icloud_bl=icloud_bl,                                 &
+                   &bl_mynn_edmf=bl_mynn_edmf,                           &
+                   &bl_mynn_edmf_mom=bl_mynn_edmf_mom,                   &
+                   &bl_mynn_edmf_tke=bl_mynn_edmf_tke,                   &
+                   &bl_mynn_mixscalars=bl_mynn_mixscalars,               &
+                   &bl_mynn_output=bl_mynn_output,                       &
+                   &bl_mynn_cloudmix=bl_mynn_cloudmix,                   &
+                   &bl_mynn_mixqt=bl_mynn_mixqt,                         &
+                   &bl_mynn_closure=bl_mynn_closure,                     &
+                   &spp_pbl=spp_pbl,pattern_spp_pbl=pattern_spp_pbl,     &
+                   &FLAG_QC=flag_qc,FLAG_QI=flag_qi,                     &
+                   &FLAG_QNC=flag_qnc,FLAG_QNI=flag_qni,                 &
+                   &FLAG_QNWFA=flag_qnwfa,FLAG_QNIFA=flag_qnifa,         &
+                   &FLAG_QNBCA=flag_qnbca,                               &
+                   &IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde,     &
+                   &IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme,     &
+                   &ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      )
 
               if (pert_mynn .and. multi_perturb == 1) then
-                call Remove_multi_perturb_pbl_perturbations (perts_qvapor, perts_qcloud, &
-                  perts_th, perts_tke, pert_mynn_qv, pert_mynn_qc, pert_mynn_t, pert_mynn_qke, &
-                  th_phy, qke, qke_adv, qv_curr, qc_curr, bl_mynn_tkeadvect, qke_tmp, its, ite, jts, jte, &
+                call Remove_multi_perturb_pbl_perturbations (            &
+                  perts_qvapor, perts_qcloud, perts_th, perts_tke,       &
+                  pert_mynn_qv, pert_mynn_qc, pert_mynn_t, pert_mynn_qke,&
+                  th_phy, qke, qke_adv, qv_curr, qc_curr,                &
+                  bl_mynn_tkeadvect, qke_tmp, its, ite, jts, jte,        &
                   ims, ime, jms, jme, kms, kme, kts, kte)
 
                   deallocate (qke_tmp)
               end if
            ELSE
-               WRITE ( message , FMT = '(A,20(L1,1X))' )            &
+               WRITE ( message , FMT = '(A,17(L1,1X))' )            &
                  'present: '//                                      &
                  'qv_curr, '//                                      &
                  'qc_curr, '//                                      &
@@ -1713,13 +1716,10 @@ CONTAINS
                  'qsq, '//                                          &
                  'cov, '//                                          &
                  'rmol, '//                                         &
-                 'qcg, '//                                          &
                  'ch, '//                                           &
-                 'grav_settling, '//                                &
-                 'bl_mynn_tkebudget, '//                            &
+                 'tke_budget, '//                                   &
                  'qke_adv, '//                                      &
-                 'bl_mynn_tkeadvect, '//                            &
-                 'vdfg = ' ,                                        &
+                 'bl_mynn_tkeadvect ' ,                             &
                   PRESENT( qv_curr ) ,                              &
                   PRESENT( qc_curr ) ,                              &
                   PRESENT( qi_curr ) ,                              &
@@ -1733,13 +1733,10 @@ CONTAINS
                   PRESENT( qsq      ) ,                             &
                   PRESENT( cov      ) ,                             &
                   PRESENT( rmol     ) ,                             &
-                  PRESENT( qcg      ) ,                             &
                   PRESENT( ch       ) ,                             &
-                  PRESENT( grav_settling),                          &
-                  PRESENT( bl_mynn_tkebudget) ,                     &
+                  PRESENT( tke_budget) ,                            &
                   PRESENT( qke_adv  ) ,                             &
-                  PRESENT( bl_mynn_tkeadvect) ,                     &
-                  PRESENT( vdfg )
+                  PRESENT( bl_mynn_tkeadvect)
                CALL wrf_debug(0,message)
               CALL wrf_error_fatal('Lack arguments to call MYNN pbl')
            ENDIF

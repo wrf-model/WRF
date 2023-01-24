@@ -353,9 +353,10 @@ rconfig   real    fs_firebrand_gen_prop_temp     namelist,fire  1     900.0     
 rconfig   real    fs_firebrand_gen_prop_tvel     namelist,fire  1       0.0     -      "fs_firebrand_gen_prop_tvel"    "Firebrand initial proporty: Terminal Velocity [m/s] (set to zero for top of trajectory)"
 rconfig   real    fs_firebrand_dens              namelist,fire  1  513000.0     -      "fs_firebrand_dens"             "Density of firebrands [g/m3]"
 rconfig   real    fs_firebrand_dens_char         namelist,fire  1  299000.0     -      "fs_firebrand_dens_char"        "Density of char [g/m3]"
-rconfig   integer fs_firebrand_max_life_dt       namelist,fire  1     600       -      "fs_firebrand_max_life_dt"      "Max lifetime of firebrands (in sec)"                                                 
+rconfig   integer fs_firebrand_max_life_dt       namelist,fire  1     200       -      "fs_firebrand_max_life_dt"      "Max lifetime of firebrands (multiple of the model timestep - in sec)" 
 rconfig   real    fs_firebrand_land_hgt          namelist,fire  1       0.15    -      "fs_firebrand_land_hgt"         "AGL height that firebrands land (in meters)"
 rconfig  logical  fuel_crosswalk                 namelist,fire  max_domains .false. -  "flag - artifact from COFPS used in firebrand_spotting - it does not crosswalk between fuel models."
+rconfig  logical  trackember                     namelist,fire  1     .false.   -      "flag - for test only. Write ember properties on rsl.error files at each timestep - huge rsl files!"
 #
 # ------------------------------------------------------------------------------------------------------------------------
 # Dimensions
@@ -383,6 +384,7 @@ state  real    fs_spotting_lkhd          ij        misc        1         -      
 # Particle properties: fs_p_[property_name]
 # 
 state integer  fs_p_id             {fs_maxsize}    dyn_em      1         -      -  "fs_p_id"	          "particle unique ID" "ID"
+state integer  fs_p_src            {fs_maxsize}    dyn_em      1         -      -  "fs_p_src"	          "particle source ID - source MPI proc" "src"
 state integer  fs_p_dt             {fs_maxsize}    dyn_em      1         -      -  "fs_p_dt"	          "particle active time steps" "count"
 state  real    fs_p_x              {fs_maxsize}    dyn_em      1         -      -  "fs_p_x"	          "particle x position" "index"
 state  real    fs_p_y              {fs_maxsize}    dyn_em      1         -      -  "fs_p_y"	          "particle y position" "index"

@@ -1088,6 +1088,9 @@ CONTAINS
 !     INTEGER :: MPI_INTEGER,MPI_MAX
 !
       REAL :: SM,X,ZETA1,ZETA2,ZRNG1,ZRNG2
+#ifdef AARCH64_X86_CORRECTNESS_FIX
+      DOUBLE PRECISION :: X2
+#endif
 !
       REAL :: PIHF=3.1415926/2.,EPS=1.E-6
 !----------------------------------------------------------------------
@@ -1209,7 +1212,12 @@ CONTAINS
 !----------------------------------------------------------------------
           X=SQRT(SQRT(1.-16.*ZETA1))
 !
+#ifndef AARCH64_X86_CORRECTNESS_FIX
           PSIM1(K)=-2.*LOG((X+1.)/2.)-LOG((X*X+1.)/2.)+2.*ATAN(X)-PIHF
+#else
+          X2 = dble(X)
+          PSIM1(K)=real(-2.d0 * log((X2+1.d0)/2.d0)-log((X2*X2+1.d0)/2.d0)+2.d0*atan(X2)-dble(PIHF))
+#endif
           PSIH1(K)=-2.*LOG((X*X+1.)/2.)
 !
 !----------------------------------------------------------------------
@@ -1246,7 +1254,12 @@ CONTAINS
 !
           X=SQRT(SQRT(1.-16.*ZETA2))
 !
+#ifndef AARCH64_X86_CORRECTNESS_FIX
           PSIM2(K)=-2.*LOG((X+1.)/2.)-LOG((X*X+1.)/2.)+2.*ATAN(X)-PIHF
+#else
+          X2 = dble(X)
+          PSIM2(K)=real(-2.d0*LOG((X2+1.d0)/2.d0)-LOG((X2*X2+1.d0)/2.d0)+2.*ATAN(X2)-dble(PIHF))
+#endif
           PSIH2(K)=-2.*LOG((X*X+1.)/2.)
 !----------------------------------------------------------------------
 !***  STABLE RANGE

@@ -405,6 +405,7 @@ package   io_grib2    io_form_restart==10                    -             -
 package   io_pnetcdf  io_form_restart==11                    -             -
 package   io_pio      io_form_restart==12                    -             -
 package   io_netcdfpar io_form_restart==13                   -             -
+package   io_adios2   io_form_restart==14                    -             -
 
 #WRF Hydro
 package   no_wrfhydro    wrf_hydro==0                -            -

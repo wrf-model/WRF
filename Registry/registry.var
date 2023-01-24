@@ -467,6 +467,8 @@ rconfig   character crtm_irwater_coef       namelist,wrfvar14  1  "Nalli.IRwater
 rconfig   character crtm_mwwater_coef       namelist,wrfvar14  1  "FASTEM5.MWwater.EmisCoeff.bin" - "crtm_mwwater_coef" "" ""
 rconfig   character crtm_irland_coef        namelist,wrfvar14  1  "USGS.IRland.EmisCoeff.bin"     - "crtm_irland_coef"  "" ""
 rconfig   character crtm_visland_coef       namelist,wrfvar14  1  "USGS.VISland.EmisCoeff.bin"    - "crtm_visland_coef" "" ""
+rconfig   logical   ahi_use_symm_obs_err    namelist,wrfvar14  1  .false.  - "ahi_use_symm_obs_err"         ""  ""
+rconfig   logical   ahi_apply_clrsky_bias   namelist,wrfvar14  1  .false.  - "ahi_apply_clrsky_bias"         ""  ""
 rconfig   integer   num_pseudo              namelist,wrfvar15  1  0        - "num_pseudo"              ""  ""   
 rconfig   real      pseudo_x                namelist,wrfvar15  1  1.0      - "pseudo_x"                ""  ""   
 rconfig   real      pseudo_y                namelist,wrfvar15  1  1.0      - "pseudo_y"                ""  ""   
@@ -569,6 +571,7 @@ package   wsm5scheme      mp_physics==4                -             moist:qv,qc
 package   fer_mp_hires    mp_physics==5                -             moist:qv,qc,qr,qi
 package   fer_mp_hires_advect  mp_physics==15          -             moist:qv,qc,qr,qi
 package   wsm6scheme      mp_physics==6                -             moist:qv,qc,qr,qi,qs,qg
+package   wsm6rscheme     mp_physics==106              -             moist:qv,qc,qr,qi,qs,qg
 package   gsfcgcescheme   mp_physics==7                -             moist:qv,qc,qr,qi,qs,qg
 package   thompson        mp_physics==8                -             moist:qv,qc,qr,qi,qs,qg
 package   milbrandt2mom   mp_physics==9                -             moist:qv,qc,qr,qi,qs,qg,qh
@@ -601,6 +604,7 @@ package   wsm5_4dvar             mp_physics_4dvar==4      -          g_moist:g_q
 package   fer_mp_hi_4dvar        mp_physics_4dvar==5      -          g_moist:g_qv,g_qc,g_qr,g_qi;a_moist:a_qv,a_qc,a_qr,a_qi
 package   fer_mp_hi_advect_4dvar mp_physics_4dvar==15     -          g_moist:g_qv,g_qc,g_qr,g_qi;a_moist:a_qv,a_qc,a_qr,a_qi
 package   wsm6_4dvar             mp_physics_4dvar==6      -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
+package   wsm6r_4dvar            mp_physics_4dvar==106    -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
 package   gsfcgce_4dvar          mp_physics_4dvar==7      -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
 package   thompson_4dvar         mp_physics_4dvar==8      -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
 package   milbrandt2mom_4dvar    mp_physics_4dvar==9      -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg,g_qh;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg,a_qh

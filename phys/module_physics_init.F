@@ -7,7 +7,6 @@
 
 !  This MODULE CONTAINS the following routines:
 
-
 MODULE module_physics_init
 
    USE module_state_description
@@ -2680,7 +2679,7 @@ CHARACTER(LEN=8) :: name
    USE module_bl_mfshconvpbl
    USE module_bl_gbmpbl
 #if ( EM_CORE == 1 )
-   USE module_bl_mynn
+   USE module_bl_mynn_wrapper
    USE module_bl_eeps
    USE module_bl_temf
 #if ( WRFPLUS == 1 )
@@ -3853,32 +3852,20 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 
 !mynn 
            
-        CASE (MYNNPBLSCHEME2, MYNNPBLSCHEME3)
+        CASE (MYNNPBLSCHEME)
            IF(isfc .NE. 5 .AND. isfc .NE. 1 .AND. isfc .NE. 2) CALL wrf_error_fatal &
                 ( 'module_physics_init: use mynnsfc or sfclay or myjsfc scheme for this pbl option')
            IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
             ( 'module_physics_init: use ysu (option1), myj (option 2), or boulac (option 8) with BEP/BEM urban scheme' )
-           
-           SELECT CASE(config_flags%bl_pbl_physics)
 
-             CASE(MYNNPBLSCHEME2)
-                mynn_closure_level=2
-
-             CASE(MYNNPBLSCHEME3)
-                mynn_closure_level=3
-
-             CASE DEFAULT
-
-           END SELECT
-
-           CALL mynn_bl_init_driver(&
+                CALL mynnedmf_wrapper_init(                  &
                 &RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN, &
-                &RQIBLTEN,                                   &
-                &QKE,EXCH_H                                  &
-                &,restart,allowed_to_read,mynn_closure_level &
-                &,IDS,IDE,JDS,JDE,KDS,KDE                    &
-                &,IMS,IME,JMS,JME,KMS,KME                    &
-                &,ITS,ITE,JTS,JTE,KTS,KTE)
+                &RQIBLTEN,QKE,                               &
+                &restart,allowed_to_read,                    &
+                &P_QC,P_QI,PARAM_FIRST_SCALAR,               &
+                &IDS,IDE,JDS,JDE,KDS,KDE,                    &
+                &IMS,IME,JMS,JME,KMS,KME,                    &
+                &ITS,ITE,JTS,JTE,KTS,KTE                     )
 
       CASE (TEMFPBLSCHEME)
            ! if(isfc .ne. 0)CALL wrf_error_fatal &

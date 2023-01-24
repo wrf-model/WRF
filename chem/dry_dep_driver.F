@@ -752,18 +752,20 @@ CONTAINS
               SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP,                                             &
               CB05_SORG_AQ_KPP, CB05_SORG_VBS_AQ_KPP)
             if(.not.is_aerosol(nv))then ! mix gases not aerosol
-               call vertmx(dtstep,pblst,ekmfull,dryrho_1d, &
+               if (.not.config_flags%mynn_chem_vertmx) then
+                  call vertmx(dtstep,pblst,ekmfull,dryrho_1d, &
                            zzfull,zz,ddvel(i,j,nv),kts,kte)
-
+               endif
             endif
 !The default case below does turbulent mixing for all gas and aerosol species
 !If aqueous phase is not activated
 !It requires ddvel array as a boundary condition near surface for flux of species 
 !The top boundary condition for eddy diffusivity is zero
          CASE DEFAULT
-            call vertmx(dtstep,pblst,ekmfull,dryrho_1d, &
+            if (.not.config_flags%mynn_chem_vertmx) then
+               call vertmx(dtstep,pblst,ekmfull,dryrho_1d, &
                         zzfull,zz,ddvel(i,j,nv),kts,kte)
-
+            endif
          END SELECT mix_select
 
          ! chem is in ppmv
@@ -1038,17 +1040,18 @@ CONTAINS
 !
        CASE (TRACER_SMOKE,TRACER_TEST1,TRACER_TEST2)
         CALL wrf_debug(15,'DOING TRACER MIXING, 1 SPECIE ONLY')
-        do nv=2,num_tracer
-         do k=kts,kte
-            pblst(k)=max(epsilc,tracer(i,k,j,nv))
-         enddo
-
+         do nv=2,num_tracer
+            do k=kts,kte
+               pblst(k)=max(epsilc,tracer(i,k,j,nv))
+            enddo
+            if (.not.config_flags%mynn_chem_vertmx) then
                call vertmx(dtstep,pblst,ekmfull,dryrho_1d, &
                            zzfull,zz,0.,kts,kte)
-         do k=kts,kte-1
-            tracer(i,k,j,nv)=max(epsilc,pblst(k))
+            endif
+            do k=kts,kte-1
+               tracer(i,k,j,nv)=max(epsilc,pblst(k))
+            enddo
          enddo
-        enddo
        CASE DEFAULT
 !        CALL wrf_debug(15,'NOT YET DEFINED')
        END SELECT tracer_select

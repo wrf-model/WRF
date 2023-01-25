@@ -542,7 +542,7 @@ CONTAINS
                                            EXCH_H,EXCH_M,TKE_PBL, &
                                                 DISS_PBL,TPE_PBL, &
                                         TKE_ADV,DISS_ADV,TPE_ADV, &
-                                                 PR_PBL,RTHRATEN  ! for GBM PBL scheme
+                                                 PR_PBL,RTHRATEN
 
  REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ),            &
                INTENT(OUT)    ::                       WU_TUR,WV_TUR,WT_TUR,WQ_TUR

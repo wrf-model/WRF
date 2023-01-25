@@ -2109,7 +2109,7 @@ AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
 RANLIB          =      ranlib
-RLFLAGS               =
+RLFLAGS         =
 CC_TOOLS        =      $(SCC)
 
 ###########################################################

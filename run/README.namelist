@@ -10,7 +10,7 @@ Description of namelist variables
  run_hours                           = 0,	! run time in hours
                                                   Note: if it is more than 1 day, one may use both run_days and run_hours
                                                   or just run_hours. e.g. if the total run length is 36 hrs, you may
-                                                  set run_days = 1, and run_hours = 12, or run_days = 0, and run_hours = 36
+                                                  set run_days = 1, and run_hours = 12, or run_days = 0, and run_hours = 36.
  run_minutes                         = 0,	! run time in minutes
  run_seconds                         = 0,	! run time in seconds
  start_year (max_dom)                = 2001,	! four digit year of starting time
@@ -1315,7 +1315,7 @@ Options for use with the Noah-MP Land Surface Model:
                                                      3 = use soil composition (sand, clay, orgm) and pedotransfer functions (OPT_PEDO)
                                                      4 = use input soil properties (BEXP_3D, SMCMAX_3D, etc.) (not valid in WRF)
  opt_pedo                           = 1,        ! Noah-MP options for pedotransfer functions (used when OPT_SOIL = 3)
-                                                          geogrid must have been run with GEOGRID.TBL.ARW.noahmp, use with caution
+                                                         geogrid must have been run with GEOGRID.TBL.ARW.noahmp, use with caution
                                                      1 = Saxton and Rawls (2006)
  opt_crop                           = 0,        ! options for crop model
                                                            geogrid must have been run with GEOGRID.TBL.ARW.noahmp, use with caution
@@ -1324,19 +1324,19 @@ Options for use with the Noah-MP Land Surface Model:
                                                      2 = Gecros (Genotype-by-Environment interaction on CROp growth Simulator) Yin and van Laar, 2005
  
  opt_irr                            = 0,        !  options for irrigation scheme
-                                                           geogrid must have been run with GEOGRID.TBL.ARW.noahmp, use with caution
+                                                         geogrid must have been run with GEOGRID.TBL.ARW.noahmp, use with caution
 	                                             0 = No irrigation
                                                      1 = Irrigation ON
                                                      2 = irrigation trigger based on crop season Planting and harvesting dates
                                                      3 = irrigation trigger based on LAI threshold
  opt_irrm                           = 0,        !  options for irrigation method (only if opt_irr > 0)
-                                                           geogrid must have been run with GEOGRID.TBL.ARW.noahmp, use with caution
+                                                         geogrid must have been run with GEOGRID.TBL.ARW.noahmp, use with caution
                                                      0 = method based on geo_em fractions (all three methods are ON)
                                                      1 = sprinkler method
                                                      2 = micro/drip irrigation
                                                      3 = surface flooding  
  opt_tdrn                           = 0,        ! Noah-MP tile drainage option (currently only tested and works with opt_run=3)
-                                                     geogrid must have been run with GEOGRID.TBL.ARW.noahmp, use with caution
+                                                         geogrid must have been run with GEOGRID.TBL.ARW.noahmp, use with caution
                                                      0 = No tile drainage
                                                      1 = Simple drainage
                                                      2 = Hooghoudt's equation based tile drainage

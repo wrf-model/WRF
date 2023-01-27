@@ -54,7 +54,8 @@ MODULES = \
 	module_bl_camuwpbl_driver.o \
 	module_bl_mfshconvpbl.o \
 	module_bl_eepsilon.o \
-	module_shcu_camuwshcu_driver.o \
+	module_bl_keps.o \
+        module_shcu_camuwshcu_driver.o \
 	module_shcu_camuwshcu.o \
 	module_shcu_deng.o          \
 	module_shcu_grims.o \

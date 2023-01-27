@@ -1209,6 +1209,12 @@ state    real    sf_bep        ikj     misc        1         Z      -        "sf
 state    real    vl_bep        ikj     misc        1         Z      -        "vl_bep"                "volume grid"               "-"
 state    real   tke_pbl        ikj     misc        1         Z      rh       "tke_pbl"              "TKE from PBL"      "m2 s-2"
 state    real   el_pbl         ikj     misc        1         Z      rh       "el_pbl"               "Length scale from PBL"      "m"
+state    real    diss_pbl      ikj     misc        1         -      rh       "diss_pbl"              "Dissipation Rrate from PBL - keps"      "m2 s-3"
+state    real    tpe_pbl       ikj     misc        1         -      rh       "tpe_pbl"              "TPE from PBL- keps"      "K2"
+state    real    tke_adv       ikjftb  scalar      1         -      i0rusdf=(bdy_interp:dt) "tke_adv"       "Advected TKE from keps"      "m2 s-2"
+state    real    diss_adv      ikjftb  scalar      1         -      i0rusdf=(bdy_interp:dt) "diss_adv"      "Advected dissipation rate from keps"      "m2 s-3"
+state    real    tpe_adv       ikjftb  scalar      1         -      i0rusdf=(bdy_interp:dt) "tpe_adv"       "Advected TPE from keps"      "K2"
+state    real    pr_pbl         ikj    misc        1         -      rh       "pr_pbl"              "prandtl number from pbl - keps"      "-"
 # Diagnostic BOULAC PBL variables
 state    real   wu_tur         ikj     misc        1         -      r        "wu_tur"               "Turbulent flux of momentum(x)"      "m2 s-2"
 state    real   wv_tur         ikj     misc        1         -      r        "wv_tur"               "Turbulent flux of momentum(y)"      "m2 s-2"
@@ -3123,6 +3129,7 @@ package   temfpblscheme  bl_pbl_physics==10          -             state:te_temf
 package   shinhongscheme bl_pbl_physics==11          -             state:el_pbl,tke_pbl
 package   gbmpblscheme   bl_pbl_physics==12          -             state:exch_tke,el_pbl,tke_pbl
 package   eepsscheme     bl_pbl_physics==16          -             scalar:pek_adv,pep_adv;state:tke_pbl,pep_pbl
+package   kepsscheme     bl_pbl_physics==17          -             scalar:tke_adv,diss_adv,tpe_adv;state:tpe_pbl,diss_pbl,tke_pbl,pr_pbl,wu_tur,wv_tur,wt_tur,wq_tur
 package   mrfscheme      bl_pbl_physics==99          -             -
 
 package   tkebudget      tke_budget==1               -             state:qSHEAR,qBUOY,qDISS,qWT,dqke

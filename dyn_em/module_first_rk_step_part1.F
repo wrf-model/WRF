@@ -1156,6 +1156,10 @@ BENCH_START(pbl_driver_tim)
 ! add tke_pbl, and turbulent fluxes
      &          ,TKE_PBL=grid%tke_pbl,EL_PBL=grid%el_pbl,WU_TUR=grid%wu_tur              &
      &          ,WV_tur=grid%wv_tur,WT_tur=grid%wt_tur,WQ_tur=grid%wq_tur                &
+     &          ,DISS_PBL=grid%diss_pbl,TPE_PBL=grid%tpe_pbl                             &
+     &          ,TKE_ADV=scalar(ims,kms,jms,P_tke_adv)                                   &
+     &          ,DISS_ADV=scalar(ims,kms,jms,P_diss_adv)                                 &
+     &          ,TPE_ADV=scalar(ims,kms,jms,P_tpe_adv),PR_PBL=grid%pr_pbl                &
 ! end add tke_pbl, and turbulent fluxes
 ! GBMPBL change: add exch_tke, rthraten
      &        ,EXCH_TKE=grid%exch_tke, RTHRATEN=grid%rthraten             &

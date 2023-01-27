@@ -27,7 +27,6 @@ CONTAINS
                  ,stepbl,warm_rain                                 &
                  ,kpbl,mixht,ct,lh,snow,xice                       &
                  ,znu, znw, mut, p_top                             &
-! paj
                  ,ctopo,ctopo2,windfarm_opt,power                  &
                  ,ysu_topdown_pblmix                               &
                  ,shinhong_tke_diag                                &
@@ -100,7 +99,9 @@ CONTAINS
                ,b_u_bep,b_v_bep,b_t_bep,b_q_bep            &
                ,sf_bep,vl_bep                              &
                ,sf_sfclay_physics,sf_urban_physics         &
-               ,tke_pbl,el_pbl                             &
+               ,tke_pbl,diss_pbl,tpe_pbl                   &
+               ,tke_adv,diss_adv,tpe_adv                   &
+               ,pr_pbl,el_pbl                              &
                ,wu_tur,wv_tur,wt_tur,wq_tur                &
 ! variables  for GBM PBL
                ,exch_tke, rthraten                         &
@@ -153,7 +154,7 @@ CONTAINS
                    QNSEPBLSCHEME,MYNNPBLSCHEME,BOULACSCHEME,         &
                    CAMUWPBLSCHEME,BEPSCHEME,BEP_BEMSCHEME,MYJSFCSCHEME, &
                    FITCHSCHEME,SHINHONGSCHEME,                       &
-                   TEMFPBLSCHEME,GBMPBLSCHEME,EEPSSCHEME,                  &
+                   TEMFPBLSCHEME,GBMPBLSCHEME,EEPSSCHEME,KEPSSCHEME,                  &
                    CAMMGMPSCHEME,p_qi,p_qni,p_qnc,param_first_scalar,& !CAMMGMPSCHEME, p_qni,p_qnc is used for camuwpbl scheme
                    p_qnwfa,p_qnifa,p_qnbca
 #if ( WRFPLUS == 1 )
@@ -194,6 +195,7 @@ CONTAINS
 #if (EM_CORE==1)
    USE module_bl_mynn_wrapper
    USE module_bl_eeps
+   USE module_bl_keps
    USE module_bl_fogdes
    USE module_wind_fitch
 #endif
@@ -211,6 +213,7 @@ CONTAINS
    !      9. camuwpbl
    !      10. temfpbl
    !      11. shinhongpbl
+   !      17. kepsstpe
    !      98. surface_drag
    !      99. mrfpbl
    !      12. gbmpbl
@@ -538,7 +541,10 @@ CONTAINS
                                                          RVBLTEN, &
                                                         RTHBLTEN, &
                                            EXCH_H,EXCH_M,TKE_PBL, &
-                                                        RTHRATEN  ! for GBM PBL scheme
+                                                DISS_PBL,TPE_PBL, &
+                                        TKE_ADV,DISS_ADV,TPE_ADV, &
+                                                 PR_PBL,RTHRATEN
+
  REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ),            &
                INTENT(OUT)    ::                       WU_TUR,WV_TUR,WT_TUR,WQ_TUR
 !
@@ -1842,6 +1848,39 @@ CONTAINS
                CALL wrf_error_fatal('Lack arguments to call EEPS pbl')
            ENDIF
 
+
+               CASE (KEPSSCHEME)
+
+             CALL wrf_debug(100,'in keps')
+             CALL KEPS(TSK=tsk,MOL=mol,XTIME=itimestep,FRC_URB2D=frc_urb2d            &
+              , FLAG_BEP=flag_bep  &
+              ,DZ8W=dz8w,DT=dt,U_PHY=u_phytmp                                  &
+              ,V_PHY=v_phytmp,TH_PHY=th_phy                                    &
+              ,PI_PHY=pi_phy,RTHRATEN=RTHRATEN,P8W=p8w                         &
+              ,RHO=rho,QV_CURR=qv_curr,QC_CURR=qc_curr,HFX=hfx                 &
+              ,QFX=qfx,USTAR=ust,CP=cp,G=g                                     &
+              ,RUBLTEN=rublten,RVBLTEN=rvblten,RTHBLTEN=rthblten               &
+              ,RQVBLTEN=rqvblten,RQCBLTEN=rqcblten                             &
+              ,TKE_PBL=tke_pbl,DISS_PBL=diss_pbl,TPE_PBL=tpe_pbl               &
+              ,TKE_ADV=tke_adv,DISS_ADV=diss_adv,TPE_ADV=tpe_adv               &
+              ,PR_PBL=pr_pbl                                                   &
+              ,WU=wu_tur,WV=wv_tur,WT=wt_tur,WQ=wq_tur                         &
+              ,EXCH_H=exch_h,EXCH_M=exch_m,PBLH=pblh                           &
+              ,A_U_BEP=a_u_bep,A_V_BEP=a_v_bep,A_T_BEP=a_t_bep                 &
+              ,A_Q_BEP=a_q_bep                                                 &
+              ,B_U_BEP=b_u_bep,B_V_BEP=b_v_bep                                 &
+              ,B_T_BEP=b_t_bep                                                 &
+              ,B_Q_BEP=b_q_bep                                                 &
+              ,B_E_BEP=b_e_bep                                                 &
+              ,SF_BEP=sf_bep,VL_BEP=vl_bep                                     &
+              ,BR=br,ZNT=znt                                                   &
+              ,PSIM=psim,PSIH=psih                                             &
+              ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde                 &
+              ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme                 &
+              ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte  )
+
+
+
         CASE (BOULACSCHEME)
 
              CALL wrf_debug(100,'in boulac')
@@ -2722,17 +2761,5 @@ CONTAINS
         end subroutine invert
 
 ! ===6=8===============================================================72
-
-
-
-
-
-
-
-
-
-
-
-
 
 END MODULE module_pbl_driver

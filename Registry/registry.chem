@@ -3779,6 +3779,7 @@ rconfig   integer cam_mam_mode             namelist,chem        1              3
 rconfig   integer cam_mam_nspec            namelist,chem        1              85      irh     "cam_mam_nspec"                   ""    ""
 rconfig   logical CAM_MP_MAM_cpled         namelist,chem        1            .true.    irh     "CAM_MP_MAM_cpled"                   ""    ""
 rconfig   integer mozart_ph_diag           namelist,chem        1              0       rh      "mozart_ph_diag"                  ""    ""
+rconfig   logical mynn_chem_vertmx         namelist,chem        1            .false.   rh      "mynn_chem_vertmx"                  ""    ""
 
 # CLM inputs
 rconfig   character  megan_specifier      namelist,physics     max_mgnspc      " "        -     "map from Megan2.1 to WRF species" "" ""
@@ -3904,7 +3905,7 @@ rconfig   real        af_lambda_start     namelist,chem          max_domains    
 rconfig   real        af_lambda_end       namelist,chem          max_domains    340.    rh    "end   wavelength for AF output" "nm"      ""
 # Control for ISORROPIA in MADE/SORGAM schemes
 rconfig   logical     do_isorropia        namelist,chem          1              .false. rh    "flag to use ISORROPIA"
-
+rconfig   logical     do_n2o5het          namelsit,chem          1              .false. rh    "flag to do n2o5 heterogenous chemistry via chlorine pathway"
 
 # CHEMISTRY PACKAGE DEFINITIONS
 #
@@ -4186,6 +4187,7 @@ rconfig   logical   has_o3_exo_coldens namelist,chem  1                  .false.
 rconfig   real      du_at_grnd      namelist,chem     1                  300.     rh     "O3 at ground"          "O3 at ground"                     "o3 Dobson units"
 rconfig   logical   scale_o3_to_grnd_exo_coldens namelist,chem  1  .false.  rh     "scale o3 column to exo_coldens"   "true = scale to exo model o3 column denisties"   ""
 rconfig   logical   scale_o3_to_du_at_grnd       namelist,chem  1  .false.  rh     "scale o3 column to du_at_grnd"    "true = scale to DU at ground"   ""
+rconfig   logical   scale_o3_to_gfs_tot          namelist,chem  1  .false.  rh     "gfs_ozone_scale_opt"              "true = scale to GFS DU at ground"               ""
 
 package  lnox_opt_none      lnox_opt==0    -   -
 package  lnox_opt_ott       lnox_opt==1    -   tracer:lnox_total

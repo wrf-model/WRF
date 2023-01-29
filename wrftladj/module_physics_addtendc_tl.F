@@ -636,7 +636,7 @@ SUBROUTINE g_phy_bl_ten(config_flags,rk_step,n_moist,n_scalar,   &
                 its, ite, jts, jte, kts, kte                     )
        ENDIF
 
-      CASE (MYNNPBLSCHEME2,MYNNPBLSCHEME3)
+      CASE (MYNNPBLSCHEME)
 
            CALL add_a2a(rt_tendf,RTHBLTEN,config_flags,          &
                 ids,ide, jds, jde, kds, kde,                     &

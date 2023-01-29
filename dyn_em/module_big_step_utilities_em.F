@@ -5707,7 +5707,7 @@ END SUBROUTINE phy_prep_part2
           mpten=max(-config_flags%mp_tend_lim*dt, mpten)
 
 #if ( WRF_DFI_RADAR == 1 )
-compiler error, not handled yet
+!compiler error, not handled yet
        if(k < k_end ) then
          if(dfi_tten_max < dfi_tten_rad(i,k,j) ) dfi_tten_max = dfi_tten_rad(i,k,j)
          if(old_max < (th_phy(i,k,j)-h_diabatic(i,k,j)) ) old_max=th_phy(i,k,j)-h_diabatic(i,k,j)

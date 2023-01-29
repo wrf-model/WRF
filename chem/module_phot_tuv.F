@@ -87,6 +87,7 @@
                ph_glyald,ph_mek,ph_gly,                                   &
                pm2_5_dry,pm2_5_water,uvrad,                               &
                dt_cld,af_dir,af_dn,af_up,par,erythema,                    &
+               o3_gfs_du,                                                 &
                ids,ide, jds,jde, kds,kde,                                 &
                ims,ime, jms,jme, kms,kme,                                 &
                its,ite, jts,jte, kts,kte )
@@ -155,6 +156,9 @@
    REAL,  DIMENSION( ims:ime , jms:jme )                   ,    &     
           INTENT(INOUT   ) ::                        uvrad
    REAL,     INTENT(IN   ) ::                        gmt
+
+   REAL, DIMENSION( ims:ime, jme:jme ),                         &
+         OPTIONAL,INTENT(IN ) ::                    o3_gfs_du
 
    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
 
@@ -570,6 +574,9 @@ has_daylight : &
          endif
          if( config_flags%scale_o3_to_grnd_exo_coldens ) then
            dobsi = real( o3_exo_col_at_grnd(i,j),4 )/2.687e16
+         endif
+         if (config_flags%scale_o3_to_gfs_tot ) then
+           dobsi = o3_gfs_du(i,j)
          endif
 
          so2col(:) = 0.

@@ -4489,7 +4489,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 ! Local
    INTEGER :: i, j, itf, jtf
    REAL, DIMENSION(20) :: nssl_params
-   INTEGER    :: nssl_ipelec_tmp
+   INTEGER    :: nssl_ipelec_tmp, nssl_ipconc, nssl_ivol
    INTEGER    :: i_err
 
    warm_rain = .false.
@@ -4505,6 +4505,12 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
         GRAUPELNC(i,j) = 0.
      ENDDO
      ENDDO
+   ENDIF
+   
+   IF ( config_flags%nssl_3moment > 0 ) THEN
+     nssl_ipconc = 8
+   ELSE
+     nssl_ipconc = 5
    ENDIF
    
    IF ( present( nssl_cccn ) ) THEN
@@ -4652,12 +4658,21 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
      CASE (NSSL_1MOM)
          CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme,nssl_params,ipctmp=0,mixphase=0,ihvol=0)
      CASE (NSSL_2MOM)
-         CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme,nssl_params,ipctmp=5,mixphase=0,ihvol=1)
+          nssl_ivol = config_flags % nssl_gvol
+         IF ( config_flags % nssl_ccn_on > 0 ) THEN
+            ccn_conc = nssl_cccn/1.225 ! set this to have correct boundary conditions
+         ENDIF
+         CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme,nssl_params,ipctmp=nssl_ipconc,mixphase=0,ihvol=nssl_ivol,igvol=nssl_ivol)
      CASE (NSSL_2MOMG)
-         CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme,nssl_params,ipctmp=5,mixphase=0,ihvol=-1) ! turn off hail
+          nssl_ivol = config_flags % nssl_gvol
+         IF ( config_flags % nssl_ccn_on > 0 ) THEN
+            ccn_conc = nssl_cccn/1.225 ! set this to have correct boundary conditions
+         ENDIF
+         CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme,nssl_params,ipctmp=nssl_ipconc,mixphase=0,ihvol=-1,igvol=nssl_ivol) ! turn off hail
      CASE (NSSL_2MOMCCN)
+          nssl_ivol = config_flags % nssl_gvol
          ccn_conc = nssl_cccn/1.225 ! set this to have correct boundary conditions
-         CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme,nssl_params,ipctmp=5,mixphase=0,ihvol=1)
+         CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme,nssl_params,ipctmp=nssl_ipconc,mixphase=0,ihvol=nssl_ivol,igvol=nssl_ivol)
 #if (EM_CORE==1)
      CASE (CAMMGMPSCHEME) ! CAM5's microphysics
           CALL CAMMGMP_INIT(ixcldliq, ixcldice, ixnumliq, ixnumice &

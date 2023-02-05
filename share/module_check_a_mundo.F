@@ -3376,7 +3376,49 @@
 #endif
               ( model_config_rec % do_radar_ref  .EQ. 1             ) ) THEN
             model_config_rec % compute_radar_ref = 1
-         END IF
+         ENDIF
+#if (EM_CORE == 1)
+         IF ( .not.  &
+             (( model_config_rec % mp_physics(i) .EQ. NSSL_2MOM     ) .OR. &
+              ( model_config_rec % mp_physics(i) .EQ. NSSL_2MOMG    ) .OR. &
+              ( model_config_rec % mp_physics(i) .EQ. NSSL_2MOMCCN  )) ) THEN
+                 model_config_rec % nssl_3moment = 0
+                 model_config_rec % nssl_hail_on = 0 
+                 model_config_rec % nssl_ccn_on = 0
+         ENDIF
+         
+         ! check if 3-moment is turned on, but hail is off
+         IF ( ( model_config_rec % mp_physics(i) .EQ. NSSL_2MOMG    ) .and. &
+              ( model_config_rec % nssl_3moment == 1  ) ) THEN
+           model_config_rec % nssl_3moment = 2
+         ENDIF
+         
+         IF ( ( model_config_rec % mp_physics(i) .EQ. NSSL_2MOMG    ) ) THEN
+             IF  ( model_config_rec % nssl_gvol == -1 ) THEN
+                model_config_rec % nssl_gvol = 1
+             ENDIF
+             model_config_rec % nssl_hvol = -1 ! ensure default
+         ENDIF
+         
+         IF ( ( model_config_rec % mp_physics(i) .EQ. NSSL_2MOM .or.  &
+                model_config_rec % mp_physics(i) .EQ. NSSL_2MOMCCN ) ) THEN
+           
+           IF ( model_config_rec % nssl_gvol == -1  .or. &
+                model_config_rec % nssl_hvol == -1       ) THEN
+               model_config_rec % nssl_gvol = 1
+               model_config_rec % nssl_hvol = 1
+           ENDIF
+
+           IF ( model_config_rec % nssl_gvol == 0 .or. &
+                model_config_rec % nssl_hvol == 0 ) THEN
+              IF ( model_config_rec % nssl_gvol /= model_config_rec % nssl_hvol ) THEN
+               ! warning: must have same setting for gvol and hvol
+                model_config_rec % nssl_gvol = 0
+                model_config_rec % nssl_hvol = 0
+              ENDIF
+           ENDIF
+         ENDIF
+#endif
       ENDDO
 
 !-----------------------------------------------------------------------

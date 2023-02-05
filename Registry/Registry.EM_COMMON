@@ -543,6 +543,12 @@ state   real    qvolg          ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QVGRAUPEL"     "Graupel Particle Volume" "m(3) kg(-1)"
 state   real    qvolh          ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QVHAIL"        "Hail Particle Volume" "m(3) kg(-1)"
+state   real    qzr             ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "QZRAIN"           "Sixth moment rain" "m(6) kg(-1)"
+state   real    qzg             ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "QZGRAUPEL"           "Sixth moment graupel" "m(6) kg(-1)"
+state   real    qzh             ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "QZHAIL"           "Sixth moment hail" "m(6) kg(-1)"
 state   real    qrimef         ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QRIMEF"        "rime factor * qi" "kg kg-1"
 state   real    qir            ikjftb  scalar      1         -     \
@@ -2383,6 +2389,14 @@ rconfig   real     nssl_cnos              namelist,physics      max_domains  3.e
 rconfig   real     nssl_rho_qh            namelist,physics      max_domains  500.     rh       "Graupel particle density"  ""      ""
 rconfig   real     nssl_rho_qhl           namelist,physics      max_domains  900.     rh       "Hail particle density"  ""      ""
 rconfig   real     nssl_rho_qs            namelist,physics      max_domains  100.     rh       "Snow particle density"  ""      ""
+rconfig   integer  nssl_hail_on           namelist,physics      1            -1       rh       "NSSL Hail flag"  ""      ""
+rconfig   integer  nssl_ccn_on            namelist,physics      1            -1       rh       "NSSL CCN flag"  ""      ""
+rconfig   integer  nssl_3moment           namelist,physics      1            0        rh       "NSSL 3-moment flag"  ""      ""
+rconfig   integer  nssl_gvol              namelist,physics      1            -1       rh       "NSSL 3-moment flag"  ""      ""
+rconfig   integer  nssl_hvol              namelist,physics      1            -1       rh       "NSSL 3-moment flag"  ""      ""
+
+
+
 rconfig   integer     CCNTY               namelist,physics      1            2        rh       "Aerosol background type for NTU microphysics"  ""   ""
 
 # Lightning Qv Nudging 
@@ -2981,11 +2995,11 @@ package   cammgmpscheme   mp_physics==11               -             moist:qv,qc
 package   sbu_ylinscheme  mp_physics==13               -             moist:qv,qc,qr,qi,qs;state:rimi
 package   wdm5scheme      mp_physics==14               -             moist:qv,qc,qr,qi,qs;scalar:qnn,qnc,qnr;state:re_cloud,re_ice,re_snow
 package   wdm6scheme      mp_physics==16               -             moist:qv,qc,qr,qi,qs,qg;scalar:qnn,qnc,qnr;state:re_cloud,re_ice,re_snow
-package   nssl_2mom       mp_physics==17               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qndrop,qnr,qni,qns,qng,qnh,qvolg,qvolh;state:re_cloud,re_ice,re_snow
-package   nssl_2momccn    mp_physics==18               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnn,qndrop,qnr,qni,qns,qng,qnh,qvolg,qvolh;state:re_cloud,re_ice,re_snow
+package   nssl_2mom       mp_physics==17               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qndrop,qnr,qni,qns,qng,qnh;state:re_cloud,re_ice,re_snow
+package   nssl_2momccn    mp_physics==18               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnn,qndrop,qnr,qni,qns,qng,qnh;state:re_cloud,re_ice,re_snow
 package   nssl_1mom       mp_physics==19               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qvolg
 package   nssl_1momlfo    mp_physics==21               -             moist:qv,qc,qr,qi,qs,qg
-package   nssl_2momg      mp_physics==22               -             moist:qv,qc,qr,qi,qs,qg;scalar:qndrop,qnr,qni,qns,qng,qvolg;state:re_cloud,re_ice,re_snow
+package   nssl_2momg      mp_physics==22               -             moist:qv,qc,qr,qi,qs,qg;scalar:qndrop,qnr,qni,qns,qng;state:re_cloud,re_ice,re_snow
 package   wsm7scheme      mp_physics==24               -             moist:qv,qc,qr,qi,qs,qg,qh;state:re_cloud,re_ice,re_snow
 package   wdm7scheme      mp_physics==26               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnn,qnc,qnr;state:re_cloud,re_ice,re_snow
 package   thompsonaero    mp_physics==28               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr,qnc,qnwfa,qnifa,qnbca;state:re_cloud,re_ice,re_snow,qnwfa2d,qnifa2d,taod5503d,taod5502d
@@ -2999,6 +3013,14 @@ package   ntu             mp_physics==56               -             moist:qv,qc
 package   etampnew        mp_physics==95               -             moist:qv,qc,qr,qs;scalar:qt;state:f_ice_phy,f_rain_phy,f_rimef_phy
 package   gsfcgcescheme   mp_physics==97               -             moist:qv,qc,qr,qi,qs,qg
 package   madwrf_mp       mp_physics==96               -             moist:qv,qc,qi,qs
+
+package   nssl3m          nssl_3moment==1              -             scalar:qzr,qzg,qzh
+package   nssl3mg         nssl_3moment==2              -             scalar:qzr,qzg
+package   nssl_hail       nssl_hail_on==1              -             moist:qh;scalar:qnh
+package   nssl_ccn_opt    nssl_ccn_on==1               -             scalar:qnn
+package   nssl_graupelvol nssl_gvol==1                 -             scalar:qvolg
+package   nssl_hailvol    nssl_hvol==1                 -             scalar:qvolh
+
 
 package   radar_refl      compute_radar_ref==1         -             state:refl_10cm,refd_max
 endif

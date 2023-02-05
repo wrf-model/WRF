@@ -797,7 +797,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
    ENDIF
 
 ! set this to true to print out the global max/min for W on each time step.
-   IF ( .false. ) THEN
+   IF ( .true. ) THEN
       wmax = maxval( w(ips:ipe,kps:kpe,jps:jpe) )
       wmin = minval( w(ips:ipe,kps:kpe,jps:jpe) )
 #if ( defined(DM_PARALLEL)  &&   ! defined(STUBMPI) )
@@ -1879,13 +1879,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      QS=qs_curr,                         &
                      QH=qg_curr,                         &
                      QHL=qh_curr,                        &
-!                     CCW=qnc_curr,                       &
-!                     CRW=qnr_curr,                       &
-!                     CCI=qni_curr,                       &
-!                     CSW=qns_curr,                       &
-!                     CHW=qng_curr,                       &
-!                     CHL=qnh_curr,                       &
-                     VHW=qvolg_curr,                     &
+                     VHW=qvolg_curr, f_vhw=F_QVOLG,      &
                      PII=pi_phy,                         &
                      P=p,                                &
                      W=w,                                &
@@ -1977,9 +1971,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
              PRESENT (HAILNC ) .AND. PRESENT (HAILNCV)   .AND. &
              PRESENT (GRAUPELNC).AND.PRESENT (GRAUPELNCV).AND. &
 #endif
-             PRESENT ( W      )  .AND. &
-             PRESENT (QVOLG_CURR) .AND. F_QVOLG  .AND.         &
-             PRESENT (QVOLH_CURR) .AND. F_QVOLH ) THEN
+             PRESENT ( W      ) ) THEN
              
 
          CALL nssl_2mom_driver(                          &
@@ -1999,8 +1991,11 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      CSW=qns_curr,                       &
                      CHW=qng_curr,                       &
                      CHL=qnh_curr,                       &
-                     VHW=qvolg_curr,                     &
-                     VHL=qvolh_curr,                     &
+                     VHW=qvolg_curr, f_vhw=F_QVOLG,      &
+                     VHL=qvolh_curr, f_vhl=F_QVOLH,      &
+                     ZRW=qzr_curr,  f_zrw = f_qzr,       &
+                     ZHW=qzg_curr,  f_zhw = f_qzg,       &
+                     ZHL=qzh_curr,  f_zhl = f_qzh,       &
                      PII=pi_phy,                         &
                      P=p,                                &
                      W=w,                                &
@@ -2058,8 +2053,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
              PRESENT (HAILNC ) .AND. PRESENT (HAILNCV)   .AND. &
              PRESENT (GRAUPELNC).AND.PRESENT (GRAUPELNCV).AND. &
 #endif
-             PRESENT ( W      )  .AND. &
-             PRESENT (QVOLG_CURR) .AND. F_QVOLG  ) THEN
+             PRESENT ( W      )   ) THEN
              
 
          CALL nssl_2mom_driver(                          &
@@ -2077,7 +2071,9 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      CCI=qni_curr,                       &
                      CSW=qns_curr,                       &
                      CHW=qng_curr,                       &
-                     VHW=qvolg_curr,                     &
+                     VHW=qvolg_curr, f_vhw=F_QVOLG,      &
+                     ZRW=qzr_curr,  f_zrw = f_qzr,       &
+                     ZHW=qzg_curr,  f_zhw = f_qzg,       &
                      PII=pi_phy,                         &
                      P=p,                                &
                      W=w,                                &
@@ -2136,8 +2132,6 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
              PRESENT (GRAUPELNC).AND.PRESENT (GRAUPELNCV).AND. &
 #endif
              PRESENT ( W      )  .AND. &
-             PRESENT (QVOLG_CURR) .AND. F_QVOLG  .AND.         &
-             PRESENT (QVOLH_CURR) .AND. F_QVOLH  .AND.         &
              PRESENT( QNN_CURR )                          ) THEN
              
 
@@ -2158,8 +2152,11 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      CSW=qns_curr,                       &
                      CHW=qng_curr,                       &
                      CHL=qnh_curr,                       &
-                     VHW=qvolg_curr,                     &
-                     VHL=qvolh_curr,                     &
+                     VHW=qvolg_curr, f_vhw=F_QVOLG,      &
+                     VHL=qvolh_curr, f_vhl=F_QVOLH,      &
+                     ZRW=qzr_curr,  f_zrw = f_qzr,       &
+                     ZHW=qzg_curr,  f_zhw = f_qzg,       &
+                     ZHL=qzh_curr,  f_zhl = f_qzh,       &
                      cn=qnn_curr,                        &
                      PII=pi_phy,                         &
                      P=p,                                &

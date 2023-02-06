@@ -1759,7 +1759,7 @@ endif
    IF ( f_qnn ) THEN
       IF ( config_flags%mp_physics == wdm5scheme .or. config_flags%mp_physics == wdm6scheme ) THEN
          ! NO OP
-      ELSE IF ( config_flags%mp_physics == nssl_2momccn ) THEN
+      ELSE IF ( config_flags%mp_physics == nssl_2momccn .or. config_flags%nssl_ccn_on == 1 ) THEN
          grid%ccn_conc =  config_flags%nssl_cccn/1.225
       ELSE
          ! NO OP

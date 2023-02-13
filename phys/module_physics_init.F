@@ -4662,17 +4662,20 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
          IF ( config_flags % nssl_ccn_on > 0 ) THEN
             ccn_conc = nssl_cccn/1.225 ! set this to have correct boundary conditions
          ENDIF
-         CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme,nssl_params,ipctmp=nssl_ipconc,mixphase=0,ihvol=nssl_ivol,igvol=nssl_ivol)
+         CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme,nssl_params,ipctmp=nssl_ipconc,mixphase=0, &
+         ihvol=nssl_ivol,igvol=nssl_ivol,nssl_icdx=config_flags%nssl_icdx,nssl_icdxhl=config_flags%nssl_icdxhl)
      CASE (NSSL_2MOMG)
           nssl_ivol = config_flags % nssl_gvol
          IF ( config_flags % nssl_ccn_on > 0 ) THEN
             ccn_conc = nssl_cccn/1.225 ! set this to have correct boundary conditions
          ENDIF
-         CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme,nssl_params,ipctmp=nssl_ipconc,mixphase=0,ihvol=-1,igvol=nssl_ivol) ! turn off hail
+         CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme,nssl_params,ipctmp=nssl_ipconc,mixphase=0, &
+         ihvol=-1,igvol=nssl_ivol,nssl_icdx=config_flags%nssl_icdx,nssl_icdxhl=config_flags%nssl_icdxhl) ! turn off hail
      CASE (NSSL_2MOMCCN)
           nssl_ivol = config_flags % nssl_gvol
          ccn_conc = nssl_cccn/1.225 ! set this to have correct boundary conditions
-         CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme,nssl_params,ipctmp=nssl_ipconc,mixphase=0,ihvol=nssl_ivol,igvol=nssl_ivol)
+         CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme,nssl_params,ipctmp=nssl_ipconc,mixphase=0, &
+           ihvol=nssl_ivol,igvol=nssl_ivol,nssl_icdx=config_flags%nssl_icdx,nssl_icdxhl=config_flags%nssl_icdxhl)
 #if (EM_CORE==1)
      CASE (CAMMGMPSCHEME) ! CAM5's microphysics
           CALL CAMMGMP_INIT(ixcldliq, ixcldice, ixnumliq, ixnumice &

@@ -554,7 +554,7 @@ state   real    qir2            ikjftb  scalar      1         -     \
 state   real    qib2            ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QIB2"           "Rime ice volume-2 mixing ratio" "m(3) kg(-1)"
 state   real    qzi             ikjftb  scalar      1         -     \
-   i0rhusdf=(bdy_interp:dt)    "QZI"           "Sixth moment ice mixing ratio" "m(6) kg(-1)"
+   i0rhusdf=(bdy_interp:dt)    "QZI"           "Sq root of sixth moment ice mixing ratio times number mixing ratio" "m(3) kg(-1)"
 state   real    qvoli            ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QVOLI"           "Ice volume-1 mixing ratio" "m(3) kg(-1)"
 state   real    qaoli            ikjftb  scalar      1         -     \

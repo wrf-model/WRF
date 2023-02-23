@@ -4418,7 +4418,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    USE module_mp_fast_sbm
 #endif
    USE module_mp_morr_two_moment
-   USE module_mp_p3
+   USE microphy_p3
    USE module_mp_jensen_ishmael
    USE module_mp_milbrandt2mom
 !  USE module_mp_milbrandt3mom

@@ -32,25 +32,25 @@ For a sample main or calling program see the end of this file.
 */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #ifndef _WIN32
 # include <strings.h>
 #endif
+#include "protos.h"
 
 #define HASHSIZE 1024
 
 /*  commented out 2-29-90
 static char * symtab[HASHSIZE] ;	
 */
-
+/*
 void * malloc() ;
 void * calloc() ;
+*/
+/* char * symget(char *name, char *(*newnode)(), char  **(*nodename)(char *), sym_nodeptr *(*nodenext)(sym_nodeptr), char ** symtab, int flag);*/
 
-char * symget(name,newnode,nodename,nodenext,symtab,flag)
-char *name ;
-char *(*newnode)(), **(*nodename)(), **(*nodenext)() ;
-char *symtab[] ;
-int flag ;		/* 1 is create if not there, 0 return NULL if not there */
+char * symget(char *name,char *(*newnode)(),char **(*nodename)(char *),char **(*nodenext)(char *), char *symtab[], int flag) /* flag = 1 is create if not there, 0 return NULL if not there */
 {
     int index ; 
     int found ;
@@ -95,8 +95,7 @@ int flag ;		/* 1 is create if not there, 0 return NULL if not there */
 }
 
 int
-hash(name)
-char * name ;
+hash(char * name )
 {
     register int result = 0  ;
     register char * p = name ;
@@ -114,8 +113,7 @@ char * name ;
 /* added 2-19-90, attaches a new hash table to pointer  */
 
 int
-create_ht( p )
-char *** p ; 
+create_ht(char *** p )
 {
     *p = (char **) calloc( HASHSIZE , sizeof( char * ) ) ;
     return(0) ;
@@ -131,10 +129,7 @@ function to each entry
 */
 
 int
-sym_traverse( ht, nodenext, f )
-char *ht[] ;
-char **(*nodenext)() ;
-void (*f)() ;
+sym_traverse( char *ht[] , char **(*nodenext)(char *), void (*f)(char *) )
 {
     char * p, **x ;
     int i ;

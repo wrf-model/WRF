@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <strings.h>
+#include <ctype.h>
 
 int  nChmOpts = 0;
 char rxt_tbl[5][1000][128];

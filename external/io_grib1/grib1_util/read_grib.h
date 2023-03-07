@@ -167,3 +167,4 @@ int rg_get_index_near_date(GribInfo *gribinfo,char targetdate[STRINGSIZE],
 int rg_get_date(GribInfo *gribinfo,int index);
 int rg_get_century(GribInfo *gribinfo,int index);
 int rg_get_forecast_time(GribInfo *gribinfo,int index);
+int rg_get_parmtbl(GribInfo *gribinfo, int index);

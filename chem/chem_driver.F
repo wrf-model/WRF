@@ -878,6 +878,10 @@
               grid%biomt_par,grid%emit_par,grid%ebio_co2oce,                               &
               eghg_bio,                                                                    &
               grid%seas_flux,                                                              &
+         ! stuff for the online nh3-"WRF-NH3-CHEM" modified by renchuanhua
+              grid%actnh3, grid%EFnh3,                                                     &          
+              grid%agrisoil, grid%fertilizer, grid%freeinten, grid%graze, grid%industry,   &
+              grid%residential,  grid%transport, current_hour, grid%Q2,                    &
               ids,ide, jds,jde, kds,kde,                                                   &
               ims,ime, jms,jme, kms,kme,                                                   &
               its,ite,jts,jte,kts,kte)

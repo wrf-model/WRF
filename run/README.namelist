@@ -1240,7 +1240,7 @@ Multiple perturbations for WRF-Solar EPS (multi_perturb = 1)
                                                   streams for all activated stochastic parameterization schemes.
 
 
-Options for use with the Noah-MP Land Surface Model:
+Options for use with the Noah-MP Land Surface Model (sf_surface_physics = 4):
 
 &noah_mp
  dveg                               = 4,        ! Noah-MP Dynamic Vegetation option:

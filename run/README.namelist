@@ -152,6 +152,8 @@ Additional settings when running WRFVAR:
  inputout_end_s (max_dom)            = 0        ! the above shows that the input-formatted data are output
                                                   starting from hour 3 to hour 12 in 180 min interval.
 
+ nocolons                            =.false.   ! replace : with _ in output file names (set .true. for pnetCDF)
+
 For automatic moving nests: requires special input data, and environment variable TERRAIN_AND_LANDUSE set at compile time
                                      (This option will overwrite input_from_file for nest domains)
  input_from_hires (max_dom)          = .true., 

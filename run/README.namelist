@@ -51,9 +51,12 @@ Description of namelist variables
  cycling                             = F,       ! whether this run is a cycling run, if so, initializes look-up table for Thompson schemes only
  restart_interval		     = 1440,	! restart output file interval in minutes
  reset_simulation_start              = F,       ! whether to overwrite simulation_start_date with forecast start time
- io_form_history                     = 2,       ! 2 = netCDF 
- io_form_restart                     = 2,       ! 2 = netCDF 
- io_form_input                       = 2,       ! 2 = netCDF
+ io_form_history                     = 2,       ! netCDF format 
+                                     = 11,      ! pnetCDF format
+ io_form_restart                     = 2,       ! netCDF format
+                                     = 11,      ! pnetCDF format
+ io_form_input                       = 2,       ! netCDF format
+                                     = 11,      ! pnetCDF format
  io_form_boundary                    = 2,       ! netCDF format
                                      = 4,       ! PHD5 format
                                      = 5,       ! GRIB1 format
@@ -95,6 +98,7 @@ Other output options:
                                                     than the history file requires Registry.EM file change
  auxhist2_interval (max_dom)         = 10,      ! interval in minutes
  io_form_auxhist2                    = 2,       ! output in netCDF
+                                     = 11,      ! pnetCDF format
  frames_per_auxhist2                 = 1000,    ! number of output times in this file
 
 For SST updating (used only with sst_update=1):
@@ -102,6 +106,7 @@ For SST updating (used only with sst_update=1):
  auxinput4_inname                    = "wrflowinp_d<domain>" 
  auxinput4_interval                  = 360      ! minutes generally matches time given by interval_seconds
  io_form_auxinput4                   = 2        ! IO format
+                                     = 11,      ! pnetCDF format
 
  nwp_diagnostics                     = 0        ! set to = 1 to add 7 history-interval max diagnostic fields
 
@@ -110,6 +115,7 @@ For additional regional climate surface fields
  output_diagnostics                  = 0        ! set to = 1 to add 36 surface diagnostic arrays (max/min/mean/std)
  auxhist3_outname                    = 'wrfxtrm_d<domain>_<date>' ! file name for added diagnostics
  io_form_auxhist3                    = 2        ! netcdf
+                                     = 11,      ! pnetCDF format
  auxhist3_interval                   = 1440     ! minutes between outputs (1440 gives daily max/min)
  frames_per_auxhist3                 = 1        ! output times per file
                                                   Note: do restart only at multiple of auxhist3_intervals

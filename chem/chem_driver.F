@@ -282,6 +282,8 @@
       CHARACTER (LEN=1000) :: msg 
       CHARACTER (LEN=256) :: current_date_char 
       integer :: current_month
+!for the online nh3-"WRF-NH3-CHEM" modified by renchuanhua 
+      integer :: current_hour  
 ! ..
 ! .. Intrinsic Functions ..
       INTRINSIC max, min

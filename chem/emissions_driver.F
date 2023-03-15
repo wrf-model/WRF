@@ -135,7 +135,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme, ne_area ),                           &
          INTENT(INOUT ) ::                               e_bio
    REAL, DIMENSION( ims:ime, 1:config_flags%kemit, jms:jme,num_emis_ant),&
-         INTENT(IN ) ::                                                    &
+         INTENT(INOUT ) ::                                                    &
          emis_ant
    REAL, DIMENSION( ims:ime,  kms:kme, jms:jme,num_emis_vol),              &
          INTENT(INOUT ) ::                                                 &

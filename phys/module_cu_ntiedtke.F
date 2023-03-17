@@ -591,13 +591,16 @@ contains
       real dt,ztpp1
       real zew,zqs,zcor
       real scale_fac(lq), dxref
+      integer  scale_aware(lq)
 !
 !  set scale-dependency factor when dx is < 15 km
 !
+      scale_aware = 0
       dxref = 15000.
       do j=1,lq
       if (dx(j).lt.dxref .and. ntiedtke_dx_opt.eq.1) then
           scale_fac(j) = (1.+log(dxref/dx(j)))**3
+          scale_aware(j) = 1
       else
           scale_fac(j) = 1.+1.33e-5*dx(j)
       end if 
@@ -656,7 +659,7 @@ contains
      &     ktype,    icbot,    ictop,    ztu,     zqu,  &
      &     zlu,      zlude,    zmfu,     zmfd,    zrain,&
      &     pcte,     phhfl,    lndj,     pgeoh,   dx,   &
-     &     scale_fac, ntiedtke_dx_opt )
+     &     scale_fac, scale_aware )
 !
 !     to include the cloud water and cloud ice detrained from convection
 !
@@ -712,7 +715,7 @@ contains
      &     ktype,    kcbot,    kctop,    ptu,      pqu,&
      &     plu,      plude,    pmfu,     pmfd,     prain,&
      &     pcte,     phhfl,    lndj,     zgeoh,    dx,   &
-     &     scale_fac,  ntiedtke_dx_opt )
+     &     scale_fac,  scale_aware )
       implicit none
 !
 !***cumastrn*  master routine for cumulus massflux-scheme
@@ -821,7 +824,7 @@ contains
       logical  ldcum(klon)
       logical  loddraf(klon),          llo1,   llo2(klon)
       real     scale_fac(klon)
-      integer  ntiedtke_dx_opt
+      integer  scale_aware(klon)
 
 !  local varaiables
       real     zcons,zcons2,zqumqe,zdqmin,zdh,zmfmax
@@ -923,7 +926,7 @@ contains
      &     zmfus,    zmfuq,    zmful,    plude,    zdmfup,&
      &     kcbot,    kctop,    ictop0,   icum,     ztmst,&
      &     zqsenh,   zlglac,   lndj,     wup,      wbase,   kdpl,  pmfude_rate,&
-     &     scale_fac,  ntiedtke_dx_opt )
+     &     scale_fac,  scale_aware )
 
 !*     (b) check cloud depth and change entrainment rate accordingly
 !          calculate precipitation rate (for downdraft calculation)
@@ -1042,7 +1045,7 @@ contains
            ztau = ztauc(jl) * scale_fac(jl)
            ztau = max(ztmst,ztau)
            ztau = max(360.,ztau)
-           if(ntiedtke_dx_opt.eq.1) then
+           if(scale_aware(jl).eq.1) then
              ztau = min(43200.,ztau)
            else
              ztau = min(10800.,ztau)
@@ -1086,7 +1089,7 @@ contains
              zmfub1(jl) = zmfub(jl)
            end if
            zmfub1(jl) = min(zmfub1(jl),zmfmax)
-           if(ntiedtke_dx_opt.eq.1) then
+           if(scale_aware(jl).eq.1) then
               zmfub1(jl) = zmfub1(jl)/(scale_fac(jl))**(.5)
            end if
          end if
@@ -2132,7 +2135,7 @@ contains
      &     pmfus,    pmfuq,    pmful,    plude,    pdmfup,&
      &     kcbot,    kctop,    kctop0,   kcum,     ztmst,&
      &     pqsenh,   plglac,   lndj,     wup,      wbase,   kdpl, pmfude_rate,&
-     &     scale_fac,  ntiedtke_dx_opt )
+     &     scale_fac,  scale_aware )
       implicit none
 !     this routine does the calculations for cloud ascents
 !     for cumulus parameterization
@@ -2254,17 +2257,13 @@ contains
       real     zfac,zbuoc,zdkbuo,zdken,zvv,zarg,zchange,zxe,zxs,zdshrd
       real     atop1,atop2,abot
       real     scale_fac(klon)
-      integer  ntiedtke_dx_opt
+      integer  scale_aware(klon)
 !--------------------------------
 !*    1.       specify parameters
 !--------------------------------
       zcons2=3./(g*ztmst)
       zfacbuo = 0.5/(1.+0.5)
-      if(ntiedtke_dx_opt.eq.1) then
-        zprcdgw = cprcon*zrg/(scale_fac(jl)**(1./3.))
-      else
       zprcdgw = cprcon*zrg
-      end if
       z_cldmax = 5.e-3
       z_cwifrac = 0.5
       z_cprc2 = 0.5
@@ -2343,7 +2342,7 @@ contains
      &     pgeo,     pgeoh,    ldcum,   ktype,   klab,  zlrain,&
      &     pmfu,     pmfub,    kcbot,   ptu,&
      &     pqu,      plu,      puu,     pvu,      pmfus,&
-     &     pmfuq,    pmful,    pdmfup,  ntiedtke_dx_opt )
+     &     pmfuq,    pmful,    pdmfup,  scale_aware )
       is = 0
       jlm = 0
       do jl = 1,klon
@@ -2563,6 +2562,9 @@ contains
             ikb=kcbot(jl)
             if ( plu(jl,jk) > zdshrd )then
               zwu = min(15.0,sqrt(2.*max(0.1,kup(jl,jk+1))))
+              if(scale_aware(jl).eq.1) then
+                 zprcdgw = cprcon*zrg/(scale_fac(jl)**(1./3.))
+              end if
               zprcon = zprcdgw/(0.75*zwu)
 ! PARAMETERS FOR BERGERON-FINDEISEN PROCESS (T < -5C)
               zdt = min(rtber-rtice,max(rtber-ptu(jl,jk),0.))
@@ -3745,7 +3747,7 @@ contains
      &     pgeo,     pgeoh,    ldcum,   ktype,  klab,  plrain,&
      &     pmfu,     pmfub,    kcbot,   ptu,&
      &     pqu,      plu,      puu,     pvu,    pmfus,&
-     &     pmfuq,    pmful,    pdmfup,  ntiedtke_dx_opt )
+     &     pmfuq,    pmful,    pdmfup,  scale_aware )
       implicit none
 !      m.tiedtke         e.c.m.w.f.     12/89
 !      c.zhang           iprc           05/2012
@@ -3782,16 +3784,16 @@ contains
 ! local variabels
       integer  jl,kk,klev,klon,klevp1,klevm1
       real     zzzmb
-      integer  ntiedtke_dx_opt
+      integer  scale_aware(klon)
 !--------------------------------------------------------
 !*    1.      calculate entrainment and detrainment rates
 ! -------------------------------------------------------
-       if(ntiedtke_dx_opt.eq.1) then
          do jl=1,klon
           if(.not.ldcum(jl) .and. klab(jl,kk+1).eq.0) then
+           if(scale_aware(jl).eq.1) then
             if(lmfmid .and. pqen(jl,kk) .gt. 0.80*pqsen(jl,kk).and. &
 ! ww (no mid level conv, if the air is saturated)
-              pqen(jl,kk) .le. pqsen(jl,kk).and. &
+              pqen(jl,kk) .lt. pqsen(jl,kk).and. &
               pgeo(jl,kk)*zrg .gt. 5.0e2  .and.  &
      &        pgeo(jl,kk)*zrg .lt. 1.0e4 )  then
             ptu(jl,kk+1)=(cpd*pten(jl,kk)+pgeo(jl,kk)-pgeoh(jl,kk+1))&
@@ -3811,11 +3813,7 @@ contains
             plrain(jl,kk+1)=0.0
             ktype(jl)=3
           end if
-         end if
-        end do
-       else
-         do jl=1,klon
-          if(.not.ldcum(jl) .and. klab(jl,kk+1).eq.0) then
+         else
             if(lmfmid .and. pqen(jl,kk) .gt. 0.80*pqsen(jl,kk).and. &
               pgeo(jl,kk)*zrg .gt. 5.0e2  .and.  &
      &        pgeo(jl,kk)*zrg .lt. 1.0e4 )  then
@@ -3837,8 +3835,8 @@ contains
             ktype(jl)=3
           end if
          end if
+         end if
         end do
-      end if
       return
       end subroutine cubasmcn
 !---------------------------------------------------------

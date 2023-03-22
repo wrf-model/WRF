@@ -4,7 +4,7 @@ MODULE module_bl_keps
       parameter(temin=1E-4,dmin=1E-7,tpemin=1E-7,c_theta=0.09,  &
                 vk=0.4,c_mu=0.09,c1=1.44,c2=1.92,c3=1.44,c4=0.27,c5=0.08,sigma_eps=1.3) ! impose minimum values for tke similar to those of MYJ
       parameter(temax=50.,dmax=50.,tpemax=5.)
-      integer,private,parameter:: bl_keps_adv = 1
+      integer,private,parameter:: bl_keps_adv = 0
 ! -----------------------------------------------------------------------     
 
 

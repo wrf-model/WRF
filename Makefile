@@ -1095,6 +1095,10 @@ fortran_2003_fflush_test:
 fortran_2008_gamma_test:
 	@cd tools ; /bin/rm -f fortran_2008_gamma_test.{exe,o} ; $(SFC) -o fortran_2008_gamma_test.exe fortran_2008_gamma_test.F ; cd ..
 
+# rule used by configure to test for RPC support
+rpc_test:
+	@cd tools ; /bin/rm -f rpc_test.exe ; $(SCC) -DUSE_TIRPC -o rpc_test.exe rpc_test.c ; $(SCC) -o rpc_test.exe rpc_test.c; cd ..
+
 toolsdir :
 	@ echo '--------------------------------------'
 	if [ $(WRF_PLUS_CORE) -eq 0 ] ; then \

@@ -305,6 +305,8 @@ SUBROUTINE construct_filename4( result , basename , fld1 , len1 , date_char , io
     ext = '.nc '
   ELSE IF ( use_package(io_form) .EQ. IO_GRIB1 ) THEN
      ext = '.gb '
+  ELSE IF ( use_package(io_form) .EQ. IO_ADIOS2 ) THEN
+     ext = ' '
   ELSE
      CALL wrf_error_fatal ('improper io_form')
   END IF
@@ -339,6 +341,8 @@ SUBROUTINE construct_filename4a( result , basename , fld1 , len1 , date_char , i
     ext = '.nc '
   ELSE IF ( use_package(io_form) .EQ. IO_GRIB1 ) THEN
      ext = '.gb '
+  ELSE IF ( use_package(io_form) .EQ. IO_ADIOS2 ) THEN
+     ext = ' '
   ELSE
      CALL wrf_error_fatal ('improper io_form')
   END IF

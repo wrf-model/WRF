@@ -1,13 +1,13 @@
 MODULE module_sf_fogdes
 
   USE module_model_constants
-!JOE - add for consistent vdfg calc when grav_settling=1
-  USE module_bl_mynn, only: qcgmin, gno, gpw
-!JOE-end
+
 !-------------------------------------------------------------------
   IMPLICIT NONE
 !-------------------------------------------------------------------
-   REAL, PARAMETER :: myu = 1.8e-5  ! air viscosity (m^2/s)
+  REAL, PARAMETER :: myu = 1.8e-5  ! air viscosity (m^2/s)
+  REAL, PARAMETER :: gno=1.0  !original value seems too aggressive: 4.64158883361278196
+  REAL, PARAMETER :: gpw=5./3., qcgmin=1.e-8
 
 CONTAINS
 

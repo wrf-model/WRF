@@ -393,11 +393,10 @@ BENCH_START(a_pbl_driver_tim)
      &        ,QKE=scalar(ims,kms,jms,P_qke_adv), tsq=grid%tsq, qsq=grid%qsq  &
      &        ,cov=grid%cov                                               &
      &        ,DQKE=grid%dqke,QWT=grid%qWT                                &
-     &        ,QSHEAR=grid%qSHEAR,QBUOY=grid%qBUOY,QDISS=grid%qDISS &
-     &        ,bl_mynn_tkebudget=config_flags%bl_mynn_tkebudget           &
+     &        ,QSHEAR=grid%qSHEAR,QBUOY=grid%qBUOY,QDISS=grid%qDISS       &
+     &        ,tke_budget=config_flags%tke_budget                         &
      &        ,rmol=grid%rmol, ch=grid%ch                                 &
-     &        ,qcg=grid%qcg, grav_settling=config_flags%grav_settling             &
-!    &        ,K_m=grid%K_m, K_h=grid%K_h, K_q=grid%K_q                   &
+     &        ,qcg=grid%qcg, grav_settling=config_flags%grav_settling     &
 !GWD for ARW
      &        ,GWD_OPT=config_flags%gwd_opt &
      &        ,DTAUX3D=grid%dtaux3d,DTAUY3D=grid%dtauy3d &

@@ -69,6 +69,7 @@ COMPILER90  = mpiifort
 FORMAT_FREE = -FR
 BYTESWAPIO  = -convert big_endian
 F90FLAGS    = -O2 -g -w -c -ftz -align all -fno-alias -fp-model precise $(FORMAT_FREE) $(BYTESWAPIO)
+DEBUGFLAGS = -DHYDRO_D -g -traceback -debug all -check all
 MODFLAG	    = -I./ -I ../../MPP -I ../MPP -I ../mod
 LDFLAGS	    =
 CPPINVOKE	= -fpp

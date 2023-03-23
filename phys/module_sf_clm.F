@@ -61004,8 +61004,6 @@ END IF
 
           if((xland(i,j)-1.5).ge.0.)then
 
-             If(xice(i,j).eq.1) then
-  
               smstav(i,j)=1.0
               smstot(i,j)=1.0
               smois(i,:,j)=1.0

@@ -24,8 +24,12 @@ subroutine da_scale_background_errors ( be, it )
    if ( jb_factor <= 0.0 ) return
 !
 ! Rewind the unit:
-    be_rf_unit    = unit_end + 1
-    be_print_unit = unit_end + 2
+    !be_rf_unit    = unit_end + 1
+    !be_print_unit = unit_end + 2
+    call da_get_unit(be_rf_unit)
+    call da_get_unit(be_print_unit)
+    open(be_rf_unit   , file="be_rf.dat"   ,status="old", form="unformatted") 
+    open(be_print_unit, file="be_print.dat",status="old", position="append") 
     rewind (be_rf_unit)
 !
 ! Read the dimensions and allocate the arrays:
@@ -171,6 +175,11 @@ subroutine da_scale_background_errors ( be, it )
                                           ds, rf_len11, be % v11)
        deallocate ( rf_len11 )
     end if
+
+   close(be_rf_unit)
+   close(be_print_unit)
+   call da_free_unit(be_rf_unit)
+   call da_free_unit(be_print_unit)
 
 end subroutine da_scale_background_errors
 

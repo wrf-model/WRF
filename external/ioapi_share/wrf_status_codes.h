@@ -59,6 +59,7 @@
   integer, parameter  :: WRF_WARN_LENGTH_LESS_THAN_1 = -1022    
   integer, parameter  :: WRF_WARN_MORE_DATA_IN_FILE  = -1023    
   integer, parameter  :: WRF_WARN_DATE_LT_LAST_DATE  = -1024
+  integer, parameter  :: WRF_WARN_ADIOS2  = -1025
 
 ! For HDF5 only
   integer, parameter  :: WRF_HDF5_ERR_FILE                 = -200

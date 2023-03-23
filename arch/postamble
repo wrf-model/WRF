@@ -11,6 +11,7 @@ ARCHFLAGS       =    $(COREDEFS) -DIWORDSIZE=$(IWORDSIZE) -DDWORDSIZE=$(DWORDSIZ
                       CONFIGURE_NETCDF_FLAG \
                       CONFIGURE_NETCDFPAR_FLAG \
                       CONFIGURE_PNETCDF_FLAG \
+                      CONFIGURE_ADIOS2_FLAG \
                       CONFIGURE_ESMF_FLAG \
                       CONFIGURE_GRIB2_FLAG \
                       CONFIGURE_RTTOV_FLAG \
@@ -67,10 +68,11 @@ HDF5PATH        =    CONFIGURE_HDF5_PATH
 WRFPLUSPATH     =    CONFIGURE_WRFPLUS_PATH
 RTTOVPATH       =    CONFIGURE_RTTOV_PATH
 PNETCDFPATH     =    CONFIGURE_PNETCDF_PATH
+ADIOS2PATH      =    CONFIGURE_ADIOS2_PATH
 
 bundled:  io_only CONFIGURE_ATMOCN
 external: io_only CONFIGURE_COMMS_EXTERNAL $(ESMF_TARGET)
-io_only:  esmf_time CONFIGURE_WRFIO_NF CONFIGURE_WRFIO_NFPAR CONFIGURE_WRFIO_PNF CONFIGURE_WRFIO_GRIB2 \
+io_only:  esmf_time CONFIGURE_WRFIO_NF CONFIGURE_WRFIO_NFPAR CONFIGURE_WRFIO_PNF CONFIGURE_WRFIO_ADIOS2 CONFIGURE_WRFIO_GRIB2 \
 	  wrf_ioapi_includes wrfio_grib_share wrfio_grib1 wrfio_int fftpack
 
 
@@ -106,6 +108,11 @@ wrfio_nfpar :
 wrfio_pnf : 
 	( cd $(WRF_SRC_ROOT_DIR)/external/io_pnetcdf ; \
           make $(J) NETCDFPATH="$(PNETCDFPATH)" RANLIB="$(RANLIB)" CPP="$(CPP) $(ARCHFLAGS)" \
+          FC="$(FC) $(PROMOTION) $(OMP) $(FCFLAGS)" TRADFLAG="$(TRADFLAG)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" )
+
+wrfio_adios2 : 
+	( cd $(WRF_SRC_ROOT_DIR)/external/io_adios2 ; \
+          make $(J) ADIOS2="$(ADIOS2PATH)" RANLIB="$(RANLIB)" CPP="$(CPP) $(ARCHFLAGS)" \
           FC="$(FC) $(PROMOTION) $(OMP) $(FCFLAGS)" TRADFLAG="$(TRADFLAG)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" )
 
 wrfio_grib_share :

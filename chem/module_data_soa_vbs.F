@@ -151,190 +151,131 @@ MODULE module_data_soa_vbs
       INTEGER vclai
       PARAMETER (vclai=10)
 
-!liqy
-
-! index for Accumulation mode aerosol calcium
-                INTEGER vcaaj
-                PARAMETER (vcaaj=11)
-! index for Aitken mode aerosol calcium         
-                INTEGER vcaai
-                PARAMETER (vcaai=12)
-
-! index for Accumulation mode aerosol potassium
-                INTEGER vkaj
-                PARAMETER (vkaj=13)
-! index for Aitken mode aerosol potassium               
-                INTEGER vkai
-                PARAMETER (vkai=14)
-
-! index for Accumulation mode aerosol magesium
-                INTEGER vmgaj
-                PARAMETER (vmgaj=15)
-! index for Aitken mode aerosol magesium                
-                INTEGER vmgai
-                PARAMETER (vmgai=16)
-
 ! I've changed the names and simplified
 ! indices for accumulation and aitken modes of anthropogenic SOA
-      INTEGER, PARAMETER ::  vasoa1j=17
-      INTEGER, PARAMETER ::  vasoa1i=18
+      INTEGER, PARAMETER ::  vasoa1j=11
+      INTEGER, PARAMETER ::  vasoa1i=12
 
-      INTEGER, PARAMETER ::  vasoa2j=19
-      INTEGER, PARAMETER ::  vasoa2i=20
+      INTEGER, PARAMETER ::  vasoa2j=13
+      INTEGER, PARAMETER ::  vasoa2i=14
 
-      INTEGER, PARAMETER ::  vasoa3j=21
-      INTEGER, PARAMETER ::  vasoa3i=22
+      INTEGER, PARAMETER ::  vasoa3j=15
+      INTEGER, PARAMETER ::  vasoa3i=16
 
-      INTEGER, PARAMETER ::  vasoa4j=23
-      INTEGER, PARAMETER ::  vasoa4i=24
+      INTEGER, PARAMETER ::  vasoa4j=17
+      INTEGER, PARAMETER ::  vasoa4i=18
 
 ! indices for accumulation and aitken modes of biogenic SOA
-      INTEGER, PARAMETER ::  vbsoa1j=25
-      INTEGER, PARAMETER ::  vbsoa1i=26
+      INTEGER, PARAMETER ::  vbsoa1j=19
+      INTEGER, PARAMETER ::  vbsoa1i=20
 
-      INTEGER, PARAMETER ::  vbsoa2j=27
-      INTEGER, PARAMETER ::  vbsoa2i=28
-
-      INTEGER, PARAMETER ::  vbsoa3j=29
-      INTEGER, PARAMETER ::  vbsoa3i=30
-
-      INTEGER, PARAMETER ::  vbsoa4j=31
-      INTEGER, PARAMETER ::  vbsoa4i=32
+      INTEGER, PARAMETER ::  vbsoa2j=21
+      INTEGER, PARAMETER ::  vbsoa2i=22
+                                      
+      INTEGER, PARAMETER ::  vbsoa3j=23
+      INTEGER, PARAMETER ::  vbsoa3i=24
+                                      
+      INTEGER, PARAMETER ::  vbsoa4j=25
+      INTEGER, PARAMETER ::  vbsoa4i=26
 !------------------------------------------------------------------------------
 
 ! index for Accumulation mode primary anthropogenic
       INTEGER vorgpaj
-      PARAMETER (vorgpaj=33)
+      PARAMETER (vorgpaj=27)
 
 ! index for Aitken mode primary anthropogenic
       INTEGER vorgpai
-      PARAMETER (vorgpai=34)
+      PARAMETER (vorgpai=28)
 
 ! index for Accumulation mode aerosol elemen
       INTEGER vecj
-      PARAMETER (vecj=35)
+      PARAMETER (vecj=29)
 
 ! index for Aitken mode elemental carbon    
       INTEGER veci
-      PARAMETER (veci=36)
+      PARAMETER (veci=30)
 
 ! index for Accumulation mode primary PM2.5 
       INTEGER vp25aj
-      PARAMETER (vp25aj=37)
+      PARAMETER (vp25aj=31)
 
 ! index for Aitken mode primary PM2.5 concentration
       INTEGER vp25ai
-      PARAMETER (vp25ai=38)
+      PARAMETER (vp25ai=32)
 
 ! index for coarse mode anthropogenic aerososol
       INTEGER vantha
-      PARAMETER (vantha=39)
+      PARAMETER (vantha=33)
 
 ! index for coarse mode marine aerosol concentration
       INTEGER vseas
-      PARAMETER (vseas=40)
+      PARAMETER (vseas=34)
 
 ! index for coarse mode soil-derived aerosol
       INTEGER vsoila
-      PARAMETER (vsoila=41)
+      PARAMETER (vsoila=35)
 
 ! index for Aitken mode number              
       INTEGER vnu0
-      PARAMETER (vnu0=42)
+      PARAMETER (vnu0=36)
 
 ! index for accum  mode number              
       INTEGER vac0
-      PARAMETER (vac0=43)
+      PARAMETER (vac0=37)
 
 ! index for coarse mode number              
       INTEGER vcorn
-      PARAMETER (vcorn=44)
+      PARAMETER (vcorn=38)
 
 ! index for Accumulation mode aerosol water 
       INTEGER vh2oaj
-      PARAMETER (vh2oaj=45)
+      PARAMETER (vh2oaj=39)
 
 ! index for Aitken mode aerosol water concentration
       INTEGER vh2oai
-      PARAMETER (vh2oai=46)
+      PARAMETER (vh2oai=40)
 
 ! index for Aitken mode 3'rd moment         
       INTEGER vnu3
-      PARAMETER (vnu3=47)
+      PARAMETER (vnu3=41)
 ! index for Accumulation mode 3'rd moment   
       INTEGER vac3
-      PARAMETER (vac3=48)
+      PARAMETER (vac3=42)
 
 ! index for coarse mode 3rd moment          
       INTEGER vcor3
-      PARAMETER (vcor3=49)
+      PARAMETER (vcor3=43)
 
 ! index for sulfuric acid vapor concentration
       INTEGER vsulf
-      PARAMETER (vsulf=50)
+      PARAMETER (vsulf=44)
 
 ! index for nitric acid vapor concentration
       INTEGER vhno3
-      PARAMETER (vhno3=51)
+      PARAMETER (vhno3=45)
 
 ! index for ammonia gas concentration
       INTEGER vnh3
-      PARAMETER (vnh3=52)
-
-! index for HCL gas concentration
-      INTEGER vhcl
-      PARAMETER (vhcl=53)
-
+      PARAMETER (vnh3=46)
 
 ! index for N2O5 gas concentration
         INTEGER vn2o5
-        PARAMETER (vn2o5=54)
-! index for CLNO2 gas concentration
-        INTEGER vclno2
-        PARAMETER (vclno2=55)
-
-! index for n2o5 uptake
-        INTEGER vgamn2o5
-        PARAMETER (vgamn2o5=56)
-
-! index for n2o5 velocity
-        INTEGER vcn2o5
-        PARAMETER (vcn2o5=57)
-
-! index for n2o5 heterogeneous reaction rate
-        INTEGER vkn2o5
-        PARAMETER (vkn2o5=58)
-
-! index for clno2 yield from n2o5 heterogeneous rate
-        INTEGER vyclno2
-        PARAMETER (vyclno2=59)
-
-! index for surface area of aerosol nuclei mode
-        INTEGER vsnu
-        PARAMETER (vsnu=60)
-
-! index for surface area of aerosol accum mode
-        INTEGER vsac
-        PARAMETER (vsac=61)
-
-! index for surface area of aerosol coarse mode
-        INTEGER vsco
-        PARAMETER (vsco=62)
+        PARAMETER (vn2o5=47)
 
 ! index for the inverse of air density, used to transform ug/m3 to and from
 ! ug/kg dry air.
 
         INTEGER valt_in
-        PARAMETER (valt_in=63)
+        PARAMETER (valt_in=48)
 
-INTEGER, PARAMETER :: vcvasoa1=64
-INTEGER, PARAMETER :: vcvasoa2=65
-INTEGER, PARAMETER :: vcvasoa3=66
-INTEGER, PARAMETER :: vcvasoa4=67
-INTEGER, PARAMETER :: vcvbsoa1=68
-INTEGER, PARAMETER :: vcvbsoa2=69
-INTEGER, PARAMETER :: vcvbsoa3=70
-INTEGER, PARAMETER :: vcvbsoa4=71
+INTEGER, PARAMETER :: vcvasoa1=49
+INTEGER, PARAMETER :: vcvasoa2=50
+INTEGER, PARAMETER :: vcvasoa3=51
+INTEGER, PARAMETER :: vcvasoa4=52
+INTEGER, PARAMETER :: vcvbsoa1=53
+INTEGER, PARAMETER :: vcvbsoa2=54
+INTEGER, PARAMETER :: vcvbsoa3=55
+INTEGER, PARAMETER :: vcvbsoa4=56
 !liqy-20140912
 !-----------------------------------------------------------------------------
 
@@ -670,17 +611,6 @@ INTEGER, PARAMETER :: pbsoa4=8
 
       REAL clfac
       PARAMETER (clfac=f6dpim9/rhocl)
-
-!liqy
-                REAL cafac
-                PARAMETER (cafac=f6dpim9/rhoca)
-
-                REAL kfac
-                PARAMETER (kfac=f6dpim9/rhok)
-
-                REAL mgfac
-                PARAMETER (mgfac=f6dpim9/rhomg)
-
 
 !liqy-20140616
 !  starting standard surface pressure [ Pa ]  
@@ -1104,15 +1034,6 @@ INTEGER, PARAMETER :: pbsoa4=8
       	  lptr_bsoa2_aer(maxd_asize,maxd_atype,maxd_aphase),     &
       	  lptr_bsoa3_aer(maxd_asize,maxd_atype,maxd_aphase),     &
       	  lptr_bsoa4_aer(maxd_asize,maxd_atype,maxd_aphase),     &
-
-!      	  lptr_orgaro1_aer(maxd_asize,maxd_atype,maxd_aphase),    &
-!      	  lptr_orgaro2_aer(maxd_asize,maxd_atype,maxd_aphase),    &
-!      	  lptr_orgalk_aer(maxd_asize,maxd_atype,maxd_aphase),     &
-!      	  lptr_orgole_aer(maxd_asize,maxd_atype,maxd_aphase),     &
-!      	  lptr_orgba1_aer(maxd_asize,maxd_atype,maxd_aphase),     &
-!      	  lptr_orgba2_aer(maxd_asize,maxd_atype,maxd_aphase),     &
-!      	  lptr_orgba3_aer(maxd_asize,maxd_atype,maxd_aphase),     &
-!      	  lptr_orgba4_aer(maxd_asize,maxd_atype,maxd_aphase),     &
 
       	  lptr_orgpa_aer(maxd_asize,maxd_atype,maxd_aphase),      &
       	  lptr_ec_aer(maxd_asize,maxd_atype,maxd_aphase),         &

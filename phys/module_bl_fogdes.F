@@ -1,11 +1,12 @@
 MODULE module_bl_fogdes
 
   USE module_model_constants
-  USE module_bl_mynn, only: qcgmin, gno, gpw
 
 !-------------------------------------------------------------------
   IMPLICIT NONE
 !-------------------------------------------------------------------
+  REAL, PARAMETER :: gno=1.0  !original value seems too aggressive: 4.64158883361278196
+  REAL, PARAMETER :: gpw=5./3., qcgmin=1.e-8
 
 CONTAINS
 
@@ -67,7 +68,6 @@ CONTAINS
 !-- jte           end index for j in tile
 !-- kts           start index for k in tile
 !-- kte           end index for k in tile
-!******************************************************************
 !------------------------------------------------------------------
 
    INTEGER, INTENT(IN)                       :: ims,ime,jms,jme,kms,kme &

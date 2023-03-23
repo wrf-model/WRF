@@ -29,6 +29,7 @@ RM		=	rm -f
 RMD		=	rm -f
 COMPILER90=	xlf90_r
 F90FLAGS  =       -c -O2 -qfree=f90 -qmaxmem=819200
+DEBUGFLAGS = -DHYDRO_D -g 
 MODFLAG	=	-I./ -I ../../MPP -I ../MPP -I ../mod
 LDFLAGS	=	
 CPP	=       cpp -C -P

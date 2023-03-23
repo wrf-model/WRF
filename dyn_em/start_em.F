@@ -2198,6 +2198,7 @@ if(config_flags%ifire.eq.2)then
                grid          = grid,                &
                cf            = config_flags,        &
                fs_p_id       = grid%fs_p_id,        &
+               fs_p_src      = grid%fs_p_src,       &
                fs_p_dt       = grid%fs_p_dt,        &
                fs_p_x        = grid%fs_p_x,         &
                fs_p_y        = grid%fs_p_y,         &

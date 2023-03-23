@@ -134,10 +134,14 @@ OVRTSWCRT = 1
 ! NOTE: Currently subsurface flow is only steepest descent
 rt_option = 1
 
+! Specify whether to adjust overland flow parameters based on imperviousness
+imperv_adj = 0
+
 ! Switch to activate channel routing...(0=no, 1=yes)
 CHANRTSWCRT = 1
 
-! Specify channel routing option: 1=Muskingam-reach, 2=Musk.-Cunge-reach, 3=Diff.Wave-gridded
+! Specify channel routing option: 1=Muskingam-reach, 2=Musk.-Cunge-reach, 3=Diff.Wave-gridded,
+! 5=Bypass channel routing (only active for UDMP=1 and reach configuration)
 channel_option = 3
 
 ! Specify the reach file for reach-based routing options (e.g.: "Route_Link.nc")

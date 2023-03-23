@@ -1,0 +1,133 @@
+!*----------------------------------------------------------------------------
+!*
+!*  WRF ADIOS2 I/O
+!*  Author: Michael Laufer
+!*  	    Toga Networks, a Huawei Company
+!*  	    michael.laufer@toganetworks.com
+!*  Author: Erick Fredj
+!*  	    Computer Science Department, The Jerusalem College of Technology
+!*	    fredj@jct.ac.il
+!*	    Toga Networks, a Huawei Company
+!*	    erick.fredj@toganetworks.com
+!*    	        
+!*  Date:    November 3, 2021
+!*
+!*----------------------------------------------------------------------------
+
+  use wrf_data_adios2
+  use ext_adios2_support_routines
+  use adios2
+  implicit none
+  include 'wrf_status_codes.h'
+  integer               ,intent(in)     :: DataHandle
+  character*(*)         ,intent(in)     :: Element
+  character*(*)         ,intent(in)     :: Var
+  TYPE_COUNT
+  TYPE_DATA
+  TYPE_OUTCOUNT
+  integer               ,intent(out)    :: Status
+  type(wrf_data_handle) ,pointer        :: DH
+  integer                               :: XLen
+  TYPE_BUFFER
+  character (VarNameLen)                :: VarName
+  integer                               :: stat
+  integer                               :: NVar
+  integer                               :: XType
+  type(adios2_attribute)                :: AttributeID
+
+  if(Count <= 0) then
+    Status = WRF_WARN_ZERO_LENGTH_GET  
+    write(msg,*) &
+'Warning ZERO LENGTH GET in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__
+    call wrf_debug ( WARN , msg)
+    return
+  endif
+  VarName = Var
+  call GetDH(DataHandle,DH,Status)
+  if(Status /= WRF_NO_ERR) then
+    write(msg,*) &
+'Warning Status = ',Status,' in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__
+    call wrf_debug ( WARN , msg)
+    return
+  endif
+  if(DH%FileStatus == WRF_FILE_NOT_OPENED) then
+    Status = WRF_WARN_FILE_NOT_OPENED  
+    write(msg,*) &
+'Warning FILE NOT OPENED in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__
+    call wrf_debug ( WARN , msg)
+  elseif(DH%FileStatus == WRF_FILE_OPENED_NOT_COMMITTED) then
+    Status = WRF_WARN_DRYRUN_READ  
+    write(msg,*) &
+'Warning DRYRUN READ in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__
+    call wrf_debug ( WARN , msg)
+  elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_WRITE) then
+    Status = WRF_WARN_READ_WONLY_FILE 
+    write(msg,*) &
+'Warning READ WONLY FILE in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__
+    call wrf_debug ( WARN , msg)
+  elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_READ) then
+    do NVar=1,DH%NumVars
+      if(DH%VarNames(NVar) == VarName) then
+        exit
+      elseif(NVar == DH%NumVars) then
+        Status = WRF_WARN_VAR_NF  
+        write(msg,*) &
+'Warning VARIABLE NOT FOUND in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__ 
+        call wrf_debug ( WARN , msg)
+        return
+      endif
+    enddo
+    call adios2_inquire_variable_attribute(AttributeID, DH%adios2IO, trim(Element), VarName, '/', stat )
+    call adios2_err(stat,Status)
+      if(Status /= WRF_NO_ERR) then
+        write(msg,*) 'adios2 error in ext_adios2_get_var_ti',__FILE__,', line', __LINE__
+        call wrf_debug ( WARN , TRIM(msg))
+        return
+    endif
+    XLen = AttributeID%length
+#ifndef CHAR_TYPE
+    allocate(Buffer(XLen), STAT=stat)
+    if(stat/= 0) then
+      Status = WRF_ERR_FATAL_ALLOCATION_ERROR 
+      write(msg,*) &
+'Fatal ALLOCATION ERROR in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__
+      call wrf_debug ( FATAL , msg)
+      return
+    endif
+    call adios2_attribute_data(Buffer, AttributeID, stat)
+#else
+    Data = ''
+    call adios2_attribute_data(Data, AttributeID, stat)
+#endif
+    call adios2_err(stat,Status)
+      if(Status /= WRF_NO_ERR) then
+        write(msg,*) 'adios2 error in ext_adios2_get_var_ti',__FILE__,', line', __LINE__
+        call wrf_debug ( WARN , TRIM(msg))
+        return
+    endif
+    COPY
+#ifndef CHAR_TYPE
+    deallocate(Buffer, STAT=stat)
+    if(stat/= 0) then
+      Status = WRF_ERR_FATAL_DEALLOCATION_ERR  
+      write(msg,*) &
+'Fatal DEALLOCATION ERROR in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__
+      call wrf_debug ( FATAL , msg)
+      return
+    endif
+    if(XLen > Count) then
+      OutCount = Count
+      Status   = WRF_WARN_MORE_DATA_IN_FILE  
+    else
+      OutCount = XLen
+      Status   = WRF_NO_ERR
+    endif
+#endif
+  else
+    Status = WRF_ERR_FATAL_BAD_FILE_STATUS  
+    write(msg,*) &
+'Fatal error BAD FILE STATUS in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__ 
+    call wrf_debug ( FATAL , msg)
+    return
+  endif
+  return

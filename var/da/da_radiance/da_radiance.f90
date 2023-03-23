@@ -58,7 +58,7 @@ module da_radiance
       use_rad,crtm_cloud, DT_cloud_model, global, use_varbc, freeze_varbc, &
       airs_warmest_fov, time_slots, interp_option, ids, ide, jds, jde, &
       ips, ipe, jps, jpe, simulated_rad_ngrid, obs_qc_pointer, use_blacklist_rad, use_satcv, &
-      use_goesimgobs, pi, earth_radius, satellite_height,use_clddet_zz, ahi_superob_halfwidth
+      use_goesimgobs, pi, earth_radius, satellite_height,use_clddet_zz, ahi_superob_halfwidth, ahi_apply_clrsky_bias
  
 #ifdef CRTM
    use da_crtm, only : da_crtm_init, da_get_innov_vector_crtm

@@ -108,6 +108,7 @@
 !   gas_aqfrac - fraction (0-1) of gas that is dissolved in cloud water
 
         real, intent(out),   &
+                OPTIONAL,    &
                 dimension( ims:ime, kms:kme, jms:jme ) :: &
                 ph_cw 
 
@@ -148,7 +149,7 @@
 	end if
 !   following line turns aqueous radical chem off unconditionally
 	iradical_onoff = 0
-
+    if ( config_flags%mozart_ph_diag .eq. 1 ) then
 !   Initialize pH of CW ph_cw to a FillValue value
         do jt = jts, jte
           do kt = kts, kte
@@ -157,7 +158,7 @@
             end do
           end do
         end do
-
+     end if
 	do 3920 jt = jts, jte
 	do 3910 it = its, ite
 
@@ -214,9 +215,10 @@
 		num_moist, num_chem, moist, chem,             &
 		t_phy, p_phy, rho_phy                         )
 
-	gas_aqfrac(it,kt,jt,:) = gas_aqfrac_box(:) 
+	gas_aqfrac(it,kt,jt,:) = gas_aqfrac_box(:)
+        if ( config_flags%mozart_ph_diag .eq. 1 ) then 
         ph_cw(it,kt,jt)        = ph_aq_box
-
+        end if
 3800	continue
 
 3910	continue

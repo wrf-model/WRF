@@ -15,7 +15,9 @@
 !  Added addtinal source term for stable boundary layer in the epsilon 
 !      equation to represent the energy drain on the eddy scale
 !      (Zeng et al. (2020))
-!  Bug fix the variable pek_adv. Now it is on half level, same as pep_adv
+!  Fixed a bug for the TKE global varaible. A new variable pek_pbl is defined 
+!  instead of  using tke_pbl in Register.EM_COMMON. Now pek_pbl,pep_pbl,pek_adv
+!  and pep_adv are all on the half levels. 
 !  Addded a few tweaks
 !
 !######################################################################

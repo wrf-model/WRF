@@ -3310,7 +3310,7 @@ package	ltng_none           lightning_option==0            -       -
 package	ltng_crm_PR92w      lightning_option==1            -       state:ic_flashcount,ic_flashrate,cg_flashcount,cg_flashrate
 package ltng_crm_PR92z      lightning_option==2            -       state:ic_flashcount,ic_flashrate,cg_flashcount,cg_flashrate
 package	ltng_cpm_PR92z      lightning_option==11           -       state:ic_flashcount,ic_flashrate,cg_flashcount,cg_flashrate
-package	ltng_lpi            lightning_option==3           -        state:lpi
+package	ltng_lpi            lightning_option==3           -        state:lpi,ic_flashcount,ic_flashrate,cg_flashcount,cg_flashrate
 # only need to specify these once; not for every io_form* variable
 package   io_intio    io_form_restart==1                     -             -
 package   io_netcdf   io_form_restart==2                     -             -

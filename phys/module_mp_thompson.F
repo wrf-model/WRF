@@ -4273,19 +4273,6 @@
          enddo
         enddo
 
-! This loop is not needed anymore because if not hail_aware, the 3rd dim is one
-!        if (.not. is_hail_aware) then
-!. Distribute the same value across NRHG dimension
-!         do n3 = 2, dimNRHG
-!            tcg_racg(:,:,n3,:,:) = tcg_racg(:,:,1,:,:)
-!            tmr_racg(:,:,n3,:,:) = tmr_racg(:,:,1,:,:)
-!            tcr_gacr(:,:,n3,:,:) = tcr_gacr(:,:,1,:,:)
-!            !tmg_gacr(:,:,n3,:,:) = tmg_gacr(:,:,1,:,:)
-!            tnr_racg(:,:,n3,:,:) = tnr_racg(:,:,1,:,:)
-!            tnr_gacr(:,:,n3,:,:) = tnr_gacr(:,:,1,:,:)
-!         enddo
-!        endif
-
 !..Note wrf_dm_gatherv expects zero-based km_s, km_e (J. Michalakes, 2009Oct30).
 
 #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )

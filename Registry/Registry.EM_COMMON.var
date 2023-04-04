@@ -148,7 +148,7 @@ state   real    cf3            -        misc      -         -     irh       "cf3
 
 # State for derived time quantities.  
 state   integer itimestep      -        -          -         -     rh         "itimestep"             ""         ""      
-state   real    xtime          -        -          -         -     rh         "xtime"                 "minutes since simulation start"         ""      
+state   real    xtime          -        -          -         -     irh        "xtime"                 "minutes since simulation start"         ""      
 state   real    julian         -        -          -         -     -          "julian"                "day of year, 0.0 at 0Z on 1 Jan."         "days"      
 
 # input file descriptor for lbcs on parent domain                                               
@@ -305,8 +305,8 @@ state   real    max_msftx      -       misc         -         -      rh       "m
 state   real    max_msfty      -       misc         -         -      rh       "max_mstfy"             "Max map factor in domain"  ""
 state logical   v4_metgrid     -       misc         -         -       -       "v4_metgrid"            "for real, T/F: identify if this is v4 metgrid data" ""
 
-state    real  RAINC            ij      misc        1         -      rhdu     "RAINC"                 "ACCUMULATED TOTAL CUMULUS PRECIPITATION"                 "mm"      
-state    real  RAINNC           ij      misc        1         -      rhdu     "RAINNC"                "ACCUMULATED TOTAL GRID SCALE PRECIPITATION"              "mm"      
+state    real  RAINC            ij      misc        1         -      irhdu    "RAINC"                 "ACCUMULATED TOTAL CUMULUS PRECIPITATION"                 "mm"      
+state    real  RAINNC           ij      misc        1         -      irhdu    "RAINNC"                "ACCUMULATED TOTAL GRID SCALE PRECIPITATION"              "mm"      
 state    real  RAINCV           ij      misc        1         -      r        "RAINCV"                "TIME-STEP CUMULUS PRECIPITATION"                         "mm"
 state    real  RAINNCV          ij      misc        1         -      r        "RAINNCV"               "TIME-STEP NONCONVECTIVE PRECIPITATION"                   "mm"
 
@@ -346,6 +346,7 @@ state    real  HFX              ij      misc        1         -      irh      "H
 state    real  QFX              ij      misc        1         -      irh      "QFX"                   "UPWARD MOISTURE FLUX AT THE SURFACE"          "kg m-2 s-1"
 state    real  REGIME           ij      misc        1         -      irh      "REGIME"  "FLAGS: 1=Night/Stable, 2=Mechanical Turbulent, 3=Forced Conv, 4=Free Conv" ""
 state integer  KPBL             ij      misc        1         -      irh      "KPBL"                  "LEVEL OF PBL TOP"                             ""
+state    real   BR              ij      misc        1         -      irh       "BR"                    "Bulk Richardson"                              ""
 
 #
 #---------------------------------------------------------------------------------------------------------------------------------------

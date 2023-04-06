@@ -261,7 +261,7 @@ CONTAINS
                          ,xtime1, PBLHAVG, TKEAVG               &
                          ,ccn_conc                             & ! RAS
                          ,QKE                                  & !for MYNN
-                         ,pep                                  & ! EEPS
+                         ,pek,pep                              & ! EEPS
                          ,ghi_accum                            & ! Solar diagnostics
                          ,landusef,landusef2,mosaic_cat_index                                                 & ! danli mosaic
                          ,TSK_mosaic,TSLB_mosaic,SMOIS_mosaic,SH2O_mosaic                                     & ! danli mosaic
@@ -477,7 +477,7 @@ CONTAINS
 
   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::    & !BSINGH(PNNL)- should be declared inout
              RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN,RQIBLTEN,EXCH_H,TKE_PBL
-  REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT), OPTIONAL :: QKE,pep
+  REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT), OPTIONAL :: QKE,pek,pep
 
   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT), OPTIONAL :: &
                                             massflux_EDKF, entr_EDKF, detr_EDKF & 
@@ -1437,7 +1437,7 @@ CHARACTER(LEN=8) :: name
    CALL bl_init(STEPBL,BLDT,DT,RUBLTEN,RVBLTEN,RTHBLTEN,        &
                 RQVBLTEN,RQCBLTEN,RQIBLTEN,TSK,TMN,             &
                 config_flags,restart,UST,LOWLYR,TSLB,ZS,DZS,    &
-                num_soil_layers,TKE_PBL,mfshconv,pep,           &
+                num_soil_layers,TKE_PBL,mfshconv,pek,pep,       &
                 massflux_EDKF, entr_EDKF, detr_EDKF, & 
                 thl_up, thv_up, rt_up,       &
                 rv_up, rc_up, u_up, v_up,    &
@@ -2478,7 +2478,7 @@ CHARACTER(LEN=8) :: name
    SUBROUTINE bl_init(STEPBL,BLDT,DT,RUBLTEN,RVBLTEN,RTHBLTEN,  &
                 RQVBLTEN,RQCBLTEN,RQIBLTEN,TSK,TMN,             &
                 config_flags,restart,UST,LOWLYR,TSLB,ZS,DZS,    &
-                num_soil_layers,TKE_PBL,mfshconv,pep,           &
+                num_soil_layers,TKE_PBL,mfshconv,pek,pep,       &
                 massflux_EDKF, entr_EDKF, detr_EDKF, & 
                 thl_up, thv_up, rt_up,       &
                 rv_up, rc_up, u_up, v_up,    &
@@ -2769,7 +2769,7 @@ CHARACTER(LEN=8) :: name
                                                           RQIBLTEN, &
                                                           TKE_PBL
 
-   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT), OPTIONAL :: QKE, pep
+   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT), OPTIONAL :: QKE, pek, pep
 
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT), OPTIONAL :: &
                               massflux_EDKF, entr_EDKF, detr_EDKF & 
@@ -3891,10 +3891,10 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                 ( 'module_physics_init: use mynnsfc or sfclay or myjsfc schemefor this pbl option')
            IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
             ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
-          IF ( PRESENT( pep ) ) THEN
+          IF ( PRESENT( pek ) .AND. PRESENT( pep ) ) THEN
            CALL eepsinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,    &
                         RQCBLTEN,RQIBLTEN,P_QI,               &
-                        PARAM_FIRST_SCALAR,TKE_PBL,pep,       &
+                        PARAM_FIRST_SCALAR,pek,pep,           &
                         restart,                              &
                         allowed_to_read ,                     &
                         ids, ide, jds, jde, kds, kde,         &

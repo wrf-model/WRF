@@ -56,7 +56,7 @@ CONTAINS
                  ,nupdraft,maxMF,ktop_plume                        &
                  ,spp_pbl,pattern_spp_pbl                          &
               ! EEPS
-                 ,pep,pek_adv,pep_adv                              &
+                 ,pek,pep,pek_adv,pep_adv                          &
                  ,restart,cycling                                  &
                  ,ids,ide, jds,jde, kds,kde                        &
                  ,ims,ime, jms,jme, kms,kme                        &
@@ -470,7 +470,7 @@ CONTAINS
 
 !For EEPS PBL scheme
     REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ),            &
-               INTENT(INOUT   )    ::                        pep
+               INTENT(INOUT   )    ::            pek, pep
     REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ),        &
                INTENT(INOUT) ::                  pek_adv,pep_adv
 
@@ -1808,7 +1808,7 @@ CONTAINS
                    PRESENT( qi_curr )                            .AND. &
                    PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
                    PRESENT( rqiblten )                           .AND. &
-                   PRESENT( pep )                                .AND. &
+                   PRESENT( pek )      .AND. PRESENT( pep)       .AND. &
                    PRESENT( pek_adv )  .AND. PRESENT( pep_adv ) ) THEN
 
                 CALL wrf_debug(100,'in EEPSPBL')
@@ -1817,7 +1817,8 @@ CONTAINS
                    U3D=u_phytmp,V3D=v_phytmp,T3D=t_phy                  &
                   ,QV3D=qv_curr,QC3D=qc_curr,QI3D=qi_curr               &
                   ,QR3D=qr_curr,QS3D=qs_curr,QG3D=qg_curr               &
-                  ,P3D=p_phy,PI3D=pi_phy,PEK=tke_pbl,PEP=pep            &
+                  ,P3D=p_phy,PI3D=pi_phy,PEK=pek,PEP=pep                &
+                  ,RHO3D=rho,RTHRATEN=rthraten                          &
                   ,RUBLTEN=rublten,RVBLTEN=rvblten                      &
                   ,RTHBLTEN=rthblten,RQVBLTEN=rqvblten                  &
                   ,RQCBLTEN=rqcblten,RQIBLTEN=rqiblten,KPBL=kpbl        &

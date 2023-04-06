@@ -1029,6 +1029,7 @@ state   real   WSTAR_YSU      ij     misc        1         -     -        "WSTAR
 state   real   DELTA_YSU      ij     misc        1         -     -        "DELTA_YSU"           "entrainment layer depth from ysupbl"    "m"
 
 # EEPS PBL  scheme
+state   real   pek_pbl        ikj    misc        1         -     hr        "PEK_PBL"            "TKE  from EEPS"                    "m2 s-2"
 state   real   pep_pbl        ikj    misc        1         -     hr        "PEP_PBL"            "TKE dissipation rate from EEPS"    "m2 s-3"
 state   real   pek_adv        ikjftb  scalar      1         -      i0rusdf=(bdy_interp:dt) "pek_adv"       "TKE from EEPS"      "m2 s-2"
 state   real   pep_adv        ikjftb  scalar      1         -      i0rusdf=(bdy_interp:dt) "pep_adv"       "TKE dissipating rate from EEPS"      "m2 s-3"
@@ -1045,7 +1046,7 @@ state   real   VZ0              ij     misc        1         -      r        "VZ
 state   real   QSFC             ij     misc        1         -      r        "QSFC"                  "SPECIFIC HUMIDITY AT LOWER BOUNDARY"          "kg kg-1"
 state   real   AKHS             ij     misc        1         -      r        "AKHS"                  "SFC EXCH COEFF FOR HEAT"                      "m s-1"    
 state   real   AKMS             ij     misc        1         -      r        "AKMS"                  "SFC EXCH COEFF FOR MOMENTUM"                  "m s-1"    
-state   integer KPBL            ij     misc        1         -     r         "KPBL"                  "LEVEL OF PBL TOP"                             ""
+state   integer KPBL            ij     misc        1         -      r        "KPBL"                  "LEVEL OF PBL TOP"                             ""
 state   real   U10E             ij     misc        1         -     hdu       "U10E"                  "Special U at 10 M from MYJSFC"         "m s-1"
 state   real   V10E             ij     misc        1         -     hdu       "V10E"                  "Special V at 10 M from MYJSFC"         "m s-1"
 
@@ -3128,7 +3129,7 @@ package   camuwpblscheme bl_pbl_physics==9           -             state:tauresx
 package   temfpblscheme  bl_pbl_physics==10          -             state:te_temf,kh_temf,km_temf,shf_temf,qf_temf,uw_temf,vw_temf,wupd_temf,mf_temf,thup_temf,qlup_temf,qtup_temf,cf3d_temf,hd_temf,lcl_temf,hct_temf,cfm_temf
 package   shinhongscheme bl_pbl_physics==11          -             state:el_pbl,tke_pbl
 package   gbmpblscheme   bl_pbl_physics==12          -             state:exch_tke,el_pbl,tke_pbl
-package   eepsscheme     bl_pbl_physics==16          -             scalar:pek_adv,pep_adv;state:tke_pbl,pep_pbl
+package   eepsscheme     bl_pbl_physics==16          -             scalar:pek_adv,pep_adv;state:pek_pbl,pep_pbl
 package   kepsscheme     bl_pbl_physics==17          -             scalar:tke_adv,diss_adv,tpe_adv;state:tpe_pbl,diss_pbl,tke_pbl,pr_pbl,wu_tur,wv_tur,wt_tur,wq_tur
 package   mrfscheme      bl_pbl_physics==99          -             -
 

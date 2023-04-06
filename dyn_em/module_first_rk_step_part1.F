@@ -1229,7 +1229,7 @@ BENCH_START(pbl_driver_tim)
      &        ,pattern_spp_pbl=grid%pattern_spp_pbl                       &
      &        ,restart=config_flags%restart,cycling=config_flags%cycling  &
 !EEPS for ARW
-     &        ,pep=grid%pep_pbl                                           &
+     &        ,pek=grid%pek_pbl,pep=grid%pep_pbl                          &
      &        ,PEK_ADV=scalar(ims,kms,jms,P_pek_adv)                      &!TKEadvection
      &        ,PEP_ADV=scalar(ims,kms,jms,P_pep_adv)                      &!TKEadvection
 !GWD for ARW

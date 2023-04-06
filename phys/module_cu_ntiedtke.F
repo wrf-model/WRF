@@ -584,20 +584,18 @@ contains
       integer i,j,k,lq,km,km1
       real dt,ztpp1
       real zew,zqs,zcor
-      real scale_tau(lq), scale_mf(lq), relax_t_limit(lq), dxref
+      real scale_fac(lq), scale_fac2(lq), dxref
 !
 !  set scale-dependency factor when dx is < 15 km
 !
       dxref = 15000.
       do j=1,lq
       if (dx(j).lt.dxref) then
-          scale_tau(j) = (1.+log(dxref/dx(j)))**3
-          scale_mf(j) = scale_tau(j)**0.5
-          relax_t_limit(j) = 43200.
+          scale_fac(j) = (1.06133+log(dxref/dx(j)))**3
+          scale_fac2(j) = scale_fac(j)**0.5
       else
-          scale_tau(j) = 1.+1.33e-5*dx(j)
-          scale_mf(j) = 1.
-          relax_t_limit(j) = 10800.
+          scale_fac(j) = 1.+1.33e-5*dx(j)
+          scale_fac2(j) = 1.
       end if 
       end do
 !
@@ -654,7 +652,7 @@ contains
      &     ktype,    icbot,    ictop,    ztu,     zqu,  &
      &     zlu,      zlude,    zmfu,     zmfd,    zrain,&
      &     pcte,     phhfl,    lndj,     pgeoh,   dx,   &
-     &     scale_tau, scale_mf, relax_t_limit )
+     &     scale_fac, scale_fac2)
 !
 !     to include the cloud water and cloud ice detrained from convection
 !
@@ -710,7 +708,7 @@ contains
      &     ktype,    kcbot,    kctop,    ptu,      pqu,&
      &     plu,      plude,    pmfu,     pmfd,     prain,&
      &     pcte,     phhfl,    lndj,     zgeoh,    dx,   &
-     &     scale_tau,  scale_mf, relax_t_limit )
+     &     scale_fac,  scale_fac2)
       implicit none
 !
 !***cumastrn*  master routine for cumulus massflux-scheme
@@ -818,7 +816,7 @@ contains
      &         ktype(klon),            lndj(klon)
       logical  ldcum(klon)
       logical  loddraf(klon),          llo1,   llo2(klon)
-      real     scale_tau(klon), scale_mf(klon), relax_t_limit(klon)
+      real     scale_fac(klon), scale_fac2(klon)
 
 !  local varaiables
       real     zcons,zcons2,zqumqe,zdqmin,zdh,zmfmax
@@ -1035,10 +1033,10 @@ contains
        if(ldcum(jl).and.ktype(jl).eq.1) then
            ikb = kcbot(jl)
            ikt = kctop(jl)
-           ztau = ztauc(jl) * scale_tau(jl)
-           ztau = max(ztmst,ztau)
-           ztau = max(360.,ztau)
-           ztau = min(relax_t_limit(jl),ztau)
+           ztauc(jl) = max(ztmst,ztauc(jl))
+           ztauc(jl) = max(360.,ztauc(jl))
+           ztauc(jl) = min(10800.,ztauc(jl))
+           ztau = ztauc(jl) * scale_fac(jl)
            if(nonequil) then
              zcape2(jl)= max(0.,zcape2(jl))
              zcape(jl) = max(0.,min(zcape1(jl)-zcape2(jl),5000.))
@@ -1077,7 +1075,7 @@ contains
            else
              zmfub1(jl) = zmfub(jl)
            end if
-           zmfub1(jl) = zmfub1(jl)/scale_mf(jl)
+           zmfub1(jl) = zmfub1(jl)/scale_fac2(jl)
            zmfub1(jl) = min(zmfub1(jl),zmfmax)
          end if
 

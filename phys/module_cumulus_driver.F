@@ -125,7 +125,6 @@ CONTAINS
                  ! Optional trigger function activation variable
                      ,kfeta_trigger                                   &
                      ,nsas_dx_factor                                  &
-                     ,ntiedtke_dx_opt                                 &
 #if ( WRF_DFI_RADAR == 1 )
                  ! Optional CAP suppress option      --- 3.2 CLEANUP TODO -- THESE SHOULD BE OPTIONAL, NOT #IF/#ENDIF
                      ,do_capsuppress                                  &
@@ -325,7 +324,6 @@ CONTAINS
 !-- W0AVG         average vertical velocity, (for KF scheme) (m/s)
 !-- kfeta_trigger namelist for KF trigger (=1, default; =2, moisture-advection-dependent trigger)
 !-- nsas_dx_factor namelist for NSAS deep scheme to have some dependency on grid sizes
-!-- ntiedtke_dx_opt namelist for nTiedtke cu scheme to have some dependency on grid sizes
 !-- rho           density (kg/m^3)
 !-- CONVCLD       Convective cloud (for BMJ scheme) (kg/m^2)
 !-- CCLDFRA       convective cloud fraction (for BMJ scheme)
@@ -527,7 +525,6 @@ CONTAINS
 
    INTEGER, INTENT(IN   ), OPTIONAL        ::   kfeta_trigger
    INTEGER, INTENT(IN   ), OPTIONAL        ::   nsas_dx_factor
-   INTEGER, INTENT(IN   )                  ::   ntiedtke_dx_opt
 
    REAL,  INTENT(IN   ) :: DT, DX
    REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,               &    
@@ -1416,8 +1413,6 @@ CONTAINS
 ! NEW TIEDTKE SCHEME - ZCX&YQW (U of Hawaii)
      CASE (NTIEDTKESCHEME)
 
-        IF ( PRESENT ( QFX ) .AND. PRESENT( HFX )) THEN
-
           CALL wrf_debug(100,'in cu_ntiedtke')
           CALL CU_NTIEDTKE(                                      &
                 DT=dt,ITIMESTEP=itimestep,STEPCU=STEPCU,HFX=hfx  &
@@ -1426,7 +1421,6 @@ CONTAINS
                ,QV3D=QV_CURR,QC3D=QC_CURR,QI3D=QI_CURR          &
                ,DZ8W=dz8w,PCPS=p,P8W=p8w,XLAND=XLAND,DX=dx2d    &
                ,CU_ACT_FLAG=CU_ACT_FLAG                         &
-               ,NTIEDTKE_DX_OPT=NTIEDTKE_DX_OPT                 &
                ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
@@ -1438,9 +1432,6 @@ CONTAINS
                ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                   &
                ,F_QI=f_qi,F_QS=f_qs                             &
                                                              )
-        ELSE
-          CALL wrf_error_fatal('Lacking arguments for CU_NTIEDTKE in cumulus driver')
-        ENDIF
 
 ! New KIM SAS SCHEME - (KIAPS, South Korea)
      CASE (KSASSCHEME)

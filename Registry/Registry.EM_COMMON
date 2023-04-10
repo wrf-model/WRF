@@ -2459,7 +2459,6 @@ rconfig   integer cu_diag                 namelist,physics      max_domains    0
 rconfig   integer kf_edrates              namelist,physics      max_domains    0       rh   "kf_edrates"           "output entrainment/detrainment rates and convective timescale for KF schemes"      ""
 rconfig   integer kfeta_trigger           namelist,physics	1              1       rh   "KFETA Trigger function"    ""    ""
 rconfig   integer nsas_dx_factor          namelist,physics	1              0       rh   "NSAS DX-dependent option"    ""    ""
-rconfig   integer ntiedtke_dx_opt         namelist,physics	1              0       rh   "nTiedtke DX-dependent option"    ""    ""
 rconfig   real    CUDT                    namelist,physics	max_domains    0       h    "CUDT"          ""      ""
 rconfig   real    GSMDT                   namelist,physics	max_domains    0       h    "GSMDT"          ""      ""
 rconfig   integer ISFFLX                  namelist,physics 	1             1       irh    "ISFFLX"                        ""      ""

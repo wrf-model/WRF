@@ -1061,10 +1061,8 @@ CONTAINS
              if  ( mix_chem ) then
                 do ic = 1,ndvel
                    vd1(ic) = vdep(i,ic) ! dry deposition velocity
-                   chem1(kts,ic) = chem3d(i,kts,ic)
-                   s_awchem1(kts,ic)=0.
                 enddo
-                do k = kts+1,kte
+                do k = kts,kte
                    do ic = 1,nchem
                       chem1(k,ic) = chem3d(i,k,ic)
                       s_awchem1(k,ic)=0.
@@ -1073,10 +1071,8 @@ CONTAINS
              else
                 do ic = 1,ndvel
                    vd1(ic) = 0. ! dry deposition velocity
-                   chem1(kts,ic) = 0.
-                   s_awchem1(kts,ic)=0.
                 enddo
-                do k = kts+1,kte
+                do k = kts,kte
                    do ic = 1,nchem
                       chem1(k,ic) = 0.
                       s_awchem1(k,ic)=0.

@@ -1038,11 +1038,16 @@ if [ $retval -ne 0 ] ; then
 fi
 
 # testing for location of rpc/types.h file, used in landuse
-if [ -f /usr/include/rpc/types.h ] ; then
-  sed -e '/^CFLAGS_LOCAL/s/#/-DRPC_TYPES=1 &/' configure.wrf > configure.wrf.edit
-  mv configure.wrf.edit configure.wrf
-elif [ -f /usr/include/tirpc/rpc/types.h ] ; then
-  sed -e '/^CFLAGS_LOCAL/s/#/-DRPC_TYPES=2 &/' configure.wrf > configure.wrf.edit
+make rpc_test > tools/rpc_test.log 2>&1
+rm -f tools/rpc_test.log
+
+if [ -f tools/rpc_test.exe ] ; then
+  rpc_type=`tools/rpc_test.exe`
+  if [ $rpc_type == "rpc" ]; then
+    sed -e '/^CFLAGS_LOCAL/s/#/-DRPC_TYPES=1 &/' configure.wrf > configure.wrf.edit
+  else
+    sed -e '/^CFLAGS_LOCAL/s/#/-DRPC_TYPES=2 &/' configure.wrf > configure.wrf.edit
+  fi
   mv configure.wrf.edit configure.wrf
 else
   echo "************************** W A R N I N G ************************************"

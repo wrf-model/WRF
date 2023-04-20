@@ -33,6 +33,7 @@
    USE module_data_sorgam
    USE module_mosaic_driver, only:  mosaic_aerchem_driver
    USE module_aerosols_soa_vbs, only: soa_vbs_driver
+   USE module_aerosols_soa_vbs_het, only: soa_vbs_het_driver
    USE module_aerosols_sorgam_vbs, only: sorgam_vbs_driver
    USE module_data_soa_vbs, only: ldrog_vbs
    USE module_cam_mam_aerchem_driver, only:  cam_mam_aerchem_driver
@@ -194,6 +195,7 @@
 
 !  output of aerosol pH from MOSAIC 4-bin
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,        &
+          OPTIONAL, &
           INTENT(OUT  ) ::                                          &
                                ph_aer01, ph_aer02, ph_aer03, ph_aer04
 !
@@ -298,7 +300,7 @@
             ids,ide, jds,jde, kds,kde,                                  &
             ims,ime, jms,jme, kms,kme,                                  &
             its,ite, jts,jte, kts,kte                                   )
-   CASE ( RACM_SOA_VBS_KPP, RACM_SOA_VBS_AQCHEM_KPP, RACM_SOA_VBS_HET_KPP )
+   CASE ( RACM_SOA_VBS_KPP, RACM_SOA_VBS_AQCHEM_KPP )
        CALL wrf_debug(15,'aerosols_driver calling soa_vbs_driver')
        do ii=its,ite
           do kk=kts,kte
@@ -311,11 +313,31 @@
        enddo
        call soa_vbs_driver ( id,ktauc,dtstepc,t_phy,moist,aerwrf,p8w,t8w, &
             alt,p_phy,chem,rho_phy,dz8w,rh,z,z_at_w,                 &
-            gamn2o5,cn2o5,kn2o5,yclno2,snu,sac,                    &
+            h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,               &
+            vcsulf_old,vdrog3_vbs,                                   &
+            config_flags%kemit,brch_ratio,                           &
+            ids,ide, jds,jde, kds,kde,                               &
+            ims,ime, jms,jme, kms,kme,                               &
+            its,ite, jts,jte, kts,kte                                )
+   CASE ( RACM_SOA_VBS_HET_KPP )
+       CALL wrf_debug(15,'aerosols_driver calling soa_vbs_het_driver')
+       do ii=its,ite
+          do kk=kts,kte
+             do jj=jts,jte
+                if(chem(ii,kk,jj,p_nu0).lt.1.e07)then
+                   chem(ii,kk,jj,p_nu0)=1.e7
+                endif
+             enddo
+          enddo
+       enddo
+       call soa_vbs_het_driver ( id,ktauc,dtstepc,t_phy,moist,aerwrf,p8w,t8w, &
+            alt,p_phy,chem,rho_phy,dz8w,rh,z,z_at_w,                 &
+            gamn2o5,cn2o5,kn2o5,yclno2,snu,sac,                      &
             h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,               &
             vcsulf_old,vdrog3_vbs,                                   &
             config_flags%kemit,brch_ratio,                           &
             config_flags%do_isorropia,                               &
+            config_flags%do_n2o5het,                                 &
             ids,ide, jds,jde, kds,kde,                               &
             ims,ime, jms,jme, kms,kme,                               &
             its,ite, jts,jte, kts,kte                                ) 

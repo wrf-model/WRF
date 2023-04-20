@@ -210,11 +210,15 @@ if ( jb_factor > 0.0 ) then
       call da_error(__FILE__,__LINE__,message(1:1))
    end if
 
-   be_rf_unit    = unit_end + 1
-   be_print_unit = unit_end + 2
+   !be_rf_unit    = unit_end + 1
+   !be_print_unit = unit_end + 2
 
    call da_get_unit(be_unit)
+   call da_get_unit(be_rf_unit)
+   call da_get_unit(be_print_unit)
    open(unit=be_unit,file="be.dat", status="old",form="unformatted")
+   open(unit=be_rf_unit   ,file="be_rf.dat"   , status="unknown",form="unformatted")
+   open(unit=be_print_unit,file="be_print.dat", status="unknown")
 
    rewind (be_unit)
    read (be_unit, iostat=ier) ni, nj, nk
@@ -3497,6 +3501,11 @@ if ( jb_factor > 0.0 ) then
 !#endif
 
    endif ! print_detail_be
+
+   close(be_rf_unit)
+   close(be_print_unit)
+   call da_free_unit(be_rf_unit)
+   call da_free_unit(be_print_unit)
 
    ! 8.0 deallocate input model state:
    ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

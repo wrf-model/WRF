@@ -294,7 +294,7 @@ contains
    real, intent(in), dimension(ix,jx)                :: runoff1x_in
    real, dimension(ix,jx)                            :: runoff1x
    real, intent(in)                                  :: basns_area(numbasns),dist(ixrt,jxrt,9),DT
-   integer(kind=int64), intent(in)                       :: basnsInd(numbasns)
+   integer(kind=int64), intent(in)                   :: basnsInd(numbasns)
    real, intent(in),dimension(numbasns)              :: C,ex,z_mx
    real, intent(out),dimension(numbasns)             :: qout_gwsubbas
    real, intent(out),dimension(numbasns)             :: qin_gwsubbas

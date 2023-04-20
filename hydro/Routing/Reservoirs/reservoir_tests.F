@@ -25,7 +25,9 @@ program reservoir_unit_tests
     logical :: rv12 = .false.
     logical :: rv13 = .false.
     logical :: rv14 = .false.
-
+    logical :: rv15 = .false.
+    logical :: rv16 = .false.
+    logical :: rv17 = .false.
 
     real, dimension(120) :: inflow_array
 
@@ -73,8 +75,14 @@ program reservoir_unit_tests
 
     rv14 = test_persistence_levelpool_hybrid_usace_no_timeslice_available()
 
+    rv15 = test_ak_rfc_forecasts_pass_through_fallback()
+
+    rv16 = test_ak_rfc_forecasts_time_series_with_lookback_and_offset()
+
+    rv17 = test_rfc_forecasts_over_max_water_elevation()
+
     if (rv1 .and. rv2 .and. rv3 .and. rv4 .and. rv5 .and. rv6 .and. rv7 .and. rv8 .and. rv9 .and. &
-    rv10 .and. rv11 .and. rv12 .and. rv13 .and. rv14) then
+    rv10 .and. rv11 .and. rv12 .and. rv13 .and. rv14 .and. rv15 .and. rv16 .and. rv17) then
         print *, "========================================================================"
         print *, 'All Reservoir Tests Passed'
         print *, "========================================================================"
@@ -102,10 +110,12 @@ program reservoir_unit_tests
         type (levelpool) :: levelpool_reservoir_data
         real :: water_elevation = 2.
 
+        integer(kind=int64):: lake_number = 20
+
         call_status = .false.
 
         print *, "calling init for levelpool"
-        call levelpool_reservoir_data%init(water_elevation, 4., 6., 8., 10., 11., 12., 14., 16., 18., 20)
+        call levelpool_reservoir_data%init(water_elevation, 4., 6., 8., 10., 11., 12., 14., 16., 18., lake_number)
 
         print *, "testing data in levelpool"
         call_status = levelpool_data_info(levelpool_reservoir_data)
@@ -130,7 +140,8 @@ program reservoir_unit_tests
         real :: lake_area, weir_elevation, weir_coefficient
         real :: weir_length, dam_length, orifice_elevation, orifice_coefficient
         real :: orifice_area, max_depth, initial_fractional_depth
-        integer :: lake_number, reservoir_type
+        integer(kind=int64):: lake_number
+        integer :: reservoir_type
         integer :: timestep_count
         character*256 :: cwd_full
         integer :: dynamic_reservoir_type
@@ -224,7 +235,8 @@ program reservoir_unit_tests
         real :: lake_area, weir_elevation, weir_coefficient
         real :: weir_length, dam_length, orifice_elevation, orifice_coefficient
         real :: orifice_area, max_depth, initial_fractional_depth
-        integer :: lake_number, reservoir_type
+        integer(kind=int64):: lake_number
+        integer :: reservoir_type
         integer :: timestep_count
         character*256 :: cwd_full
         integer :: dynamic_reservoir_type
@@ -315,7 +327,8 @@ program reservoir_unit_tests
         real :: lake_area, weir_elevation, weir_coeffecient
         real :: weir_length, dam_length, orifice_elevation, orifice_coefficient
         real :: orifice_area, max_depth, initial_fractional_depth
-        integer :: lake_number, reservoir_type
+        integer(kind=int64):: lake_number
+        integer :: reservoir_type
         integer :: timestep_count
         character*256 :: cwd_full
         integer :: dynamic_reservoir_type
@@ -407,7 +420,8 @@ program reservoir_unit_tests
         real :: lake_area, weir_elevation, weir_coeffecient
         real :: weir_length, dam_length, orifice_elevation, orifice_coefficient
         real :: orifice_area, max_depth, initial_fractional_depth
-        integer :: lake_number, reservoir_type
+        integer(kind=int64):: lake_number
+        integer :: reservoir_type
         integer :: timestep_count
         character*256 :: cwd_full
         integer :: dynamic_reservoir_type
@@ -495,7 +509,7 @@ program reservoir_unit_tests
         real :: lake_area, weir_elevation, weir_coefficient
         real :: weir_length, dam_length, orifice_elevation
         real :: orifice_coefficient, orifice_area, max_depth
-        integer :: lake_number
+        integer(kind=int64):: lake_number
         real :: inflow, prev_time_inflow, outflow, water_elevation
         real, dimension(108) :: inflow_array_overflow
         integer :: timestep_count
@@ -582,15 +596,18 @@ program reservoir_unit_tests
         type (rfc_forecasts) :: rfc_forecasts_reservoir_data
         type (time_series_data_type) :: time_series_data
         character*256 :: cwd_full
+        integer(kind=int64):: lake_number
 
         real :: water_elevation = 2.
+
+        lake_number = 3745478
 
         cwd_full = "../../../../tests/local/reservoir_testing_files/"
 
         call_status = .false.
 
         print *, "calling init for rfc_forecasts"
-        call rfc_forecasts_reservoir_data%init(water_elevation, 4., 6., 8., 10., 11., 12., 14., 16., 18., 0.9, 3745478, 4, &
+        call rfc_forecasts_reservoir_data%init(water_elevation, 4., 6., 8., 10., 11., 12., 14., 16., 18., 0.9, lake_number, 4, &
         "../../../../tests/local/reservoir_testing_files/reservoir_index_short_range.nc", "2019-08-18_07:00:00", cwd_full, 24)
 
         print *, "testing data in rfc_forecasts"
@@ -618,6 +635,9 @@ program reservoir_unit_tests
         logical :: forecast_found
         logical :: all_discharges_synthetic
         character(len=256):: time_series_file_name
+        integer :: lake_number
+
+        lake_number = 3745478
 
         call_status = .false.
 
@@ -629,7 +649,7 @@ program reservoir_unit_tests
 
         timeslice_offset_hours = 3
 
-        call time_series_data%init("2019-08-18_07:00:00", cwd_full, 24, timeslice_offset_hours, "CCHC1", 3745478, &
+        call time_series_data%init("2019-08-18_07:00:00", cwd_full, 24, timeslice_offset_hours, "CCHC1", lake_number, &
         lookback_seconds, total_counts, observed_counts, time_step_seconds, forecast_discharges, forecast_found, &
         all_discharges_synthetic, time_series_file_name)
 
@@ -661,7 +681,8 @@ program reservoir_unit_tests
         real :: lake_area, weir_elevation, weir_coefficient
         real :: weir_length, dam_length, orifice_elevation, orifice_coefficient
         real :: orifice_area, max_depth, initial_fractional_depth
-        integer :: lake_number, reservoir_type
+        integer(kind=int64):: lake_number
+        integer :: reservoir_type
         integer :: timestep_count
         character*256 :: cwd_full
         integer :: dynamic_reservoir_type
@@ -690,7 +711,7 @@ program reservoir_unit_tests
         cwd_full = "../../../../tests/local/reservoir_testing_files/"
 
         call rfc_forecasts_reservoir_data%init(water_elevation, lake_area, weir_elevation, weir_coefficient, &
-        weir_length, dam_length, orifice_elevation, orifice_coefficient, orifice_area, max_depth, 0.9, 3745478, reservoir_type, &
+        weir_length, dam_length, orifice_elevation, orifice_coefficient, orifice_area, max_depth, 0.9, lake_number, reservoir_type, &
         "../../../../tests/local/reservoir_testing_files/reservoir_index_short_range.nc", "2019-05-01_22:00:00", cwd_full, 24)
 
         water_elevation = 1331.18005
@@ -743,7 +764,8 @@ program reservoir_unit_tests
         real :: lake_area, weir_elevation, weir_coefficient
         real :: weir_length, dam_length, orifice_elevation, orifice_coefficient
         real :: orifice_area, max_depth, initial_fractional_depth
-        integer :: lake_number, reservoir_type
+        integer(kind=int64):: lake_number
+        integer :: reservoir_type
         integer :: timestep_count
         character*256 :: cwd_full
         integer :: dynamic_reservoir_type
@@ -791,6 +813,7 @@ program reservoir_unit_tests
         print *, 'dynamic_reservoir_type: ', dynamic_reservoir_type
 
         if (outflow .ge. 3.6 - epsilon(3.6) .and. outflow .le. 3.6 + epsilon(3.6) .and. &
+        water_elevation .ge. 1331.43604 - epsilon(1331.43604) .and. water_elevation .le. 1331.43604 + epsilon(1331.43604) .and. &
         dynamic_reservoir_type == 4 .and. assimilated_value .ge. 3.6 - epsilon(3.6) &
         .and. assimilated_value .le. 3.6 + epsilon(3.6) .and. &
         assimilated_source_file == "2019-08-18_00.60min.CCHC1.RFCTimeSeries.ncdf") then
@@ -822,18 +845,17 @@ program reservoir_unit_tests
         real :: lake_area, weir_elevation, weir_coefficient
         real :: weir_length, dam_length, orifice_elevation, orifice_coefficient
         real :: orifice_area, max_depth, initial_fractional_depth
-        integer :: lake_number, reservoir_type
+        integer(kind=int64):: lake_number
+        integer :: reservoir_type
         integer :: timestep_count
         character*256 :: cwd_full
         integer :: dynamic_reservoir_type
         real :: assimilated_value
         character(len=256) :: assimilated_source_file
-
         prev_time_inflow = 0.0
         timestep_count = 0
         water_elevation = 0.0
         rv = .false.
-
         lake_area = 2.096320037841796875e+02
         weir_elevation = 1.332074047851562455e+03
         weir_coefficient = 4.000000000000000222e-01
@@ -846,29 +868,20 @@ program reservoir_unit_tests
         initial_fractional_depth = 8.999999761581420898e-01
         lake_number = 17609317
         reservoir_type = 4
-
         cwd_full = "../../../../tests/local/reservoir_testing_files/"
-
         call rfc_forecasts_reservoir_data%init(water_elevation, lake_area, weir_elevation, weir_coefficient, &
         weir_length, dam_length, orifice_elevation, orifice_coefficient, orifice_area, max_depth, 0.9, lake_number, reservoir_type, &
         "../../../../tests/local/reservoir_testing_files/reservoir_index_short_range.nc", "2019-09-18_09:00:00", cwd_full, 24)
-
         water_elevation = 1331.18005
-
         do timestep_count = 1, 120
-
             inflow = inflow_array(timestep_count)
             call rfc_forecasts_reservoir_data%run(inflow, &
             inflow, 0.0, water_elevation, outflow, 900.0, dynamic_reservoir_type, &
             assimilated_value, assimilated_source_file)
-
             prev_time_inflow = inflow
-
             print *, outflow
         end do
-
         print *, 'dynamic_reservoir_type: ', dynamic_reservoir_type
-
         if (outflow .ge. 1.81549609 - epsilon(1.81549609) .and. outflow .le. 1.81549609 + epsilon(1.81549609) &
         .and. dynamic_reservoir_type == 1 .and. assimilated_value .ge. -9999.0 - epsilon(-9999.0) &
         .and. assimilated_value .le. -9999.0 + epsilon(-9999.0) .and. &
@@ -883,12 +896,8 @@ program reservoir_unit_tests
             print *, 'Outflow should be 1.81549609'
             print *, 'dynamic_reservoir_type needs to be 1 because reservoir outputs level pool instead of RFC forecast'
             print *, "========================================================================"
-
         end if
-
     end function test_rfc_forecasts_time_series_output_with_negative_data
-
-
     ! This tests an RFC Forecast Reservoir's functionality to run levelpool if
     ! it receives all synthetic values from a Time Series Forecast file.
     function test_rfc_forecasts_time_series_output_all_synthetic_data() result(rv)
@@ -901,7 +910,8 @@ program reservoir_unit_tests
         real :: lake_area, weir_elevation, weir_coefficient
         real :: weir_length, dam_length, orifice_elevation, orifice_coefficient
         real :: orifice_area, max_depth, initial_fractional_depth
-        integer :: lake_number, reservoir_type
+        integer(kind=int64):: lake_number
+        integer :: reservoir_type
         integer :: timestep_count
         character*256 :: cwd_full
         integer :: dynamic_reservoir_type
@@ -981,18 +991,17 @@ program reservoir_unit_tests
         real :: lake_area, weir_elevation, weir_coefficient
         real :: weir_length, dam_length, orifice_elevation, orifice_coefficient
         real :: orifice_area, max_depth, initial_fractional_depth
-        integer :: lake_number, reservoir_type
+        integer(kind=int64):: lake_number
+        integer :: reservoir_type
         integer :: timestep_count
         character*256 :: cwd_full
         integer :: dynamic_reservoir_type
         real :: assimilated_value
         character(len=256) :: assimilated_source_file
-
         prev_time_inflow = 0.0
         timestep_count = 0
         water_elevation = 0.0
         rv = .false.
-
         lake_area = 2.096320037841796875e+02
         weir_elevation = 1.332074047851562455e+03
         weir_coefficient = 4.000000000000000222e-01
@@ -1005,29 +1014,20 @@ program reservoir_unit_tests
         initial_fractional_depth = 8.999999761581420898e-01
         lake_number = 17609317
         reservoir_type = 4
-
         cwd_full = "../../../../tests/local/reservoir_testing_files/"
-
         call rfc_forecasts_reservoir_data%init(water_elevation, lake_area, weir_elevation, weir_coefficient, &
         weir_length, dam_length, orifice_elevation, orifice_coefficient, orifice_area, max_depth, 0.9, lake_number, reservoir_type, &
         "../../../../tests/local/reservoir_testing_files/reservoir_index_short_range.nc", "2019-11-18_09:00:00", cwd_full, 24)
-
         water_elevation = 1331.18005
-
         do timestep_count = 1, 120
-
             inflow = inflow_array(timestep_count)
             call rfc_forecasts_reservoir_data%run(inflow, &
             inflow, 0.0, water_elevation, outflow, 900.0, dynamic_reservoir_type, &
             assimilated_value, assimilated_source_file)
-
             prev_time_inflow = inflow
-
             print *, outflow
         end do
-
         print *, 'dynamic_reservoir_type: ', dynamic_reservoir_type
-
         if (outflow .ge. 1.81549609 - epsilon(1.81549609) .and. outflow .le. 1.81549609 + epsilon(1.81549609) &
         .and. dynamic_reservoir_type == 1 .and. assimilated_value .ge. -9999.0 - epsilon(-9999.0) &
         .and. assimilated_value .le. -9999.0 + epsilon(-9999.0) .and. &
@@ -1042,17 +1042,219 @@ program reservoir_unit_tests
             print *, 'Outflow should be 1.81549609'
             print *, 'dynamic_reservoir_type needs to be 1 because reservoir outputs level pool instead of RFC forecast'
             print *, "========================================================================"
-
         end if
-
     end function test_rfc_forecasts_data_exceeding_max_range
-
-
     ! This tests an RFC Forecast Reservoirs functionality to offset 28 hours in the future
     ! and look back up to 24 hours to find a time series file and output the appropriate
     ! discharge in the array that matches up with model time as would be done in an extended
     ! analysis and assimilation run.
     function test_rfc_forecasts_with_offset_for_extended_AnA() result(rv)
+        implicit none
+        logical rv, rv1, rv2                        ! test result
+        type (rfc_forecasts) :: rfc_forecasts_reservoir_data
+        real :: outflow, inflow
+        real :: water_elevation
+        real :: prev_time_inflow
+        real :: lake_area, weir_elevation, weir_coefficient
+        real :: weir_length, dam_length, orifice_elevation, orifice_coefficient
+        real :: orifice_area, max_depth, initial_fractional_depth
+        integer(kind=int64):: lake_number
+        integer :: reservoir_type
+        integer :: timestep_count
+        character*256 :: cwd_full
+        integer :: dynamic_reservoir_type
+        real :: assimilated_value
+        character(len=256) :: assimilated_source_file
+        prev_time_inflow = 0.0
+        timestep_count = 0
+        water_elevation = 0.0
+        rv = .false.
+        lake_area = 2.096320037841796875e+02
+        weir_elevation = 1.332074047851562455e+03
+        weir_coefficient = 4.000000000000000222e-01
+        weir_length = 1.000000000000000000e+01
+        dam_length = 10.0
+        orifice_elevation = 1.314473347981770758e+03
+        orifice_coefficient = 1.000000000000000056e-01
+        orifice_area = 1.0
+        max_depth = 1.335180053710937500e+03
+        initial_fractional_depth = 8.999999761581420898e-01
+        lake_number = 17609317
+        reservoir_type = 4
+        cwd_full = "../../../../tests/local/reservoir_testing_files/"
+        call rfc_forecasts_reservoir_data%init(water_elevation, lake_area, weir_elevation, weir_coefficient, &
+        weir_length, dam_length, orifice_elevation, orifice_coefficient, orifice_area, max_depth, 0.9, lake_number, reservoir_type, &
+        "../../../../tests/local/reservoir_testing_files/reservoir_index_AnA_represents_Extended_MR.nc", &
+        "2019-12-18_03:00:00", cwd_full, 24)
+        water_elevation = 1331.18005
+        do timestep_count = 1, 35
+            inflow = inflow_array(timestep_count)
+            call rfc_forecasts_reservoir_data%run(inflow, &
+            inflow, 0.0, water_elevation, outflow, 3600.0, dynamic_reservoir_type, &
+            assimilated_value, assimilated_source_file)
+            prev_time_inflow = inflow
+            print *, outflow
+        end do
+        print *, 'dynamic_reservoir_type: ', dynamic_reservoir_type
+        if (outflow .ge. 7.8 - epsilon(7.8) .and. outflow .le. 7.8 + epsilon(7.8) &
+        .and. dynamic_reservoir_type == 4 .and. assimilated_value .ge. 7.8 - epsilon(7.8) &
+        .and. assimilated_value .le. 7.8 + epsilon(7.8) .and. &
+        assimilated_source_file == "2019-12-19_05.60min.CCHC1.RFCTimeSeries.ncdf") then
+            rv = .true.
+            print *, "========================================================================"
+            print *, 'RFC Forecasts Time Series Output For Extended AnA Test Passed'
+            print *, "========================================================================"
+        else
+            print *, "========================================================================"
+            print *, 'RFC Forecasts Time Series Output For Extended AnA Test Failed'
+            print *, 'Outflow should be 7.8'
+            print *, 'dynamic_reservoir_type needs to be 4 for RFC forecast output'
+            print *, "========================================================================"
+        end if
+    end function test_rfc_forecasts_with_offset_for_extended_AnA
+
+    ! This tests an Alaska RFC Forecasts Reservoir/Glacier functionality to pass inflow directly to
+    ! outflow whenever it does not find its corresponding time series file within a given
+    ! lookback window.
+    function test_ak_rfc_forecasts_pass_through_fallback() result(rv)
+        implicit none
+        logical rv, rv1, rv2                        ! test result
+        type (rfc_forecasts) :: rfc_forecasts_reservoir_data
+        real :: outflow, inflow
+        real :: water_elevation
+        real :: prev_time_inflow
+        real :: lake_area, weir_elevation, weir_coefficient
+        real :: weir_length, dam_length, orifice_elevation, orifice_coefficient
+        real :: orifice_area, max_depth, initial_fractional_depth
+        integer(kind=int64):: lake_number
+        integer :: reservoir_type
+        integer :: timestep_count
+        character*256 :: cwd_full
+        integer :: dynamic_reservoir_type
+        real :: assimilated_value
+        character(len=256) :: assimilated_source_file
+        prev_time_inflow = 0.0
+        timestep_count = 0
+        water_elevation = 0.0
+        rv = .false.
+        rv2 = .false.
+        lake_area = 0.0
+        weir_elevation = 0.0
+        weir_coefficient = 0.0
+        weir_length = 0.0
+        dam_length = 0.0
+        orifice_elevation = 0.0
+        orifice_coefficient = 0.0
+        orifice_area = 0.0
+        max_depth = 0.0
+        initial_fractional_depth = 0.0
+        lake_number = 1
+        reservoir_type = 5
+        cwd_full = "../../../../tests/local/reservoir_testing_files/"
+        call rfc_forecasts_reservoir_data%init(water_elevation, lake_area, weir_elevation, weir_coefficient, &
+        weir_length, dam_length, orifice_elevation, orifice_coefficient, orifice_area, max_depth, 0.0, lake_number, reservoir_type, &
+        "../../../../tests/local/reservoir_testing_files/reservoir_index_Standard_AnA_APRFC_GDLs.nc", "2019-05-01_22:00:00", cwd_full, 24)
+        water_elevation = 0.0
+        do timestep_count = 1, 120
+            inflow = inflow_array(timestep_count)
+            call rfc_forecasts_reservoir_data%run(inflow, &
+            inflow, 0.0, water_elevation, outflow, 900.0, dynamic_reservoir_type, &
+            assimilated_value, assimilated_source_file)
+            prev_time_inflow = inflow
+            print *, outflow
+        end do
+        print *, 'dynamic_reservoir_type: ', dynamic_reservoir_type
+        if (outflow .ge. inflow - epsilon(inflow) .and. outflow .le. inflow + epsilon(inflow) &
+        .and. water_elevation .ge. 0.0 - epsilon(0.0) .and. water_elevation .le. 0.0 + epsilon(0.0) &
+        .and. dynamic_reservoir_type == 1 .and. assimilated_value .ge. -9999.0 - epsilon(-9999.0) &
+        .and. assimilated_value .le. -9999.0 + epsilon(-9999.0) .and. &
+        assimilated_source_file == "") then
+            rv = .true.
+            print *, "========================================================================"
+            print *, 'AK RFC Forecasts Pass Through Fallback Test Passed'
+            print *, "========================================================================"
+        else
+            print *, "========================================================================"
+            print *, 'AK RFC Forecasts Pass Throug Fallback Test Failed'
+            print *, 'Outflow should be 144.120911'
+            print *, 'dynamic_reservoir_type needs to be 1 because reservoir outputs level pool instead of RFC forecast'
+            print *, "========================================================================"
+        end if
+    end function test_ak_rfc_forecasts_pass_through_fallback
+
+    ! This tests an Alaska RFC Forecast Reservoir/Glacier functionality to offset 3 hours in the future
+    ! and look back up to 24 hours to find a time series file and output the appropriate
+    ! discharge in the array that matches up with model time as would be done in a standard
+    ! analysis and assimilation run.
+    function test_ak_rfc_forecasts_time_series_with_lookback_and_offset() result(rv)
+        implicit none
+        logical rv, rv1, rv2                        ! test result
+        type (rfc_forecasts) :: rfc_forecasts_reservoir_data
+        real :: outflow, inflow
+        real :: water_elevation
+        real :: prev_time_inflow
+        real :: lake_area, weir_elevation, weir_coefficient
+        real :: weir_length, dam_length, orifice_elevation, orifice_coefficient
+        real :: orifice_area, max_depth, initial_fractional_depth
+        integer(kind=int64):: lake_number
+        integer :: reservoir_type
+        integer :: timestep_count
+        character*256 :: cwd_full
+        integer :: dynamic_reservoir_type
+        real :: assimilated_value
+        character(len=256) :: assimilated_source_file
+        prev_time_inflow = 0.0
+        timestep_count = 0
+        water_elevation = 0.0
+        rv = .false.
+
+        lake_area = 0.0
+        weir_elevation = 0.0
+        weir_coefficient = 0.0
+        weir_length = 0.0
+        dam_length = 0.0
+        orifice_elevation = 0.0
+        orifice_coefficient = 0.0
+        orifice_area = 0.0
+        max_depth = 0.0
+        initial_fractional_depth = 0.0
+        lake_number = 1
+        reservoir_type = 5
+        cwd_full = "../../../../tests/local/reservoir_testing_files/"
+        call rfc_forecasts_reservoir_data%init(water_elevation, lake_area, weir_elevation, weir_coefficient, &
+        weir_length, dam_length, orifice_elevation, orifice_coefficient, orifice_area, max_depth, 0.0, lake_number, reservoir_type, &
+        "../../../../tests/local/reservoir_testing_files/reservoir_index_Standard_AnA_APRFC_GDLs.nc", "2019-08-18_09:00:00", cwd_full, 24)
+        water_elevation = 0.0
+        do timestep_count = 1, 80
+            inflow = inflow_array(timestep_count)
+            call rfc_forecasts_reservoir_data%run(inflow, &
+            inflow, 0.0, water_elevation, outflow, 3600.0, dynamic_reservoir_type, &
+            assimilated_value, assimilated_source_file)
+            prev_time_inflow = inflow
+            print *, outflow
+        end do
+        print *, 'dynamic_reservoir_type: ', dynamic_reservoir_type
+        if (outflow .ge. 180.392075 - epsilon(180.392075) .and. outflow .le. 180.392075 + epsilon(180.392075) &
+        .and. water_elevation .ge. 0.0 - epsilon(0.0) .and. water_elevation .le. 0.0 + epsilon(0.0) &
+        .and. dynamic_reservoir_type == 5 .and. assimilated_value .ge. 3.6 - epsilon(3.6) &
+        .and. assimilated_value .le. 3.6 + epsilon(3.6) .and. &
+        assimilated_source_file == "2019-08-18_00.60min.SNOA2.RFCTimeSeries.ncdf") then
+            rv = .true.
+            print *, "========================================================================"
+            print *, 'AK RFC Forecasts Time Series Output Test Passed'
+            print *, "========================================================================"
+        else
+            print *, "========================================================================"
+            print *, 'AK RFC Forecasts Time Series Output Test Failed'
+            print *, 'Outflow should be 180.392075'
+            print *, 'dynamic_reservoir_type needs to be 5 for AK RFC forecast output'
+            print *, "========================================================================"
+        end if
+    end function test_ak_rfc_forecasts_time_series_with_lookback_and_offset
+
+    ! This tests an RFC Forecast Reservoirs functionality to correct water elevation going
+    ! over max water elevation
+    function test_rfc_forecasts_over_max_water_elevation() result(rv)
         implicit none
         logical rv, rv1, rv2                        ! test result
         type (rfc_forecasts) :: rfc_forecasts_reservoir_data
@@ -1091,12 +1293,97 @@ program reservoir_unit_tests
 
         call rfc_forecasts_reservoir_data%init(water_elevation, lake_area, weir_elevation, weir_coefficient, &
         weir_length, dam_length, orifice_elevation, orifice_coefficient, orifice_area, max_depth, 0.9, lake_number, reservoir_type, &
-        "../../../../tests/local/reservoir_testing_files/reservoir_index_AnA_represents_Extended_MR.nc", &
-        "2019-12-18_03:00:00", cwd_full, 24)
+        "../../../../tests/local/reservoir_testing_files/reservoir_index_short_range.nc", "2019-08-18_09:00:00", cwd_full, 24)
+
+        !water_elevation = 1331.18005
+
+        water_elevation = 1.335180053710937500e+03
+
+        do timestep_count = 1, 80
+
+            inflow = inflow_array(timestep_count)
+            call rfc_forecasts_reservoir_data%run(inflow, &
+            inflow, 0.0, water_elevation, outflow, 3600.0, dynamic_reservoir_type, &
+            assimilated_value, assimilated_source_file)
+
+            prev_time_inflow = inflow
+
+            print *, outflow
+        end do
+
+        print *, 'dynamic_reservoir_type: ', dynamic_reservoir_type
+
+        if (outflow .ge. 3.6 - epsilon(3.6) .and. outflow .le. 3.6 + epsilon(3.6) .and. &
+        water_elevation .ge. 1335.18005 - epsilon(1335.18005) .and. water_elevation .le. 1335.18005 + epsilon(1335.18005) .and. &
+        dynamic_reservoir_type == 4 .and. assimilated_value .ge. 3.6 - epsilon(3.6) &
+        .and. assimilated_value .le. 3.6 + epsilon(3.6) .and. &
+        assimilated_source_file == "2019-08-18_00.60min.CCHC1.RFCTimeSeries.ncdf") then
+            rv = .true.
+            print *, "========================================================================"
+            print *, 'RFC Forecasts Over Max Water Elevation Test Passed'
+            print *, "========================================================================"
+        else
+            print *, "========================================================================"
+            print *, 'RFC Forecasts Over Max Water Elevation Test Failed'
+            print *, 'Outflow should be 3.6'
+            print *, 'Water Elevation should be 1335.18005'
+            print *, 'dynamic_reservoir_type needs to be 4 for RFC forecast output'
+            print *, "========================================================================"
+
+        end if
+
+    end function test_rfc_forecasts_over_max_water_elevation
+
+
+    ! This tests an RFC Forecast Reservoirs functionality to offset 12 hours in the future
+    ! and look back up to 24 hours to find a time series file and output the appropriate
+    ! discharge in the array that matches up with model time as would be done in a long range
+    ! analysis and assimilation run.
+    function test_rfc_forecasts_with_offset_for_long_range_AnA() result(rv)
+        implicit none
+        logical rv, rv1, rv2                        ! test result
+        type (rfc_forecasts) :: rfc_forecasts_reservoir_data
+        real :: outflow, inflow
+        real :: water_elevation
+        real :: prev_time_inflow
+        real :: lake_area, weir_elevation, weir_coefficient
+        real :: weir_length, dam_length, orifice_elevation, orifice_coefficient
+        real :: orifice_area, max_depth, initial_fractional_depth
+        integer :: lake_number, reservoir_type
+        integer :: timestep_count
+        character*256 :: cwd_full
+        integer :: dynamic_reservoir_type
+        real :: assimilated_value
+        character(len=256) :: assimilated_source_file
+
+        prev_time_inflow = 0.0
+        timestep_count = 0
+        water_elevation = 0.0
+        rv = .false.
+
+        lake_area = 2.096320037841796875e+02
+        weir_elevation = 1.332074047851562455e+03
+        weir_coefficient = 4.000000000000000222e-01
+        weir_length = 1.000000000000000000e+01
+        dam_length = 10.0
+        orifice_elevation = 1.314473347981770758e+03
+        orifice_coefficient = 1.000000000000000056e-01
+        orifice_area = 1.0
+        max_depth = 1.335180053710937500e+03
+        initial_fractional_depth = 8.999999761581420898e-01
+        lake_number = 17609317
+        reservoir_type = 4
+
+        cwd_full = "../../../../tests/local/reservoir_testing_files/"
+
+        call rfc_forecasts_reservoir_data%init(water_elevation, lake_area, weir_elevation, weir_coefficient, &
+        weir_length, dam_length, orifice_elevation, orifice_coefficient, orifice_area, max_depth, 0.9, lake_number, reservoir_type, &
+        "../../../../tests/local/reservoir_testing_files/reservoir_index_Long_Range_AnA.nc", &
+        "2019-12-18_19:00:00", cwd_full, 24)
 
         water_elevation = 1331.18005
 
-        do timestep_count = 1, 35
+        do timestep_count = 1, 19
 
             inflow = inflow_array(timestep_count)
             call rfc_forecasts_reservoir_data%run(inflow, &
@@ -1116,18 +1403,17 @@ program reservoir_unit_tests
         assimilated_source_file == "2019-12-19_05.60min.CCHC1.RFCTimeSeries.ncdf") then
             rv = .true.
             print *, "========================================================================"
-            print *, 'RFC Forecasts Time Series Output For Extended AnA Test Passed'
+            print *, 'RFC Forecasts Time Series Output For Long Range AnA Test Passed'
             print *, "========================================================================"
         else
             print *, "========================================================================"
-            print *, 'RFC Forecasts Time Series Output For Extended AnA Test Failed'
+            print *, 'RFC Forecasts Time Series Output For Long Range AnA Test Failed'
             print *, 'Outflow should be 7.8'
             print *, 'dynamic_reservoir_type needs to be 4 for RFC forecast output'
             print *, "========================================================================"
 
         end if
 
-    end function test_rfc_forecasts_with_offset_for_extended_AnA
-
+    end function test_rfc_forecasts_with_offset_for_long_range_AnA
 
 end program

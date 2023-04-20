@@ -1610,7 +1610,8 @@ end subroutine drive_CHANNEL
        , qSfcLatRunoff,     qBucket                  &
        , QLateral, velocity, qloss                   &
        , HLINK                                       &
-       , nsize , OVRTSWCRT, SUBRTSWCRT, channel_only, channelBucket_only)
+       , nsize , OVRTSWCRT, SUBRTSWCRT, channel_only, channelBucket_only, &
+       channel_bypass)
 
        use module_UDMAP, only: LNUMRSL, LUDRSL
        use config_base, only: nlst
@@ -1651,6 +1652,8 @@ end subroutine drive_CHANNEL
        real                                      :: Km, X
        real , intent(INOUT), dimension(:,:)  :: QLINK
        real , intent(INOUT), dimension(:)    :: HLINK
+
+       logical, intent(in) :: channel_bypass
 
 #ifdef WRF_HYDRO_NUDGING
        !! inout for applying previous nudge to upstream components of flow at gages
@@ -1882,6 +1885,8 @@ if(nlst(1)%output_channelBucket_influx .eq. 1 .or. &
 if(nlst(1)%output_channelBucket_influx .eq. 3) &
      accBucket(1:NLINKSL) = accBucket(1:NLINKSL) + qout_gwsubbas(1:NLINKSL) * DT
 
+! Skip this section if we are NOT running any actual channel routing
+if (.not. channel_bypass) then
 
 !---------------------------------------------
 !       QLateral = QLateral / nsteps
@@ -1908,7 +1913,6 @@ do nt = 1, nsteps
 #ifdef MPP_LAND
    endif
 #endif
-
 
    do k = 1,NLINKSL
 
@@ -2025,6 +2029,8 @@ do nt = 1, nsteps
 !#endif
 
 end do  ! nsteps
+
+endif ! channel_bypass
 
 if (KT .eq. 1) KT = KT + 1
 

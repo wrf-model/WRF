@@ -47,6 +47,9 @@ module module_subsurface_properties
         ! centerpoint distance to each neighbor (m)
         real, pointer, dimension(:,:,:) :: distance_to_neighbor => null()
 
+        ! disaggregated lksat decay exponent
+        real, allocatable, dimension(:,:) :: nexprt
+
     contains
 
         procedure :: init => subsurface_properties_init
@@ -131,6 +134,14 @@ contains
             allocation_error = .true.
         end if
 
+        ! allocate the array only if not already allocated
+        if ( .not. allocated(this%nexprt) ) then
+            allocate( this%nexprt(ix,jx) )
+            this%nexprt = 1.0
+        else
+            allocation_error = .true.
+        end if
+
         if ( allocation_error ) &
             write(0,*) "attempt to allocate data in members of subsurface properties structure&
             &that where already allocated. The allocated members where not changed"
@@ -204,6 +215,12 @@ contains
             allocation_error = .true.
         end if
 
+        ! only deallocated if already allocated
+        if ( allocated(this%nexprt) ) then
+            deallocate( this%nexprt)
+        else
+            allocation_error = .true.
+        end if
 
         if ( allocation_error ) &
             write(0,*) "attempt to deallocate data in members of subsurface properties structure&

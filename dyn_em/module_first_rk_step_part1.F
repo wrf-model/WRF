@@ -1156,6 +1156,10 @@ BENCH_START(pbl_driver_tim)
 ! add tke_pbl, and turbulent fluxes
      &          ,TKE_PBL=grid%tke_pbl,EL_PBL=grid%el_pbl,WU_TUR=grid%wu_tur              &
      &          ,WV_tur=grid%wv_tur,WT_tur=grid%wt_tur,WQ_tur=grid%wq_tur                &
+     &          ,DISS_PBL=grid%diss_pbl,TPE_PBL=grid%tpe_pbl                             &
+     &          ,TKE_ADV=scalar(ims,kms,jms,P_tke_adv)                                   &
+     &          ,DISS_ADV=scalar(ims,kms,jms,P_diss_adv)                                 &
+     &          ,TPE_ADV=scalar(ims,kms,jms,P_tpe_adv),PR_PBL=grid%pr_pbl                &
 ! end add tke_pbl, and turbulent fluxes
 ! GBMPBL change: add exch_tke, rthraten
      &        ,EXCH_TKE=grid%exch_tke, RTHRATEN=grid%rthraten             &
@@ -1192,13 +1196,13 @@ BENCH_START(pbl_driver_tim)
      &        ,QNBCA_CURR=scalar(ims,kms,jms,P_QNBCA),F_QNBCA=F_QNBCA     &
      &        ,HOL=HOL, MOL=grid%mol, REGIME=grid%REGIME                  &
 !mynn mp@
-     &        ,QKE=grid%qke, Sh3d=grid%sh3d                               &
+     &        ,QKE=grid%qke, Sh3d=grid%sh3d, Sm3d=grid%sm3d               &
      &        ,QKE_ADV=scalar(ims,kms,jms,P_qke_adv)                      & !ACF-QKE advection
      &        ,bl_mynn_tkeadvect=config_flags%bl_mynn_tkeadvect           & !ACF-QKE advection
      &        ,tsq=grid%tsq, qsq=grid%qsq, cov=grid%cov                   &
      &        ,DQKE=grid%dqke,QWT=grid%qWT                                &
      &        ,QSHEAR=grid%qSHEAR,QBUOY=grid%qBUOY,QDISS=grid%qDISS       &
-     &        ,bl_mynn_tkebudget=config_flags%bl_mynn_tkebudget           &
+     &        ,tke_budget=config_flags%tke_budget                         &
      &        ,bl_mynn_cloudpdf=config_flags%bl_mynn_cloudpdf             &
      &        ,bl_mynn_mixlength=config_flags%bl_mynn_mixlength           &
      &        ,icloud_bl=config_flags%icloud_bl                           &
@@ -1210,6 +1214,7 @@ BENCH_START(pbl_driver_tim)
      &        ,bl_mynn_output=config_flags%bl_mynn_output                 &
      &        ,bl_mynn_cloudmix=config_flags%bl_mynn_cloudmix             &
      &        ,bl_mynn_mixqt=config_flags%bl_mynn_mixqt                   &
+     &        ,bl_mynn_closure=config_flags%bl_mynn_closure               &
      &        ,edmf_a=grid%edmf_a,edmf_w=grid%edmf_w                      &
      &        ,edmf_thl=grid%edmf_thl,edmf_qt=grid%edmf_qt                &
      &        ,edmf_ent=grid%edmf_ent,edmf_qc=grid%edmf_qc                &
@@ -1224,7 +1229,7 @@ BENCH_START(pbl_driver_tim)
      &        ,pattern_spp_pbl=grid%pattern_spp_pbl                       &
      &        ,restart=config_flags%restart,cycling=config_flags%cycling  &
 !EEPS for ARW
-     &        ,pep=grid%pep_pbl                                           &
+     &        ,pek=grid%pek_pbl,pep=grid%pep_pbl                          &
      &        ,PEK_ADV=scalar(ims,kms,jms,P_pek_adv)                      &!TKEadvection
      &        ,PEP_ADV=scalar(ims,kms,jms,P_pep_adv)                      &!TKEadvection
 !GWD for ARW
@@ -1275,7 +1280,7 @@ BENCH_START(pbl_driver_tim)
      &        ,pert_mynn_qke=config_flags%pert_mynn_qke                   &
 !Variables required for camuwpbl scheme
      &        ,Z_AT_W=grid%z_at_w,CLDFRA_OLD_MP=grid%cldfra_old_mp        &
-     &        ,CLDFRA=grid%cldfra                                        &
+     &        ,CLDFRA=grid%cldfra                                         &
      &        ,RTHRATENLW=grid%rthratenlw,TAURESX2D=grid%tauresx2d        &
      &        ,TAURESY2D=grid%tauresy2d                                   &
      &        ,TPERT2D=grid%tpert2d,QPERT2D=grid%qpert2d                  &
@@ -1291,21 +1296,22 @@ BENCH_START(pbl_driver_tim)
 ! for pbl mixing of scalars and tracers
      &        ,SCALAR=scalar,SCALAR_TEND=scalar_tend,NUM_SCALAR=num_scalar&
      &        ,TRACER=tracer,TRACER_TEND=tracer_tend,NUM_TRACER=num_tracer&
-     &        ,SCALAR_PBLMIX=config_flags%scalar_pblmix                  &
-     &        ,TRACER_PBLMIX=config_flags%tracer_pblmix                  &
+     &        ,SCALAR_PBLMIX=config_flags%scalar_pblmix                   &
+     &        ,TRACER_PBLMIX=config_flags%tracer_pblmix                   &
 #if (WRF_CHEM == 1)
-     &        ,CHEM=chem,VD=grid%dep_vel                                 &
-     &        ,NCHEM=num_chem,kdvel=config_flags%kdepvel                 &
-     &        ,ndvel=config_flags%ndepvel                                &
-     &        ,NUM_VERT_MIX=grid%num_vert_mix                            &
+     &        ,mynn_chem_vertmx=config_flags%mynn_chem_vertmx             &
+     &        ,CHEM=chem,VD=grid%dep_vel                                  &
+     &        ,NCHEM=num_chem,kdvel=config_flags%kdepvel                  &
+     &        ,ndvel=config_flags%ndepvel                                 &
+     &        ,NUM_VERT_MIX=grid%num_vert_mix                             &
 #endif
-     &        ,QNORM=grid%QNORM, fasdas=config_flags%fasdas              & !fasdas
+     &        ,QNORM=grid%QNORM, fasdas=config_flags%fasdas               & !fasdas
      &        )
 
 #if (WRF_CHEM == 1)
 #ifdef DM_PARALLEL
      IF ( num_chem >= PARAM_FIRST_SCALAR .AND. (config_flags%bl_pbl_physics == &
-     & mynnpblscheme2 .OR. config_flags%bl_pbl_physics == mynnpblscheme3)  ) then
+     & mynnpblscheme)  ) then
          CALL wrf_debug ( 200 , ' call HALO CHEM AFTER PBL' )
          IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
 #      include "HALO_EM_CHEM_E_3.inc"

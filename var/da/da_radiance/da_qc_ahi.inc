@@ -58,6 +58,7 @@ subroutine da_qc_ahi (it, i, nchan, ob, iv)
                                       num_clddet_tests)
    integer            :: superob_center
    integer            :: isuper, jsuper
+   real               :: cm, co, ca ! variables for all-sky obs error
 
    real, pointer      :: tb_ob(:,:), tb_xb(:,:), tb_inv(:,:), tb_xb_clr(:,:), ca_mean(:,:)
    integer            :: tb_qc(nchan), tb_qc_clddet(nchan)
@@ -215,7 +216,7 @@ subroutine da_qc_ahi (it, i, nchan, ob, iv)
             tb_ob(:,n)
          if (crtm_cloud ) then
             if (print_cld_debug) write(stdout,'(A,I8,*(2x,F10.4:))') 'PIXEL_DEBUG4: ', n, &
-               tb_xb_clr(:,n)
+               iv%instid(i)%tb_xb_clr(:,n)
          end if
 
          if (print_cld_debug) write(stdout,'(A,I8,8F12.4,2x,A)') 'PIXEL_DEBUG5: ', n, &
@@ -410,7 +411,7 @@ subroutine da_qc_ahi (it, i, nchan, ob, iv)
                              qual_clddet )
 
             if (reject_clddet) then
-               tb_qc_clddet = qc_bad
+               tb_qc_clddet = qc_bad ! CSS do we want to set it bad for a given pixel within a superob?
                if (iv%instid(i)%info%proc_domain(1,n)) then
                   nrej_clddet(:,itest) = nrej_clddet(:,itest) + 1
         !          write(stdout,"(A,F14.6,A,I4,2D12.4)") trim(crit_names_clddet(itest)), crit_clddet, " isflg", isflg, iv%instid(i)%info%lat(1,n), iv%instid(i)%info%lon(1,n)
@@ -422,12 +423,10 @@ subroutine da_qc_ahi (it, i, nchan, ob, iv)
          end do ! isuper
          end do ! jsuper
 
-         if ( iv%instid(i)%superob_width > 1 ) then
-            iv%instid(i)%cloud_frac(n) = &
-               real( count(sum(clddet_tests,3) > 0),8) / real( iv%instid(i)%superob_width**2,8)
-         end if
+         iv%instid(i)%cloud_frac(n) = &
+            real( count(sum(clddet_tests,3) > 0),8) / real( iv%instid(i)%superob_width**2,8)
 
-         if (.not. crtm_cloud ) tb_qc = tb_qc_clddet
+         if (.not. crtm_cloud ) tb_qc = tb_qc_clddet ! CSS logic here isn't quite right if superobbing
 
 !JJGDEBUG
          if (print_cld_debug) write(stdout,'(A,I8,*(2x,I1:))') 'PIXEL_DEBUG6: ', n, clddet_tests
@@ -476,7 +475,7 @@ subroutine da_qc_ahi (it, i, nchan, ob, iv)
 
       ! ---------------------------calculate and save ca_mean for crtm_cloud and crtm_clr
       ! 5.0 assigning obs errors
-	     tb_xb_clr => iv%instid(i)%tb_xb_clr  	 
+	   ! tb_xb_clr => iv%instid(i)%tb_xb_clr ! currently not used
       if (.not. crtm_cloud ) then
          do k = 1, nchan
             if (use_error_factor_rad) then
@@ -486,6 +485,35 @@ subroutine da_qc_ahi (it, i, nchan, ob, iv)
                iv%instid(i)%tb_error(k,n) = satinfo(i)%error_std(k)
             end if
          end do ! nchan
+
+      else ! Added this else block...until now obs error = 500 if crtm_cloud = T...not good!
+
+         if ( ahi_use_symm_obs_err ) then
+	    do k = 1, nchan
+	      ! Okamato et al. (2014)
+	      !cm = iv%instid(i)%tb_xb(k,n) - iv%instid(i)%tb_xb_clr(k,n)
+	      !co = ob%instid(i)%tb(k,n)    - iv%instid(i)%tb_xb_clr(k,n)
+
+	      ! Harnisch et al. (2016)
+	       cm = max(0.0, satinfo(i)%BTLim(k) - iv%instid(i)%tb_xb(k,n))
+	       co = max(0.0, satinfo(i)%BTLim(k) - ob%instid(i)%tb(k,n))
+
+	       ! Symmetric cloud amount
+	       ca = 0.5*( abs(cm) + abs(co) )
+
+	       ! Figure out observation error as a function of ca
+	       if (ca.lt.satinfo(i)%ca1(k)) then
+		  iv%instid(i)%tb_error(k,n)= satinfo(i)%error_std(k)
+	       else if (ca.ge.satinfo(i)%ca1(k) .and. ca.lt.satinfo(i)%ca2(k)) then
+		  iv%instid(i)%tb_error(k,n)= satinfo(i)%error_std(k)+ &
+		     (ca-satinfo(i)%ca1(k))*(satinfo(i)%error_cld(k)-satinfo(i)%error_std(k))/(satinfo(i)%ca2(k)-satinfo(i)%ca1(k))
+	       else
+		  iv%instid(i)%tb_error(k,n)= satinfo(i)%error_cld(k)
+	       end if
+	    end do ! nchan
+	 else
+	    iv%instid(i)%tb_error(:,n)= 500.0 ! this is the default
+	 endif
       end if
 
       !  6.0 gross 8k check -clr,sdobs-clr
@@ -528,7 +556,10 @@ subroutine da_qc_ahi (it, i, nchan, ob, iv)
       end do	 ! nchan
  	  
       !final QC decsion	 	
-      if (crtm_cloud ) tb_qc(2:4) = qc_good  ! no qc  for crtm_cloud
+      ! CSS comment out below. Dangerous, especially if satinfo(i)%iuse(k) = -1
+      ! CSS also okay to fail 3std check if using symmetric error model for obs errors
+      !if (crtm_cloud ) tb_qc(2:4) = qc_good  ! no qc  for crtm_cloud
+
       iv%instid(i)%tb_qc(:,n) = tb_qc
       do k = 1, nchan     		 
            if (iv%instid(i)%tb_qc(k,n) == qc_bad) then

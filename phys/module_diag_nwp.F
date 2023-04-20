@@ -38,7 +38,7 @@ CONTAINS
                      ,grpl_max,grpl_colint,refd_max,refl_10cm         &
                      ,hail_maxk1,hail_max2d                           &
                      ,qg_curr                                         &
-                     ,ng_curr,qh_curr,nh_curr,qr_curr,nr_curr         & !  Optional (gthompsn)
+                     ,ng_curr,qvolg_curr,qh_curr,nh_curr,qr_curr,nr_curr         & !  Optional (gthompsn)
                      ,rho,ph,phb,g                                    &
                      ,max_time_step,adaptive_ts                       &
                                                                       )
@@ -46,11 +46,12 @@ CONTAINS
 
   USE module_state_description, ONLY :                                  &
       KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME, &
-      WSM6SCHEME, ETAMPNEW, THOMPSON, THOMPSONAERO,                     &
+      WSM6SCHEME, ETAMPNEW, THOMPSON, THOMPSONAERO, THOMPSONGH,         &
       MORR_TWO_MOMENT, GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME,           &
       NSSL_2MOM, NSSL_2MOMG, NSSL_2MOMCCN, NSSL_1MOM, NSSL_1MOMLFO,     &
       MILBRANDT2MOM , CAMMGMPSCHEME, FULL_KHAIN_LYNN, MORR_TM_AERO,     &
       FAST_KHAIN_LYNN_SHPUND  !,MILBRANDT3MOM, NSSL_3MOM
+  USE MODULE_MP_THOMPSON, ONLY: idx_bg1
 
    IMPLICIT NONE
 !======================================================================
@@ -159,7 +160,7 @@ CONTAINS
                                                         ,ph,phb
 
    REAL, DIMENSION(ims:ime,kms:kme,jms:jme), OPTIONAL, INTENT(IN) ::    &
-                                       ng_curr, qh_curr, nh_curr        &
+                           ng_curr, qvolg_curr, qh_curr, nh_curr        &
                                                ,qr_curr, nr_curr
 
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) ::            &
@@ -177,7 +178,10 @@ CONTAINS
                                          ,hail_maxk1,hail_max2d  &
                                                       ,refd_max
 
-   REAL, DIMENSION(ims:ime,kms:kme,jms:jme):: temp_qg, temp_ng
+   REAL, DIMENSION(ims:ime,kms:kme,jms:jme)::                    &
+                                      temp_qg, temp_ng, temp_qb  &
+                                              ,temp_qr, temp_nr
+   INTEGER, DIMENSION(ims:ime,kms:kme,jms:jme):: idx_bg
 
    INTEGER :: idump
 
@@ -191,12 +195,13 @@ CONTAINS
       INTEGER, PARAMETER:: ngbins=50
       DOUBLE PRECISION, DIMENSION(ngbins+1):: xxDx
       DOUBLE PRECISION, DIMENSION(ngbins):: xxDg, xdtg
-      REAL:: xrho_g, xam_g, xbm_g, xmu_g
+      REAL:: xrho_g, xam_g, xxam_g, xbm_g, xmu_g
+      REAL, DIMENSION(9), PARAMETER:: xrho_gh = (/ 50,100,200,300,400,500,600,700,800 /)
       REAL, DIMENSION(3):: cge, cgg
       DOUBLE PRECISION:: f_d, sum_ng, sum_t, lamg, ilamg, N0_g, lam_exp, N0exp
       DOUBLE PRECISION:: lamr, N0min
-      REAL:: xslw1, ygra1, zans1
-      INTEGER:: ng, n
+      REAL:: mvd_r, xslw1, ygra1, zans1
+      INTEGER:: ng, n, k_0
 
     REAL                                       :: time_from_output
     INTEGER                                    :: max_time_step
@@ -455,6 +460,39 @@ CONTAINS
 !  !$OMP END PARALLEL DO
    ENDIF
 
+   IF (PRESENT(qvolg_curr)) THEN
+   WRITE(outstring,*) 'GT-Debug, this mp scheme, ', mphysics_opt, ' has graupel volume mixing ratio'
+   CALL wrf_debug (150, TRIM(outstring))
+!  !$OMP PARALLEL DO   &
+!  !$OMP PRIVATE ( ij )
+   DO ij = 1 , num_tiles
+     DO j=j_start(ij),j_end(ij)
+     DO k=kms,kme-1
+     DO i=i_start(ij),i_end(ij)
+        temp_qb(i,k,j) = MAX(temp_qg(i,k,j)/rho(i,k,j)/xrho_gh(9), qvolg_curr(i,k,j))
+        temp_qb(i,k,j) = MIN(temp_qg(i,k,j)/rho(i,k,j)/xrho_gh(1), temp_qb(i,k,j))
+     ENDDO
+     ENDDO
+     ENDDO
+   ENDDO
+!  !$OMP END PARALLEL DO
+   ELSE
+!  !$OMP PARALLEL DO   &
+!  !$OMP PRIVATE ( ij )
+   DO ij = 1 , num_tiles
+     DO j=j_start(ij),j_end(ij)
+     DO k=kms,kme-1
+     DO i=i_start(ij),i_end(ij)
+        idx_bg(i,k,j) = idx_bg1
+        temp_qb(i,k,j) = temp_qg(i,k,j)/rho(i,k,j)/xrho_gh(idx_bg(i,k,j))
+     ENDDO
+     ENDDO
+     ENDDO
+   ENDDO
+!  !$OMP END PARALLEL DO
+   ENDIF
+
+
       ! Calculate the max hail size from graupel/hail parameters in microphysics scheme (gthompsn 12Mar2015)
       ! First, we do know multiple schemes have assumed inverse-exponential distribution with constant
       ! intercept parameter and particle density.  Please leave next 4 settings alone for common
@@ -599,20 +637,56 @@ CONTAINS
           cgg(n) = WGAMMA(cge(n))
        enddo
 
+      if (.not.(PRESENT(ng_curr))) then
+!  !$OMP PARALLEL DO   &
+!  !$OMP PRIVATE ( ij )
+      DO ij = 1 , num_tiles
+       DO j=j_start(ij),j_end(ij)
+       DO k=kms,kme-1
+       DO i=i_start(ij),i_end(ij)
+          temp_qr(i,k,j) = MAX(1.E-10, qr_curr(i,k,j)*rho(i,k,j))
+          temp_nr(i,k,j) = MAX(1.E-8, nr_curr(i,k,j)*rho(i,k,j))
+       ENDDO
+       ENDDO
+       ENDDO
+      ENDDO
+!  !$OMP END PARALLEL DO
+
 !  !$OMP PARALLEL DO   &
 !  !$OMP PRIVATE ( ij )
       DO ij = 1 , num_tiles
        DO j=j_start(ij),j_end(ij)
        DO i=i_start(ij),i_end(ij)
         DO k=kme-1, kms, -1
-         if (temp_qg(i,k,j) .LT. 1.E-6) CYCLE
-         zans1 = (3.0 + 2./7. * (ALOG10(temp_qg(i,k,j))+8.))
+         ygra1 = alog10(max(1.E-9, temp_qg(i,k,j)))
+         zans1 = 3.0 + 2./7.*(ygra1+8.)
          zans1 = MAX(2., MIN(zans1, 6.))
-         N0exp = 10.**zans1
+         N0exp = 10.**(zans1)
          lam_exp = (N0exp*xam_g*cgg(1)/temp_qg(i,k,j))**(1./cge(1))
          lamg = lam_exp * (cgg(3)/cgg(2)/cgg(1))**(1./xbm_g)
          N0_g = N0exp/(cgg(2)*lam_exp) * lamg**cge(2)
-         temp_ng(i,k,j) = N0_g*cgg(2)*lamg**(-cge(2))
+         temp_ng(i,k,j) = MAX(1.E-8, N0_g*cgg(2)*lamg**(-cge(2)))
+        ENDDO
+       ENDDO
+       ENDDO
+      ENDDO
+!  !$OMP END PARALLEL DO
+
+      endif
+
+
+     CASE (THOMPSONGH)
+
+       scheme_has_graupel = .true.
+
+!  !$OMP PARALLEL DO   &
+!  !$OMP PRIVATE ( ij )
+      DO ij = 1 , num_tiles
+       DO j=j_start(ij),j_end(ij)
+        DO k=kme-1, kms, -1
+         DO i=i_start(ij),i_end(ij)
+          idx_bg(i,k,j) = NINT(temp_qg(i,k,j)/temp_qb(i,k,j) *0.01)+1
+          idx_bg(i,k,j) = MAX(1, MIN(idx_bg(i,k,j), 9))
         ENDDO
        ENDDO
        ENDDO
@@ -724,7 +798,13 @@ CONTAINS
         DO k=kms,kme-1
         DO i=i_start(ij),i_end(ij)
            if (temp_qg(i,k,j) .LT. 1.E-6) CYCLE
-           lamg = (xam_g*cgg(3)/cgg(2)*temp_ng(i,k,j)/temp_qg(i,k,j))**(1./xbm_g)
+           IF (PRESENT(qvolg_curr)) THEN
+            xxam_g = 3.1415926536/6.0*xrho_gh(idx_bg(i,k,j))
+            IF (xrho_gh(idx_bg(i,k,j)).lt.350.0) CYCLE
+           ELSE
+            xxam_g = xam_g
+           ENDIF
+           lamg = (xxam_g*cgg(3)/cgg(2)*temp_ng(i,k,j)/temp_qg(i,k,j))**(1./xbm_g)
            N0_g = temp_ng(i,k,j)/cgg(2)*lamg**cge(2)
            sum_ng = 0.0d0
            sum_t  = 0.0d0
@@ -744,10 +824,10 @@ CONTAINS
            else
               hail_max = 1.E-4
            endif
-           if (hail_max .gt. 1E-2) then
-            WRITE(outstring,*) 'GT-Debug-Hail, ', hail_max*1000.
-            CALL wrf_debug (350, TRIM(outstring))
-           endif
+!          if (hail_max .gt. 1E-2) then
+!           WRITE(outstring,*) 'GT-Debug-Hail, ', hail_max*1000.
+!           CALL wrf_debug (350, TRIM(outstring))
+!          endif
            hail_max_sp = hail_max
            if (k.eq.kms) then
               hail_maxk1(i,j) = MAX(hail_maxk1(i,j), hail_max_sp)

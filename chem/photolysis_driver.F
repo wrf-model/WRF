@@ -29,6 +29,7 @@
                bscoef1,bscoef2,bscoef3,bscoef4,                          &
                l2aer,l3aer,l4aer,l5aer,l6aer,l7aer,                      &
                pm2_5_dry,pm2_5_water,uvrad,ivgtyp,                       &
+               o3_gfs_du,                                                &
                ids,ide, jds,jde, kds,kde,                                &
                ims,ime, jms,jme, kms,kme,                                &
                its,ite, jts,jte, kts,kte                                 )
@@ -134,6 +135,9 @@
           INTENT(IN   ) ::                                             &
                                                      xlat,             &
                                                      xlong
+   REAL,  DIMENSION( ims:ime, jms:jme ),                                & 
+          OPTIONAL, INTENT(IN ) :: o3_gfs_du
+
    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
 
    LOGICAL, INTENT(IN)  :: haveaer
@@ -238,6 +242,7 @@
                ph_glyald,ph_mek,ph_gly,                                &
                pm2_5_dry, pm2_5_water, uvrad,                          &
                dt_cld,af_dir,af_dn,af_up,par,erythema,                 &
+               o3_gfs_du,                                              &
                ids,ide, jds,jde, kds,kde,                              &
                ims,ime, jms,jme, kms,kme,                              &
                its,ite, jts,jte, kts,kte                               )

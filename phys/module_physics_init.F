@@ -7,7 +7,6 @@
 
 !  This MODULE CONTAINS the following routines:
 
-
 MODULE module_physics_init
 
    USE module_state_description
@@ -262,7 +261,7 @@ CONTAINS
                          ,xtime1, PBLHAVG, TKEAVG               &
                          ,ccn_conc                             & ! RAS
                          ,QKE                                  & !for MYNN
-                         ,pep                                  & ! EEPS
+                         ,pek,pep                              & ! EEPS
                          ,ghi_accum                            & ! Solar diagnostics
                          ,landusef,landusef2,mosaic_cat_index                                                 & ! danli mosaic
                          ,TSK_mosaic,TSLB_mosaic,SMOIS_mosaic,SH2O_mosaic                                     & ! danli mosaic
@@ -478,7 +477,7 @@ CONTAINS
 
   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::    & !BSINGH(PNNL)- should be declared inout
              RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN,RQIBLTEN,EXCH_H,TKE_PBL
-  REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT), OPTIONAL :: QKE,pep
+  REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT), OPTIONAL :: QKE,pek,pep
 
   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT), OPTIONAL :: &
                                             massflux_EDKF, entr_EDKF, detr_EDKF & 
@@ -1438,7 +1437,7 @@ CHARACTER(LEN=8) :: name
    CALL bl_init(STEPBL,BLDT,DT,RUBLTEN,RVBLTEN,RTHBLTEN,        &
                 RQVBLTEN,RQCBLTEN,RQIBLTEN,TSK,TMN,             &
                 config_flags,restart,UST,LOWLYR,TSLB,ZS,DZS,    &
-                num_soil_layers,TKE_PBL,mfshconv,pep,           &
+                num_soil_layers,TKE_PBL,mfshconv,pek,pep,       &
                 massflux_EDKF, entr_EDKF, detr_EDKF, & 
                 thl_up, thv_up, rt_up,       &
                 rv_up, rc_up, u_up, v_up,    &
@@ -2479,7 +2478,7 @@ CHARACTER(LEN=8) :: name
    SUBROUTINE bl_init(STEPBL,BLDT,DT,RUBLTEN,RVBLTEN,RTHBLTEN,  &
                 RQVBLTEN,RQCBLTEN,RQIBLTEN,TSK,TMN,             &
                 config_flags,restart,UST,LOWLYR,TSLB,ZS,DZS,    &
-                num_soil_layers,TKE_PBL,mfshconv,pep,           &
+                num_soil_layers,TKE_PBL,mfshconv,pek,pep,       &
                 massflux_EDKF, entr_EDKF, detr_EDKF, & 
                 thl_up, thv_up, rt_up,       &
                 rv_up, rc_up, u_up, v_up,    &
@@ -2680,7 +2679,7 @@ CHARACTER(LEN=8) :: name
    USE module_bl_mfshconvpbl
    USE module_bl_gbmpbl
 #if ( EM_CORE == 1 )
-   USE module_bl_mynn
+   USE module_bl_mynn_wrapper
    USE module_bl_eeps
    USE module_bl_temf
 #if ( WRFPLUS == 1 )
@@ -2770,7 +2769,7 @@ CHARACTER(LEN=8) :: name
                                                           RQIBLTEN, &
                                                           TKE_PBL
 
-   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT), OPTIONAL :: QKE, pep
+   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT), OPTIONAL :: QKE, pek, pep
 
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT), OPTIONAL :: &
                               massflux_EDKF, entr_EDKF, detr_EDKF & 
@@ -3853,32 +3852,20 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 
 !mynn 
            
-        CASE (MYNNPBLSCHEME2, MYNNPBLSCHEME3)
+        CASE (MYNNPBLSCHEME)
            IF(isfc .NE. 5 .AND. isfc .NE. 1 .AND. isfc .NE. 2) CALL wrf_error_fatal &
                 ( 'module_physics_init: use mynnsfc or sfclay or myjsfc scheme for this pbl option')
            IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
             ( 'module_physics_init: use ysu (option1), myj (option 2), or boulac (option 8) with BEP/BEM urban scheme' )
-           
-           SELECT CASE(config_flags%bl_pbl_physics)
 
-             CASE(MYNNPBLSCHEME2)
-                mynn_closure_level=2
-
-             CASE(MYNNPBLSCHEME3)
-                mynn_closure_level=3
-
-             CASE DEFAULT
-
-           END SELECT
-
-           CALL mynn_bl_init_driver(&
+                CALL mynnedmf_wrapper_init(                  &
                 &RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN, &
-                &RQIBLTEN,                                   &
-                &QKE,EXCH_H                                  &
-                &,restart,allowed_to_read,mynn_closure_level &
-                &,IDS,IDE,JDS,JDE,KDS,KDE                    &
-                &,IMS,IME,JMS,JME,KMS,KME                    &
-                &,ITS,ITE,JTS,JTE,KTS,KTE)
+                &RQIBLTEN,QKE,                               &
+                &restart,allowed_to_read,                    &
+                &P_QC,P_QI,PARAM_FIRST_SCALAR,               &
+                &IDS,IDE,JDS,JDE,KDS,KDE,                    &
+                &IMS,IME,JMS,JME,KMS,KME,                    &
+                &ITS,ITE,JTS,JTE,KTS,KTE                     )
 
       CASE (TEMFPBLSCHEME)
            ! if(isfc .ne. 0)CALL wrf_error_fatal &
@@ -3904,10 +3891,10 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                 ( 'module_physics_init: use mynnsfc or sfclay or myjsfc schemefor this pbl option')
            IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
             ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
-          IF ( PRESENT( pep ) ) THEN
+          IF ( PRESENT( pek ) .AND. PRESENT( pep ) ) THEN
            CALL eepsinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,    &
                         RQCBLTEN,RQIBLTEN,P_QI,               &
-                        PARAM_FIRST_SCALAR,TKE_PBL,pep,       &
+                        PARAM_FIRST_SCALAR,pek,pep,           &
                         restart,                              &
                         allowed_to_read ,                     &
                         ids, ide, jds, jde, kds, kde,         &
@@ -4431,7 +4418,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    USE module_mp_fast_sbm
 #endif
    USE module_mp_morr_two_moment
-   USE module_mp_p3
+   USE microphy_p3
    USE module_mp_jensen_ishmael
    USE module_mp_milbrandt2mom
 !  USE module_mp_milbrandt3mom
@@ -4594,6 +4581,25 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                           NBCA=scalar(ims,kms,jms,P_QNBCA),             &
                           wif_input_opt=config_flags%wif_input_opt,     &
                           FRC_URB2D=frc_urb2d,                          &
+                          DX=DX, DY=DY,                                 &
+                          is_start=start_of_simulation,                 &
+                          IDS=ids, IDE=ide, JDS=jds, JDE=jde, KDS=kds, KDE=kde,   &
+                          IMS=ims, IME=ime, JMS=jms, JME=jme, KMS=kms, KME=kme,   &
+                          ITS=its, ITE=ite, JTS=jts, JTE=jte, KTS=kts, KTE=kte)
+
+     CASE (THOMPSONGH)
+! Cycling the WRF forecast with moving nests will cause this initialization to be
+! called for each nest move. This is potentially very computationally expensive.
+         IF(start_of_simulation.or.restart.or.config_flags%cycling)     &
+            CALL thompson_init(HGT=z_at_q,                              &
+                          ORHO=inv_dens,                                &
+                          NWFA2D=qnwfa2d,                               &
+                          NWFA=scalar(ims,kms,jms,P_QNWFA),             &
+                          NIFA=scalar(ims,kms,jms,P_QNIFA),             &
+                          NBCA=scalar(ims,kms,jms,P_QNBCA),             &
+                          wif_input_opt=config_flags%wif_input_opt,     &
+                          FRC_URB2D=frc_urb2d,                          &
+                          NG=scalar(ims,kms,jms,P_QNG),                 &
                           DX=DX, DY=DY,                                 &
                           is_start=start_of_simulation,                 &
                           IDS=ids, IDE=ide, JDS=jds, JDE=jde, KDS=kds, KDE=kde,   &

@@ -33,7 +33,8 @@ SUBROUTINE G_MICROPHYSICS_DRIVER(th, thd, rho, rhod, pi_phy, pi_phyd, p&
 &  cldfra_mp_all, cldfrai, cldfral, cldfra_conv, alt, accum_mode, &
 &  aitken_mode, coarse_mode, icwmrsh3d, icwmrdp3d, shfrc3d, cmfmc3d, &
 &  cmfmc2_3d, config_flags, fnm, fnp, rh_old_mp, lcd_old_mp, qv_curr, &
-&  qv_currd, qc_curr, qc_currd, qr_curr, qr_currd, qi_curr, qs_curr, qg_curr, qndrop_curr, &
+&  qv_currd, qc_curr, qc_currd, qr_curr, qr_currd, qi_curr, qi_currd, &
+&  qs_curr, qs_currd, qg_curr, qg_currd, qndrop_curr, &
 &  qni_curr, qh_curr, qnh_curr, qzr_curr, qzi_curr, qzs_curr, qzg_curr, &
 &  qzh_curr, qns_curr, qnr_curr, qng_curr, qnn_curr, qnc_curr, qvolg_curr, qvolh_curr &
 &  ,qdcn_curr,qtcn_curr,qccn_curr,qrcn_curr,qnin_curr,fi_curr,fs_curr    & ! for ntu3m
@@ -49,7 +50,7 @@ SUBROUTINE G_MICROPHYSICS_DRIVER(th, thd, rho, rhod, pi_phy, pi_phyd, p&
 ! Framework
    USE module_state_description, ONLY :                                  &
                      KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME    &
-                    ,WSM6SCHEME, ETAMPNEW, THOMPSON, MORR_TWO_MOMENT     &
+                    ,WSM6SCHEME, WSM6RSCHEME, ETAMPNEW, THOMPSON, MORR_TWO_MOMENT     &
                     ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME, NSSL_2MOM, NSSL_2MOMCCN, NSSL_2MOMG  &
                     ,NSSL_1MOM,NSSL_1MOMLFO & ! ,NSSL_3MOM       &
                     ,MILBRANDT2MOM, LSCONDSCHEME, MKESSLERSCHEME, CAMMGMPSCHEME, NTU  !,MILBRANDT3MOM, ntu3m
@@ -63,6 +64,7 @@ SUBROUTINE G_MICROPHYSICS_DRIVER(th, thd, rho, rhod, pi_phy, pi_phyd, p&
 
    USE g_module_mp_nconvp    !  added by Zhuxiao
    USE g_module_mp_mkessler
+   USE g_module_mp_wsm6r
 
 ! For checking model timestep is history time (for radar reflectivity)
    USE module_utility, ONLY: WRFU_Clock, WRFU_Alarm
@@ -322,7 +324,7 @@ SUBROUTINE G_MICROPHYSICS_DRIVER(th, thd, rho, rhod, pi_phy, pi_phyd, p&
    LOGICAL, OPTIONAL :: f_qdcn,f_qtcn,f_qccn,f_qrcn,f_qnin,f_fi,f_fs,   & ! for ntu3m
 &                       f_vi,f_vs,f_vg,f_ai,f_as,f_ag,f_ah,f_i3m          ! for ntu3m
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL, INTENT(INOUT) ::&
-&  qv_currd, qc_currd, qr_currd
+&  qv_currd, qc_currd, qr_currd, qi_currd, qs_currd, qg_currd
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL, INTENT(IN) :: &
 &  qrcuten, qscuten, qicuten
 ! YLIN
@@ -436,6 +438,34 @@ SUBROUTINE G_MICROPHYSICS_DRIVER(th, thd, rho, rhod, pi_phy, pi_phyd, p&
                 CALL wrf_error_fatal ( 'arguments not present for calling g_mkessler' )
              ENDIF
 
+        CASE (WSM6RSCHEME)
+             CALL wrf_debug ( 100 , 'microphysics_driver: calling g_wsm6r' )
+             IF ( PRESENT( QV_CURR ) .AND. PRESENT( QC_CURR ) .AND.  &
+                  PRESENT( QR_CURR ) .AND. PRESENT( QS_CURR ) .AND.  &
+                                           PRESENT( QG_CURR ) .AND.  &
+                  PRESENT( RAINNC  ) .AND. PRESENT( RAINNCV ) )  THEN
+
+                 CALL g_wsm6r( &
+                       th  =th,         g_th  =thd, &
+                       q   =qv_curr,    g_q   =qv_currd,&
+                       qc  =qc_curr,    g_qc  =qc_currd,&
+                       qr  =qr_curr,    g_qr  =qr_currd,&
+                       qi  =qi_curr,    g_qi  =qi_currd,&
+                       qs  =qs_curr,    g_qs  =qs_currd,&
+                       qg  =qg_curr,    g_qg  =qg_currd,&
+                       den =rho,        g_den =rhod,&
+                       pii =pi_phy,     g_pii =pi_phyd,&
+                       p   =p,          g_p   =pd,&
+                       delz=dz8w,       g_delz=dz8wd,&
+                       delt=dt,&
+                       rain=rainnc,     g_rain=rainncd,&
+                       rainncv=rainncv, g_rainncv=rainncvd, &
+                       ids=ids, ide=ide, jds=jds, jde=jde, kds=kds, kde=kde, &
+                       ims=ims, ime=ime, jms=jms, jme=jme, kms=kms, kme=kme, &
+                       its=its, ite=ite, jts=jts, jte=jte, kts=kts, kte=kte)
+             ELSE
+                CALL wrf_error_fatal ( 'arguments not present for calling g_wsm6r' )
+             ENDIF
 
       CASE (lscondscheme) 
 !    Added by Zhuxiao,  lscond (simplified Large-scale condensation scheme by Jimy )

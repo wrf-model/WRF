@@ -12,9 +12,6 @@
 !     do j = 1, Jend; do k = 1, Kend; do i = 1, Iend; A(i, k, j); end do; end do; end do
 !-------------------------------------------------------------------------------
 
-!=============================================================
-!=============================================================
-
 MODULE module_firebrand_spotting_mpi
 
     USE module_domain,       ONLY : get_ijk_from_grid, domain               ! grid
@@ -92,7 +89,7 @@ MODULE module_firebrand_spotting_mpi
 
     INTEGER, PARAMETER :: neighbors = 8 ! number of neighbor tasks - includes diagonals
     INTEGER, PARAMETER :: mpi_datapack_nreal = 8 ! number of real type arrays packed together: 3 (xyz) + 5 (p_properties)
-    INTEGER, PARAMETER :: mpi_datapack_nint = 2  ! number of integer type arrays packed together 2 (id, dt)
+    INTEGER, PARAMETER :: mpi_datapack_nint = 3  ! number of integer type arrays packed together 2 (id, src, dt)
 
     INTEGER, SAVE :: my_id, left_id, right_id, up_id, down_id
     INTEGER, SAVE :: upleft_id, upright_id, downleft_id, downright_id
@@ -270,7 +267,7 @@ CONTAINS
 
 
 !=============================================================
-    SUBROUTINE fs_mpi_send2neighbors(task_id, mask, p_x, p_y, p_z, p_id, p_dt, fs_p_m, fs_p_d, fs_p_e, fs_p_t, fs_p_v)
+    SUBROUTINE fs_mpi_send2neighbors(task_id, mask, p_x, p_y, p_z, p_id, p_src, p_dt, fs_p_m, fs_p_d, fs_p_e, fs_p_t, fs_p_v)
 !=============================================================
 
         IMPLICIT NONE
@@ -281,7 +278,7 @@ CONTAINS
 
         INTEGER, INTENT(IN), DIMENSION(:) :: task_id
         LOGICAL, INTENT(IN), DIMENSION(:) :: mask
-        INTEGER, INTENT(IN), DIMENSION(:) :: p_id, p_dt
+        INTEGER, INTENT(IN), DIMENSION(:) :: p_id, p_dt, p_src
         REAL,    INTENT(IN), DIMENSION(:) :: p_x, p_y, p_z, fs_p_m, fs_p_d, fs_p_e, fs_p_t, fs_p_v
 
         LOGICAL, ALLOCATABLE, DIMENSION(:) :: masksendto
@@ -347,6 +344,7 @@ CONTAINS
                                PACK(fs_p_t,masksendto),&
                                PACK(fs_p_v,masksendto)]
                     p_int  = [PACK(p_id,masksendto),&
+                              PACK(p_src,masksendto),&
                                PACK(p_dt,masksendto)]
 
                     CALL fs_mpi_sendbuffsize(sendto=sendto, nbr=nbr)
@@ -545,7 +543,7 @@ CONTAINS
 
 
 !=============================================================
-        SUBROUTINE fs_mpi_recv(np_id, task_id, r_x, r_y, r_z, r_p_m, r_p_d, r_p_e, r_p_t, r_p_v, r_id, r_dt)
+        SUBROUTINE fs_mpi_recv(np_id, task_id, r_x, r_y, r_z, r_p_m, r_p_d, r_p_e, r_p_t, r_p_v, r_id, r_src, r_dt)
 !=============================================================
 
         IMPLICIT NONE
@@ -556,7 +554,7 @@ CONTAINS
 
         INTEGER, INTENT(IN), DIMENSION(:) :: task_id, np_id
         REAL,    INTENT(OUT),DIMENSION(:) :: r_x, r_y, r_z
-        INTEGER, INTENT(OUT),DIMENSION(:) :: r_id, r_dt
+        INTEGER, INTENT(OUT),DIMENSION(:) :: r_id, r_dt, r_src
         REAL,    INTENT(OUT),DIMENSION(:) :: r_p_m, r_p_d, r_p_e, r_p_t, r_p_v
 
         INTEGER :: np_sum, istart, iend, ii
@@ -613,7 +611,8 @@ CONTAINS
         r_p_v = arr_real(:,8)
 
         r_id = arr_int(:,1)
-        r_dt = arr_int(:,2)
+        r_src = arr_int(:,2)
+        r_dt = arr_int(:,3)
 
     END SUBROUTINE fs_mpi_recv
 

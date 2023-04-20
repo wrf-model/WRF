@@ -1413,8 +1413,6 @@ CONTAINS
 ! NEW TIEDTKE SCHEME - ZCX&YQW (U of Hawaii)
      CASE (NTIEDTKESCHEME)
 
-        IF ( PRESENT ( QFX ) .AND. PRESENT( HFX )) THEN
-
           CALL wrf_debug(100,'in cu_ntiedtke')
           CALL CU_NTIEDTKE(                                      &
                 DT=dt,ITIMESTEP=itimestep,STEPCU=STEPCU,HFX=hfx  &
@@ -1434,9 +1432,6 @@ CONTAINS
                ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                   &
                ,F_QI=f_qi,F_QS=f_qs                             &
                                                              )
-        ELSE
-          CALL wrf_error_fatal('Lacking arguments for CU_NTIEDTKE in cumulus driver')
-        ENDIF
 
 ! New KIM SAS SCHEME - (KIAPS, South Korea)
      CASE (KSASSCHEME)

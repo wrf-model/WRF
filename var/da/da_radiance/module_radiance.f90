@@ -169,6 +169,10 @@ module module_radiance
       real   , pointer   :: bcoef(:,:)   ! airmass predictor bias coefficients
       real   , pointer   :: bcoef0(:)    ! airmass constant coefficient
       real   , pointer   :: error_std(:) ! error standard deviation
+      real   , pointer   :: BTLim(:)     ! for all-sky radiances, "BTLim" for each channel (Harnish et al. 2016)
+      real   , pointer   :: ca1(:)       ! for all-sky radiances, symmetric cloud amount below which we set obs error to clear-sky obs error.
+      real   , pointer   :: ca2(:)       ! for all-sky radiances, symmetric cloud amount above which we set obs error to fully cloudy obs error.
+      real   , pointer   :: clearSkyBias(:) ! for all-sky radiances, bias correction determined offline based on only clear pixels.
    end type satinfo_type
 
    type (satinfo_type), pointer :: satinfo(:)

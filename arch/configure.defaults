@@ -119,8 +119,9 @@ FCDEBUG         =       # -g $(FCNOOPT)
 FORMAT_FIXED    =       -ffixed-form
 FORMAT_FREE     =       -ffree-form -ffree-line-length-huge
 FCSUFFIX        =
+FCCOMPAT        =
 BYTESWAPIO      =       -fendian=big
-FCBASEOPTS_NO_G =       -Wno=101,139,155,158 $(FORMAT_FREE) $(BYTESWAPIO)
+FCBASEOPTS_NO_G =       -Wno=101,139,155,158 $(FORMAT_FREE) $(BYTESWAPIO) $(FCCOMPAT)
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     -fmod=$(WRF_SRC_ROOT_DIR)/main
 TRADFLAG        =      CONFIGURE_TRADFLAG
@@ -984,8 +985,9 @@ FCDEBUG         =       # -g $(FCNOOPT)
 FORMAT_FIXED    =       -ffixed-form
 FORMAT_FREE     =       -ffree-form -ffree-line-length-huge
 FCSUFFIX        =
+FCCOMPAT        =
 BYTESWAPIO      =       -fendian=big
-FCBASEOPTS_NO_G =       -Wno=101,139,155,158 $(FORMAT_FREE) $(BYTESWAPIO)
+FCBASEOPTS_NO_G =       -Wno=101,139,155,158 $(FORMAT_FREE) $(BYTESWAPIO) $(FCCOMPAT)
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 LIB_LOCAL       =    -L/usr/lib -lSystemStubs
 MODULE_SRCH_FLAG =     -fmod=$(WRF_SRC_ROOT_DIR)/main
@@ -2054,6 +2056,7 @@ FCDEBUG         =       # -g $(FCNOOPT)  # -fbacktrace -ggdb -fcheck=bounds,do,m
 FORMAT_FIXED    =       -ffixed-form
 FORMAT_FREE     =       -ffree-form -ffree-line-length-none
 FCSUFFIX        =
+FCCOMPAT        =
 BYTESWAPIO      =       -fconvert=big-endian -frecord-marker=4
 FCBASEOPTS_NO_G =       -w $(FORMAT_FREE) $(BYTESWAPIO) $(FCCOMPAT)
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)

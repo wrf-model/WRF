@@ -3535,13 +3535,13 @@
           lamr = 1./ilamr(k)
 !..Rapidly eliminate near zero values when low humidity (<95%)
           if (qv(k)/qvs(k) .lt. 0.95 .AND. rr(k)*orho.le.1.E-8) then
-          prv_rev(k) = rr(k)*orho*odts
+          prv_rev(k) = rr(k)*odts
           else
           prv_rev(k) = t1_evap*diffu(k)*(-ssatw(k))*N0_r(k)*rvs &
               * (t1_qr_ev*ilamr(k)**cre(10) &
               + t2_qr_ev*vsc2(k)*rhof2(k)*((lamr+0.5*fv_r)**(-cre(11))))
-          rate_max = MIN((rr(k)*orho*odts), (qvs(k)-qv(k))*odts)
-          prv_rev(k) = MIN(DBLE(rate_max), prv_rev(k)*orho)
+          rate_max = MIN((rr(k)*odts), (qvs(k)-qv(k))*rho(k)*odts)
+          prv_rev(k) = MIN(DBLE(rate_max*orho), prv_rev(k)*orho)
 
 !..TEST: G. Thompson  10 May 2013
 !..Reduce the rain evaporation in same places as melting graupel occurs.

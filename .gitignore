@@ -17,3 +17,4 @@
 configure.wrf*
 *.backup
 *.f90
+_build/

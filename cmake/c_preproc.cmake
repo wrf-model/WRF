@@ -1,25 +1,25 @@
-# WRF Macro for preprocessing F files that are just... bad ifdef usage to say the least
-macro( wrf_preproc_fortran )
+# WRF Macro for C preprocessing F files that are just... bad ifdef usage to say the least
+macro( wrf_c_preproc_fortran )
 
   set( options        )
   set( oneValueArgs   TARGET_NAME SUFFIX PREFIX EXTENSION OUTPUT_DIR )
-  set( multiValueArgs DEPENDENCIES INCLUDE_DIRECTORIES SOURCES DEFINITIONS GENERATED_SCOPE )
+  set( multiValueArgs DEPENDENCIES INCLUDES SOURCES DEFINITIONS )
 
   cmake_parse_arguments(
                         WRF_PP_F
                         "${options}"  "${oneValueArgs}"  "${multiValueArgs}"
                         ${ARGN}
                         )
-  #!TODO Verify -o/-I/-E/-D are all compiler independent flags
+  #!TODO Verify -o/-I/-E/-D/-free are all compiler independent flags
   
-  # Santitize input
-  if ( DEFINED WRF_PP_F_GENERATED_SCOPE )
-    set( WRF_PP_F_TARGET_DIRECTORY TARGET_DIRECTORY ${WRF_PP_F_GENERATED_SCOPE} )
-  endif()
+  # # Santitize input
+  # if ( DEFINED WRF_PP_F_GENERATED_SCOPE )
+  #   set( WRF_PP_F_TARGET_DIRECTORY TARGET_DIRECTORY ${WRF_PP_F_GENERATED_SCOPE} )
+  # endif()
 
-  set( WRF_PP_F_INCLUDES )
-  foreach( WRF_PP_F_INC  ${WRF_PP_F_INCLUDE_DIRECTORIES} )
-    list( APPEND WRF_PP_F_INCLUDES -I${WRF_PP_F_INC} )
+  set( WRF_PP_F_INCLUDES_FLAGS )
+  foreach( WRF_PP_F_INC  ${WRF_PP_F_INCLUDES} )
+    list( APPEND WRF_PP_F_INCLUDES_FLAGS -I${WRF_PP_F_INC} )
   endforeach()
 
   set( WRF_PP_F_DEFS )
@@ -44,19 +44,21 @@ macro( wrf_preproc_fortran )
   set( WRF_PP_F_OUTPUT   )
   set( WRF_PP_F_COMMANDS )
   foreach( WRF_PP_F_SOURCE_FILE  ${WRF_PP_F_SOURCES} )
+    get_filename_component( WRF_PP_F_INPUT_SOURCE           ${WRF_PP_F_SOURCE_FILE} REALPATH )
+    get_filename_component( WRF_PP_F_INPUT_SOURCE_FILE_ONLY ${WRF_PP_F_SOURCE_FILE} NAME     )
+
     if ( ${WRF_PP_F_EXTENSION} MATCHES "^[.][a-z0-9]+$" )
-      string( REGEX REPLACE "[.].*$" "${WRF_PP_F_EXTENSION}" WRF_PP_F_OUTPUT_FILE ${WRF_PP_F_SOURCE_FILE} )
+      string( REGEX REPLACE "[.].*$" "${WRF_PP_F_EXTENSION}" WRF_PP_F_OUTPUT_FILE ${WRF_PP_F_INPUT_SOURCE_FILE_ONLY} )
     else()
       # Default extension
-      string( REGEX REPLACE "[.].*$" ".i" WRF_PP_F_OUTPUT_FILE ${WRF_PP_F_SOURCE_FILE} )
+      string( REGEX REPLACE "[.].*$" ".i" WRF_PP_F_OUTPUT_FILE ${WRF_PP_F_INPUT_SOURCE_FILE_ONLY} )
     endif()
 
     set( WRF_PP_F_OUTPUT_FILE ${WRF_PP_F_OUTPUT_DIR}/${WRF_PP_F_PREFIX}${WRF_PP_F_OUTPUT_FILE}${WRF_PP_F_SUFFIX} )
-    get_filename_component( WRF_PP_F_INPUT_SOURCE ${WRF_PP_F_SOURCE_FILE} REALPATH )
 
     list( 
           APPEND WRF_PP_F_COMMANDS 
-          COMMAND ${CMAKE_Fortran_COMPILER} -E ${WRF_PP_F_INPUT_SOURCE} ${WRF_PP_F_DEFS} ${WRF_PP_F_INCLUDES} > ${WRF_PP_F_OUTPUT_FILE}
+          COMMAND ${CMAKE_Fortran_COMPILER} -E ${WRF_PP_F_INPUT_SOURCE} -free ${WRF_PP_F_DEFS} ${WRF_PP_F_INCLUDES_FLAGS} > ${WRF_PP_F_OUTPUT_FILE}
           # Force check that they were made
           COMMAND ${CMAKE_COMMAND} -E compare_files ${WRF_PP_F_OUTPUT_FILE} ${WRF_PP_F_OUTPUT_FILE}
           )
@@ -80,7 +82,7 @@ macro( wrf_preproc_fortran )
     #                               GENERATED TRUE
     #                             )
 
-    message( STATUS "File ${WRF_PP_F_SOURCE_FILE} will be preprocessed into ${WRF_PP_F_OUTPUT_FILE}" )
+    # message( STATUS "File ${WRF_PP_F_SOURCE_FILE} will be preprocessed into ${WRF_PP_F_OUTPUT_FILE}" )
 
   endforeach()
 
@@ -95,6 +97,7 @@ macro( wrf_preproc_fortran )
 
   add_custom_target(
                     ${WRF_PP_F_TARGET_NAME}
+                    COMMENT "Building ${WRF_PP_F_TARGET_NAME}"
                     DEPENDS ${WRF_PP_F_OUTPUT}
                     )
 

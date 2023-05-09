@@ -1,10 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
-#ifdef _WIN32
-#define rindex(X,Y) strrchr(X,Y)
-#define index(X,Y) strchr(X,Y)
-#endif
+#if defined(_WIN32) || defined(__CYGWIN__)
 # include <io.h>
+#endif
+#ifdef _WIN32
+# define rindex(X,Y) strrchr(X,Y)
+# define index(X,Y) strchr(X,Y)
+#endif
 # include <sys/time.h>
 # include <sys/resource.h>
 # include <unistd.h>

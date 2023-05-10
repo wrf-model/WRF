@@ -10,7 +10,7 @@ Description of namelist variables
  run_hours                           = 0,	! run time in hours
                                                   Note: if it is more than 1 day, one may use both run_days and run_hours
                                                   or just run_hours. e.g. if the total run length is 36 hrs, you may
-                                                  set run_days = 1, and run_hours = 12, or run_days = 0, and run_hours = 36
+                                                  set run_days = 1, and run_hours = 12, or run_days = 0, and run_hours = 36.
  run_minutes                         = 0,	! run time in minutes
  run_seconds                         = 0,	! run time in seconds
  start_year (max_dom)                = 2001,	! four digit year of starting time
@@ -77,7 +77,9 @@ Description of namelist variables
  adjust_output_times                 = .false., ! adjust output times to the nearest hour
  override_restart_timers             = .false., ! whether to change the alarms from what is previously set
  write_hist_at_0h_rst                = .false., ! whether to output history file at the start of restart run
- output_ready_flag		     = .true.,  ! asks the model to write-out an empty file with the name 'wrfoutReady_d<domain>_<date>.  
+ write_restart_at_0h                 = .false., ! whether to output restart file at the start of restart run
+ output_ready_flag		     = .true.,  ! asks the model to write-out an empty file with the name 
+                                                  'wrfoutReady_d<domain>_<date>.  
                                                   Useful in production runs so that post-processing code can check on the 
                                                   completeness of this file
  force_use_old_data                  = .false., ! if set to .true., allow WRF Version 3 input data
@@ -126,6 +128,9 @@ Options for run-time IO:
                                        (example: +:h:21:rainc, rainnc, rthcuten)
  ignore_iofields_warning             = .true.,  ! what to do when encountering an error in the user-specified files
                                        .false., ! abort when encountering an error in iofields_filename file
+
+ nocolons                            = .false., ! whether to write file date with colons
+                                       .true.,    e.g. 2020-05-20_12_00_00
 
 Additional settings when running WRFVAR:
 
@@ -265,6 +270,11 @@ Namelist variables specifically for the WPS input for real:
                                                   1: integer vertical refinement (must set rebalance=1)
                                                   2: use specified or computed eta levels for vertical refinement (must set rebalance=1)
  rebalance                           = 0        ! must be set to =1 if vertical nesting is used. 
+
+ ts_buf_size                         = 200      ! size of time series buffer
+ max_ts_locs                         = 5,       ! maximum number of time series locations
+ max_ts_level                        = 15,      ! highest model level for time series output
+ tslist_unstagger_winds              = .false., ! whether to interpolate 3D u and v to cell centers
 
 Users may explicitly define full eta levels.  Given are two distributions for 28 and 35 levels.  The number
 of levels must agree with the number of eta surfaces allocated (e_vert).  Users may alternatively request 
@@ -504,22 +514,32 @@ Namelist variables for controlling the adaptive time step option:
                                        use_aero_icbc = .F. : use constant values
                                        use_aero_icbc = .T. : use climatological aerosol input from WPS
  use_rap_aero_icbc                   = .false.   ! Set to .true. to ingest real-time data containing aerosols (new in 4.4)
- qna_update                          = 0   ! set to 1 to update time-varying sfc aerosol emission from climatology or real-time data 
+ qna_update                          = 0   ! set to 1 to update time-varying sfc aerosol emission from climatology or 
+                                             real-time data 
                                              with mp_physics = 28. Use with input file ‘wrfqnainp_d0*’
                                              (must set auxinput17_interval and io_form_auxinput17; new in 4.4)
- wif_fire_emit                       = .false.   ! set to .true. to include biomass burning organic and black carbon aerosols with mp_physics = 28 (new in 4.4)
- wif_fire_inj                        = 1   ! (default) vertically distribute biomass burning emissions in mp_physics = 28 (new in 4.4)
+ wif_fire_emit                       = .false.   ! set to .true. to include biomass burning organic and black carbon 
+                                             aerosols with mp_physics = 28 (new in 4.4)
+ wif_fire_inj                        = 1   ! (default) vertically distribute biomass burning emissions 
+                                             in mp_physics = 28 (new in 4.4)
                                      = 30, HUJI (Hebrew University of Jerusalem, Israel) spectral bin microphysics,
                                            fast version
                                      = 32, HUJI spectral bin microphysics, full version
-                                     = 40, Morrison (2 moments) with consideration of CESM-NCSU RCP4.5 climatological aerosol 
+                                     = 38, Thompson scheme with 2-moment graupel/hail (new in 4.5)
+                                     = 40, Morrison (2 moments) with consideration of CESM-NCSU RCP4.5 climatological 
+                                           aerosol 
                                      = 50, P3 1-ice category, 1-moment cloud water
                                      = 51, P3 1-ice category plus double-moment cloud water
                                      = 52, P3 2-ice categories plus double-moment cloud water
                                      = 53, P3 1-ice category, 3-moment ice, plus double-moment cloud water
-                                     = 55, Jensen-ISHMAEL (Ice-Spheroids Habit Model with Aspect-ratio Evolution) scheme                                            predicting qc, qr, and three ice species with four predictive equations 
-                                           for each ice
+                                     = 55, Jensen-ISHMAEL (Ice-Spheroids Habit Model with Aspect-ratio Evolution) scheme 
+                                           predicting qc, qr, and three ice species with four predictive equations for each ice
                                      = 56, NTU multi-moment scheme  ! for ntu3m
+ ccnty                                 = 1  ! for aerosol background type, marine, for ntu3m
+                                         2  ! continental clean (default), for ntu3m
+                                         3  ! continental average, for ntu3m
+                                         4  ! continental urban, for ntu3m
+
                                      = 95, Ferrier (old Eta) microphysics
                                      = 96, Madwrf
                                      = 97, Goddard GCE scheme (also uses gsfcgce_hail, gsfcgce_2ice)
@@ -545,9 +565,11 @@ Namelist variables for controlling the adaptive time step option:
                                                  default value = 0
                                                  gsfcgce_hail is ignored if gsfcgce_2ice is set to 1 or 2.
  hail_opt                            = 0       ! hail switch for WSM6 and WDM6 : 0 - off, 1 - on
- morr_rimed_ice                      = 1       ! hail switch for Morrison schemes (mp_physics=10 and 40: 0 - off, 1 - on (new in 4.0)
+ morr_rimed_ice                      = 1       ! hail switch for Morrison schemes (mp_physics=10 and 40: 0 - off, 
+                                                 1 - on (new in 4.0)
  clean_atm_diag                      = 0       ! if set to =1, turns on clean sky diagnostics (for chem); default is 0=off
- acc_phy_tend                        = 0       ! set to =1 to output 16 accumulated physics tendencies for potential temp, water vaopr mixing ratio, and U/V wind components; default is 0=off (new in 4.4) 
+ acc_phy_tend                        = 0       ! set to =1 to output 16 accumulated physics tendencies for potential temp, 
+                                                 water vaopr mixing ratio, and U/V wind components; default is 0=off (new in 4.4) 
  progn (max_dom)                     = 0       ! switch to use mix-activate scheme (Only for Morrison, WDM6, WDM5, 
                                                  and NSSL_2MOMCCN/NSSL_2MOM
  ccn_conc                            = 1.E8    ! CCN concentration, used by WDM schemes
@@ -558,10 +580,9 @@ Namelist variables for controlling the adaptive time step option:
                                                  0: do not use; 1: use effective radii
                                                  (The mp schemes that compute effective radii are 3,4,6,7,8,10,14,16,17-21,24,26,28,50-53,55)
 
- CCNTY                               = 1       ! for aerosol background type, marine,  for ntu3m
-                                     = 2       ! continental clean (default), for ntu3m
-                                     = 3       ! continental average, for ntu3m
-                                     = 4       ! continental urban, for ntu3m
+ force_read_thompson                 = .false. ! whether to read tables for mp_physics = 8,28
+ write_thompson_tables               = .true.  ! whether to read or compute tables for mp_phyiscs = 8,28
+ write_thompson_mp38table            = .false. ! whether to read table (qr_acr_qg_mp38V1.dat) for mp_physics = 38
 
  ra_lw_physics (max_dom)             longwave radiation option
                                      = 0, no longwave radiation
@@ -731,8 +752,10 @@ Namelist variables for controlling the adaptive time step option:
                                      = 4, Eddy-diffusivity Mass Flux, Quasi-Normal Scale Elimination PBL
                                      = 5, MYNN 2.5 level TKE scheme, works with
                                           sf_sfclay_physics=1 or 2 as well as 5
-                                     = 6, MYNN 3rd level TKE scheme, works only
-                                          MYNNSFC (sf_sfclay_physics = 5)
+                                          (option 6 removed in 4.5, replaced by bl_mynn_closure options)
+ bl_mynn_closure                          = 2.5: level 2.5
+                                            2.6: level 2.6
+                                            3.0: level 3.0                                         
                                      = 7, ACM2 (Pleim) PBL
                                      = 8, Bougeault and Lacarrere (BouLac) PBL
                                      = 9, UW boundary layer scheme from CAM5 (CESM 1_0_1)
@@ -742,6 +765,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 12, Grenier-Bretherton-McCaa scheme
                                      = 16, TKE+TKE dissipation rate (epsilon) scheme
                                            works with surface layer options 1,91,2,5.
+                                     = 17, TKE+TKE dissipation rate+TPE (temparature variance) scheme
                                      = 99, MRF scheme
 
  bldt (max_dom)                      = 0,       ! minutes between boundary-layer physics calls
@@ -758,7 +782,8 @@ Namelist variables for controlling the adaptive time step option:
                                              (YSU PBL only, and require extra input from geogrid)
                                      = 2,    turn on topographic surface wind correction from Mass (YSU PBL only)
 
- bl_mynn_tkebudget (max_dom)         = 0,       ! default off; = 1 adds MYNN tke budget terms to output
+ tke_budget (max_dom)                = 0,       ! default off; = 1 adds MYNN tke budget terms to output (new in 4.5)
+                                                  (replacing bl_mynn_tkebudget in prior versions)
  bl_mynn_tkeadvect (max_dom)         = .false., ! default off; = .true. do MYNN tke advection
  icloud_bl                                        option to couple the subgrid-scale clouds from the PBL scheme (MYNN only) 
                                                   to radiation schemes 
@@ -777,8 +802,7 @@ Namelist variables for controlling the adaptive time step option:
                                      1: Kuwano et al 2010, similar to option 0, but uses resolved scale gradients 
                                         as opposed to higher order moments ; 
                                      2: from Chaboureau and Bechtold (2002, JAS, with mods, default) 
- bl_mynn_edmf (max_dom)              = 0,  ! default; = 1 activates mass-flux scheme in MYNN 
-                                       1:  ! (default) for StEM; 2: for TEMF; 0: just regular MYNN. 
+ bl_mynn_edmf (max_dom)              = 1   ! activate mass-flux option in MYNN, 0: mass-flux option off
                                              Related (hidden) options: 
  bl_mynn_edmf_mom (max_dom)          = 1   ! - activates momentum transport in MYNN mass-flux scheme 
                                            (assuming bl_mynn_edmf > 0); 0=off (default)
@@ -786,6 +810,10 @@ Namelist variables for controlling the adaptive time step option:
  bl_mynn_edmf_tke (max_dom)          = 0,  ! default; = 1 activates TKE transport in MYNN mass-flux scheme 
                                             (assuming bl_mynn_edmf > 0)
                                        0    no TKE transport (default);1: activate TKE transport
+ bl_mynn_output (max_dom)            = 0,  ! do not output extra arrays
+                                       1    allocate and output extra 3D arrays from MYNN PBL
+ bl_mynn_mixscalars (max_dom)        = 0   ! off, 1: activate mixing of scalars
+ bl_mynn_mixqt (max_dom)             = 0   ! mixing moisture species separately, 1: mixing total water
 
  scalar_pblmix (max_dom)             = 1 ! mix scalar fields consistent with PBL option (exch_h)
  tracer_pblmix (max_dom)             = 1 ! mix tracer fields consistent with PBL option (exch_h)
@@ -799,6 +827,8 @@ Namelist variables for controlling the adaptive time step option:
  mosaic_cat                          = 3 ! number of mosaic landuse categories in a grid cell
  mosaic_lu                           = 0, ! default ;  set to = 1 to use mosaic landuse categories in RUC
  mosaic_soil                         = 0, ! default ;  set to = 1 to use mosaic soil categories in RUC
+ flag_sm_adj                         = 0, ! default ;  set to = 1 to adjust soil moisture for RUC in real.exe 
+                                           (e.g. in case RUC is initialized from GFS LSM data) 
 
  cu_physics (max_dom)                cumulus option
                                      = 0, no cumulus
@@ -852,6 +882,9 @@ Namelist variables for controlling the adaptive time step option:
                                      = 3, for small grid distances (DX < 5 km)
  nsas_dx_factor                      = 0, ! default option
                                      = 1,   NSAS grid-distance dependent option
+ ntiedtke_dx_opt                     = 0, default option
+                                     = 1, new Tiedtke grid-distance dependent option (scale-aware)
+                                          when grid size falls below 15 km
  For KF-CuP scheme: recommended to use with cu_rad_feedback
  shallowcu_forced_ra(max_dom)        radiative impact of shallow Cu by a prescribed maximum cloud fraction
                                      = .false., option off, default
@@ -1234,7 +1267,7 @@ Multiple perturbations for WRF-Solar EPS (multi_perturb = 1)
                                                   streams for all activated stochastic parameterization schemes.
 
 
-Options for use with the Noah-MP Land Surface Model:
+Options for use with the Noah-MP Land Surface Model (sf_surface_physics=4):
 
 &noah_mp
  dveg                               = 4,        ! Noah-MP Dynamic Vegetation option:
@@ -1312,7 +1345,7 @@ Options for use with the Noah-MP Land Surface Model:
                                                      3 = use soil composition (sand, clay, orgm) and pedotransfer functions (OPT_PEDO)
                                                      4 = use input soil properties (BEXP_3D, SMCMAX_3D, etc.) (not valid in WRF)
  opt_pedo                           = 1,        ! Noah-MP options for pedotransfer functions (used when OPT_SOIL = 3)
-                                                          geogrid must have been run with GEOGRID.TBL.ARW.noahmp, use with caution
+                                                         geogrid must have been run with GEOGRID.TBL.ARW.noahmp, use with caution
                                                      1 = Saxton and Rawls (2006)
  opt_crop                           = 0,        ! options for crop model
                                                            geogrid must have been run with GEOGRID.TBL.ARW.noahmp, use with caution
@@ -1321,19 +1354,19 @@ Options for use with the Noah-MP Land Surface Model:
                                                      2 = Gecros (Genotype-by-Environment interaction on CROp growth Simulator) Yin and van Laar, 2005
  
  opt_irr                            = 0,        !  options for irrigation scheme
-                                                           geogrid must have been run with GEOGRID.TBL.ARW.noahmp, use with caution
+                                                         geogrid must have been run with GEOGRID.TBL.ARW.noahmp, use with caution
 	                                             0 = No irrigation
                                                      1 = Irrigation ON
                                                      2 = irrigation trigger based on crop season Planting and harvesting dates
                                                      3 = irrigation trigger based on LAI threshold
  opt_irrm                           = 0,        !  options for irrigation method (only if opt_irr > 0)
-                                                           geogrid must have been run with GEOGRID.TBL.ARW.noahmp, use with caution
+                                                         geogrid must have been run with GEOGRID.TBL.ARW.noahmp, use with caution
                                                      0 = method based on geo_em fractions (all three methods are ON)
                                                      1 = sprinkler method
                                                      2 = micro/drip irrigation
                                                      3 = surface flooding  
  opt_tdrn                           = 0,        ! Noah-MP tile drainage option (currently only tested and works with opt_run=3)
-                                                     geogrid must have been run with GEOGRID.TBL.ARW.noahmp, use with caution
+                                                         geogrid must have been run with GEOGRID.TBL.ARW.noahmp, use with caution
                                                      0 = No tile drainage
                                                      1 = Simple drainage
                                                      2 = Hooghoudt's equation based tile drainage
@@ -1648,7 +1681,8 @@ The following are for observation nudging:
                                      = 2       ! NBA2 using tke-based stress terms (km_opt=2 needed)
  m_opt (max_dom)                     = 0       ! no added output
                                      = 1       ! adds output of Mij stress terms when NBA is not used
- tracer_opt(max_dom)                 = 0       ! 
+ tracer_opt(max_dom)                 = 0       ! whether to turn on tracers
+ rad_nudge                           = 1       ! nudge T to initial values in idealized tropical cyclone case
 
  &bdy_control
  spec_bdy_width                      = 5,       ! total number of rows for specified boundary value nudging

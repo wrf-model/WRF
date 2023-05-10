@@ -789,6 +789,8 @@ LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       #-fdefault-real-8
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR  CONFIGURE_D_CTSM
+# to validate WRF correctness on aarch64 against x86_64; compile with x86 this alternate ARCH_LOCAL option; able to achieve identical output model on ubuntu 18.04 with gcc 10.2 (on graviton and intel processors)
+# ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR  CONFIGURE_D_CTSM -DAARCH64_X86_CORRECTNESS_FIX
 CFLAGS_LOCAL    =       -w -O3 -c  # -DRSL0_ONLY
 LDFLAGS_LOCAL   =       
 CPLUSPLUSLIB    =       
@@ -2066,7 +2068,145 @@ RLFLAGS         =
 CC_TOOLS        =      $(SCC)
 NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
 
+###########################################################
+#ARCH    AMD Linux x86_64, AOCC flang compiler with AOCC clang  #serial smpar dmpar dm+sm
+# Supported AMDARCH are znver1, znver2 and znver3 for ZEN1, ZEN2 and ZEN3 respectively
+# For optimized AMDFCFLAGS and AMDLDFLAGS, please reach out to toolchainsupport@amd.com
+#
+
+DESCRIPTION     =       AMD ($SFC/$SCC) :  AMD ZEN1/ ZEN2/ ZEN3 Architectures
+DMPARALLEL      =       1
+OMPCPP          =       -D_OPENMP
+OMP             =       -fopenmp
+OMPCC           =       -fopenmp
+SFC             =       flang
+SCC             =       clang
+CCOMP           =       clang
+DM_FC           =       mpif90
+DM_CC           =       mpicc
+FC              =       CONFIGURE_FC
+CC              =       CONFIGURE_CC
+LD              =       $(FC)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
+
+AMDARCH         =       -march=znver3
+AMDMATHLIB      =       -fveclib=AMDLIBM
+AMDLDFLAGS      =       -Wl,-mllvm -Wl,-enable-loop-reversal -Wl,-mllvm -Wl,-enable-gather -Wl,-mllvm -Wl,-vectorize-noncontigous-memory-aggressively
+AMDFCFLAGS      =
+
+PROMOTION       =       #-fdefault-real-8
+ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR  -DWRF_USE_CLM -DRPC_TYPES=2
+CFLAGS_LOCAL    =       -w -c -m64 -Ofast -ffast-math $(AMDARCH)
+LDFLAGS_LOCAL   =       -m64 -Ofast -Mstack_arrays $(AMDARCH) $(AMDLDFLAGS) $(AMDMATHLIB) -lamdlibm -lomp
+CPLUSPLUSLIB    =
+ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
+FCOPTIM         =       -Ofast -ffast-math $(AMDARCH) -Mbyteswapio -Mstack_arrays -ftree-vectorize -Mbyteswapio -funroll-loops -finline-aggressive -finline-hint-functions $(AMDMATHLIB) $(AMDFCFLAGS)
+FCREDUCEDOPT    =       -O3 $(AMDARCH) -ffast-math -Mstack_arrays -DFCREDUCEDOPT
+FCNOOPT         =       -O0
+FCDEBUG         =       # -g $(FCNOOPT)
+FORMAT_FIXED    =       -Mfixed
+FORMAT_FREE     =       -Mfreeform
+FCSUFFIX        =
+BYTESWAPIO      =       -Mbyteswapio
+FCBASEOPTS_NO_G =       -w $(FORMAT_FREE) $(BYTESWAPIO)
+FCBASEOPTS      =       -Ofast -ffast-math $(FCBASEOPTS_NO_G) $(FCDEBUG)
+MODULE_SRCH_FLAG=
+TRADFLAG        =       -traditional
+CPP             =       /lib/cpp -P
+AR              =       llvm-ar
+ARFLAGS         =       ru
+M4              =       m4
+RANLIB          =       llvm-ranlib
+RLFLAGS         =
+CC_TOOLS        =       $(SCC)
+NETCDFPAR_BUILD =       CONFIGURE_NETCDFPAR_BUILD
+
 #insert new stanza here
+
+###########################################################
+#ARCH    Linux aarch64, GCC compiler OpenMPI # serial smpar dmpar dm+sm
+#
+DESCRIPTION     =      GCC ($SFC/$SCC): Aarch64
+DMPARALLEL      =
+OMPCPP          =      -fopenmp
+OMP             =      -fopenmp
+OMPCC           =      -fopenmp
+SFC             =      gfortran
+SCC             =      gcc
+CCOMP           =      gcc
+DM_FC           =      mpif90
+DM_CC           =      mpicc -DMPI2_SUPPORT
+FC              =      CONFIGURE_FC
+CC              =      CONFIGURE_CC
+LD              =      $(FC)
+RWORDSIZE       =      CONFIGURE_RWORDSIZE
+PROMOTION       =
+ARCH_LOCAL      =      -DAARCH64_X86_CORRECTNESS_FIX
+CFLAGS_LOCAL    =      -w -O3 -c
+LDFLAGS_LOCAL   =      -fopenmp
+FCOPTIM         =      -Ofast -mcpu=native -funroll-loops -fno-expensive-optimizations -fno-reciprocal-math -fsigned-zeros -fno-unsafe-math-optimizations
+# for graviton 2 use the folowing flag
+#FCOPTIM         =      -Ofast -march=armv8.2-a+fp16+rcpc+dotprod -funroll-loops -fno-expensive-optimizations -fno-reciprocal-math -fsigned-zeros -fno-unsafe-math-optimizations
+FCREDUCEDOPT    =      $(FCOPTIM)
+FCNOOPT         =      -O0 -fopenmp -frecursive
+FCDEBUG         =      -g $(FCNOOPT)
+FORMAT_FIXED    =      -ffixed-form -ffixed-line-length-0 -fallow-argument-mismatch -fallow-invalid-boz
+FORMAT_FREE     =      -ffree-form -ffree-line-length-0 -fallow-argument-mismatch -fallow-invalid-boz
+FCSUFFIX        =
+BYTESWAPIO      =      -fconvert=big-endian -frecord-marker=4
+FCBASEOPTS      =      -w $(FORMAT_FREE) $(BYTESWAPIO)
+MODULE_SRCH_FLAG=      -I$(WRF_SRC_ROOT_DIR)/main
+TRADFLAG        =      -traditional-cpp
+CPP             =      /lib/cpp CONFIGURE_CPPFLAGS
+AR              =      ar
+ARFLAGS         =      ru
+M4              =      m4 -B 14000
+RANLIB          =      ranlib
+RLFLAGS         =
+CC_TOOLS        =      $(SCC)
+
+###########################################################
+#ARCH    Linux aarch64, NVHPC compiler with nvc # serial smpar dmpar dm+sm
+#
+DESCRIPTION     =       NVHPC ($SFC/$SCC)
+DMPARALLEL      =       # 1
+OMPCPP          =       # -D_OPENMP
+OMP             =       # -mp -Minfo=mp -Mrecursive
+OMPCC           =       # -mp
+SFC             =       nvfortran
+SCC             =       nvc
+CCOMP           =       nvc
+DM_FC           =       mpif90
+DM_CC           =       mpicc
+FC              =       CONFIGURE_FC
+CC              =       CONFIGURE_CC
+LD              =       $(FC)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
+PROMOTION       =       -r$(RWORDSIZE) -i4
+ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR  -DWRF_USE_CLM
+CFLAGS_LOCAL    =       -w -O3
+LDFLAGS_LOCAL   =
+CPLUSPLUSLIB    =
+ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
+FCOPTIM         =       -O3 -fast -Mvect=noaltcode -Mprefetch=distance:8 # -Mfprelaxed # -Minfo=all =Mneginfo=all
+FCREDUCEDOPT  =       $(FCOPTIM)
+FCNOOPT               =       -O0
+FCDEBUG         =       # -g $(FCNOOPT)  # -C -Ktrap=fp -traceback
+FORMAT_FIXED    =       -Mfixed
+FORMAT_FREE     =       -Mfree
+FCSUFFIX        =
+BYTESWAPIO      =       -byteswapio
+FCBASEOPTS_NO_G =       -w $(FORMAT_FREE) $(BYTESWAPIO) $(OMP)
+FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
+MODULE_SRCH_FLAG =     -module $(WRF_SRC_ROOT_DIR)/main
+TRADFLAG        =      CONFIGURE_TRADFLAG
+CPP             =      /lib/cpp CONFIGURE_CPPFLAGS
+AR              =      ar
+ARFLAGS         =      ru
+M4              =      m4 -B 14000
+RANLIB          =      ranlib
+RLFLAGS         =
+CC_TOOLS        =      $(SCC)
 
 ###########################################################
 #ARCH    Fujitsu FX10/FX100 Linux x86_64 SPARC64IXfx/SPARC64Xlfx, mpifrtpx and mpifccpx compilers #serial smpar dmpar dm+sm

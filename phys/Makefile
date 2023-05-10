@@ -42,7 +42,9 @@ MODULES = \
 	module_bl_myjpbl.o \
 	module_bl_qnsepbl.o \
 	module_bl_acm.o \
-	module_bl_mynn.o \
+        module_bl_mynn_common.o \
+        module_bl_mynn.o \
+        module_bl_mynn_wrapper.o \
 	module_bl_fogdes.o \
 	module_bl_gwdo.o \
 	module_bl_gwdo_gsl.o \
@@ -52,7 +54,8 @@ MODULES = \
 	module_bl_camuwpbl_driver.o \
 	module_bl_mfshconvpbl.o \
 	module_bl_eepsilon.o \
-	module_shcu_camuwshcu_driver.o \
+	module_bl_keps.o \
+        module_shcu_camuwshcu_driver.o \
 	module_shcu_camuwshcu.o \
 	module_shcu_deng.o          \
 	module_shcu_grims.o \
@@ -88,6 +91,7 @@ MODULES = \
 	module_mp_wsm3.o \
 	module_mp_wsm5.o \
 	module_mp_wsm6.o \
+	module_mp_wsm6r.o \
 	module_mp_wsm7.o \
 	module_mp_etanew.o \
 	module_mp_fer_hires.o \

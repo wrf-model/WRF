@@ -33,6 +33,7 @@ endif
 RMD		=	rm -f
 COMPILER90=	gfortran
 F90FLAGS  =       -w -c -ffree-form -ffree-line-length-none -fconvert=big-endian -frecord-marker=4 
+DEBUGFLAGS      = -DHYDRO_D -g -Wall -Wextra -Warray-temporaries -Wconversion -fimplicit-none -fbacktrace -ffree-line-length-0 -fcheck=all -ffpe-trap=invalid,zero,overflow,underflow -finit-real=nan
 MODFLAG	=	-I./ -I../mod
 LDFLAGS	=	
 CPPINVOKE 	=       -cpp

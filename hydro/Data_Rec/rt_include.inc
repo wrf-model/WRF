@@ -66,6 +66,7 @@
   REAL,    allocatable, DIMENSION(:,:)      :: INFXSRT,LKSAT,LKSATRT
   !REAL,    allocatable, DIMENSION(:,:)      :: SFCHEADSUBRT,INFXSUBRT,LKSATFAC  ! SFCHEADSUBRT, INFXSUBRT moved to overland control module
   REAL,    allocatable, DIMENSION(:,:)      :: LKSATFAC
+  REAL,    allocatable, DIMENSION(:,:)      :: IMPERVFRAC
   !REAL,    allocatable, DIMENSION(:,:)      :: SOLDEPRT ! QSUBRT, QSUBBDRYRT moved to subsurface io module, SOLDEPRT, ZWATTABLRT move to susurface properties
   REAL,    allocatable, DIMENSION(:,:)      :: SUB_RESID
   REAL,    allocatable, DIMENSION(:,:)      :: q_sfcflx_x,q_sfcflx_y
@@ -243,6 +244,7 @@
       INTEGER, allocatable, DIMENSION(:,:)   :: VEGTYP
       REAL, allocatable, DIMENSION(:,:)      :: OV_ROUGH2d
       !REAL,    allocatable, DIMENSION(:)   :: SLDPTH
+      REAL,    allocatable, DIMENSION(:,:)   :: NEXP
 
 !!! define constant/parameter
     real ::   ov_rough(50)!, ZSOIL(100) ! ZSOIL moved to subsurface properties module

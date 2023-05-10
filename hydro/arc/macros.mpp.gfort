@@ -57,6 +57,7 @@ endif
 RMD		=	rm -f
 COMPILER90      =	mpif90  
 F90FLAGS        =       -w -c -O2 -ffree-form -ffree-line-length-none -fconvert=big-endian -frecord-marker=4 -std=legacy
+DEBUGFLAGS      = -DHYDRO_D -g -Wall -Wextra -Warray-temporaries -Wconversion -fimplicit-none -fbacktrace -ffree-line-length-0 -fcheck=all -ffpe-trap=invalid,zero,overflow,underflow -finit-real=nan
 MODFLAG      	=	-I"./" -I"../../MPP" -I"../MPP" -I"../mod"
 LDFLAGS	        =	
 CPPINVOKE	=       -cpp

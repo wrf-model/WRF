@@ -9,21 +9,22 @@
 #
 ########################################################################################################################
 get_directory_property( DIR_DEFS DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_DEFINITIONS )
-wrf_preproc_fortran( 
-                    TARGET_NAME     module_ra_rrtmg_lwk_preproc
-                    GENERATED_SCOPE ${PROJECT_NAME}_Core
-                    OUTPUT_DIR      ${CMAKE_CURRENT_BINARY_DIR}/preproc/
-                    EXTENSION       ".i"
-                    INCLUDES        ${CMAKE_CURRENT_SOURCE_DIR}
-                                    # $<TARGET_PROPERTY:frame_deps,Fortran_MODULE_DIRECTORY>
-                                    # $<TARGET_PROPERTY:share_deps,Fortran_MODULE_DIRECTORY>
-                                    # $<TARGET_PROPERTY:esmf_time_f90,Fortran_MODULE_DIRECTORY>
-                    DEPENDENCIES    registry_code
-                    DEFINITIONS     ${DIR_DEFS}
-                    SOURCES         module_ra_rrtmg_lwk.F
-                                    module_ra_rrtmg_swk.F
-                                    module_sf_clm.F
-                    )
+wrf_c_preproc_fortran( 
+                      TARGET_NAME     module_ra_rrtmg_lwk_preproc
+                      OUTPUT_DIR      ${CMAKE_CURRENT_BINARY_DIR}/preproc/
+                      EXTENSION       ".f90"
+                      INCLUDES        ${CMAKE_CURRENT_SOURCE_DIR}
+                                      # $<TARGET_PROPERTY:frame_deps,Fortran_MODULE_DIRECTORY>
+                                      # $<TARGET_PROPERTY:share_deps,Fortran_MODULE_DIRECTORY>
+                                      # $<TARGET_PROPERTY:esmf_time_f90,Fortran_MODULE_DIRECTORY>
+                      DEPENDENCIES    registry_code
+                      DEFINITIONS     ${DIR_DEFS}
+                      SOURCES         module_ra_rrtmg_lwk.F
+                                      module_ra_rrtmg_lwf.F
+                                      module_ra_rrtmg_swk.F
+                                      module_ra_rrtmg_swf.F
+                                      module_sf_clm.F
+                      )
 
 add_dependencies( ${PROJECT_NAME}_Core module_ra_rrtmg_lwk_preproc )
 # set_source_files_properties(
@@ -203,13 +204,15 @@ target_sources(
                   module_ra_rrtm.F
                   module_ra_rrtmg_aero_optical_util_cmaq.F
                   module_ra_rrtmg_lw.F
-                  module_ra_rrtmg_lwf.F
+                  # module_ra_rrtmg_lwf.F
+                  ${CMAKE_CURRENT_BINARY_DIR}/preproc/module_ra_rrtmg_lwf.f90
                   # module_ra_rrtmg_lwk.F
-                  ${CMAKE_CURRENT_BINARY_DIR}/preproc/module_ra_rrtmg_lwk.i
+                  ${CMAKE_CURRENT_BINARY_DIR}/preproc/module_ra_rrtmg_lwk.f90
                   module_ra_rrtmg_sw.F
-                  module_ra_rrtmg_swf.F
+                  # module_ra_rrtmg_swf.F
+                  ${CMAKE_CURRENT_BINARY_DIR}/preproc/module_ra_rrtmg_swf.f90
                   # module_ra_rrtmg_swk.F
-                  ${CMAKE_CURRENT_BINARY_DIR}/preproc/module_ra_rrtmg_swk.i
+                  ${CMAKE_CURRENT_BINARY_DIR}/preproc/module_ra_rrtmg_swk.f90
 
                   module_ra_sw.F
                   module_radiation_driver.F
@@ -218,7 +221,7 @@ target_sources(
                   module_sf_bep.F
                   module_sf_bep_bem.F
                   # module_sf_clm.F
-                  ${CMAKE_CURRENT_BINARY_DIR}/preproc/module_sf_clm.i
+                  ${CMAKE_CURRENT_BINARY_DIR}/preproc/module_sf_clm.f90
                   module_sf_ctsm.F
                   module_sf_exchcoef.F
                   module_sf_fogdes.F

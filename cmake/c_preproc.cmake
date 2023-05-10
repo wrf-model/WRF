@@ -124,11 +124,12 @@ macro( wrf_expand_definitions )
   foreach( WRF_EXP_DEF  ${WRF_EXP_DEFINITIONS} )
     if ( NOT ${WRF_EXP_DEF} MATCHES ".*-D.*" )
       # We have a generator expression, inject the -D correctly
+      # THIS SHOULD ONLY BE USED FOR CONDITIONALLY APPLIED DEFINITIONS
       if ( ${WRF_EXP_DEF} MATCHES "^[$]<" )
-        # Take advantage of the fact that the first time a generator expression ends to finally 
-        # name the define it has the first ">:" then unexpanded characters (hopefully)
+        # Take advantage of the fact that a define is most likely not an expanded variable (i.e. starts with a-zA-Z, adjust if not)
+        # preceeded by the defining generator expression syntax $<<condition>>:var or <condition>,var
         # Yes this is fragile but is probably more robust than the current code if you're relying on this macro :D
-        string( REGEX REPLACE "^(.*>:)([a-zA-Z])" "\\1-D\\2" WRF_EXP_DEF_SANITIZED ${WRF_EXP_DEF} )
+        string( REGEX REPLACE "(>:|,)([a-zA-Z])" "\\1-D\\2" WRF_EXP_DEF_SANITIZED ${WRF_EXP_DEF} )
         list( APPEND WRF_EXP_DEFS ${WRF_EXP_DEF_SANITIZED} )
       else()
         list( APPEND WRF_EXP_DEFS -D${WRF_EXP_DEF} )

@@ -44,14 +44,14 @@
 # add_dependencies( ${FOLDER_COMPILE_TARGET}_deps share_model_constants registry_code )
 
 
-# Tell CMake to chill, we'll generate those files shortly
-# Thanks to https://gitlab.kitware.com/cmake/community/-/wikis/FAQ#how-can-i-add-a-dependency-to-a-source-file-which-is-generated-in-a-subdirectory
-# and https://samthursfield.wordpress.com/2015/11/21/cmake-dependencies-between-targets-and-files-and-custom-commands/
-set_source_files_properties(
-                            ${CMAKE_BINARY_DIR}/frame/module_state_description.F
-                            PROPERTIES
-                              GENERATED TRUE
-                            )
+# # Tell CMake to chill, we'll generate those files shortly
+# # Thanks to https://gitlab.kitware.com/cmake/community/-/wikis/FAQ#how-can-i-add-a-dependency-to-a-source-file-which-is-generated-in-a-subdirectory
+# # and https://samthursfield.wordpress.com/2015/11/21/cmake-dependencies-between-targets-and-files-and-custom-commands/
+# set_source_files_properties(
+#                             ${CMAKE_BINARY_DIR}/frame/module_state_description.F
+#                             PROPERTIES
+#                               GENERATED TRUE
+#                             )
 
 # set_target_properties( 
 #                       ${FOLDER_COMPILE_TARGET}_deps

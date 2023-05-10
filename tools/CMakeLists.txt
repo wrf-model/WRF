@@ -93,6 +93,12 @@ elseif ( ${WRF_CORE} STREQUAL "DA" OR ${WRF_CORE} STREQUAL "DA_4D_VAR" )
 
 endif()
 
+get_directory_property( DIR_DEFS DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_DEFINITIONS )
+wrf_expand_definitions( 
+                        RESULT_VAR  REGISTRY_DEFS
+                        DEFINITIONS ${DIR_DEFS}
+                        )
+
 # How this is not a bigger thing or not resolved is beyond me
 # https://gitlab.kitware.com/cmake/cmake/-/issues/18005
 # Also the suggestion does not work
@@ -110,8 +116,9 @@ add_custom_command(
                     COMMAND
                       ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/frame
                     COMMAND
-                      ${CMAKE_BINARY_DIR}/tools/registry 
-                      -DEM_CORE=1 -DNMM_CORE=0 -DNMM_MAX_DIM=2600 -DDA_CORE=0 -DWRFPLUS=0 -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNONSTANDARD_SYSTEM_SUBR  -DWRF_USE_CLM -DUSE_NETCDF4_FEATURES -DWRFIO_NCD_LARGE_FILE_SUPPORT  -DDM_PARALLEL -DNETCDF -DLANDREAD_STUB=1 -DUSE_ALLOCATABLES -Dwrfmodel -DGRIB1 -DINTIO -DKEEP_INT_AROUND -DLIMIT_ARGS -DBUILD_RRTMG_FAST=0 -DBUILD_RRTMK=0 -DBUILD_SBM_FAST=1 -DSHOW_ALL_VARS_USED=0 -DCONFIG_BUF_LEN=65536 -DMAX_DOMAINS_F=21 -DMAX_HISTORY=25 -DNMM_NEST=0  -DNEW_BDYS ${REGISTRY_FILE} &> ${CMAKE_BINARY_DIR}/registry.log
+                      ${CMAKE_BINARY_DIR}/tools/registry ${REGISTRY_DEFS} -DNEW_BDYS ${REGISTRY_FILE} &> ${CMAKE_BINARY_DIR}/registry.log
+                      #  -DNONSTANDARD_SYSTEM_SUBR  -DWRF_USE_CLM -DUSE_NETCDF4_FEATURES -DWRFIO_NCD_LARGE_FILE_SUPPORT  -DDM_PARALLEL -DNETCDF -DLANDREAD_STUB=1 -DUSE_ALLOCATABLES -Dwrfmodel -DGRIB1 -DINTIO -DKEEP_INT_AROUND -DLIMIT_ARGS -DBUILD_RRTMG_FAST=0 -DBUILD_RRTMK=0 -DBUILD_SBM_FAST=1 -DSHOW_ALL_VARS_USED=0 -DCONFIG_BUF_LEN=65536 -DMAX_DOMAINS_F=21 -DMAX_HISTORY=25 -DNMM_NEST=0  -DNEW_BDYS ${REGISTRY_FILE} &> ${CMAKE_BINARY_DIR}/registry.log
+
                     #!TODO Just have the registry code actually check for failure or better yet rewrite the 
                     # registry code to not be so obfuscating
                     COMMAND 

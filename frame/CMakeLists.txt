@@ -136,41 +136,66 @@ set( nl_dyn_source )
 get_directory_property( DIR_DEFS DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_DEFINITIONS )
 foreach( n RANGE 0 7 )
   
-  wrf_preproc_fortran( 
-                      TARGET_NAME     nl_set_${n}
-                      GENERATED_SCOPE ${PROJECT_NAME}_Core
-                      OUTPUT_DIR      ${CMAKE_CURRENT_BINARY_DIR}/preproc/
-                      EXTENSION       ".i"
-                      PREFIX          "nl_set_${n}_"
-                      INCLUDES        ${CMAKE_CURRENT_SOURCE_DIR}
-                                      ${CMAKE_BINARY_DIR}/inc
-                      DEPENDENCIES    registry_code
-                      DEFINITIONS     ${DIR_DEFS} NNN=${n} NL_set_ROUTINES
-                      SOURCES         nl_access_routines.F
-                      )
-  wrf_preproc_fortran( 
-                      TARGET_NAME     nl_get_${n}
-                      GENERATED_SCOPE ${PROJECT_NAME}_Core
-                      OUTPUT_DIR      ${CMAKE_CURRENT_BINARY_DIR}/preproc/
-                      EXTENSION       ".i"
-                      PREFIX          "nl_get_${n}_"
-                      INCLUDES        ${CMAKE_CURRENT_SOURCE_DIR}
-                                      ${CMAKE_BINARY_DIR}/inc
-                      DEPENDENCIES    registry_code
-                      DEFINITIONS     ${DIR_DEFS} NNN=${n} NL_get_ROUTINES
-                      SOURCES         nl_access_routines.F
-                      )
+  wrf_c_preproc_fortran( 
+                        TARGET_NAME     nl_set_${n}
+                        OUTPUT_DIR      ${CMAKE_CURRENT_BINARY_DIR}/preproc/
+                        EXTENSION       ".f90"
+                        PREFIX          "nl_set_${n}_"
+                        INCLUDES        ${CMAKE_CURRENT_SOURCE_DIR}
+                                        ${CMAKE_BINARY_DIR}/inc
+                        DEPENDENCIES    registry_code
+                        DEFINITIONS     ${DIR_DEFS} NNN=${n} NL_set_ROUTINES
+                        SOURCES         nl_access_routines.F
+                        )
+    wrf_c_preproc_fortran( 
+                        TARGET_NAME     nl_get_${n}
+                        OUTPUT_DIR      ${CMAKE_CURRENT_BINARY_DIR}/preproc/
+                        EXTENSION       ".f90"
+                        PREFIX          "nl_get_${n}_"
+                        INCLUDES        ${CMAKE_CURRENT_SOURCE_DIR}
+                                        ${CMAKE_BINARY_DIR}/inc
+                        DEPENDENCIES    registry_code
+                        DEFINITIONS     ${DIR_DEFS} NNN=${n} NL_get_ROUTINES
+                        SOURCES         nl_access_routines.F
+                        )
+
+  add_dependencies( ${PROJECT_NAME}_Core nl_get_${n} nl_set_${n} )
 
   list(
         APPEND
         nl_dyn_source
-        ${CMAKE_CURRENT_BINARY_DIR}/preproc/nl_set_${n}_nl_access_routines.i
-        ${CMAKE_CURRENT_BINARY_DIR}/preproc/nl_get_${n}_nl_access_routines.i
+        ${CMAKE_CURRENT_BINARY_DIR}/preproc/nl_set_${n}_nl_access_routines.f90
+        ${CMAKE_CURRENT_BINARY_DIR}/preproc/nl_get_${n}_nl_access_routines.f90
         )
 
 endforeach()
 
+if ( ${USE_M4} )
+  wrf_m4_preproc_fortran( 
+                          TARGET_NAME     md_calls
+                          OUTPUT_DIR      ${CMAKE_CURRENT_BINARY_DIR}/preproc/
+                          EXTENSION       ".inc"
+                          SOURCES         md_calls.m4
+                          )
+  
+else()
+  # Copy from arch quickly
+  # Normally I would say we just add it as source but it is an include file and I don't want to potentially 
+  # pollute the include chain by adding in arch/ *and* I want to maintain the order of operations
+  # for target dependencies
+  wrf_copy_source_files(
+                        TARGET_NAME     md_calls
+                        OUTPUT_DIR      ${CMAKE_CURRENT_BINARY_DIR}/preproc/
+                        SOURCES         ${PROJECT_SOURCE_DIR}/arch/md_calls.inc
+                        )
+endif()
 
+add_dependencies( ${PROJECT_NAME}_Core md_calls )
+target_include_directories(
+                            ${PROJECT_NAME}_Core
+                            PRIVATE
+                              ${CMAKE_CURRENT_BINARY_DIR}/preproc/
+                            )
 ########################################################################################################################
 #
 # Now define base framework

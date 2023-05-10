@@ -1,7 +1,7 @@
 
 !WRF:MODEL_LAYER:DYNAMICS
 !
-#if ( defined(ADVECT_KERNEL) )
+#ifdef ADVECT_KERNEL
 ! cpp -traditional-cpp -P -DADVECT_KERNEL module_advect_em.F > advection_kernel.f90
 ! gfortran -ffree-form -ffree-line-length-none advection_kernel.f90
 ! ./a.out
@@ -111,7 +111,7 @@ SUBROUTINE column (loop , data_list, its,ite)
    
 END SUBROUTINE column
 !----------------------------------------------------------------
-#elif ( ! defined(ADVECT_KERNEL) )
+#else
 
 MODULE module_advect_em
 
@@ -4357,7 +4357,7 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
    ENDIF vert_order_test
 
 END SUBROUTINE advect_scalar
-#if ( ! defined(ADVECT_KERNEL) )
+#ifndef ADVECT_KERNEL
 
 !---------------------------------------------------------------------------------
 
@@ -10543,7 +10543,7 @@ END SUBROUTINE advect_scalar_mono
 
 !-----------------------------------------------------------
 
-#if ( defined(ADVECT_KERNEL) )
+#ifdef ADVECT_KERNEL
 
 END MODULE advection_kernel
 !================================================================
@@ -10851,7 +10851,7 @@ PROGRAM feeder
 
 END PROGRAM feeder
 #endif
-#if ( !defined(ADVECT_KERNEL) )
+#ifndef ADVECT_KERNEL
 
 !---------------------------------------------------------------------------------
 

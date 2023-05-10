@@ -14,7 +14,7 @@ include( c_preproc   )
 include( m4_preproc  )
 include( target_copy )
 include( confcheck   )
-
+include( printOption )
 
 
 ################################################################################
@@ -28,38 +28,8 @@ set( OPTIMIZATION_LEVEL "" )
 set( WRF_OS             "" )
 set( WRF_MACH           "" )
 
-# Mode configuration
 # DO NOT USE OPTION - IT DOES NOT WORK AS ANTICIPATED EVEN WHEN CLEARING CACHE - YOU HAVE BEEN WARNED
-set( ENABLE_CHEM       OFF CACHE BOOL "ENABLE_CHEM"      )
-set( ENABLE_CMAQ       OFF CACHE BOOL "ENABLE_CMAQ"      )
-set( ENABLE_KPP        OFF CACHE BOOL "ENABLE_KPP"       )
-set( ENABLE_DFI_RADAR  OFF CACHE BOOL "ENABLE_DFI_RADAR" )
-set( ENABLE_TITAN      OFF CACHE BOOL "ENABLE_TITAN"     )
-set( ENABLE_MARS       OFF CACHE BOOL "ENABLE_MARS"      )
-set( ENABLE_VENUS      OFF CACHE BOOL "ENABLE_VENUS"     )
-set( ENABLE_VENUS      OFF CACHE BOOL "ENABLE_VENUS"     )
-set( ENABLE_TERRAIN    OFF CACHE BOOL "ENABLE_TERRAIN"   )
-
-# What do these defines even do if they are always on????
-set( USE_ALLOCATABLES     ON CACHE BOOL "USE_ALLOCATABLES"    )
-set( wrfmodel             ON CACHE BOOL "wrfmodel"            )
-set( GRIB1                ON CACHE BOOL "GRIB1"               )
-set( INTIO                ON CACHE BOOL "INTIO"               )
-set( KEEP_INT_AROUND      ON CACHE BOOL "KEEP_INT_AROUND"     )
-set( LIMIT_ARGS           ON CACHE BOOL "LIMIT_ARGS"          )
-set( WRFIO_NCD_NO_LARGE_FILE_SUPPORT  OFF CACHE BOOL "WRFIO_NCD_NO_LARGE_FILE_SUPPORT" )
-
-set( BUILD_RRTMG_FAST    OFF CACHE BOOL "BUILD_RRTMG_FAST"    )
-set( BUILD_RRTMK         OFF CACHE BOOL "BUILD_RRTMK"         )
-set( BUILD_SBM_FAST       ON CACHE BOOL "BUILD_SBM_FAST"      )
-set( SHOW_ALL_VARS_USED  OFF CACHE BOOL "SHOW_ALL_VARS_USED"  )
-
-# Not cached, cannot be changed, do not touch
-set( USE_M4               ON )
-# Same thing -what do these defines even do if they are always on????
-set( NMM_CORE            OFF )
-set( NETCDF               ON )
-
+# Mode configuration
 # WRF Core selection
 set( WRF_CORE_OPTIONS 
       # Options listed here
@@ -75,11 +45,58 @@ set( WRF_CORE_OPTIONS
 set( WRF_CORE "" CACHE STRING "WRF_CORE" )
 list( GET WRF_CORE_OPTIONS 0 WRF_CORE )
 
+# WRF Nesting selection
+set( WRF_NESTING_OPTIONS 
+      # Options listed here
+      NONE
+      BASIC #TODO Figure out what exactly this does aside from potentially stub things Config.pl:890
+      MOVES
+      VORTEX
+      )
+
+# Set default WRF_NESTING
+set( WRF_NESTING "" CACHE STRING "WRF_NESTING" )
+list( GET WRF_NESTING_OPTIONS 0 WRF_NESTING )
 
 
-option( USE_DOUBLE  OFF ) # I believe this is the r8/real8 promotion
-option( USE_MPI     OFF )
-option( USE_OPENMP  OFF )
+set( USE_DOUBLE  OFF CACHE BOOL "USE_DOUBLE"  ) # I believe this is the r8/real8 promotion
+set( USE_MPI     OFF CACHE BOOL "USE_MPI"     )
+set( USE_OPENMP  OFF CACHE BOOL "USE_OPENMP"  )
+
+
+set( ENABLE_CHEM       OFF CACHE BOOL "ENABLE_CHEM"      )
+set( ENABLE_CMAQ       OFF CACHE BOOL "ENABLE_CMAQ"      )
+set( ENABLE_KPP        OFF CACHE BOOL "ENABLE_KPP"       )
+set( ENABLE_DFI_RADAR  OFF CACHE BOOL "ENABLE_DFI_RADAR" )
+set( ENABLE_TITAN      OFF CACHE BOOL "ENABLE_TITAN"     )
+set( ENABLE_MARS       OFF CACHE BOOL "ENABLE_MARS"      )
+set( ENABLE_VENUS      OFF CACHE BOOL "ENABLE_VENUS"     )
+set( ENABLE_VENUS      OFF CACHE BOOL "ENABLE_VENUS"     )
+set( ENABLE_TERRAIN    OFF CACHE BOOL "ENABLE_TERRAIN"   )
+set( ENABLE_CLM        OFF CACHE BOOL "ENABLE_CLM"       )
+
+# What do these defines even do if they are always on????
+set( USE_ALLOCATABLES     ON CACHE BOOL "USE_ALLOCATABLES"    )
+set( wrfmodel             ON CACHE BOOL "wrfmodel"            )
+set( GRIB1                ON CACHE BOOL "GRIB1"               )
+set( INTIO                ON CACHE BOOL "INTIO"               )
+set( KEEP_INT_AROUND      ON CACHE BOOL "KEEP_INT_AROUND"     )
+set( LIMIT_ARGS           ON CACHE BOOL "LIMIT_ARGS"          )
+set( WRFIO_NCD_NO_LARGE_FILE_SUPPORT  OFF CACHE BOOL "WRFIO_NCD_NO_LARGE_FILE_SUPPORT" )
+
+set( BUILD_RRTMG_FAST    OFF CACHE BOOL "BUILD_RRTMG_FAST"    )
+set( BUILD_RRTMK         OFF CACHE BOOL "BUILD_RRTMK"         )
+set( BUILD_SBM_FAST       ON CACHE BOOL "BUILD_SBM_FAST"      )
+set( SHOW_ALL_VARS_USED  OFF CACHE BOOL "SHOW_ALL_VARS_USED"  )
+
+
+
+# Not cached, cannot be changed, do not touch
+set( USE_M4               ON )
+# Same thing -what do these defines even do if they are always on????
+set( NMM_CORE            OFF )
+set( NETCDF               ON )
+
 
 # From arch/preamble
 #### Single location for defining total number of domains.  You need
@@ -131,9 +148,50 @@ if( ${WRF_CORE} STREQUAL "CONVERT" OR ${WRF_CORE} STREQUAL "COAMPS" )
   set( EM_CORE 0 )
 endif()
 
+set( MOVE_NESTS 0 )
+# Far easier to write this one as normal logic rather than generator expression
+if( ${WRF_NESTING} STREQUAL "MOVES" OR ${WRF_NESTING} STREQUAL "VORTEX" )
+  set( MOVE_NESTS 1 )
+endif()
+
 if ( ${ENABLE_KPP} AND NOT ${ENABLE_CHEM} )
   message( WARNING "ENABLE_KPP requires ENABLE_CHEM but is not set, ignoring" )
 endif()
+
+
+
+print_option( WRF_CORE         20 ${BOLD_CYAN} )
+print_option( WRF_NESTING      20 ${BOLD_CYAN} )
+
+print_option( USE_DOUBLE       20 )
+print_option( USE_MPI          20 )
+print_option( USE_OPENMP       20 )
+
+
+print_option( ENABLE_CHEM      20 )
+print_option( ENABLE_CMAQ      20 )
+print_option( ENABLE_KPP       20 )
+print_option( ENABLE_DFI_RADAR 20 )
+print_option( ENABLE_TITAN     20 )
+print_option( ENABLE_MARS      20 )
+print_option( ENABLE_VENUS     20 )
+print_option( ENABLE_VENUS     20 )
+print_option( ENABLE_TERRAIN   20 )
+print_option( ENABLE_CLM       20 )
+
+print_option( USE_ALLOCATABLES 20 )
+print_option( wrfmodel         20 )
+print_option( GRIB1            20 )
+print_option( INTIO            20 )
+print_option( KEEP_INT_AROUND  20 )
+print_option( LIMIT_ARGS       20 )
+
+print_option( BUILD_RRTMG_FAST   20 )
+print_option( BUILD_RRTMK        20 )
+print_option( BUILD_SBM_FAST     20 )
+print_option( SHOW_ALL_VARS_USED 20 )
+
+print_option( WRFIO_NCD_NO_LARGE_FILE_SUPPORT 36 )
 
 ################################################################################
 ##
@@ -166,6 +224,11 @@ find_package( Jasper REQUIRED )
 
 if ( ${ENABLE_TERRAIN} )
   find_package( RPC )
+endif()
+
+if ( ${ENABLE_CLM} )
+  # Will need our own finder
+  # find_package( CLM REQUIRED )
 endif()
 
 # Will need our own finder
@@ -228,6 +291,7 @@ add_compile_definitions(
                         $<$<BOOL:${ENABLE_TITAN}>:WRF_TITAN=$<BOOL:${ENABLE_TITAN}>>
                         $<$<BOOL:${ENABLE_MARS}>:WRF_MARS=$<BOOL:${ENABLE_MARS}>>
                         $<$<BOOL:${ENABLE_VENUS}>:WRF_VENUS=$<BOOL:${ENABLE_VENUS}>>
+                        $<$<BOOL:${ENABLE_CLM}>:WRF_USE_CLM=$<BOOL:${ENABLE_CLM}>>
 
                         $<$<BOOL:${netCDF_NC4}>:NETCDF_classic=$<BOOL:${netCDF_NC4}>>
                         $<$<BOOL:${WRFIO_NCD_NO_LARGE_FILE_SUPPORT}>:WRFIO_NCD_NO_LARGE_FILE_SUPPORT=$<BOOL:${WRFIO_NCD_NO_LARGE_FILE_SUPPORT}>>
@@ -260,13 +324,20 @@ add_compile_definitions(
 
                         # Alwasys set
                         NMM_CORE=$<BOOL:${NMM_CORE}>
+                        NMM_MAX_DIM=2600
                         NETCDF
                         
+                        #!TODO Change this to a confcheck
+                        NONSTANDARD_SYSTEM_SUBR
                         
                         EM_CORE=${EM_CORE}
                         WRFPLUS=$<BOOL:$<STREQUAL:${WRF_CORE},"PLUS">>
                         DA_CORE=$<BOOL:$<OR:$<STREQUAL:${WRF_CORE},"DA_CORE">,$<STREQUAL:${WRF_CORE},"DA_4D_VAR">>>
                         # DFI_RADAR=$<BOOL:${NMM_CORE}>
+
+                        # Nesting options
+                        $<$<BOOL${MOVE_NESTS}>:MOVE_NESTS>
+                        $<$<BOOL:$<STREQUAL:${WRF_NESTING},"VORTEX">>:VORTEX_CENTER>
 
                         # Configuration checks
                         $<$<NOT:$<BOOL:${Fortran_2003_IEEE}>>:NO_IEEE_MODULE>

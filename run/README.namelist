@@ -902,6 +902,11 @@ Namelist variables for controlling the adaptive time step option:
                                      = 0: no aerosol interaction
                                      = 1: aerosol interaction with MSKF only
                                      = 2: aerosol interaction with both MSKF and Morrison
+                                     ! aercu_opt = 1 and 2 both require the "CESM_RCP4.5_Aerosol_Data.dat" static runtime data 
+                                       file. This can be downloaded from:
+                                            http://www2.mmm.ucar.edu/wrf/src/wrf_files/CESM_RCP4.5_Aerosol_Data.tar.gz
+                                       Once unpacked link/copy either of the two files to CESM_RCP4.5_Aerosol_Data.dat in
+                                       your run directory prior to running wrf.exe
  aercu_fct                           factor to multiply with aerosol amount
                                      = 1.       ! default value
  no_src_types_cu                     = 1        ! number of aerosol species in global aerosol data: 10 for CESM input,

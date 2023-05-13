@@ -1229,7 +1229,7 @@ BENCH_START(pbl_driver_tim)
      &        ,pattern_spp_pbl=grid%pattern_spp_pbl                       &
      &        ,restart=config_flags%restart,cycling=config_flags%cycling  &
 !EEPS for ARW
-     &        ,pep=grid%pep_pbl                                           &
+     &        ,pek=grid%pek_pbl,pep=grid%pep_pbl                          &
      &        ,PEK_ADV=scalar(ims,kms,jms,P_pek_adv)                      &!TKEadvection
      &        ,PEP_ADV=scalar(ims,kms,jms,P_pep_adv)                      &!TKEadvection
 !GWD for ARW
@@ -1480,7 +1480,6 @@ BENCH_START(cu_driver_tim)
      !BSINGH -ENDS
      &             ,KFETA_TRIGGER=config_flags%kfeta_trigger              &
      &             ,NSAS_DX_FACTOR=config_flags%nsas_dx_factor            &
-     &             ,NTIEDTKE_DX_OPT=config_flags%ntiedtke_dx_opt          &
                  ! Dimension arguments
      &             ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde     &
      &             ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme     &

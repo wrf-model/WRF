@@ -195,6 +195,7 @@
 
 !  output of aerosol pH from MOSAIC 4-bin
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,        &
+          OPTIONAL, &
           INTENT(OUT  ) ::                                          &
                                ph_aer01, ph_aer02, ph_aer03, ph_aer04
 !

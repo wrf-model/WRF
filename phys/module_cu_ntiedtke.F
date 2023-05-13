@@ -150,7 +150,6 @@ contains
                 ,u3d,v3d,w,t3d,qv3d,qc3d,qi3d,pi3d,rho3d        &
                 ,qvften,thften                                  &
                 ,dz8w,pcps,p8w,xland,cu_act_flag,dx             &
-                ,ntiedtke_dx_opt                                &
                 ,ids,ide, jds,jde, kds,kde                      &
                 ,ims,ime, jms,jme, kms,kme                      &
                 ,its,ite, jts,jte, kts,kte                      &
@@ -192,7 +191,6 @@ contains
 !-- dz8w        dz between full levels (m)
 !-- qfx         upward moisture flux at the surface (kg/m^2/s)
 !-- hfx         upward heat flux at the surface (w/m^2) 
-!-- ntiedtke_dx_opt   whether the schemem is scale-aware
 !-- dt          time step (s)
 !-- ids         start index for i in domain
 !-- ide         end index for i in domain
@@ -219,8 +217,6 @@ contains
                                         itimestep,                      &
                                         stepcu
 
-      integer, intent(in) ::            ntiedtke_dx_opt
-
       real,    intent(in) ::                                            &
                                         dt
       real,    dimension(ims:ime, jms:jme), intent(in) ::               &
@@ -234,7 +230,6 @@ contains
 
       logical, dimension(ims:ime,jms:jme), intent(inout) ::             &
                                         cu_act_flag
-
 
       real,    dimension(ims:ime, kms:kme, jms:jme), intent(in) ::      &
                                         dz8w,                           &
@@ -430,7 +425,7 @@ contains
 !
 !########################################################################
       call tiecnvn(u1,v1,t1,q1,q2,q3,q1b,t1b,ghtl,ghti,omg,prsl,prsi,evap,heatflux,  &
-                  rn,slimsk,im,kx,kx1,delt,dx2d,ntiedtke_dx_opt)
+                  rn,slimsk,im,kx,kx1,delt,dx2d)
 
       do i=its,ite
          raincv(i,j)=rn(i)/stepcu
@@ -559,7 +554,7 @@ contains
 !          level 1 subroutine 'tiecnvn'
 !-----------------------------------------------------------------
       subroutine tiecnvn(pu,pv,pt,pqv,pqc,pqi,pqvf,ptf,poz,pzz,pomg, &
-     &         pap,paph,evap,hfx,zprecc,lndj,lq,km,km1,dt,dx,ntiedtke_dx_opt)
+     &         pap,paph,evap,hfx,zprecc,lndj,lq,km,km1,dt,dx)
 !-----------------------------------------------------------------
 !  this is the interface between the model and the mass 
 !  flux convection module
@@ -581,7 +576,6 @@ contains
      &     zqsat(lq,km),   pqc(lq,km),   pqi(lq,km),   zrain(lq)
       real pqvf(lq,km),    ptf(lq,km)
       real dx(lq)
-      integer ntiedtke_dx_opt
 
       integer icbot(lq),   ictop(lq),     ktype(lq),   lndj(lq)
       logical locum(lq)
@@ -590,16 +584,18 @@ contains
       integer i,j,k,lq,km,km1
       real dt,ztpp1
       real zew,zqs,zcor
-      real scale_fac(lq), dxref
+      real scale_fac(lq), scale_fac2(lq), dxref
 !
 !  set scale-dependency factor when dx is < 15 km
 !
       dxref = 15000.
       do j=1,lq
-      if (dx(j).lt.dxref .and. ntiedtke_dx_opt.eq.1) then
-          scale_fac(j) = (1.+log(dxref/dx(j)))**3
+      if (dx(j).lt.dxref) then
+          scale_fac(j) = (1.06133+log(dxref/dx(j)))**3
+          scale_fac2(j) = scale_fac(j)**0.5
       else
           scale_fac(j) = 1.+1.33e-5*dx(j)
+          scale_fac2(j) = 1.
       end if 
       end do
 !
@@ -656,7 +652,7 @@ contains
      &     ktype,    icbot,    ictop,    ztu,     zqu,  &
      &     zlu,      zlude,    zmfu,     zmfd,    zrain,&
      &     pcte,     phhfl,    lndj,     pgeoh,   dx,   &
-     &     scale_fac, ntiedtke_dx_opt )
+     &     scale_fac, scale_fac2)
 !
 !     to include the cloud water and cloud ice detrained from convection
 !
@@ -712,7 +708,7 @@ contains
      &     ktype,    kcbot,    kctop,    ptu,      pqu,&
      &     plu,      plude,    pmfu,     pmfd,     prain,&
      &     pcte,     phhfl,    lndj,     zgeoh,    dx,   &
-     &     scale_fac,  ntiedtke_dx_opt )
+     &     scale_fac,  scale_fac2)
       implicit none
 !
 !***cumastrn*  master routine for cumulus massflux-scheme
@@ -820,8 +816,7 @@ contains
      &         ktype(klon),            lndj(klon)
       logical  ldcum(klon)
       logical  loddraf(klon),          llo1,   llo2(klon)
-      real     scale_fac(klon)
-      integer  ntiedtke_dx_opt
+      real     scale_fac(klon), scale_fac2(klon)
 
 !  local varaiables
       real     zcons,zcons2,zqumqe,zdqmin,zdh,zmfmax
@@ -922,8 +917,7 @@ contains
      &     zuu,      zvu,      pmfu,     zmfub,&
      &     zmfus,    zmfuq,    zmful,    plude,    zdmfup,&
      &     kcbot,    kctop,    ictop0,   icum,     ztmst,&
-     &     zqsenh,   zlglac,   lndj,     wup,      wbase,   kdpl,  pmfude_rate,&
-     &     scale_fac,  ntiedtke_dx_opt )
+     &     zqsenh,   zlglac,   lndj,     wup,      wbase,   kdpl,  pmfude_rate)
 
 !*     (b) check cloud depth and change entrainment rate accordingly
 !          calculate precipitation rate (for downdraft calculation)
@@ -1039,14 +1033,10 @@ contains
        if(ldcum(jl).and.ktype(jl).eq.1) then
            ikb = kcbot(jl)
            ikt = kctop(jl)
+           ztauc(jl) = max(ztmst,ztauc(jl))
+           ztauc(jl) = max(360.,ztauc(jl))
+           ztauc(jl) = min(10800.,ztauc(jl))
            ztau = ztauc(jl) * scale_fac(jl)
-           ztau = max(ztmst,ztau)
-           ztau = max(360.,ztau)
-           if(ntiedtke_dx_opt.eq.1) then
-             ztau = min(43200.,ztau)
-           else
-             ztau = min(10800.,ztau)
-           end if
            if(nonequil) then
              zcape2(jl)= max(0.,zcape2(jl))
              zcape(jl) = max(0.,min(zcape1(jl)-zcape2(jl),5000.))
@@ -1085,10 +1075,8 @@ contains
            else
              zmfub1(jl) = zmfub(jl)
            end if
+           zmfub1(jl) = zmfub1(jl)/scale_fac2(jl)
            zmfub1(jl) = min(zmfub1(jl),zmfmax)
-           if(ntiedtke_dx_opt.eq.1) then
-              zmfub1(jl) = zmfub1(jl)/(scale_fac(jl))**(.5)
-           end if
          end if
 
 !*  6.3   mid-level convection - nothing special
@@ -2131,8 +2119,7 @@ contains
      &     puu,      pvu,      pmfu,     pmfub,    &
      &     pmfus,    pmfuq,    pmful,    plude,    pdmfup,&
      &     kcbot,    kctop,    kctop0,   kcum,     ztmst,&
-     &     pqsenh,   plglac,   lndj,     wup,      wbase,   kdpl, pmfude_rate,&
-     &     scale_fac,  ntiedtke_dx_opt )
+     &     pqsenh,   plglac,   lndj,     wup,      wbase,   kdpl, pmfude_rate) 
       implicit none
 !     this routine does the calculations for cloud ascents
 !     for cumulus parameterization
@@ -2253,18 +2240,12 @@ contains
       real     zrnew,zz,zdmfeu,zdmfdu,dp
       real     zfac,zbuoc,zdkbuo,zdken,zvv,zarg,zchange,zxe,zxs,zdshrd
       real     atop1,atop2,abot
-      real     scale_fac(klon)
-      integer  ntiedtke_dx_opt
 !--------------------------------
 !*    1.       specify parameters
 !--------------------------------
       zcons2=3./(g*ztmst)
       zfacbuo = 0.5/(1.+0.5)
-      if(ntiedtke_dx_opt.eq.1) then
-        zprcdgw = cprcon*zrg/(scale_fac(jl)**(1./3.))
-      else
       zprcdgw = cprcon*zrg
-      end if
       z_cldmax = 5.e-3
       z_cwifrac = 0.5
       z_cprc2 = 0.5
@@ -2343,7 +2324,7 @@ contains
      &     pgeo,     pgeoh,    ldcum,   ktype,   klab,  zlrain,&
      &     pmfu,     pmfub,    kcbot,   ptu,&
      &     pqu,      plu,      puu,     pvu,      pmfus,&
-     &     pmfuq,    pmful,    pdmfup,  ntiedtke_dx_opt )
+     &     pmfuq,    pmful,    pdmfup  )
       is = 0
       jlm = 0
       do jl = 1,klon
@@ -3745,7 +3726,7 @@ contains
      &     pgeo,     pgeoh,    ldcum,   ktype,  klab,  plrain,&
      &     pmfu,     pmfub,    kcbot,   ptu,&
      &     pqu,      plu,      puu,     pvu,    pmfus,&
-     &     pmfuq,    pmful,    pdmfup,  ntiedtke_dx_opt )
+     &     pmfuq,    pmful,    pdmfup  )
       implicit none
 !      m.tiedtke         e.c.m.w.f.     12/89
 !      c.zhang           iprc           05/2012
@@ -3782,38 +3763,9 @@ contains
 ! local variabels
       integer  jl,kk,klev,klon,klevp1,klevm1
       real     zzzmb
-      integer  ntiedtke_dx_opt
 !--------------------------------------------------------
 !*    1.      calculate entrainment and detrainment rates
 ! -------------------------------------------------------
-       if(ntiedtke_dx_opt.eq.1) then
-         do jl=1,klon
-          if(.not.ldcum(jl) .and. klab(jl,kk+1).eq.0) then
-            if(lmfmid .and. pqen(jl,kk) .gt. 0.80*pqsen(jl,kk).and. &
-! ww (no mid level conv, if the air is saturated)
-              pqen(jl,kk) .le. pqsen(jl,kk).and. &
-              pgeo(jl,kk)*zrg .gt. 5.0e2  .and.  &
-     &        pgeo(jl,kk)*zrg .lt. 1.0e4 )  then
-            ptu(jl,kk+1)=(cpd*pten(jl,kk)+pgeo(jl,kk)-pgeoh(jl,kk+1))&
-     &                          *rcpd
-            pqu(jl,kk+1)=pqen(jl,kk)
-            plu(jl,kk+1)=0.
-            zzzmb=max(cmfcmin,-pverv(jl,kk)*zrg)
-            zzzmb=min(zzzmb,cmfcmax)
-            pmfub(jl)=zzzmb
-            pmfu(jl,kk+1)=pmfub(jl)
-            pmfus(jl,kk+1)=pmfub(jl)*(cpd*ptu(jl,kk+1)+pgeoh(jl,kk+1))
-            pmfuq(jl,kk+1)=pmfub(jl)*pqu(jl,kk+1)
-            pmful(jl,kk+1)=0.
-            pdmfup(jl,kk+1)=0.
-            kcbot(jl)=kk
-            klab(jl,kk+1)=1
-            plrain(jl,kk+1)=0.0
-            ktype(jl)=3
-          end if
-         end if
-        end do
-       else
          do jl=1,klon
           if(.not.ldcum(jl) .and. klab(jl,kk+1).eq.0) then
             if(lmfmid .and. pqen(jl,kk) .gt. 0.80*pqsen(jl,kk).and. &
@@ -3838,7 +3790,6 @@ contains
           end if
          end if
         end do
-      end if
       return
       end subroutine cubasmcn
 !---------------------------------------------------------

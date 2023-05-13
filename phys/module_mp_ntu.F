@@ -339,7 +339,7 @@
       ENDDO
       UL = (1.-DERF(5.D+0/DSQRT(2.D+0)))*0.5                            ! after 5 sigma, x1mfrc will < 2.86E-7
       X1MAFRC = 1.D+0-XAFRC
-      IF (XAFRC.LT.1.E-10) THEN
+      IF (XAFRC.LT.1.D-10) THEN
          RC = RC_MIN
          RETURN
       ENDIF
@@ -352,7 +352,7 @@
       DO I = 1,ITERMAX
          Y  = Y0
          DY = DYEQU(DRC,DWMAS,DMODE,DSTDV)
-         IF (DY.LE.1.E-50) THEN
+         IF (DY.LE.1.D-50) THEN
             PRINT *,'IN FIND_RC0.F DY IS',DY
             PRINT *,I,DX,Y,DY,DEXP(DRC),DRC,XAFRC,X1MAFRC,DMODE,DSTDV, &
                     CMODE,CSTDV

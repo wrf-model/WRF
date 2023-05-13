@@ -252,7 +252,7 @@
  IMPLICIT NONE
 !-----------------------------------------------------------------
 ! Inputs
- REAL,    DIMENSION( ims:ims, kms:kme, jms:jme ), INTENT(IN   ) :: refl, t, z
+ REAL,    DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   ) :: refl, t, z
  REAL,                                            INTENT(IN   ) :: reflthreshold
 
 ! Order dependent args for domain, mem, and tile dims
@@ -292,7 +292,7 @@
         enddo
 
         kfreeze = ktop
-        DO WHILE ( t(i,kfreeze,j) .lt. 273.15 .and. ktop .gt. kps )
+        DO WHILE ( t(i,kfreeze,j) .lt. 273.15 .and. kfreeze .gt. kps )
             kfreeze = kfreeze - 1
         ENDDO
 

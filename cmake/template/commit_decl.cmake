@@ -1,0 +1,1 @@
+    CHARACTER (LEN=*), PARAMETER :: commit_version = '@GIT_VERSION@'

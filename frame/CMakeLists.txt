@@ -1,132 +1,5 @@
 # WRF CMake Build
 
-# get_filename_component( FOLDER_COMPILE_TARGET ${CMAKE_CURRENT_SOURCE_DIR} NAME)
-# add_library(
-#             ${FOLDER_COMPILE_TARGET}
-#               STATIC
-#               )
-
-# ########################################################################################################################
-# #
-# # Extra object archive to set up dependencies
-# #
-# ########################################################################################################################
-# add_library(
-#             ${FOLDER_COMPILE_TARGET}_deps
-#             OBJECT
-#               module_configure.F
-#               module_driver_constants.F
-#               module_domain_type.F
-#               module_domain.F
-#               module_streams.F
-#               module_wrf_error.F
-#               module_machine.F
-#               module_timing.F
-#               module_dm.F
-#               module_cpl.F
-#               module_cpl_oasis3.F
-
-
-#               module_alloc_space_0.F
-#               module_alloc_space_1.F
-#               module_alloc_space_2.F
-#               module_alloc_space_3.F
-#               module_alloc_space_4.F
-#               module_alloc_space_5.F
-#               module_alloc_space_6.F
-#               module_alloc_space_7.F
-#               module_alloc_space_8.F
-#               module_alloc_space_9.F
-              
-#               ${CMAKE_BINARY_DIR}/frame/module_state_description.F # GENERATED
-#               )
-
-# add_dependencies( ${FOLDER_COMPILE_TARGET}_deps share_model_constants registry_code )
-
-
-# # Tell CMake to chill, we'll generate those files shortly
-# # Thanks to https://gitlab.kitware.com/cmake/community/-/wikis/FAQ#how-can-i-add-a-dependency-to-a-source-file-which-is-generated-in-a-subdirectory
-# # and https://samthursfield.wordpress.com/2015/11/21/cmake-dependencies-between-targets-and-files-and-custom-commands/
-# set_source_files_properties(
-#                             ${CMAKE_BINARY_DIR}/frame/module_state_description.F
-#                             PROPERTIES
-#                               GENERATED TRUE
-#                             )
-
-# set_target_properties( 
-#                       ${FOLDER_COMPILE_TARGET}_deps
-#                         PROPERTIES
-#                           Fortran_MODULE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/${FOLDER_COMPILE_TARGET}
-#                           Fortran_FORMAT           FREE
-#                       )
-
-# target_include_directories( ${FOLDER_COMPILE_TARGET}_deps
-#                             PRIVATE
-#                               ${CMAKE_CURRENT_SOURCE_DIR}
-#                               ${PROJECT_SOURCE_DIR}/inc
-#                               # Compiled sources
-#                               $<TARGET_PROPERTY:share_model_constants,Fortran_MODULE_DIRECTORY>
-#                               $<TARGET_PROPERTY:esmf_time_f90,Fortran_MODULE_DIRECTORY>
-#                               # Generated sources
-#                               ${CMAKE_BINARY_DIR}/frame
-#                               ${CMAKE_BINARY_DIR}/inc
-#                             )
-# target_link_libraries(
-#                       ${FOLDER_COMPILE_TARGET}_deps
-#                       PRIVATE
-#                         esmf_time_f90
-#                       )
-
-
-
-# ########################################################################################################################
-# # Extra stuff for things that depend on registry code
-# # https://stackoverflow.com/a/50640971
-# # Generate all the combinations dynamically, not a fan of this file breakdown
-# ########################################################################################################################
-# foreach( n RANGE 0 7 )
-
-#   add_library( nl_set_${n} OBJECT nl_access_routines.F )
-#   add_library( nl_get_${n} OBJECT nl_access_routines.F )
-
-  
-#   # Wait for registry code
-#   add_dependencies( nl_set_${n} registry_code ${FOLDER_COMPILE_TARGET}_deps )
-#   add_dependencies( nl_get_${n} registry_code ${FOLDER_COMPILE_TARGET}_deps )
-
-#   target_compile_definitions( nl_set_${n} PRIVATE -DNNN=${n} -DNL_set_ROUTINES )
-#   target_compile_definitions( nl_get_${n} PRIVATE -DNNN=${n} -DNL_get_ROUTINES )
-
-#   set_target_properties( 
-#                         nl_set_${n}
-#                         nl_get_${n}
-#                         PROPERTIES
-#                           Fortran_MODULE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/${FOLDER_COMPILE_TARGET}
-#                           Fortran_FORMAT           FREE
-#                       )
-
-#   target_include_directories( nl_set_${n}
-#                               PRIVATE
-#                                 ${CMAKE_CURRENT_SOURCE_DIR}
-#                                 # Generated sources
-#                                 ${CMAKE_BINARY_DIR}/inc
-#                               )
-#   target_include_directories( nl_get_${n}
-#                               PRIVATE
-#                                 ${CMAKE_CURRENT_SOURCE_DIR}
-#                                 # Generated sources
-#                                 ${CMAKE_BINARY_DIR}/inc
-#                               )
-
-#   target_link_libraries(
-#                         ${FOLDER_COMPILE_TARGET}
-#                         PRIVATE
-#                           nl_set_${n}
-#                           nl_get_${n}
-#                         )
-
-# endforeach()
-
 ########################################################################################################################
 # Extra stuff for things that depend on registry code
 # https://stackoverflow.com/a/50640971
@@ -202,7 +75,6 @@ target_include_directories(
 #
 ########################################################################################################################
 target_sources(
-                # ${FOLDER_COMPILE_TARGET}
                 ${PROJECT_NAME}_Core
                 PRIVATE
                   module_configure.F
@@ -264,40 +136,8 @@ target_sources(
                   wrf_shutdown.F
                   )
 
-# set_target_properties( 
-#                       ${FOLDER_COMPILE_TARGET} 
-#                         PROPERTIES
-#                           Fortran_MODULE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/${FOLDER_COMPILE_TARGET}
-#                           Fortran_FORMAT           FREE
-#                       )
-
-
-# target_link_libraries(  ${FOLDER_COMPILE_TARGET}
-#                           PRIVATE
-#                             ${FOLDER_COMPILE_TARGET}_deps
-#                             ${netCDF_LIBRARIES}
-#                             $<$<BOOL:${USE_MPI}>:$<TARGET_NAME_IF_EXISTS:MPI::MPI_Fortran>>
-#                             $<$<BOOL:${USE_OPENMP}>:$<TARGET_NAME_IF_EXISTS:OpenMP::OpenMP_Fortran>>
-#                         )
-
-target_include_directories( #${FOLDER_COMPILE_TARGET}
+target_include_directories( 
                             ${PROJECT_NAME}_Core
                             PRIVATE
-                              # ${netCDF_INCLUDE_DIRS}
                               ${CMAKE_CURRENT_SOURCE_DIR}
-                              # $<TARGET_PROPERTY:${FOLDER_COMPILE_TARGET}_deps,Fortran_MODULE_DIRECTORY>
-                              # $<TARGET_PROPERTY:esmf_time_f90,Fortran_MODULE_DIRECTORY>
-                              # # Generated sources
-                              # ${CMAKE_BINARY_DIR}/frame
-                              # ${CMAKE_BINARY_DIR}/inc
                             )
-
-# Depend on other generated files and libs, this should be one of the last things made apparently
-# add_dependencies( ${FOLDER_COMPILE_TARGET} ${FOLDER_COMPILE_TARGET}_deps registry_code share )
-
-# install(
-#         TARGETS ${FOLDER_COMPILE_TARGET}
-#         RUNTIME DESTINATION bin/
-#         ARCHIVE DESTINATION lib/
-#         LIBRARY DESTINATION lib/
-#         )

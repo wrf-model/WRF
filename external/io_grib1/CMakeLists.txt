@@ -39,8 +39,7 @@ target_include_directories( ${FOLDER_COMPILE_TARGET}
                             PRIVATE
                               ${netCDF_INCLUDE_DIRS}
                               ${CMAKE_CURRENT_SOURCE_DIR}
-                              #!TODO Fix duplicates of wrf_[io|status]_flags.h
-                              # ${CMAKE_CURRENT_SOURCE_DIR}/../ioapi_share 
+                              ${CMAKE_CURRENT_SOURCE_DIR}/../ioapi_share 
                               ${CMAKE_CURRENT_SOURCE_DIR}/../io_grib_share
                               ${CMAKE_CURRENT_SOURCE_DIR}/grib1_util
                               ${CMAKE_CURRENT_SOURCE_DIR}/MEL_grib1

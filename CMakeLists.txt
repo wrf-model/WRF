@@ -14,8 +14,22 @@ include( c_preproc   )
 include( m4_preproc  )
 include( target_copy )
 include( confcheck   )
+include( gitinfo     )
 include( printOption )
+include( wrf_case_setup )
 
+# First grab git info
+wrf_git_commit(
+                RESULT_VAR        GIT_VERSION
+                WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+                )
+
+# Configure file for usage
+configure_file( 
+                ${PROJECT_SOURCE_DIR}/cmake/template/commit_decl.cmake
+                ${PROJECT_BINARY_DIR}/inc/commit_decl
+                @ONLY
+                )
 
 ################################################################################
 ##
@@ -24,19 +38,22 @@ include( printOption )
 ################################################################################
 set( CMAKE_INSTALL_PREFIX ${PROJECT_SOURCE_DIR}/runTemp )
 
+# Mode configuration
+
 set( OPTIMIZATION_LEVEL "" )
 set( WRF_OS             "" )
 set( WRF_MACH           "" )
 
-# DO NOT USE OPTION - IT DOES NOT WORK AS ANTICIPATED EVEN WHEN CLEARING CACHE - YOU HAVE BEEN WARNED
-# Mode configuration
-# WRF Core selection
+
+################################################################################
+## WRF Core selection
+################################################################################
 set( WRF_CORE_OPTIONS 
       # Options listed here
       ARW
       COAMPS  # Not sure how this is used
       CONVERT # This exists in compile but not configure
-      DA
+      DA      # Var directory
       DA_4D_VAR
       PLUS
       )
@@ -45,7 +62,9 @@ set( WRF_CORE_OPTIONS
 set( WRF_CORE "" CACHE STRING "WRF_CORE" )
 list( GET WRF_CORE_OPTIONS 0 WRF_CORE )
 
-# WRF Nesting selection
+################################################################################
+## WRF Nesting selection
+################################################################################
 set( WRF_NESTING_OPTIONS 
       # Options listed here
       NONE
@@ -59,6 +78,38 @@ set( WRF_NESTING "" CACHE STRING "WRF_NESTING" )
 list( GET WRF_NESTING_OPTIONS 0 WRF_NESTING )
 
 
+################################################################################
+## WRF Case selection
+##!TODO Maybe one day make it so this doesn't need to be a selection and all are
+##      always built?
+################################################################################
+set( WRF_CASE_OPTIONS 
+      # Options listed here
+      EM_REAL # make this the default
+      # EM_IDEAL # Technically doable but does anyone build this? It is not a target option in make
+      EM_FIRE
+      EM_SCM_XY
+      EM_TROPICAL_CYCLONE
+      EM_HELDSUAREZ
+      
+      # These are sub-categories of ideal - Keep these lower in the list
+      EM_B_WAVE # Keep this one here as it is used to check index
+      EM_GRAV2D_X
+      EM_HILL2D_X
+      EM_LES
+      EM_QUARTER_SS
+      EM_SEABREEZE2D_X
+      EM_CONVRAD
+      EM_SQUALL2D_X
+      EM_SQUALL2D_Y
+      )
+
+# Set default WRF_CASE
+set( WRF_CASE "" CACHE STRING "WRF_CASE" )
+list( GET WRF_CASE_OPTIONS 0 WRF_CASE )
+
+
+# DO NOT USE OPTION - IT DOES NOT WORK AS ANTICIPATED EVEN WHEN CLEARING CACHE - YOU HAVE BEEN WARNED
 set( USE_DOUBLE  OFF CACHE BOOL "USE_DOUBLE"  ) # I believe this is the r8/real8 promotion
 set( USE_MPI     OFF CACHE BOOL "USE_MPI"     )
 set( USE_OPENMP  OFF CACHE BOOL "USE_OPENMP"  )
@@ -84,13 +135,14 @@ set( KEEP_INT_AROUND      ON CACHE BOOL "KEEP_INT_AROUND"     )
 set( LIMIT_ARGS           ON CACHE BOOL "LIMIT_ARGS"          )
 set( WRFIO_NCD_NO_LARGE_FILE_SUPPORT  OFF CACHE BOOL "WRFIO_NCD_NO_LARGE_FILE_SUPPORT" )
 
-set( BUILD_RRTMG_FAST    OFF CACHE BOOL "BUILD_RRTMG_FAST"    )
-set( BUILD_RRTMK         OFF CACHE BOOL "BUILD_RRTMK"         )
-set( BUILD_SBM_FAST       ON CACHE BOOL "BUILD_SBM_FAST"      )
-set( SHOW_ALL_VARS_USED  OFF CACHE BOOL "SHOW_ALL_VARS_USED"  )
+set( FORCE_NETCDF_CLASSIC OFF CACHE BOOL "FORCE_NETCDF_CLASSIC" )
+set( BUILD_RRTMG_FAST     OFF CACHE BOOL "BUILD_RRTMG_FAST"     )
+set( BUILD_RRTMK          OFF CACHE BOOL "BUILD_RRTMK"          )
+set( BUILD_SBM_FAST        ON CACHE BOOL "BUILD_SBM_FAST"       )
+set( SHOW_ALL_VARS_USED   OFF CACHE BOOL "SHOW_ALL_VARS_USED"   )
 
 
-
+# TODO investigate if this needs set
 # Not cached, cannot be changed, do not touch
 set( USE_M4               ON )
 # Same thing -what do these defines even do if they are always on????
@@ -142,6 +194,16 @@ if ( NOT ${WRF_CORE} IN_LIST WRF_CORE_OPTIONS )
   message( FATAL_ERROR "WRF Core option not recognized : ${WRF_CORE}" )
 endif()
 
+if ( NOT ${WRF_NESTING} IN_LIST WRF_NESTING_OPTIONS )
+  message( FATAL_ERROR "WRF Nesting option not recognized : ${WRF_NESTING}" )
+endif()
+
+if ( NOT ${WRF_CASE} IN_LIST WRF_CASE_OPTIONS )
+  message( FATAL_ERROR "WRF Case option not recognized : ${WRF_CASE}" )
+endif()
+
+
+# Handle selection
 set( EM_CORE 1 )
 # Far easier to write this one as normal logic rather than generator expression
 if( ${WRF_CORE} STREQUAL "CONVERT" OR ${WRF_CORE} STREQUAL "COAMPS" )
@@ -159,9 +221,24 @@ if ( ${ENABLE_KPP} AND NOT ${ENABLE_CHEM} )
 endif()
 
 
+# Additional information on the type of case we are compiling
+string( TOLOWER ${WRF_CASE} WRF_CASE_FOLDER )
+string( REPLACE "em_" "" WRF_CASE_MODULE ${WRF_CASE_FOLDER} )
+
+# Find if it is a specialized ideal case or general
+list( FIND WRF_CASE_OPTIONS EM_B_WAVE   START_GENERAL_IDEAL_CASE_IDX )
+list( FIND WRF_CASE_OPTIONS ${WRF_CASE} CURRENT_CASE_IDX )
+set( WRF_GENERAL_IDEAL_CASE TRUE )
+if ( ${CURRENT_CASE_IDX} LESS ${START_GENERAL_IDEAL_CASE_IDX} )
+  set( WRF_GENERAL_IDEAL_CASE FALSE )
+endif()
+
+
 
 print_option( WRF_CORE         20 ${BOLD_CYAN} )
 print_option( WRF_NESTING      20 ${BOLD_CYAN} )
+print_option( WRF_CASE         20 ${BOLD_CYAN} )
+
 
 print_option( USE_DOUBLE       20 )
 print_option( USE_MPI          20 )
@@ -186,10 +263,11 @@ print_option( INTIO            20 )
 print_option( KEEP_INT_AROUND  20 )
 print_option( LIMIT_ARGS       20 )
 
-print_option( BUILD_RRTMG_FAST   20 )
-print_option( BUILD_RRTMK        20 )
-print_option( BUILD_SBM_FAST     20 )
-print_option( SHOW_ALL_VARS_USED 20 )
+print_option( FORCE_NETCDF_CLASSIC 20 )
+print_option( BUILD_RRTMG_FAST     20 )
+print_option( BUILD_RRTMK          20 )
+print_option( BUILD_SBM_FAST       20 )
+print_option( SHOW_ALL_VARS_USED   20 )
 
 print_option( WRFIO_NCD_NO_LARGE_FILE_SUPPORT 36 )
 
@@ -218,9 +296,14 @@ find_package( ZLIB   REQUIRED )
 find_package( CURL   REQUIRED )
 
 # HDF5 has some funky weirdness between versions where the casing has changed
-find_package( HDF5   REQUIRED )
+# Optional
+find_package( HDF5   QUIET )
 
+# Required for WPS
 find_package( Jasper REQUIRED )
+
+# Optional
+find_package( PIO QUIET ) 
 
 if ( ${ENABLE_TERRAIN} )
   find_package( RPC )
@@ -240,8 +323,9 @@ find_package( netCDF REQUIRED )
 # Make use of version checking here and not in find_package for previous versions that did not use cmake
 if ( NOT netCDF_VERSION GREATER_EQUAL "4.1.3" )
   message( FATAL "Please make sure NETCDF version is 4.1.3 or later. " )
-  
 endif()
+
+find_package( pnetCDF QUIET )
 
 if ( USE_MPI )
   find_package( MPI REQUIRED COMPONENTS Fortran C )
@@ -252,6 +336,7 @@ if ( USE_OPENMP )
   find_package( OpenMP REQUIRED COMPONENTS Fortran C )
   add_compile_definitions( USE_OPENMP=1 SM_PARALLEL=1 )
 endif()
+
 
 ################################################################################
 ##
@@ -265,7 +350,7 @@ set( Fortran_COMPILER_ID ${CMAKE_Fortran_COMPILER_ID} )
 
 # Whole project flags
 add_compile_options( 
-                    $<$<COMPILE_LANGUAGE:Fortran>:-cpp>
+                    # $<$<COMPILE_LANGUAGE:Fortran>:-cpp>
                     # Use "" and ; specifically to evaluate correctly
                     "$<$<COMPILE_LANG_AND_ID:Fortran,Intel>:-diag-disable;6843>"
                     
@@ -293,7 +378,8 @@ add_compile_definitions(
                         $<$<BOOL:${ENABLE_VENUS}>:WRF_VENUS=$<BOOL:${ENABLE_VENUS}>>
                         $<$<BOOL:${ENABLE_CLM}>:WRF_USE_CLM=$<BOOL:${ENABLE_CLM}>>
 
-                        $<$<BOOL:${netCDF_NC4}>:NETCDF_classic=$<BOOL:${netCDF_NC4}>>
+                        # If force classic or no nc-4 support enable classic
+                        $<$<OR:$<BOOL:${FORCE_NETCDF_CLASSIC}>,$<NOT:$<BOOL:${netCDF_NC4}>>>:NETCDF_classic=1>
                         $<$<BOOL:${WRFIO_NCD_NO_LARGE_FILE_SUPPORT}>:WRFIO_NCD_NO_LARGE_FILE_SUPPORT=$<BOOL:${WRFIO_NCD_NO_LARGE_FILE_SUPPORT}>>
                         # TODO Figure out how these should be set
                         # DUSE_NETCDF4_FEATURES -DWRFIO_NCD_LARGE_FILE_SUPPORT
@@ -336,7 +422,7 @@ add_compile_definitions(
                         # DFI_RADAR=$<BOOL:${NMM_CORE}>
 
                         # Nesting options
-                        $<$<BOOL${MOVE_NESTS}>:MOVE_NESTS>
+                        $<$<BOOL:${MOVE_NESTS}>:MOVE_NESTS>
                         $<$<BOOL:$<STREQUAL:${WRF_NESTING},"VORTEX">>:VORTEX_CENTER>
 
                         # Configuration checks
@@ -350,21 +436,9 @@ add_compile_definitions(
                         # https://stackoverflow.com/a/1035713
                         # If fseeko64 succeeds, use that, else check if we can fall back to fseeko, and if not just use fseek
                         $<IF:$<BOOL:${FSEEKO64}>,FSEEKO64_OK,$<IF:$<BOOL:${FSEEKO}>,FSEEKO_OK,FSEEK_OK>>
-                        
-                        
-                        MPI2_SUPPORT
-                        MPI2_THREAD_SUPPORT
-                        
+
                         )
 
-
-# add_custom_command( OUTPUT NONE_ENABLE_CHEM       COMMAND ${CMAKE_COMMAND} -E echo  "ENABLE_CHEM      => $<$<BOOL:${ENABLE_CHEM}>:WRF_CHEM=$<BOOL:${ENABLE_CHEM}>> "                )
-# add_custom_command( OUTPUT NONE_ENABLE_CMAQ       COMMAND ${CMAKE_COMMAND} -E echo  "ENABLE_CMAQ      => $<$<BOOL:${ENABLE_CMAQ}>:WRF_CMAQ=$<BOOL:${ENABLE_CMAQ}>> "                )
-# add_custom_command( OUTPUT NONE_ENABLE_KPP        COMMAND ${CMAKE_COMMAND} -E echo  "ENABLE_KPP       => $<$<BOOL:${ENABLE_KPP}>:WRF_KPP=$<BOOL:${ENABLE_KPP}>> "                   )
-# add_custom_command( OUTPUT NONE_ENABLE_DFI_RADAR  COMMAND ${CMAKE_COMMAND} -E echo  "ENABLE_DFI_RADAR => $<$<BOOL:${ENABLE_DFI_RADAR}>:WRF_DFI_RADAR=$<BOOL:${ENABLE_DFI_RADAR}>> " )
-# add_custom_command( OUTPUT NONE_ENABLE_TITAN      COMMAND ${CMAKE_COMMAND} -E echo  "ENABLE_TITAN     => $<$<BOOL:${ENABLE_TITAN}>:WRF_TITAN=$<BOOL:${ENABLE_TITAN}>> "             )
-# add_custom_command( OUTPUT NONE_ENABLE_MARS       COMMAND ${CMAKE_COMMAND} -E echo  "ENABLE_MARS      => $<$<BOOL:${ENABLE_MARS}>:WRF_MARS=$<BOOL:${ENABLE_MARS}>> "                )
-# add_custom_command( OUTPUT NONE_ENABLE_VENUS      COMMAND ${CMAKE_COMMAND} -E echo  "ENABLE_VENUS     => $<$<BOOL:${ENABLE_VENUS}>:WRF_VENUS=$<BOOL:${ENABLE_VENUS}>> "             )
 
 #!TODO Investigate if this is better than setting -cpp
 set( CMAKE_Fortran_PREPROCESS ON )
@@ -381,55 +455,53 @@ add_library(
 add_subdirectory( external )
 add_subdirectory( tools    )
 
-
+# add_dependencies() does not support generator expressions so whatever we can defer to linking please do so
 add_dependencies(
                   ${PROJECT_NAME}_Core
                   # So many things depend on this that I'm adding a dep here
                   registry_code
-                  # "External" io libs
-                  esmf_time_f90
-                  
-                  # io_pio
-                  
-                  # io_netcdf
-                  # io_netcdfpar
-                  # io_pnetcdf
-                  # io_phdf5
-                  io_grib1
-                  io_grib_share
-                  g2lib
-                  bacio-1.3
-                  
-                  RSL_LITE
-                  fftpack5
-                  # add_dependencies() does not support generator expressions
-                  # $<TARGET_NAME_IF_EXISTS:atm_ocn>
-                  # $<TARGET_NAME_IF_EXISTS:io_adios2>
-                  # $<TARGET_NAME_IF_EXISTS:io_esmf>
                   )
 target_include_directories(
                             ${PROJECT_NAME}_Core
-                            PRIVATE
-                              ${PROJECT_SOURCE_DIR}
-                              ${PROJECT_SOURCE_DIR}/inc
-                              ${PROJECT_SOURCE_DIR}/dyn_em
-                              # ${PROJECT_SOURCE_DIR}/frame
-
-                              # externals
-                              ${PROJECT_SOURCE_DIR}/external/io_grib_share
-                              ${PROJECT_SOURCE_DIR}/external/io_netcdf
-                              ${PROJECT_SOURCE_DIR}/external/io_int
-                              ${PROJECT_SOURCE_DIR}/external/grib2
-                              ${PROJECT_SOURCE_DIR}/external/ioapi_share
-
+                            PUBLIC
+                              # List module directories first so the compiler does not get confused 
+                              # about things "not being compiled yet" - yes, yes it is compiled
                               $<TARGET_PROPERTY:esmf_time_f90,Fortran_MODULE_DIRECTORY>
                               $<TARGET_PROPERTY:io_grib_share,Fortran_MODULE_DIRECTORY>
-                              $<TARGET_PROPERTY:g2lib,Fortran_MODULE_DIRECTORY>
-                              $<TARGET_PROPERTY:bacio-1.3,Fortran_MODULE_DIRECTORY>
+                              $<TARGET_PROPERTY:grib1_util,Fortran_MODULE_DIRECTORY>
+                              $<TARGET_PROPERTY:MEL_grib1,Fortran_MODULE_DIRECTORY>
+                              $<TARGET_PROPERTY:WGRIB,Fortran_MODULE_DIRECTORY>
+                              $<TARGET_PROPERTY:fftpack5,Fortran_MODULE_DIRECTORY>
+                              $<TARGET_PROPERTY:io_netcdf,Fortran_MODULE_DIRECTORY>
 
+                              
+                              ${PROJECT_SOURCE_DIR}
+                              ${PROJECT_SOURCE_DIR}/inc
+                              ${PROJECT_SOURCE_DIR}/frame
+                              ${PROJECT_SOURCE_DIR}/external/ioapi_share
 
                               ${CMAKE_BINARY_DIR}/inc
                               ${CMAKE_BINARY_DIR}/frame
+
+                            PRIVATE
+                              # May or may not exist
+                              $<$<TARGET_EXISTS:atm_ocn>:$<TARGET_PROPERTY:atm_ocn,Fortran_MODULE_DIRECTORY>>
+                              $<$<TARGET_EXISTS:io_adios2>:$<TARGET_PROPERTY:io_adios2,Fortran_MODULE_DIRECTORY>>
+                              $<$<TARGET_EXISTS:io_esmf>:$<TARGET_PROPERTY:io_esmf,Fortran_MODULE_DIRECTORY>>
+                              $<$<TARGET_EXISTS:io_pio>:$<TARGET_PROPERTY:io_pio,Fortran_MODULE_DIRECTORY>>
+                              $<$<TARGET_EXISTS:io_netcdfpar>:$<TARGET_PROPERTY:io_netcdfpar,Fortran_MODULE_DIRECTORY>>
+                              $<$<TARGET_EXISTS:io_pnetcdf>:$<TARGET_PROPERTY:io_pnetcdf,Fortran_MODULE_DIRECTORY>>
+                              $<$<TARGET_EXISTS:io_phdf5>:$<TARGET_PROPERTY:io_phdf5,Fortran_MODULE_DIRECTORY>>
+                              $<$<TARGET_EXISTS:g2lib>:$<TARGET_PROPERTY:g2lib,Fortran_MODULE_DIRECTORY>>
+                              $<$<TARGET_EXISTS:bacio-1.3>:$<TARGET_PROPERTY:bacio-1.3,Fortran_MODULE_DIRECTORY>>
+                              
+                              ${PROJECT_SOURCE_DIR}/dyn_em
+
+                              # externals
+                              ${PROJECT_SOURCE_DIR}/external/esmf_time_f90
+                              ${PROJECT_SOURCE_DIR}/external/io_grib_share
+                              ${PROJECT_SOURCE_DIR}/external/io_netcdf
+                              ${PROJECT_SOURCE_DIR}/external/io_int
                             )
 
 # Add directly to core
@@ -442,6 +514,14 @@ if ( ${WRF_CHEM} )
 endif()
 
 add_subdirectory( dyn_em   )
+
+
+add_subdirectory( main     )
+
+################################################################################
+# Add subdirectory with case info
+###############################################################################
+add_subdirectory( test/${WRF_CASE_FOLDER} )
 
 # Configure core
 set_target_properties( 
@@ -457,19 +537,40 @@ target_link_libraries(  ${PROJECT_NAME}_Core
                             ${netCDF_LIBRARIES}
                             $<$<BOOL:${USE_MPI}>:$<TARGET_NAME_IF_EXISTS:MPI::MPI_Fortran>>
                             $<$<BOOL:${USE_OPENMP}>:$<TARGET_NAME_IF_EXISTS:OpenMP::OpenMP_Fortran>>
-                            esmf_time_f90
-                            g2lib
-                            bacio-1.3
 
                             # This will add in target dependencies if they exist
+                            $<TARGET_NAME_IF_EXISTS:Jasper::Jasper>
+
+                            # "External" io libs
+                            esmf_time_f90
+                            
+                            io_grib1
+                            grib1_util
+                            MEL_grib1
+                            WGRIB
+
+                            io_grib_share
+                            fftpack5
+
                             $<TARGET_NAME_IF_EXISTS:atm_ocn>
                             $<TARGET_NAME_IF_EXISTS:io_adios2>
                             $<TARGET_NAME_IF_EXISTS:io_esmf>
-                            $<TARGET_NAME_IF_EXISTS:Jasper::Jasper>
+                            $<TARGET_NAME_IF_EXISTS:io_pio>
+                            io_netcdf
+                            $<TARGET_NAME_IF_EXISTS:io_netcdfpar>
+                            $<TARGET_NAME_IF_EXISTS:io_pnetcdf>
+                            $<TARGET_NAME_IF_EXISTS:io_phdf5>
+                            
+                            $<TARGET_NAME_IF_EXISTS:g2lib>
+                            $<TARGET_NAME_IF_EXISTS:bacio-1.3>
+                            
+                            RSL_LITE
                       )
 
-# target_include_directories( 
-#                             ${PROJECT_NAME}_Core
-#                             PRIVATE
-                              
-#                               )
+
+install(
+        TARGETS ${PROJECT_NAME}_Core
+        RUNTIME DESTINATION bin/
+        ARCHIVE DESTINATION lib/
+        LIBRARY DESTINATION lib/
+        )

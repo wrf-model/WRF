@@ -11,45 +11,58 @@
 # list( APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR} )
 
 # Use nc-config
-execute_process( COMMAND nc-config --includedir  OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF_INCLUDE_DIR )
-execute_process( COMMAND nc-config --libs        OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF_CLIBS   )
-execute_process( COMMAND nc-config --cxx4libs    OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF_CXXLIBS )
-execute_process( COMMAND nc-config --flibs       OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF_FLIBS   )
-execute_process( COMMAND nc-config --version     OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF_VERSION_RAW )
-execute_process( COMMAND nc-config --has-nc4     OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF_NC4_YES )
-execute_process( COMMAND nc-config --has-pnetcdf OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF_PNETCDF_YES )
+find_program( 
+                NETCDF_PROGRAM
+                nc-config
+                QUIET
+                )
 
-# Sanitize version
-string( REPLACE " " ";" netCDF_VERSION_LIST ${netCDF_VERSION_RAW} )
-list( GET netCDF_VERSION_LIST -1 netCDF_VERSION )
+message( STATUS "NETCDF_PROGRAM : ${NETCDF_PROGRAM}" )
+if ( ${NETCDF_PROGRAM} MATCHES "-NOTFOUND$" )
+  message( STATUS "No nc-config found" )
+else()
 
-# Convert yes/no to 0/1 bool
-set( netCDF_NC4 $<BOOL:${netCDF_NC4_YES}> )
-set( netCDF_PNETCDF $<BOOL:${netCDF_PNETCDF_YES}> )
+  execute_process( COMMAND ${NETCDF_PROGRAM} --includedir   OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF_INCLUDE_DIR )
+  execute_process( COMMAND ${NETCDF_PROGRAM} --libs         OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF_CLIBS   )
+  execute_process( COMMAND ${NETCDF_PROGRAM} --cxx4libs     OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF_CXXLIBS )
+  execute_process( COMMAND ${NETCDF_PROGRAM} --flibs        OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF_FLIBS   )
+  execute_process( COMMAND ${NETCDF_PROGRAM} --version      OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF_VERSION_RAW )
+  execute_process( COMMAND ${NETCDF_PROGRAM} --has-nc4      OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF_NC4_YES )
+  execute_process( COMMAND ${NETCDF_PROGRAM} --has-pnetcdf  OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF_PNETCDF_YES )
+  execute_process( COMMAND ${NETCDF_PROGRAM} --has-parallel OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF_PARALLEL_YES )
 
+
+  # Sanitize version
+  string( REPLACE " " ";" netCDF_VERSION_LIST ${netCDF_VERSION_RAW} )
+  list( GET netCDF_VERSION_LIST -1 netCDF_VERSION )
+
+  # Convert to YES/NO - Note cannot be generator expression if you want to use it during configuration time
+  string( TOUPPER ${netCDF_NC4_YES}      netCDF_NC4      )
+  string( TOUPPER ${netCDF_PNETCDF_YES}  netCDF_PNETCDF  )
+  string( TOUPPER ${netCDF_PARALLEL_YES} netCDF_PARALLEL )
+
+  set( netCDF_DEFINITIONS  )
+
+  set( netCDF_LIBRARIES
+      $<$<LINK_LANGUAGE:C>:${netCDF_CLIBS}>
+      $<$<LINK_LANGUAGE:CXX>:${netCDF_CXXLIBS}> 
+      $<$<LINK_LANGUAGE:Fortran>:${netCDF_FLIBS}>
+      )
+  set( netCDF_INCLUDE_DIRS ${netCDF_INCLUDE_DIR} )
+endif()
 
 find_package( PkgConfig )
-set( netCDF_DEFINITIONS  )
-
-
 
 include(FindPackageHandleStandardArgs)
 
 # handle the QUIETLY and REQUIRED arguments and set netCDF_FOUND to TRUE
 # if all listed variables are TRUE
 find_package_handle_standard_args( netCDF  DEFAULT_MSG
-                                  netCDF_INCLUDE_DIR
+                                  netCDF_INCLUDE_DIRS
                                   netCDF_CLIBS
                                   netCDF_CXXLIBS
                                   netCDF_FLIBS
                                   netCDF_VERSION
                                   )
 
-mark_as_advanced( netCDF_INCLUDE_DIR netCDF_CLIBS netCDF_CXXLIBS netCDF_FLIBS )
-
-set( netCDF_LIBRARIES
-    $<$<LINK_LANGUAGE:C>:${netCDF_CLIBS}>
-    $<$<LINK_LANGUAGE:CXX>:${netCDF_CXXLIBS}> 
-    $<$<LINK_LANGUAGE:Fortran>:${netCDF_FLIBS}>
-    )
-set( netCDF_INCLUDE_DIRS ${netCDF_INCLUDE_DIR} )
+mark_as_advanced( netCDF_CLIBS netCDF_CXXLIBS netCDF_FLIBS )

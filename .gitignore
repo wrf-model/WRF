@@ -18,3 +18,16 @@ configure.wrf*
 *.backup
 *.f90
 _build/
+# New (and old) things we should ignore
+wrf_config.cmake
+*.nc
+rsl.out.*
+rsl.error.*
+ndown
+real
+tc
+ideal
+wrf
+wrfbdy_d*
+wrfinput_d*
+wrfout_d*

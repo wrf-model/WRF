@@ -23,6 +23,8 @@ if ( ${NETCDF_PROGRAM} MATCHES "-NOTFOUND$" )
 else()
 
   execute_process( COMMAND ${NETCDF_PROGRAM} --includedir   OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF_INCLUDE_DIR )
+  execute_process( COMMAND ${NETCDF_PROGRAM} --libdir       OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF_LIBRARY_DIR )
+  execute_process( COMMAND ${NETCDF_PROGRAM} --prefix       OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF_PREFIX )
   execute_process( COMMAND ${NETCDF_PROGRAM} --libs         OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF_CLIBS   )
   execute_process( COMMAND ${NETCDF_PROGRAM} --cxx4libs     OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF_CXXLIBS )
   execute_process( COMMAND ${NETCDF_PROGRAM} --flibs        OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF_FLIBS   )
@@ -59,10 +61,11 @@ include(FindPackageHandleStandardArgs)
 # if all listed variables are TRUE
 find_package_handle_standard_args( netCDF  DEFAULT_MSG
                                   netCDF_INCLUDE_DIRS
+                                  netCDF_LIBRARY_DIR
                                   netCDF_CLIBS
                                   netCDF_CXXLIBS
                                   netCDF_FLIBS
                                   netCDF_VERSION
                                   )
 
-mark_as_advanced( netCDF_CLIBS netCDF_CXXLIBS netCDF_FLIBS )
+mark_as_advanced( netCDF_CLIBS netCDF_CXXLIBS netCDF_FLIBS netCDF_PREFIX netCDF_LIBRARY_DIR )

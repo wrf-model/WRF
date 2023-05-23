@@ -6,14 +6,13 @@
 ! Price, C., and D. Rind (1992), A Simple Lightning Parameterization for Calculating
 !   Global Lightning Distributions, J. Geophys. Res., 97(D9), 9919-9933, doi:10.1029/92JD00719.
 !
-! Wong, J., M. Barth, and D. Noone (2012), Evaluating a Lightning Parameterization
-!   at Resolutions with Partially-Resolved Convection, GMDD, in preparation.
+! Wong, J., M. Barth, and D. Noone, 2013: Evaluating a lightning parameterization 
+!   based on cloud-top height for mesoscale numerical model simulations, 
+!   Geosci. Model Dev., 6, 429–443, https://doi.org/10.5194/gmd-6-429-2013.
 !
 ! Unlike previous implementation, this version will produce slightly inconsistent
 ! IC and CG grid-flash rates against NO emission after production via calling
 ! lightning_nox_decaria.
-!
-! Contact: J. Wong <johnwong@ucar.edu>
 !
 !**********************************************************************
 

@@ -1,0 +1,10 @@
+#!/bin/bash
+# Meant to be run at the top level
+./arch/configure_reader.py \
+  arch/configure.defaults  \
+  cmake/template/arch_config.cmake \
+  wrf_config.cmake \
+  CMakeLists.txt
+
+# Now run cmake
+cmake -S . -B _build -DCMAKE_INSTALL_PREFIX=$PWD -DCMAKE_TOOLCHAIN_FILE=$PWD/wrf_config.cmake

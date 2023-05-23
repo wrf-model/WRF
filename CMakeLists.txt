@@ -7,8 +7,17 @@ enable_language( Fortran )
 
 project( WRF )
 
+if ( DEFINED CMAKE_TOOLCHAIN_FILE )
+  set( WRF_CONFIG ${CMAKE_TOOLCHAIN_FILE} )
+  message( STATUS "Loading configuration file..." )
+  include( ${WRF_CONFIG} )
+endif()
+
 # list( APPEND CMAKE_MODULE_PATH         )
 list( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/ ${PROJECT_SOURCE_DIR}/cmake/modules )
+
+# Use link paths as rpaths 
+set( CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE )
 
 include( c_preproc   )
 include( m4_preproc  )
@@ -234,6 +243,10 @@ if ( ${CURRENT_CASE_IDX} LESS ${START_GENERAL_IDEAL_CASE_IDX} )
 endif()
 
 
+if ( DEFINED CMAKE_TOOLCHAIN_FILE )
+  print_option( WRF_CONFIG         20 ${BOLD_CYAN} )
+endif()
+
 
 print_option( WRF_CORE         20 ${BOLD_CYAN} )
 print_option( WRF_NESTING      20 ${BOLD_CYAN} )
@@ -273,16 +286,58 @@ print_option( WRFIO_NCD_NO_LARGE_FILE_SUPPORT 36 )
 
 ################################################################################
 ##
-## Configuration checks for features & intrinsices
-##
-################################################################################
-add_subdirectory( confcheck )
-
-################################################################################
-##
 ## Now find packages that cross-compilation is potentially handled
 ##
 ################################################################################
+if ( ${USE_MPI} )
+  # message( STATUS "[BEFORE] MPI_C_COMPILER       : ${MPI_C_COMPILER}")
+  # message( STATUS "[BEFORE] MPI_Fortran_COMPILER : ${MPI_Fortran_COMPILER}")
+  # message( STATUS "[BEFORE] MPI_LIBRARIES        : ${MPI_LIBRARIES}")
+  # message( STATUS "[BEFORE] MPI_LIBRARY          : ${MPI_LIBRARY}")
+  # message( STATUS "[BEFORE] MPI_EXTRA_LIBRARY    : ${MPI_EXTRA_LIBRARY}")
+  # message( STATUS "[BEFORE] MPI_COMPILE_FLAGS    : ${MPI_COMPILE_FLAGS}")
+  # message( STATUS "[BEFORE] MPI_INCLUDE_PATH     : ${MPI_INCLUDE_PATH}")
+  # message( STATUS "[BEFORE] MPI_LINK_FLAGS       : ${MPI_LINK_FLAGS}")
+  # message( STATUS "[BEFORE] MPI_LIBRARIES        : ${MPI_LIBRARIES}")
+  # set( CMAKE_FIND_DEBUG_MODE TRUE )
+  # Through ***MUCH*** debugging, if utilizing MPI_<LANG>_COMPILER
+  # https://cmake.org/cmake/help/latest/module/FindMPI.html#variables-for-locating-mpi
+  # the find logic makes a mess of things by utilizing <mpi> -show[me]
+  # Which may or may not get polluted by the environment
+  find_package( MPI REQUIRED COMPONENTS Fortran C )
+  add_compile_definitions(
+                          USE_MPI=1
+                          DM_PARALLEL
+                          )
+
+  if ( DEFINED WRF_MPI_Fortran_FLAGS AND NOT "${WRF_MPI_Fortran_FLAGS}" STREQUAL "" )
+    add_compile_options(
+                        $<$<COMPILE_LANGUAGE:Fortran>,${WRF_MPI_Fortran_FLAGS}>
+                        )
+  endif()
+
+  if ( DEFINED WRF_MPI_C_FLAGS AND NOT "${WRF_MPI_C_FLAGS}" STREQUAL "" )
+    add_compile_options(
+                        $<$<COMPILE_LANGUAGE:C>,${WRF_MPI_C_FLAGS}>
+                        )
+  endif()
+  # set( CMAKE_FIND_DEBUG_MODE FALSE )
+  # message( STATUS "[AFTER] MPI_C_COMPILER       : ${MPI_C_COMPILER}")
+  # message( STATUS "[AFTER] MPI_Fortran_COMPILER : ${MPI_Fortran_COMPILER}")
+  # message( STATUS "[AFTER] MPI_LIBRARIES        : ${MPI_LIBRARIES}")
+  # message( STATUS "[AFTER] MPI_LIBRARY          : ${MPI_LIBRARY}")
+  # message( STATUS "[AFTER] MPI_EXTRA_LIBRARY    : ${MPI_EXTRA_LIBRARY}")
+  # message( STATUS "[AFTER] MPI_COMPILE_FLAGS    : ${MPI_COMPILE_FLAGS}")
+  # message( STATUS "[AFTER] MPI_INCLUDE_PATH     : ${MPI_INCLUDE_PATH}")
+  # message( STATUS "[AFTER] MPI_LINK_FLAGS       : ${MPI_LINK_FLAGS}")
+  # message( STATUS "[AFTER] MPI_LIBRARIES        : ${MPI_LIBRARIES}")
+endif()
+
+if ( ${USE_OPENMP} )
+  find_package( OpenMP REQUIRED COMPONENTS Fortran C )
+  add_compile_definitions( USE_OPENMP=1 SM_PARALLEL )
+endif()
+
 if ( ${USE_M4} )
   find_program( 
                 M4_PROGRAM
@@ -291,9 +346,7 @@ if ( ${USE_M4} )
                 )
 endif()
 
-# Provided by cmake natively
-find_package( ZLIB   REQUIRED )
-find_package( CURL   REQUIRED )
+
 
 # HDF5 has some funky weirdness between versions where the casing has changed
 # Optional
@@ -327,16 +380,17 @@ endif()
 
 find_package( pnetCDF QUIET )
 
-if ( USE_MPI )
-  find_package( MPI REQUIRED COMPONENTS Fortran C )
-  add_compile_definitions( USE_MPI=1 DM_PARALLEL=1 )
-endif()
+# Attempt to find zlib packaged with netcdf first
+set( ZLIB_ROOT ${netCDF_PREFIX} )
+find_package( ZLIB   REQUIRED )
+find_package( CURL   REQUIRED )
 
-if ( USE_OPENMP )
-  find_package( OpenMP REQUIRED COMPONENTS Fortran C )
-  add_compile_definitions( USE_OPENMP=1 SM_PARALLEL=1 )
-endif()
-
+################################################################################
+##
+## Configuration checks for features & intrinsices
+##
+################################################################################
+add_subdirectory( confcheck )
 
 ################################################################################
 ##
@@ -502,6 +556,10 @@ target_include_directories(
                               ${PROJECT_SOURCE_DIR}/external/io_grib_share
                               ${PROJECT_SOURCE_DIR}/external/io_netcdf
                               ${PROJECT_SOURCE_DIR}/external/io_int
+
+                              # Found Packages not handled throough :: imported target
+                              ${netCDF_INCLUDE_DIRS}
+                              ${pnetCDF_INCLUDE_DIRS}
                             )
 
 # Add directly to core
@@ -529,17 +587,27 @@ set_target_properties(
                         PROPERTIES
                           # Just dump everything in here
                           Fortran_MODULE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/modules/
-                          Fortran_FORMAT           FREE                          
+                          Fortran_FORMAT           FREE
+                          # INSTALL_RPATH            ${netCDF_LIBRARY_DIR}
+                          #                          ${pnetCDF_LIBRARY_DIR}
+                          #                          ${}
                       )
-
+message( STATUS "pnetCDF_LIBRARIES ${pnetCDF_LIBRARIES}")
 target_link_libraries(  ${PROJECT_NAME}_Core
                           PRIVATE
                             ${netCDF_LIBRARIES}
+                            ${pnetCDF_LIBRARIES}
                             $<$<BOOL:${USE_MPI}>:$<TARGET_NAME_IF_EXISTS:MPI::MPI_Fortran>>
+                            MPI::MPI_Fortran
                             $<$<BOOL:${USE_OPENMP}>:$<TARGET_NAME_IF_EXISTS:OpenMP::OpenMP_Fortran>>
 
                             # This will add in target dependencies if they exist
                             $<TARGET_NAME_IF_EXISTS:Jasper::Jasper>
+                            $<TARGET_NAME_IF_EXISTS:HDF5::HDF5>
+                            $<TARGET_NAME_IF_EXISTS:ZLIB::ZLIB>
+                            $<TARGET_NAME_IF_EXISTS:CURL::libcurl>
+                            $<TARGET_NAME_IF_EXISTS:RPC::RPC>
+
 
                             # "External" io libs
                             esmf_time_f90

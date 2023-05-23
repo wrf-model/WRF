@@ -74,6 +74,11 @@ target_include_directories(
 # Now define base framework
 #
 ########################################################################################################################
+set( MODULE_DM module_dm.F )
+if ( ${USE_MPI} )
+  set( MODULE_DM ${PROJECT_SOURCE_DIR}/external/RSL_LITE/module_dm.F )
+endif()
+
 target_sources(
                 ${PROJECT_NAME}_Core
                 PRIVATE
@@ -85,7 +90,8 @@ target_sources(
                   module_wrf_error.F
                   module_machine.F
                   module_timing.F
-                  module_dm.F
+                  # module_dm.F
+                  ${MODULE_DM}
                   module_cpl.F
                   module_cpl_oasis3.F
 

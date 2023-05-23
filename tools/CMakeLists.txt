@@ -8,6 +8,11 @@ add_executable(
                ${FOLDER_COMPILE_TARGET}
               )
 
+set( GEN_COMMS gen_comms.c )
+if ( ${USE_MPI} )
+  set( GEN_COMMS ${PROJECT_SOURCE_DIR}/external/RSL_LITE/gen_comms.c )
+endif()
+
 target_sources(
                 ${FOLDER_COMPILE_TARGET}
                 PRIVATE
@@ -28,7 +33,8 @@ target_sources(
                   gen_irr_diag.c
                   gen_model_data_ord.c
                   gen_interp.c
-                  gen_comms.c
+                  # gen_comms.c
+                  ${GEN_COMMS}
                   gen_scalar_derefs.c
                   set_dim_strs.c
                   gen_wrf_io.c
@@ -42,16 +48,8 @@ target_sources(
 #                           Fortran_FORMAT           FREE                          
 #                       )
 
-target_link_libraries(  ${FOLDER_COMPILE_TARGET}
-                          PRIVATE
-                            ${netCDF_LIBRARIES}
-                            $<$<BOOL:${USE_MPI}>:$<TARGET_NAME_IF_EXISTS:MPI::MPI_Fortran>>
-                            $<$<BOOL:${USE_OPENMP}>:$<TARGET_NAME_IF_EXISTS:OpenMP::OpenMP_Fortran>>
-                        )
-
 target_include_directories( ${FOLDER_COMPILE_TARGET}
                             PRIVATE
-                              ${netCDF_INCLUDE_DIRS}
                               ${CMAKE_CURRENT_SOURCE_DIR}
                             )
 

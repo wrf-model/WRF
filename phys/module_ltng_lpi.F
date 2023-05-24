@@ -7,15 +7,15 @@ MODULE module_ltng_lpi
 ! However, we don't check for collapsing cell (so as not to require use of halo).
 ! This means that lpi is also calculated in cells that are no longer (on average) growing
 ! For a "complete" lightning forecast scheme, please see:
-!http://journals.ametsoc.org/doi/abs/10.1175/WAF-D-11-00144.1
+!https://doi.org/10.1175/WAF-D-11-00144.1
 !(Predicting Cloud-to-Ground and Intracloud Lightning in Weather Forecast Models)
 
 CONTAINS
 !===================================================================
 !
-  SUBROUTINE calclpi(qv,qc, qr, qi, qs, qg, qh                            &
-                 ,w,z,dz8w,pi_phy,th_phy,p_phy,rho_phy                    &
-                 ,lpi&
+  SUBROUTINE calclpi(qv,qc, qr, qi, qs, qg                         &
+                 ,w,z,dz8w,pi_phy,th_phy,p_phy,rho_phy             &
+                 ,lpi                                              &
                  ,ids,ide, jds,jde, kds,kde                        &
                  ,ims,ime, jms,jme, kms,kme                        &
                  ,its,ite, jts,jte, kts,kte                        &
@@ -35,7 +35,7 @@ CONTAINS
                                                               qi, &
                                                               qr, &
                                                               qs, &
-                                                              qg,qh
+                                                              qg
 
       REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          INTENT(IN ) ::  w, z
@@ -85,7 +85,7 @@ CONTAINS
           qc1d(k)=qc(i,k,j)
           ql1d(k)=qc(i,k,j)+qr(i,k,j)
           qi1d(k)=qi(i,k,j)
-          qti1d(k)=qi(i,k,j)+qs(i,k,j)+qg(i,k,j)+qh(i,k,j)
+          qti1d(k)=qi(i,k,j)+qs(i,k,j)+qg(i,k,j)
           qs1d(k)=qs(i,k,j)
 !         qg1d(k)=qg(i,k,j)+qh(i,k,j)
 ! Hail doesn't usually charge
@@ -103,6 +103,7 @@ CONTAINS
       END DO
       return
       end subroutine calclpi
+
       subroutine &
      &  calc_lpi(ql3d,qi3d,qs3d,qg3d,w3d,t3d,height,lpi,t_base,t_top,nk,nke)
       implicit none
@@ -125,6 +126,9 @@ CONTAINS
       real num_s,den_s
       real num_i,den_i
       real q_isg
+      real small_num
+
+      small_num=1.e-10
       icnt=0
       do k=1,nke
         top=height(k)
@@ -138,18 +142,19 @@ CONTAINS
       ave_z=0
       del_z_tot=0
       lpi=0
+
       do k=1,nke-1
        if (t3d(k).le.t_base.and.t3d(k).gt.t_top)then ! set temp range
         
         den_i = qi3d(k)+qg3d(k)     
         den_s = qs3d(k)+qg3d(k)
-        if (qs3d(k).eq.0.or.qg3d(k).eq.0.)then !checks for zeroes
+        if (qs3d(k).le.small_num.or.qg3d(k).le.small_num)then !checks for zeroes
          den_s=10000.
          num_s = 0.
         else
          num_s = sqrt(qs3d(k)*qg3d(k))   
         end if
-        if (qi3d(k).eq.0.or.qg3d(k).eq.0.)then  ! checks for zeroes
+        if (qi3d(k).le.small_num.or.qg3d(k).le.small_num)then  ! checks for zeroes
          den_i=10000.
          num_i = 0.
         else
@@ -157,7 +162,7 @@ CONTAINS
         end if
         q_isg = qg3d(k)*(num_i/den_i+num_s/den_s)  ! ice "fract"-content
 
-        if (ql3d(k).eq.0.or.q_isg.eq.0)then
+        if (ql3d(k).le.small_num.or.q_isg.eq.0)then
           num=0
           den=10000.
         else
@@ -173,7 +178,6 @@ CONTAINS
 !
       if (del_z_tot.eq.0)del_z_tot=100000
       lpi=ave_z/del_z_tot
-       
 !
       return
       end subroutine calc_lpi

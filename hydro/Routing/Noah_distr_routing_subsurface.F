@@ -244,7 +244,8 @@ SUBROUTINE SUBSFC_RTNG(subrt_data, subrt_static, subrt_input, subrt_output, CWAT
     !     if(subrt_static%rt_option .eq. 1) then
     CALL ROUTE_SUBSURFACE1(subrt_data%properties%distance_to_neighbor, &
                            subrt_data%properties%zwattablrt, &
-                           subrt_data%properties%lksatrt, subrt_data%properties%soldeprt, &
+                           subrt_data%properties%lksatrt, subrt_data%properties%nexprt, &
+                           subrt_data%properties%soldeprt, &
                            subrt_static%IXRT, subrt_static%JXRT, &
                            subrt_data%properties%surface_slope, &
                            subrt_data%properties%max_surface_slope_index, &
@@ -563,7 +564,7 @@ END SUBROUTINE FINDZWAT
 !  - Adapted from Wigmosta, 1994
 !  - Returns qsub=DQSUB which in turn becomes SUBFLO in head calc.
 !===================================================================================================
-SUBROUTINE ROUTE_SUBSURFACE1(dist, z, latksat, soldep, &
+SUBROUTINE ROUTE_SUBSURFACE1(dist, z, latksat, nexp, soldep, &
                              XX, YY, SO8RT, SO8RT_D, &
                              CWATAVAIL, SUBDT, QSUBDRY, QSUBDRYT, qsub)
 #ifdef MPP_LAND
@@ -581,6 +582,7 @@ SUBROUTINE ROUTE_SUBSURFACE1(dist, z, latksat, soldep, &
    real, intent(in), dimension(XX,YY)      :: z ! depth to water table (m)
    real, intent(in), dimension(XX,YY)      :: latksat
                                               ! lateral saturated hydraulic conductivity (m/s)
+   real, intent(in), dimension(XX,YY)      :: nexp ! latksat decay coefficient
    real, intent(in), dimension(XX,YY)      :: soldep ! soil depth (m)
    real, intent(in), dimension(XX,YY,8)    :: SO8RT ! terrain slope in all directions (m/m)
    integer, intent(in), dimension(XX,YY,3) :: SO8RT_D ! steepest terrain slope cell (i, j, index)
@@ -603,7 +605,6 @@ SUBROUTINE ROUTE_SUBSURFACE1(dist, z, latksat, soldep, &
    ! Local arrays
    real*8, DIMENSION(XX,YY) :: qsub_tmp, QSUBDRY_tmp ! temp trackers for fluxes (m3/s)
    ! Local parameters
-   real, parameter :: nexp=1.0  ! local power law exponent
    real :: tmp_dist(9)
 
    ! Initialize temp variables
@@ -651,7 +652,7 @@ SUBROUTINE ROUTE_SUBSURFACE1(dist, z, latksat, soldep, &
                endif
 
                ! Do the rest if the lowest grid can be found.
-               hh = ( 1 - ( z(i,j) / soldep(i,j) ) ) ** nexp
+               hh = ( 1 - ( z(i,j) / soldep(i,j) ) ) ** nexp(i,j)
                ksat = latksat(i,j)
 
                if (hh .lt. 0.) then
@@ -662,7 +663,7 @@ SUBROUTINE ROUTE_SUBSURFACE1(dist, z, latksat, soldep, &
 
                ! Calculate flux from cell
                ! AD_NOTE: gamma and qqsub are negative when flow is out of cell
-               gamma = -1.0 * ( (dist(i,j,index) * ksat * soldep(i,j)) / nexp ) * beta
+               gamma = -1.0 * ( (dist(i,j,index) * ksat * soldep(i,j)) / nexp(i,j) ) * beta
                qqsub = gamma * hh
 
                ! AD_NOTE: Moved this water available constraint from outside qsub calc loop
@@ -686,7 +687,7 @@ SUBROUTINE ROUTE_SUBSURFACE1(dist, z, latksat, soldep, &
                      "so8RT=",so8RT(i,j,index),"latksat=",ksat, &
                      "tan(beta)=",tan(beta),i,j,z(i,j),z(IXX0,JYY0)
                   print*, "ixx0=",ixx0, "jyy0=",jyy0
-                  print*, "soldep =", soldep(i,j), "nexp=",nexp
+                  print*, "soldep =", soldep(i,j), "nexp=",nexp(i,j)
                   call hydro_stop("In ROUTE_SUBSURFACE1() - qqsub should be negative")
                endif
 

@@ -53,6 +53,7 @@ MODULES =                                 \
         module_data_rrtmgaeropt.o         \
         module_data_megan2.o              \
         module_data_soa_vbs.o             \
+        module_data_soa_vbs_het.o         \
         module_data_sorgam.o              \
         module_data_sorgam_vbs.o          \
         module_ftuv_subs.o                \
@@ -130,6 +131,7 @@ MODULES =                                 \
         module_sorgam_aqchem.o            \
         module_sorgam_vbs_aqchem.o        \
         module_aerosols_soa_vbs.o         \
+        module_aerosols_soa_vbs_het.o     \
         module_aerosols_sorgam.o          \
         module_aerosols_sorgam_vbs.o      \
         module_bioemi_megan2.o            \

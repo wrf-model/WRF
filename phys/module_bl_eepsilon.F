@@ -6,9 +6,24 @@
 !   refenrences: Langland and Liou (1996, mwr, 124, 905-918)
 !                Zhang et al.      (2020, mwr, 148, 1121-1145)
 !######################################################################
+! 
+!  Updates since the original release
+!  03/2023
+!  Added the cloud top cooling effect for stratocumulus, which is similar
+!      to the one used in the MYNN PBL scheme. The critial step is to
+!      idendity stratocumulus. We used the method by Marquet and Bechtold (2020)
+!  Added addtinal source term for stable boundary layer in the epsilon 
+!      equation to represent the energy drain on the eddy scale
+!      (Zeng et al. (2020))
+!  Fixed a bug for the TKE global varaible. A new variable pek_pbl is defined 
+!  instead of  using tke_pbl in Register.EM_COMMON. Now pek_pbl,pep_pbl,pek_adv
+!  and pep_adv are all on the half levels. 
+!  Addded a few tweaks
+!
+!######################################################################
 module module_bl_eeps
 
-   use module_model_constants, only:rgas=>r_d,   &
+   use module_model_constants, only:rgas=>r_d,rv=>r_v, &
    &       t13=>Prandtl,ep1=>EP_1,ep2=>EP_2,grv=>g, &
    &       akv=>KARMAN,cp,rcp,xlv,xls,xlf,p1000mb
      
@@ -20,10 +35,13 @@ module module_bl_eeps
    real, private, parameter :: akvmx = 1600.
    real, private, parameter :: ricr=0.25,bt=5.0
    real, private, parameter :: minpek = 1.0e-4
-   real, private, parameter :: minpep = 1.0e-6
-   real, private, parameter :: maxpek = 80.
-   real, private, parameter :: maxpep = 2.0
+   real, private, parameter :: minpep = 1.0e-7
+   real, private, parameter :: maxpek = 160.
+   real, private, parameter :: maxpep = 25.0
+   real, private, parameter :: zfmin = 0.01
    integer,private,parameter:: bl_eeps_tkeadv = 1
+!Adding top-down diffusion driven by cloud-top radiative cooling
+   integer,private,parameter:: bl_eeps_topdown = 1
 !---------------------------------------------------------------
 ! ci--- five constants used in TKE tubrbulence closure scheme
 !---------------------------------------------------------------
@@ -38,7 +56,7 @@ contains
 !-------------------------------------------------------------------------------
 !
    subroutine eeps(u3d,v3d,t3d,qv3d,qc3d,qi3d,qr3d,qs3d,qg3d,p3d,pi3d,    &
-                  rublten,rvblten,rthblten,                               &
+                  rho3d,rthraten,rublten,rvblten,rthblten,                &
                   rqvblten,rqcblten,rqiblten,                             &
                   pek,pep,                                                &
                   dz8w,psfc,qsfc,tsk,ust,rmol,wspd,                       &
@@ -64,6 +82,9 @@ contains
 !               (note: if P_QI<PARAM_FIRST_SCALAR this should be zero filled)
 !-- p3d         3d pressure (pa)
 !-- pi3d        3d exner function (dimensionless)
+!-- rho3d       3d air density (kg/m^3)
+!-- rthraten    theta tendency due to
+!               radiation parameterization (K/s)
 !-- rublten     u tendency due to
 !               pbl parameterization (m/s/s)
 !-- rvblten     v tendency due to
@@ -126,13 +147,17 @@ contains
                                                                           t3d, &
                                                                          dz8w, &
                                                                           u3d, &
-                                                                          v3d
+                                                                          v3d, &
+                                                                        rho3d
    
    real,     dimension( ims:ime, kms:kme, jms:jme )                          , &
              optional                                                        , &
              intent(in   )   ::                                          qr3d, &
                                                                          qs3d, &
                                                                          qg3d
+
+   real,     dimension( ims:ime, kms:kme, jms:jme )                          , &
+             intent(in)   ::                                         rthraten
 
    real,     dimension( ims:ime, kms:kme, jms:jme )                          , &
              intent(inout)   ::                                       rublten, &
@@ -182,7 +207,9 @@ contains
                                                               q6, &
                                                               t1, &
                                                               ghtl, &
-                                                              prsl
+                                                              prsl, &
+                                                              rho1, &
+                                                         rthraten1
       real,     dimension( its:ite, kts:kte ) ::          pek2d,pep2d
       real,     dimension( its:ite, kts:kte+1 ) ::        exh2d,exm2d
       real,     dimension( its:ite) ::               psfc1,ust1,rmol1,  &
@@ -248,17 +275,15 @@ contains
           end if
           ghtl(i,zz)=zl(i,k)
           prsl(i,zz) = p3d(i,k,j)
+          rho1(i,zz)=rho3d(i,k,j)
+          rthraten1(i,zz)=rthraten(i,k,j)
           if(bl_eeps_tkeadv==1)then
-            if(k.ne.1) then 
-              pek(i,k,j) = 0.5*(pek_adv(i,k,j)+pek_adv(i,k-1,j))
-              pep(i,k,j) = 0.5*(pep_adv(i,k,j)+pep_adv(i,k-1,j))
-            else
-              pek(i,k,j) = minpek
-              pep(i,k,j) = minpep
-            end if
+            pek2d(i,zz)= min(maxpek,max(minpek,pek_adv(i,k,j)))
+            pep2d(i,zz)= min(maxpep,max(minpep,pep_adv(i,k,j)))
+          else
+            pek2d(i,zz)= min(maxpek,max(minpek,pek(i,k,j)))
+            pep2d(i,zz)= min(maxpep,max(minpep,pep(i,k,j)))
           end if
-          pek2d(i,zz)= min(maxpek,max(minpek,pek(i,k,j)))
-          pep2d(i,zz)= min(maxpep,max(minpep,pep(i,k,j)))
         end do
         pp = pp + 1
       end do
@@ -284,7 +309,7 @@ contains
         tsk1(i)  = tsk(i,j)
       end do
 ! 
-      call eeps2d(u1,v1,t1,q1,q2,q3,q4,q5,q6,prsl,ghtl,ghti,pek2d,pep2d &
+      call eeps2d(u1,v1,t1,q1,q2,q3,q4,q5,q6,prsl,ghtl,ghti,rho1,rthraten1,pek2d,pep2d &
               ,psfc1,ust1,rmol1,wspd1,xland1,qsfc1,hfx1,qfx1,tsk1       &
               ,dt,dx,itimestep,exh2d,exm2d,pblh1,kpbl1,im,kx)
 !
@@ -317,19 +342,14 @@ contains
 
       do i=its,ite
         pblh(i,j) = pblh1(i)
-        kpbl(i,j) = kpbl1(i)
+        kpbl(i,j) = kx-kpbl1(i)+1
       end do
 
       if(bl_eeps_tkeadv==1)then
         do k=kts,kte
           do i=its,ite
-            if(k.ne.kte) then
-              pek_adv(i,k,j) = 0.5*(pek(i,k,j)+pek(i,k+1,j))
-              pep_adv(i,k,j) = 0.5*(pep(i,k,j)+pep(i,k+1,j))
-            else
-              pek_adv(i,k,j) = 0.5*pek(i,k,j)
-              pep_adv(i,k,j) = 0.5*pep(i,k,j)
-            end if
+             pek_adv(i,k,j) = pek(i,k,j)
+             pep_adv(i,k,j) = pep(i,k,j)
           end do
         end do
       end if
@@ -341,7 +361,7 @@ contains
 !
 !-------------------------------------------------------------------------------
 !
-   subroutine eeps2d(pu,pv,tz,pqv,pqc,pqi,pqr,pqs,pqg,prs,poz,zz,pek,pep,       &
+   subroutine eeps2d(pu,pv,tz,pqv,pqc,pqi,pqr,pqs,pqg,prs,poz,zz,rho,rthraten,pek,pep,       &
                   psfcpa,ust,rmol,wspd,xland,qsfc,hfx,qfx,tsk,                  &
                   dt,dx,itimestep,k_h,k_m,pblh,kpbl,lq,km)
 !-------------------------------------------------------------------------------
@@ -368,7 +388,9 @@ contains
                                                               pqc, &
                                                               pqi, &
                                                               pek, &
-                                                              pep
+                                                              pep, &
+                                                              rho, &
+                                                         rthraten
   
    real,     dimension( lq,km ),intent(in)      ::            prs, &
                                                               poz, &
@@ -382,8 +404,8 @@ contains
    integer,  dimension( lq ),intent(out)                   ::  kpbl
 
 ! Local Vars
-   real,     dimension( lq,km ) :: fac,psp,pt,ztv,szv,disht,up2
-   real,     dimension( lq,km ) :: qvs,st,sh,rich,richb,dum2,dzz,doz
+   real,     dimension( lq,km ) :: fac,psp,pt,ztv,szv,disht,up2,cpm
+   real,     dimension( lq,km ) :: qvs,st,sh,rich,richb,dum2,dzz,doz,st0,rich0
    real,     dimension( lq,km ) :: am,src,src1,ax,bx,cx,ac,ab,ba,alt
    real,     dimension( lq,km-1 ) :: ax1,bx1,cx1,yy1,amt
    real,     dimension( lq,km+1 ) :: akm,akh,pnt
@@ -391,14 +413,25 @@ contains
    real,     dimension( lq)    :: tkm,zkm,qkm,us2,us,dens,wstar2,sflux
    real,     dimension( lq)    :: rm2,sfa,hs,hq
    real,     dimension( lq)    :: gamat,gamaq
-   real,     dimension( lq,km) :: sgk1,sgk2 
+   real,     dimension( lq,km) :: sgk1,sgk2,edrain 
    integer ::  j,k,mdt,lvl
-   real    ::  dtt,dum,dum0,alh,eqp,qvsw,qvsi,faf,rdz,du,dv,dss
+   real    ::  dtt,dum,dum0,alh,eqp,qvsw,qvsi,faf,rdz,du,dv,dss,bvf,rbdts
    real    ::  tk,qvk,alk,af,ag,aks,aco
-   real    ::  duj,alv0,richf,rch,alv,ak,cpm
+   real    ::  duj,alv0,richf,rch,alv,ak
    real    ::  govrth,bfx0,wstar3,coef
+
+! Local Vars for top-down diffusion
+   integer,  dimension( lq)    :: kminrad,kcld,k700,k950
+   logical,  dimension( lq)    :: flg,flg1,scuflg
+   real,     dimension( lq)    :: zl1,wm3,ent_eff,radsum,minrad,zminrad
+   real,     dimension( lq)    :: eis
+   real,     dimension( lq,km) :: pci,TKEprodTD,zfac,zfacent
+   real    :: dthvx,tmp1,temps,templ
+   integer :: ktop,kk1,kk2
+   real    :: radflux,rcldb,rvls,he0,he1,he2
+!end top down
    
-   mdt = min(6,max(3,int(dt/10.0+0.1)))
+   mdt  = 1 + int(sqrt(dt/9.0)+0.00001)
    dtt = dt/mdt
 
 !  dzz for dz between full levels, doz for dz between half levels
@@ -407,6 +440,9 @@ contains
        dzz(j,k) = zz(j,k)-zz(j,k+1)
        alt(j,k) = dt/dzz(j,k)
        up2(j,k)=grv/max(us2min,pu(j,k)*pu(j,k)+pv(j,k)*pv(j,k))
+       TKEprodTD(j,k) = 0.0
+       zfac(j,k) = 0.0
+       zfacent(j,k) = 0.0
      enddo
    enddo
 
@@ -418,7 +454,6 @@ contains
 !
    do j=1,lq
      doz(j,km)= 2.0*poz(j,km) ! not used
-!     wstar2(j)= 0.0          ! it will be assigned values later
    enddo
 !
    do k=1,km-1
@@ -438,9 +473,11 @@ contains
    do j=1,lq
       psp(j,k)=(prs(j,k)/p1000mb)**rcp
       pt(j,k)=tz(j,k)/psp(j,k)
+      cpm(j,k) = cp*(1.+0.8*pqv(j,k))
       dum=1.0+ep1*pqv(j,k)
       ztv(j,k)=tz(j,k)*dum
       szv(j,k)=pt(j,k)*dum
+      pci(j,k) = pqc(j,k) + pqi(j,k)
       fac(j,k) = pqc(j,k) + pqi(j,k) + pqr(j,k) + pqs(j,k) + pqg(j,k)
       cx(j,k)=1.0+pqv(j,k)+fac(j,k)
 
@@ -507,7 +544,7 @@ contains
 !
       do j=1,lq
         pblh(j)=poz(j,km)
-        kpbl(j)=1
+        kpbl(j)=km
         lvl=km
         do k=km-1,5,-1
           if(richb(j,k).ge.ricr) then
@@ -520,6 +557,7 @@ contains
           dum=(poz(j,lvl)-poz(j,lvl+1))/(richb(j,lvl)-richb(j,lvl+1))
           pblh(j)=max(poz(j,lvl+1),poz(j,lvl)-(richb(j,lvl)-ricr)*dum)
           pblh(j)=min(pblh(j),poz(j,lvl))
+          kpbl(j)=lvl
         endif
       end do
 
@@ -531,20 +569,18 @@ contains
         qkm(j) = pqv(j,km)
         sfa(j) = tsk(j)*(p1000mb/psfcpa(j))**rcp
         dens(j) = psfcpa(j)/(rgas*tkm(j)*(1.+ep1*qkm(j)))
-        cpm = cp * (1.+0.81*qkm(j))
 
-        rm2(j)=ust(j)*ust(j)/wspd(j)
-        hs(j)=hfx(j)/(dens(j)*cpm)
-        hq(j)=qfx(j)/dens(j)
-!
         sh(j,km)=0.0
         st(j,km)=0.0
+        rm2(j)=ust(j)*ust(j)/wspd(j)
+        hs(j)=hfx(j)/(dens(j)*cpm(j,km))
+        hq(j)=qfx(j)/dens(j)
+!
         duj=ust(j)*ust(j)
         pep(j,km)=duj*ust(j)/(akv*zkm(j))
         pep(j,km) = min(maxpep,max(minpep,pep(j,km)))
         govrth = grv/pt(j,km)
-        sflux(j) = hfx(j)/dens(j)/cpm + &
-                   qfx(j)/dens(j)*ep1*pt(j,km)
+        sflux(j) = hs(j) + hq(j)*ep1*pt(j,km)
         bfx0    = max(sflux(j),0.)
         wstar3  = govrth*bfx0*pblh(j)
         wstar2(j)  = (wstar3**2)**t13
@@ -552,7 +588,7 @@ contains
         rich(j,km) = grv*zkm(j)*  &
             log(szv(j,km)/(sfa(j)*(1.+ep1*qsfc(j))))/(wspd(j)**2.)
 
-        if(rmol(j).lt.0. .and. sflux(j).gt.0) then
+        if(rmol(j).lt.0.0 .and. sflux(j).gt.0.0) then
           pek(j,km)=3.75*duj+0.2*wstar2(j)+duj*((-zkm(j)*rmol(j))**2.)**t13
         else
           pek(j,km)=3.75*duj
@@ -563,13 +599,12 @@ contains
 
 ! to recalculate pblh here
       do j=1,lq
-        if(rmol(j).lt.0. .and. sflux(j).gt.0) then
+        if(rmol(j).lt.0.0 .and. sflux(j).gt.0.0) then
           dss=szv(j,km)+min(5.0,bt*sflux(j)/(max(0.1,sqrt(wstar2(j)))))
           do k=1,km
             richb(j,k)=poz(j,k)*(szv(j,k)/dss-1.0)*up2(j,k)
           end do
 
-          pblh(j)=poz(j,km)
           lvl=km
           do k=km-1,5,-1
             if(richb(j,k).ge.ricr) then
@@ -582,14 +617,14 @@ contains
             dum=(poz(j,lvl)-poz(j,lvl+1))/(richb(j,lvl)-richb(j,lvl+1))
             pblh(j)=max(poz(j,lvl+1),poz(j,lvl)-(richb(j,lvl)-ricr)*dum)
             pblh(j)=min(pblh(j),poz(j,lvl))
-            kpbl(j)=km-lvl+1
+            kpbl(j)=lvl
           end if
         end if
       end do
 
 ! to add the countergradient term
       do j=1,lq
-        if(rmol(j).lt.0.0 .and. sflux(j).gt.0) then
+        if(rmol(j).lt.0.0 .and. sflux(j).gt.0.0) then
           du=max(0.1,sqrt(wstar2(j)))
           gamat(j)=max(bt*hs(j)/(pblh(j)*du),0.)
           gamaq(j)=max(bt*hq(j)/(pblh(j)*du),0.)
@@ -598,20 +633,162 @@ contains
           gamaq(j)=0.0
         endif
       end do
+
+! to add TKE source driven by stratocumulus cloud top cooling
+! a switch bl_eeps_topdown controls if it is on or off
+    if (bl_eeps_topdown.eq.1)then
+      do j=1,lq
+         scuflg(j)=.true.
+         flg(j)   =.true.
+         flg1(j)  =.true.
+         minrad(j)  = 100.
+         kminrad(j) = km
+         kcld(j)    = km
+         k700(j)    = km
+         k950(j)    = km
+         zminrad(j) = poz(j,km)
+         zl1(j)     = poz(j,km)
+      end do
+
+!  look for stratocumulus
+!  look for the highest model level we will use
+      do k=km,2,-1
+      do j=1,lq
+        if(flg(j) .and. (prs(j,km)-prs(j,k))>3.0e4) then
+          k700(j)=k
+          flg(j)=.false.
+        end if
+        if(flg1(j) .and. (prs(j,km)-prs(j,k))>5.e3) then
+          k950(j)=k
+          flg1(j)=.false.
+        end if
+      end do
+      end do
+      ktop = minval(k700)
+
+!  calculate EIS based on Marquet and Bechtold (2020)
+      do j=1,lq
+          kk1 = k700(j)
+          kk2 = k950(j)
+          he1 = cp*tz(j,kk1)*(1.+5.87*(pqv(j,kk1)+pci(j,kk1))) &
+               -xlv*pqc(j,kk1)-xls*pqi(j,kk1)+grv*poz(j,kk1)
+          he2 = cp*tz(j,kk2)*(1.+5.87*(pqv(j,kk2)+pci(j,kk2))) &
+               -xlv*pqc(j,kk2)-xls*pqi(j,kk2)+grv*poz(j,kk2)
+          he0 = cp*tz(j,km)*(1.+5.87*(pqv(j,km)+pci(j,km))) &
+               -xlv*pqc(j,km)-xls*pqi(j,km)+grv*poz(j,km) 
+          eis(j) = max(he1-he2,he2-he0)
+          eis(j) = eis(j)/cp
+          if(eis(j) < 5) scuflg(j)=.false.
+      end do
+
+!  look for the highest cloud level
+      do j=1,lq
+         flg(j)=scuflg(j)
+      end do
+
+      do k=ktop,km
+      do j=1,lq
+        if(flg(j) .and. k >= k700(j) .and. pci(j,k) >= 1.e-6) then
+           kcld(j)=k
+           flg(j)=.false.
+        end if
+      end do
+      end do
+
+!   find the level of the minimum radiative cooling
+      do k=ktop,km
+      do j=1,lq
+        if(scuflg(j)) then
+          if(k >= kcld(j) .and. pci(j,k) >= 1.e-6) then
+            if(rthraten(j,k) < minrad(j)) then
+              minrad(j)=rthraten(j,k)
+              kminrad(j)=k
+              zminrad(j)=poz(j,k)
+            endif
+          endif
+        endif
+      end do
+      end do
+
+! to exclude some scenarios
+!  1) cloud top should be below PBL height
+!  2) minimum radiative cooling level can't too close to surface
+!  3) minimum radiative cooling should be negative
+      do j=1,lq
+        if(scuflg(j) .and. minrad(j)>=0.)              scuflg(j)=.false.
+        if(scuflg(j) .and. kcld(j)<kpbl(j))            scuflg(j)=.false.
+        if(scuflg(j) .and. kminrad(j)>=(km-1))         scuflg(j)=.false.
+      end do
+
+      do j=1,lq
+             if (scuflg(j)) then
+                k = kminrad(j)
+                templ=tz(j,k)
+                !rvls is ws at full level
+                rvls=100.*6.112*exp(17.67*(templ-273.16)/(templ-29.65))*(ep2/prs(j,k))
+                temps=templ + (pqv(j,k)+pci(j,k)-rvls)/(cp/xlv  +  ep2*xlv*rvls/(rgas*templ**2))
+                rvls=100.*6.112*exp(17.67*(temps-273.15)/(temps-29.65))*(ep2/prs(j,k))
+                rcldb=max(pqv(j,k)+pci(j,k)-rvls,0.)
+
+                !entrainment efficiency
+                dthvx     = szv(j,k-2)-szv(j,k)
+                dthvx     = max(dthvx,0.1)
+                tmp1      = xlv / cp * rcldb/(psp(j,k)*dthvx)
+                !Originally from Nichols and Turton (1986), where a2 = 60, but lowered
+                !here to 8, as in Grenier and Bretherton (2001).
+                ent_eff(j)   = 0.2 + 0.2*8.*tmp1
+             end if
+      end do
+
+      do k=km,ktop,-1
+         do j=1,lq
+             if(scuflg(j) .and. k<=(kminrad(j)+1) .and. k>=kcld(j)) then
+                   radflux=rthraten(j,k)*psp(j,k)         !converts theta/s to temp/s
+                   radflux=radflux*cp/grv*(prs(j,k)-prs(j,k-1)) ! converts temp/s to W/m^2
+                   if (radflux < 0.0 ) radsum(j)=abs(radflux)+radsum(j)
+             end if
+         end do
+      end do
+
+      do j=1,lq
+             if(scuflg(j)) then
+                k = kminrad(j)
+                radsum(j)=min(radsum(j),120.0)
+                bfx0 = max(radsum(j)/rho(j,k)/cp,0.)
+                wm3(j)    = grv/szv(j,k)*bfx0*min(pblh(j),1500.) ! this is wstar3(i)
+             end if
+      end do
+
+      do k=km,ktop,-1
+         do j=1,lq
+             if(scuflg(j) .and. k>=kcld(j)) then
+                   !Analytic vertical profile
+                   zfac(j,k) = min(max((1.-(poz(j,k)-zl1(j))/(zminrad(j)-zl1(j))),zfmin),1.)
+                   zfacent(j,k) = 10.*max((zminrad(j)-poz(j,k))/zminrad(j),0.0)*(1.-zfac(j,k))**3
+                   !Calculate TKE production = 2(g/TH)(w'TH'), where w'TH' = A(TH/g)wstar^3/PBLH,
+                   !A = ent_eff, and wstar is associated with the radiative cooling at top of PBL.
+                   !An analytic profile controls the magnitude of this TKE prod in the vertical. 
+                   TKEprodTD(j,k)=2.*ent_eff(j)*wm3(j)/max(pblh(j),100.)*zfacent(j,k)
+                   TKEprodTD(j,k)= max(TKEprodTD(j,k),0.0)
+             end if !end cloud check
+          end do ! end lq loop
+       end do  ! end km loop
+
+    end if !end top-down check
 !
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !  time integration of tke and ep equations
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++
       do k=1,km
       do j=1,lq
-        richf=0.1912408
-        if(rich(j,k).lt.0.195) then
+        richf=0.1620092
+        if(rich(j,k).lt.0.145) then
           richf=0.6588*(rich(j,k)+0.1776-sqrt(rich(j,k)*rich(j,k)- &
               0.3221*rich(j,k)+0.03156))
-          richf=max(-1000.0,min(0.1912408,richf))
+          richf=max(-1000.0,min(0.1620092,richf))
         endif
-        dum2(j,k)=1.122346
-        if(richf.lt.0.16) dum2(j,k)=1.318*(0.2231-richf) &
+        dum2(j,k)=1.116893
+        if(richf.lt.0.1620092) dum2(j,k)=1.318*(0.2231-richf) &
               /(0.2341-richf)
       end do
       end do
@@ -627,14 +804,21 @@ contains
           akh(j,k)=sgk2(j,k)+akh(j,k)
           akm(j,k)=min(akvmx,akm(j,k))
           akh(j,k)=min(akvmx,akh(j,k))
-          if(zz(j,k).gt.pblh(j))then
-            src(j,k)=akm(j,k)*sh(j,k)-akh(j,k)*st(j,k)
-            src1(j,k)=max(akm(j,k)*sh(j,k),akm(j,k)*sh(j,k)-akh(j,k)*st(j,k))
+          if(st(j,k).gt.0.0) then
+            bvf=sqrt(st(j,k))
+            rbdts=min(1.,sqrt(rich(j,k)/0.145))
+            edrain(j,k)=0.1/c3*rbdts*bvf*pek(j,k)
+          else
+            edrain(j,k)=0.0 
+          endif
+          if(poz(j,k).gt.pblh(j))then
+            src(j,k)=akm(j,k)*sh(j,k)-akh(j,k)*st(j,k)+TKEprodTD(j,k)
+            src1(j,k)=akm(j,k)*sh(j,k)-akh(j,k)*st(j,k)+edrain(j,k)+TKEprodTD(j,k)
           else
             src(j,k)=akm(j,k)*sh(j,k)-akh(j,k)*(st(j,k) &
-                   -2.0*grv*gamat(j)/(szv(j,k+1)+szv(j,k)))
-            src1(j,k)=max(akm(j,k)*sh(j,k),akm(j,k)*sh(j,k)-akh(j,k)*(st(j,k) &
-                   -2.0*grv*gamat(j)/(szv(j,k+1)+szv(j,k))))
+                   -2.0*grv*gamat(j)/(szv(j,k+1)+szv(j,k)))+TKEprodTD(j,k)
+            src1(j,k)=akm(j,k)*sh(j,k)-akh(j,k)*(st(j,k) &
+                   -2.0*grv*gamat(j)/(szv(j,k+1)+szv(j,k)))+edrain(j,k)+TKEprodTD(j,k)
           end if
         end do
       end do
@@ -727,7 +911,7 @@ contains
           akm(j,k)=min(akvmx,akm(j,k))
           akh(j,k)=min(akvmx,akh(j,k))
           pnt(j,k)=akh(j,k)
-          if(zz(j,k).gt.pblh(j))pnt(j,k)=0.
+          if(poz(j,k).gt.pblh(j)) pnt(j,k)=0.
           akm(j,k)=akm(j,k)/doz(j,k-1)
           akh(j,k)=akh(j,k)/doz(j,k-1)
         end do
@@ -780,7 +964,7 @@ contains
         dum=pep(j,k)
         if(dum0.le.1.e-6) dum0=0.0
         if(dum.le.1.e-6) dum=0.0
-        disht(j,k)=0.5*(dum0+dum)/(cp*(1.+.81*pqv(j,k)))
+        disht(j,k)=0.5*(dum0+dum)/cpm(j,k)
         pt(j,k)=pt(j,k)+disht(j,k)*dt/psp(j,k)+alt(j,k)* &
                 gamat(j)*(pnt(j,k+1)-pnt(j,k))
       end do
@@ -840,9 +1024,8 @@ contains
           else
             pqc(j,k)=pqc(j,k)+pqi(j,k)
           endif
-          cpm=cp*(1.0+0.81*pqv(j,k))
           alh=3.1484e6-2.37e3*tz(j,k)
-          tz(j,k)=tz(j,k)-(xls-alh)*pqi(j,k)/cpm
+          tz(j,k)=tz(j,k)-(xls-alh)*pqi(j,k)/cpm(j,k)
           pqi(j,k)=epsl
         endif
       end do

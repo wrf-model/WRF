@@ -23,6 +23,7 @@ MODULE MODULE_mpp_ReachLS
 
   use module_mpp_land, only:  io_id, my_id, mpp_status, mpp_land_max_int1, mpp_land_sync, HYDRO_COMM_WORLD
   use hashtable
+  use mpi
   implicit none
 
 
@@ -65,7 +66,6 @@ MODULE MODULE_mpp_ReachLS
 
 
 
-  include "mpif.h"
 
   integer,allocatable,dimension(:) :: sDataRec  ! sending data size
   integer,allocatable,dimension(:) :: rDataRec  ! receiving data size
@@ -1517,5 +1517,3 @@ MODULE MODULE_mpp_ReachLS
   end subroutine TONODE2RSL8
 
 END MODULE MODULE_mpp_ReachLS
-
-

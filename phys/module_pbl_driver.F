@@ -27,7 +27,6 @@ CONTAINS
                  ,stepbl,warm_rain                                 &
                  ,kpbl,mixht,ct,lh,snow,xice                       &
                  ,znu, znw, mut, p_top                             &
-! paj
                  ,ctopo,ctopo2,windfarm_opt,power                  &
                  ,ysu_topdown_pblmix                               &
                  ,shinhong_tke_diag                                &
@@ -39,11 +38,11 @@ CONTAINS
                  ,exch_temf,cf3d_temf,cfm_temf                    &
                  ,flhc,flqc                                        &
               ! MYNN
-                 ,qke,Sh3d                                         &
+                 ,qke,Sh3d,Sm3d                                    &
                  ,qke_adv,bl_mynn_tkeadvect                        & !ACF for QKE advection
                  ,tsq,qsq,cov,rmol,ch,qcg,grav_settling            & 
-                 ,dqke,qWT,qSHEAR,qBUOY,qDISS,bl_mynn_tkebudget    &
-                 ,bl_mynn_cloudpdf                                 &
+                 ,dqke,qWT,qSHEAR,qBUOY,qDISS,tke_budget           &
+                 ,bl_mynn_closure,bl_mynn_cloudpdf                 &
                  ,bl_mynn_mixlength                                &
                  ,icloud_bl,qc_bl,qi_bl,cldfra_bl                  &
                  ,bl_mynn_edmf,bl_mynn_edmf_mom,bl_mynn_edmf_tke   &
@@ -57,7 +56,7 @@ CONTAINS
                  ,nupdraft,maxMF,ktop_plume                        &
                  ,spp_pbl,pattern_spp_pbl                          &
               ! EEPS
-                 ,pep,pek_adv,pep_adv                              &
+                 ,pek,pep,pek_adv,pep_adv                          &
                  ,restart,cycling                                  &
                  ,ids,ide, jds,jde, kds,kde                        &
                  ,ims,ime, jms,jme, kms,kme                        &
@@ -100,7 +99,9 @@ CONTAINS
                ,b_u_bep,b_v_bep,b_t_bep,b_q_bep            &
                ,sf_bep,vl_bep                              &
                ,sf_sfclay_physics,sf_urban_physics         &
-               ,tke_pbl,el_pbl                             &
+               ,tke_pbl,diss_pbl,tpe_pbl                   &
+               ,tke_adv,diss_adv,tpe_adv                   &
+               ,pr_pbl,el_pbl                              &
                ,wu_tur,wv_tur,wt_tur,wq_tur                &
 ! variables  for GBM PBL
                ,exch_tke, rthraten                         &
@@ -134,7 +135,8 @@ CONTAINS
      &        ,tracer,tracer_tend,num_tracer                         &
      &        ,scalar_pblmix,tracer_pblmix                           &
 #if (WRF_CHEM == 1)
-               ,chem,vd,nchem,kdvel,ndvel,num_vert_mix             &
+              ,mynn_chem_vertmx,chem,vd,nchem,kdvel                  &
+     &        ,ndvel,num_vert_mix                                    &
 #endif
 !
 ! FASDAS
@@ -149,10 +151,10 @@ CONTAINS
 #if (EM_CORE==1)
    USE module_state_description, ONLY :                            &
                    YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME,&
-                   QNSEPBLSCHEME,MYNNPBLSCHEME2,MYNNPBLSCHEME3,BOULACSCHEME,&
+                   QNSEPBLSCHEME,MYNNPBLSCHEME,BOULACSCHEME,         &
                    CAMUWPBLSCHEME,BEPSCHEME,BEP_BEMSCHEME,MYJSFCSCHEME, &
                    FITCHSCHEME,SHINHONGSCHEME,                       &
-                   TEMFPBLSCHEME,GBMPBLSCHEME,EEPSSCHEME,                  &
+                   TEMFPBLSCHEME,GBMPBLSCHEME,EEPSSCHEME,KEPSSCHEME,                  &
                    CAMMGMPSCHEME,p_qi,p_qni,p_qnc,param_first_scalar,& !CAMMGMPSCHEME, p_qni,p_qnc is used for camuwpbl scheme
                    p_qnwfa,p_qnifa,p_qnbca
 #if ( WRFPLUS == 1 )
@@ -191,8 +193,9 @@ CONTAINS
    USE module_bl_mfshconvpbl
    USE module_bl_gbmpbl
 #if (EM_CORE==1)
-   USE module_bl_mynn
+   USE module_bl_mynn_wrapper
    USE module_bl_eeps
+   USE module_bl_keps
    USE module_bl_fogdes
    USE module_wind_fitch
 #endif
@@ -210,6 +213,7 @@ CONTAINS
    !      9. camuwpbl
    !      10. temfpbl
    !      11. shinhongpbl
+   !      17. kepsstpe
    !      98. surface_drag
    !      99. mrfpbl
    !      12. gbmpbl
@@ -466,7 +470,7 @@ CONTAINS
 
 !For EEPS PBL scheme
     REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ),            &
-               INTENT(INOUT   )    ::                        pep
+               INTENT(INOUT   )    ::            pek, pep
     REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ),        &
                INTENT(INOUT) ::                  pek_adv,pep_adv
 
@@ -537,7 +541,10 @@ CONTAINS
                                                          RVBLTEN, &
                                                         RTHBLTEN, &
                                            EXCH_H,EXCH_M,TKE_PBL, &
-                                                        RTHRATEN  ! for GBM PBL scheme
+                                                DISS_PBL,TPE_PBL, &
+                                        TKE_ADV,DISS_ADV,TPE_ADV, &
+                                                 PR_PBL,RTHRATEN
+
  REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ),            &
                INTENT(OUT)    ::                       WU_TUR,WV_TUR,WT_TUR,WQ_TUR
 !
@@ -545,7 +552,7 @@ CONTAINS
 !MYNN
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ),     &
           INTENT(INOUT) ::        tsq,qsq,cov, & !,k_m,k_h,k_q &
-                                  qke,Sh3d,                    &
+                                  qke,Sh3d,Sm3d,               &
                                   dqke,qWT,qSHEAR,qBUOY,qDISS, &
                                   qc_bl,qi_bl,cldfra_bl
 
@@ -555,8 +562,7 @@ CONTAINS
                                    sub_thl3D,sub_sqv3D,        &
                                    det_thl3D,det_sqv3D
 
-   INTEGER, OPTIONAL, INTENT(IN)  :: bl_mynn_tkebudget,        &
-                                     grav_settling,            &
+   INTEGER, OPTIONAL, INTENT(IN)  :: grav_settling,            &
                                      bl_mynn_cloudpdf,         &
                                      bl_mynn_mixlength,        &
                                      bl_mynn_edmf,             &
@@ -566,17 +572,18 @@ CONTAINS
                                      bl_mynn_output,           &
                                      bl_mynn_cloudmix,         &
                                      bl_mynn_mixqt,            &
-                                     icloud_bl
+                                     icloud_bl,                &
+                                     tke_budget
 
-!ACF-QKE advection start
+   REAL, OPTIONAL, INTENT(IN)  :: bl_mynn_closure
+
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), &
         & INTENT(INOUT) :: qke_adv
    LOGICAL, OPTIONAL, INTENT(IN) :: bl_mynn_tkeadvect
-!ACF-QKE advection end
-! Katata-added -
+
    REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,              &
         &    INTENT(INOUT)::                               vdfg
-! Katata-end
+
    INTEGER, OPTIONAL, DIMENSION( ims:ime , jms:jme ),           &
         &    INTENT(OUT) ::               nupdraft,ktop_plume
    REAL, OPTIONAL, DIMENSION( ims:ime , jms:jme ),              &
@@ -760,6 +767,7 @@ CONTAINS
     INTEGER, INTENT(IN) :: nchem, kdvel,ndvel,num_vert_mix
     REAL, INTENT(INOUT),  DIMENSION( ims:ime, kms:kme, jms:jme,nchem ) :: CHEM
     REAL, INTENT(IN)   ,  DIMENSION( ims:ime, kdvel, jms:jme, ndvel )  :: VD
+    LOGICAL, INTENT(IN) :: mynn_chem_vertmx
 #endif
 
 !  LOCAL  VAR
@@ -951,9 +959,9 @@ CONTAINS
                call wrf_message("WARNING: When using an adaptive time-step the boundary layer"// &
                                 " time-step should be 0 (i.e., equivalent to model time-step).  ")
                call wrf_message("In order to proceed, for boundary layer calculations, the "// &
-                                "boundary layer time-step"// &
-                                 " will be rounded to the nearest minute," )
-                call wrf_message("possibly resulting in innacurate results.")
+                                "boundary layer time-step "// &
+                                "will be rounded to the nearest minute," )
+               call wrf_message("possibly resulting in innacurate results.")
             END IF
             DTBL=bldt*60
          else
@@ -1595,7 +1603,7 @@ CONTAINS
 
 #if (EM_CORE==1)
 
-        CASE (MYNNPBLSCHEME2, MYNNPBLSCHEME3)
+        CASE (MYNNPBLSCHEME)
 
            IF ( PRESENT( qv_curr )  .AND. PRESENT( qc_curr )  .AND. &
                 PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
@@ -1603,14 +1611,9 @@ CONTAINS
                 PRESENT( rqniblten ) .AND. PRESENT( qni_curr ) .AND.&
                 PRESENT(qke) .AND. PRESENT(tsq) .AND.               &
                 PRESENT(qsq) .AND. PRESENT(cov) .AND.               &
-                PRESENT(rmol) .AND.                                 &
-                PRESENT(qcg) .AND. PRESENT(ch) .AND.                &
-                PRESENT(grav_settling) .AND.                        &
-                PRESENT(bl_mynn_tkebudget) .AND.                    &
-!ACF,JOE-QKE advection
-                PRESENT(qke_adv) .AND. PRESENT(bl_mynn_tkeadvect) .AND.&
-!ACF,JOE-end
-                PRESENT(vdfg) ) THEN
+                PRESENT(rmol) .AND. PRESENT(ch) .AND.               &
+                PRESENT(tke_budget) .AND. PRESENT(qke_adv) .AND.    &
+                PRESENT(bl_mynn_tkeadvect)  ) THEN
 
               CALL wrf_debug(100,'in MYNNPBL')
 
@@ -1623,30 +1626,33 @@ CONTAINS
               if (pert_mynn .and. multi_perturb == 1) then
                 allocate (qke_tmp(its:ite, kts:kte, jts:jte))
 
-                call Add_multi_perturb_pbl_perturbations (perts_qvapor, perts_qcloud, &
-                  perts_th, perts_tke, pert_mynn_qv, pert_mynn_qc, pert_mynn_t, pert_mynn_qke, &
-                  th_phy, qke, qke_adv, qv_curr, qc_curr, bl_mynn_tkeadvect, qke_tmp, its, ite, jts, jte, &
+                call Add_multi_perturb_pbl_perturbations (               &
+                  perts_qvapor, perts_qcloud, perts_th, perts_tke,       &
+                  pert_mynn_qv, pert_mynn_qc, pert_mynn_t, pert_mynn_qke,&
+                  th_phy, qke, qke_adv, qv_curr, qc_curr,                &
+                  bl_mynn_tkeadvect, qke_tmp, its, ite, jts, jte,        &
                   ims, ime, jms, jme, kms, kme, kts, kte)
               end if
 
-              CALL  mynn_bl_driver(&
+              CALL mynnedmf_wrapper_run(                                 &
                    &initflag=initflag,restart=restart,cycling=cycling,   &
-                   &grav_settling=grav_settling,                         &
-                   &delt=dtbl,dz=dz8w,dx=dx,znt=znt,                     &
+                   &delt=dtbl,dz=dz8w,dxc=dx,znt=znt,                    &
                    &u=u_phy,v=v_phy,w=w,th=th_phy,qv=qv_curr,            &
                    &qc=qc_curr,qi=qi_curr,                               &
                    &qnc=qnc_curr,qni=qni_curr,                           &
                    &QNWFA=qnwfa_curr,QNIFA=qnifa_curr,QNBCA=qnbca_curr,  &
+!                   &ozone=ozone,                                         &
                    &p=p_phy,exner=pi_phy,rho=rho,T3D=t_phy,              &
-                   &xland=xland,ts=tsk,qsfc=qsfc,qcg=qcg,ps=psfc,        &
+                   &xland=xland,ts=tsk,qsfc=qsfc,ps=psfc,                &
                    &ust=ust,ch=ch,hfx=hfx,qfx=qfx,rmol=rmol,wspd=wspd,   &
                    &uoce=uoce,voce=voce,                                 & !Ocean currents
-                   &vdfg=vdfg,                                           & !Katata -added
-                   &Qke=qke,Sh3d=Sh3d,                                   &
-                   &qke_adv=qke_adv,bl_mynn_tkeadvect=bl_mynn_tkeadvect, &
+                   &Qke=qke,qke_adv=qke_adv,Sh3d=Sh3d,Sm3d=Sm3d,         &
 #if (WRF_CHEM == 1)
-                   &chem3d=chem,vd3d=vd,nchem=nchem,kdvel=kdvel,         & ! WA 7/31/15
+                   &mix_chem=mynn_chem_vertmx,                           &
+                   &chem3d=chem,vd3d=vd,nchem=nchem,kdvel=kdvel,         &
                    &ndvel=ndvel,num_vert_mix=num_vert_mix,               &
+!                   &FRP_MEAN=FRP_MEAN,EMIS_ANT_NO=EMIS_ANT_NO,           & !to be included soon
+!                   &fire_turb=enh_vermix,                                & !to be included soon
 #endif
                    &Tsq=tsq,Qsq=qsq,Cov=cov,                             &
                    &RUBLTEN=rublten,RVBLTEN=rvblten,RTHBLTEN=rthblten,   &
@@ -1654,51 +1660,54 @@ CONTAINS
                    &RQNCBLTEN=rqncblten,RQNIBLTEN=rqniblten,             &
                    &RQNWFABLTEN=rqnwfablten,RQNIFABLTEN=rqnifablten,     &
                    &RQNBCABLTEN=rqnbcablten,                             &
+!                   &Ro3BLTEN=ro3blten,                                   &
                    &EXCH_H=exch_h,EXCH_M=exch_m,                         &
-                   &pblh=pblh,KPBL=KPBL                                  &
-                   &,el_pbl=el_pbl                                       &
-                   &,dqke=dqke                                           &
-                   &,qWT=qWT,qSHEAR=qSHEAR,qBUOY=qBUOY,qDISS=qDISS       &
-                   &,WSTAR=wstar,DELTA=delta                             & ! for grims shallow-cu
-                   &,bl_mynn_tkebudget=bl_mynn_tkebudget                 &
-                   &,bl_mynn_cloudpdf=bl_mynn_cloudpdf                   &
-                   &,bl_mynn_mixlength=bl_mynn_mixlength                 &
-                   &,icloud_bl=icloud_bl,qc_bl=qc_bl,qi_bl=qi_bl         &
-                   &,cldfra_bl=cldfra_bl                                 &
-                   &,bl_mynn_edmf=bl_mynn_edmf                           &
-                   &,bl_mynn_edmf_mom=bl_mynn_edmf_mom                   &
-                   &,bl_mynn_edmf_tke=bl_mynn_edmf_tke                   &
-                   &,bl_mynn_mixscalars=bl_mynn_mixscalars               &
-                   &,bl_mynn_output=bl_mynn_output                       &
-                   &,bl_mynn_cloudmix=bl_mynn_cloudmix                   &
-                   &,bl_mynn_mixqt=bl_mynn_mixqt                         &
-                   &,edmf_a=edmf_a,edmf_w=edmf_w,edmf_qt=edmf_qt         &
-                   &,edmf_thl=edmf_thl,edmf_ent=edmf_ent,edmf_qc=edmf_qc &
-                   &,sub_thl3D=sub_thl3D,sub_sqv3D=sub_sqv3D             &                                                                               
-                   &,det_thl3D=det_thl3D,det_sqv3D=det_sqv3D             &
-                   &,nupdraft=nupdraft,maxMF=maxMF                       &
-                   &,ktop_plume=ktop_plume                               &
-                   &,spp_pbl=spp_pbl,pattern_spp_pbl=pattern_spp_pbl     &
-                   &,RTHRATEN=RTHRATEN                                   &
-                   &,FLAG_QC=flag_qc,FLAG_QI=flag_qi                     &
-                   &,FLAG_QNC=flag_qnc,FLAG_QNI=flag_qni                 &
-                   &,FLAG_QNWFA=flag_qnwfa,FLAG_QNIFA=flag_qnifa         &
-                   &,FLAG_QNBCA=flag_qnbca                               &
-                   ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
-                   ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
-                   ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
-                   )
+                   &pblh=pblh,KPBL=KPBL,                                 &
+                   &el_pbl=el_pbl,                                       &
+                   &dqke=dqke,                                           &
+                   &qWT=qWT,qSHEAR=qSHEAR,qBUOY=qBUOY,qDISS=qDISS,       &
+                   &qc_bl=qc_bl,qi_bl=qi_bl,cldfra_bl=cldfra_bl,         &
+                   &edmf_a=edmf_a,edmf_w=edmf_w,edmf_qt=edmf_qt,         &
+                   &edmf_thl=edmf_thl,edmf_ent=edmf_ent,edmf_qc=edmf_qc, &
+                   &sub_thl3D=sub_thl3D,sub_sqv3D=sub_sqv3D,             &
+                   &det_thl3D=det_thl3D,det_sqv3D=det_sqv3D,             &
+                   &nupdraft=nupdraft,maxMF=maxMF,                       &
+                   &ktop_plume=ktop_plume,                               &
+                   &RTHRATEN=RTHRATEN,                                   &
+                   &bl_mynn_tkeadvect=bl_mynn_tkeadvect,                 &
+                   &tke_budget=tke_budget,                               &
+                   &bl_mynn_cloudpdf=bl_mynn_cloudpdf,                   &
+                   &bl_mynn_mixlength=bl_mynn_mixlength,                 &
+                   &icloud_bl=icloud_bl,                                 &
+                   &bl_mynn_edmf=bl_mynn_edmf,                           &
+                   &bl_mynn_edmf_mom=bl_mynn_edmf_mom,                   &
+                   &bl_mynn_edmf_tke=bl_mynn_edmf_tke,                   &
+                   &bl_mynn_mixscalars=bl_mynn_mixscalars,               &
+                   &bl_mynn_output=bl_mynn_output,                       &
+                   &bl_mynn_cloudmix=bl_mynn_cloudmix,                   &
+                   &bl_mynn_mixqt=bl_mynn_mixqt,                         &
+                   &bl_mynn_closure=bl_mynn_closure,                     &
+                   &spp_pbl=spp_pbl,pattern_spp_pbl=pattern_spp_pbl,     &
+                   &FLAG_QC=flag_qc,FLAG_QI=flag_qi,                     &
+                   &FLAG_QNC=flag_qnc,FLAG_QNI=flag_qni,                 &
+                   &FLAG_QNWFA=flag_qnwfa,FLAG_QNIFA=flag_qnifa,         &
+                   &FLAG_QNBCA=flag_qnbca,                               &
+                   &IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde,     &
+                   &IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme,     &
+                   &ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      )
 
               if (pert_mynn .and. multi_perturb == 1) then
-                call Remove_multi_perturb_pbl_perturbations (perts_qvapor, perts_qcloud, &
-                  perts_th, perts_tke, pert_mynn_qv, pert_mynn_qc, pert_mynn_t, pert_mynn_qke, &
-                  th_phy, qke, qke_adv, qv_curr, qc_curr, bl_mynn_tkeadvect, qke_tmp, its, ite, jts, jte, &
+                call Remove_multi_perturb_pbl_perturbations (            &
+                  perts_qvapor, perts_qcloud, perts_th, perts_tke,       &
+                  pert_mynn_qv, pert_mynn_qc, pert_mynn_t, pert_mynn_qke,&
+                  th_phy, qke, qke_adv, qv_curr, qc_curr,                &
+                  bl_mynn_tkeadvect, qke_tmp, its, ite, jts, jte,        &
                   ims, ime, jms, jme, kms, kme, kts, kte)
 
                   deallocate (qke_tmp)
               end if
            ELSE
-               WRITE ( message , FMT = '(A,20(L1,1X))' )            &
+               WRITE ( message , FMT = '(A,17(L1,1X))' )            &
                  'present: '//                                      &
                  'qv_curr, '//                                      &
                  'qc_curr, '//                                      &
@@ -1713,13 +1722,10 @@ CONTAINS
                  'qsq, '//                                          &
                  'cov, '//                                          &
                  'rmol, '//                                         &
-                 'qcg, '//                                          &
                  'ch, '//                                           &
-                 'grav_settling, '//                                &
-                 'bl_mynn_tkebudget, '//                            &
+                 'tke_budget, '//                                   &
                  'qke_adv, '//                                      &
-                 'bl_mynn_tkeadvect, '//                            &
-                 'vdfg = ' ,                                        &
+                 'bl_mynn_tkeadvect ' ,                             &
                   PRESENT( qv_curr ) ,                              &
                   PRESENT( qc_curr ) ,                              &
                   PRESENT( qi_curr ) ,                              &
@@ -1733,13 +1739,10 @@ CONTAINS
                   PRESENT( qsq      ) ,                             &
                   PRESENT( cov      ) ,                             &
                   PRESENT( rmol     ) ,                             &
-                  PRESENT( qcg      ) ,                             &
                   PRESENT( ch       ) ,                             &
-                  PRESENT( grav_settling),                          &
-                  PRESENT( bl_mynn_tkebudget) ,                     &
+                  PRESENT( tke_budget) ,                            &
                   PRESENT( qke_adv  ) ,                             &
-                  PRESENT( bl_mynn_tkeadvect) ,                     &
-                  PRESENT( vdfg )
+                  PRESENT( bl_mynn_tkeadvect)
                CALL wrf_debug(0,message)
               CALL wrf_error_fatal('Lack arguments to call MYNN pbl')
            ENDIF
@@ -1805,7 +1808,7 @@ CONTAINS
                    PRESENT( qi_curr )                            .AND. &
                    PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
                    PRESENT( rqiblten )                           .AND. &
-                   PRESENT( pep )                                .AND. &
+                   PRESENT( pek )      .AND. PRESENT( pep)       .AND. &
                    PRESENT( pek_adv )  .AND. PRESENT( pep_adv ) ) THEN
 
                 CALL wrf_debug(100,'in EEPSPBL')
@@ -1814,7 +1817,8 @@ CONTAINS
                    U3D=u_phytmp,V3D=v_phytmp,T3D=t_phy                  &
                   ,QV3D=qv_curr,QC3D=qc_curr,QI3D=qi_curr               &
                   ,QR3D=qr_curr,QS3D=qs_curr,QG3D=qg_curr               &
-                  ,P3D=p_phy,PI3D=pi_phy,PEK=tke_pbl,PEP=pep            &
+                  ,P3D=p_phy,PI3D=pi_phy,PEK=pek,PEP=pep                &
+                  ,RHO3D=rho,RTHRATEN=rthraten                          &
                   ,RUBLTEN=rublten,RVBLTEN=rvblten                      &
                   ,RTHBLTEN=rthblten,RQVBLTEN=rqvblten                  &
                   ,RQCBLTEN=rqcblten,RQIBLTEN=rqiblten,KPBL=kpbl        &
@@ -1844,6 +1848,39 @@ CONTAINS
                CALL wrf_debug(0,message)
                CALL wrf_error_fatal('Lack arguments to call EEPS pbl')
            ENDIF
+
+
+               CASE (KEPSSCHEME)
+
+             CALL wrf_debug(100,'in keps')
+             CALL KEPS(TSK=tsk,MOL=mol,XTIME=itimestep,FRC_URB2D=frc_urb2d            &
+              , FLAG_BEP=flag_bep  &
+              ,DZ8W=dz8w,DT=dt,U_PHY=u_phytmp                                  &
+              ,V_PHY=v_phytmp,TH_PHY=th_phy                                    &
+              ,PI_PHY=pi_phy,RTHRATEN=RTHRATEN,P8W=p8w                         &
+              ,RHO=rho,QV_CURR=qv_curr,QC_CURR=qc_curr,HFX=hfx                 &
+              ,QFX=qfx,USTAR=ust,CP=cp,G=g                                     &
+              ,RUBLTEN=rublten,RVBLTEN=rvblten,RTHBLTEN=rthblten               &
+              ,RQVBLTEN=rqvblten,RQCBLTEN=rqcblten                             &
+              ,TKE_PBL=tke_pbl,DISS_PBL=diss_pbl,TPE_PBL=tpe_pbl               &
+              ,TKE_ADV=tke_adv,DISS_ADV=diss_adv,TPE_ADV=tpe_adv               &
+              ,PR_PBL=pr_pbl                                                   &
+              ,WU=wu_tur,WV=wv_tur,WT=wt_tur,WQ=wq_tur                         &
+              ,EXCH_H=exch_h,EXCH_M=exch_m,PBLH=pblh                           &
+              ,A_U_BEP=a_u_bep,A_V_BEP=a_v_bep,A_T_BEP=a_t_bep                 &
+              ,A_Q_BEP=a_q_bep                                                 &
+              ,B_U_BEP=b_u_bep,B_V_BEP=b_v_bep                                 &
+              ,B_T_BEP=b_t_bep                                                 &
+              ,B_Q_BEP=b_q_bep                                                 &
+              ,B_E_BEP=b_e_bep                                                 &
+              ,SF_BEP=sf_bep,VL_BEP=vl_bep                                     &
+              ,BR=br,ZNT=znt                                                   &
+              ,PSIM=psim,PSIH=psih                                             &
+              ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde                 &
+              ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme                 &
+              ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte  )
+
+
 
         CASE (BOULACSCHEME)
 
@@ -2725,17 +2762,5 @@ CONTAINS
         end subroutine invert
 
 ! ===6=8===============================================================72
-
-
-
-
-
-
-
-
-
-
-
-
 
 END MODULE module_pbl_driver

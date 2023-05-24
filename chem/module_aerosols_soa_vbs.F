@@ -43,13 +43,11 @@ CONTAINS
 
    SUBROUTINE  soa_vbs_driver ( id,ktau,dtstep,t_phy,moist,aerwrf,p8w,  &
                t8w,alt,p_phy,chem,rho_phy,dz8w,rh,z,z_at_w,             & 
-!liqy
-              gamn2o5,cn2o5,kn2o5,yclno2,snu,sac,                       &
 !liqy - 20150319
                h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,               &
                vcsulf_old,                                              &
                vdrog3,                                                  &
-               kemit,brch_ratio,do_isorropia,                           &
+               kemit,brch_ratio,                                        &
                ids,ide, jds,jde, kds,kde,                               &
                ims,ime, jms,jme, kms,kme,                               &
                its,ite, jts,jte, kts,kte                                )
@@ -72,8 +70,6 @@ CONTAINS
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                       &
          INTENT(INOUT ) ::                                             &
-!liqy
-              gamn2o5,cn2o5,kn2o5,yclno2,snu,sac,          &
 !liqy - 20150319
            h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3
 
@@ -98,7 +94,6 @@ CONTAINS
    REAL, DIMENSION( ims:ime , kms:kme-0 , jms:jme )         ,         &
          INTENT(IN   ) ::   vcsulf_old
    REAL, INTENT(IN   ) ::   dtstep
-   LOGICAL, INTENT(IN ) :: do_isorropia
 
       REAL drog_in(ldrog_vbs)    ! anthropogenic AND biogenic organic aerosol precursors [ug m**-3 s**-1]
 
@@ -130,8 +125,6 @@ CONTAINS
                     ! input NH3 to CBLK  [ug/m^3]
       REAL nh3_in
                     ! input SO4 vapor    [ug/m^3]
-      REAL hcl_in
-
       REAL vsulf_in
 
       REAL so4rat_in
@@ -167,19 +160,11 @@ CONTAINS
       REAL mwnh3
       PARAMETER (mwnh3=17.03061)
 
-! molecular weight for HCL
-      REAL mwhcl
-      PARAMETER (mwhcl=36.46100)
 
 !bs molecular weight for Elemental Carbon
       REAL mwec
       PARAMETER (mwec=12.0)
-!liqy
-          REAL mwn2o5
-          PARAMETER (mwn2o5=108.009)
 
-          REAL mwclno2
-          PARAMETER (mwclno2=81.458)
 !liqy-20140905
 ! they aren't used
 !!rs molecular weight
@@ -273,11 +258,8 @@ INTEGER :: i,j,k,l,debug_level
                nh3_in = max(epsilc,chem(i,k,j,p_nh3)*convfac*mwnh3)
 !liqy
 !uncomment hcl_in = max(epsilc,chem(i,k,j,p_hcl)*convfac*mwhcl)
-               hcl_in = max(epsilc,chem(i,k,j,p_hcl)*convfac*mwhcl)
+!               hcl_in = max(epsilc,chem(i,k,j,p_hcl)*convfac*mwhcl)
 !comment hcl_in = 0.
-!               hcl_in = 0.
-              cblk(1,vn2o5) = max(epsilc,chem(i,k,j,p_n2o5)*convfac*mwn2o5)
-              cblk(1,vclno2) =max(epsilc,chem(i,k,j,p_clno2)*convfac*mwclno2)
 !liqy-20140905
                vsulf_in = max(epsilc,chem(i,k,j,p_sulf)*convfac*mwso4)
 
@@ -348,13 +330,6 @@ INTEGER :: i,j,k,l,debug_level
         cblk(1,VAC3     ) =   max(epsilc,ac3(i,k,j))
 
         cblk(1,VCOR3    ) =   max(epsilc,cor3(i,k,j))
-!liqy
-        cblk(1,vgamn2o5) = max(epsilc,gamn2o5(i,k,j))
-        cblk(1,vcn2o5)   = max(epsilc,cn2o5(i,k,j))
-        cblk(1,vkn2o5)   = max(epsilc,kn2o5(i,k,j))
-        cblk(1,vyclno2)  = max(epsilc,yclno2(i,k,j))
-        cblk(1,vsnu)     = max(epsilc,snu(i,k,j))
-        cblk(1,vsac)     = max(epsilc,sac(i,k,j))
 !liqy-20150319
         cblk(1,vcvasoa1)  =   chem(i,k,j,p_cvasoa1)
         cblk(1,vcvasoa2)  =   chem(i,k,j,p_cvasoa2)
@@ -389,19 +364,12 @@ INTEGER :: i,j,k,l,debug_level
 !comment cblk(1,VCLAI   ) = 0.
 !         cblk(1,VCLAJ   ) = 0.
 !         cblk(1,VCLAI   ) = 0.
-                cblk(1,vcaaj) = chem(i,k,j,p_caaj)
-                cblk(1,vcaai) = chem(i,k,j,p_caai)
-                cblk(1,vkaj) = chem(i,k,j,p_kaj)
-                cblk(1,vkai) = chem(i,k,j,p_kai)
-                cblk(1,vmgaj) = chem(i,k,j,p_mgaj)
-                cblk(1,vmgai) = chem(i,k,j,p_mgai)
 !liqy-20140623
 !
 !rs. nitrate, nh3, sulf
       cblk(1,vsulf)  =   vsulf_in
       cblk(1,vhno3)  =   nitrate_in
       cblk(1,vnh3)   =   nh3_in
-      cblk(1,vhcl)   =   hcl_in
       cblk(1,VNH4AJ) =   chem(i,k,j,p_nh4aj)
       cblk(1,VNH4AI) =   chem(i,k,j,p_nh4ai)
       cblk(1,VNU0  ) =   max(1.e7,chem(i,k,j,p_nu0))
@@ -414,8 +382,7 @@ INTEGER :: i,j,k,l,debug_level
 ! condvap_in is removed
       CALL rpmmod3(nspcsda,blksize,k,dtstep,10.*p(k),t(k),rh0(k),nitrate_in,nh3_in, &
         vsulf_in,so4rat_in,drog_in,ldrog_vbs,ncv,nacv,eeci_in,eecj_in, &
-        eorgi_in,eorgj_in,epm25i,epm25j,epmcoarse,soilrat_in,cblk,i,j,k,brrto, &
-        do_isorropia )
+        eorgi_in,eorgj_in,epm25i,epm25j,epmcoarse,soilrat_in,cblk,i,j,k,brrto)
 
 ! calculation of brch_ratio
         brch_ratio(i,k,j)= brrto
@@ -435,12 +402,6 @@ INTEGER :: i,j,k,l,debug_level
         chem(i,k,j,p_claj) = cblk(1,VCLAJ   )
         chem(i,k,j,p_clai) = cblk(1,VCLAI   )
 
-                chem(i,k,j,p_caaj) = cblk(1,vcaaj)
-                chem(i,k,j,p_caai) = cblk(1,vcaai)
-                chem(i,k,j,p_kaj) = cblk(1,vkaj)
-                chem(i,k,j,p_kai) = cblk(1,vkai)
-                chem(i,k,j,p_mgaj) = cblk(1,vmgaj)
-                chem(i,k,j,p_mgai) = cblk(1,vmgai)
 !liqy-20140616
 
         chem(i,k,j,p_asoa1j)  =   cblk(1,VASOA1J)
@@ -496,13 +457,6 @@ INTEGER :: i,j,k,l,debug_level
       nu3(i,k,j) = cblk(1,VNU3     )
       ac3(i,k,j) = cblk(1,VAC3     )
       cor3(i,k,j) = cblk(1,VCOR3    )
-!liqy
-       gamn2o5(i,k,j)= cblk(1,vgamn2o5)
-       cn2o5(i,k,j)  = cblk(1,vcn2o5)
-       kn2o5(i,k,j)  = cblk(1,vkn2o5)
-       yclno2(i,k,j) = cblk(1,vyclno2)
-       snu(i,k,j)    = cblk(1,vsnu)
-       sac(i,k,j)    = cblk(1,vsac)
 !liqy-20150319
 
     chem(i,k,j,p_cvasoa1)= cblk(1,VCVASOA1 )
@@ -535,10 +489,6 @@ INTEGER :: i,j,k,l,debug_level
       chem(i,k,j,p_hno3)=max(epsilc,cblk(1,vhno3)/CONVFAC/MWHNO3)
       chem(i,k,j,p_nh3)=max(epsilc,cblk(1,vnh3)/CONVFAC/MWNH3)
 
-!liqy
-                chem(i,k,j,p_hcl) = max(epsilc,cblk(1,vhcl)/CONVFAC/MWHCL)
-                chem(i,k,j,p_n2o5) = max(epsilc,cblk(1,vn2o5)/CONVFAC/MWN2O5)
-                chem(i,k,j,p_clno2) = max(epsilc,cblk(1,vclno2)/CONVFAC/MWCLNO2)
 !liqy-20140905
       enddo          ! k-loop
 100  continue ! i,j-loop ends
@@ -895,19 +845,6 @@ INTEGER :: i,j,k,l
       if (p_claj >= param_first_scalar) &
          cblk(1,VCLAJ ) =   max(epsilc,chem(i,k,j,p_claj)*convfac2)
 
-!liqy
-      if (p_caai >= param_first_scalar) &
-         cblk(1,VCAAI ) =   max(epsilc,chem(i,k,j,p_caai)*convfac2)
-      if (p_caaj >= param_first_scalar) &
-         cblk(1,VCAAJ ) =   max(epsilc,chem(i,k,j,p_caaj)*convfac2)
-      if (p_kai >= param_first_scalar) &
-         cblk(1,VKAI ) =   max(epsilc,chem(i,k,j,p_kai)*convfac2)
-      if (p_kaj >= param_first_scalar) &
-         cblk(1,VKAJ ) =   max(epsilc,chem(i,k,j,p_kaj)*convfac2)
-      if (p_mgai >= param_first_scalar) &
-         cblk(1,VMGAI ) =   max(epsilc,chem(i,k,j,p_mgai)*convfac2)
-      if (p_mgaj >= param_first_scalar) &
-         cblk(1,VMGAJ ) =   max(epsilc,chem(i,k,j,p_mgaj)*convfac2)
 !liqy-20140617
 
       cblk(1,VASOA1J) =     max(epsilc,chem(i,k,j,p_asoa1j)*convfac2)  ! ug/kg-air to ug/m3
@@ -1040,12 +977,6 @@ INTEGER :: i,j,k,l
         if (p_clai >= param_first_scalar) VGSA(i, j, VCLAI )  =  VGSA(i, j, VSO4AI )
         if (p_claj >= param_first_scalar) VGSA(i, j, VCLAJ )  =  VGSA(i, j, VSO4AJ )
 !liqy           
-        if (p_caai >= param_first_scalar) VGSA(i, j, VCAAI )  =  VGSA(i,j,VSO4AI )
-        if (p_caaj >= param_first_scalar) VGSA(i, j, VCAAJ )  =  VGSA(i,j,VSO4AJ)
-        if (p_kai >= param_first_scalar) VGSA(i, j, VKAI )  =  VGSA(i, j,VSO4AI)
-        if (p_kaj >= param_first_scalar) VGSA(i, j, VKAJ )  =  VGSA(i, j,VSO4AJ)
-        if (p_mgai >= param_first_scalar) VGSA(i, j, VMGAI )  =  VGSA(i,j,VSO4AI )
-        if (p_mgaj >= param_first_scalar) VGSA(i, j, VMGAJ )  =  VGSA(i,j,VSO4AJ )
 !liqy-20140703 
         VGSA(i, j, VASOA1J ) =  VGSA(i, j, VSO4AJ )
         VGSA(i, j, VASOA1I ) =  VGSA(i, j, VSO4AI )
@@ -1413,7 +1344,7 @@ SUBROUTINE aeroproc(blksize,nspcsda,numcells,layer,cblk,dt,blkta,blkprs, &
     epm25j,eorgi,eorgj,eeci,eecj,epmcoarse,esoil,eseas,xlm,amu,dgnuc, &
     dgacc,dgcor,pmassn,pmassa,pmassc,pdensn,pdensa,pdensc,knnuc,knacc, &
     kncor,fconcn,fconca,fconcn_org,fconca_org,dmdt,dndt,cgrn3,cgra3,urn00, &
-    ura00,brna01,c30,deltaso4a,igrid,jgrid,kgrid,brrto,do_isorropia)
+    ura00,brna01,c30,deltaso4a,igrid,jgrid,kgrid,brrto)
 
 !USE module_configure, only: grid_config_rec_type
 !TYPE (grid_config_rec_type), INTENT (in) :: config_flags
@@ -1566,7 +1497,6 @@ SUBROUTINE aeroproc(blksize,nspcsda,numcells,layer,cblk,dt,blkta,blkprs, &
       REAL c30(blksize)                                                        ! by intermodal c
       REAL brrto
 !
-      LOGICAL do_isorropia
 ! *** other processes
 
 ! intermodal 3rd moment transfer r
@@ -1587,13 +1517,14 @@ SUBROUTINE aeroproc(blksize,nspcsda,numcells,layer,cblk,dt,blkta,blkprs, &
 ! *** get water, ammonium  and nitrate content:
 !     for now, don't call if temp is below -40C (humidity
 !     for this wrf version is already limited to 10 percent)
-        if(blkta(1).ge.233.15.and.blkrh(1).ge.0.1 .and. do_isorropia )then
-            CALL eql3(blksize,nspcsda,numcells,cblk,blkta,blkrh)
-        else if (blkta(1).ge.233.15.and.blkrh(1).ge.0.1 .and. (.not. do_isorropia) )then
+!        if(blkta(1).ge.233.15.and.blkrh(1).ge.0.1 .and. do_isorropia )then
+!            CALL eql3(blksize,nspcsda,numcells,cblk,blkta,blkrh)
+        if (blkta(1).ge.233.15.and.blkrh(1).ge.0.1 )then
            CALL eql4(blksize,nspcsda,numcells,cblk,blkta,blkrh)
         endif
-
-        CALL n2o5het(blksize,nspcsda,numcells,dt,cblk,blkta,blkrh,dgnuc,dgacc,dgcor,igrid,jgrid,kgrid)
+!        if ( do_n2o5het ) then
+!           CALL n2o5het(blksize,nspcsda,numcells,dt,cblk,blkta,blkrh,dgnuc,dgacc,dgcor,igrid,jgrid,kgrid)
+!        endif
 !liqy-20140709
 
 !      isorop=0
@@ -1642,141 +1573,6 @@ SUBROUTINE aeroproc(blksize,nspcsda,numcells,layer,cblk,dt,blkta,blkprs, &
     END SUBROUTINE aeroproc
 !//////////////////////////////////////////////////////////////////
 !//////////////////////////////////////////////////////////////////
-!******************************************************************************
-!liqy
-        SUBROUTINE n2o5het(blksize,nspcsda,numcells,dt,cblk,blkta,blkrh,dgnuc,dgacc,dgcor,igrid,jgrid,kgrid)
-
-! dimension of arrays
-      INTEGER blksize
-! actual number of cells in arrays
-      INTEGER numcells
-! nmber of species in CBLK        
-      INTEGER nspcsda
-      REAL cblk(blksize,nspcsda)
-          REAL dt
-! *** Meteorological information in blocked arays:
-      REAL blkta(blksize) ! Air temperature [ K ]                   
-      REAL blkrh(blksize) ! Fractional relative humidity            
-      REAL dgnuc(blksize) ! nuclei mode geometric mean diamete
-      REAL dgacc(blksize) ! accumulation geometric mean diamet
-     REAL dgcor(blksize)
-!        
-      Integer igrid,jgrid,kgrid
-
-      INTEGER lcell ! loop counter                                   
-! air temperature                             
-      REAL temp
-!relative humidity.
-      REAL rh
-!aerosol number density
-      REAL nnu
-      REAL nac
-!aerosol mean diameter
-      REAL dnu!nuclei
-      REAL dac !accumulation
-!aerosol surface area density
-      REAL snu
-      REAL sac
-!uptake of n2o5 on aerosols
-      REAL gamn2o5
-!n2o5 molecular speed 
-      REAL cn2o5
-!reaction rate constants of N2O5 hydrolysis 
-      REAL kn2o5
-!yield of clno2   
-      REAL yclno2
-
-
-      REAL ah2o
-      REAL acl
-      REAL ano3
-      REAL gn2o5
-      
-      REAL mwh2o
-      PARAMETER (mwh2o = 18.015)
-      REAL mwcl
-      PARAMETER (mwcl = 35.453)
-      REAL mwno3
-      PARAMETER (mwno3 = 62.004)
-      REAL mwn2o5
-      PARAMETER (mwn2o5 = 108.009)
-      REAL mwclno2
-      PARAMETER (mwclno2 = 81.458)
-      REAL deln2o5
-      REAL pclno2
-      REAL pno3
-
-      REAL fraci,fracj,fracij
-      REAL rgasuniv
-      PARAMETER (rgasuniv = 8.314510)
-      REAL pirs
-      PARAMETER (pirs = 3.14)
-      INTEGER xxx
-      PARAMETER (xxx = 1)
-
-      real vaer
-!==================================================             
-        DO lcell = 1, numcells
-
-
-        temp = blkta(lcell)
-        rh = blkrh(lcell)
-        nnu = cblk(lcell,vnu0)          !#/m3-dry air
-        nac = cblk(lcell,vac0)
-        dnu = dgnuc(lcell)              !m
-        dac = dgacc(lcell)
-        vaer = (pirs/6.0) * (cblk(lcell,vnu3) + cblk(lcell,vac3))
-!aerosol volume in i and j mode.
-!=================================================      
-!convert the unit from ug/m3 to mol/L (in aerosol solution)
-        ah2o = ( cblk(lcell,vh2oaj) + cblk(lcell,vh2oai) ) * 1.0E-9 / ( mwh2o*vaer)
-
-!convert the unit from ug/m3 to mol/L (in aerosol solution)
-        acl  = ( cblk(lcell,vclaj) + cblk(lcell,vclai) ) * 1.0E-9/(mwcl*vaer)
-        ano3 = ( cblk(lcell,vno3aj) + cblk(lcell,vno3ai) ) * 1.0E-9/(mwno3*vaer)
-
-! convert the unit from ug/m3 to mol/L in air atmosphere.
-        gn2o5 = cblk(lcell,vn2o5) * 1.0E-9 /mwn2o5
-
-        cblk(lcell,vgamn2o5) = 3.2E-8 * ( 1.15E6 - 1.15E6 * exp(-1.3E-1* ah2o ) ) * ( 1 - (1/((6E-2*ah2o/ano3)+1+(29*acl/ano3))))
-
-        cblk(lcell,vsnu) = nnu*dnu*dnu*esn16*pirs
-        cblk(lcell,vsac) = nac*dac*dac*esa16*pirs
-
-        cblk(lcell,vcn2o5) = SQRT( 8.0 * rgasuniv * temp * 1000 / ( pirs* mwn2o5 ) )
-        cblk(lcell,vkn2o5) = cblk(lcell,vcn2o5) * ( cblk(lcell,vsnu) +cblk(lcell,vsac) ) * cblk(lcell,vgamn2o5) / 4
-        deln2o5 = gn2o5-gn2o5*exp(-1*cblk(lcell,vkn2o5)*dt)      !mole/L in atmosphere
-
-        cblk(lcell,vyclno2)= 1/(1+ah2o/(483*acl))
-
-        pclno2=deln2o5*cblk(lcell,vyclno2)   !mol/L in atmosphere
-
-        if (acl*vaer .lt. pclno2) then
-                pclno2=abs(acl*vaer-epsilc*epsilc)
-                cblk(lcell,vyclno2)=pclno2/deln2o5
-        end if
-
-
-        pno3 = deln2o5 * ( 2 - cblk(lcell,vyclno2) ) !mole/L in atmosphere
-
-        cblk(lcell,vclno2) = cblk(lcell,vclno2) + pclno2*mwclno2*1.0E9
-
-        fraci = cblk(lcell,vso4ai)/(cblk(lcell,vso4aj)+cblk(lcell,vso4ai))
-        fracj = 1.0 - fraci
-
-        cblk(lcell,vclaj)=max(epsilc*epsilc,(acl*vaer-pclno2))*mwcl*1.0E9*fracj
-        cblk(lcell,vclai)=max(epsilc*epsilc,(acl*vaer-pclno2))*mwcl*1.0E9*fraci
-
-        cblk(lcell,vn2o5) = cblk(lcell,vn2o5)*exp(-1*cblk(lcell,vkn2o5)*dt)
-        cblk(lcell,vno3ai) = (ano3*vaer + pno3) * mwno3 * 1.0E9* fraci
-        cblk(lcell,vno3aj) = (ano3*vaer + pno3) * mwno3 * 1.0E9* fracj
-
-        END DO
-
-        END SUBROUTINE n2o5het
-!liqy-20140905          
-!//////////////////////////////////////////////////////////////////////////////
-
 
 ! *** Time stepping code advances the aerosol moments one timestep;
     SUBROUTINE aerostep(layer,blksize,nspcsda,numcells,cblk,dt,so4rat         &
@@ -2298,9 +2094,6 @@ SUBROUTINE aeroproc(blksize,nspcsda,numcells,layer,cblk,dt,blkta,blkprs, &
 !liqy
         cblk(lcell,vnaaj) = cblk(lcell,vnaaj) + cblk(lcell,vnaai)*fm3
         cblk(lcell,vclaj) = cblk(lcell,vclaj) + cblk(lcell,vclai)*fm3
-        cblk(lcell,vcaaj) = cblk(lcell,vcaaj) + cblk(lcell,vcaai)*fm3
-        cblk(lcell,vkaj)  = cblk(lcell,vkaj)  + cblk(lcell,vkai)*fm3
-        cblk(lcell,vmgaj) = cblk(lcell,vmgaj) + cblk(lcell,vmgai)*fm3
 !liqy-20140617
 
     cblk(lcell,vasoa1j) = cblk(lcell,vasoa1j) + cblk(lcell,vasoa1i)*fm3
@@ -2334,9 +2127,6 @@ SUBROUTINE aeroproc(blksize,nspcsda,numcells,layer,cblk,dt,blkta,blkprs, &
 !liqy
                   cblk(lcell,vnaai) = cblk(lcell,vnaai)*phm3
                   cblk(lcell,vclai) = cblk(lcell,vclai)*phm3
-                  cblk(lcell,vcaai) = cblk(lcell,vcaai)*phm3
-                  cblk(lcell,vkai)  = cblk(lcell,vkai)*phm3
-                  cblk(lcell,vmgai) = cblk(lcell,vmgai)*phm3
 !liqy-20140617
 
           cblk(lcell,vasoa1i) = cblk(lcell,vasoa1i)*phm3
@@ -2917,240 +2707,6 @@ END SUBROUTINE coagrate
       RETURN
     END SUBROUTINE cubic
 !///////////////////////////////////////////////////////////////////////
-
-!liqy
-!    Calculate the aerosol chemical speciation and water content.
-! cubic
-    SUBROUTINE eql3(blksize,nspcsda,numcells,cblk,blkta,blkrh)
-!***********************************************************************
-!**    DESCRIPTION:
-!	Calculates the distribution of ammonia/ammonium, nitric acid/nitrate,
-!	and water between the gas and aerosol phases as the total sulfate,
-!	ammonia, and nitrate concentrations, relative humidity and
-!	temperature change.  The evolution of the aerosol mass concentration
-!	due to the change in aerosol chemical composition is calculated.
-!**    REVISION HISTORY:
-!       prototype 1/95 by Uma and Carlie
-!       Revised   8/95 by US to calculate air density in stmt func
-!                 and collect met variable stmt funcs in one include fil
-!       Revised 7/26/96 by FSB to use block concept.
-!       Revise 12/1896 to do do i-mode calculation.
-!**********************************************************************
-!     IMPLICIT NONE
-
-! dimension of arrays
-      INTEGER blksize
-! actual number of cells in arrays
-      INTEGER numcells
-! nmber of species in CBLK        
-      INTEGER nspcsda,igrid,jgrid,kgrid
-      REAL cblk(blksize,nspcsda) 
-! *** Meteorological information in blocked arays:
-
-! main array of variables         
-      REAL blkta(blksize) ! Air temperature [ K ]                   
-      REAL blkrh(blksize) ! Fractional relative humidity            
-
-      INTEGER lcell ! loop counter                                   
-! air temperature                             
-      REAL temp
-!iamodels3
-      REAL rh
-! relative humidity                           
-      REAL so4, no3, nh3, nh4, hno3
-      REAL aso4, ano3, ah2o, anh4, gnh3, gno3
-! Fraction of dry sulfate mass in i-mode         
-      REAL fraci
-      REAL fracj
-! Fraction of dry sulfate mass in j-mode 
-
-! ISOROPIA variables double precision
-!      real(kind=8) wi(5),wt(5),wt_save(5)
-!      real(kind=8) rhi,tempi,cntrl(2)
-!      real(kind=8) gas(3),aerliq(12),aersld(9),other(6)
-!      character*15 scasi
-
-!aerosol phase na,cl. gas phase hcl. 
-                REAL ana,acl,aca,ak,amg
-                REAL ghcl
-!delta nh3, hno3, and hcl in gaseous phase.
-                real dgnh3,dgno3,dghcl
-!dmax equals to the maximum available nh4+, no3-, and cl- for evaporation.              
-                real dmax
-! ISOROPIA variables 
-             DOUBLE PRECISION WI(8), GAS(3), AERLIQ(15), AERSLD(19), CNTRL(2), &
-                                WT(8), OTHER(9), RHI, TEMPI
-             CHARACTER SCASE*15
-
-!molecular weight for all isorropia species
-
-                REAL intmw(37)
-                DATA intmw/1.008, &
-                22.990, 18.039, 35.453, 96.061, 97.069, 62.004, 18.015, &
-                17.031, 36.461, 63.012, 17.007, 40.078, 39.098, 24.305, 84.994,&
-                80.043, 58.443, 53.492, 142.041, 132.139, 120.059, 115.108, &
-                247.247, 136.139, 164.086, 110.984, 174.257, 136.167, 101.102, &
-                74.551, 120.366, 148.313, 95.211, 17.031, 63.012, 36.461 /
-
-      REAL dgnuc(blksize) ! nuclei mode geometric mean diamete
-      REAL dgacc(blksize) ! accumulation geometric mean diamet
-      REAL dgcor(blksize)
-      REAL dtstep
-
-!intmw AERLIQ Name  
-!       1       1       H+
-!       2       2       Na+
-!       3       3       NH4+
-!       4       4       Cl-
-!       5       5       SO42-
-!       6       6       HSO4-
-!       7       7       NO3-
-!       8       8       H2O
-!       9       9       NH3
-!       10      10      HCL
-!       11      11      HNO3
-!       12      12      OH-
-!       13      13      Ca2+
-!       14      14      K+
-!       15      15      Mg2+
-
-!intmw AERSLD Name
-!       16      1       NaNO3
-!       17      2       NH4NO3
-!       18      3       NaCl
-!       19      4       NH4Cl
-!       20      5       Na2SO4
-!       21      6       (NH4)2SO4
-!       22      7       NaHSO4
-!       23      8       NH4HSO4
-!       24      9       (NH4)3H(SO4)2
-!       25      10      CaSO4
-!       26      11      Ca(NO3)2
-!       27      12      CaCl2
-!       28      13      K2SO4
-!       29      14      KHSO4
-!       30      15      KNO3
-!       31      16      KCL
-!       32      17      MgSO4
-!       33      18      Mg(NO3)2
-!       34      19      MgCl2
-!intmw GAS Name
-!       35      1       NH3
-!       36      2       HNO3
-!       37      3       HCL 
-
-        character*8 date
-        character*10 time
-        character*5 zone
-        integer*4  values(8)
-
-
-      DO lcell = 1,numcells
-! equilibrium for the fine mode.          
-! *** Fetch temperature, fractional relative humidity, and air density
-        temp = blkta(lcell)
-        rh = blkrh(lcell)
-        RHI = DBLE(rh)
-        TEMPI = DBLE(temp) ! Temperature (K) provided by phys
-
-        WI(1) = DBLE(((cblk(lcell,vnaaj)  + cblk(lcell,vnaai)) &
-                   /22.99)*1.e-6)      ! sodium
-
-        WI(2) = DBLE(  &
-                ((cblk(lcell,vso4aj) +  cblk(lcell,vso4ai)) &
-                         /96.061)*1.e-6)       ! sulfate
-
-        WI(3) = DBLE(((cblk(lcell,vnh3)/(18.039-1.)) +  &
-                ((cblk(lcell,vnh4aj) +  cblk(lcell,vnh4ai)) &
-                          /18.039))*1.e-6)       ! ammoinum
-
-        WI(4) = DBLE(((cblk(lcell,vhno3)/(62.004+1.)) + &
-                ((cblk(lcell,vno3aj) +  cblk(lcell,vno3ai)) &
-                          /62.004))*1.e-6)   ! nitrate
-
-        WI(5) = DBLE(((cblk(lcell,vhcl)/(35.453+1.)) +  &
-                ((cblk(lcell,vclaj)  + cblk(lcell,vclai)) &
-                          /35.453))*1.e-6)     ! chloride
-
-        WI(6) = DBLE((cblk(lcell,vcaaj)  + cblk(lcell,vcaai)) &
-                   /40.078*1.e-6) !calcium
-
-        WI(7) = DBLE((cblk(lcell,vkaj)  + cblk(lcell,vkai)) &
-                   /39.098*1.e-6) !potassium
-
-        WI(8) = DBLE((cblk(lcell,vmgaj)  + cblk(lcell,vmgai)) &
-                   /24.305*1.e-6) !magnesium
-
-
-                CNTRL(1) = DBLE(0.) ! 0=FORWARD PROBLEM, 1=REVERSE PROBLEM 
-                CNTRL(2) = DBLE(1.) ! 0=SOLID+LIQUID AEROSOL, 1=METASTABLE 
-
-                CALL ISOROPIA2p1 (WI, RHI, TEMPI, CNTRL, &
-                        WT, GAS, AERLIQ, AERSLD, SCASE, OTHER)
-
-!****************************************************************************        
-
-                        gnh3 = real(GAS(1)*DBLE(17.031)*1.D6) ! in ug/m3
-                        anh4 = real((wt(3) - gas(1))*DBLE(18.039)*1.D6)
-                        gno3 = real(GAS(2)*DBLE(63.012)*1.D6) ! in ug/m3
-                        ano3 = real((wt(4) - gas(2))*DBLE(62.004)*1.D6)
-                        ghcl = real(GAS(3)*DBLE(36.461)*1.D6) ! in ug/m3
-                        acl = real((wt(5) - gas(3))*DBLE(35.453)*1.D6)
-
-                        aso4 = real(wt(2)*DBLE(96.061)*1.D6) ! in ug/m3
-
-                        ah2o = real(AERLIQ(8)*DBLE(18.015)*1.D6) !H2O
-                        ana = real(wt(1)*DBLE(22.99)*1.D6)
-                        aca = real(wt(6)*DBLE(40.078)*1.D6)
-                        ak  = real(wt(7)*DBLE(39.098)*1.D6)
-                        amg = real(wt(8)*DBLE(24.305)*1.D6)
-!****************************************************************************
-!****************************************************************************        
-! *** the following is an interim procedure. Assume the i-mode has the
-!     same relative mass concentrations as the total mass. Use SO4 as
-!     the surrogate. 
-
-! *** get modal fraction
-        fraci = cblk(lcell,vso4ai)/(cblk(lcell,vso4aj)+cblk(lcell,vso4ai))
-        fracj = 1.0 - fraci
-
-! *** update do i-mode
-        cblk(lcell,vso4ai) = fraci*aso4
-
-        cblk(lcell,vh2oai) = fraci*ah2o
-        cblk(lcell,vnh4ai) = fraci*anh4
-        cblk(lcell,vno3ai) = fraci*ano3
-        cblk(lcell,vnaai) = fraci*ana
-        cblk(lcell,vclai) = fraci*acl
-        cblk(lcell,vcaai) = fraci*aca
-        cblk(lcell,vkai) = fraci*ak
-        cblk(lcell,vmgai) = fraci*amg
-
-! *** update accumulation mode:
-        cblk(lcell,vso4aj) = fracj*aso4
-
-        cblk(lcell,vh2oaj) = fracj*ah2o
-        cblk(lcell,vnh4aj) = fracj*anh4
-        cblk(lcell,vno3aj) = fracj*ano3
-        cblk(lcell,vnaaj) = fracj*ana
-        cblk(lcell,vclaj) = fracj*acl
-        cblk(lcell,vcaaj) = fracj*aca
-        cblk(lcell,vkaj) = fracj*ak
-        cblk(lcell,vmgaj) = fracj*amg
-
-! *** update gas / vapor phase
-        cblk(lcell,vnh3) = gnh3
-        cblk(lcell,vhno3) = gno3
-        cblk(lcell,vhcl) = ghcl
-!        cblk(lcell,vsulf) = epsilc
-!end threatment for the equilibrium for fine mode.              
-!**************************************************************************************
-      END DO !  end loop on cells
-
-      RETURN
-
-    END SUBROUTINE eql3
-!liqy-20140709
 
                                                      
     SUBROUTINE eql4(blksize,nspcsda,numcells,cblk,blkta,blkrh)
@@ -3768,10 +3324,7 @@ END SUBROUTINE klpnuc
         cblk(lcell,vnu3) = so4fac*cblk(lcell, &
           vso4ai)+nh4fac*cblk(lcell,vnh4ai)+h2ofac*cblk(lcell, &
           vh2oai)+no3fac*cblk(lcell,vno3ai)+                   &
-          nafac*cblk(lcell,vnaai)+  clfac*cblk(lcell,vclai)+   &
-!liqy
-                  cafac*cblk(lcell,vcaai)+  kfac*cblk(lcell,vkai) + &
-                  mgfac*cblk(lcell,vmgai)+ &
+          nafac*cblk(lcell,vnaai)+  clfac*cblk(lcell,vclai) +  &
 !liqy-20140616
           orgfac*cblk(lcell, &
           vasoa1i)+orgfac*cblk(lcell,vasoa2i)+orgfac*cblk(lcell, &
@@ -3786,10 +3339,7 @@ END SUBROUTINE klpnuc
         cblk(lcell,vac3) = so4fac*cblk(lcell, &
           vso4aj)+nh4fac*cblk(lcell,vnh4aj)+h2ofac*cblk(lcell, &
           vh2oaj)+no3fac*cblk(lcell,vno3aj) +                  &
-          nafac*cblk(lcell,vnaaj)+  clfac*cblk(lcell,vclaj)+   &
-!liqy
-                  cafac*cblk(lcell,vcaaj)+  kfac*cblk(lcell,vkaj) + &
-                  mgfac*cblk(lcell,vmgaj)+ &
+          nafac*cblk(lcell,vnaaj)+  clfac*cblk(lcell,vclaj) +  &
 !liqy-20140616
           orgfac*cblk(lcell, &
           vasoa1j)+orgfac*cblk(lcell,vasoa2j)+orgfac*cblk(lcell, &
@@ -3816,8 +3366,7 @@ END SUBROUTINE klpnuc
           vbsoa3i)+cblk(lcell,vbsoa4i)+cblk(lcell,vorgpai)+cblk(lcell, &
 !          vp25ai)+cblk(lcell,veci)))
 !liqy             
-          vp25ai)+cblk(lcell,veci)+cblk(lcell,vcaai)+cblk(lcell,vkai) &
-                  +cblk(lcell,vmgai)))
+          vp25ai)+cblk(lcell,veci)))
 !liqy-20140616
 
 ! *** Accumulation-mode:
@@ -3828,8 +3377,7 @@ END SUBROUTINE klpnuc
           vbsoa3j)+cblk(lcell,vbsoa4j)+cblk(lcell,vorgpaj)+cblk(lcell, &
 !          vp25aj)+cblk(lcell,vecj)))
 !liqy
-          vp25aj)+cblk(lcell,vecj)+cblk(lcell,vcaaj)+cblk(lcell,vkaj) &
-                  +cblk(lcell,vmgaj)))
+          vp25aj)+cblk(lcell,vecj)))
 !liqy-20140616
 ! *** coarse mode:
         pmassc(lcell) = max(conmin,cblk(lcell,vsoila)+cblk(lcell,vseas)+cblk( &
@@ -3906,7 +3454,7 @@ END SUBROUTINE klpnuc
 
       END DO
 
-! end loop for  Knudsen numbers                       
+! end loop for Knudsen numbers                       
       RETURN
 
 END SUBROUTINE modpar
@@ -5135,7 +4683,7 @@ END SUBROUTINE rpmares_old
     SUBROUTINE rpmmod3(nspcsda,blksize,layer,dtsec,pres,temp,relhum, &
         nitrate_in,nh3_in,vsulf_in,so4rat_in,drog_in,ldrog_vbs,ncv, &
         nacv,eeci_in,eecj_in,eorgi_in,eorgj_in,epm25i,epm25j,epmcoarse,    &
-        soilrat_in,cblk,igrid,jgrid,kgrid,brrto,do_isorropia)
+        soilrat_in,cblk,igrid,jgrid,kgrid,brrto)
 
 !USE module_configure, only: grid_config_rec_type
 !TYPE (grid_config_rec_type), INTENT (in) :: config_flags
@@ -5205,7 +4753,6 @@ END SUBROUTINE rpmares_old
       REAL drog(blksize,ldrog_vbs)                                 ! organic aerosol precursor [ppm]
 
       REAL brrto
-      LOGICAL do_isorropia
 !bs
 ! *** Primary emissions rates: [ ug / m**3 s ]
 
@@ -5461,7 +5008,7 @@ END SUBROUTINE rpmares_old
         nacv,epm25i,epm25j,eorgi,eorgj,eeci,eecj,epmcoarse,esoil,eseas,xlm, &
         amu,dgnuc,dgacc,dgcor,pmassn,pmassa,pmassc,pdensn,pdensa,pdensc,knnuc, &
         knacc,kncor,fconcn,fconca,fconcn_org,fconca_org,dmdt,dndt,cgrn3,cgra3, &
-        urn00,ura00,brna01,brna31,deltaso4a,igrid,jgrid,kgrid,brrto,do_isorropia)
+        urn00,ura00,brna01,brna31,deltaso4a,igrid,jgrid,kgrid,brrto)
 
 ! *** write output
 !      WRITE(UNIT,*) ' AFTER AEROPROC '
@@ -6797,12 +6344,6 @@ SUBROUTINE         aerosols_soa_vbs_init(chem,convfac,z_at_w,                   
           chem(i,k,j,p_claj)  = 10.E-05
           chem(i,k,j,p_clai)  = 10.E-05
 !liqy
-          chem(i,k,j,p_caaj)  = 10.E-05
-          chem(i,k,j,p_caai)  = 10.E-05
-          chem(i,k,j,p_kaj)   = 10.E-05
-          chem(i,k,j,p_kai)   = 10.E-05
-          chem(i,k,j,p_mgaj)  = 10.E-05
-          chem(i,k,j,p_mgai)  = 10.E-05
 !liqy-20140619
 !        elseif( aer_ic_opt == AER_IC_PNNL ) then
 !           zz = (z_at_w(ii,k,jj)+z_at_w(ii,k+1,jj))*0.5
@@ -6816,10 +6357,7 @@ SUBROUTINE         aerosols_soa_vbs_init(chem,convfac,z_at_w,                   
 !... i-mode
       m3nuc = so4fac*chem(i,k,j,p_so4ai) + nh4fac*chem(i,k,j,p_nh4ai) + &
         no3fac*chem(i,k,j,p_no3ai) +                                    &
-        nafac*chem(i,k,j,p_naai) + clfac*chem(i,k,j,p_clai) +           &
-!liqy
-        cafac*chem(i,k,j,p_caai) + kfac*chem(i,k,j,p_kai) + &
-                mgfac*chem(i,k,j,p_mgai) +              &
+        nafac*chem(i,k,j,p_naai) + clfac*chem(i,k,j,p_clai)           + & 
 !liqy-20140619
         orgfac*chem(i,k,j,p_asoa1i) + &
         orgfac*chem(i,k,j,p_asoa2i) + orgfac*chem(i,k,j,p_asoa3i) + &
@@ -6831,10 +6369,7 @@ SUBROUTINE         aerosols_soa_vbs_init(chem,convfac,z_at_w,                   
 !... j-mode
       m3acc = so4fac*chem(i,k,j,p_so4aj) + nh4fac*chem(i,k,j,p_nh4aj) + &
         no3fac*chem(i,k,j,p_no3aj)  +                                    &
-        nafac*chem(i,k,j,p_naaj)    + clfac*chem(i,k,j,p_claj) +         &
-!liqy
-        cafac*chem(i,k,j,p_caaj) + kfac*chem(i,k,j,p_kaj) + &
-                mgfac*chem(i,k,j,p_mgaj) +              &
+        nafac*chem(i,k,j,p_naaj)    + clfac*chem(i,k,j,p_claj)        + & 
 !liqy-20140619
         orgfac*chem(i,k,j,p_asoa1j) + &
         orgfac*chem(i,k,j,p_asoa2j) + orgfac*chem(i,k,j,p_asoa3j) + &
@@ -7277,12 +6812,6 @@ SUBROUTINE soa_vbs_seasalt_emiss(                                        &
                             factbb * ssemfact_mass_i * fracna
        chem(i,k,j,p_clai) = chem(i,k,j,p_clai) +   &
                             factbb * ssemfact_mass_i * fraccl
-        chem(i,k,j,p_caai) = chem(i,k,j,p_caai) +  &
-                        factbb * ssemfact_mass_i * fracca
-        chem(i,k,j,p_kai) = chem(i,k,j,p_kai) +  &
-                        factbb * ssemfact_mass_i * frack
-        chem(i,k,j,p_mgai) = chem(i,k,j,p_mgai) +  &
-                        factbb * ssemfact_mass_i * fracmg
 !       chem(i,k,j,p_so4ai) = chem(i,k,j,p_so4ai) + &
 !                       factbb * ssemfact_mass_i * fracso4
         chem(i,k,j,p_nu0)  = chem(i,k,j,p_nu0) +   &
@@ -7295,12 +6824,6 @@ SUBROUTINE soa_vbs_seasalt_emiss(                                        &
                             factbb * ssemfact_mass_j * fracna
        chem(i,k,j,p_claj) = chem(i,k,j,p_claj) +   &
                             factbb * ssemfact_mass_j * fraccl
-        chem(i,k,j,p_caaj) = chem(i,k,j,p_caaj) +  &
-                                factbb * ssemfact_mass_j * fracca
-        chem(i,k,j,p_kaj) = chem(i,k,j,p_kaj) +  &
-                                factbb * ssemfact_mass_j * frack
-        chem(i,k,j,p_mgaj) = chem(i,k,j,p_mgaj) +  &
-                                factbb * ssemfact_mass_j * fracmg
 !       chem(i,k,j,p_so4aj) = chem(i,k,j,p_so4aj) + &
 !                               factbb * ssemfact_mass_j * fracso4                                                      
        chem(i,k,j,p_ac0)  = chem(i,k,j,p_ac0) +   &
@@ -7632,12 +7155,6 @@ END SUBROUTINE soa_vbs_seasalt_emiss
                         factbb * (sz(3)+sz(4)+sz(5)+sz(6)) * fractot * dstfracna
 !                chem(i,k,j,p_claj)=chem(i,k,j,p_claj) + &
 !                       factbb * (sz(3)+sz(4)+sz(5)+sz(6)) * fractot * dstfraccl
-                 chem(i,k,j,p_caaj)=chem(i,k,j,p_caaj) + &
-                        factbb * (sz(3)+sz(4)+sz(5)+sz(6)) * fractot * dstfracca
-                 chem(i,k,j,p_kaj)=chem(i,k,j,p_kaj) + &
-                        factbb * (sz(3)+sz(4)+sz(5)+sz(6)) * fractot * dstfrack
-                 chem(i,k,j,p_mgaj)=chem(i,k,j,p_mgaj) + &
-                        factbb * (sz(3)+sz(4)+sz(5)+sz(6)) * fractot * dstfracmg
 
                  chem(i,k,j,p_p25j)=chem(i,k,j,p_p25j) +   &
             factbb * (sz(3)+sz(4)+sz(5)+sz(6)) * fractot * dstfrac

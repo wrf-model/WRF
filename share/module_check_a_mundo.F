@@ -3411,13 +3411,6 @@
            
          ENDIF
          
-!        IF ( ( model_config_rec % mp_physics(i) .EQ. NSSL_2MOMG    ) ) THEN
-!            IF  ( model_config_rec % nssl_gvol == -1 ) THEN
-!               model_config_rec % nssl_gvol = 1
-!            ENDIF
-!            model_config_rec % nssl_hvol = -1 ! ensure default
-!        ENDIF
-         
          IF (   model_config_rec % mp_physics(i) .EQ. NSSL_2MOM .or.  &
                 model_config_rec % mp_physics(i) .EQ. NSSL_2MOMCCN .or. &
               ( model_config_rec % mp_physics(i) .EQ. NSSL_2MOMG .and. model_config_rec % nssl_hail_on == 1 ) &
@@ -3450,20 +3443,6 @@
              ENDIF
            ENDIF
            
-!          IF ( model_config_rec % nssl_gvol == -1  .or. &
-!               model_config_rec % nssl_hvol == -1       ) THEN
-!              model_config_rec % nssl_gvol = 1
-!              model_config_rec % nssl_hvol = 1
-!          ENDIF
-!
-!          IF ( model_config_rec % nssl_gvol == 0 .or. &
-!               model_config_rec % nssl_hvol == 0 ) THEN
-!             IF ( model_config_rec % nssl_gvol /= model_config_rec % nssl_hvol ) THEN
-!              ! warning: must have same setting for gvol and hvol
-!               model_config_rec % nssl_gvol = 0
-!               model_config_rec % nssl_hvol = 0
-!             ENDIF
-!          ENDIF
          ENDIF
          
 #endif

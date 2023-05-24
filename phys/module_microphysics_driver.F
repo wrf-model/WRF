@@ -1996,6 +1996,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      ZRW=qzr_curr,  f_zrw = f_qzr,       &
                      ZHW=qzg_curr,  f_zhw = f_qzg,       &
                      ZHL=qzh_curr,  f_zhl = f_qzh,       &
+                     cn=qnn_curr,  f_cn=f_qnn,           &
                      PII=pi_phy,                         &
                      P=p,                                &
                      W=w,                                &
@@ -2074,6 +2075,8 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      VHW=qvolg_curr, f_vhw=F_QVOLG,      &
                      ZRW=qzr_curr,  f_zrw = f_qzr,       &
                      ZHW=qzg_curr,  f_zhw = f_qzg,       &
+                     ZHL=qzh_curr,  f_zhl = f_qzh,       &
+                     cn=qnn_curr,  f_cn=f_qnn,           &
                      PII=pi_phy,                         &
                      P=p,                                &
                      W=w,                                &
@@ -2157,7 +2160,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      ZRW=qzr_curr,  f_zrw = f_qzr,       &
                      ZHW=qzg_curr,  f_zhw = f_qzg,       &
                      ZHL=qzh_curr,  f_zhl = f_qzh,       &
-                     cn=qnn_curr,                        &
+                     cn=qnn_curr,  f_cn=f_qnn,           &
                      PII=pi_phy,                         &
                      P=p,                                &
                      W=w,                                &

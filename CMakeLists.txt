@@ -598,7 +598,6 @@ target_link_libraries(  ${PROJECT_NAME}_Core
                             ${netCDF_LIBRARIES}
                             ${pnetCDF_LIBRARIES}
                             $<$<BOOL:${USE_MPI}>:$<TARGET_NAME_IF_EXISTS:MPI::MPI_Fortran>>
-                            MPI::MPI_Fortran
                             $<$<BOOL:${USE_OPENMP}>:$<TARGET_NAME_IF_EXISTS:OpenMP::OpenMP_Fortran>>
 
                             # This will add in target dependencies if they exist

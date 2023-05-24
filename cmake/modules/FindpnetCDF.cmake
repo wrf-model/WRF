@@ -62,8 +62,8 @@ else()
 
   set( pnetCDF_LIBRARIES
       $<$<LINK_LANGUAGE:C>:${pnetCDF_LIBRARY}>
-      $<$<BOOL:${pnetCDF_CXX}>:$<LINK_LANGUAGE:CXX>:${pnetCDF_LIBRARY}>
-      $<$<BOOL:${pnetCDF_FORTRAN}>:$<LINK_LANGUAGE:Fortran>:${pnetCDF_LIBRARY}>
+      $<$<BOOL:${pnetCDF_CXX}>:$<$<LINK_LANGUAGE:CXX>:${pnetCDF_LIBRARY}>>
+      $<$<BOOL:${pnetCDF_FORTRAN}>:$<$<LINK_LANGUAGE:Fortran>:${pnetCDF_LIBRARY}>>
       )
   set( pnetCDF_INCLUDE_DIRS ${pnetCDF_INCLUDE_DIR} )
 endif()

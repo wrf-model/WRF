@@ -290,20 +290,12 @@ print_option( WRFIO_NCD_NO_LARGE_FILE_SUPPORT 36 )
 ##
 ################################################################################
 if ( ${USE_MPI} )
-  # message( STATUS "[BEFORE] MPI_C_COMPILER       : ${MPI_C_COMPILER}")
-  # message( STATUS "[BEFORE] MPI_Fortran_COMPILER : ${MPI_Fortran_COMPILER}")
-  # message( STATUS "[BEFORE] MPI_LIBRARIES        : ${MPI_LIBRARIES}")
-  # message( STATUS "[BEFORE] MPI_LIBRARY          : ${MPI_LIBRARY}")
-  # message( STATUS "[BEFORE] MPI_EXTRA_LIBRARY    : ${MPI_EXTRA_LIBRARY}")
-  # message( STATUS "[BEFORE] MPI_COMPILE_FLAGS    : ${MPI_COMPILE_FLAGS}")
-  # message( STATUS "[BEFORE] MPI_INCLUDE_PATH     : ${MPI_INCLUDE_PATH}")
-  # message( STATUS "[BEFORE] MPI_LINK_FLAGS       : ${MPI_LINK_FLAGS}")
-  # message( STATUS "[BEFORE] MPI_LIBRARIES        : ${MPI_LIBRARIES}")
-  # set( CMAKE_FIND_DEBUG_MODE TRUE )
   # Through ***MUCH*** debugging, if utilizing MPI_<LANG>_COMPILER
   # https://cmake.org/cmake/help/latest/module/FindMPI.html#variables-for-locating-mpi
   # the find logic makes a mess of things by utilizing <mpi> -show[me]
   # Which may or may not get polluted by the environment
+  # It still technically finds MPI but the output is nonintuitive 
+  # saying things like hdf5 or pthread
   find_package( MPI REQUIRED COMPONENTS Fortran C )
   add_compile_definitions(
                           USE_MPI=1
@@ -321,16 +313,6 @@ if ( ${USE_MPI} )
                         $<$<COMPILE_LANGUAGE:C>,${WRF_MPI_C_FLAGS}>
                         )
   endif()
-  # set( CMAKE_FIND_DEBUG_MODE FALSE )
-  # message( STATUS "[AFTER] MPI_C_COMPILER       : ${MPI_C_COMPILER}")
-  # message( STATUS "[AFTER] MPI_Fortran_COMPILER : ${MPI_Fortran_COMPILER}")
-  # message( STATUS "[AFTER] MPI_LIBRARIES        : ${MPI_LIBRARIES}")
-  # message( STATUS "[AFTER] MPI_LIBRARY          : ${MPI_LIBRARY}")
-  # message( STATUS "[AFTER] MPI_EXTRA_LIBRARY    : ${MPI_EXTRA_LIBRARY}")
-  # message( STATUS "[AFTER] MPI_COMPILE_FLAGS    : ${MPI_COMPILE_FLAGS}")
-  # message( STATUS "[AFTER] MPI_INCLUDE_PATH     : ${MPI_INCLUDE_PATH}")
-  # message( STATUS "[AFTER] MPI_LINK_FLAGS       : ${MPI_LINK_FLAGS}")
-  # message( STATUS "[AFTER] MPI_LIBRARIES        : ${MPI_LIBRARIES}")
 endif()
 
 if ( ${USE_OPENMP} )
@@ -557,7 +539,7 @@ target_include_directories(
                               ${PROJECT_SOURCE_DIR}/external/io_netcdf
                               ${PROJECT_SOURCE_DIR}/external/io_int
 
-                              # Found Packages not handled throough :: imported target
+                              # Found Packages not handled through :: imported target
                               ${netCDF_INCLUDE_DIRS}
                               ${pnetCDF_INCLUDE_DIRS}
                             )

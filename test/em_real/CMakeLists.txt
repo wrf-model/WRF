@@ -85,4 +85,32 @@ wrf_link_files(
                 SYM_PATH  ${CMAKE_CURRENT_SOURCE_DIR}
                 )
 
-#!TODO Add alternate double stuff
+wrf_link_file_new_name( 
+                        FILE      ${PROJECT_SOURCE_DIR}/run/CAMtr_volume_mixing_ratio.SSP245
+                        NEW_NAME  ${CMAKE_CURRENT_SOURCE_DIR}/CAMtr_volume_mixing_ratio
+                        )
+
+
+if ( ${USE_DOUBLE} )
+  
+  wrf_link_file_new_name(
+                          FILE      ${PROJECT_SOURCE_DIR}/run/ETAMPNEW_DATA_DBL
+                          NEW_NAME  ${CMAKE_CURRENT_SOURCE_DIR}/ETAMPNEW_DATA
+                          )
+  wrf_link_file_new_name(
+                          FILE      ${PROJECT_SOURCE_DIR}/run/ETAMPNEW_DATA.expanded_rain_DBL
+                          NEW_NAME  ${CMAKE_CURRENT_SOURCE_DIR}/ETAMPNEW_DATA.expanded_rain
+                          )
+  wrf_link_file_new_name(
+                          FILE      ${PROJECT_SOURCE_DIR}/run/RRTM_DATA_DBL
+                          NEW_NAME  ${CMAKE_CURRENT_SOURCE_DIR}/RRTM_DATA
+                          )
+  wrf_link_file_new_name(
+                          FILE      ${PROJECT_SOURCE_DIR}/run/RRTMG_LW_DATA_DBL
+                          NEW_NAME  ${CMAKE_CURRENT_SOURCE_DIR}/RRTMG_LW_DATA
+                          )
+  wrf_link_file_new_name(
+                          FILE      ${PROJECT_SOURCE_DIR}/run/RRTMG_SW_DATA_DBL
+                          NEW_NAME  ${CMAKE_CURRENT_SOURCE_DIR}/RRTMG_SW_DATA
+                          )
+endif()

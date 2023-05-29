@@ -35,7 +35,7 @@ real,intent(in)::rho(ims:ime,kms:kme,jms:jme),dz8w(ims:ime,kms:kme,jms:jme)
 real,intent(in),dimension(ifms:ifme,jfms:jfme)::burnt_area_dt,fgip
 real,intent(inout)::tracer(ims:ime,kms:kme,jms:jme,num_tracer)
 
-integer, intent(in) :: fire_smk_scheme !sqitch for smoke release
+integer, intent(in) :: fire_smk_scheme !switch for smoke release
 real, intent(in) :: fire_smk_peak !peak smoke release height for TG
 real, intent(in) :: fire_smk_ext  !smoke extinction depth for TG
 real, intent(in) :: fire_tg_ub    !upper bound of TG
@@ -70,13 +70,12 @@ do j=max(jds+1,jts),min(jte,jde-2)
            j_f=joff+jbase
            do ioff=0,ir-1
                i_f=ioff+ibase
-               if (fire_smk_scheme .eq. 0)then
-                  if (num_tracer >0)then
-                        emis=avgw*fire_tracer_smoke*burnt_area_dt(i_f,j_f)*fgip(i_f,j_f)*1000/(rho(i,kts,j)*dz8w(i,kts,j)) ! g_smoke/kg_air
-                        tracer(i,kts,j,p_fire_smoke)=tracer(i,kts,j,p_fire_smoke)+emis
-                  endif
-               elseif (fire_smk_scheme .eq. 1)then
-                  if (num_tracer >0)then
+               if (num_tracer > 0)then
+                  if (fire_smk_scheme .eq. 0)then
+                     emis=avgw*fire_tracer_smoke*burnt_area_dt(i_f,j_f)*fgip(i_f,j_f)*1000/(rho(i,kts,j)*dz8w(i,kts,j)) ! g_smoke/kg_air
+                     tracer(i,kts,j,p_fire_smoke)=tracer(i,kts,j,p_fire_smoke)+emis
+                  
+                  elseif (fire_smk_scheme .eq. 1)then
                      k_st = kts
                      k_en = min(kte,kde-1)
                      do k = k_st,k_en
@@ -92,8 +91,9 @@ do j=max(jds+1,jts),min(jte,jde-2)
 
                         emis=prop*avgw*fire_tracer_smoke*burnt_area_dt(i_f,j_f)*fgip(i_f,j_f)*1000/(rho(i,k,j)*dz8w(i,k,j)) ! g_smoke/kg_air
                         tracer(i,k,j,p_fire_smoke)=tracer(i,k,j,p_fire_smoke)+emis
-
                      end do
+                  else
+                     call wrf_error_fatal('Invalid fire smoke release option: check fire_smk_scheme namelist option')
                   end if
                end if
            enddo
@@ -261,6 +261,8 @@ SUBROUTINE fire_tendency( &
                ! vapor flux
                fact_g = prop * xlv_i
                qfx(i,k,j) = fact_g * grnqfx(i,j)
+            else
+               call wrf_error_fatal('Invalid fire heat release option: check fire_sfc_flx namelist option')
             end if
 
          END DO
@@ -313,16 +315,11 @@ SUBROUTINE tg_dist(i,j,k,k_st,k_en,dz8w_k, dz8w_k1, &
    REAL, INTENT(out):: prop             !proportion of heat or smoke to be released
 
    ! --- local for Truncated Gaussian
-   REAL :: acoef, bcoef, fire_tg_lb
+   REAL, PARAMETER :: acoef = 167./148., bcoef = 11./109., fire_tg_lb = 0.
    REAL :: xia, xib
    REAL :: phi_a, phi_b
    REAL :: xi
    REAL :: dz
-
-   acoef = 167./148.
-   bcoef = 11./109.
-
-   fire_tg_lb = 0.
 
    xia = (fire_tg_lb-fire_peak_hgt)/(0.5*fire_ext_depth)
    xib = (fire_tg_ub-fire_peak_hgt)/(0.5*fire_ext_depth)

@@ -259,7 +259,7 @@ CONTAINS
                          ,capesave, ainckfsa, radsave           &
                          ,rainsh, rainshvb, kdcldtop, kdcldbas  & 
                          ,xtime1, PBLHAVG, TKEAVG               &
-                         ,ccn_conc                             & ! RAS
+                         ,ccn_conc                              & ! RAS
                          ,QKE                                  & !for MYNN
                          ,pek,pep                              & ! EEPS
                          ,ghi_accum                            & ! Solar diagnostics
@@ -1663,7 +1663,7 @@ CHARACTER(LEN=8) :: name
                          nssl_cnor, nssl_cnos,                   &
                          nssl_rho_qh, nssl_rho_qhl,              &
                          nssl_rho_qs,                            &
-                ccn_conc,                                        & ! RAS
+                ccn_conc,                                       & ! RAS
                 z_at_q, inv_dens, qnwfa2d, qnbca2d,             &  ! G. Thompson
                 frc_urb2d, scalar, num_sc,                      &  ! G. Thompson
                 ids, ide, jds, jde, kds, kde,                   &
@@ -4671,8 +4671,9 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
          CALL nssl_2mom_init(nssl_params,ipctmp=nssl_ipconc,mixphase=0, &
            nssl_density_on=(config_flags%nssl_density_on > 0), &
            nssl_hail_on=config_flags%nssl_hail_on > 0, &
+           nssl_ccn_on=(config_flags%nssl_ccn_on > 0), &
            nssl_icdx=config_flags%nssl_icdx, &
-           nssl_icdxhl=config_flags%nssl_icdxhl)
+           nssl_icdxhl=config_flags%nssl_icdxhl,ccn_is_ccna=config_flags%nssl_ccn_is_ccna)
 
 !    CASE (NSSL_2MOM)
 !         nssl_density_on = ( config_flags % nssl_gvol > 0 )

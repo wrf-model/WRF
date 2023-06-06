@@ -1,6 +1,6 @@
 !WRF:MODEL_LAYER:PHYSICS
 
-! prepocessed on "May 24 2023" at "13:16:45"
+! prepocessed on "Jun  2 2023" at "23:41:17"
 
 
 
@@ -338,7 +338,7 @@ MODULE module_mp_nssl_2mom
                              ! (first nucleation is done with a KW sat. adj. step)
   integer, private :: issfilt = 0     ! flag to turn on filtering of supersaturation field
   integer, private :: icnuclimit = 0  ! limit droplet nucleation based on Konwar et al. (2012) and Chandrakar et al. (2016)
-  integer, private :: irenuc = 2      ! =1 to always allow renucleation of droplets within the cloud
+  integer, private :: irenuc = 2      ! =1 to always allow renucleation of droplets within the cloud (do no use, obsolete)
                                       ! =2 renucleation following Twomey/Cohard&Pinty
                                       ! =7 New renucleation that requires prediction of the number of activated nuclei
                              ! i.e., not only at cloud base
@@ -437,6 +437,7 @@ MODULE module_mp_nssl_2mom
   real   , private :: ehs0 = 0.1, ehs1 = 0.1  ! graupel-snow coll. eff. parameters: ehs0*exp(ehs1*min(temcg(mgs),0.0))
                                      ! set ehs1 = 0 to get a constant value of ehs0
   integer :: iessopt = 1  ! 1 = Original (no factor); 2 = factor based on wvel; 3 = factor based on SSI
+                          ! 4 = as 3 but sets min factor of 0.1 and goes to full value at 0.5% SSI
   real   , private :: ess0 = 0.5, ess1 = 0.05 ! snow aggregation coefficients: ess0*exp(ess1*min(temcg(mgs),0.0))
                                      ! set ess1 = 0 to get a constant value of ess0
   real   , private :: esstem1 = -15.  ! lower temperature where snow aggregation turns on
@@ -1175,7 +1176,7 @@ MODULE module_mp_nssl_2mom
      & nssl_alphah, &
      & nssl_alphahl, &
      & nssl_alphar, &
-     & nssl_density_on, nssl_hail_on, nssl_icecrystals_on, &
+     & nssl_density_on, nssl_hail_on, nssl_ccn_on, nssl_icecrystals_on, ccn_is_ccna, &
      & infileunit, &
      & myrank, mpiroot &
      )
@@ -1197,7 +1198,8 @@ MODULE module_mp_nssl_2mom
      & nssl_icdx, &
      & nssl_icdxhl, myrank, mpiroot, &
      & nssl_ufccn
-   logical, intent(in), optional :: nssl_density_on, nssl_hail_on, nssl_icecrystals_on
+   logical, intent(in), optional :: nssl_density_on, nssl_hail_on, nssl_ccn_on, nssl_icecrystals_on
+   integer, intent(inout), optional :: ccn_is_ccna
 
   integer, intent(in),optional      :: infileunit
 
@@ -1215,6 +1217,7 @@ MODULE module_mp_nssl_2mom
     logical :: wrote_namelist = .false.
     logical :: wrf_dm_on_monitor
     integer :: hail_on = -1, density_on = -1, icecrystals_on = 1
+    integer :: ccn_on = -1
 
      double precision :: arg
      real    :: temq
@@ -1358,8 +1361,33 @@ MODULE module_mp_nssl_2mom
         ENDIF
       ENDIF
 
+        IF ( present( nssl_ccn_on ) ) THEN
+          IF ( nssl_ccn_on ) THEN
+            ccn_on = 1
+          ELSE
+            ccn_on = 0
+            irenuc = 2
+          ENDIF
+        ENDIF
+
       IF ( irenuc >= 5 ) THEN
         turn_on_ccna = .true.
+        IF ( present( nssl_ccn_on ) ) THEN
+          IF ( .not. nssl_ccn_on ) THEN
+      write(0,*) 'NSSL_MP Error: Must have nssl_ccn_on=1 for irenuc >= 5!'
+        STOP
+          ENDIF
+        ENDIF
+      ENDIF
+
+      IF ( present( ccn_is_ccna ) .and. ccn_on == 1 ) THEN
+        IF ( ccn_is_ccna > 0 ) THEN
+          turn_on_ccna = .true.
+        ELSE
+          IF ( irenuc >= 5 ) THEN
+            ccn_is_ccna = 1
+          ENDIF
+        ENDIF
       ENDIF
 
       cwccn = ccn
@@ -1405,7 +1433,7 @@ MODULE module_mp_nssl_2mom
       IF ( density_on == -1 ) THEN ! density flag not set, so default is to predict it
         density_on = 1
       ENDIF
-      
+
 
 !      write(0,*) 'wrf_init: lhab,lhl,hail_on,density_on = ',lhab,lhl,hail_on,density_on
 
@@ -9959,15 +9987,14 @@ END SUBROUTINE nssl_2mom_driver
         ENDIF
         qx(mgs,lc) = 0.
         IF ( restoreccn ) THEN
-          IF ( irenuc <= 2 ) THEN
-             IF ( .not. invertccn ) THEN
-              ccnc(mgs) = Max( ccnc(mgs), Min( qccn*rho0(mgs), ccnc(mgs) + restoreccnfrac*cx(mgs,lc) ) )
-             ELSE
-              ccnc(mgs) = ccnc(mgs) + restoreccnfrac*cx(mgs,lc)
-             ENDIF
-          ENDIF
-          IF ( lccna > 1 ) THEN
-            ccna(mgs) = ccna(mgs) - restoreccnfrac*cx(mgs,lc)
+           IF ( lccna > 1 ) THEN
+              ccna(mgs) = ccna(mgs) - restoreccnfrac*cx(mgs,lc)
+           ELSEIF ( irenuc <= 2 ) THEN
+              IF ( .not. invertccn ) THEN
+               ccnc(mgs) = Max( ccnc(mgs), Min( qccn*rho0(mgs), ccnc(mgs) + restoreccnfrac*cx(mgs,lc) ) )
+              ELSE
+               ccnc(mgs) = ccnc(mgs) + restoreccnfrac*cx(mgs,lc)
+              ENDIF
           ENDIF
         ENDIF
         cx(mgs,lc) = 0.
@@ -9977,7 +10004,9 @@ END SUBROUTINE nssl_2mom_driver
         qx(mgs,lc) = qx(mgs,lc) - QEVAP
         IF ( qx(mgs,lc) .le. 0. ) THEN
           IF ( restoreccn ) THEN
-            IF ( irenuc <= 2 ) THEN
+            IF ( lccna > 1 ) THEN
+              ccna(mgs) = ccna(mgs) - restoreccnfrac*cx(mgs,lc)
+            ELSEIF ( irenuc <= 2 ) THEN
 !              ccnc(mgs) = Max( ccnc(mgs), Min( qccn*rho0(mgs), ccnc(mgs) + cx(mgs,lc) ) )
 !              ccnc(mgs) = ccnc(mgs) + cx(mgs,lc)
               IF ( .not. invertccn ) THEN
@@ -9986,15 +10015,14 @@ END SUBROUTINE nssl_2mom_driver
                ccnc(mgs) = ccnc(mgs) + restoreccnfrac*cx(mgs,lc)
               ENDIF
             ENDIF
-            IF ( lccna > 1 ) THEN
-              ccna(mgs) = ccna(mgs) - restoreccnfrac*cx(mgs,lc)
-            ENDIF
           ENDIF
           cx(mgs,lc) = 0.
         ELSE
           tmp = 0.9*QEVAP*cx(mgs,lc)/qctmp ! let droplets get smaller but also remove some. A factor of 1.0 would maintain same size
           IF ( restoreccn ) THEN
-            IF ( irenuc <= 2 ) THEN
+            IF ( lccna > 1 ) THEN
+              ccna(mgs) = ccna(mgs) - restoreccnfrac*tmp
+            ELSEIF ( irenuc <= 2 ) THEN
  !             ccnc(mgs) = Max( ccnc(mgs), Min( qccn*rho0(mgs), ccnc(mgs) + tmp ) )
 !              ccnc(mgs) = ccnc(mgs) + tmp
               IF ( .not. invertccn ) THEN
@@ -10002,9 +10030,6 @@ END SUBROUTINE nssl_2mom_driver
               ELSE
                ccnc(mgs) = ccnc(mgs) + restoreccnfrac*tmp
               ENDIF
-            ENDIF
-            IF ( lccna > 1 ) THEN
-              ccna(mgs) = ccna(mgs) - restoreccnfrac*tmp
             ENDIF
           ENDIF
           cx(mgs,lc) = cx(mgs,lc) - tmp
@@ -10412,7 +10437,7 @@ END SUBROUTINE nssl_2mom_driver
 !         ccnc(mgs) = 0.0
        ENDIF
 !      cx(mgs,lc) = cx(mgs,lc) + cn(mgs)
-      IF ( irenuc <= 2 ) ccnc(mgs) = Max(0.0, ccnc(mgs) - cn(mgs))
+      IF ( irenuc <= 2 .and. lccna < 1  ) ccnc(mgs) = Max(0.0, ccnc(mgs) - cn(mgs))
       ccna(mgs) = ccna(mgs) + cn(mgs)
       ENDIF
 
@@ -10535,6 +10560,7 @@ END SUBROUTINE nssl_2mom_driver
                ! nucleation
        CN(mgs) = Min(cn(mgs), ccnc(mgs))
        cn(mgs) = Min(cn(mgs), 0.5*dqc/cwmasn) ! limit the nucleation mass to half of the condensation mass
+       CN(mgs) = Min( CN(mgs), Max(0.0, (cnuc(mgs) - ccna(mgs) )) )
        
         IF ( .false. .and. ny <= 2 ) THEN
           write(0,*) 'i,k, cwmasn = ',igs(mgs),kgs(mgs),cwmasn
@@ -10562,7 +10588,7 @@ END SUBROUTINE nssl_2mom_driver
        
        cx(mgs,lc) = cx(mgs,lc) + cn(mgs)
        
-       ccnc(mgs) = Max(0.0, ccnc(mgs) - cn(mgs))
+       IF ( lccna < 1 ) ccnc(mgs) = Max(0.0, ccnc(mgs) - cn(mgs))
 
       ELSEIF ( irenuc == 3 ) THEN !} { 
       ! Phillips Donner Garner 2007
@@ -10749,17 +10775,22 @@ END SUBROUTINE nssl_2mom_driver
        ! 6/13/2016: Phillips et al. appears not to decrement CCN, but only increments CCNa.
        ! This would allow an initially non-homogeneous (vertically, e.g.) initial value of CCN/rho_air
        ! ccnc(mgs) = Max(0.0, ccnc(mgs) - cn(mgs))
-      ELSEIF ( irenuc == 7 ) THEN !} { 
+      ELSEIF ( irenuc == 7 .or. irenuc == 17 ) THEN !} { 
 
       ! simple Twomey scheme but limit activation to try to do most activation near cloud base, but keep some CCN available for renuclation
 !      if (ndebug .gt. 0) write(0,*) 'ICEZVD_DR:  Cloud reNucleation, wvel = ',wvel(mgs)
        cn(mgs) = 0.0
+       IF ( irenuc == 7 ) THEN
+         frac = 0.9
+       ELSE
+         frac = 0.98
+       ENDIF
 !       IF ( ccna(mgs) < 0.7*cnuc(mgs) .and. ccnc(mgs) > 0.69*cnuc(mgs) - ccna(mgs)) THEN ! here, assume we are near cloud base and use Twomey formulation
-       IF ( ccna(mgs) < 0.9*cnuc(mgs) ) THEN ! { here, assume we are near cloud base and use Twomey formulation
-         CN(mgs) =  Min( 0.91*cnuc(mgs), CCNE0*cnuc(mgs)**(2./(2.+cck))*Max(0.0,wvel(mgs))**cnexp )! *Min(1.0,1./dtp) ! 0.3465
+       IF ( ccna(mgs) < frac*cnuc(mgs) ) THEN ! { here, assume we are near cloud base and use Twomey formulation
+         CN(mgs) =  Min( (frac+0.01)*cnuc(mgs), CCNE0*cnuc(mgs)**(2./(2.+cck))*Max(0.0,wvel(mgs))**cnexp )! *Min(1.0,1./dtp) ! 0.3465
 !         IF ( cn(mgs) + ccna(mgs) > 0.71*cnuc ) THEN
          ! prevent this branch from activating more than 70% of CCN
-           CN(mgs) = Min( CN(mgs), Max(0.0, (0.9*cnuc(mgs) - ccna(mgs) )) )
+           CN(mgs) = Min( CN(mgs), Max(0.0, (frac*cnuc(mgs) - ccna(mgs) )) )
 !           CN(mgs) = Min( CN(mgs), Max(0.0, 0.71*ccnc(mgs) - ccna(mgs) ) )
          !  write(0,*) '1: k,cn = ',kgs(mgs),cn(mgs),ssf(mgs)
 !!           IF ( ccncuf(mgs) > 0.0 .and. cn(mgs) < 1.e-3 .and. ssmax(mgs) > 1.0 ) THEN
@@ -10899,7 +10930,7 @@ END SUBROUTINE nssl_2mom_driver
        IF ( cn(mgs) > 0.0 ) THEN
        cx(mgs,lc) = cx(mgs,lc) + cn(mgs)
        
-       ccnc(mgs) = Max(0.0, ccnc(mgs) - cn(mgs))
+       ! ccnc(mgs) = Max(0.0, ccnc(mgs) - cn(mgs))
        
        ! create some small droplets at minimum size (CP 2000), although it adds very little liquid
        
@@ -10972,7 +11003,11 @@ END SUBROUTINE nssl_2mom_driver
           ELSEIF ( imaxsupopt == 4 ) THEN
             cn(mgs) = Min( Max(ccnc(mgs),cwnccn(mgs)), rho0(mgs)*qvex/Max( cwmasn5, Max(cwmas20,xmas(mgs,lc)) )  )
           ENDIF
-        ccnc(mgs) = Max( 0.0, ccnc(mgs) - cn(mgs) )
+        IF ( lccna > 1 ) THEN
+          ccna(mgs) = ccna(mgs) + cn(mgs)
+        ELSE
+          ccnc(mgs) = Max( 0.0, ccnc(mgs) - cn(mgs) )
+        ENDIF
         cx(mgs,lc) = cx(mgs,lc) + cn(mgs)
         ENDIF
         

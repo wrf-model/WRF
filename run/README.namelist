@@ -489,24 +489,17 @@ Namelist variables for controlling the adaptive time step option:
                                      = 16, WDM 6-class scheme
                                      = 17, NSSL 2-moment 4-ice scheme (steady background CCN)
                                      = 18, NSSL 2-moment 4-ice scheme with predicted CCN (better for idealized than real cases)
-                                           to set a global CCN value, use
-                                           nssl_cccn  = 0.7e9   ; CCN for NSSL scheme (18). 
+                                           to change global CCN value, use
+                                           nssl_cccn  = 0.7e9   ; CCN (#/m^3 at sea level pressure) for NSSL scheme (18) or nssl_ccn_on=1
                                            Also sets same value to ccn_conc for mp_physics=18
                                      = 19, NSSL 1-moment (7 class: qv,qc,qr,qi,qs,qg,qh; predicts graupel density)
                                      = 21, NSSL 1-moment, (6-class), very similar to Gilmore et al. 2004
                                            Can set intercepts and particle densities in physics namelist, e.g., nssl_cnor
+                                     = 22, NSSL 2-moment 3-ice scheme (steady background CCN) (same as 17, but no hail)
                                        For NSSL 1-moment schemes, intercept and particle densities can be set for snow, 
                                        graupel, hail, and rain. For the 1- and 2-moment schemes, the shape parameters 
                                        for graupel and hail can be set.
-                                       nssl_alphah  = 0.    ! shape parameter for graupel
-                                       nssl_alphahl = 2.    ! shape parameter for hail
-                                       nssl_cnoh    = 4.e5  ! graupel intercept
-                                       nssl_cnohl   = 4.e4  ! hail intercept
-                                       nssl_cnor    = 8.e5  ! rain intercept
-                                       nssl_cnos    = 3.e6  ! snow intercept
-                                       nssl_rho_qh  = 500.  ! graupel density
-                                       nssl_rho_qhl = 900.  ! hail density
-                                       nssl_rho_qs  = 100.  ! snow density
+                                       PLEASE SEE README.NSSLmp for options affecting the NSSL scheme
                                      = 24, WSM 7-class scheme (separate hail and graupel categories)
                                      = 26, WDM 7-class scheme (separate hail and graupel categories)
                                      = 28, aerosol-aware Thompson scheme with water- and ice-friendly aerosol climatology 

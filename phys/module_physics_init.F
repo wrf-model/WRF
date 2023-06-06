@@ -259,7 +259,7 @@ CONTAINS
                          ,capesave, ainckfsa, radsave           &
                          ,rainsh, rainshvb, kdcldtop, kdcldbas  & 
                          ,xtime1, PBLHAVG, TKEAVG               &
-                         ,ccn_conc                              & ! RAS
+                         ,ccn_conc                             & ! RAS
                          ,QKE                                  & !for MYNN
                          ,pek,pep                              & ! EEPS
                          ,ghi_accum                            & ! Solar diagnostics
@@ -1663,7 +1663,7 @@ CHARACTER(LEN=8) :: name
                          nssl_cnor, nssl_cnos,                   &
                          nssl_rho_qh, nssl_rho_qhl,              &
                          nssl_rho_qs,                            &
-                ccn_conc,                                       & ! RAS
+                ccn_conc,                                        & ! RAS
                 z_at_q, inv_dens, qnwfa2d, qnbca2d,             &  ! G. Thompson
                 frc_urb2d, scalar, num_sc,                      &  ! G. Thompson
                 ids, ide, jds, jde, kds, kde,                   &

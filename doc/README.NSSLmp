@@ -54,7 +54,8 @@ Basic options in physics namelist:
    nssl_rho_qs  = 100.  ! snow density
 
 
-  nssl_cccn          - Initial concentration of cloud condensation nuclei
+  nssl_cccn          - Initial concentration of cloud condensation 
+                       nuclei (per m^3 at sea level
                    0.25e+9 maritime
                    0.5e+9 "low-med" continental (DEFAULT)
                    1.0e+9 "med-high" continental

@@ -96,7 +96,7 @@
    REAL :: spongeweight
    LOGICAL :: first_trip_for_this_domain, start_of_simulation, fill_w_flag
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
-   
+
 #if (WRF_CHEM != 1)
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: cldfra_old
 #endif
@@ -1256,7 +1256,7 @@ endif
                       ,grid%capesave, grid%ainckfsa, grid%radsave                        &
                       ,grid%rainsh, grid%rainshvb, grid%kdcldtop, grid%kdcldbas          &
                       ,grid%xtime1, grid%PBLHAVG, grid%TKEAVG                            &
-                      ,grid%ccn_conc                                                     & ! RAS
+                      ,grid%ccn_conc                                          & ! RAS
                       ,grid%QKE                                               &!JOE-for mynn
                       ,grid%pek_pbl,grid%pep_pbl                              & ! EEPS
                       ,grid%ghi_accum                                         & ! Solar diagnostics

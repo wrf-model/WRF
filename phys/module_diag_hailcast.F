@@ -282,16 +282,7 @@ CONTAINS
     !170519 - bug fix RAS 
     !Changed haildtacttime to an array so can be set individually
     ! by gridpoint to account for quilted processes 
-    !However, if the if statement evaluates true for one point
-    ! in the tile, it will be true for all of them.
-    !IF ( ( .NOT. decided ) .AND. &
-    !    ( doing_adapt_dt ) .AND. &
-    !    ( curr_secs .GE. haildtacttime ) ) THEN
-    !  run_param   = .TRUE.
-    !  decided     = .TRUE.
-    !  haildtacttime = curr_secs + haildt
-    !END IF
-    IF ( ( .NOT. decided ) .AND. &
+     IF ( ( .NOT. decided ) .AND. &
         ( doing_adapt_dt ) .AND. &
         ( curr_secs .GE. haildtacttime(i_start, j_start) ) ) THEN
       run_param   = .TRUE.
@@ -673,16 +664,7 @@ END SUBROUTINE hailcast_diagnostic_driver
        ELSE IF ((k.ge.KBAS+1).AND.(RWA_adiabat(k).ge.1.E-12)) THEN
           RWA_new(k) = RWA_adiabat(k)*(h1d(k)-h1d(k-1)) - RWA_new(k-1)
           IF (RWA_new(k).LT.0) RWA_new(k) = 0.
-       !ELSE - no longer necessary, as we set it at the top of the DO loop
-       !  RWA_new(k) = RWA(k)
        ENDIF
-       ! - old code - ! 
-       !IF (k.eq.KBAS+1) THEN
-       !   RWA_new(k) = RWA_adiabat(k)*(h1d(k)-h1d(k-1))
-       !ELSE IF ((k.ge.KBAS+2).AND.(RWA_adiabat(k).ge.1.E-12)) THEN
-       !   RWA_new(k) = RWA_adiabat(k)*(h1d(k)-h1d(k-1)) - RWA_new(k-1)
-       !   IF (RWA_new(k).LT.0) RWA_new(k) = 0.
-       !ENDIF
     ENDDO
     !remove the height factor from RWA_new
     DO k=KBAS+1,nz  !bug fix, ensure index start 1 higher
@@ -1170,7 +1152,6 @@ END SUBROUTINE hailcast_diagnostic_driver
          !RAS 190713
          AE=0.5*0.76*E !bug fix to match RasmussenHeymsfield1987
       ELSEIF(RE.GE.20000.0) THEN
-         !AE=(0.57+9.0E-6*RE)*E
          AE = 0.5*(0.57+9.0E-6*RE)*E !bug fix to match RasmussenHeymsfield1987
       ENDIF
 
@@ -1267,7 +1248,6 @@ END SUBROUTINE hailcast_diagnostic_driver
              AFACTOR = -DC*VIMP/TSCELSIUS
              IF ((TSCELSIUS.LE.-5.).OR.(AFACTOR.GE.-1.60)) THEN
                  DENSELW = 0.30*(AFACTOR)**0.44
-             !ELSEIF (TSCELSIUS.GT.-5.) THEN
              ELSE
                  DENSELW = EXP(-0.03115 - 1.7030*AFACTOR + &
                                0.9116*AFACTOR**2. - 0.1224*AFACTOR**3.)
@@ -1595,8 +1575,6 @@ END SUBROUTINE hailcast_diagnostic_driver
       re = rho*r*2*VT/1.7e-5
       
       !Temperature difference between environment and hailstone surface
-      !delt = wetbulb !- 0.0 !assume stone surface is at 0C
-      !                      !wetbulb is in Celsius
       !We know the stone surface temperature, let's use it
       delt = wetbulb - (TS - 273.155) !again, wet bulb is in C
 

@@ -1168,7 +1168,7 @@ END SUBROUTINE hailcast_diagnostic_driver
          AE=0.78+0.308*E
       ELSEIF(RE.GE.6000.0.AND.RE.LT.20000.0)THEN
          !RAS 190713
-         AE=0.5*0.76*E. !bug fix to match RasmussenHeymsfield1987
+         AE=0.5*0.76*E !bug fix to match RasmussenHeymsfield1987
       ELSEIF(RE.GE.20000.0) THEN
          !AE=(0.57+9.0E-6*RE)*E
          AE = 0.5*(0.57+9.0E-6*RE)*E !bug fix to match RasmussenHeymsfield1987

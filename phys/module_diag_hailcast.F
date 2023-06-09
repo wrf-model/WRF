@@ -210,18 +210,16 @@ CONTAINS
         ( (.not. grid%nested) .or. &
         ( (grid%nested) .and. (abs(grid%dtbc) < 0.0001) ) ) )THEN
        doing_adapt_dt = .TRUE.
-       !IF ( haildtacttime .eq. 0. ) THEN
-       !   haildtacttime = CURR_SECS + haildt
-       !END IF
+       
        !170519 - bug fix RAS 
        !Change haildtacttime to an array so can be set individually
        ! by gridpoint to account for quilted processes 
        DO j = j_start, j_end
-        DO i = i_start, i_end
+          DO i = i_start, i_end
             IF ( haildtacttime(i,j) .eq. 0. ) THEN
                 haildtacttime(i,j) = CURR_SECS + haildt
             END IF
-        ENDDO
+          ENDDO
         ENDDO
      END IF
 
@@ -299,9 +297,9 @@ CONTAINS
       run_param   = .TRUE.
       decided     = .TRUE.
       DO j = j_start, j_end
-      DO i = i_start, i_end
-          haildtacttime(i,j) = curr_secs + haildt
-      ENDDO
+         DO i = i_start, i_end
+            haildtacttime(i,j) = curr_secs + haildt
+         ENDDO
       ENDDO
     END IF
 
@@ -1161,7 +1159,6 @@ END SUBROUTINE hailcast_diagnostic_driver
       !experimentally derived, and are expecting cal-C-g units.  Do some conversions.
       DENSAC = DENSA * (1.E3) * (1.E-6)
       !dynamic viscosity 
-      !ANU=1.717E-4*(393.0/(TC+120.0))*(TC/273.155)**1.5
       ANU=1.717E-5*(393.0/(TC+120.0))*(TC/273.155)**1.5  !RAS units fix to agree with Roger and Yau ps. 102
       !!!  CALCULATE THE REYNOLDS NUMBER - unitless
       RE=D*VT*DENSAC/ANU   
@@ -1170,7 +1167,6 @@ END SUBROUTINE hailcast_diagnostic_driver
       IF(RE.LT.6000.0)THEN
          AE=0.78+0.308*E
       ELSEIF(RE.GE.6000.0.AND.RE.LT.20000.0)THEN
-         !AE=0.76*E
          !RAS 190713
          AE=0.5*0.76*E. !bug fix to match RasmussenHeymsfield1987
       ELSEIF(RE.GE.20000.0) THEN
@@ -1407,14 +1403,11 @@ END SUBROUTINE hailcast_diagnostic_driver
          AH=0.78+0.308*H
          !AE=0.78+0.308*E
       ELSEIF(RE.GE.6000.0.AND.RE.LT.20000.0)THEN
-        !AH=0.76*H
         !RAS 190713
         AH=0.5*0.76*H !bug fix to match RasmussenHeymsfield1987
-        !AE=0.76*E
       ELSEIF(RE.GE.20000.0) THEN
          !RAS 190713
         AH=0.5*(0.57+9.0E-6*RE)*H !bug fix to match RasmussenHeymsfield1987
-        !AH=(0.57+9.0E-6*RE)*H
          !AE=(0.57+9.0E-6*RE)*E  calculated in MASSAGR
       ENDIF
 
@@ -1428,10 +1421,6 @@ END SUBROUTINE hailcast_diagnostic_driver
          !TSC=TSC-TSC*DGM/GM1+SEKDEL/(GM1*CI)*                &
          !   (2.*PI*D*(AH*AK*(TCC-TSC)-AE*ALS*DI*DELRWC)+     &
          !   DGMW/SEKDEL*(ALF+CW*TCC)+DGMI/SEKDEL*CI*TCC)
-         !TSC=0.6*(TSC-TSC*DGM/GM1+SEKDEL/(GM1*CI)*                &
-         !   (2.*PI*D*(AH*AK*(TCC-TSC)-AE*ALS*DI*DELRWC)+     &
-         !   DGMW/SEKDEL*(ALF+CW*TCC)+DGMI/SEKDEL*CI*TCC)) + &
-         !   0.2*TSCm1 + 0.2*TSCm2
          !units fix
          TSC=0.6*(TSC-TSC*DGMC/GM1C+SEKDEL/(GM1C*CI)*                &
             (2.*PI*DCM*(AH*AK*(TCC-TSC)-AE*ALS*DI*DELRWC)+     &
@@ -1459,16 +1448,8 @@ END SUBROUTINE hailcast_diagnostic_driver
                  DGMWC/SEKDEL*(ALF+CW*TCC)+DGMIC/SEKDEL*CI*TCC)
          ELSE
             !Calculate decrease in ice mass due to melting
-            !DMLT = (2.*PI*D*AH*AK*TCC + 2.*PI*D*AE*ALV*DI*DELRWC + &
-            !        DGMW/SEKDEL*CW*TCC) / ALF
-            !FW = (FW*GM + DMLT) / GM
             !!Bug fix 28Jul2021 RAS - non-SI units
-            ! DMLT = SEKDEL * (2.*PI*D*AH*AK*TCC + 2.*PI*D*AE*ALV*DI*DELRWC + &
-            !         DGMW/SEKDEL*CW*TCC) * SEKDEL / ALF
-            ! FW = (FW*GM1 + DMLT + DGMW) / GM
             !More non-SI units -  fixed 20220307 RAS
-            !DMLT = SEKDEL * (2.*PI*DCM*AH*AK*TCC + 2.*PI*DCM*AE*ALV*DI*DELRWC + &
-            !        DGMWC/SEKDEL*CW*TCC) * SEKDEL / ALF
             ! Extra SEKDEL in the calculation - 20221102 RAS
             DMLT = SEKDEL  / ALF * (2.*PI*DCM*AH*AK*TCC + 2.*PI*DCM*AE*ALV*DI*DELRWC + &
                     DGMWC/SEKDEL*CW*TCC) 
@@ -1610,7 +1591,6 @@ END SUBROUTINE hailcast_diagnostic_driver
       !Just use the density of air at 850 mb...close enough.
       !rho = 85000./(287.*TLAYER)
       rho = player/(287.*TLAYER)  !we have the layer pressure, just use it
-      !re = rho*r*VT*.01/1.7e-5
       !units fix - r is now in meters, not mm. Plus we need D, not r. RAS 20220308
       re = rho*r*2*VT/1.7e-5
       

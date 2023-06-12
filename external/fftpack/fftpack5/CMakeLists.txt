@@ -31,13 +31,6 @@ set_target_properties(
                           Fortran_FORMAT           FREE
                       )
 
-# target_compile_options( ${FOLDER_COMPILE_TARGET} 
-#                         PRIVATE
-#                           # -cpp
-#                           # $<$<STREQUAL:"${Fortran_COMPILER_ID}","GNU">:-fcheck=all>
-#                           # $<$<STREQUAL:"${Fortran_COMPILER_ID}","Intel">:-check all>
-#                         )
-
 target_link_libraries(  ${FOLDER_COMPILE_TARGET}
                           PRIVATE
                             ${netCDF_LIBRARIES}
@@ -52,6 +45,7 @@ target_include_directories( ${FOLDER_COMPILE_TARGET}
 
 install(
         TARGETS ${FOLDER_COMPILE_TARGET}
+        EXPORT  ${EXPORT_NAME}Targets
         RUNTIME DESTINATION bin/
         ARCHIVE DESTINATION lib/
         LIBRARY DESTINATION lib/

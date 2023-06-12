@@ -56,6 +56,7 @@ target_include_directories( ${FOLDER_COMPILE_TARGET}
 
 install(
         TARGETS ${FOLDER_COMPILE_TARGET}
+        EXPORT  ${EXPORT_NAME}Targets
         RUNTIME DESTINATION bin/
         ARCHIVE DESTINATION lib/
         LIBRARY DESTINATION lib/

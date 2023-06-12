@@ -1,5 +1,13 @@
 # WRF CMake Build
 
+get_filename_component( FOLDER_COMPILE_TARGET ${CMAKE_CURRENT_SOURCE_DIR} NAME)
+set( 
+    WRF_INCLUDE_FILES
+    module_internal_header_util.F
+    ${CMAKE_BINARY_DIR}/frame/module_state_description.F
+    )
+
+
 ########################################################################################################################
 # Extra stuff for things that depend on registry code
 # https://stackoverflow.com/a/50640971
@@ -82,6 +90,8 @@ endif()
 target_sources(
                 ${PROJECT_NAME}_Core
                 PRIVATE
+                  ${WRF_INCLUDE_FILES}
+
                   module_configure.F
                   module_driver_constants.F
                   module_domain_type.F
@@ -127,7 +137,7 @@ target_sources(
                   
                                     
                   module_integrate.F
-                  module_internal_header_util.F
+                  
                   module_io.F
                   module_io_quilt.F
                   
@@ -142,8 +152,7 @@ target_sources(
                   wrf_shutdown.F
                   )
 
-target_include_directories( 
-                            ${PROJECT_NAME}_Core
-                            PRIVATE
-                              ${CMAKE_CURRENT_SOURCE_DIR}
-                            )
+install( 
+        FILES       ${WRF_INCLUDE_FILES}
+        DESTINATION include/${FOLDER_COMPILE_TARGET}
+        )

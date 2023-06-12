@@ -1,8 +1,5 @@
 # WRF CMake Build
 
-# get_filename_component( FOLDER_COMPILE_TARGET ${CMAKE_CURRENT_SOURCE_DIR} NAME )
-
-
 ########################################################################################################################
 # 
 # Quickly preprocess some files so that cmake can understand the module dependencies
@@ -10,13 +7,10 @@
 ########################################################################################################################
 get_directory_property( DIR_DEFS DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_DEFINITIONS )
 wrf_c_preproc_fortran( 
-                      TARGET_NAME     module_ra_rrtmg_lwk_preproc
+                      TARGET_NAME     module_ra_rrtmg_preproc
                       OUTPUT_DIR      ${CMAKE_CURRENT_BINARY_DIR}/preproc/
                       EXTENSION       ".f90"
                       INCLUDES        ${CMAKE_CURRENT_SOURCE_DIR}
-                                      # $<TARGET_PROPERTY:frame_deps,Fortran_MODULE_DIRECTORY>
-                                      # $<TARGET_PROPERTY:share_deps,Fortran_MODULE_DIRECTORY>
-                                      # $<TARGET_PROPERTY:esmf_time_f90,Fortran_MODULE_DIRECTORY>
                       DEPENDENCIES    registry_code
                       DEFINITIONS     ${DIR_DEFS}
                       SOURCES         module_ra_rrtmg_lwk.F
@@ -26,21 +20,9 @@ wrf_c_preproc_fortran(
                                       module_sf_clm.F
                       )
 
-add_dependencies( ${PROJECT_NAME}_Core module_ra_rrtmg_lwk_preproc )
-# set_source_files_properties(
-#                             ${CMAKE_CURRENT_BINARY_DIR}/preproc/module_ra_rrtmg_lwk.i
-#                             PROPERTIES
-#                               GENERATED TRUE
-#                             )
-
-
-# add_library(
-#             ${FOLDER_COMPILE_TARGET}
-#               STATIC
-#               )
+add_dependencies( ${PROJECT_NAME}_Core module_ra_rrtmg_preproc )
 
 target_sources(
-                # ${FOLDER_COMPILE_TARGET}
                 ${PROJECT_NAME}_Core
                 PRIVATE
                   complex_number_module.F
@@ -272,43 +254,9 @@ target_sources(
                   module_wind_fitch.F
                   )
 
-# set_target_properties( 
-#                       ${FOLDER_COMPILE_TARGET} 
-#                         PROPERTIES
-#                           Fortran_MODULE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/${FOLDER_COMPILE_TARGET}
-#                           Fortran_FORMAT           FREE                          
-#                       )
 
-
-# target_link_libraries(  ${FOLDER_COMPILE_TARGET}
-#                           PRIVATE
-#                             ${netCDF_LIBRARIES}
-#                             $<$<BOOL:${USE_MPI}>:$<TARGET_NAME_IF_EXISTS:MPI::MPI_Fortran>>
-#                             $<$<BOOL:${USE_OPENMP}>:$<TARGET_NAME_IF_EXISTS:OpenMP::OpenMP_Fortran>>
-#                         )
-
-target_include_directories( #${FOLDER_COMPILE_TARGET}
+target_include_directories( 
                             ${PROJECT_NAME}_Core
                             PRIVATE
                               ${CMAKE_CURRENT_SOURCE_DIR}
-                              # $<TARGET_PROPERTY:frame_deps,Fortran_MODULE_DIRECTORY>
-                              # $<TARGET_PROPERTY:share_deps,Fortran_MODULE_DIRECTORY>
-                              # $<TARGET_PROPERTY:esmf_time_f90,Fortran_MODULE_DIRECTORY>
-
-                              #!TODO Fix duplicates of wrf_[io|status]_flags.h
-                              # ${CMAKE_CURRENT_SOURCE_DIR}/../ioapi_share 
-                              # ${CMAKE_CURRENT_SOURCE_DIR}/../io_grib_share
-                              # ${CMAKE_CURRENT_SOURCE_DIR}/grib1_util
-                              # ${CMAKE_CURRENT_SOURCE_DIR}/MEL_grib1
                             )
-
-# # Depend on framework, why? I don't know, this is a mess
-# add_dependencies( ${FOLDER_COMPILE_TARGET} frame_deps share_deps module_ra_rrtmg_lwk_preproc )
-
-
-# install(
-#         TARGETS ${FOLDER_COMPILE_TARGET}
-#         RUNTIME DESTINATION bin/
-#         ARCHIVE DESTINATION lib/
-#         LIBRARY DESTINATION lib/
-#         )

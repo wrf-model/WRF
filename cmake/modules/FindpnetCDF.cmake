@@ -20,6 +20,7 @@ find_program(
 if ( ${PNETCDF_PROGRAM} MATCHES "-NOTFOUND$" )
   message( STATUS "No pnetcdf-config found : ${PNETCDF_PROGRAM}" )
 else()
+  message( STATUS "Found PNETCDF_PROGRAM : ${PNETCDF_PROGRAM}" )
 
   execute_process( COMMAND ${PNETCDF_PROGRAM} --includedir   OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE pnetCDF_INCLUDE_DIR  )
   execute_process( COMMAND ${PNETCDF_PROGRAM} --libdir       OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE pnetCDF_LIBRARY_DIR )

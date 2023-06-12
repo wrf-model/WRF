@@ -17,10 +17,10 @@ find_program(
                 QUIET
                 )
 
-message( STATUS "NETCDF_PROGRAM : ${NETCDF_PROGRAM}" )
 if ( ${NETCDF_PROGRAM} MATCHES "-NOTFOUND$" )
   message( STATUS "No nc-config found" )
 else()
+  message( STATUS "Found NETCDF_PROGRAM : ${NETCDF_PROGRAM}" )
 
   execute_process( COMMAND ${NETCDF_PROGRAM} --includedir   OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF_INCLUDE_DIR )
   execute_process( COMMAND ${NETCDF_PROGRAM} --libdir       OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF_LIBRARY_DIR )

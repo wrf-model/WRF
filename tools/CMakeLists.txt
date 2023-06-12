@@ -2,7 +2,6 @@
 
 #!TODO ORGANIZE THIS FOLDER
 set( FOLDER_COMPILE_TARGET registry )
-# get_filename_component( FOLDER_COMPILE_TARGET ${CMAKE_CURRENT_SOURCE_DIR} NAME)
 
 add_executable(
                ${FOLDER_COMPILE_TARGET}
@@ -115,8 +114,6 @@ add_custom_command(
                       ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/frame
                     COMMAND
                       ${CMAKE_BINARY_DIR}/tools/registry ${REGISTRY_DEFS} -DNEW_BDYS ${REGISTRY_FILE} &> ${CMAKE_BINARY_DIR}/registry.log
-                      #  -DNONSTANDARD_SYSTEM_SUBR  -DWRF_USE_CLM -DUSE_NETCDF4_FEATURES -DWRFIO_NCD_LARGE_FILE_SUPPORT  -DDM_PARALLEL -DNETCDF -DLANDREAD_STUB=1 -DUSE_ALLOCATABLES -Dwrfmodel -DGRIB1 -DINTIO -DKEEP_INT_AROUND -DLIMIT_ARGS -DBUILD_RRTMG_FAST=0 -DBUILD_RRTMK=0 -DBUILD_SBM_FAST=1 -DSHOW_ALL_VARS_USED=0 -DCONFIG_BUF_LEN=65536 -DMAX_DOMAINS_F=21 -DMAX_HISTORY=25 -DNMM_NEST=0  -DNEW_BDYS ${REGISTRY_FILE} &> ${CMAKE_BINARY_DIR}/registry.log
-
                     #!TODO Just have the registry code actually check for failure or better yet rewrite the 
                     # registry code to not be so obfuscating
                     COMMAND 

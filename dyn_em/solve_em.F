@@ -3810,6 +3810,7 @@ BENCH_START(micro_driver_tim)
       &        , SNOWNC=grid%snownc, SNOWNCV=grid%snowncv                 &
       &        , GRAUPELNC=grid%graupelnc, GRAUPELNCV=grid%graupelncv     & ! for milbrandt2mom
       &        , HAILNC=grid%hailnc, HAILNCV=grid%hailncv                 &
+      &        , HAIL_MAXK1=grid%hail_maxk1,HAIL_MAX2D=grid%hail_max2d    &
       &        , W=grid%w_2, Z=grid%z, HT=grid%ht                         &
       &        , MP_RESTART_STATE=grid%mp_restart_state                   &
       &        , TBPVS_STATE=grid%tbpvs_state                             & ! etampnew

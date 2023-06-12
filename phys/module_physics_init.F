@@ -1019,9 +1019,7 @@ CHARACTER(LEN=8) :: name
          (config_flags%ra_sw_physics .eq. goddardswscheme ) ) .and. &
         (config_flags%mp_physics  .eq. THOMPSON .or.        &
          config_flags%mp_physics  .eq. THOMPSONAERO .or.    &
-         config_flags%mp_physics  .eq. NSSL_2MOM .or.       &
-         config_flags%mp_physics  .eq. NSSL_2MOMG .or.      &
-         config_flags%mp_physics  .eq. NSSL_2MOMCCN .or.    &
+         (config_flags%mp_physics .eq. NSSL_2MOM .and. config_flags%nssl_2moment_on == 1) .or. &
          config_flags%mp_physics  .eq. WSM3SCHEME .or.      &
          config_flags%mp_physics  .eq. WSM5SCHEME .or.      &
          config_flags%mp_physics  .eq. WSM6SCHEME .or.      &
@@ -4495,15 +4493,9 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
      ENDDO
    ENDIF
    
-   IF ( config_flags%nssl_3moment > 0 ) THEN
-     nssl_ipconc = 8
-   ELSE
-     nssl_ipconc = 5
-   ENDIF
-   
    IF ( present( nssl_cccn ) ) THEN
      SELECT CASE(config_flags%mp_physics)
-     CASE (NSSL_2MOM,NSSL_2MOMCCN)
+     CASE (NSSL_2MOM)
        IF ( config_flags%elec_physics > 0 ) THEN
          nssl_ipelec_tmp = nssl_ipelec
        ELSE
@@ -4660,11 +4652,18 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
      END IF
 # endif
 #endif
-     CASE (NSSL_1MOMLFO)
-         CALL nssl_2mom_init(nssl_params,ipctmp=0,mixphase=0,nssl_hail_on=.false.,nssl_density_on=.false.) ! no separate hail
-     CASE (NSSL_1MOM)
-         CALL nssl_2mom_init(nssl_params,ipctmp=0,mixphase=0,nssl_hail_on=.true.)
-     CASE (NSSL_2MOM, NSSL_2MOMG, NSSL_2MOMCCN)
+     CASE (NSSL_2MOM)
+
+      IF ( config_flags%nssl_2moment_on == 0 ) THEN
+        nssl_ipconc = 0
+      ELSE
+        IF ( config_flags%nssl_3moment > 0 ) THEN
+          nssl_ipconc = 8
+        ELSE
+          nssl_ipconc = 5
+        ENDIF
+      ENDIF
+
          IF ( config_flags % nssl_ccn_on > 0 ) THEN
             ccn_conc = nssl_cccn/1.225 ! set this to have correct boundary conditions
          ENDIF

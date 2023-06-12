@@ -14,33 +14,49 @@ DESCRIPTION:
 The NSSL bulk microphysical parameterization scheme describes form and phase changes among a range of liquid and ice hydrometeors, as described in Mansell et al. (2010) and Mansell and Ziegler (2013). It is designed with deep (severe) convection in mind at grid spacings of up to 4 km, but can also be run at larger grid spacing as needed for nesting etc. It is also able to capture non-severe and winter weather. The scheme predicts the mass mixing ratio and number concentration of cloud droplets, raindrops, cloud ice crystals (columns), snow particles (including large crystals and aggregates), graupel, and (optionally) hail. The 3-moment option additionally predicts the 6th moments of rain, graupel, and hail which in turn predicts the PSD shape parameters (set nssl_3moment=.true.).
 
 Basic options in physics namelist:
- The standard options still behave as before, but can be modified with some flags.
- 
- mp_physics = 22 ! NSSL scheme (2-moment) without hail
- mp_physics = 18 ! NSSL scheme (2-moment) with hail and predicted CCN concentration
- mp_physics = 17 ! NSSL scheme (2-moment) with hail with constant background CCN 
+  mp_physics = 18 ! NSSL scheme (2-moment) with hail and predicted 
+                    CCN concentration + options
+
+ The legacy options (17,19,21,22) still behave as before (for now), but going
+ forward one should use mp_physics=18 with modifier flags (set *only* the listed flags):
+ m
+ p_physics 
+  = 22 ! NSSL scheme (2-moment) without hail
+      Equivalent: mp=18, nssl_hail_on=0, nssl_ccn_on=0
+  = 17 ! NSSL scheme (2-moment) with hail with constant background CCN 
                    concentration
- (Single moment options are still available, but not supported)
+      Equivalent: mp=18, nssl_ccn_on=0
+  = 19, NSSL 1-moment (7 class: qv,qc,qr,qi,qs,qg,qh; predicts graupel density)
+      Equivalent: mp=18, nssl_2moment_on=0, nssl_ccn_on=0 (do no set nssl_hail_on)
+  = 21, NSSL 1-moment, (6-class), very similar to Gilmore et al. 2004
+      Equivalent: mp=18, nssl_2moment_on=0, nssl_hail_on=0, nssl_ccn_on=0, 
+      nssl_density_on=0
+
+Option flags (apply to all domains except nssl_hail_on):
 
  nssl_3moment : default value of 0, setting true adds 6th moment for rain, 
-                graupel (i.e., 3-moment )(mp_physics=17/18/22)  and hail 
-                (mp_physics=17/18)
+                graupel (i.e., 3-moment ) and hail (Only needed for turning 
+                3-moment on)
 
  nssl_density_on : default value of 1; Setting to 0 turns off graupel/hail predicted
                    ice density and instead uses fixed (constant) ice density 
                    for graupel (nssl_rho_qh, default 500.) and hail (nssl_rho_qhl, 
-                   default 800.)
+                   default 800.) (Only needed for turning density off)
 
- nssl_ccn_on : predicted CCN concentration: default is on (1) for mp_physics=18, and 
-               otherwise off (0), but can be set on (1) for mp_physics=17/18/22
+ nssl_ccn_on : predicted CCN concentration: default is on (1) for mp_physics=18
 
- nssl_hail_on : If not set explicitly, it is set automatically according to mp_physics:
-                0 = off; 1 = on
+ nssl_hail_on : If not set explicitly, it is set automatically to 1. This is the only
+                flag with dimensions of 'max_domains' e.g., so that hail can be turned
+                off on non-convection-allowing parent domains (Only needed for turning
+                hail off)
 
  nssl_ccn_is_ccna : The CCN category, if enabled, can be used to represent either the
                     number of unactivated CCN (default, value of 0, with irenuc=2), or, if
                     set to 1, it is CCNA (the number of activated CCN, background value
                     of zero). If irenuc >= 5 (see below), this is automatically set to 1.
+
+ nssl_2moment_on : only use this flag to run single-moment (value of 0), otherwise 
+                    default is 1 (Only needed for turning 2-moment off)
 
  Other namelist options (also "physics" namelist)
    nssl_alphah  = 0.    ! PSD shape parameter for graupel (2-moment)

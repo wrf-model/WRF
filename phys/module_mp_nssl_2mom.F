@@ -1,6 +1,6 @@
 !WRF:MODEL_LAYER:PHYSICS
 
-! prepocessed on "Jun  2 2023" at "23:41:17"
+! prepocessed on "Jun 11 2023" at "20:56:19"
 
 
 
@@ -540,7 +540,7 @@ MODULE module_mp_nssl_2mom
                           ! 3 = Conversion using wet growth diameter
   real, private :: hlcnhdia = 1.e-3 ! threshold diameter for graupel -> hail conversion for ihlcnh = 1 option.
   real, private :: hlcnhqmin = 0.1e-3 ! minimum graupel mass content for graupel -> hail conversion (ihlcnh = 1)
-  real   , private :: hldia1 = 20.0e-3  ! threshold diameter for graupel -> hail conversion for ihlcnh = 2 option.
+  real   , private :: hldia1 = 10.0e-3  ! threshold diameter for graupel -> hail conversion for ihlcnh = 2 option.
   integer :: incwet = 0    ! flag to do wet growth only on D > D_wet
   integer, private  :: iusedw = 0    ! flag to use experimental wet growth ice diameter for gr -> hl conversion (=1 turns on)
   real   , private  :: dwmin   = 5.0e-3  ! Minimum diameter with iusedw (can stay at 0 or be set to something larger)
@@ -799,7 +799,7 @@ MODULE module_mp_nssl_2mom
       double precision gmoi(0:ngm0) ! ,gmod(0:ngm1,0:ngm2),gmdi(0:ngm1,0:ngm2)
 
       integer, parameter :: nqiacralpha =  300 !480 ! 240 ! 120 ! 15
-      integer, parameter :: nqiacrratio =  100 ! 500 !50  ! 25
+      integer, parameter :: nqiacrratio =  400 ! 500 !50  ! 25
 !      real,    parameter :: maxratiolu = 25.
       real,    parameter :: maxratiolu = 100. ! 25.
       real,    parameter :: maxalphalu = 15.
@@ -1316,8 +1316,12 @@ MODULE module_mp_nssl_2mom
 
     ipconc = ipctmp
     
+    IF ( ipconc < 5 ) THEN
+       ihlcnh = 0
+    ENDIF
+
     IF ( ihlcnh <= 0 ) THEN
-      IF ( ipconc <= 5 ) THEN
+      IF ( ipconc == 5 ) THEN
        ihlcnh = 3
       ELSEIF ( ipconc >= 6 ) THEN
        ihlcnh = 3
@@ -2213,6 +2217,7 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
                               axtra,                                                    &
                               SNOWNC, SNOWNCV, GRPLNC, GRPLNCV,                         &
                               SR,HAILNC, HAILNCV,                                       &
+                              hail_maxk1, hail_max2d, nwp_diagnostics,                  &
                               tkediss,                                                  &
                               re_cloud, re_ice, re_snow, re_rain,                       &
                               has_reqc, has_reqi, has_reqs, has_reqr,                   &
@@ -2300,12 +2305,14 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
        real, dimension(ims:ime, kms:kme, jms:jme), optional, intent(inout) :: axtra
 
 ! WRF variables
-      real, dimension(ims:ime, jms:jme), intent(inout)::                                 &
+      real, dimension(ims:ime, jms:jme) ::                                 &
                             RAINNC,RAINNCV    ! accumulated precip (NC) and rate (NCV)
       real, dimension(ims:ime, jms:jme), optional, intent(inout)::                                 &
                             SNOWNC,SNOWNCV,GRPLNC,GRPLNCV,SR        ! accumulated precip (NC) and rate (NCV)
       real, dimension(ims:ime, jms:jme), optional, intent(inout)::                                 &
                             HAILNC,HAILNCV ! accumulated precip (NC) and rate (NCV)
+      real, dimension(ims:ime, jms:jme), optional, intent(inout) :: hail_maxk1, hail_max2d
+      integer, optional, intent(in) :: nwp_diagnostics
 !     for cm1, set nproctot=44 (or as needed) to get domain total rates
       integer, parameter :: nproc = 1
       double precision :: proctot(nproc),proctotmpi(nproc)
@@ -2355,9 +2362,11 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
      real, dimension(its:ite, kts:kte) :: rainprod2d, evapprod2d,tke2d
      real, dimension(its:ite, 1, kts:kte, na) :: an, ancuten
      real, dimension(its:ite, 1, kts:kte, nxtra) :: axtra2d
+     real, dimension(its:ite, 1, kts:kte, 3) :: alpha2d
      real, dimension(its:ite, 1, kts:kte) :: t0,t1,t2,t3,t4,t5,t6,t7,t8,t9
      real, dimension(its:ite, 1, kts:kte) :: dn1,t00,t77,ssat,pn,wn,dz2d,dz2dinv,dbz2d,vzf2d
      real, dimension(its:ite, 1, na) :: xfall
+     real, dimension(its:ite, 1) :: hailmax1d,hailmaxk1
      real, dimension(kts:kte, nproc) :: thproclocal
      integer, parameter :: nor = 0, ng = 0
      integer :: nx,ny,nz
@@ -2645,6 +2654,12 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
 
      IF ( present( pcc2 ) .and. makediag ) THEN
          axtra2d(its:ite,1,kts:kte,:) = 0.0
+     ENDIF
+
+     IF ( makediag ) THEN
+        alpha2d(its:ite,1,kts:kte,1) = alphar
+        alpha2d(its:ite,1,kts:kte,2) = alphah
+        alpha2d(its:ite,1,kts:kte,3) = alphahl
      ENDIF
 
 
@@ -3036,7 +3051,7 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
      &   xdn0,dbz2d,tke2d,                 &
      &   thproclocal,nproc,dx1,dy1,    &
      &   timevtcalc,axtra2d, makediag        &
-     &   ,has_wetscav, rainprod2d, evapprod2d  &
+     &   ,has_wetscav, rainprod2d, evapprod2d, alpha2d  &
      &   ,elec2,its,ids,ide,jds,jde          &
      & )
 
@@ -3164,7 +3179,20 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
         ENDIF
 
 
-
+     IF ( present( hail_maxk1 ) .and. present( hail_max2d ) .and. present( nwp_diagnostics ) .and. makediag ) THEN
+       IF ( nwp_diagnostics == 1 ) THEN
+         DO ix = its,ite
+            hailmax1d(ix,1) = hail_max2d(ix,jy)
+            hailmaxk1(ix,1) = hail_maxk1(ix,jy)
+         ENDDO
+         call hailmaxd(dtp,nx,ny,nz,an,na,nor,nor,alpha2d,dn1,dz2d,dz2dinv, &
+                          hailmax1d,hailmaxk1,jy,its,jts )
+         DO ix = its,ite
+            hail_max2d(ix,jy) = hailmax1d(ix,1)
+            hail_maxk1(ix,jy) = hailmaxk1(ix,1)
+         ENDDO
+       ENDIF
+     ENDIF
    
 ! transform concentrations back to mixing ratios
      DO il = lnb,na
@@ -3922,6 +3950,240 @@ END SUBROUTINE nssl_2mom_driver
 !
 !--------------------------------------------------------------------------
 !
+! #######################################################################
+!  HAILMAXD - calculated maximum expected hail size
+! #######################################################################
+     subroutine hailmaxd(dtp,nx,ny,nz,an,na,nor,norz,alpha2d,dn,dz3d,dz3dinv, &
+     &                    hailmax1d,hailmaxk1,jslab,its,jts ) ! used for timing
+!
+! Sedimentation driver -- column by column
+!
+!  Written by ERM 10/2011
+!
+!
+!
+      implicit none
+
+      integer nx,ny,nz,nor,norz,ngt,jgs,na,ia
+      integer id ! =1 use density, =0 no density
+      integer :: its,jts ! SW point of local tile
+      
+      integer ng1
+      parameter(ng1 = 1)
+
+      real an(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz,na)
+      real dn(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz)
+      real dz3d(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz)
+      real dz3dinv(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz)
+      real t0(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz)
+      real t7(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz)
+
+!      real gz(-nor+ng1:nz+nor),z1d(-nor+ng1:nz+nor,4)
+      real dtp
+      real alpha2d(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz,3)  ! array for PSD shape parameters
+      real  :: hailmax1d(nx,ny),hailmaxk1(nx,ny)
+      integer infdo
+      integer jslab ! which line of xfall to use
+            
+      integer ix,jy,kz,ndfall,n,k,il,in
+      double precision :: tmp, ratio, del, g1palp
+      real, parameter :: dz = 200.
+
+      real :: db1(nx,nz+1),dtz1(nz+1,nx,0:1),dz2dinv(nz+1,nx),db1inv(nx,nz+1)
+      
+      real :: rhovtzx(nz,nx)
+
+      real :: alp, diam, diam1, hwdn
+      
+!      real, parameter :: cmin = 0.001 ! threshold number per m^3 for maximum diamter (threshold from diag_nwp)
+      DOUBLE PRECISION, PARAMETER:: thresh_conc = 0.0005d0                 ! number conc. of graupel/hail per cubic meter
+      real :: cwchtmp,cwchltmp, maxdia
+
+!-----------------------------------------------------------------------------
+
+      integer :: ixb, jyb, kzb
+      integer :: ixe, jye, kze
+      integer :: plo, phi
+      integer :: ialp, i, j
+
+      logical :: debug_mpi = .TRUE.
+
+! ###################################################################
+
+
+      IF ( lh > 1 ) THEN
+        cwchtmp  = ((3. + dnu(lh))*(2. + dnu(lh))*(1.0 + dnu(lh)))**(-1./3.)
+      ENDIF
+      IF ( lhl > 1 ) THEN
+        cwchltmp = ((3. + dnu(lhl))*(2. + dnu(lhl))*(1.0 + dnu(lhl)))**(-1./3.)
+      ENDIF
+
+
+      kzb = 1
+      kze = nz
+
+      ixb = 1
+      ixe = nx
+
+
+      jy = 1
+      jgs = jy
+
+
+!      hailmax1d(:,jy) = 0.0
+!      hailmaxk1(:,jy) = 0.0
+
+      if ( ndebug .gt. 0 ) write(0,*) 'dbg = 3a'
+
+
+
+      IF ( lh > 1 .and. lnh > 1 ) THEN
+      DO kz = kzb,kze
+      DO ix = ixb,ixe
+        IF ( an(ix,jy,kz,lh) .gt. qxmin(lh) .and. an(ix,jy,kz,lnh) .gt. thresh_conc ) THEN
+          IF ( lvh .gt. 1 ) THEN
+            hwdn = dn(ix,jy,kz)*an(ix,jy,kz,lh)/an(ix,jy,kz,lvh)
+          ELSE
+            hwdn = rho_qh
+          ENDIF
+
+          tmp = 1. + alpha2d(ix,jy,kz,2)
+          i = Int(dgami*(tmp))
+          del = tmp - dgam*i
+          g1palp = gmoi(i) + (gmoi(i+1) - gmoi(i))*del*dgami
+
+          tmp = dn(ix,jy,kz)*an(ix,jy,kz,lh)/(hwdn*an(ix,jy,kz,lnh))
+          diam = (6.0*tmp/(3.14159))**(1./3.)
+          IF ( lzh > 1 ) THEN ! 3moment
+            cwchtmp = ((3. + alpha2d(ix,jy,kz,2))*(2. + alpha2d(ix,jy,kz,2))*(1.0 + alpha2d(ix,jy,kz,2)))**(-1./3.)
+          ENDIF
+          diam1 = diam*cwchtmp ! characteristic diameter, i.e., 1/lambda
+         ! want cxd1 = thresh_conc
+         !  tmp = gaminterp(ratio,alpha(mgs,lh),1,1)
+         ! cxd1 = cx(mgs,lh)*(tmp)/g1palp
+         ! tmp = thresh_conc*g1palp/cx
+         ! 
+         tmp = thresh_conc*g1palp/an(ix,jy,kz,lnh)
+         alp = alpha2d(ix,jy,kz,2)
+         ! gamxinflu(i,j,luindex,ilh)
+           j = Int(Max(0.0,Min(maxalphalu,alp))*dqiacralphainv)
+           ratio = 0.0
+           maxdia = 0.0
+           ! eventually could replace with bisection search, but final value of i is usually small
+           ! compared to nqiacrratio
+           DO i = 0,nqiacrratio
+              IF ( gamxinflu(i,j,1,1) >= tmp .and. tmp >= gamxinflu(i+1,j,1,1) ) THEN
+               ! could interpolate here for more precision, but it is a ballpark value anyway
+               ! based on an arbitrary thresh_conc
+                ratio = i*dqiacrratio
+                del = tmp - gamxinflu(i,j,1,1)
+                ratio = (float(i) + del/(gamxinflu(i+1,j,1,1) - gamxinflu(i,j,1,1)))*dqiacrratio
+                exit
+              ENDIF
+           ENDDO
+           
+           IF ( ratio > 0.0 ) THEN
+              maxdia = ratio*diam1
+           ENDIF
+
+           IF ( kz == kzb ) THEN
+             hailmaxk1(ix,jy) = Max( maxdia, hailmaxk1(ix,jy) )
+!             IF ( maxdia > 0.1 ) THEN
+!            IF ( an(ix,jy,kz,lh) > 1.e-4 ) THEN
+!              write(0,*) 'maxdia,tmp,alp,ratio,diam,diam1= ',maxdia,tmp,alp,ratio,diam*100.,diam1*100.
+!              write(0,*) 'hwdn, cxhl, qx, g1palp = ',hwdn, an(ix,jy,kz,lnhl), an(ix,jy,kz,lhl), g1palp
+!              write(0,*) 'j,gamxinflu(0,2,4) = ',j,gamxinflu(0,j,1,1),gamxinflu(2,j,1,1), &
+!                gamxinflu(4,j,1,1)
+!            ENDIF
+           ENDIF
+           
+           hailmax1d(ix,jy) = Max(maxdia, hailmax1d(ix,jy) )
+
+        ! 
+
+        ENDIF
+
+      ENDDO
+      ENDDO
+
+      ENDIF ! lh
+
+
+      IF ( lhl > 1 .and. lnhl > 1 ) THEN
+      DO kz = kzb,kze
+      DO ix = ixb,ixe
+        IF ( an(ix,jy,kz,lhl) .gt. qxmin(lhl) .and. an(ix,jy,kz,lnhl) .gt. thresh_conc ) THEN
+          IF ( lvhl .gt. 1 ) THEN
+            hwdn = dn(ix,jy,kz)*an(ix,jy,kz,lhl)/an(ix,jy,kz,lvhl)
+          ELSE
+            hwdn = rho_qhl
+          ENDIF
+
+          tmp = 1. + alpha2d(ix,jy,kz,3)
+          i = Int(dgami*(tmp))
+          del = tmp - dgam*i
+          g1palp = gmoi(i) + (gmoi(i+1) - gmoi(i))*del*dgami
+
+          tmp = dn(ix,jy,kz)*an(ix,jy,kz,lhl)/(hwdn*an(ix,jy,kz,lnhl))
+          diam = (6.0*tmp/(3.14159))**(1./3.)
+          IF ( lzhl > 1 ) THEN ! 3moment
+            cwchltmp = ((3. + alpha2d(ix,jy,kz,3))*(2. + alpha2d(ix,jy,kz,3))*(1.0 + alpha2d(ix,jy,kz,3)))**(-1./3.)
+          ENDIF
+          diam1 = diam*cwchltmp ! characteristic diameter, i.e., 1/lambda
+         ! want cxd1 = thresh_conc
+         !  tmp = gaminterp(ratio,alpha(mgs,lh),1,1)
+         ! cxd1 = cx(mgs,lh)*(tmp)/g1palp
+         ! tmp = thresh_conc*g1palp/cx
+         ! 
+         tmp = thresh_conc*g1palp/an(ix,jy,kz,lnhl)
+         alp = alpha2d(ix,jy,kz,3)
+         ! gamxinflu(i,j,luindex,ilh)
+           j = Int(Max(0.0,Min(maxalphalu,alp))*dqiacralphainv)
+           ratio = 0.0
+           maxdia = 0.0
+           ! eventually could replace with bisection search, but final value of i is usually small
+           ! compared to nqiacrratio
+           DO i = 0,nqiacrratio
+              IF ( gamxinflu(i,j,1,1) >= tmp .and. tmp >= gamxinflu(i+1,j,1,1) ) THEN
+               ! could interpolate here for more precision, but it is a ballpark value anyway
+               ! based on an arbitrary thresh_conc
+                ratio = i*dqiacrratio
+                del = tmp - gamxinflu(i,j,1,1)
+                ratio = (float(i) + del/(gamxinflu(i+1,j,1,1) - gamxinflu(i,j,1,1)))*dqiacrratio
+                exit
+              ENDIF
+           ENDDO
+           
+           IF ( ratio > 0.0 ) THEN
+              maxdia = ratio*diam1
+           ENDIF
+
+           IF ( kz == kzb ) THEN
+             hailmaxk1(ix,jy) = Max( maxdia, hailmaxk1(ix,jy) )
+!             IF ( maxdia > 0.1 ) THEN
+!            IF ( an(ix,jy,kz,lhl) > 1.e-4 ) THEN
+!              write(0,*) 'maxdia,tmp,alp,ratio,diam,diam1= ',maxdia,tmp,alp,ratio,diam*100.,diam1*100.
+!              write(0,*) 'hwdn, cxhl, qx, g1palp = ',hwdn, an(ix,jy,kz,lnhl), an(ix,jy,kz,lhl), g1palp
+!              write(0,*) 'j,gamxinflu(0,2,4) = ',j,gamxinflu(0,j,1,1),gamxinflu(2,j,1,1), &
+!                gamxinflu(4,j,1,1)
+!            ENDIF
+           ENDIF
+           
+           hailmax1d(ix,jy) = Max(maxdia, hailmax1d(ix,jy) )
+
+        ! 
+
+        ENDIF
+
+      ENDDO
+      ENDDO
+
+      ENDIF
+
+
+     END SUBROUTINE HAILMAXD
+! #######################################################################
+! #######################################################################
      subroutine sediment1d(dtp,nx,ny,nz,an,na,nor,norz,xfall,dn,dz3d,dz3dinv, &
      &                    t0,t7,infdo,jslab,its,jts,  &
      &   timesed1,timesed2,timesed3,zmaxsed,timesetvt) ! used for timing
@@ -9537,11 +9799,15 @@ END SUBROUTINE nssl_2mom_driver
           ssmax(mgs) = 0.0
         ENDIF
         IF ( lccn .gt. 1 ) THEN
-          ccnc(mgs) = an(igs(mgs),jy,kgs(mgs),lccn)
+          IF ( lccnuf .gt. 1 .and. i_uf_or_ccn > 0 ) THEN
+             ccnc(mgs) = an(igs(mgs),jy,kgs(mgs),lccn) + an(igs(mgs),jy,kgs(mgs),lccnuf)
+          ELSE
+             ccnc(mgs) = an(igs(mgs),jy,kgs(mgs),lccn)
+          ENDIF
         ELSE
           ccnc(mgs) = cwnccn(mgs)
         ENDIF
-        IF ( lccnuf .gt. 1 ) THEN
+        IF ( lccnuf .gt. 1 .and. i_uf_or_ccn == 0 ) THEN
           ccncuf(mgs) = an(igs(mgs),jy,kgs(mgs),lccnuf)
         ELSE
           ccncuf(mgs) = 0.0
@@ -11121,10 +11387,10 @@ END SUBROUTINE nssl_2mom_driver
        IF (  ipconc .ge. 2 ) THEN
         an(igs(mgs),jy,kgs(mgs),lnc) = Max(cx(mgs,lc) , 0.0)
         IF ( lss > 1 ) an(igs(mgs),jy,kgs(mgs),lss) = Max( 0.0, ssmax(mgs) )
-        IF ( lccn .gt. 1 ) THEN
+        IF ( lccn .gt. 1 .and. lccna .lt. 1  ) THEN
           an(igs(mgs),jy,kgs(mgs),lccn) = Max(0.0,  ccnc(mgs) )
         ENDIF
-        IF ( lccnuf .gt. 1 ) THEN
+        IF ( lccnuf .gt. 1 .and. .not. ( lccna .gt. 1 .and. i_uf_or_ccn > 0 ) ) THEN
           an(igs(mgs),jy,kgs(mgs),lccnuf) = Max(0.0,  ccncuf(mgs) )
         ENDIF
         IF ( lccna .gt. 1 ) THEN
@@ -11679,7 +11945,7 @@ END SUBROUTINE nssl_2mom_driver
      &   xdn0,tmp3d,tkediss  &
      &  ,thproc,numproc,dx1,dy1     &
      & ,timevtcalc,axtra,io_flag  &
-     & , has_wetscav,rainprod2d, evapprod2d &
+     & , has_wetscav,rainprod2d, evapprod2d, alpha2d &
      & ,elec,its,ids,ide,jds,jde &
      & )
 
@@ -11765,6 +12031,7 @@ END SUBROUTINE nssl_2mom_driver
       real, intent(in) :: dx1,dy1
       real rainprod2d(-nor+1:nx+nor,-norz+ng1:nz+norz)
       real evapprod2d(-nor+1:nx+nor,-norz+ng1:nz+norz)
+      real alpha2d(-nor+1:nx+nor,-norz+ng1:nz+norz,3)
 
       logical lrescalelow(lc:lhab)
       real tkediss(-nor+1:nx+nor,-norz+ng1:nz+norz)
@@ -24759,7 +25026,6 @@ END SUBROUTINE nssl_2mom_driver
       end do
       end if
 
-
       IF ( has_wetscav ) THEN
         DO mgs = 1,ngscnt
          evapprod2d(igs(mgs),kgs(mgs)) = -(qrcev(mgs) + qssbv(mgs)  + qhsbv(mgs) + qhlsbv(mgs)) 
@@ -25804,6 +26070,16 @@ END SUBROUTINE nssl_2mom_driver
           
           
           ENDIF !}
+
+        IF ( lzr > 1 ) THEN
+          alpha2d(igs(mgs),kgs(mgs),1) = alpha(mgs,lr)
+        ENDIF
+        IF ( lzh > 1 ) THEN
+          alpha2d(igs(mgs),kgs(mgs),2) = alpha(mgs,lh)
+        ENDIF
+        IF ( lzhl > 1 ) THEN
+          alpha2d(igs(mgs),kgs(mgs),3) = alpha(mgs,lhl)
+        ENDIF
 
         IF ( il == lhl .and. lnhlf > 1 ) THEN
         ! update chxf in case cx has changed

@@ -6,6 +6,7 @@ enable_language( CXX )
 enable_language( Fortran )
 
 project( WRF )
+set( EXPORT_NAME ${PROJECT_NAME} )
 
 if ( DEFINED CMAKE_TOOLCHAIN_FILE )
   set( WRF_CONFIG ${CMAKE_TOOLCHAIN_FILE} )
@@ -19,6 +20,7 @@ list( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/ ${PROJECT_SOURCE_DIR
 # Use link paths as rpaths 
 set( CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE )
 
+include( CMakePackageConfigHelpers )
 include( c_preproc   )
 include( m4_preproc  )
 include( target_copy )
@@ -26,6 +28,7 @@ include( confcheck   )
 include( gitinfo     )
 include( printOption )
 include( wrf_case_setup )
+include( wrf_get_version )
 
 # First grab git info
 wrf_git_commit(
@@ -39,6 +42,9 @@ configure_file(
                 ${PROJECT_BINARY_DIR}/inc/commit_decl
                 @ONLY
                 )
+
+# Grab version info
+wrf_get_version( ${PROJECT_SOURCE_DIR}/README )
 
 ################################################################################
 ##
@@ -502,6 +508,7 @@ target_include_directories(
                             PUBLIC
                               # List module directories first so the compiler does not get confused 
                               # about things "not being compiled yet" - yes, yes it is compiled
+                              # These are already set up to be @ install location
                               $<TARGET_PROPERTY:esmf_time_f90,Fortran_MODULE_DIRECTORY>
                               $<TARGET_PROPERTY:io_grib_share,Fortran_MODULE_DIRECTORY>
                               $<TARGET_PROPERTY:grib1_util,Fortran_MODULE_DIRECTORY>
@@ -511,13 +518,20 @@ target_include_directories(
                               $<TARGET_PROPERTY:io_netcdf,Fortran_MODULE_DIRECTORY>
 
                               
-                              ${PROJECT_SOURCE_DIR}
-                              ${PROJECT_SOURCE_DIR}/inc
-                              ${PROJECT_SOURCE_DIR}/frame
-                              ${PROJECT_SOURCE_DIR}/external/ioapi_share
+                              $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
+                              $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/inc>
+                              $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/frame>
+                              $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/external/ioapi_share>
 
-                              ${CMAKE_BINARY_DIR}/inc
-                              ${CMAKE_BINARY_DIR}/frame
+                              $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/inc>
+                              $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/frame>
+
+                              # For install interface includes, i.e. when used by external tools
+                              # such as WPS
+                              # $<INSTALL_INTERFACE::${PROJECT_SOURCE_DIR}>
+                              $<INSTALL_INTERFACE:include/inc>
+                              $<INSTALL_INTERFACE:include/frame>
+                              $<INSTALL_INTERFACE:include/external/ioapi_share>
 
                             PRIVATE
                               # May or may not exist
@@ -574,7 +588,7 @@ set_target_properties(
                           #                          ${pnetCDF_LIBRARY_DIR}
                           #                          ${}
                       )
-message( STATUS "pnetCDF_LIBRARIES ${pnetCDF_LIBRARIES}")
+
 target_link_libraries(  ${PROJECT_NAME}_Core
                           PRIVATE
                             ${netCDF_LIBRARIES}
@@ -616,10 +630,43 @@ target_link_libraries(  ${PROJECT_NAME}_Core
                             RSL_LITE
                       )
 
-
+################################################################################
+##
+## Install and export
+##
+################################################################################
 install(
         TARGETS ${PROJECT_NAME}_Core
+        EXPORT ${EXPORT_NAME}Targets
         RUNTIME DESTINATION bin/
         ARCHIVE DESTINATION lib/
         LIBRARY DESTINATION lib/
+        )
+
+# Install to namespace
+install(
+        EXPORT      ${EXPORT_NAME}Targets
+        DESTINATION lib/cmake/
+        FILE        ${EXPORT_NAME}Targets.cmake
+        NAMESPACE   ${EXPORT_NAME}::
+        )
+
+configure_package_config_file(
+                              ${PROJECT_SOURCE_DIR}/cmake/template/${EXPORT_NAME}Config.cmake.in
+                              ${CMAKE_BINARY_DIR}/${EXPORT_NAME}Config.cmake
+                              INSTALL_DESTINATION lib/cmake
+                              )
+
+write_basic_package_version_file(
+                                  ${CMAKE_BINARY_DIR}/${EXPORT_NAME}ConfigVersion.cmake
+                                  VERSION ${PROJECT_VERSION}
+                                  #!TODO Check if this is the type of versioning support we want to use
+                                  COMPATIBILITY SameMinorVersion
+                                  )
+
+install(
+        FILES
+          ${CMAKE_BINARY_DIR}/${EXPORT_NAME}Config.cmake
+          ${CMAKE_BINARY_DIR}/${EXPORT_NAME}ConfigVersion.cmake
+        DESTINATION lib/cmake
         )

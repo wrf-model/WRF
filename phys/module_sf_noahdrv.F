@@ -3746,7 +3746,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                 IF (use_distributed_aerodynamics) THEN
                   IF (IVGTYP(I, J) == ISURBAN) THEN
                     UTYPE_URB = 2
-                    FRC_URB2D(I, J) = MIN(0.9, 1 - shdavg(I, J) / 100.)
+                    FRC_URB2D(I, J) = MAX(0.1, MIN(0.9, 1 - shdavg(I, J) / 100.))
                   END IF
                 ELSE IF (use_wudapt_lcz == 1) THEN
                   IF(IVGTYP(I,J)==ISURBAN) UTYPE_URB=5

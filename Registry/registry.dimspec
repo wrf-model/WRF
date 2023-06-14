@@ -140,3 +140,5 @@ endif
 # Dimensions for PSU-DENG SCP
 dimspec    nsh     2     constant=100                      z     nsh
 
+# Dimensions for AHE
+dimspec    m_hr    2     constant=(0:287)                  z     month_hour

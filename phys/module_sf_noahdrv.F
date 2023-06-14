@@ -110,6 +110,7 @@ CONTAINS
                   lfrv_urb3d,dgr_urb3d,dg_urb3d,lfr_urb3d,lfg_urb3d,& !RMS
                   lp_urb2d,hi_urb2d,lb_urb2d,hgt_urb2d,         & !H multi-layer urban
                   mh_urb2d,stdh_urb2d,lf_urb2d,                 & !SLUCM
+                  lf_urb2d_s, z0_urb2d,                         & !SLUCM
                   th_phy,rho,p_phy,ust,                         & !I multi-layer urban
                   gmt,julday,xlong,xlat,                        & !I multi-layer urban
                   a_u_bep,a_v_bep,a_t_bep,a_q_bep,              & !O multi-layer urban
@@ -595,6 +596,10 @@ CONTAINS
      REAL :: lp_urb
      REAL :: hgt_urb
      REAL, DIMENSION(4) :: lf_urb
+! Distributed aerodynamics parameters
+     REAL :: lf_urb_s
+     REAL :: z0_urb
+     REAL :: vegfrac
 ! Variables for multi-layer UCM (Martilli et al. 2002)
    REAL, OPTIONAL, INTENT(IN  )   ::                                   GMT 
    INTEGER, OPTIONAL, INTENT(IN  ) ::                               JULDAY
@@ -655,6 +660,8 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: mh_urb2d
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: stdh_urb2d
    REAL, OPTIONAL, DIMENSION( ims:ime, 4, jms:jme ), INTENT(IN) :: lf_urb2d
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: lf_urb2d_s
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: z0_urb2d
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_u_bep   !Implicit momemtum component X-direction
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_v_bep   !Implicit momemtum component Y-direction
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_t_bep   !Implicit component pot. temperature
@@ -1416,6 +1423,10 @@ CONTAINS
             if (I.eq.73.and.J.eq.125)THEN
                check = 1
             end if
+! Distributed aerodynamics
+            lf_urb_s = lf_urb2d_s(I, J)
+            z0_urb = z0_urb2d(I, J)
+            vegfrac = vegfra(I, J) / 100
 !
 ! Call urban
             CALL cal_mon_day(julian,julyr,jmonth,jday)
@@ -1439,7 +1450,8 @@ CONTAINS
                        hgt_urb,frc_urb,lb_urb, check,CMCR_URB,TGR_URB,  & ! H
                        TGRL_URB,SMR_URB,CMGR_URB,CHGR_URB,jmonth,       & ! H
                        DRELR_URB,DRELB_URB,                             & ! H
-                       DRELG_URB,FLXHUMR_URB,FLXHUMB_URB,FLXHUMG_URB)                            
+                       DRELG_URB,FLXHUMR_URB,FLXHUMB_URB,FLXHUMG_URB,   &
+                       lf_urb_s, z0_urb, vegfrac)
 
 #if 0
           IF(IPRINT) THEN
@@ -2345,7 +2357,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   myj,frpcpn,                                   &
                   SH2O,SNOWH,                                   & !H
                   U_PHY,V_PHY,                                  & !I
-                  SNOALB,SHDMIN,SHDMAX,                         & !I
+                  SNOALB,SHDMIN,SHDMAX,SHDAVG,                  & !I
                   SNOTIME,                                      & !?
                   ACSNOM,ACSNOW,                                & !O
                   SNOPCX,                                       & !O
@@ -2415,6 +2427,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   urban_map_zgrd,                               & !I multi-layer urban
                   num_urban_hi,                                 & !I multi-layer urban
                   use_wudapt_lcz,                               & !I wudapt
+                  use_distributed_aerodynamics,                 & !I slucm
                   tsk_rural_bep,                                & !H multi-layer urban
                   trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,      & !H multi-layer urban
                   tlev_urb3d,qlev_urb3d,                        & !H multi-layer urban
@@ -2430,6 +2443,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   lfrv_urb3d,dgr_urb3d,dg_urb3d,lfr_urb3d,lfg_urb3d,& !RMS
                   lp_urb2d,hi_urb2d,lb_urb2d,hgt_urb2d,         & !H multi-layer urban
                   mh_urb2d,stdh_urb2d,lf_urb2d,                 & !SLUCM
+                  lf_urb2d_s, z0_urb2d,                         & !SLUCM
                   th_phy,rho,p_phy,ust,                         & !I multi-layer urban
                   gmt,julday,xlong,xlat,                        & !I multi-layer urban
                   a_u_bep,a_v_bep,a_t_bep,a_q_bep,              & !O multi-layer urban
@@ -2607,6 +2621,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                                                         VEGFRA, &
                                                         SHDMIN, &
                                                         SHDMAX, &
+                                                        SHDAVG, &
                                                         SNOALB, &
                                                            GSW, &
                                                         SWDOWN, & !added 10 jan 2007
@@ -2911,6 +2926,10 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
      REAL :: lp_urb
      REAL :: hgt_urb
      REAL, DIMENSION(4) :: lf_urb
+! Distributed aerodynamics parameters
+     REAL :: lf_urb_s
+     REAL :: z0_urb
+     REAL :: vegfrac
 ! Variables for multi-layer UCM (Martilli et al. 2002)
    REAL, OPTIONAL, INTENT(IN  )   ::                                   GMT 
    INTEGER, OPTIONAL, INTENT(IN  ) ::                               JULDAY
@@ -2928,6 +2947,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
    INTEGER, INTENT(IN  ) ::                               urban_map_zgrd
    INTEGER, INTENT(IN  ) ::                               NUM_URBAN_HI
    INTEGER, INTENT(IN  ) ::                               use_wudapt_lcz
+   LOGICAL, INTENT(IN  ) ::                               use_distributed_aerodynamics
    REAL, OPTIONAL, DIMENSION( ims:ime,                     jms:jme ), INTENT(INOUT) :: tsk_rural_bep
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zrd, jms:jme ), INTENT(INOUT) :: trb_urb4d
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zwd, jms:jme ), INTENT(INOUT) :: tw1_urb4d
@@ -2971,6 +2991,8 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: mh_urb2d
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: stdh_urb2d
    REAL, OPTIONAL, DIMENSION( ims:ime, 4, jms:jme ), INTENT(IN) :: lf_urb2d
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: lf_urb2d_s
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: z0_urb2d
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_u_bep   !Implicit momemtum component X-direction
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_v_bep   !Implicit momemtum component Y-direction
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_t_bep   !Implicit component pot. temperature
@@ -3721,7 +3743,12 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
       
                 !  UTYPE_URB = UTYPE_URB2D(I,J) !urban type (low, high or industrial)
                 !  this need to be changed in the mosaic danli
-                IF (use_wudapt_lcz == 1) THEN
+                IF (use_distributed_aerodynamics) THEN
+                  IF (IVGTYP(I, J) == ISURBAN) THEN
+                    UTYPE_URB = 2
+                    FRC_URB2D(I, J) = MIN(0.9, 1 - shdavg(I, J) / 100.)
+                  END IF
+                ELSE IF (use_wudapt_lcz == 1) THEN
                   IF(IVGTYP(I,J)==ISURBAN) UTYPE_URB=5
                   IF(IVGTYP(I,J)==LCZ_1) UTYPE_URB=1
                   IF(IVGTYP(I,J)==LCZ_2) UTYPE_URB=2
@@ -3871,6 +3898,10 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   if (I.eq.73.and.J.eq.125)THEN
                      check = 1
                   end if
+      ! Distributed aerodynamics
+                  lf_urb_s = lf_urb2d_s(I, J)
+                  z0_urb = z0_urb2d(I, J)
+                  vegfrac = vegfra(I, J) / 100
       !
       ! Call urban
                   CALL cal_mon_day(julian,julyr,jmonth,jday)      
@@ -3894,7 +3925,8 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                              hgt_urb,frc_urb,lb_urb, check,CMCR_URB,TGR_URB,  & ! H
                              TGRL_URB,SMR_URB,CMGR_URB,CHGR_URB,jmonth,       & ! H
                              DRELR_URB,DRELB_URB,                             & ! H
-                             DRELG_URB,FLXHUMR_URB,FLXHUMB_URB,FLXHUMG_URB)     
+                             DRELG_URB,FLXHUMR_URB,FLXHUMB_URB,FLXHUMG_URB,   &
+                             lf_urb_s, z0_urb, vegfrac)
       
 #if 0
                 IF(IPRINT) THEN
@@ -3936,7 +3968,9 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
       ! Convert QSFC back to mixing ratio
                   QSFC(I,J)= Q1/(1.0-Q1)
                   UST(I,J)= FRC_URB2D(I,J)*UST_URB+(1-FRC_URB2D(I,J))*UST(I,J)      ![m/s]
+                  IF (.not. use_distributed_aerodynamics) THEN
                   ZNT(I,J)= EXP(FRC_URB2D(I,J)*ALOG(ZNT_URB)+(1-FRC_URB2D(I,J))* ALOG(ZNT(I,J)))   ! ADD BY DAN
+                  END IF
 
 #if 0
           IF(IPRINT)THEN
@@ -4743,6 +4777,10 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   if (I.eq.73.and.J.eq.125)THEN
                      check = 1
                   end if
+      ! Distributed aerodynamics
+                  lf_urb_s = lf_urb2d_s(I, J)
+                  z0_urb = z0_urb2d(I, J)
+                  vegfrac = vegfra(I, J) / 100
       !
       ! Call urban
                   CALL cal_mon_day(julian,julyr,jmonth,jday)        
@@ -4766,7 +4804,8 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                              hgt_urb,frc_urb,lb_urb, check,CMCR_URB,TGR_URB,  & ! H
                              TGRL_URB,SMR_URB,CMGR_URB,CHGR_URB,jmonth,       & ! H
                              DRELR_URB,DRELB_URB,                             & ! H
-                             DRELG_URB,FLXHUMR_URB,FLXHUMB_URB,FLXHUMG_URB)  
+                             DRELG_URB,FLXHUMR_URB,FLXHUMB_URB,FLXHUMG_URB,   &
+                             lf_urb_s, z0_urb, vegfrac)
       
 #if 0
                 IF(IPRINT) THEN

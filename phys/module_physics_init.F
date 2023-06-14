@@ -3302,7 +3302,8 @@ CHARACTER(LEN=8) :: name
 
              IF ( PRESENT( FRC_URB2D ) .AND. PRESENT( UTYPE_URB2D )) THEN
                 CALL urban_param_init(DZR,DZB,DZG,num_soil_layers,             & !urban
-                                sf_urban_physics,config_flags%use_wudapt_lcz)    !urban
+                                sf_urban_physics,config_flags%use_wudapt_lcz,  &
+                                config_flags%use_distributed_aerodynamics)
                                
                 
                 CALL urban_var_init(ISURBAN,TSK,TSLB,TMN,IVGTYP,               & !urban
@@ -3351,7 +3352,6 @@ CHARACTER(LEN=8) :: name
                               DL_U_BEP,SF_BEP,VL_BEP,                          & !multi-layer urban
                               FRC_URB2D, UTYPE_URB2D,config_flags%use_wudapt_lcz)  !urban
           
-
                max_utype_urb2d = maxval(UTYPE_URB2D)*1.0
 #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
                max_utype_urb2d = wrf_dm_max_real(max_utype_urb2d)
@@ -3445,7 +3445,8 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
           IF ((SF_URBAN_PHYSICS.eq.1).OR.(SF_URBAN_PHYSICS.EQ.2).OR.(SF_URBAN_PHYSICS.EQ.3)) THEN
              IF ( PRESENT( FRC_URB2D ) .AND. PRESENT( UTYPE_URB2D )) THEN
                 CALL urban_param_init(DZR,DZB,DZG,num_soil_layers,                   & !urban
-                                sf_urban_physics,config_flags%use_wudapt_lcz)
+                                sf_urban_physics,config_flags%use_wudapt_lcz,        &
+                                config_flags%use_distributed_aerodynamics)
                 CALL urban_var_init(ISURBAN,TSK,TSLB,TMN,IVGTYP,               & !urban
                               ims,ime,jms,jme,kms,kme,num_soil_layers,         & !urban
                               LCZ_1_TABLE,LCZ_2_TABLE,LCZ_3_TABLE,LCZ_4_TABLE, & !urban

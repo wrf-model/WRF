@@ -30,8 +30,8 @@
  time_step_fract_num                 = 0,			! Numerator if using fractional time step. DO NOT ADD ADDITIONAL COLUMNS.
  time_step_fract_den                 = 1,			! Denomenator if using fractional time step. DO NOT ADD ADDITIONAL COLUMNS.
  max_dom                             = 1,			! Total number of domains for the simulation. DO NOT ADD ADDITIONAL COLUMNS.
- e_we                                = 150,    220,   200,	! Number of grid spaces in the x direction (west-east).
- e_sn                                = 130,    214,   210,	! Number of grid spaces in the y direction (south-north).
+ e_we                                = 150,    220,   200,	! Number of grid points in the x direction (west-east).
+ e_sn                                = 130,    214,   210,	! Number of grid points in the y direction (south-north).
  e_vert                              = 45,     45,    45,	! Number of full vertical levels. must be the same for all domains.
  dzstretch_s                         = 1.1			! Surface stretch factor when auto_levels_opt = 2 (which is default). DO NOT ADD ADDITIONAL COLUMNS.
  p_top_requested                     = 5000,			! Pressure top (in Pa) to use for the simulation. The input data must go up to this value. DO NOT ADD ADDITIONAL COLUMNS.

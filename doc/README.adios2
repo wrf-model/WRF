@@ -1,0 +1,65 @@
+The ADIOS2 I/O option in WRF improves I/O at scale, as well as enabling in-situ processing and code-coupling capabilities.
+
+USAGE:
+The ADIOS2 I/O option for history and/or restart file is enabled by setting one of the following:
+io_form_history = 14
+io_form_restart = 14
+
+Additionally, the ADIOS2 I/O implementation allows for optional configuration that can be appended to the namelist.input:
+ &namelist_adios2
+ adios2_compression_enable = .true.,
+ adios2_blosc_compressor = "lz4",
+ adios2_numaggregators = 0,
+ /
+
+- ADIOS2 compression is enabled by default but can be disabled with the adios2_compression_enable parameter.
+- Different Blosc compression codecs are available: lz4 (default), lz4hc, blosclz, zstd, zlib. 
+  The ideal compression codec depends on the platform architecture as well as required compression ratios.
+- adios2_numaggregators is the number of aggregator ranks (and resulting sub-files created). This number can greatly affect write times, and is the primary tuning knob in ADIOS2. 
+  By default this is set to 0, which is an alias for a single aggregator per compute node, which is found to be a good option at large process counts,
+  as file system contention is minimized while removing inter-node communication that is seen in MPI-I/O based approaches.
+  Alternatively, this can be set to any number between 1 and the number of processes participating in the computation. 
+  Using adios2_numaggregators set to the number of participating processes (or larger) essentially achieves file-per-process I/O which is highly performant at lower process/node counts. 
+
+As ADIOS2 is "Step-based" approach (to resemble actual production of data in "steps"), optimal performance is achieved when history outputs are appended to the same file. 
+This is achieved in WRF by setting the frames_per_outfile namelist.input parameter to a large number.
+
+As ADIOS2 generates data in its own file format (BP3/4/5), post-processing scripts will need to altered to use the ADIOS2 read API.
+For backwards compatibility purposes, a conversion script converting the ADIOS2 file format to NetCDF4 file format conversion script is also available.
+See https://github.com/MichaelLaufer/WRF-ADIOS2-to-NetCDF4 for details.
+File conversions time per output file for a case such as the benchmark CONUS 2.5km resolution take just a few seconds on a local machine.
+
+INSTALLATION:
+WRF is configured for use with ADIOS2 by setting the $ADIOS2 environment variable to the ADIOS2 root installation directory, just like the PnetCDF, and PHDF5 backends.
+ADIOS2 installation should be configured for MPI and Blosc, and requires a version of ADIOS2 >= v2.8.0.
+
+ADVANCED:
+In general ADIOS2 parameters can be set using an XML file (see ADIOS2 documentation for more details). 
+But as transformation parameters (like compression) must be specified in the XML on a per-variable basis, which in WRF can be hundreds of variables, this is not feasible. 
+Therefore compression is hardcoded in the WRF-ADIOS2 implementation, but with the compression controlled by the aforementioned namelist.input parameters.
+That being said, additional features in ADIOS2 like SST for in-situ processing, and node-local burst buffer write capabilities are enabled by using an XML file (named adios2.xml,
+and should be placed in the run directory).
+The ADIOS2 "io name" in the XML should be set to the name of the file that would be written to the disk, and frames_per_outfile should be set to a large number,
+to enforce all of the data to use the same ADIOS2 "io name".
+When using the ADIOS2 SST file engine (e.g. for in-situ processing), the parameter SpeculativePreloadMode should be set to "OFF", to prevent ADIOS2 preemptively sending unneeded data to the data consumer.
+
+Example adios2.xml for node-local burst buffer functionality:
+<?xml version="1.0"?>
+<adios-config>
+  <io name="wrfout_d01_2018-06-17_00:00:00">
+      <engine type="BP4">
+      <parameter key="BurstBufferPath" value="/mnt/Burst/Buffer/PATH"/>
+      </engine>
+  </io>
+</adios-config>
+
+Example adios2.xml for in-situ analysis functionality:
+<?xml version="1.0"?>
+<adios-config>
+  <io name="wrfout_d01_2018-06-17_00:00:00">
+      <engine type="SST">
+      <parameter key="SpeculativePreloadMode" value="OFF"/>
+      <parameter key="QueueLimit" value="1"/>
+      </engine>
+  </io>
+</adios-config>

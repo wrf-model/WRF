@@ -554,7 +554,7 @@ state   real    qir2            ikjftb  scalar      1         -     \
 state   real    qib2            ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QIB2"           "Rime ice volume-2 mixing ratio" "m(3) kg(-1)"
 state   real    qzi             ikjftb  scalar      1         -     \
-   i0rhusdf=(bdy_interp:dt)    "QZI"           "Sixth moment ice mixing ratio" "m(6) kg(-1)"
+   i0rhusdf=(bdy_interp:dt)    "QZI"           "Sq root of sixth moment ice mixing ratio times number mixing ratio" "m(3) kg(-1)"
 state   real    qvoli            ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QVOLI"           "Ice volume-1 mixing ratio" "m(3) kg(-1)"
 state   real    qaoli            ikjftb  scalar      1         -     \
@@ -1029,6 +1029,7 @@ state   real   WSTAR_YSU      ij     misc        1         -     -        "WSTAR
 state   real   DELTA_YSU      ij     misc        1         -     -        "DELTA_YSU"           "entrainment layer depth from ysupbl"    "m"
 
 # EEPS PBL  scheme
+state   real   pek_pbl        ikj    misc        1         -     hr        "PEK_PBL"            "TKE  from EEPS"                    "m2 s-2"
 state   real   pep_pbl        ikj    misc        1         -     hr        "PEP_PBL"            "TKE dissipation rate from EEPS"    "m2 s-3"
 state   real   pek_adv        ikjftb  scalar      1         -      i0rusdf=(bdy_interp:dt) "pek_adv"       "TKE from EEPS"      "m2 s-2"
 state   real   pep_adv        ikjftb  scalar      1         -      i0rusdf=(bdy_interp:dt) "pep_adv"       "TKE dissipating rate from EEPS"      "m2 s-3"
@@ -1045,7 +1046,7 @@ state   real   VZ0              ij     misc        1         -      r        "VZ
 state   real   QSFC             ij     misc        1         -      r        "QSFC"                  "SPECIFIC HUMIDITY AT LOWER BOUNDARY"          "kg kg-1"
 state   real   AKHS             ij     misc        1         -      r        "AKHS"                  "SFC EXCH COEFF FOR HEAT"                      "m s-1"    
 state   real   AKMS             ij     misc        1         -      r        "AKMS"                  "SFC EXCH COEFF FOR MOMENTUM"                  "m s-1"    
-state   integer KPBL            ij     misc        1         -     r         "KPBL"                  "LEVEL OF PBL TOP"                             ""
+state   integer KPBL            ij     misc        1         -      r        "KPBL"                  "LEVEL OF PBL TOP"                             ""
 state   real   U10E             ij     misc        1         -     hdu       "U10E"                  "Special U at 10 M from MYJSFC"         "m s-1"
 state   real   V10E             ij     misc        1         -     hdu       "V10E"                  "Special V at 10 M from MYJSFC"         "m s-1"
 
@@ -1106,6 +1107,7 @@ state   real   tsq             ikj     misc        1         -      r        "ts
 state   real   qsq             ikj     misc        1         -      r        "qsq"               "total water variance"      "(kg/kg)**2"
 state   real   cov             ikj     misc        1         -      r        "cov"               "total water-liquid water pottemp covariance"   "K kg/kg"
 state   real   Sh3d            ikj     misc        1         -      r        "Sh3d"              "Stability function for heat"   ""
+state   real   Sm3d            ikj     misc        1         -      r        "Sm3d"              "Stability function for momentum"   ""
 state   real   ch               ij     misc        1         -      -        "ch"                "surface exchange coeff for heat"    "m s-1"
 #state   real   K_m             ikj     misc        1         -     -          "K_m"               "EXCHANGE COEFFICIENT for momentum "
 #state   real   K_h             ikj     misc        1         -     -          "K_h"               "EXCHANGE COEFFICIENT for heat "
@@ -1208,6 +1210,12 @@ state    real    sf_bep        ikj     misc        1         Z      -        "sf
 state    real    vl_bep        ikj     misc        1         Z      -        "vl_bep"                "volume grid"               "-"
 state    real   tke_pbl        ikj     misc        1         Z      rh       "tke_pbl"              "TKE from PBL"      "m2 s-2"
 state    real   el_pbl         ikj     misc        1         Z      rh       "el_pbl"               "Length scale from PBL"      "m"
+state    real    diss_pbl      ikj     misc        1         -      rh       "diss_pbl"              "Dissipation Rrate from PBL - keps"      "m2 s-3"
+state    real    tpe_pbl       ikj     misc        1         -      rh       "tpe_pbl"              "TPE from PBL- keps"      "K2"
+state    real    tke_adv       ikjftb  scalar      1         -      i0rusdf=(bdy_interp:dt) "tke_adv"       "Advected TKE from keps"      "m2 s-2"
+state    real    diss_adv      ikjftb  scalar      1         -      i0rusdf=(bdy_interp:dt) "diss_adv"      "Advected dissipation rate from keps"      "m2 s-3"
+state    real    tpe_adv       ikjftb  scalar      1         -      i0rusdf=(bdy_interp:dt) "tpe_adv"       "Advected TPE from keps"      "K2"
+state    real    pr_pbl         ikj    misc        1         -      rh       "pr_pbl"              "prandtl number from pbl - keps"      "-"
 # Diagnostic BOULAC PBL variables
 state    real   wu_tur         ikj     misc        1         -      r        "wu_tur"               "Turbulent flux of momentum(x)"      "m2 s-2"
 state    real   wv_tur         ikj     misc        1         -      r        "wv_tur"               "Turbulent flux of momentum(y)"      "m2 s-2"
@@ -1235,6 +1243,8 @@ state integer   ncfrcv           ij     misc        1         -      -
 
 # new rad variables
 state    real   o3rad           ikj     misc        1         -      rdf=(p2c)      "o3rad"    "RADIATION 3D OZONE" "ppmv"
+# GFS Total ozone
+state   real    o3_gfs_du       ij      misc        1         -      i012rh         "o3_gfs_du"    "Total ozone from GFS" "Dobson Units"
 
 # incoming optical depth derived from aerosol data
 state  real   aerodm    i{lsa}jm{ty}    misc        1    -   -     -
@@ -2371,6 +2381,7 @@ rconfig   real    rankine_lid          namelist,tc      1              -999.   i
 rconfig   character  physics_suite        namelist,physics      1           "none" rh "Physics suite selection" "physics suite to use for all domains: CONUS, tropical, or none" "character string"
 rconfig   logical  force_read_thompson   namelist,physics      1           .false.
 rconfig   logical  write_thompson_tables   namelist,physics     1           .true.
+rconfig   logical  write_thompson_mp38table   namelist,physics     1           .false.
 rconfig   integer     mp_physics          namelist,physics	max_domains    -1     irh       "mp_physics"            ""      ""
 #rconfig   integer     milbrandt_ccntype   namelist,physics      max_domains    0       rh       "milbrandt select maritime(1)/continental(2)"  ""      ""
 rconfig   real     nssl_cccn              namelist,physics      max_domains  0.5e9    rh       "Base CCN concentration for NSSL microphysics"  ""      ""
@@ -2424,7 +2435,7 @@ rconfig   integer     irr_ph              namelist,physics      max_domains    0
 
 rconfig   integer     sf_surface_physics  namelist,physics	max_domains    -1      rh       "sf_surface_physics"            ""      ""
 rconfig   integer     bl_pbl_physics      namelist,physics	max_domains    -1      rh       "bl_pbl_physics"                ""      ""
-rconfig   integer     bl_mynn_tkebudget   namelist,physics      max_domains    0       rh       "bl_mynn_tkebudget"             ""      ""
+rconfig   integer     tke_budget          namelist,physics      max_domains    0       rh       "tke_budget"                    ""      ""
 rconfig   integer     ysu_topdown_pblmix  namelist,physics      1              1       rh       "ysu_topdown_pblmix"            ""      ""
 rconfig   integer     shinhong_tke_diag   namelist,physics      max_domains    0       rh       "shinhong_tke_diag"             ""      ""
 rconfig   logical     bl_mynn_tkeadvect   namelist,physics      max_domains    .false.  rh      "bl_mynn_tkeadvect"             ""      ""
@@ -2438,6 +2449,7 @@ rconfig   integer     bl_mynn_output      namelist,physics      max_domains    0
 rconfig   integer     bl_mynn_cloudmix    namelist,physics      max_domains    1       irh      "bl_mynn_cloudmix"              "0:off,1:activate mixing of all cloud species"          ""
 rconfig   integer     bl_mynn_mixqt       namelist,physics      max_domains    0       irh      "bl_mynn_mixqt"                 "0:mix moisture species separate,1: mix total water"    ""
 rconfig   integer     icloud_bl           namelist,physics      1              1       irh      "icloud_bl"                     "0:no subgrid cloud-radiation coupling,1:activated"     ""
+rconfig   real        bl_mynn_closure     namelist,physics      1              2.6     irh      "bl_mynn_closure"               "2.5: level2.5, 2.6: level 2.6, 3.0: level 3.0"         ""
 rconfig   integer     mfshconv            namelist,physics      max_domains    1       rh       "mfshconv"         "To activate mass flux scheme with qnse, 1=true or 0=false"      ""
 rconfig   integer     sf_urban_physics    namelist,physics      max_domains    0       rh       "sf_urban_physics"     "activate urban model  0=no, 1=Noah_UCM 2=BEP_UCM"   ""
 rconfig   real    BLDT                    namelist,physics      max_domains    0       h    "BLDT"          ""      ""
@@ -2972,6 +2984,7 @@ package   wsm5scheme      mp_physics==4                -             moist:qv,qc
 package   fer_mp_hires    mp_physics==5                -             moist:qv,qc,qr,qi;scalar:qt;state:f_ice_phy,f_rain_phy,f_rimef_phy
 package   fer_mp_hires_advect  mp_physics==15          -             moist:qv,qc,qr,qi;scalar:qrimef
 package   wsm6scheme      mp_physics==6                -             moist:qv,qc,qr,qi,qs,qg;state:re_cloud,re_ice,re_snow
+package   wsm6rscheme     mp_physics==106              -             moist:qv,qc,qr,qi,qs,qg
 package   nuwrf4icescheme mp_physics==7              -               moist:qv,qc,qr,qi,qs,qg,qh;state:phys_tot,physc,physe,physd,physs,physm,physf,acphys_tot,acphysc,acphyse,acphysd,acphyss,acphysm,acphysf,preci3d,precs3d,precg3d,precr3d,prech3d,re_cloud_gsfc,re_rain_gsfc,re_ice_gsfc,re_snow_gsfc,re_graupel_gsfc,re_hail_gsfc,re_cloud,re_ice,re_snow
 package   thompson        mp_physics==8                -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr;state:re_cloud,re_ice,re_snow
 package   milbrandt2mom   mp_physics==9                -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh
@@ -2989,6 +3002,7 @@ package   nssl_2momg      mp_physics==22               -             moist:qv,qc
 package   wsm7scheme      mp_physics==24               -             moist:qv,qc,qr,qi,qs,qg,qh;state:re_cloud,re_ice,re_snow
 package   wdm7scheme      mp_physics==26               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnn,qnc,qnr;state:re_cloud,re_ice,re_snow
 package   thompsonaero    mp_physics==28               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr,qnc,qnwfa,qnifa,qnbca;state:re_cloud,re_ice,re_snow,qnwfa2d,qnifa2d,taod5503d,taod5502d
+package   thompsongh      mp_physics==38               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr,qnc,qng,qvolg,qnwfa,qnifa,qnbca;state:re_cloud,re_ice,re_snow,qnwfa2d,qnifa2d,taod5503d,taod5502d
 package   p3_1category    mp_physics==50               -             moist:qv,qc,qr,qi;scalar:qni,qnr,qir,qib;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,refl_10cm,th_old,qv_old
 package   p3_1category_nc mp_physics==51               -             moist:qv,qc,qr,qi;scalar:qnc,qni,qnr,qir,qib;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,refl_10cm,th_old,qv_old
 package   p3_2category    mp_physics==52               -             moist:qv,qc,qr,qi,qi2;scalar:qnc,qni,qnr,qir,qib,qni2,qir2,qib2;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,vmi3d_2,rhopo3d_2,di3d_2,refl_10cm,th_old,qv_old
@@ -3030,6 +3044,7 @@ package   nssl_1momlfo_dfi  mp_physics_dfi==21       -             dfi_moist:dfi
 package   wsm7scheme_dfi    mp_physics_dfi==24       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
 package   wdm7scheme_dfi    mp_physics_dfi==26       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;dfi_scalar:dfi_qnn,dfi_qnc,dfi_qnr;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
 package   thompsonaero_dfi  mp_physics_dfi==28       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qnr,dfi_qnc,dfi_qnwfa,dfi_qnifa,dfi_qnbca;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
+package   thompsongh_dfi    mp_physics_dfi==38       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qnr,dfi_qng,dfi_qvolg,dfi_qnc,dfi_qnwfa,dfi_qnifa,dfi_qnbca;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
 package   p3_1category_dfi  mp_physics_dfi==50       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi;dfi_scalar:dfi_qni,dfi_qnr,dfi_qir,dfi_qib;state:dfi_re_cloud,dfi_re_ice
 package   p3_1category_nc_dfi  mp_physics_dfi==51    -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi;dfi_scalar:dfi_qnc,dfi_qni,dfi_qnr,dfi_qir,dfi_qib;state:dfi_re_cloud,dfi_re_ice
 package   p3_2category_dfi  mp_physics_dfi==52    -                dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qi2;dfi_scalar:dfi_qnc,dfi_qni,dfi_qnr,dfi_qir,dfi_qib,dfi_qni2,dfi_qir2,dfi_qib2;state:dfi_re_cloud,dfi_re_ice
@@ -3106,18 +3121,18 @@ package   ysuscheme      bl_pbl_physics==1           -             -
 package   myjpblscheme   bl_pbl_physics==2           -             state:tke_pbl,el_pbl
 package   gfsscheme      bl_pbl_physics==3           -             -
 package   qnsepblscheme  bl_pbl_physics==4           -             state:tke_pbl,el_pbl,massflux_EDKF,entr_EDKF,detr_EDKF,thl_up,thv_up,rv_up,rt_up,rc_up,u_up,v_up,frac_up,rc_mf
-package   mynnpblscheme2 bl_pbl_physics==5           -             scalar:qke_adv;state:qke,tke_pbl,sh3d,tsq,qsq,cov,el_pbl
-package   mynnpblscheme3 bl_pbl_physics==6           -             scalar:qke_adv;state:qke,tke_pbl,sh3d,tsq,qsq,cov,el_pbl
+package   mynnpblscheme  bl_pbl_physics==5           -             scalar:qke_adv;state:qke,tke_pbl,sh3d,sm3d,tsq,qsq,cov,el_pbl
 package   acmpblscheme   bl_pbl_physics==7           -             -
 package   boulacscheme   bl_pbl_physics==8           -             state:el_pbl,tke_pbl,wu_tur,wv_tur,wt_tur,wq_tur
 package   camuwpblscheme bl_pbl_physics==9           -             state:tauresx2d,tauresy2d,tpert2d,qpert2d,wpert2d,tke_pbl,smaw3d,wsedl3d,turbtype3d
 package   temfpblscheme  bl_pbl_physics==10          -             state:te_temf,kh_temf,km_temf,shf_temf,qf_temf,uw_temf,vw_temf,wupd_temf,mf_temf,thup_temf,qlup_temf,qtup_temf,cf3d_temf,hd_temf,lcl_temf,hct_temf,cfm_temf
 package   shinhongscheme bl_pbl_physics==11          -             state:el_pbl,tke_pbl
 package   gbmpblscheme   bl_pbl_physics==12          -             state:exch_tke,el_pbl,tke_pbl
-package   eepsscheme     bl_pbl_physics==16          -             scalar:pek_adv,pep_adv;state:tke_pbl,pep_pbl
+package   eepsscheme     bl_pbl_physics==16          -             scalar:pek_adv,pep_adv;state:pek_pbl,pep_pbl
+package   kepsscheme     bl_pbl_physics==17          -             scalar:tke_adv,diss_adv,tpe_adv;state:tpe_pbl,diss_pbl,tke_pbl,pr_pbl,wu_tur,wv_tur,wt_tur,wq_tur
 package   mrfscheme      bl_pbl_physics==99          -             -
 
-package   mynn_tkebudget bl_mynn_tkebudget==1        -             state:qSHEAR,qBUOY,qDISS,qWT,dqke
+package   tkebudget      tke_budget==1               -             state:qSHEAR,qBUOY,qDISS,qWT,dqke
 package   mynn_dmp_edmf  bl_mynn_edmf==1             -             state:ktop_plume,maxmf,nupdraft
 package   mynn_3Doutput  bl_mynn_output==1           -             state:edmf_a,edmf_w,edmf_thl,edmf_qt,edmf_ent,edmf_qc,sub_thl3D,sub_sqv3D,det_thl3D,det_sqv3D
 package   pbl_cloud      icloud_bl==1                -             state:cldfra_bl,qc_bl,qi_bl
@@ -3125,8 +3140,7 @@ package   pbl_cloud      icloud_bl==1                -             state:cldfra_
 package   sms_3dtke      km_opt==5                   -             state:gamu,gamv,nlflux,dlk,l_diss,elmin,xkmv_meso
 
 # dfi
-package   mynnpblscheme2_dfi bl_pbl_physics_dfi==5   -             dfi_scalar:dfi_qke_adv
-package   mynnpblscheme3_dfi bl_pbl_physics_dfi==6   -             dfi_scalar:dfi_qke_adv
+package   mynnpblscheme_dfi bl_pbl_physics_dfi==5   -             dfi_scalar:dfi_qke_adv
 
 package   nocuscheme     cu_physics==0               -             -
 package   kfetascheme    cu_physics==1               -             state:w0avg
@@ -3296,7 +3310,7 @@ package	ltng_none           lightning_option==0            -       -
 package	ltng_crm_PR92w      lightning_option==1            -       state:ic_flashcount,ic_flashrate,cg_flashcount,cg_flashrate
 package ltng_crm_PR92z      lightning_option==2            -       state:ic_flashcount,ic_flashrate,cg_flashcount,cg_flashrate
 package	ltng_cpm_PR92z      lightning_option==11           -       state:ic_flashcount,ic_flashrate,cg_flashcount,cg_flashrate
-package	ltng_lpi            lightning_option==3           -        state:lpi
+package	ltng_lpi            lightning_option==3           -        state:lpi,ic_flashcount,ic_flashrate,cg_flashcount,cg_flashrate
 # only need to specify these once; not for every io_form* variable
 package   io_intio    io_form_restart==1                     -             -
 package   io_netcdf   io_form_restart==2                     -             -
@@ -3313,6 +3327,7 @@ package   io_grib2    io_form_restart==10                    -             -
 package   io_pnetcdf  io_form_restart==11                    -             -
 package   io_pio      io_form_restart==12                    -             -
 package   io_netcdfpar io_form_restart==13                   -             -
+package   io_adios2   io_form_restart==14                    -             -
 
 #WRF Hydro
 package   no_wrfhydro    wrf_hydro==0                -            -

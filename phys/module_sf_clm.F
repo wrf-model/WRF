@@ -18875,11 +18875,9 @@ fp_loop_2 : &
 !-----------------------------------------------------------------------
 ! sum up the pfts for each wrf species with megan bio emissions
 !-----------------------------------------------------------------------
-    print*,'jdf 3',shr_megan_mechcomps_n
     do imech = 1,shr_megan_mechcomps_n
       ii = shr_megan_mechcomps(imech)%index
       mbio_emis(ii) = real( sum( vocflx(:,imech) ),kind=r4 )
-      print*,'jdf 3',imech,ii,mbio_emis(ii)
     end do
 
 
@@ -59801,14 +59799,12 @@ patch_loop_1 : &
     endif
 #endif
 
-          print*,'jdf 1', do_bioe
           if( do_bioe ) then
             mbio_emis(:) = 0._r8
             rho_in = real( rho(i,kts,j),kind=r8 )
           endif
 
           call wrf_debug( 300,'clmdrv: B4 call to clm' )
-          print*,'jdf before call to clm'
           call clm(forc_txy_buf        ,forc_uxy_buf           ,forc_vxy_buf    &
                   ,forc_qxy_buf        ,zgcmxy_buf             ,prec_buf        &
                   ,flwdsxy_buf         ,forc_sols_buf          ,forc_soll_buf   &
@@ -59885,9 +59881,7 @@ patch_loop_1 : &
 
           call wrf_debug( 300,'clmdrv: Af call to clm' )
                  
-                 print*,'jdf 2', do_bioe
                  if( do_bioe ) then
-                   print*,'jdf mbio_emis to e_bio'
                    e_bio(i,j,:) = mbio_emis(:)
                  endif
 
@@ -60732,7 +60726,6 @@ end subroutine clmdrv
 
      CASE (SAPRC99_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP, &
            SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP,SAPRC99_MOSAIC_8BIN_VBS2_KPP)
-      print*,'jdf megan_specifier'
       megan_specifier(1)='isoprene=isoprene+MBO_2m3e2ol+MBO_3m2e1ol+MBO_3m3e1ol'
       term1='myrcene+sabinene+limonene+carene_3+ocimene_t_b+pinene_b+pinene_a+phellandrene_a+thujene_a+terpinene_a+terpinene_g+terpinolene+phellandrene_b+camphene'
       term2='bornene+fenchene_a+ocimene_al+ocimene_c_b+estragole+camphor+piperitone+linalool+terpineol_4+terpineol_a+linalool_OXD_c+linalool_OXD_t+ionone_b+acoradiene'
@@ -61011,8 +61004,6 @@ END IF
 
           if((xland(i,j)-1.5).ge.0.)then
 
-             If(xice(i,j).eq.1)print*,' SEA-ICE AT WATER POINT, i=',i,'j=',j
-  
               smstav(i,j)=1.0
               smstot(i,j)=1.0
               smois(i,:,j)=1.0

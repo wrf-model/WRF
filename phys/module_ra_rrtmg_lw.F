@@ -11647,10 +11647,9 @@ CONTAINS
          INTENT(IN   )  ::                                 XLAND, &
                                                             XICE, &
                                                             SNOW
-!ccc Added for time-varying trace gases.
+! Added for time-varying trace gases.
    INTEGER, INTENT(IN    ) ::                                 yr
    REAL, INTENT(IN    ) ::                                julian
-!ccc
 
 !
 ! Optional
@@ -11962,7 +11961,7 @@ CONTAINS
 ! Pressures are in mb
 !
 
-!ccc Read time-varying trace gases concentrations and interpolate them to run date.
+! Read time-varying trace gases concentrations and interpolate them to run date.
 !
    IF ( GHG_INPUT .EQ. 1 ) THEN 
       CALL read_CAMgases(yr,julian,.false.,"RRTMG",co2,n2o,ch4,cfc11,cfc12)
@@ -11982,8 +11981,6 @@ CONTAINS
       cfc11 = 0.251e-9
       cfc12 = 0.538e-9
    END IF
-
-!ccc
 
 ! latitude loop
   j_loop: do j = jts,jte
@@ -12414,7 +12411,7 @@ CONTAINS
         else
          do k = kts, nlayers
             o3vmr(ncol,k) = o3mmr(k) * amdo
-            o31d(k) = o3vmr(ncol,k)
+            if (k.le.kte) o31d(k) = o3vmr(ncol,k)
          enddo
         endif
 

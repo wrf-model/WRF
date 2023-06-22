@@ -80,6 +80,26 @@ static destroy_par_info ( p )
   if ( p != NULL ) RSL_FREE( p ) ;
 }
 
+static destroy_list( list, dfcn )
+     rsl_list_t ** list ;          /* pointer to pointer to list */
+     int (*dfcn)() ;               /* pointer to function for destroying
+                                      the data field of the list */
+{
+  rsl_list_t *p, *trash ;
+  if ( list == NULL ) return(0) ;
+  if ( *list == NULL ) return(0) ;
+  for ( p = *list ; p != NULL ; )
+  {
+    if ( dfcn != NULL ) (*dfcn)( p->data ) ;
+    trash = p ;
+    p = p->next ;
+    RSL_FREE( trash ) ;
+  }
+  *list = NULL ;
+  return(0) ;
+}
+
+
 static rsl_list_t *Xlist, *Xp, *Xprev ;
 static rsl_list_t *stage ;
 static int stage_len = 0 ;              /* 96/3/15 */
@@ -726,23 +746,3 @@ rsl_lite_from_peerpoint_msg ( len_p, buf )
 
 /********************************************/
 
-destroy_list( list, dfcn )
-  rsl_list_t ** list ;          /* pointer to pointer to list */
-  int (*dfcn)() ;               /* pointer to function for destroying
-                                   the data field of the list */
-{
-  rsl_list_t *p, *trash ;
-  if ( list == NULL ) return(0) ;
-  if ( *list == NULL ) return(0) ;
-  for ( p = *list ; p != NULL ; )
-  {
-    if ( dfcn != NULL ) (*dfcn)( p->data ) ;
-    trash = p ;
-    p = p->next ;
-    RSL_FREE( trash ) ;
-  }
-  *list = NULL ;
-  return(0) ;
-}
-
-/********************************************/

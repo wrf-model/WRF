@@ -592,7 +592,6 @@ package   etampnew        mp_physics==95               -             moist:qv,qc
 package   lscondscheme    mp_physics==98               -             moist:qv
 package   mkesslerscheme  mp_physics==99               -             moist:qv,qc,qr
 
-package   nssl_hail       nssl_hail_on==1              -             moist:qh
 #
 package   mpnotset_4dvar         mp_physics_4dvar==-1     -          g_moist:g_qv;a_moist:a_qv
 package   passiveqv_4dvar        mp_physics_4dvar==0      -          g_moist:g_qv;a_moist:a_qv

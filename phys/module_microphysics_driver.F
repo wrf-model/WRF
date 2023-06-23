@@ -242,8 +242,9 @@ SUBROUTINE microphysics_driver(                                          &
    USE module_mp_cammgmp_driver, ONLY: CAMMGMP ! CAM5's microphysics driver
 # endif
 !  USE module_mp_milbrandt3mom
+#if (WRFPLUS != 1) & !defined( VAR4D )
    USE module_mp_nssl_2mom
-
+#endif
    USE module_mixactivate, only: prescribe_aerosol_mixactivate
 
 ! For checking model timestep is history time (for radar reflectivity)
@@ -1931,6 +1932,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 
 
     CASE (NSSL_2MOM)
+#if (WRFPLUS != 1) & !defined( VAR4D )
          ! For all 1,2,3-moment options
          CALL wrf_debug(100, 'microphysics_driver: calling nssl2mom')
          IF (PRESENT (QV_CURR) .AND.                           &
@@ -2011,7 +2013,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
         ELSE
            Call wrf_error_fatal( 'arguments not present for calling nssl_2mom')
         ENDIF
-
+#endif
 !
         CASE (GSFCGCESCHEME)
              CALL wrf_debug ( 100 , 'microphysics_driver: calling GSFCGCE' )

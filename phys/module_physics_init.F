@@ -4423,7 +4423,9 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    USE module_mp_wdm5
    USE module_mp_wdm6
    USE module_mp_wdm7
+#if (WRFPLUS != 1) & !defined( VAR4D )
    USE module_mp_nssl_2mom, only: nssl_2mom_init
+#endif
 #if (EM_CORE==1)
    USE module_mp_cammgmp_driver, ONLY:CAMMGMP_INIT !CAM5's microphysics
    USE module_mp_morr_two_moment_aero              !TWG2017
@@ -4505,6 +4507,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
        nssl_ipelec_tmp = 0.0
      END SELECT
      
+     nssl_params(:)  = 0
      nssl_params(1)  = nssl_cccn
      nssl_params(2)  = nssl_alphah
      nssl_params(3)  = nssl_alphahl
@@ -4654,6 +4657,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 #endif
      CASE (NSSL_2MOM)
 
+#if (WRFPLUS != 1) & !defined( VAR4D )
       IF ( config_flags%nssl_2moment_on == 0 ) THEN
         nssl_ipconc = 0
       ELSE
@@ -4667,7 +4671,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
          IF ( config_flags % nssl_ccn_on > 0 ) THEN
             ccn_conc = nssl_cccn/1.225 ! set this to have correct boundary conditions
          ENDIF
-         CALL nssl_2mom_init(nssl_params,ipctmp=nssl_ipconc,mixphase=0, &
+         CALL nssl_2mom_init(nssl_params=nssl_params,ipctmp=nssl_ipconc,mixphase=0, &
            nssl_density_on=(config_flags%nssl_density_on > 0), &
            nssl_hail_on=config_flags%nssl_hail_on > 0, &
            nssl_ccn_on=(config_flags%nssl_ccn_on > 0), &
@@ -4696,6 +4700,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 !        CALL nssl_2mom_init(nssl_params,ipctmp=nssl_ipconc,mixphase=0, &
 !          nssl_density_on=nssl_density_on,nssl_hail_on=.true., &
 !          nssl_icdx=config_flags%nssl_icdx,nssl_icdxhl=config_flags%nssl_icdxhl)
+#endif
 #if (EM_CORE==1)
      CASE (CAMMGMPSCHEME) ! CAM5's microphysics
           CALL CAMMGMP_INIT(ixcldliq, ixcldice, ixnumliq, ixnumice &

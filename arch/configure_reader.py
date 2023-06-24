@@ -106,6 +106,29 @@ class Stanza():
     self.splitIntoFieldAndFlags( "DM_CC" )
     self.splitIntoFieldAndFlags( "M4" )
 
+    # Remove rogue compile commands that should *NOT* even be here
+    keysToSanitize = [ 
+                      "ARFLAGS",
+                      "CFLAGS_LOCAL",
+                      "CPP",
+                      "ESMF_LDFLAG",
+                      "LDFLAGS_LOCAL",
+                      "MODULE_SRCH_FLAG",
+                      "RLFLAGS",
+                      "TRADFLAG",
+                      "FCBASEOPTS",
+                      "FCBASEOPTS_NO_G",
+                      "FCOPTIM",
+                      "FORMAT_FIXED",
+                      "FORMAT_FREE"
+                      ]
+
+    for keyToSan in keysToSanitize :
+      if keyToSan in self.kvPairs_ :
+        self.kvPairs_[ keyToSan ] = self.kvPairs_[ keyToSan ].replace( "-c", "" )
+    
+
+
     # Now deref all the rest
     for key in self.kvPairs_ :
       self.dereference( key )
@@ -186,7 +209,7 @@ def getStringOptionSelection( topLevelCmake, searchString ) :
   options = [ option for option in options if option ]
 
   optionsFmt = ", ".join( [ "{idx} : {opt}".format( idx=options.index( opt ), opt=opt ) for opt in options ] )
-  selection  = int( input( "Select string options [0-{max}] ({opts}) : ".format( max=len(options)-1, opts=optionsFmt ) ) )
+  selection  = int( input( "Select option from {optionsStr} [0-{max}] ({opts}) : ".format( optionsStr=searchString, max=len(options)-1, opts=optionsFmt ) ) )
 
   if selection < 0 or selection > len(options) :
     print( "Invalid option selection for " + searchString +  "!" )
@@ -279,8 +302,8 @@ def main() :
                         "WRF_CORE"    : coreOption,
                         "WRF_NESTING" : nestingOption,
                         "WRF_CASE"    : caseOption,
-                        "USE_MPI"     : "ON" if useMPI else "OFF",
-                        "USE_OPENMP"  : "ON" if useMPI else "OFF"
+                        "USE_MPI"     : "ON" if useMPI    else "OFF",
+                        "USE_OPENMP"  : "ON" if useOpenMP else "OFF"
                         }
   generateCMakeToolChainFile( cmakeTemplateFile, cmakeConfigFile, stanzas[idxSelection], additionalOptions )
 

@@ -673,3 +673,23 @@ install(
           ${CMAKE_BINARY_DIR}/${EXPORT_NAME}ConfigVersion.cmake
         DESTINATION lib/cmake
         )
+
+# Install some helper files for anyone using this build as part of their code
+install(
+        DIRECTORY
+          # Trailing / is important
+          ${PROJECT_SOURCE_DIR}/cmake/modules/
+        COMPONENT       helpers
+        DESTINATION     share
+        FILES_MATCHING  
+          PATTERN       "*.cmake"
+        )
+install(
+        FILES
+          ${PROJECT_SOURCE_DIR}/cmake/confcheck.cmake
+          ${PROJECT_SOURCE_DIR}/cmake/gitinfo.cmake
+          ${PROJECT_SOURCE_DIR}/cmake/printOption.cmake
+          ${PROJECT_SOURCE_DIR}/cmake/wrf_get_version.cmake
+        COMPONENT     helpers
+        DESTINATION   share
+        )

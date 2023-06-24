@@ -26,23 +26,6 @@ macro( wrf_c_preproc_fortran )
                           RESULT_VAR   WRF_PP_F_DEFS
                           DEFINITIONS  ${WRF_PP_F_DEFINITIONS}
                           )
-  # set( WRF_PP_F_DEFS )
-  # foreach( WRF_PP_F_DEF  ${WRF_PP_F_DEFINITIONS} )
-  #   if ( NOT ${WRF_PP_F_DEF} MATCHES ".*-D.*" )
-  #     # We have a generator expression, inject the -D correctly
-  #     if ( ${WRF_PP_F_DEF} MATCHES "^[$]<" )
-  #       # Take advantage of the fact that the first time a generator expression ends to finally 
-  #       # name the define it has the first ">:" then unexpanded characters (hopefully)
-  #       # Yes this is fragile but is probably more robust than the current code if you're relying on this macro :D
-  #       string( REGEX REPLACE "^(.*>:)([a-zA-Z])" "\\1-D\\2" WRF_PP_F_DEF_SANITIZED ${WRF_PP_F_DEF} )
-  #       list( APPEND WRF_PP_F_DEFS ${WRF_PP_F_DEF_SANITIZED} )
-  #     else()
-  #       list( APPEND WRF_PP_F_DEFS -D${WRF_PP_F_DEF} )
-  #     endif()
-  #   endif()
-    
-  # endforeach()
-
 
   # Generate compile command and file outputs
   set( WRF_PP_F_OUTPUT   )

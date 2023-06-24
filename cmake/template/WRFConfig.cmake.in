@@ -43,4 +43,4 @@ find_package( netCDF REQUIRED )
 set( ZLIB_ROOT ${netCDF_PREFIX} )
 find_package( ZLIB   REQUIRED )
 
-check_required_components( "@EXPORT_NAME@" )
+check_required_components( "@EXPORT_NAME@_Core" )

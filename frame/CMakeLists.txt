@@ -28,17 +28,17 @@ foreach( n RANGE 0 7 )
                         DEFINITIONS     ${DIR_DEFS} NNN=${n} NL_set_ROUTINES
                         SOURCES         nl_access_routines.F
                         )
-    wrf_c_preproc_fortran( 
-                        TARGET_NAME     nl_get_${n}
-                        OUTPUT_DIR      ${CMAKE_CURRENT_BINARY_DIR}/preproc/
-                        EXTENSION       ".f90"
-                        PREFIX          "nl_get_${n}_"
-                        INCLUDES        ${CMAKE_CURRENT_SOURCE_DIR}
-                                        ${CMAKE_BINARY_DIR}/inc
-                        DEPENDENCIES    registry_code
-                        DEFINITIONS     ${DIR_DEFS} NNN=${n} NL_get_ROUTINES
-                        SOURCES         nl_access_routines.F
-                        )
+  wrf_c_preproc_fortran( 
+                      TARGET_NAME     nl_get_${n}
+                      OUTPUT_DIR      ${CMAKE_CURRENT_BINARY_DIR}/preproc/
+                      EXTENSION       ".f90"
+                      PREFIX          "nl_get_${n}_"
+                      INCLUDES        ${CMAKE_CURRENT_SOURCE_DIR}
+                                      ${CMAKE_BINARY_DIR}/inc
+                      DEPENDENCIES    registry_code
+                      DEFINITIONS     ${DIR_DEFS} NNN=${n} NL_get_ROUTINES
+                      SOURCES         nl_access_routines.F
+                      )
 
   add_dependencies( ${PROJECT_NAME}_Core nl_get_${n} nl_set_${n} )
 

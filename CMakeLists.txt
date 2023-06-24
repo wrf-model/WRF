@@ -395,6 +395,9 @@ add_compile_options(
                     # $<$<COMPILE_LANGUAGE:Fortran>:-cpp>
                     # Use "" and ; specifically to evaluate correctly
                     "$<$<COMPILE_LANG_AND_ID:Fortran,Intel>:-diag-disable;6843>"
+                    $<$<COMPILE_LANG_AND_ID:Fortran,GNU>:-fallow-argument-mismatch>
+                    $<$<COMPILE_LANG_AND_ID:Fortran,GNU>:-fallow-invalid-boz>
+                    $<$<COMPILE_LANG_AND_ID:Fortran,GNU>:-ffree-line-length-none>
                     
                     # $<AND:$<COMPILE_LANGUAGE:Fortran>,$<STREQUAL:${Fortran_COMPILER_ID},Intel>:-diag-disable;6843>
                     )

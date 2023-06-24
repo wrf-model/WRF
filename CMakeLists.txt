@@ -340,8 +340,8 @@ endif()
 # Optional
 find_package( HDF5   QUIET )
 
-# Required for WPS
-find_package( Jasper REQUIRED )
+# Optional for grib2
+find_package( Jasper QUIET )
 
 # Optional
 find_package( PIO QUIET ) 

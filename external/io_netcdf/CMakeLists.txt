@@ -7,34 +7,7 @@ add_library(
               STATIC
               )
 
-# set( 
-#     SOURCE_CODE
-#     #!TODO Change the file extension on these, maybe...
-#     # ext_ncd_get_dom_ti.code
-#     # ext_ncd_get_var_td.code
-#     # ext_ncd_get_var_ti.code
-#     # ext_ncd_put_dom_ti.code
-#     # ext_ncd_put_var_td.code
-#     # ext_ncd_put_var_ti.code
-#     # transpose.code
-    
-#     )
-
-# set_source_files_properties( 
-#                             ${SOURCE_CODE}
-#                             PROPERTIES
-#                               LANGUAGE Fortran
-#                           )
-
-target_sources(
-                ${FOLDER_COMPILE_TARGET}
-                PRIVATE
-                  field_routines.F90
-                  module_wrfsi_static.F90
-                  wrf_io.F90
-                  )
-
-
+# Do this first to simplify steps later
 set_target_properties( 
                       ${FOLDER_COMPILE_TARGET} 
                         PROPERTIES
@@ -56,6 +29,39 @@ target_include_directories( ${FOLDER_COMPILE_TARGET}
                               ${CMAKE_CURRENT_SOURCE_DIR}/../ioapi_share
                               ${CMAKE_INSTALL_PREFIX}/${FOLDER_COMPILE_TARGET}
                             )
+
+
+# First preprocess
+get_directory_property( DIR_DEFS DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_DEFINITIONS )
+get_target_property   ( FOLDER_COMPILE_TARGET_INCLUDES ${FOLDER_COMPILE_TARGET} INCLUDE_DIRECTORIES )
+wrf_c_preproc_fortran( 
+                        TARGET_NAME     ${FOLDER_COMPILE_TARGET}_c_preproc_wrf_io
+                        OUTPUT_DIR      ${CMAKE_CURRENT_BINARY_DIR}/preproc/
+                        EXTENSION       ".f90"
+                        INCLUDES        ${FOLDER_COMPILE_TARGET_INCLUDES}
+                        DEFINITIONS     ${DIR_DEFS}
+                        SOURCES         wrf_io.F90
+                        )
+
+# Now M4 preprocess
+wrf_m4_preproc_fortran( 
+                        TARGET_NAME     ${FOLDER_COMPILE_TARGET}_m4_preproc_wrf_io
+                        OUTPUT_DIR      ${CMAKE_CURRENT_BINARY_DIR}/preproc/
+                        PREFIX          "m4_preproc_"
+                        EXTENSION       ".f90"
+                        SOURCES         ${CMAKE_CURRENT_BINARY_DIR}/preproc/wrf_io.f90
+                        DEPENDENCIES    ${FOLDER_COMPILE_TARGET}_c_preproc_wrf_io
+                        )
+
+add_dependencies( ${FOLDER_COMPILE_TARGET} ${FOLDER_COMPILE_TARGET}_m4_preproc_wrf_io )
+
+target_sources(
+                ${FOLDER_COMPILE_TARGET}
+                PRIVATE
+                  ${CMAKE_CURRENT_BINARY_DIR}/preproc/m4_preproc_wrf_io.f90
+                  module_wrfsi_static.F90
+                  field_routines.F90
+                  )
 
 install(
         TARGETS ${FOLDER_COMPILE_TARGET}

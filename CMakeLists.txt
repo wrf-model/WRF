@@ -10,8 +10,8 @@ set( EXPORT_NAME ${PROJECT_NAME} )
 
 if ( DEFINED CMAKE_TOOLCHAIN_FILE )
   set( WRF_CONFIG ${CMAKE_TOOLCHAIN_FILE} )
-  message( STATUS "Loading configuration file..." )
-  include( ${WRF_CONFIG} )
+  # message( STATUS "Loading configuration file... : ${WRF_CONFIG}" )
+  # include( ${WRF_CONFIG} )
 endif()
 
 # list( APPEND CMAKE_MODULE_PATH         )
@@ -19,6 +19,7 @@ list( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/ ${PROJECT_SOURCE_DIR
 
 # Use link paths as rpaths 
 set( CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE )
+set( CMAKE_Fortran_PREPROCESS          ON )
 
 include( CMakePackageConfigHelpers )
 include( c_preproc   )
@@ -51,7 +52,7 @@ wrf_get_version( ${PROJECT_SOURCE_DIR}/README )
 ## Options that can be user configured
 ##
 ################################################################################
-set( CMAKE_INSTALL_PREFIX ${PROJECT_SOURCE_DIR}/runTemp )
+# set( CMAKE_INSTALL_PREFIX ${PROJECT_SOURCE_DIR}/ )
 
 # Mode configuration
 
@@ -163,6 +164,10 @@ set( USE_M4               ON )
 # Same thing -what do these defines even do if they are always on????
 set( NMM_CORE            OFF )
 set( NETCDF               ON )
+
+
+# Special internal flag for profiling compilation
+set( PROFILE_COMPILATION OFF )
 
 
 # From arch/preamble
@@ -310,13 +315,13 @@ if ( ${USE_MPI} )
 
   if ( DEFINED WRF_MPI_Fortran_FLAGS AND NOT "${WRF_MPI_Fortran_FLAGS}" STREQUAL "" )
     add_compile_options(
-                        $<$<COMPILE_LANGUAGE:Fortran>,${WRF_MPI_Fortran_FLAGS}>
+                        $<$<COMPILE_LANGUAGE:Fortran>:${WRF_MPI_Fortran_FLAGS}>
                         )
   endif()
 
   if ( DEFINED WRF_MPI_C_FLAGS AND NOT "${WRF_MPI_C_FLAGS}" STREQUAL "" )
     add_compile_options(
-                        $<$<COMPILE_LANGUAGE:C>,${WRF_MPI_C_FLAGS}>
+                        $<$<COMPILE_LANGUAGE:C>:${WRF_MPI_C_FLAGS}>
                         )
   endif()
 endif()
@@ -402,6 +407,12 @@ add_compile_options(
                     # $<AND:$<COMPILE_LANGUAGE:Fortran>,$<STREQUAL:${Fortran_COMPILER_ID},Intel>:-diag-disable;6843>
                     )
 
+if ( ${PROFILE_COMPILATION} )
+  add_compile_options(
+                      $<$<COMPILE_LANG_AND_ID:Fortran,GNU>:-ftime-report>
+                      )
+endif()
+
 add_compile_definitions(
                         MAX_DOMAINS_F=${MAX_DOMAINS_F}
                         CONFIG_BUF_LEN=${CONFIG_BUF_LEN}
@@ -483,10 +494,6 @@ add_compile_definitions(
                         $<IF:$<BOOL:${FSEEKO64}>,FSEEKO64_OK,$<IF:$<BOOL:${FSEEKO}>,FSEEKO_OK,FSEEK_OK>>
 
                         )
-
-
-#!TODO Investigate if this is better than setting -cpp
-set( CMAKE_Fortran_PREPROCESS ON )
 
 
 # Make core target

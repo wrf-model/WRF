@@ -4,7 +4,7 @@ add_subdirectory( MEL_grib1  )
 add_subdirectory( grib1_util )
 add_subdirectory( WGRIB      )
 
-get_filename_component( FOLDER_COMPILE_TARGET ${CMAKE_CURRENT_SOURCE_DIR} NAME)
+get_filename_component( FOLDER_COMPILE_TARGET ${CMAKE_CURRENT_SOURCE_DIR} NAME )
 
 add_library(
             ${FOLDER_COMPILE_TARGET}
@@ -24,7 +24,7 @@ set_target_properties(
                       ${FOLDER_COMPILE_TARGET} 
                         PROPERTIES
                           Fortran_MODULE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/${FOLDER_COMPILE_TARGET}
-                          Fortran_FORMAT           FREE                          
+                          Fortran_FORMAT           FREE
                       )
 
 

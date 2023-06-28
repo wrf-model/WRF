@@ -1234,15 +1234,7 @@ endif
                       grid%itimestep, grid%fdob,            &
                       t00, p00, a,                      & ! for obs_nudge base state
                       grid%TYR, grid%TYRA, grid%TDLY, grid%TLAG, grid%NYEAR, grid%NDAY,grid%tmn_update, &
-                      grid%achfx, grid%aclhf, grid%acgrdflx,                  &
-                      config_flags%nssl_cccn,                                 &
-                      config_flags%nssl_alphah, config_flags%nssl_alphahl,    &
-                      config_flags%nssl_cnoh, config_flags%nssl_cnohl,        &
-                      config_flags%nssl_cnor, config_flags%nssl_cnos,         &
-                      config_flags%nssl_rho_qh, config_flags%nssl_rho_qhl,    &
-                      config_flags%nssl_rho_qs,                               &
-                      config_flags%nssl_ipelec,                               &
-                      config_flags%nssl_isaund                               &
+                      grid%achfx, grid%aclhf, grid%acgrdflx                 &
                       ,grid%RQCNCUTEN, grid%RQINCUTEN,grid%rliq             &      !mchen add for cammpmg
                       ,grid%cldfra_dp,grid%cldfra_sh                        & ! ckay for subgrid cloud
                       ,grid%te_temf,grid%cf3d_temf,grid%wm_temf        & ! WA

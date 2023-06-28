@@ -7,9 +7,9 @@ include( "${CMAKE_CURRENT_LIST_DIR}/@EXPORT_NAME@Targets.cmake" )
 set( WRF_VERSION @PROJECT_VERSION@ )
 
 # Options WRF was built with
-set( WRF_WRF_CORE      @WRF_CORE@    )
-set( WRF_WRF_NESTING   @WRF_NESTING@ )
-set( WRF_WRF_CASE      @WRF_CASE@    )
+set( WRF_CORE      @WRF_CORE@    )
+set( WRF_NESTING   @WRF_NESTING@ )
+set( WRF_CASE      @WRF_CASE@    )
 
 set( WRF_USE_DOUBLE                       @USE_DOUBLE@                         )
 set( WRF_USE_MPI                          @USE_MPI@                            )

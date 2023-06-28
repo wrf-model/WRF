@@ -5,12 +5,11 @@ set( MPI_C_COMPILER       "{DM_CC}" )
 set( CMAKE_Fortran_COMPILER "{SFC}" )
 set( CMAKE_C_COMPILER       "{SCC}" )
 
-set( CMAKE_Fortran_FLAGS    "{FCBASEOPTS} {BYTESWAPIO}" )
-set( CMAKE_C_FLAGS          "{CFLAGS_LOCAL}" )
+set( CMAKE_Fortran_FLAGS_INIT    "{FCBASEOPTS} {BYTESWAPIO}" )
+set( CMAKE_C_FLAGS_INIT          "{CFLAGS_LOCAL}" )
 
-set( CMAKE_Fortran_FLAGS_DEBUG    "{FCDEBUG}" )
-
-set( CMAKE_Fortran_FLAGS_RELEASE  "{FCOPTIM}" )
+set( CMAKE_Fortran_FLAGS_DEBUG_INIT    "{FCDEBUG}" )
+set( CMAKE_Fortran_FLAGS_RELEASE_INIT  "{FCOPTIM}" )
 
 # Project specifics now
 set( WRF_MPI_Fortran_FLAGS  "{DM_FC_FLAGS}" )

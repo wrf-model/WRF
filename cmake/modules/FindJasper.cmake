@@ -12,7 +12,7 @@ find_path(
           Jasper_INCLUDE_DIR
           NAMES jasper/jasper.h # Make it so we go up one dir
           # Hints before PATHS
-          HINTS ENV Jasper_ROOT ENV JASPERINC ENV JASPER_PATH ${Jasper_ROOT} ${JASPERINC} ${JASPER_PATH}
+          HINTS ${Jasper_ROOT} ${JASPERINC} ${JASPER_PATH} ENV Jasper_ROOT ENV JASPERINC ENV JASPER_PATH
           PATHS ${PC_Jasper_INCLUDE_DIRS}
           PATH_SUFFIXES Jasper jasper include #include/jasper
         )
@@ -20,7 +20,7 @@ find_library(
               Jasper_LIBRARY
               NAMES jasper
               # Hints before PATHS
-              HINTS ENV Jasper_ROOT ENV JASPERLIB ENV JASPER_PATH ${Jasper_ROOT} ${JASPERLIB} ${JASPER_PATH}
+              HINTS ${Jasper_ROOT} ${JASPERLIB} ${JASPER_PATH} ENV Jasper_ROOT ENV JASPERLIB ENV JASPER_PATH
               PATHS ${PC_Jasper_LIBRARY_DIRS}
               PATH_SUFFIXES lib
             )

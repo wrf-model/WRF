@@ -521,6 +521,7 @@ target_include_directories(
                               # These are already set up to be @ install location
                               $<TARGET_PROPERTY:esmf_time_f90,Fortran_MODULE_DIRECTORY>
                               $<TARGET_PROPERTY:io_grib_share,Fortran_MODULE_DIRECTORY>
+                              $<TARGET_PROPERTY:io_grib1,Fortran_MODULE_DIRECTORY>
                               $<TARGET_PROPERTY:grib1_util,Fortran_MODULE_DIRECTORY>
                               $<TARGET_PROPERTY:MEL_grib1,Fortran_MODULE_DIRECTORY>
                               $<TARGET_PROPERTY:WGRIB,Fortran_MODULE_DIRECTORY>
@@ -572,6 +573,7 @@ target_include_directories(
 add_subdirectory( phys     )
 add_subdirectory( share    )
 add_subdirectory( frame    )
+add_subdirectory( inc      )
 
 if ( ${WRF_CHEM} )
   add_subdirectory( chem     )

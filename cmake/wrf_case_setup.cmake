@@ -90,7 +90,7 @@ macro( wrf_link_file_new_name )
   # message( "Generating install commands for ${WRF_LINK_FILE_ONLY} to ${WRF_LINK_NEW_NAME_FILE_ONLY}" )
   install( 
           CODE "
-                message( STATUS \"Creating symlinks for ${WRF_LINK_FILE} (rename ${WRF_LINK_NEW_NAME})\" )
+                message( STATUS \"Creating symlinks for ${WRF_LINK_FILE_ONLY} (rename ${WRF_LINK_NEW_NAME_FILE_ONLY})\" )
                 execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink ${WRF_LINK_FULL_FILE} ${WRF_LINK_NEW_NAME_FULL_FILE} )
                 "
           COMPONENT links

@@ -52,8 +52,6 @@ wrf_get_version( ${PROJECT_SOURCE_DIR}/README )
 ## Options that can be user configured
 ##
 ################################################################################
-# set( CMAKE_INSTALL_PREFIX ${PROJECT_SOURCE_DIR}/ )
-
 # Mode configuration
 
 set( OPTIMIZATION_LEVEL "" )

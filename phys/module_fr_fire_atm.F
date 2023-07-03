@@ -46,13 +46,11 @@ real, intent(in), dimension( ims:ime,jms:jme ) :: zs  ! topography (m abv sealvl
 integer::isz1,jsz1,isz2,jsz2,ir,jr
 integer::i,j,ibase,jbase,i_f,ioff,j_f,joff
 real::avgw,emis,conv
+integer :: i_st,i_en,j_st,j_en
 
 !local for TG
 integer :: k,k_st,k_en
-real :: z_w
-real :: prop
-real :: dz8w_k
-real :: dz8w_k1
+real, dimension(ims:ime,kms:kme,jms:jme) :: prop_smk
 
 isz1 = ite-its+1
 jsz1 = jte-jts+1
@@ -62,9 +60,25 @@ ir=isz2/isz1
 jr=jsz2/jsz1
 avgw = 1.0/(ir*jr)
 
-do j=max(jds+1,jts),min(jte,jde-2)
+! --- set loop indicies
+i_st = MAX(its,ids+1)
+i_en = MIN(ite,ide-2)
+j_st = MAX(jts,jds+1)
+j_en = MIN(jte,jde-2)
+
+! --- check if TG used: init prop_smk
+if (fire_smk_scheme .eq. 1) then
+   k_st = kts
+   k_en = MIN(kte,kde-1)
+   call tg_dist(ims,ime, kms,kme, jms,jme, &
+                i_st,i_en, j_st,j_en, k_st,k_en, dz8w, &
+                fire_smk_peak,fire_tg_ub,fire_smk_ext,z_at_w,zs, &
+                prop_smk)
+end if
+
+do j=j_st,j_en
     jbase=jtfs+jr*(j-jts)
-    do i=max(ids+1,its),min(ite,ide-2)
+    do i=i_st,i_st
        ibase=ifts+ir*(i-its)
        do joff=0,jr-1
            j_f=joff+jbase
@@ -75,21 +89,9 @@ do j=max(jds+1,jts),min(jte,jde-2)
                      emis=avgw*fire_tracer_smoke*burnt_area_dt(i_f,j_f)*fgip(i_f,j_f)*1000/(rho(i,kts,j)*dz8w(i,kts,j)) ! g_smoke/kg_air
                      tracer(i,kts,j,p_fire_smoke)=tracer(i,kts,j,p_fire_smoke)+emis
                   
-                  elseif (fire_smk_scheme .eq. 1)then
-                     k_st = kts
-                     k_en = min(kte,kde-1)
+                  else if (fire_smk_scheme .eq. 1)then
                      do k = k_st,k_en
-                        ! --- set z (in meters above ground)
-                        z_w = z_at_w(i,k,j) - zs(i,j) ! should be zero when k=k_st
-
-                        dz8w_k = dz8w(i,k,j)
-                        dz8w_k1 = dz8w(i,k-1,j)
-
-                        call tg_dist(i,j,k,k_st,k_en,dz8w_k, dz8w_k1, &
-                            fire_smk_peak,fire_tg_ub,fire_smk_ext,z_w, &
-                            prop)
-
-                        emis=prop*avgw*fire_tracer_smoke*burnt_area_dt(i_f,j_f)*fgip(i_f,j_f)*1000/(rho(i,k,j)*dz8w(i,k,j)) ! g_smoke/kg_air
+                        emis=prop_smk(i,k,j)*avgw*fire_tracer_smoke*burnt_area_dt(i_f,j_f)*fgip(i_f,j_f)*1000/(rho(i,k,j)*dz8w(i,k,j)) ! g_smoke/kg_air
                         tracer(i,k,j,p_fire_smoke)=tracer(i,k,j,p_fire_smoke)+emis
                      end do
                   else
@@ -166,9 +168,7 @@ SUBROUTINE fire_tendency( &
    REAL :: fact_g, fact_c
    REAL :: alfg_i, alfc_i
 
-   REAL :: prop !proportion of heat to be released fro TG dist.
-   REAL :: dz8w_k
-   REAL :: dz8w_k1
+   REAL, DIMENSION( ims:ime,kms:kme,jms:jme ) :: prop_heat !proportion of heat to be released fro TG dist.
 
    REAL, DIMENSION( its:ite,kts:kte,jts:jte ) :: hfx,qfx
    
@@ -207,17 +207,23 @@ SUBROUTINE fire_tendency( &
    j_st = MAX(jts,jds+1)
    j_en = MIN(jte,jde-1)
 
+! --- check if TG is used, and create proportion
+   if (fire_sfc_flx .eq. 1) then !Truncated Gaussian scheme
+      call tg_dist(ims,ime, kms,kme, jms,jme, &
+                   i_st,i_en, j_st,j_en, k_st,k_en, dz8w, &
+                   fire_heat_peak,fire_tg_ub,alfg,z_at_w,zs, &
+                   prop_heat)
+   end if
+
 ! --- distribute fluxes
    DO j = j_st,j_en
       DO k = k_st,k_en
          DO i = i_st,i_en
-
-            ! --- set z (in meters above ground)
-
-            z_w = z_at_w(i,k,j) - zs(i,j) ! should be zero when k=k_st
-
-            ! --- heat flux
             if (fire_sfc_flx .eq. 0) then
+                ! --- set z (in meters above ground)
+                z_w = z_at_w(i,k,j) - zs(i,j) ! should be zero when k=k_st
+
+                ! --- heat flux
                 fact_g = cp_i * EXP( - alfg_i * z_w )
                 IF ( z_w < z1can ) THEN
                    fact_c = cp_i
@@ -246,21 +252,24 @@ SUBROUTINE fire_tendency( &
 !!                  call message(msg)
 !               endif
             else if (fire_sfc_flx .eq. 1) then !Truncated Gaussian scheme
-
-               dz8w_k = dz8w(i,k,j)
-               dz8w_k1 = dz8w(i,k-1,j)
-
-               call tg_dist(i,j,k,k_st,k_en,dz8w_k, dz8w_k1, &
-                            fire_heat_peak,fire_tg_ub,alfg,z_w, &
-                            prop)
-                
                ! heat flux
-               fact_g = prop * cp_i
-               hfx(i,k,j) = fact_g * grnhfx(i,j)
+               fact_g = prop_heat(i,k,j) * cp_i
+               IF ( z_w < z1can ) THEN
+                  fact_c = cp_i
+               ELSE
+                  fact_c = cp_i * prop_heat(i,k,j)
+               END IF
+               hfx(i,k,j) = fact_g * grnhfx(i,j) + fact_c * canqfx(i,j)
             
                ! vapor flux
-               fact_g = prop * xlv_i
-               qfx(i,k,j) = fact_g * grnqfx(i,j)
+               fact_g = prop_heat(i,k,j) * xlv_i
+               IF (z_w < z1can) THEN
+                  fact_c = xlv_i
+               ELSE
+                  fact_c = xlv_i * prop_heat(i,k,j)
+               END IF
+               qfx(i,k,j) = fact_g * grnqfx(i,j) + fact_c * canqfx(i,j)
+
             else
                call wrf_error_fatal('Invalid fire heat release option: check fire_sfc_flx namelist option')
             end if
@@ -294,32 +303,36 @@ SUBROUTINE fire_tendency( &
 
 END SUBROUTINE fire_tendency
 
-SUBROUTINE tg_dist(i,j,k,k_st,k_en,dz8w_k, dz8w_k1, &
-                  fire_peak_hgt,fire_tg_ub,fire_ext_depth,z_w, &
-                  prop)
+SUBROUTINE tg_dist(ims,ime, kms,kme, jms,jme, &
+                   i_st,i_en, j_st,j_en, k_st,k_en, dz8w, &
+                   fire_peak_hgt,fire_tg_ub,fire_ext_depth,z_at_w,zs, &
+                   prop)
    !!!! Truncated Gaussian Distribution Subroutine for Heat and Smoke Release
    !!!! Developed by: Kasra Shamsaei (Univ. of Nevada, Reno) and Tim Juliano (NCAR/RAL)
    !!!! Supervised by: Branko Kosovic (NCAR/RAL)
 
    IMPLICIT NONE
 
-   INTEGER, INTENT(in) :: i,j,k         !current grid point indices
-   INTEGER, INTENT(in) :: k_st,k_en     !start and end vertical grid indices
-   REAL, INTENT(in) :: dz8w_k
-   REAL, INTENT(in) :: dz8w_k1
-
+   INTEGER, INTENT(in) :: ims,ime, kms,kme, jms,jme
+   INTEGER, INTENT(in) :: i_st,i_en, j_st,j_en, k_st,k_en     !loop indices
+   REAL, INTENT(in), DIMENSION( ims:ime,kms:kme,jms:jme ) :: dz8w   ! dz across w-lvl
    REAL, INTENT(in) :: fire_peak_hgt    !peak heat release height for Truncated Gaussian scheme
    REAL, INTENT(in) :: fire_tg_ub       !upper bound for the Truncated Gaussian scheme
    REAL, INTENT(in) :: fire_ext_depth   !extinction depth surface fire heat (m)
-   REAL, INTENT(in) :: z_w              !height at current level (m AGL)
-   REAL, INTENT(out):: prop             !proportion of heat or smoke to be released
+   REAL, INTENT(in), DIMENSION( ims:ime,kms:kme,jms:jme ) :: z_at_w ! m abv sealvl
+   REAL, INTENT(in), DIMENSION( ims:ime,jms:jme ) :: zs  ! topography (m abv sealvl)
+   REAL, INTENT(out), DIMENSION( ims:ime,kms:kme,jms:jme ) :: prop !proportion of heat or smoke to be released
 
    ! --- local for Truncated Gaussian
+   INTEGER :: i,j,k
+
    REAL, PARAMETER :: acoef = 167./148., bcoef = 11./109., fire_tg_lb = 0.
    REAL :: xia, xib
    REAL :: phi_a, phi_b
    REAL :: xi
    REAL :: dz
+   REAL :: z_w
+   REAL :: prop_temp
 
    xia = (fire_tg_lb-fire_peak_hgt)/(0.5*fire_ext_depth)
    xib = (fire_tg_ub-fire_peak_hgt)/(0.5*fire_ext_depth)
@@ -327,21 +340,29 @@ SUBROUTINE tg_dist(i,j,k,k_st,k_en,dz8w_k, dz8w_k1, &
    phi_a = 0.5*(1.+tanh(acoef*xia+bcoef*(xia**3)))
    phi_b = 0.5*(1.+tanh(acoef*xib+bcoef*(xib**3)))
 
-   xi=(z_w-fire_peak_hgt)/(0.5*fire_ext_depth)
+   DO j = j_st,j_en
+      DO k = k_st,k_en
+         DO i = i_st,i_en
 
-   prop = 0.5*(acoef+3.*bcoef*(xi**2))/(0.5*fire_ext_depth)*(1.-(tanh(acoef*xi+bcoef*(xi**3)))**2)
-   prop = prop / (phi_b-phi_a)
+            xi=(z_w-fire_peak_hgt)/(0.5*fire_ext_depth)
+
+            prop_temp = 0.5*(acoef+3.*bcoef*(xi**2))/(0.5*fire_ext_depth)*(1.-(tanh(acoef*xi+bcoef*(xi**3)))**2)
+            prop_temp = prop_temp / (phi_b-phi_a)
    
-   !discretize the continuous function
-   if (k .eq. k_st) then
-      dz = 0.5 * dz8w_k
-   else if (k .eq. k_en) then
-      dz = 0.5 * dz8w_k1
-   else
-      dz = 0.5 * (dz8w_k + dz8w_k1)
-   end if
+            !discretize the continuous function
+            if (k .eq. k_st) then
+               dz = 0.5 * dz8w(i,k,j)
+            else if (k .eq. k_en) then
+               dz = 0.5 * dz8w(i,k-1,j)
+            else
+               dz = 0.5 * (dz8w(i,k,j) + dz8w(i,k-1,j))
+            end if
 
-   prop = prop * dz
+            prop(i,k,j) = prop_temp * dz
+
+         END DO
+      END DO
+   END DO
 
 END SUBROUTINE tg_dist
 

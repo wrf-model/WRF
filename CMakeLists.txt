@@ -147,8 +147,10 @@ set( GRIB1                ON CACHE BOOL "GRIB1"               )
 set( INTIO                ON CACHE BOOL "INTIO"               )
 set( KEEP_INT_AROUND      ON CACHE BOOL "KEEP_INT_AROUND"     )
 set( LIMIT_ARGS           ON CACHE BOOL "LIMIT_ARGS"          )
-set( WRFIO_NCD_NO_LARGE_FILE_SUPPORT  OFF CACHE BOOL "WRFIO_NCD_NO_LARGE_FILE_SUPPORT" )
 
+# Toggles, how do we want to best address these options? Environment vars are not
+# the best
+set( WRFIO_NCD_NO_LARGE_FILE_SUPPORT  OFF CACHE BOOL "WRFIO_NCD_NO_LARGE_FILE_SUPPORT" )
 set( FORCE_NETCDF_CLASSIC OFF CACHE BOOL "FORCE_NETCDF_CLASSIC" )
 set( BUILD_RRTMG_FAST     OFF CACHE BOOL "BUILD_RRTMG_FAST"     )
 set( BUILD_RRTMK          OFF CACHE BOOL "BUILD_RRTMK"          )
@@ -249,6 +251,10 @@ list( FIND WRF_CASE_OPTIONS ${WRF_CASE} CURRENT_CASE_IDX )
 set( WRF_GENERAL_IDEAL_CASE TRUE )
 if ( ${CURRENT_CASE_IDX} LESS ${START_GENERAL_IDEAL_CASE_IDX} )
   set( WRF_GENERAL_IDEAL_CASE FALSE )
+endif()
+
+if ( NOT ${WRFIO_NCD_NO_LARGE_FILE_SUPPORT} )
+  message( STATUS "netCDF large file support not suppressed, if available it will be used" )
 endif()
 
 
@@ -434,12 +440,12 @@ add_compile_definitions(
 
                         # If force classic or no nc-4 support enable classic
                         $<$<OR:$<BOOL:${FORCE_NETCDF_CLASSIC}>,$<NOT:$<BOOL:${netCDF_NC4}>>>:NETCDF_classic=1>
-                        $<$<BOOL:${WRFIO_NCD_NO_LARGE_FILE_SUPPORT}>:WRFIO_NCD_NO_LARGE_FILE_SUPPORT=$<BOOL:${WRFIO_NCD_NO_LARGE_FILE_SUPPORT}>>
-                        # TODO Figure out how these should be set
-                        # DUSE_NETCDF4_FEATURES -DWRFIO_NCD_LARGE_FILE_SUPPORT
+                        $<$<OR:$<BOOL:${WRFIO_NCD_NO_LARGE_FILE_SUPPORT}>,$<NOT:$<BOOL:${netCDF_LARGE_FILE_SUPPORT}>>>:WRFIO_NCD_NO_LARGE_FILE_SUPPORT=1>
+                        # May need a check for WRFIO_ncdpar_LARGE_FILE_SUPPORT
 
-                        $<$<BOOL:${MPI2_SUPPORT}>:MPI2_SUPPORT=$<BOOL:${MPI2_SUPPORT}>>
-                        $<$<BOOL:${MPI2_THREAD_SUPPORT}>:MPI2_THREAD_SUPPORT=$<BOOL:${MPI2_THREAD_SUPPORT}>>
+                        # Now set the opposite in different defines, because why not :)
+                        $<$<AND:$<NOT:$<BOOL:${FORCE_NETCDF_CLASSIC}>>,$<BOOL:${netCDF_NC4}>>:USE_NETCDF4_FEATURES=1>
+                        $<$<AND:$<NOT:$<BOOL:${WRFIO_NCD_NO_LARGE_FILE_SUPPORT}>>,$<BOOL:${netCDF_LARGE_FILE_SUPPORT}>>:WRFIO_NCD_LARGE_FILE_SUPPORT=1>
 
                         # Could simplify logic to just check if RPC is available but to be explicit
                         # Does this actually need to check for EM_CORE (Config.pl:443)

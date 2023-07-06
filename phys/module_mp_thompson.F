@@ -72,6 +72,8 @@
       REAL, PARAMETER, PRIVATE:: rho_i = 890.0
       INTEGER, PARAMETER, PRIVATE:: NRHG = 9
       INTEGER, PARAMETER, PRIVATE:: NRHG1 = 1
+      INTEGER :: dimNRHG
+
       REAL, DIMENSION(NRHG), PARAMETER, PRIVATE:: &
            rho_g = (/50., 100., 200., 300., 400., 500., 600., 700., 800./)
       INTEGER, PARAMETER :: idx_bg1 = 5 ! index for rhog when mp=8 or 28
@@ -371,7 +373,7 @@
       INTEGER, PARAMETER, PRIVATE:: R8SIZE = 8
       INTEGER, PARAMETER, PRIVATE:: R4SIZE = 4
       REAL (KIND=R8SIZE), ALLOCATABLE, DIMENSION(:,:,:,:,:)::           &
-                tcg_racg, tmr_racg, tcr_gacr, tmg_gacr,                 &
+                tcg_racg, tmr_racg, tcr_gacr,                           & ! tmg_gacr
                 tnr_racg, tnr_gacr
       REAL (KIND=R8SIZE), ALLOCATABLE, DIMENSION(:,:,:,:)::             &
                 tcs_racs1, tmr_racs1, tcs_racs2, tmr_racs2,             &
@@ -456,9 +458,11 @@
 
       if (PRESENT(ng)) then
          is_hail_aware = .TRUE.
+         dimNRHG = NRHG
       else
          av_g(idx_bg1) = av_g_old
          bv_g(idx_bg1) = bv_g_old
+         dimNRHG = NRHG1
       endif
 
       is_aerosol_aware = .FALSE.
@@ -600,15 +604,15 @@
 !..Allocate space for lookup tables (J. Michalakes 2009Jun08).
 
       if (.NOT. ALLOCATED(tcg_racg) ) then
-         ALLOCATE(tcg_racg(ntb_g1,ntb_g,NRHG,ntb_r1,ntb_r))
+         ALLOCATE(tcg_racg(ntb_g1,ntb_g,dimNRHG,ntb_r1,ntb_r))
          micro_init = .TRUE.
       endif
 
-      if (.NOT. ALLOCATED(tmr_racg)) ALLOCATE(tmr_racg(ntb_g1,ntb_g,NRHG,ntb_r1,ntb_r))
-      if (.NOT. ALLOCATED(tcr_gacr)) ALLOCATE(tcr_gacr(ntb_g1,ntb_g,NRHG,ntb_r1,ntb_r))
-      if (.NOT. ALLOCATED(tmg_gacr)) ALLOCATE(tmg_gacr(ntb_g1,ntb_g,NRHG,ntb_r1,ntb_r))
-      if (.NOT. ALLOCATED(tnr_racg)) ALLOCATE(tnr_racg(ntb_g1,ntb_g,NRHG,ntb_r1,ntb_r))
-      if (.NOT. ALLOCATED(tnr_gacr)) ALLOCATE(tnr_gacr(ntb_g1,ntb_g,NRHG,ntb_r1,ntb_r))
+      if (.NOT. ALLOCATED(tmr_racg)) ALLOCATE(tmr_racg(ntb_g1,ntb_g,dimNRHG,ntb_r1,ntb_r))
+      if (.NOT. ALLOCATED(tcr_gacr)) ALLOCATE(tcr_gacr(ntb_g1,ntb_g,dimNRHG,ntb_r1,ntb_r))
+      ! if (.NOT. ALLOCATED(tmg_gacr)) ALLOCATE(tmg_gacr(ntb_g1,ntb_g,dimNRHG,ntb_r1,ntb_r))
+      if (.NOT. ALLOCATED(tnr_racg)) ALLOCATE(tnr_racg(ntb_g1,ntb_g,dimNRHG,ntb_r1,ntb_r))
+      if (.NOT. ALLOCATED(tnr_gacr)) ALLOCATE(tnr_gacr(ntb_g1,ntb_g,dimNRHG,ntb_r1,ntb_r))
 
       if (.NOT. ALLOCATED(tcs_racs1)) ALLOCATE(tcs_racs1(ntb_s,ntb_t,ntb_r1,ntb_r))
       if (.NOT. ALLOCATED(tmr_racs1)) ALLOCATE(tmr_racs1(ntb_s,ntb_t,ntb_r1,ntb_r))
@@ -897,13 +901,13 @@
 
       do m = 1, ntb_r
          do k = 1, ntb_r1
-            do n = 1, NRHG
+            do n = 1, dimNRHG
             do j = 1, ntb_g
                do i = 1, ntb_g1
                      tcg_racg(i,j,n,k,m) = 0.0d0
                      tmr_racg(i,j,n,k,m) = 0.0d0
                      tcr_gacr(i,j,n,k,m) = 0.0d0
-                     tmg_gacr(i,j,n,k,m) = 0.0d0
+                     !tmg_gacr(i,j,n,k,m) = 0.0d0
                      tnr_racg(i,j,n,k,m) = 0.0d0
                      tnr_gacr(i,j,n,k,m) = 0.0d0
                   enddo
@@ -1037,11 +1041,7 @@
 !..Rain collecting graupel & graupel collecting rain.
       CALL wrf_debug(200, '  creating rain collecting graupel table')
 
-      if (.not. is_hail_aware) then
-         call qr_acr_qg(NRHG1)
-      else
-         call qr_acr_qg(NRHG)
-      endif
+         call qr_acr_qg(dimNRHG)
 
 !..Rain collecting snow & snow collecting rain.
       CALL wrf_debug(200, '  creating rain collecting snow table')
@@ -4121,7 +4121,7 @@
       else
          ! Table for mp=8 or mp=28
          ! V4: new table dimension (NRHG), computes only rho_g(idx_bg1)
-         qr_acr_qg_name="qr_acr_qg_mp28V4.dat" 
+         qr_acr_qg_name="qr_acr_qg_V4.dat" 
    endif
 
       good = 0
@@ -4133,7 +4133,7 @@
           READ(63,err=1234) tcg_racg
           READ(63,err=1234) tmr_racg
           READ(63,err=1234) tcr_gacr
-          READ(63,err=1234) tmg_gacr
+          !READ(63,err=1234) tmg_gacr
           READ(63,err=1234) tnr_racg
           READ(63,err=1234) tnr_gacr
           good = 1
@@ -4174,7 +4174,7 @@
         CALL wrf_dm_bcast_double(tcg_racg,SIZE(tcg_racg))
         CALL wrf_dm_bcast_double(tmr_racg,SIZE(tmr_racg))
         CALL wrf_dm_bcast_double(tcr_gacr,SIZE(tcr_gacr))
-        CALL wrf_dm_bcast_double(tmg_gacr,SIZE(tmg_gacr))
+        !CALL wrf_dm_bcast_double(tmg_gacr,SIZE(tmg_gacr))
         CALL wrf_dm_bcast_double(tnr_racg,SIZE(tnr_racg))
         CALL wrf_dm_bcast_double(tnr_gacr,SIZE(tnr_gacr))
 #endif
@@ -4265,7 +4265,7 @@
             tcg_racg(i,j,n3,k,m) = t1
             tmr_racg(i,j,n3,k,m) = DMIN1(z1, r_r(m)*1.0d0)
             tcr_gacr(i,j,n3,k,m) = t2
-            tmg_gacr(i,j,n3,k,m) = DMIN1(z2, r_g(j)*1.0d0)
+            !tmg_gacr(i,j,n3,k,m) = DMIN1(z2, r_g(j)*1.0d0)
             tnr_racg(i,j,n3,k,m) = y1
             tnr_gacr(i,j,n3,k,m) = y2
          enddo
@@ -4273,27 +4273,15 @@
          enddo
         enddo
 
-        if (.not. is_hail_aware) then
-!. Distribute the same value across NRHG dimension
-         do n3 = 2, NRHG
-            tcg_racg(:,:,n3,:,:) = tcg_racg(:,:,1,:,:)
-            tmr_racg(:,:,n3,:,:) = tmr_racg(:,:,1,:,:)
-            tcr_gacr(:,:,n3,:,:) = tcr_gacr(:,:,1,:,:)
-            tmg_gacr(:,:,n3,:,:) = tmg_gacr(:,:,1,:,:)
-            tnr_racg(:,:,n3,:,:) = tnr_racg(:,:,1,:,:)
-            tnr_gacr(:,:,n3,:,:) = tnr_gacr(:,:,1,:,:)
-         enddo
-        endif
-
 !..Note wrf_dm_gatherv expects zero-based km_s, km_e (J. Michalakes, 2009Oct30).
 
 #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
-        CALL wrf_dm_gatherv(tcg_racg, ntb_g*ntb_g1*NRHG, km_s, km_e, R8SIZE)
-        CALL wrf_dm_gatherv(tmr_racg, ntb_g*ntb_g1*NRHG, km_s, km_e, R8SIZE)
-        CALL wrf_dm_gatherv(tcr_gacr, ntb_g*ntb_g1*NRHG, km_s, km_e, R8SIZE)
-        CALL wrf_dm_gatherv(tmg_gacr, ntb_g*ntb_g1*NRHG, km_s, km_e, R8SIZE)
-        CALL wrf_dm_gatherv(tnr_racg, ntb_g*ntb_g1*NRHG, km_s, km_e, R8SIZE)
-        CALL wrf_dm_gatherv(tnr_gacr, ntb_g*ntb_g1*NRHG, km_s, km_e, R8SIZE)
+        CALL wrf_dm_gatherv(tcg_racg, ntb_g*ntb_g1*NRHGtable, km_s, km_e, R8SIZE)
+        CALL wrf_dm_gatherv(tmr_racg, ntb_g*ntb_g1*NRHGtable, km_s, km_e, R8SIZE)
+        CALL wrf_dm_gatherv(tcr_gacr, ntb_g*ntb_g1*NRHGtable, km_s, km_e, R8SIZE)
+       !CALL wrf_dm_gatherv(tmg_gacr, ntb_g*ntb_g1*NRHGtable, km_s, km_e, R8SIZE)
+        CALL wrf_dm_gatherv(tnr_racg, ntb_g*ntb_g1*NRHGtable, km_s, km_e, R8SIZE)
+        CALL wrf_dm_gatherv(tnr_gacr, ntb_g*ntb_g1*NRHGtable, km_s, km_e, R8SIZE)
 #endif
         CALL end_timing ( TRIM("table computation "//qr_acr_qg_name//"") )
 !+---+-----------------------------------------------------------------+
@@ -4305,7 +4293,7 @@
           WRITE(63,err=9234) tcg_racg
           WRITE(63,err=9234) tmr_racg
           WRITE(63,err=9234) tcr_gacr
-          WRITE(63,err=9234) tmg_gacr
+          !WRITE(63,err=9234) tmg_gacr
           WRITE(63,err=9234) tnr_racg
           WRITE(63,err=9234) tnr_gacr
           CLOSE(63)

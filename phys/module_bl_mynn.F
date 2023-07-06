@@ -1061,10 +1061,8 @@ CONTAINS
              if  ( mix_chem ) then
                 do ic = 1,ndvel
                    vd1(ic) = vdep(i,ic) ! dry deposition velocity
-                   chem1(kts,ic) = chem3d(i,kts,ic)
-                   s_awchem1(kts,ic)=0.
                 enddo
-                do k = kts+1,kte
+                do k = kts,kte
                    do ic = 1,nchem
                       chem1(k,ic) = chem3d(i,k,ic)
                       s_awchem1(k,ic)=0.
@@ -1073,10 +1071,8 @@ CONTAINS
              else
                 do ic = 1,ndvel
                    vd1(ic) = 0. ! dry deposition velocity
-                   chem1(kts,ic) = 0.
-                   s_awchem1(kts,ic)=0.
                 enddo
-                do k = kts+1,kte
+                do k = kts,kte
                    do ic = 1,nchem
                       chem1(k,ic) = 0.
                       s_awchem1(k,ic)=0.
@@ -7556,9 +7552,9 @@ SUBROUTINE SCALE_AWARE(dx,PBL1,Psig_bl,Psig_shcu)
 
          dummy_0=(1.-am_unst*zet)          ! parentesis arg
          dummy_1=dummy_0**0.333333         ! y
-         dummy_11=-0.33333*am_unst*dummy_0**-0.6666667 ! dy/dzet
-         dummy_2 = 0.33333*(dummy_1**2.+dummy_1+1.)    ! f
-         dummy_22 = 0.3333*dummy_11*(2.*dummy_1+1.)    ! df/dzet
+         dummy_11=-0.33333*am_unst*dummy_0**(-0.6666667) ! dy/dzet
+         dummy_2 = 0.33333*(dummy_1**2.+dummy_1+1.)      ! f
+         dummy_22 = 0.3333*dummy_11*(2.*dummy_1+1.)      ! df/dzet
          dummy_3 = 0.57735*(2.*dummy_1+1.) ! g
          dummy_33 = 1.1547*dummy_11        ! dg/dzet
          dummy_4 = 1.5*log(dummy_2)-1.73205*atan(dummy_3)+1.813799364 !psic
@@ -7608,9 +7604,9 @@ SUBROUTINE SCALE_AWARE(dx,PBL1,Psig_bl,Psig_shcu)
 
          dummy_0=(1.-ah_unst*zet)          ! parentesis arg
          dummy_1=dummy_0**0.333333         ! y
-         dummy_11=-0.33333*ah_unst*dummy_0**-0.6666667 ! dy/dzet
-         dummy_2 = 0.33333*(dummy_1**2.+dummy_1+1.)    ! f
-         dummy_22 = 0.3333*dummy_11*(2.*dummy_1+1.)    ! df/dzet
+         dummy_11=-0.33333*ah_unst*dummy_0**(-0.6666667) ! dy/dzet
+         dummy_2 = 0.33333*(dummy_1**2.+dummy_1+1.)      ! f
+         dummy_22 = 0.3333*dummy_11*(2.*dummy_1+1.)      ! df/dzet
          dummy_3 = 0.57735*(2.*dummy_1+1.) ! g
          dummy_33 = 1.1547*dummy_11        ! dg/dzet
          dummy_4 = 1.5*log(dummy_2)-1.73205*atan(dummy_3)+1.813799364 !psic

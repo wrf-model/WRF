@@ -183,7 +183,7 @@ if [ -n "$NETCDFPAR" ] ; then
       PROBS=TRUE
     fi
   fi
-  if [ "$PROBS" == "TRUE" ] ; then
+  if [ "$PROBS" = "TRUE" ] ; then
     echo
     echo Cannot activate NETCDFPAR with this version of NetCDF: $ncversion
     echo You need NetCDF version 4.7.4 or newer
@@ -315,7 +315,7 @@ if [ -n "$NETCDF4" ] ; then
       n=`echo $buff | wc -w`
       lastword=`echo "$buff" | cut -d' ' -f$n | sed 's/\/$//'`
       c="`echo $lastword | cut -c1`"
-      if [ "$c" == "/" ] ; then
+      if [ "$c" = "/" ] ; then
          NETCDF=$lastword
       else
         c="`echo $lastword | cut -c1-2`"
@@ -922,7 +922,7 @@ EOF
         echo "NetCDF version: ${ncversion}"
         echo "Enabled NetCDF-4/HDF-5: `nc-config --has-nc4`"
         echo "NetCDF built with PnetCDF: `nc-config --has-pnetcdf`"
-        if [ "$USENETCDFPAR" == "1" ] ; then
+        if [ "$USENETCDFPAR" = "1" ] ; then
           echo "Using parallel NetCDF via NETCDFPAR option"
         fi
         echo " "
@@ -1038,11 +1038,16 @@ if [ $retval -ne 0 ] ; then
 fi
 
 # testing for location of rpc/types.h file, used in landuse
-if [ -f /usr/include/rpc/types.h ] ; then
-  sed -e '/^CFLAGS_LOCAL/s/#/-DRPC_TYPES=1 &/' configure.wrf > configure.wrf.edit
-  mv configure.wrf.edit configure.wrf
-elif [ -f /usr/include/tirpc/rpc/types.h ] ; then
-  sed -e '/^CFLAGS_LOCAL/s/#/-DRPC_TYPES=2 &/' configure.wrf > configure.wrf.edit
+make rpc_test > tools/rpc_test.log 2>&1
+rm -f tools/rpc_test.log
+
+if [ -f tools/rpc_test.exe ] ; then
+  rpc_type=`tools/rpc_test.exe`
+  if [ $rpc_type == "rpc" ]; then
+    sed -e '/^CFLAGS_LOCAL/s/#/-DRPC_TYPES=1 &/' configure.wrf > configure.wrf.edit
+  else
+    sed -e '/^CFLAGS_LOCAL/s/#/-DRPC_TYPES=2 &/' configure.wrf > configure.wrf.edit
+  fi
   mv configure.wrf.edit configure.wrf
 else
   echo "************************** W A R N I N G ************************************"

@@ -82,7 +82,7 @@ target_include_directories(
 # Now define base framework
 #
 ########################################################################################################################
-set( MODULE_DM module_dm.F )
+set( MODULE_DM module_dm_stubs.F )
 if ( ${USE_MPI} )
   set( MODULE_DM ${PROJECT_SOURCE_DIR}/external/RSL_LITE/module_dm.F )
 endif()

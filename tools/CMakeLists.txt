@@ -7,9 +7,17 @@ add_executable(
                ${FOLDER_COMPILE_TARGET}
               )
 
-set( GEN_COMMS gen_comms.c )
+set( GEN_COMMS gen_comms.stub )
 if ( ${USE_MPI} )
   set( GEN_COMMS ${PROJECT_SOURCE_DIR}/external/RSL_LITE/gen_comms.c )
+else()
+  # Account for the weird makefile nonsense of copying things around
+  set_source_files_properties( 
+                              gen_comms.stub
+                              TARGET_DIRECTORY ${FOLDER_COMPILE_TARGET}
+                              PROPERTIES
+                                LANGUAGE C
+                              )
 endif()
 
 target_sources(

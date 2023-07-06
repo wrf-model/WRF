@@ -45,42 +45,43 @@ wrf_conf_check(
 
 wrf_conf_check(
                 RUN
-                SOURCE_TYPE           C
-                RESULT_VAR            FSEEKO64
-                SOURCE                ${PROJECT_SOURCE_DIR}/tools/fseek_test.c
-                EXTENSION             .c
-                ADDITIONAL_DEFINTIONS -DTEST_FSEEKO64
-                MESSAGE               "fseeko64 not supported, checking alternate fseeko"
+                SOURCE_TYPE            C
+                RESULT_VAR             FSEEKO64
+                SOURCE                 ${PROJECT_SOURCE_DIR}/tools/fseek_test.c
+                EXTENSION              .c
+                ADDITIONAL_DEFINITIONS -DTEST_FSEEKO64
+                MESSAGE                "fseeko64 not supported, checking alternate fseeko"
                 )
 
 if ( NOT "${FSEEKO64}" )
   wrf_conf_check(
                   RUN
-                  SOURCE_TYPE           C
-                  RESULT_VAR            FSEEKO
-                  SOURCE                ${PROJECT_SOURCE_DIR}/tools/fseek_test.c
-                  EXTENSION             .c
-                  ADDITIONAL_DEFINTIONS -DTEST_FSEEKO
-                  MESSAGE               "fseeko not supported, compiling with fseek (caution with large files)"
+                  SOURCE_TYPE            C
+                  RESULT_VAR             FSEEKO
+                  SOURCE                 ${PROJECT_SOURCE_DIR}/tools/fseek_test.c
+                  EXTENSION              .c
+                  ADDITIONAL_DEFINITIONS -DTEST_FSEEKO
+                  MESSAGE                "fseeko not supported, compiling with fseek (caution with large files)"
                   )
 endif()
 
-if ( ${USE_MPI} )
-  wrf_conf_check(
-                  RUN
-                  SOURCE_TYPE           C
-                  RESULT_VAR            MPI2_SUPPORT
-                  SOURCE                ${PROJECT_SOURCE_DIR}/tools/mpi2_test.c
-                  EXTENSION             .c
-                  MESSAGE               "MPI_Comm_f2c() and MPI_Comm_c2f() not supported"
-                  )
+# Unsure if this is even necessary. Defines littered throughout configure.defaults
+# if ( ${USE_MPI} )
+#   wrf_conf_check(
+#                   RUN
+#                   SOURCE_TYPE           C
+#                   RESULT_VAR            MPI2_SUPPORT
+#                   SOURCE                ${PROJECT_SOURCE_DIR}/tools/mpi2_test.c
+#                   EXTENSION             .c
+#                   MESSAGE               "MPI_Comm_f2c() and MPI_Comm_c2f() not supported"
+#                   )
 
-  wrf_conf_check(
-                  RUN
-                  SOURCE_TYPE           C
-                  RESULT_VAR            MPI2_THREAD_SUPPORT
-                  SOURCE                ${PROJECT_SOURCE_DIR}/tools/mpi2_thread_test.c
-                  EXTENSION             .c
-                  MESSAGE               "MPI_Init_thread() not supported"
-                  )
-endif()
+#   wrf_conf_check(
+#                   RUN
+#                   SOURCE_TYPE           C
+#                   RESULT_VAR            MPI2_THREAD_SUPPORT
+#                   SOURCE                ${PROJECT_SOURCE_DIR}/tools/mpi2_thread_test.c
+#                   EXTENSION             .c
+#                   MESSAGE               "MPI_Init_thread() not supported"
+#                   )
+# endif()

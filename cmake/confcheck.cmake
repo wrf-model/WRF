@@ -23,6 +23,9 @@ macro( wrf_conf_check )
   get_filename_component( WRF_CFG_SOURCE_FILE ${WRF_CFG_SOURCE} REALPATH )  
   file( READ ${WRF_CFG_SOURCE_FILE} WRF_CFG_CODE )
 
+  # Santize for newlines
+  string( REPLACE "\\n" "\\\\n" WRF_CFG_CODE "${WRF_CFG_CODE}" )
+
   if ( NOT DEFINED WRF_CFG_SOURCE_TYPE )
     set( WRF_CFG_SOURCE_TYPE fortran )
   endif()

@@ -33,6 +33,15 @@ else()
   execute_process( COMMAND ${NETCDF_PROGRAM} --has-pnetcdf  OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF_PNETCDF_YES )
   execute_process( COMMAND ${NETCDF_PROGRAM} --has-parallel OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF_PARALLEL_YES )
 
+  # check for large file support
+  find_file( netCDF_INCLUDE_FILE netcdf.inc ${netCDF_INCLUDE_DIR} )
+  file( READ ${netCDF_INCLUDE_FILE} netCDF_INCLUDE_FILE_STR )
+  string( FIND "${netCDF_INCLUDE_FILE_STR}" "nf_format_64bit" netCDF_LARGE_FILE_SUPPORT_FOUND )
+  if ( ${netCDF_SUPPORT_LARGE_FILE_FOUND} EQUAL -1 )
+    set( netCDF_LARGE_FILE_SUPPORT "NO" )
+  else()
+    set( netCDF_LARGE_FILE_SUPPORT "YES" )
+  endif()
 
   # Sanitize version
   string( REPLACE " " ";" netCDF_VERSION_LIST ${netCDF_VERSION_RAW} )

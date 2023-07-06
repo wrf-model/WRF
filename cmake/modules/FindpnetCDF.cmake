@@ -31,7 +31,15 @@ else()
   execute_process( COMMAND ${PNETCDF_PROGRAM} --has-c++      OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE pnetCDF_CXX_YES      )
   execute_process( COMMAND ${PNETCDF_PROGRAM} --has-fortran  OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE pnetCDF_FORTRAN_YES  )
 
-
+  # check for large file support
+  find_file( pnetCDF_INCLUDE_FILE pnetcdf.inc ${pnetCDF_INCLUDE_DIR} )
+  file( READ ${pnetCDF_INCLUDE_FILE} pnetCDF_INCLUDE_FILE_STR )
+  string( FIND "${pnetCDF_INCLUDE_FILE_STR}" "nf_format_64bit" pnetCDF_LARGE_FILE_SUPPORT_FOUND )
+  if ( ${pnetCDF_SUPPORT_LARGE_FILE_FOUND} EQUAL -1 )
+    set( pnetCDF_LARGE_FILE_SUPPORT "NO" )
+  else()
+    set( pnetCDF_LARGE_FILE_SUPPORT "YES" )
+  endif()
 
   # Sanitize version
   string( REPLACE " " ";" pnetCDF_VERSION_LIST ${pnetCDF_VERSION_RAW} )

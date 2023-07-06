@@ -198,16 +198,9 @@ endif()
 
 ################################################################################
 ##
-## Load alternate OS/architecture to be compiled for if cross-compiling
+## Load options selected and any ancillary logic
 ##
 ################################################################################
-if ( ${WRF_OS} )
-  # Need a good way of condensing this down
-  set( WRF_ARCH_FILE ${WRF_OS} )
-
-  set( CMAKE_TOOLCHAIN_FILE "" )
-endif()
-
 
 # Check WRF options
 if ( NOT ${WRF_CORE} IN_LIST WRF_CORE_OPTIONS )
@@ -496,6 +489,10 @@ add_compile_definitions(
                         # https://stackoverflow.com/a/1035713
                         # If fseeko64 succeeds, use that, else check if we can fall back to fseeko, and if not just use fseek
                         $<IF:$<BOOL:${FSEEKO64}>,FSEEKO64_OK,$<IF:$<BOOL:${FSEEKO}>,FSEEKO_OK,FSEEK_OK>>
+
+                        # I don't believe these are used anymore...
+                        # $<$<BOOL:${MPI2_SUPPORT}>:MPI2_SUPPORT=$<BOOL:${MPI2_SUPPORT}>>
+                        # $<$<BOOL:${MPI2_THREAD_SUPPORT}>:MPI2_THREAD_SUPPORT=$<BOOL:${MPI2_THREAD_SUPPORT}>>
 
                         )
 

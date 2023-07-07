@@ -77,7 +77,8 @@ if ( ${Jasper_FOUND} )
   add_subdirectory( io_grib2         )
 endif()
 
-
-add_subdirectory( RSL_LITE         )
+if ( ${USE_MPI} )
+  add_subdirectory( RSL_LITE         )
+endif()
 
 

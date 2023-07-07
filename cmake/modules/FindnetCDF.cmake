@@ -72,7 +72,7 @@ find_package_handle_standard_args( netCDF  DEFAULT_MSG
                                   netCDF_INCLUDE_DIRS
                                   netCDF_LIBRARY_DIR
                                   netCDF_CLIBS
-                                  netCDF_CXXLIBS
+                                  # netCDF_CXXLIBS
                                   netCDF_FLIBS
                                   netCDF_VERSION
                                   )

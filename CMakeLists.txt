@@ -529,6 +529,8 @@ target_include_directories(
                               $<TARGET_PROPERTY:fftpack5,Fortran_MODULE_DIRECTORY>
                               $<TARGET_PROPERTY:io_netcdf,Fortran_MODULE_DIRECTORY>
 
+                              $<TARGET_PROPERTY:${PROJECT_NAME}_Core,Fortran_MODULE_DIRECTORY>
+
                               
                               $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
                               $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/inc>
@@ -597,9 +599,7 @@ set_target_properties(
                           # Just dump everything in here
                           Fortran_MODULE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/modules/
                           Fortran_FORMAT           FREE
-                          # INSTALL_RPATH            ${netCDF_LIBRARY_DIR}
-                          #                          ${pnetCDF_LIBRARY_DIR}
-                          #                          ${}
+                          EXPORT_PROPERTIES        Fortran_MODULE_DIRECTORY
                       )
 
 target_link_libraries(  ${PROJECT_NAME}_Core

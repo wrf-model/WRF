@@ -22,6 +22,7 @@ set_target_properties(
                         PROPERTIES
                           Fortran_MODULE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/${FOLDER_COMPILE_TARGET}
                           Fortran_FORMAT           FIXED
+                          EXPORT_PROPERTIES        Fortran_MODULE_DIRECTORY
                       )
 
 

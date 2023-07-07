@@ -29,6 +29,7 @@ set_target_properties(
                         PROPERTIES
                           Fortran_MODULE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/${FOLDER_COMPILE_TARGET}
                           Fortran_FORMAT           FREE
+                          EXPORT_PROPERTIES        Fortran_MODULE_DIRECTORY
                       )
 
 target_link_libraries(  ${FOLDER_COMPILE_TARGET}

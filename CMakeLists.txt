@@ -640,7 +640,7 @@ target_link_libraries(  ${PROJECT_NAME}_Core
                             $<TARGET_NAME_IF_EXISTS:g2lib>
                             $<TARGET_NAME_IF_EXISTS:bacio-1.3>
                             
-                            RSL_LITE
+                            $<TARGET_NAME_IF_EXISTS:RSL_LITE>
                       )
 
 ################################################################################

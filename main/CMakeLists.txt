@@ -74,7 +74,7 @@ foreach ( TARGET ${FOLDER_COMPILE_TARGETS} )
                         ${TARGET}
                           PROPERTIES
                             # Just dump everything in here
-                            Fortran_MODULE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/modules/
+                            Fortran_MODULE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/modules/${TARGET}/
                             Fortran_FORMAT           FREE                          
                         )
   target_link_libraries( 
@@ -87,6 +87,7 @@ foreach ( TARGET ${FOLDER_COMPILE_TARGETS} )
                               PRIVATE
                                 ${PROJECT_SOURCE_DIR}/inc
                                 ${PROJECT_BINARY_DIR}/inc
+                                $<TARGET_PROPERTY:${PROJECT_NAME}_Core,Fortran_MODULE_DIRECTORY>
                             )
 endforeach()
 

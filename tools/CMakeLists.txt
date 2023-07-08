@@ -121,7 +121,7 @@ add_custom_command(
                     COMMAND
                       ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/frame
                     COMMAND
-                      ${CMAKE_BINARY_DIR}/tools/registry ${REGISTRY_DEFS} -DNEW_BDYS ${REGISTRY_FILE} &> ${CMAKE_BINARY_DIR}/registry.log
+                      ${CMAKE_BINARY_DIR}/tools/registry ${REGISTRY_DEFS} -DNEW_BDYS ${REGISTRY_FILE} > ${CMAKE_BINARY_DIR}/registry.log 2>&1
                     #!TODO Just have the registry code actually check for failure or better yet rewrite the 
                     # registry code to not be so obfuscating
                     COMMAND 

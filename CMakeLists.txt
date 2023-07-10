@@ -82,7 +82,7 @@ list( GET WRF_CORE_OPTIONS 0 WRF_CORE )
 set( WRF_NESTING_OPTIONS 
       # Options listed here
       NONE
-      BASIC #TODO Figure out what exactly this does aside from potentially stub things Config.pl:890
+      BASIC
       MOVES
       VORTEX
       )
@@ -251,6 +251,13 @@ if ( NOT ${WRFIO_NCD_NO_LARGE_FILE_SUPPORT} )
 endif()
 
 
+################################################################################
+##
+## Print out final set of options to be used 
+## DO NOT MODIFY OPTIONS BEYOND THIS POINT
+##
+################################################################################
+
 if ( DEFINED CMAKE_TOOLCHAIN_FILE )
   print_option( WRF_CONFIG         20 ${BOLD_CYAN} )
 endif()
@@ -297,6 +304,10 @@ print_option( WRFIO_NCD_NO_LARGE_FILE_SUPPORT 36 )
 ## Now find packages that cross-compilation is potentially handled
 ##
 ################################################################################
+# If nesting is enabled, DM_PARALLEL must be set, but if this is a non-MPI compilation
+# we must stub its usage
+list( FIND WRF_NESTING_OPTIONS ${WRF_NESTING} CURRENT_NESTING_IDX )
+
 if ( ${USE_MPI} )
   # Through ***MUCH*** debugging, if utilizing MPI_<LANG>_COMPILER
   # https://cmake.org/cmake/help/latest/module/FindMPI.html#variables-for-locating-mpi
@@ -321,6 +332,12 @@ if ( ${USE_MPI} )
                         $<$<COMPILE_LANGUAGE:C>:${WRF_MPI_C_FLAGS}>
                         )
   endif()
+# We know NONE is the zero index so compare against that
+elseif( ${CURRENT_NESTING_IDX} GREATER 0 )
+  add_compile_definitions(
+                          DM_PARALLEL
+                          STUBMPI
+                          )
 endif()
 
 if ( ${USE_OPENMP} )

@@ -2,22 +2,21 @@
 set( FOLDER_COMPILE_TARGETS )
 
 # First make true executables
-if ( ${WRF_CORE} STREQUAL "ARW" )
-  add_executable( 
-                  wrf
-                  wrf.F
-                  module_wrf_top.F
-                  )
-  list( APPEND FOLDER_COMPILE_TARGETS wrf )
-
-elseif ( ${WRF_CORE} STREQUAL "WRFPLUS" )
+if ( ${WRF_CORE} STREQUAL "PLUS" )
   add_executable(
                   wrfplus
                   wrf.F
                   module_wrf_top.F
                   )
   list( APPEND FOLDER_COMPILE_TARGETS wrfplus )
-
+else()
+  # I believe this is always made if not WRF PLUS or ESMF
+  add_executable( 
+                  wrf
+                  wrf.F
+                  module_wrf_top.F
+                  )
+  list( APPEND FOLDER_COMPILE_TARGETS wrf )
 # #!TODO When does this get activated?
 # elseif()
 #   add_executable(

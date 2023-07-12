@@ -217,6 +217,49 @@ def getStringOptionSelection( topLevelCmake, searchString ) :
   
   return options[selection]
 
+def getSubOptions( topLevelCmake, ignoreOptions ) :
+  topLevelCmakeFP    = open( topLevelCmake, "r" )
+  topLevelCmakeLines = topLevelCmakeFP.read()
+  topLevelCmakeFP.close()
+
+  stringOptionsMatch = re.finditer(
+                                  r"set\s*[(]\s*(\w+)\s*(ON|OFF)\s*CACHE\s*BOOL\s*\"(.*?)\"\s*[)]",
+                                  topLevelCmakeLines,
+                                  re.I | re.M
+                                  )
+  # Remove commented ones and ones that don't follow pattern set( <OPT> ON|OFF CACHE BOOL "<OPT>" )
+  options = [ [ option.group( 1 ), option.group( 2 ) ] for option in stringOptionsMatch if option.group( 1 ) == option.group( 3 ) and option.group(0).split( "#", 1 )[0].strip() ]
+  
+  # Remove ignore options
+  options = [ option for option in options if option[0] not in ignoreOptions ]
+  subOptions      = {}
+  
+  if options :
+    subOptionQuit = False
+    optionToggleIdx = -1
+
+    # Print menu
+    optionStr = "{idx:<3} {option:<24} : {value:<5}"
+    print( optionStr.format( idx="ID", option="Option", value="Default" ) )
+    for opt in options :
+      print( optionStr.format( idx=options.index(opt), option=opt[0], value=opt[1] ) )
+
+    print( "Enter ID to toggle option on or off, q to quit : " )
+    # Loop until q, toggle from default not current value
+    while not subOptionQuit :
+      optionToggleIdx = input()
+      try:
+        optionToggleIdx = int( optionToggleIdx )
+        if optionToggleIdx < 0 or optionToggleIdx >= len( options ) :
+          print( "Not a valid index" )
+        else:
+          subOptions[ options[optionToggleIdx][0] ] = "ON" if not ( options[optionToggleIdx][1] == "ON" ) else "OFF"
+          print( "Set {option} to {value}".format( option=options[optionToggleIdx][0], value=subOptions[ options[optionToggleIdx][0] ] ) )
+      except ValueError as err :
+        subOptionQuit = optionToggleIdx.lower() == "q"
+
+  return subOptions
+
 def generateCMakeToolChainFile( cmakeToolChainTemplate, output, stanza, optionsDict={} ) :
   cmakeToolChainTemplateFP    = open( cmakeToolChainTemplate, "r" )
   cmakeToolChainTemplateLines = cmakeToolChainTemplateFP.read()
@@ -264,6 +307,13 @@ def main() :
   useMPI       = input( "[DM] Use MPI?    [Y/n] : " ).lower() in yesValues
   useOpenMP    = input( "[SM] Use OpenMP? [Y/n] : " ).lower() in yesValues
 
+  alreadyAsked = [ "USE_MPI", "USE_OPENMP" ]
+
+  doSuboptionMenu = input( "Configure additional options? [Y/n] : " ).lower() in yesValues
+  subOptions      = {}
+  if doSuboptionMenu :
+    subOptions = getSubOptions( cmakeFile, alreadyAsked )
+
 
   fp    = open( configFile, 'r' )
   lines = fp.read()
@@ -303,8 +353,9 @@ def main() :
                         "WRF_NESTING" : nestingOption,
                         "WRF_CASE"    : caseOption,
                         "USE_MPI"     : "ON" if useMPI    else "OFF",
-                        "USE_OPENMP"  : "ON" if useOpenMP else "OFF"
+                        "USE_OPENMP"  : "ON" if useOpenMP else "OFF",
                         }
+  additionalOptions.update( subOptions )
   generateCMakeToolChainFile( cmakeTemplateFile, cmakeConfigFile, stanzas[idxSelection], additionalOptions )
 
 

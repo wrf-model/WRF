@@ -6,6 +6,20 @@
          dummy = 1
       END SUBROUTINE SBM_fast
       END MODULE module_mp_fast_sbm
+
+! Stub modules
+module module_mp_SBM_BreakUp
+end module module_mp_SBM_BreakUp
+
+module module_mp_SBM_Collision
+end module module_mp_SBM_Collision
+
+module module_mp_SBM_Auxiliary
+end module module_mp_SBM_Auxiliary
+
+module module_mp_SBM_Nucleation
+end module module_mp_SBM_Nucleation
+
 #else
 ! +-----------------------------------------------------------------------------+
 ! +-----------------------------------------------------------------------------+

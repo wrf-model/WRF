@@ -193,11 +193,7 @@ set( MAX_HISTORY    25    )
 set( IWORDSIZE      4     )
 set( DWORDSIZE      8     )
 set( LWORDSIZE      4     )
-if ( USE_DOUBLE )
-  set( RWORDSIZE    8     )
-else()
-  set( RWORDSIZE    4     )
-endif()
+
 
 ########################
 
@@ -255,6 +251,76 @@ if ( NOT ${WRFIO_NCD_NO_LARGE_FILE_SUPPORT} )
   message( STATUS "netCDF large file support not suppressed, if available it will be used" )
 endif()
 
+
+# Handle double promotion - doing this here instead of from config.cmake toolchain
+# file since the double promotion logic is a nightmare
+list( FIND WRF_CORE_OPTIONS ${WRF_CORE} CURRENT_WRF_CORE_IDX )
+list( FIND WRF_CORE_OPTIONS "DA"        START_DA_IDX )
+# DA + WRF PLUS cores require double precision
+if ( ${CURRENT_WRF_CORE_IDX} GREATER_EQUAL ${START_DA_IDX} AND NOT ${USE_DOUBLE} )
+  # if ( # Apparently set regardless of compiler
+  #     ${CMAKE_Fortran_COMPILER_ID} STREQUAL "GNU" OR 
+  #     ${CMAKE_Fortran_COMPILER_ID} STREQUAL "Fujitsu" )
+  message( STATUS "DA and PLUS Core builds require double precision" )
+  set( USE_DOUBLE ON CACHE BOOL "Required by configuration" FORCE )
+  # endif()
+endif()
+
+if ( ${USE_DOUBLE} )
+  set( RWORDSIZE    8     )
+  if ( ${BUILD_SBM_FAST} )
+    set( BUILD_SBM_FAST OFF CACHE BOOL "Required by configuration" FORCE )
+    message( STATUS "BUILD_SBM_FAST does not support double, turning off" )
+  endif()
+else()
+  set( RWORDSIZE    4     )
+endif()
+
+math( EXPR RWORDSIZE_B "8 * ${RWORDSIZE}" )
+
+# This is really ugly but such is the cost of supporting many ways to say the same thing
+# https://cmake.org/cmake/help/latest/variable/CMAKE_LANG_COMPILER_ID.html
+add_compile_options(
+                    # Use "" and ; specifically to evaluate correctly
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,Absoft>:>"                                 #@ Absoft Fortran
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,ADSP>:>"                                   #@ Analog VisualDSP++
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,AppleClang>:>"                             #@ Apple Clang
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,ARMCC>:>"                                  #@ ARM Compiler
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,ARMClang>:>"                               #@ ARM Compiler based on Clang
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,Bruce>:>"                                  #@ Bruce C Compiler
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,CCur>:>"                                   #@ Concurrent Fortran
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,Clang>:>"                                  #@ LLVM Clang
+                    "$<$<COMPILE_LANG_AND_ID:Fortran,Cray>:-s;integer32;-s;real${RWORDSIZE_B}>" #@ Cray Compiler
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,Embarcadero>:>"                            #@ Embarcadero
+                    "$<$<AND:$<BOOL:${USE_DOUBLE}>,$<COMPILE_LANG_AND_ID:Fortran,Flang>>:-fdefault-real-${RWORDSIZE}>"                  #@ Classic Flang Fortran Compiler
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,LLVMFlang>:>"                              #@ LLVM Flang Fortran Compiler
+                    "$<$<COMPILE_LANG_AND_ID:Fortran,Fujitsu>:-CcdRR${RWORDSIZE}>"              #@ Fujitsu HPC compiler (Trad mode)
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,FujitsuClang>:>"                           #@ Fujitsu HPC compiler (Clang mode)
+                    "$<$<COMPILE_LANG_AND_ID:Fortran,G95>:-r${RWORDSIZE};-i4>"                                    #@ G95 Fortran
+                    "$<$<AND:$<BOOL:${USE_DOUBLE}>,$<COMPILE_LANG_AND_ID:Fortran,GNU>>:-fdefault-real-${RWORDSIZE}>"         #@ GNU Compiler Collection
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,GHS>:>"                                    #@ Green Hills Software
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,HP>:>"                                     #@ Hewlett-Packard Compiler
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,IAR>:>"                                    #@ IAR Systems
+                    "$<$<COMPILE_LANG_AND_ID:Fortran,Intel>:-real-size;${RWORDSIZE_B};-i4>"     #@ Intel Classic Compiler
+                    "$<$<COMPILE_LANG_AND_ID:Fortran,IntelLLVM>:-real-size;${RWORDSIZE_B};-i4>" #@ Intel LLVM-Based Compiler
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,LCC>:>"                                    #@ MCST Elbrus C/C++/Fortran Compiler
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,MSVC>:>"                                   #@ Microsoft Visual Studio
+                    "$<$<COMPILE_LANG_AND_ID:Fortran,NVHPC>:-r${RWORDSIZE};-i4>"                #@ NVIDIA HPC Compiler
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,NVIDIA>:>"                                 #@ NVIDIA CUDA Compiler
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,OpenWatcom>:>"                             #@ Open Watcom
+                    "$<$<COMPILE_LANG_AND_ID:Fortran,PGI>:-r${RWORDSIZE};-i4>"                  #@ The Portland Group
+                    "$<$<COMPILE_LANG_AND_ID:Fortran,PathScale>:-r${RWORDSIZE};-i4>"            #@ PathScale
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,SDCC>:>"                                   #@ Small Device C Compiler
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,SunPro>:>"                                 #@ Oracle Solaris Studio
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,Tasking>:>"                                #@ Tasking Compiler Toolsets
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,TI>:>"                                     #@ Texas Instruments
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,TinyCC>:>"                                 #@ Tiny C Compiler
+                    "$<$<COMPILE_LANG_AND_ID:Fortran,XL>:-qrealsize=${RWORDSIZE};-qintsize=4>"  #@ IBM XL
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,XLClang>:>"                                #@ IBM Clang-based XL
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,IBMClang>:>"                               #@ IBM LLVM-based Compiler
+                    # Todo find how to handle default selection or add new compiler IDs
+                    # unknown how to add support for sxf90
+                    )
 
 ################################################################################
 ##
@@ -611,8 +677,12 @@ add_subdirectory( main     )
 
 ################################################################################
 # Add subdirectory with case info
-###############################################################################
-add_subdirectory( test/${WRF_CASE_FOLDER} )
+################################################################################
+if ( ${CURRENT_WRF_CORE_IDX} GREATER_EQUAL ${START_DA_IDX} )
+  message( STATUS "DA or PLUS build, WRF_CASE selection ignored" )
+else()
+  add_subdirectory( test/${WRF_CASE_FOLDER} )
+endif()
 
 # Configure core
 set_target_properties( 

@@ -72,9 +72,11 @@ set( WRF_CORE_OPTIONS
       PLUS
       )
 
-# Set default WRF_CORE
 set( WRF_CORE "" CACHE STRING "WRF_CORE" )
-list( GET WRF_CORE_OPTIONS 0 WRF_CORE )
+if ( ${WRF_CORE} STREQUAL "" )
+  # Set default WRF_CORE
+  list( GET WRF_CORE_OPTIONS 0 WRF_CORE )
+endif()
 
 ################################################################################
 ## WRF Nesting selection
@@ -87,10 +89,11 @@ set( WRF_NESTING_OPTIONS
       VORTEX
       )
 
-# Set default WRF_NESTING
 set( WRF_NESTING "" CACHE STRING "WRF_NESTING" )
-list( GET WRF_NESTING_OPTIONS 0 WRF_NESTING )
-
+if ( ${WRF_NESTING} STREQUAL "" )
+  # Set default WRF_NESTING
+  list( GET WRF_NESTING_OPTIONS 0 WRF_NESTING )
+endif()
 
 ################################################################################
 ## WRF Case selection
@@ -118,13 +121,15 @@ set( WRF_CASE_OPTIONS
       EM_SQUALL2D_Y
       )
 
-# Set default WRF_CASE
 set( WRF_CASE "" CACHE STRING "WRF_CASE" )
-list( GET WRF_CASE_OPTIONS 0 WRF_CASE )
-
+if ( ${WRF_CASE} STREQUAL "" )
+  # Set default WRF_CASE
+  list( GET WRF_CASE_OPTIONS 0 WRF_CASE )
+endif()
 
 # DO NOT USE OPTION - IT DOES NOT WORK AS ANTICIPATED EVEN WHEN CLEARING CACHE - YOU HAVE BEEN WARNED
-set( USE_DOUBLE  OFF CACHE BOOL "USE_DOUBLE"  ) # I believe this is the r8/real8 promotion
+# If you add anything here, the description should be the name itself - this helps the configuration script
+set( USE_DOUBLE  OFF CACHE BOOL "USE_DOUBLE"  )
 set( USE_MPI     OFF CACHE BOOL "USE_MPI"     )
 set( USE_OPENMP  OFF CACHE BOOL "USE_OPENMP"  )
 

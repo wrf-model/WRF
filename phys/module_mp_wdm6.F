@@ -383,6 +383,12 @@
 !        nccn > 100 cm-3, bae from kiaps, oct 2017
 !        bug fix hydrometeros update before condensation process of rain,
 !           bae from kiaps, oct2017
+!        bug fix in snow melting and autoconversion.
+!        ==> Revisions enchance melting and autoconverison.
+!           hong from noaa, july2023 
+!        remedy for tiny nc in the presence of qc (nc = xncr, 300/cm**3)
+!        ==> prevents the crashed in computing autoconversion
+!           hong from noaa, july2023
 !
 !  history log :
 !
@@ -587,6 +593,13 @@
      enddo
    enddo
 
+   do k = kts,kte
+     do i = its,ite 
+       if(qci(i,k,1).gt.qcrmin.and.ncr(i,k,2).le.ncmin) then
+         ncr(i,k,2) = xncr
+       endif 
+     enddo  
+   enddo
 !
 !  latent heat for phase changes and heat capacity. neglect the
 !  changes during microphysical process calculation
@@ -904,8 +917,7 @@
               psmlt(i,k) = xka(t(i,k),den(i,k))/xlf*(t0c-t(i,k))*pi/2.       &
                          *n0sfac(i,k)*(precs1*rslope2(i,k,2)                 &
                          +precs2*work2(i,k)*coeres)/den(i,k)                  
-              psmlt(i,k) = min(max(psmlt(i,k)*dtcld/mstep(i),-qrs(i,k,2)     &
-                         /mstep(i)),0.)
+              psmlt(i,k) = min(max(psmlt(i,k)*dtcld,-qrs(i,k,2)),0.)
 !-------------------------------------------------------------------
 ! nsmlt: melting of snow [LH A27]
 !       (T>T0: ->NR)
@@ -2109,7 +2121,7 @@
 !
    qc0  = 4./3.*pi*denr*r0**3.*xncr0/den0
    qc1  = 4./3.*pi*denr*r0**3.*xncr1/den0
-   qck1 = .104*9.8*peaut/(xncr*denr)**(1./3.)/xmyu*den0**(4./3.) ! 7.03
+   qck1 = .104*9.8*peaut/(denr)**(1./3.)/xmyu*den0**(4./3.) ! 7.03
    pidnc = pi*denr/6.
 !
    bvtr1 = 1.+bvtr

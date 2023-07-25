@@ -8,8 +8,6 @@
 !
 ! See comments preceeding each method for details
 !
-! Contact: J. Wong <johnwong@ucar.edu>
-!
 !**********************************************************************
 
 

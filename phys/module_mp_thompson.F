@@ -837,7 +837,7 @@
 
 !..Create bins of cloud ice (from min diameter up to 5x min snow size).
       xDx(1) = D0i*1.0d0
-      xDx(nbi+1) = 5.0d0*D0s
+      xDx(nbi+1) = 2.0d0*D0s
       do n = 2, nbi
          xDx(n) = DEXP(DFLOAT(n-1)/DFLOAT(nbi) &
                   *DLOG(xDx(nbi+1)/xDx(1)) +DLOG(xDx(1)))
@@ -2542,7 +2542,7 @@
             png_rcg(k) = MIN(DBLE(ng(k)*odts), png_rcg(k))
             pbg_rcg(k) = prg_rcg(k)/rho_g(idx_bg(k))
 !..Put in explicit drop break-up due to collisions.
-            pnr_rcg(k) = -5.*tnr_gacr(idx_g1,idx_g,idx_bg(k),idx_r1,idx_r)  ! RAIN2M
+            pnr_rcg(k) = -1.5*tnr_gacr(idx_g1,idx_g,idx_bg(k),idx_r1,idx_r)  ! RAIN2M
            endif
           endif
          endif

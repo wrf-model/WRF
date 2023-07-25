@@ -5528,8 +5528,14 @@ subroutine aerosol_in_cu(aeromcu,alevsiz,no_months,no_src_types,XLAT,XLONG,aerop
                READ(UNIT=iunit)  lon_aer
                READ(UNIT=iunit)  aeropin
                READ(UNIT=iunit)  aeroin
+            ELSE
+               CALL wrf_error_fatal('Unable to open file "CESM_RCP4.5_Aerosol_Data.dat" (required for aercu_opt = 1 or 2). ' // &
+                  'Please refer to the run/README.namelist file for more information.')
             END IF
           CLOSE(iunit)
+      ELSE
+          CALL wrf_error_fatal('Missing file "CESM_RCP4.5_Aerosol_Data.dat" (required for aercu_opt = 1 or 2). ' // &
+              'Please refer to the run/README.namelist file for more information.')
       END IF
 !---------------------------------------------------------------------------
 !-- latitudinally interpolate ozone data (and extend longitudinally)

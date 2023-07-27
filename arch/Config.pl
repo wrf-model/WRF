@@ -357,7 +357,6 @@ if ( $sw_hdf5_path ) {
   if ($hl ne "") {
     $sw_hdf5_hl_fortran="-lhdf5hl_fortran";
   }
-  print "TB $sw_hdf5_hl_fortran\n";
 }
 
 # parse the configure.wrf file

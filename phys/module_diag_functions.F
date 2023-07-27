@@ -763,7 +763,7 @@ CONTAINS
       IF ((ellev >= 0) .and. (lfclev >= 0)) THEN !Modified by Zhixiao
          plfc = p (lfclev)
          pel = p (ellev)
-         CIN=REAL ( 0 )
+         CIN = REAL ( 0 )
          DO k = sfc+1, nz
             ! Make CAPE and CIN consistent with AMS definition
             ! https://glossary.ametsoc.org/wiki/Convective_available_potential_energy

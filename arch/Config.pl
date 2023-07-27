@@ -49,6 +49,7 @@ $sw_usenetcdf = "" ;
 $sw_time = "" ;          # name of a timer to time fortran compiles, e.g. timex or time
 $sw_ifort_r8 = 0 ;
 $sw_hdf5 = "-lhdf5_hl -lhdf5";
+$sw_hdf5_hl_fortran="-lhdf5_hl_fortran";
 $sw_zlib = "-lz";
 $sw_dep_lib_path = "";
 $sw_gpfs_path = "";
@@ -238,7 +239,6 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
  $sw_nest_opt = "" ; 
  $sw_comms_external = "gen_comms_serial module_dm_serial" ;
 
-
  if ( $sw_dmparallel eq "RSL_LITE" ) 
  {
   $sw_fc = "\$(DM_FC)" ;
@@ -349,6 +349,15 @@ if ( $ENV{WRF_CTSM_MKFILE} ) {
    $sw_ctsm_mkfile_path = $ENV{WRF_CTSM_MKFILE};
 }
 
+if ( $sw_hdf5_path ) {
+  opendir(my $dh, "$sw_hdf5_path/lib");
+  ($hl) = grep(/hdf5hl_fortran/i, readdir $dh);
+  closedir($dh);
+  if ($hl ne "") {
+    $sw_hdf5_hl_fortran="-lhdf5hl_fortran";
+  }
+}
+
 # parse the configure.wrf file
 
 $validresponse = 0 ;
@@ -453,6 +462,7 @@ if ( $response == 2 || $response == 3 ) {
 } else {
   $sw_terrain_and_landuse =" -DLANDREAD_STUB=1" ;
 } 
+
 open CONFIGURE_DEFAULTS, "cat ./arch/configure.defaults |"  ;
 $latchon = 0 ;
 while ( <CONFIGURE_DEFAULTS> )
@@ -732,7 +742,7 @@ while ( <CONFIGURE_DEFAULTS> )
       }
 
     if ( $sw_hdf5_path ) 
-      { $_ =~ s:CONFIGURE_HDF5_LIB_PATH:-L$sw_hdf5_path/lib -lhdf5hl_fortran -lhdf5_hl -lhdf5_fortran -lhdf5 -lm -lz: ;
+      { $_ =~ s:CONFIGURE_HDF5_LIB_PATH:-L$sw_hdf5_path/lib $sw_hdf5_hl_fortran -lhdf5_hl -lhdf5_fortran -lhdf5 -lm -lz: ;
         $_ =~ s:CONFIGURE_HDF5_FLAG:-DHDF5: ;
          }
     else
@@ -1120,7 +1130,7 @@ while ( <ARCH_PREAMBLE> )
       }
 
     if ( $sw_hdf5_path )
-      { $_ =~ s:CONFIGURE_HDF5_LIB_PATH:-L$sw_hdf5_path/lib -lhdf5hl_fortran -lhdf5_hl -lhdf5_fortran -lhdf5 -lm -lz: ;
+      { $_ =~ s:CONFIGURE_HDF5_LIB_PATH:-L$sw_hdf5_path/lib $sw_hdf5_hl_fortran -lhdf5_hl -lhdf5_fortran -lhdf5 -lm -lz: ;
         $_ =~ s:CONFIGURE_HDF5_FLAG:-DHDF5: ;
          }
     else

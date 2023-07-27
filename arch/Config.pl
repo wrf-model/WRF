@@ -239,7 +239,6 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
  $sw_nest_opt = "" ; 
  $sw_comms_external = "gen_comms_serial module_dm_serial" ;
 
-
  if ( $sw_dmparallel eq "RSL_LITE" ) 
  {
   $sw_fc = "\$(DM_FC)" ;

@@ -4,6 +4,7 @@ import sys
 import re
 import inspect
 import platform
+from shutil import which
 
 archBlock  = re.compile( r"(?:#[ ]*)(ARCH(?:.*\n)*?)(?:#{5,})", re.I )
 kvPair     = re.compile( r"^(\w+)(?:[ \t]*=[ \t]*)(.*?)$",      re.I | re.M )
@@ -13,7 +14,7 @@ osAndArch     = re.compile( r"^ARCH[ ]+(\w+)[ ]+((?:\w+.*?),|(?:[(].*?[)]))",   
 # Just grab the first two words, thats what you get
 osAndArchAlt  = re.compile( r"^ARCH[ ]+(\w+)[ ]+(\w+)",         re.I )
 
-referenceVar  = re.compile( r"[$][(](\w+)[)]", re.I )
+referenceVar  = re.compile( r"[$]([(])?(\w+)(?(1)[)])", re.I )
 
 class Stanza():
   
@@ -22,6 +23,12 @@ class Stanza():
     self.os_      = None
     self.archs_   = []
     self.kvPairs_ = {}
+    self.crossPlatform_ = False
+    self.skipCrossPlatform_ = True
+    self.serialOpt_  = False
+    self.smparOpt_   = False
+    self.dmparOpt_   = False
+    self.dmsmOpt_    = False
 
   def parse( self ) :
     # First get os & archs
@@ -34,25 +41,41 @@ class Stanza():
       
     self.os_    = osarchMatch.group(1)
     self.archs_ = osarchMatch.group(2).strip(",").split( " " )
+
+    if ( self.os_.lower() != platform.system().lower() or
+         platform.machine() not in self.archs_ ) :
+      self.crossPlatform_ = True
     
-    for kvPairMatch in kvPair.finditer( self.lines_ ) :
-      self.kvPairs_[ kvPairMatch.group(1) ] = kvPairMatch.group(2)
-      self.removeComments( kvPairMatch.group(1) )
-    
-    # Now sanitize
-    self.sanitize()
+    if not self.skipCrossPlatform_ or ( self.skipCrossPlatform_ and not self.crossPlatform_ ) :
+
+      # Find OpenMP/MPI compilation options
+      memOpts = self.lines_.partition("\n")[0].partition( "#" )[-1].split( " " )
+      # print( memOpts )
+      self.serialOpt_  = "serial" in memOpts
+      self.smparOpt_   = "smpar"  in memOpts
+      self.dmparOpt_   = "dmpar"  in memOpts
+      self.dmsmOpt_    = "dm+sm"  in memOpts
+
+      for kvPairMatch in kvPair.finditer( self.lines_ ) :
+        self.kvPairs_[ kvPairMatch.group(1) ] = kvPairMatch.group(2)
+        self.removeComments( kvPairMatch.group(1) )
+      
+      # Now sanitize
+      self.sanitize()
   
   def dereference( self, field, fatal=False ) :
+    # print( "Dereferencing " + field )
     if field in self.kvPairs_ :
       prevField = self.kvPairs_[field]
 
       for refVarIter in referenceVar.finditer( prevField ) :
         if refVarIter is not None :
           # Grab group 1 and check that it is in our kv pairs
-          refVar = refVarIter.group(1)
+          refVar = refVarIter.group(2)
+          # print( "Found variable {0} in field {1}".format( refVar, field ) )
           if refVar not in self.kvPairs_ :
             if fatal :
-              print( "Could not rereference : " + refVar )
+              # print( "Could not rereference : " + refVar )
               exit(1)
             else:
               continue
@@ -62,7 +85,7 @@ class Stanza():
 
           # Replace in original
           self.kvPairs_[field] = self.kvPairs_[field].replace(
-                                                              "$({var})".format( var=refVar ),
+                                                              "{var}".format( var=refVarIter.group(0) ),
                                                               self.kvPairs_[refVar]
                                                               )
 
@@ -102,6 +125,8 @@ class Stanza():
     self.dereference( "FCBASEOPTS" )
 
     # Now fix certain ones that are mixing programs with flags all mashed into one option
+    self.splitIntoFieldAndFlags( "SFC" )
+    self.splitIntoFieldAndFlags( "SCC" )
     self.splitIntoFieldAndFlags( "DM_FC" )
     self.splitIntoFieldAndFlags( "DM_CC" )
     self.splitIntoFieldAndFlags( "M4" )
@@ -134,6 +159,12 @@ class Stanza():
       self.dereference( key )
       # And for final measure strip
       self.kvPairs_[ key ] = self.kvPairs_[ key ].strip()
+  
+  def serialCompilersAvailable( self ) :
+    return which( self.kvPairs_["SFC"]   ) is not None and which( self.kvPairs_["SCC"]   ) is not None
+
+  def dmCompilersAvailable( self ) :
+    return which( self.kvPairs_["DM_FC"]   ) is not None and which( self.kvPairs_["DM_CC"]   ) is not None
 
   def __str__( self ):
     # base = """OS {os:<8} ARCHITECTURES {archs:<20}
@@ -143,16 +174,18 @@ class Stanza():
     #           >>  DM_FC  = {DM_FC:<12}
     #           >>  DM_CC  = {DM_CC:<12}
     #        """
-    base = """{rec} {os:<10} {SFC:<11} / {SCC:<11} / {CCOMP:<11} / {DM_FC:<11} / {DM_CC:<11}"""
+    base = """  {os:<10} {recSFC} {SFC:<11} / {recSCC} {SCC:<11} / {recDM_FC} {DM_FC:<11} / {recDM_CC} {DM_CC:<11}"""
     text = inspect.cleandoc( base ).format( 
                                             os=str(self.os_),
-                                            rec=( "!!" if platform.system().lower() != self.os_.lower() else "Ok" ),
+                                            recSFC  =( "!!" if which( self.kvPairs_["SFC"]   ) is None else (" " * 2 ) ),
+                                            recSCC  =( "!!" if which( self.kvPairs_["SCC"]   ) is None else (" " * 2 ) ),
+                                            recDM_FC=( "!!" if which( self.kvPairs_["DM_FC"] ) is None else (" " * 2 ) ),
+                                            recDM_CC=( "!!" if which( self.kvPairs_["DM_CC"] ) is None else (" " * 2 ) ),
                                             # archs=str(self.archs_),
-                                            SFC=str( self.kvPairs_["SFC"].partition(" ")[0] ),
-                                            SCC=str( self.kvPairs_["SCC"].partition(" ")[0] ),
-                                            CCOMP=str( self.kvPairs_["CCOMP"].partition(" ")[0] ),
-                                            DM_FC=str( self.kvPairs_["DM_FC"].partition(" ")[0] ),
-                                            DM_CC=str( self.kvPairs_["DM_CC"].partition(" ")[0] )
+                                            SFC=str( self.kvPairs_["SFC"] ),
+                                            SCC=str( self.kvPairs_["SCC"] ),
+                                            DM_FC=str( self.kvPairs_["DM_FC"] ),
+                                            DM_CC=str( self.kvPairs_["DM_CC"] )
                                             )
     # text   += "\n" + "\n".join( [ "{key:<18} = {value}".format( key=key, value=value) for key, value in self.kvPairs_.items() ] ) 
     return text
@@ -279,7 +312,9 @@ def generateCMakeToolChainFile( cmakeToolChainTemplate, output, stanza, optionsD
                                                     FCOPTIM=stanza.kvPairs_["FCOPTIM"],
                                                     M4_FLAGS=stanza.kvPairs_["M4_FLAGS"],
                                                     SCC=stanza.kvPairs_["SCC"],
-                                                    SFC=stanza.kvPairs_["SFC"]
+                                                    SFC=stanza.kvPairs_["SFC"],
+                                                    SCC_FLAGS=stanza.kvPairs_["SCC_FLAGS"],
+                                                    SFC_FLAGS=stanza.kvPairs_["SFC_FLAGS"]
                                                     )
 
   # Extra stufff not from stanza but options
@@ -296,25 +331,6 @@ def main() :
   cmakeConfigFile    = sys.argv[3]
   cmakeFile          = sys.argv[4]
 
-  coreOption       = getStringOptionSelection( cmakeFile, "WRF_CORE_OPTIONS"    )
-  nestingOption    = getStringOptionSelection( cmakeFile, "WRF_NESTING_OPTIONS" )
-  caseOption       = getStringOptionSelection( cmakeFile, "WRF_CASE_OPTIONS" )
-  
-  # These are yes
-  yesValues    = [ "yes", "y", "true", "1" ]
-
-  #!TODO Expand this for all wrf options
-  useMPI       = input( "[DM] Use MPI?    [Y/n] : " ).lower() in yesValues
-  useOpenMP    = input( "[SM] Use OpenMP? [Y/n] : " ).lower() in yesValues
-
-  alreadyAsked = [ "USE_MPI", "USE_OPENMP" ]
-
-  doSuboptionMenu = input( "Configure additional options? [Y/n] : " ).lower() in yesValues
-  subOptions      = {}
-  if doSuboptionMenu :
-    subOptions = getSubOptions( cmakeFile, alreadyAsked )
-
-
   fp    = open( configFile, 'r' )
   lines = fp.read()
   fp.close()
@@ -327,26 +343,66 @@ def main() :
     stanza = Stanza( stanzaBlock.group(1) )
     stanza.parse()
 
-    stanzas.append( stanza )
-    stanzaConfig = str( stanza )
-    stanzaId = "{idx:<3} ".format( idx=stanzaIdx )
-    if stanzaConfig not in uniqueConfigs :
-      uniqueConfigs[ stanzaConfig ] = { "stanza" : stanza, "idx" : stanzaIdx }
-      print( stanzaId + stanzaConfig + "[first entry]" )
-    else :
-      diff, value = Stanza.findFirstDifference( uniqueConfigs[ stanzaConfig ]["stanza"], stanza )
-      if diff :
-        print( stanzaId + stanzaConfig + "@{idx} diff => {value}".format( idx=uniqueConfigs[ stanzaConfig ][ "idx" ], value=value ) )
-      else :
-        print( stanzaId + stanzaConfig + "[no difference]" )
-    stanzaIdx += 1
+    if not stanza.crossPlatform_ and stanza.serialCompilersAvailable() and ( stanza.dmCompilersAvailable() or ( stanza.serialOpt_ or stanza.smparOpt_ ) ) :
+      stanzas.append( stanza )
+      stanzaConfig = str( stanza )
+      stanzaId = "{idx:<3} ".format( idx=stanzaIdx )
+      if stanzaConfig not in uniqueConfigs :
+        uniqueConfigs[ stanzaConfig ] = { "stanza" : stanza, "idx" : stanzaIdx }
+      
+      print( stanzaId + stanzaConfig + stanza.kvPairs_[ "DESCRIPTION" ] )
+      # else :
+        # diff, value = Stanza.findFirstDifference( uniqueConfigs[ stanzaConfig ]["stanza"], stanza )
+        # if diff :
+        #   print( stanzaId + stanzaConfig + "@{idx} diff => {value}".format( idx=uniqueConfigs[ stanzaConfig ][ "idx" ], value=value ) )
+        # else :
+        #   print( stanzaId + stanzaConfig + "[no difference]" )
+      stanzaIdx += 1
     
-  print( "!! - Not recommended for your system" )
+  print( "!! - Compiler not found, some configurations will not work and will be hidden" )
 
   idxSelection = int( input( "Select configuration [0-{stop}] (note !!)  : ".format( stop=( stanzaIdx-1) ) ) )
   if idxSelection < 0 or idxSelection > stanzaIdx - 1 :
     print( "Invalid configuration selection!" )
     exit(1)
+
+  stanzaCfg         = stanzas[idxSelection]
+  coreOption       = getStringOptionSelection( cmakeFile, "WRF_CORE_OPTIONS"    )
+  nestingOption    = getStringOptionSelection( cmakeFile, "WRF_NESTING_OPTIONS" )
+  caseOption       = getStringOptionSelection( cmakeFile, "WRF_CASE_OPTIONS" )
+  
+  # These are yes
+  yesValues    = [ "yes", "y", "true", "1" ]
+
+  ##############################################################################
+  # Decompose the weird way to write the logic for DM/SM 
+  USE_MPI = False
+  if ( stanzaCfg.serialOpt_ or stanzaCfg.smparOpt_ ) and ( stanzaCfg.dmparOpt_ or stanzaCfg.dmsmOpt_ ) :
+    # togglable
+    # we can safely check this since the user would not have been able to select this stanza if it couldn't be disabled
+    if stanzaCfg.dmCompilersAvailable() :
+      useMPI       = input( "[DM] Use MPI?    [Y/n] : " ).lower() in yesValues
+    else :
+      useMPI = False
+  else:
+    # User has no choice in the matter
+    useMPI = ( stanzaCfg.dmparOpt_ or stanzaCfg.dmsmOpt_ )
+
+  useOpenMP = False
+  if ( stanzaCfg.serialOpt_ or stanzaCfg.dmparOpt_ ) and ( stanzaCfg.smparOpt_ or stanzaCfg.dmsmOpt_ ):
+    # togglable
+    useOpenMP    = input( "[SM] Use OpenMP? [Y/n] : " ).lower() in yesValues
+  else:
+    # User has no choice in the matter
+    useOpenMP = ( stanzaCfg.smparOpt_ or stanzaCfg.dmsmOpt_ )
+
+  ##############################################################################
+
+  alreadyAsked = [ "USE_MPI", "USE_OPENMP" ]
+  doSuboptionMenu = input( "Configure additional options? [Y/n] : " ).lower() in yesValues
+  subOptions      = {}
+  if doSuboptionMenu :
+    subOptions = getSubOptions( cmakeFile, alreadyAsked )
 
   additionalOptions = {
                         "WRF_CORE"    : coreOption,
@@ -356,7 +412,7 @@ def main() :
                         "USE_OPENMP"  : "ON" if useOpenMP else "OFF",
                         }
   additionalOptions.update( subOptions )
-  generateCMakeToolChainFile( cmakeTemplateFile, cmakeConfigFile, stanzas[idxSelection], additionalOptions )
+  generateCMakeToolChainFile( cmakeTemplateFile, cmakeConfigFile, stanzaCfg, additionalOptions )
 
 
 

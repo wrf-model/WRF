@@ -15,12 +15,15 @@ osAndArch     = re.compile( r"^ARCH[ ]+(\w+)[ ]+((?:\w+.*?),|(?:[(].*?[)]))",   
 osAndArchAlt  = re.compile( r"^ARCH[ ]+(\w+)[ ]+(\w+)",         re.I )
 
 referenceVar  = re.compile( r"[$]([(])?(\w+)(?(1)[)])", re.I )
+compileObject = re.compile( r"(\W)-c(\W)" )
 
 class Stanza():
   
   def __init__( self, lines ) :
     self.lines_   = lines
     self.os_      = None
+    self.arch_    = None
+    self.osArchLine_ = None
     self.archs_   = []
     self.kvPairs_ = {}
     self.crossPlatform_ = False
@@ -31,13 +34,14 @@ class Stanza():
     self.dmsmOpt_    = False
 
   def parse( self ) :
+    self.osArchLine_ = self.lines_.partition("\n")[0]
     # First get os & archs
-    osarchMatch = osAndArch.match( self.lines_ )
+    osarchMatch = osAndArch.match( self.osArchLine_ )
 
     if osarchMatch is None :
-      osarchMatch = osAndArchAlt.match( self.lines_ )
+      osarchMatch = osAndArchAlt.match( self.osArchLine_ )
       if osarchMatch is None :
-        print( "Could not find OS and architecture info in " + self.lines_.partition("\n")[0] )
+        print( "Could not find OS and architecture info in " + self.osArchLine_ )
       
     self.os_    = osarchMatch.group(1)
     self.archs_ = osarchMatch.group(2).strip(",").split( " " )
@@ -45,11 +49,12 @@ class Stanza():
     if ( self.os_.lower() != platform.system().lower() or
          platform.machine() not in self.archs_ ) :
       self.crossPlatform_ = True
-    
+
+    # Allow cross platform or must not be cross platform
     if not self.skipCrossPlatform_ or ( self.skipCrossPlatform_ and not self.crossPlatform_ ) :
 
       # Find OpenMP/MPI compilation options
-      memOpts = self.lines_.partition("\n")[0].partition( "#" )[-1].split( " " )
+      memOpts = self.osArchLine_.partition( "#" )[-1].split( " " )
       # print( memOpts )
       self.serialOpt_  = "serial" in memOpts
       self.smparOpt_   = "smpar"  in memOpts
@@ -63,6 +68,11 @@ class Stanza():
       # Now sanitize
       self.sanitize()
   
+  ######################################################################################################################
+  ##
+  ## search and replace $(<var>) and $<var> instances
+  ##
+  ######################################################################################################################
   def dereference( self, field, fatal=False ) :
     # print( "Dereferencing " + field )
     if field in self.kvPairs_ :
@@ -113,6 +123,11 @@ class Stanza():
       self.kvPairs_[field] = fieldValue.partition(" ")[0]
       self.kvPairs_[field + "_FLAGS"] = fieldValue.partition(" ")[1]
 
+  ######################################################################################################################
+  ##
+  ## Clean up the stanza so kv pairs can be used as-is
+  ##
+  ######################################################################################################################
   def sanitize( self ) :
     # Fix problematic variables
     self.dereference( "DM_FC" )
@@ -121,7 +136,9 @@ class Stanza():
     # Get rid of all these mixed up flags, these are handled by cmake natively or 
     # just in the wrong place
     self.removeReferences( "FCBASEOPTS", [ "FCDEBUG", "FORMAT_FREE", "BYTESWAPIO", ] )
-    # Now deref
+    self.removeReferences( "FFLAGS",   [ "FORMAT_FREE", "FORMAT_FIXED" ] )
+    self.removeReferences( "F77FLAGS", [ "FORMAT_FREE", "FORMAT_FIXED" ] )
+    # # Now deref
     self.dereference( "FCBASEOPTS" )
 
     # Now fix certain ones that are mixing programs with flags all mashed into one option
@@ -133,39 +150,68 @@ class Stanza():
 
     # Remove rogue compile commands that should *NOT* even be here
     keysToSanitize = [ 
-                      "ARFLAGS",
+                      "ARFLAGS","ARFLAGS",
+                      "CC",
                       "CFLAGS_LOCAL",
+                      "CFLAGS",
+                      "COMPRESSION_INC",
+                      "COMPRESSION_LIBS",
                       "CPP",
+                      "CPPFLAGS",
+                      "DM_CC",
+                      "DM_FC",
                       "ESMF_LDFLAG",
+                      "F77FLAGS",
+                      "FC",
+                      "FCBASEOPTS_NO_G",
+                      "FCBASEOPTS",
+                      "FCOPTIM",
+                      "FCSUFFIX",
+                      "FDEFS",
+                      "FFLAGS",
+                      "FNGFLAGS",
+                      "FORMAT_FIXED",
+                      "FORMAT_FREE",
+                      "LD",
                       "LDFLAGS_LOCAL",
+                      "LDFLAGS",
                       "MODULE_SRCH_FLAG",
                       "RLFLAGS",
+                      "SCC",
+                      "SFC",
                       "TRADFLAG",
-                      "FCBASEOPTS",
-                      "FCBASEOPTS_NO_G",
-                      "FCOPTIM",
-                      "FORMAT_FIXED",
-                      "FORMAT_FREE"
                       ]
 
     for keyToSan in keysToSanitize :
       if keyToSan in self.kvPairs_ :
-        self.kvPairs_[ keyToSan ] = self.kvPairs_[ keyToSan ].replace( "-c", "" )
-    
-
+        self.kvPairs_[ keyToSan ] = self.kvPairs_[ keyToSan ].replace( "CONFIGURE_COMP_L", "" )
+        self.kvPairs_[ keyToSan ] = self.kvPairs_[ keyToSan ].replace( "CONFIGURE_COMP_I", "" )
+        self.kvPairs_[ keyToSan ] = self.kvPairs_[ keyToSan ].replace( "CONFIGURE_FC", "" )
+        self.kvPairs_[ keyToSan ] = self.kvPairs_[ keyToSan ].replace( "CONFIGURE_CC", "" )
+        self.kvPairs_[ keyToSan ] = self.kvPairs_[ keyToSan ].replace( "CONFIGURE_FDEFS", "" )
+        self.kvPairs_[ keyToSan ] = self.kvPairs_[ keyToSan ].replace( "CONFIGURE_MPI", "" )
+        self.kvPairs_[ keyToSan ] = self.kvPairs_[ keyToSan ].replace( "CONFIGURE_COMPAT_FLAGS", "" )
+        
+        compileObject.sub( "\1\2", self.kvPairs_[ keyToSan ] )
+        # self.kvPairs_[ keyToSan ] = self.kvPairs_[ keyToSan ].replace( "-c", "" )
 
     # Now deref all the rest
     for key in self.kvPairs_ :
       self.dereference( key )
       # And for final measure strip
       self.kvPairs_[ key ] = self.kvPairs_[ key ].strip()
-  
+
   def serialCompilersAvailable( self ) :
     return which( self.kvPairs_["SFC"]   ) is not None and which( self.kvPairs_["SCC"]   ) is not None
 
   def dmCompilersAvailable( self ) :
     return which( self.kvPairs_["DM_FC"]   ) is not None and which( self.kvPairs_["DM_CC"]   ) is not None
 
+  ######################################################################################################################
+  ##
+  ## string representation to view as option
+  ##
+  ######################################################################################################################
   def __str__( self ):
     # base = """OS {os:<8} ARCHITECTURES {archs:<20}
     #           >>  SFC    = {SFC:<12}
@@ -190,6 +236,11 @@ class Stanza():
     # text   += "\n" + "\n".join( [ "{key:<18} = {value}".format( key=key, value=value) for key, value in self.kvPairs_.items() ] ) 
     return text
 
+  ######################################################################################################################
+  ##
+  ## Find first apparent difference between two stanzas
+  ##
+  ######################################################################################################################
   @staticmethod
   def findFirstDifference( rhStanza, lhStanza, maxLength=32 ) :
     diff  = False
@@ -198,14 +249,16 @@ class Stanza():
                       "ARCH_LOCAL",
                       "BYTESWAPIO",
                       "CFLAGS_LOCAL",
-                      "DM_CC",
-                      "DM_FC",
-                      "DM_FC_FLAGS",
+                      "CFLAGS",
                       "DM_CC_FLAGS",
+                      "DM_CC",
+                      "DM_FC_FLAGS",
+                      "DM_FC",
                       "FCBASEOPTS",
                       "FCDEBUG",
                       "FCNOOPT",
                       "FCOPTIM",
+                      "FFLAGS",
                       "M4_FLAGS",
                       "SCC",
                       "SFC"
@@ -222,7 +275,11 @@ class Stanza():
     
     return diff, value
 
-
+########################################################################################################################
+##
+## Select enum-like string for string-based cmake options
+##
+########################################################################################################################
 def getStringOptionSelection( topLevelCmake, searchString ) :
   topLevelCmakeFP    = open( topLevelCmake, "r" )
   topLevelCmakeLines = topLevelCmakeFP.read()
@@ -250,6 +307,11 @@ def getStringOptionSelection( topLevelCmake, searchString ) :
   
   return options[selection]
 
+########################################################################################################################
+##
+## Aggregate and allow toggle of various suboptions in alternate menu
+##
+########################################################################################################################
 def getSubOptions( topLevelCmake, ignoreOptions ) :
   topLevelCmakeFP    = open( topLevelCmake, "r" )
   topLevelCmakeLines = topLevelCmakeFP.read()
@@ -292,6 +354,15 @@ def getSubOptions( topLevelCmake, ignoreOptions ) :
         subOptionQuit = optionToggleIdx.lower() == "q"
 
   return subOptions
+
+########################################################################################################################
+########################################################################################################################
+##
+## ABOVE THIS BREAK THINGS ARE EXACTLY THE SAME AS WRF/WPS
+## BELOW THIS BREAK THINGS DIFFER
+##
+########################################################################################################################
+########################################################################################################################
 
 def generateCMakeToolChainFile( cmakeToolChainTemplate, output, stanza, optionsDict={} ) :
   cmakeToolChainTemplateFP    = open( cmakeToolChainTemplate, "r" )

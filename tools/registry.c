@@ -237,7 +237,7 @@ main( int argc, char *argv[], char *env[] )
 
   fclose(fp_tmp) ;
 
-  NON_ZERO_RETURN( check_dimspecs() );
+  check_dimspecs();
 
   NON_ZERO_RETURN( gen_state_struct( "inc" ) );
   NON_ZERO_RETURN( gen_state_subtypes( "inc" ) );

@@ -51,7 +51,7 @@ fi
 if [[ "${CLEAN_BASIC_BUILD}" == "TRUE" || "${CLEAN_ALL}" == "TRUE" ]]; then
   echo "Doing cmake make clean"
   OLD_DIR=$PWD
-  cd ${BUILD_DIR} && make -j 1 clean && cd $OLD_DIR
+  cd ${BUILD_DIR} && make -j 1 clean; cd $OLD_DIR
 fi
 
 if [[ "${CLEAN_BASIC_INSTALL}" == "TRUE" || "${CLEAN_ALL}" == "TRUE" ]]; then

@@ -3275,7 +3275,7 @@ state    real   HAILCAST_DIAM_MEAN  ij   misc        1         -      -         
 state    real   HAILCAST_DIAM_STD   ij   misc        1         -      -          "HAILCAST_DIAM_STD"   "WRF-HAILCAST Stand. Dev. Hail Diameter" "mm"
 state    real   HAILCAST_WUP_MASK   ij     misc        1         -      r        "HAILCAST_WUP_MASK"           "Updraft mask, 1 if > 10m/s"                             ""
 state    real   HAILCAST_WDUR       ij     misc        1         -      r        "HAILCAST_WDUR"               "Updraft duration"                                       "sec"
-state    real   haildtacttime        -       -         -         -      r        "haildtacttime"              "HAILDTACTTIME"         "HAILCAST ACTIVATION TIME in s"
+state    real   haildtacttime       ij     misc        1         -      r        "haildtacttime"              "HAILDTACTTIME"         "HAILCAST ACTIVATION TIME in s"
 
 
 package   hailcast  hailcast_opt==1        -                    state:hailcast_diam_max,hailcast_diam_mean,hailcast_diam_std,hailcast_dhail1,hailcast_dhail2,hailcast_dhail3,hailcast_dhail4,hailcast_dhail5

@@ -1212,7 +1212,9 @@ CONTAINS
 !
       fx1=zolri2(x1,ri,z,z0)
       fx2=zolri2(x2,ri,z,z0)
+      iter = 0
       Do While (abs(x1 - x2) > 0.01)
+      if (iter .eq. 10) return
 ! check added for potential divide by zero (2019/11)
       if(fx1.eq.fx2)return
       if(abs(fx2).lt.abs(fx1))then
@@ -1225,6 +1227,7 @@ CONTAINS
         zolri=x2
       endif
 !
+      iter = iter + 1
       enddo
 !
 

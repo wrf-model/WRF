@@ -50,7 +50,8 @@ CONTAINS
 
     REAL,       INTENT(IN   ),OPTIONAL    ::     haildt
     REAL,       INTENT(IN   ),OPTIONAL    ::     curr_secs
-    REAL,       INTENT(INOUT),OPTIONAL    ::     haildtacttime
+    REAL, DIMENSION( ims:ime, jms:jme ),               &
+         INTENT(INOUT),OPTIONAL    ::     haildtacttime
     INTEGER,    INTENT(IN   )             ::     itimestep
     REAL,       INTENT(IN   )             ::     dt
 
@@ -209,10 +210,18 @@ CONTAINS
         ( (.not. grid%nested) .or. &
         ( (grid%nested) .and. (abs(grid%dtbc) < 0.0001) ) ) )THEN
        doing_adapt_dt = .TRUE.
-       IF ( haildtacttime .eq. 0. ) THEN
-          haildtacttime = CURR_SECS + haildt
-       END IF
-    END IF
+       
+       !170519 - bug fix RAS 
+       !Change haildtacttime to an array so can be set individually
+       ! by gridpoint to account for quilted processes 
+       DO j = j_start, j_end
+          DO i = i_start, i_end
+            IF ( haildtacttime(i,j) .eq. 0. ) THEN
+                haildtacttime(i,j) = CURR_SECS + haildt
+            END IF
+          ENDDO
+        ENDDO
+     END IF
 
     !  Calculate STEPHAIL 
     stephail = NINT(haildt / dt)      
@@ -270,12 +279,19 @@ CONTAINS
        decided     = .TRUE.
     END IF
 
-    IF ( ( .NOT. decided ) .AND. &
-         ( doing_adapt_dt ) .AND. &
-         ( curr_secs .GE. haildtacttime ) ) THEN
-       run_param   = .TRUE.
-       decided     = .TRUE.
-       haildtacttime = curr_secs + haildt
+    !170519 - bug fix RAS 
+    !Changed haildtacttime to an array so can be set individually
+    ! by gridpoint to account for quilted processes 
+     IF ( ( .NOT. decided ) .AND. &
+        ( doing_adapt_dt ) .AND. &
+        ( curr_secs .GE. haildtacttime(i_start, j_start) ) ) THEN
+      run_param   = .TRUE.
+      decided     = .TRUE.
+      DO j = j_start, j_end
+         DO i = i_start, i_end
+            haildtacttime(i,j) = curr_secs + haildt
+         ENDDO
+      ENDDO
     END IF
 
     write ( message, * ) 'timestep to run HAILCAST? ', run_param
@@ -442,6 +458,13 @@ END SUBROUTINE hailcast_diagnostic_driver
 !!!! 06 May 2017...................................Becky Adams-Selin AER
 !!!!     Bug fixes for some memory issues in the adiabatic liquid
 !!!!     water profile code.
+!!!! 23 Apr 2019...................................Becky Adams-Selin AER
+!!!!	 Added check to make sure embryo spends at least some time in 
+!!!!     cloud before returning a positive hail diameter.
+!!!! 16 Dec 2022...................................Becky Adams-Selin AER
+!!!!	 Consolodate a number of bug fixes, including fixing behavior
+!!!!     of haildt when tiling is used, and non-SI units errors in 
+!!!!     HEATBUD subroutine.
 !!!!    
 !!!! See Adams-Selin and Ziegler 2016, MWR for further documentation.
 !!!!
@@ -609,7 +632,8 @@ END SUBROUTINE hailcast_diagnostic_driver
     !the difference between the saturation mixing ratio at each level
     !and the cloud base water vapor mixing ratio
     DO k=1,nz
-       IF (k.LT.KBAS) THEN
+        RWA_new(k) = RWA(k)
+        IF (k.LT.KBAS) THEN
            RWA_adiabat(k) = 0.
            CYCLE
        ENDIF
@@ -640,19 +664,10 @@ END SUBROUTINE hailcast_diagnostic_driver
        ELSE IF ((k.ge.KBAS+1).AND.(RWA_adiabat(k).ge.1.E-12)) THEN
           RWA_new(k) = RWA_adiabat(k)*(h1d(k)-h1d(k-1)) - RWA_new(k-1)
           IF (RWA_new(k).LT.0) RWA_new(k) = 0.
-       ELSE
-          RWA_new(k) = RWA(k)
        ENDIF
-       ! - old code - ! 
-       !IF (k.eq.KBAS+1) THEN
-       !   RWA_new(k) = RWA_adiabat(k)*(h1d(k)-h1d(k-1))
-       !ELSE IF ((k.ge.KBAS+2).AND.(RWA_adiabat(k).ge.1.E-12)) THEN
-       !   RWA_new(k) = RWA_adiabat(k)*(h1d(k)-h1d(k-1)) - RWA_new(k-1)
-       !   IF (RWA_new(k).LT.0) RWA_new(k) = 0.
-       !ENDIF
     ENDDO
     !remove the height factor from RWA_new
-    DO k=KBAS,nz
+    DO k=KBAS+1,nz  !bug fix, ensure index start 1 higher
        RWA_new(k) = RWA_new(k) / (h1d(k)-h1d(k-1))
     ENDDO
 
@@ -695,6 +710,11 @@ END SUBROUTINE hailcast_diagnostic_driver
       CALL INTERP(RA,  RFZL, WFZLP, IFOUT, PA, nz)
       CALL INTERP(VUU_pert, VUFZL, WFZLP, IFOUT, PA, nz)
       CALL INTERP(rho1d, DENSAFZL, WFZLP, IFOUT, PA, nz)
+
+      !Check if height of cloud base is above embryo insertion point
+      !RAS-20190423-!
+      IF (ZFZL < ZBAS-1000) GOTO 400
+     
 
       !Begin hail simulation time (seconds)
       sec = 0.
@@ -850,9 +870,15 @@ END SUBROUTINE hailcast_diagnostic_driver
          !so let's shed any excess water now.
          D_ICE = ( (6*GM*(1.-FW)) / (3.141592654*DENSE) )**0.33333333 
          D = D_ICE  
-         CALL MELT(D,TLAYER,PLAYER,RLAYER,LDEPTH,VT)
+         CALL MELT(D,TLAYER,PLAYER,RLAYER,LDEPTH,VT,TS,DENSE)
 
       ENDIF !end check for melting call
+      
+      !RAS - 20190423 - !
+      400   CONTINUE !Check for if embryo insertion point is below cloud base
+
+      !Require embryo to have stayed aloft for at least some time
+      IF (sec.LT.60) D = 0.
 
       !Check to make sure something hasn't gone horribly wrong
       IF (D.GT.0.254) D = 0.  !just consider missing for now if > 10 in
@@ -993,7 +1019,7 @@ END SUBROUTINE hailcast_diagnostic_driver
       RE=(GX/0.6)**0.5
 
       !SELECT APPROPRIATE EQUATIONS FOR TERMINAL VELOCITY DEPENDING ON 
-      !THE BEST NUMBER
+      !THE BEST NUMBER.  Follows RH87 pg. 2762, but fixes an error in their (B1).
       IF (GX.LT.550) THEN
         W=LOG10(GX)
         Y= -1.7095 + 1.33438*W - 0.11591*(W**2.0)      
@@ -1115,7 +1141,7 @@ END SUBROUTINE hailcast_diagnostic_driver
       !experimentally derived, and are expecting cal-C-g units.  Do some conversions.
       DENSAC = DENSA * (1.E3) * (1.E-6)
       !dynamic viscosity 
-      ANU=1.717E-4*(393.0/(TC+120.0))*(TC/273.155)**1.5
+      ANU=1.717E-5*(393.0/(TC+120.0))*(TC/273.155)**1.5  !RAS units fix to agree with Roger and Yau ps. 102
       !!!  CALCULATE THE REYNOLDS NUMBER - unitless
       RE=D*VT*DENSAC/ANU   
       E=(0.60)**(0.333333333)*(RE**0.50) !ventilation coefficient vapor (fv)
@@ -1123,9 +1149,10 @@ END SUBROUTINE hailcast_diagnostic_driver
       IF(RE.LT.6000.0)THEN
          AE=0.78+0.308*E
       ELSEIF(RE.GE.6000.0.AND.RE.LT.20000.0)THEN
-         AE=0.76*E
+         !RAS 190713
+         AE=0.5*0.76*E !bug fix to match RasmussenHeymsfield1987
       ELSEIF(RE.GE.20000.0) THEN
-         AE=(0.57+9.0E-6*RE)*E
+         AE = 0.5*(0.57+9.0E-6*RE)*E !bug fix to match RasmussenHeymsfield1987
       ENDIF
 
 
@@ -1159,6 +1186,9 @@ END SUBROUTINE hailcast_diagnostic_driver
 
       !!!  CALCULATE THE TOTAL MASS CHANGE 
       DGM=DGMW+DGMI+DGMV
+      !Dummy arguments in the event of no water, vapor, or ice growth
+      DENSELW = 900.
+      DENSELI = 700.
       !!! CALCULATE DENSITY OF NEW LAYER, DEPENDS ON FW AND ITYPE
       IF (ITYPE.EQ.1) THEN !DRY GROWTH
           !If hailstone encountered supercooled water, calculate new layer density 
@@ -1169,7 +1199,12 @@ END SUBROUTINE hailcast_diagnostic_driver
              !!! FIND THE STOKES NUMBER  (rasmussen heymsfield 1985)
              NS = 2*VT*100.*(DC*1.E-4)**2. / (9*ANU*D*50)  !need hail radius in cm
              !!! FIND IMPACT VELOCITY (rasmussen heymsfield 1985)
-             W = LOG10(NS)
+             !W = LOG10(NS) - bug fix 20221216 - RAS !
+             IF (NS.LT.0.1)THEN
+                W=-1.
+             ELSE
+                W = LOG10(NS)
+             ENDIF
              IF (RE.GT.200) THEN
                 IF (NS.LT.0.1) THEN
                    VIMP = 0.0
@@ -1213,7 +1248,7 @@ END SUBROUTINE hailcast_diagnostic_driver
              AFACTOR = -DC*VIMP/TSCELSIUS
              IF ((TSCELSIUS.LE.-5.).OR.(AFACTOR.GE.-1.60)) THEN
                  DENSELW = 0.30*(AFACTOR)**0.44
-             ELSEIF (TSCELSIUS.GT.-5.) THEN
+             ELSE
                  DENSELW = EXP(-0.03115 - 1.7030*AFACTOR + &
                                0.9116*AFACTOR**2. - 0.1224*AFACTOR**3.)
              ENDIF
@@ -1309,13 +1344,14 @@ END SUBROUTINE hailcast_diagnostic_driver
       
       REAL RV, RD, G, PI, ALF, ALV, ALS, CI, CW, AK
       REAL H, AH, TCC, TSC, DELRWC, DENSAC, TDIFF
+      REAL DCM, GMC, DGMWC, DGMIC, GM1C, DGMC
       REAL DMLT
       REAL TSCm1, TSCm2
       DATA RV/461.48/,RD/287.04/,G/9.78956/
       DATA PI/3.141592654/,ALF/79.7/,ALV/597.3/
       DATA ALS/677.0/,CI/0.5/,CW/1./
       
-      !Convert values to non-SI units here
+      !Convert values to non-SI units here to match all the constants
       TSC = TS - 273.155
       TSCm1 = TSm1 - 273.155
       TSCm2 = TSm2 - 273.155
@@ -1323,12 +1359,18 @@ END SUBROUTINE hailcast_diagnostic_driver
       DELRWC = DELRW * (1.E3) * (1.E-6)
       DENSAC = DENSA * (1.E3) * (1.E-6)
       !DI still in cm2/sec
+      DCM = D * 100.  !m to cm
+      GMC = GM * 1000.  !kg to g
+      GM1C = GM1 * 1000.  !kg to g
+      DGMWC = DGMW * 1000.  !kg to g
+      DGMIC = DGMI * 1000.  !kg to g
+      DGMC = DGM * 1000. !kg to g
 
 
       !!!  CALCULATE THE CONSTANTS 
       AK=(5.8+0.0184*TCC)*1.E-5  !thermal conductivity - cal/(cm*sec*K)
       !dynamic viscosity - calculated in MASSAGR
-      !ANU=1.717E-4*(393.0/(TC+120.0))*(TC/273.155)**1.5
+      !ANU=1.717E-5*(393.0/(TC+120.0))*(TC/273.155)**1.5
 
       !!!  CALCULATE THE REYNOLDS NUMBER - unitless
       !RE=D*VT*DENSAC/ANU  - calculated in MASSAGR  
@@ -1341,10 +1383,11 @@ END SUBROUTINE hailcast_diagnostic_driver
          AH=0.78+0.308*H
          !AE=0.78+0.308*E
       ELSEIF(RE.GE.6000.0.AND.RE.LT.20000.0)THEN
-         AH=0.76*H
-         !AE=0.76*E
+        !RAS 190713
+        AH=0.5*0.76*H !bug fix to match RasmussenHeymsfield1987
       ELSEIF(RE.GE.20000.0) THEN
-         AH=(0.57+9.0E-6*RE)*H
+         !RAS 190713
+        AH=0.5*(0.57+9.0E-6*RE)*H !bug fix to match RasmussenHeymsfield1987
          !AE=(0.57+9.0E-6*RE)*E  calculated in MASSAGR
       ENDIF
 
@@ -1358,11 +1401,12 @@ END SUBROUTINE hailcast_diagnostic_driver
          !TSC=TSC-TSC*DGM/GM1+SEKDEL/(GM1*CI)*                &
          !   (2.*PI*D*(AH*AK*(TCC-TSC)-AE*ALS*DI*DELRWC)+     &
          !   DGMW/SEKDEL*(ALF+CW*TCC)+DGMI/SEKDEL*CI*TCC)
-         TSC=0.6*(TSC-TSC*DGM/GM1+SEKDEL/(GM1*CI)*                &
-            (2.*PI*D*(AH*AK*(TCC-TSC)-AE*ALS*DI*DELRWC)+     &
-            DGMW/SEKDEL*(ALF+CW*TCC)+DGMI/SEKDEL*CI*TCC)) + &
+         !units fix
+         TSC=0.6*(TSC-TSC*DGMC/GM1C+SEKDEL/(GM1C*CI)*                &
+            (2.*PI*DCM*(AH*AK*(TCC-TSC)-AE*ALS*DI*DELRWC)+     &
+            DGMWC/SEKDEL*(ALF+CW*TCC)+DGMIC/SEKDEL*CI*TCC)) + &
             0.2*TSCm1 + 0.2*TSCm2
-         
+     
          TS = TSC+273.155
          IF (TS.GE.273.155) THEN 
             TS=273.155
@@ -1375,14 +1419,21 @@ END SUBROUTINE hailcast_diagnostic_driver
          
          IF (TCC.LT.0.) THEN
             !Original Hailcast algorithm
-            FW=FW-FW*DGM/GM1+SEKDEL/(GM1*ALF)*               &
-                (2.*PI*D*(AH*AK*TCC-AE*ALV*DI*DELRWC)+          &
-                DGMW/SEKDEL*(ALF+CW*TCC)+DGMI/SEKDEL*CI*TCC)
+            !FW=FW-FW*DGM/GM1+SEKDEL/(GM1*ALF)*               &
+            !    (2.*PI*D*(AH*AK*TCC-AE*ALV*DI*DELRWC)+          &
+            !    DGMW/SEKDEL*(ALF+CW*TCC)+DGMI/SEKDEL*CI*TCC)
+            !units fixed
+            FW = FW-FW*DGMC/GMC+SEKDEL/(GMC*ALF)*               &
+                 (2.*PI*DCM*(AH*AK*TCC-AE*ALV*DI*DELRWC)+          &
+                 DGMWC/SEKDEL*(ALF+CW*TCC)+DGMIC/SEKDEL*CI*TCC)
          ELSE
             !Calculate decrease in ice mass due to melting
-            DMLT = (2.*PI*D*AH*AK*TCC + 2.*PI*D*AE*ALV*DI*DELRWC + &
-                    DGMW/SEKDEL*CW*TCC) / ALF
-            FW = (FW*GM + DMLT) / GM
+            !!Bug fix 28Jul2021 RAS - non-SI units
+            !More non-SI units -  fixed 20220307 RAS
+            ! Extra SEKDEL in the calculation - 20221102 RAS
+            DMLT = SEKDEL  / ALF * (2.*PI*DCM*AH*AK*TCC + 2.*PI*DCM*AE*ALV*DI*DELRWC + &
+                    DGMWC/SEKDEL*CW*TCC) 
+            FW = (FW*GM1C + DMLT + DGMWC) / GMC
          ENDIF
          
          IF(FW.GT.1.)FW=1.
@@ -1436,12 +1487,18 @@ END SUBROUTINE hailcast_diagnostic_driver
   END SUBROUTINE BREAKUP
   
   
-  SUBROUTINE MELT(D,TLAYER,PLAYER,RLAYER,LDEPTH,VT)
+  SUBROUTINE MELT(D,TLAYER,PLAYER,RLAYER,LDEPTH,VT,TS,DENSE)
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   !!!  This is a spherical hail melting estimate based on the Goyer 
   !!!  et al. (1969) eqn (3).  The depth of the warm layer, estimated 
   !!!  terminal velocity, and mean temperature of the warm layer are 
   !!!  used.  DRB.  11/17/2003.
+  !!!
+  !!!  Incorporated some known variables into the subroutine
+  !!!  to use instead of constants (VT, TS, DENSE).  RAS 10/2/2019
+  !!!
+  !!!  Note - this subroutine assumes melted water is immediately
+  !!!   shed.  Possibly not the most accurate assumption.
   !!!
   !!!  INPUT:  TLAYER   mean sub-cloud layer temperature (K)
   !!!          PLAYER   mean sub-cloud layer pressure (Pa)
@@ -1453,7 +1510,7 @@ END SUBROUTINE hailcast_diagnostic_driver
       IMPLICIT NONE
 
       REAL*8 D
-      REAL TLAYER, PLAYER, RLAYER, LDEPTH, VT
+      REAL TLAYER, PLAYER, RLAYER, LDEPTH, VT, TS, DENSE
       REAL eenv, delta, ewet, de, der, wetold, wetbulb, wetbulbk
       REAL tdclayer, tclayer, eps, b, hplayer
       REAL*8 a
@@ -1502,7 +1559,8 @@ END SUBROUTINE hailcast_diagnostic_driver
       dv = 0.25e-4 ! diffusivity of water vapor (m2/s)
       pi = 3.1415927
       rv = 1004. - 287. ! gas constant for water vapor
-      rhoice = 917.0 ! density of ice (kg/m**3)
+      !rhoice = 917.0 ! density of ice (kg/m**3)
+      rhoice = DENSE  ! we know the stone density, let's use it
       r = D/2. ! radius of stone (m)
       
       !Compute residence time in warm layer
@@ -1511,12 +1569,14 @@ END SUBROUTINE hailcast_diagnostic_driver
       !Calculate dmdt based on eqn (3) of Goyer et al. (1969)
       !Reynolds number...from pg 317 of Atmo Physics (Salby 1996)
       !Just use the density of air at 850 mb...close enough.
-      rho = 85000./(287.*TLAYER)
-      re = rho*r*VT*.01/1.7e-5
+      !rho = 85000./(287.*TLAYER)
+      rho = player/(287.*TLAYER)  !we have the layer pressure, just use it
+      !units fix - r is now in meters, not mm. Plus we need D, not r. RAS 20220308
+      re = rho*r*2*VT/1.7e-5
       
       !Temperature difference between environment and hailstone surface
-      delt = wetbulb !- 0.0 !assume stone surface is at 0C
-                            !wetbulb is in Celsius
+      !We know the stone surface temperature, let's use it
+      delt = wetbulb - (TS - 273.155) !again, wet bulb is in C
 
       !Difference in vapor density of air stream and equil vapor
       !density at the sfc of the hailstone
@@ -1531,7 +1591,7 @@ END SUBROUTINE hailcast_diagnostic_driver
       !Calculate new mass growth
       dmdt = (-1.7*pi*r*(re**0.5)/lf)*((ka*delt)+((lv-lf)*dv*dsig))
       IF (dmdt.gt.0.) dmdt = 0
-      mass = dmdt*tres
+      mass = dmdt*tres ! < 0
       
       !Find the new hailstone diameter
       massorg = 1.33333333*pi*r*r*r*rhoice

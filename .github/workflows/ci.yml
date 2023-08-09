@@ -2,7 +2,7 @@ name: Regression Suite
 
 on:
   push:
-    branches: [ main ]
+    branches: [ master ]
   pull_request:
     types:    [ labeled ]
 

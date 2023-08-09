@@ -23,7 +23,7 @@ jobs:
         ./hpc-workflows/.ci/runner.py .ci/wrf_arw_tests.json gnu -s LOCAL -d ..
 
     - name : Remove 'test' label
-      if : '!cancelled()' && ${{ github.event.label.name == 'test' }}
+      if : ${{ !cancelled() && github.event.label.name == 'test' }}
       env:
         PR_NUMBER: ${{ github.event.number }}
       run: |

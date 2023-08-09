@@ -1,0 +1,32 @@
+name: Regression Suite
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    types:    [ labeled ]
+
+jobs:
+  build:
+    if : ${{ github.event.label.name == 'test' }} || ${{ github.event_name == 'push' }}
+    runs-on: WSL
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+    - uses: actions/checkout@v3
+    - name: Run test 0
+      run: |
+        ./hpc-workflows/.ci/runner.py .ci/wrf_arw_tests.json gnu -s LOCAL -d ..
+
+    - name : Remove 'test' label
+      if : ${{ github.event.label.name == 'test' }}
+      env:
+        PR_NUMBER: ${{ github.event.number }}
+      run: |
+        curl \
+          -X DELETE \
+          -H "Accept: application/vnd.github.v3+json" \
+          -H 'Authorization: token ${{ github.token }}' \
+          https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/labels/test
+  

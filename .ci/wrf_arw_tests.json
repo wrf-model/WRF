@@ -1,0 +1,41 @@
+{
+  "submit_options" :
+  {
+    "queue"     : "regular",
+    "timelimit" : "00:05:00"
+  },
+  "gnu" :
+  {
+    "submit_options" :
+    {
+      "resources"         : "1:ncpus=12",
+      "timelimit"         : "01:00:00"
+    },
+    "steps" :
+    {
+      "serial" :
+       { 
+        "command"      : ".ci/tests/build.sh",
+        "arguments"    : [ "32", "-j 12" ]
+      },
+      "sm" :
+       { 
+        "command"      : ".ci/tests/build.sh",
+        "arguments"    : [ "33", "-j 12" ],
+        "dependencies" : { "serial" : "afterany" }
+      },
+      "dm" :
+       { 
+        "command"      : ".ci/tests/build.sh",
+        "arguments"    : [ "34", "-j 12" ],
+        "dependencies" : { "sm" : "afterany" }
+      },
+      "dm+sm" :
+       { 
+        "command"      : ".ci/tests/build.sh",
+        "arguments"    : [ "35", "-j 12" ],
+        "dependencies" : { "dm" : "afterany" }
+      }
+    }
+  }
+}

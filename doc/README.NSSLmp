@@ -5,7 +5,9 @@ Some background information and usage tips for the NSSL microphysics scheme.
    moist_adv_opt  = 4,
    scalar_adv_opt = 3,
  The monotonic option (2) is less effective, but better than the default positive definite option (1)
- 
+
+NOTE TO SMPAR or DM+SMPAR USERS: If a segmentation fault occurs, try setting the environment variable OMP_STACKSIZE to 8M or 16M (default is 4M, where M=MB). Note that this does not increase the shell stacksize limit [use 'ulimit -a unlimited' (bash) or 'unlimit stacksize' (tcsh)]
+
 CHANGES:
 June 2023 (WRF 4.5.X): Main default option change is for graupel/hail fall speed options (icdx, icdxhl; changed from 3 to 6, see below), and default maximum gr/hail droplet collection efficiencies (ehw0/ehlw0 changed from 0.5/0.75 to 0.9/0.9, see below)
 
@@ -32,9 +34,9 @@ Basic options in physics namelist:
       Equivalent: mp=18, nssl_2moment_on=0, nssl_hail_on=0, nssl_ccn_on=0, 
       nssl_density_on=0
 
-Option flags (apply to all domains except nssl_hail_on):
+Option flags (integer; apply to all domains except nssl_hail_on):
 
- nssl_3moment : default value of 0, setting true adds 6th moment for rain, 
+ nssl_3moment : default value of 0, setting to 1 adds 6th moment for rain, 
                 graupel (i.e., 3-moment ) and hail (Only needed for turning 
                 3-moment on)
 
@@ -50,7 +52,7 @@ Option flags (apply to all domains except nssl_hail_on):
                 off on non-convection-allowing parent domains (Only needed for turning
                 hail off)
 
- nssl_ccn_is_ccna : The CCN category, if enabled, can be used to represent either the
+ nssl_ccn_is_ccna : The CCN category, if enabled (=1), can be used to represent either the
                     number of unactivated CCN (default, value of 0, with irenuc=2), or, if
                     set to 1, it is CCNA (the number of activated CCN, background value
                     of zero). If irenuc >= 5 (see below), this is automatically set to 1.
@@ -70,7 +72,7 @@ Option flags (apply to all domains except nssl_hail_on):
    nssl_rho_qs  = 100.  ! snow density
 
 
-  nssl_cccn          - Initial concentration of cloud condensation 
+  nssl_cccn  - (real) Initial concentration of cloud condensation 
                        nuclei (per m^3 at sea level
                    0.25e+9 maritime
                    0.5e+9 "low-med" continental (DEFAULT)

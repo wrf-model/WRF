@@ -196,6 +196,8 @@ if [ -n "$NETCDFPAR" ] ; then
   export NETCDF
   export NETCDF4
   export USENETCDFPAR
+else
+  export USENETCDFPAR=0
 fi
 
 if  test -z "$NETCDF"  ; then
@@ -271,13 +273,18 @@ if [ -z "$HDF5_PATH" ] ; then HDF5_PATH=''; fi
 if [ -z "$ZLIB_PATH" ] ; then ZLIB_PATH=''; fi
 if [ -z "$GPFS_PATH" ] ; then GPFS_PATH=''; fi
 if [ -z "$CURL_PATH" ] ; then CURL_PATH=''; fi
-
 if [ -n "$NETCDF4" ] ; then
   if [ $NETCDF4 -eq 1 ] ; then
     DEP_LIB_PATH=''
     if [ -f $NETCDF/bin/nf-config ] ; then
       nx_config="$NETCDF/bin/nf-config --flibs"
-      DEP_LIB_PATH="`$nx_config | awk '{for(i=1;i<=NF;i++){if(match($i, /-L.*/)) {print $i} } }'`"
+      if [ -f "$NETCDF/lib/libnetcdf.so" -o -f "$NETCDF/lib/libnetcdf.dll.a" ] ; then
+        # have shared/dynamic libs
+        DEP_LIB_PATH="`$nx_config | awk '{for(i=1;i<=NF;i++){if(match($i, /-L.*/)) {print $i} } }'`"
+      else
+        # makes this work for static libs only (no shared libs)
+        DEP_LIB_PATH="`$nx_config`"
+      fi
       CURL="`$nx_config | awk '{for(i=1;i<=NF;i++){if($i == "-lcurl") {print $i} } }'`"
       GPFS="`$nx_config | awk '{for(i=1;i<=NF;i++){if($i == "-lgpfs") {print $i} } }'`"
     fi

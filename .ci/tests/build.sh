@@ -2,13 +2,13 @@
 workingDirectory=$1
 shift
 compileOption=$1
-makejobs=$3
+makejobs=$2
 
 cd $workingDirectory
 
 . .ci/env/hostenv.sh
 
-echo -ne "$compileOption\n" | ./configure
+echo "$compileOption" | ./configure
 
 if [ ! -f configure.wrf ]; then
   echo  "Failed to configure"

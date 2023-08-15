@@ -6,7 +6,7 @@ makejobs=$3
 
 cd $workingDirectory
 
-source .ci/env/hostenv.sh
+. .ci/env/hostenv.sh
 
 echo -ne "$compileOption\n" | ./configure
 

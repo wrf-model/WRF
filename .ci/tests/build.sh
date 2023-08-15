@@ -8,6 +8,7 @@ cd $workingDirectory
 
 . .ci/env/hostenv.sh
 
+./clean -a
 echo "$compileOption" | ./configure
 
 if [ ! -f configure.wrf ]; then

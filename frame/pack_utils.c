@@ -373,7 +373,7 @@ void *malloc(size_t size)
 # endif
 # if !defined(MS_SUA) && !defined(_WIN32)
 #  include <sys/time.h>
-RSL_INTERNAL_MICROCLOCK ()
+int RSL_INTERNAL_MICROCLOCK ()
 {
     struct timeval tb ;
     struct timezone tzp ;

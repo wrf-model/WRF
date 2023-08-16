@@ -48,7 +48,6 @@ static char * symtab[HASHSIZE] ;
 void * malloc() ;
 void * calloc() ;
 */
-/* char * symget(char *name, char *(*newnode)(), char  **(*nodename)(char *), sym_nodeptr *(*nodenext)(sym_nodeptr), char ** symtab, int flag);*/
 
 char * symget(char *name,char *(*newnode)(),char **(*nodename)(char *),char **(*nodenext)(char *), char *symtab[], int flag) /* flag = 1 is create if not there, 0 return NULL if not there */
 {

@@ -93,8 +93,7 @@ char * symget(char *name,char *(*newnode)(),char **(*nodename)(char *),char **(*
     return(p) ;
 }
 
-int
-hash(char * name )
+int hash(char * name )
 {
     register int result = 0  ;
     register char * p = name ;
@@ -111,8 +110,7 @@ hash(char * name )
 
 /* added 2-19-90, attaches a new hash table to pointer  */
 
-int
-create_ht(char *** p )
+int create_ht(char *** p )
 {
     *p = (char **) calloc( HASHSIZE , sizeof( char * ) ) ;
     return(0) ;
@@ -127,8 +125,7 @@ function to each entry
 
 */
 
-int
-sym_traverse( char *ht[] , char **(*nodenext)(char *), void (*f)(char *) )
+int sym_traverse( char *ht[] , char **(*nodenext)(char *), void (*f)(char *) )
 {
     char * p, **x ;
     int i ;
@@ -167,25 +164,20 @@ struct symnode {
 
 extern struct symnode * symget() ;
 
-struct symnode *
-newnode()
+struct symnode * newnode()
 {
     struct symnode * malloc() ;
     return( malloc( sizeof( struct symnode ) ) ) ;
 }
 
-char **
-nodename(p)
-struct symnode *p ;
+char ** nodename(struct symnode *p)
 {
     char ** x ;
     x = &(p->name) ;
     return( x ) ;
 }
 
-struct symnode **
-nodenext(p)
-struct symnode *p ;
+struct symnode ** nodenext(struct symnode *p)
 {
     struct symnode **x ;
     x = &(p->next) ;

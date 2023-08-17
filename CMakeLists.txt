@@ -73,7 +73,7 @@ set( WRF_CORE_OPTIONS
       )
 
 set( WRF_CORE "" CACHE STRING "WRF_CORE" )
-if ( ${WRF_CORE} STREQUAL "" )
+if ( "${WRF_CORE}" STREQUAL "" )
   # Set default WRF_CORE
   list( GET WRF_CORE_OPTIONS 0 WRF_CORE )
 endif()
@@ -90,7 +90,7 @@ set( WRF_NESTING_OPTIONS
       )
 
 set( WRF_NESTING "" CACHE STRING "WRF_NESTING" )
-if ( ${WRF_NESTING} STREQUAL "" )
+if ( "${WRF_NESTING}" STREQUAL "" )
   # Set default WRF_NESTING
   list( GET WRF_NESTING_OPTIONS 0 WRF_NESTING )
 endif()
@@ -122,7 +122,7 @@ set( WRF_CASE_OPTIONS
       )
 
 set( WRF_CASE "" CACHE STRING "WRF_CASE" )
-if ( ${WRF_CASE} STREQUAL "" )
+if ( "${WRF_CASE}" STREQUAL "" )
   # Set default WRF_CASE
   list( GET WRF_CASE_OPTIONS 0 WRF_CASE )
 endif()

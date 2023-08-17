@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import argparse
 import sys
 import re
 import inspect
@@ -191,9 +192,9 @@ class Stanza():
         self.kvPairs_[ keyToSan ] = self.kvPairs_[ keyToSan ].replace( "CONFIGURE_FDEFS", "" )
         self.kvPairs_[ keyToSan ] = self.kvPairs_[ keyToSan ].replace( "CONFIGURE_MPI", "" )
         self.kvPairs_[ keyToSan ] = self.kvPairs_[ keyToSan ].replace( "CONFIGURE_COMPAT_FLAGS", "" )
-        
-        compileObject.sub( "\1\2", self.kvPairs_[ keyToSan ] )
-        # self.kvPairs_[ keyToSan ] = self.kvPairs_[ keyToSan ].replace( "-c", "" )
+
+        self.kvPairs_[ keyToSan ] = compileObject.sub( r"\1\2", self.kvPairs_[ keyToSan ] ).strip()
+
 
     # Now deref all the rest
     for key in self.kvPairs_ :
@@ -277,6 +278,133 @@ class Stanza():
 
 ########################################################################################################################
 ##
+## Option handling
+##
+########################################################################################################################
+def getOptionsParser() :
+  parser = argparse.ArgumentParser( )
+
+  # https://stackoverflow.com/a/24181138
+  requiredNamed = parser.add_argument_group( "required named arguments" )
+
+  requiredNamed.add_argument( 
+                              "-c", "--config",
+                              dest="configFile",
+                              help="configure.defaults file holding all stanza configurations",
+                              type=str,
+                              required=True
+                              )
+  requiredNamed.add_argument( 
+                              "-t", "--template",
+                              dest="cmakeTemplateFile",
+                              help="cmake template file for configuring stanza into cmake syntax",
+                              type=str,
+                              required=True
+                              )
+  requiredNamed.add_argument( 
+                              "-o", "--output",
+                              dest="outputConfigFile",
+                              help="cmake output toolchain config file for selected stanza",
+                              type=str,
+                              required=True
+                              )
+
+  parser.add_argument( 
+                      "-p", "--preselect",
+                      dest="preselect",
+                      help="Use preselected stanza configuration, if multiple match grabs the first one",
+                      type=str,
+                      default=None
+                      )
+
+  parser.add_argument( 
+                      "-x", "--skipCMakeOptions",
+                      dest="skipCMakeOptions",
+                      help="Skip query of available CMake options",
+                      default=False,
+                      const=True,
+                      action='store_const'
+                      )
+  parser.add_argument( 
+                      "-s", "--source",
+                      dest="sourceCMakeFile",
+                      help="Required unless -x/--skipCMakeOptions set, project cmake source file used to determine available options",
+                      type=str,
+                      default=None
+                      )
+
+  return parser
+
+
+class Options(object):
+  """Empty namespace"""
+  pass
+
+########################################################################################################################
+##
+## Select stanza to operate on
+##
+########################################################################################################################
+def selectStanza( options ) :
+
+  fp    = open( options.configFile, 'r' )
+  lines = fp.read()
+  fp.close()
+
+  # Now grab the blocks and parse
+  stanzas = []
+  # Gather all stanzas available
+  for stanzaBlock in archBlock.finditer( lines ) :
+    stanza = Stanza( stanzaBlock.group(1) )
+    stanza.parse()
+
+    if not stanza.crossPlatform_ and stanza.serialCompilersAvailable() and ( stanza.dmCompilersAvailable() or ( stanza.serialOpt_ or stanza.smparOpt_ ) ) :
+      if "DESCRIPTION" not in stanza.kvPairs_ :
+        # Of course WPS configure.defaults is different than WRF so descriptions are embedded in the comments
+        stanza.kvPairs_[ "DESCRIPTION" ] = stanza.osArchLine_.partition( "," )[ -1 ].partition( "#" )[0].strip()
+      stanzas.append( stanza )
+
+  idxSelection = 0
+  if options.preselect is None :
+    # Query for selected
+    stanzaIdx = 0
+    uniqueConfigs = {}
+    for stanza in stanzas :
+      stanzaConfig = str( stanza )
+      stanzaId = "{idx:<3} ".format( idx=stanzaIdx )
+      if stanzaConfig not in uniqueConfigs :
+        uniqueConfigs[ stanzaConfig ] = { "stanza" : stanza, "idx" : stanzaIdx }
+
+      print( stanzaId + stanzaConfig + stanza.kvPairs_[ "DESCRIPTION" ] )
+      # else :
+        # diff, value = Stanza.findFirstDifference( uniqueConfigs[ stanzaConfig ]["stanza"], stanza )
+        # if diff :
+        #   print( stanzaId + stanzaConfig + "@{idx} diff => {value}".format( idx=uniqueConfigs[ stanzaConfig ][ "idx" ], value=value ) )
+        # else :
+        #   print( stanzaId + stanzaConfig + "[no difference]" )
+      stanzaIdx += 1
+    print( "!! - Compiler not found, some configurations will not work and will be hidden" )
+    idxSelection = int( input( "Select configuration [0-{stop}] (note !!)  : ".format( stop=( stanzaIdx-1) ) ) )
+    if idxSelection < 0 or idxSelection > stanzaIdx - 1 :
+      print( "Invalid configuration selection!" )
+      exit(1)
+  else :
+    for stanza in stanzas :
+      if options.preselect.lower() in stanza.kvPairs_["DESCRIPTION"].lower() :
+        print( str( stanza ) + stanza.kvPairs_[ "DESCRIPTION"] )
+        break
+      else :
+        idxSelection += 1
+    if idxSelection == len( stanzas ) :
+      print( "Error: Stanza configuration with description '{0}' does not exist. Preselect failed.".format( options.preselect ) )
+      exit(1)
+
+  stanzaCfg         = stanzas[idxSelection]
+
+  return stanzaCfg
+
+########################################################################################################################
+##
 ## Select enum-like string for string-based cmake options
 ##
 ########################################################################################################################
@@ -355,6 +483,24 @@ def getSubOptions( topLevelCmake, ignoreOptions ) :
 
   return subOptions
 
+def main() :
+  
+  parser  = getOptionsParser()
+  options = Options()
+  parser.parse_args( namespace=options )
+
+  stanzaCfg        = selectStanza( options )
+
+  additionalOptions = {}
+  if not options.skipCMakeOptions :
+    if options.sourceCMakeFile is None :
+      print( "Error: Project source cmake file required for project specific options." )
+      exit(1)
+    else:
+      additionalOptions = projectSpecificOptions( options, stanzaCfg )
+
+  generateCMakeToolChainFile( options.cmakeTemplateFile, options.outputConfigFile, stanzaCfg, additionalOptions )
+
 ########################################################################################################################
 ########################################################################################################################
 ##
@@ -396,51 +542,10 @@ def generateCMakeToolChainFile( cmakeToolChainTemplate, output, stanza, optionsD
   outputFP.write( configStanza )
   outputFP.close()
 
-def main() :
-  configFile         = sys.argv[1]
-  cmakeTemplateFile  = sys.argv[2]
-  cmakeConfigFile    = sys.argv[3]
-  cmakeFile          = sys.argv[4]
-
-  fp    = open( configFile, 'r' )
-  lines = fp.read()
-  fp.close()
-
-  # Now grab the blocks and parse
-  stanzas = []
-  uniqueConfigs = {}
-  stanzaIdx = 0
-  for stanzaBlock in archBlock.finditer( lines ) :
-    stanza = Stanza( stanzaBlock.group(1) )
-    stanza.parse()
-
-    if not stanza.crossPlatform_ and stanza.serialCompilersAvailable() and ( stanza.dmCompilersAvailable() or ( stanza.serialOpt_ or stanza.smparOpt_ ) ) :
-      stanzas.append( stanza )
-      stanzaConfig = str( stanza )
-      stanzaId = "{idx:<3} ".format( idx=stanzaIdx )
-      if stanzaConfig not in uniqueConfigs :
-        uniqueConfigs[ stanzaConfig ] = { "stanza" : stanza, "idx" : stanzaIdx }
-      
-      print( stanzaId + stanzaConfig + stanza.kvPairs_[ "DESCRIPTION" ] )
-      # else :
-        # diff, value = Stanza.findFirstDifference( uniqueConfigs[ stanzaConfig ]["stanza"], stanza )
-        # if diff :
-        #   print( stanzaId + stanzaConfig + "@{idx} diff => {value}".format( idx=uniqueConfigs[ stanzaConfig ][ "idx" ], value=value ) )
-        # else :
-        #   print( stanzaId + stanzaConfig + "[no difference]" )
-      stanzaIdx += 1
-    
-  print( "!! - Compiler not found, some configurations will not work and will be hidden" )
-
-  idxSelection = int( input( "Select configuration [0-{stop}] (note !!)  : ".format( stop=( stanzaIdx-1) ) ) )
-  if idxSelection < 0 or idxSelection > stanzaIdx - 1 :
-    print( "Invalid configuration selection!" )
-    exit(1)
-
-  stanzaCfg         = stanzas[idxSelection]
-  coreOption       = getStringOptionSelection( cmakeFile, "WRF_CORE_OPTIONS"    )
-  nestingOption    = getStringOptionSelection( cmakeFile, "WRF_NESTING_OPTIONS" )
-  caseOption       = getStringOptionSelection( cmakeFile, "WRF_CASE_OPTIONS" )
+def projectSpecificOptions( options, stanzaCfg ) :
+  coreOption       = getStringOptionSelection( options.sourceCMakeFile, "WRF_CORE_OPTIONS"    )
+  nestingOption    = getStringOptionSelection( options.sourceCMakeFile, "WRF_NESTING_OPTIONS" )
+  caseOption       = getStringOptionSelection( options.sourceCMakeFile, "WRF_CASE_OPTIONS" )
   
   # These are yes
   yesValues    = [ "yes", "y", "true", "1" ]
@@ -473,7 +578,7 @@ def main() :
   doSuboptionMenu = input( "Configure additional options? [Y/n] : " ).lower() in yesValues
   subOptions      = {}
   if doSuboptionMenu :
-    subOptions = getSubOptions( cmakeFile, alreadyAsked )
+    subOptions = getSubOptions( options.sourceCMakeFile, alreadyAsked )
 
   additionalOptions = {
                         "WRF_CORE"    : coreOption,
@@ -481,13 +586,10 @@ def main() :
                         "WRF_CASE"    : caseOption,
                         "USE_MPI"     : "ON" if useMPI    else "OFF",
                         "USE_OPENMP"  : "ON" if useOpenMP else "OFF",
-                        }
+                      }
   additionalOptions.update( subOptions )
-  generateCMakeToolChainFile( cmakeTemplateFile, cmakeConfigFile, stanzaCfg, additionalOptions )
 
-
-
+  return additionalOptions
 
 if __name__ == '__main__' :
   main()
-

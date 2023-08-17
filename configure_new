@@ -1,13 +1,65 @@
 #!/bin/sh
-# Meant to be run at the top level
-./arch/configure_reader.py \
-  arch/configure.defaults  \
-  cmake/template/arch_config.cmake \
-  wrf_config.cmake \
-  CMakeLists.txt
 
-# Now run cmake
-mkdir -p _build/
-cd _build
-cmake .. -DCMAKE_INSTALL_PREFIX=$PWD/../runTemp -DCMAKE_TOOLCHAIN_FILE=$PWD/../wrf_config.cmake
-# cmake -S . -B _build 
+function help()
+{
+  echo "./configure_new [options] [-- <CMake configuration options>]"
+  echo "  -p                  Preselect a stanza configuration with matching description"
+  echo "  -x                  Skip CMake options prompt, meant to be used in conjunction with direct pass-in options"
+  echo "  -- <CMake options>  Directly pass CMake options to configuration, equivalent to cmake <source dir> <CMake Options>"
+  echo "  -h                  Print this message"
+  
+}
+
+preselect=
+skipCMake=false
+while getopts p:xh opt; do
+  case $opt in
+    p)
+      preselect=$OPTARG
+    ;;
+    x)
+      skipCMake=true
+    ;;
+    h)  help; exit 0 ;;
+    *)  help; exit 1 ;;
+    :)  help; exit 1 ;;
+    \?) help; exit 1 ;;
+  esac
+done
+
+shift "$((OPTIND - 1))"
+
+extraOps=
+if [ $skipCMake = true ]; then
+  extraOps="-x"
+else
+  extraOps="-s CMakeLists.txt"
+fi
+
+
+if [ ! -z "$preselect" ]; then
+  echo "Using preselected config ${preselect}"
+  # Meant to be run at the top level
+  ./arch/configure_reader.py \
+    -c arch/configure.defaults  \
+    -t cmake/template/arch_config.cmake \
+    -o wrf_config.cmake \
+    ${extraOps} -p "${preselect}"
+else
+  # Meant to be run at the top level
+  ./arch/configure_reader.py \
+    -c arch/configure.defaults  \
+    -t cmake/template/arch_config.cmake \
+    -o wrf_config.cmake \
+    ${extraOps}
+fi
+
+configureStanza=$?
+
+if [ $configureStanza -eq 0 ]; then
+  # Now run cmake
+  mkdir -p _build/
+  cd _build
+  cmake .. -DCMAKE_INSTALL_PREFIX=$PWD/../runTemp -DCMAKE_TOOLCHAIN_FILE=$PWD/../wrf_config.cmake $*
+  # cmake -S . -B _build 
+fi

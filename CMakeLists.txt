@@ -334,6 +334,7 @@ if ( DEFINED CMAKE_TOOLCHAIN_FILE )
 endif()
 
 
+print_option( CMAKE_BUILD_TYPE 20 ${BOLD_CYAN} )
 print_option( WRF_CORE         20 ${BOLD_CYAN} )
 print_option( WRF_NESTING      20 ${BOLD_CYAN} )
 print_option( WRF_CASE         20 ${BOLD_CYAN} )

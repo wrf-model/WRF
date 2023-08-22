@@ -57,6 +57,8 @@ if ( ${USE_M4} )
                           OUTPUT_DIR      ${CMAKE_CURRENT_BINARY_DIR}/preproc/
                           EXTENSION       ".inc"
                           SOURCES         md_calls.m4
+                          TARGET_SCOPE    ${PROJECT_NAME}_Core
+                          FLAGS           ${M4_FLAGS}
                           )
   
 else()

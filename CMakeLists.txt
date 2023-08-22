@@ -423,6 +423,7 @@ if ( ${USE_M4} )
                 m4
                 REQUIRED
                 )
+  set( M4_FLAGS ${WRF_M4_FLAGS} -Uinclude -Uindex -Ulen )
 endif()
 
 

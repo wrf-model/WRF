@@ -54,6 +54,8 @@ wrf_m4_preproc_fortran(
                         EXTENSION       ".f90"
                         SOURCES         ${CMAKE_CURRENT_BINARY_DIR}/preproc/wrf_io.f90
                         DEPENDENCIES    ${FOLDER_COMPILE_TARGET}_c_preproc_wrf_io
+                        TARGET_SCOPE    ${FOLDER_COMPILE_TARGET}
+                        FLAGS           ${M4_FLAGS}
                         )
 
 add_dependencies( ${FOLDER_COMPILE_TARGET} ${FOLDER_COMPILE_TARGET}_m4_preproc_wrf_io )

@@ -38,6 +38,14 @@ set( WRF_SHOW_ALL_VARS_USED               @SHOW_ALL_VARS_USED@                 )
 set( WRF_WRFIO_NCD_NO_LARGE_FILE_SUPPORT  @WRFIO_NCD_NO_LARGE_FILE_SUPPORT@    )
 
 
+if ( ${WRF_USE_MPI} )
+  find_package( MPI REQUIRED COMPONENTS Fortran C )
+endif()
+
+if ( ${WRF_USE_OPENMP} )
+  find_package( OpenMP REQUIRED COMPONENTS Fortran C )
+endif()
+
 find_package( netCDF REQUIRED )
 # Attempt to find zlib packaged with netcdf first
 set( ZLIB_ROOT ${netCDF_PREFIX} )

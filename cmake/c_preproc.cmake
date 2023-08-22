@@ -3,7 +3,7 @@ macro( wrf_c_preproc_fortran )
 
   set( options        )
   set( oneValueArgs   TARGET_NAME SUFFIX PREFIX EXTENSION OUTPUT_DIR )
-  set( multiValueArgs DEPENDENCIES INCLUDES SOURCES DEFINITIONS )
+  set( multiValueArgs DEPENDENCIES INCLUDES SOURCES DEFINITIONS TARGET_SCOPE )
 
   cmake_parse_arguments(
                         WRF_PP_F
@@ -12,10 +12,10 @@ macro( wrf_c_preproc_fortran )
                         )
   #!TODO Verify -o/-I/-E/-D/-free are all compiler independent flags
   
-  # # Santitize input
-  # if ( DEFINED WRF_PP_F_GENERATED_SCOPE )
-  #   set( WRF_PP_F_TARGET_DIRECTORY TARGET_DIRECTORY ${WRF_PP_F_GENERATED_SCOPE} )
-  # endif()
+  # Santitize input
+  if ( DEFINED WRF_PP_F_TARGET_SCOPE )
+    set( WRF_PP_F_TARGET_DIRECTORY TARGET_DIRECTORY ${WRF_PP_F_TARGET_SCOPE} )
+  endif()
 
   set( WRF_PP_F_INCLUDES_FLAGS )
   foreach( WRF_PP_F_INC  ${WRF_PP_F_INCLUDES} )
@@ -68,7 +68,13 @@ macro( wrf_c_preproc_fortran )
     #                             PROPERTIES
     #                               GENERATED TRUE
     #                             )
-
+    set_source_files_properties(
+                                ${WRF_PP_F_OUTPUT_FILE}
+                                DIRECTORY ${PROJECT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}
+                                ${WRF_PP_F_TARGET_DIRECTORY}
+                                PROPERTIES
+                                  Fortran_PREPROCESS OFF
+                                )
     # message( STATUS "File ${WRF_PP_F_SOURCE_FILE} will be preprocessed into ${WRF_PP_F_OUTPUT_FILE}" )
 
   endforeach()

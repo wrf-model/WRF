@@ -50,7 +50,7 @@ subroutine da_get_innov_vector_radar (it, grid, ob, iv)
    integer :: irv, irvf
    integer :: irf, irff
 
-   real    :: alog_10, czr,czs,czg, zrr,zds,zws,zg,rze
+   real    :: alog_10, czr, czds, czws, czg, zrr, zds, zws, zg, rze
    real    :: ob_radar_rf, bg_rze, bg_rf
    real    :: cwr, cws ! weighting coefficient for mixing ratio
 
@@ -62,6 +62,24 @@ subroutine da_get_innov_vector_radar (it, grid, ob, iv)
    real              :: zlcl(ims:ime,jms:jme)
 
    logical           :: echo_non_precip, echo_rf_good
+
+   !---------------------------------------------------------
+   !  for background-dependent hydrmeteor retrieval scheme
+   !---------------------------------------------------------
+   character(len=filename_len) :: hydro_weight_filename
+   integer              :: hydro_weight_unit
+   integer              :: ii, jj, kk, sort, nk
+   logical              :: gr_exist
+   logical              :: file_exist
+   real                 :: zerr_os,zews_os,zeds_os,zegr_os
+   real, allocatable    :: count_rr(:,:)
+   real, allocatable    :: ratio_qr(:,:)
+   real, allocatable    :: ze_qr(:,:)
+   real, allocatable    :: ratio_qds(:,:), ratio_qws(:,:)
+   real, allocatable    :: ze_qds(:,:), ze_qws(:,:)
+   real, allocatable    :: ratio_qg(:,:)
+   real, allocatable    :: ze_qg(:,:)
+   real, allocatable    :: rho_s(:,:)
 
    !------------------------
    !  for jung et al 2008
@@ -240,6 +258,119 @@ END IF
       end do
    end if ! lcl for use_radar_rqv
 
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   ! background-dependent hydroemetor retrieval scheme !
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   if (use_radar_rhv .and. radar_rhv_opt == 2 ) then
+      ! allocate variables
+      allocate (count_rr(kde,6))
+      allocate (ratio_qr(kde,6))
+      allocate (ratio_qds(kde,6))
+      allocate (ratio_qws(kde,6))
+      allocate (ratio_qg(kde,6))
+      allocate (ze_qr(kde,6))
+      allocate (ze_qds(kde,6))
+      allocate (ze_qws(kde,6))
+      allocate (ze_qg(kde,6))
+      allocate (rho_s(kde,6))
+
+      ! variable initialization
+      count_rr  = 0.
+      ze_qr     = 0.
+      ze_qws    = 0.
+      ze_qds    = 0.
+      ze_qg     = 0.
+      rho_s     = 0.
+      ratio_qr  = 0.
+      ratio_qws = 0.
+      ratio_qds = 0.
+      ratio_qg  = 0.
+
+      ! read in historical stastics from file hydro_mean.dat if available
+      hydro_weight_filename='hydro_mean.dat'
+      inquire(file=trim(hydro_weight_filename), exist=file_exist)
+      if (file_exist) then
+         ! write(*,*) "Read historical statistics of hydrometeors"
+         call da_get_unit(hydro_weight_unit)
+         open(unit=hydro_weight_unit, file=trim(hydro_weight_filename), form='FORMATTED')
+         do sort=1,6
+            do kk=kds,kde
+               read(hydro_weight_unit,'(4(f19.9,2x))') ratio_qr(kk,sort), ratio_qws(kk,sort),ratio_qds(kk,sort), ratio_qg(kk,sort)
+            end do
+         end do
+         close(hydro_weight_unit)
+         call da_free_unit(hydro_weight_unit)
+      end if
+
+      ! calculate the contributions of hydrometeors to reflectivity from the background
+      do kk=kds, kde
+         do jj=jps, jpe
+            do ii=ips, ipe
+               !! calculate background reflectivity
+               call da_radar_rf(grid%xb%qrn(ii,jj,kk), grid%xb%qsn(ii,jj,kk), grid%xb%qgr(ii,jj,kk), &
+                                grid%xb%t(ii,jj,kk)-273.15, grid%xb%rho(ii,jj,kk), bg_rze)
+               bg_rf = 10.*log10(bg_rze)
+               !! get the index of refledctity threshould
+               if( bg_rf .ge. 5.0 .and. bg_rf .lt. 15.0 ) then
+                  sort=1
+               else if( bg_rf .ge. 15.0 .and. bg_rf .lt. 25.0 ) then
+                  sort=2
+               else if( bg_rf .ge. 25.0 .and. bg_rf .lt. 35.0 ) then
+                  sort=3
+               else if (bg_rf .ge. 35.0 .and. bg_rf .lt. 45.0 ) then
+                  sort=4
+               else if (bg_rf .ge. 45.0 .and. bg_rf .lt. 55.0 ) then
+                  sort=5
+               else if (bg_rf .ge. 55) then
+                  sort=6
+               else
+                  sort=0  ! non-precip
+               end if
+               !! Sum of the model states of different model levels and reflectivity threshoulds
+               if (sort .ne. 0 ) then
+                  ze_qr(kk,sort)  = ze_qr(kk,sort)  + grid%xb%qrn(ii,jj,kk)
+                  if ( grid%xb%t(ii,jj,kk) > 273.15 ) then
+                     ze_qws(kk,sort) = ze_qws(kk,sort) + grid%xb%qsn(ii,jj,kk)
+                  else
+                     ze_qds(kk,sort) = ze_qds(kk,sort) + grid%xb%qsn(ii,jj,kk)
+                  end if
+                  ze_qg(kk,sort) = ze_qg(kk,sort) + grid%xb%qgr(ii,jj,kk)
+                  rho_s(kk,sort) = rho_s(kk,sort) + grid%xb%rho(ii,jj,kk)
+                  count_rr(kk,sort) = count_rr(kk,sort) + 1.
+               end if
+            end do ! west-east
+         end do  ! south-north
+      end do ! bottom-top
+  
+      ! Average over whole domain
+      do sort=1,6
+         do kk=kds,kde
+            count_rr(kk,sort) = wrf_dm_sum_real(count_rr(kk,sort))
+            rho_s(kk,sort)    = wrf_dm_sum_real(rho_s(kk,sort))
+            ze_qr(kk,sort)    = wrf_dm_sum_real(ze_qr(kk,sort))
+            ze_qws(kk,sort)   = wrf_dm_sum_real(ze_qws(kk,sort))
+            ze_qds(kk,sort)   = wrf_dm_sum_real(ze_qds(kk,sort))
+            ze_qg(kk,sort)    = wrf_dm_sum_real(ze_qg(kk,sort))
+         end do
+      end do
+
+      ! Get the reflectivity contributed from each hydrometeor type
+      do kk=kds,kde
+         do sort=1,6
+            if (count_rr(kk,sort) .gt. 10.) then
+               if (ze_qr(kk,sort) > 0.)   & !! rain water
+                  ratio_qr (kk,sort) =  zrr*(rho_s(kk,sort)*ze_qr (kk,sort)/(count_rr(kk,sort)*1.0)**2)**1.75
+               if (ze_qws(kk,sort) > 0.)  & !! wet snow
+                  ratio_qws(kk,sort) =  zws*(rho_s(kk,sort)*ze_qws(kk,sort)/(count_rr(kk,sort)*1.0)**2)**1.75
+               if (ze_qds(kk,sort) > 0.)  & !! dry snow  
+                  ratio_qds(kk,sort) =  zds*(rho_s(kk,sort)*ze_qds(kk,sort)/(count_rr(kk,sort)*1.0)**2)**1.75
+               if (ze_qg(kk,sort) > 0.)   & !! graupel 
+                  ratio_qg(kk,sort)  =  zg*(rho_s(kk,sort)*ze_qg(kk,sort)/(count_rr(kk,sort)**2))**1.75
+            end if
+         end do
+      end do   !bottom-top
+   end if   !! use_radar_rhv .and. radar_rhv_opt == 2
+
    do n=iv%info(radar)%n1,iv%info(radar)%n2
 
       if ( use_radar_rf .and. radar_rf_opt==1) then
@@ -404,7 +535,7 @@ END IF
             end if
 
             ! calculate retrieved hydrometeorological variables
-            ! Jidong Gao JAS 2013
+            ! Background-dependent retrieval scheme (Chen et al. 2020 AR; Chen et al. 2021 QJRMS) 
             if (use_radar_rhv) then
                if ( echo_rf_good ) then
 
@@ -431,48 +562,114 @@ END IF
                         end if !if echo_non_precip
                      end if
 
-                     ob_radar_rf = min(ob_radar_rf, 55.0) ! if dBZ>55.0, set to 55.0
+                     ! The original WRFDA hydrometeor retrieval scheme
+                     if (model_tc(k,n) .ge. 5.0) then
+                        czr  = 1.0
+                        czws = 0.0
+                        czds = 0.0
+                        czg  = 0.0
+                     else if (model_tc(k,n) .ge.  0.0) then
+                        czr  = (model_tc(k,n)+5.0)/10.0
+                        czws = (1.0-czr)*zws/(zws+zg)
+                        czds = 0.0
+                        czg  = (1.0-czr)*zg/(zws+zg)
+                     else if (model_tc(k,n) .ge. -5.0) then
+                        czr  = (model_tc(k,n)+5.0)/10.0
+                        czws = 0.0
+                        czds = (1.0-czr)*zds/(zds+zg)
+                        czg  = (1.0-czr)*zg/(zds+zg)
+                     else if (model_tc(k,n) .lt. -5.0) then
+                        czr  = 0.0
+                        czws = 0.0
+                        czds = zds/(zds+zg)
+                        czg  = zg/(zds+zg)
+                     end if
+
+                     if (radar_rhv_opt == 2) then
+                       ! backgound-dependent reflectivity retrival scheme (Chen et al. 2020, AR; Chen et al. 2021, QJRMS)
+                       if (ob_radar_rf .ge. 5.0 .and. ob_radar_rf .lt. 15.0) then
+                          sort = 1
+                       else if (ob_radar_rf .ge. 15.0 .and. ob_radar_rf .lt. 25.0) then
+                          sort = 2
+                       else if (ob_radar_rf .ge. 25.0 .and. ob_radar_rf .lt. 35.0) then
+                          sort = 3
+                       else if (ob_radar_rf .ge. 35.0 .and. ob_radar_rf .lt. 45.0) then
+                          sort = 4
+                       else if (ob_radar_rf .ge. 45.0 .and. ob_radar_rf .lt. 55.0) then
+                          sort = 5
+                       else if (ob_radar_rf .ge. 55.0) then
+                          sort = 6
+                       else
+                          sort = 0
+                       end if
+                       
+                       if (sort > 0) then
+                          zerr_os=iv%info(radar)%dzm(k,n)*ratio_qr (iv%info(radar)%k(k,n),sort) + &
+                                  iv%info(radar)%dz(k,n) *ratio_qr (iv%info(radar)%k(k,n)+1,sort)
+                          zews_os=iv%info(radar)%dzm(k,n)*ratio_qws(iv%info(radar)%k(k,n),sort) + &
+                                  iv%info(radar)%dz(k,n) *ratio_qws(iv%info(radar)%k(k,n)+1,sort)
+                          zeds_os=iv%info(radar)%dzm(k,n)*ratio_qds(iv%info(radar)%k(k,n),sort) + &
+                                  iv%info(radar)%dz(k,n) *ratio_qds(iv%info(radar)%k(k,n)+1,sort)
+                          zegr_os=iv%info(radar)%dzm(k,n)*ratio_qg (iv%info(radar)%k(k,n),sort) + &
+                                  iv%info(radar)%dz(k,n) *ratio_qg (iv%info(radar)%k(k,n)+1,sort)
+                          ! detect whether rain/snow/qgraupel exists in certain temperature.
+                          gr_exist = .true.
+                          ! when T < 273.15K
+                          if (model_tc(k,n) .lt. -5.0) zerr_os = 0.
+                          if (model_tc(k,n) .lt.  0.0) zews_os = 0.
+                          ! when T>= 273.15K
+                          if (model_tc(k,n) .ge. 0.0) then
+                             zeds_os = 0.
+                             gr_exist = .false.
+                             do nk = k, iv%info(radar)%levels(n)
+                                if (model_tc(nk,n) .lt. -5.0 .and. ob % radar(n) % rf(nk) .ge. 40.) gr_exist = .true.
+                             end do
+                          end if
+                          if (model_tc(k,n) .ge. 5.0) then
+                             zews_os = 0.
+                             gr_exist = .false.
+                          end if
+                          if (.not. gr_exist) zegr_os = 0.
+                        
+                          ! determine the contributions of each hydrometeor to reflectivity
+                          if ((zerr_os+zews_os+zeds_os+zegr_os) .gt. 0.) then
+                             czr  = zerr_os/(zerr_os+zews_os+zeds_os+zegr_os)
+                             czws = zews_os/(zerr_os+zews_os+zeds_os+zegr_os)
+                             czds = zeds_os/(zerr_os+zews_os+zeds_os+zegr_os)
+                             czg  = zegr_os/(zerr_os+zews_os+zeds_os+zegr_os)
+                          end if
+                        else
+                          ob_radar_rf = -15.0 !! Assign reflectivity below 5.0 dBZ to -5.0 dbZ for supression 
+                                              !! No need to tune the weights because of very small impacts
+                        end if
+                     end if
+   
+                     ! convert dBZ to Z
+                     ob_radar_rf = min(ob_radar_rf, 65.0) ! if dBZ>65.0, set to 65.0
                      rze = 10.0**(ob_radar_rf*0.1) ! dBZ to Z
 
-                     if (model_tc(k,n).ge.5.0) then
-                        ! contribution from rain only
-                        ! Z_Qr = 3.63*1.0e9*(rho*Qr)**1.75
-                        iv % radar(n) % rrno(k) = exp ( log(rze/zrr)/1.75 )/model_rho(k,n)
-                        iv % radar(n) % rrn(k) % qc = 0
-
-                        ! rrn and rrno were assigned missing values in read_obs_radar_ascii.inc
-                        ! maximum value check, use the data under threshold 15g/kg
-                        iv % radar(n) % rrno(k) = min(iv%radar(n)%rrno(k), 0.015)
-
-                     else if (model_tc(k,n).lt.5.0 .and. model_tc(k,n).gt.-5.0 ) then
-                        ! contribution from rain, snow and graupel
-                        ! Ze = c * Z_Qr + (1-c) * (Z_Qs+Z_Qg)
-                        ! the factor c varies linearly between 0 at t=-5C and 1 at t=5C
-                        czr=(model_tc(k,n)+5)/10.0
-                        if (model_tc(k,n).le.0.0) then
-                           czs = (1.0-czr)*zds/(zds+zg) ! dry snow
-                           czg = (1.0-czr)*zg/(zds+zg)
-                           iv % radar(n) % rsno(k) = exp ( log(czs*rze/zds)/1.75 )/model_rho(k,n)
-                        else
-                           czs = (1.0-czr)*zws/(zws+zg) ! wet snow
-                           czg = (1.0-czr)*zg/(zws+zg)
-                           iv % radar(n) % rsno(k) = exp ( log(czs*rze/zws)/1.75 )/model_rho(k,n)
-                        end if
+                     ! Rain water mixing ratio
+                     if (czr .gt. 0.) then
                         iv % radar(n) % rrno(k) = exp ( log(czr*rze/zrr)/1.75 )/model_rho(k,n)
-                        iv % radar(n) % rgro(k) = exp ( log(czg*rze/zg )/1.75 )/model_rho(k,n)
                         iv % radar(n) % rrn(k) % qc = 0
-                        iv % radar(n) % rsn(k) % qc = 0
-                        iv % radar(n) % rgr(k) % qc = 0
+                     end if
 
-                     else if (model_tc(k,n).le.-5.0) then
-                        ! contribution from snow and graupel
-                        czs = zds/(zds+zg)
-                        czg = 1.0 - czs
-                        iv % radar(n) % rsno(k) = exp ( log(czs*rze/zds)/1.75 )/model_rho(k,n)
+                     ! Snow mixing ratio
+                     if ((czws+czds) .gt. 0.) then
+                        if (model_tc(k,n) .gt. 0.) then
+                          iv % radar(n) % rsno(k) = exp ( log(czws*rze/zws)/1.75 )/model_rho(k,n)
+                          iv % radar(n) % rsn(k) % qc = 0
+                        else
+                          iv % radar(n) % rsno(k) = exp ( log(czds*rze/zds)/1.75 )/model_rho(k,n)
+                          iv % radar(n) % rsn(k) % qc = 0
+                        end if
+                     end if
+
+                     ! Graupel mixing ratio
+                     if (czg .gt. 0.) then 
                         iv % radar(n) % rgro(k) = exp ( log(czg*rze/zg )/1.75 )/model_rho(k,n)
-                        iv % radar(n) % rsn(k) % qc = 0
                         iv % radar(n) % rgr(k) % qc = 0
-                     end if  ! temp
+                     end if
 
                      if ( radar_rhv_err_opt == 1 ) then
                         ! rainwater error
@@ -642,6 +839,17 @@ END IF
    deallocate (model_qci)
    deallocate (model_qsn)
    deallocate (model_qgr)
+
+   if ( allocated(count_rr) )  deallocate (count_rr)
+   if ( allocated(ratio_qr) )  deallocate (ratio_qr)
+   if ( allocated(ratio_qds) ) deallocate (ratio_qds)
+   if ( allocated(ratio_qws) ) deallocate (ratio_qws)
+   if ( allocated(ratio_qg) )  deallocate (ratio_qg)
+   if ( allocated(ze_qr) )     deallocate (ze_qr)
+   if ( allocated(ze_qds) )    deallocate (ze_qds)
+   if ( allocated(ze_qws) )    deallocate (ze_qws)
+   if ( allocated(ze_qg) )     deallocate (ze_qg)
+   if ( allocated(rho_s) )     deallocate (rho_s)
 
    if ( use_radar_rqv ) then
       deallocate (model_lcl)

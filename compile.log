@@ -1,0 +1,327 @@
+Neither WRF_EM_CORE nor WRF_PLUS_CORE
+        are explicitly specified in shell environment.... 
+  
+Will compile with CRTM library
+  
+ 
+============================================================================================== 
+ 
+V4.5.1
+git commit ed0047d1af6a4f17353f65f11d69488ec795b098 3 files changed, 248 insertions(+), 38 deletions(-)
+ 
+Compiling: WRF_DA_CORE WRF_EM_CORE  
+WRFIO_NCD_LARGE_FILE_SUPPORT=1
+ 
+Linux cheyenne6 4.12.14-95.51-default #1 SMP Fri Apr 17 08:14:12 UTC 2020 (c6bab98) x86_64 x86_64 x86_64 GNU/Linux
+ 
+Intel(R) Fortran Intel(R) 64 Compiler for applications running on Intel(R) 64, Version 19.0.5.281 Build 20190815
+Copyright (C) 1985-2019 Intel Corporation.  All rights reserved.
+ifort: warning #10315: specifying -lm before files may supersede the Intel(R) math library and affect performance
+
+GNU ld (GNU Binutils; SUSE Linux Enterprise 12) 2.32.0.20190909-9.36
+/usr/lib64/gcc/x86_64-suse-linux/4.8/../../../../x86_64-suse-linux/bin/ld: /glade/u/apps/opt/intel/2019u5/compilers_and_libraries_2019.5.281/linux/compiler/lib/intel64_lin/for_main.o: in function `main':
+for_main.c:(.text+0x2e): undefined reference to `MAIN__'
+ 
+============================================================================================== 
+ 
+setting parallel make -j 2
+make -i -r MODULE_DIRS=" -I/glade/work/taosun/model/V4.5/WRF/external/esmf_time_f90  -I/glade/work/taosun/model/V4.5/WRF/main -I/glade/work/taosun/model/V4.5/WRF/external/io_netcdf -I/glade/work/taosun/model/V4.5/WRF/external/io_int -I/glade/work/taosun/model/V4.5/WRF/frame -I/glade/work/taosun/model/V4.5/WRF/share -I/glade/work/taosun/model/V4.5/WRF/phys -I/glade/work/taosun/model/V4.5/WRF/wrftladj -I/glade/work/taosun/model/V4.5/WRF/chem -I/glade/work/taosun/model/V4.5/WRF/inc -I/glade/u/apps/ch/opt/netcdf/4.7.4/intel/19.0.5/include " ext
+make[1]: Entering directory '/glade/work/taosun/model/V4.5/WRF'
+--------------------------------------
+if [ 0 -eq 0 ] ; then \
+  ( cd frame ; make -i -r externals ) ; \
+else \
+  ( cd frame ; make -i -r PLUSFLAG="-DWRFPLUS=1" externals ) ; \
+fi
+make[2]: Entering directory '/glade/work/taosun/model/V4.5/WRF/frame'
+( cd /glade/work/taosun/model/V4.5/WRF/external/esmf_time_f90 ; \
+          make -j 2 FC="ifort -r8        -real-size `expr 8 \* 8` -i4  -ip -fp-model precise -w -ftz -align all -fno-alias -FR -convert big_endian  " RANLIB="ranlib" \
+          CPP="/lib/cpp -P -nostdinc -I/glade/work/taosun/model/V4.5/WRF/inc -I. -DEM_CORE=1 -DNMM_CORE=0 -DNMM_MAX_DIM=2600 -DDA_CORE=1 -DWRFPLUS=0 -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=8 -DLWORDSIZE=4 -DNONSTANDARD_SYSTEM_FUNC  -DWRF_USE_CLM -DUSE_NETCDF4_FEATURES -DWRFIO_NCD_LARGE_FILE_SUPPORT -DBUFR   -DFFTPACK -DNORESHAPE -DDM_PARALLEL -DNETCDF -DCRTM -DLANDREAD_STUB=1 -DUSE_ALLOCATABLES -Dwrfmodel -DGRIB1 -DINTIO -DKEEP_INT_AROUND -DLIMIT_ARGS -DBUILD_RRTMG_FAST=0 -DBUILD_RRTMK=0 -DBUILD_SBM_FAST=0 -DSHOW_ALL_VARS_USED=0 -DCONFIG_BUF_LEN=65536 -DMAX_DOMAINS_F=21 -DMAX_HISTORY=25 -DNMM_NEST=0 -traditional-cpp -DUSE_NETCDF4_FEATURES -DWRFIO_NCD_LARGE_FILE_SUPPORT" AR="ar" ARFLAGS="ru" )
+make[3]: Entering directory '/glade/work/taosun/model/V4.5/WRF/external/esmf_time_f90'
+make[3]: Nothing to be done for 'default'.
+make[3]: Leaving directory '/glade/work/taosun/model/V4.5/WRF/external/esmf_time_f90'
+( cd /glade/work/taosun/model/V4.5/WRF/external/io_netcdf ; \
+          make -j 2 NETCDFPATH="/glade/u/apps/ch/opt/netcdf/4.7.4/intel/19.0.5" RANLIB="ranlib" CPP="/lib/cpp -P -nostdinc" \
+          CC="icc" CFLAGS="-w -O3 -ip -DRPC_TYPES=1  -DDM_PARALLEL -DLANDREAD_STUB=1 -DMAX_HISTORY=25 -DNMM_CORE=0" \
+          FC="ifort -r8        -real-size `expr 8 \* 8` -i4  -O3 -ip -fp-model precise -w -ftz -align all -fno-alias -FR -convert big_endian  " TRADFLAG="-traditional-cpp -DUSE_NETCDF4_FEATURES -DWRFIO_NCD_LARGE_FILE_SUPPORT" AR="ar" ARFLAGS="ru" )
+make[3]: Entering directory '/glade/work/taosun/model/V4.5/WRF/external/io_netcdf'
+make[3]: Nothing to be done for 'all'.
+make[3]: Leaving directory '/glade/work/taosun/model/V4.5/WRF/external/io_netcdf'
+( cd /glade/work/taosun/model/V4.5/WRF/external/ioapi_share ; \
+          make -i -r NATIVE_RWORDSIZE="4" RWORDSIZE="8" AR="ar" ARFLAGS="ru" )
+make[3]: Entering directory '/glade/work/taosun/model/V4.5/WRF/external/ioapi_share'
+make[3]: Nothing to be done for 'all'.
+make[3]: Leaving directory '/glade/work/taosun/model/V4.5/WRF/external/ioapi_share'
+( cd /glade/work/taosun/model/V4.5/WRF/external/io_grib_share ; \
+          make -j 2 CC="icc" CFLAGS="-w -O3 -ip -DRPC_TYPES=1  -DDM_PARALLEL -DLANDREAD_STUB=1 -DMAX_HISTORY=25 -DNMM_CORE=0" RM="rm -f" RANLIB="ranlib" CPP="/lib/cpp -P -nostdinc" \
+          FC="ifort -r8        -real-size `expr 8 \* 8` -i4 -I.  -ip -fp-model precise -w -ftz -align all -fno-alias -FR -convert big_endian   " TRADFLAG="-traditional-cpp -DUSE_NETCDF4_FEATURES -DWRFIO_NCD_LARGE_FILE_SUPPORT" AR="ar" ARFLAGS="ru" archive) 
+make[3]: Entering directory '/glade/work/taosun/model/V4.5/WRF/external/io_grib_share'
+make[4]: Entering directory '/glade/work/taosun/model/V4.5/WRF/external/io_grib_share'
+ar ru ./libio_grib_share.a io_grib_share.o get_region_center.o gridnav.o open_file.o
+ranlib ./libio_grib_share.a
+make[4]: Leaving directory '/glade/work/taosun/model/V4.5/WRF/external/io_grib_share'
+make[3]: Leaving directory '/glade/work/taosun/model/V4.5/WRF/external/io_grib_share'
+( cd /glade/work/taosun/model/V4.5/WRF/external/io_grib1 ; \
+          make -j 2 CC="icc" CFLAGS="-w -O3 -ip -DRPC_TYPES=1  -DDM_PARALLEL -DLANDREAD_STUB=1 -DMAX_HISTORY=25 -DNMM_CORE=0" RM="rm -f" RANLIB="ranlib" CPP="/lib/cpp -P -nostdinc" \
+          FC="ifort -r8        -real-size `expr 8 \* 8` -i4 -I.  -ip -fp-model precise -w -ftz -align all -fno-alias -FR -convert big_endian   " TRADFLAG="-traditional-cpp -DUSE_NETCDF4_FEATURES -DWRFIO_NCD_LARGE_FILE_SUPPORT" AR="ar" ARFLAGS="ru" archive)
+make[3]: Entering directory '/glade/work/taosun/model/V4.5/WRF/external/io_grib1'
+        Doing make archive on library subdirectory MEL_grib1
+make[4]: Entering directory '/glade/work/taosun/model/V4.5/WRF/external/io_grib1/MEL_grib1'
+make[5]: Entering directory '/glade/work/taosun/model/V4.5/WRF/external/io_grib1/MEL_grib1'
+ar ru ../libio_grib1.a FTP_getfile.o apply_bitmap.o display_gribhdr.o gbyte.o grib_dec.o grib_enc.o grib_seek.o gribgetbds.o gribgetbms.o gribgetgds.o gribgetpds.o gribhdr2file.o gribputbds.o gribputgds.o gribputpds.o hdr_print.o init_dec_struct.o init_enc_struct.o init_gribhdr.o init_struct.o ld_dec_lookup.o ld_enc_input.o ld_enc_lookup.o ld_grib_origctrs.o make_default_grbfn.o make_grib_log.o map_lvl.o map_parm.o pack_spatial.o prt_inp_struct.o upd_child_errmsg.o prt_badmsg.o swap.o grib_uthin.o set_bytes.o
+ranlib ../libio_grib1.a
+make[5]: Leaving directory '/glade/work/taosun/model/V4.5/WRF/external/io_grib1/MEL_grib1'
+make[4]: Leaving directory '/glade/work/taosun/model/V4.5/WRF/external/io_grib1/MEL_grib1'
+        Doing make archive on library subdirectory grib1_util
+make[4]: Entering directory '/glade/work/taosun/model/V4.5/WRF/external/io_grib1/grib1_util'
+make[5]: Entering directory '/glade/work/taosun/model/V4.5/WRF/external/io_grib1/grib1_util'
+ar ru ../libio_grib1.a alloc_2d.o read_grib.o write_grib.o
+ranlib ../libio_grib1.a
+make[5]: Leaving directory '/glade/work/taosun/model/V4.5/WRF/external/io_grib1/grib1_util'
+make[4]: Leaving directory '/glade/work/taosun/model/V4.5/WRF/external/io_grib1/grib1_util'
+        Doing make archive on library subdirectory WGRIB
+make[4]: Entering directory '/glade/work/taosun/model/V4.5/WRF/external/io_grib1/WGRIB'
+make[4]: Nothing to be done for 'archive'.
+make[4]: Leaving directory '/glade/work/taosun/model/V4.5/WRF/external/io_grib1/WGRIB'
+make[4]: Entering directory '/glade/work/taosun/model/V4.5/WRF/external/io_grib1'
+ar ru ./libio_grib1.a grib1_routines.o gribmap.o io_grib1.o trim.o
+ranlib ./libio_grib1.a
+make[4]: Leaving directory '/glade/work/taosun/model/V4.5/WRF/external/io_grib1'
+make[3]: Leaving directory '/glade/work/taosun/model/V4.5/WRF/external/io_grib1'
+( cd /glade/work/taosun/model/V4.5/WRF/external/io_int ; \
+          make -j 2 CC="mpicc -cc=icc -DFSEEKO64_OK " CFLAGS_LOCAL="-w -O3 -ip -DRPC_TYPES=1 " RM="rm -f" RANLIB="ranlib" CPP="/lib/cpp -P -nostdinc" \
+          FC="time mpif90 -f90=ifort -r8        -real-size `expr 8 \* 8` -i4  -ip -fp-model precise -w -ftz -align all -fno-alias -FR -convert big_endian   " FGREP="fgrep -iq" \
+          TRADFLAG="-traditional-cpp -DUSE_NETCDF4_FEATURES -DWRFIO_NCD_LARGE_FILE_SUPPORT" AR="ar" ARFLAGS="ru" ARCHFLAGS="-DEM_CORE=1 -DNMM_CORE=0 -DNMM_MAX_DIM=2600 -DDA_CORE=1 -DWRFPLUS=0 -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=8 -DLWORDSIZE=4 -DNONSTANDARD_SYSTEM_FUNC  -DWRF_USE_CLM -DUSE_NETCDF4_FEATURES -DWRFIO_NCD_LARGE_FILE_SUPPORT -DBUFR   -DFFTPACK -DNORESHAPE -DDM_PARALLEL -DNETCDF -DCRTM -DLANDREAD_STUB=1 -DUSE_ALLOCATABLES -Dwrfmodel -DGRIB1 -DINTIO -DKEEP_INT_AROUND -DLIMIT_ARGS -DBUILD_RRTMG_FAST=0 -DBUILD_RRTMK=0 -DBUILD_SBM_FAST=0 -DSHOW_ALL_VARS_USED=0 -DCONFIG_BUF_LEN=65536 -DMAX_DOMAINS_F=21 -DMAX_HISTORY=25 -DNMM_NEST=0" all )
+make[3]: Entering directory '/glade/work/taosun/model/V4.5/WRF/external/io_int'
+Diffwrf io_int will be built later on in this compile. No need to rerun compile. 
+Diffwrf io_int will be built later on in this compile. No need to rerun compile. 
+Diffwrf io_int will be built later on in this compile. No need to rerun compile. 
+Diffwrf io_int will be built later on in this compile. No need to rerun compile. 
+if [ -f ../../frame/pack_utils.o -a -f ../../frame/clog.o ] ; then \
+  time mpif90 -f90=ifort -r8        -real-size 64 -i4  -ip -fp-model precise -w -ftz -align all -fno-alias -FR -convert big_endian      -I../ioapi_share -o diffwrf diffwrf.f \
+	../../frame/pack_utils.o ../../frame/module_internal_header_util.o ../../frame/module_driver_constants.o ../../frame/module_machine.o ../../frame/module_wrf_error.o ../../frame/wrf_debug.o  libwrfio_int.a ; \
+fi
+make[3]: Leaving directory '/glade/work/taosun/model/V4.5/WRF/external/io_int'
+( cd /glade/work/taosun/model/V4.5/WRF/external/fftpack/fftpack5 ; \
+          make -j 2 FC="ifort" FFLAGS="-r8        -real-size `expr 8 \* 8` -i4  -ip -fp-model precise -w -ftz -align all -fno-alias -FR -convert big_endian  " RANLIB="ranlib" AR="ar" \
+          ARFLAGS="ru" CPP="/lib/cpp -P -nostdinc" CPPFLAGS="-DEM_CORE=1 -DNMM_CORE=0 -DNMM_MAX_DIM=2600 -DDA_CORE=1 -DWRFPLUS=0 -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=8 -DLWORDSIZE=4 -DNONSTANDARD_SYSTEM_FUNC  -DWRF_USE_CLM -DUSE_NETCDF4_FEATURES -DWRFIO_NCD_LARGE_FILE_SUPPORT -DBUFR   -DFFTPACK -DNORESHAPE -DDM_PARALLEL -DNETCDF -DCRTM -DLANDREAD_STUB=1 -DUSE_ALLOCATABLES -Dwrfmodel -DGRIB1 -DINTIO -DKEEP_INT_AROUND -DLIMIT_ARGS -DBUILD_RRTMG_FAST=0 -DBUILD_RRTMK=0 -DBUILD_SBM_FAST=0 -DSHOW_ALL_VARS_USED=0 -DCONFIG_BUF_LEN=65536 -DMAX_DOMAINS_F=21 -DMAX_HISTORY=25 -DNMM_NEST=0  -I. -traditional-cpp -DUSE_NETCDF4_FEATURES -DWRFIO_NCD_LARGE_FILE_SUPPORT " RM="rm -f" )
+make[3]: Entering directory '/glade/work/taosun/model/V4.5/WRF/external/fftpack/fftpack5'
+ar ru libfftpack.a c1f2kb.o  cfft1b.o  cmf3kf.o  cosqb1.o  costmi.o   dcosq1f.o  dfftb1.o   mradb2.o  mrfti1.o  r1fgkf.o     rfft2i.o  sinqmi.o  z1f2kf.o  zfft1f.o  zmf4kb.o c1f2kf.o  cfft1f.o  cmf4kb.o  cosqf1.o  d1f2kb.o   dcosq1i.o  dfftf1.o   mradb3.o  msntb1.o  r4_factor.o  rfftb1.o  sint1b.o  z1f3kb.o  zfft1i.o  zmf4kf.o c1f3kb.o  cfft1i.o  cmf4kf.o  cosqmb.o  d1f2kf.o   dcosqb1.o  dffti1.o   mradb4.o  msntf1.o  r4_mcfti1.o  rfftf1.o  sint1f.o  z1f3kf.o  zfft2b.o  zmf5kb.o c1f3kf.o  cfft2b.o  cmf5kb.o  cosqmf.o  d1f3kb.o   dcosqf1.o  dsint1b.o  mradb5.o  r1f2kb.o  r4_tables.o  rffti1.o  sint1i.o  z1f4kb.o  zfft2f.o  zmf5kf.o c1f4kb.o  cfft2f.o  cmf5kf.o  cosqmi.o  d1f3kf.o   dcost1b.o  dsint1f.o  mradbg.o  r1f2kf.o  r8_factor.o  rfftmb.o  sintb1.o  z1f4kf.o  zfft2i.o  zmfgkb.o c1f4kf.o  cfft2i.o  cmfgkb.o  cost1b.o  d1f4kb.o   dcost1f.o  dsint1i.o  mradf2.o  r1f3kb.o  r8_mcfti1.o  rfftmf.o  sintf1.o  z1f5kb.o  zfftmb.o  zmfgkf.o c1f5kb.o  cfftmb.o  cmfgkf.o  cost1f.o  d1f4kf.o   dcost1i.o  dsintb1.o  mradf3.o  r1f3kf.o  r8_tables.o  rfftmi.o  sintmb.o  z1f5kf.o  zfftmf.o  zmfm1b.o c1f5kf.o  cfftmf.o  cmfm1b.o  cost1i.o  d1f5kb.o   dcostb1.o  dsintf1.o  mradf4.o  r1f4kb.o  rfft1b.o     sinq1b.o  sintmf.o  z1fgkb.o  zfftmi.o  zmfm1f.o c1fgkb.o  cfftmi.o  cmfm1f.o  costb1.o  d1f5kf.o   dcostf1.o  mcsqb1.o   mradf5.o  r1f4kf.o  rfft1f.o     sinq1f.o  sintmi.o  z1fgkf.o  zmf2kb.o c1fgkf.o  cmf2kb.o  cosq1b.o  costf1.o  d1fgkb.o   dfft1b.o   mcsqf1.o   mradfg.o  r1f5kb.o  rfft1i.o     sinq1i.o  xercon.o  z1fm1b.o  zmf2kf.o c1fm1b.o  cmf2kf.o  cosq1f.o  costmb.o  d1fgkf.o   dfft1f.o   mcstb1.o   mrftb1.o  r1f5kf.o  rfft2b.o     sinqmb.o  xerfft.o  z1fm1f.o  zmf3kb.o c1fm1f.o  cmf3kb.o  cosq1i.o  costmf.o  dcosq1b.o  dfft1i.o   mcstf1.o   mrftf1.o  r1fgkb.o  rfft2f.o     sinqmf.o  z1f2kb.o  zfft1b.o  zmf3kf.o 
+ranlib libfftpack.a
+make[3]: Leaving directory '/glade/work/taosun/model/V4.5/WRF/external/fftpack/fftpack5'
+( if [ ! -e /glade/work/taosun/model/V4.5/WRF/tools/gen_comms.c ] ; then \
+          /bin/cp /glade/work/taosun/model/V4.5/WRF/tools/gen_comms_warning /glade/work/taosun/model/V4.5/WRF/tools/gen_comms.c ; \
+          cat /glade/work/taosun/model/V4.5/WRF/external/RSL_LITE/gen_comms.c >> /glade/work/taosun/model/V4.5/WRF/tools/gen_comms.c ; fi )
+( if [ ! -e module_dm.F ] ; then /bin/cp module_dm_warning module_dm.F ; \
+          cat /glade/work/taosun/model/V4.5/WRF/external/RSL_LITE/module_dm.F >> module_dm.F ; fi )
+make[2]: Leaving directory '/glade/work/taosun/model/V4.5/WRF/frame'
+make[1]: Leaving directory '/glade/work/taosun/model/V4.5/WRF'
+make -i -r MODULE_DIRS=" -I/glade/work/taosun/model/V4.5/WRF/external/esmf_time_f90  -I/glade/work/taosun/model/V4.5/WRF/main -I/glade/work/taosun/model/V4.5/WRF/external/io_netcdf -I/glade/work/taosun/model/V4.5/WRF/external/io_int -I/glade/work/taosun/model/V4.5/WRF/frame -I/glade/work/taosun/model/V4.5/WRF/share -I/glade/work/taosun/model/V4.5/WRF/phys -I/glade/work/taosun/model/V4.5/WRF/wrftladj -I/glade/work/taosun/model/V4.5/WRF/chem -I/glade/work/taosun/model/V4.5/WRF/inc -I/glade/u/apps/ch/opt/netcdf/4.7.4/intel/19.0.5/include " toolsdir
+make[1]: Entering directory '/glade/work/taosun/model/V4.5/WRF'
+--------------------------------------
+if [ 0 -eq 0 ] ; then \
+  ( cd tools ; make -i -r CC_TOOLS_CFLAGS="-DNMM_CORE=0" CC_TOOLS="icc  -DIWORDSIZE=4 -DMAX_HISTORY=25" ) ; \
+else \
+  ( cd tools ; make -i -r CC_TOOLS_CFLAGS="-DNMM_CORE=0" CC_TOOLS="icc  -DIWORDSIZE=4 -DMAX_HISTORY=25 -DWRFPLUS=1" ) ; \
+fi
+make[2]: Entering directory '/glade/work/taosun/model/V4.5/WRF/tools'
+make[2]: 'registry' is up to date.
+make[2]: Leaving directory '/glade/work/taosun/model/V4.5/WRF/tools'
+make[1]: Leaving directory '/glade/work/taosun/model/V4.5/WRF'
+if [ 1 -ne 0 ] ; then \
+  (cd var/external/crtm_2.3.0; make -i -r -j 2) ; \
+fi
+make[1]: Entering directory '/glade/work/taosun/model/V4.5/WRF/var/external/crtm_2.3.0'
+make[2]: Entering directory '/glade/work/taosun/model/V4.5/WRF/var/external/crtm_2.3.0/libsrc'
+makefile:32: warning: overriding recipe for target '.f90.o'
+../../../../configure.wrf:419: warning: ignoring old recipe for target '.f90.o'
+make[2]: Nothing to be done for 'all'.
+make[2]: Leaving directory '/glade/work/taosun/model/V4.5/WRF/var/external/crtm_2.3.0/libsrc'
+make[1]: Leaving directory '/glade/work/taosun/model/V4.5/WRF/var/external/crtm_2.3.0'
+if [ 1 ] ; then \
+  (cd var/external/bufr;  \
+  make -i -r -j 2 FC="ifort" CC="icc" CPP="/lib/cpp -P -nostdinc" CPPFLAGS="-DEM_CORE=1 -DNMM_CORE=0 -DNMM_MAX_DIM=2600 -DDA_CORE=1 -DWRFPLUS=0 -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=8 -DLWORDSIZE=4 -DNONSTANDARD_SYSTEM_FUNC  -DWRF_USE_CLM -DUSE_NETCDF4_FEATURES -DWRFIO_NCD_LARGE_FILE_SUPPORT -DBUFR   -DFFTPACK -DNORESHAPE -DDM_PARALLEL -DNETCDF -DCRTM -DLANDREAD_STUB=1 -DUSE_ALLOCATABLES -Dwrfmodel -DGRIB1 -DINTIO -DKEEP_INT_AROUND -DLIMIT_ARGS -DBUILD_RRTMG_FAST=0 -DBUILD_RRTMK=0 -DBUILD_SBM_FAST=0 -DSHOW_ALL_VARS_USED=0 -DCONFIG_BUF_LEN=65536 -DMAX_DOMAINS_F=21 -DMAX_HISTORY=25 -DNMM_NEST=0  -I. -traditional-cpp -DUSE_NETCDF4_FEATURES -DWRFIO_NCD_LARGE_FILE_SUPPORT " CFLAGS="-w -O3 -ip -DRPC_TYPES=1  -DDM_PARALLEL -DLANDREAD_STUB=1 -DMAX_HISTORY=25 -DNMM_CORE=0" FFLAGS="-O3 -FI " RANLIB="ranlib" AR="ar" ARFLAGS="ru" ) ; \
+fi
+make[1]: Entering directory '/glade/work/taosun/model/V4.5/WRF/var/external/bufr'
+ar ru libbufr.a adn30.o atrcpt.o bfrini.o blocks.o bort.o bort2.o bort_exit.o bvers.o cadn30.o capit.o ccbfl.o chekstab.o chrtrn.o chrtrna.o cktaba.o closbf.o closmg.o cmpia.o cmpmsg.o cmsgini.o cnved4.o cobfl.o conwin.o copybf.o copymg.o copysb.o cpbfdx.o cpdxmm.o cpymem.o cpyupd.o crbmg.o cread.o cwbmg.o datebf.o datelen.o digit.o drfini.o drstpl.o dumpbf.o dxdump.o dxinit.o dxmini.o elemdx.o errwrt.o getabdb.o getbmiss.o getlens.o getntbe.o gets1loc.o gettagpr.o gettbh.o getvalnb.o getwin.o i4dy.o ibfms.o icbfms.o ichkstr.o icmpdx.o icopysb.o icvidx.o idn30.o idxmsg.o ifbget.o ifxy.o igetdate.o igetfxy.o igetntbi.o igetntbl.o igetsc.o igettdi.o inctab.o invcon.o invmrg.o invtag.o invwin.o iok2cpy.o ipkm.o ipks.o ireadmg.o ireadmm.o ireadns.o ireadsb.o irev.o ishrdx.o isize.o istdesc.o iupb.o iupbs01.o iupbs3.o iupm.o iupvs01.o jstchr.o jstnum.o lcmgdf.o lmsg.o lstjpb.o makestab.o maxout.o mesgbc.o mesgbf.o minimg.o mrginv.o msgfull.o msgini.o msgupd.o msgwrt.o mtinfo.o mvb.o nemock.o nemtab.o nemtba.o nemtbax.o nemtbb.o nemtbd.o nenubd.o nevn.o newwin.o nmsub.o nmwrd.o numbck.o nummtb.o numtab.o numtbd.o nvnwin.o nwords.o nxtwin.o openbf.o openbt.o openmb.o openmg.o pad.o padmsg.o parstr.o parusr.o parutg.o pkb.o pkbs1.o pkc.o pkftbv.o pktdd.o pkvs01.o posapx.o rbytes.o rcstpl.o rdbfdx.o rdcmps.o rdmemm.o rdmems.o rdmgsb.o rdmsgb.o rdmsgw.o rdmtbb.o rdmtbd.o rdtree.o rdusdx.o readdx.o readerme.o readlc.o readmg.o readmm.o readmt.o readns.o reads3.o readsb.o restd.o rewnbf.o rjust.o rsvfvm.o rtrcpt.o seqsdx.o setblock.o setbmiss.o sntbbe.o sntbde.o status.o stbfdx.o stdmsg.o stndrd.o stntbi.o stntbia.o strcln.o strcpt.o string.o strnum.o strsuc.o stseq.o tabent.o tabsub.o trybump.o ufbcnt.o ufbcpy.o ufbcup.o ufbdmp.o ufbevn.o ufbget.o ufbin3.o ufbint.o ufbinx.o ufbmem.o ufbmex.o ufbmms.o ufbmns.o ufbovr.o ufbpos.o ufbqcd.o ufbqcp.o ufbrep.o ufbrms.o ufbrp.o ufbrw.o ufbseq.o ufbsp.o ufbstp.o ufbtab.o ufbtam.o ufdump.o upb.o upbb.o upc.o upds3.o upftbv.o ups.o uptdd.o usrtpl.o valx.o wrcmps.o wrdesc.o wrdlen.o wrdxtb.o writcp.o writdx.o writlc.o writsa.o writsb.o wrtree.o wtstat.o 
+ranlib libbufr.a
+make[1]: Leaving directory '/glade/work/taosun/model/V4.5/WRF/var/external/bufr'
+if [  ] ; then \
+  ( cd var/external/wavelet; \
+	make CC=" -DNOUNDERSCORE" RM="rm -f" libWavelet.a; \
+	make FC="time mpif90 -f90=ifort" RM="rm -f" lib_wavelet.a ) ; \
+fi
+( cd var/build; make depend; make -i -r -j 2 all_wrfvar )
+make[1]: Entering directory '/glade/work/taosun/model/V4.5/WRF/var/build'
+da.make:316: warning: overriding recipe for target 'da_update_bc.o'
+da.make:309: warning: ignoring old recipe for target 'da_update_bc.o'
+makefile:58: warning: overriding recipe for target '.f90.o'
+../../configure.wrf:419: warning: ignoring old recipe for target '.f90.o'
+make[1]: 'depend' is up to date.
+make[1]: Leaving directory '/glade/work/taosun/model/V4.5/WRF/var/build'
+make[1]: Entering directory '/glade/work/taosun/model/V4.5/WRF/var/build'
+da.make:316: warning: overriding recipe for target 'da_update_bc.o'
+da.make:309: warning: ignoring old recipe for target 'da_update_bc.o'
+makefile:58: warning: overriding recipe for target '.f90.o'
+../../configure.wrf:419: warning: ignoring old recipe for target '.f90.o'
+rm -f da_radar.o
+make[1]: Circular da_chem_sfc.o <- da_obs.o dependency dropped.
+/glade/work/taosun/model/V4.5/WRF/tools/standard.exe da_radar.f90 > da_radar.b
+/lib/cpp -P -nostdinc -DEM_CORE=1 -DNMM_CORE=0 -DNMM_MAX_DIM=2600 -DDA_CORE=1 -DWRFPLUS=0 -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=8 -DLWORDSIZE=4 -DNONSTANDARD_SYSTEM_FUNC  -DWRF_USE_CLM -DUSE_NETCDF4_FEATURES -DWRFIO_NCD_LARGE_FILE_SUPPORT -DBUFR   -DFFTPACK -DNORESHAPE -DDM_PARALLEL -DNETCDF -DCRTM -DLANDREAD_STUB=1 -DUSE_ALLOCATABLES -Dwrfmodel -DGRIB1 -DINTIO -DKEEP_INT_AROUND -DLIMIT_ARGS -DBUILD_RRTMG_FAST=0 -DBUILD_RRTMK=0 -DBUILD_SBM_FAST=0 -DSHOW_ALL_VARS_USED=0 -DCONFIG_BUF_LEN=65536 -DMAX_DOMAINS_F=21 -DMAX_HISTORY=25 -DNMM_NEST=0  -I. -traditional-cpp -DUSE_NETCDF4_FEATURES -DWRFIO_NCD_LARGE_FILE_SUPPORT   -I/glade/work/taosun/model/V4.5/WRF/inc da_radar.b  > da_radar.f
+rm -f da_radar.b
+if fgrep -iq '!$OMP' da_radar.f ; then \
+          if [ -n "" ] ; then echo COMPILING da_radar.f90 WITH OMP ; fi ; \
+  time mpif90 -f90=ifort -o da_radar.o -c -O3 -ip -fp-model precise -w -ftz -align all -fno-alias -FR -convert big_endian    -r8        -real-size `expr 8 \* 8` -i4 da_radar.f ; \
+        else \
+          if [ -n "" ] ; then echo COMPILING da_radar.f90 WITHOUT OMP ; fi ; \
+  time mpif90 -f90=ifort -o da_radar.o -c -O3 -ip -fp-model precise -w -ftz -align all -fno-alias -FR -convert big_endian   -r8        -real-size `expr 8 \* 8` -i4 da_radar.f ; \
+        fi
+
+real	0m12.652s
+user	0m11.686s
+sys	0m0.479s
+rm -f da_obs.o
+/glade/work/taosun/model/V4.5/WRF/tools/standard.exe da_obs.f90 > da_obs.b
+/lib/cpp -P -nostdinc -DEM_CORE=1 -DNMM_CORE=0 -DNMM_MAX_DIM=2600 -DDA_CORE=1 -DWRFPLUS=0 -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=8 -DLWORDSIZE=4 -DNONSTANDARD_SYSTEM_FUNC  -DWRF_USE_CLM -DUSE_NETCDF4_FEATURES -DWRFIO_NCD_LARGE_FILE_SUPPORT -DBUFR   -DFFTPACK -DNORESHAPE -DDM_PARALLEL -DNETCDF -DCRTM -DLANDREAD_STUB=1 -DUSE_ALLOCATABLES -Dwrfmodel -DGRIB1 -DINTIO -DKEEP_INT_AROUND -DLIMIT_ARGS -DBUILD_RRTMG_FAST=0 -DBUILD_RRTMK=0 -DBUILD_SBM_FAST=0 -DSHOW_ALL_VARS_USED=0 -DCONFIG_BUF_LEN=65536 -DMAX_DOMAINS_F=21 -DMAX_HISTORY=25 -DNMM_NEST=0  -I. -traditional-cpp -DUSE_NETCDF4_FEATURES -DWRFIO_NCD_LARGE_FILE_SUPPORT   -I/glade/work/taosun/model/V4.5/WRF/inc   da_obs.b  > da_obs.f
+rm -f da_obs.b
+if fgrep -iq '!$OMP' da_obs.f ; then \
+          if [ -n "" ] ; then echo COMPILING da_obs.f90 WITH OMP ; fi ; \
+  time mpif90 -f90=ifort -c -O3 -ip -fp-model precise -w -ftz -align all -fno-alias -FR -convert big_endian    -r8        -real-size `expr 8 \* 8` -i4 -I../external/crtm_2.3.0/libsrc    da_obs.f ; \
+        else \
+          if [ -n "" ] ; then echo COMPILING da_obs.f90 WITHOUT OMP ; fi ; \
+  time mpif90 -f90=ifort -c -O3 -ip -fp-model precise -w -ftz -align all -fno-alias -FR -convert big_endian   -r8        -real-size `expr 8 \* 8` -i4 -I../external/crtm_2.3.0/libsrc   da_obs.f ; \
+        fi
+
+real	0m8.387s
+user	0m7.494s
+sys	0m0.374s
+rm -f da_obs_io.o
+/glade/work/taosun/model/V4.5/WRF/tools/standard.exe da_obs_io.f90 > da_obs_io.b
+/lib/cpp -P -nostdinc -DEM_CORE=1 -DNMM_CORE=0 -DNMM_MAX_DIM=2600 -DDA_CORE=1 -DWRFPLUS=0 -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=8 -DLWORDSIZE=4 -DNONSTANDARD_SYSTEM_FUNC  -DWRF_USE_CLM -DUSE_NETCDF4_FEATURES -DWRFIO_NCD_LARGE_FILE_SUPPORT -DBUFR   -DFFTPACK -DNORESHAPE -DDM_PARALLEL -DNETCDF -DCRTM -DLANDREAD_STUB=1 -DUSE_ALLOCATABLES -Dwrfmodel -DGRIB1 -DINTIO -DKEEP_INT_AROUND -DLIMIT_ARGS -DBUILD_RRTMG_FAST=0 -DBUILD_RRTMK=0 -DBUILD_SBM_FAST=0 -DSHOW_ALL_VARS_USED=0 -DCONFIG_BUF_LEN=65536 -DMAX_DOMAINS_F=21 -DMAX_HISTORY=25 -DNMM_NEST=0  -I. -traditional-cpp -DUSE_NETCDF4_FEATURES -DWRFIO_NCD_LARGE_FILE_SUPPORT   -I/glade/work/taosun/model/V4.5/WRF/inc   da_obs_io.b  > da_obs_io.f
+rm -f da_obs_io.b
+if fgrep -iq '!$OMP' da_obs_io.f ; then \
+          if [ -n "" ] ; then echo COMPILING da_obs_io.f90 WITH OMP ; fi ; \
+  time mpif90 -f90=ifort -c -O3 -ip -fp-model precise -w -ftz -align all -fno-alias -FR -convert big_endian    -r8        -real-size `expr 8 \* 8` -i4 -I../external/crtm_2.3.0/libsrc    da_obs_io.f ; \
+        else \
+          if [ -n "" ] ; then echo COMPILING da_obs_io.f90 WITHOUT OMP ; fi ; \
+  time mpif90 -f90=ifort -c -O3 -ip -fp-model precise -w -ftz -align all -fno-alias -FR -convert big_endian   -r8        -real-size `expr 8 \* 8` -i4 -I../external/crtm_2.3.0/libsrc   da_obs_io.f ; \
+        fi
+
+real	1m5.739s
+user	1m4.579s
+sys	0m0.916s
+rm -f da_setup_structures.o
+/glade/work/taosun/model/V4.5/WRF/tools/standard.exe da_setup_structures.f90 > da_setup_structures.b
+/lib/cpp -P -nostdinc -DEM_CORE=1 -DNMM_CORE=0 -DNMM_MAX_DIM=2600 -DDA_CORE=1 -DWRFPLUS=0 -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=8 -DLWORDSIZE=4 -DNONSTANDARD_SYSTEM_FUNC  -DWRF_USE_CLM -DUSE_NETCDF4_FEATURES -DWRFIO_NCD_LARGE_FILE_SUPPORT -DBUFR   -DFFTPACK -DNORESHAPE -DDM_PARALLEL -DNETCDF -DCRTM -DLANDREAD_STUB=1 -DUSE_ALLOCATABLES -Dwrfmodel -DGRIB1 -DINTIO -DKEEP_INT_AROUND -DLIMIT_ARGS -DBUILD_RRTMG_FAST=0 -DBUILD_RRTMK=0 -DBUILD_SBM_FAST=0 -DSHOW_ALL_VARS_USED=0 -DCONFIG_BUF_LEN=65536 -DMAX_DOMAINS_F=21 -DMAX_HISTORY=25 -DNMM_NEST=0  -I. -traditional-cpp -DUSE_NETCDF4_FEATURES -DWRFIO_NCD_LARGE_FILE_SUPPORT   -I/glade/work/taosun/model/V4.5/WRF/inc   da_setup_structures.b  > da_setup_structures.f
+rm -f da_setup_structures.b
+if fgrep -iq '!$OMP' da_setup_structures.f ; then \
+          if [ -n "" ] ; then echo COMPILING da_setup_structures.f90 WITH OMP ; fi ; \
+  time mpif90 -f90=ifort -c -O3 -ip -fp-model precise -w -ftz -align all -fno-alias -FR -convert big_endian    -r8        -real-size `expr 8 \* 8` -i4 -I../external/crtm_2.3.0/libsrc    da_setup_structures.f ; \
+        else \
+if [ -n "" ] ; then echo COMPILING da_setup_structures.f90 WITHOUT OMP ; fi ; \
+  time mpif90 -f90=ifort -c -O3 -ip -fp-model precise -w -ftz -align all -fno-alias -FR -convert big_endian   -r8        -real-size `expr 8 \* 8` -i4 -I../external/crtm_2.3.0/libsrc    da_setup_structures.f ; \
+        fi
+
+real	1m37.116s
+user	1m35.601s
+sys	0m0.892s
+rm -f da_transfer_model.o
+/glade/work/taosun/model/V4.5/WRF/tools/standard.exe da_transfer_model.f90 > da_transfer_model.b
+/lib/cpp -P -nostdinc -DEM_CORE=1 -DNMM_CORE=0 -DNMM_MAX_DIM=2600 -DDA_CORE=1 -DWRFPLUS=0 -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=8 -DLWORDSIZE=4 -DNONSTANDARD_SYSTEM_FUNC  -DWRF_USE_CLM -DUSE_NETCDF4_FEATURES -DWRFIO_NCD_LARGE_FILE_SUPPORT -DBUFR   -DFFTPACK -DNORESHAPE -DDM_PARALLEL -DNETCDF -DCRTM -DLANDREAD_STUB=1 -DUSE_ALLOCATABLES -Dwrfmodel -DGRIB1 -DINTIO -DKEEP_INT_AROUND -DLIMIT_ARGS -DBUILD_RRTMG_FAST=0 -DBUILD_RRTMK=0 -DBUILD_SBM_FAST=0 -DSHOW_ALL_VARS_USED=0 -DCONFIG_BUF_LEN=65536 -DMAX_DOMAINS_F=21 -DMAX_HISTORY=25 -DNMM_NEST=0  -I. -traditional-cpp -DUSE_NETCDF4_FEATURES -DWRFIO_NCD_LARGE_FILE_SUPPORT   -I/glade/work/taosun/model/V4.5/WRF/inc   da_transfer_model.b  > da_transfer_model.f
+In file included from da_transfer_model.b:137:0:
+da_transfer_xatowrf.inc:715:0: warning: extra tokens at end of #else directive [enabled by default]
+ #else !! not var4d !!
+ ^
+rm -f da_transfer_model.b
+if fgrep -iq '!$OMP' da_transfer_model.f ; then \
+          if [ -n "" ] ; then echo COMPILING da_transfer_model.f90 WITH OMP ; fi ; \
+  time mpif90 -f90=ifort -c -O3 -ip -fp-model precise -w -ftz -align all -fno-alias -FR -convert big_endian    -r8        -real-size `expr 8 \* 8` -i4 -I../external/crtm_2.3.0/libsrc      da_transfer_model.f ; \
+        else \
+          if [ -n "" ] ; then echo COMPILING da_transfer_model.f90 WITHOUT OMP ; fi ; \
+  time mpif90 -f90=ifort -c -O3 -ip -fp-model precise -w -ftz -align all -fno-alias -FR -convert big_endian   -r8        -real-size `expr 8 \* 8` -i4 -I../external/crtm_2.3.0/libsrc      da_transfer_model.f ; \
+        fi
+
+real	0m42.004s
+user	0m40.376s
+sys	0m0.623s
+rm -f da_minimisation.o
+/glade/work/taosun/model/V4.5/WRF/tools/standard.exe da_minimisation.f90 > da_minimisation.b
+/lib/cpp -P -nostdinc -DEM_CORE=1 -DNMM_CORE=0 -DNMM_MAX_DIM=2600 -DDA_CORE=1 -DWRFPLUS=0 -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=8 -DLWORDSIZE=4 -DNONSTANDARD_SYSTEM_FUNC  -DWRF_USE_CLM -DUSE_NETCDF4_FEATURES -DWRFIO_NCD_LARGE_FILE_SUPPORT -DBUFR   -DFFTPACK -DNORESHAPE -DDM_PARALLEL -DNETCDF -DCRTM -DLANDREAD_STUB=1 -DUSE_ALLOCATABLES -Dwrfmodel -DGRIB1 -DINTIO -DKEEP_INT_AROUND -DLIMIT_ARGS -DBUILD_RRTMG_FAST=0 -DBUILD_RRTMK=0 -DBUILD_SBM_FAST=0 -DSHOW_ALL_VARS_USED=0 -DCONFIG_BUF_LEN=65536 -DMAX_DOMAINS_F=21 -DMAX_HISTORY=25 -DNMM_NEST=0  -I. -traditional-cpp -DUSE_NETCDF4_FEATURES -DWRFIO_NCD_LARGE_FILE_SUPPORT   -I/glade/work/taosun/model/V4.5/WRF/inc   da_minimisation.b  > da_minimisation.f
+rm -f da_minimisation.b
+if fgrep -iq '!$OMP' da_minimisation.f ; then \
+          if [ -n "" ] ; then echo COMPILING da_minimisation.f90 WITH OMP ; fi ; \
+  time mpif90 -f90=ifort -c -O3 -ip -fp-model precise -w -ftz -align all -fno-alias -FR -convert big_endian    -r8        -real-size `expr 8 \* 8` -i4 -I../external/crtm_2.3.0/libsrc      da_minimisation.f ; \
+        else \
+          if [ -n "" ] ; then echo COMPILING da_minimisation.f90 WITHOUT OMP ; fi ; \
+  time mpif90 -f90=ifort -c -O3 -ip -fp-model precise -w -ftz -align all -fno-alias -FR -convert big_endian   -r8        -real-size `expr 8 \* 8` -i4 -I../external/crtm_2.3.0/libsrc      da_minimisation.f ; \
+        fi
+
+real	0m8.794s
+user	0m7.374s
+sys	0m0.455s
+rm -f da_test.o
+/glade/work/taosun/model/V4.5/WRF/tools/standard.exe da_test.f90 > da_test.b
+/lib/cpp -P -nostdinc -DEM_CORE=1 -DNMM_CORE=0 -DNMM_MAX_DIM=2600 -DDA_CORE=1 -DWRFPLUS=0 -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=8 -DLWORDSIZE=4 -DNONSTANDARD_SYSTEM_FUNC  -DWRF_USE_CLM -DUSE_NETCDF4_FEATURES -DWRFIO_NCD_LARGE_FILE_SUPPORT -DBUFR   -DFFTPACK -DNORESHAPE -DDM_PARALLEL -DNETCDF -DCRTM -DLANDREAD_STUB=1 -DUSE_ALLOCATABLES -Dwrfmodel -DGRIB1 -DINTIO -DKEEP_INT_AROUND -DLIMIT_ARGS -DBUILD_RRTMG_FAST=0 -DBUILD_RRTMK=0 -DBUILD_SBM_FAST=0 -DSHOW_ALL_VARS_USED=0 -DCONFIG_BUF_LEN=65536 -DMAX_DOMAINS_F=21 -DMAX_HISTORY=25 -DNMM_NEST=0  -I. -traditional-cpp -DUSE_NETCDF4_FEATURES -DWRFIO_NCD_LARGE_FILE_SUPPORT   -I/glade/work/taosun/model/V4.5/WRF/inc   da_test.b  > da_test.f
+rm -f da_test.b
+if fgrep -iq '!$OMP' da_test.f ; then \
+          if [ -n "" ] ; then echo COMPILING da_test.f90 WITH OMP ; fi ; \
+  time mpif90 -f90=ifort -c -O3 -ip -fp-model precise -w -ftz -align all -fno-alias -FR -convert big_endian    -r8        -real-size `expr 8 \* 8` -i4 -I../external/crtm_2.3.0/libsrc      da_test.f ; \
+        else \
+          if [ -n "" ] ; then echo COMPILING da_test.f90 WITHOUT OMP ; fi ; \
+  time mpif90 -f90=ifort -c -O3 -ip -fp-model precise -w -ftz -align all -fno-alias -FR -convert big_endian   -r8        -real-size `expr 8 \* 8` -i4 -I../external/crtm_2.3.0/libsrc      da_test.f ; \
+        fi
+
+real	0m24.385s
+user	0m23.550s
+sys	0m0.516s
+rm -f da_wrfvar_top.o
+/glade/work/taosun/model/V4.5/WRF/tools/standard.exe da_wrfvar_top.f90 > da_wrfvar_top.b
+/lib/cpp -P -nostdinc -DEM_CORE=1 -DNMM_CORE=0 -DNMM_MAX_DIM=2600 -DDA_CORE=1 -DWRFPLUS=0 -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=8 -DLWORDSIZE=4 -DNONSTANDARD_SYSTEM_FUNC  -DWRF_USE_CLM -DUSE_NETCDF4_FEATURES -DWRFIO_NCD_LARGE_FILE_SUPPORT -DBUFR   -DFFTPACK -DNORESHAPE -DDM_PARALLEL -DNETCDF -DCRTM -DLANDREAD_STUB=1 -DUSE_ALLOCATABLES -Dwrfmodel -DGRIB1 -DINTIO -DKEEP_INT_AROUND -DLIMIT_ARGS -DBUILD_RRTMG_FAST=0 -DBUILD_RRTMK=0 -DBUILD_SBM_FAST=0 -DSHOW_ALL_VARS_USED=0 -DCONFIG_BUF_LEN=65536 -DMAX_DOMAINS_F=21 -DMAX_HISTORY=25 -DNMM_NEST=0  -I. -traditional-cpp -DUSE_NETCDF4_FEATURES -DWRFIO_NCD_LARGE_FILE_SUPPORT   -I/glade/work/taosun/model/V4.5/WRF/inc   da_wrfvar_top.b  > da_wrfvar_top.f
+rm -f da_wrfvar_top.b
+if fgrep -iq '!$OMP' da_wrfvar_top.f ; then \
+          if [ -n "" ] ; then echo COMPILING da_wrfvar_top.f90 WITH OMP ; fi ; \
+  time mpif90 -f90=ifort -c -O3 -ip -fp-model precise -w -ftz -align all -fno-alias -FR -convert big_endian    -r8        -real-size `expr 8 \* 8` -i4 -I../external/crtm_2.3.0/libsrc      -I/glade/u/apps/ch/opt/netcdf/4.7.4/intel/19.0.5//include da_wrfvar_top.f ; \
+        else \
+          if [ -n "" ] ; then echo COMPILING da_wrfvar_top.f90 WITHOUT OMP ; fi ; \
+  time mpif90 -f90=ifort -c -O3 -ip -fp-model precise -w -ftz -align all -fno-alias -FR -convert big_endian   -r8        -real-size `expr 8 \* 8` -i4 -I../external/crtm_2.3.0/libsrc      -I/glade/u/apps/ch/opt/netcdf/4.7.4/intel/19.0.5//include da_wrfvar_top.f ; \
+        fi
+
+real	0m48.714s
+user	0m47.196s
+sys	0m1.091s
+rm -f libwrfvar.a
+rm -f da_wrfvar_main.o
+ar ru libwrfvar.a copyfile.o amsr2time_.o da_blas.o da_lapack.o da_par_util.o da_par_util1.o da_setup_structures.o da_transfer_model.o da_minimisation.o da_vtox_transforms.o da_obs.o da_chem_sfc.o da_obs_io.o da_join_iv_for_multi_inc.o da_metar.o da_geoamv.o da_polaramv.o da_ships.o da_synop.o da_sound.o da_mtgirs.o da_tamdar.o da_varbc_tamdar.o da_bogus.o da_airep.o da_pilot.o da_radar.o da_rain.o da_gpspw.o da_gpsref.o da_gpseph.o da_ssmi.o module_ssmi.o da_satem.o da_qscat.o da_pseudo.o da_profiler.o da_buoy.o da_dynamics.o da_physics.o f_qv_from_rh.o da_ffts.o module_ffts.o da_test.o da_tools.o da_tools_serial.o da_wrf_interfaces.o da_rsl_interfaces.o da_mat_cv3.o da_rf_cv3.o da_rfz_cv3.o da_recursive_filter.o da_wavelet.o da_interpolation.o da_grid_definitions.o da_statistics.o da_define_structures.o gamma1.o da_spectral.o da_radiance.o da_radiance1.o da_rttov.o da_crtm.o da_varbc.o module_radiance.o da_tracing.o gsi_kinds.o gsi_constants.o gsi_thinning.o mod_clddet_geoir.o da_wrfvar_io.o da_airsr.o da_wrfvar_top.o da_reporting.o da_4dvar.o module_wrf_error.o module_configure.o module_state_description.o module_timing.o module_driver_constants.o module_domain.o module_machine.o module_symbols_util.o module_utility.o module_domain_type.o module_date_time.o module_io_wrf.o module_io.o module_io_domain.o module_io_quilt.o module_dm.o module_comm_dm.o module_bc.o module_model_constants.o module_nesting.o module_tiles.o module_get_file_names.o module_bc_time_utilities.o landread.o da_memory.o wrf_debug.o set_timekeeping.o wrf_shutdown.o init_modules.o mediation_wrfmain.o mediation_integrate.o wrf_num_bytes_between.o input_wrf.o wrf_bdyin.o wrf_bdyout.o output_wrf.o wrf_ext_read_field.o wrf_ext_write_field.o collect_on_comm.o start_domain.o hires_timer.o module_streams.o module_comm_dm.o module_comm_dm_0.o module_comm_dm_1.o module_comm_dm_2.o module_comm_dm_3.o module_comm_dm_4.o module_alloc_space_0.o module_alloc_space_1.o module_alloc_space_2.o module_alloc_space_3.o module_alloc_space_4.o module_alloc_space_5.o module_alloc_space_6.o module_alloc_space_7.o module_alloc_space_8.o module_alloc_space_9.o nl_get_0_routines.o nl_get_1_routines.o nl_get_2_routines.o nl_get_3_routines.o nl_get_4_routines.o nl_get_5_routines.o nl_get_6_routines.o nl_get_7_routines.o nl_set_0_routines.o nl_set_1_routines.o nl_set_2_routines.o nl_set_3_routines.o nl_set_4_routines.o nl_set_5_routines.o nl_set_6_routines.o nl_set_7_routines.o interp_fcn.o sint.o da_netcdf_interface.o
+/glade/work/taosun/model/V4.5/WRF/tools/standard.exe da_wrfvar_main.f90 > da_wrfvar_main.b
+ar: creating libwrfvar.a
+/lib/cpp -P -nostdinc -DEM_CORE=1 -DNMM_CORE=0 -DNMM_MAX_DIM=2600 -DDA_CORE=1 -DWRFPLUS=0 -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=8 -DLWORDSIZE=4 -DNONSTANDARD_SYSTEM_FUNC  -DWRF_USE_CLM -DUSE_NETCDF4_FEATURES -DWRFIO_NCD_LARGE_FILE_SUPPORT -DBUFR   -DFFTPACK -DNORESHAPE -DDM_PARALLEL -DNETCDF -DCRTM -DLANDREAD_STUB=1 -DUSE_ALLOCATABLES -Dwrfmodel -DGRIB1 -DINTIO -DKEEP_INT_AROUND -DLIMIT_ARGS -DBUILD_RRTMG_FAST=0 -DBUILD_RRTMK=0 -DBUILD_SBM_FAST=0 -DSHOW_ALL_VARS_USED=0 -DCONFIG_BUF_LEN=65536 -DMAX_DOMAINS_F=21 -DMAX_HISTORY=25 -DNMM_NEST=0  -I. -traditional-cpp -DUSE_NETCDF4_FEATURES -DWRFIO_NCD_LARGE_FILE_SUPPORT   -I/glade/work/taosun/model/V4.5/WRF/inc   da_wrfvar_main.b  > da_wrfvar_main.f
+rm -f da_wrfvar_main.b
+if fgrep -iq '!$OMP' da_wrfvar_main.f ; then \
+          if [ -n "" ] ; then echo COMPILING da_wrfvar_main.f90 WITH OMP ; fi ; \
+  time mpif90 -f90=ifort -c -O3 -ip -fp-model precise -w -ftz -align all -fno-alias -FR -convert big_endian    -r8        -real-size `expr 8 \* 8` -i4 -I../external/crtm_2.3.0/libsrc      -I/glade/u/apps/ch/opt/netcdf/4.7.4/intel/19.0.5//include da_wrfvar_main.f ; \
+        else \
+          if [ -n "" ] ; then echo COMPILING da_wrfvar_main.f90 WITHOUT OMP ; fi ; \
+  time mpif90 -f90=ifort -c -O3 -ip -fp-model precise -w -ftz -align all -fno-alias -FR -convert big_endian   -r8        -real-size `expr 8 \* 8` -i4 -I../external/crtm_2.3.0/libsrc      -I/glade/u/apps/ch/opt/netcdf/4.7.4/intel/19.0.5//include da_wrfvar_main.f ; \
+        fi
+
+real	0m0.513s
+user	0m0.161s
+sys	0m0.235s
+ranlib  libwrfvar.a
+rm -f da_wrfvar.exe
+
+real	0m5.261s
+user	0m0.559s
+sys	0m4.043s
+make[1]: Leaving directory '/glade/work/taosun/model/V4.5/WRF/var/build'
+( cd var/obsproc; make -i -r -j 2 BUFR_CPP="-DBUFR" )
+make[1]: Entering directory '/glade/work/taosun/model/V4.5/WRF/var/obsproc'
+( cd src ; make -f Makefile -j 2  obsproc.exe )
+make[2]: Entering directory '/glade/work/taosun/model/V4.5/WRF/var/obsproc/src'
+make[2]: warning: -jN forced in submake: disabling jobserver mode.
+make[2]: 'obsproc.exe' is up to date.
+make[2]: Leaving directory '/glade/work/taosun/model/V4.5/WRF/var/obsproc/src'
+( /bin/rm -f obsproc.exe ;   ln -s src/obsproc.exe . )
+make[1]: Leaving directory '/glade/work/taosun/model/V4.5/WRF/var/obsproc'
+build started:   Thu Aug 24 22:27:04 MDT 2023
+build completed: Thu Aug 24 22:32:24 MDT 2023

@@ -616,9 +616,6 @@ target_include_directories(
                               $<TARGET_PROPERTY:esmf_time_f90,Fortran_MODULE_DIRECTORY>
                               $<TARGET_PROPERTY:io_grib_share,Fortran_MODULE_DIRECTORY>
                               $<TARGET_PROPERTY:io_grib1,Fortran_MODULE_DIRECTORY>
-                              $<TARGET_PROPERTY:grib1_util,Fortran_MODULE_DIRECTORY>
-                              $<TARGET_PROPERTY:MEL_grib1,Fortran_MODULE_DIRECTORY>
-                              $<TARGET_PROPERTY:WGRIB,Fortran_MODULE_DIRECTORY>
                               $<TARGET_PROPERTY:fftpack5,Fortran_MODULE_DIRECTORY>
                               $<TARGET_PROPERTY:io_netcdf,Fortran_MODULE_DIRECTORY>
 

@@ -15,13 +15,6 @@ target_sources(
                   write_grib.c
                   )
 
-set_target_properties( 
-                      ${FOLDER_COMPILE_TARGET} 
-                        PROPERTIES
-                          Fortran_MODULE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/${FOLDER_COMPILE_TARGET}
-                          EXPORT_PROPERTIES        Fortran_MODULE_DIRECTORY
-                      )
-
 
 target_link_libraries(  ${FOLDER_COMPILE_TARGET}
                           PRIVATE

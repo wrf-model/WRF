@@ -2,14 +2,23 @@
 set( MPI_Fortran_COMPILER "{DM_FC}" )
 set( MPI_C_COMPILER       "{DM_CC}" )
 
+# https://cmake.org/cmake/help/latest/variable/CMAKE_LANG_COMPILER.html
 set( CMAKE_Fortran_COMPILER "{SFC}" )
 set( CMAKE_C_COMPILER       "{SCC}" )
 
+# Our own addition
+set( CMAKE_C_PREPROCESSOR       "{CPP}" )
+set( CMAKE_C_PREPROCESSOR_FLAGS  {CPP_FLAGS} )
+
+# https://cmake.org/cmake/help/latest/variable/CMAKE_LANG_FLAGS_INIT.html
 set( CMAKE_Fortran_FLAGS_INIT    "{SFC_FLAGS} {FCBASEOPTS} {BYTESWAPIO}" )
 set( CMAKE_C_FLAGS_INIT          "{SCC_FLAGS} {CFLAGS_LOCAL}" )
 
+# https://cmake.org/cmake/help/latest/variable/CMAKE_LANG_FLAGS_CONFIG_INIT.html
 set( CMAKE_Fortran_FLAGS_DEBUG_INIT    "{FCDEBUG}" )
-set( CMAKE_Fortran_FLAGS_RELEASE_INIT  "{FCOPTIM}" )
+set( CMAKE_Fortran_FLAGS_RELEASE_INIT  "" )
+set( CMAKE_C_FLAGS_DEBUG_INIT    "" )
+set( CMAKE_C_FLAGS_RELEASE_INIT  "" )
 
 # Project specifics now
 set( WRF_MPI_Fortran_FLAGS  "{DM_FC_FLAGS}" )

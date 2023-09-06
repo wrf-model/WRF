@@ -21,6 +21,9 @@ list( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/ ${PROJECT_SOURCE_DIR
 set( CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE )
 set( CMAKE_Fortran_PREPROCESS          ON )
 
+# This is always set
+list( APPEND CMAKE_C_PREPROCESSOR_FLAGS -P -nostdinc )
+
 include( CMakePackageConfigHelpers )
 include( c_preproc   )
 include( m4_preproc  )

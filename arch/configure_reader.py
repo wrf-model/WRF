@@ -2,6 +2,7 @@
 
 import argparse
 import sys
+import os
 import re
 import inspect
 import platform
@@ -76,29 +77,45 @@ class Stanza():
   ######################################################################################################################
   def dereference( self, field, fatal=False ) :
     # print( "Dereferencing " + field )
+
     if field in self.kvPairs_ :
       prevField = self.kvPairs_[field]
 
       for refVarIter in referenceVar.finditer( prevField ) :
+        envSub = None
+
         if refVarIter is not None :
           # Grab group 1 and check that it is in our kv pairs
           refVar = refVarIter.group(2)
           # print( "Found variable {0} in field {1}".format( refVar, field ) )
           if refVar not in self.kvPairs_ :
-            if fatal :
-              # print( "Could not rereference : " + refVar )
-              exit(1)
+            # Try to use the environment variables
+            if refVar in os.environ :
+              envSub = os.environ[ refVar ]
             else:
-              continue
+              if fatal :
+                # print( "Could not rereference : " + refVar )
+                exit(1)
+              else:
+                continue
+          
 
-          # Recursively deref
-          self.dereference( refVar, fatal )
+          # This is an environment variable
+          if envSub is not None : 
+            self.kvPairs_[field] = self.kvPairs_[field].replace(
+                                                                "{var}".format( var=refVarIter.group(0) ),
+                                                                envSub
+                                                                )
+          # This is a kv pair, recurse
+          else :
+            # Recursively deref
+            self.dereference( refVar, fatal )
 
-          # Replace in original
-          self.kvPairs_[field] = self.kvPairs_[field].replace(
-                                                              "{var}".format( var=refVarIter.group(0) ),
-                                                              self.kvPairs_[refVar]
-                                                              )
+            # Replace in original
+            self.kvPairs_[field] = self.kvPairs_[field].replace(
+                                                                "{var}".format( var=refVarIter.group(0) ),
+                                                                self.kvPairs_[refVar]
+                                                                )
 
   def removeReferences( self, field, specifics=[] ) :
     if field in self.kvPairs_ :
@@ -141,13 +158,6 @@ class Stanza():
     self.removeReferences( "F77FLAGS", [ "FORMAT_FREE", "FORMAT_FIXED" ] )
     # # Now deref
     self.dereference( "FCBASEOPTS" )
-
-    # Now fix certain ones that are mixing programs with flags all mashed into one option
-    self.splitIntoFieldAndFlags( "SFC" )
-    self.splitIntoFieldAndFlags( "SCC" )
-    self.splitIntoFieldAndFlags( "DM_FC" )
-    self.splitIntoFieldAndFlags( "DM_CC" )
-    self.splitIntoFieldAndFlags( "M4" )
 
     # Remove rogue compile commands that should *NOT* even be here
     keysToSanitize = [ 
@@ -192,9 +202,19 @@ class Stanza():
         self.kvPairs_[ keyToSan ] = self.kvPairs_[ keyToSan ].replace( "CONFIGURE_FDEFS", "" )
         self.kvPairs_[ keyToSan ] = self.kvPairs_[ keyToSan ].replace( "CONFIGURE_MPI", "" )
         self.kvPairs_[ keyToSan ] = self.kvPairs_[ keyToSan ].replace( "CONFIGURE_COMPAT_FLAGS", "" )
+        self.kvPairs_[ keyToSan ] = self.kvPairs_[ keyToSan ].replace( "CONFIGURE_CPPFLAGS", "" )
+        self.kvPairs_[ keyToSan ] = self.kvPairs_[ keyToSan ].replace( "CONFIGURE_TRADFLAG", "" )
 
         self.kvPairs_[ keyToSan ] = compileObject.sub( r"\1\2", self.kvPairs_[ keyToSan ] ).strip()
 
+
+    # Now fix certain ones that are mixing programs with flags all mashed into one option
+    self.splitIntoFieldAndFlags( "SFC" )
+    self.splitIntoFieldAndFlags( "SCC" )
+    self.splitIntoFieldAndFlags( "DM_FC" )
+    self.splitIntoFieldAndFlags( "DM_CC" )
+    self.splitIntoFieldAndFlags( "CPP" )
+    self.splitIntoFieldAndFlags( "M4" )
 
     # Now deref all the rest
     for key in self.kvPairs_ :
@@ -531,7 +551,9 @@ def generateCMakeToolChainFile( cmakeToolChainTemplate, output, stanza, optionsD
                                                     SCC=stanza.kvPairs_["SCC"],
                                                     SFC=stanza.kvPairs_["SFC"],
                                                     SCC_FLAGS=stanza.kvPairs_["SCC_FLAGS"],
-                                                    SFC_FLAGS=stanza.kvPairs_["SFC_FLAGS"]
+                                                    SFC_FLAGS=stanza.kvPairs_["SFC_FLAGS"],
+                                                    CPP=stanza.kvPairs_["CPP"],
+                                                    CPP_FLAGS=stanza.kvPairs_["CPP_FLAGS"],
                                                     )
 
   # Extra stufff not from stanza but options

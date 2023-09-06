@@ -10,8 +10,7 @@ macro( wrf_c_preproc_fortran )
                         "${options}"  "${oneValueArgs}"  "${multiValueArgs}"
                         ${ARGN}
                         )
-  #!TODO Verify -o/-I/-E/-D/-free are all compiler independent flags
-  
+
   # Santitize input
   if ( DEFINED WRF_PP_F_TARGET_SCOPE )
     set( WRF_PP_F_TARGET_DIRECTORY TARGET_DIRECTORY ${WRF_PP_F_TARGET_SCOPE} )
@@ -45,7 +44,7 @@ macro( wrf_c_preproc_fortran )
 
     list( 
           APPEND WRF_PP_F_COMMANDS 
-          COMMAND ${CMAKE_Fortran_COMPILER} -E ${WRF_PP_F_INPUT_SOURCE} -free ${WRF_PP_F_DEFS} ${WRF_PP_F_INCLUDES_FLAGS} > ${WRF_PP_F_OUTPUT_FILE}
+          COMMAND ${CMAKE_C_PREPROCESSOR} ${CMAKE_C_PREPROCESSOR_FLAGS} ${WRF_PP_F_INPUT_SOURCE} ${WRF_PP_F_DEFS} ${WRF_PP_F_INCLUDES_FLAGS} > ${WRF_PP_F_OUTPUT_FILE}
           # Force check that they were made
           COMMAND ${CMAKE_COMMAND} -E compare_files ${WRF_PP_F_OUTPUT_FILE} ${WRF_PP_F_OUTPUT_FILE}
           )

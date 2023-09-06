@@ -76,11 +76,44 @@ foreach ( TARGET ${FOLDER_COMPILE_TARGETS} )
                             Fortran_MODULE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/modules/${TARGET}/
                             Fortran_FORMAT           FREE                          
                         )
-  target_link_libraries( 
+
+  
+  if ( ${USE_IPO} )
+    set_target_properties(
+                        ${TARGET}
+                        PROPERTIES
+                          INTERPROCEDURAL_OPTIMIZATION TRUE
+                        )
+
+    if ( ${CMAKE_VERSION} VERSION_LESS 3.24 )
+      target_link_libraries( 
                         ${TARGET}
                         PRIVATE
                           ${PROJECT_NAME}_Core
                         )
+
+      # Static libraries with LTO/IPO sometimes don't pull all the correct symbols
+      set( LINKER_OPTION ${CMAKE_Fortran_LINKER_WRAPPER_FLAG} )
+      target_link_options(
+                          ${TARGET}
+                          PRIVATE
+                            ${LINKER_OPTION}--whole-archive $<TARGET_FILE:${PROJECT_NAME}_Core> ${LINKER_OPTION}--no-whole-archive
+                          )
+    else()
+      target_link_libraries( 
+                        ${TARGET}
+                        PRIVATE
+                          $<LINK_LIBRARY:WHOLE_ARCHIVE,${PROJECT_NAME}_Core>
+                        )
+    endif()
+  else()
+    target_link_libraries( 
+                        ${TARGET}
+                        PRIVATE
+                          ${PROJECT_NAME}_Core
+                        )
+  endif()
+
   target_include_directories(
                               ${TARGET}
                               PRIVATE

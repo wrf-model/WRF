@@ -154,6 +154,14 @@ target_sources(
                   wrf_shutdown.F
                   )
 
+# Disable optimizations on these files always
+set_source_files_properties(
+                            ${nl_dyn_source}
+                            PROPERTIES
+                            COMPILE_FLAGS
+                              $<$<COMPILE_LANGUAGE:Fortran>:${WRF_FCNOOPT}>
+                            )
+
 install( 
         FILES       ${WRF_INCLUDE_FILES}
         DESTINATION include/${FOLDER_COMPILE_TARGET}

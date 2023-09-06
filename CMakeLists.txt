@@ -25,6 +25,7 @@ set( CMAKE_Fortran_PREPROCESS          ON )
 list( APPEND CMAKE_C_PREPROCESSOR_FLAGS -P -nostdinc )
 
 include( CMakePackageConfigHelpers )
+include( CheckIPOSupported )
 include( c_preproc   )
 include( m4_preproc  )
 include( target_copy )
@@ -33,6 +34,8 @@ include( gitinfo     )
 include( printOption )
 include( wrf_case_setup )
 include( wrf_get_version )
+
+check_ipo_supported( RESULT IPO_SUPPORT )
 
 # First grab git info
 wrf_git_commit(
@@ -61,6 +64,7 @@ set( OPTIMIZATION_LEVEL "" )
 set( WRF_OS             "" )
 set( WRF_MACH           "" )
 
+set( CMAKE_BUILD_TYPE Release CACHE STRING "Build Type" )
 
 ################################################################################
 ## WRF Core selection
@@ -135,6 +139,7 @@ endif()
 set( USE_DOUBLE  OFF CACHE BOOL "USE_DOUBLE"  )
 set( USE_MPI     OFF CACHE BOOL "USE_MPI"     )
 set( USE_OPENMP  OFF CACHE BOOL "USE_OPENMP"  )
+set( USE_IPO     OFF CACHE BOOL "USE_IPO"     )
 
 
 set( ENABLE_CHEM       OFF CACHE BOOL "ENABLE_CHEM"      )
@@ -175,7 +180,7 @@ set( NETCDF               ON )
 
 
 # Special internal flag for profiling compilation
-set( PROFILE_COMPILATION OFF )
+set( PROFILE_COMPILATION  OFF CACHE BOOL "PROFILE_COMPILATION" )
 
 
 # From arch/preamble
@@ -281,49 +286,15 @@ endif()
 
 math( EXPR RWORDSIZE_B "8 * ${RWORDSIZE}" )
 
-# This is really ugly but such is the cost of supporting many ways to say the same thing
-# https://cmake.org/cmake/help/latest/variable/CMAKE_LANG_COMPILER_ID.html
-add_compile_options(
-                    # Use "" and ; specifically to evaluate correctly
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,Absoft>:>"                                 #@ Absoft Fortran
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,ADSP>:>"                                   #@ Analog VisualDSP++
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,AppleClang>:>"                             #@ Apple Clang
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,ARMCC>:>"                                  #@ ARM Compiler
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,ARMClang>:>"                               #@ ARM Compiler based on Clang
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,Bruce>:>"                                  #@ Bruce C Compiler
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,CCur>:>"                                   #@ Concurrent Fortran
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,Clang>:>"                                  #@ LLVM Clang
-                    "$<$<COMPILE_LANG_AND_ID:Fortran,Cray>:-s;integer32;-s;real${RWORDSIZE_B}>" #@ Cray Compiler
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,Embarcadero>:>"                            #@ Embarcadero
-                    "$<$<AND:$<BOOL:${USE_DOUBLE}>,$<COMPILE_LANG_AND_ID:Fortran,Flang>>:-fdefault-real-${RWORDSIZE}>"                  #@ Classic Flang Fortran Compiler
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,LLVMFlang>:>"                              #@ LLVM Flang Fortran Compiler
-                    "$<$<COMPILE_LANG_AND_ID:Fortran,Fujitsu>:-CcdRR${RWORDSIZE}>"              #@ Fujitsu HPC compiler (Trad mode)
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,FujitsuClang>:>"                           #@ Fujitsu HPC compiler (Clang mode)
-                    "$<$<COMPILE_LANG_AND_ID:Fortran,G95>:-r${RWORDSIZE};-i4>"                                    #@ G95 Fortran
-                    "$<$<AND:$<BOOL:${USE_DOUBLE}>,$<COMPILE_LANG_AND_ID:Fortran,GNU>>:-fdefault-real-${RWORDSIZE}>"         #@ GNU Compiler Collection
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,GHS>:>"                                    #@ Green Hills Software
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,HP>:>"                                     #@ Hewlett-Packard Compiler
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,IAR>:>"                                    #@ IAR Systems
-                    "$<$<COMPILE_LANG_AND_ID:Fortran,Intel>:-real-size;${RWORDSIZE_B};-i4>"     #@ Intel Classic Compiler
-                    "$<$<COMPILE_LANG_AND_ID:Fortran,IntelLLVM>:-real-size;${RWORDSIZE_B};-i4>" #@ Intel LLVM-Based Compiler
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,LCC>:>"                                    #@ MCST Elbrus C/C++/Fortran Compiler
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,MSVC>:>"                                   #@ Microsoft Visual Studio
-                    "$<$<COMPILE_LANG_AND_ID:Fortran,NVHPC>:-r${RWORDSIZE};-i4>"                #@ NVIDIA HPC Compiler
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,NVIDIA>:>"                                 #@ NVIDIA CUDA Compiler
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,OpenWatcom>:>"                             #@ Open Watcom
-                    "$<$<COMPILE_LANG_AND_ID:Fortran,PGI>:-r${RWORDSIZE};-i4>"                  #@ The Portland Group
-                    "$<$<COMPILE_LANG_AND_ID:Fortran,PathScale>:-r${RWORDSIZE};-i4>"            #@ PathScale
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,SDCC>:>"                                   #@ Small Device C Compiler
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,SunPro>:>"                                 #@ Oracle Solaris Studio
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,Tasking>:>"                                #@ Tasking Compiler Toolsets
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,TI>:>"                                     #@ Texas Instruments
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,TinyCC>:>"                                 #@ Tiny C Compiler
-                    "$<$<COMPILE_LANG_AND_ID:Fortran,XL>:-qrealsize=${RWORDSIZE};-qintsize=4>"  #@ IBM XL
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,XLClang>:>"                                #@ IBM Clang-based XL
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,IBMClang>:>"                               #@ IBM LLVM-based Compiler
-                    # Todo find how to handle default selection or add new compiler IDs
-                    # unknown how to add support for sxf90
-                    )
+
+# Check if IPO usage
+if ( ${USE_IPO} )
+  if ( NOT ${IPO_SUPPORT} )
+    message( STATUS "IPO/LTO not supported, request ignored" )
+    set( USE_IPO OFF CACHE BOOL "Required by configuration" FORCE )
+  endif()
+endif()
+set( CMAKE_INTERPROCEDURAL_OPTIMIZATION ${USE_IPO} )
 
 ################################################################################
 ##
@@ -336,8 +307,9 @@ if ( DEFINED CMAKE_TOOLCHAIN_FILE )
   print_option( WRF_CONFIG         20 ${BOLD_CYAN} )
 endif()
 
-
 print_option( CMAKE_BUILD_TYPE 20 ${BOLD_CYAN} )
+
+
 print_option( WRF_CORE         20 ${BOLD_CYAN} )
 print_option( WRF_NESTING      20 ${BOLD_CYAN} )
 print_option( WRF_CASE         20 ${BOLD_CYAN} )
@@ -346,7 +318,7 @@ print_option( WRF_CASE         20 ${BOLD_CYAN} )
 print_option( USE_DOUBLE       20 )
 print_option( USE_MPI          20 )
 print_option( USE_OPENMP       20 )
-
+print_option( USE_IPO          20 )
 
 print_option( ENABLE_CHEM      20 )
 print_option( ENABLE_CMAQ      20 )
@@ -480,8 +452,92 @@ add_subdirectory( confcheck )
 ## Adjust flags based on compiler and linker used
 ##
 ################################################################################
+
+# https://stackoverflow.com/a/47927921
+# Define compile options to be inherited for directories
+define_property(
+                SOURCE
+                PROPERTY   COMPILE_FLAGS 
+                INHERITED
+                BRIEF_DOCS "brief-doc"
+                FULL_DOCS  "full-doc"
+                )
+
+define_property(
+                DIRECTORY
+                PROPERTY   COMPILE_FLAGS 
+                INHERITED
+                BRIEF_DOCS "brief-doc"
+                FULL_DOCS  "full-doc"
+                )
+
+# Get current build type flags and put them in there
+if ( ${CMAKE_BUILD_TYPE} STREQUAL "Release" )
+  set_directory_properties(
+                            PROPERTIES
+                              COMPILE_FLAGS
+                              $<$<COMPILE_LANGUAGE:Fortran>:${WRF_FCOPTIM}>
+                            )
+# else()
+#   # Assume no optimization
+#   set_directory_properties(
+#                             PROPERTIES
+#                               COMPILE_FLAGS
+#                               $<$<COMPILE_LANGUAGE:Fortran>:${WRF_FCNOOPT}>
+#                             )
+endif()
+
+
+# This is really ugly but such is the cost of supporting many ways to say the same thing
+# https://cmake.org/cmake/help/latest/variable/CMAKE_LANG_COMPILER_ID.html
+add_compile_options(
+                    # Use "" and ; specifically to evaluate correctly
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,Absoft>:>"                                 #@ Absoft Fortran
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,ADSP>:>"                                   #@ Analog VisualDSP++
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,AppleClang>:>"                             #@ Apple Clang
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,ARMCC>:>"                                  #@ ARM Compiler
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,ARMClang>:>"                               #@ ARM Compiler based on Clang
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,Bruce>:>"                                  #@ Bruce C Compiler
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,CCur>:>"                                   #@ Concurrent Fortran
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,Clang>:>"                                  #@ LLVM Clang
+                    "$<$<COMPILE_LANG_AND_ID:Fortran,Cray>:-s;integer32;-s;real${RWORDSIZE_B}>" #@ Cray Compiler
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,Embarcadero>:>"                            #@ Embarcadero
+                    "$<$<AND:$<BOOL:${USE_DOUBLE}>,$<COMPILE_LANG_AND_ID:Fortran,Flang>>:-fdefault-real-${RWORDSIZE}>"                  #@ Classic Flang Fortran Compiler
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,LLVMFlang>:>"                              #@ LLVM Flang Fortran Compiler
+                    "$<$<COMPILE_LANG_AND_ID:Fortran,Fujitsu>:-CcdRR${RWORDSIZE}>"              #@ Fujitsu HPC compiler (Trad mode)
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,FujitsuClang>:>"                           #@ Fujitsu HPC compiler (Clang mode)
+                    "$<$<COMPILE_LANG_AND_ID:Fortran,G95>:-r${RWORDSIZE};-i4>"                                    #@ G95 Fortran
+                    "$<$<AND:$<BOOL:${USE_DOUBLE}>,$<COMPILE_LANG_AND_ID:Fortran,GNU>>:-fdefault-real-${RWORDSIZE}>"         #@ GNU Compiler Collection
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,GHS>:>"                                    #@ Green Hills Software
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,HP>:>"                                     #@ Hewlett-Packard Compiler
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,IAR>:>"                                    #@ IAR Systems
+                    "$<$<COMPILE_LANG_AND_ID:Fortran,Intel>:-real-size;${RWORDSIZE_B};-i4>"     #@ Intel Classic Compiler
+                    "$<$<COMPILE_LANG_AND_ID:Fortran,IntelLLVM>:-real-size;${RWORDSIZE_B};-i4>" #@ Intel LLVM-Based Compiler
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,LCC>:>"                                    #@ MCST Elbrus C/C++/Fortran Compiler
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,MSVC>:>"                                   #@ Microsoft Visual Studio
+                    "$<$<COMPILE_LANG_AND_ID:Fortran,NVHPC>:-r${RWORDSIZE};-i4>"                #@ NVIDIA HPC Compiler
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,NVIDIA>:>"                                 #@ NVIDIA CUDA Compiler
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,OpenWatcom>:>"                             #@ Open Watcom
+                    "$<$<COMPILE_LANG_AND_ID:Fortran,PGI>:-r${RWORDSIZE};-i4>"                  #@ The Portland Group
+                    "$<$<COMPILE_LANG_AND_ID:Fortran,PathScale>:-r${RWORDSIZE};-i4>"            #@ PathScale
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,SDCC>:>"                                   #@ Small Device C Compiler
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,SunPro>:>"                                 #@ Oracle Solaris Studio
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,Tasking>:>"                                #@ Tasking Compiler Toolsets
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,TI>:>"                                     #@ Texas Instruments
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,TinyCC>:>"                                 #@ Tiny C Compiler
+                    "$<$<COMPILE_LANG_AND_ID:Fortran,XL>:-qrealsize=${RWORDSIZE};-qintsize=4>"  #@ IBM XL
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,XLClang>:>"                                #@ IBM Clang-based XL
+                    # "$<$<COMPILE_LANG_AND_ID:Fortran,IBMClang>:>"                               #@ IBM LLVM-based Compiler
+                    # Todo find how to handle default selection or add new compiler IDs
+                    # unknown how to add support for sxf90
+
+                    # line lengths
+                    "$<$<COMPILE_LANG_AND_ID:Fortran,GNU>:-ffree-line-length-none>"                #@ GNU Compiler Collection
+                    )
+
+
 # https://stackoverflow.com/a/53155812
-set( Fortran_COMPILER_ID ${CMAKE_Fortran_COMPILER_ID} )
+# set( Fortran_COMPILER_ID ${CMAKE_Fortran_COMPILER_ID} )
 # message( STATUS "Set Fortran_COMPILER_ID to : ${Fortran_COMPILER_ID}" )
 
 
@@ -498,6 +554,7 @@ add_compile_options(
                     )
 
 if ( ${PROFILE_COMPILATION} )
+  message( STATUS "Attemping to add compilation profiling..." )
   add_compile_options(
                       $<$<COMPILE_LANG_AND_ID:Fortran,GNU>:-ftime-report>
                       )

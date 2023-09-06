@@ -49,7 +49,7 @@ wrf_conf_check(
                 RESULT_VAR             FSEEKO64
                 SOURCE                 ${PROJECT_SOURCE_DIR}/tools/fseek_test.c
                 EXTENSION              .c
-                ADDITIONAL_DEFINITIONS -DTEST_FSEEKO64
+                ADDITIONAL_DEFINITIONS -DTEST_FSEEKO64 -DFILE_TO_TEST="${PROJECT_SOURCE_DIR}/CMakeLists.txt"
                 MESSAGE                "fseeko64 not supported, checking alternate fseeko"
                 )
 
@@ -60,7 +60,7 @@ if ( NOT "${FSEEKO64}" )
                   RESULT_VAR             FSEEKO
                   SOURCE                 ${PROJECT_SOURCE_DIR}/tools/fseek_test.c
                   EXTENSION              .c
-                  ADDITIONAL_DEFINITIONS -DTEST_FSEEKO
+                  ADDITIONAL_DEFINITIONS -DTEST_FSEEKO -DFILE_TO_TEST="${PROJECT_SOURCE_DIR}/CMakeLists.txt"
                   MESSAGE                "fseeko not supported, compiling with fseek (caution with large files)"
                   )
 endif()

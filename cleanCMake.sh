@@ -3,7 +3,7 @@ BUILD_DIR=_build
 INSTALL_DIR=runTemp
 TEST_DIR=test/
 
-function help()
+help()
 {
   echo "./cleanCMake.sh [options]"
   echo "  -c          Basic cmake clean functionality [cmake --build ${BUILD_DIR} -j 1 --target clean]"
@@ -43,28 +43,28 @@ while getopts "hcilfa" opt; do
   esac
 done
 
-if [[ $OPTIND -eq 1 ]]; then
+if [ $OPTIND -eq 1 ]; then
   # Do basic clean I guess
   CLEAN_BASIC_BUILD=TRUE
 fi
 
-if [[ "${CLEAN_BASIC_BUILD}" == "TRUE" || "${CLEAN_ALL}" == "TRUE" ]]; then
+if [ "${CLEAN_BASIC_BUILD}" = "TRUE" ] || [ "${CLEAN_ALL}" = "TRUE" ]; then
   echo "Doing cmake make clean"
   OLD_DIR=$PWD
   cd ${BUILD_DIR} && make -j 1 clean; cd $OLD_DIR
 fi
 
-if [[ "${CLEAN_BASIC_INSTALL}" == "TRUE" || "${CLEAN_ALL}" == "TRUE" ]]; then
+if [ "${CLEAN_BASIC_INSTALL}" = "TRUE" ] || [ "${CLEAN_ALL}" = "TRUE" ]; then
   echo "Removing binary installs"
   xargs rm < ${BUILD_DIR}/install_manifest.txt
 fi
 
-if [[ "${CLEAN_LINKS}" == "TRUE" || "${CLEAN_ALL}" == "TRUE" ]]; then
+if [ "${CLEAN_LINKS}" = "TRUE" ] || [ "${CLEAN_ALL}" = "TRUE" ]; then
   echo "Removing all symlinks in ${TEST_DIR}"
   find ${TEST_DIR} -type l -exec rm {} \;
 fi
 
-if [[ "${CLEAN_FOLDERS}" == "TRUE" || "${CLEAN_ALL}" == "TRUE" ]]; then
+if [ "${CLEAN_FOLDERS}" = "TRUE" ] || [ "${CLEAN_ALL}" = "TRUE" ]; then
   echo "Deleting ${BUILD_DIR} & ${INSTALL_DIR}/"
   rm ${BUILD_DIR} -r; rm ${INSTALL_DIR}/ -r
 fi

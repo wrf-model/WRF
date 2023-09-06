@@ -1,6 +1,6 @@
 #!/bin/sh
 
-function help()
+help()
 {
   echo "./configure_new [options] [-- <CMake configuration options>]"
   echo "  -p                  Preselect a stanza configuration with matching description"

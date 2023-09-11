@@ -1,39 +1,49 @@
 {
   "submit_options" :
   {
-    "queue"     : "regular",
-    "timelimit" : "00:05:00"
+    "queue"     : "economy",
+    "timelimit" : "01:00:00",
+    "cheyenne"  :
+    {
+      "submission" : "PBS"
+    },
+    "wsl" :
+    {
+      "submission" : "LOCAL"
+    }
   },
   "gnu" :
   {
     "submit_options" :
     {
-      "resources"         : "1:ncpus=20",
-      "timelimit"         : "01:00:00"
+      "cheyenne" :
+      {
+        "resources"         : "1:ncpus=8"
+      }
     },
     "steps" :
     {
       "serial" :
        { 
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "32", "-j 20" ]
+        "arguments"    : [ "gnu", "32", "-j 8" ]
       },
       "sm" :
        { 
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "33", "-j 20" ],
+        "arguments"    : [ "gnu", "33", "-j 8" ],
         "dependencies" : { "serial" : "afterany" }
       },
       "dm" :
        { 
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "34", "-j 20" ],
+        "arguments"    : [ "gnu-mpi", "34", "-j 8" ],
         "dependencies" : { "sm" : "afterany" }
       },
       "dm+sm" :
        { 
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "35", "-j 20" ],
+        "arguments"    : [ "gnu-mpi", "35", "-j 8" ],
         "dependencies" : { "dm" : "afterany" }
       }
     }

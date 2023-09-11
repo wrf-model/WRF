@@ -47,5 +47,41 @@
         "dependencies" : { "dm" : "afterany" }
       }
     }
+  },
+  "intel" :
+  {
+    "submit_options" :
+    {
+      "cheyenne" :
+      {
+        "resources"         : "1:ncpus=8"
+      }
+    },
+    "steps" :
+    {
+      "serial" :
+       { 
+        "command"      : ".ci/tests/build.sh",
+        "arguments"    : [ "intel", "13", "-j 8" ]
+      },
+      "sm" :
+       { 
+        "command"      : ".ci/tests/build.sh",
+        "arguments"    : [ "intel", "14", "-j 8" ],
+        "dependencies" : { "serial" : "afterany" }
+      },
+      "dm" :
+       { 
+        "command"      : ".ci/tests/build.sh",
+        "arguments"    : [ "intel-mpi", "15", "-j 8" ],
+        "dependencies" : { "sm" : "afterany" }
+      },
+      "dm+sm" :
+       { 
+        "command"      : ".ci/tests/build.sh",
+        "arguments"    : [ "intel-mpi", "16", "-j 8" ],
+        "dependencies" : { "dm" : "afterany" }
+      }
+    }
   }
 }

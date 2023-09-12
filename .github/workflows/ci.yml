@@ -32,6 +32,7 @@ jobs:
     if : ${{ !cancelled() && github.event.label.name == 'test' }}
     name: Remove 'test' label
     needs: buildtests
+    steps:
     - name : Remove 'test' label
       env:
         PR_NUMBER: ${{ github.event.number }}

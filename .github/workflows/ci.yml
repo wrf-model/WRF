@@ -7,9 +7,15 @@ on:
     types:    [ labeled ]
 
 jobs:
-  build:
+  buildtests:
     if : ${{ github.event.label.name == 'test' }} || ${{ github.event_name == 'push' }}
-    runs-on: WSL
+    strategy:
+      max-parallel: 4
+      matrix:
+        test: [ gnu, intel ]
+        runner:   [ cheyenne ]
+    name: Test ${{ matrix.test }} on ${{ matrix.runner }}
+    runs-on: ${{ matrix.runner }}
     permissions:
       contents: read
       pull-requests: write
@@ -18,12 +24,15 @@ jobs:
       with: 
         submodules: true
 
-    - name: Test GNU Compilation
+    - name: Test ${{ matrix.test }}
       run: |
-        ./hpc-workflows/.ci/runner.py .ci/wrf_arw_tests.json gnu -s LOCAL -d ..
+        ./hpc-workflows/.ci/runner.py .ci/wrf_arw_tests.json ${{ matrix.test }} -d ..
 
+  removelabel:
+    if : ${{ !cancelled() && github.event.label.name == 'test' }}
+    name: Remove 'test' label
+    needs: buildtests
     - name : Remove 'test' label
-      if : ${{ !cancelled() && github.event.label.name == 'test' }}
       env:
         PR_NUMBER: ${{ github.event.number }}
       run: |

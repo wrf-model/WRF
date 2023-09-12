@@ -25,7 +25,7 @@ jobs:
 
     - name: Test ${{ matrix.test }}
       run: |
-        ./hpc-workflows/.ci/runner.py .ci/wrf_arw_tests.json ${{ matrix.test }} -d ..
+        ./hpc-workflows/.ci/runner.py .ci/wrf_arw_tests.json ${{ matrix.test }} -d .. -a NMMM0012
 
   removelabel:
     runs-on: cheyenne

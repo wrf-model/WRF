@@ -18,7 +18,6 @@ jobs:
     runs-on: ${{ matrix.runner }}
     permissions:
       contents: read
-      pull-requests: write
     steps:
     - uses: actions/checkout@v3
       with: 
@@ -33,6 +32,9 @@ jobs:
     if : ${{ !cancelled() && github.event.label.name == 'test' }}
     name: Remove 'test' label
     needs: buildtests
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
     - name : Remove 'test' label
       env:

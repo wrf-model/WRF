@@ -29,6 +29,7 @@ jobs:
         ./hpc-workflows/.ci/runner.py .ci/wrf_arw_tests.json ${{ matrix.test }} -d ..
 
   removelabel:
+    runs-on: cheyenne
     if : ${{ !cancelled() && github.event.label.name == 'test' }}
     name: Remove 'test' label
     needs: buildtests

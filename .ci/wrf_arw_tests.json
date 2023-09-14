@@ -5,81 +5,86 @@
     "timelimit" : "01:00:00",
     "cheyenne"  :
     {
-      "submission" : "PBS"
+      "submission" : "PBS",
+      "resources"  : "1:ncpus=8",
+      "arguments"  : 
+      {
+        "global_modules" : [ "cmake/3.22.0" ]
+      }
     },
     "wsl" :
     {
       "submission" : "LOCAL"
     }
   },
-  "gnu" :
+  "gnu-nompi" :
   {
-    "submit_options" :
-    {
-      "cheyenne" :
-      {
-        "resources"         : "1:ncpus=8"
-      }
-    },
+    "submit_options" : { "cheyenne" : { "arguments" : { "test_modules" : [ "gnu", "netcdf" ] } } },
     "steps" :
     {
       "serial" :
-       { 
+      {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "gnu", "32", "-j 8" ]
+        "arguments"    : [ "32", "-j 8" ]
       },
       "sm" :
-       { 
+      {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "gnu", "33", "-j 8" ],
+        "arguments"    : [ "33", "-j 8" ],
         "dependencies" : { "serial" : "afterany" }
-      },
+      }
+    }
+  },
+  "gnu-mpi" :
+  {
+    "submit_options" : { "cheyenne" : { "arguments" : { "test_modules" : [ "gnu", "mpt", "netcdf" ] } } },
+    "steps" :
+    {
       "dm" :
-       { 
+      {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "gnu-mpi", "34", "-j 8" ],
-        "dependencies" : { "sm" : "afterany" }
+        "arguments"    : [ "34", "-j 8" ]
       },
       "dm+sm" :
-       { 
+      {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "gnu-mpi", "35", "-j 8" ],
+        "arguments"    : [ "35", "-j 8" ],
         "dependencies" : { "dm" : "afterany" }
       }
     }
   },
-  "intel" :
+  "intel-nompi" :
   {
-    "submit_options" :
-    {
-      "cheyenne" :
-      {
-        "resources"         : "1:ncpus=8"
-      }
-    },
+    "submit_options" : { "cheyenne" : { "arguments" : { "test_modules" : [ "intel", "netcdf" ] } } },
     "steps" :
     {
       "serial" :
-       { 
+      {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "intel", "13", "-j 8" ]
+        "arguments"    : [ "13", "-j 8" ]
       },
       "sm" :
-       { 
+      {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "intel", "14", "-j 8" ],
+        "arguments"    : [ "14", "-j 8" ],
         "dependencies" : { "serial" : "afterany" }
-      },
+      }
+    }
+  },
+  "intel-mpi" :
+  {
+    "submit_options" : { "cheyenne" : { "arguments" : { "test_modules" : [ "intel", "mpt", "netcdf" ] } } },
+    "steps" :
+    {
       "dm" :
-       { 
+      {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "intel-mpi", "15", "-j 8" ],
-        "dependencies" : { "sm" : "afterany" }
+        "arguments"    : [ "15", "-j 8" ]
       },
       "dm+sm" :
-       { 
+      {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "intel-mpi", "16", "-j 8" ],
+        "arguments"    : [ "16", "-j 8" ],
         "dependencies" : { "dm" : "afterany" }
       }
     }

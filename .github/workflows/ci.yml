@@ -12,8 +12,12 @@ jobs:
     strategy:
       max-parallel: 4
       matrix:
-        test: [ gnu, intel ]
-        runner:   [ cheyenne ]
+        test    : [ gnu-nompi, gnu-mpi, intel-nompi, intel-mpi ]
+        runner  : [ cheyenne ]
+        include :
+        # Specify accounts specific to each HPC resource
+          - runner : cheyenne
+            account: NMMM0012
     name: Test ${{ matrix.test }} on ${{ matrix.runner }}
     runs-on: ${{ matrix.runner }}
     permissions:
@@ -25,7 +29,7 @@ jobs:
 
     - name: Test ${{ matrix.test }}
       run: |
-        ./hpc-workflows/.ci/runner.py .ci/wrf_arw_tests.json ${{ matrix.test }} -d .. -a NMMM0012
+        ./hpc-workflows/.ci/runner.py .ci/wrf_arw_tests.json ${{ matrix.test }} -d .. -a "${{ matrix.account }}"
 
   removelabel:
     runs-on: cheyenne

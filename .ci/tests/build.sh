@@ -1,13 +1,14 @@
 #!/bin/sh
 workingDirectory=$1
 shift
-setup=$1
-compileOption=$2
-makejobs=$3
+compileOption=$1
+makejobs=$2
 
 cd $workingDirectory
 
-. .ci/env/hostenv.sh $setup
+# Everything else goes to our env setup
+shift; shift
+. .ci/env/hostenv.sh $*
 
 ./clean -a
 echo "$compileOption" | ./configure

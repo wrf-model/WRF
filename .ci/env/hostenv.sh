@@ -1,4 +1,6 @@
 #!/bin/sh
+
+# Useful string manipulation functions, leaving in for posterity
 # https://stackoverflow.com/a/8811800
 # contains(string, substring)
 #
@@ -14,6 +16,30 @@ contains()
   else
     echo 1    # $substring is not in $string
   fi
+}
+
+# Assumes contains() already returns true and substring exists
+# modules will be listed as moduleA/version-moduleB/version-moduleC/version
+specificModule()
+{
+  string="$1"
+  substring="$2"
+  # 
+  spec=$( echo "${string}" | sed -e "s@.*\($substring/\?\([^-]\+\)\?\)\(-\|$\).*@\1@" )
+
+  echo $spec
+}
+
+#
+# Once a module is loaded, to avoid potential duplicates remove it from the string
+filterModule()
+{
+  string="$1"
+  substring="$2"
+
+  filt=$( echo "${string}" | sed -e "s@$substring@@" )
+
+  echo $filt
 }
 
 # Better than uname and what we use in the HPC Workflows

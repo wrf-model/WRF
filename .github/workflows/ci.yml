@@ -18,6 +18,8 @@ jobs:
         # Specify accounts specific to each HPC resource
           - runner : cheyenne
             account: NMMM0012
+    # Is 5 days a reasonable wait time for testing?
+    timeout-minutes: 7200
     name: Test ${{ matrix.test }} on ${{ matrix.runner }}
     runs-on: ${{ matrix.runner }}
     permissions:
@@ -31,6 +33,8 @@ jobs:
       run: |
         ./hpc-workflows/.ci/runner.py .ci/wrf_arw_tests.json ${{ matrix.test }} -d .. -a "${{ matrix.account }}"
 
+  # Since this a new job, the token should be fine, per the documentation:
+  # https://docs.github.com/en/actions/security-guides/automatic-token-authentication#about-the-github_token-secret
   removelabel:
     runs-on: cheyenne
     if : ${{ !cancelled() && github.event.label.name == 'test' }}

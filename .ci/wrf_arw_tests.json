@@ -55,7 +55,7 @@
   },
   "intel-nompi" :
   {
-    "submit_options" : { "cheyenne" : { "arguments" : { "test_modules" : [ "intel", "netcdf" ] } } },
+    "submit_options" : { "cheyenne" : { "timelimit" : "00:01:00", "arguments" : { "test_modules" : [ "intel", "netcdf" ] } } },
     "steps" :
     {
       "serial" :
@@ -73,7 +73,7 @@
   },
   "intel-mpi" :
   {
-    "submit_options" : { "cheyenne" : { "arguments" : { "test_modules" : [ "intel", "mpt", "netcdf" ] } } },
+    "submit_options" : { "cheyenne" : { "timelimit" : "00:01:00", "arguments" : { "test_modules" : [ "intel", "mpt", "netcdf" ] } } },
     "steps" :
     {
       "dm" :

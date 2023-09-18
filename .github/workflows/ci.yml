@@ -30,8 +30,24 @@ jobs:
         submodules: true
 
     - name: Test ${{ matrix.test }}
+      id  : runTest
       run: |
         ./hpc-workflows/.ci/runner.py .ci/wrf_arw_tests.json ${{ matrix.test }} -d .. -a "${{ matrix.account }}"
+    - name: Print failed steps
+      if : ${{ failure() }}
+
+      run : |
+        while IFS='' read -r LINE || [ -n "${LINE}" ]; do
+          step=$( echo $LINE | awk '{print $1}' )
+          log=$( echo $LINE | awk '{print $2}' )
+          echo ""
+          echo "LOGS FOR STEP [$step]"
+          printf '!%.0s' $(seq 1 50)
+          echo ""
+          cat $log
+          printf '!%.0s' $(seq 1 50)
+          echo ""
+        done < ./wrf_arw_tests.${{ matrix.test }}.log
 
   # Since this a new job, the token should be fine, per the documentation:
   # https://docs.github.com/en/actions/security-guides/automatic-token-authentication#about-the-github_token-secret

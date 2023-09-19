@@ -25,12 +25,12 @@
       "serial" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "em_real", "32", "-j 8" ]
+        "arguments"    : [ "-c", "32", "-b", "em_real -j 8" ]
       },
       "sm" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "em_real", "33", "-j 8" ],
+        "arguments"    : [ "-c", "33", "-b", "em_real -j 8" ],
         "dependencies" : { "serial" : "afterany" }
       }
     }
@@ -43,12 +43,12 @@
       "dm" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "em_real", "34", "-j 8" ]
+        "arguments"    : [ "-c", "34", "-b", "em_real -j 8" ]
       },
       "dm+sm" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "em_real", "35", "-j 8" ],
+        "arguments"    : [ "-c", "35", "-b", "em_real -j 8" ],
         "dependencies" : { "dm" : "afterany" }
       }
     }
@@ -61,12 +61,12 @@
       "serial" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "em_real", "13", "-j 8" ]
+        "arguments"    : [ "-c", "13", "-b", "em_real -j 8" ]
       },
       "sm" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "em_real", "14", "-j 8" ],
+        "arguments"    : [ "-c", "14", "-b", "em_real -j 8" ],
         "dependencies" : { "serial" : "afterany" }
       }
     }
@@ -79,48 +79,48 @@
       "dm" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "em_real", "15", "-j 8" ]
+        "arguments"    : [ "-c", "15", "-b", "em_real -j 8" ]
       },
       "dm+sm" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "em_real", "16", "-j 8" ],
+        "arguments"    : [ "-c", "16", "-b", "em_real -j 8" ],
         "dependencies" : { "dm" : "afterany" }
       }
     }
   },
-  "nvhpc-nompi" :
+  "pgi-nompi" :
   {
-    "submit_options" : { "cheyenne" : { "arguments" : { "test_modules" : [ "nvhpc", "netcdf" ] } } },
+    "submit_options" : { "cheyenne" : { "arguments" : { "test_modules" : [ "pgi", "netcdf" ] } } },
     "steps" :
     {
       "serial" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "em_real", "13", "-j 8" ]
+        "arguments"    : [ "-c", "5", "-b", "em_real -j 8" ]
       },
       "sm" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "em_real", "14", "-j 8" ],
+        "arguments"    : [ "-c", "6", "-b", "em_real -j 8" ],
         "dependencies" : { "serial" : "afterany" }
       }
     }
   },
-  "nvhpc-mpi" :
+  "pgi-mpi" :
   {
-    "submit_options" : { "cheyenne" : { "arguments" : { "test_modules" : [ "nvhpc", "mpt", "netcdf" ] } } },
+    "submit_options" : { "cheyenne" : { "arguments" : { "test_modules" : [ "pgi", "mpt", "netcdf" ] } } },
     "steps" :
     {
       "dm" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "em_real", "15", "-j 8" ]
+        "arguments"    : [ "-c", "7", "-b", "em_real -j 8" ]
       },
       "dm+sm" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "em_real", "16", "-j 8" ],
+        "arguments"    : [ "-c", "8", "-b", "em_real -j 8" ],
         "dependencies" : { "dm" : "afterany" }
       }
     }

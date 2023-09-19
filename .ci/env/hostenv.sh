@@ -42,6 +42,20 @@ filterModule()
   echo $filt
 }
 
+setenvStr()
+{
+  # Changing IFS produces the most consistent results
+  tmpIFS=$IFS
+  IFS=","
+  string="$1"
+  for s in $string; do
+    echo "export $s"
+    export "$s"
+  done
+  IFS=$tmpIFS
+}
+
+
 # Better than uname and what we use in the HPC Workflows
 hostname=$( python3 -c "import socket; print( socket.getfqdn() )" )
 

@@ -31,8 +31,6 @@ jobs:
 
     - name: Test ${{ matrix.test }}
       id  : runTest
-      env:
-        ACTIONS_STEP_DEBUG : true
       run: |
         ./hpc-workflows/.ci/runner.py .ci/wrf_arw_tests.json ${{ matrix.test }} -d .. -a "${{ matrix.account }}"
     - name: Print failed steps

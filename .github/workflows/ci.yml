@@ -13,16 +13,24 @@ jobs:
       max-parallel: 4
       fail-fast: false
       matrix:
-        test    : [ gnu-nompi, gnu-mpi, intel-nompi, intel-mpi ]
-        runner  : [ cheyenne ]
-        include :
+        # Write our tests out this way for easier legibility
+        test    :
+          - gnu-nompi
+          - gnu-mpi
+          - intel-nompi
+          - intel-mpi
+          - pgi-nompi
+          - pgi-mpi
         # Specify accounts specific to each HPC resource
-          - runner : cheyenne
-            account: NMMM0012
+        # https://stackoverflow.com/a/68940067
+        runner  : [ { host : cheyenne, account : NMMM0012 } ]
+        # include :
+        #   - runner : cheyenne
+        #     account: NMMM0012
     # Is 5 days a reasonable wait time for testing?
     timeout-minutes: 7200
-    name: Test ${{ matrix.test }} on ${{ matrix.runner }}
-    runs-on: ${{ matrix.runner }}
+    name: Test ${{ matrix.test }} on ${{ matrix.runner.host }}
+    runs-on: ${{ matrix.runner.host }}
     permissions:
       contents: read
     steps:
@@ -33,7 +41,7 @@ jobs:
     - name: Test ${{ matrix.test }}
       id  : runTest
       run: |
-        ./hpc-workflows/.ci/runner.py .ci/wrf_arw_tests.json ${{ matrix.test }} -d .. -a "${{ matrix.account }}"
+        ./hpc-workflows/.ci/runner.py .ci/wrf_arw_tests.json ${{ matrix.test }} -d .. -a "${{ matrix.runner.account }}"
     - name: Print failed steps
       if : ${{ failure() }}
       run : |

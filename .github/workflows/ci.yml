@@ -43,7 +43,11 @@ jobs:
           with open( logs["logfile"], 'r') as f:
             print( f.read() )
           print( "!" * 50 )
-      shell: python3
+        
+        # Exit with bad status so people know where to look since that might be 
+        # an issue as this will look "successful"
+        raise Exception( "Test did not pass, refer to the above logs" )
+      shell: python3 {0}
 
   # Since this a new job, the token should be fine, per the documentation:
   # https://docs.github.com/en/actions/security-guides/automatic-token-authentication#about-the-github_token-secret

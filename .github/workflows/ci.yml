@@ -11,6 +11,7 @@ jobs:
     if : ${{ github.event.label.name == 'test' }} || ${{ github.event_name == 'push' }}
     strategy:
       max-parallel: 4
+      fast-fail: false
       matrix:
         test    : [ gnu-nompi, gnu-mpi, intel-nompi, intel-mpi ]
         runner  : [ cheyenne ]

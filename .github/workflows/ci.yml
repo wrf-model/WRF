@@ -37,7 +37,8 @@ jobs:
       if : ${{ failure() }}
       run : |
         import json
-        files = json.load( ./wrf_arw_tests.${{ matrix.test }}.log )
+        fp = open( "./wrf_arw_tests.${{ matrix.test }}.log" )
+        files = json.load( fp )
         for step, logs in files :
           print( "\nLOGS FOR STEP {step}\n{banner}", step=step, banner="!" * 50 )
           with open( logs["logfile"], 'r') as f:

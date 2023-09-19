@@ -25,12 +25,12 @@
       "serial" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "32", "-j 8" ]
+        "arguments"    : [ "em_real", "32", "-j 8" ]
       },
       "sm" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "33", "-j 8" ],
+        "arguments"    : [ "em_real", "33", "-j 8" ],
         "dependencies" : { "serial" : "afterany" }
       }
     }
@@ -43,48 +43,84 @@
       "dm" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "34", "-j 8" ]
+        "arguments"    : [ "em_real", "34", "-j 8" ]
       },
       "dm+sm" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "35", "-j 8" ],
+        "arguments"    : [ "em_real", "35", "-j 8" ],
         "dependencies" : { "dm" : "afterany" }
       }
     }
   },
   "intel-nompi" :
   {
-    "submit_options" : { "cheyenne" : { "timelimit" : "00:01:00", "arguments" : { "test_modules" : [ "intel", "netcdf" ] } } },
+    "submit_options" : { "cheyenne" : { "timelimit" : "01:30:00", "arguments" : { "test_modules" : [ "intel", "netcdf" ] } } },
     "steps" :
     {
       "serial" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "13", "-j 8" ]
+        "arguments"    : [ "em_real", "13", "-j 8" ]
       },
       "sm" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "14", "-j 8" ],
+        "arguments"    : [ "em_real", "14", "-j 8" ],
         "dependencies" : { "serial" : "afterany" }
       }
     }
   },
   "intel-mpi" :
   {
-    "submit_options" : { "cheyenne" : { "timelimit" : "00:01:00", "arguments" : { "test_modules" : [ "intel", "mpt", "netcdf" ] } } },
+    "submit_options" : { "cheyenne" : { "timelimit" : "01:30:00", "arguments" : { "test_modules" : [ "intel", "mpt", "netcdf" ] } } },
     "steps" :
     {
       "dm" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "15", "-j 8" ]
+        "arguments"    : [ "em_real", "15", "-j 8" ]
       },
       "dm+sm" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "16", "-j 8" ],
+        "arguments"    : [ "em_real", "16", "-j 8" ],
+        "dependencies" : { "dm" : "afterany" }
+      }
+    }
+  },
+  "nvhpc-nompi" :
+  {
+    "submit_options" : { "cheyenne" : { "arguments" : { "test_modules" : [ "nvhpc", "netcdf" ] } } },
+    "steps" :
+    {
+      "serial" :
+      {
+        "command"      : ".ci/tests/build.sh",
+        "arguments"    : [ "em_real", "13", "-j 8" ]
+      },
+      "sm" :
+      {
+        "command"      : ".ci/tests/build.sh",
+        "arguments"    : [ "em_real", "14", "-j 8" ],
+        "dependencies" : { "serial" : "afterany" }
+      }
+    }
+  },
+  "nvhpc-mpi" :
+  {
+    "submit_options" : { "cheyenne" : { "arguments" : { "test_modules" : [ "nvhpc", "mpt", "netcdf" ] } } },
+    "steps" :
+    {
+      "dm" :
+      {
+        "command"      : ".ci/tests/build.sh",
+        "arguments"    : [ "em_real", "15", "-j 8" ]
+      },
+      "dm+sm" :
+      {
+        "command"      : ".ci/tests/build.sh",
+        "arguments"    : [ "em_real", "16", "-j 8" ],
         "dependencies" : { "dm" : "afterany" }
       }
     }

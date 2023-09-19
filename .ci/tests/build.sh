@@ -1,24 +1,26 @@
 #!/bin/sh
 workingDirectory=$1
 shift
-compileOption=$1
-makejobs=$2
-
+core=$1
+compileOption=$2
+makejobs=$3
 cd $workingDirectory
 
 # Everything else goes to our env setup
-shift; shift
+shift; shift; shift
 . .ci/env/hostenv.sh $*
 
 ./clean -a
-echo "$compileOption" | ./configure
+./configure << EOF
+$compileOption
+EOF
 
 if [ ! -f configure.wrf ]; then
   echo  "Failed to configure"
   exit 1
 fi
 
-./compile em_real $makejobs
+./compile $core $makejobs
 
 result=$?
 

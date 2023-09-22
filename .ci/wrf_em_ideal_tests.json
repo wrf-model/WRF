@@ -1,0 +1,96 @@
+{
+  "submit_options" :
+  {
+    "queue"     : "economy",
+    "timelimit" : "01:00:00",
+    "cheyenne"  :
+    {
+      "submission" : "PBS",
+      "resources"  : "1:ncpus=8",
+      "arguments"  : 
+      {
+        "global_modules" : [ "gnu", "netcdf" ]
+      }
+    },
+    "wsl" :
+    {
+      "submission" : "LOCAL"
+    }
+  },
+  "em_real_0_serial" :
+  {
+    "submit_options" : { "cheyenne" : { "arguments" : { "test_modules" : [  ] } } },
+    "steps" :
+    {
+      "build" :
+      {
+        "command"      : ".ci/tests/build.sh",
+        "arguments"    : [ "-c", "32$'\n'1", "-b", "em_real -j 8" ]
+      },
+      "testcase" :
+      {
+        "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=1" } },
+        "command"      : ".ci/tests/testcase.sh",
+        "arguments"    : [ "-f", "test/em_real", "-n", "path/to/namelist?" ],
+        "dependencies" : { "build" : "afterany" }
+      }
+    }
+  },
+  "em_real_0_omp" :
+  {
+    "submit_options" : { "cheyenne" : { "arguments" : { "test_modules" : [  ] } } },
+    "steps" :
+    {
+      "build" :
+      {
+        "command"      : ".ci/tests/build.sh",
+        "arguments"    : [ "-c", "33$'\n'1", "-b", "em_real -j 8" ]
+      },
+      "testcase" :
+      {
+        "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=1" } },
+        "command"      : ".ci/tests/testcase.sh",
+        "arguments"    : [ "-f", "test/em_real", "-n", "path/to/namelist?" ],
+        "dependencies" : { "build" : "afterany" }
+      }
+    }
+  },
+  "em_real_0_mpi" :
+  {
+    "submit_options" : { "cheyenne" : { "arguments" : { "test_modules" : [  ] } } },
+    "steps" :
+    {
+      "build" :
+      {
+        "command"      : ".ci/tests/build.sh",
+        "arguments"    : [ "-c", "34$'\n'1", "-b", "em_real -j 8" ]
+      },
+      "testcase" :
+      {
+        "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=1" } },
+        "command"      : ".ci/tests/testcase.sh",
+        "arguments"    : [ "-f", "test/em_real", "-n", "path/to/namelist?" ],
+        "dependencies" : { "build" : "afterany" }
+      }
+    }
+  },
+  "chem_0_serial" :
+  {
+    "submit_options" : { "cheyenne" : { "arguments" : { "test_modules" : [  ] } } },
+    "steps" :
+    {
+      "build" :
+      {
+        "command"      : ".ci/tests/build.sh",
+        "arguments"    : [ "-c", "32$'\n'1", "-b", "em_real -j 8", "-e", "WRF_CHEM=1" ]
+      },
+      "testcase" :
+      {
+        "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=1" } },
+        "command"      : ".ci/tests/testcase.sh",
+        "arguments"    : [ "-f", "test/em_chem?", "-n", "path/to/namelist?" ],
+        "dependencies" : { "build" : "afterany" }
+      }
+    }
+  }
+}

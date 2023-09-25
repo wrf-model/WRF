@@ -355,6 +355,9 @@ END IF
       end do
 
       ! Get the reflectivity contributed from each hydrometeor type
+      hydro_weight_file='hydro_mean.dat.upate'
+      if (rootproc) call da_get_unit(hydro_weight_unit)
+      if (rootproc) open(unit=hydro_weight_unit, file=trim(hydro_weight_file), form='FORMATTED')
       do kk=kds,kde
          do sort=1,6
             if (count_rr(kk,sort) .gt. 10.) then
@@ -367,8 +370,12 @@ END IF
                if (ze_qg(kk,sort) > 0.)   & !! graupel 
                   ratio_qg(kk,sort)  =  zg*(rho_s(kk,sort)*ze_qg(kk,sort)/(count_rr(kk,sort)**2))**1.75
             end if
+            if (rootproc) &
+               write(hydro_weight_unit,'(a8, i2, a8, i2, 4(f19.9,2x))'),"sort:", sort, "level:", kk, ratio_qr (kk,sort),ratio_qws(kk,sort), ratio_qds(kk,sort), ratio_qg(kk,sort)
          end do
       end do   !bottom-top
+      if (rootproc) close(hydro_weight_unit)
+      if (rootproc) call da_get_unit(hydro_weight_unit)
    end if   !! use_radar_rhv .and. radar_rhv_opt == 2
 
    do n=iv%info(radar)%n1,iv%info(radar)%n2

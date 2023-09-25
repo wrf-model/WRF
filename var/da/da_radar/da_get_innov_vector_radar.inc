@@ -295,7 +295,7 @@ END IF
          open(unit=hydro_weight_unit, file=trim(hydro_weight_filename), form='FORMATTED')
          do sort=1,6
             do kk=kds,kde
-               read(hydro_weight_unit,'(4(f19.9,2x))') ratio_qr(kk,sort), ratio_qws(kk,sort),ratio_qds(kk,sort), ratio_qg(kk,sort)
+               read(hydro_weight_unit,'(a8, i2, a8, i2, 4(f19.9,2x))') "sort:", sort, "level:", kk, ratio_qr (kk,sort),ratio_qws(kk,sort), ratio_qds(kk,sort), ratio_qg(kk,sort)
             end do
          end do
          close(hydro_weight_unit)

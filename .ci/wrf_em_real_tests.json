@@ -5,7 +5,8 @@
     "timelimit" : "01:00:00",
     "arguments" : 
     {
-      "global_env" : [ "-e", "DATA=/path/to/data" ]
+      ".*testcase.*::global_env"   : [ "-e", "DATA=/path/to/data" ],
+      ".*testcase-mpi.*::exec_mpi" : [ "-p", "mpirun -np 8" ]
     },
     "cheyenne"  :
     {
@@ -13,7 +14,7 @@
       "resources"  : "1:ncpus=8",
       "arguments"  : 
       {
-        "global_env"     : 
+        ".*testcase.*::global_env"     :
         [ 
           "-e", "DATA=/glade/work/aislas/github/data/wrf/regtest/Data/",
           "-e", "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$NETCDF/lib"
@@ -22,532 +23,560 @@
       }
     }
   },
-  "em_real_serial" :
+  "em_real" :
   {
+    "submit_options" :
+    {
+      "arguments" :
+      {
+        ".*testcase.*::args_namelist" : 
+        [ 
+          "-c", "test/em_real",
+          "-b", "real.exe",
+          "-n", "namelist.input.3dtke,namelist.input.conus,namelist.input.rap,namelist.input.tropical",
+          "-d", "$DATA/em_real"
+        ]
+      }
+    },
     "steps" :
     {
-      "build" :
+      "build-serial" :
       {
         "command"      : ".ci/tests/build.sh",
         "arguments"    : [ "-c", "32$'\\n'1", "-b", "em_real -j 8" ]
       },
-      "testcase" :
+      "testcase-serial" :
       {
         "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=1" } },
-        "command"      : ".ci/tests/runNamelists.sh",
-        "arguments"    : 
+        "command"      : ".ci/tests/testcase.sh",
+        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_real/SERIAL/", "-m", "serial_results" ],
+        "dependencies" : { "build-serial" : "afterok" }
+      },
+      "build-omp" :
+      {
+        "command"      : ".ci/tests/build.sh",
+        "arguments"    : [ "-c", "33$'\\n'1", "-b", "em_real -j 8" ],
+        "dependencies" : { "testcase-serial" : "afterok" }
+      },
+      "testcase-omp" :
+      {
+        "submit_options" : { "arguments" : { "env" : [ "-e", "OMP_NUM_THREADS=8" ] }, "cheyenne" : { "resources" : "1:ncpus=8:ompthreads=8" } },
+        "command"      : ".ci/tests/testcase.sh",
+        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_real/OPENMP/", "-i", "serial_results" ],
+        "dependencies" : { "build-omp" : "afterok" }
+      },
+      "build-mpi" :
+      {
+        "command"      : ".ci/tests/build.sh",
+        "arguments"    : [ "-c", "34$'\\n'1", "-b", "em_real -j 8" ],
+        "dependencies" : { "testcase-omp" : "afterok" }
+      },
+      "testcase-mpi" :
+      {
+        "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=8:mpiprocs=8" } },
+        "command"      : ".ci/tests/testcase.sh",
+        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_real/MPI/", "-i", "serial_results" ],
+        "dependencies" : { "build-mpi" : "afterok" }
+      }
+    }
+  },
+  "em_real8" :
+  {
+    "submit_options" :
+    {
+      "arguments" :
+      {
+        ".*testcase.*::args_namelist" : 
         [ 
           "-c", "test/em_real",
           "-b", "real.exe",
-          "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_real/SERIAL/",
-          "-n", "namelist.input.3dtke,namelist.input.conus,namelist.input.rap,namelist.input.tropical",
+          "-n", "namelist.input.14,namelist.input.17AD",
+          "-d", "$DATA/em_real8"
+        ]
+      }
+    },
+    "steps" :
+    {
+      "build-serial" :
+      {
+        "command"      : ".ci/tests/build.sh",
+        "arguments"    : [ "-c", "32$'\\n'1", "-o", "-r8", "-b", "em_real -j 8" ]
+      },
+      "testcase-serial" :
+      {
+        "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=1" } },
+        "command"      : ".ci/tests/testcase.sh",
+        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_real8/SERIAL/", "-m", "serial_results" ],
+        "dependencies" : { "build-serial" : "afterok" }
+      },
+      "build-omp" :
+      {
+        "command"      : ".ci/tests/build.sh",
+        "arguments"    : [ "-c", "33$'\\n'1", "-o", "-r8", "-b", "em_real -j 8" ],
+        "dependencies" : { "testcase-serial" : "afterok" }
+      },
+      "testcase-omp" :
+      {
+        "submit_options" : { "arguments" : { "env" : [ "-e", "OMP_NUM_THREADS=8" ] }, "cheyenne" : { "resources" : "1:ncpus=8:ompthreads=8" } },
+        "command"      : ".ci/tests/testcase.sh",
+        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_real8/OPENMP/", "-i", "serial_results" ],
+        "dependencies" : { "build-omp" : "afterok" }
+      },
+      "build-mpi" :
+      {
+        "command"      : ".ci/tests/build.sh",
+        "arguments"    : [ "-c", "34$'\\n'1", "-o", "-r8", "-b", "em_real -j 8" ],
+        "dependencies" : { "testcase-omp" : "afterok" }
+      },
+      "testcase-mpi" :
+      {
+        "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=8:mpiprocs=8" } },
+        "command"      : ".ci/tests/testcase.sh",
+        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_real8/MPI/", "-i", "serial_results" ],
+        "dependencies" : { "build-mpi" : "afterok" }
+      }
+    }
+  },
+  "em_realA" :
+  {
+    "submit_options" :
+    {
+      "arguments" :
+      {
+        ".*testcase.*::args_namelist" : 
+        [ 
+          "-c", "test/em_real",
+          "-b", "real.exe",
+          "-n", "namelist.input.03,namelist.input.03DF,namelist.input.03FD,namelist.input.06,namelist.input.07NE",
           "-d", "$DATA/em_real"
-        ],
-        "dependencies" : { "build" : "afterok" }
+        ]
       }
-    }
-  },
-  "em_real_omp" :
-  {
+    },
     "steps" :
     {
-      "build" :
+      "build-serial" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "33$'\n'1", "-b", "em_real -j 8" ]
+        "arguments"    : [ "-c", "32$'\\n'1", "-b", "em_real -j 8" ]
       },
-      "testcase" :
-      {
-        "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=8" } },
-        "command"      : ".ci/tests/testcase.sh",
-        "arguments"    : [ "-f", "test/em_real", "-n", "path/to/namelist?" ],
-        "dependencies" : { "build" : "afterany" }
-      }
-    }
-  },
-  "em_real_mpi" :
-  {
-    "steps" :
-    {
-      "build" :
-      {
-        "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "34$'\n'1", "-b", "em_real -j 8" ]
-      },
-      "testcase" :
-      {
-        "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=8:mpiprocs=8" } },
-        "command"      : ".ci/tests/testcase.sh",
-        "arguments"    : [ "-f", "test/em_real", "-n", "path/to/namelist?" ],
-        "dependencies" : { "build" : "afterany" }
-      }
-    }
-  },
-  "em_real8_serial" :
-  {
-    "steps" :
-    {
-      "build" :
-      {
-        "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "32$'\n'1", "-o", "-r8", "-b", "em_real -j 8" ]
-      },
-      "testcase" :
+      "testcase-serial" :
       {
         "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=1" } },
         "command"      : ".ci/tests/testcase.sh",
-        "arguments"    : [ "-f", "test/em_real", "-n", "path/to/namelist?" ],
-        "dependencies" : { "build" : "afterany" }
-      }
-    }
-  },
-  "em_real8_omp" :
-  {
-    "steps" :
-    {
-      "build" :
+        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realA/SERIAL/", "-m", "serial_results" ],
+        "dependencies" : { "build-serial" : "afterok" }
+      },
+      "build-omp" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "33$'\n'1", "-o", "-r8", "-b", "em_real -j 8" ]
+        "arguments"    : [ "-c", "33$'\\n'1", "-b", "em_real -j 8" ],
+        "dependencies" : { "testcase-serial" : "afterok" }
       },
-      "testcase" :
+      "testcase-omp" :
       {
-        "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=8" } },
+        "submit_options" : { "arguments" : { "env" : [ "-e", "OMP_NUM_THREADS=8" ] }, "cheyenne" : { "resources" : "1:ncpus=8:ompthreads=8" } },
         "command"      : ".ci/tests/testcase.sh",
-        "arguments"    : [ "-f", "test/em_real", "-n", "path/to/namelist?" ],
-        "dependencies" : { "build" : "afterany" }
-      }
-    }
-  },
-  "em_real8_mpi" :
-  {
-    "steps" :
-    {
-      "build" :
+        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realA/OPENMP/", "-i", "serial_results" ],
+        "dependencies" : { "build-omp" : "afterok" }
+      },
+      "build-mpi" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "34$'\n'1", "-o", "-r8", "-b", "em_real -j 8" ]
+        "arguments"    : [ "-c", "34$'\\n'1", "-b", "em_real -j 8" ],
+        "dependencies" : { "testcase-omp" : "afterok" }
       },
-      "testcase" :
+      "testcase-mpi" :
       {
         "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=8:mpiprocs=8" } },
         "command"      : ".ci/tests/testcase.sh",
-        "arguments"    : [ "-f", "test/em_real", "-n", "path/to/namelist?" ],
-        "dependencies" : { "build" : "afterany" }
+        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realA/MPI/", "-i", "serial_results" ],
+        "dependencies" : { "build-mpi" : "afterok" }
       }
     }
   },
-  "em_realA_serial" :
+  "em_realB" :
   {
+    "submit_options" :
+    {
+      "arguments" :
+      {
+        ".*testcase.*::args_namelist" : 
+        [ 
+          "-c", "test/em_real",
+          "-b", "real.exe",
+          "-n", "namelist.input.10,namelist.input.11,namelist.input.14,namelist.input.16",
+          "-d", "$DATA/em_real"
+        ]
+      }
+    },
     "steps" :
     {
-      "build" :
+      "build-serial" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "32$'\n'1", "-b", "em_real -j 8" ]
+        "arguments"    : [ "-c", "32$'\\n'1", "-b", "em_real -j 8" ]
       },
-      "testcase" :
+      "testcase-serial" :
       {
         "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=1" } },
         "command"      : ".ci/tests/testcase.sh",
-        "arguments"    : [ "-f", "test/em_real", "-n", "path/to/namelist?" ],
-        "dependencies" : { "build" : "afterany" }
-      }
-    }
-  },
-  "em_realA_omp" :
-  {
-    "steps" :
-    {
-      "build" :
+        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realB/SERIAL/", "-m", "serial_results" ],
+        "dependencies" : { "build-serial" : "afterok" }
+      },
+      "build-omp" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "33$'\n'1", "-b", "em_real -j 8" ]
+        "arguments"    : [ "-c", "33$'\\n'1", "-b", "em_real -j 8" ],
+        "dependencies" : { "testcase-serial" : "afterok" }
       },
-      "testcase" :
+      "testcase-omp" :
       {
-        "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=8" } },
+        "submit_options" : { "arguments" : { "env" : [ "-e", "OMP_NUM_THREADS=8" ] }, "cheyenne" : { "resources" : "1:ncpus=8:ompthreads=8" } },
         "command"      : ".ci/tests/testcase.sh",
-        "arguments"    : [ "-f", "test/em_real", "-n", "path/to/namelist?" ],
-        "dependencies" : { "build" : "afterany" }
-      }
-    }
-  },
-  "em_realA_mpi" :
-  {
-    "steps" :
-    {
-      "build" :
+        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realB/OPENMP/", "-i", "serial_results" ],
+        "dependencies" : { "build-omp" : "afterok" }
+      },
+      "build-mpi" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "34$'\n'1", "-b", "em_real -j 8" ]
+        "arguments"    : [ "-c", "34$'\\n'1", "-b", "em_real -j 8" ],
+        "dependencies" : { "testcase-omp" : "afterok" }
       },
-      "testcase" :
+      "testcase-mpi" :
       {
         "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=8:mpiprocs=8" } },
         "command"      : ".ci/tests/testcase.sh",
-        "arguments"    : [ "-f", "test/em_real", "-n", "path/to/namelist?" ],
-        "dependencies" : { "build" : "afterany" }
+        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realB/MPI/", "-i", "serial_results" ],
+        "dependencies" : { "build-mpi" : "afterok" }
       }
     }
   },
-  "em_realB_serial" :
+  "em_realC" :
   {
+    "submit_options" :
+    {
+      "arguments" :
+      {
+        ".*testcase.*::args_namelist" : 
+        [ 
+          "-c", "test/em_real",
+          "-b", "real.exe",
+          "-n", "namelist.input.17,namelist.input.17AD,namelist.input.18,namelist.input.20,namelist.input.20NE",
+          "-d", "$DATA/em_real"
+        ]
+      }
+    },
     "steps" :
     {
-      "build" :
+      "build-serial" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "32$'\n'1", "-b", "em_real -j 8" ]
+        "arguments"    : [ "-c", "32$'\\n'1", "-b", "em_real -j 8" ]
       },
-      "testcase" :
+      "testcase-serial" :
       {
         "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=1" } },
         "command"      : ".ci/tests/testcase.sh",
-        "arguments"    : [ "-f", "test/em_real", "-n", "path/to/namelist?" ],
-        "dependencies" : { "build" : "afterany" }
-      }
-    }
-  },
-  "em_realB_omp" :
-  {
-    "steps" :
-    {
-      "build" :
+        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realC/SERIAL/", "-m", "serial_results" ],
+        "dependencies" : { "build-serial" : "afterok" }
+      },
+      "build-omp" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "33$'\n'1", "-b", "em_real -j 8" ]
+        "arguments"    : [ "-c", "33$'\\n'1", "-b", "em_real -j 8" ],
+        "dependencies" : { "testcase-serial" : "afterok" }
       },
-      "testcase" :
+      "testcase-omp" :
       {
-        "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=8" } },
+        "submit_options" : { "arguments" : { "env" : [ "-e", "OMP_NUM_THREADS=8" ] }, "cheyenne" : { "resources" : "1:ncpus=8:ompthreads=8" } },
         "command"      : ".ci/tests/testcase.sh",
-        "arguments"    : [ "-f", "test/em_real", "-n", "path/to/namelist?" ],
-        "dependencies" : { "build" : "afterany" }
-      }
-    }
-  },
-  "em_realB_mpi" :
-  {
-    "steps" :
-    {
-      "build" :
+        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realC/OPENMP/", "-i", "serial_results" ],
+        "dependencies" : { "build-omp" : "afterok" }
+      },
+      "build-mpi" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "34$'\n'1", "-b", "em_real -j 8" ]
+        "arguments"    : [ "-c", "34$'\\n'1", "-b", "em_real -j 8" ],
+        "dependencies" : { "testcase-omp" : "afterok" }
       },
-      "testcase" :
+      "testcase-mpi" :
       {
         "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=8:mpiprocs=8" } },
         "command"      : ".ci/tests/testcase.sh",
-        "arguments"    : [ "-f", "test/em_real", "-n", "path/to/namelist?" ],
-        "dependencies" : { "build" : "afterany" }
+        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realC/MPI/", "-i", "serial_results" ],
+        "dependencies" : { "build-mpi" : "afterok" }
       }
     }
   },
-  "em_realC_serial" :
+  "em_realD" :
   {
+    "submit_options" :
+    {
+      "arguments" :
+      {
+        ".*testcase.*::args_namelist" : 
+        [ 
+          "-c", "test/em_real",
+          "-b", "real.exe",
+          "-n", "namelist.input.38,namelist.input.48,namelist.input.49,namelist.input.50,namelist.input.51",
+          "-d", "$DATA/em_real"
+        ]
+      }
+    },
     "steps" :
     {
-      "build" :
+      "build-serial" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "32$'\n'1", "-b", "em_real -j 8" ]
+        "arguments"    : [ "-c", "32$'\\n'1", "-b", "em_real -j 8" ]
       },
-      "testcase" :
+      "testcase-serial" :
       {
         "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=1" } },
         "command"      : ".ci/tests/testcase.sh",
-        "arguments"    : [ "-f", "test/em_real", "-n", "path/to/namelist?" ],
-        "dependencies" : { "build" : "afterany" }
-      }
-    }
-  },
-  "em_realC_omp" :
-  {
-    "steps" :
-    {
-      "build" :
+        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realD/SERIAL/", "-m", "serial_results" ],
+        "dependencies" : { "build-serial" : "afterok" }
+      },
+      "build-omp" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "33$'\n'1", "-b", "em_real -j 8" ]
+        "arguments"    : [ "-c", "33$'\\n'1", "-b", "em_real -j 8" ],
+        "dependencies" : { "testcase-serial" : "afterok" }
       },
-      "testcase" :
+      "testcase-omp" :
       {
-        "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=8" } },
+        "submit_options" : { "arguments" : { "env" : [ "-e", "OMP_NUM_THREADS=8" ] }, "cheyenne" : { "resources" : "1:ncpus=8:ompthreads=8" } },
         "command"      : ".ci/tests/testcase.sh",
-        "arguments"    : [ "-f", "test/em_real", "-n", "path/to/namelist?" ],
-        "dependencies" : { "build" : "afterany" }
-      }
-    }
-  },
-  "em_realC_mpi" :
-  {
-    "steps" :
-    {
-      "build" :
+        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realD/OPENMP/", "-i", "serial_results" ],
+        "dependencies" : { "build-omp" : "afterok" }
+      },
+      "build-mpi" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "34$'\n'1", "-b", "em_real -j 8" ]
+        "arguments"    : [ "-c", "34$'\\n'1", "-b", "em_real -j 8" ],
+        "dependencies" : { "testcase-omp" : "afterok" }
       },
-      "testcase" :
+      "testcase-mpi" :
       {
         "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=8:mpiprocs=8" } },
         "command"      : ".ci/tests/testcase.sh",
-        "arguments"    : [ "-f", "test/em_real", "-n", "path/to/namelist?" ],
-        "dependencies" : { "build" : "afterany" }
+        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realD/MPI/", "-i", "serial_results" ],
+        "dependencies" : { "build-mpi" : "afterok" }
       }
     }
   },
-  "em_realD_serial" :
+  "em_realE" :
   {
+    "submit_options" :
+    {
+      "arguments" :
+      {
+        ".*testcase.*::args_namelist" : 
+        [ 
+          "-c", "test/em_real",
+          "-b", "real.exe",
+          "-n", "namelist.input.52,namelist.input.52DF,namelist.input.52FD,namelist.input.60,namelist.input.60NE",
+          "-d", "$DATA/em_real"
+        ]
+      }
+    },
     "steps" :
     {
-      "build" :
+      "build-serial" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "32$'\n'1", "-b", "em_real -j 8" ]
+        "arguments"    : [ "-c", "32$'\\n'1", "-b", "em_real -j 8" ]
       },
-      "testcase" :
+      "testcase-serial" :
       {
         "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=1" } },
         "command"      : ".ci/tests/testcase.sh",
-        "arguments"    : [ "-f", "test/em_real", "-n", "path/to/namelist?" ],
-        "dependencies" : { "build" : "afterany" }
-      }
-    }
-  },
-  "em_realD_omp" :
-  {
-    "steps" :
-    {
-      "build" :
+        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realE/SERIAL/", "-m", "serial_results" ],
+        "dependencies" : { "build-serial" : "afterok" }
+      },
+      "build-omp" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "33$'\n'1", "-b", "em_real -j 8" ]
+        "arguments"    : [ "-c", "33$'\\n'1", "-b", "em_real -j 8" ],
+        "dependencies" : { "testcase-serial" : "afterok" }
       },
-      "testcase" :
+      "testcase-omp" :
       {
-        "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=8" } },
+        "submit_options" : { "arguments" : { "env" : [ "-e", "OMP_NUM_THREADS=8" ] }, "cheyenne" : { "resources" : "1:ncpus=8:ompthreads=8" } },
         "command"      : ".ci/tests/testcase.sh",
-        "arguments"    : [ "-f", "test/em_real", "-n", "path/to/namelist?" ],
-        "dependencies" : { "build" : "afterany" }
-      }
-    }
-  },
-  "em_realD_mpi" :
-  {
-    "steps" :
-    {
-      "build" :
+        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realE/OPENMP/", "-i", "serial_results" ],
+        "dependencies" : { "build-omp" : "afterok" }
+      },
+      "build-mpi" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "34$'\n'1", "-b", "em_real -j 8" ]
+        "arguments"    : [ "-c", "34$'\\n'1", "-b", "em_real -j 8" ],
+        "dependencies" : { "testcase-omp" : "afterok" }
       },
-      "testcase" :
+      "testcase-mpi" :
       {
         "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=8:mpiprocs=8" } },
         "command"      : ".ci/tests/testcase.sh",
-        "arguments"    : [ "-f", "test/em_real", "-n", "path/to/namelist?" ],
-        "dependencies" : { "build" : "afterany" }
+        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realE/MPI/", "-i", "serial_results" ],
+        "dependencies" : { "build-mpi" : "afterok" }
       }
     }
   },
-  "em_realE_serial" :
+  "em_realF" :
   {
+    "submit_options" :
+    {
+      "arguments" :
+      {
+        ".*testcase.*::args_namelist" : 
+        [ 
+          "-c", "test/em_real",
+          "-b", "real.exe",
+          "-n", "namelist.input.65DF,namelist.input.66FD,namelist.input.71,namelist.input.78,namelist.input.79",
+          "-d", "$DATA/em_real"
+        ]
+      }
+    },
     "steps" :
     {
-      "build" :
+      "build-serial" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "32$'\n'1", "-b", "em_real -j 8" ]
+        "arguments"    : [ "-c", "32$'\\n'1", "-b", "em_real -j 8" ]
       },
-      "testcase" :
+      "testcase-serial" :
       {
         "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=1" } },
         "command"      : ".ci/tests/testcase.sh",
-        "arguments"    : [ "-f", "test/em_real", "-n", "path/to/namelist?" ],
-        "dependencies" : { "build" : "afterany" }
-      }
-    }
-  },
-  "em_realE_omp" :
-  {
-    "steps" :
-    {
-      "build" :
+        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realF/SERIAL/", "-m", "serial_results" ],
+        "dependencies" : { "build-serial" : "afterok" }
+      },
+      "build-omp" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "33$'\n'1", "-b", "em_real -j 8" ]
+        "arguments"    : [ "-c", "33$'\\n'1", "-b", "em_real -j 8" ],
+        "dependencies" : { "testcase-serial" : "afterok" }
       },
-      "testcase" :
+      "testcase-omp" :
       {
-        "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=8" } },
+        "submit_options" : { "arguments" : { "env" : [ "-e", "OMP_NUM_THREADS=8" ] }, "cheyenne" : { "resources" : "1:ncpus=8:ompthreads=8" } },
         "command"      : ".ci/tests/testcase.sh",
-        "arguments"    : [ "-f", "test/em_real", "-n", "path/to/namelist?" ],
-        "dependencies" : { "build" : "afterany" }
-      }
-    }
-  },
-  "em_realE_mpi" :
-  {
-    "steps" :
-    {
-      "build" :
+        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realF/OPENMP/", "-i", "serial_results" ],
+        "dependencies" : { "build-omp" : "afterok" }
+      },
+      "build-mpi" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "34$'\n'1", "-b", "em_real -j 8" ]
+        "arguments"    : [ "-c", "34$'\\n'1", "-b", "em_real -j 8" ],
+        "dependencies" : { "testcase-omp" : "afterok" }
       },
-      "testcase" :
+      "testcase-mpi" :
       {
         "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=8:mpiprocs=8" } },
         "command"      : ".ci/tests/testcase.sh",
-        "arguments"    : [ "-f", "test/em_real", "-n", "path/to/namelist?" ],
-        "dependencies" : { "build" : "afterany" }
+        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realF/MPI/", "-i", "serial_results" ],
+        "dependencies" : { "build-mpi" : "afterok" }
       }
     }
   },
-  "em_realF_serial" :
+  "em_realG" :
   {
+    "submit_options" :
+    {
+      "arguments" :
+      {
+        ".*testcase.*::args_namelist" : 
+        [ 
+          "-c", "test/em_real",
+          "-b", "real.exe",
+          "-n", "namelist.input.kiaps1NE,namelist.input.kiaps2",
+          "-d", "$DATA/em_real"
+        ]
+      }
+    },
     "steps" :
     {
-      "build" :
+      "build-serial" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "32$'\n'1", "-b", "em_real -j 8" ]
+        "arguments"    : [ "-c", "32$'\\n'1", "-b", "em_real -j 8" ]
       },
-      "testcase" :
+      "testcase-serial" :
       {
         "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=1" } },
         "command"      : ".ci/tests/testcase.sh",
-        "arguments"    : [ "-f", "test/em_real", "-n", "path/to/namelist?" ],
-        "dependencies" : { "build" : "afterany" }
-      }
-    }
-  },
-  "em_realF_omp" :
-  {
-    "steps" :
-    {
-      "build" :
+        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realG/SERIAL/", "-m", "serial_results" ],
+        "dependencies" : { "build-serial" : "afterok" }
+      },
+      "build-omp" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "33$'\n'1", "-b", "em_real -j 8" ]
+        "arguments"    : [ "-c", "33$'\\n'1", "-b", "em_real -j 8" ],
+        "dependencies" : { "testcase-serial" : "afterok" }
       },
-      "testcase" :
+      "testcase-omp" :
       {
-        "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=8" } },
+        "submit_options" : { "arguments" : { "env" : [ "-e", "OMP_NUM_THREADS=8" ] }, "cheyenne" : { "resources" : "1:ncpus=8:ompthreads=8" } },
         "command"      : ".ci/tests/testcase.sh",
-        "arguments"    : [ "-f", "test/em_real", "-n", "path/to/namelist?" ],
-        "dependencies" : { "build" : "afterany" }
-      }
-    }
-  },
-  "em_realF_mpi" :
-  {
-    "steps" :
-    {
-      "build" :
+        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realG/OPENMP/", "-i", "serial_results" ],
+        "dependencies" : { "build-omp" : "afterok" }
+      },
+      "build-mpi" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "34$'\n'1", "-b", "em_real -j 8" ]
+        "arguments"    : [ "-c", "34$'\\n'1", "-b", "em_real -j 8" ],
+        "dependencies" : { "testcase-omp" : "afterok" }
       },
-      "testcase" :
+      "testcase-mpi" :
       {
         "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=8:mpiprocs=8" } },
         "command"      : ".ci/tests/testcase.sh",
-        "arguments"    : [ "-f", "test/em_real", "-n", "path/to/namelist?" ],
-        "dependencies" : { "build" : "afterany" }
+        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realG/MPI/", "-i", "serial_results" ],
+        "dependencies" : { "build-mpi" : "afterok" }
       }
     }
   },
-  "em_realG_serial" :
+  "em_realH" :
   {
+    "submit_options" :
+    {
+      "arguments" :
+      {
+        ".*testcase.*::args_namelist" : 
+        [ 
+          "-c", "test/em_real",
+          "-b", "real.exe",
+          "-n", "namelist.input.cmt,namelist.input.solaraNE,namelist.input.,namelist.input.urb3bNE",
+          "-d", "$DATA/em_real"
+        ]
+      }
+    },
     "steps" :
     {
-      "build" :
+      "build-serial" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "32$'\n'1", "-b", "em_real -j 8" ]
+        "arguments"    : [ "-c", "32$'\\n'1", "-b", "em_real -j 8" ]
       },
-      "testcase" :
+      "testcase-serial" :
       {
         "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=1" } },
         "command"      : ".ci/tests/testcase.sh",
-        "arguments"    : [ "-f", "test/em_real", "-n", "path/to/namelist?" ],
-        "dependencies" : { "build" : "afterany" }
-      }
-    }
-  },
-  "em_realG_omp" :
-  {
-    "steps" :
-    {
-      "build" :
+        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realH/SERIAL/", "-m", "serial_results" ],
+        "dependencies" : { "build-serial" : "afterok" }
+      },
+      "build-mpi" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "33$'\n'1", "-b", "em_real -j 8" ]
+        "arguments"    : [ "-c", "34$'\\n'1", "-b", "em_real -j 8" ],
+        "dependencies" : { "testcase-serial" : "afterok" }
       },
-      "testcase" :
-      {
-        "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=8" } },
-        "command"      : ".ci/tests/testcase.sh",
-        "arguments"    : [ "-f", "test/em_real", "-n", "path/to/namelist?" ],
-        "dependencies" : { "build" : "afterany" }
-      }
-    }
-  },
-  "em_realG_mpi" :
-  {
-    "steps" :
-    {
-      "build" :
-      {
-        "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "34$'\n'1", "-b", "em_real -j 8" ]
-      },
-      "testcase" :
+      "testcase-mpi" :
       {
         "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=8:mpiprocs=8" } },
         "command"      : ".ci/tests/testcase.sh",
-        "arguments"    : [ "-f", "test/em_real", "-n", "path/to/namelist?" ],
-        "dependencies" : { "build" : "afterany" }
-      }
-    }
-  },
-  "em_realH_serial" :
-  {
-    "steps" :
-    {
-      "build" :
-      {
-        "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "32$'\n'1", "-b", "em_real -j 8" ]
-      },
-      "testcase" :
-      {
-        "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=1" } },
-        "command"      : ".ci/tests/testcase.sh",
-        "arguments"    : [ "-f", "test/em_real", "-n", "path/to/namelist?" ],
-        "dependencies" : { "build" : "afterany" }
-      }
-    }
-  },
-  "em_realH_mpi" :
-  {
-    "steps" :
-    {
-      "build" :
-      {
-        "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "34$'\n'1", "-b", "em_real -j 8" ]
-      },
-      "testcase" :
-      {
-        "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=8:mpiprocs=8" } },
-        "command"      : ".ci/tests/testcase.sh",
-        "arguments"    : [ "-f", "test/em_real", "-n", "path/to/namelist?" ],
-        "dependencies" : { "build" : "afterany" }
+        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realH/MPI/", "-i", "serial_results" ],
+        "dependencies" : { "build-mpi" : "afterok" }
       }
     }
   }

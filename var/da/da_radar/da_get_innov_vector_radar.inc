@@ -321,7 +321,6 @@ END IF
                h_index = nint(grid%xb%h(ii,jj,kk)/500.)
                h_index = max(h_index, 1)
                h_index = min(h_index,40)
-               print*, bg_rf, z_index, grid%xb%h(ii,jj,kk),  h_index
 
                !! Sum of the model states of different model levels and reflectivity threshoulds
                if (z_index .ne. 0 ) then

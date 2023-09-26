@@ -66,10 +66,11 @@ subroutine da_get_innov_vector_radar (it, grid, ob, iv)
    !---------------------------------------------------------
    !  for background-dependent hydrmeteor retrieval scheme
    !---------------------------------------------------------
-   character(len=filename_len) :: hydro_weight_filename
+   character(len=filename_len) :: hydro_weight_file
    integer              :: hydro_weight_unit
-   integer              :: ii, jj, kk, sort, nk
-   logical              :: gr_exist
+   integer              :: ii, jj, kk, nk
+   integer              :: h_index, z_index 
+   logical              :: qg_exist
    logical              :: file_exist
    real                 :: zerr_os,zews_os,zeds_os,zegr_os
    real, allocatable    :: count_rr(:,:)
@@ -263,16 +264,16 @@ END IF
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    if (use_radar_rhv .and. radar_rhv_opt == 2 ) then
       ! allocate variables
-      allocate (count_rr(kde,6))
-      allocate (ratio_qr(kde,6))
-      allocate (ratio_qds(kde,6))
-      allocate (ratio_qws(kde,6))
-      allocate (ratio_qg(kde,6))
-      allocate (ze_qr(kde,6))
-      allocate (ze_qds(kde,6))
-      allocate (ze_qws(kde,6))
-      allocate (ze_qg(kde,6))
-      allocate (rho_s(kde,6))
+      allocate (count_rr(40,6))
+      allocate (ratio_qr(40,6))
+      allocate (ratio_qds(40,6))
+      allocate (ratio_qws(40,6))
+      allocate (ratio_qg(40,6))
+      allocate (ze_qr(40,6))
+      allocate (ze_qds(40,6))
+      allocate (ze_qws(40,6))
+      allocate (ze_qg(40,6))
+      allocate (rho_s(40,6))
 
       ! variable initialization
       count_rr  = 0.
@@ -287,15 +288,16 @@ END IF
       ratio_qg  = 0.
 
       ! read in historical stastics from file hydro_mean.dat if available
-      hydro_weight_filename='hydro_mean.dat'
-      inquire(file=trim(hydro_weight_filename), exist=file_exist)
+      hydro_weight_file='hydro_mean.dat'
+      inquire(file=trim(hydro_weight_file), exist=file_exist)
       if (file_exist) then
          ! write(*,*) "Read historical statistics of hydrometeors"
          call da_get_unit(hydro_weight_unit)
-         open(unit=hydro_weight_unit, file=trim(hydro_weight_filename), form='FORMATTED')
-         do sort=1,6
-            do kk=kds,kde
-               read(hydro_weight_unit,'(a8, i2, a8, i2, 4(f19.9,2x))') "sort:", sort, "level:", kk, ratio_qr (kk,sort),ratio_qws(kk,sort), ratio_qds(kk,sort), ratio_qg(kk,sort)
+         open(unit=hydro_weight_unit, file=trim(hydro_weight_file), form='FORMATTED')
+         do z_index=1,6
+            do h_index=1,40
+               read(hydro_weight_unit,'(12x, 12x, 4(f19.9,2x))') &
+                    ratio_qr(h_index,z_index),ratio_qws(h_index,z_index), ratio_qds(h_index,z_index), ratio_qg(h_index,z_index)
             end do
          end do
          close(hydro_weight_unit)
@@ -310,47 +312,42 @@ END IF
                call da_radar_rf(grid%xb%qrn(ii,jj,kk), grid%xb%qsn(ii,jj,kk), grid%xb%qgr(ii,jj,kk), &
                                 grid%xb%t(ii,jj,kk)-273.15, grid%xb%rho(ii,jj,kk), bg_rze)
                bg_rf = 10.*log10(bg_rze)
-               !! get the index of refledctity threshould
-               if( bg_rf .ge. 5.0 .and. bg_rf .lt. 15.0 ) then
-                  sort=1
-               else if( bg_rf .ge. 15.0 .and. bg_rf .lt. 25.0 ) then
-                  sort=2
-               else if( bg_rf .ge. 25.0 .and. bg_rf .lt. 35.0 ) then
-                  sort=3
-               else if (bg_rf .ge. 35.0 .and. bg_rf .lt. 45.0 ) then
-                  sort=4
-               else if (bg_rf .ge. 45.0 .and. bg_rf .lt. 55.0 ) then
-                  sort=5
-               else if (bg_rf .ge. 55) then
-                  sort=6
-               else
-                  sort=0  ! non-precip
-               end if
+               !! get the index of reflectvity
+               z_index = nint(bg_rf/10.)
+               z_index = max(z_index, 0)
+               z_index = min(z_index, 6)
+               !! get the model height (m)
+               !! get the height index
+               h_index = nint(grid%xb%h(ii,jj,kk)/500.)
+               h_index = max(h_index, 1)
+               h_index = min(h_index,40)
+               print*, bg_rf, z_index, grid%xb%h(ii,jj,kk),  h_index
+
                !! Sum of the model states of different model levels and reflectivity threshoulds
-               if (sort .ne. 0 ) then
-                  ze_qr(kk,sort)  = ze_qr(kk,sort)  + grid%xb%qrn(ii,jj,kk)
+               if (z_index .ne. 0 ) then
+                  ze_qr(h_index,z_index)  = ze_qr(h_index,z_index)  + grid%xb%qrn(ii,jj,kk)
                   if ( grid%xb%t(ii,jj,kk) > 273.15 ) then
-                     ze_qws(kk,sort) = ze_qws(kk,sort) + grid%xb%qsn(ii,jj,kk)
+                     ze_qws(h_index,z_index) = ze_qws(h_index,z_index) + grid%xb%qsn(ii,jj,kk)
                   else
-                     ze_qds(kk,sort) = ze_qds(kk,sort) + grid%xb%qsn(ii,jj,kk)
+                     ze_qds(h_index,z_index) = ze_qds(h_index,z_index) + grid%xb%qsn(ii,jj,kk)
                   end if
-                  ze_qg(kk,sort) = ze_qg(kk,sort) + grid%xb%qgr(ii,jj,kk)
-                  rho_s(kk,sort) = rho_s(kk,sort) + grid%xb%rho(ii,jj,kk)
-                  count_rr(kk,sort) = count_rr(kk,sort) + 1.
+                  ze_qg(h_index,z_index) = ze_qg(h_index,z_index) + grid%xb%qgr(ii,jj,kk)
+                  rho_s(h_index,z_index) = rho_s(h_index,z_index) + grid%xb%rho(ii,jj,kk)
+                  count_rr(h_index,z_index) = count_rr(h_index,z_index) + 1.
                end if
             end do ! west-east
          end do  ! south-north
       end do ! bottom-top
   
       ! Average over whole domain
-      do sort=1,6
-         do kk=kds,kde
-            count_rr(kk,sort) = wrf_dm_sum_real(count_rr(kk,sort))
-            rho_s(kk,sort)    = wrf_dm_sum_real(rho_s(kk,sort))
-            ze_qr(kk,sort)    = wrf_dm_sum_real(ze_qr(kk,sort))
-            ze_qws(kk,sort)   = wrf_dm_sum_real(ze_qws(kk,sort))
-            ze_qds(kk,sort)   = wrf_dm_sum_real(ze_qds(kk,sort))
-            ze_qg(kk,sort)    = wrf_dm_sum_real(ze_qg(kk,sort))
+      do z_index=1,6
+         do h_index=1,40
+            count_rr(h_index,z_index) = wrf_dm_sum_real(count_rr(h_index,z_index))
+            rho_s(h_index,z_index)    = wrf_dm_sum_real(rho_s(h_index,z_index))
+            ze_qr(h_index,z_index)    = wrf_dm_sum_real(ze_qr(h_index,z_index))
+            ze_qws(h_index,z_index)   = wrf_dm_sum_real(ze_qws(h_index,z_index))
+            ze_qds(h_index,z_index)   = wrf_dm_sum_real(ze_qds(h_index,z_index))
+            ze_qg(h_index,z_index)    = wrf_dm_sum_real(ze_qg(h_index,z_index))
          end do
       end do
 
@@ -358,20 +355,21 @@ END IF
       hydro_weight_file='hydro_mean.dat.upate'
       if (rootproc) call da_get_unit(hydro_weight_unit)
       if (rootproc) open(unit=hydro_weight_unit, file=trim(hydro_weight_file), form='FORMATTED')
-      do kk=kds,kde
-         do sort=1,6
-            if (count_rr(kk,sort) .gt. 10.) then
-               if (ze_qr(kk,sort) > 0.)   & !! rain water
-                  ratio_qr (kk,sort) =  zrr*(rho_s(kk,sort)*ze_qr (kk,sort)/(count_rr(kk,sort)*1.0)**2)**1.75
-               if (ze_qws(kk,sort) > 0.)  & !! wet snow
-                  ratio_qws(kk,sort) =  zws*(rho_s(kk,sort)*ze_qws(kk,sort)/(count_rr(kk,sort)*1.0)**2)**1.75
-               if (ze_qds(kk,sort) > 0.)  & !! dry snow  
-                  ratio_qds(kk,sort) =  zds*(rho_s(kk,sort)*ze_qds(kk,sort)/(count_rr(kk,sort)*1.0)**2)**1.75
-               if (ze_qg(kk,sort) > 0.)   & !! graupel 
-                  ratio_qg(kk,sort)  =  zg*(rho_s(kk,sort)*ze_qg(kk,sort)/(count_rr(kk,sort)**2))**1.75
+      do z_index=1,6
+         do h_index=1,40
+            if (count_rr(h_index,z_index) .gt. 10.) then
+               if (ze_qr(h_index,z_index) > 0.)   & !! rain water
+                  ratio_qr(h_index,z_index)  =  zrr*(rho_s(h_index,z_index)*ze_qr (h_index,z_index)/(count_rr(h_index,z_index)*1.0)**2)**1.75
+               if (ze_qws(h_index,z_index) > 0.)  & !! wet snow
+                  ratio_qws(h_index,z_index) =  zws*(rho_s(h_index,z_index)*ze_qws(h_index,z_index)/(count_rr(h_index,z_index)*1.0)**2)**1.75
+               if (ze_qds(h_index,z_index) > 0.)  & !! dry snow  
+                  ratio_qds(h_index,z_index) =  zds*(rho_s(h_index,z_index)*ze_qds(h_index,z_index)/(count_rr(h_index,z_index)*1.0)**2)**1.75
+               if (ze_qg(h_index,z_index) > 0.)   & !! graupel 
+                  ratio_qg(h_index,z_index)  =  zg*(rho_s(h_index,z_index)*ze_qg(h_index,z_index)/(count_rr(h_index,z_index)**2))**1.75
             end if
             if (rootproc) &
-               write(hydro_weight_unit,'(a8, i2, a8, i2, 4(f19.9,2x))'),"sort:", sort, "level:", kk, ratio_qr (kk,sort),ratio_qws(kk,sort), ratio_qds(kk,sort), ratio_qg(kk,sort)
+               write(hydro_weight_unit,'(a10, i2, a10, i2, 4(f19.9,2x))') "z_index:", z_index, "h_index:", h_index, &
+                                      ratio_qr(h_index,z_index),ratio_qws(h_index,z_index), ratio_qds(h_index,z_index), ratio_qg(h_index,z_index)
          end do
       end do   !bottom-top
       if (rootproc) close(hydro_weight_unit)
@@ -394,7 +392,6 @@ END IF
       dy  = iv%info(radar)%dy(1,n)
       dxm = iv%info(radar)%dxm(1,n)
       dym = iv%info(radar)%dym(1,n)
-
 
       model_ps(n) = dxm *(dym * grid%xb % psac(i,  j) + dy * grid%xb%psac(i+1,  j)) + &
                  dx  *(dym * grid%xb % psac(i,j+1) + dy * grid%xb%psac(i+1,j+1)) + &
@@ -594,49 +591,38 @@ END IF
 
                      if (radar_rhv_opt == 2) then
                        ! backgound-dependent reflectivity retrival scheme (Chen et al. 2020, AR; Chen et al. 2021, QJRMS)
-                       if (ob_radar_rf .ge. 5.0 .and. ob_radar_rf .lt. 15.0) then
-                          sort = 1
-                       else if (ob_radar_rf .ge. 15.0 .and. ob_radar_rf .lt. 25.0) then
-                          sort = 2
-                       else if (ob_radar_rf .ge. 25.0 .and. ob_radar_rf .lt. 35.0) then
-                          sort = 3
-                       else if (ob_radar_rf .ge. 35.0 .and. ob_radar_rf .lt. 45.0) then
-                          sort = 4
-                       else if (ob_radar_rf .ge. 45.0 .and. ob_radar_rf .lt. 55.0) then
-                          sort = 5
-                       else if (ob_radar_rf .ge. 55.0) then
-                          sort = 6
-                       else
-                          sort = 0
-                       end if
-                       
-                       if (sort > 0) then
-                          zerr_os=iv%info(radar)%dzm(k,n)*ratio_qr (iv%info(radar)%k(k,n),sort) + &
-                                  iv%info(radar)%dz(k,n) *ratio_qr (iv%info(radar)%k(k,n)+1,sort)
-                          zews_os=iv%info(radar)%dzm(k,n)*ratio_qws(iv%info(radar)%k(k,n),sort) + &
-                                  iv%info(radar)%dz(k,n) *ratio_qws(iv%info(radar)%k(k,n)+1,sort)
-                          zeds_os=iv%info(radar)%dzm(k,n)*ratio_qds(iv%info(radar)%k(k,n),sort) + &
-                                  iv%info(radar)%dz(k,n) *ratio_qds(iv%info(radar)%k(k,n)+1,sort)
-                          zegr_os=iv%info(radar)%dzm(k,n)*ratio_qg (iv%info(radar)%k(k,n),sort) + &
-                                  iv%info(radar)%dz(k,n) *ratio_qg (iv%info(radar)%k(k,n)+1,sort)
+                       !! get the index of reflectvity
+                       z_index = int(ob_radar_rf/10. + 0.5)
+                       z_index = max(z_index, 0)
+                       z_index = min(z_index, 6)
+                       !! get the height index
+                       h_index = int(iv%radar(n)%height(k)/500. + 0.5)
+                       h_index = max(h_index, 1)
+                       h_index = min(h_index,40)
+
+                       if (z_index > 0) then
+                          zerr_os = ratio_qr (h_index, z_index)
+                          zews_os = ratio_qws(h_index, z_index)
+                          zeds_os = ratio_qds(h_index, z_index)
+                          zegr_os = ratio_qg (h_index, z_index)
                           ! detect whether rain/snow/qgraupel exists in certain temperature.
-                          gr_exist = .true.
+                          qg_exist = .true.
                           ! when T < 273.15K
                           if (model_tc(k,n) .lt. -5.0) zerr_os = 0.
                           if (model_tc(k,n) .lt.  0.0) zews_os = 0.
                           ! when T>= 273.15K
                           if (model_tc(k,n) .ge. 0.0) then
                              zeds_os = 0.
-                             gr_exist = .false.
+                             qg_exist = .false.
                              do nk = k, iv%info(radar)%levels(n)
-                                if (model_tc(nk,n) .lt. -5.0 .and. ob % radar(n) % rf(nk) .ge. 40.) gr_exist = .true.
+                                if (model_tc(nk,n) .lt. -5.0 .and. ob % radar(n) % rf(nk) .ge. 40.) qg_exist = .true.
                              end do
                           end if
                           if (model_tc(k,n) .ge. 5.0) then
                              zews_os = 0.
-                             gr_exist = .false.
+                             qg_exist = .false.
                           end if
-                          if (.not. gr_exist) zegr_os = 0.
+                          if (.not. qg_exist) zegr_os = 0.
                         
                           ! determine the contributions of each hydrometeor to reflectivity
                           if ((zerr_os+zews_os+zeds_os+zegr_os) .gt. 0.) then

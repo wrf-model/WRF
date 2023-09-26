@@ -264,16 +264,16 @@ END IF
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    if (use_radar_rhv .and. radar_rhv_opt == 2 ) then
       ! allocate variables
-      allocate (count_rr(40,6))
-      allocate (ratio_qr(40,6))
-      allocate (ratio_qds(40,6))
-      allocate (ratio_qws(40,6))
-      allocate (ratio_qg(40,6))
-      allocate (ze_qr(40,6))
-      allocate (ze_qds(40,6))
-      allocate (ze_qws(40,6))
-      allocate (ze_qg(40,6))
-      allocate (rho_s(40,6))
+      allocate (count_rr(40,7))
+      allocate (ratio_qr(40,7))
+      allocate (ratio_qds(40,7))
+      allocate (ratio_qws(40,7))
+      allocate (ratio_qg(40,7))
+      allocate (ze_qr(40,7))
+      allocate (ze_qds(40,7))
+      allocate (ze_qws(40,7))
+      allocate (ze_qg(40,7))
+      allocate (rho_s(40,7))
 
       ! variable initialization
       count_rr  = 0.
@@ -294,7 +294,7 @@ END IF
          ! write(*,*) "Read historical statistics of hydrometeors"
          call da_get_unit(hydro_weight_unit)
          open(unit=hydro_weight_unit, file=trim(hydro_weight_file), form='FORMATTED')
-         do z_index=1,6
+         do z_index=1,7
             do h_index=1,40
                read(hydro_weight_unit,'(12x, 12x, 4(f19.9,2x))') &
                     ratio_qr(h_index,z_index),ratio_qws(h_index,z_index), ratio_qds(h_index,z_index), ratio_qg(h_index,z_index)
@@ -313,9 +313,9 @@ END IF
                                 grid%xb%t(ii,jj,kk)-273.15, grid%xb%rho(ii,jj,kk), bg_rze)
                bg_rf = 10.*log10(bg_rze)
                !! get the index of reflectvity
-               z_index = nint(bg_rf/10.)
+               z_index = nint(bg_rf/10.)+1
                z_index = max(z_index, 0)
-               z_index = min(z_index, 6)
+               z_index = min(z_index, 7)
                !! get the model height (m)
                !! get the height index
                h_index = nint(grid%xb%h(ii,jj,kk)/500.)
@@ -340,7 +340,7 @@ END IF
       end do ! bottom-top
   
       ! Average over whole domain
-      do z_index=1,6
+      do z_index=1,7
          do h_index=1,40
             count_rr(h_index,z_index) = wrf_dm_sum_real(count_rr(h_index,z_index))
             rho_s(h_index,z_index)    = wrf_dm_sum_real(rho_s(h_index,z_index))
@@ -355,7 +355,7 @@ END IF
       hydro_weight_file='hydro_mean.dat.update'
       if (rootproc) call da_get_unit(hydro_weight_unit)
       if (rootproc) open(unit=hydro_weight_unit, file=trim(hydro_weight_file), form='FORMATTED')
-      do z_index=1,6
+      do z_index=1,7
          do h_index=1,40
             if (count_rr(h_index,z_index) .gt. 1.) then
                if (ze_qr(h_index,z_index) > 0.)   & !! rain water
@@ -592,11 +592,11 @@ END IF
                      if (radar_rhv_opt == 2) then
                        ! backgound-dependent reflectivity retrival scheme (Chen et al. 2020, AR; Chen et al. 2021, QJRMS)
                        !! get the index of reflectvity
-                       z_index = int(ob_radar_rf/10. + 0.5)
+                       z_index = nint(ob_radar_rf/10.+1)
                        z_index = max(z_index, 0)
-                       z_index = min(z_index, 6)
+                       z_index = min(z_index, 7)
                        !! get the height index
-                       h_index = int(iv%radar(n)%height(k)/500. + 0.5)
+                       h_index = nint(iv%radar(n)%height(k)/500.)
                        h_index = max(h_index, 1)
                        h_index = min(h_index,40)
 
@@ -632,7 +632,7 @@ END IF
                              czg  = zegr_os/(zerr_os+zews_os+zeds_os+zegr_os)
                           end if
                         else
-                          ob_radar_rf = -15.0 !! Assign reflectivity below 5.0 dBZ to -5.0 dbZ for supression 
+                          ob_radar_rf = -15.0 !! Assign reflectivity below -5.0 dBZ to -15.0 dbZ for supression 
                                               !! No need to tune the weights because of very small impacts
                         end if
                      end if

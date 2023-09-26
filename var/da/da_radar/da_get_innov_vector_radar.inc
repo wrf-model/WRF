@@ -352,7 +352,7 @@ END IF
       end do
 
       ! Get the reflectivity contributed from each hydrometeor type
-      hydro_weight_file='hydro_mean.dat.upate'
+      hydro_weight_file='hydro_mean.dat.update'
       if (rootproc) call da_get_unit(hydro_weight_unit)
       if (rootproc) open(unit=hydro_weight_unit, file=trim(hydro_weight_file), form='FORMATTED')
       do z_index=1,6

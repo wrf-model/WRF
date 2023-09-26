@@ -357,7 +357,7 @@ END IF
       if (rootproc) open(unit=hydro_weight_unit, file=trim(hydro_weight_file), form='FORMATTED')
       do z_index=1,6
          do h_index=1,40
-            if (count_rr(h_index,z_index) .gt. 10.) then
+            if (count_rr(h_index,z_index) .gt. 1.) then
                if (ze_qr(h_index,z_index) > 0.)   & !! rain water
                   ratio_qr(h_index,z_index)  =  zrr*(rho_s(h_index,z_index)*ze_qr (h_index,z_index)/(count_rr(h_index,z_index)*1.0)**2)**1.75
                if (ze_qws(h_index,z_index) > 0.)  & !! wet snow

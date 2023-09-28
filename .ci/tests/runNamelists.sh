@@ -8,8 +8,8 @@ help()
   echo "  -f <folder>               Namelist folder to look for namelists under"
   echo "  -n <fileA,fileB,...>      Comma-delimited list of namelists to test, each of which will in serial be run by replacing namelist.input"
   echo "  -d <folder>               Data directory to link into core directory"
-  echo "  -p <mpirun cmd>           Parallel launch command (MPI)"
-  echo "  -m <folder>               Move result data to prefix location, full path for run constructed as <work>/<thisfolder>/<namelist>/ "
+  echo "  -p <mpirun cmd>           Parallel launch command (MPI), e.g. mpirun, mpiexec_mpt, mpiexec -np 8 --oversubscribe"
+  echo "  -s <folder>               Save result data to prefix location, full path for run constructed as <work>/<thisfolder>/<namelist>/ "
   echo "  -i <folder>               Folder for bitwise-identical results, full path for run constructed as <work>/<thisfolder>/<namelist>/ "
   echo "  -e <varA=val,varB,...>    environment variables in comma-delimited list, e.g. var=1,foo,bar=0"
   echo "  -- <hostenv.sh options>   Directly pass options to hostenv.sh, equivalent to hostenv.sh <options>"
@@ -23,7 +23,7 @@ help()
 
 workingDirectory=$1
 shift
-if [ $workingDirectory == "-h" ]; then
+if [ $workingDirectory = "-h" ]; then
   help
   exit 0
 fi
@@ -32,7 +32,7 @@ cd $workingDirectory
 # Get some helper functions
 . .ci/env/helpers.sh
 
-while getopts c:b:f:n:d:p:m:i:e:h opt; do
+while getopts c:b:f:n:d:p:s:i:e:h opt; do
   case $opt in
     c)
       coreDir="$OPTARG"
@@ -52,7 +52,7 @@ while getopts c:b:f:n:d:p:m:i:e:h opt; do
     p)
       parallelExec="$OPTARG"
     ;;
-    m)
+    s)
       moveFolder="$OPTARG"
     ;;
     i)
@@ -89,6 +89,7 @@ eval "moveFolder=\"$moveFolder\""
 eval "identicalFolder=\"$identicalFolder\""
 
 wrf=$( realpath $coreDir/wrf.exe )
+rd_12_norm=$( realpath .ci/tests/SCRIPTS/rd_l2_norm.py )
 
 ################################################################################
 #
@@ -121,7 +122,8 @@ for namelist in $namelists; do
 
   # Run setup
   echo "Running $parallelExec $binFirst"
-  $parallelExec $binFirst
+  # Go through echo to effectively "split" on spaces
+  eval "$parallelExec $binFirst"
 
   result=$?
   if [ $result -ne 0 ]; then
@@ -131,7 +133,8 @@ for namelist in $namelists; do
 
   # run wrf
   echo "Running $parallelExec $wrf"
-  $parallelExec $wrf
+  # Go through echo to effectively "split" on spaces
+  eval "$parallelExec $wrf"
   result=$?
   if [ $result -ne 0 ]; then
     echo "$parallelExec $wrf failed"
@@ -151,14 +154,13 @@ for namelist in $namelists; do
       exit 123
     fi
 
-    ncdump wrfout_d0${d}_* | grep -i nan | grep -vi dominant
+    ncdump wrfout_d0${currentDom}_* | grep -i nan | grep -vi dominant
     okNan=$?
-    # Surely there is a simpler command than this? What is it with the abundant use of cut...
-    timeSteps=$( ncdump -h wrfout_d0${d}_* | grep "Time = UNLIMITED" | cut -d"(" -f2 | awk '{print $1}' )
+    timeSteps=$( ncdump -h wrfout_d0${currentDom}_* | grep "Time = UNLIMITED" | cut -d"(" -f2 | awk '{print $1}' )
 
     if [ $okNan -eq 1 ] && [ $timeSteps -eq 2 ]; then
       # Super ok, store output in file for comparison later
-      python3 .ci/tests/SCRIPTS/rd_12_norm.py wrfout_d0${currentDom}_* > wrf_d0${currentDom}_runstats.out
+      python3 $rd_12_norm wrfout_d0${currentDom}_* > wrf_d0${currentDom}_runstats.out
     else
       # Super NOT ok
       echo "Checks on output failed. okNan=$okNan, timeSteps=$timeSteps when expected okNan=1 && timeSteps=2"
@@ -191,7 +193,7 @@ for namelist in $namelists; do
           # We have a domain to check - should exist in both (we are treating the identical folder as truth)
           diff $workingDirectory/$identicalFolder/$namelist/wrf_${dom}_runstats.out wrf_${dom}_runstats.out > /dev/null
           result=$?
-          if [ result -ne 0 ]; then
+          if [ $result -ne 0 ]; then
             echo "$workingDirectory/$identicalFolder/$namelist/wrf_${dom}_runstats.out and wrf_${dom}_runstats.out differ"
             exit $result
           fi

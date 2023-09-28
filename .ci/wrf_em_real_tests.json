@@ -8,6 +8,18 @@
       ".*testcase.*::global_env"   : [ "-e", "DATA=/path/to/data" ],
       ".*testcase-mpi.*::exec_mpi" : [ "-p", "mpirun -np 8" ]
     },
+    "polaris"   :
+    {
+      "submission" : "LOCAL",
+      "arguments"  :
+      {
+        ".*testcase.*::global_env"     :
+        [ 
+          "-e", "DATA=/mnt/s/github/data/wrf/regtest/Data",
+          "-e", "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$NETCDF/lib"
+        ]
+      }
+    },
     "cheyenne"  :
     {
       "submission" : "PBS",
@@ -43,38 +55,38 @@
       "build-serial" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "32$'\\n'1", "-b", "em_real -j 8" ]
+        "arguments"    : [ "-c", "32", "-n", "1", "-b", "em_real -j 8" ]
       },
       "testcase-serial" :
       {
         "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=1" } },
-        "command"      : ".ci/tests/testcase.sh",
-        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_real/SERIAL/", "-m", "serial_results" ],
+        "command"      : ".ci/tests/runNamelists.sh",
+        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_real/SERIAL/", "-s", "serial_results" ],
         "dependencies" : { "build-serial" : "afterok" }
       },
       "build-omp" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "33$'\\n'1", "-b", "em_real -j 8" ],
+        "arguments"    : [ "-c", "33", "-n", "1", "-b", "em_real -j 8" ],
         "dependencies" : { "testcase-serial" : "afterok" }
       },
       "testcase-omp" :
       {
         "submit_options" : { "arguments" : { "env" : [ "-e", "OMP_NUM_THREADS=8" ] }, "cheyenne" : { "resources" : "1:ncpus=8:ompthreads=8" } },
-        "command"      : ".ci/tests/testcase.sh",
+        "command"      : ".ci/tests/runNamelists.sh",
         "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_real/OPENMP/", "-i", "serial_results" ],
         "dependencies" : { "build-omp" : "afterok" }
       },
       "build-mpi" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "34$'\\n'1", "-b", "em_real -j 8" ],
+        "arguments"    : [ "-c", "34", "-n", "1", "-b", "em_real -j 8" ],
         "dependencies" : { "testcase-omp" : "afterok" }
       },
       "testcase-mpi" :
       {
         "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=8:mpiprocs=8" } },
-        "command"      : ".ci/tests/testcase.sh",
+        "command"      : ".ci/tests/runNamelists.sh",
         "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_real/MPI/", "-i", "serial_results" ],
         "dependencies" : { "build-mpi" : "afterok" }
       }
@@ -105,33 +117,33 @@
       "testcase-serial" :
       {
         "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=1" } },
-        "command"      : ".ci/tests/testcase.sh",
-        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_real8/SERIAL/", "-m", "serial_results" ],
+        "command"      : ".ci/tests/runNamelists.sh",
+        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_real8/SERIAL/", "-s", "serial_results" ],
         "dependencies" : { "build-serial" : "afterok" }
       },
       "build-omp" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "33$'\\n'1", "-o", "-r8", "-b", "em_real -j 8" ],
+        "arguments"    : [ "-c", "33", "-n", "1", "-o", "-r8", "-b", "em_real -j 8" ],
         "dependencies" : { "testcase-serial" : "afterok" }
       },
       "testcase-omp" :
       {
         "submit_options" : { "arguments" : { "env" : [ "-e", "OMP_NUM_THREADS=8" ] }, "cheyenne" : { "resources" : "1:ncpus=8:ompthreads=8" } },
-        "command"      : ".ci/tests/testcase.sh",
+        "command"      : ".ci/tests/runNamelists.sh",
         "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_real8/OPENMP/", "-i", "serial_results" ],
         "dependencies" : { "build-omp" : "afterok" }
       },
       "build-mpi" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "34$'\\n'1", "-o", "-r8", "-b", "em_real -j 8" ],
+        "arguments"    : [ "-c", "34", "-n", "1", "-o", "-r8", "-b", "em_real -j 8" ],
         "dependencies" : { "testcase-omp" : "afterok" }
       },
       "testcase-mpi" :
       {
         "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=8:mpiprocs=8" } },
-        "command"      : ".ci/tests/testcase.sh",
+        "command"      : ".ci/tests/runNamelists.sh",
         "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_real8/MPI/", "-i", "serial_results" ],
         "dependencies" : { "build-mpi" : "afterok" }
       }
@@ -162,33 +174,33 @@
       "testcase-serial" :
       {
         "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=1" } },
-        "command"      : ".ci/tests/testcase.sh",
-        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realA/SERIAL/", "-m", "serial_results" ],
+        "command"      : ".ci/tests/runNamelists.sh",
+        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realA/SERIAL/", "-s", "serial_results" ],
         "dependencies" : { "build-serial" : "afterok" }
       },
       "build-omp" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "33$'\\n'1", "-b", "em_real -j 8" ],
+        "arguments"    : [ "-c", "33", "-n", "1", "-b", "em_real -j 8" ],
         "dependencies" : { "testcase-serial" : "afterok" }
       },
       "testcase-omp" :
       {
         "submit_options" : { "arguments" : { "env" : [ "-e", "OMP_NUM_THREADS=8" ] }, "cheyenne" : { "resources" : "1:ncpus=8:ompthreads=8" } },
-        "command"      : ".ci/tests/testcase.sh",
+        "command"      : ".ci/tests/runNamelists.sh",
         "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realA/OPENMP/", "-i", "serial_results" ],
         "dependencies" : { "build-omp" : "afterok" }
       },
       "build-mpi" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "34$'\\n'1", "-b", "em_real -j 8" ],
+        "arguments"    : [ "-c", "34", "-n", "1", "-b", "em_real -j 8" ],
         "dependencies" : { "testcase-omp" : "afterok" }
       },
       "testcase-mpi" :
       {
         "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=8:mpiprocs=8" } },
-        "command"      : ".ci/tests/testcase.sh",
+        "command"      : ".ci/tests/runNamelists.sh",
         "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realA/MPI/", "-i", "serial_results" ],
         "dependencies" : { "build-mpi" : "afterok" }
       }
@@ -219,33 +231,33 @@
       "testcase-serial" :
       {
         "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=1" } },
-        "command"      : ".ci/tests/testcase.sh",
-        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realB/SERIAL/", "-m", "serial_results" ],
+        "command"      : ".ci/tests/runNamelists.sh",
+        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realB/SERIAL/", "-s", "serial_results" ],
         "dependencies" : { "build-serial" : "afterok" }
       },
       "build-omp" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "33$'\\n'1", "-b", "em_real -j 8" ],
+        "arguments"    : [ "-c", "33", "-n", "1", "-b", "em_real -j 8" ],
         "dependencies" : { "testcase-serial" : "afterok" }
       },
       "testcase-omp" :
       {
         "submit_options" : { "arguments" : { "env" : [ "-e", "OMP_NUM_THREADS=8" ] }, "cheyenne" : { "resources" : "1:ncpus=8:ompthreads=8" } },
-        "command"      : ".ci/tests/testcase.sh",
+        "command"      : ".ci/tests/runNamelists.sh",
         "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realB/OPENMP/", "-i", "serial_results" ],
         "dependencies" : { "build-omp" : "afterok" }
       },
       "build-mpi" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "34$'\\n'1", "-b", "em_real -j 8" ],
+        "arguments"    : [ "-c", "34", "-n", "1", "-b", "em_real -j 8" ],
         "dependencies" : { "testcase-omp" : "afterok" }
       },
       "testcase-mpi" :
       {
         "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=8:mpiprocs=8" } },
-        "command"      : ".ci/tests/testcase.sh",
+        "command"      : ".ci/tests/runNamelists.sh",
         "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realB/MPI/", "-i", "serial_results" ],
         "dependencies" : { "build-mpi" : "afterok" }
       }
@@ -276,33 +288,33 @@
       "testcase-serial" :
       {
         "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=1" } },
-        "command"      : ".ci/tests/testcase.sh",
-        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realC/SERIAL/", "-m", "serial_results" ],
+        "command"      : ".ci/tests/runNamelists.sh",
+        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realC/SERIAL/", "-s", "serial_results" ],
         "dependencies" : { "build-serial" : "afterok" }
       },
       "build-omp" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "33$'\\n'1", "-b", "em_real -j 8" ],
+        "arguments"    : [ "-c", "33", "-n", "1", "-b", "em_real -j 8" ],
         "dependencies" : { "testcase-serial" : "afterok" }
       },
       "testcase-omp" :
       {
         "submit_options" : { "arguments" : { "env" : [ "-e", "OMP_NUM_THREADS=8" ] }, "cheyenne" : { "resources" : "1:ncpus=8:ompthreads=8" } },
-        "command"      : ".ci/tests/testcase.sh",
+        "command"      : ".ci/tests/runNamelists.sh",
         "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realC/OPENMP/", "-i", "serial_results" ],
         "dependencies" : { "build-omp" : "afterok" }
       },
       "build-mpi" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "34$'\\n'1", "-b", "em_real -j 8" ],
+        "arguments"    : [ "-c", "34", "-n", "1", "-b", "em_real -j 8" ],
         "dependencies" : { "testcase-omp" : "afterok" }
       },
       "testcase-mpi" :
       {
         "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=8:mpiprocs=8" } },
-        "command"      : ".ci/tests/testcase.sh",
+        "command"      : ".ci/tests/runNamelists.sh",
         "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realC/MPI/", "-i", "serial_results" ],
         "dependencies" : { "build-mpi" : "afterok" }
       }
@@ -333,33 +345,33 @@
       "testcase-serial" :
       {
         "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=1" } },
-        "command"      : ".ci/tests/testcase.sh",
-        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realD/SERIAL/", "-m", "serial_results" ],
+        "command"      : ".ci/tests/runNamelists.sh",
+        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realD/SERIAL/", "-s", "serial_results" ],
         "dependencies" : { "build-serial" : "afterok" }
       },
       "build-omp" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "33$'\\n'1", "-b", "em_real -j 8" ],
+        "arguments"    : [ "-c", "33", "-n", "1", "-b", "em_real -j 8" ],
         "dependencies" : { "testcase-serial" : "afterok" }
       },
       "testcase-omp" :
       {
         "submit_options" : { "arguments" : { "env" : [ "-e", "OMP_NUM_THREADS=8" ] }, "cheyenne" : { "resources" : "1:ncpus=8:ompthreads=8" } },
-        "command"      : ".ci/tests/testcase.sh",
+        "command"      : ".ci/tests/runNamelists.sh",
         "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realD/OPENMP/", "-i", "serial_results" ],
         "dependencies" : { "build-omp" : "afterok" }
       },
       "build-mpi" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "34$'\\n'1", "-b", "em_real -j 8" ],
+        "arguments"    : [ "-c", "34", "-n", "1", "-b", "em_real -j 8" ],
         "dependencies" : { "testcase-omp" : "afterok" }
       },
       "testcase-mpi" :
       {
         "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=8:mpiprocs=8" } },
-        "command"      : ".ci/tests/testcase.sh",
+        "command"      : ".ci/tests/runNamelists.sh",
         "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realD/MPI/", "-i", "serial_results" ],
         "dependencies" : { "build-mpi" : "afterok" }
       }
@@ -390,33 +402,33 @@
       "testcase-serial" :
       {
         "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=1" } },
-        "command"      : ".ci/tests/testcase.sh",
-        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realE/SERIAL/", "-m", "serial_results" ],
+        "command"      : ".ci/tests/runNamelists.sh",
+        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realE/SERIAL/", "-s", "serial_results" ],
         "dependencies" : { "build-serial" : "afterok" }
       },
       "build-omp" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "33$'\\n'1", "-b", "em_real -j 8" ],
+        "arguments"    : [ "-c", "33", "-n", "1", "-b", "em_real -j 8" ],
         "dependencies" : { "testcase-serial" : "afterok" }
       },
       "testcase-omp" :
       {
         "submit_options" : { "arguments" : { "env" : [ "-e", "OMP_NUM_THREADS=8" ] }, "cheyenne" : { "resources" : "1:ncpus=8:ompthreads=8" } },
-        "command"      : ".ci/tests/testcase.sh",
+        "command"      : ".ci/tests/runNamelists.sh",
         "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realE/OPENMP/", "-i", "serial_results" ],
         "dependencies" : { "build-omp" : "afterok" }
       },
       "build-mpi" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "34$'\\n'1", "-b", "em_real -j 8" ],
+        "arguments"    : [ "-c", "34", "-n", "1", "-b", "em_real -j 8" ],
         "dependencies" : { "testcase-omp" : "afterok" }
       },
       "testcase-mpi" :
       {
         "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=8:mpiprocs=8" } },
-        "command"      : ".ci/tests/testcase.sh",
+        "command"      : ".ci/tests/runNamelists.sh",
         "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realE/MPI/", "-i", "serial_results" ],
         "dependencies" : { "build-mpi" : "afterok" }
       }
@@ -447,33 +459,33 @@
       "testcase-serial" :
       {
         "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=1" } },
-        "command"      : ".ci/tests/testcase.sh",
-        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realF/SERIAL/", "-m", "serial_results" ],
+        "command"      : ".ci/tests/runNamelists.sh",
+        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realF/SERIAL/", "-s", "serial_results" ],
         "dependencies" : { "build-serial" : "afterok" }
       },
       "build-omp" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "33$'\\n'1", "-b", "em_real -j 8" ],
+        "arguments"    : [ "-c", "33", "-n", "1", "-b", "em_real -j 8" ],
         "dependencies" : { "testcase-serial" : "afterok" }
       },
       "testcase-omp" :
       {
         "submit_options" : { "arguments" : { "env" : [ "-e", "OMP_NUM_THREADS=8" ] }, "cheyenne" : { "resources" : "1:ncpus=8:ompthreads=8" } },
-        "command"      : ".ci/tests/testcase.sh",
+        "command"      : ".ci/tests/runNamelists.sh",
         "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realF/OPENMP/", "-i", "serial_results" ],
         "dependencies" : { "build-omp" : "afterok" }
       },
       "build-mpi" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "34$'\\n'1", "-b", "em_real -j 8" ],
+        "arguments"    : [ "-c", "34", "-n", "1", "-b", "em_real -j 8" ],
         "dependencies" : { "testcase-omp" : "afterok" }
       },
       "testcase-mpi" :
       {
         "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=8:mpiprocs=8" } },
-        "command"      : ".ci/tests/testcase.sh",
+        "command"      : ".ci/tests/runNamelists.sh",
         "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realF/MPI/", "-i", "serial_results" ],
         "dependencies" : { "build-mpi" : "afterok" }
       }
@@ -504,33 +516,33 @@
       "testcase-serial" :
       {
         "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=1" } },
-        "command"      : ".ci/tests/testcase.sh",
-        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realG/SERIAL/", "-m", "serial_results" ],
+        "command"      : ".ci/tests/runNamelists.sh",
+        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realG/SERIAL/", "-s", "serial_results" ],
         "dependencies" : { "build-serial" : "afterok" }
       },
       "build-omp" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "33$'\\n'1", "-b", "em_real -j 8" ],
+        "arguments"    : [ "-c", "33", "-n", "1", "-b", "em_real -j 8" ],
         "dependencies" : { "testcase-serial" : "afterok" }
       },
       "testcase-omp" :
       {
         "submit_options" : { "arguments" : { "env" : [ "-e", "OMP_NUM_THREADS=8" ] }, "cheyenne" : { "resources" : "1:ncpus=8:ompthreads=8" } },
-        "command"      : ".ci/tests/testcase.sh",
+        "command"      : ".ci/tests/runNamelists.sh",
         "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realG/OPENMP/", "-i", "serial_results" ],
         "dependencies" : { "build-omp" : "afterok" }
       },
       "build-mpi" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "34$'\\n'1", "-b", "em_real -j 8" ],
+        "arguments"    : [ "-c", "34", "-n", "1", "-b", "em_real -j 8" ],
         "dependencies" : { "testcase-omp" : "afterok" }
       },
       "testcase-mpi" :
       {
         "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=8:mpiprocs=8" } },
-        "command"      : ".ci/tests/testcase.sh",
+        "command"      : ".ci/tests/runNamelists.sh",
         "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realG/MPI/", "-i", "serial_results" ],
         "dependencies" : { "build-mpi" : "afterok" }
       }
@@ -561,20 +573,20 @@
       "testcase-serial" :
       {
         "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=1" } },
-        "command"      : ".ci/tests/testcase.sh",
-        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realH/SERIAL/", "-m", "serial_results" ],
+        "command"      : ".ci/tests/runNamelists.sh",
+        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realH/SERIAL/", "-s", "serial_results" ],
         "dependencies" : { "build-serial" : "afterok" }
       },
       "build-mpi" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "34$'\\n'1", "-b", "em_real -j 8" ],
+        "arguments"    : [ "-c", "34", "-n", "1", "-b", "em_real -j 8" ],
         "dependencies" : { "testcase-serial" : "afterok" }
       },
       "testcase-mpi" :
       {
         "submit_options" : { "cheyenne" : { "resources" : "1:ncpus=8:mpiprocs=8" } },
-        "command"      : ".ci/tests/testcase.sh",
+        "command"      : ".ci/tests/runNamelists.sh",
         "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/em_realH/MPI/", "-i", "serial_results" ],
         "dependencies" : { "build-mpi" : "afterok" }
       }

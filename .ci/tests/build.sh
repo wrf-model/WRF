@@ -3,7 +3,8 @@ help()
 {
   echo "./build.sh [workingdir] [options] [-- <hostenv.sh options>]"
   echo "  [workingdir]              First argument must be the working dir to immediate cd to"
-  echo "  -c                        Configuration dochere string, piped directly into configure"
+  echo "  -c                        Configuration build type, piped directly into configure"
+  echo "  -n                        Configuration nesting type, piped directly into configure"
   echo "  -o                        Configuration optstring passed into configure"
   echo "  -b                        Build command passed into compile"
   echo "  -e                        environment variables in comma-delimited list, e.g. var=1,foo,bar=0"
@@ -16,7 +17,7 @@ help()
 
 workingDirectory=$1
 shift
-if [ $workingDirectory == "-h" ]; then
+if [ $workingDirectory = "-h" ]; then
   help
   exit 0
 fi
@@ -25,10 +26,13 @@ cd $workingDirectory
 # Get some helper functions
 . .ci/env/helpers.sh
 
-while getopts c:o:b:e:h opt; do
+while getopts c:n:o:b:e:h opt; do
   case $opt in
     c)
-      configCommand="$OPTARG"
+      configuration="$OPTARG"
+    ;;
+    n)
+      nesting="$OPTARG"
     ;;
     o)
       configOpt="$OPTARG"
@@ -57,13 +61,15 @@ if [ ! -z $envVars ]; then
 fi
 
 # Re-evaluate input values for delayed expansion
-eval "configCommand=\"$configCommand\""
+eval "configuration=\"$configuration\""
+eval "nesting=\"$nesting\""
 eval "configOpt=\"$configOpt\""
 eval "buildCommand=\"$buildCommand\""
 
 ./clean -a
 ./configure $configOpt << EOF
-$configCommand
+$configuration
+$nesting
 EOF
 
 if [ ! -f configure.wrf ]; then

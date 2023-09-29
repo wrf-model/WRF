@@ -296,57 +296,6 @@ if ( ${USE_IPO} )
     set( USE_IPO OFF CACHE BOOL "Required by configuration" FORCE )
   endif()
 endif()
-set( CMAKE_INTERPROCEDURAL_OPTIMIZATION ${USE_IPO} )
-
-################################################################################
-##
-## Print out final set of options to be used 
-## DO NOT MODIFY OPTIONS BEYOND THIS POINT
-##
-################################################################################
-
-if ( DEFINED CMAKE_TOOLCHAIN_FILE )
-  print_option( WRF_CONFIG         20 ${BOLD_CYAN} )
-endif()
-
-print_option( CMAKE_BUILD_TYPE 20 ${BOLD_CYAN} )
-
-
-print_option( WRF_CORE         20 ${BOLD_CYAN} )
-print_option( WRF_NESTING      20 ${BOLD_CYAN} )
-print_option( WRF_CASE         20 ${BOLD_CYAN} )
-
-
-print_option( USE_DOUBLE       20 )
-print_option( USE_MPI          20 )
-print_option( USE_OPENMP       20 )
-print_option( USE_IPO          20 )
-
-print_option( ENABLE_CHEM      20 )
-print_option( ENABLE_CMAQ      20 )
-print_option( ENABLE_KPP       20 )
-print_option( ENABLE_DFI_RADAR 20 )
-print_option( ENABLE_TITAN     20 )
-print_option( ENABLE_MARS      20 )
-print_option( ENABLE_VENUS     20 )
-print_option( ENABLE_VENUS     20 )
-print_option( ENABLE_TERRAIN   20 )
-print_option( ENABLE_CLM       20 )
-
-print_option( USE_ALLOCATABLES 20 )
-print_option( wrfmodel         20 )
-print_option( GRIB1            20 )
-print_option( INTIO            20 )
-print_option( KEEP_INT_AROUND  20 )
-print_option( LIMIT_ARGS       20 )
-
-print_option( FORCE_NETCDF_CLASSIC 20 )
-print_option( BUILD_RRTMG_FAST     20 )
-print_option( BUILD_RRTMK          20 )
-print_option( BUILD_SBM_FAST       20 )
-print_option( SHOW_ALL_VARS_USED   20 )
-
-print_option( WRFIO_NCD_NO_LARGE_FILE_SUPPORT 36 )
 
 ################################################################################
 ##
@@ -381,6 +330,31 @@ if ( ${USE_MPI} )
                         $<$<COMPILE_LANGUAGE:C>:${WRF_MPI_C_FLAGS}>
                         )
   endif()
+
+  # Check if MPI in all its glory has forced IPO down our throats due to hard-coding the wrapper flags
+  # https://www.open-mpi.org/faq/?category=mpi-apps#why-no-rpath LOL! 
+  # Quote "The default installation of Open MPI tries very hard to not include any non-essential flags in the wrapper compilers"
+  # Okay, yea sure. Maybe it's the distro's lib config that does add all the bloatware flags
+  if ( NOT ${USE_IPO} )
+    # get compile info
+    message( STATUS "Checking if MPI requires IPO" )
+    foreach( IPO_FLAG IN LISTS CMAKE_Fortran_COMPILE_OPTIONS_IPO )
+      string( FIND "${MPI_Fortran_COMPILE_OPTIONS}" ${IPO_FLAG} MPI_FORCE_IPO )
+      # Note we are not using IN_LIST since certain IPO settings might not exactly match (e.g.  -flto vs -flto=auto)
+      if ( NOT ${MPI_FORCE_IPO} EQUAL -1 )
+        # An IPO flag was found
+        if ( ${IPO_SUPPORT} )
+          message( STATUS "NOTE: ${MPI_Fortran_COMPILER} requires IPO flags be enabled, forcing USE_IPO=ON" )
+          set( USE_IPO ON CACHE BOOL "Required by MPI" FORCE )
+          break()
+        else()
+          message( FATAL_ERROR "${MPI_Fortran_COMPILER} requires IPO support but selected compiler does not support it, would fail to link" )
+        endif()
+      endif()
+    endforeach()
+  endif()
+
+  set( USE_RSL_LITE ON )
 # We know NONE is the zero index so compare against that
 elseif( ${CURRENT_NESTING_IDX} GREATER 0 )
   add_compile_definitions(
@@ -444,6 +418,63 @@ find_package( CURL   REQUIRED )
 
 ################################################################################
 ##
+## Print out final set of options to be used 
+## DO NOT MODIFY OPTIONS BEYOND THIS POINT
+##
+################################################################################
+
+if ( DEFINED CMAKE_TOOLCHAIN_FILE )
+  print_option( WRF_CONFIG         20 ${BOLD_CYAN} )
+endif()
+
+print_option( CMAKE_BUILD_TYPE 20 ${BOLD_CYAN} )
+
+
+print_option( WRF_CORE         20 ${BOLD_CYAN} )
+print_option( WRF_NESTING      20 ${BOLD_CYAN} )
+print_option( WRF_CASE         20 ${BOLD_CYAN} )
+
+
+print_option( USE_DOUBLE       20 )
+print_option( USE_MPI          20 )
+print_option( USE_OPENMP       20 )
+print_option( USE_IPO          20 )
+
+print_option( ENABLE_CHEM      20 )
+print_option( ENABLE_CMAQ      20 )
+print_option( ENABLE_KPP       20 )
+print_option( ENABLE_DFI_RADAR 20 )
+print_option( ENABLE_TITAN     20 )
+print_option( ENABLE_MARS      20 )
+print_option( ENABLE_VENUS     20 )
+print_option( ENABLE_VENUS     20 )
+print_option( ENABLE_TERRAIN   20 )
+print_option( ENABLE_CLM       20 )
+
+print_option( USE_ALLOCATABLES 20 )
+print_option( wrfmodel         20 )
+print_option( GRIB1            20 )
+print_option( INTIO            20 )
+print_option( KEEP_INT_AROUND  20 )
+print_option( LIMIT_ARGS       20 )
+
+print_option( FORCE_NETCDF_CLASSIC 20 )
+print_option( BUILD_RRTMG_FAST     20 )
+print_option( BUILD_RRTMK          20 )
+print_option( BUILD_SBM_FAST       20 )
+print_option( SHOW_ALL_VARS_USED   20 )
+
+print_option( WRFIO_NCD_NO_LARGE_FILE_SUPPORT 36 )
+
+################################################################################
+##
+## Set any global cmake options decided by particular configuration
+##
+################################################################################
+set( CMAKE_INTERPROCEDURAL_OPTIMIZATION ${USE_IPO} )
+
+################################################################################
+##
 ## Configuration checks for features & intrinsices
 ##
 ################################################################################
@@ -474,7 +505,7 @@ define_property(
                 )
 
 # Get current build type flags and put them in there
-if ( ${CMAKE_BUILD_TYPE} STREQUAL "Release" )
+if ( "${CMAKE_BUILD_TYPE}" STREQUAL "Release" )
   set_directory_properties(
                             PROPERTIES
                               COMPILE_FLAGS

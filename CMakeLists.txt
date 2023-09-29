@@ -64,8 +64,10 @@ set( OPTIMIZATION_LEVEL "" )
 set( WRF_OS             "" )
 set( WRF_MACH           "" )
 
-set( CMAKE_BUILD_TYPE Release CACHE STRING "Build Type" )
-
+if ( "${CMAKE_BUILD_TYPE}" STREQUAL "" )
+  set( CMAKE_BUILD_TYPE Debug )
+  message( STATUS "Set default build type to ${CMAKE_BUILD_TYPE}" )
+endif()
 ################################################################################
 ## WRF Core selection
 ################################################################################

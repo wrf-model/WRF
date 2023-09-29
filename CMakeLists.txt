@@ -306,6 +306,8 @@ endif()
 # we must stub its usage
 list( FIND WRF_NESTING_OPTIONS ${WRF_NESTING} CURRENT_NESTING_IDX )
 
+# If MPI or nesting
+set( USE_RSL_LITE OFF )
 if ( ${USE_MPI} )
   # Through ***MUCH*** debugging, if utilizing MPI_<LANG>_COMPILER
   # https://cmake.org/cmake/help/latest/module/FindMPI.html#variables-for-locating-mpi
@@ -361,6 +363,7 @@ elseif( ${CURRENT_NESTING_IDX} GREATER 0 )
                           DM_PARALLEL
                           STUBMPI
                           )
+  set( USE_RSL_LITE ON )
 endif()
 
 if ( ${USE_OPENMP} )

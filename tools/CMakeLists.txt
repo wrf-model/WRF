@@ -8,7 +8,8 @@ add_executable(
               )
 
 set( GEN_COMMS gen_comms.stub )
-if ( ${USE_MPI} )
+if ( ${USE_RSL_LITE} )
+  message( STATUS "Setting gen_comms to RSL_LITE" )
   set( GEN_COMMS ${PROJECT_SOURCE_DIR}/external/RSL_LITE/gen_comms.c )
 else()
   # Account for the weird makefile nonsense of copying things around

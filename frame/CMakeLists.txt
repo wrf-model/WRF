@@ -85,7 +85,8 @@ target_include_directories(
 #
 ########################################################################################################################
 set( MODULE_DM module_dm_stubs.F )
-if ( ${USE_MPI} )
+if ( ${USE_RSL_LITE} )
+  message( STATUS "Setting module_dm to RSL_LITE" )
   set( MODULE_DM ${PROJECT_SOURCE_DIR}/external/RSL_LITE/module_dm.F )
 endif()
 

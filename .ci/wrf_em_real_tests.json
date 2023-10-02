@@ -5,6 +5,8 @@
     "timelimit" : "01:00:00",
     "arguments" : 
     {
+      ".*build.*::args_nesting"     : [ "-n", "1" ],
+      ".*build.*::args_configopt"   : [ "-o", "-d" ],
       ".*testcase.*::global_env"   : [ "-e", "DATA=/path/to/data" ],
       ".*testcase-mpi.*::exec_mpi" : [ "-p", "mpirun -np 8" ]
     },
@@ -55,7 +57,7 @@
       "build-serial" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "32", "-n", "1", "-b", "em_real -j 8" ]
+        "arguments"    : [ "-c", "32", "-b", "em_real -j 8" ]
       },
       "testcase-serial" :
       {
@@ -67,7 +69,7 @@
       "build-omp" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "33", "-n", "1", "-b", "em_real -j 8" ],
+        "arguments"    : [ "-c", "33", "-b", "em_real -j 8" ],
         "dependencies" : { "testcase-serial" : "afterok" }
       },
       "testcase-omp" :
@@ -80,7 +82,7 @@
       "build-mpi" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "34", "-n", "1", "-b", "em_real -j 8" ],
+        "arguments"    : [ "-c", "34", "-b", "em_real -j 8" ],
         "dependencies" : { "testcase-omp" : "afterok" }
       },
       "testcase-mpi" :
@@ -98,6 +100,7 @@
     {
       "arguments" :
       {
+        ".*build.*::args_configopt"   : [ "-o", "-d -r8" ],
         ".*testcase.*::args_namelist" : 
         [ 
           "-c", "test/em_real",
@@ -112,7 +115,7 @@
       "build-serial" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "32$'\\n'1", "-o", "-r8", "-b", "em_real -j 8" ]
+        "arguments"    : [ "-c", "32", "-b", "em_real -j 8" ]
       },
       "testcase-serial" :
       {
@@ -124,7 +127,7 @@
       "build-omp" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "33", "-n", "1", "-o", "-r8", "-b", "em_real -j 8" ],
+        "arguments"    : [ "-c", "33", "-b", "em_real -j 8" ],
         "dependencies" : { "testcase-serial" : "afterok" }
       },
       "testcase-omp" :
@@ -137,7 +140,7 @@
       "build-mpi" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "34", "-n", "1", "-o", "-r8", "-b", "em_real -j 8" ],
+        "arguments"    : [ "-c", "34", "-b", "em_real -j 8" ],
         "dependencies" : { "testcase-omp" : "afterok" }
       },
       "testcase-mpi" :
@@ -169,7 +172,7 @@
       "build-serial" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "32$'\\n'1", "-b", "em_real -j 8" ]
+        "arguments"    : [ "-c", "32", "-b", "em_real -j 8" ]
       },
       "testcase-serial" :
       {
@@ -181,7 +184,7 @@
       "build-omp" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "33", "-n", "1", "-b", "em_real -j 8" ],
+        "arguments"    : [ "-c", "33", "-b", "em_real -j 8" ],
         "dependencies" : { "testcase-serial" : "afterok" }
       },
       "testcase-omp" :
@@ -194,7 +197,7 @@
       "build-mpi" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "34", "-n", "1", "-b", "em_real -j 8" ],
+        "arguments"    : [ "-c", "34", "-b", "em_real -j 8" ],
         "dependencies" : { "testcase-omp" : "afterok" }
       },
       "testcase-mpi" :
@@ -226,7 +229,7 @@
       "build-serial" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "32$'\\n'1", "-b", "em_real -j 8" ]
+        "arguments"    : [ "-c", "32", "-b", "em_real -j 8" ]
       },
       "testcase-serial" :
       {
@@ -238,7 +241,7 @@
       "build-omp" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "33", "-n", "1", "-b", "em_real -j 8" ],
+        "arguments"    : [ "-c", "33", "-b", "em_real -j 8" ],
         "dependencies" : { "testcase-serial" : "afterok" }
       },
       "testcase-omp" :
@@ -251,7 +254,7 @@
       "build-mpi" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "34", "-n", "1", "-b", "em_real -j 8" ],
+        "arguments"    : [ "-c", "34", "-b", "em_real -j 8" ],
         "dependencies" : { "testcase-omp" : "afterok" }
       },
       "testcase-mpi" :
@@ -283,7 +286,7 @@
       "build-serial" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "32$'\\n'1", "-b", "em_real -j 8" ]
+        "arguments"    : [ "-c", "32", "-b", "em_real -j 8" ]
       },
       "testcase-serial" :
       {
@@ -295,7 +298,7 @@
       "build-omp" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "33", "-n", "1", "-b", "em_real -j 8" ],
+        "arguments"    : [ "-c", "33", "-b", "em_real -j 8" ],
         "dependencies" : { "testcase-serial" : "afterok" }
       },
       "testcase-omp" :
@@ -308,7 +311,7 @@
       "build-mpi" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "34", "-n", "1", "-b", "em_real -j 8" ],
+        "arguments"    : [ "-c", "34", "-b", "em_real -j 8" ],
         "dependencies" : { "testcase-omp" : "afterok" }
       },
       "testcase-mpi" :
@@ -340,7 +343,7 @@
       "build-serial" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "32$'\\n'1", "-b", "em_real -j 8" ]
+        "arguments"    : [ "-c", "32", "-b", "em_real -j 8" ]
       },
       "testcase-serial" :
       {
@@ -352,7 +355,7 @@
       "build-omp" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "33", "-n", "1", "-b", "em_real -j 8" ],
+        "arguments"    : [ "-c", "33", "-b", "em_real -j 8" ],
         "dependencies" : { "testcase-serial" : "afterok" }
       },
       "testcase-omp" :
@@ -365,7 +368,7 @@
       "build-mpi" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "34", "-n", "1", "-b", "em_real -j 8" ],
+        "arguments"    : [ "-c", "34", "-b", "em_real -j 8" ],
         "dependencies" : { "testcase-omp" : "afterok" }
       },
       "testcase-mpi" :
@@ -397,7 +400,7 @@
       "build-serial" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "32$'\\n'1", "-b", "em_real -j 8" ]
+        "arguments"    : [ "-c", "32", "-b", "em_real -j 8" ]
       },
       "testcase-serial" :
       {
@@ -409,7 +412,7 @@
       "build-omp" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "33", "-n", "1", "-b", "em_real -j 8" ],
+        "arguments"    : [ "-c", "33", "-b", "em_real -j 8" ],
         "dependencies" : { "testcase-serial" : "afterok" }
       },
       "testcase-omp" :
@@ -422,7 +425,7 @@
       "build-mpi" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "34", "-n", "1", "-b", "em_real -j 8" ],
+        "arguments"    : [ "-c", "34", "-b", "em_real -j 8" ],
         "dependencies" : { "testcase-omp" : "afterok" }
       },
       "testcase-mpi" :
@@ -454,7 +457,7 @@
       "build-serial" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "32$'\\n'1", "-b", "em_real -j 8" ]
+        "arguments"    : [ "-c", "32", "-b", "em_real -j 8" ]
       },
       "testcase-serial" :
       {
@@ -466,7 +469,7 @@
       "build-omp" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "33", "-n", "1", "-b", "em_real -j 8" ],
+        "arguments"    : [ "-c", "33", "-b", "em_real -j 8" ],
         "dependencies" : { "testcase-serial" : "afterok" }
       },
       "testcase-omp" :
@@ -479,7 +482,7 @@
       "build-mpi" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "34", "-n", "1", "-b", "em_real -j 8" ],
+        "arguments"    : [ "-c", "34", "-b", "em_real -j 8" ],
         "dependencies" : { "testcase-omp" : "afterok" }
       },
       "testcase-mpi" :
@@ -511,7 +514,7 @@
       "build-serial" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "32$'\\n'1", "-b", "em_real -j 8" ]
+        "arguments"    : [ "-c", "32", "-b", "em_real -j 8" ]
       },
       "testcase-serial" :
       {
@@ -523,7 +526,7 @@
       "build-omp" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "33", "-n", "1", "-b", "em_real -j 8" ],
+        "arguments"    : [ "-c", "33", "-b", "em_real -j 8" ],
         "dependencies" : { "testcase-serial" : "afterok" }
       },
       "testcase-omp" :
@@ -536,7 +539,7 @@
       "build-mpi" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "34", "-n", "1", "-b", "em_real -j 8" ],
+        "arguments"    : [ "-c", "34", "-b", "em_real -j 8" ],
         "dependencies" : { "testcase-omp" : "afterok" }
       },
       "testcase-mpi" :
@@ -568,7 +571,7 @@
       "build-serial" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "32$'\\n'1", "-b", "em_real -j 8" ]
+        "arguments"    : [ "-c", "32", "-b", "em_real -j 8" ]
       },
       "testcase-serial" :
       {
@@ -580,7 +583,7 @@
       "build-mpi" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "34", "-n", "1", "-b", "em_real -j 8" ],
+        "arguments"    : [ "-c", "34", "-b", "em_real -j 8" ],
         "dependencies" : { "testcase-serial" : "afterok" }
       },
       "testcase-mpi" :

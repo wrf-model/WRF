@@ -99,7 +99,6 @@ cd $coreDir || exit $?
 
 # Link in data in here
 ln -sf $data/* .
-
 #
 ################################################################################
 
@@ -114,7 +113,7 @@ for namelist in $namelists; do
   banner 42 "START $namelist"
 
   # Clean up run
-  rm wrfinput_d* wrfbdy_d* wrfout_d* wrfchemi_d* wrf_chem_input_d* rsl* real.print.out* wrf.print.out* -rf
+  rm wrfinput_d* wrfbdy_d* wrfout_d* wrfchemi_d* wrf_chem_input_d* rsl* real.print.out* wrf.print.out* wrf_d0*_runstats.out -rf
 
   # Copy namelist
   echo "Setting $namelistFolder/$namelist as namelist.input"

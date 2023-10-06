@@ -530,7 +530,7 @@ END IF
                end if
             end if
 
-            ! calculate background/model reflectivity
+            ! Calculate background/model reflectivity
             if (use_radar_rhv .or. use_radar_rqv) then
                if ( echo_rf_good ) then
                   call da_radar_rf (model_qrn(k,n),model_qsn(k,n),model_qgr(k,n),model_tc(k,n),model_rho(k,n),bg_rze)
@@ -540,7 +540,7 @@ END IF
                end if
             end if
 
-            ! calculate retrieved hydrometeorological variables
+            ! Calculate retrieved hydrometeorological variables
             ! Background-dependent retrieval scheme (Chen et al. 2020 AR; Chen et al. 2021 QJRMS) 
             if (use_radar_rhv) then
                if ( echo_rf_good ) then
@@ -623,7 +623,7 @@ END IF
                           if (model_tc(k,n) .ge. 5.0) then
                              zews_ratio = 0.
                           end if
-                          if (.not. qg_exist) zegr_ratio = 0.
+                          if (.not. qg_exist .or. model_tc(k,n) .ge. 10.0) zegr_ratio = 0.
                         
                           ! determine the contributions of each hydrometeor to reflectivity
                           if ((zern_ratio+zews_ratio+zeds_ratio+zegr_ratio) .gt. 0.) then

@@ -620,9 +620,7 @@ END IF
                                 if (model_tc(nk,n) .lt. -5.0 .and. ob % radar(n) % rf(nk) .ge. 40.) qg_exist = .true.
                              end do
                           end if
-                          if (model_tc(k,n) .ge. 5.0) then
-                             zews_ratio = 0.
-                          end if
+                          if (model_tc(k,n) .ge. 5.0) zews_ratio = 0.
                           if (.not. qg_exist .or. model_tc(k,n) .ge. 10.0) zegr_ratio = 0.
                         
                           ! determine the contributions of each hydrometeor to reflectivity

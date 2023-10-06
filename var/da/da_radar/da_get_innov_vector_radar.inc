@@ -291,14 +291,13 @@ END IF
       hydro_weight_file='hydro_mean.dat'
       inquire(file=trim(hydro_weight_file), exist=file_exist)
       if (file_exist) then
-         ! write(*,*) "Read historical statistics of hydrometeors"
          call da_get_unit(hydro_weight_unit)
          open(unit=hydro_weight_unit, file=trim(hydro_weight_file), form='FORMATTED')
-         read(unit=hydro_weight_unit)  ! skip one line for the header
+         read(unit=hydro_weight_unit, fmt='(A)')
          do z_index=1,7
             do h_index=1,40
-               read(hydro_weight_unit,'(6x, 6x, 4(f19.9,2x))') &
-                    avg_zern(h_index,z_index),avg_zews(h_index,z_index), avg_zeds(h_index,z_index), avg_zegr(h_index,z_index)
+               read(hydro_weight_unit, fmt='(2(10x), 4(f19.9,2x))') &
+                    avg_zern(h_index,z_index), avg_zews(h_index,z_index), avg_zeds(h_index,z_index), avg_zegr(h_index,z_index)
             end do
          end do
          close(hydro_weight_unit)
@@ -356,11 +355,11 @@ END IF
       hydro_weight_file='hydro_mean.dat.update'
       if (rootproc) call da_get_unit(hydro_weight_unit)
       if (rootproc) open(unit=hydro_weight_unit, file=trim(hydro_weight_file), form='FORMATTED')
-      if (rootproc) write(hydro_weight_unit,'(2(a8,2x), 4(a19,2x))') &
-                                         "z_index:", "h_index:", "===Rainwater===", "===Wet snow===", "===Dray snow===", "===Graupel==="
+      if (rootproc) write(unit=hydro_weight_unit, fmt='(2(a8,2x), 4(a19,2x))') &
+                          "z_index:", "h_index:", "===Rainwater===", "===Wet snow===", "===Dray snow===", "===Graupel==="
       do z_index=1,7
          do h_index=1,40
-            if (num_sample(h_index,z_index) .gt. 100.) then !! The threshold 100 is used for num_sample to make the statisctic more confidential
+            if (num_sample(h_index,z_index) .gt. 10.) then
                if (avg_qrn(h_index,z_index) > 0.)  & !! rain water
                   avg_zern(h_index,z_index) =  zrn*(ave_rho(h_index,z_index)*avg_qrn(h_index,z_index))**1.75
                if (avg_qws(h_index,z_index) > 0.)  & !! wet snow
@@ -371,8 +370,8 @@ END IF
                   avg_zegr(h_index,z_index) =  zgr*(ave_rho(h_index,z_index)*avg_qgr(h_index,z_index))**1.75
             end if
             if (rootproc) &
-               write(hydro_weight_unit,'(2(i8, 2x), 4(f19.9,2x))')  z_index, h_index, &
-                                      avg_zern(h_index,z_index),avg_zews(h_index,z_index), avg_zeds(h_index,z_index), avg_zegr(h_index,z_index)
+               write(unit=hydro_weight_unit, fmt='(2(i8, 2x), 4(f19.9,2x))')  z_index, h_index, &
+                     avg_zern(h_index,z_index),avg_zews(h_index,z_index), avg_zeds(h_index,z_index), avg_zegr(h_index,z_index)
          end do
       end do   !bottom-top
       if (rootproc) close(hydro_weight_unit)

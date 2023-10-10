@@ -190,10 +190,11 @@ for namelist in $namelists; do
       for dom in d01 d02 d03; do
         if [ -e $workingDirectory/$identicalFolder/$namelist/wrf_${dom}_runstats.out ]; then
           # We have a domain to check - should exist in both (we are treating the identical folder as truth)
-          diff $workingDirectory/$identicalFolder/$namelist/wrf_${dom}_runstats.out wrf_${dom}_runstats.out > /dev/null
+          diff $workingDirectory/$identicalFolder/$namelist/wrf_${dom}_runstats.out $(pwd)/wrf_${dom}_runstats.out > diff_log.log
           result=$?
           if [ $result -ne 0 ]; then
-            echo "$workingDirectory/$identicalFolder/$namelist/wrf_${dom}_runstats.out and wrf_${dom}_runstats.out differ"
+            echo "$workingDirectory/$identicalFolder/$namelist/wrf_${dom}_runstats.out and $(pwd)/wrf_${dom}_runstats.out differ"
+            cat diff_log.log
             exit $result
           fi
         elif [ -e ./wrf_${dom}_runstats.out ]; then

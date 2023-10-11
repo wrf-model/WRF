@@ -50,7 +50,7 @@ $sw_time = "" ;          # name of a timer to time fortran compiles, e.g. timex 
 $sw_ifort_r8 = 0 ;
 $sw_hdf5 = "-lhdf5_hl -lhdf5";
 $sw_zlib = "-lz";
-$sw_dep_lib_path = "";
+$sw_netcdf4_dep_lib = "";
 $sw_gpfs_path = "";
 $sw_gpfs_lib  = "-lgpfs";
 $sw_curl_path = "";
@@ -69,10 +69,10 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
   {
     $sw_netcdf_path = substr( $ARGV[0], 8 ) ;
   }
-  if ( substr( $ARGV[0], 1, 13 ) eq "dep_lib_path=" )
+  if ( substr( $ARGV[0], 1, 16 ) eq "netcdf4_dep_lib=" )
   {
-    $sw_dep_lib_path = substr( $ARGV[0], 14 ) ;
-    $sw_dep_lib_path =~ s/\r|\n/ /g ;
+    $sw_netcdf4_dep_lib = substr( $ARGV[0], 17 ) ;
+    $sw_netcdf4_dep_lib =~ s/\r|\n/ /g ;
   }
   if ( substr( $ARGV[0], 1, 5 ) eq "gpfs=" )
   {
@@ -1039,7 +1039,7 @@ while ( <ARCH_PREAMBLE> )
   $_ =~ s/CONFIGURE_CONFIG_NUM/Compiler choice: $response_opt/g ;
   $_ =~ s/CONFIGURE_CONFIG_NEST/Nesting option: $response_nesting/g ;
 
-  $_ =~ s/CONFIGURE_DEP_LIB_PATH/$sw_dep_lib_path/g ;
+  $_ =~ s/CONFIGURE_NETCDF4_DEP_LIB/$sw_netcdf4_dep_lib/g ;
 
     $_ =~ s/CONFIGURE_COMMS_LIB/$sw_comms_lib/g ;
     if ( $sw_os ne "CYGWIN_NT" ) {
@@ -1169,7 +1169,7 @@ while ( <ARCH_PREAMBLE> )
           $_ .= " " . $sw_curl_lib . "\n" ;
         }
     }
-  if ( $sw_dep_lib_path ne "" )
+  if ( $sw_netcdf4_dep_lib ne "" )
     { if (/^HDF5.*=/)
         { $_  =~ s/\r|\n//g;
           $_ .= " " . $sw_hdf5 . "\n" ;

@@ -1178,7 +1178,7 @@ PROGRAM time_manager_test
 
   PRINT *,'BEGIN TEST SUITE'
 
-  CALL ESMF_Initialize( defaultCalendar=ESMF_CAL_GREGORIAN, rc=rc )
+  CALL ESMF_Initialize( defaultCalKind=ESMF_CAL_GREGORIAN, rc=rc )
   CALL test_check_error( ESMF_SUCCESS, rc, &
                         'ESMF_Initialize() ', &
                         __FILE__ , &

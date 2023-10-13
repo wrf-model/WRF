@@ -6688,26 +6688,26 @@ enddo
 		                    FF2(KR,ICE) = 0.0
   			            ELSE IF (KR .gt. 10 .and. KR .lt. 18) THEN
                   			meltrate = 0.5/50.
+                        ARG_M=ARG_M+FF2(KR,ICE)*(meltrate*dt)
                   			FF2(KR,ICE)=FF2(KR,ICE)-FF2(KR,ICE)*(meltrate*dt)
-                  			ARG_M=ARG_M+FF2(KR,ICE)*(meltrate*dt)
               			ELSE
                   			meltrate = 0.683/120.
+                        ARG_M=ARG_M+FF2(KR,ICE)*(meltrate*dt)
                   			FF2(KR,ICE)=FF2(KR,ICE)-FF2(KR,ICE)*(meltrate*dt)
-                  			ARG_M=ARG_M+FF2(KR,ICE)*(meltrate*dt)
               			ENDIF
             			ENDIF
             			IF (ICE ==2 .or. ICE ==3) THEN
                			  IF (kr .le. 12) THEN
+                            ARG_M = ARG_M+FF2(KR,ICE)
                        			FF2(KR,ICE)=0.
-                       			ARG_M = ARG_M+FF2(KR,ICE)
              			    ELSE IF (kr .gt. 12 .and. kr .lt. 20) THEN
                        			meltrate = 0.5/50.
+                            ARG_M=ARG_M+FF2(KR,ICE)*(meltrate*dt)
                        			FF2(KR,ICE)=FF2(KR,ICE)-FF2(KR,ICE)*(meltrate*dt)
-                       			ARG_M=ARG_M+FF2(KR,ICE)*(meltrate*dt)
                 			ELSE
-                        			meltrate = 0.683/120.
+                            meltrate = 0.683/120.
+                            ARG_M=ARG_M+FF2(KR,ICE)*(meltrate*dt)
                        			FF2(KR,ICE)=FF2(KR,ICE)-FF2(KR,ICE)*(meltrate*dt)
-                       			ARG_M=ARG_M+FF2(KR,ICE)*(meltrate*dt)
                 			ENDIF
               			ENDIF
            		END DO  ! Do ice
@@ -6717,12 +6717,12 @@ enddo
   		               FF3(KR) = 0.0
                   ELSE IF (kr .gt. 14 .and. kr .lt. 22) THEN
                      meltrate = 0.5/50.
-                     FF3(KR)=FF3(KR)-FF3(KR)*(meltrate*dt)
                      ARG_M=ARG_M+FF3(KR)*(meltrate*dt)
+                     FF3(KR)=FF3(KR)-FF3(KR)*(meltrate*dt)
                   ELSE
                      meltrate = 0.683/120.
-                     FF3(KR)=FF3(KR)-FF3(KR)*(meltrate*dt)
                      ARG_M=ARG_M+FF3(KR)*(meltrate*dt)
+                     FF3(KR)=FF3(KR)-FF3(KR)*(meltrate*dt)
                   ENDIF
   	             ! ... Graupel/Hail
                   IF (kr .le. 13) then
@@ -6731,14 +6731,14 @@ enddo
                       FF5(KR)=0.
                   ELSE IF (kr .gt. 13 .and. kr .lt. 23) THEN
                       meltrate = 0.5/50.
+                      ARG_M=ARG_M+(FF4(KR)+FF5(KR))*(meltrate*dt)
                       FF4(KR)=FF4(KR)-FF4(KR)*(meltrate*dt)
                       FF5(KR)=FF5(KR)-FF5(KR)*(meltrate*dt)
-                      ARG_M=ARG_M+(FF4(KR)+FF5(KR))*(meltrate*dt)
                   ELSE
                       meltrate = 0.683/120.
-                     FF4(KR)=FF4(KR)-FF4(KR)*(meltrate*dt)
-                     FF5(KR)=FF5(KR)-FF5(KR)*(meltrate*dt)
-                     ARG_M=ARG_M+(FF4(KR)+FF5(KR))*(meltrate*dt)
+                      ARG_M=ARG_M+(FF4(KR)+FF5(KR))*(meltrate*dt)
+                      FF4(KR)=FF4(KR)-FF4(KR)*(meltrate*dt)
+                      FF5(KR)=FF5(KR)-FF5(KR)*(meltrate*dt)
                   ENDIF
 
                     FF1(KR) = FF1(KR) + ARG_M

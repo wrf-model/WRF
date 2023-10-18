@@ -25,17 +25,15 @@ subroutine da_setup_obs_structures_chem_sfc(ob, iv, grid)
    !--------------------------------------------------------------------------
    ! [1.0] Scan data - only necessary if an alternative format is implemented
    !--------------------------------------------------------------------------
-
    call da_scan_obs_chem_sfc(iv, filename, grid)
 
-
+   iv%time = 1      !!! Fixed by Soyoung Ha (June-2021)
    iv%info(chemic_surf)%plocal(iv%time) = iv%info(chemic_surf)%nlocal
    iv%info(chemic_surf)%ptotal(iv%time) = iv%info(chemic_surf)%ntotal
 
    !--------------------------------------------------------------------------
    ! Allocate the ob based on input number of obs:
    !--------------------------------------------------------------------------
-
    call da_allocate_observations_chem_sfc (iv)
 
    !--------------------------------------------------------------------------
@@ -46,7 +44,6 @@ subroutine da_setup_obs_structures_chem_sfc(ob, iv, grid)
    !--------------------------------------------------------------------------
    ! [3.0] Calculate innovation vector (O-B) and create (smaller) ob structure:
    !--------------------------------------------------------------------------
-
    call da_fill_obs_structures_chem_sfc(iv, ob)
 
    if (trace_use) call da_trace_exit("da_setup_obs_structures_chem_sfc")

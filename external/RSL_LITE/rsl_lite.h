@@ -165,6 +165,7 @@
 
 char * buffer_for_proc ( int P, int size, int code ) ;
 void * rsl_malloc( char * f, int l, int s ) ;
+void rsl_free( char ** p ) ;
 typedef int * int_p ;
 
 #define INDEX_2(A,B,NB)       ( (B) + (A)*(NB) )

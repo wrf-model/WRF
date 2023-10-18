@@ -7,6 +7,7 @@ RM      =       rm -f
 
 MODULES = \
 	module_bep_bem_helper.o \
+	complex_number_module.o \
 	module_cam_shr_kind_mod.o \
 	module_cam_support.o \
 	module_cam_shr_const_mod.o \
@@ -41,7 +42,9 @@ MODULES = \
 	module_bl_myjpbl.o \
 	module_bl_qnsepbl.o \
 	module_bl_acm.o \
-	module_bl_mynn.o \
+        module_bl_mynn_common.o \
+        module_bl_mynn.o \
+        module_bl_mynn_wrapper.o \
 	module_bl_fogdes.o \
 	module_bl_gwdo.o \
 	module_bl_gwdo_gsl.o \
@@ -51,7 +54,8 @@ MODULES = \
 	module_bl_camuwpbl_driver.o \
 	module_bl_mfshconvpbl.o \
 	module_bl_eepsilon.o \
-	module_shcu_camuwshcu_driver.o \
+	module_bl_keps.o \
+        module_shcu_camuwshcu_driver.o \
 	module_shcu_camuwshcu.o \
 	module_shcu_deng.o          \
 	module_shcu_grims.o \
@@ -87,11 +91,12 @@ MODULES = \
 	module_mp_wsm3.o \
 	module_mp_wsm5.o \
 	module_mp_wsm6.o \
+	module_mp_wsm6r.o \
 	module_mp_wsm7.o \
 	module_mp_etanew.o \
 	module_mp_fer_hires.o \
-	module_mp_HWRF.o \
 	module_mp_thompson.o \
+        module_fire_emis.o \
 	module_mp_SBM_polar_radar.o \
 	module_mp_full_sbm.o \
 	module_mp_fast_sbm.o \
@@ -117,6 +122,7 @@ MODULES = \
 	module_ra_rrtm.o  \
 	module_ra_rrtmg_lw.o  \
 	module_ra_rrtmg_sw.o  \
+	module_ra_rrtmg_aero_optical_util_cmaq.o \
 	module_ra_rrtmg_lwf.o  \
 	module_ra_rrtmg_swf.o  \
         module_ra_rrtmg_lwk.o  \
@@ -125,7 +131,6 @@ MODULES = \
         module_ra_cam.o \
 	module_ra_gfdleta.o \
         module_ra_flg.o \
-	module_ra_HWRF.o \
 	module_ra_hs.o  \
 	module_ra_eclipse.o \
 	module_ra_aerosol.o  \
@@ -209,7 +214,9 @@ FIRE_MODULES = \
         module_fr_fire_model.o \
         module_fr_fire_core.o \
         module_fr_fire_phys.o \
-        module_fr_fire_util.o
+        module_fr_fire_util.o \
+        module_firebrand_spotting_mpi.o \
+        module_firebrand_spotting.o
 
 DIAGNOSTIC_MODULES_EM = \
 	module_diag_afwa.o \
@@ -224,34 +231,33 @@ DIAGNOSTIC_MODULES_EM = \
 	module_diag_trad_fields.o \
         module_diag_solar.o
   
-DIAGNOSTIC_MODULES_NMM = \
-	module_diag_refl.o
-
 OBJS    =
-
-NMM_MODULES =  
 
 LIBTARGET    =  physics
 TARGETDIR    =  ./
 
 $(LIBTARGET) :
-		if [ $(WRF_NMM_CORE) -eq 1 ] ; then \
-                  $(MAKE) $(J) nmm_contrib  ; \
-                  $(AR) $(ARFLAGS) ../main/$(LIBWRFLIB) $(MODULES) $(OBJS) \
-                                   $(NMM_OBJS) $(NMM_MODULES) \
-                                   $(DIAGNOSTIC_MODULES_NMM) ; \
-                else                                                         \
-                  $(MAKE) $(J) non_nmm      ; \
-                  $(AR) $(ARFLAGS) ../main/$(LIBWRFLIB) $(MODULES) $(OBJS) \
-                                   $(FIRE_MODULES) \
-                                   $(DIAGNOSTIC_MODULES_EM)  ; \
-                fi
+	$(MAKE) $(J) non_nmm ; \
+	$(AR) $(ARFLAGS) ../main/$(LIBWRFLIB) $(MODULES) $(OBJS)  \
+		$(FIRE_MODULES) $(DIAGNOSTIC_MODULES_EM)
 
 include ../configure.wrf
 
-nmm_contrib : $(NMM_OBJS) $(NMM_MODULES) $(MODULES) $(OBJS) $(DIAGNOSTIC_MODULES_NMM)
-
 non_nmm : $(MODULES) $(FIRE_MODULES) $(WIND_MODULES) $(OBJS) $(DIAGNOSTIC_MODULES_EM)
+
+submodules :
+	@if [ \( ! -f module_sf_noahmpdrv.F \) -o \( ! -f module_sf_noahmp_glacier.F \) -o \
+	      \( ! -f module_sf_noahmp_groundwater.F \) -o \( ! -f module_sf_noahmplsm.F \) ] ; then \
+		echo Pulling in NoahMP submodule ; \
+		( cd .. ; git submodule update --init --recursive ) ; \
+		ln -sf noahmp/drivers/wrf/module_sf_noahmpdrv.F . ; \
+		ln -sf noahmp/src/module_sf_noahmp_glacier.F . ; \
+		ln -sf noahmp/src/module_sf_noahmp_groundwater.F . ; \
+		ln -sf noahmp/src/module_sf_noahmplsm.F . ; \
+		( cd ../run ; ln -sf ../phys/noahmp/parameters/MPTABLE.TBL . ) ; \
+	else \
+		echo No action required for NoahMP submodule ; \
+	fi
 
 clean:
 	@ echo 'use the clean script'

@@ -37,7 +37,7 @@ module da_vtox_transforms
 #if (WRF_CHEM == 1)
       chem_cv_options, &
 #endif
-      use_background_errors
+      use_background_errors, jb_factor
 #else
    use da_control, only : trace_use, var4d, ims,ime,jms,jme,kms,kme,jds,jde,kds,kde, &
       its,ite,jts,jte,kts,kte, cos_xls, cos_xle, sin_xle, sin_xls, pi, global, &
@@ -53,7 +53,7 @@ module da_vtox_transforms
       len_scaling12, &
       chem_cv_options, &
 #endif
-      use_background_errors,do_normalize,use_rf,len_scaling1, len_scaling2, len_scaling3, len_scaling4, &
+      use_background_errors,jb_factor,do_normalize,use_rf,len_scaling1, len_scaling2, len_scaling3, len_scaling4, &
       len_scaling5, len_scaling6, len_scaling7, len_scaling8, len_scaling9, len_scaling10, len_scaling11
 #endif
 

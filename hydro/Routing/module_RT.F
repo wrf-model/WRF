@@ -41,14 +41,15 @@ MODULE module_Routing
    use module_rfc_forecasts, only: rfc_forecasts
    use module_hydro_stop, only: HYDRO_stop
    use hashtable
+   use iso_fortran_env, only: int64
+#ifdef OUTPUT_CHAN_CONN
+#ifdef MPP_LAND
+   use mpi
+#endif
+#endif
 
    IMPLICIT NONE
 
-#ifdef OUTPUT_CHAN_CONN
-#ifdef MPP_LAND
-   include "mpif.h"  !! JLM: thought I could pick this up from module_mpp_land... but seems not
-#endif
-#endif
 
    integer, parameter :: r8 = selected_real_kind(8)
    real*8,  parameter :: zeroDbl=0.0000000000000000000_r8
@@ -182,6 +183,10 @@ CONTAINS
      !rt_domain(did)%LKSATRT     = 0.0
      allocate( rt_domain(did)%LKSATFAC    (IXRT,JXRT) )
      rt_domain(did)%LKSATFAC    = 0.0
+
+     allocate( rt_domain(did)%IMPERVFRAC    (IXRT,JXRT) )
+     rt_domain(did)%IMPERVFRAC    = 0.0
+
      !allocate( rt_domain(did)%subsurface%state%qsubrt      (IXRT,JXRT) )
      !rt_domain(did)%subsurface%state%qsubrt      = 0.0
      !allocate( rt_domain(did)%subsurface%properties%zwattablrt  (IXRT,JXRT) )
@@ -290,6 +295,9 @@ CONTAINS
   allocate( rt_domain(did)%SOLDRAIN   (IX,JX) )
             rt_domain(did)%SOLDRAIN    = 0.0
 
+  allocate( rt_domain(did)%NEXP   (IX,JX) )
+            rt_domain(did)%NEXP    = 1.0
+
   end if ! neither channel_only nor channelBucket_only
 
 
@@ -363,6 +371,7 @@ CONTAINS
      allocate( rt_domain(did)%Tw(nsizes) )
      allocate( rt_domain(did)%Tw_CC(nsizes) )
      allocate( rt_domain(did)%n_CC(nsizes) )
+     allocate( rt_domain(did)%ChannK(nsizes) )
      allocate( rt_domain(did)%LAKEIDA(nsizes) )
      allocate( rt_domain(did)%LAKEIDX(nsizes) )
 
@@ -441,6 +450,10 @@ CONTAINS
 	allocate( rt_domain(did)%velocity(nsizes) )
 	rt_domain(did)%QLateral  = zeroFlt
 	rt_domain(did)%velocity  = zeroFlt
+        if( nlst(did)%channel_option .eq. 2 ) then
+           allocate( rt_domain(did)%qloss(nsizes) )
+           rt_domain(did)%qloss = zeroFlt
+        endif
      endif
 
   if( nlst(did)%channel_option .eq. 1  .or. nlst(did)%channel_option .eq. 2 ) then
@@ -486,6 +499,7 @@ CONTAINS
       rt_domain(did)%Tw = 0.0
       rt_domain(did)%Tw_CC = 0.0
       rt_domain(did)%n_CC = 0.0
+      rt_domain(did)%ChannK = 0.0
 
 
       rt_domain(did)%ZELEV = 0.0
@@ -643,9 +657,10 @@ end subroutine getChanDim
 subroutine LandRT_ini(did)
 
   use module_noah_chan_param_init_rt
-  use config_base, only: nlst
+  use config_base, only: nlst, noah_lsm
   use module_RT_data, only: rt_domain
   use module_gw_gw2d_data, only: gw2d
+  use module_HYDRO_io, only: regrid_lowres_to_highres
 #ifdef HYDRO_D
   use module_HYDRO_io, only: output_lake_types
 #endif
@@ -667,7 +682,7 @@ subroutine LandRT_ini(did)
 
   real,  dimension(50)     :: BOTWID, TOPWID, HLINK_INIT, CHAN_SS, CHMann !Channel parms from table
   real,  dimension(50)     :: TOPWIDCC, NCC    !channnel params of compound
-
+  real,  dimension(50)     :: CHANN_K ! Channel infiltration param
   integer :: i,j,k, ll, count
 
   integer, allocatable, dimension(:) :: tmp_int
@@ -703,8 +718,8 @@ subroutine LandRT_ini(did)
              rt_domain(did)%CH_LNKRT, &
              rt_domain(did)%LKSATFAC,trim(nlst(did)%route_topo_f),&
              nlst(did)%route_chan_f,nlst(did)%geo_finegrid_flnm  ,  &
-             rt_domain(did)%OVROUGHRTFAC,rt_domain(did)%RETDEPRTFAC, &
-             nlst(did)%channel_option, nlst(did)%udmp_opt)
+             rt_domain(did)%OVROUGHRTFAC,rt_domain(did)%RETDEPRTFAC, rt_domain(did)%IMPERVFRAC, &
+             nlst(did)%channel_option, nlst(did)%udmp_opt, nlst(did)%imperv_adj)
 
 
    !yw CALL READ_ROUTING_old(rt_domain(did)%IXRT,rt_domain(did)%JXRT,rt_domain(did)%ELRT,rt_domain(did)%overland%streams_and_lakes%ch_netrt, &
@@ -728,6 +743,7 @@ subroutine LandRT_ini(did)
              rt_domain(did)%Tw,                              &
              rt_domain(did)%Tw_CC,                           &
              rt_domain(did)%n_CC,                            &
+             rt_domain(did)%ChannK,                          &
              rt_domain(did)%HRZAREA,      rt_domain(did)%LAKEMAXH, &
              rt_domain(did)%WEIRH,        rt_domain(did)%WEIRC, &
              rt_domain(did)%WEIRL,        rt_domain(did)%DAML, &
@@ -771,6 +787,7 @@ subroutine LandRT_ini(did)
            rt_domain(did)%Tw,                                       &
            rt_domain(did)%Tw_CC,                                    &
            rt_domain(did)%n_CC,                                     &
+           rt_domain(did)%ChannK,                                   &
            rt_domain(did)%LAKEIDA,       rt_domain(did)%HRZAREA,    &
            rt_domain(did)%LAKEMAXH,      rt_domain(did)%WEIRH,      &
            rt_domain(did)%WEIRC,         rt_domain(did)%WEIRL,      &
@@ -811,6 +828,9 @@ subroutine LandRT_ini(did)
           allocate(persistence_levelpool_hybrid :: rt_domain(did)%reservoirs(lake_index)%ptr)
 
        else if (rt_domain(did)%reservoir_type(lake_index) == 4 .and. nlst(did)%reservoir_rfc_forecasts) then
+          allocate(rfc_forecasts :: rt_domain(did)%reservoirs(lake_index)%ptr)
+
+       else if (rt_domain(did)%reservoir_type(lake_index) == 5 .and. nlst(did)%reservoir_rfc_forecasts) then
           allocate(rfc_forecasts :: rt_domain(did)%reservoirs(lake_index)%ptr)
 
        else
@@ -989,7 +1009,14 @@ subroutine LandRT_ini(did)
 
         endif  ! end if block for UDMP_OPT
 
-        new_start_i = 0; new_start_j = 1
+        !-------------------------------------------
+        ! Z.Cui: Changed new_start_i to 0, otherwise, it crashes with
+        !        an out-of-bounds error when the '-check all' is enabled
+        !        for the ifort compiler.
+        !        The reason is that CH_LNKRT and CH_LNKRT_SL is defined as
+        !        1:IXRT and 1:JXRT. Now new_start_i is changed to start from 1.
+        !-------------------------------------------
+        new_start_i = 1; new_start_j = 1
         new_end_i = rt_domain(did)%ixrt; new_end_j = rt_domain(did)%jxrt
 
         if(left_id .ge. 0) new_start_i = 1
@@ -1010,9 +1037,9 @@ subroutine LandRT_ini(did)
 
         block
           type(hash_t) :: hash_table
-          integer :: val,ii,jj
+          integer(kind=int64) :: val,ii,jj
           logical :: found
-          
+
           call hash_table%set_all_idx(rt_domain(did)%LLINKID, rt_domain(did)%LNLINKSL)
           do jj = new_start_j, new_end_j
              do ii = new_start_i, new_end_i
@@ -1182,6 +1209,10 @@ subroutine LandRT_ini(did)
         end do
      end do
 
+     !Apply impervious adjustment to retdeprt (AD)
+     if (nlst(did)%imperv_adj .ne. 0) then
+       rt_domain(did)%overland%properties%retention_depth = rt_domain(did)%overland%properties%retention_depth*(1.-rt_domain(did)%impervfrac)
+     end if
 
      !Apply calibration scaling factors to sfc roughness and retention depth here...
      rt_domain(did)%overland%properties%retention_depth = rt_domain(did)%overland%properties%retention_depth * rt_domain(did)%RETDEPRTFAC
@@ -1214,6 +1245,7 @@ subroutine LandRT_ini(did)
 #ifdef MPP_LAND
    ! communicate the value to
      call MPP_LAND_COM_REAL(rt_domain(did)%overland%properties%retention_depth,rt_domain(did)%IXRT,rt_domain(did)%JXRT,99)
+     call MPP_LAND_COM_REAL(rt_domain(did)%overland%properties%roughness,rt_domain(did)%IXRT,rt_domain(did)%JXRT,99)
      call MPP_LAND_COM_REAL(rt_domain(did)%overland%properties%surface_slope_x,rt_domain(did)%IXRT,rt_domain(did)%JXRT,99)
      call MPP_LAND_COM_REAL(rt_domain(did)%overland%properties%surface_slope_y,rt_domain(did)%IXRT,rt_domain(did)%JXRT,99)
      do i = 1, 8
@@ -1403,10 +1435,10 @@ subroutine LandRT_ini(did)
       ! This conflict of options is caught in Data_Rec/module_namelist.F
       ! Some of the code for reading/using top-width-necessary params from CHANPARM.TBL are available
       ! but commented out in the code, since they were a bridge to nowhere.
-        call mpp_CHAN_PARM_INIT (BOTWID,HLINK_INIT,CHAN_SS,CHMann)  !Read chan parms from table...
+        call mpp_CHAN_PARM_INIT (BOTWID,CHANN_K,HLINK_INIT,CHAN_SS,CHMann)  !Read chan parms from table...
       !call mpp_CHAN_PARM_INIT (BOTWID,TOPWID,HLINK_INIT,CHAN_SS,CHMann,TOPWIDCC,NCC)  !Read chan parms from table...
 #else
-        call CHAN_PARM_INIT (BOTWID, TOPWID, HLINK_INIT, CHAN_SS, CHMann) !,TOPWIDCC,NCC)  !Read chan parms from table...
+        call CHAN_PARM_INIT (BOTWID,CHANN_K,HLINK_INIT,CHAN_SS,CHMann) !,TOPWIDCC,NCC)  !Read chan parms from table...
 #endif
      end if
 
@@ -1693,4 +1725,3 @@ subroutine deriveFromNode(did)
 end subroutine deriveFromNode
 
 END MODULE module_Routing
-

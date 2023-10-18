@@ -231,7 +231,6 @@ contains
       logical, dimension(ims:ime,jms:jme), intent(inout) ::             &
                                         cu_act_flag
 
-
       real,    dimension(ims:ime, kms:kme, jms:jme), intent(in) ::      &
                                         dz8w,                           &
                                         pcps,                           &
@@ -585,6 +584,20 @@ contains
       integer i,j,k,lq,km,km1
       real dt,ztpp1
       real zew,zqs,zcor
+      real scale_fac(lq), scale_fac2(lq), dxref
+!
+!  set scale-dependency factor when dx is < 15 km
+!
+      dxref = 15000.
+      do j=1,lq
+      if (dx(j).lt.dxref) then
+          scale_fac(j) = (1.06133+log(dxref/dx(j)))**3
+          scale_fac2(j) = scale_fac(j)**0.5
+      else
+          scale_fac(j) = 1.+1.33e-5*dx(j)
+          scale_fac2(j) = 1.
+      end if 
+      end do
 !
       ztmst=dt
 !
@@ -638,7 +651,8 @@ contains
      &     pssfc,    locum,                             &
      &     ktype,    icbot,    ictop,    ztu,     zqu,  &
      &     zlu,      zlude,    zmfu,     zmfd,    zrain,&
-     &     pcte,     phhfl,    lndj,     pgeoh,   dx)
+     &     pcte,     phhfl,    lndj,     pgeoh,   dx,   &
+     &     scale_fac, scale_fac2)
 !
 !     to include the cloud water and cloud ice detrained from convection
 !
@@ -693,7 +707,8 @@ contains
      &     pssfc,    ldcum,                              &
      &     ktype,    kcbot,    kctop,    ptu,      pqu,&
      &     plu,      plude,    pmfu,     pmfd,     prain,&
-     &     pcte,     phhfl,    lndj,     zgeoh,   dx)
+     &     pcte,     phhfl,    lndj,     zgeoh,    dx,   &
+     &     scale_fac,  scale_fac2)
       implicit none
 !
 !***cumastrn*  master routine for cumulus massflux-scheme
@@ -801,6 +816,7 @@ contains
      &         ktype(klon),            lndj(klon)
       logical  ldcum(klon)
       logical  loddraf(klon),          llo1,   llo2(klon)
+      real     scale_fac(klon), scale_fac2(klon)
 
 !  local varaiables
       real     zcons,zcons2,zqumqe,zdqmin,zdh,zmfmax
@@ -901,7 +917,7 @@ contains
      &     zuu,      zvu,      pmfu,     zmfub,&
      &     zmfus,    zmfuq,    zmful,    plude,    zdmfup,&
      &     kcbot,    kctop,    ictop0,   icum,     ztmst,&
-     &     zqsenh,   zlglac,   lndj,     wup,      wbase,   kdpl,  pmfude_rate )
+     &     zqsenh,   zlglac,   lndj,     wup,      wbase,   kdpl,  pmfude_rate)
 
 !*     (b) check cloud depth and change entrainment rate accordingly
 !          calculate precipitation rate (for downdraft calculation)
@@ -1017,10 +1033,10 @@ contains
        if(ldcum(jl).and.ktype(jl).eq.1) then
            ikb = kcbot(jl)
            ikt = kctop(jl)
-           ztau = ztauc(jl) * (1.+1.33e-5*dx(jl))
-           ztau = max(ztmst,ztau)
-           ztau = max(360.,ztau)
-           ztau = min(10800.,ztau)
+           ztauc(jl) = max(ztmst,ztauc(jl))
+           ztauc(jl) = max(360.,ztauc(jl))
+           ztauc(jl) = min(10800.,ztauc(jl))
+           ztau = ztauc(jl) * scale_fac(jl)
            if(nonequil) then
              zcape2(jl)= max(0.,zcape2(jl))
              zcape(jl) = max(0.,min(zcape1(jl)-zcape2(jl),5000.))
@@ -1059,6 +1075,7 @@ contains
            else
              zmfub1(jl) = zmfub(jl)
            end if
+           zmfub1(jl) = zmfub1(jl)/scale_fac2(jl)
            zmfub1(jl) = min(zmfub1(jl),zmfmax)
          end if
 
@@ -2102,7 +2119,7 @@ contains
      &     puu,      pvu,      pmfu,     pmfub,    &
      &     pmfus,    pmfuq,    pmful,    plude,    pdmfup,&
      &     kcbot,    kctop,    kctop0,   kcum,     ztmst,&
-     &     pqsenh,   plglac,   lndj,     wup,      wbase,   kdpl, pmfude_rate)
+     &     pqsenh,   plglac,   lndj,     wup,      wbase,   kdpl, pmfude_rate) 
       implicit none
 !     this routine does the calculations for cloud ascents
 !     for cumulus parameterization
@@ -2307,7 +2324,7 @@ contains
      &     pgeo,     pgeoh,    ldcum,   ktype,   klab,  zlrain,&
      &     pmfu,     pmfub,    kcbot,   ptu,&
      &     pqu,      plu,      puu,     pvu,      pmfus,&
-     &     pmfuq,    pmful,    pdmfup)
+     &     pmfuq,    pmful,    pdmfup  )
       is = 0
       jlm = 0
       do jl = 1,klon
@@ -3709,7 +3726,7 @@ contains
      &     pgeo,     pgeoh,    ldcum,   ktype,  klab,  plrain,&
      &     pmfu,     pmfub,    kcbot,   ptu,&
      &     pqu,      plu,      puu,     pvu,    pmfus,&
-     &     pmfuq,    pmful,    pdmfup)
+     &     pmfuq,    pmful,    pdmfup  )
       implicit none
 !      m.tiedtke         e.c.m.w.f.     12/89
 !      c.zhang           iprc           05/2012

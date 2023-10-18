@@ -32,6 +32,7 @@ CONTAINS
                              , ipsy,ipey,jpsy,jpey,kpsy,kpey    &
                              , k_start , k_end                  &
                              , f_flux                           &
+                             , feedback_is_ready                &
                             )
     USE module_state_description
     USE module_model_constants
@@ -134,6 +135,7 @@ CONTAINS
 
     INTEGER, INTENT(IN)                           ::  k_start, k_end
     LOGICAL, INTENT(IN), OPTIONAL                 ::  f_flux
+    LOGICAL, INTENT(IN), OPTIONAL :: feedback_is_ready  ! For WRF-CMAQ coupled model, indicates feedback information is available
 
 ! Local
     REAL, DIMENSION( ims:ime, jms:jme ) :: exch_temf  ! 1/7/09 WA
@@ -330,10 +332,9 @@ BENCH_START(g_pbl_driver_tim)
      &        ,cov=grid%cov                                               &
      &        ,DQKE=grid%dqke,QWT=grid%qWT                                &
      &        ,QSHEAR=grid%qSHEAR,QBUOY=grid%qBUOY,QDISS=grid%qDISS       &
-     &        ,bl_mynn_tkebudget=config_flags%bl_mynn_tkebudget           &
+     &        ,tke_budget=config_flags%tke_budget                         &
      &        ,rmol=grid%rmol, ch=grid%ch                                 &
-     &        ,qcg=grid%qcg, grav_settling=config_flags%grav_settling             &
-!    &        ,K_m=grid%K_m, K_h=grid%K_h, K_q=grid%K_q                   &
+     &        ,qcg=grid%qcg, grav_settling=config_flags%grav_settling     &
 !GWD for ARW
      &        ,GWD_OPT=config_flags%gwd_opt &
      &        ,DTAUX3D=grid%dtaux3d,DTAUY3D=grid%dtauy3d &

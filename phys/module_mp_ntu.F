@@ -339,7 +339,7 @@
       ENDDO
       UL = (1.-DERF(5.D+0/DSQRT(2.D+0)))*0.5                            ! after 5 sigma, x1mfrc will < 2.86E-7
       X1MAFRC = 1.D+0-XAFRC
-      IF (XAFRC.LT.1.E-10) THEN
+      IF (XAFRC.LT.1.D-10) THEN
          RC = RC_MIN
          RETURN
       ENDIF
@@ -352,7 +352,7 @@
       DO I = 1,ITERMAX
          Y  = Y0
          DY = DYEQU(DRC,DWMAS,DMODE,DSTDV)
-         IF (DY.LE.1.E-50) THEN
+         IF (DY.LE.1.D-50) THEN
             PRINT *,'IN FIND_RC0.F DY IS',DY
             PRINT *,I,DX,Y,DY,DEXP(DRC),DRC,XAFRC,X1MAFRC,DMODE,DSTDV, &
                     CMODE,CSTDV
@@ -3828,6 +3828,7 @@
       IF (QH1D.GE.QSMALL) THEN
          CALL SOLVE_AFAH(TK1D,RHO,QH1D,NH1D,AH1D,LAMH,AFAH,MVDH,AVH,BVH)
          LLMH = LOG(LAMH)
+         BHTMP = SCN*SQRT(AVH*RHOAJ/MUA)
          IF (HAIL_VENT.EQ.0) THEN
             QTMP1 = LLMH*(1.5+BVH/2.)
             QTMP2 = EXP(GAMLN(AFAH+2.)-GAMLN(AFAH+1.)-LOG(LAMH))
@@ -6203,7 +6204,7 @@
             ENDIF
             QCLsh = QCLS1*ESH*VTQSH*NH1D*(SASR2*GSM3+SASR1*2.*GH2*GSM2+&
                     GH3*GSM1)
-            NCLsh = NCLS1*ESH*VTNSH*NH1D*(SASR2*GS3*+SASR1*2.*GH2*GS2+ &
+            NCLsh = NCLS1*ESH*VTNSH*NH1D*(SASR2*GS3 +SASR1*2.*GH2*GS2+ &
                     GH3)
             QCLsh = MIN(QCLsh,QS1D*iDT)
             NCLsh = MIN(NCLsh,NS1D*iDT)
@@ -6220,7 +6221,7 @@
             ENDIF
             IF (AH1D.GE.ASMALL) THEN
                AhCLsh = (MVDX**2.-MVDH**2.)*NCLS1*ESH*VTASH*NH1D*(     &
-                        SASR2*GS3*+SASR1*2.*GH2*GS2+GH3)
+                        SASR2*GS3 +SASR1*2.*GH2*GS2+GH3)
             ENDIF
          ENDIF
          IF (QS1D.GE.QSMALL.AND.MVDS.GE.2.E-4) THEN

@@ -12,7 +12,7 @@ subroutine da_print_qcstat(it, iv, num_qcstat_conv)
 
    integer                       :: ii, i, j, k ,n, num, ounit, ios
    character(len=filename_len)   :: file
-
+   character*4 :: ob_field      ! Added by Soyoung (Aug-2021)
 
    logical   :: write_head
    character(1),dimension(115):: cline
@@ -81,12 +81,17 @@ subroutine da_print_qcstat(it, iv, num_qcstat_conv)
      write_head = .true.
      end if
     do j = 1, num_ob_vars
+     ob_field = ob_vars(j)      ! Added by Soyoung (Aug-2021)
+#if (WRF_CHEM == 1)
+     if (i.eq.num_ob_indexes) ob_field = 'chem'
+#endif
      if( num_qcstat_conv(1,i,j,npres_print+1) > 0 )  then            
-      write(ounit,700) obs_names(i),ob_vars(j),typx(1),&
+      write(ounit,700) obs_names(i),ob_field,typx(1),&       ! Soyoung (Aug-2021)
+!      write(ounit,700) obs_names(i),ob_vars(j),typx(1),&
       ((num_qcstat_conv(1,i,j,k) - num_qcstat_conv(2,i,j,k)),k=1,npres_print+1)
       write(ounit,701) typx(2), (num_qcstat_conv(2,i,j,k),k=1,npres_print+1)
-700 format(1x,a10,a3,2x,a4,3x, 25(1x,i6) )
-701 format(16x,a4,3x,25(1x,i6) )
+700 format(1x,a12,a4,2x,a4,1x, 25(1x,i6) )
+701 format(19x,a4,1x,25(1x,i6) )
      end if
     end do
    end do

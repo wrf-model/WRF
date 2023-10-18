@@ -93,7 +93,12 @@ COMPILER90  = ftn
 FORMAT_FREE = -FR
 BYTESWAPIO  = -convert big_endian
 F90FLAGS    = -w -c -ftz -align all -fno-alias -fp-model precise $(FORMAT_FREE) $(BYTESWAPIO)
+DEBUGFLAGS = -DHYDRO_D -g -traceback -debug all -check all
 MODFLAG	    = -I./ -I ../../MPP -I ../MPP -I ../mod
+#
+# Used for DMAPP 
+# module load dmapp/7.0.1-1.0502.11080.8.76.ari
+#LDFLAGS	    = $(HDF5_LDFLAGS) -Wl,--whole-archive,-ldmapp,--no-whole-archive
 LDFLAGS	    = $(HDF5_LDFLAGS)
 CPPINVOKE	= -fpp
 CPPFLAGS    = -DMPP_LAND -I ../Data_Rec $(HYDRO_D) $(SPATIAL_SOIL) $(NWM_META) $(WRF_HYDRO_NUDGING) $(OUTPUT_CHAN_CONN) $(PRECIP_DOUBLE) $(NCEP_WCOSS)

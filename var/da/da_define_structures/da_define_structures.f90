@@ -636,6 +636,7 @@ module da_define_structures
       real,    pointer     :: vegtyp(:)
       real,    pointer     :: vegfra(:)
       real,    pointer     :: clwp(:) ! model/guess clwp
+      real,    pointer     :: cip(:)  ! model/guess cloud-ice path
       real,    pointer     :: clw(:)  ! currently AMSR2 only
       real,    pointer     :: ps_jacobian(:,:) ! only RTTOV
       real,    pointer     :: ts_jacobian(:,:) ! only over water CRTM
@@ -1111,7 +1112,7 @@ module da_define_structures
    type be_subtype
       integer           :: mz          ! Vertical truncation of errors.
       integer           :: max_wave    ! Global only - horizontal spectral truncation.
-      character*5       :: name        ! Variable name.
+      character*10      :: name        ! Variable name.
       real*8, pointer   :: rf_alpha(:) ! RF scale length.
       real*8, pointer   :: val(:,:)    ! Local Standard dev./sqrt(eigenvalue).
       real*8, pointer   :: evec(:,:,:) ! Local Vertical eigenvectors.

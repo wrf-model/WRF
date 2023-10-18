@@ -30,7 +30,7 @@ subroutine OverlandRouting( &
     REAL, INTENT(IN) :: DT, DTRT_TER
     integer, INTENT(IN) :: ixrt, jxrt, rt_option
     !REAL, INTENT(out), DIMENSION(IXRT,JXRT)   :: SFCHEADSUBRT  ! moved into overland_data%control
-    real, intent(inout) :: q_sfcflx_x,q_sfcflx_y
+    real, dimension(IXRT,JXRT), intent(inout) :: q_sfcflx_x,q_sfcflx_y
 
     ! REMOVED VARIABLES
     !INTEGER, INTENT(INOUT), DIMENSION(IXRT,JXRT) :: LAKE_MSKRT
@@ -256,9 +256,6 @@ subroutine ov_rtng( &
     REAL	:: DT_FRAC,SUM_INFXS,sum_head
     !INTEGER SO8RT_D(IXRT,JXRT,3), rt_option
 
-
-
-
     !DJG ----------------------------------------------------------------------
     ! DJG BEGIN 1-D or 2-D OVERLAND FLOW ROUTING LOOP
     !DJG ---------------------------------------------------------------------
@@ -473,6 +470,7 @@ SUBROUTINE ROUTE_OVERLAND1(dt,                                &
     REAL, INTENT(IN), DIMENSION(XX,YY,8) :: SO8RT
     REAL*8, DIMENSION(XX,YY) :: QBDRY_tmp, DH
     REAL*8, DIMENSION(XX,YY) :: DH_tmp
+    REAL, DIMENSION(XX,YY) :: edge_adjust ! mm
 
     !!! Declare Local Variables
 
@@ -484,7 +482,7 @@ SUBROUTINE ROUTE_OVERLAND1(dt,                                &
     INTEGER :: i,j
     REAL IXX8,IYY8
     INTEGER  IXX0,JYY0,index, SO8RT_D(XX,YY,3)
-    REAL  tmp_gsize,hsum
+    REAL :: tmp_gsize, hsum, tmp_gsize_arr(9)
 
     !!! Initialize variables
 
@@ -507,7 +505,8 @@ SUBROUTINE ROUTE_OVERLAND1(dt,                                &
                 sfx = so8RT(i,j,index)-(h(IXX0,JYY0)-h(i,j))*0.001*tmp_gsize
                 hmax = h(i,j)*0.001  !Specify max head for mass flux limit...
                 if(sfx .lt. 1E-20) then
-                    call GETMAX8DIR(IXX0,JYY0,I,J,H,RETENT_DEP,so8rt,gsize(i,j,:),sfx,XX,YY)
+                    tmp_gsize_arr = gsize(i,j,:)
+                    call GETMAX8DIR(IXX0,JYY0,I,J,H,RETENT_DEP,so8rt,tmp_gsize_arr,sfx,XX,YY)
                 end if
                 if(IXX0 > 0) then  ! do the rest if the lowest grid can be found.
                     if(sfx .lt. 1E-20) then
@@ -553,6 +552,7 @@ SUBROUTINE ROUTE_OVERLAND1(dt,                                &
 
                     !yw changed as following:
                     tmp_adjust=qqsfc*1000
+
                     if((h(i,j) - tmp_adjust) <0 )  then
 #ifdef HYDRO_D
                         print*, "Error Warning: surface head is negative:  ",i,j,ixx0,jyy0, &
@@ -580,10 +580,13 @@ SUBROUTINE ROUTE_OVERLAND1(dt,                                &
                             QBDRY_tmp(IXX0,JYY0)=QBDRY_tmp(IXX0,JYY0) - qqsfc*1000.
                             QBDRYT=QBDRYT - qqsfc
                             DH_tmp(IXX0,JYY0)= DH_tmp(IXX0,JYY0)-tmp_adjust
+
                         end if
                     end if
+
                     !! End loop to route sfc water
                 end if
+
         end do
     end do
 
@@ -601,6 +604,54 @@ SUBROUTINE ROUTE_OVERLAND1(dt,                                &
 #endif
 
     H = H + DH
+
+!!! Scrape the outermost edges
+edge_adjust = 0.0
+do j=1,YY,YY-1
+   do i=1,XX
+#ifdef MPP_LAND
+      if( ((i.eq.XX).and.(right_id .lt. 0)) .or. &
+          ((i.eq.1) .and.(left_id  .lt. 0)) .or. &
+          ((j.eq.1) .and.(down_id  .lt. 0)) .or. &
+          ((j.eq.YY).and.(up_id    .lt. 0)) ) then
+#else
+          if ((i.eq.XX).or.(i.eq.1).or.(j.eq.1)   &
+               .or.(j.eq.YY )) then
+#endif
+              if (h(i,j) .GT. retent_dep(i,j)) then
+                 edge_adjust(i,j) = h(i,j) - retent_dep(i,j) ! positive mm
+              end if
+
+          end if
+   end do
+end do
+
+do i=1,XX,XX-1
+   do j=1,YY
+#ifdef MPP_LAND
+      if( ((i.eq.XX).and.(right_id .lt. 0)) .or. &
+          ((i.eq.1) .and.(left_id  .lt. 0)) .or. &
+          ((j.eq.1) .and.(down_id  .lt. 0)) .or. &
+          ((j.eq.YY).and.(up_id    .lt. 0)) ) then
+#else
+          if ((i.eq.XX).or.(i.eq.1).or.(j.eq.1)   &
+               .or.(j.eq.YY )) then
+#endif
+              if (h(i,j) .GT. retent_dep(i,j)) then
+                 edge_adjust(i,j) = h(i,j) - retent_dep(i,j) ! positive mm
+              end if
+
+          end if
+   end do
+end do
+
+
+#ifdef MPP_LAND
+    call MPP_LAND_COM_REAL(edge_adjust,XX,YY,99)
+#endif
+    QBDRY = QBDRY - edge_adjust ! making this negative term more negative
+    H = H - edge_adjust ! making this positive term less positive
+!!! End outermost edge scrape
 
     return
 
@@ -876,4 +927,3 @@ SUBROUTINE ROUTE_OVERLAND2 (dt,                               &
 
     !DJG ----------------------------------------------------------------------
 end subroutine ROUTE_OVERLAND2
-

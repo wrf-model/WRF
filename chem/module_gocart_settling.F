@@ -152,14 +152,13 @@ SUBROUTINE gocart_settling_driver(dt,config_flags,t_phy,moist,      &
              sea_salt(1,1,kk,4)=chem(i,k,j,p_seas_4)              
           ENDDO
        ENDIF
-!
-! gravitional settling in [ug/m2/s]; from settling, graset_dust in [ug/kg][m/s]
-!
-       dustgraset_1(i,j)=graset_dust(1,1,1)*airden(1,1,1)*(-1.d0)
-       dustgraset_2(i,j)=graset_dust(1,1,2)*airden(1,1,1)*(-1.d0)
-       dustgraset_3(i,j)=graset_dust(1,1,3)*airden(1,1,1)*(-1.d0)
-       dustgraset_4(i,j)=graset_dust(1,1,4)*airden(1,1,1)*(-1.d0)
-       dustgraset_5(i,j)=graset_dust(1,1,5)*airden(1,1,1)*(-1.d0)
+
+        !graset_dust in [ug/kg][m/s]
+       dustgraset_1(i,j)=dustgraset_1(i,j)+conver*graset_dust(1,1,1)*airden(1,1,1)*dt   !dustgraset [kg/m2]
+       dustgraset_2(i,j)=dustgraset_2(i,j)+conver*graset_dust(1,1,2)*airden(1,1,1)*dt
+       dustgraset_3(i,j)=dustgraset_3(i,j)+conver*graset_dust(1,1,3)*airden(1,1,1)*dt
+       dustgraset_4(i,j)=dustgraset_4(i,j)+conver*graset_dust(1,1,4)*airden(1,1,1)*dt
+       dustgraset_5(i,j)=dustgraset_5(i,j)+conver*graset_dust(1,1,5)*airden(1,1,1)*dt
 
        setvel_1(i,j)=grasetvel_dust(1,1,1)                            ! settling velocity [m/s]
        setvel_2(i,j)=grasetvel_dust(1,1,2)

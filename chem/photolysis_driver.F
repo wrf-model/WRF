@@ -5,6 +5,7 @@
                dt_cld,af_dir,af_dn,af_up,par,erythema,                   &
                gmt,julday,t_phy,moist,aerwrf,p8w,t8w,p_phy,              &
                chem,rho_phy,dz8w,xlat,xlong,z,z_at_w,gd_cloud,gd_cloud2, &
+               bl_cld,bl_cld2,                                           &
                ph_macr,ph_o31d,ph_o33p,ph_no2,                           &
                ph_clno2,                                                 &
                ph_no3o2,                                                 &
@@ -28,6 +29,7 @@
                bscoef1,bscoef2,bscoef3,bscoef4,                          &
                l2aer,l3aer,l4aer,l5aer,l6aer,l7aer,                      &
                pm2_5_dry,pm2_5_water,uvrad,ivgtyp,                       &
+               o3_gfs_du,                                                &
                ids,ide, jds,jde, kds,kde,                                &
                ims,ime, jms,jme, kms,kme,                                &
                its,ite, jts,jte, kts,kte                                 )
@@ -99,7 +101,7 @@
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                       &  
          OPTIONAL,                                                     &
          INTENT(INOUT ) ::                                             &
-           gd_cloud,gd_cloud2
+           gd_cloud,gd_cloud2,bl_cld,bl_cld2
 !
 ! arrays that hold the aerosol optical properties
 !
@@ -133,6 +135,9 @@
           INTENT(IN   ) ::                                             &
                                                      xlat,             &
                                                      xlong
+   REAL,  DIMENSION( ims:ime, jms:jme ),                                & 
+          OPTIONAL, INTENT(IN ) :: o3_gfs_du
+
    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
 
    LOGICAL, INTENT(IN)  :: haveaer
@@ -225,6 +230,7 @@
                gmt, julday, t_phy, moist, aerwrf,                      &
                p8w, t8w, p_phy, chem, rho_phy,                         &
                dz8w, xlat, xlong, z, z_at_w, gd_cloud, gd_cloud2,      &
+               bl_cld,bl_cld2,                                         &
                tauaer1,tauaer2,tauaer3,tauaer4,                        &
                gaer1,gaer2,gaer3,gaer4,                                &
                waer1,waer2,waer3,waer4,                                &
@@ -236,6 +242,7 @@
                ph_glyald,ph_mek,ph_gly,                                &
                pm2_5_dry, pm2_5_water, uvrad,                          &
                dt_cld,af_dir,af_dn,af_up,par,erythema,                 &
+               o3_gfs_du,                                              &
                ids,ide, jds,jde, kds,kde,                              &
                ims,ime, jms,jme, kms,kme,                              &
                its,ite, jts,jte, kts,kte                               )

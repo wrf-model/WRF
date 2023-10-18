@@ -612,14 +612,18 @@ end if
 
 ! Set the num_vert_mix variable if using ACM
     num_vert_mix = 0
-    IF ( config_flags%bl_pbl_physics == ACMPBLSCHEME ) THEN
+    IF ( config_flags%bl_pbl_physics == ACMPBLSCHEME .or. config_flags%bl_pbl_physics == MYNNPBLSCHEME) THEN
          mix_select: SELECT CASE(config_flags%chem_opt)
          CASE (RADM2SORG_AQ, RADM2SORG_AQCHEM, RACMSORG_AQ, RACMSORG_AQCHEM_KPP, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, CBMZSORG_AQ, &
               CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ, &
               CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP)
             num_vert_mix = numgas
          CASE DEFAULT
-            num_vert_mix = num_chem
+            IF (config_flags%mynn_chem_vertmx) THEN
+               num_vert_mix = num_chem
+            ELSE
+               num_vert_mix = 0
+            ENDIF
          END SELECT mix_select
         if(num_vert_mix .gt. config_flags%ndepvel) then
          write(message_txt,'(A30,2(I8,2x))') 'chem_init: num_vert_mix and ndepvel ',num_vert_mix,config_flags%ndepvel

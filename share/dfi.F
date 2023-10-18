@@ -51,7 +51,6 @@
           grid%dfi_re_cloud(:,:,:)        = grid%dfi_re_cloud(:,:,:)        + grid%re_cloud(:,:,:)        * hn
           grid%dfi_re_ice(:,:,:)          = grid%dfi_re_ice(:,:,:)          + grid%re_ice(:,:,:)          * hn
           grid%dfi_re_snow(:,:,:)         = grid%dfi_re_snow(:,:,:)         + grid%re_snow(:,:,:)         * hn
-#if (EM_CORE == 1)
        ELSE IF ( grid%mp_physics_dfi .EQ. NUWRF4ICESCHEME_DFI ) THEN
           grid%dfi_re_cloud_gsfc(:,:,:)   = grid%dfi_re_cloud_gsfc(:,:,:)   + grid%re_cloud_gsfc(:,:,:)   * hn
           grid%dfi_re_rain_gsfc(:,:,:)    = grid%dfi_re_rain_gsfc(:,:,:)    + grid%re_rain_gsfc(:,:,:)    * hn
@@ -59,7 +58,6 @@
           grid%dfi_re_snow_gsfc(:,:,:)    = grid%dfi_re_snow_gsfc(:,:,:)    + grid%re_snow_gsfc(:,:,:)    * hn
           grid%dfi_re_graupel_gsfc(:,:,:) = grid%dfi_re_graupel_gsfc(:,:,:) + grid%re_graupel_gsfc(:,:,:) * hn
           grid%dfi_re_hail_gsfc(:,:,:)    = grid%dfi_re_hail_gsfc(:,:,:)    + grid%re_hail_gsfc(:,:,:)    * hn
-#endif
        ENDIF
      ELSE
        grid%dfi_moist(:,:,:,P_QV) = grid%dfi_moist(:,:,:,P_QV) + grid%moist(:,:,:,P_QV) * hn
@@ -70,25 +68,6 @@
 
       ! accumulate DFI coefficient
       grid%hcoeff_tot = grid%hcoeff_tot + hn
-#endif
-
-#if (NMM_CORE == 1)
-      hn = grid%hcoeff(grid%ntsd+1)
-      grid%dfi_pd(:,:)    = grid%dfi_pd(:,:)    + grid%pd(:,:)    * hn
-      grid%dfi_pint(:,:,:)   = grid%dfi_pint(:,:,:)   + grid%pint(:,:,:)   * hn
-      grid%dfi_dwdt(:,:,:)   = grid%dfi_dwdt(:,:,:)   + grid%dwdt(:,:,:)   * hn
-      grid%dfi_t(:,:,:)   = grid%dfi_t(:,:,:)   + grid%t(:,:,:)   * hn
-      grid%dfi_q(:,:,:)   = grid%dfi_q(:,:,:)   + grid%q(:,:,:)   * hn
-      grid%dfi_q2(:,:,:)  = grid%dfi_q2(:,:,:)  + grid%q2(:,:,:)  * hn
-      grid%dfi_cwm(:,:,:) = grid%dfi_cwm(:,:,:) + grid%cwm(:,:,:) * hn
-      grid%dfi_u(:,:,:)   = grid%dfi_u(:,:,:)   + grid%u(:,:,:)   * hn
-      grid%dfi_v(:,:,:)   = grid%dfi_v(:,:,:)   + grid%v(:,:,:)   * hn
-      grid%dfi_moist(:,:,:,:)  = grid%dfi_moist(:,:,:,:)  + grid%moist(:,:,:,:)  * hn
-      grid%dfi_scalar(:,:,:,:) = grid%dfi_scalar(:,:,:,:) + grid%scalar(:,:,:,:) * hn
-      ! accumulate DFI coefficient
-      grid%hcoeff_tot = grid%hcoeff_tot + hn
-      write(mess,*) 'grid%hcoeff_tot: ', grid%hcoeff_tot
-      call wrf_message(mess)
 #endif
 
    END SUBROUTINE dfi_accumulate
@@ -222,37 +201,6 @@
       CALL nl_set_p_lev_diags( grid%id, grid%p_lev_diags_dfi)
 #endif
 
-#if (NMM_CORE == 1)
-
-!
-! CHANGE (SIGN ONLY OF) IMPORTANT TIME CONSTANTS
-!
-      CALL nl_get_time_step( grid%id, grid%time_step )
-      if (grid%time_step .lt. 0) then
-!       DT   =-DT
-
-        write(mess,*) 'changing signs for backward integration'
-        call wrf_message(mess)
-        grid%CPGFV = -grid%CPGFV
-        grid%EN    = -grid%EN
-        grid%ENT   = -grid%ENT
-        grid%F4D   = -grid%F4D
-        grid%F4Q   = -grid%F4Q
-        grid%EF4T  = -grid%EF4T
-  
-        grid%EM(:) = -grid%EM(:)
-        grid%EMT(:) = -grid%EMT(:)
-        grid%F4Q2(:) = -grid%F4Q2(:)
-  
-        grid%WPDAR(:,:)= -grid%WPDAR(:,:)
-        grid%CPGFU(:,:)= -grid%CPGFU(:,:)
-        grid%CURV(:,:)= -grid%CURV(:,:)
-        grid%FCP(:,:)= -grid%FCP(:,:)
-        grid%FAD(:,:)= -grid%FAD(:,:)
-        grid%F(:,:)= -grid%F(:,:)
-      endif
-#endif
-
       grid%start_subtime = domain_get_start_time ( grid )
       grid%stop_subtime = domain_get_stop_time ( grid )
 
@@ -362,37 +310,6 @@
       CALL nl_set_use_adaptive_time_step( grid%id, .false. )
       ! set bc
       CALL nl_set_constant_bc(grid%id, grid%constant_bc)
-#endif
-
-#if (NMM_CORE == 1)
-!
-! CHANGE (SIGN ONLY OF) IMPORTANT TIME CONSTANTS
-!
-!mptest      CALL nl_get_time_step( grid%id, grid%time_step )
-
-!!! here need to key off something else being the "wrong" sign
-      if (grid%cpgfv .gt. 0) then
-
-        write(mess,*) 'changing signs for forward integration'
-        call wrf_message(mess)
-        grid%CPGFV = -grid%CPGFV
-        grid%EN    = -grid%EN
-        grid%ENT   = -grid%ENT
-        grid%F4D   = -grid%F4D
-        grid%F4Q   = -grid%F4Q
-        grid%EF4T  = -grid%EF4T
-  
-        grid%EM(:) = -grid%EM(:)
-        grid%EMT(:) = -grid%EMT(:)
-        grid%F4Q2(:) = -grid%F4Q2(:)
-  
-        grid%WPDAR(:,:)= -grid%WPDAR(:,:)
-        grid%CPGFU(:,:)= -grid%CPGFU(:,:)
-        grid%CURV(:,:)= -grid%CURV(:,:)
-        grid%FCP(:,:)= -grid%FCP(:,:)
-        grid%FAD(:,:)= -grid%FAD(:,:)
-        grid%F(:,:)= -grid%F(:,:)
-      endif
 #endif
 
 
@@ -852,36 +769,6 @@
 
 #endif
 
-#if (NMM_CORE == 1)
-        write(mess,*) ' divide by grid%hcoeff_tot: ', grid%hcoeff_tot
-        call wrf_message(mess)
- if (grid%hcoeff_tot .lt. 0.0001) then
- call wrf_error_fatal("bad grid%hcoeff_tot")
- endif
-       grid%pd(:,:)       = grid%dfi_pd(:,:)  / grid%hcoeff_tot
-       grid%pint(:,:,:)      = grid%dfi_pint(:,:,:) / grid%hcoeff_tot
-!       grid%dwdt(:,:,:)      = grid%dfi_dwdt(:,:,:) / grid%hcoeff_tot
-       grid%t(:,:,:)      = grid%dfi_t(:,:,:) / grid%hcoeff_tot
-       grid%q(:,:,:)      = grid%dfi_q(:,:,:) / grid%hcoeff_tot
-       grid%q2(:,:,:)     = grid%dfi_q2(:,:,:) / grid%hcoeff_tot
-       grid%cwm(:,:,:)    = grid%dfi_cwm(:,:,:) / grid%hcoeff_tot
-       grid%u(:,:,:)      = grid%dfi_u(:,:,:) / grid%hcoeff_tot
-       grid%v(:,:,:)      = grid%dfi_v(:,:,:) / grid%hcoeff_tot
-      grid%moist(:,:,:,:)  = grid%dfi_moist(:,:,:,:)  / grid%hcoeff_tot
-      grid%scalar(:,:,:,:) = grid%dfi_scalar(:,:,:,:) / grid%hcoeff_tot
-
-      ! restore initial fields
-      grid%SNOW(:,:)   = grid%dfi_SNOW(:,:)
-      grid%SNOWH(:,:)  = grid%dfi_SNOWH(:,:)
-!      grid%SNOWC(:,:)  = grid%dfi_SNOWC(:,:)
-      grid%CANWAT(:,:) = grid%dfi_CANWAT(:,:)
-      grid%NMM_TSK(:,:)    = grid%dfi_NMM_TSK(:,:)
-      ! save soil fields
-      grid%STC(:,:,:)         = grid%dfi_STC(:,:,:)
-      grid%SMC(:,:,:)        = grid%dfi_SMC(:,:,:)
-      grid%SH2O(:,:,:)       = grid%dfi_SH2O(:,:,:)
-#endif
-
 
    END SUBROUTINE dfi_array_reset
 
@@ -1002,19 +889,6 @@ call wrf_message(mess)
      endif
 #endif
 
-#if (NMM_CORE == 1)
-       grid%dfi_pd(:,:)    = 0.
-       grid%dfi_pint(:,:,:)   = 0.
-       grid%dfi_dwdt(:,:,:)   = 0.
-       grid%dfi_t(:,:,:)   = 0.
-       grid%dfi_q(:,:,:)   = 0.
-       grid%dfi_q2(:,:,:)  = 0.
-       grid%dfi_cwm(:,:,:) = 0.
-       grid%dfi_u(:,:,:)   = 0.
-       grid%dfi_v(:,:,:)   = 0.
-      grid%dfi_moist(:,:,:,:)  = 0.
-      grid%dfi_scalar(:,:,:,:) = 0.
-#endif
 
       grid%hcoeff_tot  = 0.0
 
@@ -1063,19 +937,6 @@ call wrf_message(mess)
       grid%dfi_SMFR3D(:,:,:)       = grid%SMFR3D(:,:,:)
       grid%dfi_KEEPFR3DFLAG(:,:,:) = grid%KEEPFR3DFLAG(:,:,:)
       ENDIF
-#endif
-
-#if (NMM_CORE == 1)
-      ! save surface 2-D fields
-      grid%dfi_SNOW(:,:)   = grid%SNOW(:,:)
-      grid%dfi_SNOWH(:,:)  = grid%SNOWH(:,:)
-!      grid%dfi_SNOWC(:,:)  = grid%SNOWC(:,:)
-      grid%dfi_CANWAT(:,:) = grid%CANWAT(:,:)
-      grid%dfi_NMM_TSK(:,:)    = grid%NMM_TSK(:,:)
-      ! save soil fields
-      grid%dfi_STC(:,:,:)         = grid%STC(:,:,:)
-      grid%dfi_SMC(:,:,:)        = grid%SMC(:,:,:)
-      grid%dfi_SH2O(:,:,:)       = grid%SH2O(:,:,:)
 #endif
 
 #if (EM_CORE == 1)

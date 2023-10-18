@@ -6,10 +6,9 @@
 ! Price, C., and D. Rind (1992), A Simple Lightning Parameterization for Calculating
 !   Global Lightning Distributions, J. Geophys. Res., 97(D9), 9919-9933, doi:10.1029/92JD00719.
 !
-! Wong, J., M. Barth, and D. Noone (2012), Evaluating a Lightning Parameterization
-!   at Resolutions with Partially-Resolved Convection, GMDD, in preparation.
-!
-! Contact: J. Wong <johnwong@ucar.edu>
+! Wong, J., M. Barth, and D. Noone, 2013: Evaluating a lightning parameterization 
+!   based on cloud-top height for mesoscale numerical model simulations, 
+!   Geosci. Model Dev., 6, 429–443, https://doi.org/10.5194/gmd-6-429-2013.
 !
 !**********************************************************************
 

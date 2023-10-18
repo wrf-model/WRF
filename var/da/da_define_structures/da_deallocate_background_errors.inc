@@ -31,6 +31,8 @@ subroutine da_deallocate_background_errors (be)
           end if
       end do                                                                                                                               
       deallocate ( be % v12 )
+      deallocate ( be % cv_mz_chemic )
+      if ( num_chem >= PARAM_FIRST_SCALAR ) deallocate ( be % cv % sizechemic )
      end if
 #endif
       ! Deallocate gridpoint errors:

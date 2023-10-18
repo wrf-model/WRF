@@ -40,7 +40,7 @@ module module_HYDRO_drv
    use module_gw_gw2d_data, only: gw2d
    use module_channel_routing, only: drive_channel, drive_channel_rsl
    use orchestrator_base
-   use config_base, only: nlst
+   use config_base, only: nlst, noah_lsm
    use module_routing, only: getChanDim, landrt_ini
    use module_HYDRO_utils
    use module_lsm_forcing, only: geth_newdate
@@ -935,6 +935,7 @@ if (nlst(did)%CHANRTSWCRT.eq.1 .or. nlst(did)%CHANRTSWCRT.eq.2) then
        RT_DOMAIN(did)%MUSK, RT_DOMAIN(did)%MUSX, RT_DOMAIN(did)%QLINK, &
        RT_DOMAIN(did)%CHANLEN, RT_DOMAIN(did)%MannN, RT_DOMAIN(did)%So, RT_DOMAIN(did)%ChSSlp,RT_DOMAIN(did)%Bw, &
        RT_DOMAIN(did)%Tw,  RT_DOMAIN(did)%Tw_CC, RT_DOMAIN(did)%n_CC, &
+       RT_DOMAIN(did)%ChannK,&
        RT_DOMAIN(did)%RESHT, &
        RT_DOMAIN(did)%CVOL, RT_DOMAIN(did)%QLAKEI, &
        RT_DOMAIN(did)%QLAKEO, RT_DOMAIN(did)%LAKENODE, &
@@ -954,11 +955,12 @@ if (nlst(did)%CHANRTSWCRT.eq.1 .or. nlst(did)%CHANRTSWCRT.eq.2) then
        , rt_domain(did)%accSfcLatRunoff,    rt_domain(did)%accBucket &
        , rt_domain(did)%qSfcLatRunoff,        rt_domain(did)%qBucket &
        , rt_domain(did)%QLateral,            rt_domain(did)%velocity &
+       ,                                     rt_domain(did)%qloss    &
        ,                                     RT_DOMAIN(did)%HLINK    &
        , rt_domain(did)%nlinksize,            nlst(did)%OVRTSWCRT &
        ,                                     nlst(did)%SUBRTSWCRT &
        , nlst(did)%channel_only , nlst(did)%channelBucket_only &
-       )
+       , nlst(did)%channel_bypass )
 
 else
 
@@ -975,6 +977,7 @@ else
        RT_DOMAIN(did)%HLINK, RT_DOMAIN(did)%ELRT,RT_DOMAIN(did)%CHANLEN,&
        RT_DOMAIN(did)%MannN,RT_DOMAIN(did)%So, RT_DOMAIN(did)%ChSSlp, &
        RT_DOMAIN(did)%Bw,RT_DOMAIN(did)%Tw,RT_DOMAIN(did)%Tw_CC, RT_DOMAIN(did)%n_CC, &
+       RT_DOMAIN(did)%ChannK,& 
        RT_DOMAIN(did)%RESHT, &
        RT_DOMAIN(did)%ZELEV, RT_DOMAIN(did)%CVOL, &
        RT_DOMAIN(did)%NLAKES, RT_DOMAIN(did)%QLAKEI, RT_DOMAIN(did)%QLAKEO,&
@@ -993,7 +996,7 @@ else
        , rt_domain(did)%CH_LNKRT_SL   &
        ,nlst(did)%GwBaseSwCRT, gw2d(did)%ho, gw2d(did)%qgw_chanrt, &
        nlst(did)%gwChanCondSw, nlst(did)%gwChanCondConstIn, &
-       nlst(did)%gwChanCondConstOut, rt_domain(did)%velocity &
+       nlst(did)%gwChanCondConstOut, rt_domain(did)%velocity, rt_domain(did)%qloss &
        )
 endif
 
@@ -1767,21 +1770,15 @@ end subroutine HYDRO_ini
              do i = 1, RT_DOMAIN(did)%ix
                 !yw rt_domain(did)%lksat(i,j) = xdum1(soltyp(i,j) ) * 1000.0
                 rt_domain(did)%lksat(i,j) = xdum1(soltyp(i,j) )
-                IF(rt_domain(did)%VEGTYP(i,j) == rt_domain(did)%isurban ) THEN   ! urban
-                    rt_domain(did)%SMCMAX1(i,j) = 0.45
-                    rt_domain(did)%SMCREF1(i,j) = 0.42
-                    rt_domain(did)%SMCWLT1(i,j) = 0.40
-                else
-                    rt_domain(did)%SMCMAX1(i,j) = MAXSMC(soltyp(I,J))
-                    rt_domain(did)%SMCREF1(i,j) = refsmc(soltyp(I,J))
-                    rt_domain(did)%SMCWLT1(i,j) = wltsmc(soltyp(I,J))
-                    !ADCHANGE: Add some sanity checks in case calibration knocks the order of these out of sequence.
-                    !The min diffs were pulled from the existing HYDRO.TBL defaults.
-                    !Currently water is 0, so enforcing 0 as the absolute min.
-                    rt_domain(did)%SMCMAX1(i,j) = min(rt_domain(did)%SMCMAX1(i,j), 1.0)
-                    rt_domain(did)%SMCREF1(i,j) = max(min(rt_domain(did)%SMCREF1(i,j), rt_domain(did)%SMCMAX1(i,j) - 0.01), 0.0)
-                    rt_domain(did)%SMCWLT1(i,j) = max(min(rt_domain(did)%SMCWLT1(i,j), rt_domain(did)%SMCREF1(i,j) - 0.01), 0.0)
-                ENDIF
+                rt_domain(did)%SMCMAX1(i,j) = MAXSMC(soltyp(I,J))
+                rt_domain(did)%SMCREF1(i,j) = refsmc(soltyp(I,J))
+                rt_domain(did)%SMCWLT1(i,j) = wltsmc(soltyp(I,J))
+                !ADCHANGE: Add some sanity checks in case calibration knocks the order of these out of sequence.
+                !The min diffs were pulled from the existing HYDRO.TBL defaults.
+                !Currently water is 0, so enforcing 0 as the absolute min.
+                rt_domain(did)%SMCMAX1(i,j) = min(rt_domain(did)%SMCMAX1(i,j), 1.0)
+                rt_domain(did)%SMCREF1(i,j) = max(min(rt_domain(did)%SMCREF1(i,j), rt_domain(did)%SMCMAX1(i,j) - 0.01), 0.0)
+                rt_domain(did)%SMCWLT1(i,j) = max(min(rt_domain(did)%SMCWLT1(i,j), rt_domain(did)%SMCREF1(i,j) - 0.01), 0.0)
                 IF(rt_domain(did)%VEGTYP(i,j) > 0 ) THEN   ! created 2d ov_rough
                     rt_domain(did)%OV_ROUGH2d(i,j) = RT_DOMAIN(did)%OV_ROUGH(rt_domain(did)%VEGTYP(I,J))
                 endif
@@ -1793,12 +1790,14 @@ end subroutine HYDRO_ini
        ! input from HYDRO.TBL.nc file
        print*, "reading from hydrotbl_f(HYDRO.TBL.nc)  file ...."
        call hdtbl_in_nc(did)
-       !ADCHANGE: For consistency, mirror urban and param value checks used in table read
-       where (rt_domain(did)%VEGTYP == rt_domain(did)%isurban)
-          rt_domain(did)%SMCMAX1 = 0.45
-          rt_domain(did)%SMCREF1 = 0.42
-          rt_domain(did)%SMCWLT1 = 0.40
-       endwhere
+       if (noah_lsm%imperv_option .eq. 9) then
+         !ADCHANGE: For consistency, mirror urban and param value checks used in table read
+         where (rt_domain(did)%VEGTYP == rt_domain(did)%isurban)
+           rt_domain(did)%SMCMAX1 = 0.45
+           rt_domain(did)%SMCREF1 = 0.42
+           rt_domain(did)%SMCWLT1 = 0.40
+         endwhere
+       endif
        where (rt_domain(did)%SMCMAX1 .gt. 1.0) rt_domain(did)%SMCMAX1 = 1.0
        rt_domain(did)%SMCREF1 = max(min(rt_domain(did)%SMCREF1, rt_domain(did)%SMCMAX1 - 0.01), 0.0)
        rt_domain(did)%SMCWLT1 = max(min(rt_domain(did)%SMCWLT1, rt_domain(did)%SMCREF1 - 0.01), 0.0)

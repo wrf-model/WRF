@@ -32,7 +32,9 @@ module da_obs_io
       thin_conv, thin_conv_ascii, lsac_nh_step, lsac_nv_step, lsac_nv_start, lsac_print_details, &
       lsac_use_u, lsac_use_v, lsac_use_t, lsac_use_q, lsac_u_error, lsac_v_error, lsac_t_error, lsac_q_error, &
       gpsro_drift, max_gpseph_input, use_gpsephobs, gpseph, gpseph_loadbalance, kds, kde, kts, kte, &
-      use_radar_rhv, use_radar_rqv, use_radar_rf, use_radar_rv, multi_inc
+      use_radar_rhv, use_radar_rqv, use_radar_rf, use_radar_rv, multi_inc, &
+      thin_conv_opt, no_thin, thin_single, thin_multi, thin_superob, thin_superob_hv, &
+      thin_mesh_vert_conv, use_satwnd_bufr, uv_error_opt, uv_error_val, error_opt_nml
 
    use da_wrf_interfaces, only : wrf_dm_bcast_integer, wrf_dm_bcast_real
 
@@ -85,6 +87,10 @@ module da_obs_io
    include 'mpif.h'
 #endif
 
+! array to hold observation error table
+! (300,33,6)  ! 300 ob types, 33 levels (rows), 6 variables (columns)
+real, allocatable :: oetab(:,:,:)
+
 contains
 
 #include "da_read_obs_ascii.inc"
@@ -124,5 +130,6 @@ contains
 #include "da_read_lsac_util.inc"
 #include "da_read_obs_lsac.inc"
 #include "da_scan_obs_lsac.inc"
+#include "da_read_obs_bufr_satwnd.inc"
 
 end module da_obs_io

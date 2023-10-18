@@ -14,7 +14,8 @@ module module_rfc_forecasts_state
     ! Extend/derive rfc forecasts state from the abstract base
     ! type for reservoir state.
     type, extends(reservoir_state) :: rfc_forecasts_state_interface
-        real                               :: water_elevation       ! meters AMSL
+        real                               :: water_elevation           ! meters AMSL
+        real                               :: levelpool_water_elevation ! meters AMSL
         real, allocatable, dimension(:)    :: discharges
         logical, allocatable, dimension(:) :: synthetic_values
         integer                         :: time_series_update_time  ! seconds
@@ -52,6 +53,7 @@ contains
 
         ! Initialize the state water elevation in same manner as in module_RT.F
         this%water_elevation = orifice_elevation + ((lake_max_water_elevation - orifice_elevation) * initial_fractional_depth)
+        this%levelpool_water_elevation = this%water_elevation
         this%time_series_update_time = 0
         this%current_time = 0
         this%time_series_index = 1

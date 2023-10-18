@@ -1,10 +1,10 @@
 module hashtable
-
+    use iso_fortran_env, only: int64
   implicit none
 
   type kv_type
-     integer :: key
-     integer :: value
+     integer(kind=int64) :: key
+     integer(kind=int64) :: value
   end type kv_type
 
   type node_type
@@ -41,8 +41,8 @@ module hashtable
 
   public
   type hash_t
-     integer :: n_buckets = 0
-     integer :: n_keys = 0
+     integer(kind=int64) :: n_buckets = 0
+     integer(kind=int64) :: n_keys = 0
      type(node_type), allocatable :: buckets(:)
    contains
      procedure, public :: bucket_count
@@ -66,8 +66,8 @@ contains
   function hash(this,key_value) result(bucket)
 
     class(hash_t), intent(inout) :: this
-    integer, intent(in) :: key_value
-    integer :: bucket
+    integer(kind=int64), intent(in) :: key_value
+    integer(kind=int64) bucket
 
     bucket = key_value
 
@@ -75,15 +75,15 @@ contains
 
   function bucket_count(this)
     class(hash_t), intent(inout) :: this
-    integer :: bucket_count
+    integer(kind=int64) bucket_count
 
     bucket_count = this%n_buckets
   end function bucket_count
 
   function n_collisions(this)
     class(hash_t), intent(inout) :: this
-    integer :: n_collisions
-    integer :: i
+    integer(kind=int64) n_collisions
+    integer(kind=int64) i
 
     n_collisions = 0
     do i = 1, this%n_buckets
@@ -93,7 +93,7 @@ contains
 
   recursive function node_depth(this) result(depth)
     class(node_type), intent(inout) :: this
-    integer :: depth
+    integer(kind=int64) depth
 
     if (.not. associated(this%next)) then
        depth = 1
@@ -104,16 +104,16 @@ contains
 
   pure function key_count(this)
     class(hash_t), intent(in) :: this
-    integer :: key_count
+    integer(kind=int64) key_count
 
     key_count = this%n_keys
   end function key_count
 
   subroutine set(this, key, value)
     class(hash_t), intent(inout) :: this
-    integer, intent(in) :: key
-    integer, intent(in) :: value
-    integer :: bucket_id
+    integer(kind=int64), intent(in) :: key
+    integer(kind=int64), intent(in) :: value
+    integer(kind=int64) bucket_id
     logical :: is_new
 
     bucket_id = modulo(this%hash(key), this%n_buckets) + 1
@@ -125,9 +125,10 @@ contains
 
   subroutine set_all_idx(this, keys, length)
     class(hash_t), intent(inout) :: this
-    integer, intent(in) :: keys(:)
+    integer(kind=int64), intent(in) :: keys(:)
     integer, optional, intent(in) :: length
-    integer :: bucket_id, i, n
+    integer(kind=int64) :: i
+    integer(kind=int64) bucket_id, n
 
     if(present(length)) then
        n = length
@@ -147,9 +148,9 @@ contains
 
   subroutine set_all(this, keys, values)
     class(hash_t), intent(inout) :: this
-    integer, intent(in) :: keys(:)
-    integer, intent(in) :: values(:)
-    integer :: bucket_id, i, n
+    integer(kind=int64), intent(in) :: keys(:)
+    integer(kind=int64), intent(in) :: values(:)
+    integer(kind=int64) bucket_id, i, n
 
     n = size(keys)
 
@@ -165,8 +166,8 @@ contains
 
   recursive subroutine node_set(this, key, value)
     class(node_type), intent(inout) :: this
-    integer, intent(in) :: key
-    integer, intent(in) :: value
+    integer(kind=int64), intent(in) :: key
+    integer(kind=int64), intent(in) :: value
 
     if (.not. allocated(this%kv)) then
        allocate(this%kv)
@@ -184,10 +185,10 @@ contains
 
   subroutine get(this, key, value, success)
     class(hash_t), intent(inout) :: this
-    integer, intent(in) :: key
-    integer, intent(out) :: value
+    integer(kind=int64), intent(in) :: key
+    integer(kind=int64), intent(out) :: value
     logical, intent(out) :: success
-    integer :: bucket_id
+    integer(kind=int64) bucket_id
 
     success = .false.
     if(this%n_buckets == 0) return
@@ -197,8 +198,8 @@ contains
 
   recursive subroutine node_get(this, key, value, success)
     class(node_type), intent(inout) :: this
-    integer, intent(in) :: key
-    integer, intent(out) :: value
+    integer(kind=int64), intent(in) :: key
+    integer(kind=int64), intent(out) :: value
     logical, intent(out) :: success
 
     success = .false.
@@ -218,7 +219,7 @@ contains
 
   subroutine clear(this)
     class(hash_t), intent(inout) :: this
-    integer :: i
+    integer(kind=int64) i
 
     if (.not. allocated(this%buckets)) return
 

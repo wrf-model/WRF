@@ -457,7 +457,11 @@ else
                  diff1 = max ( diff1 , abs ( a - b ) )
                  diff2 = max ( diff2 , abs ( b ) )
                  n = n + 1
-                 IF (a .ne. b) then
+                 ! IEEE754 FP32 -> FP64 allocates 3 more bits to the exponent
+                 ! and thus shifted over 3, we should be accurate within 
+                 ! 1 (sign) + 11 (fp64 exp) + 23 (fp32 mantissa) => 35 bits,
+                 ! leaving a whopping 29 bits of "stuff" that may as well be made up
+                 IF ( almostEqual( a, b, 29 ) .ne. -1 ) then
                    IKDIFFS = IKDIFFS + 1
                    IFDIFFS = IFDIFFS + 1
                  ENDIF
@@ -545,6 +549,47 @@ else
   enddo
 
 endif
+
+contains
+function almostEqual( rhs, lhs, checkToBitPos ) result( diffAtBitPos )
+  implicit none
+  integer, intent(in)       :: checkToBitPos
+  real*8, intent(in)  :: rhs, lhs
+  integer                   :: diffAtBitPos
+
+  integer :: rhsBitRep, lhsBitRep, diffBitRep, index
+  integer :: numBitsRHS = bit_size( rhsBitRep ), numBitsLHS = bit_size( lhsBitRep )
+
+  diffAtBitPos = -1
+  rhsBitRep = transfer( rhs, diffAtBitPos )
+  lhsBitRep = transfer( lhs, diffAtBitPos )
+
+  ! write( *, * ) "Checking if rhs and lhs are same bit size"
+  if ( numBitsRHS .ne. numBitsLHS ) then
+    ! They immediately differ
+    diffAtBitPos=0
+  else
+    ! write( *, * ) "Checking if rhs and lhs differ before ULP position ", checkToBitPos
+    ! Bit cancel each other and see where the first difference is
+    diffBitRep = iparity( [ rhsBitRep, lhsBitRep ] )
+    ! write( *, "(b32.32)" ) diffBitRep
+
+    if ( popcnt( diffBitRep ) .gt. 0 ) then
+      ! Check when that difference occurs
+      do index = 0, numBitsRHS - 1
+        if ( btest( diffBitRep, index ) .and. index .ge. checkToBitPos ) then
+          diffAtBitPos = index
+          exit
+        end if
+      end do
+    ! else
+    !   ! We never got a difference
+    !   write( *, * ) "Bitwise identical, number of 1s in rhs & ~lhs : ", popcnt( diffBitRep )
+    end if
+  end if
+end function almostEqual
+
+
 
 end program readv3
 

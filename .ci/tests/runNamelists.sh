@@ -113,7 +113,7 @@ for namelist in $namelists; do
   banner 42 "START $namelist"
 
   # Clean up run
-  rm wrfinput_d* wrfbdy_d* wrfout_d* wrfchemi_d* wrf_chem_input_d* rsl* real.print.out* wrf.print.out* wrf_d0*_runstats.out -rf
+  rm wrfinput_d* wrfbdy_d* wrfout_d* wrfchemi_d* wrf_chem_input_d* rsl* real.print.out* wrf.print.out* wrf_d0*_runstats.out qr_acr_qg_V4.dat fort.98 fort.88 -rf
 
   # Copy namelist
   echo "Setting $namelistFolder/$namelist as namelist.input"
@@ -171,8 +171,8 @@ for namelist in $namelists; do
   if [ ! -z $moveFolder ]; then
     mkdir -p $workingDirectory/$moveFolder/$namelist/
 
-
     # we are in core dir, find our output
+    echo "Moving output files to $workingDirectory/$moveFolder/$namelist/"
     find . -type f -name "wrfinput_d*"       \
                 -o -name "wrfbdy_d*"         \
                 -o -name "wrfout_d*"         \
@@ -181,26 +181,41 @@ for namelist in $namelists; do
                 -o -name "rsl*"              \
                 -o -name "real.print.out*"   \
                 -o -name "wrf.print.out*"    \
-                -o -name "wrf_d0*_runstats.out" \
+                -o -name "wrf_d0*_runstats.out"
+    # Now move
+    find . -type f \(  -name "wrfinput_d*"       \
+                    -o -name "wrfbdy_d*"         \
+                    -o -name "wrfout_d*"         \
+                    -o -name "wrfchemi_d*"       \
+                    -o -name "wrf_chem_input_d*" \
+                    -o -name "rsl*"              \
+                    -o -name "real.print.out*"   \
+                    -o -name "wrf.print.out*"    \
+                    -o -name "wrf_d0*_runstats.out" \) \
                 -exec mv {} $workingDirectory/$moveFolder/$namelist/ \;
 
   # else try comp
   elif [ ! -z $identicalFolder ]; then
     if [ -d $workingDirectory/$identicalFolder/$namelist/ ]; then
+      echo "Comparing current $namelist output to output stored in $workingDirectory/$identicalFolder/$namelist/"
+
       for dom in d01 d02 d03; do
-        if [ -e $workingDirectory/$identicalFolder/$namelist/wrf_${dom}_runstats.out ]; then
-          # We have a domain to check - should exist in both (we are treating the identical folder as truth)
-          diff $workingDirectory/$identicalFolder/$namelist/wrf_${dom}_runstats.out $(pwd)/wrf_${dom}_runstats.out > diff_log.log
-          result=$?
-          if [ $result -ne 0 ]; then
-            echo "$workingDirectory/$identicalFolder/$namelist/wrf_${dom}_runstats.out and $(pwd)/wrf_${dom}_runstats.out differ"
-            cat diff_log.log
-            exit $result
+        if [ -e $workingDirectory/$identicalFolder/$namelist/wrfout_${dom}_* ]; then
+          if [ ! -e ./wrfout_${dom}_* ]; then
+            # Domain does not exist in our current run but in the provided folder, that should not happen -FAIL!
+            echo "Domain $dom exists in $workingDirectory/$identicalFolder/$namelist but not in this run, cannot compare results"
+            exit 123
           fi
-        elif [ -e ./wrf_${dom}_runstats.out ]; then
-          # Domain does not exist in our current run but in the provided folder, that should not happen -FAIL!
-          echo "Domain $dom exists in $workingDirectory/$identicalFolder/$namelist but not in this run, cannot compare results"
-          exit 123
+          # We have a domain to check - should exist in both (we are treating the identical folder as truth)
+          # diff $workingDirectory/$identicalFolder/$namelist/wrf_${dom}_runstats.out $(pwd)/wrf_${dom}_runstats.out > diff_log.log
+          $workingDirectory/external/io_netcdf/diffwrf $workingDirectory/$identicalFolder/$namelist/wrfout_${dom}_* wrfout_${dom}_*
+          if [ -e fort.98 ] || [ -e fort.88 ]; then
+            echo "$( ls $workingDirectory/$identicalFolder/$namelist/wrfout_${dom}_* ) and $(pwd)/$( ls wrfout_${dom}_* ) differ"
+            cat fort.98 fort.88 2>/dev/null
+            exit 123
+          fi
+        elif [ -e ./wrfout_${dom}_* ]; then
+          echo "Domain $dom exists in $( pwd ) but not in $workingDirectory/$identicalFolder/$namelist/, is this an error?"
         else 
           # neither has it, skip
           echo "Domain $dom not generated for namelist $namelist, skipping check"
@@ -218,7 +233,7 @@ IFS=$tmpIFS
 ls $data/ | xargs -I{} rm {}
 
 # Clean up once more since we passed
-rm -rf wrfinput_d* wrfbdy_d* wrfout_d* wrfchemi_d* wrf_chem_input_d* rsl* real.print.out* wrf.print.out*
+rm -rf wrfinput_d* wrfbdy_d* wrfout_d* wrfchemi_d* wrf_chem_input_d* rsl* real.print.out* wrf.print.out* qr_acr_qg_V4.dat fort.98 fort.88
 
 # We passed!
 echo "TEST $(basename $0) PASS"

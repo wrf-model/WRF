@@ -57,10 +57,8 @@ jobs:
     # Immediately copy out to # of tests to do
     - name: Create testing directories
       id  : cpTestDirs
-      env:
-        tests: ${{ matrix.testSet.tests }}
       run : |
-        echo "$tests"
+        echo "${{ join( matrix.testSet.tests, ' ' )}}"
 
     # - name: Test ${{ matrix.testSet.name }}
     #   id  : runTest

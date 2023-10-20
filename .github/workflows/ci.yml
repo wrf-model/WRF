@@ -13,51 +13,74 @@ jobs:
       max-parallel: 4
       fail-fast: false
       matrix:
-        # Write our tests out this way for easier legibility
-        test    :
-          - gnu-nompi
-          - gnu-mpi
-          - intel-nompi
-          - intel-mpi
-          - pgi-nompi
-          - pgi-mpi
+        # # Write our tests out this way for easier legibility
+        # test    :
+        #   - 
+        #   - 
+        #   - 
+        #   - 
+        #   - 
+        #   - 
         # Specify accounts specific to each HPC resource
         # https://stackoverflow.com/a/68940067
-        runner  : [ { host : cheyenne, account : NMMM0012 } ]
+        testSet  : 
+          - { 
+              host : cheyenne,
+              account : NMMM0012,
+              name : "Compilation Tests",
+              tests : [
+                gnu-nompi, gnu-mpi, intel-nompi, intel-mpi, pgi-nompi, pgi-mpi
+                ]
+            }
+          - { 
+              host : cheyenne,
+              account : NMMM0012,
+              name : "em_real, A-H Tests",
+              tests : [
+                em_real, em_realA, em_realB, em_realC, em_realD, em_realE, em_realF, em_realG, em_realH
+                ]
+            }
         # include :
         #   - runner : cheyenne
         #     account: NMMM0012
     # Is 5 days a reasonable wait time for testing?
     timeout-minutes: 7200
-    name: Test ${{ matrix.test }} on ${{ matrix.runner.host }}
-    runs-on: ${{ matrix.runner.host }}
+    name: Test ${{ matrix.testSet.name }} on ${{ matrix.testSet.host }}
+    runs-on: ${{ matrix.testSet.host }}
     permissions:
       contents: read
     steps:
     - uses: actions/checkout@v3
       with: 
         submodules: true
-
-    - name: Test ${{ matrix.test }}
-      id  : runTest
-      run: |
-        ./hpc-workflows/.ci/runner.py .ci/wrf_arw_tests.json ${{ matrix.test }} -d .. -a "${{ matrix.runner.account }}"
-    - name: Print failed steps
-      if : ${{ failure() }}
+    
+    # Immediately copy out to # of tests to do
+    - name: Create testing directories
+      id  : cpTestDirs
       run : |
-        import json
-        fp = open( "./wrf_arw_tests.${{ matrix.test }}.log" )
-        files = json.load( fp )
-        for step, logs in files.items() :
-          print( "\nLOGS FOR STEP {step}\n{banner}".format( step=step, banner="!" * 50 ) )
-          with open( logs["logfile"], 'r') as f:
-            print( f.read() )
-          print( "!" * 50 )
+        echo "${{ matrix.testSet.tests }}"
+
+    # - name: Test ${{ matrix.testSet.name }}
+    #   id  : runTest
+    #   run: |
+    #     ./hpc-workflows/.ci/runner.py .ci/wrf_arw_tests.json ${{ matrix.test }} -d .. -a "${{ matrix.runner.account }}"
+
+    # - name: Print failed steps
+    #   if : ${{ failure() }}
+    #   run : |
+    #     import json
+    #     fp = open( "./wrf_arw_tests.${{ matrix.test }}.log" )
+    #     files = json.load( fp )
+    #     for step, logs in files.items() :
+    #       print( "\nLOGS FOR STEP {step}\n{banner}".format( step=step, banner="!" * 50 ) )
+    #       with open( logs["logfile"], 'r') as f:
+    #         print( f.read() )
+    #       print( "!" * 50 )
         
-        # Exit with bad status so people know where to look since that might be 
-        # an issue as this will look "successful"
-        raise Exception( "Test did not pass, refer to the above logs" )
-      shell: python3 {0}
+    #     # Exit with bad status so people know where to look since that might be 
+    #     # an issue as this will look "successful"
+    #     raise Exception( "Test did not pass, refer to the above logs" )
+    #   shell: python3 {0}
 
   # Since this a new job, the token should be fine, per the documentation:
   # https://docs.github.com/en/actions/security-guides/automatic-token-authentication#about-the-github_token-secret

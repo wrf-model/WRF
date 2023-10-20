@@ -580,12 +580,12 @@ function almostEqual( rhs, lhs, checkToBitPos ) result( diffAtBitPos )
       do index = 0, numBitsRHS - 1
         if ( btest( diffBitRep, index ) .and. index .ge. checkToBitPos ) then
           diffAtBitPos = index
-          write( *, * ) "RHS and LHS differ at ", diffAtBitPos
-          write( *, * ) "As double : ", rhs
-          write( *, * ) "As double : ", lhs
-          write( *, "(b64)" ) rhsBitRep
-          write( *, "(b64)" ) lhsBitRep
-          write( *, * ) "Difference : ", rhs - lhs
+          ! write( *, * ) "RHS and LHS differ at ", diffAtBitPos
+          ! write( *, * ) "As double : ", rhs
+          ! write( *, * ) "As double : ", lhs
+          ! write( *, "(b64)" ) rhsBitRep
+          ! write( *, "(b64)" ) lhsBitRep
+          ! write( *, * ) "Difference : ", rhs - lhs
           exit
         end if
       end do

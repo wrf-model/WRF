@@ -112,6 +112,25 @@ IFS=","
 for namelist in $namelists; do
   banner 42 "START $namelist"
 
+  #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  # SPECIFIC TO NESTED DOMAINS - WE MUST RUN AN ODD NUMBER OF MPI TASKS
+  # THIS IS NOTED BY THE NAMELIST HAVING 'NE' OR 'VN' AT THE END
+  #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  if [ -n "$parallelExec" ] && { [ $( echo $namelist | grep -Ec "NE$" ) -eq 1 ] || [ $( echo $namelist | grep -Ec "VN$" ) -eq 1 ]; } then
+    # Check if parallel exec np is even and if so, reduce by 1
+    parallelExecSplit=$( echo "$parallelExec" | sed -e "s/\(.*\?-np[ ]*\)\([0-9]\+\)\(.*\?\)/\1;\2;\3/g" )
+    partFront=$( echo "$parallelExecSplit" | awk -F';' '{print $1}' )
+    partEnd=$( echo "$parallelExecSplit" | awk -F';' '{print $3}' )
+    numProcs=$( echo "$parallelExecSplit" | awk -F';' '{print $2}' )
+    if [ $(( $numProcs % 2 )) -eq 0 ]; then
+      echo "MPI runs with nested namelist domains require odd-number tasks, reducing by one"
+      numProcs=$(( $numProcs - 1 ))
+      parallelExec="$partFront$numProcs$partEnd"
+      echo "New command will be '$parallelExec'"
+    fi
+  fi
+
+
   # Clean up run
   rm wrfinput_d* wrfbdy_d* wrfout_d* wrfchemi_d* wrf_chem_input_d* rsl* real.print.out* wrf.print.out* wrf_d0*_runstats.out qr_acr_qg_V4.dat fort.98 fort.88 -rf
 

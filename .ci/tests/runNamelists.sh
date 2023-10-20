@@ -109,9 +109,13 @@ ln -sf $data/* .
 tmpIFS=$IFS
 IFS=","
 
+# Since we might fail or succeed on certain namelists, make a running set of failures
+errorMsg=""
+
 for namelist in $namelists; do
   banner 42 "START $namelist"
 
+  parallelExecToUse="$parallelExec"
   #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   # SPECIFIC TO NESTED DOMAINS - WE MUST RUN AN ODD NUMBER OF MPI TASKS
   # THIS IS NOTED BY THE NAMELIST HAVING 'NE' OR 'VN' AT THE END
@@ -125,8 +129,8 @@ for namelist in $namelists; do
     if [ $(( $numProcs % 2 )) -eq 0 ]; then
       echo "MPI runs with nested namelist domains require odd-number tasks, reducing by one"
       numProcs=$(( $numProcs - 1 ))
-      parallelExec="$partFront$numProcs$partEnd"
-      echo "New command will be '$parallelExec'"
+      parallelExecToUse="$partFront$numProcs$partEnd"
+      echo "New command will be '$parallelExecToUse'"
     fi
   fi
 
@@ -139,24 +143,28 @@ for namelist in $namelists; do
   cp $namelistFolder/$namelist namelist.input || exit $?
 
   # Run setup
-  echo "Running $parallelExec $binFirst"
+  echo "Running $parallelExecToUse $binFirst"
   # Go through echo to effectively "split" on spaces
-  eval "$parallelExec $binFirst"
+  eval "$parallelExecToUse $binFirst"
 
   result=$?
   if [ $result -ne 0 ]; then
-    echo "$parallelExec $binFirst failed"
-    exit $result
+    currentErrorMsg="[$namelist] $parallelExecToUse $binFirst failed"
+    echo "$currentErrorMsg"
+    errorMsg="$errorMsg\n$currentErrorMsg"
+    continue
   fi
 
   # run wrf
-  echo "Running $parallelExec $wrf"
+  echo "Running $parallelExecToUse $wrf"
   # Go through echo to effectively "split" on spaces
-  eval "$parallelExec $wrf"
+  eval "$parallelExecToUse $wrf"
   result=$?
   if [ $result -ne 0 ]; then
-    echo "$parallelExec $wrf failed"
-    exit $result
+    currentErrorMsg="[$namelist] $parallelExecToUse $wrf failed"
+    echo "$currentErrorMsg"
+    errorMsg="$errorMsg\n$currentErrorMsg"
+    continue
   fi
 
   # Check output per domain
@@ -168,8 +176,10 @@ for namelist in $namelists; do
     domFiles=$( ls -1 | grep wrfout_d0${currentDom} | wc -l | awk '{print $1}' )
 
     if [ $domFiles -eq 0 ]; then
-      echo "No output files generated for domain $currentDom"
-      exit 123
+      currentErrorMsg="[$namelist] No output files generated for domain $currentDom"
+      echo "$currentErrorMsg"
+      errorMsg="$errorMsg\n$currentErrorMsg"
+      continue
     fi
 
     ncdump wrfout_d0${currentDom}_* | grep -i nan | grep -vi dominant
@@ -181,12 +191,51 @@ for namelist in $namelists; do
       python3 $rd_12_norm wrfout_d0${currentDom}_* > wrf_d0${currentDom}_runstats.out
     else
       # Super NOT ok
-      echo "Checks on output failed. okNan=$okNan, timeSteps=$timeSteps when expected okNan=1 && timeSteps=2"
-      exit 123
+      currentErrorMsg="[$namelist] Checks on output failed. okNan=$okNan, timeSteps=$timeSteps when expected okNan=1 && timeSteps=2"
+      echo "$currentErrorMsg"
+      errorMsg="$errorMsg\n$currentErrorMsg"
+      continue
     fi
   done
 
-  # If we have a move folder, do that
+  # try comp
+  if [ ! -z $identicalFolder ]; then
+    if [ -d $workingDirectory/$identicalFolder/$namelist/ ]; then
+      echo "Comparing current $namelist output to output stored in $workingDirectory/$identicalFolder/$namelist/"
+
+      for dom in d01 d02 d03; do
+        if [ -e $workingDirectory/$identicalFolder/$namelist/wrfout_${dom}_* ]; then
+          if [ ! -e ./wrfout_${dom}_* ]; then
+            # Domain does not exist in our current run but in the provided folder, that should not happen -FAIL!
+            currentErrorMsg="[$namelist] Domain $dom exists in $workingDirectory/$identicalFolder/$namelist but not in this run, cannot compare results"
+            echo "$currentErrorMsg"
+            errorMsg="$errorMsg\n$currentErrorMsg"
+            continue
+          fi
+
+          # We have a domain to check - should exist in both (we are treating the identical folder as truth)
+          # diff $workingDirectory/$identicalFolder/$namelist/wrf_${dom}_runstats.out $(pwd)/wrf_${dom}_runstats.out > diff_log.log
+          $workingDirectory/external/io_netcdf/diffwrf $workingDirectory/$identicalFolder/$namelist/wrfout_${dom}_* wrfout_${dom}_*
+          if [ -e fort.98 ] || [ -e fort.88 ]; then
+            currentErrorMsg="[$namelist] $( ls $workingDirectory/$identicalFolder/$namelist/wrfout_${dom}_* ) and $(pwd)/$( ls wrfout_${dom}_* ) differ"
+            echo "$currentErrorMsg"
+            cat fort.98 fort.88 2>/dev/null
+            errorMsg="$errorMsg\n$currentErrorMsg"
+            continue
+          fi
+        elif [ -e ./wrfout_${dom}_* ]; then
+          echo "Domain $dom exists in $( pwd ) but not in $workingDirectory/$identicalFolder/$namelist/, is this an error?"
+        else 
+          # neither has it, skip
+          echo "Domain $dom not generated for namelist $namelist, skipping check"
+        fi
+      done
+    else
+      echo "No output to check in $workingDirectory/$identicalFolder for $namelist"
+    fi
+  fi
+
+  # Now if we have a move folder, do that
   if [ ! -z $moveFolder ]; then
     mkdir -p $workingDirectory/$moveFolder/$namelist/
 
@@ -212,47 +261,23 @@ for namelist in $namelists; do
                     -o -name "wrf.print.out*"    \
                     -o -name "wrf_d0*_runstats.out" \) \
                 -exec mv {} $workingDirectory/$moveFolder/$namelist/ \;
-
-  # else try comp
-  elif [ ! -z $identicalFolder ]; then
-    if [ -d $workingDirectory/$identicalFolder/$namelist/ ]; then
-      echo "Comparing current $namelist output to output stored in $workingDirectory/$identicalFolder/$namelist/"
-
-      for dom in d01 d02 d03; do
-        if [ -e $workingDirectory/$identicalFolder/$namelist/wrfout_${dom}_* ]; then
-          if [ ! -e ./wrfout_${dom}_* ]; then
-            # Domain does not exist in our current run but in the provided folder, that should not happen -FAIL!
-            echo "Domain $dom exists in $workingDirectory/$identicalFolder/$namelist but not in this run, cannot compare results"
-            exit 123
-          fi
-          # We have a domain to check - should exist in both (we are treating the identical folder as truth)
-          # diff $workingDirectory/$identicalFolder/$namelist/wrf_${dom}_runstats.out $(pwd)/wrf_${dom}_runstats.out > diff_log.log
-          $workingDirectory/external/io_netcdf/diffwrf $workingDirectory/$identicalFolder/$namelist/wrfout_${dom}_* wrfout_${dom}_*
-          if [ -e fort.98 ] || [ -e fort.88 ]; then
-            echo "$( ls $workingDirectory/$identicalFolder/$namelist/wrfout_${dom}_* ) and $(pwd)/$( ls wrfout_${dom}_* ) differ"
-            cat fort.98 fort.88 2>/dev/null
-            exit 123
-          fi
-        elif [ -e ./wrfout_${dom}_* ]; then
-          echo "Domain $dom exists in $( pwd ) but not in $workingDirectory/$identicalFolder/$namelist/, is this an error?"
-        else 
-          # neither has it, skip
-          echo "Domain $dom not generated for namelist $namelist, skipping check"
-        fi
-      done
-    else
-      echo "No output to check in $workingDirectory/$identicalFolder for $namelist"
-    fi
   fi
 
   banner 42 "STOP $namelist"
 done
 IFS=$tmpIFS
-# Unlink everything we linked in
-ls $data/ | xargs -I{} rm {}
 
-# Clean up once more since we passed
-rm -rf wrfinput_d* wrfbdy_d* wrfout_d* wrfchemi_d* wrf_chem_input_d* rsl* real.print.out* wrf.print.out* qr_acr_qg_V4.dat fort.98 fort.88
+# If we passed, clean up after ourselves
+if [ -z "$errorMsg" ]; then
+  # Unlink everything we linked in
+  ls $data/ | xargs -I{} rm {}
 
-# We passed!
-echo "TEST $(basename $0) PASS"
+  # Clean up once more since we passed
+  rm -rf wrfinput_d* wrfbdy_d* wrfout_d* wrfchemi_d* wrf_chem_input_d* rsl* real.print.out* wrf.print.out* qr_acr_qg_V4.dat fort.98 fort.88
+
+  # We passed!
+  echo "TEST $(basename $0) PASS"
+else
+  echo "$errorMsg"
+  exit 1
+fi

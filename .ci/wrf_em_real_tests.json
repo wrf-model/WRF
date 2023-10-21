@@ -38,7 +38,7 @@
       }
     }
   },
-  "em_real" :
+  "em_real0" :
   {
     "submit_options" :
     {
@@ -48,7 +48,65 @@
         [ 
           "-c", "test/em_real",
           "-b", "real.exe",
-          "-n", "namelist.input.3dtke,namelist.input.conus,namelist.input.rap,namelist.input.tropical",
+          "-n", "namelist.input.3dtke,namelist.input.conus",
+          "-d", "$DATA/em_real",
+          "-e", "NAMELIST_DIR=em_real"
+        ]
+      }
+    },
+    "steps" :
+    {
+      "build-serial" :
+      {
+        "command"      : ".ci/tests/build.sh",
+        "arguments"    : [ "-c", "32", "-b", "em_real -j 4" ]
+      },
+      "testcase-serial" :
+      {
+        "submit_options" : { "cheyenne" : { "resources" : "-l select=1:ncpus=1" } },
+        "command"      : ".ci/tests/runNamelists.sh",
+        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/$NAMELIST_DIR/SERIAL/", "-s", "serial_results" ],
+        "dependencies" : { "build-serial" : "afterok" }
+      },
+      "build-omp" :
+      {
+        "command"      : ".ci/tests/build.sh",
+        "arguments"    : [ "-c", "33", "-b", "em_real -j 4" ],
+        "dependencies" : { "testcase-serial" : "afterok" }
+      },
+      "testcase-omp" :
+      {
+        "submit_options" : { "arguments" : { "env" : [ "-e", "OMP_NUM_THREADS=4" ] }, "cheyenne" : { "resources" : "-l select=1:ncpus=4:ompthreads=4" } },
+        "command"      : ".ci/tests/runNamelists.sh",
+        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/$NAMELIST_DIR/OPENMP/", "-i", "serial_results" ],
+        "dependencies" : { "build-omp" : "afterok" }
+      },
+      "build-mpi" :
+      {
+        "command"      : ".ci/tests/build.sh",
+        "arguments"    : [ "-c", "34", "-b", "em_real -j 4" ],
+        "dependencies" : { "testcase-omp" : "afterok" }
+      },
+      "testcase-mpi" :
+      {
+        "submit_options" : { "cheyenne" : { "resources" : "-l select=1:ncpus=4:mpiprocs=4" } },
+        "command"      : ".ci/tests/runNamelists.sh",
+        "arguments"    : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/$NAMELIST_DIR/MPI/", "-i", "serial_results" ],
+        "dependencies" : { "build-mpi" : "afterok" }
+      }
+    }
+  },
+  "em_real1" :
+  {
+    "submit_options" :
+    {
+      "arguments" :
+      {
+        ".*testcase.*::args_namelist" : 
+        [ 
+          "-c", "test/em_real",
+          "-b", "real.exe",
+          "-n", "namelist.input.rap,namelist.input.tropical",
           "-d", "$DATA/em_real",
           "-e", "NAMELIST_DIR=em_real"
         ]

@@ -34,7 +34,7 @@
           "-e", "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$NETCDF/lib"
         ],
         "global_modules" : [ "gnu", "netcdf" ],
-        ".*mpi.*::mpi_module" : [ "mpt" ]
+        ".*mpi.*::mpi_module" : [ "openmpi/4.0.3" ]
       }
     }
   },

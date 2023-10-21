@@ -7,9 +7,12 @@
 #include <strings.h>
 #include <ctype.h>
 
+#define TABLE_ENTRY 128
+#define EXTRA_FOR_DEST_BUFFER 32
+
 short int  nChmOpts = 0;
-char rxt_tbl[5][1000][128] = { '\0' };
-char chm_scheme[5][128] = { '\0' };
+char rxt_tbl[5][1000][TABLE_ENTRY] = { '\0' };
+char chm_scheme[5][TABLE_ENTRY] = { '\0' };
 short int  rxt_cnt[5];
 
 void strip_blanks( char *instring, char *outstring )
@@ -42,10 +45,10 @@ int AppendReg( char *chem_opt, int ndx )
    char path[256 * 2 + 25];
    char fname[256];
    char inln[1024],winln[1024],s[1024];
-   char rxtstr[128];
-   char rxtstr_tbl[1000][128];
-   char buffer[128];
-   char rxtsym[128];
+   char rxtstr[TABLE_ENTRY];
+   char rxtstr_tbl[1000][TABLE_ENTRY];
+   char buffer[TABLE_ENTRY];
+   char rxtsym[TABLE_ENTRY];
    FILE *fp_eqn, *fp_reg;
 
    strcpy( fname,chem_opt );
@@ -206,7 +209,7 @@ int irr_diag_scalar_indices( char *dirname )
    short int i, j;
    int first, flush, s1;
    char fname[256];
-   char line[135];
+   char line[TABLE_ENTRY + EXTRA_FOR_DEST_BUFFER + 1];
    char piece[135];
    char *blank = "                                                           ";
    FILE *fp_inc;
@@ -279,7 +282,7 @@ int irr_diag_scalar_indices( char *dirname )
 
    for( i = 0; /*i < nChmOpts &&*/ rxt_cnt[i] > 0; i++ ) {
      for( j = 0; j < rxt_cnt[i]; j++ ) {
-       snprintf( line,132,"     rxtsym(%d,%d) = '%s'\n",j+1,i+1,rxt_tbl[i][j]);
+       snprintf( line, TABLE_ENTRY + EXTRA_FOR_DEST_BUFFER, "     rxtsym(%d,%d) = '%s'\n",j+1,i+1,rxt_tbl[i][j]);
        fprintf( fp_inc,"%s",line);
      }
      fprintf( fp_inc," \n");

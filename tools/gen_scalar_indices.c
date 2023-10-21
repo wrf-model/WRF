@@ -24,7 +24,7 @@ int
 gen_scalar_indices ( char * dirname )
 {
   FILE * fp, *fp5[26] ;
-  char  fname[NAMELEN], fname5[2 * NAMELEN + 1] ;
+  char  fname[NAMELEN], fname5[2 * NAMELEN + EXTRA_FOR_DEST_BUFFER] ;
   char * fn = "scalar_indices.inc" ;
   char * fn2 = "scalar_tables.inc" ;
   char * fn3 = "scalar_tables_init.inc" ;
@@ -49,7 +49,7 @@ gen_scalar_indices ( char * dirname )
 	 NAMELEN elements of the entry of fn5 (each NAMELEN chars long) */
       snprintf(fname5,sizeof(fname5),"%s/%." stringify_const(NAMELEN) "s",dirname,fn5[i]) ;
     } else {
-      sprintf(fname5,"%s", fn5[i]);
+      snprintf(fname5, NAMELEN + 1, "%." stringify_const(NAMELEN) "s", fn5[i]);
     }
     if ((fp5[i] = fopen( fname5 , "w" )) == NULL ) return(1) ;
     print_warning(fp5[i],fname5) ;
@@ -130,7 +130,7 @@ gen_scalar_indices1 ( FILE * fp, FILE ** fp2 )
   node_t * p, * memb , * pkg, * rconfig, * fourd, *x ; 
   char * c , *pos1, *pos2 ;
   char assoc_namelist_var[NAMELEN], assoc_namelist_choice[NAMELEN], assoc_4d[NAMELEN_LONG], fname[NAMELEN_LONG] ;
-  char fname2[NAMELEN], tmp1[NAMELEN + 5], tmp2[NAMELEN + 4] ;
+  char fname2[NAMELEN], tmp1[NAMELEN + EXTRA_FOR_DEST_BUFFER], tmp2[NAMELEN + EXTRA_FOR_DEST_BUFFER] ;
   char scalars_str[NAMELEN_LONG] ;
   char * scalars ;
   int i ;
@@ -187,11 +187,11 @@ gen_scalar_indices1 ( FILE * fp, FILE ** fp2 )
                 fprintf(fp,"     P_%s = %s_index_table( PARAM_%s , idomain )\n",c,assoc_4d,c)  ;
                 fprintf(fp,"   END IF\n") ;
                 {
-                  char fourd_bnd[NAMELEN_LONG + 3] = { '\0' } ;
+                  char fourd_bnd[NAMELEN_LONG + 4] = { '\0' } ;
                   /* check for the existence of a fourd boundary array associated with this 4D array */
                   /* set io_mask accordingly for gen_wrf_io to know that it should generate i/o for _b and _bt */
                   /* arrays */
-                  snprintf(fourd_bnd, NAMELEN_LONG + 3,"%s_b",assoc_4d) ;
+                  snprintf(fourd_bnd, NAMELEN_LONG + 3, "%s_b",assoc_4d) ;
                   if ( get_entry_r( fourd_bnd, NULL, Domain.fields) != NULL ) {
                      x->boundary = 1 ;
                   }

@@ -66,7 +66,7 @@ int contains_tok( char *s1, char *s2, char *delims )
   
 
  /* Had to increase size for SOA from 4*4096 to 4*7000 */
-char halo_define[4*7000], halo_use[NAMELEN] = {'\0'}, halo_id[NAMELEN], x[2 * NAMELEN + 1] ;
+char halo_define[4*7000], halo_use[NAMELEN] = {'\0'}, halo_id[NAMELEN], x[2 * NAMELEN + EXTRA_FOR_DEST_BUFFER] ;
 
 /*KAL added this for vertical interpolation */
 /*DJW 131202 modified to create files required for vertical interpolation from parent to nest */
@@ -168,7 +168,7 @@ gen_nest_interp1 ( FILE * fp , node_t * node, char * fourdname, int down_path , 
   char nddim2[3][2][NAMELEN] ;
   char nmdim2[3][2][NAMELEN] ;
   char npdim2[3][2][NAMELEN] ;
-  char vname[3 * NAMELEN + 88], vname2[3 * NAMELEN + 88] ;
+  char vname[3 * NAMELEN + 5 * EXTRA_FOR_DEST_BUFFER], vname2[3 * NAMELEN + 5 * EXTRA_FOR_DEST_BUFFER] ;
   char tag[NAMELEN] = {'\0'}, tag2[NAMELEN] = {'\0'} ;
   char fcn_name[NAMELEN] ;
   char xstag[NAMELEN], ystag[NAMELEN] ;
@@ -359,7 +359,7 @@ fprintf(fp,"                  ngrid%%i_parent_start, ngrid%%j_parent_start,     
 fprintf(fp,"                  ngrid%%parent_grid_ratio, ngrid%%parent_grid_ratio                &\n") ;
    
         {
-           char tmpstr[2 * NAMELEN + 8], *p1 ;
+           char tmpstr[2 * NAMELEN + EXTRA_FOR_DEST_BUFFER], *p1 ;
            node_t * nd, * pp  ;
            pp = NULL ;
            if ( p->node_kind & FOURD ) {
@@ -378,9 +378,9 @@ fprintf(fp,"                  ngrid%%parent_grid_ratio, ngrid%%parent_grid_ratio
 	     } else if ( down_path & FORCE_DOWN ) {
                /* by default, add the boundary and boundary tendency fields to the arg list */
                if ( ! (p->node_kind & FOURD) ) {
-                 snprintf( tmpstr , 2 * NAMELEN + 8, "%s_b,%s_bt,", pp->name, pp->name )  ;
+                 snprintf( tmpstr , 2 * NAMELEN + EXTRA_FOR_DEST_BUFFER, "%s_b,%s_bt,", pp->name, pp->name )  ;
                } else {
-                 snprintf( tmpstr , 2 * NAMELEN + 8, "%s_b,%s_bt,", p->name, p->name )  ;
+                 snprintf( tmpstr , 2 * NAMELEN + EXTRA_FOR_DEST_BUFFER, "%s_b,%s_bt,", p->name, p->name )  ;
                }
                strcat( tmpstr , pp->force_aux_fields ) ;
 	     } else if ( down_path & INTERP_DOWN ) {
@@ -507,7 +507,7 @@ gen_nest_interp2 ( FILE * fp , node_t * node, char * fourdname, int down_path , 
   char ddim[3][2][NAMELEN] ;
   char mdim[3][2][NAMELEN] ;
   char pdim[3][2][NAMELEN] ;
-  char vname[3 * NAMELEN + 88], vname2[3 * NAMELEN + 88] ;
+  char vname[3 * NAMELEN + 5 * EXTRA_FOR_DEST_BUFFER], vname2[3 * NAMELEN + 5 * EXTRA_FOR_DEST_BUFFER] ;
   char tag[NAMELEN], tag2[NAMELEN] ; 
   char dexes[NAMELEN] ;
   char ndexes[NAMELEN] ;

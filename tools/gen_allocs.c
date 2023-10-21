@@ -82,10 +82,10 @@ gen_alloc2 ( FILE * fp , char * structname , char * structname2 , node_t * node,
   node_t * p ;
   int tag = 0 ;
   char post[NAMELEN], post_for_count[NAMELEN] ;
-  char fname[NAMELEN], dname[NAMELEN + 11], dname_tmp[NAMELEN] ;
-  char x[NAMELEN + 4] ;
-  char x2[NAMELEN + 2], fname2[2 * NAMELEN + 1] ;
-  char dimname[3][NAMELEN + 12] ;
+  char fname[NAMELEN], dname[NAMELEN + EXTRA_FOR_DEST_BUFFER], dname_tmp[NAMELEN] ;
+  char x[NAMELEN + EXTRA_FOR_DEST_BUFFER] ;
+  char x2[NAMELEN + EXTRA_FOR_DEST_BUFFER], fname2[2 * NAMELEN + EXTRA_FOR_DEST_BUFFER] ;
+  char dimname[3][NAMELEN + EXTRA_FOR_DEST_BUFFER] ;
   char tchar = '\0';
   unsigned int *io_mask ;
   int nd ;
@@ -120,7 +120,7 @@ gen_alloc2 ( FILE * fp , char * structname , char * structname2 , node_t * node,
 */
 if ( tag == 1 )
 {
-     char dname_symbol[NAMELEN + 7] ;
+     char dname_symbol[NAMELEN + EXTRA_FOR_DEST_BUFFER] ;
      sym_nodeptr sym_node ;
 
      sprintf(dname_symbol, "DNAME_%s", dname_tmp ) ;
@@ -607,7 +607,7 @@ gen_dealloc2 ( FILE * fp , char * structname , node_t * node )
   int tag ;
   char post[NAMELEN] ;
   char fname[NAMELEN] ;
-  char x[NAMELEN + 4] ;
+  char x[NAMELEN + EXTRA_FOR_DEST_BUFFER] ;
 
   if ( node == NULL ) return(1) ;
 

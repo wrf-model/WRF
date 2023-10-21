@@ -50,7 +50,7 @@ gen_wrf_io2 ( FILE * fp , char * fname, char * structname , char * fourdname, no
   node_t * p ;
   int i , ii  ;
   char x[NAMELEN], tag[NAMELEN], dexes[NAMELEN] ;
-  char dname[NAMELEN + 6], dname_tmp[NAMELEN] ;
+  char dname[NAMELEN + EXTRA_FOR_DEST_BUFFER], dname_tmp[NAMELEN] ;
   char vname[NAMELEN], vname_x[NAMELEN],vname_1[NAMELEN], vname_2[NAMELEN], memord[NAMELEN] ;
   char ddim[3][2][NAMELEN] ;
   char mdim[3][2][NAMELEN] ;
@@ -58,7 +58,7 @@ gen_wrf_io2 ( FILE * fp , char * fname, char * structname , char * fourdname, no
   char ddim_no[3][2][NAMELEN] ;
   char mdim_no[3][2][NAMELEN] ;
   char pdim_no[3][2][NAMELEN] ;
-  char dimname[3][NAMELEN + 6] ;
+  char dimname[3][NAMELEN + EXTRA_FOR_DEST_BUFFER] ;
   char stagstr[NAMELEN] ;
   char * tend_tag ;
 
@@ -115,7 +115,7 @@ gen_wrf_io2 ( FILE * fp , char * fname, char * structname , char * fourdname, no
         int ibdy ;
         int idx ;
         node_t *fourd_bound_array ;
-        char *bdytag="", *xdomainend="", *ydomainend="", *zdomainend="", bdytag2[10],fourd_bnd[NAMELEN + 2] ;
+        char *bdytag="", *xdomainend="", *ydomainend="", *zdomainend="", bdytag2[10],fourd_bnd[NAMELEN + EXTRA_FOR_DEST_BUFFER] ;
         char *ds1="",*de1="",*ds2="",*de2="",*ds3="",*de3="",*ms1="",*me1="",*ms2="",*me2="",*ms3="",*me3="",*ps1="",*pe1="",*ps2="",*pe2="",*ps3="",*pe3="" ;
 
 #if ( WRFPLUS == 1 )

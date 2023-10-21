@@ -25,8 +25,8 @@ int
 main( int argc, char *argv[] )
 {
   char fname_in[NAMELEN] = {'\0'}, dir[NAMELEN] = {'\0'};
-  char fname_tmp[NAMELEN] = {'\0'}, command[2 * NAMELEN + 32] = {'\0'};
-  char fname_wrk[NAMELEN + 18] = {'\0'};
+  char fname_tmp[NAMELEN] = {'\0'}, command[2 * (NAMELEN + EXTRA_FOR_DEST_BUFFER)] = {'\0'};
+  char fname_wrk[NAMELEN + EXTRA_FOR_DEST_BUFFER] = {'\0'};
   FILE * fp_in, *fp_tmp ;
   char * thisprog = "";
   char *env_val = "";

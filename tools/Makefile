@@ -9,7 +9,7 @@ WARNING = -Wall -Wextra  # -Werror
 GCC_WARNING = -Wno-unused-variable -Wno-unused-but-set-variable	\
     -Wno-unused-parameter -Wformat=2 -Wformat-truncation=2		\
     -Wformat-overflow=2 -Wno-format-security -Wno-format-nonliteral	\
-    -Wno-sign-compare -Wno-misleading-indentation
+    -Wno-sign-compare -Wno-misleading-indentation -Wno-error=format-truncation
 OBJ = registry.o my_strtok.o reg_parse.o data.o type.o misc.o \
       gen_defs.o gen_allocs.o gen_mod_state_descr.o gen_scalar_indices.o \
       gen_args.o gen_config.o sym.o symtab_gen.o gen_irr_diag.o \

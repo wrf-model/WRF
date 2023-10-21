@@ -45,7 +45,7 @@ char *
 dimension_with_ones( char * pre , char * tmp , node_t * p , char * post )
 {
   unsigned int i ;
-  char r[NAMELEN + 12],s[NAMELEN],four_d[NAMELEN + 6] ;
+  char r[NAMELEN + 2 * EXTRA_FOR_DEST_BUFFER],s[NAMELEN],four_d[NAMELEN + EXTRA_FOR_DEST_BUFFER] ;
   char *pp ;
   if ( p == NULL ) return("") ;
   if ( p->ndims <= 0 && ! p->boundary_array ) return("") ;
@@ -91,8 +91,8 @@ dimension_with_ranges( char * refarg , char * pre ,
                                                    should be dereference from, or ""  */
 {
   unsigned int i ;
-  char tx[6 * NAMELEN + 82] ;
-  char r[NAMELEN],s[NAMELEN],four_d[NAMELEN + 5] ;
+  char tx[6 * (NAMELEN + EXTRA_FOR_DEST_BUFFER)] ;
+  char r[NAMELEN],s[NAMELEN],four_d[NAMELEN + EXTRA_FOR_DEST_BUFFER] ;
   int   bdex = 0, xdex, ydex, zdex ;
   node_t *xdim, *ydim, *zdim ;
   char *pp ;
@@ -563,8 +563,8 @@ array_size_expression ( char * refarg , char * pre ,
                                                    should be dereference from, or ""  */
 {
   unsigned int i ;
-  char tx[6 * NAMELEN + 87] ;
-  char r[NAMELEN],s[NAMELEN],four_d[NAMELEN + 6] ;
+  char tx[6 * (NAMELEN + EXTRA_FOR_DEST_BUFFER)] ;
+  char r[NAMELEN],s[NAMELEN],four_d[NAMELEN + EXTRA_FOR_DEST_BUFFER] ;
   int   bdex = 0, xdex, ydex, zdex ;
   node_t *xdim, *ydim, *zdim ;
   char *pp ;

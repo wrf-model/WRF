@@ -139,7 +139,7 @@ gen_decls ( FILE * fp , node_t * node , int sw_ranges, int sw_point , int mask ,
 {
   node_t * p ; 
   int tag, ipass ;
-  char fname[NAMELEN], post[NAMELEN] ;
+  char fname[NAMELEN], post[NAMELEN + 2 * EXTRA_FOR_DEST_BUFFER] ;
   char * dimspec = "";
   int bdyonly = 0 ;
 

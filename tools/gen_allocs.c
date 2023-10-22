@@ -81,7 +81,7 @@ gen_alloc2 ( FILE * fp , char * structname , char * structname2 , node_t * node,
 {
   node_t * p ;
   int tag = 0 ;
-  char post[NAMELEN], post_for_count[NAMELEN] ;
+  char post[NAMELEN + 2 * EXTRA_FOR_DEST_BUFFER], post_for_count[NAMELEN + 2 * EXTRA_FOR_DEST_BUFFER] ;
   char fname[NAMELEN], dname[NAMELEN + EXTRA_FOR_DEST_BUFFER], dname_tmp[NAMELEN] ;
   char x[NAMELEN + EXTRA_FOR_DEST_BUFFER] ;
   char x2[NAMELEN + EXTRA_FOR_DEST_BUFFER], fname2[2 * NAMELEN + EXTRA_FOR_DEST_BUFFER] ;
@@ -544,7 +544,7 @@ gen_ddt_write1 ( FILE * fp , char * structname , node_t * node )
 {
   node_t * p ;
   int tag ;
-  char post[NAMELEN] ;
+  char post[NAMELEN + 2 * EXTRA_FOR_DEST_BUFFER] ;
   char fname[NAMELEN] ;
   char x[NAMELEN] ;
 
@@ -605,7 +605,7 @@ gen_dealloc2 ( FILE * fp , char * structname , node_t * node )
 {
   node_t * p ;
   int tag ;
-  char post[NAMELEN] ;
+  char post[NAMELEN + 2 * EXTRA_FOR_DEST_BUFFER] ;
   char fname[NAMELEN] ;
   char x[NAMELEN + EXTRA_FOR_DEST_BUFFER] ;
 

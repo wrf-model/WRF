@@ -176,7 +176,7 @@ gen_nest_interp1 ( FILE * fp , node_t * node, char * fourdname, int down_path , 
   char ndexes[NAMELEN] ;
   char *maskstr ;
   char *grid ;
-  char *colon, r[10],tx[80],temp[80],moredims[80] ; 
+  char *colon, r[10],tx[2 * NAMELEN + EXTRA_FOR_DEST_BUFFER],temp[80],moredims[80] ;
   int d ; 
   double real_store;
   long long_store;
@@ -512,7 +512,7 @@ gen_nest_interp2 ( FILE * fp , node_t * node, char * fourdname, int down_path , 
   char dexes[NAMELEN] ;
   char ndexes[NAMELEN] ;
   char *grid ;
-  char *colon,r[10],tx[80],temp[80],moredims[80] ; 
+  char *colon,r[10],tx[2 * NAMELEN + EXTRA_FOR_DEST_BUFFER],temp[80],moredims[80] ;
   int d ; 
   char zstag[NAMELEN];
   char fcn_name[NAMELEN];

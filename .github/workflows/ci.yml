@@ -72,14 +72,14 @@ jobs:
     - name: Create testing directories
       id  : cpTestDirs
       run : |
-        echo "${{ join( matrix.testSet.tests, ' ' )}}"
+        echo "${{ join( matrix.testSet.tests, ' ' ) }}"
 
     - name: Test ${{ matrix.testSet.name }}
       id  : runTest
       run: |
         ./hpc-workflows/.ci/runner.py \
           .ci/${{ matrix.testSet.file }}    \
-          -t ${{ join( matrix.testSet.tests, ' ' }}  \
+          -t ${{ join( matrix.testSet.tests, ' ' ) }}  \
           -d ..                                      \
           -a "${{ matrix.testSet.account }}"         \
           -p ${{ matrix.testSet.pool}}               \

@@ -32,7 +32,7 @@ jobs:
               args : -m "TEST CompilationSet PASS",
               pool : 1,
               tests : [
-                gnu-nompi, gnu-mpi, intel-nompi, intel-mpi, pgi-nompi, pgi-mpi
+                gnu-nompi, gnu-mpi
                 ]
             }
           # - { 

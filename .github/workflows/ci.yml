@@ -28,7 +28,7 @@ jobs:
               host : wsl,
               account : None,
               name : "em_real, A-H Tests",
-              file : wrf_arw_tests.json,
+              file : wrf_em_real_tests.json,
               args : -m "TEST em_realSet PASS",
               pool : 1,
               tests : [

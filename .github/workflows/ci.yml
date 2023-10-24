@@ -27,12 +27,12 @@ jobs:
           - { 
               host : wsl,
               account : None,
-              name : "Compilation Tests",
+              name : "em_real, A-H Tests",
               file : wrf_arw_tests.json,
-              args : -m "TEST CompilationSet PASS",
+              args : -m "TEST em_realSet PASS",
               pool : 1,
               tests : [
-                gnu-nompi, gnu-mpi
+                em_real0, em_real1, em_realA, em_realB, em_realC, em_realD, em_realE, em_realF, em_realG
                 ]
             }
           # - { 
@@ -65,24 +65,30 @@ jobs:
       contents: read
     steps:
     - uses: actions/checkout@v3
-      with: 
+      with:
+        path      : main
         submodules: true
     
     # Immediately copy out to # of tests to do
     - name: Create testing directories
       id  : cpTestDirs
       run : |
-        echo "${{ join( matrix.testSet.tests, ' ' ) }}"
+        for testDir in ${{ join( matrix.testSet.tests, ' ' ) }}; do
+          echo "Creating duplicate directory for $testDir"
+          mkdir $testDir/
+          cp -RP main/ $testDir
+        done
 
     - name: Test ${{ matrix.testSet.name }}
       id  : runTest
       run: |
-        ./hpc-workflows/.ci/runner.py \
+        ./main/hpc-workflows/.ci/runner.py \
           .ci/${{ matrix.testSet.file }}    \
-          -t ${{ join( matrix.testSet.tests, ' ' ) }}  \
-          -d ..                                      \
-          -a "${{ matrix.testSet.account }}"         \
-          -p ${{ matrix.testSet.pool}}               \
+          -t   ${{ join( matrix.testSet.tests, ' ' ) }}  \
+          -alt ${{ join( matrix.testSet.tests, ' ' ) }}  \
+          -d ..                                          \
+          -a "${{ matrix.testSet.account }}"             \
+          -p ${{ matrix.testSet.pool}}                   \
           ${{ matrix.testSet.args }}
 
 
@@ -120,7 +126,7 @@ jobs:
   # Since this a new job, the token should be fine, per the documentation:
   # https://docs.github.com/en/actions/security-guides/automatic-token-authentication#about-the-github_token-secret
   removelabel:
-    runs-on: cheyenne
+    runs-on: ubuntu-latest # Don't care about compute resources, do it very quick and always available
     if : ${{ !cancelled() && github.event.label.name == 'test' }}
     name: Remove 'test' label
     needs: buildtests

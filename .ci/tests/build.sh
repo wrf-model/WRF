@@ -81,6 +81,17 @@ fi
 
 result=$?
 
-if [ $result -eq 0 ]; then
-  echo "TEST $(basename $0) PASS"
+if [ $result -ne 0 ]; then
+  echo "Failed to compile"
+  exit 1
 fi
+
+# And a *very* special check because WRF compiles the WRF way and force-ignores all make errors
+# putting the onus on US to check for things
+if [ ! -x ./main/wrf.exe ]; then # There's a bunch of other execs but this is the most important and 
+                                 # doing more checks to accomodate just reinforces this bad design
+  echo "Failed to compile"
+  exit 1
+fi
+
+echo "TEST $(basename $0) PASS"

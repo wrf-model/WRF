@@ -6,7 +6,7 @@
     "cheyenne"  :
     {
       "submission" : "PBS",
-      "resources"  : "1:ncpus=6",
+      "resources"  : "-l select=1:ncpus=6",
       "arguments"  : 
       {
         "very_last_modules"       : [ "netcdf", "cmake/3.22.0" ],

@@ -108,7 +108,6 @@ contains
                           ipsy, ipey, jpsy, jpey, kpsy, kpey )
 
 
-    USE module_dm
     USE module_configure
     USE module_domain, ONLY : domain
     USE module_wrf_error

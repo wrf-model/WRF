@@ -294,7 +294,8 @@ subroutine da_read_obs_bufrseviri (obstype,iv,infile)
         ! SAID 55 is meteosat-8  or msg-1
         ! SAID 56 is meteosat-9  or msg-2
         ! SAID 57 is meteosat-10 or msg-3
-        if ( ( kidsat > 57) .or. ( kidsat < 55) ) then 
+	! SAID 70 is meteosat-11 or msg-4
+        if ( ( kidsat > 70) .or. ( kidsat < 55) ) then 
            write(unit=message(1),fmt='(A,I6)') 'Unknown platform: ', kidsat
            call da_warning(__FILE__,__LINE__,message(1:1))
         end if
@@ -305,6 +306,8 @@ subroutine da_read_obs_bufrseviri (obstype,iv,infile)
             satellite_id = 2
         else if ( kidsat == 57 ) then
             satellite_id = 3
+	else if ( kidsat == 70 ) then
+            satellite_id = 4
         end if
 
         if (clrsky) then     ! asr bufr has no sza

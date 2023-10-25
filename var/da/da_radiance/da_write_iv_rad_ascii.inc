@@ -18,7 +18,11 @@ subroutine da_write_iv_rad_ascii (it, ob, iv )
    character(len=filename_len)  :: filename
    character(len=7)   :: surftype
    integer            :: ndomain
-   logical            :: amsr2
+   logical            :: amsr2, ahi
+   real               :: cip ! to output cloud-ice path
+   integer            :: cloudflag ! to output cloudflag
+   integer, dimension(1) :: maxl
+   integer, allocatable :: level_max(:)
 
    real, allocatable :: dtransmt(:,:), transmt_jac(:,:), transmt(:,:), lod(:,:), lod_jac(:,:)
 
@@ -48,7 +52,14 @@ subroutine da_write_iv_rad_ascii (it, ob, iv )
          allocate ( lod_jac(iv%instid(i)%nchan,iv%instid(i)%nlevels) )
       end if
 
+      ! Get variables for maximum level of weighting function
+      !  Only filled if calc_weightfunc .and. use_crtm_kmatrix both are true
+      if ( rtm_option == rtm_option_crtm .and. calc_weightfunc .and. use_crtm_kmatrix ) then
+	 allocate(level_max(iv%instid(i)%nchan))
+      endif
+
       amsr2 = index(iv%instid(i)%rttovid_string,'amsr2') > 0
+      ahi   = index(iv%instid(i)%rttovid_string,'ahi') > 0
 
       write(unit=filename, fmt='(i2.2,a,i4.4)') it,'_inv_'//trim(iv%instid(i)%rttovid_string)//'.', myproc
 
@@ -69,7 +80,7 @@ subroutine da_write_iv_rad_ascii (it, ob, iv )
          write(unit=innov_rad_unit,fmt='(a)') ' pixel-info : i date scanpos landsea_mask  elv lat lon  satzen satazi solzen solazi'
       end if
       write(unit=innov_rad_unit,fmt='(a)') ' grid%xb-surf-info : i t2m mr2m(ppmv) u10 v10 ps ts smois tslb snowh isflg &
-                    & soiltyp vegtyp vegfra elev clwp cloud_frac'
+                    & soiltyp vegtyp vegfra elev clwp cloud_frac cip cloudflag'
       ndomain = 0
       do n =1,iv%instid(i)%num_rad
          if (iv%instid(i)%info%proc_domain(1,n)) then
@@ -118,7 +129,31 @@ subroutine da_write_iv_rad_ascii (it, ob, iv )
             case (7) ;
                surftype = 'MSNO : '
             end select
-            write(unit=innov_rad_unit,fmt='(a,i7,9f10.2,3i3,f8.3,f10.2,f8.3,f15.5)') surftype, n, &
+
+            ! Output cloud-ice path, cloudflag, pressure of weighting function peak
+            if (rtm_option==rtm_option_crtm .and. crtm_cloud ) then
+	       cip = iv%instid(i)%cip(n)
+	    else
+	       cip = -9999.0
+	    endif
+            if ( ahi ) then
+               cloudflag = iv%instid(i)%cloudflag(n)
+            else
+               cloudflag = -999
+            endif
+
+	    ! %nlevels is unstaggered, so subtract 1 to get number of mass points
+	    ! Order is top down in CRTM
+            if ( rtm_option == rtm_option_crtm .and. calc_weightfunc .and. use_crtm_kmatrix ) then
+	       level_max(:) = -1
+	       do l=1,iv%instid(i)%nchan
+		  maxl(:) = maxloc(iv%instid(i)%der_trans(l,:,n)) ! returns index of maximum value; if a tie, returns first occurrence of maximum
+	          level_max(l) = maxl(1) ! model level of weighting function peak for this pixel and channel, going from top-->down
+	       enddo
+	      !level_max(:) = ( iv%instid(i)%nlevels - 1 ) - level_max(:) + 1 ! make order bottom-up
+	    endif
+
+            write(unit=innov_rad_unit,fmt='(a,i7,9f10.2,3i3,f8.3,f10.2,f8.3,f15.5,f15.5,i7)') surftype, n, &
                              iv%instid(i)%t2m(n), &
                              iv%instid(i)%mr2m(n),   &
                              iv%instid(i)%u10(n), &
@@ -134,12 +169,22 @@ subroutine da_write_iv_rad_ascii (it, ob, iv )
                              iv%instid(i)%vegfra(n), &
                              iv%instid(i)%elevation(n), &
                              iv%instid(i)%clwp(n), &
-                             iv%instid(i)%cloud_frac(n)
+                             iv%instid(i)%cloud_frac(n), &
+                             cip, &
+                             cloudflag
 
             write(unit=innov_rad_unit,fmt='(a)') 'OBS  : '
             write(unit=innov_rad_unit,fmt='(10f11.2)') ob%instid(i)%tb(:,n)
             write(unit=innov_rad_unit,fmt='(a)') 'BAK  : '
             write(unit=innov_rad_unit,fmt='(10f11.2)') iv%instid(i)%tb_xb(:,n)
+            if (rtm_option==rtm_option_crtm .and. crtm_cloud .and. (amsr2 .or. ahi) ) then
+               write(unit=innov_rad_unit,fmt='(a)') 'BAK_clr : '
+               write(unit=innov_rad_unit,fmt='(10f11.2)') iv%instid(i)%tb_xb_clr(:,n)
+            endif
+            if ( rtm_option == rtm_option_crtm .and. calc_weightfunc .and. use_crtm_kmatrix ) then
+               write(unit=innov_rad_unit,fmt='(a)') 'WEIGHTFUNC_PEAK : '
+               write(unit=innov_rad_unit,fmt='(10f11.2)') iv%instid(i)%pm( (/level_max/), n )
+            endif
             write(unit=innov_rad_unit,fmt='(a)') 'IVBC : '
             write(unit=innov_rad_unit,fmt='(10f11.2)')  iv%instid(i)%tb_inv(:,n)
             write(unit=innov_rad_unit,fmt='(a)') 'EMS  : '
@@ -313,6 +358,9 @@ subroutine da_write_iv_rad_ascii (it, ob, iv )
          deallocate ( lod )
          deallocate ( lod_jac )
       end if
+      if ( rtm_option == rtm_option_crtm .and. calc_weightfunc .and. use_crtm_kmatrix ) then
+	 deallocate(level_max)
+      endif
       close(unit=innov_rad_unit)
       call da_free_unit(innov_rad_unit)
    end do ! end do instruments

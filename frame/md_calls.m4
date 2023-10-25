@@ -111,6 +111,19 @@ ifelse($3,real,
 `        CALL ext_pnc_$1_$2_$6_$3$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
                               ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )' )
 #endif
+#ifdef ADIOS2
+      CASE ( IO_ADIOS2   )
+ifelse($3,real,
+`#  if ( RWORDSIZE == DWORDSIZE )
+        CALL ext_adios2_$1_$2_$6_double$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
+                              ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )
+#  else
+        CALL ext_adios2_$1_$2_$6_real$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
+                              ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )
+#  endif',
+`        CALL ext_adios2_$1_$2_$6_$3$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
+                              ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )' )
+#endif
 #ifdef PIO
       CASE ( IO_PIO )
 ifelse($3,real,

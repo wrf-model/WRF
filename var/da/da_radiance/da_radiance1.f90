@@ -22,7 +22,7 @@ module da_radiance1
       use_pseudo_rad, pi, t_triple, crtm_cloud, DT_cloud_model,write_jacobian, &
       use_crtm_kmatrix,use_clddet, use_satcv, cv_size_domain, &
       cv_size_domain_js, calc_weightfunc, deg_to_rad, rad_to_deg,use_clddet_zz, &
-      ahi_superob_halfwidth
+      ahi_superob_halfwidth, ahi_use_symm_obs_err
    use da_define_structures, only : info_type,model_loc_type,maxmin_type, &
       iv_type, y_type, jo_type,bad_data_type,bad_data_type,number_type, &
       be_type, clddet_geoir_type, superob_type

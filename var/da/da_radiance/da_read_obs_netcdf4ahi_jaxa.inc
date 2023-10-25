@@ -65,6 +65,7 @@ subroutine da_read_obs_netcdf4ahi_jaxa (iv, infile_tb, infile_tbp)
    integer(i_kind)  :: itx, itt
    character(80)    :: filename1,filename2
    integer          :: nchan,nlongitude,nlatitude,ilongitude,ilatitude,ichannels
+   integer          :: lonstart,latstart,ahi_info_unit
    integer          :: LatDimID,LonDimID
    integer          :: latid,lonid,tbb_id,sazid,cltyid,ter_id
    integer          :: nfile
@@ -85,6 +86,7 @@ subroutine da_read_obs_netcdf4ahi_jaxa (iv, infile_tb, infile_tbp)
    real(r_kind), allocatable       :: rtct(:,:), rtct2(:,:),rtmt(:,:)
    real(r_kind), allocatable       :: tempir(:,:),cwvt1(:,:)
    real(r_kind), allocatable    :: ter_sat(:,:),SDob_10(:,:),SDob_13(:,:),SDob_14(:,:)
+   real(r_kind), allocatable    :: cloud_mask(:,:) ! For reading L2 cloud information
    character(200)    :: filenameStatic
 ! Allocatable arrays
    integer(i_kind),allocatable  :: ptotal(:)
@@ -112,6 +114,7 @@ subroutine da_read_obs_netcdf4ahi_jaxa (iv, infile_tb, infile_tbp)
    num_ahi_used    = 0
    num_ahi_thinned = 0
 
+   inst = 0
    do i = 1, rtminit_nsensor
       if (platform_id  == rtminit_platform(i) &
           .and. satellite_id == rtminit_satid(i)    &
@@ -135,6 +138,7 @@ subroutine da_read_obs_netcdf4ahi_jaxa (iv, infile_tb, infile_tbp)
 !-------------------------------------------------------------------------
    nfile       = 0  !initialize
    fname_tb(:) = '' !initialize
+   fname_tbp(:) = '' ! initialize
    
    ! first check if ahi nc file is available
    filename1 = trim(infile_tb)
@@ -169,6 +173,24 @@ subroutine da_read_obs_netcdf4ahi_jaxa (iv, infile_tb, infile_tbp)
       return
    end if 
 
+  ! Added to get area information from the file, in case you don't
+  !  want to read the entire area, which is large and memory intensive
+  !open the data area info file
+   call da_get_unit(ahi_info_unit)
+   open(unit=ahi_info_unit,file='ahi_info',status='old',iostat=iret)
+   if(iret /= 0)then
+       call da_warning(__FILE__,__LINE__,(/"area_info file read error"/))
+   endif
+  !read date information
+   read(ahi_info_unit,*)
+   read(ahi_info_unit,*)
+   read(ahi_info_unit,*)
+   read(ahi_info_unit,*)
+   read(ahi_info_unit,*)
+   read(ahi_info_unit,*) lonstart,latstart,nlongitude,nlatitude
+   close(ahi_info_unit)
+   call da_free_unit(ahi_info_unit)
+
    infile_loop:  do ifile = 1, nfile
       num_ahi_file_local    = 0
       num_ahi_local_local   = 0
@@ -182,14 +204,22 @@ subroutine da_read_obs_netcdf4ahi_jaxa (iv, infile_tb, infile_tbp)
          cycle infile_loop
       endif
 
-   ! read dimensions: 	latitude and longitude
-      iret = nf90_inq_dimid(ncid, "latitude", LatDimID)
-      iret = nf90_inquire_dimension(ncid, LatDimID, len=nlatitude)
-	  
-	  iret = nf90_inq_dimid(ncid, "longitude", LonDimID)
-	  iret = nf90_inquire_dimension(ncid, LonDimID, len=nlongitude)
+      ! read dimensions: 	latitude and longitude
+      ! If any value in the file is < 0, that means to ignore them
+      !     and get the number of lats/lons from file, and use everything
+      if ( nlongitude < 0 .or. nlatitude < 0 .or. lonstart < 0 .or. latstart < 0 ) then
+	 iret = nf90_inq_dimid(ncid, "latitude", LatDimID)
+	 iret = nf90_inquire_dimension(ncid, LatDimID, len=nlatitude)
+	     
+	 iret = nf90_inq_dimid(ncid, "longitude", LonDimID)
+	 iret = nf90_inquire_dimension(ncid, LonDimID, len=nlongitude)
+
+	 lonstart = 1
+	 latstart = 1
+      endif
 	  
       write(unit=stdout,fmt=*)'nlongitude,nlatitude: ',nlongitude,nlatitude   
+      write(unit=stdout,fmt=*)'lonstart,latstart: ',lonstart,latstart
  
  ! read array: time
       iret = nf90_get_att(ncid, nf90_global, "id", filename)
@@ -206,7 +236,7 @@ subroutine da_read_obs_netcdf4ahi_jaxa (iv, infile_tb, infile_tbp)
    ! read lat
 	  iret = nf90_inq_varid(ncid, 'latitude', latid)	  
 	  allocate( vlatitude(nlatitude))
-      iret = nf90_get_var(ncid, latid, vlatitude)
+      iret = nf90_get_var(ncid, latid, vlatitude,start=(/latstart/),count=(/nlatitude/))
       if(iret /= 0)then
          call da_warning(__FILE__,__LINE__, &
              (/"NETCDF4 read error for: Latitude of Observation Point"/))
@@ -214,7 +244,7 @@ subroutine da_read_obs_netcdf4ahi_jaxa (iv, infile_tb, infile_tbp)
    ! read lon
 	  iret = nf90_inq_varid(ncid, 'longitude', lonid)
 	  allocate( vlongitude(nlongitude))
-      iret = nf90_get_var(ncid, lonid, vlongitude)
+      iret = nf90_get_var(ncid, lonid, vlongitude,start=(/lonstart/),count=(/nlongitude/))
       if(iret /= 0)then
           call da_warning(__FILE__,__LINE__, &
               (/"NETCDF4 read error for: Longitude of Observation Point"/))
@@ -228,7 +258,7 @@ subroutine da_read_obs_netcdf4ahi_jaxa (iv, infile_tb, infile_tbp)
       allocate( tbb(nlongitude,nlatitude,nchan)) 
       do k=1,nchan	  
 		iret = nf90_inq_varid(ncid, tbb_name(k), tbb_id)	  
-		iret = nf90_get_var(ncid, tbb_id, tbb(:,:,k))
+		iret = nf90_get_var(ncid, tbb_id, tbb(:,:,k),start=(/lonstart,latstart/),count=(/nlongitude,nlatitude/))
 		if(iret /= 0)then
 		  call da_warning(__FILE__,__LINE__, &
 			   (/"NETCDF4 read error for: Brightness Temperature"/))
@@ -248,7 +278,7 @@ subroutine da_read_obs_netcdf4ahi_jaxa (iv, infile_tb, infile_tbp)
    ! read
 	  iret = nf90_inq_varid(ncid, 'SAZ', sazid)	  
 	  allocate( sat_zenith(nlongitude,nlatitude))
-	  iret = nf90_get_var(ncid, sazid, sat_zenith)
+	  iret = nf90_get_var(ncid, sazid, sat_zenith,start=(/lonstart,latstart/),count=(/nlongitude,nlatitude/))
       if(iret /= 0)then
          call da_warning(__FILE__,__LINE__, &
             (/"NETCDF4 read error for: satellite zenith angle"/))
@@ -267,7 +297,7 @@ subroutine da_read_obs_netcdf4ahi_jaxa (iv, infile_tb, infile_tbp)
    ! read
 	  iret = nf90_inq_varid(ncid, 'SAA', sazid)	  
 	  allocate( sat_azi(nlongitude,nlatitude))
-	  iret = nf90_get_var(ncid, sazid, sat_azi)
+	  iret = nf90_get_var(ncid, sazid, sat_azi,start=(/lonstart,latstart/),count=(/nlongitude,nlatitude/))
       if(iret /= 0)then
          call da_warning(__FILE__,__LINE__, &
             (/"NETCDF4 read error for: satellite azimuth angle"/))
@@ -285,7 +315,7 @@ subroutine da_read_obs_netcdf4ahi_jaxa (iv, infile_tb, infile_tbp)
    ! read
 	  iret = nf90_inq_varid(ncid, 'SOZ', sazid)	  
 	  allocate( sol_zenith(nlongitude,nlatitude))
-	  iret = nf90_get_var(ncid, sazid, sol_zenith)
+	  iret = nf90_get_var(ncid, sazid, sol_zenith,start=(/lonstart,latstart/),count=(/nlongitude,nlatitude/))
       if(iret /= 0)then
          call da_warning(__FILE__,__LINE__, &
             (/"NETCDF4 read error for: satellite zenith angle"/))
@@ -304,7 +334,7 @@ subroutine da_read_obs_netcdf4ahi_jaxa (iv, infile_tb, infile_tbp)
    ! read
 	  iret = nf90_inq_varid(ncid, 'SOA', sazid)	  
 	  allocate( sol_azi(nlongitude,nlatitude))
-	  iret = nf90_get_var(ncid, sazid, sol_azi)
+	  iret = nf90_get_var(ncid, sazid, sol_azi,start=(/lonstart,latstart/),count=(/nlongitude,nlatitude/))
       if(iret /= 0)then
          call da_warning(__FILE__,__LINE__, &
             (/"NETCDF4 read error for: satellite azimuth angle"/))
@@ -319,6 +349,28 @@ subroutine da_read_obs_netcdf4ahi_jaxa (iv, infile_tb, infile_tbp)
          'solar azimuth angle(pixel=1,scan=1): ',sol_azi(1,1)		 		  
    ! close infile_tb file 		 
       iret = nf90_close(ncid)
+
+      !  Read the level-2 cloud information file from JAXA
+      !  This must be on the same grid as everything else
+      allocate(cloud_mask(nlongitude,nlatitude))
+      cloud_mask = -9999.0
+      inquire(file='L2AHICLP', exist=fexist)
+      if ( fexist ) then
+         iret = nf90_open('L2AHICLP', nf90_NOWRITE, ncid)
+         if(iret /= 0)then
+            call da_warning(__FILE__,__LINE__,(/"NETCDF4 read error for: CLTYPE data"/))
+         endif
+
+         iret = nf90_inq_varid(ncid, "CLTYPE", cltyid)
+         iret = nf90_get_var(ncid,cltyid,cloud_mask,start=(/lonstart,latstart/), count=(/nlongitude,nlatitude/))
+         if(iret /= 0)then
+            call da_warning(__FILE__,__LINE__,(/"NETCDF4 read error for: CLTYPE data"/))
+         endif
+         iret = nf90_close(ncid)
+      end if
+
+      ! Note, these are only deallocated if use_clddet_zz = true
+      !  so their allocation should probably be moved inside the conditional...
       allocate( tbbp(nlongitude,nlatitude,nchan)) 	  
       allocate( ter_sat(nlongitude,nlatitude))
       allocate( SDob_10(nlongitude,nlatitude))
@@ -349,7 +401,7 @@ subroutine da_read_obs_netcdf4ahi_jaxa (iv, infile_tb, infile_tbp)
 
       do k=1,nchan	  
 		iret = nf90_inq_varid(ncid, tbb_name(k), tbb_id)	  
-		iret = nf90_get_var(ncid, tbb_id, tbbp(:,:,k))
+		iret = nf90_get_var(ncid, tbb_id, tbbp(:,:,k),start=(/lonstart,latstart/),count=(/nlongitude,nlatitude/))
 		if(iret /= 0)then
 		  call da_warning(__FILE__,__LINE__, &
 			   (/"NETCDF4 read error for: Brightness Temperature"/))
@@ -379,7 +431,7 @@ subroutine da_read_obs_netcdf4ahi_jaxa (iv, infile_tb, infile_tbp)
          print*,"Cannot open NETCDF4 file "//trim(filenameStatic)
       endif
       iret = nf90_inq_varid(ncid, "AhiTer", ter_id)
-      iret = nf90_get_var(ncid, ter_id, ter_sat(:,:))
+      iret = nf90_get_var(ncid, ter_id, ter_sat(:,:),start=(/lonstart,latstart/),count=(/nlongitude,nlatitude/))
       if(iret /= 0) print*,"NETCDF4 read error for: SatTer"
       where (ter_sat == -999.) ter_sat = missing_r
       iret = nf90_close(ncid)
@@ -543,6 +595,12 @@ end if
                   tb = tbb(ilongitude,ilatitude,k)
                end if
 
+               ! Apply clear-sky bias correction if requested
+               if ( ahi_apply_clrsky_bias ) then
+                  tb = tb - satinfo(inst)%clearSkyBias(k)
+                 !write(*,*)'channel, clearSkyBias = ',satinfo(inst)%ichan(k),satinfo(inst)%clearSkyBias(k)
+               endif
+
                if (tb > 0.0)   p % tb_inv(k) = tb
 
              end do
@@ -594,6 +652,7 @@ end if
             p%solazi           = sol_azi(ilongitude,ilatitude)
             p%sensor_index     = inst
             p%ifgat            = ifgat
+            p%cloudflag        = int(cloud_mask(ilongitude,ilatitude)) ! AHI L-2 cloud flag
             allocate (p%next)   ! add next data			
             p => p%next			
             nullify (p%next)
@@ -611,6 +670,8 @@ end if
    deallocate(sol_zenith)
    deallocate(sat_azi)
    deallocate(sol_azi)
+   deallocate(cloud_mask)
+
    if( use_clddet_zz ) deallocate(tbbp)
    if( use_clddet_zz ) deallocate(ter_sat)
    if( use_clddet_zz ) deallocate(SDob_10)

@@ -691,8 +691,7 @@ BENCH_END(set_phys_bc_tim)
                             )
 
 #ifdef DM_PARALLEL
-       IF ( config_flags%bl_pbl_physics == MYNNPBLSCHEME2 .OR. &
-            config_flags%bl_pbl_physics == MYNNPBLSCHEME3 ) THEN
+       IF ( config_flags%bl_pbl_physics == MYNNPBLSCHEME ) THEN
 #        include "HALO_EM_SCALAR_E_5.inc"
        ENDIF
 #endif
@@ -3946,11 +3945,6 @@ BENCH_START(micro_driver_tim)
 ! YLIN
 ! RI_CURR INPUT
       &        , RI_CURR=grid%rimi                                          &
-      &        , cld=grid%cld                                               & ! w2id
-      &        , tw2=grid%tw2                                               & ! w2id
-      &        , pw2=grid%pw2                                               & ! w2id
-      &        , qw2=grid%qw2                                               & ! w2id
-      &        , f_snow=grid%f_snow                                         & ! w2id
       &        , re_cloud=grid%re_cloud, re_ice=grid%re_ice, re_snow=grid%re_snow & ! G. Thompson
       &        , has_reqc=grid%has_reqc, has_reqi=grid%has_reqi, has_reqs=grid%has_reqs & ! G. Thompson
       &        , diagflag=diag_flag, do_radar_ref=config_flags%do_radar_ref &
@@ -5478,9 +5472,9 @@ BENCH_START(adj_micro_driver_tim)
       &        , QV_CURR=moist(ims,kms,jms,P_QV),QV_CURRB=a_moist(ims,kms,jms,P_QV), F_QV=F_QV               &
       &        , QC_CURR=moist(ims,kms,jms,P_QC),QC_CURRB=a_moist(ims,kms,jms,P_QC), F_QC=F_QC               &
       &        , QR_CURR=moist(ims,kms,jms,P_QR),QR_CURRB=a_moist(ims,kms,jms,P_QR), F_QR=F_QR               &
-      &        , QI_CURR=moist(ims,kms,jms,P_QI), F_QI=F_QI               &
-      &        , QS_CURR=moist(ims,kms,jms,P_QS), F_QS=F_QS               &
-      &        , QG_CURR=moist(ims,kms,jms,P_QG), F_QG=F_QG               &
+      &        , QI_CURR=moist(ims,kms,jms,P_QI),QI_CURRB=a_moist(ims,kms,jms,P_QI), F_QI=F_QI               &
+      &        , QS_CURR=moist(ims,kms,jms,P_QS),QS_CURRB=a_moist(ims,kms,jms,P_QS), F_QS=F_QS               &
+      &        , QG_CURR=moist(ims,kms,jms,P_QG),QG_CURRB=a_moist(ims,kms,jms,P_QG), F_QG=F_QG               &
       &        , QH_CURR=moist(ims,kms,jms,P_QH), F_QH=F_QH               & ! for milbrandt2mom
       &        , QNDROP_CURR=scalar(ims,kms,jms,P_QNDROP), F_QNDROP=F_QNDROP &
 #if (WRF_CHEM==1)

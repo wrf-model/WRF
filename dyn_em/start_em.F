@@ -1258,7 +1258,7 @@ endif
                       ,grid%xtime1, grid%PBLHAVG, grid%TKEAVG                            &
                       ,grid%ccn_conc                                          & ! RAS
                       ,grid%QKE                                               &!JOE-for mynn
-                      ,grid%pep_pbl                                           & ! EEPS
+                      ,grid%pek_pbl,grid%pep_pbl                              & ! EEPS
                       ,grid%ghi_accum                                         & ! Solar diagnostics
                       ,grid%landusef,grid%landusef2,grid%mosaic_cat_index                            & ! danli mosaic
                       ,grid%TSK_mosaic,grid%TSLB_mosaic,grid%SMOIS_mosaic,grid%SH2O_mosaic           & ! danli mosaic
@@ -2198,6 +2198,7 @@ if(config_flags%ifire.eq.2)then
                grid          = grid,                &
                cf            = config_flags,        &
                fs_p_id       = grid%fs_p_id,        &
+               fs_p_src      = grid%fs_p_src,       &
                fs_p_dt       = grid%fs_p_dt,        &
                fs_p_x        = grid%fs_p_x,         &
                fs_p_y        = grid%fs_p_y,         &

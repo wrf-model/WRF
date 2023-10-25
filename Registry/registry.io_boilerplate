@@ -145,3 +145,7 @@ rconfig logical   ignore_iofields_warning namelist,time_control   1            .
 # nofill = true means only a single write, not the write/read/write sequence
 rconfig logical   ncd_nofill      namelist,time_control 1      .true.
 
+# for ADIOS2 specific features
+rconfig logical   adios2_compression_enable   namelist,namelist_adios2 1 .true.
+rconfig character adios2_blosc_compressor     namelist,namelist_adios2 1 "lz4"
+rconfig integer adios2_numaggregators         namelist,namelist_adios2 1 0

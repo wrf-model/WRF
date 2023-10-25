@@ -3722,7 +3722,7 @@ do iz= kts,kte
                         icol=k
                      endif
                   elseif(ipiv(k).gt.1)then
-                     CALL wrf_error_fatal('singular matrix in gaussj')
+                     FATAL_ERROR('singular matrix in gaussj')
                   endif
                enddo
             endif
@@ -3743,7 +3743,7 @@ do iz= kts,kte
           
          endif
          
-         if(a(icol,icol).eq.0) CALL wrf_error_fatal('singular matrix in gaussj')
+         if(a(icol,icol).eq.0) FATAL_ERROR('singular matrix in gaussj')
          
          pivinv=1./a(icol,icol)
          a(icol,icol)=1
@@ -5316,7 +5316,7 @@ do iz= kts,kte
                      (1-emr_u)*rld*(1.-pv_frac_roof)+(1-0.79)*pv_frac_roof*rld)*ss(iz)*bs(id)/(ws(id)+bs(id))/ndu
              rl_inc=rl_inc+rld*ss(iz)*bs(id)/(ws(id)+bs(id))/ndu
              rs_abs=rs_abs+((1.-albr_u)*rs*(1.-pv_frac_roof)+(1.-0.11)*rs*pv_frac_roof)*ss(iz)*bs(id)/(ws(id)+bs(id))/ndu
-             gfl=(1.-albr_u)*rs*(1-pv_frac_roof)+emr_u*rld*((1-pv_frac_roof)+pv_frac_roof*emr_u*sigma*tpvlev(id,iz)**4) &
+             gfl=(1.-albr_u)*rs*(1-pv_frac_roof)+emr_u*rld*(1-pv_frac_roof)+pv_frac_roof*emr_u*sigma*tpvlev(id,iz)**4 &
                 -emr_u*sigma*(tr_av(id,iz)**4.)+(1-gr_frac_roof)*sfr(id,iz)+(sfrv(id,iz)+lfrv(id,iz))*gr_frac_roof+(1.-gr_frac_roof)*lfr(id,iz)
              grdflx_urb=grdflx_urb-gfl*ss(iz)*bs(id)/(ws(id)+bs(id))/ndu  
          enddo

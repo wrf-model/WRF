@@ -470,8 +470,11 @@ Description of WRFDA namelist variables, defined in Registry/registry.var
                                                  ; first assimilation cycle. If there are not enough data 
                                                  ; (according to "VARBC_NOBSMIN") on the first cycle, the 
                                                  ; next cycle will perform a coldstart again.
-  use_clddet_mmr                      = false    ; .true. :use the MMR scheme to conduct cloud detection for infrared radiance
-  use_clddet_ecmwf                    = false    ; .true. :use the ECMWF operational scheme to conduct cloud detection for infrared radiance.
+  use_clddet                      = 2            ; 0: off
+                                                 ; 1:use the MMR scheme to conduct cloud detection for infrared radiance
+                                                 ; 2:use the pf scheme to conduct cloud detection for infrared radiance (Default)
+                                                 ; 3:use the ECMWF operational scheme to conduct cloud detection for infrared radiance
+  use_clddet_zz                    = false       ; .true. :use the cloud detection scheme from Zhuge X. and Zou X. JAMC,2016.
   airs_warmest_fov                    = .false.  ; .true.: uses the observation brightness temperature for 
                                                  ;         AIRS Window channel #914 as criterion for GSI 
                                                  ;         thinning (with a higher amplitude than the distance 

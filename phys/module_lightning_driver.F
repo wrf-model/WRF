@@ -413,22 +413,21 @@
                   )
 
     ! LPI lightning options
-#if (EM_CORE==1)
     CASE( ltng_lpi )
         CALL wrf_debug ( 100, ' lightning_driver: calling Light Potential Index' )
         IF(F_QG) THEN
         CALL   calclpi(W=w,                              &
-                     Z=z,                              &
-                     PI_PHY=pi_phy, RHO_PHY=rho,             &
-                     TH_PHY=TH_PHY,P_PHY=p_phy,                  &
+                     Z=z,                                &
+                     PI_PHY=pi_phy, RHO_PHY=rho,         &
+                     TH_PHY=TH_PHY,P_PHY=p_phy,          &
                      DZ8w=dz8w,                          &
-                     QV=moist(ims,kms,jms,P_QV),         &   !Qv=qv_curr,                         &
-                     QC=moist(ims,kms,jms,P_QC),         &   !Qc=qc_curr,                         &
-                     QR=moist(ims,kms,jms,P_QR),         &   !QR=qr_curr,                         &
-                     QI=moist(ims,kms,jms,P_QI),         &   !QI=qi_curr,                         &
-                     QS=moist(ims,kms,jms,P_QS),         &   !qs_curr,                         &
-                     QG=moist(ims,kms,jms,P_QG),         &   !qg_curr,                         &
-                     QH=moist(ims,kms,jms,P_QH),         &   !qh_curr,                         &
+                     QV=moist(ims,kms,jms,P_QV),         &   !Qv=qv_curr
+                     QC=moist(ims,kms,jms,P_QC),         &   !Qc=qc_curr
+                     QR=moist(ims,kms,jms,P_QR),         &   !QR=qr_curr
+                     QI=moist(ims,kms,jms,P_QI),         &   !QI=qi_curr
+                     QS=moist(ims,kms,jms,P_QS),         &   !qs_curr
+                     QG=moist(ims,kms,jms,P_QG),         &   !qg_curr
+!                    QH=moist(ims,kms,jms,P_QH),         &   !qh_curr
                   lpi=lpi &
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
@@ -437,7 +436,7 @@
         WRITE(wrf_err_message, * ) ' lightning_driver: LPI option needs Microphysics Option with Graupel '
         CALL wrf_error_fatal ( wrf_err_message )
         ENDIF
-#endif
+
 !   CASE ( another_cpm_option)
 
     ! Invalid lightning options
@@ -446,6 +445,8 @@
         CALL wrf_error_fatal ( wrf_err_message )
 
  END SELECT flashrate_select
+
+ IF (lightning_option.eq.3) GOTO 100
 
 !-----------------------------------------------------------------
 
@@ -584,6 +585,7 @@
  ic_flashcount(its:ite,jts:jte) = ic_flashcount(its:ite,jts:jte) + ic_flashrate(its:ite,jts:jte) * lightning_dt
  cg_flashcount(its:ite,jts:jte) = cg_flashcount(its:ite,jts:jte) + cg_flashrate(its:ite,jts:jte) * lightning_dt
  
+ 100  CONTINUE
  do
    if( REAL(ltngacttime,8) <= nextTime ) then
      ltngacttime = ltngacttime + lightning_dt

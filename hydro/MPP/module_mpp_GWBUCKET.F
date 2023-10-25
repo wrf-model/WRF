@@ -25,11 +25,11 @@ MODULE MODULE_mpp_GWBUCKET
   use module_mpp_land, only:  io_id, my_id, mpp_status, mpp_land_max_int1, numprocs, &
                  mpp_land_bcast_real, sum_real8,  mpp_land_sync
   use iso_fortran_env, only: int64
+  use mpi
   implicit none
 
 
 
-  include "mpif.h"
 
   integer,allocatable,dimension(:) :: sizeInd  ! size of Basins for each tile
   integer ::  maxSizeInd
@@ -122,7 +122,6 @@ MODULE MODULE_mpp_GWBUCKET
                   tag2 = 63
                   call mpi_recv(ibuff(1:sizeInd(i+1)),sizeInd(i+1),&
                       MPI_INTEGER8,i,tag2,HYDRO_COMM_WORLD,mpp_status,ierr)
-
                   do k = 1, sizeInd(i+1)
                      outV(ibuff(k)) = vbuff(k)
                   end do
@@ -181,7 +180,6 @@ MODULE MODULE_mpp_GWBUCKET
                    tag2 = 63
                    call mpi_recv(ibuff(1:sizeInd(i+1)),sizeInd(i+1),&
                        MPI_INTEGER8,i,tag2,HYDRO_COMM_WORLD,mpp_status,ierr)
-
                    do k = 1, sizeInd(i+1)
                       outV(ibuff(k)) = vbuff(k)
                    end do

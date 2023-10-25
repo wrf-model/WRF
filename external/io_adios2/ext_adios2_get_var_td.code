@@ -1,0 +1,174 @@
+!*----------------------------------------------------------------------------
+!*
+!*  WRF ADIOS2 I/O
+!*  Author: Michael Laufer
+!*  	    Toga Networks, a Huawei Company
+!*  	    michael.laufer@toganetworks.com
+!*  Author: Erick Fredj
+!*  	    Computer Science Department, The Jerusalem College of Technology
+!*	    fredj@jct.ac.il
+!*	    Toga Networks, a Huawei Company
+!*	    erick.fredj@toganetworks.com
+!*    	        
+!*  Date:    November 3, 2021
+!*
+!*----------------------------------------------------------------------------
+  use wrf_data_adios2
+  use ext_adios2_support_routines
+  use adios2
+  implicit none
+  include 'wrf_status_codes.h'
+  integer               ,intent(in)         :: DataHandle
+  character*(*)         ,intent(in)         :: Element
+  character (DateStrLen),intent(in)         :: DateStr
+  character*(*)         ,intent(in)         :: Var
+  TYPE_COUNT
+  TYPE_DATA
+  TYPE_OUTCOUNT
+  integer               ,intent(out)        :: Status
+  type(wrf_data_handle) ,pointer            :: DH
+  character (VarNameLen)                    :: VarName
+  character (40+len(Element))               :: Name
+  character (40+len(Element))               :: FName
+  integer                                   :: stat
+  TYPE_BUFFER           ,allocatable        :: Buffer(:)
+  integer                                   :: i
+  integer                                   :: VDims (2)
+  integer                                   :: VStart(2)
+  integer                                   :: VCount(2)
+  integer                                   :: NVar
+  integer                                   :: TimeIndex
+  integer                                   :: DimIDs(2)
+  type(adios2_variable)                     :: VarID
+  integer                                   :: XType
+  integer                                   :: NDims
+  integer                                   :: NAtts
+  integer                                   :: Len1
+  integer(kind=8)                           :: TimeIndex_int8
+  integer(kind=8),dimension(:),allocatable  :: shape_dims
+  integer                                   :: ndims_adios2
+
+  if(Count <= 0) then
+    Status = WRF_WARN_ZERO_LENGTH_GET  
+    write(msg,*) &
+'Warning ZERO LENGTH GET in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__
+    call wrf_debug ( WARN , msg)
+    return
+  endif
+  VarName = Var
+  call DateCheck(DateStr,Status)
+  if(Status /= WRF_NO_ERR) then
+    write(msg,*) &
+'Warning DATE STRING ERROR in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__ 
+    call wrf_debug ( WARN , msg)
+    return
+  endif
+  call GetDH(DataHandle,DH,Status)
+  if(Status /= WRF_NO_ERR) then
+    write(msg,*) &
+'Warning Status = ',Status,' in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__
+    call wrf_debug ( WARN , msg)
+    return
+  endif
+  call GetName(Element, VarName, Name, Status)
+  if(Status /= WRF_NO_ERR) then
+    write(msg,*) &
+'Warning Status = ',Status,' in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__
+    call wrf_debug ( WARN , msg)
+    return
+  endif
+  if(DH%FileStatus == WRF_FILE_NOT_OPENED) then
+    Status = WRF_WARN_FILE_NOT_OPENED  
+    write(msg,*) &
+'Warning FILE NOT OPENED in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__
+    call wrf_debug ( WARN , msg)
+  elseif(DH%FileStatus == WRF_FILE_OPENED_NOT_COMMITTED) then
+    Status = WRF_WARN_DRYRUN_READ  
+    write(msg,*) &
+'Warning DRYRUN READ in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__
+    call wrf_debug ( WARN , msg)
+  elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_WRITE) then
+    Status = WRF_WARN_READ_WONLY_FILE  
+    write(msg,*) &
+'Warning READ WONLY FILE in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__
+    call wrf_debug ( WARN , msg)
+  elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_READ) then
+    call adios2_inquire_variable(VarID, DH%adios2IO, Name, stat)
+    call adios2_err(stat,Status)
+    if(Status /= WRF_NO_ERR) then
+      write(msg,*) 'adios2 error in ext_adios2_get_var_td ',__FILE__,', line', __LINE__
+      call wrf_debug ( WARN , TRIM(msg))
+      return
+    endif
+    call adios2_variable_shape(shape_dims, ndims_adios2, VarID, stat)
+    call adios2_err(stat,Status)
+    if(Status /= WRF_NO_ERR) then
+      write(msg,*) 'adios2 error in ext_adios2_get_var_td ',__FILE__,', line', __LINE__
+      call wrf_debug ( WARN , TRIM(msg))
+      return
+    endif
+    Len1 = shape_dims(1)
+    call GetTimeIndex('read',DataHandle,DateStr,TimeIndex,Status)
+    if(Status /= WRF_NO_ERR) then
+      write(msg,*) &
+'Warning in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__
+      call wrf_debug ( WARN , msg)
+      return
+    endif
+    TimeIndex_int8 = TimeIndex
+    call adios2_set_step_selection(VarID, TimeIndex_int8 -1_8, 1_8, stat)
+    call adios2_err(stat,Status)
+    if(Status /= WRF_NO_ERR) then
+      write(msg,*) 'adios2 error in ext_adios2_get_var_td ',__FILE__,', line', __LINE__
+      call wrf_debug ( WARN , TRIM(msg))
+      return
+    endif
+    VStart(1) = 1
+    VStart(2) = TimeIndex
+    VCount(1) = LENGTH
+    VCount(2) = 1
+#ifndef CHAR_TYPE
+    allocate(Buffer(VCount(1)), STAT=stat)
+    if(stat/= 0) then
+      Status = WRF_ERR_FATAL_ALLOCATION_ERROR   
+      write(msg,*) &
+'Fatal ALLOCATION ERROR in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__
+      call wrf_debug ( FATAL , msg)
+      return
+    endif
+    call adios2_get(DH%adios2Engine, VarID, Buffer, adios2_mode_sync, stat)
+#else
+    Data = ''
+    call adios2_get(DH%adios2Engine, VarID, Data, adios2_mode_sync, stat)
+#endif
+    call adios2_err(stat,Status)
+    if(Status /= WRF_NO_ERR) then
+      write(msg,*) 'adios2 error in ext_adios2_get_var_td ',__FILE__,', line', __LINE__
+      call wrf_debug ( WARN , TRIM(msg))
+      return
+    endif
+#ifndef CHAR_TYPE
+    COPY
+    deallocate(Buffer, STAT=stat)
+    if(stat/= 0) then
+      Status = WRF_ERR_FATAL_DEALLOCATION_ERR  
+      write(msg,*) &
+'Fatal DEALLOCATION ERROR in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__
+      call wrf_debug ( FATAL , msg)
+      return
+    endif
+    if(Len1 > Count) then
+      OutCount = Count
+      Status = WRF_WARN_MORE_DATA_IN_FILE  
+    else
+      OutCount = Len1
+      Status = WRF_NO_ERR   
+    endif
+#endif
+  else
+    Status = WRF_ERR_FATAL_BAD_FILE_STATUS  
+    write(msg,*) &
+'Fatal error BAD FILE STATUS in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__ 
+    call wrf_debug ( FATAL , msg)
+  endif
+  return

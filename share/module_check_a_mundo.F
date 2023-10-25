@@ -419,8 +419,7 @@
          END IF
       END DO
       IF ( ( exists ) .AND. &
-           ( ( model_config_rec % bl_pbl_physics(1) .EQ. MYNNPBLSCHEME2 ) .OR. &
-             ( model_config_rec % bl_pbl_physics(1) .EQ. MYNNPBLSCHEME3 ) .OR. &
+           ( ( model_config_rec % bl_pbl_physics(1) .EQ. MYNNPBLSCHEME ) .OR. &
              ( model_config_rec % bl_pbl_physics(1) .EQ. EEPSSCHEME     ) ) ) THEN
          WRITE(wrf_err_message,fmt='(a,i2)') '--- ERROR: LES PBL on fine grid does not work with CG PBL option ',model_config_rec % bl_pbl_physics(1)
          CALL wrf_message ( TRIM( wrf_err_message ) )
@@ -567,7 +566,7 @@
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec % shcu_physics(i) == dengshcuscheme .AND. &
               (model_config_rec % bl_pbl_physics(i) /= myjpblscheme .AND. &
-               model_config_rec % bl_pbl_physics(i) /= mynnpblscheme2 ) ) THEN
+               model_config_rec % bl_pbl_physics(i) /= mynnpblscheme ) ) THEN
             wrf_err_message = '--- ERROR: Deng shallow convection can only work with MYJ or MYNN (with bl_mynn_edmf off) PBL '
             CALL wrf_message ( wrf_err_message )
             wrf_err_message = '--- ERROR: Fix shcu_physics or bl_pbl_physics in namelist.input.'
@@ -1718,8 +1717,7 @@
          IF ( model_config_rec%shcu_physics(i) .EQ. GRIMSSHCUSCHEME ) THEN
             IF ( (model_config_rec%bl_pbl_physics(i) .EQ. YSUSCHEME) .OR. &
                  (model_config_rec%bl_pbl_physics(i) .EQ. SHINHONGSCHEME) .OR. &
-                 (model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME2) .OR. &
-                 (model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME3) ) THEN
+                 (model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME ) ) THEN
                !NO PROBLEM
             ELSE
                model_config_rec%shcu_physics(i) = 0
@@ -1739,8 +1737,7 @@
 
       DO i = 1, model_config_rec % max_dom
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
-         IF ( ( model_config_rec % bl_pbl_physics(i) .NE. MYNNPBLSCHEME2 ) .AND. &
-              ( model_config_rec % bl_pbl_physics(i) .NE. MYNNPBLSCHEME3 ) ) THEN
+         IF ( ( model_config_rec % bl_pbl_physics(i) .NE. MYNNPBLSCHEME  ) ) THEN
               model_config_rec % bl_mynn_edmf(i) = 0
               model_config_rec % bl_mynn_output(i) = 0
          END IF
@@ -1772,8 +1769,7 @@
       DO i = 1, model_config_rec % max_dom
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec%icloud_bl .eq. 1) THEN
-           IF ( model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME2 .OR. &
-                model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME3 ) THEN
+           IF ( model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME ) THEN
               !CORRECTLY CONFIGURED
            ELSE
               model_config_rec%icloud_bl = 0
@@ -1796,8 +1792,7 @@
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec%phot_blcld(i) ) THEN
            IF ( ( model_config_rec%icloud_bl .eq. 1 ) .AND.  &
-                ( ( model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME2 ) .OR. &
-                  ( model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME3 ) ) ) THEN
+                ( ( model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME ) ) ) THEN
                 !CORRECTLY CONFIGURED
            ELSE
               oops = oops + 1
@@ -2404,6 +2399,7 @@
         IF ( model_config_rec%SF_SURFACE_PHYSICS(i) == CLMSCHEME .and. &
              model_config_rec%SF_URBAN_PHYSICS(i) >= 1 .and. &
              model_config_rec%SF_URBAN_PHYSICS(i) <= 3 ) THEN
+             oops = oops + 1 
         ENDIF
       ENDDO
       IF ( oops .GT. 0 ) THEN
@@ -2480,8 +2476,7 @@
       oops = 0
       DO i = 1, model_config_rec % max_dom
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
-         IF ((model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME2) .OR. &
-             (model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME3) ) THEN
+         IF ((model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME) ) THEN
             IF ( model_config_rec%bl_mynn_mixscalars(i) .EQ. 1 ) THEN
                 model_config_rec%scalar_pblmix(i) = 0
                 oops = oops + 1
@@ -2507,11 +2502,11 @@
      END DO
 
 !-----------------------------------------------------------------------
-!  Check if qna_update=0 when aer_init_opt>0 for Thompson-MP-Aero (mp_physics=28)
+!  Check if qna_update=0 when aer_init_opt>1 for Thompson-MP-Aero (mp_physics=28)
 !-----------------------------------------------------------------------
      DO i = 1, model_config_rec % max_dom
        IF ( model_config_rec%mp_physics(i) .EQ. THOMPSONAERO ) THEN
-         IF ( model_config_rec%aer_init_opt .GT. 0 .and. model_config_rec%qna_update .EQ. 0 ) THEN
+         IF ( model_config_rec%aer_init_opt .GT. 1 .and. model_config_rec%qna_update .EQ. 0 ) THEN
            wrf_err_message = '--- ERROR: Time-varying sfc aerosol emissions not set for mp_physics=28 '
            CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
            wrf_err_message = '--- ERROR: Please set qna_update=1 and control through auxinput17 options '
@@ -2554,6 +2549,21 @@
          END IF
        END IF
      END DO
+
+!-----------------------------------------------------------------------
+! Stop the model if full_khain_lynn or mp_physics = 32 is selected
+!-----------------------------------------------------------------------
+      DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( model_config_rec%mp_physics(i) .eq. full_khain_lynn) THEN
+              oops = oops + 1
+         wrf_err_message = '--- ERROR: full bin spectral microphysics should not be used '
+         CALL wrf_message ( wrf_err_message )
+         wrf_err_message = '--- ERROR: use fast version instead (mp_physics=30)'
+         CALL wrf_message ( wrf_err_message )
+         count_fatal_error = count_fatal_error + 1
+         END IF
+      ENDDO      ! Loop over domains
 
 !-----------------------------------------------------------------------
 !  DJW Check that we're not using ndown and vertical nesting.
@@ -3393,8 +3403,7 @@
 #if (EM_CORE == 1)
       DO i = 1, model_config_rec % max_dom
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
-         IF ( ( model_config_rec % bl_pbl_physics(i) .NE. MYNNPBLSCHEME2 ) .AND. &
-              ( model_config_rec % bl_pbl_physics(i) .NE. MYNNPBLSCHEME3 ) ) THEN
+         IF ( ( model_config_rec % bl_pbl_physics(i) .NE. MYNNPBLSCHEME  ) ) THEN
             model_config_rec % bl_mynn_edmf = 0
          END IF
       ENDDO

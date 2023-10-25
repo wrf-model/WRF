@@ -77,6 +77,7 @@ F90FLAGS        = -w -c -ftz -align all -fno-alias -fp-model precise $(FORMAT_FR
 #                        RECL specifier (record length) value are in bytes
 #                        for unformatted data files, not longwords (four-
 #                        byte units)
+DEBUGFLAGS = -DHYDRO_D -g -traceback -debug all -check all
 MODFLAG         = -I./ -I../../MPP -I../MPP -I../mod
 LDFLAGS         = 
 CPP             = cpp

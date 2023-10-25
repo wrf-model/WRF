@@ -98,7 +98,6 @@ CONTAINS
               , lradius,iradius                                           &
 #endif
               , cldfra_dp, cldfra_sh                                      &
-              , cld                                                       & ! w2id
               , re_cloud, re_ice, re_snow                                 &
               , has_reqc, has_reqi, has_reqs                              &
               , PB                                                        &
@@ -846,7 +845,6 @@ CONTAINS
                                                        cldfra_sh, &
                                                        cldfra_bl
 
-   REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN):: cld               ! w2id
 !..G. Thompson
    REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT):: re_cloud, re_ice, re_snow
    INTEGER, INTENT(INOUT):: has_reqc, has_reqi, has_reqs
@@ -1949,7 +1947,6 @@ CONTAINS
                  ,XTIME=xtime,JULIAN=julian                         &
                  ,JULYR=julyr,JULDAY=julday                         &
                  ,GFDL_LW=gfdl_lw,GFDL_SW=gfdl_sw                   &
-                 ,CLD=cld                                           &       ! w2id
                  ,CFRACL=cfracl,CFRACM=cfracm,CFRACH=cfrach         &
                  ,ACFRST=acfrst,NCFRST=ncfrst                       &
                  ,ACFRCV=acfrcv,NCFRCV=ncfrcv                       &
@@ -2810,7 +2807,6 @@ CONTAINS
                  ,XTIME=xtime,JULIAN=julian                         &
                  ,JULYR=julyr,JULDAY=julday                         &
                  ,GFDL_LW=gfdl_lw,GFDL_SW=gfdl_sw                   &
-                 ,CLD=cld                                           &       ! w2id
                  ,CFRACL=cfracl,CFRACM=cfracm,CFRACH=cfrach         &
                  ,ACFRST=acfrst,NCFRST=ncfrst                       &
                  ,ACFRCV=acfrcv,NCFRCV=ncfrcv                       &

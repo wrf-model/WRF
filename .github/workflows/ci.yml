@@ -26,12 +26,12 @@ jobs:
         testSet  :
           - { 
               host : wsl,
-              account : None,
-              name : "em_real, A-H Tests",
-              file : wrf_em_real_tests.json,
-              args : -m "TEST em_realSet PASS",
-              pool : 1,
-              tests : [
+              account  : None,
+              name     : "em_real, A-H Tests",
+              fileroot : wrf_em_real_tests,
+              args     : -m "TEST em_realSet PASS",
+              pool     : 1,
+              tests    : [
                 em_real0, em_real1, em_realA, em_realB, em_realC, em_realD, em_realE, em_realF, em_realG
                 ]
             }
@@ -39,7 +39,7 @@ jobs:
           #     host : cheyenne,
           #     account : NMMM0012,
           #     name : "Compilation Tests",
-          #     file : wrf_arw_tests.json,
+          #     fileroot : wrf_arw_tests.json,
           #     args : -j="-l select=1" -m "TEST CompilationSet PASS",
           #     pool : 6,
           #     tests : [
@@ -50,7 +50,7 @@ jobs:
           #     host : cheyenne,
           #     account : NMMM0012,
           #     name : "em_real, A-H Tests",
-          #     file : wrf_em_real_tests.json,
+          #     fileroot : wrf_em_real_tests.json,
           #     args : -j="-l select=1" -m "TEST em_realSet PASS",
           #     pool : 6,
           #     tests : [

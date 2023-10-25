@@ -52,7 +52,7 @@ jobs:
               name : "em_real, A-H Tests",
               fileroot : wrf_em_real_tests.json,
               args : -j="-l select=1" -m "TEST em_realSet PASS",
-              pool : 6,
+              pool : 9,
               tests : [
                 em_real0, em_real1, em_realA, em_realB, em_realC, em_realD, em_realE, em_realF, em_realG
                 ]

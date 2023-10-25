@@ -75,10 +75,7 @@ jobs:
       run : |
         for testDir in ${{ join( matrix.testSet.tests, ' ' ) }}; do
           echo "Creating duplicate directory for $testDir"
-          # Make directory first and then copy everything into it to avoid
-          # nested copy of $testDir/main/<everything we want>
-          mkdir -p $testDir/
-          cp -RP main/. $testDir
+          rsync -a --info=progress2 --exclude '.git' main/ $testDir
         done
 
     - name: Test ${{ matrix.testSet.name }}

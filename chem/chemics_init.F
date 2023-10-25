@@ -806,7 +806,7 @@ CASE(GOCARTRACM_KPP,RACM_KPP,RACMPM_KPP,RACMSORG_KPP,RACM_MIM_KPP,RACM_ESRLSORG_
         CASE (MOZART_MOSAIC_4BIN_KPP, MOZART_MOSAIC_4BIN_AQ_KPP)
         grid%vbs_nbin=0
         if (config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP) then
-          grid%vbs_nbin=4
+          grid%vbs_nbin=5 !dimaman
         endif
         if(config_flags%chem_in_opt == 0 )then
           do j=jts,jte
@@ -888,6 +888,18 @@ CASE(GOCARTRACM_KPP,RACM_KPP,RACMPM_KPP,RACMSORG_KPP,RACM_MIM_KPP,RACM_ESRLSORG_
          if (p_bsoa3_a04.gt.1)    chem(i,k,j,p_bsoa3_a04)=0.0
          if (p_bsoa4_a04.gt.1)    chem(i,k,j,p_bsoa4_a04)=0.0
 
+         if (p_asoaX_a05.gt.1)    chem(i,k,j,p_asoaX_a05)=0.0 !dimaman
+         if (p_asoa1_a05.gt.1)    chem(i,k,j,p_asoa1_a05)=0.0
+         if (p_asoa2_a05.gt.1)    chem(i,k,j,p_asoa2_a05)=0.0
+         if (p_asoa3_a05.gt.1)    chem(i,k,j,p_asoa3_a05)=0.0
+         if (p_asoa4_a05.gt.1)    chem(i,k,j,p_asoa4_a05)=0.0
+         if (p_bsoaX_a05.gt.1)    chem(i,k,j,p_bsoaX_a05)=0.0
+         if (p_bsoa1_a05.gt.1)    chem(i,k,j,p_bsoa1_a05)=0.0
+         if (p_bsoa2_a05.gt.1)    chem(i,k,j,p_bsoa2_a05)=0.0
+         if (p_bsoa3_a05.gt.1)    chem(i,k,j,p_bsoa3_a05)=0.0
+         if (p_bsoa4_a05.gt.1)    chem(i,k,j,p_bsoa4_a05)=0.0
+
+
          if (p_glysoa_r1_a01.gt.1)  chem(i,k,j,p_glysoa_r1_a01)=0.0
          if (p_glysoa_r2_a01.gt.1)  chem(i,k,j,p_glysoa_r2_a01)=0.0
          if (p_glysoa_oh_a01.gt.1) chem(i,k,j,p_glysoa_oh_a01)=0.0
@@ -912,6 +924,13 @@ CASE(GOCARTRACM_KPP,RACM_KPP,RACMPM_KPP,RACMSORG_KPP,RACM_MIM_KPP,RACM_ESRLSORG_
          if (p_glysoa_nh4_a04.gt.1) chem(i,k,j,p_glysoa_nh4_a04)=0.0
          if (p_glysoa_sfc_a04.gt.1) chem(i,k,j,p_glysoa_sfc_a04)=0.0
 
+         if (p_glysoa_r1_a05.gt.1) chem(i,k,j,p_glysoa_r1_a05)=0.0 !dimaman
+         if (p_glysoa_r2_a05.gt.1) chem(i,k,j,p_glysoa_r2_a05)=0.0
+         if (p_glysoa_oh_a05.gt.1) chem(i,k,j,p_glysoa_oh_a05)=0.0
+         if (p_glysoa_nh4_a05.gt.1) chem(i,k,j,p_glysoa_nh4_a05)=0.0
+         if (p_glysoa_sfc_a05.gt.1) chem(i,k,j,p_glysoa_sfc_a05)=0.0
+
+
 !         chem(i,k,j,p_voca)=0.0
 !         chem(i,k,j,p_vocbb)=0.0
          if (p_voca.gt.1) chem(i,k,j,p_voca)=0.0
@@ -921,16 +940,22 @@ CASE(GOCARTRACM_KPP,RACM_KPP,RACMPM_KPP,RACMSORG_KPP,RACM_MIM_KPP,RACM_ESRLSORG_
          if (p_smpa_a02.gt.1)       chem(i,k,j,p_smpa_a02)=1.e-16
          if (p_smpa_a03.gt.1)       chem(i,k,j,p_smpa_a03)=1.e-16
          if (p_smpa_a04.gt.1)       chem(i,k,j,p_smpa_a04)=1.e-16
+         if (p_smpa_a05.gt.1)       chem(i,k,j,p_smpa_a05)=1.e-16 !dimaman
+
          
          if (p_smpbb_a01.gt.1)       chem(i,k,j,p_smpbb_a01)=1.e-16
          if (p_smpbb_a02.gt.1)       chem(i,k,j,p_smpbb_a02)=1.e-16
          if (p_smpbb_a03.gt.1)       chem(i,k,j,p_smpbb_a03)=1.e-16
          if (p_smpbb_a04.gt.1)       chem(i,k,j,p_smpbb_a04)=1.e-16
+         if (p_smpbb_a05.gt.1)       chem(i,k,j,p_smpbb_a05)=1.e-16 !dimaman
+
 
          if (p_nh4_a01.gt.1)       chem(i,k,j,p_nh4_a01)=1.e-16
          if (p_nh4_a02.gt.1)       chem(i,k,j,p_nh4_a02)=1.e-16
          if (p_nh4_a03.gt.1)       chem(i,k,j,p_nh4_a03)=1.e-16
          if (p_nh4_a04.gt.1)       chem(i,k,j,p_nh4_a04)=1.e-16
+         if (p_nh4_a05.gt.1)       chem(i,k,j,p_nh4_a05)=1.e-16 !dimaman
+
 
 
                 enddo
@@ -2731,6 +2756,9 @@ subroutine print_chem_species_index( chem_opt )
      print*,p_nh4_a01,"nh4_a01"
      print*,p_na_a01,"na_a01"
      print*,p_oin_a01,"oin_a01"
+     print*,p_bact_a01,"bact_a01"!dimaman
+     print*,p_fung_a01,"fung_a01"
+     print*,p_pol_a01,"pol_a01"
      print*,p_oc_a01,"oc_a01"
      print*,p_bc_a01,"bc_a01"
      print*,p_hysw_a01,"hysw_a01"
@@ -2742,6 +2770,9 @@ subroutine print_chem_species_index( chem_opt )
      print*,p_nh4_a02,"nh4_a02"
      print*,p_na_a02,"na_a02"
      print*,p_oin_a02,"oin_a02"
+     print*,p_bact_a02,"bact_a02" !dimaman
+     print*,p_fung_a02,"fung_a02"
+     print*,p_pol_a02,"pol_a02"
      print*,p_oc_a02,"oc_a02"
      print*,p_bc_a02,"bc_a02"
      print*,p_hysw_a02,"hysw_a02"
@@ -2753,6 +2784,9 @@ subroutine print_chem_species_index( chem_opt )
      print*,p_nh4_a03,"nh4_a03"
      print*,p_na_a03,"na_a03"
      print*,p_oin_a03,"oin_a03"
+     print*,p_bact_a03,"bact_a03"  !dimaman
+     print*,p_fung_a03,"fung_a03"
+     print*,p_pol_a03,"pol_a03"
      print*,p_oc_a03,"oc_a03"
      print*,p_bc_a03,"bc_a03"
      print*,p_hysw_a03,"hysw_a03"
@@ -2764,11 +2798,29 @@ subroutine print_chem_species_index( chem_opt )
      print*,p_nh4_a04,"nh4_a04"
      print*,p_na_a04,"na_a04"
      print*,p_oin_a04,"oin_a04"
+     print*,p_bact_a04,"bact_a04" !dimaman
+     print*,p_fung_a04,"fung_a04"
+     print*,p_pol_a04,"pol_a04"
      print*,p_oc_a04,"oc_a04"
      print*,p_bc_a04,"bc_a04"
      print*,p_hysw_a04,"hysw_a04"
      print*,p_water_a04,"water_a04"
      print*,p_num_a04,"num_a04"
+     print*,p_so4_a05,"so4_a05" !dimaman
+     print*,p_no3_a05,"no3_a05"
+     print*,p_cl_a05,"cl_a05"
+     print*,p_nh4_a05,"nh4_a05"
+     print*,p_na_a05,"na_a05"
+     print*,p_oin_a05,"oin_a05"
+     print*,p_bact_a05,"bact_a05"
+     print*,p_fung_a05,"fung_a05"
+     print*,p_pol_a05,"pol_a05"
+     print*,p_oc_a05,"oc_a05"
+     print*,p_bc_a05,"bc_a05"
+     print*,p_hysw_a05,"hysw_a05"
+     print*,p_water_a05,"water_a05"
+     print*,p_num_a05,"num_a05"
+
   case (CBMZ_MOSAIC_8BIN)
      print*,p_so4_a01,"so4_a01"
      print*,p_no3_a01,"no3_a01"
@@ -2776,6 +2828,9 @@ subroutine print_chem_species_index( chem_opt )
      print*,p_nh4_a01,"nh4_a01"
      print*,p_na_a01,"na_a01"
      print*,p_oin_a01,"oin_a01"
+     print*,p_bact_a01,"bact_a01"  !dimaman
+     print*,p_fung_a01,"fung_a01"
+     print*,p_pol_a01,"pol_a01"
      print*,p_oc_a01,"oc_a01"
      print*,p_bc_a01,"bc_a01"
      print*,p_hysw_a01,"hysw_a01"
@@ -2787,6 +2842,9 @@ subroutine print_chem_species_index( chem_opt )
      print*,p_nh4_a02,"nh4_a02"
      print*,p_na_a02,"na_a02"
      print*,p_oin_a02,"oin_a02"
+     print*,p_bact_a02,"bact_a02"  !dimaman
+     print*,p_fung_a02,"fung_a02"
+     print*,p_pol_a02,"pol_a02"
      print*,p_oc_a02,"oc_a02"
      print*,p_bc_a02,"bc_a02"
      print*,p_hysw_a02,"hysw_a02"
@@ -2798,6 +2856,9 @@ subroutine print_chem_species_index( chem_opt )
      print*,p_nh4_a03,"nh4_a03"
      print*,p_na_a03,"na_a03"
      print*,p_oin_a03,"oin_a03"
+     print*,p_bact_a03,"bact_a03"  !dimaman
+     print*,p_fung_a03,"fung_a03"
+     print*,p_pol_a03,"pol_a03"
      print*,p_oc_a03,"oc_a03"
      print*,p_bc_a03,"bc_a03"
      print*,p_hysw_a03,"hysw_a03"
@@ -2809,6 +2870,9 @@ subroutine print_chem_species_index( chem_opt )
      print*,p_nh4_a04,"nh4_a04"
      print*,p_na_a04,"na_a04"
      print*,p_oin_a04,"oin_a04"
+     print*,p_bact_a04,"bact_a04"  !dimaman
+     print*,p_fung_a04,"fung_a04"
+     print*,p_pol_a04,"pol_a04"
      print*,p_oc_a04,"oc_a04"
      print*,p_bc_a04,"bc_a04"
      print*,p_hysw_a04,"hysw_a04"
@@ -2820,6 +2884,9 @@ subroutine print_chem_species_index( chem_opt )
      print*,p_nh4_a05,"nh4_a05"
      print*,p_na_a05,"na_a05"
      print*,p_oin_a05,"oin_a05"
+     print*,p_bact_a05,"bact_a05"  !dimaman
+     print*,p_fung_a05,"fung_a05"
+     print*,p_pol_a05,"pol_a05"
      print*,p_oc_a05,"oc_a05"
      print*,p_bc_a05,"bc_a05"
      print*,p_hysw_a05,"hysw_a05"
@@ -2831,6 +2898,9 @@ subroutine print_chem_species_index( chem_opt )
      print*,p_nh4_a06,"nh4_a06"
      print*,p_na_a06,"na_a06"
      print*,p_oin_a06,"oin_a06"
+     print*,p_bact_a06,"bact_a06" !dimaman
+     print*,p_fung_a06,"fung_a06"
+     print*,p_pol_a06,"pol_a06"
      print*,p_oc_a06,"oc_a06"
      print*,p_bc_a06,"bc_a06"
      print*,p_hysw_a06,"hysw_a06"
@@ -2842,6 +2912,9 @@ subroutine print_chem_species_index( chem_opt )
      print*,p_nh4_a07,"nh4_a07"
      print*,p_na_a07,"na_a07"
      print*,p_oin_a07,"oin_a07"
+     print*,p_bact_a07,"bact_a07" !dimaman
+     print*,p_fung_a07,"fung_a07"
+     print*,p_pol_a07,"pol_a07"
      print*,p_oc_a07,"oc_a07"
      print*,p_bc_a07,"bc_a07"
      print*,p_hysw_a07,"hysw_a07"
@@ -2853,11 +2926,43 @@ subroutine print_chem_species_index( chem_opt )
      print*,p_nh4_a08,"nh4_a08"
      print*,p_na_a08,"na_a08"
      print*,p_oin_a08,"oin_a08"
+     print*,p_bact_a08,"bact_a08"  !dimaman
+     print*,p_fung_a08,"fung_a08"
+     print*,p_pol_a08,"pol_a08"
      print*,p_oc_a08,"oc_a08"
      print*,p_bc_a08,"bc_a08"
      print*,p_hysw_a08,"hysw_a08"
      print*,p_water_a08,"water_a08"
      print*,p_num_a08,"num_a08"
+     print*,p_so4_a09,"so4_a09"  !dimaman
+     print*,p_no3_a09,"no3_a09"
+     print*,p_cl_a09,"cl_a09"
+     print*,p_nh4_a09,"nh4_a09"
+     print*,p_na_a09,"na_a09"
+     print*,p_oin_a09,"oin_a09"
+     print*,p_bact_a09,"bact_a09"
+     print*,p_fung_a09,"fung_a09"
+     print*,p_pol_a09,"pol_a09"
+     print*,p_oc_a09,"oc_a09"
+     print*,p_bc_a09,"bc_a09"
+     print*,p_hysw_a09,"hysw_a09"
+     print*,p_water_a09,"water_a09"
+     print*,p_num_a09,"num_a09"
+     print*,p_so4_a10,"so4_a10"
+     print*,p_no3_a10,"no3_a10"
+     print*,p_cl_a10,"cl_a10"
+     print*,p_nh4_a10,"nh4_a10"
+     print*,p_na_a10,"na_a10"
+     print*,p_oin_a10,"oin_a10"
+     print*,p_bact_a10,"bact_a10" !dimaman
+     print*,p_fung_a10,"fung_a10"
+     print*,p_pol_a10,"pol_a10"
+     print*,p_oc_a10,"oc_a10"
+     print*,p_bc_a10,"bc_a10"
+     print*,p_hysw_a10,"hysw_a10"
+     print*,p_water_a10,"water_a10"
+     print*,p_num_a10,"num_a10"
+
   case (CBMZ_MOSAIC_KPP)
      print*,p_so4_a01,"so4_a01"
      print*,p_no3_a01,"no3_a01"

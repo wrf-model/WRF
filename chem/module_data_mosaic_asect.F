@@ -192,9 +192,9 @@
 !-----------------------------------------------------------------------
 
 	integer, parameter :: maxd_atype = 1
-	integer, parameter :: maxd_asize = 8
+	integer, parameter :: maxd_asize = 10 !dimaman
 !	integer, parameter :: maxd_acomp = 120 ! for additional SOA species changed by Manish Shrivastava on 01/25/10
-	integer, parameter :: maxd_acomp = 400 ! for additional SOA species changed by Manish Shrivastava on 01/25/10
+	integer, parameter :: maxd_acomp = 403 ! for additional SOA species changed by Manish Shrivastava on 01/25/10
 	integer, parameter :: maxd_aphase = 2
 
 	integer, save :: ai_phase = -999888777
@@ -343,6 +343,9 @@
 	real, parameter :: dens_ca_aer  = 2.60
 	real, parameter :: dens_oin_aer = 2.60
 	real, parameter :: dens_oc_aer  = 1.00
+    real, parameter :: dens_bact_aer  = 1.00 !dimaman
+    real, parameter :: dens_fung_aer  = 1.00
+    real, parameter :: dens_pol_aer  = 1.00
 	real, parameter :: dens_bc_aer  = 1.70
         real, parameter :: dens_pcg1_b_c_aer = 1.0
         real, parameter :: dens_pcg2_b_c_aer = 1.0
@@ -463,7 +466,10 @@
 	real, parameter :: mw_ca_aer  = 40.080
 	real, parameter :: mw_oin_aer = 1.0
 	real, parameter :: mw_oc_aer  = 250.0
-	real, parameter :: mw_bc_aer  = 1.0
+    real, parameter :: mw_bact_aer  = 31.0!dimaman
+    real, parameter :: mw_fung_aer  = 31.0
+    real, parameter :: mw_pol_aer  = 31.0
+	real, parameter :: mw_bc_aer  = 12.0
 	real, parameter :: mw_water_aer  = 18.016
         real, parameter :: mw_pcg1_b_c_aer = 250.0
         real, parameter :: mw_pcg2_b_c_aer = 250.0
@@ -583,6 +589,9 @@
 	real, parameter :: hygro_na_aer  = 1.16
 	real, parameter :: hygro_oin_aer = 0.068  ! = cam5/mam value, previously 0.14
 	real, parameter :: hygro_oc_aer  = 1.0e-4 ! previously 0.20
+    real, parameter :: hygro_bact_aer  = 1.0e-4 !previously 1.0e-4 dimaman
+    real, parameter :: hygro_fung_aer  = 0.5 ! 0.5
+    real, parameter :: hygro_pol_aer  = 0.5 ! 0.5
 	real, parameter :: hygro_bc_aer  = 1.e-6
         real, parameter :: hygro_pcg1_b_c_aer = 0.04
         real, parameter :: hygro_pcg2_b_c_aer = 0.04
@@ -703,6 +712,9 @@
 	integer, save :: mastercompindx_ca_aer  = -999888777
 	integer, save :: mastercompindx_oin_aer = -999888777
 	integer, save :: mastercompindx_oc_aer  = -999888777
+    integer, save :: mastercompindx_bact_aer  = -999888777 !dimaman
+    integer, save :: mastercompindx_fung_aer  = -999888777
+    integer, save :: mastercompindx_pol_aer  = -999888777
 	integer, save :: mastercompindx_bc_aer  = -999888777
         integer, save :: mastercompindx_pcg1_b_c_aer = -999888777
         integer, save :: mastercompindx_pcg2_b_c_aer = -999888777
@@ -822,6 +834,9 @@
       	  lptr_ca_aer(maxd_asize, maxd_atype, maxd_aphase),       &
       	  lptr_oin_aer(maxd_asize, maxd_atype, maxd_aphase),      &
       	  lptr_oc_aer(maxd_asize, maxd_atype, maxd_aphase),       &
+          lptr_bact_aer(maxd_asize, maxd_atype, maxd_aphase),     & !dimaman
+          lptr_fung_aer(maxd_asize, maxd_atype, maxd_aphase),     &
+          lptr_pol_aer(maxd_asize, maxd_atype, maxd_aphase),      &
       	  lptr_bc_aer(maxd_asize, maxd_atype, maxd_aphase),       &
           lptr_pcg1_b_c_aer(maxd_asize, maxd_atype, maxd_aphase), &
           lptr_pcg2_b_c_aer(maxd_asize, maxd_atype, maxd_aphase), &

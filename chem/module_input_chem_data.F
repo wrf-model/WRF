@@ -1670,6 +1670,10 @@ END SUBROUTINE bdy_chem_value_ghg
           i_bdy_method = 4
       else if ((ic .ge. p_so4_a08) .and. (ic .le. p_num_a08)) then
           i_bdy_method = 4
+      else if ((ic .ge. p_so4_a09) .and. (ic .le. p_num_a09)) then
+          i_bdy_method = 4
+      else if ((ic .ge. p_so4_a10) .and. (ic .le. p_num_a10)) then !dimaman
+          i_bdy_method = 4
       else if (config_flags%chem_opt == CHEM_TRACER) then
           i_bdy_method = 5
       else if (config_flags%chem_opt == CHEM_TRACE2) then

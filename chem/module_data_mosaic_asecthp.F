@@ -166,8 +166,8 @@
         integer, parameter :: maxd_atype_md1 = 1
         integer, parameter :: maxd_atype_md2 = 1
 
-	integer, parameter :: maxd_asize = 8
-	integer, parameter :: maxd_acomp = 120 ! for additional SOA species changed by Manish Shrivastava on 01/25/10
+	integer, parameter :: maxd_asize = 10!8 dimaman
+	integer, parameter :: maxd_acomp = 403 !120 for additional SOA species changed by Manish Shrivastava on 01/25/10
 	integer, parameter :: maxd_aphase = 2
 
 	integer, save :: ai_phase = -999888777

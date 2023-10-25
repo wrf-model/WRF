@@ -19,8 +19,11 @@
 	integer, parameter :: l_oin_aqyy = 6
 	integer, parameter :: l_bc_aqyy  = 7
 	integer, parameter :: l_oc_aqyy  = 8
+    integer, parameter :: l_bact_aqyy  = 9
+    integer, parameter :: l_fung_aqyy  = 10
+    integer, parameter :: l_pol_aqyy  = 11 !dimaman
 
-	integer, parameter :: nyyy = 8
+	integer, parameter :: nyyy = 11 ! =8 ! dimaman
 
 
 
@@ -249,7 +252,8 @@
 		cw_phase, nsize_aer, ntype_aer,   &
 		lptr_so4_aer, lptr_no3_aer, lptr_cl_aer, lptr_co3_aer,   &
 		lptr_msa_aer, lptr_nh4_aer, lptr_na_aer, lptr_ca_aer,   &
-		lptr_oin_aer, lptr_bc_aer, lptr_oc_aer
+		lptr_oin_aer, lptr_bc_aer, lptr_oc_aer,   &
+		lptr_bact_aer, lptr_fung_aer, lptr_pol_aer !dimaman
 
 	use module_data_mosaic_other, only:   &
 		l2maxd, ltot2, rsub
@@ -304,6 +308,9 @@
 	lptr_yyy_cwaer(:,:,l_oin_aqyy) = lptr_oin_aer(:,:,iphase)
 	lptr_yyy_cwaer(:,:,l_bc_aqyy ) = lptr_bc_aer( :,:,iphase)
 	lptr_yyy_cwaer(:,:,l_oc_aqyy ) = lptr_oc_aer( :,:,iphase)
+    lptr_yyy_cwaer(:,:,l_bact_aqyy ) = lptr_bact_aer( :,:,iphase) !dimaman
+    lptr_yyy_cwaer(:,:,l_fung_aqyy ) = lptr_fung_aer( :,:,iphase)
+    lptr_yyy_cwaer(:,:,l_pol_aqyy ) = lptr_pol_aer( :,:,iphase)
 
 !
 !   xfer from rsub to rbox
@@ -444,6 +451,7 @@
 		lptr_so4_aer, lptr_no3_aer, lptr_cl_aer, lptr_co3_aer,   &
 		lptr_msa_aer, lptr_nh4_aer, lptr_na_aer, lptr_ca_aer,   &
 		lptr_oin_aer, lptr_bc_aer, lptr_oc_aer,   &
+		lptr_bact_aer,lptr_fung_aer, lptr_pol_aer,   & !dimaman
 		mw_cl_aer, mw_na_aer, mw_nh4_aer, mw_no3_aer, mw_so4_aer
 
 	use module_data_mosaic_other, only:   &
@@ -490,7 +498,8 @@
 	real :: dum, dumb
 	real :: factgas, factlwc, factpatm, factphoto
 	real :: factaerbc, factaercl, factaerna, factaernh4,   &
-		factaerno3, factaeroc, factaeroin, factaerso4
+		factaerno3, factaeroc,factaerbact,factaerfung,factaerpol, factaeroin,&
+        factaerso4 !dimaman
 	real :: lwc
 	real :: p_atm, photo_in
 	real :: rh
@@ -533,6 +542,9 @@
 	factaerna    = dum*mw_na_aer
 	factaeroin   = dum
 	factaeroc    = dum
+    factaerbact    = dum !dimaman
+    factaerfung    = dum
+    factaerpol    = dum 
 	factaerbc    = dum
 
 !   rce 2005-jul-11 - use same molecular weights here as in cmu code
@@ -556,6 +568,9 @@
 	    factaerna    = 1.0
 	    factaeroin   = 1.0
 	    factaeroc    = 1.0
+        factaerbact  = 1.0 !dimaman
+        factaerfung  = 1.0
+        factaerpol   = 1.0
 	    factaerbc    = 1.0
 	end if
 
@@ -634,6 +649,9 @@
 	aerosol(nar) = rbulk_cwaer(l_oin_aqyy,1) * factaeroin
 	aerosol(nae) = rbulk_cwaer(l_bc_aqyy, 1) * factaerbc
 	aerosol(nao) = rbulk_cwaer(l_oc_aqyy, 1) * factaeroc
+    aerosol(nao) = rbulk_cwaer(l_bact_aqyy, 1) * factaerbact !dimaman
+    aerosol(nao) = rbulk_cwaer(l_fung_aqyy, 1) * factaerfung
+    aerosol(nao) = rbulk_cwaer(l_pol_aqyy, 1) * factaerpol 
 
 
 !
@@ -913,6 +931,9 @@
 	rbulk_cwaer(l_oin_aqyy,2) = aerosol(nar) / factaeroin
 	rbulk_cwaer(l_bc_aqyy, 2) = aerosol(nae) / factaerbc
 	rbulk_cwaer(l_oc_aqyy, 2) = aerosol(nao) / factaeroc
+    rbulk_cwaer(l_bact_aqyy, 2) = aerosol(nao) / factaerbact !dimaman
+    rbulk_cwaer(l_fung_aqyy, 2) = aerosol(nao) / factaerfung
+    rbulk_cwaer(l_pol_aqyy, 2) = aerosol(nao) / factaerpol 
 
 
 !#if defined ( ccboxtest_box_testing_active)
@@ -1473,6 +1494,7 @@
 		lptr_so4_aer, lptr_no3_aer, lptr_cl_aer, lptr_co3_aer,   &
 		lptr_msa_aer, lptr_nh4_aer, lptr_na_aer, lptr_ca_aer,   &
 		lptr_oin_aer, lptr_bc_aer, lptr_oc_aer,   &
+		lptr_bact_aer,lptr_fung_aer,lptr_pol_aer,   & !dimaman
 		drymass_aftgrow, drymass_pregrow,   &
 		drydens_aftgrow, drydens_pregrow
 

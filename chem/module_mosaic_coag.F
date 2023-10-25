@@ -316,6 +316,7 @@
 !   unload coagsolv arrays
 !
 	sumnew(:) = 0.0
+!    print *,'nsize ncomp_coag',nsize,ncomp_coag !dimaman
 	do isize = 1, nsize
 	    do ll = 1, ncomp_coag
 		sumnew(ll) = sumnew(ll) + max( 0.0, vol_distrib(isize,ll) )
@@ -327,6 +328,7 @@
 !   unload mass mixing ratios into rsub; also calculate dry mass and volume
 	    xxmass = 0.0
 	    xxvolu = 0.0
+!        print *,'ncomp_aer(itype)',ncomp_aer(itype) !dimaman
 	    do ll = 1, ncomp_aer(itype)
 		l = massptr_aer(ll,isize,itype,iphase)
 		if (l .ge. p1st) then
@@ -693,7 +695,9 @@
 ! *********************************************************************
 !                    set some parameters
 ! *********************************************************************
-      irad   = nbin
+!      print *,'nbin',nbin !dimaman
+      irad   = nbin-1 !dimaman not added nbin-1 so we have coagulation effect in size bin
+!      print *,'ncomp',ncomp !dimaman
       iaerty = ncomp + 1
 
       kout = lunout

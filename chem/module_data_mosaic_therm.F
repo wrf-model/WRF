@@ -41,7 +41,7 @@
 !----------------------------------------------------------------------
 
 ! nbin_a_maxd = maximum num of aerosol bins and is used to dimension arrays
-!     integer, parameter :: nbin_a_maxd = 8
+!     integer, parameter :: nbin_a_maxd = 10!8 !dimaman 
       integer, parameter :: nbin_a_maxd = nbin_a_max
 ! nbin_a = number of bins that are used in a run
 ! (nbin_a is set at run time, and must be <= nbin_a_maxd)
@@ -168,7 +168,7 @@
       integer, save ::   &
        iso4_a,     ino3_a,     icl_a,     inh4_a,     ico3_a,  &
        imsa_a,     ina_a,      ica_a,     ioc_a,      ibc_a,   &
-       ioin_a
+       ibact_a,    ifung_a,    ipol_a,    ioin_a !dimaman
 
       integer, save ::   &
       ipcg1_b_c_a,ipcg2_b_c_a,ipcg3_b_c_a,ipcg4_b_c_a, &
@@ -206,7 +206,8 @@
        jcaso4,     jcano3,     jcacl2,     jcaco3,     jh2so4,  &
        jhno3,      jhcl,       jhhso4,                          &
        jnh4msa,    jnamsa,     jcamsa2,    jmsa,                &
-       joc,        jbc,        join,       jh2o
+       joc,        jbc,        join,       jh2o,                &
+       jbact,      jfung,      jpol
 
       integer, save ::   &
       jpcg1_b_c,jpcg2_b_c,jpcg3_b_c,jpcg4_b_c, &

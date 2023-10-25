@@ -98,6 +98,9 @@
             no3_a_1to4_ic_cup, no3_cw_1to4_ic_cup,                      &
             oa_a_1to4_ic_cup,  oa_cw_1to4_ic_cup,                       &
             oin_a_1to4_ic_cup,  oin_cw_1to4_ic_cup,                     &
+            bact_a_1to4_ic_cup,  bact_cw_1to4_ic_cup,                   & !dimaman
+            fung_a_1to4_ic_cup,  fung_cw_1to4_ic_cup,                   &
+            pol_a_1to4_ic_cup,  pol_cw_1to4_ic_cup,                     &
             bc_a_1to4_ic_cup,  bc_cw_1to4_ic_cup,                       &
             na_a_1to4_ic_cup,  na_cw_1to4_ic_cup,                       &
             cl_a_1to4_ic_cup,  cl_cw_1to4_ic_cup,                       &
@@ -107,6 +110,9 @@
             no3_a_5to6_ic_cup, no3_cw_5to6_ic_cup,                      &
             oa_a_5to6_ic_cup,  oa_cw_5to6_ic_cup,                       &
             oin_a_5to6_ic_cup,  oin_cw_5to6_ic_cup,                     &
+            bact_a_5to6_ic_cup,  bact_cw_5to6_ic_cup,                   & !dimaman
+            fung_a_5to6_ic_cup,  fung_cw_5to6_ic_cup,                   &
+            pol_a_5to6_ic_cup,  pol_cw_5to6_ic_cup,                     &
             bc_a_5to6_ic_cup,  bc_cw_5to6_ic_cup,                       &
             na_a_5to6_ic_cup,  na_cw_5to6_ic_cup,                       &
             cl_a_5to6_ic_cup,  cl_cw_5to6_ic_cup,                       &
@@ -201,6 +207,9 @@
             no3_a_1to4_ic_cup, no3_cw_1to4_ic_cup,  &
             oa_a_1to4_ic_cup,  oa_cw_1to4_ic_cup,   &
             oin_a_1to4_ic_cup,  oin_cw_1to4_ic_cup,   &
+            bact_a_1to4_ic_cup,  bact_cw_1to4_ic_cup,   &
+            fung_a_1to4_ic_cup,  fung_cw_1to4_ic_cup,   &
+            pol_a_1to4_ic_cup,  pol_cw_1to4_ic_cup,   & !dimaman
             bc_a_1to4_ic_cup,  bc_cw_1to4_ic_cup,   &
             na_a_1to4_ic_cup,  na_cw_1to4_ic_cup,   &
             cl_a_1to4_ic_cup,  cl_cw_1to4_ic_cup,   &
@@ -210,6 +219,9 @@
             no3_a_5to6_ic_cup, no3_cw_5to6_ic_cup,  &
             oa_a_5to6_ic_cup,  oa_cw_5to6_ic_cup,   &
             oin_a_5to6_ic_cup,  oin_cw_5to6_ic_cup,   &
+            bact_a_5to6_ic_cup,  bact_cw_5to6_ic_cup,   & !dimaman
+            fung_a_5to6_ic_cup,  fung_cw_5to6_ic_cup,   &
+            pol_a_5to6_ic_cup,  pol_cw_5to6_ic_cup,   &
             bc_a_5to6_ic_cup,  bc_cw_5to6_ic_cup,   &
             na_a_5to6_ic_cup,  na_cw_5to6_ic_cup,   &
             cl_a_5to6_ic_cup,  cl_cw_5to6_ic_cup,   &
@@ -261,6 +273,9 @@
                   no3_a_1to4_ic_cup, no3_cw_1to4_ic_cup,                      &
                   oa_a_1to4_ic_cup,  oa_cw_1to4_ic_cup,                       &
                   oin_a_1to4_ic_cup,  oin_cw_1to4_ic_cup,                     &
+                  bact_a_1to4_ic_cup,  bact_cw_1to4_ic_cup,             & !dimaman
+                  fung_a_1to4_ic_cup,  fung_cw_1to4_ic_cup,             &
+                  pol_a_1to4_ic_cup,  pol_cw_1to4_ic_cup,               &
                   bc_a_1to4_ic_cup,  bc_cw_1to4_ic_cup,                       &
                   na_a_1to4_ic_cup,  na_cw_1to4_ic_cup,                       &
                   cl_a_1to4_ic_cup,  cl_cw_1to4_ic_cup,                       &
@@ -270,6 +285,9 @@
                   no3_a_5to6_ic_cup, no3_cw_5to6_ic_cup,                      &
                   oa_a_5to6_ic_cup,  oa_cw_5to6_ic_cup,                       &
                   oin_a_5to6_ic_cup,  oin_cw_5to6_ic_cup,                     &
+                  bact_a_5to6_ic_cup,  bact_cw_5to6_ic_cup,                   & !dimaman
+                  fung_a_5to6_ic_cup,  fung_cw_5to6_ic_cup,                   &
+                  pol_a_5to6_ic_cup,  pol_cw_5to6_ic_cup,                     &
                   bc_a_5to6_ic_cup,  bc_cw_5to6_ic_cup,                       &
                   na_a_5to6_ic_cup,  na_cw_5to6_ic_cup,                       &
                   cl_a_5to6_ic_cup,  cl_cw_5to6_ic_cup,                       &
@@ -307,6 +325,9 @@
             no3_a_1to4_ic_cup, no3_cw_1to4_ic_cup,                      &
             oa_a_1to4_ic_cup,  oa_cw_1to4_ic_cup,                       &
             oin_a_1to4_ic_cup,  oin_cw_1to4_ic_cup,                     &
+            bact_a_1to4_ic_cup,  bact_cw_1to4_ic_cup,                   & !dimaman
+            fung_a_1to4_ic_cup,  fung_cw_1to4_ic_cup,                   &
+            pol_a_1to4_ic_cup,  pol_cw_1to4_ic_cup,                     & 
             bc_a_1to4_ic_cup,  bc_cw_1to4_ic_cup,                       &
             na_a_1to4_ic_cup,  na_cw_1to4_ic_cup,                       &
             cl_a_1to4_ic_cup,  cl_cw_1to4_ic_cup,                       &
@@ -316,6 +337,9 @@
             no3_a_5to6_ic_cup, no3_cw_5to6_ic_cup,                      &
             oa_a_5to6_ic_cup,  oa_cw_5to6_ic_cup,                       &
             oin_a_5to6_ic_cup,  oin_cw_5to6_ic_cup,                     &
+            bact_a_5to6_ic_cup,  bact_cw_5to6_ic_cup,                   & !dimaman
+            fung_a_5to6_ic_cup,  fung_cw_5to6_ic_cup,                   &
+            pol_a_5to6_ic_cup,  pol_cw_5to6_ic_cup,                     &
             bc_a_5to6_ic_cup,  bc_cw_5to6_ic_cup,                       &
             na_a_5to6_ic_cup,  na_cw_5to6_ic_cup,                       &
             cl_a_5to6_ic_cup,  cl_cw_5to6_ic_cup,                       &
@@ -341,6 +365,7 @@
          massptr_aer, numptr_aer, &
          lptr_cl_aer, lptr_na_aer, lptr_nh4_aer, lptr_no3_aer, &
          lptr_oc_aer, lptr_oin_aer, lptr_so4_aer, lptr_bc_aer, &
+         lptr_bact_aer, lptr_fung_aer, lptr_pol_aer,           & !dimaman
          lptr_pcg1_b_c_aer,lptr_pcg1_b_o_aer,lptr_opcg1_b_c_aer, &
          lptr_opcg1_b_o_aer,lptr_pcg1_f_c_aer,lptr_pcg1_f_o_aer, &
          lptr_opcg1_f_c_aer, lptr_opcg1_f_o_aer, lptr_ant1_c_aer, &
@@ -393,6 +418,9 @@
             no3_a_1to4_ic_cup, no3_cw_1to4_ic_cup,                      &
             oa_a_1to4_ic_cup,  oa_cw_1to4_ic_cup,                       &
             oin_a_1to4_ic_cup,  oin_cw_1to4_ic_cup,                     &
+            bact_a_1to4_ic_cup,  bact_cw_1to4_ic_cup,                   & !dimaman
+            fung_a_1to4_ic_cup,  fung_cw_1to4_ic_cup,                   &
+            pol_a_1to4_ic_cup,  pol_cw_1to4_ic_cup,                     &
             bc_a_1to4_ic_cup,  bc_cw_1to4_ic_cup,                       &
             na_a_1to4_ic_cup,  na_cw_1to4_ic_cup,                       &
             cl_a_1to4_ic_cup,  cl_cw_1to4_ic_cup,                       &
@@ -402,6 +430,9 @@
             no3_a_5to6_ic_cup, no3_cw_5to6_ic_cup,                      &
             oa_a_5to6_ic_cup,  oa_cw_5to6_ic_cup,                       &
             oin_a_5to6_ic_cup,  oin_cw_5to6_ic_cup,                     &
+            bact_a_5to6_ic_cup,  bact_cw_5to6_ic_cup,                   & !dimaman
+            fung_a_5to6_ic_cup,  fung_cw_5to6_ic_cup,                   &
+            pol_a_5to6_ic_cup,  pol_cw_5to6_ic_cup,                     &
             bc_a_5to6_ic_cup,  bc_cw_5to6_ic_cup,                       &
             na_a_5to6_ic_cup,  na_cw_5to6_ic_cup,                       &
             cl_a_5to6_ic_cup,  cl_cw_5to6_ic_cup,                       &
@@ -569,6 +600,9 @@ main_i_loop: &
          no3_a_1to4_ic_cup(i,:,j) = 0.0 ; no3_cw_1to4_ic_cup(i,:,j) = 0.0
          oa_a_1to4_ic_cup (i,:,j) = 0.0 ;  oa_cw_1to4_ic_cup(i,:,j) = 0.0
          oin_a_1to4_ic_cup (i,:,j) = 0.0 ;  oin_cw_1to4_ic_cup(i,:,j) = 0.0
+         bact_a_1to4_ic_cup(i,:,j)=0.0 ; bact_cw_1to4_ic_cup(i,:,j) = 0.0
+         fung_a_1to4_ic_cup(i,:,j) = 0.0 ;fung_cw_1to4_ic_cup(i,:,j) = 0.0
+         pol_a_1to4_ic_cup(i,:,j) = 0.0 ; pol_cw_1to4_ic_cup(i,:,j) = 0.0    !dimaman
          bc_a_1to4_ic_cup (i,:,j) = 0.0 ;  bc_cw_1to4_ic_cup(i,:,j) = 0.0
          na_a_1to4_ic_cup (i,:,j) = 0.0 ;  na_cw_1to4_ic_cup(i,:,j) = 0.0
          cl_a_1to4_ic_cup (i,:,j) = 0.0 ;  cl_cw_1to4_ic_cup(i,:,j) = 0.0
@@ -578,6 +612,9 @@ main_i_loop: &
          no3_a_5to6_ic_cup(i,:,j) = 0.0 ; no3_cw_5to6_ic_cup(i,:,j) = 0.0
          oa_a_5to6_ic_cup (i,:,j) = 0.0 ;  oa_cw_5to6_ic_cup(i,:,j) = 0.0
          oin_a_5to6_ic_cup (i,:,j) = 0.0 ;  oin_cw_5to6_ic_cup(i,:,j) = 0.0
+         bact_a_5to6_ic_cup(i,:,j)=0.0 ; bact_cw_5to6_ic_cup(i,:,j) = 0.0
+         fung_a_5to6_ic_cup(i,:,j) = 0.0 ;fung_cw_5to6_ic_cup(i,:,j) = 0.0
+         pol_a_5to6_ic_cup(i,:,j) = 0.0 ; pol_cw_5to6_ic_cup(i,:,j) = 0.0    !dimaman
          bc_a_5to6_ic_cup (i,:,j) = 0.0 ;  bc_cw_5to6_ic_cup(i,:,j) = 0.0
          na_a_5to6_ic_cup (i,:,j) = 0.0 ;  na_cw_5to6_ic_cup(i,:,j) = 0.0
          cl_a_5to6_ic_cup (i,:,j) = 0.0 ;  cl_cw_5to6_ic_cup(i,:,j) = 0.0
@@ -772,6 +809,18 @@ main_i_loop: &
                                      + chem_incu(k,lptr_ant1_c_aer(isize,itype,cw_phase)) &
                                      + chem_incu(k,lptr_biog1_c_aer(isize,itype,cw_phase))
 
+            bact_a_1to4_ic_cup(i,k,j) = bact_a_1to4_ic_cup(i,k,j) & !dimaman
+                                     + chem_incu(k,lptr_bact_aer(isize,itype,ai_phase))
+            bact_cw_1to4_ic_cup(i,k,j) = bact_cw_1to4_ic_cup(i,k,j) &
+                                     + chem_incu(k,lptr_bact_aer(isize,itype,cw_phase))
+            fung_a_1to4_ic_cup(i,k,j) = fung_a_1to4_ic_cup(i,k,j) &
+                                     + chem_incu(k,lptr_fung_aer(isize,itype,ai_phase))
+            fung_cw_1to4_ic_cup(i,k,j) = fung_cw_1to4_ic_cup(i,k,j) &
+                                     + chem_incu(k,lptr_fung_aer(isize,itype,cw_phase))
+            pol_a_1to4_ic_cup(i,k,j) = pol_a_1to4_ic_cup(i,k,j) &
+                                     + chem_incu(k,lptr_pol_aer(isize,itype,ai_phase))
+            pol_cw_1to4_ic_cup(i,k,j) = pol_cw_1to4_ic_cup(i,k,j) &
+                                     + chem_incu(k,lptr_pol_aer(isize,itype,cw_phase))
             oin_a_1to4_ic_cup(i,k,j)  = oin_a_1to4_ic_cup(i,k,j) &
                                      + chem_incu(k,lptr_oin_aer(isize,itype,ai_phase))
             oin_cw_1to4_ic_cup(i,k,j) = oin_cw_1to4_ic_cup(i,k,j) &
@@ -839,7 +888,19 @@ main_i_loop: &
                                      + chem_incu(k,lptr_opcg1_f_o_aer(isize,itype,cw_phase)) &
                                      + chem_incu(k,lptr_ant1_c_aer(isize,itype,cw_phase)) &
                                      + chem_incu(k,lptr_biog1_c_aer(isize,itype,cw_phase))
-
+            bact_a_5to6_ic_cup(i,k,j) = bact_a_5to6_ic_cup(i,k,j) & !dimaman
+                                     + chem_incu(k,lptr_bact_aer(isize,itype,ai_phase))
+            bact_cw_5to6_ic_cup(i,k,j) = bact_cw_5to6_ic_cup(i,k,j) &
+                                     + chem_incu(k,lptr_bact_aer(isize,itype,cw_phase))
+            fung_a_5to6_ic_cup(i,k,j) = fung_a_5to6_ic_cup(i,k,j) &
+                                     + chem_incu(k,lptr_fung_aer(isize,itype,ai_phase))
+            fung_cw_5to6_ic_cup(i,k,j) = fung_cw_5to6_ic_cup(i,k,j) &
+                                     + chem_incu(k,lptr_fung_aer(isize,itype,cw_phase))
+            pol_a_5to6_ic_cup(i,k,j) = pol_a_5to6_ic_cup(i,k,j) &
+                                     + chem_incu(k,lptr_pol_aer(isize,itype,ai_phase))
+            pol_cw_5to6_ic_cup(i,k,j) = pol_cw_5to6_ic_cup(i,k,j) &
+                                     + chem_incu(k,lptr_pol_aer(isize,itype,cw_phase))
+                                                                       
             oin_a_5to6_ic_cup(i,k,j)  = oin_a_5to6_ic_cup(i,k,j) &
                                      + chem_incu(k,lptr_oin_aer(isize,itype,ai_phase))
             oin_cw_5to6_ic_cup(i,k,j) = oin_cw_5to6_ic_cup(i,k,j) &
@@ -864,7 +925,7 @@ main_i_loop: &
                                      + chem_incu(k,waterptr_aer(isize,itype))
 
 
-         end do ! k
+         end do ! k !dimaman
            end if ! dcen size 
 
       end do ! isize

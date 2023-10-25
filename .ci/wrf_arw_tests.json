@@ -2,125 +2,126 @@
   "submit_options" :
   {
     "queue"     : "economy",
-    "timelimit" : "01:00:00",
+    "timelimit" : "00:30:00",
     "cheyenne"  :
     {
       "submission" : "PBS",
-      "resources"  : "1:ncpus=8",
+      "resources"  : "1:ncpus=6",
       "arguments"  : 
       {
-        "global_modules" : [ "cmake/3.22.0" ]
+        "very_last_modules"       : [ "netcdf", "cmake/3.22.0" ],
+        ".*gnu.*::test_modules"   : [ "gnu" ],
+        ".*intel.*::test_modules" : [ "intel" ],
+        ".*pgi.*::test_modules"   : [ "pgi" ],
+        ".*dm.*::test_mpi_module" : [ "openmpi/4.0.3" ]
+
       }
     },
-    "wsl" :
+    "polaris" :
     {
       "submission" : "LOCAL"
     }
   },
   "gnu-nompi" :
   {
-    "submit_options" : { "cheyenne" : { "arguments" : { "test_modules" : [ "gnu", "netcdf" ] } } },
     "steps" :
     {
       "serial" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "32", "-b", "em_real -j 8" ]
+        "arguments"    : [ "-c", "32", "-b", "em_real -j 6" ]
       },
       "sm" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "33", "-b", "em_real -j 8" ],
+        "arguments"    : [ "-c", "33", "-b", "em_real -j 6" ],
         "dependencies" : { "serial" : "afterany" }
       }
     }
   },
   "gnu-mpi" :
   {
-    "submit_options" : { "cheyenne" : { "arguments" : { "test_modules" : [ "gnu", "mpt", "netcdf" ] } } },
     "steps" :
     {
       "dm" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "34", "-b", "em_real -j 8" ]
+        "arguments"    : [ "-c", "34", "-b", "em_real -j 6" ]
       },
       "dm+sm" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "35", "-b", "em_real -j 8" ],
+        "arguments"    : [ "-c", "35", "-b", "em_real -j 6" ],
         "dependencies" : { "dm" : "afterany" }
       }
     }
   },
   "intel-nompi" :
   {
-    "submit_options" : { "cheyenne" : { "timelimit" : "01:30:00", "arguments" : { "test_modules" : [ "intel", "netcdf" ] } } },
+    "submit_options" : { "cheyenne" : { "timelimit" : "01:00:00" } },
     "steps" :
     {
       "serial" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "13", "-b", "em_real -j 8" ]
+        "arguments"    : [ "-c", "13", "-b", "em_real -j 6" ]
       },
       "sm" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "14", "-b", "em_real -j 8" ],
+        "arguments"    : [ "-c", "14", "-b", "em_real -j 6" ],
         "dependencies" : { "serial" : "afterany" }
       }
     }
   },
   "intel-mpi" :
   {
-    "submit_options" : { "cheyenne" : { "timelimit" : "01:30:00", "arguments" : { "test_modules" : [ "intel", "mpt", "netcdf" ] } } },
+    "submit_options" : { "cheyenne" : { "timelimit" : "01:00:00" } },
     "steps" :
     {
       "dm" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "15", "-b", "em_real -j 8" ]
+        "arguments"    : [ "-c", "15", "-b", "em_real -j 6" ]
       },
       "dm+sm" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "16", "-b", "em_real -j 8" ],
+        "arguments"    : [ "-c", "16", "-b", "em_real -j 6" ],
         "dependencies" : { "dm" : "afterany" }
       }
     }
   },
   "pgi-nompi" :
   {
-    "submit_options" : { "cheyenne" : { "arguments" : { "test_modules" : [ "pgi", "netcdf" ] } } },
     "steps" :
     {
       "serial" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "5", "-b", "em_real -j 8" ]
+        "arguments"    : [ "-c", "5", "-b", "em_real -j 6" ]
       },
       "sm" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "6", "-b", "em_real -j 8" ],
+        "arguments"    : [ "-c", "6", "-b", "em_real -j 6" ],
         "dependencies" : { "serial" : "afterany" }
       }
     }
   },
   "pgi-mpi" :
   {
-    "submit_options" : { "cheyenne" : { "arguments" : { "test_modules" : [ "pgi", "mpt", "netcdf" ] } } },
     "steps" :
     {
       "dm" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "7", "-b", "em_real -j 8" ]
+        "arguments"    : [ "-c", "7", "-b", "em_real -j 6" ]
       },
       "dm+sm" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "8", "-b", "em_real -j 8" ],
+        "arguments"    : [ "-c", "8", "-b", "em_real -j 6" ],
         "dependencies" : { "dm" : "afterany" }
       }
     }

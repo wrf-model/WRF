@@ -884,8 +884,8 @@ EOF
       echo " "
       if [ -e $NETCDF_C/bin/nc-config ] ; then
         echo "NetCDF version: ${ncversion}"
-        echo "Enabled NetCDF-4/HDF-5: `nc-config --has-nc4`"
-        echo "NetCDF built with PnetCDF: `nc-config --has-pnetcdf`"
+        echo "Enabled NetCDF-4/HDF-5: `$NETCDF_C/bin/nc-config --has-nc4`"
+        echo "NetCDF built with PnetCDF: `$NETCDF_C/bin/nc-config --has-pnetcdf`"
         if [ "$USENETCDFPAR" = "1" ] ; then
           echo "Using parallel NetCDF via NETCDFPAR option"
         fi

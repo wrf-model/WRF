@@ -85,45 +85,19 @@ jobs:
       id  : runTest
       run: |
         ./main/hpc-workflows/.ci/runner.py \
-          .ci/${{ matrix.testSet.file }}    \
+          ./main/.ci/${{ matrix.testSet.fileroot }}.json \
           -t   ${{ join( matrix.testSet.tests, ' ' ) }}  \
-          -alt ${{ join( matrix.testSet.tests, ' ' ) }}  \
+          -alt ../${{ join( matrix.testSet.tests, ' ../' ) }}  \
           -d ..                                          \
           -a "${{ matrix.testSet.account }}"             \
           -p ${{ matrix.testSet.pool}}                   \
           ${{ matrix.testSet.args }}
 
 
-    - name: Print failed steps
+    - name: Report failed tests and steps
       if : ${{ failure() }}
       run : |
-        import json
-        import os
-
-        def dumpFile( filename, bannerMsg="" ) :
-          print( "\n{msg}\n{banner}".format( msg=bannerMsg, banner="!" * 50 ) )
-          with open( filename, 'r') as f:
-            print( f.read() )
-          print( "!" * 50 )
-
-        masterLog = "./{0}.log".format( os.path.splitext( "${{ matrix.testSet.file }}" )[0] )
-        fp = open( masterLog )
-        logs = json.load( fp )
-        print( "Finding tests that failed..." )
-        for test, testlog in logs.items() :
-          if not testlog["success"] :
-            print( "Test {test} failed, printing stdout".format( test=test ) )
-            dumpFile( testlog["message"], bannerMsg="STDOUT FOR TEST {test}".format( test=test ) )
-            print( "Finding logs for steps that failed..." )
-            for step, steplog in testlog["steps"].items() :
-              if not steplog["success"] :
-                print( "Step {step} failed, printing stdout".format( step=step ) )
-                dumpFile( steplog["logfile"], bannerMsg="STDOUT FOR STEP {step}".format( step=step ) )
-
-        # Exit with bad status so people know where to look since that might be 
-        # an issue as this will look "successful"
-        raise Exception( "Test did not pass, refer to the above logs" )
-      shell: python3 {0}
+        ./main/hpc-workflows/.ci/reporter.py ./main/${{ matrix.testSet.fileroot }}.log
 
   # Since this a new job, the token should be fine, per the documentation:
   # https://docs.github.com/en/actions/security-guides/automatic-token-authentication#about-the-github_token-secret

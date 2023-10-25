@@ -33,9 +33,9 @@ MODULE module_mp_ivanr_micro
       SUBROUTINE IVANRM_NEW (itimestep,DT,                              &
      &                      dz8w,rho_phy,p_phy,pi_phy,th_phy,qv,qt,     &
      &                      SR,                                         &
-     &                      QC,QS,QR,                                   &
+     &                      QC,QI,QS,QR,                                &
      &                      xland,                                      &
-     &                      CLD,T0,P0,Q0,F_SNOW,                        &
+     &                      CLD,T0,P0,Q0,                               &
      &                      RAINNC,RAINNCV,                             &
      &                      SNOWNC,SNOWNCV,                             &
      &                      ids,ide, jds,jde, kds,kde,		        &
@@ -54,10 +54,10 @@ MODULE module_mp_ivanr_micro
       REAL, INTENT(INOUT),  DIMENSION(ims:ime, kms:kme, jms:jme)::      &
      &                      th_phy,qv,qt
       REAL, INTENT(INOUT),  DIMENSION(ims:ime, kms:kme, jms:jme ) ::    &
-     &                      QC,QS,QR
+     &                      QC,QI,QS,QR
       REAL, DIMENSION( ims:ime , jms:jme ) , INTENT(IN)   :: XLAND
       REAL, INTENT(INOUT),  DIMENSION(ims:ime, kms:kme, jms:jme ) ::    &
-     &                      CLD,T0,P0,Q0,F_SNOW
+     &                      CLD,T0,P0,Q0
       REAL, INTENT(INOUT),  DIMENSION(ims:ime,jms:jme)           ::     &
      &                      RAINNC,RAINNCV,SNOWNC,SNOWNCV
       REAL, INTENT(OUT),    DIMENSION(ims:ime,jms:jme):: SR
@@ -65,9 +65,10 @@ MODULE module_mp_ivanr_micro
 !     LOCAL VARS
 !-----------------------------------------------------------------------
       REAL,DIMENSION(its:ite, kts:kte, jts:jte):: T_PHY,Q_PHY
+      REAL,DIMENSION(its:ite, kts:kte, jts:jte):: F_SNOW,F_ICEP
       REAL,DIMENSION(kts:kte) ::                                        &
      &  P_col, QV_col, T_col, THICK_col, WC_col,                        &
-     &  CLD_col, T0_col, P0_col, Q0_col, F_SNOW_col
+     &  CLD_col, T0_col, P0_col, Q0_col, F_SNOW_col, F_ICEP_col
       REAL :: ASNOW,ARAIN
       REAL :: SEAMASK
       INTEGER :: I,J,K,KFLIP
@@ -91,7 +92,6 @@ MODULE module_mp_ivanr_micro
           T0(i,k,j)=T_PHY(i,k,j)
           P0(i,k,j)=P_PHY(i,k,j)
           Q0(i,k,j)=Q_PHY(i,k,j)
-          F_SNOW(i,k,j)=0.
         ENDDO
         ENDDO
         ENDDO
@@ -100,7 +100,13 @@ MODULE module_mp_ivanr_micro
       DO j = jts,jte
       DO k = kts,kte
       DO i = its,ite
-        QT(I,K,J)=QC(I,K,J)+QR(I,K,J)+QS(I,K,J)
+        QT(I,K,J)=QC(I,K,J)+QI(I,K,J)+QS(I,K,J)+QR(I,K,J)
+        IF(QT(I,K,J).LE.1.E-12)THEN
+          F_SNOW(I,K,J)=0.
+        ELSE
+          F_SNOW(I,K,J)=AMAX1(0.,AMIN1(1.,QS(I,K,J)/QT(I,K,J)))
+        ENDIF
+        F_ICEP(I,K,J)=0.
       ENDDO
       ENDDO
       ENDDO
@@ -120,6 +126,7 @@ MODULE module_mp_ivanr_micro
         P0_col(K)=P0(I,KFLIP,J)
         Q0_col(K)=Q0(I,KFLIP,J)
         F_SNOW_col(K)=F_SNOW(I,KFLIP,J)
+        F_ICEP_col(K)=F_ICEP(I,KFLIP,J)
       ENDDO
 !
       SEAMASK=XLAND(I,J)-1.
@@ -131,7 +138,7 @@ MODULE module_mp_ivanr_micro
        CALL IVANRMCOLUMN ( ARAIN, ASNOW, DT, KTS, KTE,                  &
      & P_col, QV_col, T_col,                                            &
      & THICK_col, WC_col,                                               &
-     &  CLD_col,T0_col,P0_col,Q0_col,F_SNOW_col,SEAMASK )
+     &  CLD_col,T0_col,P0_col,Q0_col,F_SNOW_col,F_ICEP_col,SEAMASK )
    !
 !#######################################################################
 !
@@ -148,6 +155,7 @@ MODULE module_mp_ivanr_micro
         P0(I,KFLIP,J)=P0_col(K)
         Q0(I,KFLIP,J)=Q0_col(K)
         F_SNOW(I,KFLIP,J)=F_SNOW_col(K)
+        F_ICEP(I,KFLIP,J)=F_ICEP_col(K)
       ENDDO
    !
    !--- Update accumulated precipitation statistics
@@ -174,8 +182,9 @@ MODULE module_mp_ivanr_micro
       DO i = its,ite
         th_phy(i,k,j)=T_PHY(i,k,j)/pi_phy(i,k,j)
         qv(i,k,j)=Q_PHY(i,k,j)/(1.-Q_PHY(i,k,j))  !Convert to mixing ratio
-        QC(I,K,J)=QT(I,K,J)
-        QS(I,K,J)=0.
+        QC(I,K,J)=QT(I,K,J)*(1.-F_SNOW(I,K,J))*(1.-F_ICEP(I,K,J))
+        QI(I,K,J)=QT(I,K,J)*(1.-F_SNOW(I,K,J))*F_ICEP(I,K,J)
+        QS(I,K,J)=QT(I,K,J)*F_SNOW(I,K,J)
         QR(I,K,J)=0.
       ENDDO
       ENDDO
@@ -188,7 +197,7 @@ MODULE module_mp_ivanr_micro
       SUBROUTINE IVANRMCOLUMN ( ARAIN, ASNOW, DTPH, KTS, KTE,           &
      & P_col,QV_col,T_col,                                              &
      & THICK_col, WC_col,                                               &
-     &  CLD_col,T0_col,P0_col,Q0_col,F_SNOW_col,SEAMASK )
+     &  CLD_col,T0_col,P0_col,Q0_col,F_SNOW_col,F_ICEP_col,SEAMASK )
 !
 !###############################################################################
 !###############################################################################
@@ -204,7 +213,7 @@ MODULE module_mp_ivanr_micro
       REAL,INTENT(IN)    :: DTPH
       REAL,DIMENSION(KTS:KTE),INTENT(INOUT) ::                          &
      &  P_col, QV_col, T_col, THICK_col, WC_col,                        &
-     &  CLD_col, T0_col, P0_col, Q0_col, F_SNOW_col
+     &  CLD_col, T0_col, P0_col, Q0_col, F_SNOW_col, F_ICEP_col
       REAL, INTENT(IN) :: SEAMASK
 !-----------------------------------------------------------------------
       REAL,PARAMETER :: A2=17.2693882,A3=273.16,A4=35.86                &
@@ -744,6 +753,7 @@ MODULE module_mp_ivanr_micro
       QV_col(L)=QQ
       WC_col(L)=WW
       F_SNOW_col(L)=FSNOW
+      F_ICEP_col(L)=1.-FWI
  
    90 CONTINUE
 !-----------------------------------------------------------------------
@@ -762,7 +772,7 @@ MODULE module_mp_ivanr_micro
       QW=QSAT(PP,TGS,FIW,FCI)
       IF(FCLOUD*FWI*FIW*TT.GT.A3)QW=AMIN1(QQ,QW)
       FO=TGS+RCP*ELV*QW-RP
-      TG1=TGS-.5*FO
+      TG1=AMAX1(TGS/2.,TGS-.5*FO)
       TGUESS=TGS
       ITCNT=0
    10 QW=QSAT(PP,TG1,FIW,FCI)

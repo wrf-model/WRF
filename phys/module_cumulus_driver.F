@@ -150,6 +150,7 @@ CONTAINS
                                           ,OSASSCHEME                 &  
                                           ,SCALESASSCHEME             &  ! scale-sware sas
                                           ,KSASSCHEME, NSASSCHEME     &
+                                          ,RISTICSCHEME               &
 #if (EM_CORE == 1)
                                           ,MSKFSCHEME                 &
                                           ,CAMMGMPSCHEME              &
@@ -174,6 +175,7 @@ CONTAINS
 
    USE module_cu_kf     ,  ONLY : kfcps
    USE module_cu_bmj    ,  ONLY : bmjdrv
+   USE module_cu_ristic ,  ONLY : risticdrv
 #ifdef DM_PARALLEL
    USE module_dm        , ONLY : ntasks_x,ntasks_y,local_communicator,mytask,ntasks 
 #if (EM_CORE == 1)
@@ -1005,6 +1007,25 @@ CONTAINS
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
               ! optionals
+               ,RTHCUTEN=rthcuten ,RQVCUTEN=rqvcuten            &
+                                                                )
+
+     CASE (RISTICSCHEME)
+          CALL wrf_debug(100,'in ristic_cps')
+          CALL RISTICDRV(                                       &
+                TH=th,T=T ,RAINCV=raincv, PRATEC=tmppratec      &
+               ,RHO=rho                                         &
+               ,DT=dt ,ITIMESTEP=itimestep ,STEPCU=stepcu       &
+               ,CUTOP=htop, CUBOT=hbot                          &
+               ,DZ8W=dz8w, PMID=p, PI=pi                        &
+               ,CP=cp ,R=r_d ,ELWV=xlv ,ELIV=xls ,G=g           &
+               ,CU_ACT_FLAG=cu_act_flag                         &
+               ,QV=qv_curr                                      &
+               ,ustar=ust                                       &
+               ,W=w,QC=qc_curr                                  &
+               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
+               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
+               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
                ,RTHCUTEN=rthcuten ,RQVCUTEN=rqvcuten            &
                                                                 )
 

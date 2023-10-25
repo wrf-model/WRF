@@ -339,7 +339,7 @@
         [ 
           "-c", "test/em_real",
           "-b", "real.exe",
-          "-n", "namelist.input.17,namelist.input.18,namelist.input.20",
+          "-n", "namelist.input.17,namelist.input.20",
           "-d", "$DATA/em_real",
           "-e", "NAMELIST_DIR=em_realC"
         ]

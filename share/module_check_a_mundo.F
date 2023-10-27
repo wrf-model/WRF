@@ -928,7 +928,7 @@
 #endif
 
 !-----------------------------------------------------------------------
-! Climatr GHG from an input file requires coordinated pairing of
+! Climate GHG from an input file requires coordinated pairing of
 ! LW and SW schemes, and restricts which schemes are eligible.
 ! Only radiation schemes CAM, RRTM, RRTMG, RRTMG_fast may be used.
 ! CAM LW and CAM SW must be used together.

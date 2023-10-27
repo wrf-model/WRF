@@ -1168,7 +1168,7 @@ SUBROUTINE phy_cu_ten(config_flags,rk_step,n_moist,n_scalar,     &
 
        ENDIF
 
-   CASE (BMJSCHEME, RISTICSCHEME)
+   CASE (BMJSCHEME)
         CALL add_a2a(rt_tendf,RTHCUTEN,                          &
                 config_flags,                                    &
                 ids,ide, jds, jde, kds, kde,                     &
@@ -2175,7 +2175,7 @@ SUBROUTINE advance_ppt(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,           &
         ENDDO
         ENDDO
 
-   CASE (BMJSCHEME, CAMZMSCHEME, RISTICSCHEME)
+   CASE (BMJSCHEME, CAMZMSCHEME)
  
         DO J = j_start,j_end
         DO i = i_start,i_end

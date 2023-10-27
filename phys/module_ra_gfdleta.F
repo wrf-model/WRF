@@ -65,7 +65,7 @@ MODULE MODULE_RA_GFDLETA
 !
       REAL, PARAMETER ::  &
      &   TRAD_ice=0.5*T_ice      & !--- Very tunable parameter
-     &,  ABSCOEF_W=500.          & !--- Very tunable parameter            ! w2id
+     &,  ABSCOEF_W=800.          & !--- Very tunable parameter
      &,  ABSCOEF_I=500.          & !--- Very tunable parameter
      &,  SECANG=-1.66            & !--- Very tunable parameter
 !!     &,  SECANG=-0.75            & !--- Very tunable parameter
@@ -188,8 +188,6 @@ CONTAINS
      &                ,NSTEPRA,NPHS,ITIMESTEP                           &
      &                ,XTIME,JULIAN                                     &
      &                ,JULYR,JULDAY,GFDL_LW,GFDL_SW                     &
-     &                ,CLD                                              & ! w2id
-     &                ,icloud                                           & ! w2id
      &                ,CFRACL,CFRACM,CFRACH                             &
      &                ,ACFRST,NCFRST,ACFRCV,NCFRCV                      &
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                          &
@@ -214,8 +212,6 @@ CONTAINS
      &                                                      rho_phy,    &
      &                                                      p_phy,      &
      &                                                      PI3D
-      REAL, INTENT(IN), DIMENSION(ims:ime, kms:kme, jms:jme):: CLD        ! w2id
-      INTEGER, INTENT(IN ) :: icloud                                      ! w2id
       REAL, INTENT(IN), DIMENSION(ims:ime, jms:jme):: ALBEDO,SNOW,      &
      &                                                TSK2D,VEGFRA,     &
      &                                                XLAND
@@ -235,7 +231,6 @@ CONTAINS
       REAL, OPTIONAL, INTENT(IN), DIMENSION(ims:ime, kms:kme, jms:jme):: QI
 
       REAL, DIMENSION(its:ite, kms:kme, jts:jte):: PFLIP,QIFLIP,QFLIP,  &
-     &                                             CLDFLIP,             & ! w2id
      &                                             QWFLIP,TFLIP
       REAL, DIMENSION(its:ite, kms:kme, jts:jte)::P8WFLIP
       REAL, DIMENSION(its:ite, kts:kte, jts:jte)::TENDS,TENDL
@@ -283,7 +278,6 @@ CONTAINS
           QIFLIP(I,K,J)=MAX(QS(I,KFLIP,J),0.)      !Added QS
           IF(PRESENT(QI))QIFLIP(I,K,J)=QIFLIP(I,K,J)+QI(I,KFLIP,J)      !Added QI
           PFLIP (I,K,J)=P_PHY(I,KFLIP,J)
-          CLDFLIP (I,K,J)=CLD(I,KFLIP,J)                                  ! w2id
 !
 !***  USE MONOTONIC HYDROSTATIC PRESSURE INTERPOLATED TO MID-LEVEL
 !
@@ -314,8 +308,6 @@ CONTAINS
      &            GLAT,GLON,CUTOP,CUBOT,ALBEDO,CUPPT,                   &
      &            ACFRCV,NCFRCV,ACFRST,NCFRST,                          &
      &            VEGFRA,SNOW,GLW,GSW,RSWIN,RSWINC,                     &
-     &            CLDFLIP,                                              & ! w2id
-     &            icloud,                                               & ! w2id
 !BSF => for NAMX changes, pass in surface emissivity (SFCEMS) [different for snow]
      &            IDAT,IHRST,XTIME,JULIAN,                              &
      &            NSTEPRA,NSTEPRA,NPHS,ITIMESTEP,                       &
@@ -402,8 +394,6 @@ CONTAINS
      &                 GLAT,GLON,CUTOP,CUBOT,ALB,CUPPT,                 &
      &                 ACFRCV,NCFRCV,ACFRST,NCFRST,                     &
      &                 VEGFRC,SNO,GLW,GSW,RSWIN,RSWINC,                 & 
-     &                 CLDFLIP,                                         & ! w2id
-     &                 icloud,                                          & ! w2id
 !BSF => for NAMX changes, pass in surface emissivity (SFCEMS) [different for snow]
      &                 IDAT,IHRST,XTIME,JULIAN,                         &
      &                 NRADS,NRADL,NPHS,NTSD,                           &
@@ -531,7 +521,6 @@ CONTAINS
 !-----------------------------------------------------------------------
       INTEGER            :: LM1,LP1,LM
       INTEGER, INTENT(IN)               :: IHRST
-      INTEGER, INTENT(IN ) :: icloud                                      ! w2id
 !     REAL,    INTENT(IN), DIMENSION(NL)    :: PRGFDL
 !
       REAL, PARAMETER :: EPSQ1=1.E-5,EPSQ=1.E-12,EPSO3=1.E-10,H0=0.     &
@@ -556,7 +545,6 @@ CONTAINS
       REAL, INTENT(IN), DIMENSION(its:ite, kms:kme, jts:jte):: Q,QCW,   &
      &                                                         QICE,T,  &
      &                                                         PFLIP,   &
-     &                                                         CLDFLIP, & ! w2id
      &                                                         P8WFLIP
 
 !     REAL, INTENT(IN), DIMENSION(28,180) :: TABLE1,TABLE2,TABLE3,EM3,EM1,EM1WDE
@@ -604,7 +592,6 @@ CONTAINS
      &                               FLWUPS,FSWDNSC
 
       REAL,   DIMENSION(its:ite,kts:kte) :: PMID,TMID
-      REAL,   DIMENSION(its:ite,kts:kte) :: CLDMID                        ! w2id
       REAL,   DIMENSION(its:ite,kts:kte) :: QMID,THMID,OZN,POZN
       REAL,   DIMENSION(its:ite,jts:jte) :: TOT 
 
@@ -636,7 +623,7 @@ CONTAINS
       INTEGER :: NBAND,NCLD,LBASE,NKTP,NBTM,KS,MYJS1,MYJS2,MYJE2,MYJE1
 
       INTEGER :: INDEXS,IXSD
-      DATA    CC/0.0,0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8/
+      DATA    CC/0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0/
       DATA    PPT/0.,.14,.31,.70,1.6,3.4,7.7,17.,38.,85./
       DATA ABCFF/2*4.0E-5,.002,.035,.377,1.95,9.40,44.6,190.,989.,      &
      &           2706.,39011./
@@ -776,7 +763,6 @@ CONTAINS
         OZN(I,L)=EPSO3
         TENDS(I,L,J)=0.
         TENDL(I,L,J)=0.
-        CLDMID(I,L)=0.                                                    ! w2id
       ENDDO
   125 CONTINUE
 !
@@ -807,7 +793,6 @@ CONTAINS
 !    ice (cloud ice + snow) are considered
         QWMID(I,L+LVLIJ)=QCW(I,L,J)
         QIMID(I,L+LVLIJ)=QICE(I,L,J)
-        CLDMID(I,L+LVLIJ)=CLDFLIP(I,L,J)                                  ! w2id
       ENDDO
 !***
 !***  FILL IN ARTIFICIAL VALUES ABOVE THE TOP OF THE DOMAIN.
@@ -934,7 +919,6 @@ CONTAINS
                ENDIF        !--- End IF (ARG .LE. XSDmin) 
             ENDIF           !--- IF (ARG.LE.DXSD2 .AND. ARG.GE.DXSD2N)
             CSMID(I,LL)=CLFR
-            IF ( icloud .NE. 0 ) CSMID(I,LL)=CLDMID(I,LL)                 ! w2id
 255       CONTINUE         !--- End DO L=1,LML
       ENDDO                !--- End DO I=MYIS,MYIE
 !

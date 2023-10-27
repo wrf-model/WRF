@@ -83,7 +83,6 @@ MODULES = \
 	module_cu_scalesas.o \
 	module_cu_osas.o \
 	module_cu_kfcup.o \
-	module_cu_ristic.o \
 	module_madwrf.o \
 	module_mp_radar.o \
 	module_mp_kessler.o \
@@ -95,7 +94,6 @@ MODULES = \
 	module_mp_wsm6r.o \
 	module_mp_wsm7.o \
 	module_mp_etanew.o \
-	module_mp_ivanr_micro.o \
 	module_mp_fer_hires.o \
 	module_mp_thompson.o \
         module_fire_emis.o \

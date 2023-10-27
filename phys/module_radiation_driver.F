@@ -98,7 +98,6 @@ CONTAINS
               , lradius,iradius                                           &
 #endif
               , cldfra_dp, cldfra_sh                                      &
-              , cld                                                       & ! w2id
               , re_cloud, re_ice, re_snow                                 &
               , has_reqc, has_reqi, has_reqs                              &
               , PB                                                        &
@@ -283,7 +282,7 @@ CONTAINS
 
    USE module_model_constants
    USE module_wrf_error , ONLY : wrf_err_message
-   USE module_state_description, ONLY : nuwrf4icescheme, ivanr_micro        ! w2id
+   USE module_state_description, ONLY : nuwrf4icescheme
 
 ! *** add new modules of schemes here
 
@@ -846,7 +845,6 @@ CONTAINS
                                                        cldfra_sh, &
                                                        cldfra_bl
 
-   REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN):: cld               ! w2id
 !..G. Thompson
    REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT):: re_cloud, re_ice, re_snow
    INTEGER, INTENT(INOUT):: has_reqc, has_reqi, has_reqs
@@ -973,7 +971,6 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qc_temp
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qi_save,qc_save
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qs_save
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: CLDGFDL                  ! w2id
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qc_cu_weight
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qi_cu_weight
@@ -1506,24 +1503,8 @@ CONTAINS
         ELSE
            CALL wrf_error_fatal('Can not use icloud = 3 option, missing QC or QI field.')
         ENDIF
-     ELSEIF (ICLOUD == 4) THEN
-        IF ( mp_physics .EQ. ivanr_micro ) THEN 
-           IF (itimestep .NE. 1) THEN
-              DO j=jts,jte
-              DO k=kts,kte
-              DO i=its,ite
-                 CLDFRA(i,k,j) = CLD(i,k,j)
-              ENDDO
-              ENDDO
-              ENDDO
-           ENDIF
-        ELSE
-           CALL wrf_error_fatal('Can not use icloud = 4 option, missing CLD field.')
-        ENDIF
 
      END IF
-     if( F_QC ) qc_temp=qc                                                  ! w2id
-     CLDGFDL=CLDFRA                                                         ! w2id
 
       !Modify CLDFRA and QC for kfcupscheme cumulus scheme
      if(present(cldfra_cup)) then
@@ -1610,23 +1591,6 @@ CONTAINS
          ENDDO
      ENDIF
 
-!LOW, MID and HIGH cloud fractions                                          ! w2id
-     DO j = jts,jte                                                         ! w2id
-     DO i = its,ite                                                         ! w2id
-     CFRACL(I,J)=0.                                                         ! w2id
-     CFRACM(I,J)=0.                                                         ! w2id
-     CFRACH(I,J)=0.                                                         ! w2id
-     DO k = kts,kte                                                         ! w2id
-       if (p(i,k,j) .ge. 64200.) then                                       ! w2id
-         CFRACL(I,J)=max(CFRACL(I,J),cldfra(i,k,j))                         ! w2id
-       elseif (p(i,k,j) .lt. 64200. .and. p(i,k,j) .ge. 35000.) then        ! w2id
-         CFRACM(I,J)=max(CFRACM(I,J),cldfra(i,k,j))                         ! w2id
-       elseif (p(i,k,j) .lt. 35000. .and. p(i,k,j) .ge. 15000.) then        ! w2id
-         CFRACH(I,J)=max(CFRACH(I,J),cldfra(i,k,j))                         ! w2id
-       endif                                                                ! w2id
-     ENDDO                                                                  ! w2id
-     ENDDO                                                                  ! w2id
-     ENDDO                                                                  ! w2id
 
        END DO
 
@@ -1983,8 +1947,6 @@ CONTAINS
                  ,XTIME=xtime,JULIAN=julian                         &
                  ,JULYR=julyr,JULDAY=julday                         &
                  ,GFDL_LW=gfdl_lw,GFDL_SW=gfdl_sw                   &
-                 ,CLD=CLDGFDL                                       &       ! w2id
-                 ,ICLOUD=icloud                                     &       ! w2id
                  ,CFRACL=cfracl,CFRACM=cfracm,CFRACH=cfrach         &
                  ,ACFRST=acfrst,NCFRST=ncfrst                       &
                  ,ACFRCV=acfrcv,NCFRCV=ncfrcv                       &
@@ -2845,8 +2807,6 @@ CONTAINS
                  ,XTIME=xtime,JULIAN=julian                         &
                  ,JULYR=julyr,JULDAY=julday                         &
                  ,GFDL_LW=gfdl_lw,GFDL_SW=gfdl_sw                   &
-                 ,CLD=CLDGFDL                                       &       ! w2id
-                 ,ICLOUD=icloud                                     &       ! w2id
                  ,CFRACL=cfracl,CFRACM=cfracm,CFRACH=cfrach         &
                  ,ACFRST=acfrst,NCFRST=ncfrst                       &
                  ,ACFRCV=acfrcv,NCFRCV=ncfrcv                       &

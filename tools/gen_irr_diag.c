@@ -13,7 +13,7 @@
 short int  nChmOpts = 0;
 char rxt_tbl[5][1000][TABLE_ENTRY] = { '\0' };
 char chm_scheme[5][TABLE_ENTRY] = { '\0' };
-short int  rxt_cnt[5];
+short int  rxt_cnt[5] = {0, 0};
 
 void strip_blanks( char *instring, char *outstring )
 {
@@ -280,7 +280,7 @@ int irr_diag_scalar_indices( char *dirname )
    fprintf( fp_inc,line );
    fprintf( fp_inc," \n");
 
-   for( i = 0; /*i < nChmOpts &&*/ rxt_cnt[i] > 0; i++ ) {
+   for( i = 0; i < nChmOpts && rxt_cnt[i] > 0; i++ ) {
      for( j = 0; j < rxt_cnt[i]; j++ ) {
        snprintf( line, TABLE_ENTRY + EXTRA_FOR_DEST_BUFFER, "     rxtsym(%d,%d) = '%s'\n",j+1,i+1,rxt_tbl[i][j]);
        fprintf( fp_inc,"%s",line);

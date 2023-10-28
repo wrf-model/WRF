@@ -3962,6 +3962,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    USE module_cu_kfeta
    USE module_cu_mskf
    USE MODULE_CU_BMJ
+   USE MODULE_CU_RISTIC
    USE module_cu_gd,  ONLY : GDINIT
    USE module_cu_g3,  ONLY : G3INIT
    USE module_cu_sas
@@ -4069,6 +4070,14 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
      CASE (BMJSCHEME)
           CALL bmjinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,       &
                       CLDEFI,LOWLYR,cp,r_d,restart,               &
+                      allowed_to_read,                            &
+                      ids, ide, jds, jde, kds, kde,               &
+                      ims, ime, jms, jme, kms, kme,               &
+                      its, ite, jts, jte, kts, kte                )
+
+     CASE (RISTICSCHEME)
+          CALL risticinit(RTHCUTEN,RQVCUTEN,                      &
+                      restart,                                    &
                       allowed_to_read,                            &
                       ids, ide, jds, jde, kds, kde,               &
                       ims, ime, jms, jme, kms, kme,               &

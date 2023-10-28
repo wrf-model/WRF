@@ -1,0 +1,15 @@
+# This is the top-level .gitignore file for the "inc" directory for the WRF  #
+# Model                                                                      #
+#                                                                            #
+# Filenames and wildcards added below will not be tracked by git anywhere in #
+# this directory or any of its subdirectories. Note that these rules will be #
+# supplemented by rules in the top-level .gitignore file                     #
+#                                                                            #
+# Ignored file types should include executables, build-time temporary files, #
+# and other files which should not ever be added to the code repository.     #
+#                                                                            #
+# USE CAUTION WHEN ADDING WILDCARDS, as some builds use different filename   #
+# conventions than others                                                    #
+##############################################################################
+*.inc
+commit_decl 

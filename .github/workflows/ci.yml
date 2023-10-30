@@ -86,6 +86,8 @@ jobs:
       run : |
         for testDir in ${{ join( matrix.testSet.tests, ' ' ) }}; do
           echo "Creating duplicate directory for $testDir"
+          # Remove if it exists to get a fresh start
+          rm -rf $testDir
           rsync -a --info=progress2 --exclude '.git' main/ $testDir
         done
 

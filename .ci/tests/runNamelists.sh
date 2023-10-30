@@ -278,6 +278,6 @@ if [ -z "$errorMsg" ]; then
   # We passed!
   echo "TEST $(basename $0) PASS"
 else
-  echo "$errorMsg"
+  printf "%b" "$errorMsg"
   exit 1
 fi

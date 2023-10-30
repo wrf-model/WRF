@@ -42,13 +42,14 @@
   {
     "submit_options" :
     {
+      "timelimit" : "00:25:00",
       "arguments" :
       {
         ".*testcase.*::args_namelist" : 
         [ 
           "-c", "test/em_real",
           "-b", "real.exe",
-          "-n", "namelist.input.3dtke,namelist.input.conus",
+          "-n", "namelist.input.3dtke",
           "-d", "$DATA/em_real",
           "-e", "NAMELIST_DIR=em_real"
         ]

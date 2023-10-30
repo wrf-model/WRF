@@ -63,7 +63,7 @@ jobs:
               name : "em_real G-L Tests",
               fileroot : wrf_em_real_tests,
               args : -j="-l select=1" -m "TEST em_realSet PASS",
-              pool : 6,
+              pool : 7,
               tests : [
                 em_realF, em_realG, em_realH, em_realI, em_realJ, em_realK, em_realL
                 ]

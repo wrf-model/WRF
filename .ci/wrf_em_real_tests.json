@@ -2,7 +2,7 @@
   "submit_options" :
   {
     "queue"     : "economy",
-    "timelimit" : "00:30:00",
+    "timelimit" : "00:15:00",
     "arguments" : 
     {
       ".*build.*::args_nesting"     : [ "-n", "1" ],
@@ -100,6 +100,7 @@
   {
     "submit_options" :
     {
+      "timelimit" : "00:25:00",
       "arguments" :
       {
         ".*testcase.*::args_namelist" : 

@@ -2,7 +2,7 @@
   "submit_options" :
   {
     "queue"     : "economy",
-    "timelimit" : "00:30:00",
+    "timelimit" : "00:20:00",
     "cheyenne"  :
     {
       "submission" : "PBS",

@@ -27,7 +27,7 @@ jobs:
           - { 
               host : wsl,
               account  : None,
-              name     : "em_real, A-H Tests",
+              name     : "em_real, C,E,G Tests",
               fileroot : wrf_em_real_tests,
               args     : -m "TEST em_realSet PASS",
               pool     : 1,
@@ -49,12 +49,23 @@ jobs:
           - { 
               host : cheyenne,
               account : NMMM0012,
-              name : "em_real, A-H Tests",
+              name : "em_real 0-3, A-E Tests",
               fileroot : wrf_em_real_tests,
               args : -j="-l select=1" -m "TEST em_realSet PASS",
               pool : 9,
               tests : [
-                em_real0, em_real1, em_realA, em_realB, em_realC, em_realD, em_realE, em_realF, em_realG
+                em_real0, em_real1, em_real2, em_real3, em_realA, em_realB, em_realC, em_realD, em_realE
+                ]
+            }
+          - { 
+              host : cheyenne,
+              account : NMMM0012,
+              name : "em_real G-L Tests",
+              fileroot : wrf_em_real_tests,
+              args : -j="-l select=1" -m "TEST em_realSet PASS",
+              pool : 6,
+              tests : [
+                em_realF, em_realG, em_realH, em_realI, em_realJ, em_realK, em_realL
                 ]
             }
     # Is 5 days a reasonable wait time for testing?
@@ -95,6 +106,15 @@ jobs:
       if : ${{ failure() }}
       run : |
         ./main/hpc-workflows/.ci/reporter.py ./main/${{ matrix.testSet.fileroot }}.log
+    
+    - name: Clean up testing directories
+      if : ${{ success() }}
+      id  : rmTestDirs
+      run : |
+        for testDir in ${{ join( matrix.testSet.tests, ' ' ) }}; do
+          echo "Removing duplicate directory for $testDir"
+          rm -rf $testDir
+        done
 
   # Since this a new job, the token should be fine, per the documentation:
   # https://docs.github.com/en/actions/security-guides/automatic-token-authentication#about-the-github_token-secret

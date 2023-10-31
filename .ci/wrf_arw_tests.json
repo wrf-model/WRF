@@ -99,7 +99,7 @@
       "serial" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "1", "-b", "em_real -j 6" ]
+        "arguments"    : [ "-c", "5", "-b", "em_real -j 6" ]
       },
       "sm" :
       {

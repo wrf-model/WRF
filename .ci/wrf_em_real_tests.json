@@ -2,7 +2,7 @@
   "submit_options" :
   {
     "queue"     : "economy",
-    "timelimit" : "00:15:00",
+    "timelimit" : "00:20:00",
     "arguments" : 
     {
       ".*build.*::args_nesting"     : [ "-n", "1" ],
@@ -623,7 +623,7 @@
   },
   "em_realF" :
   {
-    "timelimit" : "00:30:00",
+    "timelimit" : "00:40:00",
     "submit_options" :
     {
       "arguments" :
@@ -959,7 +959,7 @@
   },
   "em_realL0" :
   {
-    "timelimit" : "00:25:00",
+    "timelimit" : "00:30:00",
     "submit_options" :
     {
       "arguments" :
@@ -1018,7 +1018,7 @@
   },
   "em_realL1" :
   {
-    "timelimit" : "00:25:00",
+    "timelimit" : "00:30:00",
     "submit_options" :
     {
       "arguments" :
@@ -1077,7 +1077,7 @@
   },
   "em_realL2" :
   {
-    "timelimit" : "00:25:00",
+    "timelimit" : "00:30:00",
     "submit_options" :
     {
       "arguments" :

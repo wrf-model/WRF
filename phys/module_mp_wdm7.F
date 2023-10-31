@@ -2398,7 +2398,7 @@ CONTAINS
 !
    qc0  = 4./3.*pi*denr*r0**3.*xncr0/den0
    qc1  = 4./3.*pi*denr*r0**3.*xncr1/den0
-   qck1 = .104*9.8*peaut/(denr)**(1./3.)/xmyu*den0**(4./3.) ! 7.03
+   qck1 = .104*9.8*peaut/(denr)**(1./3.)/xmyu*den0**(4./3.) ! 4706.08203
    pidnc = pi*denr/6.
 !
    bvtr1 = 1.+bvtr

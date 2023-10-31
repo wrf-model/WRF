@@ -63,9 +63,9 @@ jobs:
               name : "em_real G-L Tests",
               fileroot : wrf_em_real_tests,
               args : -j="-l select=1" -m "TEST em_realSet PASS",
-              pool : 8,
+              pool : 9,
               tests : [
-                em_realF, em_realG, em_realH, em_realI, em_realJ, em_realK, em_realL0, em_realL1
+                em_realF, em_realG, em_realH, em_realI, em_realJ, em_realK, em_realL0, em_realL1, em_realL2,
                 ]
             }
     # Is 5 days a reasonable wait time for testing?

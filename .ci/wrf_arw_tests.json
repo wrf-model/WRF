@@ -99,12 +99,12 @@
       "serial" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "5", "-b", "em_real -j 6" ]
+        "arguments"    : [ "-c", "1", "-b", "em_real -j 6" ]
       },
       "sm" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "6", "-b", "em_real -j 6" ],
+        "arguments"    : [ "-c", "2", "-b", "em_real -j 6" ],
         "dependencies" : { "serial" : "afterany" }
       }
     }
@@ -116,12 +116,12 @@
       "dm" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "7", "-b", "em_real -j 6" ]
+        "arguments"    : [ "-c", "3", "-b", "em_real -j 6" ]
       },
       "dm+sm" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "8", "-b", "em_real -j 6" ],
+        "arguments"    : [ "-c", "4", "-b", "em_real -j 6" ],
         "dependencies" : { "dm" : "afterany" }
       }
     }

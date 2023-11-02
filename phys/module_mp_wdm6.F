@@ -592,14 +592,6 @@
        dend(i,k) = den(i,k)
      enddo
    enddo
-
-   do k = kts,kte
-     do i = its,ite 
-       if(qci(i,k,1).gt.qcrmin.and.ncr(i,k,2).le.ncmin) then
-         ncr(i,k,2) = xncr
-       endif 
-     enddo  
-   enddo
 !
 !  latent heat for phase changes and heat capacity. neglect the
 !  changes during microphysical process calculation
@@ -1177,7 +1169,7 @@
          lencon  = 2.7e-2*den(i,k)*qci(i,k,1)*(1.e20/16.*rslopec2(i,k)         &
                   *rslopec2(i,k)-0.4)
          lenconcr = max(1.2*lencon, qcrmin)
-         if(qci(i,k,1).gt.qcr(i,k)) then
+         if(qci(i,k,1).gt.qcr(i,k).and.ncr(i,k,2).gt.ncmin) then
            praut(i,k) = qck1*qci(i,k,1)**(7./3.)*ncr(i,k,2)**(-1./3.)
            praut(i,k) = min(praut(i,k),qci(i,k,1)/dtcld)
 !----------------------------------------------------------------------

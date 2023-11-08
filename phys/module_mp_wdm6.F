@@ -932,8 +932,7 @@
               pgmlt(i,k) = xka(t(i,k),den(i,k))/xlf*(t0c-t(i,k))*(precg1     &
                            *rslope2(i,k,3) + precg2*work2(i,k)*coeres)       &
                            /den(i,k)                                          
-              pgmlt(i,k) = min(max(pgmlt(i,k)*dtcld/mstep(i),                &
-                          -qrs(i,k,3)/mstep(i)),0.)
+              pgmlt(i,k) = min(max(pgmlt(i,k)*dtcld,-qrs(i,k,3)),0.)
 !-------------------------------------------------------------------
 ! ngmlt: melting of graupel [LH A28]
 !       (T>T0: ->NR)

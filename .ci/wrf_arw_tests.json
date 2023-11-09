@@ -17,6 +17,20 @@
 
       }
     },
+    "derecho"  :
+    {
+      "submission" : "PBS",
+      "resources"  : "-l select=1:ncpus=8",
+      "arguments"  : 
+      {
+        "very_last_modules"       : [ "netcdf", "cmake/3.22.0" ],
+        ".*gnu.*::test_modules"   : [ "gcc" ],
+        ".*intel.*::test_modules" : [ "intel-classic" ],
+        ".*pgi.*::test_modules"   : [ "nvhpc" ],
+        ".*dm.*::test_mpi_module" : [ "cray-mpich" ]
+
+      }
+    },
     "polaris" :
     {
       "submission" : "LOCAL"

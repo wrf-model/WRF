@@ -387,7 +387,7 @@
 !        ==> Revisions enchance melting and autoconverison.
 !           hong from noaa, july2023 
 !        remedy for tiny nc in the presence of qc (nc = xncr, 300/cm**3)
-!        ==> prevents the crashed in computing autoconversion
+!        ==> prevents the crash in computing autoconversion
 !           hong from noaa, july2023
 !
 !  history log :

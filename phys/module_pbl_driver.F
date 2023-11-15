@@ -4,7 +4,7 @@
 MODULE module_pbl_driver
   real, private, parameter :: QCLOUD_MIN = 0.0
   real, private, parameter :: QVAPOR_MIN = 0.0
-  real, private, parameter :: QKE_MIN = 1.e-4
+  real, private, parameter :: QKE_MIN = 1.e-5
 CONTAINS
 
 !------------------------------------------------------------------

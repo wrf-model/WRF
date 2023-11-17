@@ -1123,9 +1123,10 @@ state   real   sub_thl3D       ikj     misc        1         -      h         "s
 state   real   sub_sqv3D       ikj     misc        1         -      h         "sub_sqv3D"        "qv subsidence tendency from EDMF" "kg kg-1 s-1"
 state   real   det_thl3D       ikj     misc        1         -      h         "det_thl3D"        "thetaL detrainment tendency from EDMF" "K s-1"
 state   real   det_sqv3D       ikj     misc        1         -      h         "det_sqv3D"        "qv detrainment tendency from EDMF" "kg kg-1 s-1"
-state   integer  nupdraft       ij     misc        1         -      h         "nupdraft"         "Number of updrafts per grid cell"  ""
 state   integer  ktop_plume     ij     misc        1         -      h         "ktop_plume"       "k-level of highest pentrating plume"    ""
 state   real   maxMF            ij     misc        1         -      h         "maxMF"            "Maximum mass-flux (neg: all dry, pos: moist)"   "m/s * area"
+state   real   maxwidth         ij     misc        1         -      h         "maxwidth"         "Maximum plume width"   "m"
+state   real   ztop_plume       ij     misc        1         -      h         "ztop_plume"       "Height of tallest plume"   "m"
 
 #FogDES variables
 state   real   fgdp             ij     misc        1         -      -        "fgdp"                "Accumulated fog deposition"    "mm"
@@ -3133,7 +3134,7 @@ package   kepsscheme     bl_pbl_physics==17          -             scalar:tke_ad
 package   mrfscheme      bl_pbl_physics==99          -             -
 
 package   tkebudget      tke_budget==1               -             state:qSHEAR,qBUOY,qDISS,qWT,dqke
-package   mynn_dmp_edmf  bl_mynn_edmf==1             -             state:ktop_plume,maxmf,nupdraft
+package   mynn_dmp_edmf  bl_mynn_edmf==1             -             state:ktop_plume,ztop_plume,maxmf,maxwidth
 package   mynn_3Doutput  bl_mynn_output==1           -             state:edmf_a,edmf_w,edmf_thl,edmf_qt,edmf_ent,edmf_qc,sub_thl3D,sub_sqv3D,det_thl3D,det_sqv3D
 package   pbl_cloud      icloud_bl==1                -             state:cldfra_bl,qc_bl,qi_bl
 

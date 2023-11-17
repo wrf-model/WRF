@@ -18,7 +18,7 @@
 ! For CCPP:
 !  use machine,  only : kind_phys
 ! For WRF
-  use module_gfs_machine,  only : kind_phys
+!  use module_gfs_machine,  only : kind_phys
 
 !WRF CONSTANTS
   use module_model_constants, only:         &
@@ -57,31 +57,35 @@
 ! real:: rvovrd       != r_v/r_d != 1.608
 
 ! Specified locally
- real,parameter:: zero   = 0.0
- real,parameter:: half   = 0.5
- real,parameter:: one    = 1.0
- real,parameter:: two    = 2.0
- real,parameter:: onethird  = 1./3.
- real,parameter:: twothirds = 2./3.
- real,parameter:: tref  = 300.0   ! reference temperature (K)
- real,parameter:: TKmin = 253.0   ! for total water conversion, Tripoli and Cotton (1981)
-! real,parameter:: p1000mb=100000.0
-! real,parameter:: svp1  = 0.6112 !(kPa)
-! real,parameter:: svp2  = 17.67  !(dimensionless)
-! real,parameter:: svp3  = 29.65  !(K)
- real,parameter:: tice  = 240.0  !-33 (C), temp at saturation w.r.t. ice
- real,parameter:: grav  = g
- real,parameter:: t0c   = svpt0        != 273.15
+! Define single & double precision
+ integer, parameter :: sp = selected_real_kind(6, 37)
+ integer, parameter :: dp = selected_real_kind(15, 307)
+ integer, parameter :: kind_phys = selected_real_kind(6, 37)
+ real(kind_phys),parameter:: zero   = 0.0
+ real(kind_phys),parameter:: half   = 0.5
+ real(kind_phys),parameter:: one    = 1.0
+ real(kind_phys),parameter:: two    = 2.0
+ real(kind_phys),parameter:: onethird  = 1./3.
+ real(kind_phys),parameter:: twothirds = 2./3.
+ real(kind_phys),parameter:: tref  = 300.0   ! reference temperature (K)
+ real(kind_phys),parameter:: TKmin = 253.0   ! for total water conversion, Tripoli and Cotton (1981)
+! real(kind_phys),parameter:: p1000mb=100000.0
+! real(kind_phys),parameter:: svp1  = 0.6112 !(kPa)
+! real(kind_phys),parameter:: svp2  = 17.67  !(dimensionless)
+! real(kind_phys),parameter:: svp3  = 29.65  !(K)
+ real(kind_phys),parameter:: tice  = 240.0  !-33 (C), temp at saturation w.r.t. ice
+ real(kind_phys),parameter:: grav  = g
+ real(kind_phys),parameter:: t0c   = svpt0        != 273.15
 
 ! To be derived in the init routine
- real,parameter:: ep_3   = 1.-ep_2 != 0.378
- real,parameter:: gtr    = grav/tref
- real,parameter:: rk     = cp/r_d
- real,parameter:: tv0    =  p608*tref
- real,parameter:: tv1    = (1.+p608)*tref
- real,parameter:: xlscp  = (xlv+xlf)/cp
- real,parameter:: xlvcp  = xlv/cp
- real,parameter:: g_inv  = 1./grav
+ real(kind_phys),parameter:: ep_3   = 1.-ep_2 != 0.378
+ real(kind_phys),parameter:: gtr    = grav/tref
+ real(kind_phys),parameter:: rk     = cp/r_d
+ real(kind_phys),parameter:: tv0    =  p608*tref
+ real(kind_phys),parameter:: tv1    = (1.+p608)*tref
+ real(kind_phys),parameter:: xlscp  = (xlv+xlf)/cp
+ real(kind_phys),parameter:: xlvcp  = xlv/cp
+ real(kind_phys),parameter:: g_inv  = 1./grav
 
 ! grav   = g
 ! t0c    = svpt0        != 273.15

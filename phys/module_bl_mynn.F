@@ -250,7 +250,7 @@
 
 MODULE module_bl_mynn
 
-  use module_bl_mynn_common,only: &
+  use module_bl_mynn_common,only:                        &
         cp        , cpv       , cliq       , cice      , &
         p608      , ep_2      , ep_3       , gtr       , &
         grav      , g_inv     , karman     , p1000mb   , &
@@ -319,8 +319,7 @@ MODULE module_bl_mynn
   real(kind_phys), parameter :: CKmod=1.
 
   !>Use Ito et al. (2015, BLM) scale-aware (0: no, 1: yes). Note that this also has impacts
-  !!on the cloud PDF and mass-flux scheme, using Honnert et al. (2011) similarity function
-  !!for TKE in the upper PBL/cloud layer.
+  !!on the cloud PDF and mass-flux scheme, using LES-derived similarity function.
   real(kind_phys), parameter :: scaleaware=1.
 
   !>Of the following the options, use one OR the other, not both.

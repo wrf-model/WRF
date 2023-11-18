@@ -240,9 +240,9 @@ SUBROUTINE mynnedmf_wrapper_run(                 &
      &        kpbl,ktop_plume
 
 !Local
-      real(kind_phys), dimension(ims:ime,kms:kme)         :: delp,sqv,sqc,sqi,sqs
+      real(kind_phys), dimension(ims:ime,kms:kme)         :: delp,sqv,sqc,sqi,sqs,ikzero
       real(kind_phys), dimension(ims:ime)                 :: dx
-      logical, parameter                       :: debug = .false.
+      logical, parameter                                  :: debug = .false.
       real(kind_phys), dimension(ims:ime,kms:kme,jms:jme) :: ozone,rO3blten
 
    !write(0,*)"=============================================="
@@ -257,6 +257,7 @@ SUBROUTINE mynnedmf_wrapper_run(                 &
    !For now, initialized bogus array
    ozone=0.0
    rO3blten=0.0
+   ikzero=0.0
 
    !Allocate any arrays being used
    if (icloud_bl > 0) then
@@ -533,7 +534,7 @@ SUBROUTINE mynnedmf_wrapper_run(                 &
      &        RTHBLTEN=RTHBLTEN(:,:,j),RQVBLTEN=RQVBLTEN(:,:,j),       & !output
      &        RQCBLTEN=rqcblten(:,:,j),RQIBLTEN=rqiblten(:,:,j),       & !output
      &        RQNCBLTEN=rqncblten(:,:,j),RQNIBLTEN=rqniblten(:,:,j),   & !output
-     &        RQSBLTEN=rqsblten(:,:,j),                                & !output
+     &        RQSBLTEN=ikzero,                                         & !there is no RQSBLTEN, so use dummy arary
      &        RQNWFABLTEN=RQNWFABLTEN(:,:,j),                          & !output
      &        RQNIFABLTEN=RQNIFABLTEN(:,:,j),                          & !output
      &        RQNBCABLTEN=RQNBCABLTEN(:,:,j),                          & !output
@@ -582,7 +583,7 @@ SUBROUTINE mynnedmf_wrapper_run(                 &
            RQIBLTEN(i,k,j) = RQIBLTEN(i,k,j)/(1.0 - sqv(i,k))
         enddo
       enddo
-      if (flag_qs) then
+      if (.false.) then !as of now, there is no RQSBLTEN in WRF
         do k=kts,ktf
           do i=its,itf
             RQSBLTEN(i,k,j) = RQSBLTEN(i,k,j)/(1.0 - sqv(i,k))

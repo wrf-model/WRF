@@ -1,7 +1,7 @@
 !WRF:MEDIATION_LAYER:PHYSICS
 !
 MODULE module_surface_driver
-  real, private, parameter :: QVAPOR_MIN = 0.0, SMOIS_MIN = 0.0, SMOIS_MAX = 1.0
+  real, private, parameter :: QVAPOR_MIN = 0.0, SMOIS_MIN = 0.0, SMOIS_MAX = 2.0
 CONTAINS
 
    SUBROUTINE surface_driver(                                         &

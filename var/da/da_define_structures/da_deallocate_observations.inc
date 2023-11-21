@@ -157,6 +157,15 @@ subroutine da_deallocate_observations (iv)
       deallocate (iv%radar)
    end if
 
+   if (iv%info(lightning)%nlocal > 0) then
+      do n = 1, iv%info(lightning)%nlocal
+         deallocate (iv%lightning(n) % w)
+         deallocate (iv%lightning(n) % div)
+         deallocate (iv%lightning(n) % qv)
+      end do
+      deallocate (iv%lightning)
+   end if
+
    if (iv%info(rain)%nlocal > 0) deallocate (iv%rain)
    if (iv%info(gpspw)%nlocal > 0) deallocate (iv%gpspw)
 

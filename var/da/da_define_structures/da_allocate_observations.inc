@@ -36,6 +36,7 @@ subroutine da_allocate_observations (iv)
    if (iv%info(profiler)%nlocal  > 0) allocate(iv%profiler (1:iv%info(profiler)%nlocal))
    if (iv%info(buoy)%nlocal      > 0) allocate(iv%buoy     (1:iv%info(buoy)%nlocal))
    if (iv%info(radar)%nlocal     > 0) allocate(iv%radar    (1:iv%info(radar)%nlocal))
+   if (iv%info(lightning)%nlocal > 0) allocate(iv%lightning(1:iv%info(lightning)%nlocal))
    if (iv%info(bogus)%nlocal     > 0) allocate(iv%bogus    (1:iv%info(bogus)%nlocal))
    if (iv%info(airsr)%nlocal     > 0) allocate(iv%airsr    (1:iv%info(airsr)%nlocal))
 

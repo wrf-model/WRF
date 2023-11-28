@@ -304,12 +304,12 @@ DESCRIPTION     =       INTEL ($SFC/$SCC)
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -qopenmp -fpp -auto
-OMPCC           =       # -qopenmp -fpp -auto
-SFC             =       ifort
-SCC             =       icc
-CCOMP           =       icc
-DM_FC           =       mpif90 -f90=$(SFC)
-DM_CC           =       mpicc -cc=$(SCC)
+OMPCC           =       # -qopenmp
+SFC             =       ifx # ifort
+SCC             =       icx # icc
+CCOMP           =       icx # icc
+DM_FC           =       mpiifx #mpif90 -f90=$(SFC)
+DM_CC           =       mpiicx #mpicc -cc=$(SCC)
 FC              =       CONFIGURE_FC
 CC              =       CONFIGURE_CC
 LD              =       $(FC)

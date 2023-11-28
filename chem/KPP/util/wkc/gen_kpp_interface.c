@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 
 
 #include "protos.h"
@@ -7,7 +8,7 @@
 
 
 
-int
+void
 gen_kpp_interface ( )
 {
 knode_t * p1, * p2, * pm1;

@@ -62,6 +62,111 @@
   in ~WRF:  chem/KPP/util/wkc/registry_kpp Registry/Registry          */
 
 
+void
+write_list_to_screen ( knode_t * starting_point )
+{
+knode_t * l1, * l2;
+ for ( l1 = starting_point  ; l1 != NULL ; l1 = l1->next )
+  {
+    fprintf(stderr,"-- Mechanism  %s   ----- \n", l1->name);
+         for ( l2 =  l1->members ; l2 != NULL ; l2 = l2->next )
+     {
+       fprintf(stderr,"%s ", l2->name);
+       } 
+  fprintf(stderr," \n \n ");
+  }
+}
+
+/*---------------------------------------------------------------------*/
+void
+screen_out ( )
+{
+knode_t * p1, * p2, * pm1;
+int count;
+
+ count=0;
+
+   for ( p1 =   KPP_packs  ; p1 != NULL ; p1 = p1->next ) {
+ 
+     /* fprintf(stderr, "KPP PACK:  %s \n", p1->name); */
+
+     p2 = p1->assoc_wrf_pack;
+     if ( p2 ) {
+     fprintf(stderr, "MATCHING PACK:  %s_kpp \n", p2->name);
+     count =count+1;
+          for ( pm1 = p1 -> members;  pm1 != NULL ; pm1 = pm1->next ) {
+         
+		 if ( pm1 -> found_match == 1 ) {
+                  
+         	    if ( pm1 -> is_radical  == 1 ) {
+		      if ( DEBUGR == 2 ) {
+                         fprintf(stderr, " 1 found (radical) %s %s  \n", pm1->name, pm1 -> assoc_wrf_name );
+		      }
+                    
+                    } else{
+		      if ( DEBUGR == 2 ){
+		       fprintf(stderr, " 1 found %s %s  \n", pm1->name, pm1 -> assoc_wrf_name );
+                      }
+		    }
+		 } 
+                 else if ( pm1 -> found_match == 2 ) {
+                  fprintf(stderr, " 1 found (special) %s %s  \n", pm1->name, pm1 -> assoc_wrf_name );
+                 }
+                 else {
+                fprintf(stderr, " 0 NOT found %s   \n", pm1->name );
+                /* exit (0); */
+		 }
+                
+          }
+
+     }
+
+     /* if ( count == 0 ) {
+       fprintf(stderr, " DIDN'T FIND ANY matching packages     \n");
+       fprintf(stderr, "    .. add packages to Registry and to chem/KPP/mechanisms     \n");
+       exit (0);
+       } */
+
+
+   }
+
+  
+
+}
+
+/*---------------------------------------------------------------------*/
+void
+check_all( char* kpp_dirname )
+{
+knode_t * p1, * p2, * pm1;
+   for ( p1 =   KPP_packs  ; p1 != NULL ; p1 = p1->next ) {
+     p2 = p1->assoc_wrf_pack;
+     if ( p2 ) {
+
+          for ( pm1 = p1 -> members;  pm1 != NULL ; pm1 = pm1->next ) {
+         
+		 if ( pm1 -> found_match < 1 ) {
+
+
+                fprintf(stderr, "\n FATAL ERROR MAPPING WRF TO KPP SPECIES FOR MECHANISM: %s \n", p2->name  );
+                fprintf(stderr, " variable %s NOT FOUND   \n", pm1->name );
+                fprintf(stderr, " Please check: \n");
+                fprintf(stderr, "    (a) the Registry \n");
+                fprintf(stderr, "    (b) ./%s/%s/%s.spc\n", kpp_dirname, p2->name, p2->name);
+                fprintf(stderr, "         and  ./%s/%s/%s_wrfkpp.equiv (if present)  \n",kpp_dirname, p2->name, p2->name);
+                fprintf(stderr, " EXITING  \n");
+                exit(1);
+                
+               }
+	  }
+            
+     }
+   }
+}
+
+
+
+/*---------------------------------------------------------------------*/
 int
 gen_kpp ( char * inc_dirname, char * kpp_dirname )
 {
@@ -153,107 +258,3 @@ gen_kpp ( char * inc_dirname, char * kpp_dirname )
   return(0) ;
 }
 
-
-
-
-/*---------------------------------------------------------------------*/
-int
-write_list_to_screen ( knode_t * starting_point )
-{
-knode_t * l1, * l2;
- for ( l1 = starting_point  ; l1 != NULL ; l1 = l1->next )
-  {
-    fprintf(stderr,"-- Mechanism  %s   ----- \n", l1->name);
-         for ( l2 =  l1->members ; l2 != NULL ; l2 = l2->next )
-     {
-       fprintf(stderr,"%s ", l2->name);
-       } 
-  fprintf(stderr," \n \n ");
-  }
-}
-
-/*---------------------------------------------------------------------*/
-int
-screen_out ( )
-{
-knode_t * p1, * p2, * pm1;
-int count;
-
- count=0;
-
-   for ( p1 =   KPP_packs  ; p1 != NULL ; p1 = p1->next ) {
- 
-     /* fprintf(stderr, "KPP PACK:  %s \n", p1->name); */
-
-     p2 = p1->assoc_wrf_pack;
-     if ( p2 ) {
-     fprintf(stderr, "MATCHING PACK:  %s_kpp \n", p2->name);
-     count =count+1;
-          for ( pm1 = p1 -> members;  pm1 != NULL ; pm1 = pm1->next ) {
-         
-		 if ( pm1 -> found_match == 1 ) {
-                  
-         	    if ( pm1 -> is_radical  == 1 ) {
-		      if ( DEBUGR == 2 ) {
-                         fprintf(stderr, " 1 found (radical) %s %s  \n", pm1->name, pm1 -> assoc_wrf_name );
-		      }
-                    
-                    } else{
-		      if ( DEBUGR == 2 ){
-		       fprintf(stderr, " 1 found %s %s  \n", pm1->name, pm1 -> assoc_wrf_name );
-                      }
-		    }
-		 } 
-                 else if ( pm1 -> found_match == 2 ) {
-                  fprintf(stderr, " 1 found (special) %s %s  \n", pm1->name, pm1 -> assoc_wrf_name );
-                 }
-                 else {
-                fprintf(stderr, " 0 NOT found %s   \n", pm1->name );
-                /* exit (0); */
-		 }
-                
-          }
-
-     }
-
-     /* if ( count == 0 ) {
-       fprintf(stderr, " DIDN'T FIND ANY matching packages     \n");
-       fprintf(stderr, "    .. add packages to Registry and to chem/KPP/mechanisms     \n");
-       exit (0);
-       } */
-
-
-   }
-
-  
-
-}
-/*---------------------------------------------------------------------*/
-int
-check_all( char* kpp_dirname )
-{
-knode_t * p1, * p2, * pm1;
-   for ( p1 =   KPP_packs  ; p1 != NULL ; p1 = p1->next ) {
-     p2 = p1->assoc_wrf_pack;
-     if ( p2 ) {
-
-          for ( pm1 = p1 -> members;  pm1 != NULL ; pm1 = pm1->next ) {
-         
-		 if ( pm1 -> found_match < 1 ) {
-
-
-                fprintf(stderr, "\n FATAL ERROR MAPPING WRF TO KPP SPECIES FOR MECHANISM: %s \n", p2->name  );
-                fprintf(stderr, " variable %s NOT FOUND   \n", pm1->name );
-                fprintf(stderr, " Please check: \n");
-                fprintf(stderr, "    (a) the Registry \n");
-                fprintf(stderr, "    (b) ./%s/%s/%s.spc\n", kpp_dirname, p2->name, p2->name);
-                fprintf(stderr, "         and  ./%s/%s/%s_wrfkpp.equiv (if present)  \n",kpp_dirname, p2->name, p2->name);
-                fprintf(stderr, " EXITING  \n");
-                exit(1);
-                
-               }
-	  }
-            
-     }
-   }
-}

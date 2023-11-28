@@ -4,6 +4,10 @@
  
 #ifdef _WIN32
 #include <io.h>
+#include <strings.h> 
+#else 
+#include <unistd.h>
+#include <string.h> 
 #endif
 
 #ifndef CRAY

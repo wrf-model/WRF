@@ -24,7 +24,7 @@
 
       }
     },
-    "derecho"  :
+    "hsn.de.hpc"  :
     {
       "submission" : "PBS",
       "queue"      : "main",
@@ -102,7 +102,11 @@
   },
   "intel-mpi" :
   {
-    "submit_options" : { "cheyenne" : { "timelimit" : "01:00:00" } },
+    "submit_options" :
+    { 
+      "cheyenne" : { "timelimit" : "01:00:00" },
+      "hsn.de.hpc" : { "timelimit" : "00:45:00" }
+    },
     "steps" :
     {
       "dm" :

@@ -1,7 +1,6 @@
 {
   "submit_options" :
   {
-    "queue"     : "economy",
     "timelimit" : "00:20:00",
     "arguments" : 
     {
@@ -39,6 +38,7 @@
     "cheyenne"  :
     {
       "submission" : "PBS",
+      "queue"     : "economy",
       "resources"  : "-l select=1:ncpus=4",
       "arguments"  : 
       {
@@ -51,10 +51,12 @@
         ".*mpi.*::mpi_module" : [ "openmpi/4.0.3" ]
       }
     },
-    "derecho"  :
+    "hsn.de.hpc"  :
     {
       "submission" : "PBS",
-      "resources"  : "-l select=1:ncpus=8",
+      "queue"      : "main",
+      "resources"  : "-l select=1:ncpus=8 -l job_priority=economy",
+      "timelimit" : "00:10:00",
       "arguments"  : 
       {
         "base_env_numprocs"          : [ "-e", "NUM_PROCS=8" ],
@@ -92,7 +94,7 @@
       {
         "submit_options" : {
                             "cheyenne" : { "resources" : "-l select=1:ncpus=1" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=1" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=1 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-serial" : "afterok" }
@@ -106,7 +108,7 @@
       {
         "submit_options" : { 
                             "cheyenne" : { "resources" : "-l select=1:ncpus=4:ompthreads=4" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=8:ompthreads=8" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=8:ompthreads=8 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-omp" : "afterok" }
@@ -120,7 +122,7 @@
       {
         "submit_options" : { 
                             "cheyenne" : { "resources" : "-l select=1:ncpus=4:mpiprocs=4" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=8:mpiprocs=8" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=8:mpiprocs=8 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-mpi" : "afterok" }
@@ -151,7 +153,7 @@
       {
         "submit_options" : {
                             "cheyenne" : { "resources" : "-l select=1:ncpus=1" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=1" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=1 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-serial" : "afterok" }
@@ -165,7 +167,7 @@
       {
         "submit_options" : { 
                             "cheyenne" : { "resources" : "-l select=1:ncpus=4:ompthreads=4" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=8:ompthreads=8" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=8:ompthreads=8 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-omp" : "afterok" }
@@ -179,7 +181,7 @@
       {
         "submit_options" : { 
                             "cheyenne" : { "resources" : "-l select=1:ncpus=4:mpiprocs=4" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=8:mpiprocs=8" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=8:mpiprocs=8 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-mpi" : "afterok" }
@@ -209,7 +211,7 @@
       {
         "submit_options" : {
                             "cheyenne" : { "resources" : "-l select=1:ncpus=1" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=1" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=1 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-serial" : "afterok" }
@@ -223,7 +225,7 @@
       {
         "submit_options" : { 
                             "cheyenne" : { "resources" : "-l select=1:ncpus=4:ompthreads=4" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=8:ompthreads=8" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=8:ompthreads=8 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-omp" : "afterok" }
@@ -237,7 +239,7 @@
       {
         "submit_options" : { 
                             "cheyenne" : { "resources" : "-l select=1:ncpus=4:mpiprocs=4" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=8:mpiprocs=8" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=8:mpiprocs=8 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-mpi" : "afterok" }
@@ -267,7 +269,7 @@
       {
         "submit_options" : {
                             "cheyenne" : { "resources" : "-l select=1:ncpus=1" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=1" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=1 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-serial" : "afterok" }
@@ -281,7 +283,7 @@
       {
         "submit_options" : { 
                             "cheyenne" : { "resources" : "-l select=1:ncpus=4:ompthreads=4" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=8:ompthreads=8" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=8:ompthreads=8 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-omp" : "afterok" }
@@ -295,7 +297,7 @@
       {
         "submit_options" : { 
                             "cheyenne" : { "resources" : "-l select=1:ncpus=4:mpiprocs=4" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=8:mpiprocs=8" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=8:mpiprocs=8 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-mpi" : "afterok" }
@@ -326,7 +328,7 @@
       {
         "submit_options" : {
                             "cheyenne" : { "resources" : "-l select=1:ncpus=1" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=1" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=1 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-serial" : "afterok" }
@@ -340,7 +342,7 @@
       {
         "submit_options" : { 
                             "cheyenne" : { "resources" : "-l select=1:ncpus=4:ompthreads=4" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=8:ompthreads=8" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=8:ompthreads=8 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-omp" : "afterok" }
@@ -354,7 +356,7 @@
       {
         "submit_options" : { 
                             "cheyenne" : { "resources" : "-l select=1:ncpus=4:mpiprocs=4" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=8:mpiprocs=8" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=8:mpiprocs=8 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-mpi" : "afterok" }
@@ -384,7 +386,7 @@
       {
         "submit_options" : {
                             "cheyenne" : { "resources" : "-l select=1:ncpus=1" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=1" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=1 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-serial" : "afterok" }
@@ -398,7 +400,7 @@
       {
         "submit_options" : { 
                             "cheyenne" : { "resources" : "-l select=1:ncpus=4:ompthreads=4" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=8:ompthreads=8" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=8:ompthreads=8 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-omp" : "afterok" }
@@ -412,7 +414,7 @@
       {
         "submit_options" : { 
                             "cheyenne" : { "resources" : "-l select=1:ncpus=4:mpiprocs=4" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=8:mpiprocs=8" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=8:mpiprocs=8 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-mpi" : "afterok" }
@@ -442,7 +444,7 @@
       {
         "submit_options" : {
                             "cheyenne" : { "resources" : "-l select=1:ncpus=1" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=1" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=1 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-serial" : "afterok" }
@@ -456,7 +458,7 @@
       {
         "submit_options" : { 
                             "cheyenne" : { "resources" : "-l select=1:ncpus=4:ompthreads=4" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=8:ompthreads=8" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=8:ompthreads=8 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-omp" : "afterok" }
@@ -470,7 +472,7 @@
       {
         "submit_options" : { 
                             "cheyenne" : { "resources" : "-l select=1:ncpus=4:mpiprocs=4" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=8:mpiprocs=8" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=8:mpiprocs=8 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-mpi" : "afterok" }
@@ -500,7 +502,7 @@
       {
         "submit_options" : {
                             "cheyenne" : { "resources" : "-l select=1:ncpus=1" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=1" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=1 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-serial" : "afterok" }
@@ -514,7 +516,7 @@
       {
         "submit_options" : { 
                             "cheyenne" : { "resources" : "-l select=1:ncpus=4:ompthreads=4" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=8:ompthreads=8" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=8:ompthreads=8 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-omp" : "afterok" }
@@ -528,7 +530,7 @@
       {
         "submit_options" : { 
                             "cheyenne" : { "resources" : "-l select=1:ncpus=4:mpiprocs=4" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=8:mpiprocs=8" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=8:mpiprocs=8 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-mpi" : "afterok" }
@@ -558,7 +560,7 @@
       {
         "submit_options" : {
                             "cheyenne" : { "resources" : "-l select=1:ncpus=1" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=1" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=1 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-serial" : "afterok" }
@@ -572,7 +574,7 @@
       {
         "submit_options" : { 
                             "cheyenne" : { "resources" : "-l select=1:ncpus=4:ompthreads=4" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=8:ompthreads=8" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=8:ompthreads=8 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-omp" : "afterok" }
@@ -586,7 +588,7 @@
       {
         "submit_options" : { 
                             "cheyenne" : { "resources" : "-l select=1:ncpus=4:mpiprocs=4" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=8:mpiprocs=8" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=8:mpiprocs=8 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-mpi" : "afterok" }
@@ -616,7 +618,7 @@
       {
         "submit_options" : {
                             "cheyenne" : { "resources" : "-l select=1:ncpus=1" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=1" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=1 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-serial" : "afterok" }
@@ -630,7 +632,7 @@
       {
         "submit_options" : { 
                             "cheyenne" : { "resources" : "-l select=1:ncpus=4:ompthreads=4" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=8:ompthreads=8" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=8:ompthreads=8 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-omp" : "afterok" }
@@ -644,7 +646,7 @@
       {
         "submit_options" : { 
                             "cheyenne" : { "resources" : "-l select=1:ncpus=4:mpiprocs=4" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=8:mpiprocs=8" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=8:mpiprocs=8 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-mpi" : "afterok" }
@@ -675,7 +677,7 @@
       {
         "submit_options" : {
                             "cheyenne" : { "resources" : "-l select=1:ncpus=1" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=1" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=1 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-serial" : "afterok" }
@@ -689,7 +691,7 @@
       {
         "submit_options" : { 
                             "cheyenne" : { "resources" : "-l select=1:ncpus=4:ompthreads=4" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=8:ompthreads=8" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=8:ompthreads=8 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-omp" : "afterok" }
@@ -703,7 +705,7 @@
       {
         "submit_options" : { 
                             "cheyenne" : { "resources" : "-l select=1:ncpus=4:mpiprocs=4" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=8:mpiprocs=8" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=8:mpiprocs=8 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-mpi" : "afterok" }
@@ -733,7 +735,7 @@
       {
         "submit_options" : {
                             "cheyenne" : { "resources" : "-l select=1:ncpus=1" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=1" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=1 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-serial" : "afterok" }
@@ -747,7 +749,7 @@
       {
         "submit_options" : { 
                             "cheyenne" : { "resources" : "-l select=1:ncpus=4:ompthreads=4" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=8:ompthreads=8" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=8:ompthreads=8 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-omp" : "afterok" }
@@ -761,7 +763,7 @@
       {
         "submit_options" : { 
                             "cheyenne" : { "resources" : "-l select=1:ncpus=4:mpiprocs=4" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=8:mpiprocs=8" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=8:mpiprocs=8 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-mpi" : "afterok" }
@@ -791,7 +793,7 @@
       {
         "submit_options" : {
                             "cheyenne" : { "resources" : "-l select=1:ncpus=1" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=1" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=1 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-serial" : "afterok" }
@@ -805,7 +807,7 @@
       {
         "submit_options" : { 
                             "cheyenne" : { "resources" : "-l select=1:ncpus=4:mpiprocs=4" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=8:mpiprocs=8" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=8:mpiprocs=8 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-mpi" : "afterok" }
@@ -835,7 +837,7 @@
       {
         "submit_options" : {
                             "cheyenne" : { "resources" : "-l select=1:ncpus=1" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=1" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=1 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-serial" : "afterok" }
@@ -849,7 +851,7 @@
       {
         "submit_options" : { 
                             "cheyenne" : { "resources" : "-l select=1:ncpus=4:ompthreads=4" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=8:ompthreads=8" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=8:ompthreads=8 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-omp" : "afterok" }
@@ -863,7 +865,7 @@
       {
         "submit_options" : { 
                             "cheyenne" : { "resources" : "-l select=1:ncpus=4:mpiprocs=4" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=8:mpiprocs=8" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=8:mpiprocs=8 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-mpi" : "afterok" }
@@ -893,7 +895,7 @@
       {
         "submit_options" : {
                             "cheyenne" : { "resources" : "-l select=1:ncpus=1" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=1" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=1 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-serial" : "afterok" }
@@ -907,7 +909,7 @@
       {
         "submit_options" : { 
                             "cheyenne" : { "resources" : "-l select=1:ncpus=4:ompthreads=4" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=8:ompthreads=8" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=8:ompthreads=8 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-omp" : "afterok" }
@@ -921,7 +923,7 @@
       {
         "submit_options" : { 
                             "cheyenne" : { "resources" : "-l select=1:ncpus=4:mpiprocs=4" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=8:mpiprocs=8" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=8:mpiprocs=8 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-mpi" : "afterok" }
@@ -951,7 +953,7 @@
       {
         "submit_options" : {
                             "cheyenne" : { "resources" : "-l select=1:ncpus=1" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=1" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=1 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-serial" : "afterok" }
@@ -965,7 +967,7 @@
       {
         "submit_options" : { 
                             "cheyenne" : { "resources" : "-l select=1:ncpus=4:ompthreads=4" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=8:ompthreads=8" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=8:ompthreads=8 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-omp" : "afterok" }
@@ -979,7 +981,7 @@
       {
         "submit_options" : { 
                             "cheyenne" : { "resources" : "-l select=1:ncpus=4:mpiprocs=4" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=8:mpiprocs=8" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=8:mpiprocs=8 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-mpi" : "afterok" }
@@ -1010,7 +1012,7 @@
       {
         "submit_options" : {
                             "cheyenne" : { "resources" : "-l select=1:ncpus=1" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=1" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=1 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-serial" : "afterok" }
@@ -1024,7 +1026,7 @@
       {
         "submit_options" : { 
                             "cheyenne" : { "resources" : "-l select=1:ncpus=4:ompthreads=4" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=8:ompthreads=8" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=8:ompthreads=8 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-omp" : "afterok" }
@@ -1038,7 +1040,7 @@
       {
         "submit_options" : { 
                             "cheyenne" : { "resources" : "-l select=1:ncpus=4:mpiprocs=4" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=8:mpiprocs=8" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=8:mpiprocs=8 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-mpi" : "afterok" }
@@ -1069,7 +1071,7 @@
       {
         "submit_options" : {
                             "cheyenne" : { "resources" : "-l select=1:ncpus=1" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=1" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=1 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-serial" : "afterok" }
@@ -1083,7 +1085,7 @@
       {
         "submit_options" : { 
                             "cheyenne" : { "resources" : "-l select=1:ncpus=4:ompthreads=4" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=8:ompthreads=8" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=8:ompthreads=8 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-omp" : "afterok" }
@@ -1097,7 +1099,7 @@
       {
         "submit_options" : { 
                             "cheyenne" : { "resources" : "-l select=1:ncpus=4:mpiprocs=4" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=8:mpiprocs=8" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=8:mpiprocs=8 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-mpi" : "afterok" }
@@ -1128,7 +1130,7 @@
       {
         "submit_options" : {
                             "cheyenne" : { "resources" : "-l select=1:ncpus=1" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=1" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=1 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-serial" : "afterok" }
@@ -1142,7 +1144,7 @@
       {
         "submit_options" : { 
                             "cheyenne" : { "resources" : "-l select=1:ncpus=4:ompthreads=4" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=8:ompthreads=8" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=8:ompthreads=8 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-omp" : "afterok" }
@@ -1156,7 +1158,7 @@
       {
         "submit_options" : { 
                             "cheyenne" : { "resources" : "-l select=1:ncpus=4:mpiprocs=4" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=8:mpiprocs=8" }
+                            "derecho"  : { "resources" : "-l select=1:ncpus=8:mpiprocs=8 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-mpi" : "afterok" }

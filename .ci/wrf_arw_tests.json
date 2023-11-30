@@ -1,11 +1,18 @@
 {
   "submit_options" :
   {
-    "queue"     : "economy",
     "timelimit" : "00:20:00",
+    "arguments" :
+    {
+      "base_env_numprocs"      : [ "-e", "NUM_PROCS=4" ],
+      ".*::args_nesting"       : [ "-n", "1" ],
+      ".*::args_configopt"     : [ "-o", "-d" ],
+      ".*::args_build_tgt"     : [ "-b", "em_real -j $NUM_PROCS" ]
+    },
     "cheyenne"  :
     {
       "submission" : "PBS",
+      "queue"     : "economy",
       "resources"  : "-l select=1:ncpus=6",
       "arguments"  : 
       {
@@ -20,15 +27,16 @@
     "derecho"  :
     {
       "submission" : "PBS",
-      "resources"  : "-l select=1:ncpus=8",
+      "queue"      : "main",
+      "resources"  : "-l select=1:ncpus=8 -l job_priority=economy",
       "arguments"  : 
       {
+        "base_env_numprocs"      : [ "-e", "NUM_PROCS=8" ],
         "very_last_modules"       : [ "netcdf", "cmake/3.22.0" ],
         ".*gnu.*::test_modules"   : [ "gcc" ],
         ".*intel.*::test_modules" : [ "intel-classic" ],
         ".*pgi.*::test_modules"   : [ "nvhpc" ],
         ".*dm.*::test_mpi_module" : [ "cray-mpich" ]
-
       }
     },
     "polaris" :
@@ -43,12 +51,12 @@
       "serial" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "32", "-b", "em_real -j 6" ]
+        "arguments"    : [ "-c", "32" ]
       },
       "sm" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "33", "-b", "em_real -j 6" ],
+        "arguments"    : [ "-c", "33" ],
         "dependencies" : { "serial" : "afterany" }
       }
     }
@@ -60,30 +68,34 @@
       "dm" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "34", "-b", "em_real -j 6" ]
+        "arguments"    : [ "-c", "34" ]
       },
       "dm+sm" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "35", "-b", "em_real -j 6" ],
+        "arguments"    : [ "-c", "35" ],
         "dependencies" : { "dm" : "afterany" }
       }
     }
   },
   "intel-nompi" :
   {
-    "submit_options" : { "cheyenne" : { "timelimit" : "01:00:00" } },
+    "submit_options" :
+    { 
+      "cheyenne" : { "timelimit" : "01:00:00" },
+      "hsn.de.hpc" : { "timelimit" : "00:45:00" }
+    },
     "steps" :
     {
       "serial" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "13", "-b", "em_real -j 6" ]
+        "arguments"    : [ "-c", "13" ]
       },
       "sm" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "14", "-b", "em_real -j 6" ],
+        "arguments"    : [ "-c", "14" ],
         "dependencies" : { "serial" : "afterany" }
       }
     }
@@ -96,12 +108,12 @@
       "dm" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "15", "-b", "em_real -j 6" ]
+        "arguments"    : [ "-c", "15" ]
       },
       "dm+sm" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "16", "-b", "em_real -j 6" ],
+        "arguments"    : [ "-c", "16" ],
         "dependencies" : { "dm" : "afterany" }
       }
     }
@@ -113,12 +125,12 @@
       "serial" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "5", "-b", "em_real -j 6" ]
+        "arguments"    : [ "-c", "5" ]
       },
       "sm" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "2", "-b", "em_real -j 6" ],
+        "arguments"    : [ "-c", "2" ],
         "dependencies" : { "serial" : "afterany" }
       }
     }
@@ -130,12 +142,12 @@
       "dm" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "3", "-b", "em_real -j 6" ]
+        "arguments"    : [ "-c", "3" ]
       },
       "dm+sm" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "4", "-b", "em_real -j 6" ],
+        "arguments"    : [ "-c", "4" ],
         "dependencies" : { "dm" : "afterany" }
       }
     }

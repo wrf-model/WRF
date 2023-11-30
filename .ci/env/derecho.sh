@@ -1,7 +1,7 @@
 #!/bin/sh
 
-echo "Setting up cheyenne environment"
-. /etc/profile.d/modules.sh
+echo "Setting up derecho environment"
+. /etc/profile.d/z00_modules.sh
 echo "Loading modules : $*"
 cmd="module purge"
 echo $cmd && eval "${cmd}"

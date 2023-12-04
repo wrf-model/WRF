@@ -293,6 +293,7 @@ CONTAINS
    USE module_cam_support,     ONLY : cam_mam_aerosols
 #endif
    USE module_wind_fitch
+   USE module_wind_jensen  ! Yulong add for WLM
    IMPLICIT NONE
 !-----------------------------------------------------------------
    TYPE (grid_config_rec_type)              :: config_flags
@@ -1412,6 +1413,10 @@ CHARACTER(LEN=8) :: name
 !
   IF ( config_flags%windfarm_opt .EQ. 1 ) THEN
     CALL init_module_wind_fitch(id,config_flags,xlong,xlat,windfarm_initialized,ims,ime,jms,jme,its,ite,jts,jte,ids,ide,jds,jde)
+  ! --- Yulong ---
+  ELSEIF ( config_flags%windfarm_opt .EQ. 2 ) THEN
+    CALL init_module_wind_jensen(id,config_flags,xlong,xlat,windfarm_initialized, &
+                                 dx,ims,ime,jms,jme,its,ite,jts,jte,ids,ide,jds,jde)
   ENDIF
 
    CALL wrf_debug ( 200 , 'module_start: phy_init: Before call to ra_init' )

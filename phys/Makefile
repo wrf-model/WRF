@@ -203,6 +203,7 @@ MODULES = \
         module_fddaobs_rtfdda.o \
 	module_fddaobs_driver.o \
 	module_wind_fitch.o \
+	module_wind_jensen.o \
 	module_sf_lake.o \
 	module_diagnostics_driver.o \
 	module_irrigation.o

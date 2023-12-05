@@ -98,5 +98,4 @@
 ! xlvcp  = xlv/cp
 ! g_inv  = 1./grav
 
-
  end module module_bl_mynn_common

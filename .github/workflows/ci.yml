@@ -29,7 +29,7 @@ jobs:
               account : NMMM0012,
               name : "Compilation Tests",
               fileroot : wrf_arw_tests,
-              args : -j="-l select=1" -m "TEST CompilationSet PASS",
+              args : -j="-l select=1",
               pool : 6,
               tests : [
                 gnu-nompi, gnu-mpi, intel-nompi, intel-mpi, pgi-nompi, pgi-mpi
@@ -40,7 +40,7 @@ jobs:
               account : NMMM0012,
               name : "em_real 0-3, A-E Tests",
               fileroot : wrf_em_real_tests,
-              args : -j="-l select=1" -m "TEST em_realSet PASS",
+              args : -j="-l select=1",
               pool : 9,
               tests : [
                 em_real0, em_real1, em_real2, em_real3, em_realA, em_realB, em_realC, em_realD, em_realE
@@ -51,7 +51,7 @@ jobs:
               account : NMMM0012,
               name : "em_real G-L Tests",
               fileroot : wrf_em_real_tests,
-              args : -j="-l select=1" -m "TEST em_realSet PASS",
+              args : -j="-l select=1",
               pool : 9,
               tests : [
                 em_realF, em_realG, em_realH, em_realI, em_realJ, em_realK, em_realL0, em_realL1, em_realL2,

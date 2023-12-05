@@ -99,7 +99,7 @@ jobs:
         ./main/hpc-workflows/.ci/runner.py \
           ./main/.ci/${{ matrix.testSet.fileroot }}.json \
           -t   ${{ join( matrix.testSet.tests, ' ' ) }}  \
-          -alt ../${{ join( matrix.testSet.tests, ' ../' ) }}  \
+          -alt ../${{ join( matrix.testSet.tests, '/.ci ../' ) }}/.ci  \
           -a "${{ matrix.testSet.account }}"             \
           -p ${{ matrix.testSet.pool}}                   \
           ${{ matrix.testSet.args }}

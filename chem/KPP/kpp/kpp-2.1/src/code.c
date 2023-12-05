@@ -99,7 +99,6 @@ FILE * mex_jacFile = 0;
 FILE * mex_hessFile = 0;
 FILE * wrf_UpdateRconstFile = 0;
 
-
 FILE * currentFile;
 
 int ident = 0;

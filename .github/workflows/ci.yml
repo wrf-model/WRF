@@ -64,13 +64,11 @@ jobs:
               fileroot : wrf_em_ideal_tests,
               args : -j="-l select=1",
               pool : 5,
-              tests :
-                - em_b_wave
-                # - em_fire # Both commented out for failing LFN differences
-                - em_hill2d_x
-                # - em_quarter_ss
-                - em_quarter_ss_real8
-                
+              tests : [ em_b_wave, em_hill2d_x, em_quarter_ss_real8
+                # Both commented out for failing LFN differences
+                # em_fire 
+                # em_quarter_ss
+              ]
             }
     # Is 5 days a reasonable wait time for testing?
     timeout-minutes: 7200

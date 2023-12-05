@@ -385,10 +385,10 @@
 !           bae from kiaps, oct2017
 !        bug fix in snow melting and autoconversion.
 !        ==> Revisions enchance melting and autoconverison.
-!           hong from noaa, july2023 
+!           hong from noaa, july 2023 
 !        remedy for tiny nc in the presence of qc (nc = xncr, 300/cm**3)
 !        ==> prevents the crash in computing autoconversion
-!           hong from noaa, july2023
+!           hong from noaa, july 2023
 !
 !  history log :
 !

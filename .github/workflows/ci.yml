@@ -25,17 +25,6 @@ jobs:
         # https://stackoverflow.com/a/68940067
         testSet  :
           - { 
-              host : wsl,
-              account  : None,
-              name     : "em_real, C,E,G Tests",
-              fileroot : wrf_em_real_tests,
-              args     : -m "TEST em_realSet PASS",
-              pool     : 1,
-              tests    : [
-                em_realC, em_realE, em_realG
-                ]
-            }
-          - { 
               host : cheyenne,
               account : NMMM0012,
               name : "Compilation Tests",

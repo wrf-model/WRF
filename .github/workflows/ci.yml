@@ -92,7 +92,7 @@ jobs:
           echo "Creating duplicate directory for $testDir"
           # Remove if it exists to get a fresh start
           rm -rf $testDir
-          rsync -a --info=progress2 --exclude '.git' main/ $testDir
+          rsync -a --exclude '.git' main/ $testDir
         done
 
     - name: Test ${{ matrix.testSet.name }}

@@ -98,7 +98,6 @@ jobs:
           ./main/.ci/${{ matrix.testSet.fileroot }}.json \
           -t   ${{ join( matrix.testSet.tests, ' ' ) }}  \
           -alt ../${{ join( matrix.testSet.tests, ' ../' ) }}  \
-          -d ..                                          \
           -a "${{ matrix.testSet.account }}"             \
           -p ${{ matrix.testSet.pool}}                   \
           ${{ matrix.testSet.args }}
@@ -107,7 +106,7 @@ jobs:
     - name: Report failed tests and steps
       if : ${{ failure() }}
       run : |
-        ./main/hpc-workflows/.ci/reporter.py ./main/${{ matrix.testSet.fileroot }}.log
+        ./main/hpc-workflows/.ci/reporter.py ./main/.ci/${{ matrix.testSet.fileroot }}.log ./hpc-workflows/.ci/runner.py
     
     - name: Clean up testing directories
       if : ${{ success() }}

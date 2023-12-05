@@ -2,6 +2,7 @@
   "submit_options" :
   {
     "timelimit" : "00:20:00",
+    "working_directory" : "..",
     "arguments" :
     {
       "base_env_numprocs"      : [ "-e", "NUM_PROCS=4" ],

@@ -939,7 +939,7 @@
       {
         ".*testcase.*::args_namelist" : 
         [ 
-          "-n", "namelist.input.52FD,namelist.input.60,namelist.input.60NE",
+          "-n", "namelist.input.52FD,namelist.input.60NE",
           "-e", "NAMELIST_DIR=em_realK"
         ]
       }

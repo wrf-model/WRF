@@ -130,7 +130,7 @@
       "serial" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "5" ]
+        "arguments"    : [ "-c", "1" ]
       },
       "sm" :
       {

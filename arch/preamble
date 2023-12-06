@@ -120,4 +120,3 @@ LIBWRFLIB = libwrflib.a
 
 
 #### Architecture specific settings ####
-

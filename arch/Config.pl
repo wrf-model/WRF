@@ -1211,4 +1211,3 @@ close CONFIGURE_WRF ;
 printf "Configuration successful! \n" ;
 printf "------------------------------------------------------------------------\n" ;
 
-

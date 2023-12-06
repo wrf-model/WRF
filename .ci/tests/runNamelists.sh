@@ -97,6 +97,9 @@ rd_12_norm=$( realpath .ci/tests/SCRIPTS/rd_l2_norm.py )
 # Go to core dir
 cd $coreDir || exit $?
 
+# Clean up previous runs
+rm wrfinput_d* wrfbdy_d* wrfout_d* wrfchemi_d* wrf_chem_input_d* rsl* real.print.out* wrf.print.out* wrf_d0*_runstats.out qr_acr_qg_V4.dat fort.98 fort.88 -rf
+
 # Link in data in here
 ln -sf $data/* .
 #
@@ -135,8 +138,8 @@ for namelist in $namelists; do
   fi
 
 
-  # Clean up run
-  rm wrfinput_d* wrfbdy_d* wrfout_d* wrfchemi_d* wrf_chem_input_d* rsl* real.print.out* wrf.print.out* wrf_d0*_runstats.out qr_acr_qg_V4.dat fort.98 fort.88 -rf
+  # Clean up output of any of these runs
+  rm wrfinput_d* wrfbdy_d* wrfout_d* rsl* real.print.out* wrf.print.out* wrf_d0*_runstats.out qr_acr_qg_V4.dat fort.98 fort.88 -rf
 
   # Copy namelist
   echo "Setting $namelistFolder/$namelist as namelist.input"

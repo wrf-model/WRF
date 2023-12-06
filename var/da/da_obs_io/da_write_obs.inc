@@ -937,7 +937,6 @@ subroutine da_write_obs(it,ob, iv, re)
    end if
 
    !! lightning
-   !lightning 
    num_obs = 0
    do n = 1, iv%info(lightning)%nlocal
       if (iv%info(lightning)%proc_domain(1,n)) num_obs = num_obs + 1
@@ -946,9 +945,16 @@ subroutine da_write_obs(it,ob, iv, re)
       write(ounit,'(a20,i8)')'lightning', num_obs    
       num_obs = 0
       do n = 1, iv%info(lightning)%nlocal
+         do itime = 1, num_fgat_time
+            if ( n >= iv%info(lightning)%plocal(itime-1)+1 .and. &
+                 n <= iv%info(lightning)%plocal(itime) ) then
+               ifgat = itime
+               exit
+            end if
+         end do
          if (iv%info(lightning)%proc_domain(1,n)) then
             num_obs = num_obs + 1
-            write(ounit,'(i8)')iv%info(lightning)%levels(n)
+            write(ounit,'(2i8)')iv%info(lightning)%levels(n), ifgat
             do k = 1, iv%info(lightning)%levels(n)
                write(ounit,'(2i8,a5,2f9.2,f17.7,3(2f17.7,i8,2f17.7))')&
                   num_obs   , k, iv%info(lightning)%id(n), &  ! Station
@@ -974,8 +980,6 @@ subroutine da_write_obs(it,ob, iv, re)
          end if
       end do
    end if   
-   close (ounit)
-   call da_free_unit(ounit)
    
    close (ounit)
    call da_free_unit(ounit)

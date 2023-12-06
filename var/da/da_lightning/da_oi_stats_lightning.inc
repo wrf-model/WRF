@@ -61,6 +61,37 @@ subroutine da_oi_stats_lightning (stats_unit, iv)
       end if  
    end do
 
+   ! Do inter-processor communication to gather statistics.
+   if (use_lightning_w) then
+      call da_proc_sum_int (nw)
+      call da_proc_stats_combine(stats%average%w, stats%rms_err%w, &
+         stats%minimum%w%value, stats%maximum%w%value, &
+         stats%minimum%w%n, stats%maximum%w%n, &
+         stats%minimum%w%l, stats%maximum%w%l)
+   end if
+         
+   if (use_lightning_div) then
+      call da_proc_sum_int (ndiv)
+      call da_proc_stats_combine(stats%average%div, stats%rms_err%div, &
+         stats%minimum%div%value, stats%maximum%div%value, &
+         stats%minimum%div%n, stats%maximum%div%n, &
+         stats%minimum%div%l, stats%maximum%div%l)
+   end if 
+   
+   if (use_lightning_qv) then
+      call da_proc_sum_int (nqv)
+      call da_proc_stats_combine(stats%average%qv, stats%rms_err%qv, &
+         stats%minimum%qv%value, stats%maximum%qv%value, &
+         stats%minimum%qv%n, stats%maximum%qv%n, &
+         stats%minimum%qv%l, stats%maximum%qv%l)
+   end if
+
+   if (rootproc) then
+      if ( nw /= 0 .or. ndiv /= 0 .or. nqv /= 0 ) then
+         write(unit=stats_unit, fmt='(/a/)') ' Diagnostics of OI for lightning'
+         call da_print_stats_lightning(stats_unit, nw, ndiv, nqv, stats)
+      end if
+   end if
    
    !czx
    write(unit=stdout, fmt='(A)') 'finish da_oi_stats_lightning'

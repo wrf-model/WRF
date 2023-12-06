@@ -12,7 +12,6 @@ subroutine da_jo_and_grady_lightning(iv, re, jo, jo_grad_y)
    type (y_type),  intent(inout) :: jo_grad_y   ! Grad_y(Jo)
    type (jo_type), intent(inout) :: jo          ! Obs cost function.
    integer :: n, k
-   real    :: con_factor
 
    if (trace_use_dull) call da_trace_entry("da_jo_and_grady_lightning")
    
@@ -44,12 +43,7 @@ subroutine da_jo_and_grady_lightning(iv, re, jo, jo_grad_y)
            end if                           
 
 	   if(use_lightning_div) then
-             if(iv%lightning(n)%height(k) .gt. 3000.0)then
-               con_factor = 0.25
-             else
-               con_factor = 1.0
-             end if
-             jo%lightning_div = jo%lightning_div - con_factor * re%lightning(n)%div(k) * jo_grad_y%lightning(n)%div(k)
+             jo%lightning_div = jo%lightning_div-re%lightning(n)%div(k) * jo_grad_y%lightning(n)%div(k)
            end if			    
 
 	   if(use_lightning_qv) then
@@ -62,8 +56,9 @@ subroutine da_jo_and_grady_lightning(iv, re, jo, jo_grad_y)
    end do
 
    jo%lightning_w   = 0.5 * jo % lightning_w
-   jo%lightning_div = 0.5 * jo % lightning_div * 0.1
+   jo%lightning_div = 0.5 * jo % lightning_div
    jo%lightning_qv  = 0.5 * jo % lightning_qv
+   print*, jo % lightning_w, jo % lightning_div, jo % lightning_qv
 
    if (trace_use_dull) call da_trace_exit("da_jo_and_grady_lightning")
 

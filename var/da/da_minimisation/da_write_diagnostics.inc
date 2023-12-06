@@ -102,6 +102,7 @@ if (.not. anal_type_verify) then
    if (iv%info(profiler)%ntotal > 0) call da_ao_stats_profiler (stats_unit, iv, re, ob)
    if (iv%info(buoy)%ntotal     > 0) call da_ao_stats_buoy     (stats_unit, iv, re, ob)
    if (iv%info(radar)%ntotal    > 0) call da_ao_stats_radar    (stats_unit, iv, re)
+   print*, iv%info(lightning)%ntotal
    if (iv%info(lightning)%ntotal> 0) call da_ao_stats_lightning(stats_unit, iv, re)
    if (iv%info(bogus)%ntotal    > 0) call da_ao_stats_bogus    (stats_unit, iv, re)
    if (iv%info(airsr)%ntotal    > 0) call da_ao_stats_airsr    (stats_unit, iv, re)

@@ -22,12 +22,12 @@ subroutine da_scan_obs_lightning (iv, filename, grid)
    real                          :: flashrate, lightning_error
    real, allocatable,dimension(:):: height, coff
    logical                       :: outside, outside_all
-   integer                       :: nlocal, nrecs
+   integer                       :: nlocal, ntotal
 
    if (trace_use) call da_trace_entry("da_scan_obs_lightning")
    
    nlocal = 0
-   nrecs  = 0
+   ntotal = 0
    
    ! 1. open file
    ! ============
@@ -108,19 +108,18 @@ subroutine da_scan_obs_lightning (iv, filename, grid)
       read (unit = iunit, fmt = '(F12.3,I4,F12.3,I4)') flashrate, lightning_qc, lightning_error, rh_indicator
 
      call da_llxy (platform%info, platform%loc, outside, outside_all)
+     ntotal = ntotal + 1
      if(outside)then
 	cycle
      end if
-     nlocal = nlocal+1
-     if(.not. outside_all) then
-	nrecs = nrecs+1
-     end if
+     nlocal = nlocal + 1
    end do reports
    
    iv%info(lightning)%max_lev = nlevels 
-   iv%info(lightning)%ntotal  = nrecs
+   iv%info(lightning)%ntotal  = ntotal
    iv%info(lightning)%nlocal  = nlocal
-   
+   print*,"ntotal, nlocal", ntotal, nlocal   
+
    deallocate(height)
    deallocate(coff)
    close (iunit)

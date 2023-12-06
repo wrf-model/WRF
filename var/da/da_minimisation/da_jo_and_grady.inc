@@ -610,7 +610,7 @@ subroutine da_jo_and_grady(iv, re, jot, jo, jo_grad_y)
 #if (WRF_CHEM == 1)
       jo_chemic_surf + &
 #endif
-      jo_tamdar + jo_tamdar_sfc + jo_rain 
+      jo_tamdar + jo_tamdar_sfc + jo_rain + jo_lightning
 
    jot = jo%total
 

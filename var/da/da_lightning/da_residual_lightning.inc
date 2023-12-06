@@ -30,23 +30,17 @@ subroutine da_residual_lightning(iv, y, re,np_missing, np_bad_data,np_obs_used, 
 
           if(use_lightning_w) then
              np_available = np_available + 1
-             !czx
-             !write(unit=stdout, fmt='(A, 2f20.8, 2I5)') 'y%lightning(n)%w(k), iv%lightning(n)%w(k)%inv, n, k ', y%lightning(n)%w(k), iv%lightning(n)%w(k)%inv, n, k                   
              re%lightning(n)%w(k) = da_residual(n, k, y%lightning(n)%w(k), iv%lightning(n)%w(k), n_obs_bad % w) 
           end if
 
 	  if(use_lightning_div) then
              np_available = np_available + 1
-             !czx
-             !write(unit=stdout, fmt='(A, 2f20.8, 2I5)') 'y%lightning(n)%w(k), iv%lightning(n)%w(k)%inv, n, k ', y%lightning(n)%w(k), iv%lightning(n)%w(k)%inv, n, k			 
              re%lightning(n)%div(k) = da_residual(n, k, y%lightning(n)%div(k), iv%lightning(n)%div(k), n_obs_bad % div)		 
           end if
 		  
 	  if(use_lightning_qv) then
-            np_available = np_available + 1
-            re%lightning(n)%qv(k) = da_residual(n, k, y%lightning(n)%qv(k), iv%lightning(n)%qv(k), n_obs_bad % q)
-          !czx
-          write(unit=stdout, fmt='(A, 2f20.8, 2I5)') 'In res: y%lightning(n)%qv(k), re%lightning(n)%qv(k)%, n, k ', y%lightning(n)%qv(k), re%lightning(n)%qv(k), n, k
+             np_available = np_available + 1
+             re%lightning(n)%qv(k) = da_residual(n, k, y%lightning(n)%qv(k), iv%lightning(n)%qv(k), n_obs_bad % q)
           end if		  
        end do
    end do

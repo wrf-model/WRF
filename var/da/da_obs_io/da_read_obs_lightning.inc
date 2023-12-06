@@ -137,74 +137,76 @@ subroutine da_read_obs_lightning (iv, filename, grid)
                field_type(missing_r, missing, missing_r, missing, missing_r), & ! div
                field_type(missing_r, missing, missing_r, missing, missing_r))   ! qv
                
-	    platform%each(i)%height = grid%xb%h(i1,j1,k)    !height(i)
+	platform%each(i)%height = grid%xb%h(i1,j1,k)    !height(i)
 			   		   
-        if(flashrate .ge. min_flashrate .and. i .eq. 11 .and. i .gt. 1) then ! 16 for 20170713			      
-           platform%each(i)%w%inv = -wmax*(coff(i)-coff(i-1))/(height(i)-height(i-1))
-           platform%each(i)%w%qc = 0          
-           platform%each(i)%w%error = amax1(0.0015, 0.40*abs(platform%each(i)%w%inv))		  
+        if(flashrate .ge. min_flashrate .and. i .gt. 1) then 
+           ! vertical velocity
+           platform%each(i)%w%inv = wmax*coff(i)   
+           platform%each(i)%w%qc = 0
+           platform%each(i)%w%error = amax1(1.0, 0.20*abs(platform%each(i)%w%inv))
+           ! divergence
+           platform%each(i)%div%inv = -wmax*(coff(i)-coff(i-1))/(height(i)-height(i-1))
+           platform%each(i)%div%qc = 0          
+           platform%each(i)%div%error = amax1(0.0015, 0.40*abs(platform%each(i)%div%inv))
+        else
+           platform%each(i)%w%qc = missing_data
+           platform%each(i)%w%error = missing_r		  
+           platform%each(i)%div%qc = missing_data
+           platform%each(i)%div%error = missing_r
         end if	
         
-        if(platform%each(i)%w%inv == missing_r .or. platform%each(i)%w%error == missing_r) then
-           platform%each(i)%w%qc = missing_data
-	   platform%each(i)%w%error = missing_r
-        end if
-
 
         if(flashrate .ge. 10.0 .and. rh_indicator .gt. -1 .and. height(i) .ge. zlcl .and. height(i) .le.15000)then
            platform%each(i)%qv%inv = 0.01*(2*rh_indicator+lightning_min_rh)*grid%xb%qs(i1,j1,i)        
            platform%each(i)%qv%qc = 0          
            platform%each(i)%qv%error = amax1(0.001,0.20*platform%each(i)%qv%inv)
-	end if
-
-
-        if(platform%each(i)%qv%inv == missing_r .or. platform%each(i)%qv%error == missing_r) then
+        else
            platform%each(i)%qv%qc = missing_data
 	   platform%each(i)%qv%error = missing_r
         end if	
       end do  !vertical layers
 
-     if(outside)then
-       cycle
-     end if
-     nlocal = nlocal+1
+      if(outside)then
+        cycle
+      end if
+      nlocal = nlocal+1
 	 
-     iv%info(lightning)%levels(nlocal)    = nlevels
-     iv%info(lightning)%name(nlocal)      = platform%info%name
-     iv%info(lightning)%platform(nlocal)  = platform%info%platform
-     iv%info(lightning)%id(nlocal)        = platform%info%id
-     iv%info(lightning)%date_char(nlocal) = platform%info%date_char
-     iv%info(lightning)%lat(:,nlocal)     = platform%info%lat
-     iv%info(lightning)%lon(:,nlocal)     = platform%info%lon
-     iv%info(lightning)%elv(nlocal)       = platform%info%elv
-     iv%info(lightning)%pstar(nlocal)     = platform%info%pstar
+      iv%info(lightning)%levels(nlocal)    = nlevels
+      iv%info(lightning)%name(nlocal)      = platform%info%name
+      iv%info(lightning)%platform(nlocal)  = platform%info%platform
+      iv%info(lightning)%id(nlocal)        = platform%info%id
+      iv%info(lightning)%date_char(nlocal) = platform%info%date_char
+      iv%info(lightning)%lat(:,nlocal)     = platform%info%lat
+      iv%info(lightning)%lon(:,nlocal)     = platform%info%lon
+      iv%info(lightning)%elv(nlocal)       = platform%info%elv
+      iv%info(lightning)%pstar(nlocal)     = platform%info%pstar
 
-     iv%info(lightning)%slp(nlocal)       = platform%loc%slp
-     iv%info(lightning)%pw(nlocal)        = platform%loc%pw
-     iv%info(lightning)%x(:,nlocal)       = platform%loc%x
-     iv%info(lightning)%y(:,nlocal)       = platform%loc%y 
-     iv%info(lightning)%i(:,nlocal)       = platform%loc%i 
-     iv%info(lightning)%j(:,nlocal)       = platform%loc%j 
-     iv%info(lightning)%dx(:,nlocal)      = platform%loc%dx
-     iv%info(lightning)%dxm(:,nlocal)     = platform%loc%dxm
-     iv%info(lightning)%dy(:,nlocal)      = platform%loc%dy
-     iv%info(lightning)%dym(:,nlocal)     = platform%loc%dym
-     iv%info(lightning)%proc_domain(:,nlocal) = platform%loc%proc_domain
-     iv%info(lightning)%obs_global_index(nlocal) = nlocal
+      iv%info(lightning)%slp(nlocal)       = platform%loc%slp
+      iv%info(lightning)%pw(nlocal)        = platform%loc%pw
+      iv%info(lightning)%x(:,nlocal)       = platform%loc%x
+      iv%info(lightning)%y(:,nlocal)       = platform%loc%y 
+      iv%info(lightning)%i(:,nlocal)       = platform%loc%i 
+      iv%info(lightning)%j(:,nlocal)       = platform%loc%j 
+      iv%info(lightning)%dx(:,nlocal)      = platform%loc%dx
+      iv%info(lightning)%dxm(:,nlocal)     = platform%loc%dxm
+      iv%info(lightning)%dy(:,nlocal)      = platform%loc%dy
+      iv%info(lightning)%dym(:,nlocal)     = platform%loc%dym
+      iv%info(lightning)%proc_domain(:,nlocal) = platform%loc%proc_domain
+      iv%info(lightning)%obs_global_index(nlocal) = nlocal
 
-     allocate(iv%lightning(nlocal)%height(1:nlevels))
-     allocate(iv%lightning(nlocal)%height_qc(1:nlevels))
-     allocate(iv%lightning(nlocal)%w(1:nlevels))
-     allocate(iv%lightning(nlocal)%qv(1:nlevels))          
-     allocate(iv%lightning(nlocal)%div(1:nlevels))            
+      allocate(iv%lightning(nlocal)%height(1:nlevels))
+      allocate(iv%lightning(nlocal)%height_qc(1:nlevels))
+      allocate(iv%lightning(nlocal)%w(1:nlevels))
+      allocate(iv%lightning(nlocal)%qv(1:nlevels))          
+      allocate(iv%lightning(nlocal)%div(1:nlevels))            
 
-     do i = 1, nlevels
+      do i = 1, nlevels
         iv%lightning(nlocal)%height(i)   = platform%each(i)%height
         iv%lightning(nlocal)%height_qc(i)= platform%each(i)%height_qc
 	iv%lightning(nlocal)%w(i)        = platform%each(i)%w
         iv%lightning(nlocal)%qv(i)       = platform%each(i)%qv
         iv%lightning(nlocal)%div(i)      = platform%each(i)%div
-     end do
+      end do
 	   
    end do reports
    deallocate(height)

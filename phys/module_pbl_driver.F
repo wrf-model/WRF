@@ -28,7 +28,7 @@ CONTAINS
                  ,kpbl,mixht,ct,lh,snow,xice                       &
                  ,znu, znw, mut, p_top                             &
                  ,ctopo,ctopo2,windfarm_opt,power                  &
-                 ,windfarm_model, windfarm_method                  & ! Yulong add for WLM
+                 ,windfarm_model, windfarm_method                  &
                  ,ysu_topdown_pblmix                               &
                  ,shinhong_tke_diag                                &
               ! OPTIONAL for TEMF scheme
@@ -40,7 +40,7 @@ CONTAINS
                  ,flhc,flqc                                        &
               ! MYNN
                  ,qke,Sh3d,Sm3d                                    &
-                 ,qke_adv,bl_mynn_tkeadvect                        & !ACF for QKE advection
+                 ,qke_adv,bl_mynn_tkeadvect                        &
                  ,tsq,qsq,cov,rmol,ch,qcg,grav_settling            & 
                  ,dqke,qWT,qSHEAR,qBUOY,qDISS,tke_budget           &
                  ,bl_mynn_closure,bl_mynn_cloudpdf                 &

@@ -126,7 +126,7 @@
       "testcase-mpi" :
       {
         "submit_options" : { 
-                            "cheyenne" : { "resources" : "-l select=1:ncpus=4:mpiprocs=4" },
+                            "cheyenne" : { "resources" : "-l select=1:ncpus=4:mpiprocs=6" },
                             "derecho"  : { "resources" : "-l select=1:ncpus=8:mpiprocs=8 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
@@ -188,7 +188,7 @@
       "testcase-mpi" :
       {
         "submit_options" : { 
-                            "cheyenne" : { "resources" : "-l select=1:ncpus=4:mpiprocs=4" },
+                            "cheyenne" : { "resources" : "-l select=1:ncpus=4:mpiprocs=6" },
                             "derecho"  : { "resources" : "-l select=1:ncpus=8:mpiprocs=8 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
@@ -249,7 +249,7 @@
       "testcase-mpi" :
       {
         "submit_options" : { 
-                            "cheyenne" : { "resources" : "-l select=1:ncpus=4:mpiprocs=4" },
+                            "cheyenne" : { "resources" : "-l select=1:ncpus=4:mpiprocs=6" },
                             "derecho"  : { "resources" : "-l select=1:ncpus=8:mpiprocs=8 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",
@@ -310,7 +310,7 @@
       "testcase-mpi" :
       {
         "submit_options" : { 
-                            "cheyenne" : { "resources" : "-l select=1:ncpus=4:mpiprocs=4" },
+                            "cheyenne" : { "resources" : "-l select=1:ncpus=4:mpiprocs=6" },
                             "derecho"  : { "resources" : "-l select=1:ncpus=8:mpiprocs=8 -l job_priority=economy" }
                             },
         "command"      : ".ci/tests/runNamelists.sh",

@@ -245,9 +245,6 @@ include ../configure.wrf
 
 non_nmm : $(MODULES) $(FIRE_MODULES) $(WIND_MODULES) $(OBJS) $(DIAGNOSTIC_MODULES_EM)
 
-module_mp_fast_sbm.o : module_mp_SBM_polar_radar.o
-
-module_mp_thompson.o : module_mp_radar.o
 
 submodules :
 	@if [ \( ! -f module_sf_noahmpdrv.F \) -o \( ! -f module_sf_noahmp_glacier.F \) -o \

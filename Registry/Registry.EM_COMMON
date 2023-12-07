@@ -2358,7 +2358,7 @@ rconfig   real      ocean_s         namelist,domains    max_ocean      -1      -
 rconfig   integer   num_traj        namelist,domains    1               1000    irh   "num_traj" "#of trajectory" ""
 
 # variable for time series of vertical profile of U, V, Theta, GHT,a nd QVAPOR
-rconfig   integer   max_ts_level    namelist,domains    max_domains     -1     -       "max_ts_level"   "Highest model level for time series output"
+rconfig   integer   max_ts_level    namelist,domains    1              15       -       "max_ts_level"   "Highest model level for time series output"
 
 # track input
 rconfig   integer   track_loc_in    namelist,domains    1               0       -    "Number of track locations input"   ""    ""

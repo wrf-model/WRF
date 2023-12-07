@@ -78,4 +78,3 @@ SUBROUTINE start_domain ( grid , allowed_to_read )
 #endif
 
 END SUBROUTINE start_domain
-

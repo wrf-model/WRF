@@ -2124,7 +2124,7 @@ NETCDFPAR_BUILD =       CONFIGURE_NETCDFPAR_BUILD
 #insert new stanza here
 
 ###########################################################
-#ARCH    Linux aarch64, GCC compiler OpenMPI # serial smpar dmpar dm+sm
+#ARCH    Linux aarch64, armclang compiler OpenMPI # serial smpar dmpar dm+sm
 #
 DESCRIPTION     =      armclang ($SFC/$SCC): Aarch64
 DMPARALLEL      =

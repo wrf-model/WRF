@@ -342,7 +342,6 @@ RLFLAGS		=
 CC_TOOLS        =      $(SCC) 
 NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
 
-
 ###########################################################
 #ARCH    Linux x86_64 ppc64le i486 i586 i686, Xeon Phi (MIC architecture) ifort compiler with icc # dm+sm
 #

@@ -15,5 +15,7 @@
 *.mod
 *.a
 configure.wrf*
-*.backup
+*.backup*
+rsl.*
+*.log
 *.f90

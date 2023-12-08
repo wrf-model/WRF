@@ -25,22 +25,11 @@ jobs:
         # https://stackoverflow.com/a/68940067
         testSet  :
           - { 
-              host : wsl,
-              account  : None,
-              name     : "em_real, C,E,G Tests",
-              fileroot : wrf_em_real_tests,
-              args     : -m "TEST em_realSet PASS",
-              pool     : 1,
-              tests    : [
-                em_realC, em_realE, em_realG
-                ]
-            }
-          - { 
               host : cheyenne,
               account : NMMM0012,
               name : "Compilation Tests",
               fileroot : wrf_arw_tests,
-              args : -j="-l select=1" -m "TEST CompilationSet PASS",
+              args : -j="-l select=1",
               pool : 6,
               tests : [
                 gnu-nompi, gnu-mpi, intel-nompi, intel-mpi, pgi-nompi, pgi-mpi
@@ -51,7 +40,7 @@ jobs:
               account : NMMM0012,
               name : "em_real 0-3, A-E Tests",
               fileroot : wrf_em_real_tests,
-              args : -j="-l select=1" -m "TEST em_realSet PASS",
+              args : -j="-l select=1",
               pool : 9,
               tests : [
                 em_real0, em_real1, em_real2, em_real3, em_realA, em_realB, em_realC, em_realD, em_realE
@@ -62,11 +51,24 @@ jobs:
               account : NMMM0012,
               name : "em_real G-L Tests",
               fileroot : wrf_em_real_tests,
-              args : -j="-l select=1" -m "TEST em_realSet PASS",
+              args : -j="-l select=1",
               pool : 9,
               tests : [
                 em_realF, em_realG, em_realH, em_realI, em_realJ, em_realK, em_realL0, em_realL1, em_realL2,
                 ]
+            }
+          - { 
+              host : cheyenne,
+              account : NMMM0012,
+              name : "em_ideal Tests",
+              fileroot : wrf_em_ideal_tests,
+              args : -j="-l select=1",
+              pool : 5,
+              tests : [ em_b_wave, em_hill2d_x, em_quarter_ss_real8
+                # Both commented out for failing LFN differences
+                # em_fire 
+                # em_quarter_ss
+              ]
             }
     # Is 5 days a reasonable wait time for testing?
     timeout-minutes: 7200
@@ -88,7 +90,7 @@ jobs:
           echo "Creating duplicate directory for $testDir"
           # Remove if it exists to get a fresh start
           rm -rf $testDir
-          rsync -a --info=progress2 --exclude '.git' main/ $testDir
+          rsync -a --exclude '.git' main/ $testDir
         done
 
     - name: Test ${{ matrix.testSet.name }}
@@ -97,8 +99,7 @@ jobs:
         ./main/hpc-workflows/.ci/runner.py \
           ./main/.ci/${{ matrix.testSet.fileroot }}.json \
           -t   ${{ join( matrix.testSet.tests, ' ' ) }}  \
-          -alt ../${{ join( matrix.testSet.tests, ' ../' ) }}  \
-          -d ..                                          \
+          -alt ../${{ join( matrix.testSet.tests, '/.ci ../' ) }}/.ci  \
           -a "${{ matrix.testSet.account }}"             \
           -p ${{ matrix.testSet.pool}}                   \
           ${{ matrix.testSet.args }}
@@ -107,7 +108,7 @@ jobs:
     - name: Report failed tests and steps
       if : ${{ failure() }}
       run : |
-        ./main/hpc-workflows/.ci/reporter.py ./main/${{ matrix.testSet.fileroot }}.log
+        ./main/hpc-workflows/.ci/reporter.py ./main/.ci/${{ matrix.testSet.fileroot }}.log ./hpc-workflows/.ci/runner.py
     
     - name: Clean up testing directories
       if : ${{ success() }}

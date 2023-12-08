@@ -2,6 +2,7 @@
   "submit_options" :
   {
     "timelimit" : "00:20:00",
+    "working_directory" : "..",
     "arguments" :
     {
       "base_env_numprocs"      : [ "-e", "NUM_PROCS=4" ],
@@ -129,7 +130,7 @@
       "serial" :
       {
         "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "5" ]
+        "arguments"    : [ "-c", "1" ]
       },
       "sm" :
       {

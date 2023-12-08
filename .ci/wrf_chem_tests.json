@@ -127,13 +127,13 @@
           "-n", "namelist.input.120",
           "-e", "NAMELIST_DIR=em_chem_kpp"
         ],
-        ".*testcase.*::args_kpp" :
+        ".*build.*::args_kpp" :
         [
           "-e", "WRF_KPP=1,FLEX_LIB_DIR=/usr/lib64,YACC=/usr/bin/yacc"
-        ],
-        "cheyenne"    : { "arguments" : { ".*testcase.*::args_kpp" : [ "-e", "WRF_KPP=1,FLEX_LIB_DIR=/usr/lib64,YACC=/glade/u/apps/ch/opt/usr/bin/yacc" ] } },
-        "hsn.de.hpc"  : { "arguments" : { ".*testcase.*::args_kpp" : [ "-e", "WRF_KPP=1,FLEX_LIB_DIR=/usr/lib64,YACC=/glade/u/apps/ch/opt/usr/bin/yacc" ] } }
-      }
+        ]
+      },
+      "cheyenne"    : { "arguments" : { ".*build.*::args_kpp" : [ "-e", "WRF_KPP=1,FLEX_LIB_DIR='/usr/lib64,YACC=/glade/u/apps/ch/opt/usr/bin/yacc -d'" ] } },
+      "hsn.de.hpc"  : { "arguments" : { ".*build.*::args_kpp" : [ "-e", "WRF_KPP=1,FLEX_LIB_DIR='/usr/lib64,YACC=/glade/u/apps/ch/opt/usr/bin/yacc -d'" ] } }
     },
     "steps" :
     {

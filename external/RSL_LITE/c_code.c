@@ -14,6 +14,8 @@
 
 #ifdef _WIN32
 #include <Winsock2.h>
+#else
+#include <unistd.h>
 #endif
 #ifdef NCEP_DEBUG_MULTIDIR
 // #  include <errno.h>
@@ -243,6 +245,7 @@ gethostid ()
 }
 #endif
 
+int
 RSL_LITE_GET_HOSTNAME ( char * hn, int * size, int *n, int *hostid ) 
 {
    char temp[512] ;
@@ -256,6 +259,7 @@ RSL_LITE_GET_HOSTNAME ( char * hn, int * size, int *n, int *hostid )
    return(0) ;
 }
 
+int
 BYTE_BCAST ( char * buf, int * size, int * Fcomm )
 {
 #ifndef STUBMPI
@@ -275,6 +279,7 @@ BYTE_BCAST ( char * buf, int * size, int * Fcomm )
 #endif
 }
 
+int
 BYTE_BCAST_FROM_ROOT ( char * buf, int * size, int *root , int * Fcomm )
 {
 #ifndef STUBMPI
@@ -297,6 +302,7 @@ BYTE_BCAST_FROM_ROOT ( char * buf, int * size, int *root , int * Fcomm )
 static int yp_curs, ym_curs, xp_curs, xm_curs ;
 static int yp_curs_recv, ym_curs_recv, xp_curs_recv, xm_curs_recv ;
 
+int
 RSL_LITE_INIT_EXCH ( 
                 int * Fcomm0,
                 int * shw0,  int * xy0 ,
@@ -395,6 +401,7 @@ RSL_LITE_INIT_EXCH (
   xp_curs_recv = nbytes_x_recv ; xm_curs_recv = nbytes_x_recv ;
 }
 
+int
 RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 , 
            int * sendbegm0 , int * sendwm0 , int * sendbegp0 , int * sendwp0 ,
            int * recvbegm0 , int * recvwm0 , int * recvbegp0 , int * recvwp0 ,
@@ -690,6 +697,7 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 ,
 }
 
 #if ( WRFPLUS == 1 )
+int
 RSL_LITE_PACK_AD ( int * Fcomm0, char * buf , int * shw0 , 
            int * sendbegm0 , int * sendwm0 , int * sendbegp0 , int * sendwp0 ,
            int * recvbegm0 , int * recvwm0 , int * recvbegp0 , int * recvwp0 ,
@@ -989,6 +997,7 @@ static MPI_Request yp_recv, ym_recv, yp_send, ym_send ;
 static MPI_Request xp_recv, xm_recv, xp_send, xm_send ;
 #endif
 
+int
 RSL_LITE_EXCH_Y ( int * Fcomm0, int *me0, int * np0 , int * np_x0 , int * np_y0 ,
                   int * sendw_m, int * sendw_p, int * recvw_m , int * recvw_p )
 {
@@ -1026,6 +1035,7 @@ RSL_LITE_EXCH_Y ( int * Fcomm0, int *me0, int * np0 , int * np_x0 , int * np_y0 
 #endif
 }
 
+int
 RSL_LITE_EXCH_X ( int * Fcomm0, int *me0, int * np0 , int * np_x0 , int * np_y0 ,
                   int * sendw_m, int * sendw_p, int * recvw_m , int * recvw_p )
 {
@@ -1065,6 +1075,7 @@ RSL_LITE_EXCH_X ( int * Fcomm0, int *me0, int * np0 , int * np_x0 , int * np_y0 
 
 #if !defined( MS_SUA)  && !defined(_WIN32)
 #include <sys/time.h>
+int
 RSL_INTERNAL_MILLICLOCK ()
 {
     struct timeval tb ;
@@ -1078,6 +1089,7 @@ RSL_INTERNAL_MILLICLOCK ()
     msecs = 1000 * isec + usec / 1000 ;
     return(msecs) ;
 }
+int
 RSL_INTERNAL_MICROCLOCK ()
 {
     struct timeval tb ;

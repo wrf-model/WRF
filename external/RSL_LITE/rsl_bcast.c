@@ -74,13 +74,13 @@ typedef struct bcast_point_desc {
 } bcast_point_desc_t ;
 
 
-static destroy_par_info ( p )
+static int destroy_par_info ( p )
   char * p ;
 {
   if ( p != NULL ) RSL_FREE( p ) ;
 }
 
-static destroy_list( list, dfcn )
+static int destroy_list( list, dfcn )
      rsl_list_t ** list ;          /* pointer to pointer to list */
      int (*dfcn)() ;               /* pointer to function for destroying
                                       the data field of the list */
@@ -161,7 +161,7 @@ static int s_putmsg = 0 ;
 // It needs the minor number of tasks on the nest's MPI mesh (just pass that in)
 // Otherwise it doesn't need a communicator
 
-RSL_LITE_NESTING_RESET (
+void RSL_LITE_NESTING_RESET (
                        )
 {
   int j ;
@@ -452,7 +452,6 @@ void RSL_LITE_TO_PARENT_INFO ( msize_p,
   return ;
 }
 
-
 /********************************************/
 
 /*@
@@ -460,28 +459,9 @@ void RSL_LITE_TO_PARENT_INFO ( msize_p,
 
 @*/
 
-/* parent->nest */
-RSL_LITE_TO_CHILD_MSG ( nbuf_p, buf )
-  int_p
-    nbuf_p ;     /* (I) Number of bytes to be packed. */
-  char *
-    buf ;        /* (I) Buffer containing the data to be packed. */
-{
-   rsl_lite_to_peerpoint_msg ( nbuf_p, buf ) ;
-}
-
-/* nest->parent */
-RSL_LITE_TO_PARENT_MSG ( nbuf_p, buf )
-  int_p
-    nbuf_p ;     /* (I) Number of bytes to be packed. */
-  char *
-    buf ;        /* (I) Buffer containing the data to be packed. */
-{
-   rsl_lite_to_peerpoint_msg ( nbuf_p, buf ) ;
-}
 
 /* common code */
-rsl_lite_to_peerpoint_msg ( nbuf_p, buf )
+void rsl_lite_to_peerpoint_msg ( nbuf_p, buf )
   int_p
     nbuf_p ;     /* (I) Number of bytes to be packed. */
   char *
@@ -521,6 +501,28 @@ rsl_lite_to_peerpoint_msg ( nbuf_p, buf )
 
 }
 
+
+/* parent->nest */
+void RSL_LITE_TO_CHILD_MSG ( nbuf_p, buf )
+  int_p
+    nbuf_p ;     /* (I) Number of bytes to be packed. */
+  char *
+    buf ;        /* (I) Buffer containing the data to be packed. */
+{
+   rsl_lite_to_peerpoint_msg ( nbuf_p, buf ) ;
+}
+
+/* nest->parent */
+void RSL_LITE_TO_PARENT_MSG ( nbuf_p, buf )
+  int_p
+    nbuf_p ;     /* (I) Number of bytes to be packed. */
+  char *
+    buf ;        /* (I) Buffer containing the data to be packed. */
+{
+   rsl_lite_to_peerpoint_msg ( nbuf_p, buf ) ;
+}
+
+
 /********************************************/
 
 // PARALLELNESTING NOTES
@@ -530,36 +532,9 @@ rsl_lite_to_peerpoint_msg ( nbuf_p, buf )
 //
 //  nest if it's parent->nest and the parent if it's nest->parent (we'll see)
 
-/* parent->nest */
-RSL_LITE_BCAST_MSGS ( mytask_p, ntasks_par_p, ntasks_nest_p, offset_p, Fcomm )
-  int_p mytask_p, ntasks_par_p, ntasks_nest_p, offset_p, Fcomm ;  /* offset is the id of the first task in the nest set */
-{
-#ifndef STUBMPI
-  MPI_Comm comm ;
-
-  comm = MPI_Comm_f2c( *Fcomm ) ;
-#else
-  int comm ;
-#endif
-  rsl_lite_allgather_msgs ( mytask_p, ntasks_par_p, ntasks_nest_p, offset_p, comm, 0 ) ;
-}
-
-/* nest->parent */
-RSL_LITE_MERGE_MSGS ( mytask_p, ntasks_par_p, ntasks_nest_p, offset_p, Fcomm )
-  int_p mytask_p, ntasks_par_p, ntasks_nest_p, offset_p, Fcomm ;  /* offset is the id of the first task in the nest set */
-{
-#ifndef STUBMPI
-  MPI_Comm comm ;
-
-  comm = MPI_Comm_f2c( *Fcomm ) ;
-#else
-  int comm ;
-#endif
-  rsl_lite_allgather_msgs ( mytask_p, ntasks_par_p, ntasks_nest_p, offset_p, comm, 1 ) ;
-}
 
 /* common code */
-rsl_lite_allgather_msgs ( mytask_p, ntasks_par_p, ntasks_nest_p, offset_p, comm, dir )
+void rsl_lite_allgather_msgs ( mytask_p, ntasks_par_p, ntasks_nest_p, offset_p, comm, dir )
   int_p mytask_p, ntasks_par_p, ntasks_nest_p, offset_p ;
   int dir ;  /* 0 = parent to nest, otherwist nest to parent */
 #ifndef STUBMPI
@@ -651,30 +626,38 @@ rsl_lite_allgather_msgs ( mytask_p, ntasks_par_p, ntasks_nest_p, offset_p, comm,
 
 }
 
-/********************************************/
-
 /* parent->nest */
-RSL_LITE_FROM_PARENT_INFO ( ig_p, jg_p, retval_p )
-  int_p
-    ig_p        /* (O) Global index in M dimension of nest. */
-   ,jg_p        /* (O) Global index in N dimension of nest. */
-   ,retval_p ;  /* (O) Return value; =1 valid point, =0 done. */
+void RSL_LITE_BCAST_MSGS ( mytask_p, ntasks_par_p, ntasks_nest_p, offset_p, Fcomm )
+  int_p mytask_p, ntasks_par_p, ntasks_nest_p, offset_p, Fcomm ;  /* offset is the id of the first task in the nest set */
 {
-  rsl_lite_from_peerpoint_info ( ig_p, jg_p, retval_p ) ;
+#ifndef STUBMPI
+  MPI_Comm comm ;
+
+  comm = MPI_Comm_f2c( *Fcomm ) ;
+#else
+  int comm ;
+#endif
+  rsl_lite_allgather_msgs ( mytask_p, ntasks_par_p, ntasks_nest_p, offset_p, comm, 0 ) ;
 }
 
 /* nest->parent */
-RSL_LITE_FROM_CHILD_INFO ( ig_p, jg_p, retval_p )
-  int_p
-    ig_p        /* (O) Global index in M dimension of nest. */
-   ,jg_p        /* (O) Global index in N dimension of nest. */
-   ,retval_p ;  /* (O) Return value; =1 valid point, =0 done. */
+void RSL_LITE_MERGE_MSGS ( mytask_p, ntasks_par_p, ntasks_nest_p, offset_p, Fcomm )
+  int_p mytask_p, ntasks_par_p, ntasks_nest_p, offset_p, Fcomm ;  /* offset is the id of the first task in the nest set */
 {
-  rsl_lite_from_peerpoint_info ( ig_p, jg_p, retval_p ) ;
+#ifndef STUBMPI
+  MPI_Comm comm ;
+
+  comm = MPI_Comm_f2c( *Fcomm ) ;
+#else
+  int comm ;
+#endif
+  rsl_lite_allgather_msgs ( mytask_p, ntasks_par_p, ntasks_nest_p, offset_p, comm, 1 ) ;
 }
 
+/********************************************/
+
 /* common code */
-rsl_lite_from_peerpoint_info ( ig_p, jg_p, retval_p )
+void rsl_lite_from_peerpoint_info ( ig_p, jg_p, retval_p )
   int_p
     ig_p        /* (O) Global index in M dimension of nest. */
    ,jg_p        /* (O) Global index in N dimension of nest. */
@@ -696,30 +679,31 @@ rsl_lite_from_peerpoint_info ( ig_p, jg_p, retval_p )
   
 }
 
-/********************************************/
-
 /* parent->nest */
-RSL_LITE_FROM_PARENT_MSG ( len_p, buf )
+void RSL_LITE_FROM_PARENT_INFO ( ig_p, jg_p, retval_p )
   int_p
-    len_p ;          /* (I) Number of bytes to unpack. */
-  int *
-    buf ;            /* (O) Destination buffer. */
+    ig_p        /* (O) Global index in M dimension of nest. */
+   ,jg_p        /* (O) Global index in N dimension of nest. */
+   ,retval_p ;  /* (O) Return value; =1 valid point, =0 done. */
 {
-  rsl_lite_from_peerpoint_msg ( len_p, buf ) ;
+  rsl_lite_from_peerpoint_info ( ig_p, jg_p, retval_p ) ;
 }
 
 /* nest->parent */
-RSL_LITE_FROM_CHILD_MSG ( len_p, buf )
+void RSL_LITE_FROM_CHILD_INFO ( ig_p, jg_p, retval_p )
   int_p
-    len_p ;          /* (I) Number of bytes to unpack. */
-  int *
-    buf ;            /* (O) Destination buffer. */
+    ig_p        /* (O) Global index in M dimension of nest. */
+   ,jg_p        /* (O) Global index in N dimension of nest. */
+   ,retval_p ;  /* (O) Return value; =1 valid point, =0 done. */
 {
-  rsl_lite_from_peerpoint_msg ( len_p, buf ) ;
+  rsl_lite_from_peerpoint_info ( ig_p, jg_p, retval_p ) ;
 }
 
+
+/********************************************/
+
 /* common code */
-rsl_lite_from_peerpoint_msg ( len_p, buf )
+void rsl_lite_from_peerpoint_msg ( len_p, buf )
   int_p
     len_p ;          /* (I) Number of bytes to unpack. */
   int *
@@ -743,6 +727,27 @@ rsl_lite_from_peerpoint_msg ( len_p, buf )
 
   Rpointcurs += *len_p ;
 }
+
+/* parent->nest */
+void RSL_LITE_FROM_PARENT_MSG ( len_p, buf )
+  int_p
+    len_p ;          /* (I) Number of bytes to unpack. */
+  int *
+    buf ;            /* (O) Destination buffer. */
+{
+  rsl_lite_from_peerpoint_msg ( len_p, buf ) ;
+}
+
+/* nest->parent */
+void RSL_LITE_FROM_CHILD_MSG ( len_p, buf )
+  int_p
+    len_p ;          /* (I) Number of bytes to unpack. */
+  int *
+    buf ;            /* (O) Destination buffer. */
+{
+  rsl_lite_from_peerpoint_msg ( len_p, buf ) ;
+}
+
 
 /********************************************/
 

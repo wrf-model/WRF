@@ -148,6 +148,7 @@ fprintf(stderr,"buffer_for_proc %s %d : was %d, increasing to %d\n",
   return(ret) ;
 }
 
+int
 show_tot_size()
 {
   int P ;
@@ -164,9 +165,7 @@ show_tot_size()
 }
 
 int
-buffer_size_for_proc( P, code )
-  int P ;
-  int code ;
+buffer_size_for_proc( int P, int code )
 {
   return( buftab[code][P].size ) ;
 }

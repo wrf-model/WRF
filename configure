@@ -1043,7 +1043,7 @@ rm -f tools/rpc_test.log
 
 if [ -f tools/rpc_test.exe ] ; then
   rpc_type=`tools/rpc_test.exe`
-  if [ $rpc_type == "rpc" ]; then
+  if [ $rpc_type = "rpc" ]; then
     sed -e '/^CFLAGS_LOCAL/s/#/-DRPC_TYPES=1 &/' configure.wrf > configure.wrf.edit
   else
     sed -e '/^CFLAGS_LOCAL/s/#/-DRPC_TYPES=2 &/' configure.wrf > configure.wrf.edit

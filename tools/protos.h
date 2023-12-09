@@ -30,6 +30,9 @@ int print_warning( FILE * fp , char * fname ) ;
 int close_the_file( FILE * fp  ) ;
 int make_entries_uniq ( char * fname ) ;
 int add_warning ( char * fname ) ;
+int gen_dummy_decls ( char * dn );
+int gen_dummy_decls_new ( char * dn );
+int gen_i1_decls ( char * dn );
 
 node_t * get_type_entry ( char * typename ) ;
 node_t * get_rconfig_entry( char * name ) ;
@@ -157,6 +160,67 @@ void set_mask ( unsigned int * mask , int e ) ;
 int get_mask ( unsigned int * mask , int e ) ;
 int dims_ikj_inner(node_t *);
 int dims_ij_inner(node_t *);
+
+char *make_upper_case ( char * str );
+char *make_lower_case ( char * str );
+int sym_forget();
+int init_parser();
+int pre_parse( char * dir, FILE * infile, FILE * outfile );
+int check_dimspecs();
+int set_dim_order ( char * dimorder , node_t * dim_entry );
+
+int gen_actual_args ( char * dirname );
+int gen_actual_args_new ( char * dirname );
+int gen_dummy_args ( char * dirname );
+int gen_dummy_args_new ( char * dirname );
+int gen_args ( char * dirname , int sw );
+int gen_args1 ( FILE * fp , char * outstr , char * structname , 
+            node_t * node , int *linelen , int sw , int deep );
+
+
+int gen_namelist_defines ( char * dirname , int sw_dimension );
+int gen_namelist_defaults ( char * dirname );
+int gen_namelist_statements ( char * dirname );
+int gen_namelist_script ( char * dirname );
+int gen_get_nl_config ( char * dirname );
+int gen_config_assigns ( char * dirname );
+int gen_config_reads ( char * dirname );
+
+int as_long(char *str,long *l);
+int as_finite_double(char *str,double *d);
+int contains_str( char *s1, char *s2 );
+int contains_tok( char *s1, char *s2, char *delims );
+int gen_nest_v_interp ( char * dirname );
+int gen_nest_interp ( char * dirname );
+int gen_nest_interp1 ( FILE * fp , node_t * node, char * fourdname, int down_path , int use_nest_time_level );
+int gen_nest_interp2 ( FILE * fp , node_t * node, char * fourdname, int down_path , int use_nest_time_level );
+
+
+int gen_streams(  char * dirname );
+int gen_io_domain_defs ( FILE * fp );
+int gen_set_timekeeping_defs ( FILE *fp );
+int gen_io_form_for_dataset ( FILE *fp );
+int gen_io_form_for_stream ( FILE *fp );
+int gen_switches_and_alarms ( FILE *fp );
+int gen_check_auxstream_alarms ( FILE *fp );
+int gen_fine_stream_input ( FILE *fp );
+int gen_med_auxinput_in ( FILE *fp );
+int gen_med_hist_out_opens ( FILE *fp );
+int gen_med_hist_out_closes ( FILE *fp );
+int gen_med_auxinput_in_closes ( FILE *fp );
+int gen_med_last_solve_io ( FILE *fp );
+int gen_shutdown_closes ( FILE *fp );
+int gen_med_open_esmf_calls ( FILE *fp );
+int gen_med_find_esmf_coupling ( FILE *fp );
+int gen_io_boilerplate ();
+
+int gen_comms ( char * dirname );
+
+int gen_set_timekeeping_alarms ( FILE * fp );
+
+int create_ht(char *** p );
+
+
 #define PROTOS_H
 #endif
 

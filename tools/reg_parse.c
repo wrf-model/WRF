@@ -6,6 +6,7 @@
 # define index(X,Y) strchr(X,Y)
 #else
 # include <strings.h>
+# include <ctype.h>
 #endif
 
 #include "registry.h"

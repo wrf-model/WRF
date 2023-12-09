@@ -4620,14 +4620,14 @@ SUBROUTINE advect_w    ( w, w_old, tendency,            &
         ! (latitudes are as for u grid, longitudes are displaced)
         ! Therefore: flow is only from one side for points next to poles
         IF ( config_flags%polar .AND. (j == jds+1) ) THEN
-          DO k=kts,ktf
+          DO k=kts+1,ktf+1
           DO i = i_start, i_end
             mrdy=msftx(i,j-1)*rdy    ! see ADT eqn 46 dividing by my, 2nd term RHS
             tendency(i,k,j-1) = tendency(i,k,j-1) - mrdy*fqy(i,k,jp1)
           END DO
           END DO
         ELSE IF( config_flags%polar .AND. (j == jde) ) THEN
-          DO k=kts,ktf
+          DO k=kts+1,ktf+1
           DO i = i_start, i_end
             mrdy=msftx(i,j-1)*rdy    ! see ADT eqn 46 dividing by my, 2nd term RHS
             tendency(i,k,j-1) = tendency(i,k,j-1) + mrdy*fqy(i,k,jp0)
@@ -4934,14 +4934,14 @@ ELSE IF (horz_order == 5 ) THEN
         ! (latitudes are as for u grid, longitudes are displaced)
         ! Therefore: flow is only from one side for points next to poles
         IF ( config_flags%polar .AND. (j == jds+1) ) THEN
-          DO k=kts,ktf
+          DO k=kts+1,ktf+1
           DO i = i_start, i_end
             mrdy=msftx(i,j-1)*rdy    ! see ADT eqn 46 dividing by my, 2nd term RHS
             tendency(i,k,j-1) = tendency(i,k,j-1) - mrdy*fqy(i,k,jp1)
           END DO
           END DO
         ELSE IF( config_flags%polar .AND. (j == jde) ) THEN
-          DO k=kts,ktf
+          DO k=kts+1,ktf+1
           DO i = i_start, i_end
             mrdy=msftx(i,j-1)*rdy    ! see ADT eqn 46 dividing by my, 2nd term RHS
             tendency(i,k,j-1) = tendency(i,k,j-1) + mrdy*fqy(i,k,jp0)
@@ -5293,14 +5293,14 @@ ELSE IF ( horz_order == 4 ) THEN
        ! (latitudes are as for u grid, longitudes are displaced)
        ! Therefore: flow is only from one side for points next to poles
        IF ( config_flags%polar .AND. (j == jds+1) ) THEN
-         DO k=kts,ktf
+         DO k=kts+1,ktf+1
          DO i = i_start, i_end
            mrdy=msftx(i,j-1)*rdy    ! see ADT eqn 46 dividing by my, 2nd term RHS
            tendency(i,k,j-1) = tendency(i,k,j-1) - mrdy*fqy(i,k,jp1)
          END DO
          END DO
        ELSE IF( config_flags%polar .AND. (j == jde) ) THEN
-         DO k=kts,ktf
+         DO k=kts+1,ktf+1
          DO i = i_start, i_end
            mrdy=msftx(i,j-1)*rdy    ! see ADT eqn 46 dividing by my, 2nd term RHS
            tendency(i,k,j-1) = tendency(i,k,j-1) + mrdy*fqy(i,k,jp0)
@@ -5525,14 +5525,14 @@ ELSE IF ( horz_order == 3 ) THEN
        ! (latitudes are as for u grid, longitudes are displaced)
        ! Therefore: flow is only from one side for points next to poles
        IF ( config_flags%polar .AND. (j == jds+1) ) THEN
-         DO k=kts,ktf
+         DO k=kts+1,ktf+1
          DO i = i_start, i_end
            mrdy=msftx(i,j-1)*rdy    ! see ADT eqn 46 dividing by my, 2nd term RHS
            tendency(i,k,j-1) = tendency(i,k,j-1) - mrdy*fqy(i,k,jp1)
          END DO
          END DO
        ELSE IF( config_flags%polar .AND. (j == jde) ) THEN
-         DO k=kts,ktf
+         DO k=kts+1,ktf+1
          DO i = i_start, i_end
            mrdy=msftx(i,j-1)*rdy    ! see ADT eqn 46 dividing by my, 2nd term RHS
            tendency(i,k,j-1) = tendency(i,k,j-1) + mrdy*fqy(i,k,jp0)
@@ -12541,14 +12541,14 @@ SUBROUTINE advect_weno_w    ( w, w_old, tendency,            &
         ! (latitudes are as for u grid, longitudes are displaced)
         ! Therefore: flow is only from one side for points next to poles
         IF ( config_flags%polar .AND. (j == jds+1) ) THEN
-          DO k=kts,ktf
+          DO k=kts+1,ktf+1
           DO i = i_start, i_end
             mrdy=msftx(i,j-1)*rdy    ! see ADT eqn 46 dividing by my, 2nd term RHS
             tendency(i,k,j-1) = tendency(i,k,j-1) - mrdy*fqy(i,k,jp1)
           END DO
           END DO
         ELSE IF( config_flags%polar .AND. (j == jde) ) THEN
-          DO k=kts,ktf
+          DO k=kts+1,ktf+1
           DO i = i_start, i_end
             mrdy=msftx(i,j-1)*rdy    ! see ADT eqn 46 dividing by my, 2nd term RHS
             tendency(i,k,j-1) = tendency(i,k,j-1) + mrdy*fqy(i,k,jp0)

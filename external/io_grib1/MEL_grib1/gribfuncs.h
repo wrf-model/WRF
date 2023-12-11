@@ -38,6 +38,7 @@ int gribgetgds (char *,grid_desc_sec *,char *);
 int gribgetpds (char *,PDS_INPUT *,char *);
 int gribhdr2file (GRIB_HDR *,FILE *,char *);
 int gribhdr2filed (GRIB_HDR *, int , char *);
+
 int gribputbds (USER_INPUT,long,short,float *,BDS_HEAD_INPUT *,
 		GRIB_HDR **,char *);
 int gribputgds (GEOM_IN,GDS_HEAD_INPUT *,void **,GRIB_HDR **,char *);

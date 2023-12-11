@@ -85,7 +85,6 @@
 # include "mpi.h"
 #endif
 #include "rsl_lite.h"
-
 #include <strings.h>
 #include <unistd.h>
 /*

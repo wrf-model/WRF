@@ -539,7 +539,7 @@ gen_shutdown_closes ( FILE *fp )
 }
 
 /* generate the calls that main/wrf_ESMFMod.F uses in wrf_state_populate() */
-int
+int 
 gen_med_open_esmf_calls ( FILE *fp )
 {
   int i ;
@@ -570,7 +570,7 @@ gen_med_open_esmf_calls ( FILE *fp )
 }
 
 /* generate the calls that main/wrf_ESMFMod.F uses in wrf_state_populate() */
-int
+int 
 gen_med_find_esmf_coupling ( FILE *fp )
 {
   int i ;

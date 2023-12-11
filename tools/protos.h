@@ -175,7 +175,7 @@ int gen_dummy_args ( char * dirname );
 int gen_dummy_args_new ( char * dirname );
 int gen_args ( char * dirname , int sw );
 int gen_args1 ( FILE * fp , char * outstr , char * structname , 
-		            node_t * node , int *linelen , int sw , int deep );
+            node_t * node , int *linelen , int sw , int deep );
 
 
 int gen_namelist_defines ( char * dirname , int sw_dimension );

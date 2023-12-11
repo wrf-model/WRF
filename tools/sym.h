@@ -90,6 +90,6 @@ struct sym_node
 } ;
 
 sym_nodeptr sym_add(char *) ;
-sym_nodeptr sym_get(char *) ;
+sym_nodeptr sym_get(char *);
 
 #endif

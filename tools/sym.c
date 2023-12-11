@@ -69,6 +69,7 @@ extern sym_nodeptr symget(char *name, sym_nodeptr (*newnode)(), char  **(*nodena
 
 static char ** symtab ;  /* 2-19-90 */
 
+
 sym_nodeptr
 new_sym_node()
 {
@@ -95,6 +96,7 @@ node_next(sym_nodeptr p)
     x = &(p->next) ;
     return( x ) ;
 }
+
 
 int
 sym_init() /* 2-19-90, initialize symbol table package */

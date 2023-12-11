@@ -452,7 +452,6 @@ void RSL_LITE_TO_PARENT_INFO ( msize_p,
   return ;
 }
 
-
 /********************************************/
 
 /*@
@@ -505,22 +504,22 @@ void rsl_lite_to_peerpoint_msg ( nbuf_p, buf )
 
 /* parent->nest */
 void RSL_LITE_TO_CHILD_MSG ( nbuf_p, buf )
-	  int_p
-	      nbuf_p ;     /* (I) Number of bytes to be packed. */
-	        char *
-		    buf ;        /* (I) Buffer containing the data to be packed. */
+  int_p
+    nbuf_p ;     /* (I) Number of bytes to be packed. */
+  char *
+    buf ;        /* (I) Buffer containing the data to be packed. */
 {
-	   rsl_lite_to_peerpoint_msg ( nbuf_p, buf ) ;
+   rsl_lite_to_peerpoint_msg ( nbuf_p, buf ) ;
 }
 
 /* nest->parent */
 void RSL_LITE_TO_PARENT_MSG ( nbuf_p, buf )
-	  int_p
-	      nbuf_p ;     /* (I) Number of bytes to be packed. */
-	        char *
-		    buf ;        /* (I) Buffer containing the data to be packed. */
+  int_p
+    nbuf_p ;     /* (I) Number of bytes to be packed. */
+  char *
+    buf ;        /* (I) Buffer containing the data to be packed. */
 {
-	   rsl_lite_to_peerpoint_msg ( nbuf_p, buf ) ;
+   rsl_lite_to_peerpoint_msg ( nbuf_p, buf ) ;
 }
 
 
@@ -625,8 +624,6 @@ void rsl_lite_allgather_msgs ( mytask_p, ntasks_par_p, ntasks_nest_p, offset_p, 
   }
 
 }
-
-/********************************************/
 
 /* parent->nest */
 void RSL_LITE_BCAST_MSGS ( mytask_p, ntasks_par_p, ntasks_nest_p, offset_p, Fcomm )

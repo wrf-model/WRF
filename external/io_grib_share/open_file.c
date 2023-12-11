@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
- 
 #ifdef _WIN32
 #include <io.h>
 #include <strings.h> 

@@ -93,8 +93,7 @@ char * symget(char *name,char *(*newnode)(),char **(*nodename)(char *),char **(*
     return(p) ;
 }
 
-int
-hash(char * name)
+int hash(char * name )
 {
     register int result = 0  ;
     register char * p = name ;
@@ -111,8 +110,7 @@ hash(char * name)
 
 /* added 2-19-90, attaches a new hash table to pointer  */
 
-int
-create_ht( char *** p )
+int create_ht(char *** p )
 {
     *p = (char **) calloc( HASHSIZE , sizeof( char * ) ) ;
     return(0) ;
@@ -172,8 +170,7 @@ struct symnode * newnode()
     return( malloc( sizeof( struct symnode ) ) ) ;
 }
 
-char **
-nodename(struct symnode *p)
+char ** nodename(struct symnode *p)
 {
     char ** x ;
     x = &(p->name) ;

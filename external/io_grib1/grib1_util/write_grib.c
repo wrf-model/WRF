@@ -185,12 +185,12 @@ int rg_write_grib(PDS_INPUT *pds, grid_desc_sec *gds, char filename[],
       fprintf(stderr,"rg_write_grib: rg_fwrite_grib failed\n");
       return -1;
     }
-
+  
   /* append tmpfile to filename */
   sprintf(tmpstring,"cat %s >> %s",tmpfile,filename);
   system(tmpstring);
   unlink(tmpfile);
-
+ 
   fclose(fid);
 
   return(1);

@@ -59,7 +59,7 @@
 
 /*    CALL int_pack_data ( hdrbuf , hdrbufsiz * inttypesize , int_local_output_buffer, int_local_output_cursor ) */
 
-void
+void 
 INT_PACK_DATA ( unsigned char *buf , int *ninbytes , unsigned char *obuf, int *cursor )
 {
   int i, lcurs ;
@@ -373,8 +373,7 @@ void *malloc(size_t size)
 # endif
 # if !defined(MS_SUA) && !defined(_WIN32)
 #  include <sys/time.h>
-int
-RSL_INTERNAL_MICROCLOCK ()
+int RSL_INTERNAL_MICROCLOCK ()
 {
     struct timeval tb ;
     struct timezone tzp ;

@@ -1,5 +1,4 @@
 !WRF:MEDIATION_LAYER:ADT_BARRIER
-!
 
 SUBROUTINE start_domain ( grid , allowed_to_read )
 

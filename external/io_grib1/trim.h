@@ -1,0 +1,2 @@
+char *trim (char *str);
+

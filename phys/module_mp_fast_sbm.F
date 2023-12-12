@@ -4096,7 +4096,7 @@ enddo
       REAL (KIND=R8SIZE) :: DEL1NR,DEL2NR,DEL12R,DEL12RD,ES1N,ES2N,EW1N,EW1PN
       REAL (KIND=R8SIZE) :: DELSUP1,DELSUP2,DELDIV1,DELDIV2
       REAL (KIND=R8SIZE) :: TT,QQ,TTA,QQA,PP,DPSA,DELTATEMP,DELTAQ
-      REAL (KIND=R8SIZE) :: DIV1,DIV2,DIV3,DIV4,DEL1IN,DEL2IN,DEL1AD,DEL2AD
+      REAL (KIND=R8SIZE) :: DIV1,DIV2,DIV3,DIV4,DEL1IN,DEL2IN,DEL1AD,DEL2AD,DEL_T,DEL_Q
       REAL (KIND=R4SIZE) :: DEL_BB,DEL_BBN,DEL_BBR, TTA_r
       REAL (KIND=R4SIZE) :: FACTZ,CONCCCN_XZ,CONCDROP
       REAL (KIND=R4SIZE) :: SUPICE(KTE),AR1,AR2, &
@@ -4594,26 +4594,12 @@ enddo
               SUP2_OLD=DEL2IN
 
               IF(del1ad > 0.0 .or. del2ad > 0.0 .or. (sum(FF1R)+sum(FF3R)+sum(FF4R)+sum(FF5R)) > 1.0e-20)THEN
-                ! JacobS: commented for this version                
-                !                CALL Relaxation_Time(TT,QQ,PP,rhocgs(I,K,J),DEL1IN,DEL2IN, &
-                !                                      XL,VR1_Z(:,K),FF1R,RLEC,RO1BL, &
-                !                                      XI,VR2_Z,FF2R,RIEC,RO2BL, &
-                !                                      XS,VR3_Z(:,K),FF3R,RSEC,RO3BL, &
-                !                                      XG,VR4_Z(:,K),FF4R,RGEC,RO4BL, &
-                !                                      XH,VR5_Z(:,k),FF5R,RHEC,RO5BL, &
-                !                                      NKR,ICEMAX,COL,DT,NCOND,DTCOND)
-                  DELSUP1=(DEL1AD-DEL1IN)/NCOND
-                  DELSUP2=(DEL2AD-DEL2IN)/NCOND
-                  DELDIV1=(DIV3-DIV1)/NCOND
-                  DELDIV2=(DIV4-DIV2)/NCOND
-                  DELTATEMP = 0
-                  DELTAQ = 0
-                  tt_old = TT
-                  qq_old = qq
-                  DIFFU=1
-
-                  IF (DIV1.EQ.DIV3) DIFFU = 0
-                  IF (DIV2.EQ.DIV4) DIFFU = 0
+                DEL_T = (TTA - TT) / NCOND
+                DEL_Q = (QQA - QQ) / NCOND
+                
+                DIFFU=1
+                IF (DIV1.EQ.DIV3) DIFFU = 0
+                IF (DIV2.EQ.DIV4) DIFFU = 0
 
                   DTNEW = 0.0
                   DO IKL=1,NCOND
@@ -4622,27 +4608,20 @@ enddo
 
                     IF (DIFFU.NE.0)THEN
                       IF (DIFFU.NE.0)THEN
-                          DEL1IN = DEL1IN+DELSUP1
-                          DEL2IN = DEL2IN+DELSUP2
-                          DIV1 = DIV1+DELDIV1
-                          DIV2 = DIV2+DELDIV2
+                        TT = TT + DEL_T
+                        QQ = QQ + DEL_Q
+                        ES1N = AA1_MY*DEXP(-BB1_MY/TT)
+                        ES2N = AA2_MY*DEXP(-BB2_MY/TT)
+                        EW1N = QQ*PP/(0.622+0.378*QQ)
+                        DIV1 = EW1N/ES1N
+                        DEL1IN = EW1N/ES1N-1.0
+                        DIV2 = EW1N/ES2N
+                        DEL2IN = EW1N/ES2N-1.0
                       END IF
                       IF (DIV1.GT.DIV2.AND.TT.LE.265)THEN
                         DIFFU=0
                       END IF
                       IF (DIFFU == 1)THEN
-                        DEL1NR=A1_MYN*(100.*DIV1)
-                        DEL2NR=A2_MYN*(100.*DIV2)
-                        IF (DEL2NR.EQ.0)print*,'ikl = ',ikl
-                        IF (DEL2NR.EQ.0)print*,'div1,div2 = ',div1,div2
-                        IF (DEL2NR.EQ.0)print*,'i,j,k = ',i,j,k
-                        IF (DEL2NR.EQ.0)call wrf_error_fatal("fatal error in module_mp_fast_sbm (DEL2NR.EQ.0) , model stop ")
-                        DEL12R=DEL1NR/DEL2NR
-                        DEL12RD=DEL12R**DEL_BBR
-                        EW1PN=AA1_MY*100.*DIV1*DEL12RD/100.
-                        TT=-DEL_BB/DLOG(DEL12R)
-                        QQ=0.622*EW1PN/(PP-0.378*EW1PN)
-
                         IF(DEL1IN > 0.0 .OR. DEL2IN > 0.0)THEN
 ! +------------------------------------------+
 ! Droplet nucleation :
@@ -6688,26 +6667,26 @@ enddo
 		                    FF2(KR,ICE) = 0.0
   			            ELSE IF (KR .gt. 10 .and. KR .lt. 18) THEN
                   			meltrate = 0.5/50.
+                        ARG_M=ARG_M+FF2(KR,ICE)*(meltrate*dt)
                   			FF2(KR,ICE)=FF2(KR,ICE)-FF2(KR,ICE)*(meltrate*dt)
-                  			ARG_M=ARG_M+FF2(KR,ICE)*(meltrate*dt)
               			ELSE
                   			meltrate = 0.683/120.
+                        ARG_M=ARG_M+FF2(KR,ICE)*(meltrate*dt)
                   			FF2(KR,ICE)=FF2(KR,ICE)-FF2(KR,ICE)*(meltrate*dt)
-                  			ARG_M=ARG_M+FF2(KR,ICE)*(meltrate*dt)
               			ENDIF
             			ENDIF
             			IF (ICE ==2 .or. ICE ==3) THEN
                			  IF (kr .le. 12) THEN
+                            ARG_M = ARG_M+FF2(KR,ICE)
                        			FF2(KR,ICE)=0.
-                       			ARG_M = ARG_M+FF2(KR,ICE)
              			    ELSE IF (kr .gt. 12 .and. kr .lt. 20) THEN
                        			meltrate = 0.5/50.
+                            ARG_M=ARG_M+FF2(KR,ICE)*(meltrate*dt)
                        			FF2(KR,ICE)=FF2(KR,ICE)-FF2(KR,ICE)*(meltrate*dt)
-                       			ARG_M=ARG_M+FF2(KR,ICE)*(meltrate*dt)
                 			ELSE
-                        			meltrate = 0.683/120.
+                            meltrate = 0.683/120.
+                            ARG_M=ARG_M+FF2(KR,ICE)*(meltrate*dt)
                        			FF2(KR,ICE)=FF2(KR,ICE)-FF2(KR,ICE)*(meltrate*dt)
-                       			ARG_M=ARG_M+FF2(KR,ICE)*(meltrate*dt)
                 			ENDIF
               			ENDIF
            		END DO  ! Do ice
@@ -6717,12 +6696,12 @@ enddo
   		               FF3(KR) = 0.0
                   ELSE IF (kr .gt. 14 .and. kr .lt. 22) THEN
                      meltrate = 0.5/50.
-                     FF3(KR)=FF3(KR)-FF3(KR)*(meltrate*dt)
                      ARG_M=ARG_M+FF3(KR)*(meltrate*dt)
+                     FF3(KR)=FF3(KR)-FF3(KR)*(meltrate*dt)
                   ELSE
                      meltrate = 0.683/120.
-                     FF3(KR)=FF3(KR)-FF3(KR)*(meltrate*dt)
                      ARG_M=ARG_M+FF3(KR)*(meltrate*dt)
+                     FF3(KR)=FF3(KR)-FF3(KR)*(meltrate*dt)
                   ENDIF
   	             ! ... Graupel/Hail
                   IF (kr .le. 13) then
@@ -6731,14 +6710,14 @@ enddo
                       FF5(KR)=0.
                   ELSE IF (kr .gt. 13 .and. kr .lt. 23) THEN
                       meltrate = 0.5/50.
+                      ARG_M=ARG_M+(FF4(KR)+FF5(KR))*(meltrate*dt)
                       FF4(KR)=FF4(KR)-FF4(KR)*(meltrate*dt)
                       FF5(KR)=FF5(KR)-FF5(KR)*(meltrate*dt)
-                      ARG_M=ARG_M+(FF4(KR)+FF5(KR))*(meltrate*dt)
                   ELSE
                       meltrate = 0.683/120.
-                     FF4(KR)=FF4(KR)-FF4(KR)*(meltrate*dt)
-                     FF5(KR)=FF5(KR)-FF5(KR)*(meltrate*dt)
-                     ARG_M=ARG_M+(FF4(KR)+FF5(KR))*(meltrate*dt)
+                      ARG_M=ARG_M+(FF4(KR)+FF5(KR))*(meltrate*dt)
+                      FF4(KR)=FF4(KR)-FF4(KR)*(meltrate*dt)
+                      FF5(KR)=FF5(KR)-FF5(KR)*(meltrate*dt)
                   ENDIF
 
                     FF1(KR) = FF1(KR) + ARG_M
@@ -7077,26 +7056,6 @@ enddo
  	call wrf_error_fatal("fatal error in ONECOND1-in (ABS(DAL1*DELMASSL1) > 3.0), model stop")
  ENDIF
 
- ! ... SUPERSATURATION (ONLY WATER)
- ARGEXP=-BB1_MY/TPN
- ES1N=AA1_MY*DEXP(ARGEXP)
- ARGEXP=-BB2_MY/TPN
- ES2N=AA2_MY*DEXP(ARGEXP)
- EW1N=OPER3(QPN,PP)
- IF(ES1N == 0.0D0)THEN
-          DEL1N=0.5
-          DIV1=1.5
- ELSE
-          DIV1 = EW1N/ES1N
-          DEL1N = EW1N/ES1N-1.
- END IF
- IF(ES2N == 0.0D0)THEN
-          DEL2N=0.5
-          DIV2=1.5
- ELSE
-          DEL2N = EW1N/ES2N-1.
-          DIV2 = EW1N/ES2N
- END IF
  IF(ISYM1 == 1) THEN
  	DO KR=1,NKR
            SUPINTW(KR)=SUPINTW(KR)+B11_MY(KR)*D1N
@@ -7159,29 +7118,6 @@ enddo
  		call wrf_error_fatal("fatal error in ONECOND1-out (ABS(DAL1*DELMASSL1) > 5.0), model stop")
  	ENDIF
  ENDIF
-
- ! ... SUPERSATURATION
- ARGEXP=-BB1_MY/TPN
- ES1N=AA1_MY*DEXP(ARGEXP)
- ARGEXP=-BB2_MY/TPN
- ES2N=AA2_MY*DEXP(ARGEXP)
- EW1N=OPER3(QPN,PP)
- IF(ES1N == 0.0D0)THEN
-  	DEL1N=0.5
-  	DIV1=1.5
- 	call wrf_error_fatal("fatal error in ONECOND1 (ES1N.EQ.0), model stop")
- ELSE
-    DIV1=EW1N/ES1N
-    DEL1N=EW1N/ES1N-1.
- END IF
- IF(ES2N.EQ.0)THEN
-    DEL2N=0.5
-    DIV2=1.5
-   call wrf_error_fatal("fatal error in ONECOND1 (ES2N.EQ.0), model stop")
- ELSE
-    DEL2N=EW1N/ES2N-1.
-    DIV2=EW1N/ES2N
- END IF
 
  TT=TPN
  QQ=QPN
@@ -7745,29 +7681,6 @@ enddo
  		ENDIF
  	  ENDIF
 
- ! ... SUPERSATURATION
- 	  ARGEXP=-BB1_MY/TPN
- 	  ES1N=AA1_MY*DEXP(ARGEXP)
- 	  ARGEXP=-BB2_MY/TPN
- 	  ES2N=AA2_MY*DEXP(ARGEXP)
- 	  EW1N=OPER3(QPN,PP)
- 	  IF(ES1N == 0.0)THEN
- 	   DEL1N=0.5
- 	   DIV1=1.5
- 	   call wrf_error_fatal("fatal error in ONECOND2 (ES1N.EQ.0), model stop")
- 	  ELSE
- 	   DIV1=EW1N/ES1N
- 	   DEL1N=EW1N/ES1N-1.
- 	  END IF
- 	  IF(ES2N == 0.0)THEN
- 	   DEL2N=0.5
- 	   DIV2=1.5
- 	   call wrf_error_fatal("fatal error in ONECOND2 (ES2N.EQ.0), model stop")
- 	  ELSE
- 	   DEL2N=EW1N/ES2N-1.
- 	   DIV2=EW1N/ES2N
- 	  END IF
-
  !  END OF TIME SPLITTING
  ! (ONLY ICE: CONDENSATION OR EVAPORATION)
   	IF(TIMENEW.LT.DT) GOTO 46
@@ -8312,31 +8225,7 @@ enddo
  			call wrf_error_fatal("fatal error in ONECOND3-out (ABS(DAL1*DELMASSL1+DAL2*DELMASSI1) > 5.0), model stop")
  		ENDIF
  	ENDIF
-
- ! SUPERSATURATION
- 	ARGEXP=-BB1_MY/TPN
- 	ES1N=AA1_MY*DEXP(ARGEXP)
- 	ARGEXP=-BB2_MY/TPN
- 	ES2N=AA2_MY*DEXP(ARGEXP)
- 	EW1N=OPER3(QPN,PP)
- 	IF(ES1N == 0.0)THEN
- 	 DEL1N=0.5
- 	 DIV1=1.5
- 	 print*,'es1n onecond3 = 0'
- 	 call wrf_error_fatal("fatal error in ONECOND3 (ES1N.EQ.0), model stop")
- 	ELSE
- 	 DIV1=EW1N/ES1N
- 	 DEL1N=EW1N/ES1N-1.
- 	END IF
- 	IF(ES2N == 0.0)THEN
- 	 DEL2N=0.5
- 	 DIV2=1.5
- 	 print*,'es2n onecond3 = 0'
- 	 call wrf_error_fatal("fatal error in ONECOND3 (ES2N.EQ.0), model stop")
- 	ELSE
- 	 DEL2N=EW1N/ES2N-1.
- 	 DIV2=EW1N/ES2N
- 	END IF
+  
  	! END OF TIME SPLITTING
 
  	IF(TIMENEW < DT) GOTO 16

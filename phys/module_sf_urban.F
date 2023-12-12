@@ -1279,7 +1279,7 @@ ENDIF
        ES=6.11*EXP( (2.5*10.**6./461.51)*(TGP-273.15)/(273.15*TGP) ) 
        DESDT=(2.5*10.**6./461.51)*ES/(TGP**2.)
        QS0G=0.622*ES/(PS-0.378*ES)        
-       DQS0GDTG=DESDT*0.22*PS/((PS-0.378*ES)**2.) 
+       DQS0GDTG=DESDT*0.622*PS/((PS-0.378*ES)**2.) 
 
        RG1=EPSG*( RX*VFGS          &
        +EPSB*VFGW*SIG*TBP**4./60.  &

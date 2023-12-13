@@ -117,6 +117,7 @@
 ! Set up the WRF Hydro namelist option to allow dynamic allocation of
 ! variables.
 !-----------------------------------------------------------------------
+  
    count_fatal_error = 0
 #ifdef WRF_HYDRO
    model_config_rec % wrf_hydro = 1

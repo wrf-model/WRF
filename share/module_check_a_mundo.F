@@ -2261,7 +2261,6 @@
             model_config_rec%cu_diag(i) = 0
          END IF
       END DO
-
 !-----------------------------------------------------------------------
 !  Only implement the TEMF PBL scheme with the TEMP SFCLAY scheme.  
 !-----------------------------------------------------------------------

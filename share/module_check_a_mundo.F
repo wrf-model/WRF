@@ -964,7 +964,7 @@
             CALL wrf_message ( TRIM( wrf_err_message ) )
             wrf_err_message = '           OK = RRTM, RRTMG LW or SW, RRTMG_fast LW or SW may be mixed'
             CALL wrf_message ( TRIM( wrf_err_message ) )
-            count_fatal_error = count_fatal_error + 1
+         !   count_fatal_error = count_fatal_error + 1
          END IF
       END IF
 

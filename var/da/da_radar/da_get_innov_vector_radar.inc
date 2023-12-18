@@ -73,7 +73,7 @@ subroutine da_get_innov_vector_radar (it, grid, ob, iv)
    integer              :: h_index, z_index          
    logical              :: file_exist, qg_exist
    real                 :: zern_ratio, zews_ratio, zeds_ratio, zegr_ratio  ! contributions of each hydrometeor to total reflectivity
-   real, allocatable    :: num_sample(:,:)  ！number of samples from background
+   real, allocatable    :: num_sample(:,:)  ! number of samples from the background
    real, allocatable    :: avg_zern(:,:)    ! ze contributed by bin-averaged rainwater
    real, allocatable    :: avg_zeds(:,:)    ! ze contributed by bin-averaged dry snow
    real, allocatable    :: avg_zews(:,:)    ! ze contributed by bin-averaged wet snow
@@ -268,12 +268,12 @@ END IF
       tot_h_index = 40  ! from 500 m to 20 km, at an interval of 500 m
       tot_z_index = 7   ! from -5 dBZ to 65 dBZ, at an interval of 10 dBZ 
       allocate (num_sample(tot_h_index,tot_z_index))
-      allocate (avg_zern(tot_h_index,tot_z_index)))
-      allocate (avg_zeds(tot_h_index,tot_z_index)))
-      allocate (avg_zews(tot_h_index,tot_z_index)))
-      allocate (avg_zegr(tot_h_index,tot_z_index)))
-      allocate (avg_qrn(tot_h_index,tot_z_index)))
-      allocate (avg_qds(tot_h_index,tot_z_index)))
+      allocate (avg_zern(tot_h_index,tot_z_index))
+      allocate (avg_zeds(tot_h_index,tot_z_index))
+      allocate (avg_zews(tot_h_index,tot_z_index))
+      allocate (avg_zegr(tot_h_index,tot_z_index))
+      allocate (avg_qrn(tot_h_index,tot_z_index))
+      allocate (avg_qds(tot_h_index,tot_z_index))
       allocate (avg_qws(tot_h_index,tot_z_index))
       allocate (avg_qws(tot_h_index,tot_z_index))
       allocate (avg_qgr(tot_h_index,tot_z_index))

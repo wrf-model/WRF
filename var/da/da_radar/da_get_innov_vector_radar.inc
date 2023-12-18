@@ -68,20 +68,21 @@ subroutine da_get_innov_vector_radar (it, grid, ob, iv)
    !--------------------------------------------------------
    character(len=filename_len) :: hydro_weight_file
    integer              :: hydro_weight_unit
+   integer              :: tot_h_index, tot_z_index 
    integer              :: ii, jj, kk, nk
-   integer              :: h_index, z_index
+   integer              :: h_index, z_index          
    logical              :: file_exist, qg_exist
-   real                 :: zern_ratio, zews_ratio, zeds_ratio, zegr_ratio
-   real, allocatable    :: num_sample(:,:)
-   real, allocatable    :: avg_zern(:,:)
-   real, allocatable    :: avg_zeds(:,:)
-   real, allocatable    :: avg_zews(:,:)
-   real, allocatable    :: avg_zegr(:,:)
-   real, allocatable    :: avg_qrn(:,:)
-   real, allocatable    :: avg_qds(:,:)
-   real, allocatable    :: avg_qws(:,:)
-   real, allocatable    :: avg_qgr(:,:)
-   real, allocatable    :: ave_rho(:,:)
+   real                 :: zern_ratio, zews_ratio, zeds_ratio, zegr_ratio  ! contributions of each hydrometeor to total reflectivity
+   real, allocatable    :: num_sample(:,:)  ！number of samples from background
+   real, allocatable    :: avg_zern(:,:)    ! ze contributed by bin-averaged rainwater
+   real, allocatable    :: avg_zeds(:,:)    ! ze contributed by bin-averaged dry snow
+   real, allocatable    :: avg_zews(:,:)    ! ze contributed by bin-averaged wet snow
+   real, allocatable    :: avg_zegr(:,:)    ! ze contributed by bin-averaged graupel
+   real, allocatable    :: avg_qrn(:,:)     ! bin-averaged rainwater
+   real, allocatable    :: avg_qds(:,:)     ! bin-averaged dry snow
+   real, allocatable    :: avg_qws(:,:)     ! bin-averaged wet snow
+   real, allocatable    :: avg_qgr(:,:)     ! bin-averaged graupel
+   real, allocatable    :: ave_rho(:,:)     ! bin-averaged air density
 
    !------------------------
    !  for jung et al 2008
@@ -259,23 +260,26 @@ END IF
       end do
    end if ! lcl for use_radar_rqv
 
-   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   ! background-dependent hydroemetor retrieval scheme !
-   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   ! background-dependent hydrometer retrieval scheme !
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    if (use_radar_rhv .and. radar_rhv_opt == 2 ) then
-      ! allocate variables
-      allocate (num_sample(40,7))
-      allocate (avg_zern(40,7))
-      allocate (avg_zeds(40,7))
-      allocate (avg_zews(40,7))
-      allocate (avg_zegr(40,7))
-      allocate (avg_qrn(40,7))
-      allocate (avg_qds(40,7))
-      allocate (avg_qws(40,7))
-      allocate (avg_qgr(40,7))
-      allocate (ave_rho(40,7))
+      !! allocate variables
+      tot_h_index = 40  ! from 500 m to 20 km, at an interval of 500 m
+      tot_z_index = 7   ! from -5 dBZ to 65 dBZ, at an interval of 10 dBZ 
+      allocate (num_sample(tot_h_index,tot_z_index))
+      allocate (avg_zern(tot_h_index,tot_z_index)))
+      allocate (avg_zeds(tot_h_index,tot_z_index)))
+      allocate (avg_zews(tot_h_index,tot_z_index)))
+      allocate (avg_zegr(tot_h_index,tot_z_index)))
+      allocate (avg_qrn(tot_h_index,tot_z_index)))
+      allocate (avg_qds(tot_h_index,tot_z_index)))
+      allocate (avg_qws(tot_h_index,tot_z_index))
+      allocate (avg_qws(tot_h_index,tot_z_index))
+      allocate (avg_qgr(tot_h_index,tot_z_index))
+      allocate (ave_rho(tot_h_index,tot_z_index))
 
-      ! variable initialization
+      !! variable initialization
       num_sample = 0.
       avg_qrn    = 0.
       avg_qws    = 0.
@@ -287,15 +291,15 @@ END IF
       avg_zeds   = 0.
       avg_zegr   = 0.
 
-      ! read in historical stastics from file hydro_mean.dat if available
+      !! read historical statistics from hydro_mean.dat if available
       hydro_weight_file='hydro_mean.dat'
       inquire(file=trim(hydro_weight_file), exist=file_exist)
       if (file_exist) then
          call da_get_unit(hydro_weight_unit)
          open(unit=hydro_weight_unit, file=trim(hydro_weight_file), form='FORMATTED')
          read(unit=hydro_weight_unit, fmt='(A)')
-         do z_index=1,7
-            do h_index=1,40
+         do z_index=1,tot_z_index
+            do h_index=1,tot_h_index
                read(hydro_weight_unit, fmt='(2(10x), 4(f19.9,2x))') &
                     avg_zern(h_index,z_index), avg_zews(h_index,z_index), avg_zeds(h_index,z_index), avg_zegr(h_index,z_index)
             end do
@@ -304,7 +308,7 @@ END IF
          call da_free_unit(hydro_weight_unit)
       end if
 
-      ! calculate the contributions of hydrometeors to reflectivity from the background
+      !! calculate sum of background states in the current processor 
       do kk=kds, kde
          do jj=jps, jpe
             do ii=ips, ipe
@@ -314,14 +318,14 @@ END IF
                bg_rf = 10.*log10(bg_rze)
                !! get the index of reflectvity
                z_index = nint(bg_rf/10.)+1
-               z_index = max(z_index, 0)
-               z_index = min(z_index, 7)
+               z_index = max(z_index, 0) ! set to non-precip if below -5 dBZ
+               z_index = min(z_index, tot_z_index) ! set to 65 dBZ if above
                !! get the height index
                h_index = nint(grid%xb%h(ii,jj,kk)/500.)
-               h_index = max(h_index, 1)
-               h_index = min(h_index,40)
+               h_index = max(h_index, 1) ! set to 500 m if below
+               h_index = min(h_index,tot_h_index) ! set to 20 km if above
 
-               !! Sum of the model states of different model levels and reflectivity threshoulds
+               !! Sum of the model states of different model levels and reflectivity thresholds
                if (z_index .ne. 0 ) then
                   avg_qrn(h_index,z_index)  = avg_qrn(h_index,z_index)  + grid%xb%qrn(ii,jj,kk)
                   if ( grid%xb%t(ii,jj,kk) > 273.15 ) then
@@ -337,9 +341,9 @@ END IF
          end do  ! south-north
       end do ! bottom-top
   
-      ! sum over whole domain and the do average
-      do z_index=1,7
-         do h_index=1,40
+      !! sum of all processors and get the averaged background states
+      do z_index=1,tot_z_index
+         do h_index=1,tot_h_index
             num_sample(h_index,z_index) = wrf_dm_sum_real(num_sample(h_index,z_index))
             if (num_sample(h_index,z_index) .gt. 0) then
                ave_rho(h_index,z_index) = wrf_dm_sum_real(ave_rho(h_index,z_index)) / num_sample(h_index,z_index)
@@ -351,14 +355,14 @@ END IF
          end do
       end do
 
-      ! Get the reflectivity contributed from each hydrometeor type
+      !! calculate the contributions of each hydrometeor to total reflectivity and save them to hydro_mean.dat.update
       hydro_weight_file='hydro_mean.dat.update'
       if (rootproc) call da_get_unit(hydro_weight_unit)
       if (rootproc) open(unit=hydro_weight_unit, file=trim(hydro_weight_file), form='FORMATTED')
       if (rootproc) write(unit=hydro_weight_unit, fmt='(2(a8,2x), 4(a19,2x))') &
-                          "z_index:", "h_index:", "===Rainwater===", "===Wet snow===", "===Dray snow===", "===Graupel==="
-      do z_index=1,7
-         do h_index=1,40
+                          "z_index:", "h_index:", "===Rainwater===", "===Wet snow===", "===Dry snow===", "===Graupel==="
+      do z_index=1,tot_z_index
+         do h_index=1,tot_h_index
             if (num_sample(h_index,z_index) .gt. 10.) then
                if (avg_qrn(h_index,z_index) > 0.)  & !! rain water
                   avg_zern(h_index,z_index) =  zrn*(ave_rho(h_index,z_index)*avg_qrn(h_index,z_index))**1.75
@@ -596,23 +600,23 @@ END IF
                        !! get the index of reflectvity
                        z_index = nint(ob_radar_rf/10.+1)
                        z_index = max(z_index, 0)
-                       z_index = min(z_index, 7)
+                       z_index = min(z_index, tot_z_index)
                        !! get the height index
                        h_index = nint(iv%radar(n)%height(k)/500.)
                        h_index = max(h_index, 1)
-                       h_index = min(h_index,40)
+                       h_index = min(h_index, tot_h_index)
 
                        if (z_index > 0) then
                           zern_ratio = avg_zern(h_index, z_index)
                           zews_ratio = avg_zews(h_index, z_index)
                           zeds_ratio = avg_zeds(h_index, z_index)
                           zegr_ratio = avg_zegr(h_index, z_index)
-                          ! detect whether rain/snow/qgraupel exists in certain temperature.
+                          ! detect whether rain/snow/graupel exists in certain temperatures.
                           qg_exist = .true.
                           ! when T < 273.15K
                           if (model_tc(k,n) .lt. -5.0) zern_ratio = 0.
                           if (model_tc(k,n) .lt.  0.0) zews_ratio = 0.
-                          ! when T>= 273.15K
+                          ! when T >= 273.15K
                           if (model_tc(k,n) .ge. 0.0) then
                              zeds_ratio = 0.
                              qg_exist = .false.
@@ -631,7 +635,7 @@ END IF
                              czgr = zegr_ratio/(zern_ratio+zews_ratio+zeds_ratio+zegr_ratio)
                           end if
                         else
-                          ob_radar_rf = -15.0 !! Assign reflectivity below -5.0 dBZ to -15.0 dbZ for supression 
+                          ob_radar_rf = -15.0 !! Assign reflectivity below -5.0 dBZ to -15.0 dbZ for suppression 
                                               !! No need to tune the weights because of very small impacts
                         end if
                      end if
@@ -640,7 +644,7 @@ END IF
                      ob_radar_rf = min(ob_radar_rf, 65.0) ! if dBZ>65.0, set to 65.0
                      rze = 10.0**(ob_radar_rf*0.1) ! dBZ to Z
 
-                     ! Rain water mixing ratio
+                     ! Rainwater mixing ratio
                      if (czrn .gt. 0.) then
                         iv % radar(n) % rrno(k) = exp ( log(czrn*rze/zrn)/1.75 )/model_rho(k,n)
                         iv % radar(n) % rrn(k) % qc = 0

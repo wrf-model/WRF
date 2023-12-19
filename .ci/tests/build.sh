@@ -56,7 +56,7 @@ shift "$((OPTIND - 1))"
 . .ci/env/hostenv.sh $*
 
 # Now evaluate env vars in case it pulls from hostenv.sh
-if [ ! -z $envVars ]; then
+if [ ! -z "$envVars" ]; then
   setenvStr "$envVars"
 fi
 
@@ -77,6 +77,7 @@ if [ ! -f configure.wrf ]; then
   exit 1
 fi
 
+echo "./compile $buildCommand"
 ./compile $buildCommand
 
 result=$?

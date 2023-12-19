@@ -49,8 +49,6 @@ subroutine da_residual_lightning(iv, y, re,np_missing, np_bad_data,np_obs_used, 
    np_bad_data = np_bad_data + n_obs_bad%w%num%bad  + n_obs_bad%div%num%bad  + n_obs_bad%q%num%bad
    np_obs_used = np_obs_used + n_obs_bad%w%num%use  + n_obs_bad%div%num%use  + n_obs_bad%q%num%use
    
-   !czx
-   write(unit=stdout, fmt='(A)') 'finish da_residual_lightning'
    if (trace_use_dull) call da_trace_exit("da_residual_lightning")
 
 end subroutine da_residual_lightning

@@ -55,11 +55,7 @@ subroutine da_transform_xtoy_lightning (grid, iv, y)
              y%lightning(n)%div(k) = 0.0
            else		   
              call da_div_profile_tl(grid, iv%info(lightning), n, k, TGL_div(k))                 ! divergence profile
-             !czx
-             write(unit=stdout, fmt='(A, f20.8, I2)') 'TGL_div(k), k', TGL_div(k), k		
 	     y%lightning(n)%div(k) = TGL_div(k)
-             !czx
-             write(unit=stdout, fmt='(A, f20.8, 2I5)') 'y%lightning(n)%div(k), n, k', y%lightning(n)%div(k), n, k			 
            end if
 	 end if
 
@@ -69,15 +65,11 @@ subroutine da_transform_xtoy_lightning (grid, iv, y)
            else			  
              y%lightning(n)%qv(k) = grid%xa%q(i,j,k)
              y%lightning(n)%qv(k) = y%lightning(n)%qv(k) + (17.67*243.5/(grid%xb%t(i,j,k)+243.5)**2.0)*grid%xb%q(i,j,k)*grid%xa%t(i,j,k)
-             !czx
-             write(unit=stdout, fmt='(A, f20.8, 2I5)') 'y%lightning(n)%qv(k), n, k', y%lightning(n)%qv(k), n, k			 
            end if
          end if
 
       end do
    end do	  
-   !czx
-   write(unit=stdout, fmt='(A)') 'finish da_transform_xtoy_lightning'	  
    if (trace_use_dull) call da_trace_exit("da_transform_xtoy_lightning")
 
 end subroutine da_transform_xtoy_lightning

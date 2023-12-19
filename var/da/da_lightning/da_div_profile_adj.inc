@@ -57,9 +57,6 @@ subroutine da_div_profile_adj(grid,jo_grad_x, info, n, k, ADJ_div)
          jo_grad_x%v(ii,jj+1,k) = jo_grad_x%v(ii,jj+1,k) + ADJ_div_m(ii-i+1,jj-j+1)/grid%xb%map_factor(ii,jj+1)*coeff
 								  
          jo_grad_x%v(ii,jj-1,k) = jo_grad_x%v(ii,jj-1,k) - ADJ_div_m(ii-i+1,jj-j+1)/grid%xb%map_factor(ii,jj-1)*coeff
-								  
-         !czx
-         write(unit=stdout, fmt='(A, f20.8, I2)') 'jo_grad_x%u(ii+1,jj,k), k', jo_grad_x%u(ii+1,jj,k), k	 
       end do
    end do
 

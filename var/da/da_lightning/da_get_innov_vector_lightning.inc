@@ -47,7 +47,7 @@ subroutine da_get_innov_vector_lightning( it, grid, ob, iv)
       j   = iv%info(lightning)%j(1,n)
       dx  = iv%info(lightning)%dx(1,n)
       dxm = iv%info(lightning)%dxm(1,n)
-      write(unit=stdout, fmt='(A, 2f20.8, I2)') 'lat, lon', iv%info(lightning)%lat(1,n), iv%info(lightning)%lon(1,n)
+
       ! [2.0] Calculate vertical profile of divergence and qv at obs pt.
 	  	  	  	  
       do k = 1, num_levs 
@@ -57,7 +57,6 @@ subroutine da_get_innov_vector_lightning( it, grid, ob, iv)
 
          if(use_lightning_w) then
            if(ob%lightning(n)%w(k) > missing_r .and. iv%lightning(n)%w(k)%qc >= obs_qc_pointer) then
-             ! Convert w to divergence
              w(k) = dym*(dxm*grid%xb%w(i,j,k)+dx*grid%xb%w(i+1,j,k))+dy*(dxm*grid%xb%w(i,j+1,k)+dx*grid%xb%w(i+1,j+1,k))
              iv%lightning(n)%w(k)%qc  = obs_qc_pointer
              iv%lightning(n)%w(k)%inv = ob%lightning(n)%w(k) - w(k)
@@ -66,7 +65,6 @@ subroutine da_get_innov_vector_lightning( it, grid, ob, iv)
 
          if(use_lightning_div) then
            if(ob%lightning(n)%div(k) > missing_r .and. iv%lightning(n)%div(k)%qc >= obs_qc_pointer) then 
-             ! Convert w to divergence
              iv%lightning(n)%div(k)%qc  = obs_qc_pointer
              call da_div_profile(grid, iv%info(lightning), n, k, div(k))                   
              iv%lightning(n)%div(k)%inv = ob%lightning(n)%div(k) - div(k)
@@ -82,14 +80,14 @@ subroutine da_get_innov_vector_lightning( it, grid, ob, iv)
 
       end do
    end do   
+
    ! -----------------------------------------------------------------------
    ! [3.0] Perform optional maximum error check:
    !-----------------------------------------------------------------------
 
    if(check_max_iv ) &
      call da_check_max_iv_lightning(iv, ob, it)
-   !czx
-   write(unit=stdout, fmt='(A)') 'finish da_get_innov_vector_lightning'
+
    if (trace_use) call da_trace_exit("da_get_innov_vector_lightning")
 
 end subroutine da_get_innov_vector_lightning

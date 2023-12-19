@@ -147,7 +147,7 @@ subroutine da_read_obs_lightning (iv, filename, grid)
            ! divergence
            platform%each(i)%div%inv = -wmax*(coff(i)-coff(i-1))/(height(i)-height(i-1))
            platform%each(i)%div%qc = 0          
-           platform%each(i)%div%error = amax1(0.0015, 0.40*abs(platform%each(i)%div%inv))
+           platform%each(i)%div%error = amax1(0.0001, 0.20*abs(platform%each(i)%div%inv))
         else
            platform%each(i)%w%qc = missing_data
            platform%each(i)%w%error = missing_r		  

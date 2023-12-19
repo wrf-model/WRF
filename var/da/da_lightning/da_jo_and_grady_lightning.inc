@@ -58,7 +58,6 @@ subroutine da_jo_and_grady_lightning(iv, re, jo, jo_grad_y)
    jo%lightning_w   = 0.5 * jo % lightning_w
    jo%lightning_div = 0.5 * jo % lightning_div
    jo%lightning_qv  = 0.5 * jo % lightning_qv
-   print*, jo % lightning_w, jo % lightning_div, jo % lightning_qv
 
    if (trace_use_dull) call da_trace_exit("da_jo_and_grady_lightning")
 

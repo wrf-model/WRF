@@ -93,8 +93,6 @@ subroutine da_oi_stats_lightning (stats_unit, iv)
       end if
    end if
    
-   !czx
-   write(unit=stdout, fmt='(A)') 'finish da_oi_stats_lightning'
    if (trace_use_dull) call da_trace_exit("da_oi_stats_lightning")
 
 end subroutine da_oi_stats_lightning

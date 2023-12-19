@@ -547,7 +547,6 @@ subroutine da_final_write_obs(it,iv)
       end do
    end if
    call da_proc_sum_int(num_obs)
-   print*,"num_obs: ", num_obs
    if_wind_sd = .false.
    if (num_obs > 0 .and. rootproc) then
       write(omb_unit,'(a20,i8)')'lightning', num_obs

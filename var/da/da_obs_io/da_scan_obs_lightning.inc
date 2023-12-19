@@ -118,7 +118,6 @@ subroutine da_scan_obs_lightning (iv, filename, grid)
    iv%info(lightning)%max_lev = nlevels 
    iv%info(lightning)%ntotal  = ntotal
    iv%info(lightning)%nlocal  = nlocal
-   print*,"ntotal, nlocal", ntotal, nlocal   
 
    deallocate(height)
    deallocate(coff)

@@ -66,8 +66,6 @@ subroutine da_transform_xtoy_lightning_adj(grid, iv, jo_grad_y, jo_grad_x)
 	  
    end do
 
-   !czx
-   write(unit=stdout, fmt='(A)') 'finish da_transform_xtoy_lightning_adj'
    if (trace_use_dull) call da_trace_exit("da_transform_xtoy_lightning_adj")
 
 end subroutine da_transform_xtoy_lightning_adj

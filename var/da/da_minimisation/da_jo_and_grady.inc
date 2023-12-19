@@ -424,7 +424,7 @@ subroutine da_jo_and_grady(iv, re, jot, jo, jo_grad_y)
                ' jo_lightning      ', jo_lightning, &
                '   jo%lightning_w  ', jo%lightning_w, &
                '   jo%lightning_div', jo%lightning_w, &
-               '   jo%lightning_qv', jo%lightning_qv
+               '   jo%lightning_qv ', jo%lightning_qv
       end if
    else
       jo % lightning_w = 0.0
@@ -650,7 +650,8 @@ subroutine da_jo_and_grady(iv, re, jot, jo, jo_grad_y)
 #if (WRF_CHEM == 1)
          '   jo_chemic_surf  ', jo_chemic_surf, &
 #endif
-         '   jo_rain         ', jo_rain
+         '   jo_rain         ', jo_rain, &
+	 '   jo_lightning    ', jo_lightning
 
    end if
 

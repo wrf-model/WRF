@@ -12,9 +12,6 @@ setenv NETCDFPAR /usr/local/netcdf474par
 (This will also cause configure to set NETCDF = NETCDFPAR to prevent 
 conflicting libraries, and also will force NETCDF4=1 and USENETCDFPAR=1)
 
-To use non-parallel netcdf-4, set USENETCDFPAR=0 in the configuring
-environment, as the default assumption is that netcdf-4 is parallel.
-
 The code assumes you want compression turned on, so netcdf-c version 4.7.4 
 or later is required. (Because otherwise just use pnetcdf since it is 
 faster.) This in turn requires HDF5 1.10.3 or later. Netcdf-c can be build 

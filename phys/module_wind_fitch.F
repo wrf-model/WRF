@@ -518,6 +518,7 @@ CONTAINS
         CALL wrf_dm_bcast_real(hubheight,nt)
         CALL wrf_dm_bcast_real(diameter,nt)
         CALL wrf_dm_bcast_real(stc,nt)
+        CALL wrf_dm_bcast_real(stc2,nt)
         CALL wrf_dm_bcast_real(npower,nt)
         CALL wrf_dm_bcast_real(cutin,nt)
         CALL wrf_dm_bcast_real(cutout,nt)

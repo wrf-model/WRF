@@ -304,7 +304,7 @@ DESCRIPTION     =       INTEL ($SFC/$SCC)
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -qopenmp -fpp -auto
-OMPCC           =       # -qopenmp -fpp -auto
+OMPCC           =       # -qopenmp 
 SFC             =       ifort
 SCC             =       icc
 CCOMP           =       icc
@@ -350,7 +350,7 @@ DESCRIPTION     =       INTEL ($SFC/$SCC): Xeon Phi (MIC architecture)
 DMPARALLEL      =       1
 OMPCPP          =       -D_OPENMP
 OMP             =       -qopenmp -fpp -auto
-OMPCC           =       -qopenmp -fpp -auto
+OMPCC           =       -qopenmp 
 SFC             =       ifort -mmic
 SCC             =       icc -mmic
 CCOMP           =       icc -mmic
@@ -398,7 +398,7 @@ DESCRIPTION     =       INTEL ($SFC/$SCC): Xeon (SNB with AVX mods)
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -qopenmp -fpp -auto
-OMPCC           =       # -qopenmp -fpp -auto
+OMPCC           =       # -qopenmp 
 SFC             =       ifort 
 SCC             =       icc 
 CCOMP           =       icc 
@@ -472,7 +472,7 @@ DESCRIPTION     =       INTEL ($SFC/$SCC): SGI MPT
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -qopenmp -fpp -auto
-OMPCC           =       # -qopenmp -fpp -auto
+OMPCC           =       # -qopenmp 
 SFC             =       ifort
 SCC             =       icc
 CCOMP           =       icc
@@ -522,7 +522,7 @@ DESCRIPTION     =       INTEL ($SFC/$SCC): IBM POE
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -qopenmp -fpp -auto
-OMPCC           =       # -qopenmp -fpp -auto
+OMPCC           =       # -qopenmp 
 SFC             =       ifort
 SCC             =       icc
 CCOMP           =       icc
@@ -602,7 +602,7 @@ DESCRIPTION     =       INTEL ($SFC/$SCC): ia64
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -qopenmp -fpp -auto
-OMPCC           =       # -qopenmp -fpp -auto
+OMPCC           =       # -qopenmp 
 SFC             =       ifort
 SCC             =       icc
 CCOMP           =       icc
@@ -686,7 +686,7 @@ DESCRIPTION     =       INTEL ($SFC/$SCC): SGI Altix
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -qopenmp -fpp -auto
-OMPCC           =       # -qopenmp -fpp -auto
+OMPCC           =       # -qopenmp 
 SFC             =       ifort
 SCC             =       icc
 CCOMP           =       icc
@@ -868,7 +868,7 @@ DESCRIPTION     =       INTEL ($SFC/$SCC)
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -qopenmp -fpp -auto
-OMPCC           =       # -qopenmp -fpp -auto
+OMPCC           =       # -qopenmp 
 SFC             =       ifort
 SCC             =       icc
 CCOMP           =       icc
@@ -1358,7 +1358,7 @@ DESCRIPTION     =       INTEL ($SFC/$SCC): Cray XC
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -qopenmp -fpp -auto
-OMPCC           =       # -qopenmp -fpp -auto
+OMPCC           =       # -qopenmp 
 SFC             =       ftn
 SCC             =       icc 
 CCOMP           =       icc 
@@ -1745,7 +1745,7 @@ DESCRIPTION     =       INTEL ($SFC/$SCC): Open MPI
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -qopenmp -fpp -auto
-OMPCC           =       # -qopenmp -fpp -auto
+OMPCC           =       # -qopenmp 
 SFC             =       ifort
 SCC             =       icc
 CCOMP           =       icc
@@ -1881,7 +1881,7 @@ DESCRIPTION     =       INTEL ($SFC/$SCC): HSW/BDW
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -qopenmp -fpp -auto
-OMPCC           =       # -qopenmp -fpp -auto
+OMPCC           =       # -qopenmp 
 SFC             =       ifort
 SCC             =       icc
 CCOMP           =       icc
@@ -1926,7 +1926,7 @@ DESCRIPTION     =       INTEL ($SFC/$SCC): KNL MIC
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -qopenmp -fpp -auto
-OMPCC           =       # -qopenmp -fpp -auto
+OMPCC           =       # -qopenmp 
 SFC             =       ifort
 SCC             =       icc
 CCOMP           =       icc
@@ -2123,6 +2123,92 @@ CC_TOOLS        =       $(SCC)
 NETCDFPAR_BUILD =       CONFIGURE_NETCDFPAR_BUILD
 
 #insert new stanza here
+
+###########################################################
+#ARCH    Linux x86_64 ppc64le i486 i586 i686, Intel oneAPI compiler with icx #serial smpar dmpar dm+sm
+# This mirrors the above Intel build but changes ifort=>ifx icc=>icx
+
+DESCRIPTION     =       INTEL ($SFC/$SCC) : oneAPI LLVM
+DMPARALLEL      =       # 1
+OMPCPP          =       # -D_OPENMP
+OMP             =       # -qopenmp -fpp -auto
+OMPCC           =       # -qopenmp -auto
+SFC             =       ifx
+SCC             =       icx
+CCOMP           =       icx
+DM_FC           =       mpif90 -f90=$(SFC)
+DM_CC           =       mpicc -cc=$(SCC)
+FC              =       CONFIGURE_FC
+CC              =       CONFIGURE_CC
+LD              =       $(FC)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
+PROMOTION       =       -real-size `expr 8 \* $(RWORDSIZE)` -i4
+ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_FUNC  CONFIGURE_D_CTSM
+CFLAGS_LOCAL    =       -w -O3 -ip #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -no-multibyte-chars # -DRSL0_ONLY
+LDFLAGS_LOCAL   =       -ip #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -align all -fno-alias -fno-common
+CPLUSPLUSLIB    =
+ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
+FCOPTIM         =       -O3
+FCREDUCEDOPT	=       $(FCOPTIM)
+FCNOOPT		=       -O0 -fno-inline -no-ip
+FCDEBUG         =       # -g $(FCNOOPT) -traceback # -fpe0 -check noarg_temp_created,bounds,format,output_conversion,pointers,uninit -ftrapuv -unroll0 -u
+FORMAT_FIXED    =       -FI
+FORMAT_FREE     =       -FR
+FCSUFFIX        =
+BYTESWAPIO      =       -convert big_endian
+RECORDLENGTH    =       -assume byterecl
+FCBASEOPTS_NO_G =       -ip -fp-model precise -w -ftz -align all -fno-alias $(FORMAT_FREE) $(BYTESWAPIO) #-xHost -fp-model fast=2 -no-heap-arrays -no-prec-div -no-prec-sqrt -fno-common
+FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
+MODULE_SRCH_FLAG =
+TRADFLAG        =      CONFIGURE_TRADFLAG
+CPP             =      /lib/cpp CONFIGURE_CPPFLAGS
+AR              =      ar
+ARFLAGS         =      ru
+M4              =      m4
+RANLIB          =      ranlib
+RLFLAGS		=
+CC_TOOLS        =      $(SCC)
+NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
+
+###########################################################
+#ARCH    Linux aarch64, armclang compiler OpenMPI # serial smpar dmpar dm+sm
+#
+DESCRIPTION     =      armclang ($SFC/$SCC): Aarch64
+DMPARALLEL      =
+OMPCPP          =      -fopenmp
+OMP             =      -fopenmp
+OMPCC           =      -fopenmp
+SFC             =      armflang
+SCC             =      armclang
+CCOMP           =      armclang
+DM_FC           =      mpif90
+DM_CC           =      mpicc -DMPI2_SUPPORT
+FC              =      CONFIGURE_FC
+CC              =      CONFIGURE_CC
+LD              =      $(FC)
+RWORDSIZE       =      CONFIGURE_RWORDSIZE
+PROMOTION       =
+ARCH_LOCAL      =
+CFLAGS_LOCAL    =      -w -O3 -c -Wno-implicit-function-declaration -Wno-int-conversion -Wno-implicit-int
+LDFLAGS_LOCAL   =      -fopenmp
+FCOPTIM         =      -Ofast -mcpu=native -funroll-loops
+FCREDUCEDOPT    =      $(FCOPTIM)
+FCNOOPT         =      -O0 -fopenmp -frecursive
+FCDEBUG         =      -g $(FCNOOPT)
+FORMAT_FIXED    =      -ffixed-form -ffixed-line-length-0
+FORMAT_FREE     =      -ffree-form -ffree-line-length-0
+FCSUFFIX        =
+BYTESWAPIO      =      -fconvert=big-endian -frecord-marker=4
+FCBASEOPTS      =      -w $(FORMAT_FREE) $(BYTESWAPIO)
+MODULE_SRCH_FLAG=      -I$(WRF_SRC_ROOT_DIR)/main
+TRADFLAG        =      -traditional-cpp
+CPP             =      /lib/cpp CONFIGURE_CPPFLAGS
+AR              =      ar
+ARFLAGS         =      ru
+M4              =      m4 -B 14000
+RANLIB          =      ranlib
+RLFLAGS         =
+CC_TOOLS        =      $(SCC) -Wno-implicit-function-declaration -Wno-int-conversion -Wno-implicit-int
 
 ###########################################################
 #ARCH    Linux aarch64, GCC compiler OpenMPI # serial smpar dmpar dm+sm

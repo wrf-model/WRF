@@ -2,6 +2,7 @@
 # include <stdio.h>
 #endif
 #include <fcntl.h>
+#include <stdlib.h>
 
 #define STANDARD_ERROR 2
 
@@ -27,7 +28,7 @@ static int *nbytes = NULL ;
 static MPI_Request *x_recv = NULL , *x_send = NULL ;
 #endif
 
-RSL_LITE_INIT_SWAP ( 
+void RSL_LITE_INIT_SWAP ( 
                 int * Fcomm ,
                 int * xy0 ,
                 int * n3dR0, int *n2dR0, int * typesizeR0 , 
@@ -119,7 +120,7 @@ RSL_LITE_INIT_SWAP (
 #endif
 }
 
-RSL_LITE_PACK_SWAP ( int * Fcomm , char * buf , int * odd0 , int * typesize0 , int * xy0 , int * pu0 , char * memord , int * xstag0 ,
+void RSL_LITE_PACK_SWAP ( int * Fcomm , char * buf , int * odd0 , int * typesize0 , int * xy0 , int * pu0 , char * memord , int * xstag0 ,
            int *me0, int * np0 , int * np_x0 , int * np_y0 , 
            int * min_subdomain ,
            int * ids0 , int * ide0 , int * jds0 , int * jde0 , int * kds0 , int * kde0 ,
@@ -304,7 +305,7 @@ RSL_LITE_PACK_SWAP ( int * Fcomm , char * buf , int * odd0 , int * typesize0 , i
 #endif
 }
 
-RSL_LITE_SWAP ( int * Fcomm0, int *me0, int * np0 , int * np_x0 , int * np_y0 )
+void RSL_LITE_SWAP ( int * Fcomm0, int *me0, int * np0 , int * np_x0 , int * np_y0 )
 {
 #ifndef STUBMPI
   int me, np, np_x, np_y ;

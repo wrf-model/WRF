@@ -164,6 +164,8 @@
 #define RSL_FREE(P)      rsl_free(&(P))
 
 char * buffer_for_proc ( int P, int size, int code ) ;
+int buffer_size_for_proc( int P, int code );
+
 void * rsl_malloc( char * f, int l, int s ) ;
 void rsl_free( char ** p ) ;
 typedef int * int_p ;
@@ -194,3 +196,18 @@ typedef struct rsl_list {
 #endif
 } rsl_list_t ;
 
+
+void F_PACK_LINT (long *inbuf, long *outbuf, int* memorder, int* js, int* je, int* ks, int* ke, int* is, int* ie, int* jms, int* jme, int* kms, int* kme, int* ims, int* ime, int* curs);
+void F_PACK_INT (int *inbuf, int *outbuf, int* memorder, int* js, int* je, int* ks, int* ke, int* is, int* ie, int* jms, int* jme, int* kms, int* kme, int* ims, int* ime, int* curs);
+void F_UNPACK_LINT (long *inbuf, long *outbuf, int* memorder, int* js, int* je, int* ks, int* ke, int* is, int* ie, int* jms, int* jme, int* kms, int* kme, int* ims, int* ime, int* curs);
+void F_UNPACK_INT (int *inbuf, int *outbuf, int* memorder, int* js, int* je, int* ks, int* ke, int* is, int* ie, int* jms, int* jme, int* kms, int* kme, int* ims, int* ime, int* curs);
+
+#if ( WRFPLUS == 1 )
+void F_PACK_LINT_AD (long *inbuf, long *outbuf, int* memorder, int* js, int* je, int* ks, int* ke, int* is, int* ie, int* jms, int* jme, int* kms, int* kme, int* ims, int* ime, int* curs);
+void F_PACK_INT_AD (int *inbuf, int *outbuf, int* memorder, int* js, int* je, int* ks, int* ke, int* is, int* ie, int* jms, int* jme, int* kms, int* kme, int* ims, int* ime, int* curs);
+void F_UNPACK_LINT_AD (long *inbuf, long *outbuf, int* memorder, int* js, int* je, int* ks, int* ke, int* is, int* ie, int* jms, int* jme, int* kms, int* kme, int* ims, int* ime, int* curs);
+void F_UNPACK_INT_AD (int *inbuf, int *outbuf, int* memorder, int* js, int* je, int* ks, int* ke, int* is, int* ie, int* jms, int* jme, int* kms, int* kme, int* ims, int* ime, int* curs);
+#endif
+
+int TASK_FOR_POINT ( int* i_p , int* j_p , int* ids_p, int* ide_p , int* jds_p, int* jde_p , int* npx_p , int* npy_p , int* Px_p, int* Py_p , int* minx_p, int* miny_p, int* ierr_p );
+void TASK_FOR_POINT_MESSAGE();

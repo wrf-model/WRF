@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include "isdb.h"
 
 void set_bytes(long in, int numbytes, char *out)

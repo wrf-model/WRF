@@ -1701,6 +1701,8 @@ SUBROUTINE open_hist_w ( grid , config_flags, stream, alarm_id, &
    ENDIF
 
    ierr = 0
+   fname = ""
+   n2 = ""
 
    ! Note that computation of fname and n2 are outside of the oid IF statement 
    ! since they are OUT args and may be used by callers even if oid/=0.  

@@ -14,7 +14,7 @@
 
 static int yp_curs, ym_curs, xp_curs, xm_curs ;
 
-RSL_LITE_INIT_PERIOD ( 
+void RSL_LITE_INIT_PERIOD ( 
                 int * Fcomm0,
                 int * shw0,
                 int * n3dR0, int *n2dR0, int * typesizeR0 , 
@@ -93,7 +93,7 @@ RSL_LITE_INIT_PERIOD (
 }
 
 
-RSL_LITE_PACK_PERIOD ( int* Fcomm0, char * buf , int * shw0 , int * typesize0 , int * xy0 , int * pu0 , int * imemord , int * stag0 ,
+void RSL_LITE_PACK_PERIOD ( int* Fcomm0, char * buf , int * shw0 , int * typesize0 , int * xy0 , int * pu0 , int * imemord , int * stag0 ,
            int *me0, int * np0 , int * np_x0 , int * np_y0 , 
            int * ids0 , int * ide0 , int * jds0 , int * jde0 , int * kds0 , int * kde0 ,
            int * ims0 , int * ime0 , int * jms0 , int * jme0 , int * kms0 , int * kme0 ,
@@ -368,7 +368,7 @@ static MPI_Request yp_recv, ym_recv, yp_send, ym_send ;
 static MPI_Request xp_recv, xm_recv, xp_send, xm_send ;
 #endif
 
-RSL_LITE_EXCH_PERIOD_X ( int * Fcomm0, int *me0, int * np0 , int * np_x0 , int * np_y0 )
+void RSL_LITE_EXCH_PERIOD_X ( int * Fcomm0, int *me0, int * np0 , int * np_x0 , int * np_y0 )
 {
 #ifndef STUBMPI
   int me, np, np_x, np_y ;
@@ -414,7 +414,7 @@ fprintf(stderr,"RSL_LITE_EXCH_PERIOD_X disabled\n") ;
 #endif
 }
 
-RSL_LITE_EXCH_PERIOD_Y ( int * Fcomm0, int *me0, int * np0 , int * np_x0 , int * np_y0 )
+void RSL_LITE_EXCH_PERIOD_Y ( int * Fcomm0, int *me0, int * np0 , int * np_x0 , int * np_y0 )
 {
 #ifndef STUBMPI
   int me, np, np_x, np_y ;

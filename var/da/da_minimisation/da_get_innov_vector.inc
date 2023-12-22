@@ -150,6 +150,8 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
          call da_get_innov_vector_satem     (it, num_qcstat_conv,grid, ob, iv)
       if (iv%info(radar)%nlocal     >= 0 .and. use_radarobs) &
          call da_get_innov_vector_radar     (it, grid, ob, iv)
+      if (iv%info(lightning)%nlocal     > 0) &
+         call da_get_innov_vector_lightning (it, grid, ob, iv)
       if (iv%info(qscat)%nlocal     > 0) &
          call da_get_innov_vector_qscat     (it, num_qcstat_conv,grid, ob, iv)
       if (iv%info(profiler)%nlocal  > 0) &

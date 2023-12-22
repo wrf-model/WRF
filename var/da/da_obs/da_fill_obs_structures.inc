@@ -93,6 +93,10 @@ subroutine da_fill_obs_structures(iv, ob, uvq_direct)
    iv % radar_ef_rv = 1.0
    iv % radar_ef_rf = 1.0
 
+   iv % lightning_ef_w   = 1.0
+   iv % lightning_ef_div = 1.0
+   iv % lightning_ef_qv  = 1.0
+
    iv % rain_ef_r  = 1.0
 
    iv % bogus_ef_u = 1.0
@@ -522,6 +526,19 @@ subroutine da_fill_obs_structures(iv, ob, uvq_direct)
    if (iv%info(rain)%nlocal > 0) then
       do n = 1, iv%info(rain)%nlocal
             ob % rain(n) % rain = iv % rain(n) % rain % inv
+      end do
+   end if
+
+   ! [2.21] Transfer lightning obs
+
+   if (iv%info(lightning)%nlocal > 0) then
+      do n = 1, iv%info(lightning)%nlocal
+         do k = 1, iv%info(lightning)%levels(n)
+            ! Copy observation variables:
+            ob % lightning(n) % w(k)   = iv % lightning(n) % w(k) % inv
+            ob % lightning(n) % div(k) = iv % lightning(n) % div(k) % inv
+            ob % lightning(n) % qv(k)  = iv % lightning(n) % qv(k) % inv
+         end do
       end do
    end if
 

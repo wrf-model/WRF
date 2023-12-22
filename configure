@@ -50,7 +50,7 @@ if [ -n "$print_usage" ] ; then
   echo '-help print this message'
   echo '*****************************************************************************'
   echo ' '
-  exit 
+  exit
 fi
 
 if `pwd | grep ' ' > /dev/null ` ; then
@@ -123,7 +123,7 @@ do
     else
       echo "$ac_t""found $ac_prog_where ($PERL)" 1>&1
     fi
-    PERLFULLPATH=$ac_prog_where  
+    PERLFULLPATH=$ac_prog_where
   else
     if test -z "$ac_echo_test" -a 1 = 1 ; then
       echo "$ac_t""no"
@@ -135,16 +135,16 @@ do
 done
 
 if test -z "$PERL" ; then
-    # We have to set this outside of the loop lest the first failure in 
+    # We have to set this outside of the loop lest the first failure in
     # PROGRAM_CHECK set the value (which then terminates the effect of the
-    # loop, since autoconf macros only set values that are null, they 
+    # loop, since autoconf macros only set values that are null, they
     # don't override them
     PERL=""
 fi
 
 if test -n "$PERL" ; then
     PERL="$PERL"
-    
+
     perlversion=`$PERL -v | grep 'This is perl' | \
        sed -e 's/^.*v[a-z ]*\([0-9]\).*$/\1/'`
 
@@ -159,8 +159,31 @@ if test -n "$PERL" ; then
     
 fi
 
-if [ -e $NETCDF/bin/nc-config ] ; then
-  ncversion=`nc-config --version | awk '{print $2}'` 
+# We just need to find  nc-config. First, check if NETCDF_C is set; if not, check
+# $NETCDF/bin; otherwise, try `which nc-config`. If all that fails, warn user that WRF
+# may fail to build beacuse of an incomplete NetCDF configuration. It could still be
+# successfull if NetCDF was built statically because the results of `nf-config --flibs`
+# should contain the necessary information for linking as long as NetCDF-Fortran is not
+# version 4.5.3 (see https://github.com/Unidata/netcdf-fortran/issues/270)
+
+if [ -n "$NETCDF_C" ] ; then
+  if [ -f "$NETCDF_C/bin/nc-config" ] ; then
+    export NETCDF_C=$NETCDF_C
+  fi
+elif [ -f "${NETCDF}/bin/nc-config" ] ; then
+  export NETCDF_C=$NETCDF
+else
+  ans="`which nc-config`"
+  status="$?"
+  if [ "$ans" != "nc-config:" -a "$ans" != "" -a "$status" = "0" ] ; then
+    export NETCDF_C=`echo $ans | awk -F/ '{NF=NF-2;$NF=$NF}1' OFS=/`
+  else
+    export NETCDF_C="NOT_FOUND"
+  fi
+fi
+
+if [ -e $NETCDF_C/bin/nc-config ] ; then
+  ncversion=`$NETCDF_C/bin/nc-config --version | awk '{print $2}'` 
 else
   ncversion=OLD
 fi
@@ -168,10 +191,10 @@ fi
 PROBS=FALSE
 if [ -n "$NETCDFPAR" ] ; then
   NETCDF="$NETCDFPAR"
-  if [ ! -e $NETCDF/bin/nc-config ] ; then
+  if [ ! -e $NETCDF_C/bin/nc-config ] ; then
     PROBS=TRUE
   else
-    ncversion=`nc-config --version | awk '{print $2}'`
+    ncversion=`$NETCDF_C/bin/nc-config --version | awk '{print $2}'`
     ncversiona=`echo $ncversion | cut -c 1`
     ncversionb=`echo $ncversion | cut -c 3`
     ncversionc=`echo $ncversion | cut -c 5`
@@ -224,7 +247,7 @@ if [ -n "$NETCDF" ] ; then
   else
     USENETCDFF=" "
   fi
-  if [ -f "$NETCDF/lib/libnetcdf.a" -o -f "$NETCDF/lib/libnetcdf.so" -o -f "$NETCDF/lib/libnetcdf.dll.a" ] ; then
+  if [ -f "$NETCDF_C/lib/libnetcdf.a" -o -f "$NETCDF_C/lib/libnetcdf.so" -o -f "$NETCDF_C/lib/libnetcdf.dll.a" ] ; then
     USENETCDF="-lnetcdf"
   else
     USENETCDF=" "
@@ -243,9 +266,7 @@ fi
 
 # If the user asked for classic netcdf, acquiesce to the request.
 
-ans="`which nf-config`"
-status="$?"
-if [ "$ans" = "nf-config:" -o "$ans" = "" -o "$status" != "0" ] ; then
+if [ ! -f "$NETCDF/bin/nf-config" ] ; then
     export NETCDF_classic=1
     unset NETCDF4
 else
@@ -257,7 +278,7 @@ else
       export NETCDF4=1
     fi
   else
-    if [ "`nf-config --has-nc4`" = "yes" ] ; then
+    if [ "`$NETCDF/bin/nf-config --has-nc4`" = "yes" ] ; then
       unset  NETCDF_classic
       export NETCDF4=1
     else
@@ -274,76 +295,19 @@ if [ -z "$CURL_PATH" ] ; then CURL_PATH=''; fi
 
 if [ -n "$NETCDF4" ] ; then
   if [ $NETCDF4 -eq 1 ] ; then
-    DEP_LIB_PATH=''
-    if [ -f $NETCDF/bin/nf-config ] ; then
-      nx_config="$NETCDF/bin/nf-config --flibs"
-      DEP_LIB_PATH="`$nx_config | awk '{for(i=1;i<=NF;i++){if(match($i, /-L.*/)) {print $i} } }'`"
-      CURL="`$nx_config | awk '{for(i=1;i<=NF;i++){if($i == "-lcurl") {print $i} } }'`"
-      GPFS="`$nx_config | awk '{for(i=1;i<=NF;i++){if($i == "-lgpfs") {print $i} } }'`"
+    NETCDF4_DEP_LIB=''
+    if [ "$NETCDF_C" != "NOT_FOUND" -a -f $NETCDF_C/bin/nc-config ] ; then
+      nx_config="`$NETCDF_C/bin/nc-config --libs`"
+      NETCDF4_DEP_LIB="$NETCDF4_DEP_LIB $nx_config"
+    else
+      echo ' '
+      echo '*****************************************************************************'
+      echo 'WARNING! Unable to find nc-config. Linking with NetCDF may fail.'
+      echo '*****************************************************************************'
+      echo ' '
     fi
-    if [ "$DEP_LIB_PATH" = '' ] ; then
-      if [ -f $NETCDF/bin/nc-config ] ; then
-        nx_config="$NETCDF/bin/nc-config --libs"
-        DEP_LIB_PATH="`$nx_config | awk '{for(i=1;i<=NF;i++){if(match($i, /-L.*/)) {print $i} } }'`"
-        CURL="`$nx_config | awk '{for(i=1;i<=NF;i++){if($i == "-lcurl") {print $i} } }'`"
-        GPFS="`$nx_config | awk '{for(i=1;i<=NF;i++){if($i == "-lgpfs") {print $i} } }'`"
-        if [ "$CURL" != '' -a  "$CURL_PATH" = '' ] ; then
-           CURL_PATH="DEFAULT"
-        fi
-        if [ "$GPFS" != '' -a  "$GPFS_PATH" = '' ] ; then
-           GPFS_PATH="DEFAULT"
-        fi
-      fi
-    fi
-    for P in "$HDF5_PATH" "$ZLIB_PATH" "$GPFS_PATH" "$CURL_PATH"
-    do
-      if [ "$P" != '' -a "$P" != "DEFAULT" ] ; then 
-        if [ "${P#${P%?}}" = "/" ] ; then
-          P=`echo $P | sed 's/\/$//'`
-        fi
-        DEP_LIB_PATH="`echo $DEP_LIB_PATH | awk -v VAR=-L$P/lib '{for(i=1;i<=NF;i++){if ($i != VAR ) {print $i} } }'`"
-        DEP_LIB_PATH="$DEP_LIB_PATH -L$P/lib"
-      fi
-    done
-    if [ "${NETCDF#${NETCDF%?}}" = "/" ] ; then
-      NETCDF=`echo $NETCDF | sed 's/\/$//'`
-    fi
-    buff="`ls -l $NETCDF | sed 's/  */ /g'`"
-    while [ "`echo $buff | grep lib`" = "" -a "`echo $buff | grep '\->'`" != ""  ]
-    do
-      buff="`echo $buff | sed -e 's/->//' -e 's/  */ /g'`"
-      n=`echo $buff | wc -w`
-      lastword=`echo "$buff" | cut -d' ' -f$n | sed 's/\/$//'`
-      c="`echo $lastword | cut -c1`"
-      if [ "$c" = "/" ] ; then
-         NETCDF=$lastword
-      else
-        c="`echo $lastword | cut -c1-2`"
-        if [ "$c" = "./" ] ; then
-          lastword="echo $lastword | cut -c3-"
-        fi
-        NETCDF=${NETCDF%/*}/$lastword
-      fi
-      buff="`ls -l $NETCDF | sed 's/  */ /g'`"
-    done 
-    if [ "`echo $NETCDF | grep '..'`"  != "" ] ; then
-      buff="`echo $NETCDF | sed -e 's/^\///' -e 's/\// /g'`"
-      n=`echo $buff | wc -w`
-      i=1
-      while [ $i -le $n ]
-      do
-        if [ "`echo $buff | cut -d' ' -f$i`" = ".." ] ; then
-          m=$i 
-        fi
-        i=$(( $i + 1 ))
-      done
-      m=$(( $m + 1 ))
-      NETCDF=/"`echo $buff | cut -d' ' -f${m}- | sed 's/  */\//g'`"
-    fi
-    if [ "${DEP_LIB_PATH#${DEP_LIB_PATH%?}}" = "/" ] ; then
-      DEP_LIB_PATH=`echo $DEP_LIB_PATH | sed 's/\/$//'`
-    fi
-    DEP_LIB_PATH="`echo $DEP_LIB_PATH | awk -v VAR=-L$NETCDF/lib '{for(i=1;i<=NF;i++){if ($i != VAR ) {print $i} } }'`"
+    nx_config="`$NETCDF/bin/nf-config --flibs`"
+    NETCDF4_DEP_LIB="$NETCDF4_DEP_LIB $nx_config"
   fi
 fi
 
@@ -398,12 +362,12 @@ else
       unset WRFPLUS_DIR
    fi
 fi
-# Users who are cross-compiling can set environment variable 
-# $WRF_OS to override the value normally obtained from `uname`.  
-# If $WRF_OS is set, then $WRF_MACH can also be set to override 
-# the value normally obtained from `uname -m`.  If $WRF_OS is 
-# set and $WRF_MACH is not set, then $WRF_MACH defaults to "ARCH".  
-# If $WRF_OS is not set then $WRF_MACH is ignored.  
+# Users who are cross-compiling can set environment variable
+# $WRF_OS to override the value normally obtained from `uname`.
+# If $WRF_OS is set, then $WRF_MACH can also be set to override
+# the value normally obtained from `uname -m`.  If $WRF_OS is
+# set and $WRF_MACH is not set, then $WRF_MACH defaults to "ARCH".
+# If $WRF_OS is not set then $WRF_MACH is ignored.
 if [ -n "$WRF_OS" ] ; then
   echo "${0}:  WRF operating system set to \"${WRF_OS}\" via environment variable \$WRF_OS"
   os=$WRF_OS
@@ -456,7 +420,7 @@ fi
 # the "!" is removed by Config.pl
 if [ -n "$WRF_HYDRO" ] ; then
   if [ $WRF_HYDRO = 1 ] ; then
-      echo building WRF-HYDRO 
+      echo building WRF-HYDRO
       compileflags="${compileflags}!-DWRF_HYDRO"
       echo $compileflags
   fi
@@ -517,11 +481,11 @@ if [ -n "$WRF_CHEM" ] ; then
     echo building WRF with chemistry option
     compileflags="${compileflags}!-DWRF_CHEM!-DBUILD_CHEM=1"
     if [ -n "$WRF_KPP" ] ; then
-      if [ $WRF_KPP = 1 ] ; then    
+      if [ $WRF_KPP = 1 ] ; then
         echo building WRF with KPP chemistry option
         compileflags="${compileflags}!-DWRF_KPP"
       fi
-    fi 
+    fi
   else
     compileflags="${compileflags} "
   fi
@@ -575,7 +539,7 @@ if test -n "$PERL" ; then
           -netcdf=$NETCDF -pnetcdf=$PNETCDF -netcdfpar=$NETCDFPAR -adios2=$ADIOS2 -hdf5=$HDF5 -phdf5=$PHDF5 -os=$os -mach=$mach -ldflags=$ldflags \
           -compileflags=$compileflags -opt_level=$opt_level -USENETCDFF=$USENETCDFF -USENETCDF=$USENETCDF \
           -time=$FORTRAN_COMPILER_TIMER -tfl="$TFL" -cfl="$CFL" -config_line="$config_line" \
-          -wrf_core=$wrf_core -gpfs=$GPFS_PATH -curl=$CURL_PATH -dep_lib_path="$DEP_LIB_PATH"
+          -wrf_core=$wrf_core -gpfs=$GPFS_PATH -curl=$CURL_PATH -netcdf4_dep_lib="$NETCDF4_DEP_LIB"
      if test ! -f configure.wrf ; then
        echo "configure.wrf not created! Exiting configure script..."
        exit 1
@@ -620,7 +584,7 @@ if test -f configure.wrf ; then
   if [ "$os" = "Darwin" ] ; then
     # fseeko64 does not exist under Darwin fseeko does. Remove the 0 length executable
     # file that might get generated anyway, even though the compiler complains about missing reference.
-    /bin/rm -f tools/fseeko64_test 
+    /bin/rm -f tools/fseeko64_test
   fi
   if test -x tools/fseeko64_test ; then
     ( tools/fseeko64_test 2> /dev/null ) 1> /dev/null
@@ -665,7 +629,7 @@ if test -n "$NETCDF" ; then
   configure_aaaa=$? ; export configure_aaaa
   if [ $configure_aaaa -a -z "$WRFIO_NCD_NO_LARGE_FILE_SUPPORT" ] ; then
     echo "NetCDF users note:"
-    echo " This installation of NetCDF supports large file support.  To DISABLE large file" 
+    echo " This installation of NetCDF supports large file support.  To DISABLE large file"
     echo " support in NetCDF, set the environment variable WRFIO_NCD_NO_LARGE_FILE_SUPPORT"
     echo " to 1 and run configure again. Set to any other value to avoid this message."
   fi
@@ -690,7 +654,7 @@ if [ -n "$WRFPLUS" ] ; then
   fi
 fi
 
-#Checking cross-compiling capability for some particular environment 
+#Checking cross-compiling capability for some particular environment
 #on Linux and Mac box
 
 if [ $os = "Linux" -o $os = "Darwin" ]; then
@@ -724,7 +688,7 @@ EOF
     rm ${foo} ${foo}.F 2> /dev/null
   fi
 
-cat > ${foo}.c <<EOF 
+cat > ${foo}.c <<EOF
  int main(int argc, char ** argv)
  {
      return (0);
@@ -757,7 +721,7 @@ EOF
     fi
   fi
 
-  if [ -e $NETCDF/lib/libnetcdf.a -a "$SFC" != "" -a "$SCC" != "" -a "$CCOMP" != "" ]; then
+  if [ -e $NETCDF_C/lib/libnetcdf.a -a "$SFC" != "" -a "$SCC" != "" -a "$CCOMP" != "" ]; then
 
     SFC_MULTI_ABI=0
     SCC_MULTI_ABI=0
@@ -768,11 +732,11 @@ EOF
     echo Testing for NetCDF, C and Fortran compiler
     echo
 
-    ar p $NETCDF/lib/libnetcdf.a `ar t $NETCDF/lib/libnetcdf.a | grep -E '\.o' | head -n 1 | sed 's/://'` > ${foo}.o
+    ar p $NETCDF_C/lib/libnetcdf.a `ar t $NETCDF_C/lib/libnetcdf.a | grep -E '\.o' | head -n 1 | sed 's/://'` > ${foo}.o
     netcdf_arch="`file ${foo}.o | grep -o -E '[0-9]{2}-bit|i386'`"
     rm ${foo}.o
 
-    $SFC -o ${foo} ${foo}.f > /dev/null 2>&1 
+    $SFC -o ${foo} ${foo}.f > /dev/null 2>&1
     SFC_arch="`file ${foo} | grep -o -E '[0-9]{2}-bit|i386'`"
     rm ${foo} ${foo}.o 2> /dev/null
 
@@ -790,7 +754,7 @@ EOF
     if [ "$SFC_arch" = "" -o "$SCC_arch" = "" -o "$CCOMP_arch" = "" ]; then
       echo "  One of compilers testing failed!"
       echo "  Please check your compiler"
-      echo 
+      echo
       rm -f ${foo} ${foo}.[cfo] 2> /dev/null
       exit
     else
@@ -901,14 +865,14 @@ EOF
             echo Please check your NetCDF lib and compiler
         else
           echo -m64 is appended to configure.wrf
-          echo It will be forced to build in 64-bit. 
+          echo It will be forced to build in 64-bit.
           echo If you don\'t want 64-bit binaries, please use 32-bit NetCDF, and re-run the configure script.
         fi
       fi
       ;;
     esac
 
-    if [ -e configure.wrf.edit ]; then 
+    if [ -e configure.wrf.edit ]; then
       mv configure.wrf.edit configure.wrf
     fi
 
@@ -918,10 +882,10 @@ EOF
       echo "           Fortran compiler is $SFC_arch"
       echo "              It will build in $netcdf_arch"
       echo " "
-      if [ -e $NETCDF/bin/nc-config ] ; then
+      if [ -e $NETCDF_C/bin/nc-config ] ; then
         echo "NetCDF version: ${ncversion}"
-        echo "Enabled NetCDF-4/HDF-5: `nc-config --has-nc4`"
-        echo "NetCDF built with PnetCDF: `nc-config --has-pnetcdf`"
+        echo "Enabled NetCDF-4/HDF-5: `$NETCDF_C/bin/nc-config --has-nc4`"
+        echo "NetCDF built with PnetCDF: `$NETCDF_C/bin/nc-config --has-pnetcdf`"
         if [ "$USENETCDFPAR" = "1" ] ; then
           echo "Using parallel NetCDF via NETCDFPAR option"
         fi

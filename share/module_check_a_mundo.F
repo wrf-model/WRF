@@ -117,6 +117,7 @@
 ! Set up the WRF Hydro namelist option to allow dynamic allocation of
 ! variables.
 !-----------------------------------------------------------------------
+  
    count_fatal_error = 0
 #ifdef WRF_HYDRO
    model_config_rec % wrf_hydro = 1
@@ -963,6 +964,7 @@
             CALL wrf_message ( TRIM( wrf_err_message ) )
             wrf_err_message = '           OK = RRTM, RRTMG LW or SW, RRTMG_fast LW or SW may be mixed'
             CALL wrf_message ( TRIM( wrf_err_message ) )
+         !   count_fatal_error = count_fatal_error + 1
          END IF
       END IF
 
@@ -2260,7 +2262,6 @@
             model_config_rec%cu_diag(i) = 0
          END IF
       END DO
-
 !-----------------------------------------------------------------------
 !  Only implement the TEMF PBL scheme with the TEMP SFCLAY scheme.  
 !-----------------------------------------------------------------------

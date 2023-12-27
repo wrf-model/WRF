@@ -49,7 +49,11 @@ subroutine da_sensitivity(grid, config_flags, it, cv_size, xbx, be, iv, xhat, qh
          do j = 1, neign
             ritz(i,j) = SUM( eignvec(i,1:neign) * (1.0/eignval(1:neign)) * eignvec(j,1:neign) )
             amat      = amat + qhat(:,i) * ritz(i,j) * &
-                        da_dot_cv(cv_size, qhat(:,j), shat, grid, be%cv_mz, be%ncv_mz, jp_start, jp_end)
+                        da_dot_cv(cv_size, qhat(:,j), shat, grid, be%cv_mz, be%ncv_mz, &
+#if (WRF_CHEM == 1)
+                                   be%cv_mz_chemic, &
+#endif
+                                   jp_start, jp_end)
          end do
       end do
 

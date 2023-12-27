@@ -26,7 +26,7 @@ subroutine da_trop_wmo (t, z, p, nlev, tropt, tropp, tropk)
    integer, optional, intent(out) :: tropk
    integer, intent(in) :: nlev
 
-   real    :: dtdz
+   real    :: dtdz,laps  !LAPS
    integer :: dtdztest(nlev), ztest(nlev)
    integer :: i, j, k, kk, ktrop
 
@@ -73,7 +73,7 @@ subroutine da_trop_wmo (t, z, p, nlev, tropt, tropp, tropk)
                ztest(kk) = 1                           
             endif
          enddo   !kk loop
-
+         laps=dtdz !LAPS
          IF (SUM(dtdztest) .eq. SUM(ztest)) THEN
             ! If qualified as tropopause, set altitude index and return value
             ktrop = k  

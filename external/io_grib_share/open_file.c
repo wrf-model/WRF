@@ -1,9 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
- 
 #ifdef _WIN32
 #include <io.h>
+#include <strings.h> 
+#else 
+#include <unistd.h>
+#include <string.h> 
 #endif
 
 #ifndef CRAY

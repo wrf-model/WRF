@@ -10,6 +10,9 @@ subroutine da_setup_cv(be)
 
    integer :: iy, jx   ! Local horizontal domain dimensions.
    integer :: ij       ! Product of horizontal dims.
+#if (WRF_CHEM == 1)
+   integer :: ic
+#endif
 
    if (trace_use) call da_trace_entry("da_setup_cv")
 
@@ -133,6 +136,23 @@ subroutine da_setup_cv(be)
          cv_size_domain_jl = cv_size_domain_jb 
       end if
    end if
+
+   !--------------------------------------------------------------
+   ! [4] Define and add chem emiss cv sizes
+   !--------------------------------------------------------------
+#if (WRF_CHEM == 1)
+      iy = ite - its + 1
+      jx = jte - jts + 1
+
+      ij = iy * jx              ! cv space size same as state space size
+
+      be % cv % sizechemic (:) = 0
+      do ic = PARAM_FIRST_SCALAR, num_chem
+         be % cv % sizechemic (ic) = ij * be % v12(ic-1) % mz
+      end do
+      be % cv % size_jb = be % cv % size_jb + sum (be % cv % sizechemic (:))
+
+#endif
 
    if (trace_use) call da_trace_exit("da_setup_cv")
 

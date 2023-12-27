@@ -562,7 +562,7 @@ SUBROUTINE c_esmc_basetimeeq (time1, time2, outflag)
   USE WRF_ESMF_BaseTimeMod
   USE WRF_ESMF_CalendarMod
   USE WRF_ESMF_ClockMod
-  USE esmf_fractionmod
+  USE WRF_ESMF_FractionMod
   USE WRF_ESMF_TimeIntervalMod
   USE WRF_ESMF_TimeMod
 IMPLICIT NONE
@@ -579,7 +579,7 @@ SUBROUTINE c_esmc_basetimege(time1, time2, outflag)
   USE WRF_ESMF_BaseTimeMod
   USE WRF_ESMF_CalendarMod
   USE WRF_ESMF_ClockMod
-  USE esmf_fractionmod
+  USE WRF_ESMF_FractionMod
   USE WRF_ESMF_TimeIntervalMod
   USE WRF_ESMF_TimeMod
       logical, intent(OUT) :: outflag
@@ -595,7 +595,7 @@ SUBROUTINE c_esmc_basetimegt(time1, time2, outflag)
   USE WRF_ESMF_BaseTimeMod
   USE WRF_ESMF_CalendarMod
   USE WRF_ESMF_ClockMod
-  USE esmf_fractionmod
+  USE WRF_ESMF_FractionMod
   USE WRF_ESMF_TimeIntervalMod
   USE WRF_ESMF_TimeMod
 IMPLICIT NONE
@@ -612,7 +612,7 @@ SUBROUTINE c_esmc_basetimele(time1, time2, outflag)
   USE WRF_ESMF_BaseTimeMod
   USE WRF_ESMF_CalendarMod
   USE WRF_ESMF_ClockMod
-  USE esmf_fractionmod
+  USE WRF_ESMF_FractionMod
   USE WRF_ESMF_TimeIntervalMod
   USE WRF_ESMF_TimeMod
 IMPLICIT NONE
@@ -629,7 +629,7 @@ SUBROUTINE c_esmc_basetimelt(time1, time2, outflag)
   USE WRF_ESMF_BaseTimeMod
   USE WRF_ESMF_CalendarMod
   USE WRF_ESMF_ClockMod
-  USE esmf_fractionmod
+  USE WRF_ESMF_FractionMod
   USE WRF_ESMF_TimeIntervalMod
   USE WRF_ESMF_TimeMod
 IMPLICIT NONE
@@ -646,7 +646,7 @@ SUBROUTINE c_esmc_basetimene(time1, time2, outflag)
   USE WRF_ESMF_BaseTimeMod
   USE WRF_ESMF_CalendarMod
   USE WRF_ESMF_ClockMod
-  USE esmf_fractionmod
+  USE WRF_ESMF_FractionMod
   USE WRF_ESMF_TimeIntervalMod
   USE WRF_ESMF_TimeMod
 IMPLICIT NONE

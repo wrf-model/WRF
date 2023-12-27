@@ -157,6 +157,10 @@ module_clear_halos.o: module_configure.o \
 
 # DEPENDENCIES for phys
 
+module_madwrf.o: ../share/module_model_constants.o \
+		../share/module_soil_pre.o \
+		../phys/module_mp_thompson.o
+
 module_bl_myjpbl.o: ../share/module_model_constants.o
 
 module_bl_myjurb.o: ../share/module_model_constants.o
@@ -175,7 +179,10 @@ module_bl_gfs.o: module_gfs_machine.o \
 module_bl_gfsedmf.o: module_gfs_machine.o \
 		 module_gfs_physcons.o
 
-module_bl_mynn.o: ../share/module_model_constants.o
+module_bl_mynn.o: module_bl_mynn_common.o
+
+module_bl_mynn_wrapper.o: module_bl_mynn.o \
+		  module_bl_mynn_common.o
 
 module_cam_upper_bc.o: module_cam_shr_kind_mod.o \
 		module_cam_support.o
@@ -221,11 +228,9 @@ module_sf_mynn.o: module_sf_sfclay.o module_bl_mynn.o \
                 ../share/module_model_constants.o \
                 ../frame/module_wrf_error.o
 
-module_sf_fogdes.o: ../share/module_model_constants.o \
-                module_bl_mynn.o
+module_sf_fogdes.o: ../share/module_model_constants.o
 
-module_bl_fogdes.o: ../share/module_model_constants.o \
-                module_bl_mynn.o
+module_bl_fogdes.o: ../share/module_model_constants.o
 
 module_sf_gfdl.o : \
 		module_gfs_machine.o \
@@ -337,8 +342,6 @@ module_cu_ntiedtke.o: ../share/module_model_constants.o
 module_ra_gfdleta.o:  ../frame/module_dm.o \
 		module_mp_etanew.o
 
-module_ra_HWRF.o:   ../frame/module_dm.o module_mp_HWRF.o
-
 module_ra_rrtm.o: ../frame/module_wrf_error.o \
 		module_ra_clWRF_support.o \
 		../frame/module_dm.o
@@ -449,6 +452,10 @@ module_sf_clm.o: module_cam_shr_kind_mod.o \
 		 ../frame/module_wrf_error.o  \
 		../frame/module_configure.o
 
+module_sf_ctsm.o: ../frame/module_dm.o \
+                  ../frame/module_configure.o \
+                  ../frame/module_wrf_error.o
+
 module_sf_ssib.o: ../share/module_model_constants.o  
 
 module_sf_noah_seaice_drv.o:	module_sf_noah_seaice.o
@@ -471,9 +478,9 @@ module_sf_noahmplsm.o:	../share/module_model_constants.o \
 
 module_sf_noahmp_groundwater.o:	module_sf_noahmplsm.o
 
-module_sf_bep.o: ../share/module_model_constants.o module_sf_urban.o
+module_sf_bep.o: ../share/module_model_constants.o module_sf_urban.o module_bep_bem_helper.o
 
-module_sf_bep_bem.o: ../share/module_model_constants.o module_sf_bem.o module_sf_urban.o
+module_sf_bep_bem.o: ../share/module_model_constants.o module_sf_bem.o module_sf_urban.o module_bep_bem_helper.o
 
 module_sf_bem.o: ../share/module_model_constants.o
 
@@ -481,7 +488,7 @@ module_sf_ruclsm.o: ../frame/module_wrf_error.o module_data_gocart_dust.o
 
 module_sf_pxlsm.o: ../share/module_model_constants.o module_sf_pxlsm_data.o
 
-module_ra_rrtmg_sw.o: module_ra_rrtmg_lw.o
+module_ra_rrtmg_sw.o: module_ra_rrtmg_aero_optical_util_cmaq.o module_ra_rrtmg_lw.o
 module_ra_rrtmg_swf.o: module_ra_rrtmg_lwf.o
 module_ra_rrtmg_swk.o: module_ra_rrtmg_lwk.o module_ra_effective_radius.o
 
@@ -489,9 +496,7 @@ module_ra_rrtmg_lw.o: ../share/module_model_constants.o \
 		 module_ra_clWRF_support.o 
 module_ra_rrtmg_lwf.o: ../share/module_model_constants.o \
 		 module_ra_clWRF_support.o 
-module_ra_rrtmg_lwk.o: ../share/module_model_constants.o \
-                 module_ra_clWRF_support.o
-
+module_ra_rrtmg_lwk.o: ../share/module_model_constants.o
 
 
 module_physics_addtendc.o: \
@@ -512,10 +517,10 @@ module_physics_init.o : \
 		module_ra_cam.o		\
 		$(PHYS_CU) $(PHYS_BL) \
 		module_ra_cam_support.o		\
+		module_ra_clWRF_support.o	\
 		module_ra_sw.o			\
 		module_ra_gsfcsw.o		\
 		module_ra_gfdleta.o		\
-		module_ra_HWRF.o		\
 		module_ra_hs.o			\
                 module_ra_flg.o                 \
 		module_sf_sfclay.o		\
@@ -530,6 +535,7 @@ module_physics_init.o : \
 		module_sf_noahlsm.o		\
 		module_sf_noahdrv.o		\
 		module_sf_clm.o			\
+                module_sf_ctsm.o                \
                 module_sf_ssib.o                \
 		module_sf_noahmplsm.o		\
 		module_sf_noahmpdrv.o		\
@@ -546,10 +552,11 @@ module_physics_init.o : \
 		module_bl_myjpbl.o		\
 		module_bl_qnsepbl.o		\
 		module_bl_mynn.o                \
+                module_bl_mynn_wrapper.o        \
 		module_bl_myjurb.o              \
 		module_bl_boulac.o              \
 		module_bl_camuwpbl_driver.o     \
-		module_bl_temf.o              \
+		module_bl_temf.o                \
 		module_bl_mfshconvpbl.o         \
 		module_cu_kf.o			\
 	        module_cu_g3.o                  \
@@ -571,9 +578,9 @@ module_physics_init.o : \
 		module_mp_wsm3.o		\
 		module_mp_wsm5.o		\
 		module_mp_wsm6.o		\
+		module_mp_wsm6r.o		\
 		module_mp_etanew.o		\
 		module_mp_fer_hires.o 		\
-		module_mp_HWRF.o		\
 		module_mp_fast_sbm.o		\
 		module_fdda_psufddagd.o		\
 		module_fdda_spnudging.o         \
@@ -609,7 +616,8 @@ module_microphysics_driver.o: \
 		$(PHYS_MP) \
 		module_mp_wsm3.o module_mp_wsm5.o \
 		module_mp_wsm6.o module_mp_etanew.o \
-		module_mp_fer_hires.o module_mp_HWRF.o  \
+		module_mp_wsm6r.o \
+		module_mp_fer_hires.o \
 		module_mp_thompson.o            \
 		module_mp_gsfcgce.o 		\
 		module_mp_gsfcgce_4ice_nuwrf.o  \
@@ -635,11 +643,18 @@ module_shallowcu_driver.o: \
 		../frame/module_state_description.o \
 		../share/module_model_constants.o
 
+module_cu_gf_deep.o: \
+                module_cu_gf_ctrans.o
 module_cu_gf_wrfdrv.o: \
 		module_cu_gf_deep.o \
 		module_cu_gf_sh.o
 module_cu_gf_sh.o: \
 		module_cu_gf_deep.o
+module_cu_gf_ctrans.o: \
+                ../chem/module_chem_utilities.o \
+                ../share/module_HLaw.o \
+                ../share/module_ctrans_aqchem.o \
+                ../frame/module_state_description.o 
 module_cumulus_driver.o: \
 		module_cu_kf.o \
 		module_cu_g3.o \
@@ -678,8 +693,10 @@ module_pbl_driver.o:  \
 		module_bl_gfs.o \
 		module_bl_gfsedmf.o \
 		module_bl_mynn.o \
+                module_bl_mynn_wrapper.o \
 		module_bl_fogdes.o \
 		module_bl_gwdo.o \
+		module_bl_gwdo_gsl.o \
 		module_bl_temf.o \
 		module_bl_mfshconvpbl.o \
 		$(PHYS_BL) \
@@ -699,6 +716,7 @@ module_radiation_driver.o: \
 		module_ra_rrtm.o \
 		module_ra_rrtmg_lw.o \
 		module_ra_rrtmg_sw.o \
+		module_ra_rrtmg_aero_optical_util_cmaq.o \
 		module_ra_rrtmg_lwf.o \
 		module_ra_rrtmg_swf.o \
                 module_ra_rrtmg_lwk.o \
@@ -706,10 +724,10 @@ module_radiation_driver.o: \
 		module_ra_cam.o \
 		module_ra_farms.o \
 		module_ra_gfdleta.o \
-		module_ra_HWRF.o \
 		module_ra_hs.o \
 		module_ra_goddard.o \
                 module_ra_flg.o \
+                module_ra_eclipse.o \
                 module_ra_aerosol.o \
                 module_mp_thompson.o \
 		../frame/module_driver_constants.o \
@@ -734,6 +752,7 @@ module_surface_driver.o: \
                 module_sf_noahmp_groundwater.o  \
 		module_sf_noahdrv.o		\
 		module_sf_clm.o			\
+                module_sf_ctsm.o                \
                 module_sf_ssib.o                \
 		module_sf_noahmpdrv.o		\
 		module_sf_ruclsm.o		\
@@ -887,6 +906,21 @@ module_fire_debug_output.o: \
 	        ../frame/module_configure.o \
 	        ../share/mediation_integrate.o
 
+module_firebrand_spotting_mpi.o: \
+		../frame/module_domain.o \
+	        ../frame/module_configure.o \
+	        ../frame/module_dm.o
+
+module_firebrand_spotting.o: \
+		../frame/module_domain.o \
+	        ../frame/module_configure.o \
+	        ../frame/module_dm.o \
+		../frame/module_state_description.o \
+		../frame/module_domain_type.o \
+		../external/esmf_time_f90/module_symbols_util.o \
+		../external/esmf_time_f90/module_utility.o \
+                module_firebrand_spotting_mpi.o
+
 module_fdda_spnudging.o :\
 		../frame/module_dm.o \
 		../frame/module_state_description.o \
@@ -1022,7 +1056,8 @@ module_soil_pre.o: module_date_time.o ../frame/module_state_description.o
 
 module_check_a_mundo.o: ../frame/module_configure.o ../frame/module_wrf_error.o \
 		../frame/module_state_description.o \
-		../share/module_model_constants.o
+		../share/module_model_constants.o \
+		../phys/module_bep_bem_helper.o
 
 dfi.o : 	../frame/module_wrf_error.o ../frame/module_configure.o \
 		../frame/module_state_description.o \
@@ -1200,17 +1235,6 @@ module_random.o: bobrand.o
 
 # DEPENDENCIES for main
 
-convert_nmm.o: \
-	../frame/module_machine.o \
-	../frame/module_domain.o \
-	../frame/module_driver_constants.o \
-	../frame/module_configure.o \
-	../frame/module_timing.o \
-	../frame/module_dm.o \
-	../share/module_bc.o \
-	../share/module_io_domain.o \
-	$(ESMF_MOD_DEPENDENCE)
-
 convert_em.o: \
 	../frame/module_machine.o \
 	../frame/module_domain.o \
@@ -1232,12 +1256,6 @@ ideal_em.o: \
 	../share/module_io_domain.o \
 	../dyn_$(SOLVER)/$(CASE_MODULE) \
 	$(ESMF_MOD_DEPENDENCE)
-
-ideal_nmm.o: \
-	../dyn_$(SOLVER)/$(CASE_MODULE) \
-	../share/module_optional_input.o \
-	../share/module_io_domain.o \
-	../share/input_wrf.o 
 
 ndown_em.o: \
 	../frame/module_machine.o \

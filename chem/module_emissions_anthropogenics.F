@@ -227,6 +227,16 @@ is_mozart:if( is_moz_chm ) then
             if(p_ete >= param_first_scalar) then
               chem(its:ite,k,j,p_ete) = chem(its:ite,k,j,p_ete) + emis_ant(its:ite,k,j,p_e_ol2)*conv_rho(its:ite)
             end if
+            if(p_e_hono >= param_first_scalar .and. p_hono >= param_first_scalar) then
+              chem(its:ite,k,j,p_hono) = chem(its:ite,k,j,p_hono) + emis_ant(its:ite,k,j,p_e_hono)*conv_rho(its:ite)
+            end if
+            if(p_e_terp >= param_first_scalar .and. p_api >= param_first_scalar .and. p_lim >= param_first_scalar) then
+              chem(its:ite,k,j,p_api) = chem(its:ite,k,j,p_api) + 0.5*emis_ant(its:ite,k,j,p_e_terp)*conv_rho(its:ite)
+              chem(its:ite,k,j,p_lim) = chem(its:ite,k,j,p_lim) + 0.5*emis_ant(its:ite,k,j,p_e_terp)*conv_rho(its:ite)
+            end if
+            if(p_e_co2 >= param_first_scalar .and. p_co2 >= param_first_scalar) then
+              chem(its:ite,k,j,p_co2) = chem(its:ite,k,j,p_co2) + emis_ant(its:ite,k,j,p_e_co2)*conv_rho(its:ite)
+            end if
             if( config_flags%chem_opt == GOCARTRACM_KPP .or. config_flags%chem_opt == GOCARTRADM2 ) then
               chem(its:ite,k,j,p_p10) = chem(its:ite,k,j,p_p10) + conv_rho_aer(its:ite)*emis_ant(its:ite,k,j,p_e_pm_10)
               chem(its:ite,k,j,p_p25) = chem(its:ite,k,j,p_p25) + conv_rho_aer(its:ite)*emis_ant(its:ite,k,j,p_e_pm_25)
@@ -241,7 +251,7 @@ is_mozart:if( is_moz_chm ) then
    if (config_flags%aircraft_emiss_opt == 1 ) then
       do j=jts,jte  
         do k=kts,min(config_flags%kemit_aircraft,kte)
-          conv_rho(its:ite)=4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
+          conv_rho(its:ite)=4.828e-4/rho_phy(its:ite,k,j)*dtstep/(dz8w(its:ite,k,j)*60.)
           if( p_no >= param_first_scalar ) then
             chem(its:ite,k,j,p_no)  = chem(its:ite,k,j,p_no)  + emis_aircraft(its:ite,k,j,p_eac_no) *conv_rho(its:ite)
           endif
@@ -417,7 +427,7 @@ is_mozart:if( is_moz_chm ) then
           chem(its:ite,kts,j,p_mbo)=chem(its:ite,kts,j,p_mbo)+ ebio_mbo(its:ite,j)*conv_rho(its:ite)
         endif
       enddo
-     CASE (MEGAN2)
+     CASE (MEGAN2,MEGAN2_CLM)
       do j = jts,jte
         con2ppm(its:ite,j) = dtstep/(dz8w(its:ite,kts,j)*60.)
       end do

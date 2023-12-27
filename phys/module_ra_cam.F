@@ -195,7 +195,7 @@ MODULE module_ra_cam
    data amo   /  48.0000   /
 
 contains
-subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
+subroutine camrad(RTHRATENLW,RTHRATENSW,RTHRATENLWC,RTHRATENSWC,   &
                      dolw,dosw,                                    &
                      SWUPT,SWUPTC,SWDNT,SWDNTC,                    &
                      LWUPT,LWUPTC,LWDNT,LWDNTC,                    &
@@ -213,16 +213,16 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
                      SWDDIR,SWDDIF,SWDDNI,                         & ! amontornes-bcodina (2014-04-20)
                      F_QV,F_QC,F_QR,F_QI,F_QS,F_QG,                &
                      f_ice_phy,f_rain_phy,                         &
-                     p_phy,p8w,z,pi_phy,rho_phy,dz8w,               &
-                     CLDFRA,XLAND,XICE,SNOW,                        &
-                     ozmixm,pin0,levsiz,num_months,                 &
-                     m_psp,m_psn,aerosolcp,aerosolcn,m_hybi0,       &
-                     cam_abs_dim1, cam_abs_dim2,                    &
-                     paerlev,naer_c,                                &
-                     GMT,JULDAY,JULIAN,YR,DT,XTIME,DECLIN,SOLCON,         &
-                     RADT,DEGRAD,n_cldadv,                                  &
+                     p_phy,p8w,z,pi_phy,rho_phy,dz8w,              &
+                     CLDFRA,XLAND,XICE,SNOW,                       &
+                     ozmixm,pin0,levsiz,num_months,                &
+                     m_psp,m_psn,aerosolcp,aerosolcn,m_hybi0,      &
+                     cam_abs_dim1, cam_abs_dim2,                   &
+                     paerlev,naer_c,                               &
+                     GMT,JULDAY,JULIAN,YR,DT,XTIME,DECLIN,SOLCON,  &
+                     RADT,DEGRAD,n_cldadv,                         &
                      abstot_3d, absnxt_3d, emstot_3d,              &
-                     doabsems,                                     &
+                     doabsems, ghg_input,                          &
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte,                    &
@@ -249,10 +249,11 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
    REAL,       INTENT(IN  )  ::        JULIAN
    INTEGER,    INTENT(IN  )  ::        YR
    REAL,       INTENT(IN  )  ::        DT
-   INTEGER,      INTENT(IN   )    ::   levsiz, num_months
-   INTEGER,      INTENT(IN   )    ::   paerlev, naer_c
-   INTEGER,      INTENT(IN   )    ::   cam_abs_dim1, cam_abs_dim2
+   INTEGER,    INTENT(IN  )  ::   levsiz, num_months
+   INTEGER,    INTENT(IN  )  ::   paerlev, naer_c
+   INTEGER,    INTENT(IN  )  ::   cam_abs_dim1, cam_abs_dim2
 
+   INTEGER,    INTENT(IN  )  ::    ghg_input
 
    REAL, INTENT(IN    )      ::        RADT,DEGRAD,             &
                                        XTIME,DECLIN,SOLCON,GMT
@@ -276,7 +277,9 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          INTENT(INOUT)  ::                              RTHRATENLW, &
-                                                        RTHRATENSW
+                                                        RTHRATENLWC, &
+                                                        RTHRATENSW, &
+                                                        RTHRATENSWC
 !
    REAL, DIMENSION( ims:ime, jms:jme ),                           &
          INTENT(IN   )  ::                                  XLAT, &
@@ -421,10 +424,12 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
    real(r8), dimension(  1:ite-its+1 ) :: solsd         ! Downward solar rad onto surface (sw diffuse)
    real(r8), dimension(  1:ite-its+1 ) :: solld         ! Downward solar rad onto surface (lw diffuse)
    real(r8), dimension(  1:ite-its+1, 1:kte-kts+1 ) :: qrs      ! Solar heating rate
+   real(r8), dimension(  1:ite-its+1, 1:kte-kts+1 ) :: qrscs    ! Clear sky solar heating rate
    real(r8), dimension(  1:ite-its+1 ) :: fsds          ! Flux Shortwave Downwelling Surface
    real(r8), dimension(  1:ite-its+1 ) :: fsdsdir       ! Flux Shortwave Direct Downwelling Surface
    real(r8), dimension(  1:ite-its+1 ) :: fsdsdif       ! Flux Shortwave Diffuse Downwelling Surface
    real(r8), dimension(  1:ite-its+1, 1:kte-kts+1 ) :: qrl      ! Longwave cooling rate
+   real(r8), dimension(  1:ite-its+1, 1:kte-kts+1 ) :: qrlcs    ! Clear sky longwave cooling rate
    real(r8), dimension(  1:ite-its+1 ) :: flwds          ! Surface down longwave flux
    real(r8), dimension(  1:ite-its+1, levsiz, num_months ) :: ozmixmj        ! monthly ozone mixing ratio
    real(r8), dimension(  1:ite-its+1, levsiz ) :: ozmix          ! ozone mixing ratio (time interpolated)
@@ -440,10 +445,7 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
    CHARACTER(LEN=256) :: msgstr
 
 !ccc
-#ifdef CLWRFGHG
-! CLWRF-UC June.09 
    REAL(r8)                                         :: co2vmr, n2ovmr, ch4vmr, f11vmr, f12vmr
-#endif
    LOGICAL, EXTERNAL                                :: wrf_dm_on_monitor
    CHARACTER(LEN=256)                               :: message
 
@@ -480,41 +482,27 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
 ! of interpolation factors to within 32-bit roundoff
 ! assume that day of year is 1 for all input data
 !
-!ccc
-#ifdef CLWRFGHG
-! CLWRF-UC June.09  (Copy from share/wrf_tsin.F)
 
-   CALL read_CAMgases(yr,julian,"CAM",co2vmr,n2ovmr,ch4vmr,f11vmr,f12vmr)
-
-   IF ( wrf_dm_on_monitor() ) THEN
-     WRITE(message,*)'write 1 CAM-CLWRF interpolated values______ year:',yr,' julian day:',julian
-     call wrf_debug( 100, message)
-     WRITE(message,*)'  CAM-CLWRF co2vmr: ',co2vmr,' n2ovmr:',n2ovmr,' ch4vmr:',ch4vmr,' cfc11:'&
-       ,f11vmr,' cfc12:',f12vmr
-     call wrf_debug( 100, message)
-   ENDIF
-
-#else
-!ccc
-   nyrm     = yr - yrdata(1) + 1
-   nyrp     = nyrm + 1
-   doymodel = yr*365.    + julian
-   doydatam = yrdata(nyrm)*365. + 1.
-   doydatap = yrdata(nyrp)*365. + 1.
-   deltat   = doydatap - doydatam
-   fact1    = (doydatap - doymodel)/deltat
-   fact2    = (doymodel - doydatam)/deltat
-   co2vmr = (co2(nyrm)*fact1 + co2(nyrp)*fact2)*1.e-06
-!ccc
-   IF ( wrf_dm_on_monitor() ) THEN
-     WRITE(message,*)'CAM interpolated values_____ year:',yr,' julian day:',julian
-     call wrf_debug( 100, message)
-     WRITE(message,*)'CAM co2vmr: ',co2vmr,' n2ovmr:',n2ovmr,' ch4vmr:',ch4vmr,' cfc11:',f11vmr,&
-       ' cfc12:',f12vmr
-     call wrf_debug( 100, message)
-   ENDIF
-#endif
-!ccc
+   IF (ghg_input.eq.1) then
+       CALL read_CAMgases(yr,julian,.false.,"CAM",co2vmr,n2ovmr,ch4vmr,f11vmr,f12vmr)
+       IF ( wrf_dm_on_monitor() ) THEN
+         WRITE(message,*)'write  CAM-CLWRF interpolated values______ year:',yr,' julian day:',julian
+         call wrf_debug( 100, message)
+         WRITE(message,*)'  CAM-CLWRF co2vmr: ',co2vmr,' n2ovmr:',n2ovmr,' ch4vmr:',ch4vmr,' cfc11:'&
+           ,f11vmr,' cfc12:',f12vmr
+         call wrf_debug( 100, message)
+       ENDIF
+  ELSE
+       nyrm     = yr - yrdata(1) + 1
+       nyrp     = nyrm + 1
+       doymodel = yr*365.    + julian
+       doydatam = yrdata(nyrm)*365. + 1.
+       doydatap = yrdata(nyrp)*365. + 1.
+       deltat   = doydatap - doydatam
+       fact1    = (doydatap - doymodel)/deltat
+       fact2    = (doymodel - doydatam)/deltat
+       co2vmr = (co2(nyrm)*fact1 + co2(nyrp)*fact2)*1.e-06
+  ENDIF
 
    co2mmr=co2vmr*mwco2/mwdry
 !
@@ -763,21 +751,16 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
                    pint, lnpmid, lnpint, pdel, t, q,   &
                    cld, cicewp, cliqwp, tauxcl, tauxci, coszrs, clat, asdir, asdif,               &
                    aldir, aldif, solcon, GMT,JULDAY,JULIAN,DT,XTIME,   &
-                   pin, ozmixmj, ozmix, levsiz, num_months,  & 
+                   pin, ozmixmj, ozmix, levsiz, num_months,ghg_input,  & 
                    m_psjp,m_psjn, aerosoljp, aerosoljn,  m_hybi, paerlev, naer_c, pmxrgn, nmxrgn, &
                    dolw, dosw, doabsems, abstot, absnxt, emstot, &
                    fsup, fsupc, fsdn, fsdnc,            &
                    fsdndir ,fsdncdir,fsdndif ,fsdncdif, & ! amontornes-bcodina (2014-04-20) Dir/Dif fluxes
                    flup, flupc, fldn, fldnc, swcftoa, lwcftoa, olrtoa,  &
                    fsns, fsnt    ,flns    ,flnt    , &
-                   qrs, qrl, flwds, rel, rei,                       &
+                   qrs, qrscs, qrl, qrlcs, flwds, rel, rei,             &
                    sols, soll, solsd, solld,                  &
-!ccc
-#ifdef CLWRFGHG
-!CLWRF-UC June.09
                    n2ovmr, ch4vmr, f11vmr, f12vmr  , &
-#endif
-!ccc
                    landfrac, zm, fsds, fsdsdir, fsdsdif) ! amontornes-bcodina (2014-04-20) Dir/Dif fluxes
 
       do k = kts,kte
@@ -786,6 +769,8 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
       ii = i - its + 1
       if(dolw)RTHRATENLW(I,K,J) = 1.e4*qrl(ii,kk)/(cpair*pi_phy(i,k,j))
       if(dosw)RTHRATENSW(I,K,J) = 1.e4*qrs(ii,kk)/(cpair*pi_phy(i,k,j))
+      if(dolw)RTHRATENLWC(I,K,J) = 1.e4*qrlcs(ii,kk)/(cpair*pi_phy(i,k,j))
+      if(dosw)RTHRATENSWC(I,K,J) = 1.e4*qrscs(ii,kk)/(cpair*pi_phy(i,k,j))
       cemiss(i,k,j)     = emis(ii,kk)
       taucldc(i,k,j)    = tauxcl(ii,kk)
       taucldi(i,k,j)    = tauxci(ii,kk)
@@ -1287,14 +1272,9 @@ subroutine get_aerosol(c, julday, julian, dt, gmt, xtime, m_psp, m_psn, aerosolj
             if (AEROSOLt(i, k, m) < speciesmin(m)) then
                write(6,*) 'AEROSOL_INTERPOLATE: negative mass mixing ratio, exiting'
                write(6,*) 'm, column, pver',m, i, k ,AEROSOLt(i, k, m)
-!ccc
-#ifdef CLWRFGHG
-!CLWRF-UC July.09
                print *,'naer:',naer,' pver:',pver,' ncol:',ncol
                PRINT *,'ERROR -- error -- ERROR -- error -- ERROR -- error'
                CALL wrf_error_fatal('CLWRF-module_ra_cam. : AEROSOLt=NaN')
-#endif
-!ccc
                call endrun ()
             end if
          end do
@@ -1569,7 +1549,7 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
 !                 qm1     ,cld     ,cicewp  ,cliqwp  ,coszrs,  clat, &
                   qm1     ,cld     ,cicewp  ,cliqwp  ,tauxcl, tauxci, coszrs,  clat, &
                   asdir   ,asdif   ,aldir   ,aldif   ,solcon, GMT,JULDAY,JULIAN,DT,XTIME,  &
-                  pin, ozmixmj, ozmix, levsiz, num_months,      &
+                  pin, ozmixmj, ozmix, levsiz, num_months,  ghg_input,    &
                   m_psp, m_psn,  aerosoljp, aerosoljn, m_hybi, paerlev, naer_c, pmxrgn  , &
                   nmxrgn  ,                   &
                   dolw, dosw, doabsems, abstot, absnxt, emstot, &
@@ -1578,14 +1558,9 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
                   flup    ,flupc   ,fldn    ,fldnc   , &
                   swcf    ,lwcf    ,flut    ,          &
                   fsns    ,fsnt    ,flns    ,flnt    , &
-                  qrs     ,qrl     ,flwds   ,rel     ,rei     , &
+                  qrs     ,qrscs   ,qrl     ,qrlcs   ,flwds   ,rel     ,rei     , &
                   sols    ,soll    ,solsd   ,solld   , &
-!ccc
-#ifdef CLWRFGHG
-!CLWRF-UC June.09
                   n2ovmr, ch4vmr, f11vmr, f12vmr     , &
-#endif
-!ccc
                   landfrac,zm      ,fsds, fsdsdir,fsdsdif     ) ! amontornes-bcodina (2014-04-20) Dir/Dif fluxes
 !----------------------------------------------------------------------- 
 ! 
@@ -1624,6 +1599,7 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
    integer, intent(in) :: ncol                  ! number of atmospheric columns
    integer, intent(in) :: levsiz                ! number of ozone data levels
    integer, intent(in) :: num_months            ! 12 months
+   integer, intent(in) :: ghg_input
    integer, intent(in) :: paerlev,naer_c          ! aerosol vertical level and # species
    integer, intent(in) :: pcols, pver, pverp, pverr, pverrp, ppcnst, pcnst
    logical, intent(in) :: dolw,dosw,doabsems
@@ -1694,6 +1670,7 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
    real(r8), intent(out) :: solsd(pcols)         ! Downward solar rad onto surface (sw diffuse)
    real(r8), intent(out) :: solld(pcols)         ! Downward solar rad onto surface (lw diffuse)
    real(r8), intent(out) :: qrs(pcols,pver)      ! Solar heating rate
+   real(r8), intent(out) :: qrscs(pcols,pver)    ! Clear sky solar heating rate
    real(r8), intent(out) :: fsds(pcols)          ! Flux Shortwave Downwelling Surface
    real(r8), intent(out) :: fsdsdir(pcols)       ! Flux Shortwave Direct Downwelling Surface (amontornes-bcodina 2014-04-20)
    real(r8), intent(out) :: fsdsdif(pcols)       ! Flux Shortwave Diffuse Downwelling Surface (amontornes-bcodina 2014-04-20)
@@ -1717,6 +1694,7 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
 ! Output longwave arguments
 !
    real(r8), intent(out) :: qrl(pcols,pver)      ! Longwave cooling rate
+   real(r8), intent(out) :: qrlcs(pcols,pver)    ! Clear sky longwave cooling rate
    real(r8), intent(out) :: flwds(pcols)         ! Surface down longwave flux
 
    real(r8), intent(inout) :: abstot(pcols,pverp,pverp) ! Total absorptivity
@@ -1775,12 +1753,8 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
    real(r8) aerosol(pcols, pver, naer_all) ! aerosol mass mixing ratios
    real(r8) scales(naer_all)               ! scaling factors for aerosols
 
-!ccc
-#ifdef CLWRFGHG
-!CLWRF-UC July.09
    real(r8), INTENT(IN)        ::    n2ovmr, ch4vmr, f11vmr, f12vmr
-#endif
-   LOGICAL, EXTERNAL                                :: wrf_dm_on_monitor
+   LOGICAL, EXTERNAL           ::    wrf_dm_on_monitor
    CHARACTER (LEN=256)         ::    message
 !ccc
 
@@ -1846,7 +1820,7 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
 !                   rei     ,eccf    ,coszrs  ,scon    ,solin   ,solcon , &
                     rei     ,tauxcl  ,tauxci  ,eccf    ,coszrs  ,scon    ,solin   ,solcon , &
                     asdir   ,asdif   ,aldir   ,aldif   ,nmxrgnrf, &
-                    pmxrgnrf,qrs     ,fsnt    ,fsntc   ,fsntoa  , &
+                    pmxrgnrf,qrs     ,qrscs   ,fsnt    ,fsntc   ,fsntoa  , &
                     fsntoac ,fsnirt  ,fsnrtc  ,fsnirtsq,fsns    , &
                     fsnsc   ,fsdsc   ,fsds    ,sols    ,soll    , &
                     solsd   ,solld   ,frc_day ,                   &
@@ -1896,7 +1870,7 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
 !                   rei     ,eccf    ,coszrs  ,scon    ,solin   ,solcon , &
                     rei     ,tauxcl  ,tauxci  ,eccf    ,coszrs  ,scon    ,solin   ,solcon , &
                     asdir   ,asdif   ,aldir   ,aldif   ,nmxrgn  , &
-                    pmxrgn  ,qrs     ,fsnt    ,fsntc   ,fsntoa  , &
+                    pmxrgn  ,qrs     ,qrscs   ,fsnt    ,fsntc   ,fsntoa  , &
                     fsntoac ,fsnirt  ,fsnrtc  ,fsnirtsq,fsns    , &
                     fsnsc   ,fsdsc   ,fsds    ,sols    ,soll    , &
                     solsd   ,solld   ,frc_day ,                   &
@@ -2014,29 +1988,30 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
                        pbr     ,pnm     ,pmln    ,piln    ,          &
                        qm1(1,1,in2o)    ,qm1(1,1,ich4)    ,          &
                        qm1(1,1,if11)    ,qm1(1,1,if12)    ,          &
-                       cld     ,emis    ,pmxrgn  ,nmxrgn  ,qrl     , &
-                       doabsems, abstot, absnxt, emstot,             &
+                       cld     ,emis    ,pmxrgn  ,nmxrgn  ,          &
+                       qrl     ,qrlcs   ,                            &
+                       doabsems,abstot  ,absnxt  ,emstot  ,          &
                        flns    ,flnt    ,flnsc   ,flntc   ,flwds   , &
                        flut    ,flutc   ,                            &
                        flup    ,flupc   ,fldn    ,fldnc   ,          &
                        aerosol(:,:,idxVOLC))
 !        call t_stopf("radclwmx")
       else
-!ccc
-#ifdef CLWRFGHG
-         IF ( wrf_dm_on_monitor() ) THEN
-           WRITE(message,*)'CLWRF-CAM_call-trcmix n2ovmr:',n2ovmr,' ch4vmr:',ch4vmr,' f11vmr:',f11vmr,' f12vmr:',f12vmr
-           CALL wrf_debug(1, message)
-         END IF
-         call trcmix_clwrf(lchnk   ,ncol    ,pcols, pver,  &
-                     pmid    ,clat, n2ovmr, ch4vmr, f11vmr, f12vmr, n2o,   &
-                     ch4, cfc11, cfc12 )
 
-#else
-         call trcmix(lchnk   ,ncol    ,pcols, pver,  &
-                     pmid    ,clat, n2o     ,ch4     ,                     &
-                     cfc11   ,cfc12   )
-#endif
+         IF (ghg_input.eq.1) THEN
+           IF ( wrf_dm_on_monitor() ) THEN
+             WRITE(message,*)'CLWRF-CAM_call-trcmix n2ovmr:',n2ovmr,' ch4vmr:',ch4vmr,' f11vmr:',f11vmr,' f12vmr:',f12vmr
+             CALL wrf_debug(1, message)
+           END IF
+           call trcmix_clwrf(lchnk   ,ncol    ,pcols, pver,  &
+                       pmid    ,clat, n2ovmr, ch4vmr, f11vmr, f12vmr, n2o,   &
+                       ch4, cfc11, cfc12 )
+  
+         ELSE
+           call trcmix(lchnk   ,ncol    ,pcols, pver,  &
+                       pmid    ,clat, n2o     ,ch4     ,                     &
+                       cfc11   ,cfc12   )
+         ENDIF
          IF ( wrf_dm_on_monitor() ) THEN
            WRITE(message,*)'CLWRF post_trcmix_values. n2o:', n2o(pcols/2,pver/2), ' ch4:',      &
              ch4(pcols/2,pver/2),' cfc11:', cfc11(pcols/2,pver/2),' cfc12:', cfc12(pcols/2,pver/2) 
@@ -2049,7 +2024,7 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
                        pbr       ,pnm     ,pmln    ,piln    ,          &
                        n2o       ,ch4     ,cfc11   ,cfc12   ,          &
                        cld       ,emis    ,pmxrgn  ,nmxrgn  ,qrl     , &
-                       doabsems, abstot, absnxt, emstot,             &
+                       qrlcs, doabsems, abstot, absnxt, emstot,        &
                        flns      ,flnt    ,flnsc   ,flntc   ,flwds   , &
                        flut      ,flutc   ,                            &
                        flup      ,flupc   ,fldn    ,fldnc   ,          &
@@ -2435,7 +2410,7 @@ subroutine radabs(lchnk   ,ncol    ,pcols, pver, pverp,   &
    real(r8) r2sslp             ! 1/2 of rsslp
    real(r8) ds2c               ! Y in eq(7) in table A2 of R&D
    real(r8)  dplos             ! Ozone pathlength eq(A2) in R&Di
-   real(r8) dplol              ! Presure weighted ozone pathlength
+   real(r8) dplol              ! Pressure weighted ozone pathlength
    real(r8) tlocal             ! Local interface temperature
    real(r8) beta               ! Ozone mean line parameter eq(A3) in R&Di
 !                               (includes Voigt line correction factor)
@@ -4756,7 +4731,7 @@ subroutine radclwmx(lchnk   ,ncol    ,pcols, pver, pverp,         &
                     pmid    ,pint    ,pmln    ,piln    ,          &
                              n2o     ,ch4     ,cfc11   ,cfc12   , &
                     cld     ,emis    ,pmxrgn  ,nmxrgn  ,qrl     , &
-                    doabsems, abstot, absnxt, emstot,             &
+                    qrlcs, doabsems, abstot, absnxt, emstot,      &
                     flns    ,flnt    ,flnsc   ,flntc   ,flwds   , &
                     flut    ,flutc   , &
                     flup    ,flupc   ,fldn    ,fldnc   ,          &
@@ -4834,6 +4809,7 @@ subroutine radclwmx(lchnk   ,ncol    ,pcols, pver, pverp,         &
 ! Output arguments
 !
    real(r8), intent(out) :: qrl(pcols,pver)      ! Longwave heating rate
+   real(r8), intent(out) :: qrlcs(pcols,pver)    ! Clear sky longwave heating rate
    real(r8), intent(out) :: flns(pcols)          ! Surface cooling flux
    real(r8), intent(out) :: flnt(pcols)          ! Net outgoing flux
    real(r8), intent(out) :: flut(pcols)          ! Upward flux at top of model
@@ -5674,9 +5650,17 @@ subroutine radclwmx(lchnk   ,ncol    ,pcols, pver, pverp,         &
                      1.E-4*gravit/((pint(i,k) - pint(i,k+1)))
       end do
    end do
+   ! Repeat for clear sky
+   do k=ntoplw,pver
+      do i=1,ncol
+         qrlcs(i,k) = (fsul(i,k) - fsdl(i,k) - fsul(i,k+1) + fsdl(i,k+1))* &
+                     1.E-4*gravit/((pint(i,k) - pint(i,k+1)))
+      end do
+   end do
 ! Return 0 above solution domain
    if ( ntoplw > 1 )then
       qrl(:ncol,:ntoplw-1) = 0.
+      qrlcs(:ncol,:ntoplw-1) = 0.
    end if
 
 ! Added downward/upward total and clear sky fluxes
@@ -5706,7 +5690,7 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
 !                   rei     ,eccf    ,coszrs  ,scon    ,solin   ,solcon,  &
                     rei     ,tauxcl  ,tauxci  ,eccf    ,coszrs  ,scon    ,solin   ,solcon,  &
                     asdir   ,asdif   ,aldir   ,aldif   ,nmxrgn  , &
-                    pmxrgn  ,qrs     ,fsnt    ,fsntc   ,fsntoa  , &
+                    pmxrgn  ,qrs     ,qrscs   ,fsnt    ,fsntc   ,fsntoa  , &
                     fsntoac ,fsnirtoa,fsnrtoac,fsnrtoaq,fsns    , &
                     fsnsc   ,fsdsc   ,fsds    ,sols    ,soll    , &
                     solsd   ,solld   ,frc_day ,                   &
@@ -5882,6 +5866,7 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
 
    real(r8), intent(out) :: solin(pcols)     ! Incident solar flux
    real(r8), intent(out) :: qrs(pcols,pver)  ! Solar heating rate
+   real(r8), intent(out) :: qrscs(pcols,pver)! Clear sky solar heating rate
    real(r8), intent(out) :: fsns(pcols)      ! Surface absorbed solar flux
    real(r8), intent(out) :: fsnt(pcols)      ! Total column absorbed solar flux
    real(r8), intent(out) :: fsntoa(pcols)    ! Net solar flux at TOA
@@ -6072,6 +6057,7 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
    real(r8) solflx           ! Solar flux in current interval
    real(r8) sfltot           ! Spectrally summed total solar flux
    real(r8) totfld(0:pver)   ! Spectrally summed flux divergence
+   real(r8) totfldc(0:pver)  ! Spectrally summed clear sky flux divergence
    real(r8) fswup(0:pverp)   ! Spectrally summed up flux
    real(r8) fswdn(0:pverp)   ! Spectrally summed down flux
    real(r8) fswupc(0:pverp)  ! Spectrally summed up clear sky flux
@@ -6345,6 +6331,7 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
 
       do k=1, pver
          qrs(i,k) = 0.0_r8
+         qrscs(i,k) = 0.0_r8
       end do
 
       ! initialize aerosol diagnostic fields to 0.0 
@@ -7181,6 +7168,7 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
 ! 
          do k=0,pver
             totfld(k) = 0.0_r8
+            totfldc(k) = 0.0_r8
             fswup (k) = 0.0_r8
             fswdn (k) = 0.0_r8
             fswupc (k) = 0.0_r8
@@ -7514,6 +7502,13 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
             fswdncdir(k) = fswdncdir(k) + solflx*exptdnc(k) ! Beer's Law amontornes-bcodina (2014-04-20)
             end do
 
+            ! For clear sky heating rate
+            do k=0,pver
+               kp1 = k+1
+               flxdiv = (fluxdn(k  ) - fluxdn(kp1)) + (fluxup(kp1) - fluxup(k))
+               totfldc(k) = totfldc(k)  + solflx*flxdiv
+            end do
+
             fsntc(i)    = fsntc(i)+solflx*(fluxdn(1)-fluxup(1))
             fsntoac(i)  = fsntoac(i)+solflx*(fluxdn(0)-fluxup(0))
             fsnsc(i)    = fsnsc(i)+solflx*(fluxdn(pverp)-fluxup(pverp))
@@ -7532,6 +7527,7 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
 ! 
          do k=1,pver
             qrs(i,k) = -1.E-4*gravit*totfld(k)/(pint(i,k) - pint(i,k+1))
+            qrscs(i,k) = -1.E-4*gravit*totfldc(k)/(pint(i,k) - pint(i,k+1))
          end do
 
 ! Added downward/upward total and clear sky fluxes

@@ -47,7 +47,9 @@
     INTEGER sf_urban_physics, w_damping, smooth_option, feedback, surface_input_source, sst_update
     INTEGER skebs_on, sppt_on, rand_perturb_on, nens,ISEED_SKEBS,ISEED_SPPT,ISEED_RAND_PERT
     INTEGER skebs_vertstruc, sppt_vertstruc, rand_pert_vertstruc
+    INTEGER ghg_input
     INTEGER LMINFORC,LMAXFORC,KMINFORC,KMAXFORC,LMINFORCT,LMAXFORCT,KMINFORCT,KMAXFORCT
+    INTEGER NTASKS_X, NTASKS_Y
     REAL    gridpt_stddev_rand_pert,stddev_cutoff_rand_pert,timescale_rand_pert
     REAL    gridpt_stddev_sppt,stddev_cutoff_sppt,timescale_sppt
     REAL    tot_backscat_psi,tot_backscat_t,REXPONENT_PSI,REXPONENT_T,ZTAU_PSI,ZTAU_T
@@ -157,6 +159,8 @@
     call nl_get_aer_ssa_val        ( grid%id,  aer_ssa_val        )
     call nl_get_aer_asy_val        ( grid%id,  aer_asy_val        )
     call nl_get_sf_lake_physics    ( grid%id,  sf_lake_physics    )
+    call nl_get_nproc_x            ( 1,        ntasks_x           )
+    call nl_get_nproc_y            ( 1,        ntasks_y           )
 
 #if (EM_CORE == 1)
     dt = grid%dt
@@ -172,8 +176,9 @@
     call nl_get_feedback             ( 1      ,  feedback             )
     call nl_get_smooth_option        ( 1      ,  smooth_option        )
     call nl_get_swrad_scat           ( 1      ,  swrad_scat           )
-    call nl_get_sf_urban_physics     ( 1      ,  sf_urban_physics     )
+    call nl_get_sf_urban_physics     ( grid%id,  sf_urban_physics     )
     call nl_get_w_damping            ( 1      ,  w_damping            )
+    call nl_get_ghg_input            ( 1      ,  ghg_input            )
 
 #if (EM_CORE == 1)
     call nl_get_hypsometric_opt    ( 1, hypsometric_opt           )
@@ -342,11 +347,7 @@
     CALL wrf_put_dom_ti_char ( fid , 'START_DATE', TRIM(start_date) , ierr )
     IF ( switch .EQ. input_only) THEN
        CALL wrf_put_dom_ti_char ( fid , 'SIMULATION_START_DATE', TRIM(start_date) , ierr )
-#if ( HWRF == 1 )
-    ELSE
-#else
     ELSE IF ( ( switch .EQ. restart_only ) .OR. ( switch .EQ. history_only ) ) THEN
-#endif
        CALL nl_get_simulation_start_year   ( 1, simulation_start_year   )
        CALL nl_get_simulation_start_month  ( 1, simulation_start_month  )
        CALL nl_get_simulation_start_day    ( 1, simulation_start_day    )
@@ -466,11 +467,6 @@ endif
        CALL wrf_put_dom_ti_real ( fid , 'DX' , config_flags%dx , 1 , ierr )
        CALL wrf_put_dom_ti_real ( fid , 'DY' , config_flags%dy , 1 , ierr )
     END IF
-#endif
-
-#if (NMM_CORE == 1)
-    CALL wrf_put_dom_ti_real ( fid , 'WBD0' , grid%wbd0 , 1 , ierr )
-    CALL wrf_put_dom_ti_real ( fid , 'SBD0' , grid%sbd0 , 1 , ierr )
 #endif
 
     CALL wrf_put_dom_ti_integer( fid, 'AERCU_OPT'          , config_flags%aercu_opt          , 1, ierr )
@@ -598,22 +594,18 @@ endif
      IF ( config_flags%perturb_bdy .NE. 0 ) THEN
           CALL wrf_put_dom_ti_integer( fid, 'PERTURB_BDY',        config_flags%perturb_bdy, 1, ierr )
      END IF
-     CALL wrf_put_dom_ti_integer( fid, 'SPEC_BDY_FINAL_MU',  config_flags%spec_bdy_final_mu, 1, ierr )
      CALL wrf_put_dom_ti_integer( fid, 'USE_Q_DIABATIC',     config_flags%use_q_diabatic,    1, ierr )
     END IF
 #endif
 
 ! added by SYHA (09-19-2014)
-#if ((WRF_CHEM == 1) &&  (EM_CORE == 1))
+#if ((WRF_CHEM == 1) &&  (EM_CORE == 1) && (DA_CORE != 1))
      IF ( config_flags%perturb_chem_bdy .NE. 0 ) THEN
           CALL wrf_put_dom_ti_integer( fid, 'PERTURB_CHEM_BDY', config_flags%perturb_chem_bdy, 1, ierr )
      END IF
 #endif
 
 ! added this metadatum for H. Chuan, NCEP, 030417, JM
-#if (NMM_CORE == 1)
-          CALL wrf_put_dom_ti_char ( fid , 'GRIDTYPE',  'E' , ierr )
-#endif
 #if (EM_CORE == 1)
           CALL wrf_put_dom_ti_char ( fid , 'GRIDTYPE',  'C' , ierr )
 #endif
@@ -650,11 +642,14 @@ endif
 
     ! added netcdf-specific metadata:
     IF ( ( use_package( io_form ) == IO_NETCDF ) .OR. &
+         ( use_package( io_form ) == IO_NETCDFPAR  ) .OR. &
          ( use_package( io_form ) == IO_PHDF5  ) .OR. &
          ( use_package( io_form ) == IO_PIO    ) .OR. &
+         ( use_package( io_form ) == IO_ADIOS2 ) .OR. &
          ( use_package( io_form ) == IO_PNETCDF ) ) THEN
       CALL wrf_put_dom_ti_integer ( fid, 'SURFACE_INPUT_SOURCE', surface_input_source , 1 , ierr )
       CALL wrf_put_dom_ti_integer ( fid, 'SST_UPDATE', sst_update , 1 , ierr )
+      CALL wrf_put_dom_ti_integer ( fid, 'GHG_INPUT', ghg_input , 1 , ierr )
 #if (EM_CORE == 1)
       CALL wrf_put_dom_ti_integer ( fid, 'GRID_FDDA', grid_fdda , 1 , ierr )
       CALL wrf_put_dom_ti_integer ( fid, 'GFDDA_INTERVAL_M', gfdda_interval_m , 1 , ierr )
@@ -771,6 +766,8 @@ endif
       CALL wrf_put_dom_ti_integer   ( fid, 'SCALAR_PBLMIX', scalar_pblmix , 1 , ierr )
       CALL wrf_put_dom_ti_integer   ( fid, 'YSU_TOPDOWN_PBLMIX', ysu_topdown_pblmix , 1 , ierr )
       CALL wrf_put_dom_ti_integer   ( fid, 'GRAV_SETTLING', grav_settling , 1 , ierr )
+      CALL wrf_put_dom_ti_integer   ( fid, 'CLDOVRLP', config_flags%cldovrlp , 1 , ierr )
+      CALL wrf_put_dom_ti_integer   ( fid, 'IDCOR',    config_flags%idcor ,    1 , ierr )
 
 #endif
 
@@ -792,9 +789,14 @@ endif
         CALL wrf_put_dom_ti_integer   ( fid, 'OPT_SOIL',    config_flags%opt_soil    , 1 , ierr )
         CALL wrf_put_dom_ti_integer   ( fid, 'OPT_PEDO',    config_flags%opt_pedo    , 1 , ierr )
         CALL wrf_put_dom_ti_integer   ( fid, 'OPT_CROP',    config_flags%opt_crop    , 1 , ierr )
+        CALL wrf_put_dom_ti_integer   ( fid, 'OPT_IRR',     config_flags%opt_irr     , 1 , ierr )
+        CALL wrf_put_dom_ti_integer   ( fid, 'OPT_IRRM',    config_flags%opt_irrm    , 1 , ierr )
       ENDIF
 
       CALL wrf_put_dom_ti_integer   ( fid, 'DFI_OPT',          config_flags%dfi_opt      , 1 , ierr )
+      CALL wrf_put_dom_ti_integer   ( fid, 'NTASKS_X',         ntasks_x                  , 1 , ierr )
+      CALL wrf_put_dom_ti_integer   ( fid, 'NTASKS_Y',         ntasks_y                  , 1 , ierr )
+      CALL wrf_put_dom_ti_integer   ( fid, 'NTASKS_TOTAL',     ntasks_x*ntasks_y         , 1 , ierr )
 
       ENDIF ! history_only
 
@@ -948,11 +950,7 @@ endif
     CALL wrf_put_dom_ti_integer ( fid , 'ISURBAN' ,  config_flags%isurban , 1 , ierr )
     CALL wrf_put_dom_ti_integer ( fid , 'ISOILWATER' ,  config_flags%isoilwater , 1 , ierr )
 ! added these fields for restarting of moving nests, JM
-!For HWRF: zhang
-#if ( HWRF == 1 )
-    CALL wrf_put_dom_ti_integer ( fid , 'I_PARENT_START' ,  grid%i_parent_start  , 1 , ierr )
-    CALL wrf_put_dom_ti_integer ( fid , 'J_PARENT_START' ,  grid%j_parent_start  , 1 , ierr )
-#elif ! defined(EM_CORE)
+#if ! defined(EM_CORE)
     CALL wrf_put_dom_ti_integer ( fid , 'I_PARENT_START' ,  config_flags%i_parent_start  , 1 , ierr )
     CALL wrf_put_dom_ti_integer ( fid , 'J_PARENT_START' ,  config_flags%j_parent_start  , 1 , ierr )
 #endif
@@ -1007,6 +1005,7 @@ endif
           switch .EQ. restart_only    ) THEN
       newswitch = switch
       p => grid%head_statevars%next
+      CALL wrf_start_io_timestep(fid, ierr)
       DO WHILE ( ASSOCIATED( p ) )
         IF ( p%ProcOrient .NE. 'X' .AND. p%ProcOrient .NE. 'Y' ) THEN   ! no I/O for xposed variables
           IF ( p%Ndim .EQ. 0 ) THEN
@@ -1519,10 +1518,13 @@ endif
         ENDIF
         p => p%next
       ENDDO
+      CALL wrf_end_io_timestep(fid, ierr)
     ELSE
        IF ( switch .EQ. boundary_only ) THEN
+         CALL wrf_start_io_timestep(fid, ierr)
          CALL wrf_debug ( 300 , 'output_wrf: calling code in wrf_bdyout.inc' )
          CALL wrf_bdyout( fid , grid , config_flags, switch, dryrun,  ierr )
+         CALL wrf_end_io_timestep(fid, ierr)
        ENDIF
     ENDIF
 

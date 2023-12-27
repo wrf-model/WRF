@@ -1,0 +1,16 @@
+# Registry file, WRFCHEMVAR
+
+#INCLUDES
+include registry.dimspec
+include Registry.EM_COMMON.var
+include registry.io_boilerplate
+include registry.var
+include registry.hyb_coord
+include registry.var_chem
+
+state   real    -              ijkft   a_scalar    1         -     -    -
+state   real    -              ijkft   g_scalar    1         -     -    -
+
+state   real   landmask            ij    misc          1     -     i012rhd=(interp_fcnm)u=(copy_fcnm)   "LANDMASK"      "LAND MASK (1 FOR LAND, 0 FOR WATER)"  ""
+
+state    real   SST              ij     misc        1         -     i01245rh05d=(interp_mask_water_field:lu_index,iswater)   "SST"              "SEA SURFACE TEMPERATURE" "K"

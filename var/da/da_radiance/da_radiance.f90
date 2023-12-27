@@ -49,7 +49,7 @@ module da_radiance
       tovs_min_transfer,use_error_factor_rad,num_fgat_time,stdout,trace_use, &
       qc_good, qc_bad,myproc,biascorr,thinning,thinning_mesh, &
       rad_monitoring, monitor_on, kts, kte, kms, kme, calc_weightfunc, &
-      use_mwtsobs, use_mwhsobs, use_mwhs2obs, use_atmsobs, use_amsr2obs, use_ahiobs, &
+      use_mwtsobs, use_mwhsobs, use_mwhs2obs, use_atmsobs, use_amsr2obs, use_ahiobs,use_gmiobs, &
       use_hirs4obs, use_mhsobs,bufr_year, bufr_month,bufr_day,bufr_hour, &
       bufr_minute, bufr_second,bufr_solzen, bufr_station_height, &
       bufr_landsea_mask,bufr_solazi,tovs_end, max_tovs_input, bufr_satzen, nchan_mhs, &
@@ -61,15 +61,16 @@ module da_radiance
       use_rad,crtm_cloud, DT_cloud_model, global, use_varbc, freeze_varbc, &
       airs_warmest_fov, time_slots, interp_option, ids, ide, jds, jde, &
       ips, ipe, jps, jpe, simulated_rad_ngrid, obs_qc_pointer, use_blacklist_rad, use_satcv, &
-      use_goesimgobs, use_goesabiobs, pi, earth_radius, satellite_height, &
-      var4d, var4d_bin, use_clddet_abi, abi_superob_halfwidth
+      use_goesabiobs, abi_superob_halfwidth, &
+      var4d, var4d_bin, &
+      use_goesimgobs, pi, earth_radius, satellite_height,use_clddet_zz, ahi_superob_halfwidth, ahi_apply_clrsky_bias
  
 #ifdef CRTM
    use da_crtm, only : da_crtm_init, da_get_innov_vector_crtm
 #endif
    use da_define_structures, only : maxmin_type, iv_type, y_type, jo_type, j_type, &
       bad_data_type, x_type, number_type, bad_data_type, &
-      airsr_type,info_type, model_loc_type, varbc_info_type, varbc_type
+      airsr_type,info_type, model_loc_type, varbc_info_type, varbc_type,clddet_geoir_type, superob_type
    use da_interpolation, only : da_to_zk, da_to_zk_new
    use da_tools_serial, only : da_get_unit, da_free_unit
    use da_par_util1, only : da_proc_sum_int,da_proc_sum_ints
@@ -102,6 +103,8 @@ module da_radiance
                             dlat_grid,dlon_grid,thinning_grid, &
                             makegrids,map2grids, &
                             destroygrids
+   use mod_clddet_geoir, only: qc_SDob,qc_RTCT,qc_rtmt,qc_cwvt,qc_tit, &
+                    find_std,calc_rtmt,calc_correlation							
                             
    implicit none
 
@@ -136,6 +139,8 @@ contains
 #include "da_get_sat_angles_1d.inc"
 #include "da_get_solar_angles.inc"
 #include "da_get_solar_angles_1d.inc"
+#include "da_read_obs_hdf5gmi.inc"
+#include "da_get_satzen.inc"
 #include "da_allocate_rad_iv.inc"
 #include "da_initialize_rad_iv.inc"
 #include "da_read_kma1dvar.inc"

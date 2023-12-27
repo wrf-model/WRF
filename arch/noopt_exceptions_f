@@ -90,13 +90,7 @@ wrf_tsin.o :
           $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl $*.f90 > $*.f90.tmp ; \
           mv $*.f90.tmp $*.f90 ; \
         fi
-	if $(FGREP) '!$$OMP' $*.f90 ; then \
-          if [ -n "$(OMP)" ] ; then echo COMPILING $*.F WITH OMP ; fi ; \
-	  $(FC) -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) $(OMP) $*.f90 ; \
-        else \
-          if [ -n "$(OMP)" ] ; then echo COMPILING $*.F WITHOUT OMP ; fi ; \
-	  $(FC) -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) $*.f90 ; \
-        fi
+	$(FC) -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) $(OMP) $*.f90
 
 #solve_em.o :
 #	$(RM) $@
@@ -112,16 +106,8 @@ module_sf_ruclsm.o :
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.b  > $*.f90
 	$(RM) $*.b
-	if $(FGREP) '!$$OMP' $*.f90 ; then \
-          echo COMPILING $*.F WITH OMP ; \
-          if [ -n "$(OMP)" ] ; then echo COMPILING $*.F WITH OMP ; fi ; \
-	  $(FC) -c $(PROMOTION) $(FCREDUCEDOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) $(OMP) $*.f90 ; \
-        else \
-          if [ -n "$(OMP)" ] ; then echo COMPILING $*.F WITHOUT OMP ; fi ; \
-	  $(FC) -c $(PROMOTION) $(FCREDUCEDOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) $*.f90 ; \
-        fi
+	$(FC) -c $(PROMOTION) $(FCREDUCEDOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) $(OMP) $*.f90
 
-# compile without OMP
 input_wrf.o \
 module_domain.o \
 module_domain_type.o \
@@ -165,4 +151,4 @@ module_configure.o :
           mv $*.f90.tmp $*.f90 ; \
         fi
 	$(RM) $*.b $*.bb
-	$(FC) -c $(PROMOTION) $(FCSUFFIX) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
+	$(FC) -c $(PROMOTION) $(FCSUFFIX) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(OMP) $*.f90

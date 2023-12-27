@@ -159,7 +159,6 @@
       END IF
 #endif
 
-#if ( NMM_CORE != 1 )
     IF ( .NOT. dryrun ) THEN
    
        !  Does this file exist?
@@ -188,9 +187,7 @@
           CALL wrf_error_fatal( wrf_err_message )
        END IF
     END IF
-#endif
 
-#if ( NMM_CORE != 1 )
     ! Verify feature consistency between model input and model nml settings
 
     IF ( .NOT. dryrun ) THEN
@@ -231,7 +228,6 @@
         END IF
       END IF
     END IF
-#endif
 
       ! INPUT ONLY (KK)
 
@@ -551,8 +547,6 @@
     CALL wrf_debug ( 300 , wrf_err_message )
     CALL nl_set_stand_lon ( grid%id , config_flags%stand_lon )
 
-#if ( NMM_CORE != 1 )
-
     CALL wrf_get_dom_ti_real ( fid , 'POLE_LAT' ,  config_flags%pole_lat , 1 , icnt , ierr )
     WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_real for POLE_LAT returns ',config_flags%pole_lat
     CALL wrf_debug ( 300 , wrf_err_message )
@@ -568,15 +562,12 @@
 ! written by SI have P_TOP as a metadata item; the real program and wrf model have it as a
 ! state variable. This test is to supress non-fatal but confusing messages from the model complaining
 ! that P_TOP cannot be read from the metadata for this dataset.  JM 20040905
-!
-! Note, P_TOP is not defined in the NMM core.
 
     IF ( program_name(1:7) .EQ. "REAL_EM" ) THEN
       CALL wrf_get_dom_ti_real ( fid , 'P_TOP' ,  grid%p_top , 1 , icnt , ierr )
       WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_real for P_TOP returns ',grid%p_top
       CALL wrf_debug ( 300 , wrf_err_message )
     ENDIF
-#endif
 
     IF ( switch .NE. boundary_only ) THEN
       CALL wrf_get_dom_ti_real ( fid , 'GMT' ,  config_flags%gmt , 1 , icnt , ierr )
@@ -740,6 +731,8 @@
                    ! All is well.  Noah-MP and Noah have compatible wrfinput files.
                 ELSE IF ( ( config_flags%sf_surface_physics == NOAHMPSCHEME ) .and. ( itmp == LSMSCHEME ) ) then
                    ! All is well.  Noah-MP and Noah have compatible wrfinput files.
+                ELSE IF ( ( config_flags%sf_surface_physics == CTSMSCHEME ) ) then
+                   ! All is well.  CTSM doesn't care about the wrfinput file.
                 ELSE
                    call wrf_message("----------------- ERROR -------------------")
                    WRITE(wrf_err_message,'("namelist    : sf_surface_physics = ",I10)') config_flags%sf_surface_physics
@@ -804,21 +797,26 @@
 
 #if ( DA_CORE != 1 )
     ! Test here to check that config_flags%sf_urban_physics in namelist
-    ! is equal to what is in the global attributes of the wrfinput files
+    ! is equal to the value listed the global attributes of the wrfinput files.
+    ! We only perform this check if the WRF model has sf_urban_physics turned on.
+    ! If the WRF model runs with nml sf_urban_physics==0, then any setting of the 
+    ! sf_urban_physics in the metadata is acceptable, so not test is required.
 
-    IF ( switch .EQ. input_only  ) THEN
-       CALL wrf_get_dom_ti_integer ( fid, 'SF_URBAN_PHYSICS', itmp, 1, icnt, ierr )
-       IF ( ierr .EQ. 0 ) THEN
-          WRITE(wrf_err_message,*)'input_wrf: global attribute SF_URBAN_PHYSICS returns ', itmp
-          CALL wrf_debug ( 300 , wrf_err_message )
-          IF ( config_flags%sf_urban_physics /= itmp ) THEN
-             call wrf_message("----------------- ERROR -------------------")
-             WRITE(wrf_err_message,'("namelist    : sf_urban_physics   = ",I10)') config_flags%sf_urban_physics
-             call wrf_message(wrf_err_message)
-             WRITE(wrf_err_message,'("input files : SF_URBAN_PHYSICS   = ",I10, " (from wrfinput files).")') itmp
-             call wrf_message(wrf_err_message)
-             call wrf_debug ( 0, "---- ERROR: Mismatch between namelist and global attribute SF_URBAN_PHYSICS")
-             count_fatal_error = count_fatal_error + 1
+    IF ( config_flags%sf_urban_physics /= 0 ) THEN
+       IF ( switch .EQ. input_only  ) THEN
+          CALL wrf_get_dom_ti_integer ( fid, 'SF_URBAN_PHYSICS', itmp, 1, icnt, ierr )
+          IF ( ierr .EQ. 0 ) THEN
+             WRITE(wrf_err_message,*)'input_wrf: global attribute SF_URBAN_PHYSICS returns ', itmp
+             CALL wrf_debug ( 300 , wrf_err_message )
+             IF ( config_flags%sf_urban_physics /= itmp ) THEN
+                call wrf_message("----------------- ERROR -------------------")
+                WRITE(wrf_err_message,'("namelist    : sf_urban_physics   = ",I10)') config_flags%sf_urban_physics
+                call wrf_message(wrf_err_message)
+                WRITE(wrf_err_message,'("input files : SF_URBAN_PHYSICS   = ",I10, " (from wrfinput files).")') itmp
+                call wrf_message(wrf_err_message)
+                call wrf_debug ( 0, "---- ERROR: Mismatch between namelist and global attribute SF_URBAN_PHYSICS")
+                count_fatal_error = count_fatal_error + 1
+             END IF
           END IF
        END IF
     END IF
@@ -973,44 +971,6 @@
 
 #endif
 
-#if (NMM_CORE == 1)
-
-    IF      ( ( switch .EQ. auxinput1_only  ) .AND. &
-              ( config_flags%auxinput1_inname(1:8) .EQ. 'wrf_real' ) ) THEN
-
-       CALL wrf_get_dom_ti_integer ( fid , 'BOTTOM-TOP_GRID_DIMENSION' ,   kde_compare , 1 , icnt , ierr3 )
-
-       !  Test to make sure that the input data is the right size.
-
-       IF ( ( ide-1 .NE. ide_compare    ) .OR. &
-            ( kde   .NE. kde_compare    ) .OR. &
-            ( jde-1 .NE. jde_compare    ) .AND. ierr3 .EQ. 0 ) THEN
-          WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  namelist ide-1,jde-1,kde=',ide-1,jde-1,kde,&
-                                  '; input data ide,jde,kde=',ide_compare , jde_compare , kde_compare
-          CALL wrf_debug( 100, wrf_err_message )
-       ENDIF
-
-       ELSEIF ( switch .EQ. auxinput1_only ) THEN          ! assume just WPS in this branch
-         IF ( ( ide-1                           .NE. ide_compare ) .OR. &
-            ( config_flags%num_metgrid_levels .NE. kde_compare ) .OR. &
-            ( jde-1                             .NE. jde_compare ) .AND. ierr3 .EQ. 0 ) THEN
-                WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  ',&
-                 'namelist ide-1,jde-1,num_metgrid_levels=',ide-1,jde-1,config_flags%num_metgrid_levels,&
-                 '; input data ide,jde,num_metgrid_levels=',ide_compare , jde_compare , kde_compare
-                IF (ide-1 .eq. ide_compare .AND. jde-1 .EQ. jde_compare) THEN
-                  CALL wrf_message(wrf_err_message)
-                  CALL wrf_debug ( 0, "---- ERROR: appears that the vertical dimension is wrong - quitting" )
-                  count_fatal_error = count_fatal_error + 1
-                ELSE
-                  CALL wrf_message(wrf_err_message)
-                  CALL wrf_debug ( 0, "---- ERROR: appears that I or J dimensions are wrong - quitting" )
-                  count_fatal_error = count_fatal_error + 1
-                ENDIF
-         ENDIF
-       ENDIF
-
-#endif
-
 #if (DA_CORE == 1)
     ! Test here to check that config_flags%hypsometric_opt in namelist
     ! is equal to what is in the global attributes of the wrfinput files
@@ -1151,11 +1111,9 @@
         WRITE(wrf_err_message,*) '---- ERROR: Ran out of valid boundary conditions in file ',TRIM(fname)
         CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
       ELSE
-#if ( NMM_CORE != 1 )
         WRITE(wrf_err_message,*) '---- ERROR: Could not find matching time in input file ',TRIM(fname)
         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
         count_fatal_error = count_fatal_error + 1
-#endif
       ENDIF
     ELSE IF ( ierr .NE. WRF_WARN_NOTSUPPORTED .AND. ierr .NE. WRF_WARN_DRYRUN_READ) THEN
 !
@@ -1166,7 +1124,7 @@
         CASE ( input_only, auxinput1_only, auxinput2_only,       &
                auxinput3_only, auxinput4_only, auxinput5_only,  &
                auxinput6_only, auxinput7_only, auxinput8_only,  &
-               auxinput9_only, auxinput10_only )
+               auxinput9_only, auxinput10_only, auxinput17_only )
 #if ( WRF_CHEM == 1 )
            IF( (config_flags%io_style_emissions .eq. 1) .and.                                &
               ((switch.eq.auxinput5_only) .or. (switch.eq.auxinput6_only) .or. &
@@ -1242,7 +1200,7 @@
               !  While the lateral BC time is less than the restart time, advance forward to the next LBC time.
 
               icount = 0
-              DO WHILE ( ( currentTime .GE. grid%next_bdy_time ) .AND. ( icount < 10000 ) ) 
+              DO WHILE ( ( currentTime .GE. grid%next_bdy_time ) .AND. ( icount < 60000 ) ) 
                   CALL wrf_get_next_time(fid, current_date , ierr)
                   IF ( ierr .NE. 0 ) THEN
                      CALL wrf_debug ( 0, '---- ERROR: Cannot find a valid time to start the LBC during this restart, likely ran out of time periods to test' )
@@ -1879,7 +1837,6 @@
     RETURN
   END SUBROUTINE input_wrf
     
-#if ( NMM_CORE != 1 )
   SUBROUTINE is_this_data_ok_to_use ( fid , yes_use_this_data )
 
     USE module_io
@@ -1894,8 +1851,6 @@
     CHARACTER (LEN=1024) :: input_title_char
     LOGICAL :: skip_rigorous_and_return_right_away
     INTEGER :: ierr
-
-#include "version_decl"
 
     !  Make sure that the input data is consistent with the current code.
 
@@ -1972,5 +1927,3 @@
       count = count +1
     END DO
   END FUNCTION check_which_switch
-
-#endif

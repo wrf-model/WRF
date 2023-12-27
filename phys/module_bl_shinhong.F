@@ -440,6 +440,7 @@ contains
    real    ::  prnumfac,bfx0,hfx0,qfx0,delb,dux,dvx,                           &
                dsdzu,dsdzv,wm3,dthx,dqx,wspd10,ross,tem1,dsig,tvcon,conpr,     &
                prfac,prfac2,phim8z
+   real    ::  cenlfrac
 !
    integer,  dimension( its:ite )            ::                          kpbl
    real,     dimension( its:ite )            ::                           hol
@@ -840,9 +841,13 @@ contains
        hpbl(i) = za(i,k-1)+brint*(za(i,k)-za(i,k-1))
        if(hpbl(i).lt.zq(i,2)) kpbl(i) = 1
        if(kpbl(i).le.1) pblflg(i) = .false.
-       uwst  = abs(ust(i)/wstar(i)-0.5)
-       uwstx = -80.*uwst+14.
-       csfac = 0.5*(tanh(uwstx)+3.)
+       if (wstar(i) .ne. 0) then
+          uwst  = abs(ust(i)/wstar(i)-0.5)
+          uwstx = -80.*uwst+14.
+          csfac = 0.5*(tanh(uwstx)+3.)
+       else
+          csfac = 1
+       endif
        cslen(i) = csfac*hpbl(i)
      endif
    enddo
@@ -962,9 +967,19 @@ contains
        deltaoh(i) = d1*hpbl(i) + d2*wm2(i)/delb
        deltaoh(i) = max(ezfac*deltaoh(i),hpbl(i)-za(i,kpbl(i)-1)-1.)
        deltaoh(i) = min(deltaoh(i)      ,hpbl(i))
-       rigs(i)     = govrth(i)*dthvx(i)*deltaoh(i)/(dux**2.+dvx**2.)
+       if ((dux .ne. 0) .or. (dvx .ne. 0)) then
+         rigs(i) = govrth(i)*dthvx(i)*deltaoh(i)/(dux**2.+dvx**2.)
+       else
+         rigs(i) = rigsmax
+       endif
        rigs(i)     = max(min(rigs(i), rigsmax),rimin)
-       enlfrac2(i) = max(min(wm3/wstar3(i)/(1.+cpent/rigs(i)),entfmax), entfmin)
+       if((rigs(i).gt.0) .and. (abs(rigs(i)+cpent) .le. 1.e-6))then
+          cenlfrac = entfmax
+       else
+          cenlfrac = rigs(i)/(rigs(i)+cpent)
+       endif
+       cenlfrac = min(cenlfrac,entfmax)
+       enlfrac2(i) = max(wm3/wstar3(i)*cenlfrac, entfmin)
        enlfrac2(i) = enlfrac2(i)*enlfrac
      endif
    enddo
@@ -1086,9 +1101,15 @@ contains
      sflux0      = (a11+a12*sfcfracn)*sflux(i)
      snlflux0    = nlfrac*sflux0
      amf1        = snlflux0/sfcfracn
-     amf2        = -snlflux0/(mlfrac-sfcfracn)
-     bmf2        = -mlfrac*amf2
-     amf3        = snlflux0*enlfrac2(i)/deltaoh(i)
+     if (pblflg(i)) then
+        amf2        = -snlflux0/(mlfrac-sfcfracn)
+        bmf2        = -mlfrac*amf2
+     endif
+     if ((deltaoh(i) .eq. 0) .and. (enlfrac2(i) .eq. 0)) then
+        amf3       = 0.
+     else
+        amf3       = snlflux0*enlfrac2(i)/deltaoh(i)
+     endif
      bmf3        = -amf3*mlfrac
      hfxpbl(i)   = amf3+bmf3
      pth1=pthnl(delxy,cslen(i))
@@ -2283,10 +2304,14 @@ contains
    real,parameter :: b1 = 2.0, b2 = 0.6666667
    real :: d,h,doh,num,den
 !
-   doh=d/h
-   num=a1*(doh)**b1+a2*(doh)**b2
-   den=a3*(doh)**b1+a4*(doh)**b2+a5
-   pu=num/den
+   if (h .ne. 0) then
+      doh=d/h
+      num=a1*(doh)**b1+a2*(doh)**b2
+      den=a3*(doh)**b1+a4*(doh)**b2+a5
+      pu=num/den
+   else
+      pu=1.
+   endif
    pu=max(pu,pmin)
    pu=min(pu,pmax)
 !
@@ -2305,10 +2330,14 @@ contains
    real,parameter :: b1 = 2.0
    real :: d,h,doh,num,den
 !
-   doh=d/h
-   num=a1*(doh)**b1+a2
-   den=a3*(doh)**b1+a4
-   pq=a5*num/den+(1.-a5)
+   if (h .ne. 0) then
+      doh=d/h
+      num=a1*(doh)**b1+a2
+      den=a3*(doh)**b1+a4
+      pq=a5*num/den+(1.-a5)
+   else
+      pq=1.
+   endif
    pq=max(pq,pmin)
    pq=min(pq,pmax)
 !
@@ -2328,10 +2357,14 @@ contains
    real,parameter :: b1 = 2.0, b2 = 0.875
    real :: d,h,doh,num,den
 !
-   doh=d/h
-   num=a1*(doh)**b1+a2*(doh)**b2+a3
-   den=a4*(doh)**b1+a5*(doh)**b2+a6
-   pthnl=a7*num/den+(1.-a7)
+   if (h .ne. 0) then
+      doh=d/h
+      num=a1*(doh)**b1+a2*(doh)**b2+a3
+      den=a4*(doh)**b1+a5*(doh)**b2+a6
+      pthnl=a7*num/den+(1.-a7)
+   else
+      pthnl=1.
+   endif
    pthnl=max(pthnl,pmin)
    pthnl=min(pthnl,pmax)
 !
@@ -2351,10 +2384,14 @@ contains
    real,parameter :: b1 = 2.0, b2 = 0.5
    real :: d,h,doh,num,den
 !
-   doh=d/h
-   num=a1*(doh)**b1+a2*(doh)**b2+a3
-   den=a4*(doh)**b1+a5*(doh)**b2+a6
-   pthl=a7*num/den+(1.-a7)
+   if (h .ne. 0) then
+      doh=d/h
+      num=a1*(doh)**b1+a2*(doh)**b2+a3
+      den=a4*(doh)**b1+a5*(doh)**b2+a6
+      pthl=a7*num/den+(1.-a7)
+   else
+      pthl=1.
+   endif
    pthl=max(pthl,pmin)
    pthl=min(pthl,pmax)
 !
@@ -2374,10 +2411,14 @@ contains
    real,parameter :: b1 = 2.0, b2 = 0.6666667
    real :: d,h,doh,num,den
 !
-   doh=d/h
-   num=a1*(doh)**b1+a2*(doh)**b2
-   den=a3*(doh)**b1+a4*(doh)**b2+a5
-   ptke=num/den
+   if (h .ne. 0) then
+      doh=d/h
+      num=a1*(doh)**b1+a2*(doh)**b2
+      den=a3*(doh)**b1+a4*(doh)**b2+a5
+      ptke=num/den
+   else
+      ptke=1.
+   endif
    ptke=max(ptke,pmin)
    ptke=min(ptke,pmax)
 !

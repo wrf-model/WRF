@@ -396,7 +396,7 @@ CONTAINS
              t8(      1,kflip)   = t_phy(i,k,j)  ! Temprature at the mid points (K)             [state%t     in CAM]
              
              s8(      1,kflip)   = cpair *t8(1,kflip) + gravit*zm8(1,kflip) + phis(1) ! Dry static energy (m2/s2) [state%s in CAM]-Formula tested in vertical_diffusion.F90 of CAM
-             qrl8(    1,kflip)   = rthratenlw(i,k,j)* cpair * dp ! Long Wave heating rate (W/kg*Pa)- Formula obtained from definition of qrlw(pcols,pver) in eddy_diff.F90 in CAM
+             qrl8(    1,kflip)   = rthratenlw(i,k,j) * exner(i,k,j) * cpair * dp ! Long Wave heating rate (W/kg*Pa)- Formula obtained from definition of qrlw(pcols,pver) in eddy_diff.F90 in CAM
 
              wsedl8(  1,kflip)   = wsedl3d(i,k,j)               ! Sedimentation velocity of stratiform liquid cloud droplet (m/s)
              

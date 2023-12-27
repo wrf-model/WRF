@@ -1,5 +1,9 @@
-subroutine da_transform_vtoy(it, cv_size, be, ep, cv, iv, vp, vv, xbx, &
-                              y, grid, config_flags, vp6, vv6)
+subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, xbx, &
+                              y, grid, config_flags, vp6, vv6 &
+#if (WRF_CHEM == 1)
+                        , vchem &
+#endif
+                        )
 
    !----------------------------------------------------------------------
    ! Purpose:  Does transform of control variable (V) to Obs-space (Y)
@@ -15,6 +19,9 @@ subroutine da_transform_vtoy(it, cv_size, be, ep, cv, iv, vp, vv, xbx, &
    type(iv_type),              intent(inout) :: iv     ! innovation vector (o-b).
    type(vp_type),              intent(inout) :: vp     ! Grdipt/level CV.
    type(vp_type),              intent(inout) :: vv     ! Grdipt/EOF CV.
+#if (WRF_CHEM == 1)
+   type(xchem_type), optional, intent(out) :: vchem   ! CHEM CV
+#endif
    type(xbx_type),             intent(inout) :: xbx    ! For header & non-grid arrays.
    type(y_type),               intent(inout) :: y      ! y = H(x_inc).
    type(domain),               intent(inout) :: grid
@@ -39,7 +46,7 @@ subroutine da_transform_vtoy(it, cv_size, be, ep, cv, iv, vp, vv, xbx, &
 #ifdef VAR4D
       call da_transform_vtox(grid, be%cv%size_jb, xbx, be, ep, cv(1:be%cv%size_jb), vv, vp)
       if (be % ne > 0 .and. alphacv_method == alphacv_method_xa) then
-         call da_transform_vpatox(grid, be, ep, vp)
+         call da_transform_vpatox(grid, be%ne, ep, vp)
          call da_add_xa(grid%xa, grid%xa_ens) !grid%xa = grid%xa + xa_ens
       end if
       call domain_clock_get( grid, start_timestr=timestr )
@@ -161,7 +168,20 @@ subroutine da_transform_vtoy(it, cv_size, be, ep, cv, iv, vp, vv, xbx, &
 
       ! as of V3.9, vp%alpha is not included in the vptox (called by vtox) calculation
       ! here grid%xa contains only the static increment
-      call da_transform_vtox(grid, cv_size, xbx, be, ep, cv, vv, vp)
+#if (WRF_CHEM == 1)
+!      if (present(vchem) .and. iv%info(chemic_surf)%nlocal > 0) then
+      if (present(vchem)) then
+
+        call da_zero_x (grid%xa)
+        call da_zero_xchem_type (grid%xachem)
+        call da_transform_vtox(grid, cv_size, xbx, be, ep, cv, vv, vp, vchem=vchem)
+
+      else
+#endif
+        call da_transform_vtox(grid, cv_size, xbx, be, ep, cv, vv, vp)
+#if (WRF_CHEM == 1)
+      end if
+#endif
 
       if ( use_4denvar ) then
          num_subtwindow = num_fgat_time
@@ -176,7 +196,7 @@ subroutine da_transform_vtoy(it, cv_size, be, ep, cv, iv, vp, vv, xbx, &
 
       do nobwin = num_subtwindow, 1 , -1
          if (be % ne > 0 .and. alphacv_method == alphacv_method_xa) then
-            call da_transform_vpatox(grid, be, ep, vp, nobwin)
+            call da_transform_vpatox(grid, be%ne, ep, vp, nobwin)
             if ( num_subtwindow > 1 ) then
                !reset grid%xa = grid%xa_static
                call da_copy_xa(grid%xa, grid%xa_static)

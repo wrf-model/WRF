@@ -20,7 +20,7 @@ CONTAINS
                      ,ccldfra,convcld,qcconv,qiconv                   &
                      ,bmj_rad_feedback                                & 
                      ,rainc,raincv,pratec,nca                         &
-                     ,cldfra_dp,cldfra_sh,w_up                        & !ckay for subgrid cloud
+                     ,cldfra_dp,cldfra_sh                             &
                      ,udr_kf,ddr_kf,uer_kf,der_kf,timec_kf,kf_edrates & !kf_edrates
                      ,QC_CU,QI_CU                                     &
                      ,z,z_at_w,dz8w,mavail,pblh,p8w,psfc,tsk          &
@@ -129,6 +129,10 @@ CONTAINS
                  ! Optional CAP suppress option      --- 3.2 CLEANUP TODO -- THESE SHOULD BE OPTIONAL, NOT #IF/#ENDIF
                      ,do_capsuppress                                  &
 #endif 
+#if ( WRF_CHEM == 1 )
+                   ,traceropt,conv_tr_wetscav                         &
+                   ,conv_tr_aqchem,chem_conv_tr                       &
+#endif
 #if (EM_CORE == 1)                               
           ,QR_CU,QS_CU,NC_CU,NI_CU,NR_CU,NS_CU,CCN_CU,CU_UAF          &
           ,alevsiz_cu,num_months,no_src_types_cu,aercu_opt,aercu_fct  &
@@ -152,9 +156,15 @@ CONTAINS
                                           ,KFCUPSCHEME                & !CuP, wig 3-Aug-2006  !BSINGH - For WRFCuP scheme
                                           ,num_chem                   & !CuP, rce 10-may-2012 !BSINGH - For WRFCuP scheme
 #endif
+#if ( WRF_CHEM == 1)
+                                          ,num_tracer                 &
+#endif
                                           ,TIEDTKESCHEME              &
                                           ,NTIEDTKESCHEME             
 
+#if ( WRF_CHEM == 1 )
+  USE module_chem_share, only:      get_last_gas
+#endif
 #if ( WRFPLUS == 1 )
    USE module_state_description, ONLY:    DUCUSCHEME
 #endif
@@ -468,9 +478,6 @@ CONTAINS
 
    INTEGER, INTENT(IN   )        ::   kf_edrates
 
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
-         INTENT(INOUT ),OPTIONAL ::                        w_up
-
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN) ::           &
           GSW,HT,XLAND
 #if (EM_CORE == 1)
@@ -651,6 +658,14 @@ CONTAINS
                                                      updfra_cup    !CuP, rce 10-may-2012
 
    INTEGER, OPTIONAL, INTENT(IN) ::                    chem_opt    !CuP, rce 10-may-2012
+
+#if ( WRF_CHEM == 1 )
+   INTEGER, OPTIONAL, INTENT(IN) ::                    traceropt, &
+                                                 conv_tr_wetscav, &
+                                                  conv_tr_aqchem, &
+                                                    chem_conv_tr
+  INTEGER :: numgas
+#endif
 
    LOGICAL, DIMENSION( ims:ime, jms:jme ),                       &
             INTENT(OUT) ::                              cupflag    !CuP, wig 9-Oct-2006
@@ -1060,7 +1075,6 @@ CONTAINS
                ,F_QI=f_qi,F_QS=f_qs                             &
                ,CLDFRA_DP_KF=cldfra_dp                          & ! ckay for sub-grid cloud
                ,CLDFRA_SH_KF=cldfra_sh                          &
-               ,W_UP=w_up                                       & ! ckay
                ,QC_KF=QC_CU,QI_KF=QI_CU,QR_KF=QR_CU,QS_KF=QS_CU &
                ,NC_KF=NC_CU,NI_KF=NI_CU,NR_KF=NR_CU,NS_KF=NS_CU &
                ,CCN_KF=CCN_CU,AINC_FRAC=CU_UAF                  &
@@ -1099,13 +1113,8 @@ CONTAINS
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
                ,PERIODIC_X=periodic_x,PERIODIC_Y=periodic_y     &
               ! optionals
-#if (NMM_CORE == 1 )
-               ,RTHCUTEN=RTHCUTEN ,RTHFTEN=forcet               &
-               ,RQICUTEN=RQICUTEN ,RQVFTEN=forceq               &
-#else
                ,RTHCUTEN=RTHCUTEN ,RTHFTEN=RTHFTEN              &
                ,RQICUTEN=RQICUTEN ,RQVFTEN=RQVFTEN              &
-#endif
                ,RTHRATEN=RTHRATEN,RTHBLTEN=RTHBLTEN             &
                ,RQVCUTEN=RQVCUTEN,RQCCUTEN=RQCCUTEN             &
                ,RQVBLTEN=RQVBLTEN                               &
@@ -1166,10 +1175,6 @@ CONTAINS
                ,P_QC=p_qc                                       &
                ,MOMMIX=MOMMIX  &
                ,pgcon=pgcon,sas_mass_flux=sas_mass_flux         &
-#if (HWRF==1)
-               ,pert_sas=pert_sas,ens_random_seed=ens_random_seed   &
-               ,ens_sasamp=ens_sasamp &
-#endif
                ,shalconv=shalconv,shal_pgcon=shal_pgcon         &
                ,hpbl2d=hpbl2d,evap2d=evap2d,heat2d=heat2d       &
                ,P_QI=p_qi,P_FIRST_SCALAR=param_first_scalar     &
@@ -1250,14 +1255,9 @@ CONTAINS
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
                ,PERIODIC_X=periodic_x,PERIODIC_Y=periodic_y     &
               ! optionals
-#if (NMM_CORE == 1 )
-               ,RTHCUTEN=RTHCUTEN ,RTHFTEN=forcet               &
-               ,RQICUTEN=RQICUTEN ,RQVFTEN=forceq               &
-#else
                ,RTHCUTEN=RTHCUTEN ,RTHFTEN=RTHFTEN              &
                ,RQICUTEN=RQICUTEN ,RQVFTEN=RQVFTEN              &
                ,rqvblten=rqvblten,rthblten=rthblten             &
-#endif
                ,RQVCUTEN=RQVCUTEN,RQCCUTEN=RQCCUTEN             &
                ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                   &
                ,F_QI=f_qi,F_QS=f_qs                             &
@@ -1281,6 +1281,10 @@ CONTAINS
          endif
 #endif
 
+#if ( WRF_CHEM == 1 )
+         numgas = get_last_gas(chem_opt)
+#endif
+
          CALL GFDRV(spp_conv,pattern_spp_conv,field_conv,       &
                 DT=dt,DX=dx                                     &
                ,RHO=rho,RAINCV=raincv,PRATEC=tmppratec          &
@@ -1300,16 +1304,10 @@ CONTAINS
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
                ,PERIODIC_X=periodic_x,PERIODIC_Y=periodic_y     &
               ! optionals
-#if (NMM_CORE == 1 ) 
-               ,RTHCUTEN=RTHCUTEN ,RTHFTEN=forcet               &
-               ,RTHRATEN=RTHRATEN                               &
-               ,RQICUTEN=RQICUTEN ,RQVFTEN=forceq               &
-#else
                ,RTHCUTEN=RTHCUTEN ,RTHFTEN=RTHFTEN              &
                ,RTHRATEN=RTHRATEN                               &
                ,RQICUTEN=RQICUTEN ,RQVFTEN=RQVFTEN              &
                ,rqvblten=rqvblten,rthblten=rthblten             &
-#endif
                ,RQVCUTEN=RQVCUTEN,RQCCUTEN=RQCCUTEN             &
                ,dudt_phy=rucuten, dvdt_phy=rvcuten              &
 #if ( WRF_DFI_RADAR == 1 )
@@ -1317,6 +1315,15 @@ CONTAINS
                ,do_capsuppress=do_capsuppress                   &
                ,cap_suppress_loc=cap_suppress_loc               &
 #endif 
+#if ( WRF_CHEM == 1 )
+              ,chem=grid%chem,tracer=grid%tracer                &
+              ,numgas=numgas       &
+              ,num_chem=num_chem,chemopt=chem_opt  &
+              ,num_tracer=num_tracer,traceropt=traceropt   &
+              ,conv_tr_wetscav=conv_tr_wetscav     &
+              ,conv_tr_aqchem=conv_tr_aqchem       &
+              ,chem_conv_tr=chem_conv_tr           &
+#endif  
                                                                 )
      CASE (CAMZMSCHEME)
           IF (PRESENT(z_at_w) .AND. PRESENT(mavail)                 &
@@ -1392,11 +1399,7 @@ CONTAINS
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
               ! optionals
-#if (NMM_CORE == 1 )
-               ,QVFTEN=FORCEQ                                   &
-#else
                ,QVFTEN=RQVFTEN                                  &
-#endif
                ,RTHCUTEN=RTHCUTEN,RQVCUTEN=RQVCUTEN             &
                ,RQCCUTEN=RQCCUTEN,RQICUTEN=RQICUTEN             &
                ,RUCUTEN = RUCUTEN,RVCUTEN = RVCUTEN             &
@@ -1410,8 +1413,6 @@ CONTAINS
 ! NEW TIEDTKE SCHEME - ZCX&YQW (U of Hawaii)
      CASE (NTIEDTKESCHEME)
 
-        IF ( PRESENT ( QFX ) .AND. PRESENT( HFX )) THEN
-
           CALL wrf_debug(100,'in cu_ntiedtke')
           CALL CU_NTIEDTKE(                                      &
                 DT=dt,ITIMESTEP=itimestep,STEPCU=STEPCU,HFX=hfx  &
@@ -1424,20 +1425,13 @@ CONTAINS
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
               ! optionals
-#if (NMM_CORE == 1 )
-               ,QVFTEN=FORCEQ, THFTEN=FORCET                    &
-#else
                ,QVFTEN=RQVFTEN,THFTEN=RTHFTEN                   &
-#endif
                ,RTHCUTEN=RTHCUTEN,RQVCUTEN=RQVCUTEN             &
                ,RQCCUTEN=RQCCUTEN,RQICUTEN=RQICUTEN             &
                ,RUCUTEN = RUCUTEN,RVCUTEN = RVCUTEN             &
                ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                   &
                ,F_QI=f_qi,F_QS=f_qs                             &
                                                              )
-        ELSE
-          CALL wrf_error_fatal('Lacking arguments for CU_NTIEDTKE in cumulus driver')
-        ENDIF
 
 ! New KIM SAS SCHEME - (KIAPS, South Korea)
      CASE (KSASSCHEME)

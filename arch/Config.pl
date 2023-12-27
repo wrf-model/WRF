@@ -5,16 +5,22 @@
 # Be sure to run as ./configure (to avoid getting a system configure command by mistake)
 #
 
+use Cwd qw(getcwd);
+$wrf_cmaq_option =  $ENV{'WRF_CMAQ'};     # determine building WRF-CMAQ coupled model or not
+
 select((select(STDOUT), $|=1)[0]);
 $sw_perl_path = perl ;
 $sw_netcdf_path = "" ;
 $sw_pnetcdf_path = "" ;
+$sw_netcdfpar_path = "" ;
+$sw_adios2_path = "" ;
 $sw_hdf5_path=""; 
 $sw_phdf5_path=""; 
 $sw_jasperlib_path=""; 
 $sw_jasperinc_path=""; 
 $sw_esmflib_path="";
 $sw_esmfinc_path="";
+$sw_ctsm_mkfile_path="";
 $sw_ldflags=""; 
 $sw_compileflags=""; 
 $sw_opt_level=""; 
@@ -43,8 +49,9 @@ $sw_usenetcdf = "" ;
 $sw_time = "" ;          # name of a timer to time fortran compiles, e.g. timex or time
 $sw_ifort_r8 = 0 ;
 $sw_hdf5 = "-lhdf5_hl -lhdf5";
+$sw_hdf5_hl_fortran="-lhdf5_hl_fortran";
 $sw_zlib = "-lz";
-$sw_dep_lib_path = "";
+$sw_netcdf4_dep_lib = "";
 $sw_gpfs_path = "";
 $sw_gpfs_lib  = "-lgpfs";
 $sw_curl_path = "";
@@ -63,10 +70,10 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
   {
     $sw_netcdf_path = substr( $ARGV[0], 8 ) ;
   }
-  if ( substr( $ARGV[0], 1, 13 ) eq "dep_lib_path=" )
+  if ( substr( $ARGV[0], 1, 16 ) eq "netcdf4_dep_lib=" )
   {
-    $sw_dep_lib_path = substr( $ARGV[0], 14 ) ;
-    $sw_dep_lib_path =~ s/\r|\n/ /g ;
+    $sw_netcdf4_dep_lib = substr( $ARGV[0], 17 ) ;
+    $sw_netcdf4_dep_lib =~ s/\r|\n/ /g ;
   }
   if ( substr( $ARGV[0], 1, 5 ) eq "gpfs=" )
   {
@@ -93,6 +100,14 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
   if ( substr( $ARGV[0], 1, 8 ) eq "pnetcdf=" )
   {
     $sw_pnetcdf_path = substr( $ARGV[0], 9 ) ;
+  }
+  if ( substr( $ARGV[0], 1, 10 ) eq "netcdfpar=" )
+  {
+    $sw_netcdfpar_path = substr( $ARGV[0], 11 ) ;
+  }
+  if ( substr( $ARGV[0], 1, 7 ) eq "adios2=" )
+  {
+    $sw_adios2_path = substr( $ARGV[0], 8 ) ;
   }
   if ( substr( $ARGV[0], 1, 5 ) eq "hdf5=" )
   {
@@ -321,6 +336,29 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
    $sw_esmf_ldflag = "yes" ;
    }
 
+# A separately-installed CTSM library and its dependencies are required
+# to build WRF with the CTSM land surface model (the next generation of
+# the CLM model, coupled via LILAC). The user must set the environment
+# variable WRF_CTSM_MKFILE, which should be a path to a make-formatted
+# file containing settings of CTSM_INCLUDES and CTSM_LIBS. When this
+# environment variable is set, this also triggers adding -DWRF_USE_CTSM;
+# when this env var is not set, then we instead use -DWRF_USE_CLM, which
+# builds an old version of CLM that is included in the WRF source code.
+# (We currently cannot build with both at once because of namespace
+# collisions at link time.)
+if ( $ENV{WRF_CTSM_MKFILE} ) {
+   $sw_ctsm_mkfile_path = $ENV{WRF_CTSM_MKFILE};
+}
+
+if ( $sw_hdf5_path ) {
+  opendir(my $dh, "$sw_hdf5_path/lib");
+  ($hl) = grep(/hdf5hl_fortran/i, readdir $dh);
+  closedir($dh);
+  if ($hl ne "") {
+    $sw_hdf5_hl_fortran="-lhdf5hl_fortran";
+  }
+}
+
 # parse the configure.wrf file
 
 $validresponse = 0 ;
@@ -425,15 +463,160 @@ if ( $response == 2 || $response == 3 ) {
 } else {
   $sw_terrain_and_landuse =" -DLANDREAD_STUB=1" ;
 } 
+
 open CONFIGURE_DEFAULTS, "cat ./arch/configure.defaults |"  ;
 $latchon = 0 ;
 while ( <CONFIGURE_DEFAULTS> )
 {
+  if ( $_ =~ /ifort compiler/ )
+     { $lioapi_temp = 'Linux2_x86_64ifort';
+     }
+  elsif ( $_ =~ /PGI compiler/ )
+     { $lioapi_temp = 'Linux2_x86_64pg';
+     }
+  elsif ( $_ =~ /gfortran compiler/ )
+     { $lioapi_temp = 'Linux2_x86_64gfort';
+     }
+
   if ( substr( $_, 0, 5 ) eq "#ARCH" && $latchon == 1 )
   {
     close CONFIGURE_DEFAULTS ;
     if ( $sw_opt_level eq "-f" ) {
-      open CONFIGURE_DEFAULTS, "cat ./arch/postamble ./arch/noopt_exceptions_f |"  or die "horribly" ;
+
+         # determine whether variable EM_MODULE_DIR contains -I../cmaq or not
+         my $file = "Makefile";
+         open(FH, $file) or die("File $file not found");
+
+         $lib_path_wo_cmaq = 1;
+         while ( my $String = <FH> )
+           { if($String =~ /-I..\/dyn_em -I..\/cmaq/)
+               { $lib_path_wo_cmaq = 0;
+               }
+           }
+         close (FH);
+
+         # determine whether declarations in Registry/registry.CMAQ is commented out or not
+         my $file = "Registry/registry.CMAQ";
+         open (FH, $file) or die("File $file not found");
+
+         $registry_wo_cmaq = 0;
+         while ( my $String = <FH> )
+           { if($String =~ /#state/)
+               { $registry_wo_cmaq = 1;
+               }
+           }
+         close (FH);
+
+         # determine whether express #NOWIN LIB_BUNDLED contains $(IOAPI_LIB) or not
+         my $file = "arch/preamble";
+         open (FH, $file) or die("File $file not found");
+
+         $bundle_wo_ioapi = 1;
+         while ( my $String = <FH> )
+           { if ( $String =~ /IOAPI_LIB/ )
+               { $bundle_wo_ioapi = 0;
+               }
+           }
+         close (FH);
+
+         if ( $wrf_cmaq_option eq 1 )   # build WRF-CMAQ coupled model
+            { if ( $lib_path_wo_cmaq == 1 )
+                 { open (FILE, "<Makefile") || die "File not found";
+                   my @lines = <FILE>;
+                   close (FILE);
+
+                   foreach ( @lines )
+                     { $_ =~ s/ -I..\/dyn_em/ -I..\/dyn_em -I..\/cmaq/g;
+                     }
+
+                   open (FILE, ">Makefile") || die "File not found";
+                   print FILE @lines;
+                   close (FILE);
+                 }
+
+              if ( $registry_wo_cmaq == 1 )
+                 { open (FILE, "<Registry/registry.CMAQ") || die "File not found";
+                   my @lines = <FILE>;
+                   close (FILE);
+
+                   foreach (@lines)
+                     { $_ =~ s/#state/state/g;
+                     }
+
+                   open (FILE, ">Registry/registry.CMAQ") || die "File not found";
+                   print FILE @lines;
+                   close (FILE);
+                 }
+
+              if ( $bundle_wo_ioapi == 1 )
+                 { open (FILE, "<arch/preamble") || die "File not found";
+                   my @lines = <FILE>;
+                   close (FILE);
+
+                   foreach (@lines)
+                     { $_ =~ s/#NOWIN LIB_BUNDLED     = \\/#NOWIN LIB_BUNDLED     = \$(IOAPI_LIB) \\/g;
+                     }
+
+                   open (FILE, ">arch/preamble") || die "File not found";
+                   print FILE @lines;
+                   close (FILE);
+                 }
+
+              open (FH, '>', wrf_cmaq_path) or die $! ;
+              $ioapi_path = $ENV{'IOAPI'} ;
+              print FH "CMAQLIB = libcmaqlib.a \n" ;
+              print FH "IOAPI      = $ioapi_path\n" ;
+              print FH "LIOAPI     = $lioapi\n" ;
+              print FH "IOAPI_LIB  = -L$ioapi_path/$lioapi -lioapi \n" ;
+              close (FH) ;
+              open CONFIGURE_DEFAULTS, "cat wrf_cmaq_path ./arch/postamble ./arch/noopt_exceptions_f |"  or die "horribly" ;
+            }
+         else
+            { if ( $lib_path_wo_cmaq == 0 )
+                 { open (FILE, "<Makefile") || die "File not found";
+                   my @lines = <FILE>;
+                   close (FILE);
+
+                   foreach (@lines)
+                     { $_ =~ s/ -I..\/cmaq//g;
+                     }
+
+                   open (FILE, ">Makefile") || die "File not found";
+                   print FILE @lines;
+                   close (FILE);
+
+                 }
+
+              if ( $registry_wo_cmaq == 0 )
+                 { open (FILE, "<Registry/registry.CMAQ") || die "File not found";
+                   my @lines = <FILE>;
+                   close (FILE);
+
+                   foreach(@lines)
+                     { $_ =~ s/state/#state/g;
+                     }
+
+                   open (FILE, ">Registry/registry.CMAQ") || die "File not found";
+                   print FILE @lines;
+                   close (FILE);
+                 }
+
+              if ( $bundle_wo_ioapi == 0 )
+                 { open (FILE, "<arch/preamble") || die "File not found";
+                   my @lines = <FILE>;
+                   close (FILE);
+
+                   foreach (@lines)
+                     { $_ =~ s/ \$\(IOAPI_LIB\)//g;
+                     }
+ 
+                   open (FILE, ">arch/preamble") || die "File not found";
+                   print FILE @lines;
+                   close (FILE);
+                 }
+
+              open CONFIGURE_DEFAULTS, "cat ./arch/postamble ./arch/noopt_exceptions_f |"  or die "horribly" ;
+            }
     } else {
       open CONFIGURE_DEFAULTS, "cat ./arch/postamble ./arch/noopt_exceptions |"  or die "horribly" ;
     }
@@ -444,6 +627,8 @@ while ( <CONFIGURE_DEFAULTS> )
     $_ =~ s/CONFIGURE_PERL_PATH/$sw_perl_path/g ;
     $_ =~ s/CONFIGURE_NETCDF_PATH/$sw_netcdf_path/g ;
     $_ =~ s/CONFIGURE_PNETCDF_PATH/$sw_pnetcdf_path/g ;
+    $_ =~ s/CONFIGURE_NETCDFPAR_PATH/$sw_netcdfpar_path/g ;
+    $_ =~ s/CONFIGURE_ADIOS2_PATH/$sw_adios2_path/g ;
     $_ =~ s/CONFIGURE_HDF5_PATH/$sw_hdf5_path/g ;
     $_ =~ s/CONFIGURE_PHDF5_PATH/$sw_phdf5_path/g ;
     $_ =~ s/CONFIGURE_LDFLAGS/$sw_ldflags/g ;
@@ -481,6 +666,27 @@ while ( <CONFIGURE_DEFAULTS> )
        $_ =~ s/#// ;
        $_ =~ s/#// ;
     }
+
+# put netcdfpar ahead of netcdf so that part of the name does not get clobbered
+    if ( $sw_netcdfpar_path )
+      { $_ =~ s/CONFIGURE_WRFIO_NFPAR/wrfio_nfpar/g ;
+        $_ =~ s:CONFIGURE_NETCDFPAR_FLAG:-DNETCDFPAR: ;
+        $_ =~ s:CONFIGURE_NETCDFPAR_BUILD:: ;
+        if ( $ENV{NETCDFPAR_LDFLAGS} ) {
+          $_ =~ s:CONFIGURE_NETCDFPAR_LIB_PATH:\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdfpar/libwrfio_nfpar.a $ENV{NETCDFPAR_LDFLAGS} : ;
+        } elsif ( $sw_os eq "Interix" ) {
+          $_ =~ s:CONFIGURE_NETCDFPAR_LIB_PATH:\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdfpar/libwrfio_nfpar.a -L$sw_netcdfpar_path/lib $sw_usenetcdff $sw_usenetcdf : ;
+        } else {
+          $_ =~ s:CONFIGURE_NETCDFPAR_LIB_PATH:-L\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdfpar -lwrfio_nfpar -L$sw_netcdfpar_path/lib $sw_usenetcdff $sw_usenetcdf : ;
+        }
+         }
+    else
+      { $_ =~ s/CONFIGURE_WRFIO_NFPAR//g ;
+        $_ =~ s:CONFIGURE_NETCDFPAR_FLAG::g ;
+        $_ =~ s:CONFIGURE_NETCDFPAR_BUILD:echo SKIPPING: ;
+        $_ =~ s:CONFIGURE_NETCDFPAR_LIB_PATH::g ;
+         }
+
     if ( $sw_netcdf_path ) 
       { $_ =~ s/CONFIGURE_WRFIO_NF/wrfio_nf/g ;
 	$_ =~ s:CONFIGURE_NETCDF_FLAG:-DNETCDF: ;
@@ -513,8 +719,31 @@ while ( <CONFIGURE_DEFAULTS> )
 	$_ =~ s:CONFIGURE_PNETCDF_LIB_PATH::g ;
 	 }
 
+    if ( $sw_adios2_path ) 
+      { $_ =~ s/CONFIGURE_WRFIO_ADIOS2/wrfio_adios2/g ; 
+        $_ =~ s:CONFIGURE_ADIOS2_FLAG:-DADIOS2: ;
+        if ( -d "$sw_adios2_path/lib" )
+          {
+            $adios2_libdir = "$sw_adios2_path/lib" ;
+          }
+        elsif ( -d "$sw_adios2_path/lib64" )
+          {
+            $adios2_libdir = "$sw_adios2_path/lib64" ;
+          }
+        else
+          {
+            die "ADIOS2 environment variable was set, but neither $sw_adios2_path/lib nor $sw_adios2_path/lib64 were found." ;
+          }
+        $_ =~ s:CONFIGURE_ADIOS2_LIB_PATH:-L\$\(WRF_SRC_ROOT_DIR\)/external/io_adios2 -lwrfio_adios2 -L$adios2_libdir -ladios2_fortran_mpi -ladios2_fortran:;
+      }
+    else                   
+      { $_ =~ s/CONFIGURE_WRFIO_ADIOS2//g ;
+	      $_ =~ s:CONFIGURE_ADIOS2_FLAG::g ;
+	      $_ =~ s:CONFIGURE_ADIOS2_LIB_PATH::g ;
+      }
+
     if ( $sw_hdf5_path ) 
-      { $_ =~ s:CONFIGURE_HDF5_LIB_PATH:-L$sw_hdf5_path/lib -lhdf5hl_fortran -lhdf5_hl -lhdf5_fortran -lhdf5 -lm -lz: ;
+      { $_ =~ s:CONFIGURE_HDF5_LIB_PATH:-L$sw_hdf5_path/lib $sw_hdf5_hl_fortran -lhdf5_hl -lhdf5_fortran -lhdf5 -lm -lz: ;
         $_ =~ s:CONFIGURE_HDF5_FLAG:-DHDF5: ;
          }
     else
@@ -584,6 +813,19 @@ while ( <CONFIGURE_DEFAULTS> )
            $_ =~ s:ESMFIOEXTLIB:-L\$\(WRF_SRC_ROOT_DIR\)/external/esmf_time_f90 -lesmf_time:g ;
         }
       }
+
+    # CTSM substitutions in configure.defaults and postamble
+    if ( $sw_ctsm_mkfile_path ) {
+       $_ =~ s:CONFIGURE_D_CTSM:-DWRF_USE_CTSM:g ;
+       $_ =~ s:CONFIGURE_CTSM_INC:\$\(CTSM_INCLUDES\):g ;
+       $_ =~ s:CONFIGURE_CTSM_LIB:\$\(CTSM_LIBS\):g ;
+    }
+    else {
+       $_ =~ s:CONFIGURE_D_CTSM:-DWRF_USE_CLM:g ;
+       $_ =~ s:CONFIGURE_CTSM_INC::g ;
+       $_ =~ s:CONFIGURE_CTSM_LIB::g ;
+    }
+
      if ( $ENV{HWRF} )
        {
         $_ =~ s:CONFIGURE_ATMOCN_LIB:-L\$\(WRF_SRC_ROOT_DIR\)/external/atm_ocn  -latm_ocn:g ;
@@ -665,6 +907,7 @@ while ( <CONFIGURE_DEFAULTS> )
                printf "Compile for nesting? (1=basic, 2=preset moves, 3=vortex following) [default 1]: " ;
              }
              $response = <STDIN> ;
+             $lioapi = $lioapi_temp;
           } 
           printf "\n" ;
           lc $response ;
@@ -749,6 +992,10 @@ close CONFIGURE_DEFAULTS ;
 close POSTAMBLE ;
 close ARCH_NOOPT_EXCEPTIONS ;
 
+if ( $wrf_cmaq_option eq 1 )
+   { unlink "wrf_cmaq_path";
+   }
+
 open CONFIGURE_WRF, "> configure.wrf" or die "cannot append configure.wrf" ;
 open ARCH_PREAMBLE, "< arch/preamble" or die "cannot open arch/preamble" ;
 my @preamble;
@@ -779,6 +1026,12 @@ while ( <ARCH_PREAMBLE> )
     $_ =~ s:ESMFIODEFS::g ;
     $_ =~ s:ESMFTARGET:esmf_time:g ;
     }
+
+  # CTSM substitutions in preamble
+  if ( $sw_ctsm_mkfile_path ) {
+     $_ =~ s:\# CTSMINCLUDEGOESHERE:include $sw_ctsm_mkfile_path: ;
+  }
+
   if ( $ENV{HWRF} )
     {
     $_ =~ s:CONFIGURE_ATMOCN_LIB:-L\$\(WRF_SRC_ROOT_DIR\)/external/atm_ocn  -latm_ocn:g ;
@@ -797,12 +1050,31 @@ while ( <ARCH_PREAMBLE> )
   $_ =~ s/CONFIGURE_CONFIG_NUM/Compiler choice: $response_opt/g ;
   $_ =~ s/CONFIGURE_CONFIG_NEST/Nesting option: $response_nesting/g ;
 
-  $_ =~ s/CONFIGURE_DEP_LIB_PATH/$sw_dep_lib_path/g ;
+  $_ =~ s/CONFIGURE_NETCDF4_DEP_LIB/$sw_netcdf4_dep_lib/g ;
 
     $_ =~ s/CONFIGURE_COMMS_LIB/$sw_comms_lib/g ;
     if ( $sw_os ne "CYGWIN_NT" ) {
       $_ =~ s/#NOWIN// ;
     }
+
+    if ( $sw_netcdfpar_path )
+      { #print("set sw_netcdfpar_path stuff\n");
+        $_ =~ s/CONFIGURE_WRFIO_NFPAR/wrfio_nfpar/g ;
+        $_ =~ s:CONFIGURE_NETCDFPAR_FLAG:-DNETCDFPAR: ;
+        if ( $ENV{NETCDFPAR_LDFLAGS} ) {
+          $_ =~ s:CONFIGURE_NETCDFPAR_LIB_PATH:\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdfpar/libwrfio_nfpar.a $ENV{NETCDFPAR_LDFLAGS} : ;
+        } elsif ( $sw_os eq "Interix" ) {
+          $_ =~ s:CONFIGURE_NETCDFPAR_LIB_PATH:\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdfpar/libwrfio_nfpar.a -L$sw_netcdfpar_path/lib $sw_usenetcdff $sw_usenetcdf : ;
+        } else {
+          $_ =~ s:CONFIGURE_NETCDFPAR_LIB_PATH:-L\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdfpar -lwrfio_nfpar -L$sw_netcdfpar_path/lib $sw_usenetcdff $sw_usenetcdf : ;
+        }
+         }
+    else
+      { $_ =~ s/CONFIGURE_WRFIO_NFPAR//g ;
+        $_ =~ s:CONFIGURE_NETCDFPAR_FLAG::g ;
+        $_ =~ s:CONFIGURE_NETCDFPAR_LIB_PATH::g ;
+         }
+
     if ( $sw_netcdf_path )
       { $_ =~ s/CONFIGURE_WRFIO_NF/wrfio_nf/g ;
 	$_ =~ s:CONFIGURE_NETCDF_FLAG:-DNETCDF: ;
@@ -835,8 +1107,31 @@ while ( <ARCH_PREAMBLE> )
 	$_ =~ s:CONFIGURE_PNETCDF_LIB_PATH::g ;
 	 }
 
+    if ( $sw_adios2_path ) 
+      { $_ =~ s/CONFIGURE_WRFIO_ADIOS2/wrfio_adios2/g ; 
+        $_ =~ s:CONFIGURE_ADIOS2_FLAG:-DADIOS2: ;
+        if ( -d "$sw_adios2_path/lib" )
+          {
+            $adios2_libdir = "$sw_adios2_path/lib" ;
+          }
+        elsif ( -d "$sw_adios2_path/lib64" )
+          {
+            $adios2_libdir = "$sw_adios2_path/lib64" ;
+          }
+        else
+          {
+            die "ADIOS2 environment variable was set, but neither $sw_adios2_path/lib nor $sw_adios2_path/lib64 were found." ;
+          }
+        $_ =~ s:CONFIGURE_ADIOS2_LIB_PATH:-L\$\(WRF_SRC_ROOT_DIR\)/external/io_adios2 -lwrfio_adios2 -L$adios2_libdir -ladios2_fortran_mpi -ladios2_fortran:;
+      }
+    else                   
+      { $_ =~ s/CONFIGURE_WRFIO_ADIOS2//g ;
+	      $_ =~ s:CONFIGURE_ADIOS2_FLAG::g ;
+	      $_ =~ s:CONFIGURE_ADIOS2_LIB_PATH::g ;
+      }
+
     if ( $sw_hdf5_path )
-      { $_ =~ s:CONFIGURE_HDF5_LIB_PATH:-L$sw_hdf5_path/lib -lhdf5hl_fortran -lhdf5_hl -lhdf5_fortran -lhdf5 -lm -lz: ;
+      { $_ =~ s:CONFIGURE_HDF5_LIB_PATH:-L$sw_hdf5_path/lib $sw_hdf5_hl_fortran -lhdf5_hl -lhdf5_fortran -lhdf5 -lm -lz: ;
         $_ =~ s:CONFIGURE_HDF5_FLAG:-DHDF5: ;
          }
     else
@@ -885,7 +1180,7 @@ while ( <ARCH_PREAMBLE> )
           $_ .= " " . $sw_curl_lib . "\n" ;
         }
     }
-  if ( $sw_dep_lib_path ne "" )
+  if ( $sw_netcdf4_dep_lib ne "" )
     { if (/^HDF5.*=/)
         { $_  =~ s/\r|\n//g;
           $_ .= " " . $sw_hdf5 . "\n" ;
@@ -915,5 +1210,4 @@ close CONFIGURE_WRF ;
 
 printf "Configuration successful! \n" ;
 printf "------------------------------------------------------------------------\n" ;
-
 

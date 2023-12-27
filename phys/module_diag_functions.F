@@ -53,8 +53,6 @@ CONTAINS
 
   END FUNCTION calc_rh
 
-
-
   !!!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!!!
   !~ 
   !~ Name:
@@ -110,8 +108,6 @@ CONTAINS
      theta = t * ( (p0/p)**(Rd/Cp) )
   
   END FUNCTION Theta
-
-
 
   !!!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!!!
   !~
@@ -388,7 +384,10 @@ CONTAINS
      !  ---------------------------
      Pwat=0
      DO k = 1, nz
-       Pwat = Pwat + (qv(k) + qc(k)) * dz8w(k) * rho(k)
+       !Based on AMS PWAT defination (https://glossary.ametsoc.org/wiki/Precipitable_water)
+       !PWAT is corrected as the column accumulated water vapor rather than water vapor + cloud water.
+       !Modified by Zhixiao
+       Pwat = Pwat + qv(k) * dz8w(k) * rho(k)
      ENDDO
              
   END FUNCTION Pwat
@@ -463,10 +462,12 @@ CONTAINS
       !  -------------------------
       REAL                    :: ws   ( nz ) !~ Saturation mixing ratio
       REAL                    :: w    ( nz ) !~ Mixing ratio
+      REAL                    :: etheta( nz )!~ Equivalent potential temperature. Modified by Zhixiao.
       REAL                    :: dTvK ( nz ) !~ Parcel / ambient Tv difference
       REAL                    :: buoy ( nz ) !~ Buoyancy
       REAL                    :: tlclK       !~ LCL temperature ( K )
       REAL                    :: plcl        !~ LCL pressure ( Pa )
+      REAL                    :: pel         !~ Equilibrium pressure ( Pa ). Modified by Zhixiao.
       REAL                    :: nbuoy       !~ Negative buoyancy
       REAL                    :: pbuoy       !~ Positive buoyancy
   
@@ -481,6 +482,7 @@ CONTAINS
       REAL                    :: srcthetaeK  !~ Source parcel theta-e ( K )
       INTEGER                 :: srclev      !~ Level of the source parcel
       REAL                    :: spdiff      !~ Pressure difference
+      REAL                    :: srce        !~ Equivalent potential temperature ( K ). Modified by Zhixiao.
    
       !~ Parcel variables
       !  ----------------
@@ -493,6 +495,7 @@ CONTAINS
       !  -----------------------
       INTEGER                 :: i, j, k    !~ Dummy iterator
       INTEGER                 :: lfclev     !~ Level of LFC
+      INTEGER                 :: ellev      !~ Level of EL. Modified by Zhixiao.
       INTEGER                 :: prcl       !~ Internal parcel type indicator
       INTEGER                 :: mlev       !~ Level for ML calculation
       INTEGER                 :: lyrcnt     !~ Number of layers in mean layer
@@ -514,12 +517,11 @@ CONTAINS
          PARAMETER ( g  = 9.80665 )         !~ m s^-2
       REAL                    :: RUNDEF
          PARAMETER ( RUNDEF = -9.999E30 )
-  
       !~ Initialize variables
       !  --------------------
       ostat  = 0
       CAPE   = REAL ( 0 )
-      CIN    = REAL ( 0 )
+      CIN    = RUNDEF !Change CIN filling values from 0 to default filling. CIN should not initially be filled by 0, because 0 means no inhibition energy. Modified by Zhixiao
       ZLFC   = RUNDEF
       PLFC   = RUNDEF
   
@@ -549,6 +551,11 @@ CONTAINS
       DO k = sfc, nz
         ws  ( k )   = SaturationMixingRatio ( tK(k), p(k) )
         w   ( k )   = ( rh(k)/100.0 ) * ws ( k )
+        !Removed by Zhixiao. Water vapor mixing ratio (w) is not conserved during parcel lifting processes. We should not use w to define MU layer.
+        !thetav(k)   = Theta ( VirtualTemperature ( tK (k), w (k) ), p(k)/100.0 )
+        !Added by Zhixiao. Critical modification: We use the model level with maximum equivalent potential temperature (etheta) below 500mb to define the MU layer
+        !Because equivalent potential temperature is conserved in dry and moist adiabatic processes.
+        etheta(k)   = Thetae( tK(k), p(k)/100.0, rh(k), w(k) )
       END DO
   
       srclev      = sfc
@@ -558,32 +565,38 @@ CONTAINS
       srcws       = ws    ( sfc )
       srcw        = w     ( sfc )
       srctheta    = Theta ( tK(sfc), p(sfc)/100.0 )
+      srce        = etheta (sfc) !Modified by Zhixiao
    
       !~ Compute the profile mixing ratio.  If the parcel is the MU parcel,
       !~ define our parcel to be the most unstable parcel within the lowest
       !~ 180 mb.
       !  -------------------------------------------------------------------
       mlev = sfc + 1
-      DO k = sfc + 1, nz
+      !Change initial searching level from the second to first model level. Because we did not compute pdiff, and p(k-1) properties is unnecessary.
+      !Modified by Zhixiao.
+      DO k = sfc, nz
    
          !~ Identify the last layer within 100 hPa of the surface
          !  -----------------------------------------------------
          pdiff = ( p (sfc) - p (k) ) / REAL ( 100 )
          IF ( pdiff <= REAL (100) ) mlev = k
 
-         !~ If we've made it past the lowest 180 hPa, exit the loop
+         !~ If we've made it past the lowest 500 hPa, exit the loop. MU layer is assumed below 500 hPa. Modified by Zhixiao.
          !  -------------------------------------------------------
-         IF ( pdiff >= REAL (180) ) EXIT
+         IF ( p(k) <= REAL (50000) ) EXIT
 
          IF ( prcl == 1 ) THEN
+            ! Removed by Zhixiao, w can not used for defining MU layer
             !IF ( (p(k) > 70000.0) .and. (w(k) > srcw) ) THEN
-            IF ( (w(k) > srcw) ) THEN
+            ! Modified by Zhixiao, MU layer is featured by the max etheta
+            IF (etheta(k) > srce)  THEN !Modified by Zhixiao.
                srctheta = Theta ( tK(k), p(k)/100.0 )
                srcw = w ( k )
                srclev  = k
                srctK   = tK ( k )
                srcrh   = rh ( k )
                srcp    = p  ( k )
+               srce = etheta(k) !Modified by Zhixiao
             END IF
          END IF
    
@@ -605,12 +618,11 @@ CONTAINS
       END IF
    
       srcthetaeK = Thetae ( srctK, srcp/100.0, srcrh, srcw )
-   
       !~ Calculate temperature and pressure of the LCL
       !  ---------------------------------------------
       tlclK = TLCL ( tK(srclev), rh(srclev) )
       plcl  = p(srclev) * ( (tlclK/tK(srclev))**(Cp/Rd) )
-   
+      
       !~ Now lift the parcel
       !  -------------------
    
@@ -728,47 +740,44 @@ CONTAINS
       !  -----------------------------------
       flag   = .false.
       lfclev = -1
-      nbuoy  = REAL ( 0 )
-      pbuoy = REAL ( 0 )
-      DO k = sfc + 1, nz
-         IF ( tK (k) < 253.15 ) EXIT
-         CAPE = CAPE + MAX ( buoy (k), 0.0 ) * ( hgt (k) - hgt (k-1) )
-         CIN  = CIN  + MIN ( buoy (k), 0.0 ) * ( hgt (k) - hgt (k-1) )
-   
-         !~ If we've already passed the LFC
-         !  -------------------------------
-         IF ( flag .and. buoy (k) > REAL (0) ) THEN
-            pbuoy = pbuoy + buoy (k)
-         END IF
-   
-         !~ We are buoyant now - passed the LFC
+      ellev = -1 !Modified by Zhixiao
+      DO k = sfc, nz !Modified by Zhixiao
+         !~ LFC is defiend as the highest level when negative buyancy turns postive.
          !  -----------------------------------
-         IF ( .not. flag .and. buoy (k) > REAL (0) .and. p (k) < plcl ) THEN
+         IF ( .not. flag .and. buoy (k) > REAL (0) .and. p (k) <= plcl ) THEN !Modified by Zhixiao
             flag = .true.
-            pbuoy = pbuoy + buoy (k)
             lfclev = k
          END IF
-   
-         !~ If we think we've passed the LFC, but encounter a negative layer
-         !~ start adding it up.
+         !~ Take the Highest EL as final result. Modified by Zhixiao
          !  ----------------------------------------------------------------
-         IF ( flag .and. buoy (k) < REAL (0) ) THEN
-            nbuoy = nbuoy + buoy (k)
-
-            !~ If the accumulated negative buoyancy is greater than the
-            !~ positive buoyancy, then we are capped off.  Got to go higher
-            !~ to find the LFC. Reset positive and negative buoyancy summations
-            !  ----------------------------------------------------------------
-            IF ( ABS (nbuoy) > pbuoy ) THEN
-               flag   = .false.
-               nbuoy  = REAL ( 0 )
-               pbuoy  = REAL ( 0 )
-               lfclev = -1
+         IF (k >= 2) THEN !Modified by Zhixiao
+            IF ( flag .and. buoy (k) < REAL (0) .and. buoy (k-1) >= REAL (0)) THEN !Modified by Zhixiao
+               ellev = k !Modified by Zhixiao
             END IF
          END IF
-
+         ! When buoy turns negative again, reset LFC flag and keep the highest LFC as the effective output
+         IF (buoy (k) < REAL (0) .and. flag) THEN 
+            flag = .false.
+         END IF
       END DO
-
+      IF ((ellev >= 0) .and. (lfclev >= 0)) THEN !Modified by Zhixiao
+         plfc = p (lfclev)
+         pel = p (ellev)
+         CIN = REAL ( 0 )
+         DO k = sfc+1, nz
+            ! Make CAPE and CIN consistent with AMS definition
+            ! https://glossary.ametsoc.org/wiki/Convective_available_potential_energy
+            ! https://glossary.ametsoc.org/wiki/Convective_inhibition
+            IF ( p (k) <= plcl .and. p (k) > plfc) THEN !Modified by Zhixiao
+               ! CIN is the vertically integrated negative buoyant energy between LCL and LFC
+               CIN  = CIN  + MIN ( buoy (k), 0.0 ) * ( hgt (k) - hgt (k-1) )
+            END IF
+            IF ( p (k) <= plfc .and. p (k) > pel) THEN !Modified by Zhixiao
+               ! CAPE is the vertically integrated positive buoyant energy between LFC and EL
+               CAPE = CAPE + MAX ( buoy (k), 0.0 ) * ( hgt (k) - hgt (k-1) )
+            END IF !Modified by Zhixiao         
+         END DO !Modified by Zhixiao
+      END IF !Modified by Zhixiao
       !~ Calculate lifted index by interpolating difference between
       !~ parcel and ambient Tv to 500mb.
       !  ----------------------------------------------------------
@@ -783,7 +792,7 @@ CONTAINS
          IF ( pd .le. pm ) THEN
             lidx = 0.
             EXIT
-   
+
          ELSEIF ( pu .le. pm .and. pd .gt. pm) THEN
 
             !~ Found trapping pressure: up, middle, down.
@@ -797,22 +806,21 @@ CONTAINS
          ENDIF
 
       END DO
-   
       !~ Assuming the the LFC is at a pressure level for now
       !  ---------------------------------------------------
       IF ( lfclev > 0 ) THEN
          PLFC = p   ( lfclev )
          ZLFC = hgt ( lfclev )
       END IF
-   
+
       IF ( PLFC /= PLFC .OR. PLFC < REAL (0) ) THEN
          PLFC = REAL ( -1 )
          ZLFC = REAL ( -1 )
       END IF
    
       IF ( CAPE /= CAPE ) cape = REAL ( 0 )
-   
-      IF ( CIN  /= CIN  ) cin  = REAL ( 0 )
+
+      IF ( CIN  /= CIN  ) cin  = RUNDEF
 
       !~ Chirp
       !  -----

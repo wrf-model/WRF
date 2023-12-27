@@ -10,7 +10,7 @@ CONTAINS
    SUBROUTINE SWRAD(dt,RTHRATEN,GSW,XLAT,XLONG,ALBEDO,            &
                     rho_phy,T3D,QV3D,QC3D,QR3D,                   &
                     QI3D,QS3D,QG3D,P3D,pi3D,dz8w,GMT,             &
-                    R,CP,G,JULDAY,                                &
+                    R,CP,G,JULDAY,GHG_INPUT,                      &
                     XTIME,DECLIN,SOLCON,                          &
                     F_QV,F_QC,F_QR,F_QI,F_QS,F_QG,                &
                     pm2_5_dry,pm2_5_water,pm2_5_dry_ec,           &
@@ -18,8 +18,8 @@ CONTAINS
                     ids,ide, jds,jde, kds,kde,                    & 
                     ims,ime, jms,jme, kms,kme,                    &
                     its,ite, jts,jte, kts,kte,                    &
-                    coszen,julian                                 & ! jararias, 14/08/2013
-                    )
+                    coszen,julian,                                & ! jararias, 14/08/2013
+                    obscur)					    ! amontornes-bcodina 2015/09 solar eclipses
 !------------------------------------------------------------------
    IMPLICIT NONE
 !------------------------------------------------------------------
@@ -28,7 +28,7 @@ CONTAINS
                                        its,ite, jts,jte, kts,kte
 
    LOGICAL,    INTENT(IN   ) ::        warm_rain
-   INTEGER,    INTENT(IN   ) ::        icloud
+   INTEGER,    INTENT(IN   ) ::        icloud,ghg_input
 
    REAL, INTENT(IN    )      ::        RADFRQ,DEGRAD,             &
                                        XTIME,DECLIN,SOLCON
@@ -61,8 +61,12 @@ CONTAINS
    INTEGER, INTENT(IN  ) ::                               JULDAY  
 
    ! --- jararias 14/08/2013
-   REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(IN) :: COSZEN
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) ::     COSZEN
    REAL, OPTIONAL, INTENT(IN) :: JULIAN
+
+!-- amontornes-bcodina 2015/09
+!   obscur --> degree of obscuration for solar eclipses prediction (2D)
+   real, dimension(ims:ime,jms:jme), INTENT(IN) :: obscur
 
 !
 ! Optional
@@ -100,6 +104,10 @@ CONTAINS
    INTEGER :: i,j,K,NK
    LOGICAL :: predicate , do_topo_shading
    real :: aer_dry1(kts:kte),aer_water1(kts:kte)
+
+! amontornes-bcodina 2015/09 solar eclipses
+!  obscur0 --> degree of obscuration for solar eclipses prediction at one point
+   REAL::    obscur0
 
 !------------------------------------------------------------------
 
@@ -218,6 +226,7 @@ CONTAINS
          XLAT0=XLAT(I,J)
          XLONG0=XLONG(I,J)
          ALB0=ALBEDO(I,J)
+         obscur0=obscur(I,J)
 ! slope code removed - factor now done in surface driver
            CALL SWPARA(TTEN1D,GSW0,XLAT0,XLONG0,ALB0,              &
                        T1D,QV1D,QC1D,QR1D,QI1D,QS1D,QG1D,P1D,      &
@@ -225,7 +234,7 @@ CONTAINS
                        R,CP,G,DECLIN,SOLCON,                       &
                        RADFRQ,ICLOUD,DEGRAD,aer_dry1,aer_water1,   &
                        kts,kte,                                    &
-                       coszen(i,j),julian                          ) ! jararias, 14/08/2013
+                       coszen(i,j),julian,obscur0                  ) ! jararias, 14/08/2013, amontornes-bcodina 2015/09 solar eclipses
          GSW(I,J)=GSW0
          DO K=kts,kte          
             NK=kme-1-K+kms
@@ -243,7 +252,7 @@ CONTAINS
                      XTIME, GMT, RHO0, DZ,                     &
                      R,CP,G,DECLIN,SOLCON,                     &
                      RADFRQ,ICLOUD,DEGRAD,aer_dry1,aer_water1, &
-                     kts,kte,coszen,julian,                    &
+                     kts,kte,coszen,julian,obscur0,            & ! amontornes-bcodina 2015/09 solar eclipses
                      slope_rad,shadow,slp_azi,slope            )
 !------------------------------------------------------------------
 !     TO CALCULATE SHORT-WAVE ABSORPTION AND SCATTERING IN CLEAR
@@ -276,7 +285,7 @@ CONTAINS
                                         SOLCON,XLAT,XLONG,ALBEDO, &
                                                   RADFRQ, DEGRAD
 
-   REAL, OPTIONAL, INTENT(IN) :: COSZEN, JULIAN ! jararias, 14/08/2013
+   REAL, INTENT(IN) :: COSZEN, JULIAN 
 
 !
    INTEGER, INTENT(IN) :: icloud
@@ -285,6 +294,7 @@ CONTAINS
 
    INTEGER, OPTIONAL, INTENT(IN) :: slope_rad,shadow
    REAL, OPTIONAL,    INTENT(IN) :: slp_azi,slope
+   REAL,              INTENT(IN) :: obscur0
 
 ! LOCAL VARS
 !
@@ -334,24 +344,15 @@ CONTAINS
        GSW=0.0
        bext340=5.E-6
        bexth2o=5.E-6
-       SOLTOP=SOLCON
-       ! jararias, 14/08/2013
-       if (present(coszen)) then
-          csza=coszen
-       else
-!         da=6.2831853071795862*(julian-1)/365.
-!         eot=(0.000075+0.001868*cos(da)-0.032077*sin(da) &
-!            -0.014615*cos(2*da)-0.04089*sin(2*da))*(229.18)
-          xt24 = mod(xtime+radfrq*0.5,1440.)+eot
-          tloctm = gmt + xt24/60. + xlong/15.
-          hrang = 15. * (tloctm-12.) * degrad
-          xxlat = xlat * degrad
-          csza = sin(xxlat) * sin(declin) &
-               + cos(xxlat) * cos(declin) * cos(hrang)
-       end if
+!       SOLTOP=SOLCON
+       SOLTOP = SOLCON*(1-obscur0)
+       csza=coszen
 
 !     RETURN IF NIGHT        
       IF(CSZA.LE.1.E-9)GOTO 7
+
+! amontornes-bcodina 2015/09 solar eclipses eclipse
+      IF(SOLTOP.LE.1.E-9)GOTO 7
 !
       DO K=kts, kte
 

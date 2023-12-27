@@ -1730,7 +1730,7 @@ CONTAINS
 !------------------------------------------------------------------
    SUBROUTINE RRTMLWRAD(                                          &
                         p_top                                     &
-                       ,rthraten,glw,olr,emiss                    &
+                       ,rthraten,rthratenc,glw,olr,emiss          &
                        ,p8w,p3d,pi3d                              &
                        ,dz8w,tsk,t3d,t8w,rho3d,r,g                &
                        ,icloud, warm_rain                         &
@@ -1741,7 +1741,7 @@ CONTAINS
                        ,qi3d,qs3d,qg3d,cldfra3d                   &
                        ,f_qv,f_qc,f_qr,f_qi,f_qs,f_qg             &
 !ccc Added for time-varying trace gases.
-                       ,yr, julian                                )
+                       ,yr, julian, ghg_input                     )
 !ccc
 !------------------------------------------------------------------
 !ccc
@@ -1756,7 +1756,7 @@ CONTAINS
                                        ims,ime, jms,jme, kms,kme, &
                                        its,ite, jts,jte, kts,kte
 
-   INTEGER, INTENT(IN )      ::        ICLOUD
+   INTEGER, INTENT(IN )      ::        ICLOUD, ghg_input
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
          INTENT(IN   ) ::                                   dz8w, &
@@ -1768,7 +1768,8 @@ CONTAINS
                                                            rho3D
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
-         INTENT(INOUT)  ::                              RTHRATEN
+         INTENT(INOUT)  ::                              RTHRATEN, &
+                                                       RTHRATENC
 !
    REAL, DIMENSION( ims:ime, jms:jme )                          , &
          INTENT(IN   )  ::                                 EMISS, &
@@ -1807,6 +1808,7 @@ CONTAINS
                                                             Tw1D
 
    REAL, DIMENSION( kts:kte ) ::                          TTEN1D, &
+                                                         TTEN1DC, &
                                                         CLDFRA1D, &
                                                             DZ1D, &
                                                              P1D, &
@@ -1825,6 +1827,7 @@ CONTAINS
 
 ! Add variables for variable trace gas concentrations (ccc)
     REAL(8)  :: co2vmr, n2ovmr, ch4vmr
+    REAL(8)  :: cfc11vmr, cfc12vmr ! NOT USED
     LOGICAL, EXTERNAL :: wrf_dm_on_monitor
     CHARACTER(LEN=256) :: message
 
@@ -1847,18 +1850,19 @@ CONTAINS
 
 !----- Calculate the trace gas concentrations from file.
 !ccc
-#ifdef CLWRFGHG
-   CALL read_CAMgases(yr,julian,"RRTM",co2vmr,n2ovmr,ch4vmr)
-#else
+   IF(ghg_input .EQ. 1 ) THEN 
+      CALL read_CAMgases(yr,julian,.false.,"RRTM",co2vmr,n2ovmr,ch4vmr,cfc11vmr,cfc12vmr)
+   ELSE
 ! values used in pre-V3.5
-!  co2vmr = 330.e-6
-!  n2ovmr = 0.
-!  ch4vmr = 0.
+   !  co2vmr = 330.e-6
+   !  n2ovmr = 0.
+   !  ch4vmr = 0.
 ! values updated to RRTMG in V3.5
-   co2vmr = 379.e-6
-   n2ovmr = 319.e-9
-   ch4vmr = 1774.e-9
-#endif
+      co2vmr = (280. + 90.*exp(0.02*(yr-2000)))*1.e-6
+!     co2vmr = 379.e-6
+      n2ovmr = 319.e-9
+      ch4vmr = 1774.e-9
+   END IF
  
   IF ( wrf_dm_on_monitor() ) THEN
      WRITE(message,*)'CAM-CLWRF interpolated values______ year:',yr,' julian day:',julian
@@ -1900,6 +1904,7 @@ CONTAINS
          DO K=kts,kte
             NK=kme-1-K+kms
             TTEN1D(K)=0.
+            TTEN1DC(K)=0.
             T1D(K)=T3D(I,NK,J)
             P1D(K)=P3D(I,NK,J)/100.
             DZ1D(K)=dz8w(I,NK,J)
@@ -1989,7 +1994,8 @@ CONTAINS
          OLR0=0. 
          TSFC=TSK(I,J)
 
-         CALL RRTM(tten1d,glw0,olr0,tsfc,cldfra1d,t1d,tw1d,qv1d,qc1d,   &
+         CALL RRTM(tten1d,tten1dc,glw0,olr0,tsfc,cldfra1d,         &
+                   t1d,tw1d,qv1d,qc1d,                             &
                    qr1d,qi1d,qs1d,qg1d,p1d,pW1d,dz1d,              &
                    emiss0,r,g,                                     &
 !ccc Added for time-varying trace gases.
@@ -2003,6 +2009,7 @@ CONTAINS
          DO K=kts,kte
             nk=kme-1-k+kms
             rthraten(i,k,j)=rthraten(i,k,j)+tten1d(nk)/pi3d(i,k,j)
+            rthratenc(i,k,j)=rthratenc(i,k,j)+tten1dc(nk)/pi3d(i,k,j)
          ENDDO
 
       END DO i_loop
@@ -2049,7 +2056,7 @@ CONTAINS
 ! *** transfer (based on a code for interface with CCM model by M. J. Iacono)    
 ! *** J. Dudhia ; March, 1999                                                    
 !---------------------------------------------------------------------
-   SUBROUTINE RRTM(TTEN,GLW,OLR,TSFC,CLDFRA,T,Tw,QV,QC,              &
+   SUBROUTINE RRTM(TTEN,TTENC,GLW,OLR,TSFC,CLDFRA,T,Tw,QV,QC,        &
                    QR,QI,QS,QG,P,Pw,DZ,                              &
                    EMISS,R,G,                                        &
 !ccc Added for time-varying trace gases.
@@ -2089,7 +2096,8 @@ CONTAINS
                                                                  QS, &
                                                                  QG
 !
-      REAL, DIMENSION( kts:kte ), INTENT(INOUT)::              TTEN
+      REAL, DIMENSION( kts:kte ), INTENT(INOUT)::              TTEN, &
+                                                              TTENC
 !   
       REAL, INTENT(IN  )   ::                           R, G, EMISS
 
@@ -2145,7 +2153,8 @@ CONTAINS
                                                                  TZ, &
                                                            TOTDFLUX, &
                                                            TOTUFLUX, &
-                                                                HTR
+                                                                HTR, &
+                                                               HTRC
 !     
       INTEGER ::  I,K,ktep1
       INTEGER ::  LAYTROP,LAYSWTCH,LAYLOW
@@ -2257,7 +2266,8 @@ CONTAINS
                                                                                  
            CALL RTRN(kts,ktep1,                                  &
                      TAVEL, PZ, TZ, CLDFRAC, TAUCLOUD, TOTDFLUX, &
-                     TOTUFLUX, HTR, ICLDLYR, ITR, PFRAC, TBOUND,SEMISS     )
+                     TOTUFLUX, HTR, HTRC, ICLDLYR, ITR, PFRAC,   &
+                     TBOUND,SEMISS     )
                                                                                  
 !  Pass total sky up and down flux profiles to CCM output arrays and             
 !  convert from mks to cgs units for CCM.  Pass clear sky TOA and surface        
@@ -2279,6 +2289,7 @@ CONTAINS
 !              qrl(k) = HTR(NLAYERS-1-k)/86400.                                  
 !              TTEN(K)=HTR(NLAYERS-1-k)/86400. 
               TTEN(K)=HTR(kte-k)/86400. 
+              TTENC(K)=HTRC(kte-k)/86400.
  2450      continue                                                              
            GLW = TOTDFLUX(0)
 !           OLR = TOTUFLUX(NLAYERS)
@@ -6183,7 +6194,8 @@ CONTAINS
 !-------------------------------------------------------------------------
       SUBROUTINE RTRN(kts,ktep1,                                         &
                       TAVEL, PZ, TZ, CLDFRAC, TAUCLOUD, TOTDFLUX,        &
-                      TOTUFLUX, HTR, ICLDLYR, ITR, PFRAC, TBOUND,SEMISS  )
+                      TOTUFLUX, HTR, HTRC, ICLDLYR, ITR, PFRAC, TBOUND,  &
+                      SEMISS  )
 !-------------------------------------------------------------------------
 !  RRTM Longwave Radiative Transfer Model                                        
 !  Atmospheric and Environmental Research, Inc., Cambridge, MA                   
@@ -6219,8 +6231,9 @@ CONTAINS
                                                 TOTDFLUX, &
                                                 TOTUFLUX
 
-      REAL, DIMENSION(   0:ktep1 ), INTENT(INOUT) ::        &
-                                                     HTR  
+      REAL, DIMENSION(   0:ktep1 ), INTENT(INOUT) ::      &
+                                                     HTR, &
+                                                    HTRC
 
       REAL, DIMENSION(   0:ktep1 ), INTENT(IN   ) ::      &
                                                       PZ, &
@@ -6239,8 +6252,7 @@ CONTAINS
 
       REAL, DIMENSION(   0:ktep1 )              ::        &
                                                     FNET, &
-                                                   FNETC, &
-                                                    HTRC
+                                                   FNETC
 
       INTEGER :: kk
      

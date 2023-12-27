@@ -35,9 +35,14 @@ SUBROUTINE A_MICROPHYSICS_DRIVER(th, thb, rho, rhob, pi_phy, pi_phyb, p&
 &  cldfra_mp_all, cldfrai, cldfral, cldfra_conv, alt, accum_mode, &
 &  aitken_mode, coarse_mode, icwmrsh3d, icwmrdp3d, shfrc3d, cmfmc3d, &
 &  cmfmc2_3d, config_flags, fnm, fnp, rh_old_mp, lcd_old_mp, qv_curr, &
-&  qv_currb, qc_curr, qc_currb, qr_curr, qr_currb, qi_curr, qs_curr, qg_curr, qndrop_curr, &
+&  qv_currb, qc_curr, qc_currb, qr_curr, qr_currb, qi_curr,qi_currb, &
+&  qs_curr,qs_currb, qg_curr,qg_currb, qndrop_curr, &
 &  qni_curr, qh_curr, qnh_curr, qzr_curr, qzi_curr, qzs_curr, qzg_curr, &
 &  qzh_curr, qns_curr, qnr_curr, qng_curr, qnn_curr, qnc_curr, qvolg_curr, qvolh_curr &
+&  ,qdcn_curr,qtcn_curr,qccn_curr,qrcn_curr,qnin_curr,fi_curr,fs_curr    & ! for ntu3m
+&  ,vi_curr,vs_curr,vg_curr,ai_curr,as_curr,ag_curr,ah_curr,i3m_curr     & ! for ntu3m
+&  ,f_qdcn,f_qtcn,f_qccn,f_qrcn,f_qnin,f_fi,f_fs,f_vi,f_vs,f_vg          & ! for ntu3m
+&  ,f_ai,f_as,f_ag,f_ah,f_i3m                                            & ! for ntu3m
 &  , f_qv, f_qc, f_qr, f_qi, f_qs, f_qg, f_qndrop, f_qni, f_qns, f_qnr, &
 &  f_qng, f_qnc, f_qnn, f_qh, f_qnh, f_qzr, f_qzi, f_qzs, f_qzg, f_qzh, &
 &  f_qvolg, f_qvolh, qrcuten, qscuten, qicuten, qt_curr, f_qt, &
@@ -49,10 +54,10 @@ SUBROUTINE A_MICROPHYSICS_DRIVER(th, thb, rho, rhob, pi_phy, pi_phyb, p&
 
    USE module_state_description, ONLY :                                  &
                      KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME    &
-                    ,WSM6SCHEME, ETAMPNEW, THOMPSON, MORR_TWO_MOMENT     &
+                    ,WSM6SCHEME, WSM6RSCHEME, ETAMPNEW, THOMPSON, MORR_TWO_MOMENT     &
                     ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME, NSSL_2MOM, NSSL_2MOMCCN  &
                     ,NSSL_1MOM,NSSL_1MOMLFO & ! ,NSSL_3MOM       &
-                    ,MILBRANDT2MOM, LSCONDSCHEME, MKESSLERSCHEME, CAMMGMPSCHEME  !,MILBRANDT3MOM
+                    ,MILBRANDT2MOM, LSCONDSCHEME, MKESSLERSCHEME, CAMMGMPSCHEME, NTU  !,MILBRANDT3MOM, ntu3m
 
 ! Model Layer
    USE module_model_constants
@@ -64,6 +69,7 @@ SUBROUTINE A_MICROPHYSICS_DRIVER(th, thb, rho, rhob, pi_phy, pi_phyb, p&
    USE module_mp_nconvp    !  added by Zhuxiao
    USE a_module_mp_nconvp    !  added by Zhuxiao
    USE a_module_mp_mkessler
+   USE a_module_mp_wsm6r
 
 ! For checking model timestep is history time (for radar reflectivity)
    USE module_utility, ONLY: WRFU_Clock, WRFU_Alarm
@@ -315,7 +321,14 @@ SUBROUTINE A_MICROPHYSICS_DRIVER(th, thb, rho, rhob, pi_phy, pi_phyb, p&
 &  qi_curr, qs_curr, qg_curr, qt_curr, qndrop_curr, qni_curr, qh_curr, &
 &  qnh_curr, qns_curr, qnr_curr, qng_curr, qnn_curr, qnc_curr, qzr_curr, &
 &  qzi_curr, qzs_curr, qzg_curr, qzh_curr, qvolg_curr, qvolh_curr
-  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL :: qv_currb, qc_currb, qr_currb
+   REAL, DIMENSION(ims:ime,kms:kme,jms:jme), OPTIONAL, INTENT(INOUT) :: & ! for ntu3m
+&        qdcn_curr,qtcn_curr,qccn_curr,qrcn_curr,qnin_curr,fi_curr,     & ! for ntu3m
+&        fs_curr,vi_curr,vs_curr,vg_curr,ai_curr,as_curr,ag_curr,       & ! for ntu3m
+&        ah_curr,i3m_curr                                                 ! for ntu3m
+   LOGICAL, OPTIONAL :: f_qdcn,f_qtcn,f_qccn,f_qrcn,f_qnin,f_fi,f_fs,   & ! for ntu3m
+&                       f_vi,f_vs,f_vg,f_ai,f_as,f_ag,f_ah,f_i3m          ! for ntu3m
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL :: qv_currb, qc_currb,&
+                                      qr_currb, qi_currb, qs_currb, qg_currb
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL, INTENT(IN) :: &
 &  qrcuten, qscuten, qicuten
 ! YLIN
@@ -417,14 +430,24 @@ SUBROUTINE A_MICROPHYSICS_DRIVER(th, thb, rho, rhob, pi_phy, pi_phyb, p&
         CALL PUSHCONTROL1B(1)
       END IF
       SELECT CASE  (mp_physics) 
+      CASE (WSM6RSCHEME)
+           IF ( PRESENT( QV_CURR ) .AND. PRESENT( QC_CURR ) .AND. &
+                PRESENT( QR_CURR ) .AND. PRESENT( QI_CURR ) .AND. &
+                PRESENT( QS_CURR ) .AND. PRESENT( QG_CURR ) .AND. &
+                PRESENT( RAINNC  ) .AND. PRESENT( RAINNCV ))  THEN
+             CALL PUSHCONTROL3B(4)
+           ELSE
+             CALL PUSHCONTROL3B(1)
+           END IF
+
       CASE (MKESSLERSCHEME)
            IF ( PRESENT( QV_CURR ) .AND. PRESENT( QC_CURR ) .AND.  &
                                          PRESENT( QR_CURR ) .AND.  &
                 PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) .AND.  &
                                          PRESENT( Z       ))  THEN
-             CALL PUSHCONTROL2B(3)
+             CALL PUSHCONTROL3B(3)
            ELSE
-             CALL PUSHCONTROL2B(1)
+             CALL PUSHCONTROL3B(1)
            END IF
       CASE (lscondscheme) 
 !    Added by Zhuxiao,  lscond (simplified Large-scale condensation scheme by Jimy )
@@ -441,18 +464,18 @@ SUBROUTINE A_MICROPHYSICS_DRIVER(th, thb, rho, rhob, pi_phy, pi_phyb, p&
 &                kde=kde, ims=ims, ime=ime, jms=jms, jme=jme, kms=kms, &
 &                kme=kme, its=its, ite=ite, jts=jts, jte=jte, kts=kts, &
 &                kte=kte)
-          CALL PUSHCONTROL2B(2)
+          CALL PUSHCONTROL3B(2)
         ELSE
-          CALL PUSHCONTROL2B(1)
+          CALL PUSHCONTROL3B(1)
         END IF
       CASE DEFAULT
-        CALL PUSHCONTROL2B(0)
+        CALL PUSHCONTROL3B(0)
       END SELECT
     END DO
     DO ij=num_tiles,1,-1
-      CALL POPCONTROL2B(branch)
-      IF (branch .NE. 0) THEN
-        IF (branch .NE. 1 .and. branch .NE. 3) THEN
+      CALL POPCONTROL3B(branch)
+      IF ((branch .NE. 0) .and. (branch .NE. 1)) THEN
+        IF (branch .EQ. 2) THEN
           CALL wrf_debug ( 100 , 'microphysics_driver_ad: calling a_lscond' )
           CALL POPREAL8ARRAY(th, (ime-ims+1)*(kme-kms+1)*(jme-jms+1))
           CALL POPREAL8ARRAY(qv_curr, (ime-ims+1)*(kme-kms+1)*(jme-jms+1&
@@ -467,7 +490,7 @@ SUBROUTINE A_MICROPHYSICS_DRIVER(th, thb, rho, rhob, pi_phy, pi_phyb, p&
 &                  , kms=kms, kme=kme, its=its, ite=ite, jts=jts, jte=jte&
 &                  , kts=kts, kte=kte)
         END IF
-        IF (branch .NE. 1 .and. branch .NE. 2) THEN
+        IF (branch .EQ. 3) THEN
             CALL wrf_debug ( 100 , 'microphysics_driver_ad: calling a_mkessler' )
             CALL a_mkessler(                                        &
                T=th,TB=thb                                              &
@@ -485,7 +508,29 @@ SUBROUTINE A_MICROPHYSICS_DRIVER(th, thb, rho, rhob, pi_phy, pi_phyb, p&
               ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
               ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
                                                                  )
-          ENDIF
+        ENDIF
+        IF (branch .EQ. 4) THEN
+            CALL wrf_debug ( 100 , 'microphysics_driver_ad: calling a_wsm6r' )
+            CALL a_wsm6r( &
+                  th  =th,         a_th  =thb,      &
+                  q   =qv_curr,    a_q   =qv_currb, &
+                  qc  =qc_curr,    a_qc  =qc_currb, &
+                  qr  =qr_curr,    a_qr  =qr_currb, &
+                  qi  =qi_curr,    a_qi  =qi_currb, &
+                  qs  =qs_curr,    a_qs  =qs_currb, &
+                  qg  =qg_curr,    a_qg  =qg_currb, &
+                  den =rho,        a_den =rhob,     &
+                  pii =pi_phy,     a_pii =pi_phyb,  &
+                  p   =p,          a_p   =pb,       &
+                  delz=dz8w,       a_delz=dz8wb,    &
+                  delt=dt,                          &
+                  rain=rainnc,     a_rain=rainncb,  &
+                  rainncv=rainncv, a_rainncv=rainncvb, &
+                  ids=ids, ide=ide, jds=jds, jde=jde, kds=kds, kde=kde, &
+                  ims=ims, ime=ime, jms=jms, jme=jme, kms=kms, kme=kme, &
+                  its=its, ite=ite, jts=jts, jte=jte, kts=kts, kte=kte)
+        ENDIF
+
       END IF
 
       CALL POPCONTROL1B(branch)

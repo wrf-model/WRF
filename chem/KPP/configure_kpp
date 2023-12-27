@@ -61,11 +61,11 @@ if test -z "$FLEX_LIB_DIR" ; then
 fi
 
 
-#    Platform independent C compiler flags. By default "-O" is used which 
-#    turns on optimisation. If you are experiencing problems you may try 
+#    Platform independent C compiler flags. By default "-O0" is used which 
+#    turns off all optimisation. If you are experiencing problems you may try 
 #    "-g" to include debuging informations.
 
-CC_FLAGS="-O"
+CC_FLAGS="-O0"
 
 
 

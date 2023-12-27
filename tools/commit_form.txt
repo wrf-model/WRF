@@ -6,18 +6,23 @@ KEYWORDS: 5 to 10 words related to commit, separated by commas
 
 SOURCE: Either "developer's name (affiliation)" .XOR. "internal" for a WRF Dev committee member
 
-DESCRIPTION OF CHANGES: One or more paragraphs describing problem, solution, and required changes.
+DESCRIPTION OF CHANGES:
+Problem:
+Generally or specifically, what was wrong and needed to be addressed?
 
-ISSUE: For use when this PR closes an issue. For issue number 123
-```
+Solution:
+What was down algorithmically and in the source code to address the problem?
+
+ISSUE: For use when this PR closes an issue.
 Fixes #123
-
 
 LIST OF MODIFIED FILES: list of changed files (use `git diff --name-status master` to get formatted list)
 
-TESTS CONDUCTED: Explicitly state if a WTF and or other tests were run, or are pending. For more complicated changes please be explicit!
+TESTS CONDUCTED: 
+1. Do mods fix problem? How can that be demonstrated, and was that test conducted?
+2. Are the Jenkins tests all passing?
 
-RELEASE NOTE: Optional, as appropriate. Delete if not used. Included only once for new features requiring several merge cycles. Changes to default behavior are also note worthy.
+RELEASE NOTE: Include a stand-alone message suitable for the inclusion in the minor and annual releases. A publication citation is appropriate.
 
 ------------------------------------------------------------------
 

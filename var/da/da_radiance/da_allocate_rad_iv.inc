@@ -10,9 +10,7 @@ subroutine da_allocate_rad_iv (i, nchan, iv)
 
    integer           ,  intent (in)    :: i, nchan
    type (iv_type)    ,  intent (inout) :: iv
-
    integer :: n, ix, iy
-
    call da_trace_entry("da_allocate_rad_iv")
 
       allocate (iv%instid(i)%info%date_char(iv%instid(i)%num_rad))
@@ -86,11 +84,15 @@ subroutine da_allocate_rad_iv (i, nchan, iv)
       if ( index(iv%instid(i)%rttovid_string, 'abi') > 0 ) then
          allocate (iv%instid(i)%cloud_mod(nchan,iv%instid(i)%num_rad))
          allocate (iv%instid(i)%cloud_obs(nchan,iv%instid(i)%num_rad))
+      end if	  
+      if ( index(iv%instid(i)%rttovid_string, 'gmi') > 0 ) then
+         allocate (iv%instid(i)%clw(iv%instid(i)%num_rad))
       end if
       allocate (iv%instid(i)%ps(iv%instid(i)%num_rad))
       allocate (iv%instid(i)%tb_xb(nchan,iv%instid(i)%num_rad))
       if ( any(crtm_cloud) ) then
          allocate (iv%instid(i)%tb_xb_clr(nchan,iv%instid(i)%num_rad))
+         allocate (iv%instid(i)%cip(iv%instid(i)%num_rad))
       end if
       allocate (iv%instid(i)%tb_qc(nchan,iv%instid(i)%num_rad))
       allocate (iv%instid(i)%tb_inv(nchan,iv%instid(i)%num_rad))
@@ -110,12 +112,15 @@ subroutine da_allocate_rad_iv (i, nchan, iv)
       allocate (iv%instid(i)%satazi(iv%instid(i)%num_rad))
       allocate (iv%instid(i)%solzen(iv%instid(i)%num_rad))
       allocate (iv%instid(i)%solazi(iv%instid(i)%num_rad))
-      allocate (iv%instid(i)%tropt(iv%instid(i)%num_rad))
-      allocate (iv%instid(i)%cloud_frac(iv%instid(i)%num_rad))
+      allocate (iv%instid(i)%tropt(iv%instid(i)%num_rad))	  
       allocate (iv%instid(i)%gamma_jacobian(nchan,iv%instid(i)%num_rad))
-      if ( use_clddet_abi .and. &
-           index(iv%instid(i)%rttovid_string, 'abi') > 0 ) then
-         iv%instid(i)%superob_width = 2*abi_superob_halfwidth+1
+      allocate (iv%instid(i)%cloud_frac(iv%instid(i)%num_rad))
+      if ( use_clddet_zz ) then
+         if ( index(iv%instid(i)%rttovid_string, 'ahi') > 0 ) &
+              iv%instid(i)%superob_width = 2*ahi_superob_halfwidth+1
+         if ( index(iv%instid(i)%rttovid_string, 'abi') > 0 ) &
+              iv%instid(i)%superob_width = 2*abi_superob_halfwidth+1
+
          allocate (iv%instid(i)%superob(iv%instid(i)%superob_width, &
                                         iv%instid(i)%superob_width))
          do iy = 1, iv%instid(i)%superob_width

@@ -29,14 +29,15 @@ subroutine da_setup_background_errors(grid, be)
             max_vert_var3 = 0
             max_vert_var4 = 0
             max_vert_var5 = 0
-!#ifdef CLOUD_CV
             max_vert_var6 = 0
             max_vert_var7 = 0
             max_vert_var8 = 0
             max_vert_var9 = 0
             max_vert_var10 = 0
             max_vert_var11 = 0
-!#endif
+#if (WRF_CHEM == 1)
+            max_vert_var12 = 0
+#endif
       end if
       sigma_alpha = alpha_std_dev
       write(6,'(a,4f15.5)')' jb_factor, je_factor, alpha_std_dev, sigma_alpha = ', &
@@ -74,6 +75,14 @@ subroutine da_setup_background_errors(grid, be)
    be % v9 % mz = 0
    be % v10% mz = 0
    be % v11% mz = 0
+
+#if (WRF_CHEM == 1)
+
+   if (num_chem >= PARAM_FIRST_SCALAR) then
+      allocate (be%cv%sizechemic (num_chem) )
+   end if
+
+#endif
 
    if (global) then
       call da_setup_be_global(be)

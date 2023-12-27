@@ -1,0 +1,59 @@
+# WRF-CMAQ coupled model
+rconfig  integer   wrf_cmaq_option      namelist,wrf_cmaq     1        0
+rconfig  integer   wrf_cmaq_freq        namelist,wrf_cmaq     1        1
+rconfig  integer   met_file_tstep       namelist,wrf_cmaq     1    10000
+
+rconfig  logical   direct_sw_feedback   namelist,wrf_cmaq     1  .false.
+rconfig  logical   feedback_restart     namelist,wrf_cmaq     1  .false.
+
+#state    real  mass_ws_i           ikj           twoway_feedback_data      1    -      r      "mass_ws_i"       "Water soluble i mode"       "ug/m**3"
+#state    real  mass_ws_j           ikj           twoway_feedback_data      1    -      r      "mass_ws_j"       "Water soluble j mode"       "ug/m**3"
+#state    real  mass_ws_k           ikj           twoway_feedback_data      1    -      r      "mass_ws_k"       "Water soluble k mode"       "ug/m**3"
+#state    real  mass_in_i           ikj           twoway_feedback_data      1    -      r      "mass_in_i"       "Water insoluble i mode"     "ug/m**3"
+#state    real  mass_in_j           ikj           twoway_feedback_data      1    -      r      "mass_in_j"       "Water insoluble j mode"     "ug/m**3"
+#state    real  mass_in_k           ikj           twoway_feedback_data      1    -      r      "mass_in_k"       "Water insoluble k mode"     "ug/m**3"
+#state    real  mass_ec_i           ikj           twoway_feedback_data      1    -      r      "mass_ec_i"       "Elemental carbon i mode"    "ug/m**3"
+#state    real  mass_ec_j           ikj           twoway_feedback_data      1    -      r      "mass_ec_j"       "Elemental carbon j mode"    "ug/m**3"
+#state    real  mass_ec_k           ikj           twoway_feedback_data      1    -      r      "mass_ec_k"       "Elemental carbon k mode"    "ug/m**3"
+#state    real  mass_ss_i           ikj           twoway_feedback_data      1    -      r      "mass_ss_i"       "Seasalt i mode"             "ug/m**3"
+#state    real  mass_ss_j           ikj           twoway_feedback_data      1    -      r      "mass_ss_j"       "Seasalt j mode"             "ug/m**3"
+#state    real  mass_ss_k           ikj           twoway_feedback_data      1    -      r      "mass_ss_k"       "Seasalt k mode"             "ug/m**3"
+#state    real  mass_h2o_i          ikj           twoway_feedback_data      1    -      r      "mass_h2o_i"      "water i mode"               "ug/m**3"
+#state    real  mass_h2o_j          ikj           twoway_feedback_data      1    -      r      "mass_h2o_j"      "water j mode"               "ug/m**3"
+#state    real  mass_h2o_k          ikj           twoway_feedback_data      1    -      r      "mass_h2o_k"      "water k mode"               "ug/m**3"
+#state    real  dgn_i               ikj           twoway_feedback_data      1    -      r      "dgn_i"           "diameter i mode"            "m"
+#state    real  dgn_j               ikj           twoway_feedback_data      1    -      r      "dgn_j"           "diameter j mode"            "m"
+#state    real  dgn_k               ikj           twoway_feedback_data      1    -      r      "dgn_k"           "diameter k mode"            "m"
+#state    real  sig_i               ikj           twoway_feedback_data      1    -      r      "sig_i"           "standard deviations i mode" ""
+#state    real  sig_j               ikj           twoway_feedback_data      1    -      r      "sig_j"           "standard deviations j mode" ""
+#state    real  sig_k               ikj           twoway_feedback_data      1    -      r      "sig_k"           "standard deviations k mode" ""
+
+#state    real  prev_rainnc         ij            twoway_feedback_data      1    -      r      "prev_rainnc"     "previous accumlated rainnc" "mm"
+#state    real  prev_rainc          ij            twoway_feedback_data      1    -      r      "prev_rainc"      "previous accumlated rainc"  "mm"
+
+#state    real  ozone               ikj           twoway_feedback_data      1    -      r      "OZONE"           "ozone value" ""
+
+#state    real  sw_gtauxar_01       ikj            misc                     1    -      hr     "SW_GTAUXAR_01"   "SW Optical depth of lamda = 0.388 um" ""
+#state    real  sw_gtauxar_02       ikj            misc                     1    -      hr     "SW_GTAUXAR_02"   "SW Optical depth of lamda = 0.533 um" ""
+#state    real  sw_gtauxar_03       ikj            misc                     1    -      hr     "SW_GTAUXAR_03"   "SW Optical depth of lamda = 0.702 um" ""
+#state    real  sw_gtauxar_04       ikj            misc                     1    -      hr     "SW_GTAUXAR_04"   "SW Optical depth of lamda = 1.010 um" ""
+#state    real  sw_gtauxar_05       ikj            misc                     1    -      hr     "SW_GTAUXAR_05"   "SW Optical depth of lamda = 1.271 um" ""
+#state    real  sw_ttauxar_01       ij             misc                     1    -      hr     "SW_TTAUXAR_01"   "Optical depth sum of SW_GTAUXAR_01" ""
+#state    real  sw_ttauxar_02       ij             misc                     1    -      hr     "SW_TTAUXAR_02"   "Optical depth sum of SW_GTAUXAR_02" ""
+#state    real  sw_ttauxar_03       ij             misc                     1    -      hr     "SW_TTAUXAR_03"   "Optical depth sum of SW_GTAUXAR_03" ""
+#state    real  sw_ttauxar_04       ij             misc                     1    -      hr     "SW_TTAUXAR_04"   "Optical depth sum of SW_GTAUXAR_04" ""
+#state    real  sw_ttauxar_05       ij             misc                     1    -      hr     "SW_TTAUXAR_05"   "Optical depth sum of SW_GTAUXAR_05" ""
+#state    real  sw_asy_fac_01       ikj            misc                     1    -      hr     "SW_ASY_FAC_01"   "Corresponding Asymmetry Factor of SW_GTAUXAR_01" ""
+#state    real  sw_asy_fac_02       ikj            misc                     1    -      hr     "SW_ASY_FAC_02"   "Corresponding Asymmetry Factor of SW_GTAUXAR_02" ""
+#state    real  sw_asy_fac_03       ikj            misc                     1    -      hr     "SW_ASY_FAC_03"   "Corresponding Asymmetry Factor of SW_GTAUXAR_03" ""
+#state    real  sw_asy_fac_04       ikj            misc                     1    -      hr     "SW_ASY_FAC_04"   "Corresponding Asymmetry Factor of SW_GTAUXAR_04" ""
+#state    real  sw_asy_fac_05       ikj            misc                     1    -      hr     "SW_ASY_FAC_05"   "Corresponding Asymmetry Factor of SW_GTAUXAR_05" ""
+#state    real  sw_ssa_01           ikj            misc                     1    -      hr     "SW_SSA_01"       "Corresponding Single scattering Albedo of SW_GTAUXAR_01" ""
+#state    real  sw_ssa_02           ikj            misc                     1    -      hr     "SW_SSA_02"       "Corresponding Single scattering Albedo of SW_GTAUXAR_02" ""
+#state    real  sw_ssa_03           ikj            misc                     1    -      hr     "SW_SSA_03"       "Corresponding Single scattering Albedo of SW_GTAUXAR_03" ""
+#state    real  sw_ssa_04           ikj            misc                     1    -      hr     "SW_SSA_04"       "Corresponding Single scattering Albedo of SW_GTAUXAR_04" ""
+#state    real  sw_ssa_05           ikj            misc                     1    -      hr     "SW_SSA_05"       "Corresponding Single scattering Albedo of SW_GTAUXAR_05" ""
+
+#state    real  sw_zbbcddir         ij             misc                     1    -      hr     "SW_ZBBCDDIR"     "Clear sky downward direct shortwave flux" "W m-2"
+#state    real  sw_dirdflux         ij             misc                     1    -      hr     "SW_DIRDFLUX"     "Direct downward shortwave surface flux" "W m-2"
+#state    real  sw_difdflux         ij             misc                     1    -      hr     "SW_DIFDFLUX"     "Diffuse downward shortwave surface flux" "W m-2"

@@ -58,7 +58,7 @@ subroutine da_write_oa_rad_ascii (it, ob, iv, re )
       if ( amsr2 ) then
          write(unit=oma_rad_unit,fmt='(a)') ' pixel-info : i date scanpos landsea_mask  elv lat lon  satzen satazi solzen solazi clw'
       else
-         write(unit=oma_rad_unit,fmt='(a)') ' pixel-info : i date scanpos landsea_mask  elv lat lon  satzen satazi solzen solazi '
+         write(unit=oma_rad_unit,fmt='(a)') ' pixel-info : i date scanpos landsea_mask  elv lat lon  satzen satazi solzen solazi'
       end if
       write(unit=oma_rad_unit,fmt='(a)') ' xb-surf-info : i t2m mr2m(ppmv) u10 v10 ps ts smois tslb snowh isflg &
                        & soiltyp vegtyp vegfra elev clwp cloud_frac'

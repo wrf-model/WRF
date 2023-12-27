@@ -51,6 +51,7 @@ CONTAINS
                                          sorgam_vbs_mixactivate, soa_vbs_mixactivate
   USE module_aer_drydep
   USE module_aerosols_soa_vbs, only: soa_vbs_depdriver
+  USE module_aerosols_soa_vbs_het, only: soa_vbs_het_depdriver
 
   USE module_cam_mam_drydep, only:  cam_mam_drydep_driver
   
@@ -569,9 +570,20 @@ CONTAINS
                ims,ime, jms,jme, kms,kme,                               &
                its,ite, jts,jte, kts,kte                                )
 !!! TUCCELLA
-     CASE ( RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP,RACM_SOA_VBS_HET_KPP )
+     CASE ( RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP )
        CALL wrf_debug(15,'DOING DRY DEP VELOCITIES FOR SOA_VBS AEROSOLS')
        call soa_vbs_depdriver (id,config_flags,ktau,dtstep,             &
+               ust,t_phy,moist,p8w,t8w,rmol,znt,pbl,                    &
+               alt,p_phy,chem,rho_phy,dz8w,rh,z,z_at_w,                 &
+               h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,               &
+               aer_res,ddvel(:,:,numgas+1:num_chem),                    &
+               num_chem-numgas,                                         &
+               ids,ide, jds,jde, kds,kde,                               &
+               ims,ime, jms,jme, kms,kme,                               &
+               its,ite, jts,jte, kts,kte                                )
+     CASE ( RACM_SOA_VBS_HET_KPP )
+       CALL wrf_debug(15,'DOING DRY DEP VELOCITIES FOR SOA_VBS_HET AEROSOLS')
+       call soa_vbs_het_depdriver (id,config_flags,ktau,dtstep,             &
                ust,t_phy,moist,p8w,t8w,rmol,znt,pbl,                    &
                alt,p_phy,chem,rho_phy,dz8w,rh,z,z_at_w,                 &
                h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,               &
@@ -682,26 +694,26 @@ CONTAINS
 !!$!     if e_co > 0., the grid cell should not be over water
 !!$!     if e_co > 200, the grid cell should be over a large urban region
 !!$!
-
+! Do NOT increase mixing at surface/kts, where exch==0
 ! this code is wrong - doesn't work if e_co is == param_first_scalar
 ! (like it happened to be the case for MOZCART)
 !     if (p_e_co > param_first_scalar )then
      if (p_e_co >= param_first_scalar )then
        if (sf_urban_physics .eq. 0 ) then
          if (emis_ant(i,kts,j,p_e_co) .gt. 0) then
-          ekmfull(kts:kts+10) = max(ekmfull(kts:kts+10),1.)
+          ekmfull(kts+1:kts+10) = max(ekmfull(kts+1:kts+10),1.)
          endif
          if (emis_ant(i,kts,j,p_e_co) .gt. 200) then
-          ekmfull(kts:kte/2) = max(ekmfull(kts:kte/2),2.)
+          ekmfull(kts+1:kte/2) = max(ekmfull(kts+1:kte/2),2.)
          endif
          if (p_e_pm25i > param_first_scalar )then
           if (emis_ant(i,kts,j,p_e_pm25i)+ emis_ant(i,kts,j,p_e_pm25j) .GT. 8.19e-4*200) then
-           ekmfull(kts:kte/2) = max(ekmfull(kts:kte/2),2.)
+           ekmfull(kts+1:kte/2) = max(ekmfull(kts+1:kte/2),2.)
           endif
          endif
          if (p_e_pm_25 > param_first_scalar )then
           if (emis_ant(i,kts,j,p_e_pm_25) .GT. 8.19e-4*200) then
-           ekmfull(kts:kte/2) = max(ekmfull(kts:kte/2),2.)
+           ekmfull(kts+1:kte/2) = max(ekmfull(kts+1:kte/2),2.)
           endif
          endif
        endif
@@ -711,7 +723,7 @@ CONTAINS
 !     if (p_ebu_in_co > param_first_scalar )then
      if (p_ebu_in_co >= param_first_scalar )then
          if (ebu_in(i,1,j,p_ebu_in_co) .gt. 0) then
-          ekmfull(kts:kte/2) = max(ekmfull(kts:kte/2),2.)
+          ekmfull(kts+1:kte/2) = max(ekmfull(kts+1:kte/2),2.)
          endif
      endif
 
@@ -740,18 +752,20 @@ CONTAINS
               SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP,                                             &
               CB05_SORG_AQ_KPP, CB05_SORG_VBS_AQ_KPP)
             if(.not.is_aerosol(nv))then ! mix gases not aerosol
-               call vertmx(dtstep,pblst,ekmfull,dryrho_1d, &
+               if (.not.config_flags%mynn_chem_vertmx) then
+                  call vertmx(dtstep,pblst,ekmfull,dryrho_1d, &
                            zzfull,zz,ddvel(i,j,nv),kts,kte)
-
+               endif
             endif
 !The default case below does turbulent mixing for all gas and aerosol species
 !If aqueous phase is not activated
 !It requires ddvel array as a boundary condition near surface for flux of species 
 !The top boundary condition for eddy diffusivity is zero
          CASE DEFAULT
-            call vertmx(dtstep,pblst,ekmfull,dryrho_1d, &
+            if (.not.config_flags%mynn_chem_vertmx) then
+               call vertmx(dtstep,pblst,ekmfull,dryrho_1d, &
                         zzfull,zz,ddvel(i,j,nv),kts,kte)
-
+            endif
          END SELECT mix_select
 
          ! chem is in ppmv
@@ -1026,17 +1040,18 @@ CONTAINS
 !
        CASE (TRACER_SMOKE,TRACER_TEST1,TRACER_TEST2)
         CALL wrf_debug(15,'DOING TRACER MIXING, 1 SPECIE ONLY')
-        do nv=2,num_tracer
-         do k=kts,kte
-            pblst(k)=max(epsilc,tracer(i,k,j,nv))
-         enddo
-
+         do nv=2,num_tracer
+            do k=kts,kte
+               pblst(k)=max(epsilc,tracer(i,k,j,nv))
+            enddo
+            if (.not.config_flags%mynn_chem_vertmx) then
                call vertmx(dtstep,pblst,ekmfull,dryrho_1d, &
                            zzfull,zz,0.,kts,kte)
-         do k=kts,kte-1
-            tracer(i,k,j,nv)=max(epsilc,pblst(k))
+            endif
+            do k=kts,kte-1
+               tracer(i,k,j,nv)=max(epsilc,pblst(k))
+            enddo
          enddo
-        enddo
        CASE DEFAULT
 !        CALL wrf_debug(15,'NOT YET DEFINED')
        END SELECT tracer_select

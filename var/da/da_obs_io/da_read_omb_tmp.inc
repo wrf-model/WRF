@@ -18,7 +18,16 @@ subroutine da_read_omb_tmp(filename,unit_in,num,obs_type_in,nc,if_wind_sd)
    character*20 :: iv_type
    logical      :: if_write, if_wind_sd
    
-   character*5  :: stn_id
+!  data format from da_write_obs_chem_sfc.inc
+   character(len=120)  :: fmt_chem = '(i8,3x,a6,2f9.2,5(2f17.7,i8,2f17.7))'
+   character(len=120)  :: fmt_chem1 = '(i8,2x,a6,2f11.6,2f11.2,i8,2f11.2)'
+   character(len=120)  :: fmt_chem2 = '(i8,2x,a6,2f11.6,2(2f11.2,i8,2f11.2))'
+   character(len=120)  :: fmt_chem4 = '(i8,2x,a6,2f11.6,4(2f12.3,i8,2f12.3))'
+   character(len=120)  :: wrt_chem1 = '(a6,2f11.6,2f11.2,i8,2f11.2)'
+   character(len=120)  :: wrt_chem2 = '(a6,2f11.6,2(2f11.2,i8,2f11.2))'
+   character(len=120)  :: wrt_chem4 = '(a6,2f11.6,4(2f12.3,i8,2f12.3))'
+
+   character*6  :: stn_id
    integer      :: n, k, kk, l, levels, dummy_i
    real         :: lat, lon, press, height, dummy
    real         :: tpw_obs, tpw_inv, tpw_err, tpw_inc
@@ -32,6 +41,15 @@ subroutine da_read_omb_tmp(filename,unit_in,num,obs_type_in,nc,if_wind_sd)
                    eph_obs, eph_inv, eph_error, eph_inc, &
                    rain_obs, rain_inv, rain_error, rain_inc, zk
    integer     :: u_qc, v_qc, t_qc, p_qc, q_qc, tpw_qc, spd_qc, ref_qc, rain_qc
+#if (WRF_CHEM == 1)
+   real         :: chem_obs, chem_inv, chem_err, chem_inc, &
+                   chem_obs2, chem_inv2, chem_err2, chem_inc2, &
+                   chem_obs3, chem_inv3, chem_err3, chem_inc3, &
+                   chem_obs4, chem_inv4, chem_err4, chem_inc4, &
+                   chem_obs5, chem_inv5, chem_err5, chem_inc5, &
+                   chem_obs6, chem_inv6, chem_err6, chem_inc6
+   integer     :: chem_qc, chem_qc2, chem_qc3, chem_qc4, chem_qc5, chem_qc6
+#endif
    integer     :: eph_qc
    integer     :: ifgat
 
@@ -343,8 +361,10 @@ subroutine da_read_omb_tmp(filename,unit_in,num,obs_type_in,nc,if_wind_sd)
          if (num_obs > 0) then
             do n = 1, num_obs    
                read(unit_in,'(2i8)') levels, ifgat
-               if (if_write) write(omb_unit,'(2i8)')levels, ifgat
-               num = num + 1
+               if (if_write) then
+                  write(omb_unit,'(2i8)')levels, ifgat
+                  num = num + 1
+               end if
                do k = 1, levels
                   read(unit_in,'(2i8,a5,2f9.2,f17.7,5(2f17.7,i8,2f17.7))', err= 1000)&
                      kk,l, stn_id, &          ! Station
@@ -367,8 +387,10 @@ subroutine da_read_omb_tmp(filename,unit_in,num,obs_type_in,nc,if_wind_sd)
          if (num_obs > 0) then
             do n = 1, num_obs    
                read(unit_in,'(2i8)') levels, ifgat
-               if (if_write) write(omb_unit,'(2i8)')levels, ifgat
-               num = num + 1
+               if (if_write) then
+                  write(omb_unit,'(2i8)')levels, ifgat
+                  num = num + 1
+               end if
                do k = 1, levels
                   read(unit_in,'(2i8,a5,2f9.2,f17.7,5(2f17.7,i8,2f17.7))', err= 1000)&
                      kk,l, stn_id, &          ! Station
@@ -411,8 +433,10 @@ subroutine da_read_omb_tmp(filename,unit_in,num,obs_type_in,nc,if_wind_sd)
          if (num_obs > 0) then
             do n = 1, num_obs    
                read(unit_in,'(2i8)') levels, ifgat
-               if (if_write) write(omb_unit,'(2i8)')levels, ifgat
-               num = num + 1
+               if (if_write) then
+                  write(omb_unit,'(2i8)')levels, ifgat
+                  num = num + 1
+               end if
                do k = 1, levels
                   read(unit_in,'(2i8,a5,2f9.2,f17.7,5(2f17.7,i8,2f17.7))', err= 1000)&
                      kk,l, stn_id, &          ! Station
@@ -429,8 +453,108 @@ subroutine da_read_omb_tmp(filename,unit_in,num,obs_type_in,nc,if_wind_sd)
          if (if_write) exit reports
          cycle reports
 
+#if (WRF_CHEM == 1)
+      case ('chem' )
+         if (num_obs > 0) then
+            do n = 1, num_obs
+               read(unit_in,'(2i8)')levels, ifgat
+               if (if_write) then
+                  write(omb_unit,'(2i8)')levels, ifgat
+               num = num + 1
+               end if
+               do k = 1, levels
+                 if (chemicda_opt == 1 .or. chemicda_opt ==2 ) then
+                  read(unit_in,fmt=fmt_chem1, err= 1000)&
+                     kk, stn_id, &       ! Station
+                     lat, lon,   &       ! Lat/lon
+                     chem_obs, chem_inv, chem_qc, chem_err, chem_inc
+                  if (if_write) &
+                     write(omb_unit,fmt=wrt_chem1, err= 1000)&
+                        stn_id,  &       ! Station
+                        lat, lon,  &          ! Lat/lon
+                        chem_obs, chem_inv, chem_qc, chem_err, chem_inc
+                 else if (chemicda_opt == 3) then
+                  read(unit_in,fmt=fmt_chem2, err= 1000)&
+                     kk, stn_id, &          ! Station
+                     lat, lon,  &       ! Lat/lon
+                     chem_obs, chem_inv, chem_qc, chem_err, chem_inc, &
+                     chem_obs2, chem_inv2, chem_qc2, chem_err2, chem_inc2
+                  if (if_write) &
+                     write(omb_unit,fmt=wrt_chem2, err= 1000)&
+                        stn_id,  &       ! Station
+                        lat, lon, &       ! Lat/lon
+                        chem_obs, chem_inv, chem_qc, chem_err, chem_inc, &
+                        chem_obs2, chem_inv2, chem_qc2, chem_err2, chem_inc2
+                 else if (chemicda_opt == 4) then
+                  read(unit_in,fmt=fmt_chem4, err= 1000)&
+                     kk, stn_id, &          ! Station
+                     lat, lon,  &       ! Lat/lon
+                     chem_obs, chem_inv, chem_qc, chem_err, chem_inc, &
+                     chem_obs2, chem_inv2, chem_qc2, chem_err2, chem_inc2, &
+                     chem_obs3, chem_inv3, chem_qc3, chem_err3, chem_inc3, &
+                     chem_obs4, chem_inv4, chem_qc4, chem_err4, chem_inc4
+                  if (if_write) &
+                     write(omb_unit,fmt=wrt_chem4, err= 1000)&
+                        stn_id,  &       ! Station
+                        lat, lon,  &       ! Lat/lon, dummy
+                        chem_obs, chem_inv, chem_qc, chem_err, chem_inc, &
+                        chem_obs2, chem_inv2, chem_qc2, chem_err2, chem_inc2, &
+                        chem_obs3, chem_inv3, chem_qc3, chem_err3, chem_inc3, &
+                        chem_obs4, chem_inv4, chem_qc4, chem_err4, chem_inc4
+                 else if (chemicda_opt == 5) then
+                  read(unit_in,fmt=fmt_chem2, err= 1000)&
+                     kk, stn_id, &          ! Station
+                     lat, lon,  &       ! Lat/lon
+                     chem_obs, chem_inv, chem_qc, chem_err, chem_inc, &
+                     chem_obs2, chem_inv2, chem_qc2, chem_err2, chem_inc2
+                  if (if_write) &
+                     write(omb_unit,fmt=wrt_chem2, err= 1000)&
+                        stn_id,  &       ! Station
+                        lat, lon, &       ! Lat/lon
+                        chem_obs, chem_inv, chem_qc, chem_err, chem_inc, &
+                        chem_obs2, chem_inv2, chem_qc2, chem_err2, chem_inc2
+
+                 end if
+               end do
+            end do
+
+         end if !  if (num_obs > 0) then
+
+         if (if_write) exit reports
+         cycle reports
+
+      case ('gas' )
+         if (num_obs > 0) then
+           do n = 1, num_obs
+              read(unit_in,'(2i8)')levels, ifgat
+              if (if_write) then
+                 write(omb_unit,'(2i8)')levels, ifgat
+                 num = num + 1
+              end if
+              if (chemicda_opt == 4 .or. chemicda_opt == 5) then
+                  read(unit_in, fmt = fmt_chem4, err= 1000)&
+                       kk,  stn_id, &       ! Station
+                       lat, lon,    &       ! Lat/lon
+                       chem_obs, chem_inv, chem_qc, chem_err, chem_inc, &
+                       chem_obs2, chem_inv2, chem_qc2, chem_err2, chem_inc2, &
+                       chem_obs3, chem_inv3, chem_qc3, chem_err3, chem_inc3, &
+                       chem_obs4, chem_inv4, chem_qc4, chem_err4, chem_inc4
+                  if (if_write) &
+                  write(omb_unit, fmt = wrt_chem4, err= 1000)&
+                       stn_id,  lat, lon,     &       ! station, lat/lon
+                       chem_obs, chem_inv, chem_qc, chem_err, chem_inc, &
+                       chem_obs2, chem_inv2, chem_qc2, chem_err2, chem_inc2, &
+                       chem_obs3, chem_inv3, chem_qc3, chem_err3, chem_inc3, &
+                       chem_obs4, chem_inv4, chem_qc4, chem_err4, chem_inc4
+              end if
+           end do   !  do n = 1, num_obs
+         end if     !  if (num_obs > 0) then
+
+         if (if_write) exit reports
+         cycle reports
+#endif
+
       case default;
-                  
 
          write(unit=message(1), fmt='(a,a20,a,i3)') &
             'Got unknown obs_type string:', trim(iv_type),' on unit ',unit_in

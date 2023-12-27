@@ -9,7 +9,6 @@ subroutine da_transfer_xatoanalysis(it, xbx, grid, config_flags)
    integer,         intent(in)    :: it    ! outer-loop index
    type (xbx_type), intent(out)   :: xbx    ! Header & non-gridded vars.
    type(domain),    intent(inout) :: grid
-
    type (grid_config_rec_type), intent(inout) :: config_flags
 
    character*4 filnam
@@ -32,6 +31,9 @@ subroutine da_transfer_xatoanalysis(it, xbx, grid, config_flags)
 
       if (it < max_ext_its) then
          call da_transfer_wrftoxb(xbx, grid, config_flags)
+#if (WRF_CHEM == 1)
+         call da_transfer_wrftoxb_chem(grid)
+#endif
       end if
    else if (fg_format == fg_format_wrf_arw_global) then
       if( var4d) then

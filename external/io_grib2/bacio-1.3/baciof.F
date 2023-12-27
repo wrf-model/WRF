@@ -89,7 +89,7 @@ C$$$
       USE BACIO_MODULE
       CHARACTER CFN*(*)
       CHARACTER(80) CMSG
-      INTEGER SIZE = 1
+      INTEGER :: SIZE = 1
 
 C - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
       IF(LU.LT.001.OR.LU.GT.999) THEN
@@ -132,7 +132,7 @@ C
 C$$$
       USE BACIO_MODULE
       CHARACTER CFN*(*)
-      INTEGER SIZE = 1
+      INTEGER :: SIZE = 1
 C - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
       IF(LU.LT.001.OR.LU.GT.999) THEN
         IRET=6
@@ -174,7 +174,7 @@ C
 C$$$
       USE BACIO_MODULE
       CHARACTER CFN*(*)
-      INTEGER SIZE = 1
+      INTEGER :: SIZE = 1
 C - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
       IF(LU.LT.001.OR.LU.GT.999) THEN
         IRET=6
@@ -216,7 +216,7 @@ C
 C$$$
       USE BACIO_MODULE
       CHARACTER CFN*(*)
-      INTEGER SIZE = 1
+      INTEGER :: SIZE = 1
 C - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
       IF(LU.LT.001.OR.LU.GT.999) THEN
         IRET=6
@@ -258,7 +258,7 @@ C
 C$$$
       USE BACIO_MODULE
       CHARACTER CFN*(*)
-      INTEGER SIZE = 1
+      INTEGER :: SIZE = 1
 C - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
       IF(LU.LT.001.OR.LU.GT.999) THEN
         IRET=6
@@ -299,7 +299,7 @@ C   LANGUAGE: FORTRAN 90
 C
 C$$$
       USE BACIO_MODULE
-      INTEGER SIZE = 1
+      INTEGER :: SIZE = 1
 C - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
       IF(LU.LT.001.OR.LU.GT.999) THEN
         IRET=6
@@ -356,8 +356,8 @@ C$$$
       CHARACTER Y(NY,MY)
       DATA LUX/0/
       SAVE JY,NS,NN,Y,LUX
-      INTEGER SIZE=1
-      INTEGER ZERO=0
+      INTEGER :: SIZE=1
+      INTEGER :: ZERO=0
 C - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
       IF(FD(LU).LE.0) THEN
         KA=0
@@ -375,7 +375,7 @@ C - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 C  UNBUFFERED I/O
       IF(BAOPTS(1).NE.1) THEN
         IF(IB.GE.0) THEN
-           
+
           IRET=BACIO(BACIO_READ,IB,JB,SIZE,NB,KA,FD(LU),CFN,A)
         ELSE
           IRET=BACIO(BACIO_READ+BACIO_NOSEEK,ZERO,JB,SIZE,NB,KA,
@@ -469,8 +469,8 @@ C$$$
       USE BACIO_MODULE
       CHARACTER A(NB)
       CHARACTER CFN
-      INTEGER SIZE=1
-      INTEGER ZERO=0
+      INTEGER :: SIZE=1
+      INTEGER :: ZERO=0
 C - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
       IF(FD(LU).LE.0) THEN
         KA=0
@@ -524,8 +524,8 @@ C$$$
       USE BACIO_MODULE
       CHARACTER A(NB)
       CHARACTER CFN
-      INTEGER SIZE=1
-      INTEGER ZERO=0
+      INTEGER :: SIZE=1
+      INTEGER :: ZERO=0
 C - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
       IF(FD(LU).LE.0) THEN
         RETURN

@@ -10,6 +10,9 @@
 ! the range of 32 to 127 (the standard printable ASCII character 
 ! set).
 
+! To easily see the offending characters:
+! vim -c "e ++enc=latin1" file
+
 ! The "Fortran 2003 Handbook" (Adams et al. 2009), in section 3.1.1,
 ! lists the standard Fortran character set, which is consistent 
 ! with the restriction of the ASCII character codes from 32 

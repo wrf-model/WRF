@@ -152,14 +152,13 @@ SUBROUTINE gocart_settling_driver(dt,config_flags,t_phy,moist,      &
              sea_salt(1,1,kk,4)=chem(i,k,j,p_seas_4)              
           ENDDO
        ENDIF
-!
-! gravitional settling in [ug/m2/s]; from settling, graset_dust in [ug/kg][m/s]
-!
-       dustgraset_1(i,j)=graset_dust(1,1,1)*airden(1,1,1)*(-1.d0)
-       dustgraset_2(i,j)=graset_dust(1,1,2)*airden(1,1,1)*(-1.d0)
-       dustgraset_3(i,j)=graset_dust(1,1,3)*airden(1,1,1)*(-1.d0)
-       dustgraset_4(i,j)=graset_dust(1,1,4)*airden(1,1,1)*(-1.d0)
-       dustgraset_5(i,j)=graset_dust(1,1,5)*airden(1,1,1)*(-1.d0)
+
+        !graset_dust in [ug/kg][m/s]
+       dustgraset_1(i,j)=dustgraset_1(i,j)+conver*graset_dust(1,1,1)*airden(1,1,1)*dt   !dustgraset [kg/m2]
+       dustgraset_2(i,j)=dustgraset_2(i,j)+conver*graset_dust(1,1,2)*airden(1,1,1)*dt
+       dustgraset_3(i,j)=dustgraset_3(i,j)+conver*graset_dust(1,1,3)*airden(1,1,1)*dt
+       dustgraset_4(i,j)=dustgraset_4(i,j)+conver*graset_dust(1,1,4)*airden(1,1,1)*dt
+       dustgraset_5(i,j)=dustgraset_5(i,j)+conver*graset_dust(1,1,5)*airden(1,1,1)*dt
 
        setvel_1(i,j)=grasetvel_dust(1,1,1)                            ! settling velocity [m/s]
        setvel_2(i,j)=grasetvel_dust(1,1,2)
@@ -345,16 +344,17 @@ SUBROUTINE gocart_settling_driver(dt,config_flags,t_phy,moist,      &
 
              vd_cor(l) = 2./9.*g0*rho_priv(k)*rwet_priv(k)**2/viscosity  ! Settling velocity, depends on temp
 
-            ! Update mixing ratio; order of delz: top->sfc
-            temp_tc=tc(i,j,l,k)                                          ! temp_tc - for temporal storage [ug/kg]            
-            vd_wk1 = dt_settl(k)*vd_cor(l)/delz(i,j,l2)                  ! fraction to leave level
+             ! Update mixing ratio; order of delz: top->sfc
+             temp_tc=tc(i,j,l,k)                                          ! temp_tc - for temporal storage [ug/kg]            
+             vd_wk1 = dt_settl(k)*vd_cor(l)/delz(i,j,l2)                  ! fraction to leave level
 
-            tc(i,j,l,k)   =  tc(i,j,l,k)*(1.- vd_wk1)+transfer_to_below_level          ! [ug/kg]
-            transfer_to_below_level = (temp_tc*vd_wk1)*((delz(i,j,l2)*airden(i,j,l))/(delz(i,j,l2+1)*airden(i,j,l-1))) ! [ug/kg]
-
+             tc(i,j,l,k)   =  tc(i,j,l,k)*(1.- vd_wk1)+transfer_to_below_level          ! [ug/kg]
+            
              IF (l==1) THEN
                 graset(i,j,k)=graset(i,j,k)+vd_cor(l)*temp_tc/ndt_settl(k) ! [ug/kg][m/s]
                 grasetvel(i,j,k)=vd_cor(l)                                 ! [m/s]
+             ELSE
+                transfer_to_below_level = (temp_tc*vd_wk1)*((delz(i,j,l2)*airden(i,j,l))/(delz(i,j,l2+1)*airden(i,j,l-1))) ! [ug/kg]
              ENDIF
           ENDDO                 !l, height
         ENDDO                   !n, time

@@ -193,12 +193,15 @@ module_initialize_scm_xy.o : \
 module_initialize_real.o :  \
 		nest_init_utils.o	\
 		module_polarfft.o \
+		../phys/module_madwrf.o \
 		../share/module_llxy.o	\
+		../frame/module_dm.o \
 		../frame/module_domain.o \
 		../frame/module_configure.o  \
 		../frame/module_state_description.o \
 		../frame/module_timing.o \
 		../frame/module_dm.o \
+		../phys/module_radiation_driver.o \
 		../share/module_io_domain.o \
 		../share/module_model_constants.o \
 		../share/module_bc.o \
@@ -249,6 +252,7 @@ start_em.o:     module_bc_em.o \
 		../phys/module_diag_zld.o \
 		../phys/module_diag_trad_fields.o \
                 ../phys/module_fr_fire_driver_wrf.o \
+                ../phys/module_firebrand_spotting.o \
 		$(CF)
 
 solve_em.o:     module_small_step_em.o \
@@ -277,7 +281,8 @@ solve_em.o:     module_small_step_em.o \
 		../phys/module_microphysics_driver.o \
 		../phys/module_microphysics_zero_out.o \
 		../phys/module_physics_addtendc.o \
-		../phys/module_checkerror.o
+		../phys/module_checkerror.o \
+                ../phys/module_firebrand_spotting.o
 
 module_convtrans_prep.o : 
 

@@ -52,6 +52,7 @@ subroutine da_transform_vptox_adj(grid, vp, be, ep)
    ! [3] Transform to model variable space:
    !--------------------------------------------------------------------------
 
+if ( jb_factor > 0.0 ) then
    if ( cloud_cv_options /= 1 ) then
       ! Pseudo RH --> Water vapor mixing ratio:
       !$OMP PARALLEL DO &
@@ -323,6 +324,7 @@ subroutine da_transform_vptox_adj(grid, vp, be, ep)
 
    enddo
    !$OMP END PARALLEL DO
+end if ! jb_factor > 0.0
 
    !---------------------------------------------------------------------------
    !  [1] Add flow-dependent increments in control variable space (vp):

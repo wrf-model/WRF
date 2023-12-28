@@ -86,11 +86,11 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
 
    if (iter > 0) then
 #ifdef VAR4D
-      call da_transform_vtoy(it, cv_size, be, grid%ep, xhat, iv, grid%vp, grid%vv,&
+      call da_transform_vtoy(cv_size, be, grid%ep, xhat, iv, grid%vp, grid%vv,&
                               xbx, y,                                         &
                               grid, config_flags, grid%vp6, grid%vv6)
 #else
-      call da_transform_vtoy(it, cv_size, be, grid%ep, xhat, iv, grid%vp, grid%vv,&
+      call da_transform_vtoy(cv_size, be, grid%ep, xhat, iv, grid%vp, grid%vv,&
                               xbx, y,                                         &
                               grid, config_flags &
 !!When vch includes initial conditions, need to add vch=grid%vch at end of this call

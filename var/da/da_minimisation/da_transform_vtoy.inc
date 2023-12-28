@@ -11,7 +11,6 @@ subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, xbx, &
 
    implicit none
 
-   integer,                    intent(in)    :: it     ! external iteration #.
    integer,                    intent(in)    :: cv_size ! Size of cv array.
    type(be_type),              intent(in)    :: be     ! background error structure.
    type(ep_type),              intent(in)    :: ep     ! Ensemble perturbation structure.
@@ -118,7 +117,7 @@ subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, xbx, &
             g_rainnc(:,:,nobwin)=grid%g_rainnc(:,:)  
          endif
          call da_transform_xtoxa(grid)
-         call da_transform_xtoy(it, cv_size, cv, grid, iv, y)
+         call da_transform_xtoy(cv_size, cv, grid, iv, y)
 
          if ( nobwin > 1 ) call domain_clockadvance (grid) ! We don't need the advance at the last step
          call domain_clockprint(150, grid, 'DEBUG :  get CurrTime from clock,')
@@ -220,7 +219,7 @@ subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, xbx, &
                iv%instid(:)%info%n2 = iv%instid(:)%num_rad
             end if
          end if !4denvar
-         call da_transform_xtoy(it, cv_size, cv, grid, iv, y)
+         call da_transform_xtoy(cv_size, cv, grid, iv, y)
       end do
 
    end if ! var4d

@@ -82,7 +82,7 @@ subroutine da_initialize_rad_iv (i, n, iv, p)
    end if
    iv%instid(i)%ps(n)           = 0.0
    iv%instid(i)%tb_xb(:,n)      = 0.0
-   if ( any(crtm_cloud) ) then
+   if ( crtm_cloud ) then
       iv%instid(i)%tb_xb_clr(:,n) = 0.0
       iv%instid(i)%cip(n)         = 0.0
    end if

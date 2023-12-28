@@ -1,4 +1,4 @@
-subroutine da_transform_xtoy_crtm_adj ( it, cv_size, cv, iv, jo_grad_y, jo_grad_x )
+subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
 
    !---------------------------------------------------------------------------
    ! PURPOSE: transform gradient from obs space to model grid space.
@@ -16,7 +16,6 @@ subroutine da_transform_xtoy_crtm_adj ( it, cv_size, cv, iv, jo_grad_y, jo_grad_
 
    implicit none
 
-   integer, intent(in)            :: it              ! external iteration #.
    integer, intent(in)            :: cv_size         ! Size of cv array.
    real, intent(inout)            :: cv(1:cv_size)   ! control variables.
    type (x_type), intent(inout)   :: jo_grad_x ! 
@@ -168,7 +167,7 @@ subroutine da_transform_xtoy_crtm_adj ( it, cv_size, cv, iv, jo_grad_y, jo_grad_
          n_absorbers = 2
          n_aerosols  = 0
          n_clouds    = 0
-         if ( crtm_cloud(it) ) n_clouds = 6
+         if ( crtm_cloud ) n_clouds = 6
 
          call CRTM_Atmosphere_Create( Atmosphere(n), &
                                       n_layers,      &
@@ -185,7 +184,7 @@ subroutine da_transform_xtoy_crtm_adj ( it, cv_size, cv, iv, jo_grad_y, jo_grad_
          Atmosphere(n)%Absorber_Units(2) = VOLUME_MIXING_RATIO_UNITS
          Atmosphere(n)%Climatology=iv%instid(inst)%crtm_climat(n)
 
-         if (crtm_cloud(it)) then
+         if (crtm_cloud) then
             Atmosphere(n)%Cloud(1)%Type=WATER_CLOUD
             Atmosphere(n)%Cloud(2)%Type=ICE_CLOUD
             Atmosphere(n)%Cloud(3)%Type=RAIN_CLOUD
@@ -207,7 +206,7 @@ subroutine da_transform_xtoy_crtm_adj ( it, cv_size, cv, iv, jo_grad_y, jo_grad_
       p_ad = 0.0
       xb_q = 0.0
 
-      if (crtm_cloud(it)) then
+      if (crtm_cloud) then
          allocate (qcw_ad(kts:kte,iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
          allocate (qci_ad(kts:kte,iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
          allocate (qrn_ad(kts:kte,iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
@@ -284,7 +283,7 @@ subroutine da_transform_xtoy_crtm_adj ( it, cv_size, cv, iv, jo_grad_y, jo_grad_
             xb_q(k,n) = 0.001*iv%instid(inst)%qm(k,n)/(1.0+0.001*iv%instid(inst)%qm(k,n)) ! specific humidity
          end do
 
-         if (crtm_cloud(it)) then
+         if (crtm_cloud) then
             do k=1,Atmosphere(n)%n_layers
                Atmosphere(n)%cloud(1)%water_content(k)=iv%instid(inst)%qcw(k,n)
                Atmosphere(n)%cloud(2)%water_content(k)=iv%instid(inst)%qci(k,n)
@@ -407,7 +406,7 @@ subroutine da_transform_xtoy_crtm_adj ( it, cv_size, cv, iv, jo_grad_y, jo_grad_
                                 iv%instid(inst)%t_jacobian(i,k,n) * RTSolution_AD(i,n)%brightness_temperature
                   Atmosphere_AD(n)%absorber(k,1) = Atmosphere_AD(n)%absorber(k,1) + &
                                 iv%instid(inst)%q_jacobian(i,k,n) * RTSolution_AD(i,n)%brightness_temperature
-                  if (crtm_cloud(it)) then
+                  if (crtm_cloud) then
                      Atmosphere_AD(n)%Cloud(1)%Water_Content(k) = Atmosphere_AD(n)%Cloud(1)%Water_Content(k) + &
                         iv%instid(inst)%water_jacobian(i,k,n) * RTSolution_AD(i,n)%brightness_temperature
                      Atmosphere_AD(n)%Cloud(2)%Water_Content(k) = Atmosphere_AD(n)%Cloud(2)%Water_Content(k) + &
@@ -477,7 +476,7 @@ subroutine da_transform_xtoy_crtm_adj ( it, cv_size, cv, iv, jo_grad_y, jo_grad_
       ! [1.5] Scale transformation and fill zero for no-control variable
 
         ! Convert cloud content unit from kg/kg to kg/m^2
-         if (crtm_cloud(it)) then
+         if (crtm_cloud) then
             do k=kts,kte
                do icld=1,Atmosphere(n)%n_Clouds
                   Atmosphere_AD(n)%Cloud(icld)%Water_Content(k) = &
@@ -489,7 +488,7 @@ subroutine da_transform_xtoy_crtm_adj ( it, cv_size, cv, iv, jo_grad_y, jo_grad_
 
        ! [1.6] Adjoint of Interpolate horizontally from ob to grid:
 
-         if (crtm_cloud(it)) then
+         if (crtm_cloud) then
             do k=kts,kte ! from bottom to top
                qcw_ad(k,n)=Atmosphere_AD(n)%Cloud(1)%Water_Content(kte-k+1)
                qci_ad(k,n)=Atmosphere_AD(n)%Cloud(2)%Water_Content(kte-k+1)
@@ -546,7 +545,7 @@ subroutine da_transform_xtoy_crtm_adj ( it, cv_size, cv, iv, jo_grad_y, jo_grad_
 !!!        call wrf_dm_sum_reals(cv_local, cv)
 !#endif
       
-        if ( crtm_cloud(it) .and. cloud_cv_options > 0 ) then
+        if ( crtm_cloud .and. cloud_cv_options > 0 ) then
            call da_interp_lin_2d_adj_partial(jo_grad_x%qcw(:,:,kts:kte),iv%instid(inst)%info, kts,kte, qcw_ad)
            call da_interp_lin_2d_adj_partial(jo_grad_x%qrn(:,:,kts:kte),iv%instid(inst)%info, kts,kte, qrn_ad)
            if ( cloud_cv_options > 1 ) then
@@ -565,7 +564,7 @@ subroutine da_transform_xtoy_crtm_adj ( it, cv_size, cv, iv, jo_grad_y, jo_grad_
          deallocate (p_ad)
          deallocate (xb_q)
 
-         if (crtm_cloud(it)) then
+         if (crtm_cloud) then
             deallocate (qcw_ad)
             deallocate (qci_ad)
             deallocate (qrn_ad)

@@ -45,7 +45,7 @@ subroutine da_qc_amsr2 (it, i, nchan, ob, iv)
       if (iv%instid(i)%info%proc_domain(1,n)) &
             num_proc_domain = num_proc_domain + 1
 
-      if ( crtm_cloud(it) ) then
+      if ( crtm_cloud ) then
          ! calculate c37_mean
          c37_mean = 1.0-(ob%instid(i)%tb(11,n)-ob%instid(i)%tb(12,n)+  &
                     iv%instid(i)%tb_xb(11,n)-iv%instid(i)%tb_xb(12,n))/ &
@@ -90,7 +90,7 @@ subroutine da_qc_amsr2 (it, i, nchan, ob, iv)
 
       !  4.0 check cloud
       !-----------------------------------------------------------------
-      if (.not. crtm_cloud(it) ) then
+      if (.not. crtm_cloud ) then
          do k = 1, nchan
             ! clw check
             ! channel dependent criteria
@@ -105,7 +105,7 @@ subroutine da_qc_amsr2 (it, i, nchan, ob, iv)
       end if
 
       ! assigning obs errors
-      if (.not. crtm_cloud(it) ) then
+      if (.not. crtm_cloud ) then
          do k = 1, nchan
             if (use_error_factor_rad) then
                iv%instid(i)%tb_error(k,n) = &
@@ -115,16 +115,16 @@ subroutine da_qc_amsr2 (it, i, nchan, ob, iv)
             end if
          end do ! nchan
 
-      else !crtm_cloud(it)
+      else !crtm_cloud
          ! symmetric error model, Geer and Bauer (2011)
          do k = 1, nchan
             if (c37_mean.lt.0.05) then
                iv%instid(i)%tb_error(k,n)= satinfo(i)%error_std(k)
-            else if (c37_mean.ge.0.05.and.c37_mean.lt.satinfo(i)%error_cld_x(k)) then
+            else if (c37_mean.ge.0.05.and.c37_mean.lt.0.5) then
                iv%instid(i)%tb_error(k,n)= satinfo(i)%error_std(k)+ &
-                  (c37_mean-0.05)*(satinfo(i)%error_cld_y(k)-satinfo(i)%error_std(k))/(satinfo(i)%error_cld_x(k)-0.05)
+                  (c37_mean-0.05)*(satinfo(i)%error_cld(k)-satinfo(i)%error_std(k))/(0.5-0.05)
             else
-               iv%instid(i)%tb_error(k,n)= satinfo(i)%error_cld_y(k)
+               iv%instid(i)%tb_error(k,n)= satinfo(i)%error_cld(k)
             end if
          end do ! nchan
 
@@ -132,7 +132,7 @@ subroutine da_qc_amsr2 (it, i, nchan, ob, iv)
 
       !  5.0 check innovation
       !-----------------------------------------------------------------
-      if (.not. crtm_cloud(it) ) then
+      if (.not. crtm_cloud ) then
          ! absolute departure check
          do k = 1, nchan
             if ( k <= 7 .or. k == 11 .or. k == 12) then

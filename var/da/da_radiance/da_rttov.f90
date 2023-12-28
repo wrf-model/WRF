@@ -31,7 +31,7 @@ module da_rttov
       num_fgat_time,stdout,trace_use, use_error_factor_rad, &
       qc_good, qc_bad,myproc,biascorr, global,ims,ime,jms,jme, &
       use_clddet, time_slots, rttov_emis_atlas_ir, rttov_emis_atlas_mw, &
-      use_mspps_emis, use_mspps_ts, use_clddet_abi
+      use_mspps_emis, use_mspps_ts, use_clddet_zz
    use da_interpolation, only : da_to_zk_new, &
       da_interp_lin_2d, da_interp_lin_3d, da_interp_lin_3d_adj, da_interp_lin_2d_adj, &
       da_interp_2d_partial

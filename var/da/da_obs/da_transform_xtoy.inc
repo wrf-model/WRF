@@ -5,7 +5,7 @@ subroutine da_transform_xtoy(cv_size, cv, grid, iv, y)
    !-------------------------------------------------------------------------
 
    implicit none
-    
+
    integer, intent(in)           :: cv_size         ! Size of cv array.
    real, intent(in)              :: cv(1:cv_size)   ! control variables.
    type (domain),  intent(inout) :: grid

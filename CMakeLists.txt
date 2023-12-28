@@ -405,11 +405,14 @@ endif()
 # find_package( GPFS   REQUIRED )
 
 # Included is a lightweight finder, but we really should switch to using UniData's netCDF cmake config
-find_package( netCDF REQUIRED )
+# The reason these are two separate and not COMPONENTS of one larger package is because that is the way UniData
+# has laid out the cmake configs for each respective package
+find_package( netCDF         REQUIRED )
+find_package( netCDF-Fortran REQUIRED )
 
 # Make use of version checking here and not in find_package for previous versions that did not use cmake
-if ( NOT netCDF_VERSION GREATER_EQUAL "4.1.3" )
-  message( FATAL "Please make sure NETCDF version is 4.1.3 or later. " )
+if ( ( NOT netCDF_VERSION GREATER_EQUAL "4.1.3" ) OR ( NOT netCDF-Fortran_VERSION GREATER_EQUAL "4.1.3" ) )
+  message( FATAL "Please make sure NETCDF versions are 4.1.3 or later. " )
 endif()
 
 find_package( pnetCDF QUIET )
@@ -752,6 +755,7 @@ target_include_directories(
 
                               # Found Packages not handled through :: imported target
                               ${netCDF_INCLUDE_DIRS}
+                              ${netCDF-Fortran_INCLUDE_DIRS}
                               ${pnetCDF_INCLUDE_DIRS}
                             )
 
@@ -790,18 +794,19 @@ set_target_properties(
                       )
 
 target_link_libraries(  ${PROJECT_NAME}_Core
-                          PRIVATE
+                          PUBLIC
                             ${netCDF_LIBRARIES}
+                            ${netCDF-Fortran_LIBRARIES}
                             ${pnetCDF_LIBRARIES}
                             $<$<BOOL:${USE_MPI}>:$<TARGET_NAME_IF_EXISTS:MPI::MPI_Fortran>>
                             $<$<BOOL:${USE_OPENMP}>:$<TARGET_NAME_IF_EXISTS:OpenMP::OpenMP_Fortran>>
-
                             # This will add in target dependencies if they exist
                             $<TARGET_NAME_IF_EXISTS:Jasper::Jasper>
                             $<TARGET_NAME_IF_EXISTS:HDF5::HDF5>
                             $<TARGET_NAME_IF_EXISTS:ZLIB::ZLIB>
                             $<TARGET_NAME_IF_EXISTS:CURL::libcurl>
                             $<TARGET_NAME_IF_EXISTS:RPC::RPC>
+                          PRIVATE
 
 
                             # "External" io libs

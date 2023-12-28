@@ -27,6 +27,7 @@ target_link_libraries(  ${FOLDER_COMPILE_TARGET}
 target_include_directories( ${FOLDER_COMPILE_TARGET}
                             PRIVATE
                               ${netCDF_INCLUDE_DIRS}
+                              ${netCDF-Fortran_INCLUDE_DIRS}
                               ${CMAKE_CURRENT_SOURCE_DIR}
                               ${CMAKE_CURRENT_SOURCE_DIR}/../ioapi_share
                               ${CMAKE_INSTALL_PREFIX}/${FOLDER_COMPILE_TARGET}

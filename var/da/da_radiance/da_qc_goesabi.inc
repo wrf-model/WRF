@@ -154,10 +154,10 @@ subroutine da_qc_goesabi (it, isens, nchan, ob, iv)
    print_cld_debug = .false.
 
    inv_grosscheck = 15.0
-   if ( crtm_cloud(it) ) inv_grosscheck = 80.0
+   if ( crtm_cloud ) inv_grosscheck = 80.0
    if ( use_satcv(2) ) inv_grosscheck = 100.0
 
-   if ( crtm_cloud(it) ) then
+   if ( crtm_cloud ) then
       tb_xb_clr => iv%instid(isens)%tb_xb_clr
 
       !JJG: for Harnisch et al. BTlim using stats from CONUS 9km 2-hr WRF forecast from GSI analysis
@@ -228,7 +228,7 @@ subroutine da_qc_goesabi (it, isens, nchan, ob, iv)
 
       !  3.0 check cloud
       !-----------------------------------------------------------------
-      if (.not. crtm_cloud(it) ) then
+      if (.not. crtm_cloud ) then
          if (iv%instid(isens)%clwp(n) >= 0.2) then
             tb_qc = qc_bad
             if (iv%instid(isens)%info%proc_domain(1,n)) &
@@ -253,7 +253,7 @@ subroutine da_qc_goesabi (it, isens, nchan, ob, iv)
          end if
       end if
 
-      abi_clddet: if ( use_clddet_abi ) then
+      abi_clddet: if ( use_clddet_zz ) then
 
          !!===============================================================================
          !!===============================================================================
@@ -523,7 +523,7 @@ subroutine da_qc_goesabi (it, isens, nchan, ob, iv)
          iv%instid(isens)%cloud_flag(:,n) = &
             - NINT( real( sum(clddet_tests) , 8 ) / real( iv%instid(isens)%superob_width**2, 8 ) )
 
-         if (.not. crtm_cloud(it) .and. &
+         if (.not. crtm_cloud .and. &
              iv%instid(isens)%cloud_flag(1,n) < 0) then
             tb_qc = qc_bad
          end if
@@ -537,14 +537,14 @@ subroutine da_qc_goesabi (it, isens, nchan, ob, iv)
 
       ! ---------------------------
       ! 5.0 assigning obs errors
-      if (.not. crtm_cloud(it) ) then
+      if (.not. crtm_cloud ) then
          if (use_error_factor_rad) then
             iv%instid(isens)%tb_error(:,n) = &
                 satinfo(isens)%error_std(:) * satinfo(isens)%error_factor(:)
          else
             iv%instid(isens)%tb_error(:,n) = satinfo(isens)%error_std(:)
          end if
-      else !crtm_cloud(it)
+      else !crtm_cloud
          ! calculate cloud impacts
          where (    tb_inv( :, n ) > missing_r &
                .and. tb_obs( :, n ) > 0.        &
@@ -571,7 +571,7 @@ subroutine da_qc_goesabi (it, isens, nchan, ob, iv)
             0.5 * ( cloud_mod(:,n) + cloud_obs(:,n) )
 !JJGDEBUG
 
-         if (use_rad_symm_err) then
+         if (abi_use_symm_obs_err) then
             ! symmetric error model
             ! - Okamoto, McNally, & Bell (2013)
             ! - Harnish, Weissmann, & Perianez (2016)

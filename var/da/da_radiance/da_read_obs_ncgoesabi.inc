@@ -317,7 +317,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
    num_goesabi_thinned   = 0
 
    abi_halo_width = abi_superob_halfwidth
-   if ( use_clddet_abi ) then
+   if ( use_clddet_zz ) then
       abi_halo_width = abi_halo_width + 10
    end if
 
@@ -1291,10 +1291,10 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
                   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                   write(unit=stdout,fmt='(A,I0,A,I0)') &
                      '          Reading ', count(readmask_p), ' abi radiances for band ',channel_list(ichan)
-                  if ( use_clddet_abi) write(unit=stdout,fmt='(A,I0)') &
+                  if ( use_clddet_zz) write(unit=stdout,fmt='(A,I0)') &
                      '          which includes the cloud detection halo'
                   TEMPIR_ifile = -1
-                  if ( use_clddet_abi .and. channel_list(ichan).eq.14 ) then
+                  if ( use_clddet_zz .and. channel_list(ichan).eq.14 ) then
                      ! Require earlier file to be withn 1/2 of TEMPIR_delay_minutes
                      TEMPIR_min_time_diff = TEMPIR_delay_minutes
 !write(unit=stdout,fmt='(A,F14.2)') &
@@ -1403,7 +1403,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
                         this_view % lat_1d % patch, this_view % lon_1d % patch, &
                         solzen_1d, solazi_1d )
 
-                     if ( use_clddet_abi .and. &
+                     if ( use_clddet_zz .and. &
                           abi_halo_width-abi_superob_halfwidth.ge.1) then
                            ! Allocate terrain_hgt using local indices for this view
                            allocate( terrain_hgt ( &
@@ -1721,7 +1721,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
 
                         ! Values for TEMPIR cloud QC
                         ! - channel 14
-                        if ( use_clddet_abi .and. (channel_list(ichan).eq.14) ) then
+                        if ( use_clddet_zz .and. (channel_list(ichan).eq.14) ) then
 
                            p % superob(isup,jsup) % cld_qc(1) % TEMPIR = missing_r
 
@@ -2015,7 +2015,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
    call mpi_barrier(comm, ierr)
 #endif
 
-   if (trace_use) call da_trace_exit("da_read_obs_ncgoesimg")
+   if (trace_use) call da_trace_exit("da_read_obs_ncgoesabi")
 
 end subroutine da_read_obs_ncgoesabi
 

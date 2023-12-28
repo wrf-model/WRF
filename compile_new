@@ -2,5 +2,10 @@
 # Meant to be run at the top level
 
 # Now run cmake
-cd _build && make install $*
-# cmake --build _build --target install $*
+buildDirectory=$1
+if [ ! -f "$buildDirectory" ];
+  buildDirectory=$PWD/install
+else
+  shift
+fi
+cd $buildDirectory && make install $*

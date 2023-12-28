@@ -423,7 +423,7 @@ subroutine da_jo_and_grady(iv, re, jot, jo, jo_grad_y)
           write(unit=stdout, fmt='(a, e24.12)') &
                ' jo_lightning      ', jo_lightning, &
                '   jo%lightning_w  ', jo%lightning_w, &
-               '   jo%lightning_div', jo%lightning_w, &
+               '   jo%lightning_div', jo%lightning_div, &
                '   jo%lightning_qv ', jo%lightning_qv
       end if
    else

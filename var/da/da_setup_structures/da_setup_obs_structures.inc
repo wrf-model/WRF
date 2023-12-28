@@ -417,6 +417,9 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       if ( use_goesabiobs ) then
          call da_message((/'Using GOES ABI radiance input in netcdf format'/))
       end if
+      if ( use_ahiobs ) then
+         call da_message((/'Using himawari AHI radiance input in netcdf format'/))
+      end if
       if ( use_gmiobs ) then
          call da_message((/'Using GMI radiance input in HDF5 format'/))
       end if

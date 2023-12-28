@@ -2243,7 +2243,7 @@ if ( jb_factor > 0.0 ) then
    deallocate (evec_loc)
    deallocate (eval_loc)
 
-   if(use_radarobs .and. use_radar_rf .or. use_rad .and. any(crtm_cloud)) then  
+   if(use_radarobs .and. use_radar_rf .or. use_rad .and. crtm_cloud) then  
       if ( cloud_cv_options == 1 ) be % v4 % name = 'qt   '
    end if
 

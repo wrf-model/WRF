@@ -26,17 +26,15 @@ else()
   execute_process( COMMAND ${NETCDF_PROGRAM} --libdir       OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF_LIBRARY_DIR )
   execute_process( COMMAND ${NETCDF_PROGRAM} --prefix       OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF_PREFIX )
   execute_process( COMMAND ${NETCDF_PROGRAM} --libs         OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF_CLIBS   )
-  execute_process( COMMAND ${NETCDF_PROGRAM} --cxx4libs     OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF_CXXLIBS )
-  execute_process( COMMAND ${NETCDF_PROGRAM} --flibs        OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF_FLIBS   )
   execute_process( COMMAND ${NETCDF_PROGRAM} --version      OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF_VERSION_RAW )
   execute_process( COMMAND ${NETCDF_PROGRAM} --has-nc4      OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF_NC4_YES )
   execute_process( COMMAND ${NETCDF_PROGRAM} --has-pnetcdf  OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF_PNETCDF_YES )
   execute_process( COMMAND ${NETCDF_PROGRAM} --has-parallel OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF_PARALLEL_YES )
 
   # check for large file support
-  find_file( netCDF_INCLUDE_FILE netcdf.inc ${netCDF_INCLUDE_DIR} )
+  find_file( netCDF_INCLUDE_FILE netcdf.h ${netCDF_INCLUDE_DIR} )
   file( READ ${netCDF_INCLUDE_FILE} netCDF_INCLUDE_FILE_STR )
-  string( FIND "${netCDF_INCLUDE_FILE_STR}" "nf_format_64bit" netCDF_LARGE_FILE_SUPPORT_FOUND )
+  string( FIND "${netCDF_INCLUDE_FILE_STR}" "NC_FORMAT_64BIT_DATA" netCDF_LARGE_FILE_SUPPORT_FOUND )
   if ( ${netCDF_LARGE_FILE_SUPPORT_FOUND} EQUAL -1 )
     set( netCDF_LARGE_FILE_SUPPORT "NO" )
   else()
@@ -55,10 +53,11 @@ else()
   set( netCDF_DEFINITIONS  )
 
   set( netCDF_LIBRARIES
-      $<$<LINK_LANGUAGE:C>:${netCDF_CLIBS}>
-      $<$<LINK_LANGUAGE:CXX>:${netCDF_CXXLIBS}> 
-      $<$<LINK_LANGUAGE:Fortran>:${netCDF_FLIBS}>
+      # All supported language variants will need this regardless - this may conflict with the RPATH in any
+      # supplemental packages so be careful to use compatible langauge versions of netCDF
+      $<$<OR:$<LINK_LANGUAGE:C>,$<LINK_LANGUAGE:Fortran>>:${netCDF_CLIBS}>
       )
+  # Because we may need this for in-situ manual preprocessing do not use genex
   set( netCDF_INCLUDE_DIRS ${netCDF_INCLUDE_DIR} )
 endif()
 
@@ -69,12 +68,10 @@ include(FindPackageHandleStandardArgs)
 # handle the QUIETLY and REQUIRED arguments and set netCDF_FOUND to TRUE
 # if all listed variables are TRUE
 find_package_handle_standard_args( netCDF  DEFAULT_MSG
-                                  netCDF_INCLUDE_DIRS
-                                  netCDF_LIBRARY_DIR
-                                  netCDF_CLIBS
-                                  # netCDF_CXXLIBS
-                                  netCDF_FLIBS
-                                  netCDF_VERSION
+                                   netCDF_INCLUDE_DIRS
+                                   netCDF_LIBRARY_DIR
+                                   netCDF_CLIBS
+                                   netCDF_VERSION
                                   )
 
-mark_as_advanced( netCDF_CLIBS netCDF_CXXLIBS netCDF_FLIBS netCDF_PREFIX netCDF_LIBRARY_DIR )
+mark_as_advanced( netCDF_CLIBS netCDF_PREFIX netCDF_LIBRARY_DIR )

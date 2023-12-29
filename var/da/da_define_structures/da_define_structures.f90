@@ -577,7 +577,9 @@ module da_define_structures
      real  :: RTCT, RFMFT, TEMPIR, terr_hgt
      real  :: tb_stddev_10, tb_stddev_13,tb_stddev_14
      real  :: CIRH2O
-     !real, allocatable :: CIRH2O(:,:,:)
+     real, allocatable :: CIRH2O_abi(:,:,:) ! only for ABI
+     real, allocatable :: tb_stddev_3x3(:)  ! only for ABI
+     integer :: RFMFT_ij(2) ! only for ABI
    end type clddet_geoir_type   
    type superob_type
      real, allocatable :: tb_obs(:,:)
@@ -590,18 +592,6 @@ module da_define_structures
       integer, pointer     :: cc(:)
       real, pointer        :: vtox(:,:)
    end type cv_index_type
-
-   type cld_qc_type
-     real  :: RTCT, RFMFT, TEMPIR, terr_hgt
-     integer :: RFMFT_ij(2)
-     real, allocatable :: tb_stddev_3x3(:)
-     real, allocatable :: CIRH2O(:,:,:)
-   end type cld_qc_type
- 
-   type superob_type
-     real, allocatable :: tb_obs(:,:)
-     type(cld_qc_type), allocatable :: cld_qc(:)
-   end type superob_type
 
    type instid_type
       ! Instrument triplet, follow the convension of RTTOV
@@ -630,8 +620,8 @@ module da_define_structures
       integer, pointer     :: cloud_flag(:,:)
       integer, pointer     :: cloudflag(:)
       integer, pointer     :: rain_flag(:)
-      real,    pointer     :: cloud_mod(:,:)
-      real,    pointer     :: cloud_obs(:,:)
+      real,    pointer     :: cloud_mod(:,:) ! only for ABI
+      real,    pointer     :: cloud_obs(:,:) ! only for ABI
       real, allocatable    :: cloud_frac(:)
       real,    pointer     :: satzen(:) 
       real,    pointer     :: satazi(:) 
@@ -646,10 +636,10 @@ module da_define_structures
       real,    pointer     :: lod(:,:,:)       ! layer_optical_depth
       real,    pointer     :: trans(:,:,:)     ! layer transmittance
       real,    pointer     :: der_trans(:,:,:) ! d(transmittance)/dp
-      real,    pointer     :: kmin_t(:)	
-      real,    pointer     :: kmax_p(:)	  
-      real,    pointer     :: sensitivity_ratio(:,:,:)	  
-      real,    pointer     :: p_chan_level(:,:)	  
+      real,    pointer     :: kmin_t(:)
+      real,    pointer     :: kmax_p(:)
+      real,    pointer     :: sensitivity_ratio(:,:,:)
+      real,    pointer     :: p_chan_level(:,:)
       real,    pointer     :: qrn(:,:)
       real,    pointer     :: qcw(:,:)
       real,    pointer     :: qci(:,:)

@@ -273,7 +273,7 @@ subroutine da_qc_goesabi (it, isens, nchan, ob, iv)
             tb_xb_clr(:,n)
          if (print_cld_debug) write(stdout,'(A,I8,*(2x,F10.4:))') 'PIXEL_DEBUG3: ', n, &
             tb_obs(:,n)
-         if (crtm_cloud(it) ) then
+         if (crtm_cloud ) then
             if (print_cld_debug) write(stdout,'(A,I8,*(2x,F10.4:))') 'PIXEL_DEBUG4: ', n, &
                tb_xb_clr(:,n)
          end if
@@ -424,8 +424,8 @@ subroutine da_qc_goesabi (it, isens, nchan, ob, iv)
                            iv%instid(isens)%superob(isuper,jsuper)%cld_qc(n)%terr_hgt <= 2000.  &
                      .and. iv%instid(isens)%superob(isuper,jsuper)%cld_qc(n)%tb_stddev_3x3(ch10) > 0.5 &
                      .and. iv%instid(isens)%superob(isuper,jsuper)%cld_qc(n)%tb_stddev_3x3(ch14) > 0.5
-                  if ( allocated(iv%instid(isens)%superob(isuper,jsuper)%cld_qc(n)%CIRH2O) ) &
-                     crit_clddet = iv%instid(isens)%superob(isuper,jsuper)%cld_qc(n)%CIRH2O(1,1,1)
+
+                     crit_clddet = iv%instid(isens)%superob(isuper,jsuper)%cld_qc(n)%CIRH2O
 
                case (7)
                   !--------------------------------------------------------------------------
@@ -703,57 +703,4 @@ subroutine da_qc_goesabi (it, isens, nchan, ob, iv)
    if (trace_use) call da_trace_exit("da_qc_goesabi")
 
 end subroutine da_qc_goesabi
-
-
-
-function relative_azimuth ( sol_az ,sen_az )
-
-  implicit none
-
-  real :: sol_az
-  real :: sen_az
-  real :: relative_azimuth
-
-  relative_azimuth = abs(sol_az - sen_az)
-  if (relative_azimuth > 180.0) then
-       relative_azimuth = 360.0 - relative_azimuth
-  endif
-  relative_azimuth = 180.0 - relative_azimuth
-
-end function relative_azimuth
-
-
-function glint_angle ( sol_zen , sat_zen , rel_az  )
-  !------------------------------------------------------------------------------------
-  ! Glint angle  (the angle difference between direct "specular" reflection off
-  ! the surface and actual reflection toward the satellite.)
-  !------------------------------------------------------------------------------------
-
-  implicit none
-
-  real :: sol_zen
-  real :: sat_zen
-  real :: rel_az
-  real :: glint_angle
-
-  glint_angle = cos(sol_zen * deg2rad) * cos(sat_zen * deg2rad) + &
-                sin(sol_zen * deg2rad) * sin(sat_zen * deg2rad) * cos(rel_az * deg2rad)
-  glint_angle = max(-1.0 , min( glint_angle ,1.0 ))
-  glint_angle = acos(glint_angle) / deg2rad
-
-end function glint_angle
-
-!subroutine evaluate_clddet_test ( isflg, isflgs, crit_clddet, eps, extra_qual, &
-!                                  lat, lon, &
-!                                  reject_clddet )
-!
-!   integer, intent(in)      :: isflg, isflgs(:)
-!   real, intent(in)         :: crit_clddet, eps(:), lat, lon
-!   logical, intent(in)      :: extra_qual(:)
-!   logical, intent(out)     :: reject_clddet
-!
-!   reject_clddet = .false.
-!   reject_clddet = crit_clddet > missing_r .and. any( isflg.eq.isflgs .and. crit_clddet > eps .and. extra_qual )
-!
-!end subroutine evaluate_clddet_test
 

@@ -55,10 +55,6 @@ module da_radiance1
 
    implicit none
 
-#ifdef DM_PARALLEL
-   include 'mpif.h'
-#endif
-
    type datalink_type
 
       type (info_type)        :: info

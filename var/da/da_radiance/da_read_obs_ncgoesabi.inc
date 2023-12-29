@@ -1656,34 +1656,34 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
 
                            if (channel_list(ichan).eq.10) then
 
-                              allocate( p % superob(isup,jsup) % cld_qc(1) % CIRH2O ( &
+                              allocate( p % superob(isup,jsup) % cld_qc(1) % CIRH2O_abi ( &
                                  iysup-tbuf:iysup+tbuf, ixsup-tbuf:ixsup+tbuf, 2 ) )
 
-                              p % superob(isup,jsup) % cld_qc(1) % CIRH2O(:,:,1) = &
+                              p % superob(isup,jsup) % cld_qc(1) % CIRH2O_abi(:,:,1) = &
                                  bt_p( iysup-tbuf:iysup+tbuf, ixsup-tbuf:ixsup+tbuf, 1 )
 
                            end if
                            if (channel_list(ichan).eq.14 .and. &
-                               size(p % superob(isup,jsup) % cld_qc(1) % CIRH2O).gt.1) then
+                               size(p % superob(isup,jsup) % cld_qc(1) % CIRH2O_abi).gt.1) then
 
-                              p % superob(isup,jsup) % cld_qc(1) % CIRH2O(:,:,2) = &
+                              p % superob(isup,jsup) % cld_qc(1) % CIRH2O_abi(:,:,2) = &
                                  bt_p( iysup-tbuf:iysup+tbuf, ixsup-tbuf:ixsup+tbuf, 1 )
                               nkeep = 0
                               do jy = iysup-tbuf, iysup+tbuf
                               do jx = ixsup-tbuf, ixsup+tbuf
-                                 if ( all(p % superob(isup,jsup) % cld_qc(1) % CIRH2O( jy, jx, : ) .gt. missing_r) ) nkeep = nkeep + 1
+                                 if ( all(p % superob(isup,jsup) % cld_qc(1) % CIRH2O_abi( jy, jx, : ) .gt. missing_r) ) nkeep = nkeep + 1
                               end do
                               end do
                               allocate( tb_temp ( nkeep, 2 ) )
                               ikeep = 0
                               do jy = iysup-tbuf, iysup+tbuf
                               do jx = ixsup-tbuf, ixsup+tbuf
-                                 if ( all(p % superob(isup,jsup) % cld_qc(1) % CIRH2O( jy, jx, : ) .gt. missing_r) ) then
+                                 if ( all(p % superob(isup,jsup) % cld_qc(1) % CIRH2O_abi( jy, jx, : ) .gt. missing_r) ) then
                                     ikeep = ikeep + 1
                                     tb_temp(ikeep,1) = &
-                                       p % superob(isup,jsup) % cld_qc(1) % CIRH2O( jy, jx, 1 )
+                                       p % superob(isup,jsup) % cld_qc(1) % CIRH2O_abi( jy, jx, 1 )
                                     tb_temp(ikeep,2) = &
-                                       p % superob(isup,jsup) % cld_qc(1) % CIRH2O( jy, jx, 2 )
+                                       p % superob(isup,jsup) % cld_qc(1) % CIRH2O_abi( jy, jx, 2 )
                                  end if
                               end do
                               end do
@@ -1700,21 +1700,21 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
                                            real(nkeep,r_double) / ( sigma10 * sigma14 )
 
                               deallocate( tb_temp )
-                              deallocate( p % superob(isup,jsup) % cld_qc(1) % CIRH2O )
-                              allocate( p % superob(isup,jsup) % cld_qc(1) % CIRH2O (1,1,1) )
+                              deallocate( p % superob(isup,jsup) % cld_qc(1) % CIRH2O_abi )
+                              allocate( p % superob(isup,jsup) % cld_qc(1) % CIRH2O_abi (1,1,1) )
 
-                              p % superob(isup,jsup) % cld_qc(1) % CIRH2O (1,1,1) = pearson
+                              p % superob(isup,jsup) % cld_qc(1) % CIRH2O_abi (1,1,1) = pearson
 
                            end if
                         else
                            if ( any( channel_list(ichan).eq.(/10,14/) ) ) then
 
-                              if ( allocated( p % superob(isup,jsup) % cld_qc(1) % CIRH2O ) ) &
-                                 deallocate( p % superob(isup,jsup) % cld_qc(1) % CIRH2O)
+                              if ( allocated( p % superob(isup,jsup) % cld_qc(1) % CIRH2O_abi ) ) &
+                                 deallocate( p % superob(isup,jsup) % cld_qc(1) % CIRH2O_abi)
 
-                              allocate( p % superob(isup,jsup) % cld_qc(1) % CIRH2O (1,1,1))
+                              allocate( p % superob(isup,jsup) % cld_qc(1) % CIRH2O_abi (1,1,1))
 
-                              p % superob(isup,jsup) % cld_qc(1) % CIRH2O = missing_r
+                              p % superob(isup,jsup) % cld_qc(1) % CIRH2O_abi = missing_r
 
                            end if
                         end if
@@ -1897,8 +1897,8 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
                do jsup = 1, superob_width
                do isup = 1, superob_width
                   deallocate ( current % superob(isup,jsup) % tb_obs )
-                  if ( allocated ( current % superob(isup,jsup) % cld_qc(1) % CIRH2O ) ) &
-                     deallocate ( current % superob(isup,jsup) % cld_qc(1) % CIRH2O )
+                  if ( allocated ( current % superob(isup,jsup) % cld_qc(1) % CIRH2O_abi ) ) &
+                     deallocate ( current % superob(isup,jsup) % cld_qc(1) % CIRH2O_abi )
                   deallocate ( current % superob(isup,jsup) % cld_qc(1) % tb_stddev_3x3 )
                   deallocate ( current % superob(isup,jsup) % cld_qc )
                end do
@@ -1998,8 +1998,8 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
          do jsup = 1, superob_width
          do isup = 1, superob_width
             deallocate ( current % superob(isup,jsup) % tb_obs )
-            if ( allocated ( current % superob(isup,jsup) % cld_qc(1) % CIRH2O ) ) &
-               deallocate ( current % superob(isup,jsup) % cld_qc(1) % CIRH2O )
+            if ( allocated ( current % superob(isup,jsup) % cld_qc(1) % CIRH2O_abi ) ) &
+               deallocate ( current % superob(isup,jsup) % cld_qc(1) % CIRH2O_abi )
             deallocate ( current % superob(isup,jsup) % cld_qc(1) % tb_stddev_3x3 )
             deallocate ( current % superob(isup,jsup) % cld_qc )
          end do

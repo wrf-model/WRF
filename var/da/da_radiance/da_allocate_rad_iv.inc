@@ -127,9 +127,11 @@ subroutine da_allocate_rad_iv (i, nchan, iv)
          do ix = 1, iv%instid(i)%superob_width
             allocate (iv%instid(i)%superob(ix,iy)%cld_qc(iv%instid(i)%num_rad))
             allocate (iv%instid(i)%superob(ix,iy)%tb_obs(nchan,iv%instid(i)%num_rad))
-            do n = 1, iv%instid(i)%num_rad
-               allocate (iv%instid(i)%superob(ix,iy)%cld_qc(n)%tb_stddev_3x3(nchan))
-            end do
+            if ( index(iv%instid(i)%rttovid_string, 'abi') > 0 ) then
+              do n = 1, iv%instid(i)%num_rad
+                 allocate (iv%instid(i)%superob(ix,iy)%cld_qc(n)%tb_stddev_3x3(nchan))
+              end do
+            end if
          end do
          end do
       end if

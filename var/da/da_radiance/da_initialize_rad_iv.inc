@@ -112,19 +112,15 @@ subroutine da_initialize_rad_iv (i, n, iv, p)
    iv%instid(i)%tropt(n)        = 0.0   
    iv%instid(i)%cloud_frac(n)   = missing_r
  !  iv%instid(i)%solazi(n)       = 0.0
-   if ( use_clddet_zz .and. &
-        ( (index(iv%instid(i)%rttovid_string, 'abi') > 0) .or. (index(iv%instid(i)%rttovid_string, 'ahi') > 0) ) ) then
+   if ( use_clddet_zz ) then
       if ( allocated ( p % superob ) ) then
          do iy = 1, iv%instid(i)%superob_width
          do ix = 1, iv%instid(i)%superob_width
             iv%instid(i)%superob(ix,iy)%tb_obs(:,n) = p % superob(ix,iy) % tb_obs(:,1)
+           if (index(iv%instid(i)%rttovid_string, 'abi') > 0) then
             if ( allocated ( p % superob(ix,iy) % cld_qc(1) % tb_stddev_3x3 ) ) &
                iv%instid(i)%superob(ix,iy)%cld_qc(n)%tb_stddev_3x3(:) = p % superob(ix,iy) % cld_qc(1) % tb_stddev_3x3(:)
-            if ( allocated ( p % superob(ix,iy) % cld_qc(1) % CIRH2O ) .and. &
-               size(p % superob(ix,iy) % cld_qc(1) % CIRH2O).eq.1) then
-               allocate ( iv%instid(i)%superob(ix,iy)%cld_qc(n)%CIRH2O(1,1,1) )
-               iv%instid(i)%superob(ix,iy)%cld_qc(n)%CIRH2O = p % superob(ix,iy) % cld_qc(1) % CIRH2O
-            end if
+           end if
             iv%instid(i)%superob(ix,iy)%cld_qc(n)%RTCT = p % superob(ix,iy) % cld_qc(1) % RTCT
             iv%instid(i)%superob(ix,iy)%cld_qc(n)%RFMFT = p % superob(ix,iy) % cld_qc(1) % RFMFT
             iv%instid(i)%superob(ix,iy)%cld_qc(n)%TEMPIR = p % superob(ix,iy) % cld_qc(1) % TEMPIR
@@ -132,6 +128,7 @@ subroutine da_initialize_rad_iv (i, n, iv, p)
             iv%instid(i)%superob(ix,iy)%cld_qc(n)%tb_stddev_13 = p % superob(ix,iy) % cld_qc(1) % tb_stddev_13
             iv%instid(i)%superob(ix,iy)%cld_qc(n)%tb_stddev_14 = p % superob(ix,iy) % cld_qc(1) % tb_stddev_14
             iv%instid(i)%superob(ix,iy)%cld_qc(n)%terr_hgt = p % superob(ix,iy) % cld_qc(1) % terr_hgt
+            iv%instid(i)%superob(ix,iy)%cld_qc(n)%CIRH2O = p % superob(ix,iy) % cld_qc(1) % CIRH2O
          end do
          end do
       end if

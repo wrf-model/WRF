@@ -577,7 +577,6 @@ module da_define_structures
      real  :: RTCT, RFMFT, TEMPIR, terr_hgt
      real  :: tb_stddev_10, tb_stddev_13,tb_stddev_14
      real  :: CIRH2O
-     real, allocatable :: CIRH2O_abi(:,:,:) ! only for ABI
      real, allocatable :: tb_stddev_3x3(:)  ! only for ABI
      integer :: RFMFT_ij(2) ! only for ABI
    end type clddet_geoir_type   

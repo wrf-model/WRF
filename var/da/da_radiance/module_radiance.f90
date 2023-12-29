@@ -160,6 +160,7 @@ module module_radiance
       integer, pointer   :: ichan(:)      ! channel index
       integer, pointer   :: iuse (:)      ! usage flag (-1: not use) from radiance info file
       real   , pointer   :: error(:)      ! error Standard Deviation from radiance info file
+      real   , pointer   :: error_cld(:)  ! error Standard Deviation for cloudy radiance from radiance info file
       real   , pointer   :: error_cld_y(:)  ! error Standard Deviation for cloudy radiance from radiance info file
       real   , pointer   :: error_cld_x(:)  ! error Standard Deviation for cloudy radiance from radiance info file
       real   , pointer   :: polar(:)      ! polarisation (0:ver; 1:hori) from radiance info file

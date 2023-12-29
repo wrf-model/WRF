@@ -21,6 +21,7 @@
          deallocate (satinfo(i) % ichan)
          deallocate (satinfo(i) % iuse)
          deallocate (satinfo(i) % error)
+         deallocate (satinfo(i) % error_cld)
          deallocate (satinfo(i) % error_cld_y)
          deallocate (satinfo(i) % error_cld_x)
          deallocate (satinfo(i) % polar)
@@ -149,31 +150,24 @@
             deallocate (iv%instid(i)%solzen)
             deallocate (iv%instid(i)%solazi)
             deallocate (iv%instid(i)%tropt)
-            deallocate(iv%instid(i)%cloud_frac)
             deallocate (iv%instid(i)%gamma_jacobian)
             deallocate(iv%instid(i)%cloud_frac)
             if ( use_clddet_zz ) then
-              if ( index(iv%instid(i)%rttovid_string, 'abi') > 0 ) then
                do iy = 1, iv%instid(i)%superob_width
                do ix = 1, iv%instid(i)%superob_width
+                 if ( index(iv%instid(i)%rttovid_string, 'abi') > 0 ) then
                   do n = 1,iv%instid(i)%num_rad
                      if ( allocated (iv%instid(i)%superob(ix,iy)%cld_qc(n)%tb_stddev_3x3) ) &
                         deallocate (iv%instid(i)%superob(ix,iy)%cld_qc(n)%tb_stddev_3x3)
-                     if ( allocated (iv%instid(i)%superob(ix,iy)%cld_qc(n)%CIRH2O) ) &
-                        deallocate (iv%instid(i)%superob(ix,iy)%cld_qc(n)%CIRH2O)
+                     if ( allocated (iv%instid(i)%superob(ix,iy)%cld_qc(n)%CIRH2O_abi) ) &
+                        deallocate (iv%instid(i)%superob(ix,iy)%cld_qc(n)%CIRH2O_abi)
                   end do
+                 end if
+                 deallocate (iv%instid(i)%superob(ix,iy)%cld_qc)
+                 deallocate (iv%instid(i)%superob(ix,iy)%tb_obs)
                end do
                end do
-              end if
-              if ( index(iv%instid(i)%rttovid_string, 'ahi') > 0 ) then
-               do iy = 1, iv%instid(i)%superob_width
-               do ix = 1, iv%instid(i)%superob_width
-                  deallocate (iv%instid(i)%superob(ix,iy)%cld_qc)
-                  deallocate (iv%instid(i)%superob(ix,iy)%tb_obs)
-               end do
-               end do
-              end if
-              deallocate (iv%instid(i)%superob)
+               deallocate (iv%instid(i)%superob)
            end if
            if (ANY(use_satcv)) then
 	      if (use_satcv(2)) then

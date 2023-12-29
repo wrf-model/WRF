@@ -17,7 +17,7 @@ subroutine da_jo_and_grady(iv, re, jot, jo, jo_grad_y)
               jo_airep, jo_pilot, jo_satem, &
               jo_metar, jo_ships, jo_gpspw, &
               jo_ssmi_tb, jo_ssmi_rv, jo_ssmt1, jo_ssmt2, &
-              jo_pseudo, jo_qscat, jo_buoy, &
+              jo_pseudo, jo_qscat, jo_buoy, jo_lightning, &
               jo_profiler, jo_radar, jo_gpsref, jo_gpseph, jo_bogus, jo_rain, &
               jo_radiance, jo_airsr, jo_mtgirs, jo_tamdar, jo_tamdar_sfc
 #if (WRF_CHEM == 1)
@@ -416,6 +416,23 @@ subroutine da_jo_and_grady(iv, re, jot, jo, jo_grad_y)
       jo_radar = 0.0
    end if
 
+   if (iv%info(lightning)%nlocal > 0) then
+      call  da_jo_and_grady_lightning(iv, re, jo, jo_grad_y) 
+      jo_lightning = jo%lightning_w + jo%lightning_div + jo%lightning_qv
+      if (print_detail_grad) then
+          write(unit=stdout, fmt='(a, e24.12)') &
+               ' jo_lightning      ', jo_lightning, &
+               '   jo%lightning_w  ', jo%lightning_w, &
+               '   jo%lightning_div', jo%lightning_div, &
+               '   jo%lightning_qv ', jo%lightning_qv
+      end if
+   else
+      jo % lightning_w = 0.0
+      jo % lightning_div = 0.0
+      jo % lightning_qv  = 0.0
+      jo_lightning = 0.0
+   end if
+
    if (iv%info(rain)%nlocal > 0) then
        call da_jo_and_grady_rain(iv, re, jo, jo_grad_y)
        jo_rain = jo%rain_r
@@ -593,7 +610,7 @@ subroutine da_jo_and_grady(iv, re, jot, jo, jo_grad_y)
 #if (WRF_CHEM == 1)
       jo_chemic_surf + &
 #endif
-      jo_tamdar + jo_tamdar_sfc + jo_rain 
+      jo_tamdar + jo_tamdar_sfc + jo_rain + jo_lightning
 
    jot = jo%total
 
@@ -633,7 +650,8 @@ subroutine da_jo_and_grady(iv, re, jot, jo, jo_grad_y)
 #if (WRF_CHEM == 1)
          '   jo_chemic_surf  ', jo_chemic_surf, &
 #endif
-         '   jo_rain         ', jo_rain
+         '   jo_rain         ', jo_rain, &
+	 '   jo_lightning    ', jo_lightning
 
    end if
 

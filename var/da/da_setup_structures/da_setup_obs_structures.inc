@@ -75,6 +75,10 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       use_radarobs         = .false.
       use_radar_rv         = .false.
       use_radar_rf         = .false.
+      use_lightningobs     = .false.
+      use_lightning_w      = .false.
+      use_lightning_div    = .false.
+      use_lightning_qv     = .false.
 #if (WRF_CHEM == 1)
       use_chemic_surfobs     = .false.
 #endif
@@ -158,6 +162,10 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       use_radarobs         = .false.
       use_radar_rv         = .false.
       use_radar_rf         = .false.
+      use_lightningobs     = .false.
+      use_lightning_w      = .false.
+      use_lightning_div    = .false.
+      use_lightning_qv     = .false.
 #if (WRF_CHEM == 1)
       use_chemic_surfobs     = .false.
 #endif
@@ -188,6 +196,7 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
    if ( use_profilerobs ) obs_use(profiler) = .true.
    if ( use_qscatobs ) obs_use(qscat) = .true.
    if ( use_radarobs ) obs_use(radar) = .true.
+   if ( use_lightningobs ) obs_use(lightning) = .true.
    if ( use_rainobs ) obs_use(rain) = .true.
    if ( use_satemobs ) obs_use(satem) = .true.
    if ( use_shipsobs ) obs_use(ships) = .true.
@@ -277,6 +286,7 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
      thin_conv_opt(radar) = no_thin
      thin_conv_opt(radiance) = no_thin
      thin_conv_opt(rain) = no_thin
+     thin_conv_opt(lightning) = no_thin
      if ( thin_conv .and. ob_format==ob_format_bufr ) then
         ! gpsref horizontal thinning is not implemented for bufr input
         thin_conv_opt(gpsref) = no_thin
@@ -390,6 +400,12 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       ! Radar obs are read from separate file(s)
          call da_message((/'Using ASCII format radar observation input'/))
          call da_setup_obs_structures_radar (grid, ob, iv)
+   end if
+
+   if (use_lightningobs) then
+      ! Lightning obs are read from separate file(s)
+         call da_message((/'Using ASCII format lightning observation input'/))
+         call da_setup_obs_structures_lightning (grid, ob, iv)
    end if
 
    if (use_rainobs .and. var4d) then

@@ -243,7 +243,7 @@ CONTAINS
                 QSFC(ims,j),LH(ims,j),                             &
                 GZ1OZ0(ims,j),WSPD(ims,j),BR(ims,j),ISFFLX,DX2D,   &
                 SVP1,SVP2,SVP3,SVPT0,EP1,EP2,KARMAN,EOMEG,STBOLT,  &
-                P1000mb,LAKEMASK,                                  &
+                P1000mb,LAKEMASK(ims,j),                           &
                 ids,ide, jds,jde, kds,kde,                         &
                 ims,ime, jms,jme, kms,kme,                         &
                 its,ite, jts,jte, kts,kte                          &
@@ -455,8 +455,8 @@ CONTAINS
         E1=SVP1*EXP(SVP2*(TGDSA(I)-SVPT0)/(TGDSA(I)-SVP3))                       
 !  for land points QSFC can come from previous time step
 !  the saturation vapor pressure for salty water is on average 2% lower
-        IF(xland(i).gt.1.5 .and. lakemask(i).eq.0.) E1=E1*0.98
-        if(xland(i).gt.1.5.or.qsfc(i).le.0.0)QSFC(I)=EP2*E1/(PSFC(I)-E1)                                                 
+        if(xland(i).gt.1.5 .and. lakemask(i).eq.0.) E1=E1*0.98
+        if(xland(i).gt.1.5.or.qsfc(i).le.0.0)QSFC(I)=EP2*E1/(PSFC(I)-E1)
 ! QGH CHANGED TO USE LOWEST-LEVEL AIR TEMP CONSISTENT WITH MYJSFC CHANGE
 ! Q2SAT = QGH IN LSM
         E1=SVP1*EXP(SVP2*(T1D(I)-SVPT0)/(T1D(I)-SVP3))                       

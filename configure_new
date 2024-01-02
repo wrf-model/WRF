@@ -78,4 +78,7 @@ if [ $configureStanza -eq 0 ]; then
   # Now run cmake
   cd $buildDirectory
   cmake .. -DCMAKE_INSTALL_PREFIX=$installDirectory -DCMAKE_TOOLCHAIN_FILE=$buildDirectory/wrf_config.cmake $*
+  exit $?
+else
+  exit $configureStanza
 fi

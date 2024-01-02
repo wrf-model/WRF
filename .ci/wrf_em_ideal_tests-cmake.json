@@ -7,16 +7,17 @@
     {
       "base_env_numprocs"          : [ "-e", "NUM_PROCS=4" ],
       "base_env_wkdir"             : [ "-e", "WK_DIR=$PWD" ],
+      "env_dirs"                   : [ "-e", "BUILD_DIR=_build_$IDEAL_CASE$DM$SM", "-e", "INSTALL_DIR=$WK_DIR/install_$IDEAL_CASE$DM$SM" ],
 
-      ".*build.*::args_compilecmd" : [ "-c", "-p GNU -d _build_$IDEAL_CASE -i $WK_DIR/install_$IDEAL_CASE -x -- -DWRF_CORE=ARW -DWRF_NESTING=BASIC -DWRF_CASE=$IDEAL_CASE_UPPER $USE_MPI $USE_OPENMP" ],
-      ".*build.*::args_buildcmd"   : [ "-b", "_build_$IDEAL_CASE -j $NUM_PROCS" ],
-      ".*build.*::args_cleancmd"   : [ "-r", "-d _build_$IDEAL_CASE -i $WK_DIR/install_$IDEAL_CASE" ],
+      ".*build.*::args_compilecmd" : [ "-c", "-p GNU -d $BUILD_DIR -i $INSTALL_DIR -x -- -DWRF_CORE=ARW -DWRF_NESTING=BASIC -DWRF_CASE=$IDEAL_CASE_UPPER $USE_MPI $USE_OPENMP" ],
+      ".*build.*::args_buildcmd"   : [ "-b", "$BUILD_DIR -j $NUM_PROCS" ],
+      ".*build.*::args_cleancmd"   : [ "-r", "-d $BUILD_DIR -i $INSTALL_DIR" ],
 
-      ".*build-omp.*::args_config"   : [ "-e", "USE_OPENMP=-DUSE_OPENMP=ON" ],
-      ".*build-mpi.*::args_config"   : [ "-e", "USE_MPI=-DUSE_MPI=ON" ],
+      ".*build-omp.*::args_config"   : [ "-e", "USE_OPENMP=-DUSE_OPENMP=ON", "-e", "SM=_sm" ],
+      ".*build-mpi.*::args_config"   : [ "-e", "USE_MPI=-DUSE_MPI=ON", "-e", "DM=_dm" ],
 
       ".*testcase.*::global_env"   : [ "-e", "DATA=/path/to/data" ],
-      ".*testcase.*::args_always"  : [ "-c", "$WK_DIR/install_$IDEAL_CASE/test/$IDEAL_CASE", "-b", "ideal", "-d", "$DATA/$IDEAL_CASE" ],
+      ".*testcase.*::args_always"  : [ "-c", "$INSTALL_DIR/test/$IDEAL_CASE", "-b", "ideal", "-d", "$DATA/$IDEAL_CASE" ],
       ".*testcase-mpi.*::exec_mpi" : [ "-p", "mpirun -np $NUM_PROCS" ],
       ".*testcase-omp.*::env"      : [ "-e", "OMP_NUM_THREADS=$NUM_PROCS" ],
 
@@ -60,12 +61,12 @@
       "timelimit" : "00:10:00",
       "arguments"  : 
       {
-        "base_env_numprocs"          : [ "-e", "NUM_PROCS=8" ],
+        "base_env_numprocs"          : [ "-e", "NUM_PROCS=2" ],
         ".*testcase.*::global_env"     :
         [ 
           "-e", "DATA=/glade/work/aislas/github/data/wrf/regtest/Data/"
         ],
-        "global_modules" : [ "gcc", "netcdf" ],
+        "global_modules" : [ "gcc", "netcdf", "cmake" ],
         ".*mpi.*::mpi_module" : [ "cray-mpich" ]
       }
     }
@@ -82,7 +83,8 @@
         ],
         ".*em_quarter_ss.*::args_idealcase"   :
         [
-          "-e", "IDEAL_CASE=em_quarter_ss"
+          "-e", "IDEAL_CASE=em_quarter_ss",
+          "-e", "IDEAL_CASE_UPPER=EM_QUARTER_SS"
         ]
       }
     },

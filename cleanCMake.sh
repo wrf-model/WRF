@@ -59,20 +59,20 @@ fi
 if [ "${cleanBasicBuild}" = "TRUE" ] || [ "${cleanAll}" = "TRUE" ]; then
   echo "Doing cmake make clean"
   OLD_DIR=$PWD
-  cd ${buildDirectory} && make -j 1 clean; cd $OLD_DIR
+  cd ${buildDirectory} && make -j 1 clean > /dev/null 2>&1; cd $OLD_DIR
 fi
 
 if [ "${cleanBasicInstall}" = "TRUE" ] || [ "${cleanAll}" = "TRUE" ]; then
   echo "Removing binary installs"
-  xargs rm < ${buildDirectory}/install_manifest.txt
+  xargs rm < ${buildDirectory}/install_manifest.txt > /dev/null 2>&1
 fi
 
 if [ "${cleanLinks}" = "TRUE" ] || [ "${cleanAll}" = "TRUE" ]; then
   echo "Removing all symlinks in ${installDirectory}/test"
-  find ${installDirectory}/test -type l -exec rm {} \;
+  find ${installDirectory}/test -type l -exec rm {} \; > /dev/null 2>&1
 fi
 
 if [ "${cleanFolders}" = "TRUE" ] || [ "${cleanAll}" = "TRUE" ]; then
   echo "Deleting ${buildDirectory} & ${installDirectory}/"
-  rm ${buildDirectory} -r; rm ${installDirectory}/ -r
+  rm ${buildDirectory} -r; rm ${installDirectory}/ -r > /dev/null 2>&1
 fi

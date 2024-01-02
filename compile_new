@@ -10,3 +10,4 @@ else
   shift
 fi
 cd $buildDirectory && make install $*
+exit $?

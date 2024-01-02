@@ -67,9 +67,8 @@ echo "Clean done"
 
 echo "./configure_new $configuration"
 ./configure_new $configuration
-echo "Configure done"
-
 result=$?
+echo "Configure done"
 
 if [ $result -ne 0 ]; then
   echo  "Failed to configure, command returned non-zero exit status"
@@ -78,9 +77,10 @@ fi
 
 echo "./compile_new $buildCommand"
 ./compile_new $buildCommand
+result=$?
 echo "Compile done"
 
-result=$?
+
 
 if [ $result -ne 0 ]; then
   echo "Failed to compile, command returned non-zero exit status"

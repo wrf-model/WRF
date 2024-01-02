@@ -1,9 +1,9 @@
 # These are just rules for this case, could be named CMakeLists.txt or something 
 # like install_rules.cmake, whatever you want really
-get_filename_component( FOLDER_DEST ${CMAKE_CURRENT_SOURCE_DIR} NAME )
+get_filename_component( FOLDER_DEST ${CMAKE_INSTALL_PREFIX}/test/${FOLDER_DEST} NAME )
 
 install(
-        DIRECTORY   ${CMAKE_CURRENT_SOURCE_DIR}
+        DIRECTORY   ${CMAKE_INSTALL_PREFIX}/test/${FOLDER_DEST}
         DESTINATION ${CMAKE_INSTALL_PREFIX}/test/
         PATTERN CMakeLists.txt EXCLUDE
         PATTERN .gitignore     EXCLUDE

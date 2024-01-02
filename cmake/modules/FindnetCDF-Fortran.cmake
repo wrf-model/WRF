@@ -46,6 +46,7 @@ else()
   string( TOUPPER ${netCDF-Fortran_NC4_YES}      netCDF-Fortran_NC4      )
 
   set( netCDF-Fortran_DEFINITIONS  )
+  set( netCDF-Fortran_LIBRARY_DIR  ${netCDF-Fortran_PREFIX}/lib )
 
   set( netCDF-Fortran_LIBRARIES
       $<$<LINK_LANGUAGE:Fortran>:${netCDF-Fortran_FLIBS}>
@@ -68,4 +69,4 @@ find_package_handle_standard_args(
                                   netCDF-Fortran_VERSION
                                   )
 
-mark_as_advanced( netCDF-Fortran_FLIBS netCDF-Fortran_PREFIX )
+mark_as_advanced( netCDF-Fortran_FLIBS netCDF-Fortran_PREFIX netCDF-Fortran_LIBRARY_DIR )

@@ -13,8 +13,10 @@
       ".*build.*::args_buildcmd"   : [ "-b", "$BUILD_DIR -j $NUM_PROCS" ],
       ".*build.*::args_cleancmd"   : [ "-r", "-d $BUILD_DIR -i $INSTALL_DIR" ],
 
-      ".*build-omp.*::args_config"   : [ "-e", "USE_OPENMP=-DUSE_OPENMP=ON", "-e", "SM=_sm" ],
-      ".*build-mpi.*::args_config"   : [ "-e", "USE_MPI=-DUSE_MPI=ON", "-e", "DM=_dm" ],
+      ".*build-omp.*::args_config"   : [ "-e", "USE_OPENMP=-DUSE_OPENMP=ON" ],
+      ".*omp.*::args_config"   : [ "-e", "SM=_sm" ],
+      ".*build-mpi.*::args_config"   : [ "-e", "USE_MPI=-DUSE_MPI=ON" ],
+      ".*mpi.*::args_config"   : [ "-e", "DM=_dm" ],
 
       ".*testcase.*::global_env"   : [ "-e", "DATA=/path/to/data" ],
       ".*testcase.*::args_always"  : [ "-c", "$INSTALL_DIR/test/$IDEAL_CASE", "-b", "ideal", "-d", "$DATA/$IDEAL_CASE" ],

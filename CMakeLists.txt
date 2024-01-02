@@ -793,6 +793,15 @@ set_target_properties(
                           EXPORT_PROPERTIES        Fortran_MODULE_DIRECTORY
                       )
 
+# Because of the way netCDF provides its info and the way cmake auto-gens RPATH, we need to help it along
+target_link_directories(
+                        ${PROJECT_NAME}_Core
+                        PUBLIC
+                          ${netCDF_LIBRARY_DIR}
+                          ${netCDF-Fortran_LIBRARY_DIR}
+                        )
+
+
 target_link_libraries(  ${PROJECT_NAME}_Core
                           PUBLIC
                             ${netCDF_LIBRARIES}

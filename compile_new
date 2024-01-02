@@ -3,8 +3,9 @@
 
 # Now run cmake
 buildDirectory=$1
-if [ ! -f "$buildDirectory" ];
-  buildDirectory=$PWD/install
+if [ ! -d "$buildDirectory" ]; then
+  buildDirectory=$PWD/_build
+  echo "Using default build directory : ${buildDirectory}"
 else
   shift
 fi

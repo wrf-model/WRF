@@ -1,12 +1,20 @@
 # These are just rules for this case, could be named CMakeLists.txt or something 
 # like install_rules.cmake, whatever you want really
-wrf_link_targets(
+get_filename_component( FOLDER_DEST ${CMAKE_CURRENT_SOURCE_DIR} NAME )
+
+install(
+        DIRECTORY   ${CMAKE_CURRENT_SOURCE_DIR}
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/test/
+        PATTERN CMakeLists.txt EXCLUDE
+        PATTERN .gitignore     EXCLUDE
+        )
+wrf_setup_targets(
                   TARGETS         real tc ndown wrf
-                  SYM_PATH        ${CMAKE_CURRENT_SOURCE_DIR}
+                  DEST_PATH       ${CMAKE_INSTALL_PREFIX}/test/${FOLDER_DEST}
                   OLD_BASE_PATH   ${CMAKE_INSTALL_PREFIX}/bin
                   )
 
-wrf_link_files( 
+wrf_setup_files( 
                 FILES
                   ${PROJECT_SOURCE_DIR}/run/README.namelist
                   ${PROJECT_SOURCE_DIR}/run/README.physics_files
@@ -59,6 +67,7 @@ wrf_link_files(
                   ${PROJECT_SOURCE_DIR}/run/bulkdens.asc_s_0_03_0_9
                   ${PROJECT_SOURCE_DIR}/run/bulkradii.asc_s_0_03_0_9
                   ${PROJECT_SOURCE_DIR}/run/CCN_ACTIVATE.BIN
+                  # These might be p3_lookupTable_1.dat-v5.4_*
                   ${PROJECT_SOURCE_DIR}/run/p3_lookupTable_1.dat-5.3-2momI
                   ${PROJECT_SOURCE_DIR}/run/p3_lookupTable_1.dat-3momI_v5.1.7
                   ${PROJECT_SOURCE_DIR}/run/p3_lookupTable_2.dat-2momI_v5.2.3
@@ -82,35 +91,36 @@ wrf_link_files(
                   ${PROJECT_SOURCE_DIR}/run/tr67t85
                   ${PROJECT_SOURCE_DIR}/run/gribmap.txt
                   ${PROJECT_SOURCE_DIR}/run/grib2map.tbl
-                SYM_PATH  ${CMAKE_CURRENT_SOURCE_DIR}
+                DEST_PATH
+                  ${CMAKE_INSTALL_PREFIX}/test/${FOLDER_DEST}
                 )
 
-wrf_link_file_new_name( 
+wrf_setup_file_new_name( 
                         FILE      ${PROJECT_SOURCE_DIR}/run/CAMtr_volume_mixing_ratio.SSP245
-                        NEW_NAME  ${CMAKE_CURRENT_SOURCE_DIR}/CAMtr_volume_mixing_ratio
+                        NEW_NAME  ${CMAKE_INSTALL_PREFIX}/test/${FOLDER_DEST}/CAMtr_volume_mixing_ratio
                         )
 
 
 if ( ${USE_DOUBLE} )
   
-  wrf_link_file_new_name(
+  wrf_setup_file_new_name(
                           FILE      ${PROJECT_SOURCE_DIR}/run/ETAMPNEW_DATA_DBL
-                          NEW_NAME  ${CMAKE_CURRENT_SOURCE_DIR}/ETAMPNEW_DATA
+                          NEW_NAME  ${CMAKE_INSTALL_PREFIX}/test/${FOLDER_DEST}/ETAMPNEW_DATA
                           )
-  wrf_link_file_new_name(
+  wrf_setup_file_new_name(
                           FILE      ${PROJECT_SOURCE_DIR}/run/ETAMPNEW_DATA.expanded_rain_DBL
-                          NEW_NAME  ${CMAKE_CURRENT_SOURCE_DIR}/ETAMPNEW_DATA.expanded_rain
+                          NEW_NAME  ${CMAKE_INSTALL_PREFIX}/test/${FOLDER_DEST}/ETAMPNEW_DATA.expanded_rain
                           )
-  wrf_link_file_new_name(
+  wrf_setup_file_new_name(
                           FILE      ${PROJECT_SOURCE_DIR}/run/RRTM_DATA_DBL
-                          NEW_NAME  ${CMAKE_CURRENT_SOURCE_DIR}/RRTM_DATA
+                          NEW_NAME  ${CMAKE_INSTALL_PREFIX}/test/${FOLDER_DEST}/RRTM_DATA
                           )
-  wrf_link_file_new_name(
+  wrf_setup_file_new_name(
                           FILE      ${PROJECT_SOURCE_DIR}/run/RRTMG_LW_DATA_DBL
-                          NEW_NAME  ${CMAKE_CURRENT_SOURCE_DIR}/RRTMG_LW_DATA
+                          NEW_NAME  ${CMAKE_INSTALL_PREFIX}/test/${FOLDER_DEST}/RRTMG_LW_DATA
                           )
-  wrf_link_file_new_name(
+  wrf_setup_file_new_name(
                           FILE      ${PROJECT_SOURCE_DIR}/run/RRTMG_SW_DATA_DBL
-                          NEW_NAME  ${CMAKE_CURRENT_SOURCE_DIR}/RRTMG_SW_DATA
+                          NEW_NAME  ${CMAKE_INSTALL_PREFIX}/test/${FOLDER_DEST}/RRTMG_SW_DATA
                           )
 endif()

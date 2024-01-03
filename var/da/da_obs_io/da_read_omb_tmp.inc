@@ -39,8 +39,10 @@ subroutine da_read_omb_tmp(filename,unit_in,num,obs_type_in,nc,if_wind_sd)
                    spd_obs, spd_inv, spd_err, spd_inc,   &
                    ref_obs, ref_inv, ref_error, ref_inc, &
                    eph_obs, eph_inv, eph_error, eph_inc, &
-                   rain_obs, rain_inv, rain_error, rain_inc, zk
-   integer     :: u_qc, v_qc, t_qc, p_qc, q_qc, tpw_qc, spd_qc, ref_qc, rain_qc
+                   rain_obs, rain_inv, rain_error, rain_inc, zk, &
+                   w_obs, w_inv, w_error, w_inc, &         ! lightning
+                   div_obs, div_inv, div_error, div_inc    ! lightning
+   integer     :: u_qc, v_qc, t_qc, p_qc, q_qc, tpw_qc, spd_qc, ref_qc, rain_qc, w_qc, div_qc
 #if (WRF_CHEM == 1)
    real         :: chem_obs, chem_inv, chem_err, chem_inc, &
                    chem_obs2, chem_inv2, chem_err2, chem_inc2, &
@@ -447,6 +449,34 @@ subroutine da_read_omb_tmp(filename,unit_in,num,obs_type_in,nc,if_wind_sd)
                         num,k,stn_id, &          ! Station
                         lat, lon, height, &       ! Lat/lon, height   
                         rain_obs, rain_inv, rain_qc, rain_error, rain_inc 
+               end do
+            end do
+         end if
+         if (if_write) exit reports
+         cycle reports
+
+     case ('lightning' )
+         if (num_obs > 0) then
+            do n = 1, num_obs
+               read(unit_in,'(2i8)') levels, ifgat
+               if (if_write) then
+                  write(omb_unit,'(2i8)')levels, ifgat
+                  num = num + 1
+               end if
+               do k = 1, levels
+                  read(unit_in,'(2i8,a5,2f9.2,f17.7,3(2f17.7,i8,2f17.7))', err= 1000)&
+                     kk,l, stn_id, &          ! Station
+                     lat, lon, height, &       ! Lat/lon, height
+                     w_obs, w_inv, w_qc, w_error, w_inc, & ! vertical velocity
+                     div_obs, div_inv, div_qc, div_error, div_inc, & ! divergence
+                     q_obs, q_inv, q_qc, q_error, q_inc ! water vapor
+                  if (if_write) &
+                     write(omb_unit,'(2i8,a5,2f9.2,f17.7,3(2f17.7,i8,2f17.7))', err= 1000)&
+                        num,k,stn_id, &          ! Station
+                        lat, lon, height, &       ! Lat/lon, height
+                        w_obs, w_inv, w_qc, w_error, w_inc, & ! vertical velocity
+                        div_obs, div_inv, div_qc, div_error, div_inc, & ! divergence
+                        q_obs, q_inv, q_qc, q_error, q_inc ! water vapor
                end do
             end do
          end if

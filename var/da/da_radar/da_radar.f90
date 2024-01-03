@@ -1,20 +1,21 @@
 module da_radar
 
    use module_domain, only : domain
-
+   use module_dm, only : wrf_dm_sum_real
    use da_control, only : obs_qc_pointer,max_ob_levels,missing_r, &
       v_interp_p, v_interp_h, check_max_iv_print, trace_use, &
       missing, max_error_uv, max_error_t, rootproc, &
       max_error_p,max_error_q, check_max_iv_unit,check_max_iv,  &
       max_stheight_diff,missing_data,max_error_bq,max_error_slp, &
       max_error_bt, max_error_buv, radar,fails_error_max, &
-      use_radar_rv, use_radar_rf,radar_rf_opt,radar_rf_rscl,radar_rv_rscl,rf_noice,rfmin, rf_qthres, use_radar_rhv, use_radar_rqv, &
+      use_radar_rv, use_radar_rf,radar_rf_opt,radar_rf_rscl,radar_rv_rscl,rf_noice,rfmin, rf_qthres, &
+      use_radar_rhv, use_radar_rqv, radar_rhv_opt,&
       below_model_surface,mkz,above_model_lid,&
       fg_format,fg_format_wrf_arw_regional,fg_format_wrf_nmm_regional,fg_format_wrf_arw_global,&
       fg_format_kma_global,max_error_rv,max_error_rf, &
       far_below_model_surface,kms,kme,kts,kte, trace_use_dull,filename_len,&
       myproc, analysis_date, num_procs , ierr, comm, es_beta, es_gamma, a_ew
-   use da_control, only : its, ite, jts, jte, ids, ide, jds, jde, ims, ime, jms, jme
+   use da_control, only : its, ite, jts, jte, ids, ide, jds, jde, ims, ime, jms, jme, ips, ipe, jps, jpe, kds, kde
    use da_control, only : cloudbase_calc_opt, &
       radar_non_precip_rf, radar_non_precip_opt, radar_rqv_thresh1, radar_rqv_thresh2, &
       radar_rqv_rh1, radar_rqv_rh2, radar_non_precip_rh_w, radar_non_precip_rh_i, &

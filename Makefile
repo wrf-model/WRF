@@ -97,7 +97,7 @@ configcheck:
 	 echo "------------------------------------------------------------------------------" ; \
          exit 21 ; \
 	fi
- 
+
 
 framework_only : configcheck
 	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" ext
@@ -154,7 +154,7 @@ wrfplus : configcheck
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
 
-all_wrfvar : 
+all_wrfvar :
 	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" ext
 	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" toolsdir
 	if [ $(CRTM) -ne 0 ] ; then \
@@ -498,7 +498,7 @@ em_scm_xy : wrf
 		ln -sf ../../run/LANDUSE.TBL . ; \
 		ln -sf ../../run/SOILPARM.TBL . ; \
 		ln -sf ../../run/VEGPARM.TBL . ; \
-		ln -sf ../../run/RRTM_DATA . ) 
+		ln -sf ../../run/RRTM_DATA . )
 	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup.`date +%Y-%m-%d_%H_%M_%S` ; fi ; \
@@ -529,11 +529,11 @@ convert_em : framework_only
             ( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" convert_em ) ; \
         fi
 
-# Link wrf.exe and wrf_SST_ESMF.exe into 
-# test/em_esmf_exp when ESMF_COUPLING is set.  wrf.exe 
-# can be used for stand-alone testing in this case.  
-# wrf_SST_ESMF.exe is a coupled application.  Note that make 
-# target $(SOLVER)_wrf_SST_ESMF builds wrf_SST_ESMF.exe.  
+# Link wrf.exe and wrf_SST_ESMF.exe into
+# test/em_esmf_exp when ESMF_COUPLING is set.  wrf.exe
+# can be used for stand-alone testing in this case.
+# wrf_SST_ESMF.exe is a coupled application.  Note that make
+# target $(SOLVER)_wrf_SST_ESMF builds wrf_SST_ESMF.exe.
 em_real : wrf
 	@/bin/rm -f real.exe  > /dev/null 2>&1
 	@/bin/rm -f tc.exe    > /dev/null 2>&1
@@ -923,31 +923,31 @@ framework :
 	@ echo '--------------------------------------'
 	( cd frame ; $(MAKE) $(J) LLIST="$(LINKLIST)" framework ; \
           cd ../external/io_netcdf ; \
-          $(MAKE) NETCDFPATH="$(NETCDFPATH)" \
+          $(MAKE) NETCDFPATH="$(NETCDFPATH)"  NETCDF4_DEP_LIB="$(NETCDF4_DEP_LIB)" \
                FC="$(FC) $(FCBASEOPTS) $(PROMOTION) $(FCDEBUG) $(OMP)" RANLIB="$(RANLIB)" \
                CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" TRADFLAG="$(TRADFLAG)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
                LIB_LOCAL="$(LIB_LOCAL)" \
                ESMF_MOD_DEPENDENCE="$(ESMF_MOD_DEPENDENCE)" AR="INTERNAL_BUILD_ERROR_SHOULD_NOT_NEED_AR" diffwrf; \
           cd ../io_netcdf ; \
-          $(MAKE) NETCDFPATH="$(NETCDFPATH)" \
+          $(MAKE) NETCDFPATH="$(NETCDFPATH)" NETCDF4_DEP_LIB="$(NETCDF4_DEP_LIB)" \
                FC="$(SFC) $(FCBASEOPTS) $(PROMOTION) $(FCDEBUG) $(OMP)" RANLIB="$(RANLIB)" \
                CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" TRADFLAG="$(TRADFLAG)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
 	       LIB_LOCAL="$(LIB_LOCAL)" \
                ESMF_MOD_DEPENDENCE="$(ESMF_MOD_DEPENDENCE)" AR="INTERNAL_BUILD_ERROR_SHOULD_NOT_NEED_AR"; \
           cd ../io_netcdfpar ; \
-          $(NETCDFPAR_BUILD) $(MAKE) NETCDFPARPATH="$(NETCDFPATH)" \
+          $(NETCDFPAR_BUILD) $(MAKE) NETCDFPARPATH="$(NETCDFPATH)" NETCDF4_DEP_LIB="$(NETCDF4_DEP_LIB)" \
                FC="$(FC) $(FCBASEOPTS) $(PROMOTION) $(FCDEBUG) $(OMP)" RANLIB="$(RANLIB)" \
                CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" TRADFLAG="$(TRADFLAG)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
                LIB_LOCAL="$(LIB_LOCAL)" \
                ESMF_MOD_DEPENDENCE="$(ESMF_MOD_DEPENDENCE)" AR="INTERNAL_BUILD_ERROR_SHOULD_NOT_NEED_AR" diffwrf; \
           cd ../io_netcdfpar ; \
-          $(NETCDFPAR_BUILD) $(MAKE) NETCDFPARPATH="$(NETCDFPATH)" \
+          $(NETCDFPAR_BUILD) $(MAKE) NETCDFPARPATH="$(NETCDFPATH)" NETCDF4_DEP_LIB="$(NETCDF4_DEP_LIB)" \
                FC="$(SFC) $(FCBASEOPTS) $(PROMOTION) $(FCDEBUG) $(OMP)" RANLIB="$(RANLIB)" \
                CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" TRADFLAG="$(TRADFLAG)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
 	       LIB_LOCAL="$(LIB_LOCAL)" \
                ESMF_MOD_DEPENDENCE="$(ESMF_MOD_DEPENDENCE)" AR="INTERNAL_BUILD_ERROR_SHOULD_NOT_NEED_AR"; \
           cd ../io_pio ; \
-          echo SKIPPING PIO BUILD $(MAKE) NETCDFPATH="$(PNETCDFPATH)" \
+          echo SKIPPING PIO BUILD $(MAKE) NETCDFPATH="$(PNETCDFPATH)" NETCDF4_DEP_LIB="$(NETCDF4_DEP_LIB)" \
                FC="$(SFC) $(FCBASEOPTS) $(PROMOTION) $(FCDEBUG) $(OMP)" RANLIB="$(RANLIB)" \
                CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" TRADFLAG="$(TRADFLAG)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
 	       LIB_LOCAL="$(LIB_LOCAL)" \
@@ -964,13 +964,13 @@ framework_plus :
 	@ echo '--------------------------------------'
 	( cd frame ; $(MAKE) $(J) LLIST="$(MODLL)" framework ; \
           cd ../external/io_netcdf ; \
-          $(MAKE) NETCDFPATH="$(NETCDFPATH)" \
+          $(MAKE) NETCDFPATH="$(NETCDFPATH)"  NETCDF4_DEP_LIB="$(NETCDF4_DEP_LIB)" \
                FC="$(FC) $(FCBASEOPTS) $(PROMOTION) $(FCDEBUG) $(OMP)" RANLIB="$(RANLIB)" \
                CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" TRADFLAG="$(TRADFLAG)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
                LIB_LOCAL="$(LIB_LOCAL)" \
                ESMF_MOD_DEPENDENCE="$(ESMF_MOD_DEPENDENCE)" AR="INTERNAL_BUILD_ERROR_SHOULD_NOT_NEED_AR" diffwrf; \
           cd ../io_netcdf ; \
-          $(MAKE) NETCDFPATH="$(NETCDFPATH)" \
+          $(MAKE) NETCDFPATH="$(NETCDFPATH)"  NETCDF4_DEP_LIB="$(NETCDF4_DEP_LIB)" \
                FC="$(SFC) $(FCBASEOPTS) $(PROMOTION) $(FCDEBUG) $(OMP)" RANLIB="$(RANLIB)" \
                CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" TRADFLAG="$(TRADFLAG)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
                LIB_LOCAL="$(LIB_LOCAL)" \
@@ -1069,10 +1069,10 @@ fseek_test :
 
 # rule used by configure to test if this will compile with netcdf4
 nc4_test:
-	if [ $(USENETCDFPAR) -eq 0 ] ; then \
-	 ( cd tools ; /bin/rm -f nc4_test.{exe,nc,o} ; $(SCC) -o nc4_test.exe nc4_test.c -I$(NETCDF)/include -L$(NETCDF)/lib -lnetcdf $(NETCDF4_DEP_LIB) ; cd .. ) ; \
+	if [ -z "$(USENETCDFPAR)" ] || [ $(USENETCDFPAR) -eq 0 ] ; then \
+	 ( cd tools ; /bin/rm -f nc4_test.{exe,nc,o} ; $(SCC) -o nc4_test.exe nc4_test.c -I$(NETCDF_C)/include $(NETCDF4_DEP_LIB) ; cd .. ) ; \
 	else \
-	 ( cd tools ; /bin/rm -f nc4_test.{exe,nc,o} ; $(DM_CC) -o nc4_test.exe nc4_test.c -I$(NETCDF)/include -L$(NETCDF)/lib -lnetcdf $(NETCDF4_DEP_LIB) ; cd ..  ) ; \
+	 ( cd tools ; /bin/rm -f nc4_test.{exe,nc,o} ; $(DM_CC) -o nc4_test.exe nc4_test.c -I$(NETCDF_C)/include $(NETCDF4_DEP_LIB) ; cd ..  ) ; \
 	fi
 
 # rule used by configure to test if Fortran 2003 IEEE signaling is available
@@ -1110,8 +1110,8 @@ toolsdir :
 
 #	( cd tools ; $(MAKE) CC_TOOLS="$(CC_TOOLS) -DIO_MASK_SIZE=$(IO_MASK_SIZE)" )
 
-# Use this target to build stand-alone tests of esmf_time_f90.  
-# Only touches external/esmf_time_f90/.  
+# Use this target to build stand-alone tests of esmf_time_f90.
+# Only touches external/esmf_time_f90/.
 esmf_time_f90_only :
 	@ echo '--------------------------------------'
 	( cd external/esmf_time_f90 ; $(MAKE) FC="$(FC) $(FCFLAGS)" CPP="$(CPP) -DTIME_F90_ONLY" tests )

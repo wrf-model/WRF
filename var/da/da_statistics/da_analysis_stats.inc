@@ -85,7 +85,7 @@ use module_state_description, only : num_chem, PARAM_FIRST_SCALAR               
                 'p     i    j          ', &
                 'q     i    j'
          case ( 1 )
-           write(unit=stats_unit, fmt='(8a/)') &
+           write(unit=stats_unit, fmt='(9a/)') &
                 ' Lvl         ', &
                 'u     i    j          ', &
                 'v     i    j          ', &
@@ -397,7 +397,7 @@ use module_state_description, only : num_chem, PARAM_FIRST_SCALAR               
                 'p     i    j          ', &
                 'q     i    j'
          case ( 1 )
-           write(unit=stats_unit, fmt='(8a/)') &
+           write(unit=stats_unit, fmt='(9a/)') &
                 ' Lvl         ', &
                 'u     i    j          ', &
                 'v     i    j          ', &
@@ -1080,9 +1080,9 @@ use module_state_description, only : num_chem, PARAM_FIRST_SCALAR               
             qcim=qcim+qciv(k)
             qsnm=qsnm+qsnv(k)
          end if
-		 if ( use_cv_w ) then
-		   wm=wm+wv(k)
-		 end if
+         if ( use_cv_w ) then
+            wm=wm+wv(k)
+         end if
       end do !k loop
    end if !rootproc
 

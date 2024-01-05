@@ -13,7 +13,7 @@ subroutine da_get_var_diagnostics(it, iv, j)
    integer                      :: num_stats_tot
    integer                      :: i,k
    real                         :: jo_radiance
-   real                         :: temp(79)
+   real                         :: temp(82)
 
    if (trace_use) call da_trace_entry("da_get_var_diagnostics")
 

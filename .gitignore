@@ -17,17 +17,22 @@
 configure.wrf*
 *.backup
 *.f90
-_build/
-# New (and old) things we should ignore
+
+# Out-of-source build locations
+_build*
 wrf_config.cmake
-*.nc
-rsl.out.*
-rsl.error.*
+
+# Executables when not featuring .exe suffix
 ndown
 real
 tc
 ideal
 wrf
+
+# Model inputs/outputs
 wrfbdy_d*
 wrfinput_d*
 wrfout_d*
+*.nc
+rsl.out.*
+rsl.error.*

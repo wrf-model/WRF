@@ -195,10 +195,12 @@ subroutine da_radiance_init(iv,ob)
    allocate ( satinfo(n) % ichan(nchanl(n)) )
    allocate ( satinfo(n) % iuse (nchanl(n)) )
    allocate ( satinfo(n) % error(nchanl(n)) )
+   allocate ( satinfo(n) % error_cld(nchanl(n)) )
    allocate ( satinfo(n) % error_cld_y(nchanl(n)) )
    allocate ( satinfo(n) % error_cld_x(nchanl(n)) )
    allocate ( satinfo(n) % polar(nchanl(n)) )
 
+   satinfo(n) % error_cld(:) = 500.0 !initialize
    satinfo(n) % error_cld_y(:) = 500.0 !initialize
    satinfo(n) % error_cld_x(:) = 5.0 !initialize
 

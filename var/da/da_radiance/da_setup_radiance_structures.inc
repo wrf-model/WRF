@@ -11,7 +11,6 @@ subroutine da_setup_radiance_structures( grid, ob, iv )
    type (iv_type), intent(inout)   :: iv         ! O-B structure.
 
    character(len=200)          :: filename
-   character(len=200)          :: fpath(4)
    integer                     :: i, j, n, ios, ifgat
    logical                     :: lprinttovs 
 

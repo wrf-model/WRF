@@ -67,6 +67,10 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       use_airsobs          = .false.
       use_eos_amsuaobs     = .false.
       use_hsbobs           = .false.
+      use_ahiobs           = .false.
+      use_mwhs2obs         = .false.
+      use_gmiobs           = .false.
+      use_goesabiobs       = .false.
       use_obsgts           = .false.
       use_rad              = .false.
       use_airsretobs       = .false.
@@ -154,6 +158,10 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       use_airsobs          = .false.
       use_eos_amsuaobs     = .false.
       use_hsbobs           = .false.
+      use_ahiobs           = .false.
+      use_mwhs2obs         = .false.
+      use_gmiobs           = .false.
+      use_goesabiobs       = .false.
       use_obsgts           = .false.
       use_rad              = .false.
       use_airsretobs       = .false.

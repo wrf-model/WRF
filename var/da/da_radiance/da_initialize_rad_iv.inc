@@ -121,14 +121,16 @@ subroutine da_initialize_rad_iv (i, n, iv, p)
             if ( allocated ( p % superob(ix,iy) % cld_qc(1) % tb_stddev_3x3 ) ) &
                iv%instid(i)%superob(ix,iy)%cld_qc(n)%tb_stddev_3x3(:) = p % superob(ix,iy) % cld_qc(1) % tb_stddev_3x3(:)
            end if
-            iv%instid(i)%superob(ix,iy)%cld_qc(n)%RTCT = p % superob(ix,iy) % cld_qc(1) % RTCT
-            iv%instid(i)%superob(ix,iy)%cld_qc(n)%RFMFT = p % superob(ix,iy) % cld_qc(1) % RFMFT
-            iv%instid(i)%superob(ix,iy)%cld_qc(n)%TEMPIR = p % superob(ix,iy) % cld_qc(1) % TEMPIR
+           if (index(iv%instid(i)%rttovid_string, 'ahi') > 0) then
             iv%instid(i)%superob(ix,iy)%cld_qc(n)%tb_stddev_10 = p % superob(ix,iy) % cld_qc(1) % tb_stddev_10
             iv%instid(i)%superob(ix,iy)%cld_qc(n)%tb_stddev_13 = p % superob(ix,iy) % cld_qc(1) % tb_stddev_13
             iv%instid(i)%superob(ix,iy)%cld_qc(n)%tb_stddev_14 = p % superob(ix,iy) % cld_qc(1) % tb_stddev_14
-            iv%instid(i)%superob(ix,iy)%cld_qc(n)%terr_hgt = p % superob(ix,iy) % cld_qc(1) % terr_hgt
             iv%instid(i)%superob(ix,iy)%cld_qc(n)%CIRH2O = p % superob(ix,iy) % cld_qc(1) % CIRH2O
+           end if
+            iv%instid(i)%superob(ix,iy)%cld_qc(n)%RTCT = p % superob(ix,iy) % cld_qc(1) % RTCT
+            iv%instid(i)%superob(ix,iy)%cld_qc(n)%RFMFT = p % superob(ix,iy) % cld_qc(1) % RFMFT
+            iv%instid(i)%superob(ix,iy)%cld_qc(n)%TEMPIR = p % superob(ix,iy) % cld_qc(1) % TEMPIR
+            iv%instid(i)%superob(ix,iy)%cld_qc(n)%terr_hgt = p % superob(ix,iy) % cld_qc(1) % terr_hgt
          end do
          end do
       end if

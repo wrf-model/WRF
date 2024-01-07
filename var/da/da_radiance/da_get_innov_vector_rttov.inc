@@ -149,8 +149,7 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
             iv%instid(inst)%surftype(n) = 0
          end if
 
-         if ( use_clddet_zz &
-              .AND.   trim( rttov_inst_name(rtminit_sensor(inst))) == 'abi' ) then
+         if ( use_clddet_zz ) then
             ! Find tropopause temperature for Zhuge and Zou Cloud Detection
             do k = kts, min(kte,kme-1)
                call da_interp_2d_partial ( grid%xb%t(:,:,k), iv%instid(inst)%info, k, n, n, tt_pixel(k) )

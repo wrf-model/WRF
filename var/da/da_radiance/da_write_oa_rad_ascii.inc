@@ -61,7 +61,7 @@ subroutine da_write_oa_rad_ascii (it, ob, iv, re )
          write(unit=oma_rad_unit,fmt='(a)') ' pixel-info : i date scanpos landsea_mask  elv lat lon  satzen satazi solzen solazi'
       end if
       write(unit=oma_rad_unit,fmt='(a)') ' xb-surf-info : i t2m mr2m(ppmv) u10 v10 ps ts smois tslb snowh isflg &
-                       & soiltyp vegtyp vegfra elev clwp cloud_frac'
+                       & soiltyp vegtyp vegfra elev clwp'
       ndomain = 0
       do n=1,iv%instid(i)%num_rad
          if (iv%instid(i)%info%proc_domain(1,n)) then
@@ -142,15 +142,13 @@ subroutine da_write_oa_rad_ascii (it, ob, iv, re )
             write(unit=oma_rad_unit,fmt='(10f11.2)') iv%instid(i)%tb_error(:,n)
             write(unit=oma_rad_unit,fmt='(a)') 'QC   : '
             write(unit=oma_rad_unit,fmt='(10i11)') iv%instid(i)%tb_qc(:,n)
-            write(unit=oma_rad_unit,fmt='(a)') 'CLOUD   : '
-            write(unit=oma_rad_unit,fmt='(10i11)') iv%instid(i)%cloud_flag(:,n)
-            if ( abi .and. crtm_cloud ) then ! write out cloud_mod, cloud_obs, tb_xb_clr
+            if ( abi .and. crtm_cloud ) then ! write out cloud_mod, cloud_obs, cloud_flag
                write(unit=oma_rad_unit,fmt='(a)') 'CMOD   : '
                write(unit=oma_rad_unit,fmt='(10f11.2)') iv%instid(i)%cloud_mod(:,n)
                write(unit=oma_rad_unit,fmt='(a)') 'COBS   : '
                write(unit=oma_rad_unit,fmt='(10f11.2)') iv%instid(i)%cloud_obs(:,n)
-               write(unit=oma_rad_unit,fmt='(a)') 'BGCLR: '
-               write(unit=oma_rad_unit,fmt='(10f11.2)') iv%instid(i)%tb_xb_clr(:,n)
+	       write(unit=oma_rad_unit,fmt='(a)') 'CLOUD   : '
+               write(unit=oma_rad_unit,fmt='(10i11)') iv%instid(i)%cloud_flag(:,n)
             end if
 
             if (write_profile) then

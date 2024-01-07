@@ -444,18 +444,6 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
             call da_trop_wmo ( tt_pixel, geoht_pixel, pp_pixel, (min(kte,kme-1)-kts+1), tropt = iv%instid(inst)%tropt(n) )
          end if
 
-
-         if ( use_clddet_zz &
-              .AND.   trim( crtm_sensor_name(rtminit_sensor(inst))) == 'abi' ) then
-            ! Find tropopause temperature for Zhuge and Zou Cloud Detection
-            do k = kts, min(kte,kme-1)
-               tt_pixel(k) = Atmosphere(1)%Temperature(kte-k+1)
-               pp_pixel(k) = Atmosphere(1)%Pressure(kte-k+1)
-               call da_interp_2d_partial ( geoht_full(:,:,k), iv%instid(inst)%info, k, n, n, geoht_pixel(k) )
-            end do
-            call da_trop_wmo ( tt_pixel, geoht_pixel, pp_pixel, (min(kte,kme-1)-kts+1), tropt = iv%instid(inst)%tropt(n) )
-         end if
-
          call da_interp_2d_partial (grid%xb%u10,  iv%instid(inst)%info, 1, n, n, model_u10(n:n))
          call da_interp_2d_partial (grid%xb%v10,  iv%instid(inst)%info, 1, n, n, model_v10(n:n))
          call da_interp_2d_partial (grid%xb%psfc, iv%instid(inst)%info, 1, n, n, model_psfc(n:n))

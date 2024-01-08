@@ -22,8 +22,8 @@
          deallocate (satinfo(i) % iuse)
          deallocate (satinfo(i) % error)
          deallocate (satinfo(i) % error_cld)
-         deallocate (satinfo(i) % error_cld_y)
-         deallocate (satinfo(i) % error_cld_x)
+!         deallocate (satinfo(i) % error_cld_y)
+!         deallocate (satinfo(i) % error_cld_x)
          deallocate (satinfo(i) % polar)
 
          deallocate (satinfo(i) % scanbias) 

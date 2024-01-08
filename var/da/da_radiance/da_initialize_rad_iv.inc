@@ -92,11 +92,12 @@ subroutine da_initialize_rad_iv (i, n, iv, p)
    iv%instid(i)%tb_sens(:,n)    = 0.0
    iv%instid(i)%tb_imp(:,n)     = 0.0
    iv%instid(i)%rad_xb(:,n)     = 0.0
-   if ( associated( p % rad_obs ) ) then
-      iv%instid(i)%rad_obs(:,n) = p%rad_obs(:)
-   else
-      iv%instid(i)%rad_obs(:,n) = 0.0
-   end if
+   iv%instid(i)%rad_obs(:,n)    = 0.0
+   !if ( associated( p % rad_obs ) ) then
+   !   iv%instid(i)%rad_obs(:,n) = p%rad_obs(:)
+   !else
+   !   iv%instid(i)%rad_obs(:,n) = 0.0
+   !end if
    iv%instid(i)%rad_ovc(:,:,n)  = 0.0
    iv%instid(i)%emiss(:,n)      = 0.0
    iv%instid(i)%scanpos(n)      = p%scanpos

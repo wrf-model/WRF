@@ -404,14 +404,14 @@ ntime_loop: do itime = 1, ntime
             read(unit=iunit(iproc),fmt='(10f11.2)',iostat=ios) tb_err(:,ipixel)
             read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf           ! QC
             read(unit=iunit(iproc),fmt='(10i11)',iostat=ios  ) tb_qc(:,ipixel)
-            read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf           ! CLOUD
-            if ( abi .and. buf(1:4) == "CMOD" ) then ! read cloud_mod, cloud_obs, tb_bak_clr for abi
+            read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf 
+            if ( abi .and. buf(1:4) == "CMOD" ) then ! read cloud_mod, cloud_obs, cloud_flag for abi
                read(unit=iunit(iproc),fmt='(10f11.2)',iostat=ios) cloud_mod(:,ipixel)
-               read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf        ! COBS
+               read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf        ! CMOD
                read(unit=iunit(iproc),fmt='(10f11.2)',iostat=ios) cloud_obs(:,ipixel)
-               read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf        ! BGCLR
+               read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf        ! COBS
                read(unit=iunit(iproc),fmt='(10i11)',iostat=ios  ) cloud_flag(:,ipixel)
-               read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf        ! CMOD, INFO, or level
+               read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf        ! cloud_flag
             end if
             if ( buf(1:4) == "INFO" ) then
                backspace(iunit(iproc))

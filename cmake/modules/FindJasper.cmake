@@ -25,6 +25,11 @@ find_library(
               PATH_SUFFIXES lib
             )
 
+# Ripped from https://github.com/Kitware/CMake/blob/master/Modules/FindJasper.cmake
+if( Jasper_INCLUDE_DIR AND EXISTS "${Jasper_INCLUDE_DIR}/jasper/jas_config.h")
+  file(STRINGS "${Jasper_INCLUDE_DIR}/jasper/jas_config.h" jasper_version_str REGEX "^#define[\t ]+JAS_VERSION[\t ]+\".*\".*")
+  string(REGEX REPLACE "^#define[\t ]+JAS_VERSION[\t ]+\"([^\"]+)\".*" "\\1" Jasper_VERSION_STRING "${jasper_version_str}")
+endif()
 # set(CMAKE_FIND_DEBUG_MODE FALSE)
 
 include(FindPackageHandleStandardArgs)
@@ -34,7 +39,8 @@ find_package_handle_standard_args(
                                   REQUIRED_VARS
                                     Jasper_LIBRARY
                                     Jasper_INCLUDE_DIR
-                                  # VERSION_VAR Jasper_VERSION
+                                  VERSION_VAR Jasper_VERSION_STRING
+                                  HANDLE_VERSION_RANGE
                                 )
 
 if ( Jasper_FOUND AND NOT TARGET Jasper::Jasper )

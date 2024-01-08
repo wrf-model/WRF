@@ -384,10 +384,10 @@ endif()
 
 # HDF5 has some funky weirdness between versions where the casing has changed
 # Optional
-find_package( HDF5   QUIET )
+find_package( HDF5    )
 
 # Optional for grib2
-find_package( Jasper QUIET )
+find_package( Jasper 1.900.1...<1.900.24 )
 
 # Optional
 find_package( PIO QUIET ) 

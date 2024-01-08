@@ -10,6 +10,24 @@
 # find_package( netCDF )
 # list( APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR} )
 
+# exit early if we don't even need to be here
+if ( netCDF_FOUND )
+  return()
+endif()
+
+
+###############################################################################
+# First try to find using netCDF native cmake build
+# TODO : Enable this when netCDF native cmake build works well as an imported package
+# find_package( netCDF CONFIG )
+# if ( netCDF_FOUND )
+#   message( STATUS "Found netCDF through native cmake build" )
+#   return()
+# endif()
+###############################################################################
+
+
+# else
 # Use nc-config
 find_program( 
                 NETCDF_PROGRAM

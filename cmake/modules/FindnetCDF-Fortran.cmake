@@ -10,7 +10,24 @@
 # find_package( netCDF-Fortran )
 # list( APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR} )
 
-# Use nc-config
+
+# exit early if we don't even need to be here
+if ( netCDF-Fortran_FOUND )
+  return()
+endif()
+
+###############################################################################
+# First try to find using netCDF-Fortran native cmake build
+# TODO : Enable this when netCDF-Fortran native cmake build works well as an imported package
+# find_package( netCDF-Fortran CONFIG )
+# if ( netCDF-Fortran_FOUND )
+#   message( STATUS "Found netCDF-Fortran through native cmake build" )
+#   return()
+# endif()
+###############################################################################
+
+# else
+# Use nf-config
 find_program( 
                 NETCDF-FORTRAN_PROGRAM
                 nf-config

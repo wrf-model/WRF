@@ -263,7 +263,7 @@ ntime_loop: do itime = 1, ntime
             allocate ( tb_inv(1:nchan,1:total_npixel) )
             allocate ( tb_oma(1:nchan,1:total_npixel) )
             allocate ( tb_err(1:nchan,1:total_npixel) )
-            allocate ( tb_qc(1:nchan,1:total_npixel)  )
+            allocate (  tb_qc(1:nchan,1:total_npixel) )
             if ( abi ) then
                allocate ( cloud_mod(1:nchan,1:total_npixel) )
                allocate ( cloud_obs(1:nchan,1:total_npixel) )

@@ -141,6 +141,9 @@ endif()
 set( USE_DOUBLE  OFF CACHE BOOL "USE_DOUBLE"  )
 set( USE_MPI     OFF CACHE BOOL "USE_MPI"     )
 set( USE_OPENMP  OFF CACHE BOOL "USE_OPENMP"  )
+set( USE_HDF5    OFF CACHE BOOL "USE_HDF5"    )
+set( USE_JASPER  OFF CACHE BOOL "USE_JASPER"  )
+set( USE_PIO     OFF CACHE BOOL "USE_PIO"     )
 set( USE_IPO     OFF CACHE BOOL "USE_IPO"     )
 
 
@@ -384,13 +387,19 @@ endif()
 
 # HDF5 has some funky weirdness between versions where the casing has changed
 # Optional
-find_package( HDF5    )
+if ( ${USE_HDF5} )
+  find_package( HDF5 )
+endif()
 
 # Optional for grib2
-find_package( Jasper 1.900.1...<1.900.24 )
+if ( ${USE_JASPER} )
+  find_package( Jasper 1.900.1...<1.900.24 )
+endif()
 
 # Optional
-find_package( PIO QUIET ) 
+if ( ${USE_PIO} )
+  find_package( PIO QUIET )
+endif()
 
 if ( ${ENABLE_TERRAIN} )
   find_package( RPC )

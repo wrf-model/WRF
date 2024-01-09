@@ -66,6 +66,7 @@ if ( ${PIO_FOUND} )
 endif()
 
 # https://cmake.org/cmake/help/latest/module/FindHDF5.html
+# I don't think this is the correct variable to control this IO capability...
 if ( ${HDF5_IS_PARALLEL} )
   message( STATUS "Adding [io_phdf5] to configuration" )
   add_subdirectory( io_phdf5         )

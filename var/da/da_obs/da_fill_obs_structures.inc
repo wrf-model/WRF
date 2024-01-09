@@ -21,17 +21,13 @@ subroutine da_fill_obs_structures(iv, ob, uvq_direct)
    if (trace_use) call da_trace_entry("da_fill_obs_structures")
 
    !---------------------------------------------------------------------------
-   ! Initialise uvq_direct_local (for intel oneAPI)
+   ! Initialise uvq_direct_local
    !---------------------------------------------------------------------------
 
    if (.not. present(uvq_direct)) then
-     uvq_direct_local = .false.
+      uvq_direct_local = .false.
    else
-     if (.not. uvq_direct) then
-        uvq_direct_local = .false.
-     else
-        uvq_direct_local = .true.
-     end if
+      uvq_direct_local = uvq_direct
    end if
 
    !---------------------------------------------------------------------------

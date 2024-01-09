@@ -19,7 +19,7 @@
 #include "sym.h"
 
 // Helper macro to actually do return checks
-#define NON_ZERO_RETURN( A ) { int result = A; if ( result != 0 ) { printf( "Error in %s, non-zero return expected", #A ); exit(result); } }
+#define NON_ZERO_RETURN( A ) { int result = A; if ( result != 0 ) { printf( "Error in %s, zero return expected, received %i\n", #A, result ); exit(result); } }
 
 /* SamT: bug fix: main returns int */
 int

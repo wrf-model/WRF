@@ -1651,7 +1651,7 @@ END SUBROUTINE cal_dampkm
       ELSE
         BN2(i,k,j) = g * ( (theta(i,k+1,j) - theta(i,k-1,j) ) /  &
                      theta(i,k,j) / tmpdz +  &
-                     1.61 * ( moist(i,k+1,j,P_QV) - moist(i,k-1,j,P_QV) ) / &
+                     0.61 * ( moist(i,k+1,j,P_QV) - moist(i,k-1,j,P_QV) ) / &
                      tmpdz -   &
                      ( tmp1(i,k+1,j) - tmp1(i,k-1,j) ) / tmpdz )
       ENDIF
@@ -1692,7 +1692,7 @@ END SUBROUTINE cal_dampkm
         tmpdz= 1./rdzw(i,k,j) ! controlare come calcola rdzw
         BN2(i,k,j) = g * ( ( theta(i,k+1,j) - theta(i,k,j)) /  &
                      theta(i,k,j) / tmpdz +  &
-                     1.61 * ( moist(i,k+1,j,P_QV) - qvsfc ) /  &
+                     0.61 * ( moist(i,k+1,j,P_QV) - qvsfc ) /  &
                      tmpdz -  &
                      ( tmp1(i,k+1,j) - tmp1sfc(i,j) ) / tmpdz  )
 ! end of MARTA/WCS change

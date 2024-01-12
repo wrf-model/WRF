@@ -2124,7 +2124,6 @@ NETCDFPAR_BUILD =       CONFIGURE_NETCDFPAR_BUILD
 
 #insert new stanza here
 
-
 ###########################################################
 #ARCH    Linux x86_64 ppc64le i486 i586 i686, Intel oneAPI compiler with icx #serial smpar dmpar dm+sm
 # This mirrors the above Intel build but changes ifort=>ifx icc=>icx

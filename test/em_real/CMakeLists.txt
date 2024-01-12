@@ -3,15 +3,14 @@
 get_filename_component( FOLDER_DEST ${CMAKE_INSTALL_PREFIX}/test/${FOLDER_DEST} NAME )
 
 install(
-        DIRECTORY   ${CMAKE_INSTALL_PREFIX}/test/${FOLDER_DEST}
-        DESTINATION ${CMAKE_INSTALL_PREFIX}/test/
+        DIRECTORY   ${CMAKE_CURRENT_SOURCE_DIR}
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/test/${FOLDER_DEST}
         PATTERN CMakeLists.txt EXCLUDE
         PATTERN .gitignore     EXCLUDE
         )
 wrf_setup_targets(
                   TARGETS         real tc ndown wrf
                   DEST_PATH       ${CMAKE_INSTALL_PREFIX}/test/${FOLDER_DEST}
-                  OLD_BASE_PATH   ${CMAKE_INSTALL_PREFIX}/bin
                   )
 
 wrf_setup_files( 

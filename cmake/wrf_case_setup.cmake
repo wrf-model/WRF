@@ -2,7 +2,7 @@
 macro( wrf_setup_targets )
 
   set( options        USE_SYMLINKS )
-  set( oneValueArgs   DEST_PATH OLD_BASE_PATH )
+  set( oneValueArgs   DEST_PATH )
   set( multiValueArgs TARGETS  )
 
   cmake_parse_arguments(
@@ -26,7 +26,7 @@ macro( wrf_setup_targets )
     install( 
             CODE "
                   message( STATUS \"Setting up $<TARGET_FILE_NAME:${WRF_SETUP_TARGET}> via ${WRF_SETUP_CMD}\" )
-                  execute_process( COMMAND ${CMAKE_COMMAND} -E ${WRF_SETUP_CMD} ${WRF_SETUP_OLD_BASE_PATH}/$<TARGET_FILE_NAME:${WRF_SETUP_TARGET}> ${WRF_SETUP_DEST_PATH}/$<TARGET_FILE_NAME:${WRF_SETUP_TARGET}> )
+                  execute_process( COMMAND ${CMAKE_COMMAND} -E ${WRF_SETUP_CMD} $<TARGET_FILE:${WRF_SETUP_TARGET}> ${WRF_SETUP_DEST_PATH}/$<TARGET_FILE_NAME:${WRF_SETUP_TARGET}> )
                   "
             COMPONENT setup
             )

@@ -1223,8 +1223,8 @@ BENCH_START(pbl_driver_tim)
      &        ,rmol=grid%rmol, ch=grid%ch                                 &
      &        ,qcg=grid%qcg, grav_settling=config_flags%grav_settling     &
 !    &        ,K_m=grid%K_m, K_h=grid%K_h, K_q=grid%K_q                   &
-     &        ,vdfg=grid%vdfg,nupdraft=grid%nupdraft,maxMF=grid%maxmf     &
-     &        ,ktop_plume=grid%ktop_plume                                 &
+     &        ,vdfg=grid%vdfg,maxwidth=grid%maxwidth,maxMF=grid%maxmf     &
+     &        ,ztop_plume=grid%ztop_plume,ktop_plume=grid%ktop_plume      &
      &        ,spp_pbl=config_flags%spp_pbl                               &
      &        ,pattern_spp_pbl=grid%pattern_spp_pbl                       &
      &        ,restart=config_flags%restart,cycling=config_flags%cycling  &

@@ -1,0 +1,191 @@
+&fuel_scalars                      ! scalar fuel constants
+cmbcnst  = 17.433e+06,             ! J/kg combustion heat dry fuel
+hfgl     = 17.e4 ,                 ! W/m^2 heat flux to ignite canopy
+fuelmc_g = 0.08,                   ! ground fuel moisture, set = 0 for dry
+fuelmc_g_lh = 1.20,                ! ground live herb fuel moisture, set = 0 for dry
+fuelmc_c = 1.00,                   ! canopy fuel moisture, set = 0 for dry
+nfuelcats = 54,                    ! number of fuel categories used
+no_fuel_cat = 14                   ! extra category for no fuel
+/
+
+&fuel_categories                 
+ fuel_name = 
+'1: Short grass (1 ft)',
+'2: Timber (grass and understory)',
+'3: Tall grass (2.5 ft)',
+'4: Chaparral (6 ft)',
+'5: Brush (2 ft) ',
+'6: Dormant brush, hardwood slash',
+'7: Southern rough',
+'8: Closed timber litter',
+'9: Hardwood litter',
+'10: Timber (litter + understory)',
+'11: Light logging slash',
+'12: Medium logging slash',
+'13: Heavy logging slash',
+'14: no fuel',
+'15: Short, Sparse Dry Climate Grass (Dynamic) [GR1 (101)]',
+'16: Low Load, Dry Climate Grass (Dynamic) GR2 (102)',
+'17: Low Load, Very Coarse, Humid Climate Grass (Dynamic) [GR3 (103)]',
+'18: Moderate Load, Dry Climate Grass (Dynamic) [GR4 (104)]',
+'19: Low Load, Humid Climate Grass (Dynamic) [GR5 (105)]',
+'20: Moderate Load, Humid Climate Grass (Dynamic) [GR6 (106)]',
+'21: High Load, Dry Climate Grass (Dynamic) [GR7 (107)]',
+'22: High Load, Very Coarse, Humid Climate Grass (Dynamic) [GR8 (108)]',
+'23: Very High Load, Humid Climate Grass (Dynamic) [GR9 (109)]',
+'24: Low Load, Dry Climate Grass-Shrub (Dynamic) [GS1 (121)]',
+'25: Moderate Load, Dry Climate Grass-Shrub (Dynamic) [GS2 (122)]',
+'26: Moderate Load, Humid Climate Grass-Shrub (Dynamic) [GS3 (123)]',
+'27: High Load, Humid Climate Grass-Shrub (Dynamic) [GS4 (124)]',
+'28: Low Load Dry Climate Shrub (Dynamic) [SH1 (141)]',
+'29: Moderate Load Dry Climate Shrub [SH2 (142)]',
+'30: Moderate Load, Humid Climate Shrub [SH3 (143)]',
+'31: Low Load, Humid Climate Timber-Shrub [SH4 (144)]',
+'32: High Load, Dry Climate Shrub [SH5 (145)]',
+'33: Low Load, Humid Climate Shrub [SH6 (146)]',
+'34: Very High Load, Dry Climate Shrub [SH7 (147)]',
+'35: High Load, Humid Climate Shrub [SH8 (148)]',
+'36: Very High Load, Humid Climate Shrub (Dynamic) [SH9 (149)]',
+'37: Low Load Dry Climate Timber-Grass-Shrub (Dynamic) [TU1 (161)]',
+'38: Moderate Load, Humid Climate Timber-Shrub [TU2 (162)]',
+'39: Moderate Load, Humid Climate Timber-Grass-Shrub (Dynamic) [TU3 (163)]',
+'40: Dwarf Conifer With Understory [TU4 (164)]',
+'41: Very High Load, Dry Climate Timber-Shrub [TU5 (165)]',
+'42: Low Load Compact Conifer Litter [TL1 (181)]',
+'43: Low Load Broadleaf Litter [TL2 (182)]',
+'44: Moderate Load Conifer Litter [TL3 (183)]',
+'45: Small downed logs [TL4 (184)]',
+'46: High Load Conifer Litter [TL5 (185)]',
+'47: Moderate Load Broadleaf Litter [TL6 (186)]',
+'48: Large Downed Logs [TL7 (187)]',
+'49: Long-Needle Litter [TL8 (188)]',
+'50: Very High Load Broadleaf Litter [TL9 (189)]',
+'51: Low Load Activity Fuel [SB1 (201)]',
+'52: Moderate Load Activity Fuel or Low Load Blowdown [SB2 (202)]',
+'53: High Load Activity Fuel or Moderate Load Blowdown [SB3 (203)]',
+'54: High Load Blowdown [SB4 (204)]'
+ fgi = 0.1660, 0.8960, 0.6740, 3.5910, 0.7840, 1.3440, 1.0910, 1.1200, 0.7800, 2.6920, 2.5820, 7.7490, 13.0240, 1.e-7,
+       0.0224, 0.0224, 0.1121, 0.0560, 0.0897, 0.0224, 0.2242, 0.3363, 0.4483,
+       0.0448, 0.2242, 0.1233, 0.5156,
+       0.1121, 1.0088, 0.7734, 0.4932, 1.2778, 0.9751, 2.4659, 1.4123, 1.5580,
+       0.5828, 0.8967, 0.3363, 1.0088, 2.4659,
+       1.5244, 1.3226, 1.2329, 1.3899, 1.8046, 1.0760, 2.1969, 1.8606, 3.1608,
+       3.4746, 2.8582, 2.5219, 3.1384
+ fgi_lh = 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
+          0.0673, 0.2242, 0.3363, 0.4259, 0.5604, 0.7622, 1.2105, 1.6364, 2.0175,
+          0.1121, 0.1345, 0.3250, 0.7622,
+          0.0336, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.3475,
+          0.0448, 0.0000, 0.1457, 0.0000, 0.0000,
+          0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
+          0.0000, 0.0000, 0.0000, 0.0000
+ fueldepthm= 0.3050, 0.3050, 0.7620, 1.8290, 0.6100, 0.7620, 0.7620, 0.0610, 0.0610, 0.3050, 0.3050, 0.7010, 0.9140, 0.3050,
+             0.1219, 0.3048, 0.6096, 0.6096, 0.4572, 0.4572, 0.9144, 1.2192, 1.5240,
+             0.2743, 0.4572, 0.5486, 0.6401,
+             0.3048, 0.3048, 0.7315, 0.9144, 1.8288, 0.6096, 1.8288, 0.9144, 1.3411,
+             0.1829, 0.3048, 0.3962, 0.1524, 0.3048,
+             0.0610, 0.0610, 0.0914, 0.1219, 0.1829, 0.0914, 0.1219, 0.0914, 0.1829,
+             0.3048, 0.3048, 0.3658, 0.8230
+ savr = 3500., 2784., 1500., 1739., 1683., 1564., 1562., 1889., 2484., 1764., 1182., 1145., 1159., 3500.,
+               2200., 2000., 1500., 2000., 1800., 2200., 2000., 1500., 1800.,
+               2000., 2000., 1800., 1800.,
+               2000., 2000., 1600., 2000., 750., 750., 750., 750., 750.,
+               2000., 2000., 1800., 2300., 1500.,
+               2000., 2000., 2000., 2000., 2000., 2000., 2000., 1800., 1800.,
+               2000., 2000., 2000., 2000.
+ fuelmce = 0.12, 0.15, 0.25, 0.20, 0.20, 0.25, 0.40, 0.30, 0.25, 0.25, 0.15, 0.20, 0.25, 0.12,
+           0.15, 0.15, 0.30, 0.15, 0.40, 0.40, 0.15, 0.30, 0.40,
+           0.15, 0.15, 0.40, 0.40,
+           0.15, 0.15, 0.40, 0.30, 0.15, 0.30, 0.15, 0.40, 0.40,
+           0.20, 0.30, 0.30, 0.12, 0.25,
+           0.30, 0.25, 0.20, 0.25, 0.25, 0.25, 0.25, 0.35, 0.35,
+           0.25, 0.25, 0.25, 0.25
+ fueldens = 32., 32., 32., 32., 32., 32., 32., 32., 32., 32., 32., 32., 32., 32., ! 32 if solid, 19 if rotten
+            32., 32., 32., 32., 32., 32., 32., 32., 32.,
+            32., 32., 32., 32.,
+            32., 32., 32., 32., 32., 32., 32., 32., 32.,
+            32., 32., 32., 32., 32.,
+            32., 32., 32., 32., 32., 32., 32., 32., 32.,
+            32., 32., 32., 32.
+ st = 0.0555, 0.0555, 0.0555, 0.0555, 0.0555, 0.0555, 0.0555, 0.0555, 0.0555, 0.0555, 0.0555, 0.0555, 0.0555, 0.0555,
+      0.0555, 0.0555, 0.0555, 0.0555, 0.0555, 0.0555, 0.0555, 0.0555, 0.0555,
+      0.0555, 0.0555, 0.0555, 0.0555,
+      0.0555, 0.0555, 0.0555, 0.0555, 0.0555, 0.0555, 0.0555, 0.0555, 0.0555,
+      0.0555, 0.0555, 0.0555, 0.0555, 0.0555,
+      0.0555, 0.0555, 0.0555, 0.0555, 0.0555, 0.0555, 0.0555, 0.0555, 0.0555,
+      0.0555, 0.0555, 0.0555, 0.0555
+ se = 0.010, 0.010, 0.010, 0.010, 0.010, 0.010, 0.010, 0.010, 0.010, 0.010, 0.010, 0.010, 0.010, 0.010, 
+      0.010, 0.010, 0.010, 0.010, 0.010, 0.010, 0.010, 0.010, 0.010,
+      0.010, 0.010, 0.010, 0.010,
+      0.010, 0.010, 0.010, 0.010, 0.010, 0.010, 0.010, 0.010, 0.010,
+      0.010, 0.010, 0.010, 0.010, 0.010,
+      0.010, 0.010, 0.010, 0.010, 0.010, 0.010, 0.010, 0.010, 0.010,
+      0.010, 0.010, 0.010, 0.010
+ ! ----- Notes on weight: (4) - best fit of Latham data; (5)-(7) could be 60-120; (8)-(10) could be 300-1600; (11)-(13) could be 300-1600
+ weight = 7., 7., 7., 180., 100., 100., 100., 900., 900., 900., 900., 900., 900., 7.,
+          7., 7., 7., 7., 7., 7., 7., 7., 7.,
+          7., 7., 7., 7.,
+          100., 100., 100., 100., 180., 100., 180., 100., 100.,
+          900., 900., 900., 900., 900.,
+          900., 900., 900., 900., 900., 900., 900., 900., 900.,
+          900., 900., 900., 900.
+
+! fuel loading 1-h, 10-h, 100-h, 1000-h, live following Albini 1976 as reprinted in Anderson 1982 Table 1
+! for relative proportions between classes only
+! TWJ added values for S&B model in corresponding rows
+!               1      2      3      4      5      6      7      8      9      10     11     12     13
+  fgi_1h    = 0.74,  2.00,  3.01,  5.01,  1.00,  1.50,  1.13,  1.50,  2.92,  3.01,  1.50,  4.01,  7.01,
+              0.10,  0.10,  0.10,  0.25,  0.40,  0.10,  1.00,  0.50,  1.00,
+              0.20,  0.50,  0.30,  1.90,
+              0.25,  1.35,  0.45,  0.85,  3.60,  2.90,  3.50,  2.05,  4.50,
+              0.20,  0.95,  1.10,  4.50,  4.00,
+              1.00,  1.40,  0.50,  0.50,  1.15,  2.40,  0.30,  5.80,  6.65,
+              1.50,  4.50,  5.50,  5.25
+  fgi_10h   = 0.000, 1.00,  0.00,  4.01,  0.50,  2.50,  1.87,  1.00,  0.41,  2.00,  4.51, 14.03, 23.04,
+              0.00,  0.00,  0.40,  0.00,  0.00,  0.00,  0.00,  1.00,  1.00,
+              0.00,  0.50,  0.25,  0.30,
+              0.25,  2.40,  3.00,  1.15,  2.10,  1.45,  5.30,  3.40,  2.45,
+              0.90,  1.80,  0.15,  0.00,  4.00,
+              2.20,  2.30,  2.20,  1.50,  2.50,  1.20,  1.40,  1.40,  3.30,
+              3.00,  4.25,  2.75,  3.50
+  fgi_100h  = 0.000, 0.50,  0.00,  2.00,  0.00,  2.00,  1.50,  2.50,  0.15,  5.01,  5.51, 16.53, 28.05,
+              0.00,  0.00,  0.00,  0.00,  0.00,  0.00,  0.00,  0.00,  0.00,
+              0.00,  0.00,  0.00,  0.10,
+              0.00,  0.75,  0.00,  0.20,  0.00,  0.00,  2.20,  0.85,  0.00,
+              1.50,  1.25,  0.25,  0.00,  3.00,
+              3.60,  2.20,  2.80,  4.20,  4.40,  1.20,  8.10,  1.10,  4.15,
+              11.00, 4.00,  3.00,  5.25
+  fgi_1000h = 0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
+              0.00,  0.00,  0.00,  0.00,  0.00,  0.00,  0.00,  0.00,  0.00,
+              0.00,  0.00,  0.00,  0.00,
+              0.00,  0.00,  0.00,  0.00,  0.00,  0.00,  0.00,  0.00,  0.00,
+              0.00,  0.00,  0.00,  0.00,  0.00,
+              0.00,  0.00,  0.00,  0.00,  0.00,  0.00,  0.00,  0.00,  0.00,
+              0.00,  0.00,  0.00,  0.00
+  fgi_live  = 0.000, 0.50,  0.000, 5.01,  2.00,  0.00,  0.37,  0.00,  0.00,  2.00,  0.00,  2.3,   0.00,
+              0.30,  1.00,  1.50,  1.90,  2.50,  3.40,  5.40,  7.30,  9.00,
+              0.50,  0.60,  1.45,  3.40,
+              0.15,  0.00,  0.00,  0.00,  0.00,  0.00,  0.00,  0.00,  1.55,
+              0.20,  0.00,  0.65,  0.00,  0.00,
+              0.00,  0.00,  0.00,  0.00,  0.00,  0.00,  0.00,  0.00,  0.00,
+              0.00,  0.00,  0.00,  0.00
+ /
+
+&fuel_moisture
+! Fuel moisture model coefficients to experiment with different models.
+! Can be omitted, then the defaults in the code are used.
+moisture_classes = 5,
+moisture_class_name=   '1-h','10-h','100-h','1000-h','Live', ! identification to be printed
+drying_model=             1,     1,     1,    1,     1,  ! number of model - only 1= equilibrium moisture Van Wagner (1972) per Viney (1991)  allowed
+drying_lag=               1,    10,   100,  1000,   1e9, ! so-called 10hr and 100hr fuel
+wetting_model=            1,     1,     1,    1,     1, ! number of model - only 1= allowed at this moment
+wetting_lag=            1.4,  14.0,  140.0, 1400.0, 1e9, ! 10-h lag callibrated to VanWagner&Pickett 1985, Canadian fire danger rating system, rest by scaling
+saturation_moisture=    2.5,   2.5,   2.5,  2.5,   2.5, ! ditto
+saturation_rain =       8.0,   8.0,   8.0,  8.0,   8.0, ! stronger rain than this (mm/h) does not make much difference.
+rain_threshold =       0.05,  0.05,  0.05,  0.05,  0.05,! mm/h rain too weak to wet anything.
+fmc_gc_initialization=    2,     2,     2,     2,     3,! 0: from wrfinput, 1:from fuelmc_g, 2: from equilibrium, 3: from fmc_1h,...,fmc_live
+fmc_1h =    0.08, ! as in fuelmc_g, used only if fmc_gc_initialization(1) = 3
+fmc_10h =   0.08, ! as in fuelmc_g, used only if fmc_gc_initialization(2) = 3
+fmc_100h =  0.08, ! as in fuelmc_g, used only if fmc_gc_initialization(3) = 3
+fmc_1000h = 0.08, ! as in fuelmc_g, used only if fmc_gc_initialization(4) = 3
+fmc_live =  0.30, ! Completely cured, used only if fmc_gc_initialization(5) = 3
+/

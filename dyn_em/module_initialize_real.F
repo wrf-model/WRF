@@ -3104,7 +3104,7 @@ integer::oops1,oops2
 
       !  Split NUDAPT  Urban Parameters
 
-      distributed_aerodynamics_if: IF (config_flags%use_distributed_aerodynamics) THEN
+      distributed_aerodynamics_if: IF (config_flags%sf_urban_physics == 1 .AND. config_flags%use_distributed_aerodynamics) THEN
          DO j = jts , MIN(jde-1,jte)
             DO i = its , MIN(ide-1,ite)
               IF (grid%ivgtyp(i, j) == model_config_rec%isurban(grid%id)) THEN

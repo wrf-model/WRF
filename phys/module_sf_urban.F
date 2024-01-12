@@ -1671,13 +1671,8 @@ ENDIF
    PSIX10 = ALOG(10./Z0) - PSIM10
    PSIT10 = ALOG(10./Z0H) - PSIH10
 
-   IF (distributed_aerodynamics_option .and. Z0C > 10.) THEN
-     U10 = 0.
-     V10 = 0.
-   ELSE
    U10 = U1 * (PSIX10/PSIX)       ! u at 10 m [m/s]
    V10 = V1 * (PSIX10/PSIX)       ! v at 10 m [m/s]
-   END IF
 
 !   TH2 = TS + (TA-TS)*(PSIT2/PSIT)   ! potential temp at 2 m [K]
 !  TH2 = TS + (TA-TS)*(PSIT2/PSIT)   ! Fei: this seems to be temp (not potential) at 2 m [K]
@@ -2099,14 +2094,6 @@ ENDIF
    ICATE=0  
 
    distributed_aerodynamics_option = use_distributed_aerodynamics
-   IF (use_distributed_aerodynamics) THEN
-     IF (use_wudapt_lcz == 1) THEN
-       FATAL_ERROR("use_distributed_aerodynamics is not compatible with use_wudapt_lcz")
-     END IF
-     IF (sf_urban_physics /= 1) THEN
-       FATAL_ERROR("use_distributed_aerodynamics is only compatible with sf_urban_physics = 1")
-     END IF
-   END IF
 
    
   if(USE_WUDAPT_LCZ.eq.0)then   !AndreaLCZ

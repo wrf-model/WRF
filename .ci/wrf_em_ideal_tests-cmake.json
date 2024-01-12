@@ -79,7 +79,7 @@
     {
       "arguments" :
       {
-        ".*em_quarter_ss-testcase.*::args_namelist" : 
+        ".*em_quarter_ss.testcase.*::args_namelist" : 
         [ 
           "-n", "namelist.input.02NE,namelist.input.03,namelist.input.03NE"
         ],

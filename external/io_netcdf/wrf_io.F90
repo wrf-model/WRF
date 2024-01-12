@@ -754,7 +754,7 @@ subroutine Transpose(IO,MemoryOrder,di, Field,l1,l2,m1,m2,n1,n2 &
 
   call LowerCase(MemoryOrder,MemOrd)
   select case (MemOrd)
-
+! Cannot use following define due to gfortran cpp traditional mode concatenation limitations
 !#define XDEX(A,B,C) A-A ## 1+1+(A ## 2-A ## 1+1)*((B-B ## 1)+(C-C ## 1)*(B ## 2-B ## 1+1))
 ! define(`XDEX',($1-``$1''1+1+(``$1''2-``$1''1+1)*(($2-``$2''1)+($3-``$3''1)*(``$2''2-``$2''1+1))))
 
@@ -940,7 +940,7 @@ subroutine TransposeToR4(IO,MemoryOrder,di, Field,l1,l2,m1,m2,n1,n2 &
 
   call LowerCase(MemoryOrder,MemOrd)
   select case (MemOrd)
-
+! Cannot use following define due to gfortran cpp traditional mode concatenation limitations
 !#define XDEX(A,B,C) A-A ## 1+1+(A ## 2-A ## 1+1)*((B-B ## 1)+(C-C ## 1)*(B ## 2-B ## 1+1))
 ! define(`XDEX',($1-``$1''1+1+(``$1''2-``$1''1+1)*(($2-``$2''1)+($3-``$3''1)*(``$2''2-``$2''1+1))))
 

@@ -2,6 +2,13 @@
 #include <stdlib.h>
 #include "dprints.h"		/* for dprints */
 #include "gribfuncs.h"		/* prototypes */
+
+#if defined(_WIN32)
+#include <io.h>
+#else
+#include <unistd.h>
+#endif
+
 /*
 *
 ************************************************************************

@@ -32,25 +32,24 @@ For a sample main or calling program see the end of this file.
 */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #ifndef _WIN32
 # include <strings.h>
 #endif
+#include "protos.h"
 
 #define HASHSIZE 1024
 
 /*  commented out 2-29-90
 static char * symtab[HASHSIZE] ;	
 */
-
+/*
 void * malloc() ;
 void * calloc() ;
+*/
 
-char * symget(name,newnode,nodename,nodenext,symtab,flag)
-char *name ;
-char *(*newnode)(), **(*nodename)(), **(*nodenext)() ;
-char *symtab[] ;
-int flag ;		/* 1 is create if not there, 0 return NULL if not there */
+char * symget(char *name,char *(*newnode)(),char **(*nodename)(char *),char **(*nodenext)(char *), char *symtab[], int flag) /* flag = 1 is create if not there, 0 return NULL if not there */
 {
     int index ; 
     int found ;
@@ -94,9 +93,7 @@ int flag ;		/* 1 is create if not there, 0 return NULL if not there */
     return(p) ;
 }
 
-int
-hash(name)
-char * name ;
+int hash(char * name )
 {
     register int result = 0  ;
     register char * p = name ;
@@ -113,9 +110,7 @@ char * name ;
 
 /* added 2-19-90, attaches a new hash table to pointer  */
 
-int
-create_ht( p )
-char *** p ; 
+int create_ht(char *** p )
 {
     *p = (char **) calloc( HASHSIZE , sizeof( char * ) ) ;
     return(0) ;
@@ -130,11 +125,7 @@ function to each entry
 
 */
 
-int
-sym_traverse( ht, nodenext, f )
-char *ht[] ;
-char **(*nodenext)() ;
-void (*f)() ;
+int sym_traverse( char *ht[] , char **(*nodenext)(char *), void (*f)(char *) )
 {
     char * p, **x ;
     int i ;
@@ -173,25 +164,20 @@ struct symnode {
 
 extern struct symnode * symget() ;
 
-struct symnode *
-newnode()
+struct symnode * newnode()
 {
     struct symnode * malloc() ;
     return( malloc( sizeof( struct symnode ) ) ) ;
 }
 
-char **
-nodename(p)
-struct symnode *p ;
+char ** nodename(struct symnode *p)
 {
     char ** x ;
     x = &(p->name) ;
     return( x ) ;
 }
 
-struct symnode **
-nodenext(p)
-struct symnode *p ;
+struct symnode ** nodenext(struct symnode *p)
 {
     struct symnode **x ;
     x = &(p->next) ;

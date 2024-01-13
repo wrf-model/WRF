@@ -1719,7 +1719,7 @@ integer::oops1,oops2
                             its , ite , jts , jte , kts , kte )
 
          ! when specific humidity is available, qv_gc is computed from sh_gc
-         IF (.not. config_flags%use_sh_qv .and. (flag_sh .eq. 1 .or. flag_qv .eq. 1)) THEN
+         IF (config_flags%use_sh_qv .and. (flag_sh .eq. 1 .or. flag_qv .eq. 1)) THEN
          CALL vert_interp ( grid%qv_gc , grid%pd_gc , moist(:,:,:,P_QV) , grid%pb , &
                             grid%hgtmaxw , grid%hgttrop , grid%pmaxw , grid%ptrop , &
                             grid%pmaxwnn , grid%ptropnn , &

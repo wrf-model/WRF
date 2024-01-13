@@ -251,7 +251,8 @@ Namelist variables specifically for the WPS input for real:
  rh2qv_method                        = 1,       ! which method to use to computer mixing ratio from RH:
                                                   default is option 1, the old MM5 method; option 2 uses a WMO 
                                                   recommended method (WMO-No. 49, corrigendum, August 2000) - 
-                                                  there is a difference between the two methods though small
+ use_sh_mr                           = .false., ! whether to use specific humidity or mixing ratio data from input
+                                                  recommended if input data has high vertical resolution
  interp_theta                        = .false.  ! If set to .false., it will vertically interpolate temperature 
                                                   instead of potential temperature, which may reduce bias when 
                                                   compared with input data

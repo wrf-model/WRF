@@ -1719,7 +1719,7 @@ integer::oops1,oops2
                             its , ite , jts , jte , kts , kte )
 
          ! when specific humidity is available, qv_gc is computed from sh_gc
-         IF (.not. config_flags%use_sh_mr .and. (flag_sh .eq. 1 .or. flag_qv .eq. 1)) THEN
+         IF (.not. config_flags%use_sh_qv .and. (flag_sh .eq. 1 .or. flag_qv .eq. 1)) THEN
          CALL vert_interp ( grid%qv_gc , grid%pd_gc , moist(:,:,:,P_QV) , grid%pb , &
                             grid%hgtmaxw , grid%hgttrop , grid%pmaxw , grid%ptrop , &
                             grid%pmaxwnn , grid%ptropnn , &
@@ -1805,8 +1805,8 @@ integer::oops1,oops2
                               its , ite , jts , jte , kts , kte )
          END IF
 
-         ! do not compute qv from RH if flag_sh or flag_qv = 1, or use_sh_mr = F
-         IF      ( flag_sh .ne. 1 .or. flag_qv .ne. 1 .or. .not. config_flags%use_sh_mr ) THEN
+         ! do not compute qv from RH if flag_sh or flag_qv = 1, or use_sh_qv = F
+         IF      ( flag_sh .ne. 1 .or. flag_qv .ne. 1 .or. .not. config_flags%use_sh_qv ) THEN
          IF      ( config_flags%rh2qv_method .eq. 1 ) THEN
             CALL rh_to_mxrat1(grid%u_1, grid%v_1, grid%p , moist(:,:,:,P_QV) ,       &
                               config_flags%rh2qv_wrt_liquid ,                        &
@@ -4072,7 +4072,7 @@ endif
                         ims , ime , jms , jme , kms , kme , &
                         its , ite , jts , jte , kts , kte )
 
-      IF      ( flag_sh .ne. 1 .or. flag_qv .ne. 1 .or. .not. config_flags%use_sh_mr ) THEN
+      IF      ( flag_sh .ne. 1 .or. flag_qv .ne. 1 .or. .not. config_flags%use_sh_qv ) THEN
       IF      ( config_flags%rh2qv_method .eq. 1 ) THEN
          CALL rh_to_mxrat1(grid%u_1, grid%v_1, grid%p_hyd , moist(:,:,:,P_QV) ,       &
                            config_flags%rh2qv_wrt_liquid ,                        &

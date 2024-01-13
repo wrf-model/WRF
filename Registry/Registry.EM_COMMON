@@ -2282,7 +2282,7 @@ rconfig   integer interp_method_type      namelist,domains	1              2     
 rconfig   logical aggregate_lu            namelist,domains	1              .false. irh    "aggregate_lu"   "T/F aggregate the grass, shrubs, trees in LU"
 rconfig   logical rh2qv_wrt_liquid        namelist,domains	1              .true.  irh    "rh2qv_wrt_liquid" "T = rh=>Qv assumes RH wrt liquid water, F = allows ice"
 rconfig   integer rh2qv_method            namelist,domains	1              1       irh    "rh2qv_method" "1=old MM5 method, 2=new WMO method"
-rconfig   logical use_sh_mr               namelist,domains	1              .false. irh    "use_sh_mr" "T/F whether to use SH or mixing ratio in input"
+rconfig   logical use_sh_qv               namelist,domains	1              .false. irh    "use_sh_mr" "T/F whether to use SH or mixing ratio in input"
 rconfig   real    qv_max_p_safe           namelist,domains      1              10000   irh    "qv_max_p_safe" "Threshhold pressure, Qv > flag set to value"      "Pa"
 rconfig   real    qv_max_flag             namelist,domains      1              1.E-5   irh    "qv_max_flag" "Qv flag for max"  "kg kg{-1}"
 rconfig   real    qv_max_value            namelist,domains      1              3.E-6   irh    "qv_max_value" "Qv value for max"  "kg kg{-1}"

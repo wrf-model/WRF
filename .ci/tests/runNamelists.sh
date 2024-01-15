@@ -171,8 +171,12 @@ for namelist in $namelists; do
   echo "Running $parallelExecToUse $binFirst"
   # Go through echo to effectively "split" on spaces
   eval "$parallelExecToUse $binFirst"
-
   result=$?
+  if [ -n "$parallelExecToUse" ]; then
+    # Output the rsl. output
+    cat $coreDir/rsl.out.0000
+  fi
+
   if [ $result -ne 0 ]; then
     currentErrorMsg="[$namelist] $parallelExecToUse $binFirst failed"
     echo "$currentErrorMsg"

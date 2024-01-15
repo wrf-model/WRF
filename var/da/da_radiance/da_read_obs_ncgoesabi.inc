@@ -1805,7 +1805,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
    deallocate(view_att)
 
    if (tot_files_used .lt. 1) then
-      write(unit=message(1),fmt=*) "Either no L1B data found or no matching fgat windows for GOES-",satellite_id," ABI using prefix ",INST_PREFIX, "for this process rank.  This subdomain may have an unacceptable zenith angle or fall entirely outside the GOES viewing extent."
+      write(unit=message(1),fmt=*) "Either no L1B data found or no matching fgat windows for GOES-",satellite_id," ABI using prefix ",INST_PREFIX, " for this process rank.  This subdomain may have an unacceptable zenith angle or fall entirely outside the GOES viewing extent."
 
 !      write(unit=message(1),fmt='(A)') "Either no L1B data found or no matching"
 !      write(unit=message(2),fmt='(A,I2,A)') "fgat windows for GOES-",satellite_id," ABI using"

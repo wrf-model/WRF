@@ -824,6 +824,35 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
       close (unit_in)
    end if ! nobs_tot > 0
 
+   ! [26] lightning obs:
+
+   if (iv%info(lightning)%plocal(iv%time)-iv%info(lightning)%plocal(iv%time-1) > 0) then
+
+       open(unit=unit_in,file=trim(filename)//'.lightning',form='formatted',status='old',iostat=ios)
+       if (ios /= 0) Then
+          call da_error(__FILE__,__LINE__, &
+             (/"Cannot open file"//filename/))
+       end if
+
+       read(unit_in,'(a20,i8)', end = 999, err = 1000) ob_type_string, num_obs
+       if ( trim(adjustl(ob_type_string)) .ne. 'lightning' ) &
+           call da_error(__FILE__,__LINE__, &
+                           (/"Cannot find lightning marker. "/))
+       gn = 0
+       do n = iv%info(lightning)%plocal(iv%time-1) + 1, &
+              iv%info(lightning)%plocal(iv%time)
+          call da_search_obs (ob_type_string, unit_in, num_obs, n, iv, found_flag)
+          if (found_flag .eqv. .false.) &
+              call da_error(__FILE__,__LINE__, &
+                           (/"Cannot find lightning obs. "/))
+          gn = gn + 1
+       end do
+       if (gn /= iv%info(lightning)%plocal(iv%time)-iv%info(lightning)%plocal(iv%time-1)) &
+           call da_error(__FILE__,__LINE__, &
+                        (/"Unequal obs. found "/))
+       close (unit_in)
+   end if
+
 999 continue
    close (unit_in)
    call da_free_unit(unit_in)

@@ -121,6 +121,7 @@ module da_wrfvar_top
    use da_qscat, only : da_oi_stats_qscat
    use da_mtgirs, only : da_oi_stats_mtgirs
    use da_radar, only : da_oi_stats_radar, da_write_oa_radar_ascii
+   use da_lightning, only : da_oi_stats_lightning
    use da_satem, only : da_oi_stats_satem
    use da_ships, only : da_oi_stats_ships
    use da_sound, only : da_oi_stats_sound, da_oi_stats_sonde_sfc

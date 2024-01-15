@@ -2393,7 +2393,8 @@ module_bl_mfshconvpbl.o: \
 
 module_bl_mynn_common.o: \
 	module_gfs_machine.o \
-	../share/module_model_constants.o 
+	../share/module_model_constants.o \
+	ccpp_kind_types.o
 
 
 module_cu_mskf.o: \

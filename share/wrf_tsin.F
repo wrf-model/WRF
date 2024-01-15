@@ -24,12 +24,17 @@ SUBROUTINE wrf_tsin ( grid , ierr )
 
     ierr = 0
 
+    !
+    ! If time series locations have already been computed by calc_ts_locations,
+    ! assume that we have already read the 'tslist' file for this domain and return
+    !
+    IF ( grid%have_calculated_tslocs ) RETURN
+
 #if ((EM_CORE == 1) && (DA_CORE != 1))
     IF ( grid%dfi_opt == DFI_NODFI .OR. (grid%dfi_opt /= DFI_NODFI .AND. grid%dfi_stage == DFI_SETUP) ) THEN
 #endif
     CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags ) 
        grid%ntsloc = 0
-       grid%have_calculated_tslocs = .FALSE.
    
        IF ( grid%max_ts_locs <= 0 ) RETURN
    

@@ -34,9 +34,9 @@ subroutine da_radiance_init(iv,ob)
  integer             :: iunit
  character(len=filename_len)  :: filename
  character(len=20)   :: cdum
-! real                :: error_cld_y, error_cld_x
+ real                :: error_cld_y, error_cld_x ! for ABI
  character(len=12)   :: cdum12
- real                :: error_cld
+ real                :: error_cld ! for AMSR2
 
 ! local variables for tuning error factor
 !----------------------------------------
@@ -196,13 +196,9 @@ subroutine da_radiance_init(iv,ob)
    allocate ( satinfo(n) % iuse (nchanl(n)) )
    allocate ( satinfo(n) % error(nchanl(n)) )
    allocate ( satinfo(n) % error_cld(nchanl(n)) )
-!   allocate ( satinfo(n) % error_cld_y(nchanl(n)) )
-!   allocate ( satinfo(n) % error_cld_x(nchanl(n)) )
    allocate ( satinfo(n) % polar(nchanl(n)) )
 
    satinfo(n) % error_cld(:) = 500.0 !initialize
-!   satinfo(n) % error_cld_y(:) = 500.0 !initialize
-!   satinfo(n) % error_cld_x(:) = 5.0 !initialize
 
    ! Allocate additional fields for AHI
    if ( index(iv%instid(n)%rttovid_string, 'ahi') > 0 ) then
@@ -210,6 +206,14 @@ subroutine da_radiance_init(iv,ob)
       allocate ( satinfo(n) % ca1(nchanl(n)) )
       allocate ( satinfo(n) % ca2(nchanl(n)) )
       allocate ( satinfo(n) % clearSkyBias(nchanl(n)) )
+   endif
+
+   ! Allocate additional fields for ABI
+   if ( index(iv%instid(n)%rttovid_string, 'abi') > 0 ) then
+      allocate ( satinfo(n) % error_cld_y(nchanl(n)) )
+      allocate ( satinfo(n) % error_cld_x(nchanl(n)) )
+      satinfo(n) % error_cld_y(:) = 500.0 !initialize
+      satinfo(n) % error_cld_x(:) = 5.0 !initialize
    endif
 
    read(iunit,*)
@@ -225,7 +229,7 @@ subroutine da_radiance_init(iv,ob)
                cdum
       !in the current radiance info files, the last column
       !can be either sensor_id_string or blank
-      if ( len_trim(cdum) > 0 .and. index(cdum,'-') == 0 ) then
+      if ( len_trim(cdum) > 0 .and. index(cdum,'-') == 0 ) then ! this is for AMSR2
          ! read the line again to get error_cld when it is available
          backspace(iunit)
          read(iunit,'(1x,5i5,2e18.10,f10.5)')  &
@@ -240,13 +244,6 @@ subroutine da_radiance_init(iv,ob)
 	 if ( error_cld > 0.0 ) then
             satinfo(n)%error_cld(j) = error_cld
 	 end if
-!                       error_cld_y, &
-!                       error_cld_x
-!         if ( error_cld_y > 0.0 ) &
-!            satinfo(n)%error_cld_y(j) = error_cld_y
-!         if ( error_cld_x > 0.0 ) &
-!            satinfo(n)%error_cld_x(j) = error_cld_x
-
       end if
 
       ! If AHI, read some extra things
@@ -271,6 +268,30 @@ subroutine da_radiance_init(iv,ob)
             write(*,*)'Channel       BTLim      ca1     ca2     clearSkyBias'
          endif
          write(*,fmt='(i7,6x,4f9.3)') satinfo(n)%ichan(j), satinfo(n)%BTLim(j), satinfo(n)%ca1(j), satinfo(n)%ca2(j), satinfo(n)%clearSkyBias(j)
+      endif
+
+      ! If ABI, read some extra things
+      ! Unfortunately, we need to read everything again...
+      if ( index(iv%instid(n)%rttovid_string, 'abi') > 0 ) then
+         backspace(iunit)
+         read(iunit,'(1x,5i5,2e18.10,2f10.5)') &
+                     wmo_sensor_id, &
+               satinfo(n)%ichan(j), &
+                       sensor_type, &
+               satinfo(n)%iuse(j) , &
+                              idum, &
+               satinfo(n)%error(j), &
+               satinfo(n)%polar(j), &
+               error_cld_y, error_cld_x
+	  if ( error_cld_y > 0.0 ) &
+             satinfo(n)%error_cld_y(j) = error_cld_y
+          if ( error_cld_x > 0.0 ) &
+             satinfo(n)%error_cld_x(j) = error_cld_x
+         if ( j == 1 ) then
+            write(*,*)'Reading extra data for ABI'
+            write(*,*)'Channel       error_cld_y         error_cld_x'
+         endif
+         write(*,fmt='(i7,6x,2f10.5)') satinfo(n)%ichan(j), satinfo(n)%error_cld_y(j), satinfo(n)%error_cld_x(j)
       endif
 
      iv%instid(n)%ichan(j) = satinfo(n)%ichan(j)

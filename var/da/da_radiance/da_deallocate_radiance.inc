@@ -22,8 +22,6 @@
          deallocate (satinfo(i) % iuse)
          deallocate (satinfo(i) % error)
          deallocate (satinfo(i) % error_cld)
-!         deallocate (satinfo(i) % error_cld_y)
-!         deallocate (satinfo(i) % error_cld_x)
          deallocate (satinfo(i) % polar)
 
          deallocate (satinfo(i) % scanbias) 
@@ -39,6 +37,13 @@
 	    deallocate ( satinfo(i) % ca2)
 	    deallocate ( satinfo(i) % clearSkyBias)
          endif
+
+         ! Deallocate extra variables for ABI
+         if ( index(iv%instid(i)%rttovid_string, 'abi') > 0 ) then
+	    deallocate (satinfo(i) % error_cld_y)
+            deallocate (satinfo(i) % error_cld_x)
+         endif
+
 
          if (use_error_factor_rad) then
             deallocate (satinfo(i) % error_factor)

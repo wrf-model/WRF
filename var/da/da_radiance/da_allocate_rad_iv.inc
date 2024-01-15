@@ -116,6 +116,7 @@ subroutine da_allocate_rad_iv (i, nchan, iv)
       allocate (iv%instid(i)%gamma_jacobian(nchan,iv%instid(i)%num_rad))
       allocate (iv%instid(i)%cloud_frac(iv%instid(i)%num_rad))
       if ( use_clddet_zz ) then
+         ! here we assume AHI and ABI (they cover different regions) are not used simultaneously
          if ( index(iv%instid(i)%rttovid_string, 'ahi') > 0 ) &
               iv%instid(i)%superob_width = 2*ahi_superob_halfwidth+1
          if ( index(iv%instid(i)%rttovid_string, 'abi') > 0 ) &

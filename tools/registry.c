@@ -19,7 +19,7 @@
 #include "sym.h"
 
 // Helper macro to actually do return checks
-#define NON_ZERO_RETURN( A ) { int result = A; if ( result != 0 ) { printf( "Error in %s, non-zero return expected", #A ); exit(result); } }
+#define EXIT_ON_NONZERO( A ) { int result = A; if ( result != 0 ) { printf( "Error in %s, zero return expected, received %i\n", #A, result ); exit(result); } }
 
 /* SamT: bug fix: main returns int */
 int
@@ -135,11 +135,11 @@ main( int argc, char *argv[], char *env[] )
     argv++ ;
   }
 
-  NON_ZERO_RETURN( gen_io_boilerplate() );  /* 20091213 jm.  Generate the io_boilerplate_temporary.inc file */
+  EXIT_ON_NONZERO( gen_io_boilerplate() );  /* 20091213 jm.  Generate the io_boilerplate_temporary.inc file */
 
-  NON_ZERO_RETURN( init_parser() );
-  NON_ZERO_RETURN( init_type_table() );
-  NON_ZERO_RETURN( init_dim_table() );
+  EXIT_ON_NONZERO( init_parser() );
+  EXIT_ON_NONZERO( init_type_table() );
+  EXIT_ON_NONZERO( init_dim_table() );
 //
 //  possible IRR diagnostcis?
 //
@@ -233,43 +233,43 @@ main( int argc, char *argv[], char *env[] )
   }
 
 
-  NON_ZERO_RETURN( reg_parse(fp_tmp) );
+  EXIT_ON_NONZERO( reg_parse(fp_tmp) );
 
   fclose(fp_tmp) ;
 
   check_dimspecs();
 
-  NON_ZERO_RETURN( gen_state_struct( "inc" ) );
-  NON_ZERO_RETURN( gen_state_subtypes( "inc" ) );
-  NON_ZERO_RETURN( gen_alloc( "inc" ) );
+  EXIT_ON_NONZERO( gen_state_struct( "inc" ) );
+  EXIT_ON_NONZERO( gen_state_subtypes( "inc" ) );
+  EXIT_ON_NONZERO( gen_alloc( "inc" ) );
   /* gen_alloc_count( "inc" ) ; */
-  NON_ZERO_RETURN( gen_dealloc( "inc" ) ) ;
-  NON_ZERO_RETURN( gen_scalar_indices( "inc" ) ) ;
-  NON_ZERO_RETURN( gen_module_state_description( "frame" ) ) ;
-  NON_ZERO_RETURN( gen_actual_args( "inc" ) ) ;
-  NON_ZERO_RETURN( gen_actual_args_new( "inc" ) ) ;
-  NON_ZERO_RETURN( gen_dummy_args( "inc" ) ) ;
-  NON_ZERO_RETURN( gen_dummy_args_new( "inc" ) ) ;
-  NON_ZERO_RETURN( gen_dummy_decls( "inc" ) ) ;
-  NON_ZERO_RETURN( gen_dummy_decls_new( "inc" ) ) ;
-  NON_ZERO_RETURN( gen_i1_decls( "inc" ) ) ;
-  NON_ZERO_RETURN( gen_namelist_statements("inc") ; )
-  NON_ZERO_RETURN( gen_namelist_defines ( "inc", 0 ) ) ;  /* without dimension statements  */
-  NON_ZERO_RETURN( gen_namelist_defines ( "inc", 1 ) ) ;  /* with dimension statements     */
-  NON_ZERO_RETURN( gen_namelist_defaults ( "inc" ) ) ;
-  NON_ZERO_RETURN( gen_namelist_script ( "inc" ) ) ;
-  NON_ZERO_RETURN( gen_get_nl_config( "inc" ) ) ;
-  NON_ZERO_RETURN( gen_config_assigns( "inc" ) ) ;
-  NON_ZERO_RETURN( gen_config_reads( "inc" ) ) ;
-  NON_ZERO_RETURN( gen_wrf_io( "inc" ) ) ;
-  NON_ZERO_RETURN( gen_model_data_ord( "inc" ) ) ;
-  NON_ZERO_RETURN( gen_nest_interp( "inc" ) ) ;
-  NON_ZERO_RETURN( gen_nest_v_interp( "inc") ; ) /*KAL added this for vertical interpolation*/
-  NON_ZERO_RETURN( gen_scalar_derefs( "inc" ) ) ;
-  NON_ZERO_RETURN( gen_streams("inc") ; )
+  EXIT_ON_NONZERO( gen_dealloc( "inc" ) ) ;
+  EXIT_ON_NONZERO( gen_scalar_indices( "inc" ) ) ;
+  EXIT_ON_NONZERO( gen_module_state_description( "frame" ) ) ;
+  EXIT_ON_NONZERO( gen_actual_args( "inc" ) ) ;
+  EXIT_ON_NONZERO( gen_actual_args_new( "inc" ) ) ;
+  EXIT_ON_NONZERO( gen_dummy_args( "inc" ) ) ;
+  EXIT_ON_NONZERO( gen_dummy_args_new( "inc" ) ) ;
+  EXIT_ON_NONZERO( gen_dummy_decls( "inc" ) ) ;
+  EXIT_ON_NONZERO( gen_dummy_decls_new( "inc" ) ) ;
+  EXIT_ON_NONZERO( gen_i1_decls( "inc" ) ) ;
+  EXIT_ON_NONZERO( gen_namelist_statements("inc") ; )
+  EXIT_ON_NONZERO( gen_namelist_defines ( "inc", 0 ) ) ;  /* without dimension statements  */
+  EXIT_ON_NONZERO( gen_namelist_defines ( "inc", 1 ) ) ;  /* with dimension statements     */
+  EXIT_ON_NONZERO( gen_namelist_defaults ( "inc" ) ) ;
+  EXIT_ON_NONZERO( gen_namelist_script ( "inc" ) ) ;
+  EXIT_ON_NONZERO( gen_get_nl_config( "inc" ) ) ;
+  EXIT_ON_NONZERO( gen_config_assigns( "inc" ) ) ;
+  EXIT_ON_NONZERO( gen_config_reads( "inc" ) ) ;
+  EXIT_ON_NONZERO( gen_wrf_io( "inc" ) ) ;
+  EXIT_ON_NONZERO( gen_model_data_ord( "inc" ) ) ;
+  EXIT_ON_NONZERO( gen_nest_interp( "inc" ) ) ;
+  EXIT_ON_NONZERO( gen_nest_v_interp( "inc") ; ) /*KAL added this for vertical interpolation*/
+  EXIT_ON_NONZERO( gen_scalar_derefs( "inc" ) ) ;
+  EXIT_ON_NONZERO( gen_streams("inc") ; )
 
 /* this has to happen after gen_nest_interp, which adds halos to the AST */
-  NON_ZERO_RETURN( gen_comms( "inc" ) );    /* this is either package supplied (by copying a */
+  EXIT_ON_NONZERO( gen_comms( "inc" ) );    /* this is either package supplied (by copying a */
                                             /* gen_comms.c file into this directory) or a    */
                                             /* stubs routine.                                */
 

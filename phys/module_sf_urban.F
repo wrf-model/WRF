@@ -1279,7 +1279,7 @@ ENDIF
        ES=6.11*EXP( (2.5*10.**6./461.51)*(TGP-273.15)/(273.15*TGP) ) 
        DESDT=(2.5*10.**6./461.51)*ES/(TGP**2.)
        QS0G=0.622*ES/(PS-0.378*ES)        
-       DQS0GDTG=DESDT*0.22*PS/((PS-0.378*ES)**2.) 
+       DQS0GDTG=DESDT*0.622*PS/((PS-0.378*ES)**2.) 
 
        RG1=EPSG*( RX*VFGS          &
        +EPSB*VFGW*SIG*TBP**4./60.  &
@@ -2161,9 +2161,9 @@ ENDIF
             ALLOCATE( HSESF_TBL(ICATE), stat=allocate_status )
             if(allocate_status /= 0) FATAL_ERROR('Error allocating HSESF_TBL in urban_param_init')
             ALLOCATE( PV_FRAC_ROOF_TBL(ICATE), stat=allocate_status )
-            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating PV_FRAC_ROOF_TBL in urban_param_init')
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating PV_FRAC_ROOF_TBL in urban_param_init')
             ALLOCATE( GR_FRAC_ROOF_TBL(ICATE), stat=allocate_status )
-            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating GR_FRAC_ROOF_TBL in urban_param_init')
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating GR_FRAC_ROOF_TBL in urban_param_init')
 
          endif
          numdir_tbl = 0
@@ -2889,7 +2889,7 @@ ENDIF
       IF (CHECK.EQ.0)THEN
       IF(IVGTYP(I,J).EQ.1)THEN
         write(mesg,*) 'Sample of Urban settings'
-        call wrf_message(mesg)
+        WRITE_MESSAGE(mesg)
         write(mesg,*) 'TSURFACE0_URB',TSURFACE0_URB(I,J)
         WRITE_MESSAGE(mesg)
         write(mesg,*) 'TDEEP0_URB', TDEEP0_URB(I,J)

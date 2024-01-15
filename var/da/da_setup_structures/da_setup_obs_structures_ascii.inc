@@ -81,7 +81,7 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
       endif
 
       do i=1,num_ob_indexes
-         if (i == radar) cycle
+         if (i == radar .or. i == lightning) cycle
          iv%info(i)%plocal(iv%time) = iv%info(i)%nlocal
          iv%info(i)%ptotal(iv%time) = iv%info(i)%ntotal
       end do
@@ -114,7 +114,7 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
          end if
 
          do i=1,num_ob_indexes
-            if (i == radar) cycle
+            if (i == radar .or. i==lightning) cycle
             iv%info(i)%thin_ptotal(n) = iv%info(i)%thin_ntotal
             iv%info(i)%thin_plocal(n) = iv%info(i)%thin_nlocal
          end do
@@ -134,7 +134,7 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
       end if
 
       do i=1,num_ob_indexes
-         if (i == radar) cycle
+         if (i == radar .or. i == lightning) cycle
          iv%info(i)%thin_ptotal(iv%time) = iv%info(i)%thin_ntotal
          iv%info(i)%thin_plocal(iv%time) = iv%info(i)%thin_nlocal
       end do
@@ -154,7 +154,7 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
     if ( thin_conv_ascii ) then
        do i = 1, num_ob_indexes
           if ( thin_conv_opt(i) <= no_thin ) cycle
-          if (i == radar) cycle
+          if (i == radar .or. i == lightning) cycle
           if ( iv%info(i)%ntotal > 0 ) then
              if ( iv%info(i)%nlocal > 0 ) then
                 if ( ANY(iv%info(i)%thinned(:,:)) ) then

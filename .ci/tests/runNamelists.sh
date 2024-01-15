@@ -91,6 +91,28 @@ eval "identicalFolder=\"$identicalFolder\""
 wrf=$( realpath $coreDir/wrf* | head -n 1 )
 rd_12_norm=$( realpath .ci/tests/SCRIPTS/rd_l2_norm.py )
 
+# Check our paths
+if [ ! -x "${wrf}" ]; then
+  echo "No wrf executable found"
+  exit 1
+fi
+
+if [ ! -x "${binFirst}" ]; then
+  echo "No domain preparation executable found"
+  exit 1
+fi
+
+if [ ! -d "${data}" ]; then
+  echo "No valid data path provided"
+  exit 1
+fi
+
+if [ ! -d "${namelistFolder}" ]; then
+  echo "No valid namelist folder provided"
+  exit 1
+fi
+
+
 ################################################################################
 #
 # Things done only once

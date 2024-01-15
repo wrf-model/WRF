@@ -88,7 +88,7 @@ eval "parallelExec=\"$parallelExec\""
 eval "moveFolder=\"$moveFolder\""
 eval "identicalFolder=\"$identicalFolder\""
 
-wrf=$( realpath $coreDir/wrf.exe )
+wrf=$( realpath $coreDir/wrf* | head -n 1 )
 rd_12_norm=$( realpath .ci/tests/SCRIPTS/rd_l2_norm.py )
 
 ################################################################################

@@ -126,8 +126,8 @@ subroutine da_initialize_rad_iv (i, n, iv, p)
             iv%instid(i)%superob(ix,iy)%cld_qc(n)%tb_stddev_10 = p % superob(ix,iy) % cld_qc(1) % tb_stddev_10
             iv%instid(i)%superob(ix,iy)%cld_qc(n)%tb_stddev_13 = p % superob(ix,iy) % cld_qc(1) % tb_stddev_13
             iv%instid(i)%superob(ix,iy)%cld_qc(n)%tb_stddev_14 = p % superob(ix,iy) % cld_qc(1) % tb_stddev_14
-            iv%instid(i)%superob(ix,iy)%cld_qc(n)%CIRH2O = p % superob(ix,iy) % cld_qc(1) % CIRH2O
            end if
+	    iv%instid(i)%superob(ix,iy)%cld_qc(n)%CIRH2O = p % superob(ix,iy) % cld_qc(1) % CIRH2O
             iv%instid(i)%superob(ix,iy)%cld_qc(n)%RTCT = p % superob(ix,iy) % cld_qc(1) % RTCT
             iv%instid(i)%superob(ix,iy)%cld_qc(n)%RFMFT = p % superob(ix,iy) % cld_qc(1) % RFMFT
             iv%instid(i)%superob(ix,iy)%cld_qc(n)%TEMPIR = p % superob(ix,iy) % cld_qc(1) % TEMPIR

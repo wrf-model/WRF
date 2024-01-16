@@ -476,14 +476,14 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
                cycle pixel_loop
             end if
          end do
-         if ( all(ob%instid(inst)%tb(1:nchanl,n) < 0.) ) then
-            write(message(1),'(a,2i5.0,a)') ' Skipping the pixel at loc ', i, j,  &
-               ' where all observed BTs are < 0'
-            call da_warning(__FILE__,__LINE__,message(1:1))
-            iv%instid(inst)%tb_inv(:,n) = missing_r
-            iv%instid(inst)%info%proc_domain(:,n) = .false.
-            cycle pixel_loop
-         end if
+         !if ( all(ob%instid(inst)%tb(1:nchanl,n) < 0.) ) then
+         !   write(message(1),'(a,2i5.0,a)') ' Skipping the pixel at loc ', i, j,  &
+         !      ' where all observed BTs are < 0'
+         !   call da_warning(__FILE__,__LINE__,message(1:1))
+         !   iv%instid(inst)%tb_inv(:,n) = missing_r
+         !   iv%instid(inst)%info%proc_domain(:,n) = .false.
+         !   cycle pixel_loop
+         !end if
 
          ! convert cloud content unit from kg/kg to kg/m^2        
          if (crtm_cloud) then

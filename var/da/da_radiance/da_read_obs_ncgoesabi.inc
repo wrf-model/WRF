@@ -1701,9 +1701,9 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
 
                               deallocate( tb_temp )
                               deallocate( p % superob(isup,jsup) % cld_qc(1) % CIRH2O_abi )
-                              allocate( p % superob(isup,jsup) % cld_qc(1) % CIRH2O_abi (1,1,1) )
+                              !allocate( p % superob(isup,jsup) % cld_qc(1) % CIRH2O_abi (1,1,1) )
 
-                              p % superob(isup,jsup) % cld_qc(1) % CIRH2O_abi (1,1,1) = pearson
+                              p % superob(isup,jsup) % cld_qc(1) % CIRH2O = pearson
 
                            end if
                         else
@@ -1712,9 +1712,9 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
                               if ( allocated( p % superob(isup,jsup) % cld_qc(1) % CIRH2O_abi ) ) &
                                  deallocate( p % superob(isup,jsup) % cld_qc(1) % CIRH2O_abi)
 
-                              allocate( p % superob(isup,jsup) % cld_qc(1) % CIRH2O_abi (1,1,1))
+                              !allocate( p % superob(isup,jsup) % cld_qc(1) % CIRH2O_abi (1,1,1))
 
-                              p % superob(isup,jsup) % cld_qc(1) % CIRH2O_abi = missing_r
+                              p % superob(isup,jsup) % cld_qc(1) % CIRH2O = missing_r
 
                            end if
                         end if

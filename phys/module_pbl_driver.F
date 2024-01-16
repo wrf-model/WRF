@@ -103,6 +103,9 @@ CONTAINS
                ,tke_adv,diss_adv,tpe_adv                   &
                ,pr_pbl,el_pbl                              &
                ,wu_tur,wv_tur,wt_tur,wq_tur                &
+! variables added for AHE
+               , gmt, xtime, julday, julyr, ahe &
+               , distributed_ahe_opt &
 ! variables  for GBM PBL
                ,exch_tke, rthraten                         &
                ,a_e_bep,b_e_bep,dlg_bep,dl_u_bep           &
@@ -199,6 +202,7 @@ CONTAINS
    USE module_bl_fogdes
    USE module_wind_fitch
 #endif
+   use module_ra_gfdleta, only: cal_mon_day
 
    !  This driver calls subroutines for the PBL parameterizations.
    !
@@ -610,6 +614,11 @@ CONTAINS
    REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ),            &
                INTENT(OUT)    ::                          EL_PBL
 
+   REAL, INTENT(IN) :: gmt, xtime
+   INTEGER,  INTENT(IN) :: julday, julyr
+   REAL, OPTIONAL, DIMENSION( ims:ime, 0:287, jms:jme ), INTENT(IN)  :: ahe
+   INTEGER, INTENT(IN) :: distributed_ahe_opt
+
    REAL ,                             INTENT(IN   )  ::  u_frame, &
                                                          v_frame
 !
@@ -820,6 +829,7 @@ CONTAINS
    integer iu_bep,iurb,idiff
    real seamask,thsk,zzz,unew,vnew,tnew,qnew,umom,vmom
    REAL :: z0,z1,z2,w1,w2
+   INTEGER :: ihour, jmonth, jday
 !
 ! FASDAS
 !
@@ -2203,6 +2213,25 @@ CONTAINS
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme        &
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte)
           ENDIF
+
+     IF (PRESENT(ahe)) THEN
+       call cal_mon_day(julday, julyr, jmonth, jday)
+       ihour = (jmonth - 1) * 24 + MOD(INT(gmt + xtime / 60.0), 24)
+       IF (distributed_ahe_opt == 1) THEN
+         DO j = jts, jte
+         DO i = its, ite
+           ! Volumetric heat capacity of air = 1200 J/(K m3)
+           RTHBLTEN(i, 1, j) = RTHBLTEN(i, 1, j) + ahe(i, ihour, j) / 1200 / DZ8W(i, 1, j)
+         END DO
+         END DO
+       ELSE IF (distributed_ahe_opt == 2) THEN
+         DO j = jts, jte
+         DO i = its, ite
+           HFX(i, j) = HFX(i, j) + ahe(i, ihour, j)
+         END DO
+         END DO
+       END IF
+     END IF
 
    ENDDO
    !$OMP END PARALLEL DO

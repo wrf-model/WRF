@@ -58,7 +58,7 @@ end type fire_params
 !  4. add default 
 
 !*** dimensions
-  INTEGER, PARAMETER :: mfuelcats = 30     ! allowable number of fuel categories 
+  INTEGER, PARAMETER :: mfuelcats = 60     ! allowable number of fuel categories 
   INTEGER, PARAMETER ::max_moisture_classes=5
 !***
 
@@ -148,7 +148,7 @@ end type fire_params
 !  FUEL MODEL 14: no fuel
 
 ! scalar fuel coefficients
-   REAL, SAVE:: cmbcnst,hfgl,fuelmc_g,fuelmc_c
+   REAL, SAVE:: cmbcnst,hfgl,fuelmc_g,fuelmc_g_lh,fuelmc_c
 ! computed values
    REAL, SAVE:: fuelheat
 
@@ -156,6 +156,7 @@ end type fire_params
    DATA cmbcnst  / 17.433e+06/             ! J/kg dry fuel
    DATA hfgl     / 17.e4 /                ! W/m^2
    DATA fuelmc_g / 0.08  /                ! set = 0 for dry surface fuel
+   DATA fuelmc_g_lh / 1.20 /              ! set >= 1.20 for uncured live herb fuels; <=0.30 for fully cured live herb fuels
    DATA fuelmc_c / 1.00  /                ! set = 0 for dry canopy
 !  REAL, PARAMETER :: bmst     = fuelmc_g/(1+fuelmc_g)
 !  REAL, PARAMETER :: fuelheat = cmbcnst * 4.30e-04     ! convert J/kg to BTU/lb
@@ -164,9 +165,11 @@ end type fire_params
 
 
 ! fuel categorytables
-   INTEGER, PARAMETER :: nf=14              ! number of fuel categories in data stmts
-   INTEGER, SAVE      :: nfuelcats = 13     ! number of fuel categories that are specified
-   INTEGER, PARAMETER :: zf = mfuelcats-nf  ! number of zero fillers in data stmt 
+   INTEGER, PARAMETER :: nf0=14             ! number of fuel categories in old Anderson fuel model
+   INTEGER, PARAMETER :: nf=54              ! number of fuel categories in data stmts
+   INTEGER, SAVE      :: nfuelcats = 53     ! number of fuel categories that are specified
+   INTEGER, PARAMETER :: zf = mfuelcats-nf  ! number of zero fillers in data stmt
+   INTEGER, PARAMETER :: zf0 = mfuelcats-nf0  ! number of zero fillers in old parameters originally defined for Anderson fuel model 
    INTEGER, SAVE      :: no_fuel_cat = 14   ! special category outside of 1:nfuelcats
    CHARACTER (len=80), DIMENSION(mfuelcats ), save :: fuel_name
    INTEGER, DIMENSION( mfuelcats ), save :: ichap
@@ -174,7 +177,8 @@ end type fire_params
                                             fueldepthm,fueldens,fuelmce,   &
                                             savr,st,se, &
                                             fgi_1h,fgi_10h,fgi_100h,fgi_1000h,fgi_live, &
-                                            fgi_t,fmc_gwt
+                                            fgi_t,fmc_gwt, &
+                                            fgi_lh
    REAL,   DIMENSION(mfuelcats,max_moisture_classes), save :: fgi_c, fmc_gw ! fuel moisture class weights
    DATA fuel_name /'1: Short grass (1 ft)', &
      '2: Timber (grass and understory)', &
@@ -189,42 +193,158 @@ end type fire_params
      '11: Light logging slash', &
      '12: Medium logging slash', &
      '13: Heavy logging slash', &
-     '14: no fuel', zf* ' '/
+     '14: no fuel', &
+     '15: Short, Sparse Dry Climate Grass (Dynamic) [GR1 (101)]', &
+     '16: Low Load, Dry Climate Grass (Dynamic) GR2 (102)', &
+     '17: Low Load, Very Coarse, Humid Climate Grass (Dynamic) [GR3 (103)]', &
+     '18: Moderate Load, Dry Climate Grass (Dynamic) [GR4 (104)]', &
+     '19: Low Load, Humid Climate Grass (Dynamic) [GR5 (105)]', &
+     '20: Moderate Load, Humid Climate Grass (Dynamic) [GR6 (106)]', &
+     '21: High Load, Dry Climate Grass (Dynamic) [GR7 (107)]', &
+     '22: High Load, Very Coarse, Humid Climate Grass (Dynamic) [GR8 (108)]', &
+     '23: Very High Load, Humid Climate Grass (Dynamic) [GR9 (109)]', &
+     '24: Low Load, Dry Climate Grass-Shrub (Dynamic) [GS1 (121)]', &
+     '25: Moderate Load, Dry Climate Grass-Shrub (Dynamic) [GS2 (122)]', &
+     '26: Moderate Load, Humid Climate Grass-Shrub (Dynamic) [GS3 (123)]', &
+     '27: High Load, Humid Climate Grass-Shrub (Dynamic) [GS4 (124)]', &
+     '28: Low Load Dry Climate Shrub (Dynamic) [SH1 (141)]', &
+     '29: Moderate Load Dry Climate Shrub [SH2 (142)]', &
+     '30: Moderate Load, Humid Climate Shrub [SH3 (143)]', &
+     '31: Low Load, Humid Climate Timber-Shrub [SH4 (144)]', &
+     '32: High Load, Dry Climate Shrub [SH5 (145)]', &
+     '33: Low Load, Humid Climate Shrub [SH6 (146)]', &
+     '34: Very High Load, Dry Climate Shrub [SH7 (147)]', &
+     '35: High Load, Humid Climate Shrub [SH8 (148)]', &
+     '36: Very High Load, Humid Climate Shrub (Dynamic) [SH9 (149)]', &
+     '37: Low Load Dry Climate Timber-Grass-Shrub (Dynamic) [TU1 (161)]', &
+     '38: Moderate Load, Humid Climate Timber-Shrub [TU2 (162)]', &
+     '39: Moderate Load, Humid Climate Timber-Grass-Shrub (Dynamic) [TU3 (163)]', &
+     '40: Dwarf Conifer With Understory [TU4 (164)]', &
+     '41: Very High Load, Dry Climate Timber-Shrub [TU5 (165)]', &
+     '42: Low Load Compact Conifer Litter [TL1 (181)]', &
+     '43: Low Load Broadleaf Litter [TL2 (182)]', &
+     '44: Moderate Load Conifer Litter [TL3 (183)]', &
+     '45: Small downed logs [TL4 (184)]', &
+     '46: High Load Conifer Litter [TL5 (185)]', &
+     '47: Moderate Load Broadleaf Litter [TL6 (186)]', &
+     '48: Large Downed Logs [TL7 (187)]', &
+     '49: Long-Needle Litter [TL8 (188)]', &
+     '50: Very High Load Broadleaf Litter [TL9 (189)]', &
+     '51: Low Load Activity Fuel [SB1 (201)]', &
+     '52: Moderate Load Activity Fuel or Low Load Blowdown [SB2 (202)]', &
+     '53: High Load Activity Fuel or Moderate Load Blowdown [SB3 (203)]', &
+     '54: High Load Blowdown [SB4 (204)]', zf* ' '/
 
    DATA windrf /0.36, 0.36, 0.44,  0.55,  0.42,  0.44,  0.44, &     
-                0.36, 0.36, 0.36,  0.36,  0.43,  0.46,  1e-7, zf*0 /
-   DATA fueldepthm /0.305,  0.305,  0.762, 1.829, 0.61,  0.762,0.762, &
-                    0.0610, 0.0610, 0.305, 0.305, 0.701, 0.914, 0.305,zf*0. /
-   DATA savr / 3500., 2784., 1500., 1739., 1683., 1564., 1562.,  &
-               1889., 2484., 1764., 1182., 1145., 1159., 3500., zf*0. /
-   DATA fuelmce / 0.12, 0.15, 0.25, 0.20, 0.20, 0.25, 0.40,  &
-                  0.30, 0.25, 0.25, 0.15, 0.20, 0.25, 0.12 , zf*0. / 
+                0.36, 0.36, 0.36,  0.36,  0.43,  0.46,  1e-7, zf0*0 /
+   DATA fueldepthm /0.305,  0.305,  0.762, 1.829, 0.61,  0.762,0.762, 0.0610, 0.0610, 0.305, 0.305, 0.701, 0.914, 0.305, & ! Anderson 13 + no fuel
+                    0.1219, 0.3048, 0.6096, 0.6096, 0.4572, 0.4572, 0.9144, 1.2192, 1.5240, & ! Scott & Burgan: GR fuels (1-9)
+                    0.2743, 0.4572, 0.5486, 0.6401, & ! Scott & Burgan: GS fuels (1-4)
+                    0.3048, 0.3048, 0.7315, 0.9144, 1.8288, 0.6096, 1.8288, 0.9144, 1.3411, & ! Scott & Burgan: SH fuels (1-9)
+                    0.1829, 0.3048, 0.3962, 0.1524, 0.3048, & ! Scott & Burgan: TU fuels (1-5)
+                    0.0610, 0.0610, 0.0914, 0.1219, 0.1829, 0.0914, 0.1219, 0.0914, 0.1829, & ! Scott & Burgan: TL fuels (1-9)
+                    0.3048, 0.3048, 0.3658, 0.8230, & ! Scott & Burgan: SB fuels (1-4)
+                    zf*0. /
+   DATA savr / 3500., 2784., 1500., 1739., 1683., 1564., 1562., 1889., 2484., 1764., 1182., 1145., 1159., 3500., & ! Anderson 13 + no fuel
+               2200., 2000., 1500., 2000., 1800., 2200., 2000., 1500., 1800., & ! Scott & Burgan: GR fuels (1-9)
+               2000., 2000., 1800., 1800., & ! Scott & Burgan: GS fuels (1-4)
+               2000., 2000., 1600., 2000., 750., 750., 750., 750., 750., & ! Scott & Burgan: SH fuels (1-9)
+               2000., 2000., 1800., 2300., 1500., & ! Scott & Burgan: TU fuels (1-5)
+               2000., 2000., 2000., 2000., 2000., 2000., 2000., 1800., 1800., & ! Scott & Burgan: TL fuels (1-9)
+               2000., 2000., 2000., 2000., & ! Scott & Burgan: SB fuels (1-4)
+               zf*0. /
+   DATA fuelmce / 0.12, 0.15, 0.25, 0.20, 0.20, 0.25, 0.40, 0.30, 0.25, 0.25, 0.15, 0.20, 0.25, 0.12, & ! Anderson 13 + no fuel
+                  0.15, 0.15, 0.30, 0.15, 0.40, 0.40, 0.15, 0.30, 0.40, & ! Scott & Burgan: GR fuels (1-9)
+                  0.15, 0.15, 0.40, 0.40, & ! Scott & Burgan: GS fuels (1-4)
+                  0.15, 0.15, 0.40, 0.30, 0.15, 0.30, 0.15, 0.40, 0.40, & ! Scott & Burgan: SH fuels (1-9)
+                  0.20, 0.30, 0.30, 0.12, 0.25, & ! Scott & Burgan: TU fuels (1-5)
+                  0.30, 0.25, 0.20, 0.25, 0.25, 0.25, 0.25, 0.35, 0.35, & ! Scott & Burgan: TL fuels (1-9)
+                  0.25, 0.25, 0.25, 0.25, & ! Scott & Burgan: SB fuels (1-4)
+                  zf*0. / 
    DATA fueldens / nf * 32., zf*0. /   ! 32 if solid, 19 if rotten.
    DATA st / nf* 0.0555 , zf*0./
    DATA se / nf* 0.010 , zf*0./
 ! ----- Notes on weight: (4) - best fit of data from D. Latham (pers. comm.);
 !              (5)-(7) could be 60-120; (8)-(10) could be 300-1600;
 !              (11)-(13) could be 300-1600
-   DATA weight / 7.,  7.,  7., 180., 100., 100., 100.,  &
-              900., 900., 900., 900., 900., 900., 7. , zf*0./ 
+   DATA weight / 7.,  7.,  7., 180., 100., 100., 100., 900., 900., 900., 900., 900., 900., 7., & ! Anderson 13 + no fuel
+                 7., 7., 7., 7., 7., 7., 7., 7., 7., & ! Scott & Burgan: GR fuels (1-9)
+                 7., 7., 7., 7., & ! Scott & Burgan: GS fuels (1-4)
+                 100., 100., 100., 100., 180., 100., 180., 100., 100., & ! Scott & Burgan: SH fuels (1-9)
+                 900., 900., 900., 900., 900., & ! Scott & Burgan: TU fuels (1-5)
+                 900., 900., 900., 900., 900., 900., 900., 900., 900., & ! Scott & Burgan: TL fuels (1-9)
+                 900., 900., 900., 900., & ! Scott & Burgan: SB fuels (1-4)
+                 zf*0./ 
 ! ----- 1.12083 is 5 tons/acre.  5-50 tons/acre orig., 100-300 after blowdown
    DATA fci_d / 0., 0., 0., 1.123, 0., 0., 0.,  &
-            1.121, 1.121, 1.121, 1.121, 1.121, 1.121, 0., zf*0./
+            1.121, 1.121, 1.121, 1.121, 1.121, 1.121, 0., zf0*0./
    DATA fct / 60., 60., 60., 60., 60., 60., 60.,  &
-            60., 120., 180., 180., 180., 180. , 60. , zf*0.   /
-   DATA ichap / 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 , zf*0/
+            60., 120., 180., 180., 180., 180. , 60. , zf0*0.   /
+   DATA ichap / 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 , zf0*0/
 !  DATA fmc_gw05 / 0.000, 0.023, 0.000, 0.230, 0.092, 0.000, 0.017, 0.000, 0.000, 0.092, 0.000, 0.000, 0.000, zf*0/
 
 ! fuel loading 1-h, 10-h, 100-h, 1000-h, live following Albini 1976 as reprinted in Anderson 1982 Table 1 (for proportions only)
 !                     1      2      3      4      5      6      7      8      9     10     11     12     13     14
-  DATA fgi_1h    / 0.74,   2.00,  3.01,  5.01,  1.00,  1.50,  1.13,  1.50,  2.92,  3.01,  1.50,  4.01,  7.01,   0.0,   zf*0./
-  DATA fgi_10h   / 0.00,   1.00,  0.00,  4.01,  0.50,  2.50,  1.87,  1.00,  0.41,  2.00,  4.51, 14.03, 23.04,   0.0,   zf*0./
-  DATA fgi_100h  / 0.00,   0.50,  0.00,  2.00,  0.00,  2.00,  1.50,  2.50,  0.15,  5.01,  5.51, 16.53, 28.05,   0.0,   zf*0./
-  DATA fgi_1000h / 0.0,    0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,    0.0,   zf*0./
-  DATA fgi_live  / 0.00,   0.50,  0.000, 5.01,  2.00,  0.00,  0.37,  0.00,  0.00,  2.00,  0.00,  2.3,   0.00,   0.0,   zf*0./
+  DATA fgi_1h    / 0.74,   2.00,  3.01,  5.01,  1.00,  1.50,  1.13,  1.50,  2.92,  3.01,  1.50,  4.01,  7.01,   0.0, & ! Anderson 13 + no fuel
+                   0.10,   0.10,  0.10,  0.25,  0.40,  0.10,  1.00,  0.50,  1.00, & ! Scott & Burgan: GR fuels (1-9)
+                   0.20,   0.50,  0.30,  1.90, & ! Scott & Burgan: GS fuels (1-4)
+                   0.25,   1.35,  0.45,  0.85,  3.60,  2.90,  3.50,  2.05,  4.50, & ! Scott & Burgan: SH fuels (1-9)
+                   0.20,   0.95,  1.10,  4.50,  4.00, & ! Scott & Burgan: TU fuels (1-5)
+                   1.00,   1.40,  0.50,  0.50,  1.15,  2.40,  0.30,  5.80,  6.65, & ! Scott & Burgan: TL fuels (1-9)
+                   1.50,   4.50,  5.50,  5.25, & ! Scott & Burgan: SB fuels (1-4)
+                   zf*0.  /
+  DATA fgi_10h   / 0.00,   1.00,  0.00,  4.01,  0.50,  2.50,  1.87,  1.00,  0.41,  2.00,  4.51, 14.03, 23.04,   0.0, & ! Anderson 13 + no fuel
+                   0.00,   0.00,  0.40,  0.00,  0.00,  0.00,  0.00,  1.00,  1.00, & ! Scott & Burgan: GR fuels (1-9)
+                   0.00,   0.50,  0.25,  0.30, & ! Scott & Burgan: GS fuels (1-4)
+                   0.25,   2.40,  3.00,  1.15,  2.10,  1.45,  5.30,  3.40,  2.45, & ! Scott & Burgan: SH fuels (1-9)
+                   0.90,   1.80,  0.15,  0.00,  4.00, & ! Scott & Burgan: TU fuels (1-5)
+                   2.20,   2.30,  2.20,  1.50,  2.50,  1.20,  1.40,  1.40,  3.30, & ! Scott & Burgan: TL fuels (1-9)
+                   3.00,   4.25,  2.75,  3.50, & ! Scott & Burgan: SB fuels (1-4)
+                   zf*0./
+  DATA fgi_100h  / 0.00,   0.50,  0.00,  2.00,  0.00,  2.00,  1.50,  2.50,  0.15,  5.01,  5.51, 16.53, 28.05,   0.0, & ! Anderson 13 + no fuel
+                   0.00,   0.00,  0.00,  0.00,  0.00,  0.00,  0.00,  0.00,  0.00, & ! Scott & Burgan: GR fuels (1-9)
+                   0.00,   0.00,  0.00,  0.10, & ! Scott & Burgan: GS fuels (1-4)
+                   0.00,   0.75,  0.00,  0.20,  0.00,  0.00,  2.20,  0.85,  0.00, & ! Scott & Burgan: SH fuels (1-9)
+                   1.50,   1.25,  0.25,  0.00,  3.00, & ! Scott & Burgan: TU fuels (1-5)
+                   3.60,   2.20,  2.80,  4.20,  4.40,  1.20,  8.10,  1.10,  4.15, & ! Scott & Burgan: TL fuels (1-9)
+                   11.00,  4.00,  3.00,  5.25, & ! Scott & Burgan: SB fuels (1-4)
+                   zf*0./
+  DATA fgi_1000h / 0.0,    0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,    0.0, & ! Anderson 13 + no fuel
+                   0.00,   0.00,  0.00,  0.00,  0.00,  0.00,  0.00,  0.00,  0.00, & ! Scott & Burgan: GR fuels (1-9)
+                   0.00,   0.00,  0.00,  0.00, & ! Scott & Burgan: GS fuels (1-4)
+                   0.00,   0.00,  0.00,  0.00,  0.00,  0.00,  0.00,  0.00,  0.00, & ! Scott & Burgan: SH fuels (1-9)
+                   0.00,   0.00,  0.00,  0.00,  0.00, & ! Scott & Burgan: TU fuels (1-5)
+                   0.00,   0.00,  0.00,  0.00,  0.00,  0.00,  0.00,  0.00,  0.00, & ! Scott & Burgan: TL fuels (1-9)
+                   0.00,   0.00,  0.00,  0.00, & ! Scott & Burgan: SB fuels (1-4)
+                   zf*0./
+  DATA fgi_live  / 0.00,   0.50,  0.00,  5.01,  2.00,  0.00,  0.37,  0.00,  0.00,  2.00,  0.0,   0.0,   0.0,    0.0, & ! Anderson 13 + no fuel
+                   0.30,   1.00,  1.50,  1.90,  2.50,  3.40,  5.40,  7.30,  9.00, & ! Scott & Burgan: GR fuels (1-9)
+                   0.50,   0.60,  1.45,  3.40, & ! Scott & Burgan: GS fuels (1-4)
+                   0.15,   0.00,  0.00,  0.00,  0.00,  0.00,  0.00,  0.00,  1.55, & ! Scott & Burgan: SH fuels (1-9)
+                   0.20,   0.00,  0.65,  0.00,  0.00, & ! Scott & Burgan: TU fuels (1-5)
+                   0.00,   0.00,  0.00,  0.00,  0.00,  0.00,  0.00,  0.00,  0.00, & ! Scott & Burgan: TL fuels (1-9)
+                   0.00,   0.00,  0.00,  0.00, & ! Scott & Burgan: SB fuels (1-4)
+                   zf*0./
 
-! total fuel loading kg/m^2
-  DATA fgi       / 0.166,  0.896, 0.674, 3.591, 0.784, 1.344, 1.091, 1.120, 0.780, 2.692, 2.582, 7.749, 13.024, 1.e-7, zf*0.  /
+! fuel loading live herb fuels, kg/m^2
+  DATA fgi_lh    / 0.00,   0.00,   0.00,   0.00,   0.00,   0.00,   0.00,   0.00,   0.00,   0.00,  0.00,  0.00,  0.00,  0.00, & ! Anderson 13 + no fuel
+                   0.0673, 0.2242, 0.3363, 0.4259, 0.5604, 0.7622, 1.2105, 1.6364, 2.0175, & ! Scott & Burgan: GR fuels (1-9)
+                   0.1121, 0.1345, 0.3250, 0.7622, & ! Scott & Burgan: GS fuels (1-4)
+                   0.0336, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.3475, & ! Scott & Burgan: SH fuels (1-9)
+                   0.0448, 0.0000, 0.1457, 0.0000, 0.0000, & ! Scott & Burgan: TU fuels (1-5)
+                   0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, & ! Scott & Burgan: TL fuels (1-9)
+                   0.0000, 0.0000, 0.0000, 0.0000, & ! Scott & Burgan: SB fuels (1-4)
+                   zf*0.  /
+
+! fuel loading 1-h, 10-h, and 100-h dead fuels combined, kg/m^2
+  DATA fgi       / 0.166, 0.896, 0.674, 3.591, 0.784, 1.344, 1.091, 1.120, 0.780, 2.692, 2.582, 7.749, 13.024, 1.e-7, & ! Anderson 13 + no fuel
+                   0.0224, 0.0224, 0.1121, 0.0560, 0.0897, 0.0224, 0.2242, 0.3363, 0.4483, & ! Scott & Burgan: GR fuels (1-9)
+                   0.0448, 0.2242, 0.1233, 0.5156, & ! Scott & Burgan: GS fuels (1-4)
+                   0.1121, 1.0088, 0.7734, 0.4932, 1.2778, 0.9751, 2.4659, 1.4123, 1.5580, & ! Scott & Burgan: SH fuels (1-9)
+                   0.5828, 0.8967, 0.3363, 1.0088, 2.4659, & ! Scott & Burgan: TU fuels (1-5)
+                   1.5244, 1.3226, 1.2329, 1.3899, 1.8046, 1.0760, 2.1969, 1.8606, 3.1608, & ! Scott & Burgan: TL fuels (1-9)
+                   3.4746, 2.8582, 2.5219, 3.1384, & ! Scott & Burgan: SB fuels (1-4)
+                   zf*0.  /
 
 ! =========================================================================
 contains
@@ -629,8 +749,8 @@ real:: rat
 !*** executable
 
 ! read 
-namelist /fuel_scalars/ cmbcnst,hfgl,fuelmc_g,fuelmc_c,nfuelcats,no_fuel_cat
-namelist /fuel_categories/ fuel_name,windrf,fgi,fueldepthm,savr, &
+namelist /fuel_scalars/ cmbcnst,hfgl,fuelmc_g,fuelmc_g_lh,fuelmc_c,nfuelcats,no_fuel_cat
+namelist /fuel_categories/ fuel_name,windrf,fgi,fgi_lh,fueldepthm,savr, &
     fuelmce,fueldens,st,se,weight,fci_d,fct,ichap,fgi_1h,fgi_10h,fgi_100h,fgi_1000h,fgi_live
 namelist /fuel_moisture/ moisture_classes,drying_lag,wetting_lag,saturation_moisture,saturation_rain,rain_threshold, &
     drying_model,wetting_model, moisture_class_name,fmc_gc_initialization, fmc_1h,fmc_10h,fmc_100h,fmc_1000h,fmc_live
@@ -684,7 +804,7 @@ IF ( wrf_dm_on_monitor() ) THEN
         write(msg,*)'nfuelcats=',nfuelcats,' is too large, increase mfuelcats'
         call crash(msg)
     endif
-    if (no_fuel_cat >= 1 .and. no_fuel_cat <= nfuelcats)then
+    if (nfuelcats<14 .and. no_fuel_cat >= 1 .and. no_fuel_cat <= nfuelcats)then
         write(msg,*)'no_fuel_cat=',no_fuel_cat,' may not be between 1 and nfuelcats=',nfuelcats
         call crash(msg)
     endif
@@ -782,6 +902,7 @@ call read_namelist_fire(init_fuel_moisture)
 call wrf_dm_bcast_real(cmbcnst,1)
 call wrf_dm_bcast_real(hfgl,1)
 call wrf_dm_bcast_real(fuelmc_g,1)
+call wrf_dm_bcast_real(fuelmc_g_lh,1)
 call wrf_dm_bcast_real(fuelmc_c,1)
 call wrf_dm_bcast_integer(nfuelcats,1)
 call wrf_dm_bcast_integer(no_fuel_cat,1)
@@ -840,6 +961,8 @@ call message(msg)
 write(msg,8)'hfgl       ',hfgl
 call message(msg)
 write(msg,8)'fuelmc_g   ',fuelmc_g
+call message(msg)
+write(msg,8)'fuelmc_g_lh   ',fuelmc_g_lh 
 call message(msg)
 write(msg,8)'fuelmc_c   ',fuelmc_c
 call message(msg)
@@ -940,7 +1063,7 @@ endif
 
 ! and print to file
 IF ( wrf_dm_on_monitor() ) THEN
-!jm  call write_fuels_m(61,30.,1.)
+    call write_fuels_m(61,30.,1.)
 ENDIF
 end subroutine init_fuel_cats
 
@@ -984,7 +1107,8 @@ iounit = open_text_file('fuels.m','write')
 do k=1,nfuelcats
     write(iounit,10)k,'fuel_name',trim(fuel_name(k)),'FUEL MODEL NAME'
     call write_var(k,'windrf',windrf(k),'WIND REDUCTION FACTOR FROM 20ft TO MIDFLAME HEIGHT' )
-    call write_var(k,'fgi',fgi(k),'INITIAL TOTAL MASS OF SURFACE FUEL (KG/M**2)' )
+    call write_var(k,'fgi',fgi(k),'INITIAL TOTAL MASS OF SURFACE DEAD FUEL (KG/M**2)' )
+    call write_var(k,'fgi_lh',fgi_lh(k),'INITIAL TOTAL MASS OF SURFACE LIVE HERB FUEL [SB: 1-h] (KG/M**2)' )
     call write_var(k,'fueldepthm',fueldepthm(k),'FUEL DEPTH (M)')
     call write_var(k,'savr',savr(k),'FUEL PARTICLE SURFACE-AREA-TO-VOLUME RATIO, 1/FT')
     call write_var(k,'fuelmce',fuelmce(k),'MOISTURE CONTENT OF EXTINCTION')
@@ -1128,60 +1252,53 @@ ksb(10)=10
 ksb(11)=11
 ksb(12)=12
 ksb(13)=13
-! Scott & Burgan crosswalks
-! Short grass -- 1
-ksb(101)=1
-ksb(104)=1
-ksb(107)=1
-! Timber grass and understory -- 2
-ksb(102)=2
-ksb(121)=2
-ksb(122)=2
-ksb(123)=2
-ksb(124)=2
-! Tall grass -- 3
-ksb(103)=3
-ksb(105)=3
-ksb(106)=3
-ksb(108)=3
-ksb(109)=3
-! Chaparral -- 4
-ksb(145)=4
-ksb(147)=4
-! Brush -- 5
-ksb(142)=5
-! Dormant Brushi -- 6
-ksb(141)=6
-ksb(146)=6
-! Southern Rough -- 7
-ksb(143)=7
-ksb(144)=7
-ksb(148)=7
-ksb(149)=7
-! Compact Timber Litter -- 8
-ksb(181)=8
-ksb(183)=8
-ksb(184)=8
-ksb(187)=8
-! Hardwood Litter -- 9
-ksb(182)=9
-ksb(186)=9
-ksb(188)=9
-ksb(189)=9
-! Timber (understory) -- 10
-ksb(161)=10
-ksb(162)=10
-ksb(163)=10
-ksb(164)=10
-ksb(165)=10
-! Light Logging Slash -- 11
-ksb(185)=11
-ksb(201)=11
-! Medium Logging Slash -- 12
-ksb(202)=12
-! Heavy Logging Slash -- 13
-ksb(203)=13
-ksb(204)=13
+! full Scott and Burgan (2005)
+! Grass (GR)
+ksb(101)=15
+ksb(102)=16
+ksb(103)=17
+ksb(104)=18
+ksb(105)=19
+ksb(106)=20
+ksb(107)=21
+ksb(108)=22
+ksb(109)=23
+! Grass-Shrub (GS)
+ksb(121)=24
+ksb(122)=25
+ksb(123)=26
+ksb(124)=27
+! Shrub (SH)
+ksb(141)=28
+ksb(142)=29
+ksb(143)=30
+ksb(144)=31
+ksb(145)=32
+ksb(146)=33
+ksb(147)=34
+ksb(148)=35
+ksb(149)=36
+! Timber-Understory (TU)
+ksb(161)=37
+ksb(162)=38
+ksb(163)=39
+ksb(164)=40
+ksb(165)=41
+! Timber litter (TL)
+ksb(181)=42
+ksb(182)=43
+ksb(183)=44
+ksb(184)=45
+ksb(185)=46
+ksb(186)=47
+ksb(187)=48
+ksb(188)=49
+ksb(189)=50
+! Slash-Blowdown (SB)
+ksb(201)=51
+ksb(202)=52
+ksb(203)=53
+ksb(204)=54
 
 ! ****** !
 
@@ -1221,7 +1338,17 @@ do j=jfts,jfte
         ! exp(-600*0.85/1000) = approx 0.6 
 
         fp%ischap(i,j)=ichap(k)
-        fp%fgip(i,j)=fgi(k)
+        
+        ! DME dynamic live to dead fuel conversion and fuel load selection (start)
+        ! Use sum 1-h, 10-h, 100-h dead fuel loads for S&B classes
+        if ( fuelmc_g_lh .gt. 0.3 .AND. fuelmc_g_lh .lt. 1.2 ) then
+          fp%fgip(i,j)=fgi(k)+(1.0-(fuelmc_g_lh-0.3)/0.9)*fgi_lh(k)
+        elseif ( fuelmc_g_lh .le. 0.3 ) then
+          fp%fgip(i,j)=fgi(k)+fgi_lh(k)
+        else
+          fp%fgip(i,j)=fgi(k)
+        endif
+
         if(fire_fmc_read.eq.1)then
            fp%fmc_g(i,j)=fuelmc_g
         endif
@@ -1230,7 +1357,7 @@ do j=jfts,jfte
         !        don't need to be recalculated later.
         
         bmst     = fp%fmc_g(i,j) / (1.+fp%fmc_g(i,j))
-        fuelloadm= (1.-bmst) * fgi(k)  !  fuelload without moisture
+        fuelloadm= (1.-bmst) * fp%fgip(i,j)  !  fuelload without moisture
         fuelload = fuelloadm * (.3048)**2 * 2.205    ! to lb/ft^2
         fueldepth = fueldepthm(k)/0.3048               ! to ft
         fp%betafl(i,j) = fuelload/(fueldepth * fueldens(k))! packing ratio

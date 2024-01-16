@@ -179,6 +179,8 @@ module_bl_gfs.o: module_gfs_machine.o \
 module_bl_gfsedmf.o: module_gfs_machine.o \
 		 module_gfs_physcons.o
 
+module_bl_mynn_common.o: ccpp_kind_types.o
+
 module_bl_mynn.o: module_bl_mynn_common.o
 
 module_bl_mynn_wrapper.o: module_bl_mynn.o \

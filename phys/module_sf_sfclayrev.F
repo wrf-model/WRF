@@ -1041,7 +1041,7 @@ CONTAINS
 
       DO 370 I=its,ite
         QFX(I)=FLQC(I)*(QSFC(I)-QX(I))                                     
-        QFX(I)=AMAX1(QFX(I),0.)                                            
+!       QFX(I)=AMAX1(QFX(I),0.)                                            
         LH(I)=XLV*QFX(I)
   370 CONTINUE                                                                 
                                                                                 
@@ -1059,7 +1059,7 @@ CONTAINS
 !         ENDIF 
         ELSEIF(XLAND(I)-1.5.LT.0.)THEN                                       
           HFX(I)=FLHC(I)*(THGB(I)-THX(I))                                
-          HFX(I)=AMAX1(HFX(I),-250.)                                       
+!         HFX(I)=AMAX1(HFX(I),-250.)                                       
         ENDIF                                                                  
   400 CONTINUE                                                                 
 

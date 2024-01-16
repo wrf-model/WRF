@@ -6,6 +6,7 @@ RM      =       rm -f
 
 
 MODULES = \
+	ccpp_kind_types.o \
 	module_bep_bem_helper.o \
 	complex_number_module.o \
 	module_cam_shr_kind_mod.o \

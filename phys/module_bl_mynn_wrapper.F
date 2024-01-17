@@ -73,7 +73,7 @@ SUBROUTINE mynnedmf_wrapper_run(                 &
      &  initflag,restart,cycling,                &
      &  delt,dz,dxc,znt,                         &
      &  u,v,w,th,                                &
-     &  qv,qc,qi,qnc,qni,qnwfa,qnifa,qnbca,      &
+     &  qv,qc,qi,qs,qnc,qni,qnwfa,qnifa,qnbca,   &
 !     &  ozone,                                   &
      &  p,exner,rho,t3d,                         &
      &  xland,ts,qsfc,ps,                        &
@@ -89,7 +89,7 @@ SUBROUTINE mynnedmf_wrapper_run(                 &
 !--- end chem/smoke 
      &  Tsq,Qsq,Cov,                             &
      &  rublten,rvblten,rthblten,                &
-     &  rqvblten,rqcblten,rqiblten,              &
+     &  rqvblten,rqcblten,rqiblten,rqsblten,     &
      &  rqncblten,rqniblten,                     &
      &  rqnwfablten,rqnifablten,rqnbcablten,     &
 !     &  ro3blten,                                &
@@ -100,7 +100,7 @@ SUBROUTINE mynnedmf_wrapper_run(                 &
      &  edmf_thl,edmf_ent,edmf_qc,               &
      &  sub_thl3d,sub_sqv3d,                     &
      &  det_thl3d,det_sqv3d,                     &
-     &  nupdraft,maxMF,ktop_plume,               &
+     &  maxwidth,maxMF,ztop_plume,ktop_plume,    &
      &  rthraten,                                &
      &  tke_budget,         bl_mynn_tkeadvect,   &
      &  bl_mynn_cloudpdf,   bl_mynn_mixlength,   &
@@ -110,14 +110,13 @@ SUBROUTINE mynnedmf_wrapper_run(                 &
      &  bl_mynn_output,     bl_mynn_closure,     &
      &  bl_mynn_mixscalars,                      &
      &  spp_pbl,pattern_spp_pbl,                 &
-     &  flag_qc,flag_qi,                         &
+     &  flag_qc,flag_qi,flag_qs,                 &
      &  flag_qnc,flag_qni,                       &
      &  flag_qnwfa,flag_qnifa,flag_qnbca,        &
      &  ids,ide,jds,jde,kds,kde,                 &
      &  ims,ime,jms,jme,kms,kme,                 &
      &  its,ite,jts,jte,kts,kte                  )
 
-!     use module_gfs_machine,  only : kind_phys
      use module_bl_mynn, only: mynn_bl_driver
 
 !------------------------------------------------------------------- 
@@ -161,16 +160,16 @@ SUBROUTINE mynnedmf_wrapper_run(                 &
      &       bl_mynn_mixscalars,                            &
      &       spp_pbl,                                       &
      &       tke_budget
-      real, intent(in) ::                                   &
+      real(kind_phys), intent(in) ::                        &
      &       bl_mynn_closure
 
       logical, intent(in) ::                                &
      &       FLAG_QI, FLAG_QNI, FLAG_QC, FLAG_QNC,          &
-     &       FLAG_QNWFA, FLAG_QNIFA, FLAG_QNBCA
+     &       FLAG_QS, FLAG_QNWFA, FLAG_QNIFA, FLAG_QNBCA
       logical, parameter :: FLAG_OZONE = .false.
 
 !MYNN-1D
-      REAL,    intent(in) :: delt, dxc
+      REAL(kind_phys),    intent(in) :: delt, dxc
       LOGICAL, intent(in) :: restart
       INTEGER :: i, j, k, itf, jtf, ktf, n
       INTEGER, intent(in) :: initflag,                      &
@@ -179,72 +178,72 @@ SUBROUTINE mynnedmf_wrapper_run(                 &
      &           ITS,ITE,JTS,JTE,KTS,KTE
 
 !MYNN-3D
-      real, dimension(ims:ime,kms:kme,jms:jme), intent(in) ::          &
+      real(kind_phys), dimension(ims:ime,kms:kme,jms:jme), intent(in) ::               &
      &       u,v,w,t3d,th,rho,exner,p,dz
-      real, dimension(ims:ime,kms:kme,jms:jme), intent(inout) ::       &
-     &       rublten,rvblten,rthblten,                                 &
-     &       rqvblten,rqcblten,rqiblten,                               &
-     &       rqncblten,rqniblten,                                      &
+      real(kind_phys), dimension(ims:ime,kms:kme,jms:jme), intent(inout) ::            &
+     &       rublten,rvblten,rthblten,                                                 &
+     &       rqvblten,rqcblten,rqiblten,rqsblten,                                      &
+     &       rqncblten,rqniblten,                                                      &
      &       rqnwfablten,rqnifablten,rqnbcablten !,ro3blten
-      real, dimension(ims:ime,kms:kme,jms:jme), intent(inout) ::       &
+      real(kind_phys), dimension(ims:ime,kms:kme,jms:jme), intent(inout) ::            &
      &       qke, qke_adv, el_pbl, sh3d, sm3d
-      real, dimension(ims:ime,kms:kme,jms:jme), intent(inout) ::       &
+      real(kind_phys), dimension(ims:ime,kms:kme,jms:jme), intent(inout) ::            &
      &       Tsq, Qsq, Cov, exch_h, exch_m
-      real, dimension(ims:ime,kms:kme,jms:jme), intent(in) :: rthraten
+      real(kind_phys), dimension(ims:ime,kms:kme,jms:jme), intent(in) :: rthraten
 
 !optional 3D arrays
-      real, dimension(ims:ime,kms:kme,jms:jme), optional, intent(in)  ::    &
+      real(kind_phys), dimension(ims:ime,kms:kme,jms:jme), optional, intent(in)  ::    &
      &       pattern_spp_pbl
-      real, dimension(ims:ime,kms:kme,jms:jme), optional, intent(inout) ::  &
+      real(kind_phys), dimension(ims:ime,kms:kme,jms:jme), optional, intent(inout) ::  &
      &       qc_bl, qi_bl, cldfra_bl
-      real, dimension(ims:ime,kms:kme,jms:jme), optional, intent(inout) ::  &
-     &       edmf_a,edmf_w,edmf_qt,                                    &
-     &       edmf_thl,edmf_ent,edmf_qc,                                &
+      real(kind_phys), dimension(ims:ime,kms:kme,jms:jme), optional, intent(inout) ::  &
+     &       edmf_a,edmf_w,edmf_qt,                                                    &
+     &       edmf_thl,edmf_ent,edmf_qc,                                                &
      &       sub_thl3d,sub_sqv3d,det_thl3d,det_sqv3d
-      real, dimension(ims:ime,kms:kme,jms:jme), optional, intent(inout) ::  &
+      real(kind_phys), dimension(ims:ime,kms:kme,jms:jme), optional, intent(inout) ::  &
      &       dqke,qWT,qSHEAR,qBUOY,qDISS
-      real, dimension(ims:ime,kms:kme,jms:jme), optional, intent(inout) ::  &
-     &       qv,qc,qi,qnc,qni,qnwfa,qnifa,qnbca!,o3
+      real(kind_phys), dimension(ims:ime,kms:kme,jms:jme), optional, intent(inout) ::  &
+     &       qv,qc,qi,qs,qnc,qni,qnwfa,qnifa,qnbca!,o3
 
 !optional 2D arrays for passing into module_bl_myn.F
-      real, allocatable, dimension(:,:) ::                             &
+      real(kind_phys), allocatable, dimension(:,:) ::                                  &
      &       qc_bl2d, qi_bl2d, cldfra_bl2d, pattern_spp_pbl2d
-      real, allocatable, dimension(:,:) ::                             &
-     &       edmf_a2d,edmf_w2d,edmf_qt2d,                              &
-     &       edmf_thl2d,edmf_ent2d,edmf_qc2d,                          &
+      real(kind_phys), allocatable, dimension(:,:) ::                                  &
+     &       edmf_a2d,edmf_w2d,edmf_qt2d,                                              &
+     &       edmf_thl2d,edmf_ent2d,edmf_qc2d,                                          &
      &       sub_thl2d,sub_sqv2d,det_thl2d,det_sqv2d
-      real, allocatable, dimension(:,:) ::                             &
+      real(kind_phys), allocatable, dimension(:,:) ::                                  &
      &       dqke2d,qWT2d,qSHEAR2d,qBUOY2d,qDISS2d
-      real, allocatable, dimension(:,:) ::                             &
-     &       qc2d,qi2d,qnc2d,qni2d,qnwfa2d,qnifa2d,qnbca2d!,o32d
+      real(kind_phys), allocatable, dimension(:,:) ::                                  &
+     &       qc2d,qi2d,qs2d,qnc2d,qni2d,qnwfa2d,qnifa2d,qnbca2d!,o32d
 
 !smoke/chem arrays - no if-defs in module_bl_mynn.F, so must define arrays
 #if (WRF_CHEM == 1)
-      real, dimension(ims:ime,kms:kme,jms:jme,nchem), intent(in) :: chem3d
-      real, dimension(ims:ime,kdvel,jms:jme, ndvel), intent(in)  :: vd3d
-      real, dimension(ims:ime,kms:kme,nchem) :: chem
-      real, dimension(ims:ime,ndvel)         :: vd
-      real, dimension(ims:ime)               :: frp_mean, emis_ant_no
+      real(kind_phys), dimension(ims:ime,kms:kme,jms:jme,nchem), intent(in) :: chem3d
+      real(kind_phys), dimension(ims:ime,kdvel,jms:jme, ndvel), intent(in)  :: vd3d
+      real(kind_phys), dimension(ims:ime,kms:kme,nchem) :: chem
+      real(kind_phys), dimension(ims:ime,ndvel)         :: vd
+      real(kind_phys), dimension(ims:ime)               :: frp_mean, emis_ant_no
 #else
-      real, dimension(ims:ime,kms:kme,nchem) :: chem
-      real, dimension(ims:ime,ndvel)         :: vd
-      real, dimension(ims:ime) :: frp_mean, emis_ant_no
+      real(kind_phys), dimension(ims:ime,kms:kme,nchem) :: chem
+      real(kind_phys), dimension(ims:ime,ndvel)         :: vd
+      real(kind_phys), dimension(ims:ime) :: frp_mean, emis_ant_no
 #endif
 
 !MYNN-2D
-      real, dimension(ims:ime,jms:jme), intent(in) ::                  &
+      real(kind_phys), dimension(ims:ime,jms:jme), intent(in) ::                       &
      &        xland,ts,qsfc,ps,ch
-      real, dimension(ims:ime,jms:jme), intent(inout) ::               &
-     &        znt,pblh,maxmf,rmol,hfx,qfx,ust,wspd,                    &
+      real(kind_phys), dimension(ims:ime,jms:jme), intent(inout) ::                    &
+     &        znt,pblh,maxwidth,maxmf,ztop_plume,rmol,hfx,qfx,ust,wspd,                &
      &        uoce,voce
-      integer, dimension(ims:ime,jms:jme), intent(inout) ::            &
-     &        kpbl,nupdraft,ktop_plume
+      integer, dimension(ims:ime,jms:jme), intent(inout) ::                            &
+     &        kpbl,ktop_plume
 
 !Local
-      real, dimension(ims:ime,kms:kme)         :: delp,sqv,sqc,sqi
-      real, dimension(ims:ime)                 :: dx
-      logical, parameter                       :: debug = .false.
-      real, dimension(ims:ime,kms:kme,jms:jme) :: ozone,r03blten
+      real(kind_phys), dimension(ims:ime,kms:kme)         :: delp,sqv,sqc,sqi,sqs,ikzero
+      real(kind_phys), dimension(ims:ime)                 :: dx
+      logical, parameter                                  :: debug = .false.
+      real(kind_phys), dimension(ims:ime,kms:kme,jms:jme) :: ozone,rO3blten
 
    !write(0,*)"=============================================="
    !write(0,*)"in mynn wrapper..."
@@ -257,7 +256,8 @@ SUBROUTINE mynnedmf_wrapper_run(                 &
 
    !For now, initialized bogus array
    ozone=0.0
-   r03blten=0.0
+   rO3blten=0.0
+   ikzero=0.0
 
    !Allocate any arrays being used
    if (icloud_bl > 0) then
@@ -302,6 +302,10 @@ SUBROUTINE mynnedmf_wrapper_run(                 &
    if (flag_qi) then
       allocate(qi2d(ims:ime,kms:kme))
       qi2d=0.0
+   endif
+   if (flag_qs) then
+      allocate(qs2d(ims:ime,kms:kme))
+      qs2d=0.0
    endif
    if (flag_qnc) then
       allocate(qnc2d(ims:ime,kms:kme))
@@ -360,6 +364,13 @@ SUBROUTINE mynnedmf_wrapper_run(                 &
          do k=kts,ktf
          do i=its,itf
             qi2d(i,k) = qi(i,k,j)
+         enddo
+         enddo
+      endif
+      if (flag_qs) then
+         do k=kts,ktf
+         do i=its,itf
+            qs2d(i,k) = qs(i,k,j)
          enddo
          enddo
       endif
@@ -429,12 +440,6 @@ SUBROUTINE mynnedmf_wrapper_run(                 &
       ! First, create pressure differences (delp) across model layers
       do i=its,itf
          dx(i)=dxc
-!         delp(i,1)  = ps(i,j) - (p(i,2,j)*dz(i,1,j) + p(i,1,j)*dz(i,2,j))/(dz(i,1,j)+dz(i,2,j))
-!         do k=2,kte-1
-!            delp(i,k) = (p(i,k,j)*dz(i,k-1,j) + p(i,k-1,j)*dz(i,k,j))/(dz(i,k,j)+dz(i,k-1,j)) - &
-!                        (p(i,k+1,j)*dz(i,k,j) + p(i,k,j)*dz(i,k+1,j))/(dz(i,k,j)+dz(i,k+1,j))
-!         enddo
-!         delp(i,kte) = delp(i,kte-1)
       enddo
 
 !      do i=its,itf
@@ -445,17 +450,30 @@ SUBROUTINE mynnedmf_wrapper_run(                 &
 !      enddo
 
       !In WRF, mixing ratio is incoming. Convert to specific humidity:
-       do k=kts,ktf
-          do i=its,itf
+      do k=kts,ktf
+         do i=its,itf
              sqv(i,k)=qv(i,k,j)/(1.0 + qv(i,k,j))
              sqc(i,k)=qc2d(i,k)/(1.0 + qv(i,k,j))
-             sqi(i,k)=qi2d(i,k)/(1.0 + qv(i,k,j))
          enddo
       enddo
-
-!      do i=its,ite
-!         ts(i,j)=tsurf(i,j)/exner(i,1,j)  !theta
-!      enddo
+      if (flag_qi) then
+         do k=kts,ktf
+           do i=its,itf
+             sqi(i,k)=qi2d(i,k)/(1.0 + qv(i,k,j))
+           enddo
+         enddo
+      else
+         sqi(:,:)=0.0
+      endif
+      if (flag_qs) then
+         do k=kts,ktf
+           do i=its,itf
+             sqs(i,k)=qs2d(i,k)/(1.0 + qv(i,k,j))
+           enddo
+         enddo
+      else
+         sqs(:,:)=0.0
+      endif
 
       if (debug) then
          print*
@@ -503,8 +521,8 @@ SUBROUTINE mynnedmf_wrapper_run(                 &
      &        delt=delt,dz=dz(:,:,j),dx=dx,znt=znt(:,j),               &
      &        u=u(:,:,j),v=v(:,:,j),w=w(:,:,j),                        &
      &        th=th(:,:,j),sqv3D=sqv,sqc3D=sqc,                        &
-     &        sqi3D=sqi,qnc=qnc2d,qni=qni2d,                           &
-     &        qnwfa=qnwfa2d,qnifa=qnifa2d,                             &
+     &        sqi3D=sqi,sqs3D=sqs,qnc=qnc2d,qni=qni2d,                 &
+     &        qnwfa=qnwfa2d,qnifa=qnifa2d,qnbca=qnbca2d,               &
      &        ozone=ozone(:,:,j),                                      &
      &        p=p(:,:,j),exner=exner(:,:,j),rho=rho(:,:,j),            &
      &        T3D=t3d(:,:,j),xland=xland(:,j),                         &
@@ -524,10 +542,11 @@ SUBROUTINE mynnedmf_wrapper_run(                 &
      &        RTHBLTEN=RTHBLTEN(:,:,j),RQVBLTEN=RQVBLTEN(:,:,j),       & !output
      &        RQCBLTEN=rqcblten(:,:,j),RQIBLTEN=rqiblten(:,:,j),       & !output
      &        RQNCBLTEN=rqncblten(:,:,j),RQNIBLTEN=rqniblten(:,:,j),   & !output
+     &        RQSBLTEN=ikzero,                                         & !there is no RQSBLTEN, so use dummy arary
      &        RQNWFABLTEN=RQNWFABLTEN(:,:,j),                          & !output
      &        RQNIFABLTEN=RQNIFABLTEN(:,:,j),                          & !output
      &        RQNBCABLTEN=RQNBCABLTEN(:,:,j),                          & !output
-     &        dozone=r03blten(:,:,j),                                  & !output
+     &        dozone=rO3blten(:,:,j),                                  & !output
      &        EXCH_H=exch_h(:,:,j),EXCH_M=exch_m(:,:,j),               & !output
      &        pblh=pblh(:,j),KPBL=KPBL(:,j),                           & !output
      &        el_pbl=el_pbl(:,:,j),                                    & !output
@@ -551,14 +570,14 @@ SUBROUTINE mynnedmf_wrapper_run(                 &
      &        edmf_ent=edmf_ent2d,edmf_qc=edmf_qc2d,                   & !output
      &        sub_thl3D=sub_thl2d,sub_sqv3D=sub_sqv2d,                 & !output
      &        det_thl3D=det_thl2d,det_sqv3D=det_sqv2d,                 & !output
-     &        nupdraft=nupdraft(:,j),maxMF=maxMF(:,j),                 & !output
-     &        ktop_plume=ktop_plume(:,j),                              & !output
+     &        maxwidth=maxwidth(:,j),maxMF=maxMF(:,j),                 & !output
+     &        ztop_plume=ztop_plume(:,j),ktop_plume=ktop_plume(:,j),   & !output
      &        spp_pbl=spp_pbl,pattern_spp_pbl=pattern_spp_pbl2d,       & !input
      &        RTHRATEN=rthraten(:,:,j),                                & !input
-     &        FLAG_QI=flag_qi,FLAG_QNI=flag_qni,                       & !input
+     &        FLAG_QI=flag_qi,FLAG_QNI=flag_qni,FLAG_QS=flag_qs,       & !input
      &        FLAG_QC=flag_qc,FLAG_QNC=flag_qnc,                       & !input
      &        FLAG_QNWFA=FLAG_QNWFA,FLAG_QNIFA=FLAG_QNIFA,             & !input
-     &        FLAG_QNBCA=FLAG_QNBCA,                                   & !input
+     &        FLAG_QNBCA=FLAG_QNBCA,FLAG_OZONE=flag_ozone,             & !input
      &        IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde,         & !input
      &        IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme,         & !input
      &        ITS=its,ITE=itf,JTS=jts,JTE=jtf,KTS=kts,KTE=kte)           !input
@@ -572,13 +591,20 @@ SUBROUTINE mynnedmf_wrapper_run(                 &
            RQIBLTEN(i,k,j) = RQIBLTEN(i,k,j)/(1.0 - sqv(i,k))
         enddo
       enddo
+      if (.false.) then !as of now, there is no RQSBLTEN in WRF
+        do k=kts,ktf
+          do i=its,itf
+            RQSBLTEN(i,k,j) = RQSBLTEN(i,k,j)/(1.0 - sqv(i,k))
+          enddo
+        enddo
+      endif
 
      !- Collect 3D ouput:
       if (icloud_bl > 0) then
          do k=kts,ktf
          do i=its,itf
-            qc_bl(i,k,j)     = qc_bl2d(i,k)
-            qi_bl(i,k,j)     = qi_bl2d(i,k)
+            qc_bl(i,k,j)     = qc_bl2d(i,k)/(1.0 - sqv(i,k))
+            qi_bl(i,k,j)     = qi_bl2d(i,k)/(1.0 - sqv(i,k))
             cldfra_bl(i,k,j) = cldfra_bl2d(i,k)
          enddo
          enddo
@@ -648,8 +674,7 @@ SUBROUTINE mynnedmf_wrapper_run(                 &
           print*,"dudt:",rublten(its,1,j),rublten(its,2,j),rublten(its,kte,j)
           print*,"dvdt:",rvblten(its,1,j),rvblten(its,2,j),rvblten(its,kte,j)
           print*,"dqdt:",rqvblten(its,1,j),rqvblten(its,2,j),rqvblten(its,kte,j)
-          print*,"ktop_plume:",ktop_plume(its,j)," maxmf:",maxmf(its,j)
-          print*,"nup:",nupdraft(its,j)
+          print*,"ztop_plume:",ztop_plume(its,j)," maxmf:",maxmf(its,j)
           print*
        endif
 
@@ -682,6 +707,7 @@ SUBROUTINE mynnedmf_wrapper_run(                 &
    endif
    if (flag_qc)   deallocate(qc2d)
    if (flag_qi)   deallocate(qi2d)
+   if (flag_qs)   deallocate(qs2d)
    if (flag_qnc)  deallocate(qnc2d)
    if (flag_qni)  deallocate(qni2d)
    if (flag_qnwfa)deallocate(qnwfa2d)

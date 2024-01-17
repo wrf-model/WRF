@@ -5,7 +5,7 @@ module da_obs
       da_allocate_y_chem_sfc, da_deallocate_y_chem_sfc, &
 #endif
       field_type, each_level_type,da_allocate_y, da_random_seed,da_allocate_y_rain, &
-      da_allocate_y_radar
+      da_allocate_y_radar, da_allocate_y_lightning
 #if (WRF_CHEM == 1)
    use module_domain, only : domain, x_type, xchem_type
    use da_chem_sfc, only : da_transform_xtoy_chem_sfc, da_transform_xtoy_chem_sfc_adj
@@ -28,7 +28,7 @@ module da_obs
       rtm_option_crtm,use_rad, base_temp, base_lapse, base_pres, &
       ob_format,ob_format_ascii,filename_len, trace_use_dull, &
       sound, mtgirs, synop, profiler, gpsref, gpseph, gpspw, polaramv, geoamv, ships, metar, &
-      satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep, sonde_sfc,rain, &
+      satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep, sonde_sfc, rain, lightning, &
       bogus, buoy, qscat, tamdar, tamdar_sfc, pseudo, num_ob_indexes, its,ite,jds,jts,jte,ids, &
 #if (WRF_CHEM == 1)
       chemic_surf, &
@@ -62,6 +62,7 @@ module da_obs
    use da_qscat,     only : da_transform_xtoy_qscat,da_transform_xtoy_qscat_adj
    use da_radar,     only : da_transform_xtoy_radar,da_transform_xtoy_radar_adj
    use da_rain,      only : da_transform_xtoy_rain,da_transform_xtoy_rain_adj
+   use da_lightning, only : da_transform_xtoy_lightning,da_transform_xtoy_lightning_adj
    use da_reporting, only : da_error, message, da_warning, da_message
 #ifdef RTTOV
    use da_rttov,     only : da_transform_xtoy_rttov,da_transform_xtoy_rttov_adj
@@ -69,9 +70,9 @@ module da_obs
    use da_satem,     only : da_transform_xtoy_satem, da_transform_xtoy_satem_adj
    use da_ships,     only : da_transform_xtoy_ships, da_transform_xtoy_ships_adj
    use da_sound,     only : da_transform_xtoy_sound, da_transform_xtoy_sonde_sfc, &
-      da_transform_xtoy_sound_adj, da_transform_xtoy_sonde_sfc_adj
+                            da_transform_xtoy_sound_adj, da_transform_xtoy_sonde_sfc_adj
    use da_mtgirs,    only : da_transform_xtoy_mtgirs, da_transform_xtoy_mtgirs_adj
-  use da_tamdar,    only : da_transform_xtoy_tamdar, da_transform_xtoy_tamdar_adj, &
+   use da_tamdar,    only : da_transform_xtoy_tamdar, da_transform_xtoy_tamdar_adj, &
                             da_transform_xtoy_tamdar_sfc, da_transform_xtoy_tamdar_sfc_adj
    use da_ssmi,      only : da_transform_xtoy_ssmt1, da_transform_xtoy_ssmt2, &
       da_transform_xtoy_ssmi_tb, da_transform_xtoy_ssmi_rv, &
@@ -96,6 +97,7 @@ contains
 #include "da_fill_obs_structures.inc"
 #include "da_fill_obs_structures_radar.inc"
 #include "da_fill_obs_structures_rain.inc"
+#include "da_fill_obs_structures_lightning.inc"
 #if (WRF_CHEM == 1)
 #include "da_fill_obs_structures_chem_sfc.inc"
 #endif

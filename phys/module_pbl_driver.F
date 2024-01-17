@@ -53,7 +53,7 @@ CONTAINS
                  ,sub_thl3D,sub_sqv3D                              &
                  ,det_thl3D,det_sqv3D                              &
                  ,vdfg                                             &
-                 ,nupdraft,maxMF,ktop_plume                        &
+                 ,maxwidth,maxMF,ztop_plume,ktop_plume             &
                  ,spp_pbl,pattern_spp_pbl                          &
               ! EEPS
                  ,pek,pep,pek_adv,pep_adv                          &
@@ -585,9 +585,9 @@ CONTAINS
         &    INTENT(INOUT)::                               vdfg
 
    INTEGER, OPTIONAL, DIMENSION( ims:ime , jms:jme ),           &
-        &    INTENT(OUT) ::               nupdraft,ktop_plume
+        &    INTENT(OUT) ::                          ktop_plume
    REAL, OPTIONAL, DIMENSION( ims:ime , jms:jme ),              &
-        &    INTENT(OUT) ::                               maxMF
+        &    INTENT(OUT) ::           maxwidth,maxMF,ztop_plume
 
     REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ),     &
            INTENT(INOUT) ::         qnwfa_curr,qnifa_curr,qnbca_curr
@@ -1638,7 +1638,7 @@ CONTAINS
                    &initflag=initflag,restart=restart,cycling=cycling,   &
                    &delt=dtbl,dz=dz8w,dxc=dx,znt=znt,                    &
                    &u=u_phy,v=v_phy,w=w,th=th_phy,qv=qv_curr,            &
-                   &qc=qc_curr,qi=qi_curr,                               &
+                   &qc=qc_curr,qi=qi_curr,qs=qs_curr,                    &
                    &qnc=qnc_curr,qni=qni_curr,                           &
                    &QNWFA=qnwfa_curr,QNIFA=qnifa_curr,QNBCA=qnbca_curr,  &
 !                   &ozone=ozone,                                         &
@@ -1658,6 +1658,7 @@ CONTAINS
                    &RUBLTEN=rublten,RVBLTEN=rvblten,RTHBLTEN=rthblten,   &
                    &RQVBLTEN=rqvblten,RQCBLTEN=rqcblten,RQIBLTEN=rqiblten,&
                    &RQNCBLTEN=rqncblten,RQNIBLTEN=rqniblten,             &
+                   &RQSBLTEN=rqsblten,                                   &
                    &RQNWFABLTEN=rqnwfablten,RQNIFABLTEN=rqnifablten,     &
                    &RQNBCABLTEN=rqnbcablten,                             &
 !                   &Ro3BLTEN=ro3blten,                                   &
@@ -1671,8 +1672,8 @@ CONTAINS
                    &edmf_thl=edmf_thl,edmf_ent=edmf_ent,edmf_qc=edmf_qc, &
                    &sub_thl3D=sub_thl3D,sub_sqv3D=sub_sqv3D,             &
                    &det_thl3D=det_thl3D,det_sqv3D=det_sqv3D,             &
-                   &nupdraft=nupdraft,maxMF=maxMF,                       &
-                   &ktop_plume=ktop_plume,                               &
+                   &maxwidth=maxwidth,maxMF=maxMF,                       &
+                   &ztop_plume=ztop_plume,ktop_plume=ktop_plume,         &
                    &RTHRATEN=RTHRATEN,                                   &
                    &bl_mynn_tkeadvect=bl_mynn_tkeadvect,                 &
                    &tke_budget=tke_budget,                               &
@@ -1688,7 +1689,7 @@ CONTAINS
                    &bl_mynn_mixqt=bl_mynn_mixqt,                         &
                    &bl_mynn_closure=bl_mynn_closure,                     &
                    &spp_pbl=spp_pbl,pattern_spp_pbl=pattern_spp_pbl,     &
-                   &FLAG_QC=flag_qc,FLAG_QI=flag_qi,                     &
+                   &FLAG_QC=flag_qc,FLAG_QI=flag_qi,FLAG_QS=flag_qs,     &
                    &FLAG_QNC=flag_qnc,FLAG_QNI=flag_qni,                 &
                    &FLAG_QNWFA=flag_qnwfa,FLAG_QNIFA=flag_qnifa,         &
                    &FLAG_QNBCA=flag_qnbca,                               &

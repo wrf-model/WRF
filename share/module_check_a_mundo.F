@@ -509,7 +509,7 @@
 !-----------------------------------------------------------------------
       IF (model_config_rec % use_distributed_aerodynamics) THEN
 
-        IF (model_config_rec % use_wudapt_lcz) THEN
+        IF (model_config_rec % use_wudapt_lcz .EQ. 1) THEN
             wrf_err_message = '--- ERROR: use_distributed_aerodynamics cannot work with use_wudapt_lcz'
             CALL wrf_message ( wrf_err_message )
             count_fatal_error = count_fatal_error + 1

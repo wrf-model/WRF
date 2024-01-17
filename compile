@@ -414,6 +414,8 @@ else
     pgf90 --version
   else if ( "$comp[1]" == "ifort" ) then
     ifort -V
+  else if ( "$comp[1]" == "ftn" ) then
+    ftn -V
   else
     echo "Not sure how to figure out the version of this compiler: $comp[1]"
   endif

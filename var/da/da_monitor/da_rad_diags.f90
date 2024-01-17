@@ -42,7 +42,7 @@ program da_rad_diags
    integer                                :: ncid, dimid, varid
    integer, dimension(3)                  :: ishape, istart, icount
 !
-   logical                                :: amsr2
+   logical                                :: amsr2, abi
    logical                                :: isfile, prf_found, jac_found
    integer, parameter                     :: datelen1 = 10
    integer, parameter                     :: datelen2 = 19
@@ -62,9 +62,9 @@ program da_rad_diags
    real*4,  dimension(:), allocatable     :: smois, tslb, snowh, vegfra, clwp, cloud_frac
    real*4,  dimension(:), allocatable     :: cip ! cloud-ice path
    integer, dimension(:), allocatable     :: cloudflag ! cloudflag from L2 AHI
-   integer, dimension(:,:), allocatable   :: tb_qc
+   integer, dimension(:,:), allocatable   :: tb_qc, cloud_flag
    real*4,  dimension(:,:), allocatable   :: tb_obs, tb_bak, tb_inv, tb_oma, tb_err, ems, ems_jac
-   real*4,  dimension(:,:), allocatable   :: tb_bak_clr ! clear-sky brightness temp
+   real*4,  dimension(:,:), allocatable   :: cloud_mod, cloud_obs, tb_bak_clr ! clear-sky brightness temp
    real*4,  dimension(:,:), allocatable   :: weightfunc_peak ! peak of weighting function
    real*4,  dimension(:,:), allocatable   :: prf_pfull, prf_phalf, prf_t, prf_q, prf_water
    real*4,  dimension(:,:), allocatable   :: prf_ice, prf_rain, prf_snow, prf_grau, prf_hail
@@ -139,6 +139,7 @@ ntime_loop: do itime = 1, ntime
       write(0,*) trim(instid(iinst))
 
       amsr2 = index(instid(iinst),'amsr2') > 0
+      abi   = index(instid(iinst),'abi') > 0
 
       nerr = 0
       total_npixel = 0
@@ -263,6 +264,12 @@ ntime_loop: do itime = 1, ntime
             allocate ( tb_oma(1:nchan,1:total_npixel) )
             allocate ( tb_err(1:nchan,1:total_npixel) )
             allocate (  tb_qc(1:nchan,1:total_npixel) )
+            if ( abi ) then
+               allocate ( cloud_mod(1:nchan,1:total_npixel) )
+               allocate ( cloud_obs(1:nchan,1:total_npixel) )
+               allocate ( cloud_flag(1:nchan,1:total_npixel))
+               cloud_flag = 0
+            end if
             allocate (    ems(1:nchan,1:total_npixel) )
             if ( jac_found ) then
                allocate ( ems_jac(1:nchan,1:total_npixel) )
@@ -333,6 +340,11 @@ ntime_loop: do itime = 1, ntime
             tb_inv = missing_r
             tb_oma = missing_r
             tb_err = missing_r
+            if ( abi ) then
+               cloud_mod = missing_r
+               cloud_obs = missing_r
+            end if
+
             ncname = 'diags_'//trim(instid(iinst))//"_"//datestr1(itime)//'.nc'
             ios = NF_CREATE(trim(ncname), NF_NETCDF4, ncid)  ! Change to output netcdf4 files
            !ios = NF_CREATE(trim(ncname), NF_CLOBBER, ncid)  ! NF_CLOBBER specifies the default behavior of
@@ -392,7 +404,15 @@ ntime_loop: do itime = 1, ntime
             read(unit=iunit(iproc),fmt='(10f11.2)',iostat=ios) tb_err(:,ipixel)
             read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf           ! QC
             read(unit=iunit(iproc),fmt='(10i11)',iostat=ios  ) tb_qc(:,ipixel)
-            read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf
+            read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf 
+            if ( abi .and. buf(1:4) == "CMOD" ) then ! read cloud_mod, cloud_obs, cloud_flag for abi
+               read(unit=iunit(iproc),fmt='(10f11.2)',iostat=ios) cloud_mod(:,ipixel)
+               read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf        ! CMOD
+               read(unit=iunit(iproc),fmt='(10f11.2)',iostat=ios) cloud_obs(:,ipixel)
+               read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf        ! COBS
+               read(unit=iunit(iproc),fmt='(10i11)',iostat=ios  ) cloud_flag(:,ipixel)
+               read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf        ! cloud_flag
+            end if
             if ( buf(1:4) == "INFO" ) then
                backspace(iunit(iproc))
                cycle npixel_loop
@@ -523,6 +543,13 @@ ntime_loop: do itime = 1, ntime
       end if
       ios = NF_DEF_VAR(ncid, 'tb_err', NF_FLOAT, 2, ishape(1:2), varid)
       ios = NF_DEF_VAR(ncid, 'tb_qc',  NF_INT,   2, ishape(1:2), varid)
+      if ( abi ) then
+         ios = NF_DEF_VAR(ncid, 'cloud_mod', NF_FLOAT, 2, ishape(1:2), varid)
+         ios = NF_PUT_ATT_REAL(ncid, varid, 'missing_value', NF_FLOAT, 1, missing_r)
+         ios = NF_DEF_VAR(ncid, 'cloud_obs', NF_FLOAT, 2, ishape(1:2), varid)
+         ios = NF_PUT_ATT_REAL(ncid, varid, 'missing_value', NF_FLOAT, 1, missing_r)
+         ios = NF_DEF_VAR(ncid, 'cloud_flag',  NF_INT,   2, ishape(1:2), varid)
+      end if
       !
       ! define 2-D array with dimensions nlev * total_npixel
       !
@@ -669,6 +696,14 @@ ntime_loop: do itime = 1, ntime
       ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), tb_err)
       ios = NF_INQ_VARID (ncid, 'tb_qc', varid)
       ios = NF_PUT_VARA_INT(ncid,  varid, istart(1:2), icount(1:2), tb_qc)
+      if ( abi ) then
+         ios = NF_INQ_VARID (ncid, 'cloud_mod', varid)
+         ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), cloud_mod)
+         ios = NF_INQ_VARID (ncid, 'cloud_obs', varid)
+         ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), cloud_obs)
+         ios = NF_INQ_VARID (ncid, 'cloud_flag', varid)
+         ios = NF_PUT_VARA_INT(ncid,  varid, istart(1:2), icount(1:2), cloud_flag)
+      end if
       !
       ! output 2-D array with dimensions nlev * total_npixel
       !
@@ -890,6 +925,11 @@ ntime_loop: do itime = 1, ntime
       deallocate ( tb_bak_clr )
       deallocate ( weightfunc_peak )
       deallocate ( tb_inv )
+      if ( abi ) then
+         deallocate ( cloud_mod )
+         deallocate ( cloud_obs )
+         deallocate ( cloud_flag )
+      end if
       deallocate ( tb_oma )
       deallocate ( ems )
       if ( jac_found ) deallocate ( ems_jac )

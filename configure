@@ -219,6 +219,8 @@ if [ -n "$NETCDFPAR" ] ; then
   export NETCDF
   export NETCDF4
   export USENETCDFPAR
+else
+  export USENETCDFPAR=0
 fi
 
 if  test -z "$NETCDF"  ; then
@@ -292,7 +294,6 @@ if [ -z "$HDF5_PATH" ] ; then HDF5_PATH=''; fi
 if [ -z "$ZLIB_PATH" ] ; then ZLIB_PATH=''; fi
 if [ -z "$GPFS_PATH" ] ; then GPFS_PATH=''; fi
 if [ -z "$CURL_PATH" ] ; then CURL_PATH=''; fi
-
 if [ -n "$NETCDF4" ] ; then
   if [ $NETCDF4 -eq 1 ] ; then
     NETCDF4_DEP_LIB=''

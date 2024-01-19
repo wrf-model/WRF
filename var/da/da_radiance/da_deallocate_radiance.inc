@@ -38,6 +38,13 @@
 	    deallocate ( satinfo(i) % clearSkyBias)
          endif
 
+         ! Deallocate extra variables for ABI
+         if ( index(iv%instid(i)%rttovid_string, 'abi') > 0 ) then
+	    deallocate (satinfo(i) % error_cld_y)
+            deallocate (satinfo(i) % error_cld_x)
+         endif
+
+
          if (use_error_factor_rad) then
             deallocate (satinfo(i) % error_factor)
          endif
@@ -115,6 +122,10 @@
             end if
             if ( index(iv%instid(i)%rttovid_string, 'ahi') > 0 ) then
                deallocate (iv%instid(i)%cloudflag)
+            end if
+            if ( index(iv%instid(i)%rttovid_string, 'abi') > 0 ) then
+               deallocate (iv%instid(i)%cloud_mod)
+               deallocate (iv%instid(i)%cloud_obs)
             end if			
             if ( index(iv%instid(i)%rttovid_string,'gmi') > 0 ) then
                deallocate (iv%instid(i)%clw)
@@ -149,8 +160,16 @@
             if ( use_clddet_zz ) then
                do iy = 1, iv%instid(i)%superob_width
                do ix = 1, iv%instid(i)%superob_width
-                  deallocate (iv%instid(i)%superob(ix,iy)%cld_qc)
-                  deallocate (iv%instid(i)%superob(ix,iy)%tb_obs)
+                 if ( index(iv%instid(i)%rttovid_string, 'abi') > 0 ) then
+                  do n = 1,iv%instid(i)%num_rad
+                     if ( allocated (iv%instid(i)%superob(ix,iy)%cld_qc(n)%tb_stddev_3x3) ) &
+                        deallocate (iv%instid(i)%superob(ix,iy)%cld_qc(n)%tb_stddev_3x3)
+                     if ( allocated (iv%instid(i)%superob(ix,iy)%cld_qc(n)%CIRH2O_abi) ) &
+                        deallocate (iv%instid(i)%superob(ix,iy)%cld_qc(n)%CIRH2O_abi)
+                  end do
+                 end if
+                 deallocate (iv%instid(i)%superob(ix,iy)%cld_qc)
+                 deallocate (iv%instid(i)%superob(ix,iy)%tb_obs)
                end do
                end do
                deallocate (iv%instid(i)%superob)

@@ -219,8 +219,6 @@ if [ -n "$NETCDFPAR" ] ; then
   export NETCDF
   export NETCDF4
   export USENETCDFPAR
-else
-  export USENETCDFPAR=0
 fi
 
 if  test -z "$NETCDF"  ; then

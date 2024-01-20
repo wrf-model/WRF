@@ -186,6 +186,8 @@ module_bl_mynn.o: module_bl_mynn_common.o
 module_bl_mynn_wrapper.o: module_bl_mynn.o \
 		  module_bl_mynn_common.o
 
+module_bl_gwdo.o: physics_mmm/bl_gwdo.o
+
 module_cam_upper_bc.o: module_cam_shr_kind_mod.o \
 		module_cam_support.o
 
@@ -975,6 +977,9 @@ module_mp_gsfcgce_4ice_nuwrf.o : ../frame/module_wrf_error.o \
                             module_gocart_coupling.o \
                             module_checkerror.o \
                             module_mp_radar.o
+
+physics_mmm/bl_gwdo.o :\
+	ccpp_kind_types.o
 
 # End of DEPENDENCIES for phys
 

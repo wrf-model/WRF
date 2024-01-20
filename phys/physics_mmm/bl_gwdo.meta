@@ -1,0 +1,413 @@
+[ccpp-table-properties]
+  name = bl_gwdo
+  type = scheme
+  dependencies = ./../ccpp_kind_types.F
+
+########################################################################
+[ccpp-arg-table]
+  name = bl_gwdo_init
+  type = scheme
+[errmsg]
+  standard_name = ccpp_error_message
+  long_name = error message for error handling in CCPP
+  units = none
+  dimensions = ()
+  type = character
+  kind = len=*
+  intent = out
+  optional = F
+[errflg]
+  standard_name = ccpp_error_flag
+  long_name = error flag for error handling in CCPP
+  units = flag
+  dimensions = ()
+  type = integer
+  intent = out
+  optional = F
+
+########################################################################
+[ccpp-arg-table]
+  name = bl_gwdo_final
+  type = scheme
+[errmsg]
+  standard_name = ccpp_error_message
+  long_name = error message for error handling in CCPP
+  units = 1
+  dimensions = ()
+  type = character
+  kind = len=*
+  intent = out
+  optional = F
+[errflg]
+  standard_name = ccpp_error_flag
+  long_name = error flag for error handling in CCPP
+  units = flag
+  dimensions = ()
+  type = integer
+  intent = out
+  optional = F
+########################################################################
+[ccpp-arg-table]
+  name = bl_gwdo_run
+  type = scheme
+[sina]
+  standard_name = sine_of_map_rotation
+  long_name = sine of map rotation
+  units = dimensionless
+  dimensions = (horizontal_begin:horizontal_end)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[cosa]
+  standard_name = cosine_of_map_rotation
+  long_name = cosine of map rotation
+  units = dimensionless
+  dimensions = (horizontal_begin:horizontal_end)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[rublten]
+  standard_name = tendency_of_x_wind_due_to_boundary_layer
+  long_name = tendency of x wind due to boundary layer
+  units = m s-2
+  dimensions = (horizontal_begin:horizontal_end,vertical_layer_dimension)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[rvblten]
+  standard_name = tendency_of_y_wind_due_to_boundary_layer
+  long_name = tendency of y wind due to boundary layer
+  units = m s-2
+  dimensions = (horizontal_begin:horizontal_end,vertical_layer_dimension)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[dtaux3d]
+  standard_name = x_wind_stress_due_to_gravity_wave_drag
+  long_name = x_wind_stress_due_to_gravity_wave_drag
+  units = m s-1
+  dimensions = (horizontal_begin:horizontal_end,vertical_layer_dimension)
+  type = real | kind = kind_phys
+  intent = out
+  optional = F
+[dtauy3d]
+  standard_name = y_wind_stress_due_to_gravity_wave_drag
+  long_name = y_wind_stress_due_to_gravity_wave_drag
+  units = m s-1
+  dimensions = (horizontal_begin:horizontal_end,vertical_layer_dimension)
+  type = real | kind = kind_phys
+  intent = out
+  optional = F
+[dusfcg]
+  standard_name = column_integrated_x_wind_stress_due_to_gravity_wave_drag
+  long_name = column integrated x wind stress due to gravity wave drag
+  units = Pa m s-1
+  dimensions = (horizontal_begin:horizontal_end)
+  type = real | kind = kind_phys
+  intent = out 
+  optional = F 
+[dvsfcg]
+  standard_name = column_integrated_y_wind_stress_due_to_gravity_wave_drag
+  long_name = column integrated y wind stress due to gravity wave drag
+  units = Pa m s-1
+  dimensions = (horizontal_begin:horizontal_end)
+  type = real | kind = kind_phys
+  intent = out
+  optional = F
+[uproj]
+  standard_name = x_wind
+  long_name = x wind
+  units = m s-1
+  dimensions = (horizontal_begin:horizontal_end,vertical_layer_dimension)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[vproj]
+  standard_name = y_wind
+  long_name = y wind
+  units =  m s-1
+  dimensions = (horizontal_begin:horizontal_end,vertical_layer_dimension)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[t1]
+  standard_name = air_temperature
+  long_name = air temperature
+  units =  K
+  dimensions = (horizontal_begin:horizontal_end,vertical_layer_dimension)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[q1]
+  standard_name = water_vapor_mixing_ratio
+  long_name = water vapor mixing ratio
+  units = kg kg-1
+  dimensions = (horizontal_begin:horizontal_end,vertical_layer_dimension)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[prsi]
+  standard_name = air_pressure_at_interface
+  long_name = air pressure at interface
+  units = Pa
+  dimensions = (horizontal_begin:horizontal_end,vertical_interface_dimension)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[prsl]
+  standard_name = air_pressure
+  long_name = air pressure
+  units = Pa
+  dimensions = (horizontal_begin:horizontal_end,vertical_layer_dimension)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[prslk]
+  standard_name = dimensionless_exner_function
+  long_name = dimensionless exner function
+  units = none
+  dimensions = (horizontal_begin:horizontal_end,vertical_layer_dimension)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[zl]
+  standard_name = height
+  long_name = height
+  units = m 
+  dimensions = (horizontal_begin:horizontal_end,vertical_layer_dimension)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F 
+[var]
+  standard_name = orographic_variance
+  long_name = orographic variance
+  units = dimensionless
+  dimensions = (horizontal_begin:horizontal_end)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F 
+[oc1]
+  standard_name = orographic_convexity
+  long_name = orographic convexity
+  units = dimensionless
+  dimensions = (horizontal_begin:horizontal_end)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F 
+[oa2d1]
+  standard_name = orographic_asymmetry_direction1
+  long_name = orographic asymmetry direction1
+  units = dimensionless
+  dimensions = (horizontal_begin:horizontal_end)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F 
+oa2d2
+  standard_name = orographic_asymmetry_direction2
+  long_name = orographic asymmetry direction2
+  units = dimensionless
+  dimensions = (horizontal_begin:horizontal_end)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F 
+oa2d3
+  standard_name = orographic_asymmetry_direction3
+  long_name = orographic asymmetry direction3
+  units = dimensionless
+  dimensions = (horizontal_begin:horizontal_end)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F 
+oa2d4
+  standard_name = orographic_asymmetry_direction4
+  long_name = orographic asymmetry direction4
+  units = dimensionless
+  dimensions = (horizontal_begin:horizontal_end)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F 
+ol2d1
+  standard_name = orographic_length_direction1
+  long_name = orographic length direction1
+  units = dimensionless
+  dimensions = (horizontal_begin:horizontal_end)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F 
+ol2d2
+  standard_name = orographic_length_direction2
+  long_name = orographic length direction2
+  units = dimensionless
+  dimensions = (horizontal_begin:horizontal_end)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F 
+ol2d3
+  standard_name = orographic_length_direction3
+  long_name = orographic length direction3
+  units = dimensionless
+  dimensions = (horizontal_begin:horizontal_end)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F 
+ol2d4
+  standard_name = orographic_length_direction4
+  long_name = orographic length direction4
+  units = dimensionless
+  dimensions = (horizontal_begin:horizontal_end)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F 
+[g_]
+  standard_name = gravitational_acceleration
+  long_name = gravitational acceleration
+  units = m s-2
+  dimensions = ()
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[cp_]
+  standard_name = specific_heat_of_dry_air_at_constant_pressure
+  long_name = specific heat of dry air at constant pressure
+  units = J kg-1 K-1
+  dimensions = ()
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[rd_]
+  standard_name = gas_constant_dry_air
+  long_name = gas constant dry air
+  units = J kg-1 K-1
+  dimensions = ()
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[rv_]
+  standard_name = gas_constant_water_vapor
+  long_name = gas constant water vapor
+  units = J kg-1 K-1
+  dimensions = ()
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[fv_]
+  standard_name = ratio_of_vapor_to_dry_air_gas_constants_minus_one
+  long_name = ratio of vapor to dry air gas constants minus one
+  units = none
+  dimensions = ()
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[pi_]
+  standard_name = pi_constant
+  long_name = ratio of circle circumference to diameter
+  units = J kg-1 K-1
+  dimensions = ()
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[dxmeter]
+  standard_name = grid_distance
+  long_name = grid distance
+  units = m 
+  dimensions = ()
+  type = real | kind = kind_phys
+  intent = in
+  optional = F 
+[deltim]
+  standard_name = time_step_for_physics
+  long_name = time step for physics
+  units = s 
+  dimensions = ()
+  type = real | kind = kind_phys
+  intent = in
+  optional = F 
+[its]
+  standard_name = horizontal_begin
+  long_name = horizontal begin
+  units = none
+  dimensions = ()
+  type = integer
+  intent = in
+  optional = F
+[ite]
+  standard_name = horizontal_end
+  long_name = horizontal end
+  units = none
+  dimensions = ()
+  type = integer
+  intent = in
+  optional = F
+[kte]
+  standard_name = vertical_layer_dimension
+  long_name = vertical layer dimension
+  units = none
+  dimensions = ()
+  type = integer
+  intent = in
+  optional = F
+[kme]
+  standard_name = vertical_interface_dimension
+  long_name = vertical interface dimension
+  units = none
+  dimensions = ()
+  type = integer
+  intent = in
+  optional = F
+[errmsg]
+  standard_name = ccpp_error_message
+  long_name = error message for error handling in CCPP
+  units = 1
+  dimensions = ()
+  type = character
+  kind = len=*
+  intent = out
+  optional = F
+[errflg]
+  standard_name = ccpp_error_flag
+  long_name = error flag for error handling in CCPP
+  units = flag
+  dimensions = ()
+  type = integer
+  intent = out
+  optional = F
+[ccpp-arg-table]
+  name = bl_gwdo_init
+  type = scheme
+[errmsg]
+  standard_name = ccpp_error_message
+  long_name = error message for error handling in CCPP
+  units = 1
+  dimensions = ()
+  type = character
+  kind = len=*
+  intent = out
+  optional = F
+[errflg]
+  standard_name = ccpp_error_flag
+  long_name = error flag for error handling in CCPP
+  units = flag
+  dimensions = ()
+  type = integer
+  intent = out
+  optional = F
+[ccpp-arg-table]
+  name = bl_gwdo_final
+  type = scheme
+[errmsg]
+  standard_name = ccpp_error_message
+  long_name = error message for error handling in CCPP
+  units = 1
+  dimensions = ()
+  type = character
+  kind = len=*
+  intent = out
+  optional = F
+[errflg]
+  standard_name = ccpp_error_flag
+  long_name = error flag for error handling in CCPP
+  units = flag
+  dimensions = ()
+  type = integer
+  intent = out
+  optional = F

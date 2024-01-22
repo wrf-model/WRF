@@ -1,6 +1,6 @@
 !WRF:MODEL_LAYER:PHYSICS
 
-MODULE module_wind_jensen
+MODULE module_wind_mav
 !
 ! Represents kinetic energy extracted by wind turbines and turbulence
 ! (TKE) they produce at model levels within the rotor area.
@@ -56,13 +56,13 @@ MODULE module_wind_jensen
 
   !======================================================================
 
-  subroutine  dragforce_jensen(itimestep         &
+  subroutine  dragforce_mav(itimestep         &
        &,id                                      &
        &,z_at_w,z_at_m,u,v                       &
        &,dx,dz,dt,tke                            &
        &,du,dv                                   &
        &,windfarm_opt,power                      &
-       &,windfarm_model, windfarm_method         &
+       &,windfarm_wake_model, windfarm_overlap_method &
        &,xland                                   &
 #if defined(mpas)
        &,dminfo                                  &
@@ -78,7 +78,7 @@ MODULE module_wind_jensen
 
   implicit none
 
-  integer, intent(in) :: id,windfarm_opt, windfarm_model, windfarm_method
+  integer, intent(in) :: id,windfarm_opt, windfarm_wake_model, windfarm_overlap_method
   integer, intent(in) :: its,ite,jts,jte,kts,kte
   integer, intent(in) :: ims,ime,jms,jme,kms,kme
   integer, intent(in) :: ids,ide,jds,jde,kds,kde
@@ -287,31 +287,31 @@ MODULE module_wind_jensen
   power_nt_md(:,:) = 0.  ! output to a txt file
 
   !------------------- Ensemble ---------------------
-  if (windfarm_model <= 3) then
+  if (windfarm_wake_model <= 3) then
      num_models = 1
-     wake_model_en(1) = windfarm_model
-     overlap_method_en(1) = windfarm_method
+     wake_model_en(1) = windfarm_wake_model
+     overlap_method_en(1) = windfarm_overlap_method
 
   ! 1=JS, 2=XA, 3=GM
-  else if (windfarm_model == 4) then  ! JS-M4 + XA-M3
+  else if (windfarm_wake_model == 4) then  ! JS-M4 + XA-M3
      num_models = 2 
      wake_model_en(1) = 1;   overlap_method_en(1) = 4
      wake_model_en(2) = 2;   overlap_method_en(2) = 3
 
-  else if (windfarm_model == 5) then ! JS-M4 + XA-M3 + GM
+  else if (windfarm_wake_model == 5) then ! JS-M4 + XA-M3 + GM
      num_models = 3 
      wake_model_en(1) = 1;   overlap_method_en(1) = 4
      wake_model_en(2) = 2;   overlap_method_en(2) = 3
      wake_model_en(3) = 3;   overlap_method_en(3) = 2
 
-  else if (windfarm_model == 6) then ! JS-M3 + JS-M4 + XA-M3 + GM, single-cell
+  else if (windfarm_wake_model == 6) then ! JS-M3 + JS-M4 + XA-M3 + GM, single-cell
      num_models = 4
      wake_model_en(1) = 1;   overlap_method_en(1) = 3
      wake_model_en(2) = 1;   overlap_method_en(2) = 4
      wake_model_en(3) = 2;   overlap_method_en(3) = 3
      wake_model_en(4) = 3;   overlap_method_en(4) = 2
 
-  else if (windfarm_model == 7) then ! JS-M4 + XA-M3 + XA-M4 + GM, multi-cell
+  else if (windfarm_wake_model == 7) then ! JS-M4 + XA-M3 + XA-M4 + GM, multi-cell
      num_models = 4
      wake_model_en(1) = 1;   overlap_method_en(1) = 4
      wake_model_en(2) = 2;   overlap_method_en(2) = 3
@@ -383,10 +383,10 @@ MODULE module_wind_jensen
   power_nt = power_nt/num_models
 
   ! write fraction power of each turbine to a txt at 4 hr
-  !call write_power_txt(windfarm_model, windfarm_method, itimestep, dt, its, jts, &
+  !call write_power_txt(windfarm_wake_model, windfarm_overlap_method, itimestep, dt, its, jts, &
   !                    dx, power_nt, power_nt_md, ulocal, nt, num_models)
 
-  end subroutine dragforce_jensen
+  end subroutine dragforce_mav
 
 
 !==============================================================================
@@ -1779,7 +1779,7 @@ subroutine shell_sort_1D(AA, n)
 
 end subroutine shell_sort_1D
 
-  subroutine init_module_wind_jensen(id,config_flags,xlong,xlat,windfarm_initialized,dx,&
+  subroutine init_module_wind_mav(id,config_flags,xlong,xlat,windfarm_initialized,dx,&
                                      ims,ime,jms,jme,its,ite,jts,jte,ids,ide,jds,jde)
   USE module_date_time ! must within subroutine, module_date_time.F ../share/
   implicit none
@@ -2079,7 +2079,7 @@ end subroutine shell_sort_1D
   call wrf_dm_bcast_real(turbpw,nt*maxvals) 
   call wrf_dm_bcast_real(turbpwcof,nt*maxvals) 
 
-  end subroutine init_module_wind_jensen
+  end subroutine init_module_wind_mav
 
 #endif
-END MODULE module_wind_jensen
+END MODULE module_wind_mav

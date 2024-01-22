@@ -156,7 +156,7 @@ set( ENABLE_MARS       OFF CACHE BOOL "ENABLE_MARS"      )
 set( ENABLE_VENUS      OFF CACHE BOOL "ENABLE_VENUS"     )
 set( ENABLE_VENUS      OFF CACHE BOOL "ENABLE_VENUS"     )
 set( ENABLE_TERRAIN    OFF CACHE BOOL "ENABLE_TERRAIN"   )
-set( ENABLE_CLM        OFF CACHE BOOL "ENABLE_CLM"       )
+set( ENABLE_CTSM       OFF CACHE BOOL "ENABLE_CTSM"      )
 
 # What do these defines even do if they are always on????
 set( USE_ALLOCATABLES     ON CACHE BOOL "USE_ALLOCATABLES"    )
@@ -405,9 +405,9 @@ if ( ${ENABLE_TERRAIN} )
   find_package( RPC )
 endif()
 
-if ( ${ENABLE_CLM} )
+if ( ${ENABLE_CTSM} )
   # Will need our own finder
-  # find_package( CLM REQUIRED )
+  # find_package( CTSM REQUIRED )
 endif()
 
 # Will need our own finder
@@ -627,7 +627,10 @@ add_compile_definitions(
                         $<$<BOOL:${ENABLE_TITAN}>:WRF_TITAN=$<BOOL:${ENABLE_TITAN}>>
                         $<$<BOOL:${ENABLE_MARS}>:WRF_MARS=$<BOOL:${ENABLE_MARS}>>
                         $<$<BOOL:${ENABLE_VENUS}>:WRF_VENUS=$<BOOL:${ENABLE_VENUS}>>
-                        $<$<BOOL:${ENABLE_CLM}>:WRF_USE_CLM=$<BOOL:${ENABLE_CLM}>>
+
+                        # Because once again we need two defines to control one thing
+                        $<$<BOOL:${ENABLE_CTSM}>:WRF_USE_CTSM=$<BOOL:${ENABLE_CTSM}>>
+                        $<$<NOT:$<BOOL:${ENABLE_CTSM}>>:WRF_USE_CLM>
 
                         # If force classic or no nc-4 support enable classic
                         $<$<OR:$<BOOL:${FORCE_NETCDF_CLASSIC}>,$<NOT:$<BOOL:${netCDF_NC4}>>>:NETCDF_classic=1>

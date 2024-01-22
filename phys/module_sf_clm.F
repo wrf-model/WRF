@@ -60994,7 +60994,7 @@ END IF
      ENDDO
    ENDDO
    IF ( errflag .EQ. 1 ) THEN
-      CALL wrf_error_fatal( "CLM: clminit: out of range value "// &
+      CALL wrf_error_fatal( "CLM: clminit: out of range value ", &
                             "of ISLTYP. Is this field in the input?" )
    ENDIF
 !------------------------------------------------------------------------------

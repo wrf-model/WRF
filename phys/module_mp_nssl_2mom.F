@@ -71,7 +71,7 @@
 !
 !
 !---------------------------------------------------------------------
-! Apr. 2023
+! Apr. 2023 (WRF-4.6)
 !  - Update to 3-moment for rain, graupel, and hail
 !  - Change default graupel/hail fall speeds to icdx/icdxhl=6 (Milbrandt & Morrison 2013)
 !     and also set default ehw0=0.9 and ehlw0=0.9 to compensate for lower fall speeds.
@@ -1348,7 +1348,7 @@ MODULE module_mp_nssl_2mom
 
 
 
-      IF ( .false. ) THEN ! set to true to enable internal namelist read
+      IF ( .true. ) THEN ! set to true to enable internal namelist read
       open(15,file='namelist.input',status='old',form='formatted',action='read')
       rewind(15)
       read(15,NML=nssl_mp_params,iostat=istat)

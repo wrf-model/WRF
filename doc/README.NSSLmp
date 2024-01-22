@@ -9,7 +9,9 @@ Some background information and usage tips for the NSSL microphysics scheme.
 NOTE TO SMPAR or DM+SMPAR USERS: If a segmentation fault occurs, try setting the environment variable OMP_STACKSIZE to 8M or 16M (default is 4M, where M=MB). Note that this does not increase the shell stacksize limit [use 'ulimit -a unlimited' (bash) or 'unlimit stacksize' (tcsh)]
 
 CHANGES:
-June 2023 (WRF 4.5.X): Main default option change is for graupel/hail fall speed options (icdx, icdxhl; changed from 3 to 6, see below), and default maximum gr/hail droplet collection efficiencies (ehw0/ehlw0 changed from 0.5/0.75 to 0.9/0.9, see below)
+June 2023 (WRF 4.6): Main default option change is for graupel/hail fall speed options (icdx, icdxhl; changed from 3 to 6, see below), and default maximum gr/hail droplet collection efficiencies (ehw0/ehlw0 changed from 0.5/0.75 to 0.9/0.9, see below). Snow aggregation efficiency is reduced to limit excessive snow reflectivity (see below).
+
+CONTACT: For questions not covered here (or other issues/bugs), feel free to contact Ted Mansell (NOAA/NSSL) at ted.mansell_at_noaa.gov and/or tag @MicroTed in a github issue.
 
 DESCRIPTION:
 
@@ -20,9 +22,9 @@ Basic options in physics namelist:
                     CCN concentration + options
 
  The legacy options (17,19,21,22) still behave as before (for now), but going
- forward one should use mp_physics=18 with modifier flags (set *only* the listed flags):
- m
- p_physics 
+ forward one should use mp_physics=18 with modifier flags:
+ 
+ mp_physics 
   = 22 ! NSSL scheme (2-moment) without hail
       Equivalent: mp=18, nssl_hail_on=0, nssl_ccn_on=0
   = 17 ! NSSL scheme (2-moment) with hail with constant background CCN 
@@ -49,8 +51,8 @@ Option flags (integer; apply to all domains except nssl_hail_on):
 
  nssl_hail_on : If not set explicitly, it is set automatically to 1. This is the only
                 flag with dimensions of 'max_domains' e.g., so that hail can be turned
-                off on non-convection-allowing parent domains (Only needed for turning
-                hail off)
+                off on non-convection-allowing parent domains (Default is on, so this 
+                is only needed for turning the hail species off)
 
  nssl_ccn_is_ccna : The CCN category, if enabled (=1), can be used to represent either the
                     number of unactivated CCN (default, value of 0, with irenuc=2), or, if
@@ -61,26 +63,26 @@ Option flags (integer; apply to all domains except nssl_hail_on):
                     default is 1 (Only needed for turning 2-moment off)
 
  Other namelist options (also "physics" namelist)
-   nssl_alphah  = 0.    ! PSD shape parameter for graupel (2-moment)
-   nssl_alphahl = 1.    ! PSD shape parameter for hail (2-moment)
+   nssl_alphah  = 0.    ! PSD shape parameter for graupel (1- and 2-moment)
+   nssl_alphahl = 1.    ! PSD shape parameter for hail (1- and 2-moment)
    nssl_cnoh    = 4.e5  ! graupel intercept (1-moment only)
    nssl_cnohl   = 4.e4  ! hail intercept (1-moment only)
    nssl_cnor    = 8.e5  ! rain intercept (1-moment only)
    nssl_cnos    = 3.e6  ! snow intercept (1-moment only)
-   nssl_rho_qh  = 500.  ! graupel density
-   nssl_rho_qhl = 800.  ! hail density
+   nssl_rho_qh  = 500.  ! graupel density (nssl_density_on=0)
+   nssl_rho_qhl = 800.  ! hail density (nssl_density_on=0)
    nssl_rho_qs  = 100.  ! snow density
 
 
   nssl_cccn  - (real) Initial concentration of cloud condensation 
-                       nuclei (per m^3 at sea level
+                       nuclei (per m^3 at sea level)
                    0.25e+9 maritime
                    0.5e+9 "low-med" continental (DEFAULT)
                    1.0e+9 "med-high" continental
                    1.5e+09 - high-extreme continental CCN)
                    Larger values run a risk of unrealistically weak 
                    precipitation production
-                 Value sets the concentration at MSL, and an initially
+                 The value of nssl_cccn sets the concentration at MSL, and an initially
                  homogeneous number mixing ratio (ccn/1.225) is assumed throughout
                  the depth of the domain. The droplet concentration near cloud base
                  will be less than nssl_cccn because of the well-mixed assumption, 
@@ -89,11 +91,11 @@ Option flags (integer; apply to all domains except nssl_hail_on):
 
 The graupel and hail particle densities are also calculated by predicting the total particle volume. The graupel category therefore emulates a range of characteristics from high-density frozen drops (includes small hail) to low-density graupel (from rimed ice crystals/snow) in its size and density spectrum. The hail category is designed to simulate larger hail sizes. Hail is only produced from higher-density large graupel that is actively riming (esp. in wet growth).
 
-Hydrometeor size distributions are assumed to follow a gamma functional form. Microphysical processes include cloud droplet and cloud ice nucleation, condensation, deposition, evaporation, sublimation, collection–coalescence, variable-density riming, shedding, ice multiplication, cloud ice aggregation, freezing and melting, and conversions between hydrometeor categories. 
+Hydrometeor size distributions are assumed to follow a gamma functional form. (Shape parameters for 2-moment graupel and hail can be set with nssl_alphah/nssl_alphahl.) Microphysical processes include cloud droplet and cloud ice nucleation, condensation, deposition, evaporation, sublimation, collection–coalescence, variable-density riming, shedding, ice multiplication, cloud ice aggregation, freezing and melting, and conversions between hydrometeor categories. 
 
 Cloud concentration nuclei (CCN) concentration is predicted as in Mansell et al. (2010)  with a bulk activation spectrum approximating small aerosols. (New option nssl_ccn_is_ccna=1 instead predicts the number of activated CCN.) The model tracks the number of unactivated CCN, and the local CCN concentration is depleted as droplets are activated, either at cloud base or in cloud. The CCN are subjected to advection and subgrid turbulent mixing but have no other interactions with hydrometeors; for example, scavenging by raindrops is omitted. CCN are restored by droplet evaporation and by a gradual regeneration when no hydrometeors are present (ccntimeconst). Aerosol sensitivity is enhanced by explicitly treating droplet condensation instead of using a saturation adjustment. Supersaturation (within reason) is allowed to persist in updraft with low droplet concentration.
 
-Droplet activation option method is controlled by the 'irenuc' option (internal to NSSL module). Default (old) option (2) depletes CCN from unactivated CCN field. New option (7) instead counts the number of activated CCN (nucleated droplets) with the assumption of an initial constant CCN number mixing ratio. Option 7 better handles supersaturation at low CCN (e.g., maritime) concentrations by allowing extra droplet activation at high SS.
+Droplet activation option method is controlled by the 'irenuc' option (internal to NSSL module). The default option (2) depletes CCN from the unactivated CCN field. A new option (7) instead counts the number of activated CCN (nucleated droplets) with the assumption of an initial constant CCN number mixing ratio. Option 7 better handles supersaturation at low CCN (e.g., maritime) concentrations by allowing extra droplet activation at high SS.
 
   irenuc     : (nssl_mp_params namelist)
                2 = ccn field is UNactivated aerosol (default; old droplet activation)
@@ -103,15 +105,16 @@ Droplet activation option method is controlled by the 'irenuc' option (internal 
 
 Excessive size sorting (common in 2-moment schemes) is effectively controlled by an adaptive breakup method that prevents reflectivity growth by sedimentation (Mansell 2010). For 2-moment, infall=4 (default; nssl_mp_params namelist) is recommended. For 3-moment, infall only really applies to droplets, cloud ice, and snow.
 
-Graupel -> hail conversion: The parameter ihlcnh selects the method of converting graupel (hail embryos) to the hail category. The default value is -1 for automatic setting. The original option (ihlcnh=1) is replaced by a new option (ihlcnh=3) as of May 2023. ihlcnh=3 converts from the graupel spectrum itself based on the wet growth diameter, which generally results in fewer initiated hailstones with larger diameters (and larger mean diameter at the ground).
+Graupel -> hail conversion: The parameter ihlcnh selects the method of converting graupel (hail embryos) to the hail category. The default value is -1 for automatic setting. The original option (ihlcnh=1) is replaced by a new option (ihlcnh=3) as of May 2023. ihlcnh=3 converts from the graupel spectrum itself based on the wet growth diameter, which generally results in fewer initiated hailstones with larger diameters (and larger mean diameter at the ground). If hail size seems excessive, try setting ihlcnh=1, which tends to generate higher hail number concentrations and thus smaller diameters.
 
-June 2023 (WRF 4.5.x) update introduces changes in the default options for graupel/hail fall speeds and collection efficiencies. The original fall speed options (icdx=3; icdxhl=3) from Mansell et al. (2010) are switched to the Milbrandt and Morrison (2013) fall speed curves (icdx=6; icdxhl=6). Because the fall speeds are generally a bit lower, a partially compensating increase in maximum collection efficiency is set by default: ehw0/ehlw0 increased to 0.9. One effect is somewhat reduced total precipitation and cold pool intensity for supercell storms.
+The June 2023 (WRF 4.6) update introduces changes in the default options for graupel/hail fall speeds and collection efficiencies. The original fall speed options (icdx=3; icdxhl=3) from Mansell et al. (2010) are switched to the Milbrandt and Morrison (2013) fall speed curves (icdx=6; icdxhl=6). Because the fall speeds are generally a bit lower, a partially compensating increase in maximum collection efficiency is set by default: ehw0/ehlw0 increased to 0.9. One effect is somewhat reduced total precipitation and cold pool intensity for supercell storms.
 
   (nssl_mp_params namelist)
   icdx         - fall speed option for graupel (was 3, now is 6)
   icdxhl       - fall speed option for hail (was 3, now is 6)
   ehw0,ehlw0   - Maximim droplet collection efficiencies for graupel (ehw0=0.75, now 0.9)
-                 and hail (ehlw0=0.75, now 0.9) 
+                 and hail (ehlw0=0.75, now 0.9)
+  ihlcnh       - graupel to hail conversion option (was 1, now 3)
 
 In summary, to get something closer to previous behavior, use the following:
 
@@ -125,7 +128,7 @@ In summary, to get something closer to previous behavior, use the following:
 
 Snow Aggregation and reflectivity:
 
-Snow self-collection (aggregation) has been curbed in the 4.5.x version by reducing the collision efficiency and the temperature range over which aggregation is allowed (esstem):
+Snow self-collection (aggregation) has been curbed in the 4.6 version by reducing the collision efficiency and the temperature range over which aggregation is allowed (esstem):
 
   ess0 = 0.5 ! collision efficiency, reduced from 1 to 0.5
   esstem1 = -15. ! was -25.  ! lower temperature where snow aggregation turns on

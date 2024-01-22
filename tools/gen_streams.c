@@ -609,14 +609,12 @@ gen_med_find_esmf_coupling ( FILE *fp )
    for each stream.  This file is then included by the registry.io_boilerplate file when the
    registry actually runs.  As with the other mods above, this allows a variable, compile-time
    number of io streams. Note that this one is self contained and dirname is hard-coded.
-   AI: In an effort to delineate true source files from autogen stuff this is now not going into hard-coded
-   Registry so that we can use ./ as an alternate include location
 */
 int
 gen_io_boilerplate ()
 {
   FILE * fp ;
-  char * dirname = "./" ;
+  char * dirname = "Registry" ;
   char  fname[NAMELEN] ;
   char * fn ;
   char * aux , *streamtype , streamno[5]  ;

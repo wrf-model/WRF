@@ -7,8 +7,8 @@ MODULE module_wind_mav
 ! This module is based on module_wind_fitch but uses the Jensen, XA and Gm wake
 ! loss models instead of the Fitch parameterization
 
-! Code by Yulong MA (UDEL; Guangdong-Hong kong-Macau Greater Bay Area Weather
-! Research Center for Monitoring Warning and Forecasting) and Cristina L. Archer (UDEL)
+! Code by Yulong MA (Guangdong-Hong kong-Macau Greater Bay Area Weather
+! Research Center for Monitoring Warning and Forecasting;UDEL) and Cristina L. Archer (UDEL)
 
 ! --- NOTICE ---
 ! The following papers should be cited whenever presenting results using this scheme:

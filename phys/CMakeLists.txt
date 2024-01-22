@@ -25,6 +25,7 @@ add_dependencies( ${PROJECT_NAME}_Core module_ra_rrtmg_preproc )
 target_sources(
                 ${PROJECT_NAME}_Core
                 PRIVATE
+                  ccpp_kind_types.F
                   complex_number_module.F
                   module_bep_bem_helper.F
                   module_bl_acm.F

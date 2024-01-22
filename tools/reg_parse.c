@@ -117,19 +117,21 @@ pre_parse( char * dir, FILE * infile, FILE * outfile )
     for ( p = inln ; ( *p == ' ' || *p == '	' ) && *p != '\0' ; p++ ) ;
     if ( !strncmp( p , "include", 7 ) &&  ! ( ifdef_stack_ptr >= 0 && ! ifdef_stack[ifdef_stack_ptr] ) ) {
       FILE *include_fp ;
-      char include_file_name_dir[128] ;
+      char include_file_name_local_registry[128] ;
       char include_file_name[128] ;
       p += 7 ; for ( ; ( *p == ' ' || *p == '	' ) && *p != '\0' ; p++ ) ;
       if ( strlen( p ) > 127 ) { fprintf(stderr,"Registry warning: invalid include file name: %s\n", p ) ; }
       else {
         
-        sprintf( include_file_name,     "%s", p ) ;
+        sprintf( include_file_name_local_registry, "./Registry/%s", p ) ;
+        sprintf( include_file_name, "%s/%s", dir , p ) ;
+
+        if ( (p=index(include_file_name_local_registry,'\n')) != NULL ) *p = '\0' ;
         if ( (p=index(include_file_name,'\n')) != NULL ) *p = '\0' ;
-        sprintf( include_file_name_dir, "%s/%s", dir , include_file_name ) ;
-        
+
         fprintf(stderr,"opening %s\n",include_file_name) ;
-        if ( ( ( include_fp = fopen( include_file_name,     "r" ) ) != NULL ) || // Use short circuit logic here to try both sequentially
-             ( ( include_fp = fopen( include_file_name_dir, "r" ) ) != NULL ) )
+        if ( ( ( include_fp = fopen( include_file_name_local_registry, "r" ) ) != NULL ) || // Use short circuit logic here to try both sequentially
+             ( ( include_fp = fopen( include_file_name, "r" ) ) != NULL ) )
         {
 
           fprintf(stderr,"including %s\n",include_file_name ) ;
@@ -138,7 +140,7 @@ pre_parse( char * dir, FILE * infile, FILE * outfile )
           fclose( include_fp ) ;
         } 
         else {
-          fprintf(stderr,"Registry warning: cannot open %s. Tried %s and %s Ignoring.\n", include_file_name, include_file_name, include_file_name_dir ) ;
+          fprintf(stderr,"Registry warning: cannot open %s. Tried %s and %s Ignoring.\n", include_file_name, include_file_name, include_file_name_local_registry ) ;
         } 
       }
     }

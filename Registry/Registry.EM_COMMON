@@ -3605,8 +3605,8 @@ package   any_fft_used   fft_used==1                  -             state:t_xxx,
 
 # Yulong add for wind wake models
 # 1 = Jensen; 2 = XA; 3 = GM
-rconfig   integer     windfarm_model        namelist,physics      max_domains    2       rh       "windfarm_model"                ""      ""
+rconfig   integer     windfarm_wake_model        namelist,physics      max_domains    2       rh       "windfarm_wake_model"                ""      ""
 #
 # wake overlap method, M1, M2, M3, M4 [1, 2, 3, 4]
-rconfig   integer     windfarm_method        namelist,physics      max_domains    4       rh       "windfarm_method"                ""      ""
+rconfig   integer     windfarm_overlap_method        namelist,physics      max_domains    4       rh       "windfarm_overlap_method"                ""      ""
 rconfig   real        windfarm_deg           namelist,physics      max_domains    0        -     "windfarm_deg"        "for windfarm ideal case"   "degree"

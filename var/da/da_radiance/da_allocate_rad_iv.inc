@@ -80,6 +80,10 @@ subroutine da_allocate_rad_iv (i, nchan, iv)
       end if
       if ( index(iv%instid(i)%rttovid_string, 'ahi') > 0 ) then
          allocate (iv%instid(i)%cloudflag(iv%instid(i)%num_rad))
+      end if
+      if ( index(iv%instid(i)%rttovid_string, 'abi') > 0 ) then
+         allocate (iv%instid(i)%cloud_mod(nchan,iv%instid(i)%num_rad))
+         allocate (iv%instid(i)%cloud_obs(nchan,iv%instid(i)%num_rad))
       end if	  
       if ( index(iv%instid(i)%rttovid_string, 'gmi') > 0 ) then
          allocate (iv%instid(i)%clw(iv%instid(i)%num_rad))
@@ -112,16 +116,26 @@ subroutine da_allocate_rad_iv (i, nchan, iv)
       allocate (iv%instid(i)%gamma_jacobian(nchan,iv%instid(i)%num_rad))
       allocate (iv%instid(i)%cloud_frac(iv%instid(i)%num_rad))
       if ( use_clddet_zz ) then
-         iv%instid(i)%superob_width = 2*ahi_superob_halfwidth+1
+         ! here we assume AHI and ABI (they cover different regions) are not used simultaneously
+         if ( index(iv%instid(i)%rttovid_string, 'ahi') > 0 ) &
+              iv%instid(i)%superob_width = 2*ahi_superob_halfwidth+1
+         if ( index(iv%instid(i)%rttovid_string, 'abi') > 0 ) &
+              iv%instid(i)%superob_width = 2*abi_superob_halfwidth+1
+
          allocate (iv%instid(i)%superob(iv%instid(i)%superob_width, &
                                         iv%instid(i)%superob_width))
          do iy = 1, iv%instid(i)%superob_width
          do ix = 1, iv%instid(i)%superob_width
             allocate (iv%instid(i)%superob(ix,iy)%cld_qc(iv%instid(i)%num_rad))
             allocate (iv%instid(i)%superob(ix,iy)%tb_obs(nchan,iv%instid(i)%num_rad))
+            if ( index(iv%instid(i)%rttovid_string, 'abi') > 0 ) then
+              do n = 1, iv%instid(i)%num_rad
+                 allocate (iv%instid(i)%superob(ix,iy)%cld_qc(n)%tb_stddev_3x3(nchan))
+              end do
+            end if
          end do
          end do
-      end if	  
+      end if
       if ( use_rttov_kmatrix .or. use_crtm_kmatrix ) then
          allocate(iv%instid(i)%ts_jacobian(nchan,iv%instid(i)%num_rad))
          allocate(iv%instid(i)%ps_jacobian(nchan,iv%instid(i)%num_rad))

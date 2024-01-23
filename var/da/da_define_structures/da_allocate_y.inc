@@ -211,6 +211,19 @@ subroutine da_allocate_y (iv, y)
       end do
    end if
 
+   if (y % nlocal(lightning) > 0) then
+      allocate (y % lightning(1:y % nlocal(lightning)))
+      do n = 1, y % nlocal(lightning)
+         nlevels = iv%info(lightning)%levels(n)
+         allocate (y % lightning(n) % w(1:nlevels))
+         allocate (y % lightning(n) % div(1:nlevels))
+         allocate (y % lightning(n) % qv(1:nlevels))
+         y % lightning(n) % w(1:nlevels) = 0.0
+         y % lightning(n) % div(1:nlevels) = 0.0
+         y % lightning(n) % qv(1:nlevels) = 0.0 
+      end do
+   end if
+
    if (y % nlocal(airep) > 0) then
       allocate (y % airep(1:y % nlocal(airep)))
       do n = 1, y % nlocal(airep)

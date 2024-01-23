@@ -4,7 +4,7 @@ module da_obs_io
 
    use da_control, only : xmiss, missing_r, fmt_each, fmt_info, trace_use, &
       fmt_srfc, filtered_obs_unit, num_procs,missing, ierr,comm, rand_unit, &
-      obs_qc_pointer, rootproc, omb_unit,omb_add_noise,use_airepobs, &
+      obs_qc_pointer, rootproc, omb_unit,omb_add_noise,use_airepobs, use_lightningobs, &
       use_airepobs,use_bogusobs,use_gpspwobs,use_gpsztdobs,use_gpsrefobs,use_geoamvobs, &
       use_metarobs,use_profilerobs,use_pilotobs,use_buoyobs,use_shipsobs,use_rainobs, &
       use_synopobs,use_soundobs,use_mtgirsobs,use_tamdarobs,use_qscatobs,use_radarobs, &
@@ -23,7 +23,7 @@ module da_obs_io
       obs_names, num_ob_indexes, fm_index, ids,ide, ite, jte, &
       sound, mtgirs,synop, pilot, satem, geoamv, polaramv, airep, gpspw, gpsref, &
       tamdar, tamdar_sfc, metar, ships, ssmi_rv, ssmi_tb, ssmt1, ssmt2, qscat, profiler, buoy, bogus, pseudo, &
-      radar, radiance, airsr, sonde_sfc, trace_use_dull, num_fgat_time, time_slots, myproc, &
+      radar, radiance, airsr, sonde_sfc, trace_use_dull, num_fgat_time, time_slots, myproc, lightning, &
       qmarker_retain, anal_type_verify, top_km_gpsro, bot_km_gpsro, thin_rainobs, &
       sfc_assi_options, sfc_assi_options_1, sfc_assi_options_2,print_detail_rain,max_rain_input,rain, &
       pi, ob_format_gpsro, ob_format_ascii, analysis_date, kms,kme, v_interp_h,v_interp_p, &
@@ -33,6 +33,7 @@ module da_obs_io
       lsac_use_u, lsac_use_v, lsac_use_t, lsac_use_q, lsac_u_error, lsac_v_error, lsac_t_error, lsac_q_error, &
       gpsro_drift, max_gpseph_input, use_gpsephobs, gpseph, gpseph_loadbalance, kds, kde, kts, kte, &
       use_radar_rhv, use_radar_rqv, use_radar_rf, use_radar_rv, multi_inc, &
+      use_lightning_w, use_lightning_div, use_lightning_qv, lightning_min_rh, min_flashrate, &
       thin_conv_opt, no_thin, thin_single, thin_multi, thin_superob, thin_superob_hv, &
       thin_mesh_vert_conv, use_satwnd_bufr, uv_error_opt, uv_error_val, error_opt_nml
 
@@ -54,7 +55,7 @@ module da_obs_io
    use da_define_structures, only : iv_type, multi_level_type, multi_level_type_BUFR, &
       radar_multi_level_type, y_type, field_type, each_level_type, &
       radar_each_level_type, info_type, model_loc_type,gpsref_type, rain_single_level_type, rain_each_type, &
-      gpseph_type
+      gpseph_type, lightning_each_level_type, lightning_multi_level_type
    use da_grid_definitions, only : da_ffdduv,da_ffdduv_model,da_ffdduv_diagnose
    use da_obs, only : da_count_filtered_obs,da_check_missing,da_obs_proc_station, da_set_obs_missing, da_set_3d_obs_missing
    use da_par_util1, only : da_proc_sum_int
@@ -97,6 +98,8 @@ contains
 #include "da_scan_obs_ascii.inc"
 #include "da_read_obs_radar.inc"
 #include "da_scan_obs_radar.inc"
+#include "da_read_obs_lightning.inc"
+#include "da_scan_obs_lightning.inc"
 #include "da_scan_obs_rain.inc" 
 #include "da_read_obs_rain.inc"
 #if (WRF_CHEM == 1)

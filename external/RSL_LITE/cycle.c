@@ -32,7 +32,7 @@ static int *nbytes_dst = NULL ;
 static MPI_Request *x_recv = NULL ,  *x_send = NULL ;
 #endif
 
-RSL_LITE_INIT_CYCLE (  int * Fcomm ,
+void RSL_LITE_INIT_CYCLE (  int * Fcomm ,
                 int * xy0 , int * inout0 ,
                 int * n3dR0, int *n2dR0, int * typesizeR0 , 
                 int * n3dI0, int *n2dI0, int * typesizeI0 , 
@@ -142,7 +142,7 @@ RSL_LITE_INIT_CYCLE (  int * Fcomm ,
 #endif
 }
 
-RSL_LITE_PACK_CYCLE ( int * Fcomm, char * buf , int * inout0 , int * typesize0 , int * xy0 , int * pu0 , char * memord , int * xstag0 ,
+void RSL_LITE_PACK_CYCLE ( int * Fcomm, char * buf , int * inout0 , int * typesize0 , int * xy0 , int * pu0 , char * memord , int * xstag0 ,
            int *me0, int * np0 , int * np_x0 , int * np_y0 , 
            int * min_subdomain,
            int * ids0 , int * ide0 , int * jds0 , int * jde0 , int * kds0 , int * kde0 ,
@@ -343,7 +343,7 @@ RSL_LITE_PACK_CYCLE ( int * Fcomm, char * buf , int * inout0 , int * typesize0 ,
 #endif
 }
 
-RSL_LITE_CYCLE ( int * Fcomm0, int *me0, int * np0 , int * np_x0 , int * np_y0 )
+void RSL_LITE_CYCLE ( int * Fcomm0, int *me0, int * np0 , int * np_x0 , int * np_y0 )
 {
   int me, np, np_x, np_y ;
   int yp, ym, xp, xm, nb ;

@@ -11,7 +11,7 @@ module da_statistics
 #if (WRF_CHEM == 1)
       chem_cv_options, &
 #endif
-      obs_names, ob_vars, filename_len, cloud_cv_options
+      obs_names, ob_vars, filename_len, cloud_cv_options, use_cv_w
    use da_define_structures, only : iv_type, maxmin_type, x_type, maxmin_field_type
    use da_par_util1, only : da_proc_sum_real, da_proc_sum_int, da_proc_sum_ints
    use da_par_util, only : da_proc_maxmin_combine

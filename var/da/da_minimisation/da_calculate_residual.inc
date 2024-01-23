@@ -95,6 +95,9 @@ subroutine da_calculate_residual(iv, y, re)
    if (iv%info(radar)%nlocal > 0) &
       call da_residual_radar(iv, y, re, np_missing, np_bad_data, np_obs_used, np_available)
 
+   if (iv%info(lightning)%nlocal > 0) &
+      call da_residual_lightning(iv, y, re, np_missing, np_bad_data, np_obs_used, np_available)
+
    if (iv%info(profiler)%nlocal > 0) &
       call da_residual_profiler(iv, y, re, np_missing, np_bad_data, np_obs_used, np_available)
 

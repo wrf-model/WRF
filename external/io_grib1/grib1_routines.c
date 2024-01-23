@@ -16,17 +16,25 @@
 #include "grib1_routines.h"
 #include "gridnav.h"
 #include "wrf_projection.h"
+#include "trim.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <limits.h>
+#include <string.h>
+#include <math.h>
+#if defined(_WIN32)
+#include <io.h>
+#else
+#include <unistd.h>
+#endif
 
-char *trim (char *str);
 int index_metadata(GribInfo *gribinfo, MetaData *metadata, int fid);
 int index_times(GribInfo *gribinfo, Times *times);
 int find_time(Times *times, char valid_time[15]);
 int get_gridnav_projection(int wrf_projection);
 int get_byte(int input_int, int bytenum);
+int grib_time_format(char *DateStr, char *DateStrIn);
 
 /* 
  * Allocate space for the fileindex structure

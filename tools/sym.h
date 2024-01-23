@@ -89,7 +89,7 @@ struct sym_node
     int marked ;		/* general purpose marker */
 } ;
 
-sym_nodeptr sym_add() ;
-sym_nodeptr sym_get() ;
+sym_nodeptr sym_add(char *) ;
+sym_nodeptr sym_get(char *);
 
 #endif

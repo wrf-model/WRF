@@ -760,9 +760,10 @@ CONTAINS
             flag = .false.
          END IF
       END DO
-      IF (ellev >= 0) THEN !Modified by Zhixiao
-         pel = p(ellev) !Modified by Zhixiao
-         CIN=REAL ( 0 ) !Modified by Zhixiao
+      IF ((ellev >= 0) .and. (lfclev >= 0)) THEN !Modified by Zhixiao
+         plfc = p (lfclev)
+         pel = p (ellev)
+         CIN = REAL ( 0 )
          DO k = sfc+1, nz
             ! Make CAPE and CIN consistent with AMS definition
             ! https://glossary.ametsoc.org/wiki/Convective_available_potential_energy

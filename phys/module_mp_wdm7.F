@@ -380,6 +380,16 @@ CONTAINS
                                                                   )
 !-------------------------------------------------------------------
   IMPLICIT NONE
+!
+!        The code was first implemented in WRF in v4.1
+!        Further Development:
+!        bug fix in snow melting and autoconversion.
+!        ==> Revisions enchance melting and autoconverison.
+!           hong from noaa, july2023
+!        remedy for tiny nc in the presence of qc (nc = xncr, 300/cm**3)
+!        ==> prevents the crashed in computing autoconversion
+!           hong from noaa, july2023
+!
 !-------------------------------------------------------------------
   INTEGER,      INTENT(IN   )    ::   ids,ide, jds,jde, kds,kde , &
                                       ims,ime, jms,jme, kms,kme , &
@@ -916,8 +926,7 @@ CONTAINS
               psmlt(i,k) = xka(t(i,k),den(i,k))/xlf*(t0c-t(i,k))*pi/2.       &
                          *n0sfac(i,k)*(precs1*rslope2(i,k,2)                 &
                          +precs2*work2(i,k)*coeres)/den(i,k)                  
-              psmlt(i,k) = min(max(psmlt(i,k)*dtcld/mstep(i),-qrs(i,k,2)     &
-                         /mstep(i)),0.)
+              psmlt(i,k) = min(max(psmlt(i,k)*dtcld,-qrs(i,k,2)),0.)
 !
 ! nsmlt: melting of snow [LH A27]
 !       (T>T0: ->NR)
@@ -939,8 +948,7 @@ CONTAINS
               pgmlt(i,k) = xka(t(i,k),den(i,k))/xlf*(t0c-t(i,k))*(precg1     &
                            *rslope2(i,k,3) + precg2*work2(i,k)*coeres)       &
                            /den(i,k)                                          
-              pgmlt(i,k) = min(max(pgmlt(i,k)*dtcld/mstep(i),                &
-                          -qrs(i,k,3)/mstep(i)),0.)
+              pgmlt(i,k) = min(max(pgmlt(i,k)*dtcld,-qrs(i,k,3)),0.)
 !
 ! ngmlt: melting of graupel [LH A28]
 !       (T>T0: ->NR)
@@ -1212,7 +1220,7 @@ CONTAINS
           lencon  = 2.7e-2*den(i,k)*qci(i,k,1)*(1.e20/16.*rslopec2(i,k)        &
                    *rslopec2(i,k)-0.4)
           lenconcr = max(1.2*lencon, qcrmin)
-          if(qci(i,k,1).gt.qcr(i,k)) then
+          if(qci(i,k,1).gt.qcr(i,k).and.ncr(i,k,2).gt.ncmin) then
             praut(i,k) = qck1*qci(i,k,1)**(7./3.)*ncr(i,k,2)**(-1./3.)
             praut(i,k) = min(praut(i,k),qci(i,k,1)/dtcld)
 !
@@ -2381,7 +2389,7 @@ CONTAINS
 !
    qc0  = 4./3.*pi*denr*r0**3.*xncr0/den0
    qc1  = 4./3.*pi*denr*r0**3.*xncr1/den0
-   qck1 = .104*9.8*peaut/(xncr*denr)**(1./3.)/xmyu*den0**(4./3.) ! 7.03
+   qck1 = .104*9.8*peaut/(denr)**(1./3.)/xmyu*den0**(4./3.) ! 4706.08203
    pidnc = pi*denr/6.
 !
    bvtr1 = 1.+bvtr

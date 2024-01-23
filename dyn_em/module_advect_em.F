@@ -7956,7 +7956,7 @@ SUBROUTINE advect_scalar_weno ( field, field_old, tendency,     &
     
     real               :: qim2, qim1, qi, qip1, qip2
     double precision               :: beta0, beta1, beta2, f0, f1, f2, wi0, wi1, wi2, sumwk
-    double precision, parameter    :: gi0 = 1.d0/10.d0, gi1 = 6.d0/10.d0, gi2 = 3.d0/10.d0, eps=1.0d-28
+    double precision, parameter    :: gi0 = 1.d0/10.d0, gi1 = 6.d0/10.d0, gi2 = 3.d0/10.d0, eps=1.0d-40
     integer, parameter :: pw = 2
 
 
@@ -8652,7 +8652,7 @@ SUBROUTINE advect_scalar_wenopd ( field, field_old, tendency,    &
 
     real               :: qim2, qim1, qi, qip1, qip2
     double precision               :: beta0, beta1, beta2, f0, f1, f2, wi0, wi1, wi2, sumwk
-    double precision, parameter    :: gi0 = 1.d0/10.d0, gi1 = 6.d0/10.d0, gi2 = 3.d0/10.d0, eps1=1.0d-28
+    double precision, parameter    :: gi0 = 1.d0/10.d0, gi1 = 6.d0/10.d0, gi2 = 3.d0/10.d0, eps1=1.0d-40
     integer, parameter :: pw = 2
 
 

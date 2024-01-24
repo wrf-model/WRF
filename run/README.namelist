@@ -1117,10 +1117,26 @@ Options for MAD-WRF - see doc/README.madwrf for usage information
 
 Options for wind turbine drag parameterization:
 
- windfarm_opt (max_dom)             = 0         ! 1 = Simulates the effects of wind turbines in the atmospheric evolution
+ windfarm_opt (max_dom)             = 0         ! 1 = Simulates the effects of wind turbines in the atmospheric evolution, A\activates the wind farm parameterization by Fitch et al (2012)
+                                                ! 2 = Activate the new wind farm scheme (mav scheme) based on Ma et al. (2022).
+                                                      This is similar to option 1, but it also considers subgrid-scale wind turbine wake effects
  windfarm_ij                        = 0         ! whether to use lat-lon or i-j coordinate as wind turbine locations    
                                                 ! 0 = The coordinate of the turbines are defined in terms of lat-lon
                                                 ! 1 = The coordinate of the turbines are defined in terms of grid points
+                                                ! 2 = Valid only with windfarm_opt=2. The coordinate of the turbines are defined
+                                                      in terms of lat-lon with the filename of 'windturbines-ll.txt'
+ windfarm_wake_model                = 2         ! Subgrid-scale wind turbine wake model, valid only with windfarm_opt=2, default is 2
+                                                ! 1 = The Jensen model
+                                                ! 2 = The XA model
+                                                ! 3 = The GM model (windfarm_method is not used)
+                                                ! 4 = Jensen and XA ensemble
+                                                ! 5 = Jensen, XA and GM ensemble
+ windfarm_overlap_method            = 4         ! Wake superposition method for the Jensen and XA wind turbine wake model, valid only with windfarm_opt=2, default is 4
+                                                ! 1 = linear superposition
+                                                ! 2 = squared superposition
+                                                ! 3 = modified squared superposition
+                                                ! 4 = superposition of the hub-height wind speed (Ma et al. 2022)
+ windfarm_deg                       = 0.        ! The rotation degree of the wind farm layout. This is valid only when 'windfarm_opt=2' and 'windfarm_ij=1'
  windfarm_tke_factor                = 0.25      ! Correction factor applied to the TKE coefficient (deafault is 0.25, Archer et al. 2020)
 
 

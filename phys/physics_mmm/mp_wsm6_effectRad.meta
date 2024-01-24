@@ -1,0 +1,228 @@
+[ccpp-arg-table]
+  name = mp_wsm6_effectRad_init
+  type = scheme
+[errmsg]
+  standard_name = ccpp_error_message
+  long_name = error message for error handling in CCPP
+  units = 1
+  dimensions = ()
+  type = character
+  kind = len=*
+  intent = out
+  optional = F
+[errflg]
+  standard_name = option_ccpp_error
+  long_name = option error handling in CCPP
+  units = flag
+  dimensions = ()
+  type = integer
+  intent = out
+  optional = F
+[ccpp-arg-table]
+  name = mp_wsm6_effectRad_final
+  type = scheme
+[errmsg]
+  standard_name = ccpp_error_message
+  long_name = error message for error handling in CCPP
+  units = 1
+  dimensions = ()
+  type = character
+  kind = len=*
+  intent = out
+  optional = F
+[errflg]
+  standard_name = option_ccpp_error
+  long_name = option error handling in CCPP
+  units = flag
+  dimensions = ()
+  type = integer
+  intent = out
+  optional = F
+[ccpp-arg-table]
+  name = mp_wsm6_effectRad_run
+  type = scheme
+[do_microp_re]
+  standard_name = flag_for_computing_effective radii
+  long_name = flag for computing effective radii for cloud water, cloud ice, snow
+  units = flag
+  dimensions = ()
+  type = logical
+  intent = int
+  optional = F
+[t]
+  standard_name = air_temperature
+  long_name = air temperature
+  units =  K
+  dimensions = (horizontal_begin:horizontal_end,vertical_layer_dimension)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[qc]
+  standard_name = cloud_condensed_water_mixing_ratio
+  long_name = cloud condensed water mixing ratio
+  units = kg kg-1
+  dimensions = (horizontal_begin:horizontal_end,vertical_layer_dimension)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[qi]
+  standard_name = ice_water_mixing_ratio
+  long_name = ice water mixing ratio
+  units = kg kg-1
+  dimensions = (horizontal_begin:horizontal_end,vertical_layer_dimension)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[qs]
+  standard_name = snow_mixing_ratio
+  long_name = snow mixing ratio
+  units = kg kg-1
+  dimensions = (horizontal_begin:horizontal_end,vertical_layer_dimension)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[rho]
+  standard_name = air_density
+  long_name = air density
+  units = kg m-3
+  dimensions = (horizontal_begin:horizontal_end,vertical_layer_dimension)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[qmin]
+  standard_name = minimum_value_of_water_vapor_mixing_ratio
+  long_name = minimum value of water vapor mixing ratio
+  units = kg kg-1
+  dimensions = ()
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[t0c]
+  standard_name = temperature_at_zero_celsius
+  long_name = temperature at 0 degrees Celsius
+  units = K
+  dimensions = ()
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[re_qc_bg]
+  standard_name = background_cloud_condensed_water_effective_radius
+  long_name = background cloud condensed water effective radius
+  units = m
+  dimensions = ()
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[re_qi_bg]
+  standard_name = background_ice_water_effective_radius
+  long_name = background ice water effective radius
+  units = m
+  dimensions = ()
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[re_qs_bg]
+  standard_name = background_snow_effective_radius
+  long_name = background snow effective radius
+  units = m
+  dimensions = ()
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[re_qc_max]
+  standard_name = maximum_cloud_condensed_water_effective_radius
+  long_name = maximum cloud condensed water effective radius
+  units = m
+  dimensions = ()
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[re_qi_max]
+  standard_name = maximum_ice_water_effective_radius
+  long_name = maximum ice water effective radius
+  units = m
+  dimensions = ()
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[re_qs_max]
+  standard_name = maximum_snow_effective_radius
+  long_name = maximum snow effective radius
+  units = m
+  dimensions = ()
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[re_qc]
+  standard_name = cloud_condensed_water_effective_radius
+  long_name = cloud condensed water effective radius
+  units = m
+  dimensions = (horizontal_begin:horizontal_end,vertical_layer_dimension)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[re_qi]
+  standard_name = ice_water_effective_radius
+  long_name = ice water effective radius
+  units = m
+  dimensions = (horizontal_begin:horizontal_end,vertical_layer_dimension)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[re_qs]
+  standard_name = snow_effective_radius
+  long_name = snow effective radius
+  units = m
+  dimensions = (horizontal_begin:horizontal_end,vertical_layer_dimension)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[its]
+  standard_name = horizontal_begin
+  long_name = horizontal begin
+  units = none
+  dimensions = ()
+  type = integer
+  intent = in
+  optional = F
+[ite]
+  standard_name = horizontal_end
+  long_name = horizontal end
+  units = none
+  dimensions = ()
+  type = integer
+  intent = in
+  optional = F
+[kts]
+  standard_name = vertical_begin
+  long_name = vertical begin
+  units = none
+  dimensions = ()
+  type = integer
+  intent = in
+  optional = F
+[kte]
+  standard_name = vertical_end
+  long_name = vertical end
+  units = none
+  dimensions = ()
+  type = integer
+  intent = in
+  optional = F
+[errmsg]
+  standard_name = ccpp_error_message
+  long_name = error message for error handling in CCPP
+  units = 1
+  dimensions = ()
+  type = character
+  kind = len=*
+  intent = out
+  optional = F
+[errflg]
+  standard_name = option_ccpp_error
+  long_name = option error handling in CCPP
+  units = flag
+  dimensions = ()
+  type = integer
+  intent = out
+  optional = F

@@ -1179,7 +1179,7 @@ while ( <ARCH_PREAMBLE> )
           $_ .= " " . $sw_curl_lib . "\n" ;
         }
     }
-  if ( $sw_dep_lib_path ne "" )
+  if ( $sw_netcdf4_dep_lib ne "" )
     {
       if (/^ZLIB.*=/)
         { $_  =~ s/\r|\n//g;

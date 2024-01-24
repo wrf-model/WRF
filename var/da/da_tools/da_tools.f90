@@ -65,6 +65,18 @@ contains
 #include "da_llxy_ps_new.inc"
 #include "da_llxy_wrf.inc"
 #include "da_llxy_wrf_new.inc"
+
+#include "da_llxy_1d.inc"
+#include "da_llxy_default_1d.inc"
+#include "da_llxy_kma_global_1d.inc"
+#include "da_llxy_global_1d.inc"
+#include "da_llxy_rotated_latlon_1d.inc"
+#include "da_llxy_latlon_1d.inc"
+#include "da_llxy_lc_1d.inc"
+#include "da_llxy_merc_1d.inc"
+#include "da_llxy_ps_1d.inc"
+#include "da_llxy_wrf_1d.inc"
+
 #include "da_xyll.inc"
 #include "da_xyll_default.inc"
 #include "da_xyll_latlon.inc"
@@ -98,6 +110,7 @@ contains
 #include "da_smooth_anl.inc"
 #include "da_togrid_new.inc"
 #include "da_togrid.inc"
+#include "da_togrid_1d.inc"
 #include "da_unifva.inc"
 #include "da_buddy_qc.inc"
 

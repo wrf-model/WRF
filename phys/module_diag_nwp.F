@@ -13,6 +13,7 @@ MODULE module_diag_nwp
       PRIVATE :: GAMMLN
 CONTAINS
    SUBROUTINE diagnostic_output_nwp(                                  &
+                      config_flags,                                   &
                       ids,ide, jds,jde, kds,kde,                      &
                       ims,ime, jms,jme, kms,kme,                      &
                       ips,ipe, jps,jpe, kps,kpe,                      & ! patch  dims
@@ -44,14 +45,16 @@ CONTAINS
                                                                       )
 !----------------------------------------------------------------------
 
+  USE module_configure, ONLY : grid_config_rec_type
+
   USE module_state_description, ONLY :                                  &
       KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME, &
       WSM6SCHEME, ETAMPNEW, THOMPSON, THOMPSONAERO, THOMPSONGH,         &
       MORR_TWO_MOMENT, GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME,           &
-      NSSL_2MOM, NSSL_2MOMG, NSSL_2MOMCCN, NSSL_1MOM, NSSL_1MOMLFO,     &
       MILBRANDT2MOM , CAMMGMPSCHEME, FULL_KHAIN_LYNN, MORR_TM_AERO,     &
-      FAST_KHAIN_LYNN_SHPUND  !,MILBRANDT3MOM, NSSL_3MOM
+      NSSL_2MOM, FAST_KHAIN_LYNN_SHPUND  !,MILBRANDT3MOM
   USE MODULE_MP_THOMPSON, ONLY: idx_bg1
+
 
    IMPLICIT NONE
 !======================================================================
@@ -105,6 +108,10 @@ CONTAINS
 !-- num_tiles     number of tiles
 !
 !======================================================================
+
+      !  We are not changing any of the namelist settings.
+
+   TYPE ( grid_config_rec_type ), INTENT(IN) :: config_flags
 
    INTEGER,      INTENT(IN   )    ::                             &
                                       ids,ide, jds,jde, kds,kde, &
@@ -378,7 +385,7 @@ CONTAINS
 !.. graupel category mixing ratio and number concentration (or hail, if
 !.. available).  This diagnostic uses the actual spectral distribution
 !.. assumptions, calculated by breaking the distribution into 50 bins
-!.. from 0.5mm to 7.5cm.  Once a minimum number concentration of 0.01
+!.. from 0.5mm to 7.5cm.  Once a minimum number concentration of thresh_conc (5e-4)
 !.. particle per cubic meter of air is reached, from the upper size
 !.. limit, then this bin is considered the max size.
 !+---+-----------------------------------------------------------------+ 
@@ -714,19 +721,26 @@ CONTAINS
 !    CASE (MILBRANDT3MOM)
 !      coming in future?
 
-     CASE (NSSL_1MOMLFO, NSSL_1MOM, NSSL_2MOM, NSSL_2MOMG, NSSL_2MOMCCN)
+     CASE (NSSL_2MOM)
+! Only treat 1-moment option here. 2- and 3-moment are now done in the microphysics
+! 
+       if ( config_flags%nssl_2moment_on == 0 ) then ! single-moment
 
        scheme_has_graupel = .true.
        xrho_g = nssl_rho_qh
        N0exp = nssl_cnoh
-       if (PRESENT(qh_curr)) then
+       if (config_flags%nssl_hail_on==1) then
           xrho_g = nssl_rho_qhl
           N0exp = nssl_cnohl
        endif
        xam_g = 3.1415926536/6.0*xrho_g
 
-       if (PRESENT(ng_curr)) xmu_g = nssl_alphah
-       if (PRESENT(nh_curr)) xmu_g = nssl_alphahl
+       
+       IF (config_flags%nssl_hail_on==1) THEN
+         xmu_g = nssl_alphahl
+       ELSE
+         xmu_g = nssl_alphah
+       ENDIF
 
        if (xmu_g .NE. 0.) then
           cge(1) = xbm_g + 1.
@@ -736,11 +750,14 @@ CONTAINS
              cgg(n) = WGAMMA(cge(n))
           enddo
        endif
+       
+       ENDIF
 
        ! NSSL scheme has many options, but, if single-moment, just fill
        ! in the number array for graupel from built-in assumptions.
 
-       if (.NOT.(PRESENT(nh_curr).OR.PRESENT(ng_curr)) ) then
+!       if (.NOT.(PRESENT(nh_curr).OR.PRESENT(ng_curr)) ) then
+       if ( config_flags%nssl_2moment_on == 0 ) then ! single-moment
 !      !$OMP PARALLEL DO   &
 !      !$OMP PRIVATE ( ij )
        DO ij = 1 , num_tiles

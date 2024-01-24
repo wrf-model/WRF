@@ -1126,7 +1126,7 @@ Options for MAD-WRF - see doc/README.madwrf for usage information
 
 Options for wind turbine drag parameterization:
 
- windfarm_opt (max_dom)             = 0         ! 1 = Simulates the effects of wind turbines in the atmospheric evolution
+ windfarm_opt (max_dom)             = 0         ! 1 = Simulates the effects of wind turbines in the atmospheric evolution, A\activates the wind farm parameterization by Fitch et al (2012)
                                                 ! 2 = Activate the new wind farm scheme (mav scheme) based on Ma et al. (2022).
                                                       This is similar to option 1, but it also considers subgrid-scale wind turbine wake effects
  windfarm_ij                        = 0         ! whether to use lat-lon or i-j coordinate as wind turbine locations    

@@ -17,7 +17,7 @@
 SHELL           =       /bin/sh
 DEVTOP          =       `pwd`
 LIBINCLUDE      =       .
-.SUFFIXES: .F .i .o .f90 .c
+.SUFFIXES: .F .i .o .f90 .c .F90
 
 #### Get core settings from environment (set in compile script)
 #### Note to add a core, this has to be added to.

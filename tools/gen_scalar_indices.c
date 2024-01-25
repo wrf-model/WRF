@@ -187,11 +187,11 @@ gen_scalar_indices1 ( FILE * fp, FILE ** fp2 )
                 fprintf(fp,"     P_%s = %s_index_table( PARAM_%s , idomain )\n",c,assoc_4d,c)  ;
                 fprintf(fp,"   END IF\n") ;
                 {
-                  char fourd_bnd[NAMELEN_LONG + 4] = { '\0' } ;
+                  char fourd_bnd[NAMELEN_LONG + EXTRA_FOR_DEST_BUFFER] = { '\0' } ;
                   /* check for the existence of a fourd boundary array associated with this 4D array */
                   /* set io_mask accordingly for gen_wrf_io to know that it should generate i/o for _b and _bt */
                   /* arrays */
-                  snprintf(fourd_bnd, NAMELEN_LONG + 3, "%s_b",assoc_4d) ;
+                  snprintf(fourd_bnd, NAMELEN_LONG + EXTRA_FOR_DEST_BUFFER, "%s_b",assoc_4d) ;
                   if ( get_entry_r( fourd_bnd, NULL, Domain.fields) != NULL ) {
                      x->boundary = 1 ;
                   }

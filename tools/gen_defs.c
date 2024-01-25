@@ -90,7 +90,7 @@ int
 gen_i1_decls ( char * dn )
 {
   FILE * fp ;
-  char  fname[NAMELEN+6], post[NAMELEN+6] ;
+  char  fname[NAMELEN+EXTRA_FOR_DEST_BUFFER], post[NAMELEN+EXTRA_FOR_DEST_BUFFER] ;
   char * fn = "i1_decl.inc" ;
   char * dimspec ;
   node_t * p ; 

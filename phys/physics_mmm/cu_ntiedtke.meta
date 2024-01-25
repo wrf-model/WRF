@@ -1,0 +1,895 @@
+[ccpp-table-properties]
+  name = cu_ntiedtke
+  type = scheme
+  dependencies = ccpp.F,cu_ntiedtke.F
+########################################################################
+[ccpp-arg-table]
+  name = cu_ntietdke_init
+  type = scheme
+[con_cp]
+  standard_name = specific_heat_of_dry_air_at_constant_pressure
+  long_name = specific heat of dry air at constant pressure
+  units = J kg-1 K-1
+  dimensions = ()
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[con_rd]
+  standard_name = gas_constant_dry_air
+  long_name = gas constant dry air
+  units = J kg-1 K-1
+  dimensions = ()
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[con_rv]
+  standard_name = gas_constant_water_vapor
+  long_name = gas constant water vapor
+  units = J kg-1 K-1 
+  dimensions = ()
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[con_xlv]
+  standard_name = latent_heat_of_vaporization_of_water_at_0C
+  long_name = latent heat of vaporization of water at 0C
+  units = J kg-1 
+  dimensions = ()
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[con_xls]
+  standard_name = latent_heat_of_sublimation_of_water_at_0C
+  long_name = latent heat of sublimation of water at 0C 
+  units = J kg-1 
+  dimensions = ()
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[con_xlf]
+  standard_name = latent_heat_of_fusion_of_water_at_0C
+  long_name = latent heat of fusion of water at 0C
+  units = J kg-1
+  dimensions = ()
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[con_grav]
+  standard_name = gravitational_acceleration
+  long_name = gravitational acceleration
+  units = m s-2
+  dimensions = ()
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[errmsg]
+  standard_name = ccpp_error_message
+  long_name = error message for error handling in CCPP
+  units = 1 
+  dimensions = ()
+  type = character
+  kind = len=*
+  intent = out
+  optional = F
+[errflg]
+  standard_name = option_ccpp_error
+  long_name = option error handling in CCPP
+  units = flag
+  dimensions = ()
+  type = integer
+  intent = out
+  optional = F
+########################################################################
+[ccpp-arg-table]
+  name = cu_ntietdke_final
+  type = scheme
+[errmsg]
+  standard_name = ccpp_error_message
+  long_name = error message for error handling in CCPP
+  units = 1 
+  dimensions = ()
+  type = character
+  kind = len=*
+  intent = out
+  optional = F
+[errflg]
+  standard_name = option_ccpp_error
+  long_name = option error handling in CCPP
+  units = flag
+  dimensions = ()
+  type = integer
+  intent = out
+  optional = F
+########################################################################
+[ccpp-arg-table]
+  name = cu_ntietdke_timestep_init
+  type = scheme
+[its]
+  standard_name = horizontal_begin
+  long_name = horizontal begin 
+  units = none
+  dimensions = ()
+  type = integer
+  intent = in
+  optional = F
+[ite]
+  standard_name = horizontal_end
+  long_name = horizontal end 
+  units = none
+  dimensions = ()
+  type = integer
+  intent = in
+  optional = F
+[kts]
+  standard_name = vertical_begin
+  long_name = vertical begin
+  units = none
+  dimensions = ()
+  type = integer
+  intent = in
+  optional = F
+[kte]
+  standard_name = vertical_end
+  long_name = vertical end
+  units = none
+  dimensions = ()
+  type = integer
+  intent = in
+  optional = F
+[im]
+  standard_name = horizontal_dimension
+  long_name = size of horizontal dimension
+  units = count
+  dimensions = ()
+  type = integer
+  intent = out
+  optional = F
+[kx]
+  standard_name = vertical_layer_dimension
+  long_name = number of vertical layers
+  units = count
+  dimensions = ()
+  type = integer
+  intent = out
+  optional = F
+[kx1]
+  standard_name = vertical_interface_dimension
+  long_name = number of vertical interfaces
+  units = count
+  dimensions = ()
+  type = integer
+  intent = out
+  optional = F
+[itimestep]
+  standard_name = index_of_timestep
+  long_name = current number of time steps
+  units = index
+  dimensions = ()
+  type = integer
+  intent = in
+  optional = F
+[stepcu] -> NOTE: do not know the standard name.
+  standard_name = ?
+  long_name = number of fundamental timesteps between convection calls
+  units = none
+  dimensions = ()
+  type = integer
+  intent = in
+  optional = F
+[dt]
+  standard_name = time_step_for_physics
+  long_name = time step for physics 
+  units = s
+  dimensions = ()
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[grav]
+  standard_name = gravitational_acceleration
+  long_name = gravitational acceleration
+  units = m s-2
+  dimensions = ()
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[xland]
+  standard_name = sea_land_ice_mask
+  long_name = sea land ice mask
+  units = none
+  dimensions = (horizontal_begin:horizontal_end)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[dz]
+  standard_name = layer_thickness
+  long_name = layer thickness
+  units = m
+  dimensions = (horizontal_begin:horizontal_end,vertical_begin:vertical_end)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[pres]
+  standard_name = air_pressure
+  long_name = air pressure
+  units = Pa
+  dimensions = (horizontal_begin:horizontal_end,vertical_begin:vertical_end)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[presi]
+  standard_name = air_pressure_at_interface
+  long_name = air pressure at interface
+  units = Pa
+  dimensions = (horizontal_begin:horizontal_end,vertical_begin:vertical_interface_end)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[t]
+  standard_name = air_temperature
+  long_name = air temperature
+  units = K
+  dimensions = (horizontal_begin:horizontal_end,vertical_layer_dimension)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[rho] -> NOTE: total density, not dry air density.
+  standard_name = air_density
+  long_name = air density
+  units = kg m-3
+  dimensions = (horizontal_begin:horizontal_end,vertical_begin:vertical_end)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[qv]
+  standard_name = water_vapor_mixing_ratio
+  long_name = water vapor mixing ratio 
+  units = kg kg-1
+  dimensions = (horizontal_begin:horizontal_end,vertical_begin:vertical_end)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[qc]
+  standard_name = cloud_condensed_water_mixing_ratio
+  long_name = cloud condensed water mixing ratio
+  units = kg kg-1
+  dimensions = (horizontal_begin:horizontal_end,vertical_begin:vertical_end)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[qi]
+  standard_name = ice_water_mixing_ratio
+  long_name = ice water mixing ratio
+  units = kg kg-1
+  dimensions = (horizontal_begin:horizontal_end,vertical_begin:vertical_end)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[u]
+  standard_name = x_wind
+  long_name = x wind
+  units = m s-1
+  dimensions = (horizontal_begin:horizontal_end,vertical_begin:vertical_end)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[v]
+  standard_name = y_wind
+  long_name = y wind
+  units = m s-1
+  dimensions = (horizontal_begin:horizontal_end,vertical_begin:vertical_end)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[w]
+  standard_name = vertical_velocity
+  long_name = vertical velocity
+  units = m s-1
+  dimensions = (horizontal_begin:horizontal_end,vertical_begin:vertical_interface_end)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[qvften] -> NOTE: do not know how to call the standard name. qvften is the sum of the horizontal and
+            vertical dynamical advection tendency plus PBL tendency plus radiative tendency of the
+            water vapor mixing ratio.  
+  standard_name = ?
+  long_name = dynamical tendency plus PBL tendency of the water vapor mixing ratio
+  units = kg kg-1 s-1
+  dimensions = (horizontal_begin:horizontal_end,vertical_begin:vertical_end)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[thften] -> NOTE: do not know how to call the standard name. thften is the sum of the horizontal and
+            vertical dynamical advection tendency plus PBL tendency plus radiative tendency of the
+            temperature.
+  standard_name = ?
+  long_name = dynamical tendency plus PBL tendency of the potential temperature
+  units = K s-1
+  dimensions = (horizontal_begin:horizontal_end,vertical_begin:vertical_end)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[qvftenz] -> NOTE: do not know how to call the standard name. qvften is the sum of the horizontal and
+            vertical dynamical advection tendency plus PBL tendency plus radiative tendency of the
+            water vapor mixing ratio.  
+  standard_name = ?
+  long_name = dynamical tendency plus PBL tendency of the water vapor mixing ratio
+  units = kg kg-1 s-1
+  dimensions = (horizontal_begin:horizontal_end,vertical_begin:vertical_end)
+  type = real | kind = kind_phys
+  intent = inout
+  optional = F
+[thftenz] -> NOTE: do not know how to call the standard name. thften is the sum of the horizontal and
+            vertical dynamical advection tendency plus PBL tendency plus radiative tendency of the
+            temperature.
+  standard_name = ?
+  long_name = dynamical tendency plus PBL tendency of the potential temperature
+  units = K s-1
+  dimensions = (horizontal_begin:horizontal_end,vertical_begin:vertical_end)
+  type = real | kind = kind_phys
+  intent = inout
+  optional = F
+[slimsk]
+  standard_name = sea_land_ice_mask
+  long_name = sea land ice mask
+  units = none
+  dimensions = (horizontal_begin:horizontal_end)
+  type = real | kind = kind_phys
+  intent = inout
+  optional = F
+[delt] -> NOTE: do not know how to call the standard name to distinguish it from [dt].
+  standard_name = time_step_for_physics
+  long_name = time step for physics 
+  units = s
+  dimensions = ()
+  type = real | kind = kind_phys
+  intent = inout
+  optional = F
+[prsl]
+  standard_name = air_pressure
+  long_name = air pressure
+  units = Pa
+  dimensions = (horizontal_begin:horizontal_end,vertical_begin:vertical_end)
+  type = real | kind = kind_phys
+  intent = inout
+  optional = F
+[[ghtl]
+  standard_name = height
+  long_name = height w.r.t. sea level
+  units = m
+  dimensions = (horizontal_begin:horizontal_end,vertical_begin:vertical_end)
+  type = real | kind = kind_phys
+  intent = inout
+  optional = F
+[tf]
+  standard_name = air_temperature
+  long_name = air temperature
+  units = K
+  dimensions = (horizontal_begin:horizontal_end,vertical_begin:vertical_end)
+  type = real | kind = kind_phys
+  intent = inout
+  optional = F
+[qvf]
+  standard_name = water_vapor_mixing_ratio
+  long_name = water vapor mixing ratio 
+  units = kg kg-1
+  dimensions = (horizontal_begin:horizontal_end,vertical_begin:vertical_end)
+  type = real | kind = kind_phys
+  intent = inout
+  optional = F
+[qcf]
+  standard_name = cloud_condensed_water_mixing_ratio
+  long_name = cloud condensed water mixing ratio
+  units = kg kg-1
+  dimensions = (horizontal_begin:horizontal_end,vertical_begin:vertical_end)
+  type = real | kind = kind_phys
+  intent = inout
+  optional = F
+[qif]
+  standard_name = ice_water_mixing_ratio
+  long_name = ice water mixing ratio
+  units = kg kg-1
+  dimensions = (horizontal_begin:horizontal_end,vertical_begin:vertical_end)
+  type = real | kind = kind_phys
+  intent = inout
+  optional = F
+[uf]
+  standard_name = x_wind
+  long_name = x wind
+  units = m s-1
+  dimensions = (horizontal_begin:horizontal_end,vertical_begin:vertical_end)
+  type = real | kind = kind_phys
+  intent = inout
+  optional = F
+[vf]
+  standard_name = y_wind
+  long_name = y wind
+  units = m s-1
+  dimensions = (horizontal_begin:horizontal_end,vertical_begin:vertical_end)
+  type = real | kind = kind_phys
+  intent = inout
+  optional = F
+[prsi]
+  standard_name = air_pressure_at_interface
+  long_name = air pressure at interface
+  units = Pa
+  dimensions = (horizontal_dimension:vertical_interface_dimension)
+  type = real | kind = kind_phys
+  intent = inout
+  optional = F
+[ghti]
+  standard_name = height_at_interface
+  long_name = height at interface w.r.t. sea level
+  units = m
+  dimensions = (horizontal_begin:horizontal_end,vertical_begin:vertical_end)
+  type = real | kind = kind_phys
+  intent = inout
+  optional = F
+[omg]
+  standard_name = vertical_velocity
+  long_name = vertical velocity
+  units = Pa s-1
+  dimensions = (horizontal_begin:horizontal_end,vertical_begin:vertical_end)
+  type = real | kind = kind_phys
+  intent = inout
+  optional = F
+[errmsg]
+  standard_name = ccpp_error_message
+  long_name = error message for error handling in CCPP
+  units = 1 
+  dimensions = ()
+  type = character
+  kind = len=*
+  intent = out
+  optional = F
+[errflg]
+  standard_name = option_ccpp_error
+  long_name = option error handling in CCPP
+  units = flag
+  dimensions = ()
+  type = integer
+  intent = out
+  optional = F
+########################################################################
+[ccpp-arg-table]
+  name = cu_ntietdke_timestep_final
+  type = scheme
+[its]
+  standard_name = horizontal_begin
+  long_name = horizontal begin 
+  units = none
+  dimensions = ()
+  type = integer
+  intent = in
+  optional = F
+[ite]
+  standard_name = horizontal_end
+  long_name = horizontal end 
+  units = none
+  dimensions = ()
+  type = integer
+  intent = in
+  optional = F
+[kts]
+  standard_name = vertical_begin
+  long_name = vertical begin
+  units = none
+  dimensions = ()
+  type = integer
+  intent = in
+  optional = F
+[kte]
+  standard_name = vertical_end
+  long_name = vertical end
+  units = none
+  dimensions = ()
+  type = integer
+  intent = in
+  optional = F
+[stepcu] -> NOTE: do not know the standard name.
+  standard_name = ?
+  long_name = number of fundamental timesteps between convection calls
+  units = none
+  dimensions = ()
+  type = integer
+  intent = in
+  optional = F
+[dt]
+  standard_name = time_step_for_physics
+  long_name = time step for physics 
+  units = s
+  dimensions = ()
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[exner]
+  standard_name = dimensionless_exner_function
+  long_name = dimensionless exner function
+  units = none
+  dimensions = (horizontal_begin:horizontal_end,vertical_layer_dimension)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[qv]
+  standard_name = water_vapor_mixing_ratio
+  long_name = water vapor mixing ratio
+  units = kg kg-1
+  dimensions = (horizontal_begin:horizontal_end,vertical_begin:vertical_end)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[qc]
+  standard_name = cloud_condensed_water_mixing_ratio
+  long_name = cloud condensed water mixing ratio
+  units = kg kg-1
+  dimensions = (horizontal_begin:horizontal_end,vertical_begin:vertical_end)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[qi]
+  standard_name = ice_water_mixing_ratio
+  long_name = ice water mixing ratio
+  units = kg kg-1
+  dimensions = (horizontal_begin:horizontal_end,vertical_begin:vertical_end)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[t]
+  standard_name = air_temperature
+  long_name = air temperature
+  units = K
+  dimensions = (horizontal_begin:horizontal_end,vertical_layer_dimension)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[u]
+  standard_name = x_wind
+  long_name = x wind 
+  units = m s-1
+  dimensions = (horizontal_begin:horizontal_end,vertical_begin:vertical_end)
+  type = real | kind = kind_phys
+  intent = in 
+  optional = F
+[v]
+  standard_name = y_wind
+  long_name = y wind 
+  units = m s-1
+  dimensions = (horizontal_begin:horizontal_end,vertical_begin:vertical_end)
+  type = real | kind = kind_phys
+  intent = in 
+  optional = F
+[qvf]
+  standard_name = updated_water_vapor_mixing_ratio_after_convection
+  long_name = updated water vapor mixing ratio after convection
+  units = kg kg-1
+  dimensions = (horizontal_begin:horizontal_end,vertical_begin:vertical_end)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[qcf]
+  standard_name = updated_cloud_condensed_water_mixing_ratio_after_convection
+  long_name = updated cloud condensed water mixing ratio after cnovection
+  units = kg kg-1
+  dimensions = (horizontal_begin:horizontal_end,vertical_begin:vertical_end)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[qif]
+  standard_name = updated_ice_water_mixing_ratio_after_convection
+  long_name = updated ice water mixing ratio after convection
+  units = kg kg-1
+  dimensions = (horizontal_begin:horizontal_end,vertical_begin:vertical_end)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[tf]
+  standard_name = updated_air_temperature_after_convection
+  long_name = updated air temperature after convection
+  units = K
+  dimensions = (horizontal_begin:horizontal_end,vertical_layer_dimension)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[uf]
+  standard_name = updated_x_wind_after_convection
+  long_name = updated x wind after convection
+  units = m s-1
+  dimensions = (horizontal_begin:horizontal_end,vertical_begin:vertical_end)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[vf]
+  standard_name = updated_y_wind_after_convection
+  long_name = updated y wind after convection
+  units = m s-1
+  dimensions = (horizontal_begin:horizontal_end,vertical_begin:vertical_end)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[rn]
+  standard_name = total_precipitation_at_surface
+  long_name = total precipitation at surface
+  units = m
+  dimensions = (horizontal_dimension)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[raincv]
+  standard_name = convective_timestep_rain
+  long_name = convective timestep rain
+  units = m
+  dimensions = (horizontal_begin:horizontal_end)
+  type = real | kind = kind_phys
+  intent = inout
+  optional = F
+[pratec]
+  standard_name = convective_timestep_rain_rate
+  long_name = convective timestep rain rate
+  units = m s-1
+  dimensions = (horizontal_begin:horizontal_end)
+  type = real | kind = kind_phys
+  intent = inout
+  optional = F
+[rthcuten]
+  standard_name = tendency_of_potential_temperature_due_to_convection
+  long_name = tendency of potential temperature due to convection
+  units = K s-1
+  dimensions = (horizontal_begin:horizontal_end,vertical_begin:vertical_interface_end)
+  type = real | kind = kind_phys
+  intent = inout
+  optional = F 
+[rqvcuten]
+  standard_name = tendency_of_water_vapor_mixing ratio_due_to_convection
+  long_name = tendency of water vapor mixing ratio due to convection
+  units = kg kg-1 s-1
+  dimensions = (horizontal_begin:horizontal_end,vertical_begin:vertical_interface_end)
+  type = real | kind = kind_phys
+  intent = inout
+  optional = F 
+[rqccuten]
+  standard_name = tendency_of_cloud_water_mixing ratio_due_to_convection
+  long_name = tendency of cloud water mixing ratio due to convection
+  units = kg kg-1 s-1
+  dimensions = (horizontal_begin:horizontal_end,vertical_begin:vertical_interface_end)
+  type = real | kind = kind_phys
+  intent = inout
+  optional = F 
+[rqicuten]
+  standard_name = tendency_of_cloud_ice_mixing ratio_due_to_convection
+  long_name = tendency of cloud ice mixing ratio due to convection
+  units = kg kg-1 s-1
+  dimensions = (horizontal_begin:horizontal_end,vertical_begin:vertical_interface_end)
+  type = real | kind = kind_phys
+  intent = inout
+  optional = F 
+[rucuten]
+  standard_name = tendency_of_x_wind_due_to_convection
+  long_name = tendency of x wind due to convection
+  units = m s-1 s-1
+  dimensions = (horizontal_begin:horizontal_end,vertical_begin:vertical_interface_end)
+  type = real | kind = kind_phys
+  intent = inout
+  optional = F 
+[rvcuten]
+  standard_name = tendency_of_y_wind_due_to_convection
+  long_name = tendency of y wind due to convection
+  units = m s-1 s-1
+  dimensions = (horizontal_begin:horizontal_end,vertical_begin:vertical_interface_end)
+  type = real | kind = kind_phys
+  intent = inout
+  optional = F 
+[errmsg]
+  standard_name = ccpp_error_message
+  long_name = error message for error handling in CCPP
+  units = 1 
+  dimensions = ()
+  type = character
+  kind = len=*
+  intent = out
+  optional = F
+[errflg]
+  standard_name = option_ccpp_error
+  long_name = option error handling in CCPP
+  units = flag
+  dimensions = ()
+  type = integer
+  intent = out
+  optional = F
+########################################################################
+[ccpp-arg-table]
+  name = cu_ntiedtke_run
+  type = scheme
+[pu]
+  standard_name = x_wind
+  long_name = x wind
+  units = m s-1
+  dimensions = (horizontal_dimension,vertical_layer_dimension)
+  type = real | kind = kind_phys
+  intent = inout
+  optional = F
+[pv]
+  standard_name = y_wind
+  long_name = y wind
+  units = m s-1
+  dimensions = (horizontal_dimension,vertical_layer_dimension)
+  type = real | kind = kind_phys
+  intent = inout
+  optional = F
+[pt]
+  standard_name = air_temperature
+  long_name = air temperature
+  units = K
+  dimensions = (horizontal_dimension,vertical_layer_dimension)
+  type = real | kind = kind_phys
+  intent = inout
+  optional = F
+[pqv]
+  standard_name = water_vapor_mixing_ratio
+  long_name = water vapor mixing ratio 
+  units = kg kg-1
+  dimensions = (horizontal_dimension,vertical_layer_dimension)
+  type = real | kind = kind_phys
+  intent = inout
+  optional = F
+[pqc]
+  standard_name = cloud_condensed_water_mixing_ratio 
+  long_name = cloud condensed water mixing ratio
+  units = kg kg-1
+  dimensions = (horizontal_dimension,vertical_layer_dimension)
+  type = real | kind = kind_phys
+  intent = inout
+  optional = F
+[pqi]
+  standard_name = ice_water_mixing_ratio
+  long_name = ice water mixing ratio
+  units = kg kg-1
+  dimensions = (horizontal_dimension,vertical_layer_dimension)
+  type = real | kind = kind_phys
+  intent = inout
+  optional = F
+[pqvf] -> NOTE: do not know how to call the standard name. qvften is the sum of the horizontal and
+            vertical dynamical advection tendency plus PBL tendency plus radiative tendency of the
+            water vapor mixing ratio.  
+  standard_name = ?
+  long_name = dynamical tendency plus PBL tendency of the water vapor mixing ratio
+  units = kg kg-1 s-1
+  dimensions = (horizontal_dimension,vertical_layer_dimension)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[ptf] -> NOTE: do not know how to call the standard name. thften is the sum of the horizontal and
+            vertical dynamical advection tendency plus PBL tendency plus radiative tendency of the
+            temperature.
+  standard_name = ?
+  long_name = dynamical tendency plus PBL tendency of the potential temperature
+  units = K s-1
+  dimensions = (horizontal_dimension,vertical_layer_dimension)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[poz]
+  standard_name = height
+  long_name = height w.r.t. sea level
+  units = m
+  dimensions = (horizontal_dimension,vertical_layer_dimension)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[pzz]
+  standard_name = height_at_interface
+  long_name = height at interface w.r.t. sea level
+  units = m
+  dimensions = (horizontal_dimension,vertical_interface_dimension)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[pomg]
+  standard_name = vertical_velocity
+  long_name = vertical velocity
+  units = Pa s-1
+  dimensions = (horizontal_dimension,vertical_layer_dimension)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[pap]
+  standard_name = air_pressure
+  long_name = air pressure
+  units = Pa
+  dimensions = (horizontal_dimension,vertical_layer_dimension)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[paph]
+  standard_name = air_pressure_at_interface
+  long_name = air pressure at interface
+  units = Pa
+  dimensions = (horizontal_dimension:vertical_interface_dimension)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[evap]
+  standard_name = kinematic_surface_upward_moisture_flux
+  long_name = kinematic surface upward moisture flux
+  units = kg m-2 s-1
+  dimensions = (horizontal_dimension)
+  type = real | kind = kind_phys
+  intent = in
+[hfx]
+  standard_name = kinematic_surface_upward_sensible_heat_flux
+  long_name = kinematic surface upward sensible heat flux
+  units = W m-2
+  dimensions = (horizontal_dimension)
+  type = real | kind = kind_phys
+  intent = in
+[zprecc]
+  standard_name = total_precipitation_at_surface
+  long_name = total precipitation at surface
+  units = m
+  dimensions = (horizontal_dimension)
+  type = real | kind = kind_phys
+  intent = inout
+  optional = F
+[lndj]
+  standard_name = sea_land_ice_mask
+  long_name = landmask: sea/land=0/1
+  units = none
+  dimensions = (horizontal_dimension)
+  type = integer
+  intent = in
+  optional = F
+[lq]
+  standard_name = horizontal_dimension
+  long_name = size of horizontal dimension
+  units = count
+  dimensions = ()
+  type = integer
+  intent = in
+  optional = F
+[km]
+  standard_name = vertical_layer_dimension
+  long_name = number of vertical layers
+  units = count
+  dimensions = ()
+  type = integer
+  intent = in
+  optional = F
+[km1]
+  standard_name = vertical_interface_dimension
+  long_name = number of vertical interfaces
+  units = count
+  dimensions = ()
+  type = integer
+  intent = in
+  optional = F
+[dt]
+  standard_name = time_step_for_physics
+  long_name = time step for physics
+  units = s
+  dimensions = ()
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[dx]
+  standard_name = cell_size
+  long_name = size of the grid cell
+  units = m
+  dimensions = (horizontal_begin:horizontal_end)
+  type = real | kind = kind_phys
+  intent = in
+  optional = F
+[errmsg]
+  standard_name = ccpp_error_message
+  long_name = error message for error handling in CCPP
+  units = 1 
+  dimensions = ()
+  type = character
+  kind = len=*
+  intent = out
+  optional = F
+[errflg]
+  standard_name = option_ccpp_error
+  long_name = option error handling in CCPP
+  units = flag
+  dimensions = ()
+  type = integer
+  intent = out
+  optional = F

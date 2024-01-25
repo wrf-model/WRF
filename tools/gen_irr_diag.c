@@ -271,9 +271,9 @@ int irr_diag_scalar_indices( char *dirname )
    sprintf( line,"  chm_opts_ndx(:nchm_opts) = (/ ");
    for( i = 0; i < nChmOpts; i++ ) {
      if( i == 0 ) 
-       snprintf( piece,135,"%.128s_kpp",chm_scheme[i]);
+       snprintf( piece,TABLE_ENTRY+EXTRA_FOR_DEST_BUFFER,"%." #TABLE_ENTRY "s_kpp",chm_scheme[i]);
      else
-       snprintf( piece,135," ,%.128s_kpp",chm_scheme[i]);
+       snprintf( piece,TABLE_ENTRY+EXTRA_FOR_DEST_BUFFER," ,%." #TABLE_ENTRY "s_kpp",chm_scheme[i]);
      strcat( line,piece );
    }
    strcat( line," /)\n" );

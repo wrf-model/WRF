@@ -87,6 +87,7 @@
  logical,intent(in):: wetscav_on
  real(kind=kind_phys),intent(inout),dimension(ims:ime,kms:kme,jms:jme ):: &
     rainprod,evapprod
+ real(kind=kind_phys),dimension(its:ite,kts:kte):: rainprod_hv,evapprod_hv
 #endif
 
 !output arguments:
@@ -153,7 +154,7 @@
                  snowncv=snowncv_hv,graupel=graupel_hv,graupelncv=graupelncv_hv,  &
                  its=its,ite=ite,kts=kts,kte=kte,errmsg=errmsg,errflg=errflg      &
 #if(WRF_CHEM == 1)
-                 ,rainprod2d=rainprod_hv,evapprod2d=evapprodhv                    &
+                 ,rainprod2d=rainprod_hv,evapprod2d=evapprod_hv                   &
 #endif
                     )
 

@@ -5737,7 +5737,7 @@ END SUBROUTINE phy_prep_part2
                             mpten*(1. + (R_v/R_d)*qv(i,k,j)) + \
                             (R_v/R_d)*qvten*th_phy(i,k,j) - T0
             th_phy_m_t0(i,k,j) = (t_new(i,k,j)+T0)/(1.+(R_v/R_d)*qv(i,k,j)) - T0
-            h_diabatic(i,k,j) =  ( mpten*(1. + (R_v/R_d)*qv(i,k,j)) + &
+            h_diabatic(i,k,j) =  ( mpten*(1. + (R_v/R_d)*qv(i,k,j)) + \
                                  (R_v/R_d)*qvten*th_phy(i,k,j) ) / dt
          ELSE
             t_new(i,k,j) = t_new(i,k,j) + mpten

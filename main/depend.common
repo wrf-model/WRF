@@ -339,7 +339,9 @@ module_cu_tiedtke.o:module_gfs_machine.o \
 		module_gfs_funcphys.o \
 		module_gfs_physcons.o
 
-module_cu_ntiedtke.o: ../share/module_model_constants.o
+module_cu_ntiedtke.o: ../share/module_model_constants.o \
+		ccpp_kind_types.o \
+		physics_mmm/cu_ntiedtke.o
 
 module_ra_gfdleta.o:  ../frame/module_dm.o \
 		module_mp_etanew.o
@@ -975,6 +977,9 @@ module_mp_gsfcgce_4ice_nuwrf.o : ../frame/module_wrf_error.o \
                             module_gocart_coupling.o \
                             module_checkerror.o \
                             module_mp_radar.o
+
+physics_mmm/cu_ntiedtke.o :\
+		ccpp_kind_types.o
 
 # End of DEPENDENCIES for phys
 

@@ -2295,6 +2295,7 @@ rconfig   integer interp_method_type      namelist,domains	1              2     
 rconfig   logical aggregate_lu            namelist,domains	1              .false. irh    "aggregate_lu"   "T/F aggregate the grass, shrubs, trees in LU"
 rconfig   logical rh2qv_wrt_liquid        namelist,domains	1              .true.  irh    "rh2qv_wrt_liquid" "T = rh=>Qv assumes RH wrt liquid water, F = allows ice"
 rconfig   integer rh2qv_method            namelist,domains	1              1       irh    "rh2qv_method" "1=old MM5 method, 2=new WMO method"
+rconfig   logical use_sh_qv               namelist,domains	1              .false. irh    "use_sh_qv" "T/F whether to use SH or mixing ratio in input"
 rconfig   real    qv_max_p_safe           namelist,domains      1              10000   irh    "qv_max_p_safe" "Threshhold pressure, Qv > flag set to value"      "Pa"
 rconfig   real    qv_max_flag             namelist,domains      1              1.E-5   irh    "qv_max_flag" "Qv flag for max"  "kg kg{-1}"
 rconfig   real    qv_max_value            namelist,domains      1              3.E-6   irh    "qv_max_value" "Qv value for max"  "kg kg{-1}"
@@ -3369,6 +3370,8 @@ package   wrfhydro       wrf_hydro==1                -            state:SOLDRAIN
 #WRF Windfarm
 package   no_windfarm    windfarm_opt==0             -            -
 package   fitchscheme    windfarm_opt==1             -            state:power
+# Yulong add for WLM
+package   mavscheme      windfarm_opt==2             -            state:power
 
 #Ideal Cases
 package   realcase       ideal_case==0               -            -
@@ -3634,3 +3637,10 @@ xpose XPOSE_SPECTRAL_NUDGING dyn_em dif_analysis,dif_xxx,dif_yyy
 package   no_fft_used    fft_used==0                  -             -
 package   any_fft_used   fft_used==1                  -             state:t_xxx,u_xxx,ru_xxx,v_xxx,rv_xxx,w_xxx,ww_xxx,ph_xxx,dum_yyy,fourd_xxx
 
+# Yulong add for wind wake models
+# 1 = Jensen; 2 = XA; 3 = GM
+rconfig   integer     windfarm_wake_model        namelist,physics      max_domains    2       rh       "windfarm_wake_model"                ""      ""
+#
+# wake overlap method, M1, M2, M3, M4 [1, 2, 3, 4]
+rconfig   integer     windfarm_overlap_method        namelist,physics      max_domains    4       rh       "windfarm_overlap_method"                ""      ""
+rconfig   real        windfarm_deg           namelist,physics      max_domains    0        -     "windfarm_deg"        "for windfarm ideal case"   "degree"

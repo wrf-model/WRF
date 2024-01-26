@@ -66,7 +66,7 @@
     REAL    chemdt
     INTEGER moist_adv_opt, scalar_adv_opt, tke_adv_opt
     INTEGER save_topo_orig
-    INTEGER scalar_pblmix, tracer_pblmix, grav_settling
+    INTEGER scalar_pblmix, tracer_pblmix, grav_settling, ysu_topdown_pblmix
 #endif
     CHARACTER (len=19) simulation_start_date
     CHARACTER (len=len_current_date) current_date_save
@@ -198,6 +198,7 @@
     CALL nl_get_auxinput9_interval_m ( grid%id , sgfdda_interval_m )
     CALL nl_get_scalar_pblmix  ( grid%id , scalar_pblmix )
     CALL nl_get_tracer_pblmix  ( grid%id , tracer_pblmix )
+    CALL nl_get_ysu_topdown_pblmix  ( grid%id , ysu_topdown_pblmix )
     CALL nl_get_grav_settling  ( grid%id , grav_settling )
 
     CALL nl_get_hybrid_opt ( 1       , hybrid_opt )
@@ -763,6 +764,7 @@ endif
       CALL wrf_put_dom_ti_integer   ( fid, 'ICLOUD_CU',   config_flags%icloud_cu   , 1 , ierr )
       CALL wrf_put_dom_ti_integer   ( fid, 'TRACER_PBLMIX', tracer_pblmix , 1 , ierr )
       CALL wrf_put_dom_ti_integer   ( fid, 'SCALAR_PBLMIX', scalar_pblmix , 1 , ierr )
+      CALL wrf_put_dom_ti_integer   ( fid, 'YSU_TOPDOWN_PBLMIX', ysu_topdown_pblmix , 1 , ierr )
       CALL wrf_put_dom_ti_integer   ( fid, 'GRAV_SETTLING', grav_settling , 1 , ierr )
       CALL wrf_put_dom_ti_integer   ( fid, 'CLDOVRLP', config_flags%cldovrlp , 1 , ierr )
       CALL wrf_put_dom_ti_integer   ( fid, 'IDCOR',    config_flags%idcor ,    1 , ierr )

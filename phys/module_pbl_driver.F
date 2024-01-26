@@ -397,7 +397,7 @@ CONTAINS
 
 
    INTEGER,    INTENT(IN   )    ::     bl_pbl_physics, ra_lw_physics,sf_sfclay_physics,sf_urban_physics,windfarm_opt
-   LOGICAL,    INTENT(IN   )    ::     ysu_topdown_pblmix
+   INTEGER,    INTENT(IN   )    ::     ysu_topdown_pblmix
    INTEGER,    OPTIONAL,  INTENT(IN   )    ::     shinhong_tke_diag
    INTEGER,    OPTIONAL,  INTENT(IN   )    ::     scalar_pblmix, tracer_pblmix
 

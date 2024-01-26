@@ -4,6 +4,7 @@
  use ccpp_kind_types,only: kind_phys
  use bl_ysu
 
+
  implicit none
  private
  public:: ysu
@@ -136,7 +137,7 @@
                                      ims,ime, jms,jme, kms,kme,                &
                                      its,ite, jts,jte, kts,kte
 
-   logical,  intent(in)      ::      ysu_topdown_pblmix
+   integer,  intent(in)      ::      ysu_topdown_pblmix
 !
    real(kind=kind_phys),     intent(in   )   ::      dt,cp,g,rovcp,rovg,rd,xlv,rv
 !
@@ -231,8 +232,11 @@
 
 !temporary allocation of local chemical species and/or passive tracers that are vertically-
 !mixed in subroutine bl_ysu_run:
+   logical:: l_topdown_pblmix
+
    integer,  parameter :: nmix = 0
    integer :: n
+
    real(kind=kind_phys),   dimension(ims:ime,kms:kme,jms:jme,nmix)::       qmix
    real(kind=kind_phys),   dimension(ims:ime,kms:kme,jms:jme,nmix):: rqmixblten
 
@@ -306,6 +310,10 @@
    real,                   dimension(its:ite)              ::              &
                                                              frcurb_hv
 
+!-----------------------------------------------------------------------------------------------------------------
+
+   l_topdown_pblmix = .false.
+   if(ysu_topdown_pblmix .eq. 1) l_topdown_pblmix = .true.
 
    do j = jts,jte
 !
@@ -416,7 +424,7 @@
               ,u10=u10_hv,v10=v10_hv                                           &
               ,uox=uoce_hv,vox=voce_hv                                         &
               ,rthraten=rthraten_hv                                            &
-              ,ysu_topdown_pblmix=ysu_topdown_pblmix                           &
+              ,ysu_topdown_pblmix=l_topdown_pblmix                             &
               ,ctopo=ctopo_hv,ctopo2=ctopo2_hv                                 &
               ,a_u=a_u_hv,a_v=a_v_hv,a_t=a_t_hv,a_q=a_q_hv,a_e=a_e_hv          &
               ,b_u=b_u_hv,b_v=b_v_hv,b_t=b_t_hv,b_q=b_q_hv,b_e=b_e_hv          &

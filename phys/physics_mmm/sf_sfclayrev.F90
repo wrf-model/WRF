@@ -83,7 +83,7 @@
                              u10,v10,th2,t2,q2,flhc,flqc,qgh,          &
                              qsfc,lh,gz1oz0,wspd,br,isfflx,dx,         &
                              svp1,svp2,svp3,svpt0,ep1,ep2,             &
-                             karman,p1000mb,                           &
+                             karman,p1000mb,lakemask,                  &
                              shalwater_z0,water_depth,                 &
                              isftcflx,iz0tlnd,scm_force_flux,          &
                              ustm,ck,cka,cd,cda,                       &
@@ -110,6 +110,7 @@
     psfcpa,     &
     tsk,        &
     xland,      &
+    lakemask,   &
     water_depth
 
  real(kind=kind_phys),intent(in),dimension(its:):: &
@@ -173,6 +174,7 @@
 
  real(kind=kind_phys),parameter:: xka = 2.4e-5
  real(kind=kind_phys),parameter:: prt = 1.
+ real(kind=kind_phys),parameter:: salinity_factor = 0.98
 
  real(kind=kind_phys):: pl,thcon,tvcon,e1
  real(kind=kind_phys):: zl,tskv,dthvdz,dthvm,vconv,rzol,rzol2,rzol10,zol2,zol10
@@ -277,6 +279,8 @@
 !
  do 60 i=its,ite
     e1=svp1*exp(svp2*(tgdsa(i)-svpt0)/(tgdsa(i)-svp3))                       
+    !the saturation vapor pressure for salty water is on average 2% lower
+    if(xland(i).gt.1.5 .and. lakemask(i).eq.0.) e1=e1*salinity_factor
     !for land points qsfc can come from previous time step
     if(xland(i).gt.1.5.or.qsfc(i).le.0.0)qsfc(i)=ep2*e1/(psfc(i)-e1)                                                 
 !QGH CHANGED TO USE LOWEST-LEVEL AIR TEMP CONSISTENT WITH MYJSFC CHANGE

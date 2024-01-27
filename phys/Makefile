@@ -233,6 +233,9 @@ DIAGNOSTIC_MODULES_EM = \
 	module_diag_trad_fields.o \
         module_diag_solar.o
   
+PHYSMMM_MODULES = \
+	./physics_mmm/sf_sfclayrev.o
+
 OBJS    =
 
 LIBTARGET    =  physics
@@ -241,11 +244,11 @@ TARGETDIR    =  ./
 $(LIBTARGET) :
 	$(MAKE) $(J) non_nmm ; \
 	$(AR) $(ARFLAGS) ../main/$(LIBWRFLIB) $(MODULES) $(OBJS)  \
-		$(FIRE_MODULES) $(DIAGNOSTIC_MODULES_EM)
+		$(FIRE_MODULES) $(DIAGNOSTIC_MODULES_EM) $(PHYSMMM_MODULES)
 
 include ../configure.wrf
 
-non_nmm : $(MODULES) $(FIRE_MODULES) $(WIND_MODULES) $(OBJS) $(DIAGNOSTIC_MODULES_EM)
+non_nmm : $(MODULES) $(FIRE_MODULES) $(OBJS) $(DIAGNOSTIC_MODULES_EM)
 
 submodules :
 	@if [ \( ! -f module_sf_noahmpdrv.F \) -o \( ! -f module_sf_noahmp_glacier.F \) -o \

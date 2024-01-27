@@ -832,6 +832,11 @@ module_sf_pxlsm.o: \
 	module_sf_pxlsm_data.o 
 
 
+module_sf_sfclayrev.o: \
+	ccpp_kind_types.o \
+	physics_mmm/sf_sfclayrev.o
+
+
 module_ra_rrtmg_sw.o: \
 	../share/module_model_constants.o \
 	module_ra_clWRF_support.o \
@@ -913,6 +918,7 @@ module_physics_init.o: \
 	module_ra_flg.o \
 	module_sf_sfclay.o \
 	module_sf_sfclayrev.o \
+	physics_mmm/sf_sfclayrev.o \
 	module_sf_slab.o \
 	module_sf_myjsfc.o \
 	module_sf_mynn.o \
@@ -1476,6 +1482,11 @@ module_mp_gsfcgce_4ice_nuwrf.o: \
 	module_gocart_coupling.o \
 	module_checkerror.o \
 	module_mp_radar.o \
+
+
+physics_mmm/sf_sfclayrev.o: \
+	ccpp_kind_types.o
+
 
 # End of DEPENDENCIES for phys
 

@@ -855,7 +855,7 @@
 
     do 370 i = its,ite
        qfx(i)=flqc(i)*(qsfc(i)-qx(i))                                     
-       qfx(i)=amax1(qfx(i),0.)                                            
+!      qfx(i)=amax1(qfx(i),0.)                                            
        lh(i)=xlv*qfx(i)
     370 continue                                                                 
 
@@ -873,7 +873,7 @@
 !         endif 
        elseif(xland(i)-1.5.lt.0.)then                                       
           hfx(i)=flhc(i)*(thgb(i)-thx(i))                                
-          hfx(i)=amax1(hfx(i),-250.)                                       
+!         hfx(i)=amax1(hfx(i),-250.)                                       
        endif                                                                  
    400 continue                                                                 
 

@@ -70,14 +70,15 @@ CONTAINS
          ! stuff for aircraft emissions
          emis_aircraft,                                                    &
          ! stuff for GHG fluxes
-         vprm_in,rad_vprm,lambda_vprm,alpha_vprm,resp_vprm,               &
+         vprm_in,rad_vprm,lambda_vprm,alpha_vprm,resp_vprm,                &
          xtime,tslb,wet_in,rainc,rainnc,potevp,sfcevp,lu_index,            &
          biomt_par,emit_par,ebio_co2oce,eghg_bio,                          &
          seas_flux,                                                        &
          ! stuff for online nh3 "WRF-NH3-CHEM" modified by renchuanhua
          actnh3,EFnh3,                                                     &
-         agrisoil, fertilizer, freeinten, graze, industry, residential,    &
-         transport, current_hour, Q2,                                      &         
+         agrisoil_nh3, fertilizer_nh3, freeinten_nh3, graze_nh3,           &
+         industry_nh3, residential_nh3,                                    &
+         transport_nh3, current_hour, Q2,                                  &         
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )
@@ -344,13 +345,13 @@ CONTAINS
 ! stuff for online NH3  "WRF-NH3-CHEM" modified by renchuanhua
      REAL, DIMENSION( ims:ime,12,jms:jme ), OPTIONAL,  INTENT(IN   ) :: actnh3
      REAL, DIMENSION( ims:ime,   jms:jme ), OPTIONAL,  INTENT(INOUT   ) :: EFnh3
-     REAL, DIMENSION( ims:ime,   jms:jme ), OPTIONAL,  INTENT(INOUT   ) :: agrisoil
-     REAL, DIMENSION( ims:ime,12,jms:jme ), OPTIONAL,  INTENT(INOUT   ) :: fertilizer
-     REAL, DIMENSION( ims:ime,   jms:jme ), OPTIONAL,  INTENT(INOUT   ) :: freeinten
-     REAL, DIMENSION( ims:ime,   jms:jme ), OPTIONAL,  INTENT(INOUT   ) :: graze
-     REAL, DIMENSION( ims:ime,   jms:jme ), OPTIONAL,  INTENT(INOUT   ) :: industry
-     REAL, DIMENSION( ims:ime,   jms:jme ), OPTIONAL,  INTENT(INOUT   ) :: residential
-     REAL, DIMENSION( ims:ime,   jms:jme ), OPTIONAL,  INTENT(INOUT   ) :: transport
+     REAL, DIMENSION( ims:ime,   jms:jme ), OPTIONAL,  INTENT(INOUT   ) :: agrisoil_nh3
+     REAL, DIMENSION( ims:ime,12,jms:jme ), OPTIONAL,  INTENT(INOUT   ) :: fertilizer_nh3
+     REAL, DIMENSION( ims:ime,   jms:jme ), OPTIONAL,  INTENT(INOUT   ) :: freeinten_nh3
+     REAL, DIMENSION( ims:ime,   jms:jme ), OPTIONAL,  INTENT(INOUT   ) :: graze_nh3
+     REAL, DIMENSION( ims:ime,   jms:jme ), OPTIONAL,  INTENT(INOUT   ) :: industry_nh3
+     REAL, DIMENSION( ims:ime,   jms:jme ), OPTIONAL,  INTENT(INOUT   ) :: residential_nh3
+     REAL, DIMENSION( ims:ime,   jms:jme ), OPTIONAL,  INTENT(INOUT   ) :: transport_nh3
      INTEGER, INTENT(IN   ) ::       current_hour
 
 
@@ -1008,11 +1009,11 @@ real, save :: freq_industry(24)    = &
  if( config_flags%nh3emis_opt == ONLINE) then      
   emis_ant(ims:ime , config_flags%kemit , jms:jme, p_e_nh3)=0.0
 
-  frin_house         =  freeinten*Factor_fihouse      ! house [in]
-  frin_sManure       =  freeinten*Factor_sManure      ! manure - field [out]
-  frin_manureStore   =  freeinten*Factor_manureStore  ! manure - store [none]
-  graze_house        =  graze*Factor_grhouse          ! graze [in]
-  graze_out          =  graze*(1.0-Factor_grhouse)    ! graze [out]
+  frin_house         =  freeinten_nh3*Factor_fihouse      ! house [in]
+  frin_sManure       =  freeinten_nh3*Factor_sManure      ! manure - field [out]
+  frin_manureStore   =  freeinten_nh3*Factor_manureStore  ! manure - store [none]
+  graze_house        =  graze_nh3*Factor_grhouse          ! graze [in]
+  graze_out          =  graze_nh3*(1.0-Factor_grhouse)    ! graze [out]
 
   GF_Thouse =1.0
 
@@ -1036,8 +1037,8 @@ real, save :: freq_industry(24)    = &
   end where
 
 
-     do 200 j=jts,jte  
-     do 200 i=its,ite  
+     do j=jts,jte  
+     do i=its,ite  
     
 
      CFwind  =exp(0.0419*(u10(i,j)*u10(i,j)+v10(i,j)*v10(i,j))**0.5)
@@ -1053,7 +1054,7 @@ real, save :: freq_industry(24)    = &
  ! for store
      emis_store(i,j) = frin_manureStore(i,j)
  ! for outside soil
-     emis_fert(i,j)  = EFnh3(i,j)*(fertilizer(i,current_month,j)+frin_sManure(i,j)+ graze_out(i,j)+agrisoil(i,j))
+     emis_fert(i,j)  = EFnh3(i,j)*(fertilizer_nh3(i,current_month,j)+frin_sManure(i,j)+ graze_out(i,j)+agrisoil_nh3(i,j))
 
 
 ! fertilizer and freeinten .... units is kg/km2/month
@@ -1062,11 +1063,12 @@ real, save :: freq_industry(24)    = &
         h=MOD(current_hour+8,24)   !range 0-23
 
   emis_ant(i,1,j,p_e_nh3)=1000.0/(17.0*30.0*24.0)*(emis_house(i,j)+emis_store(i,j)+emis_fert(i,j))  &
-                  + freq_residential(h+1)*residential(i,j)*1000.0/(30.0*17.0)   &
-                  + freq_industry(h+1)   *industry(i,j)*1000.0/(30.0*17.0)   &
-                  + freq_transport(h+1)  *transport(i,j)*1000.0/(30.0*17.0)   
+                  + freq_residential(h+1)*residential_nh3(i,j)*1000.0/(30.0*17.0)   &
+                  + freq_industry(h+1)   *industry_nh3(i,j)*1000.0/(30.0*17.0)   &
+                  + freq_transport(h+1)  *transport_nh3(i,j)*1000.0/(30.0*17.0)   
+    enddo
+    enddo
                    
- 200 continue
  end if 
 
 

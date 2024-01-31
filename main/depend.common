@@ -509,8 +509,8 @@ module_cu_kfeta.o: \
 	../frame/module_wrf_error.o 
 
 
-module_cu_gd.o: \
-		
+module_cu_gd.o: \		
+
 
 module_cu_ksas.o: \
 
@@ -1413,10 +1413,10 @@ module_mp_wdm5.o: \
 
  
 module_mp_wsm6.o: \
-  ccpp_kind_types.o \
-  physics_mmm/mp_wsm6_effectRad.o \
-  physics_mmm/mp_radar.o \
-  physics_mmm/mp_wsm6.o
+	ccpp_kind_types.o \
+	physics_mmm/mp_wsm6_effectRad.o \
+	physics_mmm/mp_radar.o \
+	physics_mmm/mp_wsm6.o
 
 module_mp_wdm6.o: \
 	../share/module_model_constants.o \
@@ -1480,14 +1480,14 @@ module_mp_gsfcgce_4ice_nuwrf.o: \
 
 
 physics_mmm/mp_wsm6.o: \
-  ccpp_kind_types.o \
-  physics_mmm/mp_radar.o \
-  physics_mmm/module_libmassv.o
+	ccpp_kind_types.o \
+	physics_mmm/mp_radar.o \
+	physics_mmm/module_libmassv.o
 
 
 physics_mmm/mp_wsm6_effectRad.o: \
-  ccpp_kind_types.o \
-  physics_mmm/mp_wsm6.o
+	ccpp_kind_types.o \
+	physics_mmm/mp_wsm6.o
 
 # End of DEPENDENCIES for phys
 

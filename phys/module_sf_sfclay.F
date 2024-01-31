@@ -20,7 +20,7 @@ CONTAINS
                      GZ1OZ0,WSPD,BR,ISFFLX,DX,                     &
                      SVP1,SVP2,SVP3,SVPT0,EP1,EP2,                 &
                      KARMAN,EOMEG,STBOLT,                          &
-                     P1000mb,                                      &
+                     P1000mb,LAKEMASK,                             &
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte,                    &
@@ -136,6 +136,7 @@ CONTAINS
                 INTENT(IN   )               ::             MAVAIL, &
                                                              PBLH, &
                                                             XLAND, &
+                                                         LAKEMASK, &
                                                               TSK
 
       REAL,     DIMENSION( ims:ime, jms:jme )                    , &
@@ -242,7 +243,7 @@ CONTAINS
                 QSFC(ims,j),LH(ims,j),                             &
                 GZ1OZ0(ims,j),WSPD(ims,j),BR(ims,j),ISFFLX,DX2D,   &
                 SVP1,SVP2,SVP3,SVPT0,EP1,EP2,KARMAN,EOMEG,STBOLT,  &
-                P1000mb,                                           &
+                P1000mb,LAKEMASK(ims,j),                           &
                 ids,ide, jds,jde, kds,kde,                         &
                 ims,ime, jms,jme, kms,kme,                         &
                 its,ite, jts,jte, kts,kte                          &
@@ -267,7 +268,7 @@ CONTAINS
                      QSFC,LH,GZ1OZ0,WSPD,BR,ISFFLX,DX,             &
                      SVP1,SVP2,SVP3,SVPT0,EP1,EP2,                 &
                      KARMAN,EOMEG,STBOLT,                          &
-                     P1000mb,                                      &
+                     P1000mb,LAKEMASK,                             &
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte,                    &
@@ -278,6 +279,7 @@ CONTAINS
 !-------------------------------------------------------------------
       REAL,     PARAMETER     ::        XKA=2.4E-5
       REAL,     PARAMETER     ::        PRT=1.
+      REAL,     PARAMETER     ::        SALINITY_FACTOR=0.98
 
       INTEGER,  INTENT(IN )   ::        ids,ide, jds,jde, kds,kde, &
                                         ims,ime, jms,jme, kms,kme, &
@@ -294,6 +296,7 @@ CONTAINS
                 INTENT(IN   )               ::             MAVAIL, &
                                                              PBLH, &
                                                             XLAND, &
+                                                         LAKEMASK, &
                                                               TSK
 !
       REAL,     DIMENSION( ims:ime )                             , &
@@ -452,7 +455,9 @@ CONTAINS
       DO 60 I=its,ite
         E1=SVP1*EXP(SVP2*(TGDSA(I)-SVPT0)/(TGDSA(I)-SVP3))                       
 !  for land points QSFC can come from previous time step
-        if(xland(i).gt.1.5.or.qsfc(i).le.0.0)QSFC(I)=EP2*E1/(PSFC(I)-E1)                                                 
+!  the saturation vapor pressure for salty water is on average 2% lower
+        if(xland(i).gt.1.5 .and. lakemask(i).eq.0.) E1=E1*SALINITY_FACTOR
+        if(xland(i).gt.1.5.or.qsfc(i).le.0.0)QSFC(I)=EP2*E1/(PSFC(I)-E1)
 ! QGH CHANGED TO USE LOWEST-LEVEL AIR TEMP CONSISTENT WITH MYJSFC CHANGE
 ! Q2SAT = QGH IN LSM
         E1=SVP1*EXP(SVP2*(T1D(I)-SVPT0)/(T1D(I)-SVP3))                       

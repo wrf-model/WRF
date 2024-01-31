@@ -74,7 +74,7 @@ module da_setup_structures
       chi_u_t_factor, chi_u_ps_factor,chi_u_rh_factor, t_u_rh_factor, ps_u_rh_factor, &
       interpolate_stats, be_eta, thin_rainobs, fgat_rain_flags, use_iasiobs, &
       use_seviriobs, jds_int, jde_int, anal_type_hybrid_dual_res, use_amsr2obs, nrange, use_4denvar, &
-      use_goesimgobs, use_ahiobs,use_gmiobs, obs_use, thin_conv_opt, no_thin, &
+      use_goesimgobs, use_ahiobs, use_goesabiobs, use_gmiobs, obs_use, thin_conv_opt, no_thin, &
       thin_superob_hv, thin_mesh_vert_conv, use_satwnd_bufr
    use da_control, only: rden_bin, use_lsac
    use da_control, only: use_cv_w

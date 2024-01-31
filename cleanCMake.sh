@@ -7,7 +7,6 @@ help()
   echo "./cleanCMake.sh [options]"
   echo "  -c            [Default if no options] Basic cmake clean functionality [make -j 1 clean]"
   echo "  -b            Remove cmake binary installs [xargs rm < ${buildDirectory}/install_manifest.txt]"
-  echo "  -l            Remove symlinks (WRF) [ find ${installDirectory}/test -type l -exec rm {} \; ]"
   echo "  -f            Remove build & install folders (WRF) [ rm ${buildDirectory} -r; rm ${installDirectory}/ -r ]"
   echo "  -a            Remove all (WRF), equivalent to -c -b -f (more specifically -c then -b then-f)"
   echo "Specific builds/installs"
@@ -21,16 +20,13 @@ cleanLinks=FALSE
 cleanFolders=FALSE
 cleanAll=FALSE
 
-while getopts "hcblfad:i:" opt; do
+while getopts "hcbfad:i:" opt; do
   case ${opt} in
     c)
       cleanBasicBuild=TRUE
     ;;
     b)
       cleanBasicInstall=TRUE
-    ;;
-    l)
-      cleanLinks=TRUE
     ;;
     f)
       cleanFolders=TRUE
@@ -65,11 +61,6 @@ fi
 if [ "${cleanBasicInstall}" = "TRUE" ] || [ "${cleanAll}" = "TRUE" ]; then
   echo "Removing binary installs"
   xargs rm < ${buildDirectory}/install_manifest.txt > /dev/null 2>&1
-fi
-
-if [ "${cleanLinks}" = "TRUE" ] || [ "${cleanAll}" = "TRUE" ]; then
-  echo "Removing all symlinks in ${installDirectory}/test"
-  find ${installDirectory}/test -type l -exec rm {} \; > /dev/null 2>&1
 fi
 
 if [ "${cleanFolders}" = "TRUE" ] || [ "${cleanAll}" = "TRUE" ]; then

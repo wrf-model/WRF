@@ -322,7 +322,7 @@ module_bl_mynn_wrapper.o: \
 
 
 module_bl_gwdo.o: \
-  physics_mmm/bl_gwdo.o
+	physics_mmm/bl_gwdo.o
 
 
 module_cam_upper_bc.o: \

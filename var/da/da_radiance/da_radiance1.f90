@@ -9,9 +9,11 @@ module da_radiance1
 #ifdef CRTM
    use module_radiance, only : CRTM_Planck_Radiance, CRTM_Planck_Temperature
 #endif
+   use module_radiance, only : &
 #ifdef RTTOV
-   use module_radiance, only : coefs
+     coefs, &
 #endif
+     deg2rad
 
    use da_control, only : trace_use,missing_r, rootproc, &
       stdout,myproc,qc_good,num_fgat_time,qc_bad, &
@@ -22,12 +24,16 @@ module da_radiance1
       use_pseudo_rad, pi, t_triple, crtm_cloud, DT_cloud_model,write_jacobian, &
       use_crtm_kmatrix,use_clddet, use_satcv, cv_size_domain, &
       cv_size_domain_js, calc_weightfunc, deg_to_rad, rad_to_deg,use_clddet_zz, &
-      ahi_superob_halfwidth, ahi_use_symm_obs_err
+      ahi_superob_halfwidth, abi_superob_halfwidth, ahi_use_symm_obs_err, abi_use_symm_obs_err
    use da_define_structures, only : info_type,model_loc_type,maxmin_type, &
       iv_type, y_type, jo_type,bad_data_type,bad_data_type,number_type, &
       be_type, clddet_geoir_type, superob_type
    use module_dm, only : wrf_dm_sum_real, wrf_dm_sum_integer
-   use da_par_util, only : da_proc_stats_combine
+#ifdef DM_PARALLEL
+   use da_par_util, only :  da_proc_stats_combine, true_mpi_real
+#else
+   use da_par_util, only :  da_proc_stats_combine
+#endif
    use da_par_util1, only : da_proc_sum_int,da_proc_sum_ints
    use da_reporting, only : da_error, message
    use da_statistics, only : da_stats_calculate
@@ -48,7 +54,7 @@ module da_radiance1
 #endif
 
    implicit none
-   
+
    type datalink_type
 
       type (info_type)        :: info
@@ -75,6 +81,7 @@ module da_radiance1
       real, pointer             :: tb_inv(:)
       real, pointer             :: tb_qc(:)
       real, pointer             :: tb_error(:)
+      real, pointer             :: rad_obs(:)
       integer                   :: sensor_index
       type (datalink_type), pointer  :: next ! pointer to next data
    end type datalink_type
@@ -248,6 +255,7 @@ contains
 #include "da_qc_ahi.inc"
 #include "da_qc_gmi.inc"
 #include "da_qc_goesimg.inc"
+#include "da_qc_goesabi.inc"
 #include "da_write_iv_rad_ascii.inc"
 #include "da_write_iv_rad_for_multi_inc.inc"
 #include "da_read_iv_rad_for_multi_inc.inc"

@@ -20,7 +20,7 @@ CONTAINS
                      GZ1OZ0,WSPD,BR,ISFFLX,DX,                     &
                      SVP1,SVP2,SVP3,SVPT0,EP1,EP2,                 &
                      KARMAN,EOMEG,STBOLT,                          &
-                     P1000mb,                                      &
+                     P1000mb,LAKEMASK,                             &
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte,                    &
@@ -137,6 +137,7 @@ CONTAINS
                 INTENT(IN   )               ::             MAVAIL, &
                                                              PBLH, &
                                                             XLAND, &
+                                                         LAKEMASK, &
                                                               TSK
       REAL,     DIMENSION( ims:ime, jms:jme )                    , &
                 INTENT(OUT  )               ::                U10, &
@@ -235,7 +236,7 @@ CONTAINS
                 QSFC(ims,j),LH(ims,j),                             &
                 GZ1OZ0(ims,j),WSPD(ims,j),BR(ims,j),ISFFLX,DX,     &
                 SVP1,SVP2,SVP3,SVPT0,EP1,EP2,KARMAN,EOMEG,STBOLT,  &
-                P1000mb,                                           &
+                P1000mb,LAKEMASK(ims,j),                           &
                 shalwater_z0,water_depth(ims,j),shalwater_depth,   & 
                 ids,ide, jds,jde, kds,kde,                         &
                 ims,ime, jms,jme, kms,kme,                         &
@@ -261,7 +262,7 @@ CONTAINS
                      QSFC,LH,GZ1OZ0,WSPD,BR,ISFFLX,DX,             &
                      SVP1,SVP2,SVP3,SVPT0,EP1,EP2,                 &
                      KARMAN,EOMEG,STBOLT,                          &
-                     P1000mb,                                      &
+                     P1000mb,LAKEMASK,                             &
                      shalwater_z0,water_depth,shalwater_depth,     & 
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
@@ -273,6 +274,7 @@ CONTAINS
 !-------------------------------------------------------------------
       REAL,     PARAMETER     ::        XKA=2.4E-5
       REAL,     PARAMETER     ::        PRT=1.
+      REAL,     PARAMETER     ::        SALINITY_FACTOR=0.98
 
       INTEGER,  INTENT(IN )   ::        ids,ide, jds,jde, kds,kde, &
                                         ims,ime, jms,jme, kms,kme, &
@@ -289,6 +291,7 @@ CONTAINS
                 INTENT(IN   )               ::             MAVAIL, &
                                                              PBLH, &
                                                             XLAND, &
+                                                         LAKEMASK, &
                                                               TSK
 !
       REAL,     DIMENSION( ims:ime )                             , &
@@ -459,7 +462,9 @@ CONTAINS
       DO 60 I=its,ite
         E1=SVP1*EXP(SVP2*(TGDSA(I)-SVPT0)/(TGDSA(I)-SVP3))                       
 !  for land points QSFC can come from previous time step
-        if(xland(i).gt.1.5.or.qsfc(i).le.0.0)QSFC(I)=EP2*E1/(PSFC(I)-E1)                                                 
+!  the saturation vapor pressure for salty water is on average 2% lower
+        if(xland(i).gt.1.5 .and. lakemask(i).eq.0.) E1=E1*SALINITY_FACTOR
+        if(xland(i).gt.1.5.or.qsfc(i).le.0.0)QSFC(I)=EP2*E1/(PSFC(I)-E1)
 ! QGH CHANGED TO USE LOWEST-LEVEL AIR TEMP CONSISTENT WITH MYJSFC CHANGE
 ! Q2SAT = QGH IN LSM
         E1=SVP1*EXP(SVP2*(T1D(I)-SVPT0)/(T1D(I)-SVP3))                       
@@ -1102,24 +1107,10 @@ CONTAINS
    END SUBROUTINE SFCLAYREV1D
 
 !====================================================================
-   SUBROUTINE sfclayrevinit(ims,ime,jms,jme,                    &
-                            its,ite,jts,jte,                    &
-                            bathymetry_flag, shalwater_z0,      &
-                            shalwater_depth, water_depth,       &
-                            xland,LakeModel,lake_depth,lakemask )
+   SUBROUTINE sfclayrevinit
 
     INTEGER                   ::      N
     REAL                      ::      zolf
-
-   INTEGER, INTENT(IN)      ::   ims,ime,jms,jme,its,ite,jts,jte
-   INTEGER, INTENT(IN)      ::   shalwater_z0 
-   REAL,    INTENT(IN)      ::   shalwater_depth 
-   INTEGER, INTENT(IN)      ::   bathymetry_flag 
-   REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)    ::  water_depth
-   REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN   )    ::  xland 
-   INTEGER         ::     LakeModel
-   REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN   )    ::  lake_depth
-   REAL,    DIMENSION( ims:ime, jms:jme )                   ::  lakemask  
 
     DO N=0,1000
 ! stable function tables
@@ -1133,72 +1124,8 @@ CONTAINS
        psih_unstab(n)=psih_unstable_full(zolf)
 
     ENDDO
-    IF ( shalwater_z0 .EQ. 1 ) THEN
-       CALL shalwater_init(ims,ime,jms,jme,            &
-                 its,ite,jts,jte,                      &
-                 bathymetry_flag, shalwater_z0,        &
-                 shalwater_depth, water_depth,         &
-                 xland,LakeModel,lake_depth,lakemask   )
-    END IF
 
    END SUBROUTINE sfclayrevinit
-
-   SUBROUTINE shalwater_init(ims,ime,jms,jme,                    &
-                             its,ite,jts,jte,                    &
-                             bathymetry_flag, shalwater_z0,      &
-                             shalwater_depth, water_depth,       &
-                             xland,LakeModel,lake_depth,lakemask )
-
-   INTEGER, INTENT(IN)      ::   ims,ime,jms,jme,its,ite,jts,jte
-   INTEGER, INTENT(IN)      ::   shalwater_z0 
-   REAL,    INTENT(IN)      ::   shalwater_depth 
-   INTEGER, INTENT(IN)      ::   bathymetry_flag 
-   REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)    ::  water_depth
-   REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN   )    ::  xland 
-   INTEGER         ::     LakeModel
-   REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN   )    ::  lake_depth
-   REAL,    DIMENSION( ims:ime, jms:jme )                   ::  lakemask  
-
-   ! Local 
-   LOGICAL :: overwrite_water_depth
-
-   overwrite_water_depth = .False.
-
-   IF ( bathymetry_flag .eq. 1 ) THEN
-      IF ( shalwater_depth .LE. 0.0 ) THEN
-         IF ( LakeModel .ge. 1 ) THEN
-            DO j = jts,jte
-               DO i = its,ite
-                  IF ( lakemask(i,j) .EQ. 1 ) THEN
-                     water_depth(i,j) = lake_depth(i,j)
-                  END IF
-               END DO
-            END DO
-         END IF
-      ELSE
-         overwrite_water_depth = .True.
-      END IF
-   ELSE
-      IF ( shalwater_depth .GT. 0.0 ) THEN
-         overwrite_water_depth = .True.
-      ELSE
-         CALL wrf_error_fatal('No bathymetry data detected and shalwater_depth not greater than 0.0. Re-run WPS to get bathymetry data or set shalwater_depth > 0.0')
-      END IF
-   END IF
-
-   IF (overwrite_water_depth) THEN 
-      DO j = jts,jte
-         DO i = its,ite
-            IF((XLAND(i,j)-1.5).GE.0)THEN
-               water_depth(i,j) = shalwater_depth
-            ELSE
-               water_depth(i,j) = -2.0 
-            END IF
-         END DO
-      END DO
-   END IF
-
-   END SUBROUTINE shalwater_init
 
       function zolri(ri,z,z0)
 !

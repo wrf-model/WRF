@@ -217,6 +217,13 @@ subroutine da_setup_radiance_structures( grid, ob, iv )
          !end if
          !write(unit=stdout,fmt='(a)') 'Finish reading goesimg data'
       end if
+      if (use_goesabiobs) then
+         write(unit=stdout,fmt='(a)') 'Reading netcdf goes ABI radiance data'
+
+         call da_read_obs_ncgoesabi(iv, 16)
+
+         call da_read_obs_ncgoesabi(iv, 17)
+      end if
       if (use_gmiobs) then
 #if defined(HDF5)
          write(unit=stdout,fmt='(a)') 'Reading GMI data in HDF5 format'

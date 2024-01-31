@@ -279,8 +279,8 @@ module_madwrf.o: \
 
 
 module_bl_ysu.o: \
-  ccpp_kind_types.o \
-  physics_mmm/bl_ysu.o
+	ccpp_kind_types.o \
+	physics_mmm/bl_ysu.o
   
 
 module_bl_myjpbl.o: \
@@ -1484,7 +1484,7 @@ module_mp_gsfcgce_4ice_nuwrf.o: \
 
 
 physics_mmm/bl_ysu.o: \
-  ccpp_kind_types.o
+	ccpp_kind_types.o
 
 # End of DEPENDENCIES for phys
 

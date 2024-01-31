@@ -404,7 +404,8 @@ def selectStanza( options ) :
         #   print( stanzaId + stanzaConfig + "[no difference]" )
       stanzaIdx += 1
     print( "!! - Compiler not found, some configurations will not work and will be hidden" )
-    idxSelection = int( input( "Select configuration [0-{stop}] (note !!)  : ".format( stop=( stanzaIdx-1) ) ) )
+    stringSelection = input( "Select configuration [0-{stop}] Default [0] (note !!)  : ".format( stop=( stanzaIdx-1) ) )
+    idxSelection = int( stringSelection if stringSelection.isdigit() else 0 )
     if idxSelection < 0 or idxSelection > stanzaIdx - 1 :
       print( "Invalid configuration selection!" )
       exit(1)
@@ -428,7 +429,7 @@ def selectStanza( options ) :
 ## Select enum-like string for string-based cmake options
 ##
 ########################################################################################################################
-def getStringOptionSelection( topLevelCmake, searchString ) :
+def getStringOptionSelection( topLevelCmake, searchString, destinationOption ) :
   topLevelCmakeFP    = open( topLevelCmake, "r" )
   topLevelCmakeLines = topLevelCmakeFP.read()
   topLevelCmakeFP.close()
@@ -446,8 +447,9 @@ def getStringOptionSelection( topLevelCmake, searchString ) :
   # Weed out empties
   options = [ option for option in options if option ]
 
-  optionsFmt = ", ".join( [ "{idx} : {opt}".format( idx=options.index( opt ), opt=opt ) for opt in options ] )
-  selection  = int( input( "Select option from {optionsStr} [0-{max}] ({opts}) : ".format( optionsStr=searchString, max=len(options)-1, opts=optionsFmt ) ) )
+  optionsFmt = "\n\t" + "\n\t".join( [ "{idx} : {opt}".format( idx=options.index( opt ), opt=opt ) for opt in options ] )
+  stringSelection = input( "Select option for {option} from {optionsSource} [0-{max}] {opts} \nDefault [0] : ".format( option=destinationOption, optionsSource=searchString, max=len(options)-1, opts=optionsFmt ) )
+  selection  = int( stringSelection if stringSelection.isdigit() else 0 )
 
   if selection < 0 or selection > len(options) :
     print( "Invalid option selection for " + searchString +  "!" )
@@ -565,9 +567,9 @@ def generateCMakeToolChainFile( cmakeToolChainTemplate, output, stanza, optionsD
   outputFP.close()
 
 def projectSpecificOptions( options, stanzaCfg ) :
-  coreOption       = getStringOptionSelection( options.sourceCMakeFile, "WRF_CORE_OPTIONS"    )
-  nestingOption    = getStringOptionSelection( options.sourceCMakeFile, "WRF_NESTING_OPTIONS" )
-  caseOption       = getStringOptionSelection( options.sourceCMakeFile, "WRF_CASE_OPTIONS" )
+  coreOption       = getStringOptionSelection( options.sourceCMakeFile, "WRF_CORE_OPTIONS",    "WRF_CORE"    )
+  nestingOption    = getStringOptionSelection( options.sourceCMakeFile, "WRF_NESTING_OPTIONS", "WRF_NESTING" )
+  caseOption       = getStringOptionSelection( options.sourceCMakeFile, "WRF_CASE_OPTIONS",    "WRF_CASE"    )
   
   # These are yes
   yesValues    = [ "yes", "y", "true", "1" ]
@@ -579,7 +581,7 @@ def projectSpecificOptions( options, stanzaCfg ) :
     # togglable
     # we can safely check this since the user would not have been able to select this stanza if it couldn't be disabled
     if stanzaCfg.dmCompilersAvailable() :
-      useMPI       = input( "[DM] Use MPI?    [Y/n] : " ).lower() in yesValues
+      useMPI       = input( "[DM] Use MPI?    Default [N] [y/N] : " ).lower() in yesValues
     else :
       useMPI = False
   else:
@@ -589,7 +591,7 @@ def projectSpecificOptions( options, stanzaCfg ) :
   useOpenMP = False
   if ( stanzaCfg.serialOpt_ or stanzaCfg.dmparOpt_ ) and ( stanzaCfg.smparOpt_ or stanzaCfg.dmsmOpt_ ):
     # togglable
-    useOpenMP    = input( "[SM] Use OpenMP? [Y/n] : " ).lower() in yesValues
+    useOpenMP    = input( "[SM] Use OpenMP? Default [N] [y/N] : " ).lower() in yesValues
   else:
     # User has no choice in the matter
     useOpenMP = ( stanzaCfg.smparOpt_ or stanzaCfg.dmsmOpt_ )
@@ -597,7 +599,7 @@ def projectSpecificOptions( options, stanzaCfg ) :
   ##############################################################################
 
   alreadyAsked = [ "USE_MPI", "USE_OPENMP" ]
-  doSuboptionMenu = input( "Configure additional options? [Y/n] : " ).lower() in yesValues
+  doSuboptionMenu = input( "Configure additional options? Default [N] [y/N] : " ).lower() in yesValues
   subOptions      = {}
   if doSuboptionMenu :
     subOptions = getSubOptions( options.sourceCMakeFile, alreadyAsked )

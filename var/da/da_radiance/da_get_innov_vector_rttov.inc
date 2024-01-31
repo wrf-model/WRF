@@ -49,11 +49,29 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
    real, allocatable :: em_mspps(:)    ! emissivity caluclated using MSPPS algorithm
    real              :: ts_mspps       ! surface temperature calcualted using MSPPS algorithm
 
+   !For Zhuge and Zou cloud detection
+   real, allocatable :: geoht_full(:,:,:)
+   real              :: geoht_pixel(kts:min(kte,kme-1))
+   real              :: tt_pixel(kts:min(kte,kme-1))
+   real              :: pp_pixel(kts:min(kte,kme-1))
+
    if (trace_use) call da_trace_entry("da_get_innov_vector_rttov")
 
    !------------------------------------------------------
    ! [1.0] calculate the background bright temperature
    !-------------------------------------------------------
+
+   if ( use_clddet_zz ) then
+      allocate ( geoht_full(ims:ime,jms:jme,kms:kme-1) )
+      do k = kms, kme-1
+         do j = jms, jme
+            do i = ims, ime
+               geoht_full(i,j,k) = 0.5 * ( grid%ph_2(i,j,k)   + grid%phb(i,j,k) + &
+                                           grid%ph_2(i,j,k+1) + grid%phb(i,j,k+1) ) / gravity
+            end do
+         end do
+      end do
+   end if
 
    do inst = 1, iv%num_inst                 ! loop for sensor
       if ( iv%instid(inst)%num_rad < 1 ) cycle
@@ -99,7 +117,6 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
       call da_interp_lin_3d (grid%xb%t, iv%instid(inst)%info, iv%instid(inst)%t (:,n1:n2))
       call da_interp_lin_3d (grid%xb%q, iv%instid(inst)%info, iv%instid(inst)%mr(:,n1:n2))
 
-
       do n= n1,n2
          do k=1, nlevels
             if (iv%instid(inst)%info%zk(k,n) <= 0.0) then
@@ -132,6 +149,19 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
             iv%instid(inst)%surftype(n) = 0
          end if
 
+         if ( use_clddet_zz ) then
+            ! Find tropopause temperature for Zhuge and Zou Cloud Detection
+            do k = kts, min(kte,kme-1)
+               call da_interp_2d_partial ( grid%xb%t(:,:,k), iv%instid(inst)%info, k, n, n, tt_pixel(k) )
+               call da_interp_2d_partial ( grid%xb%p(:,:,k), iv%instid(inst)%info, k, n, n, pp_pixel(k) )
+               call da_interp_2d_partial ( geoht_full(:,:,k), iv%instid(inst)%info, k, n, n, geoht_pixel(k) )
+
+!               call da_interp_lin_2d ( grid%xb%t(:,:,k), iv%instid(inst)%info, k, n, n, tt_pixel(k) )
+!               call da_interp_lin_2d ( grid%xb%p(:,:,k), iv%instid(inst)%info, k, n, n, pp_pixel(k) )
+!               call da_interp_lin_2d ( geoht_full(:,:,k), iv%instid(inst)%info, k, n, n, geoht_pixel(k) )
+            end do
+            call da_trop_wmo ( tt_pixel, geoht_pixel, pp_pixel, (min(kte,kme-1)-kts+1), tropt = iv%instid(inst)%tropt(n) )
+         end if
       end do
 
       call da_interp_lin_2d (grid%xb % u10,  iv%instid(inst)%info, 1, iv%instid(inst)%u10(n1:n2))
@@ -380,6 +410,8 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
       end if
 
    end do        ! end loop for sensor
+
+   if ( use_clddet_zz ) deallocate ( geoht_full )
 
    if (trace_use) call da_trace_exit("da_get_innov_vector_rttov")
 #else

@@ -92,7 +92,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
    real, allocatable :: hessian(:,:)
    real*8, allocatable :: eignvec(:,:), eignval(:)
    real              :: rad_clr, rad_ovc_ilev, rad_ovc_jlev
-   
+
    integer           :: Band_Size(5), Bands(AIRS_Max_Channels,5) 
 !For Zhuge and Zou cloud detection
    real, allocatable :: geoht_full(:,:,:)
@@ -243,9 +243,10 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
       calc_tb_clr = .false.
       if ( crtm_cloud .and. &
            ( trim( crtm_sensor_name(rtminit_sensor(inst))) == 'amsr2' .or. &
+             trim( crtm_sensor_name(rtminit_sensor(inst))) == 'abi' .or. &
              trim( crtm_sensor_name(rtminit_sensor(inst))) == 'ahi') ) then
          !Tb_clear_sky is only needed for symmetric obs error model
-         !symmetric obs error model only implemented for amsr2 for now
+         !symmetric obs error model only implemented for amsr2 & abi/ahi for now
          calc_tb_clr = .true.
       end if
 
@@ -443,7 +444,6 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
             call da_trop_wmo ( tt_pixel, geoht_pixel, pp_pixel, (min(kte,kme-1)-kts+1), tropt = iv%instid(inst)%tropt(n) )
          end if
 
-
          call da_interp_2d_partial (grid%xb%u10,  iv%instid(inst)%info, 1, n, n, model_u10(n:n))
          call da_interp_2d_partial (grid%xb%v10,  iv%instid(inst)%info, 1, n, n, model_v10(n:n))
          call da_interp_2d_partial (grid%xb%psfc, iv%instid(inst)%info, 1, n, n, model_psfc(n:n))
@@ -476,6 +476,14 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
                cycle pixel_loop
             end if
          end do
+         !if ( all(ob%instid(inst)%tb(1:nchanl,n) < 0.) ) then
+         !   write(message(1),'(a,2i5.0,a)') ' Skipping the pixel at loc ', i, j,  &
+         !      ' where all observed BTs are < 0'
+         !   call da_warning(__FILE__,__LINE__,message(1:1))
+         !   iv%instid(inst)%tb_inv(:,n) = missing_r
+         !   iv%instid(inst)%info%proc_domain(:,n) = .false.
+         !   cycle pixel_loop
+         !end if
 
          ! convert cloud content unit from kg/kg to kg/m^2        
          if (crtm_cloud) then

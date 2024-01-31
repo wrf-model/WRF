@@ -1,0 +1,229 @@
+
+How to compile and run?
+-----------------------
+
+- In WRF directory, type './configure_new' - this will create a 
+  _build/wrf_config.cmake file that has appropriate compile options for the 
+  supported computers.
+
+  Note: !! You must clone all submodules manually and have all code prepared   !!
+        !! to compile. No extra steps are done to download code or sanitize it !!
+
+  Note: WRF requires netCDF library, but this cmake build does not require you 
+        to set any environment variables. For netCDF detection, the configuration
+        will be detected from the `nc-config` in your path unless using 
+        netCDF_ROOT cmake variable. See more information from cmake on *_ROOT 
+        variables if you do not want to use the netCDF associated with the
+        `nc-config` in your path
+
+  Follow the prompts to select your configuration. The first will be a general
+  stanza selection, which will only show configurations for which you have the
+  supported compilers in your path. Likewise, for partially supported stanzas
+  a '!!' will appear next to that portion of the stanza denoting that this 
+  portion of the stanza is not supported in your environment and thus will not 
+  be selectable via the interactive dialogs.
+  
+  Compared to previous version of `configure` this will look much more sparse
+  and the numbering will be changed to reflect what is availble. For this 
+  reason it will be best to talk about configuration with their description 
+  or some other unique identifier from now on with this build methodology.
+
+  Other common options previously done during the stanza configuration selection
+  are now broken out into y/n interactive queries. This includes usage of :
+    * SM (OpenMP)
+    * DM (MPI)
+
+  Target selection (case), core, and nesting are all done at the configuration phase.
+
+  Any extra configuration parameters that would normally be done through 
+  environment variables or extra command line options are under the 
+  "Configure additional options?" section
+
+  Advanced features of `./configure_new` are discussed later in this document
+
+- Type './compile_new [any make options such as `-j 12`]'
+  If the first argument to compile_new is a directory, it will instead use that
+  directory as the location for building. If not the default is to build the 
+  configuration placed in _build (the default location for `./configure_new` to
+  place a configuration)
+
+
+- If sucessful, this will create either `real` or `ideal` and `wrf` executables
+  in the install location's bin/ directory (for default location this will be 
+  install/bin/) and the appropriate executables will be also copied into
+  the respective test directoires under the same install directory as 
+  <install location>/test/<case_name>. Likewise, for specific test cases that
+  have additional or modified inputs, those input files are copied from the 
+  respective source location test/<test case>
+
+  Note: Compared to the older compile script, executables do not have the '.exe'
+        suffix
+
+- cd to the appropriate test directory in the installation location to run 
+  ideal/real/wrf.
+
+- If it is one of the idealized cases (b_wave, hill2d_x, grav2d_x, quarter_ss,
+  squall2d_x, squall2d_y, em_les or em_heldsuarez), cd the the appropriate directory, type
+
+  ./ideal
+
+  to produce wrfinput_d01 file for wrf model. Then type
+
+  ./wrf
+
+  to run. 
+
+- If it is real-data case (real), place files from WPS (met_em.*)
+  in the appropriate directory, type
+
+  ./real
+
+  to produce wrfbdy_d01 and wrfinput_d01. Then type
+
+  ./wrf
+
+  to run.
+
+- If you use mpich, type
+
+  mpirun -np number-of-processors wrf
+
+- If you want to clean your configuration use `./cleanCMake.sh`, additional 
+  options are available, see `./cleanCMake.sh -h` for more info
+
+
+Advanced Configuration
+-----------------------
+
+- The 'configure_new' script is designed to work out-of-the-box with minimal 
+  guidance, however to take full advantage of the features this system brings
+  one can use `./configure_new -h` to receive a help message:
+    ./configure_new [options] [-- <CMake configuration options>]
+    -p                  Preselect a stanza configuration with matching description
+    -x                  Skip CMake options prompt, meant to be used in conjunction with direct pass-in options
+    -d directory        Use as alternate build directory
+    -i directory        Use as alternate install directory
+    -- <CMake options>  Directly pass CMake options to configuration, equivalent to cmake <source dir> <CMake Options>
+    -h                  Print this message
+
+  The '-p' option allows the preselection of a stanza based on its description 
+  without requiring knowledge about its defined number within your environment.
+  This does require that the stanza exist within the compatible set that would
+  be available within your environment.
+
+  The '-x' option allows the interactive dialogs to be suppressed, and 
+  configuration will immediately proceed with whatever options have been set or 
+  passed in. This is meant to be used with the '--' delimeter option
+
+  The '-d' option allows us to specify an alternative build/configuration 
+  directory. As CMake best operates with out-of-source builds, our configuration
+  and compilation all happen within a different directory than the source. The
+  default name of this directory is _build/, however for more fine-tuned control
+  or housing multiple builds from the same source repo at the same time one can 
+  specify a different directory name using this option. It is recommended to use
+  _build* as the prefix to denote this as an autogenerated directory that can be
+  safely deleted in its entirety
+
+  The '-i' options allows us to specify an alternative install directory for our
+  compiled configuration. The default value is $PWD/install. Note that the 
+  default includes '$PWD/' - directory locations provided via this option should
+  use absolute paths as the compile command is executed inside the build 
+  directory, thus any relative paths would be from that location. The files to 
+  be placed in the install directory follows the same premises as the '-d' 
+  option meaning they are autogenerated or copies of source files. This means 
+  the install directory can be safely deleted in its entirety if this 
+  configuration is no longer desired. This also allows multiple installs of 
+  different compilations to coexist from within the same source repo
+
+  The '--' option is meant to be a delimeter marking all subsequent input to be
+  fed directly to the CMake command execution. In other words, after this marker
+  anything that you place afterwards is as if you are directly passing in 
+  command line options to `cmake`. This allows you to more effectively use the
+  '-x' option to skip interactive dialogs and instead write the value you want 
+  beforehand, though usage of this option is not necessary. The option name and 
+  values for a given option, respectively, are always named the same as the 
+  cmake option so utilizing the same option name and value that appears in 
+  the interactive dialog will work. As an example :
+    
+    ./configure_new -p GNU -x -- -DWRF_CORE=ARW -DWRF_NESTING=BASIC -DWRF_CASE=EM_REAL
+
+  Would configure immediately configure for the first GNU stanza, using "ARW" as 
+  the WRF_CORE option, "BASIC" as the WRF_NESTING option, and "EM_REAL" as the 
+  WRF_CASE option. Note that the value used is the actual name of the value, not
+  the numeric shorthand used during interactive dialog.
+
+
+- The 'compile_new' has a complimentary feature to pair with 'configure_new'.
+  This feature is specifying an alternate build directory to use as a compile
+  location. The alternate install directory, if used, does not need to be 
+  specified as that is embedded into the cmake configuration files at configure
+  time. To use this feature, specify the alternate build directory to use as the
+  first argument ONLY into the script, like so : 
+    
+    ./configure_new _buildCustomDirectory -j 12
+
+  Afterwards, all standard make options apply. If no directory is provided it 
+  will be assumed that you are using the default build directory '_build'. This 
+  should be sufficient for normal usage.
+
+
+- The 'cleanCmake.sh' is a cleaning script to more easily facilitate cleaning 
+  configurations, whether configured, compiled, or installed. To see the full 
+  list of options, use `./cleanCmake.sh -h` to receive a help message:
+
+    ./cleanCMake.sh [options]
+      -c            [Default if no options] Basic cmake clean functionality [make -j 1 clean]
+      -b            Remove cmake binary installs [xargs rm < _build/install_manifest.txt]
+      -f            Remove build & install folders (WRF) [ rm _build -r; rm install/ -r ]
+      -a            Remove all (WRF), equivalent to -c -b -f (more specifically -c then -b then -f)"
+    Specific builds/installs
+      -d directory  Specify operating on particular build directory
+      -i directory  Specify operating on particular install directory
+
+  Each command tells exactly or the equivalent shell commands that would be 
+  executed, but for clarity they are explained below as well.
+
+  The '-c' option is the default usage if no options were passed in, in other 
+  words `./cleanCmake.sh`. This effectively goes into the build directory and 
+  runs `make -j 1 clean`, removing all binary objects in the build directory. 
+  This does not remove files in the install directory.
+
+  The '-b' option removes the installed files from the install directory 
+  manually. This can be useful for reinstating a faulty or manually disrupted 
+  install without needing to entirely recompile. For example, imagine modifying
+  the provided 'namelist.input' in the test case folder of the install, but not 
+  recalling what the original values were and where the file originates from. 
+  One could clean only the install and reinstall the exact same compilation with
+  `./cleanCMake.sh -b && ./compile_new` to reobtain a pristine install.
+
+  The '-f' option removes the build and install directories entirely. This is 
+  quickest way to clean but also lose a configuration. It can be very useful if
+  you find your configuration not working as expected and need a full reset. 
+  This can often happen with CMake caching, which can be a headache to clear.
+
+  The '-a' option can be seen as an alternative to the '-f' option which 
+  effectively in the end does the same but in a more ordered fashion. This will
+  perform all the cleaning in a step-by-step process first doing the '-c' option,
+  then the '-b' option, and finally the '-f'. 
+
+
+  Additional functionality is provided to compliment the advanced features in
+  'configure_new' of '-d'/'-i'. These are mimicked in 'cleanCMake.sh' to have 
+  the same usage and flags, so interchanging then between the commands will work.
+  The effects of 'cleanCMake.sh' cleaning, based on option, will 
+  correspondingly affect the newly specified directories. For example, if an
+  alternate build directory is provided, the '-b' option will use that instead:
+
+    ./cleanCMake.sh -b -d _buildCustomDirectory
+
+  One might think we would use the install directory when specifying the '-b'
+  option, but recall that the install location is embeded into the build 
+  configuration and thus removing the installs that cmake did without entirely
+  removing the install directory requires going to the build directory. This 
+  can be extremely versatile when installing into common locations where other 
+  projects or installed software coexists within a single base install folder.
+  
+
+
+
+

@@ -989,6 +989,7 @@ module_physics_init.o: \
 	module_cam_mp_modal_aero_initialize_data_phys.o \
 	module_cam_support.o \
 	module_wind_fitch.o \
+	module_wind_mav.o \
 	module_gocart_coupling.o \
 	module_data_gocart_dust.o \
 	../frame/module_state_description.o \

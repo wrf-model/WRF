@@ -5,7 +5,7 @@ installDirectory=install
 help()
 {
   echo "./cleanCMake.sh [options]"
-  echo "  -c            Basic cmake clean functionality [cmake --build ${buildDirectory} -j 1 --target clean]"
+  echo "  -c            [Default if no options] Basic cmake clean functionality [cmake --build ${buildDirectory} -j 1 --target clean]"
   echo "  -b            Remove cmake binary installs [xargs rm < ${buildDirectory}/install_manifest.txt]"
   echo "  -l            Remove symlinks (WRF) [ find ${installDirectory}/test -type l -exec rm {} \; ]"
   echo "  -f            Remove build & install folders (WRF) [ rm ${buildDirectory} -r; rm ${installDirectory}/ -r ]"

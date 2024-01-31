@@ -1483,7 +1483,7 @@ module_mp_gsfcgce_4ice_nuwrf.o: \
 
 
 physics_mmm/bl_gwdo.o : \
-  ccpp_kind_types.o
+	ccpp_kind_types.o
 
 
 # End of DEPENDENCIES for phys

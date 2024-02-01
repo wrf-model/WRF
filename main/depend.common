@@ -278,6 +278,11 @@ module_madwrf.o: \
 	module_mp_thompson.o 
 
 
+module_bl_ysu.o: \
+	ccpp_kind_types.o \
+	physics_mmm/bl_ysu.o
+  
+
 module_bl_myjpbl.o: \
 	../share/module_model_constants.o 
 
@@ -299,7 +304,7 @@ module_bl_qnsepbl.o: \
 
 
 module_progtm.o: \
-	module_gfs_machine.o 
+	module_gfs_machine.o
 
 
 module_bl_gfs.o: \
@@ -319,6 +324,10 @@ module_bl_mynn.o: \
 module_bl_mynn_wrapper.o: \
 	module_bl_mynn.o \
 	module_bl_mynn_common.o 
+
+
+module_bl_gwdo.o: \
+	physics_mmm/bl_gwdo.o
 
 
 module_cam_upper_bc.o: \
@@ -989,6 +998,7 @@ module_physics_init.o: \
 	module_cam_mp_modal_aero_initialize_data_phys.o \
 	module_cam_support.o \
 	module_wind_fitch.o \
+	module_wind_mav.o \
 	module_gocart_coupling.o \
 	module_data_gocart_dust.o \
 	../frame/module_state_description.o \
@@ -1488,6 +1498,15 @@ physics_mmm/mp_wsm6.o: \
 physics_mmm/mp_wsm6_effectRad.o: \
 	ccpp_kind_types.o \
 	physics_mmm/mp_wsm6.o
+
+
+physics_mmm/bl_ysu.o: \
+	ccpp_kind_types.o
+
+
+physics_mmm/bl_gwdo.o : \
+	ccpp_kind_types.o
+
 
 # End of DEPENDENCIES for phys
 

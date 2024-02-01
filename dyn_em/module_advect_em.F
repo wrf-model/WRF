@@ -4146,8 +4146,8 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
 
    IF( (config_flags%open_ys) .and. (jts == jds) ) THEN
 
-       DO i = i_start, i_end
        DO k = kts, ktf
+       DO i = i_start, i_end
          vb = MIN( 0.5*(rv(i,k,jts)+rv(i,k,jts+1)), 0. )
          tendency(i,k,jts) = tendency(i,k,jts)                     &
                - rdy*(                                             &
@@ -4162,8 +4162,8 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
 
    IF( (config_flags%open_ye) .and. (jte == jde)) THEN
 
-       DO i = i_start, i_end
        DO k = kts, ktf
+       DO i = i_start, i_end
          vb = MAX( 0.5*(rv(i,k,jte-1)+rv(i,k,jte)), 0. )
          tendency(i,k,j_end) = tendency(i,k,j_end)                   &
                - rdy*(                                               &
@@ -7297,8 +7297,8 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
    IF( (config_flags%open_ys) .and. (jts == jds) ) THEN
 
-       DO i = i_start, i_end
        DO k = kts, ktf
+       DO i = i_start, i_end
          vb = MIN( 0.5*(rv(i,k,jts)+rv(i,k,jts+1)), 0. )
          tendency(i,k,jts) = tendency(i,k,jts)                     &
                - rdy*(                                             &
@@ -7313,8 +7313,8 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
    IF( (config_flags%open_ye) .and. (jte == jde)) THEN
 
-       DO i = i_start, i_end
        DO k = kts, ktf
+       DO i = i_start, i_end
          vb = MAX( 0.5*(rv(i,k,jte-1)+rv(i,k,jte)), 0. )
          tendency(i,k,j_end) = tendency(i,k,j_end)                   &
                - rdy*(                                               &
@@ -7330,8 +7330,8 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
    IF( (config_flags%polar) .and. (jts == jds) ) THEN
 
        ! Assuming rv(i,k,jds) = 0.
-       DO i = i_start, i_end
        DO k = kts, ktf
+       DO i = i_start, i_end
          vb = MIN( 0.5*rv(i,k,jts+1), 0. )
          tendency(i,k,jts) = tendency(i,k,jts)                     &
                - rdy*(                                             &
@@ -7347,8 +7347,8 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
    IF( (config_flags%polar) .and. (jte == jde)) THEN
 
        ! Assuming rv(i,k,jde) = 0.
-       DO i = i_start, i_end
        DO k = kts, ktf
+       DO i = i_start, i_end
          vb = MAX( 0.5*rv(i,k,jte-1), 0. )
          tendency(i,k,j_end) = tendency(i,k,j_end)                   &
                - rdy*(                                               &
@@ -7412,6 +7412,9 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
            fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
            fqz(i,k,j)=rom(i,k,j)*(fzm(k)*field(i,k,j)+fzp(k)*field(i,k-1,j))
            fqz(i,k,j) = fqz(i,k,j) - fqzl(i,k,j)
+         ENDDO
+
+         DO i = i_start, i_end
 
            k=kts+2
            dz = 2./(rdzw(k)+rdzw(k-1))
@@ -7424,6 +7427,9 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
                    field(i,k-2,j), field(i,k-1,j),      &
                    field(i,k  ,j), field(i,k+1,j),  -vel )
            fqz(i,k,j) = fqz(i,k,j) - fqzl(i,k,j)
+         ENDDO
+
+         DO i = i_start, i_end
 
            k=ktf-1
            dz = 2./(rdzw(k)+rdzw(k-1))
@@ -7436,6 +7442,9 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
                    field(i,k-2,j), field(i,k-1,j),      &
                    field(i,k  ,j), field(i,k+1,j),  -vel )
            fqz(i,k,j) = fqz(i,k,j) - fqzl(i,k,j)
+         ENDDO
+
+         DO i = i_start, i_end
 
            k=ktf
            dz = 2./(rdzw(k)+rdzw(k-1))
@@ -7485,6 +7494,9 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
            fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
            fqz(i,k,j)=rom(i,k,j)*(fzm(k)*field(i,k,j)+fzp(k)*field(i,k-1,j))
            fqz(i,k,j) = fqz(i,k,j) - fqzl(i,k,j)
+         ENDDO
+
+         DO i = i_start, i_end
 
            k=kts+2
            dz = 2./(rdzw(k)+rdzw(k-1))
@@ -7497,6 +7509,9 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
                    field(i,k-2,j), field(i,k-1,j),      &
                    field(i,k  ,j), field(i,k+1,j),  -vel )
            fqz(i,k,j) = fqz(i,k,j) - fqzl(i,k,j)
+         ENDDO
+
+         DO i = i_start, i_end
 
            k=ktf-1
            dz = 2./(rdzw(k)+rdzw(k-1))
@@ -7509,6 +7524,9 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
                    field(i,k-2,j), field(i,k-1,j),      &
                    field(i,k  ,j), field(i,k+1,j),  -vel )
            fqz(i,k,j) = fqz(i,k,j) - fqzl(i,k,j)
+         ENDDO
+
+         DO i = i_start, i_end
 
            k=ktf
            dz = 2./(rdzw(k)+rdzw(k-1))

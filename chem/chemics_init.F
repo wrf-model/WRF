@@ -304,10 +304,6 @@ call wrf_message("**************************************************************
      if (config_flags%chem_opt /= mozart_mosaic_4bin_kpp .and. &
          config_flags%chem_opt /= mozart_mosaic_4bin_aq_kpp .and. &
          config_flags%chem_opt /= mozcart_kpp .and. &
-         ! osipov TODO: TUV is not compatible with chem_opt 106, produces too low OH
-         ! To make it work, I've added the tuv.map from Ravan Ahmadov & Jordan Schnell
-         ! config_flags%chem_opt /= radm2sorg_kpp .and. &
-         config_flags%chem_opt /= racm_soa_vbs_het_kpp .and. &
          config_flags%chem_opt /= t1_mozcart_kpp) THEN
        write(message_txt,'(''--- ERROR: chem_opt '',i3,'' not setup for TUV photolysis at this time'')') &
               config_flags%chem_opt

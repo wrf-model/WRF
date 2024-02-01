@@ -861,6 +861,7 @@ target_link_libraries(  ${PROJECT_NAME}_Core
 ## Install and export
 ##
 ################################################################################
+set( CONFIG_INSTALL_DIRECTORY lib/cmake/${PROJECT_NAME} )
 install(
         TARGETS ${PROJECT_NAME}_Core
         EXPORT ${EXPORT_NAME}Targets
@@ -872,7 +873,7 @@ install(
 # Install to namespace
 install(
         EXPORT      ${EXPORT_NAME}Targets
-        DESTINATION lib/cmake/
+        DESTINATION ${CONFIG_INSTALL_DIRECTORY}
         FILE        ${EXPORT_NAME}Targets.cmake
         NAMESPACE   ${EXPORT_NAME}::
         )
@@ -880,7 +881,7 @@ install(
 configure_package_config_file(
                               ${PROJECT_SOURCE_DIR}/cmake/template/${EXPORT_NAME}Config.cmake.in
                               ${CMAKE_BINARY_DIR}/${EXPORT_NAME}Config.cmake
-                              INSTALL_DESTINATION lib/cmake
+                              INSTALL_DESTINATION ${CONFIG_INSTALL_DIRECTORY}
                               )
 
 write_basic_package_version_file(
@@ -894,7 +895,7 @@ install(
         FILES
           ${CMAKE_BINARY_DIR}/${EXPORT_NAME}Config.cmake
           ${CMAKE_BINARY_DIR}/${EXPORT_NAME}ConfigVersion.cmake
-        DESTINATION lib/cmake
+        DESTINATION ${CONFIG_INSTALL_DIRECTORY}
         )
 
 # Install some helper files for anyone using this build as part of their code

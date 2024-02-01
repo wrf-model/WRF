@@ -65,7 +65,7 @@ set( WRF_OS             "" )
 set( WRF_MACH           "" )
 
 if ( "${CMAKE_BUILD_TYPE}" STREQUAL "" )
-  set( CMAKE_BUILD_TYPE Debug )
+  set( CMAKE_BUILD_TYPE Release )
   message( STATUS "Set default build type to ${CMAKE_BUILD_TYPE}" )
 endif()
 ################################################################################

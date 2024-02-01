@@ -429,7 +429,7 @@ def selectStanza( options ) :
 ## Select enum-like string for string-based cmake options
 ##
 ########################################################################################################################
-def getStringOptionSelection( topLevelCmake, searchString, destinationOption ) :
+def getStringOptionSelection( topLevelCmake, searchString, destinationOption, defaultIndex=0 ) :
   topLevelCmakeFP    = open( topLevelCmake, "r" )
   topLevelCmakeLines = topLevelCmakeFP.read()
   topLevelCmakeFP.close()
@@ -448,8 +448,15 @@ def getStringOptionSelection( topLevelCmake, searchString, destinationOption ) :
   options = [ option for option in options if option ]
 
   optionsFmt = "\n\t" + "\n\t".join( [ "{idx} : {opt}".format( idx=options.index( opt ), opt=opt ) for opt in options ] )
-  stringSelection = input( "Select option for {option} from {optionsSource} [0-{max}] {opts} \nDefault [0] : ".format( option=destinationOption, optionsSource=searchString, max=len(options)-1, opts=optionsFmt ) )
-  selection  = int( stringSelection if stringSelection.isdigit() else 0 )
+  stringSelection = input( "Select option for {option} from {optionsSource} [0-{max}] {opts} \nDefault [{defIdx}] : ".format( 
+                                                                                                                              option=destinationOption,
+                                                                                                                              optionsSource=searchString,
+                                                                                                                              max=len(options)-1,
+                                                                                                                              opts=optionsFmt,
+                                                                                                                              defIdx=defaultIndex
+                                                                                                                              )
+                          )
+  selection  = int( stringSelection if stringSelection.isdigit() else defaultIndex )
 
   if selection < 0 or selection > len(options) :
     print( "Invalid option selection for " + searchString +  "!" )

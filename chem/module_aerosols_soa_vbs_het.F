@@ -6593,7 +6593,7 @@ SUBROUTINE VDVG_2( BLKSIZE, NSPCSDA, NUMCELLS,         &
 END SUBROUTINE VDVG_2
 !------------------------------------------------------------------------------
 
-SUBROUTINE         aerosols_soa_vbs_init(chem,convfac,z_at_w,                   &
+SUBROUTINE         aerosols_soa_vbs_het_init(chem,convfac,z_at_w,                   &
                    pm2_5_dry,pm2_5_water,pm2_5_dry_ec,                         &
                    chem_in_opt,aer_ic_opt, is_aerosol,                         &
                    ids,ide, jds,jde, kds,kde,                                  &
@@ -6812,7 +6812,7 @@ SUBROUTINE         aerosols_soa_vbs_init(chem,convfac,z_at_w,                   
 !                chem, zz, i,k,j, ims,ime,jms,jme,kms,kme )
         else
            call wrf_error_fatal(   &
-                "aerosols_soa_vbs_init: unable to parse aer_ic_opt" )
+                "aerosols_soa_vbs_het_init: unable to parse aer_ic_opt" )
         end if
 
 !... i-mode
@@ -6861,7 +6861,7 @@ SUBROUTINE         aerosols_soa_vbs_init(chem,convfac,z_at_w,                   
       enddo
 
     return
-    END SUBROUTINE aerosols_soa_vbs_init
+    END SUBROUTINE aerosols_soa_vbs_het_init
 
 !
 SUBROUTINE soa_vbs_addemiss( id, dtstep, u10, v10, alt, dz8w, xland, chem,                      &

@@ -278,6 +278,11 @@ module_madwrf.o: \
 	module_mp_thompson.o 
 
 
+module_bl_ysu.o: \
+	ccpp_kind_types.o \
+	physics_mmm/bl_ysu.o
+  
+
 module_bl_myjpbl.o: \
 	../share/module_model_constants.o 
 
@@ -1481,6 +1486,10 @@ module_mp_gsfcgce_4ice_nuwrf.o: \
 	module_gocart_coupling.o \
 	module_checkerror.o \
 	module_mp_radar.o \
+
+
+physics_mmm/bl_ysu.o: \
+	ccpp_kind_types.o
 
 
 physics_mmm/bl_gwdo.o : \

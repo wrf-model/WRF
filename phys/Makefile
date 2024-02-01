@@ -234,7 +234,10 @@ DIAGNOSTIC_MODULES_EM = \
         module_diag_solar.o
   
 PHYSMMM_MODULES = \
-	./physics_mmm/bl_gwdo.o
+        physics_mmm/bl_gwdo.o \
+        physics_mmm/bl_ysu.o
+
+	
 
 OBJS    =
 

@@ -3141,12 +3141,12 @@ CHARACTER(LEN=8) :: name
            CALL sfclayinit( allowed_to_read )
            isfc = 1
       CASE (SFCLAYREVSCHEME)
-           CALL sf_sfclayrev_init(errmsg,errflg)
+           CALL sfclayrevinit
            IF ( shalwater_z0 .EQ. 1 ) THEN
-              CALL shalwater_init(ims,ime,jms,jme,            &
-                        its,ite,jts,jte,                      &
-                        bathymetry_flag, shalwater_z0,        &
-                        shalwater_depth, water_depth,         &
+              CALL shalwater_init(ims,ime,jms,jme,            &  
+                        its,ite,jts,jte,                      &  
+                        bathymetry_flag, shalwater_z0,        &  
+                        shalwater_depth, water_depth,         &  
                         xland,LakeModel,lake_depth,lakemask   )
            END IF
            isfc = 1
@@ -5680,12 +5680,11 @@ subroutine interp_vec_cu(locvec,locwant,periodic,loc1,loc2,wght1,wght2)
    INTEGER         ::     LakeModel
    REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN   )    ::  lake_depth
    REAL,    DIMENSION( ims:ime, jms:jme )                   ::  lakemask
-
-   ! Local
+               
+   ! Local  
    LOGICAL :: overwrite_water_depth
-
    overwrite_water_depth = .False.
-
+   
    IF ( bathymetry_flag .eq. 1 ) THEN
       IF ( shalwater_depth .LE. 0.0 ) THEN
          IF ( LakeModel .ge. 1 ) THEN

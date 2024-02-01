@@ -1,0 +1,165 @@
+Some background information and usage tips for the NSSL microphysics scheme.
+
+
+ IMPORTANT: Best results are attained using WENO (Weighted Essentially Non-Oscillatory) scalar advection option. This helps to limit oscillations at the edges of precipitation regions (i.e., sharp gradient), which in turns helps to prevent mismatches of moments that can show up as noisy reflectivity values.
+   moist_adv_opt  = 4,
+   scalar_adv_opt = 3,
+ The monotonic option (2) is less effective, but better than the default positive definite option (1)
+
+NOTE TO SMPAR or DM+SMPAR USERS: If a segmentation fault occurs, try setting the environment variable OMP_STACKSIZE to 8M or 16M (default is 4M, where M=MB). Note that this does not increase the shell stacksize limit [use 'ulimit -a unlimited' (bash) or 'unlimit stacksize' (tcsh)]
+
+CHANGES:
+June 2023 (WRF 4.6): Main default option change is for graupel/hail fall speed options (icdx, icdxhl; changed from 3 to 6, see below), and default maximum gr/hail droplet collection efficiencies (ehw0/ehlw0 changed from 0.5/0.75 to 0.9/0.9, see below). Snow aggregation efficiency is reduced to limit excessive snow reflectivity (see below).
+
+CONTACT: For questions not covered here (or other issues/bugs), feel free to contact Ted Mansell (NOAA/NSSL) at ted.mansell_at_noaa.gov and/or tag @MicroTed in a github issue.
+
+DESCRIPTION:
+
+The NSSL bulk microphysical parameterization scheme describes form and phase changes among a range of liquid and ice hydrometeors, as described in Mansell et al. (2010) and Mansell and Ziegler (2013). It is designed with deep (severe) convection in mind at grid spacings of up to 4 km, but can also be run at larger grid spacing as needed for nesting etc. It is also able to capture non-severe and winter weather. The scheme predicts the mass mixing ratio and number concentration of cloud droplets, raindrops, cloud ice crystals (columns), snow particles (including large crystals and aggregates), graupel, and (optionally) hail. The 3-moment option additionally predicts the 6th moments of rain, graupel, and hail which in turn predicts the PSD shape parameters (set nssl_3moment=.true.).
+
+Basic options in physics namelist:
+  mp_physics = 18 ! NSSL scheme (2-moment) with hail and predicted 
+                    CCN concentration + options
+
+ The legacy options (17,19,21,22) still behave as before (for now), but going
+ forward one should use mp_physics=18 with modifier flags:
+ 
+ mp_physics 
+  = 22 ! NSSL scheme (2-moment) without hail
+      Equivalent: mp=18, nssl_hail_on=0, nssl_ccn_on=0
+  = 17 ! NSSL scheme (2-moment) with hail with constant background CCN 
+                   concentration
+      Equivalent: mp=18, nssl_ccn_on=0
+  = 19, NSSL 1-moment (7 class: qv,qc,qr,qi,qs,qg,qh; predicts graupel density)
+      Equivalent: mp=18, nssl_2moment_on=0, nssl_ccn_on=0 (do no set nssl_hail_on)
+  = 21, NSSL 1-moment, (6-class), very similar to Gilmore et al. 2004
+      Equivalent: mp=18, nssl_2moment_on=0, nssl_hail_on=0, nssl_ccn_on=0, 
+      nssl_density_on=0
+
+Option flags (integer; apply to all domains except nssl_hail_on):
+
+ nssl_3moment : default value of 0, setting to 1 adds 6th moment for rain, 
+                graupel (i.e., 3-moment ) and hail (Only needed for turning 
+                3-moment on)
+
+ nssl_density_on : default value of 1; Setting to 0 turns off graupel/hail predicted
+                   ice density and instead uses fixed (constant) ice density 
+                   for graupel (nssl_rho_qh, default 500.) and hail (nssl_rho_qhl, 
+                   default 800.) (Only needed for turning density off)
+
+ nssl_ccn_on : predicted CCN concentration: default is on (1) for mp_physics=18
+
+ nssl_hail_on : If not set explicitly, it is set automatically to 1. This is the only
+                flag with dimensions of 'max_domains' e.g., so that hail can be turned
+                off on non-convection-allowing parent domains (Default is on, so this 
+                is only needed for turning the hail species off)
+
+ nssl_ccn_is_ccna : The CCN category, if enabled (=1), can be used to represent either the
+                    number of unactivated CCN (default, value of 0, with irenuc=2), or, if
+                    set to 1, it is CCNA (the number of activated CCN, background value
+                    of zero). If irenuc >= 5 (see below), this is automatically set to 1.
+
+ nssl_2moment_on : only use this flag to run single-moment (value of 0), otherwise 
+                    default is 1 (Only needed for turning 2-moment off)
+
+ Other namelist options (also "physics" namelist)
+   nssl_alphah  = 0.    ! PSD shape parameter for graupel (1- and 2-moment)
+   nssl_alphahl = 1.    ! PSD shape parameter for hail (1- and 2-moment)
+   nssl_cnoh    = 4.e5  ! graupel intercept (1-moment only)
+   nssl_cnohl   = 4.e4  ! hail intercept (1-moment only)
+   nssl_cnor    = 8.e5  ! rain intercept (1-moment only)
+   nssl_cnos    = 3.e6  ! snow intercept (1-moment only)
+   nssl_rho_qh  = 500.  ! graupel density (nssl_density_on=0)
+   nssl_rho_qhl = 800.  ! hail density (nssl_density_on=0)
+   nssl_rho_qs  = 100.  ! snow density
+
+
+  nssl_cccn  - (real) Initial concentration of cloud condensation 
+                       nuclei (per m^3 at sea level)
+                   0.25e+9 maritime
+                   0.5e+9 "low-med" continental (DEFAULT)
+                   1.0e+9 "med-high" continental
+                   1.5e+09 - high-extreme continental CCN)
+                   Larger values run a risk of unrealistically weak 
+                   precipitation production
+                 The value of nssl_cccn sets the concentration at MSL, and an initially
+                 homogeneous number mixing ratio (ccn/1.225) is assumed throughout
+                 the depth of the domain. The droplet concentration near cloud base
+                 will be less than nssl_cccn because of the well-mixed assumption, 
+                 so if a target Nc is desired, set nssl_cccn higher by a factor of 
+                 1.225/(air density at cloud base).
+
+The graupel and hail particle densities are also calculated by predicting the total particle volume. The graupel category therefore emulates a range of characteristics from high-density frozen drops (includes small hail) to low-density graupel (from rimed ice crystals/snow) in its size and density spectrum. The hail category is designed to simulate larger hail sizes. Hail is only produced from higher-density large graupel that is actively riming (esp. in wet growth).
+
+Hydrometeor size distributions are assumed to follow a gamma functional form. (Shape parameters for 2-moment graupel and hail can be set with nssl_alphah/nssl_alphahl.) Microphysical processes include cloud droplet and cloud ice nucleation, condensation, deposition, evaporation, sublimation, collection–coalescence, variable-density riming, shedding, ice multiplication, cloud ice aggregation, freezing and melting, and conversions between hydrometeor categories. 
+
+Cloud concentration nuclei (CCN) concentration is predicted as in Mansell et al. (2010)  with a bulk activation spectrum approximating small aerosols. (New option nssl_ccn_is_ccna=1 instead predicts the number of activated CCN.) The model tracks the number of unactivated CCN, and the local CCN concentration is depleted as droplets are activated, either at cloud base or in cloud. The CCN are subjected to advection and subgrid turbulent mixing but have no other interactions with hydrometeors; for example, scavenging by raindrops is omitted. CCN are restored by droplet evaporation and by a gradual regeneration when no hydrometeors are present (ccntimeconst). Aerosol sensitivity is enhanced by explicitly treating droplet condensation instead of using a saturation adjustment. Supersaturation (within reason) is allowed to persist in updraft with low droplet concentration.
+
+Droplet activation option method is controlled by the 'irenuc' option (internal to NSSL module). The default option (2) depletes CCN from the unactivated CCN field. A new option (7) instead counts the number of activated CCN (nucleated droplets) with the assumption of an initial constant CCN number mixing ratio. Option 7 better handles supersaturation at low CCN (e.g., maritime) concentrations by allowing extra droplet activation at high SS.
+
+  irenuc     : (nssl_mp_params namelist)
+               2 = ccn field is UNactivated aerosol (default; old droplet activation)
+                   Can switch to counting activated CCN with nssl_ccn_is_ccna=1
+               7 = ccn field must be ACTVIATED aerosol (new droplet activation) 
+                   Must have nssl_ccn_on=1 for irenuc=7
+
+Excessive size sorting (common in 2-moment schemes) is effectively controlled by an adaptive breakup method that prevents reflectivity growth by sedimentation (Mansell 2010). For 2-moment, infall=4 (default; nssl_mp_params namelist) is recommended. For 3-moment, infall only really applies to droplets, cloud ice, and snow.
+
+Graupel -> hail conversion: The parameter ihlcnh selects the method of converting graupel (hail embryos) to the hail category. The default value is -1 for automatic setting. The original option (ihlcnh=1) is replaced by a new option (ihlcnh=3) as of May 2023. ihlcnh=3 converts from the graupel spectrum itself based on the wet growth diameter, which generally results in fewer initiated hailstones with larger diameters (and larger mean diameter at the ground). If hail size seems excessive, try setting ihlcnh=1, which tends to generate higher hail number concentrations and thus smaller diameters.
+
+The June 2023 (WRF 4.6) update introduces changes in the default options for graupel/hail fall speeds and collection efficiencies. The original fall speed options (icdx=3; icdxhl=3) from Mansell et al. (2010) are switched to the Milbrandt and Morrison (2013) fall speed curves (icdx=6; icdxhl=6). Because the fall speeds are generally a bit lower, a partially compensating increase in maximum collection efficiency is set by default: ehw0/ehlw0 increased to 0.9. One effect is somewhat reduced total precipitation and cold pool intensity for supercell storms.
+
+  (nssl_mp_params namelist)
+  icdx         - fall speed option for graupel (was 3, now is 6)
+  icdxhl       - fall speed option for hail (was 3, now is 6)
+  ehw0,ehlw0   - Maximim droplet collection efficiencies for graupel (ehw0=0.75, now 0.9)
+                 and hail (ehlw0=0.75, now 0.9)
+  ihlcnh       - graupel to hail conversion option (was 1, now 3)
+
+In summary, to get something closer to previous behavior, use the following:
+
+&nssl_mp_params
+  icdx   = 3
+  icdxhl = 3
+  ehw0   = 0.5
+  ehlw0  = 0.75
+  ihlcnh = 1
+/
+
+Snow Aggregation and reflectivity:
+
+Snow self-collection (aggregation) has been curbed in the 4.6 version by reducing the collision efficiency and the temperature range over which aggregation is allowed (esstem):
+
+  ess0 = 0.5 ! collision efficiency, reduced from 1 to 0.5
+  esstem1 = -15. ! was -25.  ! lower temperature where snow aggregation turns on
+  esstem2 = -10. ! was -20.  ! higher temperature for linear ramp of ess from zero at esstem1 to formula value at esstem2
+  
+  If desired, some further reduction in aggregation can be gained from setting iessopt=4, which reduces ess0 to 0.1 (80% reduction) in conditions of ice subsaturation (RHice < 100%).
+  Snow reflectivity formerly had a default setting that turned on a crude bright band enhancement (iusewetsnow=1). This is now turned off by default (iusewetsnow=0)
+  These snow parameters can be accessed through the nssl_mp_params namelist.
+
+References:
+
+Mansell, E. R., C. L. Ziegler, and E. C. Bruning, 2010: Simulated electrification 
+   of a small thunderstorm with two-moment bulk microphysics. J. Atmos. Sci., 
+   67, 171-194, doi:10. 1175/2009JAS2965.1.
+
+Mansell, E. R. and C. L. Ziegler, 2013: Aerosol effects on simulated storm
+  electrification and precipitation in a two-moment bulk microphysics model. 
+  J. Atmos. Sci., 70 (7), 2032-2050, doi:10.1175/JAS-D-12-0264.1.
+
+Mansell, E. R., D. T. Dawson, J. M. Straka, Bin-emulating Hail Melting in 3-moment 
+   bulk microphysics, J. Atmos. Sci., 77, 3361-3385, doi: 10.1175/JAS-D-19-0268.1
+
+Ziegler, C. L., 1985: Retrieval of thermal and microphysical variables in observed
+    convective storms. Part I: Model development and preliminary testing. J. 
+    Atmos. Sci., 42, 1487-1509.
+
+Sedimentation reference:
+
+Mansell, E. R., 2010: On sedimentation and advection in multimoment bulk microphysics.
+    J. Atmos. Sci., 67, 3084-3094, doi:10.1175/2010JAS3341.1.
+
+
+
+

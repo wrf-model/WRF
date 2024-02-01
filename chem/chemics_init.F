@@ -338,8 +338,8 @@ call wrf_message("**************************************************************
          call wrf_error_fatal("ERROR: wet scavenging option requires chem_opt = 8 through 13 or 31 to 36 or 41 to 42 or 109 or 503 or 504 or 601 or 611 to function.")
        endif
        if ( config_flags%mp_physics /= 2 .and. config_flags%mp_physics /= 10 .and. config_flags%mp_physics /= 11  &
-            .and. config_flags%mp_physics /= 17 .and. config_flags%mp_physics /= 18 .and. config_flags%mp_physics /= 22) then
-         call wrf_error_fatal("ERROR: wet scavenging option requires mp_phys = 2 (Lin et al.) or 10 (Morrison) or 11 (CAMMGMP) or 17/18/22 NSSL_2mom to function.")
+            .and. .not. ( config_flags%mp_physics == 18 .and. config_flags%nssl_2moment_on == 1 ) ) then
+         call wrf_error_fatal("ERROR: wet scavenging option requires mp_phys = 2 (Lin et al.) or 10 (Morrison) or 11 (CAMMGMP) or 18 NSSL_2mom to function.")
        endif
      elseif( id == 1 ) then
        if ( config_flags%mp_physics /= 6 .and. config_flags%mp_physics /= 8 .and. config_flags%mp_physics /= 10 .and. config_flags%mp_physics /= 17  &

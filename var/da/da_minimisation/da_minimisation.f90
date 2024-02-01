@@ -54,10 +54,10 @@ module da_minimisation
       chemic_surf, chemicda_opt, &
 #endif
       sound, mtgirs, sonde_sfc, synop, profiler, gpsref, gpseph, gpspw, polaramv, geoamv, ships, metar, &
-      satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep,tamdar, tamdar_sfc, rain, &
+      satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep,tamdar, tamdar_sfc, rain, lightning, &
       bogus, buoy, qscat,pseudo, radiance, monitor_on, max_ext_its, use_rttov_kmatrix,&
       use_crtm_kmatrix,precondition_cg, precondition_factor, use_varbc, varbc_factor, &
-      biasprep, qc_rad, num_procs, myproc, use_gpspwobs, use_rainobs, use_gpsztdobs, &
+      biasprep, qc_rad, num_procs, myproc, use_gpspwobs, use_rainobs, use_gpsztdobs, use_lightningobs, &
       use_radar_rf, radar_rf_opt,radar_rf_rscl,radar_rv_rscl,use_radar_rhv,use_radar_rqv,pseudo_var, num_pseudo, &
       num_ob_indexes, num_ob_vars, npres_print, pptop, ppbot, qcstat_conv_unit, gas_constant, &
       orthonorm_gradient, its, ite, jts, jte, kts, kte, ids, ide, jds, jde, kds, kde, cp, &
@@ -140,6 +140,10 @@ module da_minimisation
    use da_radar, only :  da_calculate_grady_radar, da_ao_stats_radar, &
       da_oi_stats_radar, da_get_innov_vector_radar, da_residual_radar, &
       da_jo_and_grady_radar
+   
+   use da_lightning, only : da_calculate_grady_lightning, da_ao_stats_lightning, &
+      da_oi_stats_lightning, da_get_innov_vector_lightning, da_residual_lightning, &
+      da_jo_and_grady_lightning
 
    use da_rain, only :  da_calculate_grady_rain, da_ao_stats_rain, &
       da_oi_stats_rain, da_get_innov_vector_rain, da_residual_rain, &

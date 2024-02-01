@@ -18,6 +18,9 @@
 #include "data.h"
 #include "sym.h"
 
+// Helper macro to actually do return checks
+#define EXIT_ON_NONZERO( A ) { int result = A; if ( result != 0 ) { printf( "Error in %s, zero return expected, received %i\n", #A, result ); exit(result); } }
+
 /* SamT: bug fix: main returns int */
 int
 main( int argc, char *argv[], char *env[] )
@@ -132,11 +135,11 @@ main( int argc, char *argv[], char *env[] )
     argv++ ;
   }
 
-  gen_io_boilerplate() ;  /* 20091213 jm.  Generate the io_boilerplate_temporary.inc file */
+  EXIT_ON_NONZERO( gen_io_boilerplate() );  /* 20091213 jm.  Generate the io_boilerplate_temporary.inc file */
 
-  init_parser() ;
-  init_type_table() ;
-  init_dim_table() ;
+  EXIT_ON_NONZERO( init_parser() );
+  EXIT_ON_NONZERO( init_type_table() );
+  EXIT_ON_NONZERO( init_dim_table() );
 //
 //  possible IRR diagnostcis?
 //
@@ -230,45 +233,45 @@ main( int argc, char *argv[], char *env[] )
   }
 
 
-  reg_parse(fp_tmp) ;
+  EXIT_ON_NONZERO( reg_parse(fp_tmp) );
 
   fclose(fp_tmp) ;
 
-  check_dimspecs() ;
+  check_dimspecs();
 
-  gen_state_struct( "inc" ) ;
-  gen_state_subtypes( "inc" ) ;
-  gen_alloc( "inc" ) ;
+  EXIT_ON_NONZERO( gen_state_struct( "inc" ) );
+  EXIT_ON_NONZERO( gen_state_subtypes( "inc" ) );
+  EXIT_ON_NONZERO( gen_alloc( "inc" ) );
   /* gen_alloc_count( "inc" ) ; */
-  gen_dealloc( "inc" ) ;
-  gen_scalar_indices( "inc" ) ;
-  gen_module_state_description( "frame" ) ;
-  gen_actual_args( "inc" ) ;
-  gen_actual_args_new( "inc" ) ;
-  gen_dummy_args( "inc" ) ;
-  gen_dummy_args_new( "inc" ) ;
-  gen_dummy_decls( "inc" ) ;
-  gen_dummy_decls_new( "inc" ) ;
-  gen_i1_decls( "inc" ) ;
-  gen_namelist_statements("inc") ;
-  gen_namelist_defines ( "inc", 0 ) ;  /* without dimension statements  */
-  gen_namelist_defines ( "inc", 1 ) ;  /* with dimension statements     */
-  gen_namelist_defaults ( "inc" ) ;
-  gen_namelist_script ( "inc" ) ;
-  gen_get_nl_config( "inc" ) ;
-  gen_config_assigns( "inc" ) ;
-  gen_config_reads( "inc" ) ;
-  gen_wrf_io( "inc" ) ;
-  gen_model_data_ord( "inc" ) ;
-  gen_nest_interp( "inc" ) ;
-  gen_nest_v_interp( "inc") ; /*KAL added this for vertical interpolation*/
-  gen_scalar_derefs( "inc" ) ;
-  gen_streams("inc") ;
+  EXIT_ON_NONZERO( gen_dealloc( "inc" ) ) ;
+  EXIT_ON_NONZERO( gen_scalar_indices( "inc" ) ) ;
+  EXIT_ON_NONZERO( gen_module_state_description( "frame" ) ) ;
+  EXIT_ON_NONZERO( gen_actual_args( "inc" ) ) ;
+  EXIT_ON_NONZERO( gen_actual_args_new( "inc" ) ) ;
+  EXIT_ON_NONZERO( gen_dummy_args( "inc" ) ) ;
+  EXIT_ON_NONZERO( gen_dummy_args_new( "inc" ) ) ;
+  EXIT_ON_NONZERO( gen_dummy_decls( "inc" ) ) ;
+  EXIT_ON_NONZERO( gen_dummy_decls_new( "inc" ) ) ;
+  EXIT_ON_NONZERO( gen_i1_decls( "inc" ) ) ;
+  EXIT_ON_NONZERO( gen_namelist_statements("inc") ; )
+  EXIT_ON_NONZERO( gen_namelist_defines ( "inc", 0 ) ) ;  /* without dimension statements  */
+  EXIT_ON_NONZERO( gen_namelist_defines ( "inc", 1 ) ) ;  /* with dimension statements     */
+  EXIT_ON_NONZERO( gen_namelist_defaults ( "inc" ) ) ;
+  EXIT_ON_NONZERO( gen_namelist_script ( "inc" ) ) ;
+  EXIT_ON_NONZERO( gen_get_nl_config( "inc" ) ) ;
+  EXIT_ON_NONZERO( gen_config_assigns( "inc" ) ) ;
+  EXIT_ON_NONZERO( gen_config_reads( "inc" ) ) ;
+  EXIT_ON_NONZERO( gen_wrf_io( "inc" ) ) ;
+  EXIT_ON_NONZERO( gen_model_data_ord( "inc" ) ) ;
+  EXIT_ON_NONZERO( gen_nest_interp( "inc" ) ) ;
+  EXIT_ON_NONZERO( gen_nest_v_interp( "inc") ; ) /*KAL added this for vertical interpolation*/
+  EXIT_ON_NONZERO( gen_scalar_derefs( "inc" ) ) ;
+  EXIT_ON_NONZERO( gen_streams("inc") ; )
 
 /* this has to happen after gen_nest_interp, which adds halos to the AST */
-  gen_comms( "inc" ) ;    /* this is either package supplied (by copying a */
-                          /* gen_comms.c file into this directory) or a    */
-                          /* stubs routine.                                */
+  EXIT_ON_NONZERO( gen_comms( "inc" ) );    /* this is either package supplied (by copying a */
+                                            /* gen_comms.c file into this directory) or a    */
+                                            /* stubs routine.                                */
 
 cleanup:
 #ifdef _WIN32

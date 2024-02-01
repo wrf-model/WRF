@@ -284,6 +284,17 @@ subroutine da_zero_y( iv, y, value )
       end do
    end if
 
+   ! Initialize lightning:
+   if ( y % nlocal(lightning) > 0 ) then
+      do n = 1, y % nlocal(lightning)
+         nlevels = iv % info(lightning) % levels(n)
+
+         y % lightning(n) % w(1:nlevels) = value
+         y % lightning(n) % div(1:nlevels) = value
+         y % lightning(n) % qv(1:nlevels) = value
+      end do
+   end if
+
    ! Initialize rain:
    if ( y % nlocal(rain) > 0 ) then
           y % rain(1:y % nlocal(rain)) % rain = value

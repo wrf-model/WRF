@@ -2039,7 +2039,7 @@ CONTAINS
                  u10,v10,th2,t2,q2,                                  &
                  gz1oz0,wspd,br,isfflx,dx2d,                         &
                  svp1,svp2,svp3,svpt0,ep_1,ep_2,karman,eomeg,stbolt, &
-                 P1000mb,                                            &
+                 P1000mb,lakemask,                                   &
                  XICE,SST,TSK_SEA,                                                  &
                  CHS2_SEA,CHS_SEA,CPM_SEA,CQS2_SEA,FLHC_SEA,FLQC_SEA,               &
                  HFX_SEA,LH_SEA,QFX_SEA,QGH_SEA,QSFC_SEA,ZNT_SEA,                   &
@@ -2057,7 +2057,7 @@ CONTAINS
                u10,v10,th2,t2,q2,                                  &
                gz1oz0,wspd,br,isfflx,dx2d,                         &
                svp1,svp2,svp3,svpt0,ep_1,ep_2,karman,eomeg,stbolt, &
-               P1000mb,                                            &
+               P1000mb,lakemask,                                   &
                ids,ide, jds,jde, kds,kde,                          &
                ims,ime, jms,jme, kms,kme,                          &
                i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,    &
@@ -2092,7 +2092,7 @@ CONTAINS
                  u10,v10,th2,t2,q2,                                  &
                  gz1oz0,wspd,br,isfflx,dx,                           &
                  svp1,svp2,svp3,svpt0,ep_1,ep_2,karman,eomeg,stbolt, &
-                 P1000mb,                                            &
+                 P1000mb,lakemask,                                   &
                  XICE,SST,TSK_SEA,                                                  &
                  CHS2_SEA,CHS_SEA,CPM_SEA,CQS2_SEA,FLHC_SEA,FLQC_SEA,               &
                  HFX_SEA,LH_SEA,QFX_SEA,QGH_SEA,QSFC_SEA,ZNT_SEA,                   &
@@ -2111,7 +2111,7 @@ CONTAINS
                u10,v10,th2,t2,q2,                                  &
                gz1oz0,wspd,br,isfflx,dx,                           &
                svp1,svp2,svp3,svpt0,ep_1,ep_2,karman,eomeg,stbolt, &
-               P1000mb,                                            &
+               P1000mb,lakemask,                                   &
                ids,ide, jds,jde, kds,kde,                          &
                ims,ime, jms,jme, kms,kme,                          &
                i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,    &
@@ -5799,7 +5799,7 @@ CONTAINS
                      GZ1OZ0,WSPD,BR,ISFFLX,DX,                     &
                      SVP1,SVP2,SVP3,SVPT0,EP1,EP2,                 &
                      KARMAN,EOMEG,STBOLT,                          &
-                     P1000,                                      &
+                     P1000,LAKEMASK,                               &
                      XICE,SST,TSK_SEA,                                                  &
                      CHS2_SEA,CHS_SEA,CPM_SEA,CQS2_SEA,FLHC_SEA,FLQC_SEA,               &
                      HFX_SEA,LH_SEA,QFX_SEA,QGH_SEA,QSFC_SEA,ZNT_SEA,                   &
@@ -5835,6 +5835,7 @@ CONTAINS
                INTENT(IN   )               ::             MAVAIL, &
                                                             PBLH, &
                                                            XLAND, &
+                                                        LAKEMASK, &
                                                              TSK
      REAL,     DIMENSION( ims:ime, jms:jme )                    , &
                INTENT(OUT  )               ::                U10, &
@@ -6061,7 +6062,7 @@ CONTAINS
                  GZ1OZ0,WSPD,BR,ISFFLX,DX,                     &
                  SVP1,SVP2,SVP3,SVPT0,EP1,EP2,                 &
                  KARMAN,EOMEG,STBOLT,                          &
-                 P1000,                                      &
+                 P1000,lakemask,                               &
                  ids,ide, jds,jde, kds,kde,                    &
                  ims,ime, jms,jme, kms,kme,                    &
                  its,ite, jts,jte, kts,kte,                    &
@@ -6155,7 +6156,7 @@ CONTAINS
                  ISFFLX,DX,                                    &
                  SVP1,SVP2,SVP3,SVPT0,EP1,EP2,                 &
                  KARMAN,EOMEG,STBOLT,                          &
-                 P1000,                                      &
+                 P1000,lakemask,                               &
                  ids,ide, jds,jde, kds,kde,                    &
                  ims,ime, jms,jme, kms,kme,                    &
                  its,ite, jts,jte, kts,kte,                    & ! 0
@@ -6230,7 +6231,7 @@ CONTAINS
                      GZ1OZ0,WSPD,BR,ISFFLX,DX,                     &
                      SVP1,SVP2,SVP3,SVPT0,EP1,EP2,                 &
                      KARMAN,EOMEG,STBOLT,                          &
-                     P1000,                                        &
+                     P1000,lakemask,                               &
 XICE,SST,TSK_SEA,                                                  &
 CHS2_SEA,CHS_SEA,CPM_SEA,CQS2_SEA,FLHC_SEA,FLQC_SEA,               &
 HFX_SEA,LH_SEA,QFX_SEA,QGH_SEA,QSFC_SEA,ZNT_SEA,                   &
@@ -6265,6 +6266,7 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
                INTENT(IN   )               ::             MAVAIL, &
                                                             PBLH, &
                                                            XLAND, &
+                                                        LAKEMASK, &
                                                              TSK
      REAL,     DIMENSION( ims:ime, jms:jme )                    , &
                INTENT(OUT  )               ::                U10, &
@@ -6491,7 +6493,7 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
                  GZ1OZ0,WSPD,BR,ISFFLX,DX,                     &
                  SVP1,SVP2,SVP3,SVPT0,EP1,EP2,                 &
                  KARMAN,EOMEG,STBOLT,                          &
-                 P1000,                                        &
+                 P1000,lakemask,                               &
                  ids,ide, jds,jde, kds,kde,                    &
                  ims,ime, jms,jme, kms,kme,                    &
                  its,ite, jts,jte, kts,kte,                    &
@@ -6585,7 +6587,7 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
                  ISFFLX,DX,                                    &
                  SVP1,SVP2,SVP3,SVPT0,EP1,EP2,                 &
                  KARMAN,EOMEG,STBOLT,                          &
-                 P1000,                                      &
+                 P1000,lakemask,                               &
                  ids,ide, jds,jde, kds,kde,                    &
                  ims,ime, jms,jme, kms,kme,                    &
                  its,ite, jts,jte, kts,kte,                    & ! 0

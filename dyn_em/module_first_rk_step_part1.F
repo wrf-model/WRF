@@ -925,7 +925,7 @@ BENCH_START(surf_driver_tim)
      &        ,iopt_crop=config_flags%opt_crop, iopt_irr=config_flags%opt_irr    &
      &        ,iopt_irrm=config_flags%opt_irrm                                   &
      &        ,iopt_infdv=config_flags%opt_infdv,iopt_tdrn=config_flags%opt_tdrn &
-     &        ,soiltstep=config_flags%soiltstep
+     &        ,soiltstep=config_flags%soiltstep                                      &
      &        , isnowxy=grid%isnowxy  ,    tvxy=grid%tvxy    ,    tgxy=grid%tgxy     &
      &        ,canicexy=grid%canicexy ,canliqxy=grid%canliqxy,   eahxy=grid%eahxy    &
      &        ,   tahxy=grid%tahxy    ,    cmxy=grid%cmxy    ,    chxy=grid%chxy     &
@@ -1109,6 +1109,8 @@ BENCH_START(pbl_driver_tim)
      &         AKHS=grid%akhs          ,AKMS=grid%akms                              &
      &        ,BL_PBL_PHYSICS=config_flags%bl_pbl_physics                           &
      &        ,WINDFARM_OPT=config_flags%windfarm_opt,power=grid%power              &
+     &        ,windfarm_wake_model=config_flags%windfarm_wake_model          & ! Yulong add for WLM
+     &        ,windfarm_overlap_method=config_flags%windfarm_overlap_method  & ! Yulong add for WLM
      &        ,BLDT=grid%bldt, CURR_SECS=curr_secs, ADAPT_STEP_FLAG=adapt_step_flag &
      &        ,BLDTACTTIME=grid%bldtacttime                               &  
      &        ,BR=grid%br         ,CHKLOWQ=chklowq    ,CT=grid%ct                   &
@@ -1223,8 +1225,8 @@ BENCH_START(pbl_driver_tim)
      &        ,rmol=grid%rmol, ch=grid%ch                                 &
      &        ,qcg=grid%qcg, grav_settling=config_flags%grav_settling     &
 !    &        ,K_m=grid%K_m, K_h=grid%K_h, K_q=grid%K_q                   &
-     &        ,vdfg=grid%vdfg,nupdraft=grid%nupdraft,maxMF=grid%maxmf     &
-     &        ,ktop_plume=grid%ktop_plume                                 &
+     &        ,vdfg=grid%vdfg,maxwidth=grid%maxwidth,maxMF=grid%maxmf     &
+     &        ,ztop_plume=grid%ztop_plume,ktop_plume=grid%ktop_plume      &
      &        ,spp_pbl=config_flags%spp_pbl                               &
      &        ,pattern_spp_pbl=grid%pattern_spp_pbl                       &
      &        ,restart=config_flags%restart,cycling=config_flags%cycling  &

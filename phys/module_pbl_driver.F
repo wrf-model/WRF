@@ -28,6 +28,7 @@ CONTAINS
                  ,kpbl,mixht,ct,lh,snow,xice                       &
                  ,znu, znw, mut, p_top                             &
                  ,ctopo,ctopo2,windfarm_opt,power                  &
+                 ,windfarm_wake_model, windfarm_overlap_method     &
                  ,ysu_topdown_pblmix                               &
                  ,shinhong_tke_diag                                &
               ! OPTIONAL for TEMF scheme
@@ -39,7 +40,7 @@ CONTAINS
                  ,flhc,flqc                                        &
               ! MYNN
                  ,qke,Sh3d,Sm3d                                    &
-                 ,qke_adv,bl_mynn_tkeadvect                        & !ACF for QKE advection
+                 ,qke_adv,bl_mynn_tkeadvect                        &
                  ,tsq,qsq,cov,rmol,ch,qcg,grav_settling            & 
                  ,dqke,qWT,qSHEAR,qBUOY,qDISS,tke_budget           &
                  ,bl_mynn_closure,bl_mynn_cloudpdf                 &
@@ -53,7 +54,7 @@ CONTAINS
                  ,sub_thl3D,sub_sqv3D                              &
                  ,det_thl3D,det_sqv3D                              &
                  ,vdfg                                             &
-                 ,nupdraft,maxMF,ktop_plume                        &
+                 ,maxwidth,maxMF,ztop_plume,ktop_plume             &
                  ,spp_pbl,pattern_spp_pbl                          &
               ! EEPS
                  ,pek,pep,pek_adv,pep_adv                          &
@@ -155,6 +156,7 @@ CONTAINS
                    CAMUWPBLSCHEME,BEPSCHEME,BEP_BEMSCHEME,MYJSFCSCHEME, &
                    FITCHSCHEME,SHINHONGSCHEME,                       &
                    TEMFPBLSCHEME,GBMPBLSCHEME,EEPSSCHEME,KEPSSCHEME,                  &
+                   MAVSCHEME,  & ! Yulong add for WLM
                    CAMMGMPSCHEME,p_qi,p_qni,p_qnc,param_first_scalar,& !CAMMGMPSCHEME, p_qni,p_qnc is used for camuwpbl scheme
                    p_qnwfa,p_qnifa,p_qnbca
 #if ( WRFPLUS == 1 )
@@ -167,6 +169,7 @@ CONTAINS
                    , TEMFPBLSCHEME, GFSEDMFSCHEME           &
                    , CAMUWPBLSCHEME                                       &
                    , FITCHSCHEME, SHINHONGSCHEME                          &
+                   , MAVSCHEME  ! Yulong add for WLM
                    , GBMPBLSCHEME, MYJSFCSCHEME
 #endif
 
@@ -198,6 +201,7 @@ CONTAINS
    USE module_bl_keps
    USE module_bl_fogdes
    USE module_wind_fitch
+   USE module_wind_mav ! Yulong add for WLM
 #endif
 
    !  This driver calls subroutines for the PBL parameterizations.
@@ -434,6 +438,9 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ), &
          INTENT(IN), OPTIONAL    :: xlat_u,xlong_u,xlat_v,xlong_v
 
+   ! Yulong add for WLM
+   INTEGER,    INTENT(IN   )    ::     windfarm_wake_model, windfarm_overlap_method
+
    REAL,       DIMENSION( ims:ime, kms:kme ,jms:jme ),            &
                INTENT(IN), OPTIONAL    :: w
 !
@@ -585,9 +592,9 @@ CONTAINS
         &    INTENT(INOUT)::                               vdfg
 
    INTEGER, OPTIONAL, DIMENSION( ims:ime , jms:jme ),           &
-        &    INTENT(OUT) ::               nupdraft,ktop_plume
+        &    INTENT(OUT) ::                          ktop_plume
    REAL, OPTIONAL, DIMENSION( ims:ime , jms:jme ),              &
-        &    INTENT(OUT) ::                               maxMF
+        &    INTENT(OUT) ::           maxwidth,maxMF,ztop_plume
 
     REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ),     &
            INTENT(INOUT) ::         qnwfa_curr,qnifa_curr,qnbca_curr
@@ -820,6 +827,8 @@ CONTAINS
    integer iu_bep,iurb,idiff
    real seamask,thsk,zzz,unew,vnew,tnew,qnew,umom,vmom
    REAL :: z0,z1,z2,w1,w2
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: TKE_windfarm ! Yulong add for WLM
 !
 ! FASDAS
 !
@@ -1638,7 +1647,7 @@ CONTAINS
                    &initflag=initflag,restart=restart,cycling=cycling,   &
                    &delt=dtbl,dz=dz8w,dxc=dx,znt=znt,                    &
                    &u=u_phy,v=v_phy,w=w,th=th_phy,qv=qv_curr,            &
-                   &qc=qc_curr,qi=qi_curr,                               &
+                   &qc=qc_curr,qi=qi_curr,qs=qs_curr,                    &
                    &qnc=qnc_curr,qni=qni_curr,                           &
                    &QNWFA=qnwfa_curr,QNIFA=qnifa_curr,QNBCA=qnbca_curr,  &
 !                   &ozone=ozone,                                         &
@@ -1658,6 +1667,7 @@ CONTAINS
                    &RUBLTEN=rublten,RVBLTEN=rvblten,RTHBLTEN=rthblten,   &
                    &RQVBLTEN=rqvblten,RQCBLTEN=rqcblten,RQIBLTEN=rqiblten,&
                    &RQNCBLTEN=rqncblten,RQNIBLTEN=rqniblten,             &
+                   &RQSBLTEN=rqsblten,                                   &
                    &RQNWFABLTEN=rqnwfablten,RQNIFABLTEN=rqnifablten,     &
                    &RQNBCABLTEN=rqnbcablten,                             &
 !                   &Ro3BLTEN=ro3blten,                                   &
@@ -1671,8 +1681,8 @@ CONTAINS
                    &edmf_thl=edmf_thl,edmf_ent=edmf_ent,edmf_qc=edmf_qc, &
                    &sub_thl3D=sub_thl3D,sub_sqv3D=sub_sqv3D,             &
                    &det_thl3D=det_thl3D,det_sqv3D=det_sqv3D,             &
-                   &nupdraft=nupdraft,maxMF=maxMF,                       &
-                   &ktop_plume=ktop_plume,                               &
+                   &maxwidth=maxwidth,maxMF=maxMF,                       &
+                   &ztop_plume=ztop_plume,ktop_plume=ktop_plume,         &
                    &RTHRATEN=RTHRATEN,                                   &
                    &bl_mynn_tkeadvect=bl_mynn_tkeadvect,                 &
                    &tke_budget=tke_budget,                               &
@@ -1688,7 +1698,7 @@ CONTAINS
                    &bl_mynn_mixqt=bl_mynn_mixqt,                         &
                    &bl_mynn_closure=bl_mynn_closure,                     &
                    &spp_pbl=spp_pbl,pattern_spp_pbl=pattern_spp_pbl,     &
-                   &FLAG_QC=flag_qc,FLAG_QI=flag_qi,                     &
+                   &FLAG_QC=flag_qc,FLAG_QI=flag_qi,FLAG_QS=flag_qs,     &
                    &FLAG_QNC=flag_qnc,FLAG_QNI=flag_qni,                 &
                    &FLAG_QNWFA=flag_qnwfa,FLAG_QNIFA=flag_qnifa,         &
                    &FLAG_QNBCA=flag_qnbca,                               &
@@ -2060,6 +2070,47 @@ CONTAINS
                      CALL wrf_debug(0,message)
                      CALL wrf_error_fatal('Lack arguments to call turbine_drag')
                   ENDIF
+
+      ! Yulong add new wind farm schemes with wind turbine loss effect
+      CASE (mavscheme)
+                  IF (PRESENT(id) .AND.                                  &
+                     PRESENT(z_at_w) ) THEN
+                     CALL wrf_debug(100,'in phys/module_wind_mav.F')
+                     CALL dragforce_mav(itimestep                     &
+                     &,ID=id                                             &
+                     &,Z_AT_W=z_at_w,z_at_m=z,u=u_phy,v=v_phy            &
+                     &,DX=dx,DZ=dz8w,DT=dt                               &
+                     &,TKE=TKE_windfarm                                  &
+                     &,DU=rublten,DV=rvblten                             &
+                     &,WINDFARM_OPT=windfarm_opt,POWER=power             &
+                     &,windfarm_wake_model=windfarm_wake_model           &
+                     &,windfarm_overlap_method=windfarm_overlap_method   &
+                     &,xland=xland                                       &
+                     &,cosa=cosa,sina=sina                               &
+                     &,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde   &
+                     &,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme   &
+                     &,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte   &
+                     &)
+
+                     IF (bl_mynn_tkeadvect) THEN
+                        QKE = QKE + 2.*TKE_windfarm
+                        qke_adv=qke
+                     ENDIF
+
+                  ELSE
+                     WRITE ( message , FMT = '(A,6(L1,1X))' )           &
+                     'present: '//                                      &
+                     'ID, '//                                           &
+                     'z_at_w, '//                                       &
+                     'xlat_u, '//                                       &
+                     'xlong_u, '//                                      &
+                     'xlat_v, '//                                       &
+                     'xlong_v = ' ,                                     &
+                      PRESENT( id ) ,                                   &
+                      PRESENT( z_at_w )
+                     CALL wrf_debug(0,message)
+                     CALL wrf_error_fatal('Lack arguments to call dragforce_mav')
+                  ENDIF                 
 
    END SELECT windfarm_select
 #endif

@@ -6,6 +6,7 @@ RM      =       rm -f
 
 
 MODULES = \
+	ccpp_kind_types.o \
 	module_bep_bem_helper.o \
 	complex_number_module.o \
 	module_cam_shr_kind_mod.o \
@@ -203,6 +204,7 @@ MODULES = \
         module_fddaobs_rtfdda.o \
 	module_fddaobs_driver.o \
 	module_wind_fitch.o \
+	module_wind_mav.o \
 	module_sf_lake.o \
 	module_diagnostics_driver.o \
 	module_irrigation.o

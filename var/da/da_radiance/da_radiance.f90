@@ -11,6 +11,9 @@ module da_radiance
 #if defined(RTTOV) || defined(CRTM)
 
    use module_domain, only : xb_type, domain
+#ifdef DM_PARALLEL
+   use module_dm, only : ntasks_x, ntasks_y
+#endif
    use module_radiance, only : satinfo, &
       i_kind,r_kind, r_double, &
        one, zero, three,deg2rad,rad2deg, &
@@ -58,6 +61,8 @@ module da_radiance
       use_rad,crtm_cloud, DT_cloud_model, global, use_varbc, freeze_varbc, &
       airs_warmest_fov, time_slots, interp_option, ids, ide, jds, jde, &
       ips, ipe, jps, jpe, simulated_rad_ngrid, obs_qc_pointer, use_blacklist_rad, use_satcv, &
+      use_goesabiobs, abi_superob_halfwidth, &
+      var4d, var4d_bin, &
       use_goesimgobs, pi, earth_radius, satellite_height,use_clddet_zz, ahi_superob_halfwidth, ahi_apply_clrsky_bias
  
 #ifdef CRTM
@@ -88,7 +93,7 @@ module da_radiance
    use da_statistics, only : da_stats_calculate
    use da_tools, only : da_residual, da_obs_sfc_correction, &
       da_llxy, da_llxy_new, da_togrid_new, da_get_julian_time, da_get_time_slots, &
-      da_xyll, map_info
+      da_xyll, map_info, da_llxy_1d
    use da_tracing, only : da_trace_entry, da_trace_exit, da_trace, &
       da_trace_int_sort
    use da_varbc, only : da_varbc_direct,da_varbc_coldstart,da_varbc_precond, &
@@ -129,6 +134,11 @@ contains
 #include "da_read_obs_netcdf4ahi_geocat.inc"
 #include "da_read_obs_netcdf4ahi_jaxa.inc"
 #include "da_read_obs_ncgoesimg.inc"
+#include "da_read_obs_ncgoesabi.inc"
+#include "da_get_sat_angles.inc"
+#include "da_get_sat_angles_1d.inc"
+#include "da_get_solar_angles.inc"
+#include "da_get_solar_angles_1d.inc"
 #include "da_read_obs_hdf5gmi.inc"
 #include "da_get_satzen.inc"
 #include "da_allocate_rad_iv.inc"

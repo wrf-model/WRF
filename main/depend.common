@@ -299,7 +299,7 @@ module_bl_qnsepbl.o: \
 
 
 module_progtm.o: \
-	module_gfs_machine.o 
+	module_gfs_machine.o
 
 
 module_bl_gfs.o: \
@@ -319,6 +319,10 @@ module_bl_mynn.o: \
 module_bl_mynn_wrapper.o: \
 	module_bl_mynn.o \
 	module_bl_mynn_common.o 
+
+
+module_bl_gwdo.o: \
+	physics_mmm/bl_gwdo.o
 
 
 module_cam_upper_bc.o: \
@@ -1477,6 +1481,11 @@ module_mp_gsfcgce_4ice_nuwrf.o: \
 	module_gocart_coupling.o \
 	module_checkerror.o \
 	module_mp_radar.o \
+
+
+physics_mmm/bl_gwdo.o : \
+	ccpp_kind_types.o
+
 
 # End of DEPENDENCIES for phys
 

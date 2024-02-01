@@ -838,6 +838,10 @@ CONTAINS
 !
 ! END FASDAS
 !
+! To accommodate shared physics
+   character*256 :: errmsg
+   integer :: errflg
+!
 !------------------------------------------------------------------
 !
 !!!!!!!if using BEP set flag_bep to true
@@ -2133,7 +2137,8 @@ CONTAINS
               ,ZNU=znu,ZNW=znw,P_TOP=p_top                          &
               ,CP=cp,G=g,RD=r_d                                     &
               ,RV=r_v,EP1=ep_1,PI=3.141592653                       &
-              ,DT=dtbl,DX=dx,KPBL2D=kpbl,ITIMESTEP=itimestep        &
+              ,DT=dtbl,DX=dx2d,KPBL2D=kpbl,ITIMESTEP=itimestep      &
+              ,errmsg=errmsg,errflg=errflg                          &
               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      )

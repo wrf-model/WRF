@@ -17,11 +17,28 @@
 		- gcc-core (OpenMP for smpar)
 		- gcc-fortran
 		- libnetcdf-fortran-devel
+		- libnetcdf-devel
+		- libhdf5-devel
+		- zlib-devel
 		- openmpi (MPI for dmpar)
 		- libopenmpi-devel (MPI for dmpar)
+		- libhwloc-devel (MPI for dmpar)
+		- libevent-devel (MPI for dmpar)
 		- libjasper-devel (GRIB)
 		- perl
+		- perl_base
 		- tcsh
+		- m4
+		- make
+		- libtirpc-devel
+		- sed
+		- gawk
+		- tar
+		- gzip
+		- coreutils
+		- which
+		- file
+		- grep
 	- Select install
 	- Accept the packages pulled in as dependencies
 	- Wait for download, install, and postinstall steps.  This will

@@ -3141,7 +3141,7 @@ CHARACTER(LEN=8) :: name
            CALL sfclayinit( allowed_to_read )
            isfc = 1
       CASE (SFCLAYREVSCHEME)
-           CALL sfclayrevinit
+           CALL sf_sfclayrev_init(errmsg,errflg)
            IF ( shalwater_z0 .EQ. 1 ) THEN
               CALL shalwater_init(ims,ime,jms,jme,            &  
                         its,ite,jts,jte,                      &  

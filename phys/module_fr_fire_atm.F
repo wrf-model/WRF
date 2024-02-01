@@ -50,7 +50,7 @@ integer :: i_st,i_en,j_st,j_en
 
 !local for TG
 integer :: k,k_st,k_en
-real, dimension(ims:ime,kms:kme,jms:jme) :: prop_smk
+real, dimension(its:ite,kts:kte,jts:jte) :: prop_smk
 
 isz1 = ite-its+1
 jsz1 = jte-jts+1
@@ -168,7 +168,7 @@ SUBROUTINE fire_tendency( &
    REAL :: fact_g, fact_c
    REAL :: alfg_i, alfc_i
 
-   REAL, DIMENSION( ims:ime,kms:kme,jms:jme ) :: prop_heat !proportion of heat to be released fro TG dist.
+   REAL, DIMENSION( its:ite,kts:kte,jts:jte ) :: prop_heat !proportion of heat to be released fro TG dist.
 
    REAL, DIMENSION( its:ite,kts:kte,jts:jte ) :: hfx,qfx
    
@@ -321,7 +321,7 @@ SUBROUTINE tg_dist(ims,ime, kms,kme, jms,jme, &
    REAL, INTENT(in) :: fire_ext_depth   !extinction depth surface fire heat (m)
    REAL, INTENT(in), DIMENSION( ims:ime,kms:kme,jms:jme ) :: z_at_w ! m abv sealvl
    REAL, INTENT(in), DIMENSION( ims:ime,jms:jme ) :: zs  ! topography (m abv sealvl)
-   REAL, INTENT(out), DIMENSION( ims:ime,kms:kme,jms:jme ) :: prop !proportion of heat or smoke to be released
+   REAL, INTENT(out), DIMENSION( its:ite,kts:kte,jts:jte ) :: prop !proportion of heat or smoke to be released
 
    ! --- local for Truncated Gaussian
    INTEGER :: i,j,k

@@ -221,6 +221,17 @@ rconfig   integer fire_sprd_mdl          namelist,fire         max_domains      
 rconfig   real    fire_crwn_hgt          namelist,fire         max_domains           15.     -      "fire_crwn_hgt"    "height that heat from crown fire is released" "m"
 rconfig   real    fire_ext_grnd          namelist,fire         max_domains           50.     -      "fire_ext_grnd"    "extinction depth of sfc fire heat"   "m"
 rconfig   real    fire_ext_crwn          namelist,fire         max_domains           50.     -      "fire_ext_crwn"    "extinction depth of crown fire heat" "m"
+#
+# ------------------------------------------------------------------------------------------------------------------------
+# variable for Truncated Gaussian dist.
+#
+rconfig   integer fire_sfc_flx           namelist,fire         max_domains           0       -      "fire_sfc_flx"     "compute flux div according to 0=exponential decay, 1=Truncated Gaussian distribution" ""
+rconfig   real    fire_heat_peak         namelist,fire         max_domains           0.      -      "fire_heat_peak"   "ONLY fire_sfc_flx=1, the peak heat release height for the Truncated Gaussian scheme" "m AGL"
+rconfig   real    fire_tg_ub             namelist,fire         max_domains           1000.   -      "fire_tg_ub"       "The upper bpund of the Truncated Gaussian scheme; the default typically works well" "m AGL"
+rconfig   integer fire_smk_scheme        namelist,fire         max_domains           0       -      "fire_smk_scheme"  "Fire smoke release scheme; 0=tracers at first level, 1=Truncated Gaussian dist"
+rconfig   real    fire_smk_peak          namelist,fire         max_domains           0.      -      "fire_smk_peak"    "ONLY fire_smk_scheme=1, the peak smoke release height for the Truncated Gaussian scheme" "m AGL"
+rconfig   real    fire_smk_ext           namelist,fire         max_domains           50.     -      "fire_smk_ext"     "ONLY fire_smk_scheme=1, the extinction depth of smoke" "m AGL"
+
 rconfig   real    fire_wind_height       namelist,fire         max_domains           6.096   -      "fire_wind_height" "height of uah,vah wind in fire spread formula" "m"
 rconfig   integer fire_fuel_read         namelist,fire         max_domains           -1      -      "fire_fuel_read"   "fuel categories are set by: if 0, uniform; if 1, user-presc; if 2, read from file"   ""
 rconfig   integer fire_fuel_cat          namelist,fire         max_domains           1       -      "fire_fuel_cat"     "fuel category if ifuelread=0"              ""

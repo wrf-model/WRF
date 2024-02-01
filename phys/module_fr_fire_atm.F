@@ -321,7 +321,7 @@ SUBROUTINE tg_dist(ims,ime, kms,kme, jms,jme, &
    REAL, INTENT(in) :: fire_ext_depth   !extinction depth surface fire heat (m)
    REAL, INTENT(in), DIMENSION( ims:ime,kms:kme,jms:jme ) :: z_at_w ! m abv sealvl
    REAL, INTENT(in), DIMENSION( ims:ime,jms:jme ) :: zs  ! topography (m abv sealvl)
-   REAL, INTENT(out), DIMENSION( its:ite,kts:kte,jts:jte ) :: prop !proportion of heat or smoke to be released
+   REAL, INTENT(out), DIMENSION( i_st:i_en,k_st:k_en,j_st:j_en ) :: prop !proportion of heat or smoke to be released
 
    ! --- local for Truncated Gaussian
    INTEGER :: i,j,k

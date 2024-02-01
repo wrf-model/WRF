@@ -234,7 +234,11 @@ DIAGNOSTIC_MODULES_EM = \
         module_diag_solar.o
   
 PHYSMMM_MODULES = \
-	./physics_mmm/bl_ysu.o
+        physics_mmm/bl_gwdo.o \
+        physics_mmm/bl_ysu.o
+
+	
+
 OBJS    =
 
 LIBTARGET    =  physics
@@ -248,7 +252,7 @@ $(LIBTARGET) :
 include ../configure.wrf
 
 non_nmm : $(MODULES) $(FIRE_MODULES) $(OBJS) $(DIAGNOSTIC_MODULES_EM)
-shared_phys: $(PHYSMMM_MODULES)
+shared_phys : $(PHYSMMM_MODULES)
 
 submodules :
 	@if [ \( ! -f module_sf_noahmpdrv.F \) -o \( ! -f module_sf_noahmp_glacier.F \) -o \

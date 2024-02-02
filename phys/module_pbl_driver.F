@@ -838,6 +838,10 @@ CONTAINS
 !
 ! END FASDAS
 !
+! To accommodate shared physics
+   character*256 :: errmsg
+   integer :: errflg
+!
 !------------------------------------------------------------------
 !
 !!!!!!!if using BEP set flag_bep to true
@@ -1202,13 +1206,13 @@ CONTAINS
                 PRESENT( hol      ) ) THEN
 !
              CALL ysu(                                              &
-               U3D=u_phytmp,V3D=v_phytmp,TH3D=th_phy,T3D=t_phy      &
+               U3D=u_phytmp,V3D=v_phytmp,T3D=t_phy                  &
               ,QV3D=qv_curr,QC3D=qc_curr,QI3D=qi_curr               &
               ,P3D=p_phy,P3DI=p8w,PI3D=pi_phy                       &
               ,RUBLTEN=rublten,RVBLTEN=rvblten                      &
               ,RTHBLTEN=rthblten,RQVBLTEN=rqvblten                  &
               ,RQCBLTEN=rqcblten,RQIBLTEN=rqiblten                  &
-              ,FLAG_QI=flag_qi                                      &
+              ,FLAG_QI=flag_qi,FLAG_QC=flag_qc                      &
               ,CP=cp,G=g,ROVCP=rcp,RD=r_D,ROVG=rovg                 &
               ,DZ8W=dz8w,XLV=XLV,RV=r_v,PSFC=PSFC                   &
               ,ZNT=znt,UST=ust,HPBL=pblh                            &
@@ -1221,7 +1225,7 @@ CONTAINS
               ,YSU_TOPDOWN_PBLMIX=ysu_topdown_pblmix                &
               ,WSPD=wspd,BR=br,DT=dtbl,KPBL2D=kpbl                  &
               ,EP1=ep_1,EP2=ep_2,KARMAN=karman                      &
-              ,EXCH_H=exch_h,EXCH_M=exch_m,REGIME=regime            &
+              ,EXCH_H=exch_h,EXCH_M=exch_m                          &
               ,RTHRATEN=RTHRATEN                                    &
 ! for multilayer UCM
               ,IDIFF=idiff,FLAG_BEP=flag_bep,FRC_URB2D=frc_urb2d    &
@@ -1233,6 +1237,7 @@ CONTAINS
               ,DL_U_BEP=dl_u_bep,SF_BEP=sf_bep,VL_BEP=vl_bep        &
 ! for grims shallow convection with ysupbl
               ,WSTAR=wstar,DELTA=delta                              &
+              ,errmsg=errmsg,errflg=errflg                          &
               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
@@ -2133,7 +2138,8 @@ CONTAINS
               ,ZNU=znu,ZNW=znw,P_TOP=p_top                          &
               ,CP=cp,G=g,RD=r_d                                     &
               ,RV=r_v,EP1=ep_1,PI=3.141592653                       &
-              ,DT=dtbl,DX=dx,KPBL2D=kpbl,ITIMESTEP=itimestep        &
+              ,DT=dtbl,DX=dx2d,KPBL2D=kpbl,ITIMESTEP=itimestep      &
+              ,errmsg=errmsg,errflg=errflg                          &
               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      )

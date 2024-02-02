@@ -234,6 +234,7 @@ DIAGNOSTIC_MODULES_EM = \
         module_diag_solar.o
   
 PHYSMMM_MODULES = \
+	physics_mmm/sf_sfclayrev.o \
 	physics_mmm/cu_ntiedtke.o \
 	physics_mmm/module_libmassv.o \
 	physics_mmm/mp_wsm6.o \
@@ -248,14 +249,13 @@ LIBTARGET    =  physics
 TARGETDIR    =  ./
 
 $(LIBTARGET) :
-	$(MAKE) $(J) non_nmm shared_phys ; \
+	$(MAKE) $(J) non_nmm ; \
 	$(AR) $(ARFLAGS) ../main/$(LIBWRFLIB) $(MODULES) $(OBJS)  \
 		$(FIRE_MODULES) $(DIAGNOSTIC_MODULES_EM) $(PHYSMMM_MODULES)
 
 include ../configure.wrf
 
 non_nmm : $(MODULES) $(FIRE_MODULES) $(OBJS) $(DIAGNOSTIC_MODULES_EM)
-shared_phys : $(PHYSMMM_MODULES)
 
 submodules :
 	@if [ \( ! -f module_sf_noahmpdrv.F \) -o \( ! -f module_sf_noahmp_glacier.F \) -o \

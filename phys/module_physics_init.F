@@ -2622,7 +2622,7 @@ CHARACTER(LEN=8) :: name
                                                                 ) !Optional oml
 !--------------------------------------------------------------------
    USE module_sf_sfclay
-   USE module_sf_sfclayrev
+   USE sf_sfclayrev
    USE module_sf_slab
    USE module_sf_pxsfclay
    USE module_bl_ysu
@@ -3089,6 +3089,10 @@ CHARACTER(LEN=8) :: name
   INTEGER,OPTIONAL,INTENT(OUT), DIMENSION( ims:ime,jms:jme):: irr_rand_field  
   INTEGER,OPTIONAL :: irr_ph,irr_freq  
 
+! To accommodate shared physics
+   character*256 :: errmsg
+   integer :: errflg
+
 #if ( EM_CORE == 1 )
 !local mynn 
    INTEGER :: mynn_closure_level
@@ -3137,7 +3141,7 @@ CHARACTER(LEN=8) :: name
            CALL sfclayinit( allowed_to_read )
            isfc = 1
       CASE (SFCLAYREVSCHEME)
-           CALL sfclayrevinit
+           CALL sf_sfclayrev_init(errmsg,errflg)
            IF ( shalwater_z0 .EQ. 1 ) THEN
               CALL shalwater_init(ims,ime,jms,jme,            &  
                         its,ite,jts,jte,                      &  
@@ -5675,9 +5679,8 @@ subroutine interp_vec_cu(locvec,locwant,periodic,loc1,loc2,wght1,wght2)
                
    ! Local  
    LOGICAL :: overwrite_water_depth
-      
    overwrite_water_depth = .False.
-                         
+   
    IF ( bathymetry_flag .eq. 1 ) THEN
       IF ( shalwater_depth .LE. 0.0 ) THEN
          IF ( LakeModel .ge. 1 ) THEN

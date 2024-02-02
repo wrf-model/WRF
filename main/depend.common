@@ -566,7 +566,9 @@ module_cu_tiedtke.o: \
 
 
 module_cu_ntiedtke.o: \
-	../share/module_model_constants.o 
+	../share/module_model_constants.o \
+	ccpp_kind_types.o \
+	physics_mmm/cu_ntiedtke.o
 
 
 module_ra_gfdleta.o: \
@@ -1487,6 +1489,10 @@ module_mp_gsfcgce_4ice_nuwrf.o: \
 	module_gocart_coupling.o \
 	module_checkerror.o \
 	module_mp_radar.o \
+
+
+physics_mmm/cu_ntiedtke.o: \
+	ccpp_kind_types.o
 
 
 physics_mmm/mp_wsm6.o: \

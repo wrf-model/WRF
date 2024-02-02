@@ -974,7 +974,7 @@ module_physics_init.o: \
 	module_mp_sbu_ylin.o \
 	module_mp_wsm3.o \
 	module_mp_wsm5.o \
-	module_mp_wsm6.o \
+	physics_mmm/mp_wsm6.o \
 	module_mp_wsm6r.o \
 	module_mp_etanew.o \
 	module_mp_fer_hires.o \
@@ -1423,9 +1423,10 @@ module_mp_wdm5.o: \
 
 
 module_mp_wsm6.o: \
-	../share/module_model_constants.o \
-	module_mp_radar.o 
-
+	ccpp_kind_types.o \
+	physics_mmm/mp_wsm6_effectRad.o \
+	physics_mmm/mp_radar.o \
+	physics_mmm/mp_wsm6.o
 
 module_mp_wdm6.o: \
 	../share/module_model_constants.o \
@@ -1486,6 +1487,17 @@ module_mp_gsfcgce_4ice_nuwrf.o: \
 	module_gocart_coupling.o \
 	module_checkerror.o \
 	module_mp_radar.o \
+
+
+physics_mmm/mp_wsm6.o: \
+	ccpp_kind_types.o \
+	physics_mmm/mp_radar.o \
+	physics_mmm/module_libmassv.o
+
+
+physics_mmm/mp_wsm6_effectRad.o: \
+	ccpp_kind_types.o \
+	physics_mmm/mp_wsm6.o
 
 
 physics_mmm/bl_ysu.o: \

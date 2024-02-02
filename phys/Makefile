@@ -234,10 +234,12 @@ DIAGNOSTIC_MODULES_EM = \
         module_diag_solar.o
   
 PHYSMMM_MODULES = \
+	physics_mmm/module_libmassv.o \
+	physics_mmm/mp_wsm6.o \
+	physics_mmm/mp_wsm6_effectRad.o \
+	physics_mmm/mp_radar.o \
         physics_mmm/bl_gwdo.o \
         physics_mmm/bl_ysu.o
-
-	
 
 OBJS    =
 

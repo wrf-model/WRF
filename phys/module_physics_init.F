@@ -4375,7 +4375,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 !------------------------------------------------------------------
    USE module_mp_wsm3
    USE module_mp_wsm5
-   USE module_mp_wsm6
+   USE mp_wsm6
    USE module_mp_wsm7
    USE module_mp_etanew
    USE module_mp_fer_hires
@@ -4446,6 +4446,10 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    logical :: nssl_density_on
    INTEGER    :: i_err
 
+! To accommodate shared physics
+   character*256 :: errmsg
+   integer :: errflg
+
    warm_rain = .false.
    adv_moist_cond = .true.
    itf=min0(ite,ide-1)
@@ -4474,7 +4478,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
      CASE (WSM5SCHEME)
           CALL wsm5init(rhoair0,rhowater,rhosnow,cliq,cpv, allowed_to_read )
      CASE (WSM6SCHEME)
-          CALL wsm6init(rhoair0,rhowater,rhosnow,cliq,cpv, config_flags%hail_opt,allowed_to_read )
+          CALL mp_wsm6_init(rhoair0,rhowater,rhosnow,cliq,cpv,config_flags%hail_opt,errmsg,errflg)
      CASE (WSM7SCHEME)
           CALL wsm7init(rhoair0,rhowater,rhosnow,cliq,cpv, allowed_to_read )
      CASE (ETAMPNEW)

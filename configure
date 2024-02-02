@@ -659,7 +659,7 @@ fi
 #Checking cross-compiling capability for some particular environment
 #on Linux and Mac box
 
-if [ $os = "Linux" -o $os = "Darwin" -o $os = "CYGWIN_NT"]; then
+if [ $os = "Linux" -o $os = "Darwin" -o $os = "CYGWIN_NT" ]; then
 
   SFC=`grep '^SFC' configure.wrf | awk '{print $3}'`
   SCC=`grep '^SCC' configure.wrf | awk '{print $3}'`

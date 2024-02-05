@@ -17,3 +17,5 @@
 configure.wrf*
 *.backup
 *.f90
+#added for macOS environment (KSA)
+**/.DS_Store

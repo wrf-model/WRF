@@ -203,10 +203,24 @@ wrfio_esmf :
         fi
 	$(FC) -o $@ -c $(FCFLAGS) $(OMP) $(MODULE_DIRS) $(PROMOTION) $(FCSUFFIX) $*.f90
 
+.F90.o:
+	$(RM) $@
+	sed -e "s/^\!.*'.*//" -e "s/^ *\!.*'.*//" $*.F90 > $*.G
+	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.G  > $*.bb
+	$(SED_FTN) $*.bb | $(CPP) $(TRADFLAG) > $*.f90
+	$(RM) $*.G $*.bb
+	$(FC) -o $@ -c $(FCFLAGS) $(OMP) $(MODULE_DIRS) $(PROMOTION) $(FCSUFFIX) $*.f90
 
 .F.f90:
 	$(RM) $@
 	sed -e "s/^\!.*'.*//" -e "s/^ *\!.*'.*//" $*.F > $*.G
+	$(SED_FTN) $*.G > $*.H
+	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $*.H  > $@
+	$(RM) $*.G $*.H
+
+.F90.f90:
+	$(RM) $@
+	sed -e "s/^\!.*'.*//" -e "s/^ *\!.*'.*//" $*.F90 > $*.G
 	$(SED_FTN) $*.G > $*.H
 	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $*.H  > $@
 	$(RM) $*.G $*.H

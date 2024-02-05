@@ -612,7 +612,7 @@ USE module_model_constants, ONLY :  piconst
 !   SHADOW = .true.
 
    IF (distributed_aerodynamics_option .and. groption == 1) THEN
-     FATAL_ERROR("use_distributed_aerodynamics is not compatible with groption")
+     FATAL_ERROR("slucm_distributed_drag is not compatible with groption")
    END IF
 
 
@@ -2040,7 +2040,7 @@ ENDIF
 !
 !===============================================================================
    SUBROUTINE urban_param_init(DZR,DZB,DZG,num_soil_layers, &
-                               sf_urban_physics,use_wudapt_lcz, use_distributed_aerodynamics)
+                               sf_urban_physics,use_wudapt_lcz, slucm_distributed_drag)
 !                              num_roof_layers,num_wall_layers,num_road_layers)
 
    IMPLICIT NONE
@@ -2055,7 +2055,7 @@ ENDIF
    REAL, DIMENSION(1:num_soil_layers), INTENT(INOUT) :: DZG
    INTEGER,                            INTENT(IN)    :: SF_URBAN_PHYSICS
    INTEGER,                            INTENT(IN)    :: USE_WUDAPT_LCZ !AndreaLCZ
-   LOGICAL,                            INTENT(IN)    :: use_distributed_aerodynamics
+   LOGICAL,                            INTENT(IN)    :: slucm_distributed_drag
 
    INTEGER :: LC, K
    INTEGER :: IOSTATUS, ALLOCATE_STATUS
@@ -2093,7 +2093,7 @@ ENDIF
 
    ICATE=0  
 
-   distributed_aerodynamics_option = use_distributed_aerodynamics
+   distributed_aerodynamics_option = slucm_distributed_drag
 
    
   if(USE_WUDAPT_LCZ.eq.0)then   !AndreaLCZ

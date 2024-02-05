@@ -2214,7 +2214,7 @@ CONTAINS
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte)
           ENDIF
 
-     IF (PRESENT(ahe)) THEN
+     IF (distributed_ahe_opt > 0) THEN
        call cal_mon_day(julday, julyr, jmonth, jday)
        ihour = (jmonth - 1) * 24 + MOD(INT(gmt + xtime / 60.0), 24)
        IF (distributed_ahe_opt == 1) THEN

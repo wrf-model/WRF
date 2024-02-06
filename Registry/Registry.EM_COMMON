@@ -98,6 +98,7 @@ state    real   sct_dom_gc     ij       dyn_em      1        -     i1  "SCT_DOM"
 state    real   scb_dom_gc     ij       dyn_em      1        -     i1  "SCB_DOM"  "Dominant soil (bottom) category from GEOGRID"  "cat"
 state    real   greenfrac      imj      dyn_em      1        Z     i1  "GREENFRAC" "monthly greenness fraction" "0 - 1 fraction"
 state    real   albedo12m      imj      dyn_em      1        Z     i1  "ALBEDO12M" "background albedo" "0 - 1 fraction"
+
 state    real   lai12m         imj      dyn_em      1        Z     i1  "LAI12M" "monthly LAI" "m2/m2"
 state    real   pd_gc          igj      dyn_em      1        Z     -   "PD"    "dry pressure"        "Pa"
 state    real   pdrho_gc       igj      dyn_em      1        Z     -   "PDRHO"    "dry pressure for UM data for the variables U and V"   "Pa"
@@ -543,6 +544,12 @@ state   real    qvolg          ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QVGRAUPEL"     "Graupel Particle Volume" "m(3) kg(-1)"
 state   real    qvolh          ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QVHAIL"        "Hail Particle Volume" "m(3) kg(-1)"
+state   real    qzr             ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "QZRAIN"           "Sixth moment rain" "m(6) kg(-1)"
+state   real    qzg             ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "QZGRAUPEL"           "Sixth moment graupel" "m(6) kg(-1)"
+state   real    qzh             ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "QZHAIL"           "Sixth moment hail" "m(6) kg(-1)"
 state   real    qrimef         ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QRIMEF"        "rime factor * qi" "kg kg-1"
 state   real    qir            ikjftb  scalar      1         -     \
@@ -591,6 +598,12 @@ state   real    dfi_qnn        ikjftb  dfi_scalar      1         -     \
    rusdf=(bdy_interp:dt)    "DFI_QNCC"      "DFI CNN Number concentration"   "# kg(-1)"
 state   real    dfi_qnc        ikjftb  dfi_scalar      1         -     \
    rusdf=(bdy_interp:dt)    "DFI_QNCLOUD"   "DFI Cloud Number concentration" "# kg(-1)"
+state   real    dfi_qzr        ikjftb  dfi_scalar      1         -     \
+   rhusdf=(bdy_interp:dt)   "DFI_QZRAIN" "DFI Rain Reflectivity" "m(6) kg(-1)"
+state   real    dfi_qzg        ikjftb  dfi_scalar      1         -     \
+   rhusdf=(bdy_interp:dt)   "DFI_QZGRAUPEL" "DFI Graupel Reflectivity" "m(6) kg(-1)"
+state   real    dfi_qzh        ikjftb  dfi_scalar      1         -     \
+   rhusdf=(bdy_interp:dt)   "DFI_QZHAIL" "DFI Hail Reflectivity" "m(6) kg(-1)"
 state   real    dfi_qvolg      ikjftb  dfi_scalar      1         -     \
    rhusdf=(bdy_interp:dt)   "DFI_QVGRAUPEL" "DFI Graupel Particle Volume" "m(3) kg(-1)"
 state   real    dfi_qvolh     ikjftb  dfi_scalar      1         -     \
@@ -2289,6 +2302,7 @@ rconfig   integer interp_method_type      namelist,domains	1              2     
 rconfig   logical aggregate_lu            namelist,domains	1              .false. irh    "aggregate_lu"   "T/F aggregate the grass, shrubs, trees in LU"
 rconfig   logical rh2qv_wrt_liquid        namelist,domains	1              .true.  irh    "rh2qv_wrt_liquid" "T = rh=>Qv assumes RH wrt liquid water, F = allows ice"
 rconfig   integer rh2qv_method            namelist,domains	1              1       irh    "rh2qv_method" "1=old MM5 method, 2=new WMO method"
+rconfig   logical use_sh_qv               namelist,domains	1              .false. irh    "use_sh_qv" "T/F whether to use SH or mixing ratio in input"
 rconfig   real    qv_max_p_safe           namelist,domains      1              10000   irh    "qv_max_p_safe" "Threshhold pressure, Qv > flag set to value"      "Pa"
 rconfig   real    qv_max_flag             namelist,domains      1              1.E-5   irh    "qv_max_flag" "Qv flag for max"  "kg kg{-1}"
 rconfig   real    qv_max_value            namelist,domains      1              3.E-6   irh    "qv_max_value" "Qv value for max"  "kg kg{-1}"
@@ -2391,16 +2405,27 @@ rconfig   logical  write_thompson_tables   namelist,physics     1           .tru
 rconfig   logical  write_thompson_mp38table   namelist,physics     1           .false.
 rconfig   integer     mp_physics          namelist,physics	max_domains    -1     irh       "mp_physics"            ""      ""
 #rconfig   integer     milbrandt_ccntype   namelist,physics      max_domains    0       rh       "milbrandt select maritime(1)/continental(2)"  ""      ""
-rconfig   real     nssl_cccn              namelist,physics      max_domains  0.5e9    rh       "Base CCN concentration for NSSL microphysics"  ""      ""
-rconfig   real     nssl_alphah            namelist,physics      max_domains   0       rh       "Graupel PSD shape paramter"  ""      ""
-rconfig   real     nssl_alphahl           namelist,physics      max_domains   1       rh       "Hail PSD shape paramter"  ""      ""
-rconfig   real     nssl_cnoh              namelist,physics      max_domains  4.e5     rh       "Graupel intercept paramter"  ""      ""
-rconfig   real     nssl_cnohl             namelist,physics      max_domains  4.e4     rh       "Hail intercept paramter"  ""      ""
-rconfig   real     nssl_cnor              namelist,physics      max_domains  8.e5     rh       "Rain intercept paramter"  ""      ""
-rconfig   real     nssl_cnos              namelist,physics      max_domains  3.e6     rh       "Snow intercept paramter"  ""      ""
-rconfig   real     nssl_rho_qh            namelist,physics      max_domains  500.     rh       "Graupel particle density"  ""      ""
-rconfig   real     nssl_rho_qhl           namelist,physics      max_domains  900.     rh       "Hail particle density"  ""      ""
-rconfig   real     nssl_rho_qs            namelist,physics      max_domains  100.     rh       "Snow particle density"  ""      ""
+rconfig   real     nssl_cccn              namelist,physics      1            0.5e9    rh       "Base CCN concentration for NSSL microphysics"  ""      ""
+rconfig   real     nssl_alphah            namelist,physics      1             0       rh       "Graupel PSD shape paramter"  ""      ""
+rconfig   real     nssl_alphahl           namelist,physics      1             1       rh       "Hail PSD shape paramter"  ""      ""
+rconfig   real     nssl_cnoh              namelist,physics      1            4.e5     rh       "Graupel intercept paramter"  ""      ""
+rconfig   real     nssl_cnohl             namelist,physics      1            4.e4     rh       "Hail intercept paramter"  ""      ""
+rconfig   real     nssl_cnor              namelist,physics      1            8.e5     rh       "Rain intercept paramter"  ""      ""
+rconfig   real     nssl_cnos              namelist,physics      1            3.e6     rh       "Snow intercept paramter"  ""      ""
+rconfig   real     nssl_rho_qh            namelist,physics      1            500.     rh       "Graupel particle density"  ""      ""
+rconfig   real     nssl_rho_qhl           namelist,physics      1            900.     rh       "Hail particle density"  ""      ""
+rconfig   real     nssl_rho_qs            namelist,physics      1            100.     rh       "Snow particle density"  ""      ""
+rconfig   integer  nssl_icdx              namelist,physics      1             6       rh       "NSSL Graupel fall speed option"  ""      ""
+rconfig   integer  nssl_icdxhl            namelist,physics      1             6       rh       "NSSL Hail fall speed option"  ""      ""
+rconfig   integer  nssl_hail_on           namelist,physics     max_domains   -1       rh       "NSSL Hail flag"  ""      ""
+rconfig   integer  nssl_ccn_on            namelist,physics      1            -1       rh       "NSSL CCN flag"  ""      ""
+rconfig   integer  nssl_ccn_is_ccna       namelist,physics      1             0       rh       "NSSL flag that CCN is CCNA"  ""      ""
+rconfig   integer  nssl_2moment_on        namelist,physics      1            -1       rh       "NSSL 2-moment flag"  ""      ""
+rconfig   integer  nssl_3moment           namelist,physics      1             0       rh       "NSSL 3-moment flag"  ""      ""
+rconfig   integer  nssl_density_on        namelist,physics      1            -1       rh       "NSSL graupel/hail density flag"  ""      ""
+
+
+
 rconfig   integer     CCNTY               namelist,physics      1            2        rh       "Aerosol background type for NTU microphysics"  ""   ""
 
 # Lightning Qv Nudging 
@@ -3003,11 +3028,8 @@ package   cammgmpscheme   mp_physics==11               -             moist:qv,qc
 package   sbu_ylinscheme  mp_physics==13               -             moist:qv,qc,qr,qi,qs;state:rimi
 package   wdm5scheme      mp_physics==14               -             moist:qv,qc,qr,qi,qs;scalar:qnn,qnc,qnr;state:re_cloud,re_ice,re_snow
 package   wdm6scheme      mp_physics==16               -             moist:qv,qc,qr,qi,qs,qg;scalar:qnn,qnc,qnr;state:re_cloud,re_ice,re_snow
-package   nssl_2mom       mp_physics==17               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qndrop,qnr,qni,qns,qng,qnh,qvolg,qvolh;state:re_cloud,re_ice,re_snow
-package   nssl_2momccn    mp_physics==18               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnn,qndrop,qnr,qni,qns,qng,qnh,qvolg,qvolh;state:re_cloud,re_ice,re_snow
-package   nssl_1mom       mp_physics==19               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qvolg
-package   nssl_1momlfo    mp_physics==21               -             moist:qv,qc,qr,qi,qs,qg
-package   nssl_2momg      mp_physics==22               -             moist:qv,qc,qr,qi,qs,qg;scalar:qndrop,qnr,qni,qns,qng,qvolg;state:re_cloud,re_ice,re_snow
+# Note: Options 17, 19, 21, 22 are deprecated but still reserved for compatibility -- for now
+package   nssl_2mom       mp_physics==18               -             moist:qv,qc,qr,qi,qs,qg
 package   wsm7scheme      mp_physics==24               -             moist:qv,qc,qr,qi,qs,qg,qh;state:re_cloud,re_ice,re_snow
 package   wdm7scheme      mp_physics==26               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnn,qnc,qnr;state:re_cloud,re_ice,re_snow
 package   thompsonaero    mp_physics==28               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr,qnc,qnwfa,qnifa,qnbca;state:re_cloud,re_ice,re_snow,qnwfa2d,qnifa2d,taod5503d,taod5502d
@@ -3022,6 +3044,16 @@ package   ntu             mp_physics==56               -             moist:qv,qc
 package   etampnew        mp_physics==95               -             moist:qv,qc,qr,qs;scalar:qt;state:f_ice_phy,f_rain_phy,f_rimef_phy
 package   gsfcgcescheme   mp_physics==97               -             moist:qv,qc,qr,qi,qs,qg
 package   madwrf_mp       mp_physics==96               -             moist:qv,qc,qi,qs
+
+package   nssl2mconc      nssl_2moment_on==1           -             scalar:qndrop,qnr,qni,qns,qng;state:re_cloud,re_ice,re_snow
+package   nssl3mg         nssl_3moment==1              -             scalar:qzr,qzg
+package   nssl3m          nssl_3moment==2              -             scalar:qzr,qzg,qzh
+package   nssl_hail       nssl_hail_on==1              -             moist:qh;scalar:qnh
+package   nssl_hail1m     nssl_hail_on==2              -             moist:qh;
+package   nssl_ccn_opt    nssl_ccn_on==1               -             scalar:qnn
+package   nssl_graupelvol nssl_density_on==1           -             scalar:qvolg
+package   nssl_hailvol    nssl_density_on==2           -             scalar:qvolg,qvolh
+
 
 package   radar_refl      compute_radar_ref==1         -             state:refl_10cm,refd_max
 endif
@@ -3046,10 +3078,12 @@ package   morr_two_moment_dfi  mp_physics_dfi==10    -             dfi_moist:dfi
 #package   sbu_ylinscheme_dfi    mp_physics==13           -         dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs;state:rimi
 package   wdm5scheme_dfi    mp_physics_dfi==14       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs;dfi_scalar:dfi_qnn,dfi_qnc,dfi_qnr;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
 package   wdm6scheme_dfi    mp_physics_dfi==16       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qnn,dfi_qnc,dfi_qnr;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
-package   nssl_2mom_dfi     mp_physics_dfi==17       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;dfi_scalar:dfi_qndrop,dfi_qnr,dfi_qni,dfi_qns,dfi_qng,dfi_qnh,dfi_qvolg,dfi_qvolh;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
-package   nssl_2mom_dficcn  mp_physics_dfi==18       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;dfi_scalar:dfi_qndrop,dfi_qnn,dfi_qnr,dfi_qni,dfi_qns,dfi_qng,dfi_qnh,dfi_qvolg;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
-package   nssl_1mom_dfi     mp_physics_dfi==19       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;dfi_scalar:dfi_qvolg
-package   nssl_1momlfo_dfi  mp_physics_dfi==21       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg
+#package   nssl_2mom_dfi     mp_physics_dfi==17       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;dfi_scalar:dfi_qndrop,dfi_qnr,dfi_qni,dfi_qns,dfi_qng,dfi_qnh,dfi_qvolg,dfi_qvolh;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
+#package   nssl_2mom_dficcn  mp_physics_dfi==18       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;dfi_scalar:dfi_qndrop,dfi_qnn,dfi_qnr,dfi_qni,dfi_qns,dfi_qng,dfi_qnh,dfi_qvolg;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
+package   nssl_2mom_dfi     mp_physics_dfi==18       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;dfi_scalar:dfi_qndrop,dfi_qnn,dfi_qnr,dfi_qni,dfi_qns,dfi_qng,dfi_qnh,dfi_qvolg;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
+#package   nssl_1mom_dfi     mp_physics_dfi==19       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;dfi_scalar:dfi_qvolg
+#package   nssl_1momlfo_dfi  mp_physics_dfi==21       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg
+#package   nssl_2momg_dfi    mp_physics_dfi==22       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qndrop,dfi_qnr,dfi_qni,dfi_qns,dfi_qng,dfi_qvolg;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
 package   wsm7scheme_dfi    mp_physics_dfi==24       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
 package   wdm7scheme_dfi    mp_physics_dfi==26       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;dfi_scalar:dfi_qnn,dfi_qnc,dfi_qnr;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
 package   thompsonaero_dfi  mp_physics_dfi==28       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qnr,dfi_qnc,dfi_qnwfa,dfi_qnifa,dfi_qnbca;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
@@ -3345,6 +3379,8 @@ package   wrfhydro       wrf_hydro==1                -            state:SOLDRAIN
 #WRF Windfarm
 package   no_windfarm    windfarm_opt==0             -            -
 package   fitchscheme    windfarm_opt==1             -            state:power
+# Yulong add for WLM
+package   mavscheme      windfarm_opt==2             -            state:power
 
 #Ideal Cases
 package   realcase       ideal_case==0               -            -
@@ -3610,3 +3646,10 @@ xpose XPOSE_SPECTRAL_NUDGING dyn_em dif_analysis,dif_xxx,dif_yyy
 package   no_fft_used    fft_used==0                  -             -
 package   any_fft_used   fft_used==1                  -             state:t_xxx,u_xxx,ru_xxx,v_xxx,rv_xxx,w_xxx,ww_xxx,ph_xxx,dum_yyy,fourd_xxx
 
+# Yulong add for wind wake models
+# 1 = Jensen; 2 = XA; 3 = GM
+rconfig   integer     windfarm_wake_model        namelist,physics      max_domains    2       rh       "windfarm_wake_model"                ""      ""
+#
+# wake overlap method, M1, M2, M3, M4 [1, 2, 3, 4]
+rconfig   integer     windfarm_overlap_method        namelist,physics      max_domains    4       rh       "windfarm_overlap_method"                ""      ""
+rconfig   real        windfarm_deg           namelist,physics      max_domains    0        -     "windfarm_deg"        "for windfarm ideal case"   "degree"

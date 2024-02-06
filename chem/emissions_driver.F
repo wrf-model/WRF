@@ -70,10 +70,15 @@ CONTAINS
          ! stuff for aircraft emissions
          emis_aircraft,                                                    &
          ! stuff for GHG fluxes
-         vprm_in,rad_vprm,lambda_vprm,alpha_vprm,resp_vprm,               &
+         vprm_in,rad_vprm,lambda_vprm,alpha_vprm,resp_vprm,                &
          xtime,tslb,wet_in,rainc,rainnc,potevp,sfcevp,lu_index,            &
          biomt_par,emit_par,ebio_co2oce,eghg_bio,                          &
          seas_flux,                                                        &
+         ! stuff for online nh3 "WRF-NH3-CHEM" modified by renchuanhua
+         actnh3,EFnh3,                                                     &
+         agrisoil_nh3, fertilizer_nh3, freeinten_nh3, graze_nh3,           &
+         industry_nh3, residential_nh3,                                    &
+         transport_nh3, current_hour, Q2,                                  &         
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )
@@ -131,7 +136,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme, ne_area ),                           &
          INTENT(INOUT ) ::                               e_bio
    REAL, DIMENSION( ims:ime, 1:config_flags%kemit, jms:jme,num_emis_ant),&
-         INTENT(IN ) ::                                                    &
+         INTENT(INOUT ) ::                                                    &
          emis_ant
    REAL, DIMENSION( ims:ime,  kms:kme, jms:jme,num_emis_vol),              &
          INTENT(INOUT ) ::                                                 &
@@ -290,7 +295,7 @@ CONTAINS
 
    real, dimension (ims:ime, jms:jme ) ,                               &
         intent(in) ::                                                  &
-        T2, swdown
+        T2, swdown, Q2  ! modifed by renchuanhua
 
    integer, intent(in) :: current_month
 
@@ -336,7 +341,53 @@ CONTAINS
      REAL, DIMENSION( ims:ime,          jms:jme ),           INTENT(IN   ) :: ht, ic_flashrate, cg_flashrate
      REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),           INTENT(IN   ) :: refl_10cm
 ! end stuff for lightning NOx
-!
+
+! stuff for online NH3  "WRF-NH3-CHEM" modified by renchuanhua
+     REAL, DIMENSION( ims:ime,12,jms:jme ), OPTIONAL,  INTENT(IN   ) :: actnh3
+     REAL, DIMENSION( ims:ime,   jms:jme ), OPTIONAL,  INTENT(INOUT   ) :: EFnh3
+     REAL, DIMENSION( ims:ime,   jms:jme ), OPTIONAL,  INTENT(INOUT   ) :: agrisoil_nh3
+     REAL, DIMENSION( ims:ime,12,jms:jme ), OPTIONAL,  INTENT(INOUT   ) :: fertilizer_nh3
+     REAL, DIMENSION( ims:ime,   jms:jme ), OPTIONAL,  INTENT(INOUT   ) :: freeinten_nh3
+     REAL, DIMENSION( ims:ime,   jms:jme ), OPTIONAL,  INTENT(INOUT   ) :: graze_nh3
+     REAL, DIMENSION( ims:ime,   jms:jme ), OPTIONAL,  INTENT(INOUT   ) :: industry_nh3
+     REAL, DIMENSION( ims:ime,   jms:jme ), OPTIONAL,  INTENT(INOUT   ) :: residential_nh3
+     REAL, DIMENSION( ims:ime,   jms:jme ), OPTIONAL,  INTENT(INOUT   ) :: transport_nh3
+     INTEGER, INTENT(IN   ) ::       current_hour
+
+
+     ! local variables
+     real,parameter :: EFstd =5.5
+     real :: CFwind,CFtemp,CFsmois_hus,CFrain  
+     integer :: h 
+     real, dimension (ims:ime, jms:jme ) ::   frin_house, frin_sManure,frin_manureStore  !renchuanhua
+     real, dimension (ims:ime, jms:jme ) ::   graze_house, graze_out 
+     real, dimension (ims:ime, jms:jme ) ::   CFsmois
+     real, dimension (ims:ime, jms:jme ) ::   T_house, V_house, GF_Thouse
+     real, parameter :: Factor_fihouse=0.156, Factor_sManure=0.774, Factor_manureStore=0.07 
+     real, parameter :: Factor_grhouse=0.226     
+
+     real, dimension (ims:ime, jms:jme ) ::   house, store ,outsoil
+     real, dimension (ims:ime, jms:jme ) ::   emis_house, emis_store ,emis_fert
+
+real, save :: freq_residential(24) = &
+                          (/0.0110, 0.0030, 0.0010, 0.0000, 0.0020, 0.0169, &
+                            0.0914, 0.2111, 0.1402, 0.0905, 0.0676, 0.0487, &
+                            0.0179, 0.0358, 0.0258, 0.0182, 0.0272, 0.0222, &
+                            0.0411, 0.0401, 0.0268, 0.0202, 0.0212, 0.0202/)
+real, save :: freq_transport(24)   = &
+              (/0.02, 0.01, 0.01, 0.00, 0.00, 0.00, &
+                0.01, 0.03, 0.06, 0.06, 0.06, 0.05, &
+                0.06, 0.06, 0.06, 0.07, 0.07, 0.08, &
+                0.08, 0.07, 0.05, 0.04, 0.03, 0.02/)
+real, save :: freq_industry(24)    = &
+              (/0.02, 0.01, 0.01, 0.00, 0.00, 0.00, &
+                0.01, 0.03, 0.06, 0.06, 0.06, 0.05, &
+                0.06, 0.06, 0.06, 0.07, 0.07, 0.08, &
+                0.08, 0.07, 0.05, 0.04, 0.03, 0.02/)
+
+! end stuff online NH3  
+
+
 ! Local variables...
 !
       INTEGER :: begday,endday,i, j, k, m, p_in_chem, ksub, dust_emiss_active, seasalt_emiss_active,emiss_ash_hgt
@@ -951,6 +1002,76 @@ CONTAINS
     END SELECT bioem_select
 
 !!! **************** END BIOGENICS, ADD EMISSIONS FOR VARIOUS PACKAGES
+
+
+!!! online nh3 "WRF-NH3-CHEM" modified by renchuanhua
+
+ if( config_flags%nh3emis_opt == ONLINE) then      
+  emis_ant(ims:ime , config_flags%kemit , jms:jme, p_e_nh3)=0.0
+
+  frin_house         =  freeinten_nh3*Factor_fihouse      ! house [in]
+  frin_sManure       =  freeinten_nh3*Factor_sManure      ! manure - field [out]
+  frin_manureStore   =  freeinten_nh3*Factor_manureStore  ! manure - store [none]
+  graze_house        =  graze_nh3*Factor_grhouse          ! graze [in]
+  graze_out          =  graze_nh3*(1.0-Factor_grhouse)    ! graze [out]
+
+  GF_Thouse =1.0
+
+! Animal house temperature and wind speed
+  where( T2.LT.273.15)
+    T_house = 287.15 + 0.5*(T2-(273.15+0))
+    V_house = 0.2
+  elsewhere(T2 .GE. 273.15 .and. T2 .LT. 285.65)
+    T_house = 287.15
+    V_house = 0.2 + T2*(0.405/12.5)
+  elsewhere(T2 .GE. 285.65) 
+    T_house = 287.15 + 1.4*(T2-(285.65))
+    V_house = 0.405  !0.5*(0.38+0.43)
+  end where
+    
+!  out field soil moisture correction factor
+  where( smois(:,1,:).LT.0.45)
+    CFsmois = 0.45*exp(-1.0*smois(:,1,:))+0.55
+  elsewhere(smois(:,1,:).GE.0.45)
+    CFsmois = 0.45*exp(smois(:,1,:))+0.6
+  end where
+
+
+     do j=jts,jte  
+     do i=its,ite  
+    
+
+     CFwind  =exp(0.0419*(u10(i,j)*u10(i,j)+v10(i,j)*v10(i,j))**0.5)
+     CFtemp  = (exp(0.093*(tsk(i,j)-T2(i,j))-0.57))*exp(0.018*(tsk(i,j)-273.15))
+     CFrain = 1/(3.2*rainnc(i,j)+1.0)
+     EFnh3(i,j)=CFsmois(i,j)*CFtemp*CFrain*CFwind
+
+     CFsmois_hus = 0.45*exp(-1.0*smois(i,1,j))+0.55
+     GF_Thouse  =exp((0.093*(T_house(i,j)-tsk(i,j)))-0.57)*exp(0.018*(tsk(i,j)-273.15))  
+
+ ! for house 
+     emis_house(i,j) = CFsmois_hus*GF_Thouse(i,j)*exp(0.0419*V_house(i,j))*(frin_house(i,j) + graze_house(i,j))        
+ ! for store
+     emis_store(i,j) = frin_manureStore(i,j)
+ ! for outside soil
+     emis_fert(i,j)  = EFnh3(i,j)*(fertilizer_nh3(i,current_month,j)+frin_sManure(i,j)+ graze_out(i,j)+agrisoil_nh3(i,j))
+
+
+! fertilizer and freeinten .... units is kg/km2/month
+! conv is used to change units from "mole/km2/hr" to "delta ppmv"
+  conv = 4.828e-4/rho_phy(i,1,j)*dtstep/(dz8w(i,1,j)*60.)
+        h=MOD(current_hour+8,24)   !range 0-23
+
+  emis_ant(i,1,j,p_e_nh3)=1000.0/(17.0*30.0*24.0)*(emis_house(i,j)+emis_store(i,j)+emis_fert(i,j))  &
+                  + freq_residential(h+1)*residential_nh3(i,j)*1000.0/(30.0*17.0)   &
+                  + freq_industry(h+1)   *industry_nh3(i,j)*1000.0/(30.0*17.0)   &
+                  + freq_transport(h+1)  *transport_nh3(i,j)*1000.0/(30.0*17.0)   
+    enddo
+    enddo
+                   
+ end if 
+
+
 !
     gas_addemiss_select: SELECT CASE(config_flags%chem_opt)
     CASE (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RADM2SORG_KPP, &

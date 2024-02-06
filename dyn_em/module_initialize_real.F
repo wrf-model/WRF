@@ -1190,6 +1190,7 @@ integer::oops1,oops2
          END IF
 
          !  Some data sets do not provide a 3d geopotential height field.  
+         !  This calculation is more accurate if the data is bottom-up.
 
          IF ( grid%ght_gc(i_valid,grid%num_metgrid_levels/2,j_valid) .LT. 1 ) THEN
             DO j = jts, MIN(jte,jde-1)
@@ -1240,6 +1241,15 @@ integer::oops1,oops2
          END DO
 
          IF ( flag_qv .EQ. 1 ) THEN
+            DO j = jts, min(jde-1,jte)
+               DO i = its, min(ide-1,ite)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE
+                  grid%q2(i,j)=grid%qv_gc(i,1,j)
+               END DO
+            END DO
+         END IF
+
+         IF ( flag_sh .EQ. 1 ) THEN
             DO j = jts, min(jde-1,jte)
                DO i = its, min(ide-1,ite)
                   IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE
@@ -1723,6 +1733,23 @@ integer::oops1,oops2
                             ims , ime , jms , jme , kms , kme , &
                             its , ite , jts , jte , kts , kte )
 
+         ! when specific humidity is available, qv_gc is computed from sh_gc
+         IF (config_flags%use_sh_qv .and. (flag_sh .eq. 1 .or. flag_qv .eq. 1)) THEN
+         CALL vert_interp ( grid%qv_gc , grid%pd_gc , moist(:,:,:,P_QV) , grid%pb , &
+                            grid%hgtmaxw , grid%hgttrop , grid%pmaxw , grid%ptrop , &
+                            grid%pmaxwnn , grid%ptropnn , &
+                            0 , 0 , &
+                            config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
+                            config_flags%maxw_above_this_level , &
+                            num_metgrid_levels , 'Q' , &
+                            interp_type , lagrange_order , extrap_type , &
+                            lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
+                            zap_close_levels , force_sfc_in_vinterp , grid%id , &
+                            ids , ide , jds , jde , kds , kde , &
+                            ims , ime , jms , jme , kms , kme , &
+                            its , ite , jts , jte , kts , kte )
+         END IF
+
          !  If this is theta being interpolated, AND we have extra levels for temperature,
          !  convert those extra levels (trop and max wind) to potential temp.
 
@@ -1793,6 +1820,8 @@ integer::oops1,oops2
                               its , ite , jts , jte , kts , kte )
          END IF
 
+         ! do not compute qv from RH if flag_sh or flag_qv = 1, or use_sh_qv = F
+         IF      ( flag_sh .ne. 1 .or. flag_qv .ne. 1 .or. .not. config_flags%use_sh_qv ) THEN
          IF      ( config_flags%rh2qv_method .eq. 1 ) THEN
             CALL rh_to_mxrat1(grid%u_1, grid%v_1, grid%p , moist(:,:,:,P_QV) ,       &
                               config_flags%rh2qv_wrt_liquid ,                        &
@@ -1813,6 +1842,7 @@ integer::oops1,oops2
                               ids , ide , jds , jde , kds , kde ,                    &
                               ims , ime , jms , jme , kms , kme ,                    &
                               its , ite , jts , jte , kts , kte-1 )
+         END IF
          END IF
 
          IF ( .NOT. config_flags%interp_theta ) THEN
@@ -4069,6 +4099,7 @@ endif
                         ims , ime , jms , jme , kms , kme , &
                         its , ite , jts , jte , kts , kte )
 
+      IF      ( flag_sh .ne. 1 .or. flag_qv .ne. 1 .or. .not. config_flags%use_sh_qv ) THEN
       IF      ( config_flags%rh2qv_method .eq. 1 ) THEN
          CALL rh_to_mxrat1(grid%u_1, grid%v_1, grid%p_hyd , moist(:,:,:,P_QV) ,       &
                            config_flags%rh2qv_wrt_liquid ,                        &
@@ -4089,6 +4120,7 @@ endif
                            ids , ide , jds , jde , kds , kde ,                    &
                            ims , ime , jms , jme , kms , kme ,                    &
                            its , ite , jts , jte , kts , kte-1 )
+      END IF
       END IF
      
       !  Compute pressure similarly to how computed within model, with final Qv.

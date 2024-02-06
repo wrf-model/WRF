@@ -18,7 +18,7 @@ subroutine da_write_iv_rad_ascii (it, ob, iv )
    character(len=filename_len)  :: filename
    character(len=7)   :: surftype
    integer            :: ndomain
-   logical            :: amsr2, ahi
+   logical            :: amsr2, ahi, abi
    real               :: cip ! to output cloud-ice path
    integer            :: cloudflag ! to output cloudflag
    integer, dimension(1) :: maxl
@@ -59,6 +59,7 @@ subroutine da_write_iv_rad_ascii (it, ob, iv )
       endif
 
       amsr2 = index(iv%instid(i)%rttovid_string,'amsr2') > 0
+      abi   = index(iv%instid(i)%rttovid_string,'abi') > 0
       ahi   = index(iv%instid(i)%rttovid_string,'ahi') > 0
 
       write(unit=filename, fmt='(i2.2,a,i4.4)') it,'_inv_'//trim(iv%instid(i)%rttovid_string)//'.', myproc
@@ -177,7 +178,7 @@ subroutine da_write_iv_rad_ascii (it, ob, iv )
             write(unit=innov_rad_unit,fmt='(10f11.2)') ob%instid(i)%tb(:,n)
             write(unit=innov_rad_unit,fmt='(a)') 'BAK  : '
             write(unit=innov_rad_unit,fmt='(10f11.2)') iv%instid(i)%tb_xb(:,n)
-            if (rtm_option==rtm_option_crtm .and. crtm_cloud .and. (amsr2 .or. ahi) ) then
+            if (rtm_option==rtm_option_crtm .and. crtm_cloud .and. (amsr2 .or. ahi .or. abi) ) then
                write(unit=innov_rad_unit,fmt='(a)') 'BAK_clr : '
                write(unit=innov_rad_unit,fmt='(10f11.2)') iv%instid(i)%tb_xb_clr(:,n)
             endif
@@ -197,6 +198,14 @@ subroutine da_write_iv_rad_ascii (it, ob, iv )
             write(unit=innov_rad_unit,fmt='(10f11.2)') iv%instid(i)%tb_error(:,n)
             write(unit=innov_rad_unit,fmt='(a)') 'QC   : '
             write(unit=innov_rad_unit,fmt='(10i11)') iv%instid(i)%tb_qc(:,n)
+            if ( abi .and. crtm_cloud ) then ! write out cloud_mod, cloud_obs
+               write(unit=innov_rad_unit,fmt='(a)') 'CMOD   : '
+               write(unit=innov_rad_unit,fmt='(10f11.2)') iv%instid(i)%cloud_mod(:,n)
+               write(unit=innov_rad_unit,fmt='(a)') 'COBS   : '
+               write(unit=innov_rad_unit,fmt='(10f11.2)') iv%instid(i)%cloud_obs(:,n)
+	       write(unit=innov_rad_unit,fmt='(a)') 'CLOUD    : '
+               write(unit=innov_rad_unit,fmt='(10i11)') iv%instid(i)%cloud_flag(:,n)
+            end if
 
             if (write_profile) then
                nlevelss  = iv%instid(i)%nlevels

@@ -28,6 +28,7 @@ CONTAINS
                  ,kpbl,mixht,ct,lh,snow,xice                       &
                  ,znu, znw, mut, p_top                             &
                  ,ctopo,ctopo2,windfarm_opt,power                  &
+                 ,windfarm_wake_model, windfarm_overlap_method     &
                  ,ysu_topdown_pblmix                               &
                  ,shinhong_tke_diag                                &
               ! OPTIONAL for TEMF scheme
@@ -39,7 +40,7 @@ CONTAINS
                  ,flhc,flqc                                        &
               ! MYNN
                  ,qke,Sh3d,Sm3d                                    &
-                 ,qke_adv,bl_mynn_tkeadvect                        & !ACF for QKE advection
+                 ,qke_adv,bl_mynn_tkeadvect                        &
                  ,tsq,qsq,cov,rmol,ch,qcg,grav_settling            & 
                  ,dqke,qWT,qSHEAR,qBUOY,qDISS,tke_budget           &
                  ,bl_mynn_closure,bl_mynn_cloudpdf                 &
@@ -158,6 +159,7 @@ CONTAINS
                    CAMUWPBLSCHEME,BEPSCHEME,BEP_BEMSCHEME,MYJSFCSCHEME, &
                    FITCHSCHEME,SHINHONGSCHEME,                       &
                    TEMFPBLSCHEME,GBMPBLSCHEME,EEPSSCHEME,KEPSSCHEME,                  &
+                   MAVSCHEME,  & ! Yulong add for WLM
                    CAMMGMPSCHEME,p_qi,p_qni,p_qnc,param_first_scalar,& !CAMMGMPSCHEME, p_qni,p_qnc is used for camuwpbl scheme
                    p_qnwfa,p_qnifa,p_qnbca
 #if ( WRFPLUS == 1 )
@@ -170,6 +172,7 @@ CONTAINS
                    , TEMFPBLSCHEME, GFSEDMFSCHEME           &
                    , CAMUWPBLSCHEME                                       &
                    , FITCHSCHEME, SHINHONGSCHEME                          &
+                   , MAVSCHEME  ! Yulong add for WLM
                    , GBMPBLSCHEME, MYJSFCSCHEME
 #endif
 
@@ -201,6 +204,7 @@ CONTAINS
    USE module_bl_keps
    USE module_bl_fogdes
    USE module_wind_fitch
+   USE module_wind_mav ! Yulong add for WLM
 #endif
    use module_ra_gfdleta, only: cal_mon_day
 
@@ -437,6 +441,9 @@ CONTAINS
          INTENT(IN), OPTIONAL    :: phb
    REAL, DIMENSION( ims:ime, jms:jme ), &
          INTENT(IN), OPTIONAL    :: xlat_u,xlong_u,xlat_v,xlong_v
+
+   ! Yulong add for WLM
+   INTEGER,    INTENT(IN   )    ::     windfarm_wake_model, windfarm_overlap_method
 
    REAL,       DIMENSION( ims:ime, kms:kme ,jms:jme ),            &
                INTENT(IN), OPTIONAL    :: w
@@ -829,6 +836,7 @@ CONTAINS
    integer iu_bep,iurb,idiff
    real seamask,thsk,zzz,unew,vnew,tnew,qnew,umom,vmom
    REAL :: z0,z1,z2,w1,w2
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: TKE_windfarm ! Yulong add for WLM
    INTEGER :: ihour, jmonth, jday
 !
 ! FASDAS
@@ -838,6 +846,10 @@ CONTAINS
    REAL                                                           ::   scrp1
 !
 ! END FASDAS
+!
+! To accommodate shared physics
+   character*256 :: errmsg
+   integer :: errflg
 !
 !------------------------------------------------------------------
 !
@@ -1203,13 +1215,13 @@ CONTAINS
                 PRESENT( hol      ) ) THEN
 !
              CALL ysu(                                              &
-               U3D=u_phytmp,V3D=v_phytmp,TH3D=th_phy,T3D=t_phy      &
+               U3D=u_phytmp,V3D=v_phytmp,T3D=t_phy                  &
               ,QV3D=qv_curr,QC3D=qc_curr,QI3D=qi_curr               &
               ,P3D=p_phy,P3DI=p8w,PI3D=pi_phy                       &
               ,RUBLTEN=rublten,RVBLTEN=rvblten                      &
               ,RTHBLTEN=rthblten,RQVBLTEN=rqvblten                  &
               ,RQCBLTEN=rqcblten,RQIBLTEN=rqiblten                  &
-              ,FLAG_QI=flag_qi                                      &
+              ,FLAG_QI=flag_qi,FLAG_QC=flag_qc                      &
               ,CP=cp,G=g,ROVCP=rcp,RD=r_D,ROVG=rovg                 &
               ,DZ8W=dz8w,XLV=XLV,RV=r_v,PSFC=PSFC                   &
               ,ZNT=znt,UST=ust,HPBL=pblh                            &
@@ -1222,7 +1234,7 @@ CONTAINS
               ,YSU_TOPDOWN_PBLMIX=ysu_topdown_pblmix                &
               ,WSPD=wspd,BR=br,DT=dtbl,KPBL2D=kpbl                  &
               ,EP1=ep_1,EP2=ep_2,KARMAN=karman                      &
-              ,EXCH_H=exch_h,EXCH_M=exch_m,REGIME=regime            &
+              ,EXCH_H=exch_h,EXCH_M=exch_m                          &
               ,RTHRATEN=RTHRATEN                                    &
 ! for multilayer UCM
               ,IDIFF=idiff,FLAG_BEP=flag_bep,FRC_URB2D=frc_urb2d    &
@@ -1234,6 +1246,7 @@ CONTAINS
               ,DL_U_BEP=dl_u_bep,SF_BEP=sf_bep,VL_BEP=vl_bep        &
 ! for grims shallow convection with ysupbl
               ,WSTAR=wstar,DELTA=delta                              &
+              ,errmsg=errmsg,errflg=errflg                          &
               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
@@ -2072,6 +2085,47 @@ CONTAINS
                      CALL wrf_error_fatal('Lack arguments to call turbine_drag')
                   ENDIF
 
+      ! Yulong add new wind farm schemes with wind turbine loss effect
+      CASE (mavscheme)
+                  IF (PRESENT(id) .AND.                                  &
+                     PRESENT(z_at_w) ) THEN
+                     CALL wrf_debug(100,'in phys/module_wind_mav.F')
+                     CALL dragforce_mav(itimestep                     &
+                     &,ID=id                                             &
+                     &,Z_AT_W=z_at_w,z_at_m=z,u=u_phy,v=v_phy            &
+                     &,DX=dx,DZ=dz8w,DT=dt                               &
+                     &,TKE=TKE_windfarm                                  &
+                     &,DU=rublten,DV=rvblten                             &
+                     &,WINDFARM_OPT=windfarm_opt,POWER=power             &
+                     &,windfarm_wake_model=windfarm_wake_model           &
+                     &,windfarm_overlap_method=windfarm_overlap_method   &
+                     &,xland=xland                                       &
+                     &,cosa=cosa,sina=sina                               &
+                     &,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde   &
+                     &,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme   &
+                     &,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte   &
+                     &)
+
+                     IF (bl_mynn_tkeadvect) THEN
+                        QKE = QKE + 2.*TKE_windfarm
+                        qke_adv=qke
+                     ENDIF
+
+                  ELSE
+                     WRITE ( message , FMT = '(A,6(L1,1X))' )           &
+                     'present: '//                                      &
+                     'ID, '//                                           &
+                     'z_at_w, '//                                       &
+                     'xlat_u, '//                                       &
+                     'xlong_u, '//                                      &
+                     'xlat_v, '//                                       &
+                     'xlong_v = ' ,                                     &
+                      PRESENT( id ) ,                                   &
+                      PRESENT( z_at_w )
+                     CALL wrf_debug(0,message)
+                     CALL wrf_error_fatal('Lack arguments to call dragforce_mav')
+                  ENDIF                 
+
    END SELECT windfarm_select
 #endif
 
@@ -2093,7 +2147,8 @@ CONTAINS
               ,ZNU=znu,ZNW=znw,P_TOP=p_top                          &
               ,CP=cp,G=g,RD=r_d                                     &
               ,RV=r_v,EP1=ep_1,PI=3.141592653                       &
-              ,DT=dtbl,DX=dx,KPBL2D=kpbl,ITIMESTEP=itimestep        &
+              ,DT=dtbl,DX=dx2d,KPBL2D=kpbl,ITIMESTEP=itimestep      &
+              ,errmsg=errmsg,errflg=errflg                          &
               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      )

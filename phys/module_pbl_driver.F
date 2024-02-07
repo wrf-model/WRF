@@ -2269,23 +2269,15 @@ CONTAINS
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte)
           ENDIF
 
-     IF (distributed_ahe_opt > 0) THEN
+     IF (distributed_ahe_opt == 1) THEN
        call cal_mon_day(julday, julyr, jmonth, jday)
        ihour = (jmonth - 1) * 24 + MOD(INT(gmt + xtime / 60.0), 24)
-       IF (distributed_ahe_opt == 1) THEN
-         DO j = jts, jte
-         DO i = its, ite
-           ! Volumetric heat capacity of air = 1200 J/(K m3)
-           RTHBLTEN(i, 1, j) = RTHBLTEN(i, 1, j) + ahe(i, ihour, j) / 1200 / DZ8W(i, 1, j)
-         END DO
-         END DO
-       ELSE IF (distributed_ahe_opt == 2) THEN
-         DO j = jts, jte
-         DO i = its, ite
-           HFX(i, j) = HFX(i, j) + ahe(i, ihour, j)
-         END DO
-         END DO
-       END IF
+       DO j = jts, jte
+       DO i = its, ite
+         ! Volumetric heat capacity of air = 1200 J/(K m3)
+         RTHBLTEN(i, 1, j) = RTHBLTEN(i, 1, j) + ahe(i, ihour, j) / 1200 / DZ8W(i, 1, j)
+       END DO
+       END DO
      END IF
 
    ENDDO

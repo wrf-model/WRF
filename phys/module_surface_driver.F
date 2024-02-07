@@ -257,6 +257,7 @@ CONTAINS
      &          ,bldt,curr_secs,adapt_step_flag,bldtacttime           & 
          ! Optional urban with BEP
      &          ,sf_urban_physics,gmt,xlat,xlong,julday               &
+     &          ,distributed_ahe_opt, ahe                             & !For anthropogenic heat
      &          ,num_urban_ndm                                        & !multi-layer urban
      &          ,urban_map_zrd                                        & !multi-layer urban
      &          ,urban_map_zwd                                        & !multi-layer urban
@@ -395,6 +396,7 @@ CONTAINS
    USE module_sf_tmnupdate
    USE module_sf_lake
    USE module_cpl, ONLY : coupler_on, cpl_rcv
+   use module_ra_gfdleta, only: cal_mon_day
 !
 !  This driver calls subroutines for the surface parameterizations.
 !
@@ -1455,14 +1457,10 @@ CONTAINS
 
    real,    optional,  dimension(ims:ime,jms:jme ),intent(inout) :: XLAIDYN
 ! IRRIGATION
-   INTEGER :: tloc, jmonth,timing  
-   REAL, PARAMETER    :: PI_GRECO=3.14159 
-   INTEGER  :: end_hour, irr_start,xt24,irr_day  
-   REAL :: constants_irrigation   
+   INTEGER :: ihour, jmonth, jday
    REAL, DIMENSION( ims:ime, jms:jme ) :: IRRIGATION_CHANNEL      
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN)   , OPTIONAL::   IRRIGATION
    REAL,  INTENT(IN),OPTIONAL::  irr_daily_amount     
-   INTEGER :: phase
    INTEGER, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT),OPTIONAL :: irr_rand_field
    INTEGER, INTENT(IN ),OPTIONAL:: sf_surf_irr_scheme,irr_start_hour,irr_num_hours,irr_start_julianday,irr_end_julianday,irr_freq,irr_ph
 
@@ -4481,6 +4479,21 @@ CONTAINS
 
        ENDIF
      ENDIF
+
+     IF (distributed_ahe_opt == 2) THEN
+       call cal_mon_day(julday, julyr, jmonth, jday)
+       ihour = (jmonth - 1) * 24 + MOD(INT(gmt + xtime / 60.0), 24)
+       !$OMP PARALLEL DO   &
+       !$OMP PRIVATE ( ij, i, j, k )
+       DO ij = 1, num_tiles
+         DO j = j_start(ij), j_end(ij)
+         DO i = i_start(ij), i_end(ij)
+           HFX(i, j) = HFX(i, j) + ahe(i, ihour, j)
+         END DO
+         END DO
+       END DO
+       !$OMP END PARALLEL DO
+     END IF
 
    ENDIF run_param_if
 

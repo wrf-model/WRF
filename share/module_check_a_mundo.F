@@ -505,6 +505,28 @@
       ENDDO
 
 !-----------------------------------------------------------------------
+! Check that only compatible options are set when slucm_distributed_drag is set
+!-----------------------------------------------------------------------
+      IF (model_config_rec % slucm_distributed_drag) THEN
+
+        IF (model_config_rec % use_wudapt_lcz .EQ. 1) THEN
+            wrf_err_message = '--- ERROR: slucm_distributed_drag cannot work with use_wudapt_lcz'
+            CALL wrf_message ( wrf_err_message )
+            count_fatal_error = count_fatal_error + 1
+        END IF
+
+        DO i = 1, model_config_rec % max_dom
+           IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+           IF ( model_config_rec % sf_urban_physics(i) > 1 ) THEN
+              wrf_err_message = '--- ERROR: slucm_distributed_drag only works with urban options 1'
+              CALL wrf_message ( wrf_err_message )
+              count_fatal_error = count_fatal_error + 1
+           END IF
+        END DO
+
+      END IF
+
+!-----------------------------------------------------------------------
 ! Check that channel irrigation is run with Noah
 !-----------------------------------------------------------------------
       DO i = 1, model_config_rec % max_dom

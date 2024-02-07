@@ -668,6 +668,8 @@ endif
     CALL wrf_put_dom_ti_integer ( fid, 'SF_URBAN_PHYSICS', sf_urban_physics , 1 , ierr )
     CALL wrf_put_dom_ti_integer ( fid, 'SF_SURFACE_MOSAIC', config_flags%sf_surface_mosaic     , 1 , ierr ) 
     CALL wrf_put_dom_ti_integer ( fid, 'SF_OCEAN_PHYSICS', config_flags%sf_ocean_physics     , 1 , ierr ) 
+    CALL wrf_put_dom_ti_logical ( fid, 'SLUCM_DISTRIBUTED_DRAG', config_flags%slucm_distributed_drag, 1, ierr)
+    CALL wrf_put_dom_ti_integer ( fid, 'DISTRIBUTED_AHE_OPT', config_flags%distributed_ahe_opt, 1, ierr)
 #endif
 
       IF ( switch .EQ. history_only ) THEN

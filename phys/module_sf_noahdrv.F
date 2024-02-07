@@ -2896,7 +2896,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT) :: AKMS_URB2D
 !
      REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT) :: UST_URB2D
-     REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: FRC_URB2D                ! change this to inout, danli mosaic
+     REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FRC_URB2D                ! change this to inout, danli mosaic
      INTEGER, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: UTYPE_URB2D
 
 ! output variables urban --> lsm
@@ -3740,7 +3740,49 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                      IVGTYP(I,J) == LCZ_6      .or. IVGTYP(I,J) == LCZ_7 .or. IVGTYP(I,J) == LCZ_8 .or. &
                      IVGTYP(I,J) == LCZ_9      .or. IVGTYP(I,J) == LCZ_10 .or. IVGTYP(I,J) == LCZ_11 ) THEN
 
-                  UTYPE_URB = UTYPE_URB2D(I,J) !urban type (low, high or industrial)
+                  !  UTYPE_URB = UTYPE_URB2D(I,J) !urban type (low, high or industrial)
+                  !  this need to be changed in the mosaic danli
+                  IF (slucm_distributed_drag) THEN
+                    IF (IVGTYP(I, J) == ISURBAN) THEN
+                      UTYPE_URB = 2
+                      FRC_URB2D(I, J) = MAX(0.1, MIN(0.9, 1 - shdavg(I, J) / 100.))
+                    END IF
+                  ELSE IF (use_wudapt_lcz == 1) THEN
+                    IF(IVGTYP(I,J)==ISURBAN) UTYPE_URB=5
+                    IF(IVGTYP(I,J)==LCZ_1) UTYPE_URB=1
+                    IF(IVGTYP(I,J)==LCZ_2) UTYPE_URB=2
+                    IF(IVGTYP(I,J)==LCZ_3) UTYPE_URB=3
+                    IF(IVGTYP(I,J)==LCZ_4) UTYPE_URB=4
+                    IF(IVGTYP(I,J)==LCZ_5) UTYPE_URB=5
+                    IF(IVGTYP(I,J)==LCZ_6) UTYPE_URB=6
+                    IF(IVGTYP(I,J)==LCZ_7) UTYPE_URB=7
+                    IF(IVGTYP(I,J)==LCZ_8) UTYPE_URB=8
+                    IF(IVGTYP(I,J)==LCZ_9) UTYPE_URB=9
+                    IF(IVGTYP(I,J)==LCZ_10) UTYPE_URB=10
+                    IF(IVGTYP(I,J)==LCZ_11) UTYPE_URB=11
+
+
+                    IF(UTYPE_URB==1) FRC_URB2D(I,J)=1.
+                    IF(UTYPE_URB==2) FRC_URB2D(I,J)=0.99
+                    IF(UTYPE_URB==3) FRC_URB2D(I,J)=1.00
+                    IF(UTYPE_URB==4) FRC_URB2D(I,J)=0.65
+                    IF(UTYPE_URB==5) FRC_URB2D(I,J)=0.7
+                    IF(UTYPE_URB==6) FRC_URB2D(I,J)=0.65
+                    IF(UTYPE_URB==7) FRC_URB2D(I,J)=0.3
+                    IF(UTYPE_URB==8) FRC_URB2D(I,J)=0.85
+                    IF(UTYPE_URB==9) FRC_URB2D(I,J)=0.3
+                    IF(UTYPE_URB==10) FRC_URB2D(I,J)=0.55
+                    IF(UTYPE_URB==11) FRC_URB2D(I,J)=1.
+                  ELSE
+                    IF(IVGTYP(I,J)==ISURBAN) UTYPE_URB=2
+                    IF(IVGTYP(I,J)==LCZ_1) UTYPE_URB=1 ! LOW_DENSITY_RESIDENTIAL
+                    IF(IVGTYP(I,J)==LCZ_2) UTYPE_URB=2 ! HIGH_DENSITY_RESIDENTIAL
+                    IF(IVGTYP(I,J)==LCZ_3) UTYPE_URB=3 ! HIGH_INTENSITY_INDUSTRIAL
+
+                    IF(UTYPE_URB==1) FRC_URB2D(I,J)=0.5
+                    IF(UTYPE_URB==2) FRC_URB2D(I,J)=0.9
+                    IF(UTYPE_URB==3) FRC_URB2D(I,J)=0.95
+                  END IF
 
                   TA_URB    = SFCTMP           ! [K]
                   QA_URB    = Q2K              ! [kg/kg]

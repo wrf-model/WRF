@@ -284,7 +284,7 @@ pre_parse( char * dir, FILE * infile, FILE * outfile )
 	        if ( !strcmp( tokens[F_USE] , tracers[i] ) ) found = 1 ; 
               }
 	      if ( found == 0 ) {
-	        snprintf(tracers[ntracers], 100, tokens[F_USE]) ;
+		strncpy(tracers[ntracers], tokens[F_USE], 100);
 	        ntracers++ ;
 
 /* add entries for _b and _bt arrays */

@@ -10,6 +10,8 @@
 #define TABLE_ENTRY 128
 #define EXTRA_FOR_DEST_BUFFER 32
 
+#define NAMELEN 256
+
 short int  nChmOpts = 0;
 char rxt_tbl[5][1000][TABLE_ENTRY] = { '\0' };
 char chm_scheme[5][TABLE_ENTRY] = { '\0' };
@@ -42,7 +44,7 @@ int AppendReg( char *chem_opt, int ndx )
    char *strt, *end;
    char *token;
    char *wstrg1;
-   char path[2 * (NAMELEN + EXTRA_FOR_DEST_BUFFER)];
+   char path[NAMELEN * 2 + EXTRA_FOR_DEST_BUFFER];
    char fname[NAMELEN];
    char inln[1024],winln[1024],s[1024];
    char rxtstr[TABLE_ENTRY];
@@ -259,12 +261,12 @@ int irr_diag_scalar_indices( char *dirname )
      strcat( line,piece );
    }
    strcat( line," /)\n" );
-   fprintf( fp_inc,line );
-   fprintf( fp_inc," \n");
+   fprintf( fp_inc,"%s \n", line);
 
    for( i = 0; i < nChmOpts; i++ ) {
-     sprintf( line,"  chm_opts_name(%d) = '%s'\n",i+1,chm_scheme[i]);
-     fprintf( fp_inc,line );
+     /* I don't see the point of saving this in line when line get
+	overwritten immediately afterwards */
+     fprintf(fp_inc, "  chm_opts_name(%d) = '%s'\n",i+1,chm_scheme[i]);
    }
    fprintf( fp_inc," \n");
 
@@ -277,8 +279,7 @@ int irr_diag_scalar_indices( char *dirname )
      strcat( line,piece );
    }
    strcat( line," /)\n" );
-   fprintf( fp_inc,line );
-   fprintf( fp_inc," \n");
+   fprintf( fp_inc,"%s \n", line);
 
    for( i = 0; i < nChmOpts && rxt_cnt[i] > 0; i++ ) {
      for( j = 0; j < rxt_cnt[i]; j++ ) {

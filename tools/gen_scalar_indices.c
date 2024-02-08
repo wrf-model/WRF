@@ -191,7 +191,7 @@ gen_scalar_indices1 ( FILE * fp, FILE ** fp2 )
                   /* check for the existence of a fourd boundary array associated with this 4D array */
                   /* set io_mask accordingly for gen_wrf_io to know that it should generate i/o for _b and _bt */
                   /* arrays */
-                  snprintf(fourd_bnd, NAMELEN_LONG + EXTRA_FOR_DEST_BUFFER, "%s_b",assoc_4d) ;
+                  sprintf(fourd_bnd, "%s_b",assoc_4d) ;
                   if ( get_entry_r( fourd_bnd, NULL, Domain.fields) != NULL ) {
                      x->boundary = 1 ;
                   }

@@ -42,8 +42,8 @@ int AppendReg( char *chem_opt, int ndx )
    char *strt, *end;
    char *token;
    char *wstrg1;
-   char path[256 * 2 + 25];
-   char fname[256];
+   char path[2 * (NAMELEN + EXTRA_FOR_DEST_BUFFER)];
+   char fname[NAMELEN];
    char inln[1024],winln[1024],s[1024];
    char rxtstr[TABLE_ENTRY];
    char rxtstr_tbl[1000][TABLE_ENTRY];

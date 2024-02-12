@@ -220,7 +220,7 @@ gen_kpp ( char * inc_dirname, char * kpp_dirname )
      screen_out( );
 
 
-     /* make sure that wrf and kpp variables match and stop if not.  */
+     /* make sure that WRF and kpp variables match and stop if not.  */
       if ( DEBUGR == 1 )   printf("next: check_all \n");
      check_all ( kpp_dirname );
 

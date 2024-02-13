@@ -253,6 +253,17 @@ target_sources(
                   module_shcu_nscv.F
                   module_surface_driver.F
                   module_wind_fitch.F
+                  module_wind_mav.F
+
+                  # Shared physics
+                  physics_mmm/bl_gwdo.F90
+                  physics_mmm/bl_ysu.F90
+                  physics_mmm/cu_ntiedtke.F90
+                  physics_mmm/module_libmassv.F90
+                  physics_mmm/mp_radar.F90
+                  physics_mmm/mp_wsm6.F90
+                  physics_mmm/mp_wsm6_effectRad.F90
+                  physics_mmm/sf_sfclayrev.F90
                   )
 
 

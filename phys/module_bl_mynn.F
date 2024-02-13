@@ -232,7 +232,7 @@
 !                bl_mynn_cloudpdf = 2 (Chab-Becht).
 !            Removed WRF_CHEM dependencies.
 !            Many miscellaneous tweaks.
-! v4.5.2 / CCPP
+! v4.6 / CCPP
 !            Some code optimization. Removed many conditions from loops. Redesigned the mass-
 !                flux scheme to use 8 plumes instead of a variable n plumes. This results in
 !                the removal of the output variable "nudprafts" and adds maxwidth and ztop_plume.
@@ -242,6 +242,7 @@
 !            Now outputs all SGS cloud mixing ratios as grid-mean values, not in-cloud. This 
 !                results in a change in the pre-radiation code to no longer multiply mixing ratios
 !                by cloud fractions.
+!            Bug fix for the momentum transport.
 !            Lots of code cleanup: removal of test code, comments, changing text case, etc.
 !            Many misc tuning/tweaks.
 !
@@ -1114,7 +1115,7 @@ CONTAINS
 !!  Calculate the buoyancy production of TKE from cloud-top cooling when
 !! \p bl_mynn_topdown =1.
        if (bl_mynn_topdown.eq.1) then
-          call topdown_cloudrad(kts,kte,dz1,zw,          &
+          call topdown_cloudrad(kts,kte,dz1,zw,fltv,     &
                &xland(i),kpbl(i),PBLH(i),                &
                &sqc,sqi,sqw,thl,th1,ex1,p1,rho1,thetav,  &
                &cldfra_bl1D,rthraten(i,:),               &
@@ -2001,9 +2002,9 @@ CONTAINS
         uonset= 15. 
         wt_u = (1.0 - min(max(ugrid - uonset, 0.0)/30.0, 0.5)) 
         cns  = 2.7 !was 3.5
-        alp1 = 0.22
+        alp1 = 0.23
         alp2 = 0.3
-        alp3 = 2.0 * wt_u !taper off bouyancy enhancement in shear-driven pbls
+        alp3 = 2.5 * wt_u !taper off bouyancy enhancement in shear-driven pbls
         alp4 = 5.0
         alp5 = 0.3
         alp6 = 50.
@@ -2059,12 +2060,12 @@ CONTAINS
 
            !   **  Length scale limited by the buoyancy effect  **
            IF ( dtv(k) .GT. 0.0 ) THEN
-              bv  = max( sqrt( gtr*dtv(k) ), 0.001)
+              bv  = max( sqrt( gtr*dtv(k) ), 0.0001)
               elb = MAX(alp2*qkw(k),                          &
                   &    alp6*edmf_a1(k-1)*edmf_w1(k-1)) / bv   &
                   &  *( 1.0 + alp3*SQRT( vsc/(bv*elt) ) )
               elb = MIN(elb, zwk)
-              elf = 0.80 * qkw(k)/bv
+              elf = 1.0 * qkw(k)/bv
               elBLavg(k) = MAX(elBLavg(k), alp6*edmf_a1(k-1)*edmf_w1(k-1)/bv)
            ELSE
               elb = 1.0e10
@@ -2084,8 +2085,10 @@ CONTAINS
            !add blending to use BouLac mixing length in free atmos;
            !defined relative to the PBLH (zi) + transition layer (h1)
            !el(k) = MIN(elb/( elb/elt+elb/els+1.0 ),elf)
-           !try squared-blending
-           el(k) = SQRT( els**2/(1. + (els**2/elt**2) +(els**2/elb**2)))
+           !try squared-blending - but take out elb (makes it underdiffusive)
+           !el(k) = SQRT( els**2/(1. + (els**2/elt**2) +(els**2/elb**2)))
+           el(k) = sqrt( els**2/(1. + (els**2/elt**2)))
+           el(k) = min(el(k), elb)
            el(k) = MIN (el(k), elf)
            el(k) = el(k)*(1.-wt) + alp5*elBLavg(k)*wt
 
@@ -3633,13 +3636,13 @@ CONTAINS
 
     real(kind_phys):: qsl,esat,qsat,dqsl,cld0,q1k,qlk,eq1,qll,           &
          &q2p,pt,rac,qt,t,xl,rsl,cpm,Fng,qww,alpha,beta,bb,              &
-         &ls,wt,qpct,cld_factor,fac_damp,liq_frac,ql_ice,ql_water,       &
+         &ls,wt,wt2,qpct,cld_factor,fac_damp,liq_frac,ql_ice,ql_water,   &
          &qmq,qsat_tk,q1_rh,rh_hack,dzm1,zsl,maxqc
     real(kind_phys), parameter :: qpct_sfc=0.025
     real(kind_phys), parameter :: qpct_pbl=0.030
     real(kind_phys), parameter :: qpct_trp=0.040
     real(kind_phys), parameter :: rhcrit  =0.83 !for cloudpdf = 2
-    real(kind_phys), parameter :: rhmax   =1.01 !for cloudpdf = 2
+    real(kind_phys), parameter :: rhmax   =1.02 !for cloudpdf = 2
     integer :: i,j,k
 
     real(kind_phys):: erf
@@ -3864,25 +3867,18 @@ CONTAINS
            !Add condition for falling/settling into low-RH layers, so at least
            !some cloud fraction is applied for all qc, qs, and qi.
            rh_hack= rh(k)
+           wt2    = min(max( zagl - pblh2, 0.0 )/300., 1.0)
            !ensure adequate RH & q1 when qi is at least 1e-9 (above the PBLH)
-           if (qi(k)>1.e-9 .and. zagl .gt. pblh2) then
-              rh_hack =min(rhmax, rhcrit + 0.07*(9.0 + log10(qi(k))))
+           if ((qi(k)+qs(k))>1.e-9 .and. (zagl .gt. pblh2)) then
+              rh_hack =min(rhmax, rhcrit + wt2*0.045*(9.0 + log10(qi(k)+qs(k))))
               rh(k)   =max(rh(k), rh_hack)
               !add rh-based q1
               q1_rh   =-3. + 3.*(rh(k)-rhcrit)/(1.-rhcrit)
               q1(k)   =max(q1_rh, q1(k) )
            endif
-           !ensure adequate RH & q1 when qc is at least 1e-6
-           if (qc(k)>1.e-6) then
-              rh_hack =min(rhmax, rhcrit + 0.09*(6.0 + log10(qc(k))))
-              rh(k)   =max(rh(k), rh_hack)
-              !add rh-based q1
-              q1_rh   =-3. + 3.*(rh(k)-rhcrit)/(1.-rhcrit)
-              q1(k)   =max(q1_rh, q1(k) )
-           endif
-           !ensure adequate RH & q1 when qs is at least 1e-8 (above the PBLH)
-           if (qs(k)>1.e-8 .and. zagl .gt. pblh2) then
-              rh_hack =min(rhmax, rhcrit + 0.07*(8.0 + log10(qs(k))))
+           !ensure adequate rh & q1 when qc is at least 1e-6 (above the PBLH)
+           if (qc(k)>1.e-6 .and. (zagl .gt. pblh2)) then
+              rh_hack =min(rhmax, rhcrit + wt2*0.08*(6.0 + log10(qc(k))))
               rh(k)   =max(rh(k), rh_hack)
               !add rh-based q1
               q1_rh   =-3. + 3.*(rh(k)-rhcrit)/(1.-rhcrit)
@@ -3994,7 +3990,7 @@ CONTAINS
            fac_damp = min(zagl * 0.0025, 1.0)
            !cld_factor = 1.0 + fac_damp*MAX(0.0, ( RH(k) - 0.75 ) / 0.26 )**1.9 !HRRRv4
            !cld_factor = 1.0 + fac_damp*min((max(0.0, ( RH(k) - 0.92 )) / 0.25 )**2, 0.3)
-           cld_factor = 1.0 + fac_damp*min((max(0.0, ( RH(k) - 0.92 )) / 0.145)**2, 0.35)
+           cld_factor = 1.0 + fac_damp*min((max(0.0, ( RH(k) - 0.92 )) / 0.145)**2, 0.37)
            cldfra_bl1D(K) = min( 1., cld_factor*cldfra_bl1D(K) )
         enddo
 
@@ -4182,38 +4178,33 @@ CONTAINS
 
     k=kts
 
-!original approach (drag in b-vector):
-!    a(1)=0.
-!    b(1)=1. + dtz(k)*(dfm(k+1)+ust**2/wspd) - 0.5*dtz(k)*s_aw(k+1)*onoff
-!    c(1)=-dtz(k)*dfm(k+1) - 0.5*dtz(k)*s_aw(k+1)*onoff
-!    d(1)=u(k) + dtz(k)*uoce*ust**2/wspd - dtz(k)*s_awu(k+1)*onoff + &
-!         sub_u(k)*delt + det_u(k)*delt
-
 !rho-weighted (drag in b-vector):
     a(k)=  -dtz(k)*kmdz(k)*rhoinv(k)
-    b(k)=1.+dtz(k)*(kmdz(k+1)+rhosfc*ust**2/wspd)*rhoinv(k) &
-           & - 0.5*dtz(k)*s_aw(k+1)*onoff - 0.5*dtz(k)*rhoinv(k)*sd_aw(k+1)*onoff
+    b(k)=1.+dtz(k)*(kmdz(k+1)+rhosfc*ust**2/wspd)*rhoinv(k)     &
+           & - 0.5*dtz(k)*rhoinv(k)*s_aw(k+1)*onoff             &
+           & - 0.5*dtz(k)*rhoinv(k)*sd_aw(k+1)*onoff
     c(k)=  -dtz(k)*kmdz(k+1)*rhoinv(k) &
-           & - 0.5*dtz(k)*s_aw(k+1)*onoff - 0.5*dtz(k)*rhoinv(k)*sd_aw(k+1)*onoff
-    d(k)=u(k)  + dtz(k)*uoce*ust**2/wspd - dtz(k)*s_awu(k+1)*onoff - &
-       & dtz(k)*rhoinv(k)*sd_awu(k+1)*onoff + sub_u(k)*delt + det_u(k)*delt
+           & - 0.5*dtz(k)*rhoinv(k)*s_aw(k+1)*onoff             &
+           & - 0.5*dtz(k)*rhoinv(k)*sd_aw(k+1)*onoff
+    d(k)=u(k)  + dtz(k)*uoce*ust**2/wspd                        &
+           & - dtz(k)*rhoinv(k)*s_awu(k+1)*onoff                &
+           & + dtz(k)*rhoinv(k)*sd_awu(k+1)*onoff               &
+           & + sub_u(k)*delt + det_u(k)*delt
 
-!rho-weighted with drag term moved out of b-array
-!    a(k)=  -dtz(k)*kmdz(k)*rhoinv(k)
-!    b(k)=1.+dtz(k)*(kmdz(k+1))*rhoinv(k) - 0.5*dtz(k)*rhoinv(k)*s_aw(k+1)*onoff - 0.5*dtz(k)*rhoinv(k)*sd_aw(k+1)*onoff
-!    c(k)=  -dtz(k)*kmdz(k+1)*rhoinv(k)   - 0.5*dtz(k)*rhoinv(k)*s_aw(k+1)*onoff - 0.5*dtz(k)*rhoinv(k)*sd_aw(k+1)*onoff
-!    d(k)=u(k)*(1.-ust**2/wspd*dtz(k)*rhosfc/rho(k)) + dtz(k)*uoce*ust**2/wspd - &
-!    !!!d(k)=u(k)*(1.-ust**2/wspd*dtz(k)) + dtz(k)*uoce*ust**2/wspd - &
-!      &  dtz(k)*rhoinv(k)*s_awu(k+1)*onoff - dtz(k)*rhoinv(k)*sd_awu(k+1)*onoff + sub_u(k)*delt + det_u(k)*delt
-
-    DO k=kts+1,kte-1
-       a(k)=  -dtz(k)*kmdz(k)*rhoinv(k)     + 0.5*dtz(k)*rhoinv(k)*s_aw(k)*onoff + 0.5*dtz(k)*rhoinv(k)*sd_aw(k)*onoff 
-       b(k)=1.+dtz(k)*(kmdz(k)+kmdz(k+1))*rhoinv(k) + &
-           &    0.5*dtz(k)*rhoinv(k)*(s_aw(k)-s_aw(k+1))*onoff + 0.5*dtz(k)*rhoinv(k)*(sd_aw(k)-sd_aw(k+1))*onoff
-       c(k)=  -dtz(k)*kmdz(k+1)*rhoinv(k) - 0.5*dtz(k)*rhoinv(k)*s_aw(k+1)*onoff - 0.5*dtz(k)*rhoinv(k)*sd_aw(k+1)*onoff
-       d(k)=u(k) + dtz(k)*rhoinv(k)*(s_awu(k)-s_awu(k+1))*onoff + dtz(k)*rhoinv(k)*(sd_awu(k)-sd_awu(k+1))*onoff + &
-           &    sub_u(k)*delt + det_u(k)*delt
-    ENDDO
+    do k=kts+1,kte-1
+       a(k)=  -dtz(k)*kmdz(k)*rhoinv(k)                         &
+           &  + 0.5*dtz(k)*rhoinv(k)*s_aw(k)*onoff              &
+           &  + 0.5*dtz(k)*rhoinv(k)*sd_aw(k)*onoff
+       b(k)=1.+ dtz(k)*(kmdz(k)+kmdz(k+1))*rhoinv(k)            &
+           &  + 0.5*dtz(k)*rhoinv(k)*(s_aw(k)-s_aw(k+1))*onoff  &
+           &  + 0.5*dtz(k)*rhoinv(k)*(sd_aw(k)-sd_aw(k+1))*onoff
+       c(k)=  - dtz(k)*kmdz(k+1)*rhoinv(k)                      &
+           &  - 0.5*dtz(k)*rhoinv(k)*s_aw(k+1)*onoff            &
+           &  - 0.5*dtz(k)*rhoinv(k)*sd_aw(k+1)*onoff
+       d(k)=u(k) + dtz(k)*rhoinv(k)*(s_awu(k)-s_awu(k+1))*onoff &
+           &  - dtz(k)*rhoinv(k)*(sd_awu(k)-sd_awu(k+1))*onoff  &
+           &  + sub_u(k)*delt + det_u(k)*delt
+    enddo
 
 !! no flux at the top
 !    a(kte)=-1.
@@ -4248,37 +4239,33 @@ CONTAINS
 
     k=kts
 
-!original approach (drag in b-vector):
-!    a(1)=0.
-!    b(1)=1. + dtz(k)*(dfm(k+1)+ust**2/wspd) - 0.5*dtz(k)*s_aw(k+1)*onoff
-!    c(1)=   - dtz(k)*dfm(k+1)               - 0.5*dtz(k)*s_aw(k+1)*onoff
-!    d(1)=v(k) + dtz(k)*voce*ust**2/wspd - dtz(k)*s_awv(k+1)*onoff + &
-!          sub_v(k)*delt + det_v(k)*delt
-
 !rho-weighted (drag in b-vector):
     a(k)=  -dtz(k)*kmdz(k)*rhoinv(k)
-    b(k)=1.+dtz(k)*(kmdz(k+1) + rhosfc*ust**2/wspd)*rhoinv(k) &
-        &  - 0.5*dtz(k)*s_aw(k+1)*onoff - 0.5*dtz(k)*rhoinv(k)*sd_aw(k+1)*onoff
-    c(k)=  -dtz(k)*kmdz(k+1)*rhoinv(k) - 0.5*dtz(k)*s_aw(k+1)*onoff - 0.5*dtz(k)*rhoinv(k)*sd_aw(k+1)*onoff
-    d(k)=v(k)  + dtz(k)*voce*ust**2/wspd - dtz(k)*s_awv(k+1)*onoff - dtz(k)*rhoinv(k)*sd_awv(k+1)*onoff + &
-       & sub_v(k)*delt + det_v(k)*delt
+    b(k)=1.+dtz(k)*(kmdz(k+1) + rhosfc*ust**2/wspd)*rhoinv(k)   &
+        &  - 0.5*dtz(k)*rhoinv(k)*s_aw(k+1)*onoff               &
+        &  - 0.5*dtz(k)*rhoinv(k)*sd_aw(k+1)*onoff
+    c(k)=  -dtz(k)*kmdz(k+1)*rhoinv(k)                          &
+        &  - 0.5*dtz(k)*rhoinv(k)*s_aw(k+1)*onoff               &
+        &  - 0.5*dtz(k)*rhoinv(k)*sd_aw(k+1)*onoff
+    d(k)=v(k)  + dtz(k)*voce*ust**2/wspd                        &
+        &  - dtz(k)*rhoinv(k)*s_awv(k+1)*onoff                  &
+        &  + dtz(k)*rhoinv(k)*sd_awv(k+1)*onoff                 &
+        &  + sub_v(k)*delt + det_v(k)*delt
 
-!rho-weighted with drag	term moved out of b-array
-!    a(k)=  -dtz(k)*kmdz(k)*rhoinv(k)
-!    b(k)=1.+dtz(k)*(kmdz(k+1))*rhoinv(k)  - 0.5*dtz(k)*rhoinv(k)*s_aw(k+1)*onoff - 0.5*dtz(k)*rhoinv(k)*sd_aw(k+1)*onoff
-!    c(k)=  -dtz(k)*kmdz(k+1)*rhoinv(k)    - 0.5*dtz(k)*rhoinv(k)*s_aw(k+1)*onoff - 0.5*dtz(k)*rhoinv(k)*sd_aw(k+1)*onoff
-!    d(k)=v(k)*(1.-ust**2/wspd*dtz(k)*rhosfc/rho(k)) + dtz(k)*voce*ust**2/wspd - &
-!    !!!d(k)=v(k)*(1.-ust**2/wspd*dtz(k)) + dtz(k)*voce*ust**2/wspd - &
-!      &  dtz(k)*rhoinv(k)*s_awv(k+1)*onoff - dtz(k)*rhoinv(k)*sd_awv(k+1)*onoff + sub_v(k)*delt + det_v(k)*delt
-
-    DO k=kts+1,kte-1
-       a(k)=  -dtz(k)*kmdz(k)*rhoinv(k)   + 0.5*dtz(k)*rhoinv(k)*s_aw(k)*onoff + 0.5*dtz(k)*rhoinv(k)*sd_aw(k)*onoff
-       b(k)=1.+dtz(k)*(kmdz(k)+kmdz(k+1))*rhoinv(k) + &
-           &    0.5*dtz(k)*rhoinv(k)*(s_aw(k)-s_aw(k+1))*onoff + 0.5*dtz(k)*rhoinv(k)*(sd_aw(k)-sd_aw(k+1))*onoff
-       c(k)=  -dtz(k)*kmdz(k+1)*rhoinv(k) - 0.5*dtz(k)*rhoinv(k)*s_aw(k+1)*onoff - 0.5*dtz(k)*rhoinv(k)*sd_aw(k+1)*onoff 
-       d(k)=v(k) + dtz(k)*rhoinv(k)*(s_awv(k)-s_awv(k+1))*onoff + dtz(k)*rhoinv(k)*(sd_awv(k)-sd_awv(k+1))*onoff + &
-           &    sub_v(k)*delt + det_v(k)*delt
-    ENDDO
+    do k=kts+1,kte-1
+       a(k)=  -dtz(k)*kmdz(k)*rhoinv(k)                         &
+         & + 0.5*dtz(k)*rhoinv(k)*s_aw(k)*onoff                 &
+         & + 0.5*dtz(k)*rhoinv(k)*sd_aw(k)*onoff
+       b(k)=1.+dtz(k)*(kmdz(k)+kmdz(k+1))*rhoinv(k)             &
+         & + 0.5*dtz(k)*rhoinv(k)*(s_aw(k)-s_aw(k+1))*onoff     &
+         & + 0.5*dtz(k)*rhoinv(k)*(sd_aw(k)-sd_aw(k+1))*onoff
+       c(k)=  -dtz(k)*kmdz(k+1)*rhoinv(k)                       &
+         & - 0.5*dtz(k)*rhoinv(k)*s_aw(k+1)*onoff               &
+         & - 0.5*dtz(k)*rhoinv(k)*sd_aw(k+1)*onoff
+       d(k)=v(k) + dtz(k)*rhoinv(k)*(s_awv(k)-s_awv(k+1))*onoff &
+         & - dtz(k)*rhoinv(k)*(sd_awv(k)-sd_awv(k+1))*onoff     &
+         & + sub_v(k)*delt + det_v(k)*delt
+    enddo
 
 !! no flux at the top
 !    a(kte)=-1.
@@ -7637,7 +7624,8 @@ SUBROUTINE SCALE_AWARE(dx,PBL1,Psig_bl,Psig_shcu)
 
 END FUNCTION phih
 ! ==================================================================
- SUBROUTINE topdown_cloudrad(kts,kte,dz1,zw,xland,kpbl,PBLH,  &
+ SUBROUTINE topdown_cloudrad(kts,kte,                         &
+               &dz1,zw,fltv,xland,kpbl,PBLH,                  &
                &sqc,sqi,sqw,thl,th1,ex1,p1,rho1,thetav,       &
                &cldfra_bl1D,rthraten,                         &
                &maxKHtopdown,KHtopdown,TKEprodTD              )
@@ -7648,7 +7636,7 @@ END FUNCTION phih
           thl,th1,ex1,p1,rho1,thetav,cldfra_bl1D
     real(kind_phys), dimension(kts:kte), intent(in) :: rthraten
     real(kind_phys), dimension(kts:kte+1), intent(in) :: zw
-    real(kind_phys), intent(in) :: pblh
+    real(kind_phys), intent(in) :: pblh,fltv
     real(kind_phys), intent(in) :: xland
     integer        , intent(in) :: kpbl
     !output
@@ -7656,7 +7644,7 @@ END FUNCTION phih
     real(kind_phys), dimension(kts:kte), intent(out) :: KHtopdown,TKEprodTD
     !local
     real(kind_phys), dimension(kts:kte) :: zfac,wscalek2,zfacent
-    real(kind_phys) :: bfx0,sflux,wm2,wm3,h1,h2,bfxpbl,dthvx,tmp1
+    real(kind_phys) :: bfx0,wm2,wm3,bfxpbl,dthvx,tmp1
     real(kind_phys) :: temps,templ,zl1,wstar3_2
     real(kind_phys) :: ent_eff,radsum,radflux,we,rcldb,rvls,minrad,zminrad
     real(kind_phys), parameter :: pfac =2.0, zfmin = 0.01, phifac=8.0
@@ -7720,15 +7708,15 @@ END FUNCTION phih
           bfx0 = max(radsum/rho1(k)/cp,0.)
        else                           ! LAND
           radsum=MIN(0.25*radsum,30.0)!practically turn off over land
-          bfx0 = max(radsum/rho1(k)/cp - max(sflux,0.0),0.)
+          bfx0 = max(radsum/rho1(k)/cp - max(fltv,0.0),0.)
        endif
 
        !entrainment from PBL top thermals
        wm3    = grav/thetav(k)*bfx0*MIN(pblh,1500.) ! this is wstar3(i)
-       wm2    = wm2 + wm3**h2
+       wm2    = wm2 + wm3**twothirds
        bfxpbl = - ent_eff * bfx0
        dthvx  = max(thetav(k+1)-thetav(k),0.1)
-       we     = max(bfxpbl/dthvx,-sqrt(wm3**h2))
+       we     = max(bfxpbl/dthvx,-sqrt(wm3**twothirds))
 
        DO kk = kts,kpbl+3
           !Analytic vertical profile
@@ -7736,7 +7724,7 @@ END FUNCTION phih
           zfacent(kk) = 10.*MAX((zminrad-zw(kk+1))/zminrad,0.0)*(1.-zfac(kk))**3
 
           !Calculate an eddy diffusivity profile (not used at the moment)
-          wscalek2(kk) = (phifac*karman*wm3*(zfac(kk)))**h1
+          wscalek2(kk) = (phifac*karman*wm3*(zfac(kk)))**onethird
           !Modify shape of Kh to be similar to Lock et al (2000): use pfac = 3.0
           KHtopdown(kk) = wscalek2(kk)*karman*(zminrad-zw(kk+1))*(1.-zfac(kk))**3 !pfac
           KHtopdown(kk) = MAX(KHtopdown(kk),0.0)

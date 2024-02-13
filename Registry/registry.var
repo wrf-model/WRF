@@ -593,11 +593,8 @@ package   cammgmpscheme   mp_physics==11               -             moist:qv,qc
 package   sbu_ylinscheme  mp_physics==13               -             moist:qv,qc,qr,qi,qs
 package   wdm5scheme      mp_physics==14               -             moist:qv,qc,qr,qi,qs
 package   wdm6scheme      mp_physics==16               -             moist:qv,qc,qr,qi,qs,qg
-package   nssl_2mom       mp_physics==17               -             moist:qv,qc,qr,qi,qs,qg,qh
-package   nssl_2momccn    mp_physics==18               -             moist:qv,qc,qr,qi,qs,qg,qh
-package   nssl_1mom       mp_physics==19               -             moist:qv,qc,qr,qi,qs,qg,qh
-package   nssl_1momlfo    mp_physics==21               -             moist:qv,qc,qr,qi,qs,qg
-package   nssl_2momg      mp_physics==22               -             moist:qv,qc,qr,qi,qs,qg
+# Note: Options 17, 19, 21, 22 are deprecated but still reserved for compatibility -- for now
+package   nssl_2mom       mp_physics==18               -             moist:qv,qc,qr,qi,qs,qg
 package   thompsonaero    mp_physics==28               -             moist:qv,qc,qr,qi,qs,qg
 package   p3_1category    mp_physics==50               -             moist:qv,qc,qr,qi
 package   p3_1category_nc mp_physics==51               -             moist:qv,qc,qr,qi
@@ -607,6 +604,7 @@ package   ntu             mp_physics==56               -             moist:qv,qc
 package   etampnew        mp_physics==95               -             moist:qv,qc,qr,qs
 package   lscondscheme    mp_physics==98               -             moist:qv
 package   mkesslerscheme  mp_physics==99               -             moist:qv,qc,qr
+
 #
 package   mpnotset_4dvar         mp_physics_4dvar==-1     -          g_moist:g_qv;a_moist:a_qv
 package   passiveqv_4dvar        mp_physics_4dvar==0      -          g_moist:g_qv;a_moist:a_qv
@@ -626,11 +624,8 @@ package   cammgmp_4dvar          mp_physics_4dvar==11     -          g_moist:g_q
 package   sbu_ylin_4dvar         mp_physics_4dvar==13     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs
 package   wdm5_4dvar             mp_physics_4dvar==14     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs
 package   wdm6_4dvar             mp_physics_4dvar==16     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
-package   nssl_2mom_4dvar        mp_physics_4dvar==17     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg,g_qh;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg,a_qh
-package   nssl_2momccn_4dvar     mp_physics_4dvar==18     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg,g_qh;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg,a_qh
-package   nssl_1mom_4dvar        mp_physics_4dvar==19     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg,g_qh;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg,a_qh
-package   nssl_1momlfo_4dvar     mp_physics_4dvar==21     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
-package   nssl_2momg_4dvar       mp_physics_4dvar==22     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
+# Note: Options 17, 19, 21, 22 are deprecated but still reserved for compatibility -- for now
+package   nssl_2mom_4dvar        mp_physics_4dvar==18     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg,g_qh;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg,a_qh
 package   thompsonaero_4dvar     mp_physics_4dvar==28     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
 package   p3_1category_4dvar     mp_physics_4dvar==50     -          g_moist:g_qv,g_qc,g_qr,g_qi;a_moist:a_qv,a_qc,a_qr,a_qi
 package   p3_1category_nc_4dvar  mp_physics_4dvar==51     -          g_moist:g_qv,g_qc,g_qr,g_qi;a_moist:a_qv,a_qc,a_qr,a_qi

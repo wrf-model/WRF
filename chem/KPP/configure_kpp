@@ -80,6 +80,9 @@ echo " configure_kpp, settings:"
 if test -e "${FLEX_LIB_DIR}/libfl.a" ; then
 echo location of flex library: ${FLEX_LIB_DIR}/libfl.a
 
+elif test -e "${FLEX_LIB_DIR}/libfl.so" ; then
+echo use shared flex library: ${FLEX_LIB_DIR}/libfl.so
+
 else
           echo  No libfl.a in ${FLEX_LIB_DIR} 
           echo '  check if FLEX_LIB_DIR environment variable is set correctly'

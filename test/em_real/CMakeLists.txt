@@ -1,6 +1,6 @@
 # These are just rules for this case, could be named CMakeLists.txt or something 
 # like install_rules.cmake, whatever you want really
-get_filename_component( FOLDER_DEST ${CMAKE_INSTALL_PREFIX}/test/${FOLDER_DEST} NAME )
+get_filename_component( FOLDER_DEST ${CMAKE_CURRENT_SOURCE_DIR} NAME )
 
 install(
         DIRECTORY   ${CMAKE_CURRENT_SOURCE_DIR}

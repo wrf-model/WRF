@@ -74,7 +74,6 @@ endif()
 set( WRF_CORE_OPTIONS 
       # Options listed here
       ARW
-      COAMPS  # Not sure how this is used
       CONVERT # This exists in compile but not configure
       DA      # Var directory
       DA_4D_VAR

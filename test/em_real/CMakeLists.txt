@@ -66,7 +66,6 @@ wrf_setup_files(
                   ${PROJECT_SOURCE_DIR}/run/bulkdens.asc_s_0_03_0_9
                   ${PROJECT_SOURCE_DIR}/run/bulkradii.asc_s_0_03_0_9
                   ${PROJECT_SOURCE_DIR}/run/CCN_ACTIVATE.BIN
-                  # These might be p3_lookupTable_1.dat-v5.4_*
                   ${PROJECT_SOURCE_DIR}/run/p3_lookupTable_1.dat-v5.4_2momI
                   ${PROJECT_SOURCE_DIR}/run/p3_lookupTable_1.dat-v5.4_3momI
                   ${PROJECT_SOURCE_DIR}/run/p3_lookupTable_2.dat-v5.3
@@ -84,7 +83,7 @@ wrf_setup_files(
                   ${PROJECT_SOURCE_DIR}/run/URBPARM.TBL
                   ${PROJECT_SOURCE_DIR}/run/URBPARM_LCZ.TBL
                   ${PROJECT_SOURCE_DIR}/run/VEGPARM.TBL
-                  ${PROJECT_SOURCE_DIR}/run/MPTABLE.TBL # Missing?
+                  ${PROJECT_SOURCE_DIR}/phys/noahmp/parameters/MPTABLE.TBL
                   ${PROJECT_SOURCE_DIR}/run/tr49t67
                   ${PROJECT_SOURCE_DIR}/run/tr49t85
                   ${PROJECT_SOURCE_DIR}/run/tr67t85

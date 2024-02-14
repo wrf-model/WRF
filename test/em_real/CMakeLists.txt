@@ -67,9 +67,9 @@ wrf_setup_files(
                   ${PROJECT_SOURCE_DIR}/run/bulkradii.asc_s_0_03_0_9
                   ${PROJECT_SOURCE_DIR}/run/CCN_ACTIVATE.BIN
                   # These might be p3_lookupTable_1.dat-v5.4_*
-                  ${PROJECT_SOURCE_DIR}/run/p3_lookupTable_1.dat-5.3-2momI
-                  ${PROJECT_SOURCE_DIR}/run/p3_lookupTable_1.dat-3momI_v5.1.7
-                  ${PROJECT_SOURCE_DIR}/run/p3_lookupTable_2.dat-2momI_v5.2.3
+                  ${PROJECT_SOURCE_DIR}/run/p3_lookupTable_1.dat-v5.4_2momI
+                  ${PROJECT_SOURCE_DIR}/run/p3_lookupTable_1.dat-v5.4_3momI
+                  ${PROJECT_SOURCE_DIR}/run/p3_lookupTable_2.dat-v5.3
                   ${PROJECT_SOURCE_DIR}/run/HLC.TBL
                   ${PROJECT_SOURCE_DIR}/run/wind-turbine-1.tbl
                   ${PROJECT_SOURCE_DIR}/run/ishmael-gamma-tab.bin

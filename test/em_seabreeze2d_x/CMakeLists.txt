@@ -11,6 +11,7 @@ install(
 wrf_setup_targets(
                   TARGETS   ideal wrf
                   DEST_PATH  ${CMAKE_INSTALL_PREFIX}/test/${FOLDER_DEST}
+                  USE_SYMLINKS
                   )
 
 wrf_setup_files( 

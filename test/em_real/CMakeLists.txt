@@ -97,6 +97,7 @@ wrf_setup_files(
 wrf_setup_file_new_name( 
                         FILE      ${PROJECT_SOURCE_DIR}/run/CAMtr_volume_mixing_ratio.SSP245
                         NEW_NAME  ${CMAKE_INSTALL_PREFIX}/test/${FOLDER_DEST}/CAMtr_volume_mixing_ratio
+                        USE_SYMLINKS
                         )
 
 

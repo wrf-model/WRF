@@ -4,7 +4,7 @@ get_filename_component( FOLDER_DEST ${CMAKE_CURRENT_SOURCE_DIR} NAME )
 
 install(
         DIRECTORY   ${CMAKE_CURRENT_SOURCE_DIR}
-        DESTINATION ${CMAKE_INSTALL_PREFIX}/test/${FOLDER_DEST}
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/test/
         PATTERN CMakeLists.txt EXCLUDE
         PATTERN .gitignore     EXCLUDE
         )

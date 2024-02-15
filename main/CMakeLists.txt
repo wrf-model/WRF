@@ -130,3 +130,24 @@ install(
         ARCHIVE DESTINATION lib/
         LIBRARY DESTINATION lib/
         )
+
+# Install the "run" directory
+install(
+        DIRECTORY   ${PROJECT_SOURCE_DIR}/run/
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/run
+        PATTERN CMakeLists.txt EXCLUDE
+        PATTERN .gitignore     EXCLUDE
+        )
+wrf_setup_targets(
+                  TARGETS         ${FOLDER_COMPILE_TARGETS}
+                  DEST_PATH       ${CMAKE_INSTALL_PREFIX}/run
+                  USE_SYMLINKS
+                  )
+
+# Re-setup this particular file
+wrf_setup_files(
+                FILES
+                  ${PROJECT_SOURCE_DIR}/phys/noahmp/parameters/MPTABLE.TBL
+                DEST_PATH
+                  ${CMAKE_INSTALL_PREFIX}/run/
+                )

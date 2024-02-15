@@ -23,10 +23,22 @@ macro( wrf_setup_targets )
     #!TODO Do we *need* the rm for symlinks beforehand?
     # get_filename_component( WRF_SETUP_FILE_ONLY $<TARGET_FILE:${WRF_SETUP_TARGET}> NAME
 
+    # If we ever wanted to link or copy things other than binaries we could change this
+    set( WRF_SETUP_INSTALL_LOCATION ${CMAKE_INSTALL_PREFIX}/bin )
+
     install( 
             CODE "
                   message( STATUS \"Setting up $<TARGET_FILE_NAME:${WRF_SETUP_TARGET}> via ${WRF_SETUP_CMD}\" )
-                  execute_process( COMMAND ${CMAKE_COMMAND} -E ${WRF_SETUP_CMD} $<TARGET_FILE:${WRF_SETUP_TARGET}> ${WRF_SETUP_DEST_PATH}/$<TARGET_FILE_NAME:${WRF_SETUP_TARGET}> )
+                  execute_process( COMMAND ${CMAKE_COMMAND} -E ${WRF_SETUP_CMD} ${WRF_SETUP_INSTALL_LOCATION}/$<TARGET_FILE_NAME:${WRF_SETUP_TARGET}> ${WRF_SETUP_DEST_PATH}/$<TARGET_FILE_NAME:${WRF_SETUP_TARGET}> )
+                  "
+            COMPONENT setup
+            )
+    
+    # Add .exe link as well
+    install( 
+            CODE "
+                  message( STATUS \"Creating symlink for $<TARGET_FILE_NAME:${WRF_SETUP_TARGET}>.exe\" )
+                  execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink ${WRF_SETUP_DEST_PATH}/$<TARGET_FILE_NAME:${WRF_SETUP_TARGET}> ${WRF_SETUP_DEST_PATH}/$<TARGET_FILE_NAME:${WRF_SETUP_TARGET}>.exe )
                   "
             COMPONENT setup
             )

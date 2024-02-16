@@ -66,10 +66,7 @@
 %}
 
 %union{
-/* >>> CL: debug */
-/*  char str[80]; */
   char str[500];
-/* <<< CL */
 };
 
 %token JACOBIAN DOUBLE FUNCTION DEFVAR DEFRAD DEFFIX SETVAR SETRAD SETFIX 

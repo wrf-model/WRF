@@ -2171,7 +2171,6 @@ int UPDATE_RCONST;
   F77_Inline("      INCLUDE '%s_Global.h'", rootFileName);
   MATLAB_Inline("global SUN TEMP RCONST");
   
-/*  if ( (useLang==F77_LANG) ) *//*commented to suppress warning*/
   if ( useLang==F77_LANG )
       IncludeCode( "%s/util/UserRateLaws_FcnHeader", Home );
       

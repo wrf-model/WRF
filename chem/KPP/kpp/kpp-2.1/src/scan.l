@@ -42,7 +42,6 @@
   #include "scan.h" 
   #include "y.tab.h"
 
-//  void*malloc() ;
   void Include ( char * filename );
   int EndInclude();
 

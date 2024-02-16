@@ -155,7 +155,14 @@ for namelist in $namelists; do
       echo "MPI runs with nested namelist domains require odd-number tasks, reducing by one"
       numProcs=$(( $numProcs - 1 ))
       parallelExecToUse="$partFront$numProcs$partEnd"
+      parallelExecToUseBinFirst="$partFront$numProcs$partEnd"
       echo "New command will be '$parallelExecToUse'"
+    fi
+
+    # Check if we are runnng ideal
+    if [ $( contains $binFirst "ideal" ) -eq 0 ]; then
+      echo "Ideal test case initial conditions must be generated with one MPI rank at most"
+      parallelExecToUseBinFirst="$partFront"1"$partEnd"
     fi
   fi
 
@@ -168,17 +175,17 @@ for namelist in $namelists; do
   cp $namelistFolder/$namelist namelist.input || exit $?
 
   # Run setup
-  echo "Running $parallelExecToUse $binFirst"
-  # Go through echo to effectively "split" on spaces
-  eval "$parallelExecToUse $binFirst"
+  echo "Running $parallelExecToUseBinFirst $binFirst"
+
+  eval "$parallelExecToUseBinFirst $binFirst | tee setup.print.out"
   result=$?
-  if [ -n "$parallelExecToUse" ]; then
+  if [ -n "$parallelExecToUseBinFirst" ]; then
     # Output the rsl. output
     cat $coreDir/rsl.out.0000
   fi
 
   if [ $result -ne 0 ]; then
-    currentErrorMsg="[$namelist] $parallelExecToUse $binFirst failed"
+    currentErrorMsg="[$namelist] $parallelExecToUseBinFirst $binFirst failed"
     echo "$currentErrorMsg"
     errorMsg="$errorMsg\n$currentErrorMsg"
     continue
@@ -276,7 +283,7 @@ for namelist in $namelists; do
                 -o -name "wrfchemi_d*"       \
                 -o -name "wrf_chem_input_d*" \
                 -o -name "rsl*"              \
-                -o -name "real.print.out*"   \
+                -o -name "setup.print.out*"  \
                 -o -name "wrf.print.out*"    \
                 -o -name "wrf_d0*_runstats.out"
     # Now move
@@ -286,7 +293,7 @@ for namelist in $namelists; do
                     -o -name "wrfchemi_d*"       \
                     -o -name "wrf_chem_input_d*" \
                     -o -name "rsl*"              \
-                    -o -name "real.print.out*"   \
+                    -o -name "setup.print.out*"  \
                     -o -name "wrf.print.out*"    \
                     -o -name "wrf_d0*_runstats.out" \) \
                 -exec mv {} $workingDirectory/$moveFolder/$namelist/ \;
@@ -302,7 +309,7 @@ if [ -z "$errorMsg" ]; then
   ls $data/ | xargs -I{} rm {}
 
   # Clean up once more since we passed
-  rm -rf wrfinput_d* wrfbdy_d* wrfout_d* wrfchemi_d* wrf_chem_input_d* rsl* real.print.out* wrf.print.out* qr_acr_qg_V4.dat fort.98 fort.88
+  rm -rf wrfinput_d* wrfbdy_d* wrfout_d* wrfchemi_d* wrf_chem_input_d* rsl* setup.print.out* wrf.print.out* qr_acr_qg_V4.dat fort.98 fort.88
 
   # We passed!
   echo "TEST $(basename $0) PASS"

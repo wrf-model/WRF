@@ -88,7 +88,7 @@ eval "parallelExec=\"$parallelExec\""
 eval "moveFolder=\"$moveFolder\""
 eval "identicalFolder=\"$identicalFolder\""
 
-wrf=$( realpath $coreDir/wrf* | head -n 1 )
+wrf=$( realpath $( find $coreDir -type f -name wrf -o -name wrf.exe | head -n 1 ) )
 rd_12_norm=$( realpath .ci/tests/SCRIPTS/rd_l2_norm.py )
 
 # Check our paths

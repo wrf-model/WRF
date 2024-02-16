@@ -181,7 +181,7 @@ for namelist in $namelists; do
   result=$?
   if [ -n "$parallelExecToUseBinFirst" ]; then
     # Output the rsl. output
-    cat $coreDir/rsl.out.0000
+    cat $( ls $coreDir/rsl.out.* | sort | head -n 1 )
   fi
 
   if [ $result -ne 0 ]; then
@@ -193,9 +193,14 @@ for namelist in $namelists; do
 
   # run wrf
   echo "Running $parallelExecToUse $wrf"
-  # Go through echo to effectively "split" on spaces
-  eval "$parallelExecToUse $wrf"
+
+  eval "$parallelExecToUse $wrf | tee wrf.print.out"
   result=$?
+  if [ -n "$parallelExecToUse" ]; then
+    # Output the rsl. output
+    cat $( ls $coreDir/rsl.out.* | sort | head -n 1 )
+  fi
+
   if [ $result -ne 0 ]; then
     currentErrorMsg="[$namelist] $parallelExecToUse $wrf failed"
     echo "$currentErrorMsg"

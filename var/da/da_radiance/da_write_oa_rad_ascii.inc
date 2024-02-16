@@ -19,7 +19,7 @@ subroutine da_write_oa_rad_ascii (it, ob, iv, re )
    character(len=filename_len)  :: filename
    character(len=7)   :: surftype
    integer            :: ndomain
-   logical            :: amsr2
+   logical            :: amsr2, abi
 
    if (trace_use) call da_trace_entry("da_write_oa_rad_ascii")
 
@@ -40,6 +40,7 @@ subroutine da_write_oa_rad_ascii (it, ob, iv, re )
       if (ndomain < 1) cycle
 
       amsr2 = index(iv%instid(i)%rttovid_string,'amsr2') > 0
+      abi   = index(iv%instid(i)%rttovid_string,'abi') > 0
 
       write(unit=filename, fmt='(i2.2,a,i4.4)') it,'_oma_'//trim(iv%instid(i)%rttovid_string)//'.', myproc
 
@@ -141,6 +142,14 @@ subroutine da_write_oa_rad_ascii (it, ob, iv, re )
             write(unit=oma_rad_unit,fmt='(10f11.2)') iv%instid(i)%tb_error(:,n)
             write(unit=oma_rad_unit,fmt='(a)') 'QC   : '
             write(unit=oma_rad_unit,fmt='(10i11)') iv%instid(i)%tb_qc(:,n)
+            if ( abi .and. crtm_cloud ) then ! write out cloud_mod, cloud_obs, cloud_flag
+               write(unit=oma_rad_unit,fmt='(a)') 'CMOD   : '
+               write(unit=oma_rad_unit,fmt='(10f11.2)') iv%instid(i)%cloud_mod(:,n)
+               write(unit=oma_rad_unit,fmt='(a)') 'COBS   : '
+               write(unit=oma_rad_unit,fmt='(10f11.2)') iv%instid(i)%cloud_obs(:,n)
+	       write(unit=oma_rad_unit,fmt='(a)') 'CLOUD   : '
+               write(unit=oma_rad_unit,fmt='(10i11)') iv%instid(i)%cloud_flag(:,n)
+            end if
 
             if (write_profile) then
                nlevelss  = iv%instid(i)%nlevels

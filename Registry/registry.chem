@@ -82,7 +82,7 @@ state    real  e_hcho         i+jf     emis_ant     1         Z      i5r    "E_H
 state    real  e_ald          i+jf     emis_ant     1         Z      i5r    "E_ALD"               "EMISSIONS"          "mol km^-2 hr^-1"
 state    real  e_ket          i+jf     emis_ant     1         Z      i5r    "E_KET"               "EMISSIONS"          "mol km^-2 hr^-1"
 state    real  e_ora2         i+jf     emis_ant     1         Z      i5r    "E_ORA2"              "EMISSIONS"          "mol km^-2 hr^-1"
-state    real  e_nh3          i+jf     emis_ant     1         Z      i5r    "E_NH3"               "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  e_nh3          i+jf     emis_ant     1         Z      i5rh01    "E_NH3"               "EMISSIONS"          "mol km^-2 hr^-1"
 state    real  e_pm_25        i+jf     emis_ant     1         Z      i5r    "E_PM_25"             "EMISSIONS"          "ug/m3 m/s"
 state    real  e_pm_10        i+jf     emis_ant     1         Z      i5r    "E_PM_10"             "EMISSIONS"          "ug/m3 m/s"
 state    real  e_pm25i        i+jf     emis_ant     1         Z      i5r    "E_PM25I"             "EMISSION RATE OF UNIDEN. PM2.5 MASS"  "ug/m3 m/s"
@@ -213,7 +213,7 @@ state    real  setvel_1      ij       misc         1         -       r      "set
 state    real  setvel_2      ij       misc         1         -       r      "setvel_2"     "dust gravitational settling velocity for size 2"    "m/s"
 state    real  setvel_3      ij       misc         1         -       r      "setvel_3"     "dust gravitational settling velocity for size 3"    "m/s"
 state    real  setvel_4      ij       misc         1         -       r      "setvel_4"     "dust gravitational settling velocity for size 4"    "m/s"
-state    real  setvel_5      ij       misc         1         -       r      "setvel_5"     "effective gravitational settling velocity for total"    "m/s"
+state    real  setvel_5      ij       misc         1         -       r      "setvel_5"     "dust gravitational settling velocity for size 5"    "m/s"
 state    real  dustgraset_1  ij       misc         1         -       r      "graset_1"     "Accumulated dust gravitational settling  for size 1"        "kg/m2"
 state    real  dustgraset_2  ij       misc         1         -       r      "graset_2"     "Accumulated dust gravitational settling  for size 2"        "kg/m2"
 state    real  dustgraset_3  ij       misc         1         -       r      "graset_3"     "Accumulated dust gravitational settling  for size 3"        "kg/m2"
@@ -670,6 +670,17 @@ state    real  pftp_hb        ij      misc        1         -      i06r     "pft
 state    real  mtsa           ijm     misc        1         Z      i06r     "mtsa"             "Monthly surface air temp"  "K"
 state    real  mswdown        ijm     misc        1         Z      i06r     "mswdown"          "Monthly SWdown"  "W/m2"
 state    real  EFmegan        ij{nm}     misc        1         -      -        "EFmegan"          "MEGAN2 Emis Factor"       "ug m^-2 hr^-1"
+# Arrays for online ammonia emissions
+state    real   EFnh3          ij       misc      1        -     i01rh01   "EFNH3"       "NH3 Emis Factor"       "ug m^-2 hr^-1"
+state    real   actnh3         imj      misc      1        Z     i01rh01d  "ACTNH3"      "The activity of NH3" "0 - 1 fraction"
+state    real   agrisoil_nh3       ij       misc      1        Z     i01rh01d  "AGRISOIL_NH3"    "The activity of NH3" "0 - 1 fraction"
+state    real   fertilizer_nh3     imj      misc      1        Z     i01rh01d  "FERTILIZER_NH3"  "The activity of NH3" "0 - 1 fraction"
+state    real   freeinten_nh3      ij       misc      1        Z     i01rh01d  "FREEINTEN_NH3"   "The activity of NH3" "0 - 1 fraction"
+state    real   graze_nh3          ij       misc      1        Z     i01rh01d  "GRAZE_NH3"       "The activity of NH3" "0 - 1 fraction"
+state    real   industry_nh3       ij       misc      1        Z     i01rh01d  "INDUSTRY_NH3"    "The activity of NH3" "0 - 1 fraction"
+state    real   residential_nh3    ij       misc      1        Z     i01rh01d  "RESIDENTIAL_NH3" "The activity of NH3" "0 - 1 fraction"
+state    real   transport_nh3      ij       misc      1        Z     i01rh01d  "TRANSPORT_NH3"   "The activity of NH3" "0 - 1 fraction"
+
 # Input for GOCART: Background chemistry, erodible surface emissions map
 state    real  backg_oh       ikj     misc        1         -      i08r    "BACKG_OH"       "Background OH for Aerosol-GOcart option"       "volume mixing ratio"
 state    real  backg_h2o2     ikj     misc        1         -      i08r    "BACKG_H2O2"     "Background H2O2 for Aerosol-GOcart option"     "volume mixing ratio"
@@ -3832,6 +3843,10 @@ rconfig   integer     emiss_opt           namelist,chem          max_domains    
 rconfig   integer     emiss_opt_vol       namelist,chem          max_domains    0       rh    "emiss_opt_vol"       ""      ""
 rconfig   integer     dust_opt            namelist,chem          1              0       rh    "dust_opt"            ""      ""
 rconfig   integer     dust_schme          namelist,chem          1              2       rh    "dust_schme"       ""      ""
+
+#renchuanhua rch added
+rconfig   integer     nh3emis_opt         namelist,chem          1              0       rh    "nh3emis_opt"         ""      ""
+
 rconfig   integer     dmsemis_opt         namelist,chem          1              0       rh    "dmsemis_opt"         ""      ""
 rconfig   integer     seas_opt            namelist,chem          1              0       rh    "seas_opt"            ""      ""
 rconfig   integer     bio_emiss_opt       namelist,chem          max_domains    0       rh    "bio_emiss_opt"       ""      ""
@@ -3904,8 +3919,9 @@ rconfig   integer   mosaic_aerchem_optaa  namelist,chem          1              
 rconfig   real        af_lambda_start     namelist,chem          max_domains    200.    rh    "start wavelength for AF output" "nm"      ""
 rconfig   real        af_lambda_end       namelist,chem          max_domains    340.    rh    "end   wavelength for AF output" "nm"      ""
 # Control for ISORROPIA in MADE/SORGAM schemes
+
 rconfig   logical     do_isorropia        namelist,chem          1              .false. rh    "flag to use ISORROPIA"
-rconfig   logical     do_n2o5het          namelsit,chem          1              .false. rh    "flag to do n2o5 heterogenous chemistry via chlorine pathway"
+rconfig   logical     do_n2o5het          namelist,chem          1              .false. rh    "flag to do n2o5 heterogenous chemistry via chlorine pathway"
 
 # CHEMISTRY PACKAGE DEFINITIONS
 #
@@ -4084,6 +4100,10 @@ package   gunther1      bio_emiss_opt==1             -             -
 package   beis314       bio_emiss_opt==2             -             -
 package   megan2        bio_emiss_opt==3             -             state:mebio_isop,mebio_apin,mebio_bcar,mebio_acet,mebio_mbo,mebio_no,msebio_isop,mlai,pftp_bt,pftp_nt,pftp_sb,pftp_hb,mtsa,mswdown,EFmegan
 package   megan2_clm    bio_emiss_opt==4   
+
+# renchuanhua rch added for online nh3 emissions
+package   offline       nh3emis_opt==0              -              -
+package   online        nh3emis_opt==1              -              state:EFnh3,agrisoil_nh3,fertilizer_nh3,freeinten_nh3,graze_nh3,industry_nh3,residential_nh3,transport_nh3;emis_ant:e_nh3
 
 # Biospheric CO2 and CH4 emissions
 package   ebioco2       bio_emiss_opt==16            -             state:rad_vprm,lambda_vprm,alpha_vprm,resp_vprm;vprm_in:vegfra_vprm,evi,evi_min,evi_max,lswi,lswi_max,lswi_min;eghg_bio:ebio_gee,ebio_res,ebio_co2oce

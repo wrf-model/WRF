@@ -37,6 +37,7 @@
    USE module_mozcart_wetscav, only : wetscav_mozcart_init
    USE module_aerosols_sorgam
    USE module_aerosols_soa_vbs, only: aerosols_soa_vbs_init
+   USE module_aerosols_soa_vbs_het, only: aerosols_soa_vbs_het_init
    USE module_aerosols_sorgam_vbs, only: aerosols_sorgam_vbs_init
    USE module_dep_simple
    USE module_data_gocart_dust
@@ -65,7 +66,7 @@
    USE module_ctrans_grell, only: conv_tr_wetscav_init
 
 !!! TUCCELLA (BUG)
-   USE module_prep_wetscav_sorgam, only: aerosols_sorgam_init_aercld_ptrs, aerosols_soa_vbs_init_aercld_ptrs 
+   USE module_prep_wetscav_sorgam, only: aerosols_sorgam_init_aercld_ptrs, aerosols_soa_vbs_init_aercld_ptrs
 
 !!CYY
    USE module_model_constants, only:t0
@@ -120,7 +121,7 @@
                                z_at_w,t,p,alt,convfac
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme, num_chem ) ,       &
           INTENT(INOUT   ) ::                                        &
-                              chem 
+                              chem
    REAL,  DIMENSION( ims:ime , 1:kemit , jms:jme, num_emis_ant ) ,       &
           INTENT(INOUT   ) ::                                        &
                               emis_ant
@@ -137,7 +138,7 @@
    integer, intent(out) :: stepbioe,stepphot,stepchem,stepfirepl
    TYPE (grid_config_rec_type) , INTENT (in) ::     config_flags
    TYPE(domain) ,             INTENT (inout) ::     grid
-   
+
    REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: si_zsigf, si_zsig
 
 !
@@ -169,7 +170,7 @@ call wrf_message("**************************************************************
 
     numgas = get_last_gas(config_flags%chem_opt)
     numgas_out = numgas
- 
+
    chem_select: SELECT CASE(config_flags%chem_opt)
      CASE (GOCART_SIMPLE)
        CALL wrf_debug(15,'calling only gocart aerosols driver from chem_driver')
@@ -337,8 +338,8 @@ call wrf_message("**************************************************************
          call wrf_error_fatal("ERROR: wet scavenging option requires chem_opt = 8 through 13 or 31 to 36 or 41 to 42 or 109 or 503 or 504 or 601 or 611 to function.")
        endif
        if ( config_flags%mp_physics /= 2 .and. config_flags%mp_physics /= 10 .and. config_flags%mp_physics /= 11  &
-            .and. config_flags%mp_physics /= 17 .and. config_flags%mp_physics /= 18 .and. config_flags%mp_physics /= 22) then
-         call wrf_error_fatal("ERROR: wet scavenging option requires mp_phys = 2 (Lin et al.) or 10 (Morrison) or 11 (CAMMGMP) or 17/18/22 NSSL_2mom to function.")
+            .and. .not. ( config_flags%mp_physics == 18 .and. config_flags%nssl_2moment_on == 1 ) ) then
+         call wrf_error_fatal("ERROR: wet scavenging option requires mp_phys = 2 (Lin et al.) or 10 (Morrison) or 11 (CAMMGMP) or 18 NSSL_2mom to function.")
        endif
      elseif( id == 1 ) then
        if ( config_flags%mp_physics /= 6 .and. config_flags%mp_physics /= 8 .and. config_flags%mp_physics /= 10 .and. config_flags%mp_physics /= 17  &
@@ -375,8 +376,8 @@ call wrf_message("**************************************************************
    !BSINGH - kfcup schme only works with Mosaic aqueoue packages:
    ! *** NOTE ***
    ! KFCUP should in theory work with any chem_opt package that uses MOSAIC and has cloud-borne aerosols (*_aq*).
-   ! However, it was only tested with chem_opt=203 (saprc99_mosaic_8bin_vbs2_aq_kpp) 
-   ! during implementation into WRF-Chem in April 2017 at PNNL.   
+   ! However, it was only tested with chem_opt=203 (saprc99_mosaic_8bin_vbs2_aq_kpp)
+   ! during implementation into WRF-Chem in April 2017 at PNNL.
    if ( config_flags%cu_physics == 10)  then
       if(  config_flags%chem_opt /= 9   .and.  config_flags%chem_opt /= 10  .and. &
            config_flags%chem_opt /= 32  .and.  config_flags%chem_opt /= 34  .and.  &
@@ -426,6 +427,12 @@ call wrf_message("**************************************************************
       call wrf_error_fatal( trim(message_txt) )
    endif
 
+   ! osipov check that ddflx & ddlen has correct dim size (chem_opt=106 and such)
+   if ( config_flags%diagnostic_dep .EQ. 1 .AND. config_flags%ne_area .LT. num_chem ) then
+      write(message_txt,'(''ERROR: SORGAM diagnostic_dep 1 requires ne_area('',i6,'') >= num_chem('',i6,'')'')') config_flags%ne_area,num_chem
+      call wrf_error_fatal( trim(message_txt) )
+   endif
+
     IF ( config_flags%chem_opt == 0 .AND. config_flags%aer_ra_feedback .NE. 0 ) THEN
 !       config_flags%aer_ra_feedback = 0
         call wrf_error_fatal(" ERROR: CHEM_INIT: FOR CHEM_OPT = 0, AER_RA_FEEDBACK MUST = 0 ")
@@ -449,7 +456,7 @@ call wrf_message("**************************************************************
         call wrf_error_fatal(" ERROR: CHEM_INIT: MUST HAVE AEROSOLS TO INCLUDE AEROSOL RADIATION FEEDBACK. SET AER_RA_FEEDBACK = 0 ")
     ENDIF
 
-    if ( config_flags%n2o5_hetchem == 1 )then 
+    if ( config_flags%n2o5_hetchem == 1 )then
         if( (config_flags%chem_opt >= 7   .AND. config_flags%chem_opt <= 10)  .OR. &
             (config_flags%chem_opt >= 31  .AND. config_flags%chem_opt <= 34)  .OR. &
              config_flags%chem_opt == 170 .OR.  config_flags%chem_opt == 198  .OR. &
@@ -488,7 +495,7 @@ call wrf_message("**************************************************************
       ENDIF
     ENDIF
 !--
-    
+
 !-- Load dgnum arrays when restart is active
 IF ( config_flags%restart ) THEN
        do j=jts,jte
@@ -497,7 +504,7 @@ IF ( config_flags%restart ) THEN
                 dgnum4d(i, k, j, 1) = dgnum_a1(i, k, j)
                 dgnum4d(i, k, j, 2) = dgnum_a2(i, k, j)
                 dgnum4d(i, k, j, 3) = dgnum_a3(i, k, j)
-                
+
                 dgnumwet4d(i, k, j, 1) = dgnumwet_a1(i, k, j)
                 dgnumwet4d(i, k, j, 2) = dgnumwet_a2(i, k, j)
                 dgnumwet4d(i, k, j, 3) = dgnumwet_a3(i, k, j)
@@ -718,7 +725,7 @@ CASE(GOCARTRACM_KPP,RACM_KPP,RACMPM_KPP,RACMSORG_KPP,RACM_MIM_KPP,RACM_ESRLSORG_
           do j=jts,jte
              do k=kts,kte
                 do i=its,ite
-                   chem(i,k,j,p_co2)=400. 
+                   chem(i,k,j,p_co2)=400.
                    chem(i,k,j,p_ch4)=1.7
                    chem(i,k,j,p_ete)=chem(i,k,j,p_olt)
                    chem(i,k,j,p_ete)=epsilc
@@ -802,7 +809,7 @@ CASE(GOCARTRACM_KPP,RACM_KPP,RACMPM_KPP,RACMSORG_KPP,RACM_MIM_KPP,RACM_ESRLSORG_
                 enddo
              enddo
           enddo
-        endif 
+        endif
         CASE (MOZART_MOSAIC_4BIN_KPP, MOZART_MOSAIC_4BIN_AQ_KPP)
         grid%vbs_nbin=0
         if (config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP) then
@@ -921,7 +928,7 @@ CASE(GOCARTRACM_KPP,RACM_KPP,RACMPM_KPP,RACMSORG_KPP,RACM_MIM_KPP,RACM_ESRLSORG_
          if (p_smpa_a02.gt.1)       chem(i,k,j,p_smpa_a02)=1.e-16
          if (p_smpa_a03.gt.1)       chem(i,k,j,p_smpa_a03)=1.e-16
          if (p_smpa_a04.gt.1)       chem(i,k,j,p_smpa_a04)=1.e-16
-         
+
          if (p_smpbb_a01.gt.1)       chem(i,k,j,p_smpbb_a01)=1.e-16
          if (p_smpbb_a02.gt.1)       chem(i,k,j,p_smpbb_a02)=1.e-16
          if (p_smpbb_a03.gt.1)       chem(i,k,j,p_smpbb_a03)=1.e-16
@@ -1039,7 +1046,7 @@ CASE(GOCARTRACM_KPP,RACM_KPP,RACMPM_KPP,RACMSORG_KPP,RACM_MIM_KPP,RACM_ESRLSORG_
              enddo
           enddo
        endif
-       
+
        !BSINGH(04/03/2014): Added 8 bin vbs non-aq pakage
     CASE (SAPRC99_MOSAIC_8BIN_VBS2_KPP)
        if(config_flags%chem_in_opt == 0 )then
@@ -1144,8 +1151,8 @@ CASE(GOCARTRACM_KPP,RACM_KPP,RACMPM_KPP,RACMSORG_KPP,RACM_MIM_KPP,RACM_ESRLSORG_
                    if (p_sesq.gt.1)    chem(i,k,j,p_sesq)=0.0
                    if (p_aro1.gt.1)    chem(i,k,j,p_aro1)=0.0
                    if (p_aro2.gt.1)    chem(i,k,j,p_aro2)=0.0
-                   
-                   
+
+
                    if (p_pcg1_b_c_a01.gt.1)    chem(i,k,j,p_pcg1_b_c_a01)=0.0
                    if (p_pcg1_b_o_a01.gt.1)    chem(i,k,j,p_pcg1_b_o_a01)=0.0
                    if (p_opcg1_b_c_a01.gt.1)    chem(i,k,j,p_opcg1_b_c_a01)=0.0
@@ -1164,8 +1171,8 @@ CASE(GOCARTRACM_KPP,RACM_KPP,RACMPM_KPP,RACMSORG_KPP,RACM_MIM_KPP,RACM_ESRLSORG_
                    if (p_biog2_o_a01.gt.1)    chem(i,k,j,p_biog2_o_a01)=0.0
                    if (p_ant3_c_a01.gt.1)    chem(i,k,j,p_ant3_c_a01)=0.0
                    if (p_ant4_c_a01.gt.1)    chem(i,k,j,p_ant4_c_a01)=0.0
-                   
-                   
+
+
                    if (p_pcg1_b_c_a02.gt.1)    chem(i,k,j,p_pcg1_b_c_a02)=0.0
                    if (p_pcg1_b_o_a02.gt.1)    chem(i,k,j,p_pcg1_b_o_a02)=0.0
                    if (p_opcg1_b_c_a02.gt.1)    chem(i,k,j,p_opcg1_b_c_a02)=0.0
@@ -1184,9 +1191,9 @@ CASE(GOCARTRACM_KPP,RACM_KPP,RACMPM_KPP,RACMSORG_KPP,RACM_MIM_KPP,RACM_ESRLSORG_
                    if (p_biog2_o_a02.gt.1)    chem(i,k,j,p_biog2_o_a02)=0.0
                    if (p_ant3_c_a02.gt.1)    chem(i,k,j,p_ant3_c_a02)=0.0
                    if (p_ant4_c_a02.gt.1)    chem(i,k,j,p_ant4_c_a02)=0.0
-                   
-                   
-                   
+
+
+
                    if (p_pcg1_b_c_a03.gt.1)    chem(i,k,j,p_pcg1_b_c_a03)=0.0
                    if (p_pcg1_b_o_a03.gt.1)    chem(i,k,j,p_pcg1_b_o_a03)=0.0
                    if (p_opcg1_b_c_a03.gt.1)    chem(i,k,j,p_opcg1_b_c_a03)=0.0
@@ -1205,8 +1212,8 @@ CASE(GOCARTRACM_KPP,RACM_KPP,RACMPM_KPP,RACMSORG_KPP,RACM_MIM_KPP,RACM_ESRLSORG_
                    if (p_biog2_o_a03.gt.1)    chem(i,k,j,p_biog2_o_a03)=0.0
                    if (p_ant3_c_a03.gt.1)    chem(i,k,j,p_ant3_c_a03)=0.0
                    if (p_ant4_c_a03.gt.1)    chem(i,k,j,p_ant4_c_a03)=0.0
-                   
-                   
+
+
                    if (p_pcg1_b_c_a04.gt.1)    chem(i,k,j,p_pcg1_b_c_a04)=0.0
                    if (p_pcg1_b_o_a04.gt.1)    chem(i,k,j,p_pcg1_b_o_a04)=0.0
                    if (p_opcg1_b_c_a04.gt.1)    chem(i,k,j,p_opcg1_b_c_a04)=0.0
@@ -1225,8 +1232,8 @@ CASE(GOCARTRACM_KPP,RACM_KPP,RACMPM_KPP,RACMSORG_KPP,RACM_MIM_KPP,RACM_ESRLSORG_
                    if (p_biog2_o_a04.gt.1)    chem(i,k,j,p_biog2_o_a04)=0.0
                    if (p_ant3_c_a04.gt.1)    chem(i,k,j,p_ant3_c_a04)=0.0
                    if (p_ant4_c_a04.gt.1)    chem(i,k,j,p_ant4_c_a04)=0.0
-                   
-                   
+
+
                    if (p_pcg1_b_c_a05.gt.1)    chem(i,k,j,p_pcg1_b_c_a05)=0.0
                    if (p_pcg1_b_o_a05.gt.1)    chem(i,k,j,p_pcg1_b_o_a05)=0.0
                    if (p_opcg1_b_c_a05.gt.1)    chem(i,k,j,p_opcg1_b_c_a05)=0.0
@@ -1245,8 +1252,8 @@ CASE(GOCARTRACM_KPP,RACM_KPP,RACMPM_KPP,RACMSORG_KPP,RACM_MIM_KPP,RACM_ESRLSORG_
                    if (p_biog2_o_a05.gt.1)    chem(i,k,j,p_biog2_o_a05)=0.0
                    if (p_ant3_c_a05.gt.1)    chem(i,k,j,p_ant3_c_a05)=0.0
                    if (p_ant4_c_a05.gt.1)    chem(i,k,j,p_ant4_c_a05)=0.0
-                   
-                   
+
+
                    if (p_pcg1_b_c_a06.gt.1)    chem(i,k,j,p_pcg1_b_c_a06)=0.0
                    if (p_pcg1_b_o_a06.gt.1)    chem(i,k,j,p_pcg1_b_o_a06)=0.0
                    if (p_opcg1_b_c_a06.gt.1)    chem(i,k,j,p_opcg1_b_c_a06)=0.0
@@ -1265,8 +1272,8 @@ CASE(GOCARTRACM_KPP,RACM_KPP,RACMPM_KPP,RACMSORG_KPP,RACM_MIM_KPP,RACM_ESRLSORG_
                    if (p_biog2_o_a06.gt.1)    chem(i,k,j,p_biog2_o_a06)=0.0
                    if (p_ant3_c_a06.gt.1)    chem(i,k,j,p_ant3_c_a06)=0.0
                    if (p_ant4_c_a06.gt.1)    chem(i,k,j,p_ant4_c_a06)=0.0
-                   
-                   
+
+
                    if (p_pcg1_b_c_a07.gt.1)    chem(i,k,j,p_pcg1_b_c_a07)=0.0
                    if (p_pcg1_b_o_a07.gt.1)    chem(i,k,j,p_pcg1_b_o_a07)=0.0
                    if (p_opcg1_b_c_a07.gt.1)    chem(i,k,j,p_opcg1_b_c_a07)=0.0
@@ -1285,8 +1292,8 @@ CASE(GOCARTRACM_KPP,RACM_KPP,RACMPM_KPP,RACMSORG_KPP,RACM_MIM_KPP,RACM_ESRLSORG_
                    if (p_biog2_o_a07.gt.1)    chem(i,k,j,p_biog2_o_a07)=0.0
                    if (p_ant3_c_a07.gt.1)    chem(i,k,j,p_ant3_c_a07)=0.0
                    if (p_ant4_c_a07.gt.1)    chem(i,k,j,p_ant4_c_a07)=0.0
-                   
-                   
+
+
                    if (p_pcg1_b_c_a08.gt.1)    chem(i,k,j,p_pcg1_b_c_a08)=0.0
                    if (p_pcg1_b_o_a08.gt.1)    chem(i,k,j,p_pcg1_b_o_a08)=0.0
                    if (p_opcg1_b_c_a08.gt.1)    chem(i,k,j,p_opcg1_b_c_a08)=0.0
@@ -1305,19 +1312,19 @@ CASE(GOCARTRACM_KPP,RACM_KPP,RACMPM_KPP,RACMSORG_KPP,RACM_MIM_KPP,RACM_ESRLSORG_
                    if (p_biog2_o_a08.gt.1)    chem(i,k,j,p_biog2_o_a08)=0.0
                    if (p_ant3_c_a08.gt.1)    chem(i,k,j,p_ant3_c_a08)=0.0
                    if (p_ant4_c_a08.gt.1)    chem(i,k,j,p_ant4_c_a08)=0.0
-                   
-                   
-                   
+
+
+
                 enddo
              enddo
           enddo
        endif
        !BSINGH(04/03/2014):ENDS
-       
-       
-       !BSINGH(12/03/2013) - Added case statement for SAPRC 8 bin 
+
+
+       !BSINGH(12/03/2013) - Added case statement for SAPRC 8 bin
     CASE (SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP )!BSINGH (12/11/13): Got rid of SAPRC99_MOSAIC_4BIN_VBS2_AQ_KPP and SAPRC99_MOSAIC_4BIN_VBS2_KPP
-       
+
        if(config_flags%chem_in_opt == 1 ) grid%vbs_nbin=2
        if(config_flags%chem_in_opt == 0 )then
           grid%vbs_nbin=2
@@ -1410,7 +1417,7 @@ CASE(GOCARTRACM_KPP,RACM_KPP,RACMPM_KPP,RACMSORG_KPP,RACM_MIM_KPP,RACM_ESRLSORG_
                    if (p_biog2_o.gt.1)         chem(i,k,j,p_biog2_o)=0.0
                    if (p_biog3_o.gt.1)         chem(i,k,j,p_biog3_o)=0.0
                    if (p_biog4_o.gt.1)         chem(i,k,j,p_biog4_o)=0.0
-                   
+
                    if (p_pcg1_b_c_a01.gt.1)    chem(i,k,j,p_pcg1_b_c_a01)=0.0
                    if (p_pcg1_b_o_a01.gt.1)    chem(i,k,j,p_pcg1_b_o_a01)=0.0
                    if (p_opcg1_b_c_a01.gt.1)   chem(i,k,j,p_opcg1_b_c_a01)=0.0
@@ -1421,7 +1428,7 @@ CASE(GOCARTRACM_KPP,RACM_KPP,RACMPM_KPP,RACMSORG_KPP,RACM_MIM_KPP,RACM_ESRLSORG_
                    if (p_opcg1_f_o_a01.gt.1)   chem(i,k,j,p_opcg1_f_o_a01)=0.0
                    if (p_ant1_c_a01.gt.1)      chem(i,k,j,p_ant1_c_a01)=0.0
                    if (p_biog1_c_a01.gt.1)     chem(i,k,j,p_biog1_c_a01)=0.0
-                   
+
                    if (p_pcg1_b_c_a02.gt.1)    chem(i,k,j,p_pcg1_b_c_a02)=0.0
                    if (p_pcg1_b_o_a02.gt.1)    chem(i,k,j,p_pcg1_b_o_a02)=0.0
                    if (p_opcg1_b_c_a02.gt.1)   chem(i,k,j,p_opcg1_b_c_a02)=0.0
@@ -1432,7 +1439,7 @@ CASE(GOCARTRACM_KPP,RACM_KPP,RACMPM_KPP,RACMSORG_KPP,RACM_MIM_KPP,RACM_ESRLSORG_
                    if (p_opcg1_f_o_a02.gt.1)   chem(i,k,j,p_opcg1_f_o_a02)=0.0
                    if (p_ant1_c_a02.gt.1)      chem(i,k,j,p_ant1_c_a02)=0.0
                    if (p_biog1_c_a02.gt.1)     chem(i,k,j,p_biog1_c_a02)=0.0
-                   
+
                    if (p_pcg1_b_c_a03.gt.1)    chem(i,k,j,p_pcg1_b_c_a03)=0.0
                    if (p_pcg1_b_o_a03.gt.1)    chem(i,k,j,p_pcg1_b_o_a03)=0.0
                    if (p_opcg1_b_c_a03.gt.1)   chem(i,k,j,p_opcg1_b_c_a03)=0.0
@@ -1443,7 +1450,7 @@ CASE(GOCARTRACM_KPP,RACM_KPP,RACMPM_KPP,RACMSORG_KPP,RACM_MIM_KPP,RACM_ESRLSORG_
                    if (p_opcg1_f_o_a03.gt.1)   chem(i,k,j,p_opcg1_f_o_a03)=0.0
                    if (p_ant1_c_a03.gt.1)      chem(i,k,j,p_ant1_c_a03)=0.0
                    if (p_biog1_c_a03.gt.1)     chem(i,k,j,p_biog1_c_a03)=0.0
-                   
+
                    if (p_pcg1_b_c_a04.gt.1)    chem(i,k,j,p_pcg1_b_c_a04)=0.0
                    if (p_pcg1_b_o_a04.gt.1)    chem(i,k,j,p_pcg1_b_o_a04)=0.0
                    if (p_opcg1_b_c_a04.gt.1)   chem(i,k,j,p_opcg1_b_c_a04)=0.0
@@ -1454,7 +1461,7 @@ CASE(GOCARTRACM_KPP,RACM_KPP,RACMPM_KPP,RACMSORG_KPP,RACM_MIM_KPP,RACM_ESRLSORG_
                    if (p_opcg1_f_o_a04.gt.1)   chem(i,k,j,p_opcg1_f_o_a04)=0.0
                    if (p_ant1_c_a04.gt.1)      chem(i,k,j,p_ant1_c_a04)=0.0
                    if (p_biog1_c_a04.gt.1)     chem(i,k,j,p_biog1_c_a04)=0.0
-                   
+
                    if (p_pcg1_b_c_a05.gt.1)    chem(i,k,j,p_pcg1_b_c_a05)=0.0
                    if (p_pcg1_b_o_a05.gt.1)    chem(i,k,j,p_pcg1_b_o_a05)=0.0
                    if (p_opcg1_b_c_a05.gt.1)   chem(i,k,j,p_opcg1_b_c_a05)=0.0
@@ -1465,7 +1472,7 @@ CASE(GOCARTRACM_KPP,RACM_KPP,RACMPM_KPP,RACMSORG_KPP,RACM_MIM_KPP,RACM_ESRLSORG_
                    if (p_opcg1_f_o_a05.gt.1)   chem(i,k,j,p_opcg1_f_o_a05)=0.0
                    if (p_ant1_c_a05.gt.1)      chem(i,k,j,p_ant1_c_a05)=0.0
                    if (p_biog1_c_a05.gt.1)     chem(i,k,j,p_biog1_c_a05)=0.0
-                   
+
                    if (p_pcg1_b_c_a06.gt.1)    chem(i,k,j,p_pcg1_b_c_a06)=0.0
                    if (p_pcg1_b_o_a06.gt.1)    chem(i,k,j,p_pcg1_b_o_a06)=0.0
                    if (p_opcg1_b_c_a06.gt.1)   chem(i,k,j,p_opcg1_b_c_a06)=0.0
@@ -1476,7 +1483,7 @@ CASE(GOCARTRACM_KPP,RACM_KPP,RACMPM_KPP,RACMSORG_KPP,RACM_MIM_KPP,RACM_ESRLSORG_
                    if (p_opcg1_f_o_a06.gt.1)   chem(i,k,j,p_opcg1_f_o_a06)=0.0
                    if (p_ant1_c_a06.gt.1)      chem(i,k,j,p_ant1_c_a06)=0.0
                    if (p_biog1_c_a06.gt.1)     chem(i,k,j,p_biog1_c_a06)=0.0
-                   
+
                    if (p_pcg1_b_c_a07.gt.1)    chem(i,k,j,p_pcg1_b_c_a07)=0.0
                    if (p_pcg1_b_o_a07.gt.1)    chem(i,k,j,p_pcg1_b_o_a07)=0.0
                    if (p_opcg1_b_c_a07.gt.1)   chem(i,k,j,p_opcg1_b_c_a07)=0.0
@@ -1487,7 +1494,7 @@ CASE(GOCARTRACM_KPP,RACM_KPP,RACMPM_KPP,RACMSORG_KPP,RACM_MIM_KPP,RACM_ESRLSORG_
                    if (p_opcg1_f_o_a07.gt.1)   chem(i,k,j,p_opcg1_f_o_a07)=0.0
                    if (p_ant1_c_a07.gt.1)      chem(i,k,j,p_ant1_c_a07)=0.0
                    if (p_biog1_c_a07.gt.1)     chem(i,k,j,p_biog1_c_a07)=0.0
-                   
+
                    if (p_pcg1_b_c_a08.gt.1)    chem(i,k,j,p_pcg1_b_c_a08)=0.0
                    if (p_pcg1_b_o_a08.gt.1)    chem(i,k,j,p_pcg1_b_o_a08)=0.0
                    if (p_opcg1_b_c_a08.gt.1)   chem(i,k,j,p_opcg1_b_c_a08)=0.0
@@ -1498,9 +1505,9 @@ CASE(GOCARTRACM_KPP,RACM_KPP,RACMPM_KPP,RACMSORG_KPP,RACM_MIM_KPP,RACM_ESRLSORG_
                    if (p_opcg1_f_o_a08.gt.1)   chem(i,k,j,p_opcg1_f_o_a08)=0.0
                    if (p_ant1_c_a08.gt.1)      chem(i,k,j,p_ant1_c_a08)=0.0
                    if (p_biog1_c_a08.gt.1)     chem(i,k,j,p_biog1_c_a08)=0.0
-                   
-                   
-                   
+
+
+
                    if (p_pcg1_b_c_cw01.gt.1)   chem(i,k,j,p_pcg1_b_c_cw01)=0.0
                    if (p_pcg1_b_o_cw01.gt.1)   chem(i,k,j,p_pcg1_b_o_cw01)=0.0
                    if (p_opcg1_b_c_cw01.gt.1)  chem(i,k,j,p_opcg1_b_c_cw01)=0.0
@@ -1511,7 +1518,7 @@ CASE(GOCARTRACM_KPP,RACM_KPP,RACMPM_KPP,RACMSORG_KPP,RACM_MIM_KPP,RACM_ESRLSORG_
                    if (p_opcg1_f_o_cw01.gt.1)  chem(i,k,j,p_opcg1_f_o_cw01)=0.0
                    if (p_ant1_c_cw01.gt.1)     chem(i,k,j,p_ant1_c_cw01)=0.0
                    if (p_biog1_c_cw01.gt.1)    chem(i,k,j,p_biog1_c_cw01)=0.0
-                   
+
                    if (p_pcg1_b_c_cw02.gt.1)   chem(i,k,j,p_pcg1_b_c_cw02)=0.0
                    if (p_pcg1_b_o_cw02.gt.1)   chem(i,k,j,p_pcg1_b_o_cw02)=0.0
                    if (p_opcg1_b_c_cw02.gt.1)  chem(i,k,j,p_opcg1_b_c_cw02)=0.0
@@ -1522,7 +1529,7 @@ CASE(GOCARTRACM_KPP,RACM_KPP,RACMPM_KPP,RACMSORG_KPP,RACM_MIM_KPP,RACM_ESRLSORG_
                    if (p_opcg1_f_o_cw02.gt.1)  chem(i,k,j,p_opcg1_f_o_cw02)=0.0
                    if (p_ant1_c_cw02.gt.1)     chem(i,k,j,p_ant1_c_cw02)=0.0
                    if (p_biog1_c_cw02.gt.1)    chem(i,k,j,p_biog1_c_cw02)=0.0
-                   
+
                    if (p_pcg1_b_c_cw03.gt.1)   chem(i,k,j,p_pcg1_b_c_cw03)=0.0
                    if (p_pcg1_b_o_cw03.gt.1)   chem(i,k,j,p_pcg1_b_o_cw03)=0.0
                    if (p_opcg1_b_c_cw03.gt.1)  chem(i,k,j,p_opcg1_b_c_cw03)=0.0
@@ -1533,7 +1540,7 @@ CASE(GOCARTRACM_KPP,RACM_KPP,RACMPM_KPP,RACMSORG_KPP,RACM_MIM_KPP,RACM_ESRLSORG_
                    if (p_opcg1_f_o_cw03.gt.1)  chem(i,k,j,p_opcg1_f_o_cw03)=0.0
                    if (p_ant1_c_cw03.gt.1)     chem(i,k,j,p_ant1_c_cw03)=0.0
                    if (p_biog1_c_cw03.gt.1)    chem(i,k,j,p_biog1_c_cw03)=0.0
-                   
+
                    if (p_pcg1_b_c_cw04.gt.1)   chem(i,k,j,p_pcg1_b_c_cw04)=0.0
                    if (p_pcg1_b_o_cw04.gt.1)   chem(i,k,j,p_pcg1_b_o_cw04)=0.0
                    if (p_opcg1_b_c_cw04.gt.1)  chem(i,k,j,p_opcg1_b_c_cw04)=0.0
@@ -1544,7 +1551,7 @@ CASE(GOCARTRACM_KPP,RACM_KPP,RACMPM_KPP,RACMSORG_KPP,RACM_MIM_KPP,RACM_ESRLSORG_
                    if (p_opcg1_f_o_cw04.gt.1)  chem(i,k,j,p_opcg1_f_o_cw04)=0.0
                    if (p_ant1_c_cw04.gt.1)     chem(i,k,j,p_ant1_c_cw04)=0.0
                    if (p_biog1_c_cw04.gt.1)    chem(i,k,j,p_biog1_c_cw04)=0.0
-                   
+
                    if (p_pcg1_b_c_cw05.gt.1)   chem(i,k,j,p_pcg1_b_c_cw05)=0.0
                    if (p_pcg1_b_o_cw05.gt.1)   chem(i,k,j,p_pcg1_b_o_cw05)=0.0
                    if (p_opcg1_b_c_cw05.gt.1)  chem(i,k,j,p_opcg1_b_c_cw05)=0.0
@@ -1555,7 +1562,7 @@ CASE(GOCARTRACM_KPP,RACM_KPP,RACMPM_KPP,RACMSORG_KPP,RACM_MIM_KPP,RACM_ESRLSORG_
                    if (p_opcg1_f_o_cw05.gt.1)  chem(i,k,j,p_opcg1_f_o_cw05)=0.0
                    if (p_ant1_c_cw05.gt.1)     chem(i,k,j,p_ant1_c_cw05)=0.0
                    if (p_biog1_c_cw05.gt.1)    chem(i,k,j,p_biog1_c_cw05)=0.0
-                   
+
                    if (p_pcg1_b_c_cw06.gt.1)   chem(i,k,j,p_pcg1_b_c_cw06)=0.0
                    if (p_pcg1_b_o_cw06.gt.1)   chem(i,k,j,p_pcg1_b_o_cw06)=0.0
                    if (p_opcg1_b_c_cw06.gt.1)  chem(i,k,j,p_opcg1_b_c_cw06)=0.0
@@ -1566,7 +1573,7 @@ CASE(GOCARTRACM_KPP,RACM_KPP,RACMPM_KPP,RACMSORG_KPP,RACM_MIM_KPP,RACM_ESRLSORG_
                    if (p_opcg1_f_o_cw06.gt.1)  chem(i,k,j,p_opcg1_f_o_cw06)=0.0
                    if (p_ant1_c_cw06.gt.1)     chem(i,k,j,p_ant1_c_cw06)=0.0
                    if (p_biog1_c_cw06.gt.1)    chem(i,k,j,p_biog1_c_cw06)=0.0
-                   
+
                    if (p_pcg1_b_c_cw07.gt.1)   chem(i,k,j,p_pcg1_b_c_cw07)=0.0
                    if (p_pcg1_b_o_cw07.gt.1)   chem(i,k,j,p_pcg1_b_o_cw07)=0.0
                    if (p_opcg1_b_c_cw07.gt.1)  chem(i,k,j,p_opcg1_b_c_cw07)=0.0
@@ -1577,7 +1584,7 @@ CASE(GOCARTRACM_KPP,RACM_KPP,RACMPM_KPP,RACMSORG_KPP,RACM_MIM_KPP,RACM_ESRLSORG_
                    if (p_opcg1_f_o_cw07.gt.1)  chem(i,k,j,p_opcg1_f_o_cw07)=0.0
                    if (p_ant1_c_cw07.gt.1)     chem(i,k,j,p_ant1_c_cw07)=0.0
                    if (p_biog1_c_cw07.gt.1)    chem(i,k,j,p_biog1_c_cw07)=0.0
-                   
+
                    if (p_pcg1_b_c_cw08.gt.1)   chem(i,k,j,p_pcg1_b_c_cw08)=0.0
                    if (p_pcg1_b_o_cw08.gt.1)   chem(i,k,j,p_pcg1_b_o_cw08)=0.0
                    if (p_opcg1_b_c_cw08.gt.1)  chem(i,k,j,p_opcg1_b_c_cw08)=0.0
@@ -1611,7 +1618,7 @@ CASE(GOCARTRACM_KPP,RACM_KPP,RACMPM_KPP,RACMSORG_KPP,RACM_MIM_KPP,RACM_ESRLSORG_
                               ids,ide,jds,jde,kds,kde,its,ite,jts,jte,kts,kte)
 
    ENDIF
-   
+
 !! Initialize some greenhouse gas species for 16th and 17th chemistry options:
 !! CO2 mixing ratios for the background GHG tracers are set as a constant value.
 !! Some spin-up is necessary to get spatial variability right!
@@ -1776,7 +1783,7 @@ ENDIF ghg_block
                       gmtp=mod(xhour,24.)
                       gmtp=gmtp+xmin/60.
                       CALL szangle(1, 1, julday, gmtp, sza, cosszax,xlonn,rlat)
-                      TCOSZ(i,j)=TCOSZ(I,J)+cosszax(1,1) 
+                      TCOSZ(i,j)=TCOSZ(I,J)+cosszax(1,1)
                       if(cosszax(1,1).gt.0.)ttday(i,j)=ttday(i,j)+dt
                     enddo
 !                if(i.eq.19.and.j.eq.19)write(0,*)'in cheminit'
@@ -1847,7 +1854,7 @@ ENDIF ghg_block
         endif
         endif
         chem(its:ite,kts:min(kte,kde-1),jts:jte,:)=max(chem(its:ite,kts:min(kte,kde-1),jts:jte,:),epsilc)
-    CASE (RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP,RACM_SOA_VBS_HET_KPP)
+    CASE (RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP)
        CALL wrf_debug(15,'call MADE/SOA_VBS aerosols initialization')
 
        call aerosols_soa_vbs_init(chem,convfac,z_at_w,                &
@@ -1859,8 +1866,37 @@ ENDIF ghg_block
 
 !!!TUCCELLA (BUG, before it was called in module_aerosols_soa_vbs.F)
        ! initialize pointers used by aerosol-cloud-interaction routines
-        call aerosols_soa_vbs_init_aercld_ptrs( &
-           num_chem, is_aerosol, config_flags )
+        call aerosols_soa_vbs_init_aercld_ptrs(num_chem, is_aerosol, config_flags )
+
+!...Convert aerosols to mixing ratio
+        if( .NOT. config_flags%restart ) then
+        if(config_flags%chem_in_opt == 0 .and. num_chem.gt.numgas)then
+        do l=numgas+1,num_chem
+           do j=jts,jte
+              do k=kts,kte
+                 kk = min(k,kde-1)
+                 do i=its,ite
+                    chem(i,k,j,l)=chem(i,kk,j,l)*alt(i,kk,j)
+                 enddo
+              enddo
+           enddo
+        enddo
+        endif
+        endif
+        chem(its:ite,kts:min(kte,kde-1),jts:jte,:)=max(chem(its:ite,kts:min(kte,kde-1),jts:jte,:),epsilc)
+    CASE (RACM_SOA_VBS_HET_KPP)
+       CALL wrf_debug(15,'call MADE/SOA_VBS aerosols initialization')
+
+       call aerosols_soa_vbs_het_init(chem,convfac,z_at_w,                &
+               pm2_5_dry,pm2_5_water,pm2_5_dry_ec,                   &
+               chem_in_opt,config_flags%aer_ic_opt,is_aerosol,       &
+               ids,ide, jds,jde, kds,kde,                            &
+               ims,ime, jms,jme, kms,kme,                            &
+               its,ite, jts,jte, kts,kte, config_flags               )
+
+!!!TUCCELLA (BUG, before it was called in module_aerosols_soa_vbs.F)
+       ! initialize pointers used by aerosol-cloud-interaction routines
+        call aerosols_soa_vbs_init_aercld_ptrs(num_chem, is_aerosol, config_flags )
 
 !...Convert aerosols to mixing ratio
         if( .NOT. config_flags%restart ) then

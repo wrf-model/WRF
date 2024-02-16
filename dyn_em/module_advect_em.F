@@ -1,7 +1,7 @@
 
 !WRF:MODEL_LAYER:DYNAMICS
 !
-#if ( defined(ADVECT_KERNEL) )
+#ifdef ADVECT_KERNEL
 ! cpp -traditional-cpp -P -DADVECT_KERNEL module_advect_em.F > advection_kernel.f90
 ! gfortran -ffree-form -ffree-line-length-none advection_kernel.f90
 ! ./a.out
@@ -111,7 +111,7 @@ SUBROUTINE column (loop , data_list, its,ite)
    
 END SUBROUTINE column
 !----------------------------------------------------------------
-#elif ( ! defined(ADVECT_KERNEL) )
+#else
 
 MODULE module_advect_em
 
@@ -4146,8 +4146,8 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
 
    IF( (config_flags%open_ys) .and. (jts == jds) ) THEN
 
-       DO i = i_start, i_end
        DO k = kts, ktf
+       DO i = i_start, i_end
          vb = MIN( 0.5*(rv(i,k,jts)+rv(i,k,jts+1)), 0. )
          tendency(i,k,jts) = tendency(i,k,jts)                     &
                - rdy*(                                             &
@@ -4162,8 +4162,8 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
 
    IF( (config_flags%open_ye) .and. (jte == jde)) THEN
 
-       DO i = i_start, i_end
        DO k = kts, ktf
+       DO i = i_start, i_end
          vb = MAX( 0.5*(rv(i,k,jte-1)+rv(i,k,jte)), 0. )
          tendency(i,k,j_end) = tendency(i,k,j_end)                   &
                - rdy*(                                               &
@@ -4357,7 +4357,7 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
    ENDIF vert_order_test
 
 END SUBROUTINE advect_scalar
-#if ( ! defined(ADVECT_KERNEL) )
+#ifndef ADVECT_KERNEL
 
 !---------------------------------------------------------------------------------
 
@@ -4620,14 +4620,14 @@ SUBROUTINE advect_w    ( w, w_old, tendency,            &
         ! (latitudes are as for u grid, longitudes are displaced)
         ! Therefore: flow is only from one side for points next to poles
         IF ( config_flags%polar .AND. (j == jds+1) ) THEN
-          DO k=kts,ktf
+          DO k=kts+1,ktf+1
           DO i = i_start, i_end
             mrdy=msftx(i,j-1)*rdy    ! see ADT eqn 46 dividing by my, 2nd term RHS
             tendency(i,k,j-1) = tendency(i,k,j-1) - mrdy*fqy(i,k,jp1)
           END DO
           END DO
         ELSE IF( config_flags%polar .AND. (j == jde) ) THEN
-          DO k=kts,ktf
+          DO k=kts+1,ktf+1
           DO i = i_start, i_end
             mrdy=msftx(i,j-1)*rdy    ! see ADT eqn 46 dividing by my, 2nd term RHS
             tendency(i,k,j-1) = tendency(i,k,j-1) + mrdy*fqy(i,k,jp0)
@@ -4934,14 +4934,14 @@ ELSE IF (horz_order == 5 ) THEN
         ! (latitudes are as for u grid, longitudes are displaced)
         ! Therefore: flow is only from one side for points next to poles
         IF ( config_flags%polar .AND. (j == jds+1) ) THEN
-          DO k=kts,ktf
+          DO k=kts+1,ktf+1
           DO i = i_start, i_end
             mrdy=msftx(i,j-1)*rdy    ! see ADT eqn 46 dividing by my, 2nd term RHS
             tendency(i,k,j-1) = tendency(i,k,j-1) - mrdy*fqy(i,k,jp1)
           END DO
           END DO
         ELSE IF( config_flags%polar .AND. (j == jde) ) THEN
-          DO k=kts,ktf
+          DO k=kts+1,ktf+1
           DO i = i_start, i_end
             mrdy=msftx(i,j-1)*rdy    ! see ADT eqn 46 dividing by my, 2nd term RHS
             tendency(i,k,j-1) = tendency(i,k,j-1) + mrdy*fqy(i,k,jp0)
@@ -5293,14 +5293,14 @@ ELSE IF ( horz_order == 4 ) THEN
        ! (latitudes are as for u grid, longitudes are displaced)
        ! Therefore: flow is only from one side for points next to poles
        IF ( config_flags%polar .AND. (j == jds+1) ) THEN
-         DO k=kts,ktf
+         DO k=kts+1,ktf+1
          DO i = i_start, i_end
            mrdy=msftx(i,j-1)*rdy    ! see ADT eqn 46 dividing by my, 2nd term RHS
            tendency(i,k,j-1) = tendency(i,k,j-1) - mrdy*fqy(i,k,jp1)
          END DO
          END DO
        ELSE IF( config_flags%polar .AND. (j == jde) ) THEN
-         DO k=kts,ktf
+         DO k=kts+1,ktf+1
          DO i = i_start, i_end
            mrdy=msftx(i,j-1)*rdy    ! see ADT eqn 46 dividing by my, 2nd term RHS
            tendency(i,k,j-1) = tendency(i,k,j-1) + mrdy*fqy(i,k,jp0)
@@ -5525,14 +5525,14 @@ ELSE IF ( horz_order == 3 ) THEN
        ! (latitudes are as for u grid, longitudes are displaced)
        ! Therefore: flow is only from one side for points next to poles
        IF ( config_flags%polar .AND. (j == jds+1) ) THEN
-         DO k=kts,ktf
+         DO k=kts+1,ktf+1
          DO i = i_start, i_end
            mrdy=msftx(i,j-1)*rdy    ! see ADT eqn 46 dividing by my, 2nd term RHS
            tendency(i,k,j-1) = tendency(i,k,j-1) - mrdy*fqy(i,k,jp1)
          END DO
          END DO
        ELSE IF( config_flags%polar .AND. (j == jde) ) THEN
-         DO k=kts,ktf
+         DO k=kts+1,ktf+1
          DO i = i_start, i_end
            mrdy=msftx(i,j-1)*rdy    ! see ADT eqn 46 dividing by my, 2nd term RHS
            tendency(i,k,j-1) = tendency(i,k,j-1) + mrdy*fqy(i,k,jp0)
@@ -7297,8 +7297,8 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
    IF( (config_flags%open_ys) .and. (jts == jds) ) THEN
 
-       DO i = i_start, i_end
        DO k = kts, ktf
+       DO i = i_start, i_end
          vb = MIN( 0.5*(rv(i,k,jts)+rv(i,k,jts+1)), 0. )
          tendency(i,k,jts) = tendency(i,k,jts)                     &
                - rdy*(                                             &
@@ -7313,8 +7313,8 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
    IF( (config_flags%open_ye) .and. (jte == jde)) THEN
 
-       DO i = i_start, i_end
        DO k = kts, ktf
+       DO i = i_start, i_end
          vb = MAX( 0.5*(rv(i,k,jte-1)+rv(i,k,jte)), 0. )
          tendency(i,k,j_end) = tendency(i,k,j_end)                   &
                - rdy*(                                               &
@@ -7330,8 +7330,8 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
    IF( (config_flags%polar) .and. (jts == jds) ) THEN
 
        ! Assuming rv(i,k,jds) = 0.
-       DO i = i_start, i_end
        DO k = kts, ktf
+       DO i = i_start, i_end
          vb = MIN( 0.5*rv(i,k,jts+1), 0. )
          tendency(i,k,jts) = tendency(i,k,jts)                     &
                - rdy*(                                             &
@@ -7347,8 +7347,8 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
    IF( (config_flags%polar) .and. (jte == jde)) THEN
 
        ! Assuming rv(i,k,jde) = 0.
-       DO i = i_start, i_end
        DO k = kts, ktf
+       DO i = i_start, i_end
          vb = MAX( 0.5*rv(i,k,jte-1), 0. )
          tendency(i,k,j_end) = tendency(i,k,j_end)                   &
                - rdy*(                                               &
@@ -7412,6 +7412,9 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
            fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
            fqz(i,k,j)=rom(i,k,j)*(fzm(k)*field(i,k,j)+fzp(k)*field(i,k-1,j))
            fqz(i,k,j) = fqz(i,k,j) - fqzl(i,k,j)
+         ENDDO
+
+         DO i = i_start, i_end
 
            k=kts+2
            dz = 2./(rdzw(k)+rdzw(k-1))
@@ -7424,6 +7427,9 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
                    field(i,k-2,j), field(i,k-1,j),      &
                    field(i,k  ,j), field(i,k+1,j),  -vel )
            fqz(i,k,j) = fqz(i,k,j) - fqzl(i,k,j)
+         ENDDO
+
+         DO i = i_start, i_end
 
            k=ktf-1
            dz = 2./(rdzw(k)+rdzw(k-1))
@@ -7436,6 +7442,9 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
                    field(i,k-2,j), field(i,k-1,j),      &
                    field(i,k  ,j), field(i,k+1,j),  -vel )
            fqz(i,k,j) = fqz(i,k,j) - fqzl(i,k,j)
+         ENDDO
+
+         DO i = i_start, i_end
 
            k=ktf
            dz = 2./(rdzw(k)+rdzw(k-1))
@@ -7485,6 +7494,9 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
            fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
            fqz(i,k,j)=rom(i,k,j)*(fzm(k)*field(i,k,j)+fzp(k)*field(i,k-1,j))
            fqz(i,k,j) = fqz(i,k,j) - fqzl(i,k,j)
+         ENDDO
+
+         DO i = i_start, i_end
 
            k=kts+2
            dz = 2./(rdzw(k)+rdzw(k-1))
@@ -7497,6 +7509,9 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
                    field(i,k-2,j), field(i,k-1,j),      &
                    field(i,k  ,j), field(i,k+1,j),  -vel )
            fqz(i,k,j) = fqz(i,k,j) - fqzl(i,k,j)
+         ENDDO
+
+         DO i = i_start, i_end
 
            k=ktf-1
            dz = 2./(rdzw(k)+rdzw(k-1))
@@ -7509,6 +7524,9 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
                    field(i,k-2,j), field(i,k-1,j),      &
                    field(i,k  ,j), field(i,k+1,j),  -vel )
            fqz(i,k,j) = fqz(i,k,j) - fqzl(i,k,j)
+         ENDDO
+
+         DO i = i_start, i_end
 
            k=ktf
            dz = 2./(rdzw(k)+rdzw(k-1))
@@ -7956,7 +7974,7 @@ SUBROUTINE advect_scalar_weno ( field, field_old, tendency,     &
     
     real               :: qim2, qim1, qi, qip1, qip2
     double precision               :: beta0, beta1, beta2, f0, f1, f2, wi0, wi1, wi2, sumwk
-    double precision, parameter    :: gi0 = 1.d0/10.d0, gi1 = 6.d0/10.d0, gi2 = 3.d0/10.d0, eps=1.0d-28
+    double precision, parameter    :: gi0 = 1.d0/10.d0, gi1 = 6.d0/10.d0, gi2 = 3.d0/10.d0, eps=1.0d-40
     integer, parameter :: pw = 2
 
 
@@ -8652,7 +8670,7 @@ SUBROUTINE advect_scalar_wenopd ( field, field_old, tendency,    &
 
     real               :: qim2, qim1, qi, qip1, qip2
     double precision               :: beta0, beta1, beta2, f0, f1, f2, wi0, wi1, wi2, sumwk
-    double precision, parameter    :: gi0 = 1.d0/10.d0, gi1 = 6.d0/10.d0, gi2 = 3.d0/10.d0, eps1=1.0d-28
+    double precision, parameter    :: gi0 = 1.d0/10.d0, gi1 = 6.d0/10.d0, gi2 = 3.d0/10.d0, eps1=1.0d-40
     integer, parameter :: pw = 2
 
 
@@ -10543,7 +10561,7 @@ END SUBROUTINE advect_scalar_mono
 
 !-----------------------------------------------------------
 
-#if ( defined(ADVECT_KERNEL) )
+#ifdef ADVECT_KERNEL
 
 END MODULE advection_kernel
 !================================================================
@@ -10851,7 +10869,7 @@ PROGRAM feeder
 
 END PROGRAM feeder
 #endif
-#if ( !defined(ADVECT_KERNEL) )
+#ifndef ADVECT_KERNEL
 
 !---------------------------------------------------------------------------------
 
@@ -12541,14 +12559,14 @@ SUBROUTINE advect_weno_w    ( w, w_old, tendency,            &
         ! (latitudes are as for u grid, longitudes are displaced)
         ! Therefore: flow is only from one side for points next to poles
         IF ( config_flags%polar .AND. (j == jds+1) ) THEN
-          DO k=kts,ktf
+          DO k=kts+1,ktf+1
           DO i = i_start, i_end
             mrdy=msftx(i,j-1)*rdy    ! see ADT eqn 46 dividing by my, 2nd term RHS
             tendency(i,k,j-1) = tendency(i,k,j-1) - mrdy*fqy(i,k,jp1)
           END DO
           END DO
         ELSE IF( config_flags%polar .AND. (j == jde) ) THEN
-          DO k=kts,ktf
+          DO k=kts+1,ktf+1
           DO i = i_start, i_end
             mrdy=msftx(i,j-1)*rdy    ! see ADT eqn 46 dividing by my, 2nd term RHS
             tendency(i,k,j-1) = tendency(i,k,j-1) + mrdy*fqy(i,k,jp0)

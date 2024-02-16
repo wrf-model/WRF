@@ -59345,6 +59345,10 @@ CONTAINS
  character*256 :: msg
  real :: mh_urb,stdh_urb,lp_urb,hgt_urb,frc_urb,lb_urb,check
  real, dimension(4) :: lf_urb
+! Distributed aerodynamics parameters
+ real :: lf_urb_s
+ real :: z0_urb
+ real :: vegfrac
 
  logical, external :: wrf_dm_on_monitor
  
@@ -60318,6 +60322,10 @@ has_urban_physics : &
             enddo
             frc_urb = FRC_URB2D(I,J)
             check = 0.
+! Distributed aerodynamics
+            lf_urb_s = 0
+            z0_urb = 0
+            vegfrac = 0
 !
 
 ! Call urban
@@ -60346,7 +60354,8 @@ has_urban_physics : &
                        hgt_urb,frc_urb,lb_urb, check,CMCR_URB,TGR_URB,  & ! H
                        TGRL_URB,SMR_URB,CMGR_URB, CHGR_URB, jmonth,     & ! H
                        DRELR_URB,DRELB_URB,                             & ! H
-                       DRELG_URB,FLXHUMR_URB,FLXHUMB_URB,FLXHUMG_URB)    
+                       DRELG_URB,FLXHUMR_URB,FLXHUMB_URB,FLXHUMG_URB,   &
+                       lf_urb_s, z0_urb, vegfrac)
 !sw--
 
             TS_URB2D(I,J) = TS_URB

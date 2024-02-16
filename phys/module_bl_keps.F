@@ -1166,7 +1166,7 @@ real b_t(kms:kme),th0(kms:kme),tpe(kms:kme)
        dphidz(iz)=0.5*(dphidz1+dphidz2)
      enddo
       dphidz(kte)=0.
-      
+      dphidz(kts)=0. 
      do iz=kts,kte
       b_t(iz)=b_t(iz)-dphidz(iz)
      enddo

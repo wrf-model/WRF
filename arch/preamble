@@ -17,7 +17,7 @@
 SHELL           =       /bin/sh
 DEVTOP          =       `pwd`
 LIBINCLUDE      =       .
-.SUFFIXES: .F .i .o .f90 .c
+.SUFFIXES: .F .i .o .f90 .c .F90
 
 #### Get core settings from environment (set in compile script)
 #### Note to add a core, this has to be added to.
@@ -94,8 +94,7 @@ GPFS            =
 CURL            =
 HDF5            =
 ZLIB            =
-DEP_LIB_PATH    = CONFIGURE_DEP_LIB_PATH
-NETCDF4_DEP_LIB = $(DEP_LIB_PATH) $(HDF5) $(ZLIB) $(GPFS) $(CURL)
+NETCDF4_DEP_LIB = CONFIGURE_NETCDF4_DEP_LIB
 
 # NETCDF4INCLUDEGOESHERE
 

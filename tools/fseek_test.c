@@ -1,4 +1,7 @@
 #define _FILE_OFFSET_BITS 64
+#ifndef FILE_TO_TEST
+#define FILE_TO_TEST "Makefile"
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -18,7 +21,7 @@ main()
   int result2 ;
 #endif
   fp = NULL ;
-  fp = fopen( "Makefile" , "r" ) ;
+  fp = fopen( FILE_TO_TEST , "r" ) ;
 #ifdef TEST_FSEEKO
   x = 0xffffffff ;
   result1 = (sizeof(x) == 8) ;

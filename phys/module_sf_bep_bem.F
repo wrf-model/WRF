@@ -3722,7 +3722,7 @@ do iz= kts,kte
                         icol=k
                      endif
                   elseif(ipiv(k).gt.1)then
-                     CALL wrf_error_fatal('singular matrix in gaussj')
+                     FATAL_ERROR('singular matrix in gaussj')
                   endif
                enddo
             endif
@@ -3743,7 +3743,7 @@ do iz= kts,kte
           
          endif
          
-         if(a(icol,icol).eq.0) CALL wrf_error_fatal('singular matrix in gaussj')
+         if(a(icol,icol).eq.0) FATAL_ERROR('singular matrix in gaussj')
          
          pivinv=1./a(icol,icol)
          a(icol,icol)=1

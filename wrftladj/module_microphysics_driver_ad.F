@@ -55,8 +55,7 @@ SUBROUTINE A_MICROPHYSICS_DRIVER(th, thb, rho, rhob, pi_phy, pi_phyb, p&
    USE module_state_description, ONLY :                                  &
                      KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME    &
                     ,WSM6SCHEME, WSM6RSCHEME, ETAMPNEW, THOMPSON, MORR_TWO_MOMENT     &
-                    ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME, NSSL_2MOM, NSSL_2MOMCCN  &
-                    ,NSSL_1MOM,NSSL_1MOMLFO & ! ,NSSL_3MOM       &
+                    ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME, NSSL_2MOM  &
                     ,MILBRANDT2MOM, LSCONDSCHEME, MKESSLERSCHEME, CAMMGMPSCHEME, NTU  !,MILBRANDT3MOM, ntu3m
 
 ! Model Layer
@@ -77,7 +76,6 @@ SUBROUTINE A_MICROPHYSICS_DRIVER(th, thb, rho, rhob, pi_phy, pi_phyb, p&
 
   IMPLICIT NONE
 
-! ,NSSL_3MOM       &
 !,MILBRANDT3MOM
 ! Model Layer
 ! *** add new modules of schemes here

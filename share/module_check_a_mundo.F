@@ -505,6 +505,28 @@
       ENDDO
 
 !-----------------------------------------------------------------------
+! Check that only compatible options are set when slucm_distributed_drag is set
+!-----------------------------------------------------------------------
+      IF (model_config_rec % slucm_distributed_drag) THEN
+
+        IF (model_config_rec % use_wudapt_lcz .EQ. 1) THEN
+            wrf_err_message = '--- ERROR: slucm_distributed_drag cannot work with use_wudapt_lcz'
+            CALL wrf_message ( wrf_err_message )
+            count_fatal_error = count_fatal_error + 1
+        END IF
+
+        DO i = 1, model_config_rec % max_dom
+           IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+           IF ( model_config_rec % sf_urban_physics(i) > 1 ) THEN
+              wrf_err_message = '--- ERROR: slucm_distributed_drag only works with urban options 1'
+              CALL wrf_message ( wrf_err_message )
+              count_fatal_error = count_fatal_error + 1
+           END IF
+        END DO
+
+      END IF
+
+!-----------------------------------------------------------------------
 ! Check that channel irrigation is run with Noah
 !-----------------------------------------------------------------------
       DO i = 1, model_config_rec % max_dom
@@ -3353,6 +3375,98 @@
       END IF
 
 !-----------------------------------------------------------------------
+! Check for deprecated options with NSSL-MP
+!-----------------------------------------------------------------------
+      DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( model_config_rec % mp_physics(i) .EQ. 22            ) THEN
+              model_config_rec % mp_physics(i) = NSSL_2MOM
+              model_config_rec % nssl_2moment_on = 1
+              model_config_rec % nssl_hail_on(i) = 0
+              model_config_rec % nssl_ccn_on = 0
+              model_config_rec % nssl_density_on = 1 ! set graupel density
+              WRITE (wrf_err_message, FMT='(A)') ' **CAUTION** mp_physics = 22 has been deprecated. '// &
+                'Instead you can use mp_physics=18, nssl_hail_on=0, nssl_ccn_on=0'
+              CALL wrf_debug ( 0, wrf_err_message )
+         ELSEIF ( model_config_rec % mp_physics(i) .EQ. 17        ) THEN
+              model_config_rec % mp_physics(i) = NSSL_2MOM
+              model_config_rec % nssl_2moment_on = 1
+              model_config_rec % nssl_hail_on(i) = 1
+              model_config_rec % nssl_ccn_on = 0
+              model_config_rec % nssl_density_on = 2 ! set graupel+hail density
+              WRITE (wrf_err_message, FMT='(A)') ' **CAUTION** mp_physics = 17 has been deprecated. '// &
+                'Instead you can use mp_physics=18, nssl_ccn_on=0'
+              ! print statement for deprecated option
+              CALL wrf_debug ( 0, wrf_err_message )
+         ELSEIF ( model_config_rec % mp_physics(i) .EQ. 19        ) THEN
+             ! single-moment with hail + graupel density
+              model_config_rec % mp_physics(i) = NSSL_2MOM
+              model_config_rec % nssl_2moment_on = 0
+              model_config_rec % nssl_hail_on(i) = 2
+              model_config_rec % nssl_density_on = 1 ! set  graupel density
+              ! print statement for deprecated option
+              WRITE (wrf_err_message, FMT='(A)') ' **CAUTION** mp_physics = 19 has been deprecated. '// &
+                'Instead you can use mp_physics=18, nssl_2moment_on=0, nssl_ccn_on=0'
+              CALL wrf_debug ( 0, wrf_err_message )
+         ELSEIF ( model_config_rec % mp_physics(i) .EQ. 21        ) THEN
+             ! single-moment without
+              model_config_rec % mp_physics(i) = NSSL_2MOM
+              model_config_rec % nssl_2moment_on = 0
+              model_config_rec % nssl_hail_on(i) = 0
+              model_config_rec % nssl_density_on = 0 ! set  graupel density
+              ! print statement for deprecated option
+              WRITE (wrf_err_message, FMT='(A)') ' **CAUTION** mp_physics = 21 has been deprecated. '// &
+                'Instead you can use mp_physics=18, nssl_2moment_on=0, nssl_ccn_on=0, nssl_hail_on=0'
+              CALL wrf_debug ( 0, wrf_err_message )
+         ENDIF
+         
+         IF ( model_config_rec % mp_physics(i) /= NSSL_2MOM ) THEN
+           ! If not NSSL-MP, make sure extra fields are turned off (in case of stray namelist settings)
+              model_config_rec % nssl_2moment_on = 0
+              model_config_rec % nssl_hail_on(i) = 0
+              model_config_rec % nssl_density_on = 0 ! set  graupel density
+              model_config_rec % nssl_3moment = 0
+              model_config_rec % nssl_ccn_on = 0
+
+         ELSE ! make sure settings are consistent
+
+           IF ( model_config_rec % nssl_ccn_on < 0 ) THEN
+              model_config_rec % nssl_ccn_on = 1
+           ENDIF
+
+           IF ( model_config_rec % nssl_2moment_on < 0 ) THEN ! turn on number concentrations
+              model_config_rec % nssl_2moment_on = 1
+           ENDIF
+
+           IF ( model_config_rec % nssl_hail_on(i) < 0 ) THEN
+              IF ( model_config_rec % nssl_2moment_on == 0 ) THEN
+                model_config_rec % nssl_hail_on(i) = 2
+              ELSE
+                model_config_rec % nssl_hail_on(i) = 1
+              ENDIF
+           ENDIF
+
+           IF ( model_config_rec % nssl_density_on < 0 ) THEN
+              IF ( model_config_rec % nssl_hail_on(i) == 1 ) THEN
+                model_config_rec % nssl_density_on = 2 ! set default of graupel+hail density
+              ELSE
+                model_config_rec % nssl_density_on = 1 ! set graupel density (hail off)
+              ENDIF
+           ENDIF
+
+           IF ( model_config_rec % nssl_3moment == 1   ) THEN
+              model_config_rec % nssl_2moment_on = 1
+              IF ( model_config_rec % nssl_hail_on(i) == 1 ) THEN
+                model_config_rec % nssl_3moment = 2 ! 3mom rain, graupel and hail
+              ELSE
+                model_config_rec % nssl_3moment = 1 ! 3mom rain and graupel (no hail)
+              ENDIF
+           ENDIF
+         ENDIF
+
+      ENDDO
+
+!-----------------------------------------------------------------------
 ! If a user requested to compute the radar reflectivity .OR. if this is
 ! one of the schemes that ALWAYS computes the radar reflectivity, then
 ! turn on the switch that says allocate the space for the refl_10cm array.
@@ -3361,16 +3475,11 @@
       DO i = 1, model_config_rec % max_dom
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( ( model_config_rec % mp_physics(i) .EQ. MILBRANDT2MOM ) .OR. &
-#if (EM_CORE == 1)
               ( model_config_rec % mp_physics(i) .EQ. NSSL_2MOM     ) .OR. &
-              ( model_config_rec % mp_physics(i) .EQ. NSSL_2MOMG    ) .OR. &
-              ( model_config_rec % mp_physics(i) .EQ. NSSL_2MOMCCN  ) .OR. &
-              ( model_config_rec % mp_physics(i) .EQ. NSSL_1MOM     ) .OR. &
-              ( model_config_rec % mp_physics(i) .EQ. NSSL_1MOMLFO  ) .OR. &
-#endif
               ( model_config_rec % do_radar_ref  .EQ. 1             ) ) THEN
             model_config_rec % compute_radar_ref = 1
-         END IF
+         ENDIF
+
       ENDDO
 
 !-----------------------------------------------------------------------

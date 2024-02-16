@@ -32,21 +32,21 @@ SIGMA_ZED: 4.0,  3.0,  1.0, 1., 1., 1., 1., 1., 1., 1., 1.
 # ROOF_WIDTH:  Roof (i.e., building) width  [ m ]
 #      (sf_urban_physics=1)
 
-ROOF_WIDTH: 31.7, 25.7, 17.6, 17.6, 17.6, 17.6, 17.6, 17.6, 17.6, 17.6, 10.
+ROOF_WIDTH: 22.2, 22., 9.6, 42.86, 26.25, 13., 25., 28.9, 43.33, 23.8, 5.
 
 #
 # ROAD_WIDTH:  road width  [ m ]
 #      (sf_urban_physics=1)
 #
 
-ROAD_WIDTH: 98.9, 39.2, 108.0, 108.0, 108.0, 108.0, 108.0, 108.0, 108.0, 108.0, 108.0
+ROAD_WIDTH: 20., 14., 5.2, 50.0, 35.0, 13.0, 3.33, 32.5, 43.3, 28.6, 100.0
 
 #
 # AH:  Anthropogenic heat [ W m{-2} ]
 #      (sf_urban_physics=1)
 #
 
-AH:  100.0, 35.0, 30.0, 30.0, 15.0, 10.0, 30.0, 40.0, 5.0, 300.0, 0
+AH:  175.0, 37.5, 37.5, 25.0, 12.5, 12.5, 17.5, 25.0, 5.0, 350.0, 350.0
 
 
 #
@@ -54,7 +54,7 @@ AH:  100.0, 35.0, 30.0, 30.0, 15.0, 10.0, 30.0, 40.0, 5.0, 300.0, 0
 #      (sf_urban_physics=1)
 #
 
-ALH:  20.0, 25.0, 40.0, 20.0, 25.0, 40.0, 20.0, 25.0, 40.0, 20.0, 0
+ALH:  20.0, 25.0, 40.0,20.0, 25.0, 40.0,20.0, 25.0, 40.0,20.0, 25.0
 
 #
 #  AKANDA_URBAN:  Coefficient modifying the Kanda approach to computing
@@ -232,90 +232,92 @@ DZGR:  0.05 0.10 0.15 0.20
 #      (sf_urban_physics=1,2,3)
 #
 
-FRC_URB: 1.00, 0.99, 1.00, 0.65, 0.7, 0.65, 0.3, 0.85, 0.3, 0.55, 1.00
+FRC_URB: 0.95, 0.9,0.85, 0.65, 0.7, 0.6, 0.85, 0.85, 0.3, 0.55, 1.00
+
 #
 # CAPR:  Heat capacity of roof  [ J m{-3} K{-1} ]
 #      (sf_urban_physics=1,2,3)
 #
 
-CAPR: 1.8E6, 1.8E6, 1.44E6, 1.8E6, 1.8E6, 1.44E6, 2.0E6, 1.8E6, 1.44E6, 2.0E6, 1.8E6
+CAPR: 1.32E6,1.32E6,1.32E6, 1.32E6, 1.32E6, 1.32E6, 1.32E6, 1.32E6, 1.32E6, 1.32E6, 1.32E6
 
 #
 # CAPB:  Heat capacity of building wall [ J m{-3} K{-1} ]
 #      (sf_urban_physics=1,2,3)
 #
 
-CAPB: 1.8E6, 2.67E6, 2.05E6, 2.0E6, 2.0E6, 2.05E6, 0.72E6, 1.8E6, 2.56E6, 1.69E6, 1.8E6
+CAPB: 1.54E6,1.54E6,1.54E6, 1.54E6, 1.54E6, 1.54E6, 1.54E6, 1.54E6, 1.54E6, 1.54E6, 1.54E6
 
 #
 # CAPG:  Heat capacity of ground (road) [ J m{-3} K{-1} ]
 #      (sf_urban_physics=1,2,3)
 #
 
-CAPG:  1.75E6, 1.68E6, 1.63E6, 1.54E6, 1.50E6, 1.47E6, 1.67E6, 1.38E6, 1.37E6, 1.49E6, 1.38E6
+CAPG:  1.74E6,1.74E6,1.74E6, 1.74E6, 1.74E6, 1.74E6, 1.74E6, 1.74E6, 1.74E6, 1.74E6, 1.74E6
 
 #
 # AKSR:  Thermal conductivity of roof [ J m{-1} s{-1} K{-1} ]
 #      (sf_urban_physics=1,2,3)
 #
 
-AKSR:  1.25, 1.25, 1.00, 1.25, 1.25, 1.00, 2.0, 1.25, 1.00, 2.00, 1.25
+AKSR:  1.54,1.54,1.54, 1.54, 1.54, 1.54, 1.54, 1.54, 1.54, 1.54, 1.54
 
 #
 # AKSB:  Thermal conductivity of building wall [ J m{-1} s{-1} K{-1} ]
 #      (sf_urban_physics=1,2,3)
 #
 
-AKSB:  1.09, 1.5, 1.25, 1.45, 1.45, 1.25, 0.5, 1.25, 1.00, 1.33, 1.25
+AKSB:  1.51,1.51,1.51, 1.51, 1.51, 1.51,1.51,1.51,1.51, 1.51, 1.51
 
 #
 # AKSG:  Thermal conductivity of ground (road) [ J m{-1} s{-1} K{-1} ]
 #      (sf_urban_physics=1,2,3)
 #
 
-AKSG: 0.77, 0.73, 0.69, 0.64, 0.62, 0.60, 0.72, 0.51, 0.55, 0.61, 0.51
+AKSG: 0.82, 0.82, 0.82, 0.82, 0.82, 0.82, 0.82, 0.82, 0.82, 0.82, 0.82
 
 #
 # ALBR:   Surface albedo of roof [ fraction ]
 #      (sf_urban_physics=1,2,3)
 #
 
-ALBR: 0.13, 0.18, 0.15, 0.13, 0.13, 0.13, 0.15, 0.18, 0.13, 0.10, 0.13 
+ALBR: 0.30, 0.30 0.30, 0.30, 0.30, 0.30, 0.30, 0.30, 0.30, 0.30, 0.30 
+
 
 #
 # ALBB:  Surface albedo of building wall [ fraction ]
 #      (sf_urban_physics=1,2,3)
 #
 
-ALBB: 0.25, 0.20, 0.20, 0.25, 0.25, 0.25, 0.20, 0.25, 0.25, 0.20, 0.20
+ALBB: 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3
 
 #
 # ALBG:  Surface albedo of ground (road) [ fraction ]
 #      (sf_urban_physics=1,2,3)
 #
 
-ALBG: 0.14, 0.14, 0.14, 0.14, 0.14, 0.14, 0.18, 0.14, 0.14, 0.14, 0.14 
+ALBG: 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08 
 
 #
 # EPSR:  Surface emissivity of roof [ - ]
 #      (sf_urban_physics=1,2,3)
 #
 
-EPSR: 0.91, 0.91, 0.91, 0.91, 0.91, 0.91, 0.28, 0.91, 0.91, 0.91, 0.95
+EPSR: 0.90, 0.90, 0.90, 0.90, 0.90, 0.90, 0.90, 0.90, 0.90, 0.90, 0.90
 
 #
 # EPSB:  Surface emissivity of building wall [-]
 #      (sf_urban_physics=1,2,3)
 #
 
-EPSB: 0.90, 0.90, 0.90, 0.90, 0.90, 0.90, 0.90, 0.90, 0.90, 0.90, 0.95
+EPSB: 0.90, 0.90, 0.90, 0.90, 0.90, 0.90, 0.90, 0.90, 0.90, 0.90, 0.90
 
 #
 # EPSG:  Surface emissivity of ground (road) [ - ]
 #      (sf_urban_physics=1,2,3)
 #
 
-EPSG: 0.95, 0.95, 0.95, 0.95, 0.95, 0.95, 0.92, 0.95, 0.95, 0.95, 0.95
+EPSG: 0.95, 0.95, 0.95, 0.95, 0.95, 0.95, 0.95, 0.95, 0.95, 0.95, 0.95
 
 #
 # Z0B:  Roughness length for momentum, over building wall [ m ]
@@ -348,14 +350,14 @@ Z0R: 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01
 #      (sf_urban_physics=1,2,3)
 #
 
-TRLEND: 299.00, 299.00, 299.00, 299.00, 299.00, 299.00, 299.00, 299.00, 299.00, 299.00, 299.00
+TRLEND: 293.00, 293.00, 293.00, 293.00, 293.00, 293.00, 293.00, 293.00, 293.00, 293.00, 293.00
 
 #
 # TBLEND:  Lower boundary temperature for building wall temperature [ K ]
 #      (sf_urban_physics=1,2,3)
 #
 
-TBLEND: 299.00, 299.00, 299.00, 299.00, 299.00, 299.00, 299.00, 299.00, 299.00, 299.00, 299.00
+TBLEND: 293.00, 293.00, 293.00, 293.00, 293.00, 293.00, 293.00, 293.00, 293.00, 293.00, 293.00
 
 #
 # TGLEND:  Lower boundary temperature for ground (road) temperature [ K ]
@@ -368,7 +370,7 @@ TGLEND: 293.00, 293.00, 293.00, 293.00, 293.00, 293.00, 293.00, 293.00, 293.00, 
 #      (sf_urban_physics=3)
 #
 
-COP: 3.5, 3.5, 3.5, 3.5, 3.5, 3.5, 3.5, 3.5, 3.5, 3.5, 3.5 
+COP: 4., 4., 4., 4., 4., 4., 4., 4., 4., 4., 4. 
 #
 # BLDAC_FRC: fraction of buildings installed with A/C systems [ - ]
 #      (sf_urban_physics=3)
@@ -388,7 +390,7 @@ COOLED_FRC: 1.0, 1.0, 1.0,1.0, 1.0, 1.0,1.0, 1.0, 1.0,1.0, 1.0
 #      (sf_urban_physics=3)
 #
 
-PWIN: 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.9, 0.2, 0.2, 0.2, 0.0
+PWIN: 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.0
 
 #
 # BETA:  Thermal efficiency of heat exchanger
@@ -450,7 +452,7 @@ GAPHUM: 0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.
 #      (sf_urban_physics=3)
 #
 
-PERFLO: 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.00
+PERFLO: 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.00
 
 
 #
@@ -465,7 +467,7 @@ HSEQUIP: 0.25 0.25 0.25 0.25 0.25 0.25 0.25 0.5 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 
 #      (sf_urban_physics=3)
 #
 
-HSEQUIP_SCALE_FACTOR: 36.00, 20.00, 20.00, 36.00, 20.00, 20.00, 20.00, 36.00, 20.00, 20.00, 20.00 
+HSEQUIP_SCALE_FACTOR: 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00 
 
 
 #
@@ -480,7 +482,7 @@ GR_FLAG:0
 #      (sf_urban_physics=3)
 #
 
-GR_TYPE: 2
+GR_TYPE: 1
 
 #
 # GR_FRAC_ROOF: fraction of green roof over the roof (0:1)
@@ -502,8 +504,9 @@ IRHO:0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1
 #      (sf_urban_physics=3)
 #
 
-PV_FRAC_ROOF: 0,0,0,0,0,0,0,0,0,0,0
+PV_FRAC_ROOF: 0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.
 
+#
 
 STREET PARAMETERS:
 
@@ -513,26 +516,26 @@ STREET PARAMETERS:
 # category  direction     width      width
 # [index]  [deg from N]    [m]        [m]
 
-    1         0.0          15.       12.
-    1        90.0          15.       12.
-    2         0.0          10.       20.
-    2        90.0          10.       20.
-    3         0.0          5.7       9. 
-    3        90.0          5.7       9. 
-    4         0.0          30.0      20.
-    4        90.0          30.0      20.
-    5         0.0          20.0      20.
-    5        90.0          20.0      20.
-    6         0.0          12.4      10.5
-    6        90.0          12.4      10.5
-    7         0.0          10.       20.
-    7        90.0          10.       20.
-    8         0.0          32.5      28.8 
-    8        90.0          32.5      28.8
-    9         0.0          10.       10.
-    9        90.0          10.       10.
-    10        0.0          28.5      23.8
-    10       90.0          28.5      23.8
+    1         0.0          20.       22.22
+    1        90.0          20.       22.22
+    2         0.0          14.       22.
+    2        90.0          14.       22.
+    3         0.0          5.2       9.6 
+    3        90.0          5.2       9.6 
+    4         0.0          50.0      42.86
+    4        90.0          50.0      42.86
+    5         0.0          35.0      26.25
+    5        90.0          35.0      26.25
+    6         0.0          13.0      13.
+    6        90.0          13.0      13.
+    7         0.0          3.33      25.
+    7        90.0          3.33      25.
+    8         0.0          32.5      28.9 
+    8        90.0          32.5      28.9
+    9         0.0          43.3      43.33
+    9        90.0          43.3      43.33
+    10        0.0          28.6      23.8
+    10       90.0          28.6      23.8
     11        0.0          100.      5.
     11       90.0          100.      5.
 
@@ -543,7 +546,11 @@ BUILDING HEIGHTS: 1
 
 #     height   Percentage
 #      [m]       [%]
-      21.0      100.0
+      40.0      17.
+      45.0      21.
+      50.0      24.
+      55.0      21.
+      60.0      17.
 END BUILDING HEIGHTS
 
 BUILDING HEIGHTS: 2
@@ -551,10 +558,8 @@ BUILDING HEIGHTS: 2
 
 #     height   Percentage
 #      [m]       [%]
-      9.0        25.0
-      15.0       45.0
-      18.0       20.0
-      21.0       10.0
+      15.0       50.
+      20.0       50.
 END BUILDING HEIGHTS
 
 BUILDING HEIGHTS: 3
@@ -562,8 +567,8 @@ BUILDING HEIGHTS: 3
 
 #     height   Percentage
 #      [m]       [%]
-       6.0      55.0
-       9.0      45.0
+       5.0       72.
+       10.0      28.
 END BUILDING HEIGHTS
 
 BUILDING HEIGHTS: 4
@@ -571,7 +576,11 @@ BUILDING HEIGHTS: 4
 
 #     height   Percentage
 #      [m]       [%]
-      24.0      100.0
+      40.0      17.
+      45.0      21.
+      50.0      24.
+      55.0      21.
+      60.0      17.
 END BUILDING HEIGHTS
 
 BUILDING HEIGHTS: 5
@@ -579,10 +588,8 @@ BUILDING HEIGHTS: 5
 
 #     height   Percentage
 #      [m]       [%]
-      9.0      10.0
-      15.0      25.0
-      21.0      40.0
-      24.0      25.0
+      15.0       50.
+      20.0       50.
 END BUILDING HEIGHTS
 
 BUILDING HEIGHTS: 6
@@ -590,9 +597,8 @@ BUILDING HEIGHTS: 6
 
 #     height   Percentage
 #      [m]       [%]
-       6.0      30.0
-       9.0      40.0
-      15.0      30.0
+       5.0       72.
+       10.0      28.
 END BUILDING HEIGHTS
 
 BUILDING HEIGHTS: 7
@@ -600,11 +606,7 @@ BUILDING HEIGHTS: 7
 
 #     height   Percentage
 #      [m]       [%]
-      5.0       100.0
-      9.0       0.0
-      15.0       0.0
-      21.0       0.0
-      24.0       0.0
+      5.0       100.
 END BUILDING HEIGHTS
 
 BUILDING HEIGHTS: 8
@@ -612,8 +614,8 @@ BUILDING HEIGHTS: 8
 
 #     height   Percentage
 #      [m]       [%]
-       6.0      35.0
-       9.0      65.0
+       5.0       72.
+       10.0      28.
 END BUILDING HEIGHTS
 
 BUILDING HEIGHTS: 9
@@ -621,8 +623,8 @@ BUILDING HEIGHTS: 9
 
 #     height   Percentage
 #      [m]       [%]
-       6.0      75.0
-       9.0      25.0
+       5.0       72.
+       10.0      28.
 END BUILDING HEIGHTS
 
 BUILDING HEIGHTS: 10
@@ -630,9 +632,9 @@ BUILDING HEIGHTS: 10
 
 #     height   Percentage
 #      [m]       [%]
-       3.0      10.0
-       9.0      60.0
-      15.0      30.0
+       5.0      16.
+       10.0     68.
+       15.0     16.
 END BUILDING HEIGHTS
 
 BUILDING HEIGHTS: 11
@@ -640,8 +642,6 @@ BUILDING HEIGHTS: 11
 
 #     height   Percentage
 #      [m]       [%]
-       6.0      100.0
-      
+       5.0      100.0
 END BUILDING HEIGHTS
 
- 

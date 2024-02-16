@@ -21,7 +21,7 @@ module da_define_structures
       put_rand_seed, seed_array1, seed_array2, missing_r, &
       sound, synop, pilot, satem, geoamv, polaramv, airep, gpspw, gpsref, gpseph, &
       metar, ships, ssmi_rv, ssmi_tb, ssmt1, ssmt2, qscat, profiler, buoy, bogus, &
-      mtgirs, tamdar, tamdar_sfc, pseudo, radar, radiance, airsr, sonde_sfc, rain, &
+      mtgirs, tamdar, tamdar_sfc, pseudo, radar, lightning, radiance, airsr, sonde_sfc, rain, &
 #if (WRF_CHEM == 1)
       chemic_surf, chem_cv_options, &
 #endif
@@ -318,6 +318,42 @@ module da_define_structures
       type (rain_each_type)                   :: each(1)
    end type rain_single_level_type
 
+   type lightning_stn_type
+      character (len = 5)    :: platform      ! Data type
+      character (len = 12)   :: name          ! Station name
+      character (len = 19)   :: date_char     ! CCYY-MM-DD_HH:MM:SS date
+      integer                :: numobs        ! number of Obs
+      integer                :: levels        ! number of levels
+      real                   :: lat           ! Latitude in degree
+      real                   :: lon           ! Longitude in degree
+      real                   :: elv           ! Elevation in 
+   end type lightning_stn_type
+
+   type lightning_type
+      type (stn_loc_type)             :: stn_loc  
+      real                  , pointer :: height   (:) ! Height in m
+      integer               , pointer :: height_qc(:) ! Height QC	  
+      type (field_type)     , pointer :: w(:)         ! Retrieved vertical velocity from flash rate
+      type (field_type)     , pointer :: div(:)       ! Retrieved convergence fileds from vertical velocity
+      type (field_type)     , pointer :: qv(:)        ! Retrieved vapor mixing ratio from flash rate         
+   end type lightning_type
+
+   type lightning_each_level_type
+      real                   :: height         ! Height in m
+      integer                :: height_qc      ! Height QC
+      real                   :: zk             ! MM5 k-coordinates
+      type (field_type)      :: w
+      type (field_type)      :: div
+      type (field_type)      :: qv
+   end type lightning_each_level_type
+
+   type lightning_multi_level_type
+      type (lightning_stn_type)               :: stn
+      type (info_type)                        :: info
+      type (model_loc_type)                   :: loc
+      type (lightning_each_level_type)        :: each(max_ob_levels)
+   end type lightning_multi_level_type
+
 #if (WRF_CHEM == 1)
 
    type chemic_surf_type
@@ -538,10 +574,12 @@ module da_define_structures
       real,    pointer     :: vtox(:,:)
    end type varbc_type
    type clddet_geoir_type
-     real  :: RTCT, RFMFT, TEMPIR, terr_hgt
-     real  :: tb_stddev_10, tb_stddev_13,tb_stddev_14
-     real  :: CIRH2O
-     !real, allocatable :: CIRH2O(:,:,:)
+     real  :: RTCT, RFMFT, TEMPIR, terr_hgt ! for both ABI and AHI
+     real  :: tb_stddev_10, tb_stddev_13,tb_stddev_14 ! only for AHI
+     real  :: CIRH2O ! for both ABI and AHI
+     real, allocatable :: CIRH2O_abi(:,:,:) ! only for ABI
+     real, allocatable :: tb_stddev_3x3(:)  ! only for ABI
+     integer :: RFMFT_ij(2) ! only for ABI
    end type clddet_geoir_type   
    type superob_type
      real, allocatable :: tb_obs(:,:)
@@ -582,6 +620,8 @@ module da_define_structures
       integer, pointer     :: cloud_flag(:,:)
       integer, pointer     :: cloudflag(:)
       integer, pointer     :: rain_flag(:)
+      real,    pointer     :: cloud_mod(:,:) ! only for ABI
+      real,    pointer     :: cloud_obs(:,:) ! only for ABI
       real, allocatable    :: cloud_frac(:)
       real,    pointer     :: satzen(:) 
       real,    pointer     :: satazi(:) 
@@ -596,10 +636,10 @@ module da_define_structures
       real,    pointer     :: lod(:,:,:)       ! layer_optical_depth
       real,    pointer     :: trans(:,:,:)     ! layer transmittance
       real,    pointer     :: der_trans(:,:,:) ! d(transmittance)/dp
-      real,    pointer     :: kmin_t(:)	
-      real,    pointer     :: kmax_p(:)	  
-      real,    pointer     :: sensitivity_ratio(:,:,:)	  
-      real,    pointer     :: p_chan_level(:,:)	  
+      real,    pointer     :: kmin_t(:)
+      real,    pointer     :: kmax_p(:)
+      real,    pointer     :: sensitivity_ratio(:,:,:)
+      real,    pointer     :: p_chan_level(:,:)
       real,    pointer     :: qrn(:,:)
       real,    pointer     :: qcw(:,:)
       real,    pointer     :: qci(:,:)
@@ -702,6 +742,7 @@ module da_define_structures
       real    :: bogus_ef_u, bogus_ef_v, bogus_ef_t, bogus_ef_p, bogus_ef_q, bogus_ef_slp
       real    :: airsr_ef_t,  airsr_ef_q
       real    :: rain_ef_r
+      real    :: lightning_ef_w, lightning_ef_div, lightning_ef_qv
 #if (WRF_CHEM == 1)
       real    :: chemic_surf_ef
 #endif
@@ -737,6 +778,7 @@ module da_define_structures
       type (tamdar_type)   , pointer :: tamdar(:)
       type (synop_type)    , pointer :: tamdar_sfc(:)
       type (rain_type)     , pointer :: rain(:)
+      type (lightning_type), pointer :: lightning(:)
 #if (WRF_CHEM == 1)
       type (chemic_surf_type), pointer :: chemic_surf(:)
 #endif
@@ -782,6 +824,8 @@ module da_define_structures
       type (bad_info_type)       :: slp
       type (bad_info_type)       :: rad
       type (bad_info_type)       :: rain
+      type (bad_info_type)       :: w
+      type (bad_info_type)       :: div
 #if (WRF_CHEM == 1)
       type (bad_info_type)       :: chemic_surf
 #endif
@@ -928,6 +972,12 @@ module da_define_structures
       real, pointer :: rqv(:) => null()
    end type residual_radar_type
 
+   type residual_lightning_type
+      real, pointer :: w(:)
+      real, pointer :: div(:)
+      real, pointer :: qv(:)
+   end type residual_lightning_type
+
    type residual_instid_type
       integer                          :: num_rad
       integer                          :: nchan
@@ -985,6 +1035,7 @@ module da_define_structures
       type (residual_radar_type),    pointer :: radar(:)
       type (residual_instid_type),   pointer :: instid(:)
       type (residual_rain_type),     pointer :: rain(:)
+      type (residual_lightning_type),pointer :: lightning(:)
 #if (WRF_CHEM == 1)
       type (residual_chem_surf_type),pointer :: chemic_surf(:)
 #endif
@@ -1039,6 +1090,7 @@ module da_define_structures
       real                :: bogus_u, bogus_v, bogus_t, bogus_q, bogus_slp
       real                :: airsr_t, airsr_q
       real                :: rain_r
+      real                :: lightning_w, lightning_div, lightning_qv
 #if (WRF_CHEM == 1)
       real                :: chemic_surf
 #endif
@@ -1216,6 +1268,7 @@ contains
 #endif
 #include "da_allocate_y.inc"
 #include "da_allocate_y_radar.inc"
+#include "da_allocate_y_lightning.inc"
 #include "da_allocate_y_rain.inc"
 #if (WRF_CHEM == 1)
 #include "da_allocate_y_chem_sfc.inc"

@@ -702,9 +702,9 @@ module ext_adios2_support_routines
  
    call LowerCase(MemoryOrder,MemOrd)
    select case (MemOrd)
- 
- !#define XDEX(A,B,C) A-A ## 1+1+(A ## 2-A ## 1+1)*((B-B ## 1)+(C-C ## 1)*(B ## 2-B ## 1+1))
- ! define(`XDEX',($1-``$1''1+1+(``$1''2-``$1''1+1)*(($2-``$2''1)+($3-``$3''1)*(``$2''2-``$2''1+1))))
+! Cannot use following define due to gfortran cpp traditional mode concatenation limitations 
+!#define XDEX(A,B,C) A-A ## 1+1+(A ## 2-A ## 1+1)*((B-B ## 1)+(C-C ## 1)*(B ## 2-B ## 1+1))
+! define(`XDEX',($1-``$1''1+1+(``$1''2-``$1''1+1)*(($2-``$2''1)+($3-``$3''1)*(``$2''2-``$2''1+1))))
      case ('xzy')
 #undef  DFIELD
 #define DFIELD XField(1:di,XDEX(i,k,j))
@@ -1599,9 +1599,9 @@ subroutine ext_adios2_ioinit(SysDepInfo, Status)
   !look for adios2 xml runtime configuration
   INQUIRE(FILE="adios2.xml", EXIST=file_exists)  
   if(file_exists) then
-    call adios2_init(adios, 'adios2.xml', MPI_COMM_WORLD, adios2_debug_mode_on, stat)
+    call adios2_init(adios, 'adios2.xml', MPI_COMM_WORLD, stat)
   else
-    call adios2_init(adios, MPI_COMM_WORLD, adios2_debug_mode_on, stat)
+    call adios2_init(adios, MPI_COMM_WORLD, stat)
   endif
   call adios2_err(stat,Status)
   if(Status /= WRF_NO_ERR) then

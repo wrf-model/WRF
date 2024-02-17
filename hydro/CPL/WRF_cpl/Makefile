@@ -1,7 +1,7 @@
 # Makefile 
 #
 .SUFFIXES:
-.SUFFIXES: .o .F
+.SUFFIXES: .o .F90
 
 
 
@@ -15,9 +15,9 @@ OBJS = \
 	wrf_drv_HYDRO.o    
 all:	$(OBJS) 
 
-.F.o:
+.F90.o:
 	@echo ""
-	$(COMPILER90) $(CPPINVOKE) $(CPPFLAGS) -I$(NETCDFINC) -o $(@) $(F90FLAGS) $(MODFLAG) -I$(WRF_ROOT)/frame -I$(WRF_ROOT)/main -I$(WRF_ROOT)/external/esmf_time_f90 $(*).F
+	$(COMPILER90) $(CPPINVOKE) $(CPPFLAGS) -I$(NETCDFINC) -o $(@) $(F90FLAGS) $(MODFLAG) -I$(WRF_ROOT)/frame -I$(WRF_ROOT)/main -I$(WRF_ROOT)/external/esmf_time_f90 $(*).F90
 	@echo ""
 	ar -r ../../lib/libHYDRO.a $(@)
 

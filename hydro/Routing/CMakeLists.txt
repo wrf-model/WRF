@@ -1,0 +1,33 @@
+add_library(hydro_routing STATIC
+	module_UDMAP.F90
+	module_channel_routing.F90
+	module_date_utilities_rt.F90
+	module_GW_baseflow.F90
+	module_gw_gw2d.F90
+	module_HYDRO_io.F90
+	module_HYDRO_utils.F90
+	module_lsm_forcing.F90
+	module_noah_chan_param_init_rt.F90
+	module_NWM_io_dict.F90
+	module_NWM_io.F90
+	module_reservoir_routing.F90
+	module_RT.F90
+	Noah_distr_routing.F90
+	Noah_distr_routing_overland.F90
+	Noah_distr_routing_subsurface.F90
+)
+
+target_link_libraries(hydro_routing PUBLIC hydro_mpp)
+target_link_libraries(hydro_routing PUBLIC hydro_utils)
+target_link_libraries(hydro_routing PUBLIC hydro_orchestrator)
+target_link_libraries(hydro_routing PUBLIC hydro_routing_overland)
+target_link_libraries(hydro_routing PUBLIC hydro_routing_subsurface)
+#target_link_libraries(hydro_routing PUBLIC hydro_routing_groundwater)
+#target_link_libraries(hydro_routing PUBLIC hydro_routing_groundwater_bucket)
+#target_link_libraries(hydro_routing PUBLIC hydro_routing_groundwater_nhd)
+#target_link_libraries(hydro_routing PUBLIC hydro_routing_groundwater_simple)
+target_link_libraries(hydro_routing PUBLIC hydro_routing_reservoirs)
+target_link_libraries(hydro_routing PUBLIC hydro_routing_reservoirs_levelpool)
+target_link_libraries(hydro_routing PUBLIC hydro_routing_reservoirs_hybrid)
+target_link_libraries(hydro_routing PUBLIC hydro_data_rec)
+target_link_libraries(hydro_routing PUBLIC hydro_routing_reservoirs_rfc)

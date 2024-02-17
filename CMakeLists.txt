@@ -782,6 +782,10 @@ if ( ${WRF_CHEM} )
   add_subdirectory( chem     )
 endif()
 
+if ( ${WRF_HYDRO} )
+  add_subdirectory( hydro  )
+endif()
+
 add_subdirectory( dyn_em   )
 
 

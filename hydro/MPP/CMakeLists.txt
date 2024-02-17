@@ -1,0 +1,9 @@
+add_library(hydro_mpp STATIC
+	CPL_WRF.F90
+	module_mpp_GWBUCKET.F90
+	module_mpp_ReachLS.F90
+	mpp_land.F90
+	hashtable.F90
+)
+
+target_link_libraries(hydro_mpp ${MPI_Fortran_LIBRARIES})

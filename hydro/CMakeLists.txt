@@ -1,3 +1,8 @@
+# additions that WRF-Hydro's top CMakeLists.txt handles
+set(CMAKE_Fortran_MODULE_DIRECTORY ${PROJECT_BINARY_DIR}/hydro/mods)
+add_definitions(-DMPP_LAND)
+
+
 # build the various sup-projects
 add_subdirectory("MPP")
 add_subdirectory("utils")

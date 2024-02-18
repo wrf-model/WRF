@@ -148,14 +148,14 @@ set( USE_IPO     OFF CACHE BOOL "USE_IPO"     )
 
 set( ENABLE_CHEM       OFF CACHE BOOL "ENABLE_CHEM"      )
 set( ENABLE_CMAQ       OFF CACHE BOOL "ENABLE_CMAQ"      )
-set( ENABLE_KPP        OFF CACHE BOOL "ENABLE_KPP"       )
-set( ENABLE_DFI_RADAR  OFF CACHE BOOL "ENABLE_DFI_RADAR" )
-set( ENABLE_TITAN      OFF CACHE BOOL "ENABLE_TITAN"     )
-set( ENABLE_MARS       OFF CACHE BOOL "ENABLE_MARS"      )
-set( ENABLE_VENUS      OFF CACHE BOOL "ENABLE_VENUS"     )
-set( ENABLE_VENUS      OFF CACHE BOOL "ENABLE_VENUS"     )
-set( ENABLE_TERRAIN    OFF CACHE BOOL "ENABLE_TERRAIN"   )
 set( ENABLE_CTSM       OFF CACHE BOOL "ENABLE_CTSM"      )
+set( ENABLE_DFI_RADAR  OFF CACHE BOOL "ENABLE_DFI_RADAR" )
+set( ENABLE_HYDRO      OFF CACHE BOOL "ENABLE_HYDRO"     )
+set( ENABLE_KPP        OFF CACHE BOOL "ENABLE_KPP"       )
+set( ENABLE_MARS       OFF CACHE BOOL "ENABLE_MARS"      )
+set( ENABLE_TERRAIN    OFF CACHE BOOL "ENABLE_TERRAIN"   )
+set( ENABLE_TITAN      OFF CACHE BOOL "ENABLE_TITAN"     )
+set( ENABLE_VENUS      OFF CACHE BOOL "ENABLE_VENUS"     )
 
 # What do these defines even do if they are always on????
 set( USE_ALLOCATABLES     ON CACHE BOOL "USE_ALLOCATABLES"    )
@@ -226,6 +226,15 @@ endif()
 
 if ( NOT ${WRF_CASE} IN_LIST WRF_CASE_OPTIONS )
   message( FATAL_ERROR "WRF Case option not recognized : ${WRF_CASE}" )
+endif()
+
+# handle Hydro options
+if ( ${WRF_HYDRO} )
+  set(ENABLE_HYDRO TRUE)
+endif()
+if ( ENABLE_HYDRO )
+  set(WRF_HYDRO 1)
+  set(USE_MPI TRUE)
 endif()
 
 
@@ -455,15 +464,15 @@ print_option( USE_OPENMP       20 )
 print_option( USE_IPO          20 )
 
 print_option( ENABLE_CHEM      20 )
-print_option( ENABLE_CMAQ      20 )
-print_option( ENABLE_KPP       20 )
-print_option( ENABLE_DFI_RADAR 20 )
-print_option( ENABLE_TITAN     20 )
-print_option( ENABLE_MARS      20 )
-print_option( ENABLE_VENUS     20 )
-print_option( ENABLE_VENUS     20 )
-print_option( ENABLE_TERRAIN   20 )
 print_option( ENABLE_CLM       20 )
+print_option( ENABLE_CMAQ      20 )
+print_option( ENABLE_DFI_RADAR 20 )
+print_option( ENABLE_HYDRO     20 )
+print_option( ENABLE_KPP       20 )
+print_option( ENABLE_MARS      20 )
+print_option( ENABLE_TERRAIN   20 )
+print_option( ENABLE_TITAN     20 )
+print_option( ENABLE_VENUS     20 )
 
 print_option( USE_ALLOCATABLES 20 )
 print_option( wrfmodel         20 )
@@ -785,6 +794,7 @@ endif()
 
 if ( ${WRF_HYDRO} )
   add_subdirectory( hydro  )
+  # target_link_libraries(${PROJECT_NAME}_Core wrfhydro)
 endif()
 
 add_subdirectory( dyn_em   )
@@ -826,6 +836,9 @@ target_link_libraries(  ${PROJECT_NAME}_Core
                             ${netCDF-Fortran_LIBRARIES}
                             ${pnetCDF_LIBRARIES}
                             $<$<BOOL:${USE_MPI}>:$<TARGET_NAME_IF_EXISTS:MPI::MPI_Fortran>>
+			    $<$<BOOL:${USE_HYDRO}>:wrfhydro>
+			    # $<$<BOOL:${USE_HYDRO}>:$<TARGET_NAME_IF_EXISTS::wrfhydro>>
+			    $<$<BOOL:${USE_HYDRO}>:$<TARGET_NAME_IF_EXISTS::wrfhydro>>
                             $<$<BOOL:${USE_OPENMP}>:$<TARGET_NAME_IF_EXISTS:OpenMP::OpenMP_Fortran>>
                             # This will add in target dependencies if they exist
                             $<TARGET_NAME_IF_EXISTS:Jasper::Jasper>

@@ -12,7 +12,7 @@
 
 #define NAMELEN 256
 
-short int  nChmOpts = 0;
+int  nChmOpts = 0;
 char rxt_tbl[5][1000][TABLE_ENTRY] = { '\0' };
 char chm_scheme[5][TABLE_ENTRY] = { '\0' };
 short int  rxt_cnt[5] = {0, 0};

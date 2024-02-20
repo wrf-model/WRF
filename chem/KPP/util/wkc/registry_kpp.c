@@ -13,7 +13,7 @@
 #include "data.h"
 #include "sym.h"
 
-main( int argc, char *argv[], char *env[] )
+int main( int argc, char *argv[], char *env[] )
 {
   char fname_in[NAMELEN], dir[NAMELEN], fname_tmp[NAMELEN], command[NAMELEN] ;
   FILE * fp_in, *fp_tmp ;

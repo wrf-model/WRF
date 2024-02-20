@@ -85,7 +85,7 @@ gen_wrf_io2 ( FILE * fp , char * fname, char * structname , char * fourdname, no
   {
 
 
-    if ( p->ndims > 3 && ! p->node_kind & FOURD ) continue ; /* short circuit anything with more than 3 dims, (not counting 4d arrays) */
+    if ( p->ndims > 3 && ( (! p->node_kind) & FOURD ) ) continue ; /* short circuit anything with more than 3 dims, (not counting 4d arrays) */
 
     if ( p->node_kind & I1 ) continue ;  /* short circuit anything that's not a state var */
 

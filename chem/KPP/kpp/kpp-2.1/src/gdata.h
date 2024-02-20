@@ -36,9 +36,9 @@
 
 #include <stdio.h>
 
-#define MAX_EQN         1200 /* mz_rs_20050130 */
-#define MAX_SPECIES     500 /* mz_rs_20050130 */
-#define MAX_SPNAME       30
+#define MAX_EQN         50000 /* 1200 *//* CL *//* mz_rs_20050130 */
+#define MAX_SPECIES     10000 /* 500 *//* CL *//* mz_rs_20050130 */
+#define MAX_SPNAME       50 /* 30 *//* CL */
 #define MAX_IVAL         40
 /* MAX_EQNTAG = max length of equation ID in eqn file */
 #define MAX_EQNTAG       32
@@ -196,7 +196,7 @@ void CmdDriver( char *cmd );
 void CmdRun( char *cmd );
 void CmdStochastic( char *cmd );
 
-void Generate();
+void Generate( char *rootFileName );
 
 char * FileName( char *name, char* env, char *dir, char *ext );
 

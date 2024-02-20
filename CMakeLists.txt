@@ -794,7 +794,6 @@ endif()
 
 if ( ${WRF_HYDRO} )
   add_subdirectory( hydro  )
-  # target_link_libraries(${PROJECT_NAME}_Core wrfhydro)
 endif()
 
 add_subdirectory( dyn_em   )
@@ -836,9 +835,6 @@ target_link_libraries(  ${PROJECT_NAME}_Core
                             ${netCDF-Fortran_LIBRARIES}
                             ${pnetCDF_LIBRARIES}
                             $<$<BOOL:${USE_MPI}>:$<TARGET_NAME_IF_EXISTS:MPI::MPI_Fortran>>
-			    $<$<BOOL:${USE_HYDRO}>:wrfhydro>
-			    # $<$<BOOL:${USE_HYDRO}>:$<TARGET_NAME_IF_EXISTS::wrfhydro>>
-			    $<$<BOOL:${USE_HYDRO}>:$<TARGET_NAME_IF_EXISTS::wrfhydro>>
                             $<$<BOOL:${USE_OPENMP}>:$<TARGET_NAME_IF_EXISTS:OpenMP::OpenMP_Fortran>>
                             # This will add in target dependencies if they exist
                             $<TARGET_NAME_IF_EXISTS:Jasper::Jasper>
@@ -860,6 +856,7 @@ target_link_libraries(  ${PROJECT_NAME}_Core
                             io_grib_share
                             fftpack5
 
+			    $<$<BOOL:${WRF_HYDRO}>:wrfhydro>
                             $<TARGET_NAME_IF_EXISTS:atm_ocn>
                             $<TARGET_NAME_IF_EXISTS:io_adios2>
                             $<TARGET_NAME_IF_EXISTS:io_esmf>

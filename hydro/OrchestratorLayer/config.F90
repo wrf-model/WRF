@@ -645,8 +645,7 @@ contains
     if(maxAgePairsBiasPersist .eq. -99999) maxAgePairsBiasPersist = -1*nLastObs
 #endif
     close(12)
-
-    call read_crocus_namelist(crocus_opts)
+    if (sys_cpl == 1) call read_crocus_namelist(crocus_opts)
 ! #ifdef MPP_LAND
 !     endif
 ! #endif

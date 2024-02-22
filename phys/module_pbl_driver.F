@@ -104,6 +104,9 @@ CONTAINS
                ,tke_adv,diss_adv,tpe_adv                   &
                ,pr_pbl,el_pbl                              &
                ,wu_tur,wv_tur,wt_tur,wq_tur                &
+! variables added for AHE
+               , gmt, xtime, julday, julyr, ahe &
+               , distributed_ahe_opt &
 ! variables  for GBM PBL
                ,exch_tke, rthraten                         &
                ,a_e_bep,b_e_bep,dlg_bep,dl_u_bep           &
@@ -203,6 +206,7 @@ CONTAINS
    USE module_wind_fitch
    USE module_wind_mav ! Yulong add for WLM
 #endif
+   use module_ra_gfdleta, only: cal_mon_day
 
    !  This driver calls subroutines for the PBL parameterizations.
    !
@@ -617,6 +621,11 @@ CONTAINS
    REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ),            &
                INTENT(OUT)    ::                          EL_PBL
 
+   REAL, INTENT(IN) :: gmt, xtime
+   INTEGER,  INTENT(IN) :: julday, julyr
+   REAL, OPTIONAL, DIMENSION( ims:ime, 0:287, jms:jme ), INTENT(IN)  :: ahe
+   INTEGER, INTENT(IN) :: distributed_ahe_opt
+
    REAL ,                             INTENT(IN   )  ::  u_frame, &
                                                          v_frame
 !
@@ -827,8 +836,8 @@ CONTAINS
    integer iu_bep,iurb,idiff
    real seamask,thsk,zzz,unew,vnew,tnew,qnew,umom,vmom
    REAL :: z0,z1,z2,w1,w2
-
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: TKE_windfarm ! Yulong add for WLM
+   INTEGER :: ihour, jmonth, jday
 !
 ! FASDAS
 !
@@ -837,6 +846,10 @@ CONTAINS
    REAL                                                           ::   scrp1
 !
 ! END FASDAS
+!
+! To accommodate shared physics
+   character*256 :: errmsg
+   integer :: errflg
 !
 !------------------------------------------------------------------
 !
@@ -1202,13 +1215,13 @@ CONTAINS
                 PRESENT( hol      ) ) THEN
 !
              CALL ysu(                                              &
-               U3D=u_phytmp,V3D=v_phytmp,TH3D=th_phy,T3D=t_phy      &
+               U3D=u_phytmp,V3D=v_phytmp,T3D=t_phy                  &
               ,QV3D=qv_curr,QC3D=qc_curr,QI3D=qi_curr               &
               ,P3D=p_phy,P3DI=p8w,PI3D=pi_phy                       &
               ,RUBLTEN=rublten,RVBLTEN=rvblten                      &
               ,RTHBLTEN=rthblten,RQVBLTEN=rqvblten                  &
               ,RQCBLTEN=rqcblten,RQIBLTEN=rqiblten                  &
-              ,FLAG_QI=flag_qi                                      &
+              ,FLAG_QI=flag_qi,FLAG_QC=flag_qc                      &
               ,CP=cp,G=g,ROVCP=rcp,RD=r_D,ROVG=rovg                 &
               ,DZ8W=dz8w,XLV=XLV,RV=r_v,PSFC=PSFC                   &
               ,ZNT=znt,UST=ust,HPBL=pblh                            &
@@ -1221,7 +1234,7 @@ CONTAINS
               ,YSU_TOPDOWN_PBLMIX=ysu_topdown_pblmix                &
               ,WSPD=wspd,BR=br,DT=dtbl,KPBL2D=kpbl                  &
               ,EP1=ep_1,EP2=ep_2,KARMAN=karman                      &
-              ,EXCH_H=exch_h,EXCH_M=exch_m,REGIME=regime            &
+              ,EXCH_H=exch_h,EXCH_M=exch_m                          &
               ,RTHRATEN=RTHRATEN                                    &
 ! for multilayer UCM
               ,IDIFF=idiff,FLAG_BEP=flag_bep,FRC_URB2D=frc_urb2d    &
@@ -1233,6 +1246,7 @@ CONTAINS
               ,DL_U_BEP=dl_u_bep,SF_BEP=sf_bep,VL_BEP=vl_bep        &
 ! for grims shallow convection with ysupbl
               ,WSTAR=wstar,DELTA=delta                              &
+              ,errmsg=errmsg,errflg=errflg                          &
               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
@@ -2133,7 +2147,8 @@ CONTAINS
               ,ZNU=znu,ZNW=znw,P_TOP=p_top                          &
               ,CP=cp,G=g,RD=r_d                                     &
               ,RV=r_v,EP1=ep_1,PI=3.141592653                       &
-              ,DT=dtbl,DX=dx,KPBL2D=kpbl,ITIMESTEP=itimestep        &
+              ,DT=dtbl,DX=dx2d,KPBL2D=kpbl,ITIMESTEP=itimestep      &
+              ,errmsg=errmsg,errflg=errflg                          &
               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      )
@@ -2253,6 +2268,17 @@ CONTAINS
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme        &
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte)
           ENDIF
+
+     IF (distributed_ahe_opt == 1) THEN
+       call cal_mon_day(julday, julyr, jmonth, jday)
+       ihour = (jmonth - 1) * 24 + MOD(INT(gmt + xtime / 60.0), 24)
+       DO j = jts, jte
+       DO i = its, ite
+         ! Volumetric heat capacity of air = 1200 J/(K m3)
+         RTHBLTEN(i, 1, j) = RTHBLTEN(i, 1, j) + ahe(i, ihour, j) / 1200 / DZ8W(i, 1, j)
+       END DO
+       END DO
+     END IF
 
    ENDDO
    !$OMP END PARALLEL DO

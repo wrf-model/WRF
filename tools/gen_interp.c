@@ -377,7 +377,7 @@ fprintf(fp,"                  ngrid%%parent_grid_ratio, ngrid%%parent_grid_ratio
                strcpy( tmpstr , pp->interpu_aux_fields ) ;
 	     } else if ( down_path & FORCE_DOWN ) {
                /* by default, add the boundary and boundary tendency fields to the arg list */
-               if ( ! p->node_kind & FOURD ) {
+               if ( (! p->node_kind) & FOURD ) {
                  sprintf( tmpstr , "%s_b,%s_bt,", pp->name, pp->name )  ;
                } else {
                  sprintf( tmpstr , "%s_b,%s_bt,", p->name, p->name )  ;
@@ -546,8 +546,8 @@ gen_nest_interp2 ( FILE * fp , node_t * node, char * fourdname, int down_path , 
           set_dim_strs2 ( p , ddim , mdim , pdim , "", 1 ) ;
         } 
         if ( !strcmp ( ddim[0][1], "kde") ||
-	             ( ddim[1][1], "kde") ||
-		         ( ddim[2][1], "kde")) {	
+			!strcmp ( ddim[1][1], "kde") ||
+		        !strcmp ( ddim[2][1], "kde")) {	
     
             if ( p->ntl > 1 ) { sprintf(tag,"_2") ; sprintf(tag2,"_%d", use_nest_time_level) ; }
             else              { sprintf(tag,"")   ; sprintf(tag2,"")                         ; }

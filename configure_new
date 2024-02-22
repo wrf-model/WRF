@@ -1,0 +1,84 @@
+#!/bin/sh
+
+help()
+{
+  echo "./configure_new [options] [-- <CMake configuration options>]"
+  echo "  -p                  Preselect a stanza configuration with matching description"
+  echo "  -x                  Skip CMake options prompt, meant to be used in conjunction with direct pass-in options"
+  echo "  -d directory        Use as alternate build directory"
+  echo "  -i directory        Use as alternate install directory"
+  echo "  -- <CMake options>  Directly pass CMake options to configuration, equivalent to cmake <source dir> <CMake Options>"
+  echo "  -h                  Print this message"
+  
+}
+
+preselect=
+skipCMake=false
+while getopts p:xd:i:h opt; do
+  case $opt in
+    p)
+      preselect=$OPTARG
+    ;;
+    x)
+      skipCMake=true
+    ;;
+    d)
+      buildDirectory=$OPTARG
+    ;;
+    i)
+      installDirectory=$OPTARG
+    ;;
+    h)  help; exit 0 ;;
+    *)  help; exit 1 ;;
+    :)  help; exit 1 ;;
+    \?) help; exit 1 ;;
+  esac
+done
+
+shift "$((OPTIND - 1))"
+
+extraOps=
+if [ $skipCMake = true ]; then
+  extraOps="-x"
+else
+  extraOps="-s CMakeLists.txt"
+fi
+
+if [ -z "$buildDirectory" ]; then
+  buildDirectory=_build
+  echo "Using default build directory : $buildDirectory"
+fi
+if [ -z "$installDirectory" ]; then
+  installDirectory=$PWD/install
+  echo "Using default install directory : $installDirectory"
+fi
+
+mkdir -p $buildDirectory
+
+if [ ! -z "$preselect" ]; then
+  echo "Using preselected config ${preselect}"
+  # Meant to be run at the top level
+  ./arch/configure_reader.py \
+    -c arch/configure.defaults  \
+    -t cmake/template/arch_config.cmake \
+    -o $buildDirectory/wrf_config.cmake \
+    ${extraOps} -p "${preselect}"
+else
+  # Meant to be run at the top level
+  ./arch/configure_reader.py \
+    -c arch/configure.defaults  \
+    -t cmake/template/arch_config.cmake \
+    -o $buildDirectory/wrf_config.cmake \
+    ${extraOps}
+fi
+
+configureStanza=$?
+
+if [ $configureStanza -eq 0 ]; then
+  # Now run cmake
+  cd $buildDirectory
+  cmake .. -DCMAKE_INSTALL_PREFIX=$installDirectory -DCMAKE_TOOLCHAIN_FILE=$buildDirectory/wrf_config.cmake $*
+  exit $?
+else
+  exit $configureStanza
+fi

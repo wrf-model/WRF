@@ -2622,7 +2622,7 @@ CHARACTER(LEN=8) :: name
                                                                 ) !Optional oml
 !--------------------------------------------------------------------
    USE module_sf_sfclay
-   USE module_sf_sfclayrev
+   USE sf_sfclayrev
    USE module_sf_slab
    USE module_sf_pxsfclay
    USE module_bl_ysu
@@ -3089,6 +3089,10 @@ CHARACTER(LEN=8) :: name
   INTEGER,OPTIONAL,INTENT(OUT), DIMENSION( ims:ime,jms:jme):: irr_rand_field  
   INTEGER,OPTIONAL :: irr_ph,irr_freq  
 
+! To accommodate shared physics
+   character*256 :: errmsg
+   integer :: errflg
+
 #if ( EM_CORE == 1 )
 !local mynn 
    INTEGER :: mynn_closure_level
@@ -3137,11 +3141,14 @@ CHARACTER(LEN=8) :: name
            CALL sfclayinit( allowed_to_read )
            isfc = 1
       CASE (SFCLAYREVSCHEME)
-            CALL sfclayrevinit(ims,ime,jms,jme,                &
-                         its,ite,jts,jte,                      &
-                         bathymetry_flag, shalwater_z0,        &
-                         shalwater_depth, water_depth,         &
-                         xland,LakeModel,lake_depth,lakemask   )
+           CALL sf_sfclayrev_init(errmsg,errflg)
+           IF ( shalwater_z0 .EQ. 1 ) THEN
+              CALL shalwater_init(ims,ime,jms,jme,            &  
+                        its,ite,jts,jte,                      &  
+                        bathymetry_flag, shalwater_z0,        &  
+                        shalwater_depth, water_depth,         &  
+                        xland,LakeModel,lake_depth,lakemask   )
+           END IF
            isfc = 1
       CASE (PXSFCSCHEME)
            CALL pxsfclayinit( allowed_to_read )
@@ -3283,8 +3290,8 @@ CHARACTER(LEN=8) :: name
 
              IF ( PRESENT( FRC_URB2D ) .AND. PRESENT( UTYPE_URB2D )) THEN
                 CALL urban_param_init(DZR,DZB,DZG,num_soil_layers,             & !urban
-                                sf_urban_physics,config_flags%use_wudapt_lcz)    !urban
-                               
+                                sf_urban_physics,config_flags%use_wudapt_lcz,  &
+                                config_flags%slucm_distributed_drag) 
                 
                 CALL urban_var_init(ISURBAN,TSK,TSLB,TMN,IVGTYP,               & !urban
                               ims,ime,jms,jme,kms,kme,num_soil_layers,         & !urban
@@ -3426,7 +3433,8 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
           IF ((SF_URBAN_PHYSICS.eq.1).OR.(SF_URBAN_PHYSICS.EQ.2).OR.(SF_URBAN_PHYSICS.EQ.3)) THEN
              IF ( PRESENT( FRC_URB2D ) .AND. PRESENT( UTYPE_URB2D )) THEN
                 CALL urban_param_init(DZR,DZB,DZG,num_soil_layers,                   & !urban
-                                sf_urban_physics,config_flags%use_wudapt_lcz)
+                                sf_urban_physics,config_flags%use_wudapt_lcz,        &
+                                config_flags%slucm_distributed_drag)
                 CALL urban_var_init(ISURBAN,TSK,TSLB,TMN,IVGTYP,               & !urban
                               ims,ime,jms,jme,kms,kme,num_soil_layers,         & !urban
                               LCZ_1_TABLE,LCZ_2_TABLE,LCZ_3_TABLE,LCZ_4_TABLE, & !urban
@@ -3690,14 +3698,6 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
       CASE (YSUSCHEME)
            if(isfc .ne. 1)CALL wrf_error_fatal &
             ( 'module_physics_init: Use sf_sfclay_physics= 1 or 91 for this pbl option' )
-           CALL ysuinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,    &
-                        RQCBLTEN,RQIBLTEN,P_QI,               &
-                        PARAM_FIRST_SCALAR,                   &
-                        restart,                              &
-                        allowed_to_read ,                     &
-                        ids, ide, jds, jde, kds, kde,         &
-                        ims, ime, jms, jme, kms, kme,         &
-                        its, ite, jts, jte, kts, kte          )
       CASE (SHINHONGSCHEME)
            if(isfc .ne. 1)CALL wrf_error_fatal &
             ( 'module_physics_init: Use sf_sfclay_physics= 1 or 91 for this pbl option' )
@@ -4380,7 +4380,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 !------------------------------------------------------------------
    USE module_mp_wsm3
    USE module_mp_wsm5
-   USE module_mp_wsm6
+   USE mp_wsm6
    USE module_mp_wsm7
    USE module_mp_etanew
    USE module_mp_fer_hires
@@ -4451,6 +4451,10 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    logical :: nssl_density_on
    INTEGER    :: i_err
 
+! To accommodate shared physics
+   character*256 :: errmsg
+   integer :: errflg
+
    warm_rain = .false.
    adv_moist_cond = .true.
    itf=min0(ite,ide-1)
@@ -4479,7 +4483,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
      CASE (WSM5SCHEME)
           CALL wsm5init(rhoair0,rhowater,rhosnow,cliq,cpv, allowed_to_read )
      CASE (WSM6SCHEME)
-          CALL wsm6init(rhoair0,rhowater,rhosnow,cliq,cpv, config_flags%hail_opt,allowed_to_read )
+          CALL mp_wsm6_init(rhoair0,rhowater,rhosnow,cliq,cpv,config_flags%hail_opt,errmsg,errflg)
      CASE (WSM7SCHEME)
           CALL wsm7init(rhoair0,rhowater,rhosnow,cliq,cpv, allowed_to_read )
      CASE (ETAMPNEW)
@@ -5657,5 +5661,62 @@ subroutine interp_vec_cu(locvec,locwant,periodic,loc1,loc2,wght1,wght2)
 #endif
 
   end subroutine compute_2d_dx_area
+
+  SUBROUTINE shalwater_init(ims,ime,jms,jme,                     &
+                             its,ite,jts,jte,                    &
+                             bathymetry_flag, shalwater_z0,      &
+                             shalwater_depth, water_depth,       &
+                             xland,LakeModel,lake_depth,lakemask )
+
+   INTEGER, INTENT(IN)      ::   ims,ime,jms,jme,its,ite,jts,jte
+   INTEGER, INTENT(IN)      ::   shalwater_z0
+   REAL,    INTENT(IN)      ::   shalwater_depth
+   INTEGER, INTENT(IN)      ::   bathymetry_flag
+   REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)    ::  water_depth
+   REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN   )    ::  xland
+   INTEGER         ::     LakeModel
+   REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN   )    ::  lake_depth
+   REAL,    DIMENSION( ims:ime, jms:jme )                   ::  lakemask
+               
+   ! Local  
+   LOGICAL :: overwrite_water_depth
+   overwrite_water_depth = .False.
+   
+   IF ( bathymetry_flag .eq. 1 ) THEN
+      IF ( shalwater_depth .LE. 0.0 ) THEN
+         IF ( LakeModel .ge. 1 ) THEN
+
+            DO j = jts,jte
+               DO i = its,ite
+                  IF ( lakemask(i,j) .EQ. 1 ) THEN
+                     water_depth(i,j) = lake_depth(i,j)
+                  END IF
+               END DO
+            END DO
+         END IF
+      ELSE
+         overwrite_water_depth = .True.
+      END IF
+   ELSE
+      IF ( shalwater_depth .GT. 0.0 ) THEN
+         overwrite_water_depth = .True.
+      ELSE
+         CALL wrf_error_fatal('No bathymetry data detected and shalwater_depth not greater than 0.0. Re-run WPS to get bathymetry data or set shalwater_depth > 0.0')
+      END IF
+   END IF
+
+   IF (overwrite_water_depth) THEN
+      DO j = jts,jte
+         DO i = its,ite
+            IF((XLAND(i,j)-1.5).GE.0)THEN
+               water_depth(i,j) = shalwater_depth
+            ELSE
+               water_depth(i,j) = -2.0
+            END IF
+         END DO
+      END DO
+   END IF
+
+  END SUBROUTINE shalwater_init
 
 END MODULE module_physics_init

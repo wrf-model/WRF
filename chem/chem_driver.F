@@ -282,6 +282,8 @@
       CHARACTER (LEN=1000) :: msg 
       CHARACTER (LEN=256) :: current_date_char 
       integer :: current_month
+!for the online nh3-"WRF-NH3-CHEM" modified by renchuanhua 
+      integer :: current_hour  
 ! ..
 ! .. Intrinsic Functions ..
       INTRINSIC max, min
@@ -878,9 +880,14 @@
               grid%biomt_par,grid%emit_par,grid%ebio_co2oce,                               &
               eghg_bio,                                                                    &
               grid%seas_flux,                                                              &
+         ! stuff for the online nh3-"WRF-NH3-CHEM" modified by renchuanhua
+              grid%actnh3, grid%EFnh3,                                                     &          
+              grid%agrisoil_nh3, grid%fertilizer_nh3, grid%freeinten_nh3,                  &
+              grid%graze_nh3, grid%industry_nh3,                                           &
+              grid%residential_nh3,  grid%transport_nh3, current_hour, grid%Q2,            &
               ids,ide, jds,jde, kds,kde,                                                   &
               ims,ime, jms,jme, kms,kme,                                                   &
-              its,ite,jts,jte,kts,kte)
+              its,ite,jts,jte,kts,kte                                                      )
               if( chm_is_mozart ) then
                  call mozcart_lbc_set( chem, num_chem, grid%id, &
                                        ims, ime, jms, jme, kms, kme,    &                  

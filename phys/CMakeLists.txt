@@ -1,0 +1,274 @@
+# WRF CMake Build
+
+########################################################################################################################
+# 
+# Quickly preprocess some files so that cmake can understand the module dependencies
+#
+########################################################################################################################
+get_directory_property( DIR_DEFS DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_DEFINITIONS )
+wrf_c_preproc_fortran( 
+                      TARGET_NAME     module_ra_rrtmg_preproc
+                      OUTPUT_DIR      ${CMAKE_CURRENT_BINARY_DIR}/preproc/
+                      EXTENSION       ".f90"
+                      INCLUDES        ${CMAKE_CURRENT_SOURCE_DIR}
+                      DEPENDENCIES    registry_code
+                      DEFINITIONS     ${DIR_DEFS}
+                      SOURCES         module_ra_rrtmg_lwk.F
+                                      module_ra_rrtmg_lwf.F
+                                      module_ra_rrtmg_swk.F
+                                      module_ra_rrtmg_swf.F
+                                      module_sf_clm.F
+                      )
+
+add_dependencies( ${PROJECT_NAME}_Core module_ra_rrtmg_preproc )
+
+target_sources(
+                ${PROJECT_NAME}_Core
+                PRIVATE
+                  ccpp_kind_types.F
+                  complex_number_module.F
+                  module_bep_bem_helper.F
+                  module_bl_acm.F
+                  module_bl_boulac.F
+                  module_bl_camuwpbl_driver.F
+                  module_bl_eepsilon.F
+                  module_bl_fogdes.F
+                  module_bl_gbmpbl.F
+                  module_bl_gfs.F
+                  module_bl_gfsedmf.F
+                  module_bl_gwdo.F
+                  module_bl_gwdo_gsl.F
+                  module_bl_keps.F
+                  module_bl_mfshconvpbl.F
+                  module_bl_mrf.F
+                  module_bl_myjpbl.F
+                  module_bl_myjurb.F
+                  module_bl_mynn.F
+                  module_bl_mynn_common.F
+                  module_bl_mynn_wrapper.F
+                  module_bl_qnsepbl.F
+                  module_bl_shinhong.F
+                  module_bl_temf.F
+                  module_bl_ysu.F
+                  module_cam_bl_diffusion_solver.F
+                  module_cam_bl_eddy_diff.F
+                  module_cam_cldwat.F
+                  module_cam_constituents.F
+                  module_cam_error_function.F
+                  module_cam_esinti.F
+                  module_cam_gffgch.F
+                  module_cam_infnan.F
+                  module_cam_molec_diff.F
+                  module_cam_mp_cldwat2m_micro.F
+                  module_cam_mp_conv_water.F
+                  module_cam_mp_microp_aero.F
+                  module_cam_mp_modal_aero_initialize_data_phys.F
+                  module_cam_mp_ndrop.F
+                  module_cam_mp_qneg3.F
+                  module_cam_mp_radconstants.F
+                  module_cam_physconst.F
+                  module_cam_shr_const_mod.F
+                  module_cam_shr_kind_mod.F
+                  module_cam_support.F
+                  module_cam_trb_mtn_stress.F
+                  module_cam_upper_bc.F
+                  module_cam_wv_saturation.F
+                  module_checkerror.F
+                  module_cu_bmj.F
+                  module_cu_camzm.F
+                  module_cu_camzm_driver.F
+                  module_cu_g3.F
+                  module_cu_gd.F
+                  module_cu_gf_ctrans.F
+                  module_cu_gf_deep.F
+                  module_cu_gf_sh.F
+                  module_cu_gf_wrfdrv.F
+                  module_cu_kf.F
+                  module_cu_kfcup.F
+                  module_cu_kfeta.F
+                  module_cu_ksas.F
+                  module_cu_mskf.F
+                  module_cu_nsas.F
+                  module_cu_ntiedtke.F
+                  module_cu_osas.F
+                  module_cu_sas.F
+                  module_cu_scalesas.F
+                  module_cu_tiedtke.F
+                  module_cumulus_driver.F
+                  module_data_cam_mam_aero.F
+                  module_data_cam_mam_asect.F
+                  module_data_gocart_dust.F
+                  module_diag_afwa.F
+                  module_diag_cl.F
+                  module_diag_functions.F
+                  module_diag_hailcast.F
+                  module_diag_misc.F
+                  module_diag_nwp.F
+                  module_diag_pld.F
+                  module_diag_rasm.F
+                  module_diag_solar.F
+                  module_diag_trad_fields.F
+                  module_diag_zld.F
+                  module_diagnostics_driver.F
+                  module_dust_emis.F
+                  module_fdda_psufddagd.F
+                  module_fdda_spnudging.F
+                  module_fddagd_driver.F
+                  module_fddaobs_driver.F
+                  module_fddaobs_rtfdda.F
+                  module_fire_emis.F
+                  module_firebrand_spotting.F
+                  module_firebrand_spotting_mpi.F
+                  module_fr_fire_atm.F
+                  module_fr_fire_core.F
+                  module_fr_fire_driver.F
+                  module_fr_fire_driver_wrf.F
+                  module_fr_fire_model.F
+                  module_fr_fire_phys.F
+                  module_fr_fire_util.F
+                  module_gfs_funcphys.F
+                  module_gfs_machine.F
+                  module_gfs_physcons.F
+                  module_gocart_coupling.F
+                  module_irrigation.F
+                  module_lightning_driver.F
+                  module_ltng_cpmpr92z.F
+                  module_ltng_crmpr92.F
+                  module_ltng_iccg.F
+                  module_ltng_lpi.F
+                  module_madwrf.F
+                  module_microphysics_driver.F
+                  module_microphysics_zero_out.F
+                  module_mixactivate.F
+                  module_mp_cammgmp_driver.F
+                  module_mp_etanew.F
+                  module_mp_fast_sbm.F
+                  module_mp_fer_hires.F
+                  module_mp_full_sbm.F
+                  module_mp_gsfcgce.F
+                  module_mp_gsfcgce_4ice_nuwrf.F
+                  module_mp_jensen_ishmael.F
+                  module_mp_kessler.F
+                  module_mp_lin.F
+                  module_mp_milbrandt2mom.F
+                  module_mp_morr_two_moment.F
+                  module_mp_morr_two_moment_aero.F
+                  module_mp_nssl_2mom.F
+                  module_mp_ntu.F
+                  module_mp_p3.F
+                  module_mp_radar.F
+                  module_mp_SBM_polar_radar.F
+                  module_mp_sbu_ylin.F
+                  module_mp_thompson.F
+                  module_mp_wdm5.F
+                  module_mp_wdm6.F
+                  module_mp_wdm7.F
+                  module_mp_wsm3.F
+                  module_mp_wsm5.F
+                  module_mp_wsm6.F
+                  module_mp_wsm6r.F
+                  module_mp_wsm7.F
+                  module_pbl_driver.F
+                  module_physics_addtendc.F
+                  module_physics_init.F
+                  module_progtm.F
+                  module_ra_aerosol.F
+                  module_ra_cam.F
+                  module_ra_cam_support.F
+                  module_ra_clWRF_support.F
+                  module_ra_eclipse.F
+                  module_ra_effective_radius.F
+                  module_ra_farms.F
+                  module_ra_flg.F
+                  module_ra_gfdleta.F
+                  module_ra_goddard.F
+                  module_ra_gsfcsw.F
+                  module_ra_hs.F
+                  module_ra_rrtm.F
+                  module_ra_rrtmg_aero_optical_util_cmaq.F
+                  module_ra_rrtmg_lw.F
+                  # module_ra_rrtmg_lwf.F
+                  ${CMAKE_CURRENT_BINARY_DIR}/preproc/module_ra_rrtmg_lwf.f90
+                  # module_ra_rrtmg_lwk.F
+                  ${CMAKE_CURRENT_BINARY_DIR}/preproc/module_ra_rrtmg_lwk.f90
+                  module_ra_rrtmg_sw.F
+                  # module_ra_rrtmg_swf.F
+                  ${CMAKE_CURRENT_BINARY_DIR}/preproc/module_ra_rrtmg_swf.f90
+                  # module_ra_rrtmg_swk.F
+                  ${CMAKE_CURRENT_BINARY_DIR}/preproc/module_ra_rrtmg_swk.f90
+
+                  module_ra_sw.F
+                  module_radiation_driver.F
+                  module_sf_3dpwp.F
+                  module_sf_bem.F
+                  module_sf_bep.F
+                  module_sf_bep_bem.F
+                  # module_sf_clm.F
+                  ${CMAKE_CURRENT_BINARY_DIR}/preproc/module_sf_clm.f90
+                  module_sf_ctsm.F
+                  module_sf_exchcoef.F
+                  module_sf_fogdes.F
+                  module_sf_gecros.F
+                  module_sf_gfdl.F
+                  module_sf_gfs.F
+                  module_sf_idealscmsfclay.F
+                  module_sf_lake.F
+                  module_sf_myjsfc.F
+                  module_sf_mynn.F
+                  module_sf_noah_seaice.F
+                  module_sf_noah_seaice_drv.F
+                  module_sf_noahdrv.F
+                  module_sf_noahlsm.F
+                  module_sf_noahlsm_glacial_only.F
+                  # NoahMP Code
+                  noahmp/drivers/wrf/module_sf_noahmpdrv.F
+                  noahmp/src/module_sf_noahmp_glacier.F
+                  noahmp/src/module_sf_noahmp_groundwater.F
+                  noahmp/src/module_sf_noahmplsm.F
+
+                  module_sf_ocean_driver.F
+                  module_sf_oml.F
+                  module_sf_pxlsm.F
+                  module_sf_pxlsm_data.F
+                  module_sf_pxsfclay.F
+                  module_sf_qnsesfc.F
+                  module_sf_ruclsm.F
+                  module_sf_scmflux.F
+                  module_sf_scmskintemp.F
+                  module_sf_sfcdiags.F
+                  module_sf_sfcdiags_ruclsm.F
+                  module_sf_sfclay.F
+                  module_sf_sfclayrev.F
+                  module_sf_slab.F
+                  module_sf_ssib.F
+                  module_sf_sstskin.F
+                  module_sf_temfsfclay.F
+                  module_sf_tmnupdate.F
+                  module_sf_urban.F
+                  module_shallowcu_driver.F
+                  module_shcu_camuwshcu.F
+                  module_shcu_camuwshcu_driver.F
+                  module_shcu_deng.F
+                  module_shcu_grims.F
+                  module_shcu_nscv.F
+                  module_surface_driver.F
+                  module_wind_fitch.F
+                  module_wind_mav.F
+
+                  # Shared physics
+                  physics_mmm/bl_gwdo.F90
+                  physics_mmm/bl_ysu.F90
+                  physics_mmm/cu_ntiedtke.F90
+                  physics_mmm/module_libmassv.F90
+                  physics_mmm/mp_radar.F90
+                  physics_mmm/mp_wsm6.F90
+                  physics_mmm/mp_wsm6_effectRad.F90
+                  physics_mmm/sf_sfclayrev.F90
+                  )
+
+
+target_include_directories( 
+                            ${PROJECT_NAME}_Core
+                            PRIVATE
+                              ${CMAKE_CURRENT_SOURCE_DIR}
+                            )

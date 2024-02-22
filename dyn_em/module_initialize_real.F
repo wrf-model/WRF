@@ -617,6 +617,15 @@ integer::oops1,oops2
          END IF
       END IF
 
+      IF (config_flags%slucm_distributed_drag) THEN
+        CALL wrf_message('Adding zero-plane displacement height to topography')
+        DO j = jts, MIN(jde - 1, jte)
+        DO i = its, MIN(ide - 1, ite)
+          IF (grid%zd_urb2d(i, j) > 0) grid%ht_gc(i, j) = grid%ht_gc(i, j) + grid%zd_urb2d(i, j)
+        END DO
+        END DO
+      END IF
+
       !  Is there any vertical interpolation to do?  The "old" data comes in on the correct
       !  vertical locations already.
 
@@ -1340,6 +1349,11 @@ integer::oops1,oops2
                                 ims , ime , jms , jme , kms , kme , &
                                 its , ite , jts , jte , kts , kte )
 
+         CALL monthly_avg ( grid%greenfrac , grid%shdavg , &
+                                ids , ide , jds , jde , kds , kde , &
+                                ims , ime , jms , jme , kms , kme , &
+                                its , ite , jts , jte , kts , kte )
+
          !  The model expects the green-ness and vegetation fraction values to be in percent, not fraction.
 
          DO j = jts, MIN(jte,jde-1)
@@ -1348,7 +1362,8 @@ integer::oops1,oops2
               grid%vegfra(i,j) = grid%vegfra(i,j) * 100.
               grid%shdmax(i,j) = grid%shdmax(i,j) * 100.
               grid%shdmin(i,j) = grid%shdmin(i,j) * 100.
-           END DO
+              grid%shdavg(i,j) = grid%shdavg(i,j) * 100.
+              END DO
          END DO
 
          !  The model expects the albedo fields as a fraction, not a percent.  Set the
@@ -3119,7 +3134,18 @@ integer::oops1,oops2
 
       !  Split NUDAPT  Urban Parameters
 
-      IF ( ( config_flags%sf_urban_physics == 1 ) .OR. ( config_flags%sf_urban_physics == 2 ) .OR. ( config_flags%sf_urban_physics == 3 ) ) THEN
+      distributed_aerodynamics_if: IF (config_flags%sf_urban_physics == 1 .AND. config_flags%slucm_distributed_drag) THEN
+         CALL nl_get_isurban ( grid%id , grid%isurban )
+         DO j = jts , MIN(jde-1,jte)
+            DO i = its , MIN(ide-1,ite)
+              IF (grid%landusef(i, grid%isurban, j) > 0) THEN
+                grid%frc_urb2d(i, j) = MAX(0.1, MIN(0.9, 1 - grid%shdavg(i, j) / 100.))
+              END IF
+            END DO
+          END DO
+      ELSE
+
+       IF ( ( config_flags%sf_urban_physics == 1 ) .OR. ( config_flags%sf_urban_physics == 2 ) .OR. ( config_flags%sf_urban_physics == 3 ) ) THEN
          DO j = jts , MIN(jde-1,jte)
             DO i = its , MIN(ide-1,ite)
               IF ( MMINLU == 'NLCD40' .OR. MMINLU == 'MODIFIED_IGBP_MODIS_NOAH') THEN
@@ -3141,7 +3167,7 @@ integer::oops1,oops2
                grid%HGT_URB2D(i,j)  = grid%URB_PARAM(i,94,j)
             END DO
          END DO
-      ENDIF
+       ENDIF
 
       IF ( ( config_flags%sf_urban_physics == 2 ) .OR. ( config_flags%sf_urban_physics == 3 ) ) THEN
          DO j = jts , MIN(jde-1,jte)
@@ -3174,6 +3200,8 @@ integer::oops1,oops2
             END DO
          END DO
       END DO
+
+      END IF distributed_aerodynamics_if
 
       END IF
 
@@ -7953,6 +7981,27 @@ end do
       END DO
 
    END SUBROUTINE monthly_min_max
+
+!---------------------------------------------------------------------
+
+   SUBROUTINE monthly_avg ( field_in , field_avg , &
+                      ids , ide , jds , jde , kds , kde , &
+                      ims , ime , jms , jme , kms , kme , &
+                      its , ite , jts , jte , kts , kte )
+      IMPLICIT NONE
+      INTEGER , INTENT(IN)        :: ids , ide , jds , jde , kds , kde , &
+                                     ims , ime , jms , jme , kms , kme , &
+                                     its , ite , jts , jte , kts , kte
+      REAL , DIMENSION(ims:ime,12,jms:jme) , INTENT(IN)  :: field_in
+      REAL , DIMENSION(ims:ime,   jms:jme) , INTENT(OUT) :: field_avg
+      !  Local vars
+      INTEGER :: i , j
+      DO j = jts , MIN(jde-1,jte)
+        DO i = its , MIN(ide-1,ite)
+          field_avg(i, j) = SUM(field_in(i, :, j)) / 12
+        END DO
+      END DO
+   END SUBROUTINE monthly_avg
 
 !---------------------------------------------------------------------
 

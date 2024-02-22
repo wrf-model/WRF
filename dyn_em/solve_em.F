@@ -4008,42 +4008,33 @@ BENCH_START(moist_phys_end_tim)
 
        IF ( config_flags%mp_zero_out > 0 ) THEN
        CALL microphysics_zero_outb (                                    &
-                      moist , num_moist,                                &
-                      config_flags%mp_zero_out,                         &
+                      moist , num_moist , config_flags ,                &
+                      ids, ide, jds, jde, kds, kde,                     &
+                      ims, ime, jms, jme, kms, kme,                     &
+                      its, ite, jts, jte,                               &
+                      k_start    , k_end                                )
+
+       IF ( config_flags%mp_zero_out_all > 0 ) THEN
+       CALL microphysics_zero_outb (                                    &
+                      scalar , num_scalar , config_flags ,              &
+                      ids, ide, jds, jde, kds, kde,                     &
+                      ims, ime, jms, jme, kms, kme,                     &
+                      its, ite, jts, jte,                               &
+                      k_start    , k_end                                )
+
+       CALL microphysics_zero_outb (                                    &
+                      chem , num_chem , config_flags ,                  &
+                      ids, ide, jds, jde, kds, kde,                     &
+                      ims, ime, jms, jme, kms, kme,                     &
+                      its, ite, jts, jte,                               &
+                      k_start    , k_end                                )
+       CALL microphysics_zero_outb (                                    &
+                      tracer , num_tracer , config_flags ,              &
                       ids, ide, jds, jde, kds, kde,                     &
                       ims, ime, jms, jme, kms, kme,                     &
                       its, ite, jts, jte,                               &
                       k_start    , k_end                                )
        ENDIF
-
-       IF ( config_flags%scalar_zero_out > 0 ) THEN
-       CALL microphysics_zero_outb (                                    &
-                      scalar , num_scalar,                              &
-                      config_flags%scalar_zero_out,                     &
-                      ids, ide, jds, jde, kds, kde,                     &
-                      ims, ime, jms, jme, kms, kme,                     &
-                      its, ite, jts, jte,                               &
-                      k_start    , k_end                                )
-       ENDIF
-
-       IF ( config_flags%chem_zero_out > 0 ) THEN
-       CALL microphysics_zero_outb (                                    &
-                      chem , num_chem,                                  &
-                      config_flags%chem_zero_out,                       &
-                      ids, ide, jds, jde, kds, kde,                     &
-                      ims, ime, jms, jme, kms, kme,                     &
-                      its, ite, jts, jte,                               &
-                      k_start    , k_end                                )
-       ENDIF
-
-       IF ( config_flags%tracer_zero_out > 0 ) THEN
-       CALL microphysics_zero_outb (                                    &
-                      tracer , num_tracer,                              &
-                      config_flags%tracer_zero_out,                     &
-                      ids, ide, jds, jde, kds, kde,                     &
-                      ims, ime, jms, jme, kms, kme,                     &
-                      its, ite, jts, jte,                               &
-                      k_start    , k_end                                )
        ENDIF
 
        IF ( config_flags%periodic_x ) THEN
@@ -4058,46 +4049,34 @@ BENCH_START(moist_phys_end_tim)
 
        IF ( config_flags%mp_zero_out > 0 ) THEN
        CALL microphysics_zero_outa (                                    &
-                      moist , num_moist ,                               &
-                      config_flags%mp_zero_out,                         &
-                      config_flags%mp_zero_out_thresh,                  &
+                      moist , num_moist , config_flags ,                &
+                      ids, ide, jds, jde, kds, kde,                     &
+                      ims, ime, jms, jme, kms, kme,                     &
+                      its, ite, jts, jte,                               &
+                      k_start    , k_end                                )
+
+       IF ( config_flags%mp_zero_out_all > 0 ) THEN
+       CALL microphysics_zero_outa (                                    &
+                      scalar , num_scalar , config_flags ,              &
+                      ids, ide, jds, jde, kds, kde,                     &
+                      ims, ime, jms, jme, kms, kme,                     &
+                      its, ite, jts, jte,                               &
+                      k_start    , k_end                                )
+
+       CALL microphysics_zero_outa (                                    &
+                      chem , num_chem , config_flags ,                  &
+                      ids, ide, jds, jde, kds, kde,                     &
+                      ims, ime, jms, jme, kms, kme,                     &
+                      its, ite, jts, jte,                               &
+                      k_start    , k_end                                )
+
+       CALL microphysics_zero_outa (                                    &
+                      tracer , num_tracer , config_flags ,              &
                       ids, ide, jds, jde, kds, kde,                     &
                       ims, ime, jms, jme, kms, kme,                     &
                       its, ite, jts, jte,                               &
                       k_start    , k_end                                )
        ENDIF
-
-       IF ( config_flags%scalar_zero_out > 0 ) THEN
-       CALL microphysics_zero_outa (                                    &
-                      scalar , num_scalar,                              &
-                      config_flags%scalar_zero_out,                     &
-                      config_flags%scalar_zero_out_thresh,              &
-                      ids, ide, jds, jde, kds, kde,                     &
-                      ims, ime, jms, jme, kms, kme,                     &
-                      its, ite, jts, jte,                               &
-                      k_start    , k_end                                )
-        ENDIF
-
-       IF ( config_flags%chem_zero_out > 0 ) THEN
-       CALL microphysics_zero_outa (                                    &
-                      chem , num_chem,                                  &
-                      config_flags%chem_zero_out,                       &
-                      config_flags%chem_zero_out_thresh,                &
-                      ids, ide, jds, jde, kds, kde,                     &
-                      ims, ime, jms, jme, kms, kme,                     &
-                      its, ite, jts, jte,                               &
-                      k_start    , k_end                                )
-       ENDIF
- 
-       IF ( config_flags%tracer_zero_out > 0 ) THEN
-       CALL microphysics_zero_outa (                                    &
-                      tracer , num_tracer,                              &
-                      config_flags%tracer_zero_out,                     &
-                      config_flags%tracer_zero_out_thresh,              &
-                      ids, ide, jds, jde, kds, kde,                     &
-                      ims, ime, jms, jme, kms, kme,                     &
-                      its, ite, jts, jte,                               &
-                      k_start    , k_end                                )
        ENDIF
 
        CALL moist_physics_finish_em( grid%t_2, grid%t_1, t0, grid%muts, th_phy,  &

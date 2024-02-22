@@ -544,12 +544,8 @@ Namelist variables for controlling the adaptive time step option:
                                                  if they fall below a critical value ('moist' array only)
  mp_zero_out_thresh                  = 1.e-8   ! critical value for moist array threshold, below which
                                                  moist arrays (except for Qv) are set to zero (kg/kg)
- scalar_zero_out                     = 0 ! as for mp_zero_out but for scalar array
- chem_zero_out                       = 0 ! as for mp_zero_out but for chem array
- tracer_zero_out                     = 0 ! as for mp_zero_out but for tracer array
- scalar_zero_out_thresh              = 1.e-16 ! If scalar_zero_out > 0, then set smaller (and negative) values to zero
- chem_zero_out_thresh                = 1.e-16 ! If chem_zero_out > 0, then set smaller (and negative) values to zero
- tracer_zero_out_thresh              = 1.e-16 ! If tracer_zero_out > 0, then set smaller (and negative) values to zero
+ mp_zero_out_all                     = 0,      ! if =1 and mp_zero_out>0, then reproduce old behavior and 
+                                                 apply threshold to scalar, chem, and tracer arrays
 
  gsfcgce_hail                        = 0       ! for running gsfcgce microphysics with graupel
                                      = 1       ! for running gsfcgce microphysics with hail

@@ -5,7 +5,7 @@ CONTAINS
 
 SUBROUTINE microphysics_zero_outa (                                      &
                        moist_new , n_moist                               &
-                      ,mp_zero_out, mp_zero_out_thresh                   &
+                      ,config_flags                                      &
                       ,ids,ide, jds,jde, kds,kde                         &
                       ,ims,ime, jms,jme, kms,kme                         &
                       ,its,ite, jts,jte, kts,kte                         )
@@ -16,8 +16,7 @@ SUBROUTINE microphysics_zero_outa (                                      &
    USE module_wrf_error
 
    IMPLICIT NONE
-   INTEGER,      INTENT(IN   )    ::       mp_zero_out
-   REAL,         INTENT(IN   )    ::       mp_zero_out_thresh
+   TYPE (grid_config_rec_type) , INTENT(IN)          :: config_flags
    INTEGER,      INTENT(IN   )    ::       ids,ide, jds,jde, kds,kde
    INTEGER,      INTENT(IN   )    ::       ims,ime, jms,jme, kms,kme
    INTEGER,      INTENT(IN   )    ::       its,ite, jts,jte, kts,kte
@@ -33,9 +32,9 @@ SUBROUTINE microphysics_zero_outa (                                      &
 
    ! Zero out small condensate values  FSL-BLS-12-JUL-2004
 
-   IF ( mp_zero_out .EQ. 0 ) THEN
+   IF ( config_flags%mp_zero_out .EQ. 0 ) THEN
       !  do nothing
-   ELSE IF ( mp_zero_out .EQ. 1 ) THEN
+   ELSE IF ( config_flags%mp_zero_out .EQ. 1 ) THEN
       !  All of the "moist" fields, except for vapor, that are below a critical
       !  threshold are set to zero.
       CALL wrf_debug ( 100 , 'zero out small condensates, vapor not included')
@@ -44,13 +43,13 @@ SUBROUTINE microphysics_zero_outa (                                      &
             DO j = jts, jte
             DO k = kts, kte
             DO i = its, ite
-               IF ( moist_new(i,k,j,n) .LT. mp_zero_out_thresh )  moist_new(i,k,j,n) =0.
+               IF ( moist_new(i,k,j,n) .LT. config_flags%mp_zero_out_thresh )  moist_new(i,k,j,n) =0.
             ENDDO
             ENDDO
             ENDDO
          END IF
       ENDDO
-   ELSE IF ( mp_zero_out .EQ. 2 ) then
+   ELSE IF ( config_flags%mp_zero_out .EQ. 2 ) then
       !  All of the non-Qv "moist" fields that are below a critical threshold are set to 
       !  zero.  The vapor is constrained to be non-negative.
       CALL wrf_debug ( 100 , 'zero out small condensates, zero out negative vapor')
@@ -59,7 +58,7 @@ SUBROUTINE microphysics_zero_outa (                                      &
             DO j = jts, jte
             DO k = kts, kte
             DO i = its, ite
-               IF ( moist_new(i,k,j,n) .LT. mp_zero_out_thresh )  moist_new(i,k,j,n) =0.
+               IF ( moist_new(i,k,j,n) .LT. config_flags%mp_zero_out_thresh )  moist_new(i,k,j,n) =0.
             ENDDO
             ENDDO
             ENDDO
@@ -78,7 +77,7 @@ END SUBROUTINE microphysics_zero_outa
 
 SUBROUTINE microphysics_zero_outb (                                      &
                        moist_new , n_moist                               &
-                      ,mp_zero_out                                       &
+                      ,config_flags                                      &
                       ,ids,ide, jds,jde, kds,kde                         &
                       ,ims,ime, jms,jme, kms,kme                         &
                       ,its,ite, jts,jte, kts,kte                         )
@@ -89,7 +88,7 @@ SUBROUTINE microphysics_zero_outb (                                      &
    USE module_wrf_error
 
    IMPLICIT NONE
-   INTEGER,      INTENT(IN   )    ::       mp_zero_out
+   TYPE (grid_config_rec_type) , INTENT(IN)          :: config_flags
    INTEGER,      INTENT(IN   )    ::       ids,ide, jds,jde, kds,kde
    INTEGER,      INTENT(IN   )    ::       ims,ime, jms,jme, kms,kme
    INTEGER,      INTENT(IN   )    ::       its,ite, jts,jte, kts,kte
@@ -105,7 +104,7 @@ SUBROUTINE microphysics_zero_outb (                                      &
    ! Make sure that the boundary is .GE. 0 if the config_flags%mp_zero_out option is selected (1 or 2)
    ! Just do the outer row/col, no interior points.
 
-   IF ( mp_zero_out .NE. 0 ) THEN
+   IF ( config_flags%mp_zero_out .NE. 0 ) THEN
       DO n = PARAM_FIRST_SCALAR,n_moist
          !  bottom row
          j = jds

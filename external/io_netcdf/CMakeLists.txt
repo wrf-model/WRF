@@ -80,8 +80,32 @@ target_sources(
                   field_routines.F90
                   )
 
+# Now build diffwrf
+set( DIFFWRF_TARGET diffwrf_nc )
+add_executable(
+                ${DIFFWRF_TARGET}
+                diffwrf.F90
+                ${PROJECT_SOURCE_DIR}/frame/clog.c
+                ${PROJECT_SOURCE_DIR}/frame/module_wrf_error.F
+                ${PROJECT_SOURCE_DIR}/frame/wrf_debug.F
+                )
+
+target_link_libraries(
+                      ${DIFFWRF_TARGET}
+                        PRIVATE
+                          ${FOLDER_COMPILE_TARGET}
+                      )
+set_target_properties( 
+                      ${DIFFWRF_TARGET}
+                        PROPERTIES
+                          # Just dump everything in here
+                          Fortran_MODULE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/modules/${DIFFWRF_TARGET}
+                          Fortran_FORMAT           FREE
+                      )
+
+
 install(
-        TARGETS ${FOLDER_COMPILE_TARGET}
+        TARGETS ${FOLDER_COMPILE_TARGET} ${DIFFWRF_TARGET}
         EXPORT  ${EXPORT_NAME}Targets
         RUNTIME DESTINATION bin/
         ARCHIVE DESTINATION lib/

@@ -9,6 +9,7 @@ help()
   echo "  -n <fileA,fileB,...>      Comma-delimited list of namelists to test, each of which will in serial be run by replacing namelist.input"
   echo "  -d <folder>               Data directory to link into core directory"
   echo "  -p <mpirun cmd>           Parallel launch command (MPI), e.g. mpirun, mpiexec_mpt, mpiexec -np 8 --oversubscribe"
+  echo "  -k <diffwrf cmd>          diffwrf command binary path, if not set will use external/io_netcdf/diffwrf"
   echo "  -s <folder>               Save result data to prefix location, full path for run constructed as <work>/<thisfolder>/<namelist>/ "
   echo "  -i <folder>               Folder for bitwise-identical results, full path for run constructed as <work>/<thisfolder>/<namelist>/ "
   echo "  -e <varA=val,varB,...>    environment variables in comma-delimited list, e.g. var=1,foo,bar=0"
@@ -32,7 +33,7 @@ cd $workingDirectory
 # Get some helper functions
 . .ci/env/helpers.sh
 
-while getopts c:b:f:n:d:p:s:i:e:h opt; do
+while getopts c:b:f:n:d:p:k:s:i:e:h opt; do
   case $opt in
     c)
       coreDir="$OPTARG"
@@ -51,6 +52,9 @@ while getopts c:b:f:n:d:p:s:i:e:h opt; do
     ;;
     p)
       parallelExec="$OPTARG"
+    ;;
+    k)
+      diffExec="$OPTARG"
     ;;
     s)
       moveFolder="$OPTARG"
@@ -111,6 +115,14 @@ if [ ! -d "${namelistFolder}" ]; then
   echo "No valid namelist folder provided"
   exit 1
 fi
+
+if [ -z "${diffExec}" ]; then
+  diffExec=$( realpath $workingDirectory/external/io_netcdf/diffwrf )
+else
+  eval "diffExec=\$( realpath \"$diffExec\" )"
+fi
+
+
 
 
 ################################################################################
@@ -256,7 +268,15 @@ for namelist in $namelists; do
 
           # We have a domain to check - should exist in both (we are treating the identical folder as truth)
           # diff $workingDirectory/$identicalFolder/$namelist/wrf_${dom}_runstats.out $(pwd)/wrf_${dom}_runstats.out > diff_log.log
-          $workingDirectory/external/io_netcdf/diffwrf $workingDirectory/$identicalFolder/$namelist/wrfout_${dom}_* wrfout_${dom}_*
+          $diffExec $workingDirectory/$identicalFolder/$namelist/wrfout_${dom}_* wrfout_${dom}_*
+          result=$?
+          if [ $result -ne 0 ]; then
+            currentErrorMsg="[$namelist] $diffExec failed"
+            echo "$currentErrorMsg"
+            errorMsg="$errorMsg\n$currentErrorMsg"
+            continue
+          fi
+
           if [ -e fort.98 ] || [ -e fort.88 ]; then
             currentErrorMsg="[$namelist] $( ls $workingDirectory/$identicalFolder/$namelist/wrfout_${dom}_* ) and $(pwd)/$( ls wrfout_${dom}_* ) differ"
             echo "$currentErrorMsg"

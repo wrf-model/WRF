@@ -457,11 +457,7 @@ else
                  diff1 = max ( diff1 , abs ( a - b ) )
                  diff2 = max ( diff2 , abs ( b ) )
                  n = n + 1
-                 ! IEEE754 FP32 -> FP64 allocates 3 more bits to the exponent
-                 ! and thus shifted over 3, we should be accurate within 
-                 ! 1 (sign) + 11 (fp64 exp) + 23 (fp32 mantissa) => 35 bits,
-                 ! leaving a whopping 29 bits of "stuff" that may as well be made up
-                 IF ( almostEqual( a, b, 28 ) .ne. -1 ) then
+                 IF (a .ne. b) then
                    IKDIFFS = IKDIFFS + 1
                    IFDIFFS = IFDIFFS + 1
                  ENDIF
@@ -549,54 +545,6 @@ else
   enddo
 
 endif
-
-contains
-function almostEqual( rhs, lhs, checkToBitPos ) result( diffAtBitPos )
-  use,intrinsic :: iso_fortran_env, only : int8, int16, int32, int64
-  implicit none
-  integer, intent(in)       :: checkToBitPos
-  real*8, intent(in)  :: rhs, lhs
-  integer( kind=int64 ) :: diffAtBitPos
-
-  integer( kind=int64 ) :: rhsBitRep, lhsBitRep, diffBitRep, index
-  integer( kind=int64 ) :: numBitsRHS = bit_size( rhsBitRep ), numBitsLHS = bit_size( lhsBitRep )
-
-  diffAtBitPos = -1
-  rhsBitRep = transfer( rhs, diffAtBitPos )
-  lhsBitRep = transfer( lhs, diffAtBitPos )
-
-  ! write( *, * ) "Checking if rhs and lhs are same bit size"
-  if ( numBitsRHS .ne. numBitsLHS ) then
-    ! They immediately differ
-    diffAtBitPos=0
-  else
-    ! write( *, * ) "Checking if rhs and lhs differ before ULP position ", checkToBitPos, " with size ", numBitsRHS
-    ! Bit cancel each other and see where the first difference is
-    diffBitRep = iparity( [ rhsBitRep, lhsBitRep ] )
-    ! write( *, "(b32.32)" ) diffBitRep
-
-    if ( popcnt( diffBitRep ) .gt. 0 ) then
-      ! Check when that difference occurs
-      do index = 0, numBitsRHS - 1
-        if ( btest( diffBitRep, index ) .and. index .ge. checkToBitPos ) then
-          diffAtBitPos = index
-          ! write( *, * ) "RHS and LHS differ at ", diffAtBitPos
-          ! write( *, * ) "As double : ", rhs
-          ! write( *, * ) "As double : ", lhs
-          ! write( *, "(b64)" ) rhsBitRep
-          ! write( *, "(b64)" ) lhsBitRep
-          ! write( *, * ) "Difference : ", rhs - lhs
-          exit
-        end if
-      end do
-    ! else
-    !   ! We never got a difference
-    !   write( *, * ) "Bitwise identical, number of 1s in rhs & ~lhs : ", popcnt( diffBitRep )
-    end if
-  end if
-end function almostEqual
-
-
 
 end program readv3
 

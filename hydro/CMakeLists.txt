@@ -64,20 +64,22 @@ add_dependencies(hydro_data_rec hydro_routing_subsurface)
 add_dependencies(hydro_data_rec hydro_routing_reservoirs)
 
 
-add_library(wrfhydro STATIC
-  $<TARGET_OBJECTS:hydro_utils>
-  $<TARGET_OBJECTS:hydro_mpp>
-  $<TARGET_OBJECTS:hydro_debug_utils>
-  $<TARGET_OBJECTS:hydro_routing_overland>
-  $<TARGET_OBJECTS:hydro_routing_subsurface>
-  $<TARGET_OBJECTS:hydro_data_rec>
-  $<TARGET_OBJECTS:hydro_routing>
-  $<TARGET_OBJECTS:hydro_routing_reservoirs_levelpool>
-  $<TARGET_OBJECTS:hydro_routing_reservoirs_hybrid>
-  $<TARGET_OBJECTS:hydro_routing_reservoirs_rfc>
-  $<TARGET_OBJECTS:hydro_routing_reservoirs>
-  $<TARGET_OBJECTS:hydro_wrf_cpl>
-  $<TARGET_OBJECTS:hydro_orchestrator>
-  $<TARGET_OBJECTS:hydro_netcdf_layer>
-  $<TARGET_OBJECTS:hydro_driver>
+add_library(wrfhydro INTERFACE)
+
+target_link_libraries(wrfhydro INTERFACE
+  hydro_utils
+  hydro_mpp
+  hydro_debug_utils
+  hydro_routing_overland
+  hydro_routing_subsurface
+  hydro_data_rec
+  hydro_routing
+  hydro_routing_reservoirs_levelpool
+  hydro_routing_reservoirs_hybrid
+  hydro_routing_reservoirs_rfc
+  hydro_routing_reservoirs
+  hydro_wrf_cpl
+  hydro_orchestrator
+  hydro_netcdf_layer
+  hydro_driver
   )

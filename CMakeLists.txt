@@ -228,16 +228,6 @@ if ( NOT ${WRF_CASE} IN_LIST WRF_CASE_OPTIONS )
   message( FATAL_ERROR "WRF Case option not recognized : ${WRF_CASE}" )
 endif()
 
-# handle Hydro options
-if ( ${WRF_HYDRO} )
-  set(ENABLE_HYDRO TRUE)
-endif()
-if ( ENABLE_HYDRO )
-  set(WRF_HYDRO 1)
-  set(USE_MPI TRUE)
-endif()
-
-
 # Handle selection
 set( EM_CORE 1 )
 # Far easier to write this one as normal logic rather than generator expression
@@ -272,6 +262,10 @@ if ( NOT ${WRFIO_NCD_NO_LARGE_FILE_SUPPORT} )
   message( STATUS "netCDF large file support not suppressed, if available it will be used" )
 endif()
 
+# Hydro option requires MPI
+if ( ENABLE_HYDRO )
+  set( USE_MPI ON CACHE BOOL "Required by configuration" FORCE )
+endif()
 
 # Handle double promotion - doing this here instead of from config.cmake toolchain
 # file since the double promotion logic is a nightmare
@@ -792,7 +786,7 @@ if ( ${WRF_CHEM} )
   add_subdirectory( chem     )
 endif()
 
-if ( ${WRF_HYDRO} )
+if ( ${ENABLE_HYDRO} )
   add_subdirectory( hydro  )
 endif()
 
@@ -856,7 +850,7 @@ target_link_libraries(  ${PROJECT_NAME}_Core
                             io_grib_share
                             fftpack5
 
-			    $<$<BOOL:${WRF_HYDRO}>:wrfhydro>
+			    $<TARGET_NAME_IF_EXISTS:wrfhydro>
                             $<TARGET_NAME_IF_EXISTS:atm_ocn>
                             $<TARGET_NAME_IF_EXISTS:io_adios2>
                             $<TARGET_NAME_IF_EXISTS:io_esmf>

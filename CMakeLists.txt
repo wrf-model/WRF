@@ -725,6 +725,7 @@ target_include_directories(
                               $<TARGET_PROPERTY:io_grib1,Fortran_MODULE_DIRECTORY>
                               $<TARGET_PROPERTY:fftpack5,Fortran_MODULE_DIRECTORY>
                               $<TARGET_PROPERTY:io_netcdf,Fortran_MODULE_DIRECTORY>
+                              $<TARGET_PROPERTY:io_int,Fortran_MODULE_DIRECTORY>
 
                               $<TARGET_PROPERTY:${PROJECT_NAME}_Core,Fortran_MODULE_DIRECTORY>
 
@@ -744,7 +745,6 @@ target_include_directories(
                               $<INSTALL_INTERFACE:include/frame>
                               $<INSTALL_INTERFACE:include/external/ioapi_share>
 
-                            PRIVATE
                               # May or may not exist
                               $<$<TARGET_EXISTS:atm_ocn>:$<TARGET_PROPERTY:atm_ocn,Fortran_MODULE_DIRECTORY>>
                               $<$<TARGET_EXISTS:io_adios2>:$<TARGET_PROPERTY:io_adios2,Fortran_MODULE_DIRECTORY>>
@@ -755,6 +755,8 @@ target_include_directories(
                               $<$<TARGET_EXISTS:io_phdf5>:$<TARGET_PROPERTY:io_phdf5,Fortran_MODULE_DIRECTORY>>
                               $<$<TARGET_EXISTS:g2lib>:$<TARGET_PROPERTY:g2lib,Fortran_MODULE_DIRECTORY>>
                               $<$<TARGET_EXISTS:bacio-1.3>:$<TARGET_PROPERTY:bacio-1.3,Fortran_MODULE_DIRECTORY>>
+
+                            PRIVATE
                               
                               ${PROJECT_SOURCE_DIR}/dyn_em
 
@@ -844,6 +846,7 @@ target_link_libraries(  ${PROJECT_NAME}_Core
                             $<TARGET_NAME_IF_EXISTS:io_adios2>
                             $<TARGET_NAME_IF_EXISTS:io_esmf>
                             $<TARGET_NAME_IF_EXISTS:io_pio>
+                            io_int
                             io_netcdf
                             $<TARGET_NAME_IF_EXISTS:io_netcdfpar>
                             $<TARGET_NAME_IF_EXISTS:io_pnetcdf>

@@ -17,7 +17,7 @@ endif()
 # list( APPEND CMAKE_MODULE_PATH         )
 list( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/ ${PROJECT_SOURCE_DIR}/cmake/modules )
 
-# Use link paths as rpaths 
+# Use link paths as rpaths
 set( CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE )
 set( CMAKE_Fortran_PREPROCESS          ON )
 
@@ -44,7 +44,7 @@ wrf_git_commit(
                 )
 
 # Configure file for usage
-configure_file( 
+configure_file(
                 ${PROJECT_SOURCE_DIR}/cmake/template/commit_decl.cmake
                 ${PROJECT_BINARY_DIR}/inc/commit_decl
                 @ONLY
@@ -71,7 +71,7 @@ endif()
 ################################################################################
 ## WRF Core selection
 ################################################################################
-set( WRF_CORE_OPTIONS 
+set( WRF_CORE_OPTIONS
       # Options listed here
       ARW
       CONVERT # This exists in compile but not configure
@@ -89,7 +89,7 @@ endif()
 ################################################################################
 ## WRF Nesting selection
 ################################################################################
-set( WRF_NESTING_OPTIONS 
+set( WRF_NESTING_OPTIONS
       # Options listed here
       NONE
       BASIC
@@ -108,7 +108,7 @@ endif()
 ##!TODO Maybe one day make it so this doesn't need to be a selection and all are
 ##      always built?
 ################################################################################
-set( WRF_CASE_OPTIONS 
+set( WRF_CASE_OPTIONS
       # Options listed here
       EM_REAL # make this the default
       # EM_IDEAL # Technically doable but does anyone build this? It is not a target option in make
@@ -116,7 +116,7 @@ set( WRF_CASE_OPTIONS
       EM_SCM_XY
       EM_TROPICAL_CYCLONE
       EM_HELDSUAREZ
-      
+
       # These are sub-categories of ideal - Keep these lower in the list
       EM_B_WAVE # Keep this one here as it is used to check index
       EM_GRAV2D_X
@@ -263,7 +263,8 @@ if ( NOT ${WRFIO_NCD_NO_LARGE_FILE_SUPPORT} )
 endif()
 
 # Hydro option requires MPI
-if ( ENABLE_HYDRO )
+if ( ${ENABLE_HYDRO} AND NOT ${USE_MPI} )
+  message( STATUS "WRF Hydro requires MPI usage" )
   set( USE_MPI ON CACHE BOOL "Required by configuration" FORCE )
 endif()
 
@@ -274,7 +275,7 @@ list( FIND WRF_CORE_OPTIONS "DA"        START_DA_IDX )
 # DA + WRF PLUS cores require double precision
 if ( ${CURRENT_WRF_CORE_IDX} GREATER_EQUAL ${START_DA_IDX} AND NOT ${USE_DOUBLE} )
   # if ( # Apparently set regardless of compiler
-  #     ${CMAKE_Fortran_COMPILER_ID} STREQUAL "GNU" OR 
+  #     ${CMAKE_Fortran_COMPILER_ID} STREQUAL "GNU" OR
   #     ${CMAKE_Fortran_COMPILER_ID} STREQUAL "Fujitsu" )
   message( STATUS "DA and PLUS Core builds require double precision" )
   set( USE_DOUBLE ON CACHE BOOL "Required by configuration" FORCE )
@@ -318,7 +319,7 @@ if ( ${USE_MPI} )
   # https://cmake.org/cmake/help/latest/module/FindMPI.html#variables-for-locating-mpi
   # the find logic makes a mess of things by utilizing <mpi> -show[me]
   # Which may or may not get polluted by the environment
-  # It still technically finds MPI but the output is nonintuitive 
+  # It still technically finds MPI but the output is nonintuitive
   # saying things like hdf5 or pthread
   find_package( MPI REQUIRED COMPONENTS Fortran C )
   add_compile_definitions(
@@ -339,7 +340,7 @@ if ( ${USE_MPI} )
   endif()
 
   # Check if MPI in all its glory has forced IPO down our throats due to hard-coding the wrapper flags
-  # https://www.open-mpi.org/faq/?category=mpi-apps#why-no-rpath LOL! 
+  # https://www.open-mpi.org/faq/?category=mpi-apps#why-no-rpath LOL!
   # Quote "The default installation of Open MPI tries very hard to not include any non-essential flags in the wrapper compilers"
   # Okay, yea sure. Maybe it's the distro's lib config that does add all the bloatware flags
   if ( NOT ${USE_IPO} )
@@ -377,7 +378,7 @@ if ( ${USE_OPENMP} )
 endif()
 
 if ( ${USE_M4} )
-  find_program( 
+  find_program(
                 M4_PROGRAM
                 m4
                 REQUIRED
@@ -435,7 +436,7 @@ find_package( CURL   REQUIRED )
 
 ################################################################################
 ##
-## Print out final set of options to be used 
+## Print out final set of options to be used
 ## DO NOT MODIFY OPTIONS BEYOND THIS POINT
 ##
 ################################################################################
@@ -507,7 +508,7 @@ add_subdirectory( confcheck )
 # Define compile options to be inherited for directories
 define_property(
                 SOURCE
-                PROPERTY   COMPILE_FLAGS 
+                PROPERTY   COMPILE_FLAGS
                 INHERITED
                 BRIEF_DOCS "brief-doc"
                 FULL_DOCS  "full-doc"
@@ -515,7 +516,7 @@ define_property(
 
 define_property(
                 DIRECTORY
-                PROPERTY   COMPILE_FLAGS 
+                PROPERTY   COMPILE_FLAGS
                 INHERITED
                 BRIEF_DOCS "brief-doc"
                 FULL_DOCS  "full-doc"
@@ -592,14 +593,14 @@ add_compile_options(
 
 
 # Whole project flags
-add_compile_options( 
+add_compile_options(
                     # $<$<COMPILE_LANGUAGE:Fortran>:-cpp>
                     # Use "" and ; specifically to evaluate correctly
                     "$<$<COMPILE_LANG_AND_ID:Fortran,Intel>:-diag-disable;6843>"
                     $<$<AND:$<COMPILE_LANG_AND_ID:Fortran,GNU>,$<VERSION_GREATER_EQUAL:${CMAKE_Fortran_COMPILER_VERSION},10>>:-fallow-argument-mismatch>
                     $<$<AND:$<COMPILE_LANG_AND_ID:Fortran,GNU>,$<VERSION_GREATER_EQUAL:${CMAKE_Fortran_COMPILER_VERSION},10>>:-fallow-invalid-boz>
                     $<$<AND:$<COMPILE_LANG_AND_ID:Fortran,GNU>,$<VERSION_GREATER_EQUAL:${CMAKE_Fortran_COMPILER_VERSION},10>>:-ffree-line-length-none>
-                    
+
                     # $<AND:$<COMPILE_LANGUAGE:Fortran>,$<STREQUAL:${Fortran_COMPILER_ID},Intel>:-diag-disable;6843>
                     )
 
@@ -629,7 +630,7 @@ add_compile_definitions(
                         $<$<BOOL:${ENABLE_TITAN}>:WRF_TITAN=$<BOOL:${ENABLE_TITAN}>>
                         $<$<BOOL:${ENABLE_MARS}>:WRF_MARS=$<BOOL:${ENABLE_MARS}>>
                         $<$<BOOL:${ENABLE_VENUS}>:WRF_VENUS=$<BOOL:${ENABLE_VENUS}>>
-			$<$<BOOL:${ENABLE_HYDRO}>:WRF_HYDRO=$<BOOL:${ENABLE_HYDRO}>>
+                        $<$<BOOL:${ENABLE_HYDRO}>:WRF_HYDRO=$<BOOL:${ENABLE_HYDRO}>>
 
                         # Because once again we need two defines to control one thing
                         $<$<BOOL:${ENABLE_CTSM}>:WRF_USE_CTSM=$<BOOL:${ENABLE_CTSM}>>
@@ -646,11 +647,11 @@ add_compile_definitions(
 
                         # Could simplify logic to just check if RPC is available but to be explicit
                         # Does this actually need to check for EM_CORE (Config.pl:443)
-                        # not enable terran or not rpc_found do 
+                        # not enable terran or not rpc_found do
                         # not ( enable terrain and rpc_found )
                         $<$<NOT:$<AND:$<BOOL:${ENABLE_TERRAIN}>,$<BOOL:${RPC_FOUND}>>>:LANDREAD_STUB>
                         $<$<BOOL:${ENABLE_TERRAIN}>:TERRAIN_AND_LANDUSE>
-                        
+
 
                         $<$<BOOL:${USE_ALLOCATABLES}>:USE_ALLOCATABLES>
                         $<$<BOOL:${wrfmodel}>:wrfmodel>
@@ -669,10 +670,10 @@ add_compile_definitions(
                         NMM_CORE=$<BOOL:${NMM_CORE}>
                         NMM_MAX_DIM=2600
                         NETCDF
-                        
+
                         #!TODO Change this to a confcheck
                         NONSTANDARD_SYSTEM_SUBR
-                        
+
                         EM_CORE=${EM_CORE}
                         WRFPLUS=$<BOOL:$<STREQUAL:${WRF_CORE},"PLUS">>
                         DA_CORE=$<BOOL:$<OR:$<STREQUAL:${WRF_CORE},"DA_CORE">,$<STREQUAL:${WRF_CORE},"DA_4D_VAR">>>
@@ -721,7 +722,7 @@ add_dependencies(
 target_include_directories(
                             ${PROJECT_NAME}_Core
                             PUBLIC
-                              # List module directories first so the compiler does not get confused 
+                              # List module directories first so the compiler does not get confused
                               # about things "not being compiled yet" - yes, yes it is compiled
                               # These are already set up to be @ install location
                               $<TARGET_PROPERTY:esmf_time_f90,Fortran_MODULE_DIRECTORY>
@@ -733,7 +734,7 @@ target_include_directories(
 
                               $<TARGET_PROPERTY:${PROJECT_NAME}_Core,Fortran_MODULE_DIRECTORY>
 
-                              
+
                               $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
                               $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/inc>
                               $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/frame>
@@ -805,7 +806,7 @@ else()
 endif()
 
 # Configure core
-set_target_properties( 
+set_target_properties(
                       ${PROJECT_NAME}_Core
                         PROPERTIES
                           # Just dump everything in here
@@ -841,7 +842,7 @@ target_link_libraries(  ${PROJECT_NAME}_Core
 
                             # "External" io libs
                             esmf_time_f90
-                            
+
                             io_grib1
                             grib1_util
                             MEL_grib1
@@ -850,7 +851,7 @@ target_link_libraries(  ${PROJECT_NAME}_Core
                             io_grib_share
                             fftpack5
 
-			    $<TARGET_NAME_IF_EXISTS:wrfhydro>
+                            $<TARGET_NAME_IF_EXISTS:wrfhydro>
                             $<TARGET_NAME_IF_EXISTS:atm_ocn>
                             $<TARGET_NAME_IF_EXISTS:io_adios2>
                             $<TARGET_NAME_IF_EXISTS:io_esmf>
@@ -860,10 +861,10 @@ target_link_libraries(  ${PROJECT_NAME}_Core
                             $<TARGET_NAME_IF_EXISTS:io_netcdfpar>
                             $<TARGET_NAME_IF_EXISTS:io_pnetcdf>
                             $<TARGET_NAME_IF_EXISTS:io_phdf5>
-                            
+
                             $<TARGET_NAME_IF_EXISTS:g2lib>
                             $<TARGET_NAME_IF_EXISTS:bacio-1.3>
-                            
+
                             $<TARGET_NAME_IF_EXISTS:RSL_LITE>
                       )
 
@@ -916,7 +917,7 @@ install(
           ${PROJECT_SOURCE_DIR}/cmake/modules/
         COMPONENT       helpers
         DESTINATION     share
-        FILES_MATCHING  
+        FILES_MATCHING
           PATTERN       "*.cmake"
         )
 install(

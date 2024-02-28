@@ -103,12 +103,12 @@ MODULE MODULE_CPL_LAND
       dims(0) = 0
       dims(1) = 0
       do xx=1,total_pe_num
-	if(node_info(2,xx) .eq. (-1)) then
-	  dims(0) = dims(0)+1
-	endif
-	if(node_info(4,xx) .eq. (-1)) then
-	  dims(1) = dims(1)+1
-	endif
+         if(node_info(2,xx) .eq. (-1)) then
+            dims(0) = dims(0)+1
+         endif
+         if(node_info(4,xx) .eq. (-1)) then
+            dims(1) = dims(1)+1
+         endif
       enddo
 
       ndim = 2

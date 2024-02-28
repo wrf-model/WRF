@@ -16,19 +16,33 @@ set_target_properties(
                       )
 
 
-target_link_libraries(  ${FOLDER_COMPILE_TARGET}
-                          PRIVATE
-                            ${netCDF_LIBRARIES}
-                            $<$<BOOL:${USE_MPI}>:$<TARGET_NAME_IF_EXISTS:MPI::MPI_Fortran>>
-                            $<$<BOOL:${USE_OPENMP}>:$<TARGET_NAME_IF_EXISTS:OpenMP::OpenMP_Fortran>>
+target_link_libraries(
+                      ${FOLDER_COMPILE_TARGET}
+                        PUBLIC
+                          $<$<BOOL:${USE_OPENMP}>:$<TARGET_NAME_IF_EXISTS:OpenMP::OpenMP_Fortran>>
+                          $<$<BOOL:${USE_MPI}>:$<TARGET_NAME_IF_EXISTS:MPI::MPI_Fortran>>
+                          ${netCDF_LIBRARIES}
+                          ${netCDF-Fortran_LIBRARIES}
+                      )
+
+# Because of the way netCDF provides its info and the way cmake auto-gens RPATH, we need to help it along
+target_link_directories(
+                        ${FOLDER_COMPILE_TARGET}
+                        PUBLIC
+                          ${netCDF_LIBRARY_DIR}
+                          ${netCDF-Fortran_LIBRARY_DIR}
                         )
 
-target_include_directories( ${FOLDER_COMPILE_TARGET}
-                            PRIVATE
+target_include_directories(
+                            ${FOLDER_COMPILE_TARGET}
+                            PUBLIC
+                              $<TARGET_PROPERTY:${FOLDER_COMPILE_TARGET},Fortran_MODULE_DIRECTORY>
+                              $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/external/ioapi_share>
+                              $<INSTALL_INTERFACE:include/external/ioapi_share>
                               ${netCDF_INCLUDE_DIRS}
+                              ${netCDF-Fortran_INCLUDE_DIRS}
+                            PRIVATE
                               ${CMAKE_CURRENT_SOURCE_DIR}
-                              ${CMAKE_CURRENT_SOURCE_DIR}/../ioapi_share
-                              ${CMAKE_INSTALL_PREFIX}/${FOLDER_COMPILE_TARGET}
                             )
 
 
@@ -66,8 +80,32 @@ target_sources(
                   field_routines.F90
                   )
 
+# Now build diffwrf
+set( DIFFWRF_TARGET diffwrf_ncpar )
+add_executable(
+                ${DIFFWRF_TARGET}
+                diffwrf.F90
+                ${PROJECT_SOURCE_DIR}/frame/clog.c
+                ${PROJECT_SOURCE_DIR}/frame/module_wrf_error.F
+                ${PROJECT_SOURCE_DIR}/frame/wrf_debug.F
+                )
+
+target_link_libraries(
+                      ${DIFFWRF_TARGET}
+                        PRIVATE
+                          ${FOLDER_COMPILE_TARGET}
+                      )
+set_target_properties( 
+                      ${DIFFWRF_TARGET}
+                        PROPERTIES
+                          # Just dump everything in here
+                          Fortran_MODULE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/modules/${DIFFWRF_TARGET}
+                          Fortran_FORMAT           FREE
+                      )
+
+
 install(
-        TARGETS ${FOLDER_COMPILE_TARGET}
+        TARGETS ${FOLDER_COMPILE_TARGET} ${DIFFWRF_TARGET}
         EXPORT  ${EXPORT_NAME}Targets
         RUNTIME DESTINATION bin/
         ARCHIVE DESTINATION lib/

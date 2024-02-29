@@ -32,6 +32,7 @@
 
 #include "gdata.h"
 #include "code.h"
+#include "scan.h"
 #include <string.h>
 #include <time.h>
 
@@ -673,7 +674,7 @@ char buf[ 1000 ];
 }
 
 /*************************************************************************************************/
-void Use_MATLAB()
+void Use_MATLAB( char *rootFileName )
 { 
   WriteElm 	    = MATLAB_WriteElm;
   WriteSymbol 	    = MATLAB_WriteSymbol;  

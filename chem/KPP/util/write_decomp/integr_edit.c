@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define NAMELEN 4096
  
@@ -7,6 +8,7 @@
 /* replace decomp routine in KPP Integr file */
 
 
+int
 main( int argc, char *argv[] )
 {
 

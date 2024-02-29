@@ -80,14 +80,17 @@ echo " configure_kpp, settings:"
 if test -e "${FLEX_LIB_DIR}/libfl.a" ; then
 echo location of flex library: ${FLEX_LIB_DIR}/libfl.a
 
+elif test -e "${FLEX_LIB_DIR}/libfl.so" ; then
+echo location of flex library: ${FLEX_LIB_DIR}/libfl.so
+
 else
-          echo  No libfl.a in ${FLEX_LIB_DIR} 
+          echo  No libfl.a or libfl.so in ${FLEX_LIB_DIR} 
           echo '  check if FLEX_LIB_DIR environment variable is set correctly'
-          echo '       (FLEX_LIB_DIR should be the complete pathname of the FLEX library libfl.a)'
+          echo '       (FLEX_LIB_DIR should be the complete pathname of the FLEX library libfl.a or libfl.so)'
           echo '   OR: Enter full path to flex library on your system'
           read FLEX_LIB_DIR
-          if  test ! -e ${FLEX_LIB_DIR}/libfl.a ; then
-           echo PROBLEM: libfl.a NOT FOUND IN ${FLEX_LIB_DIR} 
+          if  test ! -e ${FLEX_LIB_DIR}/libfl.a && test ! -e ${FLEX_LIB_DIR}/libfl.so ; then
+           echo PROBLEM: libfl.a or libfl.so NOT FOUND IN ${FLEX_LIB_DIR} 
            read FLEX_LIB_DIR
           fi 
 

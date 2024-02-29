@@ -11,7 +11,7 @@
 
 
 knode_t * 
-new_knode ( int * kind )
+new_knode (  )
 { knode_t *p ; p = (knode_t *)malloc(sizeof(knode_t)) ; bzero(p,sizeof(knode_t)); return (p) ; }
 
 int

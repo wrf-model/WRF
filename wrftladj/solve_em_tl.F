@@ -3654,6 +3654,7 @@ BENCH_START(g_moist_phys_end_tim)
        jts = max(grid%j_start(ij),jds)
        jte = min(grid%j_end(ij),jde-1)
 
+       IF ( config_flags%mp_zero_out > 0 ) THEN
        CALL g_microphysics_zero_outb (                                    &
                       moist , g_moist, num_moist , config_flags ,                &
                       ids, ide, jds, jde, kds, kde,                     &
@@ -3661,6 +3662,7 @@ BENCH_START(g_moist_phys_end_tim)
                       its, ite, jts, jte,                               &
                       k_start    , k_end                                )
 
+       IF ( config_flags%mp_zero_out_all > 0 ) THEN
        CALL g_microphysics_zero_outb (                                    &
                       scalar , g_scalar, num_scalar , config_flags ,              &
                       ids, ide, jds, jde, kds, kde,                     &
@@ -3682,6 +3684,8 @@ BENCH_START(g_moist_phys_end_tim)
                       ims, ime, jms, jme, kms, kme,                     &
                       its, ite, jts, jte,                               &
                       k_start    , k_end                                )
+       ENDIF
+       ENDIF
 
        IF ( config_flags%periodic_x ) THEN
          its = max(grid%i_start(ij),ids)
@@ -3693,6 +3697,7 @@ BENCH_START(g_moist_phys_end_tim)
        jts = max(grid%j_start(ij),jds+sz)
        jte = min(grid%j_end(ij),jde-1-sz)
 
+       IF ( config_flags%mp_zero_out > 0 ) THEN
        CALL g_microphysics_zero_outa (                                    &
                       moist , g_moist, num_moist , config_flags ,                &
                       ids, ide, jds, jde, kds, kde,                     &
@@ -3700,6 +3705,7 @@ BENCH_START(g_moist_phys_end_tim)
                       its, ite, jts, jte,                               &
                       k_start    , k_end                                )
 
+       IF ( config_flags%mp_zero_out_all > 0 ) THEN
        CALL g_microphysics_zero_outa (                                    &
                       scalar ,g_scalar, num_scalar , config_flags ,              &
                       ids, ide, jds, jde, kds, kde,                     &
@@ -3721,6 +3727,8 @@ BENCH_START(g_moist_phys_end_tim)
                       ims, ime, jms, jme, kms, kme,                     &
                       its, ite, jts, jte,                               &
                       k_start    , k_end                                )
+       ENDIF
+       ENDIF
 
        CALL g_moist_physics_finish_em( grid%t_2, grid%g_t_2, grid%t_1,      &
                                       t0, grid%muts,                        &

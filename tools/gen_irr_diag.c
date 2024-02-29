@@ -211,7 +211,7 @@ int irr_diag_scalar_indices( char *dirname )
    short int i, j;
    int first, flush, s1;
    char fname[256];
-   char line[TABLE_ENTRY + 2 * EXTRA_FOR_DEST_BUFFER];
+   char line[5 * TABLE_ENTRY + 2 * EXTRA_FOR_DEST_BUFFER];
    char piece[TABLE_ENTRY + EXTRA_FOR_DEST_BUFFER];
    char *blank = "                                                           ";
    FILE *fp_inc;

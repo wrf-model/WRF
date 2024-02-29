@@ -48,7 +48,6 @@ $sw_usenetcdff = "" ;    # UNIDATA switches around library names a bit
 $sw_usenetcdf = "" ;    
 $sw_time = "" ;          # name of a timer to time fortran compiles, e.g. timex or time
 $sw_ifort_r8 = 0 ;
-$sw_hdf5 = "-lhdf5_hl -lhdf5";
 $sw_hdf5_hl_fortran="-lhdf5_hl_fortran";
 $sw_zlib = "-lz";
 $sw_netcdf4_dep_lib = "";
@@ -1181,10 +1180,7 @@ while ( <ARCH_PREAMBLE> )
         }
     }
   if ( $sw_netcdf4_dep_lib ne "" )
-    { if (/^HDF5.*=/)
-        { $_  =~ s/\r|\n//g;
-          $_ .= " " . $sw_hdf5 . "\n" ;
-        }
+    {
       if (/^ZLIB.*=/)
         { $_  =~ s/\r|\n//g;
           $_ .= " " . $sw_zlib . "\n" ;

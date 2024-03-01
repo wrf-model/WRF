@@ -19,6 +19,12 @@ add_subdirectory("Routing")
 add_subdirectory("HYDRO_drv")
 add_subdirectory("CPL/WRF_cpl")
 
+if (WRF_HYDRO_NUDGING STREQUAL "1")
+        add_subdirectory("nudging")
+        add_dependencies(hydro_routing hydro_nudging)
+        add_dependencies(hydro_driver hydro_nudging)
+endif()
+
 # add module dependencies
 add_dependencies(hydro_debug_utils hydro_mpp)
 add_dependencies(hydro_utils hydro_mpp)
@@ -36,11 +42,6 @@ add_dependencies(hydro_routing
 
 add_dependencies(hydro_routing_reservoirs_hybrid hydro_routing_reservoirs_levelpool)
 add_dependencies(hydro_routing_overland hydro_mpp)
-
-if (WRF_HYDRO_NUDGING STREQUAL "1")
-        add_dependencies(hydro_driver hydro_nudging)
-        add_subdirectory("nudging")
-endif()
 
 # currently unused Routing/Groundwater directory
 # add_subdirectory("Routing/Groundwater")
@@ -66,7 +67,8 @@ add_dependencies(hydro_driver
         hydro_debug_utils
 )
 
-add_dependencies(hydro_data_rec hydro_routing_overland
+add_dependencies(hydro_data_rec
+        hydro_routing_overland
         hydro_routing_subsurface
         hydro_routing_reservoirs
 )

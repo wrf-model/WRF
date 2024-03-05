@@ -18,8 +18,11 @@ int compare_kpp_to_species  ( char * kpp_dirname) ;
 
 
 int run_kpp( char * dirname , char * kpp_version  );
+#ifdef NO_MODIFY_MAKEFILE
+void list_kpp_generated( );
+#else
 void change_chem_Makefile( );
-
+#endif
 
 void gen_kpp_mechanism_driver ( );
 void gen_kpp_call_to_mech_dr ( );

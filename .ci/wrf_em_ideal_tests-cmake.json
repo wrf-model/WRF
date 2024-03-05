@@ -1,0 +1,376 @@
+{
+  "submit_options" :
+  {
+    "timelimit" : "00:20:00",
+    "working_directory" : "..",
+    "arguments" : 
+    {
+      "base_env_numprocs"          : [ "-e", "NUM_PROCS=9" ],
+      "base_env_wkdir"             : [ "-e", "WK_DIR=$PWD" ],
+      "env_dirs"                   : [ "-e", "BUILD_DIR=_build_$IDEAL_CASE$DM$SM", "-e", "INSTALL_DIR=$WK_DIR/install_$IDEAL_CASE$DM$SM" ],
+
+      ".*build.*::args_compilecmd" : [ "-c", "-p GNU -d $BUILD_DIR -i $INSTALL_DIR -x -- -DCMAKE_BUILD_TYPE=Debug -DWRF_CORE=ARW -DWRF_NESTING=$NESTING -DWRF_CASE=$IDEAL_CASE_UPPER $USE_MPI $USE_OPENMP $USE_DOUBLE" ],
+      ".*build.*::args_buildcmd"   : [ "-b", "$BUILD_DIR -j $NUM_PROCS" ],
+      ".*build.*::args_cleancmd"   : [ "-r", "-d $BUILD_DIR -i $INSTALL_DIR" ],
+      ".*build.*::args_nesting"    : [ "-e", "NESTING=BASIC" ],
+      ".*build.*::args_precision"  : [ "-e", "USE_DOUBLE=-DUSE_DOUBLE=OFF" ],
+
+      ".*build-omp.*::args_config"   : [ "-e", "USE_OPENMP=-DUSE_OPENMP=ON" ],
+      ".*omp.*::args_config"   : [ "-e", "SM=_sm" ],
+      ".*build-mpi.*::args_config"   : [ "-e", "USE_MPI=-DUSE_MPI=ON" ],
+      ".*mpi.*::args_config"   : [ "-e", "DM=_dm" ],
+
+      ".*testcase.*::global_env"   : [ "-e", "DATA=/path/to/data" ],
+      ".*testcase.*::args_always"  : [ "-c", "$INSTALL_DIR/test/$IDEAL_CASE", "-b", "ideal", "-d", "$DATA/$IDEAL_CASE", "-k", "$INSTALL_DIR/bin/diffwrf_nc" ],
+      ".*testcase-mpi.*::exec_mpi" : [ "-p", "mpirun -np $NUM_PROCS" ],
+      ".*testcase-omp.*::env"      : [ "-e", "OMP_NUM_THREADS=$NUM_PROCS" ],
+
+      ".*testcase-serial.*::dir"   : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/$IDEAL_CASE/", "-s", "serial_results/$IDEAL_CASE/" ],
+      ".*testcase-omp.*::dir"      : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/$IDEAL_CASE/", "-i", "serial_results/$IDEAL_CASE/" ],
+      ".*testcase-mpi.*::dir"      : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/$IDEAL_CASE/", "-i", "serial_results/$IDEAL_CASE/" ]
+    },
+    "polaris"   :
+    {
+      "submission" : "LOCAL",
+      "arguments"  :
+      {
+        "base_env_numprocs"          : [ "-e", "NUM_PROCS=2" ],
+        ".*testcase.*::global_env"     :
+        [ 
+          "-e", "DATA=/mnt/s/github/data/wrf/regtest/Data"
+        ]
+      }
+    },
+    "mmm-mystic"   :
+    {
+      "submission" : "LOCAL",
+      "arguments"  :
+      {
+        "base_env_numprocs"          : [ "-e", "NUM_PROCS=9" ],
+        ".*testcase.*::global_env"     :
+        [ 
+          "-e", "DATA=$HOME/wrf-model/DATA/namelists/Data/"
+        ]
+      }
+    },
+    "cheyenne"  :
+    {
+      "submission" : "PBS",
+      "queue"     : "economy",
+      "resources"  : "-l select=1:ncpus=6",
+      "arguments"  : 
+      {
+        "base_env_numprocs"          : [ "-e", "NUM_PROCS=6" ],
+        ".*testcase.*::global_env"     :
+        [ 
+          "-e", "DATA=/glade/work/aislas/github/data/wrf/regtest/Data/"
+        ],
+        "global_modules" : [ "gnu", "netcdf" ],
+        ".*mpi.*::mpi_module" : [ "openmpi/4.0.3" ]
+      }
+    },
+    "hsn.de.hpc"  :
+    {
+      "submission" : "PBS",
+      "queue"      : "main",
+      "resources"  : "-l select=1:ncpus=8 -l job_priority=economy",
+      "timelimit" : "00:10:00",
+      "arguments"  : 
+      {
+        "base_env_numprocs"          : [ "-e", "NUM_PROCS=16" ],
+        ".*testcase.*::global_env"     :
+        [ 
+          "-e", "DATA=/glade/work/aislas/github/data/wrf/regtest/Data/"
+        ],
+        "global_modules" : [ "gcc", "netcdf", "cmake" ],
+        ".*mpi.*::mpi_module" : [ "cray-mpich" ]
+      }
+    }
+  },
+  "em_quarter_ss" :
+  {
+    "submit_options" :
+    {
+      "arguments" :
+      {
+        ".*testcase.*::args_namelist" : 
+        [ 
+          "-n", "namelist.input.02NE,namelist.input.03,namelist.input.03NE"
+        ],
+        ".*::args_idealcase"   :
+        [
+          "-e", "IDEAL_CASE=em_quarter_ss",
+          "-e", "IDEAL_CASE_UPPER=EM_QUARTER_SS"
+        ]
+      }
+    },
+    "steps" :
+    {
+      "build-serial" :
+      {
+        "command"      : ".ci/tests/buildCMake.sh"
+      },
+      "testcase-serial" :
+      {
+        "submit_options" : {
+                            "cheyenne" : { "resources" : "-l select=1:ncpus=1" },
+                            "derecho"  : { "resources" : "-l select=1:ncpus=1 -l job_priority=economy" }
+                            },
+        "command"      : ".ci/tests/runNamelists.sh",
+        "dependencies" : { "build-serial" : "afterok" }
+      },
+      "build-omp" :
+      {
+        "command"      : ".ci/tests/buildCMake.sh"
+      },
+      "testcase-omp" :
+      {
+        "submit_options" : { 
+                            "cheyenne" : { "resources" : "-l select=1:ncpus=4:ompthreads=4" },
+                            "derecho"  : { "resources" : "-l select=1:ncpus=8:ompthreads=8 -l job_priority=economy" }
+                            },
+        "command"      : ".ci/tests/runNamelists.sh",
+        "dependencies" : { "build-omp" : "afterok", "testcase-serial" : "afterok" }
+      },
+      "build-mpi" :
+      {
+        "command"      : ".ci/tests/buildCMake.sh"
+      },
+      "testcase-mpi" :
+      {
+        "submit_options" : { 
+                            "cheyenne" : { "resources" : "-l select=1:ncpus=4:mpiprocs=6" },
+                            "derecho"  : { "resources" : "-l select=1:ncpus=8:mpiprocs=8 -l job_priority=economy" }
+                            },
+        "command"      : ".ci/tests/runNamelists.sh",
+        "dependencies" : { "build-mpi" : "afterok", "testcase-serial" : "afterok" }
+      }
+    }
+  },
+  "em_quarter_ss_real8" :
+  {
+    "submit_options" :
+    {
+      "arguments" :
+      {
+        ".*build.*::args_precision"   : [ "-e", "USE_DOUBLE=-DUSE_DOUBLE=ON" ],
+        ".*testcase.*::args_namelist" : 
+        [ 
+          "-n", "namelist.input.08,namelist.input.09"
+        ],
+        ".*::args_idealcase"   :
+        [
+          "-e", "IDEAL_CASE=em_quarter_ss",
+          "-e", "IDEAL_CASE_UPPER=EM_QUARTER_SS"
+        ],
+        "env_dirs"                   : [ "-e", "BUILD_DIR=_build_$IDEAL_CASE$DM$SM-r8", "-e", "INSTALL_DIR=$WK_DIR/install_$IDEAL_CASE$DM$SM-r8" ],
+        ".*testcase-serial.*::dir"   : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/$IDEAL_CASE/", "-s", "serial_results/$IDEAL_CASE/double/" ],
+        ".*testcase-omp.*::dir"      : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/$IDEAL_CASE/", "-i", "serial_results/$IDEAL_CASE/double/" ],
+        ".*testcase-mpi.*::dir"      : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/$IDEAL_CASE/", "-i", "serial_results/$IDEAL_CASE/double/" ]
+      }
+    },
+    "steps" :
+    {
+      "build-serial" :
+      {
+        "command"      : ".ci/tests/buildCMake.sh"
+      },
+      "testcase-serial" :
+      {
+        "submit_options" : {
+                            "cheyenne" : { "resources" : "-l select=1:ncpus=1" },
+                            "derecho"  : { "resources" : "-l select=1:ncpus=1 -l job_priority=economy" }
+                            },
+        "command"      : ".ci/tests/runNamelists.sh",
+        "dependencies" : { "build-serial" : "afterok" }
+      },
+      "build-omp" :
+      {
+        "command"      : ".ci/tests/buildCMake.sh",
+        "dependencies" : { "testcase-serial" : "afterok" }
+      },
+      "testcase-omp" :
+      {
+        "submit_options" : { 
+                            "cheyenne" : { "resources" : "-l select=1:ncpus=4:ompthreads=4" },
+                            "derecho"  : { "resources" : "-l select=1:ncpus=8:ompthreads=8 -l job_priority=economy" }
+                            },
+        "command"      : ".ci/tests/runNamelists.sh",
+        "dependencies" : { "build-omp" : "afterok" }
+      },
+      "build-mpi" :
+      {
+        "command"      : ".ci/tests/buildCMake.sh",
+        "dependencies" : { "testcase-omp" : "afterok" }
+      },
+      "testcase-mpi" :
+      {
+        "submit_options" : { 
+                            "cheyenne" : { "resources" : "-l select=1:ncpus=4:mpiprocs=6" },
+                            "derecho"  : { "resources" : "-l select=1:ncpus=8:mpiprocs=8 -l job_priority=economy" }
+                            },
+        "command"      : ".ci/tests/runNamelists.sh",
+        "dependencies" : { "build-mpi" : "afterok" }
+      }
+    }
+  },
+  "em_b_wave" :
+  {
+    "submit_options" :
+    {
+      "arguments" :
+      {
+        ".*testcase.*::args_namelist" : 
+        [ 
+          "-n", "namelist.input.1NE,namelist.input.2,namelist.input.2NE,namelist.input.3"
+        ],
+        ".*::args_idealcase"   :
+        [
+          "-e", "IDEAL_CASE=em_b_wave",
+          "-e", "IDEAL_CASE_UPPER=EM_B_WAVE"
+        ]
+      }
+    },
+    "steps" :
+    {
+      "build-serial" :
+      {
+        "command"      : ".ci/tests/buildCMake.sh"
+      },
+      "testcase-serial" :
+      {
+        "submit_options" : {
+                            "cheyenne" : { "resources" : "-l select=1:ncpus=1" },
+                            "derecho"  : { "resources" : "-l select=1:ncpus=1 -l job_priority=economy" }
+                            },
+        "command"      : ".ci/tests/runNamelists.sh",
+        "dependencies" : { "build-serial" : "afterok" }
+      },
+      "build-omp" :
+      {
+        "command"      : ".ci/tests/buildCMake.sh",
+        "dependencies" : { "testcase-serial" : "afterok" }
+      },
+      "testcase-omp" :
+      {
+        "submit_options" : { 
+                            "cheyenne" : { "resources" : "-l select=1:ncpus=4:ompthreads=4" },
+                            "derecho"  : { "resources" : "-l select=1:ncpus=8:ompthreads=8 -l job_priority=economy" }
+                            },
+        "command"      : ".ci/tests/runNamelists.sh",
+        "dependencies" : { "build-omp" : "afterok" }
+      },
+      "build-mpi" :
+      {
+        "command"      : ".ci/tests/buildCMake.sh",
+        "dependencies" : { "testcase-omp" : "afterok" }
+      },
+      "testcase-mpi" :
+      {
+        "submit_options" : { 
+                            "cheyenne" : { "resources" : "-l select=1:ncpus=4:mpiprocs=6" },
+                            "derecho"  : { "resources" : "-l select=1:ncpus=8:mpiprocs=8 -l job_priority=economy" }
+                            },
+        "command"      : ".ci/tests/runNamelists.sh",
+        "dependencies" : { "build-mpi" : "afterok" }
+      }
+    }
+  },
+  "em_fire" :
+  {
+    "submit_options" :
+    {
+      "arguments" :
+      {
+        ".*testcase.*::args_namelist" : 
+        [ 
+          "-n", "namelist.input.01"
+        ],
+        ".*::args_idealcase"   :
+        [
+          "-e", "IDEAL_CASE=em_fire",
+          "-e", "IDEAL_CASE_UPPER=EM_FIRE"
+        ]
+      }
+    },
+    "steps" :
+    {
+      "build-serial" :
+      {
+        "command"      : ".ci/tests/buildCMake.sh"
+      },
+      "testcase-serial" :
+      {
+        "submit_options" : {
+                            "cheyenne" : { "resources" : "-l select=1:ncpus=1" },
+                            "derecho"  : { "resources" : "-l select=1:ncpus=1 -l job_priority=economy" }
+                            },
+        "command"      : ".ci/tests/runNamelists.sh",
+        "dependencies" : { "build-serial" : "afterok" }
+      },
+      "build-omp" :
+      {
+        "command"      : ".ci/tests/buildCMake.sh",
+        "dependencies" : { "testcase-serial" : "afterok" }
+      },
+      "testcase-omp" :
+      {
+        "submit_options" : { 
+                            "cheyenne" : { "resources" : "-l select=1:ncpus=4:ompthreads=4" },
+                            "derecho"  : { "resources" : "-l select=1:ncpus=8:ompthreads=8 -l job_priority=economy" }
+                            },
+        "command"      : ".ci/tests/runNamelists.sh",
+        "dependencies" : { "build-omp" : "afterok" }
+      },
+      "build-mpi" :
+      {
+        "command"      : ".ci/tests/buildCMake.sh",
+        "dependencies" : { "testcase-omp" : "afterok" }
+      },
+      "testcase-mpi" :
+      {
+        "submit_options" : { 
+                            "cheyenne" : { "resources" : "-l select=1:ncpus=4:mpiprocs=6" },
+                            "derecho"  : { "resources" : "-l select=1:ncpus=8:mpiprocs=8 -l job_priority=economy" }
+                            },
+        "command"      : ".ci/tests/runNamelists.sh",
+        "dependencies" : { "build-mpi" : "afterok" }
+      }
+    }
+  },
+  "em_hill2d_x" :
+  {
+    "submit_options" :
+    {
+      "arguments" :
+      {
+        ".*build.*::args_nesting"    : [ "-e", "NESTING=NONE" ],
+        ".*testcase.*::args_namelist" : 
+        [ 
+          "-n", "namelist.input.01"
+        ],
+        ".*::args_idealcase"   :
+        [
+          "-e", "IDEAL_CASE=em_hill2d_x",
+          "-e", "IDEAL_CASE_UPPER=EM_HILL2D_X"
+        ]
+      }
+    },
+    "steps" :
+    {
+      "build-serial" :
+      {
+        "command"      : ".ci/tests/buildCMake.sh"
+      },
+      "testcase-serial" :
+      {
+        "submit_options" : {
+                            "cheyenne" : { "resources" : "-l select=1:ncpus=1" },
+                            "derecho"  : { "resources" : "-l select=1:ncpus=1 -l job_priority=economy" }
+                            },
+        "command"      : ".ci/tests/runNamelists.sh",
+        "dependencies" : { "build-serial" : "afterok" }
+      }
+    }
+  }
+}

@@ -24,15 +24,16 @@
       ".*testcase-omp.*::dir"      : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/$IDEAL_CASE/", "-i", "serial_results" ],
       ".*testcase-mpi.*::dir"      : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/$IDEAL_CASE/", "-i", "serial_results" ]
     },
-    "polaris"   :
+    "mmm-mystic"   :
     {
       "submission" : "LOCAL",
       "arguments"  :
       {
-        "base_env_numprocs"          : [ "-e", "NUM_PROCS=8" ],
+        "base_env_numprocs"          : [ "-e", "NUM_PROCS=9" ],
+        "base_env"                   : [ "-e", "NETCDF=$HOME/dependencies/" ],
         ".*testcase.*::global_env"     :
         [ 
-          "-e", "DATA=/mnt/s/github/data/wrf/regtest/Data",
+          "-e", "DATA=$HOME/wrf-model/DATA/namelists/Data/",
           "-e", "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$NETCDF/lib"
         ]
       }

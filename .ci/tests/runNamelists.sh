@@ -256,40 +256,50 @@ for namelist in $namelists; do
     if [ -d $workingDirectory/$identicalFolder/$namelist/ ]; then
       echo "Comparing current $namelist output to output stored in $workingDirectory/$identicalFolder/$namelist/"
 
-      for dom in d01 d02 d03; do
-        if [ -e $workingDirectory/$identicalFolder/$namelist/wrfout_${dom}_* ]; then
-          if [ ! -e ./wrfout_${dom}_* ]; then
-            # Domain does not exist in our current run but in the provided folder, that should not happen -FAIL!
-            currentErrorMsg="[$namelist] Domain $dom exists in $workingDirectory/$identicalFolder/$namelist but not in this run, cannot compare results"
-            echo "$currentErrorMsg"
-            errorMsg="$errorMsg\n$currentErrorMsg"
-            continue
-          fi
+      for io_type in input out; do
+        for dom in d01 d02 d03; do
+          if [ -e $workingDirectory/$identicalFolder/$namelist/wrf${io_type}_${dom}* ]; then
+            if [ ! -e ./wrf${io_type}_${dom}* ]; then
+              # Domain does not exist in our current run but in the provided folder, that should not happen -FAIL!
+              currentErrorMsg="[$namelist] Domain $( ls wrf${io_type}_${dom}* ) file $dom exists in $workingDirectory/$identicalFolder/$namelist but not in this run, cannot compare results"
+              echo "$currentErrorMsg"
+              errorMsg="$errorMsg\n$currentErrorMsg"
+              continue
+            fi
 
-          # We have a domain to check - should exist in both (we are treating the identical folder as truth)
-          # diff $workingDirectory/$identicalFolder/$namelist/wrf_${dom}_runstats.out $(pwd)/wrf_${dom}_runstats.out > diff_log.log
-          $diffExec $workingDirectory/$identicalFolder/$namelist/wrfout_${dom}_* wrfout_${dom}_*
-          result=$?
-          if [ $result -ne 0 ]; then
-            currentErrorMsg="[$namelist] $diffExec failed"
-            echo "$currentErrorMsg"
-            errorMsg="$errorMsg\n$currentErrorMsg"
-            continue
-          fi
+            # We have a domain to check - should exist in both (we are treating the identical folder as truth)
+            if [ "${io_type}" = "out" ]; then
+              diff $workingDirectory/$identicalFolder/$namelist/wrf_${dom}_runstats.out $(pwd)/wrf_${dom}_runstats.out
+              statDiff=$?
+            fi
 
-          if [ -e fort.98 ] || [ -e fort.88 ]; then
-            currentErrorMsg="[$namelist] $( ls $workingDirectory/$identicalFolder/$namelist/wrfout_${dom}_* ) and $(pwd)/$( ls wrfout_${dom}_* ) differ"
-            echo "$currentErrorMsg"
-            cat fort.98 fort.88 2>/dev/null
-            errorMsg="$errorMsg\n$currentErrorMsg"
-            continue
+            $diffExec $workingDirectory/$identicalFolder/$namelist/wrf${io_type}_${dom}* wrf${io_type}_${dom}*
+            result=$?
+
+            if [ $result -ne 0 ]; then
+              currentErrorMsg="[$namelist] $diffExec failed"
+              echo "$currentErrorMsg"
+              errorMsg="$errorMsg\n$currentErrorMsg"
+              continue
+            fi
+
+            if [ -e fort.98 ] || [ -e fort.88 ]; then
+              currentErrorMsg="[$namelist] $( ls $workingDirectory/$identicalFolder/$namelist/wrf${io_type}_${dom}* ) and current wrf${io_type}_${dom}* differ"
+              if [ -n "$statDiff" ] && [ $statDiff -eq 0 ]; then
+                currentErrorMsg="$currentErrorMsg - but are statistically equivalent based on checksum"
+              fi
+              echo "$currentErrorMsg"
+              cat fort.98 fort.88 2>/dev/null
+              errorMsg="$errorMsg\n$currentErrorMsg"
+              continue
+            fi
+          elif [ -e ./wrf${io_type}_${dom}* ]; then
+            echo "Domain file $( ls wrf${io_type}_${dom}* ) exists in $( pwd ) but not in $workingDirectory/$identicalFolder/$namelist/, is this an error?"
+          else 
+            # neither has it, skip
+            echo "Domain file wrf${io_type}_${dom}* not generated for namelist $namelist, skipping check"
           fi
-        elif [ -e ./wrfout_${dom}_* ]; then
-          echo "Domain $dom exists in $( pwd ) but not in $workingDirectory/$identicalFolder/$namelist/, is this an error?"
-        else 
-          # neither has it, skip
-          echo "Domain $dom not generated for namelist $namelist, skipping check"
-        fi
+        done
       done
     else
       echo "No output to check in $workingDirectory/$identicalFolder for $namelist"

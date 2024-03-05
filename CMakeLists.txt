@@ -1,5 +1,6 @@
 cmake_minimum_required( VERSION 3.20 )
 cmake_policy( SET CMP0118 NEW )
+cmake_policy( SET CMP0098 NEW )
 
 enable_language( C )
 enable_language( CXX )
@@ -254,6 +255,7 @@ endif()
 
 if ( ${ENABLE_KPP} AND NOT ${ENABLE_CHEM} )
   message( WARNING "ENABLE_KPP requires ENABLE_CHEM but is not set, ignoring" )
+  set( ENABLE_KPP OFF CACHE BOOL "Force ignore by configuration" FORCE )
 endif()
 
 
@@ -470,6 +472,11 @@ endif()
 if ( ${ENABLE_CTSM} )
   # Will need our own finder
   # find_package( CTSM REQUIRED )
+endif()
+
+if ( ${ENABLE_KPP} )
+  find_package( BISON REQUIRED )
+  find_package( FLEX  REQUIRED )
 endif()
 
 # Will need our own finder
@@ -914,7 +921,7 @@ add_subdirectory( share    )
 add_subdirectory( frame    )
 add_subdirectory( inc      )
 
-if ( ${WRF_CHEM} )
+if ( ${ENABLE_CHEM} )
   add_subdirectory( chem     )
 endif()
 

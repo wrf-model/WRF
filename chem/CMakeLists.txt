@@ -4,8 +4,7 @@ target_include_directories(
                             PRIVATE
                               ${CMAKE_CURRENT_SOURCE_DIR}
                             )
-add_subdirectory( KPP/kpp/kpp-2.1 )
-add_subdirectory( KPP/util/wkc )
+add_subdirectory( KPP )
 
 set( KPP_SOURCES KPP/module_wkppc_constants.F )
 

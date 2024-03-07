@@ -18,9 +18,7 @@ int compare_kpp_to_species  ( char * kpp_dirname) ;
 
 
 int run_kpp( char * dirname , char * kpp_version  );
-#ifdef NO_MODIFY_MAKEFILE
-void list_kpp_generated( );
-#else
+#ifndef NO_MODIFY_MAKEFILE
 void change_chem_Makefile( );
 #endif
 

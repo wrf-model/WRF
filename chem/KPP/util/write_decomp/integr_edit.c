@@ -25,23 +25,22 @@ main( int argc, char *argv[] )
   FILE * ofile;
   
 
-  argv++ ;
-
-  if ( *argv )
+  
+  if ( argc != 5 )
   {
-    strcpy( mechname, *argv );
-  }
-  else
-  {
-    printf("ERROR: USAGE: integr_edit mech_name\n");
+    printf("ERROR: USAGE: integr_edit mech_name integrator_file decomp_inc_file output_file\n");
     exit(11);
   }
 
-  sprintf( intfname, "module_kpp_%s_Integr.F", mechname );
-  sprintf( incfname, "decomp_%s.inc", mechname );
-  sprintf( tfname, "%s_new", intfname );
+  argv++ ;
+  strcpy( mechname, *argv );
 
-  
+  argv++;
+  strcpy( intfname, *argv );
+  argv++;
+  strcpy( incfname, *argv );
+  argv++;
+  strcpy( tfname, *argv );
 
   sprintf( cp_command,"cp %s %s",tfname, intfname );
 
@@ -101,7 +100,9 @@ main( int argc, char *argv[] )
   fclose( incf );
   fclose( ofile );
 
+#ifndef NO_COPY
   system(cp_command);
+#endif
 
   exit (0);
 }

@@ -91,130 +91,81 @@ target_compile_definitions( ${FOLDER_COMPILE_TARGET} PRIVATE NO_MODIFY_MAKEFILE 
 #         )
 
 
-# Quickly add tuv_kpp exec as well and generate tuv photolysis inc file
+# Quickly add tuv_kpp exec as well
 add_executable( tuv_kpp tuv_kpp.c )
 
 
-for all kpp_mech dirs
-
-  # util/create_inc_files model
-  for u l b a ibu ib ia e as thing
-    if kpp_mechd_${thing}_${model}.inc not exist
-      create
-  if extra_args_to_update_rconst_${model}.inc not exist
-    create
-  if extra_args_update_rconst_${model}.inc not exist
-    create
-  if extra_decls_update_rconst_${model}.inc not exist
-    create
-
-  # run kpp model, generates .F files - KPP_HOME must be set by this point
-  # often set to chem/KPP/kpp/kpp-2.1 in case you didn't know it was KPP
-  kpp ${model}.kpp
-  ${model}_Integrator.f90
-  ${model}_Parameters.f90
-  ${model}_Precision.f90
-  ${model}_JacobianSP.f90
-  ${model}_Jacobian.f90
-  ${model}_Update_Rconst.f90
+# add_custom_command(
+#                     OUTPUT
+#                       ${CMAKE_BINARY_DIR}/inc/tuv2wrf_jvals.inc
+#                       ${CMAKE_BINARY_DIR}/inc/tuvdef_jvals.inc
+#                     WORKING_DIRECTORY
+#                       ${CMAKE_BINARY_DIR}
+#                     # Replicate what exists in project directory for registry
+#                     COMMAND
+#                       ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/inc
+#                     COMMAND
+#                       ${CMAKE_BINARY_DIR}/tools/registry ${REGISTRY_DEFS} -DNEW_BDYS ${REGISTRY_FILE} > ${CMAKE_BINARY_DIR}/registry.log 2>&1
+#                     #!TODO Just have the registry code actually check for failure or better yet rewrite the 
+#                     # registry code to not be so obfuscating
+#                     COMMAND 
+#                       ${CMAKE_COMMAND} -E compare_files ${CMAKE_BINARY_DIR}/inc/nl_config.inc ${CMAKE_BINARY_DIR}/inc/nl_config.inc
+#                     DEPENDS
+#                       ${FOLDER_COMPILE_TARGET}
+#                     )
 
 
-  if tuv.jmap 
-    gen first once
-    gen ${model}
-  
-  # write_decom ${model} chem_dir
-  find in ${model}_Integrator.f90 if decomp && call
-    make 
 
-
-if tuv.jmap used
-  gen last once
-
-"gather" KPP/inc/*.inc files (known)
-
-
-# Now do coupler
+# add_custom_target( 
+#                   registry_code
+#                   DEPENDS
+#                     ${CMAKE_BINARY_DIR}/inc/nl_config.inc
+#                     ${CMAKE_BINARY_DIR}/frame/module_state_description.F
+#                   )
 
 
 
 
-add_custom_command(
-                    OUTPUT
-                      ${CMAKE_BINARY_DIR}/inc/tuv2wrf_jvals.inc
-                      ${CMAKE_BINARY_DIR}/inc/tuvdef_jvals.inc
-                    WORKING_DIRECTORY
-                      ${CMAKE_BINARY_DIR}
-                    # Replicate what exists in project directory for registry
-                    COMMAND
-                      ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/inc
-                    COMMAND
-                      ${CMAKE_BINARY_DIR}/tools/registry ${REGISTRY_DEFS} -DNEW_BDYS ${REGISTRY_FILE} > ${CMAKE_BINARY_DIR}/registry.log 2>&1
-                    #!TODO Just have the registry code actually check for failure or better yet rewrite the 
-                    # registry code to not be so obfuscating
-                    COMMAND 
-                      ${CMAKE_COMMAND} -E compare_files ${CMAKE_BINARY_DIR}/inc/nl_config.inc ${CMAKE_BINARY_DIR}/inc/nl_config.inc
-                    DEPENDS
-                      ${FOLDER_COMPILE_TARGET}
-                    )
+# get_directory_property( DIR_DEFS DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_DEFINITIONS )
+# wrf_expand_definitions( 
+#                         RESULT_VAR  REGISTRY_DEFS
+#                         DEFINITIONS ${DIR_DEFS}
+#                         )
+
+# # How this is not a bigger thing or not resolved is beyond me
+# # https://gitlab.kitware.com/cmake/cmake/-/issues/18005
+# # Also the suggestion does not work
+# add_custom_command(
+#                     OUTPUT
+#                       ${CMAKE_BINARY_DIR}/inc/nl_config.inc
+#                       ${CMAKE_BINARY_DIR}/frame/module_state_description.F
+#                     WORKING_DIRECTORY
+#                       ${CMAKE_BINARY_DIR}
+#                     # Replicate what exists in project directory for registry
+#                     COMMAND
+#                       ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/Registry
+#                     COMMAND
+#                       ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/inc
+#                     COMMAND
+#                       ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/frame
+#                     COMMAND
+#                       ${CMAKE_BINARY_DIR}/tools/registry ${REGISTRY_DEFS} -DNEW_BDYS ${REGISTRY_FILE} > ${CMAKE_BINARY_DIR}/registry.log 2>&1
+#                     #!TODO Just have the registry code actually check for failure or better yet rewrite the 
+#                     # registry code to not be so obfuscating
+#                     COMMAND 
+#                       ${CMAKE_COMMAND} -E compare_files ${CMAKE_BINARY_DIR}/inc/nl_config.inc ${CMAKE_BINARY_DIR}/inc/nl_config.inc
+#                     DEPENDS
+#                       ${FOLDER_COMPILE_TARGET}
+#                     )
 
 
 
-add_custom_target( 
-                  registry_code
-                  DEPENDS
-                    ${CMAKE_BINARY_DIR}/inc/nl_config.inc
-                    ${CMAKE_BINARY_DIR}/frame/module_state_description.F
-                  )
-
-
-
-
-
-
-
-
-
-get_directory_property( DIR_DEFS DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_DEFINITIONS )
-wrf_expand_definitions( 
-                        RESULT_VAR  REGISTRY_DEFS
-                        DEFINITIONS ${DIR_DEFS}
-                        )
-
-# How this is not a bigger thing or not resolved is beyond me
-# https://gitlab.kitware.com/cmake/cmake/-/issues/18005
-# Also the suggestion does not work
-add_custom_command(
-                    OUTPUT
-                      ${CMAKE_BINARY_DIR}/inc/nl_config.inc
-                      ${CMAKE_BINARY_DIR}/frame/module_state_description.F
-                    WORKING_DIRECTORY
-                      ${CMAKE_BINARY_DIR}
-                    # Replicate what exists in project directory for registry
-                    COMMAND
-                      ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/Registry
-                    COMMAND
-                      ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/inc
-                    COMMAND
-                      ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/frame
-                    COMMAND
-                      ${CMAKE_BINARY_DIR}/tools/registry ${REGISTRY_DEFS} -DNEW_BDYS ${REGISTRY_FILE} > ${CMAKE_BINARY_DIR}/registry.log 2>&1
-                    #!TODO Just have the registry code actually check for failure or better yet rewrite the 
-                    # registry code to not be so obfuscating
-                    COMMAND 
-                      ${CMAKE_COMMAND} -E compare_files ${CMAKE_BINARY_DIR}/inc/nl_config.inc ${CMAKE_BINARY_DIR}/inc/nl_config.inc
-                    DEPENDS
-                      ${FOLDER_COMPILE_TARGET}
-                    )
-
-
-
-add_custom_target( 
-                  registry_code
-                  DEPENDS
-                    ${CMAKE_BINARY_DIR}/inc/nl_config.inc
-                    ${CMAKE_BINARY_DIR}/frame/module_state_description.F
-                  )
+# add_custom_target( 
+#                   registry_code
+#                   DEPENDS
+#                     ${CMAKE_BINARY_DIR}/inc/nl_config.inc
+#                     ${CMAKE_BINARY_DIR}/frame/module_state_description.F
+#                   )
 
 
 

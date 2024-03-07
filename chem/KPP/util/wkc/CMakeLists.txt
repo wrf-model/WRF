@@ -46,7 +46,6 @@ target_sources(
                   gen_kpp_interf_utils.c
                   gen_kpp_args_to_Update_Rconst.c
                   kpp_data.c
-                  list_kpp_generated.c
 
                   ${GEN_COMMS}
                   

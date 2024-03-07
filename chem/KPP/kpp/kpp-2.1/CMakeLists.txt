@@ -15,30 +15,37 @@ endif()
 
 FLEX_TARGET(
             kpp_lex
-            scan.l
-            ${CMAKE_CURRENT_BINARY_DIR}/preproc/lex.yy.c
+            src/scan.l
+            ${CMAKE_CURRENT_BINARY_DIR}/lex.yy.c
             )
 
 BISON_TARGET(
               kpp_tab
-              scan.y
-              ${CMAKE_CURRENT_BINARY_DIR}/preproc/y.tab.c
+              src/scan.y
+              ${CMAKE_CURRENT_BINARY_DIR}/y.tab.c
               )
 
 add_executable(
                 kpp
                 ${FLEX_kpp_lex_OUTPUTS}
                 ${BISON_kpp_tab_OUTPUTS}
-                scanner.c
-                scanutil.c
-                kpp.c
-                gen.c
-                code.c
-                code_c.c
-                code_f77.c
-                code_f90.c
-                code_matlab.c
-                debug.c
+                src/scanner.c
+                src/scanutil.c
+                src/kpp.c
+                src/gen.c
+                src/code.c
+                src/code_c.c
+                src/code_f77.c
+                src/code_f90.c
+                src/code_matlab.c
+                src/debug.c
                 )
 
+target_compile_definitions( kpp PRIVATE SED_DELIMITER="@" )
+target_include_directories(
+                            kpp
+                            PRIVATE
+                              ${CMAKE_CURRENT_SOURCE_DIR}/src
+                              ${CMAKE_CURRENT_BINARY_DIR}
+                            )
 target_link_libraries( kpp PRIVATE ${FLEX_LIBRARIES} )

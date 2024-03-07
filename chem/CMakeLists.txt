@@ -6,8 +6,6 @@ target_include_directories(
                             )
 add_subdirectory( KPP )
 
-set( KPP_SOURCES KPP/module_wkppc_constants.F )
-
 ########################################################################################################################
 #
 # Now add sources

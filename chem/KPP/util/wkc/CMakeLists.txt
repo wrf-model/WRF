@@ -48,29 +48,8 @@ target_sources(
                   kpp_data.c
 
                   ${GEN_COMMS}
-                  
-                  # gen_defs.c
-                  # gen_allocs.c
-                  # gen_mod_state_descr.c
-                  # gen_scalar_indices.c
-                  # gen_args.c
-                  # gen_config.c
-                  # gen_irr_diag.c
-                  # gen_model_data_ord.c
-                  # gen_interp.c
-                  # gen_scalar_derefs.c
-                  # set_dim_strs.c
-                  # gen_wrf_io.c
-                  # gen_streams.c
                   )
 
-
-# set_target_properties( 
-#                       ${FOLDER_COMPILE_TARGET} 
-#                         PROPERTIES
-#                           Fortran_MODULE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/${FOLDER_COMPILE_TARGET}
-#                           Fortran_FORMAT           FREE                          
-#                       )
 
 target_include_directories( ${FOLDER_COMPILE_TARGET}
                             PRIVATE
@@ -94,78 +73,67 @@ target_compile_definitions( ${FOLDER_COMPILE_TARGET} PRIVATE NO_MODIFY_MAKEFILE 
 add_executable( tuv_kpp tuv_kpp.c )
 
 
-# add_custom_command(
-#                     OUTPUT
-#                       ${CMAKE_BINARY_DIR}/inc/tuv2wrf_jvals.inc
-#                       ${CMAKE_BINARY_DIR}/inc/tuvdef_jvals.inc
-#                     WORKING_DIRECTORY
-#                       ${CMAKE_BINARY_DIR}
-#                     # Replicate what exists in project directory for registry
-#                     COMMAND
-#                       ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/inc
-#                     COMMAND
-#                       ${CMAKE_BINARY_DIR}/tools/registry ${REGISTRY_DEFS} -DNEW_BDYS ${REGISTRY_FILE} > ${CMAKE_BINARY_DIR}/registry.log 2>&1
-#                     #!TODO Just have the registry code actually check for failure or better yet rewrite the 
-#                     # registry code to not be so obfuscating
-#                     COMMAND 
-#                       ${CMAKE_COMMAND} -E compare_files ${CMAKE_BINARY_DIR}/inc/nl_config.inc ${CMAKE_BINARY_DIR}/inc/nl_config.inc
-#                     DEPENDS
-#                       ${FOLDER_COMPILE_TARGET}
-#                     )
+# Do registry_kpp generation of sources and include files
+set( KPP_INTERFACE_SOURCES )
+set( KPP_INTERFACE_SOURCES_CMD_CHECK )
+foreach( MECH ${MECHANISMS} )
+  set( KPP_INTERFACE_SOURCE ${CMAKE_BINARY_DIR}/chem/module_kpp_${MECH}_interface.F )
+  list( APPEND KPP_INTERFACE_SOURCES ${KPP_INTERFACE_SOURCE} )
+  list( 
+        APPEND KPP_INTERFACE_SOURCES_CMD_CHECK
+        COMMAND ${CMAKE_COMMAND} -E compare_files ${KPP_INTERFACE_SOURCE} ${KPP_INTERFACE_SOURCE}
+        )
+
+endforeach()
+
+
+get_directory_property( DIR_DEFS DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_DEFINITIONS )
+wrf_expand_definitions( 
+                        RESULT_VAR  REGISTRY_DEFS
+                        DEFINITIONS ${DIR_DEFS}
+                        )
+
+add_custom_command(
+                    OUTPUT
+                      gen_${FOLDER_COMPILE_TARGET}
+                      ${CMAKE_BINARY_DIR}/chem/kpp_mechanism_driver.F
+                      ${KPP_INTERFACE_SOURCES}
+                    WORKING_DIRECTORY
+                      ${CMAKE_BINARY_DIR}
+                    # Replicate what exists in project directory for registry
+                    COMMAND
+                      ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/Registry
+                    COMMAND
+                      ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/inc
+                    COMMAND
+                      ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/frame
+                    COMMAND
+                      $<TARGET_FILE:${FOLDER_COMPILE_TARGET}> ${REGISTRY_DEFS} ${REGISTRY_FILE} > ${CMAKE_BINARY_DIR}/${FOLDER_COMPILE_TARGET}.log 2>&1
+                    ${KPP_INTERFACE_SOURCES_CMD_CHECK}
+                    COMMAND
+                      ${CMAKE_COMMAND} -E compare_files ${CMAKE_BINARY_DIR}/chem/kpp_mechanism_driver.F ${CMAKE_BINARY_DIR}/chem/kpp_mechanism_driver.F
+                    COMMAND 
+                      ${CMAKE_COMMAND} -E touch gen_${FOLDER_COMPILE_TARGET}
+                    DEPENDS
+                      ${FOLDER_COMPILE_TARGET}
+                    )
 
 
 
-# add_custom_target( 
-#                   registry_code
-#                   DEPENDS
-#                     ${CMAKE_BINARY_DIR}/inc/nl_config.inc
-#                     ${CMAKE_BINARY_DIR}/frame/module_state_description.F
-#                   )
+add_custom_target( 
+                  registry_kpp_code
+                  DEPENDS
+                    ${KPP_INTERFACE_SOURCES}
+                    ${CMAKE_BINARY_DIR}/chem/kpp_mechanism_driver.F
+                    gen_${FOLDER_COMPILE_TARGET}
+                  )
 
 
-
-
-# get_directory_property( DIR_DEFS DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_DEFINITIONS )
-# wrf_expand_definitions( 
-#                         RESULT_VAR  REGISTRY_DEFS
-#                         DEFINITIONS ${DIR_DEFS}
-#                         )
-
-# # How this is not a bigger thing or not resolved is beyond me
-# # https://gitlab.kitware.com/cmake/cmake/-/issues/18005
-# # Also the suggestion does not work
-# add_custom_command(
-#                     OUTPUT
-#                       ${CMAKE_BINARY_DIR}/inc/nl_config.inc
-#                       ${CMAKE_BINARY_DIR}/frame/module_state_description.F
-#                     WORKING_DIRECTORY
-#                       ${CMAKE_BINARY_DIR}
-#                     # Replicate what exists in project directory for registry
-#                     COMMAND
-#                       ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/Registry
-#                     COMMAND
-#                       ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/inc
-#                     COMMAND
-#                       ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/frame
-#                     COMMAND
-#                       ${CMAKE_BINARY_DIR}/tools/registry ${REGISTRY_DEFS} -DNEW_BDYS ${REGISTRY_FILE} > ${CMAKE_BINARY_DIR}/registry.log 2>&1
-#                     #!TODO Just have the registry code actually check for failure or better yet rewrite the 
-#                     # registry code to not be so obfuscating
-#                     COMMAND 
-#                       ${CMAKE_COMMAND} -E compare_files ${CMAKE_BINARY_DIR}/inc/nl_config.inc ${CMAKE_BINARY_DIR}/inc/nl_config.inc
-#                     DEPENDS
-#                       ${FOLDER_COMPILE_TARGET}
-#                     )
-
-
-
-# add_custom_target( 
-#                   registry_code
-#                   DEPENDS
-#                     ${CMAKE_BINARY_DIR}/inc/nl_config.inc
-#                     ${CMAKE_BINARY_DIR}/frame/module_state_description.F
-#                   )
-
-
-
+add_dependencies( ${PROJECT_NAME}_Core registry_kpp_code )
+target_sources(
+                ${PROJECT_NAME}_Core
+                PRIVATE
+                  ${KPP_INTERFACE_SOURCES}
+                  ${CMAKE_BINARY_DIR}/chem/kpp_mechanism_driver.F
+                )
 

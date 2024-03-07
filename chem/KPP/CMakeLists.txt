@@ -1,7 +1,8 @@
 
-add_subdirectory( kpp/kpp-2.1 )
-add_subdirectory( util/wkc )
-add_subdirectory( util/write_decomp )
+message( STATUS "[KPP] Starting preprocessing preparation..." )
+list(APPEND CMAKE_MESSAGE_INDENT "  ")
+
+# These names will also be used by the registry_kpp
 set( 
     MECHANISMS
     cb05_sorg_aq
@@ -36,6 +37,31 @@ set(
     t1_mozcart
     )
 
+add_subdirectory( kpp/kpp-2.1 )
+add_subdirectory( util/wkc )
+add_subdirectory( util/write_decomp )
+
+
+target_sources(
+                ${PROJECT_NAME}_Core
+                PRIVATE
+                  module_wkppc_constants.F
+              )
+
+target_include_directories( 
+                            ${PROJECT_NAME}_Core
+                            PRIVATE
+                              ${CMAKE_CURRENT_SOURCE_DIR}/inc
+                          )
+
+set( GEN_MECHD_INC  u l b a ibu ib ia e )
+set(
+    GEN_RCONST_INC
+    extra_args_to_update_rconst
+    extra_args_update_rconst
+    extra_decls_update_rconst
+    )
+
 message( STATUS "[KPP] Adding generation for mechanisms" )
 
 # Some helper vars for grouping the kpp gen and tuv inc
@@ -48,39 +74,66 @@ set( TUV_PHOTOLYSIS_CMD )
 set( TUV_PHOTOLYSIS_OUT )
 
 foreach ( MECH ${MECHANISMS} )
-  # Is this even necessary?
-  # # util/create_inc_files model
-  # for u l b a ibu ib ia e as thing
-  #   if kpp_mechd_${thing}_${model}.inc not exist
-  #     create
-  # if extra_args_to_update_rconst_${model}.inc not exist
-  #   create
-  # if extra_args_update_rconst_${model}.inc not exist
-  #   create
-  # if extra_decls_update_rconst_${model}.inc not exist
-  #   create
 
-  # run kpp model, generates .F files - KPP_HOME must be set by this point
+  ######################################################################################################################
+  ##
+  ## Generate any "missing" includes that are just empty
+  ##
+  if ( EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/inc/${MECH} )
+    file( COPY ${CMAKE_CURRENT_SOURCE_DIR}/inc/${MECH}/ DESTINATION ${CMAKE_BINARY_DIR}/inc )
+  endif()
+
+  foreach ( MECHD_INAME ${GEN_MECHD_INC} )
+    set( GEN_MECHD_INC_FILENAME kpp_mechd_${MECHD_INAME}_${MECH}.inc )
+    if ( NOT EXISTS ${CMAKE_BINARY_DIR}/inc/${GEN_MECHD_INC_FILENAME} )
+      message( STATUS "[KPP] Touching empty include ${GEN_MECHD_INC_FILENAME}" )
+      file( TOUCH ${CMAKE_BINARY_DIR}/inc/${GEN_MECHD_INC_FILENAME} )
+    endif()
+  endforeach()
+
+  foreach ( RCONST_INAME ${GEN_RCONST_INC} )
+    set( GEN_RCONST_INC_FILENAME ${RCONST_INAME}_${MECH}.inc )
+    if ( NOT EXISTS ${CMAKE_BINARY_DIR}/inc/${GEN_RCONST_INC_FILENAME} )
+      message( STATUS "[KPP] Touching empty include ${GEN_RCONST_INC_FILENAME}" )
+      file( TOUCH ${CMAKE_BINARY_DIR}/inc/${GEN_RCONST_INC_FILENAME} )
+    endif()
+  endforeach()
+  ##
+  ##
+  ##
+  ######################################################################################################################
+
+  ######################################################################################################################
+  ##
+  ## run kpp model, generates .F files
+  ##
+  #  KPP_HOME must be set by this point
   # often set to chem/KPP/kpp/kpp-2.1 in case you didn't know it was KPP
   set( KPP_HOME ${CMAKE_CURRENT_SOURCE_DIR}/kpp/kpp-2.1 )
 
   # I'm using the configure-time dir creation to simplify custom target/command usage
-  set( KPP_WORKING_DIR ${CMAKE_CURRENT_BINARY_DIR}/${MECH}/kpp/)
+  set( KPP_WORKING_DIR ${CMAKE_CURRENT_BINARY_DIR}/mechanisms/${MECH} )
   file( COPY ${CMAKE_CURRENT_SOURCE_DIR}/mechanisms/${MECH}/ DESTINATION ${KPP_WORKING_DIR} )
   set(
       ${MECH}_KPP_SOURCES
-      ${MECH}_Integrator.f90
-      ${MECH}_Parameters.f90
-      ${MECH}_Precision.f90
-      ${MECH}_JacobianSP.f90
-      ${MECH}_Jacobian.f90
-      ${MECH}_Update_Rconst.f90
+      ${KPP_WORKING_DIR}/${MECH}_Integrator.f90
+      ${KPP_WORKING_DIR}/${MECH}_Parameters.f90
+      ${KPP_WORKING_DIR}/${MECH}_Precision.f90
+      ${KPP_WORKING_DIR}/${MECH}_JacobianSP.f90
+      ${KPP_WORKING_DIR}/${MECH}_Jacobian.f90
+      ${KPP_WORKING_DIR}/${MECH}_Update_Rconst.f90
       )
 
   add_custom_command(
                       OUTPUT
                         ${${MECH}_KPP_SOURCES}
                       COMMAND ${CMAKE_COMMAND} -E env KPP_HOME=${KPP_HOME} $<TARGET_FILE:kpp> ${MECH}.kpp > ${CMAKE_BINARY_DIR}/kpp_${MECH}.log 2>&1
+                      COMMAND ${CMAKE_COMMAND} -E compare_files ${KPP_WORKING_DIR}/${MECH}_Integrator.f90     ${KPP_WORKING_DIR}/${MECH}_Integrator.f90
+                      COMMAND ${CMAKE_COMMAND} -E compare_files ${KPP_WORKING_DIR}/${MECH}_Parameters.f90     ${KPP_WORKING_DIR}/${MECH}_Parameters.f90
+                      COMMAND ${CMAKE_COMMAND} -E compare_files ${KPP_WORKING_DIR}/${MECH}_Precision.f90      ${KPP_WORKING_DIR}/${MECH}_Precision.f90
+                      COMMAND ${CMAKE_COMMAND} -E compare_files ${KPP_WORKING_DIR}/${MECH}_JacobianSP.f90     ${KPP_WORKING_DIR}/${MECH}_JacobianSP.f90
+                      COMMAND ${CMAKE_COMMAND} -E compare_files ${KPP_WORKING_DIR}/${MECH}_Jacobian.f90       ${KPP_WORKING_DIR}/${MECH}_Jacobian.f90
+                      COMMAND ${CMAKE_COMMAND} -E compare_files ${KPP_WORKING_DIR}/${MECH}_Update_Rconst.f90  ${KPP_WORKING_DIR}/${MECH}_Update_Rconst.f90
                       WORKING_DIRECTORY ${KPP_WORKING_DIR}
                       DEPENDS kpp
                       )
@@ -90,15 +143,13 @@ foreach ( MECH ${MECHANISMS} )
                     DEPENDS
                       ${${MECH}_KPP_SOURCES}
                     )
-  set_source_files_properties(
-                              ${${MECH}_KPP_SOURCES}
-                              DIRECTORY ${PROJECT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}
-                              TARGET_DIRECTORY ${PROJECT_NAME}_Core
-                              PROPERTIES
-                                GENERATED ON
-                              )
+
   add_dependencies( ${PROJECT_NAME}_Core ${MECH}_kpp )
   target_sources( ${PROJECT_NAME}_Core PRIVATE ${${MECH}_KPP_SOURCES} )
+  ##
+  ##
+  ##
+  ######################################################################################################################
 
   ######################################################################################################################
   ##
@@ -138,7 +189,7 @@ foreach ( MECH ${MECHANISMS} )
     
     list(
           APPEND TUV_PHOTOLYSIS_CMD
-          COMMAND ${CMAKE_COMMAND} -E chdir ${KPP_WORKING_DIR} $<TARGET_FILE:tuv_kpp> ${MECH} ${CMAKE_CURRENT_BINARY_DIR}/inc/ >> ${CMAKE_BINARY_DIR}/tuv_photolysis_inc.log 2>&1
+          COMMAND ${CMAKE_COMMAND} -E chdir ${KPP_WORKING_DIR} $<TARGET_FILE:tuv_kpp> ${MECH} ${CMAKE_BINARY_DIR}/inc/ >> ${CMAKE_BINARY_DIR}/tuv_photolysis_inc.log 2>&1
           COMMAND ${CMAKE_COMMAND} -E touch tuv_photolysis_${MECH}
           )
     list(
@@ -146,30 +197,6 @@ foreach ( MECH ${MECHANISMS} )
           tuv_photolysis_${MECH}
           )
   endif()
-
-  # # write_decom ${model} chem_dir
-  # add_custom_command(
-  #                     OUTPUT
-  #                       ${KPP_WORKING_DIR}/${MECH}_decomp_check
-  #                     COMMAND ${CMAKE_COMMAND} -E 
-  #                     COMMAND ${CMAKE_COMMAND} -E ${KPP_WORKING_DIR}/${MECH}_decomp_check
-  #                     WORKING_DIRECTORY ${KPP_WORKING_DIR}
-  #                     DEPENDS ${MECH}_kpp
-  #                     )
-  # add_custom_target(
-  #                   ${MECH}_kpp
-  #                   COMMENT "[KPP] Checking for decomposition rewrite in ${MECH}_Integrator.f90"
-  #                   DEPENDS
-  #                     ${KPP_WORKING_DIR}/${MECH}_decomp_check
-  #                   )
-  # set_source_files_properties(
-  #                             ${KPP_WORKING_DIR}/${MECH}_Integrator-decomp.f90
-  #                             DIRECTORY ${PROJECT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}
-  #                             TARGET_DIRECTORY ${PROJECT_NAME}_Core
-  #                             PROPERTIES
-  #                               GENERATED ON
-  #                             )
-
   # As far as I can tell the decomp is not used
   # find in ${model}_Integrator.f90 if decomp && call
     
@@ -192,19 +219,24 @@ foreach ( MECH ${MECHANISMS} )
 
 endforeach()
 
+# Group our aggregated tuv commands if it was specified
 if ( ${TUV_PHOTOLYSIS_GEN} )
   add_custom_command(
                       OUTPUT
+                        # Note: I am not setting output as 
+                        # inc/tuv2wrf_jvals.inc
+                        # inc/tuvdef_jvals.inc
+                        # Because I want each step to succeed and not just the start or stop
                         tuv_photolysis_start
                         ${TUV_PHOTOLYSIS_OUT}
                         tuv_photolysis_stop
-                      COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/inc/
-                      COMMAND $<TARGET_FILE:tuv_kpp> FIRST ${CMAKE_CURRENT_BINARY_DIR}/inc/  > ${CMAKE_BINARY_DIR}/tuv_photolysis_inc.log 2>&1
+                      COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/inc/
+                      COMMAND $<TARGET_FILE:tuv_kpp> FIRST ${CMAKE_BINARY_DIR}/inc/  > ${CMAKE_BINARY_DIR}/tuv_photolysis_inc.log 2>&1
                       COMMAND ${CMAKE_COMMAND} -E touch tuv_photolysis_start
                       ${TUV_PHOTOLYSIS_CMD}
-                      COMMAND $<TARGET_FILE:tuv_kpp> LAST ${CMAKE_CURRENT_BINARY_DIR}/inc/  >> ${CMAKE_BINARY_DIR}/tuv_photolysis_inc.log 2>&1
+                      COMMAND $<TARGET_FILE:tuv_kpp> LAST ${CMAKE_BINARY_DIR}/inc/  >> ${CMAKE_BINARY_DIR}/tuv_photolysis_inc.log 2>&1
                       COMMAND ${CMAKE_COMMAND} -E touch tuv_photolysis_stop
-                      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+                      WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
                       DEPENDS tuv_kpp
                       )
   add_custom_target(
@@ -218,10 +250,4 @@ if ( ${TUV_PHOTOLYSIS_GEN} )
   add_dependencies( ${PROJECT_NAME}_Core tuv_photolysis_inc )
 endif()
 
-# "gather" KPP/inc/*.inc files (known)
-
-
-# # Now do coupler
-# registry stuff
-
-
+list(POP_BACK CMAKE_MESSAGE_INDENT)

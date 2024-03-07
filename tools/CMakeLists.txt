@@ -101,6 +101,9 @@ elseif ( ${WRF_CORE} STREQUAL "DA" OR ${WRF_CORE} STREQUAL "DA_4D_VAR" )
 
 endif()
 
+# Make sure this exists at the top level - I'm avoiding using cache variables deliberately
+set( REGISTRY_FILE ${REGISTRY_FILE} PARENT_SCOPE )
+
 wrf_expand_definitions( 
                         RESULT_VAR  REGISTRY_DEFS
                         DEFINITIONS ${PROJECT_COMPILE_DEFINITIONS}

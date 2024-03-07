@@ -31,6 +31,7 @@ int main( int argc, char *argv[], char *env[] ) {
   char squezzed[NAMELEN];
   char *wrf_jname, *cwrk, *tuv_jspec, *token;
   char *tuv_jname;
+  char openMode = "a";
   FILE * fp_in, *fp_set, *fp_def;
   wrf_node *Wrf_node;
   wrf_node *Wrf_HEAD;
@@ -54,7 +55,11 @@ int main( int argc, char *argv[], char *env[] ) {
   strcpy( fname_inc, dir );
   strcat( fname_inc, "tuv2wrf_jvals.inc" );
 
-  if( (fp_set = fopen( fname_inc,"a" )) == NULL ) {
+  if( !strcmp(mech,"FIRST") ) {
+    openMode = "w";
+  }
+
+  if( (fp_set = fopen( fname_inc, openMode )) == NULL ) {
     fprintf(stderr,"Can not open %s\n",fname_inc );
     return(-1);
   }
@@ -62,7 +67,7 @@ int main( int argc, char *argv[], char *env[] ) {
   strcpy( fname_inc, dir );
   strcat( fname_inc, "tuvdef_jvals.inc" );
 
-  if( (fp_def = fopen( fname_inc,"a" )) == NULL ) {
+  if( (fp_def = fopen( fname_inc, openMode )) == NULL ) {
     fprintf(stderr,"Can not open %s\n",fname_inc );
     return(-1);
   }

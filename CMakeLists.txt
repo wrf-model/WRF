@@ -693,9 +693,9 @@ list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS
 # in code since cmake cannot handle basically any others :(
 # https://gitlab.kitware.com/cmake/cmake/-/issues/17398
 if ( ${ENABLE_CHEM} )
-  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS WRF_CHEM=1 )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS WRF_CHEM )
   if ( ${ENABLE_KPP} )
-    list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS WRF_KPP=1 )
+    list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS WRF_KPP )
   endif()
 endif()
 if ( ${ENABLE_CHEM} )

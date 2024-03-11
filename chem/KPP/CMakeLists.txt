@@ -67,7 +67,6 @@ message( STATUS "[KPP] Adding generation for mechanisms" )
 # Some helper vars for grouping the kpp gen and tuv inc
 set( KPP_GEN_GROUPS )
 set( KPP_CURRENT_GEN_GROUP 0 )
-set( KPP_SOURCES )
 
 set( TUV_PHOTOLYSIS_GEN FALSE )
 set( TUV_PHOTOLYSIS_CMD )

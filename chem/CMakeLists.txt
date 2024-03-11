@@ -14,7 +14,6 @@ add_subdirectory( KPP )
 target_sources(
                 ${PROJECT_NAME}_Core
                 PRIVATE
-                  ${KPP_SOURCES}
                   module_data_isrpia_data.F
                   module_data_ISRPIA.F
                   module_data_isrpia_asrc.F

@@ -115,17 +115,21 @@ foreach ( MECH ${MECHANISMS} )
   file( COPY ${CMAKE_CURRENT_SOURCE_DIR}/mechanisms/${MECH}/ DESTINATION ${KPP_WORKING_DIR} )
   set(
       ${MECH}_KPP_SOURCES
-      ${KPP_WORKING_DIR}/${MECH}_Integrator.f90
       ${KPP_WORKING_DIR}/${MECH}_Parameters.f90
       ${KPP_WORKING_DIR}/${MECH}_Precision.f90
       ${KPP_WORKING_DIR}/${MECH}_JacobianSP.f90
       ${KPP_WORKING_DIR}/${MECH}_Jacobian.f90
       ${KPP_WORKING_DIR}/${MECH}_Update_Rconst.f90
       )
+  set(
+      ${MECH}_KPP_SOURCES_INTEGRATOR
+      ${KPP_WORKING_DIR}/${MECH}_Integrator.f90
+      )
 
   add_custom_command(
                       OUTPUT
                         ${${MECH}_KPP_SOURCES}
+                        ${${MECH}_KPP_SOURCES_INTEGRATOR}
                       COMMAND ${CMAKE_COMMAND} -E env KPP_HOME=${KPP_HOME} $<TARGET_FILE:kpp> ${MECH}.kpp > ${CMAKE_BINARY_DIR}/kpp_${MECH}.log 2>&1
                       COMMAND ${CMAKE_COMMAND} -E compare_files ${KPP_WORKING_DIR}/${MECH}_Integrator.f90     ${KPP_WORKING_DIR}/${MECH}_Integrator.f90
                       COMMAND ${CMAKE_COMMAND} -E compare_files ${KPP_WORKING_DIR}/${MECH}_Parameters.f90     ${KPP_WORKING_DIR}/${MECH}_Parameters.f90
@@ -141,6 +145,7 @@ foreach ( MECH ${MECHANISMS} )
                     COMMENT "[KPP] Generating kpp files for ${MECH}"
                     DEPENDS
                       ${${MECH}_KPP_SOURCES}
+                      ${${MECH}_KPP_SOURCES_INTEGRATOR}
                     )
 
   add_dependencies( ${PROJECT_NAME}_Core ${MECH}_kpp )
@@ -196,25 +201,70 @@ foreach ( MECH ${MECHANISMS} )
           tuv_photolysis_${MECH}
           )
   endif()
-  # As far as I can tell the decomp is not used
-  # find in ${model}_Integrator.f90 if decomp && call
-    
-  #   gen use inc statements to decomp_uses.inc:
-  #     ${model}_Parameters
-  #     ${model}_JacobianSP
-  #   compile write_decomp :
-  #     write_decomp.F
-  #     ${model}_Parameters.f90
-  #     ${model}_Precision.f90
-  #     ${model}_JacobianSP.f90
-  #   gen mech.tmp in same directory run with ${model} as sole string
-  #   run write_decomp outputs decomp_${model}.inc
 
-  #   # compile integr_edit.exe (already done above)
-  #   run integr_edit ${model} ${model}_Integrator.f90 decomp_${model}.inc new_output
-  #   take new output as ${model}_Integrator.f90 stand-in now
+  ######################################################################################################################
+  ##
+  ## Integrator decomp rewrite
+  ##
+  # Do decomp for all - easier to manually specify rather than greps
+  file( 
+        WRITE ${KPP_WORKING_DIR}/decomp_uses.inc
+        "USE ${MECH}_Parameters\nUSE ${MECH}_JacobianSP\n"
+      )
+  file( 
+        WRITE ${KPP_WORKING_DIR}/mech.tmp
+        "${MECH}\n"
+      )
   
-  
+  add_executable(
+                  write_decomp_${MECH}
+                  util/write_decomp/write_decomp.F
+                  ${KPP_WORKING_DIR}/${MECH}_Parameters.f90
+                  ${KPP_WORKING_DIR}/${MECH}_Precision.f90
+                  ${KPP_WORKING_DIR}/${MECH}_JacobianSP.f90
+                  )
+  target_include_directories( write_decomp_${MECH} PRIVATE ${KPP_WORKING_DIR} )
+  set_target_properties( 
+                        write_decomp_${MECH}
+                        PROPERTIES
+                          Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/decomp/${MECH}/
+                          Fortran_FORMAT           FREE
+                      )
+  add_dependencies( write_decomp_${MECH} ${MECH}_kpp )
+
+
+  # Now that write_decomp is generated for this kpp mechanism, process it
+  add_custom_command(
+                      OUTPUT
+                        ${KPP_WORKING_DIR}/${MECH}_Integrator_decomp.f90
+                        ${KPP_WORKING_DIR}/decomp_${MECH}.inc
+                        # ${CMAKE_COMMAND} -E chdir ${KPP_WORKING_DIR}
+                      COMMAND $<TARGET_FILE:write_decomp_${MECH}> > ${CMAKE_BINARY_DIR}/kpp_write_decomp_${MECH}.log 2>&1
+                      COMMAND ${CMAKE_COMMAND} -E compare_files ${KPP_WORKING_DIR}/decomp_${MECH}.inc                 ${KPP_WORKING_DIR}/decomp_${MECH}.inc
+
+                      COMMAND $<TARGET_FILE:integration_edit>
+                                ${MECH} ${MECH}_Integrator.f90
+                                decomp_${MECH}.inc
+                                ${MECH}_Integrator_decomp.f90 > ${CMAKE_BINARY_DIR}/kpp_integrator_edit_${MECH}.log 2>&1
+                      COMMAND ${CMAKE_COMMAND} -E compare_files ${KPP_WORKING_DIR}/${MECH}_Integrator_decomp.f90      ${KPP_WORKING_DIR}/${MECH}_Integrator_decomp.f90
+                      
+                      WORKING_DIRECTORY ${KPP_WORKING_DIR}
+                      DEPENDS kpp
+                      )
+  add_custom_target(
+                    ${MECH}_integrator_decomp
+                    COMMENT "[KPP] Post-processing integrator decomposition for ${MECH}_Integrator.f90"
+                    DEPENDS
+                      ${KPP_WORKING_DIR}/${MECH}_Integrator_decomp.f90
+                      ${KPP_WORKING_DIR}/decomp_${MECH}.inc
+                    )
+
+  add_dependencies( ${PROJECT_NAME}_Core ${MECH}_integrator_decomp )
+  target_sources( ${PROJECT_NAME}_Core PRIVATE ${KPP_WORKING_DIR}/${MECH}_Integrator_decomp.f90 )
+  ##
+  ## 
+  ##
+  ######################################################################################################################
 
 endforeach()
 

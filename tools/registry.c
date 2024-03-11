@@ -129,10 +129,10 @@ main( int argc, char *argv[], char *env[] )
         fprintf(stderr,"Usage: %s [-DDEREF_KLUDGE] [-DDM_PARALLEL] [-DDISTRIB_IO_LAYER] [-DDM_SERIAL_IN_ONLY] [-DD3VAR_IRY_KLUDGE] registryfile\n",thisprog) ;
         exit(1) ;
       }
-      if (!strcmp(*argv,"-DWRF_CHEM=1")) {
+      if (!strcmp(*argv,"-DWRF_CHEM")) {
         sw_chem = 1 ;
       }
-      if (!strcmp(*argv,"-DWRF_KPP=1")) {
+      if (!strcmp(*argv,"-DWRF_KPP")) {
         sw_kpp = 1 ;
       }
     }

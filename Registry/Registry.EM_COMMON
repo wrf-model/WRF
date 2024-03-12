@@ -770,9 +770,9 @@ state   real   shdmin              ij    misc          1     -     i012rhd=(inte
 state   real   shdavg              ij    misc          1     -     i012rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)   "SHDAVG"        "ANNUAL AVG VEG FRACTION" ""
 state   real   snoalb              ij    misc          1     -     i012rhd  "SNOALB"        "ANNUAL MAX SNOW ALBEDO IN FRACTION" ""
 state   real   toposoil            ij    misc          1     -     i12     "SOILHGT"       "ELEVATION OF LSM DATA"  "m"
-state   real   landusef            iuj   misc          1     Z     i012rdu   "LANDUSEF"      "LANDUSE FRACTION BY CATEGORY"  ""
-state   real   soilctop            isj   misc          1     Z     i012rdu   "SOILCTOP"      "SOIL CAT FRACTION (TOP)"  ""
-state   real   soilcbot            isj   misc          1     Z     i012rdu   "SOILCBOT"      "SOIL CAT FRACTION (BOTTOM)"  ""
+state   real   landusef            iuj   misc          1     Z     i012rhdu "LANDUSEF"      "LANDUSE FRACTION BY CATEGORY"  ""
+state   real   soilctop            isj   misc          1     Z     i012rdu  "SOILCTOP"      "SOIL CAT FRACTION (TOP)"  ""
+state   real   soilcbot            isj   misc          1     Z     i012rdu  "SOILCBOT"      "SOIL CAT FRACTION (BOTTOM)"  ""
 state   real   soilcat             ij    misc          1     -     i12     "SOILCAT"       "SOIL CAT DOMINANT TYPE" ""
 state   real   vegcat              ij    misc          1     -     i12     "VEGCAT"        "VEGETATION CAT DOMINANT TYPE" ""
 
@@ -1017,21 +1017,21 @@ state    real   ALSWNIRDIF        ij    misc        1         Z      r        "A
 
 
 # From P-X PBL and LSM; RS (RC) and RA also from Noah and NoahMP
-state    real   RA               ij     misc        1         -      r        "RA"           "AERODYNAMIC RESISTANCE"            "s m-1"
-state    real   RS               ij     misc        1         -      r        "RS"           "SURFACE RESISTANCE"                "s m-1"
+state    real   RA               ij     misc        1         -      rh       "RA"           "AERODYNAMIC RESISTANCE"            "s m-1"
+state    real   RS               ij     misc        1         -      rh       "RS"           "SURFACE RESISTANCE"                "s m-1"
 state    real   LAI              ij     misc        1         -      i0124rh  "LAI"          "LEAF AREA INDEX"                   "m-2/m-2"
 state    real   VEGF_PX          ij     misc        1         -      rh       "VEGF_PX"      "Vegetation Fraction for PX LSM"    "area/area"
 state    real   T2OBS            ij     misc        1         -      r        "T2OBS"        "2-m temperature from analysis "    "K"
 state    real   Q2OBS            ij     misc        1         -      r        "Q2OBS"        "2-m mixing ratio from analysis "   "kg/kg"
 state    real   IMPERV           ij     misc        1         -      i012rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)      "IMPERV"       "Impervious surface fraction NLCD"  "percent"
 state    real   CANFRA           ij     misc        1         -      i012rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)      "CANFRA"       "Satellite canopy fraction"         "percent"
-state    real   LAI_PX           ij     misc        1         -      rh        "LAI_PX"       "LAI used for PX LSM"              "m2/m2"
-state    real   WWLT_PX          ij     misc        1         -      rh       "WWLT_PX"       "Soil wilting point for PX LSM"    "m3/m3"
-state    real   WFC_PX           ij     misc        1         -      rh       "WFC_PX"        "Soil field capacity for PX LSM"    "m3/m3"
-state    real   WSAT_PX          ij     misc        1         -      rh       "WSAT_PX"       "Soil saturation for PX LSM"    "m3/m3"
-state    real   CLAY_PX          ij     misc        1         -      rh       "CLAY_PX"       "Clay perent for PX LSM"    "fraction"
-state    real   CSAND_PX         ij     misc        1         -      rh       "CSAND_PX"      "Coarse sand perent for PX LSM"    "fraction"
-state    real   FMSAND_PX        ij     misc        1         -      rh       "FMSAND_PX"     "Fine-medium sand perent for PX LSM"    "fraction"
+state    real   LAI_PX           ij     misc        1         -      rh       "LAI_PX"       "LAI used for PX LSM"              "m2/m2"
+state    real   WWLT_PX          ij     misc        1         -      rh       "WWLT_PX"      "Soil wilting point for PX LSM"    "m3/m3"
+state    real   WFC_PX           ij     misc        1         -      rh       "WFC_PX"       "Soil field capacity for PX LSM"    "m3/m3"
+state    real   WSAT_PX          ij     misc        1         -      rh       "WSAT_PX"      "Soil saturation for PX LSM"    "m3/m3"
+state    real   CLAY_PX          ij     misc        1         -      rh       "CLAY_PX"      "Clay perent for PX LSM"    "fraction"
+state    real   CSAND_PX         ij     misc        1         -      rh       "CSAND_PX"     "Coarse sand perent for PX LSM"    "fraction"
+state    real   FMSAND_PX        ij     misc        1         -      rh       "FMSAND_PX"    "Fine-medium sand perent for PX LSM"    "fraction"
 
 # sfclay PBL variables
 i1      real   PSIM           ij     misc        1         -     -         "PSIM"                "SIMILARITY FUNCTION FOR MOMENTUM"     ""

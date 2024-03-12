@@ -370,6 +370,8 @@ CONTAINS
          LAND_USE_TYPE = 'MODIS'
       ELSE IF (NLCAT == 21) THEN
          LAND_USE_TYPE = 'MODIS'
+      ELSE IF (NLCAT == 61) THEN
+         LAND_USE_TYPE = 'MODIS'
       ELSE IF (NLCAT == 24) THEN
          LAND_USE_TYPE = 'USGS'
       ELSE IF (NLCAT == 28) THEN

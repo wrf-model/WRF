@@ -3135,9 +3135,10 @@ integer::oops1,oops2
       !  Split NUDAPT  Urban Parameters
 
       distributed_aerodynamics_if: IF (config_flags%sf_urban_physics == 1 .AND. config_flags%slucm_distributed_drag) THEN
+         CALL nl_get_isurban ( grid%id , grid%isurban )
          DO j = jts , MIN(jde-1,jte)
             DO i = its , MIN(ide-1,ite)
-              IF (grid%ivgtyp(i, j) == model_config_rec%isurban(grid%id)) THEN
+              IF (grid%landusef(i, grid%isurban, j) > 0) THEN
                 grid%frc_urb2d(i, j) = MAX(0.1, MIN(0.9, 1 - grid%shdavg(i, j) / 100.))
               END IF
             END DO
@@ -7866,6 +7867,7 @@ WRITE (*,FMT='("Full level index = ",I4,"     Height = ",F7.1," m")') k,phb(1)/g
 do k = 2 ,kte
 WRITE (*,FMT='("Full level index = ",I4,"     Height = ",F7.1," m      Thickness = ",F6.1," m")') k,phb(k)/g,(phb(k)-phb(k-1))/g
 end do
+WRITE (*,FMT='("p_top = ",F7.0," Pa, dzbot = ",F6.1," m, dzstretch_s/u = ",2F6.2)') p_top,dzbot,dzstretch_s,dzstretch_u
 
       END IF
 

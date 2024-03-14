@@ -407,15 +407,17 @@ else
   echo " "
   uname -a
   echo " "
-  set comp = ( `grep "^SFC" configure.wrf | cut -d"=" -f2-` )
-  if      ( "$comp[1]" == "gfortran" ) then
-    gfortran --version
-  else if ( "$comp[1]" == "pgf90" ) then
-    pgf90 --version
-  else if ( "$comp[1]" == "ifort" ) then
-    ifort -V
+  set comp = ( `grep "^SFC" configure.wrf | cut -d"#" -f1 | cut -d"=" -f2-` )
+  $comp[1] -V >& /dev/null
+  if ( $status == 0 ) then
+    $comp[1] --version
   else
-    echo "Not sure how to figure out the version of this compiler: $comp[1]"
+    $comp[1] --version >& /dev/null
+    if ( $status == 0 ) then
+      $comp[1] -V
+    else
+      echo "Not sure how to figure out the version of this compiler: $comp[1]"
+    endif
   endif
   echo " "
   echo "============================================================================================== "

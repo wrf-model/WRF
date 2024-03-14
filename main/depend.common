@@ -1139,6 +1139,7 @@ module_pbl_driver.o: \
 	module_bl_gwdo_gsl.o \
 	module_bl_temf.o \
 	module_bl_mfshconvpbl.o \
+	module_ra_gfdleta.o \
 	$(PHYS_BL) \
 	module_wind_fitch.o \
 	../frame/module_state_description.o \
@@ -1186,6 +1187,7 @@ module_radiation_driver.o: \
 
 
 module_surface_driver.o: \
+	module_ra_gfdleta.o \
 	module_sf_noahlsm.o \
 	module_sf_sfclay.o \
 	module_sf_sfclayrev.o \

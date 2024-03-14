@@ -265,7 +265,7 @@ pre_parse( char * dir, FILE * infile, FILE * outfile )
 	        if ( !strcmp( tokens[F_USE] , tracers[i] ) ) found = 1 ; 
               }
 	      if ( found == 0 ) {
-	        sprintf(tracers[ntracers],tokens[F_USE]) ;
+	        sprintf(tracers[ntracers],"%s",tokens[F_USE]) ;
 	        ntracers++ ;
 
 /* add entries for _b and _bt arrays */
@@ -1067,7 +1067,7 @@ check_dimspecs()
 		  p->assoc_nl_var_s,p->name ) ;
 	  return(1) ;
         }
-        if ( ! q->node_kind & RCONFIG )
+        if ( (! q->node_kind) & RCONFIG )
         {
 	  fprintf(stderr,"WARNING: no namelist variable %s defined for dimension %s\n",
 		  p->assoc_nl_var_s,p->name ) ;
@@ -1092,7 +1092,7 @@ check_dimspecs()
 		p->assoc_nl_var_e,p->name ) ;
 	return(1) ;
       }
-      if ( ! q->node_kind & RCONFIG )
+      if ( (! q->node_kind) & RCONFIG )
       {
 	fprintf(stderr,"WARNING: no namelist variable %s defined for dimension %s\n",
 		p->assoc_nl_var_e,p->name ) ;

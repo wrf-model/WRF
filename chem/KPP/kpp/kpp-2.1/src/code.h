@@ -34,6 +34,7 @@
 #define _CODE_H_
 
 #include <stdlib.h>
+#include <unistd.h>
 #include "gdef.h"
 
 #define MAX_DEPTH 	 10
@@ -167,10 +168,10 @@ void CommentFncBegin( int f, int *vars );
 void CommentFunctionBegin( int f, ... );
 void CommentFunctionEnd( int f );
 
-void Use_C();
-void Use_F();
-void Use_F90();
-void Use_MATLAB();
+void Use_C( char *rootFileName );
+void Use_F( char *rootFileName );
+void Use_F90( char *rootFileName );
+void Use_MATLAB( char *rootFileName );
 
 extern void (*WriteElm)( NODE *n );
 extern void (*WriteSymbol)( int op );
@@ -187,5 +188,15 @@ extern void (*FunctionBegin)( int f, ... );
 extern void (*FunctionEnd)( int f );
 
 void WriteDelim();
+
+/* >>> CL: code_matlab.c */
+extern void MATLAB_Inline( char *fmt, ... );
+/* >>> CL: code_F90.c */
+extern void F90_Inline( char *fmt, ... );
+/* >>> CL: code_F77.c */
+extern void F77_Inline( char *fmt, ... );
+/* >>> CL: gen.c */
+extern int EqnString( int eq, char * buf );
+/* <<< CL */
 
 #endif

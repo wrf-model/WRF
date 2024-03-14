@@ -255,12 +255,12 @@ int irr_diag_scalar_indices( char *dirname )
      strcat( line,piece );
    }
    strcat( line," /)\n" );
-   fprintf( fp_inc,line );
+   fprintf( fp_inc,"%s",line );
    fprintf( fp_inc," \n");
 
    for( i = 0; i < nChmOpts; i++ ) {
      sprintf( line,"  chm_opts_name(%d) = '%s'\n",i+1,chm_scheme[i]);
-     fprintf( fp_inc,line );
+     fprintf( fp_inc,"%s",line );
    }
    fprintf( fp_inc," \n");
 
@@ -273,10 +273,10 @@ int irr_diag_scalar_indices( char *dirname )
      strcat( line,piece );
    }
    strcat( line," /)\n" );
-   fprintf( fp_inc,line );
+   fprintf( fp_inc,"%s",line );
    fprintf( fp_inc," \n");
 
-   for( i = 0; i < nChmOpts,rxt_cnt[i] > 0; i++ ) {
+   for( i = 0; i < nChmOpts && rxt_cnt[i] > 0; i++ ) {
      for( j = 0; j < rxt_cnt[i]; j++ ) {
        sprintf( line,"     rxtsym(%d,%d) = '%s'\n",j+1,i+1,rxt_tbl[i][j]);
        fprintf( fp_inc,"%s",line);

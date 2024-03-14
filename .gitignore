@@ -16,8 +16,6 @@
 *.a
 configure.wrf*
 *.backup*
-rsl.*
-*.log
 *.f90
 
 # Out-of-source build locations
@@ -38,3 +36,4 @@ wrfout_d*
 *.nc
 rsl.out.*
 rsl.error.*
+*.log

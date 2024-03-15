@@ -4,7 +4,9 @@ target_include_directories(
                             PRIVATE
                               ${CMAKE_CURRENT_SOURCE_DIR}
                             )
-add_subdirectory( KPP )
+if ( ${ENABLE_KPP} )
+  add_subdirectory( KPP )
+endif()
 
 ########################################################################################################################
 #

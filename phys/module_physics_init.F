@@ -26,7 +26,6 @@ MODULE module_physics_init
 
 CONTAINS
 
-
 !=================================================================
    SUBROUTINE phy_init ( id, config_flags, DT, restart, zfull, zhalf,     &
                          p_top, TSK,RADT,BLDT,CUDT,MPDT,         &

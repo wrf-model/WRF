@@ -19,3 +19,7 @@ target_include_directories(hydro_wrf_cpl
         $<TARGET_PROPERTY:${PROJECT_NAME}_Core,Fortran_MODULE_DIRECTORY>
         $<TARGET_PROPERTY:esmf_time_f90,Fortran_MODULE_DIRECTORY>
 )
+
+target_include_directories(hydro_wrf_cpl PUBLIC
+        ${MPI_Fortran_MODULE_DIR}
+)

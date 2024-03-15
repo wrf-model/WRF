@@ -8,5 +8,5 @@ add_library(hydro_mpp STATIC
 
 target_link_libraries(hydro_mpp MPI::MPI_Fortran)
 target_include_directories(hydro_mpp PUBLIC
-  ${MPI_Fortran_MODULE_DIR}
+        ${MPI_Fortran_MODULE_DIR}
 )

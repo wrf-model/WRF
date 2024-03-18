@@ -4,6 +4,9 @@ target_include_directories(
                             PRIVATE
                               ${CMAKE_CURRENT_SOURCE_DIR}
                             )
+if ( ${ENABLE_KPP} )
+  add_subdirectory( KPP )
+endif()
 
 ########################################################################################################################
 #
@@ -209,18 +212,35 @@ target_sources(
                   aerosol_driver.F
                   )
 
-########################################################################################################################
-#
-# convert_emiss executable
-#
-########################################################################################################################
-add_executable(
-                convert_emiss
-                convert_emiss.F 
-                )
+#!TODO: I'm not entirely sure when this exec is supposed to be generated or if it
+#       is exclusive to the real test case
+# ########################################################################################################################
+# #
+# # convert_emiss executable
+# #
+# ########################################################################################################################
+# set( CONVERT_EMISS_TARGET convert_emiss )
+# add_executable(
+#                 ${CONVERT_EMISS_TARGET}
+#                 convert_emiss.F 
+#                 )
 
-target_link_libraries( 
-                      convert_emiss
-                      PRIVATE
-                        ${PROJECT_NAME}_Core
-                      )
+# target_link_libraries( 
+#                       ${CONVERT_EMISS_TARGET}
+#                       PRIVATE
+#                         ${PROJECT_NAME}_Core
+#                       )
+# set_target_properties(
+#                       ${CONVERT_EMISS_TARGET}
+#                         PROPERTIES
+#                           # Just dump everything in here
+#                           Fortran_MODULE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/modules/${CONVERT_EMISS_TARGET}/
+#                           Fortran_FORMAT           FREE                          
+#                       )
+# install(
+#         TARGETS ${CONVERT_EMISS_TARGET}
+#         EXPORT  ${EXPORT_NAME}Targets
+#         RUNTIME DESTINATION bin/
+#         ARCHIVE DESTINATION lib/
+#         LIBRARY DESTINATION lib/
+#         )

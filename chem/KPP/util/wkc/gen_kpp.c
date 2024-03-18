@@ -225,12 +225,11 @@ gen_kpp ( char * inc_dirname, char * kpp_dirname )
      check_all ( kpp_dirname );
 
     
-
+#ifndef NO_MODIFY_MAKEFILE
      /* add the kpp generated modules to the Makefile in the chem directory */        
            if ( DEBUGR == 1 )   printf("next: change_chem_Makefile  \n");
 	     change_chem_Makefile ( ); 
-
-     
+#endif
 
 
   /* write the mechanism driver */

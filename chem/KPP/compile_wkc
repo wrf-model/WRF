@@ -118,10 +118,10 @@ echo $kdir
 # generate tuv photolysis inc files
   if( -e $model.tuv.jmap ) then
     if( $found == 0 ) then
-      $WKC_HOME/util/wkc/tuv_kpp FIRST
+      $WKC_HOME/util/wkc/tuv_kpp FIRST ../../inc/
       set found = 1
     endif
-    $WKC_HOME/util/wkc/tuv_kpp $model
+    $WKC_HOME/util/wkc/tuv_kpp $model ../../../../inc/
   endif
 
    if (  `echo $WRFC_ROOT | awk '{print ( length ( $1 ) > 40 ) }' `) then
@@ -139,7 +139,7 @@ end
 
 # finish tuv photolysis inc files
 if( $found == 1 ) then
-  $WKC_HOME/util/wkc/tuv_kpp LAST
+  $WKC_HOME/util/wkc/tuv_kpp LAST ../../inc/
 endif
 
 echo "========================================================="

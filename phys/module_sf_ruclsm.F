@@ -107,7 +107,7 @@ contains
                    sfcrunoff,udrunoff,acrunoff,sfcexc,           &
                    sfcevp,grdflx,snowfallac,acsnow,snom,         &
                    smfr3d,keepfr3dflag,                          &
-                   myjpbl,shdmin,shdmax,rdlai2d,                 &
+                   myj,shdmin,shdmax,rdlai2d,                    &
                    ids,ide, jds,jde, kds,kde,                    &
                    ims,ime, jms,jme, kms,kme,                    &
                    its,ite, jts,jte, kts,kte                     )

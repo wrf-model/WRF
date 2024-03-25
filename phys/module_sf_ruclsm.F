@@ -1667,7 +1667,7 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
                snhei_crit,snowfrac,snhei_crit_newsn,snowfracnewsn
     endif
 
-!-- set znt for snow from vegparm table (snow/ice landuse), except for
+!-- set znt for snow from VEGPARM table (snow/ice landuse), except for
 !-- land-use types with higher roughness (forests, urban).
       if(newsn.eq.0. .and. znt.le.0.2 .and. ivgtyp.ne.isice) then
          if( snhei .le. 2.*znt)then
@@ -6692,7 +6692,7 @@ print *,'infmax,infmax1,hydro(1)*soiliqw(1),-totliq', &
 !   26:   lava
 !   27:   white sand
 
-! modis vegetation categories from vegparm.tbl
+! modis vegetation categories from VEGPARM.TBL
 !    1:   evergreen needleleaf forest
 !    2:   evergreen broadleaf forest
 !    3:   deciduous needleleaf forest
@@ -7041,14 +7041,13 @@ print *,'infmax,infmax1,hydro(1)*soiliqw(1),-totliq', &
 ! initialize three  lsm related tables
    if ( allowed_to_read ) then
      call wrf_message( 'initialize three lsm related tables' )
-      if(mminlu == 'usgs') then
-        mminluruc='usgs-ruc'
-      elseif(mminlu == 'modis' .or. &
-        &    mminlu == 'modified_igbp_modis_noah') then
-        mminluruc='modi-ruc'
+      if(mminlu == 'USGS') then
+        mminluruc='USGS-RUC'
+      elseif(mminlu == 'MODIS' .or. &
+        &    mminlu == 'MODIFIED_IGBP_MODIS_NOAH') then
+        mminluruc='MODI-RUC'
       endif
-        mminsl='stas-ruc'
-!     call  ruclsm_parm_init
+        mminsl='STAS-RUC'
     print *,'ruclsminit uses ',mminluruc
      call ruclsm_soilvegparm( mminluruc, mminsl)   
    endif
@@ -7184,19 +7183,19 @@ print *,'infmax,infmax1,hydro(1)*soiliqw(1),-totliq', &
 !                lai: leaf area index (dimensionless)
 !             maxalb: upper bound on maximum albedo over deep snow
 !
-!-----read in vegetaion properties from vegparm.tbl 
+!-----read in vegetaion properties from VEGPARM.TBL 
 !                                                                       
 
        if ( wrf_dm_on_monitor() ) then
 
-        open(19, file='vegparm.tbl',form='formatted',status='old',iostat=ierr)
+        open(19, file='VEGPARM.TBL',form='formatted',status='old',iostat=ierr)
         if(ierr .ne. open_ok ) then
           write(message,fmt='(a)') &
-          'module_sf_ruclsm.f: soil_veg_gen_parm: failure opening vegparm.tbl'
+          'module_sf_ruclsm.f: soil_veg_gen_parm: failure opening VEGPARM.TBL'
           call wrf_error_fatal ( message )
         end if
 
-        write ( mess, * ) 'input vegparm for ',mminluruc
+        write ( mess, * ) 'input VEGPARM for ',mminluruc
         call wrf_message( mess )
 
         lumatch=0
@@ -7207,7 +7206,7 @@ print *,'infmax,infmax1,hydro(1)*soiliqw(1),-totliq', &
            read (19,2000,end=2002)lutype
            read (19,*)lucats,iindex
 
-           write( mess , * ) 'vegparm for ',lutype,' found', lucats,' categories'
+           write( mess , * ) 'VEGPARM for ',lutype,' found', lucats,' categories'
            call wrf_message( mess )
 
            if(lutype.ne.mminluruc)then    ! skip over the undesired table
@@ -7256,10 +7255,10 @@ print *,'infmax,infmax1,hydro(1)*soiliqw(1),-totliq', &
            read (19,*)crop
            read (19,*)
            read (19,*,iostat=ierr)urban
-           if ( ierr /= 0 ) call wrf_message     (  "-------- vegparm.tbl read error --------")
-           if ( ierr /= 0 ) call wrf_message     (  "problem read urban from vegparm.tbl")
-           if ( ierr /= 0 ) call wrf_message     (  " -- use updated version of vegparm.tbl  ")
-           if ( ierr /= 0 ) call wrf_error_fatal (  "problem read urban from vegparm.tbl")
+           if ( ierr /= 0 ) call wrf_message     (  "-------- VEGPARM.TBL read error --------")
+           if ( ierr /= 0 ) call wrf_message     (  "problem read urban from VEGPARM.TBL")
+           if ( ierr /= 0 ) call wrf_message     (  " -- use updated version of VEGPARM.TBL  ")
+           if ( ierr /= 0 ) call wrf_error_fatal (  "problem read urban from VEGPARM.TBL")
 
         endif
 
@@ -7272,7 +7271,7 @@ print *,'infmax,infmax1,hydro(1)*soiliqw(1),-totliq', &
 
 
         if (lumatch == 0) then
-           call wrf_error_fatal ("land use dataset '"//mminluruc//"' not found in vegparm.tbl.")
+           call wrf_error_fatal ("land use dataset '"//mminluruc//"' not found in VEGPARM.TBL")
         endif
 
       end if
@@ -7303,13 +7302,13 @@ print *,'infmax,infmax1,hydro(1)*soiliqw(1),-totliq', &
       call wrf_dm_bcast_integer ( urban       , 1 )
 
 !                                                                       
-!-----read in soil properties from soilparm.tbl
+!-----read in soil properties from SOILPARM.TBL
 !                                                                       
       if ( wrf_dm_on_monitor() ) then
-        open(19, file='soilparm.tbl',form='formatted',status='old',iostat=ierr)
+        open(19, file='SOILPARM.TBL',form='formatted',status='old',iostat=ierr)
         if(ierr .ne. open_ok ) then
           write(message,fmt='(a)') &
-          'module_sf_ruclsm.f: soil_veg_gen_parm: failure opening soilparm.tbl'
+          'module_sf_ruclsm.f: soil_veg_gen_parm: failure opening SOILPARM.TBL' 
           call wrf_error_fatal ( message )
         end if
 
@@ -7377,10 +7376,10 @@ print *,'infmax,infmax1,hydro(1)*soiliqw(1),-totliq', &
 !-----read in general parameters from genparm.tbl 
 !                                                                       
       if ( wrf_dm_on_monitor() ) then
-        open(19, file='genparm.tbl',form='formatted',status='old',iostat=ierr)
+        open(19, file='GENPARM.TBL',form='formatted',status='old',iostat=ierr)
         if(ierr .ne. open_ok ) then
           write(message,fmt='(a)') &
-          'module_sf_ruclsm.f: soil_veg_gen_parm: failure opening genparm.tbl'
+          'module_sf_ruclsm.f: soil_veg_gen_parm: failure opening GENPARM.TBL'
           call wrf_error_fatal ( message )
         end if
 

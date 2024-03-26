@@ -7151,11 +7151,11 @@ print *,'infmax,infmax1,hydro(1)*soiliqw(1),-totliq', &
 
         implicit none
 
-        integer :: lumatch, iindex, lc, num_slope
+        integer :: LUMATCH, IINDEX, LC, NUM_SLOPE
         integer :: ierr
-        integer , parameter :: open_ok = 0
+        INTEGER , PARAMETER :: OPEN_OK = 0
 
-        character*8 :: mminluruc, mminsl
+        character*8 :: MMINLURUC, MMINSL
         character*128 :: mess , message, vege_parm_string
         logical, external :: wrf_dm_on_monitor
 
@@ -7186,252 +7186,250 @@ print *,'infmax,infmax1,hydro(1)*soiliqw(1),-totliq', &
 !-----read in vegetaion properties from VEGPARM.TBL 
 !                                                                       
 
-       if ( wrf_dm_on_monitor() ) then
+       IF ( wrf_dm_on_monitor() ) THEN
 
-        open(19, file='VEGPARM.TBL',form='formatted',status='old',iostat=ierr)
-        if(ierr .ne. open_ok ) then
-          write(message,fmt='(a)') &
-          'module_sf_ruclsm.f: soil_veg_gen_parm: failure opening VEGPARM.TBL'
-          call wrf_error_fatal ( message )
-        end if
+        OPEN(19, FILE='VEGPARM.TBL',FORM='FORMATTED',STATUS='OLD',IOSTAT=ierr)
+        IF(ierr .NE. OPEN_OK ) THEN
+          WRITE(message,FMT='(A)') &
+          'module_sf_ruclsm.F: soil_veg_gen_parm: failure opening VEGPARM.TBL'
+          CALL wrf_error_fatal ( message )
+        END IF
 
-        write ( mess, * ) 'input VEGPARM for ',mminluruc
-        call wrf_message( mess )
+        WRITE ( mess, * ) 'INPUT VEGPARM FOR ',MMINLURUC
+        CALL wrf_message( mess )
 
-        lumatch=0
+        LUMATCH=0
 
- 2000   format (a8)
-        read (19,'(a)') vege_parm_string
-        outer : do 
-           read (19,2000,end=2002)lutype
-           read (19,*)lucats,iindex
+ 2000   FORMAT (A8)
+        READ (19,'(A)') vege_parm_string
+        outer : DO
+           READ (19,2000,END=2002)LUTYPE
+           READ (19,*)LUCATS,IINDEX
 
-           write( mess , * ) 'VEGPARM for ',lutype,' found', lucats,' categories'
-           call wrf_message( mess )
+           WRITE( mess , * ) 'VEGPARM FOR ',LUTYPE,' FOUND', LUCATS,' CATEGORIES'
+           CALL wrf_message( mess )
 
-           if(lutype.ne.mminluruc)then    ! skip over the undesired table
-              write ( mess , * ) 'skipping ', lutype, ' table'
-              call wrf_message( mess )
-              do lc=1,lucats
-                 read (19,*)
-              enddo
-              inner : do               ! find the next "vegetation parameters"
-                 read (19,'(a)',end=2002) vege_parm_string
-                 if (trim(vege_parm_string) .eq. "vegetation parameters") then
-                    exit inner
-                 end if
-               enddo inner
-           else
-              lumatch=1
-              write ( mess , * ) 'found ', lutype, ' table'
-              call wrf_message( mess )
-              exit outer                ! found the table, read the data
-           end if
+           IF(LUTYPE.NE.MMINLURUC)THEN    ! Skip over the undesired table
+              write ( mess , * ) 'Skipping ', LUTYPE, ' table'
+              CALL wrf_message( mess )
+              DO LC=1,LUCATS
+                 READ (19,*)
+              ENDDO
+              inner : DO               ! Find the next "Vegetation Parameters"
+                 READ (19,'(A)',END=2002) vege_parm_string
+                 IF (TRIM(vege_parm_string) .EQ. "Vegetation Parameters") THEN
+                    EXIT inner
+                 END IF
+               ENDDO inner
+           ELSE
+              LUMATCH=1
+              write ( mess , * ) 'Found ', LUTYPE, ' table'
+              CALL wrf_message( mess )
+              EXIT outer                ! Found the table, read the data
+           END IF
 
-        enddo outer
+        ENDDO outer
 
-        if (lumatch == 1) then
-           write ( mess , * ) 'reading ',lutype,' table'
-           call wrf_message( mess )
-           do lc=1,lucats
-              read (19,*)iindex,albtbl(lc),z0tbl(lc),lemitbl(lc),pctbl(lc), &
-                         shdtbl(lc),ifortbl(lc),rstbl(lc),rgltbl(lc),         &
-                         hstbl(lc),snuptbl(lc),laitbl(lc),maxalb(lc)
-           enddo
+        IF (LUMATCH == 1) then
+           write ( mess , * ) 'Reading ',LUTYPE,' table'
+           CALL wrf_message( mess )
+           DO LC=1,LUCATS
+              READ (19,*)IINDEX,ALBTBL(LC),Z0TBL(LC),LEMITBL(LC),PCTBL(LC), &
+                         SHDTBL(LC),IFORTBL(LC),RSTBL(LC),RGLTBL(LC),         &
+                         HSTBL(LC),SNUPTBL(LC),LAITBL(LC),MAXALB(LC)
+           ENDDO
 !
-           read (19,*)
-           read (19,*)topt_data
-           read (19,*)
-           read (19,*)cmcmax_data
-           read (19,*)
-           read (19,*)cfactr_data
-           read (19,*)
-           read (19,*)rsmax_data
-           read (19,*)
-           read (19,*)bare
-           read (19,*)
-           read (19,*)natural
-           read (19,*)
-           read (19,*)crop
-           read (19,*)
-           read (19,*,iostat=ierr)urban
-           if ( ierr /= 0 ) call wrf_message     (  "-------- VEGPARM.TBL read error --------")
-           if ( ierr /= 0 ) call wrf_message     (  "problem read urban from VEGPARM.TBL")
-           if ( ierr /= 0 ) call wrf_message     (  " -- use updated version of VEGPARM.TBL  ")
-           if ( ierr /= 0 ) call wrf_error_fatal (  "problem read urban from VEGPARM.TBL")
+           READ (19,*)
+           READ (19,*)TOPT_DATA
+           READ (19,*)
+           READ (19,*)CMCMAX_DATA
+           READ (19,*)
+           READ (19,*)CFACTR_DATA
+           READ (19,*)
+           READ (19,*)RSMAX_DATA
+           READ (19,*)
+           READ (19,*)BARE
+           READ (19,*)
+           READ (19,*)NATURAL
+           READ (19,*)
+           READ (19,*)CROP
+           READ (19,*)
+           READ (19,*,iostat=ierr)URBAN
+           if ( ierr /= 0 ) call wrf_message     (  "-------- VEGPARM.TBL READ ERROR --------")
+           if ( ierr /= 0 ) call wrf_message     (  "Problem read URBAN from VEGPARM.TBL")
+           if ( ierr /= 0 ) call wrf_message     (  " -- Use updated version of VEGPARM.TBL  ")
+           if ( ierr /= 0 ) call wrf_error_fatal (  "Problem read URBAN from VEGPARM.TBL")
 
-        endif
+        ENDIF
 
- 2002   continue
-        close (19)
+ 2002   CONTINUE
+        CLOSE (19)
 !-----
-    if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
-         print *,' lemitbl, pctbl, z0tbl, laitbl --->', lemitbl, pctbl, z0tbl, laitbl
-    endif
+    IF ( wrf_at_debug_level(lsmruc_dbg_lvl) ) THEN
+         print *,' LEMITBL, PCTBL, Z0TBL, LAITBL --->', LEMITBL, PCTBL, Z0TBL, LAITBL
+    ENDIF
 
+        IF (LUMATCH == 0) then
+           CALL wrf_error_fatal ("Land Use Dataset '"//MMINLURUC//"' not found in VEGPARM.TBL.")
+        ENDIF
 
-        if (lumatch == 0) then
-           call wrf_error_fatal ("land use dataset '"//mminluruc//"' not found in VEGPARM.TBL")
-        endif
+      END IF
 
-      end if
-
-      call wrf_dm_bcast_string  ( lutype  , 8 )
-      call wrf_dm_bcast_integer ( lucats  , 1 )
-      call wrf_dm_bcast_integer ( iindex  , 1 )
-      call wrf_dm_bcast_integer ( lumatch , 1 )
-      call wrf_dm_bcast_real    ( albtbl  , nlus )
-      call wrf_dm_bcast_real    ( z0tbl   , nlus )
-      call wrf_dm_bcast_real    ( lemitbl , nlus )
-      call wrf_dm_bcast_real    ( pctbl   , nlus )
-      call wrf_dm_bcast_real    ( shdtbl  , nlus )
-      call wrf_dm_bcast_real    ( ifortbl , nlus )
-      call wrf_dm_bcast_real    ( rstbl   , nlus )
-      call wrf_dm_bcast_real    ( rgltbl  , nlus )
-      call wrf_dm_bcast_real    ( hstbl   , nlus )
-      call wrf_dm_bcast_real    ( snuptbl , nlus )
-      call wrf_dm_bcast_real    ( laitbl  , nlus )
-      call wrf_dm_bcast_real    ( maxalb  , nlus )
-      call wrf_dm_bcast_real    ( topt_data    , 1 )
-      call wrf_dm_bcast_real    ( cmcmax_data  , 1 )
-      call wrf_dm_bcast_real    ( cfactr_data  , 1 )
-      call wrf_dm_bcast_real    ( rsmax_data  , 1 )
-      call wrf_dm_bcast_integer ( bare        , 1 )
-      call wrf_dm_bcast_integer ( natural     , 1 )
-      call wrf_dm_bcast_integer ( crop        , 1 )
-      call wrf_dm_bcast_integer ( urban       , 1 )
-
-!                                                                       
-!-----read in soil properties from SOILPARM.TBL
-!                                                                       
-      if ( wrf_dm_on_monitor() ) then
-        open(19, file='SOILPARM.TBL',form='formatted',status='old',iostat=ierr)
-        if(ierr .ne. open_ok ) then
-          write(message,fmt='(a)') &
-          'module_sf_ruclsm.f: soil_veg_gen_parm: failure opening SOILPARM.TBL' 
-          call wrf_error_fatal ( message )
-        end if
-
-        write(mess,*) 'input soil texture classification = ',mminsl
-        call wrf_message( mess )
-
-        lumatch=0
-
-        read (19,*)
-        read (19,2000,end=2003)sltype
-        read (19,*)slcats,iindex
-        if(sltype.ne.mminsl)then
-          do lc=1,slcats
-              read (19,*) iindex,bb(lc),drysmc(lc),hc(lc),maxsmc(lc),&
-                        refsmc(lc),satpsi(lc),satdk(lc), satdw(lc),   &
-                        wltsmc(lc), qtz(lc)
-          enddo
-        endif
-        read (19,*)
-        read (19,2000,end=2003)sltype
-        read (19,*)slcats,iindex
- 
-        if(sltype.eq.mminsl)then
-            write( mess , * ) 'soil texture classification = ',sltype,' found', &
-                  slcats,' categories'
-            call wrf_message ( mess )
-          lumatch=1
-        endif
-            if(sltype.eq.mminsl)then
-          do lc=1,slcats
-              read (19,*) iindex,bb(lc),drysmc(lc),hc(lc),maxsmc(lc),&
-                        refsmc(lc),satpsi(lc),satdk(lc), satdw(lc),   &
-                        wltsmc(lc), qtz(lc)
-          enddo
-           endif
-
- 2003   continue
-
-        close (19)
-      endif
-
-      call wrf_dm_bcast_integer ( lumatch , 1 )
-      call wrf_dm_bcast_string  ( sltype  , 8 )
-      call wrf_dm_bcast_string  ( mminsl  , 8 )  ! since this is reset above, see oct2 ^
-      call wrf_dm_bcast_integer ( slcats  , 1 )
-      call wrf_dm_bcast_integer ( iindex  , 1 )
-      call wrf_dm_bcast_real    ( bb      , nsltype )
-      call wrf_dm_bcast_real    ( drysmc  , nsltype )
-      call wrf_dm_bcast_real    ( hc      , nsltype )
-      call wrf_dm_bcast_real    ( maxsmc  , nsltype )
-      call wrf_dm_bcast_real    ( refsmc  , nsltype )
-      call wrf_dm_bcast_real    ( satpsi  , nsltype )
-      call wrf_dm_bcast_real    ( satdk   , nsltype )
-      call wrf_dm_bcast_real    ( satdw   , nsltype )
-      call wrf_dm_bcast_real    ( wltsmc  , nsltype )
-      call wrf_dm_bcast_real    ( qtz     , nsltype )
-
-      if(lumatch.eq.0)then
-          call wrf_message( 'soil texture in input file does not ' )
-          call wrf_message( 'match soilparm table'                 )
-          call wrf_error_fatal ( 'inconsistent or missing soilparm file' )
-      endif
+      CALL wrf_dm_bcast_string  ( LUTYPE  , 8 )
+      CALL wrf_dm_bcast_integer ( LUCATS  , 1 )
+      CALL wrf_dm_bcast_integer ( IINDEX  , 1 )
+      CALL wrf_dm_bcast_integer ( LUMATCH , 1 )
+      CALL wrf_dm_bcast_real    ( ALBTBL  , NLUS )
+      CALL wrf_dm_bcast_real    ( Z0TBL   , NLUS )
+      CALL wrf_dm_bcast_real    ( LEMITBL , NLUS )
+      CALL wrf_dm_bcast_real    ( PCTBL   , NLUS )
+      CALL wrf_dm_bcast_real    ( SHDTBL  , NLUS )
+      CALL wrf_dm_bcast_real    ( IFORTBL , NLUS )
+      CALL wrf_dm_bcast_real    ( RSTBL   , NLUS )
+      CALL wrf_dm_bcast_real    ( RGLTBL  , NLUS )
+      CALL wrf_dm_bcast_real    ( HSTBL   , NLUS )
+      CALL wrf_dm_bcast_real    ( SNUPTBL , NLUS )
+      CALL wrf_dm_bcast_real    ( LAITBL  , NLUS )
+      CALL wrf_dm_bcast_real    ( MAXALB  , NLUS )
+      CALL wrf_dm_bcast_real    ( TOPT_DATA    , 1 )
+      CALL wrf_dm_bcast_real    ( CMCMAX_DATA  , 1 )
+      CALL wrf_dm_bcast_real    ( CFACTR_DATA  , 1 )
+      CALL wrf_dm_bcast_real    ( RSMAX_DATA  , 1 )
+      CALL wrf_dm_bcast_integer ( BARE        , 1 )
+      CALL wrf_dm_bcast_integer ( NATURAL     , 1 )
+      CALL wrf_dm_bcast_integer ( CROP        , 1 )
+      CALL wrf_dm_bcast_integer ( URBAN       , 1 )
 
 !
-!-----read in general parameters from genparm.tbl 
-!                                                                       
-      if ( wrf_dm_on_monitor() ) then
-        open(19, file='GENPARM.TBL',form='formatted',status='old',iostat=ierr)
-        if(ierr .ne. open_ok ) then
-          write(message,fmt='(a)') &
-          'module_sf_ruclsm.f: soil_veg_gen_parm: failure opening GENPARM.TBL'
-          call wrf_error_fatal ( message )
-        end if
+!-----READ IN SOIL PROPERTIES FROM SOILPARM.TBL
+!
+      IF ( wrf_dm_on_monitor() ) THEN
+        OPEN(19, FILE='SOILPARM.TBL',FORM='FORMATTED',STATUS='OLD',IOSTAT=ierr)
+        IF(ierr .NE. OPEN_OK ) THEN
+          WRITE(message,FMT='(A)') &
+          'module_sf_ruclsm.F: soil_veg_gen_parm: failure opening SOILPARM.TBL'
+          CALL wrf_error_fatal ( message )
+        END IF
 
-        read (19,*)
-        read (19,*)
-        read (19,*) num_slope
+        WRITE(mess,*) 'INPUT SOIL TEXTURE CLASSIFICATION = ',MMINSL
+        CALL wrf_message( mess )
 
-          slpcats=num_slope
+        LUMATCH=0
 
-          do lc=1,slpcats
-              read (19,*)slope_data(lc)
-          enddo
+        READ (19,*)
+        READ (19,2000,END=2003)SLTYPE
+        READ (19,*)SLCATS,IINDEX
+        IF(SLTYPE.NE.MMINSL)THEN
+          DO LC=1,SLCATS
+              READ (19,*) IINDEX,BB(LC),DRYSMC(LC),HC(LC),MAXSMC(LC),&
+                        REFSMC(LC),SATPSI(LC),SATDK(LC), SATDW(LC),   &
+                        WLTSMC(LC), QTZ(LC)
+          ENDDO
+        ENDIF
+        READ (19,*)
+        READ (19,2000,END=2003)SLTYPE
+        READ (19,*)SLCATS,IINDEX
 
-          read (19,*)
-          read (19,*)sbeta_data
-          read (19,*)
-          read (19,*)fxexp_data
-          read (19,*)
-          read (19,*)csoil_data
-          read (19,*)
-          read (19,*)salp_data
-          read (19,*)
-          read (19,*)refdk_data
-          read (19,*)
-          read (19,*)refkdt_data
-          read (19,*)
-          read (19,*)frzk_data
-          read (19,*)
-          read (19,*)zbot_data
-          read (19,*)
-          read (19,*)czil_data
-          read (19,*)
-          read (19,*)smlow_data
-          read (19,*)
-          read (19,*)smhigh_data
-        close (19)
-      endif
+        IF(SLTYPE.EQ.MMINSL)THEN
+            WRITE( mess , * ) 'SOIL TEXTURE CLASSIFICATION = ',SLTYPE,' FOUND', &
+                  SLCATS,' CATEGORIES'
+            CALL wrf_message ( mess )
+          LUMATCH=1
+        ENDIF
+            IF(SLTYPE.EQ.MMINSL)THEN
+          DO LC=1,SLCATS
+              READ (19,*) IINDEX,BB(LC),DRYSMC(LC),HC(LC),MAXSMC(LC),&
+                        REFSMC(LC),SATPSI(LC),SATDK(LC), SATDW(LC),   &
+                        WLTSMC(LC), QTZ(LC)
+          ENDDO
+           ENDIF
 
-      call wrf_dm_bcast_integer ( num_slope    ,  1 )
-      call wrf_dm_bcast_integer ( slpcats      ,  1 )
-      call wrf_dm_bcast_real    ( slope_data   ,  nslope )
-      call wrf_dm_bcast_real    ( sbeta_data   ,  1 )
-      call wrf_dm_bcast_real    ( fxexp_data   ,  1 )
-      call wrf_dm_bcast_real    ( csoil_data   ,  1 )
-      call wrf_dm_bcast_real    ( salp_data    ,  1 )
-      call wrf_dm_bcast_real    ( refdk_data   ,  1 )
-      call wrf_dm_bcast_real    ( refkdt_data  ,  1 )
-      call wrf_dm_bcast_real    ( frzk_data    ,  1 )
-      call wrf_dm_bcast_real    ( zbot_data    ,  1 )
-      call wrf_dm_bcast_real    ( czil_data    ,  1 )
-      call wrf_dm_bcast_real    ( smlow_data   ,  1 )
-      call wrf_dm_bcast_real    ( smhigh_data  ,  1 )
+ 2003   CONTINUE
+
+        CLOSE (19)
+      ENDIF
+
+      CALL wrf_dm_bcast_integer ( LUMATCH , 1 )
+      CALL wrf_dm_bcast_string  ( SLTYPE  , 8 )
+      CALL wrf_dm_bcast_string  ( MMINSL  , 8 )  ! since this is reset above, see oct2 ^
+      CALL wrf_dm_bcast_integer ( SLCATS  , 1 )
+      CALL wrf_dm_bcast_integer ( IINDEX  , 1 )
+      CALL wrf_dm_bcast_real    ( BB      , NSLTYPE )
+      CALL wrf_dm_bcast_real    ( DRYSMC  , NSLTYPE )
+      CALL wrf_dm_bcast_real    ( HC      , NSLTYPE )
+      CALL wrf_dm_bcast_real    ( MAXSMC  , NSLTYPE )
+      CALL wrf_dm_bcast_real    ( REFSMC  , NSLTYPE )
+      CALL wrf_dm_bcast_real    ( SATPSI  , NSLTYPE )
+      CALL wrf_dm_bcast_real    ( SATDK   , NSLTYPE )
+      CALL wrf_dm_bcast_real    ( SATDW   , NSLTYPE )
+      CALL wrf_dm_bcast_real    ( WLTSMC  , NSLTYPE )
+      CALL wrf_dm_bcast_real    ( QTZ     , NSLTYPE )
+
+      IF(LUMATCH.EQ.0)THEN
+          CALL wrf_message( 'SOIl TEXTURE IN INPUT FILE DOES NOT ' )
+          CALL wrf_message( 'MATCH SOILPARM TABLE'                 )
+          CALL wrf_error_fatal ( 'INCONSISTENT OR MISSING SOILPARM FILE' )
+      ENDIF
+!
+!-----READ IN GENERAL PARAMETERS FROM GENPARM.TBL
+!
+      IF ( wrf_dm_on_monitor() ) THEN
+        OPEN(19, FILE='GENPARM.TBL',FORM='FORMATTED',STATUS='OLD',IOSTAT=ierr)
+        IF(ierr .NE. OPEN_OK ) THEN
+          WRITE(message,FMT='(A)') &
+          'module_sf_ruclsm.F: soil_veg_gen_parm: failure opening GENPARM.TBL'
+          CALL wrf_error_fatal ( message )
+        END IF
+
+        READ (19,*)
+        READ (19,*)
+        READ (19,*) NUM_SLOPE
+
+          SLPCATS=NUM_SLOPE
+
+          DO LC=1,SLPCATS
+              READ (19,*)SLOPE_DATA(LC)
+          ENDDO
+
+          READ (19,*)
+          READ (19,*)SBETA_DATA
+          READ (19,*)
+          READ (19,*)FXEXP_DATA
+          READ (19,*)
+          READ (19,*)CSOIL_DATA
+          READ (19,*)
+          READ (19,*)SALP_DATA
+          READ (19,*)
+          READ (19,*)REFDK_DATA
+          READ (19,*)
+          READ (19,*)REFKDT_DATA
+          READ (19,*)
+          READ (19,*)FRZK_DATA
+          READ (19,*)
+          READ (19,*)ZBOT_DATA
+          READ (19,*)
+          READ (19,*)CZIL_DATA
+          READ (19,*)
+          READ (19,*)SMLOW_DATA
+          READ (19,*)
+          READ (19,*)SMHIGH_DATA
+        CLOSE (19)
+      ENDIF
+
+      CALL wrf_dm_bcast_integer ( NUM_SLOPE    ,  1 )
+      CALL wrf_dm_bcast_integer ( SLPCATS      ,  1 )
+      CALL wrf_dm_bcast_real    ( SLOPE_DATA   ,  NSLOPE )
+      CALL wrf_dm_bcast_real    ( SBETA_DATA   ,  1 )
+      CALL wrf_dm_bcast_real    ( FXEXP_DATA   ,  1 )
+      CALL wrf_dm_bcast_real    ( CSOIL_DATA   ,  1 )
+      CALL wrf_dm_bcast_real    ( SALP_DATA    ,  1 )
+      CALL wrf_dm_bcast_real    ( REFDK_DATA   ,  1 )
+      CALL wrf_dm_bcast_real    ( REFKDT_DATA  ,  1 )
+      CALL wrf_dm_bcast_real    ( FRZK_DATA    ,  1 )
+      CALL wrf_dm_bcast_real    ( ZBOT_DATA    ,  1 )
+      CALL wrf_dm_bcast_real    ( CZIL_DATA    ,  1 )
+      CALL wrf_dm_bcast_real    ( SMLOW_DATA   ,  1 )
+      CALL wrf_dm_bcast_real    ( SMHIGH_DATA  ,  1 )
 
 
 !-----------------------------------------------------------------

@@ -389,7 +389,6 @@ module_bl_camuwpbl_driver.o: \
 
 
 module_sf_mynn.o: \
-	module_sf_sfclay.o \
 	module_bl_mynn.o \
 	../share/module_model_constants.o \
 	../frame/module_wrf_error.o 
@@ -928,7 +927,6 @@ module_physics_init.o: \
 	module_ra_hs.o \
 	module_ra_flg.o \
 	module_sf_sfclay.o \
-	module_sf_sfclayrev.o \
 	physics_mmm/sf_sfclayrev.o \
 	module_sf_slab.o \
 	module_sf_myjsfc.o \
@@ -1415,10 +1413,6 @@ module_fdda_spnudging.o: \
 	../frame/module_state_description.o \
 	../frame/module_domain.o \
 	../frame/module_wrf_error.o 
-
-
-module_sf_bep.o: \
-	module_sf_urban.o 
 
 
 module_mp_wsm5.o: \

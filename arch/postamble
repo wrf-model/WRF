@@ -28,8 +28,8 @@ ARCHFLAGS       =    $(COREDEFS) -DIWORDSIZE=$(IWORDSIZE) -DDWORDSIZE=$(DWORDSIZ
                       -DINTIO \
                       -DKEEP_INT_AROUND \
                       -DLIMIT_ARGS \
-                      -DBUILD_RRTMG_FAST=0 \
-                      -DBUILD_RRTMK=0 \
+                      -DBUILD_RRTMG_FAST=1 \
+                      -DBUILD_RRTMK=1 \
                       -DBUILD_SBM_FAST=1 \
                       -DSHOW_ALL_VARS_USED=0 \
                       -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) \

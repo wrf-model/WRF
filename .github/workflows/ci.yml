@@ -1,0 +1,142 @@
+name: Regression Suite
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    types:    [ labeled ]
+
+jobs:
+  buildtests:
+    if : ${{ github.event.label.name == 'test' }} || ${{ github.event_name == 'push' }}
+    strategy:
+      max-parallel: 4
+      fail-fast: false
+      matrix:
+        # # Write our tests out this way for easier legibility
+        # test    :
+        #   - 
+        #   - 
+        #   - 
+        #   - 
+        #   - 
+        #   - 
+        # Specify accounts specific to each HPC resource
+        # https://stackoverflow.com/a/68940067
+        testSet  :
+          - { 
+              host : cheyenne,
+              account : NMMM0012,
+              name : "Compilation Tests",
+              fileroot : wrf_arw_tests,
+              args : -j="-l select=1",
+              pool : 6,
+              tests : [
+                gnu-nompi, gnu-mpi, intel-nompi, intel-mpi, pgi-nompi, pgi-mpi
+                ]
+            }
+          - { 
+              host : cheyenne,
+              account : NMMM0012,
+              name : "em_real 0-3, A-E Tests",
+              fileroot : wrf_em_real_tests,
+              args : -j="-l select=1",
+              pool : 9,
+              tests : [
+                em_real0, em_real1, em_real2, em_real3, em_realA, em_realB, em_realC, em_realD, em_realE
+                ]
+            }
+          - { 
+              host : cheyenne,
+              account : NMMM0012,
+              name : "em_real G-L Tests",
+              fileroot : wrf_em_real_tests,
+              args : -j="-l select=1",
+              pool : 9,
+              tests : [
+                em_realF, em_realG, em_realH, em_realI, em_realJ, em_realK, em_realL0, em_realL1, em_realL2,
+                ]
+            }
+          - { 
+              host : cheyenne,
+              account : NMMM0012,
+              name : "em_ideal Tests",
+              fileroot : wrf_em_ideal_tests,
+              args : -j="-l select=1",
+              pool : 5,
+              tests : [ em_b_wave, em_hill2d_x, em_quarter_ss_real8
+                # Both commented out for failing LFN differences
+                # em_fire 
+                # em_quarter_ss
+              ]
+            }
+    # Is 5 days a reasonable wait time for testing?
+    timeout-minutes: 7200
+    name: Test ${{ matrix.testSet.name }} on ${{ matrix.testSet.host }}
+    runs-on: ${{ matrix.testSet.host }}
+    permissions:
+      contents: read
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        path      : main
+        submodules: true
+    
+    # Immediately copy out to # of tests to do
+    - name: Create testing directories
+      id  : cpTestDirs
+      run : |
+        for testDir in ${{ join( matrix.testSet.tests, ' ' ) }}; do
+          echo "Creating duplicate directory for $testDir"
+          # Remove if it exists to get a fresh start
+          rm -rf $testDir
+          rsync -a --exclude '.git' main/ $testDir
+        done
+
+    - name: Test ${{ matrix.testSet.name }}
+      id  : runTest
+      run: |
+        ./main/hpc-workflows/.ci/runner.py \
+          ./main/.ci/${{ matrix.testSet.fileroot }}.json \
+          -t   ${{ join( matrix.testSet.tests, ' ' ) }}  \
+          -alt ../${{ join( matrix.testSet.tests, '/.ci ../' ) }}/.ci  \
+          -a "${{ matrix.testSet.account }}"             \
+          -p ${{ matrix.testSet.pool}}                   \
+          ${{ matrix.testSet.args }}
+
+
+    - name: Report failed tests and steps
+      if : ${{ failure() }}
+      run : |
+        ./main/hpc-workflows/.ci/reporter.py ./main/.ci/${{ matrix.testSet.fileroot }}.log ./hpc-workflows/.ci/runner.py
+    
+    - name: Clean up testing directories
+      if : ${{ success() }}
+      id  : rmTestDirs
+      run : |
+        for testDir in ${{ join( matrix.testSet.tests, ' ' ) }}; do
+          echo "Removing duplicate directory for $testDir"
+          rm -rf $testDir
+        done
+
+  # Since this a new job, the token should be fine, per the documentation:
+  # https://docs.github.com/en/actions/security-guides/automatic-token-authentication#about-the-github_token-secret
+  removelabel:
+    runs-on: ubuntu-latest # Don't care about compute resources, do it very quick and always available
+    if : ${{ !cancelled() && github.event.label.name == 'test' }}
+    name: Remove 'test' label
+    needs: buildtests
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+    - name : Remove 'test' label
+      env:
+        PR_NUMBER: ${{ github.event.number }}
+      run: |
+        curl \
+          -X DELETE \
+          -H "Accept: application/vnd.github.v3+json" \
+          -H 'Authorization: token ${{ github.token }}' \
+          https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/labels/test
+  

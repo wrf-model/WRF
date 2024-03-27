@@ -1,0 +1,179 @@
+{
+  "submit_options" :
+  {
+    "timelimit" : "00:30:00",
+    "working_directory" : "..",
+    "arguments" : 
+    {
+      "base_env_numprocs"          : [ "-e", "NUM_PROCS=12" ],
+
+      ".*build.*::args_nesting"    : [ "-n", "1" ],
+      ".*build.*::args_configopt"  : [ "-o", "-d" ],
+      ".*build.*::args_build_tgt"  : [ "-b", "em_real -j $NUM_PROCS" ],
+      ".*build.*::args_env"        : [ "-e", "WRF_CHEM=1" ],
+
+      ".*build-serial::args_config": [ "-c", "32" ],
+      ".*build-omp::args_config"   : [ "-c", "33" ],
+      ".*build-mpi::args_config"   : [ "-c", "34" ],
+
+      ".*testcase.*::global_env"   : [ "-e", "DATA=/path/to/data" ],
+      ".*testcase.*::args_always"  : [ "-c", "test/em_real", "-b", "real.exe", "-d", "$DATA/em_chem" ],
+      ".*testcase-mpi.*::exec_mpi" : [ "-p", "mpirun -np $NUM_PROCS" ],
+      ".*testcase-omp.*::env"      : [ "-e", "OMP_NUM_THREADS=$NUM_PROCS" ],
+
+      ".*testcase-serial.*::dir"   : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/$NAMELIST_DIR/", "-s", "serial_results" ],
+      ".*testcase-omp.*::dir"      : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/$NAMELIST_DIR/", "-i", "serial_results" ],
+      ".*testcase-mpi.*::dir"      : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/$NAMELIST_DIR/",    "-i", "serial_results" ]
+    },
+    "polaris"   :
+    {
+      "submission" : "LOCAL",
+      "arguments"  :
+      {
+        ".*testcase.*::global_env"     :
+        [ 
+          "-e", "DATA=/mnt/s/github/data/wrf/regtest/Data",
+          "-e", "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$NETCDF/lib"
+        ]
+      }
+    },
+    "cheyenne"  :
+    {
+      "submission" : "PBS",
+      "queue"     : "premium",
+      "resources"  : "-l select=1:ncpus=12",
+      "arguments"  : 
+      {
+        ".*testcase.*::global_env"     :
+        [ 
+          "-e", "DATA=/glade/work/aislas/github/data/wrf/regtest/Data/",
+          "-e", "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$NETCDF/lib"
+        ],
+        "global_modules" : [ "gnu", "netcdf" ],
+        ".*mpi.*::mpi_module" : [ "openmpi/4.0.3" ]
+      }
+    },
+    "hsn.de.hpc"  :
+    {
+      "submission" : "PBS",
+      "queue"      : "main",
+      "resources"  : "-l select=1:ncpus=16 -l job_priority=economy",
+      "timelimit" : "00:10:00",
+      "arguments"  : 
+      {
+        "base_env_numprocs"          : [ "-e", "NUM_PROCS=16" ],
+        ".*testcase.*::global_env"     :
+        [ 
+          "-e", "DATA=/glade/work/aislas/github/data/wrf/regtest/Data/",
+          "-e", "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$NETCDF/lib"
+        ],
+        "global_modules" : [ "gcc", "netcdf" ],
+        ".*mpi.*::mpi_module" : [ "cray-mpich" ]
+      }
+    }
+  },
+  "em_chem" :
+  {
+    "submit_options" :
+    {
+      "arguments" :
+      {
+        ".*testcase.*::args_namelist" : 
+        [ 
+          "-n", "namelist.input.1,namelist.input.2,namelist.input.5",
+          "-e", "NAMELIST_DIR=em_chem"
+        ]
+      }
+    },
+    "steps" :
+    {
+      "build-serial" :
+      {
+        "command"      : ".ci/tests/build.sh"
+      },
+      "testcase-serial" :
+      {
+        "submit_options" : {
+                            "cheyenne" : { "resources" : "-l select=1:ncpus=1" },
+                            "derecho"  : { "resources" : "-l select=1:ncpus=1 -l job_priority=economy" }
+                            },
+        "command"      : ".ci/tests/runNamelists.sh",
+        "dependencies" : { "build-serial" : "afterok" }
+      },
+      "build-mpi" :
+      {
+        "command"      : ".ci/tests/build.sh",
+        "dependencies" : { "testcase-serial" : "afterok" }
+      },
+      "testcase-mpi" :
+      {
+        "submit_options" : { 
+                            "cheyenne" : { "resources" : "-l select=1:ncpus=12:mpiprocs=12" },
+                            "derecho"  : { "resources" : "-l select=1:ncpus=16:mpiprocs=16 -l job_priority=economy" }
+                            },
+        "command"      : ".ci/tests/runNamelists.sh",
+        "dependencies" : { "build-mpi" : "afterok" }
+      }
+    }
+  },
+  "em_chem_kpp" :
+  {
+    "submit_options" :
+    {
+      "arguments" :
+      {
+        ".*testcase.*::args_namelist" : 
+        [ 
+          "-n", "namelist.input.120",
+          "-e", "NAMELIST_DIR=em_chem_kpp"
+        ],
+        ".*build.*::args_kpp" :
+        [
+          "-e", "WRF_KPP=1,FLEX_LIB_DIR=/usr/lib64,YACC=/usr/bin/yacc"
+        ]
+      },
+      "cheyenne"    : { "arguments" : { ".*build.*::args_kpp" : [ "-e", "WRF_KPP=1,FLEX_LIB_DIR=/usr/lib64", "-e", "YACC=/glade/u/apps/ch/opt/usr/bin/yacc -d" ] } },
+      "hsn.de.hpc"  : { "arguments" : { ".*build.*::args_kpp" : [ "-e", "WRF_KPP=1,FLEX_LIB_DIR=/usr/lib64", "-e", "YACC=/glade/u/apps/ch/opt/usr/bin/yacc -d" ] } }
+    },
+    "steps" :
+    {
+      "build-serial" :
+      {
+        "submit_options" :
+        { 
+            "cheyenne" : { "timelimit" : "00:50:00" },
+          "hsn.de.hpc" : { "timelimit" : "00:45:00" }
+        },
+        "command"      : ".ci/tests/build.sh"
+      },
+      "testcase-serial" :
+      {
+        "submit_options" : {
+                            "cheyenne" : { "resources" : "-l select=1:ncpus=1" },
+                            "derecho"  : { "resources" : "-l select=1:ncpus=1 -l job_priority=economy" }
+                            },
+        "command"      : ".ci/tests/runNamelists.sh",
+        "dependencies" : { "build-serial" : "afterok" }
+      },
+      "build-mpi" :
+      {
+        "submit_options" :
+        { 
+            "cheyenne" : { "timelimit" : "01:20:00" },
+          "hsn.de.hpc" : { "timelimit" : "00:50:00" }
+        },
+        "command"      : ".ci/tests/build.sh",
+        "dependencies" : { "testcase-serial" : "afterok" }
+      },
+      "testcase-mpi" :
+      {
+        "submit_options" : { 
+                            "cheyenne" : { "resources" : "-l select=1:ncpus=12:mpiprocs=12" },
+                            "derecho"  : { "resources" : "-l select=1:ncpus=16:mpiprocs=16 -l job_priority=economy" }
+                            },
+        "command"      : ".ci/tests/runNamelists.sh",
+        "dependencies" : { "build-mpi" : "afterok" }
+      }
+    }
+  }
+}

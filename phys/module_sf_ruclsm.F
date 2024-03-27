@@ -1629,12 +1629,12 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
         snowfrac = 0.5*(snowfrac+snowfrac2)
       else
       !-- isncovr_opt=3
-        !m = msnf ! vegetation dependent facsnf/msnf from noah mp
+        !m = mfsno(ivgtyp) ! vegetation dependent facsnf/msnf from noah mp
         m = 1.
         !-- for rrfs a factor 10. was added to 'facsnf' to get reasonal values of
         !   snow cover fractions on the 3-km scale.
         !   this factor is scale dependent.
-        snowfrac = tanh( snhei/(0.2 *(rhosn/rhonewsn)**m))
+        snowfrac = tanh( snhei/(10. * sncovfac(ivgtyp)*(rhosn/rhonewsn)**m))
       endif
 
        if(newsn > 0. ) then
@@ -2097,13 +2097,13 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
         snowfrac = 0.5*(snowfrac+snowfrac2)
       else
       !-- isncovr_opt=3
-        !m = msnf ! vegetation dependent facsnf/msnf from noah mp
+        !m = mfsno(ivgtyp) ! vegetation dependent facsnf/msnf from noah mp
         m = 1.
         !-- for rrfs a factor 10. was added to 'facsnf' to get reasonal values
         !of
         !   snow cover fractions on the 3-km scale.
         !   this factor is scale dependent.
-        snowfrac = tanh( snhei/(0.2 *(rhosn/rhonewsn)**m))
+        snowfrac = tanh( snhei/(10. * sncovfac(ivgtyp)*(rhosn/rhonewsn)**m))
       endif
 
      endif

@@ -4006,6 +4006,7 @@ BENCH_START(moist_phys_end_tim)
        jts = max(grid%j_start(ij),jds)
        jte = min(grid%j_end(ij),jde-1)
 
+       IF ( config_flags%mp_zero_out > 0 ) THEN
        CALL microphysics_zero_outb (                                    &
                       moist , num_moist , config_flags ,                &
                       ids, ide, jds, jde, kds, kde,                     &
@@ -4013,6 +4014,7 @@ BENCH_START(moist_phys_end_tim)
                       its, ite, jts, jte,                               &
                       k_start    , k_end                                )
 
+       IF ( config_flags%mp_zero_out_all > 0 ) THEN
        CALL microphysics_zero_outb (                                    &
                       scalar , num_scalar , config_flags ,              &
                       ids, ide, jds, jde, kds, kde,                     &
@@ -4021,7 +4023,7 @@ BENCH_START(moist_phys_end_tim)
                       k_start    , k_end                                )
 
        CALL microphysics_zero_outb (                                    &
-                      chem , num_chem , config_flags ,              &
+                      chem , num_chem , config_flags ,                  &
                       ids, ide, jds, jde, kds, kde,                     &
                       ims, ime, jms, jme, kms, kme,                     &
                       its, ite, jts, jte,                               &
@@ -4032,6 +4034,8 @@ BENCH_START(moist_phys_end_tim)
                       ims, ime, jms, jme, kms, kme,                     &
                       its, ite, jts, jte,                               &
                       k_start    , k_end                                )
+       ENDIF
+       ENDIF
 
        IF ( config_flags%periodic_x ) THEN
          its = max(grid%i_start(ij),ids)
@@ -4043,6 +4047,7 @@ BENCH_START(moist_phys_end_tim)
        jts = max(grid%j_start(ij),jds+sz)
        jte = min(grid%j_end(ij),jde-1-sz)
 
+       IF ( config_flags%mp_zero_out > 0 ) THEN
        CALL microphysics_zero_outa (                                    &
                       moist , num_moist , config_flags ,                &
                       ids, ide, jds, jde, kds, kde,                     &
@@ -4050,6 +4055,7 @@ BENCH_START(moist_phys_end_tim)
                       its, ite, jts, jte,                               &
                       k_start    , k_end                                )
 
+       IF ( config_flags%mp_zero_out_all > 0 ) THEN
        CALL microphysics_zero_outa (                                    &
                       scalar , num_scalar , config_flags ,              &
                       ids, ide, jds, jde, kds, kde,                     &
@@ -4070,6 +4076,8 @@ BENCH_START(moist_phys_end_tim)
                       ims, ime, jms, jme, kms, kme,                     &
                       its, ite, jts, jte,                               &
                       k_start    , k_end                                )
+       ENDIF
+       ENDIF
 
        CALL moist_physics_finish_em( grid%t_2, grid%t_1, t0, grid%muts, th_phy,  &
                                      grid%h_diabatic, dtm,                       &

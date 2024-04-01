@@ -1,0 +1,38 @@
+add_library(hydro_routing STATIC
+        module_UDMAP.F90
+        module_channel_routing.F90
+        module_date_utilities_rt.F90
+        module_GW_baseflow.F90
+        module_gw_gw2d.F90
+        module_HYDRO_io.F90
+        module_HYDRO_utils.F90
+        module_lsm_forcing.F90
+        module_noah_chan_param_init_rt.F90
+        module_NWM_io_dict.F90
+        module_NWM_io.F90
+        module_reservoir_routing.F90
+        module_RT.F90
+        Noah_distr_routing.F90
+        Noah_distr_routing_overland.F90
+        Noah_distr_routing_subsurface.F90
+)
+
+target_link_libraries(hydro_routing
+       MPI::MPI_Fortran
+       hydro_mpp
+       hydro_utils
+       hydro_orchestrator
+       hydro_routing_overland
+       hydro_routing_subsurface
+       hydro_routing_reservoirs
+       hydro_routing_reservoirs_levelpool
+       hydro_routing_reservoirs_hybrid
+       hydro_data_rec
+       hydro_routing_reservoirs_rfc
+)
+
+target_include_directories(hydro_routing
+        PRIVATE
+        ${netCDF_INCLUDE_DIRS}
+        ${netCDF-Fortran_INCLUDE_DIRS}
+)

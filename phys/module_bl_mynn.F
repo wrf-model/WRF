@@ -303,7 +303,7 @@ MODULE module_bl_mynn
 ! Note that the following mixing-length constants are now specified in mym_length
 !      &cns=3.5, alp1=0.23, alp2=0.3, alp3=3.0, alp4=10.0, alp5=0.2
 
-  real(kind_phys), parameter :: gpw=5./3., qcgmin=1.e-8, qkemin=1.e-12
+  real(kind_phys), parameter :: qkemin=1.e-3
   real(kind_phys), parameter :: tliq = 269. !all hydrometeors are liquid when T > tliq
 
 ! Constants for cloud PDF (mym_condensation)
@@ -1905,7 +1905,7 @@ CONTAINS
     !SURFACE LAYER LENGTH SCALE MODS TO REDUCE IMPACT IN UPPER BOUNDARY LAYER
     real(kind_phys), parameter :: ZSLH = 100. !< Max height correlated to surface conditions (m)
     real(kind_phys), parameter :: CSL = 2.    !< CSL = constant of proportionality to L O(1)
-
+    real(kind_phys), parameter :: qke_elb_min = 0.018
 
     integer :: i,j,k
     real(kind_phys):: afk,abk,zwk,zwk1,dzk,qdz,vflx,bv,tau_cloud,     &
@@ -1933,11 +1933,11 @@ CONTAINS
         h1=MIN(h1,maxdz)         ! 1/2 transition layer depth
         h2=h1/2.0                ! 1/4 transition layer depth
 
-        qkw(kts) = SQRT(MAX(qke(kts),1.0e-10))
+        qkw(kts) = SQRT(MAX(qke(kts), qkemin))
         DO k = kts+1,kte
            afk = dz(k)/( dz(k)+dz(k-1) )
            abk = 1.0 -afk
-           qkw(k) = SQRT(MAX(qke(k)*abk+qke(k-1)*afk,1.0e-3))
+           qkw(k) = SQRT(MAX(qke(k)*abk+qke(k-1)*afk, qkemin))
         END DO
 
         elt = 1.0e-5
@@ -1957,7 +1957,7 @@ CONTAINS
 
         elt =  alp1*elt/vsc
         vflx = ( vt(kts)+1.0 )*flt +( vq(kts)+tv0 )*flq
-        vsc = ( gtr*elt*MAX( vflx, 0.0 ) )**(1.0/3.0)
+        vsc = ( gtr*elt*MAX( vflx, 0.0 ) )**onethird
 
         !   **  Strictly, el(i,k=1) is not zero.  **
         el(kts) = 0.0
@@ -2001,7 +2001,7 @@ CONTAINS
         ugrid = sqrt(u1(kts)**2 + v1(kts)**2)
         uonset= 15. 
         wt_u = (1.0 - min(max(ugrid - uonset, 0.0)/30.0, 0.5)) 
-        cns  = 2.7 !was 3.5
+        cns  = 3.5
         alp1 = 0.23
         alp2 = 0.3
         alp3 = 2.5 * wt_u !taper off bouyancy enhancement in shear-driven pbls
@@ -2010,20 +2010,20 @@ CONTAINS
         alp6 = 50.
 
         ! Impose limits on the height integration for elt and the transition layer depth
-        zi2=MAX(zi,300.) !minzi)
-        h1=MAX(0.3*zi2,300.)
-        h1=MIN(h1,600.)          ! 1/2 transition layer depth
-        h2=h1/2.0                ! 1/4 transition layer depth
+        zi2  = MAX(zi,300.) !minzi)
+        h1   = MAX(0.3*zi2,300.)
+        h1   = MIN(h1,600.)          ! 1/2 transition layer depth
+        h2   = h1/2.0                ! 1/4 transition layer depth
 
-        qtke(kts)=MAX(0.5*qke(kts), 0.01) !tke at full sigma levels
-        thetaw(kts)=theta(kts)            !theta at full-sigma levels
-        qkw(kts) = SQRT(MAX(qke(kts),1.0e-10))
+        qtke(kts)   = MAX(0.5*qke(kts), 0.5*qkemin) !tke at full sigma levels
+        thetaw(kts) = theta(kts)            !theta at full-sigma levels
+        qkw(kts)    = SQRT(MAX(qke(kts), qkemin))
 
         DO k = kts+1,kte
-           afk = dz(k)/( dz(k)+dz(k-1) )
-           abk = 1.0 -afk
-           qkw(k) = SQRT(MAX(qke(k)*abk+qke(k-1)*afk,1.0e-3))
-           qtke(k) = 0.5*(qkw(k)**2)     ! q -> TKE
+           afk      = dz(k)/( dz(k)+dz(k-1) )
+           abk      = 1.0 -afk
+           qkw(k)   = SQRT(MAX(qke(k)*abk+qke(k-1)*afk, qkemin))
+           qtke(k)  = max(0.5*(qkw(k)**2), 0.005)  ! q -> TKE
            thetaw(k)= theta(k)*abk + theta(k-1)*afk
         END DO
 
@@ -2035,14 +2035,14 @@ CONTAINS
         zwk = zw(k)
         DO WHILE (zwk .LE. zi2+h1)
            dzk = 0.5*( dz(k)+dz(k-1) )
-           qdz = min(max( qkw(k)-qmin, 0.03 ), 30.0)*dzk
+           qdz = min(max( qkw(k)-qmin, 0.01 ), 30.0)*dzk
            elt = elt +qdz*zwk
            vsc = vsc +qdz
            k   = k+1
            zwk = zw(k)
         END DO
 
-        elt = MIN( MAX( alp1*elt/vsc, 10.), 400.)
+        elt = MIN( MAX( alp1*elt/vsc, 8.), 400.)
         !avoid use of buoyancy flux functions which are ill-defined at the surface
         !vflx = ( vt(kts)+1.0 )*flt + ( vq(kts)+tv0 )*flq
         vflx = fltv
@@ -2061,11 +2061,11 @@ CONTAINS
            !   **  Length scale limited by the buoyancy effect  **
            IF ( dtv(k) .GT. 0.0 ) THEN
               bv  = max( sqrt( gtr*dtv(k) ), 0.0001)
-              elb = MAX(alp2*qkw(k),                          &
+              elb = MAX(alp2*max(qkw(k), qke_elb_min),        &
                   &    alp6*edmf_a1(k-1)*edmf_w1(k-1)) / bv   &
                   &  *( 1.0 + alp3*SQRT( vsc/(bv*elt) ) )
               elb = MIN(elb, zwk)
-              elf = 1.0 * qkw(k)/bv
+              elf = 1.0 * max(qkw(k), qke_elb_min)/bv
               elBLavg(k) = MAX(elBLavg(k), alp6*edmf_a1(k-1)*edmf_w1(k-1)/bv)
            ELSE
               elb = 1.0e10
@@ -2089,7 +2089,7 @@ CONTAINS
            !el(k) = SQRT( els**2/(1. + (els**2/elt**2) +(els**2/elb**2)))
            el(k) = sqrt( els**2/(1. + (els**2/elt**2)))
            el(k) = min(el(k), elb)
-           el(k) = MIN (el(k), elf)
+           el(k) = min(el(k), elf)
            el(k) = el(k)*(1.-wt) + alp5*elBLavg(k)*wt
 
            ! include scale-awareness, except for original MYNN
@@ -2118,13 +2118,13 @@ CONTAINS
         h1=MIN(h1,600.)
         h2=h1*0.5                ! 1/4 transition layer depth
 
-        qtke(kts)=MAX(0.5*qke(kts),0.01) !tke at full sigma levels
-        qkw(kts) = SQRT(MAX(qke(kts),1.0e-4))
+        qtke(kts)=MAX(0.5*qke(kts), 0.5*qkemin) !tke at full sigma levels
+        qkw(kts) = SQRT(MAX(qke(kts), qkemin))
 
         DO k = kts+1,kte
            afk = dz(k)/( dz(k)+dz(k-1) )
            abk = 1.0 -afk
-           qkw(k) = SQRT(MAX(qke(k)*abk+qke(k-1)*afk,1.0e-3))
+           qkw(k) = SQRT(MAX(qke(k)*abk+qke(k-1)*afk, qkemin))
            qtke(k) = 0.5*qkw(k)**2  ! qkw -> TKE
         END DO
 
@@ -2890,7 +2890,7 @@ CONTAINS
        !Prlim = 2.0*wtpr + (1.0 - wtpr)*Prlimit
        !sm(k) = MIN(sm(k), Prlim*Sh(k))
        !Pending more testing, keep same Pr limit in sfc layer
-       shb   = max(sh(k), 0.002)
+       shb   = max(sh(k), 0.02)
        sm(k) = MIN(sm(k), Prlimit*shb)
 
 !   **  Level 3 : start  **
@@ -3357,8 +3357,8 @@ CONTAINS
     CALL tridiag2(kte,a,b,c,d,x)
 
     DO k=kts,kte
-!       qke(k)=max(d(k-kts+1), 1.e-4)
-       qke(k)=max(x(k), 1.e-4)
+!       qke(k)=max(d(k-kts+1), qkemin)
+       qke(k)=max(x(k), qkemin)
        qke(k)=min(qke(k), 150.)
     ENDDO
       
@@ -5036,7 +5036,7 @@ ENDIF
     IF (FLAG_QI) THEN
       DO k=kts,kte
          Dth(k)=(thl(k) + xlvcp/exner(k)*sqc2(k)          &
-           &            + xlscp/exner(k)*(sqi2(k)+sqs(k)) &
+           &            + xlscp/exner(k)*(sqi2(k))        & !+sqs(k)) &
            &            - th(k))/delt
          !Use form from Tripoli and Cotton (1981) with their
          !suggested min temperature to improve accuracy:
@@ -5834,7 +5834,7 @@ ENDIF
 
    !Flux limiter: not let mass-flux of heat between k=1&2 exceed (fluxportion)*(surface heat flux).
    !This limiter makes adjustments to the entire column.
-   real(kind_phys):: adjustment, flx1
+   real(kind_phys):: adjustment, flx1, flt2
    real(kind_phys), parameter :: fluxportion=0.75 ! set liberally, so has minimal impact. Note that
                                        ! 0.5 starts to have a noticeable impact
                                        ! over land (decrease maxMF by 10-20%), but no impact over water.
@@ -6049,11 +6049,8 @@ if ( fltv2 > 0.002 .AND. (maxwidth > minwidth) .AND. superadiabatic) then
     C = Atot/cn   !Normalize C according to the defined total fraction (Atot)
 
     ! Make updraft area (UPA) a function of the buoyancy flux
-    if ((landsea-1.5).LT.0) then  !land
-       acfac = .5*tanh((fltv2 - 0.02)/0.05) + .5
-    else                          !water
-       acfac = .5*tanh((fltv2 - 0.01)/0.03) + .5
-    endif
+    acfac = .5*tanh((fltv2 - 0.02)/0.05) + .5
+
     !add a windspeed-dependent adjustment to acfac that tapers off
     !the mass-flux scheme linearly above sfc wind speeds of 10 m/s.
     !Note: this effect may be better represented by an increase in
@@ -6471,10 +6468,11 @@ IF (nup2 > 0) THEN
        !       " superadiabatic=",superadiabatic," KTOP=",KTOP
    ENDIF
    adjustment=1.0
+   flt2=max(flt,0.0) !need because activation is now based on fltv, not flt
    !Print*,"Flux limiter in MYNN-EDMF, adjustment=",fluxportion*flt/dz(kts)/flx1
    !Print*,"flt/dz=",flt/dz(kts)," flx1=",flx1," s_aw(kts+1)=",s_aw(kts+1)
-   IF (flx1 > fluxportion*flt/dz(kts) .AND. flx1>0.0) THEN
-       adjustment= fluxportion*flt/dz(kts)/flx1
+   IF (flx1 > fluxportion*flt2/dz(kts) .AND. flx1>0.0) THEN
+       adjustment= fluxportion*flt2/dz(kts)/flx1
        s_aw      = s_aw*adjustment
        s_awthl   = s_awthl*adjustment
        s_awqt    = s_awqt*adjustment
@@ -6504,11 +6502,11 @@ IF (nup2 > 0) THEN
    do k=kts,kte-1
       do I=1,nup
          edmf_a(K)  =edmf_a(K)  +UPA(K,i)
-         edmf_w(K)  =edmf_w(K)  +rhoz(k)*UPA(K,i)*UPW(K,i)
-         edmf_qt(K) =edmf_qt(K) +rhoz(k)*UPA(K,i)*UPQT(K,i)
-         edmf_thl(K)=edmf_thl(K)+rhoz(k)*UPA(K,i)*UPTHL(K,i)
-         edmf_ent(K)=edmf_ent(K)+rhoz(k)*UPA(K,i)*ENT(K,i)
-         edmf_qc(K) =edmf_qc(K) +rhoz(k)*UPA(K,i)*UPQC(K,i)
+         edmf_w(K)  =edmf_w(K)  +UPA(K,i)*UPW(K,i)
+         edmf_qt(K) =edmf_qt(K) +UPA(K,i)*UPQT(K,i)
+         edmf_thl(K)=edmf_thl(K)+UPA(K,i)*UPTHL(K,i)
+         edmf_ent(K)=edmf_ent(K)+UPA(K,i)*ENT(K,i)
+         edmf_qc(K) =edmf_qc(K) +UPA(K,i)*UPQC(K,i)
       enddo
    enddo
    do k=kts,kte-1
@@ -7644,7 +7642,7 @@ END FUNCTION phih
     real(kind_phys), dimension(kts:kte), intent(out) :: KHtopdown,TKEprodTD
     !local
     real(kind_phys), dimension(kts:kte) :: zfac,wscalek2,zfacent
-    real(kind_phys) :: bfx0,wm2,wm3,bfxpbl,dthvx,tmp1
+    real(kind_phys) :: bfx0,wm3,bfxpbl,dthvx,tmp1
     real(kind_phys) :: temps,templ,zl1,wstar3_2
     real(kind_phys) :: ent_eff,radsum,radflux,we,rcldb,rvls,minrad,zminrad
     real(kind_phys), parameter :: pfac =2.0, zfmin = 0.01, phifac=8.0
@@ -7713,7 +7711,6 @@ END FUNCTION phih
 
        !entrainment from PBL top thermals
        wm3    = grav/thetav(k)*bfx0*MIN(pblh,1500.) ! this is wstar3(i)
-       wm2    = wm2 + wm3**twothirds
        bfxpbl = - ent_eff * bfx0
        dthvx  = max(thetav(k+1)-thetav(k),0.1)
        we     = max(bfxpbl/dthvx,-sqrt(wm3**twothirds))

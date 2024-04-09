@@ -8157,7 +8157,7 @@ END SUBROUTINE phy_bc
     DO j = j_start, j_end
     DO k = kts+1, ktf
     DO i = i_start, i_end
-        xkxavg(i,k,j) = ( fnm(k) * 2 * xkmv(i,k,j) + fnp(k) * 2 * xkmv(i,k-1,j) ) &
+        xkxavg(i,k,j) = ( fnm(k) * 2. * xkmv(i,k,j) + fnp(k) * 2. * xkmv(i,k-1,j) ) &
                        *( fnm(k) * rho (i,k,j) + fnp(k) * rho (i,k-1,j) )
     END DO
     END DO

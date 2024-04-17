@@ -1133,7 +1133,7 @@ use module_wrf_error
           
        CALL TDFCND (DF1,SMR(KZ), QUARTZ, SMCMAX )
        DF1 = DF1 * EXP(-2.0 * SHDFAC)  
-       RGR = EPSV*(RX-SIG*(TGRP**4.)/60.)
+       RGR = EPSV*(RX-SIG*(TA**4.)/60.)
        RGRR= (SGR+RGR) * 697.7 * 60.
        RCH = RHOO*CPP*CHGR
        RR1 = EPSV*(TA**4) * 6.48E-8 / (PS* CHGR) + 1.0
@@ -1635,7 +1635,7 @@ ENDIF
         PSIM=ALOG((Z+Z0)/Z0) &
             -ALOG((X+1.)**2.*(X**2.+1.)) &
             +2.*ATAN(X) &
-            +ALOG((X+1.)**2.*(X0**2.+1.)) &
+            +ALOG((X0+1.)**2.*(X0**2.+1.)) &
             -2.*ATAN(X0)
         FAIH=1./SQRT(1.-16.*XXX)
         PSIH=ALOG((Z+Z0)/Z0)+0.4*B1 &

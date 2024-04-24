@@ -14,7 +14,6 @@ set(
 # Generate all the combinations dynamically, not a fan of this file breakdown
 ########################################################################################################################
 set( nl_dyn_source )
-get_directory_property( DIR_DEFS DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_DEFINITIONS )
 foreach( n RANGE 0 7 )
   
   wrf_c_preproc_fortran( 
@@ -25,7 +24,7 @@ foreach( n RANGE 0 7 )
                         INCLUDES        ${CMAKE_CURRENT_SOURCE_DIR}
                                         ${CMAKE_BINARY_DIR}/inc
                         DEPENDENCIES    registry_code
-                        DEFINITIONS     ${DIR_DEFS} NNN=${n} NL_set_ROUTINES
+                        DEFINITIONS     ${PROJECT_COMPILE_DEFINITIONS} NNN=${n} NL_set_ROUTINES
                         SOURCES         nl_access_routines.F
                         )
   wrf_c_preproc_fortran( 
@@ -36,7 +35,7 @@ foreach( n RANGE 0 7 )
                       INCLUDES        ${CMAKE_CURRENT_SOURCE_DIR}
                                       ${CMAKE_BINARY_DIR}/inc
                       DEPENDENCIES    registry_code
-                      DEFINITIONS     ${DIR_DEFS} NNN=${n} NL_get_ROUTINES
+                      DEFINITIONS     ${PROJECT_COMPILE_DEFINITIONS} NNN=${n} NL_get_ROUTINES
                       SOURCES         nl_access_routines.F
                       )
 

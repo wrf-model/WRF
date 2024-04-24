@@ -224,3 +224,16 @@ target_link_libraries(
                       PRIVATE
                         ${PROJECT_NAME}_Core
                       )
+
+target_compile_options(
+                        convert_emiss
+                        PRIVATE
+                          ${PROJECT_COMPILE_OPTIONS}
+                        )
+
+
+target_compile_definitions(
+                            convert_emiss
+                            PRIVATE
+                              ${PROJECT_COMPILE_DEFINITIONS}
+                          )

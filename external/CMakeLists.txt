@@ -20,6 +20,10 @@
 
 # Always build
 
+# Suffice it to say everything under this is WRF-specific while also being external
+add_compile_options    ( "${PROJECT_COMPILE_OPTIONS}"     )
+add_compile_definitions( "${PROJECT_COMPILE_DEFINITIONS}" )
+
 add_subdirectory( io_int           )
 add_subdirectory( io_grib1         )
 add_subdirectory( io_grib_share    )

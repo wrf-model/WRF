@@ -21,17 +21,9 @@ target_link_libraries(
                         PUBLIC
                           $<$<BOOL:${USE_OPENMP}>:$<TARGET_NAME_IF_EXISTS:OpenMP::OpenMP_Fortran>>
                           $<$<BOOL:${USE_MPI}>:$<TARGET_NAME_IF_EXISTS:MPI::MPI_Fortran>>
-                          ${netCDF_LIBRARIES}
-                          ${netCDF-Fortran_LIBRARIES}
+                          netCDF::netCDF-Fortran
                       )
 
-# Because of the way netCDF provides its info and the way cmake auto-gens RPATH, we need to help it along
-target_link_directories(
-                        ${FOLDER_COMPILE_TARGET}
-                        PUBLIC
-                          ${netCDF_LIBRARY_DIR}
-                          ${netCDF-Fortran_LIBRARY_DIR}
-                        )
 
 target_include_directories(
                             ${FOLDER_COMPILE_TARGET}
@@ -39,8 +31,6 @@ target_include_directories(
                               $<TARGET_PROPERTY:${FOLDER_COMPILE_TARGET},Fortran_MODULE_DIRECTORY>
                               $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/external/ioapi_share>
                               $<INSTALL_INTERFACE:include/external/ioapi_share>
-                              ${netCDF_INCLUDE_DIRS}
-                              ${netCDF-Fortran_INCLUDE_DIRS}
                             PRIVATE
                               ${CMAKE_CURRENT_SOURCE_DIR}
                             )

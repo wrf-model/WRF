@@ -897,8 +897,6 @@ target_include_directories(
                               ${PROJECT_SOURCE_DIR}/external/io_int
 
                               # Found Packages not handled through :: imported target
-                              ${netCDF_INCLUDE_DIRS}
-                              ${netCDF-Fortran_INCLUDE_DIRS}
                               ${pnetCDF_INCLUDE_DIRS}
                             )
 
@@ -940,19 +938,10 @@ set_target_properties(
                           EXPORT_PROPERTIES        Fortran_MODULE_DIRECTORY
                       )
 
-# Because of the way netCDF provides its info and the way cmake auto-gens RPATH, we need to help it along
-target_link_directories(
-                        ${PROJECT_NAME}_Core
-                        PUBLIC
-                          ${netCDF_LIBRARY_DIR}
-                          ${netCDF-Fortran_LIBRARY_DIR}
-                        )
-
 
 target_link_libraries(  ${PROJECT_NAME}_Core
                           PUBLIC
-                            ${netCDF_LIBRARIES}
-                            ${netCDF-Fortran_LIBRARIES}
+                            netCDF::netCDF-Fortran
                             ${pnetCDF_LIBRARIES}
                             $<$<BOOL:${USE_MPI}>:$<TARGET_NAME_IF_EXISTS:MPI::MPI_Fortran>>
                             $<$<BOOL:${USE_OPENMP}>:$<TARGET_NAME_IF_EXISTS:OpenMP::OpenMP_Fortran>>

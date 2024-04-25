@@ -426,8 +426,18 @@ find_package( netCDF         REQUIRED )
 find_package( netCDF-Fortran REQUIRED )
 
 # Make use of version checking here and not in find_package for previous versions that did not use cmake
-if ( ( NOT netCDF_VERSION GREATER_EQUAL "4.1.3" ) OR ( NOT netCDF-Fortran_VERSION GREATER_EQUAL "4.1.3" ) )
-  message( FATAL "Please make sure NETCDF versions are 4.1.3 or later. " )
+if ( NOT ${FORCE_NETCDF_CLASSIC} )
+  if ( NOT netCDF_VERSION GREATER_EQUAL "4.1.3" )
+    set( NC4_MISSING_REASON "(version < 4.1.3)" )
+  elseif( NOT ${netCDF_HAS_NC4} )
+    set( NC4_MISSING_REASON "(not build with nc4)" )
+  endif()
+
+  if ( DEFINED NC4_MISSING_REASON )
+    message( STATUS "netCDF found does not support NC4 features ${NC4_MISSING_REASON}, forcing use of classic netcdf" )
+    message( STATUS "  To disable this message, make sure netCDF used has nc4 capabilities or specify FORCE_NETCDF_CLASSIC" )
+    set( FORCE_NETCDF_CLASSIC ON CACHE BOOL "Required by netCDF found" FORCE )
+  endif()
 endif()
 
 find_package( pnetCDF QUIET )

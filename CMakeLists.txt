@@ -684,7 +684,7 @@ else()
 endif()
 
 # If force classic or no nc-4 support enable classic
-if ( ${FORCE_NETCDF_CLASSIC} OR ( NOT ${netCDF_NC4} ) )
+if ( ${FORCE_NETCDF_CLASSIC} OR ( NOT ${netCDF_HAS_NC4} ) )
   list( APPEND PROJECT_COMPILE_DEFINITIONS NETCDF_classic=1 )
 endif()
 if ( ${WRFIO_NCD_NO_LARGE_FILE_SUPPORT} OR ( NOT ${netCDF_LARGE_FILE_SUPPORT} ) )
@@ -693,7 +693,7 @@ endif()
 # May need a check for WRFIO_ncdpar_LARGE_FILE_SUPPORT
 
 # Now set the opposite in different defines, because why not :)
-if ( ( NOT ${FORCE_NETCDF_CLASSIC} ) AND ${netCDF_NC4} )
+if ( ( NOT ${FORCE_NETCDF_CLASSIC} ) AND ${netCDF_HAS_NC4} )
   list( APPEND PROJECT_COMPILE_DEFINITIONS USE_NETCDF4_FEATURES=1 )
 endif()
 if ( ( NOT ${WRFIO_NCD_NO_LARGE_FILE_SUPPORT} ) AND ${netCDF_LARGE_FILE_SUPPORT} )

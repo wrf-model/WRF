@@ -68,8 +68,6 @@ else()
       f03
       )
 
-  set( netCDF-Fortran_DEFINITIONS  )
-  set( netCDF-Fortran_LIBRARY_DIR  ${netCDF-Fortran_PREFIX}/lib )
   foreach( NF_QUERY ${netCDF-Fortran_QUERY_YES_OPTIONS} )
     execute_process( COMMAND ${NETCDF-FORTRAN_PROGRAM} --has-${NF_QUERY} OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF-Fortran_${NF_QUERY}_LOWERCASE )
     string( TOUPPER ${NF_QUERY}                     NF_QUERY_UPPERCASE )
@@ -78,6 +76,12 @@ else()
     set( netCDF-Fortran_HAS_${NF_QUERY_UPPERCASE} ${NF_ANSWER_UPPERCASE} )
   endforeach()
 
+
+  # A bug in previous netcdf-fortran cmake builds, extract from flibs
+  string( REGEX MATCH "^-L([^ ]*)" netCDF-Fortran_LIBRARY_LINK_LOCATION ${netCDF-Fortran_FLIBS} )
+  set( netCDF-Fortran_LIBRARY_DIR ${CMAKE_MATCH_1} )
+
+  set( netCDF-Fortran_DEFINITIONS  )
   set( netCDF-Fortran_LIBRARIES
       $<$<LINK_LANGUAGE:Fortran>:${netCDF-Fortran_FLIBS}>
       )

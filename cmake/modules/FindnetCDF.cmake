@@ -45,9 +45,32 @@ else()
   execute_process( COMMAND ${NETCDF_PROGRAM} --prefix       OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF_PREFIX )
   execute_process( COMMAND ${NETCDF_PROGRAM} --libs         OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF_CLIBS   )
   execute_process( COMMAND ${NETCDF_PROGRAM} --version      OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF_VERSION_RAW )
-  execute_process( COMMAND ${NETCDF_PROGRAM} --has-nc4      OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF_NC4_YES )
-  execute_process( COMMAND ${NETCDF_PROGRAM} --has-pnetcdf  OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF_PNETCDF_YES )
-  execute_process( COMMAND ${NETCDF_PROGRAM} --has-parallel OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF_PARALLEL_YES )
+
+  # These do not pull all options available from nc-config out, but rather mirrors what is available from netCDFConfig.cmake.in
+  set(
+      netCDF_QUERY_YES_OPTIONS
+      dap
+      dap2
+      dap4
+      nc2
+      nc4
+      hdf5
+      hdf4
+      pnetcdf
+      parallel
+
+      # These are not part of the config but used in this to provide the properly linking
+      szlib
+      zstd
+      )
+
+  foreach( NC_QUERY ${netCDF_QUERY_YES_OPTIONS} )
+    execute_process( COMMAND ${NETCDF_PROGRAM} --has-${NC_QUERY} OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF_${NC_QUERY}_LOWERCASE )
+    string( TOUPPER ${NC_QUERY}                     NC_QUERY_UPPERCASE )
+    string( TOUPPER ${netCDF_${NC_QUERY}_LOWERCASE} NC_ANSWER_UPPERCASE )
+    # Convert to netCDF_HAS_* = YES/NO - Note this cannot be generator expression if you want to use it during configuration time
+    set( netCDF_HAS_${NC_QUERY_UPPERCASE} ${NC_ANSWER_UPPERCASE} )
+  endforeach()
 
   # check for large file support
   find_file( netCDF_INCLUDE_FILE netcdf.h ${netCDF_INCLUDE_DIR} )
@@ -63,13 +86,7 @@ else()
   string( REPLACE " " ";" netCDF_VERSION_LIST ${netCDF_VERSION_RAW} )
   list( GET netCDF_VERSION_LIST -1 netCDF_VERSION )
 
-  # Convert to YES/NO - Note cannot be generator expression if you want to use it during configuration time
-  string( TOUPPER ${netCDF_NC4_YES}      netCDF_NC4      )
-  string( TOUPPER ${netCDF_PNETCDF_YES}  netCDF_PNETCDF  )
-  string( TOUPPER ${netCDF_PARALLEL_YES} netCDF_PARALLEL )
-
   set( netCDF_DEFINITIONS  )
-
   set( netCDF_LIBRARIES
       # All supported language variants will need this regardless - this may conflict with the RPATH in any
       # supplemental packages so be careful to use compatible langauge versions of netCDF

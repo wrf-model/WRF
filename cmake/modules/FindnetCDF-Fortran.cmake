@@ -43,7 +43,6 @@ else()
   execute_process( COMMAND ${NETCDF-FORTRAN_PROGRAM} --prefix       OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF-Fortran_PREFIX )
   execute_process( COMMAND ${NETCDF-FORTRAN_PROGRAM} --flibs        OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF-Fortran_FLIBS   )
   execute_process( COMMAND ${NETCDF-FORTRAN_PROGRAM} --version      OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF-Fortran_VERSION_RAW )
-  execute_process( COMMAND ${NETCDF-FORTRAN_PROGRAM} --has-nc4      OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF-Fortran_NC4_YES )
 
   # check for large file support
   find_file( netCDF-Fortran_INCLUDE_FILE netcdf.inc ${netCDF-Fortran_INCLUDE_DIR} )
@@ -59,11 +58,25 @@ else()
   string( REPLACE " " ";" netCDF-Fortran_VERSION_LIST ${netCDF-Fortran_VERSION_RAW} )
   list( GET netCDF-Fortran_VERSION_LIST -1 netCDF-Fortran_VERSION )
 
-  # Convert to YES/NO - Note cannot be generator expression if you want to use it during configuration time
-  string( TOUPPER ${netCDF-Fortran_NC4_YES}      netCDF-Fortran_NC4      )
+  # These do not pull all options available from nc-config out, but rather mirrors what is available from netCDFConfig.cmake.in
+  set(
+      netCDF-Fortran_QUERY_YES_OPTIONS
+      dap
+      nc2
+      nc4
+      f90
+      f03
+      )
 
   set( netCDF-Fortran_DEFINITIONS  )
   set( netCDF-Fortran_LIBRARY_DIR  ${netCDF-Fortran_PREFIX}/lib )
+  foreach( NF_QUERY ${netCDF-Fortran_QUERY_YES_OPTIONS} )
+    execute_process( COMMAND ${NETCDF-FORTRAN_PROGRAM} --has-${NF_QUERY} OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF-Fortran_${NF_QUERY}_LOWERCASE )
+    string( TOUPPER ${NF_QUERY}                     NF_QUERY_UPPERCASE )
+    string( TOUPPER ${netCDF-Fortran_${NF_QUERY}_LOWERCASE} NF_ANSWER_UPPERCASE )
+    # Convert to netCDF-Fortran_HAS_* = YES/NO - Note this cannot be generator expression if you want to use it during configuration time
+    set( netCDF-Fortran_HAS_${NF_QUERY_UPPERCASE} ${NF_ANSWER_UPPERCASE} )
+  endforeach()
 
   set( netCDF-Fortran_LIBRARIES
       $<$<LINK_LANGUAGE:Fortran>:${netCDF-Fortran_FLIBS}>

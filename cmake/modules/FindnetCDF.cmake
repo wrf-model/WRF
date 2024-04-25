@@ -94,6 +94,21 @@ else()
       )
   # Because we may need this for in-situ manual preprocessing do not use genex
   set( netCDF_INCLUDE_DIRS ${netCDF_INCLUDE_DIR} )
+
+  # Find the actual name of the library
+  find_library(
+                netCDF_LIBRARY
+                netcdf
+                PATHS ${netCDF_LIBRARY_DIR}
+                NO_DEFAULT_PATH
+                )
+  if( ${netCDF_LIBRARY} MATCHES ".a$" )
+    set( netCDF_STATIC TRUE  )
+    set( netCDF_SHARED FALSE )
+  else()
+    set( netCDF_STATIC FALSE  )
+    set( netCDF_SHARED TRUE )
+  endif()
 endif()
 
 find_package( PkgConfig )
@@ -127,6 +142,70 @@ if ( netCDF_FOUND AND NOT TARGET netCDF::netcdf )
                           INTERFACE_INCLUDE_DIRECTORIES      "${netCDF_INCLUDE_DIRS}"
                         )
 
+  # I believe this is not required as the API will wrap usage of these
+  # libnetcdf should provide the rpath dependency linking if not static
+  # This is untested! Probably missing a lot of stuff
+  if ( ${netCDF_STATIC} )
+    if ( ${netCDF_HAS_HDF4} OR ${netCDF_HAS_HDF5} )
+      if ( ${netCDF_HAS_PARALLEL} )
+        set( HDF5_PREFER_PARALLEL TRUE )
+      endif()
+
+      find_package( HDF5 COMPONENTS C HL REQUIRED )
+      target_link_libraries( netCDF::netcdf INTERFACE HDF5::HDF5 )
+      
+      find_package( ZLIB REQUIRED )
+      target_link_libraries( netCDF::netcdf INTERFACE ZLIB::ZLIB )
+    endif()
+
+    # If available do find it and link in
+    find_package( ZLIB QUIET )
+    if ( ${ZLIB_FOUND} )
+      target_link_libraries( netCDF::netcdf INTERFACE ZLIB::ZLIB )
+    endif()
+
+    if ( ${netCDF_HAS_SZLIB} )
+      # Currently no standard way to find szlib, and netCDF does not export its module out soooo
+      message( WARNING "No standard way to locate szlib, will attempt to link with -lsz" )
+      target_link_libraries( netCDF::netcdf INTERFACE sz )
+    endif()
+
+    if ( ${netCDF_HAS_ZSTD} )
+      find_package( PkgConfig )
+      pkg_check_modules( PC_ZSTD QUIET zstd )
+      target_link_libraries( netCDF::netcdf INTERFACE ${PC_ZSTD_LINK_LIBRARIES} )
+    endif()
+
+    # HAS_BZ2 is not defined right now
+    # if ( ${netCDF_HAS_BZ2} )
+    find_package( BZip2 QUIET )
+    if ( ${BZIP2_FOUND} )
+      target_link_libraries( netCDF::netcdf INTERFACE BZip2::BZip2 )
+    endif()
+    # endif()
+
+    # HAS_LIBXML2 is not defined right now
+    find_package( LibXml2 QUIET )
+    if( LibXml2_FOUND )
+      target_link_libraries( netCDF::netcdf INTERFACE LibXml2::LibXml2 )
+    endif()  
+
+    if ( ${netCDF_HAS_PARALLEL} )
+      find_package( MPI COMPONENTS C REQUIRED )
+      target_link_libraries( netCDF::netcdf INTERFACE MPI::MPI_C )
+    endif()
+
+    # Always linked
+    find_package( CURL REQUIRED )
+    find_library( MATH_LIB NAMES m )
+    target_link_libraries(
+                          netCDF::netcdf
+                          INTERFACE
+                            ${CMAKE_DL_LIBS}
+                            CURL::libcurl
+                            ${MATH_LIB}
+                          )
+  endif()
 
 endif()
 

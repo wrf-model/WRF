@@ -88,6 +88,14 @@ else()
 
   # Because we may need this for in-situ manual preprocessing do not use genex
   set( netCDF-Fortran_INCLUDE_DIRS ${netCDF-Fortran_INCLUDE_DIR} )
+
+  # Find the actual name of the library
+  find_library(
+                netCDF-Fortran_LIBRARY
+                netcdff
+                PATHS ${netCDF-Fortran_LIBRARY_DIR}
+                NO_DEFAULT_PATH
+                )
 endif()
 
 find_package( PkgConfig )
@@ -97,10 +105,32 @@ include(FindPackageHandleStandardArgs)
 # handle the QUIETLY and REQUIRED arguments and set netCDF-Fortran_FOUND to TRUE
 # if all listed variables are TRUE
 find_package_handle_standard_args(
-                                  netCDF-Fortran  DEFAULT_MSG
-                                  netCDF-Fortran_INCLUDE_DIRS
-                                  netCDF-Fortran_FLIBS
-                                  netCDF-Fortran_VERSION
-                                  )
+                                  netCDF-Fortran
+                                  FOUND_VAR netCDF-Fortran_FOUND
+                                  REQUIRED_VARS
+                                    netCDF-Fortran_INCLUDE_DIRS
+                                    netCDF-Fortran_LIBRARIES
+                                    netCDF-Fortran_VERSION
+                                  VERSION_VAR netCDF-Fortran_VERSION
+                                  HANDLE_VERSION_RANGE
+                                )
+
+# Note that the name of the target is the project name as specified by the netCDF cmake build,
+# NOT the netCDF repository name, I've kept this consistent to the provided netCDF builds rather
+# than the convention of *_<LANG> to specify multiple components. This also helps account for the
+# fact that the netCDF langauge-specific projects are separate projects
+if ( netCDF-Fortran_FOUND AND NOT TARGET netCDF::netcdff )
+  find_package( netCDF REQUIRED )
+
+  add_library( netCDF::netcdff UNKNOWN IMPORTED )
+  set_target_properties(
+                        netCDF::netcdff
+                        PROPERTIES
+                          IMPORTED_LOCATION                   "${netCDF-Fortran_LIBRARY}"
+                          IMPORTED_LINK_INTERFACE_LANGUAGES   Fortran
+                          INTERFACE_INCLUDE_DIRECTORIES      "${netCDF-Fortran_INCLUDE_DIRS}"
+                        )
+  target_link_libraries( netCDF::netcdff INTERFACE netCDF::netcdf )
+endif()
 
 mark_as_advanced( netCDF-Fortran_FLIBS netCDF-Fortran_PREFIX netCDF-Fortran_LIBRARY_DIR )

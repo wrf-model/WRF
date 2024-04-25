@@ -102,11 +102,33 @@ include(FindPackageHandleStandardArgs)
 
 # handle the QUIETLY and REQUIRED arguments and set netCDF_FOUND to TRUE
 # if all listed variables are TRUE
-find_package_handle_standard_args( netCDF  DEFAULT_MSG
-                                   netCDF_INCLUDE_DIRS
-                                   netCDF_LIBRARY_DIR
-                                   netCDF_CLIBS
-                                   netCDF_VERSION
-                                  )
+find_package_handle_standard_args(
+                                  netCDF
+                                  FOUND_VAR netCDF_FOUND
+                                  REQUIRED_VARS
+                                    netCDF_INCLUDE_DIRS
+                                    netCDF_LIBRARIES
+                                    netCDF_VERSION
+                                  VERSION_VAR netCDF_VERSION
+                                  HANDLE_VERSION_RANGE
+                                )
+
+# Note that the name of the target is the project name as specified by the netCDF cmake build,
+# NOT the netCDF repository name, I've kept this consistent to the provided netCDF builds rather
+# than the convention of *_<LANG> to specify multiple components. This also helps account for the
+# fact that the netCDF langauge-specific projects are separate projects
+if ( netCDF_FOUND AND NOT TARGET netCDF::netcdf )
+  add_library( netCDF::netcdf UNKNOWN IMPORTED )
+  set_target_properties(
+                        netCDF::netcdf
+                        PROPERTIES
+                          IMPORTED_LOCATION                   "${netCDF_LIBRARY}"
+                          IMPORTED_LINK_INTERFACE_LANGUAGES   C
+                          INTERFACE_INCLUDE_DIRECTORIES      "${netCDF_INCLUDE_DIRS}"
+                        )
+
+
+endif()
+
 
 mark_as_advanced( netCDF_CLIBS netCDF_PREFIX netCDF_LIBRARY_DIR )

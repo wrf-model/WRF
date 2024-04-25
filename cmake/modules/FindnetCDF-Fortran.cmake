@@ -115,7 +115,7 @@ find_package_handle_standard_args(
                                   HANDLE_VERSION_RANGE
                                 )
 
-# Note that the name of the target is the project name as specified by the netCDF cmake build,
+# Note that the name of the target is the target library name as specified by the netCDF cmake build,
 # NOT the netCDF repository name, I've kept this consistent to the provided netCDF builds rather
 # than the convention of *_<LANG> to specify multiple components. This also helps account for the
 # fact that the netCDF langauge-specific projects are separate projects

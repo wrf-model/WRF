@@ -21,7 +21,7 @@ target_link_libraries(
                         PUBLIC
                           $<$<BOOL:${USE_OPENMP}>:$<TARGET_NAME_IF_EXISTS:OpenMP::OpenMP_Fortran>>
                           $<$<BOOL:${USE_MPI}>:$<TARGET_NAME_IF_EXISTS:MPI::MPI_Fortran>>
-                          netCDF::netCDF-Fortran
+                          netCDF::netcdff
                       )
 
 

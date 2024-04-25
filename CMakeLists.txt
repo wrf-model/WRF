@@ -941,7 +941,7 @@ set_target_properties(
 
 target_link_libraries(  ${PROJECT_NAME}_Core
                           PUBLIC
-                            netCDF::netCDF-Fortran
+                            netCDF::netcdff
                             ${pnetCDF_LIBRARIES}
                             $<$<BOOL:${USE_MPI}>:$<TARGET_NAME_IF_EXISTS:MPI::MPI_Fortran>>
                             $<$<BOOL:${USE_OPENMP}>:$<TARGET_NAME_IF_EXISTS:OpenMP::OpenMP_Fortran>>

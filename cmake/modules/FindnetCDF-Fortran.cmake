@@ -98,8 +98,6 @@ else()
                 )
 endif()
 
-find_package( PkgConfig )
-
 include(FindPackageHandleStandardArgs)
 
 # handle the QUIETLY and REQUIRED arguments and set netCDF-Fortran_FOUND to TRUE

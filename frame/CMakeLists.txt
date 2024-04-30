@@ -119,8 +119,7 @@ target_sources(
                   module_alloc_space_7.F
                   module_alloc_space_8.F
                   module_alloc_space_9.F
-                  
-                  ${CMAKE_BINARY_DIR}/frame/module_state_description.F # GENERATED
+
                   ${nl_dyn_source}                                     # GENERATED
 
                   clog.c

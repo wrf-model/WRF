@@ -694,6 +694,8 @@ add_compile_definitions(
                         # https://stackoverflow.com/a/1035713
                         # If fseeko64 succeeds, use that, else check if we can fall back to fseeko, and if not just use fseek
                         $<IF:$<BOOL:${FSEEKO64}>,FSEEKO64_OK,$<IF:$<BOOL:${FSEEKO}>,FSEEKO_OK,FSEEK_OK>>
+                        $<$<OR:$<BOOL:${FSEEKO64}>,$<BOOL:${FSEEKO}>>:_FILE_OFFSET_BITS=64>
+                        $<$<OR:$<BOOL:${FSEEKO64}>,$<BOOL:${FSEEKO}>>:_LARGEFILE_SOURCE=1>
 
                         # I don't believe these are used anymore...
                         # $<$<BOOL:${MPI2_SUPPORT}>:MPI2_SUPPORT=$<BOOL:${MPI2_SUPPORT}>>

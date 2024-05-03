@@ -792,10 +792,13 @@ endif()
 #!TODO Leaving as is in WRF for now but investigate why we don't do this
 # https://stackoverflow.com/a/1035713
 # If fseeko64 succeeds, use that, else check if we can fall back to fseeko, and if not just use fseek
-if ( ${FSEEKO64} )
-  list( APPEND PROJECT_COMPILE_DEFINITIONS FSEEKO64_OK )
-elseif( "${FSEEKO}" )
-  list( APPEND PROJECT_COMPILE_DEFINITIONS FSEEKO_OK )
+if ( "${FSEEKO64}" OR "${FSEEKO}" )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS _FILE_OFFSET_BITS=64 _LARGEFILE_SOURCE=1 )
+  if ( "${FSEEKO64}" )
+    list( APPEND PROJECT_COMPILE_DEFINITIONS FSEEKO64_OK )
+  elseif( "${FSEEKO}" )
+    list( APPEND PROJECT_COMPILE_DEFINITIONS FSEEKO_OK )
+  endif()
 else()
   list( APPEND PROJECT_COMPILE_DEFINITIONS FSEEK_OK )
 endif()

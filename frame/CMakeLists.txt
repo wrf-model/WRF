@@ -109,16 +109,6 @@ target_sources(
                   module_cpl_oasis3.F
 
 
-                  module_alloc_space_0.F
-                  module_alloc_space_1.F
-                  module_alloc_space_2.F
-                  module_alloc_space_3.F
-                  module_alloc_space_4.F
-                  module_alloc_space_5.F
-                  module_alloc_space_6.F
-                  module_alloc_space_7.F
-                  module_alloc_space_8.F
-                  module_alloc_space_9.F
                   
                   ${CMAKE_BINARY_DIR}/frame/module_state_description.F # GENERATED
                   ${nl_dyn_source}                                     # GENERATED

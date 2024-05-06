@@ -17,6 +17,9 @@
 
 
 !=================================================================================================================
+!>\section arg_table_mp_wsm6_effectRad_init
+!!\html\include mp_wsm6_effectRad_init.html
+!!
  subroutine mp_wsm6_effectRad_init(errmsg,errflg)
 !=================================================================================================================
 
@@ -32,6 +35,9 @@
  end subroutine mp_wsm6_effectRad_init
 
 !=================================================================================================================
+!>\section arg_table_mp_wsm6_effectRad_finalize
+!!\html\include mp_wsm6_effectRad_finalize.html
+!!
  subroutine mp_wsm6_effectRad_finalize(errmsg,errflg)
 !=================================================================================================================
 
@@ -47,6 +53,9 @@
  end subroutine mp_wsm6_effectRad_finalize
 
 !=================================================================================================================
+!>\section arg_table_mp_wsm6_effectRad_run
+!!\html\include mp_wsm6_effectRad_run.html
+!!
  subroutine mp_wsm6_effectRad_run(do_microp_re,t,qc,qi,qs,rho,qmin,t0c,re_qc_bg,re_qi_bg,re_qs_bg, &
                                   re_qc_max,re_qi_max,re_qs_max,re_qc,re_qi,re_qs,its,ite,kts,kte, &
                                   errmsg,errflg)

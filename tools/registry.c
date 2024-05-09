@@ -1,16 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__CYGWIN__)
 # include <io.h>
+#endif
+#ifdef _WIN32
 # define rindex(X,Y) strrchr(X,Y)
 # define index(X,Y) strchr(X,Y)
-#else
+#endif
 # include <sys/time.h>
 # include <sys/resource.h>
 # include <unistd.h>
 # include <string.h>
 # include <strings.h>
-#endif
 
 #define DEFINE_GLOBALS
 #include "protos.h"
@@ -23,13 +24,14 @@
 
 /* SamT: bug fix: main returns int */
 int
-main( int argc, char *argv[], char *env[] )
+main( int argc, char *argv[] )
 {
-  char fname_in[NAMELEN], dir[NAMELEN], fname_tmp[NAMELEN], command[NAMELEN] ;
-  char fname_wrk[NAMELEN] ;
+  char fname_in[NAMELEN] = {'\0'}, dir[NAMELEN] = {'\0'};
+  char fname_tmp[NAMELEN] = {'\0'}, command[2 * (NAMELEN + EXTRA_FOR_DEST_BUFFER)] = {'\0'};
+  char fname_wrk[NAMELEN + EXTRA_FOR_DEST_BUFFER] = {'\0'};
   FILE * fp_in, *fp_tmp ;
-  char * thisprog  ;
-  char *env_val ;
+  char * thisprog = "";
+  char *env_val = "";
   int mypid ;
   int do_irr_diag ;
 #ifndef _WIN32
@@ -37,7 +39,7 @@ main( int argc, char *argv[], char *env[] )
 #endif
 
   mypid = (int) getpid() ;
-  strcpy( thiscom, argv[0] ) ;
+  strncpy( thiscom, argv[0], 4 * NAMELEN - 1) ;
   argv++ ;
 
   sw_deref_kludge           = 0 ;
@@ -160,7 +162,8 @@ main( int argc, char *argv[], char *env[] )
       sprintf( fname_wrk,"%s/Registry_irr_diag",dir ) ;
     }
 //  fprintf(stderr,"Registry tmp file = %s\n",fname_wrk);
-    sprintf(command,"/bin/cp %s %s\n",fname_in,fname_wrk);
+    /* we should be able to implement this using posix_spawn */
+    sprintf(command,"/bin/cp \'%s\' \'%s\'\n",fname_in,fname_wrk);
 //  fprintf(stderr,"Command = %s\n",command);
     if( system( command ) ) {
       fprintf(stderr,"Could not copy %s to %s\n",fname_in,fname_wrk);
@@ -282,10 +285,10 @@ cleanup:
    sprintf(command,"del /F /Q %s\n",fname_tmp );
 #else
    if( do_irr_diag ) {
-     sprintf(command,"/bin/rm -f %s\n",fname_wrk );
+     sprintf(command,"/bin/rm -f \'%s\'\n",fname_wrk );
      system( command ) ;
    }
-   sprintf(command,"/bin/rm -f %s\n",fname_tmp );
+   sprintf(command,"/bin/rm -f \'%s\'\n",fname_tmp );
 #endif
    return system( command ) ;
 }

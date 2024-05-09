@@ -1,6 +1,6 @@
 .SUFFIXES: .c .o
 
-CC_TOOLS = cc
+CC_TOOLS = $(CC)
 CFLAGS = $(CC_TOOLS_CFLAGS) #-ansi
 LDFLAGS =
 DEBUG = -O0 -g 
@@ -30,21 +30,22 @@ gen_comms.c : gen_comms.stub
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
-data.o: registry.h protos.h data.h
-gen_allocs.o: protos.h registry.h data.h
-gen_args.o: protos.h registry.h data.h
-gen_scalar_derefs.o: protos.h registry.h data.h
-gen_config.o: protos.h registry.h data.h
-gen_defs.o: protos.h registry.h data.h
-gen_mod_state_descr.o: protos.h registry.h data.h
-gen_model_data_ord.o: protos.h registry.h data.h
-gen_scalar_indices.o: protos.h registry.h data.h
-gen_wrf_io.o: protos.h registry.h data.h
-misc.o: protos.h registry.h data.h
-my_strtok.o: registry.h protos.h data.h
-reg_parse.o: registry.h protos.h data.h
-registry.o: protos.h registry.h data.h
+data.o: registry.h protos.h data.h ../inc/streams.h
+gen_allocs.o: protos.h registry.h data.h ../inc/streams.h sym.h
+gen_args.o: protos.h registry.h data.h ../inc/streams.h
+gen_config.o: protos.h registry.h data.h ../inc/streams.h sym.h
+gen_defs.o: protos.h registry.h data.h ../inc/streams.h
+gen_interp.o: protos.h registry.h data.h ../inc/streams.h
+gen_mod_state_descr.o: protos.h registry.h data.h ../inc/streams.h
+gen_model_data_ord.o: protos.h registry.h data.h ../inc/streams.h
+gen_scalar_derefs.o: protos.h registry.h data.h ../inc/streams.h
+gen_scalar_indices.o: protos.h registry.h data.h ../inc/streams.h
+gen_streams.o: protos.h registry.h data.h ../inc/streams.h sym.h
+gen_wrf_io.o: protos.h registry.h data.h ../inc/streams.h sym.h
+misc.o: protos.h registry.h data.h ../inc/streams.h
+my_strtok.o: registry.h protos.h data.h ../inc/streams.h
+reg_parse.o: registry.h protos.h data.h ../inc/streams.h sym.h
+registry.o: protos.h registry.h data.h ../inc/streams.h sym.h
+set_dim_strs.o: protos.h registry.h data.h ../inc/streams.h sym.h
 sym.o: sym.h
-type.o: registry.h protos.h data.h
-gen_interp.o: registry.h protos.h data.h
-gen_streams.o: registry.h protos.h data.h
+type.o: registry.h protos.h data.h ../inc/streams.h

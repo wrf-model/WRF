@@ -230,7 +230,7 @@ get_entry_r ( char * name , char * use , node_t * node )
 node_t *
 get_dimnode_for_coord ( node_t * node , int coord_axis )
 {
-  int i ;
+  unsigned int i ;
   if ( node == NULL ) return(NULL) ;
   for ( i = 0 ; i < node->ndims ; i++ )
   {
@@ -246,7 +246,7 @@ get_dimnode_for_coord ( node_t * node , int coord_axis )
 int 
 get_index_for_coord ( node_t * node , int coord_axis )
 {
-  int i ;
+  unsigned int i ;
   if ( node == NULL ) return( -1 ) ;
   for ( i = 0 ; i < node->ndims ; i++ )
   {
@@ -263,7 +263,7 @@ get_index_for_coord ( node_t * node , int coord_axis )
 char *
 set_mem_order( node_t * node , char * str , int n )
 {
-  int i ;
+  unsigned int i ;
   node_t * p ;
   
   if ( str == NULL || node == NULL ) return(NULL) ;

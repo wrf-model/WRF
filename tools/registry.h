@@ -1,6 +1,12 @@
 #ifndef REGISTRY_H
+#include <stdlib.h>
+#include <ctype.h>
+#include <sys/unistd.h>
+
 #define NAMELEN 512
 #define NAMELEN_LONG 125000
+#define EXTRA_FOR_DEST_BUFFER 20
+
 #define MAXDIMS 21
 #define MAX_DYNCORES 50   /* ha ha, just kidding */
 /* #define MAX_ARGLINE 175    WRF uses 128 by default, but the nested chem version hit the continuation line limit for efc so it had to be increased, wig 14-Oct-2004 */

@@ -14,18 +14,24 @@
 
 #define NULLCHARPTR   (char *) 0
 
+/* About the only place the stringify macro is useful is in the
+   definition of the stringify_const macro.  Most other places, you
+   can put the quotes on yourself.  */
+#define stringify_const(value) stringify(value)
+#define stringify(value) #value
+
 int
 gen_scalar_indices ( char * dirname )
 {
   FILE * fp, *fp5[26] ;
-  char  fname[NAMELEN], fname5[NAMELEN] ;
+  char  fname[NAMELEN], fname5[2 * NAMELEN + EXTRA_FOR_DEST_BUFFER] ;
   char * fn = "scalar_indices.inc" ;
   char * fn2 = "scalar_tables.inc" ;
   char * fn3 = "scalar_tables_init.inc" ;
   char * fn4 = "scalar_indices_init.inc" ;
   int i ;
 
-  char fn5[26][NAMELEN] ;
+  char fn5[26][NAMELEN] = { '\0' } ;
 
   strcpy( fname, fn ) ;
   if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s",dirname,fn) ; }
@@ -37,7 +43,14 @@ gen_scalar_indices ( char * dirname )
   { 
     sprintf(fn5[i],"in_use_for_config_%c.inc",'a'+i) ;
     strcpy( fname5, fn5[i] ) ;
-    if ( strlen(dirname) > 0 ) { sprintf(fname5,"%s/%s",dirname,fn5[i]) ; }
+    if ( strlen(dirname) > 0 ) {
+      /* The stringify_const(NAMELEN) is to get something like %.512s
+	 in the format string, so snprintf won't copy more than
+	 NAMELEN elements of the entry of fn5 (each NAMELEN chars long) */
+      snprintf(fname5,sizeof(fname5),"%s/%." stringify_const(NAMELEN) "s",dirname,fn5[i]) ;
+    } else {
+      snprintf(fname5, NAMELEN + 1, "%." stringify_const(NAMELEN) "s", fn5[i]);
+    }
     if ((fp5[i] = fopen( fname5 , "w" )) == NULL ) return(1) ;
     print_warning(fp5[i],fname5) ;
   }
@@ -117,7 +130,7 @@ gen_scalar_indices1 ( FILE * fp, FILE ** fp2 )
   node_t * p, * memb , * pkg, * rconfig, * fourd, *x ; 
   char * c , *pos1, *pos2 ;
   char assoc_namelist_var[NAMELEN], assoc_namelist_choice[NAMELEN], assoc_4d[NAMELEN_LONG], fname[NAMELEN_LONG] ;
-  char fname2[NAMELEN], tmp1[NAMELEN], tmp2[NAMELEN] ;
+  char fname2[NAMELEN], tmp1[NAMELEN + EXTRA_FOR_DEST_BUFFER], tmp2[NAMELEN + EXTRA_FOR_DEST_BUFFER] ;
   char scalars_str[NAMELEN_LONG] ;
   char * scalars ;
   int i ;
@@ -128,8 +141,11 @@ gen_scalar_indices1 ( FILE * fp, FILE ** fp2 )
 
   for ( p = FourD ; p != NULL ; p = p->next ) {
     if( strncmp( p->name,"irr_diag",8 ) ) {
-      for ( memb = p->members ; memb != NULL ; memb = memb->next )
-        if ( strcmp(memb->name,"-") ) fprintf(fp,"  P_%s = 1 ; F_%s = .FALSE. \n", memb->name, memb->name ) ; 
+      for ( memb = p->members ; memb != NULL ; memb = memb->next ) {
+        if ( strcmp(memb->name,"-") ) {
+	  fprintf(fp,"  P_%s = 1 ; F_%s = .FALSE. \n", memb->name, memb->name);
+	}
+      }
     }
   }
 
@@ -171,11 +187,11 @@ gen_scalar_indices1 ( FILE * fp, FILE ** fp2 )
                 fprintf(fp,"     P_%s = %s_index_table( PARAM_%s , idomain )\n",c,assoc_4d,c)  ;
                 fprintf(fp,"   END IF\n") ;
                 {
-                  char fourd_bnd[NAMELEN] ;
+                  char fourd_bnd[NAMELEN_LONG + EXTRA_FOR_DEST_BUFFER] = { '\0' } ;
                   /* check for the existence of a fourd boundary array associated with this 4D array */
                   /* set io_mask accordingly for gen_wrf_io to know that it should generate i/o for _b and _bt */
                   /* arrays */
-                  sprintf(fourd_bnd,"%s_b",assoc_4d) ;
+                  sprintf(fourd_bnd, "%s_b",assoc_4d) ;
                   if ( get_entry_r( fourd_bnd, NULL, Domain.fields) != NULL ) {
                      x->boundary = 1 ;
                   }

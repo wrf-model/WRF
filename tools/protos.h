@@ -4,7 +4,12 @@
 
 int init_dim_table()   ;
 int make_lower( char * s1 ) ;
+char *make_lower_case ( char * str ) ;
+char *make_upper_case ( char * str ) ;
 int reg_parse( FILE * infile ) ;
+int init_parser() ;
+int pre_parse( char * dir, FILE * infile, FILE * outfile ) ;
+int check_dimspecs() ;
 int set_dim_len ( char * dimspec , node_t * dim_entry ) ;
 int set_dim_order ( char * dimorder , node_t * dim_entry ) ;
 int set_dim_orient ( char * dimorient , node_t * dim_entry ) ;
@@ -71,16 +76,25 @@ char * get_typename_i(int i) ;
 int gen_alloc ( char * dirname ) ;
 int gen_alloc1 ( char * dirname ) ;
 int gen_alloc2 ( FILE * fp , char * structname , char * structname2 , node_t * node, int *j, int *iguy, int *fraction, int numguys, int frac, int sw );
+int gen_comms ( char * dirname );
+int gen_streams(  char * dirname );
+int gen_io_boilerplate ();
 
 int gen_module_state_description ( char * dirname ) ;
 int gen_module_state_description1 ( FILE * fp , node_t * node ) ;
 
 int gen_scalar_indices ( char * dirname ) ;
 int gen_scalar_indices1 ( FILE * fp, FILE ** fp2 ) ;
+int gen_nest_interp ( char * dirname );
+int gen_nest_v_interp ( char * dirname );
+int gen_nest_interp2(FILE *fp, node_t *node, char *fourdname, int down_path, int use_nest_time_level);
 
 int gen_actual_args ( char * dirname ) ;
+int gen_actual_args_new ( char * dirname ) ;
 int gen_dummy_args ( char * dirname ) ;
+int gen_dummy_args_new ( char * dirname ) ;
 int gen_dummy_decls ( char * dn ) ;
+int gen_dummy_decls_new ( char * dn ) ;
 int gen_args ( char * dirname , int sw ) ;
 int gen_args1 ( FILE * fp , char * outstr, char * structname , node_t * node , int *linelen , int sw , int deep ) ;
 
@@ -108,6 +122,7 @@ int gen_wrf_io2 ( FILE * fp , char * fname , char * structname , char * fourdnam
 int gen_namelist_defines ( char * dirname , int sw_dimension ) ;
 int gen_namelist_defaults ( char * dirname ) ;
 int gen_namelist_script ( char * dirname ) ;
+int gen_namelist_statements ( char * dirname ) ;
 
 int gen_model_data_ord ( char * dirname ) ;
 
@@ -122,6 +137,9 @@ int range_of_dimension ( char *, char * , int, node_t *, char * );
 int dimension_size_expression ( char *, char *, int, node_t *, char *);
 int gen_alloc_count ( char *);
 int gen_alloc_count1 ( char *);
+int gen_comms ( char * dirname );
+int gen_streams(  char * dirname );
+int gen_io_boilerplate ();
 int gen_ddt_write ( char * );
 int gen_ddt_write1 ( FILE *, char *, node_t *);
 int gen_dealloc ( char * );
@@ -133,6 +151,7 @@ int irr_diag_scalar_indices ( char * );
 int gen_scalar_tables_init ( FILE *);
 int gen_scalar_indices_init ( FILE *);
 int hash(char *);
+int gen_nest_interp ( char * dirname );
 int gen_nest_interp1 ( FILE *, node_t *, char *, int, int );
 #if ( WRFPLUS == 1 )
 int gen_packs_halo ( FILE *fp , node_t *p, char *shw, int xy /* 0=y,1=x */ , int pu /* 0=pack,1=unpack */, int nta /* 0=NLM,1=TLM,2=ADM */, char * packname, char * commname, int always_interp_mp /* 1 for ARW, varies for NMM */ );

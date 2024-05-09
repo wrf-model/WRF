@@ -1,5 +1,6 @@
 cmake_minimum_required( VERSION 3.20 )
 cmake_policy( SET CMP0118 NEW )
+cmake_policy( SET CMP0098 NEW )
 
 enable_language( C )
 enable_language( CXX )
@@ -207,6 +208,13 @@ set( DWORDSIZE      8     )
 set( LWORDSIZE      4     )
 
 
+# To limit the KPP generation to not consume copious amounts of RAM
+if ( NOT DEFINED MAX_KPP_GEN_THREADS )
+  # 1 thread takes about 4.75 GB
+  set( MAX_KPP_GEN_THREADS 4 )
+endif()
+
+
 ########################
 
 ################################################################################
@@ -243,6 +251,7 @@ endif()
 
 if ( ${ENABLE_KPP} AND NOT ${ENABLE_CHEM} )
   message( WARNING "ENABLE_KPP requires ENABLE_CHEM but is not set, ignoring" )
+  set( ENABLE_KPP OFF CACHE BOOL "Force ignore by configuration" FORCE )
 endif()
 
 
@@ -411,6 +420,11 @@ endif()
 if ( ${ENABLE_CTSM} )
   # Will need our own finder
   # find_package( CTSM REQUIRED )
+endif()
+
+if ( ${ENABLE_KPP} )
+  find_package( BISON REQUIRED )
+  find_package( FLEX  REQUIRED )
 endif()
 
 # Will need our own finder
@@ -622,10 +636,10 @@ add_compile_definitions(
                         # Only define if set, this is to use #ifdef/#ifndef preprocessors
                         # in code since cmake cannot handle basically any others :(
                         # https://gitlab.kitware.com/cmake/cmake/-/issues/17398
-                        $<$<BOOL:${ENABLE_CHEM}>:WRF_CHEM=$<BOOL:${ENABLE_CHEM}>>
+                        $<$<BOOL:${ENABLE_CHEM}>:WRF_CHEM>
                         $<$<BOOL:${ENABLE_CHEM}>:BUILD_CHEM=$<BOOL:${ENABLE_CHEM}>>
                         $<$<BOOL:${ENABLE_CMAQ}>:WRF_CMAQ=$<BOOL:${ENABLE_CMAQ}>>
-                        $<$<AND:$<BOOL:${ENABLE_CHEM}>,$<BOOL:${ENABLE_KPP}>>:WRF_KPP=$<BOOL:${ENABLE_KPP}>>
+                        $<$<AND:$<BOOL:${ENABLE_CHEM}>,$<BOOL:${ENABLE_KPP}>>:WRF_KPP>
                         $<$<BOOL:${ENABLE_DFI_RADAR}>:WRF_DFI_RADAR=$<BOOL:${ENABLE_DFI_RADAR}>>
                         $<$<BOOL:${ENABLE_TITAN}>:WRF_TITAN=$<BOOL:${ENABLE_TITAN}>>
                         $<$<BOOL:${ENABLE_MARS}>:WRF_MARS=$<BOOL:${ENABLE_MARS}>>
@@ -783,7 +797,7 @@ add_subdirectory( share    )
 add_subdirectory( frame    )
 add_subdirectory( inc      )
 
-if ( ${WRF_CHEM} )
+if ( ${ENABLE_CHEM} )
   add_subdirectory( chem     )
 endif()
 

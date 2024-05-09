@@ -251,7 +251,8 @@ Namelist variables specifically for the WPS input for real:
  rh2qv_method                        = 1,       ! which method to use to computer mixing ratio from RH:
                                                   default is option 1, the old MM5 method; option 2 uses a WMO 
                                                   recommended method (WMO-No. 49, corrigendum, August 2000) - 
-                                                  there is a difference between the two methods though small
+ use_sh_qv                           = .false., ! whether to use specific humidity or mixing ratio data from input
+                                                  recommended if input data has high vertical resolution
  interp_theta                        = .false.  ! If set to .false., it will vertically interpolate temperature 
                                                   instead of potential temperature, which may reduce bias when 
                                                   compared with input data
@@ -487,26 +488,15 @@ Namelist variables for controlling the adaptive time step option:
                                      = 13, SBU_YLIN scheme
                                      = 14, WDM 5-class scheme
                                      = 16, WDM 6-class scheme
-                                     = 17, NSSL 2-moment 4-ice scheme (steady background CCN)
-                                     = 18, NSSL 2-moment 4-ice scheme with predicted CCN (better for idealized than real cases)
-                                           to set a global CCN value, use
-                                           nssl_cccn  = 0.7e9   ; CCN for NSSL scheme (18). 
-                                           Also sets same value to ccn_conc for mp_physics=18
-                                     = 19, NSSL 1-moment (7 class: qv,qc,qr,qi,qs,qg,qh; predicts graupel density)
-                                     = 21, NSSL 1-moment, (6-class), very similar to Gilmore et al. 2004
-                                           Can set intercepts and particle densities in physics namelist, e.g., nssl_cnor
+                                     = 18, NSSL 2-moment 4-ice scheme with predicted (unactivated) CCN (or activated CCN)
+                                           to change global CCN value, use
+                                           nssl_cccn  = 0.7e9   ; CCN (#/m^3 at sea level pressure) for NSSL scheme (18) or nssl_ccn_on=1
+                                           Also sets ccn_conc for mp_physics=18
                                        For NSSL 1-moment schemes, intercept and particle densities can be set for snow, 
                                        graupel, hail, and rain. For the 1- and 2-moment schemes, the shape parameters 
                                        for graupel and hail can be set.
-                                       nssl_alphah  = 0.    ! shape parameter for graupel
-                                       nssl_alphahl = 2.    ! shape parameter for hail
-                                       nssl_cnoh    = 4.e5  ! graupel intercept
-                                       nssl_cnohl   = 4.e4  ! hail intercept
-                                       nssl_cnor    = 8.e5  ! rain intercept
-                                       nssl_cnos    = 3.e6  ! snow intercept
-                                       nssl_rho_qh  = 500.  ! graupel density
-                                       nssl_rho_qhl = 900.  ! hail density
-                                       nssl_rho_qs  = 100.  ! snow density
+                                       PLEASE SEE README.NSSLmp for options affecting the NSSL scheme
+                                     = 17, 19, 21, 22: Legacy NSSL-MP options: see README.NSSLmp for equivalent settings with 18
                                      = 24, WSM 7-class scheme (separate hail and graupel categories)
                                      = 26, WDM 7-class scheme (separate hail and graupel categories)
                                      = 28, aerosol-aware Thompson scheme with water- and ice-friendly aerosol climatology 
@@ -549,11 +539,13 @@ Namelist variables for controlling the adaptive time step option:
 
  mp_zero_out                         = 0,      ! no action taken, no adjustment to any moist field
                                      = 1,      ! except for Qv, all other moist arrays are set to zero
-                                                 if they fall below a critical value
+                                                 if they fall below a critical value ('moist' array only)
                                      = 2,      ! Qv is .GE. 0, all other moist arrays are set to zero
-                                                 if they fall below a critical value
+                                                 if they fall below a critical value ('moist' array only)
  mp_zero_out_thresh                  = 1.e-8   ! critical value for moist array threshold, below which
                                                  moist arrays (except for Qv) are set to zero (kg/kg)
+ mp_zero_out_all                     = 0,      ! if =1 and mp_zero_out>0, then reproduce old behavior and 
+                                                 apply threshold to scalar, chem, and tracer arrays
 
  gsfcgce_hail                        = 0       ! for running gsfcgce microphysics with graupel
                                      = 1       ! for running gsfcgce microphysics with hail
@@ -571,14 +563,14 @@ Namelist variables for controlling the adaptive time step option:
  acc_phy_tend                        = 0       ! set to =1 to output 16 accumulated physics tendencies for potential temp, 
                                                  water vaopr mixing ratio, and U/V wind components; default is 0=off (new in 4.4) 
  progn (max_dom)                     = 0       ! switch to use mix-activate scheme (Only for Morrison, WDM6, WDM5, 
-                                                 and NSSL_2MOMCCN/NSSL_2MOM
- ccn_conc                            = 1.E8    ! CCN concentration, used by WDM schemes
+                                                 and NSSL_2MOM)
+ ccn_conc                            = 1.E8    ! CCN concentration, used by WDM schemes (set automatically for NSSL_2MOM using nssl_cccn)
 
  no_mp_heating                       = 0       ! normal
                                      = 1       ! turn off latent heating from a microphysics scheme
  use_mp_re                           = 1       ! whether to use effective radii computed in mp schemes in RRTMG
                                                  0: do not use; 1: use effective radii
-                                                 (The mp schemes that compute effective radii are 3,4,6,7,8,10,14,16,17-21,24,26,28,50-53,55)
+                                                 (The mp schemes that compute effective radii are 3,4,6,7,8,10,14,16,18,24,26,28,50-53,55)
 
  force_read_thompson                 = .false. ! whether to read tables for mp_physics = 8,28
  write_thompson_tables               = .true.  ! whether to read or compute tables for mp_phyiscs = 8,28
@@ -969,6 +961,13 @@ Namelist variables for controlling the adaptive time step option:
 							* Note: If the number of urban category in the input files is
 							  inconsistent with the namelist option, error messages will occur.
 							  The method to create the LCZ data is described here: http://www.wudapt.org/
+ slucm_distributed_drag              = .false.  ! option to use spatially varying 2-D urban Zero-plane Displacement, Roughness length for momentum, Frontal area index
+                                                ! currently does not work with LCZ, only works with single-layer urban physics (urban_physics=1)
+                                                ! need additional aforementioned 3 input variables in wrfinput file
+ distributed_ahe_opt                 = 0,       ! option to handle anthropogenic surface heat flux (need additional input in wrfinput file)
+                                                  = 0: no anthropogenic surface heat flux from input data
+                                                  = 1: add to first level temperature tendency
+                                                  = 2: add to surface sensible heat flux
  num_soil_cat                        = 16,      ! number of soil categories in input data
 
  pxlsm_smois_init(max_dom)           = 1        ! PXLSM Soil moisture initialization option 
@@ -1063,8 +1062,10 @@ Namelist variables for controlling the adaptive time step option:
  ua_phys                             = .false.  ! Option to activate UA Noah changes: a different snow-cover physics in
                                                   Noah, aimed particularly toward improving treatment of snow as it relates 
                                                   to the vegetation canopy. Also uses new columns added in VEGPARM.TBL
- do_radar_ref			     = 0, 	! 1 = allows radar reflectivity to be computed using mp-scheme-specific
- 						  parameters.  Currently works for mp_physics = 2,4,6,7,8,10,14,16,24,26,28
+ do_radar_ref                        = 0,  ! 1 = allows radar reflectivity to be computed using mp-scheme-specific
+                                            parameters.  Currently works for mp_physics = 2,4,6,7,8,10,14,16,24,26,28
+                                            Note that reflectivity is always computed for mp_physics = 9,18, and is
+                                            also set =1 when nwp_diagnostics=1
  hailcast_opt (max_dom)              = 0, 	! 1 = 1-D hail growth model which predicts 1st-5th rank-ordered hail diameters, mean hail 
                                                   diameter and standard deviation of hail diameter. (Adams-Selin and Ziegler, MWR Dec 2016.) 
  haildt (max_dom)                    = 0.,      ! seconds between WRF-HAILCAST calls (s)
@@ -1126,10 +1127,26 @@ Options for MAD-WRF - see doc/README.madwrf for usage information
 
 Options for wind turbine drag parameterization:
 
- windfarm_opt (max_dom)             = 0         ! 1 = Simulates the effects of wind turbines in the atmospheric evolution
+ windfarm_opt (max_dom)             = 0         ! 1 = Simulates the effects of wind turbines in the atmospheric evolution, A\activates the wind farm parameterization by Fitch et al (2012)
+                                                ! 2 = Activate the new wind farm scheme (mav scheme) based on Ma et al. (2022).
+                                                      This is similar to option 1, but it also considers subgrid-scale wind turbine wake effects
  windfarm_ij                        = 0         ! whether to use lat-lon or i-j coordinate as wind turbine locations    
                                                 ! 0 = The coordinate of the turbines are defined in terms of lat-lon
                                                 ! 1 = The coordinate of the turbines are defined in terms of grid points
+                                                ! 2 = Valid only with windfarm_opt=2. The coordinate of the turbines are defined
+                                                      in terms of lat-lon with the filename of 'windturbines-ll.txt'
+ windfarm_wake_model                = 2         ! Subgrid-scale wind turbine wake model, valid only with windfarm_opt=2, default is 2
+                                                ! 1 = The Jensen model
+                                                ! 2 = The XA model
+                                                ! 3 = The GM model (windfarm_method is not used)
+                                                ! 4 = Jensen and XA ensemble
+                                                ! 5 = Jensen, XA and GM ensemble
+ windfarm_overlap_method            = 4         ! Wake superposition method for the Jensen and XA wind turbine wake model, valid only with windfarm_opt=2, default is 4
+                                                ! 1 = linear superposition
+                                                ! 2 = squared superposition
+                                                ! 3 = modified squared superposition
+                                                ! 4 = superposition of the hub-height wind speed (Ma et al. 2022)
+ windfarm_deg                       = 0.        ! The rotation degree of the wind farm layout. This is valid only when 'windfarm_opt=2' and 'windfarm_ij=1'
  windfarm_tke_factor                = 0.25      ! Correction factor applied to the TKE coefficient (deafault is 0.25, Archer et al. 2020)
 
 

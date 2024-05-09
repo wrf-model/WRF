@@ -132,3 +132,12 @@
   integer, parameter :: WRF_HDF5_ERR_OTHERS             = -320
   integer, parameter :: WRF_HDF5_ERR_ATTRIBUTE_OTHERS   = -321
 
+  integer, parameter :: WRF_GRIB2_ERR_GRIBCREATE        = -401
+  integer, parameter :: WRF_GRIB2_ERR_ADDLOCAL          = -402
+  integer, parameter :: WRF_GRIB2_ERR_ADDGRIB           = -403
+  integer, parameter :: WRF_GRIB2_ERR_ADDFIELD          = -404
+  integer, parameter :: WRF_GRIB2_ERR_GRIBEND           = -405
+  integer, parameter :: WRF_GRIB2_ERR_WRITE             = -406
+  integer, parameter :: WRF_GRIB2_ERR_GRIB2MAP          = -407
+  integer, parameter :: WRF_GRIB2_ERR_GETGB2            = -408
+  integer, parameter :: WRF_GRIB2_ERR_READ              = -409

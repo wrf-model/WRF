@@ -3,7 +3,7 @@ include ../../macros
 
 MODFLAG := $(MODFLAG) -I ../../mod
 
-%.o : %.F
+%.o : %.F90
 	$(COMPILER90) $(F90FLAGS) $(LDFLAGS) $(MODFLAG) -I$(NETCDFINC) $<
 
 .PHONY: all mod test
@@ -18,10 +18,10 @@ all: mod
 
 mod: ../../MPP/module_mpp_land.mod ../../utils/module_hydro_stop.mod
 	#Build each sub module then build the module that depends on all sub modules
-	$(COMPILER90) $(F90FLAGS) $(LDFLAGS) $(MODFLAG) -I$(NETCDFINC) module_reservoir_utilities.F
-	$(COMPILER90) $(F90FLAGS) $(LDFLAGS) $(MODFLAG) -I$(NETCDFINC) module_reservoir.F
-	$(COMPILER90) $(F90FLAGS) $(LDFLAGS) $(MODFLAG) -I$(NETCDFINC) module_reservoir_read_timeslice_data.F
-	$(COMPILER90) $(F90FLAGS) $(LDFLAGS) $(MODFLAG) -I$(NETCDFINC) module_reservoir_read_rfc_time_series_data.F
+	$(COMPILER90) $(F90FLAGS) $(LDFLAGS) $(MODFLAG) -I$(NETCDFINC) module_reservoir_utilities.F90
+	$(COMPILER90) $(F90FLAGS) $(LDFLAGS) $(MODFLAG) -I$(NETCDFINC) module_reservoir.F90
+	$(COMPILER90) $(F90FLAGS) $(LDFLAGS) $(MODFLAG) -I$(NETCDFINC) module_reservoir_read_timeslice_data.F90
+	$(COMPILER90) $(F90FLAGS) $(LDFLAGS) $(MODFLAG) -I$(NETCDFINC) module_reservoir_read_rfc_time_series_data.F90
 
 	ar -r ../../lib/libHYDRO.a module_reservoir_utilities.o
 	ar -r ../../lib/libHYDRO.a module_reservoir.o
@@ -37,17 +37,17 @@ mod: ../../MPP/module_mpp_land.mod ../../utils/module_hydro_stop.mod
 
 
 test: ../../MPP/module_mpp_land.mod ../../utils/module_hydro_stop.mod
-	$(COMPILER90) $(F90FLAGS) $(LDFLAGS) $(MODFLAG) -I$(NETCDFINC) module_reservoir_utilities.F
-	$(COMPILER90) $(F90FLAGS) $(LDFLAGS) $(MODFLAG) -I$(NETCDFINC) module_reservoir.F
-	$(COMPILER90) $(F90FLAGS) $(LDFLAGS) $(MODFLAG) -I$(NETCDFINC) module_reservoir_read_timeslice_data.F
-	$(COMPILER90) $(F90FLAGS) $(LDFLAGS) $(MODFLAG) -I$(NETCDFINC) module_reservoir_read_rfc_time_series_data.F
+	$(COMPILER90) $(F90FLAGS) $(LDFLAGS) $(MODFLAG) -I$(NETCDFINC) module_reservoir_utilities.F90
+	$(COMPILER90) $(F90FLAGS) $(LDFLAGS) $(MODFLAG) -I$(NETCDFINC) module_reservoir.F90
+	$(COMPILER90) $(F90FLAGS) $(LDFLAGS) $(MODFLAG) -I$(NETCDFINC) module_reservoir_read_timeslice_data.F90
+	$(COMPILER90) $(F90FLAGS) $(LDFLAGS) $(MODFLAG) -I$(NETCDFINC) module_reservoir_read_rfc_time_series_data.F90
 
 
 	make -C Level_Pool
 	make -C Persistence_Level_Pool_Hybrid
 	make -C RFC_Forecasts
 
-	$(COMPILER90) $(F90FLAGS) $(LDFLAGS) $(MODFLAG) -I$(NETCDFINC) reservoir_tests.F
+	$(COMPILER90) $(F90FLAGS) $(LDFLAGS) $(MODFLAG) -I$(NETCDFINC) reservoir_tests.F90
 
 
 	$(COMPILER90) $(NETCDFLIB) -o reservoir_tests \

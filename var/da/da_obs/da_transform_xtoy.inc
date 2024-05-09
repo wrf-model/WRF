@@ -51,6 +51,7 @@ subroutine da_transform_xtoy(cv_size, cv, grid, iv, y)
    if (iv%info(bogus)%nlocal          > 0) call da_transform_xtoy_bogus    (grid, iv, y)
    if (iv%info(airsr)%nlocal          > 0) call da_transform_xtoy_airsr    (grid, iv, y)
    if (iv%info(pseudo)%nlocal         > 0) call da_transform_xtoy_pseudo   (grid, iv, y)
+   if (iv%info(lightning)%nlocal      > 0) call da_transform_xtoy_lightning(grid, iv, y)
 
 #if (WRF_CHEM == 1)
    if (iv%info(chemic_surf)%nlocal      > 0) &

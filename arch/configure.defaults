@@ -818,7 +818,7 @@ CC_TOOLS        =      $(SCC)
 NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
 
 ###########################################################
-#ARCH    Darwin (MACOS) PGI compiler with pgcc #serial smpar dmpar dm+sm
+#ARCH    Darwin x86_64 arm64, (MACOS) PGI compiler with pgcc #serial smpar dmpar dm+sm
 #
 DESCRIPTION     =       PGI ($SFC/$SCC)
 DMPARALLEL      =       # 1
@@ -862,7 +862,7 @@ CC_TOOLS        =      cc
 NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
 
 ###########################################################
-#ARCH    Darwin (MACOS) intel compiler with icc #serial smpar dmpar dm+sm
+#ARCH    Darwin x86_64 arm64, (MACOS) intel compiler with icc #serial smpar dmpar dm+sm
 #
 DESCRIPTION     =       INTEL ($SFC/$SCC)
 DMPARALLEL      =       # 1
@@ -909,7 +909,7 @@ CC_TOOLS        =      cc
 NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
 
 ###########################################################
-#ARCH    Darwin (MACOS) intel compiler with clang EDIT FOR OPENMPI #serial smpar dmpar dm+sm
+#ARCH    Darwin x86_64 arm64, (MACOS) intel compiler with clang EDIT FOR OPENMPI #serial smpar dmpar dm+sm
 #
 DESCRIPTION     =       INTEL ($SFC/$SCC)
 DMPARALLEL      =       # 1
@@ -955,7 +955,7 @@ CC_TOOLS        =      cc
 NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
 
 ###########################################################
-#ARCH    Darwin (MACOS) g95 with gcc #serial dmpar
+#ARCH    Darwin x86_64 arm64, (MACOS) g95 with gcc #serial dmpar
 #
 DESCRIPTION     =       GNU ($SFC/$SCC)
 DMPARALLEL      =       # 1
@@ -1000,7 +1000,7 @@ CC_TOOLS        =      $(SCC)
 NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
 
 ###########################################################
-#ARCH    Darwin (MACOS) gfortran with gcc #serial smpar dmpar dm+sm
+#ARCH    Darwin x86_64 arm64, (MACOS) gfortran with gcc #serial smpar dmpar dm+sm
 #
 DESCRIPTION     =       GNU ($SFC/$SCC)
 DMPARALLEL      =       # 1
@@ -1045,7 +1045,7 @@ CC_TOOLS        =      $(SCC)
 NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
 
 ###########################################################
-#ARCH    Darwin (MACOS) gfortran with clang #serial smpar dmpar dm+sm
+#ARCH    Darwin x86_64 arm64, (MACOS) gfortran with clang #serial smpar dmpar dm+sm
 #
 DESCRIPTION     =       GNU ($SFC/clang)
 DMPARALLEL      =       # 1
@@ -1090,7 +1090,7 @@ CC_TOOLS        =      clang
 NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
 
 ###########################################################
-#ARCH    Darwin (MACOS) xlf  #serial dmpar
+#ARCH    Darwin x86_64 arm64, (MACOS) xlf  #serial dmpar
 #
 DESCRIPTION     =       IBM ($SFC/$SCC)
 DMPARALLEL      =       # 1
@@ -1695,7 +1695,7 @@ CC_TOOLS        =      $(SCC)
 NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
 
 ###########################################################
-#ARCH    Darwin (MACOS) PGI compiler with pgcc -f90= #serial smpar dmpar dm+sm
+#ARCH    Darwin x86_64 arm64, (MACOS) PGI compiler with pgcc -f90= #serial smpar dmpar dm+sm
 #
 DESCRIPTION     =       PGI ($SFC/$SCC): -f90=pgf90
 DMPARALLEL      =       # 1
@@ -1739,7 +1739,7 @@ CC_TOOLS        =      cc
 NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
 
 ###########################################################
-#ARCH    Darwin (MACOS) intel compiler with icc #serial smpar dmpar dm+sm
+#ARCH    Darwin x86_64 arm64, (MACOS) intel compiler with icc #serial smpar dmpar dm+sm
 #
 DESCRIPTION     =       INTEL ($SFC/$SCC): Open MPI
 DMPARALLEL      =       # 1
@@ -1786,7 +1786,7 @@ CC_TOOLS        =      cc
 NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
 
 ###########################################################
-#ARCH    Darwin (MACOS) gfortran with gcc openmpi #serial smpar dmpar dm+sm
+#ARCH    Darwin x86_64 arm64, (MACOS) gfortran with gcc openmpi #serial smpar dmpar dm+sm
 #
 DESCRIPTION     =       GNU ($SFC/$SCC): Open MPI
 DMPARALLEL      =       # 1

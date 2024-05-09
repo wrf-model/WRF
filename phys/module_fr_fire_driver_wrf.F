@@ -130,6 +130,7 @@ subroutine fire_driver_em_step (grid , config_flags               &
             its,ite, kts,kte, jts,jte,      & ! 
             grid%grnhfx,grid%grnqfx,grid%canhfx,grid%canqfx,        & ! fluxes on atm grid 
             config_flags%fire_ext_grnd,config_flags%fire_ext_crwn,config_flags%fire_crwn_hgt,                &
+            config_flags%fire_sfc_flx,config_flags%fire_heat_peak,config_flags%fire_tg_ub, &
             grid%ht,z_at_w,dz8w,grid%mut,grid%c1h,grid%c2h,rho,          &
             grid%rthfrten,grid%rqvfrten)                ! out
 

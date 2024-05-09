@@ -59,7 +59,7 @@ if `pwd | grep ' ' > /dev/null ` ; then
   echo and this may cause problems for your build.  This can occur, for example, on
   echo Windows systems.  It is strongly recommended that you install WRF and other
   echo related software such as NetCDF in directories whose path names contain no
-  echo white space.  On Win, for example, create and install in a directory under C:.
+  echo white space.  On Windows, for example, create and install in a directory under C:.
   echo '*****************************************************************************'
 fi
 
@@ -219,6 +219,8 @@ if [ -n "$NETCDFPAR" ] ; then
   export NETCDF
   export NETCDF4
   export USENETCDFPAR
+else
+  export USENETCDFPAR=0
 fi
 
 if  test -z "$NETCDF"  ; then
@@ -657,7 +659,7 @@ fi
 #Checking cross-compiling capability for some particular environment
 #on Linux and Mac box
 
-if [ $os = "Linux" -o $os = "Darwin" ]; then
+if [ $os = "Linux" -o $os = "Darwin" -o $os = "CYGWIN_NT" ]; then
 
   SFC=`grep '^SFC' configure.wrf | awk '{print $3}'`
   SCC=`grep '^SCC' configure.wrf | awk '{print $3}'`

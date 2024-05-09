@@ -532,7 +532,6 @@ void RSL_LITE_TO_PARENT_MSG ( nbuf_p, buf )
 //
 //  nest if it's parent->nest and the parent if it's nest->parent (we'll see)
 
-
 /* common code */
 void rsl_lite_allgather_msgs ( mytask_p, ntasks_par_p, ntasks_nest_p, offset_p, comm, dir )
   int_p mytask_p, ntasks_par_p, ntasks_nest_p, offset_p ;

@@ -617,6 +617,15 @@ integer::oops1,oops2
          END IF
       END IF
 
+      IF (config_flags%slucm_distributed_drag) THEN
+        CALL wrf_message('Adding zero-plane displacement height to topography')
+        DO j = jts, MIN(jde - 1, jte)
+        DO i = its, MIN(ide - 1, ite)
+          IF (grid%zd_urb2d(i, j) > 0) grid%ht_gc(i, j) = grid%ht_gc(i, j) + grid%zd_urb2d(i, j)
+        END DO
+        END DO
+      END IF
+
       !  Is there any vertical interpolation to do?  The "old" data comes in on the correct
       !  vertical locations already.
 
@@ -1101,6 +1110,7 @@ integer::oops1,oops2
             ELSE
                k = num_metgrid_levels
             END IF
+            config_flags%use_sh_qv = .FALSE.
 
             IF      ( config_flags%rh2qv_method .eq. 1 ) THEN
                CALL rh_to_mxrat1(grid%rh_gc, grid%t_gc, grid%p_gc, grid%qv_gc ,         &
@@ -1181,6 +1191,7 @@ integer::oops1,oops2
          END IF
 
          !  Some data sets do not provide a 3d geopotential height field.  
+         !  This calculation is more accurate if the data is bottom-up.
 
          IF ( grid%ght_gc(i_valid,grid%num_metgrid_levels/2,j_valid) .LT. 1 ) THEN
             DO j = jts, MIN(jte,jde-1)
@@ -1231,6 +1242,15 @@ integer::oops1,oops2
          END DO
 
          IF ( flag_qv .EQ. 1 ) THEN
+            DO j = jts, min(jde-1,jte)
+               DO i = its, min(ide-1,ite)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE
+                  grid%q2(i,j)=grid%qv_gc(i,1,j)
+               END DO
+            END DO
+         END IF
+
+         IF ( flag_sh .EQ. 1 ) THEN
             DO j = jts, min(jde-1,jte)
                DO i = its, min(ide-1,ite)
                   IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE
@@ -1330,6 +1350,11 @@ integer::oops1,oops2
                                 ims , ime , jms , jme , kms , kme , &
                                 its , ite , jts , jte , kts , kte )
 
+         CALL monthly_avg ( grid%greenfrac , grid%shdavg , &
+                                ids , ide , jds , jde , kds , kde , &
+                                ims , ime , jms , jme , kms , kme , &
+                                its , ite , jts , jte , kts , kte )
+
          !  The model expects the green-ness and vegetation fraction values to be in percent, not fraction.
 
          DO j = jts, MIN(jte,jde-1)
@@ -1338,7 +1363,8 @@ integer::oops1,oops2
               grid%vegfra(i,j) = grid%vegfra(i,j) * 100.
               grid%shdmax(i,j) = grid%shdmax(i,j) * 100.
               grid%shdmin(i,j) = grid%shdmin(i,j) * 100.
-           END DO
+              grid%shdavg(i,j) = grid%shdavg(i,j) * 100.
+              END DO
          END DO
 
          !  The model expects the albedo fields as a fraction, not a percent.  Set the
@@ -1708,6 +1734,23 @@ integer::oops1,oops2
                             ims , ime , jms , jme , kms , kme , &
                             its , ite , jts , jte , kts , kte )
 
+         ! when specific humidity is available, qv_gc is computed from sh_gc
+         IF (config_flags%use_sh_qv .and. (flag_sh .eq. 1 .or. flag_qv .eq. 1)) THEN
+         CALL vert_interp ( grid%qv_gc , grid%pd_gc , moist(:,:,:,P_QV) , grid%pb , &
+                            grid%hgtmaxw , grid%hgttrop , grid%pmaxw , grid%ptrop , &
+                            grid%pmaxwnn , grid%ptropnn , &
+                            0 , 0 , &
+                            config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
+                            config_flags%maxw_above_this_level , &
+                            num_metgrid_levels , 'Q' , &
+                            interp_type , lagrange_order , extrap_type , &
+                            lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
+                            zap_close_levels , force_sfc_in_vinterp , grid%id , &
+                            ids , ide , jds , jde , kds , kde , &
+                            ims , ime , jms , jme , kms , kme , &
+                            its , ite , jts , jte , kts , kte )
+         END IF
+
          !  If this is theta being interpolated, AND we have extra levels for temperature,
          !  convert those extra levels (trop and max wind) to potential temp.
 
@@ -1778,6 +1821,8 @@ integer::oops1,oops2
                               its , ite , jts , jte , kts , kte )
          END IF
 
+         ! do not compute qv from RH if flag_sh or flag_qv = 1, or use_sh_qv = F
+         IF      ( .not.config_flags%use_sh_qv ) THEN
          IF      ( config_flags%rh2qv_method .eq. 1 ) THEN
             CALL rh_to_mxrat1(grid%u_1, grid%v_1, grid%p , moist(:,:,:,P_QV) ,       &
                               config_flags%rh2qv_wrt_liquid ,                        &
@@ -1798,6 +1843,7 @@ integer::oops1,oops2
                               ids , ide , jds , jde , kds , kde ,                    &
                               ims , ime , jms , jme , kms , kme ,                    &
                               its , ite , jts , jte , kts , kte-1 )
+         END IF
          END IF
 
          IF ( .NOT. config_flags%interp_theta ) THEN
@@ -3089,7 +3135,18 @@ integer::oops1,oops2
 
       !  Split NUDAPT  Urban Parameters
 
-      IF ( ( config_flags%sf_urban_physics == 1 ) .OR. ( config_flags%sf_urban_physics == 2 ) .OR. ( config_flags%sf_urban_physics == 3 ) ) THEN
+      distributed_aerodynamics_if: IF (config_flags%sf_urban_physics == 1 .AND. config_flags%slucm_distributed_drag) THEN
+         CALL nl_get_isurban ( grid%id , grid%isurban )
+         DO j = jts , MIN(jde-1,jte)
+            DO i = its , MIN(ide-1,ite)
+              IF (grid%landusef(i, grid%isurban, j) > 0) THEN
+                grid%frc_urb2d(i, j) = MAX(0.1, MIN(0.9, 1 - grid%shdavg(i, j) / 100.))
+              END IF
+            END DO
+          END DO
+      ELSE
+
+       IF ( ( config_flags%sf_urban_physics == 1 ) .OR. ( config_flags%sf_urban_physics == 2 ) .OR. ( config_flags%sf_urban_physics == 3 ) ) THEN
          DO j = jts , MIN(jde-1,jte)
             DO i = its , MIN(ide-1,ite)
               IF ( MMINLU == 'NLCD40' .OR. MMINLU == 'MODIFIED_IGBP_MODIS_NOAH') THEN
@@ -3111,7 +3168,7 @@ integer::oops1,oops2
                grid%HGT_URB2D(i,j)  = grid%URB_PARAM(i,94,j)
             END DO
          END DO
-      ENDIF
+       ENDIF
 
       IF ( ( config_flags%sf_urban_physics == 2 ) .OR. ( config_flags%sf_urban_physics == 3 ) ) THEN
          DO j = jts , MIN(jde-1,jte)
@@ -3144,6 +3201,8 @@ integer::oops1,oops2
             END DO
          END DO
       END DO
+
+      END IF distributed_aerodynamics_if
 
       END IF
 
@@ -4042,6 +4101,7 @@ endif
                         ims , ime , jms , jme , kms , kme , &
                         its , ite , jts , jte , kts , kte )
 
+      IF      ( .not.config_flags%use_sh_qv ) THEN
       IF      ( config_flags%rh2qv_method .eq. 1 ) THEN
          CALL rh_to_mxrat1(grid%u_1, grid%v_1, grid%p_hyd , moist(:,:,:,P_QV) ,       &
                            config_flags%rh2qv_wrt_liquid ,                        &
@@ -4062,6 +4122,7 @@ endif
                            ids , ide , jds , jde , kds , kde ,                    &
                            ims , ime , jms , jme , kms , kme ,                    &
                            its , ite , jts , jte , kts , kte-1 )
+      END IF
       END IF
      
       !  Compute pressure similarly to how computed within model, with final Qv.
@@ -7807,6 +7868,7 @@ WRITE (*,FMT='("Full level index = ",I4,"     Height = ",F7.1," m")') k,phb(1)/g
 do k = 2 ,kte
 WRITE (*,FMT='("Full level index = ",I4,"     Height = ",F7.1," m      Thickness = ",F6.1," m")') k,phb(k)/g,(phb(k)-phb(k-1))/g
 end do
+WRITE (*,FMT='("p_top = ",F7.0," Pa, dzbot = ",F6.1," m, dzstretch_s/u = ",2F6.2)') p_top,dzbot,dzstretch_s,dzstretch_u
 
       END IF
 
@@ -7921,6 +7983,27 @@ end do
       END DO
 
    END SUBROUTINE monthly_min_max
+
+!---------------------------------------------------------------------
+
+   SUBROUTINE monthly_avg ( field_in , field_avg , &
+                      ids , ide , jds , jde , kds , kde , &
+                      ims , ime , jms , jme , kms , kme , &
+                      its , ite , jts , jte , kts , kte )
+      IMPLICIT NONE
+      INTEGER , INTENT(IN)        :: ids , ide , jds , jde , kds , kde , &
+                                     ims , ime , jms , jme , kms , kme , &
+                                     its , ite , jts , jte , kts , kte
+      REAL , DIMENSION(ims:ime,12,jms:jme) , INTENT(IN)  :: field_in
+      REAL , DIMENSION(ims:ime,   jms:jme) , INTENT(OUT) :: field_avg
+      !  Local vars
+      INTEGER :: i , j
+      DO j = jts , MIN(jde-1,jte)
+        DO i = its , MIN(ide-1,ite)
+          field_avg(i, j) = SUM(field_in(i, :, j)) / 12
+        END DO
+      END DO
+   END SUBROUTINE monthly_avg
 
 !---------------------------------------------------------------------
 

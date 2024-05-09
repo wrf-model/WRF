@@ -3,12 +3,12 @@
 set nonomatch
 
 
-foreach dir ( frame chem share dyn_em phys cmaq main tools wrftladj )
+foreach dir ( frame chem share dyn_em phys phys/physics_mmm cmaq main tools wrftladj )
   if ( -d $dir ) then
      if ( $dir == cmaq ) then
         ( cd $dir ; echo $dir ; /bin/rm -f *.o *.mod ) >& /dev/null
      else
-        ( cd $dir ; echo $dir ; /bin/rm -f core wrf *.f90 *.exe *.kmo *.mod *.o *.obj *.inc *.F90 *.a \
+        ( cd $dir ; echo $dir ; /bin/rm -f core wrf *.f90 *.exe *.kmo *.mod *.o *.obj *.inc *.a \
                       db_* Warnings module_state_description.F module_dm.F gmeta \
                       wrfdata whatiread rsl.* show_domain* ) >& /dev/null
      endif

@@ -410,11 +410,11 @@ else
   set comp = ( `grep "^SFC" configure.wrf | cut -d"#" -f1 | cut -d"=" -f2-` )
   $comp[1] -V >& /dev/null
   if ( $status == 0 ) then
-    $comp[1] --version
+    $comp[1] -V
   else
     $comp[1] --version >& /dev/null
     if ( $status == 0 ) then
-      $comp[1] -V
+      $comp[1] --version
     else
       echo "Not sure how to figure out the version of this compiler: $comp[1]"
     endif

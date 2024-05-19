@@ -92,7 +92,6 @@ ESMF_TARGET         = ESMFTARGET
 NETCDF4_IO_OPTS = -DUSE_NETCDF4_FEATURES -DWRFIO_NCD_LARGE_FILE_SUPPORT
 GPFS            =
 CURL            =
-HDF5            =
 ZLIB            =
 NETCDF4_DEP_LIB = CONFIGURE_NETCDF4_DEP_LIB
 
@@ -121,4 +120,3 @@ LIBWRFLIB = libwrflib.a
 
 
 #### Architecture specific settings ####
-

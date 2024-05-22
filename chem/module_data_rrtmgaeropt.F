@@ -45,18 +45,36 @@ MODULE module_data_rrtmgaeropt
       data refrlw_bc /nlwbands*1.95/
       data refilw_bc /nlwbands*0.79/
 
-      !OC
-      real,dimension(1:nswbands),save ::  refrsw_oc,refisw_oc
-      real,dimension(1:nlwbands),save ::  refrlw_oc,refilw_oc
+      !OC BACT FUNG POL dimaman
+      real,dimension(1:nswbands),save ::  refrsw_oc,refisw_oc,refrsw_bact,refisw_bact,refrsw_fung,refisw_fung,refrsw_pol,refisw_pol
+      real,dimension(1:nlwbands),save ::  refrlw_oc,refilw_oc,refrlw_bact,refilw_bact,refrlw_fung,refilw_fung,refrlw_pol,refilw_pol
       !data refrsw_oc /1.53,1.53,1.53,1.52/
       data refrsw_oc /nswbands*1.45/
+      data refrsw_bact /nswbands*1.45/!dimaman
+      data refrsw_fung /nswbands*1.45/
+      data refrsw_pol /nswbands*1.45/
       !data refisw_oc /0.00776,0.005,0.00567,0.0156/
       data refisw_oc /nswbands*0.0/
+      data refisw_bact /nswbands*0.0/ !dimaman
+      data refisw_fung /nswbands*0.0/
+      data refisw_pol /nswbands*0.0/
       data refrlw_oc /1.86,1.91,1.988,1.439,1.606,1.7,1.888,2.489,1.219, &
       1.419,1.426,1.446,1.457,1.458,1.455,1.443/ 
       data refilw_oc /0.5,0.268,0.185,0.198,0.059,0.0488,0.11,0.3345,0.065, &
       0.058,0.0261,0.0142,0.013,0.01,0.005,0.0057/
-   
+      data refrlw_bact /1.86,1.91,1.988,1.439,1.606,1.7,1.888,2.489,1.219, &
+      1.419,1.426,1.446,1.457,1.458,1.455,1.443/
+      data refilw_bact /0.5,0.268,0.185,0.198,0.059,0.0488,0.11,0.3345,0.065, &
+      0.058,0.0261,0.0142,0.013,0.01,0.005,0.0057/
+      data refrlw_fung /1.86,1.91,1.988,1.439,1.606,1.7,1.888,2.489,1.219, &
+      1.419,1.426,1.446,1.457,1.458,1.455,1.443/
+      data refilw_fung /0.5,0.268,0.185,0.198,0.059,0.0488,0.11,0.3345,0.065, &
+      0.058,0.0261,0.0142,0.013,0.01,0.005,0.0057/
+      data refrlw_pol /1.86,1.91,1.988,1.439,1.606,1.7,1.888,2.489,1.219, &
+      1.419,1.426,1.446,1.457,1.458,1.455,1.443/
+      data refilw_pol /0.5,0.268,0.185,0.198,0.059,0.0488,0.11,0.3345,0.065, &
+      0.058,0.0261,0.0142,0.013,0.01,0.005,0.0057/ !dimaman
+
       !Sea-salt
       real,dimension(1:nswbands),save ::  refrsw_seas,refisw_seas
       real,dimension(1:nlwbands),save ::  refrlw_seas,refilw_seas

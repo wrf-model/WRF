@@ -373,43 +373,43 @@
              pm2_5_dry, pm2_5_water, pm2_5_dry_ec, pm10,               &
              tsoa,asoa,bsoa,                                           &
              hoa_a01,hoa_a02,hoa_a03,hoa_a04,                          &
-             hoa_a05,hoa_a06,hoa_a07,hoa_a08,                          & !BSINGH Added 4 more bins for each species for SAPRC 8 bin version
+             hoa_a05,hoa_a06,hoa_a07,hoa_a08,hoa_a09,hoa_a10,          & !dimaman !BSINGH Added 4 more bins for each species for SAPRC 8 bin version
              bboa_a01,bboa_a02,bboa_a03,bboa_a04,                      &
-             bboa_a05,bboa_a06,bboa_a07,bboa_a08,                      &
+             bboa_a05,bboa_a06,bboa_a07,bboa_a08,bboa_a09,bboa_a10,    &
              soa_a01,soa_a02,soa_a03,soa_a04,                          &
-             soa_a05,soa_a06,soa_a07,soa_a08,                          &
+             soa_a05,soa_a06,soa_a07,soa_a08,soa_a09,soa_a10,          &
              bbsoa_a01,bbsoa_a02,bbsoa_a03,bbsoa_a04,                  &
-             bbsoa_a05,bbsoa_a06,bbsoa_a07,bbsoa_a08,                  &
+             bbsoa_a05,bbsoa_a06,bbsoa_a07,bbsoa_a08,bbsoa_a09,bbsoa_a10, &
              hsoa_a01,hsoa_a02,hsoa_a03,hsoa_a04,                      &
-             hsoa_a05,hsoa_a06,hsoa_a07,hsoa_a08,                      &
+             hsoa_a05,hsoa_a06,hsoa_a07,hsoa_a08,hsoa_a09,hsoa_a10,    &
              biog_a01,biog_a02,biog_a03,biog_a04,                      &
-             biog_a05,biog_a06,biog_a07,biog_a08,                      &
-             asmpsoa_a01,asmpsoa_a02,asmpsoa_a03,asmpsoa_a04,          &
+             biog_a05,biog_a06,biog_a07,biog_a08,biog_a09,biog_a10,    &
+             asmpsoa_a01,asmpsoa_a02,asmpsoa_a03,asmpsoa_a04,asmpsoa_a05,          &
              arosoa_a01,arosoa_a02,arosoa_a03,arosoa_a04,              &
-             arosoa_a05,arosoa_a06,arosoa_a07,arosoa_a08,              &
+             arosoa_a05,arosoa_a06,arosoa_a07,arosoa_a08,arosoa_a09,arosoa_a10,              &
              totoa_a01,totoa_a02,totoa_a03,totoa_a04,                  &
-             totoa_a05,totoa_a06,totoa_a07,totoa_a08,                  &
+             totoa_a05,totoa_a06,totoa_a07,totoa_a08,totoa_a09,totoa_a10,                  &
              hsoa_c,hsoa_o,bbsoa_c,bbsoa_o,                            &
              biog_v1,biog_v2,biog_v3,biog_v4,                          &
              ant_v1,ant_v2,ant_v3,ant_v4,                              &
              smpa_v1,smpbb_v1,                                         &
              !BSINGH - Added cw aerosols(for VBS)
              hoa_cw01,    hoa_cw02,    hoa_cw03,    hoa_cw04,          &
-             hoa_cw05,    hoa_cw06,    hoa_cw07,    hoa_cw08,          &
+             hoa_cw05,    hoa_cw06,    hoa_cw07,    hoa_cw08,hoa_cw09,    hoa_cw10,          &
              bboa_cw01,   bboa_cw02,   bboa_cw03,   bboa_cw04,         &
-             bboa_cw05,   bboa_cw06,   bboa_cw07,   bboa_cw08,         &
+             bboa_cw05,   bboa_cw06,   bboa_cw07,   bboa_cw08,bboa_cw09,   bboa_cw10,         &
              soa_cw01,    soa_cw02,    soa_cw03,    soa_cw04,          &
-             soa_cw05,    soa_cw06,    soa_cw07,    soa_cw08,          &
+             soa_cw05,    soa_cw06,    soa_cw07,    soa_cw08,soa_cw09,    soa_cw10,           &
              bbsoa_cw01,  bbsoa_cw02,  bbsoa_cw03,  bbsoa_cw04,        &
-             bbsoa_cw05,  bbsoa_cw06,  bbsoa_cw07,  bbsoa_cw08,        &
+             bbsoa_cw05,  bbsoa_cw06,  bbsoa_cw07,  bbsoa_cw08,bbsoa_cw09,  bbsoa_cw10,        &
              biog_cw01,   biog_cw02,   biog_cw03,   biog_cw04,         &
-             biog_cw05,   biog_cw06,   biog_cw07,   biog_cw08,         &
+             biog_cw05,   biog_cw06,   biog_cw07,   biog_cw08,biog_cw09,   biog_cw10,         &
              hsoa_cw01,   hsoa_cw02,   hsoa_cw03,   hsoa_cw04,         &
-             hsoa_cw05,   hsoa_cw06,   hsoa_cw07,   hsoa_cw08,         &
+             hsoa_cw05,   hsoa_cw06,   hsoa_cw07,   hsoa_cw08,hsoa_cw09,   hsoa_cw10,         &
              arosoa_cw01, arosoa_cw02, arosoa_cw03, arosoa_cw04,       &
-             arosoa_cw05, arosoa_cw06, arosoa_cw07, arosoa_cw08,       &
+             arosoa_cw05, arosoa_cw06, arosoa_cw07, arosoa_cw08,arosoa_cw09, arosoa_cw10,       &
              totoa_cw01,  totoa_cw02,  totoa_cw03,  totoa_cw04,        &
-             totoa_cw05,  totoa_cw06,  totoa_cw07,  totoa_cw08,        &        
+             totoa_cw05,  totoa_cw06,  totoa_cw07,  totoa_cw08,totoa_cw09,  totoa_cw10,        &        
              hsoa_cw_c,   hsoa_cw_o,   bbsoa_cw_c,  bbsoa_cw_o,        &
              biog_cw_v1,                                               &
              ant_cw_v1,                                                &
@@ -448,44 +448,44 @@
          INTENT(OUT) :: pm2_5_dry,pm2_5_water,pm2_5_dry_ec,pm10,       &
              tsoa,asoa,bsoa,                                           &
              hoa_a01,hoa_a02,hoa_a03,hoa_a04,                          &
-             hoa_a05,hoa_a06,hoa_a07,hoa_a08,                          &!BSINGH Added 4 more bins for each species for SAPRC 8 bin version             
+             hoa_a05,hoa_a06,hoa_a07,hoa_a08,hoa_a09,hoa_a10,          &!dimaman !BSINGH Added 4 more bins for each species for SAPRC 8 bin version             
              bboa_a01,bboa_a02,bboa_a03,bboa_a04,                      &
-             bboa_a05,bboa_a06,bboa_a07,bboa_a08,                      & 
+             bboa_a05,bboa_a06,bboa_a07,bboa_a08,bboa_a09,bboa_a10,    & 
              soa_a01,soa_a02,soa_a03,soa_a04,                          &
-             soa_a05,soa_a06,soa_a07,soa_a08,                          & 
+             soa_a05,soa_a06,soa_a07,soa_a08,soa_a09,soa_a10,          & 
              bbsoa_a01,bbsoa_a02,bbsoa_a03,bbsoa_a04,                  &
-             bbsoa_a05,bbsoa_a06,bbsoa_a07,bbsoa_a08,                  &       
+             bbsoa_a05,bbsoa_a06,bbsoa_a07,bbsoa_a08,bbsoa_a09,bbsoa_a10,                  &       
              hsoa_a01,hsoa_a02,hsoa_a03,hsoa_a04,                      &
-             hsoa_a05,hsoa_a06,hsoa_a07,hsoa_a08,                      &  
+             hsoa_a05,hsoa_a06,hsoa_a07,hsoa_a08,hsoa_a09,hsoa_a10,                      &  
              biog_a01,biog_a02,biog_a03,biog_a04,                      &
-             biog_a05,biog_a06,biog_a07,biog_a08,                      & 
+             biog_a05,biog_a06,biog_a07,biog_a08,biog_a09,biog_a10,                      & 
              arosoa_a01,arosoa_a02,arosoa_a03,arosoa_a04,              &
-             arosoa_a05,arosoa_a06,arosoa_a07,arosoa_a08,              &   
+             arosoa_a05,arosoa_a06,arosoa_a07,arosoa_a08,arosoa_a09,arosoa_a10,              &   
              totoa_a01,totoa_a02,totoa_a03,totoa_a04,                  &
-             totoa_a05,totoa_a06,totoa_a07,totoa_a08,                  &    
+             totoa_a05,totoa_a06,totoa_a07,totoa_a08,totoa_a09,totoa_a10,                  &    
              hsoa_c,hsoa_o,bbsoa_c,bbsoa_o,                            &
              biog_v1,biog_v2,biog_v3,biog_v4,                          &
              ant_v1,ant_v2,ant_v3,ant_v4,                              &
              smpa_v1,                                                  &
              smpbb_v1,                                                 &
-             asmpsoa_a01,asmpsoa_a02,asmpsoa_a03,asmpsoa_a04,       &!BSINGH - Not adding 5-8 bins for asmpsoa, as it is not req. for 8 bin SAPRC
+             asmpsoa_a01,asmpsoa_a02,asmpsoa_a03,asmpsoa_a04, asmpsoa_a05,      &!dimaman !BSINGH - Not adding 5-8 bins for asmpsoa, as it is not req. for 8 bin SAPRC
              !BSINGH - Added cw aerosols(for VBS)
              hoa_cw01,    hoa_cw02,    hoa_cw03,    hoa_cw04,          &
-             hoa_cw05,    hoa_cw06,    hoa_cw07,    hoa_cw08,          &
+             hoa_cw05,    hoa_cw06,    hoa_cw07,    hoa_cw08,hoa_cw09,    hoa_cw10,          &
              bboa_cw01,   bboa_cw02,   bboa_cw03,   bboa_cw04,         &
-             bboa_cw05,   bboa_cw06,   bboa_cw07,   bboa_cw08,         &
+             bboa_cw05,   bboa_cw06,   bboa_cw07,   bboa_cw08,bboa_cw09,   bboa_cw10,         &
              soa_cw01,    soa_cw02,    soa_cw03,    soa_cw04,          &
-             soa_cw05,    soa_cw06,    soa_cw07,    soa_cw08,          &
+             soa_cw05,    soa_cw06,    soa_cw07,    soa_cw08,soa_cw09,    soa_cw10,          &
              bbsoa_cw01,  bbsoa_cw02,  bbsoa_cw03,  bbsoa_cw04,        &
-             bbsoa_cw05,  bbsoa_cw06,  bbsoa_cw07,  bbsoa_cw08,        &
+             bbsoa_cw05,  bbsoa_cw06,  bbsoa_cw07,  bbsoa_cw08,bbsoa_cw09,  bbsoa_cw10,        &
              biog_cw01,   biog_cw02,   biog_cw03,   biog_cw04,         &
-             biog_cw05,   biog_cw06,   biog_cw07,   biog_cw08,         &
+             biog_cw05,   biog_cw06,   biog_cw07,   biog_cw08,biog_cw09,   biog_cw10,         &
              hsoa_cw01,   hsoa_cw02,   hsoa_cw03,   hsoa_cw04,         &
-             hsoa_cw05,   hsoa_cw06,   hsoa_cw07,   hsoa_cw08,         &
+             hsoa_cw05,   hsoa_cw06,   hsoa_cw07,   hsoa_cw08,hsoa_cw09,   hsoa_cw10,         &
              arosoa_cw01, arosoa_cw02, arosoa_cw03, arosoa_cw04,       &
-             arosoa_cw05, arosoa_cw06, arosoa_cw07, arosoa_cw08,       &
+             arosoa_cw05, arosoa_cw06, arosoa_cw07, arosoa_cw08,arosoa_cw09, arosoa_cw10,        &
              totoa_cw01,  totoa_cw02,  totoa_cw03,  totoa_cw04,        &
-             totoa_cw05,  totoa_cw06,  totoa_cw07,  totoa_cw08,        &        
+             totoa_cw05,  totoa_cw06,  totoa_cw07,  totoa_cw08,totoa_cw09,  totoa_cw10,        &        
              hsoa_cw_c,   hsoa_cw_o,   bbsoa_cw_c,  bbsoa_cw_o,        &
              biog_cw_v1,                                               &
              ant_cw_v1                                                 
@@ -593,14 +593,14 @@
        CALL wrf_debug(15,'sum_pm_driver: calling sum_vbs0')
        call sum_vbs0 ( config_flags%aero_diag_opt,                     &
              alt, chem,                                                &
-             hoa_a01,hoa_a02,hoa_a03,hoa_a04,                          &
-             bboa_a01,bboa_a02,bboa_a03,bboa_a04,                      &
-             soa_a01,soa_a02,soa_a03,soa_a04,                          &
-             bbsoa_a01,bbsoa_a02,bbsoa_a03,bbsoa_a04,                  &
-             biog_a01,biog_a02,biog_a03,biog_a04,                      &
-             asmpsoa_a01,asmpsoa_a02,asmpsoa_a03,asmpsoa_a04,              &
-             arosoa_a01,arosoa_a02,arosoa_a03,arosoa_a04,              &
-             totoa_a01,totoa_a02,totoa_a03,totoa_a04,                  &
+             hoa_a01,hoa_a02,hoa_a03,hoa_a04,hoa_a05,                  & !dimaman
+             bboa_a01,bboa_a02,bboa_a03,bboa_a04,bboa_a05,             &
+             soa_a01,soa_a02,soa_a03,soa_a04,soa_a05,                  &
+             bbsoa_a01,bbsoa_a02,bbsoa_a03,bbsoa_a04,bbsoa_a05,        &
+             biog_a01,biog_a02,biog_a03,biog_a04,biog_a05,             &
+             asmpsoa_a01,asmpsoa_a02,asmpsoa_a03,asmpsoa_a04,asmpsoa_a05,&
+             arosoa_a01,arosoa_a02,arosoa_a03,arosoa_a04,arosoa_a05,   &
+             totoa_a01,totoa_a02,totoa_a03,totoa_a04,totoa_a05,        &
              biog_v1,biog_v2,biog_v3,biog_v4,                          &
              ant_v1,ant_v2,ant_v3,ant_v4,                              &
              smpa_v1,smpbb_v1,                              &
@@ -621,10 +621,10 @@
        CALL wrf_debug(15,'sum_pm_driver: calling sum_vbs4')
        call sum_vbs4 ( config_flags%aero_diag_opt,                     &
              alt, chem,                                                &
-             hoa_a01,hoa_a02,hoa_a03,hoa_a04,                          &
-             soa_a01,soa_a02,soa_a03,soa_a04,                          &
-             biog_a01,biog_a02,biog_a03,biog_a04,                      &
-             totoa_a01,totoa_a02,totoa_a03,totoa_a04,                  &
+             hoa_a01,hoa_a02,hoa_a03,hoa_a04,hoa_a05,                  &!dimaman
+             soa_a01,soa_a02,soa_a03,soa_a04,soa_a05,                  &
+             biog_a01,biog_a02,biog_a03,biog_a04,biog_a05,             &
+             totoa_a01,totoa_a02,totoa_a03,totoa_a04,totoa_a05,        &
              biog_v1,biog_v2,biog_v3,biog_v4,                          &
              ant_v1,ant_v2,ant_v3,ant_v4,                              &
              ids,ide, jds,jde, kds,kde,                                &

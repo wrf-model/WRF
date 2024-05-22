@@ -177,11 +177,11 @@
 	real fracvol, tlo, thi
 
 	integer nmaxd_nsm
-	parameter (nmaxd_nsm = 4)
+	parameter (nmaxd_nsm = 5)!dimaman
 
 	integer iphase, itype, ntot_nsm
 	integer iiprof_nsm(nmaxd_nsm)
-	integer lldum_so4, lldum_nh4, lldum_oc, lldum_bc,   &
+	integer lldum_so4, lldum_nh4, lldum_oc,lldum_bact, lldum_fung, lldum_pol, lldum_bc,   & !dimaman
 		lldum_oin, lldum_na, lldum_cl, lldum_hysw
 
 	real sx_nsm(nmaxd_nsm), sxr2_nsm(nmaxd_nsm),   &
@@ -211,12 +211,15 @@
 	aaprof_nsm(:,:) = 0.0
 	bbprof_nsm(:) = 0.0
 
-	ntot_nsm = 4
+	ntot_nsm = 5 !dimaman
 	ntot_nsm = min( ntot_nsm, nsize_aer(itype) )
 
 	lldum_so4 = 0
 	lldum_nh4 = 0
 	lldum_oc  = 0
+    lldum_bact  = 0
+    lldum_fung  = 0
+    lldum_pol  = 0 !dimaman
 	lldum_bc  = 0
 	lldum_oin = 0
 	lldum_na  = 0
@@ -230,6 +233,12 @@
 		lptr_nh4_aer(m,itype,iphase)) lldum_nh4 = ll
 	    if (massptr_aer(ll,m,itype,iphase) .eq.   &
 		lptr_oc_aer(m,itype,iphase))  lldum_oc  = ll
+        if (massptr_aer(ll,m,itype,iphase) .eq.   &
+        lptr_bact_aer(m,itype,iphase))  lldum_bact  = ll !dimaman
+        if (massptr_aer(ll,m,itype,iphase) .eq.   &
+        lptr_fung_aer(m,itype,iphase))  lldum_fung  = ll
+        if (massptr_aer(ll,m,itype,iphase) .eq.   &
+        lptr_pol_aer(m,itype,iphase))  lldum_pol  = ll
 	    if (massptr_aer(ll,m,itype,iphase) .eq.   &
 		lptr_bc_aer(m,itype,iphase))  lldum_bc  = ll
 	    if (massptr_aer(ll,m,itype,iphase) .eq.   &
@@ -249,6 +258,12 @@
 		msg = '*** subr mosaic_init_wrf_mixrats - lldum_nh4 = 0'
 	if (lldum_oc .le. 0)   &
 		msg = '*** subr mosaic_init_wrf_mixrats - lldum_oc = 0'
+    if (lldum_bact .le. 0)   & !dimaman
+        msg = '*** subr mosaic_init_wrf_mixrats - lldum_bact = 0'
+    if (lldum_fung .le. 0)   &
+        msg = '*** subr mosaic_init_wrf_mixrats - lldum_fung = 0'
+    if (lldum_pol .le. 0)   &
+        msg = '*** subr mosaic_init_wrf_mixrats - lldum_pol = 0'
 	if (lldum_bc .le. 0)   &
 		msg = '*** subr mosaic_init_wrf_mixrats - lldum_bc = 0'
 	if (lldum_oin .le. 0)   &
@@ -272,6 +287,9 @@
 	    aaprof_nsm(lldum_nh4,nsm) = aaprof_nsm(lldum_so4,nsm)   &
 					* (mw_nh4_aer/mw_so4_aer)
 	    aaprof_nsm(lldum_oc,nsm) = 0.25
+        aaprof_nsm(lldum_bact,nsm) = 0.25
+        aaprof_nsm(lldum_fung,nsm) = 0.25
+        aaprof_nsm(lldum_pol,nsm) = 0.25 !dimaman
 	    aaprof_nsm(lldum_bc,nsm) = 0.05
 	    aaprof_nsm(lldum_hysw,nsm) = aaprof_nsm(lldum_so4,nsm) * 0.2
 
@@ -283,6 +301,9 @@
 	    aaprof_nsm(lldum_nh4,nsm) = aaprof_nsm(lldum_so4,nsm)   &
 					* (mw_nh4_aer/mw_so4_aer)
 	    aaprof_nsm(lldum_oc,nsm) = 0.25 * 0.020
+        aaprof_nsm(lldum_bact,nsm) = 0.25 * 0.020
+        aaprof_nsm(lldum_fung,nsm) = 0.25 * 0.020
+        aaprof_nsm(lldum_pol,nsm) = 0.25 * 0.020 !dimaman
 	    aaprof_nsm(lldum_bc,nsm) = 0.05 * 0.020
 	    aaprof_nsm(lldum_hysw,nsm) = aaprof_nsm(lldum_so4,nsm) * 0.2
 
@@ -301,6 +322,15 @@
 	    aaprof_nsm(lldum_na,nsm) = aaprof_nsm(lldum_cl,nsm)   &
 					* (mw_na_aer/mw_cl_aer)
 	    aaprof_nsm(lldum_hysw,nsm) = aaprof_nsm(lldum_cl,nsm) * 0.2
+
+    else if (nsm .eq. 5) then                       !dimaman
+!   coarse seasalt mode with na, cl
+        dgnum_nsm( nsm) = 2.0e-4
+        sigmag_nsm(nsm) = 2.0
+        aaprof_nsm(lldum_cl,nsm) = 0.1
+        aaprof_nsm(lldum_na,nsm) = aaprof_nsm(lldum_cl,nsm)   &
+                    * (mw_na_aer/mw_cl_aer)
+        aaprof_nsm(lldum_hysw,nsm) = aaprof_nsm(lldum_cl,nsm) * 0.2!0.2 !dimaman
 
 	end if
 
@@ -520,7 +550,7 @@
 !   load the chem array
 !
         do 16390 m = 1, nsize_aer(itype)
-        do 16350 l = 1, 15
+        do 16350 l = 1, 18!dimaman
 
 	    if (l .eq. 1) then
 		l1 = lptr_so4_aer(m,itype,iphase)
@@ -550,6 +580,12 @@
 		l1 = waterptr_aer(m,itype)
 	    else if (l .eq. 14) then
 		l1 = numptr_aer(m,itype,iphase)
+        else if (l .eq. 15) then
+        l1 = lptr_bact_aer(m,itype,iphase)
+        else if (l .eq. 16) then
+        l1 = lptr_fung_aer(m,itype,iphase)
+        else if (l .eq. 17) then
+        l1 = lptr_pol_aer(m,itype,iphase)!dimaman
 	    else
 		goto 16350
 	    end if
@@ -631,32 +667,45 @@
 
 	real :: vtot_ofmode(maxd_asize)
 	real :: dumarr(maxd_acomp+5)
-	real :: fr_coar(8), fr_fine(8)
+	real :: fr_coar(10), fr_fine(10),fr_coar_bact(10), fr_fine_bact(10), fr_coar_fung(10), fr_fine_fung(10), fr_coar_pol(10), fr_fine_pol(10) !dimaman
 
 !wig 01-Apr-2005, Updated fractional breakdown between bins. (See also
 !                 bdy_chem_value_mosaic in this file and mosaic_addemiss in 
 !                 module_mosaic_addemiss.F) Note that the values here no
 !                 longer match those in mosaic_addemiss.
 !rce 10-May-2005, changed fr8b_coar to values determined by jdf
-	real, save :: fr8b_coar(8) =   &
-        (/ 0.0,  0.0,  0.0,  0.019,  0.0212,  0.1101,  0.2751, 0.7018 /) ! jdf Testbed
+	real, save :: fr8b_coar(10) =   &
+        (/ 0.0,  0.0,  0.0,  0.019,  0.0212,  0.1101,  0.2751, 0.7018,  0.0, 0.0 /) ! jdf Testbed dimaman
 !jdf    (/ 0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.300, 0.700 /) ! 10-May-2005
 !       (/ 0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.933, 0.067 /) ! 01-Apr-2005
 !       (/ 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.16,  0.84  /) ! "old"
 
-	real, save :: fr8b_fine(8) =   &
-        (/ 0.0245, 0.1472, 0.3501, 0.3317, 0.1251, 0.0186, 0.0011, 0.0/) !jdf Testbed
+	real, save :: fr8b_fine(10) =   &
+        (/ 0.0245, 0.1472, 0.3501, 0.3317, 0.1251, 0.0186, 0.0011, 0.0, 0.0, 0.0 /) !jdf Testbed dimaman
 !jdf    (/ 0.006, 0.024, 0.231, 0.341, 0.140, 0.258, 0., 0./) !5-Apr-2005 values
 !       (/ 0.0275, 0.0426, 0.2303, 0.3885, 0.1100, 0.2011, 0., 0./) !15-Nov-2004 values
 !	(/ 0.01, 0.05, 0.145, 0.60, 0.145, 0.05, 0.00, 0.00 /)
 !	(/ 0.04, 0.10, 0.35, 0.29, 0.15, 0.07, 0.00, 0.00 /)
 
+!dimaman
+   real, save :: fr8b_mosaic_bact(10) =   &
+    (/ 0.0,  0.0,  0.0,  0.0,  0.5,  0.5,  0.0, 0.0, 0.0, 0.0 /) ! 12-june-2022
+   real, save :: fr8b_mosaic_fung(10) =   &
+    (/ 0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.5, 0.5, 0.0, 0.0 /) ! 12-june-2022
+   real, save :: fr8b_mosaic_pol(10) =   &
+    (/ 0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0, 0.0, 0.5, 0.5 /) ! 12-june-2022
+   real, save :: fr8b_mosaic_zero(10) =   &
+    (/ 0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0, 0.0, 0.0, 0.0 /) ! 12-june-2022
+
+
 	real :: qfine_so4, qfine_no3, qfine_cl, qfine_msa,   &
 		qfine_co3, qfine_nh4, qfine_na, qfine_ca, qfine_oin,   &
-		qfine_oc, qfine_bc, qfine_hysw, qfine_watr, qfine_vol
+		qfine_oc,qfine_bact,qfine_fung,qfine_pol, qfine_bc,&
+        qfine_hysw, qfine_watr, qfine_vol !dimaman
 	real :: qcoar_so4, qcoar_no3, qcoar_cl, qcoar_msa,   &
 		qcoar_co3, qcoar_nh4, qcoar_na, qcoar_ca, qcoar_oin,   &
-		qcoar_oc, qcoar_bc, qcoar_hysw, qcoar_watr, qcoar_vol
+		qcoar_oc, qcoar_bact, qcoar_fung, qcoar_pol, qcoar_bc, &
+        qcoar_hysw, qcoar_watr, qcoar_vol !dimaman
 
 !wig 10-May-2004, added z
         real, dimension( ims:ime, kms:kme, jms:jme ) :: z
@@ -681,14 +730,29 @@
     end do
 !wig 10-May-2004, ...end block
 
-!   set the partitioning fractions for either 8 or 4 bins
-	if (nsize_aer(itype) == 8) then
+!   set the partitioning fractions for either 10 or 5 bins dimaman
+	if (nsize_aer(itype) == 10) then
 	    fr_coar(:) = fr8b_coar(:)
 	    fr_fine(:) = fr8b_fine(:)
-	else if (nsize_aer(itype) == 4) then
+        fr_fine_bact(:) = fr8b_mosaic_bact(:)!dimaman
+        fr_coar_bact(:) = fr8b_mosaic_zero(:)
+      !Na allaxtoyn opws bin 5 prosoxh
+        fr_coar_fung(:) = fr8b_mosaic_fung(:)
+        fr_fine_fung(:) = fr8b_mosaic_zero(:)!dimaman
+        fr_coar_pol(:) = fr8b_mosaic_pol(:)
+        fr_fine_pol(:) = fr8b_mosaic_zero(:)!dimaman
+	else if (nsize_aer(itype) == 5) then
 	    do m = 1, nsize_aer(itype)
 		fr_coar(m) = fr8b_coar(2*m) + fr8b_coar(2*m-1)
 		fr_fine(m) = fr8b_fine(2*m) + fr8b_fine(2*m-1)
+       ! fr_fine_bact(m) = fr8b_fine(2*m) + fr8b_fine(2*m-1) !dimaman
+       ! fr_coar_fung(m) = fr8b_coar(2*m) + fr8b_coar(2*m-1)
+        fr_fine_bact(m) = fr8b_mosaic_bact(2*m) + fr8b_mosaic_bact(2*m-1)
+        fr_coar_bact(m) = fr8b_mosaic_zero(2*m) + fr8b_mosaic_zero(2*m-1)
+        fr_coar_fung(m) = fr8b_mosaic_fung(2*m) + fr8b_mosaic_fung(2*m-1)
+        fr_fine_fung(m) = fr8b_mosaic_zero(2*m) + fr8b_mosaic_zero(2*m-1)
+        fr_coar_pol(m) = fr8b_mosaic_pol(2*m) + fr8b_mosaic_pol(2*m-1)
+        fr_fine_pol(m) = fr8b_mosaic_zero(2*m) + fr8b_mosaic_zero(2*m-1)
 	    end do
 	else
 	    write(msg,'(a,i5)')   &
@@ -733,7 +797,14 @@
 	qfine_oin = 3.48     ! 10-May-2005
 	qcoar_oin = 0.35
 	qfine_oc  = 1.00
-	qcoar_oc  = 1.50
+	qcoar_oc  = 1.50 
+    qfine_bact  = 1.00
+    qcoar_bact  = 0.0*1.50
+    qfine_fung  = 0.0*1.00
+    qcoar_fung  = 1.50 ! 
+    qfine_pol  = 0.0*1.00 !dimaman
+    qcoar_pol  = 1.50
+    !AKOLOY8HKE ME BASH TON OC EPEIDH TA BIOAEROSOLS PERIEXOYN FORTIO OC
 	qfine_bc  = 0.2
 	qcoar_bc  = 0.075
 	qfine_hysw = 0.0
@@ -771,6 +842,12 @@
         qcoar_oin = 4.500/2.0
         qfine_oc  = 0.088
         qcoar_oc  = 0.088/2.0
+        qfine_bact  = 0.088
+        qcoar_bact  = 0.0*0.088/2.0
+        qfine_fung  = 0.0*0.088
+        qcoar_fung  = 0.088/2.0
+        qfine_pol  = 0.0*0.088
+        qcoar_pol  = 0.088/2.0 !dimaman
         qfine_bc  = 0.013
         qcoar_bc  = 0.013/2.0
 #endif
@@ -788,6 +865,12 @@
         qfine_oin = 4.500
         qcoar_oin = 4.500/2.0
         qfine_oc  = 0.088
+        qfine_bact  = 0.088
+        qcoar_bact  = 0.0
+        qfine_fung  = 0.088*0.0
+        qcoar_fung  = 0.7
+        qfine_pol  = 0.088 *0.0
+        qcoar_pol  = 0.7 !dimaman
         qcoar_oc  = 0.0
         qfine_bc  = 0.013
         qcoar_bc  = 0.0
@@ -830,17 +913,19 @@
 	    (qfine_co3/dens_co3_aer) + (qfine_nh4/dens_nh4_aer) +   &
 	    (qfine_na /dens_na_aer ) + (qfine_ca /dens_ca_aer ) +   &
 	    (qfine_oin/dens_oin_aer) + (qfine_oc /dens_oc_aer ) +   &
-	    (qfine_bc /dens_bc_aer ) )
+        (qfine_bact /dens_bact_aer ) + (qfine_fung /dens_fung_aer ) + &
+        (qfine_pol /dens_pol_aer ) + (qfine_bc /dens_bc_aer ) ) !dimaman
 	qcoar_vol =  1.0e-6 * (  &
 	    (qcoar_so4/dens_so4_aer) + (qcoar_no3/dens_no3_aer) +   &
 	    (qcoar_cl /dens_cl_aer ) + (qcoar_msa/dens_msa_aer) +   &
 	    (qcoar_co3/dens_co3_aer) + (qcoar_nh4/dens_nh4_aer) +   &
 	    (qcoar_na /dens_na_aer ) + (qcoar_ca /dens_ca_aer ) +   &
 	    (qcoar_oin/dens_oin_aer) + (qcoar_oc /dens_oc_aer ) +   &
-	    (qcoar_bc /dens_bc_aer ) )
+        (qcoar_bact /dens_bact_aer ) + (qcoar_fung /dens_fung_aer ) + &
+        (qcoar_pol /dens_pol_aer ) + (qcoar_bc /dens_bc_aer ) ) !dimaman
 
         do 2900 m = 1, nsize_aer(itype)
-        do 2800 l = 1, 15
+        do 2800 l = 1, 18 !dimaman
 
 	    if (l .eq. 1) then
 		l1 = lptr_so4_aer(m,itype,iphase)
@@ -901,15 +986,40 @@
 		qcoar = qcoar_vol/dumvol1p
 		vtot_ofmode(m) =   &
 			qfine_vol*fr_fine(m) + qcoar_vol*fr_coar(m)
+        else if (l .eq. 15) then    !dimaman
+        l1 = lptr_bact_aer(m,itype,iphase)
+        qfine = qfine_bact
+        qcoar = qcoar_bact
+        else if (l .eq. 16) then
+        l1 = lptr_fung_aer(m,itype,iphase)
+        qfine = qfine_fung
+        qcoar = qcoar_fung
+        else if (l .eq. 17) then
+        l1 = lptr_pol_aer(m,itype,iphase)
+        qfine = qfine_pol
+        qcoar = qcoar_pol
 	    else
 		goto 2800
 	    end if
 	    l3 = l1
 
-	    if ((l1 .gt. 0) .and. (l1 .le. lmaxd) .and.   &
-	        (l3 .ge. param_first_scalar)) then
-		qval = qfine*fr_fine(m) + qcoar*fr_coar(m)
-		rclm(1,l1) = qval
+        if ((l1 .gt. 0) .and. (l1 .le. lmaxd) .and.   &
+            (l3 .ge. param_first_scalar) .and. (l .eq. 17)) then !dimaman
+        qval = qfine*fr_fine_pol(m) + qcoar*fr_coar_pol(m) !There is no fine particles in pollen
+        rclm(1,l1) = qval
+        else if ((l1 .gt. 0) .and. (l1 .le. lmaxd) .and.   &
+            (l3 .ge. param_first_scalar) .and. (l .eq. 15)) then !dimaman
+        qval = qfine*fr_fine_bact(m) + qcoar*fr_coar_bact(m) !There is no fine particles in pollen
+        rclm(1,l1) = qval
+        else if ((l1 .gt. 0) .and. (l1 .le. lmaxd) .and.   &
+            (l3 .ge. param_first_scalar) .and. (l .eq. 16)) then !dimaman
+        qval = qfine*fr_fine_fung(m) + qcoar*fr_coar_fung(m) !There is no fine particles in pollen
+        rclm(1,l1) = qval
+        else if ((l1 .gt. 0) .and. (l1 .le. lmaxd) .and.   & !default
+                (l3 .ge. param_first_scalar)) then
+        qval = qfine*fr_fine(m) + qcoar*fr_coar(m)
+        rclm(1,l1) = qval
+
 
 		do jt = jts, min(jte,jde-1)
 		do kt = kts, kte-1
@@ -986,6 +1096,45 @@
 		      mult = 0.43 - 7.045e-5*(z(it,kt,jt)-3389.)
 		   else
 		      mult = 0.046
+               end if
+          else if  ( l3 == 15)  then
+! bact aerosol profile dimaman
+         if ( z(it,kt,jt) <= 600. ) then
+                   mult = 1.0
+          elseif( z(it,kt,jt) > 600. &
+                        .and. z(it,kt,jt) <= 3389. ) then
+              mult = 1.0 - 2.04e-4*(z(it,kt,jt)-600.)
+           elseif( z(it,kt,jt) > 3389. &
+                        .and. z(it,kt,jt) <= 8840. ) then
+              mult = 0.43 - 7.045e-5*(z(it,kt,jt)-3389.)
+           else
+              mult = 0.046
+               end if
+           else if  ( l3 == 16)  then
+! fung aerosol profile
+         if ( z(it,kt,jt) <= 600. ) then
+                   mult = 1.0
+          elseif( z(it,kt,jt) > 600. &
+                        .and. z(it,kt,jt) <= 3389. ) then
+              mult = 1.0 - 2.04e-4*(z(it,kt,jt)-600.)
+           elseif( z(it,kt,jt) > 3389. &
+                        .and. z(it,kt,jt) <= 8840. ) then
+              mult = 0.43 - 7.045e-5*(z(it,kt,jt)-3389.)
+           else
+              mult = 0.046
+               end if
+           else if  ( l3 == 17)  then
+! pol aerosol profile
+         if ( z(it,kt,jt) <= 600. ) then
+                   mult = 1.0
+          elseif( z(it,kt,jt) > 600. &
+                        .and. z(it,kt,jt) <= 3389. ) then
+              mult = 1.0 - 2.04e-4*(z(it,kt,jt)-600.)
+           elseif( z(it,kt,jt) > 3389. &
+                        .and. z(it,kt,jt) <= 8840. ) then
+              mult = 0.43 - 7.045e-5*(z(it,kt,jt)-3389.)
+           else
+              mult = 0.046
                end if
           else if  ( l3 == 11)  then
 ! bc aerosol profile
@@ -1095,9 +1244,13 @@
         else
           mult = 0.002
         end if
-      else if ( (l3 == lptr_oc_aer(m,itype,iphase)) .or. &
-                (l3 == lptr_bc_aer(m,itype,iphase)) ) then
-! oc and bc aerosol profile
+        else if ( (l3 == lptr_oc_aer(m,itype,iphase)) .or. & 
+                  (l3 == lptr_bact_aer(m,itype,iphase)) .or. & 
+                  (l3 == lptr_fung_aer(m,itype,iphase)) .or. &
+                  (l3 == lptr_pol_aer(m,itype,iphase)) .or. &
+                  (l3 == lptr_bc_aer(m,itype,iphase)) ) then !dimaman
+
+! oc bact fung pol and bc aerosol profile
         if( z(it,kt,jt) <= 500. ) then
           mult = 1.000
         elseif( z(it,kt,jt) > 500. &
@@ -1309,30 +1462,46 @@
         integer :: iflg
 	real :: qcoar, qfine, qval
 
-	real :: fr_coar(8), fr_fine(8)
+	real :: fr_coar(10), fr_fine(10),fr_coar_bact(10), fr_fine_bact(10), fr_coar_fung(10),fr_fine_fung(10), fr_coar_pol(10),fr_fine_pol(10) !dimaman
 
 !wig 1-Apr-2005,  Updated fractional breakdown between bins. (See also
 !                 mosaic_init_wrf_mixrats_opt2, above, and mosaic_addemiss
 !                 in module_mosaic_addemiss.F). Note that these values no
 !                 longer match those in mosaic_addemiss.
-	real, save :: fr8b_coar(8) =   &
-        (/ 0.0,  0.0,  0.0,  0.019,  0.0212,  0.1101,  0.2751, 0.7018 /) ! jdf Testbed
+	real, save :: fr8b_coar(10) =   &
+        (/ 0.0,  0.0,  0.0,  0.019,  0.0212,  0.1101,  0.2751, 0.7018, 0.0,0.0  /) ! jdf Testbed dimaman
 !jdf    (/ 0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.300, 0.700 /) ! 10-May-2005
 !       (/ 0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.933, 0.067 /) ! 01-Apr-2005
 !		(/ 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.16, 0.84 /)
-	real, save :: fr8b_fine(8) =   &
-        (/ 0.0245, 0.1472, 0.3501, 0.3317, 0.1251, 0.0186, 0.0011, 0.0/) !jdf Testbed
+	real, save :: fr8b_fine(10) =   &
+        (/ 0.0245, 0.1472, 0.3501, 0.3317, 0.1251, 0.0186, 0.0011, 0.0, 0.0,0.0 /) !jdf Testbed dimaman
 !jdf    (/ 0.006, 0.024, 0.231, 0.341, 0.140, 0.258, 0., 0./) !5-Apr-2005 values
 !       (/ 0.0275, 0.0426, 0.2303, 0.3885, 0.1100, 0.2011, 0., 0./) !15-Nov-2004 values
 !		(/ 0.01, 0.05, 0.145, 0.60, 0.145, 0.05, 0.00, 0.00 /)
 !		(/ 0.04, 0.10, 0.35, 0.29, 0.15, 0.07, 0.00, 0.00 /)
 
+!dimaman
+   real, save :: fr8b_mosaic_bact(10) =   &
+    (/ 0.0,  0.0,  0.0,  0.0,  0.5,  0.5,  0.0, 0.0, 0.0, 0.0 /) ! 12-june-2022
+   real, save :: fr8b_mosaic_fung(10) =   &
+    (/ 0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.5, 0.5, 0.0, 0.0 /) ! 12-june-2022
+   real, save :: fr8b_mosaic_pol(10) =   &
+    (/ 0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0, 0.0, 0.5, 0.5 /) ! 12-june-2022
+   real, save :: fr8b_mosaic_zero(10) =   &
+    (/ 0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0, 0.0, 0.0, 0.0 /) ! 12-june-2022
+
+
+
+
+
 	real :: qfine_so4, qfine_no3, qfine_cl, qfine_msa,   &
 		qfine_co3, qfine_nh4, qfine_na, qfine_ca, qfine_oin,   &
-		qfine_oc, qfine_bc, qfine_hysw, qfine_watr, qfine_vol
+		qfine_oc,qfine_bact, qfine_fung, qfine_pol, &
+        qfine_bc, qfine_hysw, qfine_watr, qfine_vol !dimaman
 	real :: qcoar_so4, qcoar_no3, qcoar_cl, qcoar_msa,   &
 		qcoar_co3, qcoar_nh4, qcoar_na, qcoar_ca, qcoar_oin,   &
-		qcoar_oc, qcoar_bc, qcoar_hysw, qcoar_watr, qcoar_vol
+		qcoar_oc,qcoar_bact,qcoar_fung,qcoar_pol, qcoar_bc, &
+        qcoar_hysw, qcoar_watr, qcoar_vol !dimaman
 
 	character*80 msg
 
@@ -1355,14 +1524,26 @@
 !   following is for aer_bc_opt == aer_bc_pnnl
 !       when boundary values are set for Texas August 2000 simulations
 !
-!   set the partitioning fractions for either 8 or 4 bins
-	if (nsize_aer(itype) == 8) then
+!   set the partitioning fractions for either 10 or 5 bins dimaman
+	if (nsize_aer(itype) == 10) then
 	    fr_coar(:) = fr8b_coar(:)
 	    fr_fine(:) = fr8b_fine(:)
-	else if (nsize_aer(itype) == 4) then
+        fr_fine_bact(:) = fr8b_mosaic_bact(:)!dimaman
+        fr_coar_bact(:) = fr8b_mosaic_zero(:)
+        fr_coar_fung(:) = fr8b_mosaic_fung(:)
+        fr_fine_fung(:) = fr8b_mosaic_zero(:)
+        fr_coar_pol(:) = fr8b_mosaic_pol(:)
+        fr_fine_pol(:) = fr8b_mosaic_zero(:) 
+	else if (nsize_aer(itype) == 5) then
 	    do m = 1, nsize_aer(itype)
 		fr_coar(m) = fr8b_coar(2*m) + fr8b_coar(2*m-1)
 		fr_fine(m) = fr8b_fine(2*m) + fr8b_fine(2*m-1)
+        fr_fine_bact(m) = fr8b_mosaic_bact(2*m) + fr8b_mosaic_bact(2*m-1) !dimaman
+        fr_coar_bact(m) = fr8b_mosaic_zero(2*m) + fr8b_mosaic_zero(2*m-1)
+        fr_coar_fung(m) = fr8b_mosaic_fung(2*m) + fr8b_mosaic_fung(2*m-1)
+        fr_fine_fung(m) = fr8b_mosaic_zero(2*m) + fr8b_mosaic_zero(2*m-1) !dimaman
+        fr_coar_pol(m) = fr8b_mosaic_pol(2*m) + fr8b_mosaic_pol(2*m-1)
+        fr_fine_pol(m) = fr8b_mosaic_zero(2*m) + fr8b_mosaic_zero(2*m-1) !dimaman
 	    end do
 	else
 	    write(msg,'(a,i5)')   &
@@ -1438,6 +1619,48 @@
           if ( zz <= 600. ) then
              mult = 1.0
 		  elseif( zz > 600. &
+                  .and. zz <= 3389. ) then
+             mult = 1.0 - 2.04e-4*(zz-600.)
+          elseif( zz > 3389. &
+                  .and. zz <= 8840. ) then
+             mult = 0.43 - 7.045e-5*(zz-3389.)
+          else
+             mult = 0.046
+          end if
+          exit SIZE_LOOP
+       else if (nch .eq. lptr_bact_aer(m,itype,iphase) )  then
+! bact aerosol profile
+          if ( zz <= 600. ) then
+             mult = 1.0
+          elseif( zz > 600. &
+                  .and. zz <= 3389. ) then
+             mult = 1.0 - 2.04e-4*(zz-600.)
+          elseif( zz > 3389. &
+                  .and. zz <= 8840. ) then
+             mult = 0.43 - 7.045e-5*(zz-3389.)
+          else
+             mult = 0.046
+          end if
+          exit SIZE_LOOP
+       else if (nch .eq. lptr_fung_aer(m,itype,iphase) )  then
+! fung aerosol profile
+          if ( zz <= 600. ) then
+             mult = 1.0
+          elseif( zz > 600. &
+                  .and. zz <= 3389. ) then
+             mult = 1.0 - 2.04e-4*(zz-600.)
+          elseif( zz > 3389. &
+                  .and. zz <= 8840. ) then
+             mult = 0.43 - 7.045e-5*(zz-3389.)
+          else
+             mult = 0.046
+          end if
+          exit SIZE_LOOP
+       else if (nch .eq. lptr_pol_aer(m,itype,iphase) )  then
+! pol aerosol profile
+          if ( zz <= 600. ) then
+             mult = 1.0
+          elseif( zz > 600. &
                   .and. zz <= 3389. ) then
              mult = 1.0 - 2.04e-4*(zz-600.)
           elseif( zz > 3389. &
@@ -1563,9 +1786,12 @@
           mult = 0.002
         end if
         iflg=1
-      else if ( (nch .eq. lptr_oc_aer(m,itype,iphase) ) .or.   &
+      else if ( (nch .eq. lptr_oc_aer(m,itype,iphase) ) .or. &
+                (nch .eq. lptr_bact_aer(m,itype,iphase) ) .or. & 
+                (nch .eq. lptr_fung_aer(m,itype,iphase) ) .or.  &
+                (nch .eq. lptr_pol_aer(m,itype,iphase) ) .or. & !dimaman
                 (nch .eq. lptr_bc_aer(m,itype,iphase) ) ) then
-! oc and bc aerosol profile
+! oc bact fung pol and bc aerosol profile
         if( zz <= 500. ) then
           mult = 1.000
         elseif( zz > 500. &
@@ -1656,6 +1882,12 @@
 	qcoar_oin = mult*0.35
 	qfine_oc  = mult*1.00
 	qcoar_oc  = mult*1.50
+    qfine_bact  = mult*1.00 !dimaman
+    qcoar_bact  = mult*1.50*0.0
+    qfine_fung  = mult*1.00*0.0
+    qcoar_fung  = mult*1.50
+    qfine_pol  = mult*1.00*0.0
+    qcoar_pol  = mult*1.50
 	qfine_bc  = mult*0.2
 	qcoar_bc  = mult*0.075
 	qfine_hysw = mult*0.0
@@ -1693,6 +1925,12 @@
         qcoar_oin = mult*4.500/2.0
         qfine_oc  = mult*0.088
         qcoar_oc  = mult*0.088/2.0
+        qfine_bact  = mult*0.088
+        qcoar_bact  = 0.0*mult*0.088/2.0
+        qfine_fung  = 0.0*mult*0.088
+        qcoar_fung  = mult*0.088/2.0
+        qfine_pol  = 0.0*mult*0.088!dimaman
+        qcoar_pol  = mult*0.088/2.0
         qfine_bc  = mult*0.013
         qcoar_bc  = mult*0.013/2.0
 #endif
@@ -1711,6 +1949,12 @@
         qcoar_oin = mult*4.500/2.0
         qfine_oc  = mult*0.088
         qcoar_oc  = mult*0.0
+        qfine_bact  = mult*0.088
+        qcoar_bact  = mult*0.0
+        qfine_fung  = mult*0.088*0.0
+        qcoar_fung  = mult*0.088 !allagh apo mult*0.0
+        qfine_pol  = 0.0*mult*0.088 !dimaman
+        qcoar_pol  = mult*0.088 !allagh apo mult*0.0
         qfine_bc  = mult*0.013
         qcoar_bc  = mult*0.0
 #endif
@@ -1745,20 +1989,22 @@
 
 ! qfine_so4 ... are ug/m3 so 1.0e-6 factor gives g/m3
 ! dens_so4  ... are g/cm3;  qfine_vol ... are cm3/m3
-	qfine_vol = 1.0e-6 * (   &
+	qfine_vol = 1.0e-6 * (   &!dimaman
 	    (qfine_so4/dens_so4_aer) + (qfine_no3/dens_no3_aer) +   &
 	    (qfine_cl /dens_cl_aer ) + (qfine_msa/dens_msa_aer) +   &
 	    (qfine_co3/dens_co3_aer) + (qfine_nh4/dens_nh4_aer) +   &
 	    (qfine_na /dens_na_aer ) + (qfine_ca /dens_ca_aer ) +   &
 	    (qfine_oin/dens_oin_aer) + (qfine_oc /dens_oc_aer ) +   &
-	    (qfine_bc /dens_bc_aer ) )
-	qcoar_vol = 1.0e-6 * (   &
+        (qfine_bact /dens_pol_aer ) + (qfine_fung /dens_fung_aer ) + & 
+        (qfine_bc /dens_bc_aer ) )
+	qcoar_vol = 1.0e-6 * (   & !dimaman
 	    (qcoar_so4/dens_so4_aer) + (qcoar_no3/dens_no3_aer) +   &
 	    (qcoar_cl /dens_cl_aer ) + (qcoar_msa/dens_msa_aer) +   &
 	    (qcoar_co3/dens_co3_aer) + (qcoar_nh4/dens_nh4_aer) +   &
 	    (qcoar_na /dens_na_aer ) + (qcoar_ca /dens_ca_aer ) +   &
-	    (qcoar_oin/dens_oin_aer) + (qcoar_oc /dens_oc_aer ) +   &
-	    (qcoar_bc /dens_bc_aer ) )
+	    (qcoar_oin/dens_oin_aer) + (qcoar_oc /dens_oc_aer ) + & 
+        (qcoar_bact /dens_bact_aer )+(qcoar_fung /dens_fung_aer ) + & 
+        (qcoar_pol /dens_pol_aer ) + (qcoar_bc /dens_bc_aer ) ) !dimaman
 
 	qfine = -1.0e30
 	qcoar = -1.0e30
@@ -1809,12 +2055,33 @@
 		dumvol1p = sqrt(volumlo_sect(m,itype)*volumhi_sect(m,itype))
 		qfine = qfine_vol/dumvol1p
 		qcoar = qcoar_vol/dumvol1p
+        else if (nch .eq. lptr_bact_aer(m,itype,iphase)) then
+        qfine = qfine_bact
+        qcoar = qcoar_bact
+        else if (nch .eq. lptr_fung_aer(m,itype,iphase)) then
+        qfine = qfine_fung
+        qcoar = qcoar_fung
+        else if (nch .eq. lptr_pol_aer(m,itype,iphase)) then
+        qfine = qfine_pol
+        qcoar = qcoar_pol !dimaman
 	    end if
 
-	    if ((qfine >= 0.0) .and. (qcoar >= 0.0)) then
-		qval = qfine*fr_fine(m) + qcoar*fr_coar(m)
-		chem_bv = qval*alt
-		goto 2910
+        if ((qfine >= 0.0) .and. (qcoar >= 0.0) .and. (m .eq. 15)) then !dimaman
+        qval = qfine*fr_fine_bact(m) + qcoar*fr_coar_bact(m)
+        chem_bv = qval*alt
+        goto 2910
+        else if ((qfine >= 0.0) .and. (qcoar >= 0.0) .and. (m .eq. 16)) then
+        qval = qfine*fr_fine_fung(m) + qcoar*fr_coar_fung(m)
+        chem_bv = qval*alt
+        goto 2910
+        else if ((qfine >= 0.0) .and. (qcoar >= 0.0) .and. (m .eq. 17)) then
+        qval = qfine*fr_fine_pol(m) + qcoar*fr_coar_pol(m)
+        chem_bv = qval*alt
+        goto 2910
+        else if ((qfine >= 0.0) .and. (qcoar >= 0.0)) then
+        qval = qfine*fr_fine(m) + qcoar*fr_coar(m)
+        chem_bv = qval*alt
+        goto 2910
 	    end if
 
 2900   continue

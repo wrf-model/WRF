@@ -27,6 +27,7 @@ CONTAINS
 	       h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,           &
                cvaro2,cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,           &
                wd_no3,wd_so4,wd_nh4,wd_oa,                                 &
+               wd_oc,wd_bact,wd_fung,wd_pol,wd_bc,                         & !dimaman
                wd_so2, wd_sulf, wd_hno3, wd_nh3,                           &
                wd_cvasoa, wd_cvbsoa, wd_asoa, wd_bsoa,                     &
                qv_b4mp, qc_b4mp, qi_b4mp, qs_b4mp,                         &
@@ -75,6 +76,7 @@ CONTAINS
    USE module_prep_wetscav_sorgam, only: wetscav_sorgam_driver, wetscav_soa_vbs_driver
    USE module_data_mosaic_asect, only: mw_so4_aer, mw_no3_aer, mw_nh4_aer, &
                                        mw_smpa_aer, mw_smpbb_aer, mw_oc_aer, &
+                                       mw_bact_aer, mw_fung_aer, mw_pol_aer, mw_bc_aer, &!dimaman
                                        mw_glysoa_r1_aer, mw_glysoa_r2_aer, &
                                        mw_glysoa_sfc_aer, mw_glysoa_nh4_aer, &
                                        mw_glysoa_oh_aer,&
@@ -215,7 +217,8 @@ CONTAINS
 !
 ! Accumulated wet deposition
 !
-   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) :: wd_no3,wd_so4, &
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) :: wd_oc,wd_bact,wd_fung,wd_pol,wd_bc, &!dimaman
+                                                          wd_no3,wd_so4, &
                                                           wd_nh4, wd_oa, &
                                                           wd_so2, wd_sulf, &
                                                           wd_hno3, wd_nh3
@@ -276,7 +279,8 @@ REAL,  DIMENSION( ims:ime , kms:kme , jms:jme , ntot_amode ),       &
 !
 ! Wet deposition over the current time step
 !
-  REAL, DIMENSION( ims:ime , jms:jme ) :: wdi_no3,wdi_so4,wdi_nh4,wdi_oa, &
+  REAL, DIMENSION( ims:ime , jms:jme ) :: wdi_oc,wdi_bact,wdi_fung,wdi_pol,wdi_bc, & !dimaman
+                                          wdi_no3,wdi_so4,wdi_nh4,wdi_oa, &
                                           wdi_so2, wdi_sulf, wdi_hno3, wdi_nh3
   REAL, DIMENSION( ims:ime , jms:jme ) :: wdi_cvasoa,wdi_cvbsoa,wdi_asoa,wdi_bsoa
 
@@ -500,11 +504,65 @@ CASE (CBMZ_CAM_MAM3_NOAQ,CBMZ_CAM_MAM3_AQ,CBMZ_CAM_MAM7_NOAQ,CBMZ_CAM_MAM7_AQ)
       do jj=jts,jte
         do ii=its,ite
 
+          ! OC wet deposition over the current time step:
+          wdi_oc(ii,jj) = - 0.001*qsrflx(ii,jj,p_oc_cw01)/mw_oc_aer &
+                           - 0.001*qsrflx(ii,jj,p_oc_cw02)/mw_oc_aer &
+                           - 0.001*qsrflx(ii,jj,p_oc_cw03)/mw_oc_aer &
+                           - 0.001*qsrflx(ii,jj,p_oc_cw04)/mw_oc_aer &
+                           - 0.001*qsrflx(ii,jj,p_oc_cw05)/mw_oc_aer! mmol/m2
+
+          ! Accumulated OC wet deposition:
+          wd_oc(ii,jj) = wd_oc(ii,jj) + wdi_oc(ii,jj)         ! mmol/m2 dimaman
+
+          ! BACT wet deposition over the current time step:
+          wdi_bact(ii,jj) = - 0.001*qsrflx(ii,jj,p_bact_cw01)/mw_bact_aer &
+                           - 0.001*qsrflx(ii,jj,p_bact_cw02)/mw_bact_aer &
+                           - 0.001*qsrflx(ii,jj,p_bact_cw03)/mw_bact_aer &
+                           - 0.001*qsrflx(ii,jj,p_bact_cw04)/mw_bact_aer &
+                           - 0.001*qsrflx(ii,jj,p_bact_cw05)/mw_bact_aer! mmol/m2
+
+          ! Accumulated BACT wet deposition:
+          wd_bact(ii,jj) = wd_bact(ii,jj) + wdi_bact(ii,jj)         ! mmol/m2
+
+          ! FUNG wet deposition over the current time step:
+          wdi_fung(ii,jj) = - 0.001*qsrflx(ii,jj,p_fung_cw01)/mw_fung_aer &
+                           - 0.001*qsrflx(ii,jj,p_fung_cw02)/mw_fung_aer &
+                           - 0.001*qsrflx(ii,jj,p_fung_cw03)/mw_fung_aer &
+                           - 0.001*qsrflx(ii,jj,p_fung_cw04)/mw_fung_aer &
+                           - 0.001*qsrflx(ii,jj,p_fung_cw05)/mw_fung_aer! mmol/m2
+
+          ! Accumulated FUNG wet deposition:
+          wd_fung(ii,jj) = wd_fung(ii,jj) + wdi_fung(ii,jj)         ! mmol/m2
+
+          ! POL wet deposition over the current time step:
+          wdi_pol(ii,jj) = - 0.001*qsrflx(ii,jj,p_pol_cw01)/mw_pol_aer &
+                           - 0.001*qsrflx(ii,jj,p_pol_cw02)/mw_pol_aer &
+                           - 0.001*qsrflx(ii,jj,p_pol_cw03)/mw_pol_aer &
+                           - 0.001*qsrflx(ii,jj,p_pol_cw04)/mw_pol_aer &
+                           - 0.001*qsrflx(ii,jj,p_pol_cw05)/mw_pol_aer! mmol/m2
+
+          ! Accumulated POL wet deposition:
+          wd_pol(ii,jj) = wd_pol(ii,jj) + wdi_pol(ii,jj)         ! mmol/m2
+          
+!          print*, 'wd_pol,wd_fung,wd_bact,wd_oc,wd_bc',wd_pol(ii,jj),wd_fung(ii,jj),wd_bact(ii,jj),wd_oc(ii,jj),wd_bc(ii,jj)  
+!          print*, 'p_pol_cw01,p_fung_cw01,p_bact_cw01,p_oc_cw01,p_bc_cw01',p_pol_cw01,p_fung_cw01,p_bact_cw01,p_oc_cw01,p_bc_cw01
+          ! BC wet deposition over the current time step:
+          wdi_bc(ii,jj) = - 0.001*qsrflx(ii,jj,p_bc_cw01)/mw_bc_aer &
+                           - 0.001*qsrflx(ii,jj,p_bc_cw02)/mw_bc_aer &
+                           - 0.001*qsrflx(ii,jj,p_bc_cw03)/mw_bc_aer &
+                           - 0.001*qsrflx(ii,jj,p_bc_cw04)/mw_bc_aer & ! mmol/m2
+                           - 0.001*qsrflx(ii,jj,p_bc_cw05)/mw_bc_aer
+
+          ! Accumulated BC wet deposition:
+          wd_bc(ii,jj) = wd_bc(ii,jj) + wdi_bc(ii,jj)         ! mmol/m2
+
+
           ! Nitrate wet deposition over the current time step:
           wdi_no3(ii,jj) = - 0.001*qsrflx(ii,jj,p_no3_cw01)/mw_no3_aer &
                            - 0.001*qsrflx(ii,jj,p_no3_cw02)/mw_no3_aer &
                            - 0.001*qsrflx(ii,jj,p_no3_cw03)/mw_no3_aer &
-                           - 0.001*qsrflx(ii,jj,p_no3_cw04)/mw_no3_aer ! mmol/m2
+                           - 0.001*qsrflx(ii,jj,p_no3_cw04)/mw_no3_aer &
+                           - 0.001*qsrflx(ii,jj,p_no3_cw05)/mw_no3_aer ! mmol/m2 !dimaman
 
           ! Accumulated nitrate wet deposition:
           wd_no3(ii,jj) = wd_no3(ii,jj) + wdi_no3(ii,jj)         ! mmol/m2
@@ -513,7 +571,9 @@ CASE (CBMZ_CAM_MAM3_NOAQ,CBMZ_CAM_MAM3_AQ,CBMZ_CAM_MAM7_NOAQ,CBMZ_CAM_MAM7_AQ)
           wdi_so4(ii,jj) = - 0.001*qsrflx(ii,jj,p_so4_cw01)/mw_so4_aer &
                            - 0.001*qsrflx(ii,jj,p_so4_cw02)/mw_so4_aer &
                            - 0.001*qsrflx(ii,jj,p_so4_cw03)/mw_so4_aer &
-                           - 0.001*qsrflx(ii,jj,p_so4_cw04)/mw_so4_aer ! mmol/m2
+                           - 0.001*qsrflx(ii,jj,p_so4_cw04)/mw_so4_aer &
+                           - 0.001*qsrflx(ii,jj,p_so4_cw05)/mw_so4_aer ! mmol/m2
+  
 
           ! Accumulated sulfate wet deposition:
           wd_so4(ii,jj) = wd_so4(ii,jj) + wdi_so4(ii,jj)         ! mmol/m2
@@ -522,7 +582,9 @@ CASE (CBMZ_CAM_MAM3_NOAQ,CBMZ_CAM_MAM3_AQ,CBMZ_CAM_MAM7_NOAQ,CBMZ_CAM_MAM7_AQ)
           wdi_nh4(ii,jj) = - 0.001*qsrflx(ii,jj,p_nh4_cw01)/mw_nh4_aer &
                            - 0.001*qsrflx(ii,jj,p_nh4_cw02)/mw_nh4_aer &
                            - 0.001*qsrflx(ii,jj,p_nh4_cw03)/mw_nh4_aer &
-                           - 0.001*qsrflx(ii,jj,p_nh4_cw04)/mw_nh4_aer ! mmol/m2
+                           - 0.001*qsrflx(ii,jj,p_nh4_cw04)/mw_nh4_aer &! mmol/m2
+                           - 0.001*qsrflx(ii,jj,p_nh4_cw05)/mw_nh4_aer ! mmol/m2
+
 
           ! Accumulated ammoni* wet deposition:
           wd_nh4(ii,jj) = wd_nh4(ii,jj) + wdi_nh4(ii,jj)         ! mmol/m2
@@ -532,66 +594,83 @@ CASE (CBMZ_CAM_MAM3_NOAQ,CBMZ_CAM_MAM3_AQ,CBMZ_CAM_MAM7_NOAQ,CBMZ_CAM_MAM7_AQ)
                            - 0.001*qsrflx(ii,jj,p_oc_cw02)/mw_oc_aer &
                            - 0.001*qsrflx(ii,jj,p_oc_cw03)/mw_oc_aer &
                            - 0.001*qsrflx(ii,jj,p_oc_cw04)/mw_oc_aer &
+                           - 0.001*qsrflx(ii,jj,p_oc_cw05)/mw_oc_aer &
                            - 0.001*qsrflx(ii,jj,p_asoaX_cw01)/mw_asoaX_aer &
                            - 0.001*qsrflx(ii,jj,p_asoaX_cw02)/mw_asoaX_aer &
                            - 0.001*qsrflx(ii,jj,p_asoaX_cw03)/mw_asoaX_aer &
                            - 0.001*qsrflx(ii,jj,p_asoaX_cw04)/mw_asoaX_aer &
+                           - 0.001*qsrflx(ii,jj,p_asoaX_cw05)/mw_asoaX_aer &
                            - 0.001*qsrflx(ii,jj,p_asoa1_cw01)/mw_asoa1_aer &
                            - 0.001*qsrflx(ii,jj,p_asoa1_cw02)/mw_asoa1_aer &
                            - 0.001*qsrflx(ii,jj,p_asoa1_cw03)/mw_asoa1_aer &
                            - 0.001*qsrflx(ii,jj,p_asoa1_cw04)/mw_asoa1_aer &
+                           - 0.001*qsrflx(ii,jj,p_asoa1_cw05)/mw_asoa1_aer &
                            - 0.001*qsrflx(ii,jj,p_asoa2_cw01)/mw_asoa2_aer &
                            - 0.001*qsrflx(ii,jj,p_asoa2_cw02)/mw_asoa2_aer &
                            - 0.001*qsrflx(ii,jj,p_asoa2_cw03)/mw_asoa2_aer &
                            - 0.001*qsrflx(ii,jj,p_asoa2_cw04)/mw_asoa2_aer &
+                           - 0.001*qsrflx(ii,jj,p_asoa2_cw05)/mw_asoa2_aer &
                            - 0.001*qsrflx(ii,jj,p_asoa3_cw01)/mw_asoa3_aer &
                            - 0.001*qsrflx(ii,jj,p_asoa3_cw02)/mw_asoa3_aer &
                            - 0.001*qsrflx(ii,jj,p_asoa3_cw03)/mw_asoa3_aer &
                            - 0.001*qsrflx(ii,jj,p_asoa3_cw04)/mw_asoa3_aer &
+                           - 0.001*qsrflx(ii,jj,p_asoa3_cw05)/mw_asoa3_aer &
                            - 0.001*qsrflx(ii,jj,p_asoa4_cw01)/mw_asoa4_aer &
                            - 0.001*qsrflx(ii,jj,p_asoa4_cw02)/mw_asoa4_aer &
                            - 0.001*qsrflx(ii,jj,p_asoa4_cw03)/mw_asoa4_aer &
                            - 0.001*qsrflx(ii,jj,p_asoa4_cw04)/mw_asoa4_aer &
+                           - 0.001*qsrflx(ii,jj,p_asoa4_cw05)/mw_asoa4_aer &
                            - 0.001*qsrflx(ii,jj,p_bsoaX_cw01)/mw_bsoaX_aer &
                            - 0.001*qsrflx(ii,jj,p_bsoaX_cw02)/mw_bsoaX_aer &
                            - 0.001*qsrflx(ii,jj,p_bsoaX_cw03)/mw_bsoaX_aer &
                            - 0.001*qsrflx(ii,jj,p_bsoaX_cw04)/mw_bsoaX_aer &
+                           - 0.001*qsrflx(ii,jj,p_bsoaX_cw05)/mw_bsoaX_aer &
                            - 0.001*qsrflx(ii,jj,p_bsoa1_cw01)/mw_bsoa1_aer &
                            - 0.001*qsrflx(ii,jj,p_bsoa1_cw02)/mw_bsoa1_aer &
                            - 0.001*qsrflx(ii,jj,p_bsoa1_cw03)/mw_bsoa1_aer &
                            - 0.001*qsrflx(ii,jj,p_bsoa1_cw04)/mw_bsoa1_aer &
+                           - 0.001*qsrflx(ii,jj,p_bsoa1_cw05)/mw_bsoa1_aer &
                            - 0.001*qsrflx(ii,jj,p_bsoa2_cw01)/mw_bsoa2_aer &
                            - 0.001*qsrflx(ii,jj,p_bsoa2_cw02)/mw_bsoa2_aer &
                            - 0.001*qsrflx(ii,jj,p_bsoa2_cw03)/mw_bsoa2_aer &
                            - 0.001*qsrflx(ii,jj,p_bsoa2_cw04)/mw_bsoa2_aer &
+                           - 0.001*qsrflx(ii,jj,p_bsoa2_cw05)/mw_bsoa2_aer &
                            - 0.001*qsrflx(ii,jj,p_bsoa3_cw01)/mw_bsoa3_aer &
                            - 0.001*qsrflx(ii,jj,p_bsoa3_cw02)/mw_bsoa3_aer &
                            - 0.001*qsrflx(ii,jj,p_bsoa3_cw03)/mw_bsoa3_aer &
                            - 0.001*qsrflx(ii,jj,p_bsoa3_cw04)/mw_bsoa3_aer &
+                           - 0.001*qsrflx(ii,jj,p_bsoa3_cw05)/mw_bsoa3_aer &
                            - 0.001*qsrflx(ii,jj,p_bsoa4_cw01)/mw_bsoa4_aer &
                            - 0.001*qsrflx(ii,jj,p_bsoa4_cw02)/mw_bsoa4_aer &
                            - 0.001*qsrflx(ii,jj,p_bsoa4_cw03)/mw_bsoa4_aer &
                            - 0.001*qsrflx(ii,jj,p_bsoa4_cw04)/mw_bsoa4_aer &
+                           - 0.001*qsrflx(ii,jj,p_bsoa4_cw05)/mw_bsoa4_aer &
                            - 0.001*qsrflx(ii,jj,p_glysoa_r1_cw01)/mw_glysoa_r1_aer &
                            - 0.001*qsrflx(ii,jj,p_glysoa_r1_cw02)/mw_glysoa_r1_aer &
                            - 0.001*qsrflx(ii,jj,p_glysoa_r1_cw03)/mw_glysoa_r1_aer &
                            - 0.001*qsrflx(ii,jj,p_glysoa_r1_cw04)/mw_glysoa_r1_aer &
+                           - 0.001*qsrflx(ii,jj,p_glysoa_r1_cw05)/mw_glysoa_r1_aer &
                            - 0.001*qsrflx(ii,jj,p_glysoa_r2_cw01)/mw_glysoa_r2_aer &
                            - 0.001*qsrflx(ii,jj,p_glysoa_r2_cw02)/mw_glysoa_r2_aer &
                            - 0.001*qsrflx(ii,jj,p_glysoa_r2_cw03)/mw_glysoa_r2_aer &
                            - 0.001*qsrflx(ii,jj,p_glysoa_r2_cw04)/mw_glysoa_r2_aer &
+                           - 0.001*qsrflx(ii,jj,p_glysoa_r2_cw05)/mw_glysoa_r2_aer &
                            - 0.001*qsrflx(ii,jj,p_glysoa_sfc_cw01)/mw_glysoa_sfc_aer &
                            - 0.001*qsrflx(ii,jj,p_glysoa_sfc_cw02)/mw_glysoa_sfc_aer &
                            - 0.001*qsrflx(ii,jj,p_glysoa_sfc_cw03)/mw_glysoa_sfc_aer &
                            - 0.001*qsrflx(ii,jj,p_glysoa_sfc_cw04)/mw_glysoa_sfc_aer &
+                           - 0.001*qsrflx(ii,jj,p_glysoa_sfc_cw05)/mw_glysoa_sfc_aer &
                            - 0.001*qsrflx(ii,jj,p_glysoa_nh4_cw01)/mw_glysoa_nh4_aer &
                            - 0.001*qsrflx(ii,jj,p_glysoa_nh4_cw02)/mw_glysoa_nh4_aer &
                            - 0.001*qsrflx(ii,jj,p_glysoa_nh4_cw03)/mw_glysoa_nh4_aer &
                            - 0.001*qsrflx(ii,jj,p_glysoa_nh4_cw04)/mw_glysoa_nh4_aer &
+                           - 0.001*qsrflx(ii,jj,p_glysoa_nh4_cw05)/mw_glysoa_nh4_aer &
                            - 0.001*qsrflx(ii,jj,p_glysoa_oh_cw01)/mw_glysoa_oh_aer &
                            - 0.001*qsrflx(ii,jj,p_glysoa_oh_cw02)/mw_glysoa_oh_aer &
                            - 0.001*qsrflx(ii,jj,p_glysoa_oh_cw03)/mw_glysoa_oh_aer &
-                           - 0.001*qsrflx(ii,jj,p_glysoa_oh_cw04)/mw_glysoa_oh_aer  ! mmol/m2
+                           - 0.001*qsrflx(ii,jj,p_glysoa_oh_cw04)/mw_glysoa_oh_aer &
+                           - 0.001*qsrflx(ii,jj,p_glysoa_oh_cw05)/mw_glysoa_oh_aer  ! mmol/m2 !dimaman
+
 
           ! Accumulated total organics wet deposition:
           wd_oa(ii,jj) = wd_oa(ii,jj) + wdi_oa(ii,jj)         ! mmol/m2
@@ -600,22 +679,28 @@ CASE (CBMZ_CAM_MAM3_NOAQ,CBMZ_CAM_MAM3_AQ,CBMZ_CAM_MAM7_NOAQ,CBMZ_CAM_MAM7_AQ)
                            - 0.001*qsrflx(ii,jj,p_asoaX_cw02)/mw_asoaX_aer &
                            - 0.001*qsrflx(ii,jj,p_asoaX_cw03)/mw_asoaX_aer &
                            - 0.001*qsrflx(ii,jj,p_asoaX_cw04)/mw_asoaX_aer &
+                           - 0.001*qsrflx(ii,jj,p_asoaX_cw05)/mw_asoaX_aer &
                            - 0.001*qsrflx(ii,jj,p_asoa1_cw01)/mw_asoa1_aer &
                            - 0.001*qsrflx(ii,jj,p_asoa1_cw02)/mw_asoa1_aer &
                            - 0.001*qsrflx(ii,jj,p_asoa1_cw03)/mw_asoa1_aer &
                            - 0.001*qsrflx(ii,jj,p_asoa1_cw04)/mw_asoa1_aer &
+                           - 0.001*qsrflx(ii,jj,p_asoa1_cw05)/mw_asoa1_aer &
                            - 0.001*qsrflx(ii,jj,p_asoa2_cw01)/mw_asoa2_aer &
                            - 0.001*qsrflx(ii,jj,p_asoa2_cw02)/mw_asoa2_aer &
                            - 0.001*qsrflx(ii,jj,p_asoa2_cw03)/mw_asoa2_aer &
                            - 0.001*qsrflx(ii,jj,p_asoa2_cw04)/mw_asoa2_aer &
+                           - 0.001*qsrflx(ii,jj,p_asoa2_cw05)/mw_asoa2_aer &
                            - 0.001*qsrflx(ii,jj,p_asoa3_cw01)/mw_asoa3_aer &
                            - 0.001*qsrflx(ii,jj,p_asoa3_cw02)/mw_asoa3_aer &
                            - 0.001*qsrflx(ii,jj,p_asoa3_cw03)/mw_asoa3_aer &
                            - 0.001*qsrflx(ii,jj,p_asoa3_cw04)/mw_asoa3_aer &
+                           - 0.001*qsrflx(ii,jj,p_asoa3_cw05)/mw_asoa3_aer &
                            - 0.001*qsrflx(ii,jj,p_asoa4_cw01)/mw_asoa4_aer &
                            - 0.001*qsrflx(ii,jj,p_asoa4_cw02)/mw_asoa4_aer &
                            - 0.001*qsrflx(ii,jj,p_asoa4_cw03)/mw_asoa4_aer &
-                           - 0.001*qsrflx(ii,jj,p_asoa4_cw04)/mw_asoa4_aer ! mmol/m2
+                           - 0.001*qsrflx(ii,jj,p_asoa4_cw04)/mw_asoa4_aer &
+                           - 0.001*qsrflx(ii,jj,p_asoa4_cw05)/mw_asoa4_aer! mmol/m2 !dimaman
+
 
           ! Accumulated total organics wet deposition:
           wd_asoa(ii,jj) = wd_asoa(ii,jj) + wdi_asoa(ii,jj)         ! mmol/m2
@@ -624,22 +709,28 @@ CASE (CBMZ_CAM_MAM3_NOAQ,CBMZ_CAM_MAM3_AQ,CBMZ_CAM_MAM7_NOAQ,CBMZ_CAM_MAM7_AQ)
                            - 0.001*qsrflx(ii,jj,p_bsoaX_cw02)/mw_bsoaX_aer &
                            - 0.001*qsrflx(ii,jj,p_bsoaX_cw03)/mw_bsoaX_aer &
                            - 0.001*qsrflx(ii,jj,p_bsoaX_cw04)/mw_bsoaX_aer &
+                           - 0.001*qsrflx(ii,jj,p_bsoaX_cw05)/mw_bsoaX_aer &
                            - 0.001*qsrflx(ii,jj,p_bsoa1_cw01)/mw_bsoa1_aer &
                            - 0.001*qsrflx(ii,jj,p_bsoa1_cw02)/mw_bsoa1_aer &
                            - 0.001*qsrflx(ii,jj,p_bsoa1_cw03)/mw_bsoa1_aer &
                            - 0.001*qsrflx(ii,jj,p_bsoa1_cw04)/mw_bsoa1_aer &
+                           - 0.001*qsrflx(ii,jj,p_bsoa1_cw05)/mw_bsoa1_aer &
                            - 0.001*qsrflx(ii,jj,p_bsoa2_cw01)/mw_bsoa2_aer &
                            - 0.001*qsrflx(ii,jj,p_bsoa2_cw02)/mw_bsoa2_aer &
                            - 0.001*qsrflx(ii,jj,p_bsoa2_cw03)/mw_bsoa2_aer &
                            - 0.001*qsrflx(ii,jj,p_bsoa2_cw04)/mw_bsoa2_aer &
+                           - 0.001*qsrflx(ii,jj,p_bsoa2_cw05)/mw_bsoa2_aer &
                            - 0.001*qsrflx(ii,jj,p_bsoa3_cw01)/mw_bsoa3_aer &
                            - 0.001*qsrflx(ii,jj,p_bsoa3_cw02)/mw_bsoa3_aer &
                            - 0.001*qsrflx(ii,jj,p_bsoa3_cw03)/mw_bsoa3_aer &
                            - 0.001*qsrflx(ii,jj,p_bsoa3_cw04)/mw_bsoa3_aer &
+                           - 0.001*qsrflx(ii,jj,p_bsoa3_cw05)/mw_bsoa3_aer &
                            - 0.001*qsrflx(ii,jj,p_bsoa4_cw01)/mw_bsoa4_aer &
                            - 0.001*qsrflx(ii,jj,p_bsoa4_cw02)/mw_bsoa4_aer &
                            - 0.001*qsrflx(ii,jj,p_bsoa4_cw03)/mw_bsoa4_aer &
-                           - 0.001*qsrflx(ii,jj,p_bsoa4_cw04)/mw_bsoa4_aer ! mmol/m2
+                           - 0.001*qsrflx(ii,jj,p_bsoa4_cw04)/mw_bsoa4_aer &
+                           - 0.001*qsrflx(ii,jj,p_bsoa4_cw05)/mw_bsoa4_aer! mmol/m2 !dimaman
+
 
           ! Accumulated total organics wet deposition:
           wd_bsoa(ii,jj) = wd_bsoa(ii,jj) + wdi_bsoa(ii,jj)         ! mmol/m2

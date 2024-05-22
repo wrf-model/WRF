@@ -29,7 +29,7 @@ USE module_state_description, ONLY: mozart_mosaic_4bin_kpp, &
                               p_bsoaX_a01,p_bsoa1_a01,p_bsoa2_a01,p_bsoa3_a01,p_bsoa4_a01,&
                               p_biog1_c_a01,p_biog1_o_a01,&
                               p_cl_a01,p_co3_a01,p_nh4_a01,p_na_a01,&
-                              p_ca_a01,p_oin_a01,p_oc_a01,p_bc_a01,&
+                              p_ca_a01,p_oin_a01,p_oc_a01,p_bact_a01, p_fung_a01, p_pol_a01,p_bc_a01,& !dimaman
                               p_so4_a02,p_no3_a02,p_smpa_a02,p_smpbb_a02,&
                               p_glysoa_r1_a02,p_glysoa_r2_a02,&
                               p_glysoa_sfc_a02,p_glysoa_nh4_a02,&
@@ -38,7 +38,7 @@ USE module_state_description, ONLY: mozart_mosaic_4bin_kpp, &
                               p_bsoaX_a02,p_bsoa1_a02,p_bsoa2_a02,p_bsoa3_a02,p_bsoa4_a02,&
                               p_biog1_c_a02,p_biog1_o_a02,&
                               p_cl_a02,p_co3_a02,p_nh4_a02,p_na_a02,&
-                              p_ca_a02,p_oin_a02,p_oc_a02,p_bc_a02,&
+                              p_ca_a02,p_oin_a02,p_oc_a02,p_bact_a02, p_fung_a02, p_pol_a02,p_bc_a02,& !dimaman
                               p_so4_a03,p_no3_a03,p_smpa_a03,p_smpbb_a03,&
                               p_glysoa_r1_a03,p_glysoa_r2_a03,&
                               p_glysoa_sfc_a03,p_glysoa_nh4_a03,&
@@ -47,7 +47,7 @@ USE module_state_description, ONLY: mozart_mosaic_4bin_kpp, &
                               p_bsoaX_a03,p_bsoa1_a03,p_bsoa2_a03,p_bsoa3_a03,p_bsoa4_a03,&
                               p_biog1_c_a03,p_biog1_o_a03,&
                               p_cl_a03,p_co3_a03,p_nh4_a03,p_na_a03,&
-                              p_ca_a03,p_oin_a03,p_oc_a03,p_bc_a03,&
+                              p_ca_a03,p_oin_a03,p_oc_a03,p_bact_a03, p_fung_a03, p_pol_a03,p_bc_a03,& !dimaman
                               p_so4_a04,p_no3_a04,p_smpa_a04,p_smpbb_a04,&
                               p_glysoa_r1_a04,p_glysoa_r2_a04,&
                               p_glysoa_sfc_a04,p_glysoa_nh4_a04,&
@@ -56,7 +56,17 @@ USE module_state_description, ONLY: mozart_mosaic_4bin_kpp, &
                               p_bsoaX_a04,p_bsoa1_a04,p_bsoa2_a04,p_bsoa3_a04,p_bsoa4_a04,&
                               p_biog1_c_a04,p_biog1_o_a04,&
                               p_cl_a04,p_co3_a04,p_nh4_a04,p_na_a04,&
-                              p_ca_a04,p_oin_a04,p_oc_a04,p_bc_a04
+                              p_ca_a04,p_oin_a04,p_oc_a04,p_bact_a04, p_fung_a04, p_pol_a04,p_bc_a04,&
+                              p_so4_a05,p_no3_a05,p_smpa_a05,p_smpbb_a05,&
+                              p_glysoa_r1_a05,p_glysoa_r2_a05,&
+                              p_glysoa_sfc_a05,p_glysoa_nh4_a05,&
+                              p_glysoa_oh_a05,&
+                              p_asoaX_a05,p_asoa1_a05,p_asoa2_a05,p_asoa3_a05,p_asoa4_a05,&
+                              p_bsoaX_a05,p_bsoa1_a05,p_bsoa2_a05,p_bsoa3_a05,p_bsoa4_a05,&
+                              p_biog1_c_a05,p_biog1_o_a05,&
+                              p_cl_a05,p_co3_a05,p_nh4_a05,p_na_a05,&
+                              p_ca_a05,p_oin_a05,p_oc_a05,p_bact_a05, p_fung_a05, p_pol_a05,p_bc_a05 !dimaman
+
 
   IMPLICIT NONE
 
@@ -70,6 +80,10 @@ USE module_state_description, ONLY: mozart_mosaic_4bin_kpp, &
   REAL, PARAMETER :: mwnh4 = 18.0985 ! Molecular mass of NH4+ (g/mol)
 
   REAL, PARAMETER :: mwoa  = 250.0   ! Molecular mass of OA (g/mol)
+  REAL, PARAMETER :: mwbc  = 12.0 !dimaman
+  REAL, PARAMETER :: mwbact  = 31 !dimaman
+  REAL, PARAMETER :: mwfung  = 31 !dimaman
+  REAL, PARAMETER :: mwpol  = 31 !dimaman
 
   INTEGER, allocatable :: HLC_ndx(:)
   
@@ -80,7 +94,7 @@ CONTAINS
               rho_phy,RAINCV,chem,                                  &
               U,V,t_phy,moist,dz8w,p_phy,                           &
               XLV,CP,G,r_v,z,cu_co_ten,                             &
-              wd_no3,wd_so4,                                        &
+              wd_oc,wd_bact,wd_fung,wd_pol,wd_bc,wd_no3,wd_so4,     & !dimaman
               wd_nh4,wd_oa,                                         &
               wd_so2, wd_sulf, wd_hno3, wd_nh3,                     &
               wd_cvasoa, wd_cvbsoa, wd_asoa, wd_bsoa,               &
@@ -139,7 +153,7 @@ CONTAINS
 !
 ! Accumulated wet deposition
 !
-   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) :: wd_no3,wd_so4
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) :: wd_oc,wd_bact,wd_fung,wd_pol,wd_bc,wd_no3,wd_so4 !dimaman
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) :: wd_nh4,wd_oa, &
                                      wd_so2, wd_sulf, wd_hno3, wd_nh3
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) :: &
@@ -153,7 +167,7 @@ CONTAINS
    REAL, DIMENSION (its:ite,num_chem)         :: wetdep_1d
    REAL, DIMENSION (ims:ime,jms:jme,num_chem) :: wetdep_2d
 ! Wet deposition over the current time step
-   REAL, DIMENSION( ims:ime , jms:jme ) :: wdi_no3,wdi_so4
+   REAL, DIMENSION( ims:ime , jms:jme ) :: wdi_oc,wdi_bact,wdi_fung,wdi_pol,wdi_bc,wdi_no3,wdi_so4
    REAL, DIMENSION( ims:ime , jms:jme ) :: wdi_nh4,wdi_oa, &
    wdi_so2, wdi_sulf, wdi_hno3, wdi_nh3
    REAL, DIMENSION( ims:ime , jms:jme ) :: wdi_cvasoa, wdi_cvbsoa, &
@@ -320,6 +334,12 @@ CONTAINS
    if(chemopt > 0) then  ! skip for tracers (chemopt=0)
    ! Calculate the wet deposition over the time step:
    
+ 
+   wdi_oc(:,:) = 0.0 !dimaman
+   wdi_bact(:,:) = 0.0
+   wdi_fung(:,:) = 0.0
+   wdi_pol(:,:) = 0.0
+   wdi_bc(:,:) = 0.0
    wdi_no3(:,:) = 0.0
    wdi_so4(:,:) = 0.0
    wdi_nh4(:,:) = 0.0
@@ -339,6 +359,41 @@ CONTAINS
    
    if (chemopt == mozart_mosaic_4bin_kpp .OR. &
        chemopt == mozart_mosaic_4bin_aq_kpp) then
+
+     wdi_oc(its:ite,jts:jte) = wdi_oc(its:ite,jts:jte) + &
+       (wetdep_2d(its:ite,jts:jte,p_oc_a01) + &
+        wetdep_2d(its:ite,jts:jte,p_oc_a02) + &
+        wetdep_2d(its:ite,jts:jte,p_oc_a03) + &
+        wetdep_2d(its:ite,jts:jte,p_oc_a04) + &
+        wetdep_2d(its:ite,jts:jte,p_oc_a05))*dt*0.001/mwoa ! mmol/m2 dimaman
+
+     wdi_bact(its:ite,jts:jte) = wdi_bact(its:ite,jts:jte) + &
+       (wetdep_2d(its:ite,jts:jte,p_bact_a01) + &
+        wetdep_2d(its:ite,jts:jte,p_bact_a02) + &
+        wetdep_2d(its:ite,jts:jte,p_bact_a03) + &
+        wetdep_2d(its:ite,jts:jte,p_bact_a04) + &
+        wetdep_2d(its:ite,jts:jte,p_bact_a05))*dt*0.001/mwbact ! mmol/m2 dimaman
+
+     wdi_fung(its:ite,jts:jte) = wdi_fung(its:ite,jts:jte) + &
+       (wetdep_2d(its:ite,jts:jte,p_fung_a01) + &
+        wetdep_2d(its:ite,jts:jte,p_fung_a02) + &
+        wetdep_2d(its:ite,jts:jte,p_fung_a03) + &
+        wetdep_2d(its:ite,jts:jte,p_fung_a04) + &
+        wetdep_2d(its:ite,jts:jte,p_fung_a05))*dt*0.001/mwfung ! mmol/m2 dimaman
+
+     wdi_pol(its:ite,jts:jte) = wdi_pol(its:ite,jts:jte) + &
+       (wetdep_2d(its:ite,jts:jte,p_pol_a01) + &
+        wetdep_2d(its:ite,jts:jte,p_pol_a02) + &
+        wetdep_2d(its:ite,jts:jte,p_pol_a03) + &
+        wetdep_2d(its:ite,jts:jte,p_pol_a04) + &
+        wetdep_2d(its:ite,jts:jte,p_pol_a05))*dt*0.001/mwpol ! mmol/m2 dimaman
+
+     wdi_bc(its:ite,jts:jte) = wdi_bc(its:ite,jts:jte) + &
+       (wetdep_2d(its:ite,jts:jte,p_bc_a01) + &
+        wetdep_2d(its:ite,jts:jte,p_bc_a02) + &
+        wetdep_2d(its:ite,jts:jte,p_bc_a03) + &
+        wetdep_2d(its:ite,jts:jte,p_bc_a04) + &
+        wetdep_2d(its:ite,jts:jte,p_bc_a05))*dt*0.001/mwbc ! mmol/m2 dimaman
 
      wdi_no3(its:ite,jts:jte) = wdi_no3(its:ite,jts:jte) + &
        (wetdep_2d(its:ite,jts:jte,p_no3_a01) + &
@@ -365,42 +420,52 @@ CONTAINS
           wetdep_2d(its:ite,jts:jte,p_oc_a02) + &
           wetdep_2d(its:ite,jts:jte,p_oc_a03) + &
           wetdep_2d(its:ite,jts:jte,p_oc_a04) + &
+          wetdep_2d(its:ite,jts:jte,p_oc_a05) + & !dimaman
           wetdep_2d(its:ite,jts:jte,p_smpa_a01) + &
           wetdep_2d(its:ite,jts:jte,p_smpa_a02) + &
           wetdep_2d(its:ite,jts:jte,p_smpa_a03) + &
           wetdep_2d(its:ite,jts:jte,p_smpa_a04) + &
+          wetdep_2d(its:ite,jts:jte,p_smpa_a05) + &
           wetdep_2d(its:ite,jts:jte,p_smpbb_a01) + &
           wetdep_2d(its:ite,jts:jte,p_smpbb_a02) + &
           wetdep_2d(its:ite,jts:jte,p_smpbb_a03) + &
           wetdep_2d(its:ite,jts:jte,p_smpbb_a04) + &
+          wetdep_2d(its:ite,jts:jte,p_smpbb_a05) + & 
           wetdep_2d(its:ite,jts:jte,p_biog1_c_a01) + &
           wetdep_2d(its:ite,jts:jte,p_biog1_c_a02) + &
           wetdep_2d(its:ite,jts:jte,p_biog1_c_a03) + &
           wetdep_2d(its:ite,jts:jte,p_biog1_c_a04) + &
+          wetdep_2d(its:ite,jts:jte,p_biog1_c_a05) + &
           wetdep_2d(its:ite,jts:jte,p_biog1_o_a01) + &
           wetdep_2d(its:ite,jts:jte,p_biog1_o_a02) + &
           wetdep_2d(its:ite,jts:jte,p_biog1_o_a03) + &
           wetdep_2d(its:ite,jts:jte,p_biog1_o_a04) + &
+          wetdep_2d(its:ite,jts:jte,p_biog1_o_a05) + &
           wetdep_2d(its:ite,jts:jte,p_glysoa_r1_a01) + &
           wetdep_2d(its:ite,jts:jte,p_glysoa_r1_a02) + &
           wetdep_2d(its:ite,jts:jte,p_glysoa_r1_a03) + &
           wetdep_2d(its:ite,jts:jte,p_glysoa_r1_a04) + &
+          wetdep_2d(its:ite,jts:jte,p_glysoa_r1_a05) + &
           wetdep_2d(its:ite,jts:jte,p_glysoa_r2_a01) + &
           wetdep_2d(its:ite,jts:jte,p_glysoa_r2_a02) + &
           wetdep_2d(its:ite,jts:jte,p_glysoa_r2_a03) + &
           wetdep_2d(its:ite,jts:jte,p_glysoa_r2_a04) + &
+          wetdep_2d(its:ite,jts:jte,p_glysoa_r2_a05) + &
           wetdep_2d(its:ite,jts:jte,p_glysoa_oh_a01) + &
           wetdep_2d(its:ite,jts:jte,p_glysoa_oh_a02) + &
           wetdep_2d(its:ite,jts:jte,p_glysoa_oh_a03) + &
           wetdep_2d(its:ite,jts:jte,p_glysoa_oh_a04) + &
+          wetdep_2d(its:ite,jts:jte,p_glysoa_oh_a05) + &
           wetdep_2d(its:ite,jts:jte,p_glysoa_nh4_a01) + &
           wetdep_2d(its:ite,jts:jte,p_glysoa_nh4_a02) + &
           wetdep_2d(its:ite,jts:jte,p_glysoa_nh4_a03) + &
           wetdep_2d(its:ite,jts:jte,p_glysoa_nh4_a04) + &
+          wetdep_2d(its:ite,jts:jte,p_glysoa_nh4_a05) + &
           wetdep_2d(its:ite,jts:jte,p_glysoa_sfc_a01) + &
           wetdep_2d(its:ite,jts:jte,p_glysoa_sfc_a02) + &
           wetdep_2d(its:ite,jts:jte,p_glysoa_sfc_a03) + &
-          wetdep_2d(its:ite,jts:jte,p_glysoa_sfc_a04))*dt*0.001/mwoa ! mmol/m2
+          wetdep_2d(its:ite,jts:jte,p_glysoa_sfc_a04) + &
+          wetdep_2d(its:ite,jts:jte,p_glysoa_sfc_a05))*dt*0.001/mwoa ! mmol/m2 dimaman
      endif
 
      if (chemopt == mozart_mosaic_4bin_aq_kpp) then
@@ -410,44 +475,55 @@ CONTAINS
           wetdep_2d(its:ite,jts:jte,p_asoaX_a02) + &
           wetdep_2d(its:ite,jts:jte,p_asoaX_a03) + &
           wetdep_2d(its:ite,jts:jte,p_asoaX_a04) + &
+          wetdep_2d(its:ite,jts:jte,p_asoaX_a05) + & !dimaman
           wetdep_2d(its:ite,jts:jte,p_asoa1_a01) + &
           wetdep_2d(its:ite,jts:jte,p_asoa1_a02) + &
           wetdep_2d(its:ite,jts:jte,p_asoa1_a03) + &
           wetdep_2d(its:ite,jts:jte,p_asoa1_a04) + &
+          wetdep_2d(its:ite,jts:jte,p_asoa1_a05) + &
           wetdep_2d(its:ite,jts:jte,p_asoa2_a01) + &
           wetdep_2d(its:ite,jts:jte,p_asoa2_a02) + &
           wetdep_2d(its:ite,jts:jte,p_asoa2_a03) + &
           wetdep_2d(its:ite,jts:jte,p_asoa2_a04) + &
+          wetdep_2d(its:ite,jts:jte,p_asoa2_a05) + &
           wetdep_2d(its:ite,jts:jte,p_asoa3_a01) + &
           wetdep_2d(its:ite,jts:jte,p_asoa3_a02) + &
           wetdep_2d(its:ite,jts:jte,p_asoa3_a03) + &
           wetdep_2d(its:ite,jts:jte,p_asoa3_a04) + &
+          wetdep_2d(its:ite,jts:jte,p_asoa3_a05) + &
           wetdep_2d(its:ite,jts:jte,p_asoa4_a01) + &
           wetdep_2d(its:ite,jts:jte,p_asoa4_a02) + &
           wetdep_2d(its:ite,jts:jte,p_asoa4_a03) + &
-          wetdep_2d(its:ite,jts:jte,p_asoa4_a04))*dt*0.001/150.0 ! mmol/m2
+          wetdep_2d(its:ite,jts:jte,p_asoa4_a04) + &
+          wetdep_2d(its:ite,jts:jte,p_asoa4_a05))*dt*0.001/150.0 ! mmol/m2 dimaman 
 
        wdi_bsoa(its:ite,jts:jte) = wdi_bsoa(its:ite,jts:jte) + &
          (wetdep_2d(its:ite,jts:jte,p_bsoaX_a01) + &
           wetdep_2d(its:ite,jts:jte,p_bsoaX_a02) + &
           wetdep_2d(its:ite,jts:jte,p_bsoaX_a03) + &
           wetdep_2d(its:ite,jts:jte,p_bsoaX_a04) + &
+          wetdep_2d(its:ite,jts:jte,p_bsoaX_a05) + & !dimaman
           wetdep_2d(its:ite,jts:jte,p_bsoa1_a01) + &
           wetdep_2d(its:ite,jts:jte,p_bsoa1_a02) + &
           wetdep_2d(its:ite,jts:jte,p_bsoa1_a03) + &
           wetdep_2d(its:ite,jts:jte,p_bsoa1_a04) + &
+          wetdep_2d(its:ite,jts:jte,p_bsoa1_a05) + &
           wetdep_2d(its:ite,jts:jte,p_bsoa2_a01) + &
           wetdep_2d(its:ite,jts:jte,p_bsoa2_a02) + &
           wetdep_2d(its:ite,jts:jte,p_bsoa2_a03) + &
           wetdep_2d(its:ite,jts:jte,p_bsoa2_a04) + &
+          wetdep_2d(its:ite,jts:jte,p_bsoa2_a05) + &
           wetdep_2d(its:ite,jts:jte,p_bsoa3_a01) + &
           wetdep_2d(its:ite,jts:jte,p_bsoa3_a02) + &
           wetdep_2d(its:ite,jts:jte,p_bsoa3_a03) + &
           wetdep_2d(its:ite,jts:jte,p_bsoa3_a04) + &
+          wetdep_2d(its:ite,jts:jte,p_bsoa3_a05) + &
           wetdep_2d(its:ite,jts:jte,p_bsoa4_a01) + &
           wetdep_2d(its:ite,jts:jte,p_bsoa4_a02) + &
           wetdep_2d(its:ite,jts:jte,p_bsoa4_a03) + &
-          wetdep_2d(its:ite,jts:jte,p_bsoa4_a04))*dt*0.001/180.0 ! mmol/m2
+          wetdep_2d(its:ite,jts:jte,p_bsoa4_a04) + &
+          wetdep_2d(its:ite,jts:jte,p_bsoa4_a05))*dt*0.001/180.0 ! mmol/m2 !dimaman
+
 
        wdi_cvasoa(its:ite,jts:jte) = wdi_cvasoa(its:ite,jts:jte) + &
          (wetdep_2d(its:ite,jts:jte,p_cvasoaX) + &
@@ -468,66 +544,83 @@ CONTAINS
           wetdep_2d(its:ite,jts:jte,p_oc_a02) + &
           wetdep_2d(its:ite,jts:jte,p_oc_a03) + &
           wetdep_2d(its:ite,jts:jte,p_oc_a04) + &
+          wetdep_2d(its:ite,jts:jte,p_oc_a05) + & !dimaman
           wetdep_2d(its:ite,jts:jte,p_asoaX_a01) + &
           wetdep_2d(its:ite,jts:jte,p_asoaX_a02) + &
           wetdep_2d(its:ite,jts:jte,p_asoaX_a03) + &
           wetdep_2d(its:ite,jts:jte,p_asoaX_a04) + &
+          wetdep_2d(its:ite,jts:jte,p_asoaX_a05) + &
           wetdep_2d(its:ite,jts:jte,p_asoa1_a01) + &
           wetdep_2d(its:ite,jts:jte,p_asoa1_a02) + &
           wetdep_2d(its:ite,jts:jte,p_asoa1_a03) + &
           wetdep_2d(its:ite,jts:jte,p_asoa1_a04) + &
+          wetdep_2d(its:ite,jts:jte,p_asoa1_a05) + &
           wetdep_2d(its:ite,jts:jte,p_asoa2_a01) + &
           wetdep_2d(its:ite,jts:jte,p_asoa2_a02) + &
           wetdep_2d(its:ite,jts:jte,p_asoa2_a03) + &
           wetdep_2d(its:ite,jts:jte,p_asoa2_a04) + &
+          wetdep_2d(its:ite,jts:jte,p_asoa2_a05) + &
           wetdep_2d(its:ite,jts:jte,p_asoa3_a01) + &
           wetdep_2d(its:ite,jts:jte,p_asoa3_a02) + &
           wetdep_2d(its:ite,jts:jte,p_asoa3_a03) + &
           wetdep_2d(its:ite,jts:jte,p_asoa3_a04) + &
+          wetdep_2d(its:ite,jts:jte,p_asoa3_a05) + &
           wetdep_2d(its:ite,jts:jte,p_asoa4_a01) + &
           wetdep_2d(its:ite,jts:jte,p_asoa4_a02) + &
           wetdep_2d(its:ite,jts:jte,p_asoa4_a03) + &
           wetdep_2d(its:ite,jts:jte,p_asoa4_a04) + &
+          wetdep_2d(its:ite,jts:jte,p_asoa4_a05) + &
           wetdep_2d(its:ite,jts:jte,p_bsoaX_a01) + &
           wetdep_2d(its:ite,jts:jte,p_bsoaX_a02) + &
           wetdep_2d(its:ite,jts:jte,p_bsoaX_a03) + &
           wetdep_2d(its:ite,jts:jte,p_bsoaX_a04) + &
+          wetdep_2d(its:ite,jts:jte,p_bsoaX_a05) + &
           wetdep_2d(its:ite,jts:jte,p_bsoa1_a01) + &
           wetdep_2d(its:ite,jts:jte,p_bsoa1_a02) + &
           wetdep_2d(its:ite,jts:jte,p_bsoa1_a03) + &
           wetdep_2d(its:ite,jts:jte,p_bsoa1_a04) + &
+          wetdep_2d(its:ite,jts:jte,p_bsoa1_a05) + &
           wetdep_2d(its:ite,jts:jte,p_bsoa2_a01) + &
           wetdep_2d(its:ite,jts:jte,p_bsoa2_a02) + &
           wetdep_2d(its:ite,jts:jte,p_bsoa2_a03) + &
           wetdep_2d(its:ite,jts:jte,p_bsoa2_a04) + &
+          wetdep_2d(its:ite,jts:jte,p_bsoa2_a05) + &
           wetdep_2d(its:ite,jts:jte,p_bsoa3_a01) + &
           wetdep_2d(its:ite,jts:jte,p_bsoa3_a02) + &
           wetdep_2d(its:ite,jts:jte,p_bsoa3_a03) + &
           wetdep_2d(its:ite,jts:jte,p_bsoa3_a04) + &
+          wetdep_2d(its:ite,jts:jte,p_bsoa3_a05) + &
           wetdep_2d(its:ite,jts:jte,p_bsoa4_a01) + &
           wetdep_2d(its:ite,jts:jte,p_bsoa4_a02) + &
           wetdep_2d(its:ite,jts:jte,p_bsoa4_a03) + &
           wetdep_2d(its:ite,jts:jte,p_bsoa4_a04) + &
+          wetdep_2d(its:ite,jts:jte,p_bsoa4_a05) + &
           wetdep_2d(its:ite,jts:jte,p_glysoa_r1_a01) + &
           wetdep_2d(its:ite,jts:jte,p_glysoa_r1_a02) + &
           wetdep_2d(its:ite,jts:jte,p_glysoa_r1_a03) + &
           wetdep_2d(its:ite,jts:jte,p_glysoa_r1_a04) + &
+          wetdep_2d(its:ite,jts:jte,p_glysoa_r1_a05) + &
           wetdep_2d(its:ite,jts:jte,p_glysoa_r2_a01) + &
           wetdep_2d(its:ite,jts:jte,p_glysoa_r2_a02) + &
           wetdep_2d(its:ite,jts:jte,p_glysoa_r2_a03) + &
           wetdep_2d(its:ite,jts:jte,p_glysoa_r2_a04) + &
+          wetdep_2d(its:ite,jts:jte,p_glysoa_r2_a05) + &
           wetdep_2d(its:ite,jts:jte,p_glysoa_oh_a01) + &
           wetdep_2d(its:ite,jts:jte,p_glysoa_oh_a02) + &
           wetdep_2d(its:ite,jts:jte,p_glysoa_oh_a03) + &
           wetdep_2d(its:ite,jts:jte,p_glysoa_oh_a04) + &
+          wetdep_2d(its:ite,jts:jte,p_glysoa_oh_a05) + &
           wetdep_2d(its:ite,jts:jte,p_glysoa_nh4_a01) + &
           wetdep_2d(its:ite,jts:jte,p_glysoa_nh4_a02) + &
           wetdep_2d(its:ite,jts:jte,p_glysoa_nh4_a03) + &
           wetdep_2d(its:ite,jts:jte,p_glysoa_nh4_a04) + &
+          wetdep_2d(its:ite,jts:jte,p_glysoa_nh4_a05) + &
           wetdep_2d(its:ite,jts:jte,p_glysoa_sfc_a01) + &
           wetdep_2d(its:ite,jts:jte,p_glysoa_sfc_a02) + &
           wetdep_2d(its:ite,jts:jte,p_glysoa_sfc_a03) + &
-          wetdep_2d(its:ite,jts:jte,p_glysoa_sfc_a04))*dt*0.001/mwoa ! mmol/m2
+          wetdep_2d(its:ite,jts:jte,p_glysoa_sfc_a04) + &
+          wetdep_2d(its:ite,jts:jte,p_glysoa_sfc_a05))*dt*0.001/mwoa ! mmol/m2 !dimaman
+
      endif
 
    else
@@ -544,7 +637,11 @@ CONTAINS
    if (p_nh3   .gt.1) wdi_nh3(its:ite,jts:jte) = wdi_nh3(its:ite,jts:jte) + wetdep_2d(its:ite,jts:jte,p_nh3)*dt               ! mmol/m2
    
    ! Update the accumulated wet deposition:
-   
+   wd_oc(its:ite,jts:jte) = wd_oc(its:ite,jts:jte) + wdi_oc(its:ite,jts:jte) ! mmol/m2 !dimaman
+   wd_bact(its:ite,jts:jte) = wd_bact(its:ite,jts:jte) + wdi_bact(its:ite,jts:jte) ! mmol/m2 !dimaman
+   wd_fung(its:ite,jts:jte) = wd_fung(its:ite,jts:jte) + wdi_fung(its:ite,jts:jte) ! mmol/m2 !dimaman
+   wd_pol(its:ite,jts:jte) = wd_pol(its:ite,jts:jte) + wdi_pol(its:ite,jts:jte) ! mmol/m2 !dimaman
+   wd_bc(its:ite,jts:jte) = wd_bc(its:ite,jts:jte) + wdi_bc(its:ite,jts:jte) ! mmol/m2
    wd_no3(its:ite,jts:jte) = wd_no3(its:ite,jts:jte) + wdi_no3(its:ite,jts:jte) ! mmol/m2
    wd_so4(its:ite,jts:jte) = wd_so4(its:ite,jts:jte) + wdi_so4(its:ite,jts:jte) ! mmol/m2
    wd_nh4(its:ite,jts:jte) = wd_nh4(its:ite,jts:jte) + wdi_nh4(its:ite,jts:jte) ! mmol/m2
@@ -1484,7 +1581,7 @@ END subroutine cup_env_clev_tr
 !...........PARAMETERS and their descriptions:
 
       INTEGER, PARAMETER :: NGAS = 12  ! number of gas-phase species for AQCHEM
-      INTEGER, PARAMETER :: NAER = 36  ! number of aerosol species for AQCHEM
+      INTEGER, PARAMETER :: NAER = 42  !dimaman number of aerosol species for AQCHEM
       INTEGER, PARAMETER :: NLIQS = 41 ! number of liquid-phase species in AQCHEM
 
 !...pointers for the AQCHEM array GAS
@@ -1540,6 +1637,12 @@ END subroutine cup_env_clev_tr
       INTEGER, PARAMETER :: LA3FE    = 34  ! Iron aerosol (place holder)
       INTEGER, PARAMETER :: LB2MN    = 35  ! Manganese aerosol (place holder)
       INTEGER, PARAMETER :: LK       = 36  ! Potassium aerosol (Cl- tracked separately) (place holder)
+      INTEGER, PARAMETER :: LOCAKN  =  37  ! Aitken-mode Sulfate          dimaman
+      INTEGER, PARAMETER :: LOCACC  =  38  ! Accumulation-mode Sulfate
+      INTEGER, PARAMETER :: LOCCOR  =  39  ! Coarse-mode Sulfate
+      INTEGER, PARAMETER :: LBCAKN  =  40  ! Aitken-mode Sulfate
+      INTEGER, PARAMETER :: LBCACC  =  41  ! Accumulation-mode Sulfate
+      INTEGER, PARAMETER :: LBCCOR  =  42  ! Coarse-mode Sulfate          dimaman
 
 !
 !  on input
@@ -1599,7 +1702,9 @@ END subroutine cup_env_clev_tr
        itf,ktf,iaer,igas
      
      real                                 ::                           &
-       frac_so4(4), frac_no3(4), frac_nh4(4), tot_so4, tot_nh4, tot_no3
+       frac_so4(4), frac_no3(4), frac_nh4(4), tot_so4, tot_nh4, tot_no3, &
+       frac_oc(5), frac_bact(5),frac_fung(5),frac_pol(5),frac_bc(5),   & !dimaman
+       tot_oc, tot_bact,tot_fung, tot_pol, tot_bc
      
      ! Gas/aqueous phase partitioning for wet scavenging/deposition of gas
      ! phase and aerosol species:
@@ -1868,19 +1973,87 @@ END subroutine cup_env_clev_tr
         frac_so4(:) = 0.25
         frac_nh4(:) = 0.25
         frac_no3(:) = 0.25
+        frac_oc(:) = 0.25 !dimaman
+        frac_bact(:) = 0.25
+        frac_fung(:) = 0.25
+        frac_pol(:) = 0.25
+        frac_bc(:) = 0.25
 
+        tot_oc     = tr_up(i,k,p_oc_a01)+tr_up(i,k,p_oc_a02)+&
+                      tr_up(i,k,p_oc_a03)+tr_up(i,k,p_oc_a04)+tr_up(i,k,p_oc_a05) !dimaman
+        tot_bact     = tr_up(i,k,p_bact_a01)+tr_up(i,k,p_bact_a02)+&
+                      tr_up(i,k,p_bact_a03)+tr_up(i,k,p_bact_a04)+tr_up(i,k,p_bact_a05) !dimaman
+        tot_fung     = tr_up(i,k,p_fung_a01)+tr_up(i,k,p_fung_a02)+&
+                      tr_up(i,k,p_fung_a03)+tr_up(i,k,p_fung_a04)+tr_up(i,k,p_fung_a05) !dimaman
+        tot_pol     = tr_up(i,k,p_pol_a01)+tr_up(i,k,p_pol_a02)+&
+                      tr_up(i,k,p_pol_a03)+tr_up(i,k,p_pol_a04)+tr_up(i,k,p_pol_a05) !dimaman
+        tot_bc     = tr_up(i,k,p_bc_a01)+tr_up(i,k,p_bc_a02)+&
+                      tr_up(i,k,p_bc_a03)+tr_up(i,k,p_bc_a04)+tr_up(i,k,p_bc_a05) !dimaman
         tot_so4     = tr_up(i,k,p_so4_a01)+tr_up(i,k,p_so4_a02)+&
-                      tr_up(i,k,p_so4_a03)+tr_up(i,k,p_so4_a04)
+                      tr_up(i,k,p_so4_a03)+tr_up(i,k,p_so4_a04)+tr_up(i,k,p_so4_a05) !dimaman
         tot_nh4     = tr_up(i,k,p_nh4_a01)+tr_up(i,k,p_nh4_a02)+&
-                      tr_up(i,k,p_nh4_a03)+tr_up(i,k,p_nh4_a04)
+                      tr_up(i,k,p_nh4_a03)+tr_up(i,k,p_nh4_a04)+tr_up(i,k,p_nh4_a05)
         tot_no3     = tr_up(i,k,p_no3_a01)+tr_up(i,k,p_no3_a02)+&
-                      tr_up(i,k,p_no3_a03)+tr_up(i,k,p_no3_a04)
+                      tr_up(i,k,p_no3_a03)+tr_up(i,k,p_no3_a04)+tr_up(i,k,p_no3_a05)
+
+       if (tot_oc > 0.0) then !dimaman
+          frac_oc(1) = tr_up(i,k,p_oc_a01) / tot_oc
+          frac_oc(2) = tr_up(i,k,p_oc_a02) / tot_oc
+          frac_oc(3) = tr_up(i,k,p_oc_a03) / tot_oc
+          frac_oc(4) = tr_up(i,k,p_oc_a04) / tot_oc
+          frac_oc(5) = tr_up(i,k,p_oc_a05) / tot_oc
+
+          aerosol(locacc) = tot_oc *1.0e-9*mwdry/mwoa
+        end if
+
+        if (tot_bact > 0.0) then !dimaman
+          frac_bact(1) = tr_up(i,k,p_bact_a01) / tot_bact
+          frac_bact(2) = tr_up(i,k,p_bact_a02) / tot_bact
+          frac_bact(3) = tr_up(i,k,p_bact_a03) / tot_bact
+          frac_bact(4) = tr_up(i,k,p_bact_a04) / tot_bact
+          frac_bact(5) = tr_up(i,k,p_bact_a05) / tot_bact
+
+          aerosol(locacc) = tot_bact *1.0e-9*mwdry/mwbact
+        end if
+
+        if (tot_fung > 0.0) then !dimaman
+          frac_fung(1) = tr_up(i,k,p_fung_a01) / tot_fung
+          frac_fung(2) = tr_up(i,k,p_fung_a02) / tot_fung
+          frac_fung(3) = tr_up(i,k,p_fung_a03) / tot_fung
+          frac_fung(4) = tr_up(i,k,p_fung_a04) / tot_fung
+          frac_fung(5) = tr_up(i,k,p_fung_a05) / tot_fung
+
+          aerosol(locacc) = tot_fung *1.0e-9*mwdry/mwfung
+        end if
+
+        if (tot_pol > 0.0) then !dimaman
+          frac_pol(1) = tr_up(i,k,p_pol_a01) / tot_pol
+          frac_pol(2) = tr_up(i,k,p_pol_a02) / tot_pol
+          frac_pol(3) = tr_up(i,k,p_pol_a03) / tot_pol
+          frac_pol(4) = tr_up(i,k,p_pol_a04) / tot_pol
+          frac_pol(5) = tr_up(i,k,p_pol_a05) / tot_pol
+
+          aerosol(locacc) = tot_pol *1.0e-9*mwdry/mwpol
+        end if
+
+
+        if (tot_bc > 0.0) then
+          frac_bc(1) = tr_up(i,k,p_bc_a01) / tot_bc
+          frac_bc(2) = tr_up(i,k,p_bc_a02) / tot_bc
+          frac_bc(3) = tr_up(i,k,p_bc_a03) / tot_bc
+          frac_bc(4) = tr_up(i,k,p_bc_a04) / tot_bc
+          frac_bc(5) = tr_up(i,k,p_bc_a05) / tot_bc
+
+          aerosol(lbcacc) = tot_bc *1.0e-9*mwdry/mwbc
+        end if
+
 
         if (tot_so4 > 0.0) then
           frac_so4(1) = tr_up(i,k,p_so4_a01) / tot_so4
           frac_so4(2) = tr_up(i,k,p_so4_a02) / tot_so4
           frac_so4(3) = tr_up(i,k,p_so4_a03) / tot_so4
           frac_so4(4) = tr_up(i,k,p_so4_a04) / tot_so4
+          frac_so4(5) = tr_up(i,k,p_so4_a05) / tot_so4 !dimaman
           aerosol(lso4acc) = tot_so4 *1.0e-9*mwdry/mwso4
         end if
 
@@ -1889,6 +2062,7 @@ END subroutine cup_env_clev_tr
           frac_nh4(2) = tr_up(i,k,p_nh4_a02) / tot_nh4
           frac_nh4(3) = tr_up(i,k,p_nh4_a03) / tot_nh4
           frac_nh4(4) = tr_up(i,k,p_nh4_a04) / tot_nh4
+          frac_nh4(5) = tr_up(i,k,p_nh4_a05) / tot_nh4
           aerosol(lnh4acc) = tot_nh4 *1.0e-9*mwdry/mwnh4
         end if
 
@@ -1897,6 +2071,7 @@ END subroutine cup_env_clev_tr
           frac_no3(2) = tr_up(i,k,p_no3_a02) / tot_no3
           frac_no3(3) = tr_up(i,k,p_no3_a03) / tot_no3
           frac_no3(4) = tr_up(i,k,p_no3_a04) / tot_no3
+          frac_no3(5) = tr_up(i,k,p_no3_a05) / tot_no3
           aerosol(lno3acc) = tot_no3 *1.0e-9*mwdry/mwno3
         end if
 
@@ -1940,20 +2115,47 @@ END subroutine cup_env_clev_tr
         ! Aerosol mass concentrations
         ! (with units conversion mol/mol -> ug/kg)
 
-        tr_up(i,k,p_so4_a01) = aerosol(lso4acc) * frac_so4(1) * 1.0e9*mwso4/mwdry
-        tr_up(i,k,p_so4_a02) = aerosol(lso4acc) * frac_so4(2) * 1.0e9*mwso4/mwdry
-        tr_up(i,k,p_so4_a03) = aerosol(lso4acc) * frac_so4(3) * 1.0e9*mwso4/mwdry
-        tr_up(i,k,p_so4_a04) = aerosol(lso4acc) * frac_so4(4) * 1.0e9*mwso4/mwdry
+        tr_up(i,k,p_oc_a01) = aerosol(locacc) * frac_oc(1) * 1.0e9*mwoa/mwdry !dimaman
+        tr_up(i,k,p_oc_a02) = aerosol(locacc) * frac_oc(2) * 1.0e9*mwoa/mwdry
+        tr_up(i,k,p_oc_a03) = aerosol(locacc) * frac_oc(3) * 1.0e9*mwoa/mwdry
+        tr_up(i,k,p_oc_a04) = aerosol(locacc) * frac_oc(4) * 1.0e9*mwoa/mwdry
+        tr_up(i,k,p_oc_a05) = aerosol(locacc) * frac_oc(5) * 1.0e9*mwoa/mwdry
+
+        tr_up(i,k,p_bact_a01) = aerosol(locacc) * frac_bact(1) * 1.0e9*mwbact/mwdry
+        tr_up(i,k,p_bact_a02) = aerosol(locacc) * frac_bact(2) * 1.0e9*mwbact/mwdry
+        tr_up(i,k,p_bact_a03) = aerosol(locacc) * frac_bact(3) * 1.0e9*mwbact/mwdry
+        tr_up(i,k,p_bact_a04) = aerosol(locacc) * frac_bact(4) * 1.0e9*mwbact/mwdry
+        tr_up(i,k,p_bact_a05) = aerosol(locacc) * frac_bact(5) * 1.0e9*mwbact/mwdry
+
+        tr_up(i,k,p_fung_a01) = aerosol(locacc) * frac_fung(1) * 1.0e9*mwfung/mwdry
+        tr_up(i,k,p_fung_a02) = aerosol(locacc) * frac_fung(2) * 1.0e9*mwfung/mwdry
+        tr_up(i,k,p_fung_a03) = aerosol(locacc) * frac_fung(3) * 1.0e9*mwfung/mwdry
+        tr_up(i,k,p_fung_a04) = aerosol(locacc) * frac_fung(4) * 1.0e9*mwfung/mwdry
+        tr_up(i,k,p_fung_a05) = aerosol(locacc) * frac_fung(5) * 1.0e9*mwfung/mwdry
+
+        tr_up(i,k,p_pol_a01) = aerosol(locacc) * frac_pol(1) * 1.0e9*mwpol/mwdry
+        tr_up(i,k,p_pol_a02) = aerosol(locacc) * frac_pol(2) * 1.0e9*mwpol/mwdry
+        tr_up(i,k,p_pol_a03) = aerosol(locacc) * frac_pol(3) * 1.0e9*mwpol/mwdry
+        tr_up(i,k,p_pol_a04) = aerosol(locacc) * frac_pol(4) * 1.0e9*mwpol/mwdry
+        tr_up(i,k,p_pol_a05) = aerosol(locacc) * frac_pol(5) * 1.0e9*mwpol/mwdry
+
+        tr_up(i,k,p_so4_a01) = aerosol(lbcacc) * frac_bc(1) * 1.0e9*mwso4/mwdry
+        tr_up(i,k,p_so4_a02) = aerosol(lbcacc) * frac_bc(2) * 1.0e9*mwso4/mwdry
+        tr_up(i,k,p_so4_a03) = aerosol(lbcacc) * frac_bc(3) * 1.0e9*mwso4/mwdry
+        tr_up(i,k,p_so4_a04) = aerosol(lbcacc) * frac_bc(4) * 1.0e9*mwso4/mwdry
+        tr_up(i,k,p_so4_a05) = aerosol(lbcacc) * frac_bc(5) * 1.0e9*mwso4/mwdry
 
         tr_up(i,k,p_nh4_a01) = aerosol(lnh4acc) * frac_nh4(1) * 1.0e9*mwnh4/mwdry
         tr_up(i,k,p_nh4_a02) = aerosol(lnh4acc) * frac_nh4(2) * 1.0e9*mwnh4/mwdry
         tr_up(i,k,p_nh4_a03) = aerosol(lnh4acc) * frac_nh4(3) * 1.0e9*mwnh4/mwdry
         tr_up(i,k,p_nh4_a04) = aerosol(lnh4acc) * frac_nh4(4) * 1.0e9*mwnh4/mwdry
+        tr_up(i,k,p_nh4_a05) = aerosol(lnh4acc) * frac_nh4(5) * 1.0e9*mwnh4/mwdry
 
         tr_up(i,k,p_no3_a01) = aerosol(lno3acc) * frac_no3(1) * 1.0e9*mwno3/mwdry
         tr_up(i,k,p_no3_a02) = aerosol(lno3acc) * frac_no3(2) * 1.0e9*mwno3/mwdry
         tr_up(i,k,p_no3_a03) = aerosol(lno3acc) * frac_no3(3) * 1.0e9*mwno3/mwdry
         tr_up(i,k,p_no3_a04) = aerosol(lno3acc) * frac_no3(4) * 1.0e9*mwno3/mwdry
+        tr_up(i,k,p_no3_a05) = aerosol(lno3acc) * frac_no3(5) * 1.0e9*mwno3/mwdry
 
       endif
       

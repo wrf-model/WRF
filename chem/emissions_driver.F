@@ -52,7 +52,7 @@ CONTAINS
          ebio_ch3cho,ebio_ch3co2h,ebio_tbut2ene,ebio_c2h5cho,              &
          ebio_nc4h10,							   &
          ! stuff for MEGAN v2.04                                                 
-         T2,swdown,                                                        &
+         T2,Q2,swdown,                                                     & !dimaman
          nmegan,EFmegan,                                                   &
          msebio_isop,                                                      &
          mlai,                                                             &
@@ -73,7 +73,7 @@ CONTAINS
          vprm_in,rad_vprm,lambda_vprm,alpha_vprm,resp_vprm,               &
          xtime,tslb,wet_in,rainc,rainnc,potevp,sfcevp,lu_index,            &
          biomt_par,emit_par,ebio_co2oce,eghg_bio,                          &
-         seas_flux,                                                        &
+         seas_flux,bact_emiss, fung_emiss, pol_emiss,                      & !dimaman
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )
@@ -290,7 +290,7 @@ CONTAINS
 
    real, dimension (ims:ime, jms:jme ) ,                               &
         intent(in) ::                                                  &
-        T2, swdown
+        T2, Q2, swdown !dimaman
 
    integer, intent(in) :: current_month
 
@@ -324,7 +324,7 @@ CONTAINS
       REAL, DIMENSION(ims:ime, 8, jms:jme, num_vprm_in), INTENT(IN)     ::  vprm_in
       REAL, DIMENSION(ims:ime, 1,jms:jme, num_eghg_bio), INTENT(INOUT ) ::  eghg_bio
 
-      REAL, DIMENSION(ims:ime, jms:jme), INTENT(OUT)   :: seas_flux
+      REAL, DIMENSION(ims:ime, jms:jme), INTENT(OUT)   :: seas_flux, bact_emiss, fung_emiss, pol_emiss !dimaman
 ! CO2
       REAL, DIMENSION(8) :: rad_vprm,lambda_vprm,alpha_vprm,resp_vprm
 ! CH4
@@ -1582,12 +1582,12 @@ CONTAINS
           SAPRC99_MOSAIC_8BIN_VBS2_KPP   )
        call wrf_debug(15,'emissions_driver calling mosaic_addemiss')
        call mosaic_addemiss( id, dtstep, u10, v10, alt, dz8w, xland,     &
-            config_flags, chem, slai, ust, smois, ivgtyp, isltyp,        &
+            config_flags, chem, slai, mlai, T2, Q2, ust, smois, ivgtyp, isltyp,    & !dimaman
             emis_ant,ebu,config_flags%biomass_burn_opt,                  &
             config_flags%dust_opt,                                       &
             ktau,u_phy,v_phy,rho_phy,g,dx,erod,                          &
             dust_emiss_active, seasalt_emiss_active,                     &
-            seas_flux,emis_dust,                                         &
+            seas_flux,emis_dust, bact_emiss, fung_emiss, pol_emiss,      & !dimaman
             ids,ide, jds,jde, kds,kde,                                   &
             ims,ime, jms,jme, kms,kme,                                   &
             its,ite, jts,jte, kts,kte                                    )

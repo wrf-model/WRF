@@ -66,45 +66,45 @@
      SUBROUTINE sum_pm_driver ( config_flags,                       &
           alt, chem, h2oaj, h2oai,                                  &
           pm2_5_dry, pm2_5_water, pm2_5_dry_ec, pm10,               &
-          tsoa,asoa,bsoa,                                             &
+          tsoa,asoa,bsoa,                                           &
           hoa_a01,hoa_a02,hoa_a03,hoa_a04,                          &
-          hoa_a05,hoa_a06,hoa_a07,hoa_a08,                          & !BSINGH Added 4 more bins for each species for SAPRC 8 bin version
+          hoa_a05,hoa_a06,hoa_a07,hoa_a08,hoa_a09,hoa_a10,          & !dimaman !BSINGH Added 4 more bins for each species for SAPRC 8 bin version
           bboa_a01,bboa_a02,bboa_a03,bboa_a04,                      &
-          bboa_a05,bboa_a06,bboa_a07,bboa_a08,                      &
+          bboa_a05,bboa_a06,bboa_a07,bboa_a08,bboa_a09,bboa_a10,    &
           soa_a01,soa_a02,soa_a03,soa_a04,                          &
-          soa_a05,soa_a06,soa_a07,soa_a08,                          &
+          soa_a05,soa_a06,soa_a07,soa_a08,soa_a09,soa_a10,          &
           bbsoa_a01,bbsoa_a02,bbsoa_a03,bbsoa_a04,                  &
-          bbsoa_a05,bbsoa_a06,bbsoa_a07,bbsoa_a08,                  &
+          bbsoa_a05,bbsoa_a06,bbsoa_a07,bbsoa_a08,bbsoa_a09,bbsoa_a10,&
           hsoa_a01,hsoa_a02,hsoa_a03,hsoa_a04,                      &
-          hsoa_a05,hsoa_a06,hsoa_a07,hsoa_a08,                      &
+          hsoa_a05,hsoa_a06,hsoa_a07,hsoa_a08,hsoa_a09,hsoa_a10,    &
           biog_a01,biog_a02,biog_a03,biog_a04,                      &
-          biog_a05,biog_a06,biog_a07,biog_a08,                      &
-          asmpsoa_a01,asmpsoa_a02,asmpsoa_a03,asmpsoa_a04,          &
+          biog_a05,biog_a06,biog_a07,biog_a08,biog_a09,biog_a10,    &
+          asmpsoa_a01,asmpsoa_a02,asmpsoa_a03,asmpsoa_a04,asmpsoa_a05, &
           arosoa_a01,arosoa_a02,arosoa_a03,arosoa_a04,              &
-          arosoa_a05,arosoa_a06,arosoa_a07,arosoa_a08,              &
+          arosoa_a05,arosoa_a06,arosoa_a07,arosoa_a08,arosoa_a09,arosoa_a10,&
           totoa_a01,totoa_a02,totoa_a03,totoa_a04,                  &
-          totoa_a05,totoa_a06,totoa_a07,totoa_a08,                  & 
+          totoa_a05,totoa_a06,totoa_a07,totoa_a08,totoa_a09,totoa_a10,& 
           hsoa_c,hsoa_o,bbsoa_c,bbsoa_o,                            &
           biog_v1,biog_v2,biog_v3,biog_v4,                          &
           ant_v1,ant_v2,ant_v3,ant_v4,                              &
           smpa_v1,smpbb_v1,                                         &
           !BSINGH - Added cw aerosols(for VBS)
           hoa_cw01,    hoa_cw02,    hoa_cw03,    hoa_cw04,          &
-          hoa_cw05,    hoa_cw06,    hoa_cw07,    hoa_cw08,          &
+          hoa_cw05,    hoa_cw06,    hoa_cw07,    hoa_cw08,hoa_cw09,    hoa_cw10, & !dimaman
           bboa_cw01,   bboa_cw02,   bboa_cw03,   bboa_cw04,         &
-          bboa_cw05,   bboa_cw06,   bboa_cw07,   bboa_cw08,         &
+          bboa_cw05,   bboa_cw06,   bboa_cw07,   bboa_cw08,bboa_cw09,   bboa_cw10, &
           soa_cw01,    soa_cw02,    soa_cw03,    soa_cw04,          &
-          soa_cw05,    soa_cw06,    soa_cw07,    soa_cw08,          &
+          soa_cw05,    soa_cw06,    soa_cw07,    soa_cw08,soa_cw09,    soa_cw10, &
           bbsoa_cw01,  bbsoa_cw02,  bbsoa_cw03,  bbsoa_cw04,        &
-          bbsoa_cw05,  bbsoa_cw06,  bbsoa_cw07,  bbsoa_cw08,        &
+          bbsoa_cw05,  bbsoa_cw06,  bbsoa_cw07,  bbsoa_cw08,bbsoa_cw09,  bbsoa_cw10, &
           biog_cw01,   biog_cw02,   biog_cw03,   biog_cw04,         &
-          biog_cw05,   biog_cw06,   biog_cw07,   biog_cw08,         &
+          biog_cw05,   biog_cw06,   biog_cw07,   biog_cw08, biog_cw09,   biog_cw10,  &
           hsoa_cw01,   hsoa_cw02,   hsoa_cw03,   hsoa_cw04,         &
-          hsoa_cw05,   hsoa_cw06,   hsoa_cw07,   hsoa_cw08,         &
+          hsoa_cw05,   hsoa_cw06,   hsoa_cw07,   hsoa_cw08, hsoa_cw09,   hsoa_cw10,  &
           arosoa_cw01, arosoa_cw02, arosoa_cw03, arosoa_cw04,       &
-          arosoa_cw05, arosoa_cw06, arosoa_cw07, arosoa_cw08,       &
+          arosoa_cw05, arosoa_cw06, arosoa_cw07, arosoa_cw08,arosoa_cw09, arosoa_cw10, &
           totoa_cw01,  totoa_cw02,  totoa_cw03,  totoa_cw04,        &
-          totoa_cw05,  totoa_cw06,  totoa_cw07,  totoa_cw08,        &        
+          totoa_cw05,  totoa_cw06,  totoa_cw07,  totoa_cw08,totoa_cw09,  totoa_cw10, &        
           hsoa_cw_c,   hsoa_cw_o,   bbsoa_cw_c,  bbsoa_cw_o,        &
           biog_cw_v1,                                               &
           ant_cw_v1,                                                &
@@ -142,44 +142,44 @@
             INTENT(OUT) :: pm2_5_dry,pm2_5_water,pm2_5_dry_ec,pm10,   &
             tsoa,asoa,bsoa,                                           &
             hoa_a01,hoa_a02,hoa_a03,hoa_a04,                          &
-            hoa_a05,hoa_a06,hoa_a07,hoa_a08,                          &!BSINGH Added 4 more bins for each species for SAPRC 8 bin version             
+            hoa_a05,hoa_a06,hoa_a07,hoa_a08,hoa_a09,hoa_a10,          & !dimaman !BSINGH Added 4 more bins for each species for SAPRC 8 bin version             
             bboa_a01,bboa_a02,bboa_a03,bboa_a04,                      &
-            bboa_a05,bboa_a06,bboa_a07,bboa_a08,                      &     
+            bboa_a05,bboa_a06,bboa_a07,bboa_a08,bboa_a09,bboa_a10,    &     
             soa_a01,soa_a02,soa_a03,soa_a04,                          &
-            soa_a05,soa_a06,soa_a07,soa_a08,                          &        
+            soa_a05,soa_a06,soa_a07,soa_a08,soa_a09,soa_a10,          &        
             bbsoa_a01,bbsoa_a02,bbsoa_a03,bbsoa_a04,                  &
-            bbsoa_a05,bbsoa_a06,bbsoa_a07,bbsoa_a08,                  &     
+            bbsoa_a05,bbsoa_a06,bbsoa_a07,bbsoa_a08,bbsoa_a09,bbsoa_a10,&     
             hsoa_a01,hsoa_a02,hsoa_a03,hsoa_a04,                      &
-            hsoa_a05,hsoa_a06,hsoa_a07,hsoa_a08,                      &       
+            hsoa_a05,hsoa_a06,hsoa_a07,hsoa_a08,hsoa_a09,hsoa_a10,    &       
             biog_a01,biog_a02,biog_a03,biog_a04,                      &
-            biog_a05,biog_a06,biog_a07,biog_a08,                      &       
+            biog_a05,biog_a06,biog_a07,biog_a08,biog_a09,biog_a10,    &       
             arosoa_a01,arosoa_a02,arosoa_a03,arosoa_a04,              &
-            arosoa_a05,arosoa_a06,arosoa_a07,arosoa_a08,              &             
+            arosoa_a05,arosoa_a06,arosoa_a07,arosoa_a08,arosoa_a09,arosoa_a10,&             
             totoa_a01,totoa_a02,totoa_a03,totoa_a04,                  &
-            totoa_a05,totoa_a06,totoa_a07,totoa_a08,                  &    
+            totoa_a05,totoa_a06,totoa_a07,totoa_a08,totoa_a09,totoa_a10,&    
             hsoa_c,hsoa_o,bbsoa_c,bbsoa_o,                            &
             biog_v1,biog_v2,biog_v3,biog_v4,                          &
             ant_v1,ant_v2,ant_v3,ant_v4,                              &
             smpa_v1,                                                  &
             smpbb_v1,                                                 &
-            asmpsoa_a01,asmpsoa_a02,asmpsoa_a03,asmpsoa_a04,          &!BSINGH - Not adding 5-8 bins for asmpsoa, as it is not req. for 8 bin SAPRC
+            asmpsoa_a01,asmpsoa_a02,asmpsoa_a03,asmpsoa_a04, asmpsoa_a05, &!BSINGH - Not adding 5-8 bins for asmpsoa, as it is not req. for 8 bin SAPRC
             !BSINGH - Added cw aerosols(for VBS)
             hoa_cw01,    hoa_cw02,    hoa_cw03,    hoa_cw04,          &
-            hoa_cw05,    hoa_cw06,    hoa_cw07,    hoa_cw08,          &
+            hoa_cw05,    hoa_cw06,    hoa_cw07,    hoa_cw08,hoa_cw09,    hoa_cw10,& !dimaman
             bboa_cw01,   bboa_cw02,   bboa_cw03,   bboa_cw04,         &
-            bboa_cw05,   bboa_cw06,   bboa_cw07,   bboa_cw08,         &
+            bboa_cw05,   bboa_cw06,   bboa_cw07,   bboa_cw08,bboa_cw09,   bboa_cw10,         &
             soa_cw01,    soa_cw02,    soa_cw03,    soa_cw04,          &
-            soa_cw05,    soa_cw06,    soa_cw07,    soa_cw08,          &
+            soa_cw05,    soa_cw06,    soa_cw07,    soa_cw08,soa_cw09,    soa_cw10,          &
             bbsoa_cw01,  bbsoa_cw02,  bbsoa_cw03,  bbsoa_cw04,        &
-            bbsoa_cw05,  bbsoa_cw06,  bbsoa_cw07,  bbsoa_cw08,        &
+            bbsoa_cw05,  bbsoa_cw06,  bbsoa_cw07,  bbsoa_cw08,bbsoa_cw09,  bbsoa_cw10,        &
             biog_cw01,   biog_cw02,   biog_cw03,   biog_cw04,         &
-            biog_cw05,   biog_cw06,   biog_cw07,   biog_cw08,         &
+            biog_cw05,   biog_cw06,   biog_cw07,   biog_cw08,biog_cw09,   biog_cw10,         &
             hsoa_cw01,   hsoa_cw02,   hsoa_cw03,   hsoa_cw04,         &
-            hsoa_cw05,   hsoa_cw06,   hsoa_cw07,   hsoa_cw08,         &
+            hsoa_cw05,   hsoa_cw06,   hsoa_cw07,   hsoa_cw08,hsoa_cw09,   hsoa_cw10,         &
             arosoa_cw01, arosoa_cw02, arosoa_cw03, arosoa_cw04,       &
-            arosoa_cw05, arosoa_cw06, arosoa_cw07, arosoa_cw08,       &
+            arosoa_cw05, arosoa_cw06, arosoa_cw07, arosoa_cw08,arosoa_cw09, arosoa_cw10,       &
             totoa_cw01,  totoa_cw02,  totoa_cw03,  totoa_cw04,        &
-            totoa_cw05,  totoa_cw06,  totoa_cw07,  totoa_cw08,        &        
+            totoa_cw05,  totoa_cw06,  totoa_cw07,  totoa_cw08,totoa_cw09,  totoa_cw10,        &        
             hsoa_cw_c,   hsoa_cw_o,   bbsoa_cw_c,  bbsoa_cw_o,        &
             biog_cw_v1,                                               &
             ant_cw_v1                                                 
@@ -856,7 +856,7 @@
               grid%ebio_c5h8,grid%ebio_apinene,grid%ebio_bpinene,grid%ebio_toluene,        &
               grid%ebio_ch3cho,grid%ebio_ch3co2h,grid%ebio_tbut2ene,                      &
               grid%ebio_c2h5cho,grid%ebio_nc4h10,					                      &
-              grid%T2,grid%swdown,                                                         &
+              grid%T2,grid%Q2,grid%swdown,                                                 & !dimaman
               grid%nmegan,grid%EFmegan,                                                    &
               grid%msebio_isop,                                                            &
               grid%mlai,                                                                   &
@@ -877,7 +877,7 @@
               grid%potevp,grid%SFCEVP,grid%LU_INDEX,                                       &
               grid%biomt_par,grid%emit_par,grid%ebio_co2oce,                               &
               eghg_bio,                                                                    &
-              grid%seas_flux,                                                              &
+              grid%seas_flux,grid%bact_emiss,grid%fung_emiss,grid%pol_emiss,               & !dimaman
               ids,ide, jds,jde, kds,kde,                                                   &
               ims,ime, jms,jme, kms,kme,                                                   &
               its,ite,jts,jte,kts,kte)
@@ -926,7 +926,7 @@
               grid%bscoef1,grid%bscoef2,grid%bscoef3,grid%bscoef4,                    &
               grid%l2aer,grid%l3aer,grid%l4aer,grid%l5aer,grid%l6aer,grid%l7aer,      &
               grid%totoa_a01,grid%totoa_a02,grid%totoa_a03,grid%totoa_a04,            &
-              grid%totoa_a05,grid%totoa_a06,grid%totoa_a07,grid%totoa_a08,            &
+              grid%totoa_a05,grid%totoa_a06,grid%totoa_a07,grid%totoa_a08,grid%totoa_a09,grid%totoa_a10,            &!dimaman
               grid%extaerlw1,grid%extaerlw2,grid%extaerlw3,grid%extaerlw4,grid%extaerlw5, &
               grid%extaerlw6,grid%extaerlw7,grid%extaerlw8,grid%extaerlw9,grid%extaerlw10, &
               grid%extaerlw11,grid%extaerlw12,grid%extaerlw13,grid%extaerlw14,grid%extaerlw15, &
@@ -1149,7 +1149,8 @@
              U_phy,V_phy,t_phy,moist,dz8w,                                            &
              p_phy,XLV,CP,G,r_v,                                                      &
              z_at_w,grid%cu_co_ten,                                                   &
-             grid%wd_no3_cu,grid%wd_so4_cu,                                 &
+             grid%wd_oc_cu,grid%wd_bact_cu, grid%wd_fung_cu, grid%wd_pol_cu,grid%wd_bc_cu, & !dimaman
+             grid%wd_no3_cu,grid%wd_so4_cu,&
              grid%wd_nh4_cu,grid%wd_oa_cu,                                            &
              grid%wd_so2_cu, grid%wd_sulf_cu, grid%wd_hno3_cu, grid%wd_nh3_cu,        &
              grid%wd_cvasoa_cu, grid%wd_cvbsoa_cu, grid%wd_asoa_cu, grid%wd_bsoa_cu,  &
@@ -1178,7 +1179,7 @@
              U_phy,V_phy,t_phy,moist,dz8w,                                            &
              p_phy,XLV,CP,G,r_v,                                                      &
              z_at_w, grid%cu_co_ten,                                                  &
-             grid%wd_no3_cu,grid%wd_so4_cu,                                 &
+             grid%wd_oc_cu,grid%wd_bact_cu, grid%wd_fung_cu, grid%wd_pol_cu, grid%wd_bc_cu ,grid%wd_no3_cu,grid%wd_so4_cu,&!dimaman
              grid%wd_nh4_cu,grid%wd_oa_cu,                                            &
              grid%wd_so2_cu, grid%wd_sulf_cu, grid%wd_hno3_cu, grid%wd_nh3_cu,        &
              grid%wd_cvasoa_cu, grid%wd_cvbsoa_cu, grid%wd_asoa_cu, grid%wd_bsoa_cu,  &
@@ -1515,6 +1516,9 @@ if ( cam_mam_aerosols ) &
                 grid%no3_a_1to4_ic_cup, grid%no3_cw_1to4_ic_cup,                        &
                 grid%oa_a_1to4_ic_cup,  grid%oa_cw_1to4_ic_cup,                         &
                 grid%oin_a_1to4_ic_cup, grid%oin_cw_1to4_ic_cup,                        &
+                grid%bact_a_1to4_ic_cup, grid%bact_cw_1to4_ic_cup,                      & !dimaman
+                grid%fung_a_1to4_ic_cup, grid%fung_cw_1to4_ic_cup,                      &
+                grid%pol_a_1to4_ic_cup, grid%pol_cw_1to4_ic_cup,                        &
                 grid%bc_a_1to4_ic_cup,  grid%bc_cw_1to4_ic_cup,                         &
                 grid%na_a_1to4_ic_cup,  grid%na_cw_1to4_ic_cup,                         &
                 grid%cl_a_1to4_ic_cup,  grid%cl_cw_1to4_ic_cup,                         &
@@ -1524,6 +1528,9 @@ if ( cam_mam_aerosols ) &
                 grid%no3_a_5to6_ic_cup, grid%no3_cw_5to6_ic_cup,                        &
                 grid%oa_a_5to6_ic_cup,  grid%oa_cw_5to6_ic_cup,                         &
                 grid%oin_a_5to6_ic_cup, grid%oin_cw_5to6_ic_cup,                        &
+                grid%bact_a_5to6_ic_cup, grid%bact_cw_5to6_ic_cup,                      & !dimaman
+                grid%fung_a_5to6_ic_cup, grid%fung_cw_5to6_ic_cup,                      &
+                grid%pol_a_5to6_ic_cup, grid%pol_cw_5to6_ic_cup,                        &
                 grid%bc_a_5to6_ic_cup,  grid%bc_cw_5to6_ic_cup,                         &
                 grid%na_a_5to6_ic_cup,  grid%na_cw_5to6_ic_cup,                         &
                 grid%cl_a_5to6_ic_cup,  grid%cl_cw_5to6_ic_cup,                         &
@@ -1623,6 +1630,7 @@ if ( cam_mam_aerosols ) &
               grid%asulf,grid%ahno3,grid%anh3,grid%cvaro1,grid%cvaro2,                &
               grid%cvalk1,grid%cvole1,grid%cvapi1,grid%cvapi2,                        &
               grid%cvlim1,grid%cvlim2,                                                &
+              grid%wd_oc_sc,grid%wd_bact_sc,grid%wd_fung_sc,grid%wd_pol_sc,grid%wd_bc_sc,& !dimaman 
               grid%wd_no3_sc, grid%wd_so4_sc, grid%wd_nh4_sc,grid%wd_oa_sc,           &
               grid%wd_so2_sc, grid%wd_sulf_sc, grid%wd_hno3_sc, grid%wd_nh3_sc,       &
               grid%wd_cvasoa_sc, grid%wd_cvbsoa_sc, grid%wd_asoa_sc, grid%wd_bsoa_sc, &
@@ -1694,43 +1702,43 @@ end if !Chemistry time step check
            grid%pm2_5_dry, grid%pm2_5_water, grid%pm2_5_dry_ec, grid%pm10,            &
            grid%tsoa,grid%asoa,grid%bsoa,                                             &
            grid%hoa_a01,grid%hoa_a02,grid%hoa_a03,grid%hoa_a04,                       &
-           grid%hoa_a05,     grid%hoa_a06,     grid%hoa_a07,      grid%hoa_a08,       & !BSINGH(12/03/2013) Added 4 more bins for each species for SAPRC 8 bin version
+           grid%hoa_a05,     grid%hoa_a06,     grid%hoa_a07,      grid%hoa_a08, grid%hoa_a09,      grid%hoa_a10,       &!dimaman !BSINGH(12/03/2013) Added 4 more bins for each species for SAPRC 8 bin version
            grid%bboa_a01,grid%bboa_a02,grid%bboa_a03,grid%bboa_a04,                   &
-           grid%bboa_a05,    grid%bboa_a06,    grid%bboa_a07,     grid%bboa_a08,      &
+           grid%bboa_a05,    grid%bboa_a06,    grid%bboa_a07,     grid%bboa_a08,grid%bboa_a09,     grid%bboa_a10,      &
            grid%soa_a01,grid%soa_a02,grid%soa_a03,grid%soa_a04,                       &
-           grid%soa_a05,     grid%soa_a06,     grid%soa_a07,      grid%soa_a08,       &
+           grid%soa_a05,     grid%soa_a06,     grid%soa_a07,      grid%soa_a08,grid%soa_a09,      grid%soa_a10,       &
            grid%bbsoa_a01,grid%bbsoa_a02,grid%bbsoa_a03,grid%bbsoa_a04,               &
-           grid%bbsoa_a05,   grid%bbsoa_a06,   grid%bbsoa_a07,    grid%bbsoa_a08,     &
+           grid%bbsoa_a05,   grid%bbsoa_a06,   grid%bbsoa_a07,    grid%bbsoa_a08,grid%bbsoa_a09,    grid%bbsoa_a10,     &
            grid%hsoa_a01,grid%hsoa_a02,grid%hsoa_a03,grid%hsoa_a04,                   &
-           grid%hsoa_a05,    grid%hsoa_a06,    grid%hsoa_a07,     grid%hsoa_a08,      &
+           grid%hsoa_a05,    grid%hsoa_a06,    grid%hsoa_a07,     grid%hsoa_a08,grid%hsoa_a09,     grid%hsoa_a10,       &
            grid%biog_a01,grid%biog_a02,grid%biog_a03,grid%biog_a04,                   &
-           grid%biog_a05,    grid%biog_a06,    grid%biog_a07,     grid%biog_a08,      &
-           grid%asmpsoa_a01,grid%asmpsoa_a02,grid%asmpsoa_a03,grid%asmpsoa_a04,       &
+           grid%biog_a05,    grid%biog_a06,    grid%biog_a07,     grid%biog_a08,grid%biog_a09,     grid%biog_a10,      &
+           grid%asmpsoa_a01,  grid%asmpsoa_a02,   grid%asmpsoa_a03,  grid%asmpsoa_a04,  grid%asmpsoa_a05,       &
            grid%arosoa_a01,grid%arosoa_a02,grid%arosoa_a03,grid%arosoa_a04,           &
-           grid%arosoa_a05,  grid%arosoa_a06,  grid%arosoa_a07,   grid%arosoa_a08,    &
+           grid%arosoa_a05,  grid%arosoa_a06,  grid%arosoa_a07,   grid%arosoa_a08,grid%arosoa_a09,   grid%arosoa_a10,    &
            grid%totoa_a01,grid%totoa_a02,grid%totoa_a03,grid%totoa_a04,               &
-           grid%totoa_a05,   grid%totoa_a06,   grid%totoa_a07,    grid%totoa_a08,     &
+           grid%totoa_a05,   grid%totoa_a06,   grid%totoa_a07,    grid%totoa_a08,grid%totoa_a09,    grid%totoa_a10,      &
            grid%hsoa_c,grid%hsoa_o,grid%bbsoa_c,grid%bbsoa_o,                         &
            grid%biog_v1,grid%biog_v2,grid%biog_v3,grid%biog_v4,                       &
            grid%ant_v1,grid%ant_v2,grid%ant_v3,grid%ant_v4,                           &
            grid%smpa_v1,grid%smpbb_v1,                                                &
             !BSINGH(12/03/2013) - Added cw aerosols(for VBS)
            grid%hoa_cw01,    grid%hoa_cw02,    grid%hoa_cw03,    grid%hoa_cw04,       &
-           grid%hoa_cw05,    grid%hoa_cw06,    grid%hoa_cw07,    grid%hoa_cw08,       &
+           grid%hoa_cw05,    grid%hoa_cw06,    grid%hoa_cw07,    grid%hoa_cw08,grid%hoa_cw09,grid%hoa_cw10,       &
            grid%bboa_cw01,   grid%bboa_cw02,   grid%bboa_cw03,   grid%bboa_cw04,      &
-           grid%bboa_cw05,   grid%bboa_cw06,   grid%bboa_cw07,   grid%bboa_cw08,      &
+           grid%bboa_cw05,   grid%bboa_cw06,   grid%bboa_cw07,   grid%bboa_cw08,grid%bboa_cw09,   grid%bboa_cw10,      &
            grid%soa_cw01,    grid%soa_cw02,    grid%soa_cw03,    grid%soa_cw04,       &
-           grid%soa_cw05,    grid%soa_cw06,    grid%soa_cw07,    grid%soa_cw08,       &
+           grid%soa_cw05,    grid%soa_cw06,    grid%soa_cw07,    grid%soa_cw08,grid%soa_cw09,    grid%soa_cw10,       &
            grid%bbsoa_cw01,  grid%bbsoa_cw02,  grid%bbsoa_cw03,  grid%bbsoa_cw04,     &
-           grid%bbsoa_cw05,  grid%bbsoa_cw06,  grid%bbsoa_cw07,  grid%bbsoa_cw08,     &
+           grid%bbsoa_cw05,  grid%bbsoa_cw06,  grid%bbsoa_cw07,  grid%bbsoa_cw08,grid%bbsoa_cw09,  grid%bbsoa_cw10,     &
            grid%biog_cw01,   grid%biog_cw02,   grid%biog_cw03,   grid%biog_cw04,      &
-           grid%biog_cw05,   grid%biog_cw06,   grid%biog_cw07,   grid%biog_cw08,      &
+           grid%biog_cw05,   grid%biog_cw06,   grid%biog_cw07,   grid%biog_cw08,grid%biog_cw09,   grid%biog_cw10,      &
            grid%hsoa_cw01,   grid%hsoa_cw02,   grid%hsoa_cw03,   grid%hsoa_cw04,      &
-           grid%hsoa_cw05,   grid%hsoa_cw06,   grid%hsoa_cw07,   grid%hsoa_cw08,      &
+           grid%hsoa_cw05,   grid%hsoa_cw06,   grid%hsoa_cw07,   grid%hsoa_cw08,grid%hsoa_cw09,   grid%hsoa_cw10,      &
            grid%arosoa_cw01, grid%arosoa_cw02, grid%arosoa_cw03, grid%arosoa_cw04,    &
-           grid%arosoa_cw05, grid%arosoa_cw06, grid%arosoa_cw07, grid%arosoa_cw08,    &
+           grid%arosoa_cw05, grid%arosoa_cw06, grid%arosoa_cw07, grid%arosoa_cw08,grid%arosoa_cw09, grid%arosoa_cw10,    &
            grid%totoa_cw01,  grid%totoa_cw02,  grid%totoa_cw03,  grid%totoa_cw04,     &
-           grid%totoa_cw05,  grid%totoa_cw06,  grid%totoa_cw07,  grid%totoa_cw08,     &        
+           grid%totoa_cw05,  grid%totoa_cw06,  grid%totoa_cw07,  grid%totoa_cw08,grid%totoa_cw09,  grid%totoa_cw10,     &        
            grid%hsoa_cw_c,   grid%hsoa_cw_o,   grid%bbsoa_cw_c,  grid%bbsoa_cw_o,     &
            grid%biog_cw_v1,                                                           &
            grid%ant_cw_v1,                                                            &

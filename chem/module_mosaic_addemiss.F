@@ -29,12 +29,12 @@ CONTAINS
 
 !----------------------------------------------------------------------
    subroutine mosaic_addemiss( id, dtstep, u10, v10, alt, dz8w, xland,     &
-               config_flags, chem, slai, ust, smois, ivgtyp, isltyp,       &
+               config_flags, chem, slai, mlai,T2,Q2, ust, smois, ivgtyp, isltyp,       &
                emis_ant,ebu,biom_active,dust_opt,                          &
-               !czhao  
+               !czhao dimaman 
                 ktau, u_phy,v_phy,rho_phy,g,dx,erod,                        &
                dust_emiss_active, seasalt_emiss_active,                    &
-                seas_flux,emis_dust,                                        &
+                seas_flux,emis_dust,bact_emiss, fung_emiss, pol_emiss,     & !dimaman
                ids,ide, jds,jde, kds,kde,                                  &
                ims,ime, jms,jme, kms,kme,                                  &
                its,ite, jts,jte, kts,kte                                   )
@@ -49,10 +49,16 @@ CONTAINS
 !  USE module_state_description, only:  num_chem, param_first_scalar,   &
 !     emiss_inpt_default, emiss_inpt_pnnl_rs, emiss_inpt_pnnl_cm,num_emis_ant
    USE module_data_mosaic_asect
+   USE module_domain
+   USE module_date_time, only: geth_julgmt, calc_current_date,& 
+       split_date_char !dimaman
+
 
    IMPLICIT NONE
 
    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
+   TYPE(domain), TARGET :: grid !dimaman
+   
 
    INTEGER,      INTENT(IN   ) :: id,                                      &
                                   ids,ide, jds,jde, kds,kde,               &
@@ -61,7 +67,8 @@ CONTAINS
 
    INTEGER, INTENT(IN) ::    dust_emiss_active, seasalt_emiss_active, biom_active, dust_opt
 
-   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT) :: seas_flux
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT) :: seas_flux,          &
+                   bact_emiss, fung_emiss, pol_emiss                       !dimaman
 
    REAL, DIMENSION( ims:ime, 1, jms:jme,num_emis_dust),OPTIONAL,           &
          INTENT(INOUT ) ::                                                 &
@@ -107,14 +114,61 @@ CONTAINS
           INTENT(INOUT) ::   smois
 
 ! local variables
-   integer i, j, k, l, n
+   integer i, j, k, l, n, julyrd, juldayd, p, day_curr, dayss, daysm !dimaman
    integer iphase, itype
    integer p1st
+   integer, dimension (12) :: months_noleap, months !dimaman
+   integer, dimension (12) :: months_leap
+
 
    real, parameter :: efact1 = 1.0
    real :: aem_so4, aem_no3, aem_cl, aem_msa, aem_co3, aem_nh4,   &
-           aem_na, aem_ca, aem_oin, aem_oc, aem_bc, aem_num
-   real dum, fact
+           aem_na, aem_ca, aem_oin, aem_oc, aem_bc, aem_num,      &
+           aem_bact, aem_fung, aem_pol                            !dimaman
+   real dum, fact, gmtd
+   CHARACTER(len=24) ::  nextstep_date, cdate,simulation_start_date, cur_date
+   integer :: idt
+   REAL :: dxd,dy,xlat
+   !...leaf_area_index (m2/m2)
+   REAL, DIMENSION (ims:ime, jms:jme, 12 ) ,            &
+         OPTIONAL,                                      &
+         INTENT(IN) :: mlai
+   !...2-meter temperature (K)
+   REAL,  DIMENSION( ims:ime , jms:jme ),               &
+         INTENT(IN) :: T2
+   !...2-meter humidity (Kg/Kg)
+   REAL,  DIMENSION( ims:ime , jms:jme ),               &
+         INTENT(IN) :: Q2
+! local variables dimaman
+!   character (LEN=256) ::current_date_char
+   integer :: hour, mon
+   real :: mfactor, hfactor, mmr_bct, mmr_fng, mmr_pln, &
+           nmr_bct,nmr_bct1,nmr_bct2, nmr_fng,nmr_fng1,nmr_fng2,nmr_pln,nmr_pln1,nmr_pln2, a
+   real, dimension(:,:), allocatable ::bct_number
+   real, dimension(:,:), allocatable ::fng_number
+   real, dimension(:,:), allocatable ::pln_number
+!   real, dimension(:,:), allocatable ::bct_numberall
+!   real, dimension(:,:), allocatable ::fng_numberall
+!   real, dimension(:,:), allocatable ::pln_numberall
+   real, dimension(:,:), allocatable ::bct_mass
+   real, dimension(:,:), allocatable ::fng_mass
+   real, dimension(:,:), allocatable ::pln_mass
+!   real, dimension(:,:), allocatable ::bct_massall
+!   real, dimension(:,:), allocatable ::fng_massall
+!   real, dimension(:,:), allocatable ::pln_massall
+
+   real :: oc_density
+   real pi
+   parameter (pi = 3.1415936536)
+
+   INTEGER simulation_start_year   , &
+         simulation_start_month  , &
+         simulation_start_day    , &
+         simulation_start_hour   , &
+         simulation_start_minute , &
+         simulation_start_second
+
+!dimaman
 
 
 ! fraction of sorgam i/aitken mode emissions that go to each
@@ -122,22 +176,22 @@ CONTAINS
 !now the anthropogenic and biomass burning emissiosn use same distribution
 !it can be improve later --czhao 
 ! not 100%, because most mass falling down to the size less than the lowest boundary
-   real, save :: fr8b_aem_sorgam_i(8) =   & 
+   real, save :: fr8b_aem_sorgam_i(10) =   & 
                  (/ 0.965,  0.035,  0.000,  0.000,   &
-                    0.000,  0.000,  0.000,  0.000 /)
+                    0.000,  0.000,  0.000,  0.000, 0.000,  0.000 /) !dimaman
 
 ! fraction of sorgam j/accum mode emissions that go to each
 ! of the mosaic 8 "standard" sections
-   real, save :: fr8b_aem_sorgam_j(8) =   &
+   real, save :: fr8b_aem_sorgam_j(10) =   &
                  (/ 0.026,  0.147,  0.350,  0.332,   &
-                    0.125,  0.019,  0.001,  0.000/)
+                    0.125,  0.019,  0.001,  0.000, 0.000,  0.000/)!dimaman
 
 ! fraction of sorgam coarse mode emissions that go to each
 ! of the mosaic 8 "standard" sections
 ! not 100%, because most mass falling up to the size larger than the highest boundary
-   real, save :: fr8b_aem_sorgam_c(8) =   &
+   real, save :: fr8b_aem_sorgam_c(10) =   &
                  (/ 0.000,  0.000,  0.000,  0.002,   &
-                    0.021,  0.110,  0.275,  0.592 /)
+                    0.021,  0.110,  0.275,  0.592, 0.000,  0.000 /)!dimaman
 
 ! fraction of mosaic fine (< 2.5 um) emissions that go to each
 ! of the mosaic 8 "standard" sections
@@ -147,8 +201,8 @@ CONTAINS
 !                 here no longer match the other two subroutines.
 !rce 10-may-2005, changed fr8b_aem_mosaic_f & fr8b_aem_mosaic_c
 !                 to values determined by jdf
-   real, save :: fr8b_aem_mosaic_f(8) =   &
-       (/ 0.060, 0.045, 0.245, 0.400, 0.100, 0.150, 0., 0./) !10-may-2005
+   real, save :: fr8b_aem_mosaic_f(10) =   &
+       (/ 0.060, 0.045, 0.245, 0.400, 0.100, 0.150, 0., 0., 0., 0./) !10-may-2005 !dimaman
 !      (/ 0.100, 0.045, 0.230, 0.375, 0.100, 0.150, 0., 0./) !1-Apr-2005 values
 !      (/ 0.0275, 0.0426, 0.2303, 0.3885, 0.1100, 0.2011, 0., 0./) !15-Nov-2004 values
 !      (/ 0.01, 0.05, 0.145, 0.60, 0.145, 0.05, 0.00, 0.00 /)
@@ -156,49 +210,57 @@ CONTAINS
 
 ! fraction of mosaic coarse (> 2.5 um) emissions that go to each
 ! of the mosaic 8 "standard" sections
-   real, save :: fr8b_aem_mosaic_c(8) =   &
-       (/ 0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.300, 0.700 /) ! 10-may-2005
+   real, save :: fr8b_aem_mosaic_c(10) =   &
+       (/ 0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.300, 0.700, 0.0, 0.0 /) ! 10-may-2005 !dimaman
 !      (/ 0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.933, 0.067 /) ! as of apr-2005
 !      (/ 0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.16,  0.84  /) !  "old"
+
+!dimaman
+   real, save :: fr8b_aem_mosaic_bact(10) =   &
+    (/ 0.0,  0.0,  0.0,  0.0,  0.0,  1.0,  0.0, 0.0, 0.0, 0.0 /) ! 12-june-2022
+   real, save :: fr8b_aem_mosaic_fung(10) =   &
+    (/ 0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0, 1.0, 0.0, 0.0 /) ! 12-june-2022
+   real, save :: fr8b_aem_mosaic_pol(10) =   &
+    (/ 0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0, 0.0, 0.0, 1.0 /) ! 12-june-2022
 
 !++ SAN      Fractionation for PREP-Chem Fire emissions            ++!
 ! New fractions for biomass burning emissions. Based on Janhall et. al. (2010)
 ! Based on average fresh smoke emissions from 20 data points
 ! mean_Dp = .117um, geometric_std = 1.7
-real, save :: fr8b_bburn_mosaic(8) = &
-      (/ 0.0092, 0.1385, 0.4548, 0.3388, 0.0567, 0.002, 0.0, 0.0/) 
+real, save :: fr8b_bburn_mosaic(10) = &
+      (/ 0.0092, 0.1385, 0.4548, 0.3388, 0.0567, 0.002, 0.0, 0.0, 0.0, 0.0/) !dimaman 
 !--SAN
 
 
 ! fraction of TNO black carbon <1um emissions that go into each of 
 ! the mosaic 8 "standard" sections     - Doug (4/3/2011)
-   real, save :: fr8b_tno_bc1(8) =   &
-       (/ 0.0494,  0.3795,  0.4714,  0.0967,  0.003,  0.0,  0.0, 0.0 /)
+   real, save :: fr8b_tno_bc1(10) =   &
+    (/ 0.0494,  0.3795,  0.4714,  0.0967,  0.003,  0.0,  0.0, 0.0, 0.0, 0.0 /)
 
 ! fraction of TNO elemental carbon 1um-2.5um emissions that go into each of 
 ! the mosaic 8 "standard" sections     - Doug (4/3/2011)
-   real, save :: fr8b_tno_ec25(8) =   &
-       (/ 0.0,  0.0,  0.0,  0.0, 0.40, 0.60,  0.0,  0.0 /)
+   real, save :: fr8b_tno_ec25(10) =   &
+       (/ 0.0,  0.0,  0.0,  0.0, 0.40, 0.60,  0.0,  0.0, 0.0, 0.0 /) !dimaman 
 
 ! fraction of TNO organic carbon <2.5um domestic combustion emissions that go into each of 
 ! the mosaic 8 "standard" sections     - Doug (4/3/2011)
-   real, save :: fr8b_tno_oc_dom(8) =   &
-       (/ 0.0358, 0.1325, 0.2704, 0.3502, 0.1904, 0.0657, 0.0, 0.0 /)
+   real, save :: fr8b_tno_oc_dom(10) =   &
+    (/ 0.0358, 0.1325, 0.2704, 0.3502, 0.1904, 0.0657, 0.0, 0.0, 0.0, 0.0 /) !dimaman
 
 ! fraction of TNO organic carbon <2.5um traffic (and other) emissions that go into each of 
 ! the mosaic 8 "standard" sections     - Doug (4/3/2011)
-   real, save :: fr8b_tno_oc_tra(8) =   &
-       (/ 0.0063, 0.0877, 0.3496, 0.4054, 0.1376, 0.0134, 0.0, 0.0 /)
+   real, save :: fr8b_tno_oc_tra(10) =   &
+    (/ 0.0063, 0.0877, 0.3496, 0.4054, 0.1376, 0.0134, 0.0, 0.0, 0.0, 0.0 /) !dimaman
 
 ! fraction of TNO "OIN" [PM2.5 minus sum(carbon<2.5)] emissions that go into each of
 ! the mosaic 8 "standard" sections     - Doug (4/3/2011)  --- based on mosaic fine mode
-   real, save :: fr8b_tno_mosaic_f(8) =   &
-       (/ 0.060, 0.045, 0.245, 0.400, 0.100, 0.150, 0.0, 0.0/)
+   real, save :: fr8b_tno_mosaic_f(10) =   &
+    (/ 0.060, 0.045, 0.245, 0.400, 0.100, 0.150, 0.0, 0.0, 0.0, 0.0/) !dimaman
 
 ! fraction of TNO 2.5-10um emissions that go into each of
 ! the mosaic 8 "standard" sections     - Doug (4/3/2011)  --- based on mosaic coarse mode
-   real, save :: fr8b_tno_mosaic_c(8) =   &
-       (/ 0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.300, 0.700 /)
+   real, save :: fr8b_tno_mosaic_c(10) =   &
+    (/ 0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.300, 0.700, 0.0, 0.0 /) !dimaman
 
 
 
@@ -208,22 +270,27 @@ real, save :: fr8b_bburn_mosaic(8) = &
 !       emiss_inpt_opt
 !    when nsize_aer=4 (=number of sections), the values are
 !	calculated by adding two of the 8-section values
-   real :: fr_aem_sorgam_i(8)
-   real :: fr_aem_sorgam_j(8)
-   real :: fr_aem_sorgam_c(8)
-   real :: fr_aem_mosaic_f(8)
-   real :: fr_aem_mosaic_c(8)
-   real :: fr_tno_bc1(8)
-   real :: fr_tno_ec25(8)
-   real :: fr_tno_oc_dom(8)
-   real :: fr_tno_oc_tra(8)
-   real :: fr_tno_mosaic_f(8)
-   real :: fr_tno_mosaic_c(8)
+   real :: fr_aem_sorgam_i(10)
+   real :: fr_aem_sorgam_j(10)
+   real :: fr_aem_sorgam_c(10)
+   real :: fr_aem_mosaic_f(10)
+   real :: fr_aem_mosaic_c(10)
+   real :: fr_tno_bc1(10)
+   real :: fr_tno_ec25(10)
+   real :: fr_tno_oc_dom(10)
+   real :: fr_tno_oc_tra(10)
+   real :: fr_tno_mosaic_f(10)
+   real :: fr_tno_mosaic_c(10)
+   real :: fr_aem_mosaic_bact(10)!dimaman
+   real :: fr_aem_mosaic_fung(10)
+   real :: fr_aem_mosaic_pol(10)
+
+
 !++ SAN
-   real :: fr_aem_gc2mosaic_f(8) ! extra arrays for GOCART->MOSAIC mapping
-   real :: fr_aem_gc2mosaic_c(8)
-   real :: bburn_mosaic_f(8)       ! Arrays to hold biomass-burning size 
-   real :: bburn_mosaic_c(8)       ! Arrays to hold biomass-burning size 
+   real :: fr_aem_gc2mosaic_f(10) ! extra arrays for GOCART->MOSAIC mapping
+   real :: fr_aem_gc2mosaic_c(10)
+   real :: bburn_mosaic_f(10)       ! Arrays to hold biomass-burning size 
+   real :: bburn_mosaic_c(10)       ! Arrays to hold biomass-burning size 
 !-- SAN
    double precision :: chem_sum(num_chem)
 
@@ -258,7 +325,7 @@ real, save :: fr8b_bburn_mosaic(8) = &
 !
 ! note:  if fr_aem_sorgam_y > 0, then fr_aem_mosaic_y = 0, and vice-versa
 !
-        if ((nsize_aer(itype) .ne. 4) .and. (nsize_aer(itype) .ne. 8)) then
+        if ((nsize_aer(itype) .ne. 5) .and. (nsize_aer(itype) .ne. 10)) then !dimaman
           write(msg,'(a,i5)')   &
            'subr mosaic_addemiss - nsize_aer(itype) must be ' //   &
            '4 or 8 but = ',  nsize_aer(itype)
@@ -278,15 +345,59 @@ real, save :: fr8b_bburn_mosaic(8) = &
         fr_tno_mosaic_c(:) = 0.0
         fr_aem_gc2mosaic_f(:) = 0.0
         fr_aem_gc2mosaic_c(:) = 0.0
+        fr_aem_mosaic_bact(:) = 0.0  !dimaman
+        fr_aem_mosaic_fung(:) = 0.0
+        fr_aem_mosaic_pol(:) = 0.0
+
+
+!dimaman
+   allocate(bct_number(ims:ime, jms:jme)); bct_number=0
+   allocate(fng_number(ims:ime, jms:jme)); fng_number=0
+   allocate(pln_number(ims:ime, jms:jme)); pln_number=0
+   allocate(bct_mass(ims:ime, jms:jme)); bct_mass=0
+   allocate(fng_mass(ims:ime, jms:jme)); fng_mass=0
+   allocate(pln_mass(ims:ime, jms:jme)); pln_mass=0
+
+!   allocate(bct_numberall(ims:ime, jms:jme))
+!   allocate(fng_numberall(ims:ime, jms:jme))
+!   allocate(pln_numberall(ims:ime, jms:jme))
+!   allocate(bct_massall(ims:ime, jms:jme))
+!   allocate(fng_massall(ims:ime, jms:jme))
+!   allocate(pln_massall(ims:ime, jms:jme))
+
+
+
+
+
+   months_noleap = (/31,28,31,30,31,30,31,31,30,31,30,31/)
+   months_leap = (/31,29,31,30,31,30,31,31,30,31,30,31/)
+   dayss = 0.
+   daysm = 0.
+   oc_density = 1000.0 ! kg/m3 Vignati et al. 2010
+!   mfactor = 0.
+!   hfactor = 0.
+   xlat = 1
+   mmr_bct = 0.5e-6 !m
+   mmr_fng = 1.5e-6 !m
+   mmr_pln = 1.5e-5 !m
+!   dxd = config_flags%dx !namelist.input
+!   dy = config_flags%dy !namelist.input
+!   doxy = dxd*dy !(surface grid cell(m2))
+!dimaman
+
+
+
+
+
 
 	emiss_inpt_select_1: SELECT CASE( config_flags%emiss_inpt_opt )
 
 	  CASE( emiss_inpt_default, emiss_inpt_pnnl_rs )
-	    if (nsize_aer(itype) .eq. 8) then
+	    if (nsize_aer(itype) .eq. 10) then !dimaman
 		fr_aem_sorgam_i(:) = fr8b_aem_sorgam_i(:)
 		fr_aem_sorgam_j(:) = fr8b_aem_sorgam_j(:)
 		fr_aem_sorgam_c(:) = fr8b_aem_sorgam_c(:)
-	    else if (nsize_aer(itype) .eq. 4) then
+	    else if (nsize_aer(itype) .eq. 5) then
 		do n = 1, nsize_aer(itype)
 		    fr_aem_sorgam_i(n) = fr8b_aem_sorgam_i(2*n-1)   &
 		                       + fr8b_aem_sorgam_i(2*n)
@@ -313,10 +424,10 @@ real, save :: fr8b_bburn_mosaic(8) = &
               fr_aem_sorgam_c(:) = 0.0
 
 ! Use FM MOSAIC mapping for SO4, OC, BC and PM2.5, CM mosaic for PM10
-              if (nsize_aer(itype) .eq. 8) then
+              if (nsize_aer(itype) .eq. 10) then !dimaman
                 fr_aem_gc2mosaic_f(:) = fr8b_aem_mosaic_f(:)
                 fr_aem_gc2mosaic_c(:) = fr8b_aem_mosaic_c(:)
-              elseif (nsize_aer(itype) .eq. 4) then
+              elseif (nsize_aer(itype) .eq. 5) then
                 do n = 1, nsize_aer(itype)
                   fr_aem_gc2mosaic_f(n) = fr8b_aem_mosaic_f(2*n-1) + fr8b_aem_mosaic_f(2*n)
                   fr_aem_gc2mosaic_c(n) = fr8b_aem_mosaic_c(2*n-1) + fr8b_aem_mosaic_c(2*n)
@@ -325,10 +436,10 @@ real, save :: fr8b_bburn_mosaic(8) = &
             endif
 !-- SAN
           CASE( emiss_inpt_pnnl_cm )
-	    if (nsize_aer(itype) .eq. 8) then
+	    if (nsize_aer(itype) .eq. 10) then !dimaman
 		fr_aem_mosaic_f(:) = fr8b_aem_mosaic_f(:)
 		fr_aem_mosaic_c(:) = fr8b_aem_mosaic_c(:)
-	    else if (nsize_aer(itype) .eq. 4) then
+	    else if (nsize_aer(itype) .eq. 5) then
 		do n = 1, nsize_aer(itype)
 		    fr_aem_mosaic_f(n) = fr8b_aem_mosaic_f(2*n-1)   &
 		                       + fr8b_aem_mosaic_f(2*n)
@@ -338,14 +449,14 @@ real, save :: fr8b_bburn_mosaic(8) = &
 	    end if
 
 	  CASE( emiss_inpt_tno )		! Doug - added 4/3/2011
-	    if (nsize_aer(itype) .eq. 8) then
+	    if (nsize_aer(itype) .eq. 10) then !dimaman
 		fr_tno_bc1(:) = fr8b_tno_bc1(:)
 		fr_tno_ec25(:) = fr8b_tno_ec25(:)
 		fr_tno_oc_dom(:) = fr8b_tno_oc_dom(:)
 		fr_tno_oc_tra(:) = fr8b_tno_oc_tra(:)
         fr_tno_mosaic_c(:) = fr8b_tno_mosaic_c(:)
         fr_tno_mosaic_f(:) = fr8b_tno_mosaic_f(:)
-	    else if (nsize_aer(itype) .eq. 4) then
+	    else if (nsize_aer(itype) .eq. 5) then
 		do n = 1, nsize_aer(itype)
 		    fr_tno_bc1(n) = fr8b_tno_bc1(2*n-1)   &
 		                  + fr8b_tno_bc1(2*n)
@@ -371,12 +482,12 @@ real, save :: fr8b_bburn_mosaic(8) = &
 ! get arrays for apportioning mass into MOSAIC bins for fire emissions
         fire_inpt_select: SELECT CASE (config_flags%biomass_burn_opt)
           CASE (BIOMASSB,BIOMASSB_MOZC)
-            if (nsize_aer(itype) .eq. 8) then
+            if (nsize_aer(itype) .eq. 10) then !dimaman
               bburn_mosaic_f(:) = fr8b_bburn_mosaic(:)
 !++SAN
               bburn_mosaic_c(:) = fr8b_aem_mosaic_c(:)
 !--SAN
-            else if (nsize_aer(itype) .eq. 4) then
+            else if (nsize_aer(itype) .eq. 5) then
               do n = 1, nsize_aer(itype)
                 bburn_mosaic_f(n) = fr8b_bburn_mosaic(2*n-1) + fr8b_bburn_mosaic(2*n)
 !++SAN
@@ -400,6 +511,10 @@ real, save :: fr8b_bburn_mosaic(8) = &
 	    fr_tno_oc_tra(:) = 0.0
 	    fr_tno_mosaic_f(:) = 0.0
 	    fr_tno_mosaic_c(:) = 0.0
+        fr_aem_mosaic_bact(:) = 0.0  !dimaman
+        fr_aem_mosaic_fung(:) = 0.0
+        fr_aem_mosaic_pol(:) = 0.0
+
 	end if
 
 
@@ -410,7 +525,7 @@ real, save :: fr8b_bburn_mosaic(8) = &
                ids,ide, jds,jde, kds,kde,                                  &
                ims,ime, jms,jme, kms,kme,                                  &
                its,ite, jts,jte, kts,kte,                                  &
-               14,                                                         &
+               17,                                                         & !dimaman
                emis_ant(ims,  1,jms,p_e_pm_10),emis_ant(ims,  1,jms,p_e_pm_25), &
                emis_ant(ims,  1,jms,p_e_pm25i),emis_ant(ims,  1,jms,p_e_pm25j), &
                emis_ant(ims,  1,jms,p_e_eci),emis_ant(ims,  1,jms,p_e_ecj),     &
@@ -425,8 +540,58 @@ real, save :: fr8b_bburn_mosaic(8) = &
 
 
 	p1st = param_first_scalar
+    print *,'p1st',p1st
+!dimaman
+   print *, 'Diabazei mhna, wra'
+   CALL nl_get_simulation_start_year   ( 1, simulation_start_year   )
+   CALL nl_get_simulation_start_month  ( 1, simulation_start_month  )
+   CALL nl_get_simulation_start_day    ( 1, simulation_start_day    )
+   CALL nl_get_simulation_start_hour   ( 1, simulation_start_hour   )
+   CALL nl_get_simulation_start_minute ( 1, simulation_start_minute )
+   CALL nl_get_simulation_start_second ( 1, simulation_start_second )
+   WRITE ( simulation_start_date(1:19) , FMT = '(I4.4,"-",I2.2,"-",I2.2,"_",I2.2,":",I2.2,":",I2.2)' ) &
+           simulation_start_year,simulation_start_month,simulation_start_day,&
+           simulation_start_hour,simulation_start_minute,simulation_start_second
+   simulation_start_date(1:24) = trim(simulation_start_date(1:19))//trim('.0000')
+   print *, simulation_start_date
+   CALL geth_julgmt (julyrd , juldayd , gmtd)
+   print *, julyrd, juldayd, gmtd
 
-!       
+   IF(MOD(julyrd,100).NE.0.AND.MOD(julyrd,4).EQ.0) THEN
+    months = months_leap
+   ELSEIF(MOD(julyrd,400).EQ.0) THEN
+    months = months_leap
+   ELSE
+    months = months_noleap
+   ENDIF
+
+   do p = 1, 12
+      dayss = dayss + months(p)
+      daysm = juldayd - dayss
+     if ( daysm <= 0) then
+        mon = p
+        day_curr = daysm + months(p)
+        exit
+     endif
+   end do
+   print *,'mon',mon
+   hour = int(gmtd)
+
+!dimaman 30/09/2022
+   if (nsize_aer(itype) .eq. 10) then
+     fr_aem_mosaic_bact(:) = fr8b_aem_mosaic_bact(:)
+     fr_aem_mosaic_fung(:) = fr8b_aem_mosaic_fung(:)
+     fr_aem_mosaic_pol(:)  = fr8b_aem_mosaic_pol(:)
+   else if (nsize_aer(itype) .eq. 5) then 
+      do n = 1, nsize_aer(itype)
+         fr_aem_mosaic_bact(n) = fr8b_aem_mosaic_bact(2*n-1)   & 
+                               + fr8b_aem_mosaic_bact(2*n)
+         fr_aem_mosaic_fung(n) = fr8b_aem_mosaic_fung(2*n-1)   &
+                               + fr8b_aem_mosaic_fung(2*n)
+         fr_aem_mosaic_pol(n)  = fr8b_aem_mosaic_pol(2*n-1)    &
+                               + fr8b_aem_mosaic_pol(2*n)
+      end do
+   end if     
 ! apply emissions at each section and grid point
 !
 	do 1900 n = 1, nsize_aer(itype)
@@ -447,8 +612,8 @@ real, save :: fr8b_bburn_mosaic(8) = &
 	        + fr_aem_sorgam_i(n)*emis_ant(i,k,j,p_e_no3i)   &
 	        + fr_aem_sorgam_j(n)*emis_ant(i,k,j,p_e_no3j)  
 
-	aem_oc  = fr_aem_mosaic_f(n)*emis_ant(i,k,j,p_e_orgj)   &
-	        + fr_aem_mosaic_c(n)*emis_ant(i,k,j,p_e_orgc)   &
+	aem_oc  = fr_aem_mosaic_f(n)*emis_ant(i,k,j,p_e_orgj)   &  !dimaman
+	        + fr_aem_mosaic_c(n)*emis_ant(i,k,j,p_e_orgi)   &  !orgc
 	        + fr_aem_sorgam_i(n)*emis_ant(i,k,j,p_e_orgi)   &
 	        + fr_aem_sorgam_j(n)*emis_ant(i,k,j,p_e_orgj)   &
 	        + fr_tno_oc_dom(n)*emis_ant(i,k,j,p_e_oc_dom)   &
@@ -465,7 +630,7 @@ real, save :: fr8b_bburn_mosaic(8) = &
          END SELECT  chem_select_1 
 
 	aem_bc  = fr_aem_mosaic_f(n)*emis_ant(i,k,j,p_e_ecj)  &
-	        + fr_aem_mosaic_c(n)*emis_ant(i,k,j,p_e_ecc)  &
+	        + fr_aem_mosaic_c(n)*emis_ant(i,k,j,p_e_eci)  & !dimaman orgc
 	        + fr_aem_sorgam_i(n)*emis_ant(i,k,j,p_e_eci)  &
 	        + fr_aem_sorgam_j(n)*emis_ant(i,k,j,p_e_ecj)  &
 	        + fr_tno_bc1(n)*emis_ant(i,k,j,p_e_bc_1)      &
@@ -515,6 +680,127 @@ real, save :: fr8b_bburn_mosaic(8) = &
             + fr_aem_sorgam_i(n)*emis_ant(i,k,j,p_e_cli)   &
             + fr_aem_sorgam_j(n)*emis_ant(i,k,j,p_e_clj)
    END SELECT chem_select_2
+  
+  chem_select_3 : SELECT CASE(config_flags%pbapemis_opt)
+  CASE (PBAPMOSAIC)
+      !dimitris April 2018
+      print *, 'PBAPMOSAIC START'
+      ! Bacteria emissions - dimaman
+      print *, 'BACTERIA START'
+      !Factors from Jacobson and Streets, GJR, 2009; Table 5
+      if (xlat > 0.) then !North Hemisphere
+         if (any([1,2,3,4,11,12] == mon)) then
+            mfactor = 0.6
+         else if (any([5,6,7,8,9,10] == mon)) then
+            mfactor = 1.4
+         else
+            stop 'mfactor for bacteria unknown (N)'
+         endif
+      else   !South Hemisphere
+         if (any([7,8,9,10,5,6] == mon))then
+            mfactor = 0.6
+         else if (any([11,12,1,2,3,4] == mon)) then
+            mfactor = 1.4
+         endif
+      endif
+      ! Bacteria content from the wrfchemi file
+      bct_number(i,j) = mfactor * emis_ant(i,k,j,p_e_bact) !#/m2/s
+      nmr_bct = mmr_bct * exp(3.0*alog(1.0)**2) !m
+      bct_mass(i,j) = bct_number(i,j) * pi * 4./3. * nmr_bct**3 * &
+                      exp(9./2. * alog(1.0)**2) * oc_density * 1e09 !Kg/m2/s----->ug/m2/s
+      bact_emiss(i,j) =  bct_mass(i,j) !kg/m2/s organic mass
+      aem_bact = bact_emiss(i,j)
+      aem_bact = aem_bact * fr_aem_mosaic_bact(n) !12/6/2022
+      print *, 'bacteria aem_bact'
+      print *, aem_bact
+	  print *, 'BACTERIA END'
+      
+	  !FUNGAL emissions - dimaman
+      print *, 'FUNGAL START'
+      if (emis_ant(i,k,j,p_e_fung) > 0.) then
+         a = 20.246 * (T2(i,j) - 275.82) + 3.93e04 * &
+             Q2(i,j) * mlai(i,j,mon) !T2:temperature (K)Q2:humidity (Kg/Kg) mlai:leaf area index (m2/m2
+         fng_number(i,j) = max(0., a) !#/m2/s
+      else
+         fng_number(i,j) = 0.
+      endif
+!      fng_number(i,j) = fng_number(i,j) !#/m2/s
+      nmr_fng = mmr_fng * exp(3.0*alog(1.0)**2) !mass median radius
+	  fng_mass(i,j) = fng_number(i,j) * pi * 4./3. * &
+                      nmr_fng**3 * exp(9./2. * alog(1.0)**2) * &
+                      oc_density * 1e09!kg/m2/s -------> ug/m2/s            
+      fung_emiss(i,j) = fng_mass(i,j) !ug/m2/s
+      aem_fung = fung_emiss(i,j)
+      aem_fung = aem_fung * fr_aem_mosaic_fung(n)!12/6/2022
+      print *, 'fungal aem_fung'
+      print *, aem_fung
+      print *, 'FUNGAL END'
+	  
+      ! Pollen emissions - dimaman
+      print *, 'POLLEN START'
+      !Factors from Jacobson and Streets, GJR, 2009; Table 5
+      !1) Months
+      if (xlat > 0.) then !North Hemisphere
+         if (any([1,2,3,10,11,12] == mon)) then
+            mfactor = 0.5
+         else if (any([4,5,6] == mon)) then
+            mfactor = 2.0
+         else if (any([7,8,9] == mon)) then
+            mfactor = 1.0
+         else
+            stop 'mfactor for pollen unknown (N)'
+         endif
+      else   !South Hemisphere
+         if (any([4,5,6,7,8,9] == mon))then
+            mfactor = 0.5
+         else if (any([10,11,12] == mon)) then
+            mfactor = 2.0
+         else if (any([1,2,3] == mon)) then
+            mfactor = 1.0
+         endif
+      endif
+      !2)Hour of day
+      if (any([0,1,2,3,4,18,19,20,21,22,23] == hour)) then
+         hfactor = 0.1
+      else if (any([5,17] == hour)) then
+         hfactor = 0.2
+      else if (any([6,7] == hour)) then
+         hfactor = 4.0
+      else if (hour == 8) then
+         hfactor = 3.3
+      else if (hour == 9) then
+         hfactor = 3.0
+      else if (hour == 10) then
+         hfactor = 2.5
+      else if (hour == 11) then
+         hfactor = 2.0
+      else if (hour == 12) then
+         hfactor = 1.5
+      else if (hour == 13) then
+         hfactor = 1.0
+      else if (hour == 14) then
+         hfactor = 0.5
+      else if (hour == 15) then
+         hfactor = 0.4
+      else if (hour == 16) then
+         hfactor = 0.3
+      else
+         stop 'hfactor for pollen unknown'
+      endif
+      pln_number(i,j) = 0.5 * mfactor * hfactor * mlai(i,j,mon) !#/m2/s
+      nmr_pln = mmr_pln * exp(3.0*alog(1.0)**2)
+      pln_mass(i,j) = pln_number(i,j) * pi * 4./3. * nmr_pln**3 * &
+                      exp(9./2. * alog(1.0)**2) * oc_density * 1e09 !Kg/m2/s----->ug/m2/s
+      pol_emiss(i,j) =  pln_mass(i,j) !ug/m2/s organic mass (an thelw organic carbon prepei na diairethei me 2.6)
+      aem_pol = pol_emiss(i,j)
+      aem_pol = aem_pol * fr_aem_mosaic_pol(n)!12/6/2022
+      print *, 'pollen aem_pol'
+      print *, aem_pol
+	  print *, 'POLLEN END'
+    
+	  print *, 'PBAPMOSAIC DONE'
+  END SELECT chem_select_3
+
 
 ! compute number emissions
 ! first sum the mass-emissions/density
@@ -524,7 +810,8 @@ real, save :: fr8b_bburn_mosaic(8) = &
 	(aem_co3/dens_co3_aer) + (aem_nh4/dens_nh4_aer) +   &
 	(aem_na /dens_na_aer ) + (aem_ca /dens_ca_aer ) +   &
 	(aem_oin/dens_oin_aer) + (aem_oc /dens_oc_aer ) +   &
-	(aem_bc /dens_bc_aer )
+    (aem_bact /dens_bact_aer ) + (aem_fung /dens_fung_aer ) + & 
+    (aem_pol /dens_pol_aer ) + (aem_bc /dens_bc_aer )  !dimaman
 
 ! then multiply by 1.0e-6 to convert ug to g
 ! and divide by particle volume at center of section (cm3)
@@ -537,39 +824,64 @@ real, save :: fr8b_bburn_mosaic(8) = &
 ! rce 22-nov-2004 - change to using the "..._aer" species pointers
 	l = lptr_so4_aer(n,itype,iphase)
 	if (l >= p1st) chem(i,k,j,l) = chem(i,k,j,l) + aem_so4*fact
+    if ((n==5) .AND. l >= p1st) chem(i,k,j,l) = 1.e-35  !diagrafh mazas apo bin  dimaman
 
 	l = lptr_no3_aer(n,itype,iphase)
 	if (l >= p1st) chem(i,k,j,l) = chem(i,k,j,l) + aem_no3*fact
+    if ((n==5) .AND. l >= p1st) chem(i,k,j,l) = 1.e-35  !diagrafh mazas apo bin  dimaman
 
 	l = lptr_cl_aer(n,itype,iphase)
 	if (l >= p1st) chem(i,k,j,l) = chem(i,k,j,l) + aem_cl*fact
+    if ((n==5) .AND. l >= p1st) chem(i,k,j,l) = 1.e-35  !diagrafh mazas apo bin  dimaman
 
 	l = lptr_msa_aer(n,itype,iphase)
 	if (l >= p1st) chem(i,k,j,l) = chem(i,k,j,l) + aem_msa*fact
+    if ((n==5) .AND. l >= p1st) chem(i,k,j,l) = 1.e-35  !diagrafh mazas apo bin  dimaman
 
 	l = lptr_co3_aer(n,itype,iphase)
 	if (l >= p1st) chem(i,k,j,l) = chem(i,k,j,l) + aem_co3*fact
+    if ((n==5) .AND. l >= p1st) chem(i,k,j,l) = 1.e-35  !diagrafh mazas apo bin  dimaman
 
 	l = lptr_nh4_aer(n,itype,iphase)
 	if (l >= p1st) chem(i,k,j,l) = chem(i,k,j,l) + aem_nh4*fact
+    if ((n==5) .AND. l >= p1st) chem(i,k,j,l) = 1.e-35  !diagrafh mazas apo bin  dimaman
 
 	l = lptr_na_aer(n,itype,iphase)
 	if (l >= p1st) chem(i,k,j,l) = chem(i,k,j,l) + aem_na*fact
+    if ((n==5) .AND. l >= p1st) chem(i,k,j,l) = 1.e-35  !diagrafh mazas apo bin  dimaman
 
 	l = lptr_ca_aer(n,itype,iphase)
 	if (l >= p1st) chem(i,k,j,l) = chem(i,k,j,l) + aem_ca*fact
+    if ((n==5) .AND. l >= p1st) chem(i,k,j,l) = 1.e-35  !diagrafh mazas apo bin  dimaman
 
 	l = lptr_oin_aer(n,itype,iphase)
 	if (l >= p1st) chem(i,k,j,l) = chem(i,k,j,l) + aem_oin*fact
+    if ((n==5) .AND. l >= p1st) chem(i,k,j,l) = 1.e-35  !diagrafh mazas apo bin  dimaman
 
 	l = lptr_oc_aer(n,itype,iphase)
 	if (l >= p1st) chem(i,k,j,l) = chem(i,k,j,l) + aem_oc*fact
+    if ((n==5) .AND. l >= p1st) chem(i,k,j,l) = 1.e-35  !diagrafh mazas apo bin  dimaman
 
 	l = lptr_bc_aer(n,itype,iphase)
 	if (l >= p1st) chem(i,k,j,l) = chem(i,k,j,l) + aem_bc*fact
+    if ((n==5) .AND. l >= p1st) chem(i,k,j,l) = 1.e-35  !diagrafh mazas apo bin  dimaman
 
 	l = numptr_aer(n,itype,iphase)
 	if (l >= p1st) chem(i,k,j,l) = chem(i,k,j,l) + aem_num*fact
+    if ((n==5) .AND. l >= p1st) chem(i,k,j,l) = 1.e-35  !diagrafh mazas apo bin  dimaman
+
+    l = lptr_bact_aer(n,itype,iphase)
+    if (l >= p1st) chem(i,k,j,l) = chem(i,k,j,l) + aem_bact*fact !dimaman
+    if ((n == 1 .OR. n==2 .OR. n==4 .OR. n==5) .AND. l >= p1st) chem(i,k,j,l) = 1.e-35  !diagrafh mazas apo bin  dimaman
+ 
+    l = lptr_fung_aer(n,itype,iphase)
+    if (l >= p1st) chem(i,k,j,l) = chem(i,k,j,l) + aem_fung*fact
+    if ((n == 1 .OR. n==2 .OR. n==3 .OR. n==5) .AND. l >= p1st) chem(i,k,j,l) = 1.e-35  !diagrafh mazas apo bin    
+ 
+    l = lptr_pol_aer(n,itype,iphase)
+    if (l >= p1st) chem(i,k,j,l) = chem(i,k,j,l) + aem_pol*fact
+    if ((n == 1 .OR. n==2 .OR. n==3 .OR. n==4) .AND. l >= p1st) chem(i,k,j,l) = 1.e-35  !diagrafh mazas apo bin
+
 
 1810	continue
 1820	continue
@@ -613,10 +925,10 @@ size_loop: &
                 aem_oin = bburn_mosaic_f(n)*ebu(i,k,j,p_ebu_pm25)  &
                         + bburn_mosaic_c(n)*ebu(i,k,j,p_ebu_pm10) 
 
-         chem_select_3 : SELECT CASE( config_flags%chem_opt )
+         chem_select_4 : SELECT CASE( config_flags%chem_opt )
             CASE(SAPRC99_MOSAIC_4BIN_VBS2_KPP) ! Set the oc to zero for VBS
               aem_oc = 0.0
-            END SELECT  chem_select_3 
+            END SELECT  chem_select_4 !dimaman  
  
 ! emissions for these species are currently zero
           aem_nh4 = 0.0
@@ -696,7 +1008,7 @@ size_loop: &
                ids,ide, jds,jde, kds,kde,                                  &
                ims,ime, jms,jme, kms,kme,                                  &
                its,ite, jts,jte, kts,kte,                                  &
-               14,                                                         &
+               17,                                                         & !dimaman
                emis_ant(ims,  1,jms,p_e_pm_10),emis_ant(ims,  1,jms,p_e_pm_25), &
                emis_ant(ims,  1,jms,p_e_pm25i),emis_ant(ims,  1,jms,p_e_pm25j), &
                emis_ant(ims,  1,jms,p_e_eci),emis_ant(ims,  1,jms,p_e_ecj),     &
@@ -818,29 +1130,29 @@ size_loop: &
 	! Factors for Fuentes et al (ACP, 2011, doi:10.5194/acp-11-2585-2011) 
 	!                                              seasalt emission scheme.
 	! These are for calculating the seawater_OC content dependent factors.
-    real, save :: alpha_f1(4) =   &
-                 (/ 12.328, 38.077, 102.31, 281.65 /)
-    real, save :: alpha_f2(4) =   &
-                 (/ 2.2958, 8.0935, 25.251, 46.80 /)
-    real, save :: alpha_f3(4) =   &
-                 (/ 0.00452, 0.00705, 0.00080, 0.000761 /)
-    real, save :: beta_f1(4) =   &
-                 (/ 0.0311, -0.031633, 0.013154, -0.0017762 /)
-    real, save :: beta_f2(4) =   &
-                 (/ -13.916, 35.73, -9.7651, 1.1665 /)
-    real, save :: beta_f3(4) =   &
-                 (/ 4747.8, 12920.0, 7313.4, 6610.0 /)
-	real :: nti(4), dp0gi(4)
+    real, save :: alpha_f1(5) =   &
+                 (/ 12.328, 38.077, 102.31, 281.65, 0.0 /)!dimaman
+    real, save :: alpha_f2(5) =   &
+                 (/ 2.2958, 8.0935, 25.251, 46.80, 0.0 /)
+    real, save :: alpha_f3(5) =   &
+                 (/ 0.00452, 0.00705, 0.00080, 0.000761, 0.0 /)
+    real, save :: beta_f1(5) =   &
+                 (/ 0.0311, -0.031633, 0.013154, -0.0017762, 0.0 /)
+    real, save :: beta_f2(5) =   &
+                 (/ -13.916, 35.73, -9.7651, 1.1665, 0.0 /)
+    real, save :: beta_f3(5) =   &
+                 (/ 4747.8, 12920.0, 7313.4, 6610.0, 0.0 /)
+	real :: nti(5), dp0gi(5)
 	! seawater OC<0.2um concentration (in uM) - first is for low activity, the 2nd for high activity
 	!    High activity conc is from the average for RHaMBLe cruise in high activity regions
 	real, save :: oc02um(2) = (/ 0.0, 280.0 /)		
 	! Organic fraction for seasalt emissions (by size bin).
 	! These are estimated from Figure 5 of Fuentes et al (ACP, 2011), assuming a value of 
 	!        2 ug/l for Chl-a for the high activity
-	real, save :: org_frac_low_activity(8) =   &
-       (/ 0.05,  0.05,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0 /)
-	real, save :: org_frac_high_activity(8) =   &
-       (/ 0.2,  0.2,  0.1,  0.01,  0.01,  0.01,  0.01,  0.01 /)
+	real, save :: org_frac_low_activity(10) =   &
+       (/ 0.05,  0.05,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0, 0.0, 0.0 /)!dimaman
+	real, save :: org_frac_high_activity(10) =   &
+       (/ 0.2,  0.2,  0.1,  0.01,  0.01,  0.01,  0.01,  0.01, 0.0, 0.0 /)
 	
 
     p1st = PARAM_FIRST_SCALAR
@@ -851,7 +1163,7 @@ size_loop: &
 
 	! if using Feuntes et al (2011) then calculate the seawater OC dependent factors
 	if(seasalt_emiss_active .eq. 3 .or. seasalt_emiss_active .eq. 4)then
-		do i=1,4
+		do i=1,5 !dimaman
 			nti(i)   = beta_f1(i) * oc02um(seasalt_emiss_active-2)**2.0 + beta_f2(i) &
 							* oc02um(seasalt_emiss_active-2) + beta_f3(i)
 			dp0gi(i) = alpha_f1(i) + alpha_f2(i) &
@@ -955,7 +1267,7 @@ size_loop: &
 				l_na = lptr_na_aer(n,itype,iphase)
 				l_cl = lptr_cl_aer(n,itype,iphase)
 				l_oc = lptr_oc_aer(n,itype,iphase)
-				if ((l_na >= p1st) .and. (l_cl >= p1st) .and. (l_oc >= p1st)) then
+				if ((l_na >= p1st) .and. (l_cl >= p1st) .and. (l_oc >= p1st).and. ((n .eq. 5) .or. (n .eq. 9) .or. (n .eq. 10))) then !dimaman
 			
 					chem(i,k,j,l_na) = chem(i,k,j,l_na) +   &
 						factbb * ssemfact_mass(n,itype) * fracna
@@ -1266,7 +1578,7 @@ size_loop: &
 	!integer ireduce_smallr_emit
 	real dpdrylo_cm, dpdryhi_cm,				&
                 emitfact_numb, emitfact_surf, emitfact_mass
-    real, intent(in) :: nti(4), dp0gi(4), oc02um
+    real, intent(in) :: nti(5), dp0gi(5), oc02um !dimaman
 
 	! local variables
 	integer isub_bin, nsub_bin, jd, nsub_lower_bin, nsub_upper_bin
@@ -1784,7 +2096,7 @@ END MODULE module_mosaic_addemiss
 !       sz(3)=0.1512446
 !       sz(4)=0.84
         itype=1
-	if (nsize_aer(itype) .eq. 8) then
+	if (nsize_aer(itype) .eq. 10) then !dimaman
           !BSINGH(12/11/2013): Based on the suggestions by Manish Shrivastva, sz variable is modified below.
           !Original values are commented out
           !sz(1)=0.0
@@ -1804,7 +2116,10 @@ END MODULE module_mosaic_addemiss
           sz(6)=0.0951896
           sz(7)=0.17
           sz(8)=0.67
-	else if (nsize_aer(itype) .eq. 4) then
+          sz(9)=0.0 !dimaman
+          sz(10)=0.0
+
+	else if (nsize_aer(itype) .eq. 5) then !dimaman
           !BSINGH(12/11/2013): Based on the suggestions by Manish Shrivastva, sz variable is modified below.
           !Original values are commented out
           !sz(1)=0.0
@@ -1814,11 +2129,14 @@ END MODULE module_mosaic_addemiss
           sz(1)=1.78751e-06
           sz(2)=0.00875357
           sz(3)=0.1512446
-          sz(4)=0.84
-          sz(5)=0.0
+          sz(4)=0.44
+          sz(5)=0.40 !dimaman
           sz(6)=0.0
           sz(7)=0.0
           sz(8)=0.0
+          sz(9)=0.0 !dimaman
+          sz(10)=0.0
+
         endif
 
 !   for now just do itype=1
@@ -2103,6 +2421,9 @@ END MODULE module_mosaic_addemiss
         sz(6)=0.070
         sz(7)=0.2595
         sz(8)=0.42
+        sz(9)=0.0
+        sz(10)=0.0 !dimaman
+
 !        frac_10um=sum(sz(1:8))
 !        sz(:)=sz(:)/sum(sz(1:8))  ! relative ratio in diameter range of 0-10 um
 
@@ -2111,11 +2432,12 @@ END MODULE module_mosaic_addemiss
         iphase = ai_phase
 
         ! added option for 4bin WRF
-        IF (nsize_aer(itype) == 4) THEN
+        IF (nsize_aer(itype) == 5) THEN !dimaman
           sz(1) = sz(1) + sz(2)
           sz(2) = sz(3) + sz(4)
           sz(3) = sz(5) + sz(6)
           sz(4) = sz(7) + sz(8)
+          sz(5) = sz(9) + sz(10)
         ENDIF
 
   converi=1.e9
@@ -2199,7 +2521,7 @@ END MODULE module_mosaic_addemiss
                if (n <= 5) densdust=2.5
                if (n > 5 ) densdust=2.65
                ! added option for 4bin WRF
-               if (nsize_aer(itype) == 4) then
+               if (nsize_aer(itype) == 5) then !dimaman
                  if (n <= 2) densdust=2.5
                  if (n > 2 ) densdust=2.65
                endif

@@ -23,7 +23,7 @@
                bscoef1,bscoef2,bscoef3,bscoef4,                          &
                l2aer,l3aer,l4aer,l5aer,l6aer,l7aer,                      &
                totoa_a01,totoa_a02,totoa_a03,totoa_a04,                  &
-               totoa_a05,totoa_a06,totoa_a07,totoa_a08,                  & 
+               totoa_a05,totoa_a06,totoa_a07,totoa_a08, totoa_a09,totoa_a10,& !dimaman 
                extaerlw1,extaerlw2,extaerlw3,extaerlw4,extaerlw5,extaerlw6, &
                extaerlw7,extaerlw8,extaerlw9,extaerlw10,extaerlw11,extaerlw12, &
                extaerlw13,extaerlw14,extaerlw15,extaerlw16,  &
@@ -59,7 +59,8 @@
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                       &  
          INTENT(IN ) ::  relhum, dz8w, alt, h2oai, h2oaj,              &
                          totoa_a01, totoa_a02, totoa_a03, totoa_a04,   &
-                         totoa_a05,totoa_a06,totoa_a07,totoa_a08
+                         totoa_a05,totoa_a06,totoa_a07,totoa_a08,totoa_a09,totoa_a10 !dimaman
+
 !
 ! arrays that hold the aerosol optical properties
 !
@@ -219,7 +220,7 @@
              tauaersw,extaersw,gaersw,waersw,bscoefsw,               &
              l2aer,l3aer,l4aer,l5aer,l6aer,l7aer,                    &
              totoa_a01,totoa_a02,totoa_a03,totoa_a04,                &
-             totoa_a05,totoa_a06,totoa_a07,totoa_a08,                &
+             totoa_a05,totoa_a06,totoa_a07,totoa_a08,totoa_a09,totoa_a10,& !dimaman
              tauaerlw,extaerlw,                                      &
              ids,ide, jds,jde, kds,kde,                              &
              ims,ime, jms,jme, kms,kme,                              &

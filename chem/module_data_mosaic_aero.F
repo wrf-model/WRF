@@ -28,7 +28,7 @@ module module_data_mosaic_aero
   
   ! number of aerosol bins
 ! integer, save :: nbin_a_max = -999888777  ! maximum number of aerosol bins !BSINGH - 05/28/2013(RCE updates)
-  integer, parameter :: nbin_a_max = 8  ! maximum number of aerosol bins !BSINGH - 05/28/2013(RCE updates)
+  integer, parameter :: nbin_a_max = 10  !dimaman maximum number of aerosol bins !BSINGH - 05/28/2013(RCE updates)
 
   integer, save :: nbin_a     = -999888777  ! in-use  number of aerosol bins !BSINGH - namelist variable
   
@@ -162,6 +162,7 @@ module module_data_mosaic_aero
   integer, save ::   &
        iso4_a,     ino3_a,     icl_a,     inh4_a,     ico3_a,   &
        imsa_a,     ina_a,      ica_a,     ioc_a,      ibc_a,   &
+       ibact_a,    ifung_a,    ipol_a,    & !dimaman
        ioin_a,   &
        iaro1_a,    iaro2_a,   ialk1_a,    iole1_a,   &   ! not sure about these
        iapi1_a,    iapi2_a,    ilim1_a,   ilim2_a        ! not sure about these
@@ -174,6 +175,7 @@ module module_data_mosaic_aero
        jhno3,      jhcl,       jhhso4,   &
        jnh4msa,    jnamsa,     jcamsa2,    jmsa,   &
        joc,        jbc,        join,       jh2o,   &
+       jbact,      jfung,      jpol,   & !dimaman
        jaro1,      jaro2,      jalk1,      jole1,   &   ! not sure about these
        japi1,      japi2,      jlim1,      jlim2        ! not sure about these
   

@@ -890,7 +890,10 @@ CONTAINS
           dvel(i,1,j,p_ddmass_nh4_a01) = dvel(i,1,j,p_ddmass_nh4_a01) + ddmassn(p_nh4_a01)
           dvel(i,1,j,p_ddmass_na_a01) = dvel(i,1,j,p_ddmass_na_a01) + ddmassn(p_na_a01)
           dvel(i,1,j,p_ddmass_oin_a01) = dvel(i,1,j,p_ddmass_oin_a01) + ddmassn(p_oin_a01)
-          dvel(i,1,j,p_ddmass_oc_a01) = dvel(i,1,j,p_ddmass_oc_a01) + ddmassn(p_oc_a01)
+          dvel(i,1,j,p_ddmass_oc_a01) = dvel(i,1,j,p_ddmass_oc_a01) + ddmassn(p_oc_a01) !dimaman
+          dvel(i,1,j,p_ddmass_bact_a01) = 1.0e-35 !dimaman
+          dvel(i,1,j,p_ddmass_fung_a01) = 1.0e-35
+          dvel(i,1,j,p_ddmass_pol_a01) = 1.0e-35
           dvel(i,1,j,p_ddmass_bc_a01) = dvel(i,1,j,p_ddmass_bc_a01) + ddmassn(p_bc_a01)
           dvel(i,1,j,p_ddmass_so4_a02) = dvel(i,1,j,p_ddmass_so4_a02) + ddmassn(p_so4_a02)
           dvel(i,1,j,p_ddmass_no3_a02) = dvel(i,1,j,p_ddmass_no3_a02) + ddmassn(p_no3_a02)
@@ -899,6 +902,9 @@ CONTAINS
           dvel(i,1,j,p_ddmass_na_a02) = dvel(i,1,j,p_ddmass_na_a02) + ddmassn(p_na_a02)
           dvel(i,1,j,p_ddmass_oin_a02) = dvel(i,1,j,p_ddmass_oin_a02) + ddmassn(p_oin_a02)
           dvel(i,1,j,p_ddmass_oc_a02) = dvel(i,1,j,p_ddmass_oc_a02) + ddmassn(p_oc_a02)
+          dvel(i,1,j,p_ddmass_bact_a02) = 1.0e-35 !dimaman
+          dvel(i,1,j,p_ddmass_fung_a02) = 1.0e-35
+          dvel(i,1,j,p_ddmass_pol_a02) = 1.0e-35
           dvel(i,1,j,p_ddmass_bc_a02) = dvel(i,1,j,p_ddmass_bc_a02) + ddmassn(p_bc_a02)
           dvel(i,1,j,p_ddmass_so4_a03) = dvel(i,1,j,p_ddmass_so4_a03) + ddmassn(p_so4_a03)
           dvel(i,1,j,p_ddmass_no3_a03) = dvel(i,1,j,p_ddmass_no3_a03) + ddmassn(p_no3_a03)
@@ -907,6 +913,9 @@ CONTAINS
           dvel(i,1,j,p_ddmass_na_a03) = dvel(i,1,j,p_ddmass_na_a03) + ddmassn(p_na_a03)
           dvel(i,1,j,p_ddmass_oin_a03) = dvel(i,1,j,p_ddmass_oin_a03) + ddmassn(p_oin_a03)
           dvel(i,1,j,p_ddmass_oc_a03) = dvel(i,1,j,p_ddmass_oc_a03) + ddmassn(p_oc_a03)
+          dvel(i,1,j,p_ddmass_bact_a03) = dvel(i,1,j,p_ddmass_bact_a03) + ddmassn(p_bact_a03) !dimaman
+          dvel(i,1,j,p_ddmass_fung_a03) = 1.0e-35
+          dvel(i,1,j,p_ddmass_pol_a03) = 1.0e-35
           dvel(i,1,j,p_ddmass_bc_a03) = dvel(i,1,j,p_ddmass_bc_a03) + ddmassn(p_bc_a03)
           dvel(i,1,j,p_ddmass_so4_a04) = dvel(i,1,j,p_ddmass_so4_a04) + ddmassn(p_so4_a04)
           dvel(i,1,j,p_ddmass_no3_a04) = dvel(i,1,j,p_ddmass_no3_a04) + ddmassn(p_no3_a04)
@@ -915,17 +924,36 @@ CONTAINS
           dvel(i,1,j,p_ddmass_na_a04) = dvel(i,1,j,p_ddmass_na_a04) + ddmassn(p_na_a04)
           dvel(i,1,j,p_ddmass_oin_a04) = dvel(i,1,j,p_ddmass_oin_a04) + ddmassn(p_oin_a04)
           dvel(i,1,j,p_ddmass_oc_a04) = dvel(i,1,j,p_ddmass_oc_a04) + ddmassn(p_oc_a04)
+          dvel(i,1,j,p_ddmass_bact_a04) = 1.0e-35 !dimaman
+          dvel(i,1,j,p_ddmass_fung_a04) = dvel(i,1,j,p_ddmass_fung_a04) + ddmassn(p_fung_a04)
+          dvel(i,1,j,p_ddmass_pol_a04) = 1.0e-35
           dvel(i,1,j,p_ddmass_bc_a04) = dvel(i,1,j,p_ddmass_bc_a04) + ddmassn(p_bc_a04)
+          dvel(i,1,j,p_ddmass_so4_a05) = 1.0e-35
+          dvel(i,1,j,p_ddmass_no3_a05) = 1.0e-35
+          dvel(i,1,j,p_ddmass_cl_a05) = 1.0e-35
+          dvel(i,1,j,p_ddmass_nh4_a05) = 1.0e-35
+          dvel(i,1,j,p_ddmass_na_a05) = 1.0e-35
+          dvel(i,1,j,p_ddmass_oin_a05) = 1.0e-35
+          dvel(i,1,j,p_ddmass_oc_a05) = 1.0e-35
+          dvel(i,1,j,p_ddmass_bact_a05) = 1.0e-35
+          dvel(i,1,j,p_ddmass_fung_a05) = 1.0e-35
+          dvel(i,1,j,p_ddmass_pol_a05) = dvel(i,1,j,p_ddmass_pol_a05) + ddmassn(p_pol_a05) !dimaman
+          dvel(i,1,j,p_ddmass_bc_a05) = 1.0e-35
+
+
+
 
           dvel(i,1,j,p_ddmass_ca_a01) = dvel(i,1,j,p_ddmass_ca_a01) + ddmassn(p_ca_a01)
           dvel(i,1,j,p_ddmass_ca_a02) = dvel(i,1,j,p_ddmass_ca_a02) + ddmassn(p_ca_a02)
           dvel(i,1,j,p_ddmass_ca_a03) = dvel(i,1,j,p_ddmass_ca_a03) + ddmassn(p_ca_a03)
           dvel(i,1,j,p_ddmass_ca_a04) = dvel(i,1,j,p_ddmass_ca_a04) + ddmassn(p_ca_a04)
+          dvel(i,1,j,p_ddmass_ca_a05) = dvel(i,1,j,p_ddmass_ca_a05) + ddmassn(p_ca_a05) !dimaman
 
           dvel(i,1,j,p_ddmass_co3_a01) = dvel(i,1,j,p_ddmass_co3_a01) + ddmassn(p_co3_a01)
           dvel(i,1,j,p_ddmass_co3_a02) = dvel(i,1,j,p_ddmass_co3_a02) + ddmassn(p_co3_a02)
           dvel(i,1,j,p_ddmass_co3_a03) = dvel(i,1,j,p_ddmass_co3_a03) + ddmassn(p_co3_a03)
           dvel(i,1,j,p_ddmass_co3_a04) = dvel(i,1,j,p_ddmass_co3_a04) + ddmassn(p_co3_a04)
+          dvel(i,1,j,p_ddmass_co3_a05) = 1.0e-35 !dimaman
 
           if (config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .OR. &
               config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP) then
@@ -956,6 +984,9 @@ CONTAINS
                                               ddmassn(p_glysoa_oh_a04) + &
                                               ddmassn(p_glysoa_sfc_a04) + &
                                               ddmassn(p_glysoa_nh4_a04)
+
+            dvel(i,1,j,p_ddmass_glysoa_a05) = 1.0e-35 !dimaman
+
           endif
 
           if (config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP) then
@@ -979,6 +1010,11 @@ CONTAINS
             dvel(i,1,j,p_ddmass_smpbb_a04) = dvel(i,1,j,p_ddmass_smpbb_a04) + ddmassn(p_smpbb_a04)
             dvel(i,1,j,p_ddmass_biog1_c_a04) = dvel(i,1,j,p_ddmass_biog1_c_a04) + ddmassn(p_biog1_c_a04)
             dvel(i,1,j,p_ddmass_biog1_o_a04) = dvel(i,1,j,p_ddmass_biog1_o_a04) + ddmassn(p_biog1_o_a04)
+
+            dvel(i,1,j,p_ddmass_smpa_a05) = 1.0e-35 
+            dvel(i,1,j,p_ddmass_smpbb_a05) = 1.0e-35
+            dvel(i,1,j,p_ddmass_biog1_c_a05) = 1.0e-35
+            dvel(i,1,j,p_ddmass_biog1_o_a05) = 1.0e-35 !dimaman
 
           endif
 
@@ -1027,6 +1063,18 @@ CONTAINS
             dvel(i,1,j,p_ddmass_bsoa2_a04) = dvel(i,1,j,p_ddmass_bsoa2_a04) + ddmassn(p_bsoa2_a04)
             dvel(i,1,j,p_ddmass_bsoa3_a04) = dvel(i,1,j,p_ddmass_bsoa3_a04) + ddmassn(p_bsoa3_a04)
             dvel(i,1,j,p_ddmass_bsoa4_a04) = dvel(i,1,j,p_ddmass_bsoa4_a04) + ddmassn(p_bsoa4_a04)
+
+            dvel(i,1,j,p_ddmass_asoaX_a05) = 1.0e-35
+            dvel(i,1,j,p_ddmass_asoa1_a05) = 1.0e-35
+            dvel(i,1,j,p_ddmass_asoa2_a05) = 1.0e-35
+            dvel(i,1,j,p_ddmass_asoa3_a05) = 1.0e-35
+            dvel(i,1,j,p_ddmass_asoa4_a05) = 1.0e-35
+            dvel(i,1,j,p_ddmass_bsoaX_a05) = 1.0e-35
+            dvel(i,1,j,p_ddmass_bsoa1_a05) = 1.0e-35
+            dvel(i,1,j,p_ddmass_bsoa2_a05) = 1.0e-35
+            dvel(i,1,j,p_ddmass_bsoa3_a05) = 1.0e-35
+            dvel(i,1,j,p_ddmass_bsoa4_a05) = 1.0e-35 !dimaman
+
 
           endif
 
@@ -1153,6 +1201,9 @@ CONTAINS
           dvel(ims:ime,1,jms:jme,p_ddmass_na_a01) = dvel(ims:ime,1,jms:jme,p_ddmass_na_a01) + qsrflx(ims:ime,jms:jme,p_na_a01)
           dvel(ims:ime,1,jms:jme,p_ddmass_oin_a01) = dvel(ims:ime,1,jms:jme,p_ddmass_oin_a01) + qsrflx(ims:ime,jms:jme,p_oin_a01)
           dvel(ims:ime,1,jms:jme,p_ddmass_oc_a01) = dvel(ims:ime,1,jms:jme,p_ddmass_oc_a01) + qsrflx(ims:ime,jms:jme,p_oc_a01)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bact_a01) = 1.0e-35
+          dvel(ims:ime,1,jms:jme,p_ddmass_fung_a01) = 1.0e-35
+          dvel(ims:ime,1,jms:jme,p_ddmass_pol_a01) = 1.0e-35 !dimaman
           dvel(ims:ime,1,jms:jme,p_ddmass_bc_a01) = dvel(ims:ime,1,jms:jme,p_ddmass_bc_a01) + qsrflx(ims:ime,jms:jme,p_bc_a01)
           dvel(ims:ime,1,jms:jme,p_ddmass_so4_a02) = dvel(ims:ime,1,jms:jme,p_ddmass_so4_a02) + qsrflx(ims:ime,jms:jme,p_so4_a02)
           dvel(ims:ime,1,jms:jme,p_ddmass_no3_a02) = dvel(ims:ime,1,jms:jme,p_ddmass_no3_a02) + qsrflx(ims:ime,jms:jme,p_no3_a02)
@@ -1161,6 +1212,9 @@ CONTAINS
           dvel(ims:ime,1,jms:jme,p_ddmass_na_a02) = dvel(ims:ime,1,jms:jme,p_ddmass_na_a02) + qsrflx(ims:ime,jms:jme,p_na_a02)
           dvel(ims:ime,1,jms:jme,p_ddmass_oin_a02) = dvel(ims:ime,1,jms:jme,p_ddmass_oin_a02) + qsrflx(ims:ime,jms:jme,p_oin_a02)
           dvel(ims:ime,1,jms:jme,p_ddmass_oc_a02) = dvel(ims:ime,1,jms:jme,p_ddmass_oc_a02) + qsrflx(ims:ime,jms:jme,p_oc_a02)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bact_a02) = 1.0e-35 !dimaman
+          dvel(ims:ime,1,jms:jme,p_ddmass_fung_a02) = 1.0e-35
+          dvel(ims:ime,1,jms:jme,p_ddmass_pol_a02) = 1.0e-35
           dvel(ims:ime,1,jms:jme,p_ddmass_bc_a02) = dvel(ims:ime,1,jms:jme,p_ddmass_bc_a02) + qsrflx(ims:ime,jms:jme,p_bc_a02)
           dvel(ims:ime,1,jms:jme,p_ddmass_so4_a03) = dvel(ims:ime,1,jms:jme,p_ddmass_so4_a03) + qsrflx(ims:ime,jms:jme,p_so4_a03)
           dvel(ims:ime,1,jms:jme,p_ddmass_no3_a03) = dvel(ims:ime,1,jms:jme,p_ddmass_no3_a03) + qsrflx(ims:ime,jms:jme,p_no3_a03)
@@ -1169,6 +1223,9 @@ CONTAINS
           dvel(ims:ime,1,jms:jme,p_ddmass_na_a03) = dvel(ims:ime,1,jms:jme,p_ddmass_na_a03) + qsrflx(ims:ime,jms:jme,p_na_a03)
           dvel(ims:ime,1,jms:jme,p_ddmass_oin_a03) = dvel(ims:ime,1,jms:jme,p_ddmass_oin_a03) + qsrflx(ims:ime,jms:jme,p_oin_a03)
           dvel(ims:ime,1,jms:jme,p_ddmass_oc_a03) = dvel(ims:ime,1,jms:jme,p_ddmass_oc_a03) + qsrflx(ims:ime,jms:jme,p_oc_a03)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bact_a03) = dvel(ims:ime,1,jms:jme,p_ddmass_bact_a03) + qsrflx(ims:ime,jms:jme,p_bact_a03)
+          dvel(ims:ime,1,jms:jme,p_ddmass_fung_a03) = 1.0e-35
+          dvel(ims:ime,1,jms:jme,p_ddmass_pol_a03) = 1.0e-35 !dimaman
           dvel(ims:ime,1,jms:jme,p_ddmass_bc_a03) = dvel(ims:ime,1,jms:jme,p_ddmass_bc_a03) + qsrflx(ims:ime,jms:jme,p_bc_a03)
           dvel(ims:ime,1,jms:jme,p_ddmass_so4_a04) = dvel(ims:ime,1,jms:jme,p_ddmass_so4_a04) + qsrflx(ims:ime,jms:jme,p_so4_a04)
           dvel(ims:ime,1,jms:jme,p_ddmass_no3_a04) = dvel(ims:ime,1,jms:jme,p_ddmass_no3_a04) + qsrflx(ims:ime,jms:jme,p_no3_a04)
@@ -1177,17 +1234,36 @@ CONTAINS
           dvel(ims:ime,1,jms:jme,p_ddmass_na_a04) = dvel(ims:ime,1,jms:jme,p_ddmass_na_a04) + qsrflx(ims:ime,jms:jme,p_na_a04)
           dvel(ims:ime,1,jms:jme,p_ddmass_oin_a04) = dvel(ims:ime,1,jms:jme,p_ddmass_oin_a04) + qsrflx(ims:ime,jms:jme,p_oin_a04)
           dvel(ims:ime,1,jms:jme,p_ddmass_oc_a04) = dvel(ims:ime,1,jms:jme,p_ddmass_oc_a04) + qsrflx(ims:ime,jms:jme,p_oc_a04)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bact_a04) = 1.0e-35 !dimaman
+          dvel(ims:ime,1,jms:jme,p_ddmass_fung_a04) = dvel(ims:ime,1,jms:jme,p_ddmass_fung_a04) + qsrflx(ims:ime,jms:jme,p_fung_a04)
+          dvel(ims:ime,1,jms:jme,p_ddmass_pol_a04) = 1.0e-35
           dvel(ims:ime,1,jms:jme,p_ddmass_bc_a04) = dvel(ims:ime,1,jms:jme,p_ddmass_bc_a04) + qsrflx(ims:ime,jms:jme,p_bc_a04)
+          dvel(ims:ime,1,jms:jme,p_ddmass_so4_a05) = 1.0e-35 !dimaman
+          dvel(ims:ime,1,jms:jme,p_ddmass_no3_a05) = 1.0e-35
+          dvel(ims:ime,1,jms:jme,p_ddmass_cl_a05) = 1.0e-35
+          dvel(ims:ime,1,jms:jme,p_ddmass_nh4_a05) = 1.0e-35
+          dvel(ims:ime,1,jms:jme,p_ddmass_na_a05) = 1.0e-35
+          dvel(ims:ime,1,jms:jme,p_ddmass_oin_a05) = 1.0e-35
+          dvel(ims:ime,1,jms:jme,p_ddmass_oc_a05) = 1.0e-35
+          dvel(ims:ime,1,jms:jme,p_ddmass_bact_a05) = 1.0e-35
+          dvel(ims:ime,1,jms:jme,p_ddmass_fung_a05) = 1.0e-35
+          dvel(ims:ime,1,jms:jme,p_ddmass_pol_a05) = dvel(ims:ime,1,jms:jme,p_ddmass_pol_a05) + qsrflx(ims:ime,jms:jme,p_pol_a05)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bc_a05) = 1.0e-35
+
+
+
 
           dvel(ims:ime,1,jms:jme,p_ddmass_ca_a01) = dvel(ims:ime,1,jms:jme,p_ddmass_ca_a01) + qsrflx(ims:ime,jms:jme,p_ca_a01)
           dvel(ims:ime,1,jms:jme,p_ddmass_ca_a02) = dvel(ims:ime,1,jms:jme,p_ddmass_ca_a02) + qsrflx(ims:ime,jms:jme,p_ca_a02)
           dvel(ims:ime,1,jms:jme,p_ddmass_ca_a03) = dvel(ims:ime,1,jms:jme,p_ddmass_ca_a03) + qsrflx(ims:ime,jms:jme,p_ca_a03)
           dvel(ims:ime,1,jms:jme,p_ddmass_ca_a04) = dvel(ims:ime,1,jms:jme,p_ddmass_ca_a04) + qsrflx(ims:ime,jms:jme,p_ca_a04)
+          dvel(ims:ime,1,jms:jme,p_ddmass_ca_a05) = 1.0e-35 !dimaman
 
           dvel(ims:ime,1,jms:jme,p_ddmass_co3_a01) = dvel(ims:ime,1,jms:jme,p_ddmass_co3_a01) + qsrflx(ims:ime,jms:jme,p_co3_a01)
           dvel(ims:ime,1,jms:jme,p_ddmass_co3_a02) = dvel(ims:ime,1,jms:jme,p_ddmass_co3_a02) + qsrflx(ims:ime,jms:jme,p_co3_a02)
           dvel(ims:ime,1,jms:jme,p_ddmass_co3_a03) = dvel(ims:ime,1,jms:jme,p_ddmass_co3_a03) + qsrflx(ims:ime,jms:jme,p_co3_a03)
           dvel(ims:ime,1,jms:jme,p_ddmass_co3_a04) = dvel(ims:ime,1,jms:jme,p_ddmass_co3_a04) + qsrflx(ims:ime,jms:jme,p_co3_a04)
+          dvel(ims:ime,1,jms:jme,p_ddmass_co3_a05) = 1.0e-35 !dimaman
 
           dvel(ims:ime,1,jms:jme,p_ddmass_glysoa_a01) = dvel(ims:ime,1,jms:jme,p_ddmass_glysoa_a01) + &
                                             qsrflx(ims:ime,jms:jme,p_glysoa_r1_a01) + &
@@ -1216,6 +1292,11 @@ CONTAINS
                                             qsrflx(ims:ime,jms:jme,p_glysoa_oh_a04) + &
                                             qsrflx(ims:ime,jms:jme,p_glysoa_sfc_a04) + &
                                             qsrflx(ims:ime,jms:jme,p_glysoa_nh4_a04)
+
+          dvel(ims:ime,1,jms:jme,p_ddmass_glysoa_a05) = 1.0e-35 !dimaman
+
+
+
 
           dvel(ims:ime,1,jms:jme,p_ddmass_asoaX_a01) = dvel(ims:ime,1,jms:jme,p_ddmass_asoaX_a01) + qsrflx(ims:ime,jms:jme,p_asoaX_a01)
           dvel(ims:ime,1,jms:jme,p_ddmass_asoa1_a01) = dvel(ims:ime,1,jms:jme,p_ddmass_asoa1_a01) + qsrflx(ims:ime,jms:jme,p_asoa1_a01)
@@ -1261,6 +1342,18 @@ CONTAINS
           dvel(ims:ime,1,jms:jme,p_ddmass_bsoa3_a04) = dvel(ims:ime,1,jms:jme,p_ddmass_bsoa3_a04) + qsrflx(ims:ime,jms:jme,p_bsoa3_a04)
           dvel(ims:ime,1,jms:jme,p_ddmass_bsoa4_a04) = dvel(ims:ime,1,jms:jme,p_ddmass_bsoa4_a04) + qsrflx(ims:ime,jms:jme,p_bsoa4_a04)
 
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoaX_a05) = 1.0e-35!dimaman
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoa1_a05) = 1.0e-35
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoa2_a05) = 1.0e-35
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoa3_a05) = 1.0e-35
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoa4_a05) = 1.0e-35
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoaX_a05) = 1.0e-35
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoa1_a05) = 1.0e-35
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoa2_a05) = 1.0e-35
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoa3_a05) = 1.0e-35
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoa4_a05) = 1.0e-35
+
+
 ! and the same for settling cloud droplets
 
           dvel(ims:ime,1,jms:jme,p_ddmass_so4_cw01) = dvel(ims:ime,1,jms:jme,p_ddmass_so4_cw01) + qsrflx(ims:ime,jms:jme,p_so4_cw01)
@@ -1270,6 +1363,9 @@ CONTAINS
           dvel(ims:ime,1,jms:jme,p_ddmass_na_cw01) = dvel(ims:ime,1,jms:jme,p_ddmass_na_cw01) + qsrflx(ims:ime,jms:jme,p_na_cw01)
           dvel(ims:ime,1,jms:jme,p_ddmass_oin_cw01) = dvel(ims:ime,1,jms:jme,p_ddmass_oin_cw01) + qsrflx(ims:ime,jms:jme,p_oin_cw01)
           dvel(ims:ime,1,jms:jme,p_ddmass_oc_cw01) = dvel(ims:ime,1,jms:jme,p_ddmass_oc_cw01) + qsrflx(ims:ime,jms:jme,p_oc_cw01)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bact_cw01) = 1.0e-35
+          dvel(ims:ime,1,jms:jme,p_ddmass_fung_cw01) = 1.0e-35
+          dvel(ims:ime,1,jms:jme,p_ddmass_pol_cw01) = 1.0e-35!dimaman
           dvel(ims:ime,1,jms:jme,p_ddmass_bc_cw01) = dvel(ims:ime,1,jms:jme,p_ddmass_bc_cw01) + qsrflx(ims:ime,jms:jme,p_bc_cw01)
           dvel(ims:ime,1,jms:jme,p_ddmass_so4_cw02) = dvel(ims:ime,1,jms:jme,p_ddmass_so4_cw02) + qsrflx(ims:ime,jms:jme,p_so4_cw02)
           dvel(ims:ime,1,jms:jme,p_ddmass_no3_cw02) = dvel(ims:ime,1,jms:jme,p_ddmass_no3_cw02) + qsrflx(ims:ime,jms:jme,p_no3_cw02)
@@ -1278,6 +1374,9 @@ CONTAINS
           dvel(ims:ime,1,jms:jme,p_ddmass_na_cw02) = dvel(ims:ime,1,jms:jme,p_ddmass_na_cw02) + qsrflx(ims:ime,jms:jme,p_na_cw02)
           dvel(ims:ime,1,jms:jme,p_ddmass_oin_cw02) = dvel(ims:ime,1,jms:jme,p_ddmass_oin_cw02) + qsrflx(ims:ime,jms:jme,p_oin_cw02)
           dvel(ims:ime,1,jms:jme,p_ddmass_oc_cw02) = dvel(ims:ime,1,jms:jme,p_ddmass_oc_cw02) + qsrflx(ims:ime,jms:jme,p_oc_cw02)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bact_cw02) = 1.0e-35
+          dvel(ims:ime,1,jms:jme,p_ddmass_fung_cw02) = 1.0e-35
+          dvel(ims:ime,1,jms:jme,p_ddmass_pol_cw02) = 1.0e-35 !dimaman
           dvel(ims:ime,1,jms:jme,p_ddmass_bc_cw02) = dvel(ims:ime,1,jms:jme,p_ddmass_bc_cw02) + qsrflx(ims:ime,jms:jme,p_bc_cw02)
           dvel(ims:ime,1,jms:jme,p_ddmass_so4_cw03) = dvel(ims:ime,1,jms:jme,p_ddmass_so4_cw03) + qsrflx(ims:ime,jms:jme,p_so4_cw03)
           dvel(ims:ime,1,jms:jme,p_ddmass_no3_cw03) = dvel(ims:ime,1,jms:jme,p_ddmass_no3_cw03) + qsrflx(ims:ime,jms:jme,p_no3_cw03)
@@ -1286,6 +1385,9 @@ CONTAINS
           dvel(ims:ime,1,jms:jme,p_ddmass_na_cw03) = dvel(ims:ime,1,jms:jme,p_ddmass_na_cw03) + qsrflx(ims:ime,jms:jme,p_na_cw03)
           dvel(ims:ime,1,jms:jme,p_ddmass_oin_cw03) = dvel(ims:ime,1,jms:jme,p_ddmass_oin_cw03) + qsrflx(ims:ime,jms:jme,p_oin_cw03)
           dvel(ims:ime,1,jms:jme,p_ddmass_oc_cw03) = dvel(ims:ime,1,jms:jme,p_ddmass_oc_cw03) + qsrflx(ims:ime,jms:jme,p_oc_cw03)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bact_cw03) = dvel(ims:ime,1,jms:jme,p_ddmass_bact_cw03) + qsrflx(ims:ime,jms:jme,p_bact_cw03)
+          dvel(ims:ime,1,jms:jme,p_ddmass_fung_cw03) = 1.0e-35
+          dvel(ims:ime,1,jms:jme,p_ddmass_pol_cw03) = 1.0e-35 !dimaman
           dvel(ims:ime,1,jms:jme,p_ddmass_bc_cw03) = dvel(ims:ime,1,jms:jme,p_ddmass_bc_cw03) + qsrflx(ims:ime,jms:jme,p_bc_cw03)
           dvel(ims:ime,1,jms:jme,p_ddmass_so4_cw04) = dvel(ims:ime,1,jms:jme,p_ddmass_so4_cw04) + qsrflx(ims:ime,jms:jme,p_so4_cw04)
           dvel(ims:ime,1,jms:jme,p_ddmass_no3_cw04) = dvel(ims:ime,1,jms:jme,p_ddmass_no3_cw04) + qsrflx(ims:ime,jms:jme,p_no3_cw04)
@@ -1294,17 +1396,33 @@ CONTAINS
           dvel(ims:ime,1,jms:jme,p_ddmass_na_cw04) = dvel(ims:ime,1,jms:jme,p_ddmass_na_cw04) + qsrflx(ims:ime,jms:jme,p_na_cw04)
           dvel(ims:ime,1,jms:jme,p_ddmass_oin_cw04) = dvel(ims:ime,1,jms:jme,p_ddmass_oin_cw04) + qsrflx(ims:ime,jms:jme,p_oin_cw04)
           dvel(ims:ime,1,jms:jme,p_ddmass_oc_cw04) = dvel(ims:ime,1,jms:jme,p_ddmass_oc_cw04) + qsrflx(ims:ime,jms:jme,p_oc_cw04)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bact_cw04) = 1.0e-35
+          dvel(ims:ime,1,jms:jme,p_ddmass_fung_cw04) = dvel(ims:ime,1,jms:jme,p_ddmass_fung_cw04) + qsrflx(ims:ime,jms:jme,p_fung_cw04)
+          dvel(ims:ime,1,jms:jme,p_ddmass_pol_cw04) = 1.0e-35 !dimaman
           dvel(ims:ime,1,jms:jme,p_ddmass_bc_cw04) = dvel(ims:ime,1,jms:jme,p_ddmass_bc_cw04) + qsrflx(ims:ime,jms:jme,p_bc_cw04)
+          dvel(ims:ime,1,jms:jme,p_ddmass_so4_cw05) = 1.0e-35
+          dvel(ims:ime,1,jms:jme,p_ddmass_no3_cw05) = 1.0e-35
+          dvel(ims:ime,1,jms:jme,p_ddmass_cl_cw05) = 1.0e-35
+          dvel(ims:ime,1,jms:jme,p_ddmass_nh4_cw05) = 1.0e-35
+          dvel(ims:ime,1,jms:jme,p_ddmass_na_cw05) = 1.0e-35
+          dvel(ims:ime,1,jms:jme,p_ddmass_oin_cw05) = 1.0e-35
+          dvel(ims:ime,1,jms:jme,p_ddmass_oc_cw05) = 1.0e-35
+          dvel(ims:ime,1,jms:jme,p_ddmass_bact_cw05) = 1.0e-35
+          dvel(ims:ime,1,jms:jme,p_ddmass_fung_cw05) = 1.0e-35
+          dvel(ims:ime,1,jms:jme,p_ddmass_pol_cw05) = dvel(ims:ime,1,jms:jme,p_ddmass_pol_cw05) + qsrflx(ims:ime,jms:jme,p_pol_cw05)!dimaman
+          dvel(ims:ime,1,jms:jme,p_ddmass_bc_cw05) = 1.0e-35 !dimaman
 
           dvel(ims:ime,1,jms:jme,p_ddmass_ca_cw01) = dvel(ims:ime,1,jms:jme,p_ddmass_ca_cw01) + qsrflx(ims:ime,jms:jme,p_ca_cw01)
           dvel(ims:ime,1,jms:jme,p_ddmass_ca_cw02) = dvel(ims:ime,1,jms:jme,p_ddmass_ca_cw02) + qsrflx(ims:ime,jms:jme,p_ca_cw02)
           dvel(ims:ime,1,jms:jme,p_ddmass_ca_cw03) = dvel(ims:ime,1,jms:jme,p_ddmass_ca_cw03) + qsrflx(ims:ime,jms:jme,p_ca_cw03)
           dvel(ims:ime,1,jms:jme,p_ddmass_ca_cw04) = dvel(ims:ime,1,jms:jme,p_ddmass_ca_cw04) + qsrflx(ims:ime,jms:jme,p_ca_cw04)
+          dvel(ims:ime,1,jms:jme,p_ddmass_ca_cw05) = dvel(ims:ime,1,jms:jme,p_ddmass_ca_cw05) + qsrflx(ims:ime,jms:jme,p_ca_cw05) !dimaman
 
           dvel(ims:ime,1,jms:jme,p_ddmass_co3_cw01) = dvel(ims:ime,1,jms:jme,p_ddmass_co3_cw01) + qsrflx(ims:ime,jms:jme,p_co3_cw01)
           dvel(ims:ime,1,jms:jme,p_ddmass_co3_cw02) = dvel(ims:ime,1,jms:jme,p_ddmass_co3_cw02) + qsrflx(ims:ime,jms:jme,p_co3_cw02)
           dvel(ims:ime,1,jms:jme,p_ddmass_co3_cw03) = dvel(ims:ime,1,jms:jme,p_ddmass_co3_cw03) + qsrflx(ims:ime,jms:jme,p_co3_cw03)
           dvel(ims:ime,1,jms:jme,p_ddmass_co3_cw04) = dvel(ims:ime,1,jms:jme,p_ddmass_co3_cw04) + qsrflx(ims:ime,jms:jme,p_co3_cw04)
+          dvel(ims:ime,1,jms:jme,p_ddmass_co3_cw05) = dvel(ims:ime,1,jms:jme,p_ddmass_co3_cw05) + qsrflx(ims:ime,jms:jme,p_co3_cw05) !dimaman
 
           dvel(ims:ime,1,jms:jme,p_ddmass_glysoa_cw01) = dvel(ims:ime,1,jms:jme,p_ddmass_glysoa_cw01) + &
                                             qsrflx(ims:ime,jms:jme,p_glysoa_r1_cw01) + &
@@ -1333,6 +1451,9 @@ CONTAINS
                                             qsrflx(ims:ime,jms:jme,p_glysoa_oh_cw04) + &
                                             qsrflx(ims:ime,jms:jme,p_glysoa_sfc_cw04) + &
                                             qsrflx(ims:ime,jms:jme,p_glysoa_nh4_cw04)
+
+          dvel(ims:ime,1,jms:jme,p_ddmass_glysoa_cw05) = 1.0e-35 !dimaman
+
 
           dvel(ims:ime,1,jms:jme,p_ddmass_asoaX_cw01) = dvel(ims:ime,1,jms:jme,p_ddmass_asoaX_cw01) + qsrflx(ims:ime,jms:jme,p_asoaX_cw01)
           dvel(ims:ime,1,jms:jme,p_ddmass_asoa1_cw01) = dvel(ims:ime,1,jms:jme,p_ddmass_asoa1_cw01) + qsrflx(ims:ime,jms:jme,p_asoa1_cw01)
@@ -1377,6 +1498,19 @@ CONTAINS
           dvel(ims:ime,1,jms:jme,p_ddmass_bsoa2_cw04) = dvel(ims:ime,1,jms:jme,p_ddmass_bsoa2_cw04) + qsrflx(ims:ime,jms:jme,p_bsoa2_cw04)
           dvel(ims:ime,1,jms:jme,p_ddmass_bsoa3_cw04) = dvel(ims:ime,1,jms:jme,p_ddmass_bsoa3_cw04) + qsrflx(ims:ime,jms:jme,p_bsoa3_cw04)
           dvel(ims:ime,1,jms:jme,p_ddmass_bsoa4_cw04) = dvel(ims:ime,1,jms:jme,p_ddmass_bsoa4_cw04) + qsrflx(ims:ime,jms:jme,p_bsoa4_cw04)
+
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoaX_cw05) = 1.0e-35
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoa1_cw05) = 1.0e-35
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoa2_cw05) = 1.0e-35
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoa3_cw05) = 1.0e-35
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoa4_cw05) = 1.0e-35
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoaX_cw05) = 1.0e-35
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoa1_cw05) = 1.0e-35
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoa2_cw05) = 1.0e-35
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoa3_cw05) = 1.0e-35
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoa4_cw05) = 1.0e-35 !dimaman
+
+
 
       endif
 

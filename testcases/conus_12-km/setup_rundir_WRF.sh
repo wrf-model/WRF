@@ -19,14 +19,10 @@ mkdir -p ${rundir}
 cd ${rundir}
 pwd
 
-#get input files from NERSC's WRFSIG CFS space through Science Gateway service
+#get input files from NERSC's WRFSIG CFS space
 echo "downloading input file archive"
 
-wget https://portal.nersc.gov/cfs/m4232pub/testcase_input/testcase_input_conus12km_v4.5.2.tar.gz
-
-echo "expanding the input file arhive"
-
-tar -zxf testcase_input_conus12km_v4.5.2.tar.gz
+cp -r /global/cfs/cdirs/m4232pub/data/testcase_input/conus12km/v4.5.2/* .
 
 echo "finished copying the input files"
 

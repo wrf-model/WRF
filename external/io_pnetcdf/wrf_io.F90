@@ -687,6 +687,7 @@ subroutine FieldIO(IO,DataHandle,DateStr,Starts,Length,MemoryOrder &
   integer                                   :: NDim
   integer,dimension(NVarDims)               :: VStart
   integer,dimension(NVarDims)               :: VCount
+  type(wrf_data_handle)      ,pointer       :: DH
 
   call GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
   if(Status /= WRF_NO_ERR) then
@@ -704,19 +705,21 @@ VCount(:) = 1
   VCount(1:NDim) = Length(1:NDim)
   VStart(NDim+1) = TimeIndex
   VCount(NDim+1) = 1
+  DH => WrfDataHandles(DataHandle)
+
   select case (FieldType)
     case (WRF_REAL)
-      call ext_pnc_RealFieldIO    (WrfDataHandles(DataHandle)%Collective, &
-                                   IO,NCID,VarID,VStart,VCount,XField,Status)
+      call ext_pnc_RealFieldIO    (DH%Collective,IO,NCID,VarID,&
+                            VStart,VCount,DH%BputEnabled,XField,Status)
     case (WRF_DOUBLE)
-      call ext_pnc_DoubleFieldIO  (WrfDataHandles(DataHandle)%Collective, &
-                                   IO,NCID,VarID,VStart,VCount,XField,Status)
+      call ext_pnc_DoubleFieldIO  (DH%Collective,IO,NCID,VarID,&
+                            VStart,VCount,DH%BputEnabled,XField,Status)
     case (WRF_INTEGER)
-      call ext_pnc_IntFieldIO     (WrfDataHandles(DataHandle)%Collective, &
-                                   IO,NCID,VarID,VStart,VCount,XField,Status)
+      call ext_pnc_IntFieldIO     (DH%Collective,IO,NCID,VarID,&
+                            VStart,VCount,DH%BputEnabled,XField,Status)
     case (WRF_LOGICAL)
-      call ext_pnc_LogicalFieldIO (WrfDataHandles(DataHandle)%Collective, &
-                                   IO,NCID,VarID,VStart,VCount,XField,Status)
+      call ext_pnc_LogicalFieldIO (DH%Collective,IO,NCID,VarID,&
+                            VStart,VCount,DH%BputEnabled,XField,Status)
       if(Status /= WRF_NO_ERR) return
     case default
 !for wrf_complex, double_complex

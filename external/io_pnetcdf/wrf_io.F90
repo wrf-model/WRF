@@ -930,6 +930,32 @@ subroutine ext_pnc_bput_set_buffer_size(hndl, bput_buffer_size)
   endif
 end subroutine ext_pnc_bput_set_buffer_size
 
+! ext_pnc_bput_wait:
+! Flush all cached reqs to the file. Wait/block till finished.
+subroutine ext_pnc_bput_wait(hndl)
+  use wrf_data_pnc
+  use ext_pnc_support_routines
+  use pnetcdf
+  implicit none
+  include 'wrf_status_codes.h'
+  integer, INTENT(IN)  :: hndl
+  type(wrf_data_handle), pointer :: DH
+  integer :: ierr, status, dummy(0)
+
+  call GetDH(hndl,DH,ierr)
+  if (DH%BputEnabled) then
+    ierr = NFMPI_WAIT_ALL(DH%NCID, NF_REQ_ALL, dummy, dummy)
+
+    ! check error
+    call netcdf_err(ierr,status)
+    if(status /= WRF_NO_ERR) then
+      write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__
+      call wrf_debug(WARN, TRIM(msg))
+      return
+    endif
+  endif
+end subroutine ext_pnc_bput_wait
+
 subroutine ext_pnc_open_for_read(DatasetName, Comm1, Comm2, SysDepInfo, DataHandle, Status)
   use wrf_data_pnc
   use ext_pnc_support_routines

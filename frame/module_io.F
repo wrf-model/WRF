@@ -84,6 +84,18 @@ SUBROUTINE BputSetBufferSize(fid, bput_buffer_size)
 #endif
 END SUBROUTINE BputSetBufferSize
 
+! BputWait:
+! Flush all cached reqs to the file. Wait/block till finished.
+SUBROUTINE BputWait(fid)
+  INTEGER, INTENT(IN) :: fid
+  INTEGER :: Hndl, Hopened
+  LOGICAL :: for_out
+#ifdef PNETCDF
+  call get_handle(Hndl, Hopened, for_out, fid)
+  call ext_pnc_bput_wait(Hndl)
+#endif
+END SUBROUTINE BputWait
+
 !--- ioinit
 
 SUBROUTINE wrf_ioinit( Status )

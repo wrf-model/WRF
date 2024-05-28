@@ -154,6 +154,7 @@ set( USE_IPO     OFF CACHE BOOL "USE_IPO"     )
 
 set( ENABLE_CHEM       OFF CACHE BOOL "ENABLE_CHEM"      )
 set( ENABLE_CMAQ       OFF CACHE BOOL "ENABLE_CMAQ"      )
+set( ENABLE_CFBM       OFF CACHE BOOL "ENABLE_CFBM"      )
 set( ENABLE_CTSM       OFF CACHE BOOL "ENABLE_CTSM"      )
 set( ENABLE_DFI_RADAR  OFF CACHE BOOL "ENABLE_DFI_RADAR" )
 set( ENABLE_HYDRO      OFF CACHE BOOL "ENABLE_HYDRO"     )
@@ -530,6 +531,7 @@ print_option( USE_IPO          20 )
 print_option( ENABLE_CHEM      20 )
 print_option( ENABLE_CLM       20 )
 print_option( ENABLE_CMAQ      20 )
+print_option( ENABLE_CFBM      20 )
 print_option( ENABLE_DFI_RADAR 20 )
 print_option( ENABLE_HYDRO     20 )
 print_option( ENABLE_KPP       20 )
@@ -1065,6 +1067,7 @@ target_link_libraries(  ${PROJECT_NAME}_Core
                             fftpack5
 
                             $<TARGET_NAME_IF_EXISTS:wrfhydro>
+                            $<TARGET_NAME_IF_EXISTS:firelib>
                             $<TARGET_NAME_IF_EXISTS:atm_ocn>
                             $<TARGET_NAME_IF_EXISTS:io_adios2>
                             $<TARGET_NAME_IF_EXISTS:io_esmf>

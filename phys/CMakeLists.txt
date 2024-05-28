@@ -271,3 +271,7 @@ target_include_directories(
                             PRIVATE
                               ${CMAKE_CURRENT_SOURCE_DIR}
                             )
+
+if ( ${ENABLE_CFBM} )
+  add_subdirectory( fire_behavior )
+endif()

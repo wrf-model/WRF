@@ -103,6 +103,13 @@
 
     LOGICAL, EXTERNAL :: wrf_dm_on_monitor
 
+    ! bput_enabled is used to determine if non-blocking pnetcdf （bput） should be used for PnetCDF.
+    ! to use non-blocking bput:
+    !       1) enable_pnetcdf_bput = .true. in namelist.input
+    !       2) io_form_history=11 or io_form_restart=11 (or both=11) in namelist.input
+    !       3) not a dryrun
+    LOGICAL :: bput_enabled
+
     WRITE(wrf_err_message,*)'output_wrf: begin, fid = ',fid
     CALL wrf_debug( 300 , wrf_err_message )
 
@@ -1005,6 +1012,24 @@ endif
     IF ( (first_input   .LE. switch .AND. switch .LE. last_input) .OR. &
          (first_history .LE. switch .AND. switch .LE. last_history ) .OR. &
           switch .EQ. restart_only    ) THEN
+
+      bput_enabled = grid%enable_pnetcdf_bput .AND. (.NOT.dryrun)
+      ! Calculate and set bput buffer size for history files.
+      IF (switch .EQ. history_only) THEN
+        bput_enabled = bput_enabled .AND. (grid%io_form_history == 11)
+        IF (bput_enabled) THEN
+          CALL BputCalcBufferSize(grid, switch, bput_buffer_size_history)
+          call BputSetBufferSize(fid, bput_buffer_size_history)
+        ENDIF
+      ! Calculate and set bput buffer size for restart files.
+      ELSE IF (switch .EQ. restart_only) THEN
+        bput_enabled = bput_enabled .AND. (grid%io_form_restart == 11)
+        IF (bput_enabled) THEN
+          CALL BputCalcBufferSize(grid, switch, bput_buffer_size_restart)
+          call BputSetBufferSize(fid, bput_buffer_size_restart)
+        ENDIF
+      ENDIF
+
       newswitch = switch
       p => grid%head_statevars%next
       CALL wrf_start_io_timestep(fid, ierr)
@@ -1534,6 +1559,10 @@ endif
       IF (adjust) THEN
         current_date = current_date_save
       ENDIF
+    ENDIF
+
+    IF (bput_enabled) THEN
+      call BputWait(fid) ! wait till all PnetCDF bput calls (on this file) are finished.
     ENDIF
 
 #if ( (EM_CORE == 1) && (DA_CORE != 1) )

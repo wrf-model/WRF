@@ -1479,6 +1479,20 @@ subroutine ext_pnc_ioclose(DataHandle, Status)
     return
   endif
 
+  ! Detach bput buffer before file close
+  if (DH%BputEnabled) then
+    stat = NFMPI_BUFFER_DETACH(DH%NCID)
+
+    ! check error
+    call netcdf_err(stat,Status)
+    if(Status /= WRF_NO_ERR) then
+      write(msg,*) 'NetCDF error in ext_pnc_ioclose: buffer detach ',__FILE__,', line', __LINE__
+      call wrf_debug ( WARN , TRIM(msg))
+      return
+    endif
+    DH%BputEnabled = .false.
+  endif
+
   stat = NFMPI_CLOSE(DH%NCID)
   call netcdf_err(stat,Status)
   if(Status /= WRF_NO_ERR) then

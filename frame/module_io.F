@@ -39,6 +39,8 @@ MODULE module_io
                                                 ! are_bdys_distributed, bdys_are_distributed and
                                                 ! bdys_not_distributed routines access this flag
   CHARACTER*256 extradims
+  INTEGER(kind=8) :: bput_buffer_size_history = -1
+  INTEGER(kind=8) :: bput_buffer_size_restart = -1
 
 !<DESCRIPTION>
 !<PRE>

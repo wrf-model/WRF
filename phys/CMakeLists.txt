@@ -273,5 +273,6 @@ target_include_directories(
                             )
 
 if ( ${ENABLE_CFBM} )
+  set( DM_PARALLEL ${USE_MPI} )
   add_subdirectory( fire_behavior )
 endif()

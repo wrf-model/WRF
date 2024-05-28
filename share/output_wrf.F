@@ -1596,3 +1596,210 @@ endif
     RETURN
   END SUBROUTINE traverse_statevars_debug
 
+  ! BputCalcBufferSize:
+  ! Calculate the buffer size needed by PnetCDF bput calls.
+  ! The buffer size should equal the total amount of writes (excluding headers)
+  SUBROUTINE BputCalcBufferSize(grid, switch, totalSize)
+    USE module_domain_type, ONLY : fieldlist
+    USE module_domain
+    USE module_io
+    IMPLICIT NONE
+    INTEGER, PARAMETER :: DateStrLen = 19
+    TYPE(domain), INTENT(IN) :: grid
+    INTEGER, INTENT(IN) :: switch ! history files or restart files
+    INTEGER(kind=8), INTENT(INOUT):: totalSize ! the buffer size to return
+    ! temp variables
+    INTEGER :: gridSize = 0, typeSize = 4
+    INTEGER :: newSwitch, itrace
+    TYPE(fieldlist), POINTER :: p
+#ifdef PNETCDF
+    IF (totalSize > -1) THEN ! size already calculated, no need to repeat.
+      RETURN
+    ENDIF
+    p => grid%head_statevars%next
+
+    ! init variables
+    newSwitch = switch
+    totalSize = 0
+    ! The following codes are borrowed from share/output_wrf.F: subroutine "output_wrf"
+    !
+    ! The subroutine "output_wrf" is to write each variable to file. The implementation
+    ! logic of "output_wrf" is that:
+    !
+    !   Iterate over all variables (do while loop):
+    !       Some "if" conditions:
+    !           write/output the variable (of size amoutX) to file
+    !       End IF
+    !   End loop.
+    !
+    ! This subroutine "BputCalcBufferSize" is to return the buffer size (i.e. the total
+    ! amount of writes). The logic here is to replace "write/output the variable to file"
+    ! in the original logic with "increment total size":
+    !
+    !   totalSize = 0
+    !   Iterate over all variables (do while loop):
+    !       Some "if" conditions:
+    !           totalSize = totalSize + amoutX
+    !       End IF
+    !   End loop.
+    DO WHILE ( ASSOCIATED( p ) )
+      IF ( p%ProcOrient .NE. 'X' .AND. p%ProcOrient .NE. 'Y' ) THEN
+        IF (p%Ndim .EQ. 0)  THEN
+          IF ((p%Restart.AND.switch.EQ.restart_only).OR.on_stream(p%streams,newSwitch)) THEN
+            IF ( in_use_for_config(grid%id,TRIM(p%VarName)) ) THEN
+              ! increment totalSize
+              CALL BputInqSizeOfType(p%Type, typeSize)
+              totalSize = totalSize + typeSize ! grid szie=1 when p%Ndim == 0
+            ENDIF
+          ENDIF
+        ELSE IF (p%Ndim .EQ. 1) THEN
+          IF ((p%Restart.AND.switch.EQ.restart_only).OR.on_stream(p%streams,newSwitch)) THEN
+            IF ( in_use_for_config(grid%id,TRIM(p%VarName)) ) THEN
+              IF (switch.EQ.restart_only.OR.p%Ntl/100.EQ.mod(p%Ntl,100)) THEN
+                ! increment totalSize
+                CALL BputCalcGridSize(p, gridSize) ! calculate grid size
+                IF (gridSize >= 0) THEN
+                  CALL BputInqSizeOfType(p%Type, typeSize)
+                  totalSize = totalSize + gridSize * typeSize
+                ENDIF
+              ENDIF
+            ENDIF
+          ENDIF
+        ELSE IF (p%Ndim .EQ. 2) THEN
+          IF ((p%Restart.AND.switch.EQ.restart_only).OR.on_stream(p%streams,newSwitch)) THEN
+            IF ( in_use_for_config(grid%id,TRIM(p%VarName)) .AND.  &
+              ( .NOT. p%subgrid_x .OR. (p%subgrid_x .AND. grid%sr_x .GT. 0) ) .AND. &
+              ( .NOT. p%subgrid_y .OR. (p%subgrid_y .AND. grid%sr_y .GT. 0) )       &
+            ) THEN
+              IF (switch.EQ.restart_only.OR.p%Ntl/100.EQ.mod(p%Ntl,100)) THEN
+                ! increment totalSize
+                CALL BputCalcGridSize(p, gridSize) ! calculate grid size
+                IF (gridSize >= 0) THEN
+                  CALL BputInqSizeOfType(p%Type, typeSize)
+                  totalSize = totalSize + gridSize * typeSize
+                ENDIF
+              ENDIF
+            ENDIF
+          ENDIF
+        ELSE IF (p%Ndim .EQ. 3) THEN
+          IF ((p%Restart.AND.switch.EQ.restart_only).OR.on_stream(p%streams,newSwitch)) THEN
+            IF ( in_use_for_config(grid%id,TRIM(p%VarName)) .AND.  &
+              ( .NOT. p%subgrid_x .OR. (p%subgrid_x .AND. grid%sr_x .GT. 0) ) .AND. &
+              ( .NOT. p%subgrid_y .OR. (p%subgrid_y .AND. grid%sr_y .GT. 0) )       &
+            ) THEN
+              IF (switch.EQ.restart_only.OR.p%Ntl/100.EQ.mod(p%Ntl,100)) THEN
+                ! increment totalSize
+                CALL BputCalcGridSize(p, gridSize) ! calculate grid size
+                IF (gridSize >= 0) THEN
+                  CALL BputInqSizeOfType(p%Type, typeSize)
+                  totalSize = totalSize + gridSize * typeSize
+                ENDIF
+              ENDIF
+            ENDIF
+          ENDIF
+        ELSE IF (p%Ndim .EQ. 4 .AND. p%scalar_array ) THEN
+          IF (switch.EQ.restart_only.OR.p%Ntl/100.EQ.mod(p%Ntl,100)) THEN
+            DO itrace = PARAM_FIRST_SCALAR , p%num_table(grid%id)
+              IF ((p%Restart.AND.switch.EQ.restart_only).OR.on_stream(p%streams_table(grid%id,itrace)%stream,newSwitch)) THEN
+                ! increment totalSize
+                CALL BputCalcGridSize(p, gridSize) ! calculate grid size
+                IF (gridSize >= 0) THEN
+                  CALL BputInqSizeOfType(p%Type, typeSize)
+                  totalSize = totalSize + gridSize * typeSize
+                ENDIF
+              ENDIF
+            ENDDO
+          ENDIF
+        ENDIF
+      ENDIF
+      p => p%next
+    ENDDO
+    ! MPI Process 0 also needs to write to a variable called TimesVariable.
+    ! This variable has fix length 19 (DateStrLen). (external/io_pnetcdf/wrf_io.F90: GetTimeIndex)
+    ! Here we give 19 (DateStrLen) extra bytes to all MPI processes instead
+    ! of just giving to process 0, so that we can skip MPI rank check here to
+    ! simplify the implementation.
+    totalSize = totalSize + DateStrLen
+    contains
+    ! BputCalcGridSize:
+    ! Returns the size of the grid.
+    ! For example,  if it is a 2D 30 x 40 grid, then return size=1200 (=30x40).
+    ! if it is a 3D 10 x 30 x 40 grid, then return size=12000 (=10x30x40).
+    SUBROUTINE BputCalcGridSize(ptr, sizeOut)
+      USE module_domain_type, ONLY : fieldlist
+      TYPE(fieldlist), INTENT(INOUT), POINTER :: ptr
+      INTEGER, INTENT(OUT) :: sizeOut
+      INTEGER :: ndim, ierr=0
+      ! Whether it is a 0D/1D/2D/3D grid.
+      CALL BputInqDim(TRIM(ptr%MemoryOrder), ndim, ierr)
+      IF (ierr < 0) THEN
+        sizeOut = -1
+        return
+      ENDIF
+      ! ptr%sp[i] and prt%ep[i] store the start and end position of
+      ! grid along the i^th dimension, both sides inclusive.
+      sizeOut = 0
+      IF (ndim .EQ. 0) THEN
+        sizeOut = 1
+      ELSE IF (ndim .EQ. 1) THEN
+        IF (ptr%ep1 - ptr%sp1 >= 0) &
+        sizeOut = (ptr%ep1 - ptr%sp1 + 1)
+      ELSE IF (ndim .EQ. 2) THEN
+        IF (ptr%ep1 - ptr%sp1 >= 0 .AND. ptr%ep2 - ptr%sp2 >= 0) &
+        sizeOut = (ptr%ep1 - ptr%sp1 + 1) * (ptr%ep2 - ptr%sp2 + 1)
+      ELSE IF (ndim .EQ. 3) THEN
+        IF (ptr%ep1 - ptr%sp1 >= 0 .AND. ptr%ep2 - ptr%sp2 >= 0 .AND. ptr%ep3 - ptr%sp3 >= 0) &
+        sizeOut = (ptr%ep1 - ptr%sp1 + 1) * (ptr%ep2 - ptr%sp2 + 1) * (ptr%ep3 - ptr%sp3 + 1)
+      ENDIF
+      return
+    END SUBROUTINE BputCalcGridSize
+    ! BputInqSizeOfType:
+    ! Returns: how many bytes needed for one variable having this type.
+    SUBROUTINE BputInqSizeOfType(Type, Size)
+      CHARACTER*1, INTENT(IN) :: Type
+      INTEGER, INTENT(OUT) :: Size
+      ! LOGICAL :: temp_logical
+      REAL :: temp_real
+      REAL*8 :: temp_double
+
+      Size = 1
+      IF (Type .EQ. 'r') THEN
+        Size = SIZEOF(temp_real)
+      ELSE IF (Type .EQ. 'd') THEN
+        Size = SIZEOF(temp_double)
+      ELSE IF (Type .EQ. 'i') THEN
+        Size = SIZEOF(Size)
+      ELSE IF (Type .EQ. 'l') THEN
+        Size = SIZEOF(Size) ! integer is used for logic type
+      ENDIF
+      RETURN
+    END SUBROUTINE BputInqSizeOfType
+    ! BputInqDim:
+    ! Returns the number of dimension of the grid
+    ! i.e. whether it is a 0D/1D/2D/3D grid.
+    ! implementation is borrowed from external/io_pnetcdf/wrf_io.F90: GetDim
+    SUBROUTINE BputInqDim(MemoryOrder,NDim,Status)
+      CHARACTER*(*) ,INTENT(IN)  :: MemoryOrder
+      INTEGER       ,INTENT(OUT) :: NDim
+      INTEGER       ,INTENT(OUT) :: Status
+      CHARACTER*3                :: MemOrd
+      CALL lower_case(MemoryOrder,MemOrd) ! Convert to lower case
+      SELECT CASE (MemOrd)
+        CASE ('xyz','xzy','yxz','yzx','zxy','zyx','xsz','xez','ysz','yez')
+          NDim = 3
+        CASE ('xy','yx','xs','xe','ys','ye', 'cc')
+          NDim = 2
+        CASE ('z','c')
+          NDim = 1
+        CASE ('0')  ! NDim=0 for scalars.  TBH:  20060502
+          NDim = 0
+        CASE default
+          print *, 'memory order = ',MemOrd,'  ',MemoryOrder
+          Status = -1
+          return
+        END SELECT
+      Status = 0
+      RETURN
+    END SUBROUTINE BputInqDim
+#endif
+  END SUBROUTINE BputCalcBufferSize

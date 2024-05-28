@@ -91,6 +91,13 @@ module wrf_data_pnc
 ! Whether pnetcdf file is in collective (.true.) or independent mode
 ! Collective mode is the default.
     logical                               :: Collective
+
+    ! If BputEnabled is set to .true. then PnetCDF bput calls should be used instead
+    ! of PnetCDF put calls.
+    ! It is also (always) true that: BputEnabled is set to .true. if
+    ! and only if a buffer is correctly attached to the file. (invariant)
+    logical                               :: BputEnabled = .false.
+
   end type wrf_data_handle
   type(wrf_data_handle),target            :: WrfDataHandles(WrfDataHandleMax)
 end module wrf_data_pnc
@@ -889,6 +896,39 @@ LOGICAL FUNCTION ncd_is_first_operation( DataHandle )
 END FUNCTION ncd_is_first_operation
 
 end module ext_pnc_support_routines
+
+! ext_pnc_bput_set_buffer_size:
+! Tell PnetCDF the size of buffer to be used by PnetCDF bput calls internally.
+subroutine ext_pnc_bput_set_buffer_size(hndl, bput_buffer_size)
+  use wrf_data_pnc
+  use ext_pnc_support_routines
+  use pnetcdf
+  implicit none
+  include 'wrf_status_codes.h'
+  integer, INTENT(IN) :: hndl
+  integer(kind=8), INTENT(IN) :: bput_buffer_size
+  type(wrf_data_handle), pointer :: DH
+  integer :: ierr=0, status=0
+
+  call GetDH(hndl,DH,ierr)
+
+  if (bput_buffer_size > 0) then
+    if(.NOT. DH%BputEnabled) then ! if buffer is not yet attached
+      ierr = NFMPI_BUFFER_ATTACH(DH%NCID, bput_buffer_size)
+      DH%BputEnabled = .true.
+    endif
+
+    ! check error
+    call netcdf_err(ierr,status)
+    if(status /= WRF_NO_ERR) then
+      write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__
+      call wrf_debug ( WARN , TRIM(msg))
+      return
+    endif
+  else
+    DH%BputEnabled = .false.
+  endif
+end subroutine ext_pnc_bput_set_buffer_size
 
 subroutine ext_pnc_open_for_read(DatasetName, Comm1, Comm2, SysDepInfo, DataHandle, Status)
   use wrf_data_pnc

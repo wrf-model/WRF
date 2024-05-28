@@ -425,7 +425,7 @@ endif()
 find_package( netCDF         REQUIRED )
 find_package( netCDF-Fortran REQUIRED )
 
-# Make use of version checking here and not in find_package for previous versions that did not use cmake
+# Make use of version checking here and not in find_package for WRF control allowing older versions if requested
 if ( NOT ${FORCE_NETCDF_CLASSIC} )
   if ( NOT netCDF_VERSION GREATER_EQUAL "4.1.3" )
     set( NC4_MISSING_REASON "(version < 4.1.3)" )

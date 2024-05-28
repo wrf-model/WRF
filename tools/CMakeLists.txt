@@ -1,4 +1,6 @@
 # WRF CMake Build
+add_compile_options    ( "${PROJECT_COMPILE_OPTIONS}"     )
+add_compile_definitions( "${PROJECT_COMPILE_DEFINITIONS}" )
 
 #!TODO ORGANIZE THIS FOLDER
 set( FOLDER_COMPILE_TARGET registry )
@@ -99,10 +101,9 @@ elseif ( ${WRF_CORE} STREQUAL "DA" OR ${WRF_CORE} STREQUAL "DA_4D_VAR" )
 
 endif()
 
-get_directory_property( DIR_DEFS DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_DEFINITIONS )
 wrf_expand_definitions( 
                         RESULT_VAR  REGISTRY_DEFS
-                        DEFINITIONS ${DIR_DEFS}
+                        DEFINITIONS ${PROJECT_COMPILE_DEFINITIONS}
                         )
 
 # How this is not a bigger thing or not resolved is beyond me

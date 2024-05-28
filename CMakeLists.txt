@@ -322,21 +322,27 @@ if ( ${USE_MPI} )
   # It still technically finds MPI but the output is nonintuitive
   # saying things like hdf5 or pthread
   find_package( MPI REQUIRED COMPONENTS Fortran C )
-  add_compile_definitions(
-                          USE_MPI=1
-                          DM_PARALLEL
-                          )
+  set(
+      PROJECT_COMPILE_DEFINITIONS
+      ${PROJECT_COMPILE_DEFINITIONS}
+      USE_MPI=1
+      DM_PARALLEL
+      )
 
   if ( DEFINED WRF_MPI_Fortran_FLAGS AND NOT "${WRF_MPI_Fortran_FLAGS}" STREQUAL "" )
-    add_compile_options(
-                        $<$<COMPILE_LANGUAGE:Fortran>:${WRF_MPI_Fortran_FLAGS}>
-                        )
+    set(
+        PROJECT_COMPILE_OPTIONS
+        ${PROJECT_COMPILE_OPTIONS}
+        $<$<COMPILE_LANGUAGE:Fortran>:${WRF_MPI_Fortran_FLAGS}>
+        )
   endif()
 
   if ( DEFINED WRF_MPI_C_FLAGS AND NOT "${WRF_MPI_C_FLAGS}" STREQUAL "" )
-    add_compile_options(
-                        $<$<COMPILE_LANGUAGE:C>:${WRF_MPI_C_FLAGS}>
-                        )
+    set(
+        PROJECT_COMPILE_OPTIONS
+        ${PROJECT_COMPILE_OPTIONS}
+        $<$<COMPILE_LANGUAGE:C>:${WRF_MPI_C_FLAGS}>
+        )
   endif()
 
   # Check if MPI in all its glory has forced IPO down our throats due to hard-coding the wrapper flags
@@ -365,16 +371,23 @@ if ( ${USE_MPI} )
   set( USE_RSL_LITE ON )
 # We know NONE is the zero index so compare against that
 elseif( ${CURRENT_NESTING_IDX} GREATER 0 )
-  add_compile_definitions(
-                          DM_PARALLEL
-                          STUBMPI
-                          )
+  set(
+      PROJECT_COMPILE_DEFINITIONS
+      ${PROJECT_COMPILE_DEFINITIONS}
+      DM_PARALLEL
+      STUBMPI
+      )
   set( USE_RSL_LITE ON )
 endif()
 
 if ( ${USE_OPENMP} )
   find_package( OpenMP REQUIRED COMPONENTS Fortran C )
-  add_compile_definitions( USE_OPENMP=1 SM_PARALLEL )
+  set(
+      PROJECT_COMPILE_DEFINITIONS
+      ${PROJECT_COMPILE_DEFINITIONS}
+      USE_OPENMP=1
+      SM_PARALLEL
+      )
 endif()
 
 if ( ${USE_M4} )
@@ -541,50 +554,52 @@ endif()
 
 # This is really ugly but such is the cost of supporting many ways to say the same thing
 # https://cmake.org/cmake/help/latest/variable/CMAKE_LANG_COMPILER_ID.html
-add_compile_options(
-                    # Use "" and ; specifically to evaluate correctly
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,Absoft>:>"                                 #@ Absoft Fortran
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,ADSP>:>"                                   #@ Analog VisualDSP++
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,AppleClang>:>"                             #@ Apple Clang
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,ARMCC>:>"                                  #@ ARM Compiler
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,ARMClang>:>"                               #@ ARM Compiler based on Clang
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,Bruce>:>"                                  #@ Bruce C Compiler
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,CCur>:>"                                   #@ Concurrent Fortran
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,Clang>:>"                                  #@ LLVM Clang
-                    "$<$<COMPILE_LANG_AND_ID:Fortran,Cray>:-s;integer32;-s;real${RWORDSIZE_B}>" #@ Cray Compiler
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,Embarcadero>:>"                            #@ Embarcadero
-                    "$<$<AND:$<BOOL:${USE_DOUBLE}>,$<COMPILE_LANG_AND_ID:Fortran,Flang>>:-fdefault-real-${RWORDSIZE}>"                  #@ Classic Flang Fortran Compiler
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,LLVMFlang>:>"                              #@ LLVM Flang Fortran Compiler
-                    "$<$<COMPILE_LANG_AND_ID:Fortran,Fujitsu>:-CcdRR${RWORDSIZE}>"              #@ Fujitsu HPC compiler (Trad mode)
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,FujitsuClang>:>"                           #@ Fujitsu HPC compiler (Clang mode)
-                    "$<$<COMPILE_LANG_AND_ID:Fortran,G95>:-r${RWORDSIZE};-i4>"                                    #@ G95 Fortran
-                    "$<$<AND:$<BOOL:${USE_DOUBLE}>,$<COMPILE_LANG_AND_ID:Fortran,GNU>>:-fdefault-real-${RWORDSIZE}>"         #@ GNU Compiler Collection
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,GHS>:>"                                    #@ Green Hills Software
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,HP>:>"                                     #@ Hewlett-Packard Compiler
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,IAR>:>"                                    #@ IAR Systems
-                    "$<$<COMPILE_LANG_AND_ID:Fortran,Intel>:-real-size;${RWORDSIZE_B};-i4>"     #@ Intel Classic Compiler
-                    "$<$<COMPILE_LANG_AND_ID:Fortran,IntelLLVM>:-real-size;${RWORDSIZE_B};-i4>" #@ Intel LLVM-Based Compiler
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,LCC>:>"                                    #@ MCST Elbrus C/C++/Fortran Compiler
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,MSVC>:>"                                   #@ Microsoft Visual Studio
-                    "$<$<COMPILE_LANG_AND_ID:Fortran,NVHPC>:-r${RWORDSIZE};-i4>"                #@ NVIDIA HPC Compiler
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,NVIDIA>:>"                                 #@ NVIDIA CUDA Compiler
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,OpenWatcom>:>"                             #@ Open Watcom
-                    "$<$<COMPILE_LANG_AND_ID:Fortran,PGI>:-r${RWORDSIZE};-i4>"                  #@ The Portland Group
-                    "$<$<COMPILE_LANG_AND_ID:Fortran,PathScale>:-r${RWORDSIZE};-i4>"            #@ PathScale
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,SDCC>:>"                                   #@ Small Device C Compiler
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,SunPro>:>"                                 #@ Oracle Solaris Studio
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,Tasking>:>"                                #@ Tasking Compiler Toolsets
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,TI>:>"                                     #@ Texas Instruments
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,TinyCC>:>"                                 #@ Tiny C Compiler
-                    "$<$<COMPILE_LANG_AND_ID:Fortran,XL>:-qrealsize=${RWORDSIZE};-qintsize=4>"  #@ IBM XL
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,XLClang>:>"                                #@ IBM Clang-based XL
-                    # "$<$<COMPILE_LANG_AND_ID:Fortran,IBMClang>:>"                               #@ IBM LLVM-based Compiler
-                    # Todo find how to handle default selection or add new compiler IDs
-                    # unknown how to add support for sxf90
+set(
+    PROJECT_COMPILE_OPTIONS
+    ${PROJECT_COMPILE_OPTIONS}
+    # Use "" and ; specifically to evaluate correctly
+    # "$<$<COMPILE_LANG_AND_ID:Fortran,Absoft>:>"                                 #@ Absoft Fortran
+    # "$<$<COMPILE_LANG_AND_ID:Fortran,ADSP>:>"                                   #@ Analog VisualDSP++
+    # "$<$<COMPILE_LANG_AND_ID:Fortran,AppleClang>:>"                             #@ Apple Clang
+    # "$<$<COMPILE_LANG_AND_ID:Fortran,ARMCC>:>"                                  #@ ARM Compiler
+    # "$<$<COMPILE_LANG_AND_ID:Fortran,ARMClang>:>"                               #@ ARM Compiler based on Clang
+    # "$<$<COMPILE_LANG_AND_ID:Fortran,Bruce>:>"                                  #@ Bruce C Compiler
+    # "$<$<COMPILE_LANG_AND_ID:Fortran,CCur>:>"                                   #@ Concurrent Fortran
+    # "$<$<COMPILE_LANG_AND_ID:Fortran,Clang>:>"                                  #@ LLVM Clang
+    "$<$<COMPILE_LANG_AND_ID:Fortran,Cray>:-s;integer32;-s;real${RWORDSIZE_B}>" #@ Cray Compiler
+    # "$<$<COMPILE_LANG_AND_ID:Fortran,Embarcadero>:>"                            #@ Embarcadero
+    "$<$<AND:$<BOOL:${USE_DOUBLE}>,$<COMPILE_LANG_AND_ID:Fortran,Flang>>:-fdefault-real-${RWORDSIZE}>"                  #@ Classic Flang Fortran Compiler
+    # "$<$<COMPILE_LANG_AND_ID:Fortran,LLVMFlang>:>"                              #@ LLVM Flang Fortran Compiler
+    "$<$<COMPILE_LANG_AND_ID:Fortran,Fujitsu>:-CcdRR${RWORDSIZE}>"              #@ Fujitsu HPC compiler (Trad mode)
+    # "$<$<COMPILE_LANG_AND_ID:Fortran,FujitsuClang>:>"                           #@ Fujitsu HPC compiler (Clang mode)
+    "$<$<COMPILE_LANG_AND_ID:Fortran,G95>:-r${RWORDSIZE};-i4>"                                    #@ G95 Fortran
+    "$<$<AND:$<BOOL:${USE_DOUBLE}>,$<COMPILE_LANG_AND_ID:Fortran,GNU>>:-fdefault-real-${RWORDSIZE}>"         #@ GNU Compiler Collection
+    # "$<$<COMPILE_LANG_AND_ID:Fortran,GHS>:>"                                    #@ Green Hills Software
+    # "$<$<COMPILE_LANG_AND_ID:Fortran,HP>:>"                                     #@ Hewlett-Packard Compiler
+    # "$<$<COMPILE_LANG_AND_ID:Fortran,IAR>:>"                                    #@ IAR Systems
+    "$<$<COMPILE_LANG_AND_ID:Fortran,Intel>:-real-size;${RWORDSIZE_B};-i4>"     #@ Intel Classic Compiler
+    "$<$<COMPILE_LANG_AND_ID:Fortran,IntelLLVM>:-real-size;${RWORDSIZE_B};-i4>" #@ Intel LLVM-Based Compiler
+    # "$<$<COMPILE_LANG_AND_ID:Fortran,LCC>:>"                                    #@ MCST Elbrus C/C++/Fortran Compiler
+    # "$<$<COMPILE_LANG_AND_ID:Fortran,MSVC>:>"                                   #@ Microsoft Visual Studio
+    "$<$<COMPILE_LANG_AND_ID:Fortran,NVHPC>:-r${RWORDSIZE};-i4>"                #@ NVIDIA HPC Compiler
+    # "$<$<COMPILE_LANG_AND_ID:Fortran,NVIDIA>:>"                                 #@ NVIDIA CUDA Compiler
+    # "$<$<COMPILE_LANG_AND_ID:Fortran,OpenWatcom>:>"                             #@ Open Watcom
+    "$<$<COMPILE_LANG_AND_ID:Fortran,PGI>:-r${RWORDSIZE};-i4>"                  #@ The Portland Group
+    "$<$<COMPILE_LANG_AND_ID:Fortran,PathScale>:-r${RWORDSIZE};-i4>"            #@ PathScale
+    # "$<$<COMPILE_LANG_AND_ID:Fortran,SDCC>:>"                                   #@ Small Device C Compiler
+    # "$<$<COMPILE_LANG_AND_ID:Fortran,SunPro>:>"                                 #@ Oracle Solaris Studio
+    # "$<$<COMPILE_LANG_AND_ID:Fortran,Tasking>:>"                                #@ Tasking Compiler Toolsets
+    # "$<$<COMPILE_LANG_AND_ID:Fortran,TI>:>"                                     #@ Texas Instruments
+    # "$<$<COMPILE_LANG_AND_ID:Fortran,TinyCC>:>"                                 #@ Tiny C Compiler
+    "$<$<COMPILE_LANG_AND_ID:Fortran,XL>:-qrealsize=${RWORDSIZE};-qintsize=4>"  #@ IBM XL
+    # "$<$<COMPILE_LANG_AND_ID:Fortran,XLClang>:>"                                #@ IBM Clang-based XL
+    # "$<$<COMPILE_LANG_AND_ID:Fortran,IBMClang>:>"                               #@ IBM LLVM-based Compiler
+    # Todo find how to handle default selection or add new compiler IDs
+    # unknown how to add support for sxf90
 
-                    # line lengths
-                    "$<$<COMPILE_LANG_AND_ID:Fortran,GNU>:-ffree-line-length-none>"                #@ GNU Compiler Collection
-                    )
+    # line lengths
+    "$<$<COMPILE_LANG_AND_ID:Fortran,GNU>:-ffree-line-length-none>"                #@ GNU Compiler Collection
+    )
 
 
 # https://stackoverflow.com/a/53155812
@@ -593,113 +608,120 @@ add_compile_options(
 
 
 # Whole project flags
-add_compile_options(
-                    # $<$<COMPILE_LANGUAGE:Fortran>:-cpp>
-                    # Use "" and ; specifically to evaluate correctly
-                    "$<$<COMPILE_LANG_AND_ID:Fortran,Intel>:-diag-disable;6843>"
-                    $<$<AND:$<COMPILE_LANG_AND_ID:Fortran,GNU>,$<VERSION_GREATER_EQUAL:${CMAKE_Fortran_COMPILER_VERSION},10>>:-fallow-argument-mismatch>
-                    $<$<AND:$<COMPILE_LANG_AND_ID:Fortran,GNU>,$<VERSION_GREATER_EQUAL:${CMAKE_Fortran_COMPILER_VERSION},10>>:-fallow-invalid-boz>
-                    $<$<AND:$<COMPILE_LANG_AND_ID:Fortran,GNU>,$<VERSION_GREATER_EQUAL:${CMAKE_Fortran_COMPILER_VERSION},10>>:-ffree-line-length-none>
-
-                    # $<AND:$<COMPILE_LANGUAGE:Fortran>,$<STREQUAL:${Fortran_COMPILER_ID},Intel>:-diag-disable;6843>
-                    )
+set(
+    PROJECT_COMPILE_OPTIONS
+    ${PROJECT_COMPILE_OPTIONS}
+    # $<$<COMPILE_LANGUAGE:Fortran>:-cpp>
+    # Use "" and ; specifically to evaluate correctly
+    "$<$<COMPILE_LANG_AND_ID:Fortran,Intel>:-diag-disable;6843>"
+    $<$<AND:$<COMPILE_LANG_AND_ID:Fortran,GNU>,$<VERSION_GREATER_EQUAL:${CMAKE_Fortran_COMPILER_VERSION},10>>:-fallow-argument-mismatch>
+    $<$<AND:$<COMPILE_LANG_AND_ID:Fortran,GNU>,$<VERSION_GREATER_EQUAL:${CMAKE_Fortran_COMPILER_VERSION},10>>:-fallow-invalid-boz>
+    $<$<AND:$<COMPILE_LANG_AND_ID:Fortran,GNU>,$<VERSION_GREATER_EQUAL:${CMAKE_Fortran_COMPILER_VERSION},10>>:-ffree-line-length-none>
+    
+    # $<AND:$<COMPILE_LANGUAGE:Fortran>,$<STREQUAL:${Fortran_COMPILER_ID},Intel>:-diag-disable;6843>
+    )
 
 if ( ${PROFILE_COMPILATION} )
   message( STATUS "Attemping to add compilation profiling..." )
-  add_compile_options(
-                      $<$<COMPILE_LANG_AND_ID:Fortran,GNU>:-ftime-report>
-                      )
+  set(
+      PROJECT_COMPILE_OPTIONS
+      ${PROJECT_COMPILE_OPTIONS}
+      $<$<COMPILE_LANG_AND_ID:Fortran,GNU>:-ftime-report>
+      )
 endif()
 
-add_compile_definitions(
-                        MAX_DOMAINS_F=${MAX_DOMAINS_F}
-                        CONFIG_BUF_LEN=${CONFIG_BUF_LEN}
-                        MAX_HISTORY=${MAX_HISTORY}
-                        IWORDSIZE=${IWORDSIZE}
-                        DWORDSIZE=${DWORDSIZE}
-                        LWORDSIZE=${LWORDSIZE}
-                        RWORDSIZE=${RWORDSIZE}
-                        # Only define if set, this is to use #ifdef/#ifndef preprocessors
-                        # in code since cmake cannot handle basically any others :(
-                        # https://gitlab.kitware.com/cmake/cmake/-/issues/17398
-                        $<$<BOOL:${ENABLE_CHEM}>:WRF_CHEM=$<BOOL:${ENABLE_CHEM}>>
-                        $<$<BOOL:${ENABLE_CHEM}>:BUILD_CHEM=$<BOOL:${ENABLE_CHEM}>>
-                        $<$<BOOL:${ENABLE_CMAQ}>:WRF_CMAQ=$<BOOL:${ENABLE_CMAQ}>>
-                        $<$<AND:$<BOOL:${ENABLE_CHEM}>,$<BOOL:${ENABLE_KPP}>>:WRF_KPP=$<BOOL:${ENABLE_KPP}>>
-                        $<$<BOOL:${ENABLE_DFI_RADAR}>:WRF_DFI_RADAR=$<BOOL:${ENABLE_DFI_RADAR}>>
-                        $<$<BOOL:${ENABLE_TITAN}>:WRF_TITAN=$<BOOL:${ENABLE_TITAN}>>
-                        $<$<BOOL:${ENABLE_MARS}>:WRF_MARS=$<BOOL:${ENABLE_MARS}>>
-                        $<$<BOOL:${ENABLE_VENUS}>:WRF_VENUS=$<BOOL:${ENABLE_VENUS}>>
-                        $<$<BOOL:${ENABLE_HYDRO}>:WRF_HYDRO=$<BOOL:${ENABLE_HYDRO}>>
+set(
+    PROJECT_COMPILE_DEFINITIONS
+    ${PROJECT_COMPILE_DEFINITIONS}
 
-                        # Because once again we need two defines to control one thing
-                        $<$<BOOL:${ENABLE_CTSM}>:WRF_USE_CTSM=$<BOOL:${ENABLE_CTSM}>>
-                        $<$<NOT:$<BOOL:${ENABLE_CTSM}>>:WRF_USE_CLM>
+    MAX_DOMAINS_F=${MAX_DOMAINS_F}
+    CONFIG_BUF_LEN=${CONFIG_BUF_LEN}
+    MAX_HISTORY=${MAX_HISTORY}
+    IWORDSIZE=${IWORDSIZE}
+    DWORDSIZE=${DWORDSIZE}
+    LWORDSIZE=${LWORDSIZE}
+    RWORDSIZE=${RWORDSIZE}
+    # Only define if set, this is to use #ifdef/#ifndef preprocessors
+    # in code since cmake cannot handle basically any others :(
+    # https://gitlab.kitware.com/cmake/cmake/-/issues/17398
+    $<$<BOOL:${ENABLE_CHEM}>:WRF_CHEM=$<BOOL:${ENABLE_CHEM}>>
+    $<$<BOOL:${ENABLE_CHEM}>:BUILD_CHEM=$<BOOL:${ENABLE_CHEM}>>
+    $<$<BOOL:${ENABLE_CMAQ}>:WRF_CMAQ=$<BOOL:${ENABLE_CMAQ}>>
+    $<$<AND:$<BOOL:${ENABLE_CHEM}>,$<BOOL:${ENABLE_KPP}>>:WRF_KPP=$<BOOL:${ENABLE_KPP}>>
+    $<$<BOOL:${ENABLE_DFI_RADAR}>:WRF_DFI_RADAR=$<BOOL:${ENABLE_DFI_RADAR}>>
+    $<$<BOOL:${ENABLE_TITAN}>:WRF_TITAN=$<BOOL:${ENABLE_TITAN}>>
+    $<$<BOOL:${ENABLE_MARS}>:WRF_MARS=$<BOOL:${ENABLE_MARS}>>
+    $<$<BOOL:${ENABLE_VENUS}>:WRF_VENUS=$<BOOL:${ENABLE_VENUS}>>
+    $<$<BOOL:${ENABLE_HYDRO}>:WRF_HYDRO=$<BOOL:${ENABLE_HYDRO}>>
 
-                        # If force classic or no nc-4 support enable classic
-                        $<$<OR:$<BOOL:${FORCE_NETCDF_CLASSIC}>,$<NOT:$<BOOL:${netCDF_NC4}>>>:NETCDF_classic=1>
-                        $<$<OR:$<BOOL:${WRFIO_NCD_NO_LARGE_FILE_SUPPORT}>,$<NOT:$<BOOL:${netCDF_LARGE_FILE_SUPPORT}>>>:WRFIO_NCD_NO_LARGE_FILE_SUPPORT=1>
-                        # May need a check for WRFIO_ncdpar_LARGE_FILE_SUPPORT
+    # Because once again we need two defines to control one thing
+    $<$<BOOL:${ENABLE_CTSM}>:WRF_USE_CTSM=$<BOOL:${ENABLE_CTSM}>>
+    $<$<NOT:$<BOOL:${ENABLE_CTSM}>>:WRF_USE_CLM>
 
-                        # Now set the opposite in different defines, because why not :)
-                        $<$<AND:$<NOT:$<BOOL:${FORCE_NETCDF_CLASSIC}>>,$<BOOL:${netCDF_NC4}>>:USE_NETCDF4_FEATURES=1>
-                        $<$<AND:$<NOT:$<BOOL:${WRFIO_NCD_NO_LARGE_FILE_SUPPORT}>>,$<BOOL:${netCDF_LARGE_FILE_SUPPORT}>>:WRFIO_NCD_LARGE_FILE_SUPPORT=1>
+    # If force classic or no nc-4 support enable classic
+    $<$<OR:$<BOOL:${FORCE_NETCDF_CLASSIC}>,$<NOT:$<BOOL:${netCDF_NC4}>>>:NETCDF_classic=1>
+    $<$<OR:$<BOOL:${WRFIO_NCD_NO_LARGE_FILE_SUPPORT}>,$<NOT:$<BOOL:${netCDF_LARGE_FILE_SUPPORT}>>>:WRFIO_NCD_NO_LARGE_FILE_SUPPORT=1>
+    # May need a check for WRFIO_ncdpar_LARGE_FILE_SUPPORT
 
-                        # Could simplify logic to just check if RPC is available but to be explicit
-                        # Does this actually need to check for EM_CORE (Config.pl:443)
-                        # not enable terran or not rpc_found do
-                        # not ( enable terrain and rpc_found )
-                        $<$<NOT:$<AND:$<BOOL:${ENABLE_TERRAIN}>,$<BOOL:${RPC_FOUND}>>>:LANDREAD_STUB>
-                        $<$<BOOL:${ENABLE_TERRAIN}>:TERRAIN_AND_LANDUSE>
+    # Now set the opposite in different defines, because why not :)
+    $<$<AND:$<NOT:$<BOOL:${FORCE_NETCDF_CLASSIC}>>,$<BOOL:${netCDF_NC4}>>:USE_NETCDF4_FEATURES=1>
+    $<$<AND:$<NOT:$<BOOL:${WRFIO_NCD_NO_LARGE_FILE_SUPPORT}>>,$<BOOL:${netCDF_LARGE_FILE_SUPPORT}>>:WRFIO_NCD_LARGE_FILE_SUPPORT=1>
 
+    # Could simplify logic to just check if RPC is available but to be explicit
+    # Does this actually need to check for EM_CORE (Config.pl:443)
+    # not enable terran or not rpc_found do 
+    # not ( enable terrain and rpc_found )
+    $<$<NOT:$<AND:$<BOOL:${ENABLE_TERRAIN}>,$<BOOL:${RPC_FOUND}>>>:LANDREAD_STUB>
+    $<$<BOOL:${ENABLE_TERRAIN}>:TERRAIN_AND_LANDUSE>
+    
 
-                        $<$<BOOL:${USE_ALLOCATABLES}>:USE_ALLOCATABLES>
-                        $<$<BOOL:${wrfmodel}>:wrfmodel>
-                        $<$<BOOL:${GRIB1}>:GRIB1>
-                        $<$<BOOL:${INTIO}>:INTIO>
-                        $<$<BOOL:${KEEP_INT_AROUND}>:KEEP_INT_AROUND>
-                        $<$<BOOL:${LIMIT_ARGS}>:LIMIT_ARGS>
+    $<$<BOOL:${USE_ALLOCATABLES}>:USE_ALLOCATABLES>
+    $<$<BOOL:${wrfmodel}>:wrfmodel>
+    $<$<BOOL:${GRIB1}>:GRIB1>
+    $<$<BOOL:${INTIO}>:INTIO>
+    $<$<BOOL:${KEEP_INT_AROUND}>:KEEP_INT_AROUND>
+    $<$<BOOL:${LIMIT_ARGS}>:LIMIT_ARGS>
 
-                        #!TODO Always defined - fix the ambiguous english in these BUILD_*_FAST defines
-                        BUILD_RRTMG_FAST=$<BOOL:${BUILD_RRTMG_FAST}>
-                        BUILD_RRTMK=$<BOOL:${BUILD_RRTMK}>
-                        BUILD_SBM_FAST=$<BOOL:${BUILD_SBM_FAST}>
-                        SHOW_ALL_VARS_USED=$<BOOL:${SHOW_ALL_VARS_USED}>
+    #!TODO Always defined - fix the ambiguous english in these BUILD_*_FAST defines
+    BUILD_RRTMG_FAST=$<BOOL:${BUILD_RRTMG_FAST}>
+    BUILD_RRTMK=$<BOOL:${BUILD_RRTMK}>
+    BUILD_SBM_FAST=$<BOOL:${BUILD_SBM_FAST}>
+    SHOW_ALL_VARS_USED=$<BOOL:${SHOW_ALL_VARS_USED}>
 
-                        # Alwasys set
-                        NMM_CORE=$<BOOL:${NMM_CORE}>
-                        NMM_MAX_DIM=2600
-                        NETCDF
+    # Alwasys set
+    NMM_CORE=$<BOOL:${NMM_CORE}>
+    NMM_MAX_DIM=2600
+    NETCDF
+    
+    #!TODO Change this to a confcheck
+    NONSTANDARD_SYSTEM_SUBR
+    
+    EM_CORE=${EM_CORE}
+    WRFPLUS=$<BOOL:$<STREQUAL:${WRF_CORE},"PLUS">>
+    DA_CORE=$<BOOL:$<OR:$<STREQUAL:${WRF_CORE},"DA_CORE">,$<STREQUAL:${WRF_CORE},"DA_4D_VAR">>>
+    # DFI_RADAR=$<BOOL:${NMM_CORE}>
 
-                        #!TODO Change this to a confcheck
-                        NONSTANDARD_SYSTEM_SUBR
+    # Nesting options
+    $<$<BOOL:${MOVE_NESTS}>:MOVE_NESTS>
+    $<$<BOOL:$<STREQUAL:${WRF_NESTING},"VORTEX">>:VORTEX_CENTER>
 
-                        EM_CORE=${EM_CORE}
-                        WRFPLUS=$<BOOL:$<STREQUAL:${WRF_CORE},"PLUS">>
-                        DA_CORE=$<BOOL:$<OR:$<STREQUAL:${WRF_CORE},"DA_CORE">,$<STREQUAL:${WRF_CORE},"DA_4D_VAR">>>
-                        # DFI_RADAR=$<BOOL:${NMM_CORE}>
+    # Configuration checks
+    $<$<NOT:$<BOOL:${Fortran_2003_IEEE}>>:NO_IEEE_MODULE>
+    $<$<NOT:$<BOOL:${Fortran_2003_ISO_C}>>:NO_ISO_C_SUPPORT>
+    # If flush fails, check if we can fall back to fflush, and if not no support
+    $<$<NOT:$<BOOL:${Fortran_2003_FLUSH}>>:$<IF:$<BOOL:${Fortran_2003_FFLUSH}>,USE_FFLUSH,NO_FLUSH_SUPPORT>>
+    $<$<NOT:$<BOOL:${Fortran_2003_GAMMA}>>:NO_GAMMA_SUPPORT>
 
-                        # Nesting options
-                        $<$<BOOL:${MOVE_NESTS}>:MOVE_NESTS>
-                        $<$<BOOL:$<STREQUAL:${WRF_NESTING},"VORTEX">>:VORTEX_CENTER>
+    #!TODO Leaving as is in WRF for now but investigate why we don't do this
+    # https://stackoverflow.com/a/1035713
+    # If fseeko64 succeeds, use that, else check if we can fall back to fseeko, and if not just use fseek
+    $<IF:$<BOOL:${FSEEKO64}>,FSEEKO64_OK,$<IF:$<BOOL:${FSEEKO}>,FSEEKO_OK,FSEEK_OK>>
 
-                        # Configuration checks
-                        $<$<NOT:$<BOOL:${Fortran_2003_IEEE}>>:NO_IEEE_MODULE>
-                        $<$<NOT:$<BOOL:${Fortran_2003_ISO_C}>>:NO_ISO_C_SUPPORT>
-                        # If flush fails, check if we can fall back to fflush, and if not no support
-                        $<$<NOT:$<BOOL:${Fortran_2003_FLUSH}>>:$<IF:$<BOOL:${Fortran_2003_FFLUSH}>,USE_FFLUSH,NO_FLUSH_SUPPORT>>
-                        $<$<NOT:$<BOOL:${Fortran_2003_GAMMA}>>:NO_GAMMA_SUPPORT>
+    # I don't believe these are used anymore...
+    # $<$<BOOL:${MPI2_SUPPORT}>:MPI2_SUPPORT=$<BOOL:${MPI2_SUPPORT}>>
+    # $<$<BOOL:${MPI2_THREAD_SUPPORT}>:MPI2_THREAD_SUPPORT=$<BOOL:${MPI2_THREAD_SUPPORT}>>
 
-                        #!TODO Leaving as is in WRF for now but investigate why we don't do this
-                        # https://stackoverflow.com/a/1035713
-                        # If fseeko64 succeeds, use that, else check if we can fall back to fseeko, and if not just use fseek
-                        $<IF:$<BOOL:${FSEEKO64}>,FSEEKO64_OK,$<IF:$<BOOL:${FSEEKO}>,FSEEKO_OK,FSEEK_OK>>
-
-                        # I don't believe these are used anymore...
-                        # $<$<BOOL:${MPI2_SUPPORT}>:MPI2_SUPPORT=$<BOOL:${MPI2_SUPPORT}>>
-                        # $<$<BOOL:${MPI2_THREAD_SUPPORT}>:MPI2_THREAD_SUPPORT=$<BOOL:${MPI2_THREAD_SUPPORT}>>
-
-                        )
+    )
 
 
 # Make core target
@@ -707,6 +729,19 @@ add_library(
             ${PROJECT_NAME}_Core
               STATIC
               )
+
+target_compile_options(
+                        ${PROJECT_NAME}_Core
+                        PRIVATE
+                          ${PROJECT_COMPILE_OPTIONS}
+                        )
+
+
+target_compile_definitions(
+                            ${PROJECT_NAME}_Core
+                            PRIVATE
+                              ${PROJECT_COMPILE_DEFINITIONS}
+                          )
 
 # Supplemental to core, or rather should be, some stuff in external is legitimately part of WRF and others
 # are source code from truly external repositories - albeit old versions

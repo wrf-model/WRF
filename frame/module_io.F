@@ -98,6 +98,27 @@ SUBROUTINE BputWait(fid)
 #endif
 END SUBROUTINE BputWait
 
+! An helper routine to call enddef for PnetCDF and NetCDF(PAR).
+! So that define mode is only entered once. (This is an optimization)
+! Currently the optimization is only implemented for PnetCDF.
+SUBROUTINE wrf_enddef(fid)
+  INTEGER, INTENT(IN) :: fid
+  INTEGER :: Hndl, io_form, status
+  LOGICAL :: for_out
+  INTEGER, EXTERNAL           :: use_package
+
+  call get_handle(Hndl, io_form, for_out, fid)
+
+  SELECT CASE (use_package(io_form))
+
+#ifdef PNETCDF
+    CASE(io_pnetcdf)
+      call ext_pnc_enddef(Hndl, status)
+#endif
+
+  ENDSELECT
+END SUBROUTINE wrf_enddef
+
 !--- ioinit
 
 SUBROUTINE wrf_ioinit( Status )

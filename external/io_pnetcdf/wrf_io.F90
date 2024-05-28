@@ -98,6 +98,9 @@ module wrf_data_pnc
     ! and only if a buffer is correctly attached to the file. (invariant)
     logical                               :: BputEnabled = .false.
 
+    ! If isDefineMode is set to .true. then the file is in define mode.
+    logical                               :: isDefineMode = .true.
+
   end type wrf_data_handle
   type(wrf_data_handle),target            :: WrfDataHandles(WrfDataHandleMax)
 end module wrf_data_pnc
@@ -215,6 +218,7 @@ subroutine allocHandle(DataHandle,DH,Comm,Status)
   DH%Write     =.false.
   DH%first_operation  = .TRUE.
   DH%Collective = .TRUE.
+  DH%isDefineMode = .TRUE.
   Status = WRF_NO_ERR
 end subroutine allocHandle
 
@@ -898,6 +902,36 @@ LOGICAL FUNCTION ncd_is_first_operation( DataHandle )
     RETURN
 END FUNCTION ncd_is_first_operation
 
+! enter define mode if not already in define mode
+! do nothing if already in define mode
+subroutine try_redef(DH, stat)
+  use wrf_data_pnc
+  use pnetcdf
+  type(wrf_data_handle),pointer       :: DH
+  integer              ,intent(out)   :: stat
+  stat = 0
+  if (.NOT. DH%isDefineMode) then
+    ! return value (stat) is checked outside of this routine
+    stat = NFMPI_REDEF(DH%NCID)
+  endif
+  DH%isDefineMode = .true.
+end subroutine try_redef
+
+! exit define mode if in define mode
+! do nothing if not in define mode
+subroutine try_enddef(DH, stat)
+  use wrf_data_pnc
+  use pnetcdf
+  type(wrf_data_handle),pointer       :: DH
+  integer              ,intent(out)   :: stat
+  stat = 0
+  if (DH%isDefineMode) then
+    ! return value (stat) is checked outside of this routine
+    stat = NFMPI_ENDDEF(DH%NCID)
+  endif
+  DH%isDefineMode = .false.
+end subroutine try_enddef
+
 end module ext_pnc_support_routines
 
 ! ext_pnc_bput_set_buffer_size:
@@ -1432,13 +1466,6 @@ SUBROUTINE ext_pnc_open_for_write_commit(DataHandle, Status)
     call wrf_debug ( WARN , TRIM(msg)) 
     return
   endif
-  stat = NFMPI_ENDDEF(DH%NCID)
-  call netcdf_err(stat,Status)
-  if(Status /= WRF_NO_ERR) then
-    write(msg,*) 'NetCDF error (',stat,') from NFMPI_ENDDEF in ext_pnc_open_for_write_commit ',__FILE__,', line', __LINE__
-    call wrf_debug ( WARN , TRIM(msg))
-    return
-  endif
   DH%FileStatus  = WRF_FILE_OPENED_FOR_WRITE
   DH%first_operation  = .TRUE.
   return
@@ -1503,6 +1530,7 @@ subroutine ext_pnc_ioclose(DataHandle, Status)
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
+  DH%isDefineMode = .true.
   CALL deallocHandle( DataHandle, Status )
   DH%Free=.true.
   return
@@ -1592,7 +1620,7 @@ subroutine ext_pnc_redef( DataHandle, Status)
     call wrf_debug ( FATAL , TRIM(msg))
     return
   endif
-  stat = NFMPI_REDEF(DH%NCID)
+  call try_redef(DH, stat)
   call netcdf_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
     write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__
@@ -1640,7 +1668,7 @@ subroutine ext_pnc_enddef( DataHandle, Status)
     call wrf_debug ( FATAL , TRIM(msg))
     return
   endif
-  stat = NFMPI_ENDDEF(DH%NCID)
+  call try_enddef(DH, stat)
   call netcdf_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
     write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__

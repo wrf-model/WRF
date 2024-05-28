@@ -381,6 +381,7 @@ subroutine GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
   integer(KIND=MPI_OFFSET_KIND)         :: VCount(2)
   integer                               :: stat
   integer                               :: i
+  integer                               :: BputReqID, MPIRank
 
   DH => WrfDataHandles(DataHandle)
   call DateCheck(DateStr,Status)
@@ -412,7 +413,15 @@ subroutine GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
     VStart(2) = TimeIndex
     VCount(1) = DateStrLen
     VCount(2) = 1
-    stat = NFMPI_PUT_VARA_TEXT_ALL(DH%NCID,DH%TimesVarID,VStart,VCount,DateStr)
+    CALL MPI_COMM_RANK(DH%Comm, MPIRank, stat)
+    if (DH%BputEnabled) then
+      if (MPIRank == 0) then ! only rank 0 calls BPUT_VARA_TEXT, since this var is not partitioned.
+        ! Calling non-blocking buffered-version API
+        stat = NFMPI_BPUT_VARA_TEXT(DH%NCID, DH%TimesVarID, VStart, VCount, DateStr, BputReqID)
+      endif
+    else
+      stat = NFMPI_PUT_VARA_TEXT_ALL(DH%NCID,DH%TimesVarID,VStart,VCount,DateStr)
+    endif
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__ 
@@ -672,7 +681,7 @@ subroutine netcdf_err(err,Status)
 end subroutine netcdf_err
 
 subroutine FieldIO(IO,DataHandle,DateStr,Starts,Length,MemoryOrder &
-                     ,FieldType,NCID,VarID,XField,Status)
+                     ,FieldType,NCID,VarID,IsPartitioned,XField,Status)
   use wrf_data_pnc
   include 'wrf_status_codes.h'
 #  include "pnetcdf.inc"
@@ -685,12 +694,14 @@ subroutine FieldIO(IO,DataHandle,DateStr,Starts,Length,MemoryOrder &
   integer                    ,intent(in)    :: FieldType
   integer                    ,intent(in)    :: NCID
   integer                    ,intent(in)    :: VarID
+  logical                    ,intent(in)    :: IsPartitioned
   integer,dimension(*)       ,intent(inout) :: XField
   integer                    ,intent(out)   :: Status
   integer                                   :: TimeIndex
   integer                                   :: NDim
   integer,dimension(NVarDims)               :: VStart
   integer,dimension(NVarDims)               :: VCount
+  integer                                   :: MPIRank
   type(wrf_data_handle)      ,pointer       :: DH
 
   call GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
@@ -710,6 +721,18 @@ VCount(:) = 1
   VStart(NDim+1) = TimeIndex
   VCount(NDim+1) = 1
   DH => WrfDataHandles(DataHandle)
+
+  ! when io mode is "write", and the variable is not
+  ! partitioned (meaning every process writes the same contents
+  ! to the same region), then only rank 0 writes.
+  IF (IO=="write" .AND. .NOT.IsPartitioned) THEN
+    CALL MPI_COMM_RANK(DH%Comm, MPIRank, Status)
+    IF ( DH%BputEnabled .AND. MPIRank /= 0) THEN
+      RETURN
+    ELSE IF (MPIRank /= 0) THEN
+      VCount(:) = 0
+    ENDIF
+  ENDIF
 
   select case (FieldType)
     case (WRF_REAL)
@@ -2462,6 +2485,8 @@ subroutine ext_pnc_write_field(DataHandle,DateStr,Var,Field,FieldType,Comm, &
   logical                                      :: quilting
   ! Local, possibly adjusted, copies of MemoryStart and MemoryEnd
   integer       ,dimension(NVarDims)           :: lMemoryStart, lMemoryEnd
+  ! IsPartitioned is set to .true. if the variable is partitioned among process.
+  logical                                      :: IsPartitioned = .false.
   MemoryOrder = trim(adjustl(MemoryOrdIn))
   NullName=char(0)
   call GetDim(MemoryOrder,NDim,Status)
@@ -2708,10 +2733,18 @@ subroutine ext_pnc_write_field(DataHandle,DateStr,Var,Field,FieldType,Comm, &
                                                    ,i1,i2,j1,j2,k1,k2 )
     END IF
 
+    IsPartitioned = .false.
+    DO i=1, NDim
+      IF (DomainStart(i) .NE. PatchStart(i) .OR. DomainEnd(i) .NE. PatchEnd(i)) THEN
+        IsPartitioned = .true.
+        EXIT
+      ENDIF
+    ENDDO
+
     StoredStart(1:NDim) = PatchStart(1:NDim)
     call ExtOrder(MemoryOrder,StoredStart,Status)
     call FieldIO('write',DataHandle,DateStr,StoredStart,Length,MemoryOrder, &
-                  FieldType,NCID,VarID,XField,Status)
+                  FieldType,NCID,VarID,IsPartitioned,XField,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'Warning Status = ',Status,' in ',__FILE__,', line', __LINE__ 
       call wrf_debug ( WARN , TRIM(msg))
@@ -2961,8 +2994,10 @@ subroutine ext_pnc_read_field(DataHandle,DateStr,Var,Field,FieldType,Comm,  &
       call wrf_debug ( FATAL , msg)
       return
     endif
+    ! IsPartitioned will only take effect for write reqs.
+    ! In case of read, fix IsPartitioned to .true. (insensitive to the actual value)
     call FieldIO('read',DataHandle,DateStr,StoredStart,Length,MemoryOrder, &
-                  FieldType,NCID,VarID,XField,Status)
+                  FieldType,NCID,VarID,.true.,XField,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'Warning Status = ',Status,' in ',__FILE__,', line', __LINE__ 
       call wrf_debug ( WARN , TRIM(msg))

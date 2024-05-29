@@ -1,6 +1,6 @@
  &time_control
- run_days                            = 5,
- run_hours                           = 0,
+ run_days                            = 0,
+ run_hours                           = 6,
  run_minutes                         = 0,
  run_seconds                         = 0, 
  start_year                          = 2008,
@@ -52,9 +52,7 @@
  smooth_option                       = 0
  num_metgrid_levels                  = 34,
  num_metgrid_soil_levels             = 4,
- numtiles                            = 4,
- nproc_x                             = 8,
- nproc_y                             = 24, 
+ numtiles                            = 1, !need to change this value = $OMP_NUM_THREADS when using OpenMP
  /
 
  &physics

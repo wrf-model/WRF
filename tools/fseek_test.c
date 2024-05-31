@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <sys/types.h>
+void
 main()
 {
   FILE *fp ;

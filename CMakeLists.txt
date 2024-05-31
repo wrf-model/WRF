@@ -619,55 +619,8 @@ add_compile_definitions(
                         DWORDSIZE=${DWORDSIZE}
                         LWORDSIZE=${LWORDSIZE}
                         RWORDSIZE=${RWORDSIZE}
-                        # Only define if set, this is to use #ifdef/#ifndef preprocessors
-                        # in code since cmake cannot handle basically any others :(
-                        # https://gitlab.kitware.com/cmake/cmake/-/issues/17398
-                        $<$<BOOL:${ENABLE_CHEM}>:WRF_CHEM=$<BOOL:${ENABLE_CHEM}>>
-                        $<$<BOOL:${ENABLE_CHEM}>:BUILD_CHEM=$<BOOL:${ENABLE_CHEM}>>
-                        $<$<BOOL:${ENABLE_CMAQ}>:WRF_CMAQ=$<BOOL:${ENABLE_CMAQ}>>
-                        $<$<AND:$<BOOL:${ENABLE_CHEM}>,$<BOOL:${ENABLE_KPP}>>:WRF_KPP=$<BOOL:${ENABLE_KPP}>>
-                        $<$<BOOL:${ENABLE_DFI_RADAR}>:WRF_DFI_RADAR=$<BOOL:${ENABLE_DFI_RADAR}>>
-                        $<$<BOOL:${ENABLE_TITAN}>:WRF_TITAN=$<BOOL:${ENABLE_TITAN}>>
-                        $<$<BOOL:${ENABLE_MARS}>:WRF_MARS=$<BOOL:${ENABLE_MARS}>>
-                        $<$<BOOL:${ENABLE_VENUS}>:WRF_VENUS=$<BOOL:${ENABLE_VENUS}>>
-                        $<$<BOOL:${ENABLE_HYDRO}>:WRF_HYDRO=$<BOOL:${ENABLE_HYDRO}>>
-
-                        # Because once again we need two defines to control one thing
-                        $<$<BOOL:${ENABLE_CTSM}>:WRF_USE_CTSM=$<BOOL:${ENABLE_CTSM}>>
-                        $<$<NOT:$<BOOL:${ENABLE_CTSM}>>:WRF_USE_CLM>
-
-                        # If force classic or no nc-4 support enable classic
-                        $<$<OR:$<BOOL:${FORCE_NETCDF_CLASSIC}>,$<NOT:$<BOOL:${netCDF_NC4}>>>:NETCDF_classic=1>
-                        $<$<OR:$<BOOL:${WRFIO_NCD_NO_LARGE_FILE_SUPPORT}>,$<NOT:$<BOOL:${netCDF_LARGE_FILE_SUPPORT}>>>:WRFIO_NCD_NO_LARGE_FILE_SUPPORT=1>
-                        # May need a check for WRFIO_ncdpar_LARGE_FILE_SUPPORT
-
-                        # Now set the opposite in different defines, because why not :)
-                        $<$<AND:$<NOT:$<BOOL:${FORCE_NETCDF_CLASSIC}>>,$<BOOL:${netCDF_NC4}>>:USE_NETCDF4_FEATURES=1>
-                        $<$<AND:$<NOT:$<BOOL:${WRFIO_NCD_NO_LARGE_FILE_SUPPORT}>>,$<BOOL:${netCDF_LARGE_FILE_SUPPORT}>>:WRFIO_NCD_LARGE_FILE_SUPPORT=1>
-
-                        # Could simplify logic to just check if RPC is available but to be explicit
-                        # Does this actually need to check for EM_CORE (Config.pl:443)
-                        # not enable terran or not rpc_found do
-                        # not ( enable terrain and rpc_found )
-                        $<$<NOT:$<AND:$<BOOL:${ENABLE_TERRAIN}>,$<BOOL:${RPC_FOUND}>>>:LANDREAD_STUB>
-                        $<$<BOOL:${ENABLE_TERRAIN}>:TERRAIN_AND_LANDUSE>
 
 
-                        $<$<BOOL:${USE_ALLOCATABLES}>:USE_ALLOCATABLES>
-                        $<$<BOOL:${wrfmodel}>:wrfmodel>
-                        $<$<BOOL:${GRIB1}>:GRIB1>
-                        $<$<BOOL:${INTIO}>:INTIO>
-                        $<$<BOOL:${KEEP_INT_AROUND}>:KEEP_INT_AROUND>
-                        $<$<BOOL:${LIMIT_ARGS}>:LIMIT_ARGS>
-
-                        #!TODO Always defined - fix the ambiguous english in these BUILD_*_FAST defines
-                        BUILD_RRTMG_FAST=$<BOOL:${BUILD_RRTMG_FAST}>
-                        BUILD_RRTMK=$<BOOL:${BUILD_RRTMK}>
-                        BUILD_SBM_FAST=$<BOOL:${BUILD_SBM_FAST}>
-                        SHOW_ALL_VARS_USED=$<BOOL:${SHOW_ALL_VARS_USED}>
-
-                        # Alwasys set
-                        NMM_CORE=$<BOOL:${NMM_CORE}>
                         NMM_MAX_DIM=2600
                         NETCDF
 
@@ -675,31 +628,178 @@ add_compile_definitions(
                         NONSTANDARD_SYSTEM_SUBR
 
                         EM_CORE=${EM_CORE}
-                        WRFPLUS=$<BOOL:$<STREQUAL:${WRF_CORE},"PLUS">>
-                        DA_CORE=$<BOOL:$<OR:$<STREQUAL:${WRF_CORE},"DA_CORE">,$<STREQUAL:${WRF_CORE},"DA_4D_VAR">>>
-                        # DFI_RADAR=$<BOOL:${NMM_CORE}>
-
-                        # Nesting options
-                        $<$<BOOL:${MOVE_NESTS}>:MOVE_NESTS>
-                        $<$<BOOL:$<STREQUAL:${WRF_NESTING},"VORTEX">>:VORTEX_CENTER>
-
-                        # Configuration checks
-                        $<$<NOT:$<BOOL:${Fortran_2003_IEEE}>>:NO_IEEE_MODULE>
-                        $<$<NOT:$<BOOL:${Fortran_2003_ISO_C}>>:NO_ISO_C_SUPPORT>
-                        # If flush fails, check if we can fall back to fflush, and if not no support
-                        $<$<NOT:$<BOOL:${Fortran_2003_FLUSH}>>:$<IF:$<BOOL:${Fortran_2003_FFLUSH}>,USE_FFLUSH,NO_FLUSH_SUPPORT>>
-                        $<$<NOT:$<BOOL:${Fortran_2003_GAMMA}>>:NO_GAMMA_SUPPORT>
-
-                        #!TODO Leaving as is in WRF for now but investigate why we don't do this
-                        # https://stackoverflow.com/a/1035713
-                        # If fseeko64 succeeds, use that, else check if we can fall back to fseeko, and if not just use fseek
-                        $<IF:$<BOOL:${FSEEKO64}>,FSEEKO64_OK,$<IF:$<BOOL:${FSEEKO}>,FSEEKO_OK,FSEEK_OK>>
-
-                        # I don't believe these are used anymore...
-                        # $<$<BOOL:${MPI2_SUPPORT}>:MPI2_SUPPORT=$<BOOL:${MPI2_SUPPORT}>>
-                        # $<$<BOOL:${MPI2_THREAD_SUPPORT}>:MPI2_THREAD_SUPPORT=$<BOOL:${MPI2_THREAD_SUPPORT}>>
-
                         )
+
+
+# Only define if set, this is to use #ifdef/#ifndef preprocessors
+# in code since cmake cannot handle basically any others :(
+# https://gitlab.kitware.com/cmake/cmake/-/issues/17398
+if ( ${ENABLE_CHEM} )
+  add_compile_definitions( WRF_CHEM=1 )
+  if ( ${ENABLE_KPP} )
+    add_compile_definitions( WRF_KPP=1 )
+  endif()
+endif()
+if ( ${ENABLE_CHEM} )
+  add_compile_definitions( BUILD_CHEM=1 )
+endif()
+if ( ${ENABLE_CMAQ} )
+  add_compile_definitions( WRF_CMAQ=1 )
+endif()
+if ( ${ENABLE_DFI_RADAR} )
+  add_compile_definitions( WRF_DFI_RADAR=1 )
+endif()
+if ( ${ENABLE_TITAN} )
+  add_compile_definitions( WRF_TITAN=1 )
+endif()
+if ( ${ENABLE_MARS} )
+  add_compile_definitions( WRF_MARS=1 )
+endif()
+if ( ${ENABLE_VENUS} )
+  add_compile_definitions( WRF_VENUS=1 )
+endif()
+if ( ${ENABLE_HYDRO} )
+  add_compile_definitions( WRF_HYDRO=1 )
+endif()
+
+# Because once again we need two defines to control one thing
+if ( ${ENABLE_CTSM} )
+  add_compile_definitions( WRF_USE_CTSM )
+else()
+  #!TODO there are some files that rely on this being 1, but that is never set by the legacy make system
+  add_compile_definitions( WRF_USE_CLM )
+endif()
+
+# If force classic or no nc-4 support enable classic
+if ( ${FORCE_NETCDF_CLASSIC} OR ( NOT ${netCDF_NC4} ) )
+  add_compile_definitions( NETCDF_classic=1 )
+endif()
+if ( ${WRFIO_NCD_NO_LARGE_FILE_SUPPORT} OR ( NOT ${netCDF_LARGE_FILE_SUPPORT} ) )
+  add_compile_definitions( WRFIO_NCD_NO_LARGE_FILE_SUPPORT=1 )
+endif()
+# May need a check for WRFIO_ncdpar_LARGE_FILE_SUPPORT
+
+# Now set the opposite in different defines, because why not :)
+if ( ( NOT ${FORCE_NETCDF_CLASSIC} ) AND ${netCDF_NC4} )
+  add_compile_definitions( USE_NETCDF4_FEATURES=1 )
+endif()
+if ( ( NOT ${WRFIO_NCD_NO_LARGE_FILE_SUPPORT} ) AND ${netCDF_LARGE_FILE_SUPPORT} )
+  add_compile_definitions( WRFIO_NCD_LARGE_FILE_SUPPORT=1 )
+endif()
+
+# Could simplify logic to just check if RPC is available but to be explicit
+# Does this actually need to check for EM_CORE (Config.pl:443)
+# not enable terran or not rpc_found do
+# not ( enable terrain and rpc_found )
+# if ( NOT ( ${ENABLE_TERRAIN} AND ${RPC_FOUND} ) ) # this is wrong, needs fixing
+#   add_compile_definitions( LANDREAD_STUB )
+# endif()
+if ( ${ENABLE_TERRAIN} AND ${MOVE_NESTS} )
+  add_compile_definitions( TERRAIN_AND_LANDUSE )
+else ()
+  add_compile_definitions( LANDREAD_STUB )
+endif()
+
+if ( ${USE_ALLOCATABLES} )
+  add_compile_definitions( USE_ALLOCATABLES )
+endif()
+if ( ${wrfmodel} )
+  add_compile_definitions( wrfmodel )
+endif()
+if ( ${GRIB1} )
+  add_compile_definitions( GRIB1 )
+endif()
+if ( ${INTIO} )
+  add_compile_definitions( INTIO )
+endif()
+if ( ${KEEP_INT_AROUND} )
+  add_compile_definitions( KEEP_INT_AROUND )
+endif()
+if ( ${LIMIT_ARGS} )
+  add_compile_definitions( LIMIT_ARGS )
+endif()
+
+
+if ( ${BUILD_RRTMG_FAST} )
+  add_compile_definitions( BUILD_RRTMG_FAST=1 )
+else()
+  add_compile_definitions( BUILD_RRTMG_FAST=0 )
+endif()
+if ( ${BUILD_RRTMK} )
+  add_compile_definitions( BUILD_RRTMK=1 )
+else()
+  add_compile_definitions( BUILD_RRTMK=0 )
+endif()
+if ( ${BUILD_SBM_FAST} )
+  add_compile_definitions( BUILD_SBM_FAST=1 )
+else()
+  add_compile_definitions( BUILD_SBM_FAST=0 )
+endif()
+if ( ${SHOW_ALL_VARS_USED} )
+  add_compile_definitions( SHOW_ALL_VARS_USED=1 )
+else()
+  add_compile_definitions( SHOW_ALL_VARS_USED=0 )
+endif()
+if ( ${NMM_CORE} )
+  add_compile_definitions( NMM_CORE=1 )
+else()
+  add_compile_definitions( NMM_CORE=0 )
+endif()
+
+if ( "${WRF_CORE}" STREQUAL "PLUS" )
+  add_compile_definitions( WRFPLUS=1 )
+else()
+  add_compile_definitions( WRFPLUS=0 )
+endif()
+
+if ( "${WRF_CORE}" STREQUAL "DA_CORE" OR "${WRF_CORE}" STREQUAL "DA_4D_VAR" )
+  add_compile_definitions( DA_CORE=1 )
+else()
+  add_compile_definitions( DA_CORE=0 )
+endif()
+# DFI_RADAR=$<BOOL:${NMM_CORE}>
+
+# Nesting options
+if ( ${MOVE_NESTS} )
+  add_compile_definitions( MOVE_NESTS )
+endif()
+if ( "${WRF_NESTING}" STREQUAL "VORTEX" )
+  add_compile_definitions( VORTEX_CENTER )
+endif()
+
+# Configuration checks
+if ( NOT ${Fortran_2003_IEEE} )
+  add_compile_definitions( NO_IEEE_MODULE )
+endif()
+if ( NOT ${Fortran_2003_ISO_C} )
+  add_compile_definitions( NO_ISO_C_SUPPORT )
+endif()
+# If flush fails, check if we can fall back to fflush, and if not no support
+if ( NOT ${Fortran_2003_FLUSH} )
+  if ( "${Fortran_2003_FFLUSH}" )
+    add_compile_definitions( USE_FFLUSH )
+  else()
+    add_compile_definitions( NO_FLUSH_SUPPORT )
+  endif()
+endif()
+if ( NOT ${Fortran_2003_GAMMA} )
+  add_compile_definitions( NO_GAMMA_SUPPORT )
+endif()
+
+#!TODO Leaving as is in WRF for now but investigate why we don't do this
+# https://stackoverflow.com/a/1035713
+# If fseeko64 succeeds, use that, else check if we can fall back to fseeko, and if not just use fseek
+if ( NOT ${FSEEKO64} )
+  add_compile_definitions( FSEEKO64_OK )
+elseif( "${FSEEKO}" )
+  add_compile_definitions( FSEEKO_OK )
+else()
+  add_compile_definitions( FSEEK_OK )
+endif()
+
+# I don't believe these are used anymore...
+# $<$<BOOL:${MPI2_SUPPORT}>:MPI2_SUPPORT=$<BOOL:${MPI2_SUPPORT}>>
+# $<$<BOOL:${MPI2_THREAD_SUPPORT}>:MPI2_THREAD_SUPPORT=$<BOOL:${MPI2_THREAD_SUPPORT}>>
 
 
 # Make core target

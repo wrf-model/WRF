@@ -24,28 +24,47 @@ jobs:
         # Specify accounts specific to each HPC resource
         # https://stackoverflow.com/a/68940067
         testSet  :
-          - {
-              host : mmm-mystic,
-              account : NMMM0012,
-              name : "Compilation Tests",
+          -   host : mmm-mystic
+              account : NMMM0012
+              name : "Compilation Tests"
               fileroot : wrf_arw_tests,
               pool : 2,
               mkdirs : true,
-              tests : [
-                make-gnu, make-gnu-mpi
-                ]
-            }
-            - { 
-              host : mmm-mystic,
-              account : NMMM0012,
-              name : "Compilation Tests",
-              fileroot : wrf_arw_tests,
-              pool : 2,
-              mkdirs : false,
-              tests : [
-                cmake-gnu, cmake-gnu-mpi
-                ]
-            }
+              tests : 
+                - make-gnu
+                - make-gnu-mpi
+  
+          -   host : mmm-mystic
+              account : NMMM0012
+              name : "Compilation Tests"
+              fileroot : wrf_arw_tests
+              pool : 2
+              mkdirs : false
+              tests :
+                - cmake-gnu 
+                - cmake-gnu-mpi
+          # - { 
+          #     host : mmm-mystic,
+          #     account : NMMM0012,
+          #     name : "Compilation Tests",
+          #     fileroot : wrf_arw_tests,
+          #     pool : 2,
+          #     mkdirs : true,
+          #     tests : [
+          #       make-gnu, make-gnu-mpi
+          #       ]
+          #   }
+          #   - { 
+          #     host : mmm-mystic,
+          #     account : NMMM0012,
+          #     name : "Compilation Tests",
+          #     fileroot : wrf_arw_tests,
+          #     pool : 2,
+          #     mkdirs : false,
+          #     tests : [
+          #       cmake-gnu, cmake-gnu-mpi
+          #       ]
+          #   }
           # - { 
           #     host : derecho,
           #     account : NMMM0012,

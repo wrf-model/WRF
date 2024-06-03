@@ -34,7 +34,7 @@ jobs:
               tests : [
                 make-gnu, make-gnu-mpi
                 ]
-            }
+            },
             - { 
               host : mmm-mystic,
               account : NMMM0012,

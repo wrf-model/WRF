@@ -6,9 +6,22 @@
     "arguments" :
     {
       "base_env_numprocs"      : [ "-e", "NUM_PROCS=4" ],
-      ".*::args_nesting"       : [ "-n", "1" ],
-      ".*::args_configopt"     : [ "-o", "-d" ],
-      ".*::args_build_tgt"     : [ "-b", "em_real -j $NUM_PROCS" ]
+
+      ".*[^c]make.*::args_nesting"       : [ "-n", "1" ],
+      ".*[^c]make.*::args_configopt"     : [ "-o", "-d" ],
+      ".*[^c]make.*::args_build_tgt"     : [ "-b", "em_real -j $NUM_PROCS" ],
+
+      ".*cmake.*::base_env_dirs"    : [ "-e", "WK_DIR=$PWD", "-e", "BUILD_DIR=_build_$NAME$DM$SM", "-e", "INSTALL_DIR=$WK_DIR/install_$NAME$DM$SM"  ],
+      ".*cmake.*.::args_compilecmd" : [ "-c", "-p $NAME -d $BUILD_DIR -i $INSTALL_DIR -x -- -DCMAKE_BUILD_TYPE=Release -DWRF_CORE=ARW -DWRF_NESTING=BASIC -DWRF_CASE=EM_REAL $USE_MPI $USE_OPENMP" ],
+      ".*cmake.*.::args_buildcmd"   : [ "-b", "$BUILD_DIR -j $NUM_PROCS" ],
+      ".*cmake.*.::args_cleancmd"   : [ "-r", "-d $BUILD_DIR -i $INSTALL_DIR" ],
+
+      ".*cmake.*dm.*::args_config" : [ "-e", "USE_MPI=-DUSE_MPI=ON,DM=_dm"  ],
+      ".*cmake.*sm.*::args_config" : [ "-e", "USE_OMP=-DUSE_OMP=ON,SM=_sm"  ],
+
+      ".*cmake.*gnu.*::args_name"   : [ "-e", "NAME=gnu" ],
+      ".*cmake.*intel.*::args_name" : [ "-e", "NAME=intel" ],
+      ".*cmake.*pgi.*::args_name"   : [ "-e", "NAME=pgi" ]
     },
     "cheyenne"  :
     {
@@ -29,23 +42,20 @@
     {
       "submission" : "PBS",
       "queue"      : "main",
-      "resources"  : "-l select=1:ncpus=8 -l job_priority=economy",
+      "resources"  : "-l select=1:ncpus=16 -l job_priority=economy",
       "arguments"  : 
       {
-        "base_env_numprocs"      : [ "-e", "NUM_PROCS=8" ],
-        "very_last_modules"       : [ "netcdf", "cmake/3.22.0" ],
+        "base_env_numprocs"      : [ "-e", "NUM_PROCS=16" ],
+        "very_last_modules"       : [ "netcdf" ],
         ".*gnu.*::test_modules"   : [ "gcc" ],
         ".*intel.*::test_modules" : [ "intel-classic" ],
         ".*pgi.*::test_modules"   : [ "nvhpc" ],
-        ".*dm.*::test_mpi_module" : [ "cray-mpich" ]
+        ".*dm.*::test_mpi_module" : [ "cray-mpich" ],
+        ".*cmake.*::test_cmake_module" : [ "cmake/3.22.0" ]
       }
-    },
-    "polaris" :
-    {
-      "submission" : "LOCAL"
     }
   },
-  "gnu-nompi" :
+  "make-gnu-nompi" :
   {
     "steps" :
     {
@@ -62,7 +72,7 @@
       }
     }
   },
-  "gnu-mpi" :
+  "make-gnu-mpi" :
   {
     "steps" :
     {
@@ -79,7 +89,7 @@
       }
     }
   },
-  "intel-nompi" :
+  "make-intel-nompi" :
   {
     "submit_options" :
     { 
@@ -101,7 +111,7 @@
       }
     }
   },
-  "intel-mpi" :
+  "make-intel-mpi" :
   {
     "submit_options" :
     { 
@@ -123,7 +133,7 @@
       }
     }
   },
-  "pgi-nompi" :
+  "make-pgi-nompi" :
   {
     "steps" :
     {
@@ -140,7 +150,7 @@
       }
     }
   },
-  "pgi-mpi" :
+  "make-pgi-mpi" :
   {
     "steps" :
     {
@@ -154,6 +164,108 @@
         "command"      : ".ci/tests/build.sh",
         "arguments"    : [ "-c", "4" ],
         "dependencies" : { "dm" : "afterany" }
+      }
+    }
+  },
+  "cmake-gnu-nompi" :
+  {
+    "steps" :
+    {
+      "serial" :
+      {
+        "command"      : ".ci/tests/buildCMake.sh"
+      },
+      "sm" :
+      {
+        "command"      : ".ci/tests/buildCMake.sh"
+      }
+    }
+  },
+  "cmake-gnu-mpi" :
+  {
+    "steps" :
+    {
+      "dm" :
+      {
+        "command"      : ".ci/tests/buildCMake.sh"
+      },
+      "dm+sm" :
+      {
+        "command"      : ".ci/tests/buildCMake.sh"
+      }
+    }
+  },
+  "cmake-intel-nompi" :
+  {
+    "submit_options" :
+    { 
+      "arguments" : 
+      {
+        "base_env_numprocs"      : [ "-e", "NUM_PROCS=1" ]
+      },
+      "cheyenne" : { "timelimit" : "01:00:00" },
+      "hsn.de.hpc" : { "timelimit" : "00:45:00" }
+    },
+    "steps" :
+    {
+      "serial" :
+      {
+        "command"      : ".ci/tests/buildCMake.sh"
+      },
+      "sm" :
+      {
+        "command"      : ".ci/tests/buildCMake.sh"
+      }
+    }
+  },
+  "cmake-intel-mpi" :
+  {
+    "submit_options" :
+    { 
+      "arguments" : 
+      {
+        "base_env_numprocs"      : [ "-e", "NUM_PROCS=1" ]
+      },
+      "cheyenne" : { "timelimit" : "01:00:00" },
+      "hsn.de.hpc" : { "timelimit" : "00:45:00" }
+    },
+    "steps" :
+    {
+      "dm" :
+      {
+        "command"      : ".ci/tests/buildCMake.sh"
+      },
+      "dm+sm" :
+      {
+        "command"      : ".ci/tests/buildCMake.sh"
+      }
+    }
+  },
+  "cmake-pgi-nompi" :
+  {
+    "steps" :
+    {
+      "serial" :
+      {
+        "command"      : ".ci/tests/buildCMake.sh"
+      },
+      "sm" :
+      {
+        "command"      : ".ci/tests/buildCMake.sh"
+      }
+    }
+  },
+  "cmake-pgi-mpi" :
+  {
+    "steps" :
+    {
+      "dm" :
+      {
+        "command"      : ".ci/tests/buildCMake.sh"
+      },
+      "dm+sm" :
+      {
+        "command"      : ".ci/tests/buildCMake.sh"
       }
     }
   }

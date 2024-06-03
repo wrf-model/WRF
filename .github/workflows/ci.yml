@@ -24,7 +24,7 @@ jobs:
         # Specify accounts specific to each HPC resource
         # https://stackoverflow.com/a/68940067
         testSet  :
-          - { 
+          - {
               host : mmm-mystic,
               account : NMMM0012,
               name : "Compilation Tests",
@@ -34,7 +34,7 @@ jobs:
               tests : [
                 make-gnu, make-gnu-mpi
                 ]
-            },
+            }
             - { 
               host : mmm-mystic,
               account : NMMM0012,

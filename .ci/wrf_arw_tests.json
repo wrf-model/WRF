@@ -23,26 +23,15 @@
       ".*cmake.*intel.*::args_name" : [ "-e", "NAME=intel" ],
       ".*cmake.*pgi.*::args_name"   : [ "-e", "NAME=pgi" ]
     },
-    "cheyenne"  :
-    {
-      "submission" : "PBS",
-      "queue"     : "economy",
-      "resources"  : "-l select=1:ncpus=6",
-      "arguments"  : 
-      {
-        "very_last_modules"       : [ "netcdf", "cmake/3.22.0" ],
-        ".*gnu.*::test_modules"   : [ "gnu" ],
-        ".*intel.*::test_modules" : [ "intel" ],
-        ".*pgi.*::test_modules"   : [ "pgi" ],
-        ".*dm.*::test_mpi_module" : [ "openmpi/4.0.3" ]
-
-      }
-    },
     "hsn.de.hpc"  :
     {
       "submission" : "PBS",
       "queue"      : "main",
-      "resources"  : "-l select=1:ncpus=16 -l job_priority=economy",
+      "hpc_arguments"  : 
+      {
+        "node_select" : { "-l " : { "select"       : 1, "ncpus" : 16 } },
+        "priority"    : { "-l " : { "job_priority" : "economy"       } }
+      },
       "arguments"  : 
       {
         "base_env_numprocs"      : [ "-e", "NUM_PROCS=16" ],
@@ -55,7 +44,7 @@
       }
     }
   },
-  "make-gnu-nompi" :
+  "make-gnu" :
   {
     "steps" :
     {
@@ -89,7 +78,7 @@
       }
     }
   },
-  "make-intel-nompi" :
+  "make-intel" :
   {
     "submit_options" :
     { 
@@ -133,7 +122,7 @@
       }
     }
   },
-  "make-pgi-nompi" :
+  "make-pgi" :
   {
     "steps" :
     {
@@ -167,7 +156,7 @@
       }
     }
   },
-  "cmake-gnu-nompi" :
+  "cmake-gnu" :
   {
     "steps" :
     {
@@ -195,14 +184,11 @@
       }
     }
   },
-  "cmake-intel-nompi" :
+  "cmake-intel" :
   {
     "submit_options" :
     { 
-      "arguments" : 
-      {
-        "base_env_numprocs"      : [ "-e", "NUM_PROCS=1" ]
-      },
+      "arguments" : { "base_env_numprocs" : [ "-e", "NUM_PROCS=1" ] },
       "cheyenne" : { "timelimit" : "01:00:00" },
       "hsn.de.hpc" : { "timelimit" : "00:45:00" }
     },
@@ -222,10 +208,7 @@
   {
     "submit_options" :
     { 
-      "arguments" : 
-      {
-        "base_env_numprocs"      : [ "-e", "NUM_PROCS=1" ]
-      },
+      "arguments" : { "base_env_numprocs" : [ "-e", "NUM_PROCS=1" ] },
       "cheyenne" : { "timelimit" : "01:00:00" },
       "hsn.de.hpc" : { "timelimit" : "00:45:00" }
     },
@@ -241,7 +224,7 @@
       }
     }
   },
-  "cmake-pgi-nompi" :
+  "cmake-pgi" :
   {
     "steps" :
     {

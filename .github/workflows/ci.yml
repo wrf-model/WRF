@@ -32,7 +32,18 @@ jobs:
               pool : 2,
               mkdirs : true,
               tests : [
-                make-gnu, make-gnu-mpi, cmake-gnu, cmake-gnu-mpi
+                make-gnu, make-gnu-mpi
+                ]
+            }
+            - { 
+              host : mmm-mystic,
+              account : NMMM0012,
+              name : "Compilation Tests",
+              fileroot : wrf_arw_tests,
+              pool : 2,
+              mkdirs : false,
+              tests : [
+                cmake-gnu, cmake-gnu-mpi
                 ]
             }
           # - { 

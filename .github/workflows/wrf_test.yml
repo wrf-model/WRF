@@ -50,6 +50,8 @@ jobs:
     timeout-minutes: 7200
     name: Test ${{ inputs.name }} on ${{ inputs.host }}
     runs-on: ${{ inputs.host }}
+    env :
+      LOG_SUFFIX : ${{ github.event_name == 'push' && 'master' || github.event.number }}
     steps:
     - uses: actions/checkout@v3
       with:
@@ -86,13 +88,13 @@ jobs:
       if : ${{ failure() }}
       run : |
         # move log files to safe location
-        ./main/hpc-workflows/.ci/relocator.py ./main/.ci/${{ inputs.fileroot }}.log ${{ inputs.archive }}
+        ./main/hpc-workflows/.ci/relocator.py ./main/.ci/${{ inputs.fileroot }}.log ${{ inputs.archive }}/$LOG_SUFFIX
 
         # report on them
-        ./main/hpc-workflows/.ci/reporter.py ${{ inputs.archive }}/${{ inputs.fileroot }}.log ./hpc-workflows/.ci/runner.py
+        ./main/hpc-workflows/.ci/reporter.py ${{ inputs.archive }}/$LOG_SUFFIX/${{ inputs.fileroot }}.log ./hpc-workflows/.ci/runner.py
 
         # also output the failed tests
-        echo "::set-output name=failedTests$( python -c "import json; data = json.load( open( '${{ inputs.archive }}/${{ inputs.fileroot }}.log' ) ); print( [ { 'test' : test } for test in data.keys() if test != 'metadata' and not data[test]['success'] ] );" )"
+        echo "::set-output name=failedTests$( python -c "import json; data = json.load( open( '${{ inputs.archive }}/$LOG_SUFFIX/${{ inputs.fileroot }}.log' ) ); print( [ { 'test' : test } for test in data.keys() if test != 'metadata' and not data[test]['success'] ] );" )"
         
     
     - name: Clean up testing directories

@@ -7,8 +7,6 @@ on:
     types:    [ labeled ]
 
 
-env :
-  LOG_SUFFIX : ${{ github.event_name == 'push' && 'master' || github.event.number }}
 
 jobs:
   buildtests:
@@ -29,7 +27,7 @@ jobs:
         # https://stackoverflow.com/a/68940067
         testSet  :
           -   host : mmm-mystic
-              archive : /home/aislas/github/wrf/logs/${{ env.LOG_SUFFIX }}
+              archive : /home/aislas/github/wrf/logs/
               account : NMMM0012
               name : "Compilation Tests"
               fileroot : wrf_arw_tests
@@ -41,7 +39,7 @@ jobs:
                 - make-gnu-mpi
   
           -   host : mmm-mystic
-              archive : /home/aislas/github/wrf/logs/${{ env.LOG_SUFFIX }}
+              archive : /home/aislas/github/wrf/logs/
               account : NMMM0012
               name : "Compilation Tests"
               fileroot : wrf_arw_tests

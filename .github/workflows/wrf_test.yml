@@ -13,8 +13,8 @@ jobs:
   wrf_test :
     # Is 5 days a reasonable wait time for testing?
     timeout-minutes: 7200
-    name: Test ${{ input.matrix.testSet.name }} on ${{ input.matrix.testSet.host }}
-    runs-on: ${{ input.matrix.testSet.host }}
+    name: Test ${{ inputs.matrix.testSet.name }} on ${{ inputs.matrix.testSet.host }}
+    runs-on: ${{ inputs.matrix.testSet.host }}
     permissions:
       contents: read
       pull-requests: write
@@ -26,40 +26,40 @@ jobs:
     
     # Immediately copy out to # of tests to do
     - name: Create testing directories
-      if  : ${{ input.matrix.testSet.mkdirs }}
+      if  : ${{ inputs.matrix.testSet.mkdirs }}
       id  : cpTestDirs
       run : |
-        for testDir in ${{ join( input.matrix.testSet.tests, ' ' ) }}; do
+        for testDir in ${{ join( inputs.matrix.testSet.tests, ' ' ) }}; do
           echo "Creating duplicate directory for $testDir"
           # Remove if it exists to get a fresh start
           rm -rf $testDir
           rsync -a --exclude '.git' main/ $testDir
         done
 
-    - name: Test ${{ input.matrix.testSet.name }}
+    - name: Test ${{ inputs.matrix.testSet.name }}
       id  : runTest
       run: |
-        if [ "${{ input.matrix.testSet.mkdirs }}" = "true" ]; then
-          ALT_DIRS="-alt ../${{ join( input.matrix.testSet.tests, '/.ci ../' ) }}/.ci"
+        if [ "${{ inputs.matrix.testSet.mkdirs }}" = "true" ]; then
+          ALT_DIRS="-alt ../${{ join( inputs.matrix.testSet.tests, '/.ci ../' ) }}/.ci"
         fi
         ./main/hpc-workflows/.ci/runner.py \
-          ./main/.ci/${{ input.matrix.testSet.fileroot }}.json \
-          -t   ${{ join( input.matrix.testSet.tests, ' ' ) }}  \
-          -a "${{ input.matrix.testSet.account }}"             \
-          -p ${{ input.matrix.testSet.pool}}                   \
-          ${{ input.matrix.testSet.args }} $ALT_DIRS
+          ./main/.ci/${{ inputs.matrix.testSet.fileroot }}.json \
+          -t   ${{ join( inputs.matrix.testSet.tests, ' ' ) }}  \
+          -a "${{ inputs.matrix.testSet.account }}"             \
+          -p ${{ inputs.matrix.testSet.pool}}                   \
+          ${{ inputs.matrix.testSet.args }} $ALT_DIRS
 
 
     - name: Report failed tests and steps
       if : ${{ failure() }}
       run : |
-        ./main/hpc-workflows/.ci/reporter.py ./main/.ci/${{ input.matrix.testSet.fileroot }}.log ./hpc-workflows/.ci/runner.py
+        ./main/hpc-workflows/.ci/reporter.py ./main/.ci/${{ inputs.matrix.testSet.fileroot }}.log ./hpc-workflows/.ci/runner.py
     
     - name: Clean up testing directories
       if : ${{ success() }}
       id  : rmTestDirs
       run : |
-        for testDir in ${{ join( input.matrix.testSet.tests, ' ' ) }}; do
+        for testDir in ${{ join( inputs.matrix.testSet.tests, ' ' ) }}; do
           echo "Removing duplicate directory for $testDir"
           rm -rf $testDir
         done

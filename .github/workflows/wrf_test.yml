@@ -119,14 +119,14 @@ jobs:
     
   outputFailedTests :
     needs : wrf_test
-    if : ${{ needs.wrf_test.result == 'failure' }}
+    if : ${{ always() && needs.wrf_test.result == 'failure' }}
     runs-on : ${{ inputs.host }}
     strategy : 
       matrix :
          failedTest : ${{ fromJson( needs.wrf_test.outputs.failedTests )}}
     name : Output ${{ matrix.failedTest.test }} failure
     steps :
-      - run : |
-          echo "${{ matrix.failedTest.test }}"
+    - run : |
+        echo "${{ matrix.failedTest.test }}"
 
-    
+  

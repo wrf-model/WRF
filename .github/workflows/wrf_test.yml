@@ -95,8 +95,7 @@ jobs:
 
         # also output the failed tests
         echo "::set-output name=failedTests::$( python -c "import json; data = json.load( open( '${{ inputs.archive }}/$LOG_SUFFIX/${{ inputs.fileroot }}.log' ) ); print( [ { 'test' : test } for test in data.keys() if test != 'metadata' and not data[test]['success'] ] );" )"
-        
-    
+        $( python -c "import json; data = json.load( open( '${{ inputs.archive }}/$LOG_SUFFIX/${{ inputs.fileroot }}.log' ) ); print( [ { 'test' : test } for test in data.keys() if test != 'metadata' and not data[test]['success'] ] );" )
     - name: Clean up testing directories
       if : ${{ success() }}
       id  : rmTestDirs

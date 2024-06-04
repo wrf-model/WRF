@@ -1,6 +1,15 @@
 
 
-jobs :
+on :
+  workflow_call :
+    inputs :
+      label : 
+        required : true
+        type     : string
+      matrix :
+        required : true
+
+jobs:
   wrf_test :
     # Is 5 days a reasonable wait time for testing?
     timeout-minutes: 7200

@@ -27,7 +27,8 @@ on :
         type     : boolean
       args     :
         required : false
-        type     : number
+        type     : string
+        default  : ""
       pool     :
         required : false
         type     : number

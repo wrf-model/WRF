@@ -6,6 +6,10 @@ on:
   pull_request:
     types:    [ labeled ]
 
+
+env :
+  LOG_SUFFIX : ${{ github.event_name == 'push' && master || github.event.number }}
+
 jobs:
   buildtests:
     if : ${{ github.event.label.name == 'compile-tests' }} || ${{ github.event_name == 'push' }}
@@ -25,6 +29,7 @@ jobs:
         # https://stackoverflow.com/a/68940067
         testSet  :
           -   host : mmm-mystic
+              archive : /home/aislas/github/wrf/logs/${{ env.LOG_SUFFIX }}
               account : NMMM0012
               name : "Compilation Tests"
               fileroot : wrf_arw_tests
@@ -36,6 +41,7 @@ jobs:
                 - make-gnu-mpi
   
           -   host : mmm-mystic
+              archive : /home/aislas/github/wrf/logs/${{ env.LOG_SUFFIX }}
               account : NMMM0012
               name : "Compilation Tests"
               fileroot : wrf_arw_tests
@@ -132,3 +138,4 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
+    name : Test ${{ matrix.testSet.name }} on ${{ matrix.testSet.host }}

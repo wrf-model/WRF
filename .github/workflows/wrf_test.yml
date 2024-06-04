@@ -6,6 +6,9 @@ on :
       label : 
         required : true
         type     : string
+      archive :
+        required : true
+        type     : string
       
       name     :
         required : true
@@ -82,7 +85,15 @@ jobs:
     - name: Report failed tests and steps
       if : ${{ failure() }}
       run : |
-        ./main/hpc-workflows/.ci/reporter.py ./main/.ci/${{ inputs.fileroot }}.log ./hpc-workflows/.ci/runner.py
+        # move log files to safe location
+        ./main/hpc-workflows/.ci/relocator.py ./main/.ci/${{ inputs.fileroot }}.log ${{ inputs.archive }}
+
+        # report on them
+        ./main/hpc-workflows/.ci/reporter.py ${{ inputs.archive }}/${{ inputs.fileroot }}.log ./hpc-workflows/.ci/runner.py
+
+        # also output the failed tests
+        echo "::set-output name=failedTests$( python -c "import json; data = json.load( open( '${{ inputs.archive }}/${{ inputs.fileroot }}.log' ) ); print( [ { 'test' : test } for test in data.keys() if test != 'metadata' and not data[test]['success'] ] );" )"
+        
     
     - name: Clean up testing directories
       if : ${{ success() }}
@@ -103,3 +114,16 @@ jobs:
           -H "Accept: application/vnd.github.v3+json" \
           -H 'Authorization: token ${{ github.token }}' \
           https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/labels/test
+    
+  outputFailedTests :
+    needs : wrf_test
+    if : ${{ needs.wrf_test.result == 'failure' }}
+    runs-on : ${{ inputs.host }}
+    strategy : 
+      matrix :
+         failedTest : ${{ fromJson( needs.wrf_test.outputs.failedTests )}}
+    steps :
+      - run : |
+          echo "${{ matrix.failedTest.test }}"
+
+    

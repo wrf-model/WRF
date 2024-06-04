@@ -113,7 +113,7 @@ jobs:
           -X DELETE \
           -H "Accept: application/vnd.github.v3+json" \
           -H 'Authorization: token ${{ github.token }}' \
-          https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/labels/test
+          https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/labels/${{ inputs.label }}
     
   outputFailedTests :
     needs : wrf_test

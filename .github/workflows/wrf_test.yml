@@ -1,0 +1,67 @@
+
+
+jobs :
+  wrf_test :
+    # Is 5 days a reasonable wait time for testing?
+    timeout-minutes: 7200
+    name: Test ${{ input.matrix.testSet.name }} on ${{ input.matrix.testSet.host }}
+    runs-on: ${{ input.matrix.testSet.host }}
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        path      : main
+        submodules: true
+    
+    # Immediately copy out to # of tests to do
+    - name: Create testing directories
+      if  : ${{ input.matrix.testSet.mkdirs }}
+      id  : cpTestDirs
+      run : |
+        for testDir in ${{ join( input.matrix.testSet.tests, ' ' ) }}; do
+          echo "Creating duplicate directory for $testDir"
+          # Remove if it exists to get a fresh start
+          rm -rf $testDir
+          rsync -a --exclude '.git' main/ $testDir
+        done
+
+    - name: Test ${{ input.matrix.testSet.name }}
+      id  : runTest
+      run: |
+        if [ "${{ input.matrix.testSet.mkdirs }}" = "true" ]; then
+          ALT_DIRS="-alt ../${{ join( input.matrix.testSet.tests, '/.ci ../' ) }}/.ci"
+        fi
+        ./main/hpc-workflows/.ci/runner.py \
+          ./main/.ci/${{ input.matrix.testSet.fileroot }}.json \
+          -t   ${{ join( input.matrix.testSet.tests, ' ' ) }}  \
+          -a "${{ input.matrix.testSet.account }}"             \
+          -p ${{ input.matrix.testSet.pool}}                   \
+          ${{ input.matrix.testSet.args }} $ALT_DIRS
+
+
+    - name: Report failed tests and steps
+      if : ${{ failure() }}
+      run : |
+        ./main/hpc-workflows/.ci/reporter.py ./main/.ci/${{ input.matrix.testSet.fileroot }}.log ./hpc-workflows/.ci/runner.py
+    
+    - name: Clean up testing directories
+      if : ${{ success() }}
+      id  : rmTestDirs
+      run : |
+        for testDir in ${{ join( input.matrix.testSet.tests, ' ' ) }}; do
+          echo "Removing duplicate directory for $testDir"
+          rm -rf $testDir
+        done
+
+    - name : Remove '${{ inputs.label }}' label
+      if : ${{ !cancelled() && github.event.label.name == inputs.label }}
+      env:
+        PR_NUMBER: ${{ github.event.number }}
+      run: |
+        curl \
+          -X DELETE \
+          -H "Accept: application/vnd.github.v3+json" \
+          -H 'Authorization: token ${{ github.token }}' \
+          https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/labels/test

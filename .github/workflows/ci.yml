@@ -115,7 +115,7 @@ jobs:
           #       # em_quarter_ss
           #     ]
           #   }
-    - uses : ./.github/workflows/wrf_test.yml
-      with :
-        label  : ${{ github.event.label.name }}
-        matrix : ${{ matrix }}
+    uses : ./.github/workflows/wrf_test.yml
+    with :
+      label  : ${{ github.event.label.name }}
+      matrix : ${{ matrix }}

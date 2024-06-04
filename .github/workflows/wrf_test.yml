@@ -46,9 +46,6 @@ jobs:
     timeout-minutes: 7200
     name: Test ${{ inputs.name }} on ${{ inputs.host }}
     runs-on: ${{ inputs.host }}
-    permissions:
-      contents: read
-      pull-requests: write
     steps:
     - uses: actions/checkout@v3
       with:

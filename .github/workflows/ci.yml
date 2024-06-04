@@ -129,3 +129,6 @@ jobs:
       args     : ${{ matrix.testSet.args }}
       pool     : ${{ matrix.testSet.pool }}
       tpool    : ${{ matrix.testSet.tpool }}
+    permissions:
+      contents: read
+      pull-requests: write

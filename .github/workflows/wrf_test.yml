@@ -6,15 +6,46 @@ on :
       label : 
         required : true
         type     : string
-      matrix :
+      
+      name     :
         required : true
+        type     : string
+      host     :
+        required : true
+        type     : string
+      fileroot :
+        required : true
+        type     : string
+      account  :
+        required : true
+        type     : string
+      tests    :
+        required : true
+        type     : string
+      mkdirs   :
+        required : true
+        type     : boolean
+      args     :
+        required : false
+        type     : number
+      pool     :
+        required : false
+        type     : number
+        default  : 1
+      tpool      :
+        required : false
+        type     : number
+        default  : 1
+      
+
 
 jobs:
   wrf_test :
+
     # Is 5 days a reasonable wait time for testing?
     timeout-minutes: 7200
-    name: Test ${{ inputs.matrix.testSet.name }} on ${{ inputs.matrix.testSet.host }}
-    runs-on: ${{ inputs.matrix.testSet.host }}
+    name: Test ${{ inputs.name }} on ${{ inputs.host }}
+    runs-on: ${{ inputs.host }}
     permissions:
       contents: read
       pull-requests: write
@@ -26,40 +57,40 @@ jobs:
     
     # Immediately copy out to # of tests to do
     - name: Create testing directories
-      if  : ${{ inputs.matrix.testSet.mkdirs }}
+      if  : ${{ inputs.mkdirs }}
       id  : cpTestDirs
       run : |
-        for testDir in ${{ join( inputs.matrix.testSet.tests, ' ' ) }}; do
+        for testDir in ${{ join( fromJson( inputs.tests ), ' ' ) }}; do
           echo "Creating duplicate directory for $testDir"
           # Remove if it exists to get a fresh start
           rm -rf $testDir
           rsync -a --exclude '.git' main/ $testDir
         done
 
-    - name: Test ${{ inputs.matrix.testSet.name }}
+    - name: Test ${{ inputs.name }}
       id  : runTest
       run: |
-        if [ "${{ inputs.matrix.testSet.mkdirs }}" = "true" ]; then
-          ALT_DIRS="-alt ../${{ join( inputs.matrix.testSet.tests, '/.ci ../' ) }}/.ci"
+        if [ "${{ inputs.mkdirs }}" = "true" ]; then
+          ALT_DIRS="-alt ../${{ join( fromJson( inputs.tests ), '/.ci ../' ) }}/.ci"
         fi
         ./main/hpc-workflows/.ci/runner.py \
-          ./main/.ci/${{ inputs.matrix.testSet.fileroot }}.json \
-          -t   ${{ join( inputs.matrix.testSet.tests, ' ' ) }}  \
-          -a "${{ inputs.matrix.testSet.account }}"             \
-          -p ${{ inputs.matrix.testSet.pool}}                   \
-          ${{ inputs.matrix.testSet.args }} $ALT_DIRS
+          ./main/.ci/${{ inputs.fileroot }}.json \
+          -t   ${{ join( fromJson( inputs.tests ), ' ' ) }}  \
+          -a "${{ inputs.account }}"             \
+          -p ${{ inputs.pool}}                   \
+          ${{ inputs.args }} $ALT_DIRS
 
 
     - name: Report failed tests and steps
       if : ${{ failure() }}
       run : |
-        ./main/hpc-workflows/.ci/reporter.py ./main/.ci/${{ inputs.matrix.testSet.fileroot }}.log ./hpc-workflows/.ci/runner.py
+        ./main/hpc-workflows/.ci/reporter.py ./main/.ci/${{ inputs.fileroot }}.log ./hpc-workflows/.ci/runner.py
     
     - name: Clean up testing directories
       if : ${{ success() }}
       id  : rmTestDirs
       run : |
-        for testDir in ${{ join( inputs.matrix.testSet.tests, ' ' ) }}; do
+        for testDir in ${{ join( fromJson( inputs.tests ), ' ' ) }}; do
           echo "Removing duplicate directory for $testDir"
           rm -rf $testDir
         done

@@ -124,7 +124,7 @@ jobs:
     uses : ./.github/workflows/wrf_test.yml
     with :
       label  : ${{ github.event.label.name }}
-      label    : ${{ matrix.testSet.archive }}
+      archive  : ${{ matrix.testSet.archive }}
       name     : ${{ matrix.testSet.name }}
       host     : ${{ matrix.testSet.host }}
       fileroot : ${{ matrix.testSet.fileroot }}

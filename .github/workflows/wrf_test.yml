@@ -125,7 +125,7 @@ jobs:
     runs-on : ${{ inputs.host }}
     strategy : 
       matrix :
-         failedTest : ${{ fromJson( needs.wrf_test.outputs.failedTests )}}
+         failedTest : ${{ needs.wrf_test.outputs.failedTests }}
     name : Output ${{ matrix.failedTest.test }} failure
     steps :
     - run : |

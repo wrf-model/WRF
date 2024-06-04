@@ -99,8 +99,7 @@ jobs:
         # report on them
         ./main/hpc-workflows/.ci/reporter.py ${{ inputs.archive }}/$LOG_SUFFIX/${{ inputs.fileroot }}.log \
                                              -e ./hpc-workflows/.ci/runner.py                             \
-                                             -o GITHUB
-
+                                             -o GITHUB -m
 
     - name: Clean up testing directories
       if : ${{ success() }}

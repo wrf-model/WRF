@@ -9,7 +9,7 @@
 
       ".*[^c]make.*::args_nesting"       : [ "-n", "1" ],
       ".*[^c]make.*::args_configopt"     : [ "-o", "-d" ],
-      ".*[^c]make.*::args_build_tgt"     : [ "-b", "em_real -j $NUM_PROCS" ],
+      ".*[^c]make.*::args_build_tgt"     : [ "-b", "em_reals -j $NUM_PROCS" ],
 
       ".*cmake.*::base_env_dirs"    : [ "-e", "WK_DIR=$PWD", "-e", "BUILD_DIR=_build_$NAME$DM$SM", "-e", "INSTALL_DIR=$WK_DIR/install_$NAME$DM$SM"  ],
       ".*cmake.*.::args_compilecmd" : [ "-c", "-p $NAME -d $BUILD_DIR -i $INSTALL_DIR -x -- -DCMAKE_BUILD_TYPE=Release -DWRF_CORE=ARW -DWRF_NESTING=BASIC -DWRF_CASE=EM_REAL $USE_MPI $USE_OPENMP" ],
@@ -19,7 +19,7 @@
       ".*cmake.*dm.*::args_config" : [ "-e", "USE_MPI=-DUSE_MPI=ON,DM=_dm"  ],
       ".*cmake.*sm.*::args_config" : [ "-e", "USE_OMP=-DUSE_OMP=ON,SM=_sm"  ],
 
-      ".*cmake.*gnu.*::args_name"   : [ "-e", "NAME=gnu" ],
+      ".*cmake.*gnu.*::args_name"   : [ "-e", "NAME=gnuu" ],
       ".*cmake.*intel.*::args_name" : [ "-e", "NAME=intel" ],
       ".*cmake.*pgi.*::args_name"   : [ "-e", "NAME=pgi" ]
     },

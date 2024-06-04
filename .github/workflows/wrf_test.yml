@@ -93,8 +93,8 @@ jobs:
         # also output the failed tests
         failedTests=$( python -c "import json; data = json.load( open( '${{ inputs.archive }}/$LOG_SUFFIX/${{ inputs.fileroot }}.log' ) ); print( [ { 'test' : test } for test in data.keys() if test != 'metadata' and not data[test]['success'] ] );" )
 
-        echo "failedTests=$failedTests"
-        echo "failedTests=$failedTests" >> $GITHUB_OUTPUT
+        echo "failedTests='$failedTests'"
+        echo "failedTests='$failedTests'" >> $GITHUB_OUTPUT
         $( python -c "import json; data = json.load( open( '${{ inputs.archive }}/$LOG_SUFFIX/${{ inputs.fileroot }}.log' ) ); print( [ { 'test' : test } for test in data.keys() if test != 'metadata' and not data[test]['success'] ] );" )
 
         # report on them

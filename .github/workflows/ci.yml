@@ -8,7 +8,7 @@ on:
 
 jobs:
   buildtests:
-    if : ${{ github.event.label.name == 'test' }} || ${{ github.event_name == 'push' }}
+    if : ${{ github.event.label.name == 'compile-tests' }} || ${{ github.event_name == 'push' }}
     strategy:
       max-parallel: 4
       fail-fast: false
@@ -27,9 +27,9 @@ jobs:
           -   host : mmm-mystic
               account : NMMM0012
               name : "Compilation Tests"
-              fileroot : wrf_arw_tests,
-              pool : 2,
-              mkdirs : true,
+              fileroot : wrf_arw_tests
+              pool : 2
+              mkdirs : true
               tests : 
                 - make-gnu
                 - make-gnu-mpi
@@ -115,76 +115,7 @@ jobs:
           #       # em_quarter_ss
           #     ]
           #   }
-    # Is 5 days a reasonable wait time for testing?
-    timeout-minutes: 7200
-    name: Test ${{ matrix.testSet.name }} on ${{ matrix.testSet.host }}
-    runs-on: ${{ matrix.testSet.host }}
-    permissions:
-      contents: read
-    steps:
-    - uses: actions/checkout@v3
-      with:
-        path      : main
-        submodules: true
-    
-    # Immediately copy out to # of tests to do
-    - name: Create testing directories
-      if  : ${{ matrix.testSet.mkdirs }}
-      id  : cpTestDirs
-      run : |
-        for testDir in ${{ join( matrix.testSet.tests, ' ' ) }}; do
-          echo "Creating duplicate directory for $testDir"
-          # Remove if it exists to get a fresh start
-          rm -rf $testDir
-          rsync -a --exclude '.git' main/ $testDir
-        done
-
-    - name: Test ${{ matrix.testSet.name }}
-      id  : runTest
-      run: |
-        if [ "${{ matrix.testSet.mkdirs }}" = "true" ]; then
-          ALT_DIRS="-alt ../${{ join( matrix.testSet.tests, '/.ci ../' ) }}/.ci"
-        fi
-        ./main/hpc-workflows/.ci/runner.py \
-          ./main/.ci/${{ matrix.testSet.fileroot }}.json \
-          -t   ${{ join( matrix.testSet.tests, ' ' ) }}  \
-          -a "${{ matrix.testSet.account }}"             \
-          -p ${{ matrix.testSet.pool}}                   \
-          ${{ matrix.testSet.args }} $ALT_DIRS
-
-
-    - name: Report failed tests and steps
-      if : ${{ failure() }}
-      run : |
-        ./main/hpc-workflows/.ci/reporter.py ./main/.ci/${{ matrix.testSet.fileroot }}.log ./hpc-workflows/.ci/runner.py
-    
-    - name: Clean up testing directories
-      if : ${{ success() }}
-      id  : rmTestDirs
-      run : |
-        for testDir in ${{ join( matrix.testSet.tests, ' ' ) }}; do
-          echo "Removing duplicate directory for $testDir"
-          rm -rf $testDir
-        done
-
-  # Since this a new job, the token should be fine, per the documentation:
-  # https://docs.github.com/en/actions/security-guides/automatic-token-authentication#about-the-github_token-secret
-  removelabel:
-    runs-on: ubuntu-latest # Don't care about compute resources, do it very quick and always available
-    if : ${{ !cancelled() && github.event.label.name == 'test' }}
-    name: Remove 'test' label
-    needs: buildtests
-    permissions:
-      contents: read
-      pull-requests: write
-    steps:
-    - name : Remove 'test' label
-      env:
-        PR_NUMBER: ${{ github.event.number }}
-      run: |
-        curl \
-          -X DELETE \
-          -H "Accept: application/vnd.github.v3+json" \
-          -H 'Authorization: token ${{ github.token }}' \
-          https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/labels/test
-  
+    - uses : ./.github/workflows/wrf_test.yml
+      with :
+        label  : ${{ github.event.label.name }}
+        matrix : ${{ matrix }}

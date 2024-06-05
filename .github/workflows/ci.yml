@@ -1,4 +1,5 @@
-name: Regression Suite (${{ github.event_name }})
+name: Regression Suite
+run-name : ${{ ${{ github.event_name == 'push' && 'CI' || github.event.label.name == 'compile-tests' }} (${{ github.event_name }})
 
 on:
   push:

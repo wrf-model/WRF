@@ -110,11 +110,11 @@ jobs:
       run : |
         # report on them
         echo "# Summary for ${{ join( fromJson( inputs.tests ), ' ' ) }}" >> $GITHUB_STEP_SUMMARY
-        echo "```" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
         ./main/hpc-workflows/.ci/reporter.py ${{ inputs.archive }}/$LOG_SUFFIX/${{ inputs.fileroot }}.log \
                                              -e ./hpc-workflows/.ci/runner.py                             \
                                              -s >> $GITHUB_STEP_SUMMARY
-        echo "```" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
 
 
     - name : Remove '${{ inputs.label }}' label

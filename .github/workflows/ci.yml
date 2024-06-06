@@ -57,14 +57,16 @@ jobs:
             name : "Make Compilation Tests"
             fileroot : wrf_arw_tests
             args : -j='{"node_select":{"-l ":{"select":1}}}'
-            pool  : 6
-            tpool : 4
+            pool  : 8
+            tpool : 1
             mkdirs : true
             tests :
               - make-gnu
               - make-gnu-mpi
               - make-intel
               - make-intel-mpi
+              - make-intel-llvm
+              - make-intel-llvm-mpi
               - make-pgi
               - make-pgi-mpi
 
@@ -74,14 +76,16 @@ jobs:
             name : "CMake Compilation Tests"
             fileroot : wrf_arw_tests
             args : -j='{"node_select":{"-l ":{"select":1}}}'
-            pool  : 6
-            tpool : 4
+            pool  : 8
+            tpool : 1
             mkdirs : false
             tests :
               - cmake-gnu
               - cmake-gnu-mpi
               - cmake-intel
               - cmake-intel-mpi
+              - cmake-intel-llvm
+              - cmake-intel-llvm-mpi
               - cmake-pgi
               - cmake-pgi-mpi
     uses : ./.github/workflows/wrf_test.yml

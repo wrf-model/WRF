@@ -130,16 +130,6 @@ jobs:
           -H 'Authorization: token ${{ github.token }}' \
           https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/labels/${{ inputs.label }}
     
-  # outputFailedTests :
-  #   needs : wrf_test
-  #   if : ${{ always() && needs.wrf_test.result == 'failure' }}
-  #   runs-on : ${{ inputs.host }}
-  #   strategy : 
-  #     matrix :
-  #        failedTest : ${{ needs.wrf_test.outputs.failedTests }}
-  #   name : Output ${{ matrix.failedTest.test }} failure
-  #   steps :
-  #   - run : |
-  #       echo "${{ matrix.failedTest.test }}"
+
 
   

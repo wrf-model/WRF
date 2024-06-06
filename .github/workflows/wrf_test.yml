@@ -76,11 +76,11 @@ jobs:
         if [ "${{ inputs.mkdirs }}" = "true" ]; then
           ALT_DIRS="-alt ../${{ join( fromJson( inputs.tests ), '/.ci ../' ) }}/.ci"
         fi
-        ./main/hpc-workflows/.ci/runner.py \
-          ./main/.ci/${{ inputs.fileroot }}.json \
+        ./main/hpc-workflows/.ci/runner.py                   \
+          ./main/.ci/${{ inputs.fileroot }}.json             \
           -t   ${{ join( fromJson( inputs.tests ), ' ' ) }}  \
-          -a "${{ inputs.account }}"             \
-          -p ${{ inputs.pool}}                   \
+          -a "${{ inputs.account }}"                         \
+          -p ${{ inputs.pool}} -tp ${{ inputs.tpool }}       \
           ${{ inputs.args }} $ALT_DIRS
 
 

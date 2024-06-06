@@ -95,6 +95,7 @@ jobs:
       label    : compile-tests
       archive  : ${{ matrix.testSet.archive }}
       name     : ${{ matrix.testSet.name }}
+      id       : ${{ matrix.testSet.id }}
       host     : ${{ matrix.testSet.host }}
       fileroot : ${{ matrix.testSet.fileroot }}
       account  : ${{ matrix.testSet.account }}
@@ -166,6 +167,7 @@ jobs:
       label    : em_real-tests
       archive  : ${{ matrix.testSet.archive }}
       name     : ${{ matrix.testSet.name }}
+      id       : ${{ matrix.testSet.id }}
       host     : ${{ matrix.testSet.host }}
       fileroot : ${{ matrix.testSet.fileroot }}
       account  : ${{ matrix.testSet.account }}
@@ -232,6 +234,7 @@ jobs:
       label    : em_real-tests
       archive  : ${{ matrix.testSet.archive }}
       name     : ${{ matrix.testSet.name }}
+      id       : ${{ matrix.testSet.id }}
       host     : ${{ matrix.testSet.host }}
       fileroot : ${{ matrix.testSet.fileroot }}
       account  : ${{ matrix.testSet.account }}

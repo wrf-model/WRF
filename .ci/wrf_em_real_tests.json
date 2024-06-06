@@ -74,7 +74,6 @@
   {
     "submit_options" :
     {
-      "timelimit" : "00:25:00",
       "arguments" :
       {
         ".*testcase.*::args_namelist" : 
@@ -124,7 +123,6 @@
   {
     "submit_options" :
     {
-      "timelimit" : "00:25:00",
       "arguments" :
       {
         ".*testcase.*::args_namelist" : 

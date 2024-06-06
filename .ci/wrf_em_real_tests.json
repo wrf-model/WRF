@@ -37,22 +37,6 @@
         ]
       }
     },
-    "cheyenne"  :
-    {
-      "submission" : "PBS",
-      "queue"     : "economy",
-      "resources"  : "-l select=1:ncpus=4",
-      "arguments"  : 
-      {
-        ".*testcase.*::global_env"     :
-        [ 
-          "-e", "DATA=/glade/work/aislas/github/data/wrf/regtest/Data/",
-          "-e", "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$NETCDF/lib"
-        ],
-        "global_modules" : [ "gnu", "netcdf" ],
-        ".*mpi.*::mpi_module" : [ "openmpi/4.0.3" ]
-      }
-    },
     "hsn.de.hpc"  :
     {
       "submission" : "PBS",

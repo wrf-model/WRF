@@ -25,34 +25,6 @@
       ".*testcase-omp.*::dir"      : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/$NAMELIST_DIR/", "-i", "serial_results" ],
       ".*testcase-mpi.*::dir"      : [ "-f", ".ci/tests/SCRIPTS/Namelists/weekly/$NAMELIST_DIR/",    "-i", "serial_results" ]
     },
-    "polaris"   :
-    {
-      "submission" : "LOCAL",
-      "arguments"  :
-      {
-        ".*testcase.*::global_env"     :
-        [ 
-          "-e", "DATA=/mnt/s/github/data/wrf/regtest/Data",
-          "-e", "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$NETCDF/lib"
-        ]
-      }
-    },
-    "cheyenne"  :
-    {
-      "submission" : "PBS",
-      "queue"     : "premium",
-      "resources"  : "-l select=1:ncpus=12",
-      "arguments"  : 
-      {
-        ".*testcase.*::global_env"     :
-        [ 
-          "-e", "DATA=/glade/work/aislas/github/data/wrf/regtest/Data/",
-          "-e", "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$NETCDF/lib"
-        ],
-        "global_modules" : [ "gnu", "netcdf" ],
-        ".*mpi.*::mpi_module" : [ "openmpi/4.0.3" ]
-      }
-    },
     "hsn.de.hpc"  :
     {
       "submission" : "PBS",
@@ -132,7 +104,6 @@
           "-e", "WRF_KPP=1,FLEX_LIB_DIR=/usr/lib64,YACC=/usr/bin/yacc"
         ]
       },
-      "cheyenne"    : { "arguments" : { ".*build.*::args_kpp" : [ "-e", "WRF_KPP=1,FLEX_LIB_DIR=/usr/lib64", "-e", "YACC=/glade/u/apps/ch/opt/usr/bin/yacc -d" ] } },
       "hsn.de.hpc"  : { "arguments" : { ".*build.*::args_kpp" : [ "-e", "WRF_KPP=1,FLEX_LIB_DIR=/usr/lib64", "-e", "YACC=/glade/u/apps/ch/opt/usr/bin/yacc -d" ] } }
     },
     "steps" :
@@ -140,8 +111,7 @@
       "build-serial" :
       {
         "submit_options" :
-        { 
-            "cheyenne" : { "timelimit" : "00:50:00" },
+        {
           "hsn.de.hpc" : { "timelimit" : "00:45:00" }
         },
         "command"      : ".ci/tests/build.sh"
@@ -158,8 +128,7 @@
       "build-mpi" :
       {
         "submit_options" :
-        { 
-            "cheyenne" : { "timelimit" : "01:20:00" },
+        {
           "hsn.de.hpc" : { "timelimit" : "00:50:00" }
         },
         "command"      : ".ci/tests/build.sh",

@@ -20,7 +20,8 @@
       ".*cmake.*sm.*::args_config" : [ "-e", "USE_OMP=-DUSE_OMP=ON,SM=_sm"  ],
 
       ".*cmake.*gnu.*::args_name"   : [ "-e", "NAME=gnu" ],
-      ".*cmake.*intel.*::args_name" : [ "-e", "NAME=intel" ],
+      ".*cmake.*intel(?!-llvm)..*::args_name" : [ "-e", "NAME=ifort" ],
+      ".*cmake.*intel-llvm.*::args_name"      : [ "-e", "NAME=ifx" ],
       ".*cmake.*pgi.*::args_name"   : [ "-e", "NAME=pgi" ]
     },
     "hsn.de.hpc"  :
@@ -37,7 +38,8 @@
         "base_env_numprocs"      : [ "-e", "NUM_PROCS=16" ],
         "very_last_modules"       : [ "netcdf" ],
         ".*gnu.*::test_modules"   : [ "gcc" ],
-        ".*intel.*::test_modules" : [ "intel-classic" ],
+        ".*intel(?!-llvm).*::test_modules" : [ "intel-classic" ],
+        ".*intel-llvm.*::test_modules"     : [ "intel-oneapi" ],
         ".*pgi.*::test_modules"   : [ "nvhpc" ],
         ".*dm.*::test_mpi_module" : [ "cray-mpich" ],
         ".*cmake.*::test_cmake_module" : [ "cmake/3.22.0" ]
@@ -122,6 +124,50 @@
       }
     }
   },
+  "make-intel-llvm" :
+  {
+    "submit_options" :
+    { 
+      "cheyenne" : { "timelimit" : "01:00:00" },
+      "hsn.de.hpc" : { "timelimit" : "00:45:00" }
+    },
+    "steps" :
+    {
+      "serial" :
+      {
+        "command"      : ".ci/tests/build.sh",
+        "arguments"    : [ "-c", "76" ]
+      },
+      "sm" :
+      {
+        "command"      : ".ci/tests/build.sh",
+        "arguments"    : [ "-c", "77" ],
+        "dependencies" : { "serial" : "afterany" }
+      }
+    }
+  },
+  "make-intel-llvm-mpi" :
+  {
+    "submit_options" :
+    { 
+      "cheyenne" : { "timelimit" : "01:00:00" },
+      "hsn.de.hpc" : { "timelimit" : "00:45:00" }
+    },
+    "steps" :
+    {
+      "dm" :
+      {
+        "command"      : ".ci/tests/build.sh",
+        "arguments"    : [ "-c", "78" ]
+      },
+      "dm+sm" :
+      {
+        "command"      : ".ci/tests/build.sh",
+        "arguments"    : [ "-c", "79" ],
+        "dependencies" : { "dm" : "afterany" }
+      }
+    }
+  },
   "make-pgi" :
   {
     "steps" :
@@ -189,8 +235,7 @@
     "submit_options" :
     { 
       "arguments" : { "base_env_numprocs" : [ "-e", "NUM_PROCS=1" ] },
-      "cheyenne" : { "timelimit" : "01:00:00" },
-      "hsn.de.hpc" : { "timelimit" : "00:45:00" }
+      "hsn.de.hpc" : { "timelimit" : "00:25:00" }
     },
     "steps" :
     {
@@ -209,8 +254,45 @@
     "submit_options" :
     { 
       "arguments" : { "base_env_numprocs" : [ "-e", "NUM_PROCS=1" ] },
-      "cheyenne" : { "timelimit" : "01:00:00" },
-      "hsn.de.hpc" : { "timelimit" : "00:45:00" }
+      "hsn.de.hpc" : { "timelimit" : "00:25:00" }
+    },
+    "steps" :
+    {
+      "dm" :
+      {
+        "command"      : ".ci/tests/buildCMake.sh"
+      },
+      "dm+sm" :
+      {
+        "command"      : ".ci/tests/buildCMake.sh"
+      }
+    }
+  },
+  "cmake-intel-llvm" :
+  {
+    "submit_options" :
+    { 
+      "arguments" : { "base_env_numprocs" : [ "-e", "NUM_PROCS=1" ] },
+      "hsn.de.hpc" : { "timelimit" : "00:25:00" }
+    },
+    "steps" :
+    {
+      "serial" :
+      {
+        "command"      : ".ci/tests/buildCMake.sh"
+      },
+      "sm" :
+      {
+        "command"      : ".ci/tests/buildCMake.sh"
+      }
+    }
+  },
+  "cmake-intel-llvm-mpi" :
+  {
+    "submit_options" :
+    { 
+      "arguments" : { "base_env_numprocs" : [ "-e", "NUM_PROCS=1" ] },
+      "hsn.de.hpc" : { "timelimit" : "00:25:00" }
     },
     "steps" :
     {

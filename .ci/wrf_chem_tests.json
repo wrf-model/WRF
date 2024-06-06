@@ -29,11 +29,22 @@
     {
       "submission" : "PBS",
       "queue"      : "main",
-      "resources"  : "-l select=1:ncpus=16 -l job_priority=economy",
-      "timelimit" : "00:10:00",
+      "hpc_arguments"  : 
+      {
+        ".*testcase-serial.*::node_select" : 
+        { 
+          "-l " : { "select"       : 1, "ncpus" : 1  }
+        },
+        "^((?!testcase-serial).)*$::node_select" : 
+        {
+          "-l " : { "select"       : 1, "ncpus" : 8,
+                    ".*testcase-mpi.*::mpiprocs" : 8,
+                    ".*testcase-omp.*::ompthreads" : 8 } 
+        },
+      "timelimit" : "00:15:00",
       "arguments"  : 
       {
-        "base_env_numprocs"          : [ "-e", "NUM_PROCS=16" ],
+        "base_env_numprocs"          : [ "-e", "NUM_PROCS=8" ],
         ".*testcase.*::global_env"     :
         [ 
           "-e", "DATA=/glade/work/aislas/github/data/wrf/regtest/Data/",
@@ -65,10 +76,6 @@
       },
       "testcase-serial" :
       {
-        "submit_options" : {
-                            "cheyenne" : { "resources" : "-l select=1:ncpus=1" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=1 -l job_priority=economy" }
-                            },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-serial" : "afterok" }
       },
@@ -79,10 +86,6 @@
       },
       "testcase-mpi" :
       {
-        "submit_options" : { 
-                            "cheyenne" : { "resources" : "-l select=1:ncpus=12:mpiprocs=12" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=16:mpiprocs=16 -l job_priority=economy" }
-                            },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-mpi" : "afterok" }
       }
@@ -118,10 +121,6 @@
       },
       "testcase-serial" :
       {
-        "submit_options" : {
-                            "cheyenne" : { "resources" : "-l select=1:ncpus=1" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=1 -l job_priority=economy" }
-                            },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-serial" : "afterok" }
       },
@@ -136,10 +135,6 @@
       },
       "testcase-mpi" :
       {
-        "submit_options" : { 
-                            "cheyenne" : { "resources" : "-l select=1:ncpus=12:mpiprocs=12" },
-                            "derecho"  : { "resources" : "-l select=1:ncpus=16:mpiprocs=16 -l job_priority=economy" }
-                            },
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-mpi" : "afterok" }
       }

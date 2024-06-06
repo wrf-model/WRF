@@ -57,7 +57,8 @@ jobs:
             name : "Make Compilation Tests"
             fileroot : wrf_arw_tests
             args : -j='{"node_select":{"-l ":{"select":1}}}'
-            pool : 6
+            pool  : 6
+            tpool : 4
             mkdirs : true
             tests :
               - make-gnu
@@ -73,7 +74,8 @@ jobs:
             name : "CMake Compilation Tests"
             fileroot : wrf_arw_tests
             args : -j='{"node_select":{"-l ":{"select":1}}}'
-            pool : 6
+            pool  : 6
+            tpool : 4
             mkdirs : false
             tests :
               - cmake-gnu
@@ -115,7 +117,8 @@ jobs:
             name : "em_real 0-3, A-E Tests"
             fileroot : wrf_em_real_tests
             args : -j='{"node_select":{"-l ":{"select":1}}}'
-            pool : 9
+            pool  : 9
+            tpool : 4
             mkdirs : true
             tests :
               - em_real0
@@ -135,7 +138,8 @@ jobs:
             name : "em_real G-L Tests"
             fileroot : wrf_em_real_tests
             args : -j='{"node_select":{"-l ":{"select":1}}}'
-            pool : 9
+            pool  : 9
+            tpool : 4
             mkdirs : true
             tests :
               - em_realF
@@ -182,7 +186,8 @@ jobs:
             name : "em_real 0-3, A-E Tests"
             fileroot : wrf_em_real_tests
             args : -j='{"node_select":{"-l ":{"select":1}}}'
-            pool : 9
+            pool  : 9
+            tpool : 4
             mkdirs : true
             tests :
               - em_real0
@@ -202,7 +207,8 @@ jobs:
             name : "em_ideal Tests"
             fileroot : wrf_em_ideal_tests
             args : -j='{"node_select":{"-l ":{"select":1}}}'
-            pool : 5
+            pool  : 5
+            tpool : 4
             mkdirs : true
             tests : 
               - em_b_wave

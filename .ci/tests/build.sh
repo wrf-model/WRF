@@ -15,6 +15,9 @@ help()
   echo "you will need to do '-c \\\$SERIAL -e SERIAL=32' to delay shell expansion"
 }
 
+echo "Input arguments:"
+echo "$*"
+
 workingDirectory=$1
 shift
 if [ $workingDirectory = "-h" ]; then
@@ -67,6 +70,8 @@ eval "configOpt=\"$configOpt\""
 eval "buildCommand=\"$buildCommand\""
 
 ./clean -a
+
+echo "Compiling with option $configuration nesting=$nesting and additional flags '$configOpt'"
 ./configure $configOpt << EOF
 $configuration
 $nesting

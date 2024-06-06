@@ -94,7 +94,7 @@ jobs:
         ./main/hpc-workflows/.ci/relocator.py ./main/.ci/${{ inputs.fileroot }}.log ${{ inputs.archive }}/$LOG_SUFFIX/${{ inputs.id }}
 
         # report on them
-        ./main/hpc-workflows/.ci/reporter.py ${{ inputs.archive }}/$LOG_SUFFIX/${{ inputs.id }}/${{ inputs.fileroot }}.log \
+        ./main/hpc-workflows/.ci/reporter.py ${{ inputs.archive }}/$LOG_SUFFIX/${{ inputs.id }}/main/.ci/${{ inputs.fileroot }}.log \
                                              -e ./hpc-workflows/.ci/runner.py                             \
                                              -o GITHUB -m # only mark fail steps with gh syntax
 
@@ -114,8 +114,8 @@ jobs:
         # report on them
         echo "# Summary for ${{ join( fromJson( inputs.tests ), ' ' ) }}" >> $GITHUB_STEP_SUMMARY
         echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-        ./main/hpc-workflows/.ci/reporter.py ${{ inputs.archive }}/$LOG_SUFFIX/${{ inputs.fileroot }}.log \
-                                             -e ./hpc-workflows/.ci/runner.py                             \
+        ./main/hpc-workflows/.ci/reporter.py ${{ inputs.archive }}/$LOG_SUFFIX/${{ inputs.id }}//main/.ci//${{ inputs.fileroot }}.log \
+                                             -e ./hpc-workflows/.ci/runner.py                                               \
                                              -s >> $GITHUB_STEP_SUMMARY
         echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
 

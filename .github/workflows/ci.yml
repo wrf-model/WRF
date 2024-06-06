@@ -52,6 +52,7 @@ jobs:
           #       - cmake-gnu-mpi
 
           - host : derecho
+            archive : /glade/work/aislas/github/runners/wrf/derecho/logs/
             account : NMMM0012
             name : "Make Compilation Tests"
             fileroot : wrf_arw_tests
@@ -67,6 +68,7 @@ jobs:
               - make-pgi-mpi
 
           - host : derecho
+            archive : /glade/work/aislas/github/runners/wrf/derecho/logs/
             account : NMMM0012
             name : "CMake Compilation Tests"
             fileroot : wrf_arw_tests
@@ -108,6 +110,7 @@ jobs:
       
         testSet  :
           - host : derecho
+            archive : /glade/work/aislas/github/runners/wrf/derecho/logs/
             account : NMMM0012
             name : "em_real 0-3, A-E Tests"
             fileroot : wrf_em_real_tests
@@ -127,6 +130,7 @@ jobs:
                
             
           - host : derecho
+            archive : /glade/work/aislas/github/runners/wrf/derecho/logs/
             account : NMMM0012
             name : "em_real G-L Tests"
             fileroot : wrf_em_real_tests
@@ -173,6 +177,7 @@ jobs:
       
         testSet  :
           - host : derecho
+            archive : /glade/work/aislas/github/runners/wrf/derecho/logs/
             account : NMMM0012
             name : "em_real 0-3, A-E Tests"
             fileroot : wrf_em_real_tests
@@ -192,6 +197,7 @@ jobs:
                
             
           - host : derecho
+            archive : /glade/work/aislas/github/runners/wrf/derecho/logs/
             account : NMMM0012
             name : "em_ideal Tests"
             fileroot : wrf_em_ideal_tests

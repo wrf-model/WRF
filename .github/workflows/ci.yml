@@ -20,7 +20,7 @@ on:
 # https://stackoverflow.com/a/68940067
 jobs:
   buildtests:
-    if : ${{ github.event.label.name == 'compile-tests' }} || ${{ github.event.label.name == 'all-tests' }} || ${{ github.event_name == 'push' }}
+    if : ${{ github.event.label.name == 'compile-tests' }} || ${{ github.event.label.name == 'all-tests' }}
     strategy:
       max-parallel: 4
       fail-fast: false
@@ -104,7 +104,7 @@ jobs:
 
 
   realtests:
-    if : ${{ github.event.label.name == 'em_real-tests' }} || ${{ github.event.label.name == 'all-tests' }} || ${{ github.event_name == 'push' }}
+    if : ${{ github.event.label.name == 'em_real-tests' }} || ${{ github.event.label.name == 'all-tests' }}
     strategy:
       max-parallel: 4
       fail-fast: false
@@ -173,7 +173,7 @@ jobs:
 
   
   idealtests:
-    if : ${{ github.event.label.name == 'em_ideal-tests' }} || ${{ github.event.label.name == 'all-tests' }} || ${{ github.event_name == 'push' }}
+    if : ${{ github.event.label.name == 'em_ideal-tests' }} || ${{ github.event.label.name == 'all-tests' }}
     strategy:
       max-parallel: 4
       fail-fast: false

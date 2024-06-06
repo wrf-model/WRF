@@ -235,7 +235,7 @@
     "submit_options" :
     { 
       "arguments" : { "base_env_numprocs" : [ "-e", "NUM_PROCS=1" ] },
-      "hsn.de.hpc" : { "timelimit" : "00:25:00" }
+      "hsn.de.hpc" : { "timelimit" : "00:45:00" }
     },
     "steps" :
     {
@@ -254,7 +254,7 @@
     "submit_options" :
     { 
       "arguments" : { "base_env_numprocs" : [ "-e", "NUM_PROCS=1" ] },
-      "hsn.de.hpc" : { "timelimit" : "00:25:00" }
+      "hsn.de.hpc" : { "timelimit" : "00:50:00" }
     },
     "steps" :
     {
@@ -273,7 +273,7 @@
     "submit_options" :
     { 
       "arguments" : { "base_env_numprocs" : [ "-e", "NUM_PROCS=1" ] },
-      "hsn.de.hpc" : { "timelimit" : "00:25:00" }
+      "hsn.de.hpc" : { "timelimit" : "00:45:00" }
     },
     "steps" :
     {
@@ -292,7 +292,7 @@
     "submit_options" :
     { 
       "arguments" : { "base_env_numprocs" : [ "-e", "NUM_PROCS=1" ] },
-      "hsn.de.hpc" : { "timelimit" : "00:25:00" }
+      "hsn.de.hpc" : { "timelimit" : "00:50:00" }
     },
     "steps" :
     {

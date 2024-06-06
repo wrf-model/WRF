@@ -13,6 +13,9 @@ on :
       name     :
         required : true
         type     : string
+      id       :
+        required : true
+        type     : string
       host     :
         required : true
         type     : string
@@ -88,10 +91,10 @@ jobs:
       if : ${{ failure() }}
       run : |
         # move log files to safe location
-        ./main/hpc-workflows/.ci/relocator.py ./main/.ci/${{ inputs.fileroot }}.log ${{ inputs.archive }}/$LOG_SUFFIX
+        ./main/hpc-workflows/.ci/relocator.py ./main/.ci/${{ inputs.fileroot }}.log ${{ inputs.archive }}/$LOG_SUFFIX/${{ inputs.id }}
 
         # report on them
-        ./main/hpc-workflows/.ci/reporter.py ${{ inputs.archive }}/$LOG_SUFFIX/${{ inputs.fileroot }}.log \
+        ./main/hpc-workflows/.ci/reporter.py ${{ inputs.archive }}/$LOG_SUFFIX/${{ inputs.id }}/${{ inputs.fileroot }}.log \
                                              -e ./hpc-workflows/.ci/runner.py                             \
                                              -o GITHUB -m # only mark fail steps with gh syntax
 

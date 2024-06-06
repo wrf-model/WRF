@@ -55,6 +55,7 @@ jobs:
             archive : /glade/work/aislas/github/runners/wrf/derecho/logs/
             account : NMMM0012
             name : "Make Compilation Tests"
+            id   : make-tests
             fileroot : wrf_arw_tests
             args : -j='{"node_select":{"-l ":{"select":1}}}'
             pool  : 8
@@ -74,6 +75,7 @@ jobs:
             archive : /glade/work/aislas/github/runners/wrf/derecho/logs/
             account : NMMM0012
             name : "CMake Compilation Tests"
+            id   : cmake-tests
             fileroot : wrf_arw_tests
             args : -j='{"node_select":{"-l ":{"select":1}}}'
             pool  : 8
@@ -119,6 +121,7 @@ jobs:
             archive : /glade/work/aislas/github/runners/wrf/derecho/logs/
             account : NMMM0012
             name : "em_real 0-3, A-E Tests"
+            id   : em_real_0-3A-E-tests
             fileroot : wrf_em_real_tests
             args : -j='{"node_select":{"-l ":{"select":1}}}'
             pool  : 9
@@ -140,6 +143,7 @@ jobs:
             archive : /glade/work/aislas/github/runners/wrf/derecho/logs/
             account : NMMM0012
             name : "em_real G-L Tests"
+            id   : em_real_G-L-tests
             fileroot : wrf_em_real_tests
             args : -j='{"node_select":{"-l ":{"select":1}}}'
             pool  : 9
@@ -187,7 +191,8 @@ jobs:
           - host : derecho
             archive : /glade/work/aislas/github/runners/wrf/derecho/logs/
             account : NMMM0012
-            name : "em_real 0-3, A-E Tests"
+            name : "em_ideal Tests"
+            id   : em_ideal-tests
             fileroot : wrf_em_real_tests
             args : -j='{"node_select":{"-l ":{"select":1}}}'
             pool  : 9

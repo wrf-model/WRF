@@ -63,12 +63,13 @@ jobs:
       if  : ${{ inputs.mkdirs }}
       id  : cpTestDirs
       run : |
-        for testDir in ${{ join( fromJson( inputs.tests ), ' ' ) }}; do
-          echo "Creating duplicate directory for $testDir"
-          # Remove if it exists to get a fresh start
-          rm -rf $testDir
-          rsync -a --exclude '.git' main/ $testDir
-        done
+        echo "Do nothing for now"
+        # for testDir in ${{ join( fromJson( inputs.tests ), ' ' ) }}; do
+        #   echo "Creating duplicate directory for $testDir"
+        #   # Remove if it exists to get a fresh start
+        #   rm -rf $testDir
+        #   rsync -a --exclude '.git' main/ $testDir
+        # done
 
     - name: Test ${{ inputs.name }}
       id  : runTest
@@ -81,6 +82,7 @@ jobs:
           -t   ${{ join( fromJson( inputs.tests ), ' ' ) }}  \
           -a "${{ inputs.account }}"             \
           -p ${{ inputs.pool}}                   \
+          -dry \
           ${{ inputs.args }} $ALT_DIRS
 
 

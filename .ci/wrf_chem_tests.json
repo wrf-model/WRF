@@ -41,6 +41,8 @@
                     ".*testcase-mpi.*::mpiprocs" : 8,
                     ".*testcase-omp.*::ompthreads" : 8 } 
         },
+        "priority"    : { "-l " : { "job_priority" : "economy"       } }
+      },
       "timelimit" : "00:15:00",
       "arguments"  : 
       {

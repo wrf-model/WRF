@@ -58,6 +58,9 @@ shift "$((OPTIND - 1))"
 # Everything else goes to our env setup
 . .ci/env/hostenv.sh $*
 
+#  Go back for asinine reasons of HPC config changing your directory on you
+cd $workingDirectory
+
 # Now evaluate env vars in case it pulls from hostenv.sh
 if [ ! -z "$envVars" ]; then
   setenvStr "$envVars"

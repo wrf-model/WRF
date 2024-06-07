@@ -1230,11 +1230,12 @@ MODULE module_wind_mav
           tmp2 = sign(tmp1,tmp2)
       end if
 
-      angle = real(acos(tmp1/tmp2), kind = 4)
-
-      if (isnan(angle)) then
-         angle = 0.
-      end if
+      tmp1 = tmp1 / tmp2
+      if ( tmp1 < -1 .or. tmp1 > 1 )
+        angle = 0
+      else
+        angle = real(acos(tmp1), kind = 4)
+      endif
  
       if (abs(angle) <= sr_angle) then
           ft = .true.

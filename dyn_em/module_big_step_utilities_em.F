@@ -5733,11 +5733,11 @@ END SUBROUTINE phy_prep_part2
 !                                300                                     ! term 4
 !                    
          IF ( ( config_flags%use_theta_m .EQ. 1 ) .AND. (P_Qv .GE. PARAM_FIRST_SCALAR) ) THEN
-            t_new(i,k,j) =  h_diabatic(i,k,j)*(1. + (R_v/R_d)*qv_diabatic(i,k,j)) + \
-                            mpten*(1. + (R_v/R_d)*qv(i,k,j)) + \
+            t_new(i,k,j) =  h_diabatic(i,k,j)*(1. + (R_v/R_d)*qv_diabatic(i,k,j)) + &
+                            mpten*(1. + (R_v/R_d)*qv(i,k,j)) + &
                             (R_v/R_d)*qvten*th_phy(i,k,j) - T0
             th_phy_m_t0(i,k,j) = (t_new(i,k,j)+T0)/(1.+(R_v/R_d)*qv(i,k,j)) - T0
-            h_diabatic(i,k,j) =  ( mpten*(1. + (R_v/R_d)*qv(i,k,j)) + \
+            h_diabatic(i,k,j) =  ( mpten*(1. + (R_v/R_d)*qv(i,k,j)) + &
                                  (R_v/R_d)*qvten*th_phy(i,k,j) ) / dt
          ELSE
             t_new(i,k,j) = t_new(i,k,j) + mpten

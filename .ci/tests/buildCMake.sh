@@ -1,7 +1,7 @@
 #!/bin/sh
 help()
 {
-  echo "./build.sh [workingdir] [options] [-- <hostenv.sh options>]"
+  echo "./buildCMake.sh [workingdir] [options] [-- <hostenv.sh options>]"
   echo "  [workingdir]              First argument must be the working dir to immediate cd to"
   echo "  -c                        Configuration build type, piped directly into configure"
   echo "  -b                        Build command passed into compile"

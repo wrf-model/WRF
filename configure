@@ -1051,7 +1051,7 @@ if [ -n "$NETCDF4" ] ; then
       echo "!!! configure.wrf has been REMOVED !!!"
       echo
       echo "*****************************************************************************"
-      rm -f configure.wrf
+      # rm -f configure.wrf
     else
       echo "*****************************************************************************"
       echo "This build of WRF will use NETCDF4 with HDF5 compression"

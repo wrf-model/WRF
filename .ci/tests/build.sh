@@ -15,6 +15,9 @@ help()
   echo "you will need to do '-c \\\$SERIAL -e SERIAL=32' to delay shell expansion"
 }
 
+echo "Input arguments:"
+echo "$*"
+
 workingDirectory=$1
 shift
 if [ $workingDirectory = "-h" ]; then
@@ -55,6 +58,9 @@ shift "$((OPTIND - 1))"
 # Everything else goes to our env setup
 . .ci/env/hostenv.sh $*
 
+#  Go back for asinine reasons of HPC config changing your directory on you
+cd $workingDirectory
+
 # Now evaluate env vars in case it pulls from hostenv.sh
 if [ ! -z "$envVars" ]; then
   setenvStr "$envVars"
@@ -67,6 +73,8 @@ eval "configOpt=\"$configOpt\""
 eval "buildCommand=\"$buildCommand\""
 
 ./clean -a
+
+echo "Compiling with option $configuration nesting=$nesting and additional flags '$configOpt'"
 ./configure $configOpt << EOF
 $configuration
 $nesting

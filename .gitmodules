@@ -1,3 +1,9 @@
 [submodule "phys/noahmp"]
 	path = phys/noahmp
 	url = https://github.com/NCAR/noahmp
+[submodule "hpc-workflows"]
+	path = hpc-workflows
+	url = https://github.com/islas/hpc-workflows
+[submodule ".ci/tests/SCRIPTS"]
+	path = .ci/tests/SCRIPTS
+	url = https://github.com/wrf-model/SCRIPTS

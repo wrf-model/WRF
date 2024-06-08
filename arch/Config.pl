@@ -451,6 +451,8 @@ until ( $validresponse ) {
   $response_opt = $response ; 
   chop $response_opt ;
 }
+printf "Selected [%d] : ",$response;
+
 printf "------------------------------------------------------------------------\n" ;
 
 $optchoice = $response ;

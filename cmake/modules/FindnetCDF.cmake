@@ -66,6 +66,10 @@ else()
 
   foreach( NC_QUERY ${netCDF_QUERY_YES_OPTIONS} )
     execute_process( COMMAND ${NETCDF_PROGRAM} --has-${NC_QUERY} OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF_${NC_QUERY}_LOWERCASE )
+    if ( NOT "${netCDF-Fortran_${NF_QUERY}_LOWERCASE}" )
+      # might be empty
+      set( netCDF-Fortran_${NF_QUERY}_LOWERCASE no )
+    endif()
     string( TOUPPER ${NC_QUERY}                     NC_QUERY_UPPERCASE )
     string( TOUPPER ${netCDF_${NC_QUERY}_LOWERCASE} NC_ANSWER_UPPERCASE )
     # Convert to netCDF_HAS_* = YES/NO - Note this cannot be generator expression if you want to use it during configuration time

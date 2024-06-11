@@ -484,12 +484,12 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 ,
 	    MPI_Abort(MPI_COMM_WORLD, 99) ;
           }
           if ( typesize == 8 ) {
-            F_PACK_LINT ( buf, p+yp_curs, imemord, &js, &je, &ks, &ke, &is, &ie, 
+            F_PACK_LINT ( (long *)buf, (long *)(p+yp_curs), imemord, &js, &je, &ks, &ke, &is, &ie, 
                                                 &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
             yp_curs += wcount*typesize ;
           }
 	  else if ( typesize == 4 ) {
-            F_PACK_INT ( buf, p+yp_curs, imemord, &js, &je, &ks, &ke, &is, &ie,
+            F_PACK_INT ( (int * )buf, (int * )(p+yp_curs), imemord, &js, &je, &ks, &ke, &is, &ie,
                                                &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
             yp_curs += wcount*typesize ;
 	  }
@@ -505,12 +505,12 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 ,
           ks = kps           ; ke = kpe ;
           is = IMAX(ips-shw) ; ie = IMIN(ipe+shw) ;
           if ( typesize == 8 ) {
-            F_UNPACK_LINT ( p+yp_curs, buf, imemord, &js, &je, &ks, &ke, &is, &ie,
+            F_UNPACK_LINT ( (long *)(p+yp_curs), (long *)buf, imemord, &js, &je, &ks, &ke, &is, &ie,
                                                &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
             yp_curs += wcount*typesize ;
           }
 	  else if ( typesize == 4 ) {
-            F_UNPACK_INT ( p+yp_curs, buf, imemord, &js, &je, &ks, &ke, &is, &ie,
+            F_UNPACK_INT ( (int * )(p+yp_curs), (int * )buf, imemord, &js, &je, &ks, &ke, &is, &ie,
                                                &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
             yp_curs += wcount*typesize ;
 	  }
@@ -538,12 +538,12 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 ,
 	    MPI_Abort(MPI_COMM_WORLD, 99) ;
           }
           if ( typesize == 8 ) {
-            F_PACK_LINT ( buf, p+ym_curs, imemord, &js, &je, &ks, &ke, &is, &ie,
+            F_PACK_LINT ( (long *)buf, (long *)(p+ym_curs), imemord, &js, &je, &ks, &ke, &is, &ie,
                                                &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
             ym_curs += wcount*typesize ;
           }
 	  else if ( typesize == 4 ) {
-            F_PACK_INT ( buf, p+ym_curs, imemord, &js, &je, &ks, &ke, &is, &ie,
+            F_PACK_INT ( (int * )buf, (int * )(p+ym_curs), imemord, &js, &je, &ks, &ke, &is, &ie,
                                                &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
             ym_curs += wcount*typesize ;
   	  }
@@ -559,12 +559,12 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 ,
           ks = kps           ; ke = kpe ;
           is = IMAX(ips-shw) ; ie = IMIN(ipe+shw) ;
           if ( typesize == 8 ) {
-            F_UNPACK_LINT ( p+ym_curs, buf, imemord, &js, &je, &ks, &ke, &is, &ie,
+            F_UNPACK_LINT ( (long *)(p+ym_curs), (long *)buf, imemord, &js, &je, &ks, &ke, &is, &ie,
                                                   &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
             ym_curs += wcount*typesize ;
           }
 	  else if ( typesize == 4 ) {
-            F_UNPACK_INT ( p+ym_curs, buf, imemord, &js, &je, &ks, &ke, &is, &ie,
+            F_UNPACK_INT ( (int * )(p+ym_curs), (int * )buf, imemord, &js, &je, &ks, &ke, &is, &ie,
                                                  &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
             ym_curs += wcount*typesize ;
 	  }
@@ -596,12 +596,12 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 ,
 	    MPI_Abort(MPI_COMM_WORLD, 99) ;
           }
           if ( typesize == 8 ) {
-            F_PACK_LINT ( buf, p+xp_curs, imemord, &js, &je, &ks, &ke, &is, &ie,
+            F_PACK_LINT ( (long *)buf, (long *)(p+xp_curs), imemord, &js, &je, &ks, &ke, &is, &ie,
                                                 &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
             xp_curs += wcount*typesize ;
           }
 	  else if ( typesize == 4 ) {
-            F_PACK_INT ( buf, p+xp_curs, imemord, &js, &je, &ks, &ke, &is, &ie,
+            F_PACK_INT ( (int * )buf, (int * )(p+xp_curs), imemord, &js, &je, &ks, &ke, &is, &ie,
                                                &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
             xp_curs += wcount*typesize ;
 	  }
@@ -617,12 +617,12 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 ,
           ks = kps           ; ke = kpe ;
           is = ipe+recvbegp  ; ie = is + recvwp - 1 ;
           if ( typesize == 8 ) {
-            F_UNPACK_LINT ( p+xp_curs, buf, imemord, &js, &je, &ks, &ke, &is, &ie,
+            F_UNPACK_LINT ( (long *)(p+xp_curs), (long *)buf, imemord, &js, &je, &ks, &ke, &is, &ie,
                                                   &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
             xp_curs += wcount*typesize ;
           }
 	  else if ( typesize == 4 ) {
-            F_UNPACK_INT ( p+xp_curs, buf, imemord, &js, &je, &ks, &ke, &is, &ie,
+            F_UNPACK_INT ( (int * )(p+xp_curs), (int * )buf, imemord, &js, &je, &ks, &ke, &is, &ie,
                                                  &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
             xp_curs += wcount*typesize ;
 	  }
@@ -652,12 +652,12 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 ,
 	    MPI_Abort(MPI_COMM_WORLD, 99) ;
           }
           if ( typesize == 8 ) {
-            F_PACK_LINT ( buf, p+xm_curs, imemord, &js, &je, &ks, &ke, &is, &ie,
+            F_PACK_LINT ( (long *)buf, (long *)(p+xm_curs), imemord, &js, &je, &ks, &ke, &is, &ie,
                                                 &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
             xm_curs += wcount*typesize ;
           }
 	  else if ( typesize == 4 ) {
-            F_PACK_INT ( buf, p+xm_curs, imemord, &js, &je, &ks, &ke, &is, &ie,
+            F_PACK_INT ( (int * )buf, (int * )(p+xm_curs), imemord, &js, &je, &ks, &ke, &is, &ie,
                                                &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
             xm_curs += wcount*typesize ;
 	  }
@@ -673,12 +673,12 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 ,
           ks = kps           ; ke = kpe ;
           ie = ips-recvbegm ; is = ie - recvwm + 1 ;
           if ( typesize == 8 ) {
-            F_UNPACK_LINT ( p+xm_curs, buf, imemord, &js, &je, &ks, &ke, &is, &ie,
+            F_UNPACK_LINT ( (long *)(p+xm_curs), (long *)buf, imemord, &js, &je, &ks, &ke, &is, &ie,
                                                   &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
             xm_curs += wcount*typesize ;
           } 
           else if ( typesize == 4 ) {
-            F_UNPACK_INT ( p+xm_curs, buf, imemord, &js, &je, &ks, &ke, &is, &ie,
+            F_UNPACK_INT ( (int * )(p+xm_curs), (int * )buf, imemord, &js, &je, &ks, &ke, &is, &ie,
                                                  &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
             xm_curs += wcount*typesize ;
 	  }
@@ -780,12 +780,12 @@ RSL_LITE_PACK_AD ( int * Fcomm0, char * buf , int * shw0 ,
 	    MPI_Abort(MPI_COMM_WORLD, 99) ;
           }
           if ( typesize == 8 ) {
-            F_UNPACK_LINT_AD ( p+yp_curs, buf, imemord, &js, &je, &ks, &ke, &is, &ie, 
+            F_UNPACK_LINT_AD ( (long *)(p+yp_curs), (long *)buf, imemord, &js, &je, &ks, &ke, &is, &ie, 
                                                 &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
             yp_curs += wcount*typesize ;
           }
 	  else if ( typesize == 4 ) {
-            F_UNPACK_INT_AD ( p+yp_curs, buf, imemord, &js, &je, &ks, &ke, &is, &ie,
+            F_UNPACK_INT_AD ( (int * )(p+yp_curs), (int * )buf, imemord, &js, &je, &ks, &ke, &is, &ie,
                                                &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
             yp_curs += wcount*typesize ;
 	  }
@@ -801,12 +801,12 @@ RSL_LITE_PACK_AD ( int * Fcomm0, char * buf , int * shw0 ,
           ks = kps           ; ke = kpe ;
           is = IMAX(ips-shw) ; ie = IMIN(ipe+shw) ;
           if ( typesize == 8 ) {
-            F_PACK_LINT_AD ( buf, p+yp_curs, imemord, &js, &je, &ks, &ke, &is, &ie,
+            F_PACK_LINT_AD ( (long *)buf, (long *)(p+yp_curs), imemord, &js, &je, &ks, &ke, &is, &ie,
                                                &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
             yp_curs += wcount*typesize ;
           }
 	  else if ( typesize == 4 ) {
-            F_PACK_INT_AD ( buf, p+yp_curs, imemord, &js, &je, &ks, &ke, &is, &ie,
+            F_PACK_INT_AD ( (int * )buf, (int * )(p+yp_curs), imemord, &js, &je, &ks, &ke, &is, &ie,
                                                &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
             yp_curs += wcount*typesize ;
 	  }
@@ -834,12 +834,12 @@ RSL_LITE_PACK_AD ( int * Fcomm0, char * buf , int * shw0 ,
 	    MPI_Abort(MPI_COMM_WORLD, 99) ;
           }
           if ( typesize == 8 ) {
-            F_UNPACK_LINT_AD ( p+ym_curs, buf, imemord, &js, &je, &ks, &ke, &is, &ie,
+            F_UNPACK_LINT_AD ( (long *)(p+ym_curs), (long *)buf, imemord, &js, &je, &ks, &ke, &is, &ie,
                                                &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
             ym_curs += wcount*typesize ;
           }
 	  else if ( typesize == 4 ) {
-            F_UNPACK_INT_AD ( p+ym_curs, buf, imemord, &js, &je, &ks, &ke, &is, &ie,
+            F_UNPACK_INT_AD ( (int * )(p+ym_curs), (int * )buf, imemord, &js, &je, &ks, &ke, &is, &ie,
                                                &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
             ym_curs += wcount*typesize ;
   	  }
@@ -855,12 +855,12 @@ RSL_LITE_PACK_AD ( int * Fcomm0, char * buf , int * shw0 ,
           ks = kps           ; ke = kpe ;
           is = IMAX(ips-shw) ; ie = IMIN(ipe+shw) ;
           if ( typesize == 8 ) {
-            F_PACK_LINT_AD ( buf, p+ym_curs, imemord, &js, &je, &ks, &ke, &is, &ie,
+            F_PACK_LINT_AD ( (long *)buf, (long *)(p+ym_curs), imemord, &js, &je, &ks, &ke, &is, &ie,
                                                   &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
             ym_curs += wcount*typesize ;
           }
 	  else if ( typesize == 4 ) {
-            F_PACK_INT_AD ( buf, p+ym_curs, imemord, &js, &je, &ks, &ke, &is, &ie,
+            F_PACK_INT_AD ( (int * )buf, (int * )(p+ym_curs), imemord, &js, &je, &ks, &ke, &is, &ie,
                                                  &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
             ym_curs += wcount*typesize ;
 	  }
@@ -892,12 +892,12 @@ RSL_LITE_PACK_AD ( int * Fcomm0, char * buf , int * shw0 ,
 	    MPI_Abort(MPI_COMM_WORLD, 99) ;
           }
           if ( typesize == 8 ) {
-            F_UNPACK_LINT_AD ( p+xp_curs, buf, imemord, &js, &je, &ks, &ke, &is, &ie,
+            F_UNPACK_LINT_AD ( (long *)(p+xp_curs), (long *)buf, imemord, &js, &je, &ks, &ke, &is, &ie,
                                                 &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
             xp_curs += wcount*typesize ;
           }
 	  else if ( typesize == 4 ) {
-            F_UNPACK_INT_AD ( p+xp_curs, buf, imemord, &js, &je, &ks, &ke, &is, &ie,
+            F_UNPACK_INT_AD ( (int * )(p+xp_curs), (int * )buf, imemord, &js, &je, &ks, &ke, &is, &ie,
                                                &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
             xp_curs += wcount*typesize ;
 	  }
@@ -913,12 +913,12 @@ RSL_LITE_PACK_AD ( int * Fcomm0, char * buf , int * shw0 ,
           ks = kps           ; ke = kpe ;
           is = ipe+recvbegp  ; ie = is + recvwp - 1 ;
           if ( typesize == 8 ) {
-            F_PACK_LINT_AD ( buf, p+xp_curs, imemord, &js, &je, &ks, &ke, &is, &ie,
+            F_PACK_LINT_AD ( (long *)buf, (long *)(p+xp_curs), imemord, &js, &je, &ks, &ke, &is, &ie,
                                                   &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
             xp_curs += wcount*typesize ;
           }
 	  else if ( typesize == 4 ) {
-            F_PACK_INT_AD ( buf, p+xp_curs, imemord, &js, &je, &ks, &ke, &is, &ie,
+            F_PACK_INT_AD ( (int * )buf, (int * )(p+xp_curs), imemord, &js, &je, &ks, &ke, &is, &ie,
                                                  &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
             xp_curs += wcount*typesize ;
 	  }
@@ -948,12 +948,12 @@ RSL_LITE_PACK_AD ( int * Fcomm0, char * buf , int * shw0 ,
 	    MPI_Abort(MPI_COMM_WORLD, 99) ;
           }
           if ( typesize == 8 ) {
-            F_UNPACK_LINT_AD ( p+xm_curs, buf, imemord, &js, &je, &ks, &ke, &is, &ie,
+            F_UNPACK_LINT_AD ( (long *)(p+xm_curs), (long *)buf, imemord, &js, &je, &ks, &ke, &is, &ie,
                                                 &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
             xm_curs += wcount*typesize ;
           }
 	  else if ( typesize == 4 ) {
-            F_UNPACK_INT_AD ( p+xm_curs, buf, imemord, &js, &je, &ks, &ke, &is, &ie,
+            F_UNPACK_INT_AD ( (int * )(p+xm_curs), (int * )buf, imemord, &js, &je, &ks, &ke, &is, &ie,
                                                &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
             xm_curs += wcount*typesize ;
 	  }
@@ -969,12 +969,12 @@ RSL_LITE_PACK_AD ( int * Fcomm0, char * buf , int * shw0 ,
           ks = kps           ; ke = kpe ;
           ie = ips-recvbegm ; is = ie - recvwm + 1 ;
           if ( typesize == 8 ) {
-            F_PACK_LINT_AD ( buf, p+xm_curs, imemord, &js, &je, &ks, &ke, &is, &ie,
+            F_PACK_LINT_AD ( (long *)buf, (long *)(p+xm_curs), imemord, &js, &je, &ks, &ke, &is, &ie,
                                                   &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
             xm_curs += wcount*typesize ;
           } 
           else if ( typesize == 4 ) {
-            F_PACK_INT_AD ( buf, p+xm_curs, imemord, &js, &je, &ks, &ke, &is, &ie,
+            F_PACK_INT_AD ( (int * )buf, (int * )(p+xm_curs), imemord, &js, &je, &ks, &ke, &is, &ie,
                                                  &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
             xm_curs += wcount*typesize ;
 	  }

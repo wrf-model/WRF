@@ -161,7 +161,7 @@
 
 
 #define RSL_MALLOC(T,N)  (T *)rsl_malloc(__FILE__,__LINE__,(sizeof(T))*(N))
-#define RSL_FREE(P)      rsl_free(&(P))
+#define RSL_FREE(P)      rsl_free((char **)&(P))
 
 char * buffer_for_proc ( int P, int size, int code ) ;
 int buffer_size_for_proc( int P, int code );

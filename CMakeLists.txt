@@ -1014,6 +1014,7 @@ target_include_directories(
                               $<$<TARGET_EXISTS:bacio-1.3>:$<TARGET_PROPERTY:bacio-1.3,Fortran_MODULE_DIRECTORY>>
 
                             PRIVATE
+                              $<$<TARGET_EXISTS:firelib>:$<TARGET_PROPERTY:firelib,Fortran_MODULE_DIRECTORY>>
                               
                               ${PROJECT_SOURCE_DIR}/dyn_em
 

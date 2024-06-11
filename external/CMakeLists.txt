@@ -50,7 +50,7 @@ add_subdirectory( esmf_time_f90    )
 add_subdirectory( io_netcdf        )
 #!TODO We should collapse all these files into #ifdefs even if they are compiled
 #      multiple times with different defs for the same configuration
-if ( ${netCDF_PARALLEL} AND ${USE_MPI} )
+if ( ${netCDF_HAS_PARALLEL} AND ${USE_MPI} )
   message( STATUS "Adding [io_netcdfpar] to configuration" )
   add_subdirectory( io_netcdfpar     )
 endif()

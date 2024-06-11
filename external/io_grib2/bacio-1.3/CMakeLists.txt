@@ -21,19 +21,6 @@ set_target_properties(
                           EXPORT_PROPERTIES        Fortran_MODULE_DIRECTORY
                       )
 
-
-target_link_libraries(  ${FOLDER_COMPILE_TARGET}
-                          PRIVATE
-                            ${netCDF_LIBRARIES}
-                            $<$<BOOL:${USE_MPI}>:$<TARGET_NAME_IF_EXISTS:MPI::MPI_Fortran>>
-                            $<$<BOOL:${USE_OPENMP}>:$<TARGET_NAME_IF_EXISTS:OpenMP::OpenMP_Fortran>>
-                        )
-
-target_include_directories( ${FOLDER_COMPILE_TARGET}
-                            PRIVATE
-                              ${netCDF_INCLUDE_DIRS}
-                            )
-
 install(
         TARGETS ${FOLDER_COMPILE_TARGET}
         EXPORT  ${EXPORT_NAME}Targets

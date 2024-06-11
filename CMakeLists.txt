@@ -422,9 +422,19 @@ endif()
 find_package( netCDF         REQUIRED )
 find_package( netCDF-Fortran REQUIRED )
 
-# Make use of version checking here and not in find_package for previous versions that did not use cmake
-if ( ( NOT netCDF_VERSION GREATER_EQUAL "4.1.3" ) OR ( NOT netCDF-Fortran_VERSION GREATER_EQUAL "4.1.3" ) )
-  message( FATAL "Please make sure NETCDF versions are 4.1.3 or later. " )
+# Make use of version checking here and not in find_package for WRF control allowing older versions if requested
+if ( NOT ${FORCE_NETCDF_CLASSIC} )
+  if ( NOT netCDF_VERSION GREATER_EQUAL "4.1.3" )
+    set( NC4_MISSING_REASON "(version < 4.1.3)" )
+  elseif( NOT ${netCDF_HAS_NC4} )
+    set( NC4_MISSING_REASON "(not build with nc4)" )
+  endif()
+
+  if ( DEFINED NC4_MISSING_REASON )
+    message( STATUS "netCDF found does not support NC4 features ${NC4_MISSING_REASON}, forcing use of classic netcdf" )
+    message( STATUS "  To disable this message, make sure netCDF used has nc4 capabilities or specify FORCE_NETCDF_CLASSIC" )
+    set( FORCE_NETCDF_CLASSIC ON CACHE BOOL "Required by netCDF found" FORCE )
+  endif()
 endif()
 
 find_package( pnetCDF QUIET )
@@ -637,12 +647,12 @@ add_compile_definitions(
                         $<$<NOT:$<BOOL:${ENABLE_CTSM}>>:WRF_USE_CLM>
 
                         # If force classic or no nc-4 support enable classic
-                        $<$<OR:$<BOOL:${FORCE_NETCDF_CLASSIC}>,$<NOT:$<BOOL:${netCDF_NC4}>>>:NETCDF_classic=1>
+                        $<$<OR:$<BOOL:${FORCE_NETCDF_CLASSIC}>,$<NOT:$<BOOL:${netCDF_HAS_NC4}>>>:NETCDF_classic=1>
                         $<$<OR:$<BOOL:${WRFIO_NCD_NO_LARGE_FILE_SUPPORT}>,$<NOT:$<BOOL:${netCDF_LARGE_FILE_SUPPORT}>>>:WRFIO_NCD_NO_LARGE_FILE_SUPPORT=1>
                         # May need a check for WRFIO_ncdpar_LARGE_FILE_SUPPORT
 
                         # Now set the opposite in different defines, because why not :)
-                        $<$<AND:$<NOT:$<BOOL:${FORCE_NETCDF_CLASSIC}>>,$<BOOL:${netCDF_NC4}>>:USE_NETCDF4_FEATURES=1>
+                        $<$<AND:$<NOT:$<BOOL:${FORCE_NETCDF_CLASSIC}>>,$<BOOL:${netCDF_HAS_NC4}>>:USE_NETCDF4_FEATURES=1>
                         $<$<AND:$<NOT:$<BOOL:${WRFIO_NCD_NO_LARGE_FILE_SUPPORT}>>,$<BOOL:${netCDF_LARGE_FILE_SUPPORT}>>:WRFIO_NCD_LARGE_FILE_SUPPORT=1>
 
                         # Could simplify logic to just check if RPC is available but to be explicit
@@ -772,8 +782,6 @@ target_include_directories(
                               ${PROJECT_SOURCE_DIR}/external/io_int
 
                               # Found Packages not handled through :: imported target
-                              ${netCDF_INCLUDE_DIRS}
-                              ${netCDF-Fortran_INCLUDE_DIRS}
                               ${pnetCDF_INCLUDE_DIRS}
                             )
 
@@ -815,19 +823,10 @@ set_target_properties(
                           EXPORT_PROPERTIES        Fortran_MODULE_DIRECTORY
                       )
 
-# Because of the way netCDF provides its info and the way cmake auto-gens RPATH, we need to help it along
-target_link_directories(
-                        ${PROJECT_NAME}_Core
-                        PUBLIC
-                          ${netCDF_LIBRARY_DIR}
-                          ${netCDF-Fortran_LIBRARY_DIR}
-                        )
-
 
 target_link_libraries(  ${PROJECT_NAME}_Core
                           PUBLIC
-                            ${netCDF_LIBRARIES}
-                            ${netCDF-Fortran_LIBRARIES}
+                            netCDF::netcdff
                             ${pnetCDF_LIBRARIES}
                             $<$<BOOL:${USE_MPI}>:$<TARGET_NAME_IF_EXISTS:MPI::MPI_Fortran>>
                             $<$<BOOL:${USE_OPENMP}>:$<TARGET_NAME_IF_EXISTS:OpenMP::OpenMP_Fortran>>

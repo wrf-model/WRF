@@ -61,6 +61,11 @@ CONTAINS
 #endif
 #endif
     USE module_utility
+
+      ! CFBM
+    use advance_mod, only : Advance_state_to_be_removed
+
+
     IMPLICIT NONE
 
     TYPE ( domain ), INTENT(INOUT) :: grid
@@ -1337,7 +1342,14 @@ BENCH_END(pbl_driver_tim)
 
 !*****
 ! fire 
+     Select_fire_model: select case (config_flags%ifire)
+       case (0)
+         continue
 
+       case (1)
+         call Advance_state_to_be_removed ()
+
+       case (2)
 ! Jan Mandel's call to SFIRE
 
       IF ((grid%sr_x > 0 .OR. grid%sr_y > 0) .AND. config_flags%ifire == 2) THEN
@@ -1361,6 +1373,10 @@ BENCH_START(fire_driver_tim)
 BENCH_END(fire_driver_tim)
        ENDIF
 
+       case default
+         CALL wrf_error_fatal('The selected fire model does not exist')
+
+     end select Select_fire_model
 
 ! cumulus para.
 

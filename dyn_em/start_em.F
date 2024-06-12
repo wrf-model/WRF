@@ -45,6 +45,8 @@
    USE module_diag_pld, ONLY : pld
    USE module_diag_zld, ONLY : zld
    USE module_trad_fields, ONLY : trad_fields
+     ! CFBM
+   use initialize_mod, only : Init_fire_state_within_wrf
 
 !!debug
 !USE module_compute_geop
@@ -2168,8 +2170,15 @@ DEALLOCATE(z_at_q)
 
 
 !  FIRE
-if(config_flags%ifire.eq.2)then
+   Select_fire_model: select case (config_flags%ifire)
+     case (0)
+       continue
 
+     case (1)
+         ! Community Fire Behavior model
+       call Init_fire_state_within_wrf ()
+
+     case (2)
    call fire_driver_em_init ( grid , config_flags    &
             ,ids,ide, kds,kde, jds,jde                &
             ,ims,ime, kms,kme, jms,jme                &
@@ -2218,8 +2227,11 @@ if(config_flags%ifire.eq.2)then
 
    ENDIF
 !-----------------------------------------------------------------------
+     case default
 
-endif
+       CALL wrf_error_fatal ( 'The selected fire model does not exist' )
+   end select Select_fire_model
+
 
 #if ( WRFPLUS != 1 )
 if( grid%traj_opt /= no_trajectory ) then

@@ -110,7 +110,9 @@
          
          INTEGER FUNCTION bep_bem_ngr_u()
          END FUNCTION bep_bem_ngr_u
-
+   
+         INTEGER FUNCTION bep_bem_ncomf()
+         END FUNCTION bep_bem_ncomf
       END INTERFACE
 
 !-----------------------------------------------------------------------
@@ -482,7 +484,7 @@
            model_config_rec % num_urban_ngb  = bep_bem_ngb_u()
            model_config_rec % num_urban_nbui = bep_bem_nbui_max()
            model_config_rec % num_urban_ngr  = bep_bem_ngr_u()
-
+           model_config_rec % num_urban_ncomf =bep_bem_ncomf()
          END IF
       ENDDO
 

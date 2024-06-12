@@ -1077,7 +1077,7 @@ endif
                       grid%apr_capma,grid%apr_capme,grid%apr_capmi,          &
                       grid%xice,grid%xicem,grid%vegfra,grid%snow,grid%canwat,grid%smstav,         &
                       grid%smstot, grid%sfcrunoff,grid%udrunoff,grid%grdflx,grid%acsnow,      &
-                      grid%acsnom,grid%ivgtyp,grid%isltyp, grid%sfcevp,grid%smois,     &
+                      grid%acsnom,grid%ivgtyp,grid%urban_vegetation,grid%landmask,grid%isltyp, grid%sfcevp,grid%smois,     &
                       grid%sh2o, grid%snowh, grid%smfr3d,                    &
                       grid%snoalb,                 &
                       grid%DX,grid%DY,grid%dx2d,grid%area2d,              &
@@ -1158,7 +1158,9 @@ endif
                       grid%TRV_URB4D,grid%QR_URB4D,grid%QGR_URB3D,grid%TGR_URB3D,        & !GRZ
                       grid%DRAIN_URB4D,grid%DRAINGR_URB3D,grid%SFRV_URB3D,               & !GRZ
                       grid%LFRV_URB3D,grid%DGR_URB3D,grid%DG_URB3D,grid%LFR_URB3D,     & !GRZ
-                      grid%LFG_URB3D,                                                  & !GRZ 
+                      grid%LFG_URB3D,                                                  &
+                      grid%TGV_URB4D,grid%SFGV_URB3D,grid%LFGV_URB3D,grid%QG_URB4D,    & !GARDEN
+                      grid%BW_URB2D,grid%SW_URB2D,                     & !GRZ 
                       grid%LP_URB2D,grid%HI_URB2D,grid%LB_URB2D,grid%HGT_URB2D,        & !multi-layer urban
                       grid%MH_URB2D,grid%STDH_URB2D,grid%LF_URB2D,                     & !SLUCM
                       grid%A_U_BEP,grid%A_V_BEP,grid%A_T_BEP,grid%A_Q_BEP,             & !multi-layer urban

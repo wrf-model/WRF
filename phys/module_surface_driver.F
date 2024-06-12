@@ -17,7 +17,8 @@ CONTAINS
      &          ,seaice_snowdepth_opt,seaice_snowdepth_max            &
      &          ,seaice_snowdepth_min,tice2tsk_if2cold                &
      &          ,ifndalbsi, ifndicedepth, ifndsnowsi                  &
-     &          ,isltyp,itimestep,julian_in,ivgtyp,lowlyr,mavail,rmol &
+     &          ,isltyp,itimestep,julian_in,ivgtyp,urban_vegetation   &
+     &          ,lowlyr,mavail,rmol &
      &          ,num_soil_layers,p8w,pblh,pi_phy,pshltr,fm,fhh,psih   &
      &          ,psim,p_phy,q10,q2,qfx,qsfc,qshltr,qz0                &
      &          ,raincv,rho,sfcevp,sfcexc,sfcrunoff ,acrunoff         &
@@ -270,7 +271,7 @@ CONTAINS
      &          ,urban_map_fbd                                        & !multi-layer urban
      &          ,urban_map_zgrd                                       & !multi-layer urban
      &          ,num_urban_hi                                         & !multi-layer urban
-     &          ,use_wudapt_lcz                                       & !wudapt
+     &          ,use_wudapt_lcz,use_lcz_interpolation                 & !wudapt
      &          ,slucm_distributed_drag                         & !SLUCM
      &          ,tsk_rural                                            & !multi-layer urban
      &          ,trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d              & !multi-layer urban
@@ -287,6 +288,9 @@ CONTAINS
      &          ,sfrv_urb3d,lfrv_urb3d                               & !multi-layer urban GRZ
      &          ,dgr_urb3d,dg_urb3d                                   & !multi-layer urb;:an GRZ
      &          ,lfr_urb3d,lfg_urb3d                                 & !multi-layer urban GRZ
+     &          ,tgv_urb4d,sfgv_urb3d,lfgv_urb3d,qg_urb4d             & !GARDEN
+     &          ,tmr_11,tmr_12,tmr_13,tmr_21,tmr_22,tmr_23            & ! WRF COMFORT
+     &          ,comf_10,comf_50,comf_90,hist_comf,num_urban_ncomf    & ! WRF COMFORT
      &          ,swddir,swddif                                        & !gl
      &          ,lp_urb2d,hi_urb2d,lb_urb2d,hgt_urb2d                 & !multi-layer urban
      &          ,mh_urb2d,stdh_urb2d,lf_urb2d                         &           
@@ -295,7 +299,7 @@ CONTAINS
      &          ,b_u_bep,b_v_bep,b_t_bep,b_q_bep                      &
      &          ,sf_bep,vl_bep                                        &
      &          ,a_e_bep,b_e_bep,dlg_bep                              &
-     &          ,dl_u_bep                                             &                          
+     &          ,dl_u_bep,BW_URB2D,SW_URB2D                           &                          
      &          ,tsk_save                                             & !for fractional seaice
      &          ,cldfra                                               & !ssib
      &          ,sf_surface_mosaic,mosaic_cat,mosaic_cat_index                                    & !danli mosaic
@@ -632,6 +636,7 @@ CONTAINS
 
    INTEGER, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT )::  ISLTYP
    INTEGER, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   IVGTYP
+   INTEGER, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   URBAN_VEGETATION
    INTEGER, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   LOWLYR
    INTEGER, INTENT(IN )::   IFSNOW
    INTEGER, INTENT(IN )::   ISFFLX
@@ -960,6 +965,7 @@ CONTAINS
    INTEGER , INTENT(IN)        ::     urban_map_zgrd
    INTEGER, INTENT(IN )::   NUM_URBAN_HI
    INTEGER, INTENT(IN )::   use_wudapt_lcz
+   INTEGER, INTENT(IN )::   use_lcz_interpolation
    LOGICAL, INTENT(IN )::   slucm_distributed_drag
    REAL, OPTIONAL, DIMENSION( ims:ime,                     jms:jme ), INTENT(INOUT) :: tsk_rural
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zrd, jms:jme ), INTENT(INOUT) :: trb_urb4d
@@ -998,10 +1004,26 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_ndm, jms:jme ),INTENT(INOUT) :: dg_urb3d !GRZ
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zdf, jms:jme ),INTENT(INOUT) :: lfr_urb3d !GRZ
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_ndm, jms:jme ),INTENT(INOUT) :: lfg_urb3d !GRZ
-   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_hi, jms:jme ), INTENT(IN)  :: hi_urb2d  !urban
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_gd, jms:jme ), INTENT(INOUT) :: tgv_urb4d !GARDEN
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_gd, jms:jme ), INTENT(INOUT) :: qg_urb4d !GARDEN
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_ndm, jms:jme ), INTENT(INOUT) :: sfgv_urb3d !GARDEN
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_ndm, jms:jme ), INTENT(INOUT) :: lfgv_urb3d !GARDEN
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_hi, jms:jme ), INTENT(INOUT)  :: hi_urb2d  !urban
+   real,optional,dimension( ims:ime, jms:jme ), INTENT(INOUT) ::tmr_11
+   real,optional,dimension( ims:ime, jms:jme ), INTENT(INOUT) ::tmr_12
+   real,optional,dimension( ims:ime, jms:jme ), INTENT(INOUT) ::tmr_13
+   real,optional,dimension( ims:ime, jms:jme ), INTENT(INOUT) ::tmr_21
+   real,optional,dimension( ims:ime, jms:jme ), INTENT(INOUT) ::tmr_22
+   real,optional,dimension( ims:ime, jms:jme ), INTENT(INOUT) ::tmr_23
+   real,optional,dimension( ims:ime, jms:jme ), INTENT(INOUT) ::comf_10
+   real,optional,dimension( ims:ime, jms:jme ), INTENT(INOUT) ::comf_50
+   real,optional,dimension( ims:ime, jms:jme ), INTENT(INOUT) ::comf_90
+   real,optional,dimension( ims:ime,1:num_urban_ncomf, jms:jme ), INTENT(INOUT) :: hist_comf
+   INTEGER , INTENT(IN)        ::     num_urban_ncomf
+
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN)  :: lp_urb2d  !urban
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN)  :: lb_urb2d  !urban
-   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN)  :: hgt_urb2d !urban
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)  :: hgt_urb2d !urban
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN)  :: mh_urb2d  !urban
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN)  :: stdh_urb2d!urban
    REAL, OPTIONAL, DIMENSION( ims:ime, 4, jms:jme ), INTENT(IN)  :: lf_urb2d  !urban
@@ -1021,7 +1043,8 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::dlg_bep   !Height above ground
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::sf_bep  !Fraction air at the face of grid cell
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::dl_u_bep  !Length scale
-
+   real,optional,dimension( ims:ime, jms:jme ), INTENT(INOUT) :: BW_URB2D
+   real,optional,dimension( ims:ime, jms:jme ), INTENT(INOUT) :: SW_URB2D
 !  arguments for Ocean Mixed Layer Model
    REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(INOUT )::   TML, T0ML, HML, H0ML, HUML, HVML
    REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(IN    )::   F, TMOML
@@ -2756,6 +2779,7 @@ CONTAINS
                 trv_urb4d,qr_urb4d,qgr_urb3d,tgr_urb3d,         & !GRZ
                 drain_urb4d,draingr_urb3d,sfrv_urb3d,           & !GRZ
                 lfrv_urb3d,dgr_urb3d,dg_urb3d,lfr_urb3d,lfg_urb3d,& !GRZ
+                tgv_urb4d,sfgv_urb3d,lfgv_urb3d,qg_urb4d,             & !GARDEN
                 lp_urb2d,hi_urb2d,lb_urb2d,hgt_urb2d,           & !H multi-layer urban
                 mh_urb2d,stdh_urb2D,lf_urb2d,                   & !SLUCM
                 lf_urb2d_s, z0_urb2d,                           & !SLUCM
@@ -2819,7 +2843,8 @@ CONTAINS
                CALL lsm(dz8w,qv_curr,p8w,t_phy,tsk,                 &
                 hfx,qfx,lh,grdflx,qgh,gsw,swdown,swddir,swddif,     &
                 glw,smstav,smstot,    &
-                sfcrunoff,udrunoff,ivgtyp,isltyp,isurban,isice,vegfra,        &
+                sfcrunoff,udrunoff,ivgtyp,urban_vegetation,     &
+                isltyp,isurban,isice,vegfra,        &
                 albedo,albbck,znt,z0, tmn,xland,xice,emiss, embck,    &
                 snowc,qsfc,rainbl,                              &
                 mminlu,                                         &
@@ -2889,6 +2914,11 @@ CONTAINS
                 trv_urb4d,qr_urb4d,qgr_urb3d,tgr_urb3d,         & !GRZ
                 drain_urb4d,draingr_urb3d,sfrv_urb3d,           & !GRZ
                 lfrv_urb3d,dgr_urb3d,dg_urb3d,lfr_urb3d,lfg_urb3d,& !GRZ
+                tgv_urb4d,sfgv_urb3d,lfgv_urb3d,qg_urb4d,             & !GARDEN
+                tmr_11,tmr_12,tmr_13,tmr_21,tmr_22,tmr_23,      & !WRF COMFORT
+                comf_10,comf_50,comf_90,                        &
+                hist_comf,num_urban_ncomf,                      &
+                history_interval,                               &
                 lp_urb2d,hi_urb2d,lb_urb2d,hgt_urb2d,           & !H multi-layer urban
                 mh_urb2d,stdh_urb2D,lf_urb2d,                   & !SLUCM
                 lf_urb2d_s, z0_urb2d,                           & !SLUCM
@@ -2897,7 +2927,7 @@ CONTAINS
                 a_u_bep,a_v_bep,a_t_bep,a_q_bep,                & !O multi-layer urban
                 a_e_bep,b_u_bep,b_v_bep,                        & !O multi-layer urban
                 b_t_bep,b_q_bep,b_e_bep,dlg_bep,                & !O multi-layer urban
-                dl_u_bep,sf_bep,vl_bep                          & !O multi-layer urban
+                dl_u_bep,sf_bep,vl_bep,BW_URB2D,SW_URB2D        & !O multi-layer urban
 #ifdef WRF_HYDRO
                 ,sfcheadrt,INFXSRT, soldrain                    &
 #endif
@@ -3126,7 +3156,7 @@ CONTAINS
          CALL wrf_debug(100,'in NOAHMP DRV')
          CALL noahmplsm(ITIMESTEP,       YR, JULIAN_IN,   COSZEN, XLAT,XLONG, &
 	           DZ8W,     DTBL,      DZS,     NUM_SOIL_LAYERS,         DX, &
-		 IVGTYP,   ISLTYP,   VEGFRA,   SHDMAX,       TMN,             &
+		 IVGTYP,URBAN_VEGETATION,   ISLTYP,   VEGFRA,   SHDMAX,       TMN,             &
 		  XLAND,     XICE,     XICE_THRESHOLD,   CROPCAT,             &
                PLANTING,  HARVEST,SEASON_GDD,                               &
                   IDVEG, IOPT_CRS, IOPT_BTR, IOPT_RUN,  IOPT_SFC,   IOPT_FRZ, &
@@ -3182,12 +3212,13 @@ CONTAINS
 
          IF(SF_URBAN_PHYSICS > 0 ) THEN  !urban
          
-	   call noahmp_urban (sf_urban_physics,     NUM_SOIL_LAYERS,     IVGTYP,ITIMESTEP,  & ! IN : Model configuration 
+	   call noahmp_urban (sf_urban_physics,     NUM_SOIL_LAYERS,   DZS, TSK,       TSLB,    SMOIS,  &
+                             IVGTYP,      ITIMESTEP,                                        & ! IN : Model configuration 
                                DTBL,         COSZEN,     XLAT_URB2D,                        & ! IN : Time/Space-related
                               T_PHY,        QV_CURR,          U_PHY,      V_PHY,   SWDOWN,  & ! IN : Forcing
                              SWDDIR,         SWDDIF,                                        &
 		                GLW,            P8W,         RAINBL,       DZ8W,      ZNT,  & ! IN : Forcing
-                                TSK,            HFX,            QFX,         LH,   GRDFLX,  & ! IN/OUT : LSM 
+                                HFX,            QFX,         LH,   GRDFLX,  & ! IN/OUT : LSM 
 		             ALBEDO,          EMISS,           QSFC,                        & ! IN/OUT : LSM 
                             ids,ide,        jds,jde,        kds,kde,                        &
                             ims,ime,        jms,jme,        kms,kme,                        &
@@ -3227,7 +3258,10 @@ CONTAINS
                           trv_urb4d,       qr_urb4d,      qgr_urb3d,  tgr_urb3d,            & !GRZ
                         drain_urb4d,  draingr_urb3d,     sfrv_urb3d, lfrv_urb3d,            & !GRZ
                           dgr_urb3d,       dg_urb3d,      lfr_urb3d,  lfg_urb3d,            & !GRZ
-                           lp_urb2d,       hi_urb2d,       lb_urb2d,  hgt_urb2d,            & !H multi-layer urban
+                          tgv_urb4d,     sfgv_urb3d,     lfgv_urb3d,   qg_urb4d,            & !GARDEN
+                          tmr_11,tmr_12,tmr_13,tmr_21,tmr_22,tmr_23,                        &!WRF COMFORT
+                          comf_10,comf_50,comf_90,hist_comf,num_urban_ncomf,history_interval,& 
+                          lp_urb2d,       hi_urb2d,       lb_urb2d,  hgt_urb2d,            & !H multi-layer urban
                            mh_urb2d,     stdh_urb2d,       lf_urb2d,                        & !SLUCM
                          lf_urb2d_s,       z0_urb2d,         vegfra,                        & !SLUCM
                              th_phy,            rho,          p_phy,        ust,            & !I multi-layer urban
@@ -3235,7 +3269,7 @@ CONTAINS
                             a_u_bep,        a_v_bep,        a_t_bep,    a_q_bep,            & !O multi-layer urban
                             a_e_bep,        b_u_bep,        b_v_bep,                        & !O multi-layer urban
                             b_t_bep,        b_q_bep,        b_e_bep,    dlg_bep,            & !O multi-layer urban
-                           dl_u_bep,         sf_bep,         vl_bep)                          !O multi-layer urban
+                           dl_u_bep,         sf_bep,         vl_bep,   BW_URB2D, SW_URB2D)                          !O multi-layer urban
 	 
 	 ENDIF 
 

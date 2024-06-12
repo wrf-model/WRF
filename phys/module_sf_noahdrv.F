@@ -38,7 +38,7 @@ CONTAINS
    SUBROUTINE lsm(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   HFX,QFX,LH,GRDFLX, QGH,GSW,SWDOWN,SWDDIR,SWDDIF,&
                   GLW,SMSTAV,SMSTOT, &
-                  SFCRUNOFF, UDRUNOFF,IVGTYP,ISLTYP,ISURBAN,ISICE,VEGFRA,    &
+                  SFCRUNOFF, UDRUNOFF,IVGTYP,URBAN_VEGETATION,ISLTYP,ISURBAN,ISICE,VEGFRA,    &
                   ALBEDO,ALBBCK,ZNT,Z0,TMN,XLAND,XICE,EMISS,EMBCK,   &
                   SNOWC,QSFC,RAINBL,MMINLU,                     &
                   num_soil_layers,DT,DZS,ITIMESTEP,             &
@@ -108,6 +108,10 @@ CONTAINS
                   trv_urb4d,qr_urb4d,qgr_urb3d,tgr_urb3d,         & !RMS
                   drain_urb4d,draingr_urb3d,sfrv_urb3d,           & !RMS
                   lfrv_urb3d,dgr_urb3d,dg_urb3d,lfr_urb3d,lfg_urb3d,& !RMS
+                  tgv_urb4d,sfgv_urb3d,lfgv_urb3d,qg_urb4d,            & !GARDEN
+                  tmr_11,tmr_12,tmr_13,tmr_21,tmr_22,tmr_23,    & !WRF COMFORT
+                  comf_10,comf_50,comf_90,hist_comf,num_urban_ncomf,  &
+                  history_interval,   &
                   lp_urb2d,hi_urb2d,lb_urb2d,hgt_urb2d,         & !H multi-layer urban
                   mh_urb2d,stdh_urb2d,lf_urb2d,                 & !SLUCM
                   lf_urb2d_s, z0_urb2d,                         & !SLUCM
@@ -116,7 +120,7 @@ CONTAINS
                   a_u_bep,a_v_bep,a_t_bep,a_q_bep,              & !O multi-layer urban
                   a_e_bep,b_u_bep,b_v_bep,                      & !O multi-layer urban
                   b_t_bep,b_q_bep,b_e_bep,dlg_bep,              & !O multi-layer urban
-                  dl_u_bep,sf_bep,vl_bep                        &
+                  dl_u_bep,sf_bep,vl_bep, BW_URB2D,SW_URB2D    &
 #ifdef WRF_HYDRO
                  ,sfcheadrt,INFXSRT,soldrain                    &   !O multi-layer urban
 #endif
@@ -285,7 +289,6 @@ CONTAINS
 
    REAL,    DIMENSION( ims:ime, jms:jme )                     , &
             INTENT(IN   )    ::                            TMN, &
-                                                         XLAND, &
                                                           XICE, &
                                                         VEGFRA, &
                                                         SHDMIN, &
@@ -299,6 +302,7 @@ CONTAINS
                                                            SR,  &
                                                        SWDDIR,  &
                                                        SWDDIF
+   REAL,    DIMENSION( ims:ime, jms:jme ),INTENT(INOUT   )    ::  XLAND
 
    REAL,    DIMENSION( ims:ime, jms:jme )                     , &
             INTENT(INOUT)    ::                         ALBBCK, &
@@ -315,8 +319,8 @@ CONTAINS
                                                           CPM
 
    INTEGER, DIMENSION( ims:ime, jms:jme )                     , &
-            INTENT(IN   )    ::                         IVGTYP, &
-                                                        ISLTYP
+            INTENT(INOUT   )    ::                         IVGTYP, &
+                                                        ISLTYP,URBAN_VEGETATION
 
    INTEGER, INTENT(IN)       ::     num_soil_layers,ITIMESTEP
 
@@ -652,11 +656,18 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_ndm, jms:jme ),INTENT(INOUT) :: dg_urb3d !GRZ
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zdf, jms:jme ),INTENT(INOUT) :: lfr_urb3d !GRZ
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_ndm, jms:jme ),INTENT(INOUT) :: lfg_urb3d !GRZ
-   
-   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_hi, jms:jme ), INTENT(IN) :: hi_urb2d
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_gd, jms:jme ), INTENT(INOUT) :: tgv_urb4d !GARDEN
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_gd, jms:jme ), INTENT(INOUT) :: qg_urb4d !GARDEN
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_ndm, jms:jme ), INTENT(INOUT) :: sfgv_urb3d !GARDEN
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_ndm, jms:jme ), INTENT(INOUT) :: lfgv_urb3d !GARDEN 
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_hi, jms:jme ), INTENT(INOUT) :: hi_urb2d
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) ::tmr_11,tmr_12,tmr_13,tmr_21,tmr_22,tmr_23 !WRF COMFORT
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) ::comf_10,comf_50,comf_90 !WRF COMFORT
+   REAL, OPTIONAL, DIMENSION( ims:ime,1:num_urban_ncomf, jms:jme ), INTENT(INOUT) ::hist_comf !WRF COMFORT
+      INTEGER, INTENT(IN  ) ::                               num_urban_ncomf !WRF COMFORT
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: lp_urb2d
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: lb_urb2d
-   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: hgt_urb2d
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: hgt_urb2d
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: mh_urb2d
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: stdh_urb2d
    REAL, OPTIONAL, DIMENSION( ims:ime, 4, jms:jme ), INTENT(IN) :: lf_urb2d
@@ -676,7 +687,7 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::dlg_bep   !Height above ground
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::sf_bep  !Fraction air at the face of grid cell
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::dl_u_bep  !Length scale
-
+   integer, OPTIONAL,  INTENT(IN) :: history_interval
 ! Local variables for multi-layer UCM (Martilli et al. 2002)
    REAL,    DIMENSION( its:ite, jts:jte ) :: HFX_RURAL,LH_RURAL,GRDFLX_RURAL ! ,RN_RURAL
    REAL,    DIMENSION( its:ite, jts:jte ) :: QFX_RURAL ! ,QSFC_RURAL,UMOM_RURAL,VMOM_RURAL
@@ -689,6 +700,7 @@ CONTAINS
    REAL, DIMENSION(its:ite,jts:jte) :: RL_UP_URB
    REAL, DIMENSION(its:ite,jts:jte) ::RS_ABS_URB
    REAL, DIMENSION(its:ite,jts:jte) ::GRDFLX_URB
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: BW_URB2D,SW_URB2D
    REAL :: SIGMA_SB,RL_UP_RURAL,RL_UP_TOT,RS_ABS_TOT,UMOM,VMOM
    REAL :: CMR_URB, CHR_URB, CMC_URB, CHC_URB, CMGR_URB, CHGR_URB
    REAL :: frc_urb,lb_urb
@@ -966,15 +978,19 @@ CONTAINS
                       IVGTYP(I,J) == LCZ_3      .or. IVGTYP(I,J) == LCZ_4 .or. IVGTYP(I,J) == LCZ_5 .or. &
                       IVGTYP(I,J) == LCZ_6      .or. IVGTYP(I,J) == LCZ_7 .or. IVGTYP(I,J) == LCZ_8 .or. &
                       IVGTYP(I,J) == LCZ_9      .or. IVGTYP(I,J) == LCZ_10 .or. IVGTYP(I,J) == LCZ_11 ) THEN
-	
+                 IF(URBAN_VEGETATION(I,J).gt.0)THEN
+                 VEGTYP = URBAN_VEGETATION(I,J)
+                 SHDFAC = SHDTBL(VEGTYP)
+                 ELSE	
 		 VEGTYP = NATURAL
                  SHDFAC = SHDTBL(NATURAL)
                  ALBEDOK =0.2         !  0.2
                  ALBBRD  =0.2         !0.2
                  EMISSI = 0.98                                 !for VEGTYP=5
+                 ENDIF
                  LWDN   = GLW(I,J) * EMISSI
                  SOLNET = SOLDN * (1.0 - ALBEDOK)
-
+                   
 		 IF ( FRC_URB2D(I,J) < 0.99 ) THEN
                    if(sf_urban_physics.eq.1)then
                      T1= ( TSK(I,J) -FRC_URB2D(I,J) * TS_URB2D (I,J) )/ (1-FRC_URB2D(I,J))
@@ -1647,7 +1663,8 @@ CONTAINS
          end do
         
 
-       CALL BEP_BEM(frc_urb2d,utype_urb2d,itimestep,dz8w,dt,u_phy,v_phy, &
+       CALL BEP_BEM(TSK, nsoil,dzs,tslb,smois,                        &
+                BW_URB2D,SW_URB2D,frc_urb2d,utype_urb2d,itimestep,dz8w,dt,u_phy,v_phy, &
                 th_phy,rho,p_phy,swdown,glw,                           &
                 gmt,julday,xlong,xlat,declin_urb,cosz_urb2d,omg_urb2d, &
                 num_urban_ndm, urban_map_zrd, urban_map_zwd, urban_map_gd,  &
@@ -1663,6 +1680,10 @@ CONTAINS
                 trv_urb4d,qr_urb4d,qgr_urb3d,tgr_urb3d,                & !RMS
                 drain_urb4d,draingr_urb3d,sfrv_urb3d,                  & !RMS
                 lfrv_urb3d,dgr_urb3d,dg_urb3d,lfr_urb3d,lfg_urb3d,     & !RMS
+                tgv_urb4d,sfgv_urb3d,lfgv_urb3d,qg_urb4d,              & !GARDEN
+                tmr_11,tmr_12,tmr_13,tmr_21,tmr_22,tmr_23,             & !WRF COMFORT
+                comf_10,comf_50,comf_90,                               &
+                hist_comf,num_urban_ncomf,                             &
                 rainbl,swddir,swddif,                                  & !RMS
                 lp_urb2d,hi_urb2d,lb_urb2d,hgt_urb2d,                  &
                 a_u_bep,a_v_bep,a_t_bep,                               &
@@ -1670,6 +1691,7 @@ CONTAINS
                 b_t_bep,b_e_bep,b_q_bep,dlg_bep,                       &
                 dl_u_bep,sf_bep,vl_bep,                                &
                 rl_up_urb,rs_abs_urb,emiss_urb,grdflx_urb,qv3d,        &
+                history_interval,                                      &
                 ids,ide, jds,jde, kds,kde,                             &
                 ims,ime, jms,jme, kms,kme,                             &
                 its,ite, jts,jte, kts,kte )
@@ -2441,6 +2463,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   trv_urb4d,qr_urb4d,qgr_urb3d,tgr_urb3d,         & !RMS
                   drain_urb4d,draingr_urb3d,sfrv_urb3d,           & !RMS
                   lfrv_urb3d,dgr_urb3d,dg_urb3d,lfr_urb3d,lfg_urb3d,& !RMS
+                  tgv_urb4d,sfgv_urb3d,lfgv_urb3d,qg_urb4d,     & !GARDEN
                   lp_urb2d,hi_urb2d,lb_urb2d,hgt_urb2d,         & !H multi-layer urban
                   mh_urb2d,stdh_urb2d,lf_urb2d,                 & !SLUCM
                   lf_urb2d_s, z0_urb2d,                         & !SLUCM
@@ -2616,7 +2639,6 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
 
    REAL,    DIMENSION( ims:ime, jms:jme )                     , &
             INTENT(IN   )    ::                            TMN, &
-                                                         XLAND, &
                                                           XICE, &
                                                         VEGFRA, &
                                                         SHDMIN, &
@@ -2628,6 +2650,8 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                                                            GLW, &
                                                         RAINBL, &
                                                         SR
+    REAL,    DIMENSION( ims:ime, jms:jme )                     , &
+            INTENT(INOUT   )    ::                         XLAND
    REAL,    DIMENSION( ims:ime, jms:jme )                     , &
             INTENT(INOUT)    ::                         ALBBCK, &
                                                             Z0, &
@@ -2984,7 +3008,11 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_ndm, jms:jme ),INTENT(INOUT) :: dg_urb3d !GRZ
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zdf, jms:jme ),INTENT(INOUT) :: lfr_urb3d !GRZ
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_ndm, jms:jme ),INTENT(INOUT) :: lfg_urb3d !GRZ
-   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_hi, jms:jme ), INTENT(IN) :: hi_urb2d
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_gd, jms:jme ), INTENT(INOUT) :: tgv_urb4d !GARDEN
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_gd, jms:jme ), INTENT(INOUT) :: qg_urb4d !GARDEN
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_ndm, jms:jme ), INTENT(INOUT) :: sfgv_urb3d !GARDEN
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_ndm, jms:jme ), INTENT(INOUT) :: lfgv_urb3d !GARDEN
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_hi, jms:jme ), INTENT(INOUT) :: hi_urb2d
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: lp_urb2d
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: lb_urb2d
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: hgt_urb2d
@@ -3509,8 +3537,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
           CALL wrf_error_fatal('Urban irrigation option is for SF_URBAN_PHYSICS == 1 only')
           ENDIF
           ENDIF
-            
-            IF( SF_URBAN_PHYSICS==2.OR.SF_URBAN_PHYSICS==3 ) THEN
+          IF( SF_URBAN_PHYSICS==2.OR.SF_URBAN_PHYSICS==3 ) THEN
 !             print*, 'MOSAIC is not designed to work with SF_URBAN_PHYSICS=2 or SF_URBAN_PHYSICS=3'
             ENDIF
       
@@ -3554,13 +3581,13 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                 SH2O(I,NS,J) = 1.0
              ENDDO
              LAI(I,J) = 0.01
-      
+       
              CYCLE ILOOP
       
           ELSEIF (ICE == 0) THEN
       
              ! Non-glacial land
-      
+         
              CALL SFLX (I,J,FFROZP, ISURBAN, DT,ZLVL,NSOIL,SLDPTH,       &    !C
                        LOCAL,                                            &    !L
                        LUTYPE, SLTYPE,                                   &    !CL

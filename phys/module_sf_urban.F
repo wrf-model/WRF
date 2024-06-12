@@ -51,6 +51,11 @@ USE module_model_constants, ONLY :  piconst
    REAL, ALLOCATABLE, DIMENSION(:) :: PERFLO_TBL
    REAL, ALLOCATABLE, DIMENSION(:) :: PV_FRAC_ROOF_TBL !GRZ
    REAL, ALLOCATABLE, DIMENSION(:) :: GR_FRAC_ROOF_TBL !GRZ
+   REAL, ALLOCATABLE, DIMENSION(:) :: GR_FRAC_GROUND_TBL !GRZ
+   REAL, ALLOCATABLE, DIMENSION(:) :: FRC_TREE_TBL !GRZ
+   REAL, ALLOCATABLE, DIMENSION(:) :: ABSV_TREE_TBL !GRZ
+   REAL, ALLOCATABLE, DIMENSION(:) :: LAI_TREE_TBL !GRZ
+   INTEGER, ALLOCATABLE, DIMENSION(:) :: LEV_TREE_TBL !GRZ
    INTEGER :: GR_FLAG_TBL !GRZ
    INTEGER :: GR_TYPE_TBL !GRZ
    REAL, DIMENSION(1:24)           :: IRHO_TBL
@@ -66,7 +71,8 @@ USE module_model_constants, ONLY :  piconst
    REAL, ALLOCATABLE, DIMENSION(:) :: TRLEND_TBL, TBLEND_TBL, TGLEND_TBL
    REAL, ALLOCATABLE, DIMENSION(:) :: AKANDA_URBAN_TBL
 !for BEP
-
+    INTEGER :: THERM_COMF_TBL
+   REAL, ALLOCATABLE, DIMENSION(:) :: MET_COMF_TBL,CLO_COMF_TBL,WME_COMF_TBL,WEIGHT_COMF_TBL,HEIGHT_COMF_TBL
    ! MAXDIRS :: The maximum number of street directions we're allowed to define
    INTEGER, PARAMETER :: MAXDIRS = 3
    ! MAXHGTS :: The maximum number of building height bins we're allowed to define
@@ -2260,7 +2266,26 @@ ENDIF
             if(allocate_status /= 0) FATAL_ERROR('Error allocating PV_FRAC_ROOF_TBL in urban_param_init')
             ALLOCATE( GR_FRAC_ROOF_TBL(ICATE), stat=allocate_status )
             if(allocate_status /= 0) FATAL_ERROR('Error allocating GR_FRAC_ROOF_TBL in urban_param_init')
-
+            ALLOCATE( GR_FRAC_GROUND_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating GR_FRAC_GROUND_TBL in urban_param_init')
+            ALLOCATE( FRC_TREE_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating FRC_TREE_TBL in urban_param_init')
+            ALLOCATE( ABSV_TREE_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating ABSV_TREE_TBL in urban_param_init')
+            ALLOCATE( LAI_TREE_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating LAI_TREE_TBL in urban_param_init')
+            ALLOCATE( LEV_TREE_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating LEV_TREE_TBL in urban_param_init')
+            ALLOCATE( MET_COMF_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating MET_COMF_TBL in urban_param_init')
+            ALLOCATE( CLO_COMF_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating CLO_COMF_TBL in urban_param_init')
+            ALLOCATE( WME_COMF_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating WME_COMF_TBL in urban_param_init')
+            ALLOCATE( WEIGHT_COMF_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating WEIGTH_COMF_TBL in urban_param_init')
+            ALLOCATE( HEIGHT_COMF_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating HEIGTH_COMF_TBL in urban_param_init')
          endif
          numdir_tbl = 0
          street_direction_tbl = -1.E36
@@ -2459,10 +2484,34 @@ ENDIF
          read(string(indx+1:),*) pv_frac_roof_tbl(1:icate)
      else if ( name == "GR_FRAC_ROOF") then
          read(string(indx+1:),*) gr_frac_roof_tbl(1:icate)
+     else if ( name == "GR_FRAC_GROUND") then
+         read(string(indx+1:),*) gr_frac_ground_tbl(1:icate)
       else if (name == "GR_FLAG") then
          read(string(indx+1:),*) gr_flag_tbl
       else if (name == "GR_TYPE") then
          read(string(indx+1:),*) gr_type_tbl
+      else if (name == "FRC_TREE") then
+         read(string(indx+1:),*) frc_tree_tbl(1:icate)
+      else if (name == "ABSV_TREE") then
+         read(string(indx+1:),*) absv_tree_tbl(1:icate)
+      else if (name == "LAI_TREE") then
+         read(string(indx+1:),*) lai_tree_tbl(1:icate)
+      else if (name == "LEV_TREE") then
+         read(string(indx+1:),*) lev_tree_tbl(1:icate)
+       else if (name == "THERM_COMF") then
+         read(string(indx+1:),*) therm_comf_tbl
+         write(*,*)'therm_comf_tbl=',therm_comf_tbl
+      else if (name == "MET_COMF") then
+         read(string(indx+1:),*) met_comf_tbl(1:icate)
+         write(*,*)'met_comf_tbl=',met_comf_tbl
+      else if (name == "CLO_COMF") then
+         read(string(indx+1:),*) clo_comf_tbl(1:icate)
+      else if (name == "WME_COMF") then
+         read(string(indx+1:),*) WME_comf_tbl(1:icate)
+      else if (name == "WEIGHT_COMF") then
+         read(string(indx+1:),*) weight_comf_tbl(1:icate)
+      else if (name == "HEIGHT_COMF") then
+         read(string(indx+1:),*) height_comf_tbl(1:icate)
 
 !end BEP         
       else
@@ -2548,6 +2597,173 @@ ENDIF
    deallocate(road_width)
 
    END SUBROUTINE urban_param_init
+SUBROUTINE wudapt_interpolation(id,its,ite,jts,jte,ims,ime,jms,jme,kms,kme,         &
+                                   ids,ide,jds,jde,ISWATER,SF_PHYSICS,                         &
+                                   NLCAT,num_urban_hi,nurbm,                        &
+                                   LCZ_1,LCZ_2,LCZ_3,LCZ_4,LCZ_5,                   &
+                                   LCZ_6,LCZ_7,LCZ_8,LCZ_9,LCZ_10,LCZ_11,           &
+                                   BW_URB2D,HI_URB2D,SW_URB2D,HGT_URB2D,            &
+                                   FRC_URB2D,LANDUSEF,                              &
+                                   IVGTYP,LU_INDEX,URBAN_VEGETATION,LANDMASK,XLAND)
+
+   IMPLICIT NONE
+
+
+   INTEGER, INTENT(IN) :: id,its,ite,jts,jte,ids,ide,jds,jde,ims,ime,jms,jme,kms,kme,nlcat,num_urban_hi,nurbm
+   INTEGER :: itf,jtf,i,j,k,dir,UTYPE,heights,ISWATER,SF_PHYSICS
+   INTEGER, INTENT(IN) :: LCZ_1,LCZ_2,LCZ_3,LCZ_4,LCZ_5,LCZ_6,LCZ_7,LCZ_8,LCZ_9,LCZ_10,LCZ_11
+   REAL, DIMENSION( ims:ime,1:num_urban_hi , jms:jme), INTENT(INOUT) :: HI_URB2D
+   REAL, DIMENSION (num_urban_hi,nurbm) :: HI_TBL
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: BW_URB2D
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: SW_URB2D
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: HGT_URB2D
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FRC_URB2D
+   INTEGER, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: IVGTYP
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LU_INDEX
+   REAL, DIMENSION( ims:ime, NLCAT, jms:jme ) , INTENT(IN)::   LANDUSEF
+   REAL, DIMENSION(ims:kme,nurbm,jms:jme) :: LCZ_FRACTION
+   REAL,DIMENSION(nurbm) :: H_AVE
+   REAL :: INDEX_URBAN
+   REAL :: FRAC_LCZ,TOT_AREA_R
+   REAL :: INDEX_VEGETATION,SUM_URBAN
+   INTEGER, DIMENSION( ims:ime, jms:jme ), INTENT(OUT) :: URBAN_VEGETATION
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LANDMASK,XLAND
+   itf=min0(ite,ide-1)
+     jtf=min0(jte,jde-1)
+
+  
+   do i=ims,ime
+   do j=jms,jme
+    FRC_URB2D(I,J)=0.
+    BW_URB2D(I,J)=0.
+    SW_URB2D(I,J)=0.
+     FRAC_LCZ=0.
+     TOT_AREA_R=0.
+     INDEX_URBAN=0.
+     HGT_URB2D(I,J)=0.
+     SUM_URBAN=0.
+     INDEX_VEGETATION=0.
+     URBAN_VEGETATION(I,J)=0
+     do K=1,nurbm
+     H_AVE(K)=0.
+     do heights=1,NUMHGT_TBL(K)
+     H_AVE(K)=H_AVE(K)+HEIGHT_BIN_TBL(heights,K)*HPERCENT_BIN_TBL(heights,K)/100.
+     enddo
+     enddo
+
+     do K=1,LCZ_11
+         if(LANDUSEF(I,K,J).gt.INDEX_URBAN)then
+         INDEX_URBAN=LANDUSEF(I,K,J)
+         IVGTYP(I,J)=K
+         LU_INDEX(I,J)=K
+         endif
+     enddo
+
+     FRAC_LCZ=0.
+     UTYPE=0
+     do K=LCZ_1,LCZ_11
+       UTYPE=K-LCZ_1+1
+       FRAC_LCZ=FRAC_LCZ+LANDUSEF(I,K,J)
+       FRC_URB2D(I,J)=FRC_URB2D(I,J)+LANDUSEF(I,K,J)*FRC_URB_TBL(UTYPE)
+     enddo
+
+      if(FRC_URB2D(I,J).ge.0.1)then
+
+       INDEX_URBAN=0
+       do K=1,LCZ_11
+         if(LANDUSEF(I,K,J).gt.INDEX_URBAN)then
+         INDEX_URBAN=LANDUSEF(I,K,J)
+         IVGTYP(I,J)=K
+         LU_INDEX(I,J)=K
+         endif
+        enddo
+      
+
+      do K=LCZ_1,LCZ_11
+       UTYPE=K-LCZ_1+1
+       TOT_AREA_R=TOT_AREA_R+BUILDING_WIDTH_TBL(1,UTYPE)*BUILDING_WIDTH_TBL(2,UTYPE)*LANDUSEF(I,K,J)/FRAC_LCZ
+       enddo
+        
+
+        do K=LCZ_1,LCZ_11
+        UTYPE=K-LCZ_1+1
+        HGT_URB2D(I,J)=HGT_URB2D(I,J)+H_AVE(UTYPE)*LANDUSEF(I,K,J)/FRAC_LCZ*(BUILDING_WIDTH_TBL(2,UTYPE)*BUILDING_WIDTH_TBL(1,UTYPE))/TOT_AREA_R
+       ! LP_URB2D(I,J)=LP_URB2D(I,J)+FRC_URB_TBL(UTYPE)*BUILDING_WIDTH_TBL(1,UTYPE)/(BUILDING_WIDTH_TBL(1,UTYPE)+STREET_WIDTH_TBL(1,UTYPE))*LANDUSEF(I,K,J)/FRAC_LCZ
+        BW_URB2D(I,J)=BW_URB2D(I,J)+BUILDING_WIDTH_TBL(1,UTYPE)*LANDUSEF(I,K,J)/FRAC_LCZ
+       
+        !LB_URB2D(I,J)=LB_URB2D(I,J)+FRC_URB_TBL(UTYPE)*(BUILDING_WIDTH_TBL(1,UTYPE)+2*H_AVE(UTYPE))/(BUILDING_WIDTH_TBL(1,UTYPE)+STREET_WIDTH_TBL(1,UTYPE))*LANDUSEF(I,K,J)/FRAC_LCZ
+        SW_URB2D(I,J)=SW_URB2D(I,J)+STREET_WIDTH_TBL(1,UTYPE)*LANDUSEF(I,K,J)/FRC_URB2D(I,J)
+        
+        SUM_URBAN=SUM_URBAN+LANDUSEF(I,K,J)/FRAC_LCZ
+        enddo
+     do heights=1,num_urban_hi
+      HI_URB2D(I,heights,J)=0.
+     do K=LCZ_1,LCZ_11
+      UTYPE=K-LCZ_1+1
+      HI_URB2D(I,heights,J)=HI_URB2D(I,heights,J)+max(0.,HPERCENT_BIN_TBL(heights,UTYPE))*LANDUSEF(I,K,J)/FRAC_LCZ
+     enddo
+     enddo
+
+     do K=1,LCZ_1-1
+     if(LANDUSEF(I,K,J).gt.INDEX_VEGETATION)then
+        INDEX_VEGETATION=LANDUSEF(I,K,J)
+        URBAN_VEGETATION(I,J)=K
+        IF(URBAN_VEGETATION(I,J).eq.ISWATER)then
+        URBAN_VEGETATION(I,J)=0
+        ENDIF
+     endif
+     enddo
+
+
+     else
+     INDEX_VEGETATION=0.
+     do K=1,LCZ_1-1
+        if(LANDUSEF(I,K,J).gt.INDEX_VEGETATION)then
+        INDEX_VEGETATION=LANDUSEF(I,K,J)
+        IVGTYP(I,J)=K
+        LU_INDEX(I,J)=K
+
+        FRC_URB2D(I,J)=0.
+        HGT_URB2D(I,J)=0.
+        endif
+     enddo
+    endif
+    if(FRC_URB2D(I,J).gt.0.9)URBAN_VEGETATION(I,J)=0
+    if(FRC_URB2D(I,J).eq.0. .and. IVGTYP(I,J).ge.LCZ_1)THEN
+    INDEX_VEGETATION=0.
+     do K=1,LCZ_1-1
+        if(LANDUSEF(I,K,J).gt.INDEX_VEGETATION)then
+        INDEX_VEGETATION=LANDUSEF(I,K,J)
+        IVGTYP(I,J)=K
+        LU_INDEX(I,J)=K
+        endif
+     enddo
+    endif
+    if(SF_PHYSICS.EQ.4)THEN
+    if(IVGTYP(I,J).eq.ISWATER)then
+        LANDMASK(I,J)=-1
+        XLAND(I,J)=2
+    else
+        LANDMASK(I,J)=1
+        XLAND(I,J)=1
+    endif
+    ELSEIF(SF_PHYSICS.EQ.2)THEN
+    IF(URBAN_VEGETATION(I,J).eq.21)THEN
+    URBAN_VEGETATION(I,J)=17
+    ENDIF
+    IF(IVGTYP(I,J).eq.21)THEN
+    IVGTYP(I,J)=17
+    LU_INDEX(I,J)=17
+    XLAND(I,J)=2
+    LANDMASK(I,J)=-1
+    ENDIF
+    ENDIF
+   enddo
+   enddo
+
+   RETURN
+   END SUBROUTINE wudapt_interpolation
+   
 !===========================================================================
 !
 ! subroutine urban_var_init: initialization of urban state variables
@@ -2587,6 +2803,7 @@ ENDIF
                              TRV_URB4D,QR_URB4D,QGR_URB3D,TGR_URB3D,       & !GRZ
                              DRAIN_URB4D,DRAINGR_URB3D,SFRV_URB3D,         & !GRZ
                              LFRV_URB3D,DGR_URB3D,DG_URB3D,LFR_URB3D,LFG_URB3D,&!GRZ
+                             TGV_URB4D,SFGV_URB3D,LFGV_URB3D,QG_URB4D,& !GARDEN
                              SMOIS_URB,                                    &
                              LP_URB2D,HI_URB2D,LB_URB2D,                   & ! inout
                              HGT_URB2D,MH_URB2D,STDH_URB2D,                & ! inout
@@ -2598,9 +2815,9 @@ ENDIF
                              A_E_BEP,B_U_BEP,B_V_BEP,                      & ! inout multi-layer urban
                              B_T_BEP,B_Q_BEP,B_E_BEP,DLG_BEP,              & ! inout multi-layer urban
                              DL_U_BEP,SF_BEP,VL_BEP,                       & ! inout multi-layer urban
-                             FRC_URB2D, UTYPE_URB2D,USE_WUDAPT_LCZ)                         ! inout
+                             FRC_URB2D, UTYPE_URB2D,USE_WUDAPT_LCZ,BW_URB2D,SW_URB2D)                         ! inout
    IMPLICIT NONE
-
+   
    INTEGER, INTENT(IN) :: ISURBAN, sf_urban_physics,use_wudapt_lcz
    INTEGER, INTENT(IN) :: LCZ_1,LCZ_2,LCZ_3,LCZ_4,LCZ_5,LCZ_6,LCZ_7,LCZ_8,LCZ_9,LCZ_10,LCZ_11
    INTEGER, INTENT(IN) :: ims,ime,jms,jme,kms,kme,num_soil_layers
@@ -2694,6 +2911,10 @@ ENDIF
    REAL, DIMENSION( ims:ime, 1:num_urban_ndm, jms:jme ),INTENT(INOUT) :: DG_URB3D !GRZ
    REAL, DIMENSION( ims:ime, 1:urban_map_zdf, jms:jme ),INTENT(INOUT) :: LFR_URB3D !GRZ
    REAL, DIMENSION( ims:ime, 1:num_urban_ndm, jms:jme ), INTENT(INOUT) :: LFG_URB3D !GRZ
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_gd, jms:jme ), INTENT(INOUT)  :: TGV_URB4D !GARDEN
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_gd, jms:jme ), INTENT(INOUT)  :: QG_URB4D !GARDEN
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_ndm, jms:jme ), INTENT(INOUT) :: SFGV_URB3D !GARDEN
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_ndm, jms:jme ), INTENT(INOUT) :: LFGV_URB3D !GARDEN
    REAL, DIMENSION( ims:ime, 1:num_soil_layers, jms:jme ), INTENT(IN) ::SMOIS_URB
    REAL, DIMENSION( ims:ime,1:num_urban_hi , jms:jme), INTENT(INOUT) :: HI_URB2D
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LP_URB2D
@@ -2717,14 +2938,14 @@ ENDIF
    REAL, DIMENSION(ims:ime, kms:kme,jms:jme),INTENT(INOUT) :: SF_BEP
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: DL_U_BEP
 !
-   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FRC_URB2D
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FRC_URB2D,BW_URB2D,SW_URB2D
    INTEGER, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: UTYPE_URB2D
    INTEGER                                            :: UTYPE_URB
 !FS
    INTEGER :: SWITCH_URB
 
    INTEGER :: I,J,K,CHECK
-
+   
    CHECK = 0
 
    DO I=ims,ime
@@ -2951,8 +3172,11 @@ ENDIF
         TRV_URB4D(I,:,J)=TBLEND_TBL(UTYPE_URB2D(I,J))
        ELSE
        TRV_URB4D(I,:,J)=tlayer0_urb(I,1,J) !GRZ
-      ENDIF
-
+       ENDIF
+            QG_URB4D(I,:,J)=SMOIS_URB(I,1,J)
+            TGV_URB4D(I,:,J)=tlayer0_urb(I,1,J)
+            SFGV_URB3D(I,:,J)=0.
+            LFGV_URB3D(I,:,J)=0.
             TLEV_URB3D(I,:,J)=tlayer0_urb(I,1,J)
             TW1LEV_URB3D(I,:,J)=tlayer0_urb(I,1,J)
             TW2LEV_URB3D(I,:,J)=tlayer0_urb(I,1,J)

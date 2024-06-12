@@ -627,7 +627,7 @@ BENCH_START(surf_driver_tim)
      &        ,IRR_START_JULIANDAY=config_flags%irr_start_julianday                                          &
      &        ,IRR_END_JULIANDAY=config_flags%irr_end_julianday                                              &
      &        ,IRR_FREQ=config_flags%irr_freq,IRR_PH=config_flags%irr_ph,IRR_RAND_FIELD=grid%irr_rand_field  & 
-     &        ,IVGTYP=grid%ivgtyp      ,LH=grid%lh              ,LOWLYR=grid%lowlyr      &
+     &        ,IVGTYP=grid%ivgtyp,URBAN_VEGETATION=grid%urban_vegetation      ,LH=grid%lh              ,LOWLYR=grid%lowlyr      &
      &        ,MAVAIL=grid%mavail      ,NUM_SOIL_LAYERS=config_flags%num_soil_layers        &
      &        ,P8W=grid%p_hyd_w            ,PBLH=grid%pblh          ,PI_PHY=pi_phy      &
      &        ,PSFC=grid%psfc          ,PSHLTR=grid%pshltr      ,PSIH=psih          &
@@ -795,7 +795,6 @@ BENCH_START(surf_driver_tim)
      &        ,RN_URB2D=grid%rn_urb2d     , TS_URB2D=grid%ts_urb2d        & !H urban
      &        ,FRC_URB2D=grid%frc_urb2d                                   & !H urban
      &        ,UTYPE_URB2D=grid%utype_urb2d                               & !H urban
-     &        ,SWDDIR=grid%swddir,SWDDIF=grid%swddif                      & !multi-layer urban _gl
          ! Optional urban for BEP scheme
      &        ,SF_URBAN_PHYSICS=config_flags%sf_urban_physics             &
      &        ,num_urban_ndm = config_flags%num_urban_ndm                 & !multi-layer urban
@@ -811,6 +810,7 @@ BENCH_START(surf_driver_tim)
      &        ,urban_map_zgrd = config_flags%urban_map_zgrd               & !multi-layer urban
      &        ,NUM_URBAN_HI=config_flags%num_urban_hi                     & !multi-layer urban
      &        ,use_wudapt_lcz=config_flags%use_wudapt_lcz                 & !wudapt
+     &        ,use_lcz_interpolation=config_flags%use_lcz_interpolation   & !wudapt    
      &        ,slucm_distributed_drag=config_flags%slucm_distributed_drag & !SLUCM
      &        ,TSK_RURAL=grid%tsk_rural                                   & !multi-layer urban
      &        ,TRB_URB4D=grid%trb_urb4d,TW1_URB4D=grid%tw1_urb4d          & !multi-layer urban
@@ -844,6 +844,15 @@ BENCH_START(surf_driver_tim)
      &        ,DG_URB3D=grid%dg_urb3d                                     & !GRZ
      &        ,LFR_URB3D=grid%lfr_urb3d                                   & !GRZ
      &        ,LFG_URB3D=grid%lfg_urb3d                                   & !GRZ
+     &        ,TGV_URB4D=grid%tgv_urb4d                                   & !GARDEN
+     &        ,SFGV_URB3D=grid%sfgv_urb3d                                   & !GARDEN
+     &        ,LFGV_URB3D=grid%lfgv_urb3d                                   & !GARDEN
+     &        ,QG_URB4D=grid%qg_urb4d                                   & !GARDEN     
+     &        ,TMR_11=grid%tmr_11,TMR_12=grid%tmr_12,TMR_13=grid%tmr_13   & !WRF COMFORT
+     &        ,TMR_21=grid%tmr_21,TMR_22=grid%tmr_22,TMR_23=grid%tmr_23  &  !WRF COMFORT
+     &        ,COMF_10=grid%comf_10,COMF_50=grid%comf_50,COMF_90=grid%comf_90 & ! WRF COMFORT
+     &        ,HIST_COMF=grid%hist_comf,num_urban_ncomf = config_flags%num_urban_ncomf                 &      
+     &        ,SWDDIR=grid%swddir,SWDDIF=grid%swddif                      & !multi-layer urban _gl
      &        ,LP_URB2D=grid%lp_urb2d,HI_URB2D=grid%hi_urb2d              & !multi-layer urban
      &        ,LB_URB2D=grid%lb_urb2d,HGT_URB2D=grid%hgt_urb2d            & !multi-layer urban
      &        ,MH_URB2D=grid%mh_urb2d,STDH_URB2D=grid%stdh_urb2d          & !SLUCM
@@ -858,6 +867,7 @@ BENCH_START(surf_driver_tim)
      &        ,SF_BEP=grid%sf_bep,VL_BEP=grid%vl_bep                            &
      &        ,A_E_BEP=grid%a_e_bep,B_E_BEP=grid%b_e_bep,DLG_BEP=grid%dlg_bep   &
      &        ,DL_U_BEP=grid%dl_u_bep                                           &
+     &        ,BW_URB2D=grid%bw_urb2d,SW_URB2D=grid%sw_urb2d               &
      &        ,CMR_SFCDIF=grid%cmr_sfcdif, CHR_SFCDIF=grid%chr_sfcdif     & !I/O urban
      &        ,CMC_SFCDIF=grid%cmc_sfcdif, CHC_SFCDIF=grid%chc_sfcdif     & !I/O urban
      &        ,CMGR_SFCDIF=grid%cmgr_sfcdif, CHGR_SFCDIF=grid%chgr_sfcdif & !I/O urban

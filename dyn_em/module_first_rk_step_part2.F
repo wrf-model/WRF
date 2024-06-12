@@ -43,7 +43,7 @@ CONTAINS
                           wrf_dm_maxval, wrf_err_message, local_communicator_x, local_communicator_y
     USE module_comm_dm, ONLY : halo_em_tke_c_sub,halo_em_tke_d_sub,halo_em_tke_e_sub            &
             ,halo_em_phys_pbl_sub,halo_em_phys_shcu_sub &
-            ,halo_em_fdda_sub,halo_em_phys_diffusion_sub,halo_em_tke_3_sub &
+            ,halo_em_fdda_sub,halo_em_phys_diffusion_sub,halo_em_phys_bep_sub,halo_em_tke_3_sub &
             ,halo_em_tke_5_sub,halo_obs_nudge_sub,period_bdy_em_a1_sub,period_bdy_em_phy_bc_sub &
             ,period_bdy_em_fdda_bc_sub,period_bdy_em_chem_sub,halo_em_phys_cu_sub,halo_em_helicity_sub
 #endif
@@ -437,6 +437,9 @@ BENCH_END(comp_diff_metrics_tim)
 #ifdef DM_PARALLEL
 #  include "HALO_EM_TKE_C.inc"
 #  include "PERIOD_BDY_EM_A1.inc"
+       IF(config_flags%km_opt.eq.5.and.config_flags%sf_urban_physics.gt.1)THEN
+#      include "HALO_EM_PHYS_BEP.inc"
+       ENDIF
 #endif
 
 BENCH_START(tke_diff_bc_tim)
@@ -588,6 +591,7 @@ BENCH_START(calc_tke_tim)
            CALL free_atmos_length(config_flags,grid%dx,grid%dy,grid%rdzw,        &
                                   grid%rdz,grid%tke_2,th_phy,grid%elmin,         &
                                   grid%hfx,grid%qfx,moist,num_moist,             &
+                                  grid%dlg_bep,grid%frc_urb2d,                   &
                                   ids, ide, jds, jde, kds, kde,                  &
                                   ims, ime, jms, jme, kms, kme,                  &
                                   grid%i_start(ij),grid%i_end(ij),               &
@@ -622,7 +626,8 @@ BENCH_START(calc_tke_tim)
                                  grid%mix_upper_bound,                                  &
                                  grid%msftx, grid%msfty,                                &
                                  grid%zx, grid%zy,                                      &
-                                 grid%pblh, grid%dlk, grid%xkmv_meso,                   &  
+                                 grid%pblh, grid%dlk,grid%dlg_bep,grid%dl_u_bep,grid%frc_urb2d,        &
+                                 grid%sf_bep,grid%xkmv_meso,                   &  
                                  ids,ide, jds,jde, kds,kde,                             &
                                  ims,ime, jms,jme, kms,kme,                             &
                                  grid%i_start(ij), grid%i_end(ij),                      &
@@ -912,8 +917,8 @@ BENCH_START(tke_rhs_tim)
                          grid%dnw,config_flags%mix_isotropic,         &
                          grid%hfx, grid%qfx, moist(ims,kms,jms,P_QV), &
                          grid%ustm, grid%rho,                         &
-                         grid%l_diss, grid%nlflux,                    & !XZ
-                         grid%pblh, grid%dlk,                         & !XZ 
+                         grid%l_diss,grid%dl_u_bep,grid%nlflux,       & !XZ
+                         grid%pblh,grid%dlk,                          & !XZ 
                          ids, ide, jds, jde, kds, kde,                &
                          ims, ime, jms, jme, kms, kme,                &
                          grid%i_start(ij), grid%i_end(ij),            &
@@ -1037,8 +1042,13 @@ BENCH_END(tke_rhs_tim)
                                                ims, ime, jms, jme, kms, kme,                              &
                                                grid%i_start(ij), grid%i_end(ij),                          &
                                                grid%j_start(ij), grid%j_end(ij),                          &
-                                               k_start, k_end      )
-              ENDDO
+                                               k_start, k_end,                                            &
+                                               grid%a_u_bep,grid%b_u_bep, &
+                                               grid%a_v_bep,grid%b_v_bep, &
+                                               grid%a_t_bep,grid%b_t_bep, &
+                                               grid%b_q_bep,grid%b_e_bep,grid%sf_bep,grid%vl_bep,grid%utype_urb2d)      
+             
+          ENDDO
               !$OMP END PARALLEL DO
 
          ELSE  ! original explicit 

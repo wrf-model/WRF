@@ -1204,7 +1204,7 @@
                                 mix_upper_bound,                         &
                                 msftx, msfty,                            &
                                 zx, zy,                                  &
-                                hpbl,dlk,xkmv_meso,                      & !XZ
+                                hpbl,dlk,dlg_bep,dl_u_bep,frc_urb2d,sf_bep,xkmv_meso,& !XZ
                                 ids, ide, jds, jde, kds, kde,            &
                                 ims, ime, jms, jme, kms, kme,            &
                                 its, ite, jts, jte, kts, kte             )
@@ -1254,20 +1254,21 @@
        div, rdz, rdzw, p8w, t8w, theta, t, p, zx, zy
 
     REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( INOUT )  &
-    :: tke
+    :: tke,dlg_bep,dl_u_bep
 
     REAL, INTENT( IN )  &
     :: mix_upper_bound
 
     REAL, DIMENSION( ims:ime, jms:jme ), INTENT( IN )  &
-    :: msftx, msfty
+    :: msftx, msfty,frc_urb2d
 !XZ
     REAL, DIMENSION( ims:ime, jms:jme ), INTENT( INOUT )          &
     :: hpbl  
 
-    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( IN )    & 
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( INOUT )    & 
     :: dlk
-
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( IN )    &
+    :: sf_bep
     REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( INOUT ) & 
     :: xkmv_meso
 !
@@ -1309,7 +1310,7 @@
                                xkhh, xkhv, BN2, tke, p8w, t8w, theta,   &
                                rdz, rdzw, dx, dy, dt, isotropic,        &
                                mix_upper_bound, msftx, msfty,           &
-                               hpbl,dlk,xkmv_meso,                      & ! XZ
+                               hpbl,dlk,dlg_bep,dl_u_bep,frc_urb2d,sf_bep,xkmv_meso,     & ! XZ
                                defor11,defor22,defor12,zx,zy,           & ! XZ
                                ids, ide, jds, jde, kds, kde,            &
                                ims, ime, jms, jme, kms, kme,            &
@@ -2050,7 +2051,7 @@ END SUBROUTINE smag2d_km
                        bn2, tke, p8w, t8w, theta,                    &
                        rdz, rdzw, dx,dy, dt, isotropic,              &
                        mix_upper_bound, msftx, msfty,                &
-                       hpbl,dlk,xkmv_meso,                           &  ! XZ
+                       hpbl,dlk,dlg_bep,dl_u_bep,frc_urb2d,sf_bep,xkmv_meso,                           &  ! XZ
                        defor11,defor22,defor12,zx,zy,                &  ! XZ
                        ids, ide, jds, jde, kds, kde,                 &
                        ims, ime, jms, jme, kms, kme,                 &
@@ -2087,16 +2088,16 @@ END SUBROUTINE smag2d_km
     :: tke, p8w, t8w, theta, rdz, rdzw, bn2
 
     REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( INOUT )  &
-    :: xkmh, xkmv, xkhh, xkhv
+    :: xkmh, xkmv, xkhh, xkhv,dlg_bep,dl_u_bep
 
     REAL, INTENT( IN )  &
     :: mix_upper_bound
 
    REAL , DIMENSION( ims:ime, jms:jme), INTENT(IN   ) ::     msftx, &
-                                                             msfty
+                                                             msfty,frc_urb2d 
 !XZ
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( IN )     &
-   :: zx,zy
+   :: zx,zy,sf_bep
  
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( IN )     &
    :: defor11, defor22, defor12
@@ -2107,7 +2108,7 @@ END SUBROUTINE smag2d_km
    REAL, DIMENSION( ims:ime, jms:jme), INTENT( INOUT )            &
    :: hpbl 
 
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( IN )     &
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( INOUT )     &
    :: dlk
 !
 ! Local variables.
@@ -2297,6 +2298,9 @@ END SUBROUTINE smag2d_km
        DO j = j_start, j_end
        DO k = kts, ktf
        DO i = i_start, i_end
+              if(config_flags%sf_urban_physics.gt.1.and.dl_u_bep(i,k,j).gt.0.)then
+              if((1.-frc_urb2d(i,j)).lt.1.)dl_u_bep(i,k,j)=dl_u_bep(i,k,j)/frc_urb2d(i,j)
+              endif
               mlen_h = SQRT( dx/msftx(i,j) * dy/msfty(i,j) )  ! horizontal mixing length
               tmp    = SQRT( MAX( tke(i,k,j), tke_seed ) ) 
               deltas = 1.0 / rdzw(i,k,j)
@@ -2305,26 +2309,34 @@ END SUBROUTINE smag2d_km
               mlen_s = 0.76 * tmp / ( ABS( g / theta(i,k,j) * dthrdn(i,k,j)))**0.5
               mlen_v = MIN( mlen_v, mlen_s )
           END IF
-! length scales multiplied by partial function for grid-size dependency
               delxy = SQRT(dx/msftx(i,j)*dy/msfty(i,j))
               pth1= pthl(delxy,hpbl(i,j))
               pu1 = pu  (delxy,hpbl(i,j))
               
               xkmh_t           =  c_k * tmp * mlen_h
-              xkmv_meso(i,k,j) =  0.4 * tmp * dlk(i,k,j)      ! diffusivity using mesoscale length scale
-              xkmv_meso(i,k,j) =  xkmv_meso(i,k,j) + xkmvo
-              xkmv_les         =  c_k * tmp * mlen_v          ! diffusivity using LES length scale
+              if(config_flags%sf_urban_physics.gt.1.and.dl_u_bep(i,k,j).gt.0.)then
+              dlk(i,k,j)=1./(1./dlk(i,k,j)+1./dl_u_bep(i,k,j))
+              endif
+              xkmv_meso(i,k,j) =  0.4 * tmp * dlk(i,k,j)+xkmvo      ! diffusivity using mesoscale length scale              
+              xkmv_les         =  c_k * tmp * mlen_v      
+              if(config_flags%sf_urban_physics.gt.1)then
+              xkmv(i,k,j)      =  ( 1.0 - pu1 ) * xkmv_les  +  pu1 * xkmv_meso(i,k,j)*sf_bep(i,k,j)
+              else
               xkmv(i,k,j)      =  ( 1.0 - pu1 ) * xkmv_les  +  pu1 * xkmv_meso(i,k,j)
-              xkmv(i,k,j)      =  MIN(xkmv(i,k,j), 1000.)  
- 
+              endif
+              xkmv(i,k,j)      =  MIN(xkmv(i,k,j), 1000.)
               pr_inv_h         =  1./prandtl
               pr_inv_v_les     =  1.0 + 2.0 * mlen_v / deltas
               pr_inv_v_meso    =  1.0
               xkhh_t           =  xkmh_t * pr_inv_h
-              xkhv(i,k,j)      =  xkmv(i,k,j) * (1.0-pth1) * pr_inv_v_les    &
+              if(config_flags%sf_urban_physics.gt.1)then
+              xkhv(i,k,j)      =  xkmv(i,k,j)/sf_bep(i,k,j) * (1.0-pth1) * pr_inv_v_les    &
                                +  pth1 * (pr_inv_v_meso * xkmv(i,k,j) + xkhvo)
+              else
+              xkhv(i,k,j)      =  xkmv(i,k,j)* (1.0-pth1) * pr_inv_v_les    &
+                               +  pth1 * (pr_inv_v_meso * xkmv(i,k,j) + xkhvo)
+              endif
               xkhv(i,k,j)      =  MIN(xkhv(i,k,j), 1000.)
-!  blending of horizontal K(deformation) and K(TKE)
               xkmh(i,k,j) = pth1 * xkmh_s(i,k,j) + ( 1.0 - pth1 ) * xkmh_t
               xkhh(i,k,j) = pth1 * xkhh_s(i,k,j) + ( 1.0 - pth1 ) * xkhh_t
        ENDDO
@@ -2439,7 +2451,6 @@ END SUBROUTINE smag2d_km
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),          INTENT( IN )     &
    ::  tke, rdzw, rdz, p8w, t8w
-   
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),          INTENT( IN )     &
    ::  theta,rho
 
@@ -2639,6 +2650,7 @@ END SUBROUTINE smag2d_km
     DO k = kts, ktf
     DO i = i_start, i_end
          dlk(i,k,j) = MIN(elb(i,k,j)/(elb(i,k,j)/elt(i,j)+elb(i,k,j)/els(i,k,j)+1.0),elf(i,k,j)) 
+    
     ENDDO
     ENDDO
     ENDDO
@@ -2663,7 +2675,7 @@ END SUBROUTINE smag2d_km
 !=======================================================================
 !=======================================================================
     SUBROUTINE free_atmos_length(config_flags,dx,dy,rdzw,rdz,tke,theta,elmin,    &
-                                 hfx,qfx,moist,n_moist,                          &
+                                 hfx,qfx,moist,n_moist,dlg_bep,frc_urb2d,        &
                                  ids, ide, jds, jde, kds, kde,                   &
                                  ims, ime, jms, jme, kms, kme,                   &
                                  its, ite, jts, jte, kts, kte )
@@ -2700,16 +2712,16 @@ END SUBROUTINE smag2d_km
 
     REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),          INTENT( IN )    &
     ::  tke, rdzw, rdz
-
     REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),          INTENT( IN )    &
     ::  theta
     
     REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),          INTENT( INOUT ) &
-    ::  elmin 
+    ::  elmin,dlg_bep 
 
     REAL, DIMENSION( ims:ime, jms:jme ),                   INTENT( INOUT ) &
     ::  hfx,qfx
-
+    REAL, DIMENSION( ims:ime, jms:jme ),                   INTENT( IN ) &
+    ::  frc_urb2d
 !Local variables
     REAL, DIMENSION( its:ite, kts:kte, jts:jte )  :: zfull,za
  
@@ -2848,8 +2860,11 @@ END SUBROUTINE smag2d_km
               ENDDO
           ENDIF
  
-          dlg(i,k,j) = (zfull(i,k,j)+zfull(i,k+1,j))/2.0
-          dld(i,k,j) = min(dld(i,k,j),dlg(i,k,j))
+           if(config_flags%sf_urban_physics.gt.1)then
+           dlg(i,k,j) =dlg_bep(i,k,j)*frc_urb2d(i,j) +(1.-frc_urb2d(i,j))*(zfull(i,k,j)+zfull(i,k+1,j))/2.0
+           endif
+           dlg(i,k,j) = (zfull(i,k,j)+zfull(i,k+1,j))/2.0
+           dld(i,k,j) = min(dld(i,k,j),dlg(i,k,j))
  
           elmin(i,k,j) = min(dlu(i,k,j),dld(i,k,j))
           elmin(i,k,j) = elmin(i,k,j)/(1. + (elmin(i,k,j)/2000.))
@@ -6106,7 +6121,7 @@ END SUBROUTINE phy_bc
                         rdx, rdy, dx, dy, dt, zx, zy,           &
                         rdz, rdzw, dn, dnw, isotropic,          &
                         hfx, qfx, qv, ust, rho,                 &
-                        l_diss, nlflux, hpbl, dlk,              & !XZ
+                        l_diss,dl_u_bep,nlflux, hpbl, dlk,     & !XZ
                         ids, ide, jds, jde, kds, kde,           &
                         ims, ime, jms, jme, kms, kme,           &
                         its, ite, jts, jte, kts, kte            )
@@ -6155,6 +6170,9 @@ END SUBROUTINE phy_bc
     REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( OUT )  &
     :: l_diss   
 
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( IN )  &
+    ::dl_u_bep
+
     REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT ( IN ) &
     :: nlflux, dlk
 
@@ -6194,7 +6212,7 @@ END SUBROUTINE phy_bc
                        tke, bn2, theta, p8w, t8w, z,          &
                        dx, dy,rdz, rdzw, isotropic,           &
                        msftx, msfty,                          &
-                       hpbl, dlk, l_diss,                     & ! XZ
+                       hpbl, dlk, l_diss,dl_u_bep,            & ! XZ
                        ids, ide, jds, jde, kds, kde,          &
                        ims, ime, jms, jme, kms, kme,          &
                        its, ite, jts, jte, kts, kte           )
@@ -6386,7 +6404,7 @@ END SUBROUTINE phy_bc
                            tke, bn2, theta, p8w, t8w, z,      &
                            dx, dy, rdz, rdzw, isotropic,      &
                            msftx, msfty,                      &
-                           hpbl, dlk, l_diss,                 & !XZ
+                           hpbl, dlk, l_diss,dl_u_bep,        & !XZ
                            ids, ide, jds, jde, kds, kde,      &
                            ims, ime, jms, jme, kms, kme,      &
                            its, ite, jts, jte, kts, kte       )
@@ -6437,7 +6455,7 @@ END SUBROUTINE phy_bc
     :: hpbl
  
     REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN)  &
-    :: dlk 
+    :: dlk,dl_u_bep 
  
     REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(OUT) & 
     :: l_diss
@@ -6501,7 +6519,6 @@ END SUBROUTINE phy_bc
 
 ! Apply Deardorff's (1980) "wall effect" at the bottom of the domain.
 ! For LES with fine grid, no need for this wall effect!
-
         IF ( k .eq. kts .or. k .eq. ktf ) then
           coefc = 3.9
         ELSE
@@ -6512,7 +6529,7 @@ END SUBROUTINE phy_bc
         IF(config_flags%km_opt.eq.5) THEN 
           delxy = SQRT(dx/msftx(i,j)*dy/msfty(i,j))
           pu1 = pu(delxy,hpbl(i,j))
-          coefc_m = 0.3 !  
+          coefc_m = 0.3 ! 
           l_diss(i,k,j) = (1.0-pu1)*l_scale(i,k,j)/coefc + pu1*dlk(i,k,j)/coefc_m
         ELSE 
           tendency(i,k,j) = tendency(i,k,j) - &
@@ -7629,7 +7646,11 @@ END SUBROUTINE phy_bc
                                         c1h, c2h, c1f, c2f,                       &
                                         ids, ide, jds, jde, kds, kde,             &
                                         ims, ime, jms, jme, kms, kme,             &
-                                        its, ite, jts, jte, kts, kte              )
+                                        its, ite, jts, jte, kts, kte,             &
+                                        a_u_bep,b_u_bep, &
+                                        a_v_bep,b_v_bep, &
+                                        a_t_bep,b_t_bep, &
+                                        b_q_bep,b_e_bep,sf_bep,vl_bep,utype  )
 !To solve the vertical diffusion equations for u,v,w,th,moist,
 !chem,scalar,tracer using implicit method.
 !The vertical TKE diffusion and dissipation are implicitly treated.
@@ -7643,10 +7664,10 @@ END SUBROUTINE phy_bc
    INTEGER ,        INTENT(IN   ) ::        ids, ide, jds, jde, kds, kde, &
                                             ims, ime, jms, jme, kms, kme, &
                                             its, ite, jts, jte, kts, kte
- 
+   
    INTEGER ,        INTENT(IN   ) :: n_moist,n_chem,n_scalar,n_tracer,km_opt
    REAL,            INTENT(IN   ) :: dt
- 
+   INTEGER ,   DIMENSION( ims:ime , jms:jme ) ,     INTENT(IN   ) :: utype
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: fnm
 
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: fnp
@@ -7737,7 +7758,7 @@ END SUBROUTINE phy_bc
                                                           rhoavg,   &
                                                           nlflux_rho
    REAL, DIMENSION( its-1:ite+1, jts-1:jte+1 )         :: gamvavg, gamuavg
-   REAL, DIMENSION( its-1:ite+1, jts-1:jte+1 )         :: tao_xz, tao_yz
+   REAL, DIMENSION( its-1:ite+1,kts:kte, jts-1:jte+1 )         :: tao_xz, tao_yz
    REAL, DIMENSION( its-1:ite+1, kts:kte, jts-1:jte+1 ):: muavg_u,muavg_v
    REAL, DIMENSION( its-1:ite+1, kts:kte, jts-1:jte+1 ):: rdz_u, rdz_v
    REAL, DIMENSION(kts:kte) :: a, b, c, d
@@ -7749,6 +7770,19 @@ END SUBROUTINE phy_bc
    REAL :: V0_u,V0_v,ustar,beta
    REAL :: heat_flux, moist_flux, qfac
    REAL :: cpm,rdz_w,rhoavg_u,rhoavg_v,rdz_z
+     !BEP_LES
+     REAL,  DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN) ::a_u_bep   !Implicit momemtum component X-direction
+     REAL,  DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN) ::b_u_bep   !Explicit momemtum component X-direction
+     REAL,  DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN) ::a_v_bep   !Implicit momemtum component Y-direction
+     REAL,  DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN) ::b_v_bep   !Explicit momemtum component Y-direction
+     REAL,  DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN) ::a_t_bep   !Implicit temperature  
+     REAL,  DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN) ::b_t_bep   !Explicit temperature
+     REAL,  DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN) ::b_q_bep   !Explicit moisture
+     REAL,  DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN) ::b_e_bep   !Explicit moisture
+     REAL,  DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN) ::vl_bep   !Explicit temperature
+     REAL,  DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN) ::sf_bep   !Explicit moisture
+     REAL,DIMENSION( its-1:ite+1,kts:kte, jts-1:jte+1 )        ::  b_u_km,a_u_km,b_v_km,a_v_km
+!BEP_LES
 ! End declarations.
 !-----------------------------------------------------------------------
 !!============================================
@@ -7760,7 +7794,12 @@ END SUBROUTINE phy_bc
    i_end   = ite
    j_start = jts
    j_end   = MIN(jte,jde-1)
- 
+   tao_xz=0.
+   tao_yz=0.
+   b_u_km=0.
+   a_u_km=0.
+   b_v_km=0.
+   a_v_km=0.
    IF ( config_flags%open_xs .or. config_flags%specified .or. &
         config_flags%nested) i_start = MAX(ids+1,its)
    IF ( config_flags%open_xe .or. config_flags%specified .or. &
@@ -7820,7 +7859,13 @@ END SUBROUTINE phy_bc
                            v_2(i-1,kts,j  )+          &
                            v_2(i-1,kts,j+1))/4)**2))+epsilon
        ustar = 0.5*(ust(i,j)+ust(i-1,j))
-       tao_xz(i,j) = ustar*ustar*(rho(i,kts,j)+rho(i-1,kts,j))/(2.*V0_u)
+       tao_xz(i,kts,j) = ustar*ustar*(rho(i,kts,j)+rho(i-1,kts,j))/(2.*V0_u)
+       if(config_flags%sf_urban_physics.gt.1)then
+       do k=kts,kte
+        b_u_km(i,k,j)=(b_u_bep(i,k,j)+b_u_bep(i-1,k,j))*0.5
+        a_u_km(i,k,j)=(a_u_bep(i,k,j)+a_u_bep(i-1,k,j))*0.5
+       enddo
+       endif
     ENDDO
     ENDDO
 
@@ -7830,17 +7875,26 @@ END SUBROUTINE phy_bc
        DO  i = i_start, i_end
             k = kts
             rdz_w = -g/(dnw(k))/muavg_u(i,k,j)
+            if(config_flags%sf_urban_physics.gt.1)rdz_w=rdz_w/vl_bep(i,k,j)
             a(k) = 0.
-            b(k) = 1.+rdz_w*(rdz_u(i,k+1,j)*xkxavg_s(i,k+1,j)+tao_xz(i,j))*dt
+            if(config_flags%sf_urban_physics.le.1)then
+            b(k) = 1.+rdz_w*(rdz_u(i,k+1,j)*xkxavg_s(i,k+1,j))+tao_xz(i,k,j)*dt
             c(k) =   -rdz_w*rdz_u(i,k+1,j)*xkxavg_s(i,k+1,j)*dt
             d(k) = u_2(i,kts,j)
+            else
+            b(k) = 1.+rdz_w*(rdz_u(i,k+1,j)*xkxavg_s(i,k+1,j))*dt-a_u_km(i,kts,j)*dt
+            c(k) =   -rdz_w*rdz_u(i,k+1,j)*xkxavg_s(i,k+1,j)*dt
+            d(k) = u_2(i,kts,j)+b_u_km(i,k,j)*dt
+
+            endif
  
           DO  k = kts+1,ktf-1
             rdz_w =  -g/(dnw(k))/muavg_u(i,k,j)
+            if(config_flags%sf_urban_physics.gt.1)rdz_w=rdz_w/vl_bep(i,k,j)
             a(k) = -rdz_w*rdz_u(i,k,j)*xkxavg_s(i,k,j)*dt
-            b(k) = 1 + rdz_w*(rdz_u(i,k+1,j)*xkxavg_s(i,k+1,j)+rdz_u(i,k,j)*xkxavg_s(i,k,j))*dt
+            b(k) = 1 + rdz_w*(rdz_u(i,k+1,j)*xkxavg_s(i,k+1,j)+rdz_u(i,k,j)*xkxavg_s(i,k,j))*dt-a_u_km(i,k,j)*dt
             c(k) = -rdz_w*rdz_u(i,k+1,j)*xkxavg_s(i,k+1,j)*dt
-            d(k) = -rdz_w*(xkxavg_m(i,k+1,j)-xkxavg_m(i,k,j))*dt*gamuavg(i,j) + u_2(i,k,j)
+            d(k) = -rdz_w*(xkxavg_m(i,k+1,j)-xkxavg_m(i,k,j))*dt*gamuavg(i,j) + u_2(i,k,j)+b_u_km(i,k,j)*dt
           ENDDO
  
             a(ktf) = 0.
@@ -7933,7 +7987,14 @@ END SUBROUTINE phy_bc
                            u_2(i+1,kts,j  )+          &
                            u_2(i+1,kts,j-1))/4)**2))+epsilon
        ustar = 0.5*(ust(i,j)+ust(i,j-1))
-       tao_yz(i,j) = ustar*ustar*(rho(i,kts,j)+rho(i,kts,j-1))/(2.*V0_v)
+       tao_yz(i,kts,j) = ustar*ustar*(rho(i,kts,j)+rho(i,kts,j-1))/(2.*V0_v)
+     if(config_flags%sf_urban_physics.gt.1)then
+     do k=kts,kte
+    ! tao_yz(i,k,j)=+(v_2(i,k,j)*(a_v_bep(i,k,j)+a_v_bep(i,k,j-1))*0.5+(b_v_bep(i,k,j)+b_v_bep(i,k,j-1))*0.5) 
+     b_v_km(i,k,j)=(b_v_bep(i,k,j)+b_v_bep(i,k,j-1))*0.5
+     a_v_km(i,k,j)=(a_v_bep(i,k,j)+a_v_bep(i,k,j-1))*0.5
+     enddo
+     endif
     ENDDO
     ENDDO
 
@@ -7943,17 +8004,24 @@ END SUBROUTINE phy_bc
        DO  i = i_start, i_end
             k = kts
             rdz_w = -g/(dnw(k))/muavg_v(i,k,j)
+            if(config_flags%sf_urban_physics.gt.1)rdz_w=rdz_w/vl_bep(i,k,j)
             a(k) = 0.
-            b(k) = 1. + rdz_w*(rdz_v(i,k+1,j)*xkxavg_s(i,k+1,j)+tao_yz(i,j))*dt
+            if(config_flags%sf_urban_physics.le.1)then
+            b(k) = 1. + rdz_w*(rdz_v(i,k+1,j)*xkxavg_s(i,k+1,j))+tao_yz(i,k,j)*dt
             c(k) =     -rdz_w* rdz_v(i,k+1,j)*xkxavg_s(i,k+1,j)*dt
             d(k) = v_2(i,kts,j)
- 
+            else
+            b(k) = 1. + rdz_w*(rdz_v(i,k+1,j)*xkxavg_s(i,k+1,j))*dt-a_v_km(i,kts,j)*dt
+            c(k) =     -rdz_w* rdz_v(i,k+1,j)*xkxavg_s(i,k+1,j)*dt
+            d(k) = v_2(i,kts,j)+b_v_km(i,k,j)*dt
+            endif
          DO  k = kts+1,ktf-1
             rdz_w = -g/(dnw(k))/muavg_v(i,k,j)
+            if(config_flags%sf_urban_physics.gt.1)rdz_w=rdz_w/vl_bep(i,k,j)
             a(k) = -rdz_w*rdz_v(i,k,j)*xkxavg_s(i,k,j)*dt
-            b(k) = 1. + rdz_w*(rdz_v(i,k+1,j)*xkxavg_s(i,k+1,j)+rdz_v(i,k,j)*xkxavg_s(i,k,j))*dt
+            b(k) = 1. + rdz_w*(rdz_v(i,k+1,j)*xkxavg_s(i,k+1,j)+rdz_v(i,k,j)*xkxavg_s(i,k,j))*dt-a_v_km(i,k,j)*dt
             c(k) = -rdz_w*rdz_v(i,k+1,j)*xkxavg_s(i,k+1,j)*dt
-            d(k) = -rdz_w*(xkxavg_m(i,k+1,j)-xkxavg_m(i,k,j))*dt*gamvavg(i,j) + v_2(i,k,j)
+            d(k) = -rdz_w*(xkxavg_m(i,k+1,j)-xkxavg_m(i,k,j))*dt*gamvavg(i,j) + v_2(i,k,j)+b_v_km(i,k,j)*dt
           ENDDO
  
             a(ktf) = 0.
@@ -8006,6 +8074,9 @@ END SUBROUTINE phy_bc
  
           DO  k = kts+1,ktf
             rdz_z = -g/dn(k)/(c1f(k)*mu(i,j) + c2f(k)) 
+            if(config_flags%sf_urban_physics.gt.1)then
+             rdz_z= -g/dn(k)/(c1f(k)*mu(i,j) + c2f(k))/vl_bep(i,k,j)
+            endif
             a1(k-1) =    - rdz_z* rdzw(i,k-1,j)*xkxavg_w(i,k-1,j)*dt
             b1(k-1) = 1. + rdz_z*(rdzw(i,k  ,j)*xkxavg_w(i,k,j)+rdzw(i,k-1,j)*xkxavg_w(i,k-1,j))*dt
             c1(k-1) =    - rdz_z* rdzw(i,k  ,j)*xkxavg_w(i,k,j)*dt
@@ -8109,19 +8180,33 @@ END SUBROUTINE phy_bc
             cpm = cp * (1. + 0.8 * moist(i,kts,j,P_QV))
             k = kts
             rdz_w = -g/dnw(k)/(c1h(k)*mu(i,j) + c2h(k))
+            if(config_flags%sf_urban_physics.gt.1)rdz_w=rdz_w/vl_bep(i,k,j)
             a(k) = 0.
             b(k) = 1. + rdz_w*(rdz(i,k+1,j)*xkxavg(i,k+1,j))*dt
             c(k) =    - rdz_w* rdz(i,k+1,j)*xkxavg(i,k+1,j) *dt
          
           IF(config_flags%use_theta_m == 0)THEN
+          if(config_flags%sf_urban_physics.gt.1)then
+             d(k) = var_mix(i,kts,j)                    &
+                  - dt*rdz_w*nlflux_rho(i,k+1,j)        &
+                  + dt*b_t_bep(i,1,j)
+          else
              d(k) = var_mix(i,kts,j)                    &
                   - dt*rdz_w*nlflux_rho(i,k+1,j)        &
                   + dt*rdz_w*hfx(i,j)/cpm
+          endif
           ELSE
+             if(config_flags%sf_urban_physics.gt.1)then
+             qfac = 1.+rvovrd*moist(i,kts,j,P_QV)
+             d(k) = var_mix(i,kts,j)                    &
+                  - dt*rdz_w*nlflux_rho(i,k+1,j)*qfac   &
+                  + dt*(qfac*b_t_bep(i,1,j)+1.61*theta(i,kts,j)*b_q_bep(i,1,j)) 
+             else
              qfac = 1.+rvovrd*moist(i,kts,j,P_QV)
              d(k) = var_mix(i,kts,j)                    &
                   - dt*rdz_w*nlflux_rho(i,k+1,j)*qfac   &
                   + dt*rdz_w*(qfac*hfx(i,j)/cpm+1.61*theta(i,kts,j)*qfx(i,j))
+             endif
           ENDIF
  
           IF(config_flags%use_theta_m == 1)THEN
@@ -8131,12 +8216,16 @@ END SUBROUTINE phy_bc
           ENDIF
           DO  k = kts+1, ktf-1
             rdz_w = -g/dnw(k)/(c1h(k)*mu(i,j) + c2h(k))
+            if(config_flags%sf_urban_physics.gt.1)rdz_w=rdz_w/vl_bep(i,k,j)
             a(k)  = -rdz_w*rdz(i,k,j)*xkxavg(i,k,j)*dt
             b(k)  = 1.+rdz_w*(rdz(i,k+1,j)*xkxavg(i,k+1,j)+rdz(i,k,j)*xkxavg(i,k,j))*dt
             c(k)  = -rdz_w*rdz(i,k+1,j)*xkxavg(i,k+1,j)*dt
+            if(config_flags%sf_urban_physics.gt.1)then
+            d(k)  = -rdz_w*(nlflux_rho(i,k+1,j)-nlflux_rho(i,k,j))*qfac*dt + var_mix(i,k,j)+b_t_bep(i,k,j)*dt
+            else
             d(k)  = -rdz_w*(nlflux_rho(i,k+1,j)-nlflux_rho(i,k,j))*qfac*dt + var_mix(i,k,j)
-          ENDDO
- 
+            endif
+           ENDDO
             a(ktf) = 0.
             b(ktf) = 1.
             c(ktf) = 0.
@@ -8175,7 +8264,8 @@ END SUBROUTINE phy_bc
     DO  j = j_start, j_end
     DO  i = i_start, i_end
         DO  k = kts, ktf-1
-           rdz_w = - g/dnw(k)/(c1h(k)*mu(i,j)+c2h(k))
+           rdz_w = - g/dnw(k)/(c1h(k)*mu(i,j)+c2h(k))          
+           if(config_flags%sf_urban_physics.gt.1)rdz_w=rdz_w/vl_bep(i,k,j) 
            IF (l_diss(i,k,j) .ne. 0) THEN
                beta  =   1.5*sqrt(tke(i,k,j))/l_diss(i,k,j)
            ELSE
@@ -8186,8 +8276,11 @@ END SUBROUTINE phy_bc
                    + rdz(i,k+1,j)*xkxavg(i,k+1,j))                   &
                    + dt*beta
            c(k)  = - 2.0*xkxavg(i,k+1,j)*dt*rdz(i,k+1,j)*rdz_w
- 
+           if(config_flags%sf_urban_physics.gt.1)then 
+           d(k)  =   tke(i,k,j)+b_e_bep(i,k,j)*dt
+           else
            d(k)  =   tke(i,k,j)
+           endif
            IF (l_diss(i,k,j) .ne. 0) THEN
                d(k) = d(k) + 0.5*dt*tke(i,k,j)**1.5/l_diss(i,k,j)
            ENDIF
@@ -8253,18 +8346,25 @@ END SUBROUTINE phy_bc
          DO  i = i_start, i_end
              k = kts
              rdz_w = -g/dnw(k)/(c1h(k)*mu(i,j)+c2h(k))
+             if(config_flags%sf_urban_physics.gt.1)rdz_w=rdz_w/vl_bep(i,k,j)
              a(k) = 0.
              b(k) = 1.+rdz_w*(rdz(i,k+1,j)*xkxavg(i,k+1,j))*dt
              c(k) =   -rdz_w* rdz(i,k+1,j)*xkxavg(i,k+1,j) *dt
-!            d(k) = var_mix(i,k,j) + dt*rdz_w*qfx(i,j)/(1.+moist(i,k,j,P_QV))   !??
+             if(config_flags%sf_urban_physics.gt.1)then
+             d(k) = var_mix(i,k,j) + dt*b_q_bep(i,k,j)
+             else
              d(k) = var_mix(i,k,j) + dt*rdz_w*qfx(i,j)           
- 
+             endif
            DO  k = kts+1,ktf-1
              rdz_w = -g/dnw(k)/(c1h(k)*mu(i,j)+c2h(k))
              a(k) = -rdz_w*rdz(i,k,j)*xkxavg(i,k,j)*dt
              b(k) = 1.+rdz_w*(rdz(i,k+1,j)*xkxavg(i,k+1,j)+rdz(i,k,j)*xkxavg(i,k,j))*dt
              c(k) = -rdz_w*rdz(i,k+1,j)*xkxavg(i,k+1,j)*dt
+             if(config_flags%sf_urban_physics.gt.1)then
+             d(k) = var_mix(i,k,j)+b_q_bep(i,k,j)*dt
+             else
              d(k) = var_mix(i,k,j)
+             endif
            ENDDO
  
              a(ktf) = 0.
@@ -8287,6 +8387,7 @@ END SUBROUTINE phy_bc
          DO  i = i_start, i_end
              k = kts
              rdz_w = -g/dnw(k)/(c1h(k)*mu(i,j)+c2h(k))
+            if(config_flags%sf_urban_physics.gt.1)rdz_w=rdz_w/vl_bep(i,k,j)
              a(k) = 0.
              b(k) = 1.+rdz_w*(rdz(i,k+1,j)*xkxavg(i,k+1,j))*dt
              c(k) =   -rdz_w* rdz(i,k+1,j)*xkxavg(i,k+1,j)*dt
@@ -8294,6 +8395,7 @@ END SUBROUTINE phy_bc
  
            DO  k = kts+1,ktf-1
              rdz_w = -g/dnw(k)/(c1h(k)*mu(i,j)+c2h(k))
+            if(config_flags%sf_urban_physics.gt.1)rdz_w=rdz_w/vl_bep(i,k,j)
              a(k) = -rdz_w*rdz(i,k,j)*xkxavg(i,k,j)*dt
              b(k) = 1.+rdz_w*(rdz(i,k+1,j)*xkxavg(i,k+1,j)+rdz(i,k,j)*xkxavg(i,k,j))*dt
              c(k) = -rdz_w*rdz(i,k+1,j)*xkxavg(i,k+1,j)*dt
@@ -8353,6 +8455,7 @@ END SUBROUTINE phy_bc
          DO  i = i_start, i_end
              k = kts
              rdz_w = -g/dnw(k)/(c1h(k)*mu(i,j)+c2h(k))
+            if(config_flags%sf_urban_physics.gt.1)rdz_w=rdz_w/vl_bep(i,k,j)
              a(k) = 0.
              b(k) = 1.+rdz_w*(rdz(i,k+1,j)*xkxavg(i,k+1,j))*dt
              c(k) =   -rdz_w* rdz(i,k+1,j)*xkxavg(i,k+1,j)*dt
@@ -8360,6 +8463,7 @@ END SUBROUTINE phy_bc
  
            DO  k = kts+1, ktf-1
              rdz_w = -g/dnw(k)/(c1h(k)*mu(i,j)+c2h(k))
+            if(config_flags%sf_urban_physics.gt.1)rdz_w=rdz_w/vl_bep(i,k,j)
              a(k)  = -rdz_w*rdz(i,k,j)*xkxavg(i,k,j)*dt
              b(k)  = 1.+rdz_w*(rdz(i,k+1,j)*xkxavg(i,k+1,j)+rdz(i,k,j)*xkxavg(i,k,j))*dt
              c(k)  = -rdz_w*rdz(i,k+1,j)*xkxavg(i,k+1,j)*dt
@@ -8399,6 +8503,7 @@ END SUBROUTINE phy_bc
          DO  i = i_start, i_end
              k = kts
              rdz_w = -g/dnw(k)/(c1h(k)*mu(i,j)+c2h(k))
+            if(config_flags%sf_urban_physics.gt.1)rdz_w=rdz_w/vl_bep(i,k,j)
              a(k) = 0.
              b(k) = 1.+rdz_w*(rdz(i,k+1,j)*xkxavg(i,k+1,j))*dt
              c(k) =   -rdz_w* rdz(i,k+1,j)*xkxavg(i,k+1,j)*dt
@@ -8406,6 +8511,7 @@ END SUBROUTINE phy_bc
  
            DO  k = kts+1,ktf-1
              rdz_w = -g/dnw(k)/(c1h(k)*mu(i,j)+c2h(k))
+            if(config_flags%sf_urban_physics.gt.1)rdz_w=rdz_w/vl_bep(i,k,j)
              a(k) = -rdz_w*rdz(i,k,j)*xkxavg(i,k,j)*dt
              b(k) = 1.+rdz_w*(rdz(i,k+1,j)*xkxavg(i,k+1,j)+rdz(i,k,j)*xkxavg(i,k,j))*dt
              c(k) = -rdz_w*rdz(i,k+1,j)*xkxavg(i,k+1,j)*dt
@@ -8444,6 +8550,7 @@ END SUBROUTINE phy_bc
         DO  i = i_start, i_end
             k = kts
             rdz_w = -g/dnw(k)/(c1h(k)*mu(i,j)+c2h(k))
+            if(config_flags%sf_urban_physics.gt.1)rdz_w=rdz_w/vl_bep(i,k,j)
             a(k) = 0.
             b(k) = 1.+rdz_w*(rdz(i,k+1,j)*xkxavg(i,k+1,j))*dt
             c(k) =   -rdz_w* rdz(i,k+1,j)*xkxavg(i,k+1,j)*dt
@@ -8451,6 +8558,7 @@ END SUBROUTINE phy_bc
  
           DO  k = kts+1,ktf-1
             rdz_w = -g/dnw(k)/(c1h(k)*mu(i,j)+c2h(k))
+            if(config_flags%sf_urban_physics.gt.1)rdz_w=rdz_w/vl_bep(i,k,j)
             a(k) = -rdz_w*rdz(i,k,j)*xkxavg(i,k,j)*dt
             b(k) = 1.+rdz_w*(rdz(i,k+1,j)*xkxavg(i,k+1,j)+rdz(i,k,j)*xkxavg(i,k,j))*dt
             c(k) = -rdz_w*rdz(i,k+1,j)*xkxavg(i,k+1,j)*dt

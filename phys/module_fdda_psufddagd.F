@@ -9,7 +9,17 @@
 ! surfance reanalsys 
 !Reference: Alapaty et al., 2008: Development of the flux-adjusting surface
 ! data assimilation system for mesoscale models. JAMC, 47, 2331-2350
-
+!
+! Changed logic for determining next nudging time to rely on minutes elapsed
+! since restart (CURR_MINS2) rather than on minutes since initialization
+! (XTIME). The REAL variable, XTIME, will become imprecise after 1 X 2^24
+! minutes (just under 32 years of continuous simulation). Cannot remove all
+! reliance on XTIME because actual end time is in absolute minutes. Using XTIME
+! results in spectral nudging analyses ingested at the wrong times, beginning
+! 23 years and 3.5 months into a continous simulation. Purposefully not
+! modifying the ramping function because pragmatically we will not get
+! very large XTIME values in any situation where the off-ramp for nudging would
+! be used. (Tanya Spero, U.S. Environmental Protection Agency -- June 2024)
 !
 !
 MODULE module_fdda_psufddagd
@@ -18,7 +28,7 @@ CONTAINS
 !
 !-------------------------------------------------------------------
 !
-   SUBROUTINE fddagd(itimestep,dx,dt,xtime,  &
+   SUBROUTINE fddagd(itimestep,dx,dt,xtime, curr_mins2, &
                id,analysis_interval, end_fdda_hour, &
                if_no_pbl_nudging_uv, if_no_pbl_nudging_t, if_no_pbl_nudging_q, &
                if_zfac_uv, k_zfac_uv, if_zfac_t, k_zfac_t, if_zfac_q, k_zfac_q, &
@@ -101,7 +111,7 @@ CONTAINS
    INTEGER,  INTENT(IN)   ::      if_ramping
 
    INTEGER , INTENT(IN)   ::      id
-   REAL,     INTENT(IN)   ::      DT, dx, xtime, dtramp_min
+   REAL,     INTENT(IN)   ::      DT, dx, xtime, dtramp_min, curr_mins2
 
    INTEGER,  INTENT(IN)   ::      ids,ide, jds,jde, kds,kde, &
                                   ims,ime, jms,jme, kms,kme, &
@@ -243,10 +253,10 @@ CONTAINS
    ENDIF
 
    IF( analysis_interval <= 0 )CALL wrf_error_fatal('In grid FDDA, gfdda_interval_m must be > 0')
-   xtime_old = FLOOR(xtime/analysis_interval) * analysis_interval * 1.0
+   xtime_old = FLOOR(curr_mins2/analysis_interval) * analysis_interval * 1.0
    xtime_new = xtime_old + analysis_interval
    IF( int4 == 1 ) THEN
-     coef = (xtime-xtime_old)/(xtime_new-xtime_old)
+     coef = (curr_mins2-xtime_old)/(xtime_new-xtime_old)
    ELSE
      coef = 1.0          ! Nudging toward a target value (*_ndg_new values)
    ENDIF
@@ -255,7 +265,7 @@ CONTAINS
 
      CALL get_wrf_debug_level( dbg_level )
 
-     IF( xtime-xtime_old < 0.5*dt/60.0 ) THEN
+     IF( curr_mins2-xtime_old < 0.5*dt/60.0 ) THEN
 
        IF( xtime < end_fdda_hour*60.0 ) THEN
          WRITE(message,'(a,i1,a,f10.3,a)') &
@@ -578,7 +588,7 @@ CONTAINS
 ! Surface Analysis Nudging
 !
    IF( grid_sfdda >= 1 ) THEN
-     CALL SFDDAGD(itimestep,dx,dt,xtime, id, &
+     CALL SFDDAGD(itimestep,dx,dt,xtime, curr_mins2, id, &
      analysis_interval_sfc, end_fdda_hour_sfc, guv_sfc, gt_sfc, gq_sfc, &
      rinblw, &
                u3d,v3d,th3d,t3d,                 &
@@ -680,7 +690,7 @@ CONTAINS
    END SUBROUTINE fddagd
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   SUBROUTINE sfddagd(itimestep,dx,dt,xtime,  &
+   SUBROUTINE sfddagd(itimestep,dx,dt,xtime, curr_mins2,  &
                id, analysis_interval_sfc, end_fdda_hour_sfc, &
                guv_sfc, gt_sfc, gq_sfc, rinblw,  &
                u3d,v3d,th3d,t3d,                 &
@@ -758,7 +768,7 @@ CONTAINS
    INTEGER,  INTENT(IN)   ::      itimestep, analysis_interval_sfc, end_fdda_hour_sfc
 
    INTEGER , INTENT(IN)   ::      id
-   REAL,     INTENT(IN)   ::      dx,DT, xtime
+   REAL,     INTENT(IN)   ::      dx,DT, xtime, curr_mins2
 
    INTEGER,  INTENT(IN)   ::      ids,ide, jds,jde, kds,kde, &
                                   ims,ime, jms,jme, kms,kme, &
@@ -862,10 +872,10 @@ CONTAINS
    int4 = 1      ! 1: temporal ionterpolation. else: target nudging toward *_ndg_new values
 
    IF( analysis_interval_sfc <= 0 )CALL wrf_error_fatal('In grid sfc FDDA, sgfdda_interval_m must be > 0')
-   xtime_old_sfc = FLOOR(xtime/analysis_interval_sfc) * analysis_interval_sfc * 1.0
+   xtime_old_sfc = FLOOR(curr_mins2/analysis_interval_sfc) * analysis_interval_sfc * 1.0
    xtime_new_sfc = xtime_old_sfc + analysis_interval_sfc
    IF( int4 == 1 ) THEN
-     coef = (xtime-xtime_old_sfc)/(xtime_new_sfc-xtime_old_sfc)  ! Temporal interpolation
+     coef = (curr_mins2-xtime_old_sfc)/(xtime_new_sfc-xtime_old_sfc)  ! Temporal interpolation
    ELSE
      coef = 1.0          ! Nudging toward a target value (*_ndg_new values)
    ENDIF
@@ -874,7 +884,7 @@ CONTAINS
 
      CALL get_wrf_debug_level( dbg_level )
 
-     IF( xtime-xtime_old_sfc < 0.5*dt/60.0 ) THEN
+     IF( curr_mins2-xtime_old_sfc < 0.5*dt/60.0 ) THEN
 
        IF( xtime < end_fdda_hour_sfc*60.0 ) THEN
          WRITE(message,'(a,i1,a,f10.3,a)') &

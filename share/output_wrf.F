@@ -356,8 +356,6 @@
     CALL wrf_put_dom_ti_char ( fid , 'START_DATE', TRIM(start_date) , ierr )
     IF ( switch .EQ. input_only) THEN
        CALL wrf_put_dom_ti_char ( fid , 'SIMULATION_START_DATE', TRIM(start_date) , ierr )
-!!! Expanded to include auxiliary history files.  TLS 20 Jan 2021
-!!!    ELSE IF ( ( switch .EQ. restart_only ) .OR. ( switch .EQ. history_only ) ) THEN
     ELSE IF ( ( switch .EQ. restart_only ) .OR. ( switch .EQ. history_only ) .OR.  &
               ( ( switch .GE. auxhist1_only ) .AND. ( switch .LE. auxhist24_only ) ) ) THEN
        CALL nl_get_simulation_start_year   ( 1, simulation_start_year   )
@@ -564,8 +562,6 @@ endif
        END IF
     END IF
 
-!!! Expanded to include auxiliary history files.  TLS 20 Jan 2021
-!!!    IF (switch .EQ. history_only) THEN
     IF ( ( switch .EQ. history_only ) .OR.  &
          ( ( switch .GE. auxhist1_only ) .AND. ( switch .LE. auxhist24_only ) ) ) THEN
        CALL    wrf_put_dom_ti_integer( fid, 'SKEBS_ON'           , config_flags%skebs_on           , 1, ierr )
@@ -693,8 +689,6 @@ endif
     CALL wrf_put_dom_ti_integer ( fid, 'DISTRIBUTED_AHE_OPT', config_flags%distributed_ahe_opt, 1, ierr)
 #endif
 
-!!! Expanded to include auxiliary history files.  TLS 20 Jan 2021
-!!!      IF ( switch .EQ. history_only ) THEN
       IF ( ( switch .EQ. history_only ) .OR.  &
            ( ( switch .GE. auxhist1_only ) .AND. ( switch .LE. auxhist24_only ) ) ) THEN
       CALL wrf_put_dom_ti_integer ( fid, 'SHCU_PHYSICS',     config_flags%shcu_physics , 1 , ierr )
@@ -824,8 +818,6 @@ endif
       CALL wrf_put_dom_ti_integer   ( fid, 'NTASKS_Y',         ntasks_y                  , 1 , ierr )
       CALL wrf_put_dom_ti_integer   ( fid, 'NTASKS_TOTAL',     ntasks_x*ntasks_y         , 1 , ierr )
 
-!!! Expanded to include auxiliary history files.  TLS 20 Jan 2021
-!!!      ENDIF ! history_only
       ENDIF ! history_only and aux history
 
 #if (WRF_CHEM == 1 && WRF_KPP == 1)
@@ -836,10 +828,6 @@ endif
 #endif
 
 #if (EM_CORE == 1) && ( DA_CORE != 1)
-!!! Expanded to include auxiliary history files.  TLS 20 Jan 2021
-!!!      IF ( ( switch .EQ. input_only   ) .OR. &
-!!!           ( switch .EQ. history_only ) .OR. &
-!!!           ( switch .EQ. restart_only ) ) THEN
       IF ( ( switch .EQ. input_only   ) .OR. &
            ( switch .EQ. history_only ) .OR. &
            ( ( switch .GE. auxhist1_only ) .AND. ( switch .LE. auxhist24_only ) ) .OR. &

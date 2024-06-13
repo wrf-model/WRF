@@ -253,11 +253,9 @@ CONTAINS
    ENDIF
 
    IF( analysis_interval <= 0 )CALL wrf_error_fatal('In grid FDDA, gfdda_interval_m must be > 0')
-!!!   xtime_old = FLOOR(xtime/analysis_interval) * analysis_interval * 1.0
    xtime_old = FLOOR(curr_mins2/analysis_interval) * analysis_interval * 1.0
    xtime_new = xtime_old + analysis_interval
    IF( int4 == 1 ) THEN
-!!!     coef = (xtime-xtime_old)/(xtime_new-xtime_old)
      coef = (curr_mins2-xtime_old)/(xtime_new-xtime_old)
    ELSE
      coef = 1.0          ! Nudging toward a target value (*_ndg_new values)
@@ -267,7 +265,6 @@ CONTAINS
 
      CALL get_wrf_debug_level( dbg_level )
 
-!!!     IF( xtime-xtime_old < 0.5*dt/60.0 ) THEN
      IF( curr_mins2-xtime_old < 0.5*dt/60.0 ) THEN
 
        IF( xtime < end_fdda_hour*60.0 ) THEN
@@ -875,11 +872,9 @@ CONTAINS
    int4 = 1      ! 1: temporal ionterpolation. else: target nudging toward *_ndg_new values
 
    IF( analysis_interval_sfc <= 0 )CALL wrf_error_fatal('In grid sfc FDDA, sgfdda_interval_m must be > 0')
-!!!   xtime_old_sfc = FLOOR(xtime/analysis_interval_sfc) * analysis_interval_sfc * 1.0
    xtime_old_sfc = FLOOR(curr_mins2/analysis_interval_sfc) * analysis_interval_sfc * 1.0
    xtime_new_sfc = xtime_old_sfc + analysis_interval_sfc
    IF( int4 == 1 ) THEN
-!!!     coef = (xtime-xtime_old_sfc)/(xtime_new_sfc-xtime_old_sfc)  ! Temporal interpolation
      coef = (curr_mins2-xtime_old_sfc)/(xtime_new_sfc-xtime_old_sfc)  ! Temporal interpolation
    ELSE
      coef = 1.0          ! Nudging toward a target value (*_ndg_new values)
@@ -889,7 +884,6 @@ CONTAINS
 
      CALL get_wrf_debug_level( dbg_level )
 
-!!!     IF( xtime-xtime_old_sfc < 0.5*dt/60.0 ) THEN
      IF( curr_mins2-xtime_old_sfc < 0.5*dt/60.0 ) THEN
 
        IF( xtime < end_fdda_hour_sfc*60.0 ) THEN

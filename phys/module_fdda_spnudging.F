@@ -214,17 +214,14 @@ CONTAINS
 !  IF( if_ramping == 1 .AND. dtramp_min > 0.0 ) &
 !      actual_end_fdda_min = end_fdda_hour*60.0 + ABS(dtramp_min)
 
-!!!   xtime_old = FLOOR(xtime/analysis_interval) * analysis_interval * 1.0
    xtime_old = FLOOR(curr_mins2/analysis_interval) * analysis_interval * 1.0
    xtime_new = xtime_old + analysis_interval
-!!!     coef = (xtime-xtime_old)/(xtime_new-xtime_old)
    coef = (curr_mins2-xtime_old)/(xtime_new-xtime_old)
 
    IF ( wrf_dm_on_monitor()) THEN
 
      CALL get_wrf_debug_level( dbg_level )
 
-!!!     IF( xtime-xtime_old < 0.5*dt/60.0 ) THEN
      IF( curr_mins2-xtime_old < 0.5*dt/60.0 ) THEN
 
        IF( xtime < end_fdda_hour*60.0 ) THEN
@@ -564,7 +561,6 @@ CONTAINS
        tfac = 1.0
      ELSEIF( xtime >= actual_end_fdda_min-ABS(dtramp_min) .AND. xtime <= actual_end_fdda_min )THEN
        tfac = ( actual_end_fdda_min - xtime ) / ABS(dtramp_min)
-!!!       IF( dtramp_min > 0.0 ) coef = (xtime-xtime_old+analysis_interval)/analysis_interval
        IF( dtramp_min > 0.0 ) coef = (curr_mins2-xtime_old+analysis_interval)/analysis_interval
      ELSE                                                     
        tfac = 0.0

@@ -260,6 +260,8 @@ SUBROUTINE med_add_config_info_to_grid ( grid )
 #define DEST_RECORD   grid %
 #include "config_assigns.inc"
 
+    grid % cfbm_namelist = cfbm_namelist
+
    RETURN
 
 END SUBROUTINE med_add_config_info_to_grid

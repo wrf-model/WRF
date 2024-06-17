@@ -60,11 +60,6 @@ Description of namelist variables
                                      = 10,      ! GRIB2 format
                                      = 11,      ! pnetCDF format
  ncd_nofill                          = .true.,  ! only a single write, not the write/read/write sequence
- frames_per_emissfile                = 12,      ! number of times in each chemistry emission file.
- io_style_emiss                      = 1,       ! style to use for the chemistry emission files.
-                                                ! 0 = Do not read emissions from files.
-                                                ! 1 = Cycle between two 12 hour files (set frames_per_emissfile=12)
-                                                ! 2 = Dated files with length set by frames_per_emissfile
  debug_level                         = 0, 	! 50,100,200,300 values give increasing prints
  diag_print                          = 0, 	! print out time series of model diagnostics
                                                   0 = no print
@@ -89,20 +84,20 @@ To choose between SI and WPS input to real for EM core:
  auxinput1_inname                    = "met_em.d<domain>.<date>"             ! Input to real from WPS (default since 3.0)
                                      = "wrf_real_input_em.d<domain>.<date>"  ! Input to real from SI
 
-Other output options:
+Other output options: Note all auxhist[1-24], auxinput[2-24] interval variables are domain dependent
 
- auxhist2_outname                    = "rainfall" ! file name for extra output! if not specified,
-                                                    auxhist2_d<domain>_<date> will be used
+ auxhist9_outname                    = "rainfall" ! file name for extra output! if not specified,
+                                                    auxhist9_d<domain>_<date> will be used
                                                     also note that to write variables in output other
                                                     than the history file requires Registry.EM file change
- auxhist2_interval (max_dom)         = 10,      ! interval in minutes
- io_form_auxhist2                    = 2,       ! output in netCDF
- frames_per_auxhist2                 = 1000,    ! number of output times in this file
+ auxhist9_interval (max_dom)         = 10,      ! interval in minutes
+ io_form_auxhist9                    = 2,       ! output in netCDF
+ frames_per_auxhist9                 = 1000,    ! number of output times in this file
 
 For SST updating (used only with sst_update=1):
  
  auxinput4_inname                    = "wrflowinp_d<domain>" 
- auxinput4_interval                  = 360      ! minutes generally matches time given by interval_seconds
+ auxinput4_interval (max_dom)        = 360      ! minutes generally matches time given by interval_seconds
  io_form_auxinput4                   = 2        ! IO format
 
  nwp_diagnostics                     = 0        ! set to = 1 to add 7 history-interval max diagnostic fields
@@ -112,7 +107,7 @@ For additional regional climate surface fields
  output_diagnostics                  = 0        ! set to = 1 to add 36 surface diagnostic arrays (max/min/mean/std)
  auxhist3_outname                    = 'wrfxtrm_d<domain>_<date>' ! file name for added diagnostics
  io_form_auxhist3                    = 2        ! netcdf
- auxhist3_interval                   = 1440     ! minutes between outputs (1440 gives daily max/min)
+ auxhist3_interval (max_dom)         = 1440     ! minutes between outputs (1440 gives daily max/min)
  frames_per_auxhist3                 = 1        ! output times per file
                                                   Note: do restart only at multiple of auxhist3_intervals
 
@@ -138,13 +133,13 @@ Additional settings when running WRFVAR:
  inputout_interval (max_dom)         = 180,     ! interval in minutes when writing input-formatted data 
  input_outname                       = 'wrfinput_d<domain>_<date>' ! you may change the output file name
  inputout_begin_y (max_dom)          = 0
- inputout_begin_mo                   = 0
+ inputout_begin_m                    = 0
  inputout_begin_d (max_dom)          = 0
  inputout_begin_h (max_dom)          = 3
  inputout_begin_m (max_dom)          = 0
  inputout_begin_s (max_dom)          = 0
  inputout_end_y (max_dom)            = 0
- inputout_end_mo                     = 0
+ inputout_end_m                      = 0
  inputout_end_d (max_dom)            = 0
  inputout_end_h (max_dom)            = 12
  inputout_end_m (max_dom)            = 0
@@ -495,7 +490,7 @@ Namelist variables for controlling the adaptive time step option:
                                        For NSSL 1-moment schemes, intercept and particle densities can be set for snow, 
                                        graupel, hail, and rain. For the 1- and 2-moment schemes, the shape parameters 
                                        for graupel and hail can be set.
-                                       PLEASE SEE README.NSSLmp for options affecting the NSSL scheme
+                                       PLEASE SEE doc/README.NSSLmp for options affecting the NSSL scheme
                                      = 17, 19, 21, 22: Legacy NSSL-MP options: see README.NSSLmp for equivalent settings with 18
                                      = 24, WSM 7-class scheme (separate hail and graupel categories)
                                      = 26, WDM 7-class scheme (separate hail and graupel categories)
@@ -874,9 +869,6 @@ Namelist variables for controlling the adaptive time step option:
                                      = 3, for small grid distances (DX < 5 km)
  nsas_dx_factor                      = 0, ! default option
                                      = 1,   NSAS grid-distance dependent option
- ntiedtke_dx_opt                     = 0, default option
-                                     = 1, new Tiedtke grid-distance dependent option (scale-aware)
-                                          when grid size falls below 15 km
  For KF-CuP scheme: recommended to use with cu_rad_feedback
  shallowcu_forced_ra(max_dom)        radiative impact of shallow Cu by a prescribed maximum cloud fraction
                                      = .false., option off, default

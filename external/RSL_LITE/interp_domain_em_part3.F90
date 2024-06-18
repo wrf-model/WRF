@@ -42,6 +42,16 @@
       INTEGER ierr
       INTEGER thisdomain_max_halo_width
 
+      CALL get_ijk_from_grid (  grid ,                   &
+                                cids, cide, cjds, cjde, ckds, ckde,    &
+                                cims, cime, cjms, cjme, ckms, ckme,    &
+                                cips, cipe, cjps, cjpe, ckps, ckpe    )
+      
+      CALL get_ijk_from_grid (  ngrid ,              &
+                                nids, nide, njds, njde, nkds, nkde,    &
+                                nims, nime, njms, njme, nkms, nkme,    &
+                                nips, nipe, njps, njpe, nkps, nkpe    )
+
 # include "nest_interpdown_interp.inc"
 
       RETURN

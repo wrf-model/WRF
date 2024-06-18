@@ -21,6 +21,64 @@ module_dm.o: \
 	module_cpl.o \
 	../share/module_model_constants.o 
 
+../external/RSL_LITE/feedback_domain_em_part1.o: \
+	module_dm.o \
+	module_configure.o \
+	module_state_description.o \
+	module_domain.o
+
+
+../external/RSL_LITE/feedback_domain_em_part2.o: \
+	module_dm.o \
+	module_configure.o \
+	module_state_description.o \
+	module_domain.o \
+	module_comm_nesting_dm.o \
+	../external/esmf_time_f90/module_utility.o
+
+
+../external/RSL_LITE/force_domain_em_part2.o: \
+	module_dm.o \
+	module_configure.o \
+	module_state_description.o \
+	module_domain.o \
+	../share/module_model_constants.o \
+	module_comm_nesting_dm.o
+
+
+../external/RSL_LITE/interp_domain_em_part1.o: \
+	module_dm.o \
+	module_configure.o \
+	module_state_description.o \
+	module_domain.o \
+	module_timing.o
+
+
+../external/RSL_LITE/interp_domain_em_part2.o: \
+	module_dm.o \
+	module_configure.o \
+	module_state_description.o \
+	module_domain.o \
+	module_comm_nesting_dm.o
+
+
+../external/RSL_LITE/interp_domain_em_part3.o: \
+	module_dm.o \
+	module_configure.o \
+	module_state_description.o \
+	module_domain.o \
+	module_comm_nesting_dm.o
+
+
+../external/RSL_LITE/interp_domain_em_small.o: \
+	module_dm.o \
+	module_configure.o \
+	module_state_description.o \
+	module_domain.o \
+	module_comm_dm.o \
+	module_comm_nesting_dm.o \
+	module_timing.o
+
 
 module_timing.o: \
 	module_wrf_error.o \

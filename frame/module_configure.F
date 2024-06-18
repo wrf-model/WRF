@@ -233,7 +233,7 @@ CONTAINS
       model_config_rec%nocolons = .TRUE.   ! always no colons for Windows
 #endif
 
-      call cfbm_namelist % Initialization( "namelist.input" )
+      call cfbm_namelist % Initialization( "namelist.cfbm" )
 
       RETURN
 

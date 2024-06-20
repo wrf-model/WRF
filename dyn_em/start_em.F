@@ -2176,7 +2176,7 @@ DEALLOCATE(z_at_q)
 
      case (1)
          ! Community Fire Behavior model
-       call Init_fire_state_within_wrf ()
+       call Init_fire_state_within_wrf (state = grid%fire_state, config_flags = grid%cfbm_namelist)
 
      case (2)
    call fire_driver_em_init ( grid , config_flags    &

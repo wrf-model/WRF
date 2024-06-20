@@ -433,8 +433,7 @@ end module module_mp_SBM_BreakUp
  module module_mp_SBM_Collision
 
  private
- public coll_xyy_lwf, &
-        coll_xxx_lwf, coll_xyx_lwf, &
+ public coll_xyy_lwf, coll_xyx_lwf, coll_xxx_lwf, &
         coll_xyz_lwf, coll_xxy_lwf, &
         modkrn_KS, coll_breakup_KS, courant_bott_KS
 
@@ -656,7 +655,6 @@ enddo
     implicit none
 
     real(kind=r8size),intent(inout) :: g(:),fl(:)
-    !real(kind=r8size),intent(in) ::	ckxx(:,:),x(:), c(:,:)
     real(kind=r8size),intent(in) ::	x(:), c(:,:)
     integer,intent(in) :: ima(:,:)
     real(kind=r8size),intent(in) :: prdkrn
@@ -707,9 +705,7 @@ enddo
             k=ima(i,j)
             kp=k+1
 
-            ! no lookup
             ckxx = f_cw(dtime_coal, nkr, p_z, i, j)
-            !x01=ckxx(i,j)*g(i)*g(j)*prdkrn
             x01=ckxx*g(i)*g(j)*prdkrn
 
             x02=dmin1(x01,g(i)*x(j))
@@ -790,7 +786,6 @@ enddo
               print*,     ix0,ix1
 
               print*,   'ckxx(i,j),x01,x02,x03'
-                !print 204, ckxx(i,j),x01,x02,x03
                 print 204, ckxx,x01,x02,x03
 
               print*,   'gsi,gsj,gsk'
@@ -1349,7 +1344,6 @@ enddo
             if(gx(j).le.gmin) goto 2021
             k=ima(i,j)
             kp=k+1
-            !ckxx_ij = ckxx(i,j)
             ckxx_ij = f_cw(dtime_coal, nkr, p_z, i, j)
             x01=ckxx_ij*gx(i)*gx(j)*prdkrn
             x02=dmin1(x01,gx(i)*x(j))
@@ -4037,19 +4031,6 @@ enddo
          REAL (KIND=R4SIZE), ALLOCATABLE ::  DROPRADII(:),PKIJ(:,:,:),QKJ(:,:)
          INTEGER ::          ikr_spon_break
 
-         REAL (KIND=R8SIZE), ALLOCATABLE ::  cwll(:,:), &
-                                             cwli_1(:,:),cwli_2(:,:),cwli_3(:,:),        &
-                                             cwil_1(:,:),cwil_2(:,:),cwil_3(:,:),        &
-                                             cwlg(:,:),cwlh(:,:),cwls(:,:),              &
-                                             cwgl(:,:),cwhl(:,:),cwsl(:,:),              &
-                                             cwii_1_1(:,:),cwii_1_2(:,:),cwii_1_3(:,:),  &
-                                             cwii_2_1(:,:),cwii_2_2(:,:),cwii_2_3(:,:),  &
-                                             cwii_3_1(:,:),cwii_3_2(:,:),cwii_3_3(:,:),  &
-                                             cwis_1(:,:),cwis_2(:,:),cwis_3(:,:),        &
-                                             cwsi_1(:,:),cwsi_2(:,:),cwsi_3(:,:),        &
-                                             cwig_1(:,:),cwig_2(:,:),cwig_3(:,:),        &
-                                             cwih_1(:,:),cwih_2(:,:),cwih_3(:,:),        &
-                                             cwsg(:,:),cwss(:,:)
          REAL(kind=r8size),ALLOCATABLE ::  FCCNR_MAR(:),FCCNR_CON(:)
          REAL(kind=r4size),ALLOCATABLE :: Scale_CCN_Factor,XCCN(:),RCCN(:),FCCN(:)
 
@@ -6226,66 +6207,6 @@ enddo
    301   FORMAT(3X,F8.3,3X,E13.5)
    302   FORMAT(5E13.5)
 
- if (.NOT. ALLOCATED(cwll)) ALLOCATE(cwll(nkr,nkr))
-
- if (.NOT. ALLOCATED(cwli_1)) ALLOCATE(cwli_1(nkr,nkr))
- if (.NOT. ALLOCATED(cwli_2)) ALLOCATE(cwli_2(nkr,nkr))
- if (.NOT. ALLOCATED(cwli_3)) ALLOCATE(cwli_3(nkr,nkr))
-
- if (.NOT. ALLOCATED(cwil_1)) ALLOCATE(cwil_1(nkr,nkr))
- if (.NOT. ALLOCATED(cwil_2)) ALLOCATE(cwil_2(nkr,nkr))
- if (.NOT. ALLOCATED(cwil_3)) ALLOCATE(cwil_3(nkr,nkr))
-
- if (.NOT. ALLOCATED(cwlg)) ALLOCATE(cwlg(nkr,nkr))
- if (.NOT. ALLOCATED(cwlh)) ALLOCATE(cwlh(nkr,nkr))
- if (.NOT. ALLOCATED(cwls)) ALLOCATE(cwls(nkr,nkr))
- if (.NOT. ALLOCATED(cwgl)) ALLOCATE(cwgl(nkr,nkr))
- if (.NOT. ALLOCATED(cwhl)) ALLOCATE(cwhl(nkr,nkr))
- if (.NOT. ALLOCATED(cwsl)) ALLOCATE(cwsl(nkr,nkr))
-
- if (.NOT. ALLOCATED(cwii_1_1)) ALLOCATE(cwii_1_1(nkr,nkr))
- if (.NOT. ALLOCATED(cwii_1_2)) ALLOCATE(cwii_1_2(nkr,nkr))
- if (.NOT. ALLOCATED(cwii_1_3)) ALLOCATE(cwii_1_3(nkr,nkr))
- if (.NOT. ALLOCATED(cwii_2_1)) ALLOCATE(cwii_2_1(nkr,nkr))
- if (.NOT. ALLOCATED(cwii_2_2)) ALLOCATE(cwii_2_2(nkr,nkr))
- if (.NOT. ALLOCATED(cwii_2_3)) ALLOCATE(cwii_2_3(nkr,nkr))
- if (.NOT. ALLOCATED(cwii_3_1)) ALLOCATE(cwii_3_1(nkr,nkr))
- if (.NOT. ALLOCATED(cwii_3_2)) ALLOCATE(cwii_3_2(nkr,nkr))
- if (.NOT. ALLOCATED(cwii_3_3)) ALLOCATE(cwii_3_3(nkr,nkr))
-
- if (.NOT. ALLOCATED(cwis_1)) ALLOCATE(cwis_1(nkr,nkr))
- if (.NOT. ALLOCATED(cwis_2)) ALLOCATE(cwis_2(nkr,nkr))
- if (.NOT. ALLOCATED(cwis_3)) ALLOCATE(cwis_3(nkr,nkr))
- if (.NOT. ALLOCATED(cwsi_1)) ALLOCATE(cwsi_1(nkr,nkr))
- if (.NOT. ALLOCATED(cwsi_2)) ALLOCATE(cwsi_2(nkr,nkr))
- if (.NOT. ALLOCATED(cwsi_3)) ALLOCATE(cwsi_3(nkr,nkr))
-
- if (.NOT. ALLOCATED(cwig_1)) ALLOCATE(cwig_1(nkr,nkr))
- if (.NOT. ALLOCATED(cwig_2)) ALLOCATE(cwig_2(nkr,nkr))
- if (.NOT. ALLOCATED(cwig_3)) ALLOCATE(cwig_3(nkr,nkr))
-
- if (.NOT. ALLOCATED(cwih_1)) ALLOCATE(cwih_1(nkr,nkr))
- if (.NOT. ALLOCATED(cwih_2)) ALLOCATE(cwih_2(nkr,nkr))
- if (.NOT. ALLOCATED(cwih_3)) ALLOCATE(cwih_3(nkr,nkr))
-
- if (.NOT. ALLOCATED(cwsg)) ALLOCATE(cwsg(nkr,nkr))
- if (.NOT. ALLOCATED(cwss)) ALLOCATE(cwss(nkr,nkr))
-
-   cwll(:,:) = 0.0e0
-   cwli_1(:,:) = 0.0e0 ; cwli_2(:,:) = 0.0e0 ; cwli_3(:,:) = 0.0e0
-   cwil_1(:,:) = 0.0e0 ; cwil_2(:,:) = 0.0e0 ; cwil_3(:,:) = 0.0e0
-   cwlg(:,:) = 0.0e0 ; cwlh(:,:) = 0.0e0 ; cwls(:,:) = 0.0e0
-   cwgl(:,:) = 0.0e0 ; cwhl(:,:) = 0.0e0 ; cwsl(:,:) = 0.0e0
-   cwii_1_1(:,:) = 0.0e0 ; cwii_1_2(:,:) = 0.0e0 ; cwii_1_3(:,:) = 0.0e0
-   cwii_2_1(:,:) = 0.0e0 ; cwii_2_2(:,:) = 0.0e0 ; cwii_2_3(:,:) = 0.0e0
-   cwii_3_1(:,:) = 0.0e0 ; cwii_3_2(:,:) = 0.0e0 ; cwii_3_3(:,:) = 0.0e0
-   cwis_1(:,:) = 0.0e0 ; cwis_2(:,:) = 0.0e0 ; cwis_3(:,:) = 0.0e0
-   cwsi_1(:,:) = 0.0e0 ; cwsi_2(:,:) = 0.0e0 ; cwsi_3(:,:) = 0.0e0
-   cwig_1(:,:) = 0.0e0 ; cwig_2(:,:) = 0.0e0 ; cwig_3(:,:) = 0.0e0
-   cwih_1(:,:) = 0.0e0 ; cwih_2(:,:) = 0.0e0 ; cwih_3(:,:) = 0.0e0
-   cwsg(:,:) = 0.0e0 ; cwss(:,:) = 0.0e0
-
-   call Kernals_KS(dt,nkr,7.6E6)
 
  !+---+-----------------------------------------+
  if (.NOT. ALLOCATED( Prob)) ALLOCATE( Prob(NKR))
@@ -6580,311 +6501,6 @@ enddo
       get_cwsi_3 = get_cwis_3(dtime_coal,nkr,p_z,j,i)
   end function get_cwsi_3
 
-  subroutine Kernals_KS(dtime_coal,nkr,p_z)
-
-  implicit none
-
-  integer :: nkr
-  real(kind=r4size),intent(in) :: dtime_coal,p_z
-
-  ! ### Locals
-  integer :: i,j
-  real(kind=r4size),parameter :: p1=1.0e6,p2=0.75e6,p3=0.50e6,p4=0.3e6
-  real(kind=r4size) :: dlnr, scal, dtimelnr, pdm, p_1, p_2, p_3, ckern_1, ckern_2, &
-  					  ckern_3
-
- ! p1=1.00D6 dynes/cm^2 = 1000.0 mb
- ! p2=0.75D6 dynes/cm^2 =  750.0 mb
- ! p3=0.50D6 dynes/cm^2 =  500.0 mb
- ! p4=0.30D6 dynes/cm^2 =  300.0 mb
-
-  scal = 1.0
- 	dlnr = dlog(2.0d0)/(3.0d0*scal)
- 	dtimelnr = dtime_coal*dlnr
-
-      p_1=p1
- 	 p_2=p2
- 	p_3=p3
- 	do i=1,nkr
- 		do j=1,nkr
- 			! 1. water - water
- 			ckern_1 = YWLL_1000mb(i,j)
- 			ckern_2 = YWLL_750mb(i,j)
- 			ckern_3 = YWLL_500mb(i,j)
- 			cwll(i,j) = ckern_z(p_z,p_1,p_2,p_3,ckern_1,ckern_2,ckern_3)*dtime_coal*dlnr
- 		end do
- 	end do
-
- 	! ... ECOALMASSM is from "BreakIniit_KS"
- 	DO I=1,NKR
- 	 DO J=1,NKR
- 		CWLL(I,J) = ECOALMASSM(I,J)*CWLL(I,J)
- 	 END DO
-    END DO
-
-
- 	p_1=p2
- 	p_2=p3
- 	p_3=p4
-
- 	if(p_z >= p_1) then
- 		do j=1,nkr
- 	  		do i=1,nkr
- 				cwli_1(i,j) = ywli_750mb(i,j,1)*dtimelnr
- 				cwli_2(i,j) = ywli_750mb(i,j,2)*dtimelnr
- 				cwli_3(i,j) = ywli_750mb(i,j,3)*dtimelnr
- 				cwlg(i,j) = ywlg_750mb(i,j)*dtimelnr
- 				cwlh(i,j) = ywlh_750mb(i,j)*dtimelnr
- 				cwls(i,j) = ywls_750mb(i,j)*dtimelnr
- 				cwii_1_1(i,j) = ywii_750mb(i,j,1,1)*dtimelnr
- 				cwii_1_2(i,j) = ywii_750mb(i,j,1,2)*dtimelnr
- 				cwii_1_3(i,j) = ywii_750mb(i,j,1,3)*dtimelnr
- 				cwii_2_1(i,j) = ywii_750mb(i,j,2,1)*dtimelnr
- 				cwii_2_2(i,j) = ywii_750mb(i,j,2,2)*dtimelnr
- 				cwii_2_3(i,j) = ywii_750mb(i,j,2,3)*dtimelnr
- 				cwii_3_1(i,j) = ywii_750mb(i,j,3,1)*dtimelnr
- 				cwii_3_2(i,j) = ywii_750mb(i,j,3,2)*dtimelnr
- 				cwii_3_3(i,j) = ywii_750mb(i,j,3,3)*dtimelnr
- 				cwis_1(i,j) = ywis_750mb(i,j,1)*dtimelnr
- 				cwis_2(i,j) = ywis_750mb(i,j,2)*dtimelnr
- 				cwis_3(i,j) = ywis_750mb(i,j,3)*dtimelnr
- 				cwsg(i,j) = ywsg_750mb(i,j)*dtimelnr
- 				cwss(i,j) = ywss_750mb(i,j)*dtimelnr
- 	  		end do
- 		end do
- 	endif
-
- 	if (p_z <= p_3) then
- 		do j=1,nkr
- 		  do i=1,nkr
- 			cwli_1(i,j) = ywli_300mb(i,j,1)*dtimelnr
- 			cwli_2(i,j) = ywli_300mb(i,j,2)*dtimelnr
- 			cwli_3(i,j) = ywli_300mb(i,j,3)*dtimelnr
- 			cwlg(i,j) = ywlg_300mb(i,j)*dtimelnr
- 			cwlh(i,j) = ywlh_300mb(i,j)*dtimelnr
- 			cwls(i,j) = ywls_300mb(i,j)*dtimelnr
- 			cwii_1_1(i,j) = ywii_300mb(i,j,1,1)*dtimelnr
- 			cwii_1_2(i,j) = ywii_300mb(i,j,1,2)*dtimelnr
- 			cwii_1_3(i,j) = ywii_300mb(i,j,1,3)*dtimelnr
- 			cwii_2_1(i,j) = ywii_300mb(i,j,2,1)*dtimelnr
- 			cwii_2_2(i,j) = ywii_300mb(i,j,2,2)*dtimelnr
- 			cwii_2_3(i,j) = ywii_300mb(i,j,2,3)*dtimelnr
- 			cwii_3_1(i,j) = ywii_300mb(i,j,3,1)*dtimelnr
- 			cwii_3_2(i,j) = ywii_300mb(i,j,3,2)*dtimelnr
- 			cwii_3_3(i,j) = ywii_300mb(i,j,3,3)*dtimelnr
- 			cwis_1(i,j) = ywis_300mb(i,j,1)*dtimelnr
- 			cwis_2(i,j) = ywis_300mb(i,j,2)*dtimelnr
- 			cwis_3(i,j) = ywis_300mb(i,j,3)*dtimelnr
- 			cwsg(i,j) = ywsg_300mb(i,j)*dtimelnr
- 			cwss(i,j) = ywss_300mb(i,j)*dtimelnr
- 		  end do
- 		end do
- 	  endif
-
- 	  if (p_z <  p_1  .and. p_z >= p_2) then
- 		pdm = (p_z-p_2)/(p_1-p_2)
- 		do j=1,nkr
- 		  do i=1,nkr
- 		  	ckern_1=ywli_750mb(i,j,1)
- 			ckern_2=ywli_500mb(i,j,1)
- 			cwli_1(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
-
- 			ckern_1=ywli_750mb(i,j,2)
- 			ckern_2=ywli_500mb(i,j,2)
- 			cwli_2(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
-
- 			ckern_1=ywli_750mb(i,j,3)
- 			ckern_2=ywli_500mb(i,j,3)
- 			cwli_3(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
-
- 			ckern_1=ywlg_750mb(i,j)
- 			ckern_2=ywlg_500mb(i,j)
- 			cwlg(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
-
- 			ckern_1=ywlh_750mb(i,j)
- 			ckern_2=ywlh_500mb(i,j)
- 			cwlh(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
-
- 			ckern_1=ywls_750mb(i,j)
- 			ckern_2=ywls_500mb(i,j)
- 			cwls(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
-
- 			ckern_1=ywii_750mb(i,j,1,1)
- 			ckern_2=ywii_500mb(i,j,1,1)
- 			cwii_1_1(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
-
- 			ckern_1=ywii_750mb(i,j,1,2)
- 			ckern_2=ywii_500mb(i,j,1,2)
- 			cwii_1_2(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
-
- 			ckern_1=ywii_750mb(i,j,1,3)
- 			ckern_2=ywii_500mb(i,j,1,3)
- 			cwii_1_3(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
-
- 			ckern_1=ywii_750mb(i,j,2,1)
- 			ckern_2=ywii_500mb(i,j,2,1)
- 			cwii_2_1(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
-
-
- 			ckern_1=ywii_750mb(i,j,2,2)
- 			ckern_2=ywii_500mb(i,j,2,2)
- 			cwii_2_2(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
-
- 			ckern_1=ywii_750mb(i,j,2,3)
- 			ckern_2=ywii_500mb(i,j,2,3)
- 			cwii_2_3(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
-
- 			ckern_1=ywii_750mb(i,j,3,1)
- 			ckern_2=ywii_500mb(i,j,3,1)
- 			cwii_3_1(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
-
- 			ckern_1=ywii_750mb(i,j,3,2)
- 			ckern_2=ywii_500mb(i,j,3,2)
- 			cwii_3_2(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
-
- 			ckern_1=ywii_750mb(i,j,3,3)
- 			ckern_2=ywii_500mb(i,j,3,3)
- 			cwii_3_3(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
-
- 			ckern_1=ywis_750mb(i,j,1)
- 			ckern_2=ywis_500mb(i,j,1)
- 			cwis_1(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
-
- 			ckern_1=ywis_750mb(i,j,2)
- 			ckern_2=ywis_500mb(i,j,2)
- 			cwis_2(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
-
- 			ckern_1=ywis_750mb(i,j,3)
- 			ckern_2=ywis_500mb(i,j,3)
- 			cwis_3(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
-
- 			ckern_1=ywsg_750mb(i,j)
- 			ckern_2=ywsg_500mb(i,j)
- 			cwsg(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
-
- 			ckern_1=ywss_750mb(i,j)
- 			ckern_2=ywss_500mb(i,j)
- 			cwss(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
- 		   end do
- 		 end do
- 	   endif
-
-  		if (p_z <  p_2  .and. p_z >  p_3) then
- 		   pdm = (p_z-p_3)/(p_2-p_3)
- 		   do j=1,nkr
- 		     do i=1,nkr
-
- 			  ckern_2=ywli_500mb(i,j,1)
- 			  ckern_3=ywli_300mb(i,j,1)
- 			  cwli_1(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
-
- 			  ckern_2=ywli_500mb(i,j,2)
- 			  ckern_3=ywli_300mb(i,j,2)
- 			  cwli_2(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
-
- 			  ckern_2=ywli_500mb(i,j,3)
- 			  ckern_3=ywli_300mb(i,j,3)
- 			  cwli_3(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
-
- 			  ckern_2=ywlg_500mb(i,j)
- 			  ckern_3=ywlg_300mb(i,j)
- 			  cwlg(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
-
-   			ckern_2=ywlh_500mb(i,j)
-   			ckern_3=ywlh_300mb(i,j)
-   			cwlh(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
-
-   			ckern_2=ywls_500mb(i,j)
-   			ckern_3=ywls_300mb(i,j)
-   			cwls(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
-
-   			ckern_2=ywii_500mb(i,j,1,1)
-   			ckern_3=ywii_300mb(i,j,1,1)
-   			cwii_1_1(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
-
-   			ckern_2=ywii_500mb(i,j,1,2)
-   			ckern_3=ywii_300mb(i,j,1,2)
-   			cwii_1_2(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
-
-   			ckern_2=ywii_500mb(i,j,1,3)
-   			ckern_3=ywii_300mb(i,j,1,3)
-   			cwii_1_3(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
-
-   			ckern_2=ywii_500mb(i,j,2,1)
-   			ckern_3=ywii_300mb(i,j,2,1)
-   			cwii_2_1(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
-
-   			ckern_2=ywii_500mb(i,j,2,2)
-   			ckern_3=ywii_300mb(i,j,2,2)
-   			cwii_2_2(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
-
-   			ckern_2=ywii_500mb(i,j,2,3)
-   			ckern_3=ywii_300mb(i,j,2,3)
-   			cwii_2_3(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
-
-   			ckern_2=ywii_500mb(i,j,3,1)
-   			ckern_3=ywii_300mb(i,j,3,1)
-   			cwii_3_1(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
-
-   			ckern_2=ywii_500mb(i,j,3,2)
-   			ckern_3=ywii_300mb(i,j,3,2)
-   			cwii_3_2(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
-
-   			ckern_2=ywii_500mb(i,j,3,3)
-   			ckern_3=ywii_300mb(i,j,3,3)
-   			cwii_3_3(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
-
-   			ckern_2=ywis_500mb(i,j,1)
-   			ckern_3=ywis_300mb(i,j,1)
-   			cwis_1(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
-
-   			ckern_2=ywis_500mb(i,j,2)
-   			ckern_3=ywis_300mb(i,j,2)
-   			cwis_2(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
-
-   			ckern_2=ywis_500mb(i,j,3)
-   			ckern_3=ywis_300mb(i,j,3)
-   			cwis_3(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
-
-   			ckern_2=ywsg_500mb(i,j)
-   			ckern_3=ywsg_300mb(i,j)
-   			cwsg(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
-
-   			ckern_2=ywss_500mb(i,j)
-   			ckern_3=ywss_300mb(i,j)
-   			cwss(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
-
- 		   end do
- 		 end do
-   endif
-
- 		do i=1,nkr
- 		 do j=1,nkr
- ! columns - water
- 		  cwil_1(i,j)=cwli_1(j,i)
- ! plates - water
- 		  cwil_2(i,j)=cwli_2(j,i)
- ! dendrites - water
- 		  cwil_3(i,j)=cwli_3(j,i)
- ! 3. graupel - water
- 		  cwgl(i,j)=cwlg(j,i)
- ! 4. hail - water
- 		  cwhl(i,j)=cwlh(j,i)
- ! 5. snow - water
- 		  cwsl(i,j)=cwls(j,i)
- ! 7.snow - crystals :
- ! snow - columns
- 		  cwsi_1(i,j)=cwis_1(j,i)
- ! snow - plates
- 		  cwsi_2(i,j)=cwis_2(j,i)
- ! snow - dendrites
- 		  cwsi_3(i,j)=cwis_3(j,i)
- 		 end do
- 	  end do
-
-
-  return
-  end subroutine Kernals_KS
 
  ! ------------------------------------------------------------+
   pure real function ckern_z (p_z,p_1,p_2,p_3,ckern_1,ckern_2,ckern_3)
@@ -8612,8 +8228,7 @@ enddo
 			    	DEL1in, DEL2in,                             &
   		              	Iin,Jin,Kin,itimestep,CollEff)
 
-    use module_mp_SBM_Collision,only: coll_xyy_lwf,    &
-                     coll_xxx_lwf, coll_xyx_lwf, &
+    use module_mp_SBM_Collision,only: coll_xyy_lwf,coll_xyx_lwf,coll_xxx_lwf, &
 				     coll_xyz_lwf, modkrn_KS, coll_breakup_KS, 	&
 				     coll_xxy_lwf
 

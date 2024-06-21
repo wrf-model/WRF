@@ -2206,14 +2206,12 @@ DEALLOCATE(z_at_q)
        grid%cfbm_namelist%end_minute = config_flags%end_minute
        grid%cfbm_namelist%end_second = config_flags%end_second
 
-       grid%cfbm_namelist%num_tiles = grid%num_tiles
-
        call Init_fire_state_within_wrf (state = grid%fire_state, config_flags = grid%cfbm_namelist, &
            ifds = ifds, ifde = ifde, ifms = ifms, ifme = ifme, ifps = ifps, ifpe = ifpe, &
            jfds = jfds, jfde = jfde, jfms = jfms, jfme = jfme, jfps = jfps, jfpe = jfpe, &
            kfds = kfds, kfde = kfde, kfms = kfms, kfme = kfme, kfps = kfps, kfpe = kfpe, &
-           kfts = kts, kfte = kte, ide = ide, jde = jde, i_start = grid%i_start, i_end = grid%i_end, &
-           j_start = grid%j_start, j_end = grid%j_end, dx = config_flags%dx, dy = config_flags%dy, &
+           kfts = kts, kfte = kte, ide = ide, jde = jde, &
+           dx = config_flags%dx, dy = config_flags%dy, &
            sr_x = config_flags%sr_x, sr_y = config_flags%sr_y, &
            map_proj = config_flags%map_proj, cen_lat = cen_lat, cen_lon = cen_lon, truelat1 = truelat1, &
            truelat2 = truelat2, stand_lon = stand_lon, nfuel_cat = grid%nfuel_cat, zsf = grid%zsf, &

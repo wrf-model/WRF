@@ -63,7 +63,7 @@ CONTAINS
     USE module_utility
 
       ! CFBM
-    use advance_mod, only : Advance_state_to_be_removed
+    use advance_mod, only : Advance_state
 
 
     IMPLICIT NONE
@@ -1347,7 +1347,12 @@ BENCH_END(pbl_driver_tim)
          continue
 
        case (1)
-         call Advance_state_to_be_removed (state = grid%fire_state, config_flags = grid%cfbm_namelist)
+         grid%fire_state%uf = 5.0
+         grid%fire_state%vf = 1.0
+
+         call Advance_state (grid = grid%fire_state, config_flags = grid%cfbm_namelist)
+
+         call grid%fire_state%Handle_output (grid%cfbm_namelist)
 
        case (2)
 ! Jan Mandel's call to SFIRE

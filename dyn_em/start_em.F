@@ -7,7 +7,7 @@
 )
 
    USE module_domain, ONLY : domain, wrfu_timeinterval, get_ijk_from_grid, &
-        domain_setgmtetc
+        domain_setgmtetc, get_ijk_from_subgrid
    USE module_state_description
    USE module_driver_constants
    USE module_wrf_error
@@ -137,6 +137,12 @@
    REAL :: dt_s, dx_km
 
    REAL :: max_mf, max_rot_angle
+   integer :: ifds, ifde, jfds, jfde, kfds, kfde, &
+              ifms, ifme, jfms, jfme, kfms, kfme, &
+              ifps, ifpe, jfps, jfpe, kfps, kfpe
+   real :: cen_lat, cen_lon, truelat1, truelat2, stand_lon
+
+
    CALL get_ijk_from_grid ( grid ,                              &
                            ids, ide, jds, jde, kds, kde,        &
                            ims, ime, jms, jme, kms, kme,        &
@@ -2171,12 +2177,47 @@ DEALLOCATE(z_at_q)
 
 !  FIRE
    Select_fire_model: select case (config_flags%ifire)
+       ! none
      case (0)
        continue
 
+       ! Community Fire Behavior model
      case (1)
-         ! Community Fire Behavior model
-       call Init_fire_state_within_wrf (state = grid%fire_state, config_flags = grid%cfbm_namelist)
+         ! Get fire dims
+       call get_ijk_from_subgrid (grid, ifds, ifde, jfds, jfde, kfds, kfde, &
+                                        ifms, ifme, jfms, jfme, kfms, kfme, &
+                                        ifps, ifpe, jfps, jfpe, kfps, kfpe)
+         ! Get projection parameters
+       call nl_get_cen_lat (grid%id, cen_lat)
+       call nl_get_cen_lon (grid%id, cen_lon)
+       call nl_get_truelat1 (grid%id, truelat1)
+       call nl_get_truelat2 (grid%id, truelat2)
+       call nl_get_stand_lon (grid%id, stand_lon)
+
+         ! Impose WRF start/end times to CFBM settings
+       grid%cfbm_namelist%start_year = config_flags%start_year
+       grid%cfbm_namelist%start_month = config_flags%start_month
+       grid%cfbm_namelist%start_day = config_flags%start_day
+       grid%cfbm_namelist%start_minute = config_flags%start_minute
+       grid%cfbm_namelist%start_second = config_flags%start_second
+       grid%cfbm_namelist%end_year = config_flags%end_year
+       grid%cfbm_namelist%end_month = config_flags%end_month
+       grid%cfbm_namelist%end_day = config_flags%end_day
+       grid%cfbm_namelist%end_minute = config_flags%end_minute
+       grid%cfbm_namelist%end_second = config_flags%end_second
+
+       grid%cfbm_namelist%num_tiles = grid%num_tiles
+
+       call Init_fire_state_within_wrf (state = grid%fire_state, config_flags = grid%cfbm_namelist, &
+           ifds = ifds, ifde = ifde, ifms = ifms, ifme = ifme, ifps = ifps, ifpe = ifpe, &
+           jfds = jfds, jfde = jfde, jfms = jfms, jfme = jfme, jfps = jfps, jfpe = jfpe, &
+           kfds = kfds, kfde = kfde, kfms = kfms, kfme = kfme, kfps = kfps, kfpe = kfpe, &
+           kfts = kts, kfte = kte, ide = ide, jde = jde, i_start = grid%i_start, i_end = grid%i_end, &
+           j_start = grid%j_start, j_end = grid%j_end, dx = config_flags%dx, dy = config_flags%dy, &
+           sr_x = config_flags%sr_x, sr_y = config_flags%sr_y, &
+           map_proj = config_flags%map_proj, cen_lat = cen_lat, cen_lon = cen_lon, truelat1 = truelat1, &
+           truelat2 = truelat2, stand_lon = stand_lon, nfuel_cat = grid%nfuel_cat, zsf = grid%zsf, &
+           dzdxf = grid%dzdxf, dzdyf = grid%dzdyf)
 
      case (2)
    call fire_driver_em_init ( grid , config_flags    &

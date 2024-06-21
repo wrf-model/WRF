@@ -135,6 +135,18 @@ WRFVAR_OBJS = \
    module_alloc_space_7.o \
    module_alloc_space_8.o \
    module_alloc_space_9.o \
+   inc/deallocs_0.o \
+   inc/deallocs_1.o \
+   inc/deallocs_2.o \
+   inc/deallocs_3.o \
+   inc/deallocs_4.o \
+   inc/deallocs_5.o \
+   inc/deallocs_6.o \
+   inc/deallocs_7.o \
+   inc/deallocs_8.o \
+   inc/deallocs_9.o \
+   inc/deallocs_10.o \
+   inc/deallocs_11.o \
    nl_get_0_routines.o \
    nl_get_1_routines.o \
    nl_get_2_routines.o \

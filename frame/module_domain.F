@@ -1734,10 +1734,6 @@ CONTAINS
 
       TYPE(domain)              , POINTER :: grid
 
-      !  Local data.
-
-      INTEGER                             ::  ierr
-
 # include "deallocs.inc"
 
    END SUBROUTINE dealloc_space_field

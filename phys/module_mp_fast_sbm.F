@@ -4155,6 +4155,13 @@ enddo
       REAL (KIND=R4SIZE),DIMENSION (nkr) :: FF1IN,FF3IN,FF4IN,FF5IN,&
       &              FF1R,FF3R,FF4R,FF5R,FLIQFR_S,FRIMFR_S,FLIQFR_G,FLIQFR_H, &
       &              FF1R_NEW,FF3R_NEW,FF4R_NEW,FF5R_NEW
+      ! storing FF across loops
+      REAL (KIND=R4SIZE), DIMENSION (nkr, its:ite, kts:kte, jts:jte) :: &
+                     FF1R_all, FF3R_all, FF4R_all,FF5R_all
+      REAL (KIND=R4SIZE), DIMENSION (nkr_aerosol, its:ite, kts:kte, jts:jte) :: FCCN_all
+      REAL (KIND=R4SIZE), DIMENSION (nkr, icemax, its:ite, kts:kte, jts:jte) :: FF2R_all
+
+
       REAL (KIND=R4SIZE),DIMENSION (nkr) :: FL3R,FL4R,FL5R,FL3R_NEW,FL4R_NEW,FL5R_NEW
 
       REAL (KIND=R4SIZE),DIMENSION (nkr,icemax) :: FF2IN,FF2R,FLIQFR_I
@@ -4247,6 +4254,10 @@ enddo
  	REAL (KIND=R4SIZE) :: FACTZ_new(KMS:KME,NKR), TT_r
  ! ### (KS) ............................................................................................
  	INTEGER :: NZ,NZZ,II,JJ
+
+      ! For offloading coal_bott_new
+    real(kind=r8size), dimension(its:ite,kts:kte,jts:jte) :: tt_all, qq_all, pp_all, del1in_all, del2in_all
+    logical, dimension(its:ite,kts:kte,jts:jte) :: call_coal_bott_new
 
   XS_d = XS
 
@@ -4633,6 +4644,8 @@ enddo
 ! +---------------------------------------------+
 ! Neucliation, Condensation, Collisions
 ! +---------------------------------------------+
+        call_coal_bott_new(i,k,j) = .false.
+
           IF (T_OLD(I,K,J).GT.193.15)THEN
              TT=T_OLD(I,K,J)
              QQ=QV_OLD(I,K,J)
@@ -4816,9 +4829,51 @@ enddo
                           END IF ! DIFF.NE.0
                       END IF ! DIFFU.NE.0
                   END DO ! NCOND - end of NCOND loop
+
+                  ! record if this grid point calls coal_bott_new and record the input
+                   call_coal_bott_new(i,k,j) = .true.
+                   TT_all(i,k,j) = TT
+                   QQ_all(i,k,j) = QQ
+                   PP_all(i,k,j) = PP
+                   del1in_all(i,k,j) = del1in
+                   del2in_all(i,k,j) = del2in
+
+                end if ! temp
+            end if
+
+            FF1R_all(:,i,k,j) = FF1R
+            FF2R_all(:,:,i,k,j) = FF2R
+            FCCN_all(:,i,k,j) = FCCN
+            FF3R_all(:,i,k,j) = FF3R
+            FF5R_all(:,i,k,j) = FF5R
+            FF4R_all(:,i,k,j) = FF4R
+
+            end do ! i j k
+        end do
+    end do
+
 ! +----------------------------------+
 ! Collision-Coallescnce
 ! +----------------------------------+
+   DO j = jts,jte
+      DO k = kts,kte
+         DO i = its,ite
+
+            FF1R = FF1R_all(:,i,k,j)
+            FF2R = FF2R_all(:,:,i,k,j)
+            FF3R = FF3R_all(:,i,k,j)
+            FF4R = FF4R_all(:,i,k,j)
+            FF5R = FF5R_all(:,i,k,j)
+            FCCN = FCCN_all(:,i,k,j)
+
+            if (call_coal_bott_new(i,k,j)) then
+
+               TT = TT_all(i,k,j)
+               QQ = QQ_all(i,k,j)
+               PP = PP_all(i,k,j)
+               del1in = del1in_all(i,k,j)
+               del2in = del2in_all(i,k,j)
+
                   DO IKL = 1,NCOLL
                     IF ( TT >= 233.15 ) THEN
                       FLIQFR_SD = 0.0
@@ -4838,10 +4893,30 @@ enddo
                   T_new(i,k,j) = tt
                   qv(i,k,j) = qq
                    
-            ! in case Sw,Si,mass  
-            ENDIF 
-        ! in case T_OLD(I,K,J).GT.213.15
-        END IF
+             endif
+
+             FF1R_all(:,i,k,j) = FF1R
+             FF2R_all(:,:,i,k,j) = FF2R
+             FF3R_all(:,i,k,j) = FF3R
+             FF4R_all(:,i,k,j) = FF4R
+             FF5R_all(:,i,k,j) = FF5R
+
+          enddo
+       enddo
+      enddo
+
+
+      do j = jts,jte
+         do k = kts,kte
+            do i = its,ite
+
+               FF1R = FF1R_all(:,i,k,j)
+               FF2R = FF2R_all(:,:,i,k,j)
+               FF3R = FF3R_all(:,i,k,j)
+               FF4R = FF4R_all(:,i,k,j)
+               FF5R = FF5R_all(:,i,k,j)
+               FCCN = FCCN_all(:,i,k,j)
+
  ! +-------------------------------- +
  ! Immediate Freezing
  ! +---------------------------------+
@@ -4858,7 +4933,7 @@ enddo
 		    IF (JIWEN_FAN_MELT == 1 .and. T_NEW(i,k,j) > 273.15 .and. ICEPROCS == 1) THEN
 				   CALL J_W_MELT(FF1R,XL,FF2R,XI,FF3R,XS,FF4R,XG,FF5R,XH, &
 						             T_NEW(I,K,J),DT,rhocgs(I,K,J),COL,ICEMAX,NKR)
-        END IF
+            END IF
 
         DO KR=1,NKR
           DO ICE=1,ICEMAX
@@ -4900,6 +4975,7 @@ enddo
 
     ! Update temperature at the end of MP
   	th_phy(i,k,j) = t_new(i,k,j)/pi_phy(i,k,j)
+
 
     ! ... Drops
 	  KRR = 0

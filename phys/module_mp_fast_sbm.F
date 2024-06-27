@@ -446,15 +446,28 @@ end module module_mp_SBM_BreakUp
 
  contains
 ! +------------------------------------------------+
-subroutine coll_xyy_lwf (gx,gy,flx,fly,ckxy,x,y, &
-						            c,ima,prdkrn,nkr,indc)
+subroutine coll_xyy_lwf (gx,gy,flx,fly,&
+      f_cw,dtime_coal,nkr,p_z,&
+      x,y, c,ima,prdkrn,indc)
 	implicit none
 
-	integer,intent(in) :: nkr
 	real(kind=r8size),intent(inout) :: gy(:),gx(:),fly(:),flx(:)
-	real(kind=r8size),intent(in) :: ckxy(:,:),x(:),y(:),c(:,:)
+	real(kind=r8size),intent(in) :: x(:),y(:),c(:,:)
 	integer,intent(in) :: ima(:,:)
 	real(kind=r8size),intent(in) :: prdkrn
+
+      interface
+         pure real(kind=r8size) function f_cw(dtime_coal,nkr,p_z,i,j)
+         import :: r4size
+
+         implicit none
+         integer, intent(in) :: nkr, i, j
+         real(kind=r4size),intent(in) :: dtime_coal,p_z
+         end function f_cw
+      end interface
+
+      integer, intent(in) :: nkr
+      real(kind=r4size),intent(in) :: dtime_coal,p_z
 
 ! ... Locals
  real(kind=r8size) :: gmin,ckxy_ji,x01,x02,x03,gsi,gsj,gsk,gsi_w,gsj_w,gsk_w,gk,gk_w,&
@@ -504,7 +517,8 @@ enddo
               if(gx(j).le.gmin) goto 2021
               k=ima(i,j)
               kp=k+1
-              ckxy_ji=ckxy(j,i)
+              !ckxy_ji=ckxy(j,i)
+              ckxy_ji=f_cw(dtime_coal,nkr,p_z,j,i)
               x01=ckxy_ji*gy(i)*gx(j)*prdkrn
               x02=dmin1(x01,gy(i)*x(j))
               x03=dmin1(x02,gx(j)*y(i))
@@ -575,7 +589,7 @@ enddo
                 print*,     jx0,jx1,iy0,iy1
 
                 print*,   'ckxy(j,i),x01,x02,x03'
-                print 204, ckxy(j,i),x01,x02,x03
+                print 204, ckxy_ji,x01,x02,x03
 
                 print*,   'gsi,gsj,gsk'
                 print 203, gsi,gsj,gsk
@@ -634,21 +648,35 @@ enddo
 
   return
   end subroutine coll_xyy_lwf
+
 ! +-----------------------------------------------------+
-  subroutine coll_xxx_lwf(g,fl,ckxx,x,c,ima,prdkrn,nkr)
+  subroutine coll_xxx_lwf(g,fl,f_cw,dtime_coal, nkr, p_z,x,c,ima,prdkrn)
 
     implicit none
 
-    integer,intent(in) :: nkr
     real(kind=r8size),intent(inout) :: g(:),fl(:)
-    real(kind=r8size),intent(in) ::	ckxx(:,:),x(:), c(:,:)
+    real(kind=r8size),intent(in) ::	x(:), c(:,:)
     integer,intent(in) :: ima(:,:)
     real(kind=r8size),intent(in) :: prdkrn
+
+      interface
+         pure real(kind=r8size) function f_cw(dtime_coal,nkr,p_z,i,j)
+         import :: r4size
+
+         implicit none
+         integer, intent(in) :: nkr, i, j
+         real(kind=r4size),intent(in) :: dtime_coal,p_z
+         end function f_cw
+      end interface
+
+      integer, intent(in) :: nkr
+      real(kind=r4size),intent(in) :: dtime_coal,p_z
 
 ! ... Locals
    real(kind=r8size):: gmin,x01,x02,x03,gsi,gsj,gsk,gsi_w,gsj_w,gsk_w,gk, &
                        gk_w,fl_gk,fl_gsk,flux,x1,flux_w,g_k_w,g_kp_old,g_kp_w
    integer :: i,ix0,ix1,j,k,kp
+   real(kind=r8size) :: ckxx
 ! ... Locals
 
   gmin=g_lim*1.0d3
@@ -676,7 +704,10 @@ enddo
             if(g(j).le.gmin) goto 2021
             k=ima(i,j)
             kp=k+1
-            x01=ckxx(i,j)*g(i)*g(j)*prdkrn
+
+            ckxx = f_cw(dtime_coal, nkr, p_z, i, j)
+            x01=ckxx*g(i)*g(j)*prdkrn
+
             x02=dmin1(x01,g(i)*x(j))
             if(j.ne.k) x03=dmin1(x02,g(j)*x(i))
             if(j.eq.k) x03=x02
@@ -755,7 +786,7 @@ enddo
               print*,     ix0,ix1
 
               print*,   'ckxx(i,j),x01,x02,x03'
-                print 204, ckxx(i,j),x01,x02,x03
+                print 204, ckxx,x01,x02,x03
 
               print*,   'gsi,gsj,gsk'
                 print 203, gsi,gsj,gsk
@@ -811,20 +842,35 @@ enddo
 
  return
  end subroutine coll_xxx_lwf
+
 ! +----------------------------------------------------+
- subroutine coll_xyx_lwf (gx,gy,flx,fly,ckxy,x,y, &
-					               c,ima,prdkrn,nkr,indc,dm_rime)
+ subroutine coll_xyx_lwf (gx,gy,flx,fly,f_cw,dtime_coal,nkr,p_z, &
+      x,y, c,ima,prdkrn,indc,dm_rime)
 	implicit none
 
-	integer,intent(in) :: nkr
 	real(kind=r8size),intent(inout) :: gy(:),gx(:),fly(:),flx(:),dm_rime(:)
-	real(kind=r8size),intent(in) :: ckxy(:,:),x(:),y(:),c(:,:),prdkrn
+	real(kind=r8size),intent(in) :: x(:),y(:),c(:,:),prdkrn
 	integer,intent(in) :: ima(:,:)
+
+      interface
+         pure real(kind=r8size) function f_cw(dtime_coal,nkr,p_z,i,j)
+         import :: r4size
+
+         implicit none
+         integer, intent(in) :: nkr, i, j
+         real(kind=r4size),intent(in) :: dtime_coal,p_z
+         end function f_cw
+      end interface
+
+      integer, intent(in) :: nkr
+      real(kind=r4size),intent(in) :: dtime_coal,p_z
+
 
 ! ... Locals
 	real(kind=r8size) :: gmin,x01,x02,x03,gsi,gsj,gsk,gk,flux,x1,gsi_w,gsj_w,gsk_w, &
     	                gk_w,fl_gk,fl_gsk,flux_w,gx_k_w,gx_kp_old,gx_kp_w,frac_split
 	integer :: j, jx0, jx1, i, iy0, iy1, jmin, indc, k, kp
+      real(kind=r8size) :: ckxy
 ! ... Locals
 
 	gmin=g_lim*1.0d3
@@ -870,7 +916,11 @@ enddo
               if(gx(j).le.gmin) goto 2021
               k=ima(i,j)
               kp=k+1
-              x01=ckxy(j,i)*gy(i)*gx(j)*prdkrn
+              ! no lookup
+              ckxy = f_cw(dtime_coal,nkr,p_z,j,i)
+              x01=ckxy*gy(i)*gx(j)*prdkrn
+              !x01=ckxy(j,i)*gy(i)*gx(j)*prdkrn
+
               x02=dmin1(x01,gy(i)*x(j))
 			! new change of 20.01.11                                      (start)
               if(j.ne.k) x03=dmin1(x02,gx(j)*y(i))
@@ -957,7 +1007,8 @@ enddo
                 	print 201, gx_kp_old
 
                 print*,   'ckxy(j,i),x01,x02,x03'
-                	print 204, ckxy(j,i),x01,x02,x03
+                	!print 204, ckxy(j,i),x01,x02,x03
+                	print 204, ckxy,x01,x02,x03
 
                 print*,   'gsi,gsj,gsk'
                 	print 203, gsi,gsj,gsk
@@ -1015,16 +1066,30 @@ enddo
  return
  end subroutine coll_xyx_lwf
 ! -------------------------------------------------------+
- subroutine coll_xyz_lwf(gx,gy,gz,flx,fly,flz,ckxy,x,y, &
-                        c,ima,prdkrn,nkr,indc)
+
+ subroutine coll_xyz_lwf(gx,gy,gz,flx,fly,flz,&
+      f_cw,dtime_coal, nkr, p_z, &
+      x,y, c,ima,prdkrn, indc)
 
  implicit none
 
- integer,intent(in) :: nkr
  real(kind=r8size),intent(inout) :: gx(:),gy(:),gz(:),flx(:),fly(:),flz(:)
- real(kind=r8size),intent(in) :: ckxy(:,:),x(:),y(:),c(:,:)
+ real(kind=r8size),intent(in) :: x(:),y(:),c(:,:)
  integer,intent(in) :: ima(:,:)
  real(kind=r8size),intent(in) :: prdkrn
+
+      interface
+         pure real(kind=r8size) function f_cw(dtime_coal,nkr,p_z,i,j)
+         import :: r4size
+
+         implicit none
+         integer, intent(in) :: nkr, i, j
+         real(kind=r4size),intent(in) :: dtime_coal,p_z
+         end function f_cw
+      end interface
+
+      integer, intent(in) :: nkr
+      real(kind=r4size),intent(in) :: dtime_coal,p_z
 
 ! ... Locals
  real(kind=r8size) :: gmin,ckxy_ji,x01,x02,x03,gsi,gsj,gsk,gsi_w,gsj_w,gsk_w,gk, &
@@ -1075,7 +1140,8 @@ enddo
             if(gx(j).le.gmin) goto 2021
             k=ima(i,j)
             kp=k+1
-            ckxy_ji=ckxy(j,i)
+            !ckxy_ji=ckxy(j,i)
+            ckxy_ji= f_cw(dtime_coal,nkr,p_z,j,i)
             x01=ckxy_ji*gy(i)*gx(j)*prdkrn
             x02=dmin1(x01,gy(i)*x(j))
             x03=dmin1(x02,gx(j)*y(i))
@@ -1220,17 +1286,31 @@ enddo
 
  return
  end subroutine coll_xyz_lwf
+
 ! -----------------------------------------------+
- subroutine coll_xxy_lwf(gx,gy,flx,fly,ckxx,x, &
-                        c,ima,prdkrn,nkr)
+ subroutine coll_xxy_lwf(gx,gy,flx,fly,&
+      f_cw,dtime_coal,nkr,p_z, &
+      x, c,ima,prdkrn)
 
   implicit none
 
-  integer,intent(in) :: nkr
   real(kind=r8size),intent(inout):: gx(nkr),gy(nkr),flx(nkr),fly(nkr)
-  real(kind=r8size),intent(in) :: x(nkr),ckxx(nkr,nkr),c(nkr,nkr)
+  real(kind=r8size),intent(in) :: x(nkr), c(nkr,nkr)
   real(kind=r8size),intent(in) :: prdkrn
   integer,intent(in) :: ima(nkr,nkr)
+
+      interface
+         pure real(kind=r8size) function f_cw(dtime_coal,nkr,p_z,i,j)
+         import :: r4size
+
+         implicit none
+         integer, intent(in) :: nkr, i, j
+         real(kind=r4size),intent(in) :: dtime_coal,p_z
+         end function f_cw
+      end interface
+
+      integer, intent(in) :: nkr
+      real(kind=r4size),intent(in) :: dtime_coal,p_z
 
 ! ... Locals
   real(kind=r8size) :: gmin,ckxx_ij,x01,x02,x03,gsi,gsj,gsk,gsi_w,gsj_w,gsk_w, &
@@ -1264,7 +1344,7 @@ enddo
             if(gx(j).le.gmin) goto 2021
             k=ima(i,j)
             kp=k+1
-            ckxx_ij = ckxx(i,j)
+            ckxx_ij = f_cw(dtime_coal, nkr, p_z, i, j)
             x01=ckxx_ij*gx(i)*gx(j)*prdkrn
             x02=dmin1(x01,gx(i)*x(j))
             x03=dmin1(x02,gx(j)*x(i))
@@ -1344,6 +1424,7 @@ enddo
 
  return
  end subroutine coll_xxy_lwf
+
 ! +-------------------------------------------+
  SUBROUTINE INTERPOL_SE (NH, H_TAB, X_TAB, H, X)
 
@@ -3950,19 +4031,6 @@ enddo
          REAL (KIND=R4SIZE), ALLOCATABLE ::  DROPRADII(:),PKIJ(:,:,:),QKJ(:,:)
          INTEGER ::          ikr_spon_break
 
-         REAL (KIND=R8SIZE), ALLOCATABLE ::  cwll(:,:), &
-                                             cwli_1(:,:),cwli_2(:,:),cwli_3(:,:),        &
-                                             cwil_1(:,:),cwil_2(:,:),cwil_3(:,:),        &
-                                             cwlg(:,:),cwlh(:,:),cwls(:,:),              &
-                                             cwgl(:,:),cwhl(:,:),cwsl(:,:),              &
-                                             cwii_1_1(:,:),cwii_1_2(:,:),cwii_1_3(:,:),  &
-                                             cwii_2_1(:,:),cwii_2_2(:,:),cwii_2_3(:,:),  &
-                                             cwii_3_1(:,:),cwii_3_2(:,:),cwii_3_3(:,:),  &
-                                             cwis_1(:,:),cwis_2(:,:),cwis_3(:,:),        &
-                                             cwsi_1(:,:),cwsi_2(:,:),cwsi_3(:,:),        &
-                                             cwig_1(:,:),cwig_2(:,:),cwig_3(:,:),        &
-                                             cwih_1(:,:),cwih_2(:,:),cwih_3(:,:),        &
-                                             cwsg(:,:),cwss(:,:)
          REAL(kind=r8size),ALLOCATABLE ::  FCCNR_MAR(:),FCCNR_CON(:)
          REAL(kind=r4size),ALLOCATABLE :: Scale_CCN_Factor,XCCN(:),RCCN(:),FCCN(:)
 
@@ -6139,66 +6207,6 @@ enddo
    301   FORMAT(3X,F8.3,3X,E13.5)
    302   FORMAT(5E13.5)
 
- if (.NOT. ALLOCATED(cwll)) ALLOCATE(cwll(nkr,nkr))
-
- if (.NOT. ALLOCATED(cwli_1)) ALLOCATE(cwli_1(nkr,nkr))
- if (.NOT. ALLOCATED(cwli_2)) ALLOCATE(cwli_2(nkr,nkr))
- if (.NOT. ALLOCATED(cwli_3)) ALLOCATE(cwli_3(nkr,nkr))
-
- if (.NOT. ALLOCATED(cwil_1)) ALLOCATE(cwil_1(nkr,nkr))
- if (.NOT. ALLOCATED(cwil_2)) ALLOCATE(cwil_2(nkr,nkr))
- if (.NOT. ALLOCATED(cwil_3)) ALLOCATE(cwil_3(nkr,nkr))
-
- if (.NOT. ALLOCATED(cwlg)) ALLOCATE(cwlg(nkr,nkr))
- if (.NOT. ALLOCATED(cwlh)) ALLOCATE(cwlh(nkr,nkr))
- if (.NOT. ALLOCATED(cwls)) ALLOCATE(cwls(nkr,nkr))
- if (.NOT. ALLOCATED(cwgl)) ALLOCATE(cwgl(nkr,nkr))
- if (.NOT. ALLOCATED(cwhl)) ALLOCATE(cwhl(nkr,nkr))
- if (.NOT. ALLOCATED(cwsl)) ALLOCATE(cwsl(nkr,nkr))
-
- if (.NOT. ALLOCATED(cwii_1_1)) ALLOCATE(cwii_1_1(nkr,nkr))
- if (.NOT. ALLOCATED(cwii_1_2)) ALLOCATE(cwii_1_2(nkr,nkr))
- if (.NOT. ALLOCATED(cwii_1_3)) ALLOCATE(cwii_1_3(nkr,nkr))
- if (.NOT. ALLOCATED(cwii_2_1)) ALLOCATE(cwii_2_1(nkr,nkr))
- if (.NOT. ALLOCATED(cwii_2_2)) ALLOCATE(cwii_2_2(nkr,nkr))
- if (.NOT. ALLOCATED(cwii_2_3)) ALLOCATE(cwii_2_3(nkr,nkr))
- if (.NOT. ALLOCATED(cwii_3_1)) ALLOCATE(cwii_3_1(nkr,nkr))
- if (.NOT. ALLOCATED(cwii_3_2)) ALLOCATE(cwii_3_2(nkr,nkr))
- if (.NOT. ALLOCATED(cwii_3_3)) ALLOCATE(cwii_3_3(nkr,nkr))
-
- if (.NOT. ALLOCATED(cwis_1)) ALLOCATE(cwis_1(nkr,nkr))
- if (.NOT. ALLOCATED(cwis_2)) ALLOCATE(cwis_2(nkr,nkr))
- if (.NOT. ALLOCATED(cwis_3)) ALLOCATE(cwis_3(nkr,nkr))
- if (.NOT. ALLOCATED(cwsi_1)) ALLOCATE(cwsi_1(nkr,nkr))
- if (.NOT. ALLOCATED(cwsi_2)) ALLOCATE(cwsi_2(nkr,nkr))
- if (.NOT. ALLOCATED(cwsi_3)) ALLOCATE(cwsi_3(nkr,nkr))
-
- if (.NOT. ALLOCATED(cwig_1)) ALLOCATE(cwig_1(nkr,nkr))
- if (.NOT. ALLOCATED(cwig_2)) ALLOCATE(cwig_2(nkr,nkr))
- if (.NOT. ALLOCATED(cwig_3)) ALLOCATE(cwig_3(nkr,nkr))
-
- if (.NOT. ALLOCATED(cwih_1)) ALLOCATE(cwih_1(nkr,nkr))
- if (.NOT. ALLOCATED(cwih_2)) ALLOCATE(cwih_2(nkr,nkr))
- if (.NOT. ALLOCATED(cwih_3)) ALLOCATE(cwih_3(nkr,nkr))
-
- if (.NOT. ALLOCATED(cwsg)) ALLOCATE(cwsg(nkr,nkr))
- if (.NOT. ALLOCATED(cwss)) ALLOCATE(cwss(nkr,nkr))
-
-   cwll(:,:) = 0.0e0
-   cwli_1(:,:) = 0.0e0 ; cwli_2(:,:) = 0.0e0 ; cwli_3(:,:) = 0.0e0
-   cwil_1(:,:) = 0.0e0 ; cwil_2(:,:) = 0.0e0 ; cwil_3(:,:) = 0.0e0
-   cwlg(:,:) = 0.0e0 ; cwlh(:,:) = 0.0e0 ; cwls(:,:) = 0.0e0
-   cwgl(:,:) = 0.0e0 ; cwhl(:,:) = 0.0e0 ; cwsl(:,:) = 0.0e0
-   cwii_1_1(:,:) = 0.0e0 ; cwii_1_2(:,:) = 0.0e0 ; cwii_1_3(:,:) = 0.0e0
-   cwii_2_1(:,:) = 0.0e0 ; cwii_2_2(:,:) = 0.0e0 ; cwii_2_3(:,:) = 0.0e0
-   cwii_3_1(:,:) = 0.0e0 ; cwii_3_2(:,:) = 0.0e0 ; cwii_3_3(:,:) = 0.0e0
-   cwis_1(:,:) = 0.0e0 ; cwis_2(:,:) = 0.0e0 ; cwis_3(:,:) = 0.0e0
-   cwsi_1(:,:) = 0.0e0 ; cwsi_2(:,:) = 0.0e0 ; cwsi_3(:,:) = 0.0e0
-   cwig_1(:,:) = 0.0e0 ; cwig_2(:,:) = 0.0e0 ; cwig_3(:,:) = 0.0e0
-   cwih_1(:,:) = 0.0e0 ; cwih_2(:,:) = 0.0e0 ; cwih_3(:,:) = 0.0e0
-   cwsg(:,:) = 0.0e0 ; cwss(:,:) = 0.0e0
-
-   call Kernals_KS(dt,nkr,7.6E6)
 
  !+---+-----------------------------------------+
  if (.NOT. ALLOCATED( Prob)) ALLOCATE( Prob(NKR))
@@ -6220,314 +6228,282 @@ enddo
       CALL wrf_error_fatal(errmess)
 
   END SUBROUTINE FAST_HUCMINIT
- ! -----------------------------------------------------------------+
-  subroutine Kernals_KS(dtime_coal,nkr,p_z)
 
-  implicit none
+  pure real(kind=r8size) function get_cwll(dtime_coal, nkr, p_z, i, j)
+      ! Compute cwll(i,j)
+      implicit none
 
-  integer :: nkr
-  real(kind=r4size),intent(in) :: dtime_coal,p_z
+      integer, intent(in) :: nkr, i, j
+      real(kind=r4size),intent(in) :: dtime_coal,p_z
 
   ! ### Locals
-  integer :: i,j
   real(kind=r4size),parameter :: p1=1.0e6,p2=0.75e6,p3=0.50e6,p4=0.3e6
   real(kind=r4size) :: dlnr, scal, dtimelnr, pdm, p_1, p_2, p_3, ckern_1, ckern_2, &
   					  ckern_3
-
- ! p1=1.00D6 dynes/cm^2 = 1000.0 mb
- ! p2=0.75D6 dynes/cm^2 =  750.0 mb
- ! p3=0.50D6 dynes/cm^2 =  500.0 mb
- ! p4=0.30D6 dynes/cm^2 =  300.0 mb
-
-  scal = 1.0
+    scal = 1.0
  	dlnr = dlog(2.0d0)/(3.0d0*scal)
  	dtimelnr = dtime_coal*dlnr
 
  	p_1=p1
  	p_2=p2
  	p_3=p3
- 	do i=1,nkr
- 		do j=1,nkr
  			! 1. water - water
- 			ckern_1 = YWLL_1000mb(i,j)
- 			ckern_2 = YWLL_750mb(i,j)
- 			ckern_3 = YWLL_500mb(i,j)
- 			cwll(i,j) = ckern_z(p_z,p_1,p_2,p_3,ckern_1,ckern_2,ckern_3)*dtime_coal*dlnr
- 		end do
- 	end do
+      ckern_1 = YWLL_1000mb(i,j)
+      ckern_2 = YWLL_750mb(i,j)
+      ckern_3 = YWLL_500mb(i,j)
+      get_cwll = ckern_z(p_z,p_1,p_2,p_3,ckern_1,ckern_2,ckern_3)*dtime_coal*dlnr
+      get_cwll = ecoalmassm(i,j)*get_cwll
 
- 	! ... ECOALMASSM is from "BreakIniit_KS"
- 	DO I=1,NKR
- 	 DO J=1,NKR
- 		CWLL(I,J) = ECOALMASSM(I,J)*CWLL(I,J)
- 	 END DO
-  END DO
+  end function get_cwll
+ ! -----------------------------------------------------------------+
+  pure real(kind=r8size) function get_cw(dtime_coal, nkr, p_z, i, j, yw_300, yw_500, yw_750)
+      ! Compute the (i,j) entry of an collision table cw* based on the input yw* arrays.
+     ! For example, inputting ywls_300mb, ywls_500mb, ywls_750mb would correspond to
+     ! the value cwls(i,j)
+      implicit none
+
+      integer, intent(in) :: nkr, i, j
+      real(kind=r4size),intent(in) :: dtime_coal,p_z
+      real(kind=r4size),intent(in) :: yw_300(:,:), yw_500(:,:), yw_750(:,:)
+
+  ! ### Locals
+  real(kind=r4size),parameter :: p1=1.0e6,p2=0.75e6,p3=0.50e6,p4=0.3e6
+  real(kind=r4size) :: dlnr, scal, dtimelnr, pdm, p_1, p_2, p_3, ckern_1, ckern_2, &
+  					  ckern_3
+
+    scal = 1.0
+ 	dlnr = dlog(2.0d0)/(3.0d0*scal)
+ 	dtimelnr = dtime_coal*dlnr
 
  	p_1=p2
  	p_2=p3
  	p_3=p4
 
  	if(p_z >= p_1) then
- 		do j=1,nkr
- 	  		do i=1,nkr
- 				cwli_1(i,j) = ywli_750mb(i,j,1)*dtimelnr
- 				cwli_2(i,j) = ywli_750mb(i,j,2)*dtimelnr
- 				cwli_3(i,j) = ywli_750mb(i,j,3)*dtimelnr
- 				cwlg(i,j) = ywlg_750mb(i,j)*dtimelnr
- 				cwlh(i,j) = ywlh_750mb(i,j)*dtimelnr
- 				cwls(i,j) = ywls_750mb(i,j)*dtimelnr
- 				cwii_1_1(i,j) = ywii_750mb(i,j,1,1)*dtimelnr
- 				cwii_1_2(i,j) = ywii_750mb(i,j,1,2)*dtimelnr
- 				cwii_1_3(i,j) = ywii_750mb(i,j,1,3)*dtimelnr
- 				cwii_2_1(i,j) = ywii_750mb(i,j,2,1)*dtimelnr
- 				cwii_2_2(i,j) = ywii_750mb(i,j,2,2)*dtimelnr
- 				cwii_2_3(i,j) = ywii_750mb(i,j,2,3)*dtimelnr
- 				cwii_3_1(i,j) = ywii_750mb(i,j,3,1)*dtimelnr
- 				cwii_3_2(i,j) = ywii_750mb(i,j,3,2)*dtimelnr
- 				cwii_3_3(i,j) = ywii_750mb(i,j,3,3)*dtimelnr
- 				cwis_1(i,j) = ywis_750mb(i,j,1)*dtimelnr
- 				cwis_2(i,j) = ywis_750mb(i,j,2)*dtimelnr
- 				cwis_3(i,j) = ywis_750mb(i,j,3)*dtimelnr
- 				cwsg(i,j) = ywsg_750mb(i,j)*dtimelnr
- 				cwss(i,j) = ywss_750mb(i,j)*dtimelnr
- 	  		end do
- 		end do
- 	endif
+       get_cw = yw_750(i,j)*dtimelnr
+ 	elseif (p_z <= p_3) then
+       get_cw = yw_300(i,j)*dtimelnr
+    elseif (p_z <  p_1  .and. p_z >= p_2) then
+       pdm = (p_z-p_2)/(p_1-p_2)
+       ckern_1=yw_750(i,j)
+       ckern_2=yw_500(i,j)
+       get_cw = (ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
+    elseif (p_z <  p_2  .and. p_z >  p_3) then
+       pdm = (p_z-p_3)/(p_2-p_3)
+       ckern_2=yw_500(i,j)
+       ckern_3=yw_300(i,j)
+       get_cw = (ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
+      endif
 
- 	if (p_z <= p_3) then
- 		do j=1,nkr
- 		  do i=1,nkr
- 			cwli_1(i,j) = ywli_300mb(i,j,1)*dtimelnr
- 			cwli_2(i,j) = ywli_300mb(i,j,2)*dtimelnr
- 			cwli_3(i,j) = ywli_300mb(i,j,3)*dtimelnr
- 			cwlg(i,j) = ywlg_300mb(i,j)*dtimelnr
- 			cwlh(i,j) = ywlh_300mb(i,j)*dtimelnr
- 			cwls(i,j) = ywls_300mb(i,j)*dtimelnr
- 			cwii_1_1(i,j) = ywii_300mb(i,j,1,1)*dtimelnr
- 			cwii_1_2(i,j) = ywii_300mb(i,j,1,2)*dtimelnr
- 			cwii_1_3(i,j) = ywii_300mb(i,j,1,3)*dtimelnr
- 			cwii_2_1(i,j) = ywii_300mb(i,j,2,1)*dtimelnr
- 			cwii_2_2(i,j) = ywii_300mb(i,j,2,2)*dtimelnr
- 			cwii_2_3(i,j) = ywii_300mb(i,j,2,3)*dtimelnr
- 			cwii_3_1(i,j) = ywii_300mb(i,j,3,1)*dtimelnr
- 			cwii_3_2(i,j) = ywii_300mb(i,j,3,2)*dtimelnr
- 			cwii_3_3(i,j) = ywii_300mb(i,j,3,3)*dtimelnr
- 			cwis_1(i,j) = ywis_300mb(i,j,1)*dtimelnr
- 			cwis_2(i,j) = ywis_300mb(i,j,2)*dtimelnr
- 			cwis_3(i,j) = ywis_300mb(i,j,3)*dtimelnr
- 			cwsg(i,j) = ywsg_300mb(i,j)*dtimelnr
- 			cwss(i,j) = ywss_300mb(i,j)*dtimelnr
- 		  end do
- 		end do
- 	  endif
-
- 	  if (p_z <  p_1  .and. p_z >= p_2) then
- 		pdm = (p_z-p_2)/(p_1-p_2)
- 		do j=1,nkr
- 		  do i=1,nkr
- 		  	ckern_1=ywli_750mb(i,j,1)
- 			ckern_2=ywli_500mb(i,j,1)
- 			cwli_1(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
-
- 			ckern_1=ywli_750mb(i,j,2)
- 			ckern_2=ywli_500mb(i,j,2)
- 			cwli_2(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
-
- 			ckern_1=ywli_750mb(i,j,3)
- 			ckern_2=ywli_500mb(i,j,3)
- 			cwli_3(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
-
- 			ckern_1=ywlg_750mb(i,j)
- 			ckern_2=ywlg_500mb(i,j)
- 			cwlg(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
-
- 			ckern_1=ywlh_750mb(i,j)
- 			ckern_2=ywlh_500mb(i,j)
- 			cwlh(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
-
- 			ckern_1=ywls_750mb(i,j)
- 			ckern_2=ywls_500mb(i,j)
- 			cwls(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
-
- 			ckern_1=ywii_750mb(i,j,1,1)
- 			ckern_2=ywii_500mb(i,j,1,1)
- 			cwii_1_1(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
-
- 			ckern_1=ywii_750mb(i,j,1,2)
- 			ckern_2=ywii_500mb(i,j,1,2)
- 			cwii_1_2(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
-
- 			ckern_1=ywii_750mb(i,j,1,3)
- 			ckern_2=ywii_500mb(i,j,1,3)
- 			cwii_1_3(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
-
- 			ckern_1=ywii_750mb(i,j,2,1)
- 			ckern_2=ywii_500mb(i,j,2,1)
- 			cwii_2_1(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
+  end function get_cw
 
 
- 			ckern_1=ywii_750mb(i,j,2,2)
- 			ckern_2=ywii_500mb(i,j,2,2)
- 			cwii_2_2(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
+  pure real(kind=r8size) function get_cwlg(dtime_coal,nkr,p_z,i,j)
+      implicit none
+      integer, intent(in) :: nkr, i, j
+      real(kind=r4size),intent(in) :: dtime_coal,p_z
+      get_cwlg = get_cw(dtime_coal,nkr,p_z,i,j,ywlg_300mb, ywlg_500mb, ywlg_750mb)
+  end function get_cwlg
 
- 			ckern_1=ywii_750mb(i,j,2,3)
- 			ckern_2=ywii_500mb(i,j,2,3)
- 			cwii_2_3(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
+  pure real(kind=r8size) function get_cwlh(dtime_coal,nkr,p_z,i,j)
+      implicit none
+      integer, intent(in) :: nkr, i, j
+      real(kind=r4size),intent(in) :: dtime_coal,p_z
+      get_cwlh = get_cw(dtime_coal,nkr,p_z,i,j,ywlh_300mb, ywlh_500mb, ywlh_750mb)
+  end function get_cwlh
 
- 			ckern_1=ywii_750mb(i,j,3,1)
- 			ckern_2=ywii_500mb(i,j,3,1)
- 			cwii_3_1(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
-
- 			ckern_1=ywii_750mb(i,j,3,2)
- 			ckern_2=ywii_500mb(i,j,3,2)
- 			cwii_3_2(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
-
- 			ckern_1=ywii_750mb(i,j,3,3)
- 			ckern_2=ywii_500mb(i,j,3,3)
- 			cwii_3_3(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
-
- 			ckern_1=ywis_750mb(i,j,1)
- 			ckern_2=ywis_500mb(i,j,1)
- 			cwis_1(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
-
- 			ckern_1=ywis_750mb(i,j,2)
- 			ckern_2=ywis_500mb(i,j,2)
- 			cwis_2(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
-
- 			ckern_1=ywis_750mb(i,j,3)
- 			ckern_2=ywis_500mb(i,j,3)
- 			cwis_3(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
-
- 			ckern_1=ywsg_750mb(i,j)
- 			ckern_2=ywsg_500mb(i,j)
- 			cwsg(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
-
- 			ckern_1=ywss_750mb(i,j)
- 			ckern_2=ywss_500mb(i,j)
- 			cwss(i,j)=(ckern_2+(ckern_1-ckern_2)*pdm)*dtimelnr
- 		   end do
- 		 end do
- 	   endif
-
-  		if (p_z <  p_2  .and. p_z >  p_3) then
- 		   pdm = (p_z-p_3)/(p_2-p_3)
- 		   do j=1,nkr
- 		     do i=1,nkr
-
- 			  ckern_2=ywli_500mb(i,j,1)
- 			  ckern_3=ywli_300mb(i,j,1)
- 			  cwli_1(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
-
- 			  ckern_2=ywli_500mb(i,j,2)
- 			  ckern_3=ywli_300mb(i,j,2)
- 			  cwli_2(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
-
- 			  ckern_2=ywli_500mb(i,j,3)
- 			  ckern_3=ywli_300mb(i,j,3)
- 			  cwli_3(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
-
- 			  ckern_2=ywlg_500mb(i,j)
- 			  ckern_3=ywlg_300mb(i,j)
- 			  cwlg(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
-
-   			ckern_2=ywlh_500mb(i,j)
-   			ckern_3=ywlh_300mb(i,j)
-   			cwlh(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
-
-   			ckern_2=ywls_500mb(i,j)
-   			ckern_3=ywls_300mb(i,j)
-   			cwls(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
-
-   			ckern_2=ywii_500mb(i,j,1,1)
-   			ckern_3=ywii_300mb(i,j,1,1)
-   			cwii_1_1(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
-
-   			ckern_2=ywii_500mb(i,j,1,2)
-   			ckern_3=ywii_300mb(i,j,1,2)
-   			cwii_1_2(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
-
-   			ckern_2=ywii_500mb(i,j,1,3)
-   			ckern_3=ywii_300mb(i,j,1,3)
-   			cwii_1_3(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
-
-   			ckern_2=ywii_500mb(i,j,2,1)
-   			ckern_3=ywii_300mb(i,j,2,1)
-   			cwii_2_1(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
-
-   			ckern_2=ywii_500mb(i,j,2,2)
-   			ckern_3=ywii_300mb(i,j,2,2)
-   			cwii_2_2(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
-
-   			ckern_2=ywii_500mb(i,j,2,3)
-   			ckern_3=ywii_300mb(i,j,2,3)
-   			cwii_2_3(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
-
-   			ckern_2=ywii_500mb(i,j,3,1)
-   			ckern_3=ywii_300mb(i,j,3,1)
-   			cwii_3_1(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
-
-   			ckern_2=ywii_500mb(i,j,3,2)
-   			ckern_3=ywii_300mb(i,j,3,2)
-   			cwii_3_2(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
-
-   			ckern_2=ywii_500mb(i,j,3,3)
-   			ckern_3=ywii_300mb(i,j,3,3)
-   			cwii_3_3(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
-
-   			ckern_2=ywis_500mb(i,j,1)
-   			ckern_3=ywis_300mb(i,j,1)
-   			cwis_1(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
-
-   			ckern_2=ywis_500mb(i,j,2)
-   			ckern_3=ywis_300mb(i,j,2)
-   			cwis_2(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
-
-   			ckern_2=ywis_500mb(i,j,3)
-   			ckern_3=ywis_300mb(i,j,3)
-   			cwis_3(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
-
-   			ckern_2=ywsg_500mb(i,j)
-   			ckern_3=ywsg_300mb(i,j)
-   			cwsg(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
-
-   			ckern_2=ywss_500mb(i,j)
-   			ckern_3=ywss_300mb(i,j)
-   			cwss(i,j)=(ckern_3+(ckern_2-ckern_3)*pdm)*dtimelnr
-
- 		   end do
- 		 end do
-   endif
-
- 		do i=1,nkr
- 		 do j=1,nkr
- ! columns - water
- 		  cwil_1(i,j)=cwli_1(j,i)
- ! plates - water
- 		  cwil_2(i,j)=cwli_2(j,i)
- ! dendrites - water
- 		  cwil_3(i,j)=cwli_3(j,i)
- ! 3. graupel - water
- 		  cwgl(i,j)=cwlg(j,i)
- ! 4. hail - water
- 		  cwhl(i,j)=cwlh(j,i)
- ! 5. snow - water
- 		  cwsl(i,j)=cwls(j,i)
- ! 7.snow - crystals :
- ! snow - columns
- 		  cwsi_1(i,j)=cwis_1(j,i)
- ! snow - plates
- 		  cwsi_2(i,j)=cwis_2(j,i)
- ! snow - dendrites
- 		  cwsi_3(i,j)=cwis_3(j,i)
- 		 end do
- 	  end do
+  pure real(kind=r8size) function get_cwls(dtime_coal,nkr,p_z,i,j)
+      implicit none
+      integer, intent(in) :: nkr, i, j
+      real(kind=r4size),intent(in) :: dtime_coal,p_z
+      get_cwls = get_cw(dtime_coal,nkr,p_z,i,j,ywls_300mb, ywls_500mb, ywls_750mb)
+  end function get_cwls
 
 
-  return
-  end subroutine Kernals_KS
+  pure real(kind=r8size) function get_cwsg(dtime_coal,nkr,p_z,i,j)
+      implicit none
+      integer, intent(in) :: nkr, i, j
+      real(kind=r4size),intent(in) :: dtime_coal,p_z
+      get_cwsg = get_cw(dtime_coal,nkr,p_z,i,j,ywsg_300mb, ywsg_500mb, ywsg_750mb)
+  end function get_cwsg
+
+  pure real(kind=r8size) function get_cwss(dtime_coal,nkr,p_z,i,j)
+      implicit none
+      integer, intent(in) :: nkr, i, j
+      real(kind=r4size),intent(in) :: dtime_coal,p_z
+      get_cwss = get_cw(dtime_coal,nkr,p_z,i,j,ywss_300mb, ywss_500mb, ywss_750mb)
+  end function get_cwss
+
+  pure real(kind=r8size) function get_cwgl(dtime_coal,nkr,p_z,i,j)
+      implicit none
+      integer, intent(in) :: nkr, i, j
+      real(kind=r4size),intent(in) :: dtime_coal,p_z
+      get_cwgl = get_cwlg(dtime_coal,nkr,p_z,j,i)
+  end function get_cwgl
+
+  pure real(kind=r8size) function get_cwhl(dtime_coal,nkr,p_z,i,j)
+      implicit none
+      integer, intent(in) :: nkr, i, j
+      real(kind=r4size),intent(in) :: dtime_coal,p_z
+      get_cwhl = get_cwlh(dtime_coal,nkr,p_z,j,i)
+  end function get_cwhl
+
+  pure real(kind=r8size) function get_cwsl(dtime_coal,nkr,p_z,i,j)
+      implicit none
+      integer, intent(in) :: nkr, i, j
+      real(kind=r4size),intent(in) :: dtime_coal,p_z
+      get_cwsl = get_cwls(dtime_coal,nkr,p_z,j,i)
+  end function get_cwsl
+
+  pure real(kind=r8size) function get_cwli_1(dtime_coal,nkr,p_z,i,j)
+      implicit none
+      integer, intent(in) :: nkr, i, j
+      real(kind=r4size),intent(in) :: dtime_coal,p_z
+      get_cwli_1 = get_cw(dtime_coal,nkr,p_z,i,j,ywli_300mb(:,:,1), ywli_500mb(:,:,1), ywli_750mb(:,:,1))
+  end function get_cwli_1
+
+  pure real(kind=r8size) function get_cwli_2(dtime_coal,nkr,p_z,i,j)
+      implicit none
+      integer, intent(in) :: nkr, i, j
+      real(kind=r4size),intent(in) :: dtime_coal,p_z
+      get_cwli_2 = get_cw(dtime_coal,nkr,p_z,i,j,ywli_300mb(:,:,2), ywli_500mb(:,:,2), ywli_750mb(:,:,2))
+  end function get_cwli_2
+
+  pure real(kind=r8size) function get_cwli_3(dtime_coal,nkr,p_z,i,j)
+      implicit none
+      integer, intent(in) :: nkr, i, j
+      real(kind=r4size),intent(in) :: dtime_coal,p_z
+      get_cwli_3 = get_cw(dtime_coal,nkr,p_z,i,j,ywli_300mb(:,:,3), ywli_500mb(:,:,3), ywli_750mb(:,:,3))
+  end function get_cwli_3
+
+  pure real(kind=r8size) function get_cwil_1(dtime_coal,nkr,p_z,i,j)
+      implicit none
+      integer, intent(in) :: nkr, i, j
+      real(kind=r4size),intent(in) :: dtime_coal,p_z
+      get_cwil_1 = get_cwli_1(dtime_coal,nkr,p_z,j,i)
+  end function get_cwil_1
+
+  pure real(kind=r8size) function get_cwil_2(dtime_coal,nkr,p_z,i,j)
+      implicit none
+      integer, intent(in) :: nkr, i, j
+      real(kind=r4size),intent(in) :: dtime_coal,p_z
+      get_cwil_2 = get_cwli_2(dtime_coal,nkr,p_z,j,i)
+  end function get_cwil_2
+
+  pure real(kind=r8size) function get_cwil_3(dtime_coal,nkr,p_z,i,j)
+      implicit none
+      integer, intent(in) :: nkr, i, j
+      real(kind=r4size),intent(in) :: dtime_coal,p_z
+      get_cwil_3 = get_cwli_3(dtime_coal,nkr,p_z,j,i)
+  end function get_cwil_3
+
+
+  pure real(kind=r8size) function get_cwii_1_1(dtime_coal,nkr,p_z,i,j)
+      implicit none
+      integer, intent(in) :: nkr, i, j
+      real(kind=r4size),intent(in) :: dtime_coal,p_z
+      get_cwii_1_1 = get_cw(dtime_coal,nkr,p_z,i,j,ywii_300mb(:,:,1,1), ywii_500mb(:,:,1,1), ywii_750mb(:,:,1,1))
+  end function get_cwii_1_1
+
+  pure real(kind=r8size) function get_cwii_1_2(dtime_coal,nkr,p_z,i,j)
+      implicit none
+      integer, intent(in) :: nkr, i, j
+      real(kind=r4size),intent(in) :: dtime_coal,p_z
+      get_cwii_1_2 = get_cw(dtime_coal,nkr,p_z,i,j,ywii_300mb(:,:,1,2), ywii_500mb(:,:,1,2), ywii_750mb(:,:,1,2))
+  end function get_cwii_1_2
+  pure real(kind=r8size) function get_cwii_1_3(dtime_coal,nkr,p_z,i,j)
+      implicit none
+      integer, intent(in) :: nkr, i, j
+      real(kind=r4size),intent(in) :: dtime_coal,p_z
+      get_cwii_1_3 = get_cw(dtime_coal,nkr,p_z,i,j,ywii_300mb(:,:,1,3), ywii_500mb(:,:,1,3), ywii_750mb(:,:,1,3))
+  end function get_cwii_1_3
+
+  pure real(kind=r8size) function get_cwii_2_1(dtime_coal,nkr,p_z,i,j)
+      implicit none
+      integer, intent(in) :: nkr, i, j
+      real(kind=r4size),intent(in) :: dtime_coal,p_z
+      get_cwii_2_1 = get_cw(dtime_coal,nkr,p_z,i,j,ywii_300mb(:,:,2,1), ywii_500mb(:,:,2,1), ywii_750mb(:,:,2,1))
+  end function get_cwii_2_1
+
+  pure real(kind=r8size) function get_cwii_2_2(dtime_coal,nkr,p_z,i,j)
+      implicit none
+      integer, intent(in) :: nkr, i, j
+      real(kind=r4size),intent(in) :: dtime_coal,p_z
+      get_cwii_2_2 = get_cw(dtime_coal,nkr,p_z,i,j,ywii_300mb(:,:,2,2), ywii_500mb(:,:,2,2), ywii_750mb(:,:,2,2))
+  end function get_cwii_2_2
+
+  pure real(kind=r8size) function get_cwii_2_3(dtime_coal,nkr,p_z,i,j)
+      implicit none
+      integer, intent(in) :: nkr, i, j
+      real(kind=r4size),intent(in) :: dtime_coal,p_z
+      get_cwii_2_3 = get_cw(dtime_coal,nkr,p_z,i,j,ywii_300mb(:,:,2,3), ywii_500mb(:,:,2,3), ywii_750mb(:,:,2,3))
+  end function get_cwii_2_3
+
+  pure real(kind=r8size) function get_cwii_3_1(dtime_coal,nkr,p_z,i,j)
+      implicit none
+      integer, intent(in) :: nkr, i, j
+      real(kind=r4size),intent(in) :: dtime_coal,p_z
+      get_cwii_3_1 = get_cw(dtime_coal,nkr,p_z,i,j,ywii_300mb(:,:,3,1), ywii_500mb(:,:,3,1), ywii_750mb(:,:,3,1))
+  end function get_cwii_3_1
+
+  pure real(kind=r8size) function get_cwii_3_2(dtime_coal,nkr,p_z,i,j)
+      implicit none
+      integer, intent(in) :: nkr, i, j
+      real(kind=r4size),intent(in) :: dtime_coal,p_z
+      get_cwii_3_2 = get_cw(dtime_coal,nkr,p_z,i,j,ywii_300mb(:,:,3,2), ywii_500mb(:,:,3,2), ywii_750mb(:,:,3,2))
+  end function get_cwii_3_2
+
+  pure real(kind=r8size) function get_cwii_3_3(dtime_coal,nkr,p_z,i,j)
+      implicit none
+      integer, intent(in) :: nkr, i, j
+      real(kind=r4size),intent(in) :: dtime_coal,p_z
+      get_cwii_3_3 = get_cw(dtime_coal,nkr,p_z,i,j,ywii_300mb(:,:,3,3), ywii_500mb(:,:,3,3), ywii_750mb(:,:,3,3))
+  end function get_cwii_3_3
+
+  pure real(kind=r8size) function get_cwis_1(dtime_coal,nkr,p_z,i,j)
+      implicit none
+      integer, intent(in) :: nkr, i, j
+      real(kind=r4size),intent(in) :: dtime_coal,p_z
+      get_cwis_1 = get_cw(dtime_coal,nkr,p_z,i,j,ywis_300mb(:,:,1),ywis_500mb(:,:,1), ywis_750mb(:,:,1))
+  end function get_cwis_1
+
+  pure real(kind=r8size) function get_cwis_2(dtime_coal,nkr,p_z,i,j)
+      implicit none
+      integer, intent(in) :: nkr, i, j
+      real(kind=r4size),intent(in) :: dtime_coal,p_z
+      get_cwis_2 = get_cw(dtime_coal,nkr,p_z,i,j,ywis_300mb(:,:,2),ywis_500mb(:,:,2), ywis_750mb(:,:,2))
+  end function get_cwis_2
+
+  pure real(kind=r8size) function get_cwis_3(dtime_coal,nkr,p_z,i,j)
+      implicit none
+      integer, intent(in) :: nkr, i, j
+      real(kind=r4size),intent(in) :: dtime_coal,p_z
+      get_cwis_3 = get_cw(dtime_coal,nkr,p_z,i,j,ywis_300mb(:,:,3),ywis_500mb(:,:,3), ywis_750mb(:,:,3))
+  end function get_cwis_3
+
+  pure real(kind=r8size) function get_cwsi_1(dtime_coal,nkr,p_z,i,j)
+      implicit none
+      integer, intent(in) :: nkr, i, j
+      real(kind=r4size),intent(in) :: dtime_coal,p_z
+      get_cwsi_1 = get_cwis_1(dtime_coal,nkr,p_z,j,i)
+  end function get_cwsi_1
+  pure real(kind=r8size) function get_cwsi_2(dtime_coal,nkr,p_z,i,j)
+      implicit none
+      integer, intent(in) :: nkr, i, j
+      real(kind=r4size),intent(in) :: dtime_coal,p_z
+      get_cwsi_2 = get_cwis_2(dtime_coal,nkr,p_z,j,i)
+  end function get_cwsi_2
+
+  pure real(kind=r8size) function get_cwsi_3(dtime_coal,nkr,p_z,i,j)
+      implicit none
+      integer, intent(in) :: nkr, i, j
+      real(kind=r4size),intent(in) :: dtime_coal,p_z
+      get_cwsi_3 = get_cwis_3(dtime_coal,nkr,p_z,j,i)
+  end function get_cwsi_3
+
 
  ! ------------------------------------------------------------+
-  real function ckern_z (p_z,p_1,p_2,p_3,ckern_1,ckern_2,ckern_3)
+  pure real function ckern_z (p_z,p_1,p_2,p_3,ckern_1,ckern_2,ckern_3)
 
  	implicit none
 
@@ -8252,7 +8228,7 @@ enddo
 			    	DEL1in, DEL2in,                             &
   		              	Iin,Jin,Kin,itimestep,CollEff)
 
-    use module_mp_SBM_Collision,only:coll_xyy_lwf,coll_xyx_lwf,coll_xxx_lwf,    &
+    use module_mp_SBM_Collision,only: coll_xyy_lwf,coll_xyx_lwf,coll_xxx_lwf, &
 				     coll_xyz_lwf, modkrn_KS, coll_breakup_KS, 	&
 				     coll_xxy_lwf
 
@@ -8301,7 +8277,7 @@ enddo
     t_new = tt
 
     PP_r = PP
-    call Kernals_KS(dt_coll,nkr,PP_r)
+    !call Kernals_KS(dt_coll,nkr,PP_r)
     !CALL MODKRN_KS(TT,QQ,PP,RHO,PRDKRN,TTCOAL,1,1,Iin,Jin,Kin)
     CALL MODKRN_KS(TT,QQ,PP,RHO,PRDKRN,TTCOAL,11,1,Iin,Jin,Kin)
 
@@ -8358,7 +8334,7 @@ enddo
   if (icol_drop.eq.1)then
 ! ... Drop-Drop collisions
   fl1 = 1.0
-  call coll_xxx_lwf (G1,fl1,CWLL,XL_MG,CHUCM,IMA,1.d0,NKR)
+  call coll_xxx_lwf (G1,fl1,get_cwll,dt_coll,nkr,PP_r,XL_MG,CHUCM,IMA,1.d0)
 ! ... Breakup
   if(icol_drop_brk == 1)then
     ndiv = 1
@@ -8435,25 +8411,29 @@ end if
  				rf5 = 0.0
  				rf4 = 0.0
  				if(hail_opt == 1)then
- 					call coll_xyz_lwf(g1,g3,g5,rf1,rf3,rf5,cwls,xl_mg,xs_mg, &
-             	         	   	      	 chucm,ima,prdkrn1,nkr,0)
+ 					call coll_xyz_lwf(g1,g3,g5,rf1,rf3,rf5,&
+                       get_cwls, dt_coll,nkr,PP_r,&
+                       xl_mg,xs_mg, chucm,ima,prdkrn1,0)
  				else
- 					call coll_xyz_lwf(g1,g3,g4,rf1,rf3,rf4,cwls,xl_mg,xs_mg, &
-             	         	   		  	  chucm,ima,prdkrn1,nkr,0)
+ 					call coll_xyz_lwf(g1,g3,g4,rf1,rf3,rf4,&
+                       get_cwls, dt_coll,nkr,PP_r,&
+                       xl_mg,xs_mg, chucm,ima,prdkrn1,0)
  				endif
 		    rf1 = 1.0
         rf5 = 0.0
         rf4 = 0.0
 		    if(alwc < alcr) then
-    			call coll_xyx_lwf(g3,g1,rf3,rf1,cwsl,xs_mg,xl_mg, &
-         	         		      chucm,ima,prdkrn1,nkr,1,dm_rime)
+    			call coll_xyx_lwf(g3,g1,rf3,rf1,get_cwsl,dt_coll,nkr,PP_r,&
+                     xs_mg,xl_mg, chucm,ima,prdkrn1,1,dm_rime)
 		    else
  					if(hail_opt == 1)then
- 						call coll_xyz_lwf(g3,g1,g5,rf3,rf1,rf5,cwsl,xs_mg,xl_mg, &
-									           chucm,ima,prdkrn1,nkr,1)
+ 						call coll_xyz_lwf(g3,g1,g5,rf3,rf1,rf5,&
+                            get_cwsl,dt_coll,nkr,PP_r,&
+                            xs_mg,xl_mg, chucm,ima,prdkrn1,1)
  					else
- 						call coll_xyz_lwf(g3,g1,g4,rf3,rf1,rf4,cwsl,xs_mg,xl_mg, &
- 										         chucm,ima,prdkrn1,nkr,1)
+ 						call coll_xyz_lwf(g3,g1,g4,rf3,rf1,rf4, &
+                            get_cwsl,dt_coll,nkr,PP_r,&
+                            xs_mg,xl_mg, chucm,ima,prdkrn1,1)
  					endif
  				endif
  			! in case : icolxz_snow.ne.0
@@ -8468,8 +8448,9 @@ end if
     		if(alwc < alcr_g) then
   		    rf1 = 1.0
   		    rf4 = 0.0
-  				call coll_xyy_lwf(g1,g4,rf1,rf4,cwlg,xl_mg,xg_mg, &
-    		 	     	         	  chucm,ima,prdkrn1,nkr,0)
+  				call coll_xyy_lwf(g1,g4,rf1,rf4,&
+                    get_cwlg,dt_coll,nkr,PP_r,&
+                    xl_mg,xg_mg, chucm,ima,prdkrn1,0)
    					! ... for ice multiplication
    					conc_old = 0.0
        			conc_new = 0.0
@@ -8478,14 +8459,15 @@ end if
        			end do
        			rf1 = 1.0
        			rf4 = 0.0
-   					call coll_xyx_lwf(g4,g1,rf4,rf1,cwgl,xg_mg,xl_mg, &
-   		 							           chucm,ima,prdkrn1,nkr,1,dm_rime)
+   					call coll_xyx_lwf(g4,g1,rf4,rf1,get_cwgl,dt_coll,nkr,PP_r, &
+                            xg_mg,xl_mg, chucm,ima,prdkrn1,1,dm_rime)
   			else
           rf1 = 1.0
           rf5 = 0.0
           rf4 = 0.0
- 					call coll_xyz_lwf(g1,g4,g5,rf1,rf4,rf5,cwlg,xl_mg,xg_mg, &
-           			      			  chucm,ima,prdkrn1,nkr,1)
+ 					call coll_xyz_lwf(g1,g4,g5,rf1,rf4,rf5,&
+                            get_cwlg,dt_coll,nkr,PP_r,&
+                            xl_mg,xg_mg, chucm,ima,prdkrn1,1)
  					! ... for ice multiplication
  					conc_old = 0.0
    			  conc_new = 0.0
@@ -8495,8 +8477,9 @@ end if
           rf1 = 1.0
           rf5 = 0.0
           rf4 = 0.0
- 					call coll_xyz_lwf(g4,g1,g5,rf4,rf1,rf5,cwgl,xg_mg,xl_mg, &
-           			            chucm,ima,prdkrn1,nkr,1)
+ 					call coll_xyz_lwf(g4,g1,g5,rf4,rf1,rf5,&
+                          get_cwgl,dt_coll,nkr,PP_r,&
+                          xg_mg,xl_mg, chucm,ima,prdkrn1,1)
     		end if
  			! in case icol_graup == 1
   		endif
@@ -8507,8 +8490,9 @@ end if
    			! hail - water = hail
          rf1 = 1.0
          rf5 = 0.0
-  	     call coll_xyy_lwf(g1,g5,rf1,rf5,cwlh,xl_mg,xh_mg, &
-             		          chucm,ima,prdkrn1,nkr,0)
+  	     call coll_xyy_lwf(g1,g5,rf1,rf5,&
+                    get_cwlh,dt_coll,nkr,PP_r,&
+                     xl_mg,xh_mg, chucm,ima,prdkrn1,0)
   			 ! ... for ice multiplication
   			 conc_old = 0.0
        	 conc_new = 0.0
@@ -8517,8 +8501,8 @@ end if
   	     enddo
    			rf1 = 1.0
    			rf5 = 0.0
-  			call coll_xyx_lwf(g5,g1,rf5,rf1,cwhl,xh_mg,xl_mg, &
-                 			   chucm,ima,prdkrn1,nkr,1,dm_rime)
+  			call coll_xyx_lwf(g5,g1,rf5,rf1,get_cwhl,dt_coll,nkr,PP_r, &
+                  xh_mg,xl_mg, chucm,ima,prdkrn1,1,dm_rime)
    		! in case icol_hail == 1
   		endif
 
@@ -8546,7 +8530,7 @@ end if
 
  		if(icol_snow == 1) then
  		! ... interactions between snowflakes
-			call coll_xxx_lwf(g3,rf3,cwss,xs_mg,chucm,ima,prdkrn,nkr)
+		   call coll_xxx_lwf(g3,rf3,get_cwss,dt_coll,nkr,PP_r,xs_mg,chucm,ima,prdkrn)
  		! in case icolxz_snow.ne.0
  		endif
 

@@ -407,7 +407,7 @@ CONTAINS
                 ESG=SVP1*EXP(SVP2*(TG0(I)-SVPT0)/(TG0(I)-SVP3))
                 QSG=EP2*ESG/(PSFC(I)-ESG)
                 THG=TSK(I)*(100./PSFC(I))**ROVCP
-                HFX(I)=FLHC(I)*(THG-THX(I))
+                HFX(I)=FLHC(I)*CAPG(I)*(THG-THX(I))
                 QFX(I)=FLQC(I)*(QSG-QX(I))
                 LH(I)=QFX(I)*XLV
         QS(I)=HFX(I)+QFX(I)*XLV                                
@@ -440,7 +440,7 @@ CONTAINS
                     -SVP3))                                                      
                 QSG=EP2*ESG/(PS-ESG)                                             
 !     UPDATE FLUXES FOR NEW GROUND TEMPERATURE                                   
-                HFXT=FLHC(I)*(THG-THX(I))                                     
+                HFXT=FLHC(I)*CAPG(I)*(THG-THX(I))                                    
                 QFXT=FLQC(I)*(QSG-QX(I))
                 QS(I)=HFXT+QFXT*XLV                                
 !     SUM HFX AND QFX OVER SOIL TIMESTEPS                                        

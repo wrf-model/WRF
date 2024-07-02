@@ -46,3 +46,4 @@ cp ${scriptdir}/sub_wrf_pm_testcase.sh ${rundir}/sub_testcase.sh
 sed -i "s/elvis@nersc.gov/${myemail}/" sub_testcase.sh
 sed -i "s/elvis_test01/${casename}/" sub_testcase.sh
 
+sbatch sub_testcase.sh

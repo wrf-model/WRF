@@ -453,7 +453,7 @@ end module module_mp_SBM_BreakUp
 
  contains
 ! +----------------------------------------------------------+
- double precision FUNCTION POLYSVP (TT,ITYPE)
+ pure double precision FUNCTION POLYSVP (TT,ITYPE)
 
  implicit none
 
@@ -463,6 +463,7 @@ end module module_mp_SBM_BreakUp
  real(4),parameter :: C1 = -9.09718E0, C2 = -3.56654E0, C3 = 0.876793E0, C4 = 0.78583503E0, &
                       AA1_MY = 2.53E12, BB1_MY = 5.42E3, AA2_MY = 3.41E13, BB2_MY = 6.13E3
  real(4) :: ES1N, ES2N
+      !$omp declare target
 
  method_select: SELECT CASE(ITYPE)
 
@@ -471,7 +472,7 @@ end module module_mp_SBM_BreakUp
    ES1N = AA1_MY*EXP(-BB1_MY/TT)
    POLYSVP = ES1N ! [dyn/cm2] to [mb]
 
- ! ice  
+ ! ice
  Case(1)
    ES2N = AA2_MY*EXP(-BB2_MY/TT)
    POLYSVP = ES2N ! [dyn/cm2] to [mb]
@@ -3557,6 +3558,24 @@ enddo
 ! +----------------------------------+
 ! Collision-Coallescnce
 ! +----------------------------------+
+         !$omp target   update to( ywll_1000mb, ywll_750mb, ywll_500mb)
+         !$omp  target  update to( ywlg_300mb, ywlg_750mb, ywlg_500mb)
+         !$omp  target  update to( ywlh_300mb, ywlh_750mb, ywlh_500mb)
+         !$omp  target  update to( ywls_300mb, ywls_750mb, ywls_500mb)
+         !$omp  target  update to( ywsg_300mb, ywsg_750mb, ywsg_500mb)
+         !$omp  target  update to( ywss_300mb, ywss_750mb, ywss_500mb)
+         !$omp  target  update to( ecoalmassm)
+
+ !$omp target update to( xl_mg,xs_mg,xg_mg,xh_mg)
+ !$omp target update to( xl,xs,xg,xh,xi)
+ !$omp target update to( pkij)
+ !$omp target update to( chucm)
+ !$omp target update to( qkj)
+ !$omp target update to( ima)
+
+      !$omp target teams distribute parallel do collapse(2)  &
+      !$omp private(ff1r,ff2r,ff3r,ff4r,ff5r, &
+      !$omp fliqfr_sd,fliqfr_gd,fliqfr_hd,frimfr_sd)
    DO j = jts,jte
       DO k = kts,kte
          DO i = its,ite
@@ -4997,6 +5016,21 @@ enddo
   WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : succesfull reading "Spontanous_Init" '
   CALL wrf_debug(000, errmess)
 
+         !$omp target enter data map(to: ywll_1000mb, ywll_750mb, ywll_500mb)
+         !$omp  target enter data map(to: ywlg_300mb, ywlg_750mb, ywlg_500mb)
+         !$omp  target enter data map(to: ywlh_300mb, ywlh_750mb, ywlh_500mb)
+         !$omp  target enter data map(to: ywls_300mb, ywls_750mb, ywls_500mb)
+         !$omp  target enter data map(to: ywsg_300mb, ywsg_750mb, ywsg_500mb)
+         !$omp  target enter data map(to: ywss_300mb, ywss_750mb, ywss_500mb)
+         !$omp  target enter data map(to: ecoalmassm)
+
+ !$omp target enter data map(to: xl_mg,xs_mg,xg_mg,xh_mg)
+ !$omp target enter data map(to: xl,xs,xg,xh,xi)
+ !$omp target enter data map(to: pkij)
+ !$omp target enter data map(to: chucm)
+ !$omp target enter data map(to: qkj)
+ !$omp target enter data map(to: ima)
+
   return
   2070  continue
 
@@ -5018,6 +5052,7 @@ enddo
   real(kind=r4size),parameter :: p1=1.0e6,p2=0.75e6,p3=0.50e6,p4=0.3e6
   real(kind=r4size) :: dlnr, scal, dtimelnr, pdm, p_1, p_2, p_3, ckern_1, ckern_2, &
   					  ckern_3
+    !$omp declare target
     scal = 1.0
  	dlnr = dlog(2.0d0)/(3.0d0*scal)
  	dtimelnr = dtime_coal*dlnr
@@ -5048,7 +5083,7 @@ enddo
   real(kind=r4size),parameter :: p1=1.0e6,p2=0.75e6,p3=0.50e6,p4=0.3e6
   real(kind=r4size) :: dlnr, scal, dtimelnr, pdm, p_1, p_2, p_3, ckern_1, ckern_2, &
   					  ckern_3
-
+!$omp declare target
     scal = 1.0
  	dlnr = dlog(2.0d0)/(3.0d0*scal)
  	dtimelnr = dtime_coal*dlnr
@@ -5326,6 +5361,7 @@ enddo
 
  	real(kind=r4size),intent(in) :: p_z,p_1,p_2,p_3,ckern_1, &
  									ckern_2,ckern_3
+    !$omp declare target
 
  	if(p_z>=p_1) ckern_z = ckern_1
  	!if(p_z==p_2) ckern_z=ckern_2
@@ -7045,10 +7081,6 @@ enddo
 			    	DEL1in, DEL2in,                             &
   		              	Iin,Jin,Kin,itimestep,CollEff)
 
-    !use module_mp_SBM_Collision,only: coll_xyy_lwf,coll_xyx_lwf,coll_xxx_lwf, &
-				     !coll_xyz_lwf, modkrn_KS, coll_breakup_KS, 	&
-				     !coll_xxy_lwf
-
      implicit none
 
      integer,intent(in) :: Iin,Jin,Kin,itimestep
@@ -7058,6 +7090,7 @@ enddo
      real(kind=r8size),intent(inout) :: fliqfr_s(:),fliqfr_g(:),fliqfr_h(:), &
                                        frimfr_s(:),del1in,del2in,tt,qq
      real(kind=r8size),intent(in) :: pp
+! local vars
 
  	   integer :: KR,ICE,icol_drop,icol_snow,icol_graupel,icol_hail, &
       		      icol_column,icol_plate,icol_dendrite,icol_drop_brk
@@ -7083,6 +7116,7 @@ enddo
  	   real(kind=r8size),PARAMETER :: g_lim = 1.0D-19*1.0D3,AA1_MY = 2.53E12,  &
                                     BB1_MY = 5.42E3, AA2_MY = 3.41E13 ,BB2_MY = 6.13E3
 
+!$omp declare target
     icol_drop_brk=0
     icol_drop=0
     icol_snow=0
@@ -7186,11 +7220,13 @@ enddo
         endif
       endif
       if(FF1R(kr) .ne. FF1R(kr)) then
+#ifndef OFFLOAD
         print*,kr,GDUMB(kr),GDUMB_BF_BREAKUP(kr),XL(kr)
         print*,IT,NDIV, DTBREAKUP
         print*,GDUMB
         print*,GDUMB_BF_BREAKUP
         call wrf_error_fatal("in coal_bott af-coll_breakup - FF1R NaN, model stop")
+#endif
       endif
     enddo
 
@@ -7249,7 +7285,7 @@ end if
                             xs_mg,xl_mg, chucm,ima,prdkrn1,1)
  					else
  						call coll_xyz_lwf(g3,g1,g4,rf3,rf1,rf4, &
-                           cwsl,dt_coll,nkr,PP_r,&
+                            cwsl,dt_coll,nkr,PP_r,&
                             xs_mg,xl_mg, chucm,ima,prdkrn1,1)
  					endif
  				endif
@@ -7383,7 +7419,9 @@ end if
        else
   	     ! if deldrop < 0
          if(abs(deldrop).gt.cont_init_drop*0.05) then
+#ifndef OFFLOAD
            call wrf_error_fatal("fatal error in module_mp_fast_sbm (abs(deldrop).gt.cont_init_drop), model stop")
+#endif
          endif
        endif
       endif
@@ -7393,22 +7431,30 @@ end if
      DO KR=1,NKR
         FF1R(KR)=G1(KR)/(3.*XL(KR)*XL(KR)*1.E3)
         if((FF1R(kr) .ne. FF1R(kr)) .or. FF1R(kr) < 0.0)then
+#ifndef OFFLOAD
 	 	       print*,"G1",G1
  		 	     call wrf_error_fatal("stop at end coal_bott - FF1R NaN or FF1R < 0.0, model stop")
+#endif
 	      endif
         FF3R(KR)=G3(KR)/(3.*xs(kr)*xs(kr)*1.e3)
           if((FF3R(kr) .ne. FF3R(kr)) .or. FF3R(kr) < 0.0)then
+#ifndef OFFLOAD
            call wrf_error_fatal("stop at end coal_bott - FF3R NaN or FF3R < 0.0, model stop")
+#endif
           endif
  		   if(hail_opt == 0)then
  		 	   FF4R(KR)=G4(KR)/(3.*xg(kr)*xg(kr)*1.e3)
       	 if((FF4R(kr) .ne. FF4R(kr)) .or. FF4R(kr) < 0.0) then
+#ifndef OFFLOAD
           call wrf_error_fatal("stop at end coal_bott - FF4R NaN or FF4R < 0.0, model stop")
+#endif
          end if
       else
  		 	   FF5R(KR)=G5(KR)/(3.*xh(kr)*xh(kr)*1.e3)
 		     if((FF5R(kr) .ne. FF5R(kr)) .or. FF5R(kr) < 0.0) then
+#ifndef OFFLOAD
            call wrf_error_fatal("stop at end coal_bott - FF5R NaN or FF5R < 0.0, model stop")
+#endif
          endif
  		 endif
  		END DO
@@ -7420,7 +7466,9 @@ end if
  	FRIMFR_S(:) = rf3(:)
 
  	if (abs(tt-t_new).gt.5.0) then
+#ifndef OFFLOAD
  		call wrf_error_fatal("fatal error in module_mp_FAST_sbm Del_T 5 K, model stop")
+#endif
  	endif
 
   tt = t_new
@@ -8792,30 +8840,31 @@ enddo
  end subroutine coll_xxy_lwf
 
 ! +-------------------------------------------+
- SUBROUTINE INTERPOL_SE (NH, H_TAB, X_TAB, H, X)
+ pure real(kind=r8size) function INTERPOL_SE (NH, H_TAB, X_TAB, H)
 
   implicit none
 ! ### Interface
- integer :: NH
- real(kind=r4size) :: H_TAB(NH), X_TAB(NH)
- real(kind=r8size) :: H, X
+ integer, intent(in) :: NH
+ real(kind=r4size), intent(in) :: H_TAB(NH), X_TAB(NH)
+ real(kind=r8size), intent(in) :: H
 ! ### Interface
  integer :: I, J
 
+      !$omp declare target
  IF(H > H_TAB(1)) THEN
-    X = X_TAB(1)
+    interpol_se = X_TAB(1)
     RETURN
  ENDIF
 
  IF(H < H_TAB(NH)) THEN
-    X = X_TAB(NH)
+    interpol_se = X_TAB(NH)
     RETURN
  ENDIF
 
  DO I = 2,NH
     IF(H > H_TAB(I)) THEN
        J = I-1
-       X = X_TAB(J)+(X_TAB(I)-X_TAB(J))/ &
+       interpol_se = X_TAB(J)+(X_TAB(I)-X_TAB(J))/ &
            (H_TAB(I)-H_TAB(J))*(H-H_TAB(J))
 
        RETURN
@@ -8823,7 +8872,7 @@ enddo
  ENDDO
 
  RETURN
- END SUBROUTINE INTERPOL_SE
+ END function INTERPOL_SE
 ! +-------------------------------------------------------------------------------+
     subroutine modkrn_KS (tt,qq,pp,rho,factor_t,ttcoal,ICase,Icondition, &
                           Iin,Jin,Kin)
@@ -8842,6 +8891,7 @@ enddo
     real(kind=r8size) :: AA,BB,CC,DD,Es,Ew,AA1_MY,BB1_MY
     real(kind=r4size) :: tt_r, T_tab(7), SE_tab(7)
 
+      !$omp declare target
     satq2(t,p) = 3.80d3*(10**(9.76421d0-2667.1d0/t))/p
     temp(a,b,c,d,t) = d*t*t*t+c*t*t+b*t+a
 
@@ -8918,7 +8968,7 @@ enddo
     SE_tab = [10.0**(-0.693), 10.0**(-0.72), 10.0**(-0.877), 10.0**(-1.050),  10.0**(-1.212),  10.0**(-1.401),  10.0**(-2.082) ]
 
 
-    CALL INTERPOL_SE (size(SE_tab), T_TAB, SE_TAB, TC, factor_t)
+    factor_t = INTERPOL_SE (size(SE_tab), T_TAB, SE_TAB, TC)
 
       if(tc < -40.0d0) then
           factor_t = 0.0d0
@@ -8941,7 +8991,8 @@ enddo
     implicit none
   ! ... Interface
     integer,intent(in) :: jmax, jbreak, NKRInput, NKR
-    real(kind=r8size),intent(in) :: xt_mg(:), dt
+    real(kind=r8size),intent(in) :: xt_mg(:)
+     real(kind=r8size), value :: dt
     real(kind=r4size),intent(in) :: pkij(:,:,:),qkj(:,:)
     real(kind=r8size),intent(inout) :: gt_mg(:)
   ! ... Interface
@@ -8955,6 +9006,7 @@ enddo
                      ,amweight(jbreak), gain, aloss
   ! ... Locals
 
+!$omp declare target
   ie=jbreak
   je=jbreak
   ke=jbreak
@@ -9008,6 +9060,7 @@ enddo
     amweight(k)=2.0/(xt(j+1)**2.0-xt(j)**2.0)
     dbreak(k)=amweight(k)*(gain-fa(k)*aloss)
 
+#ifndef OFFLOAD
     if(dbreak(k) .ne. dbreak(k)) then
       print*,dbreak(k),amweight(k),gain,fa(k),aloss
       print*,"-"
@@ -9024,6 +9077,7 @@ enddo
       print*,gt
       call wrf_error_fatal(" inside coll_breakup, NaN, model stop")
     endif
+#endif
   enddo
 
   !shift rate to coagulation grid
@@ -9042,6 +9096,7 @@ enddo
   enddo
 
   !time integration
+
 
   do j=1,jmax
     gt(j)=gt(j)+dg(j)*dt

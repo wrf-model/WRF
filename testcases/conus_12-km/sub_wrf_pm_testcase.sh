@@ -18,13 +18,13 @@ n=64 # number of MPI ranks
 #mod_perftools=perftools-lite-gpu   # Use perftools-lite-gpu
 #mod_perftools=perftools            # Use perftools
 
- use_gprof=0                        # To use gprof?
+ use_gprof=0                        # Set to 1 to use gprof
  [[ $use_gprof -eq 1 ]] && mod_perftools=""
 
 #peenv=gnu                          # Use PrgEnv-gnu
  peenv=nvidia                       # Use PrgEnv-nvidia
 
- use_gpu=0                          # To use GPU offload code?
+ use_gpu=0                          # Set to 1 to use GPU offload code
 
 #Modules --------------------------------------------------------------------
 if [[ $use_gpu -eq 1 ]]; then
@@ -66,10 +66,10 @@ fi
 srunval=$?
 
 #Get the total "elapsed seconds"
- if [[ -f rsl.out.0000 ]]; then
-   elapsed_seconds=$(awk '/^Timing for / {s+=$(NF-2)}; END {printf("%20.5f\n", s)}' rsl.out.0000)
-   echo "Total elapsed seconds: $elapsed_seconds"
- fi
+if [[ -f rsl.out.0000 ]]; then
+  elapsed_seconds=$(awk '/^Timing for / {s+=$(NF-2)}; END {printf("%20.5f\n", s)}' rsl.out.0000)
+  echo "Total elapsed seconds: $elapsed_seconds"
+fi
 
 #rename and save the process 0 out and err files
 mv rsl.error.0000 rsl.error_0_$SLURM_JOB_ID

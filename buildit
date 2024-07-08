@@ -41,7 +41,7 @@ imach="pm"  #target system name. "pm" for Perlmutter.
 
 # set the top directory of the WRF source code as an environmental variable
 #export WRF_DIR="PATH_TO_YOUR_WRFcode_LOCATION"
- export WRF_DIR=${PWD}/WRF
+ export WRF_DIR=${PWD}
 
 ##############################
 

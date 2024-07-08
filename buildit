@@ -9,10 +9,10 @@ set -o pipefail
 #mod_perftools=perftools-lite-gpu   # Use perftools-lite-gpu
 #mod_perftools=perftools            # Use perftools
 
- use_gprof=0                        # To use gprof?
+ use_gprof=0                        # Set to 1 to use gprof
  [[ $use_gprof -eq 1 ]] && mod_perftools=""
 
- run_bear=0                         # To run bear?
+ run_bear=0                         # Set to 1 to run bear
  if [[ $run_bear -eq 1 ]]; then
    use_gprof=0
    mod_perftools=""
@@ -23,7 +23,7 @@ set -o pipefail
  peenv=nvidia                       # Use PrgEnv-nvidia
 #peenv=intel                        # Use PrgEnv-intel
 
- use_gpu=1                          # To build GPU offload code?
+ use_gpu=1                          # Set to 1 to build GPU offload code
 
 #change the following boolean variables to run/skip certain compiling steps
 

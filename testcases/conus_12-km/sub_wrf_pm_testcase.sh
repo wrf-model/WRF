@@ -65,6 +65,12 @@ fi
 #capture error code
 srunval=$?
 
+#Get the total "elapsed seconds"
+ if [[ -f rsl.out.0000 ]]; then
+   elapsed_seconds=$(awk '/^Timing for / {s+=$(NF-2)}; END {printf("%20.5f\n", s)}' rsl.out.0000)
+   echo "Total elapsed seconds: $elapsed_seconds"
+ fi
+
 #rename and save the process 0 out and err files
 mv rsl.error.0000 rsl.error_0_$SLURM_JOB_ID
 mv rsl.out.0000 rsl.out_0_$SLURM_JOB_ID
@@ -73,4 +79,3 @@ if [ $srunval -ne 0 ]; then
     echo "run failed"
     exit 10
 fi
-

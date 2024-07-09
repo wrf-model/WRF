@@ -1,0 +1,233 @@
+#!/bin/bash
+set -e
+set -o pipefail 
+
+##############################
+
+ mod_perftools=""
+#mod_perftools=perftools-lite       # Use perftools-lite
+#mod_perftools=perftools-lite-gpu   # Use perftools-lite-gpu
+#mod_perftools=perftools            # Use perftools
+
+ use_gprof=0                        # Set to 1 to use gprof
+ [[ $use_gprof -eq 1 ]] && mod_perftools=""
+
+ run_bear=0                         # Set to 1 to run bear
+ if [[ $run_bear -eq 1 ]]; then
+   use_gprof=0
+   mod_perftools=""
+   export PATH=PATH=/global/cfs/cdirs/m4232/tools/bin:$PATH
+ fi
+
+#peenv=gnu                          # Use PrgEnv-gnu
+ peenv=nvidia                       # Use PrgEnv-nvidia
+#peenv=intel                        # Use PrgEnv-intel
+
+ use_gpu=1                          # Set to 1 to build GPU offload code
+
+#change the following boolean variables to run/skip certain compiling steps
+
+doclean=false  #true if WRF source code is modified since the last compilation
+
+doclean_all=true   #true if previously compiled with different configure options
+
+runconf=true    #run WRF's configure script; should do this first before compiling
+
+docompile=true  #run WRF's compile script; should do this after configure
+
+debug=false  #true to compile WRF with debug flag (no optimizations, -g flag for debugger, etc.)
+
+imach="pm"  #target system name. "pm" for Perlmutter.
+
+# set the top directory of the WRF source code as an environmental variable
+#export WRF_DIR="PATH_TO_YOUR_WRFcode_LOCATION"
+ export WRF_DIR=${PWD}
+
+##############################
+
+#Modules --------------------------------------------------------------------
+#general modules
+ if [[ $use_gpu -eq 1 ]]; then
+   module load gpu  
+ else
+   module load cpu  
+ fi
+ module load PrgEnv-$peenv
+
+#module for WRF file I/O
+#order of loading matters!
+module load cray-hdf5  #required to load netcdf library
+module load cray-netcdf 
+module load cray-parallel-netcdf
+[[ -n ${mod_perftools} ]] && module load ${mod_perftools}
+
+module list #check what modules are loaded
+
+#set environmental variables used by WRF build system, 
+#using the environmental variables set by the modules
+
+#use classic (CDF1) as default
+export NETCDF_classic=1 
+#use 64-bit offset format (CDF2) of netcdf files              
+export WRFIO_NCD_LARGE_FILE_SUPPORT=1 
+#do not use netcdf4 compression (serial), need hdf5 module
+export USE_NETCDF4_FEATURES=0         
+
+export HDF5=$HDF5_DIR
+export HDF5_LIB="$HDF5_DIR/lib"
+export HDF5_BIN="$HDF5_DIR/bin"
+
+export NETCDF=$NETCDF_DIR
+export NETCDF_BIN="$NETCDF_DIR/bin"
+export NETCDF_LIB="$NETCDF_DIR/lib"
+
+#create PNETCDF environment variable to use the parallel netcdf library
+export PNETCDF=$PNETCDF_DIR  
+
+export LD_LIBRARY_PATH="/usr/lib64":${LD_LIBRARY_PATH}
+export PATH=${NETCDF_BIN}:${HDF5_BIN}:${PATH}
+export LD_LIBRARY_PATH=${NETCDF_LIB}:${LD_LIBRARY_PATH}
+
+#other special flags
+export PNETCDF_QUILT="0"  #Quilt output is not stable, better not use it
+
+#check environment variables
+echo "LD_LIBRARY_PATH: "$LD_LIBRARY_PATH
+echo "PATH: "$PATH
+echo "MANPATH: "$MANPATH
+
+echo "NETCDF is $NETCDF"
+echo "NETCDF_LIB is $NETCDF_LIB"
+
+echo "HDF5 is $HDF5"
+echo "HDF5_LIB is $HDF5_LIB"
+
+echo "PNETCDF: ${PNETCDF}"
+echo "PNETCDF_QUILT: ${PNETCDF_QUILT}"
+
+##capture the date and time for log file name
+idate=$(date "+%Y-%m-%d-%H_%M")
+#
+##run WRF build scripts located in the top WRF directory
+cd $WRF_DIR
+
+if [ "$doclean_all" = true ]; then
+    ./clean -a
+    #"The './clean –a' command is required if you have edited the configure.wrf 
+    #or any of the Registry files.", but this deletes configure.wrf....
+
+fi
+
+if [ "$doclean" = true ]; then
+    ./clean
+fi
+
+#echo "running configure"
+if [ "$runconf" = true ]; then
+
+    if [ "$debug" = true ]; then
+        echo "configure debug mode"
+        ./configure -d
+    else
+        ./configure
+    fi
+
+   ##configure options selected are:
+   #  1. (serial)   2. (smpar)   3. (dmpar)   4. (dm+sm)   PGI (pgf90/gcc)
+   # 32. (serial)  33. (smpar)  34. (dmpar)  35. (dm+sm)   GNU (gfortran/gcc)
+   # choose 35 for real (not idealized) cases
+   # GPU: choose 4
+
+    configfile="${WRF_DIR}/configure.wrf"
+
+    #the sed commands below will change the following lines in configure.wrf
+    #--- original
+    #SFC             =       gfortran
+    #SCC             =       gcc
+    #CCOMP           =       gcc
+    #DM_FC           =       mpif90
+    #DM_CC           =       mpicc
+
+    #--- edited (FC and CC with MPI)
+    #SFC             =       gfortran
+    #SCC             =       gcc
+    #CCOMP           =       cc
+    #DM_FC           =       ftn
+    #DM_CC           =       cc
+
+    if [ -f "$configfile" ]; then
+        echo "editing configure.wrf"
+        #need to remove -cc=$(SCC) in DM_CC
+        sed -i 's/-cc=\$(SCC)/ /' ${configfile}
+        sed -i 's/mpif90/ftn/' ${configfile}
+        sed -i 's/mpicc/cc/' ${configfile}
+        sed -i 's/pgf90/nvfortran/' ${configfile}
+        sed -i 's/pgcc/nvc/' ${configfile}
+#
+# FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG) -fallow-argument-mismatch
+#       sed -i 's/^\(\s*FCBASEOPTS\s*=.*\)$/\1 -fallow-argument-mismatch/' ${configfile}
+        #also user can remove the flag -DWRF_USE_CLM 
+        #from ARCH_LOCAL if not planning to 
+        #use the CLM4 land model to speed up compilation
+        #sed -i 's/-DWRF_USE_CLM/ /' ${configfile} 
+
+        if [[ $use_gprof -eq 1 ]]; then
+#CFLAGS          =    $(CFLAGS_LOCAL) -DDM_PARALLEL  \
+#                     -DLANDREAD_STUB=1 \
+#                     -DMAX_HISTORY=$(MAX_HISTORY) -DNMM_CORE=$(WRF_NMM_CORE)
+#FCFLAGS         =    $(FCOPTIM) $(FCBASEOPTS)
+          sed -i 's/^\(\s*FCFLAGS\s*=\s*\).*$/\1$(FCOPTIM) $(FCBASEOPTS) -pg/
+                  /^\s*CFLAGS\s*=/ {N; N; s/\(-DMAX_HISTORY=$(MAX_HISTORY) -DNMM_CORE=$(WRF_NMM_CORE)\)\s*/\1 -pg/}' \
+                 ${configfile}
+        fi
+
+        if [[ $use_gpu -eq 1 ]]; then
+            if [[ $peenv == nvidia ]]; then
+                # Set OpenMP flags for offloading on nvidia compilers
+                sed -i 's/^\(\s*FCFLAGS\s*=.*\)$/\1 -Minform=warn -mp=gpu -Minfo=mp,accel/' \
+                     ${configfile}
+            fi
+        fi
+
+    fi
+
+fi
+
+if [ "$docompile" = true ]; then
+    export J="-j 8"  #build in parallel
+    echo "J = $J"
+
+    bldlog=compile_em_${idate}_${imach}.log
+    echo  "compile log file is ${bldlog}"
+
+    #run the compile script 
+    if [[ $run_bear -eq 1 ]]; then
+        bear -- ./compile em_real &> ${bldlog}
+    else
+        ./compile em_real &> ${bldlog}
+    fi
+
+    #check if there is an error in the compile log
+    #grep command exits the script in case of nomatch
+    #after the 2022-12 maintenance
+    set +e #release the exit flag before grep
+
+    grep "Problems building executables" ${bldlog}    
+    RESULT=$?
+
+    #set the exit flag again
+    set -e  
+
+    if [ $RESULT -eq 0 ]; then
+        echo "compile failed, check ${bldlog}"      
+    else
+        echo "compile success"
+        #sometimes renaming executable with descriptive information is useful
+        #cp $WRF_DIR/main/ideal.exe $WRF_DIR/main/ideal_${idate}_${imach}.exe
+        #cp $WRF_DIR/main/real.exe $WRF_DIR/main/real_${idate}_${imach}.exe
+        #cp $WRF_DIR/main/wrf.exe $WRF_DIR/main/wrf_${idate}_${imach}.exe
+        #cp $WRF_DIR/main/ndown.exe $WRF_DIR/main/ndown_${idate}_${imach}.exe
+        [[ ${mod_perftools} == perftools ]] && cd $WRF_DIR/main && pat_build -f wrf.exe
+    fi
+
+fi

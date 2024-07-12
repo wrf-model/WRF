@@ -922,6 +922,10 @@ if ( ${ENABLE_HYDRO} )
   add_subdirectory( hydro  )
 endif()
 
+if ( ${WRF_CORE} STREQUAL "PLUS" )
+  add_subdirectory( wrftladj )
+endif()
+
 add_subdirectory( dyn_em   )
 
 

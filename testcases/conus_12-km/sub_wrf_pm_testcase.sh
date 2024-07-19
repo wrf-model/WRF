@@ -53,6 +53,11 @@ ml -t
 #1. don't load the wrf module
 #2. the modified executable (wrf.exe) has to be placed in the rundir 
 
+#To run an SBM case, remame namelist.input.sbm, wrfbdy_d01.sbm,
+#wrfinput_d01.sbm and wrfrst_d01_2008-07-15_00_00_00.sbm to
+#namelist.input, wrfbdy_d01, wrfinput_d01 and wrfrst_d01_2008-07-15_00_00_00,
+#respectively.
+
 #OpenMP settings:
 export OMP_NUM_THREADS=$ntile
 export OMP_PLACES=threads

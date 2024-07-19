@@ -29,6 +29,8 @@ cp    /global/cfs/cdirs/m4232/intern_2024/input_sbm/namelist.input.cold namelist
 cp    /global/cfs/cdirs/m4232/intern_2024/input_sbm/CESM_RCP4.5_Current_Aerosol_Data.dat \
       /global/cfs/cdirs/m4232/intern_2024/input_sbm/CESM_RCP4.5_Future_Aerosol_Data.dat  .
 cp    /global/cfs/cdirs/m4232/intern_2024/input_sbm/wrfrst_d01_2008-07-15_00_00_00 wrfrst_d01_2008-07-15_00_00_00.sbm
+cp    /global/cfs/cdirs/m4232/intern_2024/input_sbm/wrfbdy_d01                     wrfbdy_d01.sbm
+cp    /global/cfs/cdirs/m4232/intern_2024/input_sbm/wrfinput_d01                   wrfinput_d01.sbm
 cp -r /global/cfs/cdirs/m4232/intern_2024/input_sbm/{SBM_input_33,SBM_input_43} \
       /global/cfs/cdirs/m4232/intern_2024/input_sbm/scattering_tables_2layer_high_quad_1dT_1%fw_110 .
 

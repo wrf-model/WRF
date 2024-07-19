@@ -41,6 +41,7 @@ cp ${scriptdir}/namelist_v4.5.2_conus12km_restart.input ${rundir}/namelist.input
 
 #copy sbatch script
 cp ${scriptdir}/sub_wrf_pm_testcase.sh ${rundir}/sub_testcase.sh
+cp ${scriptdir}/updown.sh              ${rundir}/updown.sh
 
 #edit the email address and job name in the sbatch script
 sed -i "s/elvis@nersc.gov/${myemail}/" sub_testcase.sh

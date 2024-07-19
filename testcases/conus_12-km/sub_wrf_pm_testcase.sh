@@ -29,6 +29,13 @@ n=64 # number of MPI ranks
 #Modules --------------------------------------------------------------------
 if [[ $use_gpu -eq 1 ]]; then
   module load gpu
+  if [[ $peenv == gnu ]]; then
+    export GOMP_DEBUG=1
+  elif [[ $peenv == nvidia ]]; then
+    export NVCOMPILER_ACC_NOTIFY=3
+  elif [[ $peenv == cray ]]; then
+    export CRAY_ACC_DEBUG=3
+  fi
 else
   module load cpu
 fi

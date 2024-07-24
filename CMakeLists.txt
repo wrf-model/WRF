@@ -984,7 +984,12 @@ endif()
 add_subdirectory( dyn_em   )
 
 
-add_subdirectory( main     )
+if ( ${WRF_CORE} STREQUAL "DA" OR ${WRF_CORE} STREQUAL "DA_4D_VAR" )
+  # We don't create any of the drivers for WRF in DA mode
+  add_subdirectory( var )
+else()
+  add_subdirectory( main     )
+endif()
 
 ################################################################################
 # Add subdirectory with case info

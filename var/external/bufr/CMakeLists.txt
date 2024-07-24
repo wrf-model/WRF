@@ -250,6 +250,12 @@ set_target_properties(
                           Fortran_FORMAT           FIXED                          
                       )
 
+target_compile_definitions(
+                            ${FOLDER_COMPILE_TARGET}
+                            PRIVATE
+                              UNDERSCORE
+                            )
+
 set_source_files_properties(
                             irev.for
                             wrdlen.for

@@ -34,20 +34,6 @@ add_library(
               )
 
 
-set_target_properties( 
-                      ${FOLDER_COMPILE_TARGET}f
-                        PROPERTIES
-                          Fortran_MODULE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/${FOLDER_COMPILE_TARGET}
-                          EXPORT_PROPERTIES        Fortran_MODULE_DIRECTORY
-                          Fortran_FORMAT           FIXED
-                      )
-
-target_compile_definitions(
-                            ${FOLDER_COMPILE_TARGET}
-                            PRIVATE
-                              UNDERSCORE
-                            )
-
 target_include_directories(
                             ${FOLDER_COMPILE_TARGET}
                             PRIVATE

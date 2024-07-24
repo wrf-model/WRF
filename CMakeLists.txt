@@ -176,6 +176,12 @@ set( INTIO                ON CACHE BOOL "INTIO"               )
 set( KEEP_INT_AROUND      ON CACHE BOOL "KEEP_INT_AROUND"     )
 set( LIMIT_ARGS           ON CACHE BOOL "LIMIT_ARGS"          )
 
+# WRF DA
+set( ENABLE_CRTM         OFF CACHE BOOL "ENABLE_CRTM"          )
+set( ENABLE_WAVELET       ON CACHE BOOL "ENABLE_WAVELET"       ) # todo I think this should always be on
+set( ENABLE_BUFR          ON CACHE BOOL "ENABLE_BUFR"          ) # todo I think the config is defaulting this on
+
+
 # Toggles, how do we want to best address these options? Environment vars are not
 # the best
 set( WRFIO_NCD_NO_LARGE_FILE_SUPPORT  OFF CACHE BOOL "WRFIO_NCD_NO_LARGE_FILE_SUPPORT" )

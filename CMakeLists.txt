@@ -217,7 +217,7 @@ set( LWORDSIZE      4     )
 # To limit the KPP generation to not consume copious amounts of RAM
 if ( NOT DEFINED MAX_KPP_GEN_THREADS )
   # 1 thread takes about 4.75 GB
-  set( MAX_KPP_GEN_THREADS 4 )
+  set( MAX_KPP_GEN_THREADS 2 )
 endif()
 
 

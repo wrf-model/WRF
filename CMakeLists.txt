@@ -974,7 +974,6 @@ add_dependencies(
                   )
 
 # Add directly to core
-add_subdirectory( phys     )
 add_subdirectory( share    )
 add_subdirectory( frame    )
 add_subdirectory( inc      )
@@ -991,13 +990,13 @@ if ( ${WRF_CORE} STREQUAL "PLUS" )
   add_subdirectory( wrftladj )
 endif()
 
-add_subdirectory( dyn_em   )
-
-
 if ( ${WRF_CORE} STREQUAL "DA" OR ${WRF_CORE} STREQUAL "DA_4D_VAR" )
   # We don't create any of the drivers for WRF in DA mode
   add_subdirectory( var )
 else()
+  # DA does not use any of this
+  add_subdirectory( dyn_em   )
+  add_subdirectory( phys     )
   add_subdirectory( main     )
 endif()
 

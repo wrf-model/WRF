@@ -37,42 +37,34 @@ target_sources(
                   da/da_4dvar/da_4dvar.f90
                   da/da_airep/da_airep.f90
                   da/da_airsr/da_airsr.f90
-                  da/da_biascorr_airmass/da_bias_airmass.f90
-                  da/da_biascorr_airmass/da_bias_scan.f90
-                  da/da_biascorr_airmass/da_bias_sele.f90
-                  da/da_biascorr_airmass/da_bias_verif.f90
-                  da/da_biascorr_airmass/pythag.f90
-                  da/da_biascorr_airmass/rad_bias.f90
-                  da/da_biascorr_airmass/regress_one.f90
-                  da/da_biascorr_airmass/tqli.f90
-                  da/da_biascorr_airmass/tred2.f90
                   da/da_bogus/da_bogus.f90
                   da/da_buoy/da_buoy.f90
                   da/da_chem_sfc/da_chem_sfc.f90
+                  # This is not in the original da lib, but I don't see how that
+                  # isn't correct as many modules in this require it
                   da/da_control/da_control.f90
+
+
                   da/da_define_structures/da_define_structures.f90
                   da/da_dynamics/da_dynamics.f90
-                  da/da_etkf/da_etkf.f90
                   da/da_ffts/da_ffts.f90
                   da/da_ffts/module_ffts.f90
-                  da/da_gen_be/da_gen_be.f90
                   da/da_geoamv/da_geoamv.f90
                   da/da_gpseph/da_gpseph.f90
                   da/da_gpspw/da_gpspw.f90
                   da/da_gpsref/da_gpsref.f90
                   da/da_grid_definitions/da_grid_definitions.f90
                   da/da_interpolation/da_interpolation.f90
-                  da/da_main/da_wrfvar_esmf.f90
-                  da/da_main/da_wrfvar_esmf_super.f90
+                  da/da_lightning/da_lightning.f90
+                  da/da_main/copyfile.c
                   da/da_main/da_wrfvar_io.f90
-                  da/da_main/da_wrfvar_main.f90
                   da/da_main/da_wrfvar_top.f90
                   da/da_metar/da_metar.f90
                   da/da_minimisation/da_minimisation.f90
-                  da/da_monitor/da_rad_diags.f90
                   da/da_mtgirs/da_mtgirs.f90
-                  da/da_obs/da_obs.f90
+                  da/da_obs_io/da_join_iv_for_multi_inc.c
                   da/da_obs_io/da_obs_io.f90
+                  da/da_obs/da_obs.f90
                   da/da_par_util/da_par_util.f90
                   da/da_par_util/da_par_util1.f90
                   da/da_physics/da_physics.f90
@@ -83,6 +75,7 @@ target_sources(
                   da/da_pseudo/da_pseudo.f90
                   da/da_qscat/da_qscat.f90
                   da/da_radar/da_radar.f90
+                  da/da_radiance/amsr2time_.c
                   da/da_radiance/da_crtm.f90
                   da/da_radiance/da_radiance.f90
                   da/da_radiance/da_radiance1.f90
@@ -102,7 +95,6 @@ target_sources(
                   da/da_setup_structures/da_setup_structures.f90
                   da/da_ships/da_ships.f90
                   da/da_sound/da_sound.f90
-                  da/da_spectral/da_be_spectral.f90
                   da/da_spectral/da_spectral.f90
                   da/da_ssmi/da_ssmi.f90
                   da/da_ssmi/module_ssmi.f90
@@ -112,33 +104,17 @@ target_sources(
                   da/da_test/da_test.f90
                   da/da_tools/da_rsl_interfaces.f90
                   da/da_tools/da_tools_serial.f90
+                  da/da_tools/da_tools.f90
                   da/da_tools/da_wrf_interfaces.f90
                   da/da_tools/gamma1.f90
-                  da/da_tools/da_tools.f90
+                  da/da_tracing/da_memory.c
                   da/da_tracing/da_tracing.f90
                   da/da_transfer_model/da_transfer_model.f90
-                  da/da_update_bc/da_module_couple_uv.f90
-                  da/da_update_bc/da_module_couple_uv_ad.f90
                   da/da_update_bc/da_netcdf_interface.f90
-                  da/da_update_bc/da_update_bc.f90
-                  da/da_update_bc/da_update_bc_ad.f90
-                  da/da_util/da_advance_time.f90
-                  da/da_util/da_tune_obs_desroziers.f90
-                  da/da_util/da_tune_obs_hollingsworth1.f90
-                  da/da_util/da_tune_obs_hollingsworth2.f90
-                  da/da_varbc/da_varbc.f90
                   da/da_varbc_tamdar/da_varbc_tamdar.f90
-                  da/da_verif_anal/da_verif_anal.f90
-                  da/da_verif_anal/da_verif_anal_control.f90
-                  da/da_verif_grid/da_verif_grid.f90
-                  da/da_verif_grid/da_verif_grid_control.f90
-                  da/da_verif_obs/da_verif_obs.f90
-                  da/da_verif_obs/da_verif_obs_control.f90
-                  da/da_verif_obs/da_verif_obs_init.f90
-                  da/da_verif_obs/da_verif_tools.f90
+                  da/da_varbc/da_varbc.f90
                   da/da_vtox_transforms/da_vtox_transforms.f90
                   da/da_wavelet/da_wavelet.f90
-                  da/da_lightning/da_lightning.f90
 
                   # blas and lapack
                   external/blas/da_blas.f90

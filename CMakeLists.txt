@@ -26,12 +26,15 @@ list( APPEND CMAKE_C_PREPROCESSOR_FLAGS -P -nostdinc -traditional )
 
 include( CMakePackageConfigHelpers )
 include( CheckIPOSupported )
+
+# WRF helper scripts
 include( c_preproc   )
 include( m4_preproc  )
 include( target_copy )
 include( confcheck   )
 include( gitinfo     )
 include( printOption )
+include( target_source_properties )
 include( wrf_case_setup )
 include( wrf_get_version )
 
@@ -310,6 +313,28 @@ if ( ${USE_IPO} )
     set( USE_IPO OFF CACHE BOOL "Required by configuration" FORCE )
   endif()
 endif()
+
+
+################################################################################
+##
+## Create our flags / defines properties and variables to carry our information
+##
+################################################################################
+define_target_source_properties(
+                                PROPERTIES
+                                  FLAGS_OPTIMIZATION         # Control of optimization flags
+                                  FLAGS_CONFCHECK            # Originate from system configuration checks
+                                  FLAGS_Fortran_PRECISION    # Fortran floating point precision control
+                                  FLAGS_Fortran_LINE_LENGTH  # Fortran line length for compilers that need it
+                                  FLAGS_DIAGNOSTICS          # Extra flags for diagnostics
+                                  FLAGS_SUPPRESS_ERRORS      # EXPLICITLY suppress errors, USE SPARINGLY!!!
+                                  FLAGS_SUPPRESS_WARNINGS    # Suppress warnings, try to fix before they become errs 
+                                  FLAGS_STANZA               # Any remaining flags imported via stanza
+                    
+                                  DEFINE_CONFCHECK           # Originate from system configuration checks
+                                  DEFINE_OPTIONS             # Anything that is derived from options
+                                  DEFINE_STANZA              # Any remaining defines imported via stanza
+                                  )
 
 ################################################################################
 ##

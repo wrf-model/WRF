@@ -6,8 +6,7 @@ add_library(hydro_routing_reservoirs_hybrid STATIC
 
 add_dependencies(hydro_routing_reservoirs_hybrid hydro_routing_reservoirs)
 
-target_include_directories(hydro_routing_reservoirs_hybrid
+target_link_libraries(hydro_routing_reservoirs_hybrid
         PRIVATE
-        ${netCDF_INCLUDE_DIRS}
-        ${netCDF-Fortran_INCLUDE_DIRS}
+        netCDF::netcdff
 )

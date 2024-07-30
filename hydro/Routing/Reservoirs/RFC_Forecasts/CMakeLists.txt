@@ -9,8 +9,7 @@ add_dependencies(hydro_routing_reservoirs_rfc
         hydro_routing_reservoirs_levelpool
 )
 
-target_include_directories(hydro_routing_reservoirs_rfc
+target_link_libraries(hydro_routing_reservoirs_rfc
         PRIVATE
-        ${netCDF_INCLUDE_DIRS}
-        ${netCDF-Fortran_INCLUDE_DIRS}
+        netCDF::netcdff
 )

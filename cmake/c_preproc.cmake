@@ -117,6 +117,9 @@ macro( wrf_expand_definitions )
       else()
         list( APPEND WRF_EXP_DEFS -D${WRF_EXP_DEF} )
       endif()
+    else()
+      # Just add it normally
+      list( APPEND WRF_EXP_DEFS ${WRF_EXP_DEF} )
     endif()
     
   endforeach()

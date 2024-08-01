@@ -668,7 +668,7 @@ list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS
       NETCDF
       
       #!TODO Change this to a confcheck
-      NONSTANDARD_SYSTEM_SUBR
+      # NONSTANDARD_SYSTEM_SUBR # For now let this come from stanza
       
       EM_CORE=${EM_CORE}
 

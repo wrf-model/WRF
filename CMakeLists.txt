@@ -127,6 +127,9 @@ set( WRF_CASE_OPTIONS
       EM_CONVRAD
       EM_SQUALL2D_X
       EM_SQUALL2D_Y
+
+      # No case selected, for situations where we are not compiling ARW
+      NONE
       )
 
 set( WRF_CASE "" CACHE STRING "WRF_CASE" )

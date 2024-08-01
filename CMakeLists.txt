@@ -223,6 +223,11 @@ if ( NOT ${WRF_CORE} IN_LIST WRF_CORE_OPTIONS )
   message( FATAL_ERROR "WRF Core option not recognized : ${WRF_CORE}" )
 endif()
 
+if ( NOT ${WRF_CORE} STREQUAL "ARW" )
+  message( STATUS "All non-ARW Cores requires using pointers in grid state struct" )
+  set( USE_ALLOCATABLES OFF CACHE BOOL "Required by configuration" FORCE )
+endif()
+
 if ( NOT ${WRF_NESTING} IN_LIST WRF_NESTING_OPTIONS )
   message( FATAL_ERROR "WRF Nesting option not recognized : ${WRF_NESTING}" )
 endif()

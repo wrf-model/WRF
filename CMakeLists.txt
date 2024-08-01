@@ -484,6 +484,14 @@ endif()
 if ( ${ENABLE_KPP} )
   find_package( BISON REQUIRED )
   find_package( FLEX  REQUIRED )
+  if ( ${FLEX_FOUND} AND "${FLEX_LIBRARIES}" STREQUAL "FL_LIBRARY-NOTFOUND" )
+    message( FATAL_ERROR 
+              "Flex executable found, but libraries were not. Please provide a searchable path for both "
+              "\n"
+              "Refer to https://cmake.org/cmake/help/latest/command/find_package.html for more info "
+              "on providing a suitable path"
+              )
+  endif()
 endif()
 
 # Will need our own finder

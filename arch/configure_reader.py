@@ -575,8 +575,12 @@ def generateCMakeToolChainFile( cmakeToolChainTemplate, output, stanza, optionsD
 
 def projectSpecificOptions( options, stanzaCfg ) :
   coreOption       = getStringOptionSelection( options.sourceCMakeFile, "WRF_CORE_OPTIONS",    "WRF_CORE"    )
-  nestingOption    = getStringOptionSelection( options.sourceCMakeFile, "WRF_NESTING_OPTIONS", "WRF_NESTING", 1 )
-  caseOption       = getStringOptionSelection( options.sourceCMakeFile, "WRF_CASE_OPTIONS",    "WRF_CASE"    )
+  if coreOption == "ARW" :
+    nestingOption    = getStringOptionSelection( options.sourceCMakeFile, "WRF_NESTING_OPTIONS", "WRF_NESTING", 1 )
+    caseOption       = getStringOptionSelection( options.sourceCMakeFile, "WRF_CASE_OPTIONS",    "WRF_CASE"    )
+  else :
+    nestingOption = "NONE"
+    caseOption    = "NONE"
   
   # These are yes
   yesValues    = [ "yes", "y", "true", "1" ]

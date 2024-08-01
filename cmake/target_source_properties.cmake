@@ -6,6 +6,21 @@
 # relying on compiler-specific flag order precedence. Additionally this allows a
 # project to organize grouping of flags within a target
 #
+# Note that for compile defines on source files they are not used in the autogen
+# dependency scanning. See :
+# https://gitlab.kitware.com/cmake/cmake/-/issues/22519
+# and 
+# https://gitlab.kitware.com/cmake/cmake/-/blob/master/Source/cmDependsFortran.cxx#L84
+# functions cmDependsFortran::cmDependsFortran() and cmDependsFortran::WriteDependencies()
+# 
+# The solution is to either use Ninja or preprocess the files (what Ninja internally does)
+# This is probably the way to go as well since CMake native preprocessor directive
+# parsing is... subpar and simplified :
+# https://gitlab.kitware.com/cmake/cmake/-/issues/17398
+# 
+# Alternatively, set critical flags at the target level
+#
+
 
 
 #
@@ -45,7 +60,7 @@ endfunction()
 # applies it to that source.
 #
 function( apply_target_source_properties )
-  set( options        )
+  set( options        DISCARD_PREVIOUS DEBUG )
   set( oneValueArgs   AS_PROPERTY )
   set( multiValueArgs TARGETS PROPERTIES )
 
@@ -89,18 +104,38 @@ function( apply_target_source_properties )
 
         # Now apply these as prop
         if ( NOT "${SOURCE_PROPERTY_${PROPERTY}}" STREQUAL "" )
+          if ( ${FUNC_PROP_DEBUG} )
+            message( STATUS "DEBUG : Adding '${SOURCE_PROPERTY_${PROPERTY}}' as SOURCE_PROPERTY_${PROPERTY}")
+          endif()
           list( APPEND SOURCE_PROPERTY_ALL ${SOURCE_PROPERTY_${PROPERTY}} )
         endif()
       endforeach() # properties
 
       # Apply properties to source
       if ( NOT "${SOURCE_PROPERTY_ALL}" STREQUAL "" )
-        set_source_files_properties( 
-                                        ${SOURCE}
-                                        TARGET_DIRECTORY ${TARGET}
-                                        PROPERTIES
-                                          ${FUNC_PROP_AS_PROPERTY} ${SOURCE_PROPERTY_ALL}
-                                        )
+        if ( NOT ${FUNC_PROP_DISCARD_PREVIOUS} )
+          # get old value and append
+          get_source_file_property(
+                                    SOURCE_PROPERTY_ORIG
+                                    ${SOURCE}
+                                    TARGET_DIRECTORY ${TARGET}
+                                    ${FUNC_PROP_AS_PROPERTY}
+                                    )
+          if ( "${SOURCE_PROPERTY_ORIG}" STREQUAL "NOTFOUND" )
+            set( SOURCE_PROPERTY_ORIG )
+          endif()
+        endif()
+
+        if ( ${FUNC_PROP_DEBUG} )
+          message( STATUS "DEBUG : ${FUNC_PROP_AS_PROPERTY} being set to '${SOURCE_PROPERTY_ORIG} ${SOURCE_PROPERTY_ALL}'")
+        endif()
+
+        set_source_files_properties(
+                                    ${SOURCE}
+                                    TARGET_DIRECTORY ${TARGET}
+                                    PROPERTIES
+                                      ${FUNC_PROP_AS_PROPERTY} "${SOURCE_PROPERTY_ORIG};${SOURCE_PROPERTY_ALL}"
+                                    )
       endif()
     endforeach()   # sources
   endforeach()     # targets

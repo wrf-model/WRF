@@ -177,7 +177,7 @@ set( KEEP_INT_AROUND      ON CACHE BOOL "KEEP_INT_AROUND"     )
 set( LIMIT_ARGS           ON CACHE BOOL "LIMIT_ARGS"          )
 
 # WRF DA
-set( ENABLE_CRTM         OFF CACHE BOOL "ENABLE_CRTM"          )
+set( ENABLE_CRTM          ON CACHE BOOL "ENABLE_CRTM"          ) # todo this is always set unless env var = 0 in make
 set( ENABLE_WAVELET       ON CACHE BOOL "ENABLE_WAVELET"       ) # todo I think this should always be on
 set( ENABLE_BUFR          ON CACHE BOOL "ENABLE_BUFR"          ) # todo I think the config is defaulting this on
 

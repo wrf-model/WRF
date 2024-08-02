@@ -41,7 +41,6 @@ add_executable(
                 src/debug.c
                 )
 
-target_compile_definitions( kpp PRIVATE SED_DELIMITER="@" )
 target_include_directories(
                             kpp
                             PRIVATE

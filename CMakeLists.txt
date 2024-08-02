@@ -1090,6 +1090,12 @@ target_include_directories(
                               $<$<TARGET_EXISTS:g2lib>:$<TARGET_PROPERTY:g2lib,Fortran_MODULE_DIRECTORY>>
                               $<$<TARGET_EXISTS:bacio-1.3>:$<TARGET_PROPERTY:bacio-1.3,Fortran_MODULE_DIRECTORY>>
 
+                              # DA libs
+                              $<$<TARGET_EXISTS:CRTM>:$<TARGET_PROPERTY:CRTM,Fortran_MODULE_DIRECTORY>>
+                              $<$<TARGET_EXISTS:waveletf>:$<TARGET_PROPERTY:waveletf,Fortran_MODULE_DIRECTORY>>
+                              $<$<TARGET_EXISTS:bufr>:$<TARGET_PROPERTY:bufr,Fortran_MODULE_DIRECTORY>>
+
+
                             PRIVATE
                               
                               ${PROJECT_SOURCE_DIR}/dyn_em
@@ -1158,6 +1164,12 @@ target_link_libraries(  ${PROJECT_NAME}_Core
                             $<TARGET_NAME_IF_EXISTS:bacio-1.3>
 
                             $<TARGET_NAME_IF_EXISTS:RSL_LITE>
+
+                            # DA libs
+                            $<TARGET_NAME_IF_EXISTS:CRTM>
+                            $<TARGET_NAME_IF_EXISTS:wavelet>
+                            $<TARGET_NAME_IF_EXISTS:waveletf>
+                            $<TARGET_NAME_IF_EXISTS:bufr>
                       )
 
 ################################################################################

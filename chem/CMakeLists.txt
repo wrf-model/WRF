@@ -5,6 +5,8 @@ target_include_directories(
                               ${CMAKE_CURRENT_SOURCE_DIR}
                             )
 if ( ${ENABLE_KPP} )
+  add_compile_options    ( "${PROJECT_COMPILE_OPTIONS}"     )
+  add_compile_definitions( "${PROJECT_COMPILE_DEFINITIONS}" )
   add_subdirectory( KPP )
 endif()
 

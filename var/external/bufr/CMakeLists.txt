@@ -250,6 +250,16 @@ set_target_properties(
                           Fortran_FORMAT           FIXED                          
                       )
 
+
+target_compile_options( 
+                        ${FOLDER_COMPILE_TARGET}
+                        PRIVATE
+                          ${PROJECT_COMPILE_OPTIONS_OPTIMIZATION}
+                          ${PROJECT_COMPILE_OPTIONS_Fortran_LINE_LENGTH}
+                          ${PROJECT_COMPILE_OPTIONS_SUPPRESS_WARNINGS}
+                          ${PROJECT_COMPILE_OPTIONS_SUPPRESS_ERRORS}
+                        )
+
 target_compile_definitions(
                             ${FOLDER_COMPILE_TARGET}
                             PRIVATE

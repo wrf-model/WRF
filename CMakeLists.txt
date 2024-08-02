@@ -597,6 +597,12 @@ print_option( INTIO            20 )
 print_option( KEEP_INT_AROUND  20 )
 print_option( LIMIT_ARGS       20 )
 
+
+print_option( ENABLE_CRTM      20 )
+print_option( ENABLE_WAVELET   20 )
+print_option( ENABLE_BUFR      20 )
+
+
 print_option( FORCE_NETCDF_CLASSIC 20 )
 print_option( BUILD_RRTMG_FAST     20 )
 print_option( BUILD_RRTMK          20 )

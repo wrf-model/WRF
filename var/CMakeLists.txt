@@ -184,3 +184,13 @@ target_include_directories(
                               external/blas
                               external/lapack
                               )
+
+# Disable float to double precision on these files always
+set_source_files_properties(
+                            # blas and lapack
+                            external/blas/da_blas.f90
+                            external/lapack/da_lapack.f90
+                            TARGET_DIRECTORY ${PROJECT_NAME}_Core
+                            PROPERTIES
+                              COMPILE_OPTIONS_Fortran_PRECISION "" # set to nothing to void
+                            )

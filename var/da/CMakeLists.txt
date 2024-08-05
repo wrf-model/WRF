@@ -67,6 +67,7 @@ target_sources(
                   da_ships/da_ships.f90
                   da_sound/da_sound.f90
                   da_spectral/da_spectral.f90
+                  da_spectral/da_be_spectral.f90
                   da_ssmi/da_ssmi.f90
                   da_ssmi/module_ssmi.f90
                   da_statistics/da_statistics.f90
@@ -88,6 +89,10 @@ target_sources(
                   da_wavelet/da_wavelet.f90
                   # For da_bias_*
                   da_biascorr_airmass/rad_bias.f90
+
+                  # for gen_be
+                  da_gen_be/da_gen_be.f90
+                  da_etkf/da_etkf.f90
 
                 )
 

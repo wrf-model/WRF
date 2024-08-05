@@ -42,12 +42,12 @@ target_include_directories(
                               ${CMAKE_CURRENT_SOURCE_DIR}/awaprogs/chap05
                             )
 
-target_compile_definitions(
-                            ${FOLDER_COMPILE_TARGET}
-                            PRIVATE
-                              ${PROJECT_COMPILE_DEFINITIONS}
-                              NOUNDERSCORE
-                            )
+# target_compile_definitions(
+#                             ${FOLDER_COMPILE_TARGET}
+#                             PRIVATE
+#                               ${PROJECT_COMPILE_DEFINITIONS}
+#                               NOUNDERSCORE
+#                             )
 # This is new in the cmake build
 target_compile_options(
                         ${FOLDER_COMPILE_TARGET}

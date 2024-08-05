@@ -109,9 +109,7 @@ set(
     module_clear_halos.F
     module_comm_nesting_dm.F
     module_integrate.F
-    module_quilt_outbuf_ops.F
     module_sm.F
-    pack_utils.c
     )
 
 if ( ${WRF_CORE} STREQUAL "DA" OR ${WRF_CORE} STREQUAL "DA_4D_VAR" )
@@ -156,6 +154,9 @@ target_sources(
                   wrf_debug.F
                   wrf_num_bytes_between.c
                   wrf_shutdown.F
+
+                  pack_utils.c
+                  module_quilt_outbuf_ops.F
 
                   ${NON_DA_SOURCES}
                   )

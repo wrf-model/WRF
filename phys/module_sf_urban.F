@@ -64,7 +64,6 @@ use module_wrf_error
    REAL, ALLOCATABLE, DIMENSION(:) :: TRLEND_TBL, TBLEND_TBL, TGLEND_TBL
    REAL, ALLOCATABLE, DIMENSION(:) :: AKANDA_URBAN_TBL
 !for BEP
-
    ! MAXDIRS :: The maximum number of street directions we're allowed to define
    INTEGER, PARAMETER :: MAXDIRS = 3
    ! MAXHGTS :: The maximum number of building height bins we're allowed to define

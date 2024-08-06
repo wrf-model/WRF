@@ -26,7 +26,7 @@ function( wrf_conf_check )
 
   message( STATUS "Performing Check ${WRF_CFG_RESULT_VAR}" )
 
-  if ( DEFINED WRF_CFG_RUN )
+  if ( DEFINED WRF_CFG_RUN AND "${WRF_CFG_RUN}" )
     try_run( 
             ${WRF_CFG_RESULT_VAR}
             WRF_CFG_COMPILE_RESULT_VAR

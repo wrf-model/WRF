@@ -251,6 +251,13 @@ foreach( DA_EXEC ${DA_EXECUTABLES} )
   target_compile_definitions( ${DA_EXEC} PRIVATE ${PROJECT_COMPILE_DEFINITIONS} )
   target_compile_options    ( ${DA_EXEC} PRIVATE ${PROJECT_COMPILE_OPTIONS} )
 
+  set_target_properties( 
+                        ${DA_EXEC}
+                          PROPERTIES
+                            # Just dump everything in here
+                            Fortran_MODULE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/modules/${DA_EXEC}/
+                        )
+
 endforeach()
 
 install(

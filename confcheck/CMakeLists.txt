@@ -65,6 +65,31 @@ if ( NOT "${FSEEKO64}" )
   set(FSEEKO ${FSEEKO} PARENT_SCOPE)
 endif()
 
+
+# Check if underscores are needing for implicit c-Fortran intrefacing functions that
+# don't use ISO C binding to map symbols
+wrf_conf_check(
+                # try_run() with more than one source was introduced in CMake 3.25+
+                # so we won't use it here until we see reasonable need to incease the 
+                # version requirements
+                RESULT_VAR             NOUNDERSCORE_SYMBOL
+                SOURCES                ${CMAKE_CURRENT_SOURCE_DIR}/check_underscore.c ${CMAKE_CURRENT_SOURCE_DIR}/check_underscore.f90
+                OPTIONS
+                  COMPILE_DEFINITIONS -DNOUNDERSCORE
+                MESSAGE                "Implicit symbol usage between C and Fortran are not identical, checking with underscores"
+              )
+if ( NOT ${NOUNDERSCORE_SYMBOL} )
+  # If the above fails we NEED the following to work
+  wrf_conf_check(
+                  RESULT_VAR             UNDERSCORE_SYMBOL
+                  SOURCES                ${CMAKE_CURRENT_SOURCE_DIR}/check_underscore.c ${CMAKE_CURRENT_SOURCE_DIR}/check_underscore.f90
+                  OPTIONS
+                    COMPILE_DEFINITIONS -DUNDERSCORE
+                  MESSAGE                "Implicit symbol usage between C with underscores and Fortran did not link!"
+                  REQUIRED
+                )
+endif()
+
 # Unsure if this is even necessary. Defines littered throughout configure.defaults
 # if ( ${USE_MPI} )
 #   wrf_conf_check(

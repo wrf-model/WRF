@@ -638,6 +638,7 @@ endif
     ibuf(1) = wrf_cmaq_option
     CALL wrf_put_dom_ti_integer ( fid , 'WRF_CMAQ_OPTION' ,  ibuf , 1 , ierr )
     lbuf(1) = direct_sw_feedback
+! Note the code will turn logical T/F to integer 1/0 in the output
     CALL wrf_put_dom_ti_logical ( fid , 'DIRECT_SW_FEEDBACK' ,  lbuf , 1 , ierr )
 #endif
     ibuf(1) = mp_physics

@@ -326,7 +326,6 @@ CONTAINS
    END SUBROUTINE get_ijk_from_subgrid
 #endif
 
-
 ! Default version ; Otherwise module containing interface to DM library will provide
 
    SUBROUTINE wrf_patch_domain( id , domdesc , parent, parent_id , parent_domdesc , &

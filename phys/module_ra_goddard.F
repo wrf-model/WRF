@@ -2062,7 +2062,7 @@ real, dimension( ims:ime, jms:jme ), intent(in)  :: &
       ENDDO
 
 
-#if (RWORDSIZE == 4)
+#ifndef DOUBLE_PRECISION
       call swrad ( np=dk_half, icb=icb, ict=ict, fcld=dble(fcld1d), &
                    pl=dble(p8w1d), ta=dble(t1d), wa=dble(sh1d), oa=dble(o31d), &
                    taucl=dble(taucl_sw), ssacl=dble(ssacl_sw), asycl=dble(asycl_sw), &
@@ -2312,7 +2312,7 @@ real, dimension( ims:ime, jms:jme ), intent(in)  :: &
 ! 1-dimension driver of longwave radiative transfer scheme
 !
 
-#if (RWORDSIZE == 4)
+#ifndef DOUBLE_PRECISION
        call lwrad ( np=dk_half, tb=dble(tsfc), ts=dble(tskin), ict=ict, icb=icb,&
                     pl=dble(p8w1d), ta=dble(t1d), wa=dble(sh1d), oa=dble(o31d), &
                     emiss=dble(emis1d), fcld=dble(fcld1d), &

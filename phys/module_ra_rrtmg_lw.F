@@ -35,7 +35,7 @@
 #if (RWORDSIZE == 8)
       integer, parameter :: kind_rb = selected_real_kind(12) ! 8 byte real
 #endif
-#if (RWORDSIZE == 4)
+#ifndef DOUBLE_PRECISION
       integer, parameter :: kind_rb = selected_real_kind(6)  ! 4 byte real
 #endif
 #else

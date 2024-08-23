@@ -595,7 +595,7 @@ em_real : wrf
                ln -sf ../../run/ishmael-qi-qr.bin . ;                  \
                ln -sf ../../run/BROADBAND_CLOUD_GODDARD.bin . ;        \
                ln -sf ../../run/STOCHPERT.TBL . ;                      \
-               if [ $(RWORDSIZE) -eq 8 ] ; then                        \
+               if [ -n $(DOUBLE_PRECISION) ] ; then                        \
                   ln -sf ../../run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA ;   \
                   ln -sf ../../run/ETAMPNEW_DATA.expanded_rain_DBL ETAMPNEW_DATA.expanded_rain ;   \
                   ln -sf ../../run/RRTM_DATA_DBL RRTM_DATA         ;   \
@@ -677,7 +677,7 @@ em_real : wrf
              ln -sf ../../run/ishmael-qi-qr.bin . ;                 \
              ln -sf ../../run/BROADBAND_CLOUD_GODDARD.bin . ;       \
              ln -sf ../../run/STOCHPERT.TBL . ;                     \
-             if [ $(RWORDSIZE) -eq 8 ] ; then                       \
+             if [ -n $(DOUBLE_PRECISION) ] ; then                       \
                 ln -sf ../../run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA ;  \
                 ln -sf ../../run/ETAMPNEW_DATA.expanded_rain_DBL ETAMPNEW_DATA.expanded_rain ;   \
                 ln -sf ../../run/RRTM_DATA_DBL RRTM_DATA ;          \

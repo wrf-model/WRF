@@ -2,6 +2,8 @@
 # POSTAMBLE
 
 FGREP = fgrep -iq
+### Used throughout the build system to inform promotion to double precision
+DOUBLE_PRECISION = CONFIGURE_PROMOTION
 
 ARCHFLAGS       =    $(COREDEFS) -DIWORDSIZE=$(IWORDSIZE) -DDWORDSIZE=$(DWORDSIZE) -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=$(LWORDSIZE) CONFIGURE_PROMOTION \
                      $(ARCH_LOCAL) \

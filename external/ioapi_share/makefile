@@ -8,7 +8,7 @@ all: ../../inc/wrf_io_flags.h ../../inc/wrf_status_codes.h
 ../../inc/wrf_io_flags.h : wrf_io_flags.h ../../configure.wrf
 	( /bin/rm -f ../../inc/wrf_io_flags.h foo_io_flags.h; \
 	/bin/cp wrf_io_flags.h foo_io_flags.h; \
-	if [ $(RWORDSIZE) -ne $(NATIVE_RWORDSIZE) ] ; then \
+	if [ -n $(DOUBLE_PRECISION) ] ; then \
 	  /bin/rm -f foo_io_flags.h; \
 	  sed -e 's/104/105/' wrf_io_flags.h > foo_io_flags.h ;\
 	fi ; \

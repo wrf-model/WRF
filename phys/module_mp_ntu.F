@@ -665,8 +665,6 @@
       GAMLN = TMP+LOG(stp*ser/X)
 #else
       GAMLN = SNGL(TMP+LOG(stp*ser/X))
-#else
-!      This is a temporary hack assuming double precision is 8 bytes.
 #endif
 
       END FUNCTION GAMLN

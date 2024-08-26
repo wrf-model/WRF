@@ -678,6 +678,9 @@ list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS
 # Only define if set, this is to use #ifdef/#ifndef preprocessors
 # in code since cmake cannot handle basically any others :(
 # https://gitlab.kitware.com/cmake/cmake/-/issues/17398
+if ( ${USE_DOUBLE} )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS DOUBLE_PRECISION )
+endif()
 if ( ${ENABLE_CHEM} )
   list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS WRF_CHEM=1 )
   if ( ${ENABLE_KPP} )

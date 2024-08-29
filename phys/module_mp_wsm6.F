@@ -242,7 +242,7 @@
            enddo
            call refl10cm_wsm6 (qv1d,qr1d,qs1d,qg1d,t1d,p1d,dBZ,kts,kte)
            do k = kts, kte
-              refl_10cm(i,k,j) = MAX(-35., dBZ(k))
+              refl_10cm(i,k,j) = max(-35., dBZ(k))
            enddo
         enddo
      endif

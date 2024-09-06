@@ -59,6 +59,7 @@ module_domain.o : module_domain.F inc/allocs_0.o                  \
                 inc/allocs_30.o                  \
                 inc/allocs_31.o module_domain_type.o module_utility.o module_wrf_error.o module_configure.o module_machine.o module_driver_constants.o 
 module_domain_type.o : module_domain_type.F module_streams.o module_utility.o module_driver_constants.o 
+# See main/depend.common for explanation of source file dependency recipes for allocs
 inc/allocs_0.o: \
 	module_domain_type.o \
 	module_configure.o 

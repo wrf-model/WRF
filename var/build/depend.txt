@@ -22,6 +22,7 @@ module_alloc_space_6.o : module_alloc_space_6.F module_alloc_space.h module_conf
 module_alloc_space_7.o : module_alloc_space_7.F module_alloc_space.h module_configure.o module_configure.o module_domain_type.o 
 module_alloc_space_8.o : module_alloc_space_8.F module_alloc_space.h module_configure.o module_configure.o module_domain_type.o 
 module_alloc_space_9.o : module_alloc_space_9.F module_alloc_space.h module_configure.o module_configure.o module_domain_type.o 
+# See main/depend.common for explanation of source file dependency recipes for deallocs
 inc/deallocs_0.o : module_wrf_error.o module_domain_type.o
 inc/deallocs_0.F90 : module_state_description.F
 inc/deallocs_1.o : module_wrf_error.o module_domain_type.o

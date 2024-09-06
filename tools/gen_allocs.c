@@ -606,7 +606,7 @@ gen_dealloc1 ( char * dirname )
           "INTERFACE\n"
           );
   if ( dirname == NULL ) return(1) ;
-  for ( ; idx < numFiles; idx++ )
+  for ( idx = 0; idx < numFiles; idx++ )
   {
     if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s%d.F90",dirname,filename_prefix,idx) ; }
     else                       { sprintf(fname,"%s%d.F90",dirname,filename_prefix,idx ) ; }

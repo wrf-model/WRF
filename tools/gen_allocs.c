@@ -56,7 +56,7 @@ gen_alloc1 ( char * dirname )
           fp,
           "INTERFACE\n"
           );
-  for ( ; idx < numFiles; idx++ )
+  for ( idx = 0; idx < numFiles; idx++ )
   {
     if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s%d.F90",dirname,filename_prefix,idx) ; }
     else                       { sprintf(fname,"%s%d.F90",dirname,filename_prefix,idx ) ; }

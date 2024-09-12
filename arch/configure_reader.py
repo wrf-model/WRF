@@ -222,6 +222,26 @@ class Stanza():
       # And for final measure strip
       self.kvPairs_[ key ] = self.kvPairs_[ key ].strip()
 
+    # Finally, further sanitize MPI compilers, we don't need to specify underlying
+    # compiler since CMake already does that
+    filters = [
+                self.kvPairs_[ "SFC" ],
+                self.kvPairs_[ "SCC" ],
+                "-compiler"
+                ]
+    keysToSanitize = [ "DM_FC_FLAGS", "DM_CC_FLAGS" ]
+
+    for keyToSan in keysToSanitize :
+      if self.kvPairs_[ keyToSan ] :
+        allFlags = self.kvPairs_[ keyToSan ].split( " " )
+        newFlags = []
+        for flag in allFlags :
+          if not any( [ f in flag for f in filters ] ) :
+            newFlags.append( flag )
+
+        # We always need this field updated
+        self.kvPairs_[ keyToSan ] = " ".join( newFlags )
+
   def serialCompilersAvailable( self ) :
     return which( self.kvPairs_["SFC"]   ) is not None and which( self.kvPairs_["SCC"]   ) is not None
 

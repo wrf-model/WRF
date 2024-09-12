@@ -7,7 +7,12 @@ on:
   pull_request:
     types:    [ labeled ]
 
-
+# https://docs.github.com/en/actions/sharing-automations/reusing-workflows#supported-keywords-for-jobs-that-call-a-reusable-workflow
+# We must set the highest set of permissions here first
+permissions :
+  contents : read
+  pull-requests : write
+  
 # Write our tests out this way for easier legibility
 # testsSet    :
 #   - key : value

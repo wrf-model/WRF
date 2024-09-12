@@ -287,8 +287,10 @@ RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
   num = INT(time_to_bc * precision + 0.5)
   den = precision
   CALL WRFU_TimeIntervalSet(tmpTimeInterval, Sn=num, Sd=den)
-  
-  if ( ( tmpTimeInterval .LT. dtInterval * 2 ) .and. &
+
+if (num .LE. 0) then
+     stepping_to_bc = .false.
+  elseif ( ( tmpTimeInterval .LT. dtInterval * 2 ) .and. &
        ( tmpTimeInterval .GT. dtInterval ) ) then
      dtInterval = tmpTimeInterval / 2
      

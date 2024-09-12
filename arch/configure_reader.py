@@ -139,7 +139,7 @@ class Stanza():
       fieldValue = self.kvPairs_[ field ]
 
       self.kvPairs_[field] = fieldValue.partition(" ")[0]
-      self.kvPairs_[field + "_FLAGS"] = fieldValue.partition(" ")[1]
+      self.kvPairs_[field + "_FLAGS"] = fieldValue.partition(" ")[2]
 
   ######################################################################################################################
   ##

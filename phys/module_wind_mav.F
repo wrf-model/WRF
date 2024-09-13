@@ -1231,10 +1231,10 @@ MODULE module_wind_mav
       end if
 
       tmp1 = tmp1 / tmp2
-      if ( tmp1 < -1.0_8 .or. tmp1 > 1.0_8 ) then
-        angle = 0.
+      if (tmp1 < -1.0_8 .or. tmp1 > 1.0_8) then
+          angle = 0.
       else
-        angle = real(acos(tmp1), kind = 4)
+          angle = real(acos(tmp1), kind = 4)
       end if
  
       if (abs(angle) <= sr_angle) then

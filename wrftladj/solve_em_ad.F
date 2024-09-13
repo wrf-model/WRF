@@ -672,7 +672,7 @@ BENCH_END(set_phys_bc_tim)
                              , ph_tendf, mu_tendf               &
                              , tke_tend                         &
                              , config_flags%use_adaptive_time_step &
-                             , curr_secs                        &
+                             , curr_secs, curr_mins2            &
                              , psim , psih , gz1oz0             &
                              , chklowq                          &
                              , cu_act_flag , hol , th_phy       &

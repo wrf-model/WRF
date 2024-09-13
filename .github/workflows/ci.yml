@@ -4,7 +4,11 @@ run-name : ${{ github.event_name == 'push' && 'CI' || github.event.label.name }}
 on:
   push:
     branches: [ master, develop ]
-  pull_request:
+# See https://stackoverflow.com/a/78444521 and 
+# https://github.com/orgs/community/discussions/26874#discussioncomment-3253755
+# as well as official (but buried) documentation :
+# https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#pull-request-events-for-forked-repositories-2
+  pull_request_target:
     types:    [ labeled ]
 
 # https://docs.github.com/en/actions/sharing-automations/reusing-workflows#supported-keywords-for-jobs-that-call-a-reusable-workflow

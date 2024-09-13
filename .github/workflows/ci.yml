@@ -8,14 +8,16 @@ on:
 # https://github.com/orgs/community/discussions/26874#discussioncomment-3253755
 # as well as official (but buried) documentation :
 # https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#pull-request-events-for-forked-repositories-2
-  pull_request_target:
+  pull_request:
     types:    [ labeled ]
 
 # https://docs.github.com/en/actions/sharing-automations/reusing-workflows#supported-keywords-for-jobs-that-call-a-reusable-workflow
-# We must set the highest set of permissions here first
-permissions :
-  contents : read
-  pull-requests : write
+# Also https://stackoverflow.com/a/74959635
+# TL;DR - For public repositories the safest approach will be to use the default read permissions, but at the cost
+# of not being able to modify the labels. That will need to be a separate [trusted] workflow that runs from the base repo
+# permissions :
+#   contents : read
+#   pull-requests : write
   
 # Write our tests out this way for easier legibility
 # testsSet    :
@@ -70,6 +72,7 @@ jobs:
       args     : ${{ matrix.testSet.args }}
       pool     : ${{ matrix.testSet.pool }}
       tpool    : ${{ matrix.testSet.tpool }}
+    # I am leaving this here for posterity if this is to be replicated in private repositories for testing
     permissions:
       contents: read
       pull-requests: write

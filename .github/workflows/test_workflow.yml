@@ -62,8 +62,6 @@ jobs:
     - uses: actions/checkout@v4
       with:
         path      : main
-        ref       : ${{ github.event.pull_request.head.ref }}
-        repository: ${{github.event.pull_request.head.repo.full_name}}
         submodules: true
     
     # Immediately copy out to # of tests to do
@@ -134,17 +132,18 @@ jobs:
         name: ${{ github.event_name == 'push' && 'master' || github.event.number }}-${{ inputs.id }}_logfiles
         path: ${{ inputs.archive }}/${{ github.event_name == 'push' && 'master' || github.event.number }}/${{ inputs.id }}/
 
-
-    - name : Remove '${{ inputs.label }}' label
-      if : ${{ !cancelled() && github.event.label.name == inputs.label }}
-      env:
-        PR_NUMBER: ${{ github.event.number }}
-      run: |
-        curl \
-          -X DELETE \
-          -H "Accept: application/vnd.github.v3+json" \
-          -H 'Authorization: token ${{ github.token }}' \
-          https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/labels/${{ inputs.label }}
+    # As noted in ci.yml, this will need to be moved to a separate workflow with pull_request_target
+    # and strictly controlled usage of the GH token
+    # - name : Remove '${{ inputs.label }}' label
+    #   if : ${{ !cancelled() && github.event.label.name == inputs.label }}
+    #   env:
+    #     PR_NUMBER: ${{ github.event.number }}
+    #   run: |
+    #     curl \
+    #       -X DELETE \
+    #       -H "Accept: application/vnd.github.v3+json" \
+    #       -H 'Authorization: token ${{ github.token }}' \
+    #       https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/labels/${{ inputs.label }}
     
 
 

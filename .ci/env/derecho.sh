@@ -14,7 +14,7 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-#  Go back for asinine reasons of HPC config changing your directory on you
+#  Go back to working directory if for unknown reason HPC config changing your directory on you
 if [ "$workingDirectory" != "$PWD" ]; then
   echo "derecho module loading changed working directory"
   echo "  Moving back to $workingDirectory"

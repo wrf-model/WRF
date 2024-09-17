@@ -90,13 +90,13 @@ if ( ${USE_RSL_LITE} )
   set(
       MODULE_DM
       ${PROJECT_SOURCE_DIR}/external/RSL_LITE/module_dm.F
-      ${PROJECT_SOURCE_DIR}/external/RSL_LITE/feedback_domain_em_part1.F90
-      ${PROJECT_SOURCE_DIR}/external/RSL_LITE/feedback_domain_em_part2.F90
-      ${PROJECT_SOURCE_DIR}/external/RSL_LITE/force_domain_em_part2.F90
-      ${PROJECT_SOURCE_DIR}/external/RSL_LITE/interp_domain_em_part1.F90
-      ${PROJECT_SOURCE_DIR}/external/RSL_LITE/interp_domain_em_part2.F90
-      ${PROJECT_SOURCE_DIR}/external/RSL_LITE/interp_domain_em_part3.F90
-      ${PROJECT_SOURCE_DIR}/external/RSL_LITE/interp_domain_em_small.F90
+      ${PROJECT_SOURCE_DIR}/external/RSL_LITE/feedback_domain_em_part1.F
+      ${PROJECT_SOURCE_DIR}/external/RSL_LITE/feedback_domain_em_part2.F
+      ${PROJECT_SOURCE_DIR}/external/RSL_LITE/force_domain_em_part2.F
+      ${PROJECT_SOURCE_DIR}/external/RSL_LITE/interp_domain_em_part1.F
+      ${PROJECT_SOURCE_DIR}/external/RSL_LITE/interp_domain_em_part2.F
+      ${PROJECT_SOURCE_DIR}/external/RSL_LITE/interp_domain_em_part3.F
+      ${PROJECT_SOURCE_DIR}/external/RSL_LITE/interp_domain_em_small.F
       )
 endif()
 

@@ -86,73 +86,73 @@ module_dm_stubs.F: \
 ../inc/deallocs_0.o : \
 	module_wrf_error.o \
 	module_domain_type.o
-../inc/deallocs_0.F90 : module_state_description.F
+../inc/deallocs_0.F : module_state_description.F
 
 
 ../inc/deallocs_1.o : \
 	module_wrf_error.o \
 	module_domain_type.o
-../inc/deallocs_1.F90 : module_state_description.F
+../inc/deallocs_1.F : module_state_description.F
 
 
 ../inc/deallocs_2.o : \
 	module_wrf_error.o \
 	module_domain_type.o
-../inc/deallocs_2.F90 : module_state_description.F
+../inc/deallocs_2.F : module_state_description.F
 
 
 ../inc/deallocs_3.o : \
 	module_wrf_error.o \
 	module_domain_type.o
-../inc/deallocs_3.F90 : module_state_description.F
+../inc/deallocs_3.F : module_state_description.F
 
 
 ../inc/deallocs_4.o : \
 	module_wrf_error.o \
 	module_domain_type.o
-../inc/deallocs_4.F90 : module_state_description.F
+../inc/deallocs_4.F : module_state_description.F
 
 
 ../inc/deallocs_5.o : \
 	module_wrf_error.o \
 	module_domain_type.o
-../inc/deallocs_5.F90 : module_state_description.F
+../inc/deallocs_5.F : module_state_description.F
 
 
 ../inc/deallocs_6.o : \
 	module_wrf_error.o \
 	module_domain_type.o
-../inc/deallocs_6.F90 : module_state_description.F
+../inc/deallocs_6.F : module_state_description.F
 
 
 ../inc/deallocs_7.o : \
 	module_wrf_error.o \
 	module_domain_type.o
-../inc/deallocs_7.F90 : module_state_description.F
+../inc/deallocs_7.F : module_state_description.F
 
 
 ../inc/deallocs_8.o : \
 	module_wrf_error.o \
 	module_domain_type.o
-../inc/deallocs_8.F90 : module_state_description.F
+../inc/deallocs_8.F : module_state_description.F
 
 
 ../inc/deallocs_9.o : \
 	module_wrf_error.o \
 	module_domain_type.o
-../inc/deallocs_9.F90 : module_state_description.F
+../inc/deallocs_9.F : module_state_description.F
 
 
 ../inc/deallocs_10.o : \
 	module_wrf_error.o \
 	module_domain_type.o
-../inc/deallocs_10.F90 : module_state_description.F
+../inc/deallocs_10.F : module_state_description.F
 
 
 ../inc/deallocs_11.o : \
 	module_wrf_error.o \
 	module_domain_type.o
-../inc/deallocs_11.F90 : module_state_description.F
+../inc/deallocs_11.F : module_state_description.F
 
 
 module_domain.o: \

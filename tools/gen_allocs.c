@@ -608,8 +608,8 @@ gen_dealloc1 ( char * dirname )
   if ( dirname == NULL ) return(1) ;
   for ( idx = 0; idx < numFiles; idx++ )
   {
-    if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s%d.F90",dirname,filename_prefix,idx) ; }
-    else                       { sprintf(fname,"%s%d.F90",dirname,filename_prefix,idx ) ; }
+    if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s%d.F",dirname,filename_prefix,idx) ; }
+    else                       { sprintf(fname,"%s%d.F",dirname,filename_prefix,idx ) ; }
     if ((fpSub = fopen( fname , "w" )) == NULL ) return(1) ;
   
     print_warning(fpSub,fname) ;

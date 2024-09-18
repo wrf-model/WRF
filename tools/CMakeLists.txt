@@ -104,7 +104,7 @@ foreach( n RANGE 0 11 )
   list(
         APPEND
         dealloc_source
-        ${CMAKE_BINARY_DIR}/inc/deallocs_${n}.F90
+        ${CMAKE_BINARY_DIR}/inc/deallocs_${n}.F
         )
 
 endforeach()

@@ -192,7 +192,7 @@ SUBROUTINE solve_em_ad ( grid , config_flags  &
 ! urban related variables
    INTEGER :: NUM_ROOF_LAYERS, NUM_WALL_LAYERS, NUM_ROAD_LAYERS   ! urban
 
-   TYPE(WRFU_TimeInterval)                    :: tmpTimeInterval
+   TYPE(WRFU_TimeInterval)                    :: tmpTimeInterval, tmpTimeInterval2
    REAL                                       :: real_time
    REAL(8)                                    :: real_time_r8
    LOGICAL                                    :: adapt_step_flag
@@ -301,6 +301,7 @@ SUBROUTINE solve_em_ad ( grid , config_flags  &
   !   calculate it here--but, this is not clean!!
   !
    tmpTimeInterval = domain_get_current_time ( grid ) - domain_get_sim_start_time ( grid )
+   tmpTimeInterval2 = domain_get_current_time ( grid ) - domain_get_start_time ( grid )
    curr_secs = real_time(tmpTimeInterval)
    curr_secs2 = real_time(tmpTimeInterval2)
    curr_secs_r8  = real_time_r8(tmpTimeInterval)

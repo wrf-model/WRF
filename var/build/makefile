@@ -71,21 +71,3 @@ libwrfvar.a : $(WRFVAR_OBJS)
           if [ -n "$(OMP)" ] ; then echo COMPILING $*.f90 WITHOUT OMP ; fi ; \
 	  $(FC) -o $@ -c $(FCFLAGS) $(PROMOTION) $*.f ; \
         fi
-
-.F90.o :
-	$(RM) $@
-	$(SED_FTN) $*.F90 > $*.b
-	$(CPP) $(CPPFLAGS) $(OMPCPP) $(FPPFLAGS) $*.b  > $*.f
-	$(RM) $*.b
-	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
-          echo COMPILING $*.f90 for 4DVAR ; \
-          $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl $*.f > $*.f.tmp ; \
-          mv $*.f.tmp $*.f ; \
-        fi
-	if $(FGREP) '!$$OMP' $*.f ; then \
-          if [ -n "$(OMP)" ] ; then echo COMPILING $*.f90 WITH OMP ; fi ; \
-	  $(FC) -o $@ -c $(FCFLAGS) $(OMP) $(PROMOTION) $*.f ; \
-        else \
-          if [ -n "$(OMP)" ] ; then echo COMPILING $*.f90 WITHOUT OMP ; fi ; \
-	  $(FC) -o $@ -c $(FCFLAGS) $(PROMOTION) $*.f ; \
-        fi

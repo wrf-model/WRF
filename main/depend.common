@@ -135,224 +135,224 @@ module_domain_type.o: \
 	module_domain_type.o \
 	module_configure.o
 
-../inc/allocs_0.F90 : module_state_description.F
+../inc/allocs_0.F : module_state_description.F
 
 
 ../inc/allocs_1.o: \
 	module_domain_type.o \
 	module_configure.o
 
-../inc/allocs_1.F90 : module_state_description.F
+../inc/allocs_1.F : module_state_description.F
 
 
 ../inc/allocs_2.o: \
 	module_domain_type.o \
 	module_configure.o
 
-../inc/allocs_2.F90 : module_state_description.F
+../inc/allocs_2.F : module_state_description.F
 
 
 ../inc/allocs_3.o: \
 	module_domain_type.o \
 	module_configure.o
 
-../inc/allocs_3.F90 : module_state_description.F
+../inc/allocs_3.F : module_state_description.F
 
 
 ../inc/allocs_4.o: \
 	module_domain_type.o \
 	module_configure.o
 
-../inc/allocs_4.F90 : module_state_description.F
+../inc/allocs_4.F : module_state_description.F
 
 
 ../inc/allocs_5.o: \
 	module_domain_type.o \
 	module_configure.o
 
-../inc/allocs_5.F90 : module_state_description.F
+../inc/allocs_5.F : module_state_description.F
 
 
 ../inc/allocs_6.o: \
 	module_domain_type.o \
 	module_configure.o
 
-../inc/allocs_6.F90 : module_state_description.F
+../inc/allocs_6.F : module_state_description.F
 
 
 ../inc/allocs_7.o: \
 	module_domain_type.o \
 	module_configure.o
 
-../inc/allocs_7.F90 : module_state_description.F
+../inc/allocs_7.F : module_state_description.F
 
 
 ../inc/allocs_8.o: \
 	module_domain_type.o \
 	module_configure.o
 
-../inc/allocs_8.F90 : module_state_description.F
+../inc/allocs_8.F : module_state_description.F
 
 
 ../inc/allocs_9.o: \
 	module_domain_type.o \
 	module_configure.o
 
-../inc/allocs_9.F90 : module_state_description.F
+../inc/allocs_9.F : module_state_description.F
 
 
 ../inc/allocs_10.o: \
 	module_domain_type.o \
 	module_configure.o
 
-../inc/allocs_10.F90 : module_state_description.F
+../inc/allocs_10.F : module_state_description.F
 
 
 ../inc/allocs_11.o: \
 	module_domain_type.o \
 	module_configure.o
 
-../inc/allocs_11.F90 : module_state_description.F
+../inc/allocs_11.F : module_state_description.F
 
 
 ../inc/allocs_12.o: \
 	module_domain_type.o \
 	module_configure.o
 
-../inc/allocs_12.F90 : module_state_description.F
+../inc/allocs_12.F : module_state_description.F
 
 
 ../inc/allocs_13.o: \
 	module_domain_type.o \
 	module_configure.o
 
-../inc/allocs_13.F90 : module_state_description.F
+../inc/allocs_13.F : module_state_description.F
 
 
 ../inc/allocs_14.o: \
 	module_domain_type.o \
 	module_configure.o
 
-../inc/allocs_14.F90 : module_state_description.F
+../inc/allocs_14.F : module_state_description.F
 
 
 ../inc/allocs_15.o: \
 	module_domain_type.o \
 	module_configure.o
 
-../inc/allocs_15.F90 : module_state_description.F
+../inc/allocs_15.F : module_state_description.F
 
 
 ../inc/allocs_16.o: \
 	module_domain_type.o \
 	module_configure.o
 
-../inc/allocs_16.F90 : module_state_description.F
+../inc/allocs_16.F : module_state_description.F
 
 
 ../inc/allocs_17.o: \
 	module_domain_type.o \
 	module_configure.o
 
-../inc/allocs_17.F90 : module_state_description.F
+../inc/allocs_17.F : module_state_description.F
 
 
 ../inc/allocs_18.o: \
 	module_domain_type.o \
 	module_configure.o
 
-../inc/allocs_18.F90 : module_state_description.F
+../inc/allocs_18.F : module_state_description.F
 
 
 ../inc/allocs_19.o: \
 	module_domain_type.o \
 	module_configure.o
 
-../inc/allocs_19.F90 : module_state_description.F
+../inc/allocs_19.F : module_state_description.F
 
 
 ../inc/allocs_20.o: \
 	module_domain_type.o \
 	module_configure.o
 
-../inc/allocs_20.F90 : module_state_description.F
+../inc/allocs_20.F : module_state_description.F
 
 
 ../inc/allocs_21.o: \
 	module_domain_type.o \
 	module_configure.o
 
-../inc/allocs_21.F90 : module_state_description.F
+../inc/allocs_21.F : module_state_description.F
 
 
 ../inc/allocs_22.o: \
 	module_domain_type.o \
 	module_configure.o
 
-../inc/allocs_22.F90 : module_state_description.F
+../inc/allocs_22.F : module_state_description.F
 
 
 ../inc/allocs_23.o: \
 	module_domain_type.o \
 	module_configure.o
 
-../inc/allocs_23.F90 : module_state_description.F
+../inc/allocs_23.F : module_state_description.F
 
 
 ../inc/allocs_24.o: \
 	module_domain_type.o \
 	module_configure.o
 
-../inc/allocs_24.F90 : module_state_description.F
+../inc/allocs_24.F : module_state_description.F
 
 
 ../inc/allocs_25.o: \
 	module_domain_type.o \
 	module_configure.o
 
-../inc/allocs_25.F90 : module_state_description.F
+../inc/allocs_25.F : module_state_description.F
 
 
 ../inc/allocs_26.o: \
 	module_domain_type.o \
 	module_configure.o
 
-../inc/allocs_26.F90 : module_state_description.F
+../inc/allocs_26.F : module_state_description.F
 
 
 ../inc/allocs_27.o: \
 	module_domain_type.o \
 	module_configure.o
 
-../inc/allocs_27.F90 : module_state_description.F
+../inc/allocs_27.F : module_state_description.F
 
 
 ../inc/allocs_28.o: \
 	module_domain_type.o \
 	module_configure.o
 
-../inc/allocs_28.F90 : module_state_description.F
+../inc/allocs_28.F : module_state_description.F
 
 
 ../inc/allocs_29.o: \
 	module_domain_type.o \
 	module_configure.o
 
-../inc/allocs_29.F90 : module_state_description.F
+../inc/allocs_29.F : module_state_description.F
 
 
 ../inc/allocs_30.o: \
 	module_domain_type.o \
 	module_configure.o
 
-../inc/allocs_30.F90 : module_state_description.F
+../inc/allocs_30.F : module_state_description.F
 
 
 ../inc/allocs_31.o: \
 	module_domain_type.o \
 	module_configure.o
 
-../inc/allocs_31.F90 : module_state_description.F
+../inc/allocs_31.F : module_state_description.F
 
 
 module_streams.o: \

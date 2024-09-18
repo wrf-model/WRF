@@ -104,7 +104,7 @@ foreach( n RANGE 0 31 )
   list(
         APPEND
         allocs_source
-        ${CMAKE_BINARY_DIR}/inc/allocs_${n}.F90
+        ${CMAKE_BINARY_DIR}/inc/allocs_${n}.F
         )
 
 endforeach()

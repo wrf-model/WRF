@@ -1,4 +1,6 @@
 # WRF CMake Build
+add_compile_options    ( "${PROJECT_COMPILE_OPTIONS}"     )
+add_compile_definitions( "${PROJECT_COMPILE_DEFINITIONS}" )
 
 #!TODO ORGANIZE THIS FOLDER
 set( FOLDER_COMPILE_TARGET registry )
@@ -99,10 +101,9 @@ elseif ( ${WRF_CORE} STREQUAL "DA" OR ${WRF_CORE} STREQUAL "DA_4D_VAR" )
 
 endif()
 
-get_directory_property( DIR_DEFS DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_DEFINITIONS )
 wrf_expand_definitions( 
                         RESULT_VAR  REGISTRY_DEFS
-                        DEFINITIONS ${DIR_DEFS}
+                        DEFINITIONS ${PROJECT_COMPILE_DEFINITIONS}
                         )
 
 # How this is not a bigger thing or not resolved is beyond me
@@ -121,6 +122,10 @@ add_custom_command(
                       ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/inc
                     COMMAND
                       ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/frame
+                    # WRF DA shenanigans that date back so far back changing to some better layout may have unintended
+                    # consequences with external workflows. There is no harm in always doing this so that's why this is here
+                    COMMAND
+                      grep "^rconfig" ${PROJECT_SOURCE_DIR}/Registry/Registry.EM_COMMON > ${CMAKE_BINARY_DIR}/Registry/Registry.rconfig 2>&1
                     COMMAND
                       ${CMAKE_BINARY_DIR}/tools/registry ${REGISTRY_DEFS} -DNEW_BDYS ${REGISTRY_FILE} > ${CMAKE_BINARY_DIR}/registry.log 2>&1
                     #!TODO Just have the registry code actually check for failure or better yet rewrite the 

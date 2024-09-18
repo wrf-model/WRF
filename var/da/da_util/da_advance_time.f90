@@ -31,7 +31,9 @@ program da_advance_time
 !     integer function iargc()
 !     end function iargc
 !  end interface
+#ifndef __GFORTRAN__
    integer, external :: iargc
+#endif
 
    integer :: ccyy, mm, dd, hh, nn, ss, dday, dh, dn, ds, gday, gsec
 

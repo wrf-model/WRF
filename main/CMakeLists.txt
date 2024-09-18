@@ -1,6 +1,9 @@
 # WRF CMake Build
 set( FOLDER_COMPILE_TARGETS )
 
+add_compile_options    ( "${PROJECT_COMPILE_OPTIONS}"     )
+add_compile_definitions( "${PROJECT_COMPILE_DEFINITIONS}" )
+
 # First make true executables
 if ( ${WRF_CORE} STREQUAL "PLUS" )
   add_executable(

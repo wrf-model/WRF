@@ -14,7 +14,6 @@ set(
 # Generate all the combinations dynamically, not a fan of this file breakdown
 ########################################################################################################################
 set( nl_dyn_source )
-get_directory_property( DIR_DEFS DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_DEFINITIONS )
 foreach( n RANGE 0 7 )
   
   wrf_c_preproc_fortran( 
@@ -25,7 +24,7 @@ foreach( n RANGE 0 7 )
                         INCLUDES        ${CMAKE_CURRENT_SOURCE_DIR}
                                         ${CMAKE_BINARY_DIR}/inc
                         DEPENDENCIES    registry_code
-                        DEFINITIONS     ${DIR_DEFS} NNN=${n} NL_set_ROUTINES
+                        DEFINITIONS     ${PROJECT_COMPILE_DEFINITIONS} NNN=${n} NL_set_ROUTINES
                         SOURCES         nl_access_routines.F
                         )
   wrf_c_preproc_fortran( 
@@ -36,7 +35,7 @@ foreach( n RANGE 0 7 )
                       INCLUDES        ${CMAKE_CURRENT_SOURCE_DIR}
                                       ${CMAKE_BINARY_DIR}/inc
                       DEPENDENCIES    registry_code
-                      DEFINITIONS     ${DIR_DEFS} NNN=${n} NL_get_ROUTINES
+                      DEFINITIONS     ${PROJECT_COMPILE_DEFINITIONS} NNN=${n} NL_get_ROUTINES
                       SOURCES         nl_access_routines.F
                       )
 
@@ -90,11 +89,28 @@ if ( ${USE_RSL_LITE} )
   set( MODULE_DM ${PROJECT_SOURCE_DIR}/external/RSL_LITE/module_dm.F )
 endif()
 
+set( 
+    NON_DA_SOURCES 
+    module_cpl.F
+    module_cpl_oasis3.F
+    clog.c
+    libmassv.F
+    
+    module_clear_halos.F
+    module_comm_nesting_dm.F
+    module_integrate.F
+    module_sm.F
+    )
+
+if ( ${WRF_CORE} STREQUAL "DA" OR ${WRF_CORE} STREQUAL "DA_4D_VAR" )
+  set( NON_DA_SOURCES "" )
+endif()
+
 target_sources(
                 ${PROJECT_NAME}_Core
                 PRIVATE
                   ${WRF_INCLUDE_FILES}
-
+                  # Common sources used in all cores
                   module_configure.F
                   module_driver_constants.F
                   module_domain_type.F
@@ -103,11 +119,7 @@ target_sources(
                   module_wrf_error.F
                   module_machine.F
                   module_timing.F
-                  # module_dm.F
                   ${MODULE_DM}
-                  module_cpl.F
-                  module_cpl_oasis3.F
-
 
                   module_alloc_space_0.F
                   module_alloc_space_1.F
@@ -123,43 +135,39 @@ target_sources(
                   ${CMAKE_BINARY_DIR}/frame/module_state_description.F # GENERATED
                   ${nl_dyn_source}                                     # GENERATED
 
-                  clog.c
+                  
                   collect_on_comm.c
                   hires_timer.c
-                  libmassv.F
                   
-                  module_clear_halos.F
+
                   module_comm_dm.F
                   module_comm_dm_0.F
                   module_comm_dm_1.F
                   module_comm_dm_2.F
                   module_comm_dm_3.F
                   module_comm_dm_4.F
-                  module_comm_nesting_dm.F
-                  
-                  
-                                    
-                  module_integrate.F
-                  
+
                   module_io.F
                   module_io_quilt.F
                   
                   module_nesting.F
-                  module_quilt_outbuf_ops.F
-                  module_sm.F
+
                   module_tiles.F
-                  
-                  pack_utils.c
                   wrf_debug.F
                   wrf_num_bytes_between.c
                   wrf_shutdown.F
+
+                  pack_utils.c
+                  module_quilt_outbuf_ops.F
+
+                  ${NON_DA_SOURCES}
                   )
 
 # Disable optimizations on these files always
 set_source_files_properties(
                             ${nl_dyn_source}
                             PROPERTIES
-                            COMPILE_FLAGS
+                            COMPILE_OPTIONS_OPTIMIZATION
                               $<$<COMPILE_LANGUAGE:Fortran>:${WRF_FCNOOPT}>
                             )
 

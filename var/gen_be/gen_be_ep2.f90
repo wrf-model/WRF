@@ -32,7 +32,9 @@ program gen_be_ep2
    character (len=3)     :: ce                        ! Member index -> character.
    character (len=filename_len)   :: moist_string
 
+#ifndef __GFORTRAN__
    integer, external     :: iargc
+#endif
    integer               :: numarg
    integer               :: ne                        ! Ensemble size.
    integer               :: i, j, k, member           ! Loop counters.

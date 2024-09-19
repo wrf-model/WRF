@@ -71,3 +71,4 @@ libwrfvar.a : $(WRFVAR_OBJS)
           if [ -n "$(OMP)" ] ; then echo COMPILING $*.f90 WITHOUT OMP ; fi ; \
 	  $(FC) -o $@ -c $(FCFLAGS) $(PROMOTION) $*.f ; \
         fi
+

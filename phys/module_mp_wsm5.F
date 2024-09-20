@@ -1,7 +1,7 @@
 #ifdef _ACCEL
 #  include "module_mp_wsm5_accel.F"
 #else
-#if ( RWORDSIZE == 4 )
+#ifndef DOUBLE_PRECISION
 #  define VREC vsrec
 #  define VSQRT vssqrt
 #else

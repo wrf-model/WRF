@@ -62,7 +62,7 @@ IF ( Hndl .GT. -1 ) THEN
       CASE ( IO_NETCDF   )
         IF ( multi_files(io_form) .OR.  wrf_dm_on_monitor() ) THEN
 ifelse($3,real,
-`#  if ( RWORDSIZE == DWORDSIZE )
+`#  ifdef DOUBLE_PRECISION
            CALL ext_ncd_$1_$2_$6_double$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
                                  ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )
 #  else
@@ -87,7 +87,7 @@ ifelse($3,real,
 #ifdef NETCDFPAR
       CASE ( IO_NETCDFPAR   )
 ifelse($3,real,
-`#  if ( RWORDSIZE == DWORDSIZE )
+`#  ifdef DOUBLE_PRECISION
         CALL ext_ncdpar_$1_$2_$6_double$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
                               ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )
 #  else
@@ -101,7 +101,7 @@ ifelse($3,real,
 #ifdef PNETCDF
       CASE ( IO_PNETCDF   )
 ifelse($3,real,
-`#  if ( RWORDSIZE == DWORDSIZE )
+`#  ifdef DOUBLE_PRECISION
         CALL ext_pnc_$1_$2_$6_double$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
                               ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )
 #  else
@@ -114,7 +114,7 @@ ifelse($3,real,
 #ifdef ADIOS2
       CASE ( IO_ADIOS2   )
 ifelse($3,real,
-`#  if ( RWORDSIZE == DWORDSIZE )
+`#  ifdef DOUBLE_PRECISION
         CALL ext_adios2_$1_$2_$6_double$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
                               ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )
 #  else
@@ -127,7 +127,7 @@ ifelse($3,real,
 #ifdef PIO
       CASE ( IO_PIO )
 ifelse($3,real,
-`#  if ( RWORDSIZE == DWORDSIZE )
+`#  ifdef DOUBLE_PRECISION
         CALL ext_pio_$1_$2_$6_double$4_$5 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
                               ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )
 #  else
@@ -140,7 +140,7 @@ ifelse($3,real,
 #ifdef PHDF5
       CASE ( IO_PHDF5   )
 ifelse($3,real,
-`#  if ( RWORDSIZE == DWORDSIZE )
+`#  ifdef DOUBLE_PRECISION
         CALL ext_phdf5_$1_$2_$6_double$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
                               ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )
 #  else
@@ -153,7 +153,7 @@ ifelse($3,real,
 #ifdef ESMFIO
       CASE ( IO_ESMF )
 ifelse($3,real,
-`#  if ( RWORDSIZE == DWORDSIZE )
+`#  ifdef DOUBLE_PRECISION
         CALL ext_esmf_$1_$2_$6_double$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
                               ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )
 #  else
@@ -166,7 +166,7 @@ ifelse($3,real,
 #ifdef XXX
       CASE ( IO_XXX   )
 ifelse($3,real,
-`#  if ( RWORDSIZE == DWORDSIZE )
+`#  ifdef DOUBLE_PRECISION
         CALL ext_xxx_$1_$2_$6_double$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
                               ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )
 #  else
@@ -179,7 +179,7 @@ ifelse($3,real,
 #ifdef YYY
       CASE ( IO_YYY   )
 ifelse($3,real,
-`#  if ( RWORDSIZE == DWORDSIZE )
+`#  ifdef DOUBLE_PRECISION
         CALL ext_yyy_$1_$2_$6_double$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
                               ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )
 #  else
@@ -193,7 +193,7 @@ ifelse($3,real,
       CASE ( IO_GRIB1   )
         IF ( multi_files(io_form) .OR.  wrf_dm_on_monitor() ) THEN
 ifelse($3,real,
-`#  if ( RWORDSIZE == DWORDSIZE )
+`#  ifdef DOUBLE_PRECISION
            CALL ext_gr1_$1_$2_$6_double$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
                                  ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )
 #  else
@@ -219,7 +219,7 @@ ifelse($3,real,
       CASE ( IO_GRIB2   )
         IF ( multi_files(io_form) .OR.  wrf_dm_on_monitor() ) THEN
 ifelse($3,real,
-`#  if ( RWORDSIZE == DWORDSIZE )
+`#  ifdef DOUBLE_PRECISION
            CALL ext_gr2_$1_$2_$6_double$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
                                  ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )
 #  else
@@ -245,7 +245,7 @@ ifelse($3,real,
       CASE ( IO_INTIO   )
         IF ( multi_files(io_form) .OR.  wrf_dm_on_monitor() ) THEN
 ifelse($3,real,
-`#  if ( RWORDSIZE == DWORDSIZE )
+`#  ifdef DOUBLE_PRECISION
            CALL ext_int_$1_$2_$6_double$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
                                  ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )
 #  else

@@ -135,7 +135,7 @@
       inter_domain = inter_domain_in
       okay_to_alloc = okay_to_alloc_in
 
-#if ( RWORDSIZE == 8 )
+#ifdef DOUBLE_PRECISION
       initial_data_value = 0.
 #else
       CALL get_initial_data_value ( initial_data_value )

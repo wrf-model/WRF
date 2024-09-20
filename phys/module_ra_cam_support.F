@@ -3517,7 +3517,7 @@ subroutine oznini(ozmixm,pin,levsiz,num_months,XLAT,                &
 #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
      endif if_master
      call wrf_debug(1,"Broadcast ozone to other ranks.")
-# if ( RWORDSIZE == DWORDSIZE )
+# ifdef DOUBLE_PRECISION
      call MPI_Bcast(ozmixin,size(ozmixin),MPI_DOUBLE_PRECISION,0,local_communicator,ierr)
      call MPI_Bcast(pin,size(pin),MPI_DOUBLE_PRECISION,0,local_communicator,ierr)
      plev=pin

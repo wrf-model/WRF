@@ -4,7 +4,7 @@
       integer, parameter  :: WRF_FILE_OPENED_FOR_READ             = 103
       integer, parameter  :: WRF_REAL                             = 104
       integer, parameter  :: WRF_DOUBLE                           = 105
-#ifdef PROMOTE_FLOAT 
+#ifdef DOUBLE_PRECISION 
       integer, parameter  :: WRF_FLOAT=WRF_DOUBLE
 #else      
       integer, parameter  :: WRF_FLOAT=WRF_REAL

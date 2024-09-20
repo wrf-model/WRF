@@ -22,7 +22,7 @@
    TYPE ::   FLD_CPL                                  ! Coupling field information
       CHARACTER(len = 64) ::   clname                    ! Name of the coupling field, jpeighty defined in oasis
       INTEGER             ::   nid                       ! Id of the field
-#if ( RWORDSIZE == 8 )
+#ifdef DOUBLE_PRECISION
       REAL        , POINTER, DIMENSION(:,:) ::   dbl2d   ! 2d array to store received field 
 #else
       REAL(kind=8), POINTER, DIMENSION(:,:) ::   dbl2d   ! 2d array to store received field 
@@ -308,7 +308,7 @@ CONTAINS
          kdomwrf, kdomext, kfldid, ' ', TRIM(ssnd(kdomwrf,kdomext,kfldid)%clname), ksec
       CALL wrf_debug(nlevdbg, cltxt)
 
-#if ( RWORDSIZE == 8 )
+#ifdef DOUBLE_PRECISION
       CALL oasis_put(ssnd(kdomwrf,kdomext,kfldid)%nid, ksec,      pdata(:,:) , info)
 #else
       CALL oasis_put(ssnd(kdomwrf,kdomext,kfldid)%nid, ksec, DBLE(pdata(:,:)), info)
@@ -362,7 +362,7 @@ CONTAINS
       CALL wrf_debug(nlevdbg, cltxt)
 
       CALL oasis_get( srcv(kdomwrf,kdomext,kfldid)%nid, ksec, srcv(kdomwrf,kdomext,kfldid)%dbl2d, info )
-#if ( RWORDSIZE == 8 )
+#ifdef DOUBLE_PRECISION
       pcplrcv(:,:) =      srcv(kdomwrf,kdomext,kfldid)%dbl2d
 #else
       pcplrcv(:,:) = REAL(srcv(kdomwrf,kdomext,kfldid)%dbl2d, kind=4)

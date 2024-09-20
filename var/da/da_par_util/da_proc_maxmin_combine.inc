@@ -32,7 +32,7 @@ subroutine da_proc_maxmin_combine(n, max, min)
       in(2*i)   = myproc
    end do
 
-#if ( RWORDSIZE == 4 )
+#ifndef DOUBLE_PRECISION
    call mpi_reduce(in, out, n, mpi_2real, mpi_minloc, root, comm, ierr)
 #else
    call mpi_reduce(in, out, n, mpi_2double_precision, mpi_minloc, root, comm, ierr)
@@ -65,7 +65,7 @@ subroutine da_proc_maxmin_combine(n, max, min)
       in(2*i-1) = max(i)%value
       in(2*i)   = myproc
    end do
-#if ( RWORDSIZE == 4 )
+#ifndef DOUBLE_PRECISION
    call mpi_reduce(in, out, n, mpi_2real, mpi_maxloc, root, comm, ierr)
 #else
    call mpi_reduce(in, out, n, mpi_2double_precision, mpi_maxloc, root, comm, ierr)

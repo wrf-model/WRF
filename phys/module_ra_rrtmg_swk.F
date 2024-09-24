@@ -10196,7 +10196,13 @@ contains
 !sh        
                        ids,ide, jds,jde, kds,kde,                              &
                        ims,ime, jms,jme, kms,kme,                              &
-                       its,ite, jts,jte, kts,kte                               )
+                       its,ite, jts,jte, kts,kte,                              &
+! for NN emulation
+              i_play, i_tlay, i_h2ovmr, i_o3vmr, i_cldfrac, i_o3, i_qc, i_qi, i_qs, &
+              i_rel, i_rei, i_res, i_clwpth, i_ciwpth, i_cswpth, & 
+              i_albedo, i_coszen, i_tsfc, i_emiss, o_rthratensw, o_rthratenlw, &
+              o_swupt, o_swuptc, o_swdnt, o_swdntc, o_swupb, o_swupbc, o_swdnb, o_swdnbc, &
+              o_lwupt, o_lwuptc, o_lwdnt, o_lwdntc, o_lwupb, o_lwupbc, o_lwdnb, o_lwdnbc, i_topo, topography )
 !-------------------------------------------------------------------------------
 ! abstract : unified rrtmg sw lw driver
 !
@@ -10334,6 +10340,15 @@ contains
    real, dimension(its:ite)             :: xice
    integer                              :: dyofyr
 
+! for NN emulation 
+   real, dimension(ims:ime,kms:kme,jms:jme) :: &
+   i_play, i_tlay, i_h2ovmr, i_o3vmr, i_cldfrac, o_rthratensw, o_rthratenlw, & 
+   i_rel, i_rei, i_res, i_clwpth, i_ciwpth, i_cswpth
+
+   real, dimension(ims:ime,jms:jme) :: &
+   i_tsfc, i_emiss, i_coszen, i_albedo, i_o3, i_qc, i_qi, i_qs, &
+   o_swupt, o_swuptc, o_swdnt, o_swdntc, o_swupb, o_swupbc, o_swdnb, o_swdnbc, &
+   o_lwupt, o_lwuptc, o_lwdnt, o_lwdntc, o_lwupb, o_lwupbc, o_lwdnb, o_lwdnbc, i_topo, topography
 
 !
 ! Set trace gas volume mixing ratios, 2005 values, IPCC (2007)
@@ -10852,6 +10867,54 @@ contains
        lwupbc(i,j)    = uflxc(1,1)
        lwdnb(i,j)     = dflx(1,1)
        lwdnbc(i,j)    = dflxc(1,1)
+
+       ! Inputs for NN emulation
+       i_play(i,:,j) = play(1,:) ! pressure (hPa) 
+       i_tlay(i,:,j) = tlay(1,:) ! temperature (K) 
+       i_h2ovmr(i,:,j) = h2ovmr(1,:) ! water vapor mixing ratio (kg/kg)
+       i_o3vmr(i,:,j) = o3vmr(1,:) ! ozone mixing ratio (ppmv)
+       i_cldfrac(i,:,j) = cldfrac(1,:) ! layer cloud fraction
+       i_o3(i,j) = 0
+       i_qc(i,j) = 0
+       i_qi(i,j) = 0
+       i_qs(i,j) = 0
+       do k = kts, kte
+       i_o3(i,j) = o3vmr(1,k)*pdel(k)*1000./g + o3vmr(1,k) ! g m-2
+       i_qc(i,j) = clwpth(1,k) + i_qc(i,j) ! liquid water path
+       i_qi(i,j) = ciwpth(1,k) + i_qi(i,j) ! ice water path
+       i_qs(i,j) = cswpth(1,k) + i_qs(i,j) ! snow water path
+       enddo
+       i_rel(i,:,j) = rel(1,:) ! cloud liquid effective radius (um)
+       i_rei(i,:,j) = rei(1,:) ! cloud ice effective radius (um)
+       i_res(i,:,j) = res(1,:) ! cloud snow effective radius (um)
+       i_clwpth(i,:,j) = clwpth(1,:) ! layer cloud liquid water path (g/m2)
+       i_ciwpth(i,:,j) = ciwpth(1,:) ! layer cloud ice water path (g/m2)
+       i_cswpth(i,:,j) = cswpth(1,:) ! layer cloud snow water path (g/m2)
+       i_tsfc(i,j) = tsfc(1) ! surface temperature (K)
+       i_emiss(i,j) = emiss(i,j) ! surface emissivity
+       i_coszen(i,j) = coszen(1) ! cosine of solar zenith angle
+       i_albedo(i,j) = albedo(i,j) ! surface albedo
+       i_topo(i,j) = topography(i,j) ! surface elevation OR topography
+       ! Outputs for NN emulation
+       o_rthratensw(i,:,j) = rthratensw(i,:,j) ! total sky shortwave radiative heating rate (K/s) 
+       o_swupt(i,j)  = swupt(i,j)  ! total sky shortwave upward flux at TOA (W/m2)
+       o_swuptc(i,j) = swuptc(i,j) ! clear sky shortwave upward flux at TOA (W/m2)
+       o_swdnt(i,j)  = swdnt(i,j)  ! total sky shortwave downward flux at TOA (W/m2)
+       o_swdntc(i,j) = swdntc(i,j) ! clear sky shortwave downward flux at TOA (W/m2)
+       o_swupb(i,j)  = swupb(i,j)  ! total sky shortwave upward flux at surface (W/m2)
+       o_swupbc(i,j) = swupbc(i,j) ! clear sky shortwave upward flux at surface (W/m2)
+       o_swdnb(i,j)  = swdnb(i,j)  ! total sky shortwave downward flux at surface (W/m2)
+       o_swdnbc(i,j) = swdnbc(i,j) ! clear sky shortwave downward flux at surface (W/m2)
+       o_rthratenlw(i,:,j) = rthratenlw(i,:,j) ! total sky longwave radiative heating rate (K/s) 
+       o_lwupt(i,j)  = lwupt(i,j)  ! total sky longwave upward flux at TOA (W/m2)
+       o_lwuptc(i,j) = lwuptc(i,j) ! clear sky longwave upward flux at TOA (W/m2)
+       o_lwdnt(i,j)  = lwdnt(i,j)  ! total sky longwave downward flux at TOA (W/m2)
+       o_lwdntc(i,j) = lwdntc(i,j) ! clear sky longwave downward flux at TOA (W/m2)
+       o_lwupb(i,j)  = lwupb(i,j)  ! total sky longwave upward flux at surface (W/m2)
+       o_lwupbc(i,j) = lwupbc(i,j) ! clear sky longwave upward flux at surface (W/m2)
+       o_lwdnb(i,j)  = lwdnb(i,j)  ! total sky longwave downward flux at surface (W/m2)
+       o_lwdnbc(i,j) = lwdnbc(i,j) ! clear sky longwave downward flux at surface (W/m2)
+         
      enddo ! jts:jte end j LOOP 
    enddo ! its:ite end GRAND LOOP
    end subroutine rad_rrtmg_driver

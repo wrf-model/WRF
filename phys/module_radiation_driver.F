@@ -199,6 +199,11 @@ CONTAINS
               ,chem_opt                                                   &
               ,gsfcrad_gocart_coupling                                    &
 #endif
+              ,i_play, i_tlay, i_h2ovmr, i_o3vmr, i_cldfrac, i_o3, i_qc, i_qi, i_qs  &
+              ,i_rel, i_rei, i_res, i_clwpth, i_ciwpth, i_cswpth         &
+              ,i_coszen, i_albedo, i_tsfc, i_emiss, o_rthratensw, o_rthratenlw             &
+              ,o_swupt, o_swuptc, o_swdnt, o_swdntc, o_swupb, o_swupbc, o_swdnb, o_swdnbc  &
+              ,o_lwupt, o_lwuptc, o_lwdnt, o_lwdntc, o_lwupb, o_lwupbc, o_lwdnb, o_lwdnbc, i_topo, topography  &
               ,feedback_is_ready                                          & ! WRF-CMAQ twoway coupled model
               ,mass_ws_i                                                  & ! WRF-CMAQ twoway coupled model
               ,mass_ws_j                                                  & ! WRF-CMAQ twoway coupled model
@@ -1016,6 +1021,17 @@ CONTAINS
      INTEGER, PARAMETER:: taer_angexp_opt = 3                            !  input option for aerosol Angstrom exponent
      INTEGER, PARAMETER:: taer_ssa_opt = 3                               !  input option for aerosol ssa
      INTEGER, PARAMETER:: taer_asy_opt = 3                               !  input option for aerosol asy
+
+
+! for NN emulation 
+   real, dimension(ims:ime,kms:kme,jms:jme) :: &
+   i_play, i_tlay, i_h2ovmr, i_o3vmr, i_cldfrac, o_rthratensw, o_rthratenlw, &
+   i_rel, i_rei, i_res, i_clwpth, i_ciwpth, i_cswpth
+   real, dimension(ims:ime,jms:jme)  :: &
+   i_tsfc, i_emiss, i_coszen, i_albedo, i_o3, i_qc, i_qi, i_qs, i_topo, &
+   o_swupt, o_swuptc, o_swdnt, o_swdntc, o_swupb, o_swupbc, o_swdnb, o_swdnbc, &
+   o_lwupt, o_lwuptc, o_lwdnt, o_lwdntc, o_lwupb, o_lwupbc, o_lwdnb, o_lwdnbc
+   real, dimension(ims:ime, jms:jme) :: nn_lon, nn_lat, topography
 
 ! WRF-Solar EPS
   real, dimension(:, :, :), allocatable :: qv_tmp, qc_tmp, qs_tmp
@@ -2103,6 +2119,11 @@ CONTAINS
 #if( BUILD_RRTMK == 1)
         CASE (RRTMK_LWSCHEME)
 
+! NN emulator
+             nn_lon(ims:ime,jms:jme) = XLONG(ims:ime,jms:jme)
+             nn_lat(ims:ime,jms:jme) = XLAT(ims:ime,jms:jme)
+
+
            IF ( PRESENT(F_QNC) .AND. PRESENT(QNC_CURR) ) THEN
              call rad_rrtmg_driver(                                 &
                            RTHRATEN, RTHRATENSW,                    &
@@ -2125,7 +2146,13 @@ CONTAINS
                            aer_opt, aerod, no_src_types,            &
                            ids,ide, jds,jde, kds,kde,               &
                            ims,ime, jms,jme, kms,kme,               &
-                           its,ite, jts,jte, kts,kte)
+                           its,ite, jts,jte, kts,kte,               &
+   ! for NN emulation 
+   i_play, i_tlay, i_h2ovmr, i_o3vmr, i_cldfrac, i_o3, i_qc, i_qi, i_qs,  &
+   i_rel, i_rei, i_res, i_clwpth, i_ciwpth, i_cswpth,  &
+   i_albedo, i_coszen, i_tsfc, i_emiss, o_rthratensw, o_rthratenlw, &
+   o_swupt, o_swuptc, o_swdnt, o_swdntc, o_swupb, o_swupbc, o_swdnb, o_swdnbc, &
+   o_lwupt, o_lwuptc, o_lwdnt, o_lwdntc, o_lwupb, o_lwupbc, o_lwdnb, o_lwdnbc, i_topo, topography )
              ELSE
                 call wrf_error_fatal('Can not call RRTMG-K. Missing QNC field.')
              ENDIF

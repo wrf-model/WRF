@@ -3645,8 +3645,9 @@ END subroutine optical_prep_modal_soa_vbs
 ! 7/21/09  SAM variables needed to convert GOCART sectional dust and seasalt to MOZAIC sections
    real  dgnum, dhi,  dlo, xlo, xhi, dxbin, relh_frc
    real dlo_sectm(nbin_o), dhi_sectm(nbin_o)
-   real, save :: seasfrc_goc9bin(4,nbin_o)    ! GOCART seasalt size distibution - mass fracs in MOSAIC 9-bins
-   real, save :: dustfrc_goc9bin(ndust,nbin_o)! GOCART dust size distibution - mass fracs in MOSAIC 9-bins
+   integer, parameter :: nbin_omoz=9            ! A. Ukhov 09/17/24
+   real, save :: seasfrc_goc9bin(4,nbin_omoz)   ! GOCART seasalt size distibution - mass fracs in MOSAIC 9-bins
+   real, save :: dustfrc_goc9bin(ndust,nbin_omoz)   ! GOCART dust size distibution - mass fracs in MOSAIC 9-bins
    real  mass_bc1 , mass_bc2 , vol_bc2  , mass_bc1j , mass_bc2j,  &
          mass_bc1i , mass_bc2i  , vol_soil
    real*8 dlogoc, dhigoc

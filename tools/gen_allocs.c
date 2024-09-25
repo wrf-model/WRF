@@ -590,7 +590,7 @@ gen_dealloc1 ( char * dirname )
   char  fname[NAMELEN] ;
   char * fn = "deallocs.inc" ;
   // Open array of deallocs_[n].inc
-  int   numFiles = 12;
+  int    numFiles = 12;
   int    idx      = 0;
   FILE * fpSub; 
   char * filename_prefix = "deallocs_" ;

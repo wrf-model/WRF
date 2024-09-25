@@ -3729,16 +3729,16 @@ END subroutine optical_prep_modal_soa_vbs
 
        !Diagnostic. A. Ukhov 09/17/24
        !-----
-        WRITE(*,*)nbin_o
-        WRITE(*,*)'Dust redistribution:'
-        do m =1, ndust
-            WRITE(*,*)m,dustfrc_goc9bin(m,:)
-        end do
+       ! WRITE(*,*)nbin_o
+       ! WRITE(*,*)'Dust redistribution:'
+       ! do m =1, ndust
+       !     WRITE(*,*)m,dustfrc_goc9bin(m,:)
+       ! end do
 
-        WRITE(*,*)'Sea salt redistribution:'
-        do m =1, 4
-            WRITE(*,*)m,seasfrc_goc9bin(m,:)
-        end do
+       ! WRITE(*,*)'Sea salt redistribution:'
+       ! do m =1, 4
+       !     WRITE(*,*)m,seasfrc_goc9bin(m,:)
+       ! end do
         !-----
 !       ISTOP=1
 !       IF(ISTOP.EQ.1)THEN

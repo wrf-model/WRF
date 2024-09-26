@@ -25,7 +25,7 @@
         "base_env_numprocs"      : [ "-e", "NUM_PROCS=16" ],
         "very_last_modules"       : [ "netcdf" ],
         ".*gnu.*::test_modules"   : [ "gcc" ],
-        ".*intel(?!-llvm).*::test_modules" : [ "intel-classic" ],
+        ".*intel-classic.*::test_modules" : [ "intel-classic" ],
         ".*intel-llvm.*::test_modules"     : [ "intel-oneapi" ],
         ".*pgi.*::test_modules"   : [ "nvhpc" ],
         ".*dm.*::test_mpi_module" : [ "cray-mpich" ]

@@ -106,7 +106,15 @@ foreach( n RANGE 0 11 )
         dealloc_source
         ${CMAKE_BINARY_DIR}/inc/deallocs_${n}.F
         )
+endforeach()
 
+set( allocs_source )
+foreach( n RANGE 0 31 )
+  list(
+        APPEND
+        allocs_source
+        ${CMAKE_BINARY_DIR}/inc/allocs_${n}.F
+        )
 endforeach()
 
 get_directory_property( DIR_DEFS DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_DEFINITIONS )
@@ -123,6 +131,9 @@ add_custom_command(
                       ${CMAKE_BINARY_DIR}/inc/nl_config.inc
                       ${CMAKE_BINARY_DIR}/frame/module_state_description.F
                       ${dealloc_source}
+                      ${allocs_source}
+                    COMMENT
+                      "Generating registry code..."
                     WORKING_DIRECTORY
                       ${CMAKE_BINARY_DIR}
                     # Replicate what exists in project directory for registry
@@ -150,12 +161,14 @@ add_custom_target(
                     ${CMAKE_BINARY_DIR}/inc/nl_config.inc
                     ${CMAKE_BINARY_DIR}/frame/module_state_description.F
                     ${dealloc_source}
+                    ${allocs_source}
                   )
 
 target_sources(
                 ${PROJECT_NAME}_Core
                 PRIVATE
-                  ${dealloc_source}
                   ${CMAKE_BINARY_DIR}/frame/module_state_description.F
+                  ${dealloc_source}
+                  ${allocs_source}
                 )
 

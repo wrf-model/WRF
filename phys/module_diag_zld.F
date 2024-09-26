@@ -82,6 +82,7 @@ CONTAINS
                ght_zl(i,kz,j) = missing
                s_zl  (i,kz,j) = missing
                td_zl (i,kz,j) = missing
+               q_zl  (i,kz,j) = missing
                p_zl  (i,kz,j) = missing
             END DO
          END DO

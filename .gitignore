@@ -36,3 +36,4 @@ wrfout_d*
 *.nc
 rsl.out.*
 rsl.error.*
+*.log

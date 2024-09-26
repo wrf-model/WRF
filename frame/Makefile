@@ -1,4 +1,5 @@
 #
+include ../configure.wrf
 
 LN      =       ln -sf
 MAKE    =       make -i -r
@@ -95,16 +96,25 @@ OBJS    =       \
                 hires_timer.o              \
 		clog.o
 
+ifeq ($(DMPARALLEL),1)
+	RSL_OBJS= \
+            ../external/RSL_LITE/feedback_domain_em_part1.o    \
+            ../external/RSL_LITE/feedback_domain_em_part2.o    \
+            ../external/RSL_LITE/force_domain_em_part2.o       \
+            ../external/RSL_LITE/interp_domain_em_part1.o      \
+            ../external/RSL_LITE/interp_domain_em_part2.o      \
+            ../external/RSL_LITE/interp_domain_em_part3.o      \
+            ../external/RSL_LITE/interp_domain_em_small.o
+endif
+
 #compile as a .o but do not link into the main library
 SPECIAL =       module_internal_header_util.o pack_utils.o
-   
 
-include ../configure.wrf
 
 LIBTARGET    =  framework
 TARGETDIR    =  ./
-$(LIBTARGET) :  $(MODULES) $(OBJS) $(SPECIAL) $(NLOBJS) $(ALOBJS)
-		$(AR) $(ARFLAGS) ../main/$(LIBWRFLIB) $(MODULES) $(OBJS) $(NLOBJS) $(ALOBJS)
+$(LIBTARGET) :  $(MODULES) $(OBJS) $(SPECIAL) $(NLOBJS) $(ALOBJS) $(RSL_OBJS)
+		$(AR) $(ARFLAGS) ../main/$(LIBWRFLIB) $(MODULES) $(OBJS) $(NLOBJS) $(ALOBJS) $(RSL_OBJS)
 		$(RANLIB) ../main/$(LIBWRFLIB)
 
 nl_set_0_routines.o : nl_access_routines.F module_configure.o

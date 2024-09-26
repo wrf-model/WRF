@@ -51,6 +51,12 @@ jobs:
             tests :
               - make-gnu
               - make-gnu-mpi
+              - make-intel-classic
+              - make-intel-classic-mpi
+              - make-intel-llvm
+              - make-intel-llvm-mpi
+              - make-pgi
+              - make-pgi-mpi
               # add new compilation tests here
 
     uses : ./.github/workflows/test_workflow.yml

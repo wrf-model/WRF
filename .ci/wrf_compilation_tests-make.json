@@ -17,12 +17,12 @@
       "queue"      : "main",
       "hpc_arguments"  : 
       {
-        "node_select" : { "-l " : { "select"       : 1, "ncpus" : 16 } },
+        "node_select" : { "-l " : { "select"       : 1, "ncpus" : 8 } },
         "priority"    : { "-l " : { "job_priority" : "economy"       } }
       },
       "arguments"  : 
       {
-        "base_env_numprocs"      : [ "-e", "NUM_PROCS=16" ],
+        "base_env_numprocs"      : [ "-e", "NUM_PROCS=8" ],
         "very_last_modules"       : [ "netcdf" ],
         ".*gnu.*::test_modules"   : [ "gcc" ],
         ".*intel-classic.*::test_modules" : [ "intel-classic" ],
@@ -32,156 +32,48 @@
       }
     }
   },
-  "make-gnu" :
-  {
-    "steps" :
-    {
-      "serial" :
-      {
-        "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "32" ]
-      },
-      "sm" :
-      {
-        "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "33" ],
-        "dependencies" : { "serial" : "afterany" }
-      }
-    }
+
+  "make-gnu-serial" : { "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "32" ] } } },
+  "make-gnu-sm"     : { "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "33" ] } } },
+  "make-gnu-dm"     : { "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "34" ] } } },
+  "make-gnu-dm+sm"  : { "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "35" ] } } },
+  
+  "make-intel-classic-serial" : {
+    "hsn.de.hpc" : { "timelimit" : "00:40:00" },
+    "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "13" ] } }
   },
-  "make-gnu-mpi" :
-  {
-    "steps" :
-    {
-      "dm" :
-      {
-        "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "34" ]
-      },
-      "dm+sm" :
-      {
-        "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "35" ],
-        "dependencies" : { "dm" : "afterany" }
-      }
-    }
+  "make-intel-classic-sm" : {
+    "hsn.de.hpc" : { "timelimit" : "00:40:00" },
+    "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "14" ] } }
   },
-  "make-intel-classic" :
-  {
-    "hsn.de.hpc"  :
-    {
-      "timelimit" : "00:40:00"
-    },
-    "steps" :
-    {
-      "serial" :
-      {
-        "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "13" ]
-      },
-      "sm" :
-      {
-        "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "14" ],
-        "dependencies" : { "serial" : "afterany" }
-      }
-    }
+  "make-intel-classic-dm" : {
+    "hsn.de.hpc" : { "timelimit" : "00:40:00" },
+    "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "15" ] } }
   },
-  "make-intel-classic-mpi" :
-  {
-    "hsn.de.hpc"  :
-    {
-      "timelimit" : "00:40:00"
-    },
-    "steps" :
-    {
-      "dm" :
-      {
-        "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "15" ]
-      },
-      "dm+sm" :
-      {
-        "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "16" ],
-        "dependencies" : { "dm" : "afterany" }
-      }
-    }
+  "make-intel-classic-dm+sm" : {
+    "hsn.de.hpc" : { "timelimit" : "00:40:00" },
+    "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "16" ] } }
   },
-  "make-intel-llvm" :
-  {
-    "hsn.de.hpc"  :
-    {
-      "timelimit" : "00:40:00"
-    },
-    "steps" :
-    {
-      "serial" :
-      {
-        "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "76" ]
-      },
-      "sm" :
-      {
-        "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "77" ],
-        "dependencies" : { "serial" : "afterany" }
-      }
-    }
+
+  "make-intel-llvm-serial" : {
+    "hsn.de.hpc" : { "timelimit" : "00:40:00" },
+    "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "76" ] } }
   },
-  "make-intel-llvm-mpi" :
-  {
-    "hsn.de.hpc"  :
-    {
-      "timelimit" : "00:40:00"
-    },
-    "steps" :
-    {
-      "dm" :
-      {
-        "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "78" ]
-      },
-      "dm+sm" :
-      {
-        "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "79" ],
-        "dependencies" : { "dm" : "afterany" }
-      }
-    }
+  "make-intel-llvm-sm" : {
+    "hsn.de.hpc" : { "timelimit" : "00:40:00" },
+    "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "77" ] } }
   },
-  "make-pgi" :
-  {
-    "steps" :
-    {
-      "serial" :
-      {
-        "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "1" ]
-      },
-      "sm" :
-      {
-        "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "2" ],
-        "dependencies" : { "serial" : "afterany" }
-      }
-    }
+  "make-intel-llvm-dm" : {
+    "hsn.de.hpc" : { "timelimit" : "00:40:00" },
+    "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "78" ] } }
   },
-  "make-pgi-mpi" :
-  {
-    "steps" :
-    {
-      "dm" :
-      {
-        "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "3" ]
-      },
-      "dm+sm" :
-      {
-        "command"      : ".ci/tests/build.sh",
-        "arguments"    : [ "-c", "4" ],
-        "dependencies" : { "dm" : "afterany" }
-      }
-    }
-  }
+  "make-intel-llvm-dm+sm" : {
+    "hsn.de.hpc" : { "timelimit" : "00:40:00" },
+    "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "79" ] } }
+  },
+
+  "make-pgi-serial" : { "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "1" ] } } },
+  "make-pgi-sm"     : { "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "2" ] } } },
+  "make-pgi-dm"     : { "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "3" ] } } },
+  "make-pgi-dm+sm"  : { "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "4" ] } } }
 }

@@ -65,5 +65,123 @@
         "dependencies" : { "dm" : "afterany" }
       }
     }
+  },
+  "make-intel-classic" :
+  {
+    "hsn.de.hpc"  :
+    {
+      "timelimit" : "00:40:00"
+    },
+    "steps" :
+    {
+      "serial" :
+      {
+        "command"      : ".ci/tests/build.sh",
+        "arguments"    : [ "-c", "13" ]
+      },
+      "sm" :
+      {
+        "command"      : ".ci/tests/build.sh",
+        "arguments"    : [ "-c", "14" ],
+        "dependencies" : { "serial" : "afterany" }
+      }
+    }
+  },
+  "make-intel-classic-mpi" :
+  {
+    "hsn.de.hpc"  :
+    {
+      "timelimit" : "00:40:00"
+    },
+    "steps" :
+    {
+      "dm" :
+      {
+        "command"      : ".ci/tests/build.sh",
+        "arguments"    : [ "-c", "15" ]
+      },
+      "dm+sm" :
+      {
+        "command"      : ".ci/tests/build.sh",
+        "arguments"    : [ "-c", "16" ],
+        "dependencies" : { "dm" : "afterany" }
+      }
+    }
+  },
+  "make-intel-llvm" :
+  {
+    "hsn.de.hpc"  :
+    {
+      "timelimit" : "00:40:00"
+    },
+    "steps" :
+    {
+      "serial" :
+      {
+        "command"      : ".ci/tests/build.sh",
+        "arguments"    : [ "-c", "76" ]
+      },
+      "sm" :
+      {
+        "command"      : ".ci/tests/build.sh",
+        "arguments"    : [ "-c", "77" ],
+        "dependencies" : { "serial" : "afterany" }
+      }
+    }
+  },
+  "make-intel-llvm-mpi" :
+  {
+    "hsn.de.hpc"  :
+    {
+      "timelimit" : "00:40:00"
+    },
+    "steps" :
+    {
+      "dm" :
+      {
+        "command"      : ".ci/tests/build.sh",
+        "arguments"    : [ "-c", "78" ]
+      },
+      "dm+sm" :
+      {
+        "command"      : ".ci/tests/build.sh",
+        "arguments"    : [ "-c", "79" ],
+        "dependencies" : { "dm" : "afterany" }
+      }
+    }
+  },
+  "make-pgi" :
+  {
+    "steps" :
+    {
+      "serial" :
+      {
+        "command"      : ".ci/tests/build.sh",
+        "arguments"    : [ "-c", "1" ]
+      },
+      "sm" :
+      {
+        "command"      : ".ci/tests/build.sh",
+        "arguments"    : [ "-c", "2" ],
+        "dependencies" : { "serial" : "afterany" }
+      }
+    }
+  },
+  "make-pgi-mpi" :
+  {
+    "steps" :
+    {
+      "dm" :
+      {
+        "command"      : ".ci/tests/build.sh",
+        "arguments"    : [ "-c", "3" ]
+      },
+      "dm+sm" :
+      {
+        "command"      : ".ci/tests/build.sh",
+        "arguments"    : [ "-c", "4" ],
+        "dependencies" : { "dm" : "afterany" }
+      }
+    }
   }
 }

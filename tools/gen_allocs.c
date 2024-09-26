@@ -257,7 +257,6 @@ gen_alloc1 ( char * dirname )
     {
       stop  = start + ( primaryFields / numFiles );
     }
-    printf( "Total [%d] : Setting [start,stop] to [%d, %d]", primaryFields, start, stop );
     gen_alloc2( fpSub , "grid%", NULL, &Domain, start, stop, 1 ) ;
     fprintf(
             fpSub,

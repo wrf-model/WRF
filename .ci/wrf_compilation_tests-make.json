@@ -39,36 +39,36 @@
   "make-gnu-dm+sm"  : { "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "35" ] } } },
   
   "make-intel-classic-serial" : {
-    "hsn.de.hpc" : { "timelimit" : "00:40:00" },
+    "submit_options" : { "hsn.de.hpc" : { "timelimit" : "00:40:00" } },
     "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "13" ] } }
   },
   "make-intel-classic-sm" : {
-    "hsn.de.hpc" : { "timelimit" : "00:40:00" },
+    "submit_options" : { "hsn.de.hpc" : { "timelimit" : "00:40:00" } },
     "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "14" ] } }
   },
   "make-intel-classic-dm" : {
-    "hsn.de.hpc" : { "timelimit" : "00:40:00" },
+    "submit_options" : { "hsn.de.hpc" : { "timelimit" : "00:40:00" } },
     "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "15" ] } }
   },
   "make-intel-classic-dm+sm" : {
-    "hsn.de.hpc" : { "timelimit" : "00:40:00" },
+    "submit_options" : { "hsn.de.hpc" : { "timelimit" : "00:40:00" } },
     "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "16" ] } }
   },
 
   "make-intel-llvm-serial" : {
-    "hsn.de.hpc" : { "timelimit" : "00:40:00" },
+    "submit_options" : { "hsn.de.hpc" : { "timelimit" : "00:40:00" } },
     "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "76" ] } }
   },
   "make-intel-llvm-sm" : {
-    "hsn.de.hpc" : { "timelimit" : "00:40:00" },
+    "submit_options" : { "hsn.de.hpc" : { "timelimit" : "00:40:00" } },
     "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "77" ] } }
   },
   "make-intel-llvm-dm" : {
-    "hsn.de.hpc" : { "timelimit" : "00:40:00" },
+    "submit_options" : { "hsn.de.hpc" : { "timelimit" : "00:40:00" } },
     "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "78" ] } }
   },
   "make-intel-llvm-dm+sm" : {
-    "hsn.de.hpc" : { "timelimit" : "00:40:00" },
+    "submit_options" : { "hsn.de.hpc" : { "timelimit" : "00:40:00" } },
     "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "79" ] } }
   },
 

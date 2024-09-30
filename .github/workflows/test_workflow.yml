@@ -87,6 +87,7 @@ jobs:
           -t   ${{ join( fromJson( inputs.tests ), ' ' ) }}  \
           -a "${{ inputs.account }}"                         \
           -p ${{ inputs.pool}} -tp ${{ inputs.tpool }}       \
+          -jn ${{ github.event_name == 'push' && github.ref_name || github.event.number }}-${{ inputs.id }} \
           ${{ inputs.args }} $ALT_DIRS
 
 
@@ -129,8 +130,8 @@ jobs:
         # *documented* functionality doesn't work as expected. Wow, bravo
         # can't use ${{ env. }} as somehow this combination of matrix->reusable workflow->call step is too complex
         # and expands to nothing
-        name: ${{ github.event_name == 'push' && 'master' || github.event.number }}-${{ inputs.id }}_logfiles
-        path: ${{ inputs.archive }}/${{ github.event_name == 'push' && 'master' || github.event.number }}/${{ inputs.id }}/
+        name: ${{ github.event_name == 'push' && github.ref_name || github.event.number }}-${{ inputs.id }}_logfiles
+        path: ${{ inputs.archive }}/${{ github.event_name == 'push' && github.ref_name || github.event.number }}/${{ inputs.id }}/
 
     # As noted in ci.yml, this will need to be moved to a separate workflow with pull_request_target
     # and strictly controlled usage of the GH token

@@ -69,11 +69,14 @@ jobs:
       if  : ${{ inputs.mkdirs }}
       id  : cpTestDirs
       run : |
-        # Remove if it exists to get a fresh start
-        rm -rf ${{ join( fromJson( inputs.tests ), ' ' ) }}
+        # Limit parallel ops to 4 at a time to not thrash login nodes
 
-        echo "Creating duplicate directory for ${{ join( fromJson( inputs.tests ), ' ' ) }}"
-        # Copy 4 at a time max
+        # Remove if it exists to get a fresh start
+        echo "Cleaning old test directories..."
+        tests="${{ join( fromJson( inputs.tests ), ' ' ) }}"
+        time printf "%s\n" $tests | xargs -i -P 4 rm -rf {}
+
+        echo "Creating duplicate directory for $tests"
         time printf "%s\n" $tests | xargs -i -P 4 cp -Rp main/ {}
 
     - name: Test ${{ inputs.name }}

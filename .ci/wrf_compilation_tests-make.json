@@ -39,41 +39,53 @@
   "make-gnu-dm+sm"  : { "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "35" ] } } },
   
   "make-intel-classic-serial" : {
-    "submit_options" : { "hsn.de.hpc" : { "timelimit" : "00:40:00" } },
+    "submit_options" : { "hsn.de.hpc" : { "timelimit" : "00:30:00" } },
     "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "13" ] } }
   },
   "make-intel-classic-sm" : {
-    "submit_options" : { "hsn.de.hpc" : { "timelimit" : "00:40:00" } },
+    "submit_options" : { "hsn.de.hpc" : { "timelimit" : "00:30:00" } },
     "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "14" ] } }
   },
   "make-intel-classic-dm" : {
-    "submit_options" : { "hsn.de.hpc" : { "timelimit" : "00:40:00" } },
+    "submit_options" : { "hsn.de.hpc" : { "timelimit" : "00:30:00" } },
     "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "15" ] } }
   },
   "make-intel-classic-dm+sm" : {
-    "submit_options" : { "hsn.de.hpc" : { "timelimit" : "00:40:00" } },
+    "submit_options" : { "hsn.de.hpc" : { "timelimit" : "00:30:00" } },
     "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "16" ] } }
   },
 
   "make-intel-llvm-serial" : {
-    "submit_options" : { "hsn.de.hpc" : { "timelimit" : "00:40:00" } },
+    "submit_options" : { "hsn.de.hpc" : { "timelimit" : "00:30:00" } },
     "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "76" ] } }
   },
   "make-intel-llvm-sm" : {
-    "submit_options" : { "hsn.de.hpc" : { "timelimit" : "00:40:00" } },
+    "submit_options" : { "hsn.de.hpc" : { "timelimit" : "00:30:00" } },
     "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "77" ] } }
   },
   "make-intel-llvm-dm" : {
-    "submit_options" : { "hsn.de.hpc" : { "timelimit" : "00:40:00" } },
+    "submit_options" : { "hsn.de.hpc" : { "timelimit" : "00:30:00" } },
     "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "78" ] } }
   },
   "make-intel-llvm-dm+sm" : {
-    "submit_options" : { "hsn.de.hpc" : { "timelimit" : "00:40:00" } },
+    "submit_options" : { "hsn.de.hpc" : { "timelimit" : "00:30:00" } },
     "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "79" ] } }
   },
 
-  "make-pgi-serial" : { "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "1" ] } } },
-  "make-pgi-sm"     : { "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "2" ] } } },
-  "make-pgi-dm"     : { "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "3" ] } } },
-  "make-pgi-dm+sm"  : { "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "4" ] } } }
+  "make-pgi-serial" : {
+    "submit_options" : { "hsn.de.hpc" : { "timelimit" : "00:30:00" } },
+    "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "1" ] } }
+  },
+  "make-pgi-sm"     : {
+    "submit_options" : { "hsn.de.hpc" : { "timelimit" : "00:30:00" } },
+    "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "2" ] } }
+  },
+  "make-pgi-dm"     : {
+    "submit_options" : { "hsn.de.hpc" : { "timelimit" : "00:30:00" } },
+    "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "3" ] } }
+  },
+  "make-pgi-dm+sm"  : {
+    "submit_options" : { "hsn.de.hpc" : { "timelimit" : "00:30:00" } },
+    "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "4" ] } }
+  }
 }

@@ -69,12 +69,12 @@ jobs:
       if  : ${{ inputs.mkdirs }}
       id  : cpTestDirs
       run : |
-        for testDir in ${{ join( fromJson( inputs.tests ), ' ' ) }}; do
-          echo "Creating duplicate directory for $testDir"
-          # Remove if it exists to get a fresh start
-          rm -rf $testDir
-          cp -Rp main/ $testDir
-        done
+        # Remove if it exists to get a fresh start
+        rm -rf ${{ join( fromJson( inputs.tests ), ' ' ) }}
+
+        echo "Creating duplicate directory for ${{ join( fromJson( inputs.tests ), ' ' ) }}"
+        # Copy 4 at a time max
+        time printf "%s\n" $tests | xargs -i -P 4 cp -Rp main/ {}
 
     - name: Test ${{ inputs.name }}
       id  : runTest

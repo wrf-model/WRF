@@ -64,6 +64,7 @@ CONTAINS
 
       ! CFBM
     use advance_mod, only : Advance_state
+    use wrf_mod, only : Interp_wrf2dvar_to_cfbm, Interp_wrfwinds_to_cfbm
 
 
     IMPLICIT NONE
@@ -1347,8 +1348,39 @@ BENCH_END(pbl_driver_tim)
          continue
 
        case (1)
-         grid%fire_state%uf = 5.0
-         grid%fire_state%vf = 1.0
+           ! Interpolate from Atm to fire grid
+         call Interp_wrf2dvar_to_cfbm (grid%znt, ims, ime, jms, jme, &
+             grid%fire_state%ifms, grid%fire_state%ifme, grid%fire_state%jfms, grid%fire_state%jfme, &
+             grid%fire_state%ifps, grid%fire_state%ifpe, grid%fire_state%jfps, grid%fire_state%jfpe, &
+             grid%fire_state%lats, grid%fire_state%lons, grid%fire_state%proj, grid%fire_state%fz0)
+
+         call Interp_wrf2dvar_to_cfbm (grid%t2, ims, ime, jms, jme, &
+             grid%fire_state%ifms, grid%fire_state%ifme, grid%fire_state%jfms, grid%fire_state%jfme, &
+             grid%fire_state%ifps, grid%fire_state%ifpe, grid%fire_state%jfps, grid%fire_state%jfpe, &
+             grid%fire_state%lats, grid%fire_state%lons, grid%fire_state%proj, grid%fire_state%fire_t2)
+
+         call Interp_wrf2dvar_to_cfbm (grid%q2, ims, ime, jms, jme, &
+             grid%fire_state%ifms, grid%fire_state%ifme, grid%fire_state%jfms, grid%fire_state%jfme, &
+             grid%fire_state%ifps, grid%fire_state%ifpe, grid%fire_state%jfps, grid%fire_state%jfpe, &
+             grid%fire_state%lats, grid%fire_state%lons, grid%fire_state%proj, grid%fire_state%fire_q2)
+
+         call Interp_wrf2dvar_to_cfbm (grid%psfc, ims, ime, jms, jme, &
+             grid%fire_state%ifms, grid%fire_state%ifme, grid%fire_state%jfms, grid%fire_state%jfme, &
+             grid%fire_state%ifps, grid%fire_state%ifpe, grid%fire_state%jfps, grid%fire_state%jfpe, &
+             grid%fire_state%lats, grid%fire_state%lons, grid%fire_state%proj, grid%fire_state%fire_psfc)
+
+         call Interp_wrf2dvar_to_cfbm (grid%rainc + grid%rainnc, ims, ime, jms, jme, &
+             grid%fire_state%ifms, grid%fire_state%ifme, grid%fire_state%jfms, grid%fire_state%jfme, &
+             grid%fire_state%ifps, grid%fire_state%ifpe, grid%fire_state%jfps, grid%fire_state%jfpe, &
+             grid%fire_state%lats, grid%fire_state%lons, grid%fire_state%proj, grid%fire_state%fire_rain)
+
+         call Interp_wrfwinds_to_cfbm (grid%u_phy, grid%v_phy, grid%z_at_w, ims, ime, kms, kme, jms, jme, &
+             grid%fire_state%ifms, grid%fire_state%ifme, grid%fire_state%jfms, grid%fire_state%jfme, &
+             grid%fire_state%ifps, grid%fire_state%ifpe, grid%fire_state%jfps, grid%fire_state%jfpe, &
+             grid%fire_state%kfds, grid%fire_state%kfde, &
+             grid%fire_state%lats, grid%fire_state%lons, grid%fire_state%proj, grid%fire_state%fz0,  &
+             grid%cfbm_namelist%fire_lsm_zcoupling, grid%cfbm_namelist%fire_lsm_zcoupling_ref, &
+             grid%cfbm_namelist%fire_wind_height, grid%fire_state%uf, grid%fire_state%vf)
 
          call Advance_state (grid = grid%fire_state, config_flags = grid%cfbm_namelist)
 

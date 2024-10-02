@@ -2198,11 +2198,13 @@ DEALLOCATE(z_at_q)
        grid%cfbm_namelist%start_year = config_flags%start_year
        grid%cfbm_namelist%start_month = config_flags%start_month
        grid%cfbm_namelist%start_day = config_flags%start_day
+       grid%cfbm_namelist%start_hour = config_flags%start_hour
        grid%cfbm_namelist%start_minute = config_flags%start_minute
        grid%cfbm_namelist%start_second = config_flags%start_second
        grid%cfbm_namelist%end_year = config_flags%end_year
        grid%cfbm_namelist%end_month = config_flags%end_month
        grid%cfbm_namelist%end_day = config_flags%end_day
+       grid%cfbm_namelist%end_hour = config_flags%end_hour
        grid%cfbm_namelist%end_minute = config_flags%end_minute
        grid%cfbm_namelist%end_second = config_flags%end_second
 

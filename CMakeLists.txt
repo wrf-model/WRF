@@ -321,23 +321,20 @@ if ( ${USE_MPI} )
   # Which may or may not get polluted by the environment
   # It still technically finds MPI but the output is nonintuitive
   # saying things like hdf5 or pthread
+
+  # Supply any language-specific flags for interrogation
+  if ( DEFINED WRF_MPI_Fortran_FLAGS AND NOT "${WRF_MPI_Fortran_FLAGS}" STREQUAL "" )
+    set( MPI_Fortran_COMPILER_FLAGS ${WRF_MPI_Fortran_FLAGS} )
+  endif()
+
+  if ( DEFINED WRF_MPI_C_FLAGS AND NOT "${WRF_MPI_C_FLAGS}" STREQUAL "" )
+    set( MPI_C_COMPILER_FLAGS ${WRF_MPI_C_FLAGS} )
+  endif()
   find_package( MPI REQUIRED COMPONENTS Fortran C )
   add_compile_definitions(
                           USE_MPI=1
                           DM_PARALLEL
                           )
-
-  if ( DEFINED WRF_MPI_Fortran_FLAGS AND NOT "${WRF_MPI_Fortran_FLAGS}" STREQUAL "" )
-    add_compile_options(
-                        $<$<COMPILE_LANGUAGE:Fortran>:${WRF_MPI_Fortran_FLAGS}>
-                        )
-  endif()
-
-  if ( DEFINED WRF_MPI_C_FLAGS AND NOT "${WRF_MPI_C_FLAGS}" STREQUAL "" )
-    add_compile_options(
-                        $<$<COMPILE_LANGUAGE:C>:${WRF_MPI_C_FLAGS}>
-                        )
-  endif()
 
   # Check if MPI in all its glory has forced IPO down our throats due to hard-coding the wrapper flags
   # https://www.open-mpi.org/faq/?category=mpi-apps#why-no-rpath LOL!

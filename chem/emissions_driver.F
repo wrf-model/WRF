@@ -636,7 +636,7 @@ real, save :: freq_industry(24)    = &
 !                     +anthfac*factnumc*.5*emis_vol(i,k,j,p_e_vash8)*conv
                   enddo
       CASE (CHEM_VOLC)
-              CALL wrf_debug(15,'Adding volcanic emissions to case chem_volc')
+              CALL wrf_debug(15,'Adding volcanic emissions to case chem_vash')
                do k=kts,kte
                  conv = float(ivolcano)*4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
                  chem(i,k,j,p_so2)  = chem(i,k,j,p_so2)                   &

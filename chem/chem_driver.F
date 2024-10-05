@@ -814,7 +814,7 @@
        .or. config_flags%tracer_opt > 0 .or. config_flags%bio_emiss_opt == MEGAN2_CLM ) then
       call wrf_debug(15,'calling emissions driver')
 
-      call emissions_driver(grid%id,ktau,grid%dt,grid%DX,                                  &
+      call emissions_driver(grid%id,ktau,grid%dt,grid%DX,grid%DY,                          &
               adapt_step_flag, curr_secs,                                                  &
               grid%plumerisefire_frq,grid%stepfirepl,                                      &
               grid%bioemdt,grid%stepbioe,                                                  &
@@ -829,7 +829,7 @@
               grid%firesize_agef,grid%firesize_agsv,grid%firesize_aggr,                    &
               grid%u10,grid%v10,grid%ivgtyp,grid%isltyp,grid%gsw,grid%vegfra,grid%rmol,    &
               grid%ust,grid%znt,grid%dms_0,grid%erup_beg,grid%erup_end,                    &
-              grid%xland,grid%xlat,grid%xlong,                                             &
+              grid%xland,grid%xlat,grid%xlong,grid%msftx,grid%msfty,                       &
               z_at_w,zmid,grid%smois,dustin,seasin,                                        &
               grid%sebio_iso,grid%sebio_oli,grid%sebio_api,grid%sebio_lim,                 &
               grid%sebio_xyl,grid%sebio_hc3,grid%sebio_ete,grid%sebio_olt,                 &

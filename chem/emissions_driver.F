@@ -8,11 +8,14 @@
 ! A. Ukhov, 11 March 2021, remove unused parameters in gocart_dust_driver(),
 ! gocart_dust_afwa_driver(), and uoc_dust_driver() subroutines.
 
+! A. Ukhov, 3 Oct 2024, added mapfac_mx and mapfac_my for
+! for precise calculation of cell area. Needed for volcanic eruption.
+
 MODULE module_emissions_driver
    IMPLICIT NONE
 CONTAINS
 
-    subroutine emissions_driver(id,ktau,dtstep,DX,                         &
+    subroutine emissions_driver(id,ktau,dtstep,DX,DY,                      &
          adapt_step_flag,curr_secs,                                        &
          plumerisefire_frq,stepfirepl,                                     &
          bioemdt,stepbioe,                                                 &
@@ -26,7 +29,7 @@ CONTAINS
          firesize_agsv,firesize_aggr,                                      &
          u10,v10,ivgtyp,isltyp,gsw,vegfra,rmol,ust,znt,dms_0,              &
          erup_beg,erup_end,                                                &
-         xland,xlat,xlong,z_at_w,z,smois,dustin,seasin,                    &
+         xland,xlat,xlong,mapfac_mx,mapfac_my,z_at_w,z,smois,dustin,seasin,&
          sebio_iso,sebio_oli,sebio_api,sebio_lim,sebio_xyl,                &
          sebio_hc3,sebio_ete,sebio_olt,sebio_ket,sebio_ald,                &   
          sebio_hcho,sebio_eth,sebio_ora2,sebio_co,sebio_nr,                &
@@ -204,7 +207,8 @@ CONTAINS
                                                      rainnc,               &
                                                      potevp,               &
                                                      sfcevp,               &
-                                                     lu_index
+                                                     lu_index,             &
+                                                     mapfac_mx,mapfac_my
 
    REAL, DIMENSION( ims:ime , jms:jme )                  ,                 &
          OPTIONAL,                                                         &
@@ -312,7 +316,7 @@ CONTAINS
       real :: area,x1,percen_mass_umbrel,base_umbrel,ashz_above_vent
 
       REAL, INTENT(IN   ) ::                                           &
-           bioemdt, dtstep, dx, gmt, g
+           bioemdt, dtstep, dx, dy, gmt, g
 
       INTEGER, INTENT(IN   ) ::                                        &
            plumerisefire_frq
@@ -416,7 +420,10 @@ real, save :: freq_industry(24)    = &
        base_umbrel=.25    ! fraction
 
       ivolcano=0
-      area=dx*dx
+      !area=dx*dx
+      ! ukhov
+      area=(dx/mapfac_mx(i,j))*(dy/mapfac_my(i,j)) todo
+
       dust_emiss_active    = 0
       seasalt_emiss_active = 0
       if(config_flags%dust_opt >= 2 )dust_emiss_active    = 1

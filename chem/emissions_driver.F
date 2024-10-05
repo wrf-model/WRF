@@ -540,15 +540,23 @@ real, save :: freq_industry(24)    = &
 !
 !   erup_end is continuation in minutes
 !
-         begday=int(erup_beg(i,j)/1000.)-1
-         beghr=int(erup_beg(i,j))-(begday+1)*1000
+         !BEFORE
+         !begday=int(erup_beg(i,j)/1000.)-1
+         !beghr=int(erup_beg(i,j))-(begday+1)*1000
+
+         begday=int(erup_beg(i,j)/1000.)
+         beghr=int(erup_beg(i,j))-begday*1000
+
          begmin=00.
          endhr=beghr+int(erup_end(i,j)/60.)
-         endday=int(begday+endhr/24)-1
+         !endday=int(begday+endhr/24)-1
+         endday=int(begday+endhr/24) ! ukhov
          endmin=00.
-!        write(0,*)'beghr,endhr = ',beghr,endhr,erup_beg(i,j),erup_end(i,j)
-!        write(0,*)'begday,endday,julday = ',begday,endday,julday
-         ivolcano = 1
+          ! ukhov
+         write(0,*)'beghr,endhr = ',beghr,endhr,erup_beg(i,j),erup_end(i,j)
+         write(0,*)'begday,endday,julday = ',begday,endday,julday
+
+        ivolcano = 1
          if(julday.le.begday .or. julday.ge.endday)then
 !           write(0,*)'endhr,endmin,beghr,begmin = ',endhr,endmin,beghr,begmin
             if( julday.lt.begday)then

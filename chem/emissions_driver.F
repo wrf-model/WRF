@@ -11,6 +11,9 @@
 ! A. Ukhov, 3 Oct 2024, added mapfac_mx and mapfac_my for
 ! for precise calculation of cell area. Needed for volcanic eruption.
 
+! A. Ukhov, 7 Oct 2024, corrected fractions for calculation of contribution of 
+! vash into PM2.5 and PM10.
+
 MODULE module_emissions_driver
    IMPLICIT NONE
 CONTAINS
@@ -420,9 +423,9 @@ real, save :: freq_industry(24)    = &
        base_umbrel=.25    ! fraction
 
       ivolcano=0
-      !area=dx*dx
+      area=dx*dx
       ! ukhov
-      area=(dx/mapfac_mx(i,j))*(dy/mapfac_my(i,j)) todo
+      !area=(dx/mapfac_mx(i,j))*(dy/mapfac_my(i,j)) todo
 
       dust_emiss_active    = 0
       seasalt_emiss_active = 0
@@ -612,11 +615,11 @@ real, save :: freq_industry(24)    = &
                   enddo
                do k=kts,kte
                 conv=float(ivolcano)*alt(i,k,j)*dtstep/dz8w(i,k,j)
-                chem(i,k,j,p_p25)=chem(i,k,j,p_p25)+.5*emis_vol(i,k,j,p_e_vash10)*conv
+                chem(i,k,j,p_p25)=chem(i,k,j,p_p25)+ 0.672 * emis_vol(i,k,j,p_e_vash10)*conv  !vash10:[0.0-3.906] diam. (um) => log(2.5-0)/np.log(3.906-0)=0.672
                 chem(i,k,j,p_p10)=chem(i,k,j,p_p10)     &
-                                 +.5*emis_vol(i,k,j,p_e_vash10)*conv &
-                                 +emis_vol(i,k,j,p_e_vash9)*conv    &
-                                 +.5*emis_vol(i,k,j,p_e_vash8)*conv
+                                 + emis_vol(i,k,j,p_e_vash10)*conv &
+                                 + emis_vol(i,k,j,p_e_vash9)*conv    &
+                                 + 0.356 * emis_vol(i,k,j,p_e_vash8)*conv  ! vash8:[7.812-16.625] diam. (um) => (log(10)-log(7.812))/(log(15.625)-log(7.812))=0.356
                enddo
       CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_KPP,RACMSORG_KPP,RACMSORG_AQ,RACM_ESRLSORG_KPP, &
             RACMSORG_AQCHEM_KPP,RACM_ESRLSORG_AQCHEM_KPP)

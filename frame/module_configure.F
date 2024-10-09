@@ -233,7 +233,12 @@ CONTAINS
       model_config_rec%nocolons = .TRUE.   ! always no colons for Windows
 #endif
 
-      call cfbm_namelist % Initialization( "namelist.cfbm" )
+      do i = 1, max_dom
+        if (model_config_rec%ifire(i) == 1) then
+          call cfbm_namelist % Initialization( "namelist.cfbm" )
+          exit
+        end if
+      end do
 
       RETURN
 

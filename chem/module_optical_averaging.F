@@ -3537,7 +3537,7 @@ END subroutine optical_prep_modal_soa_vbs
 ! 09/17/24 - A. Ukhov, bug fix: mass redistribution between GOCART dust/sea salt and
 ! MOZAIC bins now accounts for 5th dust and 4th sea salt bins. Number of MOZAIC bins was
 ! changed from 8 to 9 and MOZAIC max size range was increased from 10 to 20 um.
-
+!
 ! This subroutine computes volume-averaged refractive index and wet radius needed
 ! by the mie calculations. Aerosol number is also passed into the mie calculations
 ! in terms of other units.

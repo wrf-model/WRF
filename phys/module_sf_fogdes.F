@@ -117,7 +117,7 @@ CONTAINS
    ELSEIF (mminlu .eq. 'USGS') THEN ! includes lake category
      land_use_type = 'USGS'
    ELSE
-     write ( message, * ) "Unknown land category for grav_settling (sf_fogdes.f) Landuse type = ",mminlu," and number of land categories= ",nlcat
+     write ( message, * ) "Unknown land category for grav_settling (sf_fogdes.F) Landuse type = ",mminlu," and number of land categories= ",nlcat
      CALL wrf_error_fatal ( message ) 
      STOP
    END IF

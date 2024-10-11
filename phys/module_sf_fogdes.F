@@ -105,6 +105,7 @@ CONTAINS
 !JOE-end
 
 ! Local variables
+   CHARACTER*512 :: message
    INTEGER :: i,j
    REAL    :: lad, spcfct, vegh, ftmp1, ftmp2, dp_fog, lwc
    CHARACTER (LEN=25) :: land_use_type, lu_fogdes
@@ -116,7 +117,8 @@ CONTAINS
    ELSEIF (mminlu .eq. 'USGS') THEN ! includes lake category
      land_use_type = 'USGS'
    ELSE
-     PRINT *, 'Unknown landuse category (sf_fogdes.F): num_land_cat=',nlcat
+     write ( message, * ) "Unknown land category for grav_settling (sf_fogdes.f) Landuse type = ",mminlu," and number of land categories= ",nlcat
+     CALL wrf_error_fatal ( message ) 
      STOP
    END IF
 

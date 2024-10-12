@@ -804,7 +804,6 @@ endif()
 # $<$<BOOL:${MPI2_SUPPORT}>:MPI2_SUPPORT=$<BOOL:${MPI2_SUPPORT}>>
 # $<$<BOOL:${MPI2_THREAD_SUPPORT}>:MPI2_THREAD_SUPPORT=$<BOOL:${MPI2_THREAD_SUPPORT}>>
 
-
 # Make core target
 add_library(
             ${PROJECT_NAME}_Core

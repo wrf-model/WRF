@@ -82,6 +82,7 @@ CONTAINS
                ght_pl(i,kp,j) = missing
                s_pl  (i,kp,j) = missing
                td_pl (i,kp,j) = missing
+               q_pl  (i,kp,j) = missing
             END DO
          END DO
       END DO

@@ -1,0 +1,69 @@
+{
+  "submit_options" :
+  {
+    "timelimit" : "00:20:00",
+    "working_directory" : "..",
+    "arguments" :
+    {
+      "base_env_numprocs"      : [ "-e", "NUM_PROCS=4" ],
+
+      ".*make.*::args_nesting"       : [ "-n", "1" ],
+      ".*make.*::args_configopt"     : [ "-o", "-d" ],
+      ".*make.*::args_build_tgt"     : [ "-b", "em_real -j $NUM_PROCS" ]
+    },
+    "hsn.de.hpc"  :
+    {
+      "submission" : "PBS",
+      "queue"      : "main",
+      "hpc_arguments"  : 
+      {
+        "node_select" : { "-l " : { "select"       : 1, "ncpus" : 16 } },
+        "priority"    : { "-l " : { "job_priority" : "economy"       } }
+      },
+      "arguments"  : 
+      {
+        "base_env_numprocs"      : [ "-e", "NUM_PROCS=16" ],
+        "very_last_modules"       : [ "netcdf" ],
+        ".*gnu.*::test_modules"   : [ "gcc" ],
+        ".*intel(?!-llvm).*::test_modules" : [ "intel-classic" ],
+        ".*intel-llvm.*::test_modules"     : [ "intel-oneapi" ],
+        ".*pgi.*::test_modules"   : [ "nvhpc" ],
+        ".*dm.*::test_mpi_module" : [ "cray-mpich" ]
+      }
+    }
+  },
+  "make-gnu" :
+  {
+    "steps" :
+    {
+      "serial" :
+      {
+        "command"      : ".ci/tests/build.sh",
+        "arguments"    : [ "-c", "32" ]
+      },
+      "sm" :
+      {
+        "command"      : ".ci/tests/build.sh",
+        "arguments"    : [ "-c", "33" ],
+        "dependencies" : { "serial" : "afterany" }
+      }
+    }
+  },
+  "make-gnu-mpi" :
+  {
+    "steps" :
+    {
+      "dm" :
+      {
+        "command"      : ".ci/tests/build.sh",
+        "arguments"    : [ "-c", "34" ]
+      },
+      "dm+sm" :
+      {
+        "command"      : ".ci/tests/build.sh",
+        "arguments"    : [ "-c", "35" ],
+        "dependencies" : { "dm" : "afterany" }
+      }
+    }
+  }
+}

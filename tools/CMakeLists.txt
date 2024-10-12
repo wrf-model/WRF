@@ -101,6 +101,16 @@ elseif ( ${WRF_CORE} STREQUAL "DA" OR ${WRF_CORE} STREQUAL "DA_4D_VAR" )
 
 endif()
 
+set( allocs_source )
+foreach( n RANGE 0 31 )
+  list(
+        APPEND
+        allocs_source
+        ${CMAKE_BINARY_DIR}/inc/allocs_${n}.F
+        )
+
+endforeach()
+
 wrf_expand_definitions( 
                         RESULT_VAR  REGISTRY_DEFS
                         DEFINITIONS ${PROJECT_COMPILE_DEFINITIONS}
@@ -113,6 +123,9 @@ add_custom_command(
                     OUTPUT
                       ${CMAKE_BINARY_DIR}/inc/nl_config.inc
                       ${CMAKE_BINARY_DIR}/frame/module_state_description.F
+                      ${allocs_source}
+                    COMMENT
+                      "Generating registry code..."
                     WORKING_DIRECTORY
                       ${CMAKE_BINARY_DIR}
                     # Replicate what exists in project directory for registry
@@ -139,5 +152,12 @@ add_custom_target(
                   DEPENDS
                     ${CMAKE_BINARY_DIR}/inc/nl_config.inc
                     ${CMAKE_BINARY_DIR}/frame/module_state_description.F
+                    ${allocs_source}
                   )
+
+target_sources(
+                ${PROJECT_NAME}_Core
+                PRIVATE
+                  ${allocs_source}
+                )
 

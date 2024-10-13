@@ -1399,18 +1399,24 @@ CONTAINS
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )
-   CASE (CHEM_VASH, CHEM_VOLC, CHEM_VOLC_4BIN)
-       CALL wrf_debug(15,'call vash settling routine')
-         call vash_settling_driver(dtstep,config_flags,t_phy,moist,        &
-         chem,rho_phy,dz8w,p8w,p_phy,                                      &
-         ash_fall,dx,g,                                                    &
-         ids,ide, jds,jde, kds,kde,                                        &
-         ims,ime, jms,jme, kms,kme,                                        &
-         its,ite, jts,jte, kts,kte                                         )
-   CASE DEFAULT
-       CALL wrf_debug(15,'no settling routine')
    END SELECT settling_select
    ENDIF
+
+
+! A. Ukhov, 12 Oct 2024
+vash_settling_select: SELECT CASE(config_flags%chem_opt)
+CASE (CHEM_VASH, CHEM_VOLC, CHEM_VOLC_4BIN)
+    CALL wrf_debug(15,'call vash grav. settling routine')
+      call vash_settling_driver(dtstep,config_flags,t_phy,moist,        &
+      chem,rho_phy,dz8w,p8w,p_phy,                                      &
+      ash_fall,dx,g,                                                    &
+      ids,ide, jds,jde, kds,kde,                                        &
+      ims,ime, jms,jme, kms,kme,                                        &
+      its,ite, jts,jte, kts,kte                                         )
+CASE DEFAULT
+    CALL wrf_debug(15,'no settling routine')
+END SELECT vash_settling_select
+
 
        CALL wrf_debug(15,'end of dry_dep_driver')
 

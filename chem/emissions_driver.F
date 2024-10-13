@@ -403,7 +403,7 @@ real, save :: freq_industry(24)    = &
       REAL :: convert2(its:ite,jts:jte)
 #endif
       CHARACTER (LEN=80) :: message
-      LOGICAL :: do_bioemiss, do_plumerisefire,do_ex_volcanoe
+      LOGICAL :: do_bioemiss, do_plumerisefire
 
       INTEGER :: imod  ! dust scheme option from namelist
 
@@ -445,7 +445,6 @@ real, save :: freq_industry(24)    = &
 !     write(0,*) 'gmtp,gmtm,curr_secs = ',gmtp,gmtm,curr_secs
 !
       if(config_flags%emiss_opt_vol == 1 .or. config_flags%emiss_opt_vol == 2)then
-         do_ex_volcanoe = .false.
 !
       emiss_ash_height = config_flags%emiss_ash_hgt
       if(emiss_ash_height.gt. 1.)then
@@ -459,7 +458,6 @@ real, save :: freq_industry(24)    = &
         so2_mass=1.5e4*3600.*1.e9/64./area
         eh=2600.*(emiss_ash_height*.0005)**4.1494
         emiss_ash_mass=eh*1.e9/area
-             
 ! volcanic emissions
 !       
         ashz_above_vent=emiss_ash_height - z_at_w(i,kts,j)                              

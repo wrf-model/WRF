@@ -423,9 +423,10 @@ real, save :: freq_industry(24)    = &
        base_umbrel=.25    ! fraction
 
       ivolcano=0
-      area=dx*dx
-      ! ukhov
-      !area=(dx/mapfac_mx(i,j))*(dy/mapfac_my(i,j)) todo
+      
+      !area=dx*dx
+      ! Ukhov A. 12 Oct 2024
+      area=(dx/mapfac_mx(i,j))*(dy/mapfac_my(i,j))
 
       dust_emiss_active    = 0
       seasalt_emiss_active = 0

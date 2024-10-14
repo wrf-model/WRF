@@ -127,6 +127,9 @@ set( WRF_CASE_OPTIONS
       EM_CONVRAD
       EM_SQUALL2D_X
       EM_SQUALL2D_Y
+
+      # No case selected, for situations where we are not compiling ARW
+      NONE
       )
 
 set( WRF_CASE "" CACHE STRING "WRF_CASE" )
@@ -218,6 +221,11 @@ set( LWORDSIZE      4     )
 # Check WRF options
 if ( NOT ${WRF_CORE} IN_LIST WRF_CORE_OPTIONS )
   message( FATAL_ERROR "WRF Core option not recognized : ${WRF_CORE}" )
+endif()
+
+if ( NOT ${WRF_CORE} STREQUAL "ARW" )
+  message( STATUS "All non-ARW Cores requires using pointers in grid state struct" )
+  set( USE_ALLOCATABLES OFF CACHE BOOL "Required by configuration" FORCE )
 endif()
 
 if ( NOT ${WRF_NESTING} IN_LIST WRF_NESTING_OPTIONS )

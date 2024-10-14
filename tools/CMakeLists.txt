@@ -99,6 +99,15 @@ elseif ( ${WRF_CORE} STREQUAL "DA" OR ${WRF_CORE} STREQUAL "DA_4D_VAR" )
 
 endif()
 
+set( dealloc_source )
+foreach( n RANGE 0 11 )
+  list(
+        APPEND
+        dealloc_source
+        ${CMAKE_BINARY_DIR}/inc/deallocs_${n}.F
+        )
+endforeach()
+
 set( allocs_source )
 foreach( n RANGE 0 31 )
   list(
@@ -106,7 +115,6 @@ foreach( n RANGE 0 31 )
         allocs_source
         ${CMAKE_BINARY_DIR}/inc/allocs_${n}.F
         )
-
 endforeach()
 
 get_directory_property( DIR_DEFS DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_DEFINITIONS )
@@ -122,6 +130,7 @@ add_custom_command(
                     OUTPUT
                       ${CMAKE_BINARY_DIR}/inc/nl_config.inc
                       ${CMAKE_BINARY_DIR}/frame/module_state_description.F
+                      ${dealloc_source}
                       ${allocs_source}
                     COMMENT
                       "Generating registry code..."
@@ -151,12 +160,15 @@ add_custom_target(
                   DEPENDS
                     ${CMAKE_BINARY_DIR}/inc/nl_config.inc
                     ${CMAKE_BINARY_DIR}/frame/module_state_description.F
+                    ${dealloc_source}
                     ${allocs_source}
                   )
 
 target_sources(
                 ${PROJECT_NAME}_Core
                 PRIVATE
+                  ${CMAKE_BINARY_DIR}/frame/module_state_description.F
+                  ${dealloc_source}
                   ${allocs_source}
                 )
 

@@ -85,7 +85,21 @@ NLOBJS =\
                 nl_set_4_routines.o        \
                 nl_set_5_routines.o        \
                 nl_set_6_routines.o        \
-                nl_set_7_routines.o 
+                nl_set_7_routines.o
+
+DEALOBJS =\
+                ../inc/deallocs_0.o        \
+                ../inc/deallocs_1.o        \
+                ../inc/deallocs_2.o        \
+                ../inc/deallocs_3.o        \
+                ../inc/deallocs_4.o        \
+                ../inc/deallocs_5.o        \
+                ../inc/deallocs_6.o        \
+                ../inc/deallocs_7.o        \
+                ../inc/deallocs_8.o        \
+                ../inc/deallocs_9.o        \
+                ../inc/deallocs_10.o       \
+                ../inc/deallocs_11.o 
 
 OBJS    =       \
                 wrf_num_bytes_between.o    \
@@ -113,8 +127,8 @@ SPECIAL =       module_internal_header_util.o pack_utils.o
 
 LIBTARGET    =  framework
 TARGETDIR    =  ./
-$(LIBTARGET) :  $(MODULES) $(OBJS) $(SPECIAL) $(NLOBJS) $(ALOBJS) $(RSL_OBJS)
-		$(AR) $(ARFLAGS) ../main/$(LIBWRFLIB) $(MODULES) $(OBJS) $(NLOBJS) $(ALOBJS) $(RSL_OBJS)
+$(LIBTARGET) :  $(MODULES) $(OBJS) $(SPECIAL) $(NLOBJS) $(ALOBJS) $(DEALOBJS) $(RSL_OBJS)
+		$(AR) $(ARFLAGS) ../main/$(LIBWRFLIB) $(MODULES) $(OBJS) $(NLOBJS) $(ALOBJS) $(DEALOBJS) $(RSL_OBJS)
 		$(RANLIB) ../main/$(LIBWRFLIB)
 
 nl_set_0_routines.o : nl_access_routines.F module_configure.o

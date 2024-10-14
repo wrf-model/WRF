@@ -257,7 +257,6 @@ gen_alloc1 ( char * dirname )
     {
       stop  = start + ( primaryFields / numFiles );
     }
-    printf( "Total [%d] : Setting [start,stop] to [%d, %d]", primaryFields, start, stop );
     gen_alloc2( fpSub , "grid%", NULL, &Domain, start, stop, 1 ) ;
     fprintf(
             fpSub,
@@ -821,30 +820,97 @@ gen_dealloc1 ( char * dirname )
   FILE * fp ;
   char  fname[NAMELEN] ;
   char * fn = "deallocs.inc" ;
+  // Open array of deallocs_[n].inc
+  int    numFiles = 12;
+  int    idx      = 0;
+  FILE * fpSub; 
+  char * filename_prefix = "deallocs_" ;
 
   if ( dirname == NULL ) return(1) ;
   if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s",dirname,fn) ; }
   else                       { sprintf(fname,"%s",fn) ; }
   if ((fp = fopen( fname , "w" )) == NULL ) return(1) ;
   print_warning(fp,fname) ;
-  gen_dealloc2( fp , "grid%", &Domain ) ;
+
+  fprintf(
+          fp,
+          "INTERFACE\n"
+          );
+  if ( dirname == NULL ) return(1) ;
+  for ( idx = 0; idx < numFiles; idx++ )
+  {
+    if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s%d.F",dirname,filename_prefix,idx) ; }
+    else                       { sprintf(fname,"%s%d.F",dirname,filename_prefix,idx ) ; }
+    if ((fpSub = fopen( fname , "w" )) == NULL ) return(1) ;
+  
+    print_warning(fpSub,fname) ;
+
+    fprintf(
+            fp,
+            "  SUBROUTINE %s%d( grid )\n"
+            "    USE module_wrf_error\n"
+            "    USE module_domain_type\n"
+            "    IMPLICIT NONE\n"
+            "    TYPE( domain ), POINTER :: grid\n  END SUBROUTINE\n",
+            filename_prefix, idx
+            );
+
+    fprintf(
+            fpSub,
+            "SUBROUTINE %s%d( grid )\n"
+            "  USE module_wrf_error\n"
+            "  USE module_domain_type\n"
+            "  IMPLICIT NONE\n"
+            "  TYPE( domain ), POINTER :: grid\n  INTEGER :: ierr\n",
+            filename_prefix, idx
+            );
+    gen_dealloc2( fpSub, "grid%", &Domain, idx, numFiles );
+    fprintf(
+            fpSub,
+            "END SUBROUTINE %s%d\n",
+            filename_prefix, idx
+            );
+    close_the_file( fpSub ) ;
+  }
+  fprintf(
+          fp,
+          "END INTERFACE\n"
+          );
+  
+  // Call the functions in the inc
+  for ( idx = 0; idx < numFiles; idx++ )
+  {
+    fprintf(
+          fp,
+          "CALL %s%d( grid )\n", filename_prefix, idx
+          );
+  }
   close_the_file( fp ) ;
   return(0) ;
 }
 
 int
-gen_dealloc2 ( FILE * fp , char * structname , node_t * node )
+gen_dealloc2 ( FILE * fp , char * structname , node_t * node, int idx, int numFiles )
 {
   node_t * p ;
   int tag ;
   char post[NAMELEN] ;
   char fname[NAMELEN] ;
   char x[NAMELEN] ;
+  int currentIdx = -1;
 
   if ( node == NULL ) return(1) ;
 
   for ( p = node->fields ; p != NULL ; p = p->next )
   {
+    // Modulo to divert each field based on index to a file
+    // Skip if this field is not part of that index and idx != -1, so -1 can be used to force output
+    currentIdx = ( currentIdx + 1 ) % numFiles;
+    if ( currentIdx != idx && idx != -1 )
+    {
+      continue;
+    }
+
     if ( (p->ndims > 0 || p->boundary_array) && (  /* any array or a boundary array and...   */
           (p->node_kind & FIELD) ||                /* scalar arrays or                       */
           (p->node_kind & FOURD) )                 /* scalar arrays or                       */
@@ -914,7 +980,7 @@ structname, fname, structname, fname ) ;
       else if ( p->type->type_type == DERIVED )
       {
         sprintf(x,"%s%s%%",structname,p->name ) ;
-        gen_dealloc2(fp,x, p->type) ;
+        gen_dealloc2(fp,x, p->type, idx, -1) ;
       }
     }
   }

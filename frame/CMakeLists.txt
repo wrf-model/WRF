@@ -119,8 +119,6 @@ target_sources(
                   module_cpl_oasis3.F
 
 
-                  
-                  ${CMAKE_BINARY_DIR}/frame/module_state_description.F # GENERATED
                   ${nl_dyn_source}                                     # GENERATED
 
                   clog.c

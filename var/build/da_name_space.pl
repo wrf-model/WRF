@@ -53,6 +53,7 @@ med_filter_out
 med_auxinput_in
 med_restart_out
 med_latbound_in
+deallocs_
 allocs_
 module_configure
 module_scalar_tables

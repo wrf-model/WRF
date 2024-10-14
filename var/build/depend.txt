@@ -12,6 +12,31 @@ mediation_interp_domain.o : mediation_interp_domain.F module_timing.o module_con
 mediation_nest_move.o : mediation_nest_move.F module_streams.o module_compute_geop.o module_driver_constants.o module_dm.o module_state_description.o module_configure.o module_timing.o module_utility.o module_domain.o 
 mediation_wrfmain.o : mediation_wrfmain.F module_utility.o module_bc_time_utilities.o module_io.o module_timing.o module_io_domain.o module_configure.o module_domain.o 
 module_MPP.o : module_MPP.F 
+# See main/depend.common for explanation of source file dependency recipes for deallocs
+inc/deallocs_0.o : module_wrf_error.o module_domain_type.o
+inc/deallocs_0.F : module_state_description.F
+inc/deallocs_1.o : module_wrf_error.o module_domain_type.o
+inc/deallocs_1.F : module_state_description.F
+inc/deallocs_2.o : module_wrf_error.o module_domain_type.o
+inc/deallocs_2.F : module_state_description.F
+inc/deallocs_3.o : module_wrf_error.o module_domain_type.o
+inc/deallocs_3.F : module_state_description.F
+inc/deallocs_4.o : module_wrf_error.o module_domain_type.o
+inc/deallocs_4.F : module_state_description.F
+inc/deallocs_5.o : module_wrf_error.o module_domain_type.o
+inc/deallocs_5.F : module_state_description.F
+inc/deallocs_6.o : module_wrf_error.o module_domain_type.o
+inc/deallocs_6.F : module_state_description.F
+inc/deallocs_7.o : module_wrf_error.o module_domain_type.o
+inc/deallocs_7.F : module_state_description.F
+inc/deallocs_8.o : module_wrf_error.o module_domain_type.o
+inc/deallocs_8.F : module_state_description.F
+inc/deallocs_9.o : module_wrf_error.o module_domain_type.o
+inc/deallocs_9.F : module_state_description.F
+inc/deallocs_10.o : module_wrf_error.o module_domain_type.o
+inc/deallocs_10.F : module_state_description.F
+inc/deallocs_11.o : module_wrf_error.o module_domain_type.o
+inc/deallocs_11.F : module_state_description.F
 module_bc.o : module_bc.F module_state_description.o module_wrf_error.o module_configure.o module_model_constants.o
 module_bc_time_utilities.o : module_bc_time_utilities.F module_utility.o 
 module_check_a_mundo.o : module_check_a_mundo.F module_configure.o module_wrf_error.o module_state_description.o 
@@ -59,6 +84,18 @@ module_domain.o : module_domain.F \
                 inc/allocs_29.o                  \
                 inc/allocs_30.o                  \
                 inc/allocs_31.o                  \
+                inc/deallocs_0.o                 \
+                inc/deallocs_1.o                 \
+                inc/deallocs_2.o                 \
+                inc/deallocs_3.o                 \
+                inc/deallocs_4.o                 \
+                inc/deallocs_5.o                 \
+                inc/deallocs_6.o                 \
+                inc/deallocs_7.o                 \
+                inc/deallocs_8.o                 \
+                inc/deallocs_9.o                 \
+                inc/deallocs_10.o                \
+                inc/deallocs_11.o                \
                 module_domain_type.o module_utility.o module_wrf_error.o module_configure.o module_machine.o module_driver_constants.o 
 module_domain_type.o : module_domain_type.F module_streams.o module_utility.o module_driver_constants.o 
 # See main/depend.common for explanation of source file dependency recipes for allocs

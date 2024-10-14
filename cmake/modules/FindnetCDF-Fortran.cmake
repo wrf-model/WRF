@@ -43,7 +43,6 @@ else()
   execute_process( COMMAND ${NETCDF-FORTRAN_PROGRAM} --prefix       OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF-Fortran_PREFIX )
   execute_process( COMMAND ${NETCDF-FORTRAN_PROGRAM} --flibs        OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF-Fortran_FLIBS   )
   execute_process( COMMAND ${NETCDF-FORTRAN_PROGRAM} --version      OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF-Fortran_VERSION_RAW )
-  execute_process( COMMAND ${NETCDF-FORTRAN_PROGRAM} --has-nc4      OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF-Fortran_NC4_YES )
 
   # check for large file support
   find_file( netCDF-Fortran_INCLUDE_FILE netcdf.inc ${netCDF-Fortran_INCLUDE_DIR} )
@@ -59,31 +58,81 @@ else()
   string( REPLACE " " ";" netCDF-Fortran_VERSION_LIST ${netCDF-Fortran_VERSION_RAW} )
   list( GET netCDF-Fortran_VERSION_LIST -1 netCDF-Fortran_VERSION )
 
-  # Convert to YES/NO - Note cannot be generator expression if you want to use it during configuration time
-  string( TOUPPER ${netCDF-Fortran_NC4_YES}      netCDF-Fortran_NC4      )
+  # These do not pull all options available from nc-config out, but rather mirrors what is available from netCDFConfig.cmake.in
+  set(
+      netCDF-Fortran_QUERY_YES_OPTIONS
+      dap
+      nc2
+      nc4
+      f90
+      f03
+      )
+
+  foreach( NF_QUERY ${netCDF-Fortran_QUERY_YES_OPTIONS} )
+    execute_process( COMMAND ${NETCDF-FORTRAN_PROGRAM} --has-${NF_QUERY} OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF-Fortran_${NF_QUERY}_LOWERCASE )
+    if ( NOT "${netCDF-Fortran_${NF_QUERY}_LOWERCASE}" )
+      # might be empty
+      set( netCDF-Fortran_${NF_QUERY}_LOWERCASE no )
+    endif()
+    string( TOUPPER ${NF_QUERY}                     NF_QUERY_UPPERCASE )
+    string( TOUPPER ${netCDF-Fortran_${NF_QUERY}_LOWERCASE} NF_ANSWER_UPPERCASE )
+    # Convert to netCDF-Fortran_HAS_* = YES/NO - Note this cannot be generator expression if you want to use it during configuration time
+    set( netCDF-Fortran_HAS_${NF_QUERY_UPPERCASE} ${NF_ANSWER_UPPERCASE} )
+  endforeach()
+
+
+  # A bug in previous netcdf-fortran cmake builds, extract from flibs
+  string( REGEX MATCH "^-L([^ ]*)" netCDF-Fortran_LIBRARY_LINK_LOCATION ${netCDF-Fortran_FLIBS} )
+  set( netCDF-Fortran_LIBRARY_DIR ${CMAKE_MATCH_1} )
 
   set( netCDF-Fortran_DEFINITIONS  )
-  set( netCDF-Fortran_LIBRARY_DIR  ${netCDF-Fortran_PREFIX}/lib )
-
   set( netCDF-Fortran_LIBRARIES
       $<$<LINK_LANGUAGE:Fortran>:${netCDF-Fortran_FLIBS}>
       )
 
   # Because we may need this for in-situ manual preprocessing do not use genex
   set( netCDF-Fortran_INCLUDE_DIRS ${netCDF-Fortran_INCLUDE_DIR} )
-endif()
 
-find_package( PkgConfig )
+  # Find the actual name of the library
+  find_library(
+                netCDF-Fortran_LIBRARY
+                netcdff
+                PATHS ${netCDF-Fortran_LIBRARY_DIR}
+                NO_DEFAULT_PATH
+                )
+endif()
 
 include(FindPackageHandleStandardArgs)
 
 # handle the QUIETLY and REQUIRED arguments and set netCDF-Fortran_FOUND to TRUE
 # if all listed variables are TRUE
 find_package_handle_standard_args(
-                                  netCDF-Fortran  DEFAULT_MSG
-                                  netCDF-Fortran_INCLUDE_DIRS
-                                  netCDF-Fortran_FLIBS
-                                  netCDF-Fortran_VERSION
-                                  )
+                                  netCDF-Fortran
+                                  FOUND_VAR netCDF-Fortran_FOUND
+                                  REQUIRED_VARS
+                                    netCDF-Fortran_INCLUDE_DIRS
+                                    netCDF-Fortran_LIBRARIES
+                                    netCDF-Fortran_VERSION
+                                  VERSION_VAR netCDF-Fortran_VERSION
+                                  HANDLE_VERSION_RANGE
+                                )
+
+# Note that the name of the target is the target library name as specified by the netCDF cmake build,
+# NOT the netCDF repository name, I've kept this consistent to the provided netCDF builds rather
+# than the convention of *_<LANG> to specify multiple components. This also helps account for the
+# fact that the netCDF langauge-specific projects are separate projects
+if ( netCDF-Fortran_FOUND AND NOT TARGET netCDF::netcdff )
+  find_package( netCDF REQUIRED )
+
+  add_library( netCDF::netcdff UNKNOWN IMPORTED )
+  set_target_properties(
+                        netCDF::netcdff
+                        PROPERTIES
+                          IMPORTED_LOCATION                   "${netCDF-Fortran_LIBRARY}"
+                          IMPORTED_LINK_INTERFACE_LANGUAGES   Fortran
+                          INTERFACE_INCLUDE_DIRECTORIES      "${netCDF-Fortran_INCLUDE_DIRS}"
+                        )
+  target_link_libraries( netCDF::netcdff INTERFACE netCDF::netcdf )
+endif()
 
 mark_as_advanced( netCDF-Fortran_FLIBS netCDF-Fortran_PREFIX netCDF-Fortran_LIBRARY_DIR )

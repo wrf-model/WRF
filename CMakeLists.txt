@@ -433,9 +433,19 @@ endif()
 find_package( netCDF         REQUIRED )
 find_package( netCDF-Fortran REQUIRED )
 
-# Make use of version checking here and not in find_package for previous versions that did not use cmake
-if ( ( NOT netCDF_VERSION GREATER_EQUAL "4.1.3" ) OR ( NOT netCDF-Fortran_VERSION GREATER_EQUAL "4.1.3" ) )
-  message( FATAL "Please make sure NETCDF versions are 4.1.3 or later. " )
+# Make use of version checking here and not in find_package for WRF control allowing older versions if requested
+if ( NOT ${FORCE_NETCDF_CLASSIC} )
+  if ( NOT netCDF_VERSION GREATER_EQUAL "4.1.3" )
+    set( NC4_MISSING_REASON "(version < 4.1.3)" )
+  elseif( NOT ${netCDF_HAS_NC4} )
+    set( NC4_MISSING_REASON "(not build with nc4)" )
+  endif()
+
+  if ( DEFINED NC4_MISSING_REASON )
+    message( STATUS "netCDF found does not support NC4 features ${NC4_MISSING_REASON}, forcing use of classic netcdf" )
+    message( STATUS "  To disable this message, make sure netCDF used has nc4 capabilities or specify FORCE_NETCDF_CLASSIC" )
+    set( FORCE_NETCDF_CLASSIC ON CACHE BOOL "Required by netCDF found" FORCE )
+  endif()
 endif()
 
 find_package( pnetCDF QUIET )
@@ -682,7 +692,7 @@ else()
 endif()
 
 # If force classic or no nc-4 support enable classic
-if ( ${FORCE_NETCDF_CLASSIC} OR ( NOT ${netCDF_NC4} ) )
+if ( ${FORCE_NETCDF_CLASSIC} OR ( NOT ${netCDF_HAS_NC4} ) )
   list( APPEND PROJECT_COMPILE_DEFINITIONS NETCDF_classic=1 )
 endif()
 if ( ${WRFIO_NCD_NO_LARGE_FILE_SUPPORT} OR ( NOT ${netCDF_LARGE_FILE_SUPPORT} ) )
@@ -691,7 +701,7 @@ endif()
 # May need a check for WRFIO_ncdpar_LARGE_FILE_SUPPORT
 
 # Now set the opposite in different defines, because why not :)
-if ( ( NOT ${FORCE_NETCDF_CLASSIC} ) AND ${netCDF_NC4} )
+if ( ( NOT ${FORCE_NETCDF_CLASSIC} ) AND ${netCDF_HAS_NC4} )
   list( APPEND PROJECT_COMPILE_DEFINITIONS USE_NETCDF4_FEATURES=1 )
 endif()
 if ( ( NOT ${WRFIO_NCD_NO_LARGE_FILE_SUPPORT} ) AND ${netCDF_LARGE_FILE_SUPPORT} )
@@ -895,8 +905,6 @@ target_include_directories(
                               ${PROJECT_SOURCE_DIR}/external/io_int
 
                               # Found Packages not handled through :: imported target
-                              ${netCDF_INCLUDE_DIRS}
-                              ${netCDF-Fortran_INCLUDE_DIRS}
                               ${pnetCDF_INCLUDE_DIRS}
                             )
 
@@ -938,19 +946,10 @@ set_target_properties(
                           EXPORT_PROPERTIES        Fortran_MODULE_DIRECTORY
                       )
 
-# Because of the way netCDF provides its info and the way cmake auto-gens RPATH, we need to help it along
-target_link_directories(
-                        ${PROJECT_NAME}_Core
-                        PUBLIC
-                          ${netCDF_LIBRARY_DIR}
-                          ${netCDF-Fortran_LIBRARY_DIR}
-                        )
-
 
 target_link_libraries(  ${PROJECT_NAME}_Core
                           PUBLIC
-                            ${netCDF_LIBRARIES}
-                            ${netCDF-Fortran_LIBRARIES}
+                            netCDF::netcdff
                             ${pnetCDF_LIBRARIES}
                             $<$<BOOL:${USE_MPI}>:$<TARGET_NAME_IF_EXISTS:MPI::MPI_Fortran>>
                             $<$<BOOL:${USE_OPENMP}>:$<TARGET_NAME_IF_EXISTS:OpenMP::OpenMP_Fortran>>

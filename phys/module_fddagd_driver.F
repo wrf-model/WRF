@@ -6,7 +6,7 @@ CONTAINS
 
 !------------------------------------------------------------------
    SUBROUTINE fddagd_driver(itimestep,dt,xtime,                   &
-                  id,  &
+                  curr_mins2, id,  &
                   RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,                 &
                   RPHNDGDTEN,RQVNDGDTEN,RMUNDGDTEN,               &
                   SDA_HFX, SDA_QFX,                               & !fasdas
@@ -143,7 +143,7 @@ CONTAINS
 
    INTEGER,    INTENT(IN   )    ::     itimestep,STEPFG
 !
-   REAL,       INTENT(IN   )    ::     DT,DX,XTIME
+   REAL,       INTENT(IN   )    ::     DT,DX,XTIME, curr_mins2
 
 
 !
@@ -521,7 +521,7 @@ CONTAINS
            ENDIF
 
            CALL FDDAGD(itimestep,dx,dt,xtime, &
-               id, &
+               curr_mins2, id, &
                config_flags%auxinput10_interval_m, &
                config_flags%auxinput10_end_h, &
                config_flags%if_no_pbl_nudging_uv, &
@@ -570,7 +570,7 @@ CONTAINS
       CASE (SPNUDGING)
         CALL wrf_debug(100,'in SPECTRAL NUDGING scheme')
            CALL SPECTRAL_NUDGING(grid,itimestep,dt,xtime, &
-               id, &
+               curr_mins2, id, &
                config_flags%auxinput10_interval_m, &
                config_flags%auxinput10_end_h, &
                config_flags%if_no_pbl_nudging_uv, &

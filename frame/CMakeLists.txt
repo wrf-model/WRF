@@ -156,7 +156,7 @@ target_sources(
 set_source_files_properties(
                             ${nl_dyn_source}
                             PROPERTIES
-                            COMPILE_FLAGS
+                            COMPILE_OPTIONS_OPTIMIZATION
                               $<$<COMPILE_LANGUAGE:Fortran>:${WRF_FCNOOPT}>
                             )
 

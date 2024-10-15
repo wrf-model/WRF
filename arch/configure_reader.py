@@ -504,6 +504,7 @@ def generateCMakeToolChainFile( cmakeToolChainTemplate, output, stanza, optionsD
 
   configStanza = cmakeToolChainTemplateLines.format( 
                                                     ARCH_LOCAL=stanza.kvPairs_["ARCH_LOCAL"],
+                                                    LDFLAGS_LOCAL=stanza.kvPairs_["LDFLAGS_LOCAL"],
                                                     BYTESWAPIO=stanza.kvPairs_["BYTESWAPIO"],
                                                     CFLAGS_LOCAL=stanza.kvPairs_["CFLAGS_LOCAL"],
                                                     DM_CC=stanza.kvPairs_["DM_CC"],

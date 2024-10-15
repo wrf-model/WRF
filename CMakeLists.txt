@@ -26,12 +26,15 @@ list( APPEND CMAKE_C_PREPROCESSOR_FLAGS -P -nostdinc -traditional )
 
 include( CMakePackageConfigHelpers )
 include( CheckIPOSupported )
+
+# WRF helper scripts
 include( c_preproc   )
 include( m4_preproc  )
 include( target_copy )
 include( confcheck   )
 include( gitinfo     )
 include( printOption )
+include( target_source_properties )
 include( wrf_case_setup )
 include( wrf_get_version )
 
@@ -311,6 +314,51 @@ if ( ${USE_IPO} )
   endif()
 endif()
 
+
+################################################################################
+##
+## Create our flags / defines properties and variables to carry our information
+##
+################################################################################
+define_target_source_properties(
+                                PROPERTIES
+                                  COMPILE_OPTIONS_OPTIMIZATION         # Control of optimization flags
+                                  COMPILE_OPTIONS_CONFCHECK            # Originate from system configuration checks
+                                  COMPILE_OPTIONS_OPTIONS              # Derived from options
+                                  COMPILE_OPTIONS_Fortran_PRECISION    # Fortran floating point precision control
+                                  COMPILE_OPTIONS_Fortran_LINE_LENGTH  # Fortran line length for compilers that need it
+                                  COMPILE_OPTIONS_DIAGNOSTICS          # Extra flags for diagnostics
+                                  COMPILE_OPTIONS_SUPPRESS_ERRORS      # EXPLICITLY suppress errors, USE SPARINGLY!!!
+                                  COMPILE_OPTIONS_SUPPRESS_WARNINGS    # Suppress warnings, try to fix before they become errs 
+                                  COMPILE_OPTIONS_STANZA               # Any remaining flags imported via stanza
+                    
+                                  COMPILE_DEFINITIONS_CONFCHECK          # Originate from system configuration checks
+                                  COMPILE_DEFINITIONS_OPTIONS            # Anything that is derived from options
+                                  COMPILE_DEFINITIONS_STANZA             # Any remaining defines imported via stanza
+                                  )
+
+# These will be the cumulative set for quicker reference
+set( PROJECT_COMPILE_OPTIONS     "" ) 
+set( PROJECT_COMPILE_DEFINITIONS "" )
+
+# Recreate these as project variables so that they may be re-used generically
+set( PROJECT_COMPILE_OPTIONS_OPTIMIZATION         "" )
+set( PROJECT_COMPILE_OPTIONS_CONFCHECK            "" )
+set( PROJECT_COMPILE_OPTIONS_OPTIONS              "" )
+set( PROJECT_COMPILE_OPTIONS_Fortran_PRECISION    "" )
+set( PROJECT_COMPILE_OPTIONS_Fortran_LINE_LENGTH  "" )
+set( PROJECT_COMPILE_OPTIONS_DIAGNOSTICS          "" )
+set( PROJECT_COMPILE_OPTIONS_SUPPRESS_ERRORS      "" )
+set( PROJECT_COMPILE_OPTIONS_SUPPRESS_WARNINGS    "" )
+set( PROJECT_COMPILE_OPTIONS_STANZA               "" )
+set( PROJECT_COMPILE_DEFINITIONS_CONFCHECK        "" )
+set( PROJECT_COMPILE_DEFINITIONS_OPTIONS          "" )
+set( PROJECT_COMPILE_DEFINITIONS_STANZA           ${WRF_ARCH_LOCAL} )
+
+# Make these imported variables easier to use in genexp
+separate_arguments( WRF_FCOPTIM )
+separate_arguments( WRF_FCNOOPT )
+
 ################################################################################
 ##
 ## Now find packages that cross-compilation is potentially handled
@@ -330,19 +378,19 @@ if ( ${USE_MPI} )
   # It still technically finds MPI but the output is nonintuitive
   # saying things like hdf5 or pthread
   find_package( MPI REQUIRED COMPONENTS Fortran C )
-  list( APPEND PROJECT_COMPILE_DEFINITIONS
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS
         USE_MPI=1
         DM_PARALLEL
         )
 
   if ( DEFINED WRF_MPI_Fortran_FLAGS AND NOT "${WRF_MPI_Fortran_FLAGS}" STREQUAL "" )
-    list( APPEND PROJECT_COMPILE_OPTIONS
+    list( APPEND PROJECT_COMPILE_OPTIONS_OPTIONS
           $<$<COMPILE_LANGUAGE:Fortran>:${WRF_MPI_Fortran_FLAGS}>
           )
   endif()
 
   if ( DEFINED WRF_MPI_C_FLAGS AND NOT "${WRF_MPI_C_FLAGS}" STREQUAL "" )
-    list( APPEND PROJECT_COMPILE_OPTIONS
+    list( APPEND PROJECT_COMPILE_OPTIONS_OPTIONS
           $<$<COMPILE_LANGUAGE:C>:${WRF_MPI_C_FLAGS}>
           )
   endif()
@@ -373,7 +421,7 @@ if ( ${USE_MPI} )
   set( USE_RSL_LITE ON )
 # We know NONE is the zero index so compare against that
 elseif( ${CURRENT_NESTING_IDX} GREATER 0 )
-  list( APPEND PROJECT_COMPILE_DEFINITIONS
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS
         DM_PARALLEL
         STUBMPI
         )
@@ -382,7 +430,7 @@ endif()
 
 if ( ${USE_OPENMP} )
   find_package( OpenMP REQUIRED COMPONENTS Fortran C )
-  list( APPEND PROJECT_COMPILE_DEFINITIONS
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS
         USE_OPENMP=1
         SM_PARALLEL
         )
@@ -525,44 +573,18 @@ add_subdirectory( confcheck )
 ##
 ################################################################################
 
-# https://stackoverflow.com/a/47927921
-# Define compile options to be inherited for directories
-define_property(
-                SOURCE
-                PROPERTY   COMPILE_FLAGS
-                INHERITED
-                BRIEF_DOCS "brief-doc"
-                FULL_DOCS  "full-doc"
-                )
-
-define_property(
-                DIRECTORY
-                PROPERTY   COMPILE_FLAGS
-                INHERITED
-                BRIEF_DOCS "brief-doc"
-                FULL_DOCS  "full-doc"
-                )
-
 # Get current build type flags and put them in there
 if ( "${CMAKE_BUILD_TYPE}" STREQUAL "Release" )
-  set_directory_properties(
-                            PROPERTIES
-                              COMPILE_FLAGS
-                              $<$<COMPILE_LANGUAGE:Fortran>:${WRF_FCOPTIM}>
-                            )
+  set( PROJECT_COMPILE_OPTIONS_OPTIMIZATION $<$<COMPILE_LANGUAGE:Fortran>:${WRF_FCOPTIM}> )
 # else()
 #   # Assume no optimization
-#   set_directory_properties(
-#                             PROPERTIES
-#                               COMPILE_FLAGS
-#                               $<$<COMPILE_LANGUAGE:Fortran>:${WRF_FCNOOPT}>
-#                             )
+#   set( PROJECT_COMPILE_OPTIONS_OPTIMIZATION $<$<COMPILE_LANGUAGE:Fortran>:${WRF_FCNOOPT}> )
 endif()
 
 
 # This is really ugly but such is the cost of supporting many ways to say the same thing
 # https://cmake.org/cmake/help/latest/variable/CMAKE_LANG_COMPILER_ID.html
-list( APPEND PROJECT_COMPILE_OPTIONS
+list( APPEND PROJECT_COMPILE_OPTIONS_Fortran_PRECISION
       # Use "" and ; specifically to evaluate correctly
       # "$<$<COMPILE_LANG_AND_ID:Fortran,Absoft>:>"                                 #@ Absoft Fortran
       # "$<$<COMPILE_LANG_AND_ID:Fortran,ADSP>:>"                                   #@ Analog VisualDSP++
@@ -602,7 +624,9 @@ list( APPEND PROJECT_COMPILE_OPTIONS
       # "$<$<COMPILE_LANG_AND_ID:Fortran,IBMClang>:>"                               #@ IBM LLVM-based Compiler
       # Todo find how to handle default selection or add new compiler IDs
       # unknown how to add support for sxf90
+      )
 
+list( APPEND PROJECT_COMPILE_OPTIONS_Fortran_LINE_LENGTH
       # line lengths
       "$<$<COMPILE_LANG_AND_ID:Fortran,GNU>:-ffree-line-length-none>"                #@ GNU Compiler Collection
       )
@@ -613,24 +637,23 @@ list( APPEND PROJECT_COMPILE_OPTIONS
 # message( STATUS "Set Fortran_COMPILER_ID to : ${Fortran_COMPILER_ID}" )
 
 
-# Whole project flags
-list( APPEND PROJECT_COMPILE_OPTIONS
-      # $<$<COMPILE_LANGUAGE:Fortran>:-cpp>
+list( APPEND PROJECT_COMPILE_OPTIONS_SUPPRESS_WARNINGS
       # Use "" and ; specifically to evaluate correctly
       "$<$<COMPILE_LANG_AND_ID:Fortran,Intel>:-diag-disable;6843>"
+      )
+
+list( APPEND PROJECT_COMPILE_OPTIONS_SUPPRESS_ERRORS
       $<$<AND:$<COMPILE_LANG_AND_ID:Fortran,GNU>,$<VERSION_GREATER_EQUAL:${CMAKE_Fortran_COMPILER_VERSION},10>>:-fallow-argument-mismatch>
       $<$<AND:$<COMPILE_LANG_AND_ID:Fortran,GNU>,$<VERSION_GREATER_EQUAL:${CMAKE_Fortran_COMPILER_VERSION},10>>:-fallow-invalid-boz>
       $<$<AND:$<COMPILE_LANG_AND_ID:Fortran,GNU>,$<VERSION_GREATER_EQUAL:${CMAKE_Fortran_COMPILER_VERSION},10>>:-ffree-line-length-none>
-      
-      # $<AND:$<COMPILE_LANGUAGE:Fortran>,$<STREQUAL:${Fortran_COMPILER_ID},Intel>:-diag-disable;6843>
       )
 
 if ( ${PROFILE_COMPILATION} )
   message( STATUS "Attemping to add compilation profiling..." )
-  list( APPEND PROJECT_COMPILE_OPTIONS $<$<COMPILE_LANG_AND_ID:Fortran,GNU>:-ftime-report> )
+  list( APPEND PROJECT_COMPILE_OPTIONS_DIAGNOSTICS $<$<COMPILE_LANG_AND_ID:Fortran,GNU>:-ftime-report> )
 endif()
 
-list( APPEND PROJECT_COMPILE_DEFINITIONS
+list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS
       MAX_DOMAINS_F=${MAX_DOMAINS_F}
       CONFIG_BUF_LEN=${CONFIG_BUF_LEN}
       MAX_HISTORY=${MAX_HISTORY}
@@ -645,7 +668,7 @@ list( APPEND PROJECT_COMPILE_DEFINITIONS
       NETCDF
       
       #!TODO Change this to a confcheck
-      NONSTANDARD_SYSTEM_SUBR
+      # NONSTANDARD_SYSTEM_SUBR # For now let this come from stanza
       
       EM_CORE=${EM_CORE}
 
@@ -656,56 +679,56 @@ list( APPEND PROJECT_COMPILE_DEFINITIONS
 # in code since cmake cannot handle basically any others :(
 # https://gitlab.kitware.com/cmake/cmake/-/issues/17398
 if ( ${ENABLE_CHEM} )
-  list( APPEND PROJECT_COMPILE_DEFINITIONS WRF_CHEM=1 )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS WRF_CHEM=1 )
   if ( ${ENABLE_KPP} )
-    list( APPEND PROJECT_COMPILE_DEFINITIONS WRF_KPP=1 )
+    list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS WRF_KPP=1 )
   endif()
 endif()
 if ( ${ENABLE_CHEM} )
-  list( APPEND PROJECT_COMPILE_DEFINITIONS BUILD_CHEM=1 )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS BUILD_CHEM=1 )
 endif()
 if ( ${ENABLE_CMAQ} )
-  list( APPEND PROJECT_COMPILE_DEFINITIONS WRF_CMAQ=1 )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS WRF_CMAQ=1 )
 endif()
 if ( ${ENABLE_DFI_RADAR} )
-  list( APPEND PROJECT_COMPILE_DEFINITIONS WRF_DFI_RADAR=1 )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS WRF_DFI_RADAR=1 )
 endif()
 if ( ${ENABLE_TITAN} )
-  list( APPEND PROJECT_COMPILE_DEFINITIONS WRF_TITAN=1 )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS WRF_TITAN=1 )
 endif()
 if ( ${ENABLE_MARS} )
-  list( APPEND PROJECT_COMPILE_DEFINITIONS WRF_MARS=1 )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS WRF_MARS=1 )
 endif()
 if ( ${ENABLE_VENUS} )
-  list( APPEND PROJECT_COMPILE_DEFINITIONS WRF_VENUS=1 )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS WRF_VENUS=1 )
 endif()
 if ( ${ENABLE_HYDRO} )
-  list( APPEND PROJECT_COMPILE_DEFINITIONS WRF_HYDRO=1 )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS WRF_HYDRO=1 )
 endif()
 
 # Because once again we need two defines to control one thing
 if ( ${ENABLE_CTSM} )
-  list( APPEND PROJECT_COMPILE_DEFINITIONS WRF_USE_CTSM )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS WRF_USE_CTSM )
 else()
   #!TODO there are some files that rely on this being 1, but that is never set by the legacy make system
-  list( APPEND PROJECT_COMPILE_DEFINITIONS WRF_USE_CLM )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS WRF_USE_CLM )
 endif()
 
 # If force classic or no nc-4 support enable classic
 if ( ${FORCE_NETCDF_CLASSIC} OR ( NOT ${netCDF_HAS_NC4} ) )
-  list( APPEND PROJECT_COMPILE_DEFINITIONS NETCDF_classic=1 )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS NETCDF_classic=1 )
 endif()
 if ( ${WRFIO_NCD_NO_LARGE_FILE_SUPPORT} OR ( NOT ${netCDF_LARGE_FILE_SUPPORT} ) )
-  list( APPEND PROJECT_COMPILE_DEFINITIONS WRFIO_NCD_NO_LARGE_FILE_SUPPORT=1 )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS WRFIO_NCD_NO_LARGE_FILE_SUPPORT=1 )
 endif()
 # May need a check for WRFIO_ncdpar_LARGE_FILE_SUPPORT
 
 # Now set the opposite in different defines, because why not :)
 if ( ( NOT ${FORCE_NETCDF_CLASSIC} ) AND ${netCDF_HAS_NC4} )
-  list( APPEND PROJECT_COMPILE_DEFINITIONS USE_NETCDF4_FEATURES=1 )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS USE_NETCDF4_FEATURES=1 )
 endif()
 if ( ( NOT ${WRFIO_NCD_NO_LARGE_FILE_SUPPORT} ) AND ${netCDF_LARGE_FILE_SUPPORT} )
-  list( APPEND PROJECT_COMPILE_DEFINITIONS WRFIO_NCD_LARGE_FILE_SUPPORT=1 )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS WRFIO_NCD_LARGE_FILE_SUPPORT=1 )
 endif()
 
 # Could simplify logic to just check if RPC is available but to be explicit
@@ -713,117 +736,142 @@ endif()
 # not enable terran or not rpc_found do
 # not ( enable terrain and rpc_found )
 # if ( NOT ( ${ENABLE_TERRAIN} AND ${RPC_FOUND} ) ) # this is wrong, needs fixing
-#   list( APPEND PROJECT_COMPILE_DEFINITIONS LANDREAD_STUB )
+#   list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS LANDREAD_STUB )
 # endif()
 if ( ${ENABLE_TERRAIN} AND ${MOVE_NESTS} )
-  list( APPEND PROJECT_COMPILE_DEFINITIONS TERRAIN_AND_LANDUSE )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS TERRAIN_AND_LANDUSE )
 else ()
-  list( APPEND PROJECT_COMPILE_DEFINITIONS LANDREAD_STUB )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS LANDREAD_STUB )
 endif()
 
 if ( ${USE_ALLOCATABLES} )
-  list( APPEND PROJECT_COMPILE_DEFINITIONS USE_ALLOCATABLES )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS USE_ALLOCATABLES )
 endif()
 if ( ${wrfmodel} )
-  list( APPEND PROJECT_COMPILE_DEFINITIONS wrfmodel )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS wrfmodel )
 endif()
 if ( ${GRIB1} )
-  list( APPEND PROJECT_COMPILE_DEFINITIONS GRIB1 )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS GRIB1 )
 endif()
 if ( ${INTIO} )
-  list( APPEND PROJECT_COMPILE_DEFINITIONS INTIO )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS INTIO )
 endif()
 if ( ${KEEP_INT_AROUND} )
-  list( APPEND PROJECT_COMPILE_DEFINITIONS KEEP_INT_AROUND )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS KEEP_INT_AROUND )
 endif()
 if ( ${LIMIT_ARGS} )
-  list( APPEND PROJECT_COMPILE_DEFINITIONS LIMIT_ARGS )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS LIMIT_ARGS )
 endif()
 
 
 if ( ${BUILD_RRTMG_FAST} )
-  list( APPEND PROJECT_COMPILE_DEFINITIONS BUILD_RRTMG_FAST=1 )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS BUILD_RRTMG_FAST=1 )
 else()
-  list( APPEND PROJECT_COMPILE_DEFINITIONS BUILD_RRTMG_FAST=0 )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS BUILD_RRTMG_FAST=0 )
 endif()
 if ( ${BUILD_RRTMK} )
-  list( APPEND PROJECT_COMPILE_DEFINITIONS BUILD_RRTMK=1 )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS BUILD_RRTMK=1 )
 else()
-  list( APPEND PROJECT_COMPILE_DEFINITIONS BUILD_RRTMK=0 )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS BUILD_RRTMK=0 )
 endif()
 if ( ${BUILD_SBM_FAST} )
-  list( APPEND PROJECT_COMPILE_DEFINITIONS BUILD_SBM_FAST=1 )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS BUILD_SBM_FAST=1 )
 else()
-  list( APPEND PROJECT_COMPILE_DEFINITIONS BUILD_SBM_FAST=0 )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS BUILD_SBM_FAST=0 )
 endif()
 if ( ${SHOW_ALL_VARS_USED} )
-  list( APPEND PROJECT_COMPILE_DEFINITIONS SHOW_ALL_VARS_USED=1 )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS SHOW_ALL_VARS_USED=1 )
 else()
-  list( APPEND PROJECT_COMPILE_DEFINITIONS SHOW_ALL_VARS_USED=0 )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS SHOW_ALL_VARS_USED=0 )
 endif()
 if ( ${NMM_CORE} )
-  list( APPEND PROJECT_COMPILE_DEFINITIONS NMM_CORE=1 )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS NMM_CORE=1 )
 else()
-  list( APPEND PROJECT_COMPILE_DEFINITIONS NMM_CORE=0 )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS NMM_CORE=0 )
 endif()
 
 if ( "${WRF_CORE}" STREQUAL "PLUS" )
-  list( APPEND PROJECT_COMPILE_DEFINITIONS WRFPLUS=1 )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS WRFPLUS=1 )
 else()
-  list( APPEND PROJECT_COMPILE_DEFINITIONS WRFPLUS=0 )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS WRFPLUS=0 )
 endif()
 
 if ( "${WRF_CORE}" STREQUAL "DA_CORE" OR "${WRF_CORE}" STREQUAL "DA_4D_VAR" )
-  list( APPEND PROJECT_COMPILE_DEFINITIONS DA_CORE=1 )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS DA_CORE=1 )
 else()
-  list( APPEND PROJECT_COMPILE_DEFINITIONS DA_CORE=0 )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS DA_CORE=0 )
 endif()
 # DFI_RADAR=$<BOOL:${NMM_CORE}>
 
 # Nesting options
 if ( ${MOVE_NESTS} )
-  list( APPEND PROJECT_COMPILE_DEFINITIONS MOVE_NESTS )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS MOVE_NESTS )
 endif()
 if ( "${WRF_NESTING}" STREQUAL "VORTEX" )
-  list( APPEND PROJECT_COMPILE_DEFINITIONS VORTEX_CENTER )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS VORTEX_CENTER )
 endif()
 
 # Configuration checks
 if ( NOT ${Fortran_2003_IEEE} )
-  list( APPEND PROJECT_COMPILE_DEFINITIONS NO_IEEE_MODULE )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_CONFCHECK NO_IEEE_MODULE )
 endif()
 if ( NOT ${Fortran_2003_ISO_C} )
-  list( APPEND PROJECT_COMPILE_DEFINITIONS NO_ISO_C_SUPPORT )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_CONFCHECK NO_ISO_C_SUPPORT )
 endif()
 # If flush fails, check if we can fall back to fflush, and if not no support
 if ( NOT ${Fortran_2003_FLUSH} )
   if ( "${Fortran_2003_FFLUSH}" )
-    list( APPEND PROJECT_COMPILE_DEFINITIONS USE_FFLUSH )
+    list( APPEND PROJECT_COMPILE_DEFINITIONS_CONFCHECK USE_FFLUSH )
   else()
-    list( APPEND PROJECT_COMPILE_DEFINITIONS NO_FLUSH_SUPPORT )
+    list( APPEND PROJECT_COMPILE_DEFINITIONS_CONFCHECK NO_FLUSH_SUPPORT )
   endif()
 endif()
 if ( NOT ${Fortran_2003_GAMMA} )
-  list( APPEND PROJECT_COMPILE_DEFINITIONS NO_GAMMA_SUPPORT )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_CONFCHECK NO_GAMMA_SUPPORT )
 endif()
 
 #!TODO Leaving as is in WRF for now but investigate why we don't do this
 # https://stackoverflow.com/a/1035713
 # If fseeko64 succeeds, use that, else check if we can fall back to fseeko, and if not just use fseek
 if ( "${FSEEKO64}" OR "${FSEEKO}" )
-  list( APPEND PROJECT_COMPILE_DEFINITIONS _FILE_OFFSET_BITS=64 _LARGEFILE_SOURCE=1 )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_CONFCHECK _FILE_OFFSET_BITS=64 _LARGEFILE_SOURCE=1 )
   if ( "${FSEEKO64}" )
-    list( APPEND PROJECT_COMPILE_DEFINITIONS FSEEKO64_OK )
+    list( APPEND PROJECT_COMPILE_DEFINITIONS_CONFCHECK FSEEKO64_OK )
   elseif( "${FSEEKO}" )
-    list( APPEND PROJECT_COMPILE_DEFINITIONS FSEEKO_OK )
+    list( APPEND PROJECT_COMPILE_DEFINITIONS_CONFCHECK FSEEKO_OK )
   endif()
 else()
-  list( APPEND PROJECT_COMPILE_DEFINITIONS FSEEK_OK )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_CONFCHECK FSEEK_OK )
 endif()
 
 # I don't believe these are used anymore...
 # $<$<BOOL:${MPI2_SUPPORT}>:MPI2_SUPPORT=$<BOOL:${MPI2_SUPPORT}>>
 # $<$<BOOL:${MPI2_THREAD_SUPPORT}>:MPI2_THREAD_SUPPORT=$<BOOL:${MPI2_THREAD_SUPPORT}>>
+
+# Accumulate option and definitions
+list( APPEND PROJECT_COMPILE_OPTIONS
+      ${PROJECT_COMPILE_OPTIONS_OPTIMIZATION}
+      ${PROJECT_COMPILE_OPTIONS_CONFCHECK}
+      ${PROJECT_COMPILE_OPTIONS_OPTIONS}
+      ${PROJECT_COMPILE_OPTIONS_Fortran_PRECISION}
+      ${PROJECT_COMPILE_OPTIONS_Fortran_LINE_LENGTH}
+      ${PROJECT_COMPILE_OPTIONS_DIAGNOSTICS}
+      ${PROJECT_COMPILE_OPTIONS_SUPPRESS_ERRORS}
+      ${PROJECT_COMPILE_OPTIONS_SUPPRESS_WARNINGS}
+      ${PROJECT_COMPILE_OPTIONS_STANZA}
+      )
+list( APPEND PROJECT_COMPILE_DEFINITIONS
+      ${PROJECT_COMPILE_DEFINITIONS_CONFCHECK}
+      ${PROJECT_COMPILE_DEFINITIONS_OPTIONS}
+      ${PROJECT_COMPILE_DEFINITIONS_STANZA}
+      )
+
+################################################################################
+##
+## DO NOT modify PROJECT_COMPILE_* beyond this point
+##
+################################################################################
+
 
 # Make core target
 add_library(
@@ -831,18 +879,22 @@ add_library(
               STATIC
               )
 
-target_compile_options(
-                        ${PROJECT_NAME}_Core
-                        PRIVATE
-                          ${PROJECT_COMPILE_OPTIONS}
-                        )
+set_target_properties(
+                      ${PROJECT_NAME}_Core
+                      PROPERTIES
+                        COMPILE_OPTIONS_OPTIMIZATION         "${PROJECT_COMPILE_OPTIONS_OPTIMIZATION}"
+                        COMPILE_OPTIONS_CONFCHECK            "${PROJECT_COMPILE_OPTIONS_CONFCHECK}"
+                        COMPILE_OPTIONS_OPTIONS              "${PROJECT_COMPILE_OPTIONS_OPTIONS}"
+                        COMPILE_OPTIONS_Fortran_PRECISION    "${PROJECT_COMPILE_OPTIONS_Fortran_PRECISION}"
+                        COMPILE_OPTIONS_Fortran_LINE_LENGTH  "${PROJECT_COMPILE_OPTIONS_Fortran_LINE_LENGTH}"
+                        COMPILE_OPTIONS_DIAGNOSTICS          "${PROJECT_COMPILE_OPTIONS_DIAGNOSTICS}"
+                        COMPILE_OPTIONS_SUPPRESS_ERRORS      "${PROJECT_COMPILE_OPTIONS_SUPPRESS_ERRORS}"
+                        COMPILE_OPTIONS_SUPPRESS_WARNINGS    "${PROJECT_COMPILE_OPTIONS_SUPPRESS_WARNINGS}"
+                        COMPILE_OPTIONS_STANZA               "${PROJECT_COMPILE_OPTIONS_STANZA}"
+                        # We do not use compile definitions for CMake's lack of source file accounting
+                      )
 
-
-target_compile_definitions(
-                            ${PROJECT_NAME}_Core
-                            PRIVATE
-                              ${PROJECT_COMPILE_DEFINITIONS}
-                          )
+# Do NOT apply these options or defines just yet, allow files to be added and set their own properties
 
 # Supplemental to core, or rather should be, some stuff in external is legitimately part of WRF and others
 # are source code from truly external repositories - albeit old versions
@@ -855,6 +907,68 @@ add_dependencies(
                   # So many things depend on this that I'm adding a dep here
                   registry_code
                   )
+
+# Add directly to core
+add_subdirectory( phys     )
+add_subdirectory( share    )
+add_subdirectory( frame    )
+add_subdirectory( inc      )
+
+if ( ${WRF_CHEM} )
+  add_subdirectory( chem     )
+endif()
+
+if ( ${ENABLE_HYDRO} )
+  add_subdirectory( hydro  )
+endif()
+
+add_subdirectory( dyn_em   )
+
+
+add_subdirectory( main     )
+
+################################################################################
+# Add subdirectory with case info
+################################################################################
+if ( ${CURRENT_WRF_CORE_IDX} GREATER_EQUAL ${START_DA_IDX} )
+  message( STATUS "DA or PLUS build, WRF_CASE selection ignored" )
+else()
+  add_subdirectory( test/${WRF_CASE_FOLDER} )
+endif()
+
+
+
+################################################################################
+##
+## DO NOT add sources beyond this point
+##
+################################################################################
+
+# gather compile info and apply
+apply_target_source_properties(
+                                TARGETS ${PROJECT_NAME}_Core
+                                PROPERTIES
+                                  COMPILE_OPTIONS_OPTIMIZATION
+                                  COMPILE_OPTIONS_CONFCHECK
+                                  COMPILE_OPTIONS_OPTIONS
+                                  COMPILE_OPTIONS_Fortran_PRECISION
+                                  COMPILE_OPTIONS_Fortran_LINE_LENGTH
+                                  COMPILE_OPTIONS_DIAGNOSTICS
+                                  COMPILE_OPTIONS_SUPPRESS_ERRORS
+                                  COMPILE_OPTIONS_SUPPRESS_WARNINGS
+                                  COMPILE_OPTIONS_STANZA
+                                AS_PROPERTY COMPILE_OPTIONS
+                              )
+
+target_compile_definitions( 
+                            ${PROJECT_NAME}_Core
+                            PRIVATE
+                                  ${PROJECT_COMPILE_DEFINITIONS_CONFCHECK}
+                                  ${PROJECT_COMPILE_DEFINITIONS_OPTIONS}
+                                  ${PROJECT_COMPILE_DEFINITIONS_STANZA}
+                            )
+
+
 target_include_directories(
                             ${PROJECT_NAME}_Core
                             PUBLIC
@@ -911,34 +1025,6 @@ target_include_directories(
                               ${pnetCDF_INCLUDE_DIRS}
                             )
 
-# Add directly to core
-add_subdirectory( phys     )
-add_subdirectory( share    )
-add_subdirectory( frame    )
-add_subdirectory( inc      )
-
-if ( ${WRF_CHEM} )
-  add_subdirectory( chem     )
-endif()
-
-if ( ${ENABLE_HYDRO} )
-  add_subdirectory( hydro  )
-endif()
-
-add_subdirectory( dyn_em   )
-
-
-add_subdirectory( main     )
-
-################################################################################
-# Add subdirectory with case info
-################################################################################
-if ( ${CURRENT_WRF_CORE_IDX} GREATER_EQUAL ${START_DA_IDX} )
-  message( STATUS "DA or PLUS build, WRF_CASE selection ignored" )
-else()
-  add_subdirectory( test/${WRF_CASE_FOLDER} )
-endif()
-
 # Configure core
 set_target_properties(
                       ${PROJECT_NAME}_Core
@@ -948,6 +1034,8 @@ set_target_properties(
                           Fortran_FORMAT           FREE
                           EXPORT_PROPERTIES        Fortran_MODULE_DIRECTORY
                       )
+
+target_link_options( ${PROJECT_NAME}_Core PRIVATE ${WRF_LINK_FLAGS} )
 
 
 target_link_libraries(  ${PROJECT_NAME}_Core

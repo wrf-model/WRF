@@ -45,7 +45,8 @@ if ( ${WRF_USE_OPENMP} )
   find_package( OpenMP REQUIRED COMPONENTS Fortran C )
 endif()
 
-find_package( netCDF REQUIRED )
+find_package( netCDF         REQUIRED )
+find_package( netCDF-Fortran REQUIRED )
 # Attempt to find zlib packaged with netcdf first
 set( ZLIB_ROOT ${netCDF_PREFIX} )
 find_package( ZLIB   REQUIRED )

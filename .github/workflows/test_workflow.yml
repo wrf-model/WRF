@@ -69,12 +69,15 @@ jobs:
       if  : ${{ inputs.mkdirs }}
       id  : cpTestDirs
       run : |
-        for testDir in ${{ join( fromJson( inputs.tests ), ' ' ) }}; do
-          echo "Creating duplicate directory for $testDir"
-          # Remove if it exists to get a fresh start
-          rm -rf $testDir
-          cp -Rp main/ $testDir
-        done
+        # Limit parallel ops to 4 at a time to not thrash login nodes
+
+        # Remove if it exists to get a fresh start
+        echo "Cleaning old test directories..."
+        tests="${{ join( fromJson( inputs.tests ), ' ' ) }}"
+        time printf "%s\n" $tests | xargs -i -P 4 rm -rf {}
+
+        echo "Creating duplicate directory for $tests"
+        time printf "%s\n" $tests | xargs -i -P 4 cp -Rp main/ {}
 
     - name: Test ${{ inputs.name }}
       id  : runTest
@@ -87,6 +90,7 @@ jobs:
           -t   ${{ join( fromJson( inputs.tests ), ' ' ) }}  \
           -a "${{ inputs.account }}"                         \
           -p ${{ inputs.pool}} -tp ${{ inputs.tpool }}       \
+          -jn ${{ github.event_name == 'push' && github.ref_name || github.event.number }}-${{ inputs.id }} \
           ${{ inputs.args }} $ALT_DIRS
 
 
@@ -129,8 +133,8 @@ jobs:
         # *documented* functionality doesn't work as expected. Wow, bravo
         # can't use ${{ env. }} as somehow this combination of matrix->reusable workflow->call step is too complex
         # and expands to nothing
-        name: ${{ github.event_name == 'push' && 'master' || github.event.number }}-${{ inputs.id }}_logfiles
-        path: ${{ inputs.archive }}/${{ github.event_name == 'push' && 'master' || github.event.number }}/${{ inputs.id }}/
+        name: ${{ github.event_name == 'push' && github.ref_name || github.event.number }}-${{ inputs.id }}_logfiles
+        path: ${{ inputs.archive }}/${{ github.event_name == 'push' && github.ref_name || github.event.number }}/${{ inputs.id }}/
 
     # As noted in ci.yml, this will need to be moved to a separate workflow with pull_request_target
     # and strictly controlled usage of the GH token

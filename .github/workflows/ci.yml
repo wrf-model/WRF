@@ -49,8 +49,22 @@ jobs:
             tpool : 1
             mkdirs : true
             tests :
-              - make-gnu
-              - make-gnu-mpi
+              - make-gnu-serial
+              - make-gnu-sm
+              - make-gnu-dm
+              - make-gnu-dm+sm
+              - make-intel-classic-serial
+              - make-intel-classic-sm
+              - make-intel-classic-dm
+              - make-intel-classic-dm+sm
+              - make-intel-llvm-serial
+              - make-intel-llvm-sm
+              - make-intel-llvm-dm
+              - make-intel-llvm-dm+sm
+              - make-pgi-serial
+              - make-pgi-sm
+              - make-pgi-dm
+              - make-pgi-dm+sm
               # add new compilation tests here
 
     uses : ./.github/workflows/test_workflow.yml

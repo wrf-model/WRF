@@ -287,8 +287,10 @@ RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
   num = INT(time_to_bc * precision + 0.5)
   den = precision
   CALL WRFU_TimeIntervalSet(tmpTimeInterval, Sn=num, Sd=den)
-  
-  if ( ( tmpTimeInterval .LT. dtInterval * 2 ) .and. &
+
+  if (num .LE. 0) then
+     stepping_to_bc = .false.
+  elseif ( ( tmpTimeInterval .LT. dtInterval * 2 ) .and. &
        ( tmpTimeInterval .GT. dtInterval ) ) then
      dtInterval = tmpTimeInterval / 2
      
@@ -325,34 +327,26 @@ RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
      history_interval_sec = grid%history_interval_s + grid%history_interval_m*60 + &
                             grid%history_interval_h*3600 + grid%history_interval_d*86400
 
-     time_to_output = history_interval_sec - &
-          mod( curr_secs, REAL(history_interval_sec) )
-     num = INT(time_to_output * precision + 0.5)
+     num = INT(history_interval_sec * precision + 0.5)
      den = precision
-     call WRFU_TimeIntervalSet(tmpTimeInterval, Sn=num, Sd=den)
+     CALL WRFU_TimeIntervalSet(tmpTimeInterval, Sn=num, Sd=den)
+
+     !Calc the time to output
+     tmpTimeInterval = tmpTimeInterval * (INT(curr_secs / REAL(history_interval_sec))+1) - &
+                      (domain_get_current_time ( grid ) - domain_get_start_time ( grid ) )
 
      if ( ( tmpTimeInterval .LT. dtInterval * 2 ) .and. &
           ( tmpTimeInterval .GT. dtInterval ) ) then
-        dtInterval = tmpTimeInterval / 2
+        
+        num = INT(( real_time(tmpTimeInterval) * precision)/2 + 0.5)
+        den = precision
+        call WRFU_TimeIntervalSet(dtInterval, Sn=num, Sd=den)
+
         use_last2 = .TRUE.
         grid%stepping_to_time = .TRUE.
 
      elseif (tmpTimeInterval .LE. dtInterval) then
-        !
-        ! We will do some tricks here to assure that we fall exactly on an 
-        !   output time.  Without the tricks, round-off error causes problems!
-        !
-
-        !
-        ! Calculate output time.  We round to nearest history time to assure 
-        !    we don't have any rounding error.
-        !
-        output_time = NINT ( (curr_secs + time_to_output) /  &
-             (history_interval_sec) ) * (history_interval_sec)
-        CALL WRFU_TimeIntervalSet(tmpTimeInterval, S=output_time)
-        dtInterval = tmpTimeInterval - &
-             (domain_get_current_time(grid) - domain_get_start_time(grid))
-
+        dtInterval = tmpTimeInterval
         use_last2 = .TRUE.
         grid%stepping_to_time = .TRUE.
      endif

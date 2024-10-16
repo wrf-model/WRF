@@ -915,7 +915,7 @@ USE module_model_constants, ONLY :  piconst
        SG1=SX*VFGS*(1.-ALBG)
        SB1=SX*VFWS*(1.-ALBB)
        SG2=SB1*ALBB/(1.-ALBB)*VFGW*(1.-ALBG)
-       SB2=SG1*ALBG/(1.-ALBG)*VFWG*(1.-ALBB)
+       SB2=SG1*ALBG/(1.-ALBG)*VFWG*(1.-ALBB) + SB1*ALBB*VFWW
 
      ELSE                              ! shadow effects model
 
@@ -961,7 +961,7 @@ USE module_model_constants, ONLY :  piconst
        SG1=SD*(RW-SLX)/RW*(1.-ALBG)+SQ*VFGS*(1.-ALBG)
        SB1=SD*SLX/W*(1.-ALBB)+SQ*VFWS*(1.-ALBB)
        SG2=SB1*ALBB/(1.-ALBB)*VFGW*(1.-ALBG)
-       SB2=SG1*ALBG/(1.-ALBG)*VFWG*(1.-ALBB)
+       SB2=SG1*ALBG/(1.-ALBG)*VFWG*(1.-ALBB) + SB1*ALBB*VFWW
 
      END IF
 

@@ -1,0 +1,111 @@
+name: Regression Suite
+run-name : ${{ github.event_name == 'push' && 'CI' || github.event.label.name }} (${{ github.event_name }})
+
+on:
+  push:
+    branches: [ master, develop ]
+# See https://stackoverflow.com/a/78444521 and 
+# https://github.com/orgs/community/discussions/26874#discussioncomment-3253755
+# as well as official (but buried) documentation :
+# https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#pull-request-events-for-forked-repositories-2
+  pull_request:
+    types:    [ labeled ]
+
+# https://docs.github.com/en/actions/sharing-automations/reusing-workflows#supported-keywords-for-jobs-that-call-a-reusable-workflow
+# Also https://stackoverflow.com/a/74959635
+# TL;DR - For public repositories the safest approach will be to use the default read permissions, but at the cost
+# of not being able to modify the labels. That will need to be a separate [trusted] workflow that runs from the base repo
+# permissions :
+#   contents : read
+#   pull-requests : write
+  
+# Write our tests out this way for easier legibility
+# testsSet    :
+#   - key : value
+#     key : value
+#     tests :
+#       - value
+#       - value
+#   - < next test >
+# https://stackoverflow.com/a/68940067
+jobs:
+  buildtests:
+    if : ${{ github.event.label.name == 'compile-tests' || github.event.label.name == 'all-tests' || github.event_name == 'push' }}
+    strategy:
+      max-parallel: 4
+      fail-fast: false
+      matrix:
+      
+        testSet  :
+          - host : derecho
+            hpc-workflows_path : .ci/hpc-workflows
+            archive : /glade/work/aislas/github/runners/wrf/derecho/logs/
+            account : NMMM0012
+            name : "Make Compilation Tests"
+            id   : make-tests
+            fileroot : wrf_compilation_tests-make
+            args : -j='{"node_select":{"-l ":{"select":1}}}'
+            pool  : 8
+            tpool : 1
+            mkdirs : true
+            tests :
+              - make-gnu-serial
+              - make-gnu-sm
+              - make-gnu-dm
+              - make-gnu-dm+sm
+              - make-intel-classic-serial
+              - make-intel-classic-sm
+              - make-intel-classic-dm
+              - make-intel-classic-dm+sm
+              - make-intel-llvm-serial
+              - make-intel-llvm-sm
+              - make-intel-llvm-dm
+              - make-intel-llvm-dm+sm
+              - make-pgi-serial
+              - make-pgi-sm
+              - make-pgi-dm
+              - make-pgi-dm+sm
+              # add new compilation tests here
+
+    uses : ./.github/workflows/test_workflow.yml
+    with :
+      # This should be the only hard-coded value, we don't use ${{ github.event.label.name }}
+      # to avoid 'all-tests' to be used in this workflow
+      label    : compile-tests
+
+      # Everything below this should remain the same and comes from the testSet matrix
+      hpc-workflows_path : ${{ matrix.testSet.hpc-workflows_path }}
+      archive  : ${{ matrix.testSet.archive }}
+      name     : ${{ matrix.testSet.name }}
+      id       : ${{ matrix.testSet.id }}
+      host     : ${{ matrix.testSet.host }}
+      fileroot : ${{ matrix.testSet.fileroot }}
+      account  : ${{ matrix.testSet.account }}
+      tests    : ${{ toJson( matrix.testSet.tests ) }}
+      mkdirs   : ${{ matrix.testSet.mkdirs }}
+      args     : ${{ matrix.testSet.args }}
+      pool     : ${{ matrix.testSet.pool }}
+      tpool    : ${{ matrix.testSet.tpool }}
+    # I am leaving this here for posterity if this is to be replicated in private repositories for testing
+    permissions:
+      contents: read
+      pull-requests: write
+    name : Test ${{ matrix.testSet.name }} on ${{ matrix.testSet.host }}
+
+  # In the event that 'all-tests' is used, this final job will be the one to remove
+  # the label from the PR
+  removeAllLabel :
+    if : ${{ !cancelled() && github.event.label.name == 'all-tests' }}
+    name : Remove 'all-tests' label
+    runs-on: ubuntu-latest
+    needs : [ buildtests ] # Put tests here to make this wait for the tests to complete
+    steps: 
+      - name : Remove '${{ github.event.label.name }}' label
+        env:
+          PR_NUMBER: ${{ github.event.number }}
+        run: |
+          curl \
+            -X DELETE \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H 'Authorization: token ${{ github.token }}' \
+            https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/labels/${{ github.event.label.name }}

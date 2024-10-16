@@ -889,7 +889,7 @@ use module_wrf_error
        uroof=(uout(n+1)**2+vout(n+1)**2)**0.5
       deltat=tpv-tair(n+1)
     hf=2.5*(40./100.*uroof)**(0.5)
-    hc=9.842*abs(deltat)**(1./3.)/(7.283-abs(cos(tiltangle)))
+    hc=9.482*abs(deltat)**(1./3.)/(7.238-abs(cos(tiltangle)))
     hup=sqrt(hc**2.+(hf)**2.)
     hc=1.810*abs(deltat)**(1./3.)/(1.382+abs(cos(tiltangle)))
     hdown=sqrt(hc**2.+(hf)**2.)

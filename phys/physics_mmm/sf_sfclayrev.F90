@@ -378,6 +378,8 @@
 
  do 320 i = its,ite
 !                                                                           
+    zol(i)=0.
+!
     if(br(i).gt.0) then
        if(br(i).gt.250.0) then
           zol(i)=zolri(250.0,za(i),znt(i))

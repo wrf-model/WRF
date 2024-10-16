@@ -1,4 +1,6 @@
 # additions that WRF-Hydro's top CMakeLists.txt handles
+add_compile_options( "${PROJECT_COMPILE_OPTIONS}" )
+add_compile_definitions( "${PROJECT_COMPILE_DEFINITIONS}" )
 set(CMAKE_Fortran_MODULE_DIRECTORY ${PROJECT_BINARY_DIR}/hydro/mods)
 add_definitions(-DMPP_LAND)
 if (WRF_HYDRO_NUDGING STREQUAL "1")

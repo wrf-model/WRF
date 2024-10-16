@@ -19,6 +19,7 @@ add_library(hydro_routing STATIC
 
 target_link_libraries(hydro_routing
        MPI::MPI_Fortran
+       netCDF::netcdff
        hydro_mpp
        hydro_utils
        hydro_orchestrator
@@ -29,10 +30,4 @@ target_link_libraries(hydro_routing
        hydro_routing_reservoirs_hybrid
        hydro_data_rec
        hydro_routing_reservoirs_rfc
-)
-
-target_include_directories(hydro_routing
-        PRIVATE
-        ${netCDF_INCLUDE_DIRS}
-        ${netCDF-Fortran_INCLUDE_DIRS}
 )

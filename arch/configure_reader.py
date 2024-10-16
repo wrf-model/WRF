@@ -17,7 +17,8 @@ osAndArch     = re.compile( r"^ARCH[ ]+(\w+)[ ]+((?:\w+.*?),|(?:[(].*?[)]))",   
 osAndArchAlt  = re.compile( r"^ARCH[ ]+(\w+)[ ]+(\w+)",         re.I )
 
 referenceVar  = re.compile( r"[$]([(])?(\w+)(?(1)[)])", re.I )
-compileObject = re.compile( r"(\W)-c(\W)" )
+compileObject = re.compile( r"(\W|^)-c(\W|$)" )
+configureRepl = re.compile( r"(\W|^)CONFIGURE_\w+(\W|$)" )
 
 class Stanza():
   
@@ -160,52 +161,9 @@ class Stanza():
     self.dereference( "FCBASEOPTS" )
 
     # Remove rogue compile commands that should *NOT* even be here
-    keysToSanitize = [ 
-                      "ARFLAGS","ARFLAGS",
-                      "CC",
-                      "CFLAGS_LOCAL",
-                      "CFLAGS",
-                      "COMPRESSION_INC",
-                      "COMPRESSION_LIBS",
-                      "CPP",
-                      "CPPFLAGS",
-                      "DM_CC",
-                      "DM_FC",
-                      "ESMF_LDFLAG",
-                      "F77FLAGS",
-                      "FC",
-                      "FCBASEOPTS_NO_G",
-                      "FCBASEOPTS",
-                      "FCOPTIM",
-                      "FCSUFFIX",
-                      "FDEFS",
-                      "FFLAGS",
-                      "FNGFLAGS",
-                      "FORMAT_FIXED",
-                      "FORMAT_FREE",
-                      "LD",
-                      "LDFLAGS_LOCAL",
-                      "LDFLAGS",
-                      "MODULE_SRCH_FLAG",
-                      "RLFLAGS",
-                      "SCC",
-                      "SFC",
-                      "TRADFLAG",
-                      ]
-
-    for keyToSan in keysToSanitize :
-      if keyToSan in self.kvPairs_ :
-        self.kvPairs_[ keyToSan ] = self.kvPairs_[ keyToSan ].replace( "CONFIGURE_COMP_L", "" )
-        self.kvPairs_[ keyToSan ] = self.kvPairs_[ keyToSan ].replace( "CONFIGURE_COMP_I", "" )
-        self.kvPairs_[ keyToSan ] = self.kvPairs_[ keyToSan ].replace( "CONFIGURE_FC", "" )
-        self.kvPairs_[ keyToSan ] = self.kvPairs_[ keyToSan ].replace( "CONFIGURE_CC", "" )
-        self.kvPairs_[ keyToSan ] = self.kvPairs_[ keyToSan ].replace( "CONFIGURE_FDEFS", "" )
-        self.kvPairs_[ keyToSan ] = self.kvPairs_[ keyToSan ].replace( "CONFIGURE_MPI", "" )
-        self.kvPairs_[ keyToSan ] = self.kvPairs_[ keyToSan ].replace( "CONFIGURE_COMPAT_FLAGS", "" )
-        self.kvPairs_[ keyToSan ] = self.kvPairs_[ keyToSan ].replace( "CONFIGURE_CPPFLAGS", "" )
-        self.kvPairs_[ keyToSan ] = self.kvPairs_[ keyToSan ].replace( "CONFIGURE_TRADFLAG", "" )
-
-        self.kvPairs_[ keyToSan ] = compileObject.sub( r"\1\2", self.kvPairs_[ keyToSan ] ).strip()
+    for keyToSan in self.kvPairs_.keys() :
+      self.kvPairs_[ keyToSan ] = configureRepl.sub( r"\1\2", self.kvPairs_[ keyToSan ] ).strip()
+      self.kvPairs_[ keyToSan ] = compileObject.sub( r"\1\2", self.kvPairs_[ keyToSan ] ).strip()
 
 
     # Now fix certain ones that are mixing programs with flags all mashed into one option
@@ -546,6 +504,7 @@ def generateCMakeToolChainFile( cmakeToolChainTemplate, output, stanza, optionsD
 
   configStanza = cmakeToolChainTemplateLines.format( 
                                                     ARCH_LOCAL=stanza.kvPairs_["ARCH_LOCAL"],
+                                                    LDFLAGS_LOCAL=stanza.kvPairs_["LDFLAGS_LOCAL"],
                                                     BYTESWAPIO=stanza.kvPairs_["BYTESWAPIO"],
                                                     CFLAGS_LOCAL=stanza.kvPairs_["CFLAGS_LOCAL"],
                                                     DM_CC=stanza.kvPairs_["DM_CC"],
@@ -575,8 +534,12 @@ def generateCMakeToolChainFile( cmakeToolChainTemplate, output, stanza, optionsD
 
 def projectSpecificOptions( options, stanzaCfg ) :
   coreOption       = getStringOptionSelection( options.sourceCMakeFile, "WRF_CORE_OPTIONS",    "WRF_CORE"    )
-  nestingOption    = getStringOptionSelection( options.sourceCMakeFile, "WRF_NESTING_OPTIONS", "WRF_NESTING", 1 )
-  caseOption       = getStringOptionSelection( options.sourceCMakeFile, "WRF_CASE_OPTIONS",    "WRF_CASE"    )
+  if coreOption == "ARW" :
+    nestingOption    = getStringOptionSelection( options.sourceCMakeFile, "WRF_NESTING_OPTIONS", "WRF_NESTING", 1 )
+    caseOption       = getStringOptionSelection( options.sourceCMakeFile, "WRF_CASE_OPTIONS",    "WRF_CASE"    )
+  else :
+    nestingOption = "NONE"
+    caseOption    = "NONE"
   
   # These are yes
   yesValues    = [ "yes", "y", "true", "1" ]

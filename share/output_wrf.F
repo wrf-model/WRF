@@ -40,6 +40,10 @@
             mp_physics, ra_lw_physics, ra_sw_physics, sf_sfclay_physics, &
             sf_surface_physics, bl_pbl_physics, cu_physics, hypsometric_opt, sf_lake_physics, &
             use_theta_m, use_maxw_level, use_trop_level,hybrid_opt, gwd_opt
+#if ( WRF_CMAQ == 1 )
+    INTEGER wrf_cmaq_option
+    LOGICAL direct_sw_feedback
+#endif
     INTEGER swint_opt, aer_type,aer_aod550_opt,aer_angexp_opt,aer_ssa_opt,aer_asy_opt, aer_opt
     REAL    aer_aod550_val,aer_angexp_val,aer_ssa_val,aer_asy_val,etac
     REAL    khdif, kvdif, swrad_scat, dampcoef,radt,bldt,cudt
@@ -88,6 +92,7 @@
     CHARACTER*80  char_junk
     CHARACTER(LEN=256) :: MMINLU
     INTEGER    ibuf(1)
+    LOGICAL    lbuf(1)
     REAL       rbuf(1)
     TYPE(WRFU_TimeInterval) :: bdy_increment
     TYPE(WRFU_Time)         :: next_time, currentTime, startTime
@@ -138,6 +143,10 @@
     call nl_get_khdif              ( grid%id,  khdif              )
     call nl_get_kvdif              ( grid%id,  kvdif              )
     call nl_get_mp_physics         ( grid%id,  mp_physics         )
+#if ( WRF_CMAQ == 1 )
+    call nl_get_wrf_cmaq_option    ( grid%id,  wrf_cmaq_option    )
+    call nl_get_direct_sw_feedback ( grid%id,  direct_sw_feedback )
+#endif
     call nl_get_ra_lw_physics      ( grid%id,  ra_lw_physics      )
     call nl_get_ra_sw_physics      ( grid%id,  ra_sw_physics      )
     call nl_get_sf_sfclay_physics  ( grid%id,  sf_sfclay_physics  )
@@ -347,7 +356,8 @@
     CALL wrf_put_dom_ti_char ( fid , 'START_DATE', TRIM(start_date) , ierr )
     IF ( switch .EQ. input_only) THEN
        CALL wrf_put_dom_ti_char ( fid , 'SIMULATION_START_DATE', TRIM(start_date) , ierr )
-    ELSE IF ( ( switch .EQ. restart_only ) .OR. ( switch .EQ. history_only ) ) THEN
+    ELSE IF ( ( switch .EQ. restart_only ) .OR. ( switch .EQ. history_only ) .OR.  &
+              ( ( switch .GE. auxhist1_only ) .AND. ( switch .LE. auxhist24_only ) ) ) THEN
        CALL nl_get_simulation_start_year   ( 1, simulation_start_year   )
        CALL nl_get_simulation_start_month  ( 1, simulation_start_month  )
        CALL nl_get_simulation_start_day    ( 1, simulation_start_day    )
@@ -552,7 +562,8 @@ endif
        END IF
     END IF
 
-    IF (switch .EQ. history_only) THEN
+    IF ( ( switch .EQ. history_only ) .OR.  &
+         ( ( switch .GE. auxhist1_only ) .AND. ( switch .LE. auxhist24_only ) ) ) THEN
        CALL    wrf_put_dom_ti_integer( fid, 'SKEBS_ON'           , config_flags%skebs_on           , 1, ierr )
        IF ( config_flags%skebs_on .NE. 0 )  THEN
           CALL wrf_put_dom_ti_real   ( fid, 'TOT_BACKSCAT_PSI'   , config_flags%tot_backscat_psi   , 1, ierr )
@@ -623,6 +634,13 @@ endif
     CALL wrf_put_dom_ti_real    ( fid , 'KHDIF' ,  rbuf , 1 , ierr )
     rbuf(1) = kvdif
     CALL wrf_put_dom_ti_real    ( fid , 'KVDIF' ,  rbuf , 1 , ierr )
+#if ( WRF_CMAQ == 1 )
+    ibuf(1) = wrf_cmaq_option
+    CALL wrf_put_dom_ti_integer ( fid , 'WRF_CMAQ_OPTION' ,  ibuf , 1 , ierr )
+    lbuf(1) = direct_sw_feedback
+! Note the code will turn logical T/F to integer 1/0 in the output
+    CALL wrf_put_dom_ti_logical ( fid , 'DIRECT_SW_FEEDBACK' ,  lbuf , 1 , ierr )
+#endif
     ibuf(1) = mp_physics
     CALL wrf_put_dom_ti_integer ( fid , 'MP_PHYSICS' ,  ibuf , 1 , ierr )
     ibuf(1) = ra_lw_physics
@@ -672,7 +690,8 @@ endif
     CALL wrf_put_dom_ti_integer ( fid, 'DISTRIBUTED_AHE_OPT', config_flags%distributed_ahe_opt, 1, ierr)
 #endif
 
-      IF ( switch .EQ. history_only ) THEN
+      IF ( ( switch .EQ. history_only ) .OR.  &
+           ( ( switch .GE. auxhist1_only ) .AND. ( switch .LE. auxhist24_only ) ) ) THEN
       CALL wrf_put_dom_ti_integer ( fid, 'SHCU_PHYSICS',     config_flags%shcu_physics , 1 , ierr )
       CALL wrf_put_dom_ti_integer ( fid, 'MFSHCONV',         config_flags%mfshconv , 1 , ierr )
       CALL wrf_put_dom_ti_integer ( fid, 'FEEDBACK', feedback , 1 , ierr )
@@ -800,7 +819,7 @@ endif
       CALL wrf_put_dom_ti_integer   ( fid, 'NTASKS_Y',         ntasks_y                  , 1 , ierr )
       CALL wrf_put_dom_ti_integer   ( fid, 'NTASKS_TOTAL',     ntasks_x*ntasks_y         , 1 , ierr )
 
-      ENDIF ! history_only
+      ENDIF ! history_only and aux history
 
 #if (WRF_CHEM == 1 && WRF_KPP == 1)
       IF ( switch == auxhist9_only .and. config_flags%irr_opt /= 0 ) THEN
@@ -812,6 +831,7 @@ endif
 #if (EM_CORE == 1) && ( DA_CORE != 1)
       IF ( ( switch .EQ. input_only   ) .OR. &
            ( switch .EQ. history_only ) .OR. &
+           ( ( switch .GE. auxhist1_only ) .AND. ( switch .LE. auxhist24_only ) ) .OR. &
            ( switch .EQ. restart_only ) ) THEN
          IF ( grid%this_is_an_ideal_run ) THEN
             CALL wrf_put_dom_ti_char ( fid , 'SIMULATION_INITIALIZATION_TYPE', "IDEALIZED DATA" , ierr )

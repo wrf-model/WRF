@@ -1,0 +1,154 @@
+
+
+on :
+  workflow_call :
+    inputs :
+      label : 
+        required : true
+        type     : string
+      hpc-workflows_path :
+        required : true
+        type     : string
+      archive :
+        required : true
+        type     : string
+      
+      name     :
+        required : true
+        type     : string
+      id       :
+        required : true
+        type     : string
+      host     :
+        required : true
+        type     : string
+      fileroot :
+        required : true
+        type     : string
+      account  :
+        required : true
+        type     : string
+      tests    :
+        required : true
+        type     : string
+      mkdirs   :
+        required : true
+        type     : boolean
+      args     :
+        required : false
+        type     : string
+        default  : ""
+      pool     :
+        required : false
+        type     : number
+        default  : 1
+      tpool      :
+        required : false
+        type     : number
+        default  : 1
+      
+
+
+jobs:
+  test_workflow :
+
+    # Is 5 days a reasonable wait time for testing?
+    timeout-minutes: 7200
+    name: Test ${{ inputs.name }} on ${{ inputs.host }}
+    runs-on: ${{ inputs.host }}
+    env :
+      LOG_SUFFIX : ${{ github.event_name == 'push' && 'master' || github.event.number }}
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        path      : main
+        submodules: true
+    
+    # Immediately copy out to # of tests to do
+    - name: Create testing directories
+      if  : ${{ inputs.mkdirs }}
+      id  : cpTestDirs
+      run : |
+        # Limit parallel ops to 4 at a time to not thrash login nodes
+
+        # Remove if it exists to get a fresh start
+        echo "Cleaning old test directories..."
+        tests="${{ join( fromJson( inputs.tests ), ' ' ) }}"
+        time printf "%s\n" $tests | xargs -i -P 4 rm -rf {}
+
+        echo "Creating duplicate directory for $tests"
+        time printf "%s\n" $tests | xargs -i -P 4 cp -Rp main/ {}
+
+    - name: Test ${{ inputs.name }}
+      id  : runTest
+      run: |
+        if [ "${{ inputs.mkdirs }}" = "true" ]; then
+          ALT_DIRS="-alt ../${{ join( fromJson( inputs.tests ), '/.ci ../' ) }}/.ci"
+        fi
+        ./main/${{ inputs.hpc-workflows_path }}/.ci/runner.py                   \
+          ./main/.ci/${{ inputs.fileroot }}.json             \
+          -t   ${{ join( fromJson( inputs.tests ), ' ' ) }}  \
+          -a "${{ inputs.account }}"                         \
+          -p ${{ inputs.pool}} -tp ${{ inputs.tpool }}       \
+          -jn ${{ github.event_name == 'push' && github.ref_name || github.event.number }}-${{ inputs.id }} \
+          ${{ inputs.args }} $ALT_DIRS
+
+
+    - name: Report failed tests and steps
+      if : ${{ failure() }}
+      run : |
+        # move log files to safe location
+        ./main/${{ inputs.hpc-workflows_path }}/.ci/relocator.py ./main/.ci/${{ inputs.fileroot }}.log ${{ inputs.archive }}/$LOG_SUFFIX/${{ inputs.id }}
+
+        # report on them - alt dirs need extra help
+        if [ "${{ inputs.mkdirs }}" = "true" ]; then
+          masterlogLoc=main/.ci
+        fi
+        ./main/${{ inputs.hpc-workflows_path }}/.ci/reporter.py ${{ inputs.archive }}/$LOG_SUFFIX/${{ inputs.id }}/$masterlogLoc/${{ inputs.fileroot }}.log \
+                                             -e ./${{ inputs.hpc-workflows_path }}/.ci/runner.py                             \
+                                             -o GITHUB -m # only mark fail steps with gh syntax
+        
+        # report on them
+        echo "# Summary for ${{ join( fromJson( inputs.tests ), ' ' ) }}" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        ./main/${{ inputs.hpc-workflows_path }}/.ci/reporter.py ${{ inputs.archive }}/$LOG_SUFFIX/${{ inputs.id }}/$masterlogLoc/${{ inputs.fileroot }}.log \
+                                             -e ./${{ inputs.hpc-workflows_path }}/.ci/runner.py                                               \
+                                             -s >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+    - name: Clean up testing directories
+      if : ${{ success() }}
+      id  : rmTestDirs
+      run : |
+        for testDir in ${{ join( fromJson( inputs.tests ), ' ' ) }}; do
+          echo "Removing duplicate directory for $testDir"
+          rm -rf $testDir
+        done
+    
+    - name: Upload test logs
+      if  : ${{ failure() }}
+      uses : actions/upload-artifact@v4
+      with:
+        # as per usual with ci/cd stuff I am shocked but not surprised when the advertised
+        # *documented* functionality doesn't work as expected. Wow, bravo
+        # can't use ${{ env. }} as somehow this combination of matrix->reusable workflow->call step is too complex
+        # and expands to nothing
+        name: ${{ github.event_name == 'push' && github.ref_name || github.event.number }}-${{ inputs.id }}_logfiles
+        path: ${{ inputs.archive }}/${{ github.event_name == 'push' && github.ref_name || github.event.number }}/${{ inputs.id }}/
+
+    # As noted in ci.yml, this will need to be moved to a separate workflow with pull_request_target
+    # and strictly controlled usage of the GH token
+    # - name : Remove '${{ inputs.label }}' label
+    #   if : ${{ !cancelled() && github.event.label.name == inputs.label }}
+    #   env:
+    #     PR_NUMBER: ${{ github.event.number }}
+    #   run: |
+    #     curl \
+    #       -X DELETE \
+    #       -H "Accept: application/vnd.github.v3+json" \
+    #       -H 'Authorization: token ${{ github.token }}' \
+    #       https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/labels/${{ inputs.label }}
+    
+
+
+  

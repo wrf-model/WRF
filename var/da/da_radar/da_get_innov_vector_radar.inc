@@ -275,7 +275,6 @@ END IF
       allocate (avg_qrn(tot_h_index,tot_z_index))
       allocate (avg_qds(tot_h_index,tot_z_index))
       allocate (avg_qws(tot_h_index,tot_z_index))
-      allocate (avg_qws(tot_h_index,tot_z_index))
       allocate (avg_qgr(tot_h_index,tot_z_index))
       allocate (ave_rho(tot_h_index,tot_z_index))
 
@@ -379,7 +378,7 @@ END IF
          end do
       end do   !bottom-top
       if (rootproc) close(hydro_weight_unit)
-      if (rootproc) call da_get_unit(hydro_weight_unit)
+      if (rootproc) call da_free_unit(hydro_weight_unit)
    end if   !! use_radar_rhv .and. radar_rhv_opt == 2
 
    do n=iv%info(radar)%n1,iv%info(radar)%n2

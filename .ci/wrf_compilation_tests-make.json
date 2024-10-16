@@ -1,0 +1,91 @@
+{
+  "submit_options" :
+  {
+    "timelimit" : "00:20:00",
+    "working_directory" : "..",
+    "arguments" :
+    {
+      "base_env_numprocs"      : [ "-e", "NUM_PROCS=4" ],
+
+      ".*make.*::args_nesting"       : [ "-n", "1" ],
+      ".*make.*::args_configopt"     : [ "-o", "-d" ],
+      ".*make.*::args_build_tgt"     : [ "-b", "em_real -j $NUM_PROCS" ]
+    },
+    "hsn.de.hpc"  :
+    {
+      "submission" : "PBS",
+      "queue"      : "main",
+      "hpc_arguments"  : 
+      {
+        "node_select" : { "-l " : { "select"       : 1, "ncpus" : 8 } },
+        "priority"    : { "-l " : { "job_priority" : "economy"       } }
+      },
+      "arguments"  : 
+      {
+        "base_env_numprocs"      : [ "-e", "NUM_PROCS=8" ],
+        "very_last_modules"       : [ "netcdf" ],
+        ".*gnu.*::test_modules"   : [ "gcc" ],
+        ".*intel-classic.*::test_modules" : [ "intel-classic" ],
+        ".*intel-llvm.*::test_modules"     : [ "intel-oneapi" ],
+        ".*pgi.*::test_modules"   : [ "nvhpc" ],
+        ".*dm.*::test_mpi_module" : [ "cray-mpich" ]
+      }
+    }
+  },
+
+  "make-gnu-serial" : { "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "32" ] } } },
+  "make-gnu-sm"     : { "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "33" ] } } },
+  "make-gnu-dm"     : { "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "34" ] } } },
+  "make-gnu-dm+sm"  : { "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "35" ] } } },
+  
+  "make-intel-classic-serial" : {
+    "submit_options" : { "hsn.de.hpc" : { "timelimit" : "00:30:00" } },
+    "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "13" ] } }
+  },
+  "make-intel-classic-sm" : {
+    "submit_options" : { "hsn.de.hpc" : { "timelimit" : "00:30:00" } },
+    "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "14" ] } }
+  },
+  "make-intel-classic-dm" : {
+    "submit_options" : { "hsn.de.hpc" : { "timelimit" : "00:30:00" } },
+    "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "15" ] } }
+  },
+  "make-intel-classic-dm+sm" : {
+    "submit_options" : { "hsn.de.hpc" : { "timelimit" : "00:30:00" } },
+    "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "16" ] } }
+  },
+
+  "make-intel-llvm-serial" : {
+    "submit_options" : { "hsn.de.hpc" : { "timelimit" : "00:30:00" } },
+    "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "76" ] } }
+  },
+  "make-intel-llvm-sm" : {
+    "submit_options" : { "hsn.de.hpc" : { "timelimit" : "00:30:00" } },
+    "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "77" ] } }
+  },
+  "make-intel-llvm-dm" : {
+    "submit_options" : { "hsn.de.hpc" : { "timelimit" : "00:30:00" } },
+    "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "78" ] } }
+  },
+  "make-intel-llvm-dm+sm" : {
+    "submit_options" : { "hsn.de.hpc" : { "timelimit" : "00:30:00" } },
+    "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "79" ] } }
+  },
+
+  "make-pgi-serial" : {
+    "submit_options" : { "hsn.de.hpc" : { "timelimit" : "00:30:00" } },
+    "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "1" ] } }
+  },
+  "make-pgi-sm"     : {
+    "submit_options" : { "hsn.de.hpc" : { "timelimit" : "00:30:00" } },
+    "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "2" ] } }
+  },
+  "make-pgi-dm"     : {
+    "submit_options" : { "hsn.de.hpc" : { "timelimit" : "00:30:00" } },
+    "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "3" ] } }
+  },
+  "make-pgi-dm+sm"  : {
+    "submit_options" : { "hsn.de.hpc" : { "timelimit" : "00:30:00" } },
+    "steps" : { "build" : { "command" : ".ci/tests/build.sh", "arguments" : [ "-c", "4" ] } }
+  }
+}

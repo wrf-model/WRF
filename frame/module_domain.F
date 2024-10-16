@@ -326,7 +326,6 @@ CONTAINS
    END SUBROUTINE get_ijk_from_subgrid
 #endif
 
-
 ! Default version ; Otherwise module containing interface to DM library will provide
 
    SUBROUTINE wrf_patch_domain( id , domdesc , parent, parent_id , parent_domdesc , &
@@ -1295,18 +1294,10 @@ CONTAINS
                                   sm31x, em31x, sm32x, em32x, sm33x, em33x, &
                                   sm31y, em31y, sm32y, em32y, sm33y, em33y )
 
-      USE module_alloc_space_0, ONLY : alloc_space_field_core_0
-      USE module_alloc_space_1, ONLY : alloc_space_field_core_1
-      USE module_alloc_space_2, ONLY : alloc_space_field_core_2
-      USE module_alloc_space_3, ONLY : alloc_space_field_core_3
-      USE module_alloc_space_4, ONLY : alloc_space_field_core_4
-      USE module_alloc_space_5, ONLY : alloc_space_field_core_5
-      USE module_alloc_space_6, ONLY : alloc_space_field_core_6
-      USE module_alloc_space_7, ONLY : alloc_space_field_core_7
-      USE module_alloc_space_8, ONLY : alloc_space_field_core_8
-      USE module_alloc_space_9, ONLY : alloc_space_field_core_9
 
       IMPLICIT NONE
+
+#include "allocs.inc"
 
       !  Input data.
 
@@ -1344,87 +1335,8 @@ CONTAINS
 
       num_bytes_allocated = 0 
 
-      ! now separate modules to reduce the size of module_domain that the compiler sees
-      CALL alloc_space_field_core_0 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in , okay_to_alloc_in, num_bytes_allocated , &
-                                    sd31, ed31, sd32, ed32, sd33, ed33, &
-                                    sm31 , em31 , sm32 , em32 , sm33 , em33 , &
-                                    sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
-                                    sp31x, ep31x, sp32x, ep32x, sp33x, ep33x, &
-                                    sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &
-                                    sm31x, em31x, sm32x, em32x, sm33x, em33x, &
-                                    sm31y, em31y, sm32y, em32y, sm33y, em33y )
-      CALL alloc_space_field_core_1 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in , okay_to_alloc_in, num_bytes_allocated ,  &
-                                    sd31, ed31, sd32, ed32, sd33, ed33, &
-                                    sm31 , em31 , sm32 , em32 , sm33 , em33 , &
-                                    sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
-                                    sp31x, ep31x, sp32x, ep32x, sp33x, ep33x, &
-                                    sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &
-                                    sm31x, em31x, sm32x, em32x, sm33x, em33x, &
-                                    sm31y, em31y, sm32y, em32y, sm33y, em33y )
-      CALL alloc_space_field_core_2 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in , okay_to_alloc_in, num_bytes_allocated ,  &
-                                    sd31, ed31, sd32, ed32, sd33, ed33, &
-                                    sm31 , em31 , sm32 , em32 , sm33 , em33 , &
-                                    sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
-                                    sp31x, ep31x, sp32x, ep32x, sp33x, ep33x, &
-                                    sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &
-                                    sm31x, em31x, sm32x, em32x, sm33x, em33x, &
-                                    sm31y, em31y, sm32y, em32y, sm33y, em33y )
-      CALL alloc_space_field_core_3 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in , okay_to_alloc_in, num_bytes_allocated ,  &
-                                    sd31, ed31, sd32, ed32, sd33, ed33, &
-                                    sm31 , em31 , sm32 , em32 , sm33 , em33 , &
-                                    sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
-                                    sp31x, ep31x, sp32x, ep32x, sp33x, ep33x, &
-                                    sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &
-                                    sm31x, em31x, sm32x, em32x, sm33x, em33x, &
-                                    sm31y, em31y, sm32y, em32y, sm33y, em33y )
-      CALL alloc_space_field_core_4 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in , okay_to_alloc_in, num_bytes_allocated ,  &
-                                    sd31, ed31, sd32, ed32, sd33, ed33, &
-                                    sm31 , em31 , sm32 , em32 , sm33 , em33 , &
-                                    sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
-                                    sp31x, ep31x, sp32x, ep32x, sp33x, ep33x, &
-                                    sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &
-                                    sm31x, em31x, sm32x, em32x, sm33x, em33x, &
-                                    sm31y, em31y, sm32y, em32y, sm33y, em33y )
-      CALL alloc_space_field_core_5 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in , okay_to_alloc_in, num_bytes_allocated ,  &
-                                    sd31, ed31, sd32, ed32, sd33, ed33, &
-                                    sm31 , em31 , sm32 , em32 , sm33 , em33 , &
-                                    sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
-                                    sp31x, ep31x, sp32x, ep32x, sp33x, ep33x, &
-                                    sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &
-                                    sm31x, em31x, sm32x, em32x, sm33x, em33x, &
-                                    sm31y, em31y, sm32y, em32y, sm33y, em33y )
-      CALL alloc_space_field_core_6 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in , okay_to_alloc_in, num_bytes_allocated ,  &
-                                    sd31, ed31, sd32, ed32, sd33, ed33, &
-                                    sm31 , em31 , sm32 , em32 , sm33 , em33 , &
-                                    sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
-                                    sp31x, ep31x, sp32x, ep32x, sp33x, ep33x, &
-                                    sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &
-                                    sm31x, em31x, sm32x, em32x, sm33x, em33x, &
-                                    sm31y, em31y, sm32y, em32y, sm33y, em33y )
-      CALL alloc_space_field_core_7 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in , okay_to_alloc_in, num_bytes_allocated ,  &
-                                    sd31, ed31, sd32, ed32, sd33, ed33, &
-                                    sm31 , em31 , sm32 , em32 , sm33 , em33 , &
-                                    sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
-                                    sp31x, ep31x, sp32x, ep32x, sp33x, ep33x, &
-                                    sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &
-                                    sm31x, em31x, sm32x, em32x, sm33x, em33x, &
-                                    sm31y, em31y, sm32y, em32y, sm33y, em33y )
-      CALL alloc_space_field_core_8 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in , okay_to_alloc_in, num_bytes_allocated ,  &
-                                    sd31, ed31, sd32, ed32, sd33, ed33, &
-                                    sm31 , em31 , sm32 , em32 , sm33 , em33 , &
-                                    sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
-                                    sp31x, ep31x, sp32x, ep32x, sp33x, ep33x, &
-                                    sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &
-                                    sm31x, em31x, sm32x, em32x, sm33x, em33x, &
-                                    sm31y, em31y, sm32y, em32y, sm33y, em33y )
-      CALL alloc_space_field_core_9 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in , okay_to_alloc_in, num_bytes_allocated ,  &
-                                    sd31, ed31, sd32, ed32, sd33, ed33, &
-                                    sm31 , em31 , sm32 , em32 , sm33 , em33 , &
-                                    sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
-                                    sp31x, ep31x, sp32x, ep32x, sp33x, ep33x, &
-                                    sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &
-                                    sm31x, em31x, sm32x, em32x, sm33x, em33x, &
-                                    sm31y, em31y, sm32y, em32y, sm33y, em33y )
+      ! Now use auto-split routines to allocate
+#include "allocs_calls.inc"
 
       IF ( .NOT. grid%have_displayed_alloc_stats ) THEN
         ! we do not want to see this message more than once, as can happen with the allocation and
@@ -1733,10 +1645,6 @@ CONTAINS
       !  Input data.
 
       TYPE(domain)              , POINTER :: grid
-
-      !  Local data.
-
-      INTEGER                             ::  ierr
 
 # include "deallocs.inc"
 

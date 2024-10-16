@@ -2,8 +2,6 @@
 
 @PACKAGE_INIT@
 
-include( "${CMAKE_CURRENT_LIST_DIR}/@EXPORT_NAME@Targets.cmake" )
-
 set( WRF_VERSION @PROJECT_VERSION@ )
 
 # Options WRF was built with
@@ -50,5 +48,8 @@ find_package( netCDF REQUIRED )
 # Attempt to find zlib packaged with netcdf first
 set( ZLIB_ROOT ${netCDF_PREFIX} )
 find_package( ZLIB   REQUIRED )
+
+
+include( "${CMAKE_CURRENT_LIST_DIR}/@EXPORT_NAME@Targets.cmake" )
 
 check_required_components( "@EXPORT_NAME@_Core" )

@@ -1119,8 +1119,8 @@ CONTAINS
 ! fix the values for the surface fluxes (source/sink terms)
 ! here for momentum the resolution is done implicitely
 ! while for heat and moisture is done explicitely 
-            a_u(i,1,j)=(-ust(I,J)*ust(I,J))/dz8w(i,1,j)/max(1.E-3,((u_phy(i,1,j)**2+v_phy(i,1,j)**2.)**.5))           
-            a_v(i,1,j)=(-ust(I,J)*ust(I,J))/dz8w(i,1,j)/max(1.E-3,((u_phy(i,1,j)**2+v_phy(i,1,j)**2.)**.5))
+            a_u(i,1,j)=(-ust(I,J)*ust(I,J))/dz8w(i,1,j)/((u_phy(i,1,j)**2+v_phy(i,1,j)**2.)**.5)           
+            a_v(i,1,j)=(-ust(I,J)*ust(I,J))/dz8w(i,1,j)/((u_phy(i,1,j)**2+v_phy(i,1,j)**2.)**.5)
             b_t(i,1,j)=hfx(i,j)/rho(i,1,j)/CP/dz8w(i,1,j)
             b_q(i,1,j)=qfx(i,j)/rho(i,1,j)/dz8w(i,1,j)
 !! if you want to solve also the heat and moisture fluxes implicitely, uncomment the following lines.
@@ -1899,7 +1899,7 @@ CONTAINS
               ,B_E_BEP=b_e_bep                                                 &
               ,SF_BEP=sf_bep,VL_BEP=vl_bep                                     &
               ,BR=br,ZNT=znt                                                   &
-              ,PSIM=psim,PSIH=psih                                             &
+              ,PSIM=fm,PSIH=fhh                                             &
               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde                 &
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme                 &
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte  )

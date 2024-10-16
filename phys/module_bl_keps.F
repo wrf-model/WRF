@@ -1073,16 +1073,16 @@ end subroutine length_bougeault
      zz=(zl1+z0)/zl1
      zol1 = max(b_ric*psim*psim/psih,rimin)
     if(sfcflg)then
-     zol1 = min(zol1,-zfmin)
+     zol1 = zz*min(zol1,-zfmin)
     else
-     zol1 = max(zol1,zfmin)
+     zol1 = zz*max(zol1,zfmin)
     endif
      hol1 = zol1*pblh/zl1*sfcfrac
     
     if(sfcflg)then
-       phim = (1.-aphi16*zol1*zz)**(-1./4.)
-       phih = (1.-aphi16*zol1*zz)**(-1./2.)
-       phieps=1.-zol1*zz
+       phim = (1.-aphi16*zol1)**(-1./4.)
+       phih = (1.-aphi16*zol1)**(-1./2.)
+       phieps=1.-zol1
        phim_sl = (1.-aphi16*hol1)**(-1./4.)
        phih_sl = (1.-aphi16*hol1)**(-1./2.)
        bfx0 = max(sflux,0.)
@@ -1093,9 +1093,9 @@ end subroutine length_bougeault
      else
        phim_sl = (1.+aphi5*hol1)
        phih_sl= phim_sl
-       phim=(1.+aphi5*zol1*zz)
-       phieps=(1+2.5*(zol1*zz)**0.6)**(3./2.)
-       phih= phim_sl
+       phim=(1.+aphi5*zol1)
+       phieps=(1+2.5*(zol1)**0.6)**(3./2.)
+       phih= phim
        wstar3=0.
        wstar3_2=0.
      endif

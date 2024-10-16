@@ -1899,7 +1899,7 @@ CONTAINS
               ,B_E_BEP=b_e_bep                                                 &
               ,SF_BEP=sf_bep,VL_BEP=vl_bep                                     &
               ,BR=br,ZNT=znt                                                   &
-              ,PSIM=psim,PSIH=psih                                             &
+              ,PSIM=fm,PSIH=fhh                                             &
               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde                 &
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme                 &
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte  )

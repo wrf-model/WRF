@@ -65,6 +65,7 @@ CONTAINS
       ! CFBM
     use advance_mod, only : Advance_state
     use wrf_mod, only : Interp_wrf2dvar_to_cfbm, Interp_wrfwinds_to_cfbm
+    use wrf_mod, only : Provide_atm_feedback
 
 
     IMPLICIT NONE
@@ -1383,6 +1384,29 @@ BENCH_END(pbl_driver_tim)
              grid%cfbm_namelist%fire_wind_height, grid%fire_state%uf, grid%fire_state%vf)
 
          call Advance_state (grid = grid%fire_state, config_flags = grid%cfbm_namelist)
+
+         if (grid%fire_state%num_tiles == grid%num_tiles) then
+           do ij = 1, grid%num_tiles
+             call Provide_atm_feedback (grid%cfbm_namelist,            &
+               grid%fire_state%ifms, grid%fire_state%ifme,             &
+               grid%fire_state%jfms, grid%fire_state%jfme,             &
+               grid%fire_state%i_start, grid%fire_state%i_end,         &
+               grid%fire_state%j_start, grid%fire_state%j_end,         &
+               grid%num_tiles,                                         &
+               grid%fire_state%ifps, grid%fire_state%ifpe,             &
+               grid%fire_state%jfps, grid%fire_state%jfpe,             &
+               ids, ide, kds, kde, jds, jde,                           &
+               ims, ime, kms, kme, jms, jme,                           &
+               grid%i_start(ij), min(grid%i_end(ij), ide-1),           &
+               grid%j_start(ij), min(grid%j_end(ij), jde-1),           &
+               k_start, min(k_end,kde-1),                              &
+               grid%rho, dz8w,                                         &
+               grid%fire_state%emis_smoke, tracer(:,:,:,p_fire_smoke), &
+               config_flags%tracer_opt)
+           end do
+         else
+         CALL wrf_error_fatal ('num_tiles in WRF and CFBM should match')
+         endif
 
          call grid%fire_state%Handle_output (grid%cfbm_namelist)
 

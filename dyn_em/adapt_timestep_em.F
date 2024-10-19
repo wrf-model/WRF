@@ -290,19 +290,17 @@ RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
   
   if ( ( tmpTimeInterval .LT. dtInterval * 2 ) .and. &
        ( tmpTimeInterval .GT. dtInterval ) ) then
-     dtInterval = tmpTimeInterval / 2
+
+      num = INT((time_to_bc * precision)/2 + 0.5)
+      den = precision
+      CALL WRFU_TimeIntervalSet(dtInterval, Sn=num, Sd=den)
      
      use_last2 = .TRUE.
      stepping_to_bc = .true.
      grid%stepping_to_time = .TRUE.
      
   elseif (tmpTimeInterval .LE. dtInterval) then
-     
-     bc_time = NINT ( (curr_secs + time_to_bc) / ( grid%interval_seconds ) ) &
-          * ( grid%interval_seconds )
-     CALL WRFU_TimeIntervalSet(tmpTimeInterval, S=bc_time)
-     dtInterval = tmpTimeInterval - &
-          (domain_get_current_time(grid) - domain_get_start_time(grid))
+     dtInterval = tmpTimeInterval 
      
      use_last2 = .TRUE.
      stepping_to_bc = .true.
@@ -333,25 +331,16 @@ RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
 
      if ( ( tmpTimeInterval .LT. dtInterval * 2 ) .and. &
           ( tmpTimeInterval .GT. dtInterval ) ) then
-        dtInterval = tmpTimeInterval / 2
+
+        num = INT((time_to_output * precision)/2 + 0.5)
+        den = precision
+        call WRFU_TimeIntervalSet(dtInterval, Sn=num, Sd=den)
+
         use_last2 = .TRUE.
         grid%stepping_to_time = .TRUE.
 
      elseif (tmpTimeInterval .LE. dtInterval) then
-        !
-        ! We will do some tricks here to assure that we fall exactly on an 
-        !   output time.  Without the tricks, round-off error causes problems!
-        !
-
-        !
-        ! Calculate output time.  We round to nearest history time to assure 
-        !    we don't have any rounding error.
-        !
-        output_time = NINT ( (curr_secs + time_to_output) /  &
-             (history_interval_sec) ) * (history_interval_sec)
-        CALL WRFU_TimeIntervalSet(tmpTimeInterval, S=output_time)
-        dtInterval = tmpTimeInterval - &
-             (domain_get_current_time(grid) - domain_get_start_time(grid))
+        dtInterval = tmpTimeInterval
 
         use_last2 = .TRUE.
         grid%stepping_to_time = .TRUE.

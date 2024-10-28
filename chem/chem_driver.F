@@ -5,6 +5,7 @@
 ! 10/12/2011 - Ravan Ahmadov (NOAA) updated to include the RACM_SOA_VBS option
 ! 10/08/2014 - Kai Wang and Yang Zhang (NCSU) updated to include the CB05_MADE/SORGAM and CB05_MADE/VBS options
 ! 28/10/2024 - A. Ukhov (KAUST) added diagnostic for large and convective scale washout of volcanic ash
+!              A. Ukhov (KAUST) added calculation of optical properties of ash and sulf aerosol.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     subroutine chem_driver ( grid , config_flags   &
  
@@ -914,9 +915,9 @@
 !
       if( do_photstep .and. &
            config_flags%chem_opt /= CHEM_TRACER .and. &
-           config_flags%chem_opt /= CHEM_VASH .and. &
-           config_flags%chem_opt /= CHEM_VOLC .and. &
-           config_flags%chem_opt /= CHEM_VOLC_4BIN .and. &
+           !config_flags%chem_opt /= CHEM_VASH .and. &          ! A. Ukhov. 28 Oct 2024
+           !config_flags%chem_opt /= CHEM_VOLC .and. &
+           !config_flags%chem_opt /= CHEM_VOLC_4BIN .and. &
            config_flags%chem_opt /= DUST .and. &
            config_flags%chem_opt /= CHEM_TRACE2 .and. &
            config_flags%chem_opt /= CO2_TRACER  .and. &

@@ -5,6 +5,16 @@ MODULE MODULE_VASH_SETTLING
 ! violated in the "settling" routine. I.e. prev. discrtetisation scheme 
 ! did not conserve the mass of ash. Code clean-up. 
 
+!Vertical grid indeces
+!     _
+!i+3 |_| l2-3
+!i+2 |_| l2-2
+!i+1 |_| l2-1
+! i  |_|  l2
+!i-1 |_| l2+1
+!i-2 |_| l2+2
+!i-3 |_| l2+3
+!////////////
 CONTAINS
 
 SUBROUTINE vash_settling_driver(dt,config_flags,t_phy,moist,               &
@@ -241,13 +251,13 @@ subroutine vsettling(imx,jmx, lmx, nmx, g0, &
 
               ! Update mixing ratio. Order of delz is top->sfc
               IF (l == lmx) THEN
-                tc(i,j,l,k) = tc(i,j,l,k) / (1.0 + dt_settl(k)*vd_cor(l)/delz(i,j,l2))
+                tc(i,j,l,k) = tc(i,j,l,k) / (1.0 + dt_settl(k) * vd_cor(l)/delz(i,j,l2))
               ELSE
                 if (l==1) then
                   bstl(i,j,k) = bstl(i,j,k) + (tc(i,j,l,k) * dt_settl(k) * vd_cor(l)/delz(i,j,l2)) * &
                                                airden(i,j,l) * delz(i,j,l2)  !ug/m2
                 endif
-                tc(i,j,l,k) = 1.0/(1.0+dt_settl(k) * vd_cor(l)/delz(i,j,l2)) * &
+                tc(i,j,l,k) = 1.0/(1.0 + dt_settl(k) * vd_cor(l)/delz(i,j,l2)) * &
                       (tc(i,j,l,k) + tc(i,j,l+1,k) * dt_settl(k) * vd_cor(l+1) /delz(i,j,l2-1) * &
                       ((airden(i,j,l+1)*delz(i,j,l2-1))/(airden(i,j,l)*delz(i,j,l2))))
               END IF

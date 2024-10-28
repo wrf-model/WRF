@@ -4,7 +4,7 @@
 !                   William Gustafson (PNNL), Marc Salzmann (GFDL), and Georg Grell
 ! 10/12/2011 - Ravan Ahmadov (NOAA) updated to include the RACM_SOA_VBS option
 ! 10/08/2014 - Kai Wang and Yang Zhang (NCSU) updated to include the CB05_MADE/SORGAM and CB05_MADE/VBS options
-!
+! 28/10/2024 - A. Ukhov (KAUST) added diagnostic for large and convective scale washout of volcanic ash
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     subroutine chem_driver ( grid , config_flags   &
  
@@ -1158,6 +1158,7 @@
              z_at_w,grid%cu_co_ten,                                                   &
              grid%wd_no3_cu,grid%wd_so4_cu,                                 &
              grid%wd_nh4_cu,grid%wd_oa_cu,                                            &
+             grid%wd_ash_cu,        &  ! A. Ukhov
              grid%wd_so2_cu, grid%wd_sulf_cu, grid%wd_hno3_cu, grid%wd_nh3_cu,        &
              grid%wd_cvasoa_cu, grid%wd_cvbsoa_cu, grid%wd_asoa_cu, grid%wd_bsoa_cu,  &
              grid%k22_shallow,grid%kbcon_shallow,grid%ktop_shallow,grid%xmb_shallow,  &
@@ -1187,6 +1188,7 @@
              z_at_w, grid%cu_co_ten,                                                  &
              grid%wd_no3_cu,grid%wd_so4_cu,                                 &
              grid%wd_nh4_cu,grid%wd_oa_cu,                                            &
+             grid%wd_ash_cu,        &  ! A. Ukhov
              grid%wd_so2_cu, grid%wd_sulf_cu, grid%wd_hno3_cu, grid%wd_nh3_cu,        &
              grid%wd_cvasoa_cu, grid%wd_cvbsoa_cu, grid%wd_asoa_cu, grid%wd_bsoa_cu,  &
              grid%k22_shallow,grid%kbcon_shallow,grid%ktop_shallow,grid%xmb_shallow,  &
@@ -1687,6 +1689,7 @@ end if !Chemistry time step check
            call wrf_debug(15,'calculate LS wet deposition')
            call wetdep_ls(grid%dt,chem,grid%rainncv,moist,rho,num_moist, &
                 num_chem,numgas,dz8w,vvel,grid%chem_opt,                 &
+                grid%wd_ash_sc,                                          &
                 ids,ide, jds,jde, kds,kde,                               &
                 ims,ime, jms,jme, kms,kme,                               &
                 its,ite, jts,jte, kts,kte                                )

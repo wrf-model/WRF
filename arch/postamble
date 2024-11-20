@@ -9,7 +9,9 @@ ARCHFLAGS       =    $(COREDEFS) -DIWORDSIZE=$(IWORDSIZE) -DDWORDSIZE=$(DWORDSIZ
                       CONFIGURE_DMPARALLEL \
                       CONFIGURE_STUBMPI \
                       CONFIGURE_NETCDF_FLAG \
+                      CONFIGURE_NETCDFPAR_FLAG \
                       CONFIGURE_PNETCDF_FLAG \
+                      CONFIGURE_ADIOS2_FLAG \
                       CONFIGURE_ESMF_FLAG \
                       CONFIGURE_GRIB2_FLAG \
                       CONFIGURE_RTTOV_FLAG \
@@ -66,10 +68,11 @@ HDF5PATH        =    CONFIGURE_HDF5_PATH
 WRFPLUSPATH     =    CONFIGURE_WRFPLUS_PATH
 RTTOVPATH       =    CONFIGURE_RTTOV_PATH
 PNETCDFPATH     =    CONFIGURE_PNETCDF_PATH
+ADIOS2PATH      =    CONFIGURE_ADIOS2_PATH
 
 bundled:  io_only CONFIGURE_ATMOCN
 external: io_only CONFIGURE_COMMS_EXTERNAL $(ESMF_TARGET)
-io_only:  esmf_time CONFIGURE_WRFIO_NF CONFIGURE_WRFIO_PNF CONFIGURE_WRFIO_GRIB2 \
+io_only:  esmf_time CONFIGURE_WRFIO_NF CONFIGURE_WRFIO_NFPAR CONFIGURE_WRFIO_PNF CONFIGURE_WRFIO_ADIOS2 CONFIGURE_WRFIO_GRIB2 \
 	  wrf_ioapi_includes wrfio_grib_share wrfio_grib1 wrfio_int fftpack
 
 
@@ -91,21 +94,32 @@ module_dm_rsllite :
 	( if [ ! -e module_dm.F ] ; then /bin/cp module_dm_warning module_dm.F ; \
           cat $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/module_dm.F >> module_dm.F ; fi )
 
-wrfio_nf : 
+wrfio_nf :
 	( cd $(WRF_SRC_ROOT_DIR)/external/io_netcdf ; \
           make $(J) NETCDFPATH="$(NETCDFPATH)" RANLIB="$(RANLIB)" CPP="$(CPP)" \
-          CC="$(SCC)" CFLAGS="$(CFLAGS)" \
+          CC="$(SCC)" CFLAGS="$(CFLAGS)" NETCDF4_DEP_LIB="$(NETCDF4_DEP_LIB)" \
           FC="$(SFC) $(PROMOTION) $(OMP) $(FCFLAGS)" TRADFLAG="$(TRADFLAG)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" )
+
+wrfio_nfpar : 
+	( cd $(WRF_SRC_ROOT_DIR)/external/io_netcdfpar ; \
+          make $(J) NETCDFPARPATH="$(NETCDFPATH)" RANLIB="$(RANLIB)" CPP="$(CPP) $(ARCHFLAGS)" \
+          NETCDF4_DEP_LIB="$(NETCDF4_DEP_LIB)" \
+          FC="$(FC) $(PROMOTION) $(OMP) $(FCFLAGS)" TRADFLAG="$(TRADFLAG)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" )
 
 wrfio_pnf : 
 	( cd $(WRF_SRC_ROOT_DIR)/external/io_pnetcdf ; \
           make $(J) NETCDFPATH="$(PNETCDFPATH)" RANLIB="$(RANLIB)" CPP="$(CPP) $(ARCHFLAGS)" \
           FC="$(FC) $(PROMOTION) $(OMP) $(FCFLAGS)" TRADFLAG="$(TRADFLAG)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" )
 
+wrfio_adios2 : 
+	( cd $(WRF_SRC_ROOT_DIR)/external/io_adios2 ; \
+          make $(J) ADIOS2="$(ADIOS2PATH)" RANLIB="$(RANLIB)" CPP="$(CPP) $(ARCHFLAGS)" \
+          FC="$(FC) $(PROMOTION) $(OMP) $(FCFLAGS)" TRADFLAG="$(TRADFLAG)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" )
+
 wrfio_grib_share :
 	( cd $(WRF_SRC_ROOT_DIR)/external/io_grib_share ; \
           make $(J) CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" \
-          FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS) $(FCSUFFIX)" TRADFLAG="$(TRADFLAG)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" archive) 
+          FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS) $(FCSUFFIX)" TRADFLAG="$(TRADFLAG)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" archive)
 
 wrfio_grib1 :
 	( cd $(WRF_SRC_ROOT_DIR)/external/io_grib1 ; \
@@ -119,13 +133,13 @@ wrfio_grib2 :
           FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS) $(FCSUFFIX)" TRADFLAG="-traditional" AR="$(AR)" ARFLAGS="$(ARFLAGS)" \
           FIXED="$(FORMAT_FIXED)" archive)
 
-wrfio_int : 
+wrfio_int :
 	( cd $(WRF_SRC_ROOT_DIR)/external/io_int ; \
           make $(J) CC="$(CC)" CFLAGS_LOCAL="$(CFLAGS_LOCAL)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" \
           FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS) $(OMP)" FGREP="$(FGREP)" \
           TRADFLAG="$(TRADFLAG)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" ARCHFLAGS="$(ARCHFLAGS)" all )
 
-esmf_time : 
+esmf_time :
 	( cd $(WRF_SRC_ROOT_DIR)/external/esmf_time_f90 ; \
           make $(J) FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" \
           CPP="$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc -I. $(ARCHFLAGS) $(TRADFLAG)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" )
@@ -188,12 +202,26 @@ wrfio_esmf :
           mv $*.f90.tmp $*.f90 ; \
         fi
 	$(FC) -o $@ -c $(FCFLAGS) $(OMP) $(MODULE_DIRS) $(PROMOTION) $(FCSUFFIX) $*.f90
-        
+
+.F90.o:
+	$(RM) $@
+	sed -e "s/^\!.*'.*//" -e "s/^ *\!.*'.*//" $*.F90 > $*.G
+	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.G  > $*.bb
+	$(SED_FTN) $*.bb | $(CPP) $(TRADFLAG) > $*.f90
+	$(RM) $*.G $*.bb
+	$(FC) -o $@ -c $(FCFLAGS) $(OMP) $(MODULE_DIRS) $(PROMOTION) $(FCSUFFIX) $*.f90
 
 .F.f90:
 	$(RM) $@
 	sed -e "s/^\!.*'.*//" -e "s/^ *\!.*'.*//" $*.F > $*.G
-	$(SED_FTN) $*.G > $*.H 
+	$(SED_FTN) $*.G > $*.H
+	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $*.H  > $@
+	$(RM) $*.G $*.H
+
+.F90.f90:
+	$(RM) $@
+	sed -e "s/^\!.*'.*//" -e "s/^ *\!.*'.*//" $*.F90 > $*.G
+	$(SED_FTN) $*.G > $*.H
 	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $*.H  > $@
 	$(RM) $*.G $*.H
 

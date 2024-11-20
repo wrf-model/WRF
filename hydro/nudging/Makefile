@@ -1,7 +1,7 @@
-# Makefile 
+# Makefile
 #
 .SUFFIXES:
-.SUFFIXES: .o .F
+.SUFFIXES: .o .F90
 
 include ../macros
 
@@ -14,17 +14,17 @@ OBJS = \
 
 all:	$(OBJS)
 
-#module_RT.o: module_RT.F
+#module_RT.o: module_RT.F90
 #	@echo ""
-#	$(CPP) $(CPPFLAGS) $(*).F > $(*).f
-#	$(COMPILER90) -o $(@) $(F90FLAGS) $(MODFLAG)  $(*).f
-#	$(RMD) $(*).f
+#	$(CPP) $(CPPFLAGS) $(*).F90 > $(*).f90
+#	$(COMPILER90) -o $(@) $(F90FLAGS) $(MODFLAG)  $(*).f90
+#	$(RMD) $(*).f90
 #	@echo ""
 #	cp *.mod ../mod
 
-.F.o:
+.F90.o:
 	@echo ""
-	$(COMPILER90) $(CPPINVOKE) $(CPPFLAGS) -o $(@) $(F90FLAGS) $(MODFLAG) -I$(NETCDF_INC) $(*).F
+	$(COMPILER90) $(CPPINVOKE) $(CPPFLAGS) -o $(@) $(F90FLAGS) $(MODFLAG) -I$(NETCDF_INC) $(*).F90
 	@echo ""
 	ar -r ../lib/libHYDRO.a $(@)
 	cp *.mod ../mod

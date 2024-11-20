@@ -110,7 +110,7 @@ SUBROUTINE int_gen_write_field_header ( hdrbuf, hdrbufsize, itypesize, ftypesize
 !  hdrbufsize:  Size of this data header in bytes.  
 !  headerTag:   "Header tag" that tells the I/O quilt servers what kind of 
 !               header this is.  For a "write field" header it must be set to 
-!               int_field.  See file intio_tags.h for a complete list of 
+!               INT_FIELD.  See file intio_tags.h for a complete list of 
 !               these tags.  
 !  ftypesize:   Size of field data type in bytes.  
 !  DataHandle:  Descriptor for an open data set.  
@@ -145,7 +145,7 @@ SUBROUTINE int_gen_write_field_header ( hdrbuf, hdrbufsize, itypesize, ftypesize
 
 
   hdrbuf(1) = 0 ! deferred -- this will be length of header
-  hdrbuf(2) = int_field
+  hdrbuf(2) = INT_FIELD
   hdrbuf(3) = ftypesize
 
   i = 4
@@ -215,8 +215,8 @@ SUBROUTINE int_get_write_field_header ( hdrbuf, hdrbufsize, itypesize, ftypesize
   INTEGER i, n
 
   hdrbufsize = hdrbuf(1)
-  IF ( hdrbuf(2) .NE. int_field ) THEN
-    write(mess,*)'int_get_write_field_header: hdrbuf(2) ne int_field ',hdrbuf(2),int_field
+  IF ( hdrbuf(2) .NE. INT_FIELD ) THEN
+    write(mess,*)'int_get_write_field_header: hdrbuf(2) ne INT_FIELD ',hdrbuf(2),INT_FIELD
     CALL wrf_error_fatal ( mess )
   ENDIF
   ftypesize = hdrbuf(3)
@@ -269,7 +269,7 @@ SUBROUTINE int_gen_ofr_header( hdrbuf, hdrbufsize, itypesize, &
 !  hdrbufsize:  Size of this data header in bytes.  
 !  headerTag:   "Header tag" that tells the I/O quilt servers what kind of 
 !               header this is.  For an "open for read" header it must be set to 
-!               int_open_for_read.  See file intio_tags.h for a complete list of 
+!               INT_OPEN_FOR_READ.  See file intio_tags.h for a complete list of 
 !               these tags.  
 !  DataHandle:  Descriptor for an open data set.  
 !  FileName:    File name.  
@@ -292,7 +292,7 @@ SUBROUTINE int_gen_ofr_header( hdrbuf, hdrbufsize, itypesize, &
   INTEGER i, n, i1
 !
   hdrbuf(1) = 0  !deferred
-  hdrbuf(2) = int_open_for_read
+  hdrbuf(2) = INT_OPEN_FOR_READ
   i = 3
   hdrbuf(i) = DataHandle     ; i = i+1
 
@@ -324,8 +324,8 @@ SUBROUTINE int_get_ofr_header( hdrbuf, hdrbufsize, itypesize, &
   INTEGER i, n
 !
   hdrbufsize = hdrbuf(1)
-!  IF ( hdrbuf(2) .NE. int_open_for_read ) THEN
-!    CALL wrf_error_fatal ( "int_get_ofr_header: hdrbuf ne int_open_for_read")
+!  IF ( hdrbuf(2) .NE. INT_OPEN_FOR_READ ) THEN
+!    CALL wrf_error_fatal ( "int_get_ofr_header: hdrbuf ne INT_OPEN_FOR_READ")
 !  ENDIF
   i = 3
   DataHandle = hdrbuf(i)    ; i = i+1
@@ -356,7 +356,7 @@ SUBROUTINE int_gen_ofwb_header( hdrbuf, hdrbufsize, itypesize, &
 !  hdrbufsize:  Size of this data header in bytes.  
 !  headerTag:   "Header tag" that tells the I/O quilt servers what kind of 
 !               header this is.  For an "open for write begin" header it must be set to 
-!               int_open_for_write_begin.  See file intio_tags.h for a complete list of 
+!               INT_OPEN_FOR_WRITE_BEGIN.  See file intio_tags.h for a complete list of 
 !               these tags.  
 !  DataHandle:  Descriptor for an open data set.  
 !  io_form:     I/O format for this file (netCDF, etc.).  
@@ -381,7 +381,7 @@ SUBROUTINE int_gen_ofwb_header( hdrbuf, hdrbufsize, itypesize, &
   INTEGER i, n, j
 !
   hdrbuf(1) = 0  !deferred
-  hdrbuf(2) = int_open_for_write_begin
+  hdrbuf(2) = INT_OPEN_FOR_WRITE_BEGIN
   i = 3
   hdrbuf(i) = DataHandle     ; i = i+1
   hdrbuf(i) = io_form        ; i = i+1
@@ -420,8 +420,8 @@ SUBROUTINE int_get_ofwb_header( hdrbuf, hdrbufsize, itypesize, &
 !
   hdrbufsize = hdrbuf(1)
 !write(0,*)' int_get_ofwb_header next rec start ',hdrbuf(hdrbufsize+1)
-!  IF ( hdrbuf(2) .NE. int_open_for_write_begin ) THEN
-!    CALL wrf_error_fatal ( "int_get_ofwb_header: hdrbuf ne int_open_for_write_begin") 
+!  IF ( hdrbuf(2) .NE. INT_OPEN_FOR_WRITE_BEGIN ) THEN
+!    CALL wrf_error_fatal ( "int_get_ofwb_header: hdrbuf ne INT_OPEN_FOR_WRITE_BEGIN") 
 !  ENDIF
   i = 3
   DataHandle = hdrbuf(i)    ; i = i+1
@@ -529,7 +529,7 @@ SUBROUTINE int_gen_ti_header_integer( hdrbuf, hdrbufsize, itypesize, typesize, &
 !  hdrbufsize:  Size of this data header in bytes.  
 !  headerTag:   "Header tag" that tells the I/O quilt servers what kind of 
 !               header this is.  For an "time-independent integer" header it must be 
-!               set to int_dom_ti_integer.  See file intio_tags.h for a complete 
+!               set to INT_DOM_TI_INTEGER.  See file intio_tags.h for a complete 
 !               list of these tags.  
 !  DataHandle:  Descriptor for an open data set.  
 !  typesize:    Size in bytes of each element of Data.  
@@ -584,7 +584,7 @@ SUBROUTINE int_gen_ti_header_integer_varna( hdrbuf, hdrbufsize, itypesize, types
 !  hdrbufsize:  Size of this data header in bytes.
 !  headerTag:   "Header tag" that tells the I/O quilt servers what kind of
 !               header this is.  For an "time-independent integer" header it must be
-!               set to int_dom_ti_integer.  See file intio_tags.h for a complete
+!               set to INT_DOM_TI_INTEGER.  See file intio_tags.h for a complete
 !               list of these tags.
 !  DataHandle:  Descriptor for an open data set.
 !  typesize:    Size in bytes of each element of Data.
@@ -761,7 +761,7 @@ SUBROUTINE int_gen_ti_header_char( hdrbuf, hdrbufsize, itypesize, &
 !  hdrbufsize:  Size of this data header in bytes.  
 !  headerTag:   "Header tag" that tells the I/O quilt servers what kind of 
 !               header this is.  For an "time-independent string" header it must be 
-!               set to int_dom_ti_char.  See file intio_tags.h for a complete 
+!               set to INT_DOM_TI_CHAR.  See file intio_tags.h for a complete 
 !               list of these tags.  
 !  DataHandle:  Descriptor for an open data set.  
 !  typesize:    1 (size in bytes of a single CHARACTER).  
@@ -852,7 +852,7 @@ SUBROUTINE int_gen_td_header_char( hdrbuf, hdrbufsize, itypesize, &
 !  hdrbufsize:  Size of this data header in bytes.  
 !  headerTag:   "Header tag" that tells the I/O quilt servers what kind of 
 !               header this is.  For an "time-dependent string" header it must be 
-!               set to int_dom_td_char.  See file intio_tags.h for a complete 
+!               set to INT_DOM_TD_CHAR.  See file intio_tags.h for a complete 
 !               list of these tags.  
 !  DataHandle:  Descriptor for an open data set.  
 !  typesize:    1 (size in bytes of a single CHARACTER).  
@@ -937,7 +937,7 @@ SUBROUTINE int_gen_td_header_integer( hdrbuf, hdrbufsize, itypesize, typesize, &
 !  hdrbufsize:  Size of this data header in bytes.  
 !  headerTag:   "Header tag" that tells the I/O quilt servers what kind of 
 !               header this is.  For an "time-dependent integer" header it must be 
-!               set to int_dom_td_integer.  See file intio_tags.h for a complete 
+!               set to INT_DOM_TD_INTEGER.  See file intio_tags.h for a complete 
 !               list of these tags.  
 !  DataHandle:  Descriptor for an open data set.  
 !  typesize:    1 (size in bytes of a single CHARACTER).  
@@ -1074,7 +1074,7 @@ SUBROUTINE int_gen_noop_header ( hdrbuf, hdrbufsize, itypesize )
 !  hdrbufsize:  Size of this data header in bytes.  
 !  headerTag:   "Header tag" that tells the I/O quilt servers what kind of 
 !               header this is.  For an "no-operation" header it must be 
-!               set to int_noop.  See file intio_tags.h for a complete 
+!               set to INT_NOOP.  See file intio_tags.h for a complete 
 !               list of these tags.  
 !
 !</PRE>
@@ -1087,7 +1087,7 @@ SUBROUTINE int_gen_noop_header ( hdrbuf, hdrbufsize, itypesize )
   INTEGER i
 !
   hdrbuf(1) = 0  !deferred
-  hdrbuf(2) = int_noop
+  hdrbuf(2) = INT_NOOP
   i = 3
   hdrbufsize = (i-1) * itypesize  ! return the number in bytes
   hdrbuf(1) = hdrbufsize
@@ -1110,8 +1110,8 @@ SUBROUTINE int_get_noop_header( hdrbuf, hdrbufsize, itypesize )
   INTEGER i
 !
   hdrbufsize = hdrbuf(1)
-  IF ( hdrbuf(2) .NE. int_noop ) THEN
-    CALL wrf_error_fatal ( "int_get_noop_header: hdrbuf ne int_noop")
+  IF ( hdrbuf(2) .NE. INT_NOOP ) THEN
+    CALL wrf_error_fatal ( "int_get_noop_header: hdrbuf ne INT_NOOP")
   ENDIF
   i = 3
   RETURN

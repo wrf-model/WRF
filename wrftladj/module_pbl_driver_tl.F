@@ -45,7 +45,7 @@ SUBROUTINE G_PBL_DRIVER(itimestep, dt, u_frame, v_frame, bldt, curr_secs&
 &  mf_temf, thup_temf, qtup_temf, qlup_temf, exch_temf, cf3d_temf, &
 &  cfm_temf, flhc, flqc, qke, qke_adv, bl_mynn_tkeadvect, tsq, qsq, cov, &
 &  rmol, ch, qcg, grav_settling, el_mynn, dqke, qwt, qshear, qbuoy, qdiss&
-&  , bl_mynn_tkebudget, ids, ide, jds, jde, kds, kde, ims, ime, jms, jme&
+&  , tke_budget, ids, ide, jds, jde, kds, kde, ims, ime, jms, jme&
 &  , kms, kme, i_start, i_end, j_start, j_end, kts, kte, num_tiles, hol, &
 &  mol, regime, gwd_opt, dtaux3d, dtaux3dd, dtauy3d, dtauy3dd, dusfcg, &
 &  dusfcgd, dvsfcg, dvsfcgd, var2d, oc12d, oa1, oa2, oa3, oa4, ol1, ol2, &
@@ -64,7 +64,7 @@ SUBROUTINE G_PBL_DRIVER(itimestep, dt, u_frame, v_frame, bldt, curr_secs&
 
    USE module_state_description, ONLY :                            &
                    YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME,&
-                   QNSEPBLSCHEME,MYNNPBLSCHEME2,MYNNPBLSCHEME3,BOULACSCHEME,&
+                   QNSEPBLSCHEME,MYNNPBLSCHEME,BOULACSCHEME,&
                    CAMUWPBLSCHEME,BEPSCHEME,BEP_BEMSCHEME,MYJSFCSCHEME, &
                    SURFDRAGSCHEME, TEMFPBLSCHEME, &
                    p_qi,param_first_scalar 
@@ -311,7 +311,7 @@ SUBROUTINE G_PBL_DRIVER(itimestep, dt, u_frame, v_frame, bldt, curr_secs&
 !,k_m,k_h,k_q &
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL, INTENT(INOUT) ::&
 &  tsq, qsq, cov, qke, el_mynn, dqke, qwt, qshear, qbuoy, qdiss
-  INTEGER, OPTIONAL, INTENT(IN) :: bl_mynn_tkebudget, grav_settling
+  INTEGER, OPTIONAL, INTENT(IN) :: tke_budget, grav_settling
 !ACF-QKE advection start
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL, INTENT(INOUT) ::&
 &  qke_adv

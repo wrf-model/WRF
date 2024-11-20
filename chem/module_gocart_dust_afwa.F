@@ -15,8 +15,8 @@ MODULE GOCART_DUST_AFWA
 
 CONTAINS
   SUBROUTINE gocart_dust_afwa_driver(dt,config_flags,alt,  &
-         chem,rho_phy,smois,u10,v10,p8w,dz8w,erod,erod_dri,dustin,snowh,   &
-         isltyp,vegfra,lai_vegmask,xland,dx,g,emis_dust,      &
+         chem,rho_phy,smois,u10,v10,dz8w,erod,erod_dri,dustin,snowh,   &
+         isltyp,vegfra,lai_vegmask,xland,g,emis_dust,      &
          ust,znt,clay_wrf,sand_wrf,clay_nga,sand_nga,afwa_dustloft,                 &
          tot_dust,tot_edust,vis_dust,alpha,gamma,smtune,ustune,            &
          ids,ide, jds,jde, kds,kde,                                        &
@@ -60,7 +60,7 @@ CONTAINS
                                                      snowh
    REAL, DIMENSION( ims:ime , kms:kme , jms:jme )   ,                      &
          INTENT(IN   ) ::                            alt,                  &
-                                                     p8w,dz8w,             &
+                                                     dz8w,                 &
                                                      rho_phy
   REAL, DIMENSION( ims:ime , jms:jme )               ,                     &
          INTENT(  OUT) ::                            afwa_dustloft,        &
@@ -68,7 +68,7 @@ CONTAINS
   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                          &
          INTENT(  OUT) ::                            tot_dust,             &
                                                      vis_dust
-  REAL, INTENT(IN   ) :: dt,dx,g
+  REAL, INTENT(IN   ) :: dt,g
 
   ! Local variables
 

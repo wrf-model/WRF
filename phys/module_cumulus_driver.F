@@ -200,7 +200,7 @@ CONTAINS
    USE module_cu_osas   , ONLY : cu_osas
    USE module_cu_camzm_driver, ONLY : camzm_driver
    USE module_cu_tiedtke, ONLY : cu_tiedtke
-   USE module_cu_ntiedtke,ONLY : cu_ntiedtke
+   USE module_cu_ntiedtke,ONLY : cu_ntiedtke_driver
    USE module_cu_ksas   , ONLY : cu_ksas
    USE module_cu_nsas   , ONLY : cu_nsas
    USE module_wrf_error , ONLY : wrf_err_message
@@ -744,6 +744,10 @@ CONTAINS
    INTEGER, INTENT(IN) :: JULDAY
 #endif
 
+! To accommodate shared physics
+   character*256 :: errmsg
+   integer :: errflg
+
 !-----------------------------------------------------------------
     pattern_spp_conv=0.
     field_conv=0.
@@ -1113,13 +1117,8 @@ CONTAINS
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
                ,PERIODIC_X=periodic_x,PERIODIC_Y=periodic_y     &
               ! optionals
-#if (NMM_CORE == 1 )
-               ,RTHCUTEN=RTHCUTEN ,RTHFTEN=forcet               &
-               ,RQICUTEN=RQICUTEN ,RQVFTEN=forceq               &
-#else
                ,RTHCUTEN=RTHCUTEN ,RTHFTEN=RTHFTEN              &
                ,RQICUTEN=RQICUTEN ,RQVFTEN=RQVFTEN              &
-#endif
                ,RTHRATEN=RTHRATEN,RTHBLTEN=RTHBLTEN             &
                ,RQVCUTEN=RQVCUTEN,RQCCUTEN=RQCCUTEN             &
                ,RQVBLTEN=RQVBLTEN                               &
@@ -1180,10 +1179,6 @@ CONTAINS
                ,P_QC=p_qc                                       &
                ,MOMMIX=MOMMIX  &
                ,pgcon=pgcon,sas_mass_flux=sas_mass_flux         &
-#if (HWRF==1)
-               ,pert_sas=pert_sas,ens_random_seed=ens_random_seed   &
-               ,ens_sasamp=ens_sasamp &
-#endif
                ,shalconv=shalconv,shal_pgcon=shal_pgcon         &
                ,hpbl2d=hpbl2d,evap2d=evap2d,heat2d=heat2d       &
                ,P_QI=p_qi,P_FIRST_SCALAR=param_first_scalar     &
@@ -1264,14 +1259,9 @@ CONTAINS
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
                ,PERIODIC_X=periodic_x,PERIODIC_Y=periodic_y     &
               ! optionals
-#if (NMM_CORE == 1 )
-               ,RTHCUTEN=RTHCUTEN ,RTHFTEN=forcet               &
-               ,RQICUTEN=RQICUTEN ,RQVFTEN=forceq               &
-#else
                ,RTHCUTEN=RTHCUTEN ,RTHFTEN=RTHFTEN              &
                ,RQICUTEN=RQICUTEN ,RQVFTEN=RQVFTEN              &
                ,rqvblten=rqvblten,rthblten=rthblten             &
-#endif
                ,RQVCUTEN=RQVCUTEN,RQCCUTEN=RQCCUTEN             &
                ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                   &
                ,F_QI=f_qi,F_QS=f_qs                             &
@@ -1318,16 +1308,10 @@ CONTAINS
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
                ,PERIODIC_X=periodic_x,PERIODIC_Y=periodic_y     &
               ! optionals
-#if (NMM_CORE == 1 ) 
-               ,RTHCUTEN=RTHCUTEN ,RTHFTEN=forcet               &
-               ,RTHRATEN=RTHRATEN                               &
-               ,RQICUTEN=RQICUTEN ,RQVFTEN=forceq               &
-#else
                ,RTHCUTEN=RTHCUTEN ,RTHFTEN=RTHFTEN              &
                ,RTHRATEN=RTHRATEN                               &
                ,RQICUTEN=RQICUTEN ,RQVFTEN=RQVFTEN              &
                ,rqvblten=rqvblten,rthblten=rthblten             &
-#endif
                ,RQVCUTEN=RQVCUTEN,RQCCUTEN=RQCCUTEN             &
                ,dudt_phy=rucuten, dvdt_phy=rvcuten              &
 #if ( WRF_DFI_RADAR == 1 )
@@ -1419,11 +1403,7 @@ CONTAINS
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
               ! optionals
-#if (NMM_CORE == 1 )
-               ,QVFTEN=FORCEQ                                   &
-#else
                ,QVFTEN=RQVFTEN                                  &
-#endif
                ,RTHCUTEN=RTHCUTEN,RQVCUTEN=RQVCUTEN             &
                ,RQCCUTEN=RQCCUTEN,RQICUTEN=RQICUTEN             &
                ,RUCUTEN = RUCUTEN,RVCUTEN = RVCUTEN             &
@@ -1437,10 +1417,8 @@ CONTAINS
 ! NEW TIEDTKE SCHEME - ZCX&YQW (U of Hawaii)
      CASE (NTIEDTKESCHEME)
 
-        IF ( PRESENT ( QFX ) .AND. PRESENT( HFX )) THEN
-
           CALL wrf_debug(100,'in cu_ntiedtke')
-          CALL CU_NTIEDTKE(                                      &
+          CALL CU_NTIEDTKE_DRIVER(                               &
                 DT=dt,ITIMESTEP=itimestep,STEPCU=STEPCU,HFX=hfx  &
                ,RAINCV=RAINCV,PRATEC=tmppratec,QFX=qfx          &
                ,U3D=u,V3D=v,W=w,T3D=t,PI3D=pi,RHO3D=rho         &
@@ -1451,20 +1429,16 @@ CONTAINS
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
               ! optionals
-#if (NMM_CORE == 1 )
-               ,QVFTEN=FORCEQ, THFTEN=FORCET                    &
-#else
                ,QVFTEN=RQVFTEN,THFTEN=RTHFTEN                   &
-#endif
                ,RTHCUTEN=RTHCUTEN,RQVCUTEN=RQVCUTEN             &
                ,RQCCUTEN=RQCCUTEN,RQICUTEN=RQICUTEN             &
                ,RUCUTEN = RUCUTEN,RVCUTEN = RVCUTEN             &
                ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                   &
                ,F_QI=f_qi,F_QS=f_qs                             &
+               ,GRAV=g,XLF=xlf,XLS=xls,XLV=xlv                  &
+               ,RD=r_d,RV=r_v,CP=cp                             &
+               ,errmsg=errmsg,errflg=errflg                     &
                                                              )
-        ELSE
-          CALL wrf_error_fatal('Lacking arguments for CU_NTIEDTKE in cumulus driver')
-        ENDIF
 
 ! New KIM SAS SCHEME - (KIAPS, South Korea)
      CASE (KSASSCHEME)

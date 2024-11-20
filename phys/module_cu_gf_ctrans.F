@@ -1,5 +1,6 @@
 MODULE module_cu_gf_ctrans
   real, parameter::g=9.81
+  INTEGER, allocatable :: HLC_ndx(:)
 !++ GF CTRAN ++ lyy 01/2020
 #if ( WRF_CHEM == 1 )    
   contains
@@ -15,6 +16,7 @@ MODULE module_cu_gf_ctrans
                       ,xmb,ierr,edto  &
                       ,itf,ktf,its,ite,kts,kte  &
                       ,ishallow)
+  
   IMPLICIT NONE
      integer,intent (in   )                   ::            &
         itf,ktf,its,ite, kts,kte,                           &
@@ -204,7 +206,7 @@ MODULE module_cu_gf_ctrans
              do nv=2,num_chem
                call wetscav(tr_up(i,k,nv),tr_pw(i,k,nv) &
                            ,zuo(i,k),nv,p(i,k),t(i,k),clw_all(i,k),dz  &
-                           ,chemopt,numgas)
+                           ,chemopt,numgas,num_chem)
                tot_up_pw(i,nv)=tot_up_pw(i,nv)+tr_pw(i,k,nv)*dp/g
              enddo ! nv
            endif ! scav
@@ -306,7 +308,7 @@ MODULE module_cu_gf_ctrans
 
   SUBROUTINE wetscav(tr_up1d,tr_pw1d &
                     ,zu1d,nv,p1d,t1d,clw_all1d,dz &
-                    ,chemopt,numgas)
+                    ,chemopt,numgas,num_chem)
   USE module_HLawConst, only:HLC
   USE module_state_description, ONLY: mozart_mosaic_4bin_kpp, &
                               mozart_mosaic_4bin_aq_kpp, &
@@ -323,7 +325,7 @@ MODULE module_cu_gf_ctrans
                               p_hcooh 
       IMPLICIT NONE
      integer,intent (in) ::         &
-        chemopt,nv,numgas
+        chemopt,nv,numgas,num_chem
      real,intent (in )::            &
         p1d,t1d,clw_all1d,dz,zu1d
      REAL,INTENT(INOUT)::           &
@@ -343,7 +345,6 @@ MODULE module_cu_gf_ctrans
      integer,parameter :: USE_ICE_RETENTION=1
      real::reteff
 !--
-     INTEGER, allocatable :: HLC_ndx(:)
      tfac=(HL_t0-t1d)/(t1d*HL_t0)
      aq_gas_ratio=0.0
      dens=0.1*p1d/t1d*mwdry/8.314472  !kg/m3
@@ -369,7 +370,13 @@ MODULE module_cu_gf_ctrans
      if( chemopt == MOZCART_KPP .or. chemopt == T1_MOZCART_KPP .or. &
                 chemopt == MOZART_MOSAIC_4BIN_KPP .or. &
                 chemopt == MOZART_MOSAIC_4BIN_AQ_KPP ) then
+! This setup is not ideal, as the the sub is just a duplicate version of the
+! init that occurs on the /chem side. But, it will work for now.
+       if ( .not. allocated(HLC_ndx) ) then
+           call conv_tr_wetscav_init_phys( numgas, num_chem )
+       endif
        HLndx = HLC_ndx(nv)
+
        if( HLndx /= 0 ) then
          HLCnst1 = HLC(HLndx)%hcnst(1) 
          HLCnst2 = HLC(HLndx)%hcnst(2)
@@ -454,6 +461,52 @@ MODULE module_cu_gf_ctrans
        tr_up1d = trcc+trch ! Total amount of species in updraft = conc in liq water (trcc) + conc in gas phase (trch)
      endif
   END SUBROUTINE wetscav
+
+   SUBROUTINE conv_tr_wetscav_init_phys( numgas, num_chem )
+
+   use module_state_description, only : param_first_scalar
+   use module_scalar_tables, only : chem_dname_table
+   use module_chem_utilities, only : UPCASE
+   use module_HLawConst
+
+   integer, intent(in) :: numgas, num_chem
+
+!----------------------------------------------------------------------
+!  local variables
+!----------------------------------------------------------------------
+   integer :: m, m1
+   integer :: astat
+   character(len=64) :: HL_tbl_name
+   character(len=64) :: wrf_spc_name
+
+is_allocated : &
+   if( .not. allocated(HLC_ndx) ) then
+!----------------------------------------------------------------------
+!  scan HLawConst table for match with chem_opt scheme gas phase species
+!----------------------------------------------------------------------
+     allocate( HLC_ndx(num_chem),stat=astat )
+     if( astat /= 0 ) then
+       call wrf_error_fatal("conv_tr_wetscav_init: failed to allocate HLC_ndx")
+     endif
+     HLC_ndx(:) = 0
+     do m = param_first_scalar,numgas
+       wrf_spc_name = chem_dname_table(1,m)
+       call upcase( wrf_spc_name )
+       do m1 = 1,nHLC
+         HL_tbl_name = HLC(m1)%name
+         call upcase( HL_tbl_name )
+         if( trim(HL_tbl_name) == trim(wrf_spc_name) ) then
+           HLC_ndx(m) = m1
+           exit
+         endif
+       end do
+     end do
+   endif is_allocated
+
+   END SUBROUTINE conv_tr_wetscav_init_phys
+
+
+
 
   REAL FUNCTION moz_aq_frac(T, q, heff )
    implicit none

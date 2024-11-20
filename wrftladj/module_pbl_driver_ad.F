@@ -46,7 +46,7 @@ SUBROUTINE A_PBL_DRIVER(itimestep, dt, u_frame, v_frame, bldt, curr_secs&
 &  mf_temf, thup_temf, qtup_temf, qlup_temf, exch_temf, cf3d_temf, &
 &  cfm_temf, flhc, flqc, qke, qke_adv, bl_mynn_tkeadvect, tsq, qsq, cov, &
 &  rmol, ch, qcg, grav_settling, el_mynn, dqke, qwt, qshear, qbuoy, qdiss&
-&  , bl_mynn_tkebudget, ids, ide, jds, jde, kds, kde, ims, ime, jms, jme&
+&  , tke_budget, ids, ide, jds, jde, kds, kde, ims, ime, jms, jme&
 &  , kms, kme, i_start, i_end, j_start, j_end, kts, kte, num_tiles, hol, &
 &  mol, regime, gwd_opt, dtaux3d, dtaux3db, dtauy3d, dtauy3db, dusfcg, &
 &  dusfcgb, dvsfcg, dvsfcgb, var2d, oc12d, oa1, oa2, oa3, oa4, ol1, ol2, &
@@ -65,7 +65,7 @@ SUBROUTINE A_PBL_DRIVER(itimestep, dt, u_frame, v_frame, bldt, curr_secs&
 
    USE module_state_description, ONLY :                            &
                    YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME,&
-                   QNSEPBLSCHEME,MYNNPBLSCHEME2,MYNNPBLSCHEME3,BOULACSCHEME,&
+                   QNSEPBLSCHEME,MYNNPBLSCHEME,BOULACSCHEME,&
                    CAMUWPBLSCHEME,BEPSCHEME,BEP_BEMSCHEME,MYJSFCSCHEME, &
                    SURFDRAGSCHEME, TEMFPBLSCHEME, &
                    p_qi,param_first_scalar
@@ -318,7 +318,7 @@ SUBROUTINE A_PBL_DRIVER(itimestep, dt, u_frame, v_frame, bldt, curr_secs&
 !,k_m,k_h,k_q &
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL, INTENT(INOUT) ::&
 &  tsq, qsq, cov, qke, el_mynn, dqke, qwt, qshear, qbuoy, qdiss
-  INTEGER, OPTIONAL, INTENT(IN) :: bl_mynn_tkebudget, grav_settling
+  INTEGER, OPTIONAL, INTENT(IN) :: tke_budget, grav_settling
 !ACF-QKE advection start
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL, INTENT(INOUT) ::&
 &  qke_adv
@@ -502,6 +502,10 @@ SUBROUTINE A_PBL_DRIVER(itimestep, dt, u_frame, v_frame, bldt, curr_secs&
   REAL :: seamask, thsk, zzz, unew, vnew, tnew, qnew, umom, vmom
   REAL :: z0, z1, z2, w1, w2
 !------------------------------------------------------------------
+! For shared physics
+  REAL, DIMENSION(ims:ime, jms:jme) :: dx2dtmp
+  character*256 :: errmsg
+  integer :: errflg
 !
 !!!!!!!if using BEP set flag_bep to true
   INTEGER :: branch
@@ -635,6 +639,7 @@ SUBROUTINE A_PBL_DRIVER(itimestep, dt, u_frame, v_frame, bldt, curr_secs&
             ELSE
               CALL PUSHCONTROL1B(1)
             END IF
+            dx2dtmp(i,j)=dx
           END DO
           CALL PUSHINTEGER4(i - 1)
           CALL PUSHINTEGER4(ad_from)
@@ -677,8 +682,9 @@ SUBROUTINE A_PBL_DRIVER(itimestep, dt, u_frame, v_frame, bldt, curr_secs&
 &                oc12d=oc12d, oa2d1=oa1, oa2d2=oa2, oa2d3=oa3, oa2d4=oa4&
 &                , ol2d1=ol1, ol2d2=ol2, ol2d3=ol3, ol2d4=ol4, &
 &                SINA=sina,COSA=cosa, znu=znu, &
+&                errmsg= errmsg, errflg=errflg, &
 &                znw=znw, p_top=p_top, cp=cp, g=g, rd=r_d, rv=&
-&                r_v, ep1=ep_1, pi=3.141592653, dt=dtbl, dx=dx, kpbl2d=&
+&                r_v, ep1=ep_1, pi=3.141592653, dt=dtbl, dx=dx2dtmp, kpbl2d=&
 &                kpbl, itimestep=itimestep, ids=ids, ide=ide, jds=jds, &
 &                jde=jde, kds=kds, kde=kde, ims=ims, ime=ime, jms=jms, &
 &                jme=jme, kms=kms, kme=kme, its=its, ite=ite, jts=jts, &

@@ -17,7 +17,7 @@
 SHELL           =       /bin/sh
 DEVTOP          =       `pwd`
 LIBINCLUDE      =       .
-.SUFFIXES: .F .i .o .f90 .c
+.SUFFIXES: .F .i .o .f90 .c .F90
 
 #### Get core settings from environment (set in compile script)
 #### Note to add a core, this has to be added to.
@@ -87,7 +87,6 @@ ESMF_TARGET         = ESMFTARGET
 
 # ESMFINCLUDEGOESHERE
 
-
 #### NETCDF4 pieces
 
 NETCDF4_IO_OPTS = -DUSE_NETCDF4_FEATURES -DWRFIO_NCD_LARGE_FILE_SUPPORT
@@ -95,8 +94,7 @@ GPFS            =
 CURL            =
 HDF5            =
 ZLIB            =
-DEP_LIB_PATH    = CONFIGURE_DEP_LIB_PATH
-NETCDF4_DEP_LIB = $(DEP_LIB_PATH) $(HDF5) $(ZLIB) $(GPFS) $(CURL)
+NETCDF4_DEP_LIB = CONFIGURE_NETCDF4_DEP_LIB
 
 # NETCDF4INCLUDEGOESHERE
 
@@ -119,7 +117,7 @@ LIBWRFLIB = libwrflib.a
 #NOWIN                      $(WRF_SRC_ROOT_DIR)/frame/pack_utils.o
 
 #NOWIN LIB_EXTERNAL    = \
-#NOWIN                      CONFIGURE_NETCDF_LIB_PATH CONFIGURE_PNETCDF_LIB_PATH CONFIGURE_GRIB2_LIB CONFIGURE_ATMOCN_LIB CONFIGURE_HDF5_LIB_PATH
+#NOWIN                      CONFIGURE_NETCDF_LIB_PATH CONFIGURE_NETCDFPAR_LIB_PATH CONFIGURE_PNETCDF_LIB_PATH CONFIGURE_GRIB2_LIB CONFIGURE_ATMOCN_LIB CONFIGURE_HDF5_LIB_PATH CONFIGURE_ADIOS2_LIB_PATH
 
 
 #### Architecture specific settings ####

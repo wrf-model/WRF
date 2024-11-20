@@ -16,12 +16,28 @@ use module_state_description, only : num_chem, PARAM_FIRST_SCALAR               
    type (stats_chem_sfc_type), intent(in)    :: stats
    integer,  intent(in), optional    :: ichem
 
+   ! local variables (Ha)
+   integer :: ipc
+   character*64   :: str_pm2,str_pm1,str_so2,str_no2,str_o3,str_co
+   str_pm2 = 'pm25 (ug/m3)     n         k    '
+   str_pm1 = 'pm10 (ug/m3)     n         k    '
+   str_so2 = 'so2 (ug/m3)     n         k    '
+   str_no2 = 'no2 (ug/m3)     n         k    '
+   str_o3  = 'o3 (ug/m3)     n         k    '
+   str_co  = 'co (ug/m3)     n         k    '
+
+   if (chem_cv_options >= 108) then
+   str_so2 = 'so2 (ppmv)      n         k    '
+   str_no2 = 'no2 (ppmv)      n         k    '
+   str_o3  = 'o3 (ppmv)      n         k    '
+   str_co  = 'co (ppmv)      n         k    '
+   endif
+
    if (trace_use_dull) call da_trace_entry("da_print_stats_chem_sfc")
 
    if (chemicda_opt == 1 ) then
    write(unit=stats_unit, fmt='(2a/)') &
-      '   var             ', &
-      'pm25 (ug/kg)     n         k    '
+      '   var             ', str_pm2
    write(unit=stats_unit, fmt='(a,i16)') &
       '  Number: ', nchem
    if (nchem < 1) nchem = 1
@@ -34,8 +50,7 @@ use module_state_description, only : num_chem, PARAM_FIRST_SCALAR               
 
    else if (chemicda_opt == 2 ) then
    write(unit=stats_unit, fmt='(2a/)') &
-      '   var             ', &
-      'pm10 (ug/kg)     n         k    '
+      '   var             ', str_pm1
    write(unit=stats_unit, fmt='(a,i16)') &
       '  Number: ', nchem
    if (nchem < 1) nchem = 1
@@ -49,8 +64,7 @@ use module_state_description, only : num_chem, PARAM_FIRST_SCALAR               
    else if (chemicda_opt == 3) then
    if (present(ichem).and.ichem == PARAM_FIRST_SCALAR) then
    write(unit=stats_unit, fmt='(2a/)') &
-      '   var             ', &
-      'pm25 (ug/kg)     n         k    '
+      '   var             ', str_pm2
    write(unit=stats_unit, fmt='(a,i16)') &
       '  Number: ', nchem
    if (nchem < 1) nchem = 1
@@ -63,8 +77,7 @@ use module_state_description, only : num_chem, PARAM_FIRST_SCALAR               
 
    else if (present(ichem).and.ichem == PARAM_FIRST_SCALAR+1) then
    write(unit=stats_unit, fmt='(2a/)') &
-      '   var             ', &
-      'pm10 (ug/kg)     n         k    '
+      '   var             ', str_pm1
    write(unit=stats_unit, fmt='(a,i16)') &
       '  Number: ', nchem
    if (nchem < 1) nchem = 1
@@ -80,8 +93,7 @@ use module_state_description, only : num_chem, PARAM_FIRST_SCALAR               
    else if (chemicda_opt == 4) then
    if (present(ichem).and.ichem == PARAM_FIRST_SCALAR) then
    write(unit=stats_unit, fmt='(2a/)') &
-      '   var             ', &
-      'so2 (ug/kg)     n         k    '
+      '   var             ', str_so2
    write(unit=stats_unit, fmt='(a,i16)') &
       '  Number: ', nchem
    if (nchem < 1) nchem = 1
@@ -94,8 +106,7 @@ use module_state_description, only : num_chem, PARAM_FIRST_SCALAR               
 
    else if (present(ichem).and.ichem == PARAM_FIRST_SCALAR+1) then
    write(unit=stats_unit, fmt='(2a/)') &
-      '   var             ', &
-      'no2 (ug/kg)     n         k    '
+      '   var             ', str_no2
    write(unit=stats_unit, fmt='(a,i16)') &
       '  Number: ', nchem
    if (nchem < 1) nchem = 1
@@ -108,8 +119,7 @@ use module_state_description, only : num_chem, PARAM_FIRST_SCALAR               
 
    else if (present(ichem).and.ichem == PARAM_FIRST_SCALAR+2) then
    write(unit=stats_unit, fmt='(2a/)') &
-      '   var             ', &
-      'o3 (ug/kg)     n         k    '
+      '   var             ', str_o3
    write(unit=stats_unit, fmt='(a,i16)') &
       '  Number: ', nchem
    if (nchem < 1) nchem = 1
@@ -122,8 +132,7 @@ use module_state_description, only : num_chem, PARAM_FIRST_SCALAR               
 
    else if (present(ichem).and.ichem == PARAM_FIRST_SCALAR+3) then
    write(unit=stats_unit, fmt='(2a/)') &
-      '   var             ', &
-      'co (ug/kg)     n         k    '
+      '   var             ', str_co
    write(unit=stats_unit, fmt='(a,i16)') &
       '  Number: ', nchem
    if (nchem < 1) nchem = 1
@@ -139,8 +148,7 @@ use module_state_description, only : num_chem, PARAM_FIRST_SCALAR               
    else if (chemicda_opt == 5) then
    if (present(ichem).and.ichem == PARAM_FIRST_SCALAR) then
    write(unit=stats_unit, fmt='(2a/)') &
-      '   var             ', &
-      'pm25 (ug/kg)     n         k    '
+      '   var             ', str_pm2
    write(unit=stats_unit, fmt='(a,i16)') &
       '  Number: ', nchem
    if (nchem < 1) nchem = 1
@@ -153,8 +161,7 @@ use module_state_description, only : num_chem, PARAM_FIRST_SCALAR               
 
    else if (present(ichem).and.ichem == PARAM_FIRST_SCALAR+1) then
    write(unit=stats_unit, fmt='(2a/)') &
-      '   var             ', &
-      'pm10 (ug/kg)     n         k    '
+      '   var             ', str_pm1
    write(unit=stats_unit, fmt='(a,i16)') &
       '  Number: ', nchem
    if (nchem < 1) nchem = 1
@@ -167,8 +174,7 @@ use module_state_description, only : num_chem, PARAM_FIRST_SCALAR               
 
    else if (present(ichem).and.ichem == PARAM_FIRST_SCALAR+2) then
    write(unit=stats_unit, fmt='(2a/)') &
-      '   var             ', &
-      'so2 (ug/kg)     n         k    '
+      '   var             ', str_so2
    write(unit=stats_unit, fmt='(a,i16)') &
       '  Number: ', nchem
    if (nchem < 1) nchem = 1
@@ -181,8 +187,7 @@ use module_state_description, only : num_chem, PARAM_FIRST_SCALAR               
 
    else if (present(ichem).and.ichem == PARAM_FIRST_SCALAR+3) then
    write(unit=stats_unit, fmt='(2a/)') &
-      '   var             ', &
-      'no2 (ug/kg)     n         k    '
+      '   var             ', str_no2
    write(unit=stats_unit, fmt='(a,i16)') &
       '  Number: ', nchem
    if (nchem < 1) nchem = 1
@@ -195,8 +200,7 @@ use module_state_description, only : num_chem, PARAM_FIRST_SCALAR               
 
    else if (present(ichem).and.ichem == PARAM_FIRST_SCALAR+4) then
    write(unit=stats_unit, fmt='(2a/)') &
-      '   var             ', &
-      'o3 (ug/kg)     n         k    '
+      '   var             ', str_o3
    write(unit=stats_unit, fmt='(a,i16)') &
       '  Number: ', nchem
    if (nchem < 1) nchem = 1
@@ -209,8 +213,7 @@ use module_state_description, only : num_chem, PARAM_FIRST_SCALAR               
 
    else if (present(ichem).and.ichem == PARAM_FIRST_SCALAR+5) then
    write(unit=stats_unit, fmt='(2a/)') &
-      '   var             ', &
-      'co (ug/kg)     n         k    '
+      '   var             ', str_co
    write(unit=stats_unit, fmt='(a,i16)') &
       '  Number: ', nchem
    if (nchem < 1) nchem = 1

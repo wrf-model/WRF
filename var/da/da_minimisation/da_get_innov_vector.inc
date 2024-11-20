@@ -131,8 +131,11 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
       else if ( use_gpsztdObs .and. iv%info(gpspw)%nlocal > 0 ) then
          call da_get_innov_vector_gpsztd    ( it, num_qcstat_conv, grid, ob, iv )
       endif
-      if ( iv%info(gpsref)%nlocal  > 0  ) &
-         call da_get_innov_vector_gpsref    (it, num_qcstat_conv, grid, ob, iv)
+      ! as of v4.4, check ntotal instead of nlocal for gpsref
+      ! all processors have to call get_innov even when nlocal=0 due to the
+      ! MPI implementation in the da_qc_gpsref code
+      if ( iv%info(gpsref)%ntotal > 0 )  &
+         call da_get_innov_vector_gpsref(it, grid, ob, iv)
       if ( iv%info(gpseph)%nlocal  > 0 ) &
          call da_get_innov_vector_gpseph    (it, ob, iv)
       if (iv%info(ssmi_tb)%nlocal   > 0) &
@@ -147,6 +150,8 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
          call da_get_innov_vector_satem     (it, num_qcstat_conv,grid, ob, iv)
       if (iv%info(radar)%nlocal     >= 0 .and. use_radarobs) &
          call da_get_innov_vector_radar     (it, grid, ob, iv)
+      if (iv%info(lightning)%nlocal     > 0) &
+         call da_get_innov_vector_lightning (it, grid, ob, iv)
       if (iv%info(qscat)%nlocal     > 0) &
          call da_get_innov_vector_qscat     (it, num_qcstat_conv,grid, ob, iv)
       if (iv%info(profiler)%nlocal  > 0) &

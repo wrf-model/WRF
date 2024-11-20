@@ -659,7 +659,7 @@ gen_dealloc2 ( FILE * fp , char * structname , node_t * node )
         fprintf(fp, 
 "  DEALLOCATE(%s%s,STAT=ierr)\n if (ierr.ne.0) then\n CALL wrf_error_fatal ( &\n'frame/module_domain.f: Failed to deallocate %s%s. ')\n endif\n",
 structname, fname, structname, fname ) ;
-#ifdef USE_ALLOCATABLES
+#ifndef USE_ALLOCATABLES
         fprintf(fp,
 "  NULLIFY(%s%s)\n",structname, fname ) ;
 #endif

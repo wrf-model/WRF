@@ -259,27 +259,13 @@ real(r8) :: gdst(ndstsz, nspint) ! dust asymmetry parameter
       real(r8) cplos    ! constant for ozone path length integral
       real(r8) cplol    ! constant for ozone path length integral
 
-!ccc
-#ifdef CLWRFGHG
-!! UC-CLWRF June.09
    real(r8) :: co2vmr = 3.550e-4         ! co2   volume mixing ratio
    real(r8) :: n2ovmr = 0.311e-6         ! n2o   volume mixing ratio
    real(r8) :: ch4vmr = 1.714e-6         ! ch4   volume mixing ratio
    real(r8) :: f11vmr = 0.280e-9         ! cfc11 volume mixing ratio
    real(r8) :: f12vmr = 0.503e-9         ! cfc12 volume mixing ratio
 
-   integer, parameter               :: cyr = 500     ! maximum num. of lines in 'CAMtr_volume_mixing_ratio' file
-#else
-!ccc
-
-!From ghg_surfvals.F90 module
-   real(r8) :: co2vmr = 3.550e-4         ! co2   volume mixing ratio
-   real(r8) :: n2ovmr = 0.311e-6         ! n2o   volume mixing ratio
-   real(r8) :: ch4vmr = 1.714e-6         ! ch4   volume mixing ratio
-   real(r8) :: f11vmr = 0.280e-9         ! cfc11 volume mixing ratio
-   real(r8) :: f12vmr = 0.503e-9         ! cfc12 volume mixing ratio
-
-integer, parameter :: cyr = 233  ! number of years of co2 data
+   integer, parameter  :: cyr = 233  ! number of years of co2 data
 
    integer  :: yrdata(cyr) = &
  (/ 1869, 1870, 1871, 1872, 1873, 1874, 1875, &
@@ -351,8 +337,7 @@ integer, parameter :: cyr = 233  ! number of years of co2 data
     723.308, 730.1008, 736.9958, 743.993, 751.0975, 758.3183, 765.6594,     &
     773.1207, 780.702, 788.4033, 796.2249, 804.1667, 812.2289, 820.4118,    &
     828.6444, 828.6444 /)
-#endif
-!ccc
+
       integer  :: ntoplw      ! top level to solve for longwave cooling (WRF sets this to 1 for model top below 10 mb)
 
       logical :: masterproc = .true.
@@ -1439,9 +1424,6 @@ subroutine trcmix(lchnk   ,ncol     ,pcols, pver, &
 !
 end subroutine trcmix
 
-!ccc
-#ifdef CLWRFGHG
-
 subroutine trcmix_clwrf(lchnk   ,ncol     ,pcols, pver,       &
                   pmid    ,clat, n2ovmr, ch4vmr, f11vmr,      &
                   f12vmr, n2o      ,ch4     ,                 &
@@ -1594,11 +1576,6 @@ subroutine trcmix_clwrf(lchnk   ,ncol     ,pcols, pver,       &
    return
 !
 end subroutine trcmix_clwrf
-
-
-#endif
-
-!ccc
 
 subroutine trcplk(lchnk   ,ncol    ,pcols, pver, pverp,         &
                   tint    ,tlayr   ,tplnke  ,emplnk  ,abplnk1 , &
@@ -2113,13 +2090,6 @@ subroutine vert_interpolate (Match_ps, aerosolc, m_hybi, paerlev, naer_c, pint, 
    real(r8) v_coord                    ! vertical coordinate
    real(r8) m_to_mmr                   ! mass to mass mixing ratio conversion factor
    real(r8) AER_diff                   ! temp var for difference between aerosol masses
-!ccc
-#ifdef CLWRFGHG
-!CLWRF-UC July.09
-!   LOGICAL ISNAND, EXTERNAL           ! NaN values detection
-#endif
-!ccc
-!  call t_startf ('vert_interpolate')
 !
 ! Initialize index array
 !
@@ -2250,17 +2220,7 @@ subroutine vert_interpolate (Match_ps, aerosolc, m_hybi, paerlev, naer_c, pint, 
                write(6,*)'vert_interpolate: aerosol(k),(k+1)',AEROSOL(i,k,m),AEROSOL(i,k+1,m)
                write(6,*)'vert_interpolate: pint(k+1),(k)',pint(i,k+1),pint(i,k)
                write(6,*)'n,c',n,c
-!ccc
-#ifdef CLWRFGHG
-!CLWRF-UC July.09
-!               IF (ISNAND(pint(i,k+1))) THEN
-                 CALL wrf_error_fatal('CLWRF-module_ra_cam_support. vert_interpolate: ERROR -- error -- Error of computation pint=NaN')
-!               ENDIF
-!               IF (ISNAND(pint(i,k))) THEN
-!                 CALL wrf_error_fatal('CLWRF-module_ra_cam_support. vert_interpolate: ERROR -- error -- Error of computation pint=NaN')
-!               ENDIF
-#endif
-!ccc
+               CALL wrf_error_fatal('CLWRF-module_ra_cam_support. vert_interpolate: ERROR -- error -- Error of computation pint=NaN')
                call endrun()
             end if
          end do

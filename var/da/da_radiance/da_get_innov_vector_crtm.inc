@@ -41,6 +41,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
    integer :: model_isflg
 
    real    :: model_qcw(kms:kme)
+   real    :: model_qci(kms:kme)
    real    :: model_rho(kms:kme)
    real, allocatable :: model_snow(:)  ! snow water equivalent, different from model_snowh,
                                        ! used in calculating reff_water
@@ -55,9 +56,9 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
    integer :: inst, nchanl, n1,n2
    integer :: ipred, npred, gammapred
 
-   ! variables for computing clwp
-   real    :: clw(kms:kme), dpf(kms:kme)
-   real    :: clwp
+   ! variables for computing clwp (clw/clwp) and cloud ice (ci/cip)
+   real    :: clw(kms:kme), dpf(kms:kme), ci(kms:kme)
+   real    :: clwp, cip
 
    real    :: total_od
 
@@ -91,7 +92,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
    real, allocatable :: hessian(:,:)
    real*8, allocatable :: eignvec(:,:), eignval(:)
    real              :: rad_clr, rad_ovc_ilev, rad_ovc_jlev
-   
+
    integer           :: Band_Size(5), Bands(AIRS_Max_Channels,5) 
 !For Zhuge and Zou cloud detection
    real, allocatable :: geoht_full(:,:,:)
@@ -241,9 +242,11 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
 
       calc_tb_clr = .false.
       if ( crtm_cloud .and. &
-           trim( crtm_sensor_name(rtminit_sensor(inst))) == 'amsr2' ) then
+           ( trim( crtm_sensor_name(rtminit_sensor(inst))) == 'amsr2' .or. &
+             trim( crtm_sensor_name(rtminit_sensor(inst))) == 'abi' .or. &
+             trim( crtm_sensor_name(rtminit_sensor(inst))) == 'ahi') ) then
          !Tb_clear_sky is only needed for symmetric obs error model
-         !symmetric obs error model only implemented for amsr2 for now
+         !symmetric obs error model only implemented for amsr2 & abi/ahi for now
          calc_tb_clr = .true.
       end if
 
@@ -389,6 +392,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
             if (crtm_cloud) then
 
                call da_interp_2d_partial (grid%xb%qci(:,:,k), iv%instid(inst)%info,k,n,n,qci)
+               call da_interp_2d_partial (grid%xb%qci(:,:,k), iv%instid(inst)%info,k,n,n,model_qci(kte-k+1:kte-k+1))
 
                call da_interp_2d_partial (grid%xb%qrn(:,:,k), iv%instid(inst)%info,k,n,n,qrn)
  
@@ -440,7 +444,6 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
             call da_trop_wmo ( tt_pixel, geoht_pixel, pp_pixel, (min(kte,kme-1)-kts+1), tropt = iv%instid(inst)%tropt(n) )
          end if
 
-
          call da_interp_2d_partial (grid%xb%u10,  iv%instid(inst)%info, 1, n, n, model_u10(n:n))
          call da_interp_2d_partial (grid%xb%v10,  iv%instid(inst)%info, 1, n, n, model_v10(n:n))
          call da_interp_2d_partial (grid%xb%psfc, iv%instid(inst)%info, 1, n, n, model_psfc(n:n))
@@ -473,6 +476,14 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
                cycle pixel_loop
             end if
          end do
+         !if ( all(ob%instid(inst)%tb(1:nchanl,n) < 0.) ) then
+         !   write(message(1),'(a,2i5.0,a)') ' Skipping the pixel at loc ', i, j,  &
+         !      ' where all observed BTs are < 0'
+         !   call da_warning(__FILE__,__LINE__,message(1:1))
+         !   iv%instid(inst)%tb_inv(:,n) = missing_r
+         !   iv%instid(inst)%info%proc_domain(:,n) = .false.
+         !   cycle pixel_loop
+         !end if
 
          ! convert cloud content unit from kg/kg to kg/m^2        
          if (crtm_cloud) then
@@ -510,6 +521,16 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
             if (Atmosphere(1)%pressure(k)<100.0) clw(k) = 0.0
             clwp  = clwp + clw(k)
          end do
+
+         ! computing ice path from guess
+         if (crtm_cloud) then
+            cip = 0.0
+            do k = kts,kte ! from top to bottom
+               dpf(k) = 100.0*(Atmosphere(1)%level_pressure(k) - Atmosphere(1)%level_pressure(k-1))
+               ci(k) = model_qci(k)*dpf(k)/gravity ! kg/m2 or mm
+               cip  = cip + ci(k)
+            end do
+	 endif
 
          ! CRTM GeometryInfo Structure
          GeometryInfo(1)%Sensor_Zenith_Angle=iv%instid(inst)%satzen(n)
@@ -853,6 +874,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
          iv%instid(inst)%vegtyp(n)    = model_ivgtyp
          iv%instid(inst)%vegfra(n)    = model_vegfra(n)
          iv%instid(inst)%clwp(n)      = clwp
+         if (crtm_cloud) iv%instid(inst)%cip(n) = cip
          iv%instid(inst)%water_coverage(n) = Surface(1)%water_coverage
          iv%instid(inst)%land_coverage(n)  = Surface(1)%land_coverage
          iv%instid(inst)%ice_coverage(n)   = Surface(1)%ice_coverage                              

@@ -77,10 +77,14 @@ subroutine da_initialize_rad_iv (i, n, iv, p)
       iv%instid(i)%cloudflag(n) = p%cloudflag
    end if 
    iv%instid(i)%cloud_flag(:,n) = qc_good  ! no cloud   
+   if ( index(iv%instid(i)%rttovid_string, 'gmi') > 0 ) then
+      iv%instid(i)%clw(n)       = p%clw
+   end if
    iv%instid(i)%ps(n)           = 0.0
    iv%instid(i)%tb_xb(:,n)      = 0.0
    if ( crtm_cloud ) then
       iv%instid(i)%tb_xb_clr(:,n) = 0.0
+      iv%instid(i)%cip(n)         = 0.0
    end if
    iv%instid(i)%tb_inv(:,n)     = p%tb_inv(:)
    iv%instid(i)%tb_qc(:,n)      = 0
@@ -89,6 +93,11 @@ subroutine da_initialize_rad_iv (i, n, iv, p)
    iv%instid(i)%tb_imp(:,n)     = 0.0
    iv%instid(i)%rad_xb(:,n)     = 0.0
    iv%instid(i)%rad_obs(:,n)    = 0.0
+   !if ( associated( p % rad_obs ) ) then
+   !   iv%instid(i)%rad_obs(:,n) = p%rad_obs(:)
+   !else
+   !   iv%instid(i)%rad_obs(:,n) = 0.0
+   !end if
    iv%instid(i)%rad_ovc(:,:,n)  = 0.0
    iv%instid(i)%emiss(:,n)      = 0.0
    iv%instid(i)%scanpos(n)      = p%scanpos
@@ -109,14 +118,20 @@ subroutine da_initialize_rad_iv (i, n, iv, p)
          do iy = 1, iv%instid(i)%superob_width
          do ix = 1, iv%instid(i)%superob_width
             iv%instid(i)%superob(ix,iy)%tb_obs(:,n) = p % superob(ix,iy) % tb_obs(:,1)
-            iv%instid(i)%superob(ix,iy)%cld_qc(n)%RTCT = p % superob(ix,iy) % cld_qc(1) % RTCT
-            iv%instid(i)%superob(ix,iy)%cld_qc(n)%RFMFT = p % superob(ix,iy) % cld_qc(1) % RFMFT
-            iv%instid(i)%superob(ix,iy)%cld_qc(n)%TEMPIR = p % superob(ix,iy) % cld_qc(1) % TEMPIR
+           if (index(iv%instid(i)%rttovid_string, 'abi') > 0) then
+            if ( allocated ( p % superob(ix,iy) % cld_qc(1) % tb_stddev_3x3 ) ) &
+               iv%instid(i)%superob(ix,iy)%cld_qc(n)%tb_stddev_3x3(:) = p % superob(ix,iy) % cld_qc(1) % tb_stddev_3x3(:)
+           end if
+           if (index(iv%instid(i)%rttovid_string, 'ahi') > 0) then
             iv%instid(i)%superob(ix,iy)%cld_qc(n)%tb_stddev_10 = p % superob(ix,iy) % cld_qc(1) % tb_stddev_10
             iv%instid(i)%superob(ix,iy)%cld_qc(n)%tb_stddev_13 = p % superob(ix,iy) % cld_qc(1) % tb_stddev_13
             iv%instid(i)%superob(ix,iy)%cld_qc(n)%tb_stddev_14 = p % superob(ix,iy) % cld_qc(1) % tb_stddev_14
+           end if
+	    iv%instid(i)%superob(ix,iy)%cld_qc(n)%CIRH2O = p % superob(ix,iy) % cld_qc(1) % CIRH2O
+            iv%instid(i)%superob(ix,iy)%cld_qc(n)%RTCT = p % superob(ix,iy) % cld_qc(1) % RTCT
+            iv%instid(i)%superob(ix,iy)%cld_qc(n)%RFMFT = p % superob(ix,iy) % cld_qc(1) % RFMFT
+            iv%instid(i)%superob(ix,iy)%cld_qc(n)%TEMPIR = p % superob(ix,iy) % cld_qc(1) % TEMPIR
             iv%instid(i)%superob(ix,iy)%cld_qc(n)%terr_hgt = p % superob(ix,iy) % cld_qc(1) % terr_hgt
-            iv%instid(i)%superob(ix,iy)%cld_qc(n)%CIRH2O = p % superob(ix,iy) % cld_qc(1) % CIRH2O
          end do
          end do
       end if

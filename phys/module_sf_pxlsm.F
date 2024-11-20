@@ -370,6 +370,8 @@ CONTAINS
          LAND_USE_TYPE = 'MODIS'
       ELSE IF (NLCAT == 21) THEN
          LAND_USE_TYPE = 'MODIS'
+      ELSE IF (NLCAT == 61) THEN
+         LAND_USE_TYPE = 'MODIS'
       ELSE IF (NLCAT == 24) THEN
          LAND_USE_TYPE = 'USGS'
       ELSE IF (NLCAT == 28) THEN
@@ -526,17 +528,19 @@ CONTAINS
           ! are converted to ice/snow for more reasonable treatment.
           IF( (XICE(I,J).GE.0.5) .OR.   &
               (SST(I,J).LE.270.0.AND.XLAND(I,J).GE.1.50) ) THEN
-              XLAND(I,J) = 1.0
-              IFLAND = 1.0
-              ZNT(I,J) = 0.001  !  Ice
-              SMOIS(I,1,J) = 1.0     ! FWSAT
-              SMOIS(I,2,J) = 1.0     ! FWSAT
-              XICE(I,J) = 1.0
-              ALBEDO(I,J) = 0.7
-              SNOWC(I,J) = 1.0
-              SNOW_FRA = 1.0
-              VEGF_PX(I,J) = 0.0
-              LAI(I,J) = 0.0
+            XLAND(I,J)   = 1.0
+            IFLAND       = 1.0
+            ZNT(I,J)     = 0.001  
+            SMOIS(I,1,J) = 1.0 
+            SMOIS(I,2,J) = 1.0 
+            XICE(I,J)    = 1.0
+            ALBEDO(I,J)  = 0.7
+            SNOWC(I,J)   = 1.0
+            SNOW_FRA     = 1.0
+            VEGF_PX(I,J) = 0.0
+            LAI_PX(I,J)  = 0.0
+            LAI(I,J)     = 0.0
+            FCGSAT       = 3.670
           ENDIF
           !-------------------------------------------------------------
 
@@ -652,10 +656,15 @@ CONTAINS
           
           END DO                        ! Time internal PX time loop   
 
-          IF (IFLAND .LT. 1.5) TSK(I,J)    = TSLB(I,1,J)     ! ATV 02/20: changed for compatibility with sst_skin = 1.
-          CANWAT(I,J)= WR * 1000.                           ! convert WR back to mm for CANWAT
-          RAW        = RA(I,J) + 4.503 / USTAR
-          QSFC(I,J)  = QFX(I,J) * RAW / DENS1 + QV1
+          IF (IFLAND .GE. 1.5) THEN                        
+            TSK(I,J)     = SST(I,J)     ! Skin temp set to sea surface temperature for open water
+            GRDFLX(I,J)  = 0.0
+          ELSE
+            TSK(I,J)  = TSLB(I,1,J)     ! Skin temp set to 1 cm soil temperature in PX for now
+          ENDIF
+          CANWAT(I,J) = WR * 1000.      ! convert WR back to mm for CANWAT
+          RAW         = RA(I,J) + 4.503 / USTAR
+          QSFC(I,J)   = QFX(I,J) * RAW / DENS1 + QV1
           
        ENDDO !  END MIAN I LOOP
       ENDDO  !  END MAIN J LOOP
@@ -1175,6 +1184,7 @@ CONTAINS
       REAL        :: RSOIL, LDRY, DP       ! Soil model updates - JEP 12/14
       REAL        :: C1MAX,ZZA,ZZB,ZDEL,ZLY,ZA,ZB,ZY2
       REAL        :: Rinc, Hcan                           ! JEP 2020
+      REAL        :: CQ3BG,CQ3VW,CQ3VG,SIGG
 
 !... Parameters
       REAL        :: ZOBS, GAMAH, BETAH, SIGF, BH, CT_SNOW, CT_IMPERV
@@ -1287,7 +1297,7 @@ CONTAINS
                     VEGFRC, ISNOW,  ISTI, IFLAND, LAI, BETAP,          &
                     WG,     W2,     WR,                                &
                     RSTMIN, WWLT, WFC, RSOIL, RINC,                    &     
-                    EG,     ER,     ETR,  CQ4,    RS,  FASS)
+                    EG,     ER,     ETR,  CQ4,    RS,  FASS, SIGG)
         !--------------------------------------------------------------------
 
         !--------------------------------------------------------------------
@@ -1330,18 +1340,17 @@ CONTAINS
           ! IMPERVIOUS weighting scheme -- Subtract highly accurate impervious fraction from cell
           ! remainder is split between ground and vegetation. CT is a weighted fractional average.
           ! Snow CT is then applied for final heat capacity
-          IMF  = AMAX1(0.0,IMPERV/100.0)
-          VEGF = (1.0 - IMF) * VEGFRC
-          SOILF= (1.0 - IMF) * (1.0 - VEGFRC)
-          CT   = 1./( IMF/CT_IMPERV + VEGF/CV + SOILF/CG)                        
-          CT   = 1./(SNOW_FRA/CT_SNOW + (1-SNOW_FRA)/CT)
-          CAPG = 1.0/CT          
-
+          IMF     = AMAX1(0.0,IMPERV/100.0)
+          VEGF    = (1.0 - IMF) * VEGFRC
+          SOILF   = (1.0 - IMF) * (1.0 - VEGFRC)
+          CT      = 1./( IMF/CT_IMPERV + VEGF/CV + SOILF/CG)                        
+          CT      = 1./(SNOW_FRA/CT_SNOW + (1-SNOW_FRA)/CT)
+          CAPG    = 1.0/CT          
           SOILFLX = 2.0 * PI * TAUINV * (TG - T2)
           GRDFLX  = SOILFLX / CT
         ENDIF
         !-----------------------------------------------------------------------------------------
-
+ 
         !--------------------------------------------------------------------
         !-- ASSIMILATION --- COMPUTE SOIL MOISTURE NUDGING FROM TA2 and RH2               
         !-------COMPUTE ASSIMILATION COEFFICIENTS FOR ALL I                            
@@ -1374,7 +1383,10 @@ CONTAINS
           !-- Calculate the coefficients for implicit calculation of TG
           CQ1      = (1.0 - 0.622 * LV * CRANKP / (r_d * TG)) * QSS
           CQ2      = 0.622 * LV * QSS * CRANKP / (r_d * TG * TG)
-          CQ3      = DENS1 * (1.0 - VEGFRC) / (RAW + RSOIL)
+          CQ3BG    = DENS1 * (1.0 - VEGFRC) / (RAW + RSOIL)
+          CQ3VW    = DENS1 * VEGFRC*SIGG / RAW
+          CQ3VG    = DENS1 * VEGFRC / (RAW + RSOIL + RINC)
+          CQ3      = CQ3BG + CQ3VW + CQ3VG
           COEFFNP1 = 1.0 + DTPBL * CRANKP * (4.0 * EMISSI *  STBOLT * TG ** 3    &
                      * CT + DENS1 * CPAIR / RAH * CPOT * CT + 2.0 * PI           &
                      * TAUINV ) + DTPBL * (CT * LV * CQ2 * (CQ3 + CQ4))
@@ -1497,8 +1509,8 @@ CONTAINS
       SUBROUTINE QFLUX (DENS1,  QV1,   TA1,  RG,     RAW, QSS,           & ! in
                         VEGFRC, ISNOW, ISTI, IFLAND, LAI, BETAP,         & ! in
                         WG,     W2,    WR,                               & ! in
-                        RSTMIN, WWLT,  WFC,  RSOIL, RINC,                & ! in  !Soil model updates - JEP 12/14
-                        EG,     ER,    ETR,  CQ4,    RS,  FASS)            ! out
+                        RSTMIN, WWLT,  WFC,  RSOIL, RINC,                & ! in
+                        EG,     ER,    ETR,  CQ4,    RS,  FASS, SIGG )     ! out        
 
 !-------------------------------------------------------------------------
 !                                                              
@@ -1535,9 +1547,10 @@ CONTAINS
 !-- EG           evaporation from ground (bare soil)
 !-- ER           evaporation from canopy
 !-- ETR          transpiration from vegetation
-!-- CQ4
+!-- CQ4          CQ4 is used for the implicit calculation of TG in SURFACE
 !-- RS           surface resistence
 !-- FASS         parameter for soil moisture nudging
+!-- SIGG         near ground-first layer moisture difference for evap or dew (1)
 !-------------------------------------------------------------------------
 !-------------------------------------------------------------------------
 
@@ -1554,12 +1567,12 @@ CONTAINS
       REAL ,    INTENT(INOUT)  :: BETAP, RSOIL
       REAL,     INTENT(IN)   :: WWLT, WFC, RINC
 
-      REAL ,    INTENT(OUT) :: EG, ER, ETR, CQ4, RS, FASS
+      REAL ,    INTENT(OUT) :: EG, ER, ETR, CQ4, RS, FASS, SIGG
 
 !... Local Variables
 
 !... Real
-      REAL    :: WRMAX, DELTA, SIGG, RADL, RADF, W2AVAIL, W2MXAV
+      REAL    :: WRMAX, DELTA, RADL, RADF, W2AVAIL, W2MXAV
       REAL    :: FTOT, F1, F2, F3,  F4
       REAL    :: FSHELT, GS, GA, FX
       REAL    :: PAR, F1MAX

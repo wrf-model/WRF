@@ -41,12 +41,8 @@ DA_CONVERTOR_MODULES = $(DA_CONVERTOR_MOD_DIR) $(INCLUDE_MODULES)
 
 #### 3.d.   add macros to specify the modules for this core
 
-NMM_MODULE_DIR = -I../dyn_nmm
-NMM_MODULES =  $(NMM_MODULE_DIR)
-
 ALL_MODULES =                           \
                $(EM_MODULE_DIR)         \
-               $(NMM_MODULES)           \
                $(INCLUDE_MODULES)
 
 configcheck:
@@ -101,7 +97,7 @@ configcheck:
 	 echo "------------------------------------------------------------------------------" ; \
          exit 21 ; \
 	fi
- 
+
 
 framework_only : configcheck
 	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" ext
@@ -112,18 +108,29 @@ framework_only : configcheck
 
 wrf : framework_only
 	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" physics
+	@if [ \( ! -f run/MPTABLE.TBL \) -o \
+	     \( ! -f phys/module_sf_noahmpdrv.F \) -o \
+	     \( ! -f phys/module_sf_noahmp_glacier.F \) -o \
+	     \( ! -f phys/module_sf_noahmp_groundwater.F \) -o \
+	     \( ! -f phys/module_sf_noahmplsm.F \) ] ; then \
+	   echo " " ; \
+	   echo "------------------------------------------------------------------------------" ; \
+	   echo "Error Error Error NoahMP submodule files not populating WRF directories" ; \
+	   echo "------------------------------------------------------------------------------" ; \
+	   echo " " ; \
+	   exit 31 ; \
+	else \
+	   echo "------------------------------------------------------------------------------" ; \
+	   echo "NoahMP submodule files populating WRF directories" ; \
+	   echo "------------------------------------------------------------------------------" ; \
+	fi
 	if [ $(WRF_CHEM) -eq 1 ]    ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" chemics ; fi
 	if [ $(WRF_EM_CORE) -eq 1 ]    ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" em_core ; fi
-	if [ $(WRF_NMM_CORE) -eq 1 ]   ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" nmm_core ; fi
 	if [ $(WRF_HYDRO) -eq 1 ]   ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" wrf_hydro ; fi
 	( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em em_wrf )
 	( cd run ; /bin/rm -f wrf.exe ; ln -s ../main/wrf.exe . )
 	if [ $(ESMF_COUPLING) -eq 1 ] ; then \
 	  ( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em em_wrf_SST_ESMF ) ; \
-	fi
-	if [ ! -f run/p3_lookupTable_1.dat-5.3-3momI ] ; then \
-	  ( cd run ; cp p3_lookupTable_1.dat-5.3-3momI.gz hold.gz ; \
-	    gunzip hold.gz ; mv hold p3_lookupTable_1.dat-5.3-3momI ) ; \
 	fi
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
@@ -147,7 +154,7 @@ wrfplus : configcheck
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
 
-all_wrfvar : 
+all_wrfvar :
 	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" ext
 	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" toolsdir
 	if [ $(CRTM) -ne 0 ] ; then \
@@ -175,9 +182,6 @@ gen_be :
 	( cd var/build; make depend; $(MAKE) $(J) gen_be )
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
-
-
-nmm_wrf : wrf
 
 
 #  Eulerian mass coordinate initializations
@@ -494,7 +498,7 @@ em_scm_xy : wrf
 		ln -sf ../../run/LANDUSE.TBL . ; \
 		ln -sf ../../run/SOILPARM.TBL . ; \
 		ln -sf ../../run/VEGPARM.TBL . ; \
-		ln -sf ../../run/RRTM_DATA . ) 
+		ln -sf ../../run/RRTM_DATA . )
 	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup.`date +%Y-%m-%d_%H_%M_%S` ; fi ; \
@@ -525,11 +529,11 @@ convert_em : framework_only
             ( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" convert_em ) ; \
         fi
 
-# Link wrf.exe and wrf_SST_ESMF.exe into 
-# test/em_esmf_exp when ESMF_COUPLING is set.  wrf.exe 
-# can be used for stand-alone testing in this case.  
-# wrf_SST_ESMF.exe is a coupled application.  Note that make 
-# target $(SOLVER)_wrf_SST_ESMF builds wrf_SST_ESMF.exe.  
+# Link wrf.exe and wrf_SST_ESMF.exe into
+# test/em_esmf_exp when ESMF_COUPLING is set.  wrf.exe
+# can be used for stand-alone testing in this case.
+# wrf_SST_ESMF.exe is a coupled application.  Note that make
+# target $(SOLVER)_wrf_SST_ESMF builds wrf_SST_ESMF.exe.
 em_real : wrf
 	@/bin/rm -f real.exe  > /dev/null 2>&1
 	@/bin/rm -f tc.exe    > /dev/null 2>&1
@@ -554,9 +558,15 @@ em_real : wrf
                ln -sf ../../run/CAM_AEROPT_DATA . ;                    \
                ln -sf ../../run/CAMtr_volume_mixing_ratio.RCP4.5 . ;   \
                ln -sf ../../run/CAMtr_volume_mixing_ratio.RCP6   . ;   \
-               ln -sf ../../run/CAMtr_volume_mixing_ratio.RCP8.5 CAMtr_volume_mixing_ratio ;   \
+               ln -sf ../../run/CAMtr_volume_mixing_ratio.RCP8.5 . ;   \
                ln -sf ../../run/CAMtr_volume_mixing_ratio.A1B    . ;   \
                ln -sf ../../run/CAMtr_volume_mixing_ratio.A2     . ;   \
+               ln -sf ../../run/CAMtr_volume_mixing_ratio.SSP119 . ;   \
+               ln -sf ../../run/CAMtr_volume_mixing_ratio.SSP126 . ;   \
+               ln -sf ../../run/CAMtr_volume_mixing_ratio.SSP245 . ;   \
+               ln -sf ../../run/CAMtr_volume_mixing_ratio.SSP245 CAMtr_volume_mixing_ratio ;   \
+               ln -sf ../../run/CAMtr_volume_mixing_ratio.SSP370 . ;   \
+               ln -sf ../../run/CAMtr_volume_mixing_ratio.SSP585 . ;   \
                ln -sf ../../run/CLM_ALB_ICE_DFS_DATA . ;               \
                ln -sf ../../run/CLM_ALB_ICE_DRC_DATA . ;               \
                ln -sf ../../run/CLM_ASM_ICE_DFS_DATA . ;               \
@@ -575,15 +585,16 @@ em_real : wrf
                ln -sf ../../run/aerosol_plev.formatted . ;             \
                ln -sf ../../run/eclipse_besselian_elements.dat . ;     \
                ln -sf ../../run/CCN_ACTIVATE.BIN . ;                   \
-               ln -sf ../../run/p3_lookupTable_1.dat-5.3-2momI . ;     \
-               ln -sf ../../run/p3_lookupTable_1.dat-5.3-3momI . ;     \
-               ln -sf ../../run/p3_lookupTable_2.dat-2momI_v5.2.2 . ;  \
+	       ln -sf ../../run/p3_lookupTable_1.dat-v5.4_2momI . ;    \
+               ln -sf ../../run/p3_lookupTable_1.dat-v5.4_3momI . ;    \
+               ln -sf ../../run/p3_lookupTable_2.dat-v5.3 . ;          \
                ln -sf ../../run/HLC.TBL . ;                            \
                ln -sf ../../run/wind-turbine-1.tbl . ;                 \
                ln -sf ../../run/ishmael-gamma-tab.bin . ;              \
                ln -sf ../../run/ishmael-qi-qc.bin . ;                  \
                ln -sf ../../run/ishmael-qi-qr.bin . ;                  \
                ln -sf ../../run/BROADBAND_CLOUD_GODDARD.bin . ;        \
+               ln -sf ../../run/STOCHPERT.TBL . ;                      \
                if [ $(RWORDSIZE) -eq 8 ] ; then                        \
                   ln -sf ../../run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA ;   \
                   ln -sf ../../run/ETAMPNEW_DATA.expanded_rain_DBL ETAMPNEW_DATA.expanded_rain ;   \
@@ -619,9 +630,15 @@ em_real : wrf
              ln -sf ../../run/CAM_AEROPT_DATA . ;                   \
              ln -sf ../../run/CAMtr_volume_mixing_ratio.RCP4.5 . ;  \
              ln -sf ../../run/CAMtr_volume_mixing_ratio.RCP6   . ;  \
-             ln -sf ../../run/CAMtr_volume_mixing_ratio.RCP8.5 CAMtr_volume_mixing_ratio ;   \
+             ln -sf ../../run/CAMtr_volume_mixing_ratio.RCP8.5 . ;  \
              ln -sf ../../run/CAMtr_volume_mixing_ratio.A1B    . ;  \
              ln -sf ../../run/CAMtr_volume_mixing_ratio.A2     . ;  \
+             ln -sf ../../run/CAMtr_volume_mixing_ratio.SSP119 . ;  \
+             ln -sf ../../run/CAMtr_volume_mixing_ratio.SSP126 . ;  \
+             ln -sf ../../run/CAMtr_volume_mixing_ratio.SSP245 . ;  \
+             ln -sf ../../run/CAMtr_volume_mixing_ratio.SSP245 CAMtr_volume_mixing_ratio ;   \
+             ln -sf ../../run/CAMtr_volume_mixing_ratio.SSP370 . ;  \
+             ln -sf ../../run/CAMtr_volume_mixing_ratio.SSP585 . ;  \
              ln -sf ../../run/CLM_ALB_ICE_DFS_DATA . ;              \
              ln -sf ../../run/CLM_ALB_ICE_DRC_DATA . ;              \
              ln -sf ../../run/CLM_ASM_ICE_DFS_DATA . ;              \
@@ -650,15 +667,16 @@ em_real : wrf
              ln -sf ../../run/bulkdens.asc_s_0_03_0_9 . ;           \
              ln -sf ../../run/bulkradii.asc_s_0_03_0_9 . ;          \
              ln -sf ../../run/CCN_ACTIVATE.BIN . ;                  \
-             ln -sf ../../run/p3_lookupTable_1.dat-5.3-2momI . ;    \
-             ln -sf ../../run/p3_lookupTable_1.dat-5.3-3momI . ;    \
-             ln -sf ../../run/p3_lookupTable_2.dat-2momI_v5.2.2 . ; \
+             ln -sf ../../run/p3_lookupTable_1.dat-v5.4_2momI . ;   \
+             ln -sf ../../run/p3_lookupTable_1.dat-v5.4_3momI . ;   \
+             ln -sf ../../run/p3_lookupTable_2.dat-v5.3 . ;         \
              ln -sf ../../run/HLC.TBL . ;                           \
              ln -sf ../../run/wind-turbine-1.tbl . ;                \
              ln -sf ../../run/ishmael-gamma-tab.bin . ;             \
              ln -sf ../../run/ishmael-qi-qc.bin . ;                 \
              ln -sf ../../run/ishmael-qi-qr.bin . ;                 \
              ln -sf ../../run/BROADBAND_CLOUD_GODDARD.bin . ;       \
+             ln -sf ../../run/STOCHPERT.TBL . ;                     \
              if [ $(RWORDSIZE) -eq 8 ] ; then                       \
                 ln -sf ../../run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA ;  \
                 ln -sf ../../run/ETAMPNEW_DATA.expanded_rain_DBL ETAMPNEW_DATA.expanded_rain ;   \
@@ -884,104 +902,6 @@ gocart_conv : wrf
 		/bin/rm -f namelist.input ; cp ../test/em_real/namelist.input . )
 
 
-#### nmm converter
-
-### Idealized NMM tropical cyclone case
-nmm_tropical_cyclone : nmm_wrf
-	@ echo '--------------------------------------'
-	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=nmm IDEAL_CASE=tropical_cyclone nmm_ideal )
-	( cd test/nmm_tropical_cyclone ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
-	( cd test/nmm_tropical_cyclone ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
-	( cd test/nmm_tropical_cyclone ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
-	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
-	( cd run ; if test -f namelist.input ; then \
-		/bin/cp -f namelist.input namelist.input.backup.`date +%Y-%m-%d_%H_%M_%S` ; fi ; \
-		/bin/rm -f namelist.input ; cp ../test/nmm_tropical_cyclone/namelist.input . )
-	@echo "build started:   $(START_OF_COMPILE)"
-	@echo "build completed:" `date`
-
-nmm_real : nmm_wrf
-	@ echo '--------------------------------------'
-	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=nmm IDEAL_CASE=real real_nmm )
-	( cd test/nmm_real ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
-	( cd test/nmm_real ; /bin/rm -f real_nmm.exe ; ln -s ../../main/real_nmm.exe . )
-	( cd test/nmm_real ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
-	( cd test/nmm_real ; /bin/rm -f ETAMPNEW_DATA.expanded_rain ETAMPNEW_DATA RRTM_DATA ;    \
-             ln -sf ../../run/ETAMPNEW_DATA . ;                     \
-             ln -sf ../../run/ETAMPNEW_DATA.expanded_rain . ;       \
-             ln -sf ../../run/RRTM_DATA . ;                         \
-             ln -sf ../../run/RRTMG_LW_DATA . ;                     \
-             ln -sf ../../run/RRTMG_SW_DATA . ;                     \
-             ln -sf ../../run/CAM_ABS_DATA . ;                      \
-             ln -sf ../../run/CAM_AEROPT_DATA . ;                   \
-             ln -sf ../../run/CAMtr_volume_mixing_ratio.RCP4.5 . ;  \
-             ln -sf ../../run/CAMtr_volume_mixing_ratio.RCP6   . ;  \
-             ln -sf ../../run/CAMtr_volume_mixing_ratio.RCP8.5 CAMtr_volume_mixing_ratio ;   \
-             ln -sf ../../run/CAMtr_volume_mixing_ratio.A1B    . ;  \
-             ln -sf ../../run/CAMtr_volume_mixing_ratio.A2     . ;  \
-             ln -sf ../../run/CLM_ALB_ICE_DFS_DATA . ;              \
-             ln -sf ../../run/CLM_ALB_ICE_DRC_DATA . ;              \
-             ln -sf ../../run/CLM_ASM_ICE_DFS_DATA . ;              \
-             ln -sf ../../run/CLM_ASM_ICE_DRC_DATA . ;              \
-             ln -sf ../../run/CLM_DRDSDT0_DATA . ;                  \
-             ln -sf ../../run/CLM_EXT_ICE_DFS_DATA . ;              \
-             ln -sf ../../run/CLM_EXT_ICE_DRC_DATA . ;              \
-             ln -sf ../../run/CLM_KAPPA_DATA . ;                    \
-             ln -sf ../../run/CLM_TAU_DATA . ;                      \
-             ln -sf ../../run/ozone.formatted . ;                   \
-             ln -sf ../../run/ozone_lat.formatted . ;               \
-             ln -sf ../../run/ozone_plev.formatted . ;              \
-             ln -sf ../../run/aerosol.formatted . ;                 \
-             ln -sf ../../run/aerosol_lat.formatted . ;             \
-             ln -sf ../../run/aerosol_lon.formatted . ;             \
-             ln -sf ../../run/aerosol_plev.formatted . ;            \
-             ln -sf ../../run/eclipse_besselian_elements.dat . ;    \
-             ln -sf ../../run/capacity.asc . ;                      \
-             ln -sf ../../run/coeff_p.asc . ;                       \
-             ln -sf ../../run/coeff_q.asc . ;                       \
-             ln -sf ../../run/constants.asc . ;                     \
-             ln -sf ../../run/masses.asc . ;                        \
-             ln -sf ../../run/termvels.asc . ;                      \
-             ln -sf ../../run/kernels.asc_s_0_03_0_9 . ;            \
-             ln -sf ../../run/kernels_z.asc . ;                     \
-             ln -sf ../../run/bulkdens.asc_s_0_03_0_9 . ;           \
-             ln -sf ../../run/bulkradii.asc_s_0_03_0_9 . ;          \
-             ln -sf ../../run/CCN_ACTIVATE.BIN . ;                  \
-             ln -sf ../../run/p3_lookupTable_1.dat-5.3-2momI . ;    \
-             ln -sf ../../run/p3_lookupTable_1.dat-5.3-3momI . ;    \
-             ln -sf ../../run/p3_lookupTable_2.dat-2momI_v5.2.2 . ; \
-             ln -sf ../../run/HLC.TBL . ;                           \
-             ln -sf ../../run/wind-turbine-1.tbl . ;                \
-             ln -sf ../../run/ishmael-gamma-tab.bin . ;             \
-             ln -sf ../../run/ishmael-qi-qc.bin . ;                 \
-             ln -sf ../../run/ishmael-qi-qr.bin . ;                 \
-             ln -sf ../../run/BROADBAND_CLOUD_GODDARD.bin . ;       \
-	     if [ $(RWORDSIZE) -eq 8 ] ; then                       \
-	        ln -sf ../../run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA ;  \
-                ln -sf ../../run/ETAMPNEW_DATA.expanded_rain_DBL ETAMPNEW_DATA.expanded_rain ;   \
-	        ln -sf ../../run/RRTM_DATA_DBL RRTM_DATA ;          \
-	     fi )
-	( cd test/nmm_real ; /bin/rm -f GENPARM.TBL ; ln -s ../../run/GENPARM.TBL . )
-	( cd test/nmm_real ; /bin/rm -f LANDUSE.TBL ; ln -s ../../run/LANDUSE.TBL . )
-	( cd test/nmm_real ; /bin/rm -f SOILPARM.TBL ; ln -s ../../run/SOILPARM.TBL . )
-	( cd test/nmm_real ; /bin/rm -f VEGPARM.TBL ; ln -s ../../run/VEGPARM.TBL . )
-	( cd test/nmm_real ; /bin/rm -f MPTABLE.TBL ; ln -s ../../run/MPTABLE.TBL . )
-	( cd test/nmm_real ; /bin/rm -f tr49t67 ; ln -s ../../run/tr49t67 . )
-	( cd test/nmm_real ; /bin/rm -f tr49t85 ; ln -s ../../run/tr49t85 . )
-	( cd test/nmm_real ; /bin/rm -f tr67t85 ; ln -s ../../run/tr67t85 . )
-	( cd test/nmm_real ; /bin/rm -f gribmap.txt ; ln -s ../../run/gribmap.txt . )
-	( cd test/nmm_real ; /bin/rm -f grib2map.tbl ; ln -s ../../run/grib2map.tbl . )
-	( cd test/nmm_real ; /bin/rm -f co2_trans ; ln -s ../../run/co2_trans . )
-	( cd run ; /bin/rm -f real_nmm.exe ; ln -s ../main/real_nmm.exe . )
-	( cd run ; if test -f namelist.input ; then \
-		/bin/cp -f namelist.input namelist.input.backup.`date +%Y-%m-%d_%H_%M_%S` ; fi ; \
-		/bin/rm -f namelist.input ; cp ../test/nmm_real/namelist.input . )
-
-
-
-# semi-Lagrangian initializations
-
-
 io :
 	@ echo '--------------------------------------'
 	( cd tools ; $(MAKE) standard.exe )
@@ -1003,19 +923,31 @@ framework :
 	@ echo '--------------------------------------'
 	( cd frame ; $(MAKE) $(J) LLIST="$(LINKLIST)" framework ; \
           cd ../external/io_netcdf ; \
-          $(MAKE) NETCDFPATH="$(NETCDFPATH)" \
+          $(MAKE) NETCDFPATH="$(NETCDFPATH)"  NETCDF4_DEP_LIB="$(NETCDF4_DEP_LIB)" \
                FC="$(FC) $(FCBASEOPTS) $(PROMOTION) $(FCDEBUG) $(OMP)" RANLIB="$(RANLIB)" \
                CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" TRADFLAG="$(TRADFLAG)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
                LIB_LOCAL="$(LIB_LOCAL)" \
                ESMF_MOD_DEPENDENCE="$(ESMF_MOD_DEPENDENCE)" AR="INTERNAL_BUILD_ERROR_SHOULD_NOT_NEED_AR" diffwrf; \
           cd ../io_netcdf ; \
-          $(MAKE) NETCDFPATH="$(NETCDFPATH)" \
+          $(MAKE) NETCDFPATH="$(NETCDFPATH)" NETCDF4_DEP_LIB="$(NETCDF4_DEP_LIB)" \
+               FC="$(SFC) $(FCBASEOPTS) $(PROMOTION) $(FCDEBUG) $(OMP)" RANLIB="$(RANLIB)" \
+               CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" TRADFLAG="$(TRADFLAG)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
+	       LIB_LOCAL="$(LIB_LOCAL)" \
+               ESMF_MOD_DEPENDENCE="$(ESMF_MOD_DEPENDENCE)" AR="INTERNAL_BUILD_ERROR_SHOULD_NOT_NEED_AR"; \
+          cd ../io_netcdfpar ; \
+          $(NETCDFPAR_BUILD) $(MAKE) NETCDFPARPATH="$(NETCDFPATH)" NETCDF4_DEP_LIB="$(NETCDF4_DEP_LIB)" \
+               FC="$(FC) $(FCBASEOPTS) $(PROMOTION) $(FCDEBUG) $(OMP)" RANLIB="$(RANLIB)" \
+               CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" TRADFLAG="$(TRADFLAG)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
+               LIB_LOCAL="$(LIB_LOCAL)" \
+               ESMF_MOD_DEPENDENCE="$(ESMF_MOD_DEPENDENCE)" AR="INTERNAL_BUILD_ERROR_SHOULD_NOT_NEED_AR" diffwrf; \
+          cd ../io_netcdfpar ; \
+          $(NETCDFPAR_BUILD) $(MAKE) NETCDFPARPATH="$(NETCDFPATH)" NETCDF4_DEP_LIB="$(NETCDF4_DEP_LIB)" \
                FC="$(SFC) $(FCBASEOPTS) $(PROMOTION) $(FCDEBUG) $(OMP)" RANLIB="$(RANLIB)" \
                CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" TRADFLAG="$(TRADFLAG)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
 	       LIB_LOCAL="$(LIB_LOCAL)" \
                ESMF_MOD_DEPENDENCE="$(ESMF_MOD_DEPENDENCE)" AR="INTERNAL_BUILD_ERROR_SHOULD_NOT_NEED_AR"; \
           cd ../io_pio ; \
-          echo SKIPPING PIO BUILD $(MAKE) NETCDFPATH="$(PNETCDFPATH)" \
+          echo SKIPPING PIO BUILD $(MAKE) NETCDFPATH="$(PNETCDFPATH)" NETCDF4_DEP_LIB="$(NETCDF4_DEP_LIB)" \
                FC="$(SFC) $(FCBASEOPTS) $(PROMOTION) $(FCDEBUG) $(OMP)" RANLIB="$(RANLIB)" \
                CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" TRADFLAG="$(TRADFLAG)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
 	       LIB_LOCAL="$(LIB_LOCAL)" \
@@ -1032,13 +964,13 @@ framework_plus :
 	@ echo '--------------------------------------'
 	( cd frame ; $(MAKE) $(J) LLIST="$(MODLL)" framework ; \
           cd ../external/io_netcdf ; \
-          $(MAKE) NETCDFPATH="$(NETCDFPATH)" \
+          $(MAKE) NETCDFPATH="$(NETCDFPATH)"  NETCDF4_DEP_LIB="$(NETCDF4_DEP_LIB)" \
                FC="$(FC) $(FCBASEOPTS) $(PROMOTION) $(FCDEBUG) $(OMP)" RANLIB="$(RANLIB)" \
                CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" TRADFLAG="$(TRADFLAG)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
                LIB_LOCAL="$(LIB_LOCAL)" \
                ESMF_MOD_DEPENDENCE="$(ESMF_MOD_DEPENDENCE)" AR="INTERNAL_BUILD_ERROR_SHOULD_NOT_NEED_AR" diffwrf; \
           cd ../io_netcdf ; \
-          $(MAKE) NETCDFPATH="$(NETCDFPATH)" \
+          $(MAKE) NETCDFPATH="$(NETCDFPATH)"  NETCDF4_DEP_LIB="$(NETCDF4_DEP_LIB)" \
                FC="$(SFC) $(FCBASEOPTS) $(PROMOTION) $(FCDEBUG) $(OMP)" RANLIB="$(RANLIB)" \
                CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" TRADFLAG="$(TRADFLAG)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
                LIB_LOCAL="$(LIB_LOCAL)" \
@@ -1093,16 +1025,20 @@ chemics :
 physics :
 	@ echo '--------------------------------------'
 	if [ $(WRF_CHEM) -eq 0 ] ; then \
-		( cd phys ; $(MAKE) CF2=" " ) ; \
+		( cd phys ; $(MAKE) submodules ; $(MAKE) CF2=" " ) ; \
+		if [ -n "$(WRF_CMAQ)" ] && [ $(WRF_CMAQ) -eq 1 ] ; then \
+			@ echo '----------- make cmaq ----------------' ; \
+			( rm -f main/libcmaqlib.a; cd cmaq ; $(MAKE) -f Makefile.twoway ) ; \
+		fi \
 	else \
-		( cd phys ; $(MAKE) CF2="$(CHEM_FILES2)" ) ; \
+		( cd phys ; $(MAKE) submodules ; $(MAKE) CF2="$(CHEM_FILES2)" ) ; \
 	fi
 
 physics_plus :
 	if [ $(WRF_PLUS_CORE) -eq 0 ] ; then \
-	   ( cd phys ; $(MAKE) PHYS_PLUS=" " PHYS_MP=" " PHYS_BL=" " PHYS_CU=" " ) ; \
+	   ( cd phys ; $(MAKE) submodules ; $(MAKE) PHYS_PLUS=" " PHYS_MP=" " PHYS_BL=" " PHYS_CU=" " ) ; \
 	else \
-	   ( cd phys ; $(MAKE) PHYS_PLUS="$(MODS4)" PHYS_MP="$(MODMP)" PHYS_BL="$(MODBL)" PHYS_CU="$(MODCU)" ) ; \
+	   ( cd phys ; $(MAKE) submodules ; $(MAKE) PHYS_PLUS="$(MODS4)" PHYS_MP="$(MODMP)" PHYS_BL="$(MODBL)" PHYS_CU="$(MODCU)" ) ; \
 	fi
 
 wrftlmadj :
@@ -1133,7 +1069,11 @@ fseek_test :
 
 # rule used by configure to test if this will compile with netcdf4
 nc4_test:
-	@cd tools ; /bin/rm -f nc4_test.{exe,nc,o} ; $(SCC) -o nc4_test.exe nc4_test.c -I$(NETCDF)/include -L$(NETCDF)/lib $(USENETCDF) ; cd ..
+	if [ -z "$(USENETCDFPAR)" ] || [ $(USENETCDFPAR) -eq 0 ] ; then \
+	 ( cd tools ; /bin/rm -f nc4_test.{exe,nc,o} ; $(SCC) -o nc4_test.exe nc4_test.c -I$(NETCDF_C)/include $(NETCDF4_DEP_LIB) ; cd .. ) ; \
+	else \
+	 ( cd tools ; /bin/rm -f nc4_test.{exe,nc,o} ; $(DM_CC) -o nc4_test.exe nc4_test.c -I$(NETCDF_C)/include $(NETCDF4_DEP_LIB) ; cd ..  ) ; \
+	fi
 
 # rule used by configure to test if Fortran 2003 IEEE signaling is available
 fortran_2003_ieee_test:
@@ -1155,13 +1095,9 @@ fortran_2003_fflush_test:
 fortran_2008_gamma_test:
 	@cd tools ; /bin/rm -f fortran_2008_gamma_test.{exe,o} ; $(SFC) -o fortran_2008_gamma_test.exe fortran_2008_gamma_test.F ; cd ..
 
-nmm_core :
-	@ echo '--------------------------------------'
-	if [ "`echo $(J) | sed -e 's/-j//g' -e 's/ \+//g'`" -gt "16" ] ; then \
-	  ( cd dyn_nmm ; $(MAKE) -j 16 ) ;  \
-	else \
-	  ( cd dyn_nmm ; $(MAKE) $(J) ) ;  \
-	fi
+# rule used by configure to test for RPC support
+rpc_test:
+	@cd tools ; /bin/rm -f rpc_test.exe ; $(SCC) -DUSE_TIRPC -o rpc_test.exe rpc_test.c ; $(SCC) -o rpc_test.exe rpc_test.c; cd ..
 
 toolsdir :
 	@ echo '--------------------------------------'
@@ -1174,8 +1110,8 @@ toolsdir :
 
 #	( cd tools ; $(MAKE) CC_TOOLS="$(CC_TOOLS) -DIO_MASK_SIZE=$(IO_MASK_SIZE)" )
 
-# Use this target to build stand-alone tests of esmf_time_f90.  
-# Only touches external/esmf_time_f90/.  
+# Use this target to build stand-alone tests of esmf_time_f90.
+# Only touches external/esmf_time_f90/.
 esmf_time_f90_only :
 	@ echo '--------------------------------------'
 	( cd external/esmf_time_f90 ; $(MAKE) FC="$(FC) $(FCFLAGS)" CPP="$(CPP) -DTIME_F90_ONLY" tests )

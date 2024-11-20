@@ -1,0 +1,54 @@
+# WRF CMake Package
+
+@PACKAGE_INIT@
+
+include( "${CMAKE_CURRENT_LIST_DIR}/@EXPORT_NAME@Targets.cmake" )
+
+set( WRF_VERSION @PROJECT_VERSION@ )
+
+# Options WRF was built with
+set( WRF_CORE      @WRF_CORE@    )
+set( WRF_NESTING   @WRF_NESTING@ )
+set( WRF_CASE      @WRF_CASE@    )
+
+set( WRF_USE_DOUBLE                       @USE_DOUBLE@                         )
+set( WRF_USE_MPI                          @USE_MPI@                            )
+set( WRF_USE_OPENMP                       @USE_OPENMP@                         )
+set( WRF_ENABLE_CHEM                      @ENABLE_CHEM@                        )
+set( WRF_ENABLE_CMAQ                      @ENABLE_CMAQ@                        )
+set( WRF_ENABLE_KPP                       @ENABLE_KPP@                         )
+set( WRF_ENABLE_DFI_RADAR                 @ENABLE_DFI_RADAR@                   )
+set( WRF_ENABLE_TITAN                     @ENABLE_TITAN@                       )
+set( WRF_ENABLE_MARS                      @ENABLE_MARS@                        )
+set( WRF_ENABLE_VENUS                     @ENABLE_VENUS@                       )
+set( WRF_ENABLE_VENUS                     @ENABLE_VENUS@                       )
+set( WRF_ENABLE_TERRAIN                   @ENABLE_TERRAIN@                     )
+set( WRF_ENABLE_CLM                       @ENABLE_CLM@                         )
+set( WRF_USE_ALLOCATABLES                 @USE_ALLOCATABLES@                   )
+set( WRF_wrfmodel                         @wrfmodel@                           )
+set( WRF_GRIB1                            @GRIB1@                              )
+set( WRF_INTIO                            @INTIO@                              )
+set( WRF_KEEP_INT_AROUND                  @KEEP_INT_AROUND@                    )
+set( WRF_LIMIT_ARGS                       @LIMIT_ARGS@                         )
+set( WRF_FORCE_NETCDF_CLASSIC             @FORCE_NETCDF_CLASSIC@               )
+set( WRF_BUILD_RRTMG_FAST                 @BUILD_RRTMG_FAST@                   )
+set( WRF_BUILD_RRTMK                      @BUILD_RRTMK@                        )
+set( WRF_BUILD_SBM_FAST                   @BUILD_SBM_FAST@                     )
+set( WRF_SHOW_ALL_VARS_USED               @SHOW_ALL_VARS_USED@                 )
+set( WRF_WRFIO_NCD_NO_LARGE_FILE_SUPPORT  @WRFIO_NCD_NO_LARGE_FILE_SUPPORT@    )
+
+
+if ( ${WRF_USE_MPI} )
+  find_package( MPI REQUIRED COMPONENTS Fortran C )
+endif()
+
+if ( ${WRF_USE_OPENMP} )
+  find_package( OpenMP REQUIRED COMPONENTS Fortran C )
+endif()
+
+find_package( netCDF REQUIRED )
+# Attempt to find zlib packaged with netcdf first
+set( ZLIB_ROOT ${netCDF_PREFIX} )
+find_package( ZLIB   REQUIRED )
+
+check_required_components( "@EXPORT_NAME@_Core" )

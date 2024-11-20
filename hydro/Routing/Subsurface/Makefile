@@ -20,13 +20,13 @@ all: mod
 
 mod:
 	#Build each sub module then build the module that depends on all sub modules
-	$(COMPILER90) $(F90FLAGS) $(LDFLAGS) $(MODFLAG) -I$(NETCDFINC) module_subsurface_grid_transform.F
-	$(COMPILER90) $(F90FLAGS) $(LDFLAGS) $(MODFLAG) -I$(NETCDFINC) module_subsurface_properties.F
-	$(COMPILER90) $(F90FLAGS) $(LDFLAGS) $(MODFLAG) -I$(NETCDFINC) module_subsurface_state.F
-	$(COMPILER90) $(F90FLAGS) $(LDFLAGS) $(MODFLAG) -I$(NETCDFINC) module_subsurface.F
-	$(COMPILER90) $(F90FLAGS) $(LDFLAGS) $(MODFLAG) -I$(NETCDFINC) module_subsurface_static_data.F
-	$(COMPILER90) $(F90FLAGS) $(LDFLAGS) $(MODFLAG) -I$(NETCDFINC) module_subsurface_output.F
-	$(COMPILER90) $(F90FLAGS) $(LDFLAGS) $(MODFLAG) -I$(NETCDFINC) module_subsurface_input.F
+	$(COMPILER90) $(F90FLAGS) $(LDFLAGS) $(MODFLAG) -I$(NETCDFINC) module_subsurface_grid_transform.F90
+	$(COMPILER90) $(F90FLAGS) $(LDFLAGS) $(MODFLAG) -I$(NETCDFINC) module_subsurface_properties.F90
+	$(COMPILER90) $(F90FLAGS) $(LDFLAGS) $(MODFLAG) -I$(NETCDFINC) module_subsurface_state.F90
+	$(COMPILER90) $(F90FLAGS) $(LDFLAGS) $(MODFLAG) -I$(NETCDFINC) module_subsurface.F90
+	$(COMPILER90) $(F90FLAGS) $(LDFLAGS) $(MODFLAG) -I$(NETCDFINC) module_subsurface_static_data.F90
+	$(COMPILER90) $(F90FLAGS) $(LDFLAGS) $(MODFLAG) -I$(NETCDFINC) module_subsurface_output.F90
+	$(COMPILER90) $(F90FLAGS) $(LDFLAGS) $(MODFLAG) -I$(NETCDFINC) module_subsurface_input.F90
 	ar -r ../../lib/libHYDRO.a module_subsurface_grid_transform.o
 	ar -r ../../lib/libHYDRO.a module_subsurface_properties.o
 	ar -r ../../lib/libHYDRO.a module_subsurface_state.o
@@ -37,7 +37,7 @@ mod:
 
 	cp *.mod ../../mod
 test:
-	$(COMPILER90) $(F90FLAGS) $(MODFLAG) subsurface_tests.F
+	$(COMPILER90) $(F90FLAGS) $(MODFLAG) subsurface_tests.F90
 	$(COMPILER90) -o subsurface_tests \
 		module_subsurface_grid_transform.o \
 		module_subsurface_properties.o \

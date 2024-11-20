@@ -200,17 +200,7 @@ SUBROUTINE med_shutdown_io ( grid , config_flags )
    grid_ptr => grid
    CALL med_shutdown_io_recurse ( grid_ptr , config_flags )
 
-#if ( HWRF == 1 ) 
-   DO id = 1, max_domains
-     IF( domain_active_this_task(id) ) THEN
-       CALL push_communicators_for_domain(id)
-       CALL wrf_ioexit( ierr )    ! shut down the quilt I/O
-       CALL pop_communicators_for_domain
-     ENDIF
-   ENDDO
-#else
    CALL wrf_ioexit( ierr )    ! shut down the quilt I/O
-#endif
 
    RETURN
 

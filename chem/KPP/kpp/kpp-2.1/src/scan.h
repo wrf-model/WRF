@@ -35,10 +35,11 @@
 #define _SCAN_H_
 
 #include <stdio.h>
+#include <ctype.h>
 #include "gdef.h"
 
 /*  mz_rs_20050518+ value increased */
-#define MAX_INLINE 30000
+#define MAX_INLINE 50000 /* 30000 *//* CL further increased */
 /* #define MAX_INLINE 4000 */
 /*  mz_rs_20050518- */
           
@@ -97,7 +98,7 @@ void WriteSpecies();
 void WriteMatrices();
 void WriteOptions();
 
-void yyerror() ;
+void yyerror( char * str ) ;
 void ParserErrorMessage() ;
 
 char * AppendString( char * s1, char * s2, int * len, int addlen );
@@ -106,5 +107,29 @@ void AddInlineCode( char * context, char * code );
 #ifdef YYBISON
 int yyerrflag ;
 #endif
+
+/* >>> CL: scanner.c */
+extern void CmdStoicmat( char *cmd );
+extern void CheckAll();
+extern void LookAtAll();
+extern void TransportAll();
+extern void DefineInitializeNbr( char *cmd );
+extern void DefineXGrid( char *cmd );
+extern void DefineYGrid( char *cmd );
+extern void DefineZGrid( char *cmd );
+extern void SparseData( char *cmd );
+extern void AddUseFile( char *fname );
+extern void WRFConform();
+extern int ParseEquationFile( char * filename );
+
+/* >>> CL: scan.l */
+extern int EqNoCase( char *s1, char *s2 );
+
+/* >>> CL: scan.y */                                                           
+extern int yylex(void);                                                              
+/* <<< CL */                                                                    
+   
+/* <<< CL */
+
 
 #endif

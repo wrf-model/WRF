@@ -72,7 +72,7 @@ compare_kpp_to_species  ( char * kpp_dirname)
 
    for ( p1 =   KPP_packs  ; p1 != NULL ; p1 = p1->next ) {
      p2 = p1->assoc_wrf_pack;
-        printf(" ... testing  %s %s\n",p1, p2 );
+        printf(" ... testing  %s %s\n",p1->name, p2->name );
      if ( p2 ) {
      fprintf(stderr, "\n \n FOUND match between WRF-Chem/KPP for mechanism:  %s \n", p2->name);
 

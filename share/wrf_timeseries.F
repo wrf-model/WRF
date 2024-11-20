@@ -85,13 +85,8 @@ SUBROUTINE calc_ts_locations( grid )
    
       IF (ips <= 1 .AND. 1 <= ipe .AND. &
           jps <= 1 .AND. 1 <= jpe) THEN
-#if(NMM_CORE==1)
-         known_lat = grid%hlat(1,1)
-         known_lon = grid%hlon(1,1)
-#else
          known_lat = grid%xlat(1,1)
          known_lon = grid%xlong(1,1)
-#endif
       ELSE
          known_lat = 9999.
          known_lon = 9999.
@@ -225,13 +220,8 @@ SUBROUTINE calc_ts_locations( grid )
                ts_xlong = 1.E30
                ts_hgt   = 1.E30
             ELSE
-#if(NMM_CORE==1)
-               ts_xlat  = grid%hlat(grid%itsloc(k),grid%jtsloc(k))
-               ts_xlong = grid%hlon(grid%itsloc(k),grid%jtsloc(k))
-#else
                ts_xlat  = grid%xlat(grid%itsloc(k),grid%jtsloc(k))
                ts_xlong = grid%xlong(grid%itsloc(k),grid%jtsloc(k))
-#endif
 #if (EM_CORE == 1)
                ts_hgt   = grid%ht(grid%itsloc(k),grid%jtsloc(k))
 #endif
@@ -517,6 +507,7 @@ SUBROUTINE calc_ts( grid )
             grid%ts_ctopht_tot(n,i) = grid%ctopht_tot(ix,iy)
             grid%ts_clrnidx(n,i) = grid%clrnidx(ix,iy)
             grid%ts_sza(n,i) = grid%sza(ix,iy)
+            grid%ts_ghi_accum(n,i) = grid%ghi_accum(ix,iy)
             grid%ts_swdown(n,i) = grid%swdown(ix,iy)
             grid%ts_swddni(n,i) = grid%swddni(ix,iy)
             grid%ts_swddif(n,i) = grid%swddif(ix,iy)
@@ -612,6 +603,7 @@ SUBROUTINE calc_ts( grid )
             grid%ts_ctopht_tot(n,i) = 1.E30
             grid%ts_clrnidx(n,i) = 1.E30
             grid%ts_sza(n,i) = 1.E30
+            grid%ts_ghi_accum(n,i) = 1.E30
             grid%ts_swdown(n,i) = 1.E30
             grid%ts_swddni(n,i) = 1.E30
             grid%ts_swddif(n,i) = 1.E30
@@ -830,6 +822,9 @@ SUBROUTINE write_ts( grid )
       ts_buf(:,:) = grid%ts_sza(:,:)
       CALL wrf_dm_min_reals(ts_buf(:,:),grid%ts_sza(:,:),grid%ts_buf_size*grid%max_ts_locs)
 
+      ts_buf(:,:) = grid%ts_ghi_accum(:,:)
+      CALL wrf_dm_min_reals(ts_buf(:,:),grid%ts_ghi_accum(:,:),grid%ts_buf_size*grid%max_ts_locs)
+
       ts_buf(:,:) = grid%ts_swdown(:,:)
       CALL wrf_dm_min_reals(ts_buf(:,:),grid%ts_swdown(:,:),grid%ts_buf_size*grid%max_ts_locs)
 
@@ -950,6 +945,7 @@ SUBROUTINE write_ts( grid )
                                  grid%ts_ctopht_tot(n,i),                   &
                                  grid%ts_clrnidx(n,i),                      &
                                  grid%ts_sza(n,i),                          &
+                                 grid%ts_ghi_accum(n,i),                    &
                                  grid%ts_swdown(n,i),                       &
                                  grid%ts_swddni(n,i),                       &
                                  grid%ts_swddif(n,i),                       &

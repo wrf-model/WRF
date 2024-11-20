@@ -52,5 +52,6 @@ int GET_GRIB1_TABLES_SIZE (int *size);
 
 int LOAD_GRIB1_TABLES (char filename[], 
 			   Grib1_Tables *grib_tables, int *ret, int strlen1);
+int FREE_GRIBMAP(Grib1_Tables *grib_tables);
 
 Grib1_Tables *copy_grib_tables(Grib1_Tables *);

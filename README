@@ -1,4 +1,5 @@
-WRF Model Version 4.4.4
+
+WRF Model Version 4.6.0
 
 https://www2.mmm.ucar.edu/wrf/users/
   
@@ -29,6 +30,7 @@ This is the main directory for the WRF Version 4 source code release.
 ======================================
 
 Other README files are located in the WRF/doc directory:
+doc/README.cmake_build
 doc/README.crtm
 doc/README.CTSM
 doc/README.cygwin.md

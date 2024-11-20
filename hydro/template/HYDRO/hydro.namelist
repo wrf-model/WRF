@@ -134,10 +134,14 @@ OVRTSWCRT = 1
 ! NOTE: Currently subsurface flow is only steepest descent
 rt_option = 1
 
+! Specify whether to adjust overland flow parameters based on imperviousness
+imperv_adj = 0
+
 ! Switch to activate channel routing...(0=no, 1=yes)
 CHANRTSWCRT = 1
 
-! Specify channel routing option: 1=Muskingam-reach, 2=Musk.-Cunge-reach, 3=Diff.Wave-gridded
+! Specify channel routing option: 1=Muskingam-reach, 2=Musk.-Cunge-reach, 3=Diff.Wave-gridded,
+! 5=Bypass channel routing (only active for UDMP=1 and reach configuration)
 channel_option = 3
 
 ! Specify the reach file for reach-based routing options (e.g.: "Route_Link.nc")
@@ -146,6 +150,9 @@ channel_option = 3
 ! If using channel_option=2, activate the compound channel formulation? (Default=.FALSE.)
 ! This option is currently only supported if using reach-based routing with UDMP=1.
 compound_channel = .FALSE.
+
+! Switch to activate channel-loss option (0=no, 1=yes) [Requires Kchan in RouteLink]
+! channel_loss_option = 0
 
 ! Specify the lake parameter file (e.g.: "LAKEPARM.nc").
 ! Note REQUIRED if lakes are on.

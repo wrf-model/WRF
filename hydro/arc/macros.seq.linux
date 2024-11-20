@@ -46,6 +46,7 @@ RMD		=	ls
 RM		=	rm -f
 COMPILER90=	pgf90 
 F90FLAGS  =     -Mfree -Mfptrap -c -byteswapio -Ktrap=fp -O2 -Kieee
+DEBUGFLAGS = -DHYDRO_D -g
 LDFLAGS  =      $(F90FLAGS)
 MODFLAG	=	-I./ -I ../mod
 LDFLAGS	=	

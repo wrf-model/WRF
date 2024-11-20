@@ -1,0 +1,13 @@
+#!/bin/sh
+# Meant to be run at the top level
+
+# Now run cmake
+buildDirectory=$1
+if [ ! -d "$buildDirectory" ]; then
+  buildDirectory=$PWD/_build
+  echo "Using default build directory : ${buildDirectory}"
+else
+  shift
+fi
+cd $buildDirectory && make install $*
+exit $?

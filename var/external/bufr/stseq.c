@@ -85,7 +85,7 @@ void stseq( f77int *lun, f77int *irepct, f77int *idn, char nemo[8],
     tab = 'D';
     nd = igetntbi( lun, &tab, sizeof ( tab ) );
     cadn30( idn, adn, sizeof( adn ) ); 
-    stntbi( &nd, lun, adn, nemo, cseq, sizeof( adn ), 8, 55 );
+    stntbi( &nd, lun, adn, nemo, cseq );
 
 /*    
 **  Now, go through the list of child descriptors corresponding to *idn.
@@ -180,8 +180,7 @@ void stseq( f77int *lun, f77int *irepct, f77int *idn, char nemo[8],
 		    pkint = ( igettdi( lun ) - 49152 );
 		    cadn30( &pkint, adn2, sizeof( adn2 ) );
 
-		    stntbi( &nb, lun, adn2, nemo2, rpseq,
-			    sizeof( adn2 ), 8, 55 );
+		    stntbi( &nb, lun, adn2, nemo2, rpseq );
 
 		    /* Initialize card to all blanks. */
 		    memset( card, (int) cblk, sizeof( card ) );
@@ -356,7 +355,7 @@ void stseq( f77int *lun, f77int *irepct, f77int *idn, char nemo[8],
 		nb = igetntbi( lun, &tab, sizeof( tab ) );
 		cadn30( &cdesc[i], adn2, sizeof( adn2 ) ); 
 		stntbi( &nb, lun, adn2, &mstabs.cbmnem[ipt][0],
-			&mstabs.cbelem[ipt][0], sizeof( adn2 ), 8, 55 );
+			&mstabs.cbelem[ipt][0] );
 
 		/* Initialize card to all blanks. */
 		memset( card, (int) cblk, sizeof( card ) );

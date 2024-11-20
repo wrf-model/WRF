@@ -12,8 +12,14 @@ fi
 
 ###################################
 ## Setup the NetCDF include and LIB variables.
-## If Neither is set and $NETCDF is not set,
+## If Neither is set and neither $NETCDF nor $NETCDF_DIR is not set,
 ## then try nc-config. If that fails, all fails.
+
+if [[ -z $NETCDF ]]; then
+    if [[ -n $NETCDF_DIR ]]; then
+	NETCDF=$NETCDF_DIR
+    fi
+fi
 
 if [[ -z $NETCDF_INC ]]; then
     if [[ -z $NETCDF ]]; then
@@ -66,6 +72,7 @@ if [[ -z $theArgument ]]; then
     echo "     4          luna  intel parallel (WCOSS Luna)"
     echo "     5     ifort_omp  intel openmp"
     echo "     6 intel.cray_xc  intel parallel (cray_xc)"
+    echo "     7  cray_fortran  Cray Fortran PE (ftn)"
     echo "     0          exit  exit"
     echo 
     read -p "Enter selection: " theArgument
@@ -138,6 +145,13 @@ if [[ "$theArgument" == "6" ]] || [[ "$theArgument" == "intel.cray_xc" ]]; then
     cp arc/Makefile.mpp Makefile.comm
     echo "Configured: ifort on cray_xc"
 fi
+
+if [[ "$theArgument" == "7" ]] || [[ "$theArgument" == "cray_fortran" ]]; then
+    cp arc/macros.mpp.cray_fortran macros
+    cp arc/Makefile.mpp Makefile.comm
+    echo "Configured: Cray Fortran PrgEnv"
+fi
+
 
 ## The above result in a new macros file which was
 ## previously deleted. If it does not exist, none

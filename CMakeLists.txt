@@ -14,6 +14,11 @@ if ( DEFINED CMAKE_TOOLCHAIN_FILE )
   # include( ${WRF_CONFIG} )
 endif()
 
+# Import default flags now, get rid of any imported release flag
+# we will handle that ourselves with WRF_FCOPTIM/WRF_FCNOOPT
+set( CMAKE_Fortran_FLAGS_RELEASE "" CACHE STRING "" FORCE )
+set( CMAKE_C_FLAGS_RELEASE       "" CACHE STRING "" FORCE )
+
 # list( APPEND CMAKE_MODULE_PATH         )
 list( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/ ${PROJECT_SOURCE_DIR}/cmake/modules )
 

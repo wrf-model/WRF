@@ -356,10 +356,20 @@ SUBROUTINE calc_ts( grid )
    ALLOCATE ( earth_u_profile(grid%max_ts_level), earth_v_profile(grid%max_ts_level) )
 #endif
 
-   IF ( grid%ntsloc_domain .LE. 0 ) RETURN
+   IF ( grid%ntsloc_domain .LE. 0 ) THEN
+#if ( EM_CORE == 1 )
+       DEALLOCATE(earth_u_profile, earth_v_profile)
+#endif
+       RETURN
+   END IF
 
 #if ((EM_CORE == 1) && (DA_CORE != 1))
-   IF ( grid%dfi_opt /= DFI_NODFI .AND. grid%dfi_stage /= DFI_FST ) RETURN
+   IF ( grid%dfi_opt /= DFI_NODFI .AND. grid%dfi_stage /= DFI_FST ) THEN
+#if ( EM_CORE == 1 )
+       DEALLOCATE(earth_u_profile, earth_v_profile)
+#endif
+       RETURN
+   END IF
 #endif
 
    n = grid%next_ts_time

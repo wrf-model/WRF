@@ -1,15 +1,34 @@
 name: Regression Suite
-run-name : ${{ github.event_name == 'push' && 'CI' || github.event.label.name }} (${{ github.event_name }})
+run-name : Run ${{ inputs.event_name == 'push' && 'CI' || inputs.test }} (${{ inputs.event_name }})
 
 on:
-  push:
-    branches: [ master, develop ]
-# See https://stackoverflow.com/a/78444521 and 
-# https://github.com/orgs/community/discussions/26874#discussioncomment-3253755
-# as well as official (but buried) documentation :
-# https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#pull-request-events-for-forked-repositories-2
-  pull_request:
-    types:    [ labeled ]
+  workflow_dispatch:
+    inputs:
+      event_name:
+        description: Event name that triggered this dispatch
+        required: false
+        default: push
+        type: string
+      event_number:
+        description: Event number that triggered this dispatch
+        required: false
+        default: 0
+        type: string
+      ref:
+        description: Actual ref to use
+        required: false
+        default: null
+        type: string
+      test:
+        description: Test to run
+        required: true
+        default: all-tests
+        type: choice
+        options:
+          - all-tests
+          - compile-tests
+          - tmp-tests
+
 
 # https://docs.github.com/en/actions/sharing-automations/reusing-workflows#supported-keywords-for-jobs-that-call-a-reusable-workflow
 # Also https://stackoverflow.com/a/74959635
@@ -30,7 +49,7 @@ on:
 # https://stackoverflow.com/a/68940067
 jobs:
   buildtests:
-    if : ${{ github.event.label.name == 'compile-tests' || github.event.label.name == 'all-tests' || github.event_name == 'push' }}
+    if : ${{ contains( fromJson('["compile-tests","all-tests"]'), inputs.test ) || inputs.event_name == 'push' }}
     strategy:
       max-parallel: 4
       fail-fast: false
@@ -86,6 +105,12 @@ jobs:
       args     : ${{ matrix.testSet.args }}
       pool     : ${{ matrix.testSet.pool }}
       tpool    : ${{ matrix.testSet.tpool }}
+
+      # required to emulate event trigger
+      event_name   : ${{ inputs.event_name }}
+      event_number : ${{ inputs.event_number }}
+      ref          : ${{ inputs.ref }}
+
     # I am leaving this here for posterity if this is to be replicated in private repositories for testing
     permissions:
       contents: read

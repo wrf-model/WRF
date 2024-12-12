@@ -118,20 +118,21 @@ jobs:
       statuses: write
     name : Test ${{ matrix.testSet.name }} on ${{ matrix.testSet.host }}
 
-  # In the event that 'all-tests' is used, this final job will be the one to remove
-  # the label from the PR
-  removeAllLabel :
-    if : ${{ !cancelled() && github.event.label.name == 'all-tests' }}
-    name : Remove 'all-tests' label
-    runs-on: ubuntu-latest
-    needs : [ buildtests ] # Put tests here to make this wait for the tests to complete
-    steps: 
-      - name : Remove '${{ github.event.label.name }}' label
-        env:
-          PR_NUMBER: ${{ github.event.number }}
-        run: |
-          curl \
-            -X DELETE \
-            -H "Accept: application/vnd.github.v3+json" \
-            -H 'Authorization: token ${{ github.token }}' \
-            https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/labels/${{ github.event.label.name }}
+
+  # # In the event that 'all-tests' is used, this final job will be the one to remove
+  # # the label from the PR
+  # removeAllLabel :
+  #   if : ${{ !cancelled() && github.event.label.name == 'all-tests' }}
+  #   name : Remove 'all-tests' label
+  #   runs-on: ubuntu-latest
+  #   needs : [ buildtests ] # Put tests here to make this wait for the tests to complete
+  #   steps: 
+  #     - name : Remove '${{ github.event.label.name }}' label
+  #       env:
+  #         PR_NUMBER: ${{ github.event.number }}
+  #       run: |
+  #         curl \
+  #           -X DELETE \
+  #           -H "Accept: application/vnd.github.v3+json" \
+  #           -H 'Authorization: token ${{ github.token }}' \
+  #           https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/labels/${{ github.event.label.name }}

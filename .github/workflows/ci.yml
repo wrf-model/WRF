@@ -115,6 +115,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
+      statuses: write
     name : Test ${{ matrix.testSet.name }} on ${{ matrix.testSet.host }}
 
   # In the event that 'all-tests' is used, this final job will be the one to remove

@@ -69,6 +69,25 @@ jobs:
     env :
       LOG_SUFFIX : ${{ inputs.event_name == 'push' && github.ref_name || inputs.event_number }}
     steps:
+    # Don't use gh checks as they are woefully underdeveloped as a feature leading
+    # to confusing UI and misplaced metrics
+    # https://github.com/orgs/community/discussions/24616
+    - name: Set pending status
+      id: check_run_start
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          github.rest.repos.createCommitStatus({
+            owner:      context.repo.owner,
+            repo:       context.repo.repo,
+            sha:        context.sha,
+            target_url: '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}',
+            description: '${{ inputs.name }}',
+            context:     '${{ inputs.host }}/${{ inputs.id }}',
+            state:      'pending'
+          })
+
     - uses: actions/checkout@v4
       with:
         path      : main
@@ -149,6 +168,21 @@ jobs:
         path: ${{ inputs.archive }}/${{ inputs.event_name == 'push' && github.ref_name || inputs.event_number }}/${{ inputs.id }}/
         include-hidden-files: true
 
+    - name: Set completed status
+      if: ${{ always() }}
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          github.rest.repos.createCommitStatus({
+            owner:        context.repo.owner,
+            repo:         context.repo.repo,
+            sha:          context.sha,
+            target_url:   '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}',
+            description:  '${{ inputs.name }}',
+            context:      '${{ inputs.host }}/${{ inputs.id }}',
+            state:        '${{ job.status == 'success' && 'success' || 'failure' }}'
+          })
     # As noted in ci.yml, this will need to be moved to a separate workflow with pull_request_target
     # and strictly controlled usage of the GH token
     # - name : Remove '${{ inputs.label }}' label

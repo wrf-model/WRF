@@ -1,15 +1,38 @@
 name: Regression Suite
-run-name : ${{ github.event_name == 'push' && 'CI' || github.event.label.name }} (${{ github.event_name }})
+run-name : Run ${{ inputs.event_name == 'push' && 'CI' || inputs.test }} (${{ inputs.event_name }})
 
 on:
-  push:
-    branches: [ master, develop ]
-# See https://stackoverflow.com/a/78444521 and 
-# https://github.com/orgs/community/discussions/26874#discussioncomment-3253755
-# as well as official (but buried) documentation :
-# https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#pull-request-events-for-forked-repositories-2
-  pull_request:
-    types:    [ labeled ]
+  workflow_dispatch:
+    inputs:
+      event_name:
+        description: Event name that triggered this dispatch
+        required: false
+        default: push
+        type: string
+      event_number:
+        description: Event number that triggered this dispatch
+        required: false
+        default: 0
+        type: string
+      ref:
+        description: Actual ref to use
+        required: false
+        default: null
+        type: string
+      sha:
+        description: Actual sha to use
+        required: false
+        default: null
+        type: string
+      test:
+        description: Test to run
+        required: true
+        default: all-tests
+        type: choice
+        options:
+          - all-tests
+          - compile-tests
+
 
 # https://docs.github.com/en/actions/sharing-automations/reusing-workflows#supported-keywords-for-jobs-that-call-a-reusable-workflow
 # Also https://stackoverflow.com/a/74959635
@@ -30,7 +53,7 @@ on:
 # https://stackoverflow.com/a/68940067
 jobs:
   buildtests:
-    if : ${{ github.event.label.name == 'compile-tests' || github.event.label.name == 'all-tests' || github.event_name == 'push' }}
+    if : ${{ contains( fromJson('["compile-tests","all-tests"]'), inputs.test ) || inputs.event_name == 'push' }}
     strategy:
       max-parallel: 4
       fail-fast: false
@@ -69,7 +92,7 @@ jobs:
 
     uses : ./.github/workflows/test_workflow.yml
     with :
-      # This should be the only hard-coded value, we don't use ${{ github.event.label.name }}
+      # This should be the only hard-coded value, we don't use ${{ inputs.test }}
       # to avoid 'all-tests' to be used in this workflow
       label    : compile-tests
 
@@ -86,26 +109,37 @@ jobs:
       args     : ${{ matrix.testSet.args }}
       pool     : ${{ matrix.testSet.pool }}
       tpool    : ${{ matrix.testSet.tpool }}
+
+      # required to emulate event trigger
+      event_name   : ${{ inputs.event_name }}
+      event_number : ${{ inputs.event_number }}
+      event_label  : ${{ inputs.test }}
+      ref          : ${{ inputs.ref }}
+      sha          : ${{ inputs.sha }}
+
     # I am leaving this here for posterity if this is to be replicated in private repositories for testing
     permissions:
       contents: read
       pull-requests: write
     name : Test ${{ matrix.testSet.name }} on ${{ matrix.testSet.host }}
 
+
   # In the event that 'all-tests' is used, this final job will be the one to remove
   # the label from the PR
   removeAllLabel :
-    if : ${{ !cancelled() && github.event.label.name == 'all-tests' }}
+    if : ${{ !cancelled() && inputs.test == 'all-tests' }}
     name : Remove 'all-tests' label
     runs-on: ubuntu-latest
     needs : [ buildtests ] # Put tests here to make this wait for the tests to complete
+    permissions:
+      pull-requests: write
     steps: 
-      - name : Remove '${{ github.event.label.name }}' label
+      - name : Remove '${{ inputs.test }}' label
         env:
-          PR_NUMBER: ${{ github.event.number }}
+          PR_NUMBER: ${{ inputs.event_number }}
         run: |
           curl \
             -X DELETE \
             -H "Accept: application/vnd.github.v3+json" \
             -H 'Authorization: token ${{ github.token }}' \
-            https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/labels/${{ github.event.label.name }}
+            https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/labels/${{ inputs.test }}

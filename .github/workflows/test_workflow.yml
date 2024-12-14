@@ -142,16 +142,20 @@ jobs:
           masterlogLoc=main/.ci
         fi
         ./main/${{ inputs.hpc-workflows_path }}/.ci/reporter.py ${{ inputs.archive }}/$LOG_SUFFIX/${{ inputs.id }}/$masterlogLoc/${{ inputs.fileroot }}.log \
-                                             -e ./${{ inputs.hpc-workflows_path }}/.ci/runner.py                             \
-                                             -o GITHUB -m # only mark fail steps with gh syntax
+                                             -e ./${{ inputs.hpc-workflows_path }}/.ci/runner.py -p ./.ci \
+                                             -o GITHUB -m -n # only mark fail steps with gh syntax
+
+        echo "Relaying results to summary..."
         
         # report on them
-        echo "# Summary for ${{ join( fromJson( inputs.tests ), ' ' ) }}" >> $GITHUB_STEP_SUMMARY
+        echo "# Summary for ${{ inputs.name }}" >> $GITHUB_STEP_SUMMARY
         echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
         ./main/${{ inputs.hpc-workflows_path }}/.ci/reporter.py ${{ inputs.archive }}/$LOG_SUFFIX/${{ inputs.id }}/$masterlogLoc/${{ inputs.fileroot }}.log \
-                                             -e ./${{ inputs.hpc-workflows_path }}/.ci/runner.py                                               \
-                                             -s >> $GITHUB_STEP_SUMMARY
+                                             -e ./${{ inputs.hpc-workflows_path }}/.ci/runner.py -p ./.ci \
+                                             -s -n >> $GITHUB_STEP_SUMMARY
         echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        # We know this is a failure
+        exit 1
 
     - name: Clean up testing directories
       if : ${{ success() }}
@@ -172,6 +176,7 @@ jobs:
         # and expands to nothing
         name: ${{ inputs.event_name == 'push' && github.ref_name || inputs.event_number }}-${{ inputs.id }}_logfiles
         path: ${{ inputs.archive }}/${{ inputs.event_name == 'push' && github.ref_name || inputs.event_number }}/${{ inputs.id }}/
+        include-hidden-files: true
 
     - name: Set completed status
       if: ${{ always() }}

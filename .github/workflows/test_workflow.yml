@@ -75,6 +75,25 @@ jobs:
     env :
       LOG_SUFFIX : ${{ inputs.event_name == 'push' && github.ref_name || inputs.event_number }}
     steps:
+    # Don't use gh checks as they are woefully underdeveloped as a feature leading
+    # to confusing UI and misplaced metrics
+    # https://github.com/orgs/community/discussions/24616
+    - name: Set pending status
+      id: check_run_start
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          github.rest.repos.createCommitStatus({
+            owner:      context.repo.owner,
+            repo:       context.repo.repo,
+            sha:        '${{ inputs.event_name == 'push' && github.sha || inputs.sha }}',
+            target_url: '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}',
+            description: '${{ inputs.name }}',
+            context:     '${{ inputs.host }}/${{ inputs.id }}',
+            state:      'pending'
+          })
+
     - uses: actions/checkout@v4
       with:
         path      : main
@@ -154,18 +173,32 @@ jobs:
         name: ${{ inputs.event_name == 'push' && github.ref_name || inputs.event_number }}-${{ inputs.id }}_logfiles
         path: ${{ inputs.archive }}/${{ inputs.event_name == 'push' && github.ref_name || inputs.event_number }}/${{ inputs.id }}/
 
-    # As noted in ci.yml, this will need to be moved to a separate workflow with pull_request_target
-    # and strictly controlled usage of the GH token
-    # - name : Remove '${{ inputs.label }}' label
-    #   if : ${{ !cancelled() && github.event.label.name == inputs.label }}
-    #   env:
-    #     PR_NUMBER: ${{ github.event.number }}
-    #   run: |
-    #     curl \
-    #       -X DELETE \
-    #       -H "Accept: application/vnd.github.v3+json" \
-    #       -H 'Authorization: token ${{ github.token }}' \
-    #       https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/labels/${{ inputs.label }}
+    - name: Set completed status
+      if: ${{ always() }}
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          github.rest.repos.createCommitStatus({
+            owner:        context.repo.owner,
+            repo:         context.repo.repo,
+            sha:          '${{ inputs.event_name == 'push' && github.sha || inputs.sha }}',
+            target_url:   '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}',
+            description:  '${{ inputs.name }}',
+            context:      '${{ inputs.host }}/${{ inputs.id }}',
+            state:        '${{ job.status == 'success' && 'success' || 'failure' }}'
+          })
+
+    - name : Remove '${{ inputs.label }}' label
+      if : ${{ !cancelled() && inputs.event_label == inputs.label }}
+      env:
+        PR_NUMBER: ${{ inputs.event_number }}
+      run: |
+        curl \
+          -X DELETE \
+          -H "Accept: application/vnd.github.v3+json" \
+          -H 'Authorization: token ${{ github.token }}' \
+          https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/labels/${{ inputs.label }}
     
 
 

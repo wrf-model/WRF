@@ -161,12 +161,15 @@ SUBROUTINE microphysics_driver(                                          &
                       ,perts_qsnow, perts_ni                             &
                       ,pert_thom_qv,pert_thom_qc,pert_thom_qi            &
                       ,pert_thom_qs,pert_thom_ni                         &
+			  		 ,sigma_out									&				! for RCON; warm rain outputs
+			         ,prrwau_out,pnrwau_out,pncwau_out  		&				! for RCON; warm rain outputs
+			         ,prrrcw_out,pncrcw_out,ilamr_out,ilamc_out,cloudnc	&		! for RCON; warm rain outputs
                                                                          )
 
 ! Framework
    USE module_state_description, ONLY :                                  &
                      KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME    &
-                    ,WSM6SCHEME, ETAMPNEW, FER_MP_HIRES, THOMPSON, THOMPSONAERO, THOMPSONGH, FAST_KHAIN_LYNN_SHPUND, MORR_TWO_MOMENT     &
+                    ,WSM6SCHEME, ETAMPNEW, FER_MP_HIRES, THOMPSON, THOMPSONAERO, RCON_MP_SCHEME, THOMPSONGH, FAST_KHAIN_LYNN_SHPUND, MORR_TWO_MOMENT     &
                     ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME, NSSL_2MOM, MADWRF_MP  &
                     ,FER_MP_HIRES_ADVECT & 
                     ,WSM7SCHEME, WDM7SCHEME &
@@ -220,6 +223,7 @@ SUBROUTINE microphysics_driver(                                          &
    USE module_mp_wsm7
    USE module_mp_etanew
    USE module_mp_fer_hires
+   USE module_mp_rcon
    USE module_mp_thompson
    USE module_mp_full_sbm
 #if ( BUILD_SBM_FAST == 1 )
@@ -602,6 +606,13 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
    REAL, INTENT(IN   ) :: dt,dx,dy
 
    INTEGER, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) :: LOWLYR
+
+
+   REAL, DIMENSION( ims:ime , jms:jme ) , OPTIONAL, INTENT(OUT) :: CLOUDNC  !RC
+   REAL, DIMENSION( ims:ime , kms:kme, jms:jme ) , OPTIONAL, INTENT(OUT) :: sigma_out  !RC
+   REAL, DIMENSION( ims:ime , kms:kme, jms:jme ) , OPTIONAL, INTENT(OUT) :: prrwau_out,pnrwau_out,pncwau_out, prrrcw_out,pncrcw_out,ilamr_out,ilamc_out  !RC
+
+
 
 !
 ! Optional
@@ -1025,6 +1036,102 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                 CALL wrf_error_fatal ( 'arguments not present for calling mkessler' )
              ENDIF
 #endif
+!
+!
+! rcon mp scheme is below.
+        CASE (RCON_MP_SCHEME)
+
+             CALL wrf_debug ( 100 , 'microphysics_driver: calling RCON' )
+             IF ( PRESENT( QV_CURR ) .AND. PRESENT ( QC_CURR )   .AND.  &
+                  PRESENT( QR_CURR ) .AND. PRESENT ( QI_CURR )   .AND.  &
+                  PRESENT( QS_CURR ) .AND. PRESENT ( QG_CURR )   .AND.  &
+                  PRESENT( QNR_CURR) .AND. PRESENT ( QNI_CURR)   .AND.  &
+                  PRESENT( QNC_CURR) .AND. PRESENT ( QNWFA_CURR) .AND.  &
+                  PRESENT( QNIFA_CURR).AND.PRESENT ( QNWFA2D)    .AND.  &
+                  PRESENT( QNIFA2D)                              .AND.  &
+                  PRESENT( SNOWNC)   .AND. PRESENT ( SNOWNCV)    .AND.  &
+                  PRESENT( GRAUPELNC).AND. PRESENT ( GRAUPELNCV) .AND.  &
+                  PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) ) THEN
+#if ( WRF_CHEM == 1 )
+                 qv_b4mp(its:ite,kts:kte,jts:jte) = qv_curr(its:ite,kts:kte,jts:jte)
+                 qc_b4mp(its:ite,kts:kte,jts:jte) = qc_curr(its:ite,kts:kte,jts:jte)
+                 qi_b4mp(its:ite,kts:kte,jts:jte) = qi_curr(its:ite,kts:kte,jts:jte)
+                 qs_b4mp(its:ite,kts:kte,jts:jte) = qs_curr(its:ite,kts:kte,jts:jte)
+#endif
+             CALL mp_rcon_driver(                          &
+                     QV=qv_curr,                         &
+                     QC=qc_curr,                         &
+                     QR=qr_curr,                         &
+                     QI=qi_curr,                         &
+                     QS=qs_curr,                         &
+                     QG=qg_curr,                         &
+                     NI=qni_curr,                        &
+                     NR=qnr_curr,                        &
+                     NC=qnc_curr,                        &
+                     NWFA=qnwfa_curr,                    &
+                     NIFA=qnifa_curr,                    &
+                     NBCA=qnbca_curr,                    &
+                     NWFA2D=qnwfa2d,                     &
+                     NIFA2D=qnifa2d,                     &
+                     NBCA2D=qnbca2d,                     &
+                     aer_init_opt=config_flags%aer_init_opt,   &
+                     wif_input_opt=config_flags%wif_input_opt, &
+                     TH=th,                              &
+                     PII=pi_phy,                         &
+                     P=p,                                &
+                     W=w,                                &
+                     DZ=dz8w,                            &
+                     DT_IN=dt,                           &
+                     ITIMESTEP=itimestep,                &
+                     RAINNC=RAINNC,                      &
+                     RAINNCV=RAINNCV,                    &
+                     CLOUDNC=CLOUDNC,                    &
+                     SNOWNC=SNOWNC,                      &
+                     SNOWNCV=SNOWNCV,                    &
+                     GRAUPELNC=GRAUPELNC,                &
+                     GRAUPELNCV=GRAUPELNCV,              &
+                     SR=SR,                              &
+#if ( WRF_CHEM == 1 )
+                     WETSCAV_ON=config_flags%wetscav_onoff == 1, &
+                     RAINPROD=rainprod,                  &
+                     EVAPPROD=evapprod,                  &
+#endif
+                     REFL_10CM=refl_10cm,                &
+                     diagflag=diagflag,                  &
+                     ke_diag = ke_diag,                  &
+                     do_radar_ref=do_radar_ref,          &
+                     re_cloud=re_cloud,                  &
+                     re_ice=re_ice,                      &
+                     re_snow=re_snow,                    &
+                     has_reqc=has_reqc,                  & 
+                     has_reqi=has_reqi,                  & 
+                     has_reqs=has_reqs,                  & 
+                 IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde, &
+                 IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme, &
+                 ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte, &
+				 SIGMA_OUT=sigma_out,								&
+				 PRRWAU_OUT=prrwau_out,PNRWAU_OUT=pnrwau_out,PNCWAU_OUT=pncwau_out,		&
+				 PRRRCW_OUT=prrrcw_out,PNCRCW_OUT=pncrcw_out,ILAMR_OUT=ilamr_out,		&
+				 ILAMC_OUT=ilamc_out)	
+
+
+              IF (config_flags%aer_fire_emit_opt.gt.0)  then
+                CALL wrf_debug ( 200 , ' call fire_emis_simple_plumerise' )
+                CALL fire_emis_simple_plumerise (config_flags%wif_fire_inj, config_flags%aer_fire_emit_opt  &
+                    ,z_at_mass, pblh, qnwfa_curr, qnbca_curr   &
+                    ,qnocbb2d, qnbcbb2d, dt, ids, ide, jds, jde, kds, kde                    &
+                    ,ims, ime, jms, jme, kms, kme, its, ite, jts, jte, kts, kte                       )
+              ENDIF
+             ELSE
+                CALL wrf_error_fatal ( 'arguments not present for calling rcon' )
+             ENDIF
+
+
+
+
+
+
+
 !
         CASE (THOMPSONAERO)
               if (pert_thom .and. multi_perturb == 1) then

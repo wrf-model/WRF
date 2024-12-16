@@ -1004,6 +1004,7 @@ CHARACTER(LEN=8) :: name
          (config_flags%ra_sw_physics .eq. goddardswscheme ) ) .and. &
         (config_flags%mp_physics  .eq. THOMPSON .or.        &
          config_flags%mp_physics  .eq. THOMPSONAERO .or.    &
+         config_flags%mp_physics  .eq. RCON_MP_SCHEME .or.    &
          (config_flags%mp_physics .eq. NSSL_2MOM .and. config_flags%nssl_2moment_on == 1) .or. &
          config_flags%mp_physics  .eq. WSM3SCHEME .or.      &
          config_flags%mp_physics  .eq. WSM5SCHEME .or.      &
@@ -1037,6 +1038,7 @@ CHARACTER(LEN=8) :: name
 
    IF ( config_flags%swint_opt .eq. 2 ) THEN
       IF ((   config_flags%mp_physics == THOMPSON .OR.        &
+			  config_flags%mp_physics == RCON_MP_SCHEME .OR.        &
               config_flags%mp_physics == THOMPSONAERO .OR.    &
               config_flags%mp_physics == WSM3SCHEME .OR.    &
               config_flags%mp_physics == WSM5SCHEME .OR.    &
@@ -4379,6 +4381,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                       ims, ime, jms, jme, kms, kme,               &
                       its, ite, jts, jte, kts, kte                )
 !------------------------------------------------------------------
+   USE module_mp_rcon
    USE module_mp_wsm3
    USE module_mp_wsm5
    USE mp_wsm6
@@ -4536,6 +4539,23 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                           IDS=ids, IDE=ide, JDS=jds, JDE=jde, KDS=kds, KDE=kde,   &
                           IMS=ims, IME=ime, JMS=jms, JME=jme, KMS=kms, KME=kme,   &
                           ITS=its, ITE=ite, JTS=jts, JTE=jte, KTS=kts, KTE=kte)
+
+     CASE (RCON_MP_SCHEME)
+         IF(start_of_simulation.or.restart.or.config_flags%cycling)     &
+            CALL rcon_init(HGT=z_at_q,                              &
+                          ORHO=inv_dens,                                &
+                          NWFA2D=qnwfa2d, NBCA2D=qnbca2d,               &
+                          NWFA=scalar(ims,kms,jms,P_QNWFA),             &
+                          NIFA=scalar(ims,kms,jms,P_QNIFA),             &
+                          NBCA=scalar(ims,kms,jms,P_QNBCA),             &
+                          wif_input_opt=config_flags%wif_input_opt,     &
+                          FRC_URB2D=frc_urb2d,                          &
+                          DX=DX, DY=DY,                                 &
+                          is_start=start_of_simulation,                 &
+                          IDS=ids, IDE=ide, JDS=jds, JDE=jde, KDS=kds, KDE=kde,   &
+                          IMS=ims, IME=ime, JMS=jms, JME=jme, KMS=kms, KME=kme,   &
+                          ITS=its, ITE=ite, JTS=jts, JTE=jte, KTS=kts, KTE=kte)
+
 
      CASE (THOMPSONGH)
 ! Cycling the WRF forecast with moving nests will cause this initialization to be

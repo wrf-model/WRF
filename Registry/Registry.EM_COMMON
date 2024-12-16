@@ -3045,7 +3045,8 @@ package   ntu             mp_physics==56               -             moist:qv,qc
 package   etampnew        mp_physics==95               -             moist:qv,qc,qr,qs;scalar:qt;state:f_ice_phy,f_rain_phy,f_rimef_phy
 package   gsfcgcescheme   mp_physics==97               -             moist:qv,qc,qr,qi,qs,qg
 package   madwrf_mp       mp_physics==96               -             moist:qv,qc,qi,qs
-
+package   rcon_mp_scheme  mp_physics==29               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr,qnc,qnwfa,qnifa,qnbca;state:re_cloud,re_ice,re_snow,qnwfa2d,qnifa2d,taod5503d,taod5502d
+ 
 package   nssl2mconc      nssl_2moment_on==1           -             scalar:qndrop,qnr,qni,qns,qng;state:re_cloud,re_ice,re_snow
 package   nssl3mg         nssl_3moment==1              -             scalar:qzr,qzg
 package   nssl3m          nssl_3moment==2              -             scalar:qzr,qzg,qzh
@@ -3097,6 +3098,7 @@ package   jensen_ishmael_dfi  mp_physics_dfi==55         -         dfi_moist:dfi
 package   ntu_dfi           mp_physics_dfi==56       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;dfi_scalar:dfi_qnc,dfi_qnr,dfi_qni,dfi_qns,dfi_qng,dfi_qnh,dfi_qdcn,dfi_qtcn,dfi_qccn,dfi_qrcn,dfi_qnin,dfi_fi,dfi_fs,dfi_vi,dfi_vs,dfi_vg,dfi_ai,dfi_as,dfi_ag,dfi_ah,dfi_i3m
 package   etampnew_dfi      mp_physics_dfi==95       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qs;dfi_scalar:dfi_qt
 package   gsfcgcescheme_dfi   mp_physics_dfi==97     -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg
+package   rcon_dfi  	    mp_physics_dfi==29       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qnr,dfi_qnc,dfi_qnwfa,dfi_qnifa,dfi_qnbca;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
 
 package   noprogn       progn==0                     -             -
 package   progndrop     progn==1                     -             scalar:qndrop;dfi_scalar:dfi_qndrop;state:qndropsource
@@ -3654,3 +3656,24 @@ rconfig   integer     windfarm_wake_model        namelist,physics      max_domai
 # wake overlap method, M1, M2, M3, M4 [1, 2, 3, 4]
 rconfig   integer     windfarm_overlap_method        namelist,physics      max_domains    4       rh       "windfarm_overlap_method"                ""      ""
 rconfig   real        windfarm_deg           namelist,physics      max_domains    0        -     "windfarm_deg"        "for windfarm ideal case"   "degree"
+
+#
+# outputs for RCON model.
+
+state    real  CLOUDNC              ij       misc        1         -      rh   "CLOUDNC"                "ACCUMULATED TOTAL GRID SCALE CLOUD PRECIPITATION"              "mm"
+state    real  sigma_out            ikj      misc        1         -      rh   "SIGMA"                      "LOGNORMAL WIDTH"              ""
+state    real  prrwau_out           ikj      misc        1         -      rh   "PRR_WAU"                ""              ""
+state    real  pnrwau_out           ikj      misc        1         -      rh   "PNR_WAU"                ""              ""
+state    real  pncwau_out           ikj      misc        1         -      rh   "PNC_WAU"                ""              ""
+state    real  prrrcw_out           ikj      misc        1         -      rh   "PRR_RCW"                ""              ""
+state    real  pncrcw_out           ikj      misc        1         -      rh   "PNC_RCW"                ""              ""
+state    real  ilamr_out            ikj      misc        1         -      rh   "ILAMR"                "RAIN SHAPE PARAM"              ""
+state    real  ilamc_out            ikj      misc        1         -      rh   "ILAMC"                ""              ""
+
+
+
+
+
+
+
+

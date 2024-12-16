@@ -521,6 +521,10 @@ endif()
 # Will need our own finder
 # find_package( GPFS   REQUIRED )
 
+# Find this first in case we need to use pnetcdf's netCDF
+# Priority is given to pnetcdf due to performance
+find_package( PnetCDF QUIET )
+
 # Included is a lightweight finder, but we really should switch to using UniData's netCDF cmake config
 # The reason these are two separate and not COMPONENTS of one larger package is because that is the way UniData
 # has laid out the cmake configs for each respective package
@@ -542,7 +546,6 @@ if ( NOT ${FORCE_NETCDF_CLASSIC} )
   endif()
 endif()
 
-find_package( pnetCDF QUIET )
 
 # Attempt to find zlib packaged with netcdf first
 set( ZLIB_ROOT ${netCDF_PREFIX} )
@@ -1093,8 +1096,8 @@ target_link_options( ${PROJECT_NAME}_Core PRIVATE ${WRF_LINK_FLAGS} )
 
 target_link_libraries(  ${PROJECT_NAME}_Core
                           PUBLIC
-                            netCDF::netcdff
-                            ${pnetCDF_LIBRARIES}
+                            $<TARGET_NAME_IF_EXISTS:PnetCDF::pnetcdf>
+                            $<TARGET_NAME_IF_EXISTS:netCDF::netcdff>
                             $<$<BOOL:${USE_MPI}>:$<TARGET_NAME_IF_EXISTS:MPI::MPI_Fortran>>
                             $<$<BOOL:${USE_OPENMP}>:$<TARGET_NAME_IF_EXISTS:OpenMP::OpenMP_Fortran>>
                             # This will add in target dependencies if they exist

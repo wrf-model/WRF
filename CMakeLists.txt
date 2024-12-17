@@ -1078,7 +1078,6 @@ target_include_directories(
                               ${PROJECT_SOURCE_DIR}/external/io_int
 
                               # Found Packages not handled through :: imported target
-                              ${pnetCDF_INCLUDE_DIRS}
                             )
 
 # Configure core

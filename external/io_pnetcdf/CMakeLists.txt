@@ -18,19 +18,18 @@ set_target_properties(
 
 target_link_libraries(  ${FOLDER_COMPILE_TARGET}
                           PRIVATE
-                            ${netCDF_LIBRARIES}
-                            ${pnetCDF_LIBRARIES}
                             $<$<BOOL:${USE_MPI}>:$<TARGET_NAME_IF_EXISTS:MPI::MPI_Fortran>>
                             $<$<BOOL:${USE_OPENMP}>:$<TARGET_NAME_IF_EXISTS:OpenMP::OpenMP_Fortran>>
+                            PnetCDF::pnetcdf
                         )
 
 target_include_directories( ${FOLDER_COMPILE_TARGET}
+                            PUBLIC
+                              $<TARGET_PROPERTY:${FOLDER_COMPILE_TARGET},Fortran_MODULE_DIRECTORY>
+                              $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/external/ioapi_share>
+                              $<INSTALL_INTERFACE:include/external/ioapi_share>
                             PRIVATE
-                              ${netCDF_INCLUDE_DIRS}
-                              ${pnetCDF_INCLUDE_DIRS}
                               ${CMAKE_CURRENT_SOURCE_DIR}
-                              ${CMAKE_CURRENT_SOURCE_DIR}/../ioapi_share
-                              ${CMAKE_INSTALL_PREFIX}/${FOLDER_COMPILE_TARGET}
                             )
 
 

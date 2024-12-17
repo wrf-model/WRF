@@ -156,17 +156,17 @@ set( USE_JASPER  OFF CACHE BOOL "USE_JASPER"  )
 set( USE_PIO     OFF CACHE BOOL "USE_PIO"     )
 set( USE_IPO     OFF CACHE BOOL "USE_IPO"     )
 
-
-set( ENABLE_CHEM       OFF CACHE BOOL "ENABLE_CHEM"      )
-set( ENABLE_CMAQ       OFF CACHE BOOL "ENABLE_CMAQ"      )
-set( ENABLE_CTSM       OFF CACHE BOOL "ENABLE_CTSM"      )
-set( ENABLE_DFI_RADAR  OFF CACHE BOOL "ENABLE_DFI_RADAR" )
-set( ENABLE_HYDRO      OFF CACHE BOOL "ENABLE_HYDRO"     )
-set( ENABLE_KPP        OFF CACHE BOOL "ENABLE_KPP"       )
-set( ENABLE_MARS       OFF CACHE BOOL "ENABLE_MARS"      )
-set( ENABLE_TERRAIN    OFF CACHE BOOL "ENABLE_TERRAIN"   )
-set( ENABLE_TITAN      OFF CACHE BOOL "ENABLE_TITAN"     )
-set( ENABLE_VENUS      OFF CACHE BOOL "ENABLE_VENUS"     )
+set( ENABLE_PNETCDF_QUILT OFF CACHE BOOL "ENABLE_PNETCDF_QUILT" )
+set( ENABLE_CHEM          OFF CACHE BOOL "ENABLE_CHEM"          )
+set( ENABLE_CMAQ          OFF CACHE BOOL "ENABLE_CMAQ"          )
+set( ENABLE_CTSM          OFF CACHE BOOL "ENABLE_CTSM"          )
+set( ENABLE_DFI_RADAR     OFF CACHE BOOL "ENABLE_DFI_RADAR"     )
+set( ENABLE_HYDRO         OFF CACHE BOOL "ENABLE_HYDRO"         )
+set( ENABLE_KPP           OFF CACHE BOOL "ENABLE_KPP"           )
+set( ENABLE_MARS          OFF CACHE BOOL "ENABLE_MARS"          )
+set( ENABLE_TERRAIN       OFF CACHE BOOL "ENABLE_TERRAIN"       )
+set( ENABLE_TITAN         OFF CACHE BOOL "ENABLE_TITAN"         )
+set( ENABLE_VENUS         OFF CACHE BOOL "ENABLE_VENUS"         )
 
 # What do these defines even do if they are always on????
 set( USE_ALLOCATABLES     ON CACHE BOOL "USE_ALLOCATABLES"    )
@@ -284,6 +284,12 @@ endif()
 
 if ( NOT ${WRFIO_NCD_NO_LARGE_FILE_SUPPORT} )
   message( STATUS "netCDF large file support not suppressed, if available it will be used" )
+endif()
+
+# PnetCDF options require MPI
+if ( ${ENABLE_PNETCDF_QUILT} AND NOT ${USE_MPI} )
+  message( STATUS "PnetCDF features require MPI usage" )
+  set( USE_MPI ON CACHE BOOL "Required by configuration" FORCE )
 endif()
 
 # Hydro option requires MPI

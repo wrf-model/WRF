@@ -37,9 +37,6 @@ else()
   execute_process( COMMAND ${PNETCDF_PROGRAM} --ldflags      OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE PnetCDF_LDFLAGS )
   execute_process( COMMAND ${PNETCDF_PROGRAM} --libs         OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE PnetCDF_BUILD_LIBS )
 
-  # check for large file support
-  find_file( PnetCDF_INCLUDE_FILE pnetcdf.inc ${PnetCDF_INCLUDE_DIR} )
-
   # Sanitize version
   string( REPLACE " " ";" PnetCDF_VERSION_LIST ${PnetCDF_VERSION_RAW} )
   list( GET PnetCDF_VERSION_LIST -1 PnetCDF_VERSION )

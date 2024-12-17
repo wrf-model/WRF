@@ -529,7 +529,9 @@ endif()
 
 # Find this first in case we need to use pnetcdf's netCDF
 # Priority is given to pnetcdf due to performance
-find_package( PnetCDF QUIET )
+if ( ${USE_MPI} )
+  find_package( PnetCDF QUIET )
+endif()
 
 # Included is a lightweight finder, but we really should switch to using UniData's netCDF cmake config
 # The reason these are two separate and not COMPONENTS of one larger package is because that is the way UniData
@@ -770,6 +772,13 @@ if ( ${ENABLE_CTSM} )
 else()
   #!TODO there are some files that rely on this being 1, but that is never set by the legacy make system
   list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS WRF_USE_CLM )
+endif()
+
+if ( ${PnetCDF_FOUND} )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS PNETCDF )
+endif()
+if ( ${ENABLE_PNETCDF_QUILT} )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS PNETCDF_QUILT=1 )
 endif()
 
 # If force classic or no nc-4 support enable classic

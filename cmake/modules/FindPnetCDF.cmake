@@ -105,7 +105,6 @@ find_package_handle_standard_args(
 
 if ( PnetCDF_FOUND AND NOT TARGET PnetCDF::pnetcdf )
   if ( ${PnetCDF_HAS_NETCDF4} )
-    message( STATUS "Will try to find netCDF from PnetCDF ldflags..." )
     list( APPEND CMAKE_MESSAGE_INDENT "  " )
     if ( NOT "${PnetCDF_LDFLAGS}" STREQUAL "" )
       # Find prefix

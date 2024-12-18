@@ -155,6 +155,7 @@ set( USE_HDF5    OFF CACHE BOOL "USE_HDF5"    )
 set( USE_JASPER  OFF CACHE BOOL "USE_JASPER"  )
 set( USE_PIO     OFF CACHE BOOL "USE_PIO"     )
 set( USE_IPO     OFF CACHE BOOL "USE_IPO"     )
+set( USE_PNETCDF OFF CACHE BOOL "USE_PNETCDF" )
 
 set( ENABLE_PNETCDF_QUILT OFF CACHE BOOL "ENABLE_PNETCDF_QUILT" )
 set( ENABLE_CHEM          OFF CACHE BOOL "ENABLE_CHEM"          )
@@ -287,8 +288,12 @@ if ( NOT ${WRFIO_NCD_NO_LARGE_FILE_SUPPORT} )
 endif()
 
 # PnetCDF options require MPI
-if ( ${ENABLE_PNETCDF_QUILT} AND NOT ${USE_MPI} )
-  message( STATUS "PnetCDF features require MPI usage" )
+if ( ${ENABLE_PNETCDF_QUILT} AND NOT ${USE_PNETCDF} )
+  message( STATUS "PnetCDF Quilt IO requires PnetCDF" )
+  set( USE_PNETCDF ON CACHE BOOL "Required by configuration" FORCE )
+endif()
+if ( ${USE_PNETCDF} AND NOT ${USE_MPI} )
+  message( STATUS "PnetCDF require MPI usage" )
   set( USE_MPI ON CACHE BOOL "Required by configuration" FORCE )
 endif()
 
@@ -529,8 +534,8 @@ endif()
 
 # Find this first in case we need to use pnetcdf's netCDF
 # Priority is given to pnetcdf due to performance
-if ( ${USE_MPI} )
-  find_package( PnetCDF QUIET )
+if ( ${USE_PNETCDF} )
+  find_package( PnetCDF REQUIRED )
 endif()
 
 # Included is a lightweight finder, but we really should switch to using UniData's netCDF cmake config

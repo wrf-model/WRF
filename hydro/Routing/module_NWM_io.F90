@@ -172,7 +172,7 @@ subroutine output_chrt_NWM(domainId)
    ! If not MPI, then default to 0, which is the I/O ID.
    if(mppFlag .eq. 1) then
 #ifdef MPP_LAND
-      call MPI_COMM_RANK( HYDRO_COMM_WORLD, myId, ierr )
+      call MPI_Comm_rank( HYDRO_COMM_WORLD, myId, ierr )
       call nwmCheck(diagFlag,ierr,'ERROR: Unable to determine MPI process ID.')
 #endif
    else
@@ -1144,7 +1144,7 @@ subroutine output_NoahMP_NWM(outDir,iGrid,output_timestep,itime,startdate,date,i
    ! If not MPI, then default to 0, which is the I/O ID.
    if(mppFlag .eq. 1) then
 #ifdef MPP_LAND
-      call MPI_COMM_RANK( HYDRO_COMM_WORLD, myId, ierr )
+      call MPI_Comm_rank( HYDRO_COMM_WORLD, myId, ierr )
       call nwmCheck(diagFlag,ierr,'ERROR: Unable to determine MPI process ID.')
 #endif
    else
@@ -1857,7 +1857,7 @@ subroutine output_rt_NWM(domainId,iGrid)
    ! If not MPI, then default to 0, which is the I/O ID.
    if(mppFlag .eq. 1) then
 #ifdef MPP_LAND
-      call MPI_COMM_RANK( HYDRO_COMM_WORLD, myId, ierr )
+      call MPI_Comm_rank( HYDRO_COMM_WORLD, myId, ierr )
       call nwmCheck(diagFlag,ierr,'ERROR: Unable to determine MPI process ID.')
 #endif
    else
@@ -2433,7 +2433,7 @@ subroutine output_lakes_NWM(domainId,iGrid)
    ! If not MPI, then default to 0, which is the I/O ID.
    if(mppFlag .eq. 1) then
 #ifdef MPP_LAND
-      call MPI_COMM_RANK( HYDRO_COMM_WORLD, myId, ierr )
+      call MPI_Comm_rank( HYDRO_COMM_WORLD, myId, ierr )
       call nwmCheck(diagFlag,ierr,'ERROR: Unable to determine MPI process ID.')
 #endif
    else
@@ -3125,7 +3125,7 @@ subroutine output_chrtout_grd_NWM(domainId,iGrid)
    ! If not MPI, then default to 0, which is the I/O ID.
    if(mppFlag .eq. 1) then
 #ifdef MPP_LAND
-      call MPI_COMM_RANK( HYDRO_COMM_WORLD, myId, ierr )
+      call MPI_Comm_rank( HYDRO_COMM_WORLD, myId, ierr )
       call nwmCheck(diagFlag,ierr,'ERROR: Unable to determine MPI process ID.')
 #endif
    else
@@ -3613,7 +3613,7 @@ subroutine output_lsmOut_NWM(domainId)
    ! If not MPI, then default to 0, which is the I/O ID.
    if(mppFlag .eq. 1) then
 #ifdef MPP_LAND
-      call MPI_COMM_RANK( HYDRO_COMM_WORLD, myId, ierr )
+      call MPI_Comm_rank( HYDRO_COMM_WORLD, myId, ierr )
       call nwmCheck(diagFlag,ierr,'ERROR: Unable to determine MPI process ID.')
 #endif
    else
@@ -4067,7 +4067,7 @@ implicit none
    ! If not MPI, then default to 0, which is the I/O ID.
    if(mppFlag .eq. 1) then
 #ifdef MPP_LAND
-      call MPI_COMM_RANK( HYDRO_COMM_WORLD, myId, ierr )
+      call MPI_Comm_rank( HYDRO_COMM_WORLD, myId, ierr )
       call nwmCheck(diagFlag,ierr,'ERROR: Unable to determine MPI process ID.')
 #endif
    else
@@ -4375,7 +4375,7 @@ subroutine output_chanObs_NWM(domainId)
    ! If not MPI, then default to 0, which is the I/O ID.
    if(mppFlag .eq. 1) then
 #ifdef MPP_LAND
-      call MPI_COMM_RANK( HYDRO_COMM_WORLD, myId, ierr )
+      call MPI_Comm_rank( HYDRO_COMM_WORLD, myId, ierr )
       call nwmCheck(diagFlag,ierr,'ERROR: Unable to determine MPI process ID.')
 #endif
    else
@@ -5090,7 +5090,7 @@ subroutine output_gw_NWM(domainId,iGrid)
    ! If not MPI, then default to 0, which is the I/O ID.
    if(mppFlag .eq. 1) then
 #ifdef MPP_LAND
-      call MPI_COMM_RANK( HYDRO_COMM_WORLD, myId, ierr )
+      call MPI_Comm_rank( HYDRO_COMM_WORLD, myId, ierr )
       call nwmCheck(diagFlag,ierr,'ERROR: Unable to determine MPI process ID.')
 #endif
    else

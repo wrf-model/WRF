@@ -56,7 +56,8 @@ contains
     subroutine levelpool_init(this, water_elevation,  &
         lake_area, weir_elevation, weir_coeffecient, &
         weir_length, dam_length, orifice_elevation, orifice_coefficient, &
-        orifice_area, max_depth, lake_number)
+        orifice_area, max_depth, lake_number, lake_opt)
+
         implicit none
         class(levelpool), intent(inout) :: this ! object being initialized
         real, intent(inout) :: water_elevation           ! meters AMSL
@@ -69,7 +70,9 @@ contains
         real, intent(in)    :: orifice_coefficient       ! orifice coefficient
         real, intent(in)    :: orifice_area              ! orifice area (meters^2)
         real, intent(in)    :: max_depth                 ! max depth of reservoir before overtop (meters)
-        integer(kind=int64), intent(in) :: lake_number               ! lake number
+        integer(kind=int64), intent(in) :: lake_number   ! lake number
+        integer, intent(in) :: lake_opt                  ! bypass lake physics (2 to use pass-through)
+
         character(len=15)   :: lake_number_string
 
 #ifdef RESERVOIR_D
@@ -114,7 +117,7 @@ contains
                 call this%properties%init( lake_area,  &
                     weir_elevation, weir_coeffecient, weir_length, dam_length, &
                     orifice_elevation, orifice_coefficient, &
-                    orifice_area, max_depth, lake_number )
+                    orifice_area, max_depth, lake_number, lake_opt )
             end if
             this%pointer_allocation_guard = .true.
 
@@ -169,6 +172,7 @@ contains
         this%state%water_elevation = water_elevation
 
         call LEVELPOOL_PHYSICS(this%properties%lake_number,                  &
+                               this%properties%lake_opt,                   &
                                previous_timestep_inflow,                     &
                                this%input%inflow,                            &
                                this%output%outflow,                          &
@@ -217,7 +221,7 @@ contains
     !   SUBROUTINE LEVELPOOL
     ! ------------------------------------------------
 
-    subroutine LEVELPOOL_PHYSICS(ln,qi0,qi1,qo1,ql,dt,H,ar,we,maxh,wc,wl,dl,oe,oc,oa)
+    subroutine LEVELPOOL_PHYSICS(ln,lake_opt,qi0,qi1,qo1,ql,dt,H,ar,we,maxh,wc,wl,dl,oe,oc,oa)
 
         !! ----------------------------  argument variables
         !! All elevations should be relative to a common base (often belev(k))
@@ -238,9 +242,8 @@ contains
         real, intent(IN)    :: oa      ! orifice area (m^2)
         real, intent(IN)    :: maxh    ! max depth of reservoir before overtop (m)
         integer(kind=int64), intent(IN) :: ln      ! lake number
+        integer, intent(in) :: lake_opt ! reservoir physics options (1: levelpool, 2: passthrough)
 
-        !!DJG Add lake option switch here...move up to namelist in future versions...
-        integer :: LAKE_OPT            ! Lake model option (move to namelist later)
         real    :: Htmp                ! Temporary assign of incoming lake el. (m)
 
         !! ----------------------------  local variables
@@ -254,22 +257,20 @@ contains
         !! ----------------------------  subroutine body: from chow, mad mays. pg. 252
         !! -- determine from inflow hydrograph
 
-
-        !!DJG Set hardwire for LAKE_OPT...move specification of this to namelist in
-        !future versions...
-        LAKE_OPT = 2
         Htmp = H   !temporary set of incoming lake water elevation...
         !hdiff_vol = 0.0
         !qdiff_vol = 0.0
 
         !!DJG IF-block for lake model option  1 - outflow=inflow, 2 - Chow et al level
         !pool, .....
-        if (LAKE_OPT == 1) then     ! If-block for simple pass through scheme....
-
+        if (LAKE_OPT == 2) then     ! If-block for simple pass through scheme....
+#ifdef RESERVOIR_D
+           write(6,*) "LEVELPOOL LAKE_OPT=2, using reservoir passthrough"
+#endif
            qo1 = qi1                 ! Set outflow equal to inflow at current time
            H = Htmp                  ! Set new lake water elevation to incoming lake el.
 
-        else if (LAKE_OPT == 2) then   ! If-block for Chow et al level pool scheme
+        else if (LAKE_OPT == 1) then   ! If-block for Chow et al level pool scheme
 
            It = qi0
            Itdt_3   = qi0 + ((qi1 + ql - qi0) * 0.33)
@@ -406,6 +407,7 @@ contains
 
 
         else   ! ELSE for LAKE_OPT....
+         call hydro_stop("Invalid lake option supplied to LEVELPOOL_PHYSICS()")
         endif  ! ENDIF for LAKE_OPT....
 
         return

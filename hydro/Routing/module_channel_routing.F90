@@ -1,23 +1,3 @@
-!  Program Name:
-!  Author(s)/Contact(s):
-!  Abstract:
-!  History Log:
-!
-!  Usage:
-!  Parameters: <Specify typical arguments passed>
-!  Input Files:
-!        <list file names and briefly describe the data they include>
-!  Output Files:
-!        <list file names and briefly describe the information they include>
-!
-!  Condition codes:
-!        <list exit condition or error codes returned >
-!        If appropriate, descriptive troubleshooting instructions or
-!        likely causes for failures could be mentioned here with the
-!        appropriate error code
-!
-!  User controllable options: <if applicable>
-
 MODULE module_channel_routing
 #ifdef MPP_LAND
 use module_mpp_land
@@ -566,13 +546,13 @@ END SUBROUTINE SUBMUSKINGCUNGE
        LAKE_MSKRT, DT, DTCT, DTRT_CH,MUSK, MUSX, QLINK, &
        QLateral, &
        HLINK, ELRT, CHANLEN, MannN, So, ChSSlp, Bw, Tw, Tw_CC, n_CC,  &
-       ChannK, RESHT, &
+       ChannK, RESHT, HRZAREA, LAKEMAXH, WEIRH, WEIRC, WEIRL, ORIFICEC, ORIFICEA, ORIFICEE, &
        ZELEV, CVOL, NLAKES, QLAKEI, QLAKEO, LAKENODE, &
        dist, QINFLOWBASE, CHANXI, CHANYJ, channel_option, RETDEP_CHAN, &
-       NLINKSL, LINKID, node_area  &
+       NLINKSL, LINKID, node_area, lake_lookup  &
 #ifdef MPP_LAND
        , lake_index,link_location,mpp_nlinks,nlinks_index,yw_mpp_nlinks  &
-       , LNLINKSL  &
+       , LNLINKSL, LLINKID  &
        , gtoNode,toNodeInd,nToNodeInd &
 #endif
        , CH_LNKRT_SL &
@@ -639,6 +619,15 @@ END SUBROUTINE SUBMUSKINGCUNGE
 
 
         !-- lake params
+        REAL, INTENT(IN), DIMENSION(NLAKES)       :: HRZAREA  !-- horizontal area (km^2)
+        REAL, INTENT(IN), DIMENSION(NLAKES)       :: LAKEMAXH !-- maximum lake depth  (m^2)
+        REAL, INTENT(IN), DIMENSION(NLAKES)       :: WEIRH    !-- lake depth  (m^2)
+        REAL, INTENT(IN), DIMENSION(NLAKES)       :: WEIRC    !-- weir coefficient
+        REAL, INTENT(IN), DIMENSION(NLAKES)       :: WEIRL    !-- weir length (m)
+        REAL, INTENT(IN), DIMENSION(NLAKES)       :: ORIFICEC !-- orrifice coefficient
+        REAL, INTENT(IN), DIMENSION(NLAKES)       :: ORIFICEA !-- orrifice area (m^2)
+        REAL, INTENT(IN), DIMENSION(NLAKES)       :: ORIFICEE !-- orrifce elevation (m)
+
         REAL, INTENT(INOUT), DIMENSION(NLAKES)    :: RESHT    !-- reservoir height (m)
         REAL*8,  DIMENSION(NLAKES)    :: QLAKEI8   !-- lake inflow (cms)
         REAL, INTENT(INOUT), DIMENSION(NLAKES)    :: QLAKEI   !-- lake inflow (cms)
@@ -652,8 +641,10 @@ END SUBROUTINE SUBMUSKINGCUNGE
         REAL, DIMENSION(NLAKES)                   :: QLLAKE   !-- lateral inflow to lake in diffusion scheme
         REAL*8, DIMENSION(NLAKES)                   :: QLLAKE8   !-- lateral inflow to lake in diffusion scheme
 
+        integer, intent(in), dimension(:)     :: lake_lookup  !-- inverse lake index for k->lake mapping
+
 !-- Local Variables
-        INTEGER                     :: i,j,k,t,m,jj,kk,KRT,node
+        INTEGER                     :: i,j,k,t,m,jj,kk,KRT,node,l_idx, lakeid
         INTEGER                     :: DT_STEPS               !-- number of timestep in routing
         REAL                        :: Qup,Quc                !--Q upstream Previous, Q Upstream Current, downstream Previous
         REAL                        :: bo                     !--critical depth, bnd outflow just for testing
@@ -671,19 +662,29 @@ END SUBROUTINE SUBMUSKINGCUNGE
         integer(kind=int64) link_location(ixrt,jxrt)
         real     ywtmp(ixrt,jxrt)
         integer LNLINKSL
-        real*8,  dimension(LNLINKSL) :: LQLateral
-!        real*4,  dimension(LNLINKSL) :: LQLateral
+        integer(kind=int64), dimension(LNLINKSL) :: LLINKID
+        real(kind=8),  dimension(LNLINKSL) :: LQLateral
         integer, dimension(:) ::  toNodeInd
         integer(kind=int64), dimension(:,:) ::  gtoNode
         integer  :: nToNodeInd
         real, dimension(nToNodeInd,2) :: gQLINK
+        real, allocatable,dimension(:) :: tmpQLAKEO, tmpQLAKEI, tmpRESHT
 #else
-        real*8, dimension(NLINKS)                   :: LQLateral !--lateral flow
+        real(kind=8), dimension(NLINKS)                   :: LQLateral !--lateral flow
 #endif
         integer flag
 
         integer :: n, kk2, nt, nsteps  ! tmp
 
+#ifdef MPP_LAND
+       if(my_id == io_id) then
+#endif
+           allocate(tmpQLAKEO(NLAKES))
+           allocate(tmpQLAKEI(NLAKES))
+           allocate(tmpRESHT(NLAKES))
+#ifdef MPP_LAND
+        endif
+#endif
         QLAKEIP = 0
         QLAKEI8 = 0
         HLINKTMP = 0
@@ -791,6 +792,15 @@ END SUBROUTINE SUBMUSKINGCUNGE
 
       !---------- route other reaches, with upstream inflow
        tmpQlink = 0.0
+#ifdef MPP_LAND
+       if(my_id .eq. io_id) then
+#endif
+            tmpQLAKEO = QLAKEO
+            tmpQLAKEI = QLAKEI
+            tmpRESHT = RESHT
+#ifdef MPP_LAND
+       endif
+#endif
        do k = 1,NLINKSL
 !          if (ORDER(k) .gt. 1 ) then  !-- exclude first order stream
              Quc  = 0.0
@@ -821,28 +831,38 @@ END SUBROUTINE SUBMUSKINGCUNGE
                end do ! do m
 #endif
 
-                if(TYPEL(k) .eq. 1) then   !--link is a reservoir
+                if(TYPEL(k) == 1) then   !--link is a reservoir
+                    l_idx = lake_lookup(k)
+                    if (l_idx >= 0) then     !-- -999 if not a reservoir in the lookup table (belt-and-suspenders check)
+                        call rt_domain(did)%reservoirs(l_idx)%ptr%run(Qup, Quc, 0.0, &
+                              RESHT(l_idx), QLINK(k,2), DTRT_CH, rt_domain(did)%final_reservoir_type(l_idx), &
+                              rt_domain(did)%reservoir_assimilated_value(l_idx), rt_domain(did)%reservoir_assimilated_source_file(l_idx))
 
-                   ! CALL LEVELPOOL(1,QLINK(k,1), Qup, QLINK(k,1), QLINK(k,2), &
-                   !  QLateral(k), DT, RESHT(k), HRZAREA(k), LAKEMAXH(k), &
-                   !  WEIRC(k), WEIRL(k),ORIFICEE(k),  ORIFICEC(k), ORIFICEA(k))
-
-                   elseif (channel_option .eq. 1) then  !muskingum routing
+                        QLAKEO(l_idx)  = QLINK(k,2)     !save outflow to lake
+                        QLAKEI(l_idx)  = Quc            !save inflow to lake
+                    end if
+                elseif (channel_option .eq. 1) then  !muskingum routing
                        Km = MUSK(k)
                        X = MUSX(k)
-                       tmpQLINK(k,2) = MUSKING(k,Qup,(Quc+QLateral(k)),QLINK(k,1),DTRT_CH,Km,X) !upstream plust lateral inflow
+                       tmpQLINK(k,2) = MUSKING(k,Qup,(Quc+QLateral(k)),QLINK(k,1),DTRT_CH,Km,X) !upstream plus lateral inflow
                    elseif (channel_option .eq. 2) then ! muskingum cunge
 
                    call SUBMUSKINGCUNGE(tmpQLINK(k,2), velocity(k), qloss(k), LINKID(k),  &
                     Qup,Quc, QLINK(k,1), QLateral(k),   DTRT_CH, So(k), &
                     CHANLEN(k), MannN(k), ChSSlp(k), Bw(k), Tw(k),Tw_CC(k), n_CC(k),  HLINK(k), ChannK(k) )
 
-                   else
+                else
                     print *, "FATAL ERROR: no channel option selected"
                     call hydro_stop("In drive_CHANNEL() - no channel option selected")
                    endif
 !            endif !!! order(1) .ne. 1
          end do       !--k links
+
+#ifdef MPP_LAND
+         call updateLake_seq(RESHT,nlakes,tmpRESHT)
+         call updateLake_seq(QLAKEO,nlakes,tmpQLAKEO)
+         call updateLake_seq(QLAKEI,nlakes,tmpQLAKEI)
+#endif
 
 !yw check
 !        gQLINK = 0.0
@@ -856,7 +876,7 @@ END SUBROUTINE SUBMUSKINGCUNGE
 !        endif
 
           do k = 1, NLINKSL
-            if(TYPEL(k) .ne. 1) then
+            if(TYPEL(k) .ne. 2) then
                QLINK(k,2) = tmpQLINK(k,2)
             endif
             QLINK(k,1) = QLINK(k,2)    !assing link flow of current to be previous for next time step
@@ -1290,7 +1310,13 @@ gwOption:   if(gwBaseSwCRT == 3) then
 
         if (KT .eq. 1) KT = KT + 1
 
-
+#ifdef MPP_LAND
+       if (my_id == io_id) then
+           if(allocated(tmpRESHT))  deallocate(tmpRESHT)
+           if(allocated(tmpQLAKEO))  deallocate(tmpQLAKEO)
+           if(allocated(tmpQLAKEI))  deallocate(tmpQLAKEI)
+       endif
+#endif
 end subroutine drive_CHANNEL
 ! ----------------------------------------------------------------
 
@@ -1524,7 +1550,6 @@ end subroutine drive_CHANNEL
 #endif
          write(unit,*) cd
           call flush(unit)
-         return
     end subroutine check_lake
 
     subroutine check_channel(unit,cd,did,nlinks)
@@ -1547,7 +1572,6 @@ end subroutine drive_CHANNEL
 #endif
           call flush(unit)
           close(unit)
-         return
     end subroutine check_channel
     subroutine smoth121(var,nlinks,maxv_p,from_node,to_node)
         implicit none
@@ -1581,7 +1605,6 @@ end subroutine drive_CHANNEL
                  endif
               end do
               var = vartmp
-        return
     end subroutine smoth121
 
 !   SUBROUTINE drive_CHANNEL for NHDPLUS

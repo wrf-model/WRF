@@ -201,7 +201,7 @@ contains
             ! Initialize level pool reservoir
             call this%state%levelpool_ptr%init(water_elevation, lake_area, &
             weir_elevation, weir_coeffecient, weir_length, dam_length, orifice_elevation, &
-            orifice_coefficient, orifice_area, lake_max_water_elevation, lake_number)
+            orifice_coefficient, orifice_area, lake_max_water_elevation, lake_number, 1)
 
         end if
     end subroutine hybrid_init

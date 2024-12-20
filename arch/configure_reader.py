@@ -19,6 +19,7 @@ osAndArchAlt  = re.compile( r"^ARCH[ ]+(\w+)[ ]+(\w+)",         re.I )
 referenceVar  = re.compile( r"[$]([(])?(\w+)(?(1)[)])", re.I )
 compileObject = re.compile( r"(\W|^)-c(\W|$)" )
 configureRepl = re.compile( r"(\W|^)CONFIGURE_\w+(\W|$)" )
+defineRepl    = re.compile( r"-D([^ ]+)" )
 
 class Stanza():
   
@@ -164,6 +165,7 @@ class Stanza():
     for keyToSan in self.kvPairs_.keys() :
       self.kvPairs_[ keyToSan ] = configureRepl.sub( r"\1\2", self.kvPairs_[ keyToSan ] ).strip()
       self.kvPairs_[ keyToSan ] = compileObject.sub( r"\1\2", self.kvPairs_[ keyToSan ] ).strip()
+      self.kvPairs_[ keyToSan ] =    defineRepl.sub( r"\1",   self.kvPairs_[ keyToSan ] ).strip()
 
 
     # Now fix certain ones that are mixing programs with flags all mashed into one option

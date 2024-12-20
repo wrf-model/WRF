@@ -1,11 +1,12 @@
 cmake_minimum_required( VERSION 3.20 )
 cmake_policy( SET CMP0118 NEW )
 
+project( WRF )
+
 enable_language( C )
 enable_language( CXX )
 enable_language( Fortran )
 
-project( WRF )
 set( EXPORT_NAME ${PROJECT_NAME} )
 
 if ( DEFINED CMAKE_TOOLCHAIN_FILE )

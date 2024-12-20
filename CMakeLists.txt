@@ -1,5 +1,4 @@
-cmake_minimum_required( VERSION 3.20 )
-cmake_policy( SET CMP0118 NEW )
+cmake_minimum_required( VERSION 3.19 )
 
 project( WRF )
 

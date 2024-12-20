@@ -102,7 +102,8 @@ endif()
 target_sources(
                 ${PROJECT_NAME}_Core
                 PRIVATE
-                  ${WRF_INCLUDE_FILES}
+                  module_internal_header_util.F
+
 
                   module_configure.F
                   module_driver_constants.F

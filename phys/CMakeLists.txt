@@ -5,14 +5,13 @@
 # Quickly preprocess some files so that cmake can understand the module dependencies
 #
 ########################################################################################################################
-get_directory_property( DIR_DEFS DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_DEFINITIONS )
 wrf_c_preproc_fortran( 
                       TARGET_NAME     module_ra_rrtmg_preproc
                       OUTPUT_DIR      ${CMAKE_CURRENT_BINARY_DIR}/preproc/
                       EXTENSION       ".f90"
                       INCLUDES        ${CMAKE_CURRENT_SOURCE_DIR}
                       DEPENDENCIES    registry_code
-                      DEFINITIONS     ${DIR_DEFS}
+                      DEFINITIONS     ${PROJECT_COMPILE_DEFINITIONS}
                       SOURCES         module_ra_rrtmg_lwk.F
                                       module_ra_rrtmg_lwf.F
                                       module_ra_rrtmg_swk.F

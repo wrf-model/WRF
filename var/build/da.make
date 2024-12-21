@@ -125,16 +125,50 @@ WRFVAR_OBJS = \
    module_comm_dm_2.o \
    module_comm_dm_3.o \
    module_comm_dm_4.o \
-   module_alloc_space_0.o \
-   module_alloc_space_1.o \
-   module_alloc_space_2.o \
-   module_alloc_space_3.o \
-   module_alloc_space_4.o \
-   module_alloc_space_5.o \
-   module_alloc_space_6.o \
-   module_alloc_space_7.o \
-   module_alloc_space_8.o \
-   module_alloc_space_9.o \
+   inc/allocs_0.o \
+   inc/allocs_1.o \
+   inc/allocs_2.o \
+   inc/allocs_3.o \
+   inc/allocs_4.o \
+   inc/allocs_5.o \
+   inc/allocs_6.o \
+   inc/allocs_7.o \
+   inc/allocs_8.o \
+   inc/allocs_9.o \
+   inc/allocs_10.o \
+   inc/allocs_11.o \
+   inc/allocs_12.o \
+   inc/allocs_13.o \
+   inc/allocs_14.o \
+   inc/allocs_15.o \
+   inc/allocs_16.o \
+   inc/allocs_17.o \
+   inc/allocs_18.o \
+   inc/allocs_19.o \
+   inc/allocs_20.o \
+   inc/allocs_21.o \
+   inc/allocs_22.o \
+   inc/allocs_23.o \
+   inc/allocs_24.o \
+   inc/allocs_25.o \
+   inc/allocs_26.o \
+   inc/allocs_27.o \
+   inc/allocs_28.o \
+   inc/allocs_29.o \
+   inc/allocs_30.o \
+   inc/allocs_31.o \
+   inc/deallocs_0.o \
+   inc/deallocs_1.o \
+   inc/deallocs_2.o \
+   inc/deallocs_3.o \
+   inc/deallocs_4.o \
+   inc/deallocs_5.o \
+   inc/deallocs_6.o \
+   inc/deallocs_7.o \
+   inc/deallocs_8.o \
+   inc/deallocs_9.o \
+   inc/deallocs_10.o \
+   inc/deallocs_11.o \
    nl_get_0_routines.o \
    nl_get_1_routines.o \
    nl_get_2_routines.o \

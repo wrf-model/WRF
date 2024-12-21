@@ -8,14 +8,11 @@ target_link_libraries(hydro_driver PUBLIC
         hydro_data_rec
         hydro_routing
         hydro_debug_utils
+        PRIVATE
+          netCDF::netcdff
 )
 
 if(WRF_HYDRO_NUDGING STREQUAL "1")
         target_link_libraries(hydro_driver PUBLIC hydro_nudging)
 endif()
 
-target_include_directories(hydro_driver
-        PRIVATE
-        ${netCDF_INCLUDE_DIRS}
-        ${netCDF-Fortran_INCLUDE_DIRS}
-)

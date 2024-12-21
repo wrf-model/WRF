@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <sys/types.h>
+int
 main()
 {
   FILE *fp ;
@@ -43,6 +44,6 @@ main()
     retval = 1 ;
   }
   fclose(fp) ;
-  exit(retval) ;
+  return retval ;
 }
 

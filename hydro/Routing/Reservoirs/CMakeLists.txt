@@ -5,10 +5,9 @@ add_library(hydro_routing_reservoirs STATIC
         module_reservoir_utilities.F90
 )
 
-target_include_directories(hydro_routing_reservoirs
+target_link_libraries(hydro_routing_reservoirs
         PRIVATE
-        ${netCDF_INCLUDE_DIRS}
-        ${netCDF-Fortran_INCLUDE_DIRS}
+        netCDF::netcdff
 )
 
 add_subdirectory("Level_Pool")

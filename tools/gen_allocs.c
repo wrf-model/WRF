@@ -25,27 +25,251 @@ int
 gen_alloc1 ( char * dirname )
 {
   FILE * fp ;
+  FILE * fpCalls ;
   char  fname[NAMELEN] ;
   char * fn = "allocs.inc" ;
-  int startpiece, fraction, iguy, numguys ;
-  int stats[4] ;
-#define FRAC 8
+  char * fnCalls = "allocs_calls.inc" ;
+  node_t *p;
+
+  // Open array of allocs_[n].F
+  int    numFiles = 32;
+  int    idx      = 0;
+  int    start    = 0;
+  int    stop     = -1;
+  int    primaryFields = 0;
+  FILE * fpSub; 
+  char * filename_prefix = "allocs_" ;
 
   if ( dirname == NULL ) return(1) ;
   if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s",dirname,fn) ; }
   else                       { sprintf(fname,"%s",fn) ; }
   if ((fp = fopen( fname , "w" )) == NULL ) return(1) ;
+
+  if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s",dirname,fnCalls) ; }
+  else                       { sprintf(fname,"%s",fnCalls) ; }
+  if ((fpCalls = fopen( fname , "w" )) == NULL ) return(1) ;
+
+  for ( p = Domain.fields; p != NULL ; p = p->next ) { primaryFields++ ; }
+
   print_warning(fp,fname) ;
-  startpiece = 0 ;
-  fraction   = 0 ;
-  numguys = 0 ;
-  iguy = -1 ;
-  stats[0] = 0 ; stats[1] = 0 ; stats[2] = 0 ; stats[3] = 0 ;
-  get_count_for_alloc( &Domain, &numguys , stats) ;  /* howmany deez guys? */
-  fprintf(stderr,"Registry INFO variable counts: 0d %d 1d %d 2d %d 3d %d\n",stats[0],stats[1],stats[2],stats[3]) ; 
-  fprintf(fp,"#if 1\n") ;
-  gen_alloc2( fp , "grid%", NULL, &Domain, &startpiece , &iguy, &fraction, numguys, FRAC, 1 ) ;
-  fprintf(fp,"#endif\n") ;
+  fprintf(
+          fp,
+          "INTERFACE\n"
+          );
+  for ( idx = 0; idx < numFiles; idx++ )
+  {
+    if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s%d.F",dirname,filename_prefix,idx) ; }
+    else                       { sprintf(fname,"%s%d.F",dirname,filename_prefix,idx ) ; }
+    if ((fpSub = fopen( fname , "w" )) == NULL ) return(1) ;
+
+    print_warning(fpSub,fname) ;
+    fprintf(
+            fp,
+            "  SUBROUTINE %s%d( grid,   id, setinitval_in ,  tl_in , inter_domain_in , okay_to_alloc_in, num_bytes_allocated ,  &\n"
+            "           sd31, ed31, sd32, ed32, sd33, ed33, &\n"
+            "           sm31 , em31 , sm32 , em32 , sm33 , em33 , &\n"
+            "           sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &\n"
+            "           sp31x, ep31x, sp32x, ep32x, sp33x, ep33x, &\n"
+            "           sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &\n"
+            "           sm31x, em31x, sm32x, em32x, sm33x, em33x, &\n"
+            "           sm31y, em31y, sm32y, em32y, sm33y, em33y )\n"
+            "    USE module_domain_type\n"
+            "    USE module_configure, ONLY : model_config_rec, grid_config_rec_type, in_use_for_config, model_to_grid_config_rec\n"
+            "    USE module_scalar_tables ! this includes module_state_description too\n"
+            "    IMPLICIT NONE\n"
+            "    !  Input data.\n\n"
+            "    TYPE(domain)               , POINTER          :: grid\n"
+            "    INTEGER , INTENT(IN)            :: id\n"
+            "    INTEGER , INTENT(IN)            :: setinitval_in   ! 3 = everything, 1 = arrays only, 0 = none\n"
+            "    INTEGER , INTENT(IN)            :: sd31, ed31, sd32, ed32, sd33, ed33\n"
+            "    INTEGER , INTENT(IN)            :: sm31, em31, sm32, em32, sm33, em33\n"
+            "    INTEGER , INTENT(IN)            :: sp31, ep31, sp32, ep32, sp33, ep33\n"
+            "    INTEGER , INTENT(IN)            :: sp31x, ep31x, sp32x, ep32x, sp33x, ep33x\n"
+            "    INTEGER , INTENT(IN)            :: sp31y, ep31y, sp32y, ep32y, sp33y, ep33y\n"
+            "    INTEGER , INTENT(IN)            :: sm31x, em31x, sm32x, em32x, sm33x, em33x\n"
+            "    INTEGER , INTENT(IN)            :: sm31y, em31y, sm32y, em32y, sm33y, em33y\n\n"
+            "    ! this argument is a bitmask. First bit is time level 1, second is time level 2, and so on.\n"
+            "    ! e.g. to set both 1st and second time level, use 3\n"
+            "    !      to set only 1st                        use 1\n"
+            "    !      to set only 2st                        use 2\n"
+            "    INTEGER , INTENT(IN)            :: tl_in\n\n"
+            "    ! true if the allocation is for an intermediate domain (for nesting); only certain fields allocated\n"
+            "    ! false otherwise (all allocated, modulo tl above)\n"
+            "    LOGICAL , INTENT(IN)            :: inter_domain_in, okay_to_alloc_in\n\n"
+            "    INTEGER(KIND=8) , INTENT(INOUT)         :: num_bytes_allocated\n"
+            "  END SUBROUTINE %s%d\n",
+            filename_prefix, idx, filename_prefix, idx
+            );
+
+    // Call the functions in the calls inc
+    fprintf(
+            fpCalls,
+            "CALL %s%d( grid,   id, setinitval_in ,  tl_in , inter_domain_in , okay_to_alloc_in, num_bytes_allocated ,  &\n"
+            "           sd31, ed31, sd32, ed32, sd33, ed33, &\n"
+            "           sm31 , em31 , sm32 , em32 , sm33 , em33 , &\n"
+            "           sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &\n"
+            "           sp31x, ep31x, sp32x, ep32x, sp33x, ep33x, &\n"
+            "           sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &\n"
+            "           sm31x, em31x, sm32x, em32x, sm33x, em33x, &\n"
+            "           sm31y, em31y, sm32y, em32y, sm33y, em33y )\n", 
+            filename_prefix, idx
+            );
+
+    fprintf(
+            fpSub,
+            "SUBROUTINE %s%d( grid,   id, setinitval_in ,  tl_in , inter_domain_in , okay_to_alloc_in, num_bytes_allocated ,  &\n"
+            "         sd31, ed31, sd32, ed32, sd33, ed33, &\n"
+            "         sm31 , em31 , sm32 , em32 , sm33 , em33 , &\n"
+            "         sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &\n"
+            "         sp31x, ep31x, sp32x, ep32x, sp33x, ep33x, &\n"
+            "         sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &\n"
+            "         sm31x, em31x, sm32x, em32x, sm33x, em33x, &\n"
+            "         sm31y, em31y, sm32y, em32y, sm33y, em33y )\n"
+            "  USE module_domain_type\n"
+            "  USE module_configure, ONLY : model_config_rec, grid_config_rec_type, in_use_for_config, model_to_grid_config_rec\n"
+            "  USE module_scalar_tables ! this includes module_state_description too\n"
+            "  IMPLICIT NONE\n"
+            "  !  Input data.\n\n"
+            "  TYPE(domain)               , POINTER          :: grid\n"
+            "  INTEGER , INTENT(IN)            :: id\n"
+            "  INTEGER , INTENT(IN)            :: setinitval_in   ! 3 = everything, 1 = arrays only, 0 = none\n"
+            "  INTEGER , INTENT(IN)            :: sd31, ed31, sd32, ed32, sd33, ed33\n"
+            "  INTEGER , INTENT(IN)            :: sm31, em31, sm32, em32, sm33, em33\n"
+            "  INTEGER , INTENT(IN)            :: sp31, ep31, sp32, ep32, sp33, ep33\n"
+            "  INTEGER , INTENT(IN)            :: sp31x, ep31x, sp32x, ep32x, sp33x, ep33x\n"
+            "  INTEGER , INTENT(IN)            :: sp31y, ep31y, sp32y, ep32y, sp33y, ep33y\n"
+            "  INTEGER , INTENT(IN)            :: sm31x, em31x, sm32x, em32x, sm33x, em33x\n"
+            "  INTEGER , INTENT(IN)            :: sm31y, em31y, sm32y, em32y, sm33y, em33y\n\n"
+            "  ! this argument is a bitmask. First bit is time level 1, second is time level 2, and so on.\n"
+            "  ! e.g. to set both 1st and second time level, use 3\n"
+            "  !      to set only 1st                        use 1\n"
+            "  !      to set only 2st                        use 2\n"
+            "  INTEGER , INTENT(IN)            :: tl_in\n\n"
+            "  ! true if the allocation is for an intermediate domain (for nesting); only certain fields allocated\n"
+            "  ! false otherwise (all allocated, modulo tl above)\n"
+            "  LOGICAL , INTENT(IN)            :: inter_domain_in, okay_to_alloc_in\n\n"
+            "  INTEGER(KIND=8) , INTENT(INOUT)         :: num_bytes_allocated\n"
+            "  !  Local data.\n"
+            "  INTEGER idum1, idum2, spec_bdy_width\n"
+            "  REAL    initial_data_value\n"
+            "  CHARACTER (LEN=256) message\n"
+            "  INTEGER tl\n"
+            "  LOGICAL inter_domain, okay_to_alloc\n"
+            "  INTEGER setinitval\n"
+            "  INTEGER sr_x, sr_y\n\n"
+            "  !declare ierr variable for error checking ALLOCATE calls\n"
+            "  INTEGER ierr\n\n"
+            "  INTEGER                              :: loop\n"
+            "  INTEGER(KIND=8)                      :: nba ! number of bytes allocated per variable\n"
+            "  CHARACTER(LEN=256)                   :: message_string\n\n"
+            "  ! Local data\n\n"
+            "  TYPE ( grid_config_rec_type ) :: config_flags\n\n"
+            "  INTEGER                         :: k_start , k_end, its, ite, jts, jte\n"
+            "  INTEGER                         :: ids , ide , jds , jde , kds , kde , &\n"
+            "                                    ims , ime , jms , jme , kms , kme , &\n"
+            "                                    ips , ipe , jps , jpe , kps , kpe\n\n"
+            "  INTEGER                         :: sids , side , sjds , sjde , skds , skde , &\n"
+            "                                    sims , sime , sjms , sjme , skms , skme , &\n"
+            "                                    sips , sipe , sjps , sjpe , skps , skpe\n\n"
+            "  INTEGER ::              imsx, imex, jmsx, jmex, kmsx, kmex,    &\n"
+            "                          ipsx, ipex, jpsx, jpex, kpsx, kpex,    &\n"
+            "                          imsy, imey, jmsy, jmey, kmsy, kmey,    &\n"
+            "                          ipsy, ipey, jpsy, jpey, kpsy, kpey\n\n"
+            "  data_ordering : SELECT CASE ( model_data_order )\n"
+            "    CASE  ( DATA_ORDER_XYZ )\n"
+            "        ids = sd31 ; ide = ed31 ; jds = sd32 ; jde = ed32 ; kds = sd33 ; kde = ed33 ;\n"
+            "        ims = sm31 ; ime = em31 ; jms = sm32 ; jme = em32 ; kms = sm33 ; kme = em33 ;\n"
+            "        ips = sp31 ; ipe = ep31 ; jps = sp32 ; jpe = ep32 ; kps = sp33 ; kpe = ep33 ;\n"
+            "        imsx = sm31x ; imex = em31x ; jmsx = sm32x ; jmex = em32x ; kmsx = sm33x ; kmex = em33x ;\n"
+            "        ipsx = sp31x ; ipex = ep31x ; jpsx = sp32x ; jpex = ep32x ; kpsx = sp33x ; kpex = ep33x ;\n"
+            "        imsy = sm31y ; imey = em31y ; jmsy = sm32y ; jmey = em32y ; kmsy = sm33y ; kmey = em33y ;\n"
+            "        ipsy = sp31y ; ipey = ep31y ; jpsy = sp32y ; jpey = ep32y ; kpsy = sp33y ; kpey = ep33y ;\n"
+            "    CASE  ( DATA_ORDER_YXZ )\n"
+            "        ids = sd32  ; ide = ed32  ; jds = sd31  ; jde = ed31  ; kds = sd33  ; kde = ed33  ;\n"
+            "        ims = sm32  ; ime = em32  ; jms = sm31  ; jme = em31  ; kms = sm33  ; kme = em33  ;\n"
+            "        ips = sp32  ; ipe = ep32  ; jps = sp31  ; jpe = ep31  ; kps = sp33  ; kpe = ep33  ;\n"
+            "        imsx = sm32x  ; imex = em32x  ; jmsx = sm31x  ; jmex = em31x  ; kmsx = sm33x  ; kmex = em33x  ;\n"
+            "        ipsx = sp32x  ; ipex = ep32x  ; jpsx = sp31x  ; jpex = ep31x  ; kpsx = sp33x  ; kpex = ep33x  ;\n"
+            "        imsy = sm32y  ; imey = em32y  ; jmsy = sm31y  ; jmey = em31y  ; kmsy = sm33y  ; kmey = em33y  ;\n"
+            "        ipsy = sp32y  ; ipey = ep32y  ; jpsy = sp31y  ; jpey = ep31y  ; kpsy = sp33y  ; kpey = ep33y  ;\n"
+            "    CASE  ( DATA_ORDER_ZXY )\n"
+            "        ids = sd32  ; ide = ed32  ; jds = sd33  ; jde = ed33  ; kds = sd31  ; kde = ed31  ;\n"
+            "        ims = sm32  ; ime = em32  ; jms = sm33  ; jme = em33  ; kms = sm31  ; kme = em31  ;\n"
+            "        ips = sp32  ; ipe = ep32  ; jps = sp33  ; jpe = ep33  ; kps = sp31  ; kpe = ep31  ;\n"
+            "        imsx = sm32x  ; imex = em32x  ; jmsx = sm33x  ; jmex = em33x  ; kmsx = sm31x  ; kmex = em31x  ;\n"
+            "        ipsx = sp32x  ; ipex = ep32x  ; jpsx = sp33x  ; jpex = ep33x  ; kpsx = sp31x  ; kpex = ep31x  ;\n"
+            "        imsy = sm32y  ; imey = em32y  ; jmsy = sm33y  ; jmey = em33y  ; kmsy = sm31y  ; kmey = em31y  ;\n"
+            "        ipsy = sp32y  ; ipey = ep32y  ; jpsy = sp33y  ; jpey = ep33y  ; kpsy = sp31y  ; kpey = ep31y  ;\n"
+            "    CASE  ( DATA_ORDER_ZYX )\n"
+            "        ids = sd33  ; ide = ed33  ; jds = sd32  ; jde = ed32  ; kds = sd31  ; kde = ed31  ;\n"
+            "        ims = sm33  ; ime = em33  ; jms = sm32  ; jme = em32  ; kms = sm31  ; kme = em31  ;\n"
+            "        ips = sp33  ; ipe = ep33  ; jps = sp32  ; jpe = ep32  ; kps = sp31  ; kpe = ep31  ;\n"
+            "        imsx = sm33x  ; imex = em33x  ; jmsx = sm32x  ; jmex = em32x  ; kmsx = sm31x  ; kmex = em31x  ;\n"
+            "        ipsx = sp33x  ; ipex = ep33x  ; jpsx = sp32x  ; jpex = ep32x  ; kpsx = sp31x  ; kpex = ep31x  ;\n"
+            "        imsy = sm33y  ; imey = em33y  ; jmsy = sm32y  ; jmey = em32y  ; kmsy = sm31y  ; kmey = em31y  ;\n"
+            "        ipsy = sp33y  ; ipey = ep33y  ; jpsy = sp32y  ; jpey = ep32y  ; kpsy = sp31y  ; kpey = ep31y  ;\n"
+            "    CASE  ( DATA_ORDER_XZY )\n"
+            "        ids = sd31  ; ide = ed31  ; jds = sd33  ; jde = ed33  ; kds = sd32  ; kde = ed32  ;\n"
+            "        ims = sm31  ; ime = em31  ; jms = sm33  ; jme = em33  ; kms = sm32  ; kme = em32  ;\n"
+            "        ips = sp31  ; ipe = ep31  ; jps = sp33  ; jpe = ep33  ; kps = sp32  ; kpe = ep32  ;\n"
+            "        imsx = sm31x  ; imex = em31x  ; jmsx = sm33x  ; jmex = em33x  ; kmsx = sm32x  ; kmex = em32x  ;\n"
+            "        ipsx = sp31x  ; ipex = ep31x  ; jpsx = sp33x  ; jpex = ep33x  ; kpsx = sp32x  ; kpex = ep32x  ;\n"
+            "        imsy = sm31y  ; imey = em31y  ; jmsy = sm33y  ; jmey = em33y  ; kmsy = sm32y  ; kmey = em32y  ;\n"
+            "        ipsy = sp31y  ; ipey = ep31y  ; jpsy = sp33y  ; jpey = ep33y  ; kpsy = sp32y  ; kpey = ep32y  ;\n"
+            "    CASE  ( DATA_ORDER_YZX )\n"
+            "        ids = sd33  ; ide = ed33  ; jds = sd31  ; jde = ed31  ; kds = sd32  ; kde = ed32  ;\n"
+            "        ims = sm33  ; ime = em33  ; jms = sm31  ; jme = em31  ; kms = sm32  ; kme = em32  ;\n"
+            "        ips = sp33  ; ipe = ep33  ; jps = sp31  ; jpe = ep31  ; kps = sp32  ; kpe = ep32  ;\n"
+            "        imsx = sm33x  ; imex = em33x  ; jmsx = sm31x  ; jmex = em31x  ; kmsx = sm32x  ; kmex = em32x  ;\n"
+            "        ipsx = sp33x  ; ipex = ep33x  ; jpsx = sp31x  ; jpex = ep31x  ; kpsx = sp32x  ; kpex = ep32x  ;\n"
+            "        imsy = sm33y  ; imey = em33y  ; jmsy = sm31y  ; jmey = em31y  ; kmsy = sm32y  ; kmey = em32y  ;\n"
+            "        ipsy = sp33y  ; ipey = ep33y  ; jpsy = sp31y  ; jpey = ep31y  ; kpsy = sp32y  ; kpey = ep32y  ;\n"
+            "  END SELECT data_ordering\n\n"
+            "  CALL model_to_grid_config_rec ( id , model_config_rec , config_flags )\n\n"
+            "  CALL nl_get_sr_x( id , sr_x )\n"
+            "  CALL nl_get_sr_y( id , sr_y )\n\n"
+            "  tl = tl_in\n"
+            "  inter_domain = inter_domain_in\n"
+            "  okay_to_alloc = okay_to_alloc_in\n\n"
+            "#if ( RWORDSIZE == 8 )\n"
+            "  initial_data_value = 0.\n"
+            "#else\n"
+            "  CALL get_initial_data_value ( initial_data_value )\n"
+            "#endif\n\n"
+            "#ifdef NO_INITIAL_DATA_VALUE\n"
+            "  setinitval = 0\n"
+            "#else\n"
+            "  setinitval = setinitval_in\n"
+            "#endif\n\n"
+            "  CALL nl_get_spec_bdy_width( 1, spec_bdy_width )\n\n",
+            filename_prefix, idx
+            );
+
+    // Determine start/stop fields
+    start = stop + 1;
+    if ( idx == numFiles - 1 )
+    {
+      // This should catch divisions that don't perfectly fit numFiles with at most numFiles 
+      // extra fields in the last file
+      stop = primaryFields;
+    }
+    else
+    {
+      stop  = start + ( primaryFields / numFiles );
+    }
+    gen_alloc2( fpSub , "grid%", NULL, &Domain, start, stop, 1 ) ;
+    fprintf(
+            fpSub,
+            "END SUBROUTINE %s%d\n",
+            filename_prefix, idx
+            );
+  }
+  fprintf(
+          fp,
+          "END INTERFACE\n"
+          );
+
+  close_the_file( fpCalls ) ;
   close_the_file( fp ) ;
   return(0) ;
 }
@@ -77,7 +301,7 @@ int
 nolistthese( char * ) ;
 
 int
-gen_alloc2 ( FILE * fp , char * structname , char * structname2 , node_t * node, int *j, int *iguy, int *fraction, int numguys, int frac, int sw ) /* 1 = allocate, 2 = just count */
+gen_alloc2 ( FILE * fp , char * structname , char * structname2 , node_t * node, int start, int stop, int sw ) /* 1 = allocate, 2 = just count */
 {
   node_t * p ;
   int tag ;
@@ -90,16 +314,23 @@ gen_alloc2 ( FILE * fp , char * structname , char * structname2 , node_t * node,
   unsigned int *io_mask ;
   int nd ;
   int restart ;
+  int currentIdx = -1;
 
   if ( node == NULL ) return(1) ;
 
   for ( p = node->fields ; p != NULL ; p = p->next )
   {
-    (*iguy)++ ;
-
-    if ( (*iguy % ((numguys+1)/frac+1)) == 0 ) {
-      fprintf(fp,"#endif\n") ;
-      fprintf(fp,"#if (NNN == %d)\n",(*j)++) ;
+    // Skip if this field is not part of [start,stop] and stop != -1, so -1 can be used to force output
+    currentIdx++;;
+    if ( currentIdx < start && stop != -1 )
+    {
+      continue;
+    }
+    // We should be at [start] or forcing output via stop == -1
+    if ( currentIdx > stop && stop != -1 )
+    {
+      // We passed stop and are not forcing, exit loop
+      break;
     }
 
     nd = p->ndims + ((p->node_kind & FOURD)?1:0) ;
@@ -489,7 +720,7 @@ if ( tag == 1 )
       {
         sprintf(x,"%s%s%%",structname,p->name ) ;
         sprintf(x2,"%s%%",p->name ) ;
-        gen_alloc2(fp,x, x2, p->type, j, iguy, fraction, numguys, 1, sw) ;
+        gen_alloc2(fp,x, x2, p->type, start, -1, sw) ;
       }
     }
   } /* fraction loop */
@@ -589,30 +820,97 @@ gen_dealloc1 ( char * dirname )
   FILE * fp ;
   char  fname[NAMELEN] ;
   char * fn = "deallocs.inc" ;
+  // Open array of deallocs_[n].inc
+  int    numFiles = 12;
+  int    idx      = 0;
+  FILE * fpSub; 
+  char * filename_prefix = "deallocs_" ;
 
   if ( dirname == NULL ) return(1) ;
   if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s",dirname,fn) ; }
   else                       { sprintf(fname,"%s",fn) ; }
   if ((fp = fopen( fname , "w" )) == NULL ) return(1) ;
   print_warning(fp,fname) ;
-  gen_dealloc2( fp , "grid%", &Domain ) ;
+
+  fprintf(
+          fp,
+          "INTERFACE\n"
+          );
+  if ( dirname == NULL ) return(1) ;
+  for ( idx = 0; idx < numFiles; idx++ )
+  {
+    if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s%d.F",dirname,filename_prefix,idx) ; }
+    else                       { sprintf(fname,"%s%d.F",dirname,filename_prefix,idx ) ; }
+    if ((fpSub = fopen( fname , "w" )) == NULL ) return(1) ;
+  
+    print_warning(fpSub,fname) ;
+
+    fprintf(
+            fp,
+            "  SUBROUTINE %s%d( grid )\n"
+            "    USE module_wrf_error\n"
+            "    USE module_domain_type\n"
+            "    IMPLICIT NONE\n"
+            "    TYPE( domain ), POINTER :: grid\n  END SUBROUTINE\n",
+            filename_prefix, idx
+            );
+
+    fprintf(
+            fpSub,
+            "SUBROUTINE %s%d( grid )\n"
+            "  USE module_wrf_error\n"
+            "  USE module_domain_type\n"
+            "  IMPLICIT NONE\n"
+            "  TYPE( domain ), POINTER :: grid\n  INTEGER :: ierr\n",
+            filename_prefix, idx
+            );
+    gen_dealloc2( fpSub, "grid%", &Domain, idx, numFiles );
+    fprintf(
+            fpSub,
+            "END SUBROUTINE %s%d\n",
+            filename_prefix, idx
+            );
+    close_the_file( fpSub ) ;
+  }
+  fprintf(
+          fp,
+          "END INTERFACE\n"
+          );
+  
+  // Call the functions in the inc
+  for ( idx = 0; idx < numFiles; idx++ )
+  {
+    fprintf(
+          fp,
+          "CALL %s%d( grid )\n", filename_prefix, idx
+          );
+  }
   close_the_file( fp ) ;
   return(0) ;
 }
 
 int
-gen_dealloc2 ( FILE * fp , char * structname , node_t * node )
+gen_dealloc2 ( FILE * fp , char * structname , node_t * node, int idx, int numFiles )
 {
   node_t * p ;
   int tag ;
   char post[NAMELEN] ;
   char fname[NAMELEN] ;
   char x[NAMELEN] ;
+  int currentIdx = -1;
 
   if ( node == NULL ) return(1) ;
 
   for ( p = node->fields ; p != NULL ; p = p->next )
   {
+    // Modulo to divert each field based on index to a file
+    // Skip if this field is not part of that index and idx != -1, so -1 can be used to force output
+    currentIdx = ( currentIdx + 1 ) % numFiles;
+    if ( currentIdx != idx && idx != -1 )
+    {
+      continue;
+    }
+
     if ( (p->ndims > 0 || p->boundary_array) && (  /* any array or a boundary array and...   */
           (p->node_kind & FIELD) ||                /* scalar arrays or                       */
           (p->node_kind & FOURD) )                 /* scalar arrays or                       */
@@ -682,7 +980,7 @@ structname, fname, structname, fname ) ;
       else if ( p->type->type_type == DERIVED )
       {
         sprintf(x,"%s%s%%",structname,p->name ) ;
-        gen_dealloc2(fp,x, p->type) ;
+        gen_dealloc2(fp,x, p->type, idx, -1) ;
       }
     }
   }

@@ -12,16 +12,31 @@ mediation_interp_domain.o : mediation_interp_domain.F module_timing.o module_con
 mediation_nest_move.o : mediation_nest_move.F module_streams.o module_compute_geop.o module_driver_constants.o module_dm.o module_state_description.o module_configure.o module_timing.o module_utility.o module_domain.o 
 mediation_wrfmain.o : mediation_wrfmain.F module_utility.o module_bc_time_utilities.o module_io.o module_timing.o module_io_domain.o module_configure.o module_domain.o 
 module_MPP.o : module_MPP.F 
-module_alloc_space_0.o : module_alloc_space_0.F module_alloc_space.h module_configure.o module_configure.o module_domain_type.o 
-module_alloc_space_1.o : module_alloc_space_1.F module_alloc_space.h module_configure.o module_configure.o module_domain_type.o 
-module_alloc_space_2.o : module_alloc_space_2.F module_alloc_space.h module_configure.o module_configure.o module_domain_type.o 
-module_alloc_space_3.o : module_alloc_space_3.F module_alloc_space.h module_configure.o module_configure.o module_domain_type.o 
-module_alloc_space_4.o : module_alloc_space_4.F module_alloc_space.h module_configure.o module_configure.o module_domain_type.o 
-module_alloc_space_5.o : module_alloc_space_5.F module_alloc_space.h module_configure.o module_configure.o module_domain_type.o 
-module_alloc_space_6.o : module_alloc_space_6.F module_alloc_space.h module_configure.o module_configure.o module_domain_type.o 
-module_alloc_space_7.o : module_alloc_space_7.F module_alloc_space.h module_configure.o module_configure.o module_domain_type.o 
-module_alloc_space_8.o : module_alloc_space_8.F module_alloc_space.h module_configure.o module_configure.o module_domain_type.o 
-module_alloc_space_9.o : module_alloc_space_9.F module_alloc_space.h module_configure.o module_configure.o module_domain_type.o 
+# See main/depend.common for explanation of source file dependency recipes for deallocs
+inc/deallocs_0.o : module_wrf_error.o module_domain_type.o
+inc/deallocs_0.F : module_state_description.F
+inc/deallocs_1.o : module_wrf_error.o module_domain_type.o
+inc/deallocs_1.F : module_state_description.F
+inc/deallocs_2.o : module_wrf_error.o module_domain_type.o
+inc/deallocs_2.F : module_state_description.F
+inc/deallocs_3.o : module_wrf_error.o module_domain_type.o
+inc/deallocs_3.F : module_state_description.F
+inc/deallocs_4.o : module_wrf_error.o module_domain_type.o
+inc/deallocs_4.F : module_state_description.F
+inc/deallocs_5.o : module_wrf_error.o module_domain_type.o
+inc/deallocs_5.F : module_state_description.F
+inc/deallocs_6.o : module_wrf_error.o module_domain_type.o
+inc/deallocs_6.F : module_state_description.F
+inc/deallocs_7.o : module_wrf_error.o module_domain_type.o
+inc/deallocs_7.F : module_state_description.F
+inc/deallocs_8.o : module_wrf_error.o module_domain_type.o
+inc/deallocs_8.F : module_state_description.F
+inc/deallocs_9.o : module_wrf_error.o module_domain_type.o
+inc/deallocs_9.F : module_state_description.F
+inc/deallocs_10.o : module_wrf_error.o module_domain_type.o
+inc/deallocs_10.F : module_state_description.F
+inc/deallocs_11.o : module_wrf_error.o module_domain_type.o
+inc/deallocs_11.F : module_state_description.F
 module_bc.o : module_bc.F module_state_description.o module_wrf_error.o module_configure.o module_model_constants.o
 module_bc_time_utilities.o : module_bc_time_utilities.F module_utility.o 
 module_check_a_mundo.o : module_check_a_mundo.F module_configure.o module_wrf_error.o module_state_description.o 
@@ -36,8 +51,183 @@ module_compute_geop.o : module_compute_geop.F
 module_configure.o : module_configure.F module_wrf_error.o module_domain_type.o module_state_description.o module_driver_constants.o 
 module_date_time.o : module_date_time.F module_utility.o module_model_constants.o module_configure.o module_wrf_error.o 
 module_dm.o : module_dm.F module_comm_dm.o module_utility.o module_comm_nesting_dm.o module_configure.o module_state_description.o module_timing.o module_domain.o module_driver_constants.o module_wrf_error.o module_machine.o 
-module_domain.o : module_domain.F module_alloc_space_9.o module_alloc_space_8.o module_alloc_space_7.o module_alloc_space_6.o module_alloc_space_5.o module_alloc_space_4.o module_alloc_space_3.o module_alloc_space_2.o module_alloc_space_1.o module_alloc_space_0.o module_domain_type.o module_utility.o module_wrf_error.o module_configure.o module_machine.o module_driver_constants.o 
+module_domain.o : module_domain.F \
+                inc/allocs_0.o                  \
+                inc/allocs_1.o                  \
+                inc/allocs_2.o                  \
+                inc/allocs_3.o                  \
+                inc/allocs_4.o                  \
+                inc/allocs_5.o                  \
+                inc/allocs_6.o                  \
+                inc/allocs_7.o                  \
+                inc/allocs_8.o                  \
+                inc/allocs_9.o                  \
+                inc/allocs_10.o                  \
+                inc/allocs_11.o                  \
+                inc/allocs_12.o                  \
+                inc/allocs_13.o                  \
+                inc/allocs_14.o                  \
+                inc/allocs_15.o                  \
+                inc/allocs_16.o                  \
+                inc/allocs_17.o                  \
+                inc/allocs_18.o                  \
+                inc/allocs_19.o                  \
+                inc/allocs_20.o                  \
+                inc/allocs_21.o                  \
+                inc/allocs_22.o                  \
+                inc/allocs_23.o                  \
+                inc/allocs_24.o                  \
+                inc/allocs_25.o                  \
+                inc/allocs_26.o                  \
+                inc/allocs_27.o                  \
+                inc/allocs_28.o                  \
+                inc/allocs_29.o                  \
+                inc/allocs_30.o                  \
+                inc/allocs_31.o                  \
+                inc/deallocs_0.o                 \
+                inc/deallocs_1.o                 \
+                inc/deallocs_2.o                 \
+                inc/deallocs_3.o                 \
+                inc/deallocs_4.o                 \
+                inc/deallocs_5.o                 \
+                inc/deallocs_6.o                 \
+                inc/deallocs_7.o                 \
+                inc/deallocs_8.o                 \
+                inc/deallocs_9.o                 \
+                inc/deallocs_10.o                \
+                inc/deallocs_11.o                \
+                module_domain_type.o module_utility.o module_wrf_error.o module_configure.o module_machine.o module_driver_constants.o 
 module_domain_type.o : module_domain_type.F module_streams.o module_utility.o module_driver_constants.o 
+# See main/depend.common for explanation of source file dependency recipes for allocs
+inc/allocs_0.o: \
+	module_domain_type.o \
+	module_configure.o 
+inc/allocs_0.F : module_state_description.F
+inc/allocs_1.o: \
+	module_domain_type.o \
+	module_configure.o 
+inc/allocs_1.F : module_state_description.F
+inc/allocs_2.o: \
+	module_domain_type.o \
+	module_configure.o 
+inc/allocs_2.F : module_state_description.F
+inc/allocs_3.o: \
+	module_domain_type.o \
+	module_configure.o 
+inc/allocs_3.F : module_state_description.F
+inc/allocs_4.o: \
+	module_domain_type.o \
+	module_configure.o 
+inc/allocs_4.F : module_state_description.F
+inc/allocs_5.o: \
+	module_domain_type.o \
+	module_configure.o 
+inc/allocs_5.F : module_state_description.F
+inc/allocs_6.o: \
+	module_domain_type.o \
+	module_configure.o 
+inc/allocs_6.F : module_state_description.F
+inc/allocs_7.o: \
+	module_domain_type.o \
+	module_configure.o 
+inc/allocs_7.F : module_state_description.F
+inc/allocs_8.o: \
+	module_domain_type.o \
+	module_configure.o 
+inc/allocs_8.F : module_state_description.F
+inc/allocs_9.o: \
+	module_domain_type.o \
+	module_configure.o 
+inc/allocs_9.F : module_state_description.F
+inc/allocs_10.o: \
+	module_domain_type.o \
+	module_configure.o 
+inc/allocs_10.F : module_state_description.F
+inc/allocs_11.o: \
+	module_domain_type.o \
+	module_configure.o 
+inc/allocs_11.F : module_state_description.F
+inc/allocs_12.o: \
+	module_domain_type.o \
+	module_configure.o 
+inc/allocs_12.F : module_state_description.F
+inc/allocs_13.o: \
+	module_domain_type.o \
+	module_configure.o 
+inc/allocs_13.F : module_state_description.F
+inc/allocs_14.o: \
+	module_domain_type.o \
+	module_configure.o 
+inc/allocs_14.F : module_state_description.F
+inc/allocs_15.o: \
+	module_domain_type.o \
+	module_configure.o 
+inc/allocs_15.F : module_state_description.F
+inc/allocs_16.o: \
+	module_domain_type.o \
+	module_configure.o 
+inc/allocs_16.F : module_state_description.F
+inc/allocs_17.o: \
+	module_domain_type.o \
+	module_configure.o 
+inc/allocs_17.F : module_state_description.F
+inc/allocs_18.o: \
+	module_domain_type.o \
+	module_configure.o 
+inc/allocs_18.F : module_state_description.F
+inc/allocs_19.o: \
+	module_domain_type.o \
+	module_configure.o 
+inc/allocs_19.F : module_state_description.F
+inc/allocs_20.o: \
+	module_domain_type.o \
+	module_configure.o 
+inc/allocs_20.F : module_state_description.F
+inc/allocs_21.o: \
+	module_domain_type.o \
+	module_configure.o 
+inc/allocs_21.F : module_state_description.F
+inc/allocs_22.o: \
+	module_domain_type.o \
+	module_configure.o 
+inc/allocs_22.F : module_state_description.F
+inc/allocs_23.o: \
+	module_domain_type.o \
+	module_configure.o 
+inc/allocs_23.F : module_state_description.F
+inc/allocs_24.o: \
+	module_domain_type.o \
+	module_configure.o 
+inc/allocs_24.F : module_state_description.F
+inc/allocs_25.o: \
+	module_domain_type.o \
+	module_configure.o 
+inc/allocs_25.F : module_state_description.F
+inc/allocs_26.o: \
+	module_domain_type.o \
+	module_configure.o 
+inc/allocs_26.F : module_state_description.F
+inc/allocs_27.o: \
+	module_domain_type.o \
+	module_configure.o 
+inc/allocs_27.F : module_state_description.F
+inc/allocs_28.o: \
+	module_domain_type.o \
+	module_configure.o 
+inc/allocs_28.F : module_state_description.F
+inc/allocs_29.o: \
+	module_domain_type.o \
+	module_configure.o 
+inc/allocs_29.F : module_state_description.F
+inc/allocs_30.o: \
+	module_domain_type.o \
+	module_configure.o 
+inc/allocs_30.F : module_state_description.F
+inc/allocs_31.o: \
+	module_domain_type.o \
+	module_configure.o 
+inc/allocs_31.F : module_state_description.F
+
 module_driver_constants.o : module_driver_constants.F 
 module_em.o : module_em.F module_state_description.o module_model_constants.o 
 module_get_file_names.o : module_get_file_names.F 

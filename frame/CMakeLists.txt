@@ -14,7 +14,6 @@ set(
 # Generate all the combinations dynamically, not a fan of this file breakdown
 ########################################################################################################################
 set( nl_dyn_source )
-get_directory_property( DIR_DEFS DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_DEFINITIONS )
 foreach( n RANGE 0 7 )
   
   wrf_c_preproc_fortran( 
@@ -25,7 +24,7 @@ foreach( n RANGE 0 7 )
                         INCLUDES        ${CMAKE_CURRENT_SOURCE_DIR}
                                         ${CMAKE_BINARY_DIR}/inc
                         DEPENDENCIES    registry_code
-                        DEFINITIONS     ${DIR_DEFS} NNN=${n} NL_set_ROUTINES
+                        DEFINITIONS     ${PROJECT_COMPILE_DEFINITIONS} NNN=${n} NL_set_ROUTINES
                         SOURCES         nl_access_routines.F
                         )
   wrf_c_preproc_fortran( 
@@ -36,7 +35,7 @@ foreach( n RANGE 0 7 )
                       INCLUDES        ${CMAKE_CURRENT_SOURCE_DIR}
                                       ${CMAKE_BINARY_DIR}/inc
                       DEPENDENCIES    registry_code
-                      DEFINITIONS     ${DIR_DEFS} NNN=${n} NL_get_ROUTINES
+                      DEFINITIONS     ${PROJECT_COMPILE_DEFINITIONS} NNN=${n} NL_get_ROUTINES
                       SOURCES         nl_access_routines.F
                       )
 
@@ -87,13 +86,24 @@ target_include_directories(
 set( MODULE_DM module_dm_stubs.F )
 if ( ${USE_RSL_LITE} )
   message( STATUS "Setting module_dm to RSL_LITE" )
-  set( MODULE_DM ${PROJECT_SOURCE_DIR}/external/RSL_LITE/module_dm.F )
+  set(
+      MODULE_DM
+      ${PROJECT_SOURCE_DIR}/external/RSL_LITE/module_dm.F
+      ${PROJECT_SOURCE_DIR}/external/RSL_LITE/feedback_domain_em_part1.F
+      ${PROJECT_SOURCE_DIR}/external/RSL_LITE/feedback_domain_em_part2.F
+      ${PROJECT_SOURCE_DIR}/external/RSL_LITE/force_domain_em_part2.F
+      ${PROJECT_SOURCE_DIR}/external/RSL_LITE/interp_domain_em_part1.F
+      ${PROJECT_SOURCE_DIR}/external/RSL_LITE/interp_domain_em_part2.F
+      ${PROJECT_SOURCE_DIR}/external/RSL_LITE/interp_domain_em_part3.F
+      ${PROJECT_SOURCE_DIR}/external/RSL_LITE/interp_domain_em_small.F
+      )
 endif()
 
 target_sources(
                 ${PROJECT_NAME}_Core
                 PRIVATE
-                  ${WRF_INCLUDE_FILES}
+                  module_internal_header_util.F
+
 
                   module_configure.F
                   module_driver_constants.F
@@ -109,18 +119,6 @@ target_sources(
                   module_cpl_oasis3.F
 
 
-                  module_alloc_space_0.F
-                  module_alloc_space_1.F
-                  module_alloc_space_2.F
-                  module_alloc_space_3.F
-                  module_alloc_space_4.F
-                  module_alloc_space_5.F
-                  module_alloc_space_6.F
-                  module_alloc_space_7.F
-                  module_alloc_space_8.F
-                  module_alloc_space_9.F
-                  
-                  ${CMAKE_BINARY_DIR}/frame/module_state_description.F # GENERATED
                   ${nl_dyn_source}                                     # GENERATED
 
                   clog.c
@@ -158,8 +156,10 @@ target_sources(
 # Disable optimizations on these files always
 set_source_files_properties(
                             ${nl_dyn_source}
+                            module_comm_nesting_dm.F
+                            DIRECTORY ${PROJECT_SOURCE_DIR}
                             PROPERTIES
-                            COMPILE_FLAGS
+                            COMPILE_OPTIONS_OPTIMIZATION
                               $<$<COMPILE_LANGUAGE:Fortran>:${WRF_FCNOOPT}>
                             )
 

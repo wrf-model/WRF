@@ -1,12 +1,11 @@
-cmake_minimum_required( VERSION 3.20 )
-cmake_policy( SET CMP0118 NEW )
-cmake_policy( SET CMP0098 NEW )
+cmake_minimum_required( VERSION 3.19 )
+
+project( WRF )
 
 enable_language( C )
 enable_language( CXX )
 enable_language( Fortran )
 
-project( WRF )
 set( EXPORT_NAME ${PROJECT_NAME} )
 
 if ( DEFINED CMAKE_TOOLCHAIN_FILE )
@@ -14,6 +13,11 @@ if ( DEFINED CMAKE_TOOLCHAIN_FILE )
   # message( STATUS "Loading configuration file... : ${WRF_CONFIG}" )
   # include( ${WRF_CONFIG} )
 endif()
+
+# Import default flags now, get rid of any imported release flag
+# we will handle that ourselves with WRF_FCOPTIM/WRF_FCNOOPT
+set( CMAKE_Fortran_FLAGS_RELEASE "" CACHE STRING "" FORCE )
+set( CMAKE_C_FLAGS_RELEASE       "" CACHE STRING "" FORCE )
 
 # list( APPEND CMAKE_MODULE_PATH         )
 list( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/ ${PROJECT_SOURCE_DIR}/cmake/modules )

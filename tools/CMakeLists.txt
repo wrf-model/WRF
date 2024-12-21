@@ -168,6 +168,15 @@ add_custom_target(
                     ${allocs_source}
                   )
 
+set_source_files_properties(
+                            ${CMAKE_BINARY_DIR}/frame/module_state_description.F
+                            ${dealloc_source}
+                            ${allocs_source}
+                            DIRECTORY ${PROJECT_SOURCE_DIR}
+                            PROPERTIES
+                              GENERATED TRUE
+                            )
+
 target_sources(
                 ${PROJECT_NAME}_Core
                 PRIVATE

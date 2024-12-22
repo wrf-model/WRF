@@ -41,7 +41,7 @@ SUBROUTINE update_phy_ten(rph_tendf,rt_tendf,ru_tendf,rv_tendf,moist_tendf, &
                       ruiauten,rviauten,rthiauten,                          &
                       rqviauten,rqciauten,rqriauten,                        &
                       rqiiauten,rqsiauten,rqgiauten,                        &
-                      rqhiauten,rphiauten,rmuiauten,                        &
+                      rphiauten,rmuiauten,                                  &
                       n_moist,n_scalar,config_flags,rk_step,adv_moist_cond, &
                       ids, ide, jds, jde, kds, kde,                         &
                       ims, ime, jms, jme, kms, kme,                         &
@@ -117,8 +117,7 @@ SUBROUTINE update_phy_ten(rph_tendf,rt_tendf,ru_tendf,rv_tendf,moist_tendf, &
                                                       RQRIAUTEN, &
                                                       RQIIAUTEN, &
                                                       RQSIAUTEN, &
-                                                      RQGIAUTEN, &
-                                                      RQHIAUTEN
+                                                      RQGIAUTEN
 
    REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN  ) :: RMUNDGDTEN, &
                                                        RMUIAUTEN
@@ -187,7 +186,7 @@ SUBROUTINE update_phy_ten(rph_tendf,rt_tendf,ru_tendf,rv_tendf,moist_tendf, &
                       RUIAUTEN,RVIAUTEN,RTHIAUTEN,             &
                       RPHIAUTEN,RMUIAUTEN,                     &
                       RQVIAUTEN,RQCIAUTEN,RQRIAUTEN,           &
-                      RQIIAUTEN,RQSIAUTEN,RQGIAUTEN,RQHIAUTEN, &
+                      RQIIAUTEN,RQSIAUTEN,RQGIAUTEN,           &
                       ids, ide, jds, jde, kds, kde,            &
                       ims, ime, jms, jme, kms, kme,            &
                       its, ite, jts, jte, kts, kte             )
@@ -2027,7 +2026,7 @@ SUBROUTINE phy_iau_ten(config_flags,rk_step,n_moist,             &
                       RUIAUTEN,RVIAUTEN,RTHIAUTEN,               &
                       RPHIAUTEN,RMUIAUTEN,                       &
                       RQVIAUTEN,RQCIAUTEN,RQRIAUTEN,             &
-                      RQIIAUTEN,RQSIAUTEN,RQGIAUTEN,RQHIAUTEN,   &
+                      RQIIAUTEN,RQSIAUTEN,RQGIAUTEN,             &
                       ids, ide, jds, jde, kds, kde,              &
                       ims, ime, jms, jme, kms, kme,              &
                       its, ite, jts, jte, kts, kte               )
@@ -2055,8 +2054,7 @@ SUBROUTINE phy_iau_ten(config_flags,rk_step,n_moist,             &
                                                        RQRIAUTEN, &
                                                        RQIIAUTEN, &
                                                        RQSIAUTEN, &
-                                                       RQGIAUTEN, &
-                                                       RQHIAUTEN
+                                                       RQGIAUTEN
 
    REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN  ) ::  RMUIAUTEN
 
@@ -2137,13 +2135,6 @@ SUBROUTINE phy_iau_ten(config_flags,rk_step,n_moist,             &
 
         if (P_QG .ge. PARAM_FIRST_SCALAR)                        &
            CALL add_a2a(moist_tendf(ims,kms,jms,P_QG),RQGIAUTEN, &
-                config_flags,                                    &
-                ids,ide, jds, jde, kds, kde,                     &
-                ims, ime, jms, jme, kms, kme,                    &
-                its, ite, jts, jte, kts, kte                     )
-
-        if (P_QH .ge. PARAM_FIRST_SCALAR)                        &
-           CALL add_a2a(moist_tendf(ims,kms,jms,P_QH),RQHIAUTEN, &
                 config_flags,                                    &
                 ids,ide, jds, jde, kds, kde,                     &
                 ims, ime, jms, jme, kms, kme,                    &

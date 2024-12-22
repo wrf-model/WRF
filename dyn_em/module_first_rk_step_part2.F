@@ -405,10 +405,10 @@ BENCH_START(cal_phy_tend)
                      grid%ruiauten,grid%rviauten,grid%rthiauten,       &
                      grid%rqviauten,grid%rqciauten,grid%rqriauten,     &
                      grid%rqiiauten,grid%rqsiauten,grid%rqgiauten,     &
-                     grid%rqhiauten,grid%rmuiauten,grid%rphiauten,     &
+                     grid%rmuiauten,grid%rphiauten,                    &
                      grid%u_iau,grid%v_iau,grid%t_iau,grid%ph_iau,     &
                      grid%mu_iau,grid%qv_iau,grid%qc_iau,grid%qr_iau,  &
-                     grid%qs_iau,grid%qi_iau,grid%qg_iau,grid%qh_iau,  &
+                     grid%qs_iau,grid%qi_iau,grid%qg_iau,              &
                      grid%itimestep,                                   &
                      scalar, scalar_tend, num_scalar,                  &
                      tracer, tracer_tend, num_tracer,                  &
@@ -818,7 +818,7 @@ BENCH_START(update_phy_ten_tim)
                            grid%ruiauten,grid%rviauten,grid%rthiauten,      &
                            grid%rqviauten,grid%rqciauten,grid%rqriauten,    &
                            grid%rqiiauten,grid%rqsiauten,grid%rqgiauten,    &
-                           grid%rqhiauten,grid%rphiauten,grid%rmuiauten,    &
+                           grid%rphiauten,grid%rmuiauten,                   &
                            num_moist,num_scalar,config_flags,rk_step,       &
                            grid%adv_moist_cond,                             &
                            ids, ide, jds, jde, kds, kde,                    &

@@ -17,7 +17,7 @@ MODULE module_em
 
   USE module_ieva_em, only: advect_u_implicit, advect_v_implicit, advect_w_implicit, advect_s_implicit, advect_ph_implicit, &
                             chk_ieva, ww_split, calc_mut_new
-  USE module_state_description, only: param_first_scalar, p_qr, p_qv, p_qc, p_qg, p_qi, p_qs, p_qh, tiedtkescheme,ntiedtkescheme, heldsuarez, &
+  USE module_state_description, only: param_first_scalar, p_qr, p_qv, p_qc, p_qg, p_qi, p_qs, tiedtkescheme,ntiedtkescheme, heldsuarez, &
         positivedef, gdscheme, g3scheme, gfscheme, kfetascheme, mskfscheme, monotonic, wenopd_scalar, weno_scalar, weno_mom
 
    USE module_damping_em, only: held_suarez_damp
@@ -2092,10 +2092,10 @@ SUBROUTINE calculate_phy_tend (config_flags,c1,c2,                     &
                      ruiauten,rviauten,rthiauten,                      &
                      rqviauten,rqciauten,rqriauten,                    &
                      rqiiauten,rqsiauten,rqgiauten,                    &
-                     rqhiauten,rmuiauten,rphiauten,                    &
+                     rmuiauten,rphiauten,                              &
                      u_iau,v_iau,t_iau,ph_iau,                         &
                      mu_iau,qv_iau,qc_iau,qr_iau,                      &
-                     qi_iau,qs_iau,qg_iau,qh_iau,                      &
+                     qi_iau,qs_iau,qg_iau,                             &
                      itimestep,                                        &
                      scalar, scalar_tend, num_scalar,                  &
                      tracer, tracer_tend, num_tracer,                  &
@@ -2182,8 +2182,8 @@ SUBROUTINE calculate_phy_tend (config_flags,c1,c2,                     &
                                                             RQRIAUTEN, &
                                                             RQIIAUTEN, &
                                                             RQSIAUTEN, &
-                                                            RQGIAUTEN, &
-                                                            RQHIAUTEN
+                                                            RQGIAUTEN   
+
       REAL,     DIMENSION( ims:ime, jms:jme ),                         &
                 INTENT(INOUT)   ::                          RMUIAUTEN
 
@@ -2198,8 +2198,8 @@ SUBROUTINE calculate_phy_tend (config_flags,c1,c2,                     &
                                                                qr_iau, &
                                                                qs_iau, &
                                                                qi_iau, &
-                                                               qg_iau, &
-                                                               qh_iau
+                                                               qg_iau   
+
       REAL,     DIMENSION( ims:ime, jms:jme ),                         &
                 INTENT(IN   )   ::                             mu_iau
 
@@ -2568,16 +2568,6 @@ SUBROUTINE calculate_phy_tend (config_flags,c1,c2,                     &
          DO K=kts,ktf
          DO I=its,itf
             RQGIAUTEN(I,K,J)=(c1(k)*mut(I,J)+c2(k))*QG_IAU(I,K,J)*WGT_IAU
-         ENDDO
-         ENDDO
-         ENDDO
-      ENDIF
-
-      IF(P_QH .ge. PARAM_FIRST_SCALAR)THEN
-         DO J=jts,jtf
-         DO K=kts,ktf
-         DO I=its,itf
-            RQHIAUTEN(I,K,J)=(c1(k)*mut(I,J)+c2(k))*QH_IAU(I,K,J)*WGT_IAU
          ENDDO
          ENDDO
          ENDDO

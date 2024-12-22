@@ -1,0 +1,56 @@
+# IAU variables
+
+state   real    -              ikjftb   iau_moist       1         -     -    -
+state   real    iau_qv         ikjftb   iau_moist       1         -     \
+   rusdf=(bdy_interp:dt)  "QV_IAU"       "Water vapor mixing ratio"          "kg kg-1"
+state   real    iau_qc         ikjftb   iau_moist       1         -     \
+   rusdf=(bdy_interp:dt)  "QC_IAU"       "Cloud water mixing ratio"          "kg kg-1"
+state   real    iau_qr         ikjftb   iau_moist       1         -     \
+   rusdf=(bdy_interp:dt)  "QR_IAU"        "Rain water mixing ratio"          "kg kg-1"
+state   real    iau_qi         ikjftb   iau_moist       1         -     \
+   rusdf=(bdy_interp:dt)  "QI_IAU"         "Ice mixing ratio"                "kg kg-1"
+state   real    iau_qs         ikjftb   iau_moist       1         -     \
+   rusdf=(bdy_interp:dt)  "QS_IAU"        "Snow mixing ratio"                "kg kg-1"
+state   real    iau_qg         ikjftb   iau_moist       1         -     \
+   rusdf=(bdy_interp:dt)  "QG_IAU"       "Graupel mixing ratio"              "kg kg-1"
+state   real    iau_qh         ikjftb   iau_moist       1         -     \
+   rusdf=(bdy_interp:dt)  "QH_IAU"        "Hail mixing ratio"                "kg kg-1"
+
+state   character iau_time     -         -        -      -     i5r  "TIME_IAU"     "  "                                   "   "
+state   real   mu_iau         ij      misc        1      -     i5r  "MU_IAU"       "mu analysis increments array"         "   "
+state   real   u_iau          ikj     misc        1      -     i5r  "U_IAU"        "u analysis increments array"          "   "
+state   real   v_iau          ikj     misc        1      -     i5r  "V_IAU"        "v analysis increments array"          "   "
+state   real   w_iau          ikj     misc        1      -     i5r  "W_IAU"        "w analysis increments array"          "   "
+state   real   p_iau          ikj     misc        1      -     i5r  "P_IAU"        "p analysis increments array"          "   "
+state   real   t_iau          ikj     misc        1      -     i5r  "T_IAU"        "t analysis increments array"          "   "
+state   real   ph_iau         ikj     misc        1      -     i5r  "PH_IAU"       "ph analysis increments array"         "   "
+state   real   qv_iau         ikj     misc        1      -     i5r  "QV_IAU"       "qv analysis increments array"         "   "
+state   real   qr_iau         ikj     misc        1      -     i5r  "QR_IAU"       "qr analysis increments array"         "   "
+state   real   qc_iau         ikj     misc        1      -     i5r  "QC_IAU"       "qc analysis increments array"         "   "
+state   real   qs_iau         ikj     misc        1      -     i5r  "QS_IAU"       "qs analysis increments array"         "   "
+state   real   qi_iau         ikj     misc        1      -     i5r  "QI_IAU"       "qice analysis increments array"       "   "
+state   real   qg_iau         ikj     misc        1      -     i5r  "QG_IAU"       "qgraupel analysis increments array"   "   "
+state   real   qh_iau         ikj     misc        1      -     i5r  "QH_IAU"       "qhail analysis increments array"      "   "
+
+state   real   RUIAUTEN       ikj     misc        1      X      r   "RUIAUTEN"     "X WIND TENDENCY DUE TO IAU"  "m s-2" 
+state   real   RVIAUTEN       ikj     misc        1      Y      r   "RVIAUTEN"     "Y WIND TENDENCY DUE TO IAU"  "m s-2"
+state   real   RTHIAUTEN      ikj     misc        1      -      r   "RTHIAUTEN"    "THETA TENDENCY DUE TO IAU"   "K s-1"
+state   real   RPHIAUTEN      ikj     misc        1      -      r   "RPHIAUTEN"    "GEOPOTENTIAL TENDENCY DUE TO IAU"   "m2 s-3" 
+state   real   RQVIAUTEN      ikj     misc        1      -      r   "RQVIAUTEN"    "Q_V TENDENCY DUE TO IAU"     "kg kg-1 s-1" 
+state   real   RQCIAUTEN      ikj     misc        1      -      r   "RQCIAUTEN"    "Q_C TENDENCY DUE TO IAU"     "kg kg-1 s-1" 
+state   real   RQRIAUTEN      ikj     misc        1      -      r   "RQRIAUTEN"    "Q_R TENDENCY DUE TO IAU"     "kg kg-1 s-1" 
+state   real   RQIIAUTEN      ikj     misc        1      -      r   "RQIIAUTEN"    "Q_I TENDENCY DUE TO IAU"     "kg kg-1 s-1" 
+state   real   RQSIAUTEN      ikj     misc        1      -      r   "RQSIAUTEN"    "Q_S TENDENCY DUE TO IAU"     "kg kg-1 s-1" 
+state   real   RQGIAUTEN      ikj     misc        1      -      r   "RQGIAUTEN"    "Q_G TENDENCY DUE TO IAU"     "kg kg-1 s-1" 
+state   real   RQHIAUTEN      ikj     misc        1      -      r   "RQHIAUTEN"    "Q_H TENDENCY DUE TO IAU"     "kg kg-1 s-1" 
+state   real   RMUIAUTEN      ij      misc        1      -      r   "RMUIAUTEN"    "MU TENDENCY DUE TO IAU"      "Pa s-1" 
+
+# IAU namelist options
+
+rconfig   integer iau                   namelist,time_control     max_domains    0      irh   "analysis increments read" "0/1 ACTIVATE FOR ANALYSIS INCREMENTS UPDATES" ""
+rconfig   real    iau_time_window_sec   namelist,time_control     max_domains    3600.  irh   "iau_time_window_sec"      "TIME WINDOW OF INCREMENTS ANALYSIS UPDATES" "SECONDS"
+
+# IAU packages
+
+package   noiau        iau==0   -   -
+package   iau          iau==1   -   state:u_iau,v_iau,w_iau,p_iau,t_iau,ph_iau,qqv_iau,qqr_iau,qqc_iau,qqs_iau,qqi_iau,qqg_iau,qqh_iau,ruiauten,rviauten,rthiauten,rqviauten,rqciauten,rqriauten,rqiiauten,rqsiauten,rqgiauten,rqhiauten

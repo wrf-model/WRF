@@ -161,9 +161,9 @@ SUBROUTINE microphysics_driver(                                          &
                       ,perts_qsnow, perts_ni                             &
                       ,pert_thom_qv,pert_thom_qc,pert_thom_qi            &
                       ,pert_thom_qs,pert_thom_ni                         &
-			  		 ,sigma_out									&				! for RCON; warm rain outputs
-			         ,prrwau_out,pnrwau_out,pncwau_out  		&				! for RCON; warm rain outputs
-			         ,prrrcw_out,pncrcw_out,ilamr_out,ilamc_out,cloudnc	&		! for RCON; warm rain outputs
+		      ,sigma_out					 & ! for RCON; warm rain outputs
+		      ,prrwau_out,pnrwau_out,pncwau_out  		 & ! for RCON; warm rain outputs
+		      ,prrrcw_out,pncrcw_out,ilamr_out,ilamc_out,cloudnc & ! for RCON; warm rain outputs
                                                                          )
 
 ! Framework
@@ -1125,13 +1125,6 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling rcon' )
              ENDIF
-
-
-
-
-
-
-
 !
         CASE (THOMPSONAERO)
               if (pert_thom .and. multi_perturb == 1) then

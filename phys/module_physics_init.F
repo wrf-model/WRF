@@ -1004,7 +1004,7 @@ CHARACTER(LEN=8) :: name
          (config_flags%ra_sw_physics .eq. goddardswscheme ) ) .and. &
         (config_flags%mp_physics  .eq. THOMPSON .or.        &
          config_flags%mp_physics  .eq. THOMPSONAERO .or.    &
-         config_flags%mp_physics  .eq. RCON_MP_SCHEME .or.    &
+         config_flags%mp_physics  .eq. RCON_MP_SCHEME .or.  &
          (config_flags%mp_physics .eq. NSSL_2MOM .and. config_flags%nssl_2moment_on == 1) .or. &
          config_flags%mp_physics  .eq. WSM3SCHEME .or.      &
          config_flags%mp_physics  .eq. WSM5SCHEME .or.      &
@@ -1038,7 +1038,7 @@ CHARACTER(LEN=8) :: name
 
    IF ( config_flags%swint_opt .eq. 2 ) THEN
       IF ((   config_flags%mp_physics == THOMPSON .OR.        &
-			  config_flags%mp_physics == RCON_MP_SCHEME .OR.        &
+	      config_flags%mp_physics == RCON_MP_SCHEME .OR.  &
               config_flags%mp_physics == THOMPSONAERO .OR.    &
               config_flags%mp_physics == WSM3SCHEME .OR.    &
               config_flags%mp_physics == WSM5SCHEME .OR.    &

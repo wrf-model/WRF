@@ -53,7 +53,7 @@ diffwrf:                diffwrf.F90
           if [ \( -f $(NETCDFPATH)/lib/libnetcdff.a -o -f $(NETCDFPATH)/lib/libnetcdff.so -o -f $(NETCDFPATH)/lib/libnetcdff.dll.a \) ] ; then \
             $(FC) $(FFLAGS) $(LDFLAGS) -o diffwrf diffwrf.o $(OBJSL) ../../frame/wrf_debug.o ../../frame/module_wrf_error.o ../../frame/clog.o $(ESMF_IO_LIB_EXT) $(LIBFFS) ;\
           else \
-            $(FC) $(FFLAGS) $(LDFLAGS) -o diffwrf diffwrf.o $(OBJSL) ../../frame/wrf_debug.o ../../frame/module_wrf_error.o ../../frame/clog.o $(ESMF_IO_LIB_EXT) $(LIBS) ;\
+            $(FC) $(FFLAGS) $(LDFLAGS) -o diffwrf diffwrf.o $(OBJSL) ../../frame/wrf_debug.o ../../frame/module_wrf_error.o ../../frame/clog.o $(ESMF_IO_LIB_EXT) $(LIBFFS) ;\
           fi ; \
         else \
 	   echo "***************************************************************************** " ; \

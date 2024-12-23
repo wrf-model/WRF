@@ -4401,6 +4401,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    USE module_mp_wdm5
    USE module_mp_wdm6
    USE module_mp_wdm7
+   USE module_mp_udm
 #if (WRFPLUS != 1) & !defined( VAR4D )
    USE module_mp_nssl_2mom, only: nssl_2mom_init
 #endif
@@ -4584,6 +4585,10 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                         config_flags%hail_opt, allowed_to_read )
      CASE (WDM7SCHEME)
           CALL wdm7init(rhoair0,rhowater,rhosnow,cliq,cpv,ccn_conc, allowed_to_read )
+     CASE (UDMSCHEME)
+          CALL udminit(rhoair0,rhowater,rhosnow,cliq,cpv,ccn_conc, allowed_to_read )
+          CALL udm_funct_mps_setup
+          CALL udm_funct_svp_setup
 #if (EM_CORE==1)
      CASE (NTU)
           CALL ntu_init(PHB,PH,P,PB,inv_dens,QV,QDCN,QTCN,QCCN,QRCN,   &

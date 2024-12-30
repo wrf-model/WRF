@@ -315,6 +315,29 @@ if ( ${USE_IPO} )
 endif()
 
 
+
+################################################################################
+##
+## Checkout external repositories using manage_externals
+##
+################################################################################
+message( STATUS "Checking out external repos via manage_externals" )
+set( LOG_FILE      ${CMAKE_CURRENT_BINARY_DIR}/checkout_externals.log )
+execute_process(
+                COMMAND
+                  ${PROJECT_SOURCE_DIR}/tools/manage_externals/checkout_externals --externals ${PROJECT_SOURCE_DIR}/arch/Externals.cfg
+                WORKING_DIRECTORY       ${PROJECT_SOURCE_DIR}
+                RESULT_VARIABLE         MANAGE_EXTERNALS_STATUS
+                OUTPUT_FILE             ${LOG_FILE}
+                ERROR_FILE              ${LOG_FILE}
+                )
+if ( ${MANAGE_EXTERNALS_STATUS} AND NOT ${MANAGE_EXTERNALS_STATUS} EQUAL 0 )
+  message( FATAL_ERROR "Failed to checkout external repos via manage_externals" )
+else()
+  message( STATUS "Finished checking out external repos via manage_externals" )
+endif()
+
+
 ################################################################################
 ##
 ## Create our flags / defines properties and variables to carry our information

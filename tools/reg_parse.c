@@ -122,7 +122,7 @@ pre_parse( char * dir, FILE * infile, FILE * outfile )
       char include_file_name_local_registry[MAX_PATH] ;
       char include_file_name[MAX_PATH] ;
       p += 7 ; for ( ; ( *p == ' ' || *p == '	' ) && *p != '\0' ; p++ ) ;
-      fprintf( stderr, "Len : %d\n", strlen( p ) );
+
       if ( strlen( p ) > MAX_PATH - 1 ) { fprintf(stderr,"Registry error: include file name too long: %s\n", p ) ; }
       else if ( ( strlen( p ) + strlen( dir ) ) > MAX_PATH - 1 ) { fprintf(stderr,"Registry error: include file name too long when adding path: %s/%s\n", dir, p ) ; }
       else {

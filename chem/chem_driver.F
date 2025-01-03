@@ -1021,7 +1021,7 @@
        end if
 #endif
       endif
-
+   call wrf_debug(15,'Liran start vertical mixing with dry deposition')
 !
 ! do vertical mixing with dry deposition
 !
@@ -1048,8 +1048,16 @@
             call dry_dep_driver(grid%id,curr_secs,ktau,grid%dt,config_flags,          &
                  grid%gmt,ijulian,t_phy,moist,scalar,p8w,t8w,vvel,                &
                  rri,p_phy,chem,tracer,rho,dz8w,rh,grid%exch_h,grid%hfx,grid%dx,      & 
-                 grid%cldfra, grid%cldfra_old,grid%raincv_b,seasin,dustin,            &
-	         grid%ccn1, grid%ccn2, grid%ccn3, grid%ccn4, grid%ccn5, grid%ccn6,    &
+                 grid%cldfra,grid%cldfra_old,grid%raincv_b,seasin,dustin,   &
+                 grid%fn11,grid%fn12,grid%fn13,grid%fn14,grid%fn21,grid%fn22,grid%fn23,grid%fn24,&
+                 grid%fn31,grid%fn32,grid%fn33,grid%fn34,grid%fn41,grid%fn42,grid%fn43,grid%fn44,&
+                 grid%na11,grid%na12,grid%na13,grid%na14,grid%na21,grid%na22,grid%na23,grid%na24,&
+                 grid%na31,grid%na32,grid%na33,grid%na34,grid%na41,grid%na42,grid%na43,grid%na44,&
+                 grid%sg11,grid%sg12,grid%sg13,grid%sg14,grid%sg21,grid%sg22,grid%sg23,grid%sg24,&
+                 grid%sg31,grid%sg32,grid%sg33,grid%sg34,grid%sg41,grid%sg42,grid%sg43,grid%sg44,&
+                 grid%hg11,grid%hg12,grid%hg13,grid%hg14,grid%hg21,grid%hg22,grid%hg23,grid%hg24,&
+                 grid%hg31,grid%hg32,grid%hg33,grid%hg34,grid%hg41,grid%hg42,grid%hg43,grid%hg44,&
+                 grid%ccn1, grid%ccn2, grid%ccn3, grid%ccn4, grid%ccn5, grid%ccn6,    &
                  grid%qndropsource,grid%ivgtyp,grid%tsk,grid%gsw,grid%vegfra,pbl_h,   &
                  grid%rmol,grid%ust,grid%znt,grid%xlat,grid%xlong,                    &
                  zmid,z_at_w,grid%xland,grid%ash_fall,                                &

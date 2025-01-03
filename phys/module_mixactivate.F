@@ -97,7 +97,15 @@ CONTAINS
 ! terminology:  (pi/6) * (mean-volume diameter)**3 ==
 !       (volume mixing ratio of section/mode)/(number mixing ratio)
 	real, dimension(ims:ime,kms:kme,jms:jme) :: &
-	     ccn1,ccn2,ccn3,ccn4,ccn5,ccn6  ! number conc of aerosols activated at supersat
+	     ccn1,ccn2,ccn3,ccn4,ccn5,ccn6,&
+             na11,na12,na13,na14,na21,na22,na23,na24,&
+             na31,na32,na33,na34,na41,na42,na43,na44,&
+             sg11,sg12,sg13,sg14,sg21,sg22,sg23,sg24,&
+             sg31,sg32,sg33,sg34,sg41,sg42,sg43,sg44,&
+             hg11,hg12,hg13,hg14,hg21,hg22,hg23,hg24,&
+             hg31,hg32,hg33,hg34,hg41,hg42,hg43,hg44,&
+             fn11,fn12,fn13,fn14,fn21,fn22,fn23,fn24,& 
+             fn31,fn32,fn33,fn34,fn41,fn42,fn43,fn44  ! number conc of aerosols activated at supersat
 	integer idrydep_onoff
 	real, dimension(ims:ime,kms:kme,jms:jme) :: t_phy
 	integer msectional
@@ -215,7 +223,15 @@ CONTAINS
             ims,ime, jms,jme, kms,kme,                            &
             its,ite, jts,jte, kts,kte,                            &
             rho_phy, z, dz8w, p_at_w, t_at_w, exch_h,      &
-            cldfra, cldfra_old, qsrflx,         &
+            cldfra, cldfra_old, qsrflx,&
+            fn11,fn12,fn13,fn14,fn21,fn22,fn23,fn24,&
+            fn31,fn32,fn33,fn34,fn41,fn42,fn43,fn44,&
+            na11,na12,na13,na14,na21,na22,na23,na24,&
+            na31,na32,na33,na34,na41,na42,na43,na44,&
+            sg11,sg12,sg13,sg14,sg21,sg22,sg23,sg24,&
+            sg31,sg32,sg33,sg34,sg41,sg42,sg43,sg44,&
+            hg11,hg12,hg13,hg14,hg21,hg22,hg23,hg24,&
+            hg31,hg32,hg33,hg34,hg41,hg42,hg43,hg44,&
             ccn1, ccn2, ccn3, ccn4, ccn5, ccn6, nsource,       &
             grid_id, ktau, dtstep, &
             F_QC=f_qc, F_QI=f_qi                              )
@@ -246,7 +262,15 @@ subroutine mixactivate(  msectional,            &
            ims,ime, jms,jme, kms,kme,                            &
            its,ite, jts,jte, kts,kte,                            &
            rho, zm, dz8w, p_at_w, t_at_w, kvh,      &
-           cldfra, cldfra_old, qsrflx,          &
+           cldfra, cldfra_old, qsrflx,&
+            fn11,fn12,fn13,fn14,fn21,fn22,fn23,fn24,&
+            fn31,fn32,fn33,fn34,fn41,fn42,fn43,fn44,&
+            na11,na12,na13,na14,na21,na22,na23,na24,&
+            na31,na32,na33,na34,na41,na42,na43,na44,&
+            sg11,sg12,sg13,sg14,sg21,sg22,sg23,sg24,&
+            sg31,sg32,sg33,sg34,sg41,sg42,sg43,sg44,&
+            hg11,hg12,hg13,hg14,hg21,hg22,hg23,hg24,&
+            hg31,hg32,hg33,hg34,hg41,hg42,hg43,hg44,&
            ccn1, ccn2, ccn3, ccn4, ccn5, ccn6, nsource,       &
            grid_id, ktau, dtstep, &
            f_qc, f_qi                       )
@@ -316,6 +340,14 @@ subroutine mixactivate(  msectional,            &
   real, intent(in) :: hygro( its:ite, kts:kte, jts:jte, maxd_asize, maxd_atype ) ! bulk hygroscopicity   &
 
   REAL, intent(out), DIMENSION( ims:ime, jms:jme, num_chem ) ::   qsrflx ! dry deposition rate for aerosol
+  real, intent(out), dimension(ims:ime,kms:kme,jms:jme) :: fn11,fn12,fn13,fn14,fn21,fn22,fn23,fn24
+  real, intent(out), dimension(ims:ime,kms:kme,jms:jme) :: fn31,fn32,fn33,fn34,fn41,fn42,fn43,fn44
+  real, intent(out), dimension(ims:ime,kms:kme,jms:jme) :: na11,na12,na13,na14,na21,na22,na23,na24
+  real, intent(out), dimension(ims:ime,kms:kme,jms:jme) :: na31,na32,na33,na34,na41,na42,na43,na44
+  real, intent(out), dimension(ims:ime,kms:kme,jms:jme) :: sg11,sg12,sg13,sg14,sg21,sg22,sg23,sg24
+  real, intent(out), dimension(ims:ime,kms:kme,jms:jme) :: sg31,sg32,sg33,sg34,sg41,sg42,sg43,sg44
+  real, intent(out), dimension(ims:ime,kms:kme,jms:jme) :: hg11,hg12,hg13,hg14,hg21,hg22,hg23,hg24
+  real, intent(out), dimension(ims:ime,kms:kme,jms:jme) :: hg31,hg32,hg33,hg34,hg41,hg42,hg43,hg44
   real, intent(out), dimension(ims:ime,kms:kme,jms:jme) :: nsource, &  ! droplet number source (#/kg/s)
        ccn1,ccn2,ccn3,ccn4,ccn5,ccn6  ! number conc of aerosols activated at supersat
 
@@ -715,6 +747,107 @@ GROW_SHRINK_MAIN_K_LOOP: do k=kts,kte
                 naerosol, vaerosol,  &
                 dlo_sect,dhi_sect,sigmag_aer,hygro_aer,              &
                 fn,fs,fm,fluxn,fluxs,fluxm,flux_fullact(k), grid_id, ktau, i, j, k )
+           do n = 1,ntype_aer
+              do m = 1,nsize_aer(n)
+                if ((m.eq.1).and.(n.eq.1)) then
+                        fn11(i,k,j)=fn(m,n)
+                        na11(i,k,j)=naerosol(m,n)
+                        sg11(i,k,j)=sigmag_aer(m,n)
+                        hg11(i,k,j)=hygro_aer(m,n)
+                endif
+                if ((m.eq.1).and.(n.eq.2)) then
+                        fn12(i,k,j)=fn(m,n)
+                        na12(i,k,j)=naerosol(m,n)
+                        sg12(i,k,j)=sigmag_aer(m,n)
+                        hg12(i,k,j)=hygro_aer(m,n)
+                endif
+                if ((m.eq.1).and.(n.eq.3)) then
+                        fn13(i,k,j)=fn(m,n)
+                        na13(i,k,j)=naerosol(m,n)
+                        sg13(i,k,j)=sigmag_aer(m,n)
+                        hg13(i,k,j)=hygro_aer(m,n)
+                endif
+                if ((m.eq.1).and.(n.eq.4)) then
+                        fn14(i,k,j)=fn(m,n)
+                        na14(i,k,j)=naerosol(m,n)
+                        sg14(i,k,j)=sigmag_aer(m,n)
+                        hg14(i,k,j)=hygro_aer(m,n)
+                endif
+                if ((m.eq.2).and.(n.eq.1)) then
+                        fn21(i,k,j)=fn(m,n)
+                        na21(i,k,j)=naerosol(m,n)
+                        sg21(i,k,j)=sigmag_aer(m,n)
+                        hg21(i,k,j)=hygro_aer(m,n)
+                endif
+                if ((m.eq.2).and.(n.eq.2)) then
+                        fn22(i,k,j)=fn(m,n)
+                        na22(i,k,j)=naerosol(m,n)
+                        sg22(i,k,j)=sigmag_aer(m,n)
+                        hg22(i,k,j)=hygro_aer(m,n)
+                endif
+                if ((m.eq.2).and.(n.eq.3)) then
+                        fn23(i,k,j)=fn(m,n)
+                        na23(i,k,j)=naerosol(m,n)
+                        sg23(i,k,j)=sigmag_aer(m,n)
+                        hg23(i,k,j)=hygro_aer(m,n)
+                endif
+                if ((m.eq.2).and.(n.eq.4)) then
+                        fn24(i,k,j)=fn(m,n)
+                        na24(i,k,j)=naerosol(m,n)
+                        sg24(i,k,j)=sigmag_aer(m,n)
+                        hg24(i,k,j)=hygro_aer(m,n)
+                endif
+                if ((m.eq.3).and.(n.eq.1)) then
+                        fn31(i,k,j)=fn(m,n)
+                        na31(i,k,j)=naerosol(m,n)
+                        sg31(i,k,j)=sigmag_aer(m,n)
+                        hg31(i,k,j)=hygro_aer(m,n)
+                endif
+                if ((m.eq.3).and.(n.eq.2)) then
+                        fn32(i,k,j)=fn(m,n)
+                        na32(i,k,j)=naerosol(m,n)
+                        sg32(i,k,j)=sigmag_aer(m,n)
+                        hg32(i,k,j)=hygro_aer(m,n)
+                endif
+                if ((m.eq.3).and.(n.eq.3)) then
+                        fn33(i,k,j)=fn(m,n)
+                        na33(i,k,j)=naerosol(m,n)
+                        sg33(i,k,j)=sigmag_aer(m,n)
+                        hg33(i,k,j)=hygro_aer(m,n)
+                endif
+                if ((m.eq.3).and.(n.eq.4)) then
+                        fn34(i,k,j)=fn(m,n)
+                        na34(i,k,j)=naerosol(m,n)
+                        sg34(i,k,j)=sigmag_aer(m,n)
+                        hg34(i,k,j)=hygro_aer(m,n)
+                endif
+                if ((m.eq.4).and.(n.eq.1)) then
+                        fn41(i,k,j)=fn(m,n)
+                        na41(i,k,j)=naerosol(m,n)
+                        sg41(i,k,j)=sigmag_aer(m,n)
+                        hg41(i,k,j)=hygro_aer(m,n)
+                endif
+                if ((m.eq.4).and.(n.eq.2)) then
+                        fn42(i,k,j)=fn(m,n)
+                        na42(i,k,j)=naerosol(m,n)
+                        sg42(i,k,j)=sigmag_aer(m,n)
+                        hg42(i,k,j)=hygro_aer(m,n)
+                endif
+                if ((m.eq.4).and.(n.eq.3)) then
+                        fn43(i,k,j)=fn(m,n)
+                        na43(i,k,j)=naerosol(m,n)
+                        sg43(i,k,j)=sigmag_aer(m,n)
+                        hg43(i,k,j)=hygro_aer(m,n)
+                endif
+                if ((m.eq.4).and.(n.eq.4)) then
+                        fn44(i,k,j)=fn(m,n)
+                        na44(i,k,j)=naerosol(m,n)
+                        sg44(i,k,j)=sigmag_aer(m,n)
+                        hg44(i,k,j)=hygro_aer(m,n)
+                endif
+              enddo
+           enddo
+
 
            do n = 1,ntype_aer
               do m = 1,nsize_aer(n)
@@ -847,6 +980,107 @@ OLD_CLOUD_MAIN_K_LOOP: do k=kts,kte
                       naerosol, vaerosol,  &
                       dlo_sect,dhi_sect, sigmag_aer,hygro_aer,                    &
                       fn,fs,fm,fluxn,fluxs,fluxm,flux_fullact(k), grid_id, ktau, i, j, k )
+              do n=1,ntype_aer
+                    do m=1,nsize_aer(n)
+                if ((m.eq.1).and.(n.eq.1)) then
+                        fn11(i,k,j)=fn(m,n)
+                        na11(i,k,j)=naerosol(m,n)
+                        sg11(i,k,j)=sigmag_aer(m,n)
+                        hg11(i,k,j)=hygro_aer(m,n)
+                endif
+                if ((m.eq.1).and.(n.eq.2)) then
+                        fn12(i,k,j)=fn(m,n)
+                        na12(i,k,j)=naerosol(m,n)
+                        sg12(i,k,j)=sigmag_aer(m,n)
+                        hg12(i,k,j)=hygro_aer(m,n)
+                endif
+                if ((m.eq.1).and.(n.eq.3)) then
+                        fn13(i,k,j)=fn(m,n)
+                        na13(i,k,j)=naerosol(m,n)
+                        sg13(i,k,j)=sigmag_aer(m,n)
+                        hg13(i,k,j)=hygro_aer(m,n)
+                endif
+                if ((m.eq.1).and.(n.eq.4)) then
+                        fn14(i,k,j)=fn(m,n)
+                        na14(i,k,j)=naerosol(m,n)
+                        sg14(i,k,j)=sigmag_aer(m,n)
+                        hg14(i,k,j)=hygro_aer(m,n)
+                endif
+                if ((m.eq.2).and.(n.eq.1)) then
+                        fn21(i,k,j)=fn(m,n)
+                        na21(i,k,j)=naerosol(m,n)
+                        sg21(i,k,j)=sigmag_aer(m,n)
+                        hg21(i,k,j)=hygro_aer(m,n)
+                endif
+                if ((m.eq.2).and.(n.eq.2)) then
+                        fn22(i,k,j)=fn(m,n)
+                        na22(i,k,j)=naerosol(m,n)
+                        sg22(i,k,j)=sigmag_aer(m,n)
+                        hg22(i,k,j)=hygro_aer(m,n)
+                endif
+                if ((m.eq.2).and.(n.eq.3)) then
+                        fn23(i,k,j)=fn(m,n)
+                        na23(i,k,j)=naerosol(m,n)
+                        sg23(i,k,j)=sigmag_aer(m,n)
+                        hg23(i,k,j)=hygro_aer(m,n)
+                endif
+                if ((m.eq.2).and.(n.eq.4)) then
+                        fn24(i,k,j)=fn(m,n)
+                        na24(i,k,j)=naerosol(m,n)
+                        sg24(i,k,j)=sigmag_aer(m,n)
+                        hg24(i,k,j)=hygro_aer(m,n)
+                endif
+                if ((m.eq.3).and.(n.eq.1)) then
+                        fn31(i,k,j)=fn(m,n)
+                        na31(i,k,j)=naerosol(m,n)
+                        sg31(i,k,j)=sigmag_aer(m,n)
+                        hg31(i,k,j)=hygro_aer(m,n)
+                endif
+                if ((m.eq.3).and.(n.eq.2)) then
+                        fn32(i,k,j)=fn(m,n)
+                        na32(i,k,j)=naerosol(m,n)
+                        sg32(i,k,j)=sigmag_aer(m,n)
+                        hg32(i,k,j)=hygro_aer(m,n)
+                endif
+                if ((m.eq.3).and.(n.eq.3)) then
+                        fn33(i,k,j)=fn(m,n)
+                        na33(i,k,j)=naerosol(m,n)
+                        sg33(i,k,j)=sigmag_aer(m,n)
+                        hg33(i,k,j)=hygro_aer(m,n)
+                endif
+                if ((m.eq.3).and.(n.eq.4)) then
+                        fn34(i,k,j)=fn(m,n)
+                        na34(i,k,j)=naerosol(m,n)
+                        sg34(i,k,j)=sigmag_aer(m,n)
+                        hg34(i,k,j)=hygro_aer(m,n)
+                endif
+                if ((m.eq.4).and.(n.eq.1)) then
+                        fn41(i,k,j)=fn(m,n)
+                        na41(i,k,j)=naerosol(m,n)
+                        sg41(i,k,j)=sigmag_aer(m,n)
+                        hg41(i,k,j)=hygro_aer(m,n)
+                endif
+                if ((m.eq.4).and.(n.eq.2)) then
+                        fn42(i,k,j)=fn(m,n)
+                        na42(i,k,j)=naerosol(m,n)
+                        sg42(i,k,j)=sigmag_aer(m,n)
+                        hg42(i,k,j)=hygro_aer(m,n)
+                endif
+                if ((m.eq.4).and.(n.eq.3)) then
+                        fn43(i,k,j)=fn(m,n)
+                        na43(i,k,j)=naerosol(m,n)
+                        sg43(i,k,j)=sigmag_aer(m,n)
+                        hg43(i,k,j)=hygro_aer(m,n)
+                endif
+                if ((m.eq.4).and.(n.eq.4)) then
+                        fn44(i,k,j)=fn(m,n)
+                        na44(i,k,j)=naerosol(m,n)
+                        sg44(i,k,j)=sigmag_aer(m,n)
+                        hg44(i,k,j)=hygro_aer(m,n)
+                endif
+                    enddo
+                 enddo                
+
                  
 ! rce-comment
 !    the activation-fraction fluxes (fluxn, fluxm) from subr activate assume that

@@ -23,7 +23,15 @@ CONTAINS
            id, ktau, dtstep, config_flags, idrydep_onoff,    &
            rho_phy, t_phy, w, cldfra, cldfra_old,            &
            ddvel, z, dz8w, p_at_w, t_at_w, exch_h,           &
-           qv, qc, qi, qndrop3d, f_qc, f_qi, chem,           &
+           qv, qc, qi, qndrop3d, f_qc, f_qi, chem,&
+           fn11,fn12,fn13,fn14,fn21,fn22,fn23,fn24,&
+           fn31,fn32,fn33,fn34,fn41,fn42,fn43,fn44,&
+           na11,na12,na13,na14,na21,na22,na23,na24,&
+           na31,na32,na33,na34,na41,na42,na43,na44,&
+           sg11,sg12,sg13,sg14,sg21,sg22,sg23,sg24,&
+           sg31,sg32,sg33,sg34,sg41,sg42,sg43,sg44,&
+           hg11,hg12,hg13,hg14,hg21,hg22,hg23,hg24,&
+           hg31,hg32,hg33,hg34,hg41,hg42,hg43,hg44,&
 	       ccn1, ccn2, ccn3, ccn4, ccn5, ccn6, nsource,      &
 	       qsrflx, &
            ids,ide, jds,jde, kds,kde,                        &
@@ -75,7 +83,15 @@ CONTAINS
 		chem
       real, intent(out), dimension(ims:ime,kms:kme,jms:jme) :: nsource,&
 	     ccn1,ccn2,ccn3,ccn4,ccn5,ccn6  ! number conc of aerosols activated at supersat
-
+      real, intent(out), dimension(ims:ime,kms:kme,jms:jme) :: na11,&
+             na12,na13,na14,na21,na22,na23,na24,&
+             na31,na32,na33,na34,na41,na42,na43,na44,&
+             sg11,sg12,sg13,sg14,sg21,sg22,sg23,sg24,&
+             sg31,sg32,sg33,sg34,sg41,sg42,sg43,sg44,&
+             hg11,hg12,hg13,hg14,hg21,hg22,hg23,hg24,&
+             hg31,hg32,hg33,hg34,hg41,hg42,hg43,hg44,&
+             fn11,fn12,fn13,fn14,fn21,fn22,fn23,fn24,& 
+             fn31,fn32,fn33,fn34,fn41,fn42,fn43,fn44 
 	type(grid_config_rec_type), intent(in) :: config_flags
  real, intent(out) :: qsrflx(ims:ime, jms:jme, num_chem) ! wet deposition flux of aerosol
 ! local vars
@@ -119,6 +135,14 @@ CONTAINS
            its,ite, jts,jte, kts,kte,                            &
            rho_phy, z, dz8w, p_at_w, t_at_w, exch_h,      &
            cldfra, cldfra_old, qsrflx, &
+           fn11,fn12,fn13,fn14,fn21,fn22,fn23,fn24,&
+           fn31,fn32,fn33,fn34,fn41,fn42,fn43,fn44,&
+           na11,na12,na13,na14,na21,na22,na23,na24,&
+           na31,na32,na33,na34,na41,na42,na43,na44,&
+           sg11,sg12,sg13,sg14,sg21,sg22,sg23,sg24,&
+           sg31,sg32,sg33,sg34,sg41,sg42,sg43,sg44,&
+           hg11,hg12,hg13,hg14,hg21,hg22,hg23,hg24,&
+           hg31,hg32,hg33,hg34,hg41,hg42,hg43,hg44,&
 	       ccn1, ccn2, ccn3, ccn4, ccn5, ccn6, nsource,       &
 	       id, ktau, dtstep, &
            f_qc, f_qi               )
@@ -207,7 +231,15 @@ CONTAINS
            id, ktau, dtstep, config_flags, idrydep_onoff,    &
            rho_phy, t_phy, w, cldfra, cldfra_old,            &
            ddvel, z, dz8w, p_at_w, t_at_w, exch_h,           &
-           qv, qc, qi, qndrop3d, f_qc, f_qi, chem,           &
+           qv, qc, qi, qndrop3d, f_qc, f_qi, chem,&
+           fn11,fn12,fn13,fn14,fn21,fn22,fn23,fn24,&
+           fn31,fn32,fn33,fn34,fn41,fn42,fn43,fn44,&
+           na11,na12,na13,na14,na21,na22,na23,na24,&
+           na31,na32,na33,na34,na41,na42,na43,na44,&
+           sg11,sg12,sg13,sg14,sg21,sg22,sg23,sg24,&
+           sg31,sg32,sg33,sg34,sg41,sg42,sg43,sg44,&
+           hg11,hg12,hg13,hg14,hg21,hg22,hg23,hg24,&
+           hg31,hg32,hg33,hg34,hg41,hg42,hg43,hg44,&
 	       ccn1, ccn2, ccn3, ccn4, ccn5, ccn6, nsource,      &
            ids,ide, jds,jde, kds,kde,                        &
            ims,ime, jms,jme, kms,kme,                        &
@@ -258,7 +290,15 @@ CONTAINS
 		chem
       real, intent(out), dimension(ims:ime,kms:kme,jms:jme) :: nsource, &
 	     ccn1,ccn2,ccn3,ccn4,ccn5,ccn6  ! number conc of aerosols activated at supersat
-
+      real, intent(out), dimension(ims:ime,kms:kme,jms:jme) :: na11,&
+             na12,na13,na14,na21,na22,na23,na24,&
+             na31,na32,na33,na34,na41,na42,na43,na44,&
+             sg11,sg12,sg13,sg14,sg21,sg22,sg23,sg24,&
+             sg31,sg32,sg33,sg34,sg41,sg42,sg43,sg44,&
+             hg11,hg12,hg13,hg14,hg21,hg22,hg23,hg24,&
+             hg31,hg32,hg33,hg34,hg41,hg42,hg43,hg44,&
+             fn11,fn12,fn13,fn14,fn21,fn22,fn23,fn24,& 
+             fn31,fn32,fn33,fn34,fn41,fn42,fn43,fn44 
 	type(grid_config_rec_type), intent(in) :: config_flags
 
 ! local vars
@@ -301,7 +341,15 @@ CONTAINS
            ims,ime, jms,jme, kms,kme,                            &
            its,ite, jts,jte, kts,kte,                            &
            rho_phy, z, dz8w, p_at_w, t_at_w, exch_h,      &
-           cldfra, cldfra_old, qsrflx,                      &
+           cldfra, cldfra_old, qsrflx,&
+           fn11,fn12,fn13,fn14,fn21,fn22,fn23,fn24,&
+           fn31,fn32,fn33,fn34,fn41,fn42,fn43,fn44,&
+           na11,na12,na13,na14,na21,na22,na23,na24,&
+           na31,na32,na33,na34,na41,na42,na43,na44,&
+           sg11,sg12,sg13,sg14,sg21,sg22,sg23,sg24,&
+           sg31,sg32,sg33,sg34,sg41,sg42,sg43,sg44,&
+           hg11,hg12,hg13,hg14,hg21,hg22,hg23,hg24,&
+           hg31,hg32,hg33,hg34,hg41,hg42,hg43,hg44,&
 	       ccn1, ccn2, ccn3, ccn4, ccn5, ccn6, nsource,       &
 	       id, ktau, dtstep, &
            f_qc, f_qi               )
@@ -313,7 +361,15 @@ CONTAINS
            id, ktau, dtstep, config_flags, idrydep_onoff,    &
            rho_phy, t_phy, w, cldfra, cldfra_old,            &
            ddvel, z, dz8w, p_at_w, t_at_w, exch_h,           &
-           qv, qc, qi, qndrop3d, f_qc, f_qi, chem,           &
+           qv, qc, qi, qndrop3d, f_qc, f_qi, chem,&
+           fn11,fn12,fn13,fn14,fn21,fn22,fn23,fn24,&
+           fn31,fn32,fn33,fn34,fn41,fn42,fn43,fn44,&
+           na11,na12,na13,na14,na21,na22,na23,na24,&
+           na31,na32,na33,na34,na41,na42,na43,na44,&
+           sg11,sg12,sg13,sg14,sg21,sg22,sg23,sg24,&
+           sg31,sg32,sg33,sg34,sg41,sg42,sg43,sg44,&
+           hg11,hg12,hg13,hg14,hg21,hg22,hg23,hg24,&
+           hg31,hg32,hg33,hg34,hg41,hg42,hg43,hg44,&
            ccn1, ccn2, ccn3, ccn4, ccn5, ccn6, nsource,      &
            ids,ide, jds,jde, kds,kde,                        &
            ims,ime, jms,jme, kms,kme,                        &
@@ -364,7 +420,15 @@ CONTAINS
                 chem
       real, intent(out), dimension(ims:ime,kms:kme,jms:jme) :: nsource, &
              ccn1,ccn2,ccn3,ccn4,ccn5,ccn6  ! number conc of aerosols activated at supersat
-
+      real, intent(out), dimension(ims:ime,kms:kme,jms:jme) :: na11,&
+             na12,na13,na14,na21,na22,na23,na24,&
+             na31,na32,na33,na34,na41,na42,na43,na44,&
+             sg11,sg12,sg13,sg14,sg21,sg22,sg23,sg24,&
+             sg31,sg32,sg33,sg34,sg41,sg42,sg43,sg44,&
+             hg11,hg12,hg13,hg14,hg21,hg22,hg23,hg24,&
+             hg31,hg32,hg33,hg34,hg41,hg42,hg43,hg44,&
+             fn11,fn12,fn13,fn14,fn21,fn22,fn23,fn24,& 
+             fn31,fn32,fn33,fn34,fn41,fn42,fn43,fn44 
         type(grid_config_rec_type), intent(in) :: config_flags ! local vars
         real qsrflx(ims:ime, jms:jme, num_chem) ! dry deposition flux of aerosol
         real sumhygro,sumvol
@@ -405,7 +469,15 @@ CONTAINS
            ims,ime, jms,jme, kms,kme,                            &
            its,ite, jts,jte, kts,kte,                            &
            rho_phy, z, dz8w, p_at_w, t_at_w, exch_h,      &
-           cldfra, cldfra_old, qsrflx,                      &
+           cldfra, cldfra_old, qsrflx,&
+           fn11,fn12,fn13,fn14,fn21,fn22,fn23,fn24,&
+           fn31,fn32,fn33,fn34,fn41,fn42,fn43,fn44,&
+           na11,na12,na13,na14,na21,na22,na23,na24,&
+           na31,na32,na33,na34,na41,na42,na43,na44,&
+           sg11,sg12,sg13,sg14,sg21,sg22,sg23,sg24,&
+           sg31,sg32,sg33,sg34,sg41,sg42,sg43,sg44,&
+           hg11,hg12,hg13,hg14,hg21,hg22,hg23,hg24,&
+           hg31,hg32,hg33,hg34,hg41,hg42,hg43,hg44,&
                ccn1, ccn2, ccn3, ccn4, ccn5, ccn6, nsource,       &
                id, ktau, dtstep, &
            f_qc, f_qi               )
@@ -416,7 +488,15 @@ CONTAINS
            id, ktau, dtstep, config_flags, idrydep_onoff,    &
            rho_phy, t_phy, w, cldfra, cldfra_old,            &
            ddvel, z, dz8w, p_at_w, t_at_w, exch_h,           &
-           qv, qc, qi, qndrop3d, f_qc, f_qi, chem,           &
+           qv, qc, qi, qndrop3d, f_qc, f_qi, chem,&
+           fn11,fn12,fn13,fn14,fn21,fn22,fn23,fn24,&
+           fn31,fn32,fn33,fn34,fn41,fn42,fn43,fn44,&
+           na11,na12,na13,na14,na21,na22,na23,na24,&
+           na31,na32,na33,na34,na41,na42,na43,na44,&
+           sg11,sg12,sg13,sg14,sg21,sg22,sg23,sg24,&
+           sg31,sg32,sg33,sg34,sg41,sg42,sg43,sg44,&
+           hg11,hg12,hg13,hg14,hg21,hg22,hg23,hg24,&
+           hg31,hg32,hg33,hg34,hg41,hg42,hg43,hg44,&
            ccn1, ccn2, ccn3, ccn4, ccn5, ccn6, nsource,      &
            ids,ide, jds,jde, kds,kde,                        &
            ims,ime, jms,jme, kms,kme,                        &
@@ -467,7 +547,15 @@ CONTAINS
                 chem
       real, intent(out), dimension(ims:ime,kms:kme,jms:jme) :: nsource, &
              ccn1,ccn2,ccn3,ccn4,ccn5,ccn6  ! number conc of aerosols activated at supersat
-
+      real, intent(out), dimension(ims:ime,kms:kme,jms:jme) :: na11,&
+             na12,na13,na14,na21,na22,na23,na24,&
+             na31,na32,na33,na34,na41,na42,na43,na44,&
+             sg11,sg12,sg13,sg14,sg21,sg22,sg23,sg24,&
+             sg31,sg32,sg33,sg34,sg41,sg42,sg43,sg44,&
+             hg11,hg12,hg13,hg14,hg21,hg22,hg23,hg24,&
+             hg31,hg32,hg33,hg34,hg41,hg42,hg43,hg44,&
+             fn11,fn12,fn13,fn14,fn21,fn22,fn23,fn24,& 
+             fn31,fn32,fn33,fn34,fn41,fn42,fn43,fn44 
         type(grid_config_rec_type), intent(in) :: config_flags
 
 ! local vars
@@ -510,7 +598,15 @@ CONTAINS
            ims,ime, jms,jme, kms,kme,                            &
            its,ite, jts,jte, kts,kte,                            &
            rho_phy, z, dz8w, p_at_w, t_at_w, exch_h,      &
-           cldfra, cldfra_old, qsrflx,                      &
+           cldfra, cldfra_old, qsrflx,&
+           fn11,fn12,fn13,fn14,fn21,fn22,fn23,fn24,&
+           fn31,fn32,fn33,fn34,fn41,fn42,fn43,fn44,&
+           na11,na12,na13,na14,na21,na22,na23,na24,&
+           na31,na32,na33,na34,na41,na42,na43,na44,&
+           sg11,sg12,sg13,sg14,sg21,sg22,sg23,sg24,&
+           sg31,sg32,sg33,sg34,sg41,sg42,sg43,sg44,&
+           hg11,hg12,hg13,hg14,hg21,hg22,hg23,hg24,&
+           hg31,hg32,hg33,hg34,hg41,hg42,hg43,hg44,&
                ccn1, ccn2, ccn3, ccn4, ccn5, ccn6, nsource,       &
                id, ktau, dtstep, &
            f_qc, f_qi               )

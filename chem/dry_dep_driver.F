@@ -19,6 +19,12 @@ CONTAINS
                fn31,fn32,fn33,fn34,fn41,fn42,fn43,fn44,&
                na11,na12,na13,na14,na21,na22,na23,na24,&
                na31,na32,na33,na34,na41,na42,na43,na44,&
+               vo11,vo12,vo13,vo14,vo21,vo22,vo23,vo24,&
+               vo31,vo32,vo33,vo34,vo41,vo42,vo43,vo44,&
+               dl11,dl12,dl13,dl14,dl21,dl22,dl23,dl24,&
+               dl31,dl32,dl33,dl34,dl41,dl42,dl43,dl44,&
+               dh11,dh12,dh13,dh14,dh21,dh22,dh23,dh24,&
+               dh31,dh32,dh33,dh34,dh41,dh42,dh43,dh44,&
                sg11,sg12,sg13,sg14,sg21,sg22,sg23,sg24,&
                sg31,sg32,sg33,sg34,sg41,sg42,sg43,sg44,&
                hg11,hg12,hg13,hg14,hg21,hg22,hg23,hg24,&
@@ -152,15 +158,20 @@ CONTAINS
 
    REAL, INTENT(OUT), dimension(ims:ime,kms:kme,jms:jme) :: nsource, &
 	     ccn1,ccn2,ccn3,ccn4,ccn5,ccn6  ! number conc of aerosols activated at supersat
-   REAL, INTENT(OUT), dimension(ims:ime,kms:kme,jms:jme) :: na11,&
-             na12,na13,na14,na21,na22,na23,na24,&
-             na31,na32,na33,na34,na41,na42,na43,na44,&
-             sg11,sg12,sg13,sg14,sg21,sg22,sg23,sg24,&
-             sg31,sg32,sg33,sg34,sg41,sg42,sg43,sg44,&
-             hg11,hg12,hg13,hg14,hg21,hg22,hg23,hg24,&
-             hg31,hg32,hg33,hg34,hg41,hg42,hg43,hg44,&
-             fn11,fn12,fn13,fn14,fn21,fn22,fn23,fn24,& 
-             fn31,fn32,fn33,fn34,fn41,fn42,fn43,fn44 
+   REAL, INTENT(OUT), dimension(ims:ime,kms:kme,jms:jme) :: fn11,fn12,fn13,fn14,fn21,fn22,fn23,fn24,&
+           fn31,fn32,fn33,fn34,fn41,fn42,fn43,fn44,&
+           na11,na12,na13,na14,na21,na22,na23,na24,&
+           na31,na32,na33,na34,na41,na42,na43,na44,&
+           vo11,vo12,vo13,vo14,vo21,vo22,vo23,vo24,&
+           vo31,vo32,vo33,vo34,vo41,vo42,vo43,vo44,&
+           dl11,dl12,dl13,dl14,dl21,dl22,dl23,dl24,&
+           dl31,dl32,dl33,dl34,dl41,dl42,dl43,dl44,&
+           dh11,dh12,dh13,dh14,dh21,dh22,dh23,dh24,&
+           dh31,dh32,dh33,dh34,dh41,dh42,dh43,dh44,&
+           sg11,sg12,sg13,sg14,sg21,sg22,sg23,sg24,&
+           sg31,sg32,sg33,sg34,sg41,sg42,sg43,sg44,&
+           hg11,hg12,hg13,hg14,hg21,hg22,hg23,hg24,&
+           hg31,hg32,hg33,hg34,hg41,hg42,hg43,hg44
       REAL,      INTENT(IN   ) ::                               &
                              dtstep,gmt,dx
 
@@ -1096,13 +1107,19 @@ CONTAINS
 		moist(ims,kms,jms,P_QV), moist(ims,kms,jms,P_QC), moist(ims,kms,jms,P_QI), &
         scalar(ims,kms,jms,P_QNDROP), f_qc, f_qi, chem,&
             fn11,fn12,fn13,fn14,fn21,fn22,fn23,fn24,&
-            fn31,fn32,fn33,fn34,fn41,fn42,fn43,fn44,&
-            na11,na12,na13,na14,na21,na22,na23,na24,&
-            na31,na32,na33,na34,na41,na42,na43,na44,&
-            sg11,sg12,sg13,sg14,sg21,sg22,sg23,sg24,&
-            sg31,sg32,sg33,sg34,sg41,sg42,sg43,sg44,&
-            hg11,hg12,hg13,hg14,hg21,hg22,hg23,hg24,&
-            hg31,hg32,hg33,hg34,hg41,hg42,hg43,hg44,&
+           fn31,fn32,fn33,fn34,fn41,fn42,fn43,fn44,&
+           na11,na12,na13,na14,na21,na22,na23,na24,&
+           na31,na32,na33,na34,na41,na42,na43,na44,&
+           vo11,vo12,vo13,vo14,vo21,vo22,vo23,vo24,&
+           vo31,vo32,vo33,vo34,vo41,vo42,vo43,vo44,&
+           dl11,dl12,dl13,dl14,dl21,dl22,dl23,dl24,&
+           dl31,dl32,dl33,dl34,dl41,dl42,dl43,dl44,&
+           dh11,dh12,dh13,dh14,dh21,dh22,dh23,dh24,&
+           dh31,dh32,dh33,dh34,dh41,dh42,dh43,dh44,&
+           sg11,sg12,sg13,sg14,sg21,sg22,sg23,sg24,&
+           sg31,sg32,sg33,sg34,sg41,sg42,sg43,sg44,&
+           hg11,hg12,hg13,hg14,hg21,hg22,hg23,hg24,&
+           hg31,hg32,hg33,hg34,hg41,hg42,hg43,hg44,&
         ccn1, ccn2, ccn3, ccn4, ccn5, ccn6, nsource,       &
 		ids,ide, jds,jde, kds,kde,                        &
 		ims,ime, jms,jme, kms,kme,                        &
@@ -1116,13 +1133,19 @@ CONTAINS
                 moist(ims,kms,jms,P_QV), moist(ims,kms,jms,P_QC),moist(ims,kms,jms,P_QI), &
         scalar(ims,kms,jms,P_QNDROP), f_qc, f_qi, chem,&
             fn11,fn12,fn13,fn14,fn21,fn22,fn23,fn24,&
-            fn31,fn32,fn33,fn34,fn41,fn42,fn43,fn44,&
-            na11,na12,na13,na14,na21,na22,na23,na24,&
-            na31,na32,na33,na34,na41,na42,na43,na44,&
-            sg11,sg12,sg13,sg14,sg21,sg22,sg23,sg24,&
-            sg31,sg32,sg33,sg34,sg41,sg42,sg43,sg44,&
-            hg11,hg12,hg13,hg14,hg21,hg22,hg23,hg24,&
-            hg31,hg32,hg33,hg34,hg41,hg42,hg43,hg44,&
+           fn31,fn32,fn33,fn34,fn41,fn42,fn43,fn44,&
+           na11,na12,na13,na14,na21,na22,na23,na24,&
+           na31,na32,na33,na34,na41,na42,na43,na44,&
+           vo11,vo12,vo13,vo14,vo21,vo22,vo23,vo24,&
+           vo31,vo32,vo33,vo34,vo41,vo42,vo43,vo44,&
+           dl11,dl12,dl13,dl14,dl21,dl22,dl23,dl24,&
+           dl31,dl32,dl33,dl34,dl41,dl42,dl43,dl44,&
+           dh11,dh12,dh13,dh14,dh21,dh22,dh23,dh24,&
+           dh31,dh32,dh33,dh34,dh41,dh42,dh43,dh44,&
+           sg11,sg12,sg13,sg14,sg21,sg22,sg23,sg24,&
+           sg31,sg32,sg33,sg34,sg41,sg42,sg43,sg44,&
+           hg11,hg12,hg13,hg14,hg21,hg22,hg23,hg24,&
+           hg31,hg32,hg33,hg34,hg41,hg42,hg43,hg44,&
         ccn1, ccn2, ccn3, ccn4, ccn5, ccn6, nsource,       &
                 ids,ide, jds,jde, kds,kde,                        &
                 ims,ime, jms,jme, kms,kme,                        &
@@ -1136,13 +1159,19 @@ CONTAINS
                 moist(ims,kms,jms,P_QV), moist(ims,kms,jms,P_QC), moist(ims,kms,jms,P_QI), &
         scalar(ims,kms,jms,P_QNDROP), f_qc, f_qi, chem, &
             fn11,fn12,fn13,fn14,fn21,fn22,fn23,fn24,&
-            fn31,fn32,fn33,fn34,fn41,fn42,fn43,fn44,&
-            na11,na12,na13,na14,na21,na22,na23,na24,&
-            na31,na32,na33,na34,na41,na42,na43,na44,&
-            sg11,sg12,sg13,sg14,sg21,sg22,sg23,sg24,&
-            sg31,sg32,sg33,sg34,sg41,sg42,sg43,sg44,&
-            hg11,hg12,hg13,hg14,hg21,hg22,hg23,hg24,&
-            hg31,hg32,hg33,hg34,hg41,hg42,hg43,hg44,&
+           fn31,fn32,fn33,fn34,fn41,fn42,fn43,fn44,&
+           na11,na12,na13,na14,na21,na22,na23,na24,&
+           na31,na32,na33,na34,na41,na42,na43,na44,&
+           vo11,vo12,vo13,vo14,vo21,vo22,vo23,vo24,&
+           vo31,vo32,vo33,vo34,vo41,vo42,vo43,vo44,&
+           dl11,dl12,dl13,dl14,dl21,dl22,dl23,dl24,&
+           dl31,dl32,dl33,dl34,dl41,dl42,dl43,dl44,&
+           dh11,dh12,dh13,dh14,dh21,dh22,dh23,dh24,&
+           dh31,dh32,dh33,dh34,dh41,dh42,dh43,dh44,&
+           sg11,sg12,sg13,sg14,sg21,sg22,sg23,sg24,&
+           sg31,sg32,sg33,sg34,sg41,sg42,sg43,sg44,&
+           hg11,hg12,hg13,hg14,hg21,hg22,hg23,hg24,&
+           hg31,hg32,hg33,hg34,hg41,hg42,hg43,hg44,&
         ccn1, ccn2, ccn3, ccn4, ccn5, ccn6, nsource,       &
                 ids,ide, jds,jde, kds,kde,                        &
                 ims,ime, jms,jme, kms,kme,                        &
@@ -1159,13 +1188,19 @@ CONTAINS
 		moist(ims,kms,jms,P_QV), moist(ims,kms,jms,P_QC), moist(ims,kms,jms,P_QI), &
         scalar(ims,kms,jms,P_QNDROP), f_qc, f_qi, chem,&
             fn11,fn12,fn13,fn14,fn21,fn22,fn23,fn24,&
-            fn31,fn32,fn33,fn34,fn41,fn42,fn43,fn44,&
-            na11,na12,na13,na14,na21,na22,na23,na24,&
-            na31,na32,na33,na34,na41,na42,na43,na44,&
-            sg11,sg12,sg13,sg14,sg21,sg22,sg23,sg24,&
-            sg31,sg32,sg33,sg34,sg41,sg42,sg43,sg44,&
-            hg11,hg12,hg13,hg14,hg21,hg22,hg23,hg24,&
-            hg31,hg32,hg33,hg34,hg41,hg42,hg43,hg44,&
+           fn31,fn32,fn33,fn34,fn41,fn42,fn43,fn44,&
+           na11,na12,na13,na14,na21,na22,na23,na24,&
+           na31,na32,na33,na34,na41,na42,na43,na44,&
+           vo11,vo12,vo13,vo14,vo21,vo22,vo23,vo24,&
+           vo31,vo32,vo33,vo34,vo41,vo42,vo43,vo44,&
+           dl11,dl12,dl13,dl14,dl21,dl22,dl23,dl24,&
+           dl31,dl32,dl33,dl34,dl41,dl42,dl43,dl44,&
+           dh11,dh12,dh13,dh14,dh21,dh22,dh23,dh24,&
+           dh31,dh32,dh33,dh34,dh41,dh42,dh43,dh44,&
+           sg11,sg12,sg13,sg14,sg21,sg22,sg23,sg24,&
+           sg31,sg32,sg33,sg34,sg41,sg42,sg43,sg44,&
+           hg11,hg12,hg13,hg14,hg21,hg22,hg23,hg24,&
+           hg31,hg32,hg33,hg34,hg41,hg42,hg43,hg44,&
         ccn1, ccn2, ccn3, ccn4, ccn5, ccn6, nsource,      &
         qsrflx,                                           &
 		ids,ide, jds,jde, kds,kde,                        &

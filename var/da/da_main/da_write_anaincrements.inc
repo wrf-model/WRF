@@ -54,7 +54,7 @@ subroutine da_write_anaincrements(grid, config_flags)
   real*4  :: gmt4
   real    :: qvf
 
-  filnam="BANALYSIS_INCREMENTS"
+  filnam="ANALYSIS_INCREMENTS"
 if(rootproc) print *,'in da_write_anaincrements...'
       if ( grid%auxhist5_oid .NE. 0 ) then
          call close_dataset ( grid%auxhist5_oid , config_flags , "DATASET=AUXHIST5" )

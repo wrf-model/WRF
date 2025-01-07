@@ -1,4 +1,4 @@
-subroutine da_write_anaincrements(grid, config_flags) 
+subroutine da_write_anaincrements(grid, config_flags)
 
   use module_domain, only : get_ijk_from_grid, program_name
   use da_control,    only : use_radarobs, use_rad, crtm_cloud, &
@@ -31,9 +31,9 @@ subroutine da_write_anaincrements(grid, config_flags)
   character(len=120) :: file_name,filnam
   character(len=19)  :: DateStr1
   character(len=4)   :: staggering=' N/A'
-  character(len=3)   :: ordering  
+  character(len=3)   :: ordering
   character(len=80), dimension(3)  ::  dimnames
-  character(len=80)  :: rmse_var  
+  character(len=80)  :: rmse_var
   integer            :: dh1,dh0
   integer            :: i,j,k
   integer            :: ndim1
@@ -45,7 +45,7 @@ subroutine da_write_anaincrements(grid, config_flags)
                         ims, ime, jms, jme, kms, kme,    &
                         ips, ipe, jps, jpe, kps, kpe    
   integer, dimension(4)           :: start_index, end_index1
-  real, dimension(:), allocatable :: globbuf  
+  real, dimension(:), allocatable :: globbuf
   real*4,allocatable :: field3(:,:,:),field2(:,:)
   real*4,allocatable :: field3u(:,:,:),field3v(:,:,:),field3ph(:,:,:)
   character(len=4) ::  fgname
@@ -54,17 +54,13 @@ subroutine da_write_anaincrements(grid, config_flags)
   real*4  :: gmt4
   real    :: qvf
 
-  filnam="ANALYSIS_INCREMENTS"
-if(rootproc) print *,'in da_write_anaincrements...'
       if ( grid%auxhist5_oid .NE. 0 ) then
          call close_dataset ( grid%auxhist5_oid , config_flags , "DATASET=AUXHIST5" )
       endif
 
-!      call open_w_dataset (grid%auxhist5_oid, trim(filnam), grid, config_flags, &
       call open_w_dataset (grid%auxhist5_oid, trim(config_flags%auxhist5_outname), grid, config_flags, &
                             output_auxhist5, "DATASET=AUXHIST5", ierr)
       if ( ierr .NE. 0 ) CALL wrf_error_fatal('Error opening '//trim(filnam))
-if(rootproc) print *,'after open_w_dataset of AUXHIST5...'
 
       start_date=current_date
 
@@ -74,7 +70,6 @@ if(rootproc) print *,'after open_w_dataset of AUXHIST5...'
       config_flags%julday = julday
 
       call output_auxhist5 (grid%auxhist5_oid, grid , config_flags , ierr)
-if(rootproc) print*, 'after outpu_auxhist5...'
       if ( ierr .NE. 0 ) CALL wrf_error_fatal('Error writing Gradient in auxhist5')
       call close_dataset (grid%auxhist5_oid, config_flags, "DATASET=AUXHIST5")
 

@@ -249,6 +249,7 @@ LIBTARGET    =  physics
 TARGETDIR    =  ./
 
 $(LIBTARGET) :
+	(cd .. && ./tools/manage_externals/checkout_externals --externals ./arch/Externals.cfg)
 	$(MAKE) $(J) non_nmm ; \
 	$(AR) $(ARFLAGS) ../main/$(LIBWRFLIB) $(MODULES) $(OBJS)  \
 		$(FIRE_MODULES) $(DIAGNOSTIC_MODULES_EM) $(PHYSMMM_MODULES)

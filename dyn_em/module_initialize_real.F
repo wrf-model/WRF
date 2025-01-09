@@ -3154,7 +3154,7 @@ integer::oops1,oops2
                       (grid%ivgtyp(i,j).NE.13 .AND. grid%ivgtyp(i,j).NE.24 .AND. grid%ivgtyp(i,j).NE.25 .AND. grid%ivgtyp(i,j).NE.26 .AND. grid%ivgtyp(i,j).LT.30)) grid%ivgtyp(i,j)=13
               ELSE IF ( MMINLU == "USGS" ) THEN
                   IF ( grid%FRC_URB2D(i,j) .GE. 0.5 .AND.  &
-                       grid%ivgtyp(i,j).NE.1 .AND. grid&ivgtyp(i,j).LT.30) grid%ivgtyp(i,j)=1
+                       grid%ivgtyp(i,j).NE.1 .AND. grid%ivgtyp(i,j).LT.30) grid%ivgtyp(i,j)=1
               ENDIF
 
               IF ( grid%FRC_URB2D(i,j) == 0. ) THEN

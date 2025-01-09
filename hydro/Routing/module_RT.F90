@@ -567,7 +567,7 @@ subroutine getChanDim(did)
 
    return
 
-endif
+  endif
 
 
 allocate(CH_NETLNK(ixrt,jxrt))
@@ -588,6 +588,11 @@ if (nlst(did)%CHANRTSWCRT.eq.1 .or. nlst(did)%CHANRTSWCRT .eq. 2) then  !IF/then
 #ifndef MPP_LAND
    call get_NLINKSL(rt_domain(did)%NLINKSL, nlst(did)%channel_option, nlst(did)%route_link_f)
 #endif
+
+if (nlst(did)%lake_option == 0) then
+   write(6,*) "Lakes have been disabled -- NLAKES will be set to zero."
+   rt_domain(did)%nlakes = 0
+end if
 
 #ifdef HYDRO_D
    write(6,*) "before rt_allocate after READ_ROUTEDIM"

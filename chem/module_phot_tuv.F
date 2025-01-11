@@ -1457,11 +1457,10 @@ master_proc_b: &
       CALL wrf_dm_bcast_bytes( temp_data, n_temp_data*RWORDSIZE )
       CALL wrf_dm_bcast_bytes( o3_data, n_o3_data*RWORDSIZE )
       CALL wrf_dm_bcast_bytes( air_dens_data, n_air_dens_data*RWORDSIZE )
-#if RWORDSIZE == 4
+#ifndef DOUBLE_PRECISION
       CALL wrf_dm_bcast_bytes( chebev_ac, nchebev_term*nchebev_wave*2*RWORDSIZE )
       CALL wrf_dm_bcast_bytes( chebev_bc, nchebev_term*nchebev_wave*2*RWORDSIZE )
-#endif
-#if RWORDSIZE == 8
+#else
       CALL wrf_dm_bcast_bytes( chebev_ac, nchebev_term*nchebev_wave*RWORDSIZE )
       CALL wrf_dm_bcast_bytes( chebev_bc, nchebev_term*nchebev_wave*RWORDSIZE )
 #endif

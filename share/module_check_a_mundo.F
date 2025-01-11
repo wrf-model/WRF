@@ -671,7 +671,7 @@
 !-----------------------------------------------------------------------
 ! There is a binary file for Goddard radiation. It is single precision.
 !-----------------------------------------------------------------------
-# if ( defined(PROMOTE_FLOAT) || ( RWORDSIZE == DWORDSIZE ) )
+# ifdef DOUBLE_PRECISION
       god_r8 : DO i = 1, model_config_rec % max_dom
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( ( model_config_rec % ra_lw_physics(i) == goddardlwscheme ) .OR. &

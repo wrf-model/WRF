@@ -1081,10 +1081,8 @@
                               has_reqc, has_reqi, has_reqs,           &
                               ids,ide, jds,jde, kds,kde, &             ! domain dims
                               ims,ime, jms,jme, kms,kme, &             ! memory dims
-                              its,ite, jts,jte, kts,kte, &               ! tile dims
-							  sigma_out,  &									!RC	
-							  prrwau_out,pnrwau_out,pncwau_out, &			!RC 
-							  prrrcw_out,pncrcw_out,ilamr_out,ilamc_out ) 	!RC 
+                              its,ite, jts,jte, kts,kte &               ! tile dims
+							  ) 	!RC 
 
 
       implicit none
@@ -1108,9 +1106,7 @@
 #endif
 
 	  !RC
-	  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL, INTENT(INOUT):: sigma_out
-	  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL, INTENT(INOUT):: prrwau_out,pnrwau_out,pncwau_out,prrrcw_out,pncrcw_out,ilamr_out,ilamc_out
-	  REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL, INTENT(INOUT):: CLOUDNC
+	  REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT):: CLOUDNC
 
 	  !\RC
 
@@ -1139,12 +1135,6 @@
       REAL, DIMENSION(kts:kte):: &
                           rainprod1d, evapprod1d
 #endif
-		
-		!RC
-		REAL, DIMENSION(kts:kte):: sigma_1d
-		DOUBLE PRECISION, DIMENSION(kts:kte):: prr_wau,pnr_wau,pnc_wau,prr_rcw,pnc_rcw,ilamr,ilamc
-		REAL, DIMENSION(its:ite, jts:jte):: pcp_cl
-		!\RC
 
       REAL, DIMENSION(its:ite, jts:jte):: pcp_ra, pcp_sn, pcp_gr, pcp_ic
       REAL:: dt, pptrain, pptsnow, pptgraul, pptice, pptcloud !RC; added pptcloud
@@ -1307,22 +1297,9 @@
 #if ( WRF_CHEM == 1 )
                       wetscav_on, rainprod1d, evapprod1d, &
 #endif
-                      kts, kte, dt, i, j,sigma_1d,prr_wau,pnr_wau,pnc_wau,prr_rcw,pnc_rcw,ilamr,ilamc) !RC
-		!RC
-		do k = kts, kte
-			sigma_out(i,k,j) 	= 	sigma_1d(k)
-			prrwau_out(i,k,j)	=	prr_wau(k)
-			pnrwau_out(i,k,j)	=	pnr_wau(k)
-			pncwau_out(i,k,j)	=	pnc_wau(k)
-			prrrcw_out(i,k,j)	=	prr_rcw(k)
-			pncrcw_out(i,k,j)	=	pnc_rcw(k)
-			ilamr_out(i,k,j) 	=	ilamr(k)
-			ilamc_out (i,k,j)	=	ilamc(k)
-		enddo
-		!\RC
+                      kts, kte, dt, i, j) !RC
 
          pcp_ra(i,j) = pptrain
-		 pcp_cl(i,j) = pptcloud		!RC
          pcp_sn(i,j) = pptsnow
          pcp_gr(i,j) = pptgraul
          pcp_ic(i,j) = pptice
@@ -1550,10 +1527,7 @@
 #if ( WRF_CHEM == 1 )
                           wetscav_on, rainprod, evapprod, &
 #endif
-                          kts, kte, dt, ii, jj, 		&
-						  ln_sigma,						& !RC
-						  prr_wau,pnr_wau,pnc_wau, 		& !RC
-						  prr_rcw,pnc_rcw,ilamr,ilamc	) !RC
+                          kts, kte, dt, ii, jj) 
 						  
       implicit none
 
@@ -1670,15 +1644,17 @@
       INTEGER:: nu_c
 
 
-	!RC; processes and microphysical outputs
-	DOUBLE PRECISION, DIMENSION(kts:kte), INTENT(INOUT):: 			&
+	!RC; processes and microphysical quantities necessary for this scheme.
+	!RC;	included below in case someone wants to output easier.
+	DOUBLE PRECISION, DIMENSION(kts:kte):: 			&
 								prr_wau,pnr_wau,pnc_wau, 			&
 								prr_rcw,pnc_rcw,ilamr,ilamc
 	!/RC
+	
 	!RC; lognormal variables
 	REAL:: ln_varx,ln_tmp1,ln_tmp2
 	REAL, DIMENSION(kts:kte):: ln_dn
-	REAL, DIMENSION(kts:kte), INTENT(INOUT):: ln_sigma
+	REAL, DIMENSION(kts:kte):: ln_sigma
 	REAL:: sigma_d
 	!/RC
 

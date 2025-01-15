@@ -3978,9 +3978,7 @@ BENCH_START(micro_driver_tim)
       &        ,pert_thom_qi=config_flags%pert_thom_qi                   &
       &        ,pert_thom_qs=config_flags%pert_thom_qs                   &
       &        ,pert_thom_ni=config_flags%pert_thom_ni					 &
-	  &		   ,sigma_out=grid%sigma_out								 &		! for RCON; warm rain outputs
-	  &       ,prrwau_out=grid%prrwau_out,pnrwau_out=grid%pnrwau_out,pncwau_out=grid%pncwau_out  &							! for RCON; warm rain outputs
-	  &       ,prrrcw_out=grid%prrrcw_out,pncrcw_out=grid%pncrcw_out,ilamr_out=grid%ilamr_out,ilamc_out=grid%ilamc_out,cloudnc=grid%cloudnc &	! for RCON; warm rain outputs
+	  &		   ,cloudnc=grid%cloudnc 									 &
 	)
 
                                                                           

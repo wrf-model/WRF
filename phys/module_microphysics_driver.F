@@ -161,9 +161,7 @@ SUBROUTINE microphysics_driver(                                          &
                       ,perts_qsnow, perts_ni                             &
                       ,pert_thom_qv,pert_thom_qc,pert_thom_qi            &
                       ,pert_thom_qs,pert_thom_ni                         &
-		      ,sigma_out					 & ! for RCON; warm rain outputs
-		      ,prrwau_out,pnrwau_out,pncwau_out  		 & ! for RCON; warm rain outputs
-		      ,prrrcw_out,pncrcw_out,ilamr_out,ilamc_out,cloudnc & ! for RCON; warm rain outputs
+					  ,cloudnc											 &
                                                                          )
 
 ! Framework
@@ -607,13 +605,6 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 
    INTEGER, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) :: LOWLYR
 
-
-   REAL, DIMENSION( ims:ime , jms:jme ) , OPTIONAL, INTENT(OUT) :: CLOUDNC  !RC
-   REAL, DIMENSION( ims:ime , kms:kme, jms:jme ) , OPTIONAL, INTENT(OUT) :: sigma_out  !RC
-   REAL, DIMENSION( ims:ime , kms:kme, jms:jme ) , OPTIONAL, INTENT(OUT) :: prrwau_out,pnrwau_out,pncwau_out, prrrcw_out,pncrcw_out,ilamr_out,ilamc_out  !RC
-
-
-
 !
 ! Optional
 !
@@ -695,6 +686,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                                                       ,GRAUPELNCV &
                                                           ,HAILNC &
                                                          ,HAILNCV &
+														 ,CLOUDNC &
                                           ,hail_maxk1, hail_max2d
                                                           
 #if ( WRF_CHEM == 1)
@@ -1038,7 +1030,6 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 #endif
 !
 !
-! rcon mp scheme is below.
         CASE (RCON_MP_SCHEME)
 
              CALL wrf_debug ( 100 , 'microphysics_driver: calling RCON' )
@@ -1108,11 +1099,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      has_reqs=has_reqs,                  & 
                  IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde, &
                  IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme, &
-                 ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte, &
-				 SIGMA_OUT=sigma_out,								&
-				 PRRWAU_OUT=prrwau_out,PNRWAU_OUT=pnrwau_out,PNCWAU_OUT=pncwau_out,		&
-				 PRRRCW_OUT=prrrcw_out,PNCRCW_OUT=pncrcw_out,ILAMR_OUT=ilamr_out,		&
-				 ILAMC_OUT=ilamc_out)	
+                 ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte)	
 
 
               IF (config_flags%aer_fire_emit_opt.gt.0)  then

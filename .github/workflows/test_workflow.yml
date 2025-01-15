@@ -99,12 +99,18 @@ jobs:
         path      : main
         submodules: true
         ref: ${{ inputs.event_name == 'push' && github.ref || inputs.ref }}
-    # More checkout
+
+    ############################################################################
+    # WRF Specific
+    # More checkout, just do everything so we have it all at the ready. This unfortunately will limit testing 
+    # of on-the-fly checkouts
     - name: Checkout extra via manage_externals
       id  : manage_externals
       run : |
         cd main
         ./tools/manage_externals/checkout_externals -e arch/Externals.cfg 
+        ./tools/manage_externals/checkout_externals -e arch/OptionalExternals_testing.cfg
+    ############################################################################
 
     
     # Immediately copy out to # of tests to do

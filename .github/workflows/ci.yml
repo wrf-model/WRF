@@ -32,6 +32,7 @@ on:
         options:
           - all-tests
           - compile-tests
+          - em_real-tests
 
 
 # https://docs.github.com/en/actions/sharing-automations/reusing-workflows#supported-keywords-for-jobs-that-call-a-reusable-workflow
@@ -67,7 +68,7 @@ jobs:
             name : "Make Compilation Tests"
             id   : make-tests
             fileroot : wrf_compilation_tests-make
-            args : -j='{"node_select":{"-l ":{"select":1}}}'
+            args : -ff hsn.de.hpc.ucar.edu -j='{"node_select":{"-l ":{"select":1}}}'
             pool  : 8
             tpool : 1
             mkdirs : true
@@ -95,6 +96,75 @@ jobs:
       # This should be the only hard-coded value, we don't use ${{ inputs.test }}
       # to avoid 'all-tests' to be used in this workflow
       label    : compile-tests
+
+      # Everything below this should remain the same and comes from the testSet matrix
+      hpc-workflows_path : ${{ matrix.testSet.hpc-workflows_path }}
+      archive  : ${{ matrix.testSet.archive }}
+      name     : ${{ matrix.testSet.name }}
+      id       : ${{ matrix.testSet.id }}
+      host     : ${{ matrix.testSet.host }}
+      fileroot : ${{ matrix.testSet.fileroot }}
+      account  : ${{ matrix.testSet.account }}
+      tests    : ${{ toJson( matrix.testSet.tests ) }}
+      mkdirs   : ${{ matrix.testSet.mkdirs }}
+      args     : ${{ matrix.testSet.args }}
+      pool     : ${{ matrix.testSet.pool }}
+      tpool    : ${{ matrix.testSet.tpool }}
+
+      # required to emulate event trigger
+      event_name   : ${{ inputs.event_name }}
+      event_number : ${{ inputs.event_number }}
+      event_label  : ${{ inputs.test }}
+      ref          : ${{ inputs.ref }}
+      sha          : ${{ inputs.sha }}
+
+    # I am leaving this here for posterity if this is to be replicated in private repositories for testing
+    permissions:
+      contents: read
+      pull-requests: write
+      statuses: write
+    name : Test ${{ matrix.testSet.name }} on ${{ matrix.testSet.host }}
+  
+  em_real:
+    if : ${{ contains( fromJson('["em_real-tests","all-tests"]'), inputs.test ) || inputs.event_name == 'push' }}
+    strategy:
+      max-parallel: 4
+      fail-fast: false
+      matrix:
+      
+        testSet  :
+          - host : derecho
+            hpc-workflows_path : .ci/hpc-workflows
+            archive : /glade/work/aislas/github/runners/wrf/derecho/logs/
+            account : NMMM0012
+            name : "em_real Tests"
+            id   : em_real-tests
+            fileroot : wrf_em_real_tests
+            args : -ff hsn.de.hpc.ucar.edu -j='{"node_select":{"-l ":{"select":1}}}'
+            pool  : 14
+            tpool : 4 # This really only applies to em_real and em_realL
+            mkdirs : true
+            tests :
+              - em_real
+              - em_real8
+              - em_realA
+              - em_realB
+              - em_realC
+              - em_realD
+              - em_realE
+              - em_realF
+              - em_realG
+              - em_realH
+              - em_realI
+              - em_realJ
+              - em_realK
+              - em_realL
+
+    uses : ./.github/workflows/test_workflow.yml
+    with :
+      # This should be the only hard-coded value, we don't use ${{ inputs.test }}
+      # to avoid 'all-tests' to be used in this workflow
+      label    : em_real-tests
 
       # Everything below this should remain the same and comes from the testSet matrix
       hpc-workflows_path : ${{ matrix.testSet.hpc-workflows_path }}

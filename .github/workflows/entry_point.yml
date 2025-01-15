@@ -22,7 +22,12 @@ on:
 # https://stackoverflow.com/a/68940067
 jobs:
   queue_tests:
-    if : ${{ contains( fromJson('["compile-tests","all-tests"]'), github.event.label.name ) || github.event_name == 'push' }}
+    # https://stackoverflow.com/a/67532120
+    if : >
+      ${{ contains(
+            fromJson('["compile-tests","em_real-tests","all-tests"]'), 
+            github.event.label.name ) || 
+          github.event_name == 'push' }}
     name: Queue Test (${{ github.event_name == 'push' && github.ref_name || github.event.label.name }})
     runs-on: ubuntu-latest
     permissions:

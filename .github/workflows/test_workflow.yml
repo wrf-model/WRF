@@ -99,6 +99,12 @@ jobs:
         path      : main
         submodules: true
         ref: ${{ inputs.event_name == 'push' && github.ref || inputs.ref }}
+    # More checkout
+    - name: Checkout extra via manage_externals
+      id  : manage_externals
+      run : |
+        cd main
+        ./tools/manage_externals/checkout_externals -e arch/Externals.cfg 
 
     
     # Immediately copy out to # of tests to do

@@ -1790,6 +1790,27 @@ ENDIF ghg_block
 !                if(i.eq.19.and.j.eq.19)write(0,*)TCOSZ(i,j),ttday(i,j),julday, gmtp, sza, cosszax,xlonn,rlat
            enddo
           enddo
+
+         ! 17 Oct. 2024. A. Ukhov. 
+         CASE (CHEM_VOLC)
+            CALL wrf_debug(15,'call CHEM_VOLC initialization')
+            if(config_flags%phot_opt .NE. 0 )then
+               call wrf_error_fatal("CHEM_VOLC initialization, phot_opt  MUST BE ZERO")
+            endif
+            CALL wrf_debug(15,'call volcanic aerosols initialization')
+            if(config_flags%chem_in_opt == 0 )then
+            if( .NOT. config_flags%restart )then
+               do j=jts,jte
+                  do k=kts,kte
+                     do i=its,ite
+                        do n=1,num_chem
+                        chem(i,k,j,n)=0.
+                        enddo
+                     enddo
+                  enddo
+               enddo
+            endif
+            endif
       CASE (MOZCART_KPP,T1_MOZCART_KPP)
         CALL wrf_debug(15,'MOZCART dust initialization')
         ch_dust(:,:) = 0.8D-9

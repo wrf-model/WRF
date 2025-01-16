@@ -1811,6 +1811,32 @@ ENDIF ghg_block
                enddo
             endif
             endif
+            
+     ! scale background oh in dependence on average zenith angle
+     ! this is done since background values are only available as average/month. 
+     !
+            ndystep=86400/ifix(dt)
+            do j=jts,jte
+                  do i=its,ite
+                     tcosz(i,j)=0.
+                     ttday(i,j)=0.
+                     rlat=xlat(i,j)*3.1415926535590/180.
+                     xlonn=xlong(i,j)
+                     do n=1,ndystep
+                        xtime=n*dt/60.
+                        ixhour=ifix(gmt+.01)+ifix(xtime/60.)
+                        xhour=float(ixhour)
+                        xmin=60.*gmt+(xtime-xhour*60.)
+                        gmtp=mod(xhour,24.)
+                        gmtp=gmtp+xmin/60.
+                        CALL szangle(1, 1, julday, gmtp, sza, cosszax,xlonn,rlat)
+                        TCOSZ(i,j)=TCOSZ(I,J)+cosszax(1,1)
+                        if(cosszax(1,1).gt.0.)ttday(i,j)=ttday(i,j)+dt
+                     enddo
+!                if(i.eq.19.and.j.eq.19)write(0,*)TCOSZ(i,j),ttday(i,j),julday, gmtp, sza, cosszax,xlonn,rlat
+                  enddo
+            enddo
+
       CASE (MOZCART_KPP,T1_MOZCART_KPP)
         CALL wrf_debug(15,'MOZCART dust initialization')
         ch_dust(:,:) = 0.8D-9

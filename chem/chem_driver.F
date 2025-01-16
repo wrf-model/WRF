@@ -1221,7 +1221,7 @@
      if( do_chemstep .and.                           &
           config_flags%chem_opt /= CHEM_TRACER .and. &
           config_flags%chem_opt /= CHEM_VASH .and. &
-          config_flags%chem_opt /= CHEM_VOLC .and. &
+          !config_flags%chem_opt /= CHEM_VOLC .and. &   ! A. Ukhov. 28 Oct 2024
           config_flags%chem_opt /= CHEM_VOLC_4BIN .and. &
           config_flags%chem_opt /= DUST .and. &
           config_flags%chem_opt /= CHEM_TRACE2 .and. &
@@ -1243,7 +1243,7 @@
 
           call mechanism_driver(grid%id,curr_secs,ktau,grid%dt,grid%ktauc,dtstepc,config_flags, &
               grid%gmt,ijulian,t_phy,moist,p8w,t8w,grid%gd_cldfr,                     &
-              p_phy,chem,rho,dz8w,grid%dx,g,                                          &
+              p_phy,chem,rho,dz8w,grid%dx,grid%dy,grid%msftx,grid%msfty,g,                                          &
               zmid,z_at_w,grid%xlat,grid%xlong,                                       &
               vdrog3,vcsulf_old,vcso2_old,vch2o2_old,grid%ttday,grid%tcosz,           &
               grid%ph_macr,grid%ph_o31d,grid%ph_o33p,grid%ph_no2,                     &
@@ -1258,7 +1258,7 @@
               grid%oltp,grid%olip,grid%cslp,grid%limp,grid%hc5p,grid%hc8p,grid%tolp,  &
               grid%xylp,grid%apip,grid%isop,grid%hc3p,grid%ethp,grid%o3p,grid%tco3,   &
               grid%mo2,grid%o1d,grid%olnn,grid%rpho,grid%xo2,                         &
-              grid%ketp,grid%olnd,                                                    &
+              grid%ketp,grid%olnd,grid%so2_oh_loss,grid%so2_h2o2_loss,                &
               ids,ide, jds,jde, kds,kde,                                              &
               ims,ime, jms,jme, kms,kme,                                              &
               its,ite,jts,jte,kts,kte        )
@@ -1675,7 +1675,7 @@ end if !Chemistry time step check
 ! will have to use backgrund value
 !
         if(config_flags%chem_opt == CHEM_VOLC)then
-          CALL wrf_debug(15,'gocart so2-so4 conversion')
+          CALL wrf_debug(15,'CHEM_VOLC so2-so4 conversion')
           CALL  so2so4(0,chem,p_so2,p_sulf,p_h2o2,p_QC,T_PHY,MOIST,         &
          grid%qc_cu, grid%gd_cldfr, config_flags%cu_diag,                   &
          NUM_CHEM,NUM_MOIST,                                                &

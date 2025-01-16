@@ -2,7 +2,7 @@
 !
     subroutine mechanism_driver(id,curr_secs,ktau,dtstep,ktauc,dtstepc,&
                config_flags,gmt,julday,t_phy,moist,p8w,t8w,gd_cldfr,   &
-               p_phy,chem,rho_phy,dz8w,dx,g,z,z_at_w,xlat,xlong,vdrog3,&
+               p_phy,chem,rho_phy,dz8w,dx,dy,msftx,msfty,g,z,z_at_w,xlat,xlong,vdrog3,&
                vcsulf_old,vcso2_old,vch2o2_old,ttday,tcosz,            &
                ph_macr,ph_o31d,ph_o33p,ph_no2,                         &
                ph_cl2,ph_hocl,ph_clno2,ph_fmcl,                        &
@@ -13,7 +13,7 @@
                ph_n2o5,ph_o2,backg_oh,backg_h2o2,backg_no3,            &
                addt,addx,addc,etep,oltp,olip,cslp,limp,hc5p,hc8p,tolp, &
                xylp,apip,isop,hc3p,ethp,o3p,tco3,mo2,o1d,olnn,rpho,xo2,&
-               ketp,olnd,                                              &
+               ketp,olnd,so2_oh_loss,so2_h2o2_loss,                    &
                ids,ide, jds,jde, kds,kde,                              &
                ims,ime, jms,jme, kms,kme,                              &
                its,ite, jts,jte, kts,kte                               )
@@ -24,6 +24,7 @@
   USE module_data_sorgam
   USE module_radm
   USE module_gocart_chem
+  USE module_volc_chem, only: gocart_volc_chem_driver   ! A. Ukhov 24 Oct 2024
   USE module_aerosols_sorgam
   USE module_cbmz, only:	cbmz_driver
    IMPLICIT NONE
@@ -34,7 +35,7 @@
                                   its,ite, jts,jte, kts,kte
    INTEGER,      INTENT(IN   ) :: ktau,ktauc
    REAL(KIND=8), INTENT(IN   ) :: curr_secs
-   REAL,         INTENT(IN   ) :: dtstep,dtstepc,gmt,dx,g
+   REAL,         INTENT(IN   ) :: dtstep,dtstepc,gmt,dx,g,dy
 !
 ! advected moisture variables
 !
@@ -47,7 +48,7 @@
          INTENT(INOUT ) ::                                   chem
    REAL, DIMENSION( ims:ime, jms:jme ),                       &
          INTENT(IN ) ::                                             &
-          xlat,xlong,ttday,tcosz
+          xlat,xlong,ttday,tcosz,msftx,msfty
 
 !
 ! arrays that hold the photolysis rates
@@ -70,7 +71,9 @@
                xylp,apip,isop,hc3p,ethp,o3p,tco3,mo2,o1d,olnn,rpho,xo2,&
                ketp,olnd
 
-
+   REAL,  DIMENSION( ims:ime , jms:jme ),                        &
+         INTENT(INOUT   ) ::  so2_oh_loss,so2_h2o2_loss
+         
 !
 ! on input from meteorological model 
 !
@@ -108,6 +111,19 @@
 ! select chemical mechanism
 !
    chem_select: SELECT CASE(config_flags%chem_opt)
+     CASE (CHEM_VOLC)
+      !A. Ukhov 24 Oct 2024
+       CALL wrf_debug(15,'calling volc. chem from mechanism_driver')
+       call gocart_volc_chem_driver(curr_secs,dtstepc,config_flags,        &
+         gmt,julday,t_phy,moist,                                           &
+         chem,rho_phy,dz8w,p8w,backg_oh,backg_h2o2,                        &
+         gd_cldfr,dx,dy,msftx,msfty,g,                                     &
+         xlat,xlong,ttday,tcosz,                                           &
+         so2_oh_loss,so2_h2o2_loss,                                        &
+         ids,ide, jds,jde, kds,kde,                                        &
+         ims,ime, jms,jme, kms,kme,                                        &
+         its,ite, jts,jte, kts,kte                                         )
+
      CASE (GOCART_SIMPLE,GOCARTRACM_KPP,GOCARTRADM2)
        CALL wrf_debug(15,'calling gocart chem from mechanism_driver')
        call gocart_chem_driver(curr_secs,dtstepc,config_flags,        &

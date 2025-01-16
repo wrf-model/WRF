@@ -3,6 +3,7 @@
 !                   VERTMX was originally developed by Mariusz Pagowski and modified by
 !                   Richard C. Easter (PNNL)
 ! 10/11/2011 - Ravan Ahmadov (NOAA) updated to include the RACM_SOA_VBS option
+! 10/30/2024 - A. Ukhov (KAUST) added dry deposition of volcanic ash, so2, sulf
 !
 !WRF:MODEL_LAYER:CHEMICS
 !
@@ -17,7 +18,7 @@ CONTAINS
                cldfra, cldfra_old,raincv,seasin,dustin,                   &
                ccn1, ccn2, ccn3, ccn4, ccn5, ccn6, nsource,               &
                ivgtyp,tsk,gsw,vegfra,pbl,rmol,ust,znt,xlat,xlong,z,z_at_w,&
-               xland,ash_fall,h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,       &
+               xland,ash_fall,ashdrydep,h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,&
                anh3,cvaro1,cvaro2,                                        &
                cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,dep_vel_o3,      &
                ddlen,ddflx,                                               &
@@ -25,7 +26,7 @@ CONTAINS
                sf_urban_physics,numgas,current_month,dvel,snowh,          & 
                dustdrydep_1,dustdrydep_2,dustdrydep_3,                    &
                dustdrydep_4,dustdrydep_5,                                 &
-               depvelocity,                                               &               
+               depvelocity,so2_drydep,sulfdrydep,sulfgravsetl,            &
                dustgraset_1,dustgraset_2,dustgraset_3,                    &
                dustgraset_4,dustgraset_5,                                 &
                setvel_1,setvel_2,setvel_3,setvel_4,setvel_5, imod,        &         
@@ -44,7 +45,7 @@ CONTAINS
   USE module_data_sorgam
   USE module_aerosols_sorgam
   USE module_gocart_settling
-  USE module_vash_settling
+  USE module_vash_settling, only: volc_ash_sulf_so2_drydep_driver,sulf_settling_driver,vash_settling_driver ! A.Ukhov
   USE module_gocart_drydep
   USE module_mosaic_drydep, only:  mosaic_drydep_driver
   USE module_mixactivate_wrappers, only: mosaic_mixactivate, sorgam_mixactivate, &
@@ -127,7 +128,7 @@ CONTAINS
                                                      xlat,      &
                                                      xlong,     &
                                                      snowh,     &
-                                          xland,znt,raincv,ash_fall
+                                          xland,znt,raincv,ash_fall,ashdrydep
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,        &
           INTENT(INOUT ) ::                                     &
                     cldfra,     & ! cloud fraction current timestep
@@ -152,7 +153,7 @@ CONTAINS
       
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) ::        &
                 dustdrydep_1, dustdrydep_2, dustdrydep_3,       &
-                dustdrydep_4, dustdrydep_5, depvelocity
+                dustdrydep_4, dustdrydep_5, depvelocity,so2_drydep,sulfdrydep,sulfgravsetl ! A. Ukhov SO2 Sulf dry dep
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) ::        &
                dustgraset_1,dustgraset_2,dustgraset_3,          &
                dustgraset_4,dustgraset_5,                       &
@@ -265,6 +266,7 @@ CONTAINS
            config_flags%chem_opt /= GHG_TRACER     .and.                  &
            config_flags%chem_opt /= CHEM_VASH      .and.                  &
            config_flags%chem_opt /= CHEM_VOLC_4BIN .and.                  &
+           config_flags%chem_opt /= CHEM_VOLC      .and.                  &    ! A. Ukhov
            config_flags%chem_opt /= DUST           .and.                  &
            config_flags%chem_opt /= GOCART_SIMPLE  .and.                  &
            config_flags%chem_opt /= GOCARTRACM_KPP )THEN
@@ -435,6 +437,28 @@ CONTAINS
                dustdrydep_1,dustdrydep_2,dustdrydep_3,                    &
                dustdrydep_4,dustdrydep_5,                                 &
                depvelocity,                                               &                    
+               ids,ide, jds,jde, kds,kde,                                 &
+               ims,ime, jms,jme, kms,kme,                                 &
+               its,ite, jts,jte, kts,kte                                  )
+
+      !A. UKhov Dry deposition of volcanic SO2, sulf, and ash
+      ELSEIF ( config_flags%chem_opt == CHEM_VOLC) then
+         call wesely_driver(id,ktau,dtstep,                               &
+               config_flags,current_month,                                &
+               gmt,julday,t_phy,moist,p8w,t8w,raincv,                     &
+               p_phy,chem,rho_phy,dz8w,ddvel,aer_res_def,aer_res_zcen,    &
+               ivgtyp,tsk,gsw,vegfra,pbl,rmol,ust,znt,xlat,xlong,z,z_at_w,&
+               snowh, numgas,                                             &
+               ids,ide, jds,jde, kds,kde,                                 &
+               ims,ime, jms,jme, kms,kme,                                 &
+               its,ite, jts,jte, kts,kte                                  )
+
+         call volc_ash_sulf_so2_drydep_driver(dtstep,                     &
+               config_flags,numgas,                                       &
+               t_phy,moist,p8w,t8w,rmol,aer_res_def,                      &
+               p_phy,chem,rho_phy,dz8w,ddvel,xland,hfx,                   &
+               tsk,pbl,ust,znt,                                           &
+               ashdrydep,so2_drydep, sulfdrydep,                          &
                ids,ide, jds,jde, kds,kde,                                 &
                ims,ime, jms,jme, kms,kme,                                 &
                its,ite, jts,jte, kts,kte                                  )

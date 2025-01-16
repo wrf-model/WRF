@@ -14,7 +14,7 @@ contains
         ierr = 1
 #ifndef NCEP_WCOSS
 !#ifdef HYDRO_D  !! PLEASE NEVER UNCOMMENT THIS IFDEF, it's just one incredibly useful string.
-      write(6,*) "The job is stopped due to the fatal error. ", trim(msg)
+      write(6,'(a)') "The job has stopped due to a fatal error: ", trim(msg)
       call flush(6)
 !#endif
 #else
@@ -35,7 +35,7 @@ contains
 !        call flush(my_id+90)
 
          call mpp_land_abort()
-         call MPI_finalize(ierr)
+         call MPI_Finalize(ierr)
 #else
          stop "FATAL ERROR: Program stopped. Recompile with environment variable HYDRO_D set to 1 for enhanced debug information."
 #endif

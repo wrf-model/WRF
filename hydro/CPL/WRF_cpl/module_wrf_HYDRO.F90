@@ -1,23 +1,3 @@
-!  Program Name:
-!  Author(s)/Contact(s):
-!  Abstract:
-!  History Log:
-!  <brief list of changes to this source file>
-!
-!  Usage:
-!  Parameters: <Specify typical arguments passed>
-!  Input Files:
-!        <list file names and briefly describe the data they include>
-!  Output Files:
-!        <list file names and briefly describe the information they include>
-!
-!  Condition codes:
-!        <list exit condition or error codes returned >
-!        If appropriate, descriptive troubleshooting instructions or
-!        likely causes for failures could be mentioned here with the
-!        appropriate error code
-!
-!  User controllable options: <if applicable>
 
 module module_WRF_HYDRO
 
@@ -106,7 +86,7 @@ CONTAINS
 
 
 #ifdef MPP_LAND
-           call MPI_COMM_DUP(MPI_COMM_WORLD, HYDRO_COMM_WORLD, ierr)
+           call MPI_Comm_dup(MPI_COMM_WORLD, HYDRO_COMM_WORLD, ierr)
            call MPP_LAND_INIT(grid%e_we - grid%s_we - 1, grid%e_sn - grid%s_sn - 1)
 
            call mpp_land_bcast_int1 (nlst(did)%nsoil)
@@ -214,9 +194,9 @@ CONTAINS
 #endif
        else
             do k = 1, nlst(did)%nsoil
-                RT_DOMAIN(did)%STC(:,:,k) = grid%TSLB(its:ite,k,jts:jte) 
-                RT_DOMAIN(did)%smc(:,:,k) = grid%smois(its:ite,k,jts:jte) 
-                RT_DOMAIN(did)%sh2ox(:,:,k) = grid%sh2o(its:ite,k,jts:jte) 
+                RT_DOMAIN(did)%STC(:,:,k) = grid%TSLB(its:ite,k,jts:jte)
+                RT_DOMAIN(did)%smc(:,:,k) = grid%smois(its:ite,k,jts:jte)
+                RT_DOMAIN(did)%sh2ox(:,:,k) = grid%sh2o(its:ite,k,jts:jte)
             end do
             rt_domain(did)%infxsrt = grid%infxsrt(its:ite,jts:jte)
             rt_domain(did)%soldrain = grid%soldrain(its:ite,jts:jte)
@@ -235,7 +215,7 @@ CONTAINS
 ! update WRF variable after running routing model.
             grid%sfcheadrt(its:ite,jts:jte) = rt_domain(did)%overland%control%surface_water_head_lsm
 
-! provide groundwater soil flux to WRF for fully coupled simulations (FERSCH 09/2014)            
+! provide groundwater soil flux to WRF for fully coupled simulations (FERSCH 09/2014)
             if(nlst(did)%GWBASESWCRT .eq. 3 ) then
 !Wei Yu: comment the following two lines. Not ready for WRF3.7 release
 !yw             grid%qsgw(its:ite,jts:jte) = gw2d(did)%qsgw
@@ -269,7 +249,7 @@ CONTAINS
          do j = 1, jx
             do i = 1, ix
                 do k = 1, kk
-                  call interpLayer(Z1,v1(i,1:kk1,j),kk1,Z(k),vout(i,j,k)) 
+                  call interpLayer(Z1,v1(i,1:kk1,j),kk1,Z(k),vout(i,j,k))
                 end do
             end do
          end do
@@ -291,7 +271,7 @@ CONTAINS
          do j = 1, jx
             do i = 1, ix
                  do k = 1, kk
-                    call interpLayer(Z1,v1(i,j,1:kk1),kk1,Z(k),vout(i,k,j)) 
+                    call interpLayer(Z1,v1(i,j,1:kk1),kk1,Z(k),vout(i,k,j))
                  end do
             end do
          end do

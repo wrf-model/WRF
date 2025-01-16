@@ -1,24 +1,3 @@
-!  Program Name:
-!  Author(s)/Contact(s):
-!  Abstract:
-!  History Log:
-!
-!  Usage:
-!  Parameters: <Specify typical arguments passed>
-!  Input Files:
-!        <list file names and briefly describe the data they include>
-!  Output Files:
-!        <list file names and briefly describe the information they include>
-!
-!  Condition codes:
-!        <list exit condition or error codes returned >
-!        If appropriate, descriptive troubleshooting instructions or
-!        likely causes for failures could be mentioned here with the
-!        appropriate error code
-!
-!  User controllable options: <if applicable>
-!
-
 module module_HYDRO_io
 #ifdef MPP_LAND
      use module_mpp_land
@@ -695,7 +674,6 @@ end subroutine get_albedo12m_netcdf
       endif
       iret = nf90_get_var(ncid, varid, var, start, count)
 
-      return
       end subroutine get_2d_netcdf_cows
 
 !---------------------------------------------------------
@@ -1082,7 +1060,6 @@ end subroutine get_albedo12m_netcdf
 
       end if !end-if is now for channel_option just above, not IF from further up
 
-          return
      end subroutine get_NLINKSL
 
      subroutine nreadRT2d_real(var_name, inv, ixrt, jxrt, fileName, fatalErr)
@@ -1357,7 +1334,6 @@ end subroutine get_albedo12m_netcdf
      if(allocated(g_ch_netrt)) deallocate(g_ch_netrt)
      if(allocated(g_GWSUBBASMSK))  deallocate(g_GWSUBBASMSK)
 
-  return
   end subroutine MPP_READ_SIMP_GW
 #endif
 
@@ -1437,7 +1413,6 @@ end subroutine get_albedo12m_netcdf
       write(6,*) "numbasns = ", numbasns
 #endif
 
-    return
 
 !DJG -----------------------------------------------------
    END SUBROUTINE READ_SIMP_GW
@@ -1507,7 +1482,6 @@ end subroutine get_albedo12m_netcdf
      write(6,*) "check numbasns, gnumbasns : ", numbasns, gnumbasns
 #endif
 
-     return
   end subroutine SIMP_GW_IND
 
   subroutine read_GWBUCKPARM (inFile, numbasns, gnumbasns, basnsInd, &
@@ -1760,7 +1734,6 @@ end subroutine get_albedo12m_netcdf
 
 
   !bftodo: make filename accessible in namelist
-  return
   end subroutine readGW2d
   !BF
 
@@ -4773,7 +4746,6 @@ end subroutine mpp_output_chrt
            qlakei,qlakeo, resht,dtrt_ch,K)
      end if
      call mpp_land_sync()
-     return
      end subroutine mpp_output_lakes
 
    subroutine mpp_output_lakes2(lake_index,igrid, split_output_count, NLAKES, &
@@ -4808,7 +4780,6 @@ end subroutine mpp_output_chrt
            qlakei,qlakeo, resht,dtrt_ch,K, LAKEIDM)
      end if
      call mpp_land_sync()
-     return
      end subroutine mpp_output_lakes2
 #endif
 
@@ -5275,7 +5246,6 @@ end subroutine mpp_output_chrt
 
      if(allocated(g_qlink)) deallocate(g_qlink)
      if(allocated(CH_NETLNK)) deallocate(CH_NETLNK)
-     return
      end subroutine mpp_output_chrtgrd
 #endif
 
@@ -5501,7 +5471,6 @@ end subroutine mpp_output_chrt
        if(fatalErr_local) call hydro_stop(trim(errMsg))
     endif
 
-    return
   end subroutine get2d_int
 
     subroutine get2d_int8(var_name,out_buff,ix,jx,fileName, fatalErr)
@@ -5548,7 +5517,6 @@ end subroutine mpp_output_chrt
             if(fatalErr_local) call hydro_stop(trim(errMsg))
         endif
 
-        return
     end subroutine get2d_int8
 
 #ifdef MPP_LAND
@@ -5632,7 +5600,6 @@ end subroutine mpp_output_chrt
         end do
 
         call mpp_chrt_nlinks_collect(NLINKS)
-        return
 
       end SUBROUTINE MPP_READ_ROUTEDIM
 
@@ -5729,7 +5696,6 @@ end subroutine mpp_output_chrt
         write(6,*) "finish READ_ROUTING_seq"
 #endif
 
-        return
 
 !DJG -----------------------------------------------------
    END SUBROUTINE READ_ROUTING_seq
@@ -5829,7 +5795,6 @@ end subroutine mpp_output_chrt
     endif
 #endif
 
-        return
         end subroutine output_lsm
 
 
@@ -6219,7 +6184,6 @@ end if  ! end if(nlst_rt(did)%SUBRTSWCRT  .eq. 1 .or. &
 #endif
         iret = nf90_close(ncid)
 
-        return
         end subroutine RESTART_OUT_nc
 
 #ifdef MPP_LAND
@@ -6426,7 +6390,6 @@ end if  ! end if(nlst_rt(did)%SUBRTSWCRT  .eq. 1 .or. &
            endif
 #endif
 
-           return
         end subroutine w_rst_rt_nc2
 
         subroutine w_rst_rt_nc3(ncid,ix,jx,NSOIL,inVar, varName)
@@ -6461,7 +6424,6 @@ end if  ! end if(nlst_rt(did)%SUBRTSWCRT  .eq. 1 .or. &
               iret = nf90_put_var(ncid, varid, inVar(:,:,k), (/1,1/), (/ix,jx/))
            end do
 #endif
-           return
         end subroutine w_rst_rt_nc3
 
         subroutine w_rst_nc2(ncid,ix,jx,inVar,varName)
@@ -6482,7 +6444,6 @@ end if  ! end if(nlst_rt(did)%SUBRTSWCRT  .eq. 1 .or. &
            iret = nf90_put_var(ncid, varid, invar, (/1,1/), (/ix,jx/))
 #endif
 
-           return
         end subroutine w_rst_nc2
 
         subroutine w_rst_nc3(ncid,ix,jx,NSOIL,inVar, varName)
@@ -6518,7 +6479,6 @@ end if  ! end if(nlst_rt(did)%SUBRTSWCRT  .eq. 1 .or. &
              iret = nf90_put_var(ncid, varid, inVar(:,:,k), (/1,1/), (/ix,jx/))
            end do
 #endif
-           return
         end subroutine w_rst_nc3
 
         subroutine w_rst_crt_nc1_lake(ncid,n,inVar,varName &
@@ -6542,7 +6502,6 @@ end if  ! end if(nlst_rt(did)%SUBRTSWCRT  .eq. 1 .or. &
 #ifdef MPP_LAND
            endif
 #endif
-           return
         end subroutine w_rst_crt_nc1_lake
 
         subroutine w_rst_crt_reach_real(ncid,inVar,varName &
@@ -6576,7 +6535,6 @@ end if  ! end if(nlst_rt(did)%SUBRTSWCRT  .eq. 1 .or. &
            iret = nf90_inq_varid(ncid,varName, varid)
            iret = nf90_put_var(ncid, varid, inVar, (/1/), (/n/))
 #endif
-           return
         end subroutine w_rst_crt_reach_real
 
 
@@ -6611,7 +6569,6 @@ end if  ! end if(nlst_rt(did)%SUBRTSWCRT  .eq. 1 .or. &
            iret = nf90_inq_varid(ncid,varName, varid)
            iret = nf90_put_var(ncid, varid, inVar, (/1/), (/n/))
 #endif
-           return
         end subroutine w_rst_crt_reach_real8
 
 
@@ -6639,7 +6596,6 @@ end if  ! end if(nlst_rt(did)%SUBRTSWCRT  .eq. 1 .or. &
 #ifdef MPP_LAND
            endif
 #endif
-           return
         end subroutine w_rst_crt_nc1
 
         subroutine w_rst_crt_nc1g(ncid,n,inVar,varName)
@@ -6655,7 +6611,6 @@ end if  ! end if(nlst_rt(did)%SUBRTSWCRT  .eq. 1 .or. &
 #ifdef MPP_LAND
            endif
 #endif
-           return
         end subroutine w_rst_crt_nc1g
 
    subroutine w_rst_gwbucket_real(ncid,numbasns,gnumbasns, &
@@ -6936,7 +6891,6 @@ write(6,*) "end of RESTART_IN"
 call flush(6)
 #endif
 
-return
 end subroutine RESTART_IN_nc
 
 
@@ -6986,7 +6940,6 @@ end subroutine RESTART_IN_nc
 #endif
          end do
 
-         return
       end subroutine read_rst_nc3
 
       subroutine read_rst_nc2(ncid,ix,jx,var,varStr)
@@ -7022,7 +6975,6 @@ end subroutine RESTART_IN_nc
             var = 0.0
             iret = nf90_get_var(ncid, varid, var)
 #endif
-         return
       end subroutine read_rst_nc2
 
       subroutine read_rst_rt_nc3(ncid,ix,jx,NSOIL,var,varStr)
@@ -7064,7 +7016,6 @@ end subroutine RESTART_IN_nc
          iret = nf90_get_var(ncid, varid, var(:,:,i))
 #endif
          end do
-         return
       end subroutine read_rst_rt_nc3
 
       subroutine read_rst_rt_nc2(ncid,ix,jx,var,varStr)
@@ -7095,7 +7046,6 @@ end subroutine RESTART_IN_nc
 #else
             iret = nf90_get_var(ncid, varid, var)
 #endif
-         return
       end subroutine read_rst_rt_nc2
 
       subroutine read_rt_nc2(ncid,ix,jx,var,varStr)
@@ -7138,7 +7088,6 @@ end subroutine RESTART_IN_nc
 #else
             iret = nf90_get_var(ncid, varid, var)
 #endif
-         return
       end subroutine read_rt_nc2
 
       subroutine read_rst_crt_nc(ncid,var,n,varStr)
@@ -7174,7 +7123,6 @@ end subroutine RESTART_IN_nc
              call mpp_land_bcast_real(n,var)
          endif
 #endif
-         return
       end subroutine read_rst_crt_nc
 
       subroutine read_rst_crt_stream_nc(ncid,var_out,n,varStr,gnlinks,map_l2g)
@@ -7228,7 +7176,6 @@ end subroutine RESTART_IN_nc
 #else
          var_out = var
 #endif
-         return
       end subroutine read_rst_crt_stream_nc
 
       subroutine read_rst_crt_reach_nc_real(ncid,var_out,varStr,gnlinksl, fatalErr)
@@ -7327,7 +7274,6 @@ end subroutine RESTART_IN_nc
          if(allocated(var)) deallocate(var)
 #endif
 
-         return
          end subroutine read_rst_crt_reach_nc_real
 
 
@@ -7408,7 +7354,6 @@ end subroutine RESTART_IN_nc
          iret = nf90_get_var(ncid, varid, var_out)
          if(allocated(var)) deallocate(var)
 #endif
-         return
          end subroutine read_rst_crt_reach_nc_real8
 
 
@@ -8864,7 +8809,6 @@ endif
 
 link_location = CH_NETLNK
 
-return
 
 end subroutine MPP_READ_CHROUTING_new
 
@@ -10358,8 +10302,8 @@ end subroutine output_chrt2
           endif
        else
 !yw for IOC reach based routing, if netcdf lake file is not set from the hydro.namelist,
-!    we will assume that no lake will be assimulated.
-          write(6,*) "No lake nectdf file defined. NLAKES is set to be zero."
+!    we will assume that no lake will be assimilated.
+          write(6,*) "Lakes have been disabled -- NLAKES will be set to zero."
           NLAKES = 0
       endif
 #ifdef MPP_LAND

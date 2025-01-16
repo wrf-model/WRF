@@ -345,6 +345,8 @@ state    real  e_vash8          ikjf     emis_vol     1         Z      i{13}r   
 state    real  e_vash9          ikjf     emis_vol     1         Z      i{13}r    "E_VASH9"               "Volcanic Emissions, bin9"   "ug/m2/s"
 state    real  e_vash10         ikjf     emis_vol     1         Z      i{13}r    "E_VASH10"              "Volcanic Emissions, bin10"  "ug/m2/s"
 state    real  e_vso2           ikjf     emis_vol     1         Z      i{13}r    "E_VSO2"                "Volcanic Emissions, SO2"    "mol/m2/h"
+state    real  e_vsulf          ikjf     emis_vol     1         Z      i{13}r    "E_VSULF"               "Volcanic Emissions, SULF"   "mol/m2/h"
+state    real  e_qv             ikjf     emis_vol     1         Z      i{13}r    "E_QV"                  "Volcanic Emissions, water vapor"  "kg/m2/s"
 #
 # biomassburning emission arrays (used by fire plume rise)
 state   real     -          ikjf    ebu      -        -        -         -                    "Biomass burnung Emissions"         ""
@@ -4078,6 +4080,7 @@ package   ecrimechtno     emiss_opt==20                  -             emis_ant:
 #
 package   vash    emiss_opt_vol==1                   -             emis_vol:e_vash1,e_vash2,e_vash3,e_vash4,e_vash5,e_vash6,e_vash7,e_vash8,e_vash9,e_vash10
 package   vashso2 emiss_opt_vol==2                   -             emis_vol:e_vash1,e_vash2,e_vash3,e_vash4,e_vash5,e_vash6,e_vash7,e_vash8,e_vash9,e_vash10,e_vso2
+package   vashso2qv emiss_opt_vol==3                   -           emis_vol:e_vash1,e_vash2,e_vash3,e_vash4,e_vash5,e_vash6,e_vash7,e_vash8,e_vash9,e_vash10,e_vso2,e_qv,e_vsulf
 
 #
 

@@ -36,11 +36,11 @@
 # endif
 #endif
 
-  
+
 int col_on_comm ( int *, int *, void *, int *, void *, int *, int);
 int dst_on_comm ( int *, int *, void *, int *, void *, int *, int);
 
-void 
+void
 COLLECT_ON_COMM ( int * comm, int * typesize ,
                   void * inbuf, int *ninbuf , void * outbuf, int * noutbuf )
 {
@@ -96,7 +96,7 @@ col_on_comm ( int * Fcomm, int * typesize ,
     {
 #ifndef MS_SUA
       fprintf(stderr,"FATAL ERROR: collect_on_comm: noutbuf_loc (%d) > noutbuf (%d)\n",
-		      noutbuf_loc , * noutbuf ) ; 
+		      noutbuf_loc , * noutbuf ) ;
       fprintf(stderr,"WILL NOT perform the collection operation\n") ;
 #endif
       MPI_Abort(MPI_COMM_WORLD,1) ;
@@ -241,4 +241,3 @@ rlim_ ()
 }
 #endif
 #endif
-

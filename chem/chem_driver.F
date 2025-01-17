@@ -43,6 +43,7 @@
   USE module_wetscav_driver, only: wetscav_driver
   USE module_wetdep_ls, only:wetdep_ls
   USE module_uoc_dustwd ! Claudia, 3 April 2014  [mklose 03082015]
+  USE module_vash_settling, only: wetdep_ls_volc        ! A. Ukhov (KAUST) 24 Oct 2024
   USE module_input_chem_data, only: last_chem_time, &
 #if (defined(CHEM_DBG_I) && defined(CHEM_DBG_J) && defined(CHEM_DBG_K))
                                      chem_dbg,      &
@@ -1686,15 +1687,26 @@ end if !Chemistry time step check
         endif
 !
 !   now do wet removal; first LS if there is no explicit aqeous phase
-!
-        if(config_flags%wetscav_onoff<0)then
-           call wrf_debug(15,'calculate LS wet deposition')
-           call wetdep_ls(grid%dt,chem,grid%rainncv,moist,rho,num_moist, &
+         if(config_flags%wetscav_onoff<0)then
+            call wrf_debug(15,'calculate LS wet deposition')
+            if(config_flags%chem_opt == CHEM_VOLC .or. &
+              config_flags%chem_opt == chem_volc_4bin .or. &
+              config_flags%chem_opt == chem_vash) then
+
+              !A. Ukhov (KAUST). large scale scaveging for Ash, volcanic SO2 and Sulf
+              call wetdep_ls_volc(grid%dt,chem,grid%rainncv,moist,rho,num_moist, &
                 num_chem,numgas,dz8w,vvel,grid%chem_opt,                 &
-                grid%wd_ash_sc,                                          &
+                grid%wd_ash_sc,grid%wd_so2_sc,grid%wd_sulf_sc,           &
                 ids,ide, jds,jde, kds,kde,                               &
                 ims,ime, jms,jme, kms,kme,                               &
                 its,ite, jts,jte, kts,kte                                )
+            else
+              call wetdep_ls(grid%dt,chem,grid%rainncv,moist,rho,num_moist, &
+                num_chem,numgas,dz8w,vvel,grid%chem_opt,                 &
+                ids,ide, jds,jde, kds,kde,                               &
+                ims,ime, jms,jme, kms,kme,                               &
+                its,ite, jts,jte, kts,kte                                )
+            endif
          endif
 !
 ! Sum up the aerosol mass for radiation and diagnostic purposes. Unlike

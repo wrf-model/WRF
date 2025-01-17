@@ -1,15 +1,11 @@
 MODULE module_wetdep_ls
 USE module_state_description, only:p_qv,p_qc,p_so2,p_sulf, &
                               p_bc1,p_bc2,p_oc1,p_oc2,p_seas_1,p_seas_2,     &
-                              p_seas_3,p_seas_4,p_dms,p_vash_1,p_vash_2,     &
-                              p_vash_3,p_vash_4,p_vash_5,p_vash_6,p_vash_7,  &
-                              p_vash_8,p_vash_9,p_vash_10,                   &
-                              chem_vash,chem_volc,chem_volc_4bin     ! A. Ukhov.                              
+                              p_seas_3,p_seas_4,p_dms
 
 CONTAINS
 subroutine wetdep_ls(dt,var,rain,moist,rho,num_moist, &
          num_chem,numgas,dz8w,vvel,chem_opt,             &
-         wd_ash_sc,                                      &
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )
@@ -29,7 +25,6 @@ subroutine wetdep_ls(dt,var,rain,moist,rho,num_moist, &
           INTENT(INOUT) :: var        
    REAL,  DIMENSION( ims:ime , jms:jme ),                                  &
           INTENT(IN   ) :: rain
-   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) :: wd_ash_sc
 !  REAL,  DIMENSION( ims:ime ,  jms:jme ),                                  &
 !         INTENT(INOUT   ) :: var_rmv
    REAL,  DIMENSION( its:ite ,  jts:jte ) :: var_sum,var_rmv
@@ -91,21 +86,6 @@ subroutine wetdep_ls(dt,var,rain,moist,rho,num_moist, &
         dvar=alpha*factor/(1+factor)*var(i,k,j,nv)
         var(i,k,j,nv)=max(1.e-16,var(i,k,j,nv)-dvar)
 !       write(0,*)'var after ',km,var(i,k,j,nv),dvar
-
-         ! A. Ukhov 18 Oct 2024 added accumulated scaveged ash
-        if (chem_opt == chem_vash .OR. chem_opt == chem_volc) then
-            if(nv.eq.p_vash_1 .or. nv.eq.p_vash_2 .or. nv.eq.p_vash_3 .or. nv.eq.p_vash_4 .or. &
-               nv.eq.p_vash_5 .or. nv.eq.p_vash_6 .or. nv.eq.p_vash_7 .or. nv.eq.p_vash_8 .or. &
-               nv.eq.p_vash_9 .or. nv.eq.p_vash_10) then
-               wd_ash_sc(i,j) = wd_ash_sc(i,j) + dvar*rho(i,k,j)*dz8w(i,k,j)*1.E-6
-            endif
-         endif
-         if(chem_opt == chem_volc_4bin) then
-            if(nv.eq.p_vash_7 .or. nv.eq.p_vash_8 .or. nv.eq.p_vash_9 .or. nv.eq.p_vash_10) then
-               wd_ash_sc(i,j) = wd_ash_sc(i,j) + dvar*rho(i,k,j)*dz8w(i,k,j)*1.E-6
-            endif
-         endif  
-
         endif
        enddo
 !      var_rmv(i,j)=var_rmv(i,j)+var_rmvl(i,j)

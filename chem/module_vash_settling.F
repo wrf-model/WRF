@@ -3,6 +3,7 @@
 ! did not conserve the mass of ash. Code clean-up. 
 
 ! 30/10/2024. A. UKhov (KAUST) Added dry deposition for volcanic ash, so2, sulf
+! 30/10/2024. A. UKhov (KAUST) Added large scale scaveging for ash, so2, sulf 
 
 MODULE MODULE_VASH_SETTLING
 
@@ -620,4 +621,134 @@ SUBROUTINE dry_depvel_ash_sulf_so2( config_flags,ipr,ii,imx,jmx,lmx, &
     END DO j_loop
 
 END SUBROUTINE dry_depvel_ash_sulf_so2
+
+! A. Ukhov 30 October 2024
+! Based on wetdep_ls()
+subroutine wetdep_ls_volc(dt,var,rain,moist,rho,num_moist, &
+  num_chem,numgas,dz8w,vvel,chem_opt,             &
+  wd_ash_sc,wd_so2_sc,wd_sulf_sc, & ! A. Ukhov. for Ash, SO2  and Sulf LS scaveging
+
+
+
+! A. Ukhov 30/10/2024. Large Scale scaveging Ash, SO2 and Sulf aerosols
+! Based on wetdep_ls() for GOCART aerosols
+subroutine wetdep_ls_volc(dt,var,rain,moist,rho,num_moist,          &
+  num_chem,numgas,dz8w,vvel,chem_opt,                               &
+  wd_ash_sc,wd_so2_sc,wd_sulf_sc,                                   & 
+  ids,ide, jds,jde, kds,kde,                                        &
+  ims,ime, jms,jme, kms,kme,                                        &
+  its,ite, jts,jte, kts,kte                                         )
+
+  USE module_model_constants, ONLY: mwdry
+IMPLICIT NONE
+
+INTEGER,      INTENT(IN   ) :: num_chem,numgas,num_moist,               &
+                           chem_opt,                                &
+                           ids,ide, jds,jde, kds,kde,               &
+                           ims,ime, jms,jme, kms,kme,               &
+                           its,ite, jts,jte, kts,kte
+real, INTENT(IN ) :: dt
+REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_moist ),                &
+  INTENT(IN ) ::                                   moist
+REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ),                        &
+   INTENT(IN   ) :: rho,dz8w,vvel        
+REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ,1:num_chem),              &
+   INTENT(INOUT) :: var        
+REAL,  DIMENSION( ims:ime , jms:jme ),                                  &
+   INTENT(IN   ) :: rain
+
+!Accumulated large scale scaveged so2 and sulf
+REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) :: wd_so2_sc,wd_sulf_sc
+
+REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) :: wd_ash_sc
+REAL,  DIMENSION( its:ite ,  jts:jte ) :: var_sum,var_rmv
+REAL,  DIMENSION( its:ite ,  jts:jte ) :: frc,var_sum_clw,rain_clw     
+real :: dvar,factor,clsum,alpha!,rho_water
+integer :: nv,i,j,k,km
+
+!write(0,*) 'in wetdepls, numgas,num_chem = ',numgas,num_chem,chem_opt
+!in wetdepls, numgas,num_chem =            3          13         402
+  do nv=1,num_chem
+    
+    !if(nv.le. numgas .and. nv.ne.p_sulf)cycle
+    alpha = .5    ! scavenging factor
+
+    if(nv.eq.p_sulf .or. nv.eq.p_so2)alpha=1.
+    
+    do i=its,ite
+    do j=jts,jte
+        var_sum_clw(i,j)=0.
+        var_sum(i,j)=0.
+        !var_rmvl(i,:,j)=0.
+        frc(i,j)=0.
+        rain_clw(i,j)=0.
+        if(rain(i,j).gt.1.e-10)then
+        ! convert rain back to rate
+            rain_clw(i,j)=rain(i,j)/dt
+        ! total cloud water
+        !
+            do k=1,kte-1
+              dvar=max(0.,moist(i,k,j,p_qc)*rho(i,k,j)*vvel(i,k,j)*dz8w(i,k,j))
+              var_sum_clw(i,j)=var_sum_clw(i,j)+dvar
+              var_sum(i,j)=var_sum(i,j)+var(i,k,j,nv)*rho(i,k,j)
+            enddo
+            if(var_sum(i,j).gt.1.e-10 .and. var_sum_clw(i,j).gt.1.e-10 ) then
+        !        assuming that frc is onstant, it is my conversion factor 
+        !       (just like in convec. parameterization
+              frc(i,j)=rain_clw(i,j)/var_sum_clw(i,j)
+        !    write(0,*)'frc ', frc(i,j),var_sum_clw(i,j),var_sum(i,j)
+              frc(i,j)=max(1.e-6,min(frc(i,j),.005))
+            endif
+        endif
+    enddo   !j
+    enddo   !i
+    !
+    ! get rid of it
+    !
+    do i=its,ite
+    do j=jts,jte
+    if(rain(i,j).gt.1.e-10 .and. var_sum(i,j).gt.1.e-10 .and. var_sum_clw(i,j).gt.1.e-10)then
+      do k=kts,kte-2
+          if(var(i,k,j,nv).gt.1.e-16 .and. moist(i,k,j,p_qc).gt.0.)then
+            factor = max(0.,frc(i,j)*rho(i,k,j)*dz8w(i,k,j)*vvel(i,k,j))
+        !        write(0,*)'var before ',k,km,var(i,k,j,nv),factor
+            dvar=alpha*factor/(1+factor)*var(i,k,j,nv)
+            var(i,k,j,nv)=max(1.e-16,var(i,k,j,nv)-dvar)
+        !        write(0,*)'var after ',km,var(i,k,j,nv),dvar
+
+            ! accumulated scaveged volcanic SO2 and Sulf
+            if (chem_opt .eq. chem_volc) then
+                if(nv.eq.p_so2) then
+                  wd_so2_sc(i,j) = wd_so2_sc(i,j) + dvar *  rho(i,k,j) * dz8w(i,k,j)/mwdry ! mmol/m2
+                endif
+
+                if(nv.eq.p_sulf) then
+                  wd_sulf_sc(i,j) = wd_sulf_sc(i,j) + dvar * rho(i,k,j) * dz8w(i,k,j)/mwdry ! mmol/m2
+                endif
+            endif
+
+            ! accumulated scaveged volcanic ash
+            if (chem_opt .eq. chem_vash .OR. chem_opt .eq. chem_volc) then
+                if(nv.eq.p_vash_1 .or. nv.eq.p_vash_2 .or. nv.eq.p_vash_3 .or. nv.eq.p_vash_4 .or. &
+                  nv.eq.p_vash_5 .or. nv.eq.p_vash_6 .or. nv.eq.p_vash_7 .or. nv.eq.p_vash_8 .or. &
+                  nv.eq.p_vash_9 .or. nv.eq.p_vash_10) then
+                  wd_ash_sc(i,j) = wd_ash_sc(i,j) + 1.E-6 * dvar * rho(i,k,j) * dz8w(i,k,j) !g/m2
+                endif
+            endif
+
+            if(chem_opt == chem_volc_4bin) then
+                if(nv.eq.p_vash_7 .or. nv.eq.p_vash_8 .or. nv.eq.p_vash_9 .or. nv.eq.p_vash_10) then
+                  wd_ash_sc(i,j) = wd_ash_sc(i,j) + 1.E-6 * dvar * rho(i,k,j) * dz8w(i,k,j) !g/m2
+                endif
+            endif  
+          endif
+      enddo !k
+    !      var_rmv(i,j)=var_rmv(i,j)+var_rmvl(i,j)
+    endif   !rain...
+    enddo   !j
+    enddo   !i
+  enddo   !nv
+END SUBROUTINE WETDEP_LS_VOLC
+
+
 END MODULE MODULE_VASH_SETTLING

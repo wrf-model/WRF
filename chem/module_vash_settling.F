@@ -52,7 +52,7 @@ SUBROUTINE vash_settling_driver(dt,config_flags,t_phy,moist,               &
 
   REAL, INTENT(IN   ) :: dt,dx,g
   integer :: nmx,i,j,k,kk,lmx
-  real*8, DIMENSION (1,1,kte-kts+1) :: tmp,airden,airmas,p_mid,delz,rh
+  real*8, DIMENSION (1,1,kte-kts+1) :: tmp,airden,p_mid,delz,rh
   real*8, DIMENSION (1,1,kte-kts+1,4) :: sea_salt
 !srf
   real*8, DIMENSION (1,1,kte-kts+1,10) :: ash
@@ -60,18 +60,16 @@ SUBROUTINE vash_settling_driver(dt,config_flags,t_phy,moist,               &
                                                      2500.,2500.,2500.,2500.,2500. /)
   real*8, DIMENSION (10), PARAMETER :: reff_ash(10)=(/0.5000D-3,&! 1.00 mm diameter 
                                                       0.3750D-3,&! 0.75 mm
-						      0.1875D-3,&!
-						      93.750D-6,&!
-						      46.875D-6,&!
-						      23.437D-6,&!
-						      11.719D-6,&!
-						      05.859D-6,&!
-						      02.930D-6,&!
-						      00.975D-6 /)! 3.9 um
+                                                      0.1875D-3,&!
+                                                      93.750D-6,&!
+                                                      46.875D-6,&!
+                                                      23.437D-6,&!
+                                                      11.719D-6,&!
+                                                      05.859D-6,&!
+                                                      02.930D-6,&!
+                                                      00.975D-6 /)! 3.9 um
   real*8, DIMENSION (10) :: bstl_ash
-!
-! bstl is for budgets
-!
+  !real*8, DIMENSION (10,55) :: ash_speed
 
        lmx=kte-kts+1
        
@@ -86,7 +84,6 @@ SUBROUTINE vash_settling_driver(dt,config_flags,t_phy,moist,               &
             kk=kk+1
             p_mid(1,1,kk)=.01*p_phy(i,kte-k+kts,j)
             delz(1,1,kk)=dz8w(i,kte-k+kts,j)
-            airmas(1,1,kk)=-(p8w(i,k+1,j)-p8w(i,k,j))/g
             airden(1,1,kk)=rho_phy(i,k,j)
             tmp(1,1,kk)=t_phy(i,k,j)
             rh(1,1,kk) = .95
@@ -105,7 +102,7 @@ SUBROUTINE vash_settling_driver(dt,config_flags,t_phy,moist,               &
             ash(1,1,kk,10)=chem(i,k,j,p_vash_10)
           enddo
           
-          if(config_flags%chem_opt == 400  .or. config_flags%chem_opt == 402 ) then
+          if(config_flags%chem_opt == CHEM_VASH  .or. config_flags%chem_opt == CHEM_VOLC ) then
           kk=0
             do k=kts,kte
               kk=kk+1
@@ -118,8 +115,15 @@ SUBROUTINE vash_settling_driver(dt,config_flags,t_phy,moist,               &
             enddo
           endif
 
-          call vsettling(1, 1, lmx, 10, g, ash, tmp, p_mid, delz, airmas, &
-                    den_ash, reff_ash, dt, bstl_ash, rh, airden)
+          call vsettling(1, 1, lmx, 10, g, ash, tmp, p_mid, delz, &
+                    den_ash, reff_ash, dt, bstl_ash, rh, airden)!,ash_speed)
+
+          !if(i==20.and.j==20) then
+          !  write(*,*)'1',ash_speed(1,:)
+          !  write(*,*)'2',ash_speed(2,:)
+          !          ...
+          !  write(*,*)'10',ash_speed(10,:)
+          !endif
 
           !bstl_ash [ug/m2]. total ash grav. set [kg/m2]
           ash_fall(i,j) = ash_fall(i,j) + sum(1.e-9 * bstl_ash(1:10))      
@@ -133,7 +137,7 @@ SUBROUTINE vash_settling_driver(dt,config_flags,t_phy,moist,               &
             chem(i,k,j,p_vash_10)=ash(1,1,kk,10)
           enddo
           
-          if(config_flags%chem_opt == 400  .or. config_flags%chem_opt == 402 ) then
+          if(config_flags%chem_opt == CHEM_VASH  .or. config_flags%chem_opt == CHEM_VOLC ) then
             kk=0
             do k=kts,kte
               kk=kk+1
@@ -154,37 +158,25 @@ END SUBROUTINE vash_settling_driver
 
 
 subroutine vsettling(imx,jmx, lmx, nmx, g0, &
-         tc, tmp, p_mid, delz, airmas, &
-         den, reff, dt, bstl, rh,airden)
-! ****************************************************************************
-! *                                                                          *
-! *  Calculate the loss by settling, using an implicit method                *
-! *                                                                          *
-! *  Input variables:                                                        *
-! *    SIGE(k)         - sigma coordinate of the vertical edges              *
-! *    PS(i,j)         - Surface pressure (mb)                               *
-! *    TMP(i,j,k)      - Air temperature  (K)                                *
-! *    CT(i,j)         - Surface exchange coeff for moisture
-! *                                                                          *
-! **************************************************************************** 
-
+         tc, tmp, p_mid, delz, den, reff, dt, bstl, rh,airden)!,ash_speed)
 
   IMPLICIT  NONE
 
   INTEGER, INTENT(IN) :: imx, jmx, lmx, nmx
   INTEGER :: ntdt
   REAL, INTENT(IN) :: dt,g0
-  REAL*8,    INTENT(IN) :: tmp(imx,jmx,lmx), delz(imx,jmx,lmx),  &
-                         airmas(imx,jmx,lmx), rh(imx,jmx,lmx), &
-                         den(nmx), reff(nmx), p_mid(imx,jmx,lmx),airden(imx,jmx,lmx)
+  REAL*8,    INTENT(IN) :: tmp(imx,jmx,lmx), delz(imx,jmx,lmx),   &
+                         rh(imx,jmx,lmx), den(nmx), reff(nmx),    &
+                         p_mid(imx,jmx,lmx),airden(imx,jmx,lmx)
   REAL*8, INTENT(INOUT) :: tc(imx,jmx,lmx,nmx)
   REAL*8, INTENT(OUT)   :: bstl(imx,jmx,nmx)
+  !real*8, INTENT(INOUT) :: ash_speed(10,55)
 
   REAL*8    :: dt_settl(nmx), rho(nmx)
   INTEGER :: ndt_settl(nmx)
   REAL*8    :: vd_cor(lmx)
   REAL*8    :: dzmin, vsettl, dtmax, rwet(nmx)
-  REAL*8    :: addmass,c_stokes, free_path, c_cun, viscosity
+  REAL*8    :: addmass,c_stokes, free_path, c_cun, viscosity,R_tilde
   REAL,    PARAMETER :: dyn_visc = 1.5E-5
   INTEGER :: k, n, i, j, l, l2
 
@@ -256,6 +248,15 @@ subroutine vsettling(imx,jmx, lmx, nmx, g0, &
               ! Settling velocity, depends on temp
               vd_cor(l) = 2.0/9.0*g0*rho_priv(k)*rwet_priv(k)**2/viscosity
 
+              ! Correction of ash settling speed for partciles with radii>20 micron
+              ! details in Mailler, Sylvain, et al. 2023
+              if (k < 7) then              
+                    R_tilde = airden(i,j,l) * (2 * rwet_priv(k)) * vd_cor(l) / (2.*viscosity)
+                    if(R_tilde>0.0116)then
+                      vd_cor(l) = vd_cor(l) * (1 - (1 + (R_tilde /2.440)**(-0.4335))**(-1.905))
+                    endif
+              END IF
+
               ! Update mixing ratio. Order of delz is top->sfc
               IF (l == lmx) THEN
                 tc(i,j,l,k) = tc(i,j,l,k) / (1.0 + dt_settl(k) * vd_cor(l)/delz(i,j,l2))
@@ -268,6 +269,9 @@ subroutine vsettling(imx,jmx, lmx, nmx, g0, &
                       (tc(i,j,l,k) + tc(i,j,l+1,k) * dt_settl(k) * vd_cor(l+1) /delz(i,j,l2-1) * &
                       ((airden(i,j,l+1)*delz(i,j,l2-1))/(airden(i,j,l)*delz(i,j,l2))))
               END IF
+
+              !ash_speed(k,l)=vd_cor(l)
+              !write(*,*)'SA ',i,j,l2,k,vd_cor(l)!,delz(i,j,l2)
 
            END DO  !l, height
         END DO  !n, time

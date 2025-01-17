@@ -143,7 +143,8 @@ CONTAINS
 !
 ! Accumulated wet deposition
 !
-   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) :: wd_no3,wd_so4,wd_ash
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) :: wd_no3,wd_so4
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) :: wd_ash    ! A. Ukhov
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) :: wd_nh4,wd_oa, &
                                      wd_so2, wd_sulf, wd_hno3, wd_nh3
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) :: &
@@ -548,27 +549,29 @@ CONTAINS
    if (p_nh3   .gt.1) wdi_nh3(its:ite,jts:jte) = wdi_nh3(its:ite,jts:jte) + wetdep_2d(its:ite,jts:jte,p_nh3)*dt               ! mmol/m2
    
 
-   ! A. Ukhov 18 Oct 2024
+   ! A. Ukhov (KAUST) 18 Oct 2024
    ! diagnostics for wet deposited ash
    if (chemopt == chem_vash .OR. chemopt == chem_volc) then
      ! wetdep_2d [ug/m2/s] for aerosol
-      wd_ash(its:ite,jts:jte) = wd_ash(its:ite,jts:jte) + wetdep_2d(its:ite,jts:jte,p_vash_1)*dt ! ug/m2
-      wd_ash(its:ite,jts:jte) = wd_ash(its:ite,jts:jte) + wetdep_2d(its:ite,jts:jte,p_vash_2)*dt ! ug/m2
-      wd_ash(its:ite,jts:jte) = wd_ash(its:ite,jts:jte) + wetdep_2d(its:ite,jts:jte,p_vash_3)*dt ! ug/m2
-      wd_ash(its:ite,jts:jte) = wd_ash(its:ite,jts:jte) + wetdep_2d(its:ite,jts:jte,p_vash_4)*dt ! ug/m2
-      wd_ash(its:ite,jts:jte) = wd_ash(its:ite,jts:jte) + wetdep_2d(its:ite,jts:jte,p_vash_5)*dt ! ug/m2
-      wd_ash(its:ite,jts:jte) = wd_ash(its:ite,jts:jte) + wetdep_2d(its:ite,jts:jte,p_vash_6)*dt ! ug/m2
-      wd_ash(its:ite,jts:jte) = wd_ash(its:ite,jts:jte) + wetdep_2d(its:ite,jts:jte,p_vash_7)*dt ! ug/m2
-      wd_ash(its:ite,jts:jte) = wd_ash(its:ite,jts:jte) + wetdep_2d(its:ite,jts:jte,p_vash_8)*dt ! ug/m2
-      wd_ash(its:ite,jts:jte) = wd_ash(its:ite,jts:jte) + wetdep_2d(its:ite,jts:jte,p_vash_9)*dt ! ug/m2
-      wd_ash(its:ite,jts:jte) = wd_ash(its:ite,jts:jte) + wetdep_2d(its:ite,jts:jte,p_vash_10)*dt ! ug/m2
+      wd_ash(its:ite,jts:jte) = wd_ash(its:ite,jts:jte) + &
+                                (wetdep_2d(its:ite,jts:jte,p_vash_1)+ &
+                                wetdep_2d(its:ite,jts:jte,p_vash_2) + &
+                                wetdep_2d(its:ite,jts:jte,p_vash_3) + &
+                                wetdep_2d(its:ite,jts:jte,p_vash_4) + &
+                                wetdep_2d(its:ite,jts:jte,p_vash_5) + &
+                                wetdep_2d(its:ite,jts:jte,p_vash_6) + &
+                                wetdep_2d(its:ite,jts:jte,p_vash_7) + &
+                                wetdep_2d(its:ite,jts:jte,p_vash_8) + &
+                                wetdep_2d(its:ite,jts:jte,p_vash_9) + &
+                                wetdep_2d(its:ite,jts:jte,p_vash_10))*dt ! ug/m2
     endif
 
     if(chemopt == chem_volc_4bin) then
-      wd_ash(its:ite,jts:jte) = wd_ash(its:ite,jts:jte) + wetdep_2d(its:ite,jts:jte,p_vash_7)*dt ! ug/m2
-      wd_ash(its:ite,jts:jte) = wd_ash(its:ite,jts:jte) + wetdep_2d(its:ite,jts:jte,p_vash_8)*dt ! ug/m2
-      wd_ash(its:ite,jts:jte) = wd_ash(its:ite,jts:jte) + wetdep_2d(its:ite,jts:jte,p_vash_9)*dt ! ug/m2
-      wd_ash(its:ite,jts:jte) = wd_ash(its:ite,jts:jte) + wetdep_2d(its:ite,jts:jte,p_vash_10)*dt ! ug/m2
+      wd_ash(its:ite,jts:jte) = wd_ash(its:ite,jts:jte) + &
+                                (wetdep_2d(its:ite,jts:jte,p_vash_7) + &
+                                wetdep_2d(its:ite,jts:jte,p_vash_8) + &
+                                wetdep_2d(its:ite,jts:jte,p_vash_9) + &
+                                wetdep_2d(its:ite,jts:jte,p_vash_10)) * dt ! ug/m2
     endif
    
    ! Update the accumulated wet deposition:

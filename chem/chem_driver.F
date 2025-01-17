@@ -1161,7 +1161,7 @@
              z_at_w,grid%cu_co_ten,                                                   &
              grid%wd_no3_cu,grid%wd_so4_cu,                                           &
              grid%wd_nh4_cu,grid%wd_oa_cu,                                            &
-             grid%wd_ash_cu,        &  ! A. Ukhov
+             grid%wd_ash_cu,                                                          &
              grid%wd_so2_cu, grid%wd_sulf_cu, grid%wd_hno3_cu, grid%wd_nh3_cu,        &
              grid%wd_cvasoa_cu, grid%wd_cvbsoa_cu, grid%wd_asoa_cu, grid%wd_bsoa_cu,  &
              grid%k22_shallow,grid%kbcon_shallow,grid%ktop_shallow,grid%xmb_shallow,  &
@@ -1189,9 +1189,9 @@
              U_phy,V_phy,t_phy,moist,dz8w,                                            &
              p_phy,XLV,CP,G,r_v,                                                      &
              z_at_w, grid%cu_co_ten,                                                  &
-             grid%wd_no3_cu,grid%wd_so4_cu,                                 &
+             grid%wd_no3_cu,grid%wd_so4_cu,                                           &
              grid%wd_nh4_cu,grid%wd_oa_cu,                                            &
-             grid%wd_ash_cu,        &  ! A. Ukhov
+             grid%wd_ash_cu,                                                          &
              grid%wd_so2_cu, grid%wd_sulf_cu, grid%wd_hno3_cu, grid%wd_nh3_cu,        &
              grid%wd_cvasoa_cu, grid%wd_cvbsoa_cu, grid%wd_asoa_cu, grid%wd_bsoa_cu,  &
              grid%k22_shallow,grid%kbcon_shallow,grid%ktop_shallow,grid%xmb_shallow,  &

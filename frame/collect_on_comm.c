@@ -67,8 +67,9 @@ col_on_comm ( int * Fcomm, int * typesize ,
   int *displace ;
   int noutbuf_loc ;
   int root_task ;
+  MPI_Datatype dtype;
+  int ierr = -1;
   MPI_Comm *comm, dummy_comm ;
-  int ierr ;
 
   comm = &dummy_comm ;
   *comm = MPI_Comm_f2c( *Fcomm ) ;
@@ -90,6 +91,16 @@ col_on_comm ( int * Fcomm, int * typesize ,
     for ( p = 1 , displace[0] = 0 , noutbuf_loc = recvcounts[0] ; p < ntasks ; p++ ) {
       displace[p] = displace[p-1]+recvcounts[p-1] ;
       noutbuf_loc = noutbuf_loc + recvcounts[p] ;
+
+      /* check for overflow: displace is the partial sum of recvcounts, which can overflow for large problems. */
+      if (displace[p] < 0) {
+#ifndef MS_SUA
+        fprintf(stderr,"%s %d buffer offset overflow!!\n",__FILE__,__LINE__) ;
+        fprintf(stderr," ---> p = %d,\n ---> displace[%d] = %d,\n ---> typesize = %d\n",
+                p, p, displace[p], *typesize);
+#endif
+        MPI_Abort(MPI_COMM_WORLD,1) ;
+      }
     }
 
     if ( noutbuf_loc > * noutbuf )
@@ -102,26 +113,23 @@ col_on_comm ( int * Fcomm, int * typesize ,
       MPI_Abort(MPI_COMM_WORLD,1) ;
     }
 
-    /* multiply everything by the size of the type */
-    for ( p = 0 ; p < ntasks ; p++ ) {
-      displace[p] *= *typesize ;
-      recvcounts[p] *= *typesize ;
+  }
 
-      /* check for overflow: displace is the partial sum of recvcounts, which can overflow for large problems. */
-      if (displace[p] < 0) {
+  /* handle different sized data types appropriately. */
+  ierr = MPI_Type_match_size (MPI_TYPECLASS_REAL, *typesize, &dtype);
+  if (MPI_SUCCESS != ierr) {
+    ierr = MPI_Type_match_size (MPI_TYPECLASS_INTEGER, *typesize, &dtype);
+    if (MPI_SUCCESS != ierr) {
 #ifndef MS_SUA
-        fprintf(stderr,"%s %d buffer offset overflow!!\n",__FILE__,__LINE__) ;
-        fprintf(stderr," ---> p = %d,\n ---> displace[%d] = %d,\n ---> typesize = %d\n",
-                p, p, displace[p], *typesize);
+      fprintf(stderr,"%s %d FATAL ERROR: unhandled typesize = %d!!\n", __FILE__,__LINE__,*typesize) ;
 #endif
-        MPI_Abort(MPI_COMM_WORLD,1) ;
-      }
+      MPI_Abort(MPI_COMM_WORLD,1) ;
     }
   }
 
-  ierr = MPI_Gatherv( inbuf  , *ninbuf * *typesize  , MPI_CHAR ,
-               outbuf , recvcounts , displace, MPI_CHAR ,
-               root_task , *comm ) ;
+  ierr = MPI_Gatherv( inbuf  , *ninbuf,               dtype,
+                      outbuf , recvcounts , displace, dtype,
+                      root_task , *comm ) ;
 #ifndef MS_SUA
   if ( ierr != 0 ) fprintf(stderr,"%s %d MPI_Gatherv returns %d\n",__FILE__,__LINE__,ierr ) ;
 #endif
@@ -162,7 +170,7 @@ dst_on_comm ( int * Fcomm, int * typesize ,
   int *displace ;
   int noutbuf_loc ;
   int root_task ;
-  int dtype = -1;
+  MPI_Datatype dtype;
   int ierr = -1;
   MPI_Comm *comm, dummy_comm ;
 
@@ -201,15 +209,10 @@ dst_on_comm ( int * Fcomm, int * typesize ,
   if (MPI_SUCCESS != ierr) {
     ierr = MPI_Type_match_size (MPI_TYPECLASS_INTEGER, *typesize, &dtype);
     if (MPI_SUCCESS != ierr) {
-      if (1 == *typesize) {
-        dtype = MPI_CHAR;
-      }
-      else {
 #ifndef MS_SUA
-        fprintf(stderr,"%s %d FATAL ERROR: unhandled typesize = %d!!\n", __FILE__,__LINE__,*typesize) ;
+      fprintf(stderr,"%s %d FATAL ERROR: unhandled typesize = %d!!\n", __FILE__,__LINE__,*typesize) ;
 #endif
-        MPI_Abort(MPI_COMM_WORLD,1) ;
-      }
+      MPI_Abort(MPI_COMM_WORLD,1) ;
     }
   }
 

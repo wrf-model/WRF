@@ -1437,6 +1437,17 @@ CASE (CHEM_VASH, CHEM_VOLC, CHEM_VOLC_4BIN)
       ids,ide, jds,jde, kds,kde,                                        &
       ims,ime, jms,jme, kms,kme,                                        &
       its,ite, jts,jte, kts,kte                                         )
+
+      !A. Ukhov, 12 Oct 2024
+      if (config_flags%chem_opt.eq.CHEM_VOLC) then
+         CALL wrf_debug(15,'call sulf. aerosol grav. settling routine')
+         call sulf_settling_driver(dtstep,config_flags,t_phy,moist,    &
+         chem,rho_phy,dz8w,p8w,p_phy,dx,g,z_at_w,sulfgravsetl,         &
+         ids,ide, jds,jde, kds,kde,                                    &
+         ims,ime, jms,jme, kms,kme,                                    &
+         its,ite, jts,jte, kts,kte)      
+      endif
+      
 CASE DEFAULT
     CALL wrf_debug(15,'no settling routine')
 END SELECT vash_settling_select

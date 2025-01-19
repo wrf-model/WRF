@@ -626,11 +626,204 @@ SUBROUTINE dry_depvel_ash_sulf_so2( config_flags,ipr,ii,imx,jmx,lmx, &
 
 END SUBROUTINE dry_depvel_ash_sulf_so2
 
-! A. Ukhov 30 October 2024
-! Based on wetdep_ls()
-subroutine wetdep_ls_volc(dt,var,rain,moist,rho,num_moist, &
-  num_chem,numgas,dz8w,vvel,chem_opt,             &
-  wd_ash_sc,wd_so2_sc,wd_sulf_sc, & ! A. Ukhov. for Ash, SO2  and Sulf LS scaveging
+
+! A. Ukhov 6 Nov 2024
+! Gravitational settling for volcanic sulfate aerosol (accumulation mode only)
+! Based on gocart_settling_driver and on 
+! Ukhov, A., et al, Improving dust simulations in WRF-Chem v4.1.3 coupled...,
+! Geosci. Model Dev., 14, 473–493, https://doi.org/10.5194/gmd-14-473-2021, 2021.
+SUBROUTINE sulf_settling_driver(dt,config_flags,t_phy,moist,           &
+              chem,rho_phy,dz8w,p8w,p_phy,dx,g,z_at_w,sulf_fall,       &
+              ids,ide,jds,jde,kds,kde,                                 &
+              ims,ime,jms,jme,kms,kme,                                 &
+              its,ite,jts,jte,kts,kte)
+
+USE module_configure
+USE module_state_description
+USE module_data_sorgam, only: rhoso4
+IMPLICIT NONE
+
+TYPE(grid_config_rec_type), INTENT(IN) :: config_flags
+
+INTEGER, INTENT(IN) :: ids,ide, jds,jde, kds,kde,                  &
+                ims,ime, jms,jme, kms,kme,                  &
+                its,ite, jts,jte, kts,kte
+
+REAL, DIMENSION(ims:ime,kms:kme,jms:jme,num_moist), INTENT(IN) :: moist
+REAL, DIMENSION(ims:ime,kms:kme,jms:jme,num_chem), INTENT(INOUT) :: chem
+REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN) :: t_phy,p_phy,dz8w,p8w,rho_phy,z_at_w
+REAL,  DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) ::  sulf_fall
+
+REAL, INTENT(IN) :: dt,dx,g
+INTEGER          :: i,j,k,kk,lmx
+REAL*8, DIMENSION (1,1,kte-kts+1)   :: tmp,airden,p_mid,delz,rh
+REAL*8, DIMENSION (1,1,kte-kts+1)   :: dsulf
+real*8 :: bstl_sulf
+REAL reff_sulf
+REAL,    PARAMETER :: dyn_visc = 1.5E-5
+REAL*8 convert_to_ppmv, convert_to_mixing_ratio
+
+!real*8, DIMENSION (1,55) :: sulf_speed
+
+! mean diameter for volcanic sulf accumulation mode [ m ]
+! same definition in module_optical_averaging.F::optical_prep_volc()
+REAL dginia_sulf
+PARAMETER (dginia_sulf=0.64E-6)
+! sigma-G for sulf accumulation mode          
+REAL sginia_sulf
+PARAMETER (sginia_sulf=1.6)
+
+
+convert_to_mixing_ratio = 1.e-6 * 96.066/28.97
+convert_to_ppmv = 1.e6 * 28.97/96.066
+
+! sulfate aerosol volume median radius = mu+3 * sigma^2
+!reff_sulf=(dginia_sulf/2.0) + exp(3.*log(sginia_sulf)**2)
+reff_sulf=exp(log(dginia_sulf/2.0) + 3.*log(sginia_sulf)**2)
+
+lmx=kte-kts+1
+do j=jts,jte
+do i=its,ite
+
+  kk=0     
+  DO k=kts,kte
+      kk=kk+1
+      ! sulf in [ppmv], converting it into [kg/kg]
+      dsulf(1,1,kk)=convert_to_mixing_ratio * chem(i,k,j,p_sulf)
+      
+      p_mid(1,1,kk) = .01 * p_phy(i,kte-k+kts,j)
+      delz(1,1,kk)  = dz8w(i,kte-k+kts,j)             ! delz(1) = dz8w(kte), delz(lmx)=dz8w(kts)
+      airden(1,1,kk)= rho_phy(i,k,j)
+      tmp(1,1,kk)   = t_phy(i,k,j)
+      rh(1,1,kk)    = .95
+      rh(1,1,kk)    = MIN( .95, moist(i,k,j,p_qv) /               &
+            (3.80*exp(17.27*(t_phy(i,k,j)-273.)/                   &
+            (t_phy(i,k,j)-36.))/(.01*p_phy(i,k,j))))
+      rh(1,1,kk)=max(1.0D-1,rh(1,1,kk))
+  ENDDO
+
+  bstl_sulf=0.
+  CALL sulf_settling(1,1,lmx,g,dyn_visc,dsulf,tmp,p_mid,delz,rhoso4,reff_sulf,dt,rh,airden,bstl_sulf)!,sulf_speed)
+
+  kk = 0
+  DO k = kts,kte
+    kk = kk+1
+    chem(i,k,j,p_sulf) = convert_to_ppmv * dsulf(1,1,kk)    !converting sufl [kg/kg] into [ppmv]
+  ENDDO
+
+  !if(i==20.and.j==20) write(*,*)'1',sulf_speed(1,:)
+
+  !!!!bstl_sulf [ug/m2]. total sulf grav. set [kg/m2]
+  !!!!sulf_fall(i,j) = sulf_fall(i,j) + sum(1.e-9 * bstl_sulf)    
+
+  !bstl_sulf in [kg/kg][m/s]
+  sulf_fall(i,j)=sulf_fall(i,j) + bstl_sulf * airden(1,1,1) * dt   ![kg/m2]
+
+enddo  ! i
+enddo  ! j 
+
+END SUBROUTINE sulf_settling_driver
+
+
+subroutine sulf_settling(imx,jmx,lmx,g0,dyn_visc,tc,tmp, &
+          p_mid,delz, den,reff,dt,rh,airden,bstl)!,sulf_speed)
+              
+IMPLICIT  NONE
+
+INTEGER, INTENT(IN) :: imx, jmx, lmx
+INTEGER             :: ntdt
+REAL,    INTENT(IN) :: dt,g0,dyn_visc
+REAL*8,  INTENT(IN) :: tmp(imx,jmx,lmx), delz(imx,jmx,lmx),  &
+                rh(imx,jmx,lmx), p_mid(imx,jmx,lmx),airden(imx,jmx,lmx)
+
+REAL,  INTENT(IN) :: den, reff
+
+REAL*8, INTENT(INOUT) :: tc(imx,jmx,lmx)
+REAL*8, INTENT(OUT)   :: bstl
+
+!real*8, INTENT(INOUT) :: sulf_speed(1,55)
+!REAL*8, INTENT(OUT)   :: grasetvel(imx,jmx,lmx)
+
+REAL*8    :: dt_settl
+INTEGER   :: ndt_settl
+REAL*8    :: dzmin, vsettl, dtmax, rwet
+REAL*8    :: c_stokes, free_path, c_cun, viscosity
+REAL*8    :: vd_cor(lmx), vd_wk1
+
+REAL*8    :: transfer_to_below_level,cell_tc
+INTEGER   :: k, n, i, j, l, l2
+
+! for OMP:
+REAL*8 :: rwet_priv, rho_priv
+
+REAL(4),PARAMETER :: onethird = 1.0/3.0
+REAL(4),PARAMETER :: kappa = 1.19
+
+! Determine the maximum time-step satisying CFL: dt <= (dz)_min / v_settl
+dzmin = MINVAL(delz(:,:,:))
+vsettl = 4.0/9.0 * g0 * den * reff**2 / dyn_visc
+
+ntdt = INT(dt)
+dtmax = dzmin / vsettl
+ndt_settl = MAX( 1,INT(ntdt/dtmax) )
+
+! Limit maximum number of iterations
+IF (ndt_settl > 12) ndt_settl = 12
+dt_settl = REAL(ntdt) / REAL(ndt_settl)
+
+! assign effective radius and density
+rwet_priv = reff
+rho_priv  = den
+
+!alnsg2=log(sginia_sulf)**2
+
+!$OMP PARALLEL DO &
+!$OMP DEFAULT( SHARED ) &
+!$OMP PRIVATE( i,   j,   l,   l2, n,   k, rwet_priv, c_stokes)&
+!$OMP PRIVATE( free_path, c_cun, viscosity, rho_priv, vd_cor )
+
+DO j = 1,jmx                      ! lat loop
+DO i = 1,imx                    ! lon loop
+
+DO n = 1,ndt_settl            ! time loop 
+ 
+ transfer_to_below_level=0
+
+ DO l = lmx,1,-1            ! height loop, from top
+    l2 = lmx - l + 1
+
+    rwet_priv=reff*((1+rh(i,j,l)*(kappa-1))/(1-rh(i,j,l)))**onethird  ! Aerosol growth with relative humidity
+
+    c_stokes = 1.458E-6*tmp(i,j,l)**1.5/(tmp(i,j,l) + 110.4)    ! Dynamic viscosity
+    free_path = 1.1E-3/p_mid(i,j,l2)/SQRT(tmp(i,j,l))           ! Free path as func of pres(mb) and temp(K); order of p_mid: top->sfc
+
+    c_cun = 1.0+free_path/rwet_priv*(1.257 + 0.4*EXP(-1.1*rwet_priv/free_path))              ! Slip correction; This formula is from Davis (1945)
+    viscosity = c_stokes / c_cun                                ! Corrected dynamic viscosity (kg/m/s)
+
+    vd_cor(l) = 2./9.*g0*rho_priv*rwet_priv**2/viscosity  ! Settling velocity, depends on temp [m/s]
+
+    ! Update mixing ratio; order of delz: top->sfc            
+    cell_tc=tc(i,j,l)                           ! cell_tc - for temporal storage [kg/kg]            
+    vd_wk1 = dt_settl*vd_cor(l)/delz(i,j,l2)   ! fraction to leave level
+   
+    tc(i,j,l) = cell_tc * (1.- vd_wk1) + transfer_to_below_level          ! [kg/kg]
+
+    IF (l==1) THEN
+        bstl = bstl + vd_cor(l) * cell_tc/ndt_settl ! [kg/kg][m/s]
+       !grasetvel(i,j,k)=vd_cor(l)                                 ! [m/s]
+    ELSE
+       transfer_to_below_level = (cell_tc*vd_wk1)*((delz(i,j,l2)*airden(i,j,l))/(delz(i,j,l2+1)*airden(i,j,l-1))) ! [kg/kg]
+    ENDIF
+
+    !sulf_speed(1,l) = vd_cor(l)
+
+ ENDDO                 !l, height
+ENDDO                   !n, time
+ENDDO                     !i
+END DO                      !j
+!$OMP END PARALLEL DO
+
+END SUBROUTINE sulf_settling
 
 
 

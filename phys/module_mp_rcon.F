@@ -1,5 +1,6 @@
 !+---+-----------------------------------------------------------------+
 !
+!	RELEASED JANUARY 2025
 !	
 ! This is the WRF module for the RCON microphysics scheme, the intent
 ! of which is to improve warm rain representation within the Thompson-Eidhammer scheme.
@@ -17,9 +18,10 @@
 ! of lognormal shape instead of the gamma DSD used by the Thompson–Eidhammer parameterization and 
 ! 2) enhancement of the cloud-to-rain autoconversion parameterization to accomodate the new shape.
 ! The changes here also allow for sedimentation of cloud water within the lowest model layer, which 
-! effectively creates a drizzle mode in the scheme.
+! effectively creates a drizzle mode in the scheme. One new diagnostic is provided in wrfout, CLOUDNC, 
+! which is the accumulated cloud water at the surface, i.e. drizzle.
 !
-!	A future version of this scheme will introduce an expanded aerosol table.
+! A future version of this scheme will introduce an expanded aerosol table to increase accuracy of cloud representation.
 !
 !
 ! Further details and extensive evaluation of the rain/cloud changes is found in the following paper:
@@ -28,10 +30,12 @@
 !
 !
 !
-! NOTE:	ALL OF THE THOMPSON-AERO NAMELIST OPTIONS APPLY TO THIS SCHEME AS WELL.
+! NOTE 1:	The intent of this scheme is for the Thompson aerosol options to be used. 
+!			Either the climotological aerosol data or the 'default' profile may be used.
+! NOTE 2:	The Thompson hail scheme is NOT supported at this time. 
 ! 
 !
-! Questions/comments? 
+! Questions/comments/bugs? 
 !	Contact Robert Conrick at robert.conrick@gmail.com or Clifford Mass at cmass@uw.edu
 !
 !

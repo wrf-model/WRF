@@ -2456,12 +2456,12 @@
 #endif
 
 !-----------------------------------------------------------------------
-!  grav_settling = 1 must be turned off for mp_physics=28.
+!  grav_settling = 1 must be turned off for mp_physics=28 or mp_physics=29
 !-----------------------------------------------------------------------
       oops = 0
       DO i = 1, model_config_rec % max_dom
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
-         IF ( model_config_rec%mp_physics(i) .EQ. THOMPSONAERO ) THEN
+         IF ( model_config_rec%mp_physics(i) .EQ. THOMPSONAERO .OR. model_config_rec%mp_physics(i) .EQ. RCON_MP_SCHEME ) THEN
             IF ( model_config_rec%grav_settling(i) .NE. FOGSETTLING0 ) THEN
                 model_config_rec%grav_settling(i) = 0
                 oops = oops + 1
@@ -2474,12 +2474,12 @@
       END IF
 
 !-----------------------------------------------------------------------
-!  scalar_pblmix = 1 should be turned on for mp_physics=28. But can be off for MYNN (when bl_mynn_mixscalars = 1)
+!  scalar_pblmix = 1 should be turned on for mp_physics=28 and mp_physics=29. But can be off for MYNN (when bl_mynn_mixscalars = 1)
 !-----------------------------------------------------------------------
       oops = 0
       DO i = 1, model_config_rec % max_dom
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
-         IF ( model_config_rec%mp_physics(i) .EQ. THOMPSONAERO ) THEN
+         IF ( model_config_rec%mp_physics(i) .EQ. THOMPSONAERO .OR. model_config_rec%mp_physics(i) .EQ. RCON_MP_SCHEME ) THEN
             IF ( (model_config_rec%use_aero_icbc .OR. model_config_rec%use_rap_aero_icbc) &
                                       .AND. model_config_rec%scalar_pblmix(i) .NE. 1 ) THEN
                 model_config_rec%scalar_pblmix(i) = 1
@@ -2511,10 +2511,10 @@
       END IF
 
 !-----------------------------------------------------------------------
-!  Set aer_init_opt for Thompson-MP-Aero (mp_physics=28)
+!  Set aer_init_opt for Thompson-MP-Aero (mp_physics=28) AND rcon mp (mp_physics=29)
 !-----------------------------------------------------------------------
      DO i = 1, model_config_rec % max_dom
-       IF ( model_config_rec%mp_physics(i) .EQ. THOMPSONAERO ) THEN
+       IF ( model_config_rec%mp_physics(i) .EQ. THOMPSONAERO .OR. model_config_rec%mp_physics(i) .EQ. RCON_MP_SCHEME ) THEN
          IF ( model_config_rec%use_aero_icbc ) THEN
            model_config_rec%aer_init_opt = 1
          ELSE IF ( model_config_rec%use_rap_aero_icbc ) THEN
@@ -2524,10 +2524,10 @@
      END DO
 
 !-----------------------------------------------------------------------
-!  Check if qna_update=0 when aer_init_opt>1 for Thompson-MP-Aero (mp_physics=28)
+!  Check if qna_update=0 when aer_init_opt>1 for Thompson-MP-Aero (mp_physics=28) AND rcon mp (mp_physics=29
 !-----------------------------------------------------------------------
      DO i = 1, model_config_rec % max_dom
-       IF ( model_config_rec%mp_physics(i) .EQ. THOMPSONAERO ) THEN
+       IF ( model_config_rec%mp_physics(i) .EQ. THOMPSONAERO .OR. model_config_rec%mp_physics(i) .EQ. RCON_MP_SCHEME ) THEN
          IF ( model_config_rec%aer_init_opt .GT. 1 .and. model_config_rec%qna_update .EQ. 0 ) THEN
            wrf_err_message = '--- ERROR: Time-varying sfc aerosol emissions not set for mp_physics=28 '
            CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
@@ -2539,10 +2539,10 @@
      END DO
 
 !-----------------------------------------------------------------------
-!  Set aer_fire_emit_opt for Thompson-MP-Aero (mp_physics=28)
+!  Set aer_fire_emit_opt for Thompson-MP-Aero (mp_physics=28) AND rcon mp (mp_physics=29)
 !-----------------------------------------------------------------------
      DO i = 1, model_config_rec % max_dom
-       IF ( model_config_rec%mp_physics(i) .EQ. THOMPSONAERO .AND. model_config_rec%wif_fire_emit) THEN
+       IF ( (model_config_rec%mp_physics(i) .EQ. THOMPSONAERO .OR. model_config_rec%mp_physics(i) .EQ. RCON_MP_SCHEME) .AND. model_config_rec%wif_fire_emit) THEN
          IF ( model_config_rec%aer_init_opt .EQ. 2) THEN
            IF ( model_config_rec%wif_input_opt .EQ. 1 ) THEN
              model_config_rec%aer_fire_emit_opt = 1
@@ -2564,7 +2564,7 @@
 !  is turned on when no PBL scheme is active
 !-----------------------------------------------------------------------
      DO i = 1, model_config_rec % max_dom
-       IF ( model_config_rec%mp_physics(i) .EQ. THOMPSONAERO .AND. model_config_rec%wif_fire_emit) THEN
+       IF ( (model_config_rec%mp_physics(i) .EQ. THOMPSONAERO .OR. model_config_rec%mp_physics(i) .EQ. RCON_MP_SCHEME) .AND. model_config_rec%wif_fire_emit) THEN
          IF ( model_config_rec%bl_pbl_physics(i) .EQ. 0  ) THEN
            wrf_err_message = '--- WARNING: PBL scheme not active but wif_fire_inj=1 for mp_physics=28 '
            CALL wrf_debug ( 0, TRIM( wrf_err_message ) )

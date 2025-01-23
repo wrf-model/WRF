@@ -42,9 +42,6 @@ target_sources(
                   module_bl_mrf.F
                   module_bl_myjpbl.F
                   module_bl_myjurb.F
-                  module_bl_mynn.F
-                  module_bl_mynn_common.F
-                  module_bl_mynn_wrapper.F
                   module_bl_qnsepbl.F
                   module_bl_shinhong.F
                   module_bl_temf.F
@@ -263,6 +260,11 @@ target_sources(
                   physics_mmm/mp_wsm6.F90
                   physics_mmm/mp_wsm6_effectRad.F90
                   physics_mmm/sf_sfclayrev.F90
+
+                  # MYNN-EDMF
+                  MYNN-EDMF/module_bl_mynnedmf.F90
+                  MYNN-EDMF/WRF/module_bl_mynnedmf_common.F90
+                  MYNN-EDMF/WRF/module_bl_mynnedmf_driver.F90
                   )
 
 

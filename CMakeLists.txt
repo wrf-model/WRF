@@ -1,4 +1,4 @@
-cmake_minimum_required( VERSION 3.19 )
+cmake_minimum_required( VERSION 3.20 )
 
 project( WRF )
 
@@ -218,6 +218,13 @@ set( DWORDSIZE      8     )
 set( LWORDSIZE      4     )
 
 
+# To limit the KPP generation to not consume copious amounts of RAM
+if ( NOT DEFINED MAX_KPP_GEN_THREADS )
+  # 1 thread takes about 4.75 GB
+  set( MAX_KPP_GEN_THREADS 2 )
+endif()
+
+
 ########################
 
 ################################################################################
@@ -259,6 +266,7 @@ endif()
 
 if ( ${ENABLE_KPP} AND NOT ${ENABLE_CHEM} )
   message( WARNING "ENABLE_KPP requires ENABLE_CHEM but is not set, ignoring" )
+  set( ENABLE_KPP OFF CACHE BOOL "Force ignore by configuration" FORCE )
 endif()
 
 
@@ -497,6 +505,19 @@ if ( ${ENABLE_CTSM} )
   # find_package( CTSM REQUIRED )
 endif()
 
+if ( ${ENABLE_KPP} )
+  find_package( BISON REQUIRED )
+  find_package( FLEX  REQUIRED )
+  if ( ${FLEX_FOUND} AND "${FLEX_LIBRARIES}" STREQUAL "FL_LIBRARY-NOTFOUND" )
+    message( FATAL_ERROR 
+              "Flex executable found, but libraries were not. Please provide a searchable path for both "
+              "\n"
+              "Refer to https://cmake.org/cmake/help/latest/command/find_package.html for more info "
+              "on providing a suitable path"
+              )
+  endif()
+endif()
+
 # Will need our own finder
 # find_package( GPFS   REQUIRED )
 
@@ -707,9 +728,9 @@ if ( ${USE_DOUBLE} )
   list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS DOUBLE_PRECISION )
 endif()
 if ( ${ENABLE_CHEM} )
-  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS WRF_CHEM=1 )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS WRF_CHEM )
   if ( ${ENABLE_KPP} )
-    list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS WRF_KPP=1 )
+    list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS WRF_KPP )
   endif()
 endif()
 if ( ${ENABLE_CHEM} )
@@ -942,7 +963,7 @@ add_subdirectory( share    )
 add_subdirectory( frame    )
 add_subdirectory( inc      )
 
-if ( ${WRF_CHEM} )
+if ( ${ENABLE_CHEM} )
   add_subdirectory( chem     )
 endif()
 

@@ -67,7 +67,7 @@ jobs:
             account : NMMM0012
             name : "Make Compilation Tests"
             id   : make-tests
-            fileroot : wrf_compilation_tests-make
+            config : .ci/wrf_compilation_tests-make.json
             args : -ff hsn.de.hpc.ucar.edu -j='{"node_select":{"-l ":{"select":1}}}'
             pool  : 8
             tpool : 1
@@ -103,7 +103,7 @@ jobs:
       name     : ${{ matrix.testSet.name }}
       id       : ${{ matrix.testSet.id }}
       host     : ${{ matrix.testSet.host }}
-      fileroot : ${{ matrix.testSet.fileroot }}
+      config   : ${{ matrix.testSet.config }}
       account  : ${{ matrix.testSet.account }}
       tests    : ${{ toJson( matrix.testSet.tests ) }}
       mkdirs   : ${{ matrix.testSet.mkdirs }}
@@ -139,7 +139,7 @@ jobs:
             account : NMMM0012
             name : "em_real Tests"
             id   : em_real-tests
-            fileroot : wrf_em_real_tests
+            config : .ci/wrf_em_real_tests.jsonc
             args : -ff hsn.de.hpc.ucar.edu -j='{"node_select":{"-l ":{"select":1}}}'
             pool  : 14
             tpool : 4 # This really only applies to em_real and em_realL
@@ -172,7 +172,7 @@ jobs:
       name     : ${{ matrix.testSet.name }}
       id       : ${{ matrix.testSet.id }}
       host     : ${{ matrix.testSet.host }}
-      fileroot : ${{ matrix.testSet.fileroot }}
+      config   : ${{ matrix.testSet.config }}
       account  : ${{ matrix.testSet.account }}
       tests    : ${{ toJson( matrix.testSet.tests ) }}
       mkdirs   : ${{ matrix.testSet.mkdirs }}

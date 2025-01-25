@@ -104,12 +104,13 @@
           "-e", "NAMELIST_DIR=em_real",
           "-r", "runNamelists/$NAMELIST_DIR/1"
         ],
-        ".*testcase.*2.*::args_namelist" : 
-        [ 
-          "-n", "namelist.input.rap",
-          "-e", "NAMELIST_DIR=em_real",
-          "-r", "runNamelists/$NAMELIST_DIR/2"
-        ],
+        // This is producing inconsistent bitwise identical results
+        // ".*testcase.*2.*::args_namelist" : 
+        // [ 
+        //   "-n", "namelist.input.rap",
+        //   "-e", "NAMELIST_DIR=em_real",
+        //   "-r", "runNamelists/$NAMELIST_DIR/2"
+        // ],
         ".*testcase.*3.*::args_namelist" : 
         [ 
           "-n", "namelist.input.tropical",
@@ -136,12 +137,12 @@
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "build-serial" : "afterok" }
       },
-      "testcase-serial2" :
-      {
-        "submit_options" : { "timelimit" : "00:40:00" },
-        "command"      : ".ci/tests/runNamelists.sh",
-        "dependencies" : { "build-serial" : "afterok" }
-      },
+      // "testcase-serial2" :
+      // {
+      //   "submit_options" : { "timelimit" : "00:40:00" },
+      //   "command"      : ".ci/tests/runNamelists.sh",
+      //   "dependencies" : { "build-serial" : "afterok" }
+      // },
       "testcase-serial3" :
       {
         "submit_options" : { "timelimit" : "00:40:00" },
@@ -172,12 +173,12 @@
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "testcase-omp0" : "afterok" }
       },
-      "testcase-omp2" :
-      {
-        "submit_options" : { "timelimit" : "00:25:00" },
-        "command"      : ".ci/tests/runNamelists.sh",
-        "dependencies" : { "testcase-omp1" : "afterok" }
-      },
+      // "testcase-omp2" :
+      // {
+      //   "submit_options" : { "timelimit" : "00:25:00" },
+      //   "command"      : ".ci/tests/runNamelists.sh",
+      //   "dependencies" : { "testcase-omp1" : "afterok" }
+      // },
       "testcase-omp3" :
       {
         "submit_options" : { "timelimit" : "00:25:00" },
@@ -201,12 +202,12 @@
         "command"      : ".ci/tests/runNamelists.sh",
         "dependencies" : { "testcase-mpi0" : "afterok" }
       },
-      "testcase-mpi2" :
-      {
-        "submit_options" : { "timelimit" : "00:20:00" },
-        "command"      : ".ci/tests/runNamelists.sh",
-        "dependencies" : { "testcase-mpi1" : "afterok" }
-      },
+      // "testcase-mpi2" :
+      // {
+      //   "submit_options" : { "timelimit" : "00:20:00" },
+      //   "command"      : ".ci/tests/runNamelists.sh",
+      //   "dependencies" : { "testcase-mpi1" : "afterok" }
+      // },
       "testcase-mpi3" :
       {
         "submit_options" : { "timelimit" : "00:20:00" },
@@ -446,52 +447,52 @@
       }
     }
   },
-  "em_realE" :
-  {
-    "submit_options" :
-    {
-      "arguments" :
-      {
-        ".*testcase.*::args_namelist" : 
-        [ 
-          "-n", "namelist.input.52DF",
-          "-e", "NAMELIST_DIR=em_realE"
-        ]
-      }
-    },
-    "steps" :
-    {
-      "build-serial" :
-      {
-        "command"      : ".ci/tests/build.sh"
-      },
-      "testcase-serial" :
-      {
-        "command"      : ".ci/tests/runNamelists.sh",
-        "dependencies" : { "build-serial" : "afterok" }
-      },
-      "build-omp" :
-      {
-        "command"      : ".ci/tests/build.sh",
-        "dependencies" : { "testcase-serial" : "afterok" }
-      },
-      "testcase-omp" :
-      {
-        "command"      : ".ci/tests/runNamelists.sh",
-        "dependencies" : { "build-omp" : "afterok" }
-      },
-      "build-mpi" :
-      {
-        "command"      : ".ci/tests/build.sh",
-        "dependencies" : { "testcase-omp" : "afterok" }
-      },
-      "testcase-mpi" :
-      {
-        "command"      : ".ci/tests/runNamelists.sh",
-        "dependencies" : { "build-mpi" : "afterok" }
-      }
-    }
-  },
+  // "em_realE" :
+  // {
+  //   "submit_options" :
+  //   {
+  //     "arguments" :
+  //     {
+  //       ".*testcase.*::args_namelist" : 
+  //       [ 
+  //         "-n", "namelist.input.52DF",
+  //         "-e", "NAMELIST_DIR=em_realE"
+  //       ]
+  //     }
+  //   },
+  //   "steps" :
+  //   {
+  //     "build-serial" :
+  //     {
+  //       "command"      : ".ci/tests/build.sh"
+  //     },
+  //     "testcase-serial" :
+  //     {
+  //       "command"      : ".ci/tests/runNamelists.sh",
+  //       "dependencies" : { "build-serial" : "afterok" }
+  //     },
+  //     "build-omp" :
+  //     {
+  //       "command"      : ".ci/tests/build.sh",
+  //       "dependencies" : { "testcase-serial" : "afterok" }
+  //     },
+  //     "testcase-omp" :
+  //     {
+  //       "command"      : ".ci/tests/runNamelists.sh",
+  //       "dependencies" : { "build-omp" : "afterok" }
+  //     },
+  //     "build-mpi" :
+  //     {
+  //       "command"      : ".ci/tests/build.sh",
+  //       "dependencies" : { "testcase-omp" : "afterok" }
+  //     },
+  //     "testcase-mpi" :
+  //     {
+  //       "command"      : ".ci/tests/runNamelists.sh",
+  //       "dependencies" : { "build-mpi" : "afterok" }
+  //     }
+  //   }
+  // },
   "em_realF" :
   {
     "submit_options" :

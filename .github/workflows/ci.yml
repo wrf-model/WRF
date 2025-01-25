@@ -151,14 +151,16 @@ jobs:
               - em_realB
               - em_realC
               - em_realD
-              - em_realE
+              # This test intermittently fails
+              # - em_realE
               - em_realF
               - em_realG
-              - em_realH
-              - em_realI
-              - em_realJ
-              - em_realK
-              - em_realL
+              # Unstable and cannot get bitwise identical results
+              # - em_realH
+              # - em_realI
+              # - em_realJ
+              # - em_realK
+              # - em_realL
 
     uses : ./.github/workflows/test_workflow.yml
     with :

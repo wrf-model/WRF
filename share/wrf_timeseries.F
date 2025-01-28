@@ -351,25 +351,20 @@ SUBROUTINE calc_ts( grid )
        ! FALSE to output T and Q at 2-m and wind at 10-m diagnostic levels:
    LOGICAL, PARAMETER :: ts_model_level = .FALSE. 
 
-   !Allocate the arrays for wind components
-#if ( EM_CORE == 1 )   
-   ALLOCATE ( earth_u_profile(grid%max_ts_level), earth_v_profile(grid%max_ts_level) )
-#endif
 
    IF ( grid%ntsloc_domain .LE. 0 ) THEN
-#if ( EM_CORE == 1 )
-       DEALLOCATE(earth_u_profile, earth_v_profile)
-#endif
        RETURN
    END IF
 
 #if ((EM_CORE == 1) && (DA_CORE != 1))
    IF ( grid%dfi_opt /= DFI_NODFI .AND. grid%dfi_stage /= DFI_FST ) THEN
-#if ( EM_CORE == 1 )
-       DEALLOCATE(earth_u_profile, earth_v_profile)
-#endif
        RETURN
    END IF
+#endif
+
+   !Allocate the arrays for wind components
+#if ( EM_CORE == 1 )   
+   ALLOCATE ( earth_u_profile(grid%max_ts_level), earth_v_profile(grid%max_ts_level) )
 #endif
 
    n = grid%next_ts_time

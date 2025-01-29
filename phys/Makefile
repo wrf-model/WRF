@@ -43,9 +43,9 @@ MODULES = \
 	module_bl_myjpbl.o \
 	module_bl_qnsepbl.o \
 	module_bl_acm.o \
-        module_bl_mynn_common.o \
-        module_bl_mynn.o \
-        module_bl_mynn_wrapper.o \
+        module_bl_mynnedmf_common.o \
+        module_bl_mynnedmf.o \
+        module_bl_mynnedmf_driver.o \
 	module_bl_fogdes.o \
 	module_bl_gwdo.o \
 	module_bl_gwdo_gsl.o \
@@ -272,7 +272,17 @@ submodules :
 	else \
 		echo No action required for NoahMP submodule ; \
 	fi
-
+	@if [ \( ! -f module_bl_mynnedmf.F \) -o \( ! -f module_bl_mynedmf_common.F \) -o \
+	      \( ! -f module_bl_mynnedmf_driver.F \) ] ; then \
+	      	echo Pulling in MYNN-EDMF submodule ; \
+		( cd .. ; git submodule update --init --recursive ) ; \
+		ln -sf MYNN-EDMF/module_bl_mynnedmf.F90 module_bl_mynnedmf.F ; \
+		ln -sf MYNN-EDMF/WRF/module_bl_mynnedmf_common.F90 module_bl_mynnedmf_common.F ; \
+		ln -sf MYNN-EDMF/WRF/module_bl_mynnedmf_driver.F90 module_bl_mynnedmf_driver.F ; \
+	else \
+		echo No action required for MYNN-EDMF submodule ; \
+	fi
+	
 clean:
 	@ echo 'use the clean script'
 

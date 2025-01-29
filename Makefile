@@ -124,6 +124,20 @@ wrf : framework_only
 	   echo "NoahMP submodule files populating WRF directories" ; \
 	   echo "------------------------------------------------------------------------------" ; \
 	fi
+	if [ \( ! -f phys/module_bl_mynnedmf.F \) -o \
+	    \( ! -f phys/module_bl_mynnedmf_common.F \) -o \
+	    \( ! -f phys/module_bl_mynnedmf_common.F \) ] ; then \
+	  echo " " ; \
+	  echo "------------------------------------------------------------------------------" ; \
+	  echo "Error Error Error MYNN-EDMF submodule files not populating WRF directories" ; \
+	  echo "------------------------------------------------------------------------------" ; \
+	  echo " " ; \
+	  exit 31 ; \
+	else \
+	  echo "------------------------------------------------------------------------------" ; \
+	  echo "MYNN-EDMF submodule files populating WRF directories" ; \
+	  echo "------------------------------------------------------------------------------" ; \
+	fi
 	if [ $(WRF_CHEM) -eq 1 ]    ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" chemics ; fi
 	if [ $(WRF_EM_CORE) -eq 1 ]    ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" em_core ; fi
 	if [ $(WRF_HYDRO) -eq 1 ]   ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" wrf_hydro ; fi

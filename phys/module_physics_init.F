@@ -2662,7 +2662,7 @@ CHARACTER(LEN=8) :: name
    USE module_bl_mfshconvpbl
    USE module_bl_gbmpbl
 #if ( EM_CORE == 1 )
-   USE module_bl_mynn_wrapper
+   USE module_bl_mynnedmf_driver
    USE module_bl_eeps
    USE module_bl_temf
 #if ( WRFPLUS == 1 )
@@ -3842,7 +3842,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
            IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
             ( 'module_physics_init: use ysu (option1), myj (option 2), or boulac (option 8) with BEP/BEM urban scheme' )
 
-                CALL mynnedmf_wrapper_init(                  &
+                CALL mynnedmf_init(                          &
                 &RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN, &
                 &RQIBLTEN,QKE,                               &
                 &restart,allowed_to_read,                    &

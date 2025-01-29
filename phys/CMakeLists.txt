@@ -153,6 +153,7 @@ target_sources(
                   module_mp_ntu.F
                   module_mp_p3.F
                   module_mp_radar.F
+                  module_mp_rcon.F
                   module_mp_SBM_polar_radar.F
                   module_mp_sbu_ylin.F
                   module_mp_thompson.F

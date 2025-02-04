@@ -351,7 +351,6 @@ SUBROUTINE calc_ts( grid )
        ! FALSE to output T and Q at 2-m and wind at 10-m diagnostic levels:
    LOGICAL, PARAMETER :: ts_model_level = .FALSE. 
 
-
    IF ( grid%ntsloc_domain .LE. 0 ) THEN
        RETURN
    END IF

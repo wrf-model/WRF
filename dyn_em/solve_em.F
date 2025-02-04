@@ -3977,7 +3977,10 @@ BENCH_START(micro_driver_tim)
       &        ,pert_thom_qc=config_flags%pert_thom_qc                   &
       &        ,pert_thom_qi=config_flags%pert_thom_qi                   &
       &        ,pert_thom_qs=config_flags%pert_thom_qs                   &
-      &        ,pert_thom_ni=config_flags%pert_thom_ni  )
+      &        ,pert_thom_ni=config_flags%pert_thom_ni					 &
+	  &		   ,cloudnc=grid%cloudnc 									 &
+	)
+
                                                                           
 BENCH_END(micro_driver_tim)
 

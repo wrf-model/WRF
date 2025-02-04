@@ -102,7 +102,8 @@ endif()
 target_sources(
                 ${PROJECT_NAME}_Core
                 PRIVATE
-                  ${WRF_INCLUDE_FILES}
+                  module_internal_header_util.F
+
 
                   module_configure.F
                   module_driver_constants.F
@@ -155,6 +156,8 @@ target_sources(
 # Disable optimizations on these files always
 set_source_files_properties(
                             ${nl_dyn_source}
+                            module_comm_nesting_dm.F
+                            DIRECTORY ${PROJECT_SOURCE_DIR}
                             PROPERTIES
                             COMPILE_OPTIONS_OPTIMIZATION
                               $<$<COMPILE_LANGUAGE:Fortran>:${WRF_FCNOOPT}>

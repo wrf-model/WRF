@@ -4,3 +4,6 @@
 [submodule ".ci/hpc-workflows"]
 	path = .ci/hpc-workflows
 	url = https://github.com/islas/hpc-workflows
+[submodule "phys/MYNN-EDMF"]
+	path = phys/MYNN-EDMF
+	url = https://github.com/NCAR/MYNN-EDMF

@@ -5,15 +5,8 @@ add_compile_options    ( "${PROJECT_COMPILE_OPTIONS}"     )
 add_compile_definitions( "${PROJECT_COMPILE_DEFINITIONS}" )
 
 # First make true executables
-if ( ${WRF_CORE} STREQUAL "PLUS" )
-  add_executable(
-                  wrfplus
-                  wrf.F
-                  module_wrf_top.F
-                  )
-  list( APPEND FOLDER_COMPILE_TARGETS wrfplus )
-else()
-  # I believe this is always made if not WRF PLUS or ESMF
+if ( ${WRF_CORE} STREQUAL "PLUS" OR ${WRF_CASE} STREQUAL "EM_REAL" )
+  
   add_executable( 
                   wrf
                   wrf.F
@@ -31,45 +24,47 @@ else()
 #   list( APPEND FOLDER_COMPILE_TARGETS em_wrf_SST_ESMF )
 endif()
 
-# Use case info from higher CMakeLists.txt
-set( MODULE_FILE ${PROJECT_SOURCE_DIR}/dyn_em/module_initialize_${WRF_CASE_MODULE}.F )
+if ( ${WRF_CORE} STREQUAL "ARW" )
 
-if ( ${WRF_CASE} STREQUAL "EM_REAL" )
-  add_executable(
-                  ndown
-                  ndown_em.F
-                  ${MODULE_FILE}
-                  )
-  add_executable(
-                  tc
-                  tc_em.F
-                  ${MODULE_FILE}
-                  )
-  add_executable( 
-                  real
-                  real_em.F
-                  ${MODULE_FILE}
-                )
-  list( APPEND FOLDER_COMPILE_TARGETS ndown tc real )
+  # Use case info from higher CMakeLists.txt
+  set( MODULE_FILE ${PROJECT_SOURCE_DIR}/dyn_em/module_initialize_${WRF_CASE_MODULE}.F )
 
-elseif( NOT ${WRF_GENERAL_IDEAL_CASE} ) # Not general ideal and not real
-  # All others are variants of ideal
-  add_executable( 
-                  ideal
-                  ideal_em.F
-                  ${MODULE_FILE}
-                )
-  list( APPEND FOLDER_COMPILE_TARGETS ideal )
-else()
-  # greater than or equal to general ideal case
-  add_executable( 
-                  ideal
-                  ideal_em.F
-                  ${PROJECT_SOURCE_DIR}/dyn_em/module_initialize_ideal.F
-                )
-  list( APPEND FOLDER_COMPILE_TARGETS ideal )
+  if ( ${WRF_CASE} STREQUAL "EM_REAL" )
+    add_executable(
+                    ndown
+                    ndown_em.F
+                    ${MODULE_FILE}
+                    )
+    add_executable(
+                    tc
+                    tc_em.F
+                    ${MODULE_FILE}
+                    )
+    add_executable( 
+                    real
+                    real_em.F
+                    ${MODULE_FILE}
+                  )
+    list( APPEND FOLDER_COMPILE_TARGETS ndown tc real )
+
+  elseif( NOT ${WRF_GENERAL_IDEAL_CASE} ) # Not general ideal and not real
+    # All others are variants of ideal
+    add_executable( 
+                    ideal
+                    ideal_em.F
+                    ${MODULE_FILE}
+                  )
+    list( APPEND FOLDER_COMPILE_TARGETS ideal )
+  else()
+    # greater than or equal to general ideal case
+    add_executable( 
+                    ideal
+                    ideal_em.F
+                    ${PROJECT_SOURCE_DIR}/dyn_em/module_initialize_ideal.F
+                  )
+    list( APPEND FOLDER_COMPILE_TARGETS ideal )
+  endif()
 endif()
-
 
 foreach ( TARGET ${FOLDER_COMPILE_TARGETS} )
   set_target_properties( 
@@ -154,3 +149,13 @@ wrf_setup_files(
                 DEST_PATH
                   ${CMAKE_INSTALL_PREFIX}/run/
                 )
+
+if ( ${WRF_CORE} STREQUAL "PLUS" )
+  wrf_setup_target_new_name(
+                            TARGET         wrf
+                            DEST_PATH      ${CMAKE_INSTALL_PREFIX}/run
+                            NEW_NAME       wrfplus
+                            USE_SYMLINKS
+
+  )
+endif()

@@ -28,4 +28,5 @@ include registry.new3d_wif
 include registry.trad_fields
 include registry.solar_fields
 include registry.diags
+include registry.iau
 include registry.CMAQ

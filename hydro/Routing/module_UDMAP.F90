@@ -1,23 +1,3 @@
-!  Program Name:
-!  Author(s)/Contact(s):
-!  Abstract:
-!  History Log:
-!
-!  Usage:
-!  Parameters: <Specify typical arguments passed>
-!  Input Files:
-!        <list file names and briefly describe the data they include>
-!  Output Files:
-!        <list file names and briefly describe the information they include>
-!
-!  Condition codes:
-!        <list exit condition or error codes returned >
-!        If appropriate, descriptive troubleshooting instructions or
-!        likely causes for failures could be mentioned here with the
-!        appropriate error code
-!
-!  User controllable options: <if applicable>
-
 ! This subrouting includs the data structure and tools used for NHDPlus network mapping.
 module module_UDMAP
 
@@ -335,8 +315,8 @@ contains
                allocate(LUDRSL(LNUMRSL))
                allocate( basns_area(LNUMRSL) )
         else
-! When MPI is performed,for every subdomain in each process, all the links 
-! are listed and if there is no link in the subdomain then it is calling 
+! When MPI is performed,for every subdomain in each process, all the links
+! are listed and if there is no link in the subdomain then it is calling
 ! cleanBuf (memory cleaning purposes), this used to print a warning
 ! that is not necessary for the user to see it, therefore it is been commented out here
 !               write(6,*) "Warning: no routing links found."
@@ -465,7 +445,6 @@ contains
             call mpp_land_bcast_int1(ndata)
             call mpp_land_bcast_int1(npid)
 #endif
-            return
      end subroutine get_dimension
 
        subroutine get1d_real8(fileName,var_name,out_buff)
@@ -544,17 +523,17 @@ contains
          do k  = 1, LNUMRSL
             if(LUDRSL(k)%ngrids .gt. 0) then
                 do m = 1, LUDRSL(k)%ngrids
-                    LUDRSL(k)%nodeArea(m) = cell_area(LUDRSL(k)%grid_i(m),LUDRSL(k)%grid_j(m)) 
+                    LUDRSL(k)%nodeArea(m) = cell_area(LUDRSL(k)%grid_i(m),LUDRSL(k)%grid_j(m))
                 enddo
             endif
                 do m = 1, LUDRSL(k)%ncell
-                    LUDRSL(k)%cellArea(m) = cell_area(LUDRSL(k)%cell_i(m),LUDRSL(k)%cell_j(m)) 
+                    LUDRSL(k)%cellArea(m) = cell_area(LUDRSL(k)%cell_i(m),LUDRSL(k)%cell_j(m))
                 enddo
 
             basns_area(k) = 0
             do m = 1, LUDRSL(k)%ncell
                     basns_area(k) = basns_area(k) + &
-                          cell_area(LUDRSL(k)%cell_i(m),LUDRSL(k)%cell_j(m)) * LUDRSL(k)%cellWeight(m) 
+                          cell_area(LUDRSL(k)%cell_i(m),LUDRSL(k)%cell_j(m)) * LUDRSL(k)%cellWeight(m)
             enddo
 
          end do

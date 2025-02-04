@@ -2062,14 +2062,14 @@ real, dimension( ims:ime, jms:jme ), intent(in)  :: &
       ENDDO
 
 
-#if (RWORDSIZE == 4)
+#ifndef DOUBLE_PRECISION
       call swrad ( np=dk_half, icb=icb, ict=ict, fcld=dble(fcld1d), &
                    pl=dble(p8w1d), ta=dble(t1d), wa=dble(sh1d), oa=dble(o31d), &
                    taucl=dble(taucl_sw), ssacl=dble(ssacl_sw), asycl=dble(asycl_sw), &
                    taual=dble(taual_sw), ssaal=dble(ssaal_sw), asyal=dble(asyal_sw), &
                    cosz=dble(cosz), rsuvbm=dble(rsuvbm), rsuvdf=dble(rsuvdf), rsirbm=dble(rsirbm), rsirdf=dble(rsirdf),&
                    flx_out=flx, flxd_out=flxd,flxu_out=flxu, flxd_surf = flxd_surf, lmask=lmask, irestrict=min(CHUNK,ite-ii+1) )
-#elif (RWORDSIZE == 8)
+#else
       call swrad ( np=dk_half, icb=icb, ict=ict, fcld=fcld1d, &
                    pl=p8w1d, ta=t1d, wa=sh1d, oa=o31d, &
                    taucl=taucl_sw, ssacl=ssacl_sw, asycl=asycl_sw, &
@@ -2312,14 +2312,14 @@ real, dimension( ims:ime, jms:jme ), intent(in)  :: &
 ! 1-dimension driver of longwave radiative transfer scheme
 !
 
-#if (RWORDSIZE == 4)
+#ifndef DOUBLE_PRECISION
        call lwrad ( np=dk_half, tb=dble(tsfc), ts=dble(tskin), ict=ict, icb=icb,&
                     pl=dble(p8w1d), ta=dble(t1d), wa=dble(sh1d), oa=dble(o31d), &
                     emiss=dble(emis1d), fcld=dble(fcld1d), &
                     taucl=dble(taucl_lw), ssacl=dble(ssacl_lw), asycl=dble(asycl_lw),  &
                     taual=dble(taual_lw), ssaal=dble(ssaal_lw), asyal=dble(asyal_lw),  &
                     flx_out=flx, acflxd_out=flxd, acflxu_out=flxu, irestrict=min(CHUNK,ite-ii+1) )
-#elif (RWORDSIZE == 8)
+#else
        call lwrad ( np=dk_half, tb=tsfc, ts=tskin, ict=ict, icb=icb,&
                     pl=p8w1d, ta=t1d, wa=sh1d, oa=o31d, &
                     emiss=emis1d, fcld=fcld1d, &

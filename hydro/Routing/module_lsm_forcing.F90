@@ -1,23 +1,3 @@
-!  Program Name:
-!  Author(s)/Contact(s):
-!  Abstract:
-!  History Log:
-!
-!  Usage:
-!  Parameters: <Specify typical arguments passed>
-!  Input Files:
-!        <list file names and briefly describe the data they include>
-!  Output Files:
-!        <list file names and briefly describe the information they include>
-!
-!  Condition codes:
-!        <list exit condition or error codes returned >
-!        If appropriate, descriptive troubleshooting instructions or
-!        likely causes for failures could be mentioned here with the
-!        appropriate error code
-!
-!  User controllable options: <if applicable>
-
 module module_lsm_forcing
 
 #ifdef MPP_LAND
@@ -25,9 +5,9 @@ module module_lsm_forcing
 #endif
     use module_HYDRO_io, only: get_2d_netcdf, get_soilcat_netcdf, get2d_int
     use module_hydro_stop, only:HYDRO_stop
+    use netcdf
 
 implicit none
-#include <netcdf.inc>
     integer :: i_forcing
 character(len=19) out_date
 
@@ -62,8 +42,8 @@ Contains
     pcpc = 0
 
     ! Open the NetCDF file.
-    ierr = nf_open(flnm, NF_NOWRITE, ncid)
-    if (ierr /= 0) then
+    ierr = nf90_open(flnm, NF90_NOWRITE, ncid)
+    if (ierr /= NF90_NOERR) then
        write(*,'("READFORC_WRF Problem opening netcdf file: ''", A, "''")') trim(flnm)
        call hydro_stop("In READFORC_WRF() - Problem opening netcdf file")
     endif
@@ -83,7 +63,7 @@ Contains
     endif
     call get_2d_netcdf_ruc("LAI", ncid, lai,  ix, jx,tlevel, .true., ierr)
 
-    ierr = nf_close(ncid)
+    ierr = nf90_close(ncid)
 
 !DJG  Add the convective and non-convective rain components (note: conv. comp=0
 !for cloud resolving runs...)
@@ -103,63 +83,63 @@ Contains
     integer :: iret, ncid, dimid
 
     ! Open the NetCDF file.
-    iret = nf_open(geo_static_flnm, NF_NOWRITE, ncid)
+    iret = nf90_open(geo_static_flnm, NF90_NOWRITE, ncid)
     if (iret /= 0) then
        write(*,'("Problem opening geo_static file: ''", A, "''")') &
             trim(geo_static_flnm)
        call hydro_stop("In read_hrldas_hdrinfo() - Problem opening geo_static file")
     endif
 
-    iret = nf_inq_dimid(ncid, "west_east", dimid)
+    iret = nf90_inq_dimid(ncid, "west_east", dimid)
 
     if (iret /= 0) then
-!       print*, "nf_inq_dimid:  west_east"
-       call hydro_stop("In read_hrldas_hdrinfo() - nf_inq_dimid:  west_east problem")
+!       print*, "nf90_inq_dimid:  west_east"
+       call hydro_stop("In read_hrldas_hdrinfo() - nf90_inq_dimid:  west_east problem")
     endif
 
-    iret = nf_inq_dimlen(ncid, dimid, ix)
+    iret = nf90_inquire_dimension(ncid, dimid, len=ix)
     if (iret /= 0) then
-!       print*, "nf_inq_dimlen:  west_east"
-       call hydro_stop("In read_hrldas_hdrinfo() - nf_inq_dimlen:  west_east problem")
+!       print*, "nf90_inq_dimlen:  west_east"
+       call hydro_stop("In read_hrldas_hdrinfo() - nf90_inq_dimlen:  west_east problem")
     endif
 
-    iret = nf_inq_dimid(ncid, "south_north", dimid)
+    iret = nf90_inq_dimid(ncid, "south_north", dimid)
     if (iret /= 0) then
-!       print*, "nf_inq_dimid:  south_north"
-       call hydro_stop("In read_hrldas_hdrinfo() - nf_inq_dimid:  south_north problem")
+!       print*, "nf90_inq_dimid:  south_north"
+       call hydro_stop("In read_hrldas_hdrinfo() - nf90_inq_dimid:  south_north problem")
     endif
 
-    iret = nf_inq_dimlen(ncid, dimid, jx)
+    iret = nf90_inquire_dimension(ncid, dimid, len=jx)
     if (iret /= 0) then
- !      print*, "nf_inq_dimlen:  south_north"
-       call hydro_stop("In read_hrldas_hdrinfo() - nf_inq_dimlen:  south_north problem")
+ !      print*, "nf90_inq_dimlen:  south_north"
+       call hydro_stop("In read_hrldas_hdrinfo() - nf90_inq_dimlen:  south_north problem")
     endif
 
-    iret = nf_inq_dimid(ncid, "land_cat", dimid)
+    iret = nf90_inq_dimid(ncid, "land_cat", dimid)
     if (iret /= 0) then
- !      print*, "nf_inq_dimid:  land_cat"
-       call hydro_stop("In read_hrldas_hdrinfo() - nf_inq_dimid:  land_cat problem")
+ !      print*, "nf90_inq_dimid:  land_cat"
+       call hydro_stop("In read_hrldas_hdrinfo() - nf90_inq_dimid:  land_cat problem")
     endif
 
-    iret = nf_inq_dimlen(ncid, dimid, land_cat)
+    iret = nf90_inquire_dimension(ncid, dimid, len=land_cat)
     if (iret /= 0) then
-       print*, "nf_inq_dimlen:  land_cat"
-       call hydro_stop("In read_hrldas_hdrinfo() - nf_inq_dimlen:  land_cat problem")
+       print*, "nf90_inq_dimlen:  land_cat"
+       call hydro_stop("In read_hrldas_hdrinfo() - nf90_inq_dimlen:  land_cat problem")
     endif
 
-    iret = nf_inq_dimid(ncid, "soil_cat", dimid)
+    iret = nf90_inq_dimid(ncid, "soil_cat", dimid)
     if (iret /= 0) then
- !      print*, "nf_inq_dimid:  soil_cat"
-       call hydro_stop("In read_hrldas_hdrinfo() - nf_inq_dimid:  soil_cat problem")
+ !      print*, "nf90_inq_dimid:  soil_cat"
+       call hydro_stop("In read_hrldas_hdrinfo() - nf90_inq_dimid:  soil_cat problem")
     endif
 
-    iret = nf_inq_dimlen(ncid, dimid, soil_cat)
+    iret = nf90_inquire_dimension(ncid, dimid, len=soil_cat)
     if (iret /= 0) then
- !      print*, "nf_inq_dimlen:  soil_cat"
-       call hydro_stop("In read_hrldas_hdrinfo() - nf_inq_dimlen:  soil_cat problem")
+ !      print*, "nf90_inq_dimlen:  soil_cat"
+       call hydro_stop("In read_hrldas_hdrinfo() - nf90_inq_dimlen:  soil_cat problem")
     endif
 
-    iret = nf_close(ncid)
+    iret = nf90_close(ncid)
 
   end subroutine read_hrldas_hdrinfo
 
@@ -183,18 +163,18 @@ Contains
     integer :: islake, iswater, isoilwater
 
     ! Open the NetCDF file.
-    ierr = nf_open(geo_static_flnm, NF_NOWRITE, ncid)
+    ierr = nf90_open(geo_static_flnm, NF90_NOWRITE, ncid)
 
-    if (ierr /= 0) then
+    if (ierr /= NF90_NOERR) then
        write(*,'("Problem opening geo_static file: ''", A, "''")') trim(geo_static_flnm)
        call hydro_stop("In readland_hrldas() - Problem opening geo_static file")
     endif
 
     flag = -99
-    ierr = nf_inq_varid(ncid,"XLAT", varid)
+    ierr = nf90_inq_varid(ncid,"XLAT", varid)
     flag = 1
     if(ierr .ne. 0) then
-        ierr = nf_inq_varid(ncid,"XLAT_M", varid)
+        ierr = nf90_inq_varid(ncid,"XLAT_M", varid)
         if(ierr .ne. 0) then
 !            write(6,*) "XLAT not found from wrfstatic file. "
             call hydro_stop("In readland_hrldas() - XLAT not found from wrfstatic file")
@@ -257,26 +237,26 @@ Contains
 
     endif
 
-    ierr = NF_GET_ATT_INT(ncid, NF_GLOBAL, 'ISWATER', iswater)
-    if (ierr /= 0) then
+    ierr = nf90_get_att(ncid, NF90_GLOBAL, 'ISWATER', iswater)
+    if (ierr /= NF90_NOERR) then
        call hydro_stop("In readland_hrldas() - Attribute ISWATER unable to be read from geo_static_flnm")
     endif
 
-    ierr = NF_GET_ATT_INT(ncid, NF_GLOBAL, 'ISOILWATER', isoilwater)
-    if (ierr /= 0) then
+    ierr = nf90_get_att(ncid, NF90_GLOBAL, 'ISOILWATER', isoilwater)
+    if (ierr /= NF90_NOERR) then
        call hydro_stop("In readland_hrldas() - Attribute ISOILWATER unable to be read from geo_static_flnm")
     endif
 
-    ierr = NF_GET_ATT_INT(ncid, NF_GLOBAL, 'ISLAKE', islake)
-    if (ierr /= 0) then
+    ierr = nf90_get_att(ncid, NF90_GLOBAL, 'ISLAKE', islake)
+    if (ierr /= NF90_NOERR) then
        call hydro_stop("In readland_hrldas() - Attribute ISLAKE unable to be read from geo_static_flnm")
     endif
 
     ! Close the NetCDF file
-    ierr = nf_close(ncid)
-    if (ierr /= 0) then
-       print*, "MODULE_NOAHLSM_HRLDAS_INPUT:  READLAND_HRLDAS:  NF_CLOSE"
-       call hydro_stop("In readland_hrldas() - NF_CLOSE problem")
+    ierr = nf90_close(ncid)
+    if (ierr /= NF90_NOERR) then
+       print*, "MODULE_NOAHLSM_HRLDAS_INPUT:  READLAND_HRLDAS:  NF90_CLOSE"
+       call hydro_stop("In readland_hrldas() - NF90_CLOSE problem")
     endif
 
  write(6, *) "readland_hrldas: ISLAKE ISWATER ISOILWATER", islake, iswater, isoilwater
@@ -309,21 +289,20 @@ Contains
           count(1) = ix
           count(2) = jx
           start(4) = tlevel
-      ierr = nf_inq_varid(ncid,  var_name,  varid)
+      ierr = nf90_inq_varid(ncid,  var_name,  varid)
 
-      if (ierr /= 0) then
+      if (ierr /= NF90_NOERR) then
         if (fatal_IF_ERROR) then
-           print*, "MODULE_NOAHLSM_HRLDAS_INPUT: get_2d_netcdf_ruc:nf_inq_varid ", trim(var_name)
-           call hydro_stop("In get_2d_netcdf_ruc() - nf_inq_varid problem")
+           print*, "MODULE_NOAHLSM_HRLDAS_INPUT: get_2d_netcdf_ruc:nf90_inq_varid ", trim(var_name)
+           call hydro_stop("In get_2d_netcdf_ruc() - nf90_inq_varid problem")
         else
           return
         endif
       endif
 
-      ierr = nf_get_vara_real(ncid, varid, start,count,var)
+      ierr = nf90_get_var(ncid, varid, var, start, count)
 
 
-      return
       end subroutine get_2d_netcdf_ruc
 
 
@@ -341,20 +320,19 @@ Contains
           count(1) = ix
           count(2) = jx
           start(4) = tlevel
-      iret = nf_inq_varid(ncid,  var_name,  varid)
+      iret = nf90_inq_varid(ncid,  var_name,  varid)
 
       if (iret /= 0) then
         if (fatal_IF_ERROR) then
-           print*, "MODULE_NOAHLSM_HRLDAS_INPUT: get_2d_netcdf_cows:nf_inq_varid"
-           call hydro_stop("In get_2d_netcdf_cows() - nf_inq_varid problem")
+           print*, "MODULE_NOAHLSM_HRLDAS_INPUT: get_2d_netcdf_cows:nf90_inq_varid"
+           call hydro_stop("In get_2d_netcdf_cows() - nf90_inq_varid problem")
         else
           ierr = iret
           return
         endif
       endif
-      iret = nf_get_vara_real(ncid, varid, start,count,var)
+      iret = nf90_get_var(ncid, varid, var, start,count)
 
-      return
       end subroutine get_2d_netcdf_cows
 
 
@@ -387,8 +365,8 @@ Contains
     logical :: found_canwat, found_skintemp, found_weasd, found_stemp, found_smois
 
     ! Open the NetCDF file.
-    ierr = nf_open(netcdf_flnm, NF_NOWRITE, ncid)
-    if (ierr /= 0) then
+    ierr = nf90_open(netcdf_flnm, NF90_NOWRITE, ncid)
+    if (ierr /= NF90_NOERR) then
        write(*,'("READINIT Problem opening netcdf file: ''", A, "''")') &
             trim(netcdf_flnm)
        call hydro_stop("In readinit_hrldas()- Problem opening netcdf file")
@@ -437,19 +415,32 @@ Contains
 
     sh2o = smc
 
-    ierr = nf_close(ncid)
+    ierr = nf90_close(ncid)
   end subroutine readinit_hrldas
 
 
 
 
-  subroutine READFORC_HRLDAS(flnm,ix,jx,target_date, t,q,u,v,p,lw,sw,pcp,lai,fpar)
+  subroutine READFORC_HRLDAS(flnm,ix,jx,target_date, &
+       forcing_name_T,forcing_name_Q,forcing_name_U,forcing_name_V,forcing_name_P, &
+       forcing_name_LW,forcing_name_SW,forcing_name_PR,forcing_name_SN, forcing_name_LF,&
+       t,q,u,v,p,lw,sw,pcp,lai,snowbl,fpar)
     implicit none
 
     character(len=*),                   intent(in)  :: flnm
     integer,                            intent(in)  :: ix
     integer,                            intent(in)  :: jx
     character(len=*),                   intent(in)  :: target_date
+    character(len=256), intent(in)  :: forcing_name_T
+    character(len=256), intent(in)  :: forcing_name_Q
+    character(len=256), intent(in)  :: forcing_name_U
+    character(len=256), intent(in)  :: forcing_name_V
+    character(len=256), intent(in)  :: forcing_name_P
+    character(len=256), intent(in)  :: forcing_name_LW
+    character(len=256), intent(in)  :: forcing_name_SW
+    character(len=256), intent(in)  :: forcing_name_PR
+    character(len=256), intent(in)  :: forcing_name_SN
+    character(len=256), intent(in)  :: forcing_name_LF
     real,             dimension(ix,jx), intent(out) :: t
     real,             dimension(ix,jx), intent(out) :: q
     real,             dimension(ix,jx), intent(out) :: u
@@ -460,33 +451,46 @@ Contains
     real,             dimension(ix,jx), intent(out) :: pcp
     real,             dimension(ix,jx), intent(inout) :: lai
     real,             dimension(ix,jx), intent(inout) :: fpar
-
+    real,             dimension(ix,jx), intent(inout) :: snowbl
+    real,             dimension(:,:),   allocatable   :: liqfrac
     character(len=256) :: units
     integer :: ierr
     integer :: ncid
 
     ! Open the NetCDF file.
-    ierr = nf_open(trim(flnm), NF_NOWRITE, ncid)
-    if (ierr /= 0) then
+    ierr = nf90_open(trim(flnm), NF90_NOWRITE, ncid)
+    if (ierr /= NF90_NOERR) then
        write(*,'("READFORC Problem opening netcdf file: ''", A, "''")') trim(flnm)
        call hydro_stop("In READFORC_HRLDAS() - Problem opening netcdf file")
     endif
 
-    call get_2d_netcdf("T2D",     ncid, t,     units, ix, jx, .TRUE., ierr)
-    call get_2d_netcdf("Q2D",     ncid, q,     units, ix, jx, .TRUE., ierr)
-    call get_2d_netcdf("U2D",     ncid, u,     units, ix, jx, .TRUE., ierr)
-    call get_2d_netcdf("V2D",     ncid, v,     units, ix, jx, .TRUE., ierr)
-    call get_2d_netcdf("PSFC",    ncid, p,     units, ix, jx, .TRUE., ierr)
-    call get_2d_netcdf("LWDOWN",  ncid, lw,    units, ix, jx, .TRUE., ierr)
-    call get_2d_netcdf("SWDOWN",  ncid, sw,    units, ix, jx, .TRUE., ierr)
-    call get_2d_netcdf("RAINRATE",ncid, pcp,   units, ix, jx, .TRUE., ierr)
+    call get_2d_netcdf(trim(forcing_name_T),     ncid, t,     units, ix, jx, .TRUE., ierr)
+    call get_2d_netcdf(trim(forcing_name_Q),     ncid, q,     units, ix, jx, .TRUE., ierr)
+    call get_2d_netcdf(trim(forcing_name_U),     ncid, u,     units, ix, jx, .TRUE., ierr)
+    call get_2d_netcdf(trim(forcing_name_V),     ncid, v,     units, ix, jx, .TRUE., ierr)
+    call get_2d_netcdf(trim(forcing_name_P),    ncid, p,     units, ix, jx, .TRUE., ierr)
+    call get_2d_netcdf(trim(forcing_name_lw),  ncid, lw,    units, ix, jx, .TRUE., ierr)
+    call get_2d_netcdf(trim(forcing_name_sw),  ncid, sw,    units, ix, jx, .TRUE., ierr)
+    call get_2d_netcdf(trim(forcing_name_pr),ncid, pcp,   units, ix, jx, .TRUE., ierr)
     call get_2d_netcdf("VEGFRA",  ncid, fpar,  units, ix, jx, .FALSE., ierr)
     if (ierr == 0) then
       if(maxval(fpar) .gt. 10 .and. maxval(fpar) .lt. 10000)  fpar = fpar * 1.E-2
     endif
-    call get_2d_netcdf("LAI",     ncid, lai,   units, ix, jx, .FALSE., ierr)
 
-    ierr = nf_close(ncid)
+    call get_2d_netcdf("LAI",     ncid, lai,   units, ix, jx, .FALSE., ierr)
+    call get_2d_netcdf(trim(forcing_name_SN),    ncid, snowbl,units, ix, jx, .FALSE., ierr)
+    if (ierr /= NF90_NOERR) then
+       allocate(liqfrac(ix,jx))
+       call get_2d_netcdf(trim(forcing_name_LF), ncid, liqfrac, units, ix, jx, .FALSE., ierr)
+       if (ierr == 0) then
+          snowbl = (1.0 - liqfrac) * pcp
+       else
+          snowbl = 0.0 ! since is liqfrac is not present it is equal to 1.0
+       end if
+       deallocate(liqfrac)
+    end if
+
+    ierr = nf90_close(ncid)
 
   end subroutine READFORC_HRLDAS
 
@@ -551,7 +555,7 @@ Contains
 
 
 !open NetCDF file...
-        ierr_flg = nf_open(flnm, NF_NOWRITE, ncid)
+        ierr_flg = nf90_open(flnm, NF90_NOWRITE, ncid)
         if (ierr_flg /= 0) then
 #ifdef HYDRO_D
           write(*,'("READFORC_MDV Problem opening netcdf file: ''",A,"''")') &
@@ -560,13 +564,13 @@ Contains
            return
         end if
 
-        ierr = nf_inq_varid(ncid,  "precip",  varid)
-        if(ierr /= 0) ierr_flg = ierr
-        if (ierr /= 0) then
-          ierr = nf_inq_varid(ncid,  "precip_rate",  varid)   !recheck variable name...
-          if (ierr /= 0) then
-            ierr = nf_inq_varid(ncid,  "RAINRATE",  varid)   !recheck variable name...
-            if (ierr /= 0) then
+        ierr = nf90_inq_varid(ncid,  "precip",  varid)
+        if(ierr /= NF90_NOERR) ierr_flg = ierr
+        if (ierr /= NF90_NOERR) then
+          ierr = nf90_inq_varid(ncid,  "precip_rate",  varid)   !recheck variable name...
+          if (ierr /= NF90_NOERR) then
+            ierr = nf90_inq_varid(ncid,  "RAINRATE",  varid)   !recheck variable name...
+            if (ierr /= NF90_NOERR) then
 #ifdef HYDRO_D
               write(*,'("READFORC_MDV Problem reading precip netcdf file: ''", A,"''")') &
                  trim(flnm)
@@ -576,10 +580,10 @@ Contains
           ierr_flg = ierr
           mmflag = 1
         end if
-        ierr = nf_get_var_real(ncid, varid, pcp)
-        ierr = nf_close(ncid)
+        ierr = nf90_get_var(ncid, varid, pcp)
+        ierr = nf90_close(ncid)
 
-        if (ierr /= 0) then
+        if (ierr /= NF90_NOERR) then
 #ifdef HYDRO_D
           write(*,'("READFORC_MDV Problem reading netcdf file: ''", A,"''")') trim(flnm)
 #endif
@@ -612,18 +616,18 @@ Contains
 
 !open NetCDF file...
       if (k.eq.1.) then
-        ierr = nf_open(flnm, NF_NOWRITE, ncid)
-        if (ierr /= 0) then
+        ierr = nf90_open(flnm, NF90_NOWRITE, ncid)
+        if (ierr /= NF90_NOERR) then
           write(*,'("READFORC_NAMPCP1 Problem opening netcdf file: ''",A, "''")') &
               trim(flnm)
           call hydro_stop("In READFORC_NAMPCP() - Problem opening netcdf file")
         end if
 
-        ierr = nf_inq_varid(ncid,  trim(product),  varid)
-        ierr = nf_get_var_real(ncid, varid, buf)
-        ierr = nf_close(ncid)
+        ierr = nf90_inq_varid(ncid,  trim(product),  varid)
+        ierr = nf90_get_var(ncid, varid, buf)
+        ierr = nf90_close(ncid)
 
-        if (ierr /= 0) then
+        if (ierr /= NF90_NOERR) then
           write(*,'("READFORC_NAMPCP2 Problem reading netcdf file: ''", A,"''")') &
              trim(flnm)
           call hydro_stop("In READFORC_NAMPCP() - Problem reading netcdf file")
@@ -670,8 +674,8 @@ Contains
     integer :: ncid
 
     ! Open the NetCDF file.
-    ierr = nf_open(flnm, NF_NOWRITE, ncid)
-    if (ierr /= 0) then
+    ierr = nf90_open(flnm, NF90_NOWRITE, ncid)
+    if (ierr /= NF90_NOERR) then
        write(*,'("READFORC_COWS Problem opening netcdf file: ''", A, "''")') trim(flnm)
        call hydro_stop("In READFORC_COWS() - Problem opening netcdf file")
     endif
@@ -685,7 +689,7 @@ Contains
     call get_2d_netcdf_cows("RAIN",    ncid, pcp,   ix, jx,tlevel, .TRUE., ierr)
 !yw   call get_2d_netcdf_cows("V2D",     ncid, v,     ix, jx,tlevel, .TRUE., ierr)
 
-    ierr = nf_close(ncid)
+    ierr = nf90_close(ncid)
 
   end subroutine READFORC_COWS
 
@@ -710,8 +714,8 @@ Contains
     tlevel = 1
 
     ! Open the NetCDF file.
-    ierr = nf_open(flnm, NF_NOWRITE, ncid)
-    if (ierr /= 0) then
+    ierr = nf90_open(flnm, NF90_NOWRITE, ncid)
+    if (ierr /= NF90_NOERR) then
        write(*,'("READFORC_RUC Problem opening netcdf file: ''", A, "''")') trim(flnm)
        call hydro_stop("In READFORC_RUC() - Problem opening netcdf file")
     endif
@@ -726,7 +730,7 @@ Contains
     call get_2d_netcdf_ruc("RAINC",  ncid, pcpc,  ix, jx,tlevel, .true., ierr)
     call get_2d_netcdf_ruc("RAINNC", ncid, pcp,   ix, jx,tlevel, .true., ierr)
 
-    ierr = nf_close(ncid)
+    ierr = nf90_close(ncid)
 
 
 !DJG  Add the convective and non-convective rain components (note: conv. comp=0
@@ -757,14 +761,14 @@ Contains
 
     ! Open the NetCDF file.
 
-    ierr = nf_open(flnm, NF_NOWRITE, ncid)
-    if (ierr /= 0) then
+    ierr = nf90_open(flnm, NF90_NOWRITE, ncid)
+    if (ierr /= NF90_NOERR) then
        write(*,'("READSNOW Problem opening netcdf file: ''", A, "''")') trim(flnm)
        call hydro_stop("In READSNOW_FORC() - Problem opening netcdf file")
     endif
 
     call get_2d_netcdf("WEASD",  ncid, tmp,   units, ix, jx, .FALSE., ierr)
-    if (ierr /= 0) then
+    if (ierr /= NF90_NOERR) then
          call get_2d_netcdf("SNOW",  ncid, tmp,   units, ix, jx, .FALSE., ierr)
          if (ierr == 0) then
             units = "mm"
@@ -781,12 +785,12 @@ Contains
          endif
     endif
 
-    if (ierr /= 0) then
+    if (ierr /= NF90_NOERR) then
        print *, "!!!!! NO WEASD present in input file...initialize to 0."
     endif
 
     call get_2d_netcdf("SNODEP",     ncid, tmp,   units, ix, jx, .FALSE., ierr)
-    if (ierr /= 0) then
+    if (ierr /= NF90_NOERR) then
        ! Quick assumption regarding snow depth.
        call get_2d_netcdf("SNOWH",     ncid, tmp,   units, ix, jx, .FALSE., ierr)
        if(ierr .eq. 0) then
@@ -797,7 +801,7 @@ Contains
        snodep = tmp
     endif
 
-    if (ierr /= 0) then
+    if (ierr /= NF90_NOERR) then
        ! Quick assumption regarding snow depth.
 !yw       snodep = weasd * 10.
        where(snodep .lt. weasd) snodep = weasd*10  !set lower bound to correct bi-lin interp err...
@@ -806,7 +810,7 @@ Contains
 !DJG check for erroneous neg WEASD or SNOWD due to offline interpolation...
        where(snodep .lt. 0) snodep = 0
        where(weasd .lt. 0) weasd = 0
-    ierr = nf_close(ncid)
+    ierr = nf90_close(ncid)
 
   end subroutine READSNOW_FORC
 
@@ -817,7 +821,7 @@ Contains
           real,dimension(ix,jx,nsoil):: smc,stc,sh2ox
           character(len=*), intent(in) :: inflnm
           character(len=256)::   units
-          iret = nf_open(trim(inflnm), NF_NOWRITE, ncid)
+          iret = nf90_open(trim(inflnm), NF90_NOWRITE, ncid)
           if(iret .ne. 0 )then
               write(6,*) "Error: failed to open file :",trim(inflnm)
              call hydro_stop("In get2d_hrldas() - failed to open file")
@@ -855,8 +859,7 @@ Contains
     call get2d_hrldas_real("SOIL_W_7",    ncid, SH2OX(:,:,7),  ix, jx)
     call get2d_hrldas_real("SOIL_W_8",    ncid, SH2OX(:,:,8),  ix, jx)
 
-          iret = nf_close(ncid)
-         return
+          iret = nf90_close(ncid)
       end subroutine get2d_hrldas
 
       subroutine get2d_hrldas_real(var_name,ncid,out_buff,ix,jx)
@@ -864,9 +867,8 @@ Contains
           integer ::iret,varid,ncid,ix,jx
           real out_buff(ix,jx)
           character(len=*), intent(in) :: var_name
-          iret = nf_inq_varid(ncid,trim(var_name),  varid)
-          iret = nf_get_var_real(ncid, varid, out_buff)
-         return
+          iret = nf90_inq_varid(ncid,trim(var_name),  varid)
+          iret = nf90_get_var(ncid, varid, out_buff)
       end subroutine get2d_hrldas_real
 
     subroutine read_stage4(flnm,IX,JX,pcp)
@@ -875,14 +877,14 @@ Contains
         character(len=*),  intent(in)  :: flnm
         character(len=256) :: units
 
-        ierr = nf_open(flnm, NF_NOWRITE, ncid)
+        ierr = nf90_open(flnm, NF90_NOWRITE, ncid)
 
         if(ierr .ne. 0) then
             call hydro_stop("In read_stage4() - failed to open stage4 file.")
         endif
 
         call get_2d_netcdf("RAINRATE",ncid, buf,   units, ix, jx, .TRUE., ierr)
-        ierr = nf_close(ncid)
+        ierr = nf90_close(ncid)
         do j = 1, jx
         do i = 1, ix
             if(buf(i,j) .lt. 0) then
@@ -891,7 +893,6 @@ Contains
         end do
         end do
         pcp = buf
-        return
     END subroutine read_stage4
 
 
@@ -900,28 +901,39 @@ Contains
  subroutine read_hydro_forcing_seq( &
        indir,olddate,hgrid, &
        ix,jx,forc_typ,snow_assim,  &
+       forcing_name_T,forcing_name_Q,forcing_name_U,forcing_name_V,forcing_name_P, &
+       forcing_name_LW,forcing_name_SW,forcing_name_PR,forcing_name_SN, forcing_name_LF,&
        T2,q2x,u,v,pres,xlong,short,prcp1,&
-       lai,fpar,snodep,dt,k,prcp_old)
+       lai,snowbl,fpar,snodep,dt,k,prcp_old)
 ! This subrouting is going to read different forcing.
    implicit none
    ! in variable
    character(len=*) :: olddate,hgrid,indir
    character(len=256) :: filename
    integer :: ix,jx,forc_typ,k,snow_assim  ! k is time loop
+   character(len=256), intent(in)  :: forcing_name_T
+   character(len=256), intent(in)  :: forcing_name_Q
+   character(len=256), intent(in)  :: forcing_name_U
+   character(len=256), intent(in)  :: forcing_name_V
+   character(len=256), intent(in)  :: forcing_name_P
+   character(len=256), intent(in)  :: forcing_name_LW
+   character(len=256), intent(in)  :: forcing_name_SW
+   character(len=256), intent(in)  :: forcing_name_PR
+   character(len=256), intent(in)  :: forcing_name_SN
+   character(len=256), intent(in)  :: forcing_name_LF
    real,dimension(ix,jx):: T2,q2x,u,v,pres,xlong,short,prcp1,&
           prcpnew,weasd,snodep,prcp0,prcp2,prcp_old
    real ::  dt, wrf_dt
    ! tmp variable
    character(len=256) :: inflnm, inflnm2, product
    integer  :: i,j,mmflag,ierr_flg
-   real,dimension(ix,jx):: lai,fpar
+   real,dimension(ix,jx):: lai,snowbl,fpar
    character(len=4) nwxst_t
    logical :: fexist
 
         inflnm = trim(indir)//"/"//&
              olddate(1:4)//olddate(6:7)//olddate(9:10)//olddate(12:13)//&
              ".LDASIN_DOMAIN"//hgrid
-
 !!!DJG... Call READFORC_(variable) Subroutine for forcing data...
 !!!DJG HRLDAS Format Forcing with hour format filename (NOTE: precip must be in mm/s!!!)
    if(FORC_TYP.eq.1) then
@@ -937,8 +949,11 @@ Contains
            call hydro_stop("In read_hydro_forcing_seq")
         endif
 
-      CALL READFORC_HRLDAS(inflnm,IX,JX,OLDDATE,T2,Q2X,U,V,   &
-          PRES,XLONG,SHORT,PRCP1,LAI,FPAR)
+        CALL READFORC_HRLDAS(inflnm,IX,JX,OLDDATE, &
+             forcing_name_T,forcing_name_Q,forcing_name_U,forcing_name_V,forcing_name_P, &
+             forcing_name_LW,forcing_name_SW,forcing_name_PR,forcing_name_SN, forcing_name_LF,&
+             T2,Q2X,U,V,   &
+             PRES,XLONG,SHORT,PRCP1,LAI,snowbl,FPAR)
    end if
 
 
@@ -956,8 +971,11 @@ Contains
            print*, "no forcing data found", inflnm
            call hydro_stop("In read_hydro_forcing_seq() - no forcing data found")
         endif
-      CALL READFORC_HRLDAS(inflnm,IX,JX,OLDDATE,T2,Q2X,U,V,   &
-          PRES,XLONG,SHORT,PRCP1,LAI,FPAR)
+        CALL READFORC_HRLDAS(inflnm,IX,JX,OLDDATE, &
+             forcing_name_T,forcing_name_Q,forcing_name_U,forcing_name_V,forcing_name_P, &
+             forcing_name_LW,forcing_name_SW,forcing_name_PR,forcing_name_SN, forcing_name_LF,&
+             T2,Q2X,U,V,   &
+             PRES,XLONG,SHORT,PRCP1,LAI,snowbl,FPAR)
    end if
 
 
@@ -1142,8 +1160,11 @@ Contains
            print*, "reading forcing data at this time", inflnm
 #endif
 
-           CALL READFORC_HRLDAS(inflnm,IX,JX,OLDDATE,T2,Q2X,U,V,   &
-                PRES,XLONG,SHORT,PRCP1,LAI,FPAR)
+           CALL READFORC_HRLDAS(inflnm,IX,JX,OLDDATE,&
+                forcing_name_T,forcing_name_Q,forcing_name_U,forcing_name_V,forcing_name_P, &
+                forcing_name_LW,forcing_name_SW,forcing_name_PR,forcing_name_SN, forcing_name_LF,&
+                T2,Q2X,U,V,   &
+                PRES,XLONG,SHORT,PRCP1,LAI,snowbl,FPAR)
            PRCP_old = PRCP1  ! This assigns new precip to last precip as a fallback for missing data...
         endif
 
@@ -1649,7 +1670,6 @@ Contains
      call decompose_data_real(g_TERRAIN,TERRAIN)
      call decompose_data_real(g_LATITUDE,LATITUDE)
      call decompose_data_real(g_LONGITUDE,LONGITUDE)
-      return
       end subroutine mpp_readland_hrldas
 
 
@@ -1675,7 +1695,6 @@ Contains
        call decompose_data_real(g_WEASD,WEASD)
        call decompose_data_real(g_SNODEP,SNODEP)
 
-        return
         end  subroutine MPP_READSNOW_FORC
 
       subroutine MPP_DEEPGW_HRLDAS(ix,jx,in_SMCMAX,&
@@ -1712,15 +1731,16 @@ Contains
         call decompose_data_real(g_sh2ox(:,:,k),out_sh2ox(:,:,k))
        end do
 
-        return
         end  subroutine MPP_DEEPGW_HRLDAS
 
 
  subroutine read_hydro_forcing_mpp( &
        indir,olddate,hgrid, &
        ix,jx,forc_typ,snow_assim,  &
+       forcing_name_T,forcing_name_Q,forcing_name_U,forcing_name_V,forcing_name_P, &
+       forcing_name_LW,forcing_name_SW,forcing_name_PR,forcing_name_SN, forcing_name_LF,&
        T2,q2x,u,v,pres,xlong,short,prcp1,&
-       lai,fpar,snodep,dt,k,prcp_old)
+       lai,snowbl,fpar,snodep,dt,k,prcp_old)
 ! This subrouting is going to read different forcing.
 
 
@@ -1729,14 +1749,24 @@ Contains
    character(len=*) :: olddate,hgrid,indir
    character(len=256) :: filename
    integer :: ix,jx,forc_typ,k,snow_assim  ! k is time loop
+   character(len=256), intent(in)  :: forcing_name_T
+   character(len=256), intent(in)  :: forcing_name_Q
+   character(len=256), intent(in)  :: forcing_name_U
+   character(len=256), intent(in)  :: forcing_name_V
+   character(len=256), intent(in)  :: forcing_name_P
+   character(len=256), intent(in)  :: forcing_name_LW
+   character(len=256), intent(in)  :: forcing_name_SW
+   character(len=256), intent(in)  :: forcing_name_PR
+   character(len=256), intent(in)  :: forcing_name_SN
+   character(len=256), intent(in)  :: forcing_name_LF
    real,dimension(ix,jx):: T2,q2x,u,v,pres,xlong,short,prcp1,&
-          prcpnew,lai,fpar,snodep,prcp_old
+          prcpnew,lai,snowbl,fpar,snodep,prcp_old
    real ::  dt
    ! tmp variable
    character(len=256) :: inflnm, product
    integer  :: i,j,mmflag
    real,dimension(global_nx,global_ny):: g_T2,g_Q2X,g_U,g_V,g_XLONG, &
-             g_SHORT,g_PRCP1,g_PRES,g_lai,g_snodep,g_prcp_old, g_fpar
+             g_SHORT,g_PRCP1,g_PRES,g_lai,g_snowbl,g_snodep,g_prcp_old, g_fpar
    integer flag
 
 
@@ -1752,6 +1782,7 @@ Contains
      call write_io_real(prcp_old,g_PRCP_old)
 
      call write_io_real(lai,g_lai)
+     call write_io_real(snowbl,g_snowbl)
      call write_io_real(fpar,g_fpar)
      call write_io_real(snodep,g_snodep)
 
@@ -1761,8 +1792,10 @@ Contains
       call read_hydro_forcing_seq( &
         indir,olddate,hgrid,&
         global_nx,global_ny,forc_typ,snow_assim,  &
+        forcing_name_T,forcing_name_Q,forcing_name_U,forcing_name_V,forcing_name_P, &
+        forcing_name_LW,forcing_name_SW,forcing_name_PR,forcing_name_SN, forcing_name_LF,&
         g_T2,g_q2x,g_u,g_v,g_pres,g_xlong,g_short,g_prcp1,&
-        g_lai,g_fpar,g_snodep,dt,k,g_prcp_old)
+        g_lai,g_snowbl,g_fpar,g_snodep,dt,k,g_prcp_old)
 #ifdef HYDRO_D
      write(6,*) "finish read forcing,olddate ",olddate
 #endif
@@ -1782,7 +1815,6 @@ Contains
      call decompose_data_real(g_fpar,fpar)
      call decompose_data_real(g_snodep,snodep)
 
-     return
    end subroutine read_hydro_forcing_mpp
 #endif
 
@@ -2252,21 +2284,33 @@ Contains
 subroutine read_hydro_forcing_mpp1( &
      indir,olddate,hgrid, &
      ix,jx,forc_typ,snow_assim,  &
+     forcing_name_T,forcing_name_Q,forcing_name_U,forcing_name_V,forcing_name_P, &
+     forcing_name_LW,forcing_name_SW,forcing_name_PR,forcing_name_SN, forcing_name_LF,&
      T2,q2x,u,v,pres,xlong,short,prcp1,&
-     lai,fpar,snodep,dt,k,prcp_old)
+     lai,snowbl,fpar,snodep,dt,k,prcp_old)
 ! This subrouting is going to read different forcing.
 implicit none
 ! in variable
 character(len=*) :: olddate,hgrid,indir
 character(len=256) :: filename
 integer :: ix,jx,forc_typ,k,snow_assim  ! k is time loop
+character(len=256), intent(in)  :: forcing_name_T
+character(len=256), intent(in)  :: forcing_name_Q
+character(len=256), intent(in)  :: forcing_name_U
+character(len=256), intent(in)  :: forcing_name_V
+character(len=256), intent(in)  :: forcing_name_P
+character(len=256), intent(in)  :: forcing_name_LW
+character(len=256), intent(in)  :: forcing_name_SW
+character(len=256), intent(in)  :: forcing_name_PR
+character(len=256), intent(in)  :: forcing_name_SN
+character(len=256), intent(in)  :: forcing_name_LF
 real,dimension(ix,jx):: T2,q2x,u,v,pres,xlong,short,prcp1,&
      prcpnew,weasd,snodep,prcp0,prcp2,prcp_old
 real ::  dt, wrf_dt
 ! tmp variable
 character(len=256) :: inflnm, inflnm2, product
 integer  :: i,j,mmflag,ierr_flg
-real,dimension(ix,jx):: lai,fpar
+real,dimension(ix,jx):: lai,snowbl,fpar
 character(len=4) nwxst_t
 logical :: fexist
 
@@ -2274,9 +2318,9 @@ inflnm = trim(indir)//"/"//&
          olddate(1:4)//olddate(6:7)//olddate(9:10)//olddate(12:13)//&
          ".LDASIN_DOMAIN"//hgrid
 
+
 !!!DJG... Call READFORC_(variable) Subroutine for forcing data...
 !!!DJG HRLDAS Format Forcing with hour format filename (NOTE: precip must be in mm/s!!!)
-
 
 !!! FORC_TYPE 1 ============================================================================
 if(FORC_TYP.eq.1) then
@@ -2299,8 +2343,11 @@ if(FORC_TYP.eq.1) then
 #ifdef HYDRO_D
    print*, "read forcing data at ", OLDDATE,  trim(inflnm)
 #endif
-   call READFORC_HRLDAS_mpp(inflnm,IX,JX,OLDDATE,T2,Q2X,U,V,   &
-        PRES,XLONG,SHORT,PRCP1,LAI,FPAR)
+   call READFORC_HRLDAS_mpp(inflnm,IX,JX,OLDDATE, &
+        forcing_name_T,forcing_name_Q,forcing_name_U,forcing_name_V,forcing_name_P, &
+        forcing_name_LW,forcing_name_SW,forcing_name_PR,forcing_name_SN, forcing_name_LF,&
+        T2,Q2X,U,V,   &
+        PRES,XLONG,SHORT,PRCP1,LAI,snowbl,FPAR)
 
    where(PRCP1 .lt. 0) PRCP1= 0  ! set minimum to be 0
    where(PRCP1 .gt. 0.138889) PRCP1= 0.138889 ! set maximum to be 500 mm/h
@@ -2325,8 +2372,11 @@ if(FORC_TYP.eq.2) then
       print*, "no forcing data found", inflnm
       call hydro_stop("In read_hydro_forcing_mpp1() - no forcing data found")
    endif
-   call READFORC_HRLDAS_mpp(inflnm,IX,JX,OLDDATE,T2,Q2X,U,V,   &
-        PRES,XLONG,SHORT,PRCP1,LAI,FPAR)
+   call READFORC_HRLDAS_mpp(inflnm,IX,JX,OLDDATE,&
+        forcing_name_T,forcing_name_Q,forcing_name_U,forcing_name_V,forcing_name_P, &
+        forcing_name_LW,forcing_name_SW,forcing_name_PR,forcing_name_SN, forcing_name_LF,&
+        T2,Q2X,U,V,   &
+        PRES,XLONG,SHORT,PRCP1,LAI,snowbl,FPAR)
 
    where(PRCP1 .lt. 0) PRCP1= 0  ! set minimum to be 0
    where(PRCP1 .gt. 0.138889) PRCP1= 0.138889 ! set maximum to be 500 mm/h
@@ -2539,8 +2589,11 @@ if(FORC_TYP.eq.6) then
       print*, "reading forcing data at this time", inflnm
 #endif
 
-      call READFORC_HRLDAS_mpp(inflnm,IX,JX,OLDDATE,T2,Q2X,U,V,   &
-           PRES,XLONG,SHORT,PRCP1,LAI,FPAR)
+      call READFORC_HRLDAS_mpp(inflnm,IX,JX,OLDDATE,&
+           forcing_name_T,forcing_name_Q,forcing_name_U,forcing_name_V,forcing_name_P, &
+           forcing_name_LW,forcing_name_SW,forcing_name_PR,forcing_name_SN, forcing_name_LF,&
+           T2,Q2X,U,V,   &
+           PRES,XLONG,SHORT,PRCP1,LAI,snowbl,FPAR)
       PRCP_old = PRCP1  ! This assigns new precip to last precip as a fallback for missing data...
    endif
 
@@ -2729,13 +2782,26 @@ end subroutine read_hydro_forcing_mpp1
 
 
 
-  subroutine READFORC_HRLDAS_mpp(flnm,ix,jx,target_date, t,q,u,v,p,lw,sw,pcp,lai,fpar)
+    subroutine READFORC_HRLDAS_mpp(flnm,ix,jx,target_date, &
+         forcing_name_T,forcing_name_Q,forcing_name_U,forcing_name_V,forcing_name_P, &
+         forcing_name_LW,forcing_name_SW,forcing_name_PR,forcing_name_SN, forcing_name_LF,&
+         t,q,u,v,p,lw,sw,pcp,lai,snowbl,fpar)
     implicit none
 
     character(len=*),                   intent(in)  :: flnm
     integer,                            intent(in)  :: ix
     integer,                            intent(in)  :: jx
     character(len=*),                   intent(in)  :: target_date
+    character(len=256), intent(in)  :: forcing_name_T
+    character(len=256), intent(in)  :: forcing_name_Q
+    character(len=256), intent(in)  :: forcing_name_U
+    character(len=256), intent(in)  :: forcing_name_V
+    character(len=256), intent(in)  :: forcing_name_P
+    character(len=256), intent(in)  :: forcing_name_LW
+    character(len=256), intent(in)  :: forcing_name_SW
+    character(len=256), intent(in)  :: forcing_name_PR
+    character(len=256), intent(in)  :: forcing_name_SN
+    character(len=256), intent(in)  :: forcing_name_LF
     real,             dimension(ix,jx), intent(out) :: t
     real,             dimension(ix,jx), intent(out) :: q
     real,             dimension(ix,jx), intent(out) :: u
@@ -2745,6 +2811,7 @@ end subroutine read_hydro_forcing_mpp1
     real,             dimension(ix,jx), intent(out) :: sw
     real,             dimension(ix,jx), intent(out) :: pcp
     real,             dimension(ix,jx), intent(inout) :: lai
+    real,             dimension(ix,jx), intent(inout) :: snowbl
     real,             dimension(ix,jx), intent(inout) :: fpar
 
     character(len=256) :: units
@@ -2754,36 +2821,38 @@ end subroutine read_hydro_forcing_mpp1
     ! Open the NetCDF file.
 #ifdef MPP_LAND
     real, allocatable, dimension(:,:):: buf2
+    real, allocatable, dimension(:,:) :: liqfrac
+
     if(my_id .eq. io_id) then
         allocate(buf2(global_nx,global_ny))
     else
         allocate(buf2(1,1))
     endif
     if(my_id .eq. io_id) then
-        ierr = nf_open(trim(flnm), NF_NOWRITE, ncid)
+        ierr = nf90_open(trim(flnm), NF90_NOWRITE, ncid)
     endif
     call mpp_land_bcast_int1(ierr)
-    if (ierr /= 0) then
+    if (ierr /= NF90_NOERR) then
        write(*,'("READFORC Problem opening netcdf file: ''", A, "''")') trim(flnm)
        call hydro_stop("In READFORC_HRLDAS_mpp() - Problem opening netcdf file")
     endif
 
 
-    if(my_id .eq. io_id ) call get_2d_netcdf("T2D", ncid,buf2, units, global_nx, global_ny, .TRUE., ierr)
+    if(my_id .eq. io_id ) call get_2d_netcdf(trim(forcing_name_T), ncid,buf2, units, global_nx, global_ny, .TRUE., ierr)
     call decompose_data_real (buf2,t)
-    if(my_id .eq. io_id ) call get_2d_netcdf("Q2D", ncid,buf2, units, global_nx, global_ny, .TRUE., ierr)
+    if(my_id .eq. io_id ) call get_2d_netcdf(trim(forcing_name_Q), ncid,buf2, units, global_nx, global_ny, .TRUE., ierr)
     call decompose_data_real (buf2,q)
-    if(my_id .eq. io_id ) call get_2d_netcdf("U2D", ncid,buf2, units, global_nx, global_ny, .TRUE., ierr)
+    if(my_id .eq. io_id ) call get_2d_netcdf(trim(forcing_name_U), ncid,buf2, units, global_nx, global_ny, .TRUE., ierr)
     call decompose_data_real (buf2,u)
-    if(my_id .eq. io_id ) call get_2d_netcdf("V2D", ncid,buf2, units, global_nx, global_ny, .TRUE., ierr)
+    if(my_id .eq. io_id ) call get_2d_netcdf(trim(forcing_name_V), ncid,buf2, units, global_nx, global_ny, .TRUE., ierr)
     call decompose_data_real (buf2,v)
-    if(my_id .eq. io_id ) call get_2d_netcdf("PSFC", ncid,buf2, units, global_nx, global_ny, .TRUE., ierr)
+    if(my_id .eq. io_id ) call get_2d_netcdf(trim(forcing_name_P), ncid,buf2, units, global_nx, global_ny, .TRUE., ierr)
     call decompose_data_real (buf2,p)
-    if(my_id .eq. io_id ) call get_2d_netcdf("LWDOWN", ncid,buf2, units, global_nx, global_ny, .TRUE., ierr)
+    if(my_id .eq. io_id ) call get_2d_netcdf(trim(forcing_name_LW), ncid,buf2, units, global_nx, global_ny, .TRUE., ierr)
     call decompose_data_real (buf2,lw)
-    if(my_id .eq. io_id ) call get_2d_netcdf("SWDOWN", ncid,buf2, units, global_nx, global_ny, .TRUE., ierr)
+    if(my_id .eq. io_id ) call get_2d_netcdf(trim(forcing_name_SW), ncid,buf2, units, global_nx, global_ny, .TRUE., ierr)
     call decompose_data_real (buf2,sw)
-    if(my_id .eq. io_id ) call get_2d_netcdf("RAINRATE", ncid,buf2, units, global_nx, global_ny, .TRUE., ierr)
+    if(my_id .eq. io_id ) call get_2d_netcdf(trim(forcing_name_PR), ncid,buf2, units, global_nx, global_ny, .TRUE., ierr)
     call decompose_data_real (buf2,pcp)
     if(my_id .eq. io_id ) then
           call get_2d_netcdf("VEGFRA", ncid,buf2, units, global_nx, global_ny, .FALSE., ierr)
@@ -2796,32 +2865,60 @@ end subroutine read_hydro_forcing_mpp1
     if(my_id .eq. io_id ) call get_2d_netcdf("LAI",     ncid, buf2,   units, global_nx, global_ny, .FALSE., ierr)
     call mpp_land_bcast_int1(ierr)
     if(ierr == 0) call decompose_data_real (buf2,lai)
+    if(my_id .eq. io_id ) call get_2d_netcdf(trim(forcing_name_SN), ncid, buf2, units, global_nx, global_ny, .FALSE., ierr)
+    call mpp_land_bcast_int1(ierr)
+    if (ierr == 0) then
+       call decompose_data_real (buf2,snowbl)
+    else
+       if(my_id .eq. io_id ) call get_2d_netcdf(trim(forcing_name_LF), ncid, buf2, units, global_nx, global_ny, .FALSE., ierr)
+       call mpp_land_bcast_int1(ierr)
+       if(ierr == 0) then
+          allocate(liqfrac(ix,jx))
+          call decompose_data_real (buf2,liqfrac)
+          snowbl = (1.0 - liqfrac) * pcp
+          deallocate(liqfrac)
+       else
+          snowbl = 0.0 ! since if liqfrac is not present it defaults to 1.0
+       end if
+    end if
 
     deallocate(buf2)
 #else
-    ierr = nf_open(trim(flnm), NF_NOWRITE, ncid)
-    if (ierr /= 0) then
+    ierr = nf90_open(trim(flnm), NF90_NOWRITE, ncid)
+    if (ierr /= NF90_NOERR) then
        write(*,'("READFORC Problem opening netcdf file: ''", A, "''")') trim(flnm)
        call hydro_stop("READFORC_HRLDAS")
     endif
-    call get_2d_netcdf("T2D",     ncid, t,     units, ix, jx, .TRUE., ierr)
-    call get_2d_netcdf("Q2D",     ncid, q,     units, ix, jx, .TRUE., ierr)
-    call get_2d_netcdf("U2D",     ncid, u,     units, ix, jx, .TRUE., ierr)
-    call get_2d_netcdf("V2D",     ncid, v,     units, ix, jx, .TRUE., ierr)
-    call get_2d_netcdf("PSFC",    ncid, p,     units, ix, jx, .TRUE., ierr)
-    call get_2d_netcdf("LWDOWN",  ncid, lw,    units, ix, jx, .TRUE., ierr)
-    call get_2d_netcdf("SWDOWN",  ncid, sw,    units, ix, jx, .TRUE., ierr)
-    call get_2d_netcdf("RAINRATE",ncid, pcp,   units, ix, jx, .TRUE., ierr)
+    call get_2d_netcdf(trim(forcing_name_T),     ncid, t,     units, ix, jx, .TRUE., ierr)
+    call get_2d_netcdf(trim(forcing_name_Q),     ncid, q,     units, ix, jx, .TRUE., ierr)
+    call get_2d_netcdf(trim(forcing_name_U),     ncid, u,     units, ix, jx, .TRUE., ierr)
+    call get_2d_netcdf(trim(forcing_name_V),     ncid, v,     units, ix, jx, .TRUE., ierr)
+    call get_2d_netcdf(trim(forcing_name_P),    ncid, p,     units, ix, jx, .TRUE., ierr)
+    call get_2d_netcdf(trim(forcing_name_LW),  ncid, lw,    units, ix, jx, .TRUE., ierr)
+    call get_2d_netcdf(trim(forcing_name_SW),  ncid, sw,    units, ix, jx, .TRUE., ierr)
+    call get_2d_netcdf(trim(forcing_name_PR),ncid, pcp,   units, ix, jx, .TRUE., ierr)
     call get_2d_netcdf("VEGFRA",  ncid, fpar,  units, ix, jx, .FALSE., ierr)
 
     if (ierr == 0) then
       if(maxval(fpar) .gt. 10 .and. maxval(fpar) .lt. 10000)  fpar = fpar * 1.E-2
     endif
+
     call get_2d_netcdf("LAI",     ncid, lai,   units, ix, jx, .FALSE., ierr)
+    call get_2d_netcdf(trim(forcing_name_SN),    ncid, snowbl,units, ix, jx, .FALSE., ierr)
+    if (ierr /= NF90_NOERR) then
+       allocate(liqfrac(ix,jx))
+       call get_2d_netcdf(trim(forcing_name_LF), ncid, liqfrac, units, ix, jx, .FALSE., ierr)
+       if (ierr == 0) then
+          snowbl = (1.0 - liqfrac) * pcp
+       else
+          snowbl = 0.0 ! since if liqfrac is not present it is set to 1.0
+       end if
+       deallocate(liqfrac)
+    end if
+
 #endif
 
-    ierr = nf_close(ncid)
-
+    ierr = nf90_close(ncid)
   end subroutine READFORC_HRLDAS_mpp
 
   subroutine READFORC_WRF_mpp(flnm,ix,jx,target_date,t,q,u,v,p,lw,sw,pcp,lai,fpar)
@@ -2854,9 +2951,9 @@ end subroutine read_hydro_forcing_mpp1
 
     ! Open the NetCDF file.
 
-    if(my_id .eq. io_id) ierr = nf_open(flnm, NF_NOWRITE, ncid)
+    if(my_id .eq. io_id) ierr = nf90_open(flnm, NF90_NOWRITE, ncid)
     call mpp_land_bcast_int1(ierr)
-    if (ierr /= 0) then
+    if (ierr /= NF90_NOERR) then
        write(*,'("READFORC_WRF Problem opening netcdf file: ''", A, "''")') trim(flnm)
        call hydro_stop("In READFORC_WRF_mpp() - Problem opening netcdf file")
     endif
@@ -2893,8 +2990,8 @@ end subroutine read_hydro_forcing_mpp1
 #else
 
     ! Open the NetCDF file.
-    ierr = nf_open(flnm, NF_NOWRITE, ncid)
-    if (ierr /= 0) then
+    ierr = nf90_open(flnm, NF90_NOWRITE, ncid)
+    if (ierr /= NF90_NOERR) then
        write(*,'("READFORC_WRF Problem opening netcdf file: ''", A, "''")') trim(flnm)
        call hydro_stop("In READFORC_WRF_mpp() - Problem opening netcdf file")
     endif
@@ -2917,7 +3014,7 @@ end subroutine read_hydro_forcing_mpp1
 
 
     pcp=pcp+pcpc   ! assumes pcpc=0 for resolved convection...
-    ierr = nf_close(ncid)
+    ierr = nf90_close(ncid)
 
 
   end subroutine READFORC_WRF_mpp
@@ -2952,7 +3049,7 @@ end subroutine read_hydro_forcing_mpp1
 #ifdef MPP_LAND
       if(my_id .eq. io_id) then
 #endif
-        ierr_flg = nf_open(flnm, NF_NOWRITE, ncid)
+        ierr_flg = nf90_open(flnm, NF90_NOWRITE, ncid)
 #ifdef MPP_LAND
       endif
       call mpp_land_bcast_int1(ierr_flg)
@@ -2969,31 +3066,31 @@ end subroutine read_hydro_forcing_mpp1
 #ifdef MPP_LAND
       if(my_id .eq. io_id) then
 #endif
-        ierr = nf_inq_varid(ncid,  "precip",  varid)
+        ierr = nf90_inq_varid(ncid,  "precip",  varid)
 #ifdef MPP_LAND
       endif
       call mpp_land_bcast_int1(ierr)
 #endif
-        if(ierr /= 0) ierr_flg = ierr
-        if (ierr /= 0) then
+        if(ierr /= NF90_NOERR) ierr_flg = ierr
+        if (ierr /= NF90_NOERR) then
 #ifdef MPP_LAND
       if(my_id .eq. io_id) then
 #endif
-          ierr = nf_inq_varid(ncid,  "precip_rate",  varid)   !recheck variable name...
+          ierr = nf90_inq_varid(ncid,  "precip_rate",  varid)   !recheck variable name...
 #ifdef MPP_LAND
       endif
       call mpp_land_bcast_int1(ierr)
 #endif
-          if (ierr /= 0) then
+          if (ierr /= NF90_NOERR) then
 #ifdef MPP_LAND
           if(my_id .eq. io_id) then
 #endif
-             ierr = nf_inq_varid(ncid,  "RAINRATE",  varid)   !recheck variable name...
+             ierr = nf90_inq_varid(ncid,  "RAINRATE",  varid)   !recheck variable name...
 #ifdef MPP_LAND
           endif
           call mpp_land_bcast_int1(ierr)
 #endif
-            if (ierr /= 0) then
+            if (ierr /= NF90_NOERR) then
               write(*,'("READFORC_MDV Problem reading precip netcdf file: ''", A,"''")') &
                  trim(flnm)
 #ifdef MPP_LAND
@@ -3007,18 +3104,18 @@ end subroutine read_hydro_forcing_mpp1
         end if
 #ifdef MPP_LAND
       if(my_id .eq. io_id) then
-          ierr = nf_get_var_real(ncid, varid, buf2)
+          ierr = nf90_get_var(ncid, varid, buf2)
       endif
       call mpp_land_bcast_int1(ierr)
       if(ierr ==0) call decompose_data_real (buf2,pcp)
       deallocate(buf2)
 #else
-        ierr = nf_get_var_real(ncid, varid, pcp)
+        ierr = nf90_get_var(ncid, varid, pcp)
 #endif
-        if (ierr /= 0) then
+        if (ierr /= NF90_NOERR) then
            write(*,'("READFORC_MDV Problem reading netcdf file: ''", A,"''")') trim(flnm)
         end if
-        ierr = nf_close(ncid)
+        ierr = nf90_close(ncid)
 
   end subroutine READFORC_MDV_mpp
 
@@ -3048,12 +3145,12 @@ end subroutine read_hydro_forcing_mpp1
 #ifdef MPP_LAND
       if(my_id .eq. io_id) then
 #endif
-    ierr = nf_open(flnm, NF_NOWRITE, ncid)
+    ierr = nf90_open(flnm, NF90_NOWRITE, ncid)
 #ifdef MPP_LAND
       endif
       call mpp_land_bcast_int1(ierr)
 #endif
-    if (ierr /= 0) then
+    if (ierr /= NF90_NOERR) then
        write(*,'("READSNOW Problem opening netcdf file: ''", A, "''")') trim(flnm)
        call hydro_stop("In READSNOW_FORC_mpp() - Problem opening netcdf file")
     endif
@@ -3067,7 +3164,7 @@ end subroutine read_hydro_forcing_mpp1
 #else
     call get_2d_netcdf("WEASD",  ncid, tmp,   units, ix, jx, .FALSE., ierr)
 #endif
-    if (ierr /= 0) then
+    if (ierr /= NF90_NOERR) then
          call get_2d_netcdf("SNOW",  ncid, tmp,   units, ix, jx, .FALSE., ierr)
          if (ierr == 0) then
             units = "mm"
@@ -3086,7 +3183,7 @@ end subroutine read_hydro_forcing_mpp1
          endif
     endif
 
-    if (ierr /= 0) then
+    if (ierr /= NF90_NOERR) then
        print *, "!!!!! NO WEASD present in input file...initialize to 0."
     endif
 #ifdef MPP_LAND
@@ -3098,7 +3195,7 @@ end subroutine read_hydro_forcing_mpp1
 #else
     call get_2d_netcdf("SNODEP",     ncid, tmp,   units, ix, jx, .FALSE., ierr)
 #endif
-    if (ierr /= 0) then
+    if (ierr /= NF90_NOERR) then
        ! Quick assumption regarding snow depth.
 
 #ifdef MPP_LAND
@@ -3120,7 +3217,7 @@ end subroutine read_hydro_forcing_mpp1
        snodep = tmp
     endif
 
-    if (ierr /= 0) then
+    if (ierr /= NF90_NOERR) then
        ! Quick assumption regarding snow depth.
 !yw       snodep = weasd * 10.
        where(snodep .lt. weasd) snodep = weasd*10  !set lower bound to correct bi-lin interp err...
@@ -3129,7 +3226,7 @@ end subroutine read_hydro_forcing_mpp1
 !DJG check for erroneous neg WEASD or SNOWD due to offline interpolation...
        where(snodep .lt. 0) snodep = 0
        where(weasd .lt. 0) weasd = 0
-    ierr = nf_close(ncid)
+    ierr = nf90_close(ncid)
 
   end subroutine READSNOW_FORC_mpp
 
@@ -3189,7 +3286,7 @@ end subroutine read_hydro_forcing_mpp1
 !       read file1
 #ifdef MPP_LAND
         if(my_id .eq. io_id) then
-           ierr = nf_open(trim(inflnm), NF_NOWRITE, ncid)
+           ierr = nf90_open(trim(inflnm), NF90_NOWRITE, ncid)
            call get_2d_netcdf("SFCRNOFF",    ncid, gArr, units,  global_nx, global_ny, .TRUE., ierr)
         endif
         call decompose_data_real (gArr,infxsrt)
@@ -3198,18 +3295,18 @@ end subroutine read_hydro_forcing_mpp1
         endif
         call decompose_data_real (gArr,soldrain)
         if(my_id .eq. io_id) then
-            ierr = nf_close(ncid)
+            ierr = nf90_close(ncid)
         endif
 #else
-        ierr = nf_open(trim(inflnm), NF_NOWRITE, ncid)
+        ierr = nf90_open(trim(inflnm), NF90_NOWRITE, ncid)
         call get_2d_netcdf("SFCRNOFF",    ncid, infxsrt, units,  ix, jx, .TRUE., ierr)
         call get_2d_netcdf("UGDRNOFF",    ncid, soldrain, units,  ix, jx, .TRUE., ierr)
-        ierr = nf_close(ncid)
+        ierr = nf90_close(ncid)
 #endif
 !       read file2
 #ifdef MPP_LAND
        if(my_id .eq. io_id) then
-           ierr = nf_open(trim(inflnm2), NF_NOWRITE, ncid)
+           ierr = nf90_open(trim(inflnm2), NF90_NOWRITE, ncid)
            call get_2d_netcdf("SFCRNOFF",    ncid, gArr, units,  global_nx, global_ny, .TRUE., ierr)
         endif
         call decompose_data_real (gArr,infxsrt2)
@@ -3218,13 +3315,13 @@ end subroutine read_hydro_forcing_mpp1
         endif
         call decompose_data_real (gArr,soldrain2)
         if(my_id .eq. io_id) then
-           ierr = nf_close(ncid)
+           ierr = nf90_close(ncid)
         endif
 #else
-        ierr = nf_open(trim(inflnm2), NF_NOWRITE, ncid)
+        ierr = nf90_open(trim(inflnm2), NF90_NOWRITE, ncid)
         call get_2d_netcdf("SFCRNOFF",    ncid, infxsrt2, units,  ix, jx, .TRUE., ierr)
         call get_2d_netcdf("UGDRNOFF",    ncid, soldrain2, units,  ix, jx, .TRUE., ierr)
-        ierr = nf_close(ncid)
+        ierr = nf90_close(ncid)
 #endif
 
         infxsrt = infxsrt2 - infxsrt
@@ -3284,15 +3381,15 @@ end subroutine read_hydro_forcing_mpp1
             call hydro_stop( "LDASOUT input Error")
         endif
 !       read file1
-        ierr = nf_open(trim(inflnm), NF_NOWRITE, ncid)
+        ierr = nf90_open(trim(inflnm), NF90_NOWRITE, ncid)
         call get_2d_netcdf("SFCRNOFF",    ncid, infxsrt, units,  ix, jx, .TRUE., ierr)
         call get_2d_netcdf("UGDRNOFF",    ncid, soldrain, units,  ix, jx, .TRUE., ierr)
-        ierr = nf_close(ncid)
+        ierr = nf90_close(ncid)
 !       read file2
-        ierr = nf_open(trim(inflnm2), NF_NOWRITE, ncid)
+        ierr = nf90_open(trim(inflnm2), NF90_NOWRITE, ncid)
         call get_2d_netcdf("SFCRNOFF",    ncid, infxsrt2, units,  ix, jx, .TRUE., ierr)
         call get_2d_netcdf("UGDRNOFF",    ncid, soldrain2, units,  ix, jx, .TRUE., ierr)
-        ierr = nf_close(ncid)
+        ierr = nf90_close(ncid)
 
         infxsrt = infxsrt2 - infxsrt
         soldrain = soldrain2 - soldrain

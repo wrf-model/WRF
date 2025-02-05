@@ -114,10 +114,8 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
 ! Write history for other streams at restart - James Ruppert - October 2024
 !----------------------------------------------------------------------
       DO ialarm = first_auxhist, last_auxhist
-         IF  ( (config_flags%restart) .AND. ( currTime .EQ. startTime ) .AND. ( config_flags%write_hist_at_0h_rst )) THEN
-            !  output history at beginning of restart
-            CALL med_hist_out ( grid , ialarm, config_flags )
-         ENDIF
+      !  output history at beginning of restart
+         CALL med_hist_out ( grid , ialarm, config_flags )
       ENDDO
    ENDIF
 

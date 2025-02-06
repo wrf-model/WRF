@@ -19,7 +19,6 @@ CONTAINS
                              , ph_tendf, a_ph_tendf, mu_tendf, a_mu_tendf        &
                              , tke_tend, a_tke_tend             &
                              , adapt_step_flag , curr_secs      &
-                             , curr_mins2                       &
                              , psim , psih , gz1oz0 , chklowq &
                              , cu_act_flag , hol , th_phy , a_th_phy      &
                              , pi_phy , a_pi_phy , p_phy , a_p_phy , t_phy , a_t_phy &
@@ -76,7 +75,7 @@ CONTAINS
 
 
     LOGICAL ,INTENT(IN)                        :: adapt_step_flag
-    REAL, INTENT(IN)                           :: curr_secs, curr_mins2
+    REAL, INTENT(IN)                           :: curr_secs
 
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_moist),INTENT(INOUT)   :: moist
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_moist),INTENT(INOUT)   :: a_moist

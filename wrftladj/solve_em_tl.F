@@ -154,8 +154,7 @@ SUBROUTINE solve_em_tl ( grid , config_flags  &
    LOGICAL :: leapfrog
    INTEGER :: l,kte,kk
    LOGICAL :: f_flux  ! flag for computing averaged fluxes in cu_gd
-   REAL    :: curr_secs, curr_secs2, curr_mins2
-   REAL(8) :: curr_secs_r8, curr_secs2_r8
+   REAL    :: curr_secs, curr_secs2
    INTEGER :: num_sound_steps
    INTEGER :: idex, jdex
    REAL    :: max_msft
@@ -170,7 +169,6 @@ SUBROUTINE solve_em_tl ( grid , config_flags  &
 
    TYPE(WRFU_TimeInterval)                    :: tmpTimeInterval, tmpTimeInterval2
    REAL                                       :: real_time
-   REAL(8)                                    :: real_time_r8
    LOGICAL                                    :: adapt_step_flag
    LOGICAL                                    :: fill_w_flag
 
@@ -272,9 +270,6 @@ SUBROUTINE solve_em_tl ( grid , config_flags  &
    tmpTimeInterval2 = domain_get_current_time ( grid ) - domain_get_start_time ( grid )
    curr_secs  = real_time(tmpTimeInterval)
    curr_secs2 = real_time(tmpTimeInterval2)
-   curr_secs_r8  = real_time_r8(tmpTimeInterval)
-   curr_secs2_r8 = real_time_r8(tmpTimeInterval2)
-   curr_mins2 = REAL( curr_secs2_r8 / 60.0d0 )
 
    old_dt = grid%dt   ! store old time step for flux averaging code at end of RK loop
 !-----------------------------------------------------------------------------
@@ -655,7 +650,7 @@ BENCH_END(g_set_phys_bc_tim)
                              , ph_tendf,g_ph_tendf, mu_tendf,g_mu_tendf    &
                              , tke_tend,g_tke_tend                         &
                              , config_flags%use_adaptive_time_step         &
-                             , curr_secs, curr_mins2     &
+                             , curr_secs                 &
                              , psim ,psih  &
                              , gz1oz0 , chklowq           &
                              , cu_act_flag , hol , th_phy ,g_th_phy                 &

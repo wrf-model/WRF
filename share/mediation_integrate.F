@@ -202,8 +202,15 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
      ELSE IF( ialarm .EQ. AUXINPUT13_ALARM .AND. config_flags%chem_opt > 0 ) THEN
        IF( config_flags%emiss_opt_vol /= 0 ) THEN
          IF( WRFU_AlarmIsRinging( grid%alarms( ialarm ), rc=rc ) ) THEN
-           call wrf_debug(15,' CALL med_read_wrf_volc_emiss ')
-           CALL med_read_wrf_volc_emiss ( grid , config_flags )
+           
+           IF( config_flags%emiss_opt_vol == 3 ) THEN
+            call wrf_debug(15,' CALL med_read_wrf_volc_emiss_opt_vol_eq_3 ')
+            CALL med_read_wrf_volc_emiss_opt_vol_eq_3 ( grid , config_flags )
+           ELSE 
+            call wrf_debug(15,' CALL med_read_wrf_volc_emiss ')
+            CALL med_read_wrf_volc_emiss ( grid , config_flags )
+           ENDIF
+
            CALL WRFU_AlarmRingerOff( grid%alarms( ialarm ), rc=rc )
            call wrf_debug(15,' Back from CALL med_read_wrf_volc_emiss ')
          ENDIF
@@ -2381,6 +2388,87 @@ SUBROUTINE med_read_wrf_volc_emiss ( grid , config_flags )
  
 END SUBROUTINE  med_read_wrf_volc_emiss
 
+SUBROUTINE med_read_wrf_volc_emiss_opt_vol_eq_3 ( grid , config_flags )
+   ! Driver layer
+    USE module_domain    , ONLY : domain , domain_clock_get
+    USE module_io_domain
+    USE module_timing
+    USE module_configure , ONLY : grid_config_rec_type
+   ! Model layer
+    USE module_bc_time_utilities
+ #ifdef DM_PARALLEL
+    USE module_dm
+ #endif
+    USE module_date_time
+    USE module_utility
+ 
+    IMPLICIT NONE
+ 
+   ! Arguments
+    TYPE(domain)                               :: grid
+ 
+    TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
+
+   ! Local data
+    !LOGICAL, EXTERNAL                      :: wrf_dm_on_monitor
+    INTEGER                                :: ierr
+    CHARACTER (LEN=256)                    :: message, current_date_char
+    CHARACTER (LEN=256)                    :: inpname
+ 
+ #include "wrf_io_flags.h"
+
+      CALL domain_clock_get( grid, current_timestr=current_date_char )
+
+      IF( grid%auxinput13_oid == 0 ) then
+         CALL construct_filename2a(inpname , 'wrfchemv_d<domain>.<date>', grid%id , 2, current_date_char)
+         
+          IF (TRIM(grid%auxinput13_inname) .eq. TRIM(inpname)) THEN
+            WRITE(message,*)'mediation_integrate: med_read_wrf_volc_emiss_opt_vol_eq_3: Open file ',TRIM(inpname)
+            CALL wrf_message( TRIM(message) )
+
+            CALL open_r_dataset ( grid%auxinput13_oid, TRIM(inpname) , grid , config_flags, "DATASET=AUXINPUT13", ierr )
+            IF ( ierr .NE. 0 ) THEN
+               WRITE( message , * ) 'med_read_wrf_volc_emiss_opt_vol_eq_3: error opening ', TRIM( inpname )
+               CALL wrf_error_fatal( TRIM( message ) )
+            ENDIF
+
+            WRITE(message,*)'mediation_integrate: med_read_wrf_volc_emiss_opt_vol_eq_3: Read volcanic ash, so2, sulf and qv emissions ',&
+            TRIM(current_date_char),' frame ',grid%emissframes
+            CALL wrf_message( TRIM(message) )
+  !
+  ! Read the emissions data.
+  !
+            CALL wrf_debug (100 , 'mediation_integrate: calling input_auxinput13' )
+            CALL input_auxinput13 ( grid%auxinput13_oid, grid , config_flags , ierr )
+  !
+            grid%emissframes = grid%emissframes + 1
+          ENDIF
+      ELSE
+          WRITE(message,*)'mediation_integrate: med_read_wrf_volc_emiss_opt_vol_eq_3: Read volcanic ash, so2, sulf and qv emissions ',&
+          TRIM(current_date_char),' frame ',grid%emissframes
+          CALL wrf_message( TRIM(message) )
+!
+! Read the emissions data.
+!
+          CALL wrf_debug (100 , 'mediation_integrate: calling input_auxinput13' )
+          CALL input_auxinput13 ( grid%auxinput13_oid, grid , config_flags , ierr )
+!
+! If reached the indicated number of frames in the emissions file, close it.
+!
+          grid%emissframes = grid%emissframes + 1
+
+          IF ( grid%emissframes >= config_flags%frames_per_auxinput13 ) THEN
+             CALL close_dataset ( grid%auxinput13_oid , config_flags , "DATASET=AUXINPUT13" )
+             grid%auxinput13_oid = 0  
+             WRITE(message,*)'mediation_integrate: med_read_wrf_volc_emiss_opt_vol_eq_3: close emissions file ',TRIM(inpname),&
+            TRIM(current_date_char),' frame ',grid%emissframes
+            CALL wrf_message( TRIM(message) )
+          ENDIF
+      ENDIF !( grid%auxinput13_oid == 0 )
+
+    CALL wrf_debug (100 , 'mediation_integrate: med_read_wrf_volc_emiss_opt_vol_eq_3: exit' )
+  
+ END SUBROUTINE  med_read_wrf_volc_emiss_opt_vol_eq_3
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 SUBROUTINE med_read_wrf_chem_emissopt3 ( grid , config_flags )
   ! Driver layer

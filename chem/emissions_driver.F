@@ -544,29 +544,21 @@ real, save :: freq_industry(24)    = &
       do j=jts,jte
       do i=its,ite
          ivolcano = 0
-        if(erup_end(i,j).le.0)cycle
+        if(erup_end(i,j).le.0 .and. config_flags%emiss_opt_vol .ne. 3)cycle
 !        if(emis_vol(i,kts,j,p_e_vash1).le.0.)cycle
 !
 !   erup_end is continuation in minutes
 !
-        begday=int(erup_beg(i,j)/1000.)-1
-        beghr=int(erup_beg(i,j))-(begday+1)*1000
-        begmin=00.
-        endhr=beghr+int(erup_end(i,j)/60.)
-        endday=int(begday+endhr/24)-1
-        endmin=00.
-
-          ! A. Ukhov 12 Oct 2024.
-          if (config_flags%emiss_opt_vol .eq. 3) then
-               begday=int(erup_beg(i,j)/1000.)
-               beghr=int(erup_beg(i,j))-begday*1000
-               !endhr=beghr+int(erup_end(i,j)/60.)
-               endday=int(begday+endhr/24)
-          endif
-
-        !write(0,*)'volcano beghr,endhr = ',beghr,endhr,erup_beg(i,j),erup_end(i,j)
-        !write(0,*)'volcano begday,endday,julday = ',begday,endday,julday
-        ivolcano = 1
+        if(config_flags%emiss_opt_vol .ne. 3) then
+         begday=int(erup_beg(i,j)/1000.)-1
+         beghr=int(erup_beg(i,j))-(begday+1)*1000
+         begmin=00.
+         endhr=beghr+int(erup_end(i,j)/60.)
+         endday=int(begday+endhr/24)-1
+         endmin=00.
+!        write(0,*)'beghr,endhr = ',beghr,endhr,erup_beg(i,j),erup_end(i,j)
+!        write(0,*)'begday,endday,julday = ',begday,endday,julday
+         ivolcano = 1
          if(julday.le.begday .or. julday.ge.endday)then
 !           write(0,*)'endhr,endmin,beghr,begmin = ',endhr,endmin,beghr,begmin
             if( julday.lt.begday)then
@@ -605,6 +597,13 @@ real, save :: freq_industry(24)    = &
             endif
          endif ! julday.ge.begday .and. julday.le.endday
 
+        ! A. Ukhov 12 Oct 2024.
+        elseif(config_flags%emiss_opt_vol .eq. 3) then 
+          if (emis_vol(i,kts,j,p_e_start) .le.0) cycle
+          ivolcano=1
+          !write(*,*)"volcano at ",ivolcano,i,j,emis_vol(i,kts,j,p_e_start),emis_vol(i,22,j,p_e_vso2),emis_vol(i,22,j,p_e_vash9)
+        endif !if(config_flags%emiss_opt_vol .ne. 3)
+     
       volc_select:  SELECT CASE(config_flags%chem_opt)
       CASE (GOCART_SIMPLE,MOZCART_KPP,T1_MOZCART_KPP,GOCARTRADM2,GOCARTRACM_KPP)
         CALL wrf_debug(15,'Adding volcanic emissions')
@@ -654,17 +653,18 @@ real, save :: freq_industry(24)    = &
                          chem(i,k,j,p_so2)  = chem(i,k,j,p_so2) + emis_vol(i,k,j,p_e_vso2) * conv
                     endif
 
+                    ! A. Ukhov. volcanic emissions
                     if (config_flags%emiss_opt_vol == 3) then
                          ! p_e_vso2 in "ug/m2/min". p_so2 in ppmv
                          conv = float(ivolcano) * 4.52656e-4 * alt(i,k,j) * dtstep/(dz8w(i,k,j)*60.)
                          chem(i,k,j,p_so2)  = chem(i,k,j,p_so2) + emis_vol(i,k,j,p_e_vso2) * conv
 
-                         ! A. Ukhov volcanic sulfate emission.
+                         ! volcanic sulfate emission.
                          ! p_e_vsulf in "ug/m2/min". p_sulf in ppmv
                          conv = float(ivolcano) * 3.01771e-4 * alt(i,k,j) * dtstep/(dz8w(i,k,j)*60.)
                          chem(i,k,j,p_sulf) = chem(i,k,j,p_sulf) + emis_vol(i,k,j,p_e_vsulf) * conv
 
-                         ! A. Ukhov volcanic water vapor emission. p_qv in [kg/kg]
+                         ! volcanic water vapor emission. p_qv in [kg/kg]
                          ! p_e_qv in [kg/m2/sec]
                          conv = float(ivolcano) * alt(i,k,j) * dtstep  / dz8w(i,k,j)
                          moist(i,k,j,p_qv) = moist(i,k,j,p_qv) + emis_vol(i,k,j,p_e_qv) * conv

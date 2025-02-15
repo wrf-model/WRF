@@ -1054,7 +1054,7 @@
 	         grid%ccn1, grid%ccn2, grid%ccn3, grid%ccn4, grid%ccn5, grid%ccn6,    &
                  grid%qndropsource,grid%ivgtyp,grid%tsk,grid%gsw,grid%vegfra,pbl_h,   &
                  grid%rmol,grid%ust,grid%znt,grid%xlat,grid%xlong,                    &
-                 zmid,z_at_w,grid%xland,grid%ash_fall,grid%ashdrydep,                 & ! A. Ukhov 18 Oct 2024. Added ash_dry_dep
+                 zmid,z_at_w,grid%xland,grid%ash_fall,grid%ash_drydep,                 & ! A. Ukhov 18 Oct 2024. Added ash_dry_dep
                  grid%h2oaj,grid%h2oai,grid%nu3,grid%ac3,grid%cor3,grid%asulf,        &
                  grid%ahno3,grid%anh3,grid%cvaro1,grid%cvaro2,grid%cvalk1,grid%cvole1,&
                  grid%cvapi1,grid%cvapi2,grid%cvlim1,grid%cvlim2,grid%dep_vel_o3,     &
@@ -1064,7 +1064,7 @@
                  grid%dustdrydep_1,grid%dustdrydep_2,grid%dustdrydep_3,               &
                  grid%dustdrydep_4,grid%dustdrydep_5,                                 &      
                  grid%depvelocity,                                                    &      
-                 grid%so2_drydep, grid%sulfdrydep, grid%sulf_grav_setl,               & ! A. Ukhov So2 and sulf dry dep and grav.setl.
+                 grid%so2_drydep, grid%sulf_drydep, grid%sulf_grav_setl,               & ! A. Ukhov So2 and sulf dry dep and grav.setl.
                  grid%dustgraset_1,grid%dustgraset_2,grid%dustgraset_3,               &
                  grid%dustgraset_4,grid%dustgraset_5,                                 &
                  grid%setvel_1,grid%setvel_2,grid%setvel_3,grid%setvel_4,             &

@@ -96,10 +96,10 @@ MODULE MODULE_VOLC_CHEM
    
             airden(1,1,1)=rho_phy(i,k,j)
             tmp(1,1,1)=t_phy(i,k,j)
-            oh(1,1,1)=86400./dt*cossza(1,1)*backg_oh(i,k,j)/tcosz(i,j) !backg_oh  in ppv
-            !oh(1,1,1)=oh(1,1,1) * 1.d-6         !backg_oh  in molecules/cm3
+            !oh(1,1,1)=86400./dt*cossza(1,1)*backg_oh(i,k,j)/tcosz(i,j) !backg_oh  in ppv
+            oh(1,1,1)=86400./dt*cossza(1,1)*backg_oh(i,k,j)/tcosz(i,j) !backg_oh  in molecules/cm3
    
-            h2o2(1,1,1) = backg_h2o2(i,k,j)        !ppv
+            h2o2(1,1,1)=backg_h2o2(i,k,j)          !ppv
             tc(1,1,1,1)=chem(i,k,j,p_so2) *1.d-6   !ppv
             tc(1,1,1,2)=chem(i,k,j,p_sulf)*1.d-6   !ppv
             
@@ -170,16 +170,16 @@ MODULE MODULE_VOLC_CHEM
      REAL*8, DIMENSION(imx,jmx,lmx) :: pso4_so2
    
    
-     REAL*8 ::  k0, kk, m, l1, l2!, ld
+     REAL*8 ::  k0, kinf, kk, m, l1, l2!, ld
      INTEGER               :: NSO2=1
      INTEGER               :: NSO4=2
      REAL,    PARAMETER :: airmw    = 28.97
      REAL,    PARAMETER :: smw      = 32.00 
      ! Factor to convert AIRDEN from kgair/m3 to molecules/cm3: 
      REAL*8, PARAMETER :: f  = 1000. / airmw * 6.022D23 * 1.0D-6
-     REAL*8, PARAMETER :: ki = 1.5D-12
+     !REAL*8, PARAMETER :: ki = 1.5D-12
      INTEGER :: i, j, l
-     REAL*8 :: so20,so40, tk, f1,  rk1, rk2, rk, rkt, so2_cd, fc, so2,so4
+     REAL*8 :: so20,so40, tk, f1,  rk1, rkt, so2_cd, fc, so2,so4
    
      ! executable statements
    
@@ -192,27 +192,29 @@ MODULE MODULE_VOLC_CHEM
    
               ! RK: SO2 + OH(g), in s-1 
               tk = tmp(i,j,l)
-              k0 = 3.0D-31 * (300.0/tk)**3.3
+              k0 = 2.9D-31 * (298/tk)**4.1   !cm6 molecule−2 s−1
+              kinf = 1.7D-12 * (298/tk)**(-0.2)    !cm3 molecule−1 s−1
               m  = airden(i,j,l) * f
-              kk = k0 * m / ki
+              kk = k0 * m / kinf
               f1 = ( 1.0+ ( LOG10(kk) )**2 )**(-1)
               
-               ! convert to molecules/cm3
-              rk1 = ( k0 * m / (1.0 + kk) ) * 0.6**f1 * oh(i,j,l)*airden(i,j,l)*f
+               ! if OH in ppv convert it to molecules/cm3
+              !rk1 = ( k0 * m / (1.0 + kk) ) * 0.6**f1 * oh(i,j,l) * airden(i,j,l)*f
    
-              !rk1 = ( k0 * m / (1.0 + kk) ) * 0.6**f1 * oh(i,j,l)! oh [molecules/cm3]
-              rk2 = 0.0
+              ! of OH in [molecules/cm3] do nothing
+              rk1 = ( k0 * m / (1.0 + kk) ) * 0.6**f1 * oh(i,j,l)
+              !rk2 = 0.0
    
-              rk  = (rk1 + rk2)
-              rkt =  rk * REAL(ndt1)
+              !rk  = (rk1 + rk2)
+              rkt =  rk1  * REAL(ndt1)
    
    ! ****************************************************************************
    ! *  Update SO2 concentration after gas phase chemistry
    ! ****************************************************************************
    
-              IF (rk > 0.0) THEN
+              IF (rkt > 0.0) THEN
                  so2_cd = so20 * EXP(-rkt)            !mol/mol
-                 l1     = (so20 - so2_cd) * rk1/rk    ! l1 loss SO2 [mol/mol]
+                 l1     = (so20 - so2_cd) !* rk1/rk    ! l1 loss SO2 [mol/mol]
               ELSE
                  so2_cd = so20
                  l1 = 0.0

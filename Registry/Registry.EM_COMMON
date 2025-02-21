@@ -1612,6 +1612,9 @@ state    real    itype          ikj     misc        1         -     hdu       "i
 state    real    itype_2          ikj     misc        1         -     hdu       "ice_type2"             "Diagnostic ice type cat 2 ISHMAEL microphysics"  ""
 state    real    itype_3          ikj     misc        1         -     hdu       "ice_type3"             "Diagnostic ice type cat 3 ISHMAEL microphysics"  ""
 
+state    real  ssat       ikj      dyn_em      1         -      hdu      "ssat"             "Supersaturation wrt liquid"  "%"
+state    real  ssati      ikj      dyn_em      1         -      hdu      "ssati"            "Supersaturation wrt ice"  "%"
+
 # LIGHTNING NUDGING
 #state    real    ltg_dat        ij      misc        1         -      r         "ltg_dat"               "gridded lightning data"  "Flash per xkm x xkm per LAD_INT sec"
 # END LIGHTNING NUDGING
@@ -2422,6 +2425,7 @@ rconfig   integer  nssl_ccn_is_ccna       namelist,physics      1             0 
 rconfig   integer  nssl_2moment_on        namelist,physics      1            -1       rh       "NSSL 2-moment flag"  ""      ""
 rconfig   integer  nssl_3moment           namelist,physics      1             0       rh       "NSSL 3-moment flag"  ""      ""
 rconfig   integer  nssl_density_on        namelist,physics      1            -1       rh       "NSSL graupel/hail density flag"  ""      ""
+rconfig   integer  nssl_ssat_output       namelist,physics      1             0       rh       "NSSL ssat output flag"  ""      ""
 
 
 
@@ -3055,6 +3059,8 @@ package   nssl_hail1m     nssl_hail_on==2              -             moist:qh;
 package   nssl_ccn_opt    nssl_ccn_on==1               -             scalar:qnn
 package   nssl_graupelvol nssl_density_on==1           -             scalar:qvolg
 package   nssl_hailvol    nssl_density_on==2           -             scalar:qvolg,qvolh
+package   nssl_ssat_out   nssl_ssat_output==1          -             state:ssat
+package   nssl_ssati_out  nssl_ssat_output==2          -             state:ssat,ssati
 
 
 package   radar_refl      compute_radar_ref==1         -             state:refl_10cm,refd_max

@@ -111,6 +111,8 @@ SUBROUTINE microphysics_driver(                                          &
 #endif
                       ,qnwfa2d, qnifa2d, qnbca2d                         & ! for water/ice-friendly/black carbon aerosols
                       ,qnocbb2d, qnbcbb2d                                & ! for biomass burning aerosols
+                      ,ssat,ssati                                        &
+                      ,f_ssat,f_ssati                                    &
                       ,refl_10cm                                         & ! HM, 9/22/09, add for refl
                       ,vmi3d                                             & ! for P3 
                       ,di3d                                              & ! for P3 
@@ -609,7 +611,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 !
 ! Optional
 !
-   REAL, OPTIONAL, DIMENSION( ims:ime , kms:kme, jms:jme ) , INTENT(OUT) :: refl_10cm
+   REAL, OPTIONAL, DIMENSION( ims:ime , kms:kme, jms:jme ) , INTENT(OUT) :: refl_10cm,ssat,ssati
    REAL, OPTIONAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: &  ! for ntu3m
                    qdcn_curr,qtcn_curr,qccn_curr,qrcn_curr,qnin_curr,   &  ! for ntu3m
                    fi_curr,fs_curr,vi_curr,vs_curr,vg_curr,ai_curr,     &  ! for ntu3m
@@ -728,7 +730,8 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                        ,f_qvoli,f_qaoli                                      & ! for Jensen ISHMAEL
                        ,f_qvoli2,f_qaoli2                                    & ! for Jensen ISHMAEL
                        ,f_qi3,f_qni3,f_qvoli3,f_qaoli3                       & ! for Jensen ISHMAEL
-                       ,f_qnwfa, f_qnifa, f_qnbca                         ! Added by G. Thompson
+                       ,f_qnwfa, f_qnifa, f_qnbca                            & ! Added by G. Thompson
+                       ,f_ssat,f_ssati
 
 
    LOGICAL, OPTIONAL, INTENT(IN) :: diagflag
@@ -2076,6 +2079,8 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      GRPLNCV  = GRAUPELNCV,              &
                      SR=SR,                              &
                      dbz      = refl_10cm,               &
+                     ssat3d   = ssat,  f_ssat=f_ssat,    &
+                     ssati    = ssati, f_ssati=f_ssati,  &
 #if ( WRF_CHEM == 1 )
                     WETSCAV_ON = config_flags%wetscav_onoff == 1, &
                     EVAPPROD=evapprod,RAINPROD=rainprod, &

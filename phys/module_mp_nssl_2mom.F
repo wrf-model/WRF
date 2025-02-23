@@ -1,6 +1,6 @@
 !WRF:MODEL_LAYER:PHYSICS
 
-! prepocessed on "Feb 19 2025" at "16:07:57"
+! prepocessed on "Feb 23 2025" at "16:22:22"
 
 
 
@@ -1262,6 +1262,7 @@ MODULE module_mp_nssl_2mom
      & nssl_alphahl, &
      & nssl_alphar, &
      & nssl_density_on, nssl_hail_on, nssl_ccn_on, nssl_icecrystals_on, ccn_is_ccna, &
+     & nssl_ccn_opt, &
      & infileunit, &
      & myrank, mpiroot &
      )
@@ -1283,8 +1284,8 @@ MODULE module_mp_nssl_2mom
      & nssl_icdx,                    &
      & nssl_icdxhl, myrank, mpiroot, &
      & nssl_ufccn,                   &
-     & nssl_ccn_on
-   logical, intent(in), optional :: nssl_density_on, nssl_hail_on, nssl_icecrystals_on
+     & nssl_ccn_opt
+   logical, intent(in), optional :: nssl_density_on, nssl_ccn_on, nssl_hail_on, nssl_icecrystals_on
    integer, intent(inout), optional :: ccn_is_ccna
 
   integer, intent(in),optional      :: infileunit
@@ -1482,8 +1483,11 @@ MODULE module_mp_nssl_2mom
       ENDIF
 
         IF ( present( nssl_ccn_on ) ) THEN
-          IF ( nssl_ccn_on > 0 ) THEN
+          IF ( nssl_ccn_on ) THEN
             ccn_on = 1
+            IF ( present( nssl_ccn_opt ) ) THEN
+               IF ( nssl_ccn_opt > 10 ) ac_opt = 22
+            ENDIF
           ELSE
             ccn_on = 0
             irenuc = 2
@@ -1493,8 +1497,8 @@ MODULE module_mp_nssl_2mom
       IF ( irenuc >= 5 ) THEN
         turn_on_ccna = .true.
         IF ( present( nssl_ccn_on ) ) THEN
-          IF ( nssl_ccn_on <= 0 ) THEN
-      write(0,*) 'NSSL_MP Error: Must have nssl_ccn_on=1 for irenuc >= 5!'
+          IF ( .not. nssl_ccn_on ) THEN
+      write(0,*) 'NSSL_MP Error: Must have nssl_ccn_on=1/true for irenuc >= 5!'
         STOP
           ENDIF
         ENDIF
@@ -3999,6 +4003,19 @@ END SUBROUTINE nssl_2mom_driver
         integer :: k,m1,m
         
         double precision :: G(26)
+
+           DATA G/1.0D0,0.5772156649015329D0,                  &
+     &          -0.6558780715202538D0, -0.420026350340952D-1,  &
+     &          0.1665386113822915D0,-.421977345555443D-1,     &
+     &          -.96219715278770D-2, .72189432466630D-2,       &
+     &          -.11651675918591D-2, -.2152416741149D-3,       &
+     &          .1280502823882D-3, -.201348547807D-4,          &
+     &          -.12504934821D-5, .11330272320D-5,             &
+     &          -.2056338417D-6, .61160950D-8,                 &
+     &          .50020075D-8, -.11812746D-8,                   &
+     &          .1043427D-9, .77823D-11,                       &
+     &          -.36968D-11, .51D-12,                          &
+     &          -.206D-13, -.54D-14, .14D-14, .1D-15/
         
         IF (X.EQ.INT(X)) THEN
            IF (X.GT.0.0D0) THEN
@@ -4022,18 +4039,6 @@ END SUBROUTINE nssl_2mom_driver
            ELSE
               Z=X
            ENDIF
-           DATA G/1.0D0,0.5772156649015329D0,                  &
-     &          -0.6558780715202538D0, -0.420026350340952D-1,  &
-     &          0.1665386113822915D0,-.421977345555443D-1,     &
-     &          -.96219715278770D-2, .72189432466630D-2,       &
-     &          -.11651675918591D-2, -.2152416741149D-3,       &
-     &          .1280502823882D-3, -.201348547807D-4,          &
-     &          -.12504934821D-5, .11330272320D-5,             &
-     &          -.2056338417D-6, .61160950D-8,                 &
-     &          .50020075D-8, -.11812746D-8,                   &
-     &          .1043427D-9, .77823D-11,                       &
-     &          -.36968D-11, .51D-12,                          &
-     &          -.206D-13, -.54D-14, .14D-14, .1D-15/
            GR=G(26)
            DO K=25,1,-1
              GR=GR*Z+G(K)
@@ -12915,7 +12920,8 @@ END SUBROUTINE nssl_2mom_driver
       real ac1,bc, c1,d1,e1,f1,p380,tmp,tmp1,tmp2,tmp3,tmp4,tmp5,tmp6,temp3 ! , sstdy, super
       real :: flim, xmass
       real dw,dwr
-      double precision :: tmpc, tmpz, tmpzmlt
+      double precision :: tmpz, tmpzmlt
+      real :: tmpc
       real ratio, delx, dely
       real dbigg,volt
       real chgtmp,fac,mixedphasefac

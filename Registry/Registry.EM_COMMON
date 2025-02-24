@@ -2419,7 +2419,7 @@ rconfig   real     nssl_rho_qhl           namelist,physics      1            900
 rconfig   real     nssl_rho_qs            namelist,physics      1            100.     rh       "Snow particle density"  ""      ""
 rconfig   integer  nssl_icdx              namelist,physics      1             6       rh       "NSSL Graupel fall speed option"  ""      ""
 rconfig   integer  nssl_icdxhl            namelist,physics      1             6       rh       "NSSL Hail fall speed option"  ""      ""
-rconfig   integer  nssl_hail_on           namelist,physics     max_domains   -1       rh       "NSSL Hail flag"  ""      ""
+rconfig   integer  nssl_hail_on           namelist,physics      1            -1       rh       "NSSL Hail flag"  ""      ""
 rconfig   integer  nssl_ccn_on            namelist,physics      1            -1       rh       "NSSL CCN flag"  ""      ""
 rconfig   integer  nssl_ccn_is_ccna       namelist,physics      1             0       rh       "NSSL flag that CCN is CCNA"  ""      ""
 rconfig   integer  nssl_2moment_on        namelist,physics      1            -1       rh       "NSSL 2-moment flag"  ""      ""

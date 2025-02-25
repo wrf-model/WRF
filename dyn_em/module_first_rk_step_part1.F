@@ -1386,6 +1386,8 @@ BENCH_END(pbl_driver_tim)
          call Advance_state (grid = grid%fire_state, config_flags = grid%cfbm_namelist)
 
          if (grid%fire_state%num_tiles == grid%num_tiles) then
+           !$OMP PARALLEL DO   &
+           !$OMP PRIVATE ( ij ,i,j,k,its,ite,jts,jte)
            do ij = 1, grid%num_tiles
              call Provide_atm_feedback (grid%cfbm_namelist,            &
                grid%fire_state%ifms, grid%fire_state%ifme,             &
@@ -1398,12 +1400,19 @@ BENCH_END(pbl_driver_tim)
                ids, ide, kds, kde, jds, jde,                           &
                ims, ime, kms, kme, jms, jme,                           &
                grid%i_start(ij), min(grid%i_end(ij), ide-1),           &
-               grid%j_start(ij), min(grid%j_end(ij), jde-1),           &
                k_start, min(k_end,kde-1),                              &
-               grid%rho, dz8w,                                         &
+               grid%j_start(ij), min(grid%j_end(ij), jde-1),           &
                grid%fire_state%emis_smoke, tracer(:,:,:,p_fire_smoke), &
-               config_flags%tracer_opt)
+               config_flags%tracer_opt,                                &
+               grid%fire_state%fgrnhfx, grid%fire_state%fgrnqfx,       &
+               grid%grnhfx, grid%grnqfx, grid%canhfx, grid%canqfx,     &
+               ! obsolete WRF flags
+               config_flags%fire_ext_grnd,config_flags%fire_ext_crwn,  &
+               config_flags%fire_crwn_hgt, grid%rho, dz8w,             &
+               grid%z_at_w, grid%mut, grid%c1h, grid%c2h,              &
+               grid%rthfrten, grid%rqvfrten)          ! theta and Qv tendencies
            end do
+           !$OMP END PARALLEL DO
          else
          CALL wrf_error_fatal ('num_tiles in WRF and CFBM should match')
          endif

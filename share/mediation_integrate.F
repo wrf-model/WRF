@@ -2396,9 +2396,9 @@ SUBROUTINE med_read_wrf_volc_emiss_opt_vol_eq_3 ( grid , config_flags )
     USE module_configure , ONLY : grid_config_rec_type
    ! Model layer
     USE module_bc_time_utilities
- #ifdef DM_PARALLEL
+#ifdef DM_PARALLEL
     USE module_dm
- #endif
+#endif
     USE module_date_time
     USE module_utility
  
@@ -2415,7 +2415,7 @@ SUBROUTINE med_read_wrf_volc_emiss_opt_vol_eq_3 ( grid , config_flags )
     CHARACTER (LEN=256)                    :: message, current_date_char
     CHARACTER (LEN=256)                    :: inpname
  
- #include "wrf_io_flags.h"
+#include "wrf_io_flags.h"
 
       CALL domain_clock_get( grid, current_timestr=current_date_char )
 

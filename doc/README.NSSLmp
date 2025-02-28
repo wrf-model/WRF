@@ -22,16 +22,16 @@ Basic options in physics namelist:
                     CCN concentration + options
 
  The legacy options (17,19,21,22) still behave as before (for now), but going
- forward one should use mp_physics=18 with modifier flags:
+ forward one should use mp_physics=18 with modifier flags. 2025 Update, however, sets nssl_ccn_on=1 by default (keeps supersaturation much more reasonable; except for single moment).
  
  mp_physics 
   = 22 ! NSSL scheme (2-moment) without hail
-      Equivalent: mp=18, nssl_hail_on=0, nssl_ccn_on=0
-  = 17 ! NSSL scheme (2-moment) with hail with constant background CCN 
-                   concentration
-      Equivalent: mp=18, nssl_ccn_on=0
+      Equivalent: mp=18, nssl_hail_on=0, nssl_ccn_on=1
+  = 17 ! NSSL scheme (2-moment) with hail is now the same as mp=18
+      Equivalent: mp=18, nssl_ccn_on=1 <- must explicitly set nssl_ccn_on=0 to 
+      get old behavior
   = 19, NSSL 1-moment (7 class: qv,qc,qr,qi,qs,qg,qh; predicts graupel density)
-      Equivalent: mp=18, nssl_2moment_on=0, nssl_ccn_on=0 (do no set nssl_hail_on)
+      Equivalent: mp=18, nssl_2moment_on=0, nssl_ccn_on=1 (do no set nssl_hail_on)
   = 21, NSSL 1-moment, (6-class), very similar to Gilmore et al. 2004
       Equivalent: mp=18, nssl_2moment_on=0, nssl_hail_on=0, nssl_ccn_on=0, 
       nssl_density_on=0

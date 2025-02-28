@@ -1,6 +1,6 @@
 !WRF:MODEL_LAYER:PHYSICS
 
-! prepocessed on "Feb 23 2025" at "16:22:22"
+! prepocessed on "Feb 27 2025" at "18:52:58"
 
 
 
@@ -1498,7 +1498,7 @@ MODULE module_mp_nssl_2mom
         turn_on_ccna = .true.
         IF ( present( nssl_ccn_on ) ) THEN
           IF ( .not. nssl_ccn_on ) THEN
-      write(0,*) 'NSSL_MP Error: Must have nssl_ccn_on=1/true for irenuc >= 5!'
+           write(0,*) 'NSSL_MP Error: Must have nssl_ccn_on=1/true for irenuc >= 5!'
         STOP
           ENDIF
         ENDIF
@@ -8063,7 +8063,7 @@ END SUBROUTINE nssl_2mom_driver
 
       ! Vaporize tiny values
       DO il = l1,l2
-      IF ( lz(il) < 1 ) THEN
+      IF ( lz(il) < 1 .and. ln(il) > 1 ) THEN
       do mgs = 1,ngscnt
         IF ( cx(mgs,il) <= cxmin .or. qx(mgs,il) < qxmin(il) ) THEN
           cx(mgs,il) = 0.0
@@ -12242,6 +12242,7 @@ END SUBROUTINE nssl_2mom_driver
            hwdn = xdn0(lhl)
          ENDIF
 
+         IF ( ipconc >= 5 .and.  an(ix,jy,kz,lhl) .gt. qxmin(lhl) ) THEN
             qr = an(ix,jy,kz,lhl)
             xvol = dn(ix,jy,kz)*an(ix,jy,kz,lhl)/(hwdn*an(ix,jy,kz,lnhl))
             chw = an(ix,jy,kz,lnhl)
@@ -12251,6 +12252,7 @@ END SUBROUTINE nssl_2mom_driver
               chw = dn(ix,jy,kz)*an(ix,jy,kz,lhl)/(xvol*hwdn)
               an(ix,jy,kz,lnhl) = chw
              ENDIF
+          ENDIF
        
 !  CHECK INTERCEPT
        IF ( ipconc == 5 .and.  an(ix,jy,kz,lhl) .gt. qxmin(lhl) .and.  alphahl .le. 0.1 .and. lnhl .gt. 1 .and. lzhl == 0 ) THEN
@@ -12398,6 +12400,7 @@ END SUBROUTINE nssl_2mom_driver
            hwdn = xdn0(lh)
          ENDIF
 
+         IF ( ipconc >= 5 .and.  an(ix,jy,kz,lh) .gt. qxmin(lh) ) THEN
             qr = an(ix,jy,kz,lh)
             xvol = dn(ix,jy,kz)*an(ix,jy,kz,lh)/(hwdn*an(ix,jy,kz,lnh))
             chw = an(ix,jy,kz,lnh)
@@ -12407,6 +12410,7 @@ END SUBROUTINE nssl_2mom_driver
               chw = dn(ix,jy,kz)*an(ix,jy,kz,lh)/(xvol*hwdn)
               an(ix,jy,kz,lnh) = chw
              ENDIF
+          ENDIF
 
 !  CHECK INTERCEPT
        IF ( ipconc == 5 .and.  an(ix,jy,kz,lh) .gt. qxmin(lh) .and.  alphah .le. 0.1 .and. lnh .gt. 1 .and. lzh == 0 ) THEN
@@ -14392,8 +14396,10 @@ END SUBROUTINE nssl_2mom_driver
      &              ((3.0 + alphar)*(2.0 + alphar)*(1.0 + alphar))
          g1x(:,lh) = (6.0 + alphah)*(5.0 + alphah)*(4.0 + alphah)/ &
      &               ((3.0 + alphah)*(2.0 + alphah)*(1.0 + alphah))
-         g1x(:,lhl) = (6.0 + alphahl)*(5.0 + alphahl)*(4.0 + alphahl)/ &
+           IF ( lhl > 0 ) THEN
+            g1x(:,lhl) = (6.0 + alphahl)*(5.0 + alphahl)*(4.0 + alphahl)/ &
      &               ((3.0 + alphahl)*(2.0 + alphahl)*(1.0 + alphahl))
+           ENDIF
          ENDIF
 
         scx(:,:) = 0.0

@@ -3414,6 +3414,7 @@
               model_config_rec % nssl_2moment_on = 0
               model_config_rec % nssl_hail_on = 0
               model_config_rec % nssl_density_on = 0 ! set  graupel density
+              model_config_rec % nssl_ccn_on = 0
               ! print statement for deprecated option
               WRITE (wrf_err_message, FMT='(A)') ' **CAUTION** mp_physics = 21 has been deprecated. '// &
                 'Instead you can use mp_physics=18, nssl_2moment_on=0, nssl_ccn_on=0, nssl_hail_on=0'

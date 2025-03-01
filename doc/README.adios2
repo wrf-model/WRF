@@ -1,27 +1,40 @@
-The ADIOS2 I/O option in WRF improves I/O at scale, as well as enabling in-situ processing and code-coupling capabilities.
+The ADIOS2 I/O option in WRF improves I/O scalability, as well as enabling in-situ processing and code-coupling capabilities.
 
 USAGE:
-The ADIOS2 I/O option for history and/or restart file is enabled by setting one of the following:
+The ADIOS2 I/O option for history and/or restart files is enabled by setting one of the following:
 io_form_history = 14
 io_form_restart = 14
 
-Additionally, the ADIOS2 I/O implementation allows for optional configuration that can be appended to the namelist.input:
+The ADIOS2 I/O option can be enabled for input and/or boundary file as well.
+io_form_input    = 14
+io_form_boundary = 14
+
+Note:
+1. During our testing with 'io_form_boundary = 14', the exception 'BeginStep() is called a second time without an intervening EndStep()' is thrown when running real.exe.
+   However, the outputs seem to be correct, and upon inspection, the BeginStep() and EndStep() are properly called in order.
+2. When running wrf.exe with 'io_form_boundary = 14', the exception 'IO wrfbdy_d01 declared twice' may be thrown.
+   Nevertheless, this can be safely ignored since a vacant I/O name such as 'wrfbdy_d01_1' will be used in substitution.
+
+Furthermore, the ADIOS2 I/O implementation supports optional configurations that can be appended to the namelist.input:
  &namelist_adios2
- adios2_compression_enable = .true.,
- adios2_blosc_compressor = "lz4",
- adios2_numaggregators = 0,
+   adios2_compression_enable = .true.,
+   adios2_blosc_compressor = "lz4",
+   adios2_blosc_clevel = 9,
+   adios2_numaggregators = 0,
  /
 
-- ADIOS2 compression is enabled by default but can be disabled with the adios2_compression_enable parameter.
-- Different Blosc compression codecs are available: lz4 (default), lz4hc, blosclz, zstd, zlib. 
-  The ideal compression codec depends on the platform architecture as well as required compression ratios.
-- adios2_numaggregators is the number of aggregator ranks (and resulting sub-files created). This number can greatly affect write times, and is the primary tuning knob in ADIOS2. 
-  By default this is set to 0, which is an alias for a single aggregator per compute node, which is found to be a good option at large process counts,
+- ADIOS2 compression is enabled by default but can be disabled with the 'adios2_compression_enable' parameter.
+- Different Blosc compression codecs are available: lz4 (default), lz4hc, blosclz, zstd, zlib.
+  The ideal compression codec depends on the platform architecture.
+  Experimentation with the compression level 'adios2_blosc_clevel', ranging from 1 to 9, may be useful as well.
+- 'adios2_numaggregators' is the number of aggregator ranks (and resulting sub-files created). This number can greatly affect write times, and is the primary tuning knob in ADIOS2.
+  By default, this is set to 0, which is an alias for a single aggregator per compute node, which is found to be a good option at large process counts,
   as file system contention is minimized while removing inter-node communication that is seen in MPI-I/O based approaches.
-  Alternatively, this can be set to any number between 1 and the number of processes participating in the computation. 
-  Using adios2_numaggregators set to the number of participating processes (or larger) essentially achieves file-per-process I/O which is highly performant at lower process/node counts. 
+  Alternatively, this can be set to any number between 1 and the number of processes participating in the computation.
+  Using adios2_numaggregators set to the number of participating processes (or larger) essentially achieves file-per-process I/O which is highly performant at lower process/node counts.
+  For moderate process/node counts, using a divisible value between sqrt(num_proc)/2 and sqrt(num_proc) may be optimal.
 
-As ADIOS2 is "Step-based" approach (to resemble actual production of data in "steps"), optimal performance is achieved when history outputs are appended to the same file. 
+As ADIOS2 is "Step-based" approach (to resemble actual production of data in "steps"), optimal performance is achieved when history outputs are appended to the same file.
 This is achieved in WRF by setting the frames_per_outfile namelist.input parameter to a large number.
 
 As ADIOS2 generates data in its own file format (BP3/4/5), post-processing scripts will need to altered to use the ADIOS2 read API.
@@ -34,13 +47,16 @@ WRF is configured for use with ADIOS2 by setting the $ADIOS2 environment variabl
 ADIOS2 installation should be configured for MPI and Blosc, and requires a version of ADIOS2 >= v2.8.0.
 
 ADVANCED:
-In general ADIOS2 parameters can be set using an XML file (see ADIOS2 documentation for more details). 
-But as transformation parameters (like compression) must be specified in the XML on a per-variable basis, which in WRF can be hundreds of variables, this is not feasible. 
+In general ADIOS2 parameters can be set using an XML file (see ADIOS2 documentation for more details).
+But as transformation parameters (like compression) must be specified in the XML on a per-variable basis, which in WRF can be hundreds of variables, this is not feasible.
 Therefore compression is hardcoded in the WRF-ADIOS2 implementation, but with the compression controlled by the aforementioned namelist.input parameters.
 That being said, additional features in ADIOS2 like SST for in-situ processing, and node-local burst buffer write capabilities are enabled by using an XML file (named adios2.xml,
-and should be placed in the run directory).
-The ADIOS2 "io name" in the XML should be set to the name of the file that would be written to the disk, and frames_per_outfile should be set to a large number,
-to enforce all of the data to use the same ADIOS2 "io name".
+and must be placed in the run directory).
+
+In the XML file, the ADIOS2 "io name" is the WRF filename, i.e., the files that would be read/written to the disk.
+You may set 'frames_per_outfile' to a large number to enforce all of the data to use the same ADIOS2 "io name".
+Otherwise, you may have to write a script for generating the XML file, duplicating read/write parameters for all filenames.
+
 When using the ADIOS2 SST file engine (e.g. for in-situ processing), the parameter SpeculativePreloadMode should be set to "OFF", to prevent ADIOS2 preemptively sending unneeded data to the data consumer.
 
 Example adios2.xml for node-local burst buffer functionality:

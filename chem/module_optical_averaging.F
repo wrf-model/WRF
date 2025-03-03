@@ -4243,8 +4243,8 @@ END subroutine optical_prep_modal_soa_vbs
         integer ns
         real  drydens,duma,dlo_um,dhi_um,sixpi,dtemp
         integer  iflag
-        real, dimension(1:nbin_o) :: xnum_secti,xnum_sectj,xnum_sectc
-        real, dimension(1:nbin_o) :: xmas_secti,xmas_sectj,xmas_sectc
+        real, save:: xnum_secti(8),xnum_sectj(8)
+        real, save:: xmas_secti(8),xmas_sectj(8)
         real, dimension(1:nbin_o) :: xdia_um, xdia_cm
         REAL, PARAMETER :: FRAC2Aitken=0.25   ! Fraction of modal mass in Aitken mode
         
@@ -4340,7 +4340,22 @@ END subroutine optical_prep_modal_soa_vbs
             WRITE(*,*)'Ash redistribution:'
             do m =1, 10
                   WRITE(*,*)m,ashfrc_vol10bin(m,:)
-            end do        
+            end do
+            
+            ! Now divide mass into sections which is done by sect02:
+            ! * sect02 expects input in um
+            ! * pass in generic mass of 1.0 just to get a percentage distribution of mass among bins
+            
+            !aiken mode
+            call sect02(dginin_sulf*1.E6,sginin_sulf,drydens,iflag,duma,nbin_o,dlo_um,dhi_um, xnum_secti,xmas_secti)
+            
+            !accumulation mode
+            call sect02(dginia_sulf*1.E6,sginia_sulf,drydens,iflag,duma,nbin_o,dlo_um,dhi_um, xnum_sectj,xmas_sectj)
+            
+            write(*,*)'Sulfate Aitken mode: '
+            write(*,*)xmas_secti
+            write(*,*)'Sulfate accumulation mode: '
+            write(*,*)xmas_sectj
             !-----
       endif !kcall
 
@@ -4400,16 +4415,6 @@ END subroutine optical_prep_modal_soa_vbs
       ! Aitken mode...
       ! fraction of sulfate mass into modal Aitken mode
       mass_so4i= FRAC2Aitken*chem(i,k,j,p_sulf)*conv1sulf
-      
-      ! Now divide mass into sections which is done by sect02:
-      ! * sect02 expects input in um
-      ! * pass in generic mass of 1.0 just to get a percentage distribution of mass among bins
-      
-      !aiken mode
-      call sect02(dginin_sulf*1.E6,sginin_sulf,drydens,iflag,duma,nbin_o,dlo_um,dhi_um, xnum_secti,xmas_secti)
-      
-      !accumulation mode
-      call sect02(dginia_sulf*1.E6,sginia_sulf,drydens,iflag,duma,nbin_o,dlo_um,dhi_um, xnum_sectj,xmas_sectj)
       
       !loop over 8 MOSAIC bins
       do isize = 1, nbin_o

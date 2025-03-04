@@ -975,10 +975,10 @@ subroutine ext_adios2_open_for_read_begin( FileName, SysDepInfo, DataHandle, Sta
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
-  call adios2_variable_steps(nsteps, VarIDTime, stat)
+  call adios2_steps(nsteps, DH%adios2Engine, stat)
   call adios2_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
-    write(msg,*) 'adios2_variable_steps error in ext_adios2_open_for_read_begin ',__FILE__,', line', __LINE__
+    write(msg,*) 'adios2_steps error in ext_adios2_open_for_read_begin ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
@@ -1108,10 +1108,10 @@ subroutine ext_adios2_open_for_update( FileName, SysDepInfo, DataHandle, Status)
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
-  call adios2_variable_steps(nsteps, VarIDTime, stat)
+  call adios2_steps(nsteps, DH%adios2Engine, stat)
   call adios2_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
-    write(msg,*) 'adios2_variable_steps error in ext_adios2_open_for_update ',__FILE__,', line', __LINE__
+    write(msg,*) 'adios2_steps error in ext_adios2_open_for_update ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif

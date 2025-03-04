@@ -722,13 +722,13 @@ while ( <CONFIGURE_DEFAULTS> )
     if ( $sw_adios2_path ) 
       { $_ =~ s/CONFIGURE_WRFIO_ADIOS2/wrfio_adios2/g ; 
         $_ =~ s:CONFIGURE_ADIOS2_FLAG:-DADIOS2: ;
-        if ( -d "$sw_adios2_path/lib64" )
-          {
-            $adios2_libdir = "$sw_adios2_path/lib64" ;
-          }
-        elsif ( -d "$sw_adios2_path/lib" )
+        if ( -d "$sw_adios2_path/lib" )
           {
             $adios2_libdir = "$sw_adios2_path/lib" ;
+          }
+        elsif ( -d "$sw_adios2_path/lib64" )
+          {
+            $adios2_libdir = "$sw_adios2_path/lib64" ;
           }
         else
           {
@@ -1110,13 +1110,13 @@ while ( <ARCH_PREAMBLE> )
     if ( $sw_adios2_path ) 
       { $_ =~ s/CONFIGURE_WRFIO_ADIOS2/wrfio_adios2/g ; 
         $_ =~ s:CONFIGURE_ADIOS2_FLAG:-DADIOS2: ;
-        if ( -d "$sw_adios2_path/lib64" )
-          {
-            $adios2_libdir = "$sw_adios2_path/lib64" ;
-          }
-        elsif ( -d "$sw_adios2_path/lib" )
+        if ( -d "$sw_adios2_path/lib" )
           {
             $adios2_libdir = "$sw_adios2_path/lib" ;
+          }
+        elsif ( -d "$sw_adios2_path/lib64" )
+          {
+            $adios2_libdir = "$sw_adios2_path/lib64" ;
           }
         else
           {
@@ -1210,4 +1210,3 @@ close CONFIGURE_WRF ;
 
 printf "Configuration successful! \n" ;
 printf "------------------------------------------------------------------------\n" ;
-

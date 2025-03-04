@@ -9,13 +9,13 @@
 !*	    fredj@jct.ac.il
 !*	    Toga Networks, a Huawei Company
 !*	    erick.fredj@toganetworks.com
-!*
+!*    	        
 !*  Date:    November 3, 2021
 !*
 !*----------------------------------------------------------------------------
 
 module wrf_data_adios2
-   use adios2
+   use adios2 
    integer                , parameter      :: FATAL            = 0
    integer                , parameter      :: WARN             = 0
    integer                , parameter      :: WrfDataHandleMax = 99
@@ -51,7 +51,7 @@ module wrf_data_adios2
      type(adios2_attribute)                :: DimUnlimID
      character (9)                         :: DimUnlimName
      type(adios2_attribute), dimension(NVarDims) :: DimID
-     integer       , dimension(NVarDims)   :: Dimension
+     integer       , dimension(NVarDims)   :: Dimension 
      type(adios2_variable), pointer        :: MDVarIDs(:)
      integer               , pointer       :: MDVarDimLens(:)
      character (80)        , pointer       :: MDVarNames(:)
@@ -60,26 +60,25 @@ module wrf_data_adios2
      character (VarNameLen), pointer       :: VarNames(:)
      integer                               :: CurrentVariable  !Only used for read
      integer                               :: NumVars
- ! first_operation is set to .TRUE. when a new handle is allocated
- ! or when open-for-write or open-for-read are committed.  It is set
- ! to .FALSE. when the first field is read or written.
+ ! first_operation is set to .TRUE. when a new handle is allocated 
+ ! or when open-for-write or open-for-read are committed.  It is set 
+ ! to .FALSE. when the first field is read or written.  
      logical                               :: first_operation
      type(adios2_io)                       :: adios2IO
      type(adios2_engine)                   :: adios2Engine
      type(adios2_operator)                 :: compress_operator
      character(32)                         :: blosc_compressor
-     character(4)                          :: blosc_clevel
    end type wrf_data_handle
    type(wrf_data_handle),target            :: WrfDataHandles(WrfDataHandleMax)
  end module wrf_data_adios2
-
+ 
 module ext_adios2_support_routines
-
+   
    implicit none
    !include 'mpif.h'
-
+ 
  CONTAINS
-
+ 
  subroutine allocHandle(DataHandle,DH,Status)
    use wrf_data_adios2
    include 'wrf_status_codes.h'
@@ -88,7 +87,7 @@ module ext_adios2_support_routines
    integer              ,intent(out) :: Status
    integer                           :: i
    integer                           :: stat
-
+ 
    do i=1,WrfDataHandleMax
      if(WrfDataHandles(i)%Free) then
        DH => WrfDataHandles(i)
@@ -167,7 +166,7 @@ module ext_adios2_support_routines
      endif
      if(i==WrfDataHandleMax) then
        Status = WRF_WARN_TOO_MANY_FILES
-       write(msg,*) 'Warning TOO MANY FILES in ',__FILE__,', line', __LINE__
+       write(msg,*) 'Warning TOO MANY FILES in ',__FILE__,', line', __LINE__ 
        call wrf_debug ( WARN , TRIM(msg))
        write(msg,*) 'Did you call ext_adios2_ioinit?'
        call wrf_debug ( WARN , TRIM(msg))
@@ -179,7 +178,7 @@ module ext_adios2_support_routines
    DH%first_operation  = .TRUE.
    Status = WRF_NO_ERR
  end subroutine allocHandle
-
+ 
  subroutine deallocHandle(DataHandle, Status)
    use wrf_data_adios2
    include 'wrf_status_codes.h'
@@ -188,7 +187,7 @@ module ext_adios2_support_routines
    type(wrf_data_handle),pointer     :: DH
    integer                           :: i
    integer                           :: stat
-
+ 
    IF ( DataHandle .GE. 1 .AND. DataHandle .LE. WrfDataHandleMax ) THEN
      if(.NOT. WrfDataHandles(DataHandle)%Free) then
        DH => WrfDataHandles(DataHandle)
@@ -267,14 +266,14 @@ module ext_adios2_support_routines
    ENDIF
    Status = WRF_NO_ERR
  end subroutine deallocHandle
-
+ 
  subroutine GetDH(DataHandle,DH,Status)
    use wrf_data_adios2
    include 'wrf_status_codes.h'
    integer               ,intent(in)     :: DataHandle
    type(wrf_data_handle) ,pointer        :: DH
    integer               ,intent(out)    :: Status
-
+ 
    if(DataHandle < 1 .or. DataHandle > WrfDataHandleMax) then
      Status = WRF_WARN_BAD_DATA_HANDLE
      return
@@ -287,21 +286,21 @@ module ext_adios2_support_routines
    Status = WRF_NO_ERR
    return
  end subroutine GetDH
-
+ 
  subroutine DateCheck(Date,Status)
    use wrf_data_adios2
    include 'wrf_status_codes.h'
    character*(*) ,intent(in)      :: Date
    integer       ,intent(out)     :: Status
-
+   
    if(len(Date) /= DateStrLen) then
      Status = WRF_WARN_DATESTR_BAD_LENGTH
-   else
+   else  
      Status = WRF_NO_ERR
    endif
    return
  end subroutine DateCheck
-
+ 
  subroutine GetName(Element,Var,Name,Status)
    use wrf_data_adios2
    include 'wrf_status_codes.h'
@@ -313,7 +312,7 @@ module ext_adios2_support_routines
    character (1)                 :: c
    integer                       :: i
    integer, parameter            :: upper_to_lower =IACHAR('a')-IACHAR('A')
-
+ 
    VarName = Var
    Name = 'MD___'//trim(Element)//VarName
    do i=1,len(Name)
@@ -324,7 +323,7 @@ module ext_adios2_support_routines
    Status = WRF_NO_ERR
    return
  end subroutine GetName
-
+ 
  subroutine GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
    use wrf_data_adios2
    use adios2
@@ -337,12 +336,12 @@ module ext_adios2_support_routines
    type(wrf_data_handle) ,pointer        :: DH
    integer                               :: stat
    integer                               :: i
-
+   
    DH => WrfDataHandles(DataHandle)
    call DateCheck(DateStr,Status)
    if(Status /= WRF_NO_ERR) then
      Status =  WRF_WARN_DATESTR_ERROR
-     write(msg,*) 'Warning DATE STRING ERROR in ',__FILE__,', line', __LINE__
+     write(msg,*) 'Warning DATE STRING ERROR in ',__FILE__,', line', __LINE__ 
      call wrf_debug ( WARN , TRIM(msg))
      return
    endif
@@ -357,7 +356,7 @@ module ext_adios2_support_routines
        TimeIndex = TimeIndex +1
        if(TimeIndex > MaxTimes) then
          Status = WRF_WARN_TIME_EOF
-         write(msg,*) 'Warning TIME EOF in ',__FILE__,', line', __LINE__
+         write(msg,*) 'Warning TIME EOF in ',__FILE__,', line', __LINE__ 
          call wrf_debug ( WARN , TRIM(msg))
          return
        endif
@@ -367,7 +366,7 @@ module ext_adios2_support_routines
      CALL adios2_put(DH%adios2Engine, DH%TimesVarID, DateStr, adios2_mode_sync, stat)
      call adios2_err(stat,Status)
      if(Status /= WRF_NO_ERR) then
-       write(msg,*) 'adios2_put error in ',__FILE__,', line', __LINE__
+       write(msg,*) 'adios2 error in ',__FILE__,', line', __LINE__ 
        call wrf_debug ( WARN , TRIM(msg))
        return
      endif
@@ -380,7 +379,7 @@ module ext_adios2_support_routines
        endif
        if(i==MaxTimes) then
          Status = WRF_WARN_TIME_NF
-         write(msg,*) 'Warning TIME ',DateStr,' NOT FOUND in ',__FILE__,', line', __LINE__
+         write(msg,*) 'Warning TIME ',DateStr,' NOT FOUND in ',__FILE__,', line', __LINE__ 
          call wrf_debug ( WARN , TRIM(msg))
          return
        endif
@@ -388,14 +387,14 @@ module ext_adios2_support_routines
    endif
    return
  end subroutine GetTimeIndex
-
+ 
  subroutine GetDim(MemoryOrder,NDim,Status)
    include 'wrf_status_codes.h'
    character*(*) ,intent(in)  :: MemoryOrder
    integer       ,intent(out) :: NDim
    integer       ,intent(out) :: Status
    character*3                :: MemOrd
-
+ 
    call LowerCase(MemoryOrder,MemOrd)
    select case (MemOrd)
      case ('xyz','xzy','yxz','yzx','zxy','zyx','xsz','xez','ysz','yez')
@@ -414,12 +413,12 @@ module ext_adios2_support_routines
    Status = WRF_NO_ERR
    return
  end subroutine GetDim
-
+ 
  subroutine GetIndices(NDim,Start,End,i1,i2,j1,j2,k1,k2)
    integer              ,intent(in)  :: NDim
    integer ,dimension(*),intent(in)  :: Start,End
    integer              ,intent(out) :: i1,i2,j1,j2,k1,k2
-
+ 
    i1=1
    i2=1
    j1=1
@@ -437,7 +436,7 @@ module ext_adios2_support_routines
    k2 = End  (3)
    return
  end subroutine GetIndices
-
+ 
  logical function ZeroLengthHorzDim(MemoryOrder,Vector,Status)
    use wrf_data_adios2
    include 'wrf_status_codes.h'
@@ -448,7 +447,7 @@ module ext_adios2_support_routines
    integer,dimension(NVarDims)               :: temp
    character*3                               :: MemOrd
    logical zero_length
-
+ 
    call GetDim(MemoryOrder,NDim,Status)
    temp(1:NDim) = Vector(1:NDim)
    call LowerCase(MemoryOrder,MemOrd)
@@ -473,7 +472,7 @@ module ext_adios2_support_routines
    ZeroLengthHorzDim = zero_length
    return
  end function ZeroLengthHorzDim
-
+ 
  subroutine ExtOrder(MemoryOrder,Vector,Status)
    use wrf_data_adios2
    include 'wrf_status_codes.h'
@@ -483,7 +482,7 @@ module ext_adios2_support_routines
    integer                                   :: NDim
    integer,dimension(NVarDims)               :: temp
    character*3                               :: MemOrd
-
+ 
    call GetDim(MemoryOrder,NDim,Status)
    temp(1:NDim) = Vector(1:NDim)
    call LowerCase(MemoryOrder,MemOrd)
@@ -519,7 +518,7 @@ module ext_adios2_support_routines
    Status = WRF_NO_ERR
    return
  end subroutine ExtOrder
-
+ 
  subroutine ExtOrderStr(MemoryOrder,Vector,ROVector,Status)
    use wrf_data_adios2
    include 'wrf_status_codes.h'
@@ -529,7 +528,7 @@ module ext_adios2_support_routines
    integer                          ,intent(out)   :: Status
    integer                                         :: NDim
    character*3                                     :: MemOrd
-
+ 
    call GetDim(MemoryOrder,NDim,Status)
    ROVector(1:NDim) = Vector(1:NDim)
    call LowerCase(MemoryOrder,MemOrd)
@@ -565,15 +564,15 @@ module ext_adios2_support_routines
    Status = WRF_NO_ERR
    return
  end subroutine ExtOrderStr
-
-
+ 
+ 
  subroutine LowerCase(MemoryOrder,MemOrd)
    character*(*) ,intent(in)  :: MemoryOrder
    character*(*) ,intent(out) :: MemOrd
    character*1                :: c
    integer       ,parameter   :: upper_to_lower =IACHAR('a')-IACHAR('A')
    integer                    :: i,N
-
+ 
    MemOrd = ' '
    N = len(MemoryOrder)
    MemOrd(1:N) = MemoryOrder(1:N)
@@ -583,14 +582,14 @@ module ext_adios2_support_routines
    enddo
    return
  end subroutine LowerCase
-
+ 
  subroutine UpperCase(MemoryOrder,MemOrd)
    character*(*) ,intent(in)  :: MemoryOrder
    character*(*) ,intent(out) :: MemOrd
    character*1                :: c
    integer     ,parameter     :: lower_to_upper =IACHAR('A')-IACHAR('a')
    integer                    :: i,N
-
+ 
    MemOrd = ' '
    N = len(MemoryOrder)
    MemOrd(1:N) = MemoryOrder(1:N)
@@ -600,7 +599,7 @@ module ext_adios2_support_routines
    enddo
    return
  end subroutine UpperCase
-
+ 
  subroutine adios2_err(err,Status)
    use wrf_data_adios2
    use adios2
@@ -609,7 +608,7 @@ module ext_adios2_support_routines
    integer  ,intent(out) :: Status
    character(len=80)     :: errmsg
    integer               :: stat
-
+ 
    if( err == adios2_error_none )then
      Status = WRF_NO_ERR
    else
@@ -619,7 +618,7 @@ module ext_adios2_support_routines
    endif
    return
  end subroutine adios2_err
-
+ 
  subroutine FieldIO(IO,DataHandle,DateStr,Starts,Length,MemoryOrder &
                       ,FieldType,VarID,XField,Status)
    use wrf_data_adios2
@@ -641,7 +640,7 @@ module ext_adios2_support_routines
    integer(kind=8),dimension(NVarDims)       :: VCount
    integer(kind=8)                           :: TimeIndex_int8
    integer                                   :: stat
-
+ 
    call GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
    if(Status /= WRF_NO_ERR) then
      write(msg,*) 'Warning in ',__FILE__,', line', __LINE__
@@ -655,7 +654,7 @@ module ext_adios2_support_routines
     call adios2_set_step_selection(VarID, TimeIndex_int8 -1_8, 1_8, stat)
     call adios2_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
-      write(msg,*) 'adios2_set_step_selection error in FieldIO ',__FILE__,', line', __LINE__
+      write(msg,*) 'adios2 error in FieldIO ',__FILE__,', line', __LINE__
       call wrf_debug ( WARN , TRIM(msg))
       return
     endif
@@ -684,7 +683,7 @@ module ext_adios2_support_routines
    end select
    return
  end subroutine FieldIO
-
+ 
  subroutine Transpose(IO,MemoryOrder,di, Field,l1,l2,m1,m2,n1,n2 &
                                        ,XField,x1,x2,y1,y2,z1,z2 &
                                               ,i1,i2,j1,j2,k1,k2 )
@@ -700,10 +699,10 @@ module ext_adios2_support_routines
    character*3                      :: MemO
    integer           ,parameter     :: MaxUpperCase=IACHAR('Z')
    integer                          :: i,j,k,ix,jx,kx
-
+ 
    call LowerCase(MemoryOrder,MemOrd)
    select case (MemOrd)
-! Cannot use following define due to gfortran cpp traditional mode concatenation limitations
+! Cannot use following define due to gfortran cpp traditional mode concatenation limitations 
 !#define XDEX(A,B,C) A-A ## 1+1+(A ## 2-A ## 1+1)*((B-B ## 1)+(C-C ## 1)*(B ## 2-B ## 1+1))
 ! define(`XDEX',($1-``$1''1+1+(``$1''2-``$1''1+1)*(($2-``$2''1)+($3-``$3''1)*(``$2''2-``$2''1+1))))
      case ('xzy')
@@ -737,13 +736,13 @@ module ext_adios2_support_routines
    end select
    return
  end subroutine Transpose
-
+ 
  subroutine reorder (MemoryOrder,MemO)
    character*(*)     ,intent(in)    :: MemoryOrder
    character*3       ,intent(out)   :: MemO
    character*3                      :: MemOrd
    integer                          :: N,i,i1,i2,i3
-
+ 
    MemO = MemoryOrder
    N = len_trim(MemoryOrder)
    if(N == 1) return
@@ -775,14 +774,14 @@ module ext_adios2_support_routines
    endif
    return
  end subroutine reorder
-
- ! Returns .TRUE. iff it is OK to write time-independent domain metadata to the
- ! file referenced by DataHandle.  If DataHandle is invalid, .FALSE. is
- ! returned.
+   
+ ! Returns .TRUE. iff it is OK to write time-independent domain metadata to the 
+ ! file referenced by DataHandle.  If DataHandle is invalid, .FALSE. is 
+ ! returned.  
  LOGICAL FUNCTION adios2_ok_to_put_dom_ti( DataHandle )
      USE wrf_data_adios2
      include 'wrf_status_codes.h'
-     INTEGER, INTENT(IN) :: DataHandle
+     INTEGER, INTENT(IN) :: DataHandle 
      CHARACTER*80 :: fname
      INTEGER :: filestate
      INTEGER :: Status
@@ -802,14 +801,14 @@ module ext_adios2_support_routines
      adios2_ok_to_put_dom_ti = retval
      RETURN
  END FUNCTION adios2_ok_to_put_dom_ti
-
- ! Returns .TRUE. iff it is OK to read time-independent domain metadata from the
- ! file referenced by DataHandle.  If DataHandle is invalid, .FALSE. is
- ! returned.
+ 
+ ! Returns .TRUE. iff it is OK to read time-independent domain metadata from the 
+ ! file referenced by DataHandle.  If DataHandle is invalid, .FALSE. is 
+ ! returned.  
  LOGICAL FUNCTION adios2_ok_to_get_dom_ti( DataHandle )
      USE wrf_data_adios2
      include 'wrf_status_codes.h'
-     INTEGER, INTENT(IN) :: DataHandle
+     INTEGER, INTENT(IN) :: DataHandle 
      CHARACTER*80 :: fname
      INTEGER :: filestate
      INTEGER :: Status
@@ -827,13 +826,13 @@ module ext_adios2_support_routines
      adios2_ok_to_get_dom_ti = retval
      RETURN
  END FUNCTION adios2_ok_to_get_dom_ti
-
- ! Returns .TRUE. iff nothing has been read from or written to the file
- ! referenced by DataHandle.  If DataHandle is invalid, .FALSE. is returned.
+ 
+ ! Returns .TRUE. iff nothing has been read from or written to the file 
+ ! referenced by DataHandle.  If DataHandle is invalid, .FALSE. is returned.  
  LOGICAL FUNCTION adios2_is_first_operation( DataHandle )
      USE wrf_data_adios2
      INCLUDE 'wrf_status_codes.h'
-     INTEGER, INTENT(IN) :: DataHandle
+     INTEGER, INTENT(IN) :: DataHandle 
      TYPE(wrf_data_handle) ,POINTER :: DH
      INTEGER :: Status
      LOGICAL :: retval
@@ -849,7 +848,7 @@ module ext_adios2_support_routines
      adios2_is_first_operation = retval
      RETURN
  END FUNCTION adios2_is_first_operation
-
+ 
  end module ext_adios2_support_routines
 
 subroutine ext_adios2_open_for_read(DatasetName, SysDepInfo, DataHandle, Status)
@@ -862,7 +861,7 @@ subroutine ext_adios2_open_for_read(DatasetName, SysDepInfo, DataHandle, Status)
   character *(*), INTENT(IN)   :: SysDepInfo
   integer       , INTENT(OUT)  :: DataHandle
   integer       , INTENT(OUT)  :: Status
-
+  
   DataHandle = 0   ! dummy setting to quiet warning message
   CALL ext_adios2_open_for_read_begin( DatasetName, SysDepInfo, DataHandle, Status )
   IF ( Status .EQ. WRF_NO_ERR ) THEN
@@ -908,7 +907,7 @@ subroutine ext_adios2_open_for_read_begin( FileName, SysDepInfo, DataHandle, Sta
   use adios2
   implicit none
   include 'wrf_status_codes.h'
-  character*(*)         ,intent(in)              :: FileName
+  character*(*)         ,intent(IN)              :: FileName
   character*(*)         ,intent(in)              :: SysDepInfo
   integer               ,intent(out)             :: DataHandle
   integer               ,intent(out)             :: Status
@@ -929,56 +928,42 @@ subroutine ext_adios2_open_for_read_begin( FileName, SysDepInfo, DataHandle, Sta
   character(len=256)                             :: Name
 
   if(WrfIOnotInitialized) then
-    Status = WRF_IO_NOT_INITIALIZED
+    Status = WRF_IO_NOT_INITIALIZED 
     write(msg,*) 'ext_adios2_ioinit was not called ',__FILE__,', line', __LINE__
     call wrf_debug ( FATAL , msg)
     return
   endif
   call allocHandle(DataHandle,DH,Status)
   if(Status /= WRF_NO_ERR) then
-    write(msg,*) 'Fatal ALLOCATION ERROR in ',__FILE__,', line', __LINE__
+    write(msg,*) 'Fatal ALLOCATION ERROR in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
   call adios2_declare_io(DH%adios2IO, adios, FileName, stat)
-  if (stat /= adios2_error_none) then
-    ! It should be alright to have multiple ReadIO on the same file.
-    do timestep=1,MaxTimes
-      write(Name,FMT="(A,A,I0)") FileName,"_",timestep
-      call adios2_declare_io(DH%adios2IO, adios, TRIM(Name), stat)
-      if (stat == adios2_error_none) then
-        write(msg,*) 'Vacant IO name ',TRIM(Name),' will be used instead (required by ADIOS2) ', &
-                     'in ext_adios2_open_for_read_begin ',__FILE__,', line', __LINE__
-        call wrf_debug ( 0 , TRIM(msg))
-        exit
-      endif
-    end do
-    if ((stat /= adios2_error_none) .or. (DH%adios2IO%valid .eqv. .false.)) then
-      write(msg,*) ' Error IO name runs out (unique name required by ADIOS2) ', &
-                   'try dividing into many shorter runs using the restart capability, ', &
-                   'in ext_adios2_open_for_read_begin ',__FILE__,', line', __LINE__
-      call wrf_debug ( FATAL , TRIM(msg))
-      return
-    endif
-  end if
-  call adios2_open(DH%adios2Engine, DH%adios2IO, FileName, adios2_mode_readRandomAccess, stat)
   call adios2_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
-    write(msg,*) 'adios2_open error in ext_adios2_open_for_read_begin ',__FILE__,', line', __LINE__
+    write(msg,*) 'adios2 error in ext_adios2_open_for_read_begin ',__FILE__,', line', __LINE__
+    call wrf_debug ( WARN , TRIM(msg))
+    return
+  endif
+  call adios2_open(DH%adios2Engine, DH%adios2IO, FileName, adios2_mode_read, stat)
+  call adios2_err(stat,Status)
+  if(Status /= WRF_NO_ERR) then
+    write(msg,*) 'adios2 error in ext_adios2_open_for_read_begin ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
   call adios2_inquire_variable(VarIDTime, DH%adios2IO, DH%TimesName, stat)
   call adios2_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
-    write(msg,*) 'adios2_inquire_variable error in ext_adios2_open_for_read_begin ',__FILE__,', line', __LINE__
+    write(msg,*) 'adios2 error in ext_adios2_open_for_read_begin ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
   call adios2_steps(nsteps, DH%adios2Engine, stat)
   call adios2_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
-    write(msg,*) 'adios2_steps error in ext_adios2_open_for_read_begin ',__FILE__,', line', __LINE__
+    write(msg,*) 'adios2 error in ext_adios2_open_for_read_begin ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
@@ -993,14 +978,14 @@ subroutine ext_adios2_open_for_read_begin( FileName, SysDepInfo, DataHandle, Sta
     call adios2_set_step_selection(VarIDTime, timestep - 1, 1_8, stat)
     call adios2_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
-      write(msg,*) 'adios2_set_step_selection error in ext_adios2_open_for_read_begin ',__FILE__,', line', __LINE__
+      write(msg,*) 'adios2 error in ext_adios2_open_for_read_begin ',__FILE__,', line', __LINE__
       call wrf_debug ( WARN , TRIM(msg))
       return
     endif
     call adios2_get(DH%adios2Engine, VarIDTime, DH%Times(timestep), adios2_mode_sync, stat)
     call adios2_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
-      write(msg,*) 'adios2_get error in ext_adios2_open_for_read_begin ',__FILE__,', line', __LINE__
+      write(msg,*) 'adios2 error in ext_adios2_open_for_read_begin ',__FILE__,', line', __LINE__
       call wrf_debug ( WARN , TRIM(msg))
       return
     endif
@@ -1009,7 +994,7 @@ subroutine ext_adios2_open_for_read_begin( FileName, SysDepInfo, DataHandle, Sta
   call adios2_available_variables(DH%adios2IO, namestruct, stat)
   call adios2_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
-    write(msg,*) 'adios2_available_variables error in ',__FILE__,', line', __LINE__
+    write(msg,*) 'adios2 error in ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
@@ -1017,7 +1002,7 @@ subroutine ext_adios2_open_for_read_begin( FileName, SysDepInfo, DataHandle, Sta
   call adios2_retrieve_names(namestruct, varnamelist, stat)
   call adios2_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
-    write(msg,*) 'adios2_retrieve_names error in ',__FILE__,', line', __LINE__
+    write(msg,*) 'adios2 error in ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
@@ -1028,14 +1013,14 @@ subroutine ext_adios2_open_for_read_begin( FileName, SysDepInfo, DataHandle, Sta
     call adios2_inquire_variable(VarID, DH%adios2IO, Name, stat)
     call adios2_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
-      write(msg,*) 'adios2_inquire_variable error in ',__FILE__,', line', __LINE__
+      write(msg,*) 'adios2 error in ',__FILE__,', line', __LINE__
       call wrf_debug ( WARN , TRIM(msg))
       return
     elseif(Name(1:5) /= 'md___' .and. Name /= DH%TimesName) then
       NumVars              = NumVars + 1
       DH%VarNames(NumVars) = Name
       DH%VarIDs(NumVars)   = VarID
-    endif
+    endif      
   enddo
   deallocate(varnamelist)
   DH%NumVars         = NumVars
@@ -1076,21 +1061,21 @@ subroutine ext_adios2_open_for_update( FileName, SysDepInfo, DataHandle, Status)
   character(len=256)                             :: Name
 
   if(WrfIOnotInitialized) then
-    Status = WRF_IO_NOT_INITIALIZED
+    Status = WRF_IO_NOT_INITIALIZED 
     write(msg,*) 'ext_adios2_ioinit was not called ',__FILE__,', line', __LINE__
     call wrf_debug ( FATAL , msg)
     return
   endif
   call allocHandle(DataHandle,DH,Status)
   if(Status /= WRF_NO_ERR) then
-    write(msg,*) 'Fatal ALLOCATION ERROR in ',__FILE__,', line', __LINE__
+    write(msg,*) 'Fatal ALLOCATION ERROR in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
   call adios2_declare_io(DH%adios2IO, adios, FileName, stat)
   call adios2_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
-    write(msg,*) 'adios2_declare_io error in ext_adios2_open_for_update ',__FILE__,', line', __LINE__
+    write(msg,*) 'adios2 error in ext_adios2_open_for_update ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
@@ -1104,14 +1089,14 @@ subroutine ext_adios2_open_for_update( FileName, SysDepInfo, DataHandle, Status)
   call adios2_inquire_variable(VarIDTime, DH%adios2IO, DH%TimesName, stat)
   call adios2_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
-    write(msg,*) 'adios2_inquire_variable error in ext_adios2_open_for_update ',__FILE__,', line', __LINE__
+    write(msg,*) 'adios2 error in ext_adios2_open_for_update ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
   call adios2_steps(nsteps, DH%adios2Engine, stat)
   call adios2_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
-    write(msg,*) 'adios2_steps error in ext_adios2_open_for_update ',__FILE__,', line', __LINE__
+    write(msg,*) 'adios2 error in ext_adios2_open_for_update ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
@@ -1126,14 +1111,14 @@ subroutine ext_adios2_open_for_update( FileName, SysDepInfo, DataHandle, Status)
     call adios2_set_step_selection(VarIDTime, timestep-1, 1_8, stat)
     call adios2_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
-      write(msg,*) 'adios2_set_step_selection error in ext_adios2_open_for_update ',__FILE__,', line', __LINE__
+      write(msg,*) 'adios2 error in ext_adios2_open_for_update ',__FILE__,', line', __LINE__
       call wrf_debug ( WARN , TRIM(msg))
       return
     endif
     call adios2_get(DH%adios2Engine, VarIDTime, DH%Times(timestep), adios2_mode_sync, stat)
     call adios2_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
-      write(msg,*) 'adios2_get error in ext_adios2_open_for_update ',__FILE__,', line', __LINE__
+      write(msg,*) 'adios2 error in ext_adios2_open_for_update ',__FILE__,', line', __LINE__
       call wrf_debug ( WARN , TRIM(msg))
       return
     endif
@@ -1142,7 +1127,7 @@ subroutine ext_adios2_open_for_update( FileName, SysDepInfo, DataHandle, Status)
   call adios2_available_variables(DH%adios2IO, namestruct, stat)
   call adios2_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
-    write(msg,*) 'adios2_available_variables error in ',__FILE__,', line', __LINE__
+    write(msg,*) 'adios2 error in ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
@@ -1150,7 +1135,7 @@ subroutine ext_adios2_open_for_update( FileName, SysDepInfo, DataHandle, Status)
   call adios2_retrieve_names(namestruct, varnamelist, stat)
   call adios2_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
-    write(msg,*) 'adios2_retrieve error in ',__FILE__,', line', __LINE__
+    write(msg,*) 'adios2 error in ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
@@ -1161,14 +1146,14 @@ subroutine ext_adios2_open_for_update( FileName, SysDepInfo, DataHandle, Status)
     call adios2_inquire_variable(VarID, DH%adios2IO, Name, stat)
     call adios2_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
-      write(msg,*) 'adios2_inquire_variable error in ',__FILE__,', line', __LINE__
+      write(msg,*) 'adios2 error in ',__FILE__,', line', __LINE__
       call wrf_debug ( WARN , TRIM(msg))
       return
     elseif(Name(1:5) /= 'md___' .and. Name /= DH%TimesName) then
       NumVars              = NumVars + 1
       DH%VarNames(NumVars) = Name
       DH%VarIDs(NumVars)   = VarID
-    endif
+    endif      
   enddo
   deallocate(varnamelist)
   DH%NumVars         = NumVars
@@ -1183,7 +1168,7 @@ subroutine ext_adios2_open_for_update( FileName, SysDepInfo, DataHandle, Status)
   call adios2_close(DH%adios2Engine, stat)
   call adios2_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
-    write(msg,*) 'adios2_close error in ',__FILE__,', line', __LINE__
+    write(msg,*) 'adios2 error in ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
@@ -1218,14 +1203,14 @@ SUBROUTINE ext_adios2_open_for_write_begin(FileName,SysDepInfo,Iotype,DataHandle
   type(adios2_attribute)            :: attribute
   type(adios2_attribute)            :: timeAttribute
   logical                           :: compression_enabled
-  integer                           :: clevel
+  character*32                      :: compressor
   character(80),dimension(2)        :: DimNamesOut
   logical                           :: in_config
   integer                           :: numaggregators
   character(256)                    :: s_numaggregators
 
   if(WrfIOnotInitialized) then
-    Status = WRF_IO_NOT_INITIALIZED
+    Status = WRF_IO_NOT_INITIALIZED 
     write(msg,*) 'ext_adios2_open_for_write_begin: ext_adios2_ioinit was not called ',__FILE__,', line', __LINE__
     call wrf_debug ( FATAL , msg)
     return
@@ -1245,7 +1230,7 @@ SUBROUTINE ext_adios2_open_for_write_begin(FileName,SysDepInfo,Iotype,DataHandle
     call adios2_declare_io(DH%adios2IO, adios, DH%FileName, stat)
     call adios2_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
-      write(msg,*) 'adios2_declare_io error in ext_adios2_open_for_write_begin ',__FILE__,', line', __LINE__
+      write(msg,*) 'adios2 error in ext_adios2_open_for_write_begin ',__FILE__,', line', __LINE__
       call wrf_debug ( WARN , TRIM(msg))
       return
     endif
@@ -1263,7 +1248,7 @@ SUBROUTINE ext_adios2_open_for_write_begin(FileName,SysDepInfo,Iotype,DataHandle
       DateStrLen, stat)
   call adios2_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
-    write(msg,*) 'adios2_define_attribute error in ext_adios2_open_for_write_begin ',__FILE__,', line', __LINE__
+    write(msg,*) 'adios2 error in ext_adios2_open_for_write_begin ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
@@ -1271,7 +1256,7 @@ SUBROUTINE ext_adios2_open_for_write_begin(FileName,SysDepInfo,Iotype,DataHandle
   call adios2_define_variable(DH%TimesVarID, DH%adios2IO, DH%TimesName, adios2_type_character, stat)
   call adios2_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
-    write(msg,*) 'adios2_define_variable error in ext_adios2_open_for_write_begin ',__FILE__,', line', __LINE__
+    write(msg,*) 'adios2 error in ext_adios2_open_for_write_begin ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
@@ -1280,23 +1265,20 @@ SUBROUTINE ext_adios2_open_for_write_begin(FileName,SysDepInfo,Iotype,DataHandle
   call adios2_define_attribute(timeAttribute,DH%adios2IO, 'Dims', DimNamesOut, 2, DH%TimesVarID%name, '/', stat)
   call adios2_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
-    write(msg,*) 'adios2_define_attribute error in ext_adios2_open_for_write_begin ',__FILE__,', line', __LINE__
-    call wrf_debug ( WARN , TRIM(msg))
-    return
+    write(msg,*) 'adios2 error in ext_adios2_open_for_write_begin ',__FILE__,', line', __LINE__
+  call wrf_debug ( WARN , TRIM(msg))
+  return
   endif
   !ADIOS2 compression
-  call nl_get_adios2_compression_enable(1, compression_enabled)
+  CALL nl_get_adios2_compression_enable(1,   compression_enabled)
   if (compression_enabled) then
-    call nl_get_adios2_blosc_compressor(1, DH%blosc_compressor)
-    ! call nl_get_adios2_blosc_clevel(1, clevel)
-    ! write(DH%blosc_clevel,FMT="(I0)") clevel
-    DH%blosc_clevel = '9'
-    call adios2_inquire_operator(DH%compress_operator, adios, 'Compressor', stat)
-    if (DH%compress_operator%valid .eqv. .false.) then
+    if (DH%compress_operator%name .ne. 'Compressor') then
+      CALL nl_get_adios2_blosc_compressor(1,   compressor)
+      DH%blosc_compressor = compressor
       call adios2_define_operator(DH%compress_operator, adios, 'Compressor', 'blosc', stat)
       call adios2_err(stat,Status)
       if(Status /= WRF_NO_ERR) then
-        write(msg,*) 'adios2_define_operator error in ext_adios2_open_for_write_begin ',__FILE__,', line', __LINE__
+        write(msg,*) 'adios2 error in ext_adios2_open_for_write_begin ',__FILE__,', line', __LINE__
         call wrf_debug ( WARN , TRIM(msg))
         return
       endif
@@ -1304,16 +1286,16 @@ SUBROUTINE ext_adios2_open_for_write_begin(FileName,SysDepInfo,Iotype,DataHandle
   endif
   !ADIOS2 number of aggregators (AKA substreams, subfiles). Overrules setting in adios2.xml.
   !numaggregators = 0 will set a single aggregator per node.
-  call nl_get_adios2_numaggregators(1, numaggregators)
+  CALL nl_get_adios2_numaggregators(1,   numaggregators)
   write(s_numaggregators,*) numaggregators
   call adios2_set_parameter(DH%adios2IO, 'NumAggregators', s_numaggregators, stat)
   call adios2_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
-    write(msg,*) 'adios2_set_parameter error in ext_adios2_open_for_write_begin ',__FILE__,', line', __LINE__
+    write(msg,*) 'adios2 error in ext_adios2_open_for_write_begin ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
-
+    
   DH%DimLengths(1) = DateStrLen
   return
 end subroutine ext_adios2_open_for_write_begin
@@ -1330,7 +1312,7 @@ subroutine ext_adios2_open_for_write (DatasetName, SysDepInfo, DataHandle, Statu
   character *(*), intent(in)  :: SysDepInfo
   integer       , intent(out) :: DataHandle
   integer       , intent(out) :: Status
-
+  
   Status=WRF_WARN_NOOP
   DataHandle = 0    ! dummy setting to quiet warning message
   return
@@ -1346,27 +1328,21 @@ SUBROUTINE ext_adios2_start_io_timestep(DataHandle, Status)
   integer              ,intent(out) :: Status
   type(wrf_data_handle),pointer     :: DH
   integer                           :: stat
-  ! integer(kind=8)                   :: step
-
+  
   call GetDH(DataHandle,DH,Status)
   if(Status /= WRF_NO_ERR) then
     write(msg,*) 'Warning Status = ',Status,' in ext_adios2_start_io_timestep ',__FILE__,', line', __LINE__
-    call wrf_debug ( WARN , TRIM(msg))
+    call wrf_debug ( WARN , TRIM(msg)) 
     return
   endif
   if (DH%adios2Engine%valid .eqv. .true.) then
-    ! call adios2_current_step(step, DH%adios2Engine, stat)
-    ! write(msg,*) TRIM(DH%adios2Engine%name),' in Step ',step,' before adios2_begin_step in ext_adios2_start_io_timestep ',__FILE__,', line', __LINE__
-    ! call wrf_debug ( WARN , TRIM(msg))
     call adios2_begin_step(DH%adios2Engine, stat)
     call adios2_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'adios2 error (',stat,') from adios2_begin_step in ext_adios2_start_io_timestep ',__FILE__,', line', __LINE__
       call wrf_debug ( WARN , TRIM(msg))
+      return
     endif
-    ! call adios2_current_step(step, DH%adios2Engine, stat)
-    ! write(msg,*) TRIM(DH%adios2Engine%name),' in Step ',step,' after adios2_begin_step in ext_adios2_start_io_timestep ',__FILE__,', line', __LINE__
-    ! call wrf_debug ( WARN , TRIM(msg))
   endif
   return
 end SUBROUTINE ext_adios2_start_io_timestep
@@ -1381,27 +1357,21 @@ SUBROUTINE ext_adios2_end_io_timestep(DataHandle, Status)
   integer              ,intent(out) :: Status
   type(wrf_data_handle),pointer     :: DH
   integer                           :: stat
-  ! integer(kind=8)                   :: step
-
+  
   call GetDH(DataHandle,DH,Status)
   if(Status /= WRF_NO_ERR) then
     write(msg,*) 'Warning Status = ',Status,' in ext_adios2_end_io_timestep ',__FILE__,', line', __LINE__
-    call wrf_debug ( WARN , TRIM(msg))
+    call wrf_debug ( WARN , TRIM(msg)) 
     return
   endif
   if (DH%adios2Engine%valid .eqv. .true.) then
-    ! call adios2_current_step(step, DH%adios2Engine, stat)
-    ! write(msg,*) TRIM(DH%adios2Engine%name),' in Step ',step,' before adios2_end_step in ext_adios2_start_io_timestep ',__FILE__,', line', __LINE__
-    ! call wrf_debug ( WARN , TRIM(msg))
     call adios2_end_step(DH%adios2Engine, stat)
     call adios2_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'adios2 error (',stat,') from adios2_end_step in ext_adios2_end_io_timestep ',__FILE__,', line', __LINE__
       call wrf_debug ( WARN , TRIM(msg))
+      return
     endif
-    ! call adios2_current_step(step, DH%adios2Engine, stat)
-    ! write(msg,*) TRIM(DH%adios2Engine%name),' in Step ',step,' after adios2_end_step in ext_adios2_start_io_timestep ',__FILE__,', line', __LINE__
-    ! call wrf_debug ( WARN , TRIM(msg))
   endif
   return
 end SUBROUTINE ext_adios2_end_io_timestep
@@ -1419,7 +1389,7 @@ SUBROUTINE ext_adios2_open_for_write_commit(DataHandle, Status)
   integer                           :: stat
 
   if(WrfIOnotInitialized) then
-    Status = WRF_IO_NOT_INITIALIZED
+    Status = WRF_IO_NOT_INITIALIZED 
     write(msg,*) 'ext_adios2_open_for_write_commit: ext_adios2_ioinit was not called ',__FILE__,', line', __LINE__
     call wrf_debug ( FATAL , msg)
     return
@@ -1427,7 +1397,7 @@ SUBROUTINE ext_adios2_open_for_write_commit(DataHandle, Status)
   call GetDH(DataHandle,DH,Status)
   if(Status /= WRF_NO_ERR) then
     write(msg,*) 'Warning Status = ',Status,' in ext_adios2_open_for_write_commit ',__FILE__,', line', __LINE__
-    call wrf_debug ( WARN , TRIM(msg))
+    call wrf_debug ( WARN , TRIM(msg)) 
     return
   endif
   call adios2_open(DH%adios2Engine, DH%adios2IO, DH%FileName, adios2_mode_write, stat)
@@ -1468,7 +1438,7 @@ subroutine ext_adios2_ioclose(DataHandle, Status)
     write(msg,*) 'Warning TRY TO CLOSE DRYRUN in ext_adios2_ioclose ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg))
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_WRITE) then
-    continue
+    continue    
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_READ) then
     continue
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_UPDATE) then
@@ -1482,7 +1452,7 @@ subroutine ext_adios2_ioclose(DataHandle, Status)
   call adios2_close(DH%adios2Engine, stat)
   call adios2_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
-    write(msg,*) 'adios2_close error in ext_adios2_ioclose ',__FILE__,', line', __LINE__
+    write(msg,*) 'adios2 error in ext_adios2_ioclose ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
@@ -1619,7 +1589,7 @@ subroutine ext_adios2_ioinit(SysDepInfo, Status)
   integer                   :: stat, rank, ierror
   INTEGER ,INTENT(INOUT)    :: Status
   logical                   :: file_exists=.FALSE.
-
+    
   WrfIOnotInitialized                             = .false.
   WrfDataHandles(1:WrfDataHandleMax)%Free         = .true.
   WrfDataHandles(1:WrfDataHandleMax)%TimesName    = 'Times'
@@ -1627,7 +1597,7 @@ subroutine ext_adios2_ioinit(SysDepInfo, Status)
   WrfDataHandles(1:WrfDataHandleMax)%FileStatus   = WRF_FILE_NOT_OPENED
   Status = WRF_NO_ERR
   !look for adios2 xml runtime configuration
-  INQUIRE(FILE="adios2.xml", EXIST=file_exists)
+  INQUIRE(FILE="adios2.xml", EXIST=file_exists)  
   if(file_exists) then
     call adios2_init(adios, 'adios2.xml', MPI_COMM_WORLD, stat)
   else
@@ -1635,7 +1605,7 @@ subroutine ext_adios2_ioinit(SysDepInfo, Status)
   endif
   call adios2_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
-    write(msg,*) 'adios2_init error in ext_adios2_ioinit ',__FILE__,', line', __LINE__
+    write(msg,*) 'adios2 error in ext_adios2_ioinit ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
@@ -1650,7 +1620,7 @@ subroutine ext_adios2_inquiry (Inquiry, Result, Status)
   character *(*), INTENT(IN)    :: Inquiry
   character *(*), INTENT(OUT)   :: Result
   integer        ,INTENT(INOUT) :: Status
-
+  
   SELECT CASE (Inquiry)
   CASE ("RANDOM_WRITE","RANDOM_READ","SEQUENTIAL_WRITE","SEQUENTIAL_READ")
         Result='ALLOW'
@@ -1681,20 +1651,20 @@ subroutine ext_adios2_ioexit(Status)
   type(wrf_data_handle),pointer     :: DH
   integer                           :: i
   integer                           :: stat
-
+  
   if(WrfIOnotInitialized) then
-    Status = WRF_IO_NOT_INITIALIZED
+    Status = WRF_IO_NOT_INITIALIZED 
     write(msg,*) 'ext_adios2_ioinit was not called ',__FILE__,', line', __LINE__
     call wrf_debug ( FATAL , msg)
     return
   endif
   do i=1,WrfDataHandleMax
-    CALL deallocHandle( i , stat )
+    CALL deallocHandle( i , stat ) 
   enddo
   call adios2_finalize(adios, stat)
   call adios2_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
-    write(msg,*) 'adios2_finalize error in ext_adios2_ioexit ',__FILE__,', line', __LINE__
+    write(msg,*) 'adios2 error in ext_adios2_ioexit ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
@@ -1713,8 +1683,8 @@ subroutine ext_adios2_get_dom_ti_real(DataHandle,Element,Data,Count,OutCount,Sta
 end subroutine ext_adios2_get_dom_ti_real
 
 subroutine ext_adios2_get_dom_ti_integer(DataHandle,Element,Data,Count,OutCount,Status)
-#undef ROUTINE_TYPE
-#undef TYPE_DATA
+#undef ROUTINE_TYPE 
+#undef TYPE_DATA 
 #undef TYPE_BUFFER
 #undef COPY
 #define ROUTINE_TYPE 'INTEGER'
@@ -1726,8 +1696,8 @@ subroutine ext_adios2_get_dom_ti_integer(DataHandle,Element,Data,Count,OutCount,
 end subroutine ext_adios2_get_dom_ti_integer
 
 subroutine ext_adios2_get_dom_ti_double(DataHandle,Element,Data,Count,OutCount,Status)
-#undef ROUTINE_TYPE
-#undef TYPE_DATA
+#undef ROUTINE_TYPE 
+#undef TYPE_DATA 
 #undef TYPE_BUFFER
 #undef COPY
 #define ROUTINE_TYPE 'DOUBLE'
@@ -1739,8 +1709,8 @@ subroutine ext_adios2_get_dom_ti_double(DataHandle,Element,Data,Count,OutCount,S
 end subroutine ext_adios2_get_dom_ti_double
 
 subroutine ext_adios2_get_dom_ti_logical(DataHandle,Element,Data,Count,OutCount,Status)
-#undef ROUTINE_TYPE
-#undef TYPE_DATA
+#undef ROUTINE_TYPE 
+#undef TYPE_DATA 
 #undef TYPE_BUFFER
 #undef COPY
 #define ROUTINE_TYPE 'LOGICAL'
@@ -1769,8 +1739,8 @@ subroutine ext_adios2_get_dom_ti_char(DataHandle,Element,Data,Status)
 end subroutine ext_adios2_get_dom_ti_char
 
 subroutine ext_adios2_put_dom_ti_real(DataHandle,Element,Data,Count,Status)
-#undef ROUTINE_TYPE
-#undef TYPE_DATA
+#undef ROUTINE_TYPE 
+#undef TYPE_DATA 
 #undef TYPE_COUNT
 #undef LOG
 #define ROUTINE_TYPE 'REAL'
@@ -1780,7 +1750,7 @@ subroutine ext_adios2_put_dom_ti_real(DataHandle,Element,Data,Count,Status)
 end subroutine ext_adios2_put_dom_ti_real
 
 subroutine ext_adios2_put_dom_ti_integer(DataHandle,Element,Data,Count,Status)
-#undef ROUTINE_TYPE
+#undef ROUTINE_TYPE 
 #undef TYPE_DATA
 #undef TYPE_COUNT
 #undef LOG
@@ -1791,7 +1761,7 @@ subroutine ext_adios2_put_dom_ti_integer(DataHandle,Element,Data,Count,Status)
 end subroutine ext_adios2_put_dom_ti_integer
 
 subroutine ext_adios2_put_dom_ti_double(DataHandle,Element,Data,Count,Status)
-#undef ROUTINE_TYPE
+#undef ROUTINE_TYPE 
 #undef TYPE_DATA
 #undef TYPE_COUNT
 #undef LOG
@@ -1802,7 +1772,7 @@ subroutine ext_adios2_put_dom_ti_double(DataHandle,Element,Data,Count,Status)
 end subroutine ext_adios2_put_dom_ti_double
 
 subroutine ext_adios2_put_dom_ti_logical(DataHandle,Element,Data,Count,Status)
-#undef ROUTINE_TYPE
+#undef ROUTINE_TYPE 
 #undef TYPE_DATA
 #undef TYPE_COUNT
 #define ROUTINE_TYPE 'LOGICAL'
@@ -1813,7 +1783,7 @@ subroutine ext_adios2_put_dom_ti_logical(DataHandle,Element,Data,Count,Status)
 end subroutine ext_adios2_put_dom_ti_logical
 
 subroutine ext_adios2_put_dom_ti_char(DataHandle,Element,Data,Status)
-#undef ROUTINE_TYPE
+#undef ROUTINE_TYPE 
 #undef TYPE_DATA
 #undef TYPE_COUNT
 #undef LOG
@@ -1846,7 +1816,7 @@ subroutine ext_adios2_put_var_td_real(DataHandle,Element,DateStr,Var,Data,Count,
 #define ROUTINE_TYPE 'REAL'
 #define TYPE_DATA  real    ,intent(in) :: Data(Count)
 #define TYPE_COUNT integer ,intent(in) :: Count
-#define ADIOS2TYPE adios2_type_real
+#define ADIOS2TYPE adios2_type_real 
 #define LENGTH Count
 #include "ext_adios2_put_var_td.code"
 end subroutine ext_adios2_put_var_td_real
@@ -1872,7 +1842,7 @@ subroutine ext_adios2_put_var_td_double(DataHandle,Element,DateStr,Var,Data,Coun
 #define ROUTINE_TYPE 'DOUBLE'
 #define TYPE_DATA  real*8,intent(in)   :: Data(Count)
 #define TYPE_COUNT integer ,intent(in) :: Count
-#define ADIOS2TYPE adios2_type_dp
+#define ADIOS2TYPE adios2_type_dp 
 #define LENGTH Count
 #include "ext_adios2_put_var_td.code"
 end subroutine ext_adios2_put_var_td_double
@@ -2113,7 +2083,7 @@ subroutine ext_adios2_get_var_ti_char(DataHandle,Element,Var,Data,Status)
 #define TYPE_BUFFER
 #define TYPE_COUNT integer :: Count = 1
 #define TYPE_OUTCOUNT
-#define COPY
+#define COPY 
 #define CHAR_TYPE
 #include "ext_adios2_get_var_ti.code"
 #undef CHAR_TYPE
@@ -2211,7 +2181,7 @@ subroutine ext_adios2_get_dom_td_real(DataHandle,Element,DateStr,Data,Count,OutC
   integer               ,intent(in)     :: Count
   integer               ,intent(out)    :: OutCount
   integer               ,intent(out)    :: Status
-
+  
   call ext_adios2_get_var_td_real(DataHandle,Element,DateStr,          &
        'E_X_T_D_O_M_A_I_N_M_E_T_A_DATA_' ,Data,Count,OutCount,Status)
    return
@@ -2225,7 +2195,7 @@ subroutine ext_adios2_get_dom_td_integer(DataHandle,Element,DateStr,Data,Count,O
   integer               ,intent(in)     :: Count
   integer               ,intent(out)    :: OutCount
   integer               ,intent(out)    :: Status
-
+  
   call ext_adios2_get_var_td_integer(DataHandle,Element,DateStr,          &
        'E_X_T_D_O_M_A_I_N_M_E_T_A_DATA_'    ,Data,Count,OutCount,Status)
    return
@@ -2239,7 +2209,7 @@ subroutine ext_adios2_get_dom_td_double(DataHandle,Element,DateStr,Data,Count,Ou
   integer               ,intent(in)     :: Count
   integer               ,intent(out)    :: OutCount
   integer               ,intent(out)    :: Status
-
+  
   call ext_adios2_get_var_td_double(DataHandle,Element,DateStr,          &
        'E_X_T_D_O_M_A_I_N_M_E_T_A_DATA_'   ,Data,Count,OutCount,Status)
   return
@@ -2253,7 +2223,7 @@ subroutine ext_adios2_get_dom_td_logical(DataHandle,Element,DateStr,Data,Count,O
   integer               ,intent(in)     :: Count
   integer               ,intent(out)    :: OutCount
   integer               ,intent(out)    :: Status
-
+  
   call ext_adios2_get_var_td_logical(DataHandle,Element,DateStr,          &
        'E_X_T_D_O_M_A_I_N_M_E_T_A_DATA_'    ,Data,Count,OutCount,Status)
   return
@@ -2265,7 +2235,7 @@ subroutine ext_adios2_get_dom_td_char(DataHandle,Element,DateStr,Data,Status)
   character*(*)         ,intent(in)     :: DateStr
   character*(*)         ,intent(out)    :: Data
   integer               ,intent(out)    :: Status
-
+  
   call ext_adios2_get_var_td_char(DataHandle,Element,DateStr,          &
        'E_X_T_D_O_M_A_I_N_M_E_T_A_DATA_' ,Data,Status)
   return
@@ -2335,7 +2305,7 @@ subroutine ext_adios2_write_field(DataHandle,DateStr,Var,Field,FieldType, &
   endif
   call DateCheck(DateStr,Status)
   if(Status /= WRF_NO_ERR) then
-    write(msg,*) 'Warning DATE STRING ERROR |',DateStr,'| in ',__FILE__,', line', __LINE__
+    write(msg,*) 'Warning DATE STRING ERROR |',DateStr,'| in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
@@ -2357,22 +2327,22 @@ subroutine ext_adios2_write_field(DataHandle,DateStr,Var,Field,FieldType, &
   call ExtOrder(MemoryOrder,Length,Status)
   call ExtOrder(MemoryOrder,Length_global,Status)
   call ExtOrderStr(MemoryOrder,DimNames,RODimNames,Status)
-
+  
   lMemoryStart(1:NDim) = MemoryStart(1:NDim)
   lMemoryEnd(1:NDim) = MemoryEnd(1:NDim)
   if(DH%FileStatus == WRF_FILE_NOT_OPENED) then
     Status = WRF_WARN_FILE_NOT_OPENED
-    write(msg,*) 'Warning FILE NOT OPENED in ',__FILE__,', line', __LINE__
+    write(msg,*) 'Warning FILE NOT OPENED in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( WARN , TRIM(msg))
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_READ) then
     Status = WRF_WARN_WRITE_RONLY_FILE
-    write(msg,*) 'Warning WRITE READ ONLY FILE in ',__FILE__,', line', __LINE__
+    write(msg,*) 'Warning WRITE READ ONLY FILE in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( WARN , TRIM(msg))
   elseif(DH%FileStatus == WRF_FILE_OPENED_NOT_COMMITTED) then
     do NVar=1,MaxVars
       if(DH%VarNames(NVar) == VarName ) then
         Status = WRF_WARN_2DRYRUNS_1VARIABLE
-        write(msg,*) 'Warning 2 DRYRUNS 1 VARIABLE (',TRIM(VarName),') in ',__FILE__,', line', __LINE__
+        write(msg,*) 'Warning 2 DRYRUNS 1 VARIABLE (',TRIM(VarName),') in ',__FILE__,', line', __LINE__ 
         call wrf_debug ( WARN , TRIM(msg))
         return
       elseif(DH%VarNames(NVar) == NO_NAME) then
@@ -2381,7 +2351,7 @@ subroutine ext_adios2_write_field(DataHandle,DateStr,Var,Field,FieldType, &
         exit
       elseif(NVar == MaxVars) then
         Status = WRF_WARN_TOO_MANY_VARIABLES
-        write(msg,*) 'Warning TOO MANY VARIABLES in ',__FILE__,', line', __LINE__
+        write(msg,*) 'Warning TOO MANY VARIABLES in ',__FILE__,', line', __LINE__ 
         call wrf_debug ( WARN , TRIM(msg))
         return
       endif
@@ -2396,7 +2366,7 @@ subroutine ext_adios2_write_field(DataHandle,DateStr,Var,Field,FieldType, &
               Length_global(j), stat)
             call adios2_err(stat,Status)
             if(Status /= WRF_NO_ERR) then
-              write(msg,*) 'adios2_define_attribute error in ',__FILE__,', line', __LINE__
+              write(msg,*) 'adios2 error in ',__FILE__,', line', __LINE__
               call wrf_debug ( WARN , TRIM(msg))
               return
             endif
@@ -2404,7 +2374,7 @@ subroutine ext_adios2_write_field(DataHandle,DateStr,Var,Field,FieldType, &
             exit
           elseif(i == MaxDims) then
             Status = WRF_WARN_TOO_MANY_DIMS
-            write(msg,*) 'Warning TOO MANY DIMENSIONS (',i,') in (',TRIM(VarName),') ',__FILE__,', line', __LINE__
+            write(msg,*) 'Warning TOO MANY DIMENSIONS (',i,') in (',TRIM(VarName),') ',__FILE__,', line', __LINE__ 
             call wrf_debug ( WARN , TRIM(msg))
             return
           endif
@@ -2419,7 +2389,7 @@ subroutine ext_adios2_write_field(DataHandle,DateStr,Var,Field,FieldType, &
             else
               Status = WRF_WARN_DIMNAME_REDEFINED
               write(msg,*) 'Warning DIM ',i,', NAME ',TRIM(DH%DimNames(i)),' REDEFINED  by var ', &
-                           TRIM(Var),' ',DH%DimLengths(i),Length_global(j) ,' in ', __FILE__ ,' line', __LINE__
+                           TRIM(Var),' ',DH%DimLengths(i),Length_global(j) ,' in ', __FILE__ ,' line', __LINE__ 
               call wrf_debug ( WARN , TRIM(msg))
               return
             endif
@@ -2433,7 +2403,7 @@ subroutine ext_adios2_write_field(DataHandle,DateStr,Var,Field,FieldType, &
               Length_global(j), stat)
               call adios2_err(stat,Status)
               if(Status /= WRF_NO_ERR) then
-                write(msg,*) 'adios2_define_attribute error in ',__FILE__,', line', __LINE__
+                write(msg,*) 'adios2 error in ',__FILE__,', line', __LINE__
                 call wrf_debug ( WARN , TRIM(msg))
                 return
               endif
@@ -2441,7 +2411,7 @@ subroutine ext_adios2_write_field(DataHandle,DateStr,Var,Field,FieldType, &
               exit
             elseif(i == MaxDims) then
               Status = WRF_WARN_TOO_MANY_DIMS
-              write(msg,*) 'Warning TOO MANY DIMENSIONS in ',__FILE__,', line', __LINE__
+              write(msg,*) 'Warning TOO MANY DIMENSIONS in ',__FILE__,', line', __LINE__ 
               call wrf_debug ( WARN , TRIM(msg))
               return
             endif
@@ -2462,7 +2432,7 @@ subroutine ext_adios2_write_field(DataHandle,DateStr,Var,Field,FieldType, &
         XType = adios2_type_integer4
       case default
         Status = WRF_WARN_DATA_TYPE_NOT_FOUND
-        write(msg,*) 'Warning DATA TYPE NOT FOUND in ',__FILE__,', line', __LINE__
+        write(msg,*) 'Warning DATA TYPE NOT FOUND in ',__FILE__,', line', __LINE__ 
         call wrf_debug ( WARN , TRIM(msg))
         return
     end select
@@ -2480,24 +2450,25 @@ subroutine ext_adios2_write_field(DataHandle,DateStr,Var,Field,FieldType, &
     endif
     call adios2_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
-      write(msg,*) 'ext_adios2_write_field: adios2_define_variable error for ',TRIM(VarName),' in ',__FILE__,', line', __LINE__
+      write(msg,*) 'ext_adios2_write_field: adios2 error for ',TRIM(VarName),' in ',__FILE__,', line', __LINE__
       call wrf_debug ( WARN , TRIM(msg))
       return
     endif
     if (DH%compress_operator%valid .eqv. .true.) then
-      call adios2_add_operation(operation_id, VarID, DH%compress_operator, 'compressor', TRIM(DH%blosc_compressor), stat)
-      call adios2_err(stat,Status)
-      if(Status /= WRF_NO_ERR) then
-        write(msg,*) 'ext_adios2_write_field: adios2_add_operation error: invalid compressor ',TRIM(DH%blosc_compressor), &
-                     ' for ',TRIM(VarName),' in ',__FILE__,', line', __LINE__
-        call wrf_debug ( WARN , TRIM(msg))
-        return
+      if (DH%blosc_compressor == 'blosclz') then
+        call adios2_add_operation(operation_id, VarID, DH%compress_operator, 'compressor', 'blosclz', stat)
+      elseif (DH%blosc_compressor == 'zlib') then
+        call adios2_add_operation(operation_id, VarID, DH%compress_operator, 'compressor', 'zlib', stat)
+      elseif (DH%blosc_compressor == 'lz4') then
+        call adios2_add_operation(operation_id, VarID, DH%compress_operator, 'compressor', 'lz4', stat)
+      elseif (DH%blosc_compressor == 'lz4hc') then
+        call adios2_add_operation(operation_id, VarID, DH%compress_operator, 'compressor', 'lz4hc', stat)
+      elseif (DH%blosc_compressor == 'zstd') then
+          call adios2_add_operation(operation_id, VarID, DH%compress_operator, 'compressor', 'zstd', stat)
       endif
-      call adios2_set_operation_parameter(VarID, operation_id, 'clevel', TRIM(DH%blosc_clevel), stat)
       call adios2_err(stat,Status)
       if(Status /= WRF_NO_ERR) then
-        write(msg,*) 'ext_adios2_write_field: adios2_set_operation error: invalid compression level used ', DH%blosc_clevel, &
-                     ' for ',TRIM(VarName),' in ',__FILE__,', line', __LINE__
+        write(msg,*) 'ext_adios2_write_field: adios2 error for ',TRIM(VarName),' in ',__FILE__,', line', __LINE__
         call wrf_debug ( WARN , TRIM(msg))
         return
       endif
@@ -2507,12 +2478,12 @@ subroutine ext_adios2_write_field(DataHandle,DateStr,Var,Field,FieldType, &
     do j = 1,NDim
       DimNamesOut(j) = DH%DimNames(VDimIDs(j))
     end do
-    DimNamesOut(NDim+1) = DH%DimUnlimName
+    DimNamesOut(NDim+1) = DH%DimUnlimName  
     call adios2_define_attribute(AttributeID,DH%adios2IO, 'Dims', &
               DimNamesOut, NDim+1, VarID%name, '/', stat)
     call adios2_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
-      write(msg,*) 'ext_adios2_write_field: adios2_define_attribute error in ',__FILE__,', line', __LINE__
+      write(msg,*) 'ext_adios2_write_field: adios2 error in ',__FILE__,', line', __LINE__ 
       call wrf_debug ( WARN , TRIM(msg))
       return
     endif
@@ -2520,7 +2491,7 @@ subroutine ext_adios2_write_field(DataHandle,DateStr,Var,Field,FieldType, &
               FieldType, VarID%name, stat)
     call adios2_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
-      write(msg,*) 'ext_adios2_write_field: adios2_define_attribute error in ',__FILE__,', line', __LINE__
+      write(msg,*) 'ext_adios2_write_field: adios2 error in ',__FILE__,', line', __LINE__ 
       call wrf_debug ( WARN , TRIM(msg))
       return
     endif
@@ -2530,7 +2501,7 @@ subroutine ext_adios2_write_field(DataHandle,DateStr,Var,Field,FieldType, &
              UCMemO, VarID%name, stat)
     call adios2_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
-      write(msg,*) 'ext_adios2_write_field: adios2_define_attribute error in ',__FILE__,', line', __LINE__
+      write(msg,*) 'ext_adios2_write_field: adios2 error in ',__FILE__,', line', __LINE__ 
       call wrf_debug ( WARN , TRIM(msg))
       return
     endif
@@ -2540,7 +2511,7 @@ subroutine ext_adios2_write_field(DataHandle,DateStr,Var,Field,FieldType, &
         exit
       elseif(NVar == DH%NumVars) then
         Status = WRF_WARN_VAR_NF
-        write(msg,*) 'Warning VARIABLE NOT FOUND in ',__FILE__,', line', __LINE__
+        write(msg,*) 'Warning VARIABLE NOT FOUND in ',__FILE__,', line', __LINE__ 
         call wrf_debug ( WARN , TRIM(msg))
         return
       endif
@@ -2550,7 +2521,7 @@ subroutine ext_adios2_write_field(DataHandle,DateStr,Var,Field,FieldType, &
       if(Length_global(j) /= DH%VarDimLens(j,NVar) .AND. DH%FileStatus /= WRF_FILE_OPENED_FOR_UPDATE ) then
         Status = WRF_WARN_WRTLEN_NE_DRRUNLEN
         write(msg,*) 'Warning LENGTH != DRY RUN LENGTH for |',   &
-                     VarName,'| dim ',j,' in ',__FILE__,', line', __LINE__
+                     VarName,'| dim ',j,' in ',__FILE__,', line', __LINE__ 
         call wrf_debug ( WARN , TRIM(msg))
         write(msg,*) '   LENGTH ',Length_global(j),' DRY RUN LENGTH ',DH%VarDimLens(j,NVar)
         call wrf_debug ( WARN , TRIM(msg))
@@ -2560,7 +2531,7 @@ subroutine ext_adios2_write_field(DataHandle,DateStr,Var,Field,FieldType, &
       elseif(PatchStart(j) < lMemoryStart(j)) then
         Status = WRF_WARN_DIMENSION_ERROR
         write(msg,*) 'Warning DIMENSION ERROR for |',VarName,    &
-                     '| in ',__FILE__,', line', __LINE__
+                     '| in ',__FILE__,', line', __LINE__ 
         call wrf_debug ( WARN , TRIM(msg))
         return
       endif
@@ -2595,7 +2566,7 @@ subroutine ext_adios2_write_field(DataHandle,DateStr,Var,Field,FieldType, &
     call FieldIO('write',DataHandle,DateStr,StoredStart,Length,MemoryOrder, &
                   FieldType,VarID,XField,Status)
     if(Status /= WRF_NO_ERR) then
-      write(msg,*) 'Warning Status = ',Status,' in ',__FILE__,', line', __LINE__
+      write(msg,*) 'Warning Status = ',Status,' in ',__FILE__,', line', __LINE__ 
       call wrf_debug ( WARN , TRIM(msg))
       return
     endif
@@ -2608,7 +2579,7 @@ subroutine ext_adios2_write_field(DataHandle,DateStr,Var,Field,FieldType, &
     endif
   else
     Status = WRF_ERR_FATAL_BAD_FILE_STATUS
-    write(msg,*) 'Fatal error BAD FILE STATUS in ',__FILE__,', line', __LINE__
+    write(msg,*) 'Fatal error BAD FILE STATUS in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( FATAL , TRIM(msg))
   endif
   DH%first_operation  = .FALSE.
@@ -2675,7 +2646,7 @@ subroutine ext_adios2_read_field(DataHandle,DateStr,Var,Field,FieldType,  &
   call DateCheck(DateStr,Status)
   if(Status /= WRF_NO_ERR) then
     write(msg,*) 'Warning DATE STRING ERROR |',TRIM(DateStr),'| for |',TRIM(Var), &
-                 '| in ext_adios2_read_field ',__FILE__,', line', __LINE__
+                 '| in ext_adios2_read_field ',__FILE__,', line', __LINE__ 
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
@@ -2688,18 +2659,18 @@ subroutine ext_adios2_read_field(DataHandle,DateStr,Var,Field,FieldType,  &
   endif
   if(DH%FileStatus == WRF_FILE_NOT_OPENED) then
     Status = WRF_WARN_FILE_NOT_OPENED
-    write(msg,*) 'Warning FILE NOT OPENED in ',__FILE__,', line', __LINE__
+    write(msg,*) 'Warning FILE NOT OPENED in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( WARN , TRIM(msg))
   elseif(DH%FileStatus == WRF_FILE_OPENED_NOT_COMMITTED) then
 ! jm it is okay to have a dry run read. means read is called between ofrb and ofrc. Just return.
 !    Status = WRF_WARN_DRYRUN_READ
-!    write(msg,*) 'Warning DRYRUN READ in ',__FILE__,', line', __LINE__
+!    write(msg,*) 'Warning DRYRUN READ in ',__FILE__,', line', __LINE__ 
 !    call wrf_debug ( WARN , TRIM(msg))
     Status = WRF_NO_ERR
     RETURN
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_WRITE) then
     Status = WRF_WARN_READ_WONLY_FILE
-    write(msg,*) 'Warning READ WRITE ONLY FILE in ',__FILE__,', line', __LINE__
+    write(msg,*) 'Warning READ WRITE ONLY FILE in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( WARN , TRIM(msg))
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_READ .OR. DH%FileStatus == WRF_FILE_OPENED_FOR_UPDATE ) then
     Length(1:NDim) = PatchEnd(1:NDim)-PatchStart(1:NDim)+1
@@ -2708,20 +2679,20 @@ subroutine ext_adios2_read_field(DataHandle,DateStr,Var,Field,FieldType,  &
     call adios2_inquire_variable(VarID, DH%adios2IO, VarName, stat)
     call adios2_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
-      write(msg,*) 'adios2_inquire_variable error in ',__FILE__,', line', __LINE__,' Varname ',Varname
+      write(msg,*) 'adios2 error in ',__FILE__,', line', __LINE__,' Varname ',Varname
       call wrf_debug ( WARN , TRIM(msg))
       return
     endif
     call adios2_inquire_variable_attribute(attribute, DH%adios2IO, 'FieldType', VarName, '/', stat)
     call adios2_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
-      write(msg,*) 'adios2_inquire_variable_attribute error in ',__FILE__,', line', __LINE__
+      write(msg,*) 'adios2 error in ',__FILE__,', line', __LINE__ 
       call wrf_debug ( WARN , TRIM(msg))
       return
     endif
     call adios2_attribute_data(FType, attribute, stat)
     if(Status /= WRF_NO_ERR) then
-      write(msg,*) 'adios2_attribute_data error in ',__FILE__,', line', __LINE__
+      write(msg,*) 'adios2 error in ',__FILE__,', line', __LINE__ 
       call wrf_debug ( WARN , TRIM(msg))
       return
     endif
@@ -2756,7 +2727,7 @@ subroutine ext_adios2_read_field(DataHandle,DateStr,Var,Field,FieldType,  &
           write(msg,*) 'Warning DOUBLE TYPE MISMATCH in ',__FILE__,', line', __LINE__
         endif
       case (WRF_INTEGER)
-        if(XType /= adios2_type_integer4)  then
+        if(XType /= adios2_type_integer4)  then 
           Status = WRF_WARN_TYPE_MISMATCH
           write(msg,*) 'Warning INTEGER TYPE MISMATCH in ',__FILE__,', line', __LINE__
         endif
@@ -2778,7 +2749,7 @@ subroutine ext_adios2_read_field(DataHandle,DateStr,Var,Field,FieldType,  &
     call GetIndices(NDim,StoredStart,Length,x1,x2,y1,y2,z1,z2)
 !jm    call GetIndices(NDim,DomainStart,DomainEnd,i1,i2,j1,j2,k1,k2)
     call GetIndices(NDim,PatchStart,PatchEnd,i1,i2,j1,j2,k1,k2)
-
+    
     StoredStart(1:NDim) = PatchStart(1:NDim)
     call ExtOrder(MemoryOrder,StoredStart,Status)
 
@@ -2794,7 +2765,7 @@ subroutine ext_adios2_read_field(DataHandle,DateStr,Var,Field,FieldType,  &
     call FieldIO('read',DataHandle,DateStr,StoredStart,Length,MemoryOrder, &
                   FieldType,VarID,XField,Status)
     if(Status /= WRF_NO_ERR) then
-      write(msg,*) 'Warning Status = ',Status,' in ',__FILE__,', line', __LINE__
+      write(msg,*) 'Warning Status = ',Status,' in ',__FILE__,', line', __LINE__ 
       call wrf_debug ( WARN , TRIM(msg))
       return
     endif
@@ -2810,7 +2781,7 @@ subroutine ext_adios2_read_field(DataHandle,DateStr,Var,Field,FieldType,  &
     endif
   else
     Status = WRF_ERR_FATAL_BAD_FILE_STATUS
-    write(msg,*) 'Fatal error BAD FILE STATUS in ',__FILE__,', line', __LINE__
+    write(msg,*) 'Fatal error BAD FILE STATUS in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( FATAL , msg)
   endif
   DH%first_operation  = .FALSE.
@@ -2879,7 +2850,7 @@ subroutine ext_adios2_set_time(DataHandle, DateStr, Status)
 
   call DateCheck(DateStr,Status)
   if(Status /= WRF_NO_ERR) then
-    write(msg,*) 'Warning DATE STRING ERROR in ',__FILE__,', line', __LINE__
+    write(msg,*) 'Warning DATE STRING ERROR in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
@@ -2891,7 +2862,7 @@ subroutine ext_adios2_set_time(DataHandle, DateStr, Status)
   endif
   if(DH%FileStatus == WRF_FILE_NOT_OPENED) then
     Status = WRF_WARN_FILE_NOT_OPENED
-    write(msg,*) 'Warning FILE NOT OPENED in ',__FILE__,', line', __LINE__
+    write(msg,*) 'Warning FILE NOT OPENED in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( WARN , TRIM(msg))
   elseif(DH%FileStatus == WRF_FILE_OPENED_NOT_COMMITTED) then
     Status = WRF_WARN_FILE_NOT_COMMITTED
@@ -2899,7 +2870,7 @@ subroutine ext_adios2_set_time(DataHandle, DateStr, Status)
     call wrf_debug ( WARN , TRIM(msg))
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_WRITE) then
     Status = WRF_WARN_READ_WONLY_FILE
-    write(msg,*) 'Warning READ WRITE ONLY FILE in ',__FILE__,', line', __LINE__
+    write(msg,*) 'Warning READ WRITE ONLY FILE in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( WARN , TRIM(msg))
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_READ) then
     do i=1,MaxTimes
@@ -2916,7 +2887,7 @@ subroutine ext_adios2_set_time(DataHandle, DateStr, Status)
     Status = WRF_NO_ERR
   else
     Status = WRF_ERR_FATAL_BAD_FILE_STATUS
-    write(msg,*) 'Fatal error BAD FILE STATUS in ',__FILE__,', line', __LINE__
+    write(msg,*) 'Fatal error BAD FILE STATUS in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( FATAL , msg)
   endif
   return
@@ -2940,15 +2911,15 @@ subroutine ext_adios2_get_next_time(DataHandle, DateStr, Status)
   endif
   if(DH%FileStatus == WRF_FILE_NOT_OPENED) then
     Status = WRF_WARN_FILE_NOT_OPENED
-    write(msg,*) 'Warning FILE NOT OPENED in ',__FILE__,', line', __LINE__
+    write(msg,*) 'Warning FILE NOT OPENED in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( WARN , TRIM(msg))
   elseif(DH%FileStatus == WRF_FILE_OPENED_NOT_COMMITTED) then
     Status = WRF_WARN_DRYRUN_READ
-    write(msg,*) 'Warning DRYRUN READ in ',__FILE__,', line', __LINE__
+    write(msg,*) 'Warning DRYRUN READ in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( WARN , TRIM(msg))
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_WRITE) then
     Status = WRF_WARN_READ_WONLY_FILE
-    write(msg,*) 'Warning READ WRITE ONLY FILE in ',__FILE__,', line', __LINE__
+    write(msg,*) 'Warning READ WRITE ONLY FILE in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( WARN , TRIM(msg))
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_READ .OR. DH%FileStatus == WRF_FILE_OPENED_FOR_UPDATE ) then
     if(DH%CurrentTime >= DH%NumberTimes) then
@@ -2963,7 +2934,7 @@ subroutine ext_adios2_get_next_time(DataHandle, DateStr, Status)
     Status = WRF_NO_ERR
   else
     Status = WRF_ERR_FATAL_BAD_FILE_STATUS
-    write(msg,*) 'Fatal error BAD FILE STATUS in ',__FILE__,', line', __LINE__
+    write(msg,*) 'Fatal error BAD FILE STATUS in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( FATAL , msg)
   endif
   return
@@ -2987,15 +2958,15 @@ subroutine ext_adios2_get_previous_time(DataHandle, DateStr, Status)
   endif
   if(DH%FileStatus == WRF_FILE_NOT_OPENED) then
     Status = WRF_WARN_FILE_NOT_OPENED
-    write(msg,*) 'Warning FILE NOT OPENED in ',__FILE__,', line', __LINE__
+    write(msg,*) 'Warning FILE NOT OPENED in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( WARN , TRIM(msg))
   elseif(DH%FileStatus == WRF_FILE_OPENED_NOT_COMMITTED) then
     Status = WRF_WARN_DRYRUN_READ
-    write(msg,*) 'Warning DRYRUN READ in ',__FILE__,', line', __LINE__
+    write(msg,*) 'Warning DRYRUN READ in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( WARN , TRIM(msg))
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_WRITE) then
     Status = WRF_WARN_READ_WONLY_FILE
-    write(msg,*) 'Warning READ WRITE ONLY FILE in ',__FILE__,', line', __LINE__
+    write(msg,*) 'Warning READ WRITE ONLY FILE in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( WARN , TRIM(msg))
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_READ) then
     if(DH%CurrentTime.GT.0) then
@@ -3006,7 +2977,7 @@ subroutine ext_adios2_get_previous_time(DataHandle, DateStr, Status)
     Status = WRF_NO_ERR
   else
     Status = WRF_ERR_FATAL_BAD_FILE_STATUS
-    write(msg,*) 'Fatal error BAD FILE STATUS in ',__FILE__,', line', __LINE__
+    write(msg,*) 'Fatal error BAD FILE STATUS in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( FATAL , msg)
   endif
   return
@@ -3032,15 +3003,15 @@ subroutine ext_adios2_get_next_var(DataHandle, VarName, Status)
   endif
   if(DH%FileStatus == WRF_FILE_NOT_OPENED) then
     Status = WRF_WARN_FILE_NOT_OPENED
-    write(msg,*) 'Warning FILE NOT OPENED in ',__FILE__,', line', __LINE__
+    write(msg,*) 'Warning FILE NOT OPENED in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( WARN , TRIM(msg))
   elseif(DH%FileStatus == WRF_FILE_OPENED_NOT_COMMITTED) then
     Status = WRF_WARN_DRYRUN_READ
-    write(msg,*) 'Warning DRYRUN READ in ',__FILE__,', line', __LINE__
+    write(msg,*) 'Warning DRYRUN READ in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( WARN , TRIM(msg))
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_WRITE) then
     Status = WRF_WARN_READ_WONLY_FILE
-    write(msg,*) 'Warning READ WRITE ONLY FILE in ',__FILE__,', line', __LINE__
+    write(msg,*) 'Warning READ WRITE ONLY FILE in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( WARN , TRIM(msg))
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_READ .OR. DH%FileStatus == WRF_FILE_OPENED_FOR_UPDATE) then
     DH%CurrentVariable = DH%CurrentVariable +1
@@ -3052,7 +3023,7 @@ subroutine ext_adios2_get_next_var(DataHandle, VarName, Status)
     Status  = WRF_NO_ERR
   else
     Status = WRF_ERR_FATAL_BAD_FILE_STATUS
-    write(msg,*) 'Fatal error BAD FILE STATUS in ',__FILE__,', line', __LINE__
+    write(msg,*) 'Fatal error BAD FILE STATUS in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( FATAL , msg)
   endif
   return
@@ -3103,24 +3074,24 @@ subroutine ext_adios2_get_var_info(DataHandle,Name,NDim,MemoryOrder,Stagger,Doma
   endif
   if(DH%FileStatus == WRF_FILE_NOT_OPENED) then
     Status = WRF_WARN_FILE_NOT_OPENED
-    write(msg,*) 'Warning FILE NOT OPENED in ',__FILE__,', line', __LINE__
+    write(msg,*) 'Warning FILE NOT OPENED in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( WARN , TRIM(msg))
     return
   elseif(DH%FileStatus == WRF_FILE_OPENED_NOT_COMMITTED) then
     Status = WRF_WARN_DRYRUN_READ
-    write(msg,*) 'Warning DRYRUN READ in ',__FILE__,', line', __LINE__
+    write(msg,*) 'Warning DRYRUN READ in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( WARN , TRIM(msg))
     return
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_WRITE) then
     Status = WRF_WARN_READ_WONLY_FILE
-    write(msg,*) 'Warning READ WRITE ONLY FILE in ',__FILE__,', line', __LINE__
+    write(msg,*) 'Warning READ WRITE ONLY FILE in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( WARN , TRIM(msg))
     return
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_READ .OR. DH%FileStatus == WRF_FILE_OPENED_FOR_UPDATE) then
     call adios2_inquire_variable(VarID, DH%adios2IO, Name, stat)
     call adios2_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
-      write(msg,*) 'adios2_inquire_variable error in ',__FILE__,', line', __LINE__
+      write(msg,*) 'adios2 error in ',__FILE__,', line', __LINE__ 
       call wrf_debug ( WARN , TRIM(msg))
       return
     endif
@@ -3128,61 +3099,61 @@ subroutine ext_adios2_get_var_info(DataHandle,Name,NDim,MemoryOrder,Stagger,Doma
     call adios2_inquire_variable_attribute(attribute, DH%adios2IO, 'FieldType', Name, '/', stat)
     call adios2_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
-      write(msg,*) 'adios2_inquire_variable_attribute error in ',__FILE__,', line', __LINE__
+      write(msg,*) 'adios2 error in ',__FILE__,', line', __LINE__ 
       call wrf_debug ( WARN , TRIM(msg))
       return
     endif
     call adios2_attribute_data(WrfType, attribute, stat)
     call adios2_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
-      write(msg,*) 'adios2_attribute_data error in ',__FILE__,', line', __LINE__
+      write(msg,*) 'adios2 error in ',__FILE__,', line', __LINE__ 
       call wrf_debug ( WARN , TRIM(msg))
       return
     endif
     select case (XType)
       case (adios2_type_character)
         Status = WRF_WARN_BAD_DATA_TYPE
-        write(msg,*) 'Warning CHAR IS BAD DATA TYPE in ',__FILE__,', line', __LINE__
+        write(msg,*) 'Warning CHAR IS BAD DATA TYPE in ',__FILE__,', line', __LINE__ 
         call wrf_debug ( WARN , TRIM(msg))
         return
       case (adios2_type_integer4)
         if(WrfType /= WRF_INTEGER .and. WrfType /= WRF_LOGICAL) then
           Status = WRF_WARN_BAD_DATA_TYPE
-          write(msg,*) 'Warning BAD DATA TYPE in ',__FILE__,', line', __LINE__
+          write(msg,*) 'Warning BAD DATA TYPE in ',__FILE__,', line', __LINE__ 
           call wrf_debug ( WARN , TRIM(msg))
           return
         endif
       case (adios2_type_real)
         if(WrfType /= WRF_REAL) then
           Status = WRF_WARN_BAD_DATA_TYPE
-          write(msg,*) 'Warning BAD DATA TYPE in ',__FILE__,', line', __LINE__
+          write(msg,*) 'Warning BAD DATA TYPE in ',__FILE__,', line', __LINE__ 
           call wrf_debug ( WARN , TRIM(msg))
           return
         endif
       case (adios2_type_dp)
         if(WrfType /= WRF_DOUBLE) then
           Status = WRF_WARN_BAD_DATA_TYPE
-          write(msg,*) 'Warning BAD DATA TYPE in ',__FILE__,', line', __LINE__
+          write(msg,*) 'Warning BAD DATA TYPE in ',__FILE__,', line', __LINE__ 
           call wrf_debug ( WARN , TRIM(msg))
           return
         endif
       case default
         Status = WRF_WARN_DATA_TYPE_NOT_FOUND
-        write(msg,*) 'Warning DATA TYPE NOT FOUND in ',__FILE__,', line', __LINE__
+        write(msg,*) 'Warning DATA TYPE NOT FOUND in ',__FILE__,', line', __LINE__ 
         call wrf_debug ( WARN , TRIM(msg))
         return
     end select
     call adios2_inquire_variable_attribute(attribute, DH%adios2IO, 'MemoryOrder', Name, '/', stat)
     call adios2_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
-      write(msg,*) 'adios2_inquire_variable_attribute error in ',__FILE__,', line', __LINE__
+      write(msg,*) 'adios2 error in ',__FILE__,', line', __LINE__ 
       call wrf_debug ( WARN , TRIM(msg))
       return
     endif
     call adios2_attribute_data(MemoryOrder, attribute, stat)
     call adios2_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
-      write(msg,*) 'adios2_attribute_data error in ',__FILE__,', line', __LINE__
+      write(msg,*) 'adios2 error in ',__FILE__,', line', __LINE__ 
       call wrf_debug ( WARN , TRIM(msg))
       return
     endif
@@ -3195,14 +3166,14 @@ subroutine ext_adios2_get_var_info(DataHandle,Name,NDim,MemoryOrder,Stagger,Doma
     call adios2_variable_shape(shape_dims, ndims_adios2, VarID, stat)
     call adios2_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
-      write(msg,*) 'adios2_variable_shape error in ',__FILE__,', line', __LINE__
+      write(msg,*) 'adios2 error in ',__FILE__,', line', __LINE__ 
       call wrf_debug ( WARN , TRIM(msg))
       return
     endif
     DomainEnd(1:NDim) = shape_dims(1:NDim)
   else
     Status = WRF_ERR_FATAL_BAD_FILE_STATUS
-    write(msg,*) 'Fatal error BAD FILE STATUS in ',__FILE__,', line', __LINE__
+    write(msg,*) 'Fatal error BAD FILE STATUS in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( FATAL , msg)
   endif
   return

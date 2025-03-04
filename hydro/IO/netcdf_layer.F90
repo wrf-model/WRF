@@ -43,7 +43,7 @@ module netcdf_layer_base
   end type NetCDF_serial_
 
   type, extends(NetCDF_layer_) :: NetCDF_parallel_
-     integer :: MPI_communicator
+     integer :: MPI_Communicator
      integer :: default_info = MPI_INFO_NULL
    contains
      procedure, pass(object) :: create_file => create_file_parallel

@@ -5,6 +5,17 @@
 ! Added capability to spectrally nudge water vapor mixing ratio, and added
 ! user-definable lid for nudging potential temperature and water vapor mixing
 ! ratio. (Tanya Spero, U.S. Environmental Protection Agency -- October 2017)
+!
+! Changed logic for determining next nudging time to rely on minutes elapsed
+! since restart (CURR_MINS2) rather than on minutes since initialization
+! (XTIME). The REAL variable, XTIME, will become imprecise after 1 X 2^24
+! minutes (just under 32 years of continuous simulation). Cannot remove all
+! reliance on XTIME because actual end time is in absolute minutes. Using XTIME
+! results in spectral nudging analyses ingested at the wrong times, beginning
+! 23 years and 3.5 months into a continous simulation. Purposefully not
+! modifying the ramping function because pragmatically we will not get
+! very large XTIME values in any situation where the off-ramp for nudging would
+! be used. (Tanya Spero, U.S. Environmental Protection Agency -- June 2024)
 
 MODULE module_fdda_spnudging
 
@@ -17,7 +28,8 @@ CONTAINS
 !
 !-------------------------------------------------------------------
 !
-   SUBROUTINE spectral_nudging(grid,itimestep,dt,xtime,id,analysis_interval, end_fdda_hour, &
+   SUBROUTINE spectral_nudging(grid,itimestep,dt,xtime,curr_mins2, &
+               id,analysis_interval, end_fdda_hour, &
                if_no_pbl_nudging_uv, if_no_pbl_nudging_t, if_no_pbl_nudging_ph,if_no_pbl_nudging_q,&
                if_zfac_uv, k_zfac_uv, dk_zfac_uv, & 
                if_zfac_t, k_zfac_t, dk_zfac_t, &
@@ -95,7 +107,7 @@ CONTAINS
    INTEGER,  INTENT(IN)   ::      xwavenum,ywavenum
 
    INTEGER , INTENT(IN)   ::      id
-   REAL,     INTENT(IN)   ::      DT, xtime, dtramp_min
+   REAL,     INTENT(IN)   ::      DT, xtime, dtramp_min, curr_mins2
 
    INTEGER,  INTENT(IN)   ::      ids,ide, jds,jde, kds,kde, &
                                   ims,ime, jms,jme, kms,kme, &
@@ -202,15 +214,15 @@ CONTAINS
 !  IF( if_ramping == 1 .AND. dtramp_min > 0.0 ) &
 !      actual_end_fdda_min = end_fdda_hour*60.0 + ABS(dtramp_min)
 
-   xtime_old = FLOOR(xtime/analysis_interval) * analysis_interval * 1.0
+   xtime_old = FLOOR(curr_mins2/analysis_interval) * analysis_interval * 1.0
    xtime_new = xtime_old + analysis_interval
-   coef = (xtime-xtime_old)/(xtime_new-xtime_old)
+   coef = (curr_mins2-xtime_old)/(xtime_new-xtime_old)
 
    IF ( wrf_dm_on_monitor()) THEN
 
      CALL get_wrf_debug_level( dbg_level )
 
-     IF( xtime-xtime_old < 0.5*dt/60.0 ) THEN
+     IF( curr_mins2-xtime_old < 0.5*dt/60.0 ) THEN
 
        IF( xtime < end_fdda_hour*60.0 ) THEN
          WRITE(wrf_err_message,FMT='(a,i2.2,a,f15.3,a)') &
@@ -549,7 +561,7 @@ CONTAINS
        tfac = 1.0
      ELSEIF( xtime >= actual_end_fdda_min-ABS(dtramp_min) .AND. xtime <= actual_end_fdda_min )THEN
        tfac = ( actual_end_fdda_min - xtime ) / ABS(dtramp_min)
-       IF( dtramp_min > 0.0 ) coef = (xtime-xtime_old+analysis_interval)/analysis_interval
+       IF( dtramp_min > 0.0 ) coef = (curr_mins2-xtime_old+analysis_interval)/analysis_interval
      ELSE                                                     
        tfac = 0.0
      ENDIF

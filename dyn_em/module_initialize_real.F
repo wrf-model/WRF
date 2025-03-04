@@ -237,21 +237,27 @@ integer::oops1,oops2
             geogrid_flag_error = geogrid_flag_error + 1
          END IF
 
-         IF ( ( config_flags%mp_physics         .EQ. thompsonaero ) .AND. &
+         IF ( ( (config_flags%mp_physics         .EQ. thompsonaero .OR. &
+				 config_flags%mp_physics         .EQ. rcon_mp_scheme &
+				) ) .AND. &
               ( config_flags%dust_emis          .EQ. 1            ) .AND. ( flag_erod      .EQ. 0 ) ) THEN
-            CALL wrf_message ( '----- ERROR: mp=28 AND dust_emis= 1 AND flag_erod       = 0 ' )
+            CALL wrf_message ( '----- ERROR: mp=28 or mp=29 AND dust_emis= 1 AND flag_erod       = 0 ' )
             geogrid_flag_error = geogrid_flag_error + 1
          END IF
 
-         IF ( ( config_flags%mp_physics         .EQ. thompsonaero ) .AND. &
+         IF ( ( (config_flags%mp_physics         .EQ. thompsonaero .OR. &
+				 config_flags%mp_physics         .EQ. rcon_mp_scheme &
+				) ) .AND. &
               ( config_flags%dust_emis          .EQ. 1            ) .AND. ( flag_clayfrac  .EQ. 0 ) ) THEN
-            CALL wrf_message ( '----- ERROR: mp=28 AND dust_emis= 1 AND flag_clayfrac   = 0 ' )
+            CALL wrf_message ( '----- ERROR: mp=28 or mp=29 AND dust_emis= 1 AND flag_clayfrac   = 0 ' )
             geogrid_flag_error = geogrid_flag_error + 1
          END IF
 
-         IF ( ( config_flags%mp_physics         .EQ. thompsonaero ) .AND. &
-              ( config_flags%dust_emis          .EQ. 1            ) .AND. ( flag_sandfrac  .EQ. 0 ) ) THEN
-            CALL wrf_message ( '----- ERROR: mp=28 AND dust_emis= 1 AND flag_sandfrac   = 0 ' )
+         IF ( ( (config_flags%mp_physics         .EQ. thompsonaero .OR. &
+				 config_flags%mp_physics         .EQ. rcon_mp_scheme &
+				) ) .AND. &
+				( config_flags%dust_emis          .EQ. 1            ) .AND. ( flag_sandfrac  .EQ. 0 ) ) THEN
+            CALL wrf_message ( '----- ERROR: mp=28 or mp=29 AND dust_emis= 1 AND flag_sandfrac   = 0 ' )
             geogrid_flag_error = geogrid_flag_error + 1
          END IF
         
@@ -2321,10 +2327,12 @@ integer::oops1,oops2
             !  QNWFA - Number concentration water-friendly aerosols
             !  QNIFA - Number concentration ice-friendly aerosols
             !  QNBCA - Number concentration black carbon aerosols
+			! Also used in RCON Microphysics, mp=29
 
             aer_init_opt = config_flags%aer_init_opt
 
-            if_thompsonaero_3d: IF (config_flags%mp_physics .EQ. THOMPSONAERO .AND. &
+            if_thompsonaero_3d: IF ((config_flags%mp_physics .EQ. THOMPSONAERO &
+				.OR. config_flags%mp_physics .EQ. RCON_MP_SCHEME) .AND. &
                 config_flags%wif_input_opt .GT. 0) THEN
 
             select_aer_init_opt_3d: select case (aer_init_opt)
@@ -2731,9 +2739,10 @@ integer::oops1,oops2
 
                end select select_aer_init_opt_3d
 
-            ELSE IF (config_flags%mp_physics .EQ. THOMPSONAERO .and. &
+            ELSE IF ((config_flags%mp_physics .EQ. THOMPSONAERO &
+				.OR. config_flags%mp_physics .EQ. RCON_MP_SCHEME) .and. &
                      config_flags%wif_input_opt .EQ. 0 ) THEN
-               CALL wrf_error_fatal ('wif_input_opt=0 but mp_physics=28' )
+               CALL wrf_error_fatal ('wif_input_opt=0 but mp_physics=28 or mp_physics=29' )
             END IF if_thompsonaero_3d
 
 !=========================================================================================
@@ -3154,7 +3163,7 @@ integer::oops1,oops2
                       (grid%ivgtyp(i,j).NE.13 .AND. grid%ivgtyp(i,j).NE.24 .AND. grid%ivgtyp(i,j).NE.25 .AND. grid%ivgtyp(i,j).NE.26 .AND. grid%ivgtyp(i,j).LT.30)) grid%ivgtyp(i,j)=13
               ELSE IF ( MMINLU == "USGS" ) THEN
                   IF ( grid%FRC_URB2D(i,j) .GE. 0.5 .AND.  &
-                       grid%ivgtyp(i,j).NE.1 ) grid%ivgtyp(i,j)=1
+                       grid%ivgtyp(i,j).NE.1 .AND. grid%ivgtyp(i,j).LT.30) grid%ivgtyp(i,j)=1
               ENDIF
 
               IF ( grid%FRC_URB2D(i,j) == 0. ) THEN
@@ -4493,7 +4502,8 @@ endif
 !.. to read biomass burning aerosol emissions
 !+---+-----------------------------------------------------------------+
 
-      if_thompsonaero_2d: IF (config_flags%mp_physics .EQ. THOMPSONAERO .AND. &
+      if_thompsonaero_2d: IF ((config_flags%mp_physics .EQ. THOMPSONAERO &
+				.OR. config_flags%mp_physics .EQ. RCON_MP_SCHEME) .AND. &
                 config_flags%wif_input_opt .GT. 0) THEN
 
       select_aer_init_opt_2d: select case (aer_init_opt)
@@ -4782,7 +4792,9 @@ endif
 !+---+-----------------------------------------------------------------+
 
       IF ( config_flags%mp_physics .EQ. THOMPSON .OR.                   &
-                   config_flags%mp_physics .EQ. THOMPSONAERO ) THEN
+                   config_flags%mp_physics .EQ. THOMPSONAERO .OR.       &
+				   config_flags%mp_physics .EQ. RCON_MP_SCHEME          &
+				   ) THEN
 
          !..As it occurs up above, temporarily utilizing the v_1 variable,
          !.. to hold temperature, which it does when time_loop=0.

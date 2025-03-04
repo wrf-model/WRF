@@ -4587,8 +4587,9 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
           CALL wdm7init(rhoair0,rhowater,rhosnow,cliq,cpv,ccn_conc, allowed_to_read )
      CASE (UDMSCHEME)
           CALL udminit(rhoair0,rhowater,rhosnow,cliq,cpv,ccn_conc, allowed_to_read )
-          CALL udm_funct_mps_setup
-          CALL udm_funct_svp_setup
+          call udm_funct_shape_setup
+          call udm_funct_svp_setup
+          call udm_funct_lb2017_setup
 #if (EM_CORE==1)
      CASE (NTU)
           CALL ntu_init(PHB,PH,P,PB,inv_dens,QV,QDCN,QTCN,QCCN,QRCN,   &

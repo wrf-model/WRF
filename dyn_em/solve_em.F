@@ -3762,7 +3762,7 @@ BENCH_START(micro_driver_tim)
       &        ,DGNUM4D=grid%dgnum4d,DGNUMWET4D=grid%dgnumwet4d           &
 !======================
 #endif
-      &        ,XLAND=grid%xland,SNOWH=grid%SNOW                           &  !PMA
+      &        ,XLAND=grid%xland,SNOWH=grid%SNOW,XICE=grid%XICE           &
       &        ,SPECIFIED=specified_bdy, CHANNEL_SWITCH=channel_bdy       &
       &        ,F_RAIN_PHY=grid%f_rain_phy                                &
       &        ,F_RIMEF_PHY=grid%f_rimef_phy                              &

@@ -1,6 +1,6 @@
 !WRF:MODEL_LAYER:PHYSICS
 
-! prepocessed on "Feb 27 2025" at "18:52:58"
+! prepocessed on "Mar 11 2025" at "09:41:58"
 
 
 
@@ -1419,12 +1419,11 @@ MODULE module_mp_nssl_2mom
 
     ipconc = ipctmp
     
-    IF ( ipconc < 5 ) THEN
-       ihlcnh = 0
-    ENDIF
 
     IF ( ihlcnh <= 0 ) THEN
-      IF ( ipconc == 5 ) THEN
+      IF ( ipconc < 5 ) THEN
+        ihlcnh = 0
+      ELSEIF ( ipconc == 5 ) THEN
        ihlcnh = 3
       ELSEIF ( ipconc >= 6 ) THEN
        ihlcnh = 3
@@ -1747,9 +1746,15 @@ MODULE module_mp_nssl_2mom
 
     IF ( ipconc == 0 ) THEN
        IF ( hail_on == 1 ) THEN ! turn on graupel density for 1-moment scheme
-       lvh = 9
-       ltmp = 9
-       denscale(lvh) = 1
+         IF ( density_on >= 1 ) THEN ! turn on graupel density for 1-moment scheme
+          lvh = 9
+          ltmp = 9
+          denscale(lvh) = 1
+         ELSE
+          ltmp = lhab
+          lvh = 0
+          lvhl = 0
+         ENDIF
        ELSE ! no hail, 'LFO' scheme
        ltmp = lhab
        lhl = 0
@@ -2924,7 +2929,7 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
           an(ix,1,kz,lnh)  = chw(ix,kz,jy)
           IF ( lhl > 1 ) an(ix,1,kz,lnhl) = chl(ix,kz,jy)
           ENDIF
-          IF ( lvh > 0 ) an(ix,1,kz,lvh)  = vhw(ix,kz,jy)
+          IF ( lvh > 0 .and. present( vhw ) ) an(ix,1,kz,lvh)  = vhw(ix,kz,jy)
           IF ( lvhl > 0 .and. present( vhl ) ) an(ix,1,kz,lvhl)  = vhl(ix,kz,jy)
 
           IF ( ipconc >= 6 ) THEN
@@ -3518,7 +3523,7 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
 
 
 
-         IF ( lvh > 0 )  vhw(ix,kz,jy) = an(ix,1,kz,lvh)
+         IF ( lvh > 0 .and. present( vhw ) )  vhw(ix,kz,jy) = an(ix,1,kz,lvh)
          IF ( lvhl > 0 .and. present( vhl ) ) vhl(ix,kz,jy) = an(ix,1,kz,lvhl)
 
 #if ( WRF_CHEM == 1 )
@@ -12579,7 +12584,8 @@ END SUBROUTINE nssl_2mom_driver
 !             write(0,*) 'restore: k, qccn,exp = ',kz,qccn,dn(ix,jy,kz)*qccn,Exp(-dtp/ccntimeconst)
 !             write(0,*) 'ccn1,ccn2 = ',an(ix,jy,kz,lccn),dn(ix,jy,kz)*qccn - Max(0.0 , dn(ix,jy,kz)*qccn - an(ix,jy,kz,lccn))*Exp(-dtp/ccntimeconst)
 !           ENDIF
-           IF ( an(ix,jy,kz,lccn) > 1. .and. tmp < qxmin(li) .and. ( an(ix,jy,kz,lccn) < dn(ix,jy,kz)*qccn .or. .not. invertccn ) ) THEN 
+           IF ( an(ix,jy,kz,lccn) > 1. .and. tmp < qxmin(li) .and.   &
+               ( an(ix,jy,kz,lccn) < dn(ix,jy,kz)*qccn .or. .not. invertccn ) ) THEN
         !      an(ix,jy,kz,lccn) =  &
         !            an(ix,jy,kz,lccn) +  Max(0.0 , dn(ix,jy,kz)*qccn - an(ix,jy,kz,lccn))*(1.0 - Exp(-dtp/ccntimeconst))
         ! Equivalent form after expanding last term:
@@ -13092,10 +13098,9 @@ END SUBROUTINE nssl_2mom_driver
       real ::  alpha(ngs,lc:lhab)
       real ::  dab0lh(ngs,lc:lhab,lc:lhab)
       real ::  dab1lh(ngs,lc:lhab,lc:lhab)
-      real ::  zx(ngs,lr:lhab)
-      real ::  zxmxd(ngs,lr:lhab)
-      real ::  g1x(ngs,lr:lhab)
-      
+      real :: zx(ngs,lr:lhab)
+      real :: zxmxd(ngs,lr:lhab)
+      real :: g1x(ngs,lr:lhab)
       real :: g1xmax,g1xmin
       real :: qsimxdep(ngs) ! max sublimation of qi+qs+qis
       real :: qsimxsub(ngs) ! max depositionof qi+qs+qis
@@ -17842,7 +17847,8 @@ END SUBROUTINE nssl_2mom_driver
                tmp = crcnw(mgs)
                tmp2 = qrcnw(mgs)*cx(mgs,lr)/qx(mgs,lr)
                ! try mass*diameter-weighted average of old and new Dmr (using full qc mass)
-               crcnw(mgs) = (tmp*xdia(mgs,lc,3)*qx(mgs,lc)+tmp2*xdia(mgs,lr,3)*qx(mgs,lr))/(xdia(mgs,lc,3)*qx(mgs,lc)+xdia(mgs,lr,3)*qx(mgs,lr))
+               crcnw(mgs) = (tmp*xdia(mgs,lc,3)*qx(mgs,lc)+tmp2*xdia(mgs,lr,3)*qx(mgs,lr))/ &
+                             (xdia(mgs,lc,3)*qx(mgs,lc)+xdia(mgs,lr,3)*qx(mgs,lr))
              ELSEIF ( ( dmropt == 7 ) .and. qx(mgs,lr) > qxmin(lr) ) THEN
                tmp = crcnw(mgs)
                tmp2 = qrcnw(mgs)*cx(mgs,lr)/qx(mgs,lr)
@@ -17852,7 +17858,8 @@ END SUBROUTINE nssl_2mom_driver
                tmp = crcnw(mgs)
                tmp2 = qrcnw(mgs)*cx(mgs,lr)/qx(mgs,lr)
                ! try sqrt(diameter)-weighted average of old and new Dmr
-               crcnw(mgs) = (tmp*sqrt(xdia(mgs,lc,3))+tmp2*sqrt(xdia(mgs,lr,3)))/(sqrt(xdia(mgs,lc,3))+sqrt(xdia(mgs,lr,3)))
+               crcnw(mgs) = (tmp*sqrt(xdia(mgs,lc,3))+tmp2*sqrt(xdia(mgs,lr,3)))/  &
+                             (sqrt(xdia(mgs,lc,3))+sqrt(xdia(mgs,lr,3)))
              ENDIF
            ELSEIF ( dmrauto == 1  .and. cx(mgs,lr) > cxmin) THEN
              IF ( qx(mgs,lr) > qxmin(lr) ) THEN
@@ -19165,8 +19172,6 @@ END SUBROUTINE nssl_2mom_driver
 
        ELSEIF ( ibinhlmlr == 1 ) THEN ! use incomplete gamma functions to approximate the bin results
 
-! #ifdef 1
-! #if (defined 1) && defined( COMMAS ) || defined( COMMASTMP )
 
        ELSEIF ( ibinhlmlr == -1 ) THEN ! OLD VERSION use incomplete gamma functions to approximate the bin results
 
@@ -20964,7 +20969,7 @@ END SUBROUTINE nssl_2mom_driver
 !      qhlcnh(mgs) = 0.0
 !      chlcnh(mgs) = 0.0
       if ( wetgrowth(mgs) .and. temg(mgs) .lt. tfr-5. .and. qx(mgs,lh) > qxmin(lh) ) then
-      if ( qhacw(mgs).gt.1.e-6 .and. xdn(mgs,lh) > 700. ) then
+      if ( qhacw(mgs).gt.1.e-6 .and. ( xdn(mgs,lh) > 700. .or. lvh == 0 ) ) then
       qhlcnh(mgs) =                                                   &
         ((pi*xdn(mgs,lh)*cx(mgs,lh)) / (6.0*rho0(mgs)*dtp))           &
        *exp(-hldia1/xdia(mgs,lh,1))                                    &

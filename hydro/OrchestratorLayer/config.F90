@@ -759,9 +759,13 @@ contains
     nlst(did)%SOLVEG_INITSWC = SOLVEG_INITSWC
     nlst(did)%reservoir_obs_dir = "testDirectory"
 
-    if ((lake_option == 3) .and. (reservoir_persistence_usgs .or. reservoir_persistence_usace .or. reservoir_rfc_forecasts)) then
-      reservoir_type_specified = .TRUE.
-      lake_option = 1
+    if (lake_option == 3) then
+      if (reservoir_persistence_usgs .or. reservoir_persistence_usace .or. reservoir_rfc_forecasts) then
+         reservoir_type_specified = .TRUE.
+      else
+         print *, "WARNING: lake_option = 3 (Reservoir DA), but no specific DA option was enabled. Setting lake_option to 1."
+      end if
+      lake_option = 1      ! set to 1 either way
     end if
 
     if (lake_option == -99) then

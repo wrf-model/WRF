@@ -1404,6 +1404,8 @@ BENCH_END(pbl_driver_tim)
                grid%j_start(ij), grid%j_end(ij),                       &
                grid%fire_state%emis_smoke, tracer(:,:,:,p_fire_smoke), &
                config_flags%tracer_opt,                                &
+               p_phy, t_phy, moist(ims,kms,jms,P_QV),                  &
+               grid%aod5502d_smoke,                                    &
                grid%fire_state%fgrnhfx, grid%fire_state%fgrnqfx,       &
                grid%grnhfx, grid%grnqfx, grid%canhfx, grid%canqfx,     &
                grid%grnsmk,                                            &

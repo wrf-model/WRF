@@ -1392,9 +1392,8 @@ BENCH_END(pbl_driver_tim)
              call Provide_atm_feedback (grid%cfbm_namelist,            &
                grid%fire_state%ifms, grid%fire_state%ifme,             &
                grid%fire_state%jfms, grid%fire_state%jfme,             &
-               grid%fire_state%i_start, grid%fire_state%i_end,         &
-               grid%fire_state%j_start, grid%fire_state%j_end,         &
-               grid%num_tiles,                                         &
+               grid%fire_state%i_start(ij), grid%fire_state%i_end(ij), &
+               grid%fire_state%j_start(ij), grid%fire_state%j_end(ij), &
                grid%fire_state%ifps, grid%fire_state%ifpe,             &
                grid%fire_state%jfps, grid%fire_state%jfpe,             &
                ids, ide, kds, kde, jds, jde,                           &
@@ -1402,6 +1401,7 @@ BENCH_END(pbl_driver_tim)
                grid%i_start(ij), grid%i_end(ij),                       &
                k_start, k_end,                                         &
                grid%j_start(ij), grid%j_end(ij),                       &
+               grid%sr_x, grid%sr_y,                                   &
                grid%fire_state%emis_smoke, tracer(:,:,:,p_fire_smoke), &
                config_flags%tracer_opt,                                &
                p_phy, t_phy, moist(ims,kms,jms,P_QV),                  &

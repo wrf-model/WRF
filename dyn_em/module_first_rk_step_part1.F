@@ -1417,7 +1417,7 @@ BENCH_END(pbl_driver_tim)
            end do
            !$OMP END PARALLEL DO
          else
-         CALL wrf_error_fatal ('num_tiles in WRF and CFBM should match')
+           call wrf_error_fatal ('num_tiles in WRF and CFBM should match')
          endif
 
          call grid%fire_state%Handle_output (grid%cfbm_namelist)

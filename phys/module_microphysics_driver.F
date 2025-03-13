@@ -112,7 +112,6 @@ SUBROUTINE microphysics_driver(                                          &
                       ,qnwfa2d, qnifa2d, qnbca2d                         & ! for water/ice-friendly/black carbon aerosols
                       ,qnocbb2d, qnbcbb2d                                & ! for biomass burning aerosols
                       ,ssat,ssati                                        &
-                      ,f_ssat,f_ssati                                    &
                       ,refl_10cm                                         & ! HM, 9/22/09, add for refl
                       ,vmi3d                                             & ! for P3 
                       ,di3d                                              & ! for P3 
@@ -730,8 +729,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                        ,f_qvoli,f_qaoli                                      & ! for Jensen ISHMAEL
                        ,f_qvoli2,f_qaoli2                                    & ! for Jensen ISHMAEL
                        ,f_qi3,f_qni3,f_qvoli3,f_qaoli3                       & ! for Jensen ISHMAEL
-                       ,f_qnwfa, f_qnifa, f_qnbca                            & ! Added by G. Thompson
-                       ,f_ssat,f_ssati
+                       ,f_qnwfa, f_qnifa, f_qnbca                             ! Added by G. Thompson
 
 
    LOGICAL, OPTIONAL, INTENT(IN) :: diagflag
@@ -2079,8 +2077,8 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      GRPLNCV  = GRAUPELNCV,              &
                      SR=SR,                              &
                      dbz      = refl_10cm,               &
-                     ssat3d   = ssat,  f_ssat=f_ssat,    &
-                     ssati    = ssati, f_ssati=f_ssati,  &
+                     ssat3d   = ssat,  f_ssat =(config_flags%nssl_ssat_output >= 1), &
+                     ssati    = ssati, f_ssati=(config_flags%nssl_ssat_output >= 2), &
 #if ( WRF_CHEM == 1 )
                     WETSCAV_ON = config_flags%wetscav_onoff == 1, &
                     EVAPPROD=evapprod,RAINPROD=rainprod, &

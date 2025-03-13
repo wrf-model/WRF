@@ -3409,7 +3409,7 @@
                 'Instead you can use mp_physics=18, nssl_2moment_on=0, nssl_ccn_on=0'
               CALL wrf_debug ( 0, wrf_err_message )
          ELSEIF ( model_config_rec % mp_physics(i) .EQ. 21        ) THEN
-             ! single-moment without
+             ! single-moment without graupel volume, no hail
               model_config_rec % mp_physics(i) = NSSL_2MOM
               model_config_rec % nssl_2moment_on = 0
               model_config_rec % nssl_hail_on = 0

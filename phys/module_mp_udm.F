@@ -1574,7 +1574,7 @@ subroutine udm2d(t1, q1                                          &
 !-------------------------------------------------------------------------------
 ! ngacw: accretion of cloud water by graupel [lh a13]
 !        (nc->
-       if(qrs(k,i,3)>qrmin .and. ncr(k,i,2)>ncmin) then
+       if(qrs(k,i,3)>qrmin .and. qci(k,i,1)>qcmin .and. ncr(k,i,2)>ncmin) then               
          ngacw(k) = min(pacrg*rslope3(k,3)*rslopeb(k,3)*ncr(k,i,2)             &
 ! reduce collection efficiency (suggested by B. Wilt)
                      *min(max(0.0,qrs(k,i,3)/qci(k,i,1)),1.)**2                &

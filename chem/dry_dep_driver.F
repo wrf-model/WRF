@@ -947,7 +947,7 @@ CONTAINS
           dvel(i,1,j,p_ddmass_ca_a02) = dvel(i,1,j,p_ddmass_ca_a02) + ddmassn(p_ca_a02)
           dvel(i,1,j,p_ddmass_ca_a03) = dvel(i,1,j,p_ddmass_ca_a03) + ddmassn(p_ca_a03)
           dvel(i,1,j,p_ddmass_ca_a04) = dvel(i,1,j,p_ddmass_ca_a04) + ddmassn(p_ca_a04)
-          dvel(i,1,j,p_ddmass_ca_a05) = dvel(i,1,j,p_ddmass_ca_a05) + ddmassn(p_ca_a05) !dimaman
+          dvel(i,1,j,p_ddmass_ca_a05) = 1.0e-35 !dimaman
 
           dvel(i,1,j,p_ddmass_co3_a01) = dvel(i,1,j,p_ddmass_co3_a01) + ddmassn(p_co3_a01)
           dvel(i,1,j,p_ddmass_co3_a02) = dvel(i,1,j,p_ddmass_co3_a02) + ddmassn(p_co3_a02)
@@ -1416,13 +1416,13 @@ CONTAINS
           dvel(ims:ime,1,jms:jme,p_ddmass_ca_cw02) = dvel(ims:ime,1,jms:jme,p_ddmass_ca_cw02) + qsrflx(ims:ime,jms:jme,p_ca_cw02)
           dvel(ims:ime,1,jms:jme,p_ddmass_ca_cw03) = dvel(ims:ime,1,jms:jme,p_ddmass_ca_cw03) + qsrflx(ims:ime,jms:jme,p_ca_cw03)
           dvel(ims:ime,1,jms:jme,p_ddmass_ca_cw04) = dvel(ims:ime,1,jms:jme,p_ddmass_ca_cw04) + qsrflx(ims:ime,jms:jme,p_ca_cw04)
-          dvel(ims:ime,1,jms:jme,p_ddmass_ca_cw05) = dvel(ims:ime,1,jms:jme,p_ddmass_ca_cw05) + qsrflx(ims:ime,jms:jme,p_ca_cw05) !dimaman
+          dvel(ims:ime,1,jms:jme,p_ddmass_ca_cw05) = 1.0e-35 !dimaman
 
           dvel(ims:ime,1,jms:jme,p_ddmass_co3_cw01) = dvel(ims:ime,1,jms:jme,p_ddmass_co3_cw01) + qsrflx(ims:ime,jms:jme,p_co3_cw01)
           dvel(ims:ime,1,jms:jme,p_ddmass_co3_cw02) = dvel(ims:ime,1,jms:jme,p_ddmass_co3_cw02) + qsrflx(ims:ime,jms:jme,p_co3_cw02)
           dvel(ims:ime,1,jms:jme,p_ddmass_co3_cw03) = dvel(ims:ime,1,jms:jme,p_ddmass_co3_cw03) + qsrflx(ims:ime,jms:jme,p_co3_cw03)
           dvel(ims:ime,1,jms:jme,p_ddmass_co3_cw04) = dvel(ims:ime,1,jms:jme,p_ddmass_co3_cw04) + qsrflx(ims:ime,jms:jme,p_co3_cw04)
-          dvel(ims:ime,1,jms:jme,p_ddmass_co3_cw05) = dvel(ims:ime,1,jms:jme,p_ddmass_co3_cw05) + qsrflx(ims:ime,jms:jme,p_co3_cw05) !dimaman
+          dvel(ims:ime,1,jms:jme,p_ddmass_co3_cw05) = 1.0e-35 !dimaman
 
           dvel(ims:ime,1,jms:jme,p_ddmass_glysoa_cw01) = dvel(ims:ime,1,jms:jme,p_ddmass_glysoa_cw01) + &
                                             qsrflx(ims:ime,jms:jme,p_glysoa_r1_cw01) + &

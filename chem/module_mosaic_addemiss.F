@@ -127,8 +127,8 @@ CONTAINS
            aem_bact, aem_fung, aem_pol                            !dimaman
    real dum, fact, gmtd
    CHARACTER(len=24) ::  nextstep_date, cdate,simulation_start_date, cur_date
-   integer :: idt
-   REAL :: dxd,dy,xlat
+   !integer :: idt
+   REAL :: xlat !dxd,dy
    !...leaf_area_index (m2/m2)
    REAL, DIMENSION (ims:ime, jms:jme, 12 ) ,            &
          OPTIONAL,                                      &
@@ -147,16 +147,9 @@ CONTAINS
    real, dimension(:,:), allocatable ::bct_number
    real, dimension(:,:), allocatable ::fng_number
    real, dimension(:,:), allocatable ::pln_number
-!   real, dimension(:,:), allocatable ::bct_numberall
-!   real, dimension(:,:), allocatable ::fng_numberall
-!   real, dimension(:,:), allocatable ::pln_numberall
    real, dimension(:,:), allocatable ::bct_mass
    real, dimension(:,:), allocatable ::fng_mass
    real, dimension(:,:), allocatable ::pln_mass
-!   real, dimension(:,:), allocatable ::bct_massall
-!   real, dimension(:,:), allocatable ::fng_massall
-!   real, dimension(:,:), allocatable ::pln_massall
-
    real :: oc_density
    real pi
    parameter (pi = 3.1415936536)
@@ -358,15 +351,6 @@ real, save :: fr8b_bburn_mosaic(10) = &
    allocate(fng_mass(ims:ime, jms:jme)); fng_mass=0
    allocate(pln_mass(ims:ime, jms:jme)); pln_mass=0
 
-!   allocate(bct_numberall(ims:ime, jms:jme))
-!   allocate(fng_numberall(ims:ime, jms:jme))
-!   allocate(pln_numberall(ims:ime, jms:jme))
-!   allocate(bct_massall(ims:ime, jms:jme))
-!   allocate(fng_massall(ims:ime, jms:jme))
-!   allocate(pln_massall(ims:ime, jms:jme))
-
-
-
 
 
    months_noleap = (/31,28,31,30,31,30,31,31,30,31,30,31/)
@@ -540,22 +524,22 @@ real, save :: fr8b_bburn_mosaic(10) = &
 
 
 	p1st = param_first_scalar
-    print *,'p1st',p1st
+!    print *,'p1st',p1st
 !dimaman
-   print *, 'Diabazei mhna, wra'
-   CALL nl_get_simulation_start_year   ( 1, simulation_start_year   )
-   CALL nl_get_simulation_start_month  ( 1, simulation_start_month  )
-   CALL nl_get_simulation_start_day    ( 1, simulation_start_day    )
-   CALL nl_get_simulation_start_hour   ( 1, simulation_start_hour   )
-   CALL nl_get_simulation_start_minute ( 1, simulation_start_minute )
-   CALL nl_get_simulation_start_second ( 1, simulation_start_second )
-   WRITE ( simulation_start_date(1:19) , FMT = '(I4.4,"-",I2.2,"-",I2.2,"_",I2.2,":",I2.2,":",I2.2)' ) &
-           simulation_start_year,simulation_start_month,simulation_start_day,&
-           simulation_start_hour,simulation_start_minute,simulation_start_second
-   simulation_start_date(1:24) = trim(simulation_start_date(1:19))//trim('.0000')
-   print *, simulation_start_date
+!   print *, 'Diabazei mhna, wra'
+!   CALL nl_get_simulation_start_year   ( 1, simulation_start_year   )
+!   CALL nl_get_simulation_start_month  ( 1, simulation_start_month  )
+!   CALL nl_get_simulation_start_day    ( 1, simulation_start_day    )
+!   CALL nl_get_simulation_start_hour   ( 1, simulation_start_hour   )
+!   CALL nl_get_simulation_start_minute ( 1, simulation_start_minute )
+!   CALL nl_get_simulation_start_second ( 1, simulation_start_second )
+!   WRITE ( simulation_start_date(1:19) , FMT = '(I4.4,"-",I2.2,"-",I2.2,"_",I2.2,":",I2.2,":",I2.2)' ) &
+!           simulation_start_year,simulation_start_month,simulation_start_day,&
+!           simulation_start_hour,simulation_start_minute,simulation_start_second, &
+!           simulation_start_date(1:24) = trim(simulation_start_date(1:19))//trim('.0000')
+!   print *, simulation_start_date
    CALL geth_julgmt (julyrd , juldayd , gmtd)
-   print *, julyrd, juldayd, gmtd
+!   print *, julyrd, juldayd, gmtd
 
    IF(MOD(julyrd,100).NE.0.AND.MOD(julyrd,4).EQ.0) THEN
     months = months_leap
@@ -574,7 +558,7 @@ real, save :: fr8b_bburn_mosaic(10) = &
         exit
      endif
    end do
-   print *,'mon',mon
+!   print *,'mon',mon
    hour = int(gmtd)
 
 !dimaman 30/09/2022
@@ -612,8 +596,8 @@ real, save :: fr8b_bburn_mosaic(10) = &
 	        + fr_aem_sorgam_i(n)*emis_ant(i,k,j,p_e_no3i)   &
 	        + fr_aem_sorgam_j(n)*emis_ant(i,k,j,p_e_no3j)  
 
-	aem_oc  = fr_aem_mosaic_f(n)*emis_ant(i,k,j,p_e_orgj)   &  !dimaman
-	        + fr_aem_mosaic_c(n)*emis_ant(i,k,j,p_e_orgi)   &  !orgc
+	aem_oc  = fr_aem_mosaic_f(n)*emis_ant(i,k,j,p_e_orgj)   &
+	        + fr_aem_mosaic_c(n)*emis_ant(i,k,j,p_e_orgc)   &  !dimaman suggested orgi
 	        + fr_aem_sorgam_i(n)*emis_ant(i,k,j,p_e_orgi)   &
 	        + fr_aem_sorgam_j(n)*emis_ant(i,k,j,p_e_orgj)   &
 	        + fr_tno_oc_dom(n)*emis_ant(i,k,j,p_e_oc_dom)   &
@@ -630,7 +614,7 @@ real, save :: fr8b_bburn_mosaic(10) = &
          END SELECT  chem_select_1 
 
 	aem_bc  = fr_aem_mosaic_f(n)*emis_ant(i,k,j,p_e_ecj)  &
-	        + fr_aem_mosaic_c(n)*emis_ant(i,k,j,p_e_eci)  & !dimaman orgc
+	        + fr_aem_mosaic_c(n)*emis_ant(i,k,j,p_e_ecc)  & !dimaman suggested eci
 	        + fr_aem_sorgam_i(n)*emis_ant(i,k,j,p_e_eci)  &
 	        + fr_aem_sorgam_j(n)*emis_ant(i,k,j,p_e_ecj)  &
 	        + fr_tno_bc1(n)*emis_ant(i,k,j,p_e_bc_1)      &
@@ -686,7 +670,7 @@ real, save :: fr8b_bburn_mosaic(10) = &
       !dimitris April 2018
       print *, 'PBAPMOSAIC START'
       ! Bacteria emissions - dimaman
-      print *, 'BACTERIA START'
+!      print *, 'BACTERIA START'
       !Factors from Jacobson and Streets, GJR, 2009; Table 5
       if (xlat > 0.) then !North Hemisphere
          if (any([1,2,3,4,11,12] == mon)) then
@@ -700,9 +684,10 @@ real, save :: fr8b_bburn_mosaic(10) = &
          if (any([7,8,9,10,5,6] == mon))then
             mfactor = 0.6
          else if (any([11,12,1,2,3,4] == mon)) then
-            mfactor = 1.4
+            mfactor = 1.4     
          endif
       endif
+
       ! Bacteria content from the wrfchemi file
       bct_number(i,j) = mfactor * emis_ant(i,k,j,p_e_bact) !#/m2/s
       nmr_bct = mmr_bct * exp(3.0*alog(1.0)**2) !m
@@ -711,33 +696,37 @@ real, save :: fr8b_bburn_mosaic(10) = &
       bact_emiss(i,j) =  bct_mass(i,j) !kg/m2/s organic mass
       aem_bact = bact_emiss(i,j)
       aem_bact = aem_bact * fr_aem_mosaic_bact(n) !12/6/2022
-      print *, 'bacteria aem_bact'
-      print *, aem_bact
-	  print *, 'BACTERIA END'
+      print *, 'bacteria aem_bact = ',aem_bact
+!      print *, aem_bact
+!	  print *, 'BACTERIA END'
       
 	  !FUNGAL emissions - dimaman
-      print *, 'FUNGAL START'
+!      print *, 'FUNGAL START'
       if (emis_ant(i,k,j,p_e_fung) > 0.) then
          a = 20.246 * (T2(i,j) - 275.82) + 3.93e04 * &
              Q2(i,j) * mlai(i,j,mon) !T2:temperature (K)Q2:humidity (Kg/Kg) mlai:leaf area index (m2/m2
+         !Heald & Spracklen - Hoose - Hummel
+         !a = 3.08667e04 * Q2(i,j) * mlai(i,j,mon) !Q2:humidity (Kg/Kg) mlai:leaf area index (m2/m2)
+         !Janssen - add ust 
+         !a = 2.63e-5 + 6.10e03 * Q2(i,j) + 46.7 * mlai(i,j,mon) + 59.0 * ust(i,j) #ust:friction velocity (m/s)
          fng_number(i,j) = max(0., a) !#/m2/s
       else
          fng_number(i,j) = 0.
       endif
 !      fng_number(i,j) = fng_number(i,j) !#/m2/s
       nmr_fng = mmr_fng * exp(3.0*alog(1.0)**2) !mass median radius
-	  fng_mass(i,j) = fng_number(i,j) * pi * 4./3. * &
+      fng_mass(i,j) = fng_number(i,j) * pi * 4./3. * &
                       nmr_fng**3 * exp(9./2. * alog(1.0)**2) * &
                       oc_density * 1e09!kg/m2/s -------> ug/m2/s            
       fung_emiss(i,j) = fng_mass(i,j) !ug/m2/s
       aem_fung = fung_emiss(i,j)
       aem_fung = aem_fung * fr_aem_mosaic_fung(n)!12/6/2022
-      print *, 'fungal aem_fung'
-      print *, aem_fung
-      print *, 'FUNGAL END'
+      print *, 'fungal aem_fung', aem_fung
+!     print *, aem_fung
+!     print *, 'FUNGAL END'
 	  
       ! Pollen emissions - dimaman
-      print *, 'POLLEN START'
+!      print *, 'POLLEN START'
       !Factors from Jacobson and Streets, GJR, 2009; Table 5
       !1) Months
       if (xlat > 0.) then !North Hemisphere
@@ -794,9 +783,9 @@ real, save :: fr8b_bburn_mosaic(10) = &
       pol_emiss(i,j) =  pln_mass(i,j) !ug/m2/s organic mass (an thelw organic carbon prepei na diairethei me 2.6)
       aem_pol = pol_emiss(i,j)
       aem_pol = aem_pol * fr_aem_mosaic_pol(n)!12/6/2022
-      print *, 'pollen aem_pol'
-      print *, aem_pol
-	  print *, 'POLLEN END'
+      print *, 'pollen aem_pol',aem_pol
+!      print *, aem_pol
+!	  print *, 'POLLEN END'
     
 	  print *, 'PBAPMOSAIC DONE'
   END SELECT chem_select_3

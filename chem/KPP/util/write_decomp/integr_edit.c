@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define NAMELEN 4096
  
@@ -7,6 +8,7 @@
 /* replace decomp routine in KPP Integr file */
 
 
+int
 main( int argc, char *argv[] )
 {
 
@@ -23,99 +25,84 @@ main( int argc, char *argv[] )
   FILE * ofile;
   
 
+  
+  if ( argc != 5 )
+  {
+    printf("ERROR: USAGE: integr_edit mech_name integrator_file decomp_inc_file output_file\n");
+    exit(11);
+  }
+
   argv++ ;
-
-  if ( *argv )
-    {
   strcpy( mechname, *argv );
-    }
-  else
-    {
-     printf("ERROR: USAGE: integr_edit mech_name\n");
-     exit(11);
-    }
 
-  sprintf ( intfname, "module_kpp_%s_Integr.F", mechname);
-  sprintf ( incfname, "decomp_%s.inc", mechname);
-  sprintf ( tfname, "%s_new", intfname );
+  argv++;
+  strcpy( intfname, *argv );
+  argv++;
+  strcpy( incfname, *argv );
+  argv++;
+  strcpy( tfname, *argv );
 
-  
+  sprintf( cp_command,"cp %s %s",tfname, intfname );
 
-  sprintf(  cp_command,"cp %s %s",tfname, intfname);
-
-  intf = fopen( intfname , "r" );
-  incf = fopen( incfname , "r" );
-  ofile = fopen( tfname , "w" );
+  intf  = fopen( intfname, "r" );
+  incf  = fopen( incfname, "r" );
+  ofile = fopen( tfname,   "w" );
 
 
   
-  sprintf ( callln , "   CALL %s_KppDecomp\0", mechname );
-  sprintf ( endln , "END MODULE");
+  sprintf( callln, "   CALL %s_KppDecomp\0", mechname );
+  sprintf( endln, "END MODULE" );
 
-     /* loop over lines in Integr file */
-       while ( fgets ( inln , 4096 , intf ) != NULL ){
+  /* loop over lines in Integr file */
+  while ( fgets( inln , 4096 , intf ) != NULL ) {
 
-	   copyit=1;
-      
-        
-	   /* replace call to decomp routine */
-
-           if ( !strncmp (inln, callln, strlen(callln)-1) ) {
-
-	  printf("   integr_edit: replacing  %s \n", inln);
-
-          fprintf(ofile, "!!!  use direct adressing in decomp \n");
-          fprintf(ofile, "!!! %s", inln);
-          fprintf(ofile, "CALL decomp_%s ( A, ising )\n", mechname );
+    copyit = 1;
 
 
-          add_sub=1;
-	  copyit=0;
-           }
+    /* replace call to decomp routine */
+    if ( !strncmp( inln, callln, strlen( callln ) - 1 ) ) {
+
+      printf("   integr_edit: replacing  %s \n", inln);
+      fprintf(ofile, "!!!  use direct adressing in decomp \n");
+      fprintf(ofile, "!!! %s", inln);
+      fprintf(ofile, "CALL decomp_%s ( A, ising )\n", mechname );
+
+      add_sub = 1;
+      copyit  = 0;
+    }
 
 
-	   /* add decomp routine w. direct referncing */
+    /* add decomp routine w. direct referncing */
+    if ( !strncmp (inln, endln, strlen(endln)-1) ) {
 
-          if ( !strncmp (inln, endln, strlen(endln)-1) ) {
-
-	    if ( add_sub ){
-	    printf("  %s ", inln );
-               while ( fgets ( incln , 4096 , incf ) != NULL ){
-
-                fprintf(ofile, "%s", incln);
-
-               }
-            
-                fprintf(ofile, " \n\n\n");
-            }
-          }
+      if ( add_sub ) {
+        printf("  %s ", inln );
+        while ( fgets ( incln , 4096 , incf ) != NULL ) {
+          fprintf( ofile, "%s", incln );
+        }
+        fprintf(ofile, " \n\n\n");
+      }
+    }
 
 
+    /* copy line from original file */
+    if ( copyit ) {
+      fprintf( ofile, "%s", inln );
+    }
+  }
 
-
-       /* copy line from original file */
-	 if ( copyit ) {
- 
-	   fprintf(ofile, "%s", inln);
-
-	 } 
-
-
-     }
-
-
-       if ( ! add_sub  ) {
-	 printf(" integr_edit: Kept previous version. \n "); 
-       }
-
+  if ( ! add_sub  ) {
+    printf( " integr_edit: Kept previous version. \n " );
+  }
 
 
   fclose( intf );
   fclose( incf );
   fclose( ofile );
 
-
-   system(cp_command);
+#ifndef NO_COPY
+  system(cp_command);
+#endif
 
   exit (0);
 }

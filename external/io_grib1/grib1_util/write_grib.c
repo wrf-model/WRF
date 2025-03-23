@@ -33,39 +33,14 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "gribfuncs.h"
 
-int rg_write_grib(PDS_INPUT *pds, grid_desc_sec *gds, char filename[],
-	       float **data)
-{
-  char tmpfile[240];
-  char tmpstring[240];
-  FILE *fid;
-  int status;
-
-  sprintf(tmpfile,"/tmp/tmpgribfile_%d",getpid());
-  fid = fopen(tmpfile,"wb");
-  if (fid == NULL) {
-    fprintf(stderr,"rg_write_grib: Could not open %s\n",tmpfile);
-    return -1;
-  }
-
-  status = rg_fwrite_grib(pds,gds,data,fid);
-  if (status != 1)
-    {
-      fprintf(stderr,"rg_write_grib: rg_fwrite_grib failed\n");
-      return -1;
-    }
-  
-  /* append tmpfile to filename */
-  sprintf(tmpstring,"cat %s >> %s",tmpfile,filename);
-  system(tmpstring);
-  unlink(tmpfile);
- 
-  close(fid);
-
-  return(1);
-}
+#if defined(_WIN32)
+#include <io.h>
+#else
+#include <unistd.h>
+#endif
 
 int rg_fwrite_grib(PDS_INPUT *pds, grid_desc_sec *gds, float **data, FILE *fid)
 {
@@ -187,4 +162,36 @@ int rg_fwrite_grib(PDS_INPUT *pds, grid_desc_sec *gds, float **data, FILE *fid)
 
   return 1;
   
+}
+
+int rg_write_grib(PDS_INPUT *pds, grid_desc_sec *gds, char filename[],
+	       float **data)
+{
+  char tmpfile[240];
+  char tmpstring[240];
+  FILE *fid;
+  int status;
+
+  sprintf(tmpfile,"/tmp/tmpgribfile_%d",getpid());
+  fid = fopen(tmpfile,"wb");
+  if (fid == NULL) {
+    fprintf(stderr,"rg_write_grib: Could not open %s\n",tmpfile);
+    return -1;
+  }
+
+  status = rg_fwrite_grib(pds,gds,data,fid);
+  if (status != 1)
+    {
+      fprintf(stderr,"rg_write_grib: rg_fwrite_grib failed\n");
+      return -1;
+    }
+  
+  /* append tmpfile to filename */
+  sprintf(tmpstring,"cat %s >> %s",tmpfile,filename);
+  system(tmpstring);
+  unlink(tmpfile);
+ 
+  fclose(fid);
+
+  return(1);
 }

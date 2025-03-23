@@ -1405,8 +1405,8 @@ CONTAINS
               CALL wrf_debug (1, 'in rad driver; use BL clouds')
               IF (itimestep .NE. 1) THEN
                  DO j = jts,jte
-                 DO i = its,ite
                  DO k = kts,kte
+                 DO i = its,ite
                     CLDFRA(i,k,j)=CLDFRA_BL(i,k,j)
                  ENDDO
                  ENDDO
@@ -1414,13 +1414,13 @@ CONTAINS
               ENDIF
 
               DO j = jts,jte
-              DO i = its,ite
               DO k = kts,kte
+              DO i = its,ite
                  IF (qc(i,k,j) < 1.E-6 .AND. CLDFRA_BL(i,k,j) > 0.001) THEN
-                     qc(i,k,j)=qc(i,k,j) + QC_BL(i,k,j)*CLDFRA_BL(i,k,j)
+                     qc(i,k,j)=qc(i,k,j) + QC_BL(i,k,j)
                  ENDIF
                  IF (qi(i,k,j) < 1.E-8 .AND. CLDFRA_BL(i,k,j) > 0.001) THEN
-                    qi(i,k,j)=qi(i,k,j) + QI_BL(i,k,j)*CLDFRA_BL(i,k,j)
+                    qi(i,k,j)=qi(i,k,j) + QI_BL(i,k,j)
                  ENDIF
               ENDDO
               ENDDO

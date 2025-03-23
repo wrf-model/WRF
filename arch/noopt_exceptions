@@ -17,16 +17,6 @@ module_comm_nesting_dm.o : module_comm_nesting_dm.F
 module_configure.o : module_configure.F
 module_domain.o : module_domain.F
 module_domain_type.o : module_domain_type.F
-module_alloc_space_0.o : module_alloc_space_0.F
-module_alloc_space_1.o : module_alloc_space_1.F
-module_alloc_space_2.o : module_alloc_space_2.F
-module_alloc_space_3.o : module_alloc_space_3.F
-module_alloc_space_4.o : module_alloc_space_4.F
-module_alloc_space_5.o : module_alloc_space_5.F
-module_alloc_space_6.o : module_alloc_space_6.F
-module_alloc_space_7.o : module_alloc_space_7.F
-module_alloc_space_8.o : module_alloc_space_8.F
-module_alloc_space_9.o : module_alloc_space_9.F
 module_tiles.o : module_tiles.F
 module_initialize.o : module_initialize.F
 module_physics_init.o : module_physics_init.F
@@ -209,17 +199,6 @@ wrf_inputout.o \
 wrf_restartin.o \
 wrf_restartout.o \
 module_state_description.o \
-module_alloc_space.o \
-module_alloc_space_0.o \
-module_alloc_space_1.o \
-module_alloc_space_2.o \
-module_alloc_space_3.o \
-module_alloc_space_4.o \
-module_alloc_space_5.o \
-module_alloc_space_6.o \
-module_alloc_space_7.o \
-module_alloc_space_8.o \
-module_alloc_space_9.o \
 module_comm_dm.o \
 module_comm_dm_0.o \
 module_comm_dm_1.o \

@@ -17,3 +17,23 @@
 configure.wrf*
 *.backup
 *.f90
+
+# Out-of-source build locations
+_build*
+wrf_config.cmake
+
+# Executables when not featuring .exe suffix
+ndown
+real
+tc
+ideal
+wrf
+
+# Model inputs/outputs
+wrfbdy_d*
+wrfinput_d*
+wrfout_d*
+*.nc
+rsl.out.*
+rsl.error.*
+*.log

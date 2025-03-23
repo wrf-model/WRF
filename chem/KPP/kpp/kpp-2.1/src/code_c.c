@@ -32,6 +32,7 @@
 
 #include "gdata.h"
 #include "code.h"
+#include "scan.h"
 #include <string.h>
 
 #define MAX_LINE  120
@@ -366,7 +367,7 @@ char dummy_val[100];           /* used just to avoid strange behaviour of
     case CONST: bprintf("#define %-20s %-10s ", var->name, val );
                 break;       
     default:
-                printf( "Invalid constant", var->type );
+                printf( "Invalid constant %d", var->type );
                 break;
   }
   if( varTable[ v ]->comment )
@@ -484,7 +485,7 @@ char buf[ 1000 ];
   FlushBuf();
 }
 
-void Use_C()
+void Use_C( char *rootFileName )
 { 
   WriteElm 	    = C_WriteElm;
   WriteSymbol 	    = C_WriteSymbol;  

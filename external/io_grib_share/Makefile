@@ -22,9 +22,9 @@ LIB_DEST = .
 #    CXX_INCLUDES is for C++ files
 #    C_INCLUDES is for C files
 #
-C_INCLUDES   = -I.
-CXX_INCLUDES = -I.
-F_INCLUDES   = -I.
+C_INCLUDES   = -I. -I../ioapi_share
+CXX_INCLUDES = -I. -I../ioapi_share
+F_INCLUDES   = -I. -I../ioapi_share
 AR           = ar
 ARFLAGS      = cruv
 

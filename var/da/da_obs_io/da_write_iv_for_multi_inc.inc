@@ -890,6 +890,35 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
 
    end if ! nobs_tot > 0
 
+   ! [26] lightning obs:
+
+   if (iv%info(lightning)%plocal(iv%time) - iv%info(lightning)%plocal(iv%time-1) > 0) then
+
+      open (unit=ounit,file=trim(filename)//'.lightning',form='formatted',status='replace', &
+         iostat=ios)
+      if (ios /= 0) then
+         call da_error(__FILE__,__LINE__, &
+            (/"Cannot open conventional observation omb file"//filename/))
+      end if
+
+      write(ounit,'(a20,i8)')'radar', iv%info(lightning)%plocal(iv%time) - &
+                                       iv%info(lightning)%plocal(iv%time-1)
+      do n = iv%info(lightning)%plocal(iv%time-1) + 1, &
+             iv%info(lightning)%plocal(iv%time)
+         write(ounit,'(2i8,2E22.13)')&
+                 n, iv%info(lightning)%levels(n),  &
+                 iv%info(lightning)%lat(1,n), &      ! Latitude
+                 iv%info(lightning)%lon(1,n)         ! Longitude
+         do k = 1 , iv%info(lightning)%levels(n)
+            write(ounit,'(E22.13,(E22.13,i8,3E22.13))')&
+                     iv%lightning(n)%w(k) ,&        ! lightning-w
+                     iv%lightning(n)%div(k), &      ! lightning-div
+                     iv%lightning(n)%qv(k)          ! lightning-qv
+         enddo
+      end do
+      close (ounit)
+   end if
+
    !-------------------------------------------------------------------------------
 
 

@@ -351,7 +351,7 @@ else
              setenv BUFR 1
           endif
           if ( -e ${RTTOV}/lib/librttov12_main.a ) then
-             setenv RTTOV_LIB "-L${hdf5path}/lib -lhdf5hl_fortran -lhdf5_hl -lhdf5_fortran -lhdf5 -L${RTTOV}/lib -lrttov12_coef_io -lrttov12_emis_atlas -lrttov12_main -lrttov12_hdf"
+             setenv RTTOV_LIB "-L${hdf5path}/lib -lhdf5_hl_fortran -lhdf5_hl -lhdf5_fortran -lhdf5 -lhdf5_hl_f90cstub -lhdf5_f90cstub -lhdf5_hl_cpp -L${RTTOV}/lib -lrttov12_coef_io -lrttov12_emis_atlas -lrttov12_main -lrttov12_hdf"
           else
              echo "Can not find a compatible RTTOV library! Please ensure that your RTTOV build was successful,"
              echo "your 'RTTOV' environment variable is set correctly, and you are using a supported version of RTTOV."
@@ -407,15 +407,17 @@ else
   echo " "
   uname -a
   echo " "
-  set comp = ( `grep "^SFC" configure.wrf | cut -d"=" -f2-` )
-  if      ( "$comp[1]" == "gfortran" ) then
-    gfortran --version
-  else if ( "$comp[1]" == "pgf90" ) then
-    pgf90 --version
-  else if ( "$comp[1]" == "ifort" ) then
-    ifort -V
+  set comp = ( `grep "^SFC" configure.wrf | cut -d"#" -f1 | cut -d"=" -f2-` )
+  $comp[1] -V >& /dev/null
+  if ( $status == 0 ) then
+    $comp[1] -V
   else
-    echo "Not sure how to figure out the version of this compiler: $comp[1]"
+    $comp[1] --version >& /dev/null
+    if ( $status == 0 ) then
+      $comp[1] --version
+    else
+      echo "Not sure how to figure out the version of this compiler: $comp[1]"
+    endif
   endif
   echo " "
   echo "============================================================================================== "

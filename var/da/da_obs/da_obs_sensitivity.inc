@@ -506,7 +506,7 @@ subroutine da_obs_sensitivity(ktr, iv)
          write(unit=message(imsg),fmt='(A)') 'Impact of Conventional Observations for each observation type: '
          do i = 1, num_ob_indexes
             if ( (i == ssmi_tb) .or. (i == ssmt1) .or. (i == ssmt2) .or. &
-                 (i == radar ) .or. (i == radiance) .or. (i == airsr) .or. &
+                 (i == radar ) .or. (i == radiance) .or. (i == airsr) .or. (i == lightning) .or. &
                  (i == sonde_sfc) .or. (i == tamdar_sfc) .or. (i == rain) ) cycle
             imsg = imsg + 1
             write(unit=message(imsg),fmt='(3x,a,e15.5)') obs_names(i), SUM(ktd_global(i,:))

@@ -6,7 +6,7 @@ include ../../configure.kpp
 
 CFLAGS = #-ansi
 LDFLAGS =
-DEBUG = -g 
+DEBUG = -O0 -g 
 OBJ = registry_kpp.o  my_strtok.o data.o type.o misc.o reg_parse.o \
       gen_kpp.o get_wrf_chem_specs.o gen_kpp_mech_dr.o gen_kpp_interface.o \
       get_kpp_chem_specs.o compare_kpp_to_species.o get_wrf_radicals.o \

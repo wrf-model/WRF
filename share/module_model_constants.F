@@ -62,6 +62,9 @@
    REAL    , PARAMETER :: RE_QC_BG     = 2.49E-6     ! effective radius of cloud for background (m)
    REAL    , PARAMETER :: RE_QI_BG     = 4.99E-6     ! effective radius of ice for background (m)
    REAL    , PARAMETER :: RE_QS_BG     = 9.99E-6     ! effective radius of snow for background (m)
+   REAL    , PARAMETER :: RE_QC_MAX    =  50.E-6     ! max effective radius of cloud allowed
+   REAL    , PARAMETER :: RE_QI_MAX    = 125.E-6     ! max effective radius of ice allowed
+   REAL    , PARAMETER :: RE_QS_MAX    = 999.E-6     ! max effective radius of snow allowed
 !
 ! Now namelist-specified parameter: ccn_conc - RAS
 !   REAL    , PARAMETER :: n_ccn0       = 1.0E8

@@ -505,6 +505,28 @@
       ENDDO
 
 !-----------------------------------------------------------------------
+! Check that only compatible options are set when slucm_distributed_drag is set
+!-----------------------------------------------------------------------
+      IF (model_config_rec % slucm_distributed_drag) THEN
+
+        IF (model_config_rec % use_wudapt_lcz .EQ. 1) THEN
+            wrf_err_message = '--- ERROR: slucm_distributed_drag cannot work with use_wudapt_lcz'
+            CALL wrf_message ( wrf_err_message )
+            count_fatal_error = count_fatal_error + 1
+        END IF
+
+        DO i = 1, model_config_rec % max_dom
+           IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+           IF ( model_config_rec % sf_urban_physics(i) > 1 ) THEN
+              wrf_err_message = '--- ERROR: slucm_distributed_drag only works with urban options 1'
+              CALL wrf_message ( wrf_err_message )
+              count_fatal_error = count_fatal_error + 1
+           END IF
+        END DO
+
+      END IF
+
+!-----------------------------------------------------------------------
 ! Check that channel irrigation is run with Noah
 !-----------------------------------------------------------------------
       DO i = 1, model_config_rec % max_dom
@@ -649,7 +671,7 @@
 !-----------------------------------------------------------------------
 ! There is a binary file for Goddard radiation. It is single precision.
 !-----------------------------------------------------------------------
-# if ( defined(PROMOTE_FLOAT) || ( RWORDSIZE == DWORDSIZE ) )
+# ifdef DOUBLE_PRECISION
       god_r8 : DO i = 1, model_config_rec % max_dom
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( ( model_config_rec % ra_lw_physics(i) == goddardlwscheme ) .OR. &
@@ -2434,12 +2456,12 @@
 #endif
 
 !-----------------------------------------------------------------------
-!  grav_settling = 1 must be turned off for mp_physics=28.
+!  grav_settling = 1 must be turned off for mp_physics=28 or mp_physics=29
 !-----------------------------------------------------------------------
       oops = 0
       DO i = 1, model_config_rec % max_dom
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
-         IF ( model_config_rec%mp_physics(i) .EQ. THOMPSONAERO ) THEN
+         IF ( model_config_rec%mp_physics(i) .EQ. THOMPSONAERO .OR. model_config_rec%mp_physics(i) .EQ. RCON_MP_SCHEME ) THEN
             IF ( model_config_rec%grav_settling(i) .NE. FOGSETTLING0 ) THEN
                 model_config_rec%grav_settling(i) = 0
                 oops = oops + 1
@@ -2452,12 +2474,12 @@
       END IF
 
 !-----------------------------------------------------------------------
-!  scalar_pblmix = 1 should be turned on for mp_physics=28. But can be off for MYNN (when bl_mynn_mixscalars = 1)
+!  scalar_pblmix = 1 should be turned on for mp_physics=28 and mp_physics=29. But can be off for MYNN (when bl_mynn_mixscalars = 1)
 !-----------------------------------------------------------------------
       oops = 0
       DO i = 1, model_config_rec % max_dom
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
-         IF ( model_config_rec%mp_physics(i) .EQ. THOMPSONAERO ) THEN
+         IF ( model_config_rec%mp_physics(i) .EQ. THOMPSONAERO .OR. model_config_rec%mp_physics(i) .EQ. RCON_MP_SCHEME ) THEN
             IF ( (model_config_rec%use_aero_icbc .OR. model_config_rec%use_rap_aero_icbc) &
                                       .AND. model_config_rec%scalar_pblmix(i) .NE. 1 ) THEN
                 model_config_rec%scalar_pblmix(i) = 1
@@ -2489,10 +2511,10 @@
       END IF
 
 !-----------------------------------------------------------------------
-!  Set aer_init_opt for Thompson-MP-Aero (mp_physics=28)
+!  Set aer_init_opt for Thompson-MP-Aero (mp_physics=28) AND rcon mp (mp_physics=29)
 !-----------------------------------------------------------------------
      DO i = 1, model_config_rec % max_dom
-       IF ( model_config_rec%mp_physics(i) .EQ. THOMPSONAERO ) THEN
+       IF ( model_config_rec%mp_physics(i) .EQ. THOMPSONAERO .OR. model_config_rec%mp_physics(i) .EQ. RCON_MP_SCHEME ) THEN
          IF ( model_config_rec%use_aero_icbc ) THEN
            model_config_rec%aer_init_opt = 1
          ELSE IF ( model_config_rec%use_rap_aero_icbc ) THEN
@@ -2502,10 +2524,10 @@
      END DO
 
 !-----------------------------------------------------------------------
-!  Check if qna_update=0 when aer_init_opt>1 for Thompson-MP-Aero (mp_physics=28)
+!  Check if qna_update=0 when aer_init_opt>1 for Thompson-MP-Aero (mp_physics=28) AND rcon mp (mp_physics=29
 !-----------------------------------------------------------------------
      DO i = 1, model_config_rec % max_dom
-       IF ( model_config_rec%mp_physics(i) .EQ. THOMPSONAERO ) THEN
+       IF ( model_config_rec%mp_physics(i) .EQ. THOMPSONAERO .OR. model_config_rec%mp_physics(i) .EQ. RCON_MP_SCHEME ) THEN
          IF ( model_config_rec%aer_init_opt .GT. 1 .and. model_config_rec%qna_update .EQ. 0 ) THEN
            wrf_err_message = '--- ERROR: Time-varying sfc aerosol emissions not set for mp_physics=28 '
            CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
@@ -2517,10 +2539,10 @@
      END DO
 
 !-----------------------------------------------------------------------
-!  Set aer_fire_emit_opt for Thompson-MP-Aero (mp_physics=28)
+!  Set aer_fire_emit_opt for Thompson-MP-Aero (mp_physics=28) AND rcon mp (mp_physics=29)
 !-----------------------------------------------------------------------
      DO i = 1, model_config_rec % max_dom
-       IF ( model_config_rec%mp_physics(i) .EQ. THOMPSONAERO .AND. model_config_rec%wif_fire_emit) THEN
+       IF ( (model_config_rec%mp_physics(i) .EQ. THOMPSONAERO .OR. model_config_rec%mp_physics(i) .EQ. RCON_MP_SCHEME) .AND. model_config_rec%wif_fire_emit) THEN
          IF ( model_config_rec%aer_init_opt .EQ. 2) THEN
            IF ( model_config_rec%wif_input_opt .EQ. 1 ) THEN
              model_config_rec%aer_fire_emit_opt = 1
@@ -2542,7 +2564,7 @@
 !  is turned on when no PBL scheme is active
 !-----------------------------------------------------------------------
      DO i = 1, model_config_rec % max_dom
-       IF ( model_config_rec%mp_physics(i) .EQ. THOMPSONAERO .AND. model_config_rec%wif_fire_emit) THEN
+       IF ( (model_config_rec%mp_physics(i) .EQ. THOMPSONAERO .OR. model_config_rec%mp_physics(i) .EQ. RCON_MP_SCHEME) .AND. model_config_rec%wif_fire_emit) THEN
          IF ( model_config_rec%bl_pbl_physics(i) .EQ. 0  ) THEN
            wrf_err_message = '--- WARNING: PBL scheme not active but wif_fire_inj=1 for mp_physics=28 '
            CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
@@ -3353,6 +3375,98 @@
       END IF
 
 !-----------------------------------------------------------------------
+! Check for deprecated options with NSSL-MP
+!-----------------------------------------------------------------------
+      DO i = 1, model_config_rec % max_dom
+         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
+         IF ( model_config_rec % mp_physics(i) .EQ. 22            ) THEN
+              model_config_rec % mp_physics(i) = NSSL_2MOM
+              model_config_rec % nssl_2moment_on = 1
+              model_config_rec % nssl_hail_on(i) = 0
+              model_config_rec % nssl_ccn_on = 0
+              model_config_rec % nssl_density_on = 1 ! set graupel density
+              WRITE (wrf_err_message, FMT='(A)') ' **CAUTION** mp_physics = 22 has been deprecated. '// &
+                'Instead you can use mp_physics=18, nssl_hail_on=0, nssl_ccn_on=0'
+              CALL wrf_debug ( 0, wrf_err_message )
+         ELSEIF ( model_config_rec % mp_physics(i) .EQ. 17        ) THEN
+              model_config_rec % mp_physics(i) = NSSL_2MOM
+              model_config_rec % nssl_2moment_on = 1
+              model_config_rec % nssl_hail_on(i) = 1
+              model_config_rec % nssl_ccn_on = 0
+              model_config_rec % nssl_density_on = 2 ! set graupel+hail density
+              WRITE (wrf_err_message, FMT='(A)') ' **CAUTION** mp_physics = 17 has been deprecated. '// &
+                'Instead you can use mp_physics=18, nssl_ccn_on=0'
+              ! print statement for deprecated option
+              CALL wrf_debug ( 0, wrf_err_message )
+         ELSEIF ( model_config_rec % mp_physics(i) .EQ. 19        ) THEN
+             ! single-moment with hail + graupel density
+              model_config_rec % mp_physics(i) = NSSL_2MOM
+              model_config_rec % nssl_2moment_on = 0
+              model_config_rec % nssl_hail_on(i) = 2
+              model_config_rec % nssl_density_on = 1 ! set  graupel density
+              ! print statement for deprecated option
+              WRITE (wrf_err_message, FMT='(A)') ' **CAUTION** mp_physics = 19 has been deprecated. '// &
+                'Instead you can use mp_physics=18, nssl_2moment_on=0, nssl_ccn_on=0'
+              CALL wrf_debug ( 0, wrf_err_message )
+         ELSEIF ( model_config_rec % mp_physics(i) .EQ. 21        ) THEN
+             ! single-moment without
+              model_config_rec % mp_physics(i) = NSSL_2MOM
+              model_config_rec % nssl_2moment_on = 0
+              model_config_rec % nssl_hail_on(i) = 0
+              model_config_rec % nssl_density_on = 0 ! set  graupel density
+              ! print statement for deprecated option
+              WRITE (wrf_err_message, FMT='(A)') ' **CAUTION** mp_physics = 21 has been deprecated. '// &
+                'Instead you can use mp_physics=18, nssl_2moment_on=0, nssl_ccn_on=0, nssl_hail_on=0'
+              CALL wrf_debug ( 0, wrf_err_message )
+         ENDIF
+         
+         IF ( model_config_rec % mp_physics(i) /= NSSL_2MOM ) THEN
+           ! If not NSSL-MP, make sure extra fields are turned off (in case of stray namelist settings)
+              model_config_rec % nssl_2moment_on = 0
+              model_config_rec % nssl_hail_on(i) = 0
+              model_config_rec % nssl_density_on = 0 ! set  graupel density
+              model_config_rec % nssl_3moment = 0
+              model_config_rec % nssl_ccn_on = 0
+
+         ELSE ! make sure settings are consistent
+
+           IF ( model_config_rec % nssl_ccn_on < 0 ) THEN
+              model_config_rec % nssl_ccn_on = 1
+           ENDIF
+
+           IF ( model_config_rec % nssl_2moment_on < 0 ) THEN ! turn on number concentrations
+              model_config_rec % nssl_2moment_on = 1
+           ENDIF
+
+           IF ( model_config_rec % nssl_hail_on(i) < 0 ) THEN
+              IF ( model_config_rec % nssl_2moment_on == 0 ) THEN
+                model_config_rec % nssl_hail_on(i) = 2
+              ELSE
+                model_config_rec % nssl_hail_on(i) = 1
+              ENDIF
+           ENDIF
+
+           IF ( model_config_rec % nssl_density_on < 0 ) THEN
+              IF ( model_config_rec % nssl_hail_on(i) == 1 ) THEN
+                model_config_rec % nssl_density_on = 2 ! set default of graupel+hail density
+              ELSE
+                model_config_rec % nssl_density_on = 1 ! set graupel density (hail off)
+              ENDIF
+           ENDIF
+
+           IF ( model_config_rec % nssl_3moment == 1   ) THEN
+              model_config_rec % nssl_2moment_on = 1
+              IF ( model_config_rec % nssl_hail_on(i) == 1 ) THEN
+                model_config_rec % nssl_3moment = 2 ! 3mom rain, graupel and hail
+              ELSE
+                model_config_rec % nssl_3moment = 1 ! 3mom rain and graupel (no hail)
+              ENDIF
+           ENDIF
+         ENDIF
+
+      ENDDO
+
+!-----------------------------------------------------------------------
 ! If a user requested to compute the radar reflectivity .OR. if this is
 ! one of the schemes that ALWAYS computes the radar reflectivity, then
 ! turn on the switch that says allocate the space for the refl_10cm array.
@@ -3361,16 +3475,11 @@
       DO i = 1, model_config_rec % max_dom
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( ( model_config_rec % mp_physics(i) .EQ. MILBRANDT2MOM ) .OR. &
-#if (EM_CORE == 1)
               ( model_config_rec % mp_physics(i) .EQ. NSSL_2MOM     ) .OR. &
-              ( model_config_rec % mp_physics(i) .EQ. NSSL_2MOMG    ) .OR. &
-              ( model_config_rec % mp_physics(i) .EQ. NSSL_2MOMCCN  ) .OR. &
-              ( model_config_rec % mp_physics(i) .EQ. NSSL_1MOM     ) .OR. &
-              ( model_config_rec % mp_physics(i) .EQ. NSSL_1MOMLFO  ) .OR. &
-#endif
               ( model_config_rec % do_radar_ref  .EQ. 1             ) ) THEN
             model_config_rec % compute_radar_ref = 1
-         END IF
+         ENDIF
+
       ENDDO
 
 !-----------------------------------------------------------------------

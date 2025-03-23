@@ -170,12 +170,19 @@ rconfig   logical   use_radar_rv            namelist,wrfvar4  1  .false.  - "rad
 rconfig   logical   use_radar_rf            namelist,wrfvar4  1  .false.  - "reflectivity"             ""  ""
 rconfig   logical   use_radar_rqv           namelist,wrfvar4  1  .false.  - "retrieved water vapor"    ""  ""
 rconfig   logical   use_radar_rhv           namelist,wrfvar4  1  .false.  - "retr. hydrometeor var"    ""  ""
+rconfig   integer   radar_rhv_opt           namelist,wrfvar4  1  1        - "hydrometeor retrieval option"   "2 is for background-dependent scheme"  ""
 rconfig   integer   radar_rf_opt            namelist,wrfvar4  1  1        - "reflectivity DA option"   ""  ""
 rconfig   real      rf_qthres               namelist,wrfvar4  1  1e-12    - "mixing ratio threshold"   ""  ""
 rconfig   real      rfmin                   namelist,wrfvar4  1  0.0      - "min rf for no-rain echo"  ""  ""
 rconfig   integer   rf_noice                namelist,wrfvar4  1  0        - "disable ice phace in H"   ""  ""
 rconfig   real      radar_rf_rscl           namelist,wrfvar4  1  1.0      - "weight of rf"             ""  ""
 rconfig   real      radar_rv_rscl           namelist,wrfvar4  1  1.0      - "weight of rv"             ""  ""
+rconfig   logical   use_lightningobs        namelist,wrfvar4  1  .false.  - "use_lightningobs"         ""  ""
+rconfig   logical   use_lightning_w         namelist,wrfvar4  1  .false.  - "use_lightning_w"          ""  ""
+rconfig   logical   use_lightning_qv        namelist,wrfvar4  1  .false.  - "use_lightning_qv"         ""  ""
+rconfig   logical   use_lightning_div       namelist,wrfvar4  1  .false.  - "use_lightning_div"        ""  ""
+rconfig   real      min_flashrate           namelist,wrfvar4  1   2.0     - "min_flashrate"            ""  ""
+rconfig   real      lightning_min_rh        namelist,wrfvar4  1   85.     - "lightning_min_rh"         ""  ""
 rconfig   logical   use_rainobs             namelist,wrfvar4  1  .false.  - "use_rainobs"              ""  ""   
 rconfig   logical   use_hirs2obs            namelist,wrfvar4  1  .false.  - "use_hirs2obs"             ""  ""
 rconfig   logical   use_hirs3obs            namelist,wrfvar4  1  .false.  - "use_hirs3obs"             ""  ""
@@ -195,6 +202,7 @@ rconfig   logical   use_amsr2obs            namelist,wrfvar4  1  .false.  - "use
 rconfig   logical   use_ahiobs              namelist,wrfvar4  1  .false.  - "use_ahiobs"               ""  ""
 rconfig   logical   use_gmiobs              namelist,wrfvar4  1  .false.  - "use_gmiobs"               ""  ""
 rconfig   logical   use_goesimgobs          namelist,wrfvar4  1  .false.  - "use_goesimgobs"           ""  ""
+rconfig   logical   use_goesabiobs          namelist,wrfvar4  1  .false.  - "use_goesabiobs"           ""  ""
 rconfig   logical   use_kma1dvar            namelist,wrfvar4  1  .false.  - "use_kma1dvar"             ""  ""
 rconfig   logical   use_filtered_rad        namelist,wrfvar4  1  .false.  - "use_filtered_rad"         ""  ""
 rconfig   logical   use_obs_errfac          namelist,wrfvar4  1  .false.  - "use_obs_errfac"           ""  ""
@@ -229,6 +237,9 @@ rconfig   real      max_error_buv           namelist,wrfvar5  1   500.0   - "max
 rconfig   real      max_error_bt            namelist,wrfvar5  1   500.0   - "max_error_bt"             ""  ""
 rconfig   real      max_error_bq            namelist,wrfvar5  1   500.0   - "max_error_bq"             ""  ""
 rconfig   real      max_error_slp           namelist,wrfvar5  1   500.0   - "max_error_slp"            ""  ""
+rconfig   real      max_error_lda_w         namelist,wrfvar5  1   5.0     - "max_error_lda_w"          ""  ""
+rconfig   real      max_error_lda_div       namelist,wrfvar5  1   5.0     - "max_error_lda_div"        ""  ""
+rconfig   real      max_error_lda_qv        namelist,wrfvar5  1   5.0     - "max_error_lda_qv"         ""  ""
 rconfig   logical   check_buddy             namelist,wrfvar5  1  .false.  - "check_buddy"              ""  ""
 rconfig   logical   put_rand_seed           namelist,wrfvar5  1  .false.  - "put_rand_seed"            ""  ""
 rconfig   logical   omb_set_rand            namelist,wrfvar5  1  .false.  - "omb_set_rand"             ""  ""
@@ -458,6 +469,7 @@ rconfig   integer   varbc_nobsmin           namelist,wrfvar14  1  10       - "va
 rconfig   integer   use_clddet              namelist,wrfvar14  1  2        - "use_clddet"        "0: off, 1: mmr, 2: pf, 3: ecmwf"  ""
 rconfig   logical   use_clddet_zz           namelist,wrfvar14  1  .false.  - "use_clddet_zz"     "cloud detection scheme from Zhuge X. and Zou X. JAMC, 2016."  ""
 rconfig   integer   ahi_superob_halfwidth   namelist,wrfvar14  1  0        - "ahi_superob_halfwidth"   ""  ""
+rconfig   integer   abi_superob_halfwidth   namelist,wrfvar14  1  0        - "abi_superob_halfwidth"   ""  ""
 rconfig   logical   airs_warmest_fov        namelist,wrfvar14  1  .false.  - "airs_warmest_fov"        ""  ""
 rconfig   logical   use_satcv               namelist,wrfvar14  2  .false.  - "use_satcv"               ""  ""
 rconfig   logical   use_blacklist_rad       namelist,wrfvar14  1  .true.   - "use_blacklist_rad"       ""  ""
@@ -467,6 +479,7 @@ rconfig   character crtm_irwater_coef       namelist,wrfvar14  1  "Nalli.IRwater
 rconfig   character crtm_mwwater_coef       namelist,wrfvar14  1  "FASTEM5.MWwater.EmisCoeff.bin" - "crtm_mwwater_coef" "" ""
 rconfig   character crtm_irland_coef        namelist,wrfvar14  1  "USGS.IRland.EmisCoeff.bin"     - "crtm_irland_coef"  "" ""
 rconfig   character crtm_visland_coef       namelist,wrfvar14  1  "USGS.VISland.EmisCoeff.bin"    - "crtm_visland_coef" "" ""
+rconfig   logical   abi_use_symm_obs_err    namelist,wrfvar14  1  .false.  - "abi_use_symm_obs_err"         ""  ""
 rconfig   logical   ahi_use_symm_obs_err    namelist,wrfvar14  1  .false.  - "ahi_use_symm_obs_err"         ""  ""
 rconfig   logical   ahi_apply_clrsky_bias   namelist,wrfvar14  1  .false.  - "ahi_apply_clrsky_bias"         ""  ""
 rconfig   integer   num_pseudo              namelist,wrfvar15  1  0        - "num_pseudo"              ""  ""   
@@ -580,12 +593,10 @@ package   cammgmpscheme   mp_physics==11               -             moist:qv,qc
 package   sbu_ylinscheme  mp_physics==13               -             moist:qv,qc,qr,qi,qs
 package   wdm5scheme      mp_physics==14               -             moist:qv,qc,qr,qi,qs
 package   wdm6scheme      mp_physics==16               -             moist:qv,qc,qr,qi,qs,qg
-package   nssl_2mom       mp_physics==17               -             moist:qv,qc,qr,qi,qs,qg,qh
-package   nssl_2momccn    mp_physics==18               -             moist:qv,qc,qr,qi,qs,qg,qh
-package   nssl_1mom       mp_physics==19               -             moist:qv,qc,qr,qi,qs,qg,qh
-package   nssl_1momlfo    mp_physics==21               -             moist:qv,qc,qr,qi,qs,qg
-package   nssl_2momg      mp_physics==22               -             moist:qv,qc,qr,qi,qs,qg
+# Note: Options 17, 19, 21, 22 are deprecated but still reserved for compatibility -- for now
+package   nssl_2mom       mp_physics==18               -             moist:qv,qc,qr,qi,qs,qg
 package   thompsonaero    mp_physics==28               -             moist:qv,qc,qr,qi,qs,qg
+package   rcon_mp_scheme  mp_physics==29               -             moist:qv,qc,qr,qi,qs,qg
 package   p3_1category    mp_physics==50               -             moist:qv,qc,qr,qi
 package   p3_1category_nc mp_physics==51               -             moist:qv,qc,qr,qi
 package   p3_2category    mp_physics==52               -             moist:qv,qc,qr,qi,qi2
@@ -594,6 +605,7 @@ package   ntu             mp_physics==56               -             moist:qv,qc
 package   etampnew        mp_physics==95               -             moist:qv,qc,qr,qs
 package   lscondscheme    mp_physics==98               -             moist:qv
 package   mkesslerscheme  mp_physics==99               -             moist:qv,qc,qr
+
 #
 package   mpnotset_4dvar         mp_physics_4dvar==-1     -          g_moist:g_qv;a_moist:a_qv
 package   passiveqv_4dvar        mp_physics_4dvar==0      -          g_moist:g_qv;a_moist:a_qv
@@ -613,12 +625,10 @@ package   cammgmp_4dvar          mp_physics_4dvar==11     -          g_moist:g_q
 package   sbu_ylin_4dvar         mp_physics_4dvar==13     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs
 package   wdm5_4dvar             mp_physics_4dvar==14     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs
 package   wdm6_4dvar             mp_physics_4dvar==16     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
-package   nssl_2mom_4dvar        mp_physics_4dvar==17     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg,g_qh;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg,a_qh
-package   nssl_2momccn_4dvar     mp_physics_4dvar==18     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg,g_qh;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg,a_qh
-package   nssl_1mom_4dvar        mp_physics_4dvar==19     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg,g_qh;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg,a_qh
-package   nssl_1momlfo_4dvar     mp_physics_4dvar==21     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
-package   nssl_2momg_4dvar       mp_physics_4dvar==22     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
+# Note: Options 17, 19, 21, 22 are deprecated but still reserved for compatibility -- for now
+package   nssl_2mom_4dvar        mp_physics_4dvar==18     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg,g_qh;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg,a_qh
 package   thompsonaero_4dvar     mp_physics_4dvar==28     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
+package   rcon_mp_scheme_4dvar   mp_physics_4dvar==29     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
 package   p3_1category_4dvar     mp_physics_4dvar==50     -          g_moist:g_qv,g_qc,g_qr,g_qi;a_moist:a_qv,a_qc,a_qr,a_qi
 package   p3_1category_nc_4dvar  mp_physics_4dvar==51     -          g_moist:g_qv,g_qc,g_qr,g_qi;a_moist:a_qv,a_qc,a_qr,a_qi
 package   p3_2category_4dvar     mp_physics_4dvar==52     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qi2;a_moist:a_qv,a_qc,a_qr,a_qi,a_qi2

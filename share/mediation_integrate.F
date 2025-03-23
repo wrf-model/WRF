@@ -110,6 +110,13 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
      !  output history at beginning of restart even if alarm is not ringing
      CALL med_hist_out ( grid , HISTORY_ALARM, config_flags )
      CALL WRFU_AlarmRingerOff( grid%alarms( HISTORY_ALARM ), rc=rc )
+!----------------------------------------------------------------------
+! Write history for other streams at restart - James Ruppert - October 2024
+!----------------------------------------------------------------------
+      DO ialarm = first_auxhist, last_auxhist
+      !  output history at beginning of restart
+         CALL med_hist_out ( grid , ialarm, config_flags )
+      ENDDO
    ENDIF
 
    IF( WRFU_AlarmIsRinging( grid%alarms( INPUTOUT_ALARM ), rc=rc ) ) THEN
@@ -1701,6 +1708,8 @@ SUBROUTINE open_hist_w ( grid , config_flags, stream, alarm_id, &
    ENDIF
 
    ierr = 0
+   fname = ""
+   n2 = ""
 
    ! Note that computation of fname and n2 are outside of the oid IF statement 
    ! since they are OUT args and may be used by callers even if oid/=0.  

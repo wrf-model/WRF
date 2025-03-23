@@ -935,6 +935,51 @@ subroutine da_write_obs(it,ob, iv, re)
          end if
       end do
    end if
+
+   !! lightning
+   num_obs = 0
+   do n = 1, iv%info(lightning)%nlocal
+      if (iv%info(lightning)%proc_domain(1,n)) num_obs = num_obs + 1
+   end do
+   if (num_obs > 0) then
+      write(ounit,'(a20,i8)')'lightning', num_obs    
+      num_obs = 0
+      do n = 1, iv%info(lightning)%nlocal
+         do itime = 1, num_fgat_time
+            if ( n >= iv%info(lightning)%plocal(itime-1)+1 .and. &
+                 n <= iv%info(lightning)%plocal(itime) ) then
+               ifgat = itime
+               exit
+            end if
+         end do
+         if (iv%info(lightning)%proc_domain(1,n)) then
+            num_obs = num_obs + 1
+            write(ounit,'(2i8)')iv%info(lightning)%levels(n), ifgat
+            do k = 1, iv%info(lightning)%levels(n)
+               write(ounit,'(2i8,a5,2f9.2,f17.7,3(2f17.7,i8,2f17.7))')&
+                  num_obs   , k, iv%info(lightning)%id(n), &  ! Station
+                  iv%info(lightning)%lat(1,n), &       ! Latitude
+                  iv%info(lightning)%lon(1,n), &       ! Longitude
+                  iv%lightning(n)%height(k),   &       ! Obs Height
+                  ob%lightning(n)%w(k),        &
+                  iv%lightning(n)%w(k)%inv,    &
+                  iv%lightning(n)%w(k)%qc,     &
+                  iv%lightning(n)%w(k)%error,  &
+                  re%lightning(n)%w(k),        &
+                  ob%lightning(n)%div(k),      &
+                  iv%lightning(n)%div(k)%inv,  &
+                  iv%lightning(n)%div(k)%qc,   &
+                  iv%lightning(n)%div(k)%error,&
+                  re%lightning(n)%div(k),      &
+                  ob%lightning(n)%qv(k),       &
+                  iv%lightning(n)%qv(k)%inv,   &
+                  iv%lightning(n)%qv(k)%qc,    &
+                  iv%lightning(n)%qv(k)%error, &
+                  re%lightning(n)%qv(k)				  
+            end do
+         end if
+      end do
+   end if   
    
    close (ounit)
    call da_free_unit(ounit)

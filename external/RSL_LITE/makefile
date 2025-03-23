@@ -9,6 +9,19 @@ CFLAGS = $(PLUSFLAG)
 CPPFLAGS =
 FFLAGS =
 
+# These .F files are compiled in frame but leave behind auto-gen files here
+F_FILES = \
+ feedback_domain_em_part1.F \
+ feedback_domain_em_part2.F \
+ force_domain_em_part2.F    \
+ interp_domain_em_part1.F   \
+ interp_domain_em_part2.F   \
+ interp_domain_em_part3.F   \
+ interp_domain_em_small.F
+
+# These will be the files we need to clean up
+F90_FILES = $(foreach file,$(F_FILES),$(patsubst %.F,%.f90,$(file)))
+
 
 .SUFFIXES:      .F90 .F .f .o .code
 
@@ -51,7 +64,7 @@ f_xpose.o:	        f_xpose.F90 f_pack.o
 			$(FC) -o $@ $(FFLAGS) -c f_xpose.f
 
 clean : 
-			@/bin/rm -f *.f *.o *.mod *.obj *.i
+			@/bin/rm -f *.f *.o *.mod *.obj *.i $(F90_FILES)
 
 superclean : clean
 			@/bin/rm -f *.a

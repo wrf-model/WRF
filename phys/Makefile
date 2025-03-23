@@ -6,6 +6,7 @@ RM      =       rm -f
 
 
 MODULES = \
+	ccpp_kind_types.o \
 	module_bep_bem_helper.o \
 	complex_number_module.o \
 	module_cam_shr_kind_mod.o \
@@ -42,9 +43,9 @@ MODULES = \
 	module_bl_myjpbl.o \
 	module_bl_qnsepbl.o \
 	module_bl_acm.o \
-        module_bl_mynn_common.o \
-        module_bl_mynn.o \
-        module_bl_mynn_wrapper.o \
+        module_bl_mynnedmf_common.o \
+        module_bl_mynnedmf.o \
+        module_bl_mynnedmf_driver.o \
 	module_bl_fogdes.o \
 	module_bl_gwdo.o \
 	module_bl_gwdo_gsl.o \
@@ -96,6 +97,7 @@ MODULES = \
 	module_mp_etanew.o \
 	module_mp_fer_hires.o \
 	module_mp_thompson.o \
+	module_mp_rcon.o \
         module_fire_emis.o \
 	module_mp_SBM_polar_radar.o \
 	module_mp_full_sbm.o \
@@ -112,6 +114,7 @@ MODULES = \
 	module_mp_wdm5.o \
 	module_mp_wdm6.o \
 	module_mp_wdm7.o \
+	module_mp_udm.o \
 	module_mp_ntu.o \
 	module_mp_cammgmp_driver.o \
 	module_ra_sw.o  \
@@ -203,6 +206,7 @@ MODULES = \
         module_fddaobs_rtfdda.o \
 	module_fddaobs_driver.o \
 	module_wind_fitch.o \
+	module_wind_mav.o \
 	module_sf_lake.o \
 	module_diagnostics_driver.o \
 	module_irrigation.o
@@ -231,19 +235,30 @@ DIAGNOSTIC_MODULES_EM = \
 	module_diag_trad_fields.o \
         module_diag_solar.o
   
+PHYSMMM_MODULES = \
+	physics_mmm/sf_sfclayrev.o \
+	physics_mmm/cu_ntiedtke.o \
+	physics_mmm/module_libmassv.o \
+	physics_mmm/mp_wsm6.o \
+	physics_mmm/mp_wsm6_effectRad.o \
+	physics_mmm/mp_radar.o \
+        physics_mmm/bl_gwdo.o \
+        physics_mmm/bl_ysu.o
+
 OBJS    =
 
 LIBTARGET    =  physics
 TARGETDIR    =  ./
 
 $(LIBTARGET) :
+	(cd .. && ./tools/manage_externals/checkout_externals --externals ./arch/Externals.cfg)
 	$(MAKE) $(J) non_nmm ; \
 	$(AR) $(ARFLAGS) ../main/$(LIBWRFLIB) $(MODULES) $(OBJS)  \
-		$(FIRE_MODULES) $(DIAGNOSTIC_MODULES_EM)
+		$(FIRE_MODULES) $(DIAGNOSTIC_MODULES_EM) $(PHYSMMM_MODULES)
 
 include ../configure.wrf
 
-non_nmm : $(MODULES) $(FIRE_MODULES) $(WIND_MODULES) $(OBJS) $(DIAGNOSTIC_MODULES_EM)
+non_nmm : $(MODULES) $(FIRE_MODULES) $(OBJS) $(DIAGNOSTIC_MODULES_EM)
 
 submodules :
 	@if [ \( ! -f module_sf_noahmpdrv.F \) -o \( ! -f module_sf_noahmp_glacier.F \) -o \
@@ -258,7 +273,17 @@ submodules :
 	else \
 		echo No action required for NoahMP submodule ; \
 	fi
-
+	@if [ \( ! -f module_bl_mynnedmf.F \) -o \( ! -f module_bl_mynedmf_common.F \) -o \
+	      \( ! -f module_bl_mynnedmf_driver.F \) ] ; then \
+	      	echo Pulling in MYNN-EDMF submodule ; \
+		( cd .. ; git submodule update --init --recursive ) ; \
+		ln -sf MYNN-EDMF/module_bl_mynnedmf.F90 module_bl_mynnedmf.F ; \
+		ln -sf MYNN-EDMF/WRF/module_bl_mynnedmf_common.F90 module_bl_mynnedmf_common.F ; \
+		ln -sf MYNN-EDMF/WRF/module_bl_mynnedmf_driver.F90 module_bl_mynnedmf_driver.F ; \
+	else \
+		echo No action required for MYNN-EDMF submodule ; \
+	fi
+	
 clean:
 	@ echo 'use the clean script'
 

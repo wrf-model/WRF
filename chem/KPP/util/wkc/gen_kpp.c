@@ -62,102 +62,7 @@
   in ~WRF:  chem/KPP/util/wkc/registry_kpp Registry/Registry          */
 
 
-int
-gen_kpp ( char * inc_dirname, char * kpp_dirname )
-{
-
-
-
-  /* put chem compound names defined in Registry into linked list WRFC_packs */
-
-       if ( DEBUGR == 1 )   printf("next: get_wrf_chem_specs \n");
-     get_wrf_chem_specs () ;
-       if ( DEBUGR == 2 ) write_list_to_screen( WRFC_packs ) ;
-   
-      
-       
-
-  /* put radical names defined in Registry into linked list WRFC_radicals */
-
-       if ( DEBUGR == 1 )   printf("next: get_wrf_radicals \n");
-     get_wrf_radicals () ;
-       if ( DEBUGR == 2 ) write_list_to_screen( WRFC_radicals ) ;
-
-
-  /* put photolysis rates defined in Registry into linked list WRFC_jvals */
-
-       if ( DEBUGR == 1 )   printf("next: get_wrf_jvals \n");
-     get_wrf_jvals () ;
-       if ( DEBUGR == 2 ) write_list_to_screen( WRFC_jvals ) ;
-
-
-  /* read KPP species files and put compound names into linked list KPP_packs */     
-       if ( DEBUGR == 1 )   printf("next: get_kpp_chem_specs \n");     
-     get_kpp_chem_specs ( kpp_dirname ) ; 
-       if ( DEBUGR == 2 ) {write_list_to_screen( KPP_packs ) ;} 
-
-
-
-    
-
-  /* define pointer from each KPP package to corresponding WRF-Chem chemistry package  and check whether variable names are consistent. If *_wrfkpp.equiv file exists in KPP directory use it for name matching */
- 
-
-       if ( DEBUGR == 1 )   printf("next: compare_kpp_to_species \n"); 
-     compare_kpp_to_species ( kpp_dirname );
-
-
-
-    
- 
-     /* write some output to screen  */
-       if ( DEBUGR == 1 )   printf("next: screen_out \n");
-     screen_out( );
-
-
-     /* make sure that wrf and kpp variables match and stop if not.  */
-      if ( DEBUGR == 1 )   printf("next: check_all \n");
-     check_all ( kpp_dirname );
-
-    
-
-     /* add the kpp generated modules to the Makefile in the chem directory */        
-           if ( DEBUGR == 1 )   printf("next: change_chem_Makefile  \n");
-	     change_chem_Makefile ( ); 
-
-     
-
-
-  /* write the mechanism driver */
-      if ( DEBUGR == 1 )   printf("next: gen_kpp_mechanism_driver (writing chem/kpp_mechanism_driver.F) \n");
-     gen_kpp_mechanism_driver ( );
-
-
-      if ( DEBUGR == 1 )   printf("next: gen_call_to_kpp_mechanism_driver (writing inc/call_to_kpp_mech_drive.inc) \n");
-     gen_kpp_call_to_mech_dr ( );
-
-
-     /* write arguments for call to KPPs Update_Rconst      */
-          if ( DEBUGR == 1 )   printf("next: gen_kpp_args_to_Update_Rconst (writing inc/args_to_update_rconst.inc and inc/<decls_update_rconst.inc) \n");
-     gen_kpp_args_to_Update_Rconst ( );
-     
-
-    /* write the interface */
-      if ( DEBUGR == 1 )   printf("next: gen_kpp_interface (writing several module_kpp_* for each mechanism)\n");
-     gen_kpp_interface ( );
-     
-
-    
-      if ( DEBUGR == 1 )   printf("DONE gen_kpp \n");
-
-  return(0) ;
-}
-
-
-
-
-/*---------------------------------------------------------------------*/
-int
+void
 write_list_to_screen ( knode_t * starting_point )
 {
 knode_t * l1, * l2;
@@ -173,7 +78,7 @@ knode_t * l1, * l2;
 }
 
 /*---------------------------------------------------------------------*/
-int
+void
 screen_out ( )
 {
 knode_t * p1, * p2, * pm1;
@@ -228,8 +133,9 @@ int count;
   
 
 }
+
 /*---------------------------------------------------------------------*/
-int
+void
 check_all( char* kpp_dirname )
 {
 knode_t * p1, * p2, * pm1;
@@ -257,3 +163,97 @@ knode_t * p1, * p2, * pm1;
      }
    }
 }
+
+
+
+/*---------------------------------------------------------------------*/
+int
+gen_kpp ( char * inc_dirname, char * kpp_dirname )
+{
+
+
+
+  /* put chem compound names defined in Registry into linked list WRFC_packs */
+
+       if ( DEBUGR == 1 )   printf("next: get_wrf_chem_specs \n");
+     get_wrf_chem_specs () ;
+       if ( DEBUGR == 2 ) write_list_to_screen( WRFC_packs ) ;
+   
+      
+       
+
+  /* put radical names defined in Registry into linked list WRFC_radicals */
+
+       if ( DEBUGR == 1 )   printf("next: get_wrf_radicals \n");
+     get_wrf_radicals () ;
+       if ( DEBUGR == 2 ) write_list_to_screen( WRFC_radicals ) ;
+
+
+  /* put photolysis rates defined in Registry into linked list WRFC_jvals */
+
+       if ( DEBUGR == 1 )   printf("next: get_wrf_jvals \n");
+     get_wrf_jvals () ;
+       if ( DEBUGR == 2 ) write_list_to_screen( WRFC_jvals ) ;
+
+
+  /* read KPP species files and put compound names into linked list KPP_packs */     
+       if ( DEBUGR == 1 )   printf("next: get_kpp_chem_specs \n");     
+     get_kpp_chem_specs ( kpp_dirname ) ; 
+       if ( DEBUGR == 2 ) {write_list_to_screen( KPP_packs ) ;} 
+
+
+
+    
+
+  /* define pointer from each KPP package to corresponding WRF-Chem chemistry package  and check whether variable names are consistent. If *_wrfkpp.equiv file exists in KPP directory use it for name matching */
+ 
+
+       if ( DEBUGR == 1 )   printf("next: compare_kpp_to_species \n"); 
+     compare_kpp_to_species ( kpp_dirname );
+
+
+
+    
+ 
+     /* write some output to screen  */
+       if ( DEBUGR == 1 )   printf("next: screen_out \n");
+     screen_out( );
+
+
+     /* make sure that WRF and kpp variables match and stop if not.  */
+      if ( DEBUGR == 1 )   printf("next: check_all \n");
+     check_all ( kpp_dirname );
+
+    
+#ifndef NO_MODIFY_MAKEFILE
+     /* add the kpp generated modules to the Makefile in the chem directory */        
+           if ( DEBUGR == 1 )   printf("next: change_chem_Makefile  \n");
+	     change_chem_Makefile ( ); 
+#endif
+
+
+  /* write the mechanism driver */
+      if ( DEBUGR == 1 )   printf("next: gen_kpp_mechanism_driver (writing chem/kpp_mechanism_driver.F) \n");
+     gen_kpp_mechanism_driver ( );
+
+
+      if ( DEBUGR == 1 )   printf("next: gen_call_to_kpp_mechanism_driver (writing inc/call_to_kpp_mech_drive.inc) \n");
+     gen_kpp_call_to_mech_dr ( );
+
+
+     /* write arguments for call to KPPs Update_Rconst      */
+          if ( DEBUGR == 1 )   printf("next: gen_kpp_args_to_Update_Rconst (writing inc/args_to_update_rconst.inc and inc/<decls_update_rconst.inc) \n");
+     gen_kpp_args_to_Update_Rconst ( );
+     
+
+    /* write the interface */
+      if ( DEBUGR == 1 )   printf("next: gen_kpp_interface (writing several module_kpp_* for each mechanism)\n");
+     gen_kpp_interface ( );
+     
+
+    
+      if ( DEBUGR == 1 )   printf("DONE gen_kpp \n");
+
+  return(0) ;
+}
+

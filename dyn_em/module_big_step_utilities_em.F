@@ -2,7 +2,7 @@
 !wrf:MODEL_LAYER:DYNAMICS
 !
 
-#if (RWORDSIZE == 4)
+#ifndef DOUBLE_PRECISION
 # define VPOWX vspowx
 # define VPOW  vspow
 #else
@@ -5105,8 +5105,8 @@ END SUBROUTINE phy_prep
    IF (config_flags%cu_physics .gt. 0) THEN
 
       DO J=j_start,j_end
-      DO I=i_start,i_end
       DO K=k_start,k_end
+      DO I=i_start,i_end
          RUCUTEN(I,K,J) =RUCUTEN(I,K,J)/(c1(k)*MUT(I,J)+c2(k))
          RVCUTEN(I,K,J) =RVCUTEN(I,K,J)/(c1(k)*MUT(I,J)+c2(k))
          RTHCUTEN(I,K,J)=RTHCUTEN(I,K,J)/(c1(k)*MUT(I,J)+c2(k))
@@ -5116,8 +5116,8 @@ END SUBROUTINE phy_prep
 
       IF (P_QV .ge. PARAM_FIRST_SCALAR)THEN
          DO J=j_start,j_end
-         DO I=i_start,i_end
          DO K=k_start,k_end
+         DO I=i_start,i_end
             RQVCUTEN(I,K,J)=RQVCUTEN(I,K,J)/(c1(k)*MUT(I,J)+c2(k))
          ENDDO
          ENDDO
@@ -5126,8 +5126,8 @@ END SUBROUTINE phy_prep
 
       IF (P_QC .ge. PARAM_FIRST_SCALAR)THEN
          DO J=j_start,j_end
-         DO I=i_start,i_end
          DO K=k_start,k_end
+         DO I=i_start,i_end
             RQCCUTEN(I,K,J)=RQCCUTEN(I,K,J)/(c1(k)*MUT(I,J)+c2(k))
          ENDDO
          ENDDO
@@ -5136,8 +5136,8 @@ END SUBROUTINE phy_prep
 
       IF (P_QR .ge. PARAM_FIRST_SCALAR)THEN
          DO J=j_start,j_end
-         DO I=i_start,i_end
          DO K=k_start,k_end
+         DO I=i_start,i_end
             RQRCUTEN(I,K,J)=RQRCUTEN(I,K,J)/(c1(k)*MUT(I,J)+c2(k))
          ENDDO
          ENDDO
@@ -5146,8 +5146,8 @@ END SUBROUTINE phy_prep
 
       IF (P_QI .ge. PARAM_FIRST_SCALAR)THEN
          DO J=j_start,j_end
-         DO I=i_start,i_end
          DO K=k_start,k_end
+         DO I=i_start,i_end
             RQICUTEN(I,K,J)=RQICUTEN(I,K,J)/(c1(k)*MUT(I,J)+c2(k))
          ENDDO
          ENDDO
@@ -5156,8 +5156,8 @@ END SUBROUTINE phy_prep
 
       IF(P_QS .ge. PARAM_FIRST_SCALAR)THEN
          DO J=j_start,j_end
-         DO I=i_start,i_end
          DO K=k_start,k_end
+         DO I=i_start,i_end
             RQSCUTEN(I,K,J)=RQSCUTEN(I,K,J)/(c1(k)*MUT(I,J)+c2(k))
          ENDDO
          ENDDO
@@ -5169,8 +5169,8 @@ END SUBROUTINE phy_prep
    IF (config_flags%shcu_physics .gt. 0) THEN
 
       DO J=j_start,j_end
-      DO I=i_start,i_end
       DO K=k_start,k_end
+      DO I=i_start,i_end
          RUSHTEN(I,K,J) =RUSHTEN(I,K,J)/(c1(k)*MUT(I,J)+c2(k))
          RVSHTEN(I,K,J) =RVSHTEN(I,K,J)/(c1(k)*MUT(I,J)+c2(k))
          RTHSHTEN(I,K,J)=RTHSHTEN(I,K,J)/(c1(k)*MUT(I,J)+c2(k))
@@ -5180,8 +5180,8 @@ END SUBROUTINE phy_prep
 
       IF (P_QV .ge. PARAM_FIRST_SCALAR)THEN
          DO J=j_start,j_end
-         DO I=i_start,i_end
          DO K=k_start,k_end
+         DO I=i_start,i_end
             RQVSHTEN(I,K,J)=RQVSHTEN(I,K,J)/(c1(k)*MUT(I,J)+c2(k))
          ENDDO
          ENDDO
@@ -5190,8 +5190,8 @@ END SUBROUTINE phy_prep
 
       IF (P_QC .ge. PARAM_FIRST_SCALAR)THEN
          DO J=j_start,j_end
-         DO I=i_start,i_end
          DO K=k_start,k_end
+         DO I=i_start,i_end
             RQCSHTEN(I,K,J)=RQCSHTEN(I,K,J)/(c1(k)*MUT(I,J)+c2(k))
          ENDDO
          ENDDO
@@ -5200,8 +5200,8 @@ END SUBROUTINE phy_prep
 
       IF (P_QR .ge. PARAM_FIRST_SCALAR)THEN
          DO J=j_start,j_end
-         DO I=i_start,i_end
          DO K=k_start,k_end
+         DO I=i_start,i_end
             RQRSHTEN(I,K,J)=RQRSHTEN(I,K,J)/(c1(k)*MUT(I,J)+c2(k))
          ENDDO
          ENDDO
@@ -5210,8 +5210,8 @@ END SUBROUTINE phy_prep
 
       IF (P_QI .ge. PARAM_FIRST_SCALAR)THEN
          DO J=j_start,j_end
-         DO I=i_start,i_end
          DO K=k_start,k_end
+         DO I=i_start,i_end
             RQISHTEN(I,K,J)=RQISHTEN(I,K,J)/(c1(k)*MUT(I,J)+c2(k))
          ENDDO
          ENDDO
@@ -5220,8 +5220,8 @@ END SUBROUTINE phy_prep
 
       IF(P_QS .ge. PARAM_FIRST_SCALAR)THEN
          DO J=j_start,j_end
-         DO I=i_start,i_end
          DO K=k_start,k_end
+         DO I=i_start,i_end
             RQSSHTEN(I,K,J)=RQSSHTEN(I,K,J)/(c1(k)*MUT(I,J)+c2(k))
          ENDDO
          ENDDO
@@ -5230,8 +5230,8 @@ END SUBROUTINE phy_prep
 
       IF(P_QG .ge. PARAM_FIRST_SCALAR)THEN
          DO J=j_start,j_end
-         DO I=i_start,i_end
          DO K=k_start,k_end
+         DO I=i_start,i_end
             RQGSHTEN(I,K,J)=RQGSHTEN(I,K,J)/(c1(k)*MUT(I,J)+c2(k))
          ENDDO
          ENDDO
@@ -5296,8 +5296,8 @@ END SUBROUTINE phy_prep
 
       IF (P_QV .ge. PARAM_FIRST_SCALAR)THEN
          DO J=j_start,j_end
-         DO I=i_start,i_end
-            DO K=k_start,k_end
+         DO K=k_start,k_end
+            DO I=i_start,i_end
                RQVFTEN(I,K,J)=RQVFTEN(I,K,J)/(c1(k)*MUT(I,J)+c2(k))
             ENDDO
          ENDDO
@@ -5312,8 +5312,8 @@ END SUBROUTINE phy_prep
       ( config_flags%cu_physics == NTIEDTKESCHEME )) THEN
 
       DO J=j_start,j_end
-      DO I=i_start,i_end
-         DO K=k_start,k_end
+      DO K=k_start,k_end
+         DO I=i_start,i_end
             RTHFTEN(I,K,J)=RTHFTEN(I,K,J)/(c1(k)*MUT(I,J)+c2(k))
          ENDDO
       ENDDO
@@ -5322,8 +5322,8 @@ END SUBROUTINE phy_prep
 !  If using moist theta, get dry theta tendency for CPSs
       IF ( config_flags%use_theta_m == 1 ) THEN
          DO J=j_start,j_end
-         DO I=i_start,i_end
-            DO K=k_start,k_end
+         DO K=k_start,k_end
+            DO I=i_start,i_end
                th_phy(i,k,j) = (t_new(i,k,j) + t0) / (1. + (R_v/R_d) * qv(i,k,j))
                rthften(i,k,j) = th_phy(i,k,j)/(t_new(i,k,j)+t0) *          &
                                (rthften(i,k,j) - (R_v/R_d) * th_phy(i,k,j) * rqvften(i,k,j))
@@ -5733,11 +5733,11 @@ END SUBROUTINE phy_prep_part2
 !                                300                                     ! term 4
 !                    
          IF ( ( config_flags%use_theta_m .EQ. 1 ) .AND. (P_Qv .GE. PARAM_FIRST_SCALAR) ) THEN
-            t_new(i,k,j) =  h_diabatic(i,k,j)*(1. + (R_v/R_d)*qv_diabatic(i,k,j)) + \
-                            mpten*(1. + (R_v/R_d)*qv(i,k,j)) + \
+            t_new(i,k,j) =  h_diabatic(i,k,j)*(1. + (R_v/R_d)*qv_diabatic(i,k,j)) + &
+                            mpten*(1. + (R_v/R_d)*qv(i,k,j)) + &
                             (R_v/R_d)*qvten*th_phy(i,k,j) - T0
             th_phy_m_t0(i,k,j) = (t_new(i,k,j)+T0)/(1.+(R_v/R_d)*qv(i,k,j)) - T0
-            h_diabatic(i,k,j) =  ( mpten*(1. + (R_v/R_d)*qv(i,k,j)) + \
+            h_diabatic(i,k,j) =  ( mpten*(1. + (R_v/R_d)*qv(i,k,j)) + &
                                  (R_v/R_d)*qvten*th_phy(i,k,j) ) / dt
          ELSE
             t_new(i,k,j) = t_new(i,k,j) + mpten

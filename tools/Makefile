@@ -3,7 +3,7 @@
 CC_TOOLS = cc
 CFLAGS = $(CC_TOOLS_CFLAGS) #-ansi
 LDFLAGS =
-DEBUG = -g 
+DEBUG = -O0 -g 
 OBJ = registry.o my_strtok.o reg_parse.o data.o type.o misc.o \
       gen_defs.o gen_allocs.o gen_mod_state_descr.o gen_scalar_indices.o \
       gen_args.o gen_config.o sym.o symtab_gen.o gen_irr_diag.o \

@@ -95,7 +95,7 @@ module da_wrfvar_top
    use da_vtox_transforms, only : da_transform_vtox, da_transform_xtoxa, &
       da_transform_xtoxa_adj, da_copy_xa, da_add_xa, da_transform_vpatox, &
       da_transform_vtox_inv
-   use da_wrfvar_io, only : da_med_initialdata_input, da_update_firstguess
+   use da_wrfvar_io, only : da_med_initialdata_input, da_update_firstguess,da_write_anaincrements
    use da_tools, only : da_set_randomcv, da_get_julian_time
 
    use da_tools, only : map_info,map_info_ens,proj_merc, proj_ps,proj_lc,proj_latlon, &
@@ -121,6 +121,7 @@ module da_wrfvar_top
    use da_qscat, only : da_oi_stats_qscat
    use da_mtgirs, only : da_oi_stats_mtgirs
    use da_radar, only : da_oi_stats_radar, da_write_oa_radar_ascii
+   use da_lightning, only : da_oi_stats_lightning
    use da_satem, only : da_oi_stats_satem
    use da_ships, only : da_oi_stats_ships
    use da_sound, only : da_oi_stats_sound, da_oi_stats_sonde_sfc

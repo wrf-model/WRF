@@ -3023,7 +3023,7 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
                                    config_flags,                           &
                                    tke(ims,kms,jms),                       & 
                                    msftx, msfty, msfux, msfuy,             &
-                                   msfvx, msfvy, xkhh, rdx, rdy,           &
+                                   msfvx, msfvy, xkmh, rdx, rdy,           &
                                    fnm, fnp, cf1, cf2, cf3,                &
                                    zx, zy, rdz, rdzw, dnw, dn, rho,        &
                                    .true.,                                 &
@@ -4332,7 +4332,7 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
    If (km_opt .eq. 2) then
    CALL vertical_diffusion_s( tke_tendf(ims,kms,jms),               &
                               config_flags, tke(ims,kms,jms),       &
-                              xkhv,                                 &
+                              xkmv,                                 &
                               dn, dnw, rdz, rdzw, fnm, fnp, rho,    &
                               .true.,                               &
                               ids, ide, jds, jde, kds, kde,         &
@@ -8157,7 +8157,7 @@ END SUBROUTINE phy_bc
     DO j = j_start, j_end
     DO k = kts+1, ktf
     DO i = i_start, i_end
-        xkxavg(i,k,j) = ( fnm(k) * xkhv(i,k,j) + fnp(k) * xkhv(i,k-1,j) ) &
+        xkxavg(i,k,j) = ( fnm(k) * 2. * xkmv(i,k,j) + fnp(k) * 2. * xkmv(i,k-1,j) ) &
                        *( fnm(k) * rho (i,k,j) + fnp(k) * rho (i,k-1,j) )
     END DO
     END DO

@@ -1845,6 +1845,7 @@
             ! alpha = exp(-(Z(j)-Z(j-1))/Zo) where Zo is a characteristic length scale
 
             ! compute alpha
+            ! permute this loop
             do i = 1, ncol
                alpha(i, 1) = 0._rb
                do ilev = 2,nlay
@@ -8597,28 +8598,36 @@
                zdbt_nodel(jk) = zclear*zdbtmc + zcloud*zdbtmo
                ztdbt_nodel(jk+1) = zdbt_nodel(jk) * ztdbt_nodel(jk)
 !   /\/\/\ Above code only needed for direct beam calculation
+            enddo
 
-
+! to vectorize the following loop
+            do jk=1, klev
 ! Delta scaling - clear   
                zf = zgcc(jk) * zgcc(jk)
                zwf = zomcc(jk) * zf
                ztauc(jk) = (1.0_rb - zwf) * ztauc(jk)
                zomcc(jk) = (zomcc(jk) - zwf) / (1.0_rb - zwf)
                zgcc (jk) = (zgcc(jk) - zf) / (1.0_rb - zf)
+            enddo
 
 
 ! Total sky optical parameters (cloud properties already delta-scaled)
 !   Use this code if cloud properties are derived in rrtmg_sw_cldprop       
                if (icpr .ge. 1) then
+            do jk=1,klev
+                  ikl=klev+1-jk
                   ztauo(jk) = ztauc(jk) + ptaucmc(ikl,iw)
                   zomco(jk) = ztauc(jk) * zomcc(jk) + ptaucmc(ikl,iw) * pomgcmc(ikl,iw) 
                   zgco (jk) = (ptaucmc(ikl,iw) * pomgcmc(ikl,iw) * pasycmc(ikl,iw) + &
                               ztauc(jk) * zomcc(jk) * zgcc(jk)) / zomco(jk)
                   zomco(jk) = zomco(jk) / ztauo(jk)
+            enddo
 
 ! Total sky optical parameters (if cloud properties not delta scaled)
 !   Use this code if cloud properties are not derived in rrtmg_sw_cldprop       
                elseif (icpr .eq. 0) then
+            do jk=1,klev
+                  ikl=klev+1-jk
                   ztauo(jk) = ztaur(ikl,iw) + ztaug(ikl,iw) + ptaua(ikl,ibm) + ptaucmc(ikl,iw)
                   zomco(jk) = ptaua(ikl,ibm) * pomga(ikl,ibm) + ptaucmc(ikl,iw) * pomgcmc(ikl,iw) + &
                               ztaur(ikl,iw) * 1.0_rb
@@ -8633,10 +8642,10 @@
                   ztauo(jk) = (1._rb - zwf) * ztauo(jk)
                   zomco(jk) = (zomco(jk) - zwf) / (1.0_rb - zwf)
                   zgco (jk) = (zgco(jk) - zf) / (1.0_rb - zf)
+            enddo
                endif 
 
 ! End of layer loop
-            enddo    
 
 ! Clear sky reflectivities
             call reftra_sw (klev, &
@@ -8734,22 +8743,27 @@
                pbbcd(ikl) = pbbcd(ikl) + zincflx(iw)*zcd(jk,iw)
                pbbfddir(ikl) = pbbfddir(ikl) + zincflx(iw)*ztdbt_nodel(jk)
                pbbcddir(ikl) = pbbcddir(ikl) + zincflx(iw)*ztdbtc_nodel(jk)
+            enddo
 
 ! Accumulate direct fluxes for UV/visible bands
                if (ibm >= 10 .and. ibm <= 13) then
+            do jk=1,klev+1
+               ikl=klev+2-jk
                   puvcd(ikl) = puvcd(ikl) + zincflx(iw)*zcd(jk,iw)
                   puvfd(ikl) = puvfd(ikl) + zincflx(iw)*zfd(jk,iw)
                   puvcddir(ikl) = puvcddir(ikl) + zincflx(iw)*ztdbtc_nodel(jk)
                   puvfddir(ikl) = puvfddir(ikl) + zincflx(iw)*ztdbt_nodel(jk)
+            enddo
 ! Accumulate direct fluxes for near-IR bands
                else if (ibm == 14 .or. ibm <= 9) then  
+            do jk=1,klev+1
+               ikl=klev+2-jk
                   pnicd(ikl) = pnicd(ikl) + zincflx(iw)*zcd(jk,iw)
                   pnifd(ikl) = pnifd(ikl) + zincflx(iw)*zfd(jk,iw)
                   pnicddir(ikl) = pnicddir(ikl) + zincflx(iw)*ztdbtc_nodel(jk)
                   pnifddir(ikl) = pnifddir(ikl) + zincflx(iw)*ztdbt_nodel(jk)
-               endif
-
             enddo
+               endif
 
 ! End loop on jg, g-point interval
          enddo             
@@ -9429,8 +9443,8 @@
 !               enddo
 !            enddo
 
-            do i = 1, nlayers
-               do ib = 1, nbndsw
+            do ib = 1, nbndsw
+               do i = 1, nlayers
                   ztaua(i,ib) = 0._rb
                   zasya(i,ib) = 0._rb
                   zomga(i,ib) = 0._rb
@@ -9453,8 +9467,8 @@
 ! IAER=10: Direct specification of aerosol optical properties from GCM
          elseif (iaer.eq.10) then
 
-            do i = 1 ,nlayers
-               do ib = 1 ,nbndsw
+            do ib = 1 ,nbndsw
+               do i = 1 ,nlayers
                   ztaua(i,ib) = taua(i,ib)
                   ztauacln(i,ib) = 0.0
                   zasya(i,ib) = asma(i,ib)
@@ -9934,8 +9948,8 @@
 ! modify to reverse layer indexing here if necessary.
 
       if (iaer .ge. 1) then 
-         do l = 1, nlayers
-            do ib = 1, nbndsw
+         do ib = 1, nbndsw
+            do l = 1, nlayers
                taua(l,ib) = tauaer(iplon,l,ib)
                ssaa(l,ib) = ssaaer(iplon,l,ib)
                asma(l,ib) = asmaer(iplon,l,ib)

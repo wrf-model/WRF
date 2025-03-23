@@ -502,6 +502,10 @@ SUBROUTINE A_PBL_DRIVER(itimestep, dt, u_frame, v_frame, bldt, curr_secs&
   REAL :: seamask, thsk, zzz, unew, vnew, tnew, qnew, umom, vmom
   REAL :: z0, z1, z2, w1, w2
 !------------------------------------------------------------------
+! For shared physics
+  REAL, DIMENSION(ims:ime, jms:jme) :: dx2dtmp
+  character*256 :: errmsg
+  integer :: errflg
 !
 !!!!!!!if using BEP set flag_bep to true
   INTEGER :: branch
@@ -635,6 +639,7 @@ SUBROUTINE A_PBL_DRIVER(itimestep, dt, u_frame, v_frame, bldt, curr_secs&
             ELSE
               CALL PUSHCONTROL1B(1)
             END IF
+            dx2dtmp(i,j)=dx
           END DO
           CALL PUSHINTEGER4(i - 1)
           CALL PUSHINTEGER4(ad_from)
@@ -677,8 +682,9 @@ SUBROUTINE A_PBL_DRIVER(itimestep, dt, u_frame, v_frame, bldt, curr_secs&
 &                oc12d=oc12d, oa2d1=oa1, oa2d2=oa2, oa2d3=oa3, oa2d4=oa4&
 &                , ol2d1=ol1, ol2d2=ol2, ol2d3=ol3, ol2d4=ol4, &
 &                SINA=sina,COSA=cosa, znu=znu, &
+&                errmsg= errmsg, errflg=errflg, &
 &                znw=znw, p_top=p_top, cp=cp, g=g, rd=r_d, rv=&
-&                r_v, ep1=ep_1, pi=3.141592653, dt=dtbl, dx=dx, kpbl2d=&
+&                r_v, ep1=ep_1, pi=3.141592653, dt=dtbl, dx=dx2dtmp, kpbl2d=&
 &                kpbl, itimestep=itimestep, ids=ids, ide=ide, jds=jds, &
 &                jde=jde, kds=kds, kde=kde, ims=ims, ime=ime, jms=jms, &
 &                jme=jme, kms=kms, kme=kme, its=its, ite=ite, jts=jts, &

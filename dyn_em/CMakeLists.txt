@@ -1,0 +1,45 @@
+# WRF CMake Build
+target_include_directories( 
+                            ${PROJECT_NAME}_Core
+                            PRIVATE
+                              ${CMAKE_CURRENT_SOURCE_DIR}
+                            )
+
+########################################################################################################################
+#
+# Now add sources
+#
+########################################################################################################################
+target_sources(
+                ${PROJECT_NAME}_Core
+                PRIVATE
+                  module_advect_em.F
+                  module_ieva_em.F
+                  module_diffusion_em.F
+                  module_small_step_em.F
+                  module_big_step_utilities_em.F
+                  module_em.F
+                  module_solvedebug_em.F
+                  module_bc_em.F
+                  module_init_utilities.F
+                  module_wps_io_arw.F
+                  module_damping_em.F
+                  module_polarfft.F
+                  module_force_scm.F
+                  module_first_rk_step_part1.F
+                  module_first_rk_step_part2.F
+                  module_avgflx_em.F
+                  module_sfs_nba.F
+                  module_convtrans_prep.F
+                  module_sfs_driver.F
+                  module_stoch.F
+                  module_after_all_rk_steps.F
+                  init_modules_em.F
+                  solve_em.F
+                  start_em.F
+                  shift_domain_em.F
+                  couple_or_uncouple_em.F
+                  nest_init_utils.F
+                  adapt_timestep_em.F
+                  interp_domain_em.F
+                  )

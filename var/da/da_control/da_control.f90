@@ -99,7 +99,7 @@ module da_control
    !hcl-note: should the top and interval be namelist options?
    integer, parameter :: interpolate_level = 2000
 
-#if RWORDSIZE==8
+#ifdef DOUBLE_PRECISION
    real, parameter :: da_zero = 0D0
 #else
    real, parameter :: da_zero = 0.0
@@ -240,6 +240,7 @@ module da_control
    real, parameter    :: typical_rv_rms = 1.0    ! m/s
    real, parameter    :: typical_rf_rms = 1.0    ! dBZ
    real, parameter    :: typical_rain_rms = 1.0   ! mm  
+   real, parameter    :: typical_div_rms = 0.001 
 
    ! The following typical mean squared values depend on control variable. They   
    ! are calculated in da_setup_background_errors and used in the VvToVp adjoint 
@@ -487,7 +488,7 @@ module da_control
 
    ! rtm_init setup parameter
 
-   integer, parameter            :: maxsensor = 30
+   integer, parameter            :: maxsensor = 31
 
    integer, parameter :: npres_print = 12
 
@@ -525,8 +526,9 @@ module da_control
    integer, parameter :: tamdar_sfc = 27
    integer, parameter :: rain      = 28
    integer, parameter :: gpseph    = 29
+   integer, parameter :: lightning = 30
 #if (WRF_CHEM == 1)
-   integer, parameter :: chemic_surf = 30
+   integer, parameter :: chemic_surf = 31
 #endif
 
    character(len=14), parameter :: obs_names(num_ob_indexes) = (/ &
@@ -558,7 +560,8 @@ module da_control
       "tamdar        ", &
       "tamdar_sfc    ", &
       "rain          ", &
-      "gpseph        "  &
+      "gpseph        ", &
+      "lightning     "  & 
 #if (WRF_CHEM == 1)
      ,"chemic_surf   " &
 #endif

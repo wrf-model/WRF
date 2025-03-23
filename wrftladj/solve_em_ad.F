@@ -178,7 +178,8 @@ SUBROUTINE solve_em_ad ( grid , config_flags  &
    LOGICAL :: leapfrog
    INTEGER :: l,kte,kk
    LOGICAL :: f_flux  ! flag for computing averaged fluxes in cu_gd
-   REAL    :: curr_secs
+   REAL    :: curr_secs, curr_secs2, curr_mins2
+   REAL(8) :: curr_secs_r8, curr_secs2_r8
    INTEGER :: num_sound_steps
    INTEGER :: idex, jdex
    REAL    :: max_msft
@@ -191,8 +192,9 @@ SUBROUTINE solve_em_ad ( grid , config_flags  &
 ! urban related variables
    INTEGER :: NUM_ROOF_LAYERS, NUM_WALL_LAYERS, NUM_ROAD_LAYERS   ! urban
 
-   TYPE(WRFU_TimeInterval)                    :: tmpTimeInterval
+   TYPE(WRFU_TimeInterval)                    :: tmpTimeInterval, tmpTimeInterval2
    REAL                                       :: real_time
+   REAL(8)                                    :: real_time_r8
    LOGICAL                                    :: adapt_step_flag
    LOGICAL                                    :: fill_w_flag
 
@@ -299,7 +301,12 @@ SUBROUTINE solve_em_ad ( grid , config_flags  &
   !   calculate it here--but, this is not clean!!
   !
    tmpTimeInterval = domain_get_current_time ( grid ) - domain_get_sim_start_time ( grid )
+   tmpTimeInterval2 = domain_get_current_time ( grid ) - domain_get_start_time ( grid )
    curr_secs = real_time(tmpTimeInterval)
+   curr_secs2 = real_time(tmpTimeInterval2)
+   curr_secs_r8  = real_time_r8(tmpTimeInterval)
+   curr_secs2_r8 = real_time_r8(tmpTimeInterval2)
+   curr_mins2 = REAL( curr_secs2_r8 / 60.0d0 )
 
    old_dt = grid%dt   ! store old time step for flux averaging code at end of RK loop
 !-----------------------------------------------------------------------------
@@ -672,7 +679,7 @@ BENCH_END(set_phys_bc_tim)
                              , ph_tendf, mu_tendf               &
                              , tke_tend                         &
                              , config_flags%use_adaptive_time_step &
-                             , curr_secs                        &
+                             , curr_secs, curr_mins2            &
                              , psim , psih , gz1oz0             &
                              , chklowq                          &
                              , cu_act_flag , hol , th_phy       &
@@ -4015,6 +4022,7 @@ BENCH_START(moist_phys_end_tim)
        jts = max(grid%j_start(ij),jds)
        jte = min(grid%j_end(ij),jde-1)
 
+       IF ( config_flags%mp_zero_out > 0 ) THEN
        CALL microphysics_zero_outb (                                    &
                       moist , num_moist , config_flags ,                &
                       ids, ide, jds, jde, kds, kde,                     &
@@ -4022,6 +4030,7 @@ BENCH_START(moist_phys_end_tim)
                       its, ite, jts, jte,                               &
                       k_start    , k_end                                )
 
+       IF ( config_flags%mp_zero_out_all > 0 ) THEN
        CALL microphysics_zero_outb (                                    &
                       scalar , num_scalar , config_flags ,              &
                       ids, ide, jds, jde, kds, kde,                     &
@@ -4042,6 +4051,8 @@ BENCH_START(moist_phys_end_tim)
                       ims, ime, jms, jme, kms, kme,                     &
                       its, ite, jts, jte,                               &
                       k_start    , k_end                                )
+       ENDIF
+       ENDIF
 
        IF ( config_flags%periodic_x ) THEN
          its = max(grid%i_start(ij),ids)
@@ -4054,6 +4065,7 @@ BENCH_START(moist_phys_end_tim)
        jte = min(grid%j_end(ij),jde-1-sz)
 
        CALL PUSHREAL8ARRAY ( moist, (ime-ims+1)*(kme-kms+1)*(jme-jms+1)*num_moist )
+       IF ( config_flags%mp_zero_out > 0 ) THEN
        CALL microphysics_zero_outa (                                    &
                       moist , num_moist , config_flags ,                &
                       ids, ide, jds, jde, kds, kde,                     &
@@ -4061,6 +4073,7 @@ BENCH_START(moist_phys_end_tim)
                       its, ite, jts, jte,                               &
                       k_start    , k_end                                )
 
+       IF ( config_flags%mp_zero_out_all > 0 ) THEN
        CALL microphysics_zero_outa (                                    &
                       scalar , num_scalar , config_flags ,              &
                       ids, ide, jds, jde, kds, kde,                     &
@@ -4081,6 +4094,8 @@ BENCH_START(moist_phys_end_tim)
                       ims, ime, jms, jme, kms, kme,                     &
                       its, ite, jts, jte,                               &
                       k_start    , k_end                                )
+       ENDIF
+       ENDIF
 
        CALL PUSHREAL8ARRAY ( grid%t_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
        CALL PUSHREAL8ARRAY ( grid%h_diabatic, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )

@@ -2089,6 +2089,14 @@ SUBROUTINE calculate_phy_tend (config_flags,c1,c2,                     &
                      RQISHTEN,RQSSHTEN,RQGSHTEN,                       &
                      RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,RQVNDGDTEN,        &
                      RMUNDGDTEN,                                       &
+                     ruiauten,rviauten,rthiauten,                      &
+                     rqviauten,rqciauten,rqriauten,                    &
+                     rqiiauten,rqsiauten,rqgiauten,                    &
+                     rmuiauten,rphiauten,                              &
+                     u_iau,v_iau,t_iau,ph_iau,                         &
+                     mu_iau,qv_iau,qc_iau,qr_iau,                      &
+                     qi_iau,qs_iau,qg_iau,                             &
+                     itimestep,                                        &
                      scalar, scalar_tend, num_scalar,                  &
                      tracer, tracer_tend, num_tracer,                  &
                      ids,ide, jds,jde, kds,kde,                        &
@@ -2163,6 +2171,38 @@ SUBROUTINE calculate_phy_tend (config_flags,c1,c2,                     &
       REAL,     DIMENSION( ims:ime, jms:jme )               , &
                 INTENT(INOUT)   ::                           RMUNDGDTEN
 
+! iau
+      REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ),              &
+                INTENT(INOUT)   ::                           RUIAUTEN, &
+                                                             RVIAUTEN, &
+                                                            RTHIAUTEN, &
+                                                            RPHIAUTEN, &
+                                                            RQVIAUTEN, &
+                                                            RQCIAUTEN, &
+                                                            RQRIAUTEN, &
+                                                            RQIIAUTEN, &
+                                                            RQSIAUTEN, &
+                                                            RQGIAUTEN   
+
+      REAL,     DIMENSION( ims:ime, jms:jme ),                         &
+                INTENT(INOUT)   ::                          RMUIAUTEN
+
+      REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ),              &
+                INTENT(IN   )   ::                                     &
+                                                                u_iau, &
+                                                                v_iau, &
+                                                                t_iau, &
+                                                               ph_iau, &
+                                                               qv_iau, &
+                                                               qc_iau, &
+                                                               qr_iau, &
+                                                               qs_iau, &
+                                                               qi_iau, &
+                                                               qg_iau   
+
+      REAL,     DIMENSION( ims:ime, jms:jme ),                         &
+                INTENT(IN   )   ::                             mu_iau
+
 ! 4d arrays
 
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_tracer),INTENT(INOUT)   :: tracer
@@ -2170,8 +2210,12 @@ SUBROUTINE calculate_phy_tend (config_flags,c1,c2,                     &
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_scalar),INTENT(INOUT)   :: scalar
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_scalar),INTENT(INOUT)   :: scalar_tend
 
+      INTEGER :: itimestep
       INTEGER :: i,k,j, im
       INTEGER :: itf,ktf,jtf,itsu,jtsv
+
+! local
+    real   :: wgt_iau
 
 !-----------------------------------------------------------------------
 
@@ -2208,8 +2252,8 @@ SUBROUTINE calculate_phy_tend (config_flags,c1,c2,                     &
    IF (config_flags%cu_physics .gt. 0) THEN
 
       DO J=jts,jtf
-      DO I=its,itf
       DO K=kts,ktf
+      DO I=its,itf
          RUCUTEN(I,K,J) =(c1(k)*mut(I,J)+c2(k))*RUCUTEN(I,K,J)
          RVCUTEN(I,K,J) =(c1(k)*mut(I,J)+c2(k))*RVCUTEN(I,K,J)
          RTHCUTEN(I,K,J)=(c1(k)*mut(I,J)+c2(k))*RTHCUTEN(I,K,J)
@@ -2220,8 +2264,8 @@ SUBROUTINE calculate_phy_tend (config_flags,c1,c2,                     &
 
       IF (P_QC .ge. PARAM_FIRST_SCALAR)THEN
          DO J=jts,jtf
-         DO I=its,itf
          DO K=kts,ktf
+         DO I=its,itf
             RQCCUTEN(I,K,J)=(c1(k)*mut(I,J)+c2(k))*RQCCUTEN(I,K,J)
          ENDDO
          ENDDO
@@ -2230,8 +2274,8 @@ SUBROUTINE calculate_phy_tend (config_flags,c1,c2,                     &
 
       IF (P_QR .ge. PARAM_FIRST_SCALAR)THEN
          DO J=jts,jtf
-         DO I=its,itf
          DO K=kts,ktf
+         DO I=its,itf
             RQRCUTEN(I,K,J)=(c1(k)*mut(I,J)+c2(k))*RQRCUTEN(I,K,J)
          ENDDO
          ENDDO
@@ -2240,8 +2284,8 @@ SUBROUTINE calculate_phy_tend (config_flags,c1,c2,                     &
 
       IF (P_QI .ge. PARAM_FIRST_SCALAR)THEN
          DO J=jts,jtf
-         DO I=its,itf
          DO K=kts,ktf
+         DO I=its,itf
             RQICUTEN(I,K,J)=(c1(k)*mut(I,J)+c2(k))*RQICUTEN(I,K,J)
          ENDDO
          ENDDO
@@ -2250,8 +2294,8 @@ SUBROUTINE calculate_phy_tend (config_flags,c1,c2,                     &
 
       IF(P_QS .ge. PARAM_FIRST_SCALAR)THEN
          DO J=jts,jtf
-         DO I=its,itf
          DO K=kts,ktf
+         DO I=its,itf
             RQSCUTEN(I,K,J)=(c1(k)*mut(I,J)+c2(k))*RQSCUTEN(I,K,J)
          ENDDO
          ENDDO
@@ -2265,8 +2309,8 @@ SUBROUTINE calculate_phy_tend (config_flags,c1,c2,                     &
    IF (config_flags%shcu_physics .gt. 0) THEN
 
       DO J=jts,jtf
-      DO I=its,itf
       DO K=kts,ktf
+      DO I=its,itf
          RUSHTEN(I,K,J) =(c1(k)*mut(I,J)+c2(k))*RUSHTEN(I,K,J)
          RVSHTEN(I,K,J) =(c1(k)*mut(I,J)+c2(k))*RVSHTEN(I,K,J)
          RTHSHTEN(I,K,J)=(c1(k)*mut(I,J)+c2(k))*RTHSHTEN(I,K,J)
@@ -2277,8 +2321,8 @@ SUBROUTINE calculate_phy_tend (config_flags,c1,c2,                     &
 
       IF (P_QC .ge. PARAM_FIRST_SCALAR)THEN
          DO J=jts,jtf
-         DO I=its,itf
          DO K=kts,ktf
+         DO I=its,itf
             RQCSHTEN(I,K,J)=(c1(k)*mut(I,J)+c2(k))*RQCSHTEN(I,K,J)
          ENDDO
          ENDDO
@@ -2287,8 +2331,8 @@ SUBROUTINE calculate_phy_tend (config_flags,c1,c2,                     &
 
       IF (P_QR .ge. PARAM_FIRST_SCALAR)THEN
          DO J=jts,jtf
-         DO I=its,itf
          DO K=kts,ktf
+         DO I=its,itf
             RQRSHTEN(I,K,J)=(c1(k)*mut(I,J)+c2(k))*RQRSHTEN(I,K,J)
          ENDDO
          ENDDO
@@ -2297,8 +2341,8 @@ SUBROUTINE calculate_phy_tend (config_flags,c1,c2,                     &
 
       IF (P_QI .ge. PARAM_FIRST_SCALAR)THEN
          DO J=jts,jtf
-         DO I=its,itf
          DO K=kts,ktf
+         DO I=its,itf
             RQISHTEN(I,K,J)=(c1(k)*mut(I,J)+c2(k))*RQISHTEN(I,K,J)
          ENDDO
          ENDDO
@@ -2307,8 +2351,8 @@ SUBROUTINE calculate_phy_tend (config_flags,c1,c2,                     &
 
       IF(P_QS .ge. PARAM_FIRST_SCALAR)THEN
          DO J=jts,jtf
-         DO I=its,itf
          DO K=kts,ktf
+         DO I=its,itf
             RQSSHTEN(I,K,J)=(c1(k)*mut(I,J)+c2(k))*RQSSHTEN(I,K,J)
          ENDDO
          ENDDO
@@ -2317,8 +2361,8 @@ SUBROUTINE calculate_phy_tend (config_flags,c1,c2,                     &
 
       IF(P_QG .ge. PARAM_FIRST_SCALAR)THEN
          DO J=jts,jtf
-         DO I=its,itf
          DO K=kts,ktf
+         DO I=its,itf
             RQGSHTEN(I,K,J)=(c1(k)*mut(I,J)+c2(k))*RQGSHTEN(I,K,J)
          ENDDO
          ENDDO
@@ -2448,6 +2492,88 @@ SUBROUTINE calculate_phy_tend (config_flags,c1,c2,                     &
          ENDDO
    ENDDO
 
+! IAU (Incremental Analysis Updates)
+
+   IF (config_flags%iau .gt. 0) THEN
+
+      wgt_iau = iau_coef(config_flags%iau_time_window_sec,config_flags%dt,itimestep)
+
+      DO J=jts,jtf
+      DO K=kts,ktf
+      DO I=its,itf
+         RUIAUTEN(I,K,J) =(c1(k)*mut(I,J)+c2(k))*U_IAU(I,K,J)*WGT_IAU
+         RVIAUTEN(I,K,J) =(c1(k)*mut(I,J)+c2(k))*V_IAU(I,K,J)*WGT_IAU
+         RTHIAUTEN(I,K,J)=(c1(k)*mut(I,J)+c2(k))*T_IAU(I,K,J)*WGT_IAU
+         RQVIAUTEN(I,K,J)=(c1(k)*mut(I,J)+c2(k))*QV_IAU(I,K,J)*WGT_IAU
+      ENDDO
+      ENDDO
+      ENDDO
+
+      DO J=jts,jtf
+      DO K=kts,ktf+1
+      DO I=its,itf
+         RPHIAUTEN(I,K,J)=PH_IAU(I,K,J)*WGT_IAU
+      ENDDO 
+      ENDDO
+      ENDDO
+
+      DO J=jts,jtf
+      DO I=its,itf
+         RMUIAUTEN(I,J) =MU_IAU(I,J)*WGT_IAU
+      ENDDO
+      ENDDO
+
+      IF (P_QC .ge. PARAM_FIRST_SCALAR)THEN
+         DO J=jts,jtf
+         DO K=kts,ktf
+         DO I=its,itf
+            RQCIAUTEN(I,K,J)=(c1(k)*mut(I,J)+c2(k))*QC_IAU(I,K,J)*WGT_IAU
+         ENDDO
+         ENDDO
+         ENDDO
+      ENDIF
+
+      IF (P_QR .ge. PARAM_FIRST_SCALAR)THEN
+         DO J=jts,jtf
+         DO K=kts,ktf
+         DO I=its,itf
+            RQRIAUTEN(I,K,J)=(c1(k)*mut(I,J)+c2(k))*QR_IAU(I,K,J)*WGT_IAU
+         ENDDO
+         ENDDO
+         ENDDO
+      ENDIF
+
+      IF (P_QI .ge. PARAM_FIRST_SCALAR)THEN
+         DO J=jts,jtf
+         DO K=kts,ktf
+         DO I=its,itf
+            RQIIAUTEN(I,K,J)=(c1(k)*mut(I,J)+c2(k))*QI_IAU(I,K,J)*WGT_IAU
+         ENDDO
+         ENDDO
+         ENDDO
+      ENDIF
+
+      IF(P_QS .ge. PARAM_FIRST_SCALAR)THEN
+         DO J=jts,jtf
+         DO K=kts,ktf
+         DO I=its,itf
+            RQSIAUTEN(I,K,J)=(c1(k)*mut(I,J)+c2(k))*QS_IAU(I,K,J)*WGT_IAU
+         ENDDO
+         ENDDO
+         ENDDO
+      ENDIF
+
+      IF(P_QG .ge. PARAM_FIRST_SCALAR)THEN
+         DO J=jts,jtf
+         DO K=kts,ktf
+         DO I=its,itf
+            RQGIAUTEN(I,K,J)=(c1(k)*mut(I,J)+c2(k))*QG_IAU(I,K,J)*WGT_IAU
+         ENDDO
+         ENDDO
+         ENDDO
+      ENDIF
+
+   ENDIF
 
 END SUBROUTINE calculate_phy_tend
 
@@ -3017,5 +3143,23 @@ subroutine trajmapproj (grid,config_flags,ts_proj)
 
 
 end subroutine trajmapproj
+
+FUNCTION iau_coef (iau_time_window_sec, dt, itimestep)  result(wgt_iau)
+
+  implicit none
+
+! This function returns the coeficient for IAU
+
+      INTEGER :: itimestep
+      INTEGER :: nsteps_iau
+      REAL    :: wgt_iau, iau_time_window_sec, dt
+
+      wgt_iau = 0.
+      nsteps_iau = nint(iau_time_window_sec / dt)
+      if (itimestep <= nsteps_iau) then
+         wgt_iau = 1.0/iau_time_window_sec
+      endif
+
+END FUNCTION iau_coef
 
 END MODULE module_em

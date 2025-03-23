@@ -1,5 +1,6 @@
 
 #include <stdio.h>
+#include <string.h>
 
 
 #include "protos.h"
@@ -9,7 +10,7 @@
 
 
 /*---------------------------------------------------------------------*/
-int
+void
 gen_kpp_mechanism_driver ( )
 {
 knode_t * p1, * p2, * p3, * p4, * pm1, * pm3, * pm4;
@@ -112,7 +113,7 @@ knode_t * p1, * p2, * p3, * p4, * pm1, * pm3, * pm4;
 
 
 
-int
+void
 gen_kpp_call_to_mech_dr ( )
 {
 knode_t * p1, * p2, * p3, * p4, * pm1, * pm3, * pm4;

@@ -19,6 +19,7 @@ CONTAINS
                              , ph_tendf, mu_tendf               &
                              , tke_tend                         &
                              , adapt_step_flag , curr_secs      &
+                             , curr_mins2                       &
                              , psim , psih , gz1oz0 , chklowq   &
                              , cu_act_flag , hol , th_phy       &
                              , pi_phy , p_phy , t_phy           &
@@ -77,7 +78,7 @@ CONTAINS
 
 
     LOGICAL ,INTENT(IN)                        :: adapt_step_flag
-    REAL, INTENT(IN)                           :: curr_secs
+    REAL, INTENT(IN)                           :: curr_secs, curr_mins2
 
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_moist),INTENT(INOUT)   :: moist
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_moist),INTENT(INOUT)   :: moist_tend
@@ -644,6 +645,7 @@ BENCH_START(surf_driver_tim)
      &        ,BL_PBL_PHYSICS=config_flags%bl_pbl_physics                              &
      &        ,SF_SURFACE_PHYSICS=config_flags%sf_surface_physics  ,SH2O=grid%sh2o          &
      &        ,SHDMAX=grid%shdmax      ,SHDMIN=grid%shdmin      ,SMOIS=grid%smois        &
+     &        ,SHDAVG=grid%shdavg                                                        &
      &        ,SMSTAV=grid%smstav      ,SMSTOT=grid%smstot      ,SNOALB=grid%snoalb      &
      &        ,SNOW=grid%snow          ,SNOWC=grid%snowc        ,SNOWH=grid%snowh        &
      &        ,SMCREL=grid%smcrel                                                        &
@@ -810,6 +812,7 @@ BENCH_START(surf_driver_tim)
      &        ,urban_map_zgrd = config_flags%urban_map_zgrd               & !multi-layer urban
      &        ,NUM_URBAN_HI=config_flags%num_urban_hi                     & !multi-layer urban
      &        ,use_wudapt_lcz=config_flags%use_wudapt_lcz                 & !wudapt
+     &        ,slucm_distributed_drag=config_flags%slucm_distributed_drag & !SLUCM
      &        ,TSK_RURAL=grid%tsk_rural                                   & !multi-layer urban
      &        ,TRB_URB4D=grid%trb_urb4d,TW1_URB4D=grid%tw1_urb4d          & !multi-layer urban
      &        ,TW2_URB4D=grid%tw2_urb4d,TGB_URB4D=grid%tgb_urb4d          & !multi-layer urban
@@ -846,7 +849,9 @@ BENCH_START(surf_driver_tim)
      &        ,LB_URB2D=grid%lb_urb2d,HGT_URB2D=grid%hgt_urb2d            & !multi-layer urban
      &        ,MH_URB2D=grid%mh_urb2d,STDH_URB2D=grid%stdh_urb2d          & !SLUCM
      &        ,LF_URB2D=grid%lf_urb2d                                           & 
+     &        ,lf_urb2d_s=grid%lf_urb2d_s, z0_urb2d=grid%z0_urb2d               &
      &        ,GMT=grid%gmt,XLAT=grid%xlat,XLONG=grid%xlong,JULDAY=grid%julday  &
+     &        ,distributed_ahe_opt=grid%distributed_ahe_opt, ahe=grid%ahe       & !For anthropogenic heat
      &        ,A_U_BEP=grid%a_u_bep,A_V_BEP=grid%a_v_bep,A_T_BEP=grid%a_t_bep   &
      &        ,A_Q_BEP=grid%a_q_bep                                             &
      &        ,B_U_BEP=grid%b_u_bep,B_V_BEP=grid%b_v_bep,B_T_BEP=grid%b_t_bep   &
@@ -925,7 +930,7 @@ BENCH_START(surf_driver_tim)
      &        ,iopt_crop=config_flags%opt_crop, iopt_irr=config_flags%opt_irr    &
      &        ,iopt_irrm=config_flags%opt_irrm                                   &
      &        ,iopt_infdv=config_flags%opt_infdv,iopt_tdrn=config_flags%opt_tdrn &
-     &        ,soiltstep=config_flags%soiltstep
+     &        ,soiltstep=config_flags%soiltstep                                      &
      &        , isnowxy=grid%isnowxy  ,    tvxy=grid%tvxy    ,    tgxy=grid%tgxy     &
      &        ,canicexy=grid%canicexy ,canliqxy=grid%canliqxy,   eahxy=grid%eahxy    &
      &        ,   tahxy=grid%tahxy    ,    cmxy=grid%cmxy    ,    chxy=grid%chxy     &
@@ -1109,6 +1114,8 @@ BENCH_START(pbl_driver_tim)
      &         AKHS=grid%akhs          ,AKMS=grid%akms                              &
      &        ,BL_PBL_PHYSICS=config_flags%bl_pbl_physics                           &
      &        ,WINDFARM_OPT=config_flags%windfarm_opt,power=grid%power              &
+     &        ,windfarm_wake_model=config_flags%windfarm_wake_model          & ! Yulong add for WLM
+     &        ,windfarm_overlap_method=config_flags%windfarm_overlap_method  & ! Yulong add for WLM
      &        ,BLDT=grid%bldt, CURR_SECS=curr_secs, ADAPT_STEP_FLAG=adapt_step_flag &
      &        ,BLDTACTTIME=grid%bldtacttime                               &  
      &        ,BR=grid%br         ,CHKLOWQ=chklowq    ,CT=grid%ct                   &
@@ -1155,6 +1162,8 @@ BENCH_START(pbl_driver_tim)
 ! Bep changes end
 ! add tke_pbl, and turbulent fluxes
      &          ,TKE_PBL=grid%tke_pbl,EL_PBL=grid%el_pbl,WU_TUR=grid%wu_tur              &
+     &          , gmt=grid%gmt, xtime=grid%xtime,julday=grid%julday,julyr=grid%julyr     &
+     &          , ahe=grid%ahe,distributed_ahe_opt=grid%distributed_ahe_opt              &
      &          ,WV_tur=grid%wv_tur,WT_tur=grid%wt_tur,WQ_tur=grid%wq_tur                &
      &          ,DISS_PBL=grid%diss_pbl,TPE_PBL=grid%tpe_pbl                             &
      &          ,TKE_ADV=scalar(ims,kms,jms,P_tke_adv)                                   &
@@ -1223,8 +1232,8 @@ BENCH_START(pbl_driver_tim)
      &        ,rmol=grid%rmol, ch=grid%ch                                 &
      &        ,qcg=grid%qcg, grav_settling=config_flags%grav_settling     &
 !    &        ,K_m=grid%K_m, K_h=grid%K_h, K_q=grid%K_q                   &
-     &        ,vdfg=grid%vdfg,nupdraft=grid%nupdraft,maxMF=grid%maxmf     &
-     &        ,ktop_plume=grid%ktop_plume                                 &
+     &        ,vdfg=grid%vdfg,maxwidth=grid%maxwidth,maxMF=grid%maxmf     &
+     &        ,ztop_plume=grid%ztop_plume                                 &
      &        ,spp_pbl=config_flags%spp_pbl                               &
      &        ,pattern_spp_pbl=grid%pattern_spp_pbl                       &
      &        ,restart=config_flags%restart,cycling=config_flags%cycling  &
@@ -1762,7 +1771,7 @@ BENCH_END(shcu_driver_tim)
 
 BENCH_START(fdda_driver_tim)
       CALL fddagd_driver(itimestep=grid%itimestep,dt=grid%dt,xtime=grid%XTIME,      &
-                  id=grid%id,                                                       &
+                  curr_mins2=curr_mins2, id=grid%id,                                &
                   RUNDGDTEN=grid%rundgdten,RVNDGDTEN=grid%rvndgdten,                &
                   RTHNDGDTEN=grid%rthndgdten,RPHNDGDTEN=grid%rphndgdten,            &
                   RQVNDGDTEN=grid%rqvndgdten,RMUNDGDTEN=grid%rmundgdten,            &

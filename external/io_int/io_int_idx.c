@@ -19,7 +19,7 @@
 #include <arpa/inet.h>
 
 #include "io_int_idx.h"
-#include "io_int_idx_tags.h"
+#include "intio_tags.h"
 
 /* Static/Private functions within this file */
 

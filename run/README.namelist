@@ -60,11 +60,6 @@ Description of namelist variables
                                      = 10,      ! GRIB2 format
                                      = 11,      ! pnetCDF format
  ncd_nofill                          = .true.,  ! only a single write, not the write/read/write sequence
- frames_per_emissfile                = 12,      ! number of times in each chemistry emission file.
- io_style_emiss                      = 1,       ! style to use for the chemistry emission files.
-                                                ! 0 = Do not read emissions from files.
-                                                ! 1 = Cycle between two 12 hour files (set frames_per_emissfile=12)
-                                                ! 2 = Dated files with length set by frames_per_emissfile
  debug_level                         = 0, 	! 50,100,200,300 values give increasing prints
  diag_print                          = 0, 	! print out time series of model diagnostics
                                                   0 = no print
@@ -89,20 +84,20 @@ To choose between SI and WPS input to real for EM core:
  auxinput1_inname                    = "met_em.d<domain>.<date>"             ! Input to real from WPS (default since 3.0)
                                      = "wrf_real_input_em.d<domain>.<date>"  ! Input to real from SI
 
-Other output options:
+Other output options: Note all auxhist[1-24], auxinput[2-24] interval variables are domain dependent
 
- auxhist2_outname                    = "rainfall" ! file name for extra output! if not specified,
-                                                    auxhist2_d<domain>_<date> will be used
+ auxhist9_outname                    = "rainfall" ! file name for extra output! if not specified,
+                                                    auxhist9_d<domain>_<date> will be used
                                                     also note that to write variables in output other
                                                     than the history file requires Registry.EM file change
- auxhist2_interval (max_dom)         = 10,      ! interval in minutes
- io_form_auxhist2                    = 2,       ! output in netCDF
- frames_per_auxhist2                 = 1000,    ! number of output times in this file
+ auxhist9_interval (max_dom)         = 10,      ! interval in minutes
+ io_form_auxhist9                    = 2,       ! output in netCDF
+ frames_per_auxhist9                 = 1000,    ! number of output times in this file
 
 For SST updating (used only with sst_update=1):
  
  auxinput4_inname                    = "wrflowinp_d<domain>" 
- auxinput4_interval                  = 360      ! minutes generally matches time given by interval_seconds
+ auxinput4_interval (max_dom)        = 360      ! minutes generally matches time given by interval_seconds
  io_form_auxinput4                   = 2        ! IO format
 
  nwp_diagnostics                     = 0        ! set to = 1 to add 7 history-interval max diagnostic fields
@@ -112,7 +107,7 @@ For additional regional climate surface fields
  output_diagnostics                  = 0        ! set to = 1 to add 36 surface diagnostic arrays (max/min/mean/std)
  auxhist3_outname                    = 'wrfxtrm_d<domain>_<date>' ! file name for added diagnostics
  io_form_auxhist3                    = 2        ! netcdf
- auxhist3_interval                   = 1440     ! minutes between outputs (1440 gives daily max/min)
+ auxhist3_interval (max_dom)         = 1440     ! minutes between outputs (1440 gives daily max/min)
  frames_per_auxhist3                 = 1        ! output times per file
                                                   Note: do restart only at multiple of auxhist3_intervals
 
@@ -138,13 +133,13 @@ Additional settings when running WRFVAR:
  inputout_interval (max_dom)         = 180,     ! interval in minutes when writing input-formatted data 
  input_outname                       = 'wrfinput_d<domain>_<date>' ! you may change the output file name
  inputout_begin_y (max_dom)          = 0
- inputout_begin_mo                   = 0
+ inputout_begin_m                    = 0
  inputout_begin_d (max_dom)          = 0
  inputout_begin_h (max_dom)          = 3
  inputout_begin_m (max_dom)          = 0
  inputout_begin_s (max_dom)          = 0
  inputout_end_y (max_dom)            = 0
- inputout_end_mo                     = 0
+ inputout_end_m                      = 0
  inputout_end_d (max_dom)            = 0
  inputout_end_h (max_dom)            = 12
  inputout_end_m (max_dom)            = 0
@@ -251,7 +246,8 @@ Namelist variables specifically for the WPS input for real:
  rh2qv_method                        = 1,       ! which method to use to computer mixing ratio from RH:
                                                   default is option 1, the old MM5 method; option 2 uses a WMO 
                                                   recommended method (WMO-No. 49, corrigendum, August 2000) - 
-                                                  there is a difference between the two methods though small
+ use_sh_qv                           = .false., ! whether to use specific humidity or mixing ratio data from input
+                                                  recommended if input data has high vertical resolution
  interp_theta                        = .false.  ! If set to .false., it will vertically interpolate temperature 
                                                   instead of potential temperature, which may reduce bias when 
                                                   compared with input data
@@ -259,10 +255,10 @@ Namelist variables specifically for the WPS input for real:
                                                   = 2: it uses an alternative way (less biased 
                                                   when compared against input data) to compute height in program 
                                                   real and pressure in model.
- wif_input_opt                       = 0        ! = 1: option to process the Water Ice Friendly Aerosol input from metgrid for use with mp_physics=28
-                                                  = 2: since V4.4, option to use black carbon aerosol category with mp_physics=28, as well as its radiative effect. Must include
+ wif_input_opt                       = 0        ! = 1: option to process the Water Ice Friendly Aerosol input from metgrid for use with mp_physics=28,29
+                                                  = 2: since V4.4, option to use black carbon aerosol category with mp_physics=28,29, as well as its radiative effect. Must include
                                                        file QNWFA_QNIFA_QNBCA_SIGMA_MONTHLY.dat during WPS 
- num_wif_levels                      = 30       ! number of levels in the Thompson Water Ice Friendly aerosols (mp_physic=28) 
+ num_wif_levels                      = 30       ! number of levels in the Thompson Water Ice Friendly aerosols (mp_physic=28,29) 
  p_top_requested                     = 5000     ! p_top (Pa) to use in the model
  vert_refine_fact                    = 1        ! vertical refinement factor for ndown, not used for concurrent vertical grid refinement
  vert_refine_method (max_dom)        = 0        ! vertical refinement method
@@ -409,20 +405,23 @@ Namelist variables for controlling the adaptive time step option:
  use_adaptive_time_step              = .false.  ! T/F use adaptive time stepping.
  step_to_output_time                 = .true.   ! if adaptive time stepping, T/F modify the
                                                   time steps so that the exact history time is reached
- target_cfl(max_dom)                 = 1.2,1.2  ! vertical and horizontal CFL <= to this value implies
-                                                  no reason to reduce the time step, and to increase it
- target_hcfl(max_dom)                = .84,.84  ! horizontal CFL <= to this value implies
- max_step_increase_pct(max_dom)      = 5,51     ! percentage of previous time step to increase, if the
+ target_cfl(max_dom)                 = 1.2,1.2  ! if vertical CFL is <= to this value, it means there
+						  is no reason to reduce the time step, and therefore 
+						  time step is increased
+ target_hcfl(max_dom)                = .84,.84  ! if horizontal CFL <= to this value, it suggests no 
+						  need to reduce time step, and therefore time step 
+						  is increased
+ max_step_increase_pct(max_dom)      = 5,51     ! increase percentage for the previous time step, if the
                                                   max(vert cfl, horiz cfl) <= target_cfl, then the time
-                                                  will increase by max_step_increase_pct. Use something 
-                                                  large for nests (51% suggested)
- starting_time_step(max_dom)         = -1,-1    ! flag = -1 implies use 4*dx (defined in start_em), 
+                                                  will increase by this percentage; use something 
+                                                  much larger for nests (51% suggested, i.e., = 5, 51, 51)
+ starting_time_step(max_dom)         = -1,-1    ! flag = -1 sets time step to 4*dx (defined in start_em), 
                                                   starting_time_step = 100 means the starting time step
                                                   for the coarse grid is 100 s
- max_time_step(max_dom)              = -1,-1    ! flag = -1 implies max time step is 8*dx,
+ max_time_step(max_dom)              = -1,-1    ! flag = -1 sets the max time step to 8*dx,
                                                   max_time_step = 100 means that the time step will not
                                                   exceed 100 s
- min_time_step(max_dom)              = -1,-1    ! flag = -1 implies max time step is 3*dx,
+ min_time_step(max_dom)              = -1,-1    ! flag = -1 sets max time step to 3*dx,
                                                   min_time_step = 100 means that the time step will not
                                                   be less than 100 s
  adaptation_domain                   = 1        ! default, all fine grid domains adaptive dt driven by coarse-grid
@@ -487,41 +486,32 @@ Namelist variables for controlling the adaptive time step option:
                                      = 13, SBU_YLIN scheme
                                      = 14, WDM 5-class scheme
                                      = 16, WDM 6-class scheme
-                                     = 17, NSSL 2-moment 4-ice scheme (steady background CCN)
-                                     = 18, NSSL 2-moment 4-ice scheme with predicted CCN (better for idealized than real cases)
-                                           to set a global CCN value, use
-                                           nssl_cccn  = 0.7e9   ; CCN for NSSL scheme (18). 
-                                           Also sets same value to ccn_conc for mp_physics=18
-                                     = 19, NSSL 1-moment (7 class: qv,qc,qr,qi,qs,qg,qh; predicts graupel density)
-                                     = 21, NSSL 1-moment, (6-class), very similar to Gilmore et al. 2004
-                                           Can set intercepts and particle densities in physics namelist, e.g., nssl_cnor
+                                     = 18, NSSL 2-moment 4-ice scheme with predicted (unactivated) CCN (or activated CCN)
+                                           to change global CCN value, use
+                                           nssl_cccn  = 0.7e9   ; CCN (#/m^3 at sea level pressure) for NSSL scheme (18) or nssl_ccn_on=1
+                                           Also sets ccn_conc for mp_physics=18
                                        For NSSL 1-moment schemes, intercept and particle densities can be set for snow, 
                                        graupel, hail, and rain. For the 1- and 2-moment schemes, the shape parameters 
                                        for graupel and hail can be set.
-                                       nssl_alphah  = 0.    ! shape parameter for graupel
-                                       nssl_alphahl = 2.    ! shape parameter for hail
-                                       nssl_cnoh    = 4.e5  ! graupel intercept
-                                       nssl_cnohl   = 4.e4  ! hail intercept
-                                       nssl_cnor    = 8.e5  ! rain intercept
-                                       nssl_cnos    = 3.e6  ! snow intercept
-                                       nssl_rho_qh  = 500.  ! graupel density
-                                       nssl_rho_qhl = 900.  ! hail density
-                                       nssl_rho_qs  = 100.  ! snow density
+                                       PLEASE SEE doc/README.NSSLmp for options affecting the NSSL scheme
+                                     = 17, 19, 21, 22: Legacy NSSL-MP options: see README.NSSLmp for equivalent settings with 18
                                      = 24, WSM 7-class scheme (separate hail and graupel categories)
                                      = 26, WDM 7-class scheme (separate hail and graupel categories)
                                      = 28, aerosol-aware Thompson scheme with water- and ice-friendly aerosol climatology 
                                        This option has two climatological aerosol input options:
                                        use_aero_icbc = .F. : use constant values
                                        use_aero_icbc = .T. : use climatological aerosol input from WPS
- use_rap_aero_icbc                   = .false.   ! Set to .true. to ingest real-time data containing aerosols (new in 4.4)
+use_rap_aero_icbc                   = .false.   ! Set to .true. to ingest real-time data containing aerosols (new in 4.4)
  qna_update                          = 0   ! set to 1 to update time-varying sfc aerosol emission from climatology or 
                                              real-time data 
-                                             with mp_physics = 28. Use with input file ‘wrfqnainp_d0*’
+                                             with mp_physics = 28,29. Use with input file ‘wrfqnainp_d0*’
                                              (must set auxinput17_interval and io_form_auxinput17; new in 4.4)
  wif_fire_emit                       = .false.   ! set to .true. to include biomass burning organic and black carbon 
-                                             aerosols with mp_physics = 28 (new in 4.4)
+                                             aerosols with mp_physics = 28,29 (new in 4.4)
  wif_fire_inj                        = 1   ! (default) vertically distribute biomass burning emissions 
-                                             in mp_physics = 28 (new in 4.4)
+                                             in mp_physics = 28,29 (new in 4.4)
+				     = 29, RCON scheme, Thompson aerosol-aware with liquid-phase and cloud water modifications.
+				       This option supports the thompson aerosol options above.
                                      = 30, HUJI (Hebrew University of Jerusalem, Israel) spectral bin microphysics,
                                            fast version
                                      = 32, HUJI spectral bin microphysics, full version
@@ -549,11 +539,13 @@ Namelist variables for controlling the adaptive time step option:
 
  mp_zero_out                         = 0,      ! no action taken, no adjustment to any moist field
                                      = 1,      ! except for Qv, all other moist arrays are set to zero
-                                                 if they fall below a critical value
+                                                 if they fall below a critical value ('moist' array only)
                                      = 2,      ! Qv is .GE. 0, all other moist arrays are set to zero
-                                                 if they fall below a critical value
+                                                 if they fall below a critical value ('moist' array only)
  mp_zero_out_thresh                  = 1.e-8   ! critical value for moist array threshold, below which
                                                  moist arrays (except for Qv) are set to zero (kg/kg)
+ mp_zero_out_all                     = 0,      ! if =1 and mp_zero_out>0, then reproduce old behavior and 
+                                                 apply threshold to scalar, chem, and tracer arrays
 
  gsfcgce_hail                        = 0       ! for running gsfcgce microphysics with graupel
                                      = 1       ! for running gsfcgce microphysics with hail
@@ -571,17 +563,17 @@ Namelist variables for controlling the adaptive time step option:
  acc_phy_tend                        = 0       ! set to =1 to output 16 accumulated physics tendencies for potential temp, 
                                                  water vaopr mixing ratio, and U/V wind components; default is 0=off (new in 4.4) 
  progn (max_dom)                     = 0       ! switch to use mix-activate scheme (Only for Morrison, WDM6, WDM5, 
-                                                 and NSSL_2MOMCCN/NSSL_2MOM
- ccn_conc                            = 1.E8    ! CCN concentration, used by WDM schemes
+                                                 and NSSL_2MOM)
+ ccn_conc                            = 1.E8    ! CCN concentration, used by WDM schemes (set automatically for NSSL_2MOM using nssl_cccn)
 
  no_mp_heating                       = 0       ! normal
                                      = 1       ! turn off latent heating from a microphysics scheme
  use_mp_re                           = 1       ! whether to use effective radii computed in mp schemes in RRTMG
                                                  0: do not use; 1: use effective radii
-                                                 (The mp schemes that compute effective radii are 3,4,6,7,8,10,14,16,17-21,24,26,28,50-53,55)
+                                                 (The mp schemes that compute effective radii are 3,4,6,7,8,10,14,16,18,24,26,28,50-53,55)
 
- force_read_thompson                 = .false. ! whether to read tables for mp_physics = 8,28
- write_thompson_tables               = .true.  ! whether to read or compute tables for mp_phyiscs = 8,28
+ force_read_thompson                 = .false. ! whether to read tables for mp_physics = 8,28,29
+ write_thompson_tables               = .true.  ! whether to read or compute tables for mp_phyiscs = 8,28,29
  write_thompson_mp38table            = .false. ! whether to read table (qr_acr_qg_mp38V1.dat) for mp_physics = 38
 
  ra_lw_physics (max_dom)             longwave radiation option
@@ -882,9 +874,6 @@ Namelist variables for controlling the adaptive time step option:
                                      = 3, for small grid distances (DX < 5 km)
  nsas_dx_factor                      = 0, ! default option
                                      = 1,   NSAS grid-distance dependent option
- ntiedtke_dx_opt                     = 0, default option
-                                     = 1, new Tiedtke grid-distance dependent option (scale-aware)
-                                          when grid size falls below 15 km
  For KF-CuP scheme: recommended to use with cu_rad_feedback
  shallowcu_forced_ra(max_dom)        radiative impact of shallow Cu by a prescribed maximum cloud fraction
                                      = .false., option off, default
@@ -969,6 +958,13 @@ Namelist variables for controlling the adaptive time step option:
 							* Note: If the number of urban category in the input files is
 							  inconsistent with the namelist option, error messages will occur.
 							  The method to create the LCZ data is described here: http://www.wudapt.org/
+ slucm_distributed_drag              = .false.  ! option to use spatially varying 2-D urban Zero-plane Displacement, Roughness length for momentum, Frontal area index
+                                                ! currently does not work with LCZ, only works with single-layer urban physics (urban_physics=1)
+                                                ! need additional aforementioned 3 input variables in wrfinput file
+ distributed_ahe_opt                 = 0,       ! option to handle anthropogenic surface heat flux (need additional input in wrfinput file)
+                                                  = 0: no anthropogenic surface heat flux from input data
+                                                  = 1: add to first level temperature tendency
+                                                  = 2: add to surface sensible heat flux
  num_soil_cat                        = 16,      ! number of soil categories in input data
 
  pxlsm_smois_init(max_dom)           = 1        ! PXLSM Soil moisture initialization option 
@@ -1002,7 +998,7 @@ Namelist variables for controlling the adaptive time step option:
  rdmaxalb                            = .true.   ! use snow albedo from geogrid; false means using values from table
  rdlai2d                             = .false.  ! use LAI from input; false means using values from table
                                                   if sst_update=1, LAI will also be in wrflowinp file
- dust_emis                           = 0        ! Enable (0=no, 1=yes) surface dust emission scheme to enter mp_physics=28 QNIFA (ice-friendly aerosol variable)
+ dust_emis                           = 0        ! Enable (0=no, 1=yes) surface dust emission scheme to enter mp_physics=28,29 QNIFA (ice-friendly aerosol variable)
  erosion_dim                         = 3        ! In conjunction with dust_emis=1, this value can only be set equal to 3 (erodibility information)
  bucket_mm                           = -1.      ! bucket reset value for water accumulations (value in mm, -1.=inactive)
  bucket_J                            = -1.      ! bucket reset value for energy accumulations (value in J, -1.=inactive)
@@ -1063,8 +1059,10 @@ Namelist variables for controlling the adaptive time step option:
  ua_phys                             = .false.  ! Option to activate UA Noah changes: a different snow-cover physics in
                                                   Noah, aimed particularly toward improving treatment of snow as it relates 
                                                   to the vegetation canopy. Also uses new columns added in VEGPARM.TBL
- do_radar_ref			     = 0, 	! 1 = allows radar reflectivity to be computed using mp-scheme-specific
- 						  parameters.  Currently works for mp_physics = 2,4,6,7,8,10,14,16,24,26,28
+ do_radar_ref                        = 0,  ! 1 = allows radar reflectivity to be computed using mp-scheme-specific
+                                            parameters.  Currently works for mp_physics = 2,4,6,7,8,10,14,16,24,26,28
+                                            Note that reflectivity is always computed for mp_physics = 9,18, and is
+                                            also set =1 when nwp_diagnostics=1
  hailcast_opt (max_dom)              = 0, 	! 1 = 1-D hail growth model which predicts 1st-5th rank-ordered hail diameters, mean hail 
                                                   diameter and standard deviation of hail diameter. (Adams-Selin and Ziegler, MWR Dec 2016.) 
  haildt (max_dom)                    = 0.,      ! seconds between WRF-HAILCAST calls (s)
@@ -1126,10 +1124,26 @@ Options for MAD-WRF - see doc/README.madwrf for usage information
 
 Options for wind turbine drag parameterization:
 
- windfarm_opt (max_dom)             = 0         ! 1 = Simulates the effects of wind turbines in the atmospheric evolution
+ windfarm_opt (max_dom)             = 0         ! 1 = Simulates the effects of wind turbines in the atmospheric evolution, A\activates the wind farm parameterization by Fitch et al (2012)
+                                                ! 2 = Activate the new wind farm scheme (mav scheme) based on Ma et al. (2022).
+                                                      This is similar to option 1, but it also considers subgrid-scale wind turbine wake effects
  windfarm_ij                        = 0         ! whether to use lat-lon or i-j coordinate as wind turbine locations    
                                                 ! 0 = The coordinate of the turbines are defined in terms of lat-lon
                                                 ! 1 = The coordinate of the turbines are defined in terms of grid points
+                                                ! 2 = Valid only with windfarm_opt=2. The coordinate of the turbines are defined
+                                                      in terms of lat-lon with the filename of 'windturbines-ll.txt'
+ windfarm_wake_model                = 2         ! Subgrid-scale wind turbine wake model, valid only with windfarm_opt=2, default is 2
+                                                ! 1 = The Jensen model
+                                                ! 2 = The XA model
+                                                ! 3 = The GM model (windfarm_method is not used)
+                                                ! 4 = Jensen and XA ensemble
+                                                ! 5 = Jensen, XA and GM ensemble
+ windfarm_overlap_method            = 4         ! Wake superposition method for the Jensen and XA wind turbine wake model, valid only with windfarm_opt=2, default is 4
+                                                ! 1 = linear superposition
+                                                ! 2 = squared superposition
+                                                ! 3 = modified squared superposition
+                                                ! 4 = superposition of the hub-height wind speed (Ma et al. 2022)
+ windfarm_deg                       = 0.        ! The rotation degree of the wind farm layout. This is valid only when 'windfarm_opt=2' and 'windfarm_ij=1'
  windfarm_tke_factor                = 0.25      ! Correction factor applied to the TKE coefficient (deafault is 0.25, Archer et al. 2020)
 
 
@@ -1820,7 +1834,7 @@ data.  To introduce new data sets, mods are required in the Registry
 and in module_initialize_real.F.  There is a space-holder/practice
 set-up for "GCA".  The actual data set for Thompson mp=28 (WIF) that 
 utilizes QNWFA and QNIFA (water and ice friendly aerosols) has 
-been tested.
+been tested. Also compatible with mp=29 (RCON scheme).
 
 &domains
  num_wif_levels                      = 30    

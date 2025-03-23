@@ -536,6 +536,26 @@ subroutine da_final_write_obs(it,iv)
       end do
    end if
 
+   !------------------------------------------------------------------
+   ! [22] writing lightning
+   !------------------------------------------------------------------
+
+   num_obs = 0
+   if (iv%info(lightning)%nlocal > 0) then
+      do n = 1, iv%info(lightning)%nlocal
+         if(iv%info(lightning)%proc_domain(1,n)) num_obs = num_obs + 1
+      end do
+   end if
+   call da_proc_sum_int(num_obs)
+   if_wind_sd = .false.
+   if (num_obs > 0 .and. rootproc) then
+      write(omb_unit,'(a20,i8)')'lightning', num_obs
+      num_obs = 0
+      do k = 0,num_procs-1
+         call da_read_omb_tmp(filename(k),iunit,num_obs,'lightning',5,if_wind_sd)
+      end do
+   end if
+
 
    if (rootproc) then
       close(iunit)
@@ -548,5 +568,3 @@ subroutine da_final_write_obs(it,iv)
    if (trace_use) call da_trace_exit("da_final_write_obs")
    
 end subroutine da_final_write_obs
-
-

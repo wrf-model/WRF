@@ -224,14 +224,14 @@ MODULE module_domain_type
       Type(WRFU_TimeInterval) :: last_dtInterval
 
       ! Time series location information
-      INTEGER :: ntsloc, ntsloc_domain
-      INTEGER :: next_ts_time
-      INTEGER, POINTER, DIMENSION(:) :: itsloc, jtsloc, id_tsloc
-      REAL, POINTER, DIMENSION(:) :: lattsloc, lontsloc
-      CHARACTER (LEN=5), POINTER, DIMENSION(:) :: nametsloc
-      CHARACTER (LEN=25), POINTER, DIMENSION(:) :: desctsloc
-      CHARACTER (LEN=256), POINTER, DIMENSION(:) :: ts_filename
-      LOGICAL :: have_calculated_tslocs
+      INTEGER :: ntsloc = 0, ntsloc_domain = 0
+      INTEGER :: next_ts_time = 0
+      INTEGER, POINTER, DIMENSION(:) :: itsloc => NULL(), jtsloc => NULL(), id_tsloc => NULL()
+      REAL, POINTER, DIMENSION(:) :: lattsloc => NULL(), lontsloc => NULL()
+      CHARACTER (LEN=5), POINTER, DIMENSION(:) :: nametsloc => NULL()
+      CHARACTER (LEN=25), POINTER, DIMENSION(:) :: desctsloc => NULL()
+      CHARACTER (LEN=256), POINTER, DIMENSION(:) :: ts_filename => NULL()
+      LOGICAL :: have_calculated_tslocs = .FALSE.
       LOGICAL :: have_displayed_alloc_stats   ! used in module_alloc_space to display alloc stats; only do it once.
 
 ! Track location information

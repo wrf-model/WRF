@@ -32,10 +32,10 @@
 
 #if 0
 ! Modified for WRF:
-#if (RWORDSIZE == 8)
+#ifdef DOUBLE_PRECISION
       integer, parameter :: kind_rb = selected_real_kind(12) ! 8 byte real
 #endif
-#if (RWORDSIZE == 4)
+#ifndef DOUBLE_PRECISION
       integer, parameter :: kind_rb = selected_real_kind(6)  ! 4 byte real
 #endif
 #else
@@ -2537,6 +2537,7 @@ contains
             ! alpha = exp(-(Z(j)-Z(j-1))/Zo) where Zo is a characteristic length scale
 
             ! compute alpha
+            ! todo - need to permute this loop after adding vectorized expf() function
             do i = 1, ncol
                alpha(i, 1) = 0._rb
                do ilev = 2,nlay
@@ -3280,6 +3281,7 @@ contains
          icldlyr(lay) = 0
 
 ! Change to band loop?
+! todo permute, remove condition, vectorize expf
          do ig = 1, ngptlw
             if (cldfmc(ig,lay) .eq. 1._rb) then
                ib = ngb(ig)

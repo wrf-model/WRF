@@ -32,11 +32,8 @@ io_int.f: io_int.F90 module_internal_header_util.o
 io_int.o: io_int.f ../../inc/intio_tags.h
 	$(FC) $(FCFLAGS) -I../../inc -I../ioapi_share -o $@ -c $*.f
 
-io_int_idx_tags.h: ../../inc/intio_tags.h
-	awk '{print "#define", toupper($$4), $$6}' < ../../inc/intio_tags.h > $@
-
-io_int_idx.o: io_int_idx.c io_int_idx.h io_int_idx_tags.h
-	$(CC) -o $@ -c $(CFLAGS_LOCAL) $*.c
+io_int_idx.o: io_int_idx.c io_int_idx.h
+	$(CC) -I../../inc -o $@ -c $(CFLAGS_LOCAL) $*.c
 
 module_io_int_idx.o: module_io_int_idx.f
 	$(FC) $(FCFLAGS) -o $@ -c $*.f
@@ -91,5 +88,5 @@ test_io_mpi: test_io_mpi.f90 $(LIB)
 	$(FC) $(FCFLAGS) $(LDFLAGS) -o $@ $@.f90 -L. -lwrfio_int
 
 superclean:
-	@$(RM) *.f *.o *.obj *.i *.mod $(LIB) diffwrf io_int_idx_tags.h \
-		test_io_idx test_io_mpi io_int_idx_tags.h
+	@$(RM) *.f *.o *.obj *.i *.mod $(LIB) diffwrf \
+		test_io_idx test_io_mpi

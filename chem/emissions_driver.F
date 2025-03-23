@@ -52,7 +52,7 @@ CONTAINS
          ebio_ch3cho,ebio_ch3co2h,ebio_tbut2ene,ebio_c2h5cho,              &
          ebio_nc4h10,							   &
          ! stuff for MEGAN v2.04                                                 
-         T2,Q2,swdown,                                                     & !dimaman
+         T2,swdown,                                                        &
          nmegan,EFmegan,                                                   &
          msebio_isop,                                                      &
          mlai,                                                             &

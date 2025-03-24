@@ -858,8 +858,8 @@
               grid%soilctop, grid%ust_t, grid%rough_cor, grid%smois_cor,                  &              
               grid%ebio_c5h8,grid%ebio_apinene,grid%ebio_bpinene,grid%ebio_toluene,        &
               grid%ebio_ch3cho,grid%ebio_ch3co2h,grid%ebio_tbut2ene,                      &
-              grid%ebio_c2h5cho,grid%ebio_nc4h10,					                      &
-              grid%T2,grid%Q2,grid%swdown,                                                 & !dimaman
+              grid%ebio_c2h5cho,grid%ebio_nc4h10,                                         &
+              grid%T2,grid%swdown,                                                         & !dimaman
               grid%nmegan,grid%EFmegan,                                                    &
               grid%msebio_isop,                                                            &
               grid%mlai,                                                                   &

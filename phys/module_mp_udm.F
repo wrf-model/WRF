@@ -1538,7 +1538,7 @@ subroutine udm2d(t1, q1                                          &
 !-------------------------------------------------------------------------------
 ! nsacw: accretion of cloud water by snow  [lh A12]
 !        (NC ->)
-       if(qrs(k,i,2)>qrmin .and. ncr(k,i,2)>ncmin) then
+       if(qrs(k,i,2)>qrmin .and. ncr(k,i,2)>ncmin .and. qci(k,i,1)>qcmin) then  
          nsacw(k) = min(pacrc*n0sfac(k)*rslope3(k,2)*rslopeb(k,2)              &
 ! reduce collection efficiency (suggested by B. Wilt)
                      *min(max(0.0,qrs(k,i,2)/qci(k,i,1)),1.)**2                &
@@ -1574,7 +1574,7 @@ subroutine udm2d(t1, q1                                          &
 !-------------------------------------------------------------------------------
 ! ngacw: accretion of cloud water by graupel [lh a13]
 !        (nc->
-       if(qrs(k,i,3)>qrmin .and. qci(k,i,1)>qcmin .and. ncr(k,i,2)>ncmin) then               
+       if(qrs(k,i,3)>qrmin .and. qci(k,i,1)>qcmin .and.  ncr(k,i,2)>ncmin) then  
          ngacw(k) = min(pacrg*rslope3(k,3)*rslopeb(k,3)*ncr(k,i,2)             &
 ! reduce collection efficiency (suggested by B. Wilt)
                      *min(max(0.0,qrs(k,i,3)/qci(k,i,1)),1.)**2                &
@@ -1622,7 +1622,7 @@ subroutine udm2d(t1, q1                                          &
 !
 ! nhacw: Accretion of cloud water by hail
 !      (nc->)
-       if(qrs(k,i,4)>qrmin .and. ncr(k,i,2)>ncmin) then
+       if(qrs(k,i,4)>qrmin .and. ncr(k,i,2)>ncmin .and. qci(k,i,1)>qcmin) then 
          nhacw(k) = min(pacrh*rslope3(k,4)*rslopeb(k,4)*ncr(k,i,2)             &
                      *min(max(0.0,qrs(k,i,4)/qci(k,i,1)),1.)**2                &
                      *denfac(k,i),ncr(k,i,2)*rdtcld)

@@ -13,7 +13,7 @@
                ph_n2o5,ph_o2,backg_oh,backg_h2o2,backg_no3,            &
                addt,addx,addc,etep,oltp,olip,cslp,limp,hc5p,hc8p,tolp, &
                xylp,apip,isop,hc3p,ethp,o3p,tco3,mo2,o1d,olnn,rpho,xo2,&
-               ketp,olnd,so2_oh_loss,so2_h2o2_loss,                    &
+               ketp,olnd, volc_diags,                                  &
                ids,ide, jds,jde, kds,kde,                              &
                ims,ime, jms,jme, kms,kme,                              &
                its,ite, jts,jte, kts,kte                               )
@@ -71,9 +71,8 @@
                xylp,apip,isop,hc3p,ethp,o3p,tco3,mo2,o1d,olnn,rpho,xo2,&
                ketp,olnd
 
-   REAL,  DIMENSION( ims:ime , jms:jme ),                        &
-         INTENT(INOUT   ) ::  so2_oh_loss,so2_h2o2_loss
-         
+   ! A. Ukhov 24 Oct 2024, Volcanic diagnostics
+   REAL, DIMENSION( ims:ime , jms:jme ,1:9), INTENT(INOUT) :: volc_diags
 !
 ! on input from meteorological model 
 !
@@ -119,7 +118,7 @@
          chem,rho_phy,dz8w,p8w,backg_oh,backg_h2o2,                        &
          gd_cldfr,dx,dy,msftx,msfty,g,                                     &
          xlat,xlong,ttday,tcosz,                                           &
-         so2_oh_loss,so2_h2o2_loss,                                        &
+         volc_diags,                          & ! A. Ukhov Volc. diagnostics
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )

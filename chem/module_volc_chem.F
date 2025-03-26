@@ -10,7 +10,7 @@ MODULE MODULE_VOLC_CHEM
             gmt,julday,t_phy,moist,                                           &
             chem,rho_phy,dz8w,p8w,backg_oh,backg_h2o2,                        &
             gd_cldf,dx,dy,mapfac_mx,mapfac_my,g,xlat,xlong,ttday,tcosz,       &
-            so2_oh_loss,so2_h2o2_loss,                                                &
+            volc_diags ,                                                      &
             ids,ide, jds,jde, kds,kde,                                        &
             ims,ime, jms,jme, kms,kme,                                        &
             its,ite, jts,jte, kts,kte                                         )
@@ -32,9 +32,7 @@ MODULE MODULE_VOLC_CHEM
              INTENT(IN   ) ::                                                 &
                  xlat,xlong,ttday,tcosz,mapfac_mx,mapfac_my
    
-      REAL,  DIMENSION( ims:ime , jms:jme ),                        &
-      INTENT(INOUT   ) ::  so2_oh_loss,so2_h2o2_loss
-       
+      REAL, DIMENSION( ims:ime , jms:jme ,1:9), INTENT(INOUT) :: volc_diags
    
       REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ),                        &
              OPTIONAL,                                                        &
@@ -109,8 +107,8 @@ MODULE MODULE_VOLC_CHEM
             chem(i,k,j,p_so2)= tc(1,1,1,1)*1.e6    !ppmv
             chem(i,k,j,p_sulf)=tc(1,1,1,2)*1.e6    !ppmv
    
-            so2_oh_loss(i,j) = so2_oh_loss(i,j) + chlso2_oh(1,1,1)  !loss (kg/dt)
-            so2_h2o2_loss(i,j) = so2_h2o2_loss(i,j) + chlso2_aq(1,1,1)  !loss (kg/dt)
+            volc_diags(i,j,p_so2_oh_loss) = volc_diags(i,j,p_so2_oh_loss) + chlso2_oh(1,1,1)  !loss (kg/dt)
+            volc_diags(i,j,p_so2_h2o2_loss) = volc_diags(i,j,p_so2_h2o2_loss) + chlso2_aq(1,1,1)  !loss (kg/dt)
          enddo
       enddo
       enddo   

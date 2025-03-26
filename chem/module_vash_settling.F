@@ -25,8 +25,7 @@ MODULE MODULE_VASH_SETTLING
 CONTAINS
 
 SUBROUTINE vash_settling_driver(dt,config_flags,t_phy,moist,               &
-         chem,rho_phy,dz8w,p8w,p_phy,                                      &
-         ash_fall,dx,g,                                                    &
+         chem,rho_phy,dz8w,p8w,p_phy,volc_diags,dx,g,                      &
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )
@@ -47,8 +46,9 @@ SUBROUTINE vash_settling_driver(dt,config_flags,t_phy,moist,               &
          INTENT(INOUT ) ::                                   chem
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ),                        &
           INTENT(IN   ) ::  t_phy,p_phy,dz8w,p8w,rho_phy
-   REAL,  DIMENSION( ims:ime , jms:jme ),                        &
-          INTENT(INOUT   ) ::  ash_fall
+
+  ! A. Ukhov,  Volcanic diagnostics
+  REAL, DIMENSION( ims:ime, jms:jme,1:9), INTENT(INOUT ) :: volc_diags
 
   REAL, INTENT(IN   ) :: dt,dx,g
   integer :: nmx,i,j,k,kk,lmx
@@ -125,8 +125,8 @@ SUBROUTINE vash_settling_driver(dt,config_flags,t_phy,moist,               &
           !  write(*,*)'10',ash_speed(10,:)
           !endif
 
-          !bstl_ash [ug/m2]. total ash grav. set [kg/m2]
-          ash_fall(i,j) = ash_fall(i,j) + sum(1.e-9 * bstl_ash(1:10))      
+          !bstl_ash [ug/m2]. Ash fall in [kg/m2]
+          volc_diags(i,j,p_ash_fall) = volc_diags(i,j,p_ash_fall) + sum(1.e-9 * bstl_ash(1:10))      
 
           kk=0
           do k=kts,kte
@@ -289,8 +289,7 @@ subroutine volc_ash_sulf_so2_drydep_driver(dtstep,      &
         config_flags,numgas,                            &
         t_phy,moist,p8w,t8w,rmol,aer_res,               &
         p_phy,chem,rho_phy,dz8w,ddvel,xland,hfx,        &
-        tsk,pbl,ust,znt,                                &
-        ashdrydep,so2_dry_dep,sulf_dry_dep,             &
+        tsk,pbl,ust,znt,volc_diags,                     &
         ids,ide, jds,jde, kds,kde,                      &
         ims,ime, jms,jme, kms,kme,                      &
         its,ite, jts,jte, kts,kte                       )
@@ -318,7 +317,7 @@ INTENT(INOUT) ::                            ddvel
 REAL,  DIMENSION( ims:ime , jms:jme )                   ,    &
 INTENT(IN) :: tsk,pbl,ust,rmol,xland,znt,hfx
 REAL, DIMENSION( its:ite, jts:jte ),  INTENT(IN)  ::  aer_res
-REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: ashdrydep, so2_dry_dep,sulf_dry_dep                 
+REAL, DIMENSION( ims:ime, jms:jme,1:9), INTENT(INOUT ) :: volc_diags
 
 !! .. Local Scalars ..
 INTEGER :: n, nr, ipr, imx,jmx,lmx
@@ -384,19 +383,19 @@ TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
     if(config_flags%chem_opt == chem_volc ) then
       ddvel(i,j,p_sulf) = real( dvel(1,1),kind=4 )
       !SO2
-      so2_dry_dep(i,j)=so2_dry_dep(i,j) + chem(i,1,j,p_so2) * airden(1,1) * ddvel(i,j,p_so2) * dtstep * 1.E-6 / 28.97 ![mol m^-2]
+      volc_diags(i,j,p_so2_drydep)= volc_diags(i,j,p_so2_drydep) + chem(i,1,j,p_so2) * airden(1,1) * ddvel(i,j,p_so2) * dtstep * 1.E-6 / 28.97 ![mol m^-2]
       !sulf 
-      sulf_dry_dep(i,j)=sulf_dry_dep(i,j) + chem(i,1,j,p_sulf) * airden(1,1) * ddvel(i,j,p_sulf) * dtstep * 1.E-6 / 28.97 ![mol m^-2]
+      volc_diags(i,j,p_sulf_drydep)= volc_diags(i,j,p_sulf_drydep) + chem(i,1,j,p_sulf) * airden(1,1) * ddvel(i,j,p_sulf) * dtstep * 1.E-6 / 28.97 ![mol m^-2]
     endif
 
     !drydep [kg/m2] = drydep [kg/m2]+1.e-9*dt[s]*dvel [m/s] * airden [kg/m3] * chem [ug/kg]
     !ashdrydep(i,j) = ashdrydep(i,j) + 1.e-9 * dtstep * dvel(1,1) * airden(1,1) * chem(i,1,j,p_vash_10)
 
-    ashdrydep(i,j) = ashdrydep(i,j) + 1.e-9 * dtstep * dvel(1,1) * airden(1,1) * &
+    volc_diags(i,j,p_ash_drydep) = volc_diags(i,j,p_ash_drydep) + 1.e-9 * dtstep * dvel(1,1) * airden(1,1) * &
     (chem(i,1,j,p_vash_7) + chem(i,1,j,p_vash_8) + chem(i,1,j,p_vash_9) + chem(i,1,j,p_vash_10))
 
     if(config_flags%chem_opt == chem_vash  .or. config_flags%chem_opt == chem_volc ) then
-      ashdrydep(i,j) = ashdrydep(i,j) + 1.e-9 * dtstep * dvel(1,1) * airden(1,1) * &
+      volc_diags(i,j,p_ash_drydep) = volc_diags(i,j,p_ash_drydep) + 1.e-9 * dtstep * dvel(1,1) * airden(1,1) * &
       (chem(i,1,j,p_vash_1) + chem(i,1,j,p_vash_2) + chem(i,1,j,p_vash_3) + chem(i,1,j,p_vash_4)+ &
        chem(i,1,j,p_vash_5) + chem(i,1,j,p_vash_6))
   
@@ -633,7 +632,7 @@ END SUBROUTINE dry_depvel_ash_sulf_so2
 ! Ukhov, A., et al, Improving dust simulations in WRF-Chem v4.1.3 coupled...,
 ! Geosci. Model Dev., 14, 473–493, https://doi.org/10.5194/gmd-14-473-2021, 2021.
 SUBROUTINE sulf_settling_driver(dt,config_flags,t_phy,moist,           &
-              chem,rho_phy,dz8w,p8w,p_phy,dx,g,z_at_w,sulf_fall,       &
+              chem,rho_phy,dz8w,p8w,p_phy,dx,g,z_at_w,volc_diags,      &
               ids,ide,jds,jde,kds,kde,                                 &
               ims,ime,jms,jme,kms,kme,                                 &
               its,ite,jts,jte,kts,kte)
@@ -652,7 +651,7 @@ INTEGER, INTENT(IN) :: ids,ide, jds,jde, kds,kde,                  &
 REAL, DIMENSION(ims:ime,kms:kme,jms:jme,num_moist), INTENT(IN) :: moist
 REAL, DIMENSION(ims:ime,kms:kme,jms:jme,num_chem), INTENT(INOUT) :: chem
 REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN) :: t_phy,p_phy,dz8w,p8w,rho_phy,z_at_w
-REAL,  DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) ::  sulf_fall
+REAL, DIMENSION(ims:ime,jms:jme,1:9), INTENT(INOUT) :: volc_diags
 
 REAL, INTENT(IN) :: dt,dx,g
 INTEGER          :: i,j,k,kk,lmx
@@ -717,7 +716,7 @@ do i=its,ite
   !!!!sulf_fall(i,j) = sulf_fall(i,j) + sum(1.e-9 * bstl_sulf)    
 
   !bstl_sulf in [kg/kg][m/s]
-  sulf_fall(i,j)=sulf_fall(i,j) + bstl_sulf * airden(1,1,1) * dt   ![kg/m2]
+  volc_diags(i,j,p_sulf_grav_setl) = volc_diags(i,j,p_sulf_grav_setl) + bstl_sulf * airden(1,1,1) * dt   ![kg/m2]
 
 enddo  ! i
 enddo  ! j 
@@ -831,11 +830,12 @@ END SUBROUTINE sulf_settling
 ! Based on wetdep_ls() for GOCART aerosols
 subroutine wetdep_ls_volc(dt,var,rain,moist,rho,num_moist,          &
   num_chem,numgas,dz8w,vvel,chem_opt,                               &
-  wd_ash_sc,wd_so2_sc,wd_sulf_sc,                                   & 
+  wd_so2_sc,wd_sulf_sc,volc_diags,                                  &
   ids,ide, jds,jde, kds,kde,                                        &
   ims,ime, jms,jme, kms,kme,                                        &
   its,ite, jts,jte, kts,kte                                         )
 
+  USE module_state_description, only: p_wd_ash_sc
   USE module_model_constants, ONLY: mwdry
 IMPLICIT NONE
 
@@ -856,8 +856,8 @@ REAL,  DIMENSION( ims:ime , jms:jme ),                                  &
 
 !Accumulated large scale scaveged so2 and sulf
 REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) :: wd_so2_sc,wd_sulf_sc
+REAL, DIMENSION( ims:ime , jms:jme ,1:9), INTENT(INOUT) :: volc_diags
 
-REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) :: wd_ash_sc
 REAL,  DIMENSION( its:ite ,  jts:jte ) :: var_sum,var_rmv
 REAL,  DIMENSION( its:ite ,  jts:jte ) :: frc,var_sum_clw,rain_clw     
 real :: dvar,factor,clsum,alpha!,rho_water
@@ -929,13 +929,13 @@ integer :: nv,i,j,k,km
                 if(nv.eq.p_vash_1 .or. nv.eq.p_vash_2 .or. nv.eq.p_vash_3 .or. nv.eq.p_vash_4 .or. &
                   nv.eq.p_vash_5 .or. nv.eq.p_vash_6 .or. nv.eq.p_vash_7 .or. nv.eq.p_vash_8 .or. &
                   nv.eq.p_vash_9 .or. nv.eq.p_vash_10) then
-                  wd_ash_sc(i,j) = wd_ash_sc(i,j) + 1.E-6 * dvar * rho(i,k,j) * dz8w(i,k,j) !g/m2
+                    volc_diags(i,j,p_wd_ash_sc) = volc_diags(i,j,p_wd_ash_sc) + 1.E-6 * dvar * rho(i,k,j) * dz8w(i,k,j) !g/m2
                 endif
             endif
 
             if(chem_opt == chem_volc_4bin) then
                 if(nv.eq.p_vash_7 .or. nv.eq.p_vash_8 .or. nv.eq.p_vash_9 .or. nv.eq.p_vash_10) then
-                  wd_ash_sc(i,j) = wd_ash_sc(i,j) + 1.E-6 * dvar * rho(i,k,j) * dz8w(i,k,j) !g/m2
+                  volc_diags(i,j,p_wd_ash_sc) = volc_diags(i,j,p_wd_ash_sc) + 1.E-6 * dvar * rho(i,k,j) * dz8w(i,k,j) !g/m2
                 endif
             endif  
           endif

@@ -85,7 +85,7 @@ CONTAINS
               XLV,CP,G,r_v,z,cu_co_ten,                             &
               wd_no3,wd_so4,                                        &
               wd_nh4,wd_oa,                                         &
-              wd_ash,        &  ! A. Ukhov
+              volc_diags,           &  ! A. Ukhov Volcanic diagnostics
               wd_so2, wd_sulf, wd_hno3, wd_nh3,                     &
               wd_cvasoa, wd_cvbsoa, wd_asoa, wd_bsoa,               &
               k22_shallow,kbcon_shallow,ktop_shallow,xmb_shallow,   &
@@ -95,7 +95,7 @@ CONTAINS
               ims,ime, jms,jme, kms,kme,                            &
               its,ite, jts,jte, kts,kte                             )
 ! USE module_configure
-! USE module_state_description
+ USE module_state_description, only: p_wd_ash_cu
 !-------------------------------------------------------------
    IMPLICIT NONE
 !-------------------------------------------------------------
@@ -144,7 +144,7 @@ CONTAINS
 ! Accumulated wet deposition
 !
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) :: wd_no3,wd_so4
-   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) :: wd_ash    ! A. Ukhov
+   REAL, DIMENSION( ims:ime , jms:jme ,1:9), INTENT(INOUT) :: volc_diags ! A. Ukhov
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) :: wd_nh4,wd_oa, &
                                      wd_so2, wd_sulf, wd_hno3, wd_nh3
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) :: &
@@ -550,10 +550,10 @@ CONTAINS
    
 
    ! A. Ukhov (KAUST) 18 Oct 2024
-   ! diagnostics for wet deposited ash
+   ! Volcanic diagnostics for wet deposited ash
    if (chemopt == chem_vash .OR. chemopt == chem_volc) then
      ! wetdep_2d [ug/m2/s] for aerosol
-      wd_ash(its:ite,jts:jte) = wd_ash(its:ite,jts:jte) + &
+      volc_diags(its:ite,jts:jte,p_wd_ash_cu) = volc_diags(its:ite,jts:jte,p_wd_ash_cu) + &
                                 (wetdep_2d(its:ite,jts:jte,p_vash_1)+ &
                                 wetdep_2d(its:ite,jts:jte,p_vash_2) + &
                                 wetdep_2d(its:ite,jts:jte,p_vash_3) + &
@@ -567,7 +567,7 @@ CONTAINS
     endif
 
     if(chemopt == chem_volc_4bin) then
-      wd_ash(its:ite,jts:jte) = wd_ash(its:ite,jts:jte) + &
+      volc_diags(its:ite,jts:jte,p_wd_ash_cu) = volc_diags(its:ite,jts:jte,p_wd_ash_cu) + &
                                 (wetdep_2d(its:ite,jts:jte,p_vash_7) + &
                                 wetdep_2d(its:ite,jts:jte,p_vash_8) + &
                                 wetdep_2d(its:ite,jts:jte,p_vash_9) + &

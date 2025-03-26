@@ -14,22 +14,22 @@ CONTAINS
 
     subroutine dry_dep_driver(id,curr_secs,ktau,dtstep,config_flags,      &
                gmt,julday,t_phy,moist,scalar,p8w,t8w,w,alt,               &
-               p_phy,chem,tracer,rho_phy,dz8w,rh,exch_h,hfx,dx,           &  
+               p_phy,chem,tracer,rho_phy,dz8w,rh,exch_h,hfx,dx,           &
                cldfra, cldfra_old,raincv,seasin,dustin,                   &
                ccn1, ccn2, ccn3, ccn4, ccn5, ccn6, nsource,               &
                ivgtyp,tsk,gsw,vegfra,pbl,rmol,ust,znt,xlat,xlong,z,z_at_w,&
-               xland,ash_fall,ash_drydep,h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,&
+               xland,volc_diags,h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,     &
                anh3,cvaro1,cvaro2,                                        &
                cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,dep_vel_o3,      &
                ddlen,ddflx,                                               &
                emis_ant,ebu_in,                                           &
-               sf_urban_physics,numgas,current_month,dvel,snowh,          & 
+               sf_urban_physics,numgas,current_month,dvel,snowh,          &
                dustdrydep_1,dustdrydep_2,dustdrydep_3,                    &
                dustdrydep_4,dustdrydep_5,                                 &
-               depvelocity,so2_drydep,sulf_drydep,sulfgravsetl,            &
+               depvelocity,                                               &
                dustgraset_1,dustgraset_2,dustgraset_3,                    &
                dustgraset_4,dustgraset_5,                                 &
-               setvel_1,setvel_2,setvel_3,setvel_4,setvel_5, imod,        &         
+               setvel_1,setvel_2,setvel_3,setvel_4,setvel_5, imod,        &
                is_CAMMGMP_used,                                           &
                dep_vel,num_vert_mix,                                      &
                ids,ide, jds,jde, kds,kde,                                 &
@@ -128,7 +128,12 @@ CONTAINS
                                                      xlat,      &
                                                      xlong,     &
                                                      snowh,     &
-                                          xland,znt,raincv,ash_fall,ash_drydep
+                                          xland,znt,raincv
+
+   ! A. Ukhov Volcanic diagnostics
+   REAL, DIMENSION( ims:ime, jms:jme,1:9), INTENT(INOUT ) :: volc_diags
+
+
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,        &
           INTENT(INOUT ) ::                                     &
                     cldfra,     & ! cloud fraction current timestep
@@ -153,7 +158,7 @@ CONTAINS
       
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) ::        &
                 dustdrydep_1, dustdrydep_2, dustdrydep_3,       &
-                dustdrydep_4, dustdrydep_5, depvelocity,so2_drydep,sulf_drydep,sulfgravsetl ! A. Ukhov SO2 Sulf dry dep
+                dustdrydep_4, dustdrydep_5, depvelocity
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) ::        &
                dustgraset_1,dustgraset_2,dustgraset_3,          &
                dustgraset_4,dustgraset_5,                       &
@@ -458,7 +463,7 @@ CONTAINS
                t_phy,moist,p8w,t8w,rmol,aer_res_def,                      &
                p_phy,chem,rho_phy,dz8w,ddvel,xland,hfx,                   &
                tsk,pbl,ust,znt,                                           &
-               ash_drydep,so2_drydep, sulf_drydep,                          &
+               volc_diags,                                                &
                ids,ide, jds,jde, kds,kde,                                 &
                ims,ime, jms,jme, kms,kme,                                 &
                its,ite, jts,jte, kts,kte                                  )
@@ -1419,7 +1424,7 @@ CONTAINS
          dustin,seasin,dx,g, &
          dustgraset_1,dustgraset_2,dustgraset_3,                           &
          dustgraset_4,dustgraset_5,                                        &
-         setvel_1,setvel_2,setvel_3,setvel_4,setvel_5, imod,               &              
+         setvel_1,setvel_2,setvel_3,setvel_4,setvel_5, imod,               &
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )
@@ -1427,13 +1432,12 @@ CONTAINS
    ENDIF
 
 
-! A. Ukhov, 12 Oct 2024
+! A. Ukhov, 12 Oct 2024. added volc_diags
 vash_settling_select: SELECT CASE(config_flags%chem_opt)
 CASE (CHEM_VASH, CHEM_VOLC, CHEM_VOLC_4BIN)
     CALL wrf_debug(15,'call vash grav. settling routine')
       call vash_settling_driver(dtstep,config_flags,t_phy,moist,        &
-      chem,rho_phy,dz8w,p8w,p_phy,                                      &
-      ash_fall,dx,g,                                                    &
+      chem,rho_phy,dz8w,p8w,p_phy,volc_diags,dx,g,                      &
       ids,ide, jds,jde, kds,kde,                                        &
       ims,ime, jms,jme, kms,kme,                                        &
       its,ite, jts,jte, kts,kte                                         )
@@ -1442,7 +1446,7 @@ CASE (CHEM_VASH, CHEM_VOLC, CHEM_VOLC_4BIN)
       if (config_flags%chem_opt.eq.CHEM_VOLC) then
          CALL wrf_debug(15,'call sulf. aerosol grav. settling routine')
          call sulf_settling_driver(dtstep,config_flags,t_phy,moist,    &
-         chem,rho_phy,dz8w,p8w,p_phy,dx,g,z_at_w,sulfgravsetl,         &
+         chem,rho_phy,dz8w,p8w,p_phy,dx,g,z_at_w,volc_diags,           &
          ids,ide, jds,jde, kds,kde,                                    &
          ims,ime, jms,jme, kms,kme,                                    &
          its,ite, jts,jte, kts,kte)      

@@ -1054,7 +1054,8 @@
 	         grid%ccn1, grid%ccn2, grid%ccn3, grid%ccn4, grid%ccn5, grid%ccn6,    &
                  grid%qndropsource,grid%ivgtyp,grid%tsk,grid%gsw,grid%vegfra,pbl_h,   &
                  grid%rmol,grid%ust,grid%znt,grid%xlat,grid%xlong,                    &
-                 zmid,z_at_w,grid%xland,grid%ash_fall,grid%ash_drydep,                 & ! A. Ukhov 18 Oct 2024. Added ash_dry_dep
+                 zmid,z_at_w,grid%xland,                                              &
+                 grid%volc_diags,        & ! A. Ukhov 18 Oct 2024. Volcanic diagnostics
                  grid%h2oaj,grid%h2oai,grid%nu3,grid%ac3,grid%cor3,grid%asulf,        &
                  grid%ahno3,grid%anh3,grid%cvaro1,grid%cvaro2,grid%cvalk1,grid%cvole1,&
                  grid%cvapi1,grid%cvapi2,grid%cvlim1,grid%cvlim2,grid%dep_vel_o3,     &
@@ -1064,7 +1065,6 @@
                  grid%dustdrydep_1,grid%dustdrydep_2,grid%dustdrydep_3,               &
                  grid%dustdrydep_4,grid%dustdrydep_5,                                 &      
                  grid%depvelocity,                                                    &      
-                 grid%so2_drydep, grid%sulf_drydep, grid%sulf_grav_setl,               & ! A. Ukhov So2 and sulf dry dep and grav.setl.
                  grid%dustgraset_1,grid%dustgraset_2,grid%dustgraset_3,               &
                  grid%dustgraset_4,grid%dustgraset_5,                                 &
                  grid%setvel_1,grid%setvel_2,grid%setvel_3,grid%setvel_4,             &
@@ -1161,7 +1161,7 @@
              z_at_w,grid%cu_co_ten,                                                   &
              grid%wd_no3_cu,grid%wd_so4_cu,                                           &
              grid%wd_nh4_cu,grid%wd_oa_cu,                                            &
-             grid%wd_ash_cu,                                                          &
+             volc_diags,                  & !A. Ukhov 18 Oct 2024. Volcanic diagnostics
              grid%wd_so2_cu, grid%wd_sulf_cu, grid%wd_hno3_cu, grid%wd_nh3_cu,        &
              grid%wd_cvasoa_cu, grid%wd_cvbsoa_cu, grid%wd_asoa_cu, grid%wd_bsoa_cu,  &
              grid%k22_shallow,grid%kbcon_shallow,grid%ktop_shallow,grid%xmb_shallow,  &
@@ -1191,7 +1191,7 @@
              z_at_w, grid%cu_co_ten,                                                  &
              grid%wd_no3_cu,grid%wd_so4_cu,                                           &
              grid%wd_nh4_cu,grid%wd_oa_cu,                                            &
-             grid%wd_ash_cu,                                                          &
+             volc_diags,                  & ! A. Ukhov 18 Oct 2024. Volcanic diagnostics
              grid%wd_so2_cu, grid%wd_sulf_cu, grid%wd_hno3_cu, grid%wd_nh3_cu,        &
              grid%wd_cvasoa_cu, grid%wd_cvbsoa_cu, grid%wd_asoa_cu, grid%wd_bsoa_cu,  &
              grid%k22_shallow,grid%kbcon_shallow,grid%ktop_shallow,grid%xmb_shallow,  &
@@ -1260,7 +1260,8 @@
               grid%oltp,grid%olip,grid%cslp,grid%limp,grid%hc5p,grid%hc8p,grid%tolp,  &
               grid%xylp,grid%apip,grid%isop,grid%hc3p,grid%ethp,grid%o3p,grid%tco3,   &
               grid%mo2,grid%o1d,grid%olnn,grid%rpho,grid%xo2,                         &
-              grid%ketp,grid%olnd,grid%so2_oh_loss,grid%so2_h2o2_loss,                &
+              grid%ketp,grid%olnd,                                                    &
+              grid%volc_diags,            & ! A. Ukhov 18 Oct 2024. Volcanic diagnostics
               ids,ide, jds,jde, kds,kde,                                              &
               ims,ime, jms,jme, kms,kme,                                              &
               its,ite,jts,jte,kts,kte        )
@@ -1696,7 +1697,8 @@ end if !Chemistry time step check
               !A. Ukhov (KAUST). large scale scaveging for Ash, volcanic SO2 and Sulf
               call wetdep_ls_volc(grid%dt,chem,grid%rainncv,moist,rho,num_moist, &
                 num_chem,numgas,dz8w,vvel,grid%chem_opt,                 &
-                grid%wd_ash_sc,grid%wd_so2_sc,grid%wd_sulf_sc,           &
+                grid%wd_so2_sc,grid%wd_sulf_sc,                          &
+                grid%volc_diags,                                         &
                 ids,ide, jds,jde, kds,kde,                               &
                 ims,ime, jms,jme, kms,kme,                               &
                 its,ite, jts,jte, kts,kte                                )

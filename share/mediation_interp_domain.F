@@ -51,6 +51,21 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
          TYPE (grid_config_rec_type)            :: config_flags
 #        include "dummy_new_decl.inc"
       END SUBROUTINE interp_domain_em_part2
+
+
+      SUBROUTINE interp_domain_em_part3 ( grid, nested_grid, parent_grid, config_flags   &
+!
+#        include "dummy_new_args.inc"
+!
+                 )
+         USE module_domain
+         USE module_configure
+         TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
+         TYPE(domain), POINTER :: nested_grid
+         TYPE(domain), POINTER :: parent_grid   !KAL added for vertical nesting
+         TYPE (grid_config_rec_type)            :: config_flags
+#        include "dummy_new_decl.inc"
+      END SUBROUTINE interp_domain_em_part3
 #endif
    END INTERFACE
 ! ----------------------------------------------------------
@@ -97,6 +112,11 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
   CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
   
   CALL interp_domain_em_part2 ( grid, nested_grid, parent_grid, config_flags   &
+!
+#     include "actual_new_args.inc"
+!
+                                )
+  CALL interp_domain_em_part3 ( grid, nested_grid, parent_grid, config_flags   &
 !
 #     include "actual_new_args.inc"
 !

@@ -2,8 +2,6 @@
 
 @PACKAGE_INIT@
 
-include( "${CMAKE_CURRENT_LIST_DIR}/@EXPORT_NAME@Targets.cmake" )
-
 set( WRF_VERSION @PROJECT_VERSION@ )
 
 # Options WRF was built with
@@ -37,6 +35,7 @@ set( WRF_BUILD_SBM_FAST                   @BUILD_SBM_FAST@                     )
 set( WRF_SHOW_ALL_VARS_USED               @SHOW_ALL_VARS_USED@                 )
 set( WRF_WRFIO_NCD_NO_LARGE_FILE_SUPPORT  @WRFIO_NCD_NO_LARGE_FILE_SUPPORT@    )
 
+list( PREPEND CMAKE_MODULE_PATH @CMAKE_INSTALL_PREFIX@/share/ )
 
 if ( ${WRF_USE_MPI} )
   find_package( MPI REQUIRED COMPONENTS Fortran C )
@@ -46,9 +45,14 @@ if ( ${WRF_USE_OPENMP} )
   find_package( OpenMP REQUIRED COMPONENTS Fortran C )
 endif()
 
-find_package( netCDF REQUIRED )
+find_package( netCDF         REQUIRED )
+find_package( netCDF-Fortran REQUIRED )
 # Attempt to find zlib packaged with netcdf first
 set( ZLIB_ROOT ${netCDF_PREFIX} )
 find_package( ZLIB   REQUIRED )
+
+list( POP_FRONT CMAKE_MODULE_PATH )
+
+include( "${CMAKE_CURRENT_LIST_DIR}/@EXPORT_NAME@Targets.cmake" )
 
 check_required_components( "@EXPORT_NAME@_Core" )

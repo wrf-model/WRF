@@ -10,10 +10,6 @@ target_link_libraries(hydro_nudging PRIVATE
         hydro_mpp
         hydro_data_rec
         hydro_orchestrator
+        netCDF::netcdff
 )
 
-target_include_directories(hydro_nudging
-        PRIVATE
-        ${netCDF_INCLUDE_DIRS}
-        ${netCDF-Fortran_INCLUDE_DIRS}
-)

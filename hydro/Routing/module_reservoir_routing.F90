@@ -1,5 +1,5 @@
 ! Intended purpose is to provide a module for all subroutines related to
-! reservoir routing, including active management, level pool, and integrating live 
+! reservoir routing, including active management, level pool, and integrating live
 ! data feeds. As of NWMv2.0, this module stub can read in a timeslice file
 ! to incorporate data from external sources, should a data service become available.
 
@@ -83,7 +83,7 @@ subroutine read_reservoir_obs(domainId)
    ! If not MPI, then default to 0, which is the I/O ID.
    if(mppFlag .eq. 1) then
 #ifdef MPP_LAND
-      call MPI_COMM_RANK( HYDRO_COMM_WORLD, myId, ierr )
+      call MPI_Comm_rank( HYDRO_COMM_WORLD, myId, ierr )
       call nwmCheck(diagFlag,ierr,'ERROR: Unable to determine MPI process ID.')
 #endif
    else
@@ -92,7 +92,7 @@ subroutine read_reservoir_obs(domainId)
 
    ! Open up and read in the NetCDF file containing disharge data.
    if(myId .eq. 0) then
-      ! Initialize our missing flag to 0. If at any point we don't find a file, 
+      ! Initialize our missing flag to 0. If at any point we don't find a file,
       ! the flag value will go to 1 to indicate no files were found.
       missingFlag = 0
 

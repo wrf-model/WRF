@@ -1,4 +1,6 @@
 # WRF CMake Build
+add_compile_options    ( "${PROJECT_COMPILE_OPTIONS}"     )
+add_compile_definitions( "${PROJECT_COMPILE_DEFINITIONS}" )
 
 #!TODO ORGANIZE THIS FOLDER
 set( FOLDER_COMPILE_TARGET registry )
@@ -99,10 +101,30 @@ elseif ( ${WRF_CORE} STREQUAL "DA" OR ${WRF_CORE} STREQUAL "DA_4D_VAR" )
 
 endif()
 
-get_directory_property( DIR_DEFS DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_DEFINITIONS )
+set( dealloc_source )
+foreach( n RANGE 0 11 )
+  list(
+        APPEND
+        dealloc_source
+        ${CMAKE_BINARY_DIR}/inc/deallocs_${n}.F
+        )
+endforeach()
+
+set( allocs_source )
+foreach( n RANGE 0 31 )
+  list(
+        APPEND
+        allocs_source
+        ${CMAKE_BINARY_DIR}/inc/allocs_${n}.F
+        )
+endforeach()
+
+# Make sure this exists at the top level - I'm avoiding using cache variables deliberately
+set( REGISTRY_FILE ${REGISTRY_FILE} PARENT_SCOPE )
+
 wrf_expand_definitions( 
                         RESULT_VAR  REGISTRY_DEFS
-                        DEFINITIONS ${DIR_DEFS}
+                        DEFINITIONS ${PROJECT_COMPILE_DEFINITIONS}
                         )
 
 # How this is not a bigger thing or not resolved is beyond me
@@ -112,6 +134,10 @@ add_custom_command(
                     OUTPUT
                       ${CMAKE_BINARY_DIR}/inc/nl_config.inc
                       ${CMAKE_BINARY_DIR}/frame/module_state_description.F
+                      ${dealloc_source}
+                      ${allocs_source}
+                    COMMENT
+                      "Generating registry code..."
                     WORKING_DIRECTORY
                       ${CMAKE_BINARY_DIR}
                     # Replicate what exists in project directory for registry
@@ -138,5 +164,24 @@ add_custom_target(
                   DEPENDS
                     ${CMAKE_BINARY_DIR}/inc/nl_config.inc
                     ${CMAKE_BINARY_DIR}/frame/module_state_description.F
+                    ${dealloc_source}
+                    ${allocs_source}
                   )
+
+set_source_files_properties(
+                            ${CMAKE_BINARY_DIR}/frame/module_state_description.F
+                            ${dealloc_source}
+                            ${allocs_source}
+                            DIRECTORY ${PROJECT_SOURCE_DIR}
+                            PROPERTIES
+                              GENERATED TRUE
+                            )
+
+target_sources(
+                ${PROJECT_NAME}_Core
+                PRIVATE
+                  ${CMAKE_BINARY_DIR}/frame/module_state_description.F
+                  ${dealloc_source}
+                  ${allocs_source}
+                )
 

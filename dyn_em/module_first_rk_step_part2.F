@@ -402,6 +402,14 @@ BENCH_START(cal_phy_tend)
                      grid%rqishten,grid%rqsshten,grid%rqgshten,        &
                      grid%RUNDGDTEN,grid%RVNDGDTEN,grid%RTHNDGDTEN,grid%RQVNDGDTEN, &
                      grid%RMUNDGDTEN,                                  &
+                     grid%ruiauten,grid%rviauten,grid%rthiauten,       &
+                     grid%rqviauten,grid%rqciauten,grid%rqriauten,     &
+                     grid%rqiiauten,grid%rqsiauten,grid%rqgiauten,     &
+                     grid%rmuiauten,grid%rphiauten,                    &
+                     grid%u_iau,grid%v_iau,grid%t_iau,grid%ph_iau,     &
+                     grid%mu_iau,grid%qv_iau,grid%qc_iau,grid%qr_iau,  &
+                     grid%qs_iau,grid%qi_iau,grid%qg_iau,              &
+                     grid%itimestep,                                   &
                      scalar, scalar_tend, num_scalar,                  &
                      tracer, tracer_tend, num_tracer,                  &
                      ids,ide, jds,jde, kds,kde,                        &
@@ -807,6 +815,10 @@ BENCH_START(update_phy_ten_tim)
                            grid%RVNDGDTEN,grid%RTHNDGDTEN,grid%RPHNDGDTEN,  &
                            grid%RQVNDGDTEN,grid%RMUNDGDTEN,                 &
                            grid%rthfrten,grid%rqvfrten,                     &  ! fire
+                           grid%ruiauten,grid%rviauten,grid%rthiauten,      &
+                           grid%rqviauten,grid%rqciauten,grid%rqriauten,    &
+                           grid%rqiiauten,grid%rqsiauten,grid%rqgiauten,    &
+                           grid%rphiauten,grid%rmuiauten,                   &
                            num_moist,num_scalar,config_flags,rk_step,       &
                            grid%adv_moist_cond,                             &
                            ids, ide, jds, jde, kds, kde,                    &

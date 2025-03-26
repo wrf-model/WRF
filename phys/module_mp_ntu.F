@@ -661,12 +661,10 @@
          y = y+1.D0
          ser = ser+cof(J)/y
       ENDDO
-#if (DWORDSIZE == 8 && RWORDSIZE == 8)
+#ifdef DOUBLE_PRECISION
       GAMLN = TMP+LOG(stp*ser/X)
-#elif (DWORDSIZE == 8 && RWORDSIZE == 4)
-      GAMLN = SNGL(TMP+LOG(stp*ser/X))
 #else
-!      This is a temporary hack assuming double precision is 8 bytes.
+      GAMLN = SNGL(TMP+LOG(stp*ser/X))
 #endif
 
       END FUNCTION GAMLN

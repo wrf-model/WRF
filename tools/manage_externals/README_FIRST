@@ -1,0 +1,54 @@
+CESM is comprised of a number of different components that are
+developed and managed independently. Each component may have
+additional 'external' dependancies and optional parts that are also
+developed and managed independently.
+
+The checkout_externals.py tool manages retreiving and updating the
+components and their externals so you have a complete set of source
+files for the model.
+
+checkout_externals.py relies on a model description file that
+describes what components are needed, where to find them and where to
+put them in the source tree. The default file is called "CESM.xml"
+regardless of whether you are checking out CESM or a standalone
+component.
+
+checkout_externals requires access to git and svn repositories that
+require authentication. checkout_externals may pass through
+authentication requests, but it will not cache them for you. For the
+best and most robust user experience, you should have svn and git
+working without password authentication. See:
+
+    https://help.github.com/articles/connecting-to-github-with-ssh/
+
+    ?svn ref?
+
+NOTE: checkout_externals.py *MUST* be run from the root of the source
+tree it is managing. For example, if you cloned CLM with:
+
+    $ git clone git@github.com/ncar/clm clm-dev
+
+Then the root of the source tree is /path/to/cesm-dev. If you obtained
+CLM via an svn checkout of CESM and you need to checkout the CLM
+externals, then the root of the source tree for CLM is:
+
+    /path/to/cesm-dev/components/clm
+
+The root of the source tree will be referred to as ${SRC_ROOT} below.
+
+To get started quickly, checkout all required components from the
+default model description file:
+
+    $ cd ${SRC_ROOT}
+    $ ./checkout_cesm/checkout_externals.py
+
+For additional information about using checkout model, please see:
+
+    ${SRC_ROOT}/checkout_cesm/README
+
+or run:
+
+    $ cd ${SRC_ROOT}
+    $ ./checkout_cesm/checkout_externals.py --help
+
+

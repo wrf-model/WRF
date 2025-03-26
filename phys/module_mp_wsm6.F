@@ -1,7 +1,7 @@
  module module_mp_wsm6
  use ccpp_kind_types,only: kind_phys
 
- use mp_wsm6,only: mp_wsm6_run
+ use mp_wsm6,only: mp_wsm6_run,refl10cm_wsm6
  use mp_wsm6_effectrad,only: mp_wsm6_effectRad_run
 
 
@@ -230,6 +230,23 @@
            re_snow(i,k,j)  = re_qs_hv(i,k)
         enddo
      enddo
+
+     if (diagflag .and. do_radar_ref == 1) then
+        do i=its,ite
+           do k=kts,kte
+              t1d(k)=th(i,k,j)*pii(i,k,j)
+              p1d(k)=p(i,k,j)
+              qv1d(k)=q(i,k,j)
+              qr1d(k)=qr(i,k,j)
+              qs1d(k)=qs(i,k,j)
+              qg1d(k)=qg(i,k,j)
+           enddo
+           call refl10cm_wsm6 (qv1d,qr1d,qs1d,qg1d,t1d,p1d,dBZ,kts,kte)
+           do k = kts, kte
+              refl_10cm(i,k,j) = MAX(-35., dBZ(k))
+           enddo
+        enddo
+     endif
 
  enddo
 

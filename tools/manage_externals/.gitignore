@@ -1,0 +1,17 @@
+# directories that are checked out by the tool
+cime/
+cime_config/
+components/
+
+# generated local files
+*.log
+
+# editor files
+*~
+*.bak
+
+# generated python files
+*.pyc
+
+# test tmp file
+test/tmp

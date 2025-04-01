@@ -2077,8 +2077,9 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      GRPLNCV  = GRAUPELNCV,              &
                      SR=SR,                              &
                      dbz      = refl_10cm,               &
-                     ssat3d   = ssat,  f_ssat =(config_flags%nssl_ssat_output >= 1), &
-                     ssati    = ssati, f_ssati=(config_flags%nssl_ssat_output >= 2), &
+                     ssat3d   = ssat,                    &
+                     ssati    = ssati,                   &
+                     nssl_ssat_output = config_flags%nssl_ssat_output, &
 #if ( WRF_CHEM == 1 )
                     WETSCAV_ON = config_flags%wetscav_onoff == 1, &
                     EVAPPROD=evapprod,RAINPROD=rainprod, &

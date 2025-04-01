@@ -2387,7 +2387,7 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
                               elec_physics,                                             &
                               induc,elecz,scion,sciona,f_scion,f_sciona,                &
                               noninduc,noninducp,noninducn,                             &
-                              ssat3d,ssati,f_ssat,f_ssati,                              &
+                              ssat3d,ssati,nssl_ssat_output,                            &
                               pcc2, pre2, depsubr,      &
                               mnucf2, melr2, ctr2,     &
                               rim1_2, rim2_2,rim3_2, &
@@ -2435,7 +2435,7 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
                             qi,qhl,ccw,crw,cci,csw,chw,chl,vhw,vhl
       integer, optional, intent(in) :: is_theta_or_temp
       logical, optional, intent(in) ::  f_zrw, f_zhw, f_zhl, f_vhw, f_vhl ! not used yet
-      logical, optional, intent(in) ::  f_ssat,f_ssati 
+      integer, optional, intent(in) ::  nssl_ssat_output
       real, dimension(ims:ime, kms:kme, jms:jme), optional, intent(inout):: dbz, vzf, cn, cna, cni, cnuf
       real, dimension(ims:ime, kms:kme, jms:jme), optional, intent(inout):: cn_nu, cn_ac, cn_co, cinp, cna_co, cna_nu
       logical, optional, intent(in) :: f_cnnu, f_cnac, f_cnco, f_cinp, f_cnaco, f_cnanu
@@ -3280,8 +3280,7 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
          ENDDO
      ENDIF
 
-     IF ( ( ( present( ssat3d ) .and. present( f_ssat ) ) .or.  &
-            ( present( ssati ) .and. present( f_ssati ) ) ) .and. makediag ) THEN
+     IF (  ( present( ssat3d ) .and. present( nssl_ssat_output )  ) .and. makediag ) THEN
          DO kz = kts,kte
           DO ix = its,ite
 
@@ -3290,8 +3289,7 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
           ltemq = Int( (temp1-163.15)/fqsat+1.5 )
          ltemq = Min( nqsat, Max(1,ltemq) )
 
-          IF ( present( ssat3d ) .and. present( f_ssat ) ) THEN
-          IF ( f_ssat ) THEN
+          IF ( present( ssat3d ) .and. nssl_ssat_output >= 1 ) THEN
 
 !          c1 = t00(ix,1,kz)*tabqvs(ltemq)
           IF ( iqvsopt == 0 ) THEN
@@ -3305,13 +3303,10 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
           ENDIF
           
           ENDIF
-          ENDIF
 
-          IF ( present( ssati ) .and. present( f_ssati ) ) THEN
-          IF ( f_ssati ) THEN
+          IF ( present( ssati ) .and. nssl_ssat_output >= 2 ) THEN
            t9s = (380.0/pn(ix,1,kz))*tabqis(ltemq)  !saturation mixing ratio wrt ice
            ssati(ix,kz,jy) = 100.*(an(ix,1,kz,lv)/t9s - 1.0) !  Min(t8s,max(an(ix,1,kz,lv),0.0))/t9s  ! qv/qvi
-          ENDIF
           ENDIF
 
         ENDDO
@@ -5941,6 +5936,9 @@ END SUBROUTINE nssl_2mom_driver
       double precision :: numh, numhl,denomh,denomhl
       
       logical :: flag_t4, flag_t5, flag_t6
+      
+      real, parameter :: qmin = 1.e-8
+      real, parameter :: volmin = 1.e-30
 
 
 ! -------------------------------------------------------------------------------
@@ -6055,7 +6053,7 @@ END SUBROUTINE nssl_2mom_driver
          ENDIF
 
          IF ( present( t4 ) .and.( ( present(qrw) .and. present(crw) ) .or. flag_t4 ) ) THEN
-         IF ( qx(mgs,lr) > Max(1.e-8,qxmin(lr))  .and. cx(mgs,lr) > cxmin ) THEN
+         IF ( qx(mgs,lr) > Max(qmin,qxmin(lr))  .and. cx(mgs,lr) > cxmin ) THEN
            IF ( imurain == 1 ) THEN ! gamma-diameter
 ! Lambda for rain
              lam_r = factor_r *((xdn0(lr)*cx(mgs,lr))/(qx(mgs,lr)*rho0(mgs)))**(1./3.)
@@ -6074,11 +6072,11 @@ END SUBROUTINE nssl_2mom_driver
           
          IF (  lhl < 1 .or. flag_t6 ) THEN
          ! graupel only 
-           IF ( qx(mgs,lh) > Max(1.e-8,qxmin(lh)) ) THEN
+           IF ( qx(mgs,lh) > Max(qmin,qxmin(lh)) ) THEN
             ! Lambda for graupel
             hwdn = xdn0(lh)
             IF ( lvh > 1 ) THEN ! variable density
-              IF ( an(ix,jy,kz,lvh) > 1.e-30 ) THEN
+              IF ( an(ix,jy,kz,lvh) > volmin ) THEN
                 hwdn = rho0(mgs)*qx(mgs,lh)/an(ix,jy,kz,lvh)
               ENDIF
             ENDIF
@@ -6089,11 +6087,11 @@ END SUBROUTINE nssl_2mom_driver
            
          ELSE ! have hail, too, but do not have t6 array
          
-           IF ( qx(mgs,lh) > Max(1.e-8,qxmin(lh)) .and.  qx(mgs,lhl) < Max(1.e-8,qxmin(lhl)) ) THEN
+           IF ( qx(mgs,lh) > Max(qmin,qxmin(lh)) .and.  qx(mgs,lhl) < Max(qmin,qxmin(lhl)) ) THEN
 ! Lambda for graupel
             hwdn = xdn0(lh)
             IF ( lvh > 1 ) THEN ! variable density
-              IF ( an(ix,jy,kz,lvh) > 1.e-30 ) THEN
+              IF ( an(ix,jy,kz,lvh) > volmin ) THEN
                 hwdn = rho0(mgs)*qx(mgs,lh)/an(ix,jy,kz,lvh)
               ENDIF
             ENDIF
@@ -6101,11 +6099,11 @@ END SUBROUTINE nssl_2mom_driver
             lam_h = factor_h *((hwdn*cx(mgs,lh))/(qx(mgs,lh)*rho0(mgs)))**(1./3.)
             t5(ix,jy,kz) = 0.5*(alphah+3.)/lam_h
              
-           ELSEIF ( qx(mgs,lh) < Max(1.e-8,qxmin(lh)) .and.  qx(mgs,lhl) > Max(1.e-8,qxmin(lhl)) ) THEN
+           ELSEIF ( qx(mgs,lh) < Max(qmin,qxmin(lh)) .and.  qx(mgs,lhl) > Max(qmin,qxmin(lhl)) ) THEN
 ! Lambda for hail
             hldn = xdn0(lhl)
             IF ( lvhl > 1 ) THEN ! variable density
-              IF ( an(ix,jy,kz,lvhl) > 1.e-30 ) THEN
+              IF ( an(ix,jy,kz,lvhl) > volmin ) THEN
                 hldn = rho0(mgs)*qx(mgs,lhl)/an(ix,jy,kz,lvhl)
               ENDIF
             ENDIF
@@ -6113,19 +6111,19 @@ END SUBROUTINE nssl_2mom_driver
             lam_hl = factor_hl *((hldn*cx(mgs,lhl))/(qx(mgs,lhl)*rho0(mgs)))**(1./3.)
             t5(ix,jy,kz) = 0.5*(alphahl+3.)/lam_hl
 
-           ELSEIF ( qx(mgs,lh) > Max(1.e-8,qxmin(lh)) .and.  qx(mgs,lhl) > Max(1.e-8,qxmin(lhl)) ) THEN
+           ELSEIF ( qx(mgs,lh) > Max(qmin,qxmin(lh)) .and.  qx(mgs,lhl) > Max(qmin,qxmin(lhl)) ) THEN
 !  r_eff graupel and hail combined
           
             hldn = xdn0(lhl)
             IF ( lvhl > 1 ) THEN ! variable density
-              IF ( an(ix,jy,kz,lvhl) > 1.e-30 ) THEN
+              IF ( an(ix,jy,kz,lvhl) > volmin ) THEN
                 hldn = rho0(mgs)*qx(mgs,lhl)/an(ix,jy,kz,lvhl)
               ENDIF
             ENDIF
 
             hwdn = xdn0(lh)
             IF ( lvh > 1 ) THEN ! variable density
-              IF ( an(ix,jy,kz,lvh) > 1.e-30 ) THEN
+              IF ( an(ix,jy,kz,lvh) > volmin ) THEN
                 hwdn = rho0(mgs)*qx(mgs,lh)/an(ix,jy,kz,lvh)
               ENDIF
             ENDIF
@@ -6150,11 +6148,11 @@ END SUBROUTINE nssl_2mom_driver
          
          IF ( present(t6) .and. flag_t6 .and. lhl > 1 ) THEN
          
-           IF ( qx(mgs,lhl) > Max(1.e-8,qxmin(lhl)) ) THEN
+           IF ( qx(mgs,lhl) > Max(qmin,qxmin(lhl)) ) THEN
 ! Lambda for hail
             hldn = xdn0(lhl)
             IF ( lvhl > 1 ) THEN ! variable density
-              IF ( an(ix,jy,kz,lvhl) > 1.e-30 ) THEN
+              IF ( an(ix,jy,kz,lvhl) > volmin ) THEN
                 hldn = rho0(mgs)*qx(mgs,lhl)/an(ix,jy,kz,lvhl)
               ENDIF
             ENDIF

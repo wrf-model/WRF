@@ -3123,7 +3123,7 @@ integer::oops1,oops2
             DO i = its, MIN(ide-1,ite)
                IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE
                IF ( grid%landmask(i,j) .GT. 0.5 .AND. grid%isltyp(i,j) .EQ. grid%isoilwater ) THEN
-                  grid%isltyp(i,j) = 8
+                  grid%isltyp(i,j) = config_flags%default_soiltype
                   change_soilw =  change_soilw + 1
                   iforce =  iforce + 1
                ELSE IF ( grid%landmask(i,j) .LT. 0.5 .AND. grid%isltyp(i,j) .NE. grid%isoilwater ) THEN
@@ -3134,10 +3134,17 @@ integer::oops1,oops2
             END DO
          END DO
          IF ( change_soilw .GT. 0 .OR. change_soil .GT. 0 ) THEN
-            WRITE(a_message,FMT='(A,I4,A,I6)' ) &
-                  'forcing artificial silty clay loam at ',iforce,' points, out of ',&
-                  (MIN(ide-1,ite)-its+1)*(MIN(jde-1,jte)-jts+1)
-                  CALL wrf_debug(0,a_message)
+            IF (config_flags%default_soiltype == 8) THEN
+               WRITE(a_message,FMT='(A,I4,A,I6)' ) &
+                     'forcing artificial silty clay loam at ',iforce,' points, out of ',&
+                     (MIN(ide-1,ite)-its+1)*(MIN(jde-1,jte)-jts+1)
+            ELSE
+               WRITE(a_message,FMT='(A,I4,A,I4,A,I6)' ) &
+                     'forcing soil type to the user defined default category (',config_flags%default_soiltype,&
+                     ') at ',iforce,' points, out of ',&
+                     (MIN(ide-1,ite)-its+1)*(MIN(jde-1,jte)-jts+1)
+            ENDIF
+            CALL wrf_debug(0,a_message)
          END IF
 
       END IF

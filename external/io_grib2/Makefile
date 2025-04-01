@@ -24,7 +24,7 @@ LIB_DEST = .
 #
 C_INCLUDES   = -I.
 CXX_INCLUDES = -I.
-F_INCLUDES   = -I. -Ig2lib -Ibacio-1.3 -I../io_grib_share
+F_INCLUDES   = -I. -Ig2lib -Ibacio-1.3 -I../io_grib_share -I../ioapi_share
 ARFLAGS      = cruv
 
 FORMAT = $(FREE)

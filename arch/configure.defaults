@@ -2214,7 +2214,7 @@ CC_TOOLS        =      $(SCC) -Wno-implicit-function-declaration -Wno-int-conver
 #ARCH    Linux aarch64, GCC compiler OpenMPI # serial smpar dmpar dm+sm
 #
 DESCRIPTION     =      GCC ($SFC/$SCC): Aarch64
-DMPARALLEL      =
+DMPARALLEL      =      # 1
 OMPCPP          =      -fopenmp
 OMP             =      -fopenmp
 OMPCC           =      -fopenmp

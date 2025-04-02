@@ -3729,6 +3729,7 @@ BENCH_START(micro_driver_tim)
       &        ,P8W=p8w            ,P=p_phy            ,PI_PHY=pi_phy     &
       &        ,RHO=grid%rho       ,SPEC_ZONE=grid%spec_zone              &
       &        ,SR=grid%sr              ,TH=th_phy                        &
+      &        ,ssat=grid%ssat, ssati=grid%ssati                          &
       &        ,refl_10cm=grid%refl_10cm                                  & ! hm, 9/22/09 for refl
       &        ,vmi3d=grid%vmi3d                                          & ! for P3
       &        ,di3d=grid%di3d                                            & ! for P3

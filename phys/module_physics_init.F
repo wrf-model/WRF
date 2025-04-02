@@ -4670,11 +4670,12 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
             ccn_conc = config_flags%nssl_cccn/1.225 ! set this to have correct boundary conditions
          ENDIF
          CALL nssl_2mom_init(nssl_params=nssl_params,ipctmp=nssl_ipconc,mixphase=0, &
-           nssl_density_on=(config_flags%nssl_density_on > 0), &
-           nssl_hail_on=config_flags%nssl_hail_on > 0, &
-           nssl_ccn_on=(config_flags%nssl_ccn_on > 0), &
-           nssl_icdx=config_flags%nssl_icdx, &
-           nssl_icdxhl=config_flags%nssl_icdxhl,ccn_is_ccna=config_flags%nssl_ccn_is_ccna)
+           nssl_density_on=(config_flags%nssl_density_on > 0),                      &
+           nssl_hail_on=config_flags%nssl_hail_on > 0,                              &
+           nssl_ccn_on=( config_flags%nssl_ccn_on > 0 ),                            &
+           nssl_icdx=config_flags%nssl_icdx,                                        &
+           nssl_icdxhl=config_flags%nssl_icdxhl,                                    &
+           ccn_is_ccna=config_flags%nssl_ccn_is_ccna)
 #endif
 #if (EM_CORE==1)
      CASE (CAMMGMPSCHEME) ! CAM5's microphysics

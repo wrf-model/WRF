@@ -25,17 +25,8 @@ set_target_properties(
                       )
 
 
-target_link_libraries(  ${FOLDER_COMPILE_TARGET}
-                          PRIVATE
-                            ${netCDF_LIBRARIES}
-                            $<$<BOOL:${USE_MPI}>:$<TARGET_NAME_IF_EXISTS:MPI::MPI_Fortran>>
-                            $<$<BOOL:${USE_OPENMP}>:$<TARGET_NAME_IF_EXISTS:OpenMP::OpenMP_Fortran>>
-                        )
-
 target_include_directories( ${FOLDER_COMPILE_TARGET}
                             PRIVATE
-                              ${netCDF_INCLUDE_DIRS}
-                              ${CMAKE_CURRENT_SOURCE_DIR}
                               ${CMAKE_CURRENT_SOURCE_DIR}/../ioapi_share
                             )
 

@@ -5,14 +5,13 @@
 # Quickly preprocess some files so that cmake can understand the module dependencies
 #
 ########################################################################################################################
-get_directory_property( DIR_DEFS DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_DEFINITIONS )
 wrf_c_preproc_fortran( 
                       TARGET_NAME     module_ra_rrtmg_preproc
                       OUTPUT_DIR      ${CMAKE_CURRENT_BINARY_DIR}/preproc/
                       EXTENSION       ".f90"
                       INCLUDES        ${CMAKE_CURRENT_SOURCE_DIR}
                       DEPENDENCIES    registry_code
-                      DEFINITIONS     ${DIR_DEFS}
+                      DEFINITIONS     ${PROJECT_COMPILE_DEFINITIONS}
                       SOURCES         module_ra_rrtmg_lwk.F
                                       module_ra_rrtmg_lwf.F
                                       module_ra_rrtmg_swk.F
@@ -43,9 +42,6 @@ target_sources(
                   module_bl_mrf.F
                   module_bl_myjpbl.F
                   module_bl_myjurb.F
-                  module_bl_mynn.F
-                  module_bl_mynn_common.F
-                  module_bl_mynn_wrapper.F
                   module_bl_qnsepbl.F
                   module_bl_shinhong.F
                   module_bl_temf.F
@@ -157,6 +153,7 @@ target_sources(
                   module_mp_ntu.F
                   module_mp_p3.F
                   module_mp_radar.F
+                  module_mp_rcon.F
                   module_mp_SBM_polar_radar.F
                   module_mp_sbu_ylin.F
                   module_mp_thompson.F
@@ -264,6 +261,11 @@ target_sources(
                   physics_mmm/mp_wsm6.F90
                   physics_mmm/mp_wsm6_effectRad.F90
                   physics_mmm/sf_sfclayrev.F90
+
+                  # MYNN-EDMF
+                  MYNN-EDMF/module_bl_mynnedmf.F90
+                  MYNN-EDMF/WRF/module_bl_mynnedmf_common.F90
+                  MYNN-EDMF/WRF/module_bl_mynnedmf_driver.F90
                   )
 
 

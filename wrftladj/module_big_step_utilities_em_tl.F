@@ -5,7 +5,7 @@
 ! and LSEC of ICMSEC, AMSS(2001-2003)
 ! The copyright of the DFT system was declared by Walls at LASG, 1998-2010
 ! ======================================================================================
-#if (RWORDSIZE == 4)
+#ifndef DOUBLE_PRECISION
 #   define VPOWX vspowx
 #   define VPOW  vspow
 #else

@@ -3534,7 +3534,10 @@ END subroutine optical_prep_modal_soa_vbs
 ! MOZAIC grids.
 ! 10/24/18 - A. Ukhov, bug fix: mass redistribution between GOCART dust/sea salt and 
 ! MOZAIC bins should be computed using interpolation over the logarithmic axis.
-
+! 09/17/24 - A. Ukhov, bug fix: mass redistribution between GOCART dust/sea salt and
+! MOZAIC bins now accounts for 5th dust and 4th sea salt bins. Number of MOZAIC bins was
+! changed from 8 to 9 and MOZAIC max size range was increased from 10 to 20 um.
+!
 ! This subroutine computes volume-averaged refractive index and wet radius needed
 ! by the mie calculations. Aerosol number is also passed into the mie calculations
 ! in terms of other units.
@@ -3642,9 +3645,9 @@ END subroutine optical_prep_modal_soa_vbs
 ! 7/21/09  SAM variables needed to convert GOCART sectional dust and seasalt to MOZAIC sections
    real  dgnum, dhi,  dlo, xlo, xhi, dxbin, relh_frc
    real dlo_sectm(nbin_o), dhi_sectm(nbin_o)
-   integer, parameter :: nbin_omoz=8
-   real, save :: seasfrc_goc8bin(4,nbin_omoz)   ! GOCART seasalt size distibution - mass fracs in MOSAIC 8-bins
-   real, save :: dustfrc_goc8bin(ndust,nbin_omoz)   ! GOCART dust size distibution - mass fracs in MOSAIC 8-bins
+   integer, parameter :: nbin_omoz=9            ! A. Ukhov 09/17/24
+   real, save :: seasfrc_goc9bin(4,nbin_omoz)   ! GOCART seasalt size distibution - mass fracs in MOSAIC 9-bins
+   real, save :: dustfrc_goc9bin(ndust,nbin_omoz)   ! GOCART dust size distibution - mass fracs in MOSAIC 9-bins
    real  mass_bc1 , mass_bc2 , vol_bc2  , mass_bc1j , mass_bc2j,  &
          mass_bc1i , mass_bc2i  , vol_soil
    real*8 dlogoc, dhigoc
@@ -3671,7 +3674,7 @@ END subroutine optical_prep_modal_soa_vbs
 !
       sixpi=6.0/3.14159265359
       dlo_um=0.0390625
-      dhi_um=10.0
+      dhi_um=20.0             !A. Ukhov 09/17/24
       drydens=1.8
       iflag=2
       duma=1.0
@@ -3692,18 +3695,8 @@ END subroutine optical_prep_modal_soa_vbs
             dlo_sectm(n) = exp( xlo + dxbin*(n-1) )
             dhi_sectm(n) = exp( xlo + dxbin*n )
         end do
-!  real, save :: seasfrc_goc8bin(4,nbin_o)   ! GOCART seasalt size distibution - mass fracs in MOSAIC 8-bins
-!  real, save :: dustfrc_goc8bin(ndust,nbin_o)   ! GOCART dust size distibution - mass fracs in MOSAIC 8-bins
-!  USE module_data_gocart_seas
-! real*8, DIMENSION (4), PARAMETER :: ra(4)=(/1.d-1,5.d-1,1.5d0,5.0d0/)
-! real*8, DIMENSION (4), PARAMETER :: rb(4)=(/5.d-1,1.5d0,5.d0,1.d1/)
-! real*8, DIMENSION (4), PARAMETER :: den_seas(4)=(/2.2d3,2.2d3,2.2d3,2.2d3/)
-! real*8, DIMENSION (4), PARAMETER :: reff_seas(4)=(/0.30D-6,1.00D-6,3.25D-6,7.50D-6/)
-!  USE module_data_gocart_dust, only:  ndust, reff_dust, den_dust
-!  real*8, DIMENSION (5), PARAMETER :: den_dust(5)=(/2500.,2650.,2650.,2650.,2650./)
-!  real*8, DIMENSION (5), PARAMETER :: reff_dust(5)=(/0.73D-6,1.4D-6,2.4D-6,4.5D-6,8.0D-6/)
 ! Seasalt bin mass fractions
-        seasfrc_goc8bin=0.
+        seasfrc_goc9bin=0.
 !      WRITE(*,*)'Seasalt mass fractions'
 !      WRITE(*,*)'         ','       ',(dlo_sectm(n),n=1,nbin_o)
 !      WRITE(*,*)'         ','       ',(dhi_sectm(n),n=1,nbin_o)
@@ -3711,28 +3704,42 @@ END subroutine optical_prep_modal_soa_vbs
        dlogoc = ra(m)*2.E-6  ! low diameter limit (m)
        dhigoc = rb(m)*2.E-6  ! hi diameter limit (m)
         do n = 1, nbin_o
-        seasfrc_goc8bin(m,n)=max(DBLE(0.),min(DBLE(log(dhi_sectm(n))),log(dhigoc))- &
+        seasfrc_goc9bin(m,n)=max(DBLE(0.),min(DBLE(log(dhi_sectm(n))),log(dhigoc))- &
                              max(log(dlogoc),DBLE(log(dlo_sectm(n)))) )/(log(dhigoc)-log(dlogoc))
 
        end do
-!      WRITE(*,*)m,dlogoc,dhigoc,(seasfrc_goc8bin(m,n),n=1,nbin_o)
+!      WRITE(*,*)m,dlogoc,dhigoc,(seasfrc_goc9bin(m,n),n=1,nbin_o)
        end do
 ! Dust bin mass fractions
 !      WRITE(*,*)'Dust mass fractions'
 !      WRITE(*,*)'         ','       ',(dlo_sectm(n),n=1,nbin_o)
 !      WRITE(*,*)'         ','       ',(dhi_sectm(n),n=1,nbin_o)
-        dustfrc_goc8bin=0.
+        dustfrc_goc9bin=0.
        do m =1, ndust  ! loop over dust size bins
         dlogoc = ra_dust(m)*2.E-6  ! low diameter limit (m)
         dhigoc = rb_dust(m)*2.E-6  ! hi diameter limit (m)
         do n = 1, nbin_o
-        dustfrc_goc8bin(m,n)=max(DBLE(0.),min(DBLE(log(dhi_sectm(n))),log(dhigoc))- &
+        dustfrc_goc9bin(m,n)=max(DBLE(0.),min(DBLE(log(dhi_sectm(n))),log(dhigoc))- &
                              max(log(dlogoc),DBLE(log(dlo_sectm(n)))) )/(log(dhigoc)-log(dlogoc))
 
        end do
-!      WRITE(*,*)m,dlogoc,dhigoc,(dustfrc_goc8bin(m,n),n=1,nbin_o)
+!      WRITE(*,*)m,dlogoc,dhigoc,(dustfrc_goc9bin(m,n),n=1,nbin_o)
        end do
         kcall=kcall+1
+
+       !Diagnostic. A. Ukhov 09/17/24
+       !-----
+       ! WRITE(*,*)nbin_o
+       ! WRITE(*,*)'Dust redistribution:'
+       ! do m =1, ndust
+       !     WRITE(*,*)m,dustfrc_goc9bin(m,:)
+       ! end do
+
+       ! WRITE(*,*)'Sea salt redistribution:'
+       ! do m =1, 4
+       !     WRITE(*,*)m,seasfrc_goc9bin(m,:)
+       ! end do
+        !-----
 !       ISTOP=1
 !       IF(ISTOP.EQ.1)THEN
 !       STOP
@@ -3991,15 +3998,15 @@ END subroutine optical_prep_modal_soa_vbs
 ! Add in seasalt and dust from GOCART sectional distributions
        n = 0
        mass_seas = 0.0
-       do m =p_seas_1,  p_seas_3 ! loop over seasalt size bins less than 10 um diam
+       do m =p_seas_1,  p_seas_4 ! loop over seasalt size bins less than 20 um. A. Ukhov 09/17/24
        n = n+1
-        mass_seas=mass_seas+seasfrc_goc8bin(n,isize)*chem(i,k,j,m)
+        mass_seas=mass_seas+seasfrc_goc9bin(n,isize)*chem(i,k,j,m)
        end do
        n = 0
        mass_soil = 0.0
-       do m =p_dust_1,  p_dust_1+ndust-2 ! loop over dust size bins less than 10 um diam
+       do m =p_dust_1,  p_dust_5 ! loop over dust size bins less than 20 um. A. Ukhov 09/17/24
        n = n+1
-        mass_soil=mass_soil+dustfrc_goc8bin(n,isize)*chem(i,k,j,m)
+        mass_soil=mass_soil+dustfrc_goc9bin(n,isize)*chem(i,k,j,m)
        end do
        mass_cl=mass_seas*conv1a*35.4530/58.4428
        mass_na=mass_seas*conv1a*22.9898/58.4428

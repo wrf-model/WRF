@@ -2,8 +2,10 @@
 # POSTAMBLE
 
 FGREP = fgrep -iq
+### Used throughout the build system to inform promotion to double precision
+DOUBLE_PRECISION = CONFIGURE_PROMOTION
 
-ARCHFLAGS       =    $(COREDEFS) -DIWORDSIZE=$(IWORDSIZE) -DDWORDSIZE=$(DWORDSIZE) -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=$(LWORDSIZE) \
+ARCHFLAGS       =    $(COREDEFS) -DIWORDSIZE=$(IWORDSIZE) -DDWORDSIZE=$(DWORDSIZE) -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=$(LWORDSIZE) CONFIGURE_PROMOTION \
                      $(ARCH_LOCAL) \
                      $(DA_ARCHFLAGS) \
                       CONFIGURE_DMPARALLEL \
@@ -207,20 +209,13 @@ wrfio_esmf :
 	$(RM) $@
 	sed -e "s/^\!.*'.*//" -e "s/^ *\!.*'.*//" $*.F90 > $*.G
 	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.G  > $*.bb
-	$(SED_FTN) $*.bb | $(CPP) $(TRADFLAG) > $*.f90
+	$(SED_FTN) $*.bb | $(CPP) $(TRADFLAG) > $*.tmp.f90
 	$(RM) $*.G $*.bb
-	$(FC) -o $@ -c $(FCFLAGS) $(OMP) $(MODULE_DIRS) $(PROMOTION) $(FCSUFFIX) $*.f90
+	$(FC) -o $@ -c $(FCFLAGS) $(OMP) $(MODULE_DIRS) $(PROMOTION) $(FCSUFFIX) $*.tmp.f90
 
 .F.f90:
 	$(RM) $@
 	sed -e "s/^\!.*'.*//" -e "s/^ *\!.*'.*//" $*.F > $*.G
-	$(SED_FTN) $*.G > $*.H
-	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $*.H  > $@
-	$(RM) $*.G $*.H
-
-.F90.f90:
-	$(RM) $@
-	sed -e "s/^\!.*'.*//" -e "s/^ *\!.*'.*//" $*.F90 > $*.G
 	$(SED_FTN) $*.G > $*.H
 	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $*.H  > $@
 	$(RM) $*.G $*.H

@@ -2509,7 +2509,7 @@ CONTAINS
 
            CALL sf_fogdes(                                  &
                 vdfg,fgdp,dfgdp,ivgtyp,lai,wspd,qc_curr,    &
-                dtbl,rho,dz8w,grav_settling,nlcat,          &
+                dtbl,rho,dz8w,grav_settling,nlcat,mminlu,   &
                 ids,ide, jds,jde, kds,kde,                  &
                 ims,ime, jms,jme, kms,kme,                  &
                 i_start(ij),i_end(ij),                      &

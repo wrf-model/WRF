@@ -1,7 +1,7 @@
-# Makefile 
+# Makefile
 #
 .SUFFIXES:
-.SUFFIXES: .o .f90
+.SUFFIXES: .o .F90
 
 include ../macros
 
@@ -20,10 +20,10 @@ all:	$(OBJS)
 #	@echo ""
 #	cp *.mod ../mod
 
-.f90.o:
+.F90.o:
 	@echo "Orchestrator Makefile:"
 #	$(COMPILER90) -o $(@) $(F90FLAGS) $(MODFLAG) $(*).f
-	$(COMPILER90) $(CPPINVOKE) -o $(@) $(CPPFLAGS) $(FPPFLAGS) $(F90FLAGS) $(LDFLAGS) $(MODFLAG) -I$(NETCDFINC) $(*).f90
+	$(COMPILER90) $(CPPINVOKE) -o $(@) $(CPPFLAGS) $(FPPFLAGS) $(F90FLAGS) $(LDFLAGS) $(MODFLAG) -I$(NETCDFINC) $(*).F90
 #	$(RMD) $(*).f
 	@echo ""
 	ar -r ../lib/libHYDRO.a $(@)
@@ -36,5 +36,5 @@ io_manager.o: ../IO/netcdf_layer.o
 
 orchestrator.o: io_manager.o config.o
 
-clean:	
+clean:
 	rm -f *.o *.mod *.stb *~ *.f

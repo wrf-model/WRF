@@ -413,6 +413,7 @@ subroutine mixactivate(  msectional,            &
   real fac_srflx
   real depvel_drop, depvel_tmp
   real, parameter :: depvel_uplimit = 1.0 ! upper limit for dep vels (m/s)
+  real, parameter :: eps = 0.1
   real :: surfrate(num_chem) ! surface exchange rate (/s)
   real surfratemax      ! max surfrate for all species treated here
   real surfrate_drop    ! surfade exchange rate for droplelts
@@ -773,7 +774,7 @@ GROW_SHRINK_MAIN_K_LOOP: do k=kts,kte
                 fn,fs,fm,fluxn,fluxs,fluxm,flux_fullact(k), grid_id, ktau, i, j, k )
            do n = 1,ntype_aer
               do m = 1,nsize_aer(n)
-                if ((m.eq.1).and.(n.eq.1)) then
+                if ((abs(m - 1.0) < eps) .and. (abs(n - 1.0) < eps)) then
                         fn11(i,k,j)=fn(m,n)
                         na11(i,k,j)=naerosol(m,n)
                         vo11(i,k,j)=vaerosol(m,n)
@@ -782,7 +783,7 @@ GROW_SHRINK_MAIN_K_LOOP: do k=kts,kte
                         sg11(i,k,j)=sigmag_aer(m,n)
                         hg11(i,k,j)=hygro_aer(m,n)
                 endif
-                if ((m.eq.1).and.(n.eq.2)) then
+                if ((abs(m - 1.0) < eps) .and. (abs(n - 2.0) < eps)) then
                         fn12(i,k,j)=fn(m,n)
                         na12(i,k,j)=naerosol(m,n)
                         vo12(i,k,j)=vaerosol(m,n)
@@ -791,7 +792,7 @@ GROW_SHRINK_MAIN_K_LOOP: do k=kts,kte
                         sg12(i,k,j)=sigmag_aer(m,n)
                         hg12(i,k,j)=hygro_aer(m,n)
                 endif
-                if ((m.eq.1).and.(n.eq.3)) then
+                if ((abs(m - 1.0) < eps) .and. (abs(n - 3.0) < eps)) then
                         fn13(i,k,j)=fn(m,n)
                         na13(i,k,j)=naerosol(m,n)
                         vo13(i,k,j)=vaerosol(m,n)
@@ -800,7 +801,7 @@ GROW_SHRINK_MAIN_K_LOOP: do k=kts,kte
                         sg13(i,k,j)=sigmag_aer(m,n)
                         hg13(i,k,j)=hygro_aer(m,n)
                 endif
-                if ((m.eq.1).and.(n.eq.4)) then
+                if ((abs(m - 1.0) < eps) .and. (abs(n - 4.0) < eps)) then
                         fn14(i,k,j)=fn(m,n)
                         na14(i,k,j)=naerosol(m,n)
                         vo14(i,k,j)=vaerosol(m,n)
@@ -809,7 +810,7 @@ GROW_SHRINK_MAIN_K_LOOP: do k=kts,kte
                         sg14(i,k,j)=sigmag_aer(m,n)
                         hg14(i,k,j)=hygro_aer(m,n)
                 endif
-                if ((m.eq.2).and.(n.eq.1)) then
+                if ((abs(m - 2.0) < eps) .and. (abs(n - 1.0) < eps)) then
                         fn21(i,k,j)=fn(m,n)
                         na21(i,k,j)=naerosol(m,n)
                         vo21(i,k,j)=vaerosol(m,n)
@@ -818,7 +819,7 @@ GROW_SHRINK_MAIN_K_LOOP: do k=kts,kte
                         sg21(i,k,j)=sigmag_aer(m,n)
                         hg21(i,k,j)=hygro_aer(m,n)
                 endif
-                if ((m.eq.2).and.(n.eq.2)) then
+                if ((abs(m - 2.0) < eps) .and. (abs(n - 2.0) < eps)) then
                         fn22(i,k,j)=fn(m,n)
                         na22(i,k,j)=naerosol(m,n)
                         vo22(i,k,j)=vaerosol(m,n)
@@ -827,7 +828,7 @@ GROW_SHRINK_MAIN_K_LOOP: do k=kts,kte
                         sg22(i,k,j)=sigmag_aer(m,n)
                         hg22(i,k,j)=hygro_aer(m,n)
                 endif
-                if ((m.eq.2).and.(n.eq.3)) then
+                if ((abs(m - 2.0) < eps) .and. (abs(n - 3.0) < eps)) then
                         fn23(i,k,j)=fn(m,n)
                         na23(i,k,j)=naerosol(m,n)
                         vo23(i,k,j)=vaerosol(m,n)
@@ -836,7 +837,7 @@ GROW_SHRINK_MAIN_K_LOOP: do k=kts,kte
                         sg23(i,k,j)=sigmag_aer(m,n)
                         hg23(i,k,j)=hygro_aer(m,n)
                 endif
-                if ((m.eq.2).and.(n.eq.4)) then
+                if ((abs(m - 2.0) < eps) .and. (abs(n - 4.0) < eps)) then
                         fn24(i,k,j)=fn(m,n)
                         na24(i,k,j)=naerosol(m,n)
                         vo24(i,k,j)=vaerosol(m,n)
@@ -845,7 +846,7 @@ GROW_SHRINK_MAIN_K_LOOP: do k=kts,kte
                         sg24(i,k,j)=sigmag_aer(m,n)
                         hg24(i,k,j)=hygro_aer(m,n)
                 endif
-                if ((m.eq.3).and.(n.eq.1)) then
+                if ((abs(m - 3.0) < eps) .and. (abs(n - 1.0) < eps)) then
                         fn31(i,k,j)=fn(m,n)
                         na31(i,k,j)=naerosol(m,n)
                         vo31(i,k,j)=vaerosol(m,n)
@@ -854,7 +855,7 @@ GROW_SHRINK_MAIN_K_LOOP: do k=kts,kte
                         sg31(i,k,j)=sigmag_aer(m,n)
                         hg31(i,k,j)=hygro_aer(m,n)
                 endif
-                if ((m.eq.3).and.(n.eq.2)) then
+                if ((abs(m - 3.0) < eps) .and. (abs(n - 2.0) < eps)) then
                         fn32(i,k,j)=fn(m,n)
                         na32(i,k,j)=naerosol(m,n)
                         vo32(i,k,j)=vaerosol(m,n)
@@ -863,7 +864,7 @@ GROW_SHRINK_MAIN_K_LOOP: do k=kts,kte
                         sg32(i,k,j)=sigmag_aer(m,n)
                         hg32(i,k,j)=hygro_aer(m,n)
                 endif
-                if ((m.eq.3).and.(n.eq.3)) then
+                if ((abs(m - 3.0) < eps) .and. (abs(n - 3.0) < eps)) then
                         fn33(i,k,j)=fn(m,n)
                         na33(i,k,j)=naerosol(m,n)
                         vo33(i,k,j)=vaerosol(m,n)
@@ -872,7 +873,7 @@ GROW_SHRINK_MAIN_K_LOOP: do k=kts,kte
                         sg33(i,k,j)=sigmag_aer(m,n)
                         hg33(i,k,j)=hygro_aer(m,n)
                 endif
-                if ((m.eq.3).and.(n.eq.4)) then
+                if ((abs(m - 3.0) < eps) .and. (abs(n - 4.0) < eps)) then
                         fn34(i,k,j)=fn(m,n)
                         na34(i,k,j)=naerosol(m,n)
                         vo34(i,k,j)=vaerosol(m,n)
@@ -881,7 +882,7 @@ GROW_SHRINK_MAIN_K_LOOP: do k=kts,kte
                         sg34(i,k,j)=sigmag_aer(m,n)
                         hg34(i,k,j)=hygro_aer(m,n)
                 endif
-                if ((m.eq.4).and.(n.eq.1)) then
+                if ((abs(m - 4.0) < eps) .and. (abs(n - 1.0) < eps)) then
                         fn41(i,k,j)=fn(m,n)
                         na41(i,k,j)=naerosol(m,n)
                         vo41(i,k,j)=vaerosol(m,n)
@@ -890,7 +891,7 @@ GROW_SHRINK_MAIN_K_LOOP: do k=kts,kte
                         sg41(i,k,j)=sigmag_aer(m,n)
                         hg41(i,k,j)=hygro_aer(m,n)
                 endif
-                if ((m.eq.4).and.(n.eq.2)) then
+                if ((abs(m - 4.0) < eps) .and. (abs(n - 2.0) < eps)) then
                         fn42(i,k,j)=fn(m,n)
                         na42(i,k,j)=naerosol(m,n)
                         vo42(i,k,j)=vaerosol(m,n)
@@ -899,7 +900,7 @@ GROW_SHRINK_MAIN_K_LOOP: do k=kts,kte
                         sg42(i,k,j)=sigmag_aer(m,n)
                         hg42(i,k,j)=hygro_aer(m,n)
                 endif
-                if ((m.eq.4).and.(n.eq.3)) then
+                if ((abs(m - 4.0) < eps) .and. (abs(n - 3.0) < eps)) then
                         fn43(i,k,j)=fn(m,n)
                         na43(i,k,j)=naerosol(m,n)
                         vo43(i,k,j)=vaerosol(m,n)
@@ -908,7 +909,7 @@ GROW_SHRINK_MAIN_K_LOOP: do k=kts,kte
                         sg43(i,k,j)=sigmag_aer(m,n)
                         hg43(i,k,j)=hygro_aer(m,n)
                 endif
-                if ((m.eq.4).and.(n.eq.4)) then
+                if ((abs(m - 4.0) < eps) .and. (abs(n - 4.0) < eps)) then
                         fn44(i,k,j)=fn(m,n)
                         na44(i,k,j)=naerosol(m,n)
                         vo44(i,k,j)=vaerosol(m,n)
@@ -1052,154 +1053,154 @@ OLD_CLOUD_MAIN_K_LOOP: do k=kts,kte
                       naerosol, vaerosol,  &
                       dlo_sect,dhi_sect, sigmag_aer,hygro_aer,                    &
                       fn,fs,fm,fluxn,fluxs,fluxm,flux_fullact(k), grid_id, ktau, i, j, k )
-              do n=1,ntype_aer
-                    do m=1,nsize_aer(n)
-                if ((m.eq.1).and.(n.eq.1)) then
-                        fn11(i,k,j)=fn(m,n)
-                        na11(i,k,j)=naerosol(m,n)
-                        vo11(i,k,j)=vaerosol(m,n)
-                        dl11(i,k,j)=dlo_sect(m,n)
-                        dh11(i,k,j)=dhi_sect(m,n)
-                        sg11(i,k,j)=sigmag_aer(m,n)
-                        hg11(i,k,j)=hygro_aer(m,n)
-                endif
-                if ((m.eq.1).and.(n.eq.2)) then
-                        fn12(i,k,j)=fn(m,n)
-                        na12(i,k,j)=naerosol(m,n)
-                        vo12(i,k,j)=vaerosol(m,n)
-                        dl12(i,k,j)=dlo_sect(m,n)
-                        dh12(i,k,j)=dhi_sect(m,n)
-                        sg12(i,k,j)=sigmag_aer(m,n)
-                        hg12(i,k,j)=hygro_aer(m,n)
-                endif
-                if ((m.eq.1).and.(n.eq.3)) then
-                        fn13(i,k,j)=fn(m,n)
-                        na13(i,k,j)=naerosol(m,n)
-                        vo13(i,k,j)=vaerosol(m,n)
-                        dl13(i,k,j)=dlo_sect(m,n)
-                        dh13(i,k,j)=dhi_sect(m,n)
-                        sg13(i,k,j)=sigmag_aer(m,n)
-                        hg13(i,k,j)=hygro_aer(m,n)
-                endif
-                if ((m.eq.1).and.(n.eq.4)) then
-                        fn14(i,k,j)=fn(m,n)
-                        na14(i,k,j)=naerosol(m,n)
-                        vo14(i,k,j)=vaerosol(m,n)
-                        dl14(i,k,j)=dlo_sect(m,n)
-                        dh14(i,k,j)=dhi_sect(m,n)
-                        sg14(i,k,j)=sigmag_aer(m,n)
-                        hg14(i,k,j)=hygro_aer(m,n)
-                endif
-                if ((m.eq.2).and.(n.eq.1)) then
-                        fn21(i,k,j)=fn(m,n)
-                        na21(i,k,j)=naerosol(m,n)
-                        vo21(i,k,j)=vaerosol(m,n)
-                        dl21(i,k,j)=dlo_sect(m,n)
-                        dh21(i,k,j)=dhi_sect(m,n)
-                        sg21(i,k,j)=sigmag_aer(m,n)
-                        hg21(i,k,j)=hygro_aer(m,n)
-                endif
-                if ((m.eq.2).and.(n.eq.2)) then
-                        fn22(i,k,j)=fn(m,n)
-                        na22(i,k,j)=naerosol(m,n)
-                        vo22(i,k,j)=vaerosol(m,n)
-                        dl22(i,k,j)=dlo_sect(m,n)
-                        dh22(i,k,j)=dhi_sect(m,n)
-                        sg22(i,k,j)=sigmag_aer(m,n)
-                        hg22(i,k,j)=hygro_aer(m,n)
-                endif
-                if ((m.eq.2).and.(n.eq.3)) then
-                        fn23(i,k,j)=fn(m,n)
-                        na23(i,k,j)=naerosol(m,n)
-                        vo23(i,k,j)=vaerosol(m,n)
-                        dl23(i,k,j)=dlo_sect(m,n)
-                        dh23(i,k,j)=dhi_sect(m,n)
-                        sg23(i,k,j)=sigmag_aer(m,n)
-                        hg23(i,k,j)=hygro_aer(m,n)
-                endif
-                if ((m.eq.2).and.(n.eq.4)) then
-                        fn24(i,k,j)=fn(m,n)
-                        na24(i,k,j)=naerosol(m,n)
-                        vo24(i,k,j)=vaerosol(m,n)
-                        dl24(i,k,j)=dlo_sect(m,n)
-                        dh24(i,k,j)=dhi_sect(m,n)
-                        sg24(i,k,j)=sigmag_aer(m,n)
-                        hg24(i,k,j)=hygro_aer(m,n)
-                endif
-                if ((m.eq.3).and.(n.eq.1)) then
-                        fn31(i,k,j)=fn(m,n)
-                        na31(i,k,j)=naerosol(m,n)
-                        vo31(i,k,j)=vaerosol(m,n)
-                        dl31(i,k,j)=dlo_sect(m,n)
-                        dh31(i,k,j)=dhi_sect(m,n)
-                        sg31(i,k,j)=sigmag_aer(m,n)
-                        hg31(i,k,j)=hygro_aer(m,n)
-                endif
-                if ((m.eq.3).and.(n.eq.2)) then
-                        fn32(i,k,j)=fn(m,n)
-                        na32(i,k,j)=naerosol(m,n)
-                        vo32(i,k,j)=vaerosol(m,n)
-                        dl32(i,k,j)=dlo_sect(m,n)
-                        dh32(i,k,j)=dhi_sect(m,n)
-                        sg32(i,k,j)=sigmag_aer(m,n)
-                        hg32(i,k,j)=hygro_aer(m,n)
-                endif
-                if ((m.eq.3).and.(n.eq.3)) then
-                        fn33(i,k,j)=fn(m,n)
-                        na33(i,k,j)=naerosol(m,n)
-                        vo33(i,k,j)=vaerosol(m,n)
-                        dl33(i,k,j)=dlo_sect(m,n)
-                        dh33(i,k,j)=dhi_sect(m,n)
-                        sg33(i,k,j)=sigmag_aer(m,n)
-                        hg33(i,k,j)=hygro_aer(m,n)
-                endif
-                if ((m.eq.3).and.(n.eq.4)) then
-                        fn34(i,k,j)=fn(m,n)
-                        na34(i,k,j)=naerosol(m,n)
-                        vo34(i,k,j)=vaerosol(m,n)
-                        dl34(i,k,j)=dlo_sect(m,n)
-                        dh34(i,k,j)=dhi_sect(m,n)
-                        sg34(i,k,j)=sigmag_aer(m,n)
-                        hg34(i,k,j)=hygro_aer(m,n)
-                endif
-                if ((m.eq.4).and.(n.eq.1)) then
-                        fn41(i,k,j)=fn(m,n)
-                        na41(i,k,j)=naerosol(m,n)
-                        vo41(i,k,j)=vaerosol(m,n)
-                        dl41(i,k,j)=dlo_sect(m,n)
-                        dh41(i,k,j)=dhi_sect(m,n)
-                        sg41(i,k,j)=sigmag_aer(m,n)
-                        hg41(i,k,j)=hygro_aer(m,n)
-                endif
-                if ((m.eq.4).and.(n.eq.2)) then
-                        fn42(i,k,j)=fn(m,n)
-                        na42(i,k,j)=naerosol(m,n)
-                        vo42(i,k,j)=vaerosol(m,n)
-                        dl42(i,k,j)=dlo_sect(m,n)
-                        dh42(i,k,j)=dhi_sect(m,n)
-                        sg42(i,k,j)=sigmag_aer(m,n)
-                        hg42(i,k,j)=hygro_aer(m,n)
-                endif
-                if ((m.eq.4).and.(n.eq.3)) then
-                        fn43(i,k,j)=fn(m,n)
-                        na43(i,k,j)=naerosol(m,n)
-                        vo43(i,k,j)=vaerosol(m,n)
-                        dl43(i,k,j)=dlo_sect(m,n)
-                        dh43(i,k,j)=dhi_sect(m,n)
-                        sg43(i,k,j)=sigmag_aer(m,n)
-                        hg43(i,k,j)=hygro_aer(m,n)
-                endif
-                if ((m.eq.4).and.(n.eq.4)) then
-                        fn44(i,k,j)=fn(m,n)
-                        na44(i,k,j)=naerosol(m,n)
-                        vo44(i,k,j)=vaerosol(m,n)
-                        dl44(i,k,j)=dlo_sect(m,n)
-                        dh44(i,k,j)=dhi_sect(m,n)
-                        sg44(i,k,j)=sigmag_aer(m,n)
-                        hg44(i,k,j)=hygro_aer(m,n)
-                endif
-                    enddo
-                 enddo                
+                  do n=1,ntype_aer
+                        do m=1,nsize_aer(n)
+                              if ((abs(m - 1.0) < eps) .and. (abs(n - 1.0) < eps)) then
+                                       fn11(i,k,j)=fn(m,n)
+                                       na11(i,k,j)=naerosol(m,n)
+                                       vo11(i,k,j)=vaerosol(m,n)
+                                       dl11(i,k,j)=dlo_sect(m,n)
+                                       dh11(i,k,j)=dhi_sect(m,n)
+                                       sg11(i,k,j)=sigmag_aer(m,n)
+                                       hg11(i,k,j)=hygro_aer(m,n)
+                              endif
+                              if ((abs(m - 1.0) < eps) .and. (abs(n - 2.0) < eps)) then
+                                       fn12(i,k,j)=fn(m,n)
+                                       na12(i,k,j)=naerosol(m,n)
+                                       vo12(i,k,j)=vaerosol(m,n)
+                                       dl12(i,k,j)=dlo_sect(m,n)
+                                       dh12(i,k,j)=dhi_sect(m,n)
+                                       sg12(i,k,j)=sigmag_aer(m,n)
+                                       hg12(i,k,j)=hygro_aer(m,n)
+                              endif
+                              if ((abs(m - 1.0) < eps) .and. (abs(n - 3.0) < eps)) then
+                                       fn13(i,k,j)=fn(m,n)
+                                       na13(i,k,j)=naerosol(m,n)
+                                       vo13(i,k,j)=vaerosol(m,n)
+                                       dl13(i,k,j)=dlo_sect(m,n)
+                                       dh13(i,k,j)=dhi_sect(m,n)
+                                       sg13(i,k,j)=sigmag_aer(m,n)
+                                       hg13(i,k,j)=hygro_aer(m,n)
+                              endif
+                              if ((abs(m - 1.0) < eps) .and. (abs(n - 4.0) < eps)) then
+                                       fn14(i,k,j)=fn(m,n)
+                                       na14(i,k,j)=naerosol(m,n)
+                                       vo14(i,k,j)=vaerosol(m,n)
+                                       dl14(i,k,j)=dlo_sect(m,n)
+                                       dh14(i,k,j)=dhi_sect(m,n)
+                                       sg14(i,k,j)=sigmag_aer(m,n)
+                                       hg14(i,k,j)=hygro_aer(m,n)
+                              endif
+                              if ((abs(m - 2.0) < eps) .and. (abs(n - 1.0) < eps)) then
+                                       fn21(i,k,j)=fn(m,n)
+                                       na21(i,k,j)=naerosol(m,n)
+                                       vo21(i,k,j)=vaerosol(m,n)
+                                       dl21(i,k,j)=dlo_sect(m,n)
+                                       dh21(i,k,j)=dhi_sect(m,n)
+                                       sg21(i,k,j)=sigmag_aer(m,n)
+                                       hg21(i,k,j)=hygro_aer(m,n)
+                              endif
+                              if ((abs(m - 2.0) < eps) .and. (abs(n - 2.0) < eps)) then
+                                       fn22(i,k,j)=fn(m,n)
+                                       na22(i,k,j)=naerosol(m,n)
+                                       vo22(i,k,j)=vaerosol(m,n)
+                                       dl22(i,k,j)=dlo_sect(m,n)
+                                       dh22(i,k,j)=dhi_sect(m,n)
+                                       sg22(i,k,j)=sigmag_aer(m,n)
+                                       hg22(i,k,j)=hygro_aer(m,n)
+                              endif
+                              if ((abs(m - 2.0) < eps) .and. (abs(n - 3.0) < eps)) then
+                                       fn23(i,k,j)=fn(m,n)
+                                       na23(i,k,j)=naerosol(m,n)
+                                       vo23(i,k,j)=vaerosol(m,n)
+                                       dl23(i,k,j)=dlo_sect(m,n)
+                                       dh23(i,k,j)=dhi_sect(m,n)
+                                       sg23(i,k,j)=sigmag_aer(m,n)
+                                       hg23(i,k,j)=hygro_aer(m,n)
+                              endif
+                              if ((abs(m - 2.0) < eps) .and. (abs(n - 4.0) < eps)) then
+                                       fn24(i,k,j)=fn(m,n)
+                                       na24(i,k,j)=naerosol(m,n)
+                                       vo24(i,k,j)=vaerosol(m,n)
+                                       dl24(i,k,j)=dlo_sect(m,n)
+                                       dh24(i,k,j)=dhi_sect(m,n)
+                                       sg24(i,k,j)=sigmag_aer(m,n)
+                                       hg24(i,k,j)=hygro_aer(m,n)
+                              endif
+                              if ((abs(m - 3.0) < eps) .and. (abs(n - 1.0) < eps)) then
+                                       fn31(i,k,j)=fn(m,n)
+                                       na31(i,k,j)=naerosol(m,n)
+                                       vo31(i,k,j)=vaerosol(m,n)
+                                       dl31(i,k,j)=dlo_sect(m,n)
+                                       dh31(i,k,j)=dhi_sect(m,n)
+                                       sg31(i,k,j)=sigmag_aer(m,n)
+                                       hg31(i,k,j)=hygro_aer(m,n)
+                              endif
+                              if ((abs(m - 3.0) < eps) .and. (abs(n - 2.0) < eps)) then
+                                       fn32(i,k,j)=fn(m,n)
+                                       na32(i,k,j)=naerosol(m,n)
+                                       vo32(i,k,j)=vaerosol(m,n)
+                                       dl32(i,k,j)=dlo_sect(m,n)
+                                       dh32(i,k,j)=dhi_sect(m,n)
+                                       sg32(i,k,j)=sigmag_aer(m,n)
+                                       hg32(i,k,j)=hygro_aer(m,n)
+                              endif
+                              if ((abs(m - 3.0) < eps) .and. (abs(n - 3.0) < eps)) then
+                                       fn33(i,k,j)=fn(m,n)
+                                       na33(i,k,j)=naerosol(m,n)
+                                       vo33(i,k,j)=vaerosol(m,n)
+                                       dl33(i,k,j)=dlo_sect(m,n)
+                                       dh33(i,k,j)=dhi_sect(m,n)
+                                       sg33(i,k,j)=sigmag_aer(m,n)
+                                       hg33(i,k,j)=hygro_aer(m,n)
+                              endif
+                              if ((abs(m - 3.0) < eps) .and. (abs(n - 4.0) < eps)) then
+                                       fn34(i,k,j)=fn(m,n)
+                                       na34(i,k,j)=naerosol(m,n)
+                                       vo34(i,k,j)=vaerosol(m,n)
+                                       dl34(i,k,j)=dlo_sect(m,n)
+                                       dh34(i,k,j)=dhi_sect(m,n)
+                                       sg34(i,k,j)=sigmag_aer(m,n)
+                                       hg34(i,k,j)=hygro_aer(m,n)
+                              endif
+                              if ((abs(m - 4.0) < eps) .and. (abs(n - 1.0) < eps)) then
+                                       fn41(i,k,j)=fn(m,n)
+                                       na41(i,k,j)=naerosol(m,n)
+                                       vo41(i,k,j)=vaerosol(m,n)
+                                       dl41(i,k,j)=dlo_sect(m,n)
+                                       dh41(i,k,j)=dhi_sect(m,n)
+                                       sg41(i,k,j)=sigmag_aer(m,n)
+                                       hg41(i,k,j)=hygro_aer(m,n)
+                              endif
+                              if ((abs(m - 4.0) < eps) .and. (abs(n - 2.0) < eps)) then
+                                       fn42(i,k,j)=fn(m,n)
+                                       na42(i,k,j)=naerosol(m,n)
+                                       vo42(i,k,j)=vaerosol(m,n)
+                                       dl42(i,k,j)=dlo_sect(m,n)
+                                       dh42(i,k,j)=dhi_sect(m,n)
+                                       sg42(i,k,j)=sigmag_aer(m,n)
+                                       hg42(i,k,j)=hygro_aer(m,n)
+                              endif
+                              if ((abs(m - 4.0) < eps) .and. (abs(n - 3.0) < eps)) then
+                                       fn43(i,k,j)=fn(m,n)
+                                       na43(i,k,j)=naerosol(m,n)
+                                       vo43(i,k,j)=vaerosol(m,n)
+                                       dl43(i,k,j)=dlo_sect(m,n)
+                                       dh43(i,k,j)=dhi_sect(m,n)
+                                       sg43(i,k,j)=sigmag_aer(m,n)
+                                       hg43(i,k,j)=hygro_aer(m,n)
+                              endif
+                              if ((abs(m - 4.0) < eps) .and. (abs(n - 4.0) < eps)) then
+                                       fn44(i,k,j)=fn(m,n)
+                                       na44(i,k,j)=naerosol(m,n)
+                                       vo44(i,k,j)=vaerosol(m,n)
+                                       dl44(i,k,j)=dlo_sect(m,n)
+                                       dh44(i,k,j)=dhi_sect(m,n)
+                                       sg44(i,k,j)=sigmag_aer(m,n)
+                                       hg44(i,k,j)=hygro_aer(m,n)
+                              endif
+                        enddo
+                     enddo                
 
                  
 ! rce-comment

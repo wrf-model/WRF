@@ -124,7 +124,7 @@ wrf : framework_only
 	   echo "NoahMP submodule files populating WRF directories" ; \
 	   echo "------------------------------------------------------------------------------" ; \
 	fi
-	if [ \( ! -f phys/module_bl_mynnedmf.F \) -o \
+	@if [ \( ! -f phys/module_bl_mynnedmf.F \) -o \
 	    \( ! -f phys/module_bl_mynnedmf_common.F \) -o \
 	    \( ! -f phys/module_bl_mynnedmf_common.F \) ] ; then \
 	  echo " " ; \

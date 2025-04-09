@@ -1,0 +1,43 @@
+#!/usr/bin/env python3
+
+"""Main driver wrapper around the manic/checkout utility.
+
+Tool to assemble external respositories represented in an externals
+description file.
+
+"""
+from __future__ import absolute_import
+from __future__ import unicode_literals
+from __future__ import print_function
+
+import sys
+import traceback
+import os
+import manic
+
+if sys.hexversion < 0x02070000:
+    print(70 * '*')
+    print('ERROR: {0} requires python >= 2.7.x. '.format(sys.argv[0]))
+    print('It appears that you are running python {0}'.format(
+        '.'.join(str(x) for x in sys.version_info[0:3])))
+    print(70 * '*')
+    sys.exit(1)
+
+
+if __name__ == '__main__':
+    ARGS = manic.checkout.commandline_arguments()
+    if ARGS.version:
+        version_info = ''
+        version_file_path = os.path.join(os.path.dirname(__file__),'version.txt')
+        with open(version_file_path) as f:
+            version_info = f.readlines()[0].strip()
+        print(version_info)
+        sys.exit(0)
+    try:
+        RET_STATUS, _ = manic.checkout.main(ARGS)
+        sys.exit(RET_STATUS)
+    except Exception as error:  # pylint: disable=broad-except
+        manic.printlog(str(error))
+        if ARGS.backtrace:
+            traceback.print_exc()
+        sys.exit(1)

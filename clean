@@ -83,6 +83,8 @@ if ( "$arg" == '-a' || "$arg" == '-aa' ) then
     /bin/rm -f phys/module_sf_noahmpdrv.F phys/module_sf_noahmp_glacier.F \
                phys/module_sf_noahmp_groundwater.F phys/module_sf_noahmplsm.F \
                run/MPTABLE.TBL
+    /bin/rm -f phys/module_bl_mynnedmf.F phys/module_bl_mynnedmf_common.F \
+               phys/module_bl_mynnedmf_driver.F
   endif
 endif
 

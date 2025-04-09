@@ -154,9 +154,39 @@ compound_channel = .FALSE.
 ! Switch to activate channel-loss option (0=no, 1=yes) [Requires Kchan in RouteLink]
 ! channel_loss_option = 0
 
+! Lake / Reservoir options (0=lakes off, 1=level pool (typical default),
+!                           2=passthrough, 3=reservoir DA [see &reservoir_nlist below])
+lake_option = 1
+
 ! Specify the lake parameter file (e.g.: "LAKEPARM.nc").
 ! Note REQUIRED if lakes are on.
 route_lake_f = "./DOMAIN/LAKEPARM.nc"
+
+! Switch to activate baseflow bucket model...(0=none, 1=exp. bucket, 2=pass-through,
+! 4=exp. bucket with area normalized parameters)
+! Option 4 is currently only supported if using reach-based routing with UDMP=1.
+GWBASESWCRT = 1
+
+! Switch to activate bucket model loss (0=no, 1=yes)
+! This option is currently only supported if using reach-based routing with UDMP=1.
+bucket_loss = 0
+
+! Groundwater/baseflow 2d mask specified on land surface model grid (e.g.: "GWBASINS.nc")
+! Note: Only required if baseflow  model is active (1 or 2) and UDMP_OPT=0.
+gwbasmskfil = "./DOMAIN/GWBASINS.nc"
+
+! Groundwater bucket parameter file (e.g.: "GWBUCKPARM.nc")
+GWBUCKPARM_file = "./DOMAIN/GWBUCKPARM.nc"
+
+! User defined mapping, such as NHDPlus: 0=no (default), 1=yes
+UDMP_OPT = 0
+
+! If on, specify the user-defined mapping file (e.g.: "spatialweights.nc")
+!udmap_file = "./DOMAIN/spatialweights.nc"
+
+/
+
+&reservoir_nlist
 
 ! Specify the reservoir parameter file
 reservoir_parameter_file = "./DOMAIN/persistence_parm.nc"
@@ -189,28 +219,6 @@ reservoir_rfc_forecasts_time_series_path = "./rfc_timeseries/"
 
 ! Specify lookback hours to read reservoir RFC forecasts
 reservoir_rfc_forecasts_lookback_hours = 28
-
-! Switch to activate baseflow bucket model...(0=none, 1=exp. bucket, 2=pass-through,
-! 4=exp. bucket with area normalized parameters)
-! Option 4 is currently only supported if using reach-based routing with UDMP=1.
-GWBASESWCRT = 1
-
-! Switch to activate bucket model loss (0=no, 1=yes)
-! This option is currently only supported if using reach-based routing with UDMP=1.
-bucket_loss = 0
-
-! Groundwater/baseflow 2d mask specified on land surface model grid (e.g.: "GWBASINS.nc")
-! Note: Only required if baseflow  model is active (1 or 2) and UDMP_OPT=0.
-gwbasmskfil = "./DOMAIN/GWBASINS.nc"
-
-! Groundwater bucket parameter file (e.g.: "GWBUCKPARM.nc")
-GWBUCKPARM_file = "./DOMAIN/GWBUCKPARM.nc"
-
-! User defined mapping, such as NHDPlus: 0=no (default), 1=yes
-UDMP_OPT = 0
-
-! If on, specify the user-defined mapping file (e.g.: "spatialweights.nc")
-!udmap_file = "./DOMAIN/spatialweights.nc"
 
 /
 

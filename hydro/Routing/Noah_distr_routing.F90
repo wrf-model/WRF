@@ -1,23 +1,3 @@
-!  Program Name:
-!  Author(s)/Contact(s):
-!  Abstract:
-!  History Log:
-!
-!  Usage:
-!  Parameters: <Specify typical arguments passed>
-!  Input Files:
-!        <list file names and briefly describe the data they include>
-!  Output Files:
-!        <list file names and briefly describe the information they include>
-!
-!  Condition codes:
-!        <list exit condition or error codes returned >
-!        If appropriate, descriptive troubleshooting instructions or
-!        likely causes for failures could be mentioned here with the
-!        appropriate error code
-!
-!  User controllable options: <if applicable>
-
 !DJG ------------------------------------------------
 !DJG   SUBROUTINE RT_PARM
 !DJG ------------------------------------------------
@@ -147,7 +127,6 @@ SUBROUTINE GETMAX8DIR(IXX0,JYY0,I,J,H,RETENT_DEP,sox,tmp_gsize,max,XX,YY)
     IXX8 = I-1
     JYY8 = J+1
     call GET8DIR(IXX8,JYY8,I,J,H,RETENT_DEP,sox(:,:,8),IXX0,JYY0,max,tmp_gsize(8),XX,YY)
-    RETURN
 END SUBROUTINE GETMAX8DIR
 
 SUBROUTINE GET8DIR(IXX8,JYY8,I,J,H,RETENT_DEP,sox   &
@@ -207,7 +186,6 @@ SUBROUTINE GETSUB8(I, J, XX, YY, wattbl, terrslpNeighbors, distNeighbors, &
                       terrslpNeighbors(I,J,neighIndx), distNeighbors(neighIndx), &
                       maxneighI, maxneighJ, maxneighIndx, maxneighSlp)
    enddo
-   RETURN
 END SUBROUTINE GETSUB8
 
 SUBROUTINE GETSUB8DIR(I, J, selfWattbl, &
@@ -341,7 +319,6 @@ SUBROUTINE TER_ADJ_SOL(IX,JX,SO8LD_D,TSLP,SHORT,XLAT,XLONG,olddate,DT)
 
     SHORT = SOLDN
 
-    return
 end SUBROUTINE TER_ADJ_SOL
 !DJG-----------------------------------------------------------------------
 !DJG END SUBROUTINE TER_ADJ_SOL
@@ -507,7 +484,6 @@ subroutine GMT2LOCAL(IX,JX,XLONG,YY,MM,DD,HH,MIN,DT)
         end do   !i-loop
     end do   !j-loop
 
-    return
 end subroutine
 
 !DJG-----------------------------------------------------------------------
@@ -542,7 +518,6 @@ subroutine JULDAY_CALC(YYYY,MM,DD,JULDAY)
         JULDAY = LPJULM(MM) + DD
     end if
 
-    RETURN
 END subroutine JULDAY_CALC
 !DJG-----------------------------------------------------------------------
 !DJG END SUBROUTINE JULDAY
@@ -595,7 +570,6 @@ subroutine SLOPE_ASPECT(IX,JX,SO8LD_D,TAZI)
         END DO
     END DO
 
-    RETURN
 END  subroutine SLOPE_ASPECT
 !DJG-----------------------------------------------------------------------
 !DJG END SUBROUTINE SLOPE_ASPECT
@@ -761,7 +735,6 @@ SUBROUTINE SOLSUB(LONG,LAT,AZ,IN,SC,YY,MO,IDA,IHR,MM,OUT1, &
     END IF    ! End if for daily vs instantaneous values...
 
     !DJG-----------------------------------------------------------------------
-    RETURN
 END SUBROUTINE SOLSUB
 !DJG-----------------------------------------------------------------------
 
@@ -833,7 +806,6 @@ subroutine seq_land_SO8(SO8LD_D,Vmax,TERR,dx,ix,jx)
         enddo
     enddo
     Vmax = TANH(Vmax)
-    return
 end  subroutine seq_land_SO8
 
 #ifdef MPP_LAND
@@ -870,7 +842,6 @@ subroutine MPP_seq_land_SO8(SO8LD_D,Vmax,TERRAIN,dx,ix,jx,&
     endif
     call decompose_data_int(g_SO8LD_D(:,:,3),SO8LD_D(:,:,3))
     call decompose_data_real(g_Vmax,Vmax)
-    return
 end subroutine MPP_seq_land_SO8
 
 #endif
@@ -1335,5 +1306,4 @@ subroutine time_seconds(i3)
     call date_and_time(values=time_array)
     i3 = time_array(4)*24*3600+time_array(5) * 3600 + time_array(6) * 60 + &
         time_array(7) + 0.001 * time_array(8)
-    return
 end subroutine time_seconds

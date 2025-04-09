@@ -351,6 +351,24 @@ else()
   message( STATUS "Finished checking out external repos via manage_externals" )
 endif()
 
+if ( ${ENABLE_CFBM} )
+  message( STATUS "Checking out CFBM external repo via manage_externals" )
+  set( LOG_FILE      ${CMAKE_CURRENT_BINARY_DIR}/checkout_externals_cfbm.log )
+  execute_process(
+                  COMMAND
+                    ${PROJECT_SOURCE_DIR}/tools/manage_externals/checkout_externals --externals ${PROJECT_SOURCE_DIR}/arch/OptionalExternals_cfbm.cfg
+                  WORKING_DIRECTORY       ${PROJECT_SOURCE_DIR}
+                  RESULT_VARIABLE         MANAGE_EXTERNALS_STATUS
+                  OUTPUT_FILE             ${LOG_FILE}
+                  ERROR_FILE              ${LOG_FILE}
+                  )
+  if ( ${MANAGE_EXTERNALS_STATUS} AND NOT ${MANAGE_EXTERNALS_STATUS} EQUAL 0 )
+    message( FATAL_ERROR "Failed to checkout cfbm external repo via manage_externals" )
+  else()
+    message( STATUS "Finished checking out cfbm external repo via manage_externals" )
+  endif()
+endif()
+
 
 ################################################################################
 ##

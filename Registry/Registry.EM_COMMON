@@ -2505,6 +2505,7 @@ rconfig   integer ideal_xland             namelist,physics	1             1      
 rconfig   real    swrad_scat              namelist,physics	1             1       irh    "SWRAD_SCAT" "SCATTERING FACTOR IN SWRAD"      ""
 rconfig   integer surface_input_source    namelist,physics	1             3       irh    "surface_input_source"          "1=static (fractional), 2=time dependent (dominant), 3=dominant cateogry from metgrid"      ""
 rconfig   integer num_soil_layers         namelist,physics	1             5       irh    "num_soil_layers"               ""      ""
+rconfig   integer default_soiltype        namelist,physics	1             8        rh    "default_soiltype"              "Soil category used to correct missing values (default 8 : silty clay loam)"      ""
 rconfig   integer num_pft_clm             namelist,physics      1            17       -      "num_pft_clm"                  ""      ""
 rconfig   logical input_pft               namelist,physics      1            .false.   h     "input_pft_flag"         "use input pft instead of USGS"      ""
 rconfig   integer maxpatch                namelist,physics      1            10       irh    "maxpatch"                      ""      ""

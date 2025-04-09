@@ -341,10 +341,11 @@ any_daylight: &
 !-----------------------------------------------------------------------------
 !     set solar distance factor
 !-----------------------------------------------------------------------------
-     if( curjulday /= julday ) then
-       curjulday = julday
-       esfact = sundis( julday )
-     endif
+     ! osipov fix the bug. Always calc the distance. Testing for 0 results in True on 1 Jan, keeps the sfact=0 and shutsdown the photolysis for entire day
+     !if( curjulday /= julday ) then
+     curjulday = julday
+     esfact = sundis( julday )
+     !endif
      if( .not. config_flags%scale_o3_to_grnd_exo_coldens ) then
        if( config_flags%scale_o3_to_du_at_grnd ) then
          dobsi = max( 0.,config_flags%du_at_grnd )

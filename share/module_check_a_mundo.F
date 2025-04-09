@@ -487,6 +487,19 @@
       ENDDO
 
 !-----------------------------------------------------------------------
+! Check that default_soiltype is between 1 and 19 and is not water (14)
+!-----------------------------------------------------------------------
+      IF ((model_config_rec % default_soiltype .LT. 1) &
+            .OR. (model_config_rec % default_soiltype .GT. 19) &
+            .OR. (model_config_rec % default_soiltype .EQ. 14)) THEN
+         WRITE (wrf_err_message, FMT='(A,I4,A)') '--- ERROR: invalid default_soiltype category (', model_config_rec % default_soiltype, ')'
+         CALL wrf_message ( wrf_err_message )
+         WRITE (wrf_err_message, FMT='(A)') '--- ERROR: resetting default_soiltype to 8 (silty clay loam)'
+         CALL wrf_message ( wrf_err_message )
+         model_config_rec % default_soiltype = 8
+      END IF
+      
+!-----------------------------------------------------------------------
 ! Check that mosiac option cannot turn on when sf_urban_physics = 2 and 3
 !-----------------------------------------------------------------------
       DO i = 1, model_config_rec % max_dom

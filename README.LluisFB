@@ -1,8 +1,0 @@
-This is a forked version of WRF dedicated to the bugs and fixes found by 
-Lluís Fita Borrell, UBA/CIMA/IFAECI, Argentina
-
-Following instructions from https://github.com/wrf-model/WRF/wiki/Workflow-for-WRF-Code-Modification
-
-This fork is aimed to contriute to the development of WRF model and used to perform 'Pull requests' when bugs are found and solutions for them are provided.
-
-

@@ -92,7 +92,7 @@ Other output options: Note all auxhist[1-24], auxinput[2-24] interval variables 
                                                     than the history file requires Registry.EM file change
  auxhist9_interval (max_dom)         = 10,      ! interval in minutes
  io_form_auxhist9                    = 2,       ! output in netCDF
- frames_per_auxhist9                 = 1000,    ! number of output times in this file
+ frames_per_auxhist9 (max_dom)       = 1000,    ! number of output times in this file
 
 For SST updating (used only with sst_update=1):
  
@@ -108,7 +108,7 @@ For additional regional climate surface fields
  auxhist3_outname                    = 'wrfxtrm_d<domain>_<date>' ! file name for added diagnostics
  io_form_auxhist3                    = 2        ! netcdf
  auxhist3_interval (max_dom)         = 1440     ! minutes between outputs (1440 gives daily max/min)
- frames_per_auxhist3                 = 1        ! output times per file
+ frames_per_auxhist3 (max_dom)       = 1        ! output times per file
                                                   Note: do restart only at multiple of auxhist3_intervals
 
 For observation nudging:
@@ -497,6 +497,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 17, 19, 21, 22: Legacy NSSL-MP options: see README.NSSLmp for equivalent settings with 18
                                      = 24, WSM 7-class scheme (separate hail and graupel categories)
                                      = 26, WDM 7-class scheme (separate hail and graupel categories)
+                                     = 27, UDM 7-class scheme, double moments in qnc and qnr plus qnn
                                      = 28, aerosol-aware Thompson scheme with water- and ice-friendly aerosol climatology 
                                        This option has two climatological aerosol input options:
                                        use_aero_icbc = .F. : use constant values

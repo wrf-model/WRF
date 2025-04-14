@@ -984,6 +984,8 @@
                    ( model_config_rec % ra_sw_physics(i) .EQ. RRTMG_SWSCHEME       )   .OR.  &
                    ( model_config_rec % ra_sw_physics(i) .EQ. RRTMG_SWSCHEME_FAST  ) ) ) ) THEN
                ! This is OK, no way would a negation have been understandable!
+            ELSE IF ( model_config_rec % ra_sw_physics(i) == 0 ) THEN
+                    model_config_rec%ghg_input=0
             ELSE
                oops = oops + 1
             END IF

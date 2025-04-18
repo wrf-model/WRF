@@ -66,7 +66,7 @@ int contains_tok( char *s1, char *s2, char *delims )
   
 
  /* Had to increase size for SOA from 4*4096 to 4*7000 */
-char halo_define[4*7000], halo_use[NAMELEN], halo_id[NAMELEN], x[NAMELEN] ;
+char halo_define[4*7000], halo_use[NAMELEN] = {'\0'}, halo_id[NAMELEN], x[2 * NAMELEN + EXTRA_FOR_DEST_BUFFER] ;
 
 /*KAL added this for vertical interpolation */
 /*DJW 131202 modified to create files required for vertical interpolation from parent to nest */
@@ -130,7 +130,7 @@ else if ( down_path[ipath] == FORCE_DOWN  ) { sprintf(halo_id,"HALO_FORCE_DOWN")
 else if ( down_path[ipath] == INTERP_UP   ) { sprintf(halo_id,"HALO_INTERP_UP") ; }
 else if ( down_path[ipath] == SMOOTH_UP   ) { sprintf(halo_id,"HALO_INTERP_SMOOTH") ; }
 sprintf(halo_define,"80:") ;
-sprintf(halo_use,"") ;
+ halo_use[0] = '\0' ;
       gen_nest_interp1 ( fp , Domain.fields, NULL, down_path[ipath], (down_path[ipath]==FORCE_DOWN)?2:2 ) ;
 {
   node_t * comm_struct ;
@@ -168,15 +168,15 @@ gen_nest_interp1 ( FILE * fp , node_t * node, char * fourdname, int down_path , 
   char nddim2[3][2][NAMELEN] ;
   char nmdim2[3][2][NAMELEN] ;
   char npdim2[3][2][NAMELEN] ;
-  char vname[NAMELEN], vname2[NAMELEN] ; 
-  char tag[NAMELEN], tag2[NAMELEN] ; 
+  char vname[3 * NAMELEN + 5 * EXTRA_FOR_DEST_BUFFER], vname2[3 * NAMELEN + 5 * EXTRA_FOR_DEST_BUFFER] ;
+  char tag[NAMELEN] = {'\0'}, tag2[NAMELEN] = {'\0'} ;
   char fcn_name[NAMELEN] ;
   char xstag[NAMELEN], ystag[NAMELEN] ;
   char dexes[NAMELEN] ;
   char ndexes[NAMELEN] ;
   char *maskstr ;
   char *grid ;
-  char *colon, r[10],tx[80],temp[80],moredims[80] ; 
+  char *colon, r[10],tx[2 * NAMELEN + EXTRA_FOR_DEST_BUFFER],temp[80],moredims[80] ;
   int d ; 
   double real_store;
   long long_store;
@@ -200,7 +200,7 @@ gen_nest_interp1 ( FILE * fp , node_t * node, char * fourdname, int down_path , 
     if ( nest_mask & down_path )
     {
         if ( p->ntl > 1 ) { sprintf(tag,"_2") ; sprintf(tag2,"_%d", use_nest_time_level) ; }
-        else              { sprintf(tag,"")   ; sprintf(tag2,"")                         ; }
+        else              { tag[0] = '\0'; tag2[0] = '\0'; }
 
         /* construct variable name */
         if ( p->node_kind & FOURD ) {
@@ -359,7 +359,7 @@ fprintf(fp,"                  ngrid%%i_parent_start, ngrid%%j_parent_start,     
 fprintf(fp,"                  ngrid%%parent_grid_ratio, ngrid%%parent_grid_ratio                &\n") ;
    
         {
-           char tmpstr[NAMELEN], *p1 ;
+           char tmpstr[2 * NAMELEN + EXTRA_FOR_DEST_BUFFER], *p1 ;
            node_t * nd, * pp  ;
            pp = NULL ;
            if ( p->node_kind & FOURD ) {
@@ -377,10 +377,10 @@ fprintf(fp,"                  ngrid%%parent_grid_ratio, ngrid%%parent_grid_ratio
                strcpy( tmpstr , pp->interpu_aux_fields ) ;
 	     } else if ( down_path & FORCE_DOWN ) {
                /* by default, add the boundary and boundary tendency fields to the arg list */
-               if ( (! p->node_kind) & FOURD ) {
-                 sprintf( tmpstr , "%s_b,%s_bt,", pp->name, pp->name )  ;
+               if ( ! (p->node_kind & FOURD) ) {
+                 snprintf( tmpstr , 2 * NAMELEN + EXTRA_FOR_DEST_BUFFER, "%s_b,%s_bt,", pp->name, pp->name )  ;
                } else {
-                 sprintf( tmpstr , "%s_b,%s_bt,", p->name, p->name )  ;
+                 snprintf( tmpstr , 2 * NAMELEN + EXTRA_FOR_DEST_BUFFER, "%s_b,%s_bt,", p->name, p->name )  ;
                }
                strcat( tmpstr , pp->force_aux_fields ) ;
 	     } else if ( down_path & INTERP_DOWN ) {
@@ -507,12 +507,12 @@ gen_nest_interp2 ( FILE * fp , node_t * node, char * fourdname, int down_path , 
   char ddim[3][2][NAMELEN] ;
   char mdim[3][2][NAMELEN] ;
   char pdim[3][2][NAMELEN] ;
-  char vname[NAMELEN], vname2[NAMELEN] ; 
+  char vname[3 * NAMELEN + 5 * EXTRA_FOR_DEST_BUFFER], vname2[3 * NAMELEN + 5 * EXTRA_FOR_DEST_BUFFER] ;
   char tag[NAMELEN], tag2[NAMELEN] ; 
   char dexes[NAMELEN] ;
   char ndexes[NAMELEN] ;
   char *grid ;
-  char *colon,r[10],tx[80],temp[80],moredims[80] ; 
+  char *colon,r[10],tx[2 * NAMELEN + EXTRA_FOR_DEST_BUFFER],temp[80],moredims[80] ;
   int d ; 
   char zstag[NAMELEN];
   char fcn_name[NAMELEN];
@@ -546,11 +546,11 @@ gen_nest_interp2 ( FILE * fp , node_t * node, char * fourdname, int down_path , 
           set_dim_strs2 ( p , ddim , mdim , pdim , "", 1 ) ;
         } 
         if ( !strcmp ( ddim[0][1], "kde") ||
-			!strcmp ( ddim[1][1], "kde") ||
-		        !strcmp ( ddim[2][1], "kde")) {	
+	     !strcmp ( ddim[1][1], "kde") ||
+	     !strcmp ( ddim[2][1], "kde")) {
     
             if ( p->ntl > 1 ) { sprintf(tag,"_2") ; sprintf(tag2,"_%d", use_nest_time_level) ; }
-            else              { sprintf(tag,"")   ; sprintf(tag2,"")                         ; }
+            else              { tag[0] = '\0'; tag2[0] = '\0'; }
 
             /* construct variable name */
             if ( p->node_kind & FOURD ) {

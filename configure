@@ -244,7 +244,7 @@ USENETCDF=""
 if [ -n "$NETCDF" ] ; then
   echo "Will use NETCDF in dir: $NETCDF"
 # Oh UNIDATA, why make it so hard ...
-  if [ -f "$NETCDF/lib/libnetcdff.a" -o -f "$NETCDF/lib/libnetcdff.so" -o -f "$NETCDF/lib/libnetcdff.dll.a" ] ; then
+  if [ -f "$NETCDF/lib/libnetcdff.a" -o -f "$NETCDF/lib/libnetcdff.so" -o -f "${NETCDF}/lib/libnetcdff.dll.a" ] ; then
     USENETCDFF="-lnetcdff"
   else
     USENETCDFF=" "
@@ -268,7 +268,16 @@ fi
 
 # If the user asked for classic netcdf, acquiesce to the request.
 
-if [ ! -f "$NETCDF/bin/nf-config" ] ; then
+if [ "`uname`" = "Linux" -o "`uname -o`" = "Cygwin" ] ; then
+  ans="`whereis nf-config`"
+elif [ "`uname`" = "Darwin" ] ; then
+  ans="`which nf-config`"
+else
+  ans=""
+# echo "Add in your architecture's uname and the command to find executables in the path"
+# exit 1
+fi
+if [ "$ans" = "nf-config:" -o "$ans" = "" ] ; then
     export NETCDF_classic=1
     unset NETCDF4
 else

@@ -7,10 +7,15 @@
 #include <strings.h>
 #include <ctype.h>
 
+#define TABLE_ENTRY 128
+#define EXTRA_FOR_DEST_BUFFER 32
+
+#define NAMELEN 256
+
 int  nChmOpts = 0;
-char rxt_tbl[5][1000][128];
-char chm_scheme[5][128];
-int  rxt_cnt[5];
+char rxt_tbl[5][1000][TABLE_ENTRY] = { '\0' };
+char chm_scheme[5][TABLE_ENTRY] = { '\0' };
+short int  rxt_cnt[5] = {0, 0};
 
 void strip_blanks( char *instring, char *outstring )
 {
@@ -39,13 +44,13 @@ int AppendReg( char *chem_opt, int ndx )
    char *strt, *end;
    char *token;
    char *wstrg1;
-   char path[256];
-   char fname[256];
+   char path[NAMELEN * 2 + EXTRA_FOR_DEST_BUFFER];
+   char fname[NAMELEN];
    char inln[1024],winln[1024],s[1024];
-   char rxtstr[128];
-   char rxtstr_tbl[1000][128];
-   char buffer[128];
-   char rxtsym[128];
+   char rxtstr[TABLE_ENTRY];
+   char rxtstr_tbl[1000][TABLE_ENTRY];
+   char buffer[TABLE_ENTRY];
+   char rxtsym[TABLE_ENTRY];
    FILE *fp_eqn, *fp_reg;
 
    strcpy( fname,chem_opt );
@@ -72,6 +77,7 @@ int AppendReg( char *chem_opt, int ndx )
 
    if( fp_reg == NULL ) {
      fprintf(stderr,"Can not open registry.irr_diag for writing\n");
+     fclose(fp_eqn);
      return(-2);
    }
    strcpy( buffer,"\"Integrated Reaction Rate\"  \"\"");
@@ -176,7 +182,7 @@ int AppendReg( char *chem_opt, int ndx )
           for( i=0; i < slen; i++ )
           {
             if( ! strncmp( rxtsym+i, "+", 1 ) )
-              strncpy( rxtsym+i, "_", 1 );
+              strncpy( rxtsym+i, "_", 2 );
           }
           strcat( rxtsym,"_IRR" );
 //
@@ -202,11 +208,11 @@ int AppendReg( char *chem_opt, int ndx )
 int irr_diag_scalar_indices( char *dirname )
 {
    int Nrxt;
-   int i, j;
+   short int i, j;
    int first, flush, s1;
    char fname[256];
-   char line[132];
-   char piece[132];
+   char line[5 * TABLE_ENTRY + 2 * EXTRA_FOR_DEST_BUFFER];
+   char piece[TABLE_ENTRY + EXTRA_FOR_DEST_BUFFER];
    char *blank = "                                                           ";
    FILE *fp_inc;
 
@@ -255,30 +261,29 @@ int irr_diag_scalar_indices( char *dirname )
      strcat( line,piece );
    }
    strcat( line," /)\n" );
-   fprintf( fp_inc,"%s",line );
-   fprintf( fp_inc," \n");
+   fprintf( fp_inc,"%s \n", line);
 
    for( i = 0; i < nChmOpts; i++ ) {
-     sprintf( line,"  chm_opts_name(%d) = '%s'\n",i+1,chm_scheme[i]);
-     fprintf( fp_inc,"%s",line );
+     /* I don't see the point of saving this in line when line get
+	overwritten immediately afterwards */
+     fprintf(fp_inc, "  chm_opts_name(%d) = '%s'\n",i+1,chm_scheme[i]);
    }
    fprintf( fp_inc," \n");
 
    sprintf( line,"  chm_opts_ndx(:nchm_opts) = (/ ");
    for( i = 0; i < nChmOpts; i++ ) {
      if( i == 0 ) 
-       sprintf( piece,"%s_kpp",chm_scheme[i]);
+       snprintf( piece,TABLE_ENTRY+EXTRA_FOR_DEST_BUFFER,"%.*s_kpp", TABLE_ENTRY, chm_scheme[i]);
      else
-       sprintf( piece," ,%s_kpp",chm_scheme[i]);
+       snprintf( piece,TABLE_ENTRY+EXTRA_FOR_DEST_BUFFER," ,%.*s_kpp", TABLE_ENTRY, chm_scheme[i]);
      strcat( line,piece );
    }
    strcat( line," /)\n" );
-   fprintf( fp_inc,"%s",line );
-   fprintf( fp_inc," \n");
+   fprintf( fp_inc,"%s \n", line);
 
    for( i = 0; i < nChmOpts && rxt_cnt[i] > 0; i++ ) {
      for( j = 0; j < rxt_cnt[i]; j++ ) {
-       sprintf( line,"     rxtsym(%d,%d) = '%s'\n",j+1,i+1,rxt_tbl[i][j]);
+       snprintf( line, TABLE_ENTRY + EXTRA_FOR_DEST_BUFFER, "     rxtsym(%d,%d) = '%s'\n",j+1,i+1,rxt_tbl[i][j]);
        fprintf( fp_inc,"%s",line);
      }
      fprintf( fp_inc," \n");

@@ -59,7 +59,7 @@ gen_alloc1 ( char * dirname )
   for ( idx = 0; idx < numFiles; idx++ )
   {
     if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s%d.F",dirname,filename_prefix,idx) ; }
-    else                       { sprintf(fname,"%s%d.F",dirname,filename_prefix,idx ) ; }
+    else                       { sprintf(fname,"%s%d.F",filename_prefix,idx ) ; }
     if ((fpSub = fopen( fname , "w" )) == NULL ) return(1) ;
 
     print_warning(fpSub,fname) ;
@@ -304,13 +304,13 @@ int
 gen_alloc2 ( FILE * fp , char * structname , char * structname2 , node_t * node, int start, int stop, int sw ) /* 1 = allocate, 2 = just count */
 {
   node_t * p ;
-  int tag ;
-  char post[NAMELEN], post_for_count[NAMELEN] ;
-  char fname[NAMELEN], dname[NAMELEN], dname_tmp[NAMELEN] ;
-  char x[NAMELEN] ;
-  char x2[NAMELEN], fname2[NAMELEN] ;
-  char dimname[3][NAMELEN] ;
-  char tchar ;
+  int tag = 0 ;
+  char post[NAMELEN + 2 * EXTRA_FOR_DEST_BUFFER], post_for_count[NAMELEN + 2 * EXTRA_FOR_DEST_BUFFER] ;
+  char fname[NAMELEN], dname[NAMELEN + EXTRA_FOR_DEST_BUFFER], dname_tmp[NAMELEN] ;
+  char x[NAMELEN + EXTRA_FOR_DEST_BUFFER] ;
+  char x2[NAMELEN + EXTRA_FOR_DEST_BUFFER], fname2[2 * NAMELEN + EXTRA_FOR_DEST_BUFFER] ;
+  char dimname[3][NAMELEN + EXTRA_FOR_DEST_BUFFER] ;
+  char tchar = '\0';
   unsigned int *io_mask ;
   int nd ;
   int restart ;
@@ -351,7 +351,7 @@ gen_alloc2 ( FILE * fp , char * structname , char * structname2 , node_t * node,
 */
 if ( tag == 1 )
 {
-     char dname_symbol[128] ;
+     char dname_symbol[NAMELEN + EXTRA_FOR_DEST_BUFFER] ;
      sym_nodeptr sym_node ;
 
      sprintf(dname_symbol, "DNAME_%s", dname_tmp ) ;
@@ -775,7 +775,7 @@ gen_ddt_write1 ( FILE * fp , char * structname , node_t * node )
 {
   node_t * p ;
   int tag ;
-  char post[NAMELEN] ;
+  char post[NAMELEN + 2 * EXTRA_FOR_DEST_BUFFER] ;
   char fname[NAMELEN] ;
   char x[NAMELEN] ;
 
@@ -840,7 +840,7 @@ gen_dealloc1 ( char * dirname )
   for ( idx = 0; idx < numFiles; idx++ )
   {
     if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s%d.F",dirname,filename_prefix,idx) ; }
-    else                       { sprintf(fname,"%s%d.F",dirname,filename_prefix,idx ) ; }
+    else                       { sprintf(fname,"%s%d.F",filename_prefix,idx ) ; }
     if ((fpSub = fopen( fname , "w" )) == NULL ) return(1) ;
   
     print_warning(fpSub,fname) ;
@@ -894,9 +894,9 @@ gen_dealloc2 ( FILE * fp , char * structname , node_t * node, int idx, int numFi
 {
   node_t * p ;
   int tag ;
-  char post[NAMELEN] ;
+  char post[NAMELEN + 2 * EXTRA_FOR_DEST_BUFFER] ;
   char fname[NAMELEN] ;
-  char x[NAMELEN] ;
+  char x[NAMELEN + EXTRA_FOR_DEST_BUFFER] ;
   int currentIdx = -1;
 
   if ( node == NULL ) return(1) ;

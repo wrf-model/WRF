@@ -177,7 +177,7 @@ int AppendReg( char *chem_opt, int ndx )
           for( i=0; i < slen; i++ )
           {
             if( ! strncmp( rxtsym+i, "+", 1 ) )
-              strncpy( rxtsym+i, "_", 1 );
+              strncpy( rxtsym+i, "_", 2 );
           }
           strcat( rxtsym,"_IRR" );
 //

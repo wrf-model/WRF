@@ -14,7 +14,7 @@ int
 gen_namelist_defines ( char * dirname , int sw_dimension )
 {
   FILE * fp ;
-  char  fname[NAMELEN] ;
+  char  fname[2*NAMELEN+2] ;
   char  fn[NAMELEN] ;
   node_t *p ;
   

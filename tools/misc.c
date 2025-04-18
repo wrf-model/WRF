@@ -43,7 +43,7 @@ char *
 dimension_with_ones( char * pre , char * tmp , node_t * p , char * post )
 {
   unsigned int i ;
-  char r[NAMELEN],s[NAMELEN],four_d[NAMELEN] ;
+  char r[NAMELEN+12],s[NAMELEN],four_d[NAMELEN+5] ;
   char *pp ;
   if ( p == NULL ) return("") ;
   if ( p->ndims <= 0 && ! p->boundary_array ) return("") ;

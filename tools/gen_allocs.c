@@ -59,7 +59,7 @@ gen_alloc1 ( char * dirname )
   for ( idx = 0; idx < numFiles; idx++ )
   {
     if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s%d.F",dirname,filename_prefix,idx) ; }
-    else                       { sprintf(fname,"%s%d.F",dirname,filename_prefix,idx ) ; }
+    else                       { sprintf(fname,"%s%d.F",filename_prefix,idx ) ; }
     if ((fpSub = fopen( fname , "w" )) == NULL ) return(1) ;
 
     print_warning(fpSub,fname) ;
@@ -840,7 +840,7 @@ gen_dealloc1 ( char * dirname )
   for ( idx = 0; idx < numFiles; idx++ )
   {
     if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s%d.F",dirname,filename_prefix,idx) ; }
-    else                       { sprintf(fname,"%s%d.F",dirname,filename_prefix,idx ) ; }
+    else                       { sprintf(fname,"%s%d.F",filename_prefix,idx ) ; }
     if ((fpSub = fopen( fname , "w" )) == NULL ) return(1) ;
   
     print_warning(fpSub,fname) ;

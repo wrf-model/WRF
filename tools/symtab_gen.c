@@ -42,6 +42,8 @@ For a sample main or calling program see the end of this file.
 #define HASHSIZE 1024
 
 #include "sym.h"
+int sym_forget();
+int create_ht( char *** p ) ;
 int hash(char * name);
 
 /*  commented out 2-29-90

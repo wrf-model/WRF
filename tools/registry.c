@@ -181,6 +181,15 @@ main( int argc, char *argv[] )
       exit(2) ;
     }
     if( !access( "Registry/registry.irr_diag",F_OK ) ) {
+      /*
+	command_argv[0] = "/bin/rm";
+	command_argv[1] = "-f";
+	command_argv[2] = "Registry/registry.irr_diag";
+	if (posix_spawn(&child_pid, command_argv[0], NULL, NULL, command_argv, environ)) {
+          fprintf(stderr, "Could not remove Registry/registry.irr_diag\n", fname_in, fname_wrk);
+	  exit(2);
+	}
+      */
       sprintf(command,"/bin/rm -f Registry/registry.irr_diag\n");
       if( system( command ) ) {
         fprintf(stderr,"Could not remove Registry/registry.irr_diag\n");

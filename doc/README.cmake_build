@@ -117,7 +117,7 @@ Advanced Configuration
 
   The '-d' option allows us to specify an alternative build/configuration 
   directory. As CMake best operates with out-of-source builds, our configuration
-  and compilation all happens within a different directory than the source. The
+  and compilation all happen within a different directory than the source. The
   default name of this directory is _build/, however for more fine-tuned control
   or housing multiple builds from the same source repo at the same time one can 
   specify a different directory name using this option. It is recommended to use

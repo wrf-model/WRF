@@ -179,8 +179,10 @@ Advanced Configuration
         general search location if multiple depenendencies reside in the same directory.
         Please refer to https://cmake.org/cmake/help/v3.20/command/find_package.html
         for further documentation on using `*_ROOT` variables or other control methods
-        of resolving depenendency locations. Please note the version specification
-        as WRF uses the logic of CMake v3.20 even if you have a newer version of cmake installed.
+        of resolving depenendency locations. Note that the minimum required CMake version
+        for WRF is specified as v3.20, and so the package finding logic for WRF will
+        follow as closely as possible the behavior of find_package() in version v3.20,
+        even if a newer version of CMake is being used to build WRF.
 
 - The 'compile_new' has a complimentary feature to pair with 'configure_new'.
   This feature is specifying an alternate build directory to use as a compile

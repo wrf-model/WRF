@@ -4,6 +4,7 @@ add_library(hydro_netcdf_layer STATIC
 )
 
 target_link_libraries(hydro_netcdf_layer
+        PUBLIC
         MPI::MPI_Fortran
         netCDF::netcdff
 )

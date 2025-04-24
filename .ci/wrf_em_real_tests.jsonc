@@ -77,7 +77,7 @@
         ".*testcase.*::global_env"     :
         [ 
           "-e", "DATA=/glade/work/aislas/github/data/wrf/regtest/Data/",
-          "-e", "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$NETCDF/lib"
+          "-e", "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$NETCDF/lib:$NETCDF/lib64"
         ],
         "global_modules" : [ "gcc", "netcdf" ],
         ".*mpi.*::mpi_module" : [ "cray-mpich" ]

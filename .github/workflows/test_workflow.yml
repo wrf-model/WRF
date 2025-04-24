@@ -46,6 +46,22 @@ on :
         required : false
         type     : number
         default  : 1
+    
+      event_name :
+        required : true
+        type     : string
+      event_number: 
+        required : true
+        type     : string
+      event_label: 
+        required : true
+        type     : string
+      ref        :
+        required : true
+        type     : string
+      sha        :
+        required : true
+        type     : string
       
 
 
@@ -57,12 +73,33 @@ jobs:
     name: Test ${{ inputs.name }} on ${{ inputs.host }}
     runs-on: ${{ inputs.host }}
     env :
-      LOG_SUFFIX : ${{ github.event_name == 'push' && 'master' || github.event.number }}
+      LOG_SUFFIX : ${{ inputs.event_name == 'push' && github.ref_name || inputs.event_number }}
     steps:
+    # Don't use gh checks as they are woefully underdeveloped as a feature leading
+    # to confusing UI and misplaced metrics
+    # https://github.com/orgs/community/discussions/24616
+    - name: Set pending status
+      id: check_run_start
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          github.rest.repos.createCommitStatus({
+            owner:      context.repo.owner,
+            repo:       context.repo.repo,
+            sha:        '${{ inputs.event_name == 'push' && github.sha || inputs.sha }}',
+            target_url: '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}',
+            description: '${{ inputs.name }}',
+            context:     '${{ inputs.host }}/${{ inputs.id }}',
+            state:      'pending'
+          })
+
     - uses: actions/checkout@v4
       with:
         path      : main
         submodules: true
+        ref: ${{ inputs.event_name == 'push' && github.ref || inputs.ref }}
+
     
     # Immediately copy out to # of tests to do
     - name: Create testing directories
@@ -90,7 +127,7 @@ jobs:
           -t   ${{ join( fromJson( inputs.tests ), ' ' ) }}  \
           -a "${{ inputs.account }}"                         \
           -p ${{ inputs.pool}} -tp ${{ inputs.tpool }}       \
-          -jn ${{ github.event_name == 'push' && github.ref_name || github.event.number }}-${{ inputs.id }} \
+          -jn ${{ inputs.event_name == 'push' && github.ref_name || inputs.event_number }}-${{ inputs.id }} \
           ${{ inputs.args }} $ALT_DIRS
 
 
@@ -105,16 +142,20 @@ jobs:
           masterlogLoc=main/.ci
         fi
         ./main/${{ inputs.hpc-workflows_path }}/.ci/reporter.py ${{ inputs.archive }}/$LOG_SUFFIX/${{ inputs.id }}/$masterlogLoc/${{ inputs.fileroot }}.log \
-                                             -e ./${{ inputs.hpc-workflows_path }}/.ci/runner.py                             \
-                                             -o GITHUB -m # only mark fail steps with gh syntax
+                                             -e ./${{ inputs.hpc-workflows_path }}/.ci/runner.py -p ./.ci \
+                                             -o GITHUB -m -n # only mark fail steps with gh syntax
+
+        echo "Relaying results to summary..."
         
         # report on them
-        echo "# Summary for ${{ join( fromJson( inputs.tests ), ' ' ) }}" >> $GITHUB_STEP_SUMMARY
+        echo "# Summary for ${{ inputs.name }}" >> $GITHUB_STEP_SUMMARY
         echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
         ./main/${{ inputs.hpc-workflows_path }}/.ci/reporter.py ${{ inputs.archive }}/$LOG_SUFFIX/${{ inputs.id }}/$masterlogLoc/${{ inputs.fileroot }}.log \
-                                             -e ./${{ inputs.hpc-workflows_path }}/.ci/runner.py                                               \
-                                             -s >> $GITHUB_STEP_SUMMARY
+                                             -e ./${{ inputs.hpc-workflows_path }}/.ci/runner.py -p ./.ci \
+                                             -s -n >> $GITHUB_STEP_SUMMARY
         echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        # We know this is a failure
+        exit 1
 
     - name: Clean up testing directories
       if : ${{ success() }}
@@ -133,21 +174,36 @@ jobs:
         # *documented* functionality doesn't work as expected. Wow, bravo
         # can't use ${{ env. }} as somehow this combination of matrix->reusable workflow->call step is too complex
         # and expands to nothing
-        name: ${{ github.event_name == 'push' && github.ref_name || github.event.number }}-${{ inputs.id }}_logfiles
-        path: ${{ inputs.archive }}/${{ github.event_name == 'push' && github.ref_name || github.event.number }}/${{ inputs.id }}/
+        name: ${{ inputs.event_name == 'push' && github.ref_name || inputs.event_number }}-${{ inputs.id }}_logfiles
+        path: ${{ inputs.archive }}/${{ inputs.event_name == 'push' && github.ref_name || inputs.event_number }}/${{ inputs.id }}/
+        include-hidden-files: true
 
-    # As noted in ci.yml, this will need to be moved to a separate workflow with pull_request_target
-    # and strictly controlled usage of the GH token
-    # - name : Remove '${{ inputs.label }}' label
-    #   if : ${{ !cancelled() && github.event.label.name == inputs.label }}
-    #   env:
-    #     PR_NUMBER: ${{ github.event.number }}
-    #   run: |
-    #     curl \
-    #       -X DELETE \
-    #       -H "Accept: application/vnd.github.v3+json" \
-    #       -H 'Authorization: token ${{ github.token }}' \
-    #       https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/labels/${{ inputs.label }}
+    - name: Set completed status
+      if: ${{ always() }}
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          github.rest.repos.createCommitStatus({
+            owner:        context.repo.owner,
+            repo:         context.repo.repo,
+            sha:          '${{ inputs.event_name == 'push' && github.sha || inputs.sha }}',
+            target_url:   '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}',
+            description:  '${{ inputs.name }}',
+            context:      '${{ inputs.host }}/${{ inputs.id }}',
+            state:        '${{ job.status == 'success' && 'success' || 'failure' }}'
+          })
+
+    - name : Remove '${{ inputs.label }}' label
+      if : ${{ !cancelled() && inputs.event_label == inputs.label }}
+      env:
+        PR_NUMBER: ${{ inputs.event_number }}
+      run: |
+        curl \
+          -X DELETE \
+          -H "Accept: application/vnd.github.v3+json" \
+          -H 'Authorization: token ${{ github.token }}' \
+          https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/labels/${{ inputs.label }}
     
 
 

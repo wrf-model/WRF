@@ -157,7 +157,7 @@
           // We parallelized the serial tests, now sync
           "testcase-serial0" : "afterok",
           "testcase-serial1" : "afterok",
-          "testcase-serial2" : "afterok",
+          // "testcase-serial2" : "afterok",
           "testcase-serial3" : "afterok"
         }
       },
@@ -183,7 +183,7 @@
       {
         "submit_options" : { "timelimit" : "00:25:00" },
         "command"      : ".ci/tests/runNamelists.sh",
-        "dependencies" : { "testcase-omp2" : "afterok" }
+        "dependencies" : { "testcase-omp1" : "afterok" }
       },
       "build-mpi" :
       {
@@ -212,7 +212,7 @@
       {
         "submit_options" : { "timelimit" : "00:20:00" },
         "command"      : ".ci/tests/runNamelists.sh",
-        "dependencies" : { "testcase-mpi2" : "afterok" }
+        "dependencies" : { "testcase-mpi1" : "afterok" }
       }
     }
   },
@@ -271,7 +271,9 @@
       {
         ".*testcase.*::args_namelist" : 
         [ 
-          "-n", "namelist.input.03,namelist.input.03DF",
+          // The following namelists require BUILD_RRTMG_FAST and BUILD_RRTMK
+          // namelist.input.03
+          "-n", "namelist.input.03DF",
           "-e", "NAMELIST_DIR=em_realA"
         ]
       }
@@ -409,7 +411,9 @@
       {
         ".*testcase.*::args_namelist" : 
         [ 
-          "-n", "namelist.input.38,namelist.input.48,namelist.input.49",
+          "-n", "namelist.input.38",
+          // The following namelists require BUILD_RRTMG_FAST and BUILD_RRTMK
+          // ,namelist.input.48,namelist.input.49",
           "-e", "NAMELIST_DIR=em_realD"
         ]
       }
@@ -540,52 +544,53 @@
       }
     }
   },
-  "em_realG" :
-  {
-    "submit_options" :
-    {
-      "arguments" :
-      {
-        ".*testcase.*::args_namelist" : 
-        [ 
-          "-n", "namelist.input.kiaps1NE,namelist.input.kiaps2",
-          "-e", "NAMELIST_DIR=em_realG"
-        ]
-      }
-    },
-    "steps" :
-    {
-      "build-serial" :
-      {
-        "command"      : ".ci/tests/build.sh"
-      },
-      "testcase-serial" :
-      {
-        "command"      : ".ci/tests/runNamelists.sh",
-        "dependencies" : { "build-serial" : "afterok" }
-      },
-      "build-omp" :
-      {
-        "command"      : ".ci/tests/build.sh",
-        "dependencies" : { "testcase-serial" : "afterok" }
-      },
-      "testcase-omp" :
-      {
-        "command"      : ".ci/tests/runNamelists.sh",
-        "dependencies" : { "build-omp" : "afterok" }
-      },
-      "build-mpi" :
-      {
-        "command"      : ".ci/tests/build.sh",
-        "dependencies" : { "testcase-omp" : "afterok" }
-      },
-      "testcase-mpi" :
-      {
-        "command"      : ".ci/tests/runNamelists.sh",
-        "dependencies" : { "build-mpi" : "afterok" }
-      }
-    }
-  },
+  // This requires BUILD_RRTMG_FAST and BUILD_RRTMK
+  // "em_realG" :
+  // {
+  //   "submit_options" :
+  //   {
+  //     "arguments" :
+  //     {
+  //       ".*testcase.*::args_namelist" : 
+  //       [ 
+  //         "-n", "namelist.input.kiaps1NE,namelist.input.kiaps2",
+  //         "-e", "NAMELIST_DIR=em_realG"
+  //       ]
+  //     }
+  //   },
+  //   "steps" :
+  //   {
+  //     "build-serial" :
+  //     {
+  //       "command"      : ".ci/tests/build.sh"
+  //     },
+  //     "testcase-serial" :
+  //     {
+  //       "command"      : ".ci/tests/runNamelists.sh",
+  //       "dependencies" : { "build-serial" : "afterok" }
+  //     },
+  //     "build-omp" :
+  //     {
+  //       "command"      : ".ci/tests/build.sh",
+  //       "dependencies" : { "testcase-serial" : "afterok" }
+  //     },
+  //     "testcase-omp" :
+  //     {
+  //       "command"      : ".ci/tests/runNamelists.sh",
+  //       "dependencies" : { "build-omp" : "afterok" }
+  //     },
+  //     "build-mpi" :
+  //     {
+  //       "command"      : ".ci/tests/build.sh",
+  //       "dependencies" : { "testcase-omp" : "afterok" }
+  //     },
+  //     "testcase-mpi" :
+  //     {
+  //       "command"      : ".ci/tests/runNamelists.sh",
+  //       "dependencies" : { "build-mpi" : "afterok" }
+  //     }
+  //   }
+  // },
   "em_realH" :
   {
     "submit_options" :

@@ -147,14 +147,15 @@ jobs:
             tests :
               - em_real
               - em_real8
-              - em_realA
+              - em_realA # partially implemented
               - em_realB
               - em_realC
-              - em_realD
+              - em_realD # partially implemented
               # This test intermittently fails
               # - em_realE
               - em_realF
-              - em_realG
+              # This test requires BUILD_RRTMG_FAST and BUILD_RRTMK
+              # - em_realG
               # Unstable and cannot get bitwise identical results
               # - em_realH
               # - em_realI

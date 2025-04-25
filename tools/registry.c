@@ -54,8 +54,6 @@ main( int argc, char *argv[], char *env[] )
                                      other data streams are written to file per process */
   sw_new_bdys              = 0 ;
   sw_unidir_shift_halo     = 0 ;
-  sw_chem                  = 0;
-  sw_kpp                   = 0;
 
   strcpy( fname_in , "" ) ;
 
@@ -129,12 +127,6 @@ main( int argc, char *argv[], char *env[] )
         fprintf(stderr,"Usage: %s [-DDEREF_KLUDGE] [-DDM_PARALLEL] [-DDISTRIB_IO_LAYER] [-DDM_SERIAL_IN_ONLY] [-DD3VAR_IRY_KLUDGE] registryfile\n",thisprog) ;
         exit(1) ;
       }
-      if (!strcmp(*argv,"-DWRF_CHEM")) {
-        sw_chem = 1 ;
-      }
-      if (!strcmp(*argv,"-DWRF_KPP")) {
-        sw_kpp = 1 ;
-      }
     }
     else  /* consider it an input file */
     {
@@ -152,8 +144,10 @@ main( int argc, char *argv[], char *env[] )
 //  possible IRR diagnostcis?
 //
   do_irr_diag = 0;
-  if( sw_chem == 1 ) {
-    if( sw_kpp == 1 ) do_irr_diag = 1; 
+  env_val = getenv( "WRF_CHEM" );
+  if( env_val != NULL && !strncmp( env_val, "1", 1 ) ) {
+    env_val = getenv( "WRF_KPP" );
+    if( env_val != NULL && !strncmp( env_val, "1", 1 ) ) do_irr_diag = 1; 
   }
   if( do_irr_diag ) {
     if( access( fname_in,F_OK ) ) {

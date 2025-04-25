@@ -2001,7 +2001,6 @@ endif
 #endif
 
 DEALLOCATE(z_at_q)
-DEALLOCATE(dz8w)
 
    IF (config_flags%p_lev_diags == PRESS_DIAGS ) THEN
     CALL wrf_debug ( 200 , ' PLD: pressure level diags' )

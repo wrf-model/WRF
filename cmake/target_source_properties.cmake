@@ -42,16 +42,12 @@ function( define_target_source_properties )
                     SOURCE
                     PROPERTY   ${PROPERTY}
                     # INHERITED # they will be "inherited" via target to source
-                    BRIEF_DOCS "Transitive property from target to file"
-                    FULL_DOCS  "This property can override an existing property derived from a target"
                     )
 
     define_property(
                     TARGET
                     PROPERTY   ${PROPERTY}
                     # INHERITED # they will be "inherited" via target to source
-                    BRIEF_DOCS "Transitive property from target to file"
-                    FULL_DOCS  "This property can be overridden on a per file basis"
                     )
   endforeach()
 endfunction()

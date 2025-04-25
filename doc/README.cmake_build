@@ -24,7 +24,7 @@ How to compile and run?
   be selectable via the interactive dialogs.
   
   Compared to previous version of `configure` this will look much more sparse
-  and the numbering will be changed to reflect what is available. For this 
+  and the numbering will be changed to reflect what is availble. For this 
   reason it will be best to talk about configuration with their description 
   or some other unique identifier from now on with this build methodology.
 
@@ -48,10 +48,10 @@ How to compile and run?
   place a configuration)
 
 
-- If successful, this will create either `real` or `ideal` and `wrf` executables
+- If sucessful, this will create either `real` or `ideal` and `wrf` executables
   in the install location's bin/ directory (for default location this will be 
   install/bin/) and the appropriate executables will be also copied into
-  the respective test directories under the same install directory as 
+  the respective test directoires under the same install directory as 
   <install location>/test/<case_name>. Likewise, for specific test cases that
   have additional or modified inputs, those input files are copied from the 
   respective source location test/<test case>
@@ -67,7 +67,7 @@ How to compile and run?
 
   ./ideal
 
-  to produce wrfinput_d01 file for WRF. Then type
+  to produce wrfinput_d01 file for wrf model. Then type
 
   ./wrf
 
@@ -113,7 +113,7 @@ Advanced Configuration
 
   The '-x' option allows the interactive dialogs to be suppressed, and 
   configuration will immediately proceed with whatever options have been set or 
-  passed in. This is meant to be used with the '--' delimiter option
+  passed in. This is meant to be used with the '--' delimeter option
 
   The '-d' option allows us to specify an alternative build/configuration 
   directory. As CMake best operates with out-of-source builds, our configuration
@@ -135,7 +135,7 @@ Advanced Configuration
   configuration is no longer desired. This also allows multiple installs of 
   different compilations to coexist from within the same source repo
 
-  The '--' option is meant to be a delimiter marking all subsequent input to be
+  The '--' option is meant to be a delimeter marking all subsequent input to be
   fed directly to the CMake command execution. In other words, after this marker
   anything that you place afterwards is as if you are directly passing in 
   command line options to `cmake`. This allows you to more effectively use the
@@ -152,37 +152,6 @@ Advanced Configuration
   WRF_CASE option. Note that the value used is the actual name of the value, not
   the numeric shorthand used during interactive dialog.
 
-  Note: When using the cmake `*_ROOT` package variables to control where certain
-        depenendencies are found, please refer to the top-level CMakeLists.txt 
-        (i.e. <your WRF dir>/CMakeLists.txt) for all instances of `find_package()`
-        for the latest accurate list of all possible values. The construction of the
-        respective `*_ROOT` variable for a package uses the name in the call to
-        `find_package( <PackageName> )` verbatim and *is case sensitive* resulting
-        in `<PackageName>_ROOT`.
-        
-        The current list of possible `*_ROOT` is as follows :
-          Dependecies always used :
-            * netCDF_ROOT
-            * netCDF-Fortran_ROOT
-            * ZLIB_ROOT
-          
-          Conditional depenendencies based on configuration:
-            * MPI_ROOT
-            * OpenMP_ROOT
-            * HDF5_ROOT
-            * Jasper_ROOT
-            * RPC_ROOT
-            * BISON_ROOT
-            * FLEX_ROOT
-          
-        One can make use of passing in `CMAKE_PREFIX_PATH` to provide a lower priority
-        general search location if multiple depenendencies reside in the same directory.
-        Please refer to https://cmake.org/cmake/help/v3.20/command/find_package.html
-        for further documentation on using `*_ROOT` variables or other control methods
-        of resolving depenendency locations. Note that the minimum required CMake version
-        for WRF is specified as v3.20, and so the package finding logic for WRF will
-        follow as closely as possible the behavior of find_package() in version v3.20,
-        even if a newer version of CMake is being used to build WRF.
 
 - The 'compile_new' has a complimentary feature to pair with 'configure_new'.
   This feature is specifying an alternate build directory to use as a compile
@@ -248,7 +217,7 @@ Advanced Configuration
     ./cleanCMake.sh -b -d _buildCustomDirectory
 
   One might think we would use the install directory when specifying the '-b'
-  option, but recall that the install location is embedded into the build 
+  option, but recall that the install location is embeded into the build 
   configuration and thus removing the installs that cmake did without entirely
   removing the install directory requires going to the build directory. This 
   can be extremely versatile when installing into common locations where other 

@@ -353,34 +353,27 @@
          present(b_v_bep) .and. present(b_t_bep) .and. present(b_q_bep) .and.  &
          present(b_e_bep) .and. present(dlg_bep) .and. present(dl_u_bep) .and. &
          present(sf_bep)  .and. present(vl_bep)  .and. present(frc_urb2d)) then
-
-         ! following v4.5 logic to fix access violation
-         if(flag_bep) then
-
-            do k = kts, kte
-               do i = its,ite
-                  a_u_hv(i,k)  = a_u_bep(i,k,j)
-                  a_v_hv(i,k)  = a_v_bep(i,k,j)
-                  a_t_hv(i,k)  = a_t_bep(i,k,j)
-                  a_q_hv(i,k)  = a_q_bep(i,k,j)
-                  a_e_hv(i,k)  = a_e_bep(i,k,j)
-                  b_u_hv(i,k)  = b_u_bep(i,k,j)
-                  b_v_hv(i,k)  = b_v_bep(i,k,j)
-                  b_t_hv(i,k)  = b_t_bep(i,k,j)
-                  b_q_hv(i,k)  = b_q_bep(i,k,j)
-                  b_e_hv(i,k)  = b_e_bep(i,k,j)
-                  dlg_hv(i,k)  = dlg_bep(i,k,j)
-                  dl_u_hv(i,k) = dl_u_bep(i,k,j)
-                  vlk_hv(i,k) = vl_bep(i,k,j)
-                  sfk_hv(i,k)  = sf_bep(i,k,j)
-               enddo
+         do k = kts, kte
+            do i = its,ite
+               a_u_hv(i,k)  = a_u_bep(i,k,j)
+               a_v_hv(i,k)  = a_v_bep(i,k,j)
+               a_t_hv(i,k)  = a_t_bep(i,k,j)
+               a_q_hv(i,k)  = a_q_bep(i,k,j)
+               a_e_hv(i,k)  = a_e_bep(i,k,j)
+               b_u_hv(i,k)  = b_u_bep(i,k,j)
+               b_v_hv(i,k)  = b_v_bep(i,k,j)
+               b_t_hv(i,k)  = b_t_bep(i,k,j)
+               b_q_hv(i,k)  = b_q_bep(i,k,j)
+               b_e_hv(i,k)  = b_e_bep(i,k,j)
+               dlg_hv(i,k)  = dlg_bep(i,k,j)
+               dl_u_hv(i,k) = dl_u_bep(i,k,j)
+               vlk_hv(i,k) = vl_bep(i,k,j)
+               sfk_hv(i,k)  = sf_bep(i,k,j)
             enddo
-            do i = its, ite
-               frcurb_hv(i) = frc_urb2d(i,j)
-            enddo
-
-         endif
-
+         enddo
+         do i = its, ite
+            frcurb_hv(i) = frc_urb2d(i,j)
+         enddo
       endif
 
       do i = its, ite

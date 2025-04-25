@@ -1,11 +1,11 @@
 cmake_minimum_required( VERSION 3.20 )
-
-project( WRF )
+cmake_policy( SET CMP0118 NEW )
 
 enable_language( C )
 enable_language( CXX )
 enable_language( Fortran )
 
+project( WRF )
 set( EXPORT_NAME ${PROJECT_NAME} )
 
 if ( DEFINED CMAKE_TOOLCHAIN_FILE )
@@ -13,11 +13,6 @@ if ( DEFINED CMAKE_TOOLCHAIN_FILE )
   # message( STATUS "Loading configuration file... : ${WRF_CONFIG}" )
   # include( ${WRF_CONFIG} )
 endif()
-
-# Import default flags now, get rid of any imported release flag
-# we will handle that ourselves with WRF_FCOPTIM/WRF_FCNOOPT
-set( CMAKE_Fortran_FLAGS_RELEASE "" CACHE STRING "" FORCE )
-set( CMAKE_C_FLAGS_RELEASE       "" CACHE STRING "" FORCE )
 
 # list( APPEND CMAKE_MODULE_PATH         )
 list( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/ ${PROJECT_SOURCE_DIR}/cmake/modules )
@@ -218,13 +213,6 @@ set( DWORDSIZE      8     )
 set( LWORDSIZE      4     )
 
 
-# To limit the KPP generation to not consume copious amounts of RAM
-if ( NOT DEFINED MAX_KPP_GEN_THREADS )
-  # 1 thread takes about 4.75 GB
-  set( MAX_KPP_GEN_THREADS 2 )
-endif()
-
-
 ########################
 
 ################################################################################
@@ -266,7 +254,6 @@ endif()
 
 if ( ${ENABLE_KPP} AND NOT ${ENABLE_CHEM} )
   message( WARNING "ENABLE_KPP requires ENABLE_CHEM but is not set, ignoring" )
-  set( ENABLE_KPP OFF CACHE BOOL "Force ignore by configuration" FORCE )
 endif()
 
 
@@ -325,29 +312,6 @@ if ( ${USE_IPO} )
     message( STATUS "IPO/LTO not supported, request ignored" )
     set( USE_IPO OFF CACHE BOOL "Required by configuration" FORCE )
   endif()
-endif()
-
-
-
-################################################################################
-##
-## Checkout external repositories using manage_externals
-##
-################################################################################
-message( STATUS "Checking out external repos via manage_externals" )
-set( LOG_FILE      ${CMAKE_CURRENT_BINARY_DIR}/checkout_externals.log )
-execute_process(
-                COMMAND
-                  ${PROJECT_SOURCE_DIR}/tools/manage_externals/checkout_externals --externals ${PROJECT_SOURCE_DIR}/arch/Externals.cfg
-                WORKING_DIRECTORY       ${PROJECT_SOURCE_DIR}
-                RESULT_VARIABLE         MANAGE_EXTERNALS_STATUS
-                OUTPUT_FILE             ${LOG_FILE}
-                ERROR_FILE              ${LOG_FILE}
-                )
-if ( ${MANAGE_EXTERNALS_STATUS} AND NOT ${MANAGE_EXTERNALS_STATUS} EQUAL 0 )
-  message( FATAL_ERROR "Failed to checkout external repos via manage_externals" )
-else()
-  message( STATUS "Finished checking out external repos via manage_externals" )
 endif()
 
 
@@ -413,20 +377,23 @@ if ( ${USE_MPI} )
   # Which may or may not get polluted by the environment
   # It still technically finds MPI but the output is nonintuitive
   # saying things like hdf5 or pthread
-
-  # Supply any language-specific flags for interrogation
-  if ( DEFINED WRF_MPI_Fortran_FLAGS AND NOT "${WRF_MPI_Fortran_FLAGS}" STREQUAL "" )
-    set( MPI_Fortran_COMPILER_FLAGS ${WRF_MPI_Fortran_FLAGS} )
-  endif()
-
-  if ( DEFINED WRF_MPI_C_FLAGS AND NOT "${WRF_MPI_C_FLAGS}" STREQUAL "" )
-    set( MPI_C_COMPILER_FLAGS ${WRF_MPI_C_FLAGS} )
-  endif()
   find_package( MPI REQUIRED COMPONENTS Fortran C )
   list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS
         USE_MPI=1
         DM_PARALLEL
         )
+
+  if ( DEFINED WRF_MPI_Fortran_FLAGS AND NOT "${WRF_MPI_Fortran_FLAGS}" STREQUAL "" )
+    list( APPEND PROJECT_COMPILE_OPTIONS_OPTIONS
+          $<$<COMPILE_LANGUAGE:Fortran>:${WRF_MPI_Fortran_FLAGS}>
+          )
+  endif()
+
+  if ( DEFINED WRF_MPI_C_FLAGS AND NOT "${WRF_MPI_C_FLAGS}" STREQUAL "" )
+    list( APPEND PROJECT_COMPILE_OPTIONS_OPTIONS
+          $<$<COMPILE_LANGUAGE:C>:${WRF_MPI_C_FLAGS}>
+          )
+  endif()
 
   # Check if MPI in all its glory has forced IPO down our throats due to hard-coding the wrapper flags
   # https://www.open-mpi.org/faq/?category=mpi-apps#why-no-rpath LOL!
@@ -503,19 +470,6 @@ endif()
 if ( ${ENABLE_CTSM} )
   # Will need our own finder
   # find_package( CTSM REQUIRED )
-endif()
-
-if ( ${ENABLE_KPP} )
-  find_package( BISON REQUIRED )
-  find_package( FLEX  REQUIRED )
-  if ( ${FLEX_FOUND} AND "${FLEX_LIBRARIES}" STREQUAL "FL_LIBRARY-NOTFOUND" )
-    message( FATAL_ERROR 
-              "Flex executable found, but libraries were not. Please provide a searchable path for both "
-              "\n"
-              "Refer to https://cmake.org/cmake/help/latest/command/find_package.html for more info "
-              "on providing a suitable path"
-              )
-  endif()
 endif()
 
 # Will need our own finder
@@ -724,13 +678,10 @@ list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS
 # Only define if set, this is to use #ifdef/#ifndef preprocessors
 # in code since cmake cannot handle basically any others :(
 # https://gitlab.kitware.com/cmake/cmake/-/issues/17398
-if ( ${USE_DOUBLE} )
-  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS DOUBLE_PRECISION )
-endif()
 if ( ${ENABLE_CHEM} )
-  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS WRF_CHEM )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS WRF_CHEM=1 )
   if ( ${ENABLE_KPP} )
-    list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS WRF_KPP )
+    list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS WRF_KPP=1 )
   endif()
 endif()
 if ( ${ENABLE_CHEM} )
@@ -963,16 +914,12 @@ add_subdirectory( share    )
 add_subdirectory( frame    )
 add_subdirectory( inc      )
 
-if ( ${ENABLE_CHEM} )
+if ( ${WRF_CHEM} )
   add_subdirectory( chem     )
 endif()
 
 if ( ${ENABLE_HYDRO} )
   add_subdirectory( hydro  )
-endif()
-
-if ( ${WRF_CORE} STREQUAL "PLUS" )
-  add_subdirectory( wrftladj )
 endif()
 
 add_subdirectory( dyn_em   )

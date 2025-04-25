@@ -6,7 +6,7 @@ thiscmd=$0
 
 FORTRAN_COMPILER_TIMER=""
 opt_level="-f"
-rword=4
+rword="-r4"
 print_usage=""
 chemistry=""
 wrf_core=""
@@ -22,7 +22,7 @@ while [ $# -ge 1 ]; do
       -help) print_usage="yes" ;;
       -os) shift ; WRF_OS=$1 ;;
       -mach) shift ; WRF_MACH=$1 ;;
-      -r8) rword=8 ;;
+      -r8) rword="-r8" ;;
       -time) shift ; FORTRAN_COMPILER_TIMER=$1 ;;
       chem) WRF_CHEM=1  ;;
       cmaq) WRF_CMAQ=1  ;;
@@ -529,7 +529,7 @@ if test -n "$wrf_core" ; then
    if [ "$wrf_core" = "DA_CORE" -o \
         "$wrf_core" = "4D_DA_CORE" -o \
         "$wrf_core" = "WRF_PLUS_CORE" ] ; then
-      rword=8
+      rword="-r8"
    fi
 fi
 
@@ -541,7 +541,7 @@ if test -n "$PERL" ; then
           -netcdf=$NETCDF -pnetcdf=$PNETCDF -netcdfpar=$NETCDFPAR -adios2=$ADIOS2 -hdf5=$HDF5 -phdf5=$PHDF5 -os=$os -mach=$mach -ldflags=$ldflags \
           -compileflags=$compileflags -opt_level=$opt_level -USENETCDFF=$USENETCDFF -USENETCDF=$USENETCDF \
           -time=$FORTRAN_COMPILER_TIMER -tfl="$TFL" -cfl="$CFL" -config_line="$config_line" \
-          -wrf_core=$wrf_core -gpfs=$GPFS_PATH -curl=$CURL_PATH -netcdf4_dep_lib="$NETCDF4_DEP_LIB" -rword="$rword"
+          -wrf_core=$wrf_core -gpfs=$GPFS_PATH -curl=$CURL_PATH -netcdf4_dep_lib="$NETCDF4_DEP_LIB"
      if test ! -f configure.wrf ; then
        echo "configure.wrf not created! Exiting configure script..."
        exit 1
@@ -556,10 +556,13 @@ if test -n "$PERL" ; then
      fi
 
      # GNU has a funny way of doing promotion to real*8
-     if [ $rword -eq 8 ] ; then
+     if [ "$rword" = "-r8" ] ; then
        srch=`grep -i "^SFC" configure.wrf | grep -i "gfortran"`
        if [ -n "$srch" ] ; then
-         sed -e '/^PROMOTION/s/#//' configure.wrf > configure.wrf.edit
+         sed -e '/^PROMOTION/s/#//' \
+          -e '/^RWORDSIZE/s/$(NATIVE_RWORDSIZE)/8/' configure.wrf > configure.wrf.edit
+       else
+         sed -e '/^RWORDSIZE/s/$(NATIVE_RWORDSIZE)/8/' configure.wrf > configure.wrf.edit
        fi
        /bin/mv configure.wrf.edit configure.wrf
        sed -e 's/-DBUILD_SBM_FAST=1/-DBUILD_SBM_FAST=0/' configure.wrf > configure.wrf.edit

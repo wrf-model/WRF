@@ -1529,12 +1529,12 @@ SUBROUTINE ext_int_read_field ( DataHandle , DateStr , VarName , Field , FieldTy
                                  locMemoryStart , locMemoryEnd ,                                    &
                                  locPatchStart , locPatchEnd )
         IF ( TRIM(locVarName) .EQ. TRIM(VarName) ) THEN
-          IF      ( FieldType .EQ. WRF_FLOAT ) THEN
+          IF      ( FieldType .EQ. WRF_REAL ) THEN
             CALL rfieldread( DataHandle, Field, MemoryStart, MemoryEnd, PatchStart, PatchEnd )
           ELSE IF ( FieldType .EQ. WRF_INTEGER ) THEN
             CALL ifieldread( DataHandle, Field, MemoryStart, MemoryEnd, PatchStart, PatchEnd )
           ELSE
-            CALL wrf_message('io_int.F90: ext_int_read_field: types other than WRF_FLOAT not supported yet')
+            CALL wrf_message('io_int.F90: ext_int_read_field: types other than WRF_REAL not supported yet')
             READ( unit=DataHandle )
           ENDIF
         ELSE
@@ -1602,7 +1602,7 @@ SUBROUTINE ext_int_write_field ( DataHandle , DateStr , VarName , Field , FieldT
 
   inttypesize = itypesize
   realtypesize = rtypesize
-  IF      ( FieldType .EQ. WRF_FLOAT .OR. FieldType .EQ. WRF_DOUBLE) THEN
+  IF      ( FieldType .EQ. WRF_REAL .OR. FieldType .EQ. WRF_DOUBLE) THEN
     typesize = rtypesize
   ELSE IF ( FieldType .EQ. WRF_DOUBLE ) THEN
     CALL wrf_error_fatal( 'io_int.F90: ext_int_write_field, WRF_DOUBLE not yet supported')
@@ -1621,7 +1621,7 @@ SUBROUTINE ext_int_write_field ( DataHandle , DateStr , VarName , Field , FieldT
                              MemoryStart , MemoryEnd ,                                    &
                              PatchStart , PatchEnd )
     WRITE( unit=DataHandle ) hdrbuf
-    IF      ( FieldType .EQ. WRF_FLOAT ) THEN
+    IF      ( FieldType .EQ. WRF_REAL ) THEN
       CALL rfieldwrite( DataHandle, Field, MemoryStart, MemoryEnd, PatchStart, PatchEnd )
     ELSE IF ( FieldType .EQ. WRF_INTEGER ) THEN
       CALL ifieldwrite( DataHandle, Field, MemoryStart, MemoryEnd, PatchStart, PatchEnd )

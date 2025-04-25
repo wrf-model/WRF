@@ -99,7 +99,7 @@ module da_control
    !hcl-note: should the top and interval be namelist options?
    integer, parameter :: interpolate_level = 2000
 
-#ifdef DOUBLE_PRECISION
+#if RWORDSIZE==8
    real, parameter :: da_zero = 0D0
 #else
    real, parameter :: da_zero = 0.0

@@ -231,7 +231,7 @@ gen_alloc1 ( char * dirname )
             "  tl = tl_in\n"
             "  inter_domain = inter_domain_in\n"
             "  okay_to_alloc = okay_to_alloc_in\n\n"
-            "#ifdef DOUBLE_PRECISION\n"
+            "#if ( RWORDSIZE == 8 )\n"
             "  initial_data_value = 0.\n"
             "#else\n"
             "  CALL get_initial_data_value ( initial_data_value )\n"

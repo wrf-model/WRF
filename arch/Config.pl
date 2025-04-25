@@ -25,7 +25,6 @@ $sw_ldflags="";
 $sw_compileflags=""; 
 $sw_opt_level=""; 
 $sw_rwordsize="\$\(NATIVE_RWORDSIZE\)";
-$sw_promotion="";
 $sw_rttov_flag = "" ;
 $sw_rttov_inc = "" ;
 $sw_rttov_path = "" ;
@@ -229,10 +228,6 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
   {
     $sw_config_line=substr( $ARGV[0], 13 ) ;
   }
-  if ( substr( $ARGV[0], 1, 6 ) eq "rword=" )
-  {
-    $sw_rwordsize=substr( $ARGV[0], 7 ) ;
-  }
   shift @ARGV ;
  }
 
@@ -321,10 +316,6 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
    }
 
  $sw_rwordsize = "8" if ( $sw_wrfplus_core eq "-DWRFPLUS=1" );
- if ( $sw_rwordsize eq "8" )
- {
-   $sw_promotion = "-DDOUBLE_PRECISION" ;
- }
 
 # A separately-installed ESMF library is required to build the ESMF 
 # implementation of WRF IOAPI in external/io_esmf.  This is needed 
@@ -643,7 +634,6 @@ while ( <CONFIGURE_DEFAULTS> )
     $_ =~ s/CONFIGURE_LDFLAGS/$sw_ldflags/g ;
     $_ =~ s/CONFIGURE_COMPILEFLAGS/$sw_compileflags/g ;
     $_ =~ s/CONFIGURE_RWORDSIZE/$sw_rwordsize/g ;
-    $_ =~ s/CONFIGURE_PROMOTION/$sw_promotion/g ;
     $_ =~ s/CONFIGURE_FC/$sw_time $sw_fc/g ;
     $_ =~ s/CONFIGURE_CC/$sw_cc/g ;
     $_ =~ s/CONFIGURE_COMMS_LIB/$sw_comms_lib/g ;

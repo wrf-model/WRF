@@ -18,4 +18,3 @@ add_library(hydro_utils STATIC
         module_version.F90
         module_hydro_stop.F90
 )
-target_link_libraries(hydro_utils PRIVATE MPI::MPI_Fortran)

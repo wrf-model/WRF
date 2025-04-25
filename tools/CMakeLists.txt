@@ -119,9 +119,6 @@ foreach( n RANGE 0 31 )
         )
 endforeach()
 
-# Make sure this exists at the top level - I'm avoiding using cache variables deliberately
-set( REGISTRY_FILE ${REGISTRY_FILE} PARENT_SCOPE )
-
 wrf_expand_definitions( 
                         RESULT_VAR  REGISTRY_DEFS
                         DEFINITIONS ${PROJECT_COMPILE_DEFINITIONS}
@@ -167,15 +164,6 @@ add_custom_target(
                     ${dealloc_source}
                     ${allocs_source}
                   )
-
-set_source_files_properties(
-                            ${CMAKE_BINARY_DIR}/frame/module_state_description.F
-                            ${dealloc_source}
-                            ${allocs_source}
-                            DIRECTORY ${PROJECT_SOURCE_DIR}
-                            PROPERTIES
-                              GENERATED TRUE
-                            )
 
 target_sources(
                 ${PROJECT_NAME}_Core

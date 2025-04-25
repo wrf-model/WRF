@@ -96,7 +96,7 @@ module gsi_kinds
 ! Default values
 ! **** CHANGE THE FOLLOWING TO CHANGE THE DEFAULT REAL TYPE KIND ***
 ! 1=single, 2=double, 3=quad
-#ifndef DOUBLE_PRECISION
+#if ( RWORDSIZE == 4 )
   integer, parameter, private :: default_real = 1
 #else
   integer, parameter, private :: default_real = 2

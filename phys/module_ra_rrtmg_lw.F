@@ -32,10 +32,10 @@
 
 #if 0
 ! Modified for WRF:
-#ifdef DOUBLE_PRECISION
+#if (RWORDSIZE == 8)
       integer, parameter :: kind_rb = selected_real_kind(12) ! 8 byte real
 #endif
-#ifndef DOUBLE_PRECISION
+#if (RWORDSIZE == 4)
       integer, parameter :: kind_rb = selected_real_kind(6)  ! 4 byte real
 #endif
 #else

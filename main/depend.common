@@ -663,13 +663,13 @@ module_bl_gfsedmf.o: \
 	module_gfs_physcons.o 
 
 
-module_bl_mynnedmf.o: \
-	module_bl_mynnedmf_common.o
+module_bl_mynn.o: \
+	module_bl_mynn_common.o 
 
 
-module_bl_mynnedmf_driver.o: \
-	module_bl_mynnedmf.o \
-	module_bl_mynnedmf_common.o
+module_bl_mynn_wrapper.o: \
+	module_bl_mynn.o \
+	module_bl_mynn_common.o 
 
 
 module_bl_gwdo.o: \
@@ -735,6 +735,7 @@ module_bl_camuwpbl_driver.o: \
 
 
 module_sf_mynn.o: \
+	module_bl_mynn.o \
 	../share/module_model_constants.o \
 	../frame/module_wrf_error.o 
 
@@ -968,14 +969,6 @@ module_mp_thompson.o: \
 	../frame/module_timing.o \
 	../frame/module_wrf_error.o \
 	module_mp_radar.o 
-
-
-module_mp_rcon.o: \
-	../frame/module_domain.o \
-	../share/module_model_constants.o \
-	../frame/module_timing.o \
-	../frame/module_wrf_error.o \
-	module_mp_radar.o
 
 
 module_mp_nssl_2mom.o: \
@@ -1307,8 +1300,8 @@ module_physics_init.o: \
 	module_bl_acm.o \
 	module_bl_myjpbl.o \
 	module_bl_qnsepbl.o \
-	module_bl_mynnedmf.o \
-	module_bl_mynnedmf_driver.o \
+	module_bl_mynn.o \
+	module_bl_mynn_wrapper.o \
 	module_bl_myjurb.o \
 	module_bl_boulac.o \
 	module_bl_camuwpbl_driver.o \
@@ -1342,7 +1335,6 @@ module_physics_init.o: \
 	module_fdda_spnudging.o \
 	module_fddaobs_rtfdda.o \
 	module_mp_thompson.o \
-	module_mp_rcon.o \
 	module_mp_gsfcgce.o \
 	module_mp_gsfcgce_4ice_nuwrf.o \
 	module_mp_morr_two_moment.o \
@@ -1389,7 +1381,6 @@ module_microphysics_driver.o: \
 	module_mp_wsm6r.o \
 	module_mp_fer_hires.o \
 	module_mp_thompson.o \
-	module_mp_rcon.o \
 	module_mp_gsfcgce.o \
 	module_mp_gsfcgce_4ice_nuwrf.o \
 	module_mp_morr_two_moment.o \
@@ -1485,8 +1476,8 @@ module_pbl_driver.o: \
 	module_bl_camuwpbl_driver.o \
 	module_bl_gfs.o \
 	module_bl_gfsedmf.o \
-	module_bl_mynnedmf.o \
-	module_bl_mynnedmf_driver.o \
+	module_bl_mynn.o \
+	module_bl_mynn_wrapper.o \
 	module_bl_fogdes.o \
 	module_bl_gwdo.o \
 	module_bl_gwdo_gsl.o \
@@ -2789,7 +2780,8 @@ module_bl_mfshconvpbl.o: \
 	../share/module_model_constants.o 
 
 
-module_bl_mynnedmf_common.o: \
+module_bl_mynn_common.o: \
+	module_gfs_machine.o \
 	../share/module_model_constants.o \
 	ccpp_kind_types.o
 

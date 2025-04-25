@@ -19,7 +19,6 @@ osAndArchAlt  = re.compile( r"^ARCH[ ]+(\w+)[ ]+(\w+)",         re.I )
 referenceVar  = re.compile( r"[$]([(])?(\w+)(?(1)[)])", re.I )
 compileObject = re.compile( r"(\W|^)-c(\W|$)" )
 configureRepl = re.compile( r"(\W|^)CONFIGURE_\w+(\W|$)" )
-defineRepl    = re.compile( r"-D([^ ]+)" )
 
 class Stanza():
   
@@ -141,7 +140,7 @@ class Stanza():
       fieldValue = self.kvPairs_[ field ]
 
       self.kvPairs_[field] = fieldValue.partition(" ")[0]
-      self.kvPairs_[field + "_FLAGS"] = fieldValue.partition(" ")[2]
+      self.kvPairs_[field + "_FLAGS"] = fieldValue.partition(" ")[1]
 
   ######################################################################################################################
   ##
@@ -165,7 +164,6 @@ class Stanza():
     for keyToSan in self.kvPairs_.keys() :
       self.kvPairs_[ keyToSan ] = configureRepl.sub( r"\1\2", self.kvPairs_[ keyToSan ] ).strip()
       self.kvPairs_[ keyToSan ] = compileObject.sub( r"\1\2", self.kvPairs_[ keyToSan ] ).strip()
-      self.kvPairs_[ keyToSan ] =    defineRepl.sub( r"\1",   self.kvPairs_[ keyToSan ] ).strip()
 
 
     # Now fix certain ones that are mixing programs with flags all mashed into one option
@@ -181,26 +179,6 @@ class Stanza():
       self.dereference( key )
       # And for final measure strip
       self.kvPairs_[ key ] = self.kvPairs_[ key ].strip()
-
-    # Finally, further sanitize MPI compilers, we don't need to specify underlying
-    # compiler since CMake already does that
-    filters = [
-                self.kvPairs_[ "SFC" ],
-                self.kvPairs_[ "SCC" ],
-                "-compiler"
-                ]
-    keysToSanitize = [ "DM_FC_FLAGS", "DM_CC_FLAGS" ]
-
-    for keyToSan in keysToSanitize :
-      if self.kvPairs_[ keyToSan ] :
-        allFlags = self.kvPairs_[ keyToSan ].split( " " )
-        newFlags = []
-        for flag in allFlags :
-          if not any( [ f in flag for f in filters ] ) :
-            newFlags.append( flag )
-
-        # We always need this field updated
-        self.kvPairs_[ keyToSan ] = " ".join( newFlags )
 
   def serialCompilersAvailable( self ) :
     return which( self.kvPairs_["SFC"]   ) is not None and which( self.kvPairs_["SCC"]   ) is not None

@@ -178,8 +178,7 @@ SUBROUTINE solve_em_ad ( grid , config_flags  &
    LOGICAL :: leapfrog
    INTEGER :: l,kte,kk
    LOGICAL :: f_flux  ! flag for computing averaged fluxes in cu_gd
-   REAL    :: curr_secs, curr_secs2, curr_mins2
-   REAL(8) :: curr_secs_r8, curr_secs2_r8
+   REAL    :: curr_secs
    INTEGER :: num_sound_steps
    INTEGER :: idex, jdex
    REAL    :: max_msft
@@ -192,9 +191,8 @@ SUBROUTINE solve_em_ad ( grid , config_flags  &
 ! urban related variables
    INTEGER :: NUM_ROOF_LAYERS, NUM_WALL_LAYERS, NUM_ROAD_LAYERS   ! urban
 
-   TYPE(WRFU_TimeInterval)                    :: tmpTimeInterval, tmpTimeInterval2
+   TYPE(WRFU_TimeInterval)                    :: tmpTimeInterval
    REAL                                       :: real_time
-   REAL(8)                                    :: real_time_r8
    LOGICAL                                    :: adapt_step_flag
    LOGICAL                                    :: fill_w_flag
 
@@ -301,12 +299,7 @@ SUBROUTINE solve_em_ad ( grid , config_flags  &
   !   calculate it here--but, this is not clean!!
   !
    tmpTimeInterval = domain_get_current_time ( grid ) - domain_get_sim_start_time ( grid )
-   tmpTimeInterval2 = domain_get_current_time ( grid ) - domain_get_start_time ( grid )
    curr_secs = real_time(tmpTimeInterval)
-   curr_secs2 = real_time(tmpTimeInterval2)
-   curr_secs_r8  = real_time_r8(tmpTimeInterval)
-   curr_secs2_r8 = real_time_r8(tmpTimeInterval2)
-   curr_mins2 = REAL( curr_secs2_r8 / 60.0d0 )
 
    old_dt = grid%dt   ! store old time step for flux averaging code at end of RK loop
 !-----------------------------------------------------------------------------
@@ -679,7 +672,7 @@ BENCH_END(set_phys_bc_tim)
                              , ph_tendf, mu_tendf               &
                              , tke_tend                         &
                              , config_flags%use_adaptive_time_step &
-                             , curr_secs, curr_mins2            &
+                             , curr_secs                        &
                              , psim , psih , gz1oz0             &
                              , chklowq                          &
                              , cu_act_flag , hol , th_phy       &
@@ -3840,7 +3833,7 @@ BENCH_START(micro_driver_tim)
       &        ,DGNUM4D=grid%dgnum4d,DGNUMWET4D=grid%dgnumwet4d           &
 !======================
 #endif
-      &        ,XLAND=grid%xland,SNOWH=grid%SNOW,XICE=grid%XICE           &
+      &        ,XLAND=grid%xland,SNOWH=grid%SNOW                          &
       &        ,SPECIFIED=specified_bdy, CHANNEL_SWITCH=channel_bdy       &
       &        ,F_RAIN_PHY=grid%f_rain_phy                                &
       &        ,F_RIMEF_PHY=grid%f_rimef_phy                              &

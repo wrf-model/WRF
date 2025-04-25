@@ -1308,11 +1308,10 @@ include 'netcdf.inc'
 !-----------------------------------------------------------------------------
 !     set solar distance factor
 !-----------------------------------------------------------------------------
-         ! osipov fix the bug. Always calc the distance. Testing for 0 results in True on 1 Jan, keeps the sfact=0 and shutsdown the photolysis for entire day
-         !if( curjulday /= julday ) then
-         curjulday = julday
-         call sundis( curjulday, esfact )
-         !endif
+         if( curjulday /= julday ) then
+            curjulday = julday
+            call sundis( curjulday, esfact )
+         endif
 
       end subroutine ftuv_timestep_init
 

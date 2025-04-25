@@ -1,23 +1,3 @@
-!  Program Name:
-!  Author(s)/Contact(s):
-!  Abstract:
-!  History Log:
-!
-!  Usage:
-!  Parameters: <Specify typical arguments passed>
-!  Input Files:
-!        <list file names and briefly describe the data they include>
-!  Output Files:
-!        <list file names and briefly describe the information they include>
-!
-!  Condition codes:
-!        <list exit condition or error codes returned >
-!        If appropriate, descriptive troubleshooting instructions or
-!        likely causes for failures could be mentioned here with the
-!        appropriate error code
-!
-!  User controllable options: <if applicable>
-
 !   This is used as a coupler with the WRF model.
 MODULE MODULE_mpp_GWBUCKET
 
@@ -57,7 +37,7 @@ MODULE MODULE_mpp_GWBUCKET
 
      if(my_id .ne. IO_id) then
           tag = 66
-          call mpi_send(numbasns,1,MPI_INTEGER, IO_id,     &
+          call MPI_Send(numbasns,1,MPI_INTEGER, IO_id,     &
                 tag,HYDRO_COMM_WORLD,ierr)
      else
           do i = 0, numprocs - 1
@@ -65,7 +45,7 @@ MODULE MODULE_mpp_GWBUCKET
                  sizeInd(i+1) = numbasns
               else
                  tag = 66
-                 call mpi_recv(rcv,1,&
+                 call MPI_Recv(rcv,1,&
                      MPI_INTEGER,i,tag,HYDRO_COMM_WORLD,mpp_status,ierr)
 
                  sizeInd(i+1) = rcv
@@ -101,10 +81,10 @@ MODULE MODULE_mpp_GWBUCKET
      if(my_id .ne. IO_id) then
         if(numbasns .gt. 0) then
           tag = 62
-          call mpi_send(inV,numbasns,MPI_REAL, IO_id,     &
+          call MPI_Send(inV,numbasns,MPI_REAL, IO_id,     &
                 tag,HYDRO_COMM_WORLD,ierr)
           tag2 = 63
-          call mpi_send(ind,numbasns,MPI_INTEGER8, IO_id,     &
+          call MPI_Send(ind,numbasns,MPI_INTEGER8, IO_id,     &
                 tag2,HYDRO_COMM_WORLD,ierr)
         endif
       else
@@ -117,10 +97,10 @@ MODULE MODULE_mpp_GWBUCKET
             if(i .ne. IO_id) then
                if(sizeInd(i+1) .gt. 0) then
                   tag = 62
-                  call mpi_recv(vbuff(1:sizeInd(i+1)),sizeInd(i+1),&
+                  call MPI_Recv(vbuff(1:sizeInd(i+1)),sizeInd(i+1),&
                       MPI_REAL,i,tag,HYDRO_COMM_WORLD,mpp_status,ierr)
                   tag2 = 63
-                  call mpi_recv(ibuff(1:sizeInd(i+1)),sizeInd(i+1),&
+                  call MPI_Recv(ibuff(1:sizeInd(i+1)),sizeInd(i+1),&
                       MPI_INTEGER8,i,tag2,HYDRO_COMM_WORLD,mpp_status,ierr)
                   do k = 1, sizeInd(i+1)
                      outV(ibuff(k)) = vbuff(k)
@@ -159,10 +139,10 @@ MODULE MODULE_mpp_GWBUCKET
       if(my_id .ne. IO_id) then
          if(numbasns .gt. 0) then
            tag = 62
-           call mpi_send(inV,numbasns,MPI_INTEGER8, IO_id,     &
+           call MPI_Send(inV,numbasns,MPI_INTEGER8, IO_id,     &
                  tag,HYDRO_COMM_WORLD,ierr)
            tag2 = 63
-           call mpi_send(ind,numbasns,MPI_INTEGER8, IO_id,     &
+           call MPI_Send(ind,numbasns,MPI_INTEGER8, IO_id,     &
                  tag2,HYDRO_COMM_WORLD,ierr)
          endif
        else
@@ -175,10 +155,10 @@ MODULE MODULE_mpp_GWBUCKET
              if(i .ne. IO_id) then
                 if(sizeInd(i+1) .gt. 0) then
                    tag = 62
-                   call mpi_recv(vbuff(1:sizeInd(i+1)),sizeInd(i+1),&
+                   call MPI_Recv(vbuff(1:sizeInd(i+1)),sizeInd(i+1),&
                        MPI_INTEGER8,i,tag,HYDRO_COMM_WORLD,mpp_status,ierr)
                    tag2 = 63
-                   call mpi_recv(ibuff(1:sizeInd(i+1)),sizeInd(i+1),&
+                   call MPI_Recv(ibuff(1:sizeInd(i+1)),sizeInd(i+1),&
                        MPI_INTEGER8,i,tag2,HYDRO_COMM_WORLD,mpp_status,ierr)
                    do k = 1, sizeInd(i+1)
                       outV(ibuff(k)) = vbuff(k)

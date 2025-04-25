@@ -1129,6 +1129,9 @@
        (config_flags%real_data_init_type == 3)) then
       if ( .not. offline_varbc ) &
       call da_update_firstguess(input_grid)
+   ! output analysis increments
+      call da_write_anaincrements (grid, config_flags)
+
 #ifdef VAR4D
       !if (var4d) call da_med_initialdata_output_lbc (head_grid , config_flags)
       if ( var4d_lbc ) then

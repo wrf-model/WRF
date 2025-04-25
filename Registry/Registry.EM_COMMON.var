@@ -347,6 +347,20 @@ state    real  QFX              ij      misc        1         -      irh      "Q
 state    real  REGIME           ij      misc        1         -      irh      "REGIME"  "FLAGS: 1=Night/Stable, 2=Mechanical Turbulent, 3=Forced Conv, 4=Free Conv" ""
 state integer  KPBL             ij      misc        1         -      irh      "KPBL"                  "LEVEL OF PBL TOP"                             ""
 
+# Increment Output
+state    real   u_iau        ijk     dyn_em      1         X     ih5       "U_IAU"    "x-wind component inc"           "m s-1"
+state    real   v_iau        ijk     dyn_em      1         Y     ih5       "V_IAU"    "y-wind component inc"           "m s-1"
+state    real   t_iau        ijk     dyn_em      1         -     ih5       "T_IAU"    "potential temp inc"             "K"
+state    real   w_iau        ijk     dyn_em      1         -     ih5       "W_IAU"    "z-wind component inc"           "m s-1"
+state    real   qv_iau       ijk     dyn_em      1         -     ih5       "QV_IAU"   "water water mixing ratio inc"   "kg kg-1"
+state    real   qc_iau       ijk     dyn_em      1         -     ih5       "QC_IAU"   "cloud water mixing ratio inc"   "kg kg-1"
+state    real   qr_iau       ijk     dyn_em      1         -     ih5       "QR_IAU"   "rain water mixing ratio inc"    "kg kg-1"
+state    real   qi_iau       ijk     dyn_em      1         -     ih5       "QI_IAU"   "ice water mixing ratio inc"     "kg kg-1"
+state    real   qs_iau       ijk     dyn_em      1         -     ih5       "QS_IAU"   "snow water mixing ratio inc"    "kg kg-1"
+state    real   qg_iau       ijk     dyn_em      1         -     ih5       "QG_IAU"   "graupel mixing ratio inc"       "kg kg-1"
+state    real   ph_iau       ijk     dyn_em      1         -     ih5       "PH_IAU"   "perturbation geopotential inc"  "m2 s-2"
+state    real   mu_iau        ij     dyn_em      1         -     ih5       "MU_IAU"   "dry air mass inc"     "pa"
+
 #
 #---------------------------------------------------------------------------------------------------------------------------------------
 #                                               

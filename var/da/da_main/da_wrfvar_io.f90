@@ -6,6 +6,7 @@ module da_wrfvar_io
    use module_domain, only : domain, get_ijk_from_grid
    use module_io_domain, only : open_r_dataset,close_dataset, &
       input_input, open_w_dataset,output_input, &
+      output_auxhist5, &
       input_boundary, output_boundary, output_auxhist4, &
       input_auxhist6, input_auxhist4
    use module_io, only: wrf_get_dom_ti_integer
@@ -30,5 +31,6 @@ contains
 #include "da_med_initialdata_output.inc"
 #include "da_med_initialdata_output_lbc.inc"
 #include "da_update_firstguess.inc"
+#include "da_write_anaincrements.inc"
 
 end module da_wrfvar_io

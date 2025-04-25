@@ -11,7 +11,7 @@ MODULE a_module_big_step_utilities_em
    kfetascheme, mskfscheme, g3scheme, p_qv, param_first_scalar, p_qr, p_qc, DFI_FWD
    USE module_configure, ONLY : grid_config_rec_type
    USE module_wrf_error
-#if (RWORDSIZE == 4)
+#ifndef DOUBLE_PRECISION
 #   define VPOWX vspowx
 #   define VPOW  vspow
 #else

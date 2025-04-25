@@ -1,23 +1,3 @@
-!  Program Name:
-!  Author(s)/Contact(s):
-!  Abstract:
-!  History Log:
-!
-!  Usage:
-!  Parameters: <Specify typical arguments passed>
-!  Input Files:
-!        <list file names and briefly describe the data they include>
-!  Output Files:
-!        <list file names and briefly describe the information they include>
-!
-!  Condition codes:
-!        <list exit condition or error codes returned >
-!        If appropriate, descriptive troubleshooting instructions or
-!        likely causes for failures could be mentioned here with the
-!        appropriate error code
-!
-!  User controllable options: <if applicable>
-
 !------------------------------------------------------------------------------
 ! Benjamin Fersch  2d groundwater model
 !------------------------------------------------------------------------------
@@ -103,7 +83,6 @@ module module_gw_gw2d
 
           end do
 
-   return
    end subroutine gw2d_ini
 
    subroutine gw2d_allocate(did, ix, jx, nsoil)
@@ -822,12 +801,12 @@ deallocate(hh)
 
 #ifdef MPP_LAND
 
-call mpi_reduce(delcur, mpiDelcur, 1, MPI_REAL, MPI_SUM, 0, HYDRO_COMM_WORLD, ierr)
-call MPI_COMM_SIZE( HYDRO_COMM_WORLD, mpiSize, ierr )
+call MPI_Reduce(delcur, mpiDelcur, 1, MPI_REAL, MPI_SUM, 0, HYDRO_COMM_WORLD, ierr)
+call MPI_Comm_size( HYDRO_COMM_WORLD, mpiSize, ierr )
 
 if(my_id .eq. IO_id) delcur = mpiDelcur/mpiSize
 
-call mpi_bcast(delcur, 1, mpi_real, 0, HYDRO_COMM_WORLD, ierr)
+call MPI_Bcast(delcur, 1, MPI_REAL, 0, HYDRO_COMM_WORLD, ierr)
 
 #endif
 
@@ -907,10 +886,10 @@ if(my_id .eq. IO_id)  write(6,*) "Iteration", iter, "of", itermax, "error:", del
 #ifdef HYDRO_D
 #ifdef MPP_LAND
 
-      call MPI_REDUCE(dtot,gdtot,1, MPI_REAL, MPI_SUM, IO_id, HYDRO_COMM_WORLD, ierr)
-      call MPI_REDUCE(dtoa,gdtoa,1, MPI_REAL, MPI_SUM, IO_id, HYDRO_COMM_WORLD, ierr)
-      call MPI_REDUCE(eocn,geocn,1, MPI_REAL, MPI_SUM, IO_id, HYDRO_COMM_WORLD, ierr)
-      call MPI_REDUCE(ebot,gebot,1, MPI_REAL, MPI_SUM, IO_id, HYDRO_COMM_WORLD, ierr)
+      call MPI_Reduce(dtot,gdtot,1, MPI_REAL, MPI_SUM, IO_id, HYDRO_COMM_WORLD, ierr)
+      call MPI_Reduce(dtoa,gdtoa,1, MPI_REAL, MPI_SUM, IO_id, HYDRO_COMM_WORLD, ierr)
+      call MPI_Reduce(eocn,geocn,1, MPI_REAL, MPI_SUM, IO_id, HYDRO_COMM_WORLD, ierr)
+      call MPI_Reduce(ebot,gebot,1, MPI_REAL, MPI_SUM, IO_id, HYDRO_COMM_WORLD, ierr)
 
       if(my_id .eq. IO_id) then
         write (*,900)                         &
@@ -931,7 +910,6 @@ if(my_id .eq. IO_id)  write(6,*) "Iteration", iter, "of", itermax, "error:", del
 !         /3x,4f9.4,2(9x),e14.4)
         /3x,5(e14.4))
 
-      return
       end subroutine gwstep
 
 
@@ -950,7 +928,6 @@ if(my_id .eq. IO_id)  write(6,*) "Iteration", iter, "of", itermax, "error:", del
          IB = IB + INCB
    10 CONTINUE
 !
-      RETURN
       END SUBROUTINE SCOPY
 
 
@@ -1262,11 +1239,11 @@ end subroutine aggregateQsgw
 ! ! Send (ZSPS,j)th equations.
 ! ! Receive (ZSPS+1,j)th equations.
 
- call mpi_cart_shift(cartGridComm, rowshift, 1, source, dest, ierr)
- call MPI_ISEND(zntmp, cnt, MPI_REAL, dest, ZN_REC, cartGridComm, sendReq, ierr)
- call MPI_IRECV(   zn, cnt, MPI_REAL, dest, ZN_REC, cartGridComm, recvReq, ierr)
- call mpi_wait(sendReq, mpp_status, ierr)
- call mpi_wait(recvReq, mpp_status, ierr)
+ call MPI_Cart_shift(cartGridComm, rowshift, 1, source, dest, ierr)
+ call MPI_Isend(zntmp, cnt, MPI_REAL, dest, ZN_REC, cartGridComm, sendReq, ierr)
+ call MPI_Irecv(   zn, cnt, MPI_REAL, dest, ZN_REC, cartGridComm, recvReq, ierr)
+ call MPI_Wait(sendReq, mpp_status, ierr)
+ call MPI_Wait(recvReq, mpp_status, ierr)
 
 #ifdef TIMING
         tf = click()
@@ -1294,9 +1271,9 @@ end subroutine aggregateQsgw
 #endif
 ! ! Receive (0,j)th equations.
 
- call mpi_cart_shift(cartGridComm, rowshift, -1, source, dest, ierr)
- call MPI_IRECV(   zn, cnt, MPI_REAL, dest, ZN_REC, cartGridComm, recvReq, ierr)
- call mpi_wait(recvReq, mpp_status, ierr)
+ call MPI_Cart_shift(cartGridComm, rowshift, -1, source, dest, ierr)
+ call MPI_Irecv(   zn, cnt, MPI_REAL, dest, ZN_REC, cartGridComm, recvReq, ierr)
+ call MPI_Wait(recvReq, mpp_status, ierr)
 
 #ifdef TIMING
         tf = click()
@@ -1328,11 +1305,11 @@ end subroutine aggregateQsgw
 ! ! Send (ZSPS,j)th equations.
 ! ! Receive (ZSPS+1,j)th equations.
 
- call mpi_cart_shift(cartGridComm, rowshift, 1, source, dest, ierr)
- call MPI_ISEND(zntmp, cnt, MPI_REAL, dest, ZN_REC, cartGridComm, sendReq, ierr)
- call MPI_IRECV(   zn, cnt, MPI_REAL, dest, ZN_REC, cartGridComm, recvReq, ierr)
- call mpi_wait(sendReq, mpp_status, ierr)
- call mpi_wait(recvReq, mpp_status, ierr)
+ call MPI_Cart_shift(cartGridComm, rowshift, 1, source, dest, ierr)
+ call MPI_Isend(zntmp, cnt, MPI_REAL, dest, ZN_REC, cartGridComm, sendReq, ierr)
+ call MPI_Irecv(   zn, cnt, MPI_REAL, dest, ZN_REC, cartGridComm, recvReq, ierr)
+ call MPI_Wait(sendReq, mpp_status, ierr)
+ call MPI_Wait(recvReq, mpp_status, ierr)
 #ifdef TIMING
         tf = click()
         call add_dt(ct,tf,ti,dt)
@@ -1362,8 +1339,8 @@ end subroutine aggregateQsgw
         call add_dt(ct,tf,ti,dt)
 #endif
 
- call mpi_cart_shift(cartGridComm, rowshift, -1, source, dest, ierr)
- call MPI_ISEND(zntmp, cnt, MPI_REAL, dest, ZN_REC, cartGridComm, sendReq, ierr)
+ call MPI_Cart_shift(cartGridComm, rowshift, -1, source, dest, ierr)
+ call MPI_Isend(zntmp, cnt, MPI_REAL, dest, ZN_REC, cartGridComm, sendReq, ierr)
 
         do 60 j = 1, XSPS
 ! Backward elimination in (0,j)th equations.
@@ -1375,7 +1352,7 @@ end subroutine aggregateQsgw
    70   continue
    60   continue
 
- call mpi_wait(sendReq, mpp_status, ierr)
+ call MPI_Wait(sendReq, mpp_status, ierr)
 
 
       else if (z_pid .lt. ZDNS) then
@@ -1385,9 +1362,9 @@ end subroutine aggregateQsgw
 #endif
 ! ! Receive (ZSPS+1,j)th equations.
 
- call mpi_cart_shift(cartGridComm, rowshift, 1, source, dest, ierr)
- call MPI_IRECV(   zn, cnt, MPI_REAL, dest, ZN_REC, cartGridComm, recvReq, ierr)
- call mpi_wait(recvReq, mpp_status, ierr)
+ call MPI_Cart_shift(cartGridComm, rowshift, 1, source, dest, ierr)
+ call MPI_Irecv(   zn, cnt, MPI_REAL, dest, ZN_REC, cartGridComm, recvReq, ierr)
+ call MPI_Wait(recvReq, mpp_status, ierr)
 
 #ifdef TIMING
         tf = click()
@@ -1420,11 +1397,11 @@ end subroutine aggregateQsgw
 ! ! Send (1,j)th equations.
 ! ! Receive (0,j)th equations.
 
- call mpi_cart_shift(cartGridComm, rowshift, -1, source, dest, ierr)
- call MPI_ISEND(zntmp, cnt, MPI_REAL, dest, ZN_REC, cartGridComm, sendReq, ierr)
- call MPI_IRECV(   zn, cnt, MPI_REAL, dest, ZN_REC, cartGridComm, recvReq, ierr)
- call mpi_wait(sendReq, mpp_status, ierr)
- call mpi_wait(recvReq, mpp_status, ierr)
+ call MPI_Cart_shift(cartGridComm, rowshift, -1, source, dest, ierr)
+ call MPI_Isend(zntmp, cnt, MPI_REAL, dest, ZN_REC, cartGridComm, sendReq, ierr)
+ call MPI_Irecv(   zn, cnt, MPI_REAL, dest, ZN_REC, cartGridComm, recvReq, ierr)
+ call MPI_Wait(sendReq, mpp_status, ierr)
+ call MPI_Wait(recvReq, mpp_status, ierr)
 
 #ifdef TIMING
         tf = click()
@@ -1450,8 +1427,8 @@ end subroutine aggregateQsgw
 #endif
 ! ! Send (ZSPS,j)th equations.
 
- call mpi_cart_shift(cartGridComm, rowshift, 1, source, dest, ierr)
- call MPI_ISEND(zntmp, cnt, MPI_REAL, dest, ZN_REC, cartGridComm, sendReq, ierr)
+ call MPI_Cart_shift(cartGridComm, rowshift, 1, source, dest, ierr)
+ call MPI_Isend(zntmp, cnt, MPI_REAL, dest, ZN_REC, cartGridComm, sendReq, ierr)
 
 #ifdef TIMING
         tf = click()
@@ -1468,7 +1445,7 @@ end subroutine aggregateQsgw
   110   continue
   100   continue
 
- call mpi_wait(sendReq, mpp_status, ierr)
+ call MPI_Wait(sendReq, mpp_status, ierr)
 
       else
 
@@ -1484,11 +1461,11 @@ end subroutine aggregateQsgw
 ! ! Send (1,j)th equations.
 ! ! Receive (0,j)th equations.
 
- call mpi_cart_shift(cartGridComm, rowshift, -1, source, dest, ierr)
- call MPI_ISEND(zntmp, cnt, MPI_REAL, dest, ZN_REC, cartGridComm, sendReq, ierr)
- call MPI_IRECV(   zn, cnt, MPI_REAL, dest, ZN_REC, cartGridComm, recvReq, ierr)
- call mpi_wait(sendReq, mpp_status, ierr)
- call mpi_wait(recvReq, mpp_status, ierr)
+ call MPI_Cart_shift(cartGridComm, rowshift, -1, source, dest, ierr)
+ call MPI_Isend(zntmp, cnt, MPI_REAL, dest, ZN_REC, cartGridComm, sendReq, ierr)
+ call MPI_Irecv(   zn, cnt, MPI_REAL, dest, ZN_REC, cartGridComm, recvReq, ierr)
+ call MPI_Wait(sendReq, mpp_status, ierr)
+ call MPI_Wait(recvReq, mpp_status, ierr)
 
 #ifdef TIMING
         tf = click()
@@ -1510,7 +1487,6 @@ end subroutine aggregateQsgw
 
       endif
 
-      return
       end subroutine
 
 
@@ -1574,11 +1550,11 @@ end subroutine aggregateQsgw
 ! ! Send (i,XSPS)th equations.
 ! ! Receive (i,(XSPS + 1))th equations.
 
- call mpi_cart_shift(cartGridComm, colshift, 1, source, dest, ierr)
- call MPI_ISEND(xntmp, cnt, MPI_REAL, dest, XN_REC, cartGridComm, sendReq, ierr)
- call MPI_IRECV(   xn, cnt, MPI_REAL, dest, XN_REC, cartGridComm, recvReq, ierr)
- call mpi_wait(sendReq, mpp_status, ierr)
- call mpi_wait(recvReq, mpp_status, ierr)
+ call MPI_Cart_shift(cartGridComm, colshift, 1, source, dest, ierr)
+ call MPI_Isend(xntmp, cnt, MPI_REAL, dest, XN_REC, cartGridComm, sendReq, ierr)
+ call MPI_Irecv(   xn, cnt, MPI_REAL, dest, XN_REC, cartGridComm, recvReq, ierr)
+ call MPI_Wait(sendReq, mpp_status, ierr)
+ call MPI_Wait(recvReq, mpp_status, ierr)
 
 #ifdef TIMING
         tf = click()
@@ -1609,9 +1585,9 @@ end subroutine aggregateQsgw
 #endif
 ! ! Receive (i,0)th equations.
 
- call mpi_cart_shift(cartGridComm, colshift, -1, source, dest, ierr)
- call MPI_IRECV(   xn, cnt, MPI_REAL, dest, XN_REC, cartGridComm, recvReq, ierr)
- call mpi_wait(recvReq, mpp_status, ierr)
+ call MPI_Cart_shift(cartGridComm, colshift, -1, source, dest, ierr)
+ call MPI_Irecv(   xn, cnt, MPI_REAL, dest, XN_REC, cartGridComm, recvReq, ierr)
+ call MPI_Wait(recvReq, mpp_status, ierr)
 
 #ifdef TIMING
         tf = click()
@@ -1642,11 +1618,11 @@ end subroutine aggregateQsgw
 ! ! Send (i,XSPS)th equations.
 ! ! Receive (i,(XSPS + 1))th equations.
 
- call mpi_cart_shift(cartGridComm, colshift, 1, source, dest, ierr)
- call MPI_ISEND(xntmp, cnt, MPI_REAL, dest, XN_REC, cartGridComm, sendReq, ierr)
- call MPI_IRECV(   xn, cnt, MPI_REAL, dest, XN_REC, cartGridComm, recvReq, ierr)
- call mpi_wait(sendReq, mpp_status, ierr)
- call mpi_wait(recvReq, mpp_status, ierr)
+ call MPI_Cart_shift(cartGridComm, colshift, 1, source, dest, ierr)
+ call MPI_Isend(xntmp, cnt, MPI_REAL, dest, XN_REC, cartGridComm, sendReq, ierr)
+ call MPI_Irecv(   xn, cnt, MPI_REAL, dest, XN_REC, cartGridComm, recvReq, ierr)
+ call MPI_Wait(sendReq, mpp_status, ierr)
+ call MPI_Wait(recvReq, mpp_status, ierr)
 #ifdef TIMING
         tf = click()
         call add_dt(ct,tf,ti,dt)
@@ -1675,8 +1651,8 @@ end subroutine aggregateQsgw
         tf = click()
         call add_dt(ct,tf,ti,dt)
 #endif
- call mpi_cart_shift(cartGridComm, colshift, -1, source, dest, ierr)
- call MPI_ISEND(xntmp, cnt, MPI_REAL, dest, XN_REC, cartGridComm, sendReq, ierr)
+ call MPI_Cart_shift(cartGridComm, colshift, -1, source, dest, ierr)
+ call MPI_Isend(xntmp, cnt, MPI_REAL, dest, XN_REC, cartGridComm, sendReq, ierr)
 
         do 60 i = 1, ZSPS
 ! Backward elimination in (i,0)th equations.
@@ -1690,7 +1666,7 @@ end subroutine aggregateQsgw
           r(i,j) = r(i,j) - b(i,j)*r(i,XSPS) - c(i,j)*r(i,1)
    70   continue
 
- call mpi_wait(sendReq, mpp_status, ierr)
+ call MPI_Wait(sendReq, mpp_status, ierr)
 
       else if (x_pid .lt. XDNS) then
 
@@ -1700,9 +1676,9 @@ end subroutine aggregateQsgw
 #endif
 ! ! Receive (i,XSPS+1)th equations.
 
- call mpi_cart_shift(cartGridComm, colshift, 1, source, dest, ierr)
- call MPI_IRECV(   xn, cnt, MPI_REAL, dest, XN_REC, cartGridComm, recvReq, ierr)
- call mpi_wait(recvReq, mpp_status, ierr)
+ call MPI_Cart_shift(cartGridComm, colshift, 1, source, dest, ierr)
+ call MPI_Irecv(   xn, cnt, MPI_REAL, dest, XN_REC, cartGridComm, recvReq, ierr)
+ call MPI_Wait(recvReq, mpp_status, ierr)
 
 #ifdef TIMING
         tf = click()
@@ -1732,11 +1708,11 @@ end subroutine aggregateQsgw
 #endif
 ! ! Send (i,1)th equations.
 ! ! Receive (i,0)th equations.
- call mpi_cart_shift(cartGridComm, colshift, -1, source, dest, ierr)
- call MPI_ISEND(xntmp, cnt, MPI_REAL, dest, XN_REC, cartGridComm, sendReq, ierr)
- call MPI_IRECV(   xn, cnt, MPI_REAL, dest, XN_REC, cartGridComm, recvReq, ierr)
- call mpi_wait(sendReq, mpp_status, ierr)
- call mpi_wait(recvReq, mpp_status, ierr)
+ call MPI_Cart_shift(cartGridComm, colshift, -1, source, dest, ierr)
+ call MPI_Isend(xntmp, cnt, MPI_REAL, dest, XN_REC, cartGridComm, sendReq, ierr)
+ call MPI_Irecv(   xn, cnt, MPI_REAL, dest, XN_REC, cartGridComm, recvReq, ierr)
+ call MPI_Wait(sendReq, mpp_status, ierr)
+ call MPI_Wait(recvReq, mpp_status, ierr)
 
 #ifdef TIMING
         tf = click()
@@ -1762,8 +1738,8 @@ end subroutine aggregateQsgw
 #endif
 ! ! Send (i,XSPS)th equations.
 
- call mpi_cart_shift(cartGridComm, colshift, 1, source, dest, ierr)
- call MPI_ISEND(xntmp, cnt, MPI_REAL, dest, XN_REC, cartGridComm, sendReq, ierr)
+ call MPI_Cart_shift(cartGridComm, colshift, 1, source, dest, ierr)
+ call MPI_Isend(xntmp, cnt, MPI_REAL, dest, XN_REC, cartGridComm, sendReq, ierr)
 #ifdef TIMING
         tf = click()
         call add_dt(ct,tf,ti,dt)
@@ -1781,7 +1757,7 @@ end subroutine aggregateQsgw
           r(i,j) = r(i,j) - c(i,j)*r(i,1) - b(i,j)*r(i,XSPS)
   110   continue
 
- call mpi_wait(sendReq, mpp_status, ierr)
+ call MPI_Wait(sendReq, mpp_status, ierr)
 
       else
 
@@ -1798,11 +1774,11 @@ end subroutine aggregateQsgw
 ! ! Send (i,1)th equations.
 ! ! Receive (i,0)th equations.
 
- call mpi_cart_shift(cartGridComm, colshift, -1, source, dest, ierr)
- call MPI_ISEND(xntmp, cnt, MPI_REAL, dest, XN_REC, cartGridComm, sendReq, ierr)
- call MPI_IRECV(   xn, cnt, MPI_REAL, dest, XN_REC, cartGridComm, recvReq, ierr)
- call mpi_wait(sendReq, mpp_status, ierr)
- call mpi_wait(recvReq, mpp_status, ierr)
+ call MPI_Cart_shift(cartGridComm, colshift, -1, source, dest, ierr)
+ call MPI_Isend(xntmp, cnt, MPI_REAL, dest, XN_REC, cartGridComm, sendReq, ierr)
+ call MPI_Irecv(   xn, cnt, MPI_REAL, dest, XN_REC, cartGridComm, recvReq, ierr)
+ call MPI_Wait(sendReq, mpp_status, ierr)
+ call MPI_Wait(recvReq, mpp_status, ierr)
 
 #ifdef TIMING
         tf = click()
@@ -1825,7 +1801,6 @@ end subroutine aggregateQsgw
 
       endif
 
-      return
       end subroutine
 
 
@@ -2056,7 +2031,6 @@ end subroutine aggregateQsgw
 !       stop
       endif
 
-      return
       end subroutine
 #endif
 
@@ -2150,7 +2124,6 @@ end subroutine aggregateQsgw
 !       stop
       endif
 
-      return
       end  subroutine
 
 

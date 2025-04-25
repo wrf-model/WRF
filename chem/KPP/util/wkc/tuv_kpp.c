@@ -31,6 +31,7 @@ int main( int argc, char *argv[], char *env[] ) {
   char squezzed[NAMELEN];
   char *wrf_jname, *cwrk, *tuv_jspec, *token;
   char *tuv_jname;
+  char openMode[1] = "a";
   FILE * fp_in, *fp_set, *fp_def;
   wrf_node *Wrf_node;
   wrf_node *Wrf_HEAD;
@@ -46,22 +47,27 @@ int main( int argc, char *argv[], char *env[] ) {
   argv++;
   strcpy( mech,*argv );
 
+  argv++;
+  strcpy( dir,*argv );
+
   fprintf(stderr,"tuv_kpp: Argument = %s\n",mech);
 // open and write inc files
+  strcpy( fname_inc, dir );
+  strcat( fname_inc, "tuv2wrf_jvals.inc" );
 
-  if( !strcmp(mech,"LAST") )
-    strcpy(fname_inc,"../../inc/tuv2wrf_jvals.inc");
-  else
-    strcpy(fname_inc,"../../../../inc/tuv2wrf_jvals.inc");
-  if( (fp_set = fopen( fname_inc,"a" )) == NULL ) {
+  if( !strcmp(mech,"FIRST") ) {
+    strcpy( openMode, "w" );
+  }
+
+  if( (fp_set = fopen( fname_inc, openMode )) == NULL ) {
     fprintf(stderr,"Can not open %s\n",fname_inc );
     return(-1);
   }
-  if( !strcmp(mech,"LAST") )
-    strcpy(fname_inc,"../../inc/tuvdef_jvals.inc");
-  else
-    strcpy(fname_inc,"../../../../inc/tuvdef_jvals.inc");
-  if( (fp_def = fopen( fname_inc,"a" )) == NULL ) {
+
+  strcpy( fname_inc, dir );
+  strcat( fname_inc, "tuvdef_jvals.inc" );
+
+  if( (fp_def = fopen( fname_inc, openMode )) == NULL ) {
     fprintf(stderr,"Can not open %s\n",fname_inc );
     return(-1);
   }

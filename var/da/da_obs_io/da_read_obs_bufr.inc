@@ -542,7 +542,7 @@ bufrfile:  do ibufr=1,numbufr
       end if
       if ( obs(7,1) < r8bfms ) then
          pwq=nint(qms(7,1))
-#if ( RWORDSIZE == 4 )
+#ifndef DOUBLE_PRECISION
          pwe = min(DBLE(err_pw), oes(7,1))
 #else
          pwe = min(err_pw, oes(7,1))
@@ -604,7 +604,7 @@ bufrfile:  do ibufr=1,numbufr
          !Not currently used
          !cat=nint(obs(8,k))
 
-#if ( RWORDSIZE == 4 )
+#ifndef DOUBLE_PRECISION
          toe = min(DBLE(err_t), oes(3,k))
          woe = min(DBLE(err_uv), oes(5,k))
          qoe = min(DBLE(err_q), oes(2,k)*10.0)  ! convert to % from PREPBUFR percent divided by 10
@@ -686,7 +686,7 @@ bufrfile:  do ibufr=1,numbufr
 
       ! assign u,v,t,q obs errors for synop and metar
       if ( t29 == 512 .or. t29 == 511 .or. t29 == 514 ) then
-#if ( RWORDSIZE == 4 )
+#ifndef DOUBLE_PRECISION
          toe = min(DBLE(err_t), oes(3,1))
          woe = min(DBLE(err_uv), oes(5,1))
          qoe = min(DBLE(err_q), oes(2,1)*10.0)  ! convert to % from PREPBUFR percent divided by 10

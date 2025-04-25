@@ -1,4 +1,4 @@
-#if ( RWORDSIZE == 4 )
+#ifndef DOUBLE_PRECISION
 #  define VREC vsrec
 #  define VSQRT vssqrt
 #else

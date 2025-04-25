@@ -5,3 +5,4 @@ add_library(hydro_data_rec STATIC
         module_RT_data.F90
         module_namelist.F90
 )
+target_link_libraries( hydro_data_rec PRIVATE hydro_mpp )

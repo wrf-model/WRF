@@ -152,6 +152,37 @@ Advanced Configuration
   WRF_CASE option. Note that the value used is the actual name of the value, not
   the numeric shorthand used during interactive dialog.
 
+  Note: When using the cmake `*_ROOT` package variables to control where certain
+        depenendencies are found, please refer to the top-level CMakeLists.txt 
+        (i.e. <your WRF dir>/CMakeLists.txt) for all instances of `find_package()`
+        for the latest accurate list of all possible values. The construction of the
+        respective `*_ROOT` variable for a package uses the name in the call to
+        `find_package( <PackageName> )` verbatim and *is case sensitive* resulting
+        in `<PackageName>_ROOT`.
+        
+        The current list of possible `*_ROOT` is as follows :
+          Dependecies always used :
+            * netCDF_ROOT
+            * netCDF-Fortran_ROOT
+            * ZLIB_ROOT
+          
+          Conditional depenendencies based on configuration:
+            * MPI_ROOT
+            * OpenMP_ROOT
+            * HDF5_ROOT
+            * Jasper_ROOT
+            * RPC_ROOT
+            * BISON_ROOT
+            * FLEX_ROOT
+          
+        One can make use of passing in `CMAKE_PREFIX_PATH` to provide a lower priority
+        general search location if multiple depenendencies reside in the same directory.
+        Please refer to https://cmake.org/cmake/help/v3.20/command/find_package.html
+        for further documentation on using `*_ROOT` variables or other control methods
+        of resolving depenendency locations. Note that the minimum required CMake version
+        for WRF is specified as v3.20, and so the package finding logic for WRF will
+        follow as closely as possible the behavior of find_package() in version v3.20,
+        even if a newer version of CMake is being used to build WRF.
 
 - The 'compile_new' has a complimentary feature to pair with 'configure_new'.
   This feature is specifying an alternate build directory to use as a compile

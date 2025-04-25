@@ -2,7 +2,7 @@
 !wrf:MODEL_LAYER:DYNAMICS
 !
 
-#ifndef DOUBLE_PRECISION
+#if (RWORDSIZE == 4)
 # define VPOWX vspowx
 # define VPOW  vspow
 #else

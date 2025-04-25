@@ -640,7 +640,6 @@ int GET_LANDUSE (        float *adx,
     }
   }
   tsCloseTileSet();
-  return 0;
 }
 
 int GET_TERRAIN (        float *adx,

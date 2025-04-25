@@ -1687,7 +1687,7 @@ MODULE rrtmg_aero_optical_util_module
 
      SUCCESS = .TRUE.      
 
-#ifdef DOUBLE_PRECISION
+#if ( RWORDSIZE == 8 )
      II = c_set(0.0, 1.0)
 #else
      II = c_set(0.0D0, 1.0D0)
@@ -1733,13 +1733,13 @@ MODULE rrtmg_aero_optical_util_module
      xi0y   = c_sub(psi0y, c_mul(chi0y, II))
      xi1y   = c_sub(psi1y, c_mul(chi1y, II))
 
-#ifdef DOUBLE_PRECISION
+#if ( RWORDSIZE == 8 )
      chi0y2 = c_mul(-1.0, c_SIN(y2))
 #else
      chi0y2 = c_mul(-1.0d0, c_SIN(y2))
 #endif
      chi1y2 = c_COS(y2)
-#ifdef DOUBLE_PRECISION
+#if ( RWORDSIZE == 8 )
      chi0x2 = c_mul(-1.0, c_SIN(x2))
 #else
      chi0x2 = c_mul(-1.0d0, c_SIN(x2))
@@ -1748,7 +1748,7 @@ MODULE rrtmg_aero_optical_util_module
      qsca   = 0.0d0
      qext   = 0.0d0
      GSCA   = 0.0d0
-#ifdef DOUBLE_PRECISION
+#if ( RWORDSIZE == 8 )
      xback  = c_set(0.0, 0.0)
 #else
      xback  = c_set(0.0d0, 0.0d0)
@@ -1806,7 +1806,7 @@ MODULE rrtmg_aero_optical_util_module
               (c_ABS(amess3) .LE. del*c_ABS(d1y2)) .AND.                          &
               (c_ABS(amess4) .LE. del)                ) THEN
 !             convergence for inner sphere        
-#ifdef DOUBLE_PRECISION
+#if ( RWORDSIZE == 8 )
               brack = c_set(0.0,0.0)
               crack = c_set(0.0,0.0)
 #else

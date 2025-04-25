@@ -1004,7 +1004,6 @@ CHARACTER(LEN=8) :: name
          (config_flags%ra_sw_physics .eq. goddardswscheme ) ) .and. &
         (config_flags%mp_physics  .eq. THOMPSON .or.        &
          config_flags%mp_physics  .eq. THOMPSONAERO .or.    &
-         config_flags%mp_physics  .eq. RCON_MP_SCHEME .or.  &
          (config_flags%mp_physics .eq. NSSL_2MOM .and. config_flags%nssl_2moment_on == 1) .or. &
          config_flags%mp_physics  .eq. WSM3SCHEME .or.      &
          config_flags%mp_physics  .eq. WSM5SCHEME .or.      &
@@ -1038,7 +1037,6 @@ CHARACTER(LEN=8) :: name
 
    IF ( config_flags%swint_opt .eq. 2 ) THEN
       IF ((   config_flags%mp_physics == THOMPSON .OR.        &
-	      config_flags%mp_physics == RCON_MP_SCHEME .OR.  &
               config_flags%mp_physics == THOMPSONAERO .OR.    &
               config_flags%mp_physics == WSM3SCHEME .OR.    &
               config_flags%mp_physics == WSM5SCHEME .OR.    &
@@ -2662,7 +2660,7 @@ CHARACTER(LEN=8) :: name
    USE module_bl_mfshconvpbl
    USE module_bl_gbmpbl
 #if ( EM_CORE == 1 )
-   USE module_bl_mynnedmf_driver
+   USE module_bl_mynn_wrapper
    USE module_bl_eeps
    USE module_bl_temf
 #if ( WRFPLUS == 1 )
@@ -3842,7 +3840,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
            IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
             ( 'module_physics_init: use ysu (option1), myj (option 2), or boulac (option 8) with BEP/BEM urban scheme' )
 
-                CALL mynnedmf_init(                          &
+                CALL mynnedmf_wrapper_init(                  &
                 &RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN, &
                 &RQIBLTEN,QKE,                               &
                 &restart,allowed_to_read,                    &
@@ -4381,7 +4379,6 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                       ims, ime, jms, jme, kms, kme,               &
                       its, ite, jts, jte, kts, kte                )
 !------------------------------------------------------------------
-   USE module_mp_rcon
    USE module_mp_wsm3
    USE module_mp_wsm5
    USE mp_wsm6
@@ -4404,7 +4401,6 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    USE module_mp_wdm5
    USE module_mp_wdm6
    USE module_mp_wdm7
-   USE module_mp_udm
 #if (WRFPLUS != 1) & !defined( VAR4D )
    USE module_mp_nssl_2mom, only: nssl_2mom_init
 #endif
@@ -4541,23 +4537,6 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                           IMS=ims, IME=ime, JMS=jms, JME=jme, KMS=kms, KME=kme,   &
                           ITS=its, ITE=ite, JTS=jts, JTE=jte, KTS=kts, KTE=kte)
 
-     CASE (RCON_MP_SCHEME)
-         IF(start_of_simulation.or.restart.or.config_flags%cycling)     &
-            CALL rcon_init(HGT=z_at_q,                              &
-                          ORHO=inv_dens,                                &
-                          NWFA2D=qnwfa2d, NBCA2D=qnbca2d,               &
-                          NWFA=scalar(ims,kms,jms,P_QNWFA),             &
-                          NIFA=scalar(ims,kms,jms,P_QNIFA),             &
-                          NBCA=scalar(ims,kms,jms,P_QNBCA),             &
-                          wif_input_opt=config_flags%wif_input_opt,     &
-                          FRC_URB2D=frc_urb2d,                          &
-                          DX=DX, DY=DY,                                 &
-                          is_start=start_of_simulation,                 &
-                          IDS=ids, IDE=ide, JDS=jds, JDE=jde, KDS=kds, KDE=kde,   &
-                          IMS=ims, IME=ime, JMS=jms, JME=jme, KMS=kms, KME=kme,   &
-                          ITS=its, ITE=ite, JTS=jts, JTE=jte, KTS=kts, KTE=kte)
-
-
      CASE (THOMPSONGH)
 ! Cycling the WRF forecast with moving nests will cause this initialization to be
 ! called for each nest move. This is potentially very computationally expensive.
@@ -4605,11 +4584,6 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                         config_flags%hail_opt, allowed_to_read )
      CASE (WDM7SCHEME)
           CALL wdm7init(rhoair0,rhowater,rhosnow,cliq,cpv,ccn_conc, allowed_to_read )
-     CASE (UDMSCHEME)
-          CALL udminit(rhoair0,rhowater,rhosnow,cliq,cpv,ccn_conc, allowed_to_read )
-          call udm_funct_shape_setup
-          call udm_funct_svp_setup
-          call udm_funct_lb2017_setup
 #if (EM_CORE==1)
      CASE (NTU)
           CALL ntu_init(PHB,PH,P,PB,inv_dens,QV,QDCN,QTCN,QCCN,QRCN,   &
@@ -4670,12 +4644,11 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
             ccn_conc = config_flags%nssl_cccn/1.225 ! set this to have correct boundary conditions
          ENDIF
          CALL nssl_2mom_init(nssl_params=nssl_params,ipctmp=nssl_ipconc,mixphase=0, &
-           nssl_density_on=(config_flags%nssl_density_on > 0),                      &
-           nssl_hail_on=config_flags%nssl_hail_on > 0,                              &
-           nssl_ccn_on=( config_flags%nssl_ccn_on > 0 ),                            &
-           nssl_icdx=config_flags%nssl_icdx,                                        &
-           nssl_icdxhl=config_flags%nssl_icdxhl,                                    &
-           ccn_is_ccna=config_flags%nssl_ccn_is_ccna)
+           nssl_density_on=(config_flags%nssl_density_on > 0), &
+           nssl_hail_on=config_flags%nssl_hail_on > 0, &
+           nssl_ccn_on=(config_flags%nssl_ccn_on > 0), &
+           nssl_icdx=config_flags%nssl_icdx, &
+           nssl_icdxhl=config_flags%nssl_icdxhl,ccn_is_ccna=config_flags%nssl_ccn_is_ccna)
 #endif
 #if (EM_CORE==1)
      CASE (CAMMGMPSCHEME) ! CAM5's microphysics

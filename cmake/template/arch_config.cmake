@@ -15,10 +15,10 @@ set( CMAKE_Fortran_FLAGS_INIT    "{SFC_FLAGS} {FCBASEOPTS} {BYTESWAPIO}" )
 set( CMAKE_C_FLAGS_INIT          "{SCC_FLAGS} {CFLAGS_LOCAL}" )
 
 # https://cmake.org/cmake/help/latest/variable/CMAKE_LANG_FLAGS_CONFIG_INIT.html
-set( CMAKE_Fortran_FLAGS_DEBUG_INIT    "{FCDEBUG}" )
-set( CMAKE_Fortran_FLAGS_RELEASE_INIT  "" )
-set( CMAKE_C_FLAGS_DEBUG_INIT          "" )
-set( CMAKE_C_FLAGS_RELEASE_INIT        "" )
+set( CMAKE_Fortran_FLAGS_Debug_INIT    "{FCDEBUG}" )
+set( CMAKE_Fortran_FLAGS_Release_INIT  "" )
+set( CMAKE_C_FLAGS_Debug_INIT    "" )
+set( CMAKE_C_FLAGS_Release_INIT  "" )
 
 # Project specifics now
 set( WRF_MPI_Fortran_FLAGS  "{DM_FC_FLAGS}"   )

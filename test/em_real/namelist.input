@@ -30,10 +30,8 @@
  max_dom                             = 2,
  e_we                                = 150,    220,
  e_sn                                = 130,    214,
- e_vert                              = 48,     48,
- dzbot                               = 30.
- dzstretch_s                         = 1.11
- dzstretch_u                         = 1.10
+ e_vert                              = 45,     45,
+ dzstretch_s                         = 1.1
  p_top_requested                     = 5000,
  num_metgrid_levels                  = 34,
  num_metgrid_soil_levels             = 4,

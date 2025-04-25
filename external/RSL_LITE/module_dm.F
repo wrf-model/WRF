@@ -78,7 +78,7 @@ MODULE module_dm
 #endif
 
    INTERFACE wrf_dm_maxval
-#ifdef DOUBLE_PRECISION
+#if ( defined(PROMOTE_FLOAT) || ( RWORDSIZE == DWORDSIZE ) )
      MODULE PROCEDURE wrf_dm_maxval_real , wrf_dm_maxval_integer
 #else
      MODULE PROCEDURE wrf_dm_maxval_real , wrf_dm_maxval_integer, wrf_dm_maxval_doubleprecision
@@ -86,7 +86,7 @@ MODULE module_dm
    END INTERFACE
 
    INTERFACE wrf_dm_minval                       ! gopal's doing
-#ifdef DOUBLE_PRECISION
+#if ( defined(PROMOTE_FLOAT) || ( RWORDSIZE == DWORDSIZE ) )
      MODULE PROCEDURE wrf_dm_minval_real , wrf_dm_minval_integer
 #else
      MODULE PROCEDURE wrf_dm_minval_real , wrf_dm_minval_integer, wrf_dm_minval_doubleprecision
@@ -1458,7 +1458,7 @@ LOGICAL FUNCTION wrf_dm_land_logical ( inval )
 # endif
     END SUBROUTINE wrf_dm_minval_real
 
-#ifndef DOUBLE_PRECISION
+#ifndef PROMOTE_FLOAT
    SUBROUTINE wrf_dm_maxval_doubleprecision ( val, idex, jdex )
 # ifndef STUBMPI
       IMPLICIT NONE

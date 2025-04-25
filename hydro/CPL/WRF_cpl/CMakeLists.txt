@@ -14,8 +14,6 @@ add_dependencies(hydro_wrf_cpl
         MPI::MPI_Fortran
 )
 
-target_link_libraries( hydro_wrf_cpl PRIVATE hydro_driver )
-
 target_include_directories(hydro_wrf_cpl
         PRIVATE
         $<TARGET_PROPERTY:${PROJECT_NAME}_Core,Fortran_MODULE_DIRECTORY>

@@ -1,3 +1,23 @@
+!  Program Name:
+!  Author(s)/Contact(s):
+!  Abstract:
+!  History Log:
+!
+!  Usage:
+!  Parameters: <Specify typical arguments passed>
+!  Input Files:
+!        <list file names and briefly describe the data they include>
+!  Output Files:
+!        <list file names and briefly describe the information they include>
+!
+!  Condition codes:
+!        <list exit condition or error codes returned >
+!        If appropriate, descriptive troubleshooting instructions or
+!        likely causes for failures could be mentioned here with the
+!        appropriate error code
+!
+!  User controllable options: <if applicable>
+
 MODULE module_Routing
 #ifdef MPP_LAND
    use module_gw_baseflow, only: pix_ct_1
@@ -559,7 +579,7 @@ subroutine getChanDim(did)
       rt_domain(did)%GNLINKSL = 1
       rt_domain(did)%NLINKSL = 1
    endif
-   if(nlst(did)%UDMP_OPT .eq. 1 .or. nlst(did)%channel_option .eq. 1 .or. nlst(did)%channel_option .eq. 2) &
+   if(nlst(did)%UDMP_OPT .eq. 1) &
         call read_NSIMLAKES(rt_domain(did)%NLAKES,nlst(did)%route_lake_f)
 
    call rt_allocate(did,rt_domain(did)%ix,rt_domain(did)%jx,&
@@ -567,7 +587,7 @@ subroutine getChanDim(did)
 
    return
 
-  endif
+endif
 
 
 allocate(CH_NETLNK(ixrt,jxrt))
@@ -588,11 +608,6 @@ if (nlst(did)%CHANRTSWCRT.eq.1 .or. nlst(did)%CHANRTSWCRT .eq. 2) then  !IF/then
 #ifndef MPP_LAND
    call get_NLINKSL(rt_domain(did)%NLINKSL, nlst(did)%channel_option, nlst(did)%route_link_f)
 #endif
-
-if (nlst(did)%lake_option == 0) then
-   write(6,*) "Lakes have been disabled -- NLAKES will be set to zero."
-   rt_domain(did)%nlakes = 0
-end if
 
 #ifdef HYDRO_D
    write(6,*) "before rt_allocate after READ_ROUTEDIM"
@@ -620,7 +635,7 @@ end if
 
 endif
 
-if(nlst(did)%UDMP_OPT .eq. 1 .or. nlst(did)%channel_option .eq. 1 .or. nlst(did)%channel_option .eq. 2) then
+if(nlst(did)%UDMP_OPT .eq. 1) then
    call read_NSIMLAKES(rt_domain(did)%NLAKES,nlst(did)%route_lake_f)
 endif
 
@@ -838,8 +853,7 @@ subroutine LandRT_ini(did)
                      rt_domain(did)%ORIFICEC(lake_index),         &
                      rt_domain(did)%ORIFICEA(lake_index),         &
                      rt_domain(did)%LAKEMAXH(lake_index),         &
-                     rt_domain(did)%LAKEIDM(lake_index),          &
-                     nlst(did)%lake_option)
+                     rt_domain(did)%LAKEIDM(lake_index)            )
 
           type is (persistence_levelpool_hybrid)
               call reservoir%init(                                     &

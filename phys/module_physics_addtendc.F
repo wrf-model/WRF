@@ -38,10 +38,6 @@ SUBROUTINE update_phy_ten(rph_tendf,rt_tendf,ru_tendf,rv_tendf,moist_tendf, &
                       RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,RPHNDGDTEN,            &
                       RQVNDGDTEN,RMUNDGDTEN,                                &
                       rthfrten,rqvfrten,                                    & !fire
-                      ruiauten,rviauten,rthiauten,                          &
-                      rqviauten,rqciauten,rqriauten,                        &
-                      rqiiauten,rqsiauten,rqgiauten,                        &
-                      rphiauten,rmuiauten,                                  &
                       n_moist,n_scalar,config_flags,rk_step,adv_moist_cond, &
                       ids, ide, jds, jde, kds, kde,                         &
                       ims, ime, jms, jme, kms, kme,                         &
@@ -107,20 +103,9 @@ SUBROUTINE update_phy_ten(rph_tendf,rt_tendf,ru_tendf,rv_tendf,moist_tendf, &
                                                      RPHNDGDTEN, &
                                                      RQVNDGDTEN, &
                                                       RUNDGDTEN, &
-                                                      RVNDGDTEN, &
-                                                       RUIAUTEN, &
-                                                       RVIAUTEN, &
-                                                      RPHIAUTEN, &
-                                                      RTHIAUTEN, &
-                                                      RQVIAUTEN, &
-                                                      RQCIAUTEN, &
-                                                      RQRIAUTEN, &
-                                                      RQIIAUTEN, &
-                                                      RQSIAUTEN, &
-                                                      RQGIAUTEN
+                                                      RVNDGDTEN
 
-   REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN  ) :: RMUNDGDTEN, &
-                                                       RMUIAUTEN
+   REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN  ) :: RMUNDGDTEN
 
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN  ) ::   & ! fire
                                                        rthfrten, &
@@ -175,18 +160,6 @@ SUBROUTINE update_phy_ten(rph_tendf,rt_tendf,ru_tendf,rv_tendf,moist_tendf, &
                       mu_tendf, moist_tendf,                   &
                       RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,          &
                       RPHNDGDTEN,RQVNDGDTEN,RMUNDGDTEN,        &
-                      ids, ide, jds, jde, kds, kde,            &
-                      ims, ime, jms, jme, kms, kme,            &
-                      its, ite, jts, jte, kts, kte             )
-
-   if (config_flags%iau .gt. 0)                                &
-      CALL phy_iau_ten(config_flags,rk_step,n_moist,           &
-                      rph_tendf,rt_tendf,ru_tendf,rv_tendf,    &
-                      mu_tendf, moist_tendf,                   &
-                      RUIAUTEN,RVIAUTEN,RTHIAUTEN,             &
-                      RPHIAUTEN,RMUIAUTEN,                     &
-                      RQVIAUTEN,RQCIAUTEN,RQRIAUTEN,           &
-                      RQIIAUTEN,RQSIAUTEN,RQGIAUTEN,           &
                       ids, ide, jds, jde, kds, kde,            &
                       ims, ime, jms, jme, kms, kme,            &
                       its, ite, jts, jte, kts, kte             )
@@ -2018,129 +1991,6 @@ SUBROUTINE phy_fg_ten(config_flags,rk_step,n_moist,            &
    END SELECT
 
 END SUBROUTINE phy_fg_ten
-
-!=================================================================
-SUBROUTINE phy_iau_ten(config_flags,rk_step,n_moist,             &
-                      rph_tendf,rt_tendf,ru_tendf,rv_tendf,      &
-                      mu_tendf, moist_tendf,                     &
-                      RUIAUTEN,RVIAUTEN,RTHIAUTEN,               &
-                      RPHIAUTEN,RMUIAUTEN,                       &
-                      RQVIAUTEN,RQCIAUTEN,RQRIAUTEN,             &
-                      RQIIAUTEN,RQSIAUTEN,RQGIAUTEN,             &
-                      ids, ide, jds, jde, kds, kde,              &
-                      ims, ime, jms, jme, kms, kme,              &
-                      its, ite, jts, jte, kts, kte               )
-!-----------------------------------------------------------------
-   IMPLICIT NONE
-!-----------------------------------------------------------------
-   TYPE(grid_config_rec_type) ,     INTENT(IN   ) :: config_flags
-
-   INTEGER , INTENT(IN)        ::  ids, ide, jds, jde, kds, kde, &
-                                   ims, ime, jms, jme, kms, kme, &
-                                   its, ite, jts, jte, kts, kte, &
-                                   n_moist, rk_step
-
-   REAL , DIMENSION(ims:ime, kms:kme, jms:jme, n_moist),         &
-          INTENT(INOUT)     ::                      moist_tendf
-
-   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN  ) ::   &
-                                                       RPHIAUTEN, &
-                                                       RTHIAUTEN, &
-                                                        RUIAUTEN, &
-                                                        RVIAUTEN, &
-                                                       RQVIAUTEN
-   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN  ) ::    &
-                                                       RQCIAUTEN, &
-                                                       RQRIAUTEN, &
-                                                       RQIIAUTEN, &
-                                                       RQSIAUTEN, &
-                                                       RQGIAUTEN
-
-   REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN  ) ::  RMUIAUTEN
-
-   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT)::   &
-                                                       rph_tendf,&
-                                                       rt_tendf, &
-                                                       ru_tendf, &
-                                                       rv_tendf
-
-   REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)::  mu_tendf
-
-! LOCAL VARS
-
-   INTEGER :: i,j,k,IBGN,IEND,JBGN,JEND
-
-!-----------------------------------------------------------------
-
-           CALL add_a2a(rt_tendf,RTHIAUTEN,config_flags,         &
-                ids,ide, jds, jde, kds, kde,                     &
-                ims, ime, jms, jme, kms, kme,                    &
-                its, ite, jts, jte, kts, kte                     )
-
-           CALL add_a2a_ph(rph_tendf,RPHIAUTEN,config_flags,     &
-                ids,ide, jds, jde, kds, kde,                     &
-                ims, ime, jms, jme, kms, kme,                    &
-                its, ite, jts, jte, kts, kte                     )
-
-! note fdda u and v tendencies are staggered
-           CALL add_c2c_u(ru_tendf,RUIAUTEN,config_flags,        &
-                ids,ide, jds, jde, kds, kde,                     &
-                ims, ime, jms, jme, kms, kme,                    &
-                its, ite, jts, jte, kts, kte                     )
-
-           CALL add_c2c_v(rv_tendf,RVIAUTEN,config_flags,        &
-                ids,ide, jds, jde, kds, kde,                     &
-                ims, ime, jms, jme, kms, kme,                    &
-                its, ite, jts, jte, kts, kte                     )
-
-           CALL add_a2a(mu_tendf,RMUIAUTEN,config_flags,         &
-                ids,ide, jds, jde, kds, kds,                     &
-                ims, ime, jms, jme, kms, kms,                    &
-                its, ite, jts, jte, kts, kts                     )
-
-        if (P_QV .ge. PARAM_FIRST_SCALAR)                        &
-           CALL add_a2a(moist_tendf(ims,kms,jms,P_QV),RQVIAUTEN, &
-                config_flags,                                    &
-                ids,ide, jds, jde, kds, kde,                     &
-                ims, ime, jms, jme, kms, kme,                    &
-                its, ite, jts, jte, kts, kte                     )
-
-        if (P_QC .ge. PARAM_FIRST_SCALAR)                        &
-           CALL add_a2a(moist_tendf(ims,kms,jms,P_QC),RQCIAUTEN, &
-                config_flags,                                    &
-                ids,ide, jds, jde, kds, kde,                     &
-                ims, ime, jms, jme, kms, kme,                    &
-                its, ite, jts, jte, kts, kte                     )
-
-        if (P_QR .ge. PARAM_FIRST_SCALAR)                        &
-           CALL add_a2a(moist_tendf(ims,kms,jms,P_QR),RQRIAUTEN, &
-                config_flags,                                    &
-                ids,ide, jds, jde, kds, kde,                     &
-                ims, ime, jms, jme, kms, kme,                    &
-                its, ite, jts, jte, kts, kte                     )
-
-        if (P_QI .ge. PARAM_FIRST_SCALAR)                        &
-           CALL add_a2a(moist_tendf(ims,kms,jms,P_QI),RQIIAUTEN, &
-                config_flags,                                    &
-                ids,ide, jds, jde, kds, kde,                     &
-                ims, ime, jms, jme, kms, kme,                    &
-                its, ite, jts, jte, kts, kte                     )
-
-        if (P_QS .ge. PARAM_FIRST_SCALAR)                        &
-           CALL add_a2a(moist_tendf(ims,kms,jms,P_QS),RQSIAUTEN, &
-                config_flags,                                    &
-                ids,ide, jds, jde, kds, kde,                     &
-                ims, ime, jms, jme, kms, kme,                    &
-                its, ite, jts, jte, kts, kte                     )
-
-        if (P_QG .ge. PARAM_FIRST_SCALAR)                        &
-           CALL add_a2a(moist_tendf(ims,kms,jms,P_QG),RQGIAUTEN, &
-                config_flags,                                    &
-                ids,ide, jds, jde, kds, kde,                     &
-                ims, ime, jms, jme, kms, kme,                    &
-                its, ite, jts, jte, kts, kte                     )
-
-END SUBROUTINE phy_iau_ten
 
 !=================================================================
 SUBROUTINE phy_fr_ten(config_flags,rk_step,n_moist,            &

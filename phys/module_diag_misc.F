@@ -288,11 +288,7 @@ CONTAINS
 !-----------------------------------------------------------------
 ! Handle accumulations with buckets to prevent round-off truncation in long runs
 ! This is done every 360 minutes assuming time step fits exactly into 360 minutes
-
-!!!~~ CURR_SECS2 is elapsed seconds since restart. It is preferred to
-!!!~~ XTIME here because XTIME goes imprecise at 2^24, just under 32 years.
-
-   IF(bucket_mm .gt. 0. .AND. MOD(NINT(CURR_SECS2),3600) .EQ. 0)THEN
+   IF(bucket_mm .gt. 0. .AND. MOD(NINT(XTIME),360) .EQ. 0)THEN
 ! SET START AND END POINTS FOR TILES
 !  !$OMP PARALLEL DO   &
 !  !$OMP PRIVATE ( ij )

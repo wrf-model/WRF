@@ -54,13 +54,19 @@ macro( wrf_m4_preproc_fortran )
     # # It keeps getting better lol
     # # https://gitlab.kitware.com/cmake/cmake/-/issues/18399
     # # We could use cmake 3.20+ and CMP0118, but this allows usage from 3.18.6+
+    # TL;DR - This doesn't work despite all documentation stating otherwise, need to use CMP0118
+    # set_source_files_properties(
+    #                             ${WRF_PP_M4_OUTPUT_FILE}
+    #                             ${WRF_PP_M4_TARGET_DIRECTORY}
+    #                             PROPERTIES
+    #                               GENERATED TRUE
+    #                             )
     set_source_files_properties(
                                 ${WRF_PP_M4_OUTPUT_FILE}
                                 DIRECTORY ${PROJECT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}
                                 ${WRF_PP_M4_TARGET_DIRECTORY}
                                 PROPERTIES
                                   Fortran_PREPROCESS OFF
-                                  GENERATED          TRUE
                                 )
     # message( STATUS "File ${WRF_PP_M4_SOURCE_FILE} will be preprocessed into ${WRF_PP_M4_OUTPUT_FILE}" )
 

@@ -445,10 +445,10 @@ da_setup_structures.o :
          fi
 	if $(FGREP) '!$$OMP' $*.f ; then \
           if [ -n "$(OMP)" ] ; then echo COMPILING $*.f90 WITH OMP ; fi ; \
-	  $(FC) -c $(FCFLAGS) $(OMP) $(PROMOTION) $(CRTM_SRC) $(RTTOV_SRC) $(HDF5_INC) -I$(NETCDF)/include  $*.f ; \
+	  $(FC) -c $(FCFLAGS) $(OMP) $(PROMOTION) $(CRTM_SRC) $(RTTOV_SRC) $(HDF5_INC) $*.f ; \
         else \
 	if [ -n "$(OMP)" ] ; then echo COMPILING $*.f90 WITHOUT OMP ; fi ; \
-	  $(FC) -c $(FCFLAGS) $(PROMOTION) $(CRTM_SRC) $(RTTOV_SRC) $(HDF5_INC) -I$(NETCDF)/include $*.f ; \
+	  $(FC) -c $(FCFLAGS) $(PROMOTION) $(CRTM_SRC) $(RTTOV_SRC) $(HDF5_INC) $*.f ; \
         fi
 
 da_obs_io.o \

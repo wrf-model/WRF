@@ -66,9 +66,9 @@ else()
 
   foreach( NC_QUERY ${netCDF_QUERY_YES_OPTIONS} )
     execute_process( COMMAND ${NETCDF_PROGRAM} --has-${NC_QUERY} OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE netCDF_${NC_QUERY}_LOWERCASE )
-    if ( NOT "${netCDF_${NC_QUERY}_LOWERCASE}" )
+    if ( NOT "${netCDF-Fortran_${NF_QUERY}_LOWERCASE}" )
       # might be empty
-      set( netCDF_${NC_QUERY}_LOWERCASE no )
+      set( netCDF-Fortran_${NF_QUERY}_LOWERCASE no )
     endif()
     string( TOUPPER ${NC_QUERY}                     NC_QUERY_UPPERCASE )
     string( TOUPPER ${netCDF_${NC_QUERY}_LOWERCASE} NC_ANSWER_UPPERCASE )

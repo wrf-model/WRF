@@ -47,51 +47,6 @@ macro( wrf_setup_targets )
 
 endmacro()
 
-# WRF Macro for adding target symlinks/copies to be run after internal install() code 
-# this allows for alternate naming
-macro( wrf_setup_target_new_name )
-
-  set( options        USE_SYMLINKS )
-  set( oneValueArgs   TARGET DEST_PATH NEW_NAME )
-  set( multiValueArgs )
-
-  cmake_parse_arguments(
-                        WRF_SETUP
-                        "${options}"  "${oneValueArgs}"  "${multiValueArgs}"
-                        ${ARGN}
-                        )
-  set( WRF_SETUP_CMD copy_if_different )
-  if ( ${WRF_SETUP_USE_SYMLINKS} )
-    set( WRF_SETUP_CMD create_symlink )
-  endif()
-
-  # Generate install code for each target
-  # https://stackoverflow.com/a/56528615
-  #!TODO Do we *need* the rm for symlinks beforehand?
-  # get_filename_component( WRF_SETUP_FILE_ONLY $<TARGET_FILE:${WRF_SETUP_TARGET}> NAME
-
-  # If we ever wanted to link or copy things other than binaries we could change this
-  set( WRF_SETUP_INSTALL_LOCATION ${CMAKE_INSTALL_PREFIX}/bin )
-
-  install( 
-          CODE "
-                message( STATUS \"Setting up $<TARGET_FILE_NAME:${WRF_SETUP_TARGET}> via ${WRF_SETUP_CMD} as ${WRF_SETUP_NEW_NAME}\" )
-                execute_process( COMMAND ${CMAKE_COMMAND} -E ${WRF_SETUP_CMD} ${WRF_SETUP_INSTALL_LOCATION}/$<TARGET_FILE_NAME:${WRF_SETUP_TARGET}> ${WRF_SETUP_DEST_PATH}/${WRF_SETUP_NEW_NAME} )
-                "
-          COMPONENT setup
-          )
-  
-  # Add .exe link as well
-  install( 
-          CODE "
-                message( STATUS \"Creating symlink for ${WRF_SETUP_NEW_NAME}.exe\" )
-                execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink ${WRF_SETUP_DEST_PATH}/${WRF_SETUP_NEW_NAME} ${WRF_SETUP_DEST_PATH}/${WRF_SETUP_NEW_NAME}.exe )
-                "
-          COMPONENT setup
-          )
-
-endmacro()
-
 # WRF Macro for adding file symlinks/copies to be run after internal install() code
 macro( wrf_setup_files )
 

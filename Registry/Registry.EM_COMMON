@@ -1142,6 +1142,7 @@ state   real   sub_thl3D       ikj     misc        1         -      h         "s
 state   real   sub_sqv3D       ikj     misc        1         -      h         "sub_sqv3D"        "qv subsidence tendency from EDMF" "kg kg-1 s-1"
 state   real   det_thl3D       ikj     misc        1         -      h         "det_thl3D"        "thetaL detrainment tendency from EDMF" "K s-1"
 state   real   det_sqv3D       ikj     misc        1         -      h         "det_sqv3D"        "qv detrainment tendency from EDMF" "kg kg-1 s-1"
+state   integer  ktop_plume     ij     misc        1         -      h         "ktop_plume"       "k-level of highest pentrating plume"    ""
 state   real   maxMF            ij     misc        1         -      h         "maxMF"            "Maximum mass-flux (neg: all dry, pos: moist)"   "m/s * area"
 state   real   maxwidth         ij     misc        1         -      h         "maxwidth"         "Maximum plume width"   "m"
 state   real   ztop_plume       ij     misc        1         -      h         "ztop_plume"       "Height of tallest plume"   "m"
@@ -1611,9 +1612,6 @@ state    real    phii3d_3        ikj     misc        1         -     hdu       "
 state    real    itype          ikj     misc        1         -     hdu       "ice_type"             "Diagnostic ice type cat 1 ISHMAEL microphysics"  ""
 state    real    itype_2          ikj     misc        1         -     hdu       "ice_type2"             "Diagnostic ice type cat 2 ISHMAEL microphysics"  ""
 state    real    itype_3          ikj     misc        1         -     hdu       "ice_type3"             "Diagnostic ice type cat 3 ISHMAEL microphysics"  ""
-
-state    real  ssat       ikj      dyn_em      1         -      hdu      "ssat"             "Supersaturation wrt liquid"  "%"
-state    real  ssati      ikj      dyn_em      1         -      hdu      "ssati"            "Supersaturation wrt ice"  "%"
 
 # LIGHTNING NUDGING
 #state    real    ltg_dat        ij      misc        1         -      r         "ltg_dat"               "gridded lightning data"  "Flash per xkm x xkm per LAD_INT sec"
@@ -2419,13 +2417,12 @@ rconfig   real     nssl_rho_qhl           namelist,physics      1            900
 rconfig   real     nssl_rho_qs            namelist,physics      1            100.     rh       "Snow particle density"  ""      ""
 rconfig   integer  nssl_icdx              namelist,physics      1             6       rh       "NSSL Graupel fall speed option"  ""      ""
 rconfig   integer  nssl_icdxhl            namelist,physics      1             6       rh       "NSSL Hail fall speed option"  ""      ""
-rconfig   integer  nssl_hail_on           namelist,physics      1            -1       rh       "NSSL Hail flag"  ""      ""
+rconfig   integer  nssl_hail_on           namelist,physics     max_domains   -1       rh       "NSSL Hail flag"  ""      ""
 rconfig   integer  nssl_ccn_on            namelist,physics      1            -1       rh       "NSSL CCN flag"  ""      ""
 rconfig   integer  nssl_ccn_is_ccna       namelist,physics      1             0       rh       "NSSL flag that CCN is CCNA"  ""      ""
 rconfig   integer  nssl_2moment_on        namelist,physics      1            -1       rh       "NSSL 2-moment flag"  ""      ""
 rconfig   integer  nssl_3moment           namelist,physics      1             0       rh       "NSSL 3-moment flag"  ""      ""
 rconfig   integer  nssl_density_on        namelist,physics      1            -1       rh       "NSSL graupel/hail density flag"  ""      ""
-rconfig   integer  nssl_ssat_output       namelist,physics      1             0       rh       "NSSL ssat output flag"  ""      ""
 
 
 
@@ -2479,7 +2476,7 @@ rconfig   integer     bl_mynn_mixlength   namelist,physics      1              1
 rconfig   integer     bl_mynn_edmf        namelist,physics      max_domains    1       irh      "bl_mynn_edmf"                  "0:off,1:activate mass-flux in mynn"                    ""
 rconfig   integer     bl_mynn_edmf_mom    namelist,physics      max_domains    1       irh      "bl_mynn_edmf_mom"              "0:off,1:activate mass-flux transport of momentum"      ""
 rconfig   integer     bl_mynn_edmf_tke    namelist,physics      max_domains    0       irh      "bl_mynn_edmf_tke"              "0:off,1:activate mass-flux transport of tke"           ""
-rconfig   integer     bl_mynn_mixscalars  namelist,physics      max_domains    1       irh      "bl_mynn_mixscalars"            "0:off,1:activate mixing of scalars (qnx, qnxfa) in MYNN"      ""
+rconfig   integer     bl_mynn_mixscalars  namelist,physics      max_domains    0       irh      "bl_mynn_mixscalars"            "0:off,1:activate mixing of scalars (qnx, qnxfa) in MYNN"      ""
 rconfig   integer     bl_mynn_output      namelist,physics      max_domains    0       irh      "bl_mynn_output"                "0:off,1:Allocate and output extra 3D arrays"      ""
 rconfig   integer     bl_mynn_cloudmix    namelist,physics      max_domains    1       irh      "bl_mynn_cloudmix"              "0:off,1:activate mixing of all cloud species"          ""
 rconfig   integer     bl_mynn_mixqt       namelist,physics      max_domains    0       irh      "bl_mynn_mixqt"                 "0:mix moisture species separate,1: mix total water"    ""
@@ -2505,7 +2502,6 @@ rconfig   integer ideal_xland             namelist,physics	1             1      
 rconfig   real    swrad_scat              namelist,physics	1             1       irh    "SWRAD_SCAT" "SCATTERING FACTOR IN SWRAD"      ""
 rconfig   integer surface_input_source    namelist,physics	1             3       irh    "surface_input_source"          "1=static (fractional), 2=time dependent (dominant), 3=dominant cateogry from metgrid"      ""
 rconfig   integer num_soil_layers         namelist,physics	1             5       irh    "num_soil_layers"               ""      ""
-rconfig   integer default_soiltype        namelist,physics	1             8        rh    "default_soiltype"              "Soil category used to correct missing values (default 8 : silty clay loam)"      ""
 rconfig   integer num_pft_clm             namelist,physics      1            17       -      "num_pft_clm"                  ""      ""
 rconfig   logical input_pft               namelist,physics      1            .false.   h     "input_pft_flag"         "use input pft instead of USGS"      ""
 rconfig   integer maxpatch                namelist,physics      1            10       irh    "maxpatch"                      ""      ""
@@ -3037,7 +3033,6 @@ package   wdm6scheme      mp_physics==16               -             moist:qv,qc
 package   nssl_2mom       mp_physics==18               -             moist:qv,qc,qr,qi,qs,qg
 package   wsm7scheme      mp_physics==24               -             moist:qv,qc,qr,qi,qs,qg,qh;state:re_cloud,re_ice,re_snow
 package   wdm7scheme      mp_physics==26               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnn,qnc,qnr;state:re_cloud,re_ice,re_snow
-package   udmscheme       mp_physics==27               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnn,qnc,qnr;state:re_cloud,re_ice,re_snow
 package   thompsonaero    mp_physics==28               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr,qnc,qnwfa,qnifa,qnbca;state:re_cloud,re_ice,re_snow,qnwfa2d,qnifa2d,taod5503d,taod5502d
 package   thompsongh      mp_physics==38               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr,qnc,qng,qvolg,qnwfa,qnifa,qnbca;state:re_cloud,re_ice,re_snow,qnwfa2d,qnifa2d,taod5503d,taod5502d
 package   p3_1category    mp_physics==50               -             moist:qv,qc,qr,qi;scalar:qni,qnr,qir,qib;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,refl_10cm,th_old,qv_old
@@ -3050,8 +3045,7 @@ package   ntu             mp_physics==56               -             moist:qv,qc
 package   etampnew        mp_physics==95               -             moist:qv,qc,qr,qs;scalar:qt;state:f_ice_phy,f_rain_phy,f_rimef_phy
 package   gsfcgcescheme   mp_physics==97               -             moist:qv,qc,qr,qi,qs,qg
 package   madwrf_mp       mp_physics==96               -             moist:qv,qc,qi,qs
-package   rcon_mp_scheme  mp_physics==29               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr,qnc,qnwfa,qnifa,qnbca;state:re_cloud,re_ice,re_snow,qnwfa2d,qnifa2d,taod5503d,taod5502d,cloudnc
- 
+
 package   nssl2mconc      nssl_2moment_on==1           -             scalar:qndrop,qnr,qni,qns,qng;state:re_cloud,re_ice,re_snow
 package   nssl3mg         nssl_3moment==1              -             scalar:qzr,qzg
 package   nssl3m          nssl_3moment==2              -             scalar:qzr,qzg,qzh
@@ -3060,8 +3054,6 @@ package   nssl_hail1m     nssl_hail_on==2              -             moist:qh;
 package   nssl_ccn_opt    nssl_ccn_on==1               -             scalar:qnn
 package   nssl_graupelvol nssl_density_on==1           -             scalar:qvolg
 package   nssl_hailvol    nssl_density_on==2           -             scalar:qvolg,qvolh
-package   nssl_ssat_out   nssl_ssat_output==1          -             state:ssat
-package   nssl_ssati_out  nssl_ssat_output==2          -             state:ssat,ssati
 
 
 package   radar_refl      compute_radar_ref==1         -             state:refl_10cm,refd_max
@@ -3095,7 +3087,6 @@ package   nssl_2mom_dfi     mp_physics_dfi==18       -             dfi_moist:dfi
 #package   nssl_2momg_dfi    mp_physics_dfi==22       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qndrop,dfi_qnr,dfi_qni,dfi_qns,dfi_qng,dfi_qvolg;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
 package   wsm7scheme_dfi    mp_physics_dfi==24       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
 package   wdm7scheme_dfi    mp_physics_dfi==26       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;dfi_scalar:dfi_qnn,dfi_qnc,dfi_qnr;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
-package   udmscheme_dfi     mp_physics_dfi==27       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;dfi_scalar:dfi_qnn,dfi_qnc,dfi_qnr;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
 package   thompsonaero_dfi  mp_physics_dfi==28       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qnr,dfi_qnc,dfi_qnwfa,dfi_qnifa,dfi_qnbca;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
 package   thompsongh_dfi    mp_physics_dfi==38       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qnr,dfi_qng,dfi_qvolg,dfi_qnc,dfi_qnwfa,dfi_qnifa,dfi_qnbca;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
 package   p3_1category_dfi  mp_physics_dfi==50       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi;dfi_scalar:dfi_qni,dfi_qnr,dfi_qir,dfi_qib;state:dfi_re_cloud,dfi_re_ice
@@ -3106,7 +3097,6 @@ package   jensen_ishmael_dfi  mp_physics_dfi==55         -         dfi_moist:dfi
 package   ntu_dfi           mp_physics_dfi==56       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;dfi_scalar:dfi_qnc,dfi_qnr,dfi_qni,dfi_qns,dfi_qng,dfi_qnh,dfi_qdcn,dfi_qtcn,dfi_qccn,dfi_qrcn,dfi_qnin,dfi_fi,dfi_fs,dfi_vi,dfi_vs,dfi_vg,dfi_ai,dfi_as,dfi_ag,dfi_ah,dfi_i3m
 package   etampnew_dfi      mp_physics_dfi==95       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qs;dfi_scalar:dfi_qt
 package   gsfcgcescheme_dfi   mp_physics_dfi==97     -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg
-package   rcon_dfi  	    mp_physics_dfi==29       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qnr,dfi_qnc,dfi_qnwfa,dfi_qnifa,dfi_qnbca;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
 
 package   noprogn       progn==0                     -             -
 package   progndrop     progn==1                     -             scalar:qndrop;dfi_scalar:dfi_qndrop;state:qndropsource
@@ -3187,7 +3177,7 @@ package   kepsscheme     bl_pbl_physics==17          -             scalar:tke_ad
 package   mrfscheme      bl_pbl_physics==99          -             -
 
 package   tkebudget      tke_budget==1               -             state:qSHEAR,qBUOY,qDISS,qWT,dqke
-package   mynn_dmp_edmf  bl_mynn_edmf==1             -             state:ztop_plume,maxmf,maxwidth
+package   mynn_dmp_edmf  bl_mynn_edmf==1             -             state:ktop_plume,ztop_plume,maxmf,maxwidth
 package   mynn_3Doutput  bl_mynn_output==1           -             state:edmf_a,edmf_w,edmf_thl,edmf_qt,edmf_ent,edmf_qc,sub_thl3D,sub_sqv3D,det_thl3D,det_sqv3D
 package   pbl_cloud      icloud_bl==1                -             state:cldfra_bl,qc_bl,qi_bl
 
@@ -3664,8 +3654,3 @@ rconfig   integer     windfarm_wake_model        namelist,physics      max_domai
 # wake overlap method, M1, M2, M3, M4 [1, 2, 3, 4]
 rconfig   integer     windfarm_overlap_method        namelist,physics      max_domains    4       rh       "windfarm_overlap_method"                ""      ""
 rconfig   real        windfarm_deg           namelist,physics      max_domains    0        -     "windfarm_deg"        "for windfarm ideal case"   "degree"
-
-
-# outputs for RCON model.
-state    real  CLOUDNC              ij       misc        1         -      rh   "CLOUDNC"                "ACCUMULATED TOTAL GRID SCALE CLOUD PRECIPITATION"     "mm"
-

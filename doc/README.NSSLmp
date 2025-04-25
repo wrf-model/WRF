@@ -22,16 +22,16 @@ Basic options in physics namelist:
                     CCN concentration + options
 
  The legacy options (17,19,21,22) still behave as before (for now), but going
- forward one should use mp_physics=18 with modifier flags. 2025 Update, however, sets nssl_ccn_on=1 by default (keeps supersaturation much more reasonable; except for single moment).
+ forward one should use mp_physics=18 with modifier flags:
  
  mp_physics 
   = 22 ! NSSL scheme (2-moment) without hail
-      Equivalent: mp=18, nssl_hail_on=0, nssl_ccn_on=1
-  = 17 ! NSSL scheme (2-moment) with hail is now the same as mp=18
-      Equivalent: mp=18, nssl_ccn_on=1 <- must explicitly set nssl_ccn_on=0 to 
-      get old behavior
+      Equivalent: mp=18, nssl_hail_on=0, nssl_ccn_on=0
+  = 17 ! NSSL scheme (2-moment) with hail with constant background CCN 
+                   concentration
+      Equivalent: mp=18, nssl_ccn_on=0
   = 19, NSSL 1-moment (7 class: qv,qc,qr,qi,qs,qg,qh; predicts graupel density)
-      Equivalent: mp=18, nssl_2moment_on=0, nssl_ccn_on=1 (do no set nssl_hail_on)
+      Equivalent: mp=18, nssl_2moment_on=0, nssl_ccn_on=0 (do no set nssl_hail_on)
   = 21, NSSL 1-moment, (6-class), very similar to Gilmore et al. 2004
       Equivalent: mp=18, nssl_2moment_on=0, nssl_hail_on=0, nssl_ccn_on=0, 
       nssl_density_on=0
@@ -98,23 +98,14 @@ Cloud concentration nuclei (CCN) concentration is predicted as in Mansell et al.
 Droplet activation option method is controlled by the 'irenuc' option (internal to NSSL module). The default option (2) depletes CCN from the unactivated CCN field. A new option (7) instead counts the number of activated CCN (nucleated droplets) with the assumption of an initial constant CCN number mixing ratio. Option 7 better handles supersaturation at low CCN (e.g., maritime) concentrations by allowing extra droplet activation at high SS.
 
   irenuc     : (nssl_mp_params namelist)
-               2 = ccn field is UNactivated aerosol (old default; old droplet activation)
+               2 = ccn field is UNactivated aerosol (default; old droplet activation)
                    Can switch to counting activated CCN with nssl_ccn_is_ccna=1
-               5 = ccn field must be ACTVIATED aerosol (new default as of Feb. 2025)
-                   Must have nssl_ccn_on=1 for irenuc=5
-                   Allows activation beyond limit of nssl_cccn at higher supersaturation
-                   as an approximation of nucleation mode aerosol being activated. (Mainly
-                   an issue for low CCN concentration with deep updrafts.)
-                   If more strict limitation of activation is desired, use option 7.
                7 = ccn field must be ACTVIATED aerosol (new droplet activation) 
                    Must have nssl_ccn_on=1 for irenuc=7
 
 Excessive size sorting (common in 2-moment schemes) is effectively controlled by an adaptive breakup method that prevents reflectivity growth by sedimentation (Mansell 2010). For 2-moment, infall=4 (default; nssl_mp_params namelist) is recommended. For 3-moment, infall only really applies to droplets, cloud ice, and snow.
 
-3-moment active rain breakup (WRF 4.7.x, 2025): The 3-moment rain without explicit breakup can result in cold pools that are too warm and rain median diameters that are too large in rain cores. A bin-model-based breakup parameterization for rain was implemented to address these issues. Very low rain rates (sparse drops) are largely unaffected (e.g., maintains Zdr arc feature). The breakup coefficient (rainbreakfac) has a default value of 1.0e6 and can reasonably be increased up to around 2.5e6 if desired (nssl_mp_params). Active breakup is automatically turned on for 3-moment (irainbreak=2) but not for 2-moment. Option irainbreak=2 is not recommended for 2-moment, but a user may experiment with irainbreak=11, which breaks up large drops in the tail of the spectrum starting at D=draintail (default 10.e-3 m).
-
 Graupel -> hail conversion: The parameter ihlcnh selects the method of converting graupel (hail embryos) to the hail category. The default value is -1 for automatic setting. The original option (ihlcnh=1) is replaced by a new option (ihlcnh=3) as of May 2023. ihlcnh=3 converts from the graupel spectrum itself based on the wet growth diameter, which generally results in fewer initiated hailstones with larger diameters (and larger mean diameter at the ground). If hail size seems excessive, try setting ihlcnh=1, which tends to generate higher hail number concentrations and thus smaller diameters.
-UPDATE (4.7.x/2025): The conversion has been updated to conserve reflectivity of the new hailstones compared to the graupel. This results in new hail that is smaller than previously but prevents spurious increases in reflectivity. (Active for both 2- and 3-moment)
 
 The June 2023 (WRF 4.6) update introduces changes in the default options for graupel/hail fall speeds and collection efficiencies. The original fall speed options (icdx=3; icdxhl=3) from Mansell et al. (2010) are switched to the Milbrandt and Morrison (2013) fall speed curves (icdx=6; icdxhl=6). Because the fall speeds are generally a bit lower, a partially compensating increase in maximum collection efficiency is set by default: ehw0/ehlw0 increased to 0.9. One effect is somewhat reduced total precipitation and cold pool intensity for supercell storms.
 
@@ -146,15 +137,6 @@ Snow self-collection (aggregation) has been curbed in the 4.6 version by reducin
   If desired, some further reduction in aggregation can be gained from setting iessopt=4, which reduces ess0 to 0.1 (80% reduction) in conditions of ice subsaturation (RHice < 100%).
   Snow reflectivity formerly had a default setting that turned on a crude bright band enhancement (iusewetsnow=1). This is now turned off by default (iusewetsnow=0)
   These snow parameters can be accessed through the nssl_mp_params namelist.
-
-Saturation mixing ratio (WRF 4.7.x, 2025): New formulation (iqvsopt=1) is more consistent with other microphysics schemes. Previously (iqvsopt=0), the quantity e/(p-e) was approximated as e/p, but the new default restores the full equation and uses slightly more accurate (Bolton) coefficients for the saturation (wrt liquid) tables.
-
-New options (Feb. 2025) (not enabled by default):
-  - Option (nsplinter=1001) for ice crystal production by drop freezing/shattering (Sullivan et al. 2018)
-  - Option (incwet = 1) to treat wet growth only for D > Dwet rather than all or nothing; results in greater hail production due to maintaining dry growth at D < Dwet
-
-New diagnostic output option:
- nssl_ssat_output : (default 0); 1 = Supersaturation wrt liquid; 2 = also supersat. wrt ice
 
 References:
 

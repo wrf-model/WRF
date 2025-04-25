@@ -596,7 +596,6 @@ package   wdm6scheme      mp_physics==16               -             moist:qv,qc
 # Note: Options 17, 19, 21, 22 are deprecated but still reserved for compatibility -- for now
 package   nssl_2mom       mp_physics==18               -             moist:qv,qc,qr,qi,qs,qg
 package   thompsonaero    mp_physics==28               -             moist:qv,qc,qr,qi,qs,qg
-package   rcon_mp_scheme  mp_physics==29               -             moist:qv,qc,qr,qi,qs,qg
 package   p3_1category    mp_physics==50               -             moist:qv,qc,qr,qi
 package   p3_1category_nc mp_physics==51               -             moist:qv,qc,qr,qi
 package   p3_2category    mp_physics==52               -             moist:qv,qc,qr,qi,qi2
@@ -628,7 +627,6 @@ package   wdm6_4dvar             mp_physics_4dvar==16     -          g_moist:g_q
 # Note: Options 17, 19, 21, 22 are deprecated but still reserved for compatibility -- for now
 package   nssl_2mom_4dvar        mp_physics_4dvar==18     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg,g_qh;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg,a_qh
 package   thompsonaero_4dvar     mp_physics_4dvar==28     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
-package   rcon_mp_scheme_4dvar   mp_physics_4dvar==29     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
 package   p3_1category_4dvar     mp_physics_4dvar==50     -          g_moist:g_qv,g_qc,g_qr,g_qi;a_moist:a_qv,a_qc,a_qr,a_qi
 package   p3_1category_nc_4dvar  mp_physics_4dvar==51     -          g_moist:g_qv,g_qc,g_qr,g_qi;a_moist:a_qv,a_qc,a_qr,a_qi
 package   p3_2category_4dvar     mp_physics_4dvar==52     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qi2;a_moist:a_qv,a_qc,a_qr,a_qi,a_qi2

@@ -341,11 +341,10 @@ any_daylight: &
 !-----------------------------------------------------------------------------
 !     set solar distance factor
 !-----------------------------------------------------------------------------
-     ! osipov fix the bug. Always calc the distance. Testing for 0 results in True on 1 Jan, keeps the sfact=0 and shutsdown the photolysis for entire day
-     !if( curjulday /= julday ) then
-     curjulday = julday
-     esfact = sundis( julday )
-     !endif
+     if( curjulday /= julday ) then
+       curjulday = julday
+       esfact = sundis( julday )
+     endif
      if( .not. config_flags%scale_o3_to_grnd_exo_coldens ) then
        if( config_flags%scale_o3_to_du_at_grnd ) then
          dobsi = max( 0.,config_flags%du_at_grnd )
@@ -1458,10 +1457,11 @@ master_proc_b: &
       CALL wrf_dm_bcast_bytes( temp_data, n_temp_data*RWORDSIZE )
       CALL wrf_dm_bcast_bytes( o3_data, n_o3_data*RWORDSIZE )
       CALL wrf_dm_bcast_bytes( air_dens_data, n_air_dens_data*RWORDSIZE )
-#ifndef DOUBLE_PRECISION
+#if RWORDSIZE == 4
       CALL wrf_dm_bcast_bytes( chebev_ac, nchebev_term*nchebev_wave*2*RWORDSIZE )
       CALL wrf_dm_bcast_bytes( chebev_bc, nchebev_term*nchebev_wave*2*RWORDSIZE )
-#else
+#endif
+#if RWORDSIZE == 8
       CALL wrf_dm_bcast_bytes( chebev_ac, nchebev_term*nchebev_wave*RWORDSIZE )
       CALL wrf_dm_bcast_bytes( chebev_bc, nchebev_term*nchebev_wave*RWORDSIZE )
 #endif

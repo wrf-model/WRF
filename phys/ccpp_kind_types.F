@@ -1,5 +1,5 @@
 module ccpp_kind_types
-#ifndef DOUBLE_PRECISION
+#if ( RWORDSIZE == 4 )
    integer, parameter :: kind_phys = selected_real_kind(6)
 #else
    integer, parameter :: kind_phys = selected_real_kind(12)

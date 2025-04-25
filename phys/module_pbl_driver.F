@@ -54,7 +54,7 @@ CONTAINS
                  ,sub_thl3D,sub_sqv3D                              &
                  ,det_thl3D,det_sqv3D                              &
                  ,vdfg                                             &
-                 ,maxwidth,maxMF,ztop_plume                        &
+                 ,maxwidth,maxMF,ztop_plume,ktop_plume             &
                  ,spp_pbl,pattern_spp_pbl                          &
               ! EEPS
                  ,pek,pep,pek_adv,pep_adv                          &
@@ -199,7 +199,7 @@ CONTAINS
    USE module_bl_mfshconvpbl
    USE module_bl_gbmpbl
 #if (EM_CORE==1)
-   USE module_bl_mynnedmf_driver
+   USE module_bl_mynn_wrapper
    USE module_bl_eeps
    USE module_bl_keps
    USE module_bl_fogdes
@@ -595,6 +595,8 @@ CONTAINS
    REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,              &
         &    INTENT(INOUT)::                               vdfg
 
+   INTEGER, OPTIONAL, DIMENSION( ims:ime , jms:jme ),           &
+        &    INTENT(OUT) ::                          ktop_plume
    REAL, OPTIONAL, DIMENSION( ims:ime , jms:jme ),              &
         &    INTENT(OUT) ::           maxwidth,maxMF,ztop_plume
 
@@ -1632,7 +1634,7 @@ CONTAINS
                 PRESENT( rqniblten ) .AND. PRESENT( qni_curr ) .AND.&
                 PRESENT(qke) .AND. PRESENT(tsq) .AND.               &
                 PRESENT(qsq) .AND. PRESENT(cov) .AND.               &
-                PRESENT(ch) .AND.                                   &
+                PRESENT(rmol) .AND. PRESENT(ch) .AND.               &
                 PRESENT(tke_budget) .AND. PRESENT(qke_adv) .AND.    &
                 PRESENT(bl_mynn_tkeadvect)  ) THEN
 
@@ -1655,7 +1657,7 @@ CONTAINS
                   ims, ime, jms, jme, kms, kme, kts, kte)
               end if
 
-              CALL mynnedmf_driver(                                      &
+              CALL mynnedmf_wrapper_run(                                 &
                    &initflag=initflag,restart=restart,cycling=cycling,   &
                    &delt=dtbl,dz=dz8w,dxc=dx,znt=znt,                    &
                    &u=u_phy,v=v_phy,w=w,th=th_phy,qv=qv_curr,            &
@@ -1665,7 +1667,7 @@ CONTAINS
 !                   &ozone=ozone,                                         &
                    &p=p_phy,exner=pi_phy,rho=rho,T3D=t_phy,              &
                    &xland=xland,ts=tsk,qsfc=qsfc,ps=psfc,                &
-                   &ust=ust,ch=ch,hfx=hfx,qfx=qfx,wspd=wspd,             &
+                   &ust=ust,ch=ch,hfx=hfx,qfx=qfx,rmol=rmol,wspd=wspd,   &
                    &uoce=uoce,voce=voce,                                 & !Ocean currents
                    &Qke=qke,qke_adv=qke_adv,Sh3d=Sh3d,Sm3d=Sm3d,         &
 #if (WRF_CHEM == 1)
@@ -1694,7 +1696,7 @@ CONTAINS
                    &sub_thl3D=sub_thl3D,sub_sqv3D=sub_sqv3D,             &
                    &det_thl3D=det_thl3D,det_sqv3D=det_sqv3D,             &
                    &maxwidth=maxwidth,maxMF=maxMF,                       &
-                   &ztop_plume=ztop_plume,                               &
+                   &ztop_plume=ztop_plume,ktop_plume=ktop_plume,         &
                    &RTHRATEN=RTHRATEN,                                   &
                    &bl_mynn_tkeadvect=bl_mynn_tkeadvect,                 &
                    &tke_budget=tke_budget,                               &
@@ -1729,7 +1731,7 @@ CONTAINS
                   deallocate (qke_tmp)
               end if
            ELSE
-               WRITE ( message , FMT = '(A,16(L1,1X))' )            &
+               WRITE ( message , FMT = '(A,17(L1,1X))' )            &
                  'present: '//                                      &
                  'qv_curr, '//                                      &
                  'qc_curr, '//                                      &
@@ -1743,6 +1745,7 @@ CONTAINS
                  'tsq, '//                                          &
                  'qsq, '//                                          &
                  'cov, '//                                          &
+                 'rmol, '//                                         &
                  'ch, '//                                           &
                  'tke_budget, '//                                   &
                  'qke_adv, '//                                      &
@@ -1759,6 +1762,7 @@ CONTAINS
                   PRESENT( tsq      ) ,                             &
                   PRESENT( qsq      ) ,                             &
                   PRESENT( cov      ) ,                             &
+                  PRESENT( rmol     ) ,                             &
                   PRESENT( ch       ) ,                             &
                   PRESENT( tke_budget) ,                            &
                   PRESENT( qke_adv  ) ,                             &
@@ -1895,7 +1899,7 @@ CONTAINS
               ,B_E_BEP=b_e_bep                                                 &
               ,SF_BEP=sf_bep,VL_BEP=vl_bep                                     &
               ,BR=br,ZNT=znt                                                   &
-              ,PSIM=fm,PSIH=fhh                                             &
+              ,PSIM=psim,PSIH=psih                                             &
               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde                 &
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme                 &
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte  )

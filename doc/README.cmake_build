@@ -24,7 +24,7 @@ How to compile and run?
   be selectable via the interactive dialogs.
   
   Compared to previous version of `configure` this will look much more sparse
-  and the numbering will be changed to reflect what is availble. For this 
+  and the numbering will be changed to reflect what is available. For this 
   reason it will be best to talk about configuration with their description 
   or some other unique identifier from now on with this build methodology.
 
@@ -48,10 +48,10 @@ How to compile and run?
   place a configuration)
 
 
-- If sucessful, this will create either `real` or `ideal` and `wrf` executables
+- If successful, this will create either `real` or `ideal` and `wrf` executables
   in the install location's bin/ directory (for default location this will be 
   install/bin/) and the appropriate executables will be also copied into
-  the respective test directoires under the same install directory as 
+  the respective test directories under the same install directory as 
   <install location>/test/<case_name>. Likewise, for specific test cases that
   have additional or modified inputs, those input files are copied from the 
   respective source location test/<test case>
@@ -67,7 +67,7 @@ How to compile and run?
 
   ./ideal
 
-  to produce wrfinput_d01 file for wrf model. Then type
+  to produce wrfinput_d01 file for WRF. Then type
 
   ./wrf
 
@@ -113,7 +113,7 @@ Advanced Configuration
 
   The '-x' option allows the interactive dialogs to be suppressed, and 
   configuration will immediately proceed with whatever options have been set or 
-  passed in. This is meant to be used with the '--' delimeter option
+  passed in. This is meant to be used with the '--' delimiter option
 
   The '-d' option allows us to specify an alternative build/configuration 
   directory. As CMake best operates with out-of-source builds, our configuration
@@ -135,7 +135,7 @@ Advanced Configuration
   configuration is no longer desired. This also allows multiple installs of 
   different compilations to coexist from within the same source repo
 
-  The '--' option is meant to be a delimeter marking all subsequent input to be
+  The '--' option is meant to be a delimiter marking all subsequent input to be
   fed directly to the CMake command execution. In other words, after this marker
   anything that you place afterwards is as if you are directly passing in 
   command line options to `cmake`. This allows you to more effectively use the
@@ -217,7 +217,7 @@ Advanced Configuration
     ./cleanCMake.sh -b -d _buildCustomDirectory
 
   One might think we would use the install directory when specifying the '-b'
-  option, but recall that the install location is embeded into the build 
+  option, but recall that the install location is embedded into the build 
   configuration and thus removing the installs that cmake did without entirely
   removing the install directory requires going to the build directory. This 
   can be extremely versatile when installing into common locations where other 

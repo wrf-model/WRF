@@ -53,7 +53,7 @@ if ( NOT "${FSEEKO64}" )
                   RESULT_VAR             FSEEKO
                   SOURCES                ${PROJECT_SOURCE_DIR}/tools/fseek_test.c
                   OPTIONS
-                    COMPILE_DEFINITINOS -DTEST_FSEEKO -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE=1 -DFILE_TO_TEST="${PROJECT_SOURCE_DIR}/CMakeLists.txt"
+                    COMPILE_DEFINITIONS -DTEST_FSEEKO -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE=1 -DFILE_TO_TEST="${PROJECT_SOURCE_DIR}/CMakeLists.txt"
                   MESSAGE                "fseeko not supported, compiling with fseek (caution with large files)"
                   )
 endif()

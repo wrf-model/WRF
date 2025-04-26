@@ -1612,6 +1612,9 @@ state    real    itype          ikj     misc        1         -     hdu       "i
 state    real    itype_2          ikj     misc        1         -     hdu       "ice_type2"             "Diagnostic ice type cat 2 ISHMAEL microphysics"  ""
 state    real    itype_3          ikj     misc        1         -     hdu       "ice_type3"             "Diagnostic ice type cat 3 ISHMAEL microphysics"  ""
 
+state    real  ssat       ikj      dyn_em      1         -      hdu      "ssat"             "Supersaturation wrt liquid"  "%"
+state    real  ssati      ikj      dyn_em      1         -      hdu      "ssati"            "Supersaturation wrt ice"  "%"
+
 # LIGHTNING NUDGING
 #state    real    ltg_dat        ij      misc        1         -      r         "ltg_dat"               "gridded lightning data"  "Flash per xkm x xkm per LAD_INT sec"
 # END LIGHTNING NUDGING
@@ -2416,12 +2419,13 @@ rconfig   real     nssl_rho_qhl           namelist,physics      1            900
 rconfig   real     nssl_rho_qs            namelist,physics      1            100.     rh       "Snow particle density"  ""      ""
 rconfig   integer  nssl_icdx              namelist,physics      1             6       rh       "NSSL Graupel fall speed option"  ""      ""
 rconfig   integer  nssl_icdxhl            namelist,physics      1             6       rh       "NSSL Hail fall speed option"  ""      ""
-rconfig   integer  nssl_hail_on           namelist,physics     max_domains   -1       rh       "NSSL Hail flag"  ""      ""
+rconfig   integer  nssl_hail_on           namelist,physics      1            -1       rh       "NSSL Hail flag"  ""      ""
 rconfig   integer  nssl_ccn_on            namelist,physics      1            -1       rh       "NSSL CCN flag"  ""      ""
 rconfig   integer  nssl_ccn_is_ccna       namelist,physics      1             0       rh       "NSSL flag that CCN is CCNA"  ""      ""
 rconfig   integer  nssl_2moment_on        namelist,physics      1            -1       rh       "NSSL 2-moment flag"  ""      ""
 rconfig   integer  nssl_3moment           namelist,physics      1             0       rh       "NSSL 3-moment flag"  ""      ""
 rconfig   integer  nssl_density_on        namelist,physics      1            -1       rh       "NSSL graupel/hail density flag"  ""      ""
+rconfig   integer  nssl_ssat_output       namelist,physics      1             0       rh       "NSSL ssat output flag"  ""      ""
 
 
 
@@ -2501,6 +2505,7 @@ rconfig   integer ideal_xland             namelist,physics	1             1      
 rconfig   real    swrad_scat              namelist,physics	1             1       irh    "SWRAD_SCAT" "SCATTERING FACTOR IN SWRAD"      ""
 rconfig   integer surface_input_source    namelist,physics	1             3       irh    "surface_input_source"          "1=static (fractional), 2=time dependent (dominant), 3=dominant cateogry from metgrid"      ""
 rconfig   integer num_soil_layers         namelist,physics	1             5       irh    "num_soil_layers"               ""      ""
+rconfig   integer default_soiltype        namelist,physics	1             8        rh    "default_soiltype"              "Soil category used to correct missing values (default 8 : silty clay loam)"      ""
 rconfig   integer num_pft_clm             namelist,physics      1            17       -      "num_pft_clm"                  ""      ""
 rconfig   logical input_pft               namelist,physics      1            .false.   h     "input_pft_flag"         "use input pft instead of USGS"      ""
 rconfig   integer maxpatch                namelist,physics      1            10       irh    "maxpatch"                      ""      ""
@@ -3055,6 +3060,8 @@ package   nssl_hail1m     nssl_hail_on==2              -             moist:qh;
 package   nssl_ccn_opt    nssl_ccn_on==1               -             scalar:qnn
 package   nssl_graupelvol nssl_density_on==1           -             scalar:qvolg
 package   nssl_hailvol    nssl_density_on==2           -             scalar:qvolg,qvolh
+package   nssl_ssat_out   nssl_ssat_output==1          -             state:ssat
+package   nssl_ssati_out  nssl_ssat_output==2          -             state:ssat,ssati
 
 
 package   radar_refl      compute_radar_ref==1         -             state:refl_10cm,refd_max

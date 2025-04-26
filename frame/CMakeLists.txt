@@ -160,7 +160,7 @@ set_source_files_properties(
                             DIRECTORY ${PROJECT_SOURCE_DIR}
                             PROPERTIES
                             COMPILE_OPTIONS_OPTIMIZATION
-                              $<$<COMPILE_LANGUAGE:Fortran>:${WRF_FCNOOPT}>
+                              "$<$<COMPILE_LANGUAGE:Fortran>:${WRF_FCNOOPT}>"
                             )
 
 install( 

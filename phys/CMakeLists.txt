@@ -157,6 +157,7 @@ target_sources(
                   module_mp_SBM_polar_radar.F
                   module_mp_sbu_ylin.F
                   module_mp_thompson.F
+                  module_mp_udm.F
                   module_mp_wdm5.F
                   module_mp_wdm6.F
                   module_mp_wdm7.F

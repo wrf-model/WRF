@@ -487,6 +487,19 @@
       ENDDO
 
 !-----------------------------------------------------------------------
+! Check that default_soiltype is between 1 and 19 and is not water (14)
+!-----------------------------------------------------------------------
+      IF ((model_config_rec % default_soiltype .LT. 1) &
+            .OR. (model_config_rec % default_soiltype .GT. 19) &
+            .OR. (model_config_rec % default_soiltype .EQ. 14)) THEN
+         WRITE (wrf_err_message, FMT='(A,I4,A)') '--- ERROR: invalid default_soiltype category (', model_config_rec % default_soiltype, ')'
+         CALL wrf_message ( wrf_err_message )
+         WRITE (wrf_err_message, FMT='(A)') '--- ERROR: resetting default_soiltype to 8 (silty clay loam)'
+         CALL wrf_message ( wrf_err_message )
+         model_config_rec % default_soiltype = 8
+      END IF
+      
+!-----------------------------------------------------------------------
 ! Check that mosiac option cannot turn on when sf_urban_physics = 2 and 3
 !-----------------------------------------------------------------------
       DO i = 1, model_config_rec % max_dom
@@ -773,7 +786,7 @@
 !-----------------------------------------------------------------------
 ! Check that all values of mp_physics are the same for all domains
 !-----------------------------------------------------------------------
-
+! NOTE: This is redundant because frame/module_configure.F has already set all values to the value of mp_physics(max_dom)
       DO i = 2, model_config_rec % max_dom
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec % mp_physics(i)     .NE. &
@@ -971,6 +984,8 @@
                    ( model_config_rec % ra_sw_physics(i) .EQ. RRTMG_SWSCHEME       )   .OR.  &
                    ( model_config_rec % ra_sw_physics(i) .EQ. RRTMG_SWSCHEME_FAST  ) ) ) ) THEN
                ! This is OK, no way would a negation have been understandable!
+            ELSE IF ( model_config_rec % ra_sw_physics(i) == 0 ) THEN
+                    model_config_rec%ghg_input=0
             ELSE
                oops = oops + 1
             END IF
@@ -3382,38 +3397,39 @@
          IF ( model_config_rec % mp_physics(i) .EQ. 22            ) THEN
               model_config_rec % mp_physics(i) = NSSL_2MOM
               model_config_rec % nssl_2moment_on = 1
-              model_config_rec % nssl_hail_on(i) = 0
-              model_config_rec % nssl_ccn_on = 0
+              model_config_rec % nssl_hail_on = 0
+              model_config_rec % nssl_ccn_on = 1
               model_config_rec % nssl_density_on = 1 ! set graupel density
               WRITE (wrf_err_message, FMT='(A)') ' **CAUTION** mp_physics = 22 has been deprecated. '// &
-                'Instead you can use mp_physics=18, nssl_hail_on=0, nssl_ccn_on=0'
+                'Instead you can use mp_physics=18, nssl_hail_on=0, nssl_ccn_on=1'
               CALL wrf_debug ( 0, wrf_err_message )
          ELSEIF ( model_config_rec % mp_physics(i) .EQ. 17        ) THEN
               model_config_rec % mp_physics(i) = NSSL_2MOM
               model_config_rec % nssl_2moment_on = 1
-              model_config_rec % nssl_hail_on(i) = 1
-              model_config_rec % nssl_ccn_on = 0
+              model_config_rec % nssl_hail_on = 1
+              model_config_rec % nssl_ccn_on = 1
               model_config_rec % nssl_density_on = 2 ! set graupel+hail density
               WRITE (wrf_err_message, FMT='(A)') ' **CAUTION** mp_physics = 17 has been deprecated. '// &
-                'Instead you can use mp_physics=18, nssl_ccn_on=0'
+                'Please use mp_physics=18, Note that nssl_ccn_on=0 is not recommended and default set to 1'
               ! print statement for deprecated option
               CALL wrf_debug ( 0, wrf_err_message )
          ELSEIF ( model_config_rec % mp_physics(i) .EQ. 19        ) THEN
              ! single-moment with hail + graupel density
               model_config_rec % mp_physics(i) = NSSL_2MOM
               model_config_rec % nssl_2moment_on = 0
-              model_config_rec % nssl_hail_on(i) = 2
+              model_config_rec % nssl_hail_on = 2
               model_config_rec % nssl_density_on = 1 ! set  graupel density
               ! print statement for deprecated option
               WRITE (wrf_err_message, FMT='(A)') ' **CAUTION** mp_physics = 19 has been deprecated. '// &
                 'Instead you can use mp_physics=18, nssl_2moment_on=0, nssl_ccn_on=0'
               CALL wrf_debug ( 0, wrf_err_message )
          ELSEIF ( model_config_rec % mp_physics(i) .EQ. 21        ) THEN
-             ! single-moment without
+             ! single-moment without graupel volume, no hail
               model_config_rec % mp_physics(i) = NSSL_2MOM
               model_config_rec % nssl_2moment_on = 0
-              model_config_rec % nssl_hail_on(i) = 0
+              model_config_rec % nssl_hail_on = 0
               model_config_rec % nssl_density_on = 0 ! set  graupel density
+              model_config_rec % nssl_ccn_on = 0
               ! print statement for deprecated option
               WRITE (wrf_err_message, FMT='(A)') ' **CAUTION** mp_physics = 21 has been deprecated. '// &
                 'Instead you can use mp_physics=18, nssl_2moment_on=0, nssl_ccn_on=0, nssl_hail_on=0'
@@ -3423,7 +3439,7 @@
          IF ( model_config_rec % mp_physics(i) /= NSSL_2MOM ) THEN
            ! If not NSSL-MP, make sure extra fields are turned off (in case of stray namelist settings)
               model_config_rec % nssl_2moment_on = 0
-              model_config_rec % nssl_hail_on(i) = 0
+              model_config_rec % nssl_hail_on = 0
               model_config_rec % nssl_density_on = 0 ! set  graupel density
               model_config_rec % nssl_3moment = 0
               model_config_rec % nssl_ccn_on = 0
@@ -3431,23 +3447,25 @@
          ELSE ! make sure settings are consistent
 
            IF ( model_config_rec % nssl_ccn_on < 0 ) THEN
+             ! nssl_ccn_on = -1, so set default
               model_config_rec % nssl_ccn_on = 1
            ENDIF
 
            IF ( model_config_rec % nssl_2moment_on < 0 ) THEN ! turn on number concentrations
+             ! nssl_2moment_on = -1 so set default
               model_config_rec % nssl_2moment_on = 1
            ENDIF
 
-           IF ( model_config_rec % nssl_hail_on(i) < 0 ) THEN
+           IF ( model_config_rec % nssl_hail_on < 0 ) THEN
               IF ( model_config_rec % nssl_2moment_on == 0 ) THEN
-                model_config_rec % nssl_hail_on(i) = 2
+                model_config_rec % nssl_hail_on = 2
               ELSE
-                model_config_rec % nssl_hail_on(i) = 1
+                model_config_rec % nssl_hail_on = 1
               ENDIF
            ENDIF
 
            IF ( model_config_rec % nssl_density_on < 0 ) THEN
-              IF ( model_config_rec % nssl_hail_on(i) == 1 ) THEN
+              IF ( model_config_rec % nssl_hail_on == 1 ) THEN
                 model_config_rec % nssl_density_on = 2 ! set default of graupel+hail density
               ELSE
                 model_config_rec % nssl_density_on = 1 ! set graupel density (hail off)
@@ -3456,7 +3474,7 @@
 
            IF ( model_config_rec % nssl_3moment == 1   ) THEN
               model_config_rec % nssl_2moment_on = 1
-              IF ( model_config_rec % nssl_hail_on(i) == 1 ) THEN
+              IF ( model_config_rec % nssl_hail_on == 1 ) THEN
                 model_config_rec % nssl_3moment = 2 ! 3mom rain, graupel and hail
               ELSE
                 model_config_rec % nssl_3moment = 1 ! 3mom rain and graupel (no hail)

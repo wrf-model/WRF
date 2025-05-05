@@ -3843,8 +3843,8 @@ SUBROUTINE bdy_chem_value_top_pv ( chem,xlat,         &
 
     REAL, DIMENSION(ims:ime,kms:kme,jms:jme,num_chem ),  &
                intent(INOUT) :: chem
-    REAL, DIMENSION( ims:ime , jms:jme ),   intent(IN)   :: xlat     ! for determination of O3/PV p\
-roportionality constant
+    REAL, DIMENSION( ims:ime , jms:jme ),   intent(IN)   :: xlat     ! for determination of O3/PV proportionality constant
+
     REAL                  :: pv2o3_con   ! for determination of O3/PV proportionality constant
     REAL, DIMENSION(ims:ime , kms:kme , jms:jme), intent(IN) :: pv,pb,p
     REAL   :: preshPa

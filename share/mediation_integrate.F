@@ -2422,14 +2422,34 @@ SUBROUTINE med_read_wrf_volc_emiss_opt_vol_eq_3 ( grid , config_flags )
     CHARACTER (LEN=256)                    :: message, current_date_char
     CHARACTER (LEN=256)                    :: inpname
  
+    INTEGER :: day_of_year, julyr
+    REAL :: gmt
+    
+    character(len=50) :: trimmed_auxinput13_inname
+    INTEGER :: trimmed_day_of_year, trimmed_julyr
+    REAL :: trimmed_gmt
+    
+    logical :: first_call
+    save first_call
+    data first_call / .true. /
+
 #include "wrf_io_flags.h"
 
       CALL domain_clock_get( grid, current_timestr=current_date_char )
 
       IF( grid%auxinput13_oid == 0 ) then
-         CALL construct_filename2a(inpname , 'wrfchemv_d<domain>.<date>', grid%id , 2, current_date_char)
-         
-          IF (TRIM(grid%auxinput13_inname) .eq. TRIM(inpname)) THEN
+         CALL get_julgmt ( current_date_char , julyr , day_of_year , gmt )
+
+         !print *, 'current_date_char: ', current_date_char
+         !print *, 'julyr, day_of_year, gmt : ', julyr, day_of_year, gmt
+         trimmed_auxinput13_inname = grid%auxinput13_inname(14:)
+   
+         CALL get_julgmt ( trimmed_auxinput13_inname , trimmed_julyr , trimmed_day_of_year , trimmed_gmt )
+         !print *, 'trimmed_current_date_char: ', trimmed_auxinput13_inname
+         !print *, 'trimmed_julyr, trimmed_day_of_year, trimmed_gmt : ', trimmed_julyr, trimmed_day_of_year, trimmed_gmt
+   
+         IF (trimmed_julyr .eq. julyr .and. trimmed_day_of_year .eq. day_of_year .and. gmt.ge.trimmed_gmt .and. first_call) THEN
+            inpname=TRIM(grid%auxinput13_inname)
             WRITE(message,*)'mediation_integrate: med_read_wrf_volc_emiss_opt_vol_eq_3: Open file ',TRIM(inpname)
             CALL wrf_message( TRIM(message) )
 
@@ -2470,6 +2490,8 @@ SUBROUTINE med_read_wrf_volc_emiss_opt_vol_eq_3 ( grid , config_flags )
              WRITE(message,*)'mediation_integrate: med_read_wrf_volc_emiss_opt_vol_eq_3: close emissions file ',TRIM(inpname),&
             TRIM(current_date_char),' frame ',grid%emissframes
             CALL wrf_message( TRIM(message) )
+            
+            first_call = .false.
           ENDIF
       ENDIF !( grid%auxinput13_oid == 0 )
 

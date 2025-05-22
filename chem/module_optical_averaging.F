@@ -4253,7 +4253,10 @@ END subroutine optical_prep_modal_soa_vbs
         real, save:: xnum_secti(8),xnum_sectj(8)
         real, save:: xmas_secti(8),xmas_sectj(8)
         real, dimension(1:nbin_o) :: xdia_um, xdia_cm
-        REAL, PARAMETER :: FRAC2Aitken=0.25   ! Fraction of modal mass in Aitken mode
+        !REAL, PARAMETER :: FRAC2Aitken=0.25   ! Fraction of modal mass in Aitken mode
+
+        !ukhova 23 March 2025. hardcoded value
+        REAL, PARAMETER :: sulf_FRAC2Aitken=0.05   ! Fraction of modal mass in Aitken mode - applied globally to each species
         
         !Ash bins. Diameters in microns
         real*8, DIMENSION (10), PARAMETER :: da_ash(10)=(/1000d0,500d0, 250d0,125d0,62.5d0,31.25d0,15.625d0,7.8125d0,3.9065d0,0.039d0/)
@@ -4417,11 +4420,11 @@ END subroutine optical_prep_modal_soa_vbs
       
       ! Accumulation mode...
       ! fraction of sulfate mass into modal accumulation mode
-      mass_so4j= (1.-FRAC2Aitken)*chem(i,k,j,p_sulf)*conv1sulf
+      mass_so4j= (1.-sulf_FRAC2Aitken)*chem(i,k,j,p_sulf)*conv1sulf
       
       ! Aitken mode...
       ! fraction of sulfate mass into modal Aitken mode
-      mass_so4i= FRAC2Aitken*chem(i,k,j,p_sulf)*conv1sulf
+      mass_so4i= sulf_FRAC2Aitken*chem(i,k,j,p_sulf)*conv1sulf
       
       !loop over 8 MOSAIC bins
       do isize = 1, nbin_o

@@ -678,7 +678,12 @@ convert_to_ppmv = 1.e6 * 28.97/96.066
 
 ! sulfate aerosol volume median radius = mu+3 * sigma^2
 !reff_sulf=(dginia_sulf/2.0) + exp(3.*log(sginia_sulf)**2)
-reff_sulf=exp(log(dginia_sulf/2.0) + 3.*log(sginia_sulf)**2)
+!reff_sulf=exp(log(dginia_sulf/2.0) + 3.*log(sginia_sulf)**2)
+
+
+!ATTENTION here 3.5*log(...) instead of 3*log(...)
+reff_sulf=exp(log(dginia_sulf/2.0) + 3.5*log(sginia_sulf)**2)
+
 
 lmx=kte-kts+1
 do j=jts,jte

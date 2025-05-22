@@ -1678,15 +1678,6 @@ end if !Chemistry time step check
 ! since we do not have h2o2 as a variable, pass in p_h2o2 as zero
 ! will have to use backgrund value
 !
-        if(config_flags%chem_opt == CHEM_VOLC)then
-          CALL wrf_debug(15,'CHEM_VOLC so2-so4 conversion')
-          CALL  so2so4(0,chem,p_so2,p_sulf,p_h2o2,p_QC,T_PHY,MOIST,         &
-         grid%qc_cu, grid%gd_cldfr, config_flags%cu_diag,                   &
-         NUM_CHEM,NUM_MOIST,                                                &
-         ids,ide, jds,jde, kds,kde,                                         &
-         ims,ime, jms,jme, kms,kme,                                         &
-         its,ite, jts,jte, kts,kte                                          )
-        endif
 !
 !   now do wet removal; first LS if there is no explicit aqeous phase
          if(config_flags%wetscav_onoff<0)then

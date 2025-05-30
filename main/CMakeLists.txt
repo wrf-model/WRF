@@ -5,7 +5,7 @@ add_compile_options    ( "${PROJECT_COMPILE_OPTIONS}"     )
 add_compile_definitions( "${PROJECT_COMPILE_DEFINITIONS}" )
 
 # First make true executables
-if ( ${WRF_CORE} STREQUAL "PLUS" OR ${WRF_CASE} STREQUAL "EM_REAL" )
+if ( ${WRF_CORE} STREQUAL "PLUS" OR ${WRF_CORE} STREQUAL "ARW" )
   
   add_executable( 
                   wrf

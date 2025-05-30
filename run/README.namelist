@@ -743,12 +743,8 @@ use_rap_aero_icbc                   = .false.   ! Set to .true. to ingest real-t
                                      = 2, Mellor-Yamada-Janjic TKE scheme
                                      = 3, Hybrid EDMF GFS scheme 
                                      = 4, Eddy-diffusivity Mass Flux, Quasi-Normal Scale Elimination PBL
-                                     = 5, MYNN 2.5 level TKE scheme, works with
-                                          sf_sfclay_physics=1 or 2 as well as 5
+                                     = 5, MYNN TKE scheme, works with sf_sfclay_physics=1 or 2 as well as 5
                                           (option 6 removed in 4.5, replaced by bl_mynn_closure options)
- bl_mynn_closure                          = 2.5: level 2.5
-                                            2.6: level 2.6
-                                            3.0: level 3.0                                         
                                      = 7, ACM2 (Pleim) PBL
                                      = 8, Bougeault and Lacarrere (BouLac) PBL
                                      = 9, UW boundary layer scheme from CAM5 (CESM 1_0_1)
@@ -777,6 +773,9 @@ use_rap_aero_icbc                   = .false.   ! Set to .true. to ingest real-t
 
  tke_budget (max_dom)                = 0,       ! default off; = 1 adds MYNN tke budget terms to output (new in 4.5)
                                                   (replacing bl_mynn_tkebudget in prior versions)
+ bl_mynn_closure                     = 2.5: level 2.5
+                                       2.6: level 2.6 (default)
+                                       3.0: level 3.0
  bl_mynn_tkeadvect (max_dom)         = .false., ! default off; = .true. do MYNN tke advection
  icloud_bl                                        option to couple the subgrid-scale clouds from the PBL scheme (MYNN only) 
                                                   to radiation schemes 

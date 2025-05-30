@@ -23,6 +23,7 @@ macro( wrf_m4_preproc_fortran )
   # Generate compile command and file outputs
   set( WRF_PP_M4_OUTPUT   )
   set( WRF_PP_M4_COMMANDS )
+  set( WRF_PP_M4_DEPENDS  )
   foreach( WRF_PP_M4_SOURCE_FILE  ${WRF_PP_M4_SOURCES} )
     get_filename_component( WRF_PP_M4_INPUT_SOURCE           ${WRF_PP_M4_SOURCE_FILE} REALPATH )
     get_filename_component( WRF_PP_M4_INPUT_SOURCE_FILE_ONLY ${WRF_PP_M4_SOURCE_FILE} NAME     )
@@ -45,6 +46,10 @@ macro( wrf_m4_preproc_fortran )
     list( 
           APPEND WRF_PP_M4_OUTPUT
           ${WRF_PP_M4_OUTPUT_FILE}
+          )
+    list( 
+          APPEND WRF_PP_M4_DEPENDS
+          ${WRF_PP_M4_INPUT_SOURCE}
           )
     
     # # Tell all targets that eventually use this file that it is generated - this is useful if this macro is used in a
@@ -72,7 +77,7 @@ macro( wrf_m4_preproc_fortran )
                       COMMAND ${CMAKE_COMMAND} -E  make_directory ${WRF_PP_M4_OUTPUT_DIR}
                       ${WRF_PP_M4_COMMANDS}
                       COMMENT "Preprocessing ${WRF_PP_M4_TARGET_NAME}"
-                      DEPENDS ${WRF_PP_M4_DEPENDENCIES}
+                      DEPENDS ${WRF_PP_M4_DEPENDENCIES} ${WRF_PP_M4_DEPENDS}
                       )
 
   add_custom_target(

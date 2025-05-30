@@ -55,8 +55,8 @@ get_datatype_from_typesize( int *typesize )
   // MPI critically aborts on trivial errors caused by this call so replace error
   // handler temporarily
   ierr = MPI_Comm_create_errhandler( &temp_errhandler, &errhandler );
-  ierr = MPI_Errhandler_get( MPI_COMM_WORLD, &previous );
-  ierr = MPI_Errhandler_set( MPI_COMM_WORLD, errhandler );
+  ierr = MPI_Comm_get_errhandler( MPI_COMM_WORLD, &previous );
+  ierr = MPI_Comm_set_errhandler( MPI_COMM_WORLD, errhandler );
 
   /* handle different sized data types appropriately. */
   ierr = MPI_Type_match_size (MPI_TYPECLASS_REAL, *typesize, &dtype);
@@ -71,7 +71,7 @@ get_datatype_from_typesize( int *typesize )
   }
 
   // Reinstate the previous error handler and clear ours
-  ierr = MPI_Errhandler_set( MPI_COMM_WORLD, previous );
+  ierr = MPI_Comm_set_errhandler( MPI_COMM_WORLD, previous );
   ierr = MPI_Errhandler_free( &errhandler );
 
   return dtype;

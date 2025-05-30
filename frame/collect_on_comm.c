@@ -37,6 +37,47 @@
 #endif
 
 
+#if defined( DM_PARALLEL ) && ! defined( STUBMPI )
+void
+temp_errhandler( MPI_Comm *comm_ptr, int *errcode, ... )
+{
+  // do nothing...
+}
+
+MPI_Datatype
+get_datatype_from_typesize( int *typesize )
+{
+  MPI_Errhandler errhandler;
+  MPI_Errhandler previous;
+  MPI_Datatype dtype;
+  int ierr = -1;
+
+  // MPI critically aborts on trivial errors caused by this call so replace error
+  // handler temporarily
+  ierr = MPI_Comm_create_errhandler( &temp_errhandler, &errhandler );
+  ierr = MPI_Errhandler_get( MPI_COMM_WORLD, &previous );
+  ierr = MPI_Errhandler_set( MPI_COMM_WORLD, errhandler );
+
+  /* handle different sized data types appropriately. */
+  ierr = MPI_Type_match_size (MPI_TYPECLASS_REAL, *typesize, &dtype);
+  if (MPI_SUCCESS != ierr) {
+    ierr = MPI_Type_match_size (MPI_TYPECLASS_INTEGER, *typesize, &dtype);
+    if (MPI_SUCCESS != ierr) {
+#ifndef MS_SUA
+      fprintf(stderr,"%s %d FATAL ERROR: unhandled typesize = %d!!\n", __FILE__,__LINE__,*typesize) ;
+#endif
+      MPI_Abort(MPI_COMM_WORLD,1) ;
+    }
+  }
+
+  // Reinstate the previous error handler and clear ours
+  ierr = MPI_Errhandler_set( MPI_COMM_WORLD, previous );
+  ierr = MPI_Errhandler_free( &errhandler );
+
+  return dtype;
+}
+#endif
+
 int col_on_comm ( int *, int *, void *, int *, void *, int *, int);
 int dst_on_comm ( int *, int *, void *, int *, void *, int *, int);
 
@@ -115,17 +156,7 @@ col_on_comm ( int * Fcomm, int * typesize ,
 
   }
 
-  /* handle different sized data types appropriately. */
-  ierr = MPI_Type_match_size (MPI_TYPECLASS_REAL, *typesize, &dtype);
-  if (MPI_SUCCESS != ierr) {
-    ierr = MPI_Type_match_size (MPI_TYPECLASS_INTEGER, *typesize, &dtype);
-    if (MPI_SUCCESS != ierr) {
-#ifndef MS_SUA
-      fprintf(stderr,"%s %d FATAL ERROR: unhandled typesize = %d!!\n", __FILE__,__LINE__,*typesize) ;
-#endif
-      MPI_Abort(MPI_COMM_WORLD,1) ;
-    }
-  }
+  dtype = get_datatype_from_typesize( typesize );
 
   ierr = MPI_Gatherv( inbuf  , *ninbuf,               dtype,
                       outbuf , recvcounts , displace, dtype,
@@ -204,17 +235,7 @@ dst_on_comm ( int * Fcomm, int * typesize ,
     }
   }
 
-  /* handle different sized data types appropriately. */
-  ierr = MPI_Type_match_size (MPI_TYPECLASS_REAL, *typesize, &dtype);
-  if (MPI_SUCCESS != ierr) {
-    ierr = MPI_Type_match_size (MPI_TYPECLASS_INTEGER, *typesize, &dtype);
-    if (MPI_SUCCESS != ierr) {
-#ifndef MS_SUA
-      fprintf(stderr,"%s %d FATAL ERROR: unhandled typesize = %d!!\n", __FILE__,__LINE__,*typesize) ;
-#endif
-      MPI_Abort(MPI_COMM_WORLD,1) ;
-    }
-  }
+  dtype = get_datatype_from_typesize( typesize );
 
   MPI_Scatterv( inbuf,     sendcounts,  displace, dtype,
                 outbuf,    *noutbuf,              dtype,

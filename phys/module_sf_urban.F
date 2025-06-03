@@ -1032,7 +1032,8 @@ USE module_model_constants, ONLY :  piconst
    IF (IMP_SCHEME==2) then
    IF (FLXHUMRP <= 0.) FLXHUMRP = 0. 
 !  Compute water retention depth from previous time step 
-   DrelR = DrelRP+(RAIN1-FLXHUMRP)*DELT/porimp(IMPR)
+   ! Convert kinematic water flux to evaporation in m/s: multiply flux by rho_air/who_water in SI units
+   DrelR = DrelRP+(RAIN1-FLXHUMRP*RHOO/1000.)*DELT/porimp(IMPR)
    IF (RAIN > 0. .AND. DrelR < DrelRP) DrelR = DrelRP 
   
    IF (DrelR <= 0.) then
@@ -1284,9 +1285,10 @@ ENDIF
    IF (FLXHUMBP <= 0.) FLXHUMBP = 0. 
    IF (FLXHUMGP <= 0.) FLXHUMGP = 0. 
 ! Compute water retention from previous time step for wall and ground
-  DrelB = DrelBP+(RAIN1-FLXHUMBP)*DELT/porimp(IMPB) 
+   ! Convert kinematic water flux to evaporation in m/s: multiply flux by rho_air/who_water in SI units
+  DrelB = DrelBP+(RAIN1-FLXHUMBP*RHOO/1000.)*DELT/porimp(IMPB) 
     IF (RAIN > 0. .AND. DrelB < DrelBP) DrelB = DrelBP 
-  DrelG = DrelGP+(RAIN1-FLXHUMGP)*DELT/porimp(IMPG)  
+  DrelG = DrelGP+(RAIN1-FLXHUMGP*RHOO/1000.)*DELT/porimp(IMPG)  
     IF (RAIN > 0. .AND. DrelG < DrelGP) DrelG = DrelGP 
   
   IF (DrelB <= 0.) then

@@ -82,7 +82,7 @@ static int destroy_par_info ( p )
 
 static int destroy_list( list, dfcn )
      rsl_list_t ** list ;          /* pointer to pointer to list */
-     int (*dfcn)() ;               /* pointer to function for destroying
+     int (*dfcn)(void *) ;         /* pointer to function for destroying
                                       the data field of the list */
 {
   rsl_list_t *p, *trash ;

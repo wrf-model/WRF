@@ -3,7 +3,7 @@ help()
 {
   echo "./build.sh as_host workingdir [options] [-- <hostenv.sh options>]"
   echo "  as_host                   First argument must be the host configuration to use for environment loading"
-  echo "  workingdir                First argument must be the working dir to immediate cd to"
+  echo "  workingdir                Second argument must be the working dir to immediate cd to"
   echo "  -c                        Configuration build type, piped directly into configure"
   echo "  -n                        Configuration nesting type, piped directly into configure"
   echo "  -o                        Configuration optstring passed into configure"

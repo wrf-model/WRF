@@ -743,12 +743,8 @@ use_rap_aero_icbc                   = .false.   ! Set to .true. to ingest real-t
                                      = 2, Mellor-Yamada-Janjic TKE scheme
                                      = 3, Hybrid EDMF GFS scheme 
                                      = 4, Eddy-diffusivity Mass Flux, Quasi-Normal Scale Elimination PBL
-                                     = 5, MYNN 2.5 level TKE scheme, works with
-                                          sf_sfclay_physics=1 or 2 as well as 5
+                                     = 5, MYNN TKE scheme, works with sf_sfclay_physics=1 or 2 as well as 5
                                           (option 6 removed in 4.5, replaced by bl_mynn_closure options)
- bl_mynn_closure                          = 2.5: level 2.5
-                                            2.6: level 2.6
-                                            3.0: level 3.0                                         
                                      = 7, ACM2 (Pleim) PBL
                                      = 8, Bougeault and Lacarrere (BouLac) PBL
                                      = 9, UW boundary layer scheme from CAM5 (CESM 1_0_1)
@@ -777,17 +773,20 @@ use_rap_aero_icbc                   = .false.   ! Set to .true. to ingest real-t
 
  tke_budget (max_dom)                = 0,       ! default off; = 1 adds MYNN tke budget terms to output (new in 4.5)
                                                   (replacing bl_mynn_tkebudget in prior versions)
+ bl_mynn_closure                     = 2.5: level 2.5
+                                       2.6: level 2.6 (default)
+                                       3.0: level 3.0
  bl_mynn_tkeadvect (max_dom)         = .false., ! default off; = .true. do MYNN tke advection
  icloud_bl                                        option to couple the subgrid-scale clouds from the PBL scheme (MYNN only) 
                                                   to radiation schemes 
                                      0:  no coupling; 1: activate coupling to radiation (default)
- bl_mynn_cloudmix (max_dom)          = 0 ! default off; =1 activates mixing of qc and qi in MYNN
+ bl_mynn_cloudmix (max_dom)          activates mixing of qc and qi in MYNN
                                      0: no mixing of qc & qi; 1: mixing activated (default). 
                                         Note qnc and qni are mixed when scalar_pblmix =1.
  bl_mynn_mixlength                   option to change mixing length formulation in MYNN
                                      0: original as in Nakanishi and Niino 2009, 
-                                     1: RAP/HRRR (including BouLac in free atmosphere), 
-                                     2: experimental (default; includes cloud-specific mixing length and a scale-aware mixing 
+                                     1: RAP/HRRR (default; including BouLac in free atmosphere), 
+                                     2: experimental (includes cloud-specific mixing length and a scale-aware mixing 
                                         length, following Ito et al. 2015, BLM). Option 2 has been well tested with 
                                         the edmf options.
  bl_mynn_cloudpdf                    option to switch to different cloud PDFs to represent subgrid clouds

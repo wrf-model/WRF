@@ -88,7 +88,7 @@ int	pack_spatial (  pt_cnt, bit_cnt, pack_null, fbuff, ppbitstream,
     float max_grid;		/* maximum value in grid */
     float ftemp;		/* temporary float containing grid value */
     unsigned long *pBitstream;
-    unsigned long grib_local_ibm();
+    unsigned long grib_local_ibm(double);
     int wordnum;
     int zero_cnt;
     int prec_too_high = 0;

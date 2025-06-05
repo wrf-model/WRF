@@ -10,13 +10,13 @@ module da_qscat
       max_error_bt, max_error_buv, anal_type_verify, kms,kme,kts,kte,&
       ob_vars,qcstat_conv_unit, fails_error_max, &
       convert_fd2uv,convert_uv2fd,max_error_spd,max_error_dir,max_omb_spd,max_omb_dir,pi,qc_rej_both,&
-      wind_sd_qscat, wind_stats_sd, write_rej_obs_conv
+      wind_sd_qscat, wind_stats_sd, write_rej_obs_conv, qc_qscat, qc_qscat_rr, qscat_neutral
    use da_grid_definitions, only : da_ffdduv, da_ffdduv_model, da_ffdduv_diagnose
    use da_physics, only : da_uv_to_sd_lin, da_uv_to_sd_adj
    use da_define_structures, only : maxmin_type, iv_type, y_type, jo_type, &
       bad_data_type, x_type, number_type, bad_data_type
    use da_interpolation, only : da_to_zk, &
-      da_interp_lin_3d,da_interp_lin_3d_adj
+      da_interp_lin_3d,da_interp_lin_3d_adj,da_interp_lin_2d
    use da_par_util, only : da_proc_stats_combine
    use da_par_util1, only : da_proc_sum_int
    use da_statistics, only : da_stats_calculate
@@ -51,5 +51,6 @@ contains
 #include "da_transform_xtoy_qscat.inc"
 #include "da_transform_xtoy_qscat_adj.inc"
 #include "da_calculate_grady_qscat.inc"
+#include "da_qc_qscat.inc"
 
 end module da_qscat

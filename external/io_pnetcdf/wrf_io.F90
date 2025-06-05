@@ -91,6 +91,16 @@ module wrf_data_pnc
 ! Whether pnetcdf file is in collective (.true.) or independent mode
 ! Collective mode is the default.
     logical                               :: Collective
+
+    ! If BputEnabled is set to .true. then PnetCDF bput calls should be used instead
+    ! of PnetCDF put calls.
+    ! It is also (always) true that: BputEnabled is set to .true. if
+    ! and only if a buffer is correctly attached to the file. (invariant)
+    logical                               :: BputEnabled = .false.
+
+    ! If isDefineMode is set to .true. then the file is in define mode.
+    logical                               :: isDefineMode = .true.
+
   end type wrf_data_handle
   type(wrf_data_handle),target            :: WrfDataHandles(WrfDataHandleMax)
 end module wrf_data_pnc
@@ -208,6 +218,7 @@ subroutine allocHandle(DataHandle,DH,Comm,Status)
   DH%Write     =.false.
   DH%first_operation  = .TRUE.
   DH%Collective = .TRUE.
+  DH%isDefineMode = .TRUE.
   Status = WRF_NO_ERR
 end subroutine allocHandle
 
@@ -370,6 +381,7 @@ subroutine GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
   integer(KIND=MPI_OFFSET_KIND)         :: VCount(2)
   integer                               :: stat
   integer                               :: i
+  integer                               :: BputReqID, MPIRank
 
   DH => WrfDataHandles(DataHandle)
   call DateCheck(DateStr,Status)
@@ -401,7 +413,15 @@ subroutine GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
     VStart(2) = TimeIndex
     VCount(1) = DateStrLen
     VCount(2) = 1
-    stat = NFMPI_PUT_VARA_TEXT_ALL(DH%NCID,DH%TimesVarID,VStart,VCount,DateStr)
+    CALL MPI_COMM_RANK(DH%Comm, MPIRank, stat)
+    if (DH%BputEnabled) then
+      if (MPIRank == 0) then ! only rank 0 calls BPUT_VARA_TEXT, since this var is not partitioned.
+        ! Calling non-blocking buffered-version API
+        stat = NFMPI_BPUT_VARA_TEXT(DH%NCID, DH%TimesVarID, VStart, VCount, DateStr, BputReqID)
+      endif
+    else
+      stat = NFMPI_PUT_VARA_TEXT_ALL(DH%NCID,DH%TimesVarID,VStart,VCount,DateStr)
+    endif
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__ 
@@ -661,7 +681,7 @@ subroutine netcdf_err(err,Status)
 end subroutine netcdf_err
 
 subroutine FieldIO(IO,DataHandle,DateStr,Starts,Length,MemoryOrder &
-                     ,FieldType,NCID,VarID,XField,Status)
+                     ,FieldType,NCID,VarID,IsPartitioned,XField,Status)
   use wrf_data_pnc
   include 'wrf_status_codes.h'
 #  include "pnetcdf.inc"
@@ -674,12 +694,15 @@ subroutine FieldIO(IO,DataHandle,DateStr,Starts,Length,MemoryOrder &
   integer                    ,intent(in)    :: FieldType
   integer                    ,intent(in)    :: NCID
   integer                    ,intent(in)    :: VarID
+  logical                    ,intent(in)    :: IsPartitioned
   integer,dimension(*)       ,intent(inout) :: XField
   integer                    ,intent(out)   :: Status
   integer                                   :: TimeIndex
   integer                                   :: NDim
   integer,dimension(NVarDims)               :: VStart
   integer,dimension(NVarDims)               :: VCount
+  integer                                   :: MPIRank
+  type(wrf_data_handle)      ,pointer       :: DH
 
   call GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
   if(Status /= WRF_NO_ERR) then
@@ -697,19 +720,33 @@ VCount(:) = 1
   VCount(1:NDim) = Length(1:NDim)
   VStart(NDim+1) = TimeIndex
   VCount(NDim+1) = 1
+  DH => WrfDataHandles(DataHandle)
+
+  ! when io mode is "write", and the variable is not
+  ! partitioned (meaning every process writes the same contents
+  ! to the same region), then only rank 0 writes.
+  IF (IO=="write" .AND. .NOT.IsPartitioned) THEN
+    CALL MPI_COMM_RANK(DH%Comm, MPIRank, Status)
+    IF ( DH%BputEnabled .AND. MPIRank /= 0) THEN
+      RETURN
+    ELSE IF (MPIRank /= 0) THEN
+      VCount(:) = 0
+    ENDIF
+  ENDIF
+
   select case (FieldType)
     case (WRF_REAL)
-      call ext_pnc_RealFieldIO    (WrfDataHandles(DataHandle)%Collective, &
-                                   IO,NCID,VarID,VStart,VCount,XField,Status)
+      call ext_pnc_RealFieldIO    (DH%Collective,IO,NCID,VarID,&
+                            VStart,VCount,DH%BputEnabled,XField,Status)
     case (WRF_DOUBLE)
-      call ext_pnc_DoubleFieldIO  (WrfDataHandles(DataHandle)%Collective, &
-                                   IO,NCID,VarID,VStart,VCount,XField,Status)
+      call ext_pnc_DoubleFieldIO  (DH%Collective,IO,NCID,VarID,&
+                            VStart,VCount,DH%BputEnabled,XField,Status)
     case (WRF_INTEGER)
-      call ext_pnc_IntFieldIO     (WrfDataHandles(DataHandle)%Collective, &
-                                   IO,NCID,VarID,VStart,VCount,XField,Status)
+      call ext_pnc_IntFieldIO     (DH%Collective,IO,NCID,VarID,&
+                            VStart,VCount,DH%BputEnabled,XField,Status)
     case (WRF_LOGICAL)
-      call ext_pnc_LogicalFieldIO (WrfDataHandles(DataHandle)%Collective, &
-                                   IO,NCID,VarID,VStart,VCount,XField,Status)
+      call ext_pnc_LogicalFieldIO (DH%Collective,IO,NCID,VarID,&
+                            VStart,VCount,DH%BputEnabled,XField,Status)
       if(Status /= WRF_NO_ERR) return
     case default
 !for wrf_complex, double_complex
@@ -888,7 +925,96 @@ LOGICAL FUNCTION ncd_is_first_operation( DataHandle )
     RETURN
 END FUNCTION ncd_is_first_operation
 
+! enter define mode if not already in define mode
+! do nothing if already in define mode
+subroutine try_redef(DH, stat)
+  use wrf_data_pnc
+  use pnetcdf
+  type(wrf_data_handle),pointer       :: DH
+  integer              ,intent(out)   :: stat
+  stat = 0
+  if (.NOT. DH%isDefineMode) then
+    ! return value (stat) is checked outside of this routine
+    stat = NFMPI_REDEF(DH%NCID)
+  endif
+  DH%isDefineMode = .true.
+end subroutine try_redef
+
+! exit define mode if in define mode
+! do nothing if not in define mode
+subroutine try_enddef(DH, stat)
+  use wrf_data_pnc
+  use pnetcdf
+  type(wrf_data_handle),pointer       :: DH
+  integer              ,intent(out)   :: stat
+  stat = 0
+  if (DH%isDefineMode) then
+    ! return value (stat) is checked outside of this routine
+    stat = NFMPI_ENDDEF(DH%NCID)
+  endif
+  DH%isDefineMode = .false.
+end subroutine try_enddef
+
 end module ext_pnc_support_routines
+
+! ext_pnc_bput_set_buffer_size:
+! Tell PnetCDF the size of buffer to be used by PnetCDF bput calls internally.
+subroutine ext_pnc_bput_set_buffer_size(hndl, bput_buffer_size)
+  use wrf_data_pnc
+  use ext_pnc_support_routines
+  use pnetcdf
+  implicit none
+  include 'wrf_status_codes.h'
+  integer, INTENT(IN) :: hndl
+  integer(kind=8), INTENT(IN) :: bput_buffer_size
+  type(wrf_data_handle), pointer :: DH
+  integer :: ierr=0, status=0
+
+  call GetDH(hndl,DH,ierr)
+
+  if (bput_buffer_size > 0) then
+    if(.NOT. DH%BputEnabled) then ! if buffer is not yet attached
+      ierr = NFMPI_BUFFER_ATTACH(DH%NCID, bput_buffer_size)
+      DH%BputEnabled = .true.
+    endif
+
+    ! check error
+    call netcdf_err(ierr,status)
+    if(status /= WRF_NO_ERR) then
+      write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__
+      call wrf_debug ( WARN , TRIM(msg))
+      return
+    endif
+  else
+    DH%BputEnabled = .false.
+  endif
+end subroutine ext_pnc_bput_set_buffer_size
+
+! ext_pnc_bput_wait:
+! Flush all cached reqs to the file. Wait/block till finished.
+subroutine ext_pnc_bput_wait(hndl)
+  use wrf_data_pnc
+  use ext_pnc_support_routines
+  use pnetcdf
+  implicit none
+  include 'wrf_status_codes.h'
+  integer, INTENT(IN)  :: hndl
+  type(wrf_data_handle), pointer :: DH
+  integer :: ierr, status, dummy(0)
+
+  call GetDH(hndl,DH,ierr)
+  if (DH%BputEnabled) then
+    ierr = NFMPI_WAIT_ALL(DH%NCID, NF_REQ_ALL, dummy, dummy)
+
+    ! check error
+    call netcdf_err(ierr,status)
+    if(status /= WRF_NO_ERR) then
+      write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__
+      call wrf_debug(WARN, TRIM(msg))
+      return
+    endif
+  endif
+end subroutine ext_pnc_bput_wait
 
 subroutine ext_pnc_open_for_read(DatasetName, Comm1, Comm2, SysDepInfo, DataHandle, Status)
   use wrf_data_pnc
@@ -1363,13 +1489,6 @@ SUBROUTINE ext_pnc_open_for_write_commit(DataHandle, Status)
     call wrf_debug ( WARN , TRIM(msg)) 
     return
   endif
-  stat = NFMPI_ENDDEF(DH%NCID)
-  call netcdf_err(stat,Status)
-  if(Status /= WRF_NO_ERR) then
-    write(msg,*) 'NetCDF error (',stat,') from NFMPI_ENDDEF in ext_pnc_open_for_write_commit ',__FILE__,', line', __LINE__
-    call wrf_debug ( WARN , TRIM(msg))
-    return
-  endif
   DH%FileStatus  = WRF_FILE_OPENED_FOR_WRITE
   DH%first_operation  = .TRUE.
   return
@@ -1413,6 +1532,20 @@ subroutine ext_pnc_ioclose(DataHandle, Status)
     return
   endif
 
+  ! Detach bput buffer before file close
+  if (DH%BputEnabled) then
+    stat = NFMPI_BUFFER_DETACH(DH%NCID)
+
+    ! check error
+    call netcdf_err(stat,Status)
+    if(Status /= WRF_NO_ERR) then
+      write(msg,*) 'NetCDF error in ext_pnc_ioclose: buffer detach ',__FILE__,', line', __LINE__
+      call wrf_debug ( WARN , TRIM(msg))
+      return
+    endif
+    DH%BputEnabled = .false.
+  endif
+
   stat = NFMPI_CLOSE(DH%NCID)
   call netcdf_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
@@ -1420,6 +1553,7 @@ subroutine ext_pnc_ioclose(DataHandle, Status)
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
+  DH%isDefineMode = .true.
   CALL deallocHandle( DataHandle, Status )
   DH%Free=.true.
   return
@@ -1509,7 +1643,7 @@ subroutine ext_pnc_redef( DataHandle, Status)
     call wrf_debug ( FATAL , TRIM(msg))
     return
   endif
-  stat = NFMPI_REDEF(DH%NCID)
+  call try_redef(DH, stat)
   call netcdf_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
     write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__
@@ -1557,7 +1691,7 @@ subroutine ext_pnc_enddef( DataHandle, Status)
     call wrf_debug ( FATAL , TRIM(msg))
     return
   endif
-  stat = NFMPI_ENDDEF(DH%NCID)
+  call try_enddef(DH, stat)
   call netcdf_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
     write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__
@@ -2351,6 +2485,8 @@ subroutine ext_pnc_write_field(DataHandle,DateStr,Var,Field,FieldType,Comm, &
   logical                                      :: quilting
   ! Local, possibly adjusted, copies of MemoryStart and MemoryEnd
   integer       ,dimension(NVarDims)           :: lMemoryStart, lMemoryEnd
+  ! IsPartitioned is set to .true. if the variable is partitioned among process.
+  logical                                      :: IsPartitioned = .false.
   MemoryOrder = trim(adjustl(MemoryOrdIn))
   NullName=char(0)
   call GetDim(MemoryOrder,NDim,Status)
@@ -2597,10 +2733,18 @@ subroutine ext_pnc_write_field(DataHandle,DateStr,Var,Field,FieldType,Comm, &
                                                    ,i1,i2,j1,j2,k1,k2 )
     END IF
 
+    IsPartitioned = .false.
+    DO i=1, NDim
+      IF (DomainStart(i) .NE. PatchStart(i) .OR. DomainEnd(i) .NE. PatchEnd(i)) THEN
+        IsPartitioned = .true.
+        EXIT
+      ENDIF
+    ENDDO
+
     StoredStart(1:NDim) = PatchStart(1:NDim)
     call ExtOrder(MemoryOrder,StoredStart,Status)
     call FieldIO('write',DataHandle,DateStr,StoredStart,Length,MemoryOrder, &
-                  FieldType,NCID,VarID,XField,Status)
+                  FieldType,NCID,VarID,IsPartitioned,XField,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'Warning Status = ',Status,' in ',__FILE__,', line', __LINE__ 
       call wrf_debug ( WARN , TRIM(msg))
@@ -2850,8 +2994,10 @@ subroutine ext_pnc_read_field(DataHandle,DateStr,Var,Field,FieldType,Comm,  &
       call wrf_debug ( FATAL , msg)
       return
     endif
+    ! IsPartitioned will only take effect for write reqs.
+    ! In case of read, fix IsPartitioned to .true. (insensitive to the actual value)
     call FieldIO('read',DataHandle,DateStr,StoredStart,Length,MemoryOrder, &
-                  FieldType,NCID,VarID,XField,Status)
+                  FieldType,NCID,VarID,.true.,XField,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'Warning Status = ',Status,' in ',__FILE__,', line', __LINE__ 
       call wrf_debug ( WARN , TRIM(msg))

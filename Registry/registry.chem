@@ -1107,15 +1107,15 @@ state    real  wd_no3_sc   ij        misc           1         -      rdu      "w
 
 
 state    real     -             i%jf    volc_diags    -         -      -         -                    "Volcanic ash, so2 and sulf diagstics"                ""
-state    real  wd_ash_sc        i%jf    volc_diags    1         Z      -      "wd_ash_sc"       "ash surface large scale wet deposition, accumulated"   "g/m2"
-state    real  wd_ash_cu        i%jf    volc_diags    1         Z      -      "wd_ash_cu"       "ash surface wet deposition, accumulated (Cumul)"       "ug/m2"
-state    real  ash_drydep       i%jf    volc_diags    1         Z      -      "ash_drydep"       "Accumulated volcanic ash dry deposition"                "kg/m2"
-state    real  sulf_drydep      i%jf    volc_diags    1         Z      -      "sulf_drydep"      "Accumulated volcanic sulfate dry deposition"            "mol/m2"
-state    real  so2_drydep       i%jf    volc_diags    1         Z      -      "so2_drydep"      "Accumulated volcanic so2 dry deposition"                 "mol/m2"
-state    real  sulf_grav_setl   i%jf    volc_diags    1         Z      -      "sulf_grav_setl"  "Accumulated volcanic sulfate grav. settling"             "kg/m2"
-state    real  so2_oh_loss      i%jf    volc_diags    1         Z      -      "so2_oh_loss"     "Accumulated volcanic so2 loss due to OH"                 "kgS"
-state    real  so2_h2o2_loss    i%jf    volc_diags    1         Z      -      "so2_h2o2_loss"   "Accumulated volcanic so2 loss due to H2O2"               "kgS"
-state    real  ash_fall         i%jf    volc_diags    1         Z      -       "ash_fall"        "volcanic asg fall"                                    "kg/m2"
+state    real  wd_ash_sc        i%jf    volc_diags    1         Z      rdu      "wd_ash_sc"       "ash surface large scale wet deposition, accumulated"   "g/m2"
+state    real  wd_ash_cu        i%jf    volc_diags    1         Z      rdu      "wd_ash_cu"       "ash surface wet deposition, accumulated (Cumul)"       "ug/m2"
+state    real  ash_drydep       i%jf    volc_diags    1         Z      rdu      "ash_drydep"       "Accumulated volcanic ash dry deposition"                "kg/m2"
+state    real  sulf_drydep      i%jf    volc_diags    1         Z      rdu      "sulf_drydep"      "Accumulated volcanic sulfate dry deposition"            "mol/m2"
+state    real  so2_drydep       i%jf    volc_diags    1         Z      rdu      "so2_drydep"      "Accumulated volcanic so2 dry deposition"                 "mol/m2"
+state    real  sulf_grav_setl   i%jf    volc_diags    1         Z      rdu      "sulf_grav_setl"  "Accumulated volcanic sulfate grav. settling"             "kg/m2"
+state    real  so2_oh_loss      i%jf    volc_diags    1         Z      rdu      "so2_oh_loss"     "Accumulated volcanic so2 loss due to OH"                 "kgS"
+state    real  so2_h2o2_loss    i%jf    volc_diags    1         Z      rdu      "so2_h2o2_loss"   "Accumulated volcanic so2 loss due to H2O2"               "kgS"
+state    real  ash_fall         i%jf    volc_diags    1         Z      rdu       "ash_fall"        "volcanic asg fall"                                    "kg/m2"
 
 # added wet deposition totals for NH4 and OA for MOZART coupled version
 state    real  wd_nh4_sc     ij        misc           1         -      rdu      "wd_nh4_sc"     "NH4 surface wet deposition, accumulated (Sc)"            "mmol/m2"

@@ -5,6 +5,7 @@
 !
 ! 10/12/2011 - Ravan Ahmadov (NOAA) updated to include the RACM_SOA_VBS option
 ! 10/08/2014 - Kai Wang and Yang Zhang (NCSU) updated to include the CB05_MADE/SORGAM and CB05_MADE/VBS options
+! 01/13/2025 - Alexander Ukhov (KAUST) added calculation of PM2.5 and PM10 for CHEM_VASH,CHEM_VOLC,CHEM_VOLC_4BIN
 !
       SUBROUTINE aerosols_driver (id,curr_secs,ktau,dtstep,ktauc,          &
                config_flags,dtstepc,dx,                                    &
@@ -426,6 +427,7 @@
    USE module_gocart_aerosols, only: sum_pm_gocart
    USE module_aerosols_soa_vbs, only: sum_pm_soa_vbs
    USE module_aerosols_sorgam_vbs, only: sum_pm_sorgam_vbs
+   USE module_volc_chem, only: sum_pm_volc
 
    IMPLICIT NONE
 
@@ -498,6 +500,15 @@
 ! for use in radiation and/or diagnostic purposes.
 !
    sum_pm_select: SELECT CASE(config_flags%chem_opt)
+
+   ! 01/13/2025 - A. Ukhov
+   case (chem_vash,chem_volc,chem_volc_4bin)
+      CALL wrf_debug(15,'sum_pm_driver: calling sum_pm_volc')
+      CALL sum_pm_volc (                                              &
+           alt, chem,pm2_5_dry, pm10,                                 &
+           ids,ide, jds,jde, kds,kde,                                 &
+           ims,ime, jms,jme, kms,kme,                                 &
+           its,ite, jts,jte, kts,kte                                  )
 
    CASE (GOCART_SIMPLE,GOCARTRACM_KPP,GOCARTRADM2,MOZCART_KPP,T1_MOZCART_KPP)
        CALL wrf_debug(15,'sum_pm_driver: calling sum_pm_gocart')

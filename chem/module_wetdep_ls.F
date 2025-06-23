@@ -21,7 +21,7 @@ subroutine wetdep_ls(dt,var,rain,moist,rho,num_moist, &
          INTENT(IN ) ::                                   moist
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ),                        &
           INTENT(IN   ) :: rho,dz8w,vvel        
-   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ,1:num_chem),                        &
+   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ,1:num_chem),              &
           INTENT(INOUT) :: var        
    REAL,  DIMENSION( ims:ime , jms:jme ),                                  &
           INTENT(IN   ) :: rain

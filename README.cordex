@@ -138,6 +138,11 @@ Efficiency constrains make necessary to introduce a system of compilation in ord
  - tdsmin: minimum 2m dew point temperature [K]
  - tdsmax: maximum 2m dew point temperature [K]
  - tdsmean: mean 2m dew point temperature [K]
+
+* CDXWRF=3
+
+
+* CDXWRF=4
  - wbacdiabh: Water-budget vertically integrated accumulated of diabatic heating from microphysics [K]
  - wbacpw, wbacpw[c/r/s/i/g/h]: Water-budget vertically integrated accumulated total tendency for water vapour, cloud, rain, snow, ice, graupel, hail [mm]
  - wbacf, wbacf[c/r/s/i/g/h]: Water-budget vertically integrated accumulated horizontal advection for water vapour, cloud, rain, snow, ice, graupel, hail [mm]
@@ -252,36 +257,59 @@ $ ./clean -a
   nhhursrng                 = amount + 1 of high-resolution bins for temporal residence of hurs (25, default)
   nltasrng                  = amount + 1 of low-resolution bins for temporal residence of tas (21, default)
   nlhursrng                 = amount + 1 of low-resolution bins for temporal residence of hurs (25, default)
-##CDXWRF3##rconfig   integer nwbdsrng                namelist,cordex       1              33      rh    "nwbdsrng"                 "amount + 1 of  bins for temporal residence of wbds"                  ""
-# SI-based
-##CDXWRF3##rconfig   integer nwssrng                 namelist,cordex       1              22      rh    "nwssrng"                  "amount + 1 of  bins for temporal residence of wss"                  ""
+  nwbdsrng                  = amount + 1 of  bins for temporal residence of wbds (33, default)
+  nwssrng                   = amount + 1 of  bins for temporal residence of wss (22, default)
+  nhtashursrng              = amount + 1 of high-resolution bins for temporal residence of tas and hurs (nhtas+1)*(nhhurs+1) (950, default)
+  nltashursrng              = amount + 1 of low-resolution bins for temporal residence of wss and wbds (nwbds+1)*(nwss+1) (525, default)
+  nwbdswssrng               = amount + 1 of bins for temporal residence of wbds and wss (nwbds+1)*(nwss+1) (726, default)
+  htasrng                   = high-resolution bins for temporal residence of tas (/173.15,268.15,269.15,270.15,271.15,272.15,273.15,
+    274.15,275.15,276.15,277.15,278.15,279.15,280.15,281.15,282.15,283.15,284.15,285.15,286.15,287.15,288.15,289.15,
+    290.15,291.15,292.15,293.15,294.15,295.15,296.15,297.15,298.15,299.15,300.15,301.15,302.15,303.15,0.00,0.00,0.00,
+    0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00/)
+  hhursrng                  = high-resolution bins for temporal residence of hurs (/0.00,0.05,0.10,0.15,0.20,0.25,0.30,0.35,0.40,
+    0.45,0.50,0.55,0.60,0.65,0.70,0.75,0.80,0.85,0.90,0.95,1.00,1.05,1.10,1.15,0.00,0.00,0.00,0.00,0.00,0.00,0.00,
+    0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00/)
+  ltasrng                   = low-resolution bins for temporal residence of tas (/173.15,233.15,238.15,243.15,248.15,253.15,
+    258.15,263.15,268.15,273.15,278.15,283.15,288.15,293.15,298.15,303.15,308.15,313.15,318.15,323.15,0.00,0.00,0.00,
+    0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,
+    0.00,0.00,0.00,0.00,0.00/)
+  lhursrng                  = low-resolution bins for temporal residence of hurs (/0.00,0.05,0.10,0.15,0.20,0.25,0.30,0.35,0.40,0.45,
+    0.50,0.55,0.60,0.65,0.70,0.75,0.80,0.85,0.90,0.95,1.00,1.05,1.10,1.15,0.00,0.00,0.00,0.00,0.00,0.00,
+    0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00/)
+  wbdsrng                   = bins for temporal residence of wbds (/-0.0982,0.0982,0.2945,0.4909,0.6872,0.8836,   
+    1.0799,1.2763,1.4726,1.669,1.8653,2.0617,2.258,2.4544,2.6507,2.8471,3.0434,3.2398,3.4361,3.6325,3.8288,
+    4.0252,4.2215,4.4179,4.6142,4.8106,5.0069,5.2033,5.3996,5.596,5.7923,5.9887,6.185,0.0,0.0,0.0,0.0,0.0,
+    0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0/)
+  wssrng                    = bins for temporal residence of wss (/0.0,0.5,1.0,2.5,5.0,10.0,15.0,20.0,25.0,30.0,35.0,40.0,45.0,
+    50.0,60.0,70.0,80.0,90.0,100.0,125.0,150.0,200.0,95.2375,107.6506,120.5606,133.9489,147.7992,0.0,0.0,0.0,
+    0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0/)
+/
+
+
+`convxtrm_diag' parameter has only effect with CDXWRF=1
+`outputwb', `fogvisibility_diag' and `fogvars' parameters has only effect with CDXWRF=2
+
+# Optional values for wbds & wss residence-time
+## 
 # kt-based: [0., 2.5, 5., 10., 15., 20., 25., 30., 35., 40.. 45., 50., 60., 70., 80., 100., 150., 200., 250., 300. ]
 #   Transforming to ms-1 as wss = kt * 1852. / 3600.
-###CDXWRF3##rconfig   integer nwssrng                 namelist,cordex       1              20      rh    "nwssrng"                  "amount + 1 of  bins for temporal residence of wss kt-based"         ""
+  nwssrng                   = amount + 1 of  bins for temporal residence of wss kt-based (20, default)
+  nwbdswssrng               = amount + 1 of bins for temporal residence of wbds and wss (nwbds+1)*(nwss+1) kt-based (660, default)
+  wssrng                    = bins for temporal residence of wss kt based (/0.0,1.2861,2.5722,5.1444,7.7167,10.2889,12.8611,
+    15.4333,18.0056,20.5778,23.15,25.7222,30.8667,36.0111,41.1556,51.4444,77.1667,102.8889,128.6111,154.3333,0.0,0.0,0.0,0.0,
+    0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0/)        
+   
 # Beafourt scale-based: [0., 0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5, 10.5, 11.5, 12.5, 13.5, 14.5, 15.5, 
 #   16.5, 17.5, 18.5, 19.5, 21.5, 23.5, 25.5, 27.5, 29.5, 31.5]
 #   FROM: https://en.wikipedia.org/wiki/Beaufort_scale
 #   Transforming to ms-1 as wss = 0.836*Bnum**(3./2.)
-###CDXWRF3##rconfig   integer nwssrng                 namelist,cordex       1              27      rh    "nwssrng"                  "amount + 1 of  bins for temporal residence of wss Beafourt-based"   ""
-## L. Fita, so, WRF output will provide a (n[h/l]tasrng*n[h/l]hursrng) 3D variable instead
-##CDXWRF3##rconfig   integer nhtashursrng                namelist,cordex       1              950      rh    "nhtashursrng"        "amount + 1 of high-resolution bins for temporal residence of tas and hurs (nhtas+1)*(nhhurs+1)"   ""
-##CDXWRF3##rconfig   integer nltashursrng                namelist,cordex       1              525      rh    "nltashursrng"        "amount + 1 of low-resolution bins for temporal residence of wss and wbds (nwbds+1)*(nwss+1)"   ""
-##CDXWRF3##rconfig   integer nwbdswssrng                 namelist,cordex       1              726      rh    "nwbdswssrng"         "amount + 1 of bins for temporal residence of wbds and wss (nwbds+1)*(nwss+1)"   ""
-###CDXWRF3##rconfig   integer nwbdswssrng                 namelist,cordex       1              660      rh    "nwbdswssrng"         "amount + 1 of bins for temporal residence of wbds and wss (nwbds+1)*(nwss+1) kt-based"   ""
-###CDXWRF3##rconfig   integer nwbdswssrng                 namelist,cordex       1              891      rh    "nwbdswssrng"         "amount + 1 of bins for temporal residence of wbds and wss (nwbds+1)*(nwss+1) Beafourt-based"   ""
-##CDXWRF3##rconfig   real    htasrng                namelist,cordex       max_lbins      (/173.15,268.15,269.15,270.15,271.15,272.15,273.15,274.15,275.15,276.15,277.15,278.15,279.15,280.15,281.15,282.15,283.15,284.15,285.15,286.15,287.15,288.15,289.15,290.15,291.15,292.15,293.15,294.15,295.15,296.15,297.15,298.15,299.15,300.15,301.15,302.15,303.15,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00/) rh    "htasrng"                  "high-resolution bins for temporal residence of tas"   ""
-##CDXWRF3##rconfig   real    hhursrng               namelist,cordex       max_lbins      (/0.00,0.05,0.10,0.15,0.20,0.25,0.30,0.35,0.40,0.45,0.50,0.55,0.60,0.65,0.70,0.75,0.80,0.85,0.90,0.95,1.00,1.05,1.10,1.15,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00/)      rh    "hhursrng"                 "high-resolution bins for temporal residence of hurs"  ""
-##CDXWRF3##rconfig   real    ltasrng                namelist,cordex       max_lbins      (/173.15,233.15,238.15,243.15,248.15,253.15,258.15,263.15,268.15,273.15,278.15,283.15,288.15,293.15,298.15,303.15,308.15,313.15,318.15,323.15,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00/)      rh    "ltasrng"                  "low-resolution bins for temporal residence of tas"   ""
-##CDXWRF3##rconfig   real    lhursrng               namelist,cordex       max_lbins      (/0.00,0.05,0.10,0.15,0.20,0.25,0.30,0.35,0.40,0.45,0.50,0.55,0.60,0.65,0.70,0.75,0.80,0.85,0.90,0.95,1.00,1.05,1.10,1.15,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00/)      rh    "lhursrng"                 "low-resolution bins for temporal residence of hurs"  ""
-##CDXWRF3##rconfig   real    wbdsrng                namelist,cordex       max_lbins      (/-0.0982,0.0982,0.2945,0.4909,0.6872,0.8836,1.0799,1.2763,1.4726,1.669,1.8653,2.0617,2.258,2.4544,2.6507,2.8471,3.0434,3.2398,3.4361,3.6325,3.8288,4.0252,4.2215,4.4179,4.6142,4.8106,5.0069,5.2033,5.3996,5.596,5.7923,5.9887,6.185,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0/)      rh    "wbdsrng"                "bins for temporal residence of wbds"  ""
-##CDXWRF3##rconfig   real    wssrng                 namelist,cordex       max_lbins      (/0.0,0.5,1.0,2.5,5.0,10.0,15.0,20.0,25.0,30.0,35.0,40.0,45.0,50.0,60.0,70.0,80.0,90.0,100.0,125.0,150.0,200.0,95.2375,107.6506,120.5606,133.9489,147.7992,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0/)      rh    "wssrng"                 "bins for temporal residence of wss"  ""
-###CDXWRF3##rconfig   real    wssrng                 namelist,cordex       max_lbins      (/0.0,1.2861,2.5722,5.1444,7.7167,10.2889,12.8611,15.4333,18.0056,20.5778,23.15,25.7222,30.8667,36.0111,41.1556,51.4444,77.1667,102.8889,128.6111,154.3333,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0/)      rh    "wssrng"                 "bins for temporal residence of wss kt-based"  ""
-###CDXWRF3##rconfig   real    wssrng                 namelist,cordex       max_lbins      (/0.0,0.2956,1.5358,3.3046,5.474,7.9804,10.7833,13.854,17.1711,20.7174,24.4789,28.444,32.6027,36.9463,41.4674,46.1592,51.0157,56.0315,61.2017,66.5218,71.9877,83.342,95.2375,107.6506,120.5606,133.9489,147.7992,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0/)      rh    "wssrng"                 "bins for temporal residence of wss Beafourt-based"  ""
+  nwssrng                   = amount + 1 of  bins for temporal residence of wss Beafourt-based (27, default)
+  nwbdswssrng               = amount + 1 of bins for temporal residence of wbds and wss (nwbds+1)*(nwss+1) Beafourt-based (891, default)
+  wssrng                    = bins for temporal residence of wss Beafourt-based (/0.0,0.2956,1.5358,3.3046,5.474,7.9804,10.7833,
+    13.854,17.1711,20.7174,24.4789,28.444,32.6027,36.9463,41.4674,46.1592,51.0157,56.0315,61.2017,66.5218,71.9877,83.342,
+    95.2375,107.6506,120.5606,133.9489,147.7992,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,
+    0.0,0.0,0.0,0.0,0.0/)
 
-/
-
-`convxtrm_diag' parameter has only effect with CDXWRF=1
-`outputwb', `fogvisibility_diag' and `fogvars' parameters has only effect with CDXWRF=2
 
 ** Pressure interpolation
 

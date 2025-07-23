@@ -2666,6 +2666,7 @@ CONTAINS
 
   END SUBROUTINE cordex_output_calc
 
+#ifdef CDXWRF
 ! CDXWRF - high frequency
 !! 
   SUBROUTINE cordex_hf_output_calc(                                                                   &
@@ -2674,12 +2675,17 @@ CONTAINS
 
                    ! Input
                       lon, lat,                                                                       &
+                      timedbg,                                                                        &
+                      londbg, latdbg,                                                                 &
+                      idbg, jdbg,                                                                     &
                       qr, qs, qg,                                                                     &
                       t,                                                                              &
                       prc, prnc, prsh,                                                                &
                       rho,                                                                            &
                    ! Output
+#if CDXWRF>=1
                       flxpr, colmax,                                                                  &
+#endif
                       ids,ide, jds,jde, kds,kde,                                                      &
                       ims,ime, jms,jme, kms,kme,                                                      &
                       ips,ipe, jps,jpe, kps,kpe,                                                      & ! patch  dims
@@ -2736,6 +2742,9 @@ CONTAINS
 ! ------- INPUT vars -------
 ! lon: longitude
 ! lat: latitude
+! timedbg: frecuency in minutes of time debugging
+! londbg, latdbg: coordinates of the debugging grid point (-999. if not set-up)
+! idbg, jdbg: grid point coordinates of the debugging grid point
 ! qr: rain mixing ratio [kgkg-1]
 ! qs: snow mixing ratio [kgkg-1]
 ! qg: graupel mixing ratio [kgkg-1]
@@ -2771,6 +2780,9 @@ CONTAINS
 
   REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(in)   :: qr, qs, qg, t, rho
   REAL, DIMENSION(ims:ime,jms:jme), INTENT(in)           :: lon, lat
+  INTEGER, INTENT(in)                                    :: timedbg
+  REAL, INTENT(in)                                       :: londbg, latdbg
+  INTEGER, INTENT(in)                                    :: idbg, jdbg
   REAL, DIMENSION(ims:ime,jms:jme), INTENT(in)           :: prc, prnc, prsh
 
   REAL, INTENT(in)                                       :: DT, XTIME
@@ -2778,13 +2790,15 @@ CONTAINS
   INTEGER, INTENT(in)                                    :: cdxH
   LOGICAL, INTENT(in)                                    :: is_restart, is_output_time
   INTEGER, INTENT(inout)                                 :: nsteps
+#if CDXWRF>=1
   REAL, DIMENSION(ims:ime,jms:jme), INTENT(inout)        :: flxpr, colmax
+#endif
 
 ! LOCAL  VAR
 
   INTEGER                                                :: i, j, k, m, its, ite, jts, jte, ij
   INTEGER                                                :: idp, jdp, dimz, dimz1, dz1
-  INTEGER                                                :: i1, i_1, j1, j_1, k2
+  INTEGER                                                :: i1, i_1, j1, j_1, k2, tdbg
   INTEGER, DIMENSION(num_tiles)                          :: i2, j2
 
   REAL                                                   :: xtimep
@@ -2801,6 +2815,10 @@ CONTAINS
   CALL get_wrf_debug_level( dbg_level ) 
   cdone = .FALSE.
 
+  ! timedbg
+  !  when time-debug in minutes
+  tdbg = MOD(xtime, timedbg*1.)
+
   ! L. Fita: NOTE about efficiency
   !   I am not sure if this is the more efficient way:
   !     1.- IF --> 2.- repeat DO
@@ -2811,13 +2829,23 @@ CONTAINS
   dz1 = dimz - 1
 
   ! For test purposes
-  !$OMP PARALLEL DO   &
-  !$OMP PRIVATE ( ij )
-  DO ij = 1 , num_tiles
-    i2(ij) = INT(0.5*(i_start(ij) + i_end(ij)))
-    j2(ij) = INT(0.5*(j_start(ij) + j_end(ij)))
-  END DO
-  !$OMP END PARALLEL DO
+  IF ((londbg == -999.) .OR. (latdbg == -999.)) THEN
+    !$OMP PARALLEL DO   &
+    !$OMP PRIVATE ( ij )
+    DO ij = 1 , num_tiles
+      i2(ij) = INT(0.5*(i_start(ij) + i_end(ij)))
+      j2(ij) = INT(0.5*(j_start(ij) + j_end(ij)))
+    END DO
+    !$OMP END PARALLEL DO
+  ELSE
+    !$OMP PARALLEL DO   &
+    !$OMP PRIVATE ( ij )
+    DO ij = 1 , num_tiles
+      i2(ij) = idbg
+      j2(ij) = jdbg
+    END DO
+    !$OMP END PARALLEL DO
+  END IF
   k2 = 0.5*(kms+kme)
 
   ! Computing accumulative variables 
@@ -2833,7 +2861,7 @@ CONTAINS
         IF (curr_secs2 > 0. ) THEN
           WRITE(msg,*) '  ' // TRIM(fname) // ': computing colmax'
 
-          IF (ijdbg) CALL wrf_debug(50,msg)
+          IF (ijdbg .AND. tdbg==0) CALL wrf_debug(50,msg)
           ! Total precipitation
           prv = prc(i,j) + prnc(i,j) + prsh(i,j)
 
@@ -2862,18 +2890,22 @@ CONTAINS
         DO j = j_start(ij), j_end(ij)
           IF (ij == 1 .AND. i == i2(ij) .AND. j == j2(ij)) ijdbg = .TRUE.
 
+#if CDXWRF>=1
           ! Precipitations
           flxpr(i,j) = prc(i,j) + prnc(i,j) + prsh(i,j)
+#endif
 
-          IF (dbg_level >= 75 .AND. ijdbg) THEN
+          IF (dbg_level >= 75 .AND. ijdbg .AND. tdbg==0) THEN
             WRITE(msg,*) '  ' // TRIM(fname) // ' ',i,' ,',j,' : first value checks _______' 
             CALL wrf_debug(75,msg)
             WRITE(msg,*) '    longitude:', lon(i,j),' latitude:',lat(i,j)
             CALL wrf_debug(75,msg)
             WRITE(msg,*) '    nsteps:', nsteps
             CALL wrf_debug(75,msg)
+#if CDXWRF>=1
             WRITE(msg,*)'    prc:', prc(i,j), ' prnc:', prnc(i,j), ' prsh:', prsh(i,j), ' flxpr:',    &
               flxpr(i,j)
+#endif
             CALL wrf_debug(75,msg)
           END IF
 
@@ -2894,17 +2926,21 @@ CONTAINS
         DO j = j_start(ij), j_end(ij)
           IF (ij == 1 .AND. i == i2(ij) .AND. j == j2(ij)) ijdbg = .TRUE.
 
+#if CDXWRF>=1
           ! Precipitations
           flxpr(i,j) = flxpr(i,j) + prc(i,j) + prnc(i,j) + prsh(i,j)
-
-          IF (dbg_level >= 75 .AND. ijdbg) THEN
+#endif
+          IF (dbg_level >= 75 .AND. ijdbg .AND. tdbg==0) THEN
             WRITE(msg,*) '  ' // TRIM(fname) // ' ',i,' ,',j,' : intermediate checks _______' 
             CALL wrf_debug(75,msg)
             WRITE(msg,*) '    longitude:', lon(i,j),' latitude:',lat(i,j)
             CALL wrf_debug(75,msg)
             WRITE(msg,*) '    nsteps:', nsteps
+            CALL wrf_debug(75,msg)
+#if CDXWRF>=1
             WRITE(msg,*)'    prc:', prc(i,j), ' prnc:', prnc(i,j), ' prsh:', prsh(i,j), ' flxpr:',    &
               flxpr(i,j)
+#endif
             CALL wrf_debug(75,msg)
           END IF
           ijdbg = .FALSE.
@@ -2932,22 +2968,25 @@ CONTAINS
           j1 = MIN(j+1,j_end(ij))
           j_1 = MAX(j-1,j_start(ij))
 
-          ! 2m specific humidity
+#if CDXWRF>=1
+          ! colmax
           CALL var_colmax1D(dimz, rho(i,:,j), t(i,:,j), qr(i,:,j), qs(i,:,j), qg(i,:,j), colmax(i,j))
 
-          ! Precipitations
+          ! Precipitation
           flxpr(i,j) = flxpr(i,j)/(dt*nsteps)
-
-          IF (dbg_level >= 75 .AND. ijdbg) THEN
+#endif
+          IF (dbg_level >= 75 .AND. ijdbg .AND. tdbg==0) THEN
             WRITE(msg,*) '  ' // TRIM(fname) // ' ',i,' ,',j,' : final checks _______' 
             CALL wrf_debug(75,msg)
             WRITE(msg,*) '    nsteps:', nsteps
             CALL wrf_debug(75,msg)
+#if CDXWRF>=1
             WRITE(msg,*)'    prc:', prc(i,j), ' prnc:', prnc(i,j), ' prsh:', prsh(i,j), ' flxpr:',    &
               flxpr(i,j)
             CALL wrf_debug(75,msg)
             WRITE(msg,*)'    colmax:', colmax(i,j)
             CALL wrf_debug(75,msg)
+#endif
           END IF
 
           ijdbg = .FALSE.
@@ -2959,5 +2998,6 @@ CONTAINS
   END IF
 
   END SUBROUTINE cordex_hf_output_calc
+#endif
 
 END MODULE module_diag_cordex

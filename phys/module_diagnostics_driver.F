@@ -1636,6 +1636,10 @@ CONTAINS
 
          ! Input
                     ,LON=grid%xlong, LAT=grid%xlat                         &
+                    ,TIMEDBG = config_flags%timedbg                        &
+                    ,LONDBG = config_flags%londbg                          &
+                    ,LATDBG = config_flags%latdbg                          &
+                    ,IDBG=grid%ijdbg(1), JDBG=grid%ijdbg(2)                &
                     ,QR=moist(:,:,:,P_QR), QS=moist(:,:,:,P_QS)            &
                     ,QG=moist(:,:,:,P_QG)                                  &
                     ,T=grid%t_phy                                          &
@@ -1643,7 +1647,9 @@ CONTAINS
                     ,RHO=grid%rho                                          &
          ! Output
                     ,nsteps=grid%cdxhfnsteps                               &
+#if CDXWRF>=1
                     ,FLXPR=grid%prhf, COLMAX=grid%colmax                   &
+#endif
          ! Dimension arguments
                     ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde     &
                     ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme     &

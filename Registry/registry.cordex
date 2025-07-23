@@ -140,6 +140,7 @@ state    real  MRSFLMEAN       ilj      misc        1         -      rh9      "m
 state    real  MRFSOMEAN        ij      misc        1         -      rh9      "mrfsomean"             "mean total frozen water content of soil layer"           "kgm-2"
 state    real  MRFSOSMEAN       ij      misc        1         -      rh9      "mrfsosmean"            "mean frozen water content in Upper Portion of soil column (0-10cm)"  "kgm-2"
 state    real  pr               ij      misc        1         -      rh9      "pr"                    "precipitation flux"                                      "kgm-2s-1"
+state    real  prhf             ij      misc        1         -      rh8      "prhf"                  "precipitation flux"                                      "kgm-2s-1"
 state    real  prl              ij      misc        1         -      rh9      "prl"                   "large scale precipitation flux"                          "kgm-2s-1"
 state    real  prc              ij      misc        1         -      rh9      "prc"                   "convective precipitation flux"                           "kgm-2s-1"
 state    real  prsh             ij      misc        1         -      rh9      "prsh"                  "shallow-cumulus precipitation flux"                      "kgm-2s-1"
@@ -180,6 +181,7 @@ state    real  qvs_hm           ij      misc        1         -      rh9      "q
 ##CDXWRF1##state    real  IUTMEAN          ij      misc        1         -      rh9      "iutmean"               "mean vertically integrated eastward transport of water vapour"                             "kgm-1s-1"
 ##CDXWRF1##state    real  IVTMEAN          ij      misc        1         -      rh9      "ivtmean"               "mean vertically integrated northward transport of water vapour"                             "kgm-1s-1"
 ##CDXWRF1##state    real  ZEROISOTHERM     ij      misc        1         -       h9      "zeroisotherm"          "height above ground of the 0-isotherm"                   "m"
+##CDXWRF1##state    real  COLMAX           ij      misc        1         -       h8      "colmax"                "instantaneous maximum radar reflectivity in the column"                     "dBz"
 
 # Instantaneous values. If one require them into the output, modify the second '-' by 'h9'
 ##CDXWRF1##state    real  IUT              ij      misc        1         -      -        "iut"                   "instantaneous vertically integrated eastward transport of water vapour"                              "kgm-1s-1"

@@ -41,18 +41,21 @@ http://wiki.cima.fcen.uba.ar/mediawiki/index.php/CDXWRF
 
 This module computes that variables required by CORDEX which usually are post-processed
 
-* Compilation & efficiency note
+#### note in Compilation & efficiency ####
 
 Efficiency constrains make necessary to introduce a system of compilation in order to do not overload WRF execution. Long simulations are usually used in CORDEX experiments, thus model temporal efficiency is even more important. In order to achieve this, a new pre-compilation variable has been added. According to the value of this giving variable and accordingly modifications in the 'Registry/registry.cordex' file certain variables are computed and provided at the output. This is not very 'WRF'-friendly, since usually all options are directly available with just a single compilation, but it has been shown that the large amount of variables introduced by this module, it slows down too much (up to 40% of additional time) the running time of the model. See below for more details (INSTALLATION section)
 
-* Subroutines/Functions
+#### Subroutines/Functions ####
  - module_diag_cordex: Main subroutine to compute CORDEX required variables
  - module_diagvar_cordex: subroutine with the specific computation of CORDEX required variables
  - registry.cordex: required definition of the new CORDEX variables
 
-* Available diagnostics (accordingly to pre-compilation set-up and namelist options)
+#### Available diagnostics ####
+Accordingly to pre-compilation set-up and namelist options
 
-** Instantaneous diagnostics (only computed on output times)
+##### Instantaneous diagnostics #####
+only computed on output times
+
  - prw: Total water path
  - clwvi: Total liquid water path (QCLOUD + QRAIN)
  - clivi: Total ice water path (QSNOW+QICE+QGRAUPEL+QHAIL)
@@ -84,20 +87,21 @@ Efficiency constrains make necessary to introduce a system of compilation in ord
  - mrfso: total frozen water content of soil layer [kgm-2]
  - mrfsos: frozen water content in Upper Portion of soil column (0-10cm) [kgm-2]
 
-* CDXWRF=1
+###### CDXWRF=1
  - clivg: graupel water path (QGRAUPEL)
  - clivh: hail water path (QHAIL)
  - zmla: pbl height following a generic method [m]
  - colmax: high-frequency maximum radar reflectivity in the column [dBz] (on auxhist8, wrfhfcdx)
  
-** Only if 'INSTVALS' modifications are made
+###### INSTVALS
+Only if `INSTVALS` modifications are made in the code
  - cape: Convective Available Potential Energy [Jkg-1] 
  - cin: Convective inhibition [Jkg-1]
  - zlfc: Height at the Level of free convection [m]
  - plfc: Pressure at the Level of free convection [Pa]
  - lidx: Lifted index [1]
 
-* CDXWRF=2
+###### CDXWRF=2
  - ua: 3D earth-rotated eastward wind [ms-1]
  - va: 3D earth-rotated northward wind [ms-1]
  - ws: 3D wind speed [ms-1]
@@ -107,12 +111,15 @@ Efficiency constrains make necessary to introduce a system of compilation in ord
  - hur: 3D relative humidty [1]
  - hus: 3D specific humidty [1]
 
-** Accumulated or similar time dependency (computed at every time-step)
-!!!  NOTE: CLDFRAC is computed by the radiative scheme thus,
-!!!    bear in mind to configure the namelist.input that:
-!!!        auxhist9_interval > radt
-!!!    otherwise one obtains repeated values of clt, cll, clm, clh!! 
-!!!
+##### Accumulated or similar time dependency 
+computed at every time-step
+
+**NOTE:** CLDFRAC is computed by the radiative scheme thus, bear in mind to configure the `namelist.input` that:
+```
+ auxhist9_interval > radt
+```
+otherwise one obtains repeated values of clt, cll, clm, clh!! 
+
  - cltmean: mean clt [%]
  - cllmean: mean cll [%]
  - clmmean: mean clm [%]
@@ -162,13 +169,14 @@ Efficiency constrains make necessary to introduce a system of compilation in ord
  - mrfsomean: mean total frozen water content of soil layer [kgm-2]
  - mrfsosmean: mean frozen water content in Upper Portion of soil column (0-10cm) [kgm-2]
 
-* Only if 'INSTVALS' modifications are made
+###### INSTVALS
+Only if `INSTVALS` modifications in code are made
  - clt: total cloud cover [%]
  - cll: low-level cloud cover [%]
  - clm: mid-level cloud cover [%]
  - clh: high-level cloud cover [%]
 
-* CDXWRF=1
+###### CDXWRF=1
  - capemin: minimum CAPE [Jkg-1]
  - cinmin: minimum CIN [Jkg-1]
  - zlfcmin: minimum height at LFC [m]
@@ -186,7 +194,7 @@ Efficiency constrains make necessary to introduce a system of compilation in ord
  - lidxmean: mean Lifted index [1]
  - prflux: high-frequency precipitation flux [kgm-2s-1] (on auxhist8, wrfhfcdx)
 
-* CDXWRF=2
+###### CDXWRF=2
  - tfog: time of presence of fog [s]
  - fogvisbltymin: minimun visibility inside fog [km]
  - fogvisbltymax: maximun visibility inside fog [km]
@@ -198,12 +206,12 @@ Efficiency constrains make necessary to introduce a system of compilation in ord
  - twsmax: maximum 2m wet-bulb temperature [K]
  - twsmean: mean 2m wet-bulb temperature [K]
 
-* CDXWRF=3
+###### CDXWRF=3
  - tashurstreshighres: high resolution of simultaneous temporal residence of 2-meter temperature and relative humidity
  - tashurstreslowres: low resolution of simultaneous temporal residence of 2-meter temperature and relative humidity
  - wbdswsstres: simultaneous temporal residence of 10-meter wind direction (from where it blows) and wind speed
 
-* CDXWRF=4
+###### CDXWRF=4
  - wbacdiabh: Water-budget vertically integrated accumulated of diabatic heating from microphysics [K]
  - wbacpw, wbacpw[c/r/s/i/g/h]: Water-budget vertically integrated accumulated total tendency for water vapour, cloud, rain, snow, ice, graupel, hail [mm]
  - wbacf, wbacf[c/r/s/i/g/h]: Water-budget vertically integrated accumulated horizontal advection for water vapour, cloud, rain, snow, ice, graupel, hail [mm]
@@ -213,7 +221,8 @@ Efficiency constrains make necessary to introduce a system of compilation in ord
  - wbacf{l/m/h}, wbacf[c/r/s/i/g/h]{l/m/h}: Water-budget vertically integrated accumulated horizontal advection for water vapour, cloud, rain, snow, ice, graupel, hail at low, medium and high levels (same as cloudiness) [mm]
  - wbacz{l/m/h}, wbacz[c/r/s/i/g/h]{l/m/h}: Water-budget vertically integrated accumulated vertical advection for water vapour, cloud, rain, snow, ice, graupel, hail at low, medium and high levels (same as cloudiness) [mm]
 
-** Only if 'INSTVALS' modifications are made
+###### INSTVALS
+Only if `INSTVALS` modifications in code are made
  - fog: whether point is inside fog (vis < 1km) [1]
  - vis: visibility inside fog [km]
  - tds: 2m dew point temperature [K]
@@ -221,57 +230,69 @@ Efficiency constrains make necessary to introduce a system of compilation in ord
  - q[v/c/r/s/i/g/h]_hadv: instantaneous horizontal advection for water vapor, cloud, rain, snow, ice, graupel, hail [kgkg-1]
  - q[v/c/r/s/i/g/h]_zadv: instantaneous Vertical advection for water vapor, cloud, rain, snow, ice, graupel, hail [kgkg-1]
 
- * Pressure interplation
- - Interpolation on pressure levels of specific humidty (hus_pl), vertical wind speed (w_pl), Earth-rotated wind x-component (uer), Earth-rotated wind y-component (ver) and wind speed (ws) have been also introduced into the `wrfpress' output
+#### Pressure interplation
+ - Interpolation on pressure levels of specific humidty (`hus_pl`), vertical wind speed (`w_pl`), Earth-rotated wind x-component (`uer`), Earth-rotated wind y-component (`ver`) and wind speed (`ws`) have been also introduced into the `wrfpress` output
 
-* INSTALLATION
-These steps must be followed prior the re-compilation of the WRF model (it requires a clean -a)
+#### INSTALLATION
+These steps must be followed prior the re-compilation of the WRF model (it requires a  `clean -a`)
 
- 1.- Check to the right branch
-   $ git checkout cdxwrf
-   
-   ** NOTE **: assuming that you got the right submodules [e.g. noahMP] (when downloading the fork) !!
+1. Check to the right branch. **NOTE:** assuming that you got the right submodules [e.g. noahMP] (when downloading the fork) !!
+```
+git checkout cdxwrf
+```
 
- 2.- Clean the code (in order to avoid to run again configure one can make a copy of the 'configure.wrf' and recover it after the clean, otherwise it is erased)
-   $ cp configure.wrf configure.cordex.wrf
-   $ ./clean -a
-   $ cp configure.cordex.wrf configure.wrf
+2. Clean the code (in order to avoid to run again configure one can make a copy of the `configure.wrf` and recover it after the clean, otherwise it is erased)
+```
+cp configure.wrf configure.cordex.wrf
+./clean -a
+cp configure.cordex.wrf configure.wrf
+```
 
- 3.- edit the `configure.wrf' and add the line (after the line -DNETCDF and/or -DCLWRFGHG)
+3. edit the `configure.wrf` and add the line (after the line `-DNETCDF` and/or `-DCLWRFGHG`)
+```
                       -DCORDEXDIAG \
- 4.- Set up (or not) the pre-compilation variable CDXWRF (after the line -DCORDEXDIAG)
+```
+4. Set up (or not) the pre-compilation variable CDXWRF (after the line -DCORDEXDIAG)
+```
                       -DCDXWRF=[value] \
+```
 
-  Accordingly to the value given to the pre-compilation variable CDXWRF one obtains:
+ - Accordingly to the value given to the pre-compilation variable CDXWRF one obtains:
    - Without adding the variable: all CORDEX 'Core' variables
-   - CDXWRF=1 CORDEX 'Tier' variables: clivg, clivh, zmla, [cape/cin/zlfc/plfc/lidx]{min/max/mean}
-   - CDXWRF=2 The same as with CDXWRF=1 and additional variables: ua, va, ws, ta, press, zg, hur, hus, tfog, fogvisbltymin, fogvisbltymax, fogvisbltymean, tdsmin, tdsmax, tdsmean
-   - CDXWRF=3 The same as with CDXWRF=1,2 and additional residence-time variables
-   - CDXWRF=4 The same as with CDXWRF=1,2 and 3 and the Water-Budget relarted ones: wbacdiabh, wbacpw, wbacpw[c/r/s/i/g/h], wbacf, wbacf[c/r/s/i/g/h], wbacz, wbacz[c/r/s/i/g/h], wbacdiabh{l/m/h}, wbacpw{l/m/h}, wbacpw[c/r/s/i/g/h]{l/m/h}, wbacf{l/m/h}, wbacf[c/r/s/i/g/h]{l/m/h}, wbacz{l/m/h}, wbacz[c/r/s/i/g/h]{l/m/h}
+   - `CDXWRF=1` CORDEX 'Tier' variables: `clivg`, `clivh`, `zmla`, [cape/cin/zlfc/plfc/lidx]{min/max/mean} (if `convxtrm_diag = 1`), `colmax`, `prhf`
+   - `CDXWRF=2` The same as with `CDXWRF=1` and additional variables: `ua`, `va`, `ws`, `ta`, `press`, `zg`, `hur`, `hus`, `tfog`, `fogvisbltymin`, `fogvisbltymax`, `fogvisbltymean`, `tdsmin`, `tdsmax`, `tdsmean`, `twsmin`, `twsmax`, `twsmean`
+   - `CDXWRF=3` The same as with `CDXWRF=1,2` and additional residence-time variables
+   - `CDXWRF=4` The same as with `CDXWRF=1,2` and `3` and the Water-Budget relarted ones: `wbacdiabh`, `wbacpw`, `wbacpw[c/r/s/i/g/h]`, `wbacf`, `wbacf[c/r/s/i/g/h]`, `wbacz`, `wbacz[c/r/s/i/g/h]`, `wbacdiabh{l/m/h}`, `wbacpw{l/m/h}`, `wbacpw[c/r/s/i/g/h]{l/m/h}`, `wbacf{l/m/h}`, `wbacf[c/r/s/i/g/h]{l/m/h}`, `wbacz{l/m/h}`, `wbacz[c/r/s/i/g/h]{l/m/h}`
   Simultanesouly, one needs to:
-   a.- make a copy of Registry/registry.cordex
-     $ cp Registry/registry.cordex Registry/registry.cordex_comp
-   b.- modify the Registry/registry.cordex_comp accordingly to the value of CDXWRF:
-    - Without adding CDXWRF, nothing needs to be changed
-    - Adding CDXWRF=1, one needs to remove the comment ##CDXWRF1## at the beginning of the line of the definition of certain variables
-    - Adding CDXWRF=2, one needs to remove the comment ##CDXWRF1## and ##CDXWRF2## at the beginning of the line of the definition of certain variables
-    - Adding CDXWRF=3, one needs to remove the comment ##CDXWRF1##, ##CDXWRF2## and ##CDXWRF3## at the beginning of the line of the definition of certain variables
-    - Adding CDXWRF=4, one needs to remove the comment ##CDXWRF1##, ##CDXWRF2##, ##CDXWRF3## and ##CDXWRF4## at the beginning of the line of the definition of certain variables
+   1. make a copy of `Registry/registry.cordex`
+```   
+cp Registry/registry.cordex Registry/registry.cordex_comp
+```
+   2. modify the `Registry/registry.cordex_comp` accordingly to the value of `CDXWRF`:
+    - Without adding `CDXWRF`, nothing needs to be changed
+    - Adding `CDXWRF=1`, one needs to remove the comment `##CDXWRF1##` at the beginning of the line of the definition of certain variables
+    - Adding `CDXWRF=2`, one needs to remove the comment `##CDXWRF1##` and `##CDXWRF2##` at the beginning of the line of the definition of certain variables
+    - Adding `CDXWRF=3`, one needs to remove the comment `##CDXWRF1##`, `##CDXWRF2##` and `##CDXWRF3##` at the beginning of the line of the definition of certain variables
+    - Adding `CDXWRF=4`, one needs to remove the comment `##CDXWRF1##`, `##CDXWRF2##`, `##CDXWRF3##` and `##CDXWRF4##` at the beginning of the line of the definition of certain variables
 
  - Additionally, one can also get the instantaneous values for the variables which only certain statistics (accumulation, minimum, mean, ...) are provided. In order to get them, one need to:
-  a.- Search in 'phys/module_diagnostics_driver.F' and 'phys/module_diag_cordex.F' the lines of code marked with 'INSTVALS' and change accordingly. 
-  b.- Modify Registry/registry.cordex accordingly (removing ##INST## at the beginning of the line of the definition of certain variables, and adding 'h9' to certain others)
-  c.- re-compile
+  1. Search in `phys/module_diagnostics_driver.F` and `phys/module_diag_cordex.F` the lines of code marked with `INSTVALS` and change accordingly (not fully tested). 
+  2. Modify `Registry/registry.cordex` accordingly (removing `##INST##` at the beginning of the line of the definition of certain variables, and adding `h9` to certain others)
+  3. re-compile
 
- 7.- compile as always
-  · ./compile em_real >& compile.log
+ 7. compile as always
+```
+./compile em_real >& compile.log
+```
 
-NOTE: after any change into a `Registry' related file, one needs to before the compilation refresh entirely the code throughout
-$ ./clean -a
+**NOTE:** after any change into a `Registry` related file, one needs to before the compilation refresh entirely the code throughout
+```
+./clean -a
+```
 
-* USAGE
- One need to add to the 'namelist.input' the auxiliary output number 8 (only for CDXWRF>=1, e.g. for every 10 minutes and 1-day files) & 9 (e.g. for output every 3 hours and 1-day files) at the `&history' section:
-
+#### USAGE: namelist.input
+One need to add to the `namelist.input` the auxiliary output number 8 (only for `CDXWRF>=1`, e.g. for every 10 minutes and 1-day files) & 9 (e.g. for output every 3 hours and 1-day files) at the `&history' section:
+```
  auxhist8_outname = "wrfhfcdx_d<domain>_<date>"
  auxhist8_interval = 10, 10,
  frames_per_auxhist8 = 144, 144,
@@ -281,9 +302,10 @@ $ ./clean -a
  auxhist9_interval = 180, 180,
  frames_per_auxhist9 = 8, 8,
  io_form_auxhist9 = 2
+```
+Also a new section should be added (assuming it will get complex...)
 
- Also a new section should be added (assuming it will get complex...)
-
+```
 &cordex
  output_cordex              = 1 
  psl_diag                   = 1: sea-level pressure diagnostic following hydrostatic Shuell correction
@@ -345,37 +367,42 @@ $ ./clean -a
     50.0,60.0,70.0,80.0,90.0,100.0,125.0,150.0,200.0,95.2375,107.6506,120.5606,133.9489,147.7992,0.0,0.0,0.0,
     0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0/)
 /
+```
 
+ - `convxtrm_diag` parameter has only effect with `CDXWRF=1`
+ - `outputwb`, `fogvisibility_diag` and `fogvars` parameters has only effect with `CDXWRF=2`
 
-`convxtrm_diag' parameter has only effect with CDXWRF=1
-`outputwb', `fogvisibility_diag' and `fogvars' parameters has only effect with CDXWRF=2
+###### Optional values for wbds & wss residence-time
+In the code, user is provided with 2 different complementary set-ups for the wbds & wss residence-time 
 
-# Optional values for wbds & wss residence-time
-## 
-# kt-based: [0., 2.5, 5., 10., 15., 20., 25., 30., 35., 40.. 45., 50., 60., 70., 80., 100., 150., 200., 250., 300. ]
-#   Transforming to ms-1 as wss = kt * 1852. / 3600.
+####### kt-based
+The references for wind-speed are based on knots (kt)
+ - wss: [0., 2.5, 5., 10., 15., 20., 25., 30., 35., 40.. 45., 50., 60., 70., 80., 100., 150., 200., 250., 300. ]
+ - Transforming to ms-1 as wss = kt * 1852. / 3600.
+```
   nwssrng                   = amount + 1 of  bins for temporal residence of wss kt-based (20, default)
   nwbdswssrng               = amount + 1 of bins for temporal residence of wbds and wss (nwbds+1)*(nwss+1) kt-based (660, default)
   wssrng                    = bins for temporal residence of wss kt based (/0.0,1.2861,2.5722,5.1444,7.7167,10.2889,12.8611,
     15.4333,18.0056,20.5778,23.15,25.7222,30.8667,36.0111,41.1556,51.4444,77.1667,102.8889,128.6111,154.3333,0.0,0.0,0.0,0.0,
     0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0/)        
-   
-# Beafourt scale-based: [0., 0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5, 10.5, 11.5, 12.5, 13.5, 14.5, 15.5, 
-#   16.5, 17.5, 18.5, 19.5, 21.5, 23.5, 25.5, 27.5, 29.5, 31.5]
-#   FROM: https://en.wikipedia.org/wiki/Beaufort_scale
-#   Transforming to ms-1 as wss = 0.836*Bnum**(3./2.)
+```
+
+####### Beafourt scale-based
+The references of wind speed are based on the [Beafourt](https://en.wikipedia.org/wiki/Beaufort_scale) scale
+ - wss: [0., 0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5, 10.5, 11.5, 12.5, 13.5, 14.5, 15.5, 16.5, 17.5, 18.5, 19.5, 21.5, 23.5, 25.5, 27.5, 29.5, 31.5]
+ - Transforming to ms-1 as wss = 0.836*Bnum**(3./2.)
+```
   nwssrng                   = amount + 1 of  bins for temporal residence of wss Beafourt-based (27, default)
   nwbdswssrng               = amount + 1 of bins for temporal residence of wbds and wss (nwbds+1)*(nwss+1) Beafourt-based (891, default)
   wssrng                    = bins for temporal residence of wss Beafourt-based (/0.0,0.2956,1.5358,3.3046,5.474,7.9804,10.7833,
     13.854,17.1711,20.7174,24.4789,28.444,32.6027,36.9463,41.4674,46.1592,51.0157,56.0315,61.2017,66.5218,71.9877,83.342,
     95.2375,107.6506,120.5606,133.9489,147.7992,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,
     0.0,0.0,0.0,0.0,0.0/)
+```
 
-
-** Pressure interpolation
-
- Remember to activate section &diags in order to get pressure-level vertical interpolation of state variables (assuming 6 levels only)
-
+#### Pressure interpolation
+ Remember to activate section `&diags` in order to get pressure-level vertical interpolation of state variables (assuming 6 levels only)
+``
  auxhist23_outname=”wrfpress_d<domain>_<date>”
  io_form_auxhist23 = 2,
  auxhist23_interval = 180, 60,
@@ -388,8 +415,13 @@ $ ./clean -a
  use_tot_or_hyd_p = 1
  p_lev_missing = -999.
 /
+```
 
-Optional 23 p-level values:
+- Optional 23 p-level values:
+```
  num_press_levels = 23,
- press_levels = 100000,97500,95000,92500,90000,87500,85000,82500,80000,75000,70000,65000,60000,55000,50000,45000,40000,35000,30000,25000,20000,15000,10000,
+ press_levels = 100000,97500,95000,92500,90000,87500,85000,82500,80000,75000,70000,65000,60000,55000,50000,45000,40000,35000,
+   30000,25000,20000,15000,10000,
+```
 
+The module will provide additional mass-conservative vertically integrated values for the water species

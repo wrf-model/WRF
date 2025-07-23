@@ -273,6 +273,17 @@ CONTAINS
                          ,alevsiz_cu,num_months,no_src_types_cu,aeromcu,aeropcu   & ! PSH/TWG 06/10/16                         
                          ,EFCG,EFCS,EFIG,EFIS,EFSG,EFSS                           & ! TWG
 #endif
+#ifdef CDXWRF
+                         ,fracsoil10cm                                            &
+                         ,londbg, latdbg                                          &
+                         ,ijdbg                                                   &
+#if CDXWRF>=3
+                         ,nhtasrng, nhhursrng, nltasrng, nlhursrng                &
+                         ,nwbdsrng, nwssrng                                       &
+                         ,htasbins, hhursbins, ltasbins, lhursbins                &
+                         ,wbdsbins, wssbins                                       &
+#endif
+#endif
                           )
 
 !-----------------------------------------------------------------
@@ -842,6 +853,24 @@ CONTAINS
 
    REAL, OPTIONAL, DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) :: &
              RDCASHTEN, RQCDCSHTEN
+
+#ifdef CDXWRF
+   REAL, DIMENSION(1:num_soil_layers), INTENT(out)       :: fracsoil10cm
+   REAL, INTENT(in)                                      :: londbg, latdbg
+   INTEGER, DIMENSION(2), INTENT(out)                    :: ijdbg
+   
+#if CDXWRF>=3
+   INTEGER, INTENT(in)                                   :: nhtasrng, nhhursrng, nltasrng, nlhursrng
+   INTEGER, INTENT(in)                                   :: nwbdsrng, nwssrng   
+   REAL, DIMENSION(Nhtasrng), INTENT(out)                :: htasbins
+   REAL, DIMENSION(Nhhursrng), INTENT(out)               :: hhursbins
+   REAL, DIMENSION(Nltasrng), INTENT(out)                :: ltasbins
+   REAL, DIMENSION(Nlhursrng), INTENT(out)               :: lhursbins
+   REAL, DIMENSION(Nwbdsrng), INTENT(out)                :: wbdsbins
+   REAL, DIMENSION(Nwssrng), INTENT(out)                 :: wssbins
+#endif
+#endif
+
 
 ! Local data
 
@@ -1737,6 +1766,32 @@ CHARACTER(LEN=8) :: name
       CALL wrf_debug(200 , 'phy_init: Before call to makelut_ccn_icn')
       call makelut_ccn_icn
    end if
+#endif
+
+#ifdef CDXWRF
+  CALL cdxwrf_init(config_flags%num_soil_layers, dzs                                                  &
+    ,xlong, xlat                                                                                      &
+    ,londbg, latdbg                                                                                   &
+    ,ids, ide, jds, jde, kds, kde                                                                     &
+    ,ims, ime, jms, jme, kms, kme                                                                     &
+    ,its, ite, jts, jte, kts, kte                                                                     &
+
+#if CDXWRF>=3
+    ,model_config_rec%nhtasrng, model_config_rec%nhhursrng                                            &
+    ,model_config_rec%nltasrng, model_config_rec%nlhursrng                                            &
+    ,model_config_rec%nwbdsrng, model_config_rec%nwssrng                                              &
+    ,model_config_rec%nhtashursrng, model_config_rec%nltashursrng                                     &
+    ,model_config_rec%nwbdswssrng                                                                     &
+    ,model_config_rec%htasrng, model_config_rec%hhursrng                                              &
+    ,model_config_rec%ltasrng, model_config_rec%lhursrng                                              &
+    ,model_config_rec%wbdsrng, model_config_rec%wssrng                                                &
+#endif
+    ,ijdbg                                                                                            &
+#if CDXWRF>=3    
+    ,htasbins, hhursbins, ltasbins, lhursbins                                                         &
+    ,wbdsbins, wssbins                                                                                &
+#endif
+    ,fracsoil10cm)
 #endif
 
    END SUBROUTINE phy_init
@@ -5746,5 +5801,213 @@ subroutine interp_vec_cu(locvec,locwant,periodic,loc1,loc2,wght1,wght2)
    END IF
 
   END SUBROUTINE shalwater_init
+
+#ifdef CDXWRF
+  SUBROUTINE cdxwrf_init(num_soil_layers, dzs                                                         &
+    ,xlong, xlat                                                                                      &
+    ,londbg, latdbg                                                                                   &
+    ,ids, ide, jds, jde, kds, kde                                                                     &
+    ,ims, ime, jms, jme, kms, kme                                                                     &
+    ,its, ite, jts, jte, kts, kte                                                                     &
+
+#if CDXWRF>=3
+    ,nhtasrng, nhhursrng                                                                              & 
+    ,nltasrng, nlhursrng                                                                              &
+    ,nwbdsrng, nwssrng                                                                                &
+    ,nhtashursrng, nltashursrng                                                                       &
+    ,nwbdswssrng                                                                                      &
+    ,htasrng, hhursrng, ltasrng, lhursrng                                                             &
+    ,wbdsrng, wssrng                                                                                  &
+#endif
+    ! Output
+    ,ijdbg                                                                                            &
+#if CDXWRF>=3    
+    ,htasbins, hhursbins, ltasbins, lhursbins, wbdsbins, wssbins                                      &
+#endif
+    ,fracsoil10cm)  
+    ! Subroutine to initialize CDXWRF module
+    
+    IMPLICIT NONE
+
+    ! Input
+    INTEGER, INTENT(in)                                  :: num_soil_layers
+    REAL, DIMENSION(1:num_soil_layers), INTENT(in)       :: dzs
+    INTEGER, INTENT(in)                                  :: ids, ide, jds, jde, kds, kde
+    INTEGER, INTENT(in)                                  :: ims, ime, jms, jme, kms, kme
+    INTEGER, INTENT(in)                                  :: its, ite, jts, jte, kts, kte
+    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(in)     :: xlong, xlat
+    REAL, INTENT(in)                                     :: londbg, latdbg
+#if CDXWRF>=3    
+    INTEGER, INTENT(in)                                  :: nhtasrng, nhhursrng, nltasrng, nlhursrng
+    INTEGER, INTENT(in)                                  :: nwbdsrng, nwssrng
+    INTEGER, INTENT(in)                                  :: nhtashursrng, nltashursrng
+    INTEGER, INTENT(in)                                  :: nwbdswssrng
+    REAL, DIMENSION(Nhtasrng), INTENT(in)                :: htasrng
+    REAL, DIMENSION(Nhhursrng), INTENT(in)               :: hhursrng
+    REAL, DIMENSION(Nltasrng), INTENT(in)                :: ltasrng
+    REAL, DIMENSION(Nlhursrng), INTENT(in)               :: lhursrng
+    REAL, DIMENSION(Nwbdsrng), INTENT(in)                :: wbdsrng
+    REAL, DIMENSION(Nwssrng), INTENT(in)                 :: wssrng
+#endif
+    
+    ! Output
+    INTEGER, DIMENSION(2), INTENT(out)                   :: ijdbg
+    REAL, DIMENSION(1:num_soil_layers), INTENT(out)      :: fracsoil10cm
+#if CDXWRF>=3    
+    REAL, DIMENSION(Nhtasrng), INTENT(out)               :: htasbins
+    REAL, DIMENSION(Nhhursrng), INTENT(out)              :: hhursbins
+    REAL, DIMENSION(Nltasrng), INTENT(out)               :: ltasbins
+    REAL, DIMENSION(Nlhursrng), INTENT(out)              :: lhursbins
+    REAL, DIMENSION(Nwbdsrng), INTENT(out)               :: wbdsbins
+    REAL, DIMENSION(Nwssrng), INTENT(out)                :: wssbins
+#endif
+    
+    ! Local
+    INTEGER                                              :: i,j,k
+    INTEGER                                              :: idbg, jdbg
+    REAL                                                 :: inczsoil
+    REAL                                                 :: mindist
+    REAL                                                 :: ddlon, ddlat, mindd
+    REAL, DIMENSION( ims:ime , jms:jme )                 :: dist, ddist, dlon, dlat
+    CHARACTER (LEN=1000)                                 :: diag_message
+    LOGICAL                                              :: found
+
+!!!!!!!! Variables
+! num_soil_layers: amount of soil layers 
+! dzs: depths of the soil layers [m]
+! xlong, xlat: matrices of longitudes and latitudes
+! londbg, latdbg: coordinates of the debugging grid point
+! ids, ide, jds, jde, kds, kde: extension of the matrices
+! ims, ime, jms, jme, kms, kme: extension of the matrices in memory
+! its, ite, jts, jte, kts, kte: extension of the martices by tile
+! nhtasrng, nhhursrng: range of the high-resolution temperature and relative humidity residence time
+! nltasrng, nlhursrng: range of the low-resolution temperature and relative humidity residence time
+! nwbdsrng, nwssrng: range of the blowing wind direction and wind speed residence time
+! nhtashursrng, nltashursrng: combined ranges of the high/low tas-hurs residence time
+! nwbdswssrng: combined ranges of the wbds-wss residence time
+! htasrng, hhursrng, ltasrng, lhursrng: individual ranges of the high/low tas-hurs residence time
+! wbdsrng, wssrng: individual ranges of the wbds-wss residence time
+! idbg, jdbg: point coordinates of the debugging point
+! htasbins, hhursbins, ltasbins, lhursbins, wbdsbins, wssbins: bins for the residence time
+! fracsoil10cm: fraction of the verical soil layer to use to compute 10cm depth soil values
+
+    ! lon, lat debugging point 
+    !   L. Fita, UBA-CIMA-IFAECI. This should be done as in share/wrf_timeseries.F, but it uses 
+    !     a lot of aditional modules, that might not be worth to mess with in the phys/ folder ¿?
+    ! Minimum grid distance
+    ! Filling matrices with absurd numbers
+    DO i=ims, ime
+      DO j=jms, jme
+        dlon(i,j) = 10000.*i + 10.*j
+        dlat(i,j) = 20000.*i + 10.*j
+      END DO
+    END DO
+    dlon(its:ite-1,jts:jte-1) = xlong(its:ite-1,jts:jte-1)-xlong(its+1:ite,jts+1:jte)   
+    dlat(its:ite-1,jts:jte-1) = xlat(its:ite-1,jts:jte-1)-xlat(its+1:ite,jts+1:jte)
+
+    ddist = 1000.
+    ddist = SQRT(dlon*dlon + dlat*dlat)
+    mindd = MINVAL(ddist)
+    
+    ! Minimum distance to the debugging point
+    dist = SQRT((xlong-londbg)**2+(xlat-latdbg)**2)
+    mindist = MINVAL(dist)
+    
+    found = .FALSE.
+    WRITE(diag_message,*)'its,ite:', its,ite,' jts,jte:', jts,jte,'  mindist:', mindist, ' mindd:', mindd
+    CALL wrf_debug(75,diag_message)
+    IF (mindist < mindd) THEN
+      DO i=its, ite
+        DO j=jts, jte
+
+          IF (dist(i,j) == mindist) THEN
+            idbg = i
+            jdbg = j
+            found = .TRUE.
+            WRITE(diag_message,*)'  found debugging grid point _______' 
+            CALL wrf_debug(75,diag_message)
+            WRITE(diag_message,*)'  lon,lat dbg: ', londbg, ' ,', latdbg,' mindist:', mindist
+            CALL wrf_debug(75,diag_message)
+            WRITE(diag_message,*)'  i,j dbg: ', idbg, jdbg
+            CALL wrf_debug(75,diag_message)
+            ijdbg(1) = idbg
+            ijdbg(2) = jdbg
+            EXIT
+          END IF
+        END DO
+        IF (found) EXIT
+      END DO
+    END IF 
+    
+    ! Soil layers to retrieve 10cm diagnostics
+    inczsoil = 0.
+    DO k=1, num_soil_layers
+      IF (inczsoil < 0.1) THEN
+        IF (inczsoil + dzs(k) <= 0.1) THEN
+          fracsoil10cm(k) = 1.
+        ELSE IF (inczsoil + dzs(k) > 0.1) THEN
+          fracsoil10cm(k) = (0.1 - inczsoil) / dzs(k)
+        ELSE
+          fracsoil10cm(k) = 0.
+        END IF
+      END IF
+      inczsoil = inczsoil + dzs(k)
+    END DO
+
+#if CDXWRF>=3
+    ! Residence time
+
+    ! Consistency checks
+    IF ( nhtasrng*nhhursrng /= nhtashursrng) THEN
+      PRINT *, '  nhtasrng: ', nhtasrng, ' nhhursrng: ', nhhursrng, ' nhtashursrng: ', nhtashursrng
+      WRITE (diag_message , * ) &
+        "CORDEX: ERROR -- error -- ERROR -- error: individual ranges nhtasrng, nhhursrng " //         &
+        "and nhtashursrng do not coincide! nhtashursrng = nhtasrng*nhursrng"
+      CALL wrf_error_fatal ( diag_message )
+    END IF
+
+    IF ( nltasrng*nlhursrng /= nltashursrng) THEN
+      PRINT *, '  nltasrng: ', nltasrng, ' nlhursrng: ', nlhursrng, ' nltashursrng: ', nltashursrng
+      WRITE (diag_message , * ) &
+        "CORDEX: ERROR -- error -- ERROR -- error: individual ranges nltasrng, nlhursrng " //         &
+        "and nltashursrng do not coincide! nltashursrng = nltasrng*nlursrng"
+      CALL wrf_error_fatal ( diag_message )
+    END IF
+
+    IF ( nwbdsrng*nwssrng /= nwbdswssrng) THEN
+      PRINT *, '  nwbdsrng: ', nwbdsrng, ' nwssrng: ', nwssrng, ' nwbdswssrng: ', nwbdswssrng
+      WRITE (diag_message , * ) &
+        "CORDEX: ERROR -- error -- ERROR -- error: individual ranges nwbdsrng, nwssrng " //           &
+        "and nwbdswssrng do not coincide! nwbdswssrng = nwbdsrng*nwssrng"
+      CALL wrf_error_fatal ( diag_message )
+    END IF
+
+    ! Fillling up the bins
+    htasbins(1:nhtasrng-1) = htasrng(1:nhtasrng-1)
+    hhursbins(1:nhhursrng-1) = hhursrng(1:nhhursrng-1)
+    ltasbins(1:nltasrng-1) = ltasrng(1:nltasrng-1)
+    lhursbins(1:nlhursrng-1) = lhursrng(1:nlhursrng-1)
+    wbdsbins(1:nwbdsrng-1) = wbdsrng(1:nwbdsrng-1)
+    wssbins(1:nwssrng-1) = wssrng(1:nwssrng-1)
+           
+    WRITE(diag_message,*) '  high-res tas bins ', (htasbins(k), k=1, nhtasrng-1)
+    CALL wrf_debug(75,diag_message)
+    WRITE(diag_message,*) '  high-res hurs bins ', (hhursbins(k), k=1, nhhursrng-1)
+    CALL wrf_debug(75,diag_message)
+    WRITE(diag_message,*) '  low-res tas bins ', (ltasbins(k), k=1, nltasrng-1)
+    CALL wrf_debug(75,diag_message)
+    WRITE(diag_message,*) '  low-res tas bins ', (lhursbins(k), k=1, nlhursrng-1)
+    CALL wrf_debug(75,diag_message)
+    WRITE(diag_message,*) '  wbds bins ', (wbdsbins(k), k=1, nwbdsrng-1)
+    CALL wrf_debug(75,diag_message)
+    WRITE(diag_message,*) '  wss bins ', (wssbins(k), k=1, nwssrng-1)
+    CALL wrf_debug(75,diag_message)
+
+#endif
+
+    RETURN
+  
+  END SUBROUTINE cdxwrf_init
+#endif
 
 END MODULE module_physics_init

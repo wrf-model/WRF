@@ -161,34 +161,19 @@ Efficiency constrains make necessary to introduce a system of compilation in ord
 * INSTALLATION
 These steps must be followed prior the re-compilation of the WRF model (it requires a clean -a)
 
- 1.- Untar the file
-   $ tar xvfz WRF_CORDEX.tar.gz
+ 1.- Check to the right branch
+   $ git checkout cdxwrf
+   
+   ** NOTE **: assuming that you got the right submodules (when downloading the fork) !!
 
- 2.- It deflates all the required files and the modified orignal WRF files
-  dyn_em/solve_em.F
-  dyn_em/start_em.F
-  main/depend.common
-  phys/module_diagnostics_driver.F
-  phys/module_diag_cordex.F
-  phys/module_diag_pld.F
-  phys/module_diagvar_cordex.F
-  phys/Makefile
-  README.cordex
-  Registry/registry.cordex
-  Registry/registry.diags
-
- 3.- On the Registry/Registry.EM add the following line (after the line with registry.bdy_perturb (on WRFV3.7.1, WRFV3.8.1), registry.new3d_wif (on WRFV3.9.1.1)) 
-
-include registry.cordex
-
- 4.- Clean the code (in order to avoid to run again configure one can make a copy of the 'configure.wrf' and recover it after the clean, otherwise it is erased)
+ 2.- Clean the code (in order to avoid to run again configure one can make a copy of the 'configure.wrf' and recover it after the clean, otherwise it is erased)
    $ cp configure.wrf configure.cordex.wrf
    $ ./clean -a
    $ cp configure.cordex.wrf configure.wrf
 
- 5.- edit the `configure.wrf' and add the line (after the line -DNETCDF and/or -DCLWRFGHG)
+ 3.- edit the `configure.wrf' and add the line (after the line -DNETCDF and/or -DCLWRFGHG)
                       -DCORDEXDIAG \
- 6.- Set up (or not) the pre-compilation variable CDXWRF (after the line -DCORDEXDIAG)
+ 4.- Set up (or not) the pre-compilation variable CDXWRF (after the line -DCORDEXDIAG)
                       -DCDXWRF=[value] \
 
   Accordingly to the value given to the pre-compilation variable CDXWRF one obtains:
@@ -198,9 +183,9 @@ include registry.cordex
    - CDXWRF=3 The same as with CDXWRF=1,2 and additional residence-time variables
    - CDXWRF=4 The same as with CDXWRF=1,2 and 3 and the Water-Budget relarted ones: wbacdiabh, wbacpw, wbacpw[c/r/s/i/g/h], wbacf, wbacf[c/r/s/i/g/h], wbacz, wbacz[c/r/s/i/g/h], wbacdiabh{l/m/h}, wbacpw{l/m/h}, wbacpw[c/r/s/i/g/h]{l/m/h}, wbacf{l/m/h}, wbacf[c/r/s/i/g/h]{l/m/h}, wbacz{l/m/h}, wbacz[c/r/s/i/g/h]{l/m/h}
   Simultanesouly, one needs to:
-   1.- make a copy of Registry/registry.cordex
+   a.- make a copy of Registry/registry.cordex
      $ cp Registry/registry.cordex Registry/registry.cordex_comp
-   2.- modify the Registry/registry.cordex_comp accordingly to the value of CDXWRF:
+   b.- modify the Registry/registry.cordex_comp accordingly to the value of CDXWRF:
     - Without adding CDXWRF, nothing needs to be changed
     - Adding CDXWRF=1, one needs to remove the comment ##CDXWRF1## at the beginning of the line of the definition of certain variables
     - Adding CDXWRF=2, one needs to remove the comment ##CDXWRF1## and ##CDXWRF2## at the beginning of the line of the definition of certain variables
@@ -208,17 +193,23 @@ include registry.cordex
     - Adding CDXWRF=4, one needs to remove the comment ##CDXWRF1##, ##CDXWRF2##, ##CDXWRF3## and ##CDXWRF4## at the beginning of the line of the definition of certain variables
 
  - Additionally, one can also get the instantaneous values for the variables which only certain statistics (accumulation, minimum, mean, ...) are provided. In order to get them, one need to:
-  1.- Search in 'phys/module_diagnostics_driver.F' and 'phys/module_diag_cordex.F' the lines of code marked with 'INSTVALS' and change accordingly. 
-  2.- Modify Registry/registry.cordex accordingly (removing ##INST## at the beginning of the line of the definition of certain variables, and adding 'h9' to certain others)
-  3.- re-compile
+  a.- Search in 'phys/module_diagnostics_driver.F' and 'phys/module_diag_cordex.F' the lines of code marked with 'INSTVALS' and change accordingly. 
+  b.- Modify Registry/registry.cordex accordingly (removing ##INST## at the beginning of the line of the definition of certain variables, and adding 'h9' to certain others)
+  c.- re-compile
 
  7.- compile as always
+  · ./compile em_real >& compile.log
 
 NOTE: after any change into a `Registry' related file, one needs to before the compilation refresh entirely the code throughout
 $ ./clean -a
 
 * USAGE
  One need to add to the 'namelist.input' the auxiliary output number 9 (e.g. for output every 3 hours and 1-day files) at the `&history' section:
+
+ auxhist8_outname = "wrfhfcdx_d<domain>_<date>"
+ auxhist8_interval = 10, 10,
+ frames_per_auxhist8 = 144, 144,
+ io_form_auxhist8 = 2
 
  auxhist9_outname = "wrfcdx_d<domain>_<date>"
  auxhist9_interval = 180, 180,
@@ -249,6 +240,44 @@ $ ./clean -a
                             = 3: FRAML 50% prob Gultepe and Milbrandt, (2010) (default)
  fogvars                    = 1: variables to use to diagnose fog using 3D [hur] (default)
                             = 2: sfc [hus] (not available for Kunkel, 1984)
+ zmlagen_diag               = 1: diagnostic of generic zmla after Nielsen-Gammon et al. (2008)
+                            = 2: bulk-Richardson (Vogelezang and Holtslag, 1996; Seidel et al., 2004) (default)
+ timedbg                    = frecuency in minutes of time-debugging (720, default)
+ londbg                     = longitude in degrees of grid-point debugging (-999., not used) (-999., default)
+ latdbg                     = latitude in degrees of grid-point debugging (-999., not used) (-999., default)
+ wgsts_wbdswsstres          = whether wind gusts should be used for wbds-wss residence-time (0: no, 1: yes (1, default)
+
+#### ONLY for CDXWRF>=3
+  nhtasrng                  = amount + 1 of high-resolution bins for temporal residence of tas (38, default)
+  nhhursrng                 = amount + 1 of high-resolution bins for temporal residence of hurs (25, default)
+  nltasrng                  = amount + 1 of low-resolution bins for temporal residence of tas (21, default)
+  nlhursrng                 = amount + 1 of low-resolution bins for temporal residence of hurs (25, default)
+##CDXWRF3##rconfig   integer nwbdsrng                namelist,cordex       1              33      rh    "nwbdsrng"                 "amount + 1 of  bins for temporal residence of wbds"                  ""
+# SI-based
+##CDXWRF3##rconfig   integer nwssrng                 namelist,cordex       1              22      rh    "nwssrng"                  "amount + 1 of  bins for temporal residence of wss"                  ""
+# kt-based: [0., 2.5, 5., 10., 15., 20., 25., 30., 35., 40.. 45., 50., 60., 70., 80., 100., 150., 200., 250., 300. ]
+#   Transforming to ms-1 as wss = kt * 1852. / 3600.
+###CDXWRF3##rconfig   integer nwssrng                 namelist,cordex       1              20      rh    "nwssrng"                  "amount + 1 of  bins for temporal residence of wss kt-based"         ""
+# Beafourt scale-based: [0., 0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5, 10.5, 11.5, 12.5, 13.5, 14.5, 15.5, 
+#   16.5, 17.5, 18.5, 19.5, 21.5, 23.5, 25.5, 27.5, 29.5, 31.5]
+#   FROM: https://en.wikipedia.org/wiki/Beaufort_scale
+#   Transforming to ms-1 as wss = 0.836*Bnum**(3./2.)
+###CDXWRF3##rconfig   integer nwssrng                 namelist,cordex       1              27      rh    "nwssrng"                  "amount + 1 of  bins for temporal residence of wss Beafourt-based"   ""
+## L. Fita, so, WRF output will provide a (n[h/l]tasrng*n[h/l]hursrng) 3D variable instead
+##CDXWRF3##rconfig   integer nhtashursrng                namelist,cordex       1              950      rh    "nhtashursrng"        "amount + 1 of high-resolution bins for temporal residence of tas and hurs (nhtas+1)*(nhhurs+1)"   ""
+##CDXWRF3##rconfig   integer nltashursrng                namelist,cordex       1              525      rh    "nltashursrng"        "amount + 1 of low-resolution bins for temporal residence of wss and wbds (nwbds+1)*(nwss+1)"   ""
+##CDXWRF3##rconfig   integer nwbdswssrng                 namelist,cordex       1              726      rh    "nwbdswssrng"         "amount + 1 of bins for temporal residence of wbds and wss (nwbds+1)*(nwss+1)"   ""
+###CDXWRF3##rconfig   integer nwbdswssrng                 namelist,cordex       1              660      rh    "nwbdswssrng"         "amount + 1 of bins for temporal residence of wbds and wss (nwbds+1)*(nwss+1) kt-based"   ""
+###CDXWRF3##rconfig   integer nwbdswssrng                 namelist,cordex       1              891      rh    "nwbdswssrng"         "amount + 1 of bins for temporal residence of wbds and wss (nwbds+1)*(nwss+1) Beafourt-based"   ""
+##CDXWRF3##rconfig   real    htasrng                namelist,cordex       max_lbins      (/173.15,268.15,269.15,270.15,271.15,272.15,273.15,274.15,275.15,276.15,277.15,278.15,279.15,280.15,281.15,282.15,283.15,284.15,285.15,286.15,287.15,288.15,289.15,290.15,291.15,292.15,293.15,294.15,295.15,296.15,297.15,298.15,299.15,300.15,301.15,302.15,303.15,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00/) rh    "htasrng"                  "high-resolution bins for temporal residence of tas"   ""
+##CDXWRF3##rconfig   real    hhursrng               namelist,cordex       max_lbins      (/0.00,0.05,0.10,0.15,0.20,0.25,0.30,0.35,0.40,0.45,0.50,0.55,0.60,0.65,0.70,0.75,0.80,0.85,0.90,0.95,1.00,1.05,1.10,1.15,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00/)      rh    "hhursrng"                 "high-resolution bins for temporal residence of hurs"  ""
+##CDXWRF3##rconfig   real    ltasrng                namelist,cordex       max_lbins      (/173.15,233.15,238.15,243.15,248.15,253.15,258.15,263.15,268.15,273.15,278.15,283.15,288.15,293.15,298.15,303.15,308.15,313.15,318.15,323.15,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00/)      rh    "ltasrng"                  "low-resolution bins for temporal residence of tas"   ""
+##CDXWRF3##rconfig   real    lhursrng               namelist,cordex       max_lbins      (/0.00,0.05,0.10,0.15,0.20,0.25,0.30,0.35,0.40,0.45,0.50,0.55,0.60,0.65,0.70,0.75,0.80,0.85,0.90,0.95,1.00,1.05,1.10,1.15,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00/)      rh    "lhursrng"                 "low-resolution bins for temporal residence of hurs"  ""
+##CDXWRF3##rconfig   real    wbdsrng                namelist,cordex       max_lbins      (/-0.0982,0.0982,0.2945,0.4909,0.6872,0.8836,1.0799,1.2763,1.4726,1.669,1.8653,2.0617,2.258,2.4544,2.6507,2.8471,3.0434,3.2398,3.4361,3.6325,3.8288,4.0252,4.2215,4.4179,4.6142,4.8106,5.0069,5.2033,5.3996,5.596,5.7923,5.9887,6.185,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0/)      rh    "wbdsrng"                "bins for temporal residence of wbds"  ""
+##CDXWRF3##rconfig   real    wssrng                 namelist,cordex       max_lbins      (/0.0,0.5,1.0,2.5,5.0,10.0,15.0,20.0,25.0,30.0,35.0,40.0,45.0,50.0,60.0,70.0,80.0,90.0,100.0,125.0,150.0,200.0,95.2375,107.6506,120.5606,133.9489,147.7992,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0/)      rh    "wssrng"                 "bins for temporal residence of wss"  ""
+###CDXWRF3##rconfig   real    wssrng                 namelist,cordex       max_lbins      (/0.0,1.2861,2.5722,5.1444,7.7167,10.2889,12.8611,15.4333,18.0056,20.5778,23.15,25.7222,30.8667,36.0111,41.1556,51.4444,77.1667,102.8889,128.6111,154.3333,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0/)      rh    "wssrng"                 "bins for temporal residence of wss kt-based"  ""
+###CDXWRF3##rconfig   real    wssrng                 namelist,cordex       max_lbins      (/0.0,0.2956,1.5358,3.3046,5.474,7.9804,10.7833,13.854,17.1711,20.7174,24.4789,28.444,32.6027,36.9463,41.4674,46.1592,51.0157,56.0315,61.2017,66.5218,71.9877,83.342,95.2375,107.6506,120.5606,133.9489,147.7992,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0/)      rh    "wssrng"                 "bins for temporal residence of wss Beafourt-based"  ""
+
 /
 
 `convxtrm_diag' parameter has only effect with CDXWRF=1
@@ -260,8 +289,8 @@ $ ./clean -a
 
  auxhist23_outname=”wrfpress_d<domain>_<date>”
  io_form_auxhist23 = 2,
- auxhist23_interval = 180, 180,
- frames_per_auxhist23 = 100, 100,
+ auxhist23_interval = 180, 60,
+ frames_per_auxhist23 = 8, 24,
 
 &diags
  p_lev_diags = 1,
@@ -270,4 +299,8 @@ $ ./clean -a
  use_tot_or_hyd_p = 1
  p_lev_missing = -999.
 /
+
+Optional 23 p-level values:
+ num_press_levels = 23,
+ press_levels = 100000,97500,95000,92500,90000,87500,85000,82500,80000,75000,70000,65000,60000,55000,50000,45000,40000,35000,30000,25000,20000,15000,10000,
 

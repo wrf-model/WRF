@@ -38,12 +38,23 @@ Efficiency constrains make necessary to introduce a system of compilation in ord
  - cdgen: generic drag coefficient [-]
  - ps: surface pressure [Pa]
  - ts: skin temperature [K]
+ - zeroith: 0-isotherm [m]
+ - mrsol: moisture content of soil layer [kgm-2]
+ - mrsos: first layer soil moisture content (0-10 cm) [kgm-2]
+ - mrso: total soil moisture content [kgm-2]
+ - mrsll: liquid water content of soil layer [kgm-2]
+ - mrlso: total liquid water content of soil layer [kgm-2]
+ - mrlsos: liquid water content in Upper Portion of soil column (0-10cm) [kgm-2]
+ - mrsfl: frozen water content of soil layer [kgm-2]
+ - mrfso: total frozen water content of soil layer [kgm-2]
+ - mrfsos: frozen water content in Upper Portion of soil column (0-10cm) [kgm-2]
 
 * CDXWRF=1
  - clivg: graupel water path (QGRAUPEL)
  - clivh: hail water path (QHAIL)
  - zmla: pbl height following a generic method [m]
-
+ - colmax: high-frequency maximum radar reflectivity in the column [dBz] (on auxhist8, wrfhfcdx)
+ 
 ** Only if 'INSTVALS' modifications are made
  - cape: Convective Available Potential Energy [Jkg-1] 
  - cin: Convective inhibition [Jkg-1]
@@ -106,6 +117,15 @@ Efficiency constrains make necessary to introduce a system of compilation in ord
  - rsdt: TOA incident shortwave radiation [kgm-2]
  - rsut: TOA outgoing shortwave radiation [kgm-2]
  - rlut: TOA outgoing Longwave radiation [kgm-2]
+ - mrsolmean: mean moisture content of soil layer [kgm-2]
+ - mrsosmean: mean first layer soil moisture content (0-10 cm) [kgm-2]
+ - mrsomean: mean total soil moisture content [kgm-2]
+ - mrsllmean: mean liquid water content of soil layer [kgm-2]
+ - mrlsomean: mean total liquid water content of soil layer [kgm-2]
+ - mrlsosmean: mean liquid water content in Upper Portion of soil column (0-10cm) [kgm-2]
+ - mrsflmean: mean frozen water content of soil layer [kgm-2]
+ - mrfsomean: mean total frozen water content of soil layer [kgm-2]
+ - mrfsosmean: mean frozen water content in Upper Portion of soil column (0-10cm) [kgm-2]
 
 * Only if 'INSTVALS' modifications are made
  - clt: total cloud cover [%]
@@ -129,6 +149,7 @@ Efficiency constrains make necessary to introduce a system of compilation in ord
  - zlfcmean: mean height at LFC [m]
  - plfcmean: mean Pressure at LFC [Pa]
  - lidxmean: mean Lifted index [1]
+ - prflux: high-frequency precipitation flux [kgm-2s-1] (on auxhist8, wrfhfcdx)
 
 * CDXWRF=2
  - tfog: time of presence of fog [s]
@@ -138,9 +159,14 @@ Efficiency constrains make necessary to introduce a system of compilation in ord
  - tdsmin: minimum 2m dew point temperature [K]
  - tdsmax: maximum 2m dew point temperature [K]
  - tdsmean: mean 2m dew point temperature [K]
+ - twsmin: minimum 2m wet-bulb temperature [K]
+ - twsmax: maximum 2m wet-bulb temperature [K]
+ - twsmean: mean 2m wet-bulb temperature [K]
 
 * CDXWRF=3
-
+ - tashurstreshighres: high resolution of simultaneous temporal residence of 2-meter temperature and relative humidity
+ - tashurstreslowres: low resolution of simultaneous temporal residence of 2-meter temperature and relative humidity
+ - wbdswsstres: simultaneous temporal residence of 10-meter wind direction (from where it blows) and wind speed
 
 * CDXWRF=4
  - wbacdiabh: Water-budget vertically integrated accumulated of diabatic heating from microphysics [K]
@@ -209,7 +235,7 @@ NOTE: after any change into a `Registry' related file, one needs to before the c
 $ ./clean -a
 
 * USAGE
- One need to add to the 'namelist.input' the auxiliary output number 9 (e.g. for output every 3 hours and 1-day files) at the `&history' section:
+ One need to add to the 'namelist.input' the auxiliary output number 8 (only for CDXWRF>=1, e.g. for every 10 minutes and 1-day files) & 9 (e.g. for output every 3 hours and 1-day files) at the `&history' section:
 
  auxhist8_outname = "wrfhfcdx_d<domain>_<date>"
  auxhist8_interval = 10, 10,

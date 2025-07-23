@@ -195,7 +195,7 @@ These steps must be followed prior the re-compilation of the WRF model (it requi
  1.- Check to the right branch
    $ git checkout cdxwrf
    
-   ** NOTE **: assuming that you got the right submodules (when downloading the fork) !!
+   ** NOTE **: assuming that you got the right submodules [e.g. noahMP] (when downloading the fork) !!
 
  2.- Clean the code (in order to avoid to run again configure one can make a copy of the 'configure.wrf' and recover it after the clean, otherwise it is erased)
    $ cp configure.wrf configure.cordex.wrf

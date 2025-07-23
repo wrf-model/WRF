@@ -2666,4 +2666,298 @@ CONTAINS
 
   END SUBROUTINE cordex_output_calc
 
+! CDXWRF - high frequency
+!! 
+  SUBROUTINE cordex_hf_output_calc(                                                                   &
+                      is_restart, is_output_time, cdxH, nsteps,                                       &
+                      dt, xtime, curr_secs2,                                                          &
+
+                   ! Input
+                      lon, lat,                                                                       &
+                      qr, qs, qg,                                                                     &
+                      t,                                                                              &
+                      prc, prnc, prsh,                                                                &
+                      rho,                                                                            &
+                   ! Output
+                      flxpr, colmax,                                                                  &
+                      ids,ide, jds,jde, kds,kde,                                                      &
+                      ims,ime, jms,jme, kms,kme,                                                      &
+                      ips,ipe, jps,jpe, kps,kpe,                                                      & ! patch  dims
+                      i_start,i_end,j_start,j_end,kts,kte,num_tiles                                   &
+                    )
+
+!----------------------------------------------------------------------
+! Main subroutine to compute CORDEX high-frequency variables
+
+  USE module_dm, ONLY: wrf_dm_sum_real, wrf_dm_maxval
+  USE module_configure 
+  USE module_diagvar_cordex
+
+  IMPLICIT NONE
+
+!======================================================================
+! Definitions
+!-----------
+!-- DT            time step (second)
+!-- XTIME         forecast time
+!-- curr_secs2    current time in seconds since simulation restart
+!-- nsteps        amount of time-steps between outputs
+!
+!-- ids           start index for i in domain
+!-- ide           end index for i in domain
+!-- jds           start index for j in domain
+!-- jde           end index for j in domain
+!-- kds           start index for k in domain
+!-- kde           end index for k in domain
+!-- ims           start index for i in memory
+!-- ime           end index for i in memory
+!-- jms           start index for j in memory
+!-- jme           end index for j in memory
+!-- ips           start index for i in patch
+!-- ipe           end index for i in patch
+!-- jps           start index for j in patch
+!-- jpe           end index for j in patch
+!-- kms           start index for k in memory
+!-- kme           end index for k in memory
+!-- i_start       start indices for i in tile
+!-- i_end         end indices for i in tile
+!-- j_start       start indices for j in tile
+!-- j_end         end indices for j in tile
+!-- kts           start index for k in tile
+!-- kte           end index for k in tile
+!-- num_tiles     number of tiles
+
+!
+!-----------
+! is_restart: whether if simulation is a restart
+! is_output_time: whether if this iteration is an output time-step
+! cdxH: period of time [minute] of calculations between outputs
+!
+! ------- INPUT vars -------
+! lon: longitude
+! lat: latitude
+! qr: rain mixing ratio [kgkg-1]
+! qs: snow mixing ratio [kgkg-1]
+! qg: graupel mixing ratio [kgkg-1]
+! t: 3D air temperature [K]
+! rho: air density [kgm-3]
+! prc: convective (from cumulus scheme) precipitation [kgm-2]
+! prnc: non-convective (from micro-physics scheme) precipitation [kgm-2]
+! prsh: shallow-cumulus (from shallow-cumulus scheme) precipitation [kgm-2]
+
+!-------- OUTPUT vars ------- [defined at registry.cordex] and included on Registry.EM_COMMON on auxhist8
+! flxpr: precipitation flux [kgm-2s-1]
+! colmax: maximum radar reflectivity in the column [dBz]
+
+!!!!!!! Structure
+! 1.: Compute such variables needed for internal accumulations, extremes
+! 2.: Compute the variables from clouds (only actualized at every radt)
+! 3.: If the time step is the first after writting the auxhist8 file inittialize the variables of (1., 2.)
+! 4.: If the time step is exactly the previous one before the writting of the auxhist8 file:
+!   a: Compute all other variables 
+!   b: Finish calculation of 1., 2. variables 
+
+!======================================================================
+
+  INTEGER,      INTENT(in)                               ::                                           &
+                                            ids,ide, jds,jde, kds,kde,                                &
+                                            ims,ime, jms,jme, kms,kme,                                &
+                                            ips,ipe, jps,jpe, kps,kpe,                                &
+                                            kts,kte,                                                  &
+                                            num_tiles
+
+
+  INTEGER, DIMENSION(num_tiles), INTENT(in)              :: i_start, i_end, j_start, j_end
+
+  REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(in)   :: qr, qs, qg, t, rho
+  REAL, DIMENSION(ims:ime,jms:jme), INTENT(in)           :: lon, lat
+  REAL, DIMENSION(ims:ime,jms:jme), INTENT(in)           :: prc, prnc, prsh
+
+  REAL, INTENT(in)                                       :: DT, XTIME
+  REAL, INTENT(in)                                       :: curr_secs2
+  INTEGER, INTENT(in)                                    :: cdxH
+  LOGICAL, INTENT(in)                                    :: is_restart, is_output_time
+  INTEGER, INTENT(inout)                                 :: nsteps
+  REAL, DIMENSION(ims:ime,jms:jme), INTENT(inout)        :: flxpr, colmax
+
+! LOCAL  VAR
+
+  INTEGER                                                :: i, j, k, m, its, ite, jts, jte, ij
+  INTEGER                                                :: idp, jdp, dimz, dimz1, dz1
+  INTEGER                                                :: i1, i_1, j1, j_1, k2
+  INTEGER, DIMENSION(num_tiles)                          :: i2, j2
+
+  REAL                                                   :: xtimep
+  REAL                                                   :: prv
+
+  LOGICAL, EXTERNAL                                      :: wrf_dm_on_monitor
+  CHARACTER(len=256)                                     :: msg
+  LOGICAL                                                :: ijdbg, cdone
+  INTEGER                                                :: dbg_level
+
+  fname = 'cordex_hf_output_calc'
+
+  ! Getting the overall debug level
+  CALL get_wrf_debug_level( dbg_level ) 
+  cdone = .FALSE.
+
+  ! L. Fita: NOTE about efficiency
+  !   I am not sure if this is the more efficient way:
+  !     1.- IF --> 2.- repeat DO
+  !     1.- DO -->  2.- IF
+
+  dimz = kme - kms + 1
+  dimz1 = dimz + 1
+  dz1 = dimz - 1
+
+  ! For test purposes
+  !$OMP PARALLEL DO   &
+  !$OMP PRIVATE ( ij )
+  DO ij = 1 , num_tiles
+    i2(ij) = INT(0.5*(i_start(ij) + i_end(ij)))
+    j2(ij) = INT(0.5*(j_start(ij) + j_end(ij)))
+  END DO
+  !$OMP END PARALLEL DO
+  k2 = 0.5*(kms+kme)
+
+  ! Computing accumulative variables 
+  ijdbg = .FALSE.
+  !$OMP PARALLEL DO   &
+  !$OMP PRIVATE ( ij )
+  DO ij = 1 , num_tiles
+    DO i = i_start(ij), i_end(ij)
+      DO j = j_start(ij), j_end(ij)
+        IF (ij == 1 .AND. i == i2(ij) .AND. j == j2(ij)) ijdbg = .TRUE.
+
+        ! Avoiding seg faults
+        IF (curr_secs2 > 0. ) THEN
+          WRITE(msg,*) '  ' // TRIM(fname) // ': computing colmax'
+
+          IF (ijdbg) CALL wrf_debug(50,msg)
+          ! Total precipitation
+          prv = prc(i,j) + prnc(i,j) + prsh(i,j)
+
+        END IF
+
+
+        ijdbg = .FALSE.
+      END DO
+    END DO
+  END DO
+  !$OMP END PARALLEL DO
+
+  IF (( MOD(NINT(curr_secs2/dt),NINT(cdxH*60./dt)) == 0) ) THEN
+    ! Initialization of accumulated variables between outputs
+    IF  ( wrf_dm_on_monitor() ) THEN
+      CALL wrf_debug(0, '  ' // TRIM(fname) // ': Re-initializing accumulation arrays')
+    ENDIF
+
+    nsteps = 1
+
+    ijdbg = .FALSE.
+    !$OMP PARALLEL DO   &
+    !$OMP PRIVATE ( ij )
+    DO ij = 1 , num_tiles
+      DO i = i_start(ij), i_end(ij)
+        DO j = j_start(ij), j_end(ij)
+          IF (ij == 1 .AND. i == i2(ij) .AND. j == j2(ij)) ijdbg = .TRUE.
+
+          ! Precipitations
+          flxpr(i,j) = prc(i,j) + prnc(i,j) + prsh(i,j)
+
+          IF (dbg_level >= 75 .AND. ijdbg) THEN
+            WRITE(msg,*) '  ' // TRIM(fname) // ' ',i,' ,',j,' : first value checks _______' 
+            CALL wrf_debug(75,msg)
+            WRITE(msg,*) '    longitude:', lon(i,j),' latitude:',lat(i,j)
+            CALL wrf_debug(75,msg)
+            WRITE(msg,*) '    nsteps:', nsteps
+            CALL wrf_debug(75,msg)
+            WRITE(msg,*)'    prc:', prc(i,j), ' prnc:', prnc(i,j), ' prsh:', prsh(i,j), ' flxpr:',    &
+              flxpr(i,j)
+            CALL wrf_debug(75,msg)
+          END IF
+
+          ijdbg = .FALSE.
+        ENDDO
+      ENDDO
+    ENDDO
+    !$OMP END PARALLEL DO
+
+  ELSE
+    xtimep = xtime + dt/60.   ! value at end of timestep for time info
+    nsteps=nsteps+1
+    ijdbg = .FALSE.
+    !$OMP PARALLEL DO   &
+    !$OMP PRIVATE ( ij )
+    DO ij = 1 , num_tiles
+      DO i = i_start(ij), i_end(ij)
+        DO j = j_start(ij), j_end(ij)
+          IF (ij == 1 .AND. i == i2(ij) .AND. j == j2(ij)) ijdbg = .TRUE.
+
+          ! Precipitations
+          flxpr(i,j) = flxpr(i,j) + prc(i,j) + prnc(i,j) + prsh(i,j)
+
+          IF (dbg_level >= 75 .AND. ijdbg) THEN
+            WRITE(msg,*) '  ' // TRIM(fname) // ' ',i,' ,',j,' : intermediate checks _______' 
+            CALL wrf_debug(75,msg)
+            WRITE(msg,*) '    longitude:', lon(i,j),' latitude:',lat(i,j)
+            CALL wrf_debug(75,msg)
+            WRITE(msg,*) '    nsteps:', nsteps
+            WRITE(msg,*)'    prc:', prc(i,j), ' prnc:', prnc(i,j), ' prsh:', prsh(i,j), ' flxpr:',    &
+              flxpr(i,j)
+            CALL wrf_debug(75,msg)
+          END IF
+          ijdbg = .FALSE.
+        ENDDO
+      ENDDO
+    ENDDO
+    !$OMP END PARALLEL DO
+
+  END IF
+
+  ! Some of CORDEX variables tend to be quite computational intensive, thus, just compute them when
+  !   it is necessary (only valid for instantaneous variables)
+  ijdbg = .FALSE.
+  IF (is_output_time) THEN
+    CALL wrf_debug(10,'  ' // TRIM(fname) // ': Computing instantaneous CORDEX variables')
+
+    !$OMP PARALLEL DO   &
+    !$OMP PRIVATE ( ij )
+    DO ij = 1 , num_tiles
+      DO i = i_start(ij), i_end(ij)
+        DO j = j_start(ij), j_end(ij)
+          IF (ij == 1 .AND. i == i2(ij) .AND. j == j2(ij)) ijdbg = .TRUE.
+          i1 = MIN(i+1,i_end(ij))
+          i_1 = MAX(i-1,i_start(ij))
+          j1 = MIN(j+1,j_end(ij))
+          j_1 = MAX(j-1,j_start(ij))
+
+          ! 2m specific humidity
+          CALL var_colmax1D(dimz, rho(i,:,j), t(i,:,j), qr(i,:,j), qs(i,:,j), qg(i,:,j), colmax(i,j))
+
+          ! Precipitations
+          flxpr(i,j) = flxpr(i,j)/(dt*nsteps)
+
+          IF (dbg_level >= 75 .AND. ijdbg) THEN
+            WRITE(msg,*) '  ' // TRIM(fname) // ' ',i,' ,',j,' : final checks _______' 
+            CALL wrf_debug(75,msg)
+            WRITE(msg,*) '    nsteps:', nsteps
+            CALL wrf_debug(75,msg)
+            WRITE(msg,*)'    prc:', prc(i,j), ' prnc:', prnc(i,j), ' prsh:', prsh(i,j), ' flxpr:',    &
+              flxpr(i,j)
+            CALL wrf_debug(75,msg)
+            WRITE(msg,*)'    colmax:', colmax(i,j)
+            CALL wrf_debug(75,msg)
+          END IF
+
+          ijdbg = .FALSE.
+        ENDDO
+      ENDDO
+    ENDDO
+    !$OMP END PARALLEL DO
+
+  END IF
+
+  END SUBROUTINE cordex_hf_output_calc
+
 END MODULE module_diag_cordex

@@ -1481,6 +1481,8 @@ CONTAINS
                     ,SNW=grid%snw                                          &
                     ,RSDT=grid%rsdt, RSUT=grid%rsut, RLUT=grid%rlut        &
                     ,TAS_HM=grid%tas_hm, QVS_HM=grid%qvs_hm                &
+                    ,COLMAX=grid%colmax, HFPRFLX=grid%prhf                 &
+
 #ifdef CDXWRF
 #if CDXWRF>=1
                     ,CLGVI=grid%clgvi, CLHVI=grid%clhvi                    &
@@ -1604,12 +1606,66 @@ CONTAINS
 #endif
 !! End of INSTVALS
                   )
+                  
+
+!!
+! High-frequency CORDEX diagnostics
+!!
+         ! Only to be computed if an interval is provided
+         IF ( ( config_flags%auxhist8_interval /= 0 ) ) THEN
+
+           CALL wrf_debug ( 100 , '--> CALL DIAGNOSTICS PACKAGE: High-Frequency CORDEX DIAGNOSTICS' )
+         
+           ! From AFWA diagnostics ...
+           CALL WRFU_ALARMGET( grid%alarms( HISTORY_ALARM ), prevringtime=hist_time,                    &
+             ringinterval=histint)
+           CALL WRFU_ALARMGET( grid%alarms(AUXHIST8_ALARM), prevringtime=aux8_time, ringinterval=aux8int)
+           CALL domain_clock_get ( grid, current_time=CurrTime, simulationStartTime=StartTime,          &
+             current_timestr=timestr, time_step=dtint )
+           is_output_t = ( Currtime .ge. aux8_time + aux8int - dtint )
+
+           IF (is_output_t) THEN
+             grid%cdxlon = grid%xlong
+             grid%cdxlat = grid%xlat
+           END IF
+         
+           CALL cordex_hf_output_calc(                                     &
+                     is_restart=config_flags%restart                       &
+                    ,is_output_time = is_output_t                          &
+                    ,cdxH=config_flags%auxhist8_interval                   &
+!                    ,DT=grid%dt                                            &
+                    ,DT=REAL(model_config_rec%dt(grid%id))                 &
+                    ,XTIME=grid%xtime,CURR_SECS2=curr_secs2                &
+
+         ! Input
+                    ,LON=grid%xlong, LAT=grid%xlat                         &
+                    ,QR=moist(:,:,:,P_QR), QS=moist(:,:,:,P_QS)            &
+                    ,QG=moist(:,:,:,P_QG)                                  &
+                    ,T=grid%t_phy                                          &
+                    ,PRC=grid%raincv, PRNC=grid%rainncv, PRSH=grid%rainshv &
+                    ,RHO=grid%rho                                          &
+         ! Output
+                    ,nsteps=grid%cdxhfnsteps                               &
+                    ,FLXPR=grid%prhf, COLMAX=grid%colmax                   &
+
+          ! Dimension arguments
+                    ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde     &
+                    ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme     &
+                    ,IPS=ips,IPE=ipe, JPS=jps,JPE=jpe, KPS=kps,KPE=kpe     &
+                    ,I_START=grid%i_start,I_END=min(grid%i_end, ide-1)     &
+                    ,J_START=grid%j_start,J_END=min(grid%j_end, jde-1)     &
+                    ,KTS=k_start, KTE=k_end                                &
+                    ,NUM_TILES=grid%num_tiles                              &
+                  )
+
+         ! End if for auxhist8 value
+         END IF
+
       END IF CORDEX_DIAGS
 
 #endif
 
    END SUBROUTINE diagnostics_driver
-
 
 
    SUBROUTINE update_phys_fields ( grid, config_flags, moist,           &

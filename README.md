@@ -269,16 +269,15 @@ cp configure.cordex.wrf configure.wrf
 cp Registry/registry.cordex Registry/registry.cordex_comp
 ```
    2. modify the `Registry/registry.cordex_comp` accordingly to the value of `CDXWRF`:
-    - Without adding `CDXWRF`, nothing needs to be changed
-    - Adding `CDXWRF=1`, one needs to remove the comment `##CDXWRF1##` at the beginning of the line of the definition of certain variables
-    - Adding `CDXWRF=2`, one needs to remove the comment `##CDXWRF1##` and `##CDXWRF2##` at the beginning of the line of the definition of certain variables
-    - Adding `CDXWRF=3`, one needs to remove the comment `##CDXWRF1##`, `##CDXWRF2##` and `##CDXWRF3##` at the beginning of the line of the definition of certain variables
-    - Adding `CDXWRF=4`, one needs to remove the comment `##CDXWRF1##`, `##CDXWRF2##`, `##CDXWRF3##` and `##CDXWRF4##` at the beginning of the line of the definition of certain variables
+   - Without adding `CDXWRF`, nothing needs to be changed
+   - Adding `CDXWRF=1`, one needs to remove the comment `##CDXWRF1##` at the beginning of the line of the definition of certain variables
+   - Adding `CDXWRF=2`, one needs to remove the comment `##CDXWRF1##` and `##CDXWRF2##` at the beginning of the line of the definition of certain variables
+   - Adding `CDXWRF=3`, one needs to remove the comment `##CDXWRF1##`, `##CDXWRF2##` and `##CDXWRF3##` at the beginning of the line of the definition of certain variables
+   - Adding `CDXWRF=4`, one needs to remove the comment `##CDXWRF1##`, `##CDXWRF2##`, `##CDXWRF3##` and `##CDXWRF4##` at the beginning of the line of the definition of certain variables
 
  - Additionally, one can also get the instantaneous values for the variables which only certain statistics (accumulation, minimum, mean, ...) are provided. In order to get them, one need to:
   1. Search in `phys/module_diagnostics_driver.F` and `phys/module_diag_cordex.F` the lines of code marked with `INSTVALS` and change accordingly (not fully tested). 
   2. Modify `Registry/registry.cordex` accordingly (removing `##INST##` at the beginning of the line of the definition of certain variables, and adding `h9` to certain others)
-  3. re-compile
 
  7. compile as always
 ```
@@ -303,7 +302,7 @@ One need to add to the `namelist.input` the auxiliary output number 8 (only for 
  frames_per_auxhist9 = 8, 8,
  io_form_auxhist9 = 2
 ```
-Also a new section should be added (assuming it will get complex...)
+Also a new section should be added into the `namelist.input
 
 ```
 &cordex
@@ -375,7 +374,7 @@ Also a new section should be added (assuming it will get complex...)
 ###### Optional values for wbds & wss residence-time
 In the code, user is provided with 2 different complementary set-ups for the wbds & wss residence-time 
 
-####### kt-based
+<ins>kt-based</ins>
 The references for wind-speed are based on knots (kt)
  - wss: [0., 2.5, 5., 10., 15., 20., 25., 30., 35., 40.. 45., 50., 60., 70., 80., 100., 150., 200., 250., 300. ]
  - Transforming to ms-1 as wss = kt * 1852. / 3600.
@@ -387,7 +386,7 @@ The references for wind-speed are based on knots (kt)
     0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0/)        
 ```
 
-####### Beafourt scale-based
+<ins>Beafourt scale-based</ins>
 The references of wind speed are based on the [Beafourt](https://en.wikipedia.org/wiki/Beaufort_scale) scale
  - wss: [0., 0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5, 10.5, 11.5, 12.5, 13.5, 14.5, 15.5, 16.5, 17.5, 18.5, 19.5, 21.5, 23.5, 25.5, 27.5, 29.5, 31.5]
  - Transforming to ms-1 as wss = 0.836*Bnum**(3./2.)
@@ -402,7 +401,7 @@ The references of wind speed are based on the [Beafourt](https://en.wikipedia.or
 
 #### Pressure interpolation
  Remember to activate section `&diags` in order to get pressure-level vertical interpolation of state variables (assuming 6 levels only)
-``
+``` 
  auxhist23_outname=”wrfpress_d<domain>_<date>”
  io_form_auxhist23 = 2,
  auxhist23_interval = 180, 60,
@@ -417,7 +416,7 @@ The references of wind speed are based on the [Beafourt](https://en.wikipedia.or
 /
 ```
 
-- Optional 23 p-level values:
+- Optional for 23 p-level values:
 ```
  num_press_levels = 23,
  press_levels = 100000,97500,95000,92500,90000,87500,85000,82500,80000,75000,70000,65000,60000,55000,50000,45000,40000,35000,

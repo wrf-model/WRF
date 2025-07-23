@@ -855,9 +855,9 @@ CONTAINS
   REAL, DIMENSION(ims:ime,jms:jme)                       :: vis
   REAL, DIMENSION(ims:ime,jms:jme)                       :: tds
   REAL, DIMENSION(ims:ime,jms:jme)                       :: tws
-  INTEGER                                                :: itas, ihurs, iwbds, iwss
 #endif
 #if CDXWRF>=3
+  INTEGER                                                :: itas, ihurs, iwbds, iwss
 #endif
 #if CDXWRF>=4
 #endif
@@ -885,7 +885,7 @@ CONTAINS
 #if CDXWRF>=1
 
 #endif
-#if CDXWRF>=2
+#if CDXWRF>=3
   REAL                                                   :: uuas, vvas
   REAL, DIMENSION(ims:ime,jms:jme)                       :: wbdsv, wssv
 #endif

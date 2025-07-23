@@ -7,7 +7,7 @@ MODULE module_diagvar_cordex
 !! These are the definition of parameters used in the calculations
 !   They might be placed on the general WRF's share/module_model_constants.F ... ?
   ! Current version of the module
-  CHARACTER(LEN=50)                                      :: cdxwrfversion = '2.0'
+  CHARACTER(LEN=50)                                      :: cdxwrfversion = '3.0'
 
   INTEGER, PARAMETER                                     :: r_k = KIND(1.d0)
 

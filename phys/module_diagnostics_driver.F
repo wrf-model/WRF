@@ -87,7 +87,7 @@ CONTAINS
       USE module_trad_fields, ONLY : trad_fields
 #ifdef CORDEXDIAG
 ! CORDEX diagnostics. CIMA Dec.17
-      USE module_diag_cordex, ONLY: cordex_output_calc
+      USE module_diag_cordex, ONLY: cordex_output_calc, cordex_hf_output_calc
 #endif
 
       IMPLICIT NONE
@@ -186,8 +186,8 @@ CONTAINS
       INTEGER                                            :: rc
       LOGICAL                                            :: is_output_t, is_pinterp_t
       TYPE(WRFU_Time)                                    :: hist_time, aux9_time, aux23_time,         &
-        CurrTime, StartTime
-      TYPE(WRFU_TimeInterval)                            :: dtint, histint, aux9int, aux23int
+        CurrTime, StartTime, aux8_time
+      TYPE(WRFU_TimeInterval)                            :: dtint, histint, aux9int, aux23int, aux8int
       CHARACTER(len=256)                                 :: message, timestr
       REAL                                               :: inczsoil
 #ifdef CDXWRF
@@ -1481,8 +1481,6 @@ CONTAINS
                     ,SNW=grid%snw                                          &
                     ,RSDT=grid%rsdt, RSUT=grid%rsut, RLUT=grid%rlut        &
                     ,TAS_HM=grid%tas_hm, QVS_HM=grid%qvs_hm                &
-                    ,COLMAX=grid%colmax, HFPRFLX=grid%prhf                 &
-
 #ifdef CDXWRF
 #if CDXWRF>=1
                     ,CLGVI=grid%clgvi, CLHVI=grid%clhvi                    &
@@ -1606,7 +1604,6 @@ CONTAINS
 #endif
 !! End of INSTVALS
                   )
-                  
 
 !!
 ! High-frequency CORDEX diagnostics
@@ -1647,8 +1644,7 @@ CONTAINS
          ! Output
                     ,nsteps=grid%cdxhfnsteps                               &
                     ,FLXPR=grid%prhf, COLMAX=grid%colmax                   &
-
-          ! Dimension arguments
+         ! Dimension arguments
                     ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde     &
                     ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme     &
                     ,IPS=ips,IPE=ipe, JPS=jps,JPE=jpe, KPS=kps,KPE=kpe     &

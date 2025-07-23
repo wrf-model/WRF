@@ -209,6 +209,7 @@ MODULES = \
 	module_wind_mav.o \
 	module_sf_lake.o \
 	module_diagnostics_driver.o \
+	module_diagvar_cordex.o \
 	module_irrigation.o
 
 FIRE_MODULES = \
@@ -226,6 +227,7 @@ DIAGNOSTIC_MODULES_EM = \
 	module_diag_afwa.o \
 	module_diag_cl.o \
 	module_diag_functions.o \
+	module_diag_cordex.o \
         module_diag_hailcast.o \
 	module_diag_misc.o \
 	module_diag_nwp.o \

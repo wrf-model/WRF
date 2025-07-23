@@ -34,6 +34,10 @@ CONTAINS
                                           DO_SOLAR_OUTPUT,                             &
                                           PARAM_FIRST_SCALAR,                          &
                                           P_QG, P_QH, P_QV, P_QC, P_QI, P_QS,          &
+#ifdef CORDEXDIAG
+! L. Fita. CIMA Dec. 2017
+                                          P_QR,                                        &
+#endif
                                           P_QNG, P_QH, P_QNH, P_QR, P_QNR, P_QVOLG,    &
                                           F_QV, F_QC, F_QI, F_QS,                      &
                      KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME, &
@@ -61,8 +65,11 @@ CONTAINS
                                    model_config_rec
 
       USE module_streams
+#ifdef CORDEXDIAG
+      USE module_utility
+#else
       USE module_utility, ONLY : WRFU_Time
-
+#endif
       !=============================================================
       !  USE Association for the Diagnostic Packages
       !=============================================================
@@ -78,6 +85,10 @@ CONTAINS
       USE module_diag_hailcast, ONLY : hailcast_diagnostic_driver
       USE module_diag_solar, ONLY : solar_diag
       USE module_trad_fields, ONLY : trad_fields
+#ifdef CORDEXDIAG
+! CORDEX diagnostics. CIMA Dec.17
+      USE module_diag_cordex, ONLY: cordex_output_calc
+#endif
 
       IMPLICIT NONE
 
@@ -170,6 +181,21 @@ CONTAINS
       ! Current time associated with current simulation step (RASM_DIAGS)
 
       TYPE(WRFU_Time) :: currentTime
+#ifdef CORDEXDIAG
+! CORDEX diagnostics. CIMA Dec.17
+      INTEGER                                            :: rc
+      LOGICAL                                            :: is_output_t, is_pinterp_t
+      TYPE(WRFU_Time)                                    :: hist_time, aux9_time, aux23_time,         &
+        CurrTime, StartTime
+      TYPE(WRFU_TimeInterval)                            :: dtint, histint, aux9int, aux23int
+      CHARACTER(len=256)                                 :: message, timestr
+      REAL                                               :: inczsoil
+#ifdef CDXWRF
+      INTEGER                                            :: i
+      CHARACTER(len=1024)                                :: msg
+#endif
+
+#endif
 
       !=============================================================
       !  Start of executable code
@@ -857,6 +883,38 @@ CONTAINS
                       ,s_pl  = grid%s_pl                                    &
                       ,td_pl = grid%td_pl                                   &
                       ,q_pl = grid%q_pl                                     &
+#ifdef CORDEXDIAG
+                      ,sina = grid%sina                                     &
+                      ,cosa = grid%cosa                                     &
+                      ,psfc = grid%psfc                                     &
+                      ,topo = grid%ht                                       &
+                      ,alt = grid%alt                                       &
+                      ,p_top = config_flags%p_top_requested                 &
+                      ,iqc=moist(:,:,:,P_QC)                                &
+                      ,iqr=moist(:,:,:,P_QR)                                &
+                      ,iqs=moist(:,:,:,P_QS)                                &
+                      ,iqi=moist(:,:,:,P_QI)                                &
+                      ,iqg=moist(:,:,:,P_QG)                                &
+                      ,iqh=moist(:,:,:,P_QH)                                &
+                      ,hus_pl = grid%hus_pl                                 &
+                      ,w_pl = grid%w_pl                                     &
+                      ,uer_pl = grid%uer_pl                                 &
+                      ,ver_pl = grid%ver_pl                                 &
+                      ,ws_pl = grid%ws_pl                                   &
+                      ,qc_pl = grid%qc_pl                                   &
+                      ,qr_pl = grid%qr_pl                                   &
+                      ,qs_pl = grid%qs_pl                                   &
+                      ,qi_pl = grid%qi_pl                                   &
+                      ,qg_pl = grid%qg_pl                                   &
+                      ,qh_pl = grid%qh_pl                                   &
+                      ,qv_pl_mc = grid%qv_pl_mc                             &
+                      ,qc_pl_mc = grid%qc_pl_mc                             &
+                      ,qr_pl_mc = grid%qr_pl_mc                             &
+                      ,qs_pl_mc = grid%qs_pl_mc                             &
+                      ,qi_pl_mc = grid%qi_pl_mc                             &
+                      ,qg_pl_mc = grid%qg_pl_mc                             &
+                      ,qh_pl_mc = grid%qh_pl_mc                             &
+#endif
                !  Dimension arguments
                       ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde    &
                       ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme    &
@@ -1212,6 +1270,343 @@ CONTAINS
               kts=k_start, kte=min(k_end,kde-1), num_tiles=grid%num_tiles   )
       END IF SOLAR_FIELDS
 
+#ifdef CORDEXDIAG
+! CORDEX diagnostics. CIMA Dec.17
+
+      !  CORDEX-oriented diagnostic quantities.
+
+      CORDEX_DIAGS : IF ( config_flags%output_cordex == 1 ) THEN
+
+         IF ( ( config_flags%auxhist9_interval == 0 ) ) THEN
+            WRITE (diag_message , * ) &
+            "CORDEX: ERROR -- error -- ERROR -- error : NO 'auxhist9_interval' has been defined in 'namelist.input'"
+            CALL wrf_error_fatal ( diag_message )
+         END IF
+
+         CALL wrf_debug ( 100 , '--> CALL DIAGNOSTICS PACKAGE: CORDEX DIAGNOSTICS' )
+         ! Do not forget, CDXWRF initialization in phys/module_physics_init.F at SUBROUTINE cdxwrf_init
+         
+         ! From AFWA diagnostics ...
+         CALL WRFU_ALARMGET( grid%alarms( HISTORY_ALARM ), prevringtime=hist_time,                    &
+           ringinterval=histint)
+         CALL WRFU_ALARMGET( grid%alarms(AUXHIST9_ALARM), prevringtime=aux9_time, ringinterval=aux9int)
+         CALL domain_clock_get ( grid, current_time=CurrTime, simulationStartTime=StartTime,          &
+           current_timestr=timestr, time_step=dtint )
+         !is_output_t = ( Currtime .GE. hist_time + histint - dtint .OR.                               & 
+         !  Currtime .ge. aux9_time + aux9int - dtint )
+         is_output_t = ( Currtime .ge. aux9_time + aux9int - dtint )
+         ! Complementary way...
+         !is_output_t=(MOD(NINT((curr_secs2+grid%dt)/grid%dt),NINT(config_flags%auxhist9_interval*60./grid%dt))==0 .OR. curr_secs2==0.)
+
+         IF (is_output_t) THEN
+           grid%cdxlon = grid%xlong
+           grid%cdxlat = grid%xlat
+           grid%cdxps = grid%psfc
+           grid%cdxts = grid%tsk
+#ifdef CDXWRF
+#if CDXWRF>=4
+      !! INSTVALS: Instantaneous values (uncomment and re-compile)
+!           grid%cdxdiabh = grid%diab_h
+#endif
+#endif
+         END IF
+         
+         CALL cordex_output_calc(                                          &
+                     is_restart=config_flags%restart                       &
+                    ,is_output_time = is_output_t                          &
+                    ,cdxH=config_flags%auxhist9_interval                   &
+!                    ,DT=grid%dt                                            &
+                    ,DT=REAL(model_config_rec%dt(grid%id))                 &
+                    ,XTIME=grid%xtime,CURR_SECS2=curr_secs2                &
+                    ,RADT=config_flags%radt                                &
+                    ,PSL_DIAG=config_flags%psl_diag                        &
+                    ,WSGS_DIAG=config_flags%wsgs_diag                      &
+                    ,PTARGET=config_flags%ptarget                          &
+                    ,PSMOOTH=config_flags%psmooth                          &
+                    ,WBOUT = config_flags%output_wb                        &
+                    ,WSZ100_DIAG=config_flags%wsz100_diag                  &
+                    ,ZHGTZW = config_flags%z100m_wind                      &
+                    ,Z50_DIAG=config_flags%z50m                            &
+                    ,DQV = config_flags%zmlagen_dqv                        &
+                    ,DTHETA = config_flags%zmlagen_dtheta                  &
+                    ,POTEVAP_DIAG = config_flags%potevp_diag               &
+                    ,CONVXTRM_DIAG = config_flags%convxtrm_diag            &
+                    ,VISIBILITY_DIAG = config_flags%fogvisibility_diag     &
+                    ,FOGVARS = config_flags%fogvars                        &
+                    ,ZMLAGEN_DIAG = config_flags%zmlagen_diag              &
+                    ,TIMEDBG = config_flags%timedbg                        &
+                    ,LONDBG = config_flags%londbg                          &
+                    ,LATDBG = config_flags%latdbg                          &
+                    ,IDBG=grid%ijdbg(1), JDBG=grid%ijdbg(2)                &
+                    ,WGSTS_WBDSWSSTRES = config_flags%wgsts_wbdswsstres    &
+#ifdef CDXWRF
+#if CDXWRF>=3
+                    ,NHTASRNG = config_flags%nhtasrng                      &
+                    ,NHHURSRNG = config_flags%nhhursrng                    &
+                    ,NLTASRNG = config_flags%nltasrng                      &
+                    ,NLHURSRNG = config_flags%nlhursrng                    &
+                    ,NWBDSRNG = config_flags%nwbdsrng                      &
+                    ,NWSSRNG = config_flags%nwssrng                        &
+                    ,NHTASHURSRNG = config_flags%nhtashursrng              &
+                    ,NLTASHURSRNG = config_flags%nltashursrng              &
+                    ,NWBDSWSSRNG = config_flags%nwbdswssrng                &
+! Should I keep it this?
+!                    ,TASHRNG = grid%htasbins(1:model_config_rec%nhtasrng-1)    &
+!                    ,HURSHRNG = grid%hhursbins(1:model_config_rec%nhhursrng-1) &
+!                    ,TASLRNG = grid%ltasbins(1:model_config_rec%nltasrng-1)    &
+!                    ,HURSLRNG = grid%lhursbins(1:model_config_rec%nlhursrng-1) &
+                    ,TASHRNG = model_config_rec%htasrng(1:model_config_rec%nhtasrng)                &
+                    ,HURSHRNG = model_config_rec%hhursrng(1:model_config_rec%nhhursrng)             &
+                    ,TASLRNG = model_config_rec%ltasrng(1:model_config_rec%nltasrng)                &
+                    ,HURSLRNG = model_config_rec%lhursrng(1:model_config_rec%nlhursrng)             &
+                    ,WBDSRNG = model_config_rec%wbdsrng(1:model_config_rec%nwbdsrng)                &
+                    ,WSSRNG = model_config_rec%wssrng(1:model_config_rec%nwssrng)                   &
+#endif
+#endif
+
+         ! Input
+                    ,LON=grid%xlong, LAT=grid%xlat                         &
+                    ,CLDFRA=grid%cldfra, p8w=p8w, P=grid%p, PB=grid%pb     &
+                    ,PCLT=grid%pclt                                        &
+                    ,PCLL=grid%pcll, PCLM=grid%pclm, PCLH=grid%pclh        &
+                    ,QV=moist(:,:,:,P_QV), QC=moist(:,:,:,P_QC)            &
+                    ,QR=moist(:,:,:,P_QR), QS=moist(:,:,:,P_QS)            &
+                    ,QI=moist(:,:,:,P_QI), QG=moist(:,:,:,P_QG)            &
+                    ,QH=moist(:,:,:,P_QH)                                  &
+                    ,MU=grid%mu_2, MUB=grid%mub, DETA=-grid%dnw            &
+                    ,SINA=grid%sina, COSA=grid%cosa                        &
+! Which one should be used?                    
+!                    ,U=grid%u_2, V=grid%v_2, T=grid%t_2                    &
+! t_phy already as temperature!! not potential temperature!
+                    ,U=grid%u_phy, V=grid%v_phy, T=grid%t_phy              &
+                    ,THp=grid%th_phy_m_t0                                  &
+                    ,PH=grid%ph_2, PHB=grid%phb, P_PHY=p_phy               &
+                    ,U10=grid%u10, V10=grid%v10                            &
+                    ,Q2=grid%q2, T2=grid%t2, TH2=grid%th2                  &
+                    ,PS=grid%psfc, QSFC=grid%qsfc                          &
+                    ,HGT=grid%ht, Z=grid%z                                 &
+                    ,DZS=grid%dzs, SMOIS=grid%smois, SH2O=grid%sh2o        &
+                    ,TKE=grid%tke_pbl, PBLH=grid%pblh                      &
+                    ,PRC=grid%raincv, PRNC=grid%rainncv, PRSH=grid%rainshv &
+                    ,UST=grid%ust, ZNT=grid%znt, ROL=grid%rmol             &
+                    ,SWDOWN=grid%swdown                                    &
+                    ,CD=grid%cd                                            &
+                    ,GLW=grid%glw, LH=grid%lh, HFX=grid%hfx                &
+                    ,SWUPB=grid%swupb, LWUPB=grid%lwupb, QFX=grid%qfx      &
+                    ,SNOW=grid%snow, SNOWH=grid%snowh, SNOWC=grid%snowc    &
+                    ,SFCRUNOFF=grid%sfcrunoff, UDRUNOFF=grid%udrunoff      &
+                    ,RHO=grid%rho                                          &
+                    ,SWDNT=grid%swdnt, SWUPT=grid%swupt, LWUPT=grid%lwupt  &
+                    ,TS=grid%tsk, ALBEDO=grid%albedo                       &
+                    ,EMISS=grid%emiss                                      &
+                    ,SR=grid%sr                                            &
+                    ! we are going to assume that drag coefficients for momentum and heat are the same 
+                    ! it is scheme dependent, but at his level we are going simple
+                    ! From Registry/Regisyty,EM_COMMON
+                    !   "ch"                "surface exchange coeff for heat"    "m s-1"
+                    ! We need to transform from surface exchange coefficients to drag coefficients for 
+                    !   the tas_hm, qvs_hm diagnostics
+                    !      QCDRAGH = CHS/wspd
+                    ! WRF does not provide the surface exchange coefficient of momentum (not for all 
+                    !   sfclay schemes), therefore the generic one (already in CDXWRF as cdgen) will 
+                    !   be used as
+                    !      CDM = (ust/wss)**2
+                    ,CHS=grid%ch, CDM=grid%cd, BR=grid%br, ZOL=grid%zol    &
+                    ,FRACSOIL10CM=grid%fracsoil10cm                        &
+#ifdef CDXWRF
+#if CDXWRF>=1
+
+#elif CDXWRF>=4
+                    ,DIABH=grid%h_diabatic                                 &
+                    ,QVTTEND=grid%qvttend, QCTTEND=grid%qcttend            & 
+                    ,QRTTEND=grid%qrttend, QSTTEND=grid%qsttend            &
+                    ,QITTEND=grid%qittend, QGTTEND=grid%qgttend            &
+                    ,QHTTEND=grid%qhttend                                  &
+                    ,QVHADV=grid%qv_hadv, QCHADV=grid%qc_hadv              &
+                    ,QRHADV=grid%qr_hadv, QSHADV=grid%qs_hadv              &
+                    ,QIHADV=grid%qi_hadv, QGHADV=grid%qg_hadv              &
+                    ,QHHADV=grid%qh_hadv                                   &
+                    ,QVZADV=grid%qv_zadv, QCZADV=grid%qc_zadv              &
+                    ,QRZADV=grid%qr_zadv, QSZADV=grid%qs_zadv              &
+                    ,QIZADV=grid%qi_zadv, QGZADV=grid%qg_zadv              &
+                    ,QHZADV=grid%qh_zadv                                   &
+#endif
+#endif
+         ! Output
+                    ,NSTEPS=grid%cdxnsteps                                 &
+                    ,CLTMEAN=grid%cltmean, CLLMEAN=grid%cllmean            &
+                    ,CLMMEAN=grid%clmmean, CLHMEAN=grid%clhmean            &
+                    ,PRW=grid%prw, CLWVI=grid%clwvi, CLIVI=grid%clivi      &
+                    ,UAS=grid%uas, VAS=grid%vas                            &
+                    ,WSS=grid%wss, WBDS=grid%wbds                          &
+                    ,HURS=grid%hurs ,HUSS=grid%huss                        &
+                    ,PSL=grid%psl                                          &
+                    ,WSGSMAX=grid%wsgsmax                                  & 
+                    ,UGSMAX=grid%ugsmax, VGSMAX=grid%vgsmax                &
+                    ,PERCENGUST=grid%wsgspercen                            &
+                    ,TOTWSGSMAX=grid%totwsgsmax                            & 
+                    ,TOTUGSMAX=grid%totugsmax, TOTVGSMAX=grid%totvgsmax    &
+                    ,TOTPERCENGUST=grid%totwsgspercen                      &
+                    ,WSZ100=grid%wsz100                                    & 
+                    ,UZ100WIND=grid%uz100, VZ100WIND=grid%vz100            &
+                    ,WSZ50=grid%wsz50                                      & 
+                    ,UZ50WIND=grid%uz50, VZ50WIND=grid%vz50                &
+                    ,TAZ50=grid%taz50, QVZ50=grid%qvz50                    &
+                    ,WSZ100MAX=grid%wsz100max                              & 
+                    ,UZ100MAX=grid%uz100max, VZ100MAX=grid%vz100max        &
+                    ,SUNSHINE=grid%sund                                    &
+                    ,TAUU=grid%tauu, TAUV=grid%tauv                        &
+                    ,TAUUGEN=grid%tauugen, TAUVGEN=grid%tauvgen            &
+                    ,RSDS=grid%rsds, RLDS=grid%rlds, HFLS=grid%hfls        &
+                    ,HFSS=grid%hfss, RSUS=grid%rsus, RLUS=grid%rlus        &
+                    ,RSUSGEN=grid%rsusgen, RLUSGEN=grid%rlusgen            &
+                    ,EVSPSBL=grid%evspsbl, EVSPSBLPOT=grid%evspsblpot      &
+                    ,EVSPSBLPOTGEN=grid%evspsblpotgen                      &
+                    ,CDCDX=grid%cdcdx, CDGEN=grid%cdgen                    &
+                    ,SNC=grid%snc, SND=grid%snd                            &
+                    ,PMRROS=grid%pmrros, PMRRO=grid%pmrro                  &
+                    ,MRROS=grid%mrros, MRRO=grid%mrro, MRSO=grid%mrso      &
+                    ,MRSOL=grid%mrsol, MRSOS=grid%mrsos                    &
+                    ,MRSLL=grid%mrsll, MRLSO=grid%mrlso,MRLSOS=grid%mrlsos &
+                    ,MRSFL=grid%mrsfl, MRFSO=grid%mrfso,MRFSOS=grid%mrfsos &
+                    ,MRSOMEAN=grid%mrsomean, MRSOLMEAN=grid%mrsolmean      &
+                    ,MRSOSMEAN=grid%mrsosmean                              &
+                    ,MRSLLMEAN=grid%mrsllmean, MRLSOMEAN=grid%mrlsomean    &
+                    ,MRLSOSMEAN=grid%mrlsosmean                            &
+                    ,MRSFLMEAN=grid%mrsflmean, MRFSOMEAN=grid%mrfsomean    &
+                    ,MRFSOSMEAN=grid%mrfsosmean                            &
+                    ,FLXPR=grid%pr, FLXPRL=grid%prl,FLXPRC=grid%prc        &
+                    ,FLXPRSH=grid%prsh                                     &
+                    ,FLXPRSN=grid%prsn                                     &
+                    ,SNW=grid%snw                                          &
+                    ,RSDT=grid%rsdt, RSUT=grid%rsut, RLUT=grid%rlut        &
+                    ,TAS_HM=grid%tas_hm, QVS_HM=grid%qvs_hm                &
+#ifdef CDXWRF
+#if CDXWRF>=1
+                    ,CLGVI=grid%clgvi, CLHVI=grid%clhvi                    &
+                    ,ZMLA=grid%zmlagen                                     &
+                    ,CAPEMIN=grid%capemin, CINMIN=grid%cinmin              &
+                    ,ZLFCMIN=grid%lfczmin, PLFCMIN=grid%lfcpmin            &
+                    ,LIDXMIN=grid%limin                                    &
+                    ,CAPEMAX=grid%capemax, CINMAX=grid%cinmax              &
+                    ,ZLFCMAX=grid%lfczmax, PLFCMAX=grid%lfcpmax            &
+                    ,CAPEMEAN=grid%capemean, CINMEAN=grid%cinmean          &
+                    ,ZLFCMEAN=grid%lfczmean, PLFCMEAN=grid%lfcpmean        &
+                    ,LIDXMAX=grid%limax                                    &
+                    ,LIDXMEAN=grid%limean                                  &
+                    ,IUTMEAN=grid%iutmean, IVTMEAN=grid%ivtmean            &
+                    ,ZEROITH=grid%zeroisotherm                             &
+#endif
+#if CDXWRF>=2
+                    ,UA=grid%ua, VA=grid%va, WS=grid%ws, TA=grid%ta        &
+                    ,PRESS=grid%press, ZG=grid%zg                          &
+                    ,HUR=grid%hur, HUS=grid%hus                            &
+                    ,TFOG=grid%tfog, FOGVISBLTYMIN=grid%fogvisbltymin      &
+                    ,FOGVISBLTYMAX=grid%fogvisbltymax                      &
+                    ,FOGVISBLTYMEAN=grid%fogvisbltymean                    &
+                    ,TDSMIN=grid%tdsmin, TDSMAX=grid%tdsmax                &
+                    ,TDSMEAN=grid%tdsmean                                  &
+                    ,TWSMIN=grid%twsmin, TWSMAX=grid%twsmax                &
+                    ,TWSMEAN=grid%twsmean                                  &
+#endif
+#if CDXWRF>=4
+                    !! Water-budget
+                    ,WBACDH=grid%wbacdiabh                                 & 
+                    ,WBACPW=grid%wbacpw, WBACPWC=grid%wbacpwc              &
+                    ,WBACPWR=grid%wbacpwr, WBACPWS=grid%wbacpws            &
+                    ,WBACPWI=grid%wbacpwi, WBACPWG=grid%wbacpwg            &
+                    ,WBACPWH=grid%wbacpwh                                  &
+                    ,WBACF=grid%wbacf, WBACFC=grid%wbacfc                  &
+                    ,WBACFR=grid%wbacfr, WBACFS=grid%wbacfs                &
+                    ,WBACFI=grid%wbacfi, WBACFG=grid%wbacfg                &
+                    ,WBACFH=grid%wbacfh                                    &
+                    ,WBACZ=grid%wbacz, WBACZC=grid%wbaczc                  &
+                    ,WBACZR=grid%wbaczr, WBACZS=grid%wbaczs                &
+                    ,WBACZI=grid%wbaczi, WBACZG=grid%wbaczg                &
+                    ,WBACZH=grid%wbaczh                                    &
+                    ! Low-medium-high
+                    ,WBACDHL=grid%wbacdiabhl, WBACDHM=grid%wbacdiabhm      & 
+                    ,WBACDHH=grid%wbacdiabhh                               &
+                    ,WBACPWLV=grid%wbacpwlv, WBACPWMV=grid%wbacpwmv        &
+                    ,WBACPWHV=grid%wbacpwhv, WBACFLV=grid%wbacflv          &
+                    ,WBACFMV=grid%wbacfmv, WBACFHV=grid%wbacfhv            &
+                    ,WBACZLV=grid%wbaczlv, WBACZMV=grid%wbaczmv            &
+                    ,WBACZHV=grid%wbaczhv                                  &
+                    ,WBACPWLC=grid%wbacpwlc, WBACPWMC=grid%wbacpwmc        &
+                    ,WBACPWHC=grid%wbacpwhc, WBACFLC=grid%wbacflc          &
+                    ,WBACFMC=grid%wbacfmc, WBACFHC=grid%wbacfhc            &
+                    ,WBACZLC=grid%wbaczlc, WBACZMC=grid%wbaczmc            &
+                    ,WBACZHC=grid%wbaczhc                                  &
+                    ,WBACPWLR=grid%wbacpwlr, WBACPWMR=grid%wbacpwmr        &
+                    ,WBACPWHR=grid%wbacpwhr, WBACFLR=grid%wbacflr          &
+                    ,WBACFMR=grid%wbacfmr, WBACFHR=grid%wbacfhr            &
+                    ,WBACZLR=grid%wbaczlr, WBACZMR=grid%wbaczmr            &
+                    ,WBACZHR=grid%wbaczhr                                  &
+                    ,WBACPWLS=grid%wbacpwls, WBACPWMS=grid%wbacpwms        &
+                    ,WBACPWHS=grid%wbacpwhs, WBACFLS=grid%wbacfls          &
+                    ,WBACFMS=grid%wbacfms, WBACFHS=grid%wbacfhs            &
+                    ,WBACZLS=grid%wbaczls, WBACZMS=grid%wbaczms            &
+                    ,WBACZHS=grid%wbaczhs                                  &
+                    ,WBACPWLI=grid%wbacpwli, WBACPWMI=grid%wbacpwmi        &
+                    ,WBACPWHI=grid%wbacpwhi, WBACFLI=grid%wbacfli          &
+                    ,WBACFMI=grid%wbacfmi, WBACFHI=grid%wbacfhi            &
+                    ,WBACZLI=grid%wbaczli, WBACZMI=grid%wbaczmi            &
+                    ,WBACZHI=grid%wbaczhi                                  &
+                    ,WBACPWLG=grid%wbacpwlg, WBACPWMG=grid%wbacpwmg        &
+                    ,WBACPWHG=grid%wbacpwhg, WBACFLG=grid%wbacflg          &
+                    ,WBACFMG=grid%wbacfmg, WBACFHG=grid%wbacfhg            &
+                    ,WBACZLG=grid%wbaczlg, WBACZMG=grid%wbaczmg            &
+                    ,WBACZHG=grid%wbaczhg                                  &
+                    ,WBACPWLH=grid%wbacpwlh, WBACPWMH=grid%wbacpwmh        &
+                    ,WBACPWHH=grid%wbacpwhh, WBACFLH=grid%wbacflh          &
+                    ,WBACFMH=grid%wbacfmh, WBACFHH=grid%wbacfhh            &
+                    ,WBACZLH=grid%wbaczlh, WBACZMH=grid%wbaczmh            &
+                    ,WBACZHH=grid%wbaczhh                                  &
+#endif
+#if CDXWRF>=3
+                    ,TASHURSTRESHIGHRES=grid%tashurstreshighres            &
+                    ,TASHURSTRESLOWRES=grid%tashurstreslowres              &
+                    ,WBDSWSSTRES=grid%wbdswsstres                          &
+#endif
+#endif
+         ! Dimension arguments
+                    ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde     &
+                    ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme     &
+                    ,IPS=ips,IPE=ipe, JPS=jps,JPE=jpe, KPS=kps,KPE=kpe     &
+                    ,I_START=grid%i_start,I_END=min(grid%i_end, ide-1)     &
+                    ,J_START=grid%j_start,J_END=min(grid%j_end, jde-1)     &
+                    ,KTS=k_start, KTE=k_end                                &
+                    ,NUM_TILES=grid%num_tiles                              &
+                    ,NUM_SOIL_LAYERS=grid%num_soil_layers                  &
+                    ,N_MOIST=num_moist                                     &
+                    ,M_QV=p_qv, M_QC=p_qc, M_QR=p_qr, M_QS=p_qs            &
+                    ,M_QI=p_qi, M_QG=p_qg, M_QH=p_qh                       &
+!! INSTVALS: Instantaneous values (uncomment and re-compile)
+!                    ,CLT=grid%clt                                          &
+!                    ,CLL=grid%cll, CLM=grid%clm, CLH=grid%clh              &
+!                    ,WSGS=grid%wsgs, UGUSTWIND=grid%usgs                   &
+!                    ,VGUSTWIND=grid%vsgs, GUSTPOINT=grid%gustpoint         &
+!                    ,TOTWSGS=grid%totwsgs, TOTUGUSTWIND=grid%totusgs       &
+!                    ,TOTVGUSTWIND=grid%totvsgs                             &
+!                    ,TOTGUSTPOINT=grid%totgustpoint                        &
+!                    ,POTEVAPO=grid%potevapo                                &
+!                    ,POTEVAPOGEN=grid%potevapogen                          &
+#ifdef CDXWRF
+#if CDXWRF>=1
+!                    ,CAPE=grid%cdxcape                                     &
+!                    ,CIN=grid%cin, ZLFC=grid%lfcz                          &
+!                    ,PLFC=grid%lfcp, LIDX=grid%li                          &
+#endif
+#if CDXWRF>=2
+!                    ,FOG=grid%fog, FOGVISBLTY=grid%fogvisblty              & 
+!                    ,TDS=grid%tds, TWS=grid%tws                            & 
+#endif
+#endif
+!! End of INSTVALS
+                  )
+      END IF CORDEX_DIAGS
+
+#endif
 
    END SUBROUTINE diagnostics_driver
 

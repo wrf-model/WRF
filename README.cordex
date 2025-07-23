@@ -194,12 +194,18 @@ include registry.cordex
   Accordingly to the value given to the pre-compilation variable CDXWRF one obtains:
    - Without adding the variable: all CORDEX 'Core' variables
    - CDXWRF=1 CORDEX 'Tier' variables: clivg, clivh, zmla, [cape/cin/zlfc/plfc/lidx]{min/max/mean}
-   - CDXWRF=2 The same as with CDXWRF=1 and additional variables: ua, va, ws, ta, press, zg, hur, hus, tfog, fogvisbltymin, fogvisbltymax, fogvisbltymean, tdsmin, tdsmax, tdsmean and the Water-Budget relarted ones: wbacdiabh, wbacpw, wbacpw[c/r/s/i/g/h], wbacf, wbacf[c/r/s/i/g/h], wbacz, wbacz[c/r/s/i/g/h], wbacdiabh{l/m/h}, wbacpw{l/m/h}, wbacpw[c/r/s/i/g/h]{l/m/h}, wbacf{l/m/h}, wbacf[c/r/s/i/g/h]{l/m/h}, wbacz{l/m/h}, wbacz[c/r/s/i/g/h]{l/m/h}
-  Simultanesouly, one needs to modify the Registry/registry.cordex accordingly to the value of CDXWRF:
+   - CDXWRF=2 The same as with CDXWRF=1 and additional variables: ua, va, ws, ta, press, zg, hur, hus, tfog, fogvisbltymin, fogvisbltymax, fogvisbltymean, tdsmin, tdsmax, tdsmean
+   - CDXWRF=3 The same as with CDXWRF=1,2 and additional residence-time variables
+   - CDXWRF=4 The same as with CDXWRF=1,2 and 3 and the Water-Budget relarted ones: wbacdiabh, wbacpw, wbacpw[c/r/s/i/g/h], wbacf, wbacf[c/r/s/i/g/h], wbacz, wbacz[c/r/s/i/g/h], wbacdiabh{l/m/h}, wbacpw{l/m/h}, wbacpw[c/r/s/i/g/h]{l/m/h}, wbacf{l/m/h}, wbacf[c/r/s/i/g/h]{l/m/h}, wbacz{l/m/h}, wbacz[c/r/s/i/g/h]{l/m/h}
+  Simultanesouly, one needs to:
+   1.- make a copy of Registry/registry.cordex
+     $ cp Registry/registry.cordex Registry/registry.cordex_comp
+   2.- modify the Registry/registry.cordex_comp accordingly to the value of CDXWRF:
     - Without adding CDXWRF, nothing needs to be changed
     - Adding CDXWRF=1, one needs to remove the comment ##CDXWRF1## at the beginning of the line of the definition of certain variables
     - Adding CDXWRF=2, one needs to remove the comment ##CDXWRF1## and ##CDXWRF2## at the beginning of the line of the definition of certain variables
-
+    - Adding CDXWRF=3, one needs to remove the comment ##CDXWRF1##, ##CDXWRF2## and ##CDXWRF3## at the beginning of the line of the definition of certain variables
+    - Adding CDXWRF=4, one needs to remove the comment ##CDXWRF1##, ##CDXWRF2##, ##CDXWRF3## and ##CDXWRF4## at the beginning of the line of the definition of certain variables
 
  - Additionally, one can also get the instantaneous values for the variables which only certain statistics (accumulation, minimum, mean, ...) are provided. In order to get them, one need to:
   1.- Search in 'phys/module_diagnostics_driver.F' and 'phys/module_diag_cordex.F' the lines of code marked with 'INSTVALS' and change accordingly. 

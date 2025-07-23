@@ -55,10 +55,10 @@ rconfig   integer wgsts_wbdswsstres       namelist,cordex       1              1
 ###CDXWRF3##rconfig   real    wssrng                 namelist,cordex       max_lbins      (/0.0,0.2956,1.5358,3.3046,5.474,7.9804,10.7833,13.854,17.1711,20.7174,24.4789,28.444,32.6027,36.9463,41.4674,46.1592,51.0157,56.0315,61.2017,66.5218,71.9877,83.342,95.2375,107.6506,120.5606,133.9489,147.7992,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0/)      rh    "wssrng"                 "bins for temporal residence of wss Beafourt-based"  ""
 
 # CORDEX variables
-state    integer  cdxnsteps      -      misc        -         -       r       "cdxnsteps"             "CORDEX Time Step Counter"                                ""
-state    integer  ijdbg        {iit}    misc        -         -     rh9       "ijdbg"                 "i,j-grid points from londbg,latdbg for debugging"        "-"
-state    real  CDXLON           ij      misc        1         -      h9       "lon"                   "LONGITUDE"                                               "degrees_east"
-state    real  CDXLAT           ij      misc        1         -      h9       "lat"                   "LATITUDE"                                                "degrees_north"
+state    integer  cdxnsteps      -      misc        -         -      r        "cdxnsteps"             "CORDEX Time Step Counter"                                ""
+state    integer  ijdbg        {iit}    misc        -         -      rh9      "ijdbg"                 "i,j-grid points from londbg,latdbg for debugging"        "-"
+state    real  CDXLON           ij      misc        1         -      h89      "lon"                   "LONGITUDE"                                               "degrees_east"
+state    real  CDXLAT           ij      misc        1         -      h89      "lat"                   "LATITUDE"                                                "degrees_north"
 state    real  PCLT             ij      misc        1         -      r        "pclt"                  "PREVIOUS TOTAL CLOUDINESS"                               "%"
 state    real  PCLL             ij      misc        1         -      r        "pcll"                  "PREVIOUS LOW-LEVEL CLOUDINESS (p >= 68000 Pa)"           "%"
 state    real  PCLM             ij      misc        1         -      r        "pclm"                  "PREVIOUS MID-LEVEL CLOUDINESS (44000 <= p < 68000 Pa)"   "%"

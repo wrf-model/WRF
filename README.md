@@ -37,9 +37,11 @@ $ git checkout [branch_name]
 ### cdxwrf: CORDEX-WRF module ###
 
 See for more detail wiki page:
-http://wiki.cima.fcen.uba.ar/mediawiki/index.php/CDXWRF
+[http://wiki.cima.fcen.uba.ar/mediawiki/index.php/CDXWRF](http://wiki.cima.fcen.uba.ar/mediawiki/index.php/CDXWRF)
 
-This module computes that variables required by CORDEX which usually are post-processed
+This module computes that variables required by CORDEX which usually are post-processed. Starting publication:
+
+- Fita, L., Polcher, J., Giannaros, T. M., Lorenz, T., Milovac, J., Sofiadis, G., Katragkou, E., and Bastin, S.: CORDEX-WRF v1.3: development of a module for the Weather Research and Forecasting (WRF) model to support the CORDEX community, Geosci. Model Dev., 12, 1029–1066, [doi: 10.5194/gmd-12-1029-2019](https://doi.org/10.5194/gmd-12-1029-2019), 2019.
 
 #### note in Compilation & efficiency ####
 

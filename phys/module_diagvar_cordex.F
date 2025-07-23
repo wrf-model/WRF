@@ -66,6 +66,7 @@ MODULE module_diagvar_cordex
 ! var_cape_afwa: CAPE following AFWA methodology
 ! var_cllmh: low, medium, high-cloud [0,100]
 ! var_clt: total cloudiness [0,100]
+! var_colmax1D: Subroutine to compute 1D maximum radar reflectivity
 ! var_fog_K84: Computation of fog and visibility following Kunkel, (1984)
 ! var_fog_RUC: Computation of fog and visibility following RUC method Smirnova, (2000)
 ! var_fog_FRAML50: fog and visibility following Gultepe and Milbrandt, (2010)
@@ -140,6 +141,141 @@ MODULE module_diagvar_cordex
 !!!
 ! Variables
 !!!
+
+  SUBROUTINE var_colmax1D(dz, rho, t_phy, qr, qs, qg, refd_max)
+  ! Subroutine to compute 1D maximum radar reflectivity
+  !  Folllowing code from phys/module_diag_afwa.F in WRF v4.3.1
+
+    IMPLICIT NONE
+
+    INTEGER, INTENT(in)                                  :: dz
+    REAL, dimension(dz), INTENT(in)                      :: rho, t_phy, qr, qs, qg
+
+    REAL, INTENT(inout)                                  :: refd_max
+
+    ! Local
+    INTEGER                                              :: k, ktop
+
+    REAL                                                 :: refd, refd_com
+    REAL, dimension(dz)                                  :: z_e
+
+    ! From subroutine wrf_dbzcalc
+    REAL                                                 :: factor_r, factor_s, factor_g, factorb_s,  &
+      factorb_g, ronv, sonv, gonv
+    REAL                                                 :: temp_c, rhoair, qgr, qra, qsn
+    INTEGER, PARAMETER                                   :: iBrightBand = 1
+    REAL, PARAMETER                                      :: T_0 = 273.15
+    REAL, PARAMETER                                      :: PI = 3.1415926536
+    REAL, PARAMETER                                      :: rgas=287.04, gamma_seven = 720.0,         &
+      alpha2 = 0.224
+
+    !! Densities of rain, snow, graupel, and cloud ice.
+    !! ------------------------------------------------
+    REAL, PARAMETER                                      :: rho_w = 1000.0, rho_r = 1000.0, rho_s = 100.0
+    REAL, PARAMETER                                      :: rho_g = 400.0, rho_i = 890.0
+    REAL, PARAMETER                                      :: ron=8.e6, son=2.e7, gon=5.e7, r1=1.e-15
+    REAL, PARAMETER                                      :: ron_min = 8.e6, ron2=1.e10
+    REAL, PARAMETER                                      :: ron_qr0 = 0.0001, ron_delqr0 = 0.25*ron_qr0
+    REAL, PARAMETER                                      :: ron_const1r = (ron2-ron_min)*0.5
+    REAL, PARAMETER                                      :: ron_const2r = (ron2+ron_min)*0.5
+
+    CHARACTER(len=50)                                    :: fname
+
+!!!!!! Variables
+! dz: amount of vertical levels
+! rho: dry air density [kgm-3]
+! t_phy: air temperature [K]
+! qr: water vapour mixing ratio [kgkg-1]
+ ! qs: snow mixing ratio [kgkg-1]
+! qg: graupel mixing ratio [kgkg-1]
+!! See subroutine phy_prep in 'dyn_em/module_big_step_utilities_em.F'
+! z: vertical height at half eta-levels [m] z[k] = 0.5*(dz8w[k] + dz8w[k+1])
+! dz8w: distance between full eta-levels [m] dz8w[k+1] = (zg[k+1]-zg[k])/9.81; dz8w[1] = 0.
+
+! z_e: column radar reflectivity
+! refd: reflectivity 1st level
+! refd_max: maximum composite reflectivity 
+
+    fname = 'var_colmax1D'
+
+    refd_max = 0.
+
+    ! From subroutine wrf_dbzcalc
+    !! Constant intercepts
+    !! -------------------
+    ronv = 8.e6    ! m^-4
+    sonv = 2.e7    ! m^-4
+    gonv = 4.e6    ! m^-4
+
+    factor_r = gamma_seven * 1.e18 * (1./(pi*rho_r))**1.75
+    factor_s = gamma_seven * 1.e18 * (1./(pi*rho_s))**1.75  &
+              * (rho_s/rho_w)**2 * alpha2
+    factor_g = gamma_seven * 1.e18 * (1./(pi*rho_g))**1.75  &
+              * (rho_g/rho_w)**2 * alpha2
+
+    DO k = 1, dz
+
+      ! From subroutine wrf_dbzcalc
+      !! Calculate equivalent radar reflectivity factor (z_e) using 
+      !! old RIP code (2004) if running radar or VIL packages.
+      factorb_s = factor_s
+      factorb_g = factor_g
+
+      !! In this case snow or graupel particle scatters like liquid
+      !! water because it is assumed to have a liquid skin
+      !! ----------------------------------------------------------
+      IF( iBrightBand == 1 ) THEN
+        IF (t_phy(k) > T_0) THEN
+          factorb_s = factor_s /alpha2
+          factorb_g = factor_g /alpha2
+        ENDIF
+      ENDIF
+
+      !! Calculate variable intercept parameters
+      !! ---------------------------------------
+      temp_c = amin1(-0.001, t_phy(k)- T_0)
+      sonv = amin1(2.0e8, 2.0e6*exp(-0.12*temp_c))
+      gonv = gon
+      qgr = qg(k)
+      qra = qr(k)
+      qsn = qs(k)
+      IF (qgr.gt.r1) THEN
+        gonv = 2.38*(pi*rho_g/(rho(k)*qgr))**0.92
+        gonv = max(1.e4, min(gonv,gon))
+      ENDIF
+      ronv = ron2
+      IF (qra.gt. r1) THEN
+        ronv = ron_const1r*tanh((ron_qr0-qra)/ron_delqr0) + ron_const2r
+      ENDIF
+
+      IF (qra < 0.0 ) qra = 0.0
+      IF (qsn < 0.0 ) qsn = 0.0
+      IF (qgr < 0.0 ) qgr = 0.0
+      z_e(k) = factor_r * (rho(k)*qra)**1.75/ronv**.75 + factorb_s * (rho(k)*qsn)**1.75/sonv**.75 +   &
+        factorb_g * (rho(k)*qgr)**1.75/gonv**.75
+
+      IF ( z_e(k) < 0.0 ) z_e(k) = 0.0
+
+      ! From subroutine radar_diagnostics
+      IF (z_e(k) .gt. 1.e-20) THEN
+
+        !! Reflectivity (first level)
+        !! --------------------------
+        IF (k == 1) refd = MAX(10.0 * log10(z_e(k)),0.)
+
+        ! Composite reflectivity calc (max reflectivity in the column)
+        ! ------------------------------------------------------------
+        IF (10.0 * log10(z_e(k)) .gt. refd_max) THEN
+          refd_max = 10.0 * log10(z_e(k))
+        ENDIF
+
+      ENDIF
+
+    END DO
+
+    RETURN
+
+  END SUBROUTINE var_colmax1D
 
   SUBROUTINE Cdrag_0(ust,uas,vas,Cd)
 ! Fuction to compute a first order generic approximation of the drag coefficient as

@@ -111,7 +111,7 @@ only computed on output times
  - clivg: graupel water path (QGRAUPEL)
  - clivh: hail water path (QHAIL)
  - zmla: pbl height following a generic method [m]
- - colmax: high-frequency maximum radar reflectivity in the column [dBz] (on auxhist8, wrfhfcdx)
+ - colmax: high-frequency maximum radar reflectivity in the column [dBz] (on auxhist18, wrfhfcdx)
  
 ###### INSTVALS
 Only if `INSTVALS` modifications are made in the code
@@ -136,7 +136,7 @@ computed at every time-step
 
 **NOTE:** CLDFRAC is computed by the radiative scheme thus, bear in mind to configure the `namelist.input` that:
 ```
- auxhist9_interval > radt
+ auxhist19_interval > radt
 ```
 otherwise one obtains repeated values of clt, cll, clm, clh!! 
 
@@ -212,7 +212,7 @@ Only if `INSTVALS` modifications in code are made
  - zlfcmean: mean height at LFC [m]
  - plfcmean: mean Pressure at LFC [Pa]
  - lidxmean: mean Lifted index [1]
- - prflux: high-frequency precipitation flux [kgm-2s-1] (on auxhist8, wrfhfcdx)
+ - prflux: high-frequency precipitation flux [kgm-2s-1] (on auxhist18, wrfhfcdx)
 
 ###### CDXWRF=2
  - tfog: time of presence of fog [s]
@@ -303,7 +303,7 @@ sed -i 's/##CDXWRF3##//g' Registry/registry.cordex_comp
 
  - Additionally, one can also get the instantaneous values for the variables which only certain statistics (accumulation, minimum, mean, ...) are provided. In order to get them, one need to:
   1. Search in `phys/module_diagnostics_driver.F` and `phys/module_diag_cordex.F` the lines of code marked with `INSTVALS` and change accordingly (not fully tested). 
-  2. Modify `Registry/registry.cordex` accordingly (removing `##INST##` at the beginning of the line of the definition of certain variables, and adding `h9` to certain others)
+  2. Modify `Registry/registry.cordex` accordingly (removing `##INST##` at the beginning of the line of the definition of certain variables, and adding `h19` to certain others)
 
  7. compile as always
 ```
@@ -316,17 +316,17 @@ sed -i 's/##CDXWRF3##//g' Registry/registry.cordex_comp
 ```
 
 #### USAGE: namelist.input
-One need to add to the `namelist.input` the auxiliary output number 8 (only for `CDXWRF>=1`, e.g. for every 10 minutes and 1-day files) & 9 (e.g. for output every 3 hours and 1-day files) at the `&history' section:
+One need to add to the `namelist.input` the auxiliary output number 18 (only for `CDXWRF>=1`, e.g. for every 10 minutes and 1-day files) & 19 (e.g. for output every 3 hours and 1-day files) at the `&history' section:
 ```
- auxhist8_outname = "wrfhfcdx_d<domain>_<date>"
- auxhist8_interval = 10, 10,
- frames_per_auxhist8 = 144, 144,
- io_form_auxhist8 = 2
+ auxhist18_outname = "wrfhfcdx_d<domain>_<date>"
+ auxhist18_interval = 10, 10,
+ frames_per_auxhist18 = 144, 144,
+ io_form_auxhist18 = 2
 
- auxhist9_outname = "wrfcdx_d<domain>_<date>"
- auxhist9_interval = 180, 180,
- frames_per_auxhist9 = 8, 8,
- io_form_auxhist9 = 2
+ auxhist19_outname = "wrfcdx_d<domain>_<date>"
+ auxhist19_interval = 180, 180,
+ frames_per_auxhist19 = 8, 8,
+ io_form_auxhist19 = 2
 ```
 Also a new section should be added into the `namelist.input
 

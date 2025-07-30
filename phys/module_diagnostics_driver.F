@@ -1277,9 +1277,9 @@ CONTAINS
 
       CORDEX_DIAGS : IF ( config_flags%output_cordex == 1 ) THEN
 
-         IF ( ( config_flags%auxhist9_interval == 0 ) ) THEN
+         IF ( ( config_flags%auxhist19_interval == 0 ) ) THEN
             WRITE (diag_message , * ) &
-            "CORDEX: ERROR -- error -- ERROR -- error : NO 'auxhist9_interval' has been defined in 'namelist.input'"
+            "CORDEX: ERROR -- error -- ERROR -- error : NO 'auxhist19_interval' has been defined in 'namelist.input'"
             CALL wrf_error_fatal ( diag_message )
          END IF
 
@@ -1314,7 +1314,7 @@ CONTAINS
          CALL cordex_output_calc(                                          &
                      is_restart=config_flags%restart                       &
                     ,is_output_time = is_output_t                          &
-                    ,cdxH=config_flags%auxhist9_interval                   &
+                    ,cdxH=config_flags%auxhist19_interval                  &
 !                    ,DT=grid%dt                                            &
                     ,DT=REAL(model_config_rec%dt(grid%id))                 &
                     ,XTIME=grid%xtime,CURR_SECS2=curr_secs2                &
@@ -1609,7 +1609,7 @@ CONTAINS
 ! High-frequency CORDEX diagnostics
 !!
          ! Only to be computed if an interval is provided
-         IF ( ( config_flags%auxhist8_interval /= 0 ) ) THEN
+         IF ( ( config_flags%auxhist18_interval /= 0 ) ) THEN
 
            CALL wrf_debug ( 100 , '--> CALL DIAGNOSTICS PACKAGE: High-Frequency CORDEX DIAGNOSTICS' )
          
@@ -1629,7 +1629,7 @@ CONTAINS
            CALL cordex_hf_output_calc(                                     &
                      is_restart=config_flags%restart                       &
                     ,is_output_time = is_output_t                          &
-                    ,cdxH=config_flags%auxhist8_interval                   &
+                    ,cdxH=config_flags%auxhist18_interval                  &
 !                    ,DT=grid%dt                                            &
                     ,DT=REAL(model_config_rec%dt(grid%id))                 &
                     ,XTIME=grid%xtime,CURR_SECS2=curr_secs2                &
@@ -1660,7 +1660,7 @@ CONTAINS
                     ,NUM_TILES=grid%num_tiles                              &
                   )
 
-         ! End if for auxhist8 value
+         ! End if for auxhist18 value
          END IF
 
       END IF CORDEX_DIAGS

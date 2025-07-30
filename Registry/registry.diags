@@ -75,7 +75,7 @@ package   skip_press_diags      p_lev_diags==0     -        -
 ## L. Fita, CiMA. March 2018
 #### Added for CORDEX!
 ##package        press_diags      p_lev_diags==1     -        state:p_pl,u_pl,v_pl,t_pl,rh_pl,ght_pl,s_pl,td_pl,q_pl
-package        press_diags      p_lev_diags==1     -        state:p_pl,u_pl,v_pl,t_pl,rh_pl,ght_pl,s_pl,td_pl,q_pl,w_pl,hus_pl,qc_pl,qr_pl,qs_pl,qi_pl,qg_pl,qh_pl,qv_pl_mc,qc_pl_mc,qr_pl_mc,qs_pl_mc,qi_pl_mc,qg_pl_mc,qh_pl_mc
+package        press_diags      p_lev_diags==1     -        state:p_pl,u_pl,v_pl,t_pl,rh_pl,ght_pl,s_pl,td_pl,q_pl,w_pl,hus_pl,uer_pl,ver_pl,ws_pl,qc_pl,qr_pl,qs_pl,qi_pl,qg_pl,qh_pl,qv_pl_mc,qc_pl_mc,qr_pl_mc,qs_pl_mc,qi_pl_mc,qg_pl_mc,qh_pl_mc
 
 
 

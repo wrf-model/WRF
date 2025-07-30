@@ -185,9 +185,9 @@ CONTAINS
 ! CORDEX diagnostics. CIMA Dec.17
       INTEGER                                            :: rc
       LOGICAL                                            :: is_output_t, is_pinterp_t
-      TYPE(WRFU_Time)                                    :: hist_time, aux9_time, aux23_time,         &
-        CurrTime, StartTime, aux8_time
-      TYPE(WRFU_TimeInterval)                            :: dtint, histint, aux9int, aux23int, aux8int
+      TYPE(WRFU_Time)                                    :: hist_time, aux19_time, aux18_time,        &
+        aux23_time, CurrTime, StartTime
+      TYPE(WRFU_TimeInterval)                            :: dtint, histint, aux18int, aux19int, aux23int
       CHARACTER(len=256)                                 :: message, timestr
       REAL                                               :: inczsoil
 #ifdef CDXWRF
@@ -1277,9 +1277,9 @@ CONTAINS
 
       CORDEX_DIAGS : IF ( config_flags%output_cordex == 1 ) THEN
 
-         IF ( ( config_flags%auxhist9_interval == 0 ) ) THEN
+         IF ( ( config_flags%auxhist19_interval == 0 ) ) THEN
             WRITE (diag_message , * ) &
-            "CORDEX: ERROR -- error -- ERROR -- error : NO 'auxhist9_interval' has been defined in 'namelist.input'"
+            "CORDEX: ERROR -- error -- ERROR -- error : NO 'auxhist19_interval' has been defined in 'namelist.input'"
             CALL wrf_error_fatal ( diag_message )
          END IF
 
@@ -1289,14 +1289,14 @@ CONTAINS
          ! From AFWA diagnostics ...
          CALL WRFU_ALARMGET( grid%alarms( HISTORY_ALARM ), prevringtime=hist_time,                    &
            ringinterval=histint)
-         CALL WRFU_ALARMGET( grid%alarms(AUXHIST9_ALARM), prevringtime=aux9_time, ringinterval=aux9int)
+         CALL WRFU_ALARMGET( grid%alarms(AUXHIST19_ALARM), prevringtime=aux19_time, ringinterval=aux19int)
          CALL domain_clock_get ( grid, current_time=CurrTime, simulationStartTime=StartTime,          &
            current_timestr=timestr, time_step=dtint )
          !is_output_t = ( Currtime .GE. hist_time + histint - dtint .OR.                               & 
-         !  Currtime .ge. aux9_time + aux9int - dtint )
-         is_output_t = ( Currtime .ge. aux9_time + aux9int - dtint )
+         !  Currtime .ge. aux19_time + aux19int - dtint )
+         is_output_t = ( Currtime .ge. aux19_time + aux19int - dtint )
          ! Complementary way...
-         !is_output_t=(MOD(NINT((curr_secs2+grid%dt)/grid%dt),NINT(config_flags%auxhist9_interval*60./grid%dt))==0 .OR. curr_secs2==0.)
+         !is_output_t=(MOD(NINT((curr_secs2+grid%dt)/grid%dt),NINT(config_flags%auxhist19_interval*60./grid%dt))==0 .OR. curr_secs2==0.)
 
          IF (is_output_t) THEN
            grid%cdxlon = grid%xlong
@@ -1314,7 +1314,7 @@ CONTAINS
          CALL cordex_output_calc(                                          &
                      is_restart=config_flags%restart                       &
                     ,is_output_time = is_output_t                          &
-                    ,cdxH=config_flags%auxhist9_interval                   &
+                    ,cdxH=config_flags%auxhist19_interval                  &
 !                    ,DT=grid%dt                                            &
                     ,DT=REAL(model_config_rec%dt(grid%id))                 &
                     ,XTIME=grid%xtime,CURR_SECS2=curr_secs2                &
@@ -1609,17 +1609,17 @@ CONTAINS
 ! High-frequency CORDEX diagnostics
 !!
          ! Only to be computed if an interval is provided
-         IF ( ( config_flags%auxhist8_interval /= 0 ) ) THEN
+         IF ( ( config_flags%auxhist18_interval /= 0 ) ) THEN
 
            CALL wrf_debug ( 100 , '--> CALL DIAGNOSTICS PACKAGE: High-Frequency CORDEX DIAGNOSTICS' )
          
            ! From AFWA diagnostics ...
            CALL WRFU_ALARMGET( grid%alarms( HISTORY_ALARM ), prevringtime=hist_time,                    &
              ringinterval=histint)
-           CALL WRFU_ALARMGET( grid%alarms(AUXHIST8_ALARM), prevringtime=aux8_time, ringinterval=aux8int)
+           CALL WRFU_ALARMGET( grid%alarms(AUXHIST18_ALARM), prevringtime=aux18_time, ringinterval=aux18int)
            CALL domain_clock_get ( grid, current_time=CurrTime, simulationStartTime=StartTime,          &
              current_timestr=timestr, time_step=dtint )
-           is_output_t = ( Currtime .ge. aux8_time + aux8int - dtint )
+           is_output_t = ( Currtime .ge. aux18_time + aux18int - dtint )
 
            IF (is_output_t) THEN
              grid%cdxlon = grid%xlong
@@ -1629,7 +1629,7 @@ CONTAINS
            CALL cordex_hf_output_calc(                                     &
                      is_restart=config_flags%restart                       &
                     ,is_output_time = is_output_t                          &
-                    ,cdxH=config_flags%auxhist8_interval                   &
+                    ,cdxH=config_flags%auxhist18_interval                  &
 !                    ,DT=grid%dt                                            &
                     ,DT=REAL(model_config_rec%dt(grid%id))                 &
                     ,XTIME=grid%xtime,CURR_SECS2=curr_secs2                &
@@ -1660,7 +1660,7 @@ CONTAINS
                     ,NUM_TILES=grid%num_tiles                              &
                   )
 
-         ! End if for auxhist8 value
+         ! End if for auxhist18 value
          END IF
 
       END IF CORDEX_DIAGS

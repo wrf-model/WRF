@@ -65,8 +65,9 @@ state    real  LU_MASK          ij      misc        1         -     i3h1     "LU
 
 state    real    znu            k       dyn_em      1         -     irh      "znu"  "eta values on half (mass) levels"  ""
 state    real    znw            k       dyn_em      1         Z     i0rh     "znw"  "eta values on full (w) levels"  ""
-state    real   ZS              l        misc      -         Z     irh       "ZS"                    "DEPTHS OF CENTERS OF SOIL LAYERS"         "m"
-state    real   DZS             l        misc      -         Z     irh       "DZS"                   "THICKNESSES OF SOIL LAYERS"               "m"
+# CDXWRF modification
+state    real   ZS              l        misc      -         Z     irh0{19}  "ZS"                    "DEPTHS OF CENTERS OF SOIL LAYERS"         "m"
+state    real   DZS             l        misc      -         Z     irh0{19}  "DZS"                   "THICKNESSES OF SOIL LAYERS"               "m"
 # cyl : variables for trajectory calculation
 state    real  traj_i         {ntraj}       dyn_em      1         Z     irh     "traj_i" "grid number of trajectory " ""                                     
 state    real  traj_j         {ntraj}       dyn_em      1         Z     irh     "traj_j" "grid number of trajectory " ""                                     

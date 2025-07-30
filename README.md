@@ -111,7 +111,7 @@ only computed on output times
  - clivg: graupel water path (QGRAUPEL)
  - clivh: hail water path (QHAIL)
  - zmla: pbl height following a generic method [m]
- - colmax: high-frequency maximum radar reflectivity in the column [dBz] (on auxhist8, wrfhfcdx)
+ - colmax: high-frequency maximum radar reflectivity in the column [dBz] (on auxhist18, wrfhfcdx)
  
 ###### INSTVALS
 Only if `INSTVALS` modifications are made in the code
@@ -136,7 +136,7 @@ computed at every time-step
 
 **NOTE:** CLDFRAC is computed by the radiative scheme thus, bear in mind to configure the `namelist.input` that:
 ```
- auxhist9_interval > radt
+ auxhist19_interval > radt
 ```
 otherwise one obtains repeated values of clt, cll, clm, clh!! 
 
@@ -212,7 +212,7 @@ Only if `INSTVALS` modifications in code are made
  - zlfcmean: mean height at LFC [m]
  - plfcmean: mean Pressure at LFC [Pa]
  - lidxmean: mean Lifted index [1]
- - prflux: high-frequency precipitation flux [kgm-2s-1] (on auxhist8, wrfhfcdx)
+ - prflux: high-frequency precipitation flux [kgm-2s-1] (on auxhist18, wrfhfcdx)
 
 ###### CDXWRF=2
  - tfog: time of presence of fog [s]

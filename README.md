@@ -17,6 +17,7 @@ Getting the code from the fork in a INSTDIR
 ```
 $ cd $INSTDIR
 $ git clone git@github.com:LluisFB/WRF.git
+$ cd WRF
 ```
 
 Getting submodules

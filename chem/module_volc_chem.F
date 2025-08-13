@@ -101,16 +101,11 @@ MODULE MODULE_VOLC_CHEM
             tc(1,1,1,1)=chem(i,k,j,p_so2) *1.d-6   !ppv
             tc(1,1,1,2)=chem(i,k,j,p_sulf)*1.d-6   !ppv
             
-            !call chmdrv_volc_su( imx,jmx,lmx, nmx, dt, tmp, airden, airmas, &
-            !         oh, h2o2, cldf, tc, chlso2_oh, chlso2_aq)!chpso4
+            call chmdrv_volc_su( imx,jmx,lmx, nmx, dt, tmp, airden, airmas, &
+                     oh, h2o2, cldf, tc, chlso2_oh, chlso2_aq)!chpso4
    
-            !chem(i,k,j,p_so2)= tc(1,1,1,1)*1.e6    !ppmv
-            !chem(i,k,j,p_sulf)=tc(1,1,1,2)*1.e6    !ppmv
-
-            ! uncomment above
-            chem(i,k,j,p_so2) = 86400./dt*cossza(1,1)*backg_oh(i,k,j)/tcosz(i,j) !backg_oh  in molecules/cm3
-            chem(i,k,j,p_so2) = chem(i,k,j,p_so2) * (28.97 * 0.001)* 1.0D12 / (6.022D23 * rho_phy(i,k,j)) ! to ppmv from molecules/cm3
-
+            chem(i,k,j,p_so2)= tc(1,1,1,1)*1.e6    !ppmv
+            chem(i,k,j,p_sulf)=tc(1,1,1,2)*1.e6    !ppmv
    
             volc_diags(i,j,p_so2_oh_loss) = volc_diags(i,j,p_so2_oh_loss) + chlso2_oh(1,1,1)  !loss (kg/dt)
             volc_diags(i,j,p_so2_h2o2_loss) = volc_diags(i,j,p_so2_h2o2_loss) + chlso2_aq(1,1,1)  !loss (kg/dt)

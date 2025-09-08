@@ -27,7 +27,7 @@ CONTAINS
                  ,stepbl,warm_rain                                 &
                  ,kpbl,mixht,ct,lh,snow,xice                       &
                  ,znu, znw, mut, p_top                             &
-                 ,ctopo,ctopo2,windfarm_opt,power                  &
+                 ,ctopo,ctopo2,windfarm_opt,power,thrust           &
                  ,windfarm_wake_model, windfarm_overlap_method     &
                  ,ysu_topdown_pblmix                               &
                  ,shinhong_tke_diag                                &
@@ -542,6 +542,7 @@ CONTAINS
                                                             VOCE, &
                                                               T2, &
                                                            POWER, &
+                                                           THRUST, &
                                                             WSPD
    REAL,       DIMENSION( ims:ime, jms:jme )                    , &
                INTENT(INOUT)    ::                     HPBL_HOLD
@@ -2057,6 +2058,7 @@ CONTAINS
                      &,QKE=qke                                           &
                      &,DU=rublten,DV=rvblten                             &
                      &,WINDFARM_OPT=windfarm_opt,POWER=power             &
+                     &,THRUST=thrust                                     &
                      &,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde   &
                      &,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme   &
                      &,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte   &

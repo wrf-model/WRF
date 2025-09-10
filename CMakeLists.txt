@@ -563,7 +563,6 @@ endif()
 # Attempt to find zlib packaged with netcdf first
 set( ZLIB_ROOT ${netCDF_PREFIX} )
 find_package( ZLIB   REQUIRED )
-find_package( CURL   REQUIRED )
 
 ################################################################################
 ##

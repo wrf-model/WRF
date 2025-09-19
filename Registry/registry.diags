@@ -9,7 +9,7 @@ dimspec    np      2     namelist=num_press_levels         z     num_press_level
 #### Added for CORDEX!
 ## L. Fita 2 grid coordinates for the londbg,latdbg
 dimspec    iit     2     constant=2                        z     iit
-ifdef CDXWRF=3
+!ifdef CDXWRF=3
 ## L. Fita. This should work, but WRF is not prepared for 4D output variables like this
 dimspec    ht      2     namelist=nhtasrng                 c     nhtasrng
 dimspec    hh      2     namelist=nhhursrng                c     nhhursrng
@@ -21,7 +21,7 @@ dimspec    ws      2     namelist=nwssrng                  c     nwssrng
 dimspec    hth     2     namelist=nhtashursrng             z     nhtashursrng
 dimspec    lth     2     namelist=nltashursrng             z     nltashursrng
 dimspec    wds     2     namelist=nwbdswssrng              z     nwbdswssrng
-endif 
+!endif 
 
 #  Namelist parameters
 

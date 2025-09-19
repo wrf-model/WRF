@@ -1386,9 +1386,10 @@ BENCH_END(pbl_driver_tim)
 
          call Advance_state (grid = grid%fire_state, config_flags = grid%cfbm_namelist)
 
-         if (grid%fire_state%num_tiles == grid%num_tiles) then
+         if (grid%fire_state%num_tiles == grid%num_tiles .and. &
+            grid%cfbm_namelist%tile_strategy == config_flags%tile_strategy) then
            !$OMP PARALLEL DO   &
-           !$OMP PRIVATE ( ij ,i,j,k,its,ite,jts,jte)
+           !$OMP PRIVATE (ij)
            do ij = 1, grid%num_tiles
              call Provide_atm_feedback (grid%cfbm_namelist,            &
                grid%fire_state%ifms, grid%fire_state%ifme,             &

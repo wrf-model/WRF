@@ -34,10 +34,10 @@ CONTAINS
                                           DO_SOLAR_OUTPUT,                             &
                                           PARAM_FIRST_SCALAR,                          &
                                           P_QG, P_QH, P_QV, P_QC, P_QI, P_QS,          &
-#ifdef CORDEXDIAG
+!#ifdef CORDEXDIAG
 ! L. Fita. CIMA Dec. 2017
                                           P_QR,                                        &
-#endif
+!#endif
                                           P_QNG, P_QH, P_QNH, P_QR, P_QNR, P_QVOLG,    &
                                           F_QV, F_QC, F_QI, F_QS,                      &
                      KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME, &
@@ -65,11 +65,11 @@ CONTAINS
                                    model_config_rec
 
       USE module_streams
-#ifdef CORDEXDIAG
+!#ifdef CORDEXDIAG
       USE module_utility
-#else
-      USE module_utility, ONLY : WRFU_Time
-#endif
+!#else
+!      USE module_utility, ONLY : WRFU_Time
+!#endif
       !=============================================================
       !  USE Association for the Diagnostic Packages
       !=============================================================
@@ -85,10 +85,10 @@ CONTAINS
       USE module_diag_hailcast, ONLY : hailcast_diagnostic_driver
       USE module_diag_solar, ONLY : solar_diag
       USE module_trad_fields, ONLY : trad_fields
-#ifdef CORDEXDIAG
+!#ifdef CORDEXDIAG
 ! CORDEX diagnostics. CIMA Dec.17
       USE module_diag_cordex, ONLY: cordex_output_calc, cordex_hf_output_calc
-#endif
+!#endif
 
       IMPLICIT NONE
 
@@ -181,7 +181,7 @@ CONTAINS
       ! Current time associated with current simulation step (RASM_DIAGS)
 
       TYPE(WRFU_Time) :: currentTime
-#ifdef CORDEXDIAG
+!#ifdef CORDEXDIAG
 ! CORDEX diagnostics. CIMA Dec.17
       INTEGER                                            :: rc
       LOGICAL                                            :: is_output_t, is_pinterp_t
@@ -190,12 +190,12 @@ CONTAINS
       TYPE(WRFU_TimeInterval)                            :: dtint, histint, aux18int, aux19int, aux23int
       CHARACTER(len=256)                                 :: message, timestr
       REAL                                               :: inczsoil
-#ifdef CDXWRF
+!#ifdef CDXWRF
       INTEGER                                            :: i
       CHARACTER(len=1024)                                :: msg
-#endif
+!#endif
 
-#endif
+!#endif
 
       !=============================================================
       !  Start of executable code
@@ -883,7 +883,7 @@ CONTAINS
                       ,s_pl  = grid%s_pl                                    &
                       ,td_pl = grid%td_pl                                   &
                       ,q_pl = grid%q_pl                                     &
-#ifdef CORDEXDIAG
+!#ifdef CORDEXDIAG
                       ,sina = grid%sina                                     &
                       ,cosa = grid%cosa                                     &
                       ,psfc = grid%psfc                                     &
@@ -914,7 +914,7 @@ CONTAINS
                       ,qi_pl_mc = grid%qi_pl_mc                             &
                       ,qg_pl_mc = grid%qg_pl_mc                             &
                       ,qh_pl_mc = grid%qh_pl_mc                             &
-#endif
+!#endif
                !  Dimension arguments
                       ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde    &
                       ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme    &
@@ -1270,7 +1270,7 @@ CONTAINS
               kts=k_start, kte=min(k_end,kde-1), num_tiles=grid%num_tiles   )
       END IF SOLAR_FIELDS
 
-#ifdef CORDEXDIAG
+!#ifdef CORDEXDIAG
 ! CORDEX diagnostics. CIMA Dec.17
 
       !  CORDEX-oriented diagnostic quantities.
@@ -1303,12 +1303,12 @@ CONTAINS
            grid%cdxlat = grid%xlat
            grid%cdxps = grid%psfc
            grid%cdxts = grid%tsk
-#ifdef CDXWRF
-#if CDXWRF>=4
+!#ifdef CDXWRF
+!#if CDXWRF>=4
       !! INSTVALS: Instantaneous values (uncomment and re-compile)
 !           grid%cdxdiabh = grid%diab_h
-#endif
-#endif
+!#endif
+!#endif
          END IF
          
          CALL cordex_output_calc(                                          &
@@ -1339,8 +1339,8 @@ CONTAINS
                     ,LATDBG = config_flags%latdbg                          &
                     ,IDBG=grid%ijdbg(1), JDBG=grid%ijdbg(2)                &
                     ,WGSTS_WBDSWSSTRES = config_flags%wgsts_wbdswsstres    &
-#ifdef CDXWRF
-#if CDXWRF>=3
+!#ifdef CDXWRF
+!#if CDXWRF>=3
                     ,NHTASRNG = config_flags%nhtasrng                      &
                     ,NHHURSRNG = config_flags%nhhursrng                    &
                     ,NLTASRNG = config_flags%nltasrng                      &
@@ -1361,8 +1361,8 @@ CONTAINS
                     ,HURSLRNG = model_config_rec%lhursrng(1:model_config_rec%nlhursrng)             &
                     ,WBDSRNG = model_config_rec%wbdsrng(1:model_config_rec%nwbdsrng)                &
                     ,WSSRNG = model_config_rec%wssrng(1:model_config_rec%nwssrng)                   &
-#endif
-#endif
+!#endif
+!#endif
 
          ! Input
                     ,LON=grid%xlong, LAT=grid%xlat                         &
@@ -1413,10 +1413,10 @@ CONTAINS
                     !      CDM = (ust/wss)**2
                     ,CHS=grid%ch, CDM=grid%cd, BR=grid%br, ZOL=grid%zol    &
                     ,FRACSOIL10CM=grid%fracsoil10cm                        &
-#ifdef CDXWRF
-#if CDXWRF>=1
+!#ifdef CDXWRF
+!#if CDXWRF>=1
 
-#elif CDXWRF>=4
+!#elif CDXWRF>=4
                     ,DIABH=grid%h_diabatic                                 &
                     ,QVTTEND=grid%qvttend, QCTTEND=grid%qcttend            & 
                     ,QRTTEND=grid%qrttend, QSTTEND=grid%qsttend            &
@@ -1430,8 +1430,8 @@ CONTAINS
                     ,QRZADV=grid%qr_zadv, QSZADV=grid%qs_zadv              &
                     ,QIZADV=grid%qi_zadv, QGZADV=grid%qg_zadv              &
                     ,QHZADV=grid%qh_zadv                                   &
-#endif
-#endif
+!#endif
+!#endif
          ! Output
                     ,NSTEPS=grid%cdxnsteps                                 &
                     ,CLTMEAN=grid%cltmean, CLLMEAN=grid%cllmean            &
@@ -1481,8 +1481,8 @@ CONTAINS
                     ,SNW=grid%snw                                          &
                     ,RSDT=grid%rsdt, RSUT=grid%rsut, RLUT=grid%rlut        &
                     ,TAS_HM=grid%tas_hm, QVS_HM=grid%qvs_hm                &
-#ifdef CDXWRF
-#if CDXWRF>=1
+!#ifdef CDXWRF
+!#if CDXWRF>=1
                     ,CLGVI=grid%clgvi, CLHVI=grid%clhvi                    &
                     ,ZMLA=grid%zmlagen                                     &
                     ,CAPEMIN=grid%capemin, CINMIN=grid%cinmin              &
@@ -1496,8 +1496,8 @@ CONTAINS
                     ,LIDXMEAN=grid%limean                                  &
                     ,IUTMEAN=grid%iutmean, IVTMEAN=grid%ivtmean            &
                     ,ZEROITH=grid%zeroisotherm                             &
-#endif
-#if CDXWRF>=2
+!#endif
+!#if CDXWRF>=2
                     ,UA=grid%ua, VA=grid%va, WS=grid%ws, TA=grid%ta        &
                     ,PRESS=grid%press, ZG=grid%zg                          &
                     ,HUR=grid%hur, HUS=grid%hus                            &
@@ -1508,8 +1508,8 @@ CONTAINS
                     ,TDSMEAN=grid%tdsmean                                  &
                     ,TWSMIN=grid%twsmin, TWSMAX=grid%twsmax                &
                     ,TWSMEAN=grid%twsmean                                  &
-#endif
-#if CDXWRF>=4
+!#endif
+!#if CDXWRF>=4
                     !! Water-budget
                     ,WBACDH=grid%wbacdiabh                                 & 
                     ,WBACPW=grid%wbacpw, WBACPWC=grid%wbacpwc              &
@@ -1562,13 +1562,13 @@ CONTAINS
                     ,WBACFMH=grid%wbacfmh, WBACFHH=grid%wbacfhh            &
                     ,WBACZLH=grid%wbaczlh, WBACZMH=grid%wbaczmh            &
                     ,WBACZHH=grid%wbaczhh                                  &
-#endif
-#if CDXWRF>=3
+!#endif
+!#if CDXWRF>=3
                     ,TASHURSTRESHIGHRES=grid%tashurstreshighres            &
                     ,TASHURSTRESLOWRES=grid%tashurstreslowres              &
                     ,WBDSWSSTRES=grid%wbdswsstres                          &
-#endif
-#endif
+!#endif
+!#endif
          ! Dimension arguments
                     ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde     &
                     ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme     &
@@ -1581,28 +1581,28 @@ CONTAINS
                     ,N_MOIST=num_moist                                     &
                     ,M_QV=p_qv, M_QC=p_qc, M_QR=p_qr, M_QS=p_qs            &
                     ,M_QI=p_qi, M_QG=p_qg, M_QH=p_qh                       &
-!! INSTVALS: Instantaneous values (uncomment and re-compile)
-!                    ,CLT=grid%clt                                          &
-!                    ,CLL=grid%cll, CLM=grid%clm, CLH=grid%clh              &
-!                    ,WSGS=grid%wsgs, UGUSTWIND=grid%usgs                   &
-!                    ,VGUSTWIND=grid%vsgs, GUSTPOINT=grid%gustpoint         &
-!                    ,TOTWSGS=grid%totwsgs, TOTUGUSTWIND=grid%totusgs       &
-!                    ,TOTVGUSTWIND=grid%totvsgs                             &
-!                    ,TOTGUSTPOINT=grid%totgustpoint                        &
-!                    ,POTEVAPO=grid%potevapo                                &
-!                    ,POTEVAPOGEN=grid%potevapogen                          &
-#ifdef CDXWRF
-#if CDXWRF>=1
-!                    ,CAPE=grid%cdxcape                                     &
-!                    ,CIN=grid%cin, ZLFC=grid%lfcz                          &
-!                    ,PLFC=grid%lfcp, LIDX=grid%li                          &
-#endif
-#if CDXWRF>=2
-!                    ,FOG=grid%fog, FOGVISBLTY=grid%fogvisblty              & 
-!                    ,TDS=grid%tds, TWS=grid%tws                            & 
-#endif
-#endif
-!! End of INSTVALS
+!!! INSTVALS: Instantaneous values (uncomment and re-compile)
+!!                    ,CLT=grid%clt                                          &
+!!                    ,CLL=grid%cll, CLM=grid%clm, CLH=grid%clh              &
+!!                    ,WSGS=grid%wsgs, UGUSTWIND=grid%usgs                   &
+!!                    ,VGUSTWIND=grid%vsgs, GUSTPOINT=grid%gustpoint         &
+!!                    ,TOTWSGS=grid%totwsgs, TOTUGUSTWIND=grid%totusgs       &
+!!                    ,TOTVGUSTWIND=grid%totvsgs                             &
+!!                    ,TOTGUSTPOINT=grid%totgustpoint                        &
+!!                    ,POTEVAPO=grid%potevapo                                &
+!!                    ,POTEVAPOGEN=grid%potevapogen                          &
+!#ifdef CDXWRF
+!#if CDXWRF>=1
+!!                    ,CAPE=grid%cdxcape                                     &
+!!                    ,CIN=grid%cin, ZLFC=grid%lfcz                          &
+!!                    ,PLFC=grid%lfcp, LIDX=grid%li                          &
+!#endif
+!#if CDXWRF>=2
+!!                    ,FOG=grid%fog, FOGVISBLTY=grid%fogvisblty              & 
+!!                    ,TDS=grid%tds, TWS=grid%tws                            & 
+!#endif
+!#endif
+!!! End of INSTVALS
                   )
 
 !!
@@ -1647,9 +1647,9 @@ CONTAINS
                     ,RHO=grid%rho                                          &
          ! Output
                     ,nsteps=grid%cdxhfnsteps                               &
-#if CDXWRF>=1
+!#if CDXWRF>=1
                     ,FLXPR=grid%prhf, COLMAX=grid%colmax                   &
-#endif
+!#endif
          ! Dimension arguments
                     ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde     &
                     ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme     &
@@ -1665,7 +1665,7 @@ CONTAINS
 
       END IF CORDEX_DIAGS
 
-#endif
+!#endif
 
    END SUBROUTINE diagnostics_driver
 

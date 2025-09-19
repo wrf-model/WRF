@@ -273,17 +273,17 @@ CONTAINS
                          ,alevsiz_cu,num_months,no_src_types_cu,aeromcu,aeropcu   & ! PSH/TWG 06/10/16                         
                          ,EFCG,EFCS,EFIG,EFIS,EFSG,EFSS                           & ! TWG
 #endif
-#ifdef CDXWRF
+!#ifdef CDXWRF
                          ,fracsoil10cm                                            &
                          ,londbg, latdbg                                          &
                          ,ijdbg                                                   &
-#if CDXWRF>=3
+!#if CDXWRF>=3
                          ,nhtasrng, nhhursrng, nltasrng, nlhursrng                &
                          ,nwbdsrng, nwssrng                                       &
                          ,htasbins, hhursbins, ltasbins, lhursbins                &
                          ,wbdsbins, wssbins                                       &
-#endif
-#endif
+!#endif
+!#endif
                           )
 
 !-----------------------------------------------------------------
@@ -854,12 +854,12 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) :: &
              RDCASHTEN, RQCDCSHTEN
 
-#ifdef CDXWRF
+!#ifdef CDXWRF
    REAL, DIMENSION(1:num_soil_layers), INTENT(out)       :: fracsoil10cm
    REAL, INTENT(in)                                      :: londbg, latdbg
    INTEGER, DIMENSION(2), INTENT(out)                    :: ijdbg
    
-#if CDXWRF>=3
+!#if CDXWRF>=3
    INTEGER, INTENT(in)                                   :: nhtasrng, nhhursrng, nltasrng, nlhursrng
    INTEGER, INTENT(in)                                   :: nwbdsrng, nwssrng   
    REAL, DIMENSION(Nhtasrng), INTENT(out)                :: htasbins
@@ -868,8 +868,8 @@ CONTAINS
    REAL, DIMENSION(Nlhursrng), INTENT(out)               :: lhursbins
    REAL, DIMENSION(Nwbdsrng), INTENT(out)                :: wbdsbins
    REAL, DIMENSION(Nwssrng), INTENT(out)                 :: wssbins
-#endif
-#endif
+!#endif
+!#endif
 
 
 ! Local data
@@ -1768,7 +1768,7 @@ CHARACTER(LEN=8) :: name
    end if
 #endif
 
-#ifdef CDXWRF
+!#ifdef CDXWRF
   CALL cdxwrf_init(config_flags%num_soil_layers, dzs                                                  &
     ,xlong, xlat                                                                                      &
     ,londbg, latdbg                                                                                   &
@@ -1776,7 +1776,7 @@ CHARACTER(LEN=8) :: name
     ,ims, ime, jms, jme, kms, kme                                                                     &
     ,its, ite, jts, jte, kts, kte                                                                     &
 
-#if CDXWRF>=3
+!#if CDXWRF>=3
     ,model_config_rec%nhtasrng, model_config_rec%nhhursrng                                            &
     ,model_config_rec%nltasrng, model_config_rec%nlhursrng                                            &
     ,model_config_rec%nwbdsrng, model_config_rec%nwssrng                                              &
@@ -1785,14 +1785,14 @@ CHARACTER(LEN=8) :: name
     ,model_config_rec%htasrng, model_config_rec%hhursrng                                              &
     ,model_config_rec%ltasrng, model_config_rec%lhursrng                                              &
     ,model_config_rec%wbdsrng, model_config_rec%wssrng                                                &
-#endif
+!#endif
     ,ijdbg                                                                                            &
-#if CDXWRF>=3    
+!#if CDXWRF>=3    
     ,htasbins, hhursbins, ltasbins, lhursbins                                                         &
     ,wbdsbins, wssbins                                                                                &
-#endif
+!#endif
     ,fracsoil10cm)
-#endif
+!#endif
 
    END SUBROUTINE phy_init
 
@@ -5802,7 +5802,7 @@ subroutine interp_vec_cu(locvec,locwant,periodic,loc1,loc2,wght1,wght2)
 
   END SUBROUTINE shalwater_init
 
-#ifdef CDXWRF
+!#ifdef CDXWRF
   SUBROUTINE cdxwrf_init(num_soil_layers, dzs                                                         &
     ,xlong, xlat                                                                                      &
     ,londbg, latdbg                                                                                   &
@@ -5810,7 +5810,7 @@ subroutine interp_vec_cu(locvec,locwant,periodic,loc1,loc2,wght1,wght2)
     ,ims, ime, jms, jme, kms, kme                                                                     &
     ,its, ite, jts, jte, kts, kte                                                                     &
 
-#if CDXWRF>=3
+!#if CDXWRF>=3
     ,nhtasrng, nhhursrng                                                                              & 
     ,nltasrng, nlhursrng                                                                              &
     ,nwbdsrng, nwssrng                                                                                &
@@ -5818,12 +5818,12 @@ subroutine interp_vec_cu(locvec,locwant,periodic,loc1,loc2,wght1,wght2)
     ,nwbdswssrng                                                                                      &
     ,htasrng, hhursrng, ltasrng, lhursrng                                                             &
     ,wbdsrng, wssrng                                                                                  &
-#endif
+!#endif
     ! Output
     ,ijdbg                                                                                            &
-#if CDXWRF>=3    
+!#if CDXWRF>=3    
     ,htasbins, hhursbins, ltasbins, lhursbins, wbdsbins, wssbins                                      &
-#endif
+!#endif
     ,fracsoil10cm)  
     ! Subroutine to initialize CDXWRF module
     
@@ -5837,7 +5837,7 @@ subroutine interp_vec_cu(locvec,locwant,periodic,loc1,loc2,wght1,wght2)
     INTEGER, INTENT(in)                                  :: its, ite, jts, jte, kts, kte
     REAL, DIMENSION( ims:ime , jms:jme ), INTENT(in)     :: xlong, xlat
     REAL, INTENT(in)                                     :: londbg, latdbg
-#if CDXWRF>=3    
+!#if CDXWRF>=3    
     INTEGER, INTENT(in)                                  :: nhtasrng, nhhursrng, nltasrng, nlhursrng
     INTEGER, INTENT(in)                                  :: nwbdsrng, nwssrng
     INTEGER, INTENT(in)                                  :: nhtashursrng, nltashursrng
@@ -5848,19 +5848,19 @@ subroutine interp_vec_cu(locvec,locwant,periodic,loc1,loc2,wght1,wght2)
     REAL, DIMENSION(Nlhursrng), INTENT(in)               :: lhursrng
     REAL, DIMENSION(Nwbdsrng), INTENT(in)                :: wbdsrng
     REAL, DIMENSION(Nwssrng), INTENT(in)                 :: wssrng
-#endif
+!#endif
     
     ! Output
     INTEGER, DIMENSION(2), INTENT(out)                   :: ijdbg
     REAL, DIMENSION(1:num_soil_layers), INTENT(out)      :: fracsoil10cm
-#if CDXWRF>=3    
+!#if CDXWRF>=3    
     REAL, DIMENSION(Nhtasrng), INTENT(out)               :: htasbins
     REAL, DIMENSION(Nhhursrng), INTENT(out)              :: hhursbins
     REAL, DIMENSION(Nltasrng), INTENT(out)               :: ltasbins
     REAL, DIMENSION(Nlhursrng), INTENT(out)              :: lhursbins
     REAL, DIMENSION(Nwbdsrng), INTENT(out)               :: wbdsbins
     REAL, DIMENSION(Nwssrng), INTENT(out)                :: wssbins
-#endif
+!#endif
     
     ! Local
     INTEGER                                              :: i,j,k
@@ -5954,7 +5954,7 @@ subroutine interp_vec_cu(locvec,locwant,periodic,loc1,loc2,wght1,wght2)
       inczsoil = inczsoil + dzs(k)
     END DO
 
-#if CDXWRF>=3
+!#if CDXWRF>=3
     ! Residence time
 
     ! Consistency checks
@@ -6003,11 +6003,11 @@ subroutine interp_vec_cu(locvec,locwant,periodic,loc1,loc2,wght1,wght2)
     WRITE(diag_message,*) '  wss bins ', (wssbins(k), k=1, nwssrng-1)
     CALL wrf_debug(75,diag_message)
 
-#endif
+!#endif
 
     RETURN
   
   END SUBROUTINE cdxwrf_init
-#endif
+!#endif
 
 END MODULE module_physics_init

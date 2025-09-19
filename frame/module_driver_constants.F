@@ -147,15 +147,15 @@ MODULE module_driver_constants
    REAL , PARAMETER :: P2SI = 1.0
 #endif
 
-#ifdef CORDEXDIAG
-#if CDXWRF>=3
+!#ifdef CORDEXDIAG
+!#if CDXWRF>=3
    ! 5. CORDEX-WRF diagnostics
    ! Maximum amount of bins per variable for the simultaneous time of residence
    INTEGER, PARAMETER                                    :: max_lbins = 50
    ! Maximum amount of bins for the simultaneous time of residence  
    INTEGER, PARAMETER                                    :: max_rng = 1000
-#endif
-#endif
+!#endif
+!#endif
 
  CONTAINS
    SUBROUTINE init_module_driver_constants

@@ -217,13 +217,13 @@ CONTAINS
                       timedbg, wgsts_wbdswsstres,                                                     &
                       londbg, latdbg,                                                                 &
                       idbg, jdbg,                                                                     &
-#ifdef CDXWRF
-#if CDXWRF>=3
+!#ifdef CDXWRF
+!#if CDXWRF>=3
                       Nhtasrng, Nhhursrng, Nltasrng, Nlhursrng, Nwbdsrng, Nwssrng,                    &
                       Nhtashursrng, Nltashursrng, Nwbdswssrng,                                        &
                       tashrng, hurshrng, taslrng, hurslrng,  wbdsrng, wssrng,                         &
-#endif
-#endif
+!#endif
+!#endif
                    ! Input
                       lon, lat,                                                                       &
                       cldfra, p8w, p, pb,                                                             &
@@ -249,17 +249,17 @@ CONTAINS
                       sr,                                                                             &
                       chs, cdm, br, zol,                                                              &
                       fracsoil10cm,                                                                   &
-#ifdef CDXWRF
-#if CDXWRF>=1
-#endif
+!#ifdef CDXWRF
+!#if CDXWRF>=1
+!#endif
 
-#if CDXWRF>=4
+!#if CDXWRF>=4
                       diabh,                                                                          &
                       qvttend, qcttend, qrttend, qsttend, qittend, qgttend, qhttend,                  &
                       qvhadv, qchadv, qrhadv, qshadv, qihadv, qghadv, qhhadv,                         &
                       qvzadv, qczadv, qrzadv, qszadv, qizadv, qgzadv, qhzadv,                         &
-#endif
-#endif
+!#endif
+!#endif
                    ! Output
                       cltmean, cllmean, clmmean, clhmean,                                             &
                       prw, clwvi, clivi,                                                              &
@@ -288,8 +288,8 @@ CONTAINS
                       flxpr, flxprl, flxprc, flxprsh, flxprsn, snw,                                   &
                       rsdt, rsut, rlut,                                                               &
                       tas_hm, qvs_hm,                                                                 &
-#ifdef CDXWRF
-#if CDXWRF>=1
+!#ifdef CDXWRF
+!#if CDXWRF>=1
                       clgvi, clhvi,                                                                   &
                       zmla,                                                                           &
                       capemin, cinmin, zlfcmin, plfcmin,                                              &
@@ -298,14 +298,14 @@ CONTAINS
                       iutmean, ivtmean,                                                               &
                       zeroith,                                                                        &
                       lidxmin, lidxmax, lidxmean,                                                     &
-#endif
-#if CDXWRF>=2
+!#endif
+!#if CDXWRF>=2
                       ua, va, ws, zg, ta, press, hur, hus,                                            &
                       tfog, fogvisbltymin, fogvisbltymax, fogvisbltymean,                             &
                       tdsmin, tdsmax, tdsmean,                                                        &
                       twsmin, twsmax, twsmean,                                                        &
-#endif
-#if CDXWRF>=4
+!#endif
+!#if CDXWRF>=4
                    ! Water-budget
                       wbacdh,                                                                         &
                       wbacpw, wbacpwc, wbacpwr, wbacpws, wbacpwi, wbacpwg, wbacpwh,                   &
@@ -319,11 +319,11 @@ CONTAINS
                       wbacpwli,wbacpwmi,wbacpwhi,wbacfli,wbacfmi, wbacfhi, wbaczli, wbaczmi, wbaczhi, &
                       wbacpwlg,wbacpwmg,wbacpwhg,wbacflg,wbacfmg, wbacfhg, wbaczlg, wbaczmg, wbaczhg, &
                       wbacpwlh,wbacpwmh,wbacpwhh,wbacflh,wbacfmh, wbacfhh, wbaczlh, wbaczmh, wbaczhh, &
-#endif
-#if CDXWRF>=3
+!#endif
+!#if CDXWRF>=3
                       tashurstreshighres, tashurstreslowres, wbdswsstres,                             &
-#endif
-#endif
+!#endif
+!#endif
                       ids,ide, jds,jde, kds,kde,                                                      &
                       ims,ime, jms,jme, kms,kme,                                                      &
                       ips,ipe, jps,jpe, kps,kpe,                                                      & ! patch  dims
@@ -336,15 +336,15 @@ CONTAINS
 !                      wsgs, ugustwind, vgustwind, gustpoint,                                          &
 !                      totwsgs, totugustwind, totvgustwind, gustpoint,                                 &
 !                      potevap, potevapogen,                                                           & 
-#ifdef CDXWRF
-#if CDXWRF>=1
+!#ifdef CDXWRF
+!#if CDXWRF>=1
 !                      cape, cin, zlfc, plfc, lidx,                                                    &
-#endif
-#if CDXWRF>=2
+!#endif
+!#if CDXWRF>=2
 !                      fog, fogvisblty,                                                                & 
 !                      tds, tws                                                                        & 
-#endif
-#endif
+!#endif
+!#endif
 !! End of INSTVALS
                     )
 
@@ -662,11 +662,11 @@ CONTAINS
 
   REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(in)   :: cldfra, p8w, p, pb, qv, qc, qr, qs, qi,   &
     qg, qh, t, thp, ph, phb, p_phy, u, v, z, rho
-#ifdef CDXWRF
-#if CDXWRF>=1
-#endif
+!#ifdef CDXWRF
+!#if CDXWRF>=1
+!#endif
 
-#if CDXWRF>=4
+!#if CDXWRF>=4
   REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(in)   :: diabh
   REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(in)   :: qvttend, qcttend, qrttend, qsttend,       &
     qittend, qgttend, qhttend
@@ -674,8 +674,8 @@ CONTAINS
     qghadv, qhhadv
   REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(in)   :: qvzadv, qczadv, qrzadv, qszadv, qizadv,   &
     qgzadv, qhzadv
-#endif
-#if CDXWRF>=3
+!#endif
+!#if CDXWRF>=3
   INTEGER, INTENT(in)                                    :: Nhtasrng, Nhhursrng, Nltasrng, Nlhursrng, &
     Nwbdsrng, Nwssrng
   INTEGER, INTENT(in)                                    :: Nhtashursrng, Nltashursrng, Nwbdswssrng
@@ -685,8 +685,8 @@ CONTAINS
   REAL, DIMENSION(Nlhursrng), INTENT(in)                 :: hurslrng
   REAL, DIMENSION(Nwbdsrng), INTENT(in)                  :: wbdsrng
   REAL, DIMENSION(Nwssrng), INTENT(in)                   :: wssrng
-#endif
-#endif
+!#endif
+!#endif
   REAL, DIMENSION(ims:ime,jms:jme), INTENT(in)           :: lon, lat
   REAL, DIMENSION(ims:ime,jms:jme), INTENT(in)           :: mu, mub, sina, cosa
   REAL, DIMENSION(kms:kme), INTENT(in)                   :: deta
@@ -732,11 +732,11 @@ CONTAINS
   REAL, DIMENSION(ims:ime,jms:jme), INTENT(inout)        :: pclt, pcll, pclm, pclh
   REAL, DIMENSION(ims:ime,jms:jme), INTENT(inout)        :: cltmean, cllmean, clmmean, clhmean
   REAL, DIMENSION(ims:ime,jms:jme), INTENT(out)          :: prw, clwvi, clivi
-#ifdef CDXWRF
+!#ifdef CDXWRF
+!!#if CDXWRF>=1
+!!  REAL, DIMENSION(ims:ime,kms:kme,jms:jme)               :: ta, press, zg, hur
+!!#endif
 !#if CDXWRF>=1
-!  REAL, DIMENSION(ims:ime,kms:kme,jms:jme)               :: ta, press, zg, hur
-!#endif
-#if CDXWRF>=1
   REAL, DIMENSION(ims:ime,jms:jme), INTENT(out)          :: zmla
   REAL, DIMENSION(ims:ime,jms:jme), INTENT(out)          :: clgvi, clhvi
   REAL, DIMENSION(ims:ime,jms:jme), INTENT(inout)        :: capemin, cinmin, zlfcmin, plfcmin
@@ -745,15 +745,15 @@ CONTAINS
     lidxmin, lidxmax, lidxmean
   REAL, DIMENSION(ims:ime,jms:jme)                       :: iutmean, ivtmean
   REAL, DIMENSION(ims:ime,jms:jme)                       :: zeroith
-#endif
-#if CDXWRF>=2
+!#endif
+!#if CDXWRF>=2
   REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(out)  :: ua, va, ta, press, zg, hur, ws, hus
   REAL, DIMENSION(ims:ime,jms:jme), INTENT(inout)        :: tfog, fogvisbltymin, fogvisbltymax,       &
     fogvisbltymean
   REAL, DIMENSION(ims:ime,jms:jme), INTENT(inout)        :: tdsmin, tdsmax, tdsmean
   REAL, DIMENSION(ims:ime,jms:jme), INTENT(inout)        :: twsmin, twsmax, twsmean
-#endif
-#if CDXWRF>=4
+!#endif
+!#if CDXWRF>=4
   REAL, DIMENSION(ims:ime,jms:jme), INTENT(inout)        :: wbacdh
   REAL, DIMENSION(ims:ime,jms:jme), INTENT(inout)        :: wbacpw, wbacpwc, wbacpwr, wbacpws,        &
     wbacpwi, wbacpwg, wbacpwh
@@ -771,22 +771,22 @@ CONTAINS
   REAL, DIMENSION(ims:ime,jms:jme), INTENT(inout)        :: wbaczlv, wbaczmv, wbaczhv,                &
     wbaczlc, wbaczmc, wbaczhc, wbaczlr, wbaczmr, wbaczhr, wbaczls, wbaczms, wbaczhs,                  &
     wbaczli, wbaczmi, wbaczhi, wbaczlg, wbaczmg, wbaczhg, wbaczlh, wbaczmh, wbaczhh
-#endif
-#if CDXWRF>=3
-!  REAL, DIMENSION(ims:ime,jms:jme,Nhtasrng,Nhhursrng),                                                &
-!    INTENT(inout)                                        :: tashurstreshighres
-!  REAL, DIMENSION(ims:ime,jms:jme,Nltasrng,Nlhursrng),                                                &
-!    INTENT(inout)                                        :: tashurstreslowres
+!#endif
+!#if CDXWRF>=3
+!!  REAL, DIMENSION(ims:ime,jms:jme,Nhtasrng,Nhhursrng),                                                &
+!!    INTENT(inout)                                        :: tashurstreshighres
+!!  REAL, DIMENSION(ims:ime,jms:jme,Nltasrng,Nlhursrng),                                                &
+!!    INTENT(inout)                                        :: tashurstreslowres
   REAL, DIMENSION(ims:ime,Nhtashursrng,jms:jme),                                                      &
     INTENT(inout)                                        :: tashurstreshighres
   REAL, DIMENSION(ims:ime,Nltashursrng,jms:jme),                                                      &
     INTENT(inout)                                        :: tashurstreslowres
   REAL, DIMENSION(ims:ime,Nwbdswssrng,jms:jme),                                                       &
     INTENT(inout)                                        :: wbdswsstres
-#endif
-#else
-  REAL, DIMENSION(ims:ime,kms:kme,jms:jme)               :: ta, press, zg
-#endif
+!#endif
+!#else
+!  REAL, DIMENSION(ims:ime,kms:kme,jms:jme)               :: ta, press, zg
+!#endif
   REAL, DIMENSION(ims:ime,jms:jme), INTENT(out)          :: uas, vas, wss, wbds, hurs, huss
   REAL, DIMENSION(ims:ime,jms:jme), INTENT(out)          :: psl
   REAL, DIMENSION(ims:ime,jms:jme), INTENT(inout)        :: wsgsmax, ugsmax, vgsmax, percengust
@@ -816,25 +816,25 @@ CONTAINS
   REAL, DIMENSION(ims:ime,jms:jme), INTENT(inout)        :: rsdt, rsut, rlut
   REAL, DIMENSION(ims:ime,jms:jme), INTENT(inout)        :: tas_hm, qvs_hm
 
-!! INSTVALS: Instantaneous values (uncomment and recompile)
-!  REAL, DIMENSION(ims:ime,jms:jme), INTENT(out)          :: clt, cll, clm, clh
-!  REAL, DIMENSION(ims:ime,jms:jme), INTENT(out)          :: wsgs, ugustwind, vgustwind
-!  INTEGER, DIMENSION(ims:ime,jms:jme), INTENT(out)       :: gustpoint
-!  REAL, DIMENSION(ims:ime,jms:jme), INTENT(out)          :: totwsgs, totugustwind, totvgustwind
-!  INTEGER, DIMENSION(ims:ime,jms:jme), INTENT(out)       :: totgustpoint
-!  REAL, DIMENSION(ims:ime,jms:jme), INTENT(out)          :: potevap, potevapgen
-#ifdef CDXWRF
-#if CDXWRF>=1
-!  REAL, DIMENSION(ims:ime,jms:jme), INTENT(out)          :: cape, cin, zlfc, plfc, lidx
-!  REAL, DIMENSION(ims:ime,jms:jme), INTENT(out)          :: iut, ivt
-#endif
-#if CDXWRF>=2
-!  INTEGER, DIMENSION(ims:ime,jms:jme), INTENT(out)       :: fog
-!  REAL, DIMENSION(ims:ime,jms:jme), INTENT(out)          :: vis
-!  REAL, DIMENSION(ims:ime,jms:jme), INTENT(out)          :: tds
-!  REAL, DIMENSION(ims:ime,jms:jme), INTENT(out)          :: tws
-#endif
-#endif
+!!! INSTVALS: Instantaneous values (uncomment and recompile)
+!!  REAL, DIMENSION(ims:ime,jms:jme), INTENT(out)          :: clt, cll, clm, clh
+!!  REAL, DIMENSION(ims:ime,jms:jme), INTENT(out)          :: wsgs, ugustwind, vgustwind
+!!  INTEGER, DIMENSION(ims:ime,jms:jme), INTENT(out)       :: gustpoint
+!!  REAL, DIMENSION(ims:ime,jms:jme), INTENT(out)          :: totwsgs, totugustwind, totvgustwind
+!!  INTEGER, DIMENSION(ims:ime,jms:jme), INTENT(out)       :: totgustpoint
+!!  REAL, DIMENSION(ims:ime,jms:jme), INTENT(out)          :: potevap, potevapgen
+!#ifdef CDXWRF
+!#if CDXWRF>=1
+!!  REAL, DIMENSION(ims:ime,jms:jme), INTENT(out)          :: cape, cin, zlfc, plfc, lidx
+!!  REAL, DIMENSION(ims:ime,jms:jme), INTENT(out)          :: iut, ivt
+!#endif
+!#if CDXWRF>=2
+!!  INTEGER, DIMENSION(ims:ime,jms:jme), INTENT(out)       :: fog
+!!  REAL, DIMENSION(ims:ime,jms:jme), INTENT(out)          :: vis
+!!  REAL, DIMENSION(ims:ime,jms:jme), INTENT(out)          :: tds
+!!  REAL, DIMENSION(ims:ime,jms:jme), INTENT(out)          :: tws
+!#endif
+!#endif
 !! INSTVALS: comment these lines
   REAL, DIMENSION(ims:ime,jms:jme)                       :: clt, cll, clm, clh
   REAL, DIMENSION(ims:ime,jms:jme)                       :: wsgs, ugustwind, vgustwind
@@ -845,24 +845,24 @@ CONTAINS
   REAL, DIMENSION(ims:ime,jms:jme)                       :: wsgshp, ugustwindhp, vgustwindhp
   INTEGER, DIMENSION(ims:ime,jms:jme)                    :: gustpointb01, gustpointhp
   REAL, DIMENSION(ims:ime,jms:jme)                       :: potevap, potevapgen
-#ifdef CDXWRF
-#if CDXWRF>=1
+!#ifdef CDXWRF
+!#if CDXWRF>=1
   REAL, DIMENSION(ims:ime,jms:jme)                       :: cape, cin, zlfc, plfc, lidx
   REAL, DIMENSION(ims:ime,jms:jme)                       :: iut, ivt  
-#endif
-#if CDXWRF>=2
+!#endif
+!#if CDXWRF>=2
   INTEGER, DIMENSION(ims:ime,jms:jme)                    :: fog
   REAL, DIMENSION(ims:ime,jms:jme)                       :: vis
   REAL, DIMENSION(ims:ime,jms:jme)                       :: tds
   REAL, DIMENSION(ims:ime,jms:jme)                       :: tws
-#endif
-#if CDXWRF>=3
+!#endif
+!#if CDXWRF>=3
   INTEGER                                                :: itas, ihurs, iwbds, iwss
-#endif
-#if CDXWRF>=4
-#endif
-#endif
-!! End of INSTVALS
+!#endif
+!#if CDXWRF>=4
+!#endif
+!#endif
+!!! End of INSTVALS
 
 ! LOCAL  VAR
 
@@ -881,23 +881,23 @@ CONTAINS
   REAL, DIMENSION(kms:kme)                               :: qvar, zagl, ri, qsolid
   REAL, DIMENSION(ims:ime,kms:kme+1,jms:jme)             :: stzg
   REAL, DIMENSION(ims:ime,jms:jme)                       :: smoothp
-#ifdef CDXWRF
-#if CDXWRF>=1
+!#ifdef CDXWRF
+!#if CDXWRF>=1
 
-#endif
-#if CDXWRF>=3
+!#endif
+!#if CDXWRF>=3
   REAL                                                   :: uuas, vvas
   REAL, DIMENSION(ims:ime,jms:jme)                       :: wbdsv, wssv
-#endif
-#if CDXWRF>=4
+!#endif
+!#if CDXWRF>=4
   REAL, DIMENSION(kms:kme,n_moist)                       :: qvarttend, qvarhadv, qvarzadv
   REAL, DIMENSION(ims:ime,kms:kme,jms:jme,n_moist)       :: pwqvar, fqvar, zqvar
   REAL, DIMENSION(n_moist)                               :: acpwqvar, acfqvar, aczqvar
   REAL, DIMENSION(n_moist)                               :: acpwlqvar, acpwmqvar, acpwhqvar
   REAL, DIMENSION(n_moist)                               :: acflqvar, acfmqvar, acfhqvar
   REAL, DIMENSION(n_moist)                               :: aczlqvar, aczmqvar, aczhqvar
-#endif
-#endif
+!#endif
+!#endif
   INTEGER                                                :: ostat
   REAL, DIMENSION(kms:kme)                               :: zsfc
   REAL                                                   :: prv
@@ -1192,8 +1192,8 @@ CONTAINS
           potevapgen(i,j) = 0.
         END IF
 
-#ifdef CDXWRF
-#if CDXWRF>=1
+!#ifdef CDXWRF
+!#if CDXWRF>=1
         ! relative humidity
         CALL var_hur(t(i,:,j), press(i,:,j), qv(i,:,j), dimz, hur(i,:,j))
         ! Diagnostics of relative humidity from AFWA's module
@@ -1234,9 +1234,9 @@ CONTAINS
           iut(i,j) = 0.
           ivt(i,j) = 0.
         END IF
-#endif
+!#endif
 
-#if CDXWRF>=2
+!#if CDXWRF>=2
         ! 2m dew point temperature
         CALL var_tds(hurs(i,j), t2(i,j), tds(i,j))
 
@@ -1297,8 +1297,8 @@ CONTAINS
           vis(i,j) = 0.
         END IF
 
-#endif
-#if CDXWRF>=3
+!#endif
+!#if CDXWRF>=3
         ! Computing wind direction from where it blows and speed
         ! Towards it blows
         ! Avoiding seg faults
@@ -1325,8 +1325,8 @@ CONTAINS
         ! Getting first bin [ -pi/(2(Nwbdsrng-1)), pi/(2(Nwbdsrng-1)) )
         IF (wbdsv(i,j) >= piconst*(2.-1./(2.*(Nwbdsrng-1)))) wbdsv(i,j) = wbdsv(i,j) - 2.*piconst
         
-#endif
-#if CDXWRF>=4
+!#endif
+!#if CDXWRF>=4
         ! Water budget
         IF (wbout == 1) THEN
           WRITE(msg,*)'    ' // TRIM(fname) // ' Water species: vapor:', m_qv,' cloud:', m_qc,        &
@@ -1363,8 +1363,8 @@ CONTAINS
             pwqvar(i,:,j,:), fqvar(i,:,j,:), zqvar(i,:,j,:))
         END IF
 
-#endif
-#endif
+!#endif
+!#endif
 
         ijdbg = .FALSE.
       END DO
@@ -1502,8 +1502,8 @@ CONTAINS
             mrsflmean(i,k,j) = mrsfl(i,k,j)
           END DO
 
-#ifdef CDXWRF
-#if CDXWRF>=1
+!#ifdef CDXWRF
+!#if CDXWRF>=1
           ! Extremes of convection indices
           IF (convxtrm_diag == 1) THEN
             capemin(i,j) = cape(i,j)
@@ -1549,9 +1549,9 @@ CONTAINS
           twsmin(i,j) = tws(i,j)
           twsmax(i,j) = tws(i,j)
           twsmean(i,j) = tws(i,j)
-#endif
+!#endif
 
-#if CDXWRF>=4
+!#if CDXWRF>=4
           IF (wbout == 1) THEN
             wbacdh(i,j) = SUM(diabh(i,:,j))*dt
             ! Vertical intervals
@@ -1619,8 +1619,8 @@ CONTAINS
               wbaczhg(i,j), wbaczhh(i,j))
           END IF
 
-#endif
-#if CDXWRF>=3
+!#endif
+!#if CDXWRF>=3
           ! temporal residence
           ! Checking consistency
           ! L. Fita, January 2024. Removed for efficiency
@@ -1650,8 +1650,8 @@ CONTAINS
           wbdswsstres(i,:,j) = 0.            
           wbdswsstres(i,(iwbds-1)*Nwssrng+iwss,j) = dt          
 
-#endif
-#endif
+!#endif
+!#endif
 
           IF (dbg_level >= 75 .AND. ijdbg .AND. tdbg==0) THEN
             WRITE(msg,*) '  ' // TRIM(fname) // ' ',i,' ,',j,' : first value checks _______' 
@@ -1750,8 +1750,8 @@ CONTAINS
             CALL wrf_debug(75,msg)
             WRITE(msg,*)'    lwupt:', lwupt(i,j), ' rlut:', rlut(i,j)
             CALL wrf_debug(75,msg)
-#ifdef CDXWRF
-#if CDXWRF>=1
+!#ifdef CDXWRF
+!#if CDXWRF>=1
             IF (convxtrm_diag == 1) THEN
               WRITE(msg,*) '    cape:', cape(i,j), ' cin:', cin(i,j),' zlfc:', zlfc(i,j), ' plfc:',   &
                 plfc(i,j), 'lidx:', lidx(i,j)
@@ -1767,9 +1767,9 @@ CONTAINS
             CALL wrf_debug(75,msg)
             WRITE(msg,*)'    tws:', tws(i,j), ' min:', twsmin(i,j), ' max:', twsmax(i,j),             &
               ' mean:', twsmean(i,j)
-#endif
+!#endif
 
-#if CDXWRF>=4
+!#if CDXWRF>=4
             WRITE(msg,*) '    diabh:', SUM(diabh(i,:,j))*dt, ' wbacdh:', wbacdh(i,j)
             CALL wrf_debug(75,msg)
             WRITE(msg,*) '      dhl:', wbacdhl(i,j), 'dhm:', wbacdhm(i,j), 'dhh:', wbacdhh(i,j)
@@ -1789,15 +1789,15 @@ CONTAINS
             WRITE(msg,*)'       qv: zh', varlmh(3), ' aczhv:', wbaczhv(i,j)
             CALL wrf_debug(75,msg)
 
-#endif
-#if CDXWRF>=3
+!#endif
+!#if CDXWRF>=3
             CALL wrf_debug(75,msg)
             WRITE(msg,*)'    tashurstreshighres: ',tashurstreshighres(i,INT(Nhtasrng/2*Nhhursrng/2),j),&
               ' tashurstreslowres: ', tashurstreslowres(i,INT(Nltasrng/2*Nlhursrng/2),j),              &
               ' wbdswsstres: ', wbdswsstres(i,INT(Nwbdsrng/2*Nwssrng/2),j)
             CALL wrf_debug(75,msg)
-#endif
-#endif
+!#endif
+!#endif
             !CALL wrf_error_fatal(msg)
           END IF
 
@@ -1896,8 +1896,8 @@ CONTAINS
           rsut(i,j) = rsut(i,j) + swupt(i,j)
           rlut(i,j) = rlut(i,j) + lwupt(i,j)
 
-#ifdef CDXWRF
-#if CDXWRF>=1
+!#ifdef CDXWRF
+!#if CDXWRF>=1
           ! Extremes of convection indices
           IF (convxtrm_diag == 1) THEN
             IF (cape(i,j) < capemin(i,j)) capemin(i,j) = cape(i,j)
@@ -1938,9 +1938,9 @@ CONTAINS
           IF (twsmin(i,j) > tws(i,j)) twsmin(i,j) = tws(i,j)
           IF (twsmax(i,j) < tws(i,j)) twsmax(i,j) = tws(i,j)
           twsmean(i,j) = twsmean(i,j) + tws(i,j)
-#endif
+!#endif
 
-#if CDXWRF>=4
+!#if CDXWRF>=4
 
           IF (wbout == 1) THEN
             wbacdh(i,j) = wbacdh(i,j) + SUM(diabh(i,:,j))*dt
@@ -2039,8 +2039,8 @@ CONTAINS
               wbaczhv(i,j), wbaczhc(i,j), wbaczhr(i,j), wbaczhs(i,j), wbaczhi(i,j),                   &
               wbaczhg(i,j), wbaczhh(i,j))
           END IF
-#endif
-#if CDXWRF>=3
+!#endif
+!#if CDXWRF>=3
           ! temporal residence
           ! High res tas, hurs
           CALL var_residencetime_2var2D(t2(i,j), hurs(i,j), Nhtasrng, Nhhursrng, tashrng, hurshrng,   &
@@ -2094,8 +2094,8 @@ CONTAINS
 !            PRINT *,'  all values:', tashurstreslowres(i,:,j)
           END IF
 
-#endif
-#endif
+!#endif
+!#endif
 
           IF (dbg_level >= 75 .AND. ijdbg .AND. tdbg==0) THEN
             WRITE(msg,*) '  ' // TRIM(fname) // ' ',i,' ,',j,' : intermediate checks _______' 
@@ -2188,8 +2188,8 @@ CONTAINS
             WRITE(msg,*)'    lwupt:', lwupt(i,j), ' rlut:', rlut(i,j)
             CALL wrf_debug(75,msg)
 
-#ifdef CDXWRF
-#if CDXWRF>=1
+!#ifdef CDXWRF
+!#if CDXWRF>=1
             IF (convxtrm_diag == 1) THEN
               WRITE(msg,*) '    cape:', cape(i,j), ' capemin:', capemin(i,j), ' capemax:',            &
                 capemax(i,j), ' capemean:', capemean(i,j)
@@ -2218,8 +2218,8 @@ CONTAINS
             WRITE(msg,*)'    tws:', tws(i,j), ' min:', twsmin(i,j), ' max:', twsmax(i,j),             &
               ' mean:', twsmean(i,j)
             CALL wrf_debug(75,msg)
-#endif
-#if CDXWRF>=4
+!#endif
+!#if CDXWRF>=4
             WRITE(msg,*) '    diabh:', SUM(diabh(i,:,j))*dt, ' wbacdh:', wbacdh(i,j)
             CALL wrf_debug(75,msg)
             WRITE(msg,*) '      dhl:', wbacdhl(i,j), 'dhm:', wbacdhm(i,j), 'dhh:', wbacdhh(i,j)
@@ -2238,14 +2238,14 @@ CONTAINS
             CALL wrf_debug(75,msg)
             WRITE(msg,*)'       qv: zh', varlmh(3), ' aczhv:', wbaczhv(i,j)
             CALL wrf_debug(75,msg)
-#endif
-#if CDXWRF>=3
+!#endif
+!#if CDXWRF>=3
             WRITE(msg,*)'    tashurstreshighres: ',tashurstreshighres(i,INT(Nhtasrng/2*Nhhursrng/2),j),&
               ' tashurstreslowres: ', tashurstreslowres(i,INT(Nltasrng/2*Nlhursrng/2),j),              &
               ' wbdswsstres: ', wbdswsstres(i,INT(Nwbdsrng/2*Nwssrng/2),j)
             CALL wrf_debug(75,msg)
-#endif
-#endif
+!#endif
+!#endif
 
             !CALL wrf_error_fatal(msg)
           END IF
@@ -2429,8 +2429,8 @@ CONTAINS
           rsut(i,j) = rsut(i,j)/nsteps
           rlut(i,j) = rlut(i,j)/nsteps
 
-#ifdef CDXWRF
-#if CDXWRF>=1
+!#ifdef CDXWRF
+!#if CDXWRF>=1
           ! clgvi: Total graupel water path
           qvar = qg(i,:,j)
           CALL var_massvertint(qvar, mutot(i,j), dimz, deta, clgvi(i,j))
@@ -2487,8 +2487,8 @@ CONTAINS
           zagl = z(i,:,j)-hgt(i,j)
           zeroith(i,j) = zero_isotherm1D(dimz, t(i,:,j), zagl(:))
           
-#endif
-#if CDXWRF>=2
+!#endif
+!#if CDXWRF>=2
           ! specific humidity
           CALL var_hus(qv(i,:,j), dimz, hus(i,:,j))
 
@@ -2507,8 +2507,8 @@ CONTAINS
           ! tws
           twsmean(i,j) = twsmean(i,j)/nsteps
 
-#endif
-#endif
+!#endif
+!#endif
 
           IF (dbg_level >= 75 .AND. ijdbg) THEN
             WRITE(msg,*) '  ' // TRIM(fname) // ' ',i,' ,',j,' : final checks _______' 
@@ -2603,8 +2603,8 @@ CONTAINS
             WRITE(msg,*)'    snw:', snw(i,j), ' rsdt:', rsdt(i,j), ' rsut:', rsut(i,j), ' rlut:',     &
               rlut(i,j)
             CALL wrf_debug(75,msg)
-#ifdef CDXWRF
-#if CDXWRF>=1
+!#ifdef CDXWRF
+!#if CDXWRF>=1
             WRITE(msg,*) '    clgvi:', clgvi(i,j), ' clhvi:', clhvi(i,j)
             CALL wrf_debug(75,msg)
             WRITE(msg,*) '    zmla_gen:', zmla(i,j)
@@ -2618,8 +2618,8 @@ CONTAINS
             CALL wrf_debug(75,msg)            
             WRITE(msg,*) '    0-isotherm:', zeroith(i,j)
             CALL wrf_debug(75,msg)            
-#endif
-#if CDXWRF>=2
+!#endif
+!#if CDXWRF>=2
             WRITE(msg,*) '    ua', ua(i,k2,j), ' va:', va(i,k2,j), ' ws:', ws(i,k2,j),' ta:',         &
               ta(i,k2,j), ' press:', press(i,k2,j), ' zg:', zg(i,k2,j)
             CALL wrf_debug(75,msg)
@@ -2637,8 +2637,8 @@ CONTAINS
             WRITE(msg,*)'    tws:', tws(i,j), ' min:', twsmin(i,j), ' max:', twsmax(i,j),             &
               ' mean:', twsmean(i,j)
             CALL wrf_debug(75,msg)
-#endif
-#if CDXWRF >=4
+!#endif
+!#if CDXWRF >=4
             WRITE(msg,*) '    acdh:', wbacdh(i,j), ' dhl:', wbacdhl(i,j), 'dhm:', wbacdhm(i,j),       &
               'dhh:', wbacdhh(i,j)
             CALL wrf_debug(75,msg)
@@ -2652,8 +2652,8 @@ CONTAINS
             WRITE(msg,*) '    WB acz:', wbacz(i,j), 'aczc:', wbaczc(i,j), 'aczr:', wbaczr(i,j),       &
               'acfs:', wbaczs(i,j), 'acfi:', wbaczi(i,j), 'aczg:', wbaczg(i,j), 'aczh:', wbaczh(i,j)
             CALL wrf_debug(75,msg)
-#endif
-#endif
+!#endif
+!#endif
           END IF
 
           ijdbg = .FALSE.
@@ -2666,7 +2666,7 @@ CONTAINS
 
   END SUBROUTINE cordex_output_calc
 
-#ifdef CDXWRF
+!#ifdef CDXWRF
 ! CDXWRF - high frequency
 !! 
   SUBROUTINE cordex_hf_output_calc(                                                                   &
@@ -2683,9 +2683,9 @@ CONTAINS
                       prc, prnc, prsh,                                                                &
                       rho,                                                                            &
                    ! Output
-#if CDXWRF>=1
+!#if CDXWRF>=1
                       flxpr, colmax,                                                                  &
-#endif
+!#endif
                       ids,ide, jds,jde, kds,kde,                                                      &
                       ims,ime, jms,jme, kms,kme,                                                      &
                       ips,ipe, jps,jpe, kps,kpe,                                                      & ! patch  dims
@@ -2790,9 +2790,9 @@ CONTAINS
   INTEGER, INTENT(in)                                    :: cdxH
   LOGICAL, INTENT(in)                                    :: is_restart, is_output_time
   INTEGER, INTENT(inout)                                 :: nsteps
-#if CDXWRF>=1
+!#if CDXWRF>=1
   REAL, DIMENSION(ims:ime,jms:jme), INTENT(inout)        :: flxpr, colmax
-#endif
+!#endif
 
 ! LOCAL  VAR
 
@@ -2890,10 +2890,10 @@ CONTAINS
         DO j = j_start(ij), j_end(ij)
           IF (ij == 1 .AND. i == i2(ij) .AND. j == j2(ij)) ijdbg = .TRUE.
 
-#if CDXWRF>=1
+!#if CDXWRF>=1
           ! Precipitations
           flxpr(i,j) = prc(i,j) + prnc(i,j) + prsh(i,j)
-#endif
+!#endif
 
           IF (dbg_level >= 75 .AND. ijdbg .AND. tdbg==0) THEN
             WRITE(msg,*) '  ' // TRIM(fname) // ' ',i,' ,',j,' : first value checks _______' 
@@ -2902,10 +2902,10 @@ CONTAINS
             CALL wrf_debug(75,msg)
             WRITE(msg,*) '    nsteps:', nsteps
             CALL wrf_debug(75,msg)
-#if CDXWRF>=1
+!#if CDXWRF>=1
             WRITE(msg,*)'    prc:', prc(i,j), ' prnc:', prnc(i,j), ' prsh:', prsh(i,j), ' flxpr:',    &
               flxpr(i,j)
-#endif
+!#endif
             CALL wrf_debug(75,msg)
           END IF
 
@@ -2926,10 +2926,10 @@ CONTAINS
         DO j = j_start(ij), j_end(ij)
           IF (ij == 1 .AND. i == i2(ij) .AND. j == j2(ij)) ijdbg = .TRUE.
 
-#if CDXWRF>=1
+!#if CDXWRF>=1
           ! Precipitations
           flxpr(i,j) = flxpr(i,j) + prc(i,j) + prnc(i,j) + prsh(i,j)
-#endif
+!#endif
           IF (dbg_level >= 75 .AND. ijdbg .AND. tdbg==0) THEN
             WRITE(msg,*) '  ' // TRIM(fname) // ' ',i,' ,',j,' : intermediate checks _______' 
             CALL wrf_debug(75,msg)
@@ -2937,10 +2937,10 @@ CONTAINS
             CALL wrf_debug(75,msg)
             WRITE(msg,*) '    nsteps:', nsteps
             CALL wrf_debug(75,msg)
-#if CDXWRF>=1
+!#if CDXWRF>=1
             WRITE(msg,*)'    prc:', prc(i,j), ' prnc:', prnc(i,j), ' prsh:', prsh(i,j), ' flxpr:',    &
               flxpr(i,j)
-#endif
+!#endif
             CALL wrf_debug(75,msg)
           END IF
           ijdbg = .FALSE.
@@ -2968,25 +2968,25 @@ CONTAINS
           j1 = MIN(j+1,j_end(ij))
           j_1 = MAX(j-1,j_start(ij))
 
-#if CDXWRF>=1
+!#if CDXWRF>=1
           ! colmax
           CALL var_colmax1D(dimz, rho(i,:,j), t(i,:,j), qr(i,:,j), qs(i,:,j), qg(i,:,j), colmax(i,j))
 
           ! Precipitation
           flxpr(i,j) = flxpr(i,j)/(dt*nsteps)
-#endif
+!#endif
           IF (dbg_level >= 75 .AND. ijdbg .AND. tdbg==0) THEN
             WRITE(msg,*) '  ' // TRIM(fname) // ' ',i,' ,',j,' : final checks _______' 
             CALL wrf_debug(75,msg)
             WRITE(msg,*) '    nsteps:', nsteps
             CALL wrf_debug(75,msg)
-#if CDXWRF>=1
+!#if CDXWRF>=1
             WRITE(msg,*)'    prc:', prc(i,j), ' prnc:', prnc(i,j), ' prsh:', prsh(i,j), ' flxpr:',    &
               flxpr(i,j)
             CALL wrf_debug(75,msg)
             WRITE(msg,*)'    colmax:', colmax(i,j)
             CALL wrf_debug(75,msg)
-#endif
+!#endif
           END IF
 
           ijdbg = .FALSE.
@@ -2998,6 +2998,6 @@ CONTAINS
   END IF
 
   END SUBROUTINE cordex_hf_output_calc
-#endif
+!#endif
 
 END MODULE module_diag_cordex

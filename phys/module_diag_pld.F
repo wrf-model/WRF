@@ -18,7 +18,7 @@ CONTAINS
                     num_press_levels,max_press_levels,press_levels, &
                     p_pl,u_pl,v_pl,t_pl,rh_pl,ght_pl,s_pl,td_pl,    &
                     q_pl,                                           &
-#ifdef CORDEXDIAG
+!#ifdef CORDEXDIAG
                     ! L. Fita, CIMA. March 2018
                     !! Added for CORDEX output
                     sina, cosa,                                     &
@@ -28,16 +28,16 @@ CONTAINS
                     qc_pl, qr_pl, qs_pl, qi_pl, qg_pl, qh_pl,       &  ! v2. Adding other species
                     qv_pl_mc, qc_pl_mc, qr_pl_mc, qs_pl_mc,         &  ! v2. Adding mass-conservative 
                     qi_pl_mc, qg_pl_mc, qh_pl_mc,                   &  
-#endif
+!#endif
                     ids,ide, jds,jde, kds,kde,                      &
                     ims,ime, jms,jme, kms,kme,                      &
                     its,ite, jts,jte, kts,kte                       )
    
       USE module_model_constants
-#ifdef CORDEXDIAG
-! It is not working
-!      USE module_diagvar_cordex, ONLY: massconserv_vinterp1D, presbars_to_hgtbars
-#endif   
+!#ifdef CORDEXDIAG
+!! It is not working
+!!      USE module_diagvar_cordex, ONLY: massconserv_vinterp1D, presbars_to_hgtbars
+!#endif   
       IMPLICIT NONE
    
    
@@ -54,24 +54,24 @@ CONTAINS
       REAL   , INTENT(IN   ) , DIMENSION(ims:ime , kms:kme , jms:jme) :: u,v,w,t,qv,zp,zb,pp,pb,p,pw
       INTEGER, INTENT(IN   )                                          :: num_press_levels, max_press_levels
       REAL   , INTENT(IN   ) , DIMENSION(max_press_levels)            :: press_levels
-#ifdef CORDEXDIAG
+!#ifdef CORDEXDIAG
       REAL                                                            :: p_top
       REAL   , INTENT(IN   ) , DIMENSION(ims:ime , jms:jme)           :: sina, cosa, topo, psfc
       REAL   , INTENT(IN   ) , DIMENSION(ims:ime , kms:kme , jms:jme) :: alt
       REAL   , INTENT(IN   ) , DIMENSION(ims:ime , kms:kme , jms:jme) :: iqc, iqr, iqs, iqi, iqg, iqh
-#endif   
+!#endif   
       !  Output variables
    
       REAL   , INTENT(  OUT) ,  DIMENSION(num_press_levels)                     :: p_pl
       REAL   , INTENT(  OUT) ,  DIMENSION(ims:ime , num_press_levels , jms:jme) :: u_pl,v_pl,t_pl,rh_pl,ght_pl,s_pl,td_pl,q_pl
-#ifdef CORDEXDIAG
+!#ifdef CORDEXDIAG
       REAL   , INTENT(  OUT) ,  DIMENSION(ims:ime , num_press_levels , jms:jme) :: hus_pl, w_pl,      &
         uer_pl, ver_pl, ws_pl
       REAL   , INTENT(  OUT) ,  DIMENSION(ims:ime , num_press_levels , jms:jme) :: qc_pl, qr_pl,      &
         qs_pl, qi_pl, qg_pl, qh_pl
       REAL   , INTENT(  OUT) ,  DIMENSION(ims:ime , num_press_levels , jms:jme) :: qv_pl_mc,          &
         qc_pl_mc, qr_pl_mc, qs_pl_mc, qi_pl_mc, qg_pl_mc, qh_pl_mc
-#endif
+!#endif
    
       !  Local variables
    
@@ -88,7 +88,7 @@ CONTAINS
                  qu, qd     , &
                  eu, ed, em , &
                  du, dd
-#ifdef CORDEXDIAG
+!#ifdef CORDEXDIAG
       INTEGER                                            :: dzstag
       REAL                                               :: wu, wd
       REAL, DIMENSION(kms:kme)                           :: press, zg, massv, rho, ohgts, obthgts
@@ -98,7 +98,7 @@ CONTAINS
       REAL, DIMENSION(num_press_levels)                  :: rhodes, valsdes
       REAL, DIMENSION(kms:kme)                           :: bthgts
 
-#endif
+!#endif
       REAL    :: es, qs
       REAL    :: part, gammas, tvu, tvd
    
@@ -121,7 +121,7 @@ CONTAINS
                s_pl  (i,kp,j) = missing
                td_pl (i,kp,j) = missing
                q_pl  (i,kp,j) = missing
-#ifdef CORDEXDIAG
+!#ifdef CORDEXDIAG
                ! L. Fita. CIMA. March 2018
                hus_pl  (i,kp,j) = missing
                w_pl  (i,kp,j) = missing
@@ -141,7 +141,7 @@ CONTAINS
                qi_pl_mc  (i,kp,j) = missing
                qg_pl_mc  (i,kp,j) = missing
                qh_pl_mc  (i,kp,j) = missing
-#endif
+!#endif
             END DO
          END DO
       END DO
@@ -254,7 +254,7 @@ CONTAINS
                      ed = max(ed, 0.001)   ! water vapor pressure in mb.
                      td_pl(i,kp,j) = t_kelvin + (s1 / ((s2 / log(ed/s3)) - 1.0))
 
-#ifdef CORDEXDIAG
+!#ifdef CORDEXDIAG
                      !  8. Specific humidty (1)
 
                      hus_pl(i,kp,j) = q_pl(i,kp,j) / (1. + q_pl(i,kp,j))
@@ -268,7 +268,7 @@ CONTAINS
 
                      ws_pl(i,kp,j) = SQRT(u_pl(i,kp,j)*u_pl(i,kp,j) + v_pl(i,kp,j)*v_pl(i,kp,j))
 
-#endif
+!#endif
 
                      EXIT ke_loop_half
                   ELSEIF ( ( pd .GE. pm ) .AND. &
@@ -331,7 +331,7 @@ CONTAINS
                      !rh_pl(i,kp,j) = 100. * em * ( pm * 0.01 - es ) / ( es * ( pm * 0.01 - em ) )
                      
                      
-#ifdef CORDEXDIAG
+!#ifdef CORDEXDIAG
                      !  8. Specific humidty (1)
 
                      hus_pl(i,kp,j) = q_pl(i,kp,j) / (1. + q_pl(i,kp,j))
@@ -377,7 +377,7 @@ CONTAINS
                      qd = MAX(iqh(i,ke  ,j),0.)
                      qh_pl(i,kp,j) = ( qu * (pm-pd) + qd * (pu-pm) ) / (pu-pd)
 
-#endif
+!#endif
 
                      ke_h = ke
                      EXIT ke_loop_half
@@ -405,14 +405,14 @@ CONTAINS
                      ght_pl(i,kp,j) = ( zu * (pm-pd) + zd * (pu-pm) ) / (pu-pd)
    
    
-#ifdef CORDEXDIAG
+!#ifdef CORDEXDIAG
                      ! L. Fita. CIMA. March 2018
                      !  2. Vertical wind speed (ms-1)
    
                      wu = w(i,ke+1,j)
                      wd = w(i,ke  ,j)
                      w_pl(i,kp,j) = ( wu * (pm-pd) + wd * (pu-pm) ) / (pu-pd)
-#endif
+!#endif
 
                      ke_f = ke
                      EXIT ke_loop_full
@@ -421,7 +421,7 @@ CONTAINS
    
             END DO kp_loop
 
-#ifdef CORDEXDIAG
+!#ifdef CORDEXDIAG
             ! Mass-conservative vertical interpolation of water species
 
             ! Transforming p-level bars to heights
@@ -494,14 +494,14 @@ CONTAINS
               bthgts(1:num_press_levels+1), valsdes(1:Nright))
             qh_pl_mc(i,fstrightlevel:fstrightlevel+Nright-1,j) = valsdes(1:Nright) / rhodes(1:Nright)
 
-#endif
+!#endif
 
          END DO i_loop
       END DO j_loop
 
    END SUBROUTINE pld
 
-#ifdef CORDEXDIAG
+!#ifdef CORDEXDIAG
 ! L. Fita, February 2023
 ! this should not be here, but it seems that the order of compilation does not allow to do it in another
 !   way.
@@ -807,7 +807,7 @@ CONTAINS
 
   END FUNCTION interpolate1D
 
-#endif
+!#endif
 
 END MODULE module_diag_pld
 #endif

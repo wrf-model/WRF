@@ -225,10 +225,10 @@ SUBROUTINE solve_em ( grid , config_flags  &
    end interface
 #endif
 
-#ifdef CORDEXDIAG
+!#ifdef CORDEXDIAG
    INTEGER                                               :: i2, j2, k2
    INTEGER                                               :: ix, iy, iz
-#endif
+!#endif
 
 ! Define benchmarking timers if -DBENCH is compiled
 #include "bench_solve_em_def.h"
@@ -2200,9 +2200,9 @@ BENCH_END(small_step_finish_tim)
 !</DESCRIPTION>
 
 
-#ifdef CORDEXDIAG
-#ifdef CDXWRF
-#if CDXWRF>=4
+!#ifdef CORDEXDIAG
+!#ifdef CDXWRF
+!#if CDXWRF>=4
 
        ! L. Fita, CIMA. Feb. 2018
        ! Initializing values it gives unitialize values on that unconsidered
@@ -2235,9 +2235,9 @@ BENCH_END(small_step_finish_tim)
          END DO
        END DO moist_tile_loop_ini
        !$OMP END PARALLEL DO
-#endif
-#endif
-#endif
+!#endif
+!#endif
+!#endif
        moist_scalar_advance: IF (num_3d_m >= PARAM_FIRST_SCALAR )  THEN
 
          moist_variable_loop: DO im = PARAM_FIRST_SCALAR, num_3d_m
@@ -2252,15 +2252,15 @@ BENCH_END(small_step_finish_tim)
              moist_tile_loop_1: DO ij = 1 , grid%num_tiles
 
                CALL wrf_debug ( 200 , ' call rk_scalar_tend' )
-#ifdef CORDEXDIAG
-#ifdef CDXWRF
-#if CDXWRF>=4
+!#ifdef CORDEXDIAG
+!#ifdef CDXWRF
+!#if CDXWRF>=4
                tenddec = .true.
-#endif
-#endif
-#else
-               tenddec = .false.
-#endif
+!#endif
+!#endif
+!#else
+!               tenddec = .false.
+!#endif
 
 BENCH_START(rk_scalar_tend_tim)
                CALL rk_scalar_tend (  im, im, config_flags, tenddec,         & 
@@ -2354,29 +2354,29 @@ BENCH_END(rlx_bdy_scalar_tim)
              moist_tile_loop_2: DO ij = 1 , grid%num_tiles
 
                CALL wrf_debug ( 200 , ' call rk_update_scalar' )
-#ifdef CORDEXDIAG
-#ifdef CDXWRF
-#if CDXWRF>=4
+!#ifdef CORDEXDIAG
+!#ifdef CDXWRF
+!#if CDXWRF>=4
                tenddec = .true.
-#endif
-#endif
-#else
-               tenddec = .false.
-#endif
+!#endif
+!#endif
+!#else
+!               tenddec = .false.
+!#endif
 
 BENCH_START(update_scal_tim)
                CALL rk_update_scalar( scs=im, sce=im,                                  &
                                scalar_1=moist_old(ims,kms,jms,im),                     &
                                scalar_2=moist(ims,kms,jms,im),                         &
                                sc_tend=moist_tend(ims,kms,jms,im),                     &
-#ifdef CORDEXDIAG
-#ifdef CDXWRF
-#if CDXWRF>=4
+!#ifdef CORDEXDIAG
+!#ifdef CDXWRF
+!#if CDXWRF>=4
                                advh_t=advh_t(ims:ime,kms:kme,jms:jme,1),               &
                                advz_t=advz_t(ims:ime,kms:kme,jms:jme,1),               &
-#endif
-#endif
-#endif
+!#endif
+!#endif
+!#endif
                                advect_tend=advect_tend,                                &
                                h_tendency=h_tendency, z_tendency=z_tendency,           & 
                                msftx=grid%msftx,msfty=grid%msfty,                      &
@@ -2403,9 +2403,9 @@ BENCH_START(update_scal_tim)
                            k_start    , k_end               )
                ENDIF
                ENDIF
-#ifdef CORDEXDIAG
-#ifdef CDXWRF
-#if CDXWRF>=4
+!#ifdef CORDEXDIAG
+!#ifdef CDXWRF
+!#if CDXWRF>=4
                IF (rk_step .eq. config_flags%rk_ord .AND. curr_secs2 > 0. .AND.  &
                  config_flags%output_cordex == 1 .AND. config_flags%output_wb == 1) THEN
 ! L. Fita, January 2018. CIMA
@@ -2490,9 +2490,9 @@ BENCH_START(update_scal_tim)
 !                 WRITE(message,*)'    Lluis qvh:', grid%qv_hadv(i2,2,j2), ' qch:', grid%qc_hadv(i2,2,j2), ' qrh:', grid%qr_hadv(i2,2,j2), ' qsh:', grid%qs_hadv(i2,2,j2), ' qih:', grid%qh_hadv(i2,2,j2), ' qhh:', grid%qh_hadv(i2,2,j2), ' qgh:', grid%qg_hadv(i2,2,j2)
 !                 CALL wrf_debug(100,message)
                END IF
-#endif
-#endif
-#endif
+!#endif
+!#endif
+!#endif
 BENCH_END(update_scal_tim)
 
 BENCH_START(flow_depbdy_tim)
@@ -4908,9 +4908,9 @@ BENCH_END(bc_2d_tim)
    END DO
    !$OMP END PARALLEL DO
 
-#ifdef CORDEXDIAG
-#ifdef CDXWRF
-#if CDXWRF>=4
+!#ifdef CORDEXDIAG
+!#ifdef CDXWRF
+!#if CDXWRF>=4
 ! Getting some variables for the Water budget
    IF (config_flags%output_wb == 1 .AND. curr_secs2 > 0.) THEN
      !!i2 = (ime+ims)/2
@@ -4934,9 +4934,9 @@ BENCH_END(bc_2d_tim)
        grid%qgttend = (moist(:,:,:,P_QG) - moist_old(:,:,:,P_QG))/REAL(model_config_rec%dt(grid%id))
      ENDIF
    END IF
-#endif
-#endif
-#endif
+!#endif
+!#endif
+!#endif
 
 !-----------------------------------------------------------
 !  After all of the RK steps, after the microphysics, after p-rho-phi,

@@ -1,0 +1,22 @@
+GRIB | Level| Level| Level| metgrid  |  metgrid | metgrid                                  |
+Code | Code |   1  |   2  | Name     |  Units   | Description                              |
+-----+------+------+------+----------+----------+------------------------------------------+
+  65 |  1   |   0  |      | SNOW     | kg m-2   | Water Equivalent of Accum Snow Depth     | 
+  66 |  1   |   0  |      | SNOWH    | m        | Snow Depth                               |
+  85 | 112  |   0  | 10   | ST000010 | K        | T of 0-10 cm ground layer                |
+  85 | 112  |  10  | 40   | ST010040 | K        | T of 10-40 cm ground layer               |
+  85 | 112  |  40  |100   | ST040100 | K        | T of 40-100 cm ground layer              |
+  85 | 112  | 100  |200   | ST100200 | K        | T of 100-200 cm ground layer             |
+ 201 | 112  |  0   | 10   | SM000010 |          | Soil Moisture of 0-10 cm ground layer    |
+ 201 | 112  | 10   | 40   | SM010040 |          | Soil Moisture of 10-40 cm ground layer   |
+ 201 | 112  | 40   |100   | SM040100 |          | Soil Moisture of 40-100 cm ground layer  |
+ 201 | 112  |100   |200   | SM100200 |          | Soil Moisture of 100-200 cm ground layer |
+ 211 | 112  |  0   | 10   | SW000010 |          | Soil Moisture (liquid) of 0-10 cm layer  |
+ 211 | 112  | 10   | 40   | SW010040 |          | Soil Moisture (liquid) of 10-40 cm layer |
+ 211 | 112  | 40   |100   | SW040100 |          | Soil Moisture (liquid) of 40-100 layer   |
+ 211 | 112  |100   |200   | SW100200 |          | Soil Moisture (liquid) of 100-200 cm lay |
+  81 |  1   |   0  |      | AGRLSEA  |          | Land/Sea flag                            |
+ 207 |  1   |   0  |      | CANWAT   | m        | Plant Canopy Surface Water               | 
+-----+------+------+------+----------+----------+------------------------------------------+
+#
+#  AFWA

@@ -1,0 +1,133 @@
+
+g2lib-1.0   - August 2003 - Original version
+
+g2lib-1.0.1 - October 2003 - Added support for Grid Definition Template 3.31
+                             Albers Equal Area.
+                           - Added new parameters to the Parameter list in
+                             params.f
+                           - Minor documentation updates.
+
+g2lib-1.0.2 - February 2004 - Added new parameters in params.f for use with 
+                              Quickscat data and Ozone (Air Quality)
+
+g2lib-1.0.3 - May 2004 - Changed most PDT templates in module pdstemplates to 
+                         allow negative surface values.
+                       - Added new routine to gridtemplates and pdstemplates 
+                         modules to return number of entries in a specified 
+                         template.
+                       - Added New routines, getgb2p getgb2rp, used to request 
+                         a packed GRIB2 message from a file.
+                       - New module g2grids can be used to return GDT entries 
+                         for a specific grid from a file containing a list of
+                         predefined grids.
+
+g2lib-1.0.4 - August 2004 - Added functionality to support encoding of 
+                            "Missing" data values within the data field when
+                            using Data Representation Templates 5.2 
+                            (complex packing) and 5.3 (complex packing and 
+                            spatial differencing).  See octets 23 - 31 in DRTs
+                            5.2 and 5.3 for more info on missing value
+                            management.
+                          - Increased the packing efficiency of Data 
+                            Representation Templates 5.2 and 5.3 by adding 
+                            MDL/Glahn algorithm for determining effective
+                            groupings.
+
+g2lib-1.0.5 - December 2004 - WMO approved the JPEG2000 and PNG Data 
+                             Representation Templates ( 5.40000 and 5.40010,
+                             respectively ) for operational use.  The templates
+                             were assigned WMO values of 5.40 and 5.41, 
+                             respectively.  Changes were made to the source to 
+                             recognize either template number.
+                           - Fixed bug encountered when packing a near constant
+                             field with DRT 5.40 or 5.40000 (JPEG2000).
+                           - Added consistency check, provided by 
+                             Arthur Taylor/MDL, used when unpacking Data 
+                             Templates 7.2 and 7.3.
+                           - Corrected the documentation for subroutine
+                             addfield in the grib2.doc file.  Incorrect
+                             arguments were specified for this routine.
+                           - Corrected bug when packing Secondary missing
+                             values in Data Representation Templates 5.2 and
+                             5.3.
+
+g2lib-1.0.6 - April 2005 - Modified the way GETGB2 manages the GRIB2 file 
+                           indexes, so that it can be more efficient and
+                           flexible when reading from multiple
+                           GRIB2 files.
+                         - Fixed bug in PUTGB2 that caused data fields to be
+                           encoded incorrectly.
+                         - Added routine gdt2gds that converts grid information
+                           from a GRIB2 Grid Description Section (GDS) and
+                           Grid Definition Template to GRIB1 GDS info.
+
+g2lib-1.0.7 - April 2005 - Fixed bug causing seg fault when using JPEG2000 
+                           encoding algorithm on a grid with an insanely large
+                           number of data points bitmapped out.
+
+g2lib-1.0.8 - October 2006 - Modified Product Definition Templates 4.5 and 4.9
+                             to allow negative scale factors and limits.
+                           - Fixed several rounding error bugs during encoding.
+                           - Added new local parameter conversion entries
+
+g2lib-1.0.9 - MAY  2007    - Modified Grid Definition Template 3.igds(5)(3.204)
+                             to add Curvilinear Orthogonal grids.
+                           - Added new local parameter conversion entries
+
+g2lib-1.1.0  -December 2007 - Added new local parameters conversion entries
+                            - Declared the variable rmin,rmax in routine (jpcpack.f
+                              and pngpack.f) with double precision fix bug causing
+                              seg fault when using JPEG2000 encoding algorithm.
+
+g2lib-1.1.1  -January 2008  - Added new local parameters conversion entries
+
+g2lib-1.1.7  -August  2008  - Added new local parameters conversion entries
+                              and table 131
+                            - Added a new Grid Definition Template number
+                              3.32768 (Added Rotate Lat/Lon E-grid)
+
+g2lib-1.1.9  -June    2009  - Update Jasper version 1.900.1, libpng-1.2.34 and zlib-1.2.3
+                            - Allow negative scale factors and limits for Templates 4.5 and 4.9
+                            - Fixed bug causing seg fault when using PNG 1.2.35
+                            - Added new local parameters conversion entries
+
+g2lib-1.2.0  -March   2010  - Fixed bug for checking (LUGB) unit index file
+                            - Modified to increase length of seek (512)
+                            - Added Templates (Satellite Product) 4.31
+                            - Added Templates (ICAO WAFS) 4.15
+                            - Added new local parameters conversion entries
+                            - Added Time Range indicator Average (7)
+
+g2lib-1.2.1 - Aug 2010      - Added new local parameters conversion entries
+                            - Added Templates 4.40,4.41,4.42,4.43
+                            - Added a new Grid Definition Template number
+                              3.32769 (Added Rotate Lat/Lon None E-grid)
+                            - Added Type of Ensemble forecast 4 and 192
+                            - Corrected parameters U/V  Max Wind level to use PDT 4.0
+                              for WAFS product
+
+g2lib-1.2.2 - Dec 2010      - Added new local parameters conversion entries
+                            - Corrected Templates 4.42,4.43
+
+g2lib-1.2.3 - Nov 2011      - Added new local parameters conversion entries
+                            - Fixed bug in PUTGB2 that caused data fields to be
+                              encoded incorrectly.
+                            - Changed variable kprob(1) to kpds(5) in calling
+                              routine param_g1_to_g2
+
+g2lib-1.2.4 - Nov 2011      - Added 2 ECMWF parameters (TMAX/TMIN at 2m) conversion entries
+
+g2lib-1.4.0 - MAY 2012      - Added new parameters conversion entries
+                            - Fixed bug in PUTGB2 that caused segmentation fault
+                            - Added a new Grid Definition Template numbers 4.44,
+                              4.45, 4.46,4.47,4.48,4.50,4.51,4.91 and 4.32
+                            - Declared the variable rmin4 in routine misspack.f
+                            - Modified to change voidp to png_voidp in routines dec_png.c 
+                              and enc_png.c
+
+g2lib-2.5.0 - AUG 2013      - Added new parameters conversion entries
+                            - Modified GETIDX to allow users to open same unit file 
+                            - Added new Grid Definition Template numbers 3.4,3.5,.3.12,
+                              3.101, and 3.140
+                            - Added new Product Definition Template numbers 4.33, 4.34, 4.53,4.54
+

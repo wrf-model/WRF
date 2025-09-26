@@ -1,0 +1,30 @@
+GRIB | Level| Level| Level| metgrid  |  metgrid | metgrid                                  |
+Code | Code |   1  |   2  | Name     |  Units   | Description                              |
+-----+------+------+------+----------+----------+------------------------------------------+
+  11 | 100  |   *  |      | TT       | K        | Temperature                              |
+  33 | 100  |   *  |      | UU       | m s-1    | U                                        |
+  34 | 100  |   *  |      | VV       | m s-1    | V                                        |
+     | 100  |   *  |      | RH       | %        | Relative Humidity                        |
+  51 | 100  |   *  |      | SPECHUMD | kg kg-1  |                                          |
+  7  | 100  |   *  |      | HGT      | m        | Height                                   |
+  1  |  1   |   0  |      | PSFC     | Pa       | Surface Pressure                         |
+ 130 | 102  |   0  |      | PMSL     | Pa       | Sea-level Pressure                       |
+  65 |  1   |   0  |      | SNOW     | kg m-2   | Water Equivalent Snow Depth              |
+ 85  | 112  |   0  |  10  | ST000010 | K        | T of 0-10 cm ground layer                |
+ 85  | 112  |  10  |  40  | ST010040 | K        | T of 10-40 cm ground layer               |
+ 85  | 112  |  40  | 100  | ST040100 | K        | T of 40-100 cm ground layer              |
+ 85  | 112  | 100  | 200  | ST100200 | K        | T of 100-200 cm ground layer             |
+ 144 | 112  |   0  |  10  | SM000010 | fraction | Soil Moisture of 0-10 cm ground layer    |
+ 144 | 112  |  10  |  40  | SM010040 | fraction | Soil Moisture of 10-40 cm ground layer   |
+ 144 | 112  |  40  | 100  | SM040100 | fraction | Soil Moisture of 40-100 cm ground layer  |
+ 144 | 112  | 100  | 200  | SM100200 | fraction | Soil Moisture of 100-200 cm ground layer |
+ 7   |  1   |   0  |      | SOILHGT  | m        | Terrain field of source analysis         |
+  11 |  1   |   0  |      | SKINTEMP | K        | Skin Temperature                         |
+  11 | 105  |   2  |      | TT       | K        | Temperature                              |
+     | 105  |   2  |      | RH       | %        | Relative Humidity                        |
+  51 | 105  |   2  |      | SPECHUMD | kg kg-1  |                                          |
+  33 | 105  |  10  |      | UU       | m s-1    | U                                        |
+  34 | 105  |  10  |      | VV       | m s-1    | V                                        |
+ 91  |  1   |   0  |      | SEAICE   | 0/1 Flag | Ice flag                                 |
+ 81  |  1   |   0  |      | LANDSEA  | 0/1 Flag | Land/Sea flag                            |
+-----+------+------+------+----------+----------+------------------------------------------+

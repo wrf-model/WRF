@@ -1,0 +1,164 @@
+#!/bin/csh -f
+
+if ( ! -e configure.wps ) then
+	echo "Do 'configure' first"
+	exit ( 1 ) 
+endif
+
+if  ( ( ! $?NETCDF ) && ( -d netcdf_links ) ) then
+	setenv NETCDF `pwd`/netcdf_links
+	setenv temp_netcdf 1
+else
+	setenv temp_netcdf 0
+endif
+
+set DEV_TOP = `pwd`
+set first_char = `grep ^WRF_DIR configure.wps | awk '{print $3}' | cut -c -1`
+
+
+## test for Cygwin on Windows
+grep CYGWIN_NT configure.wps >& /dev/null
+if ( $status == 0 ) then
+   ls -l */*/*cio.c | grep '^l'
+   if ( $status == 0 ) then
+     echo Symbolic links are not handled properly by pgcc on Windows.  Run arch/fixlinks in this directory and try again.
+     exit
+   endif
+else
+   if ( "$first_char" == "/" ) then
+	set WRF_DIR_PRE	=
+   else
+	set WRF_DIR_PRE	=	${DEV_TOP}/
+   endif
+endif
+
+if      ( ${#argv} == 0 ) then
+	set names	=	( geogrid ungrib metgrid g1print g2print   rd_intermediate mod_levs avg_tsfc calc_ecmwf_p height_ukmo int2nc )
+	set NAMES	=	( GEOGRID UNGRIB METGRID GRIBUTIL GRIBUTIL UTIL            UTIL     UTIL     UTIL         UTIL        UTIL   )
+else if ( $1 == wps    ) then
+	set names	=	( geogrid ungrib metgrid )
+	set NAMES	=	( GEOGRID UNGRIB METGRID )
+else if ( $1 == util    ) then
+	set names	=	( g1print g2print plotfmt rd_intermediate plotgrids mod_levs avg_tsfc calc_ecmwf_p height_ukmo int2nc )
+	set NAMES	=	( GRIBUTIL GRIBUTIL UTIL       UTIL          UTIL      UTIL    UTIL      UTIL         UTIL     UTIL   )
+else if ( $1 == geogrid ) then
+	set names	=	( geogrid )
+	set NAMES	=	( GEOGRID )
+else if ( $1 == ungrib  ) then
+	set names	=	( ungrib  )
+	set NAMES	=	( UNGRIB  )
+else if ( $1 == metgrid ) then
+	set names	=	( metgrid )
+	set NAMES	=	( METGRID )
+else if ( $1 == g1print ) then
+	set names	=	( g1print )
+	set NAMES	=	( GRIBUTIL )
+else if ( $1 == g2print ) then
+	set names	=	( g2print )
+	set NAMES	=	( GRIBUTIL )
+else if ( $1 == plotfmt ) then
+	set names	=	( plotfmt )
+	set NAMES	=	( UTIL )
+else if ( $1 == rd_intermediate ) then
+	set names	=	( rd_intermediate )
+	set NAMES	=	( UTIL )
+else if ( $1 == plotgrids ) then
+	set names	=	( plotgrids )
+	set NAMES	=	( UTIL )
+else if ( $1 == mod_levs ) then
+	set names	=	( mod_levs )
+	set NAMES	=	( UTIL )
+else if ( $1 == avg_tsfc ) then
+	set names	=	( avg_tsfc )
+	set NAMES	=	( UTIL )
+else if ( $1 == calc_ecmwf_p ) then
+	set names	=	( calc_ecmwf_p )
+	set NAMES	=	( UTIL )
+else if ( $1 == height_ukmo ) then
+	set names	=	( height_ukmo )
+	set NAMES	=	( UTIL )
+else if ( $1 == int2nc      ) then
+	set names	=	( int2nc )
+	set NAMES	=	( UTIL )
+else
+        echo "*****"
+        echo " "
+	echo "Unrecognized compile target $1."
+        echo " "
+        echo "Usage: compile [target]"
+        echo "where target is one of"
+        echo "   wps"
+        echo "   util"
+        echo "   geogrid"
+        echo "   ungrib"
+        echo "   metgrid"
+        echo "   g1print"
+        echo "   g2print"
+        echo "   plotfmt"
+        echo "   rd_intermediate"
+        echo "   plotgrids"
+        echo "   mod_levs"
+        echo "   avg_tsfc"
+        echo "   calc_ecmwf_p"
+        echo "   height_ukmo"
+        echo "   int2nc"
+        echo " "
+        echo " or just run compile with no target to build everything."
+        echo " "
+        echo "*****"
+        exit(1)
+endif
+
+# Print out WPS version, system info, and compiler/version
+echo "============================================================================================== "
+  echo " "
+  echo Version 4.2
+  echo " "
+  uname -a
+  echo " "
+  set comp = ( `grep "^SFC" configure.wps | cut -d"=" -f2-` )
+  if      ( "$comp[1]" == "gfortran" ) then
+    gfortran --version
+  else if ( "$comp[1]" == "pgf90" ) then
+    pgf90 --version
+  else if ( "$comp[1]" == "ifort" ) then
+    ifort -V
+  else
+    echo "Not sure how to figure out the version of this compiler: $comp[1]"
+  endif
+  echo " "
+  echo "============================================================================================== "
+  echo " "
+
+
+echo " "
+if ( ${#argv} == 0 ) then
+	echo "**** Compiling WPS and all utilities ****"
+else
+	echo "**** Compiling $1 ****"
+endif
+echo " "
+
+set count = 1
+foreach f ( $names )
+	if ("$NAMES[$count]" == "UTIL") then
+		( cd util ; make -i -r WRF_DIR_PRE="${WRF_DIR_PRE}" DEV_TOP="${DEV_TOP}" TARGET="${f}.exe" CPP_TARGET="$NAMES[$count]" all )
+	else if ("$NAMES[$count]" == "GRIBUTIL") then
+		( cd ungrib ; make -i -r WRF_DIR_PRE="${WRF_DIR_PRE}" DEV_TOP="${DEV_TOP}" TARGET="${f}.exe" CPP_TARGET="$NAMES[$count]" all )
+		if ( -e ungrib/src/${f}.exe ) then
+			( cd util ; ln -sf ../ungrib/src/${f}.exe . )
+		endif
+	else
+		( cd $f ; make -i -r WRF_DIR_PRE="${WRF_DIR_PRE}" DEV_TOP="${DEV_TOP}" TARGET="${f}.exe" CPP_TARGET="$NAMES[$count]" all )
+		if ( -e ${f}/src/${f}.exe ) then
+			ln -sf ${f}/src/${f}.exe .
+		endif
+	endif
+	@ count ++
+end
+
+if ( $temp_netcdf == 1 ) then
+	unsetenv NETCDF
+endif
+
+exit(0)

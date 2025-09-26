@@ -1,0 +1,19 @@
+GRIB1| Level| From |  To  | metgrid  | metgrid | metgrid                                 |GRIB2|GRIB2|GRIB2|GRIB2|
+Param| Type |Level1|Level2| Name     | Units   | Description                             |Discp|Catgy|Param|Level|
+-----+------+------+------+----------+---------+-----------------------------------------+-----------------------+
+ 144 | 112  |   0  |  10  | SM000010 | kg m-3  | Soil Moist 0-10 cm below grn layer (Up) |  2  |  0  | 192 | 106 |
+ 144 | 112  |  10  |  40  | SM010040 | kg m-3  | Soil Moist 10-40 cm below grn layer     |  2  |  0  | 192 | 106 |
+ 144 | 112  |  40  | 100  | SM040100 | kg m-3  | Soil Moist 40-100 cm below grn layer    |  2  |  0  | 192 | 106 |
+ 144 | 112  | 100  | 200  | SM100200 | kg m-3  | Soil Moist 100-200 cm below gr layer    |  2  |  0  | 192 | 106 |
+ 144 | 112  |  10  | 200  | SM010200 | kg m-3  | Soil Moist 10-200 cm below gr layer     |  2  |  0  | 192 | 106 |
+  11 | 112  |   0  |  10  | ST000010 | K       | T 0-10 cm below ground layer (Upper)    |  0  |  0  |  0  | 106 |
+  11 | 112  |  10  |  40  | ST010040 | K       | T 10-40 cm below ground layer (Upper)   |  0  |  0  |  0  | 106 |
+  11 | 112  |  40  | 100  | ST040100 | K       | T 40-100 cm below ground layer (Upper)  |  0  |  0  |  0  | 106 |
+  11 | 112  | 100  | 200  | ST100200 | K       | T 100-200 cm below ground layer (Bottom)|  0  |  0  |  0  | 106 |
+  11 | 112  |  10  | 200  | ST010200 | K       | T 10-200 cm below ground layer (Bottom) |  0  |  0  |  0  | 106 |
+  91 |   1  |   0  |      | SEAICE   | proprtn | Ice flag                                | 10  |  2  |  0  |   1 |
+  81 |   1  |   0  |      | LANDSEA  | proprtn | Land/Sea flag (1=land, 0 or 2=sea)      |  2  |  0  |  0  |   1 |
+   7 |   1  |   0  |      | SOILHGT  | m       | Terrain field of source analysis        |  0  |  3  |  5  |   1 |
+  11 |   1  |   0  |      | SKINTEMP | K       | Skin temperature (can use for SST also) |  0  |  0  |  0  |   1 |
+  65 |   1  |   0  |      | SNOW     | kg m-2  | Water equivalent snow depth             |  0  |  1  | 13  |   1 |
+-----+------+------+------+----------+---------+-----------------------------------------+-----------------------+

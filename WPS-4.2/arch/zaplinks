@@ -1,0 +1,7 @@
+#!/bin/csh -f 
+echo do an svn update to restore these as symlinks
+set echo
+/bin/rm metgrid/src/cio.c
+/bin/rm ungrib/src/debug_cio.c
+/bin/rm util/src/cio.c 
+

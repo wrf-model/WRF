@@ -1,0 +1,26 @@
+GRIB | Level| Level| Level| metgrid  |  metgrid | metgrid                                  |
+Code | Code |   1  |   2  | Name     |  Units   | Description                              |
+-----+------+------+------+----------+----------+------------------------------------------+
+  11 | 100  |   *  |      | TT       | K        | Temperature                              |
+  33 | 100  |   *  |      | UU       | m s-1    | U                                        |
+  34 | 100  |   *  |      | VV       | m s-1    | V                                        |
+  52 | 100  |   *  |      | RH       |          | Relative Humidity                        |
+   7 | 100  |   *  |      | HGT      | m        | Height                                   |
+   2 | 102  |   0  |      | PMSL     | Pa       | Sea-level Pressure                       |
+  11 | 105  |   2  |      | TT       | K        | Temperature                              | At 2 m
+  51 | 105  |   2  |      | SPECHUMD | kg kg-1  |                                          | At 2 m
+     | 105  |   2  |      | RH       |          | Relative Humidity                        | At 2 m
+  33 | 105  |  10  |      | UU       | m s-1    | U                                        | At 10 m
+  34 | 105  |  10  |      | VV       | m s-1    | V                                        | At 10 m
+   1 |  1   |   0  |      | PSFC     | Pa       | Surface Pressure                         |
+ 144 | 112  |   0  | 10   | SM000010 |          | Soil Moisture of 0-10 cm ground layer    |
+ 144 | 112  |  10  | 200  | SM010200 |          | Soil Moisture of 10-200 cm ground layer  |
+ 11  | 112  |   0  |  10  | ST000010 | K        | T of 0-10 cm ground layer                |
+ 11  | 112  |  10  | 200  | ST010200 | K        | T of 10-200 cm ground layer              |
+  91 |  1   |   0  |      | SEAICE   |          | Ice flag                                 |
+  81 |  1   |   0  |      | LANDSEA  |          | Land/Sea flag                            |
+  11 |  1   |   0  |      | SKINTEMP | K        | Skin temperature (can use for SST also)  | 
+  65 |  1   |   0  |      | SNOW     | kg m-2   | Water equivalent snow depth              |
+  80 |  1   |   0  |      | SST      | K        | Sea Surface Temperature                  |
+   7 |  1   |   0  |      | SOILHGT  | m        | Terrain field of source analysis         |
+-----+------+------+------+----------+----------+------------------------------------------+

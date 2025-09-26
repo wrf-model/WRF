@@ -1,0 +1,25 @@
+GRIB | Level| Level| Level| metgrid  |  metgrid | metgrid                                     |
+Code | Code |   1  |   2  | Name     |  Units   | Description                                 |
+-----+------+------+------+----------+----------+---------------------------------------------+
+ 201 | 112  |   0  |  10  | SM000010 | fraction | Soil Moisture of 0-10 cm ground layer       |
+ 201 | 112  |  10  |  40  | SM010040 | fraction | Soil Moisture of 10-40 cm ground layer      |
+ 201 | 112  |  40  | 100  | SM040100 | fraction | Soil Moisture of 40-100 cm ground layer     |
+ 201 | 112  | 100  | 200  | SM100200 | fraction | Soil Moisture of 100-200 cm ground layer    |
+ 201 | 112  |  10  | 200  | SM010200 | fraction | Soil Moisture of 10-200 cm ground layer     |
+ 211 | 112  |   0  |  10  | SW000010 | fraction | Soil Moisture (Liquid) of 0-10 cm ground    |
+ 211 | 112  |  10  |  40  | SW010040 | fraction | Soil Moisture (Liquid) of 10-40 cm ground   |
+ 211 | 112  |  40  | 100  | SW040100 | fraction | Soil Moisture (Liquid) of 40-100 cm ground  |
+ 211 | 112  | 100  | 200  | SW100200 | fraction | Soil Moisture (Liquid) of 100-200 cm ground |
+ 211 | 112  |  10  | 200  | SW010200 | fraction | Soil Moisture (Liquid) of 10-200 cm ground  |
+ 85  | 112  |   0  |  10  | ST000010 | K        | T of 0-10 cm ground layer                   |
+ 85  | 112  |  10  |  40  | ST010040 | K        | T of 10-40 cm ground layer                  |
+ 85  | 112  |  40  | 100  | ST040100 | K        | T of 40-100 cm ground layer                 |
+ 85  | 112  | 100  | 200  | ST100200 | K        | T of 100-200 cm ground layer                |
+ 85  | 112  |  10  | 200  | ST010200 | K        | T of 10-200 cm ground layer                 |
+ 81  |  1   |   0  |      | LANDSEA  | 0/1 Flag | Land/Sea flag                               |
+ 161 |  1   |   0  |      | SOILHGT  | m        | Terrain field of source analysis            |
+ 205 |  1   |   0  |      | SOILINDX | category | Soil Category                               |
+ 207 |  1   |   0  |      | CANWAT   | kg m-2   | Canopy Moisture Content                     |
+ 212 |  1   |   0  |      | LAND USE | category | Land Use and Vegetation Category            |
+ 213 |  1   |   0  |      | GREENFRC | %        | Green Vegetation Fraction                   |
+-----+------+------+------+----------+----------+---------------------------------------------+

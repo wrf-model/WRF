@@ -1,0 +1,10 @@
+GRIB1| Level| From |  To  | metgrid  | metgrid | metgrid                         |
+Param| Type |Level1|Level2| Name     | Units   | Description                     |
+-----+------+------+------+----------+---------+---------------------------------+
+  91 |   1  |   0  |      | ICEMASK  | flag    | Ice mask flag                   |
+ 128 |   1  |   0  |      | ICEFRAC  | fraction| Ice fraction                    |
+ 129 |   1  |   0  |      | ICEAGE   | days    | Ice age                         | 
+-----+------+------+------+----------+---------+---------------------------------+
+#
+# Vtable for AFWA Ice fields. Grib 1 only.
+

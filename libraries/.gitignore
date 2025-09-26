@@ -1,0 +1,5 @@
+snow_libs/
+*.tar.gz
+local_libs/
+mpich*
+netcdf*

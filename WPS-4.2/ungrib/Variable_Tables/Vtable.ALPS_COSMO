@@ -1,0 +1,36 @@
+GRIB | Level| Level| Level| metgrid  |  metgrid | METGRID                                 |
+Code | Code |   1  |   2  | Name     |  Units   | Description                             |
+-----+------+------+------+----------+----------+-----------------------------------------+
+   6 | 100  |   *  |      | GEOPT    | m2 s-2   |					  |
+     | 100  |   *  |      | HGT      | m        | Height				  |
+  11 | 100  |   *  |      | TT       | K        | Temperature                             |
+  33 | 100  |   *  |      | UU       | m s-1    | U                                       |
+  34 | 100  |   *  |      | VV       | m s-1    | V                                       |
+  52 | 100  |   *  |      | RH       | %        | Relative Humidity                       |
+  11 |   1  |   0  |      | SKINTEMP | K        | Skin temperature (can use for SST also) |
+  11 | 105  |   2  |      | TT       | K        | Temperature       at 2 m                |
+  52 | 105  |   2  |      | RH       | %        | Relative Humidity at 2 m                |
+  33 | 105  |  10  |      | UU       | m s-1    | U                 at 10 m               |
+  34 | 105  |  10  |      | VV       | m s-1    | V                 at 10 m               |
+   1 |   1  |   0  |      | PSFC     | Pa       | Surface Pressure                        |
+   2 | 102  |   0  |      | PMSL     | Pa       | Sea-level Pressure                      |
+  66 |  1   |   0  |      | SNOWH    | m        | Physical Snow Depth                     |
+  65 |  1   |   0  |      | SNOW     | kg m-2   | Water equivalent snow depth             |
+  31 | 100  |   *  |      | QC       | kg kg-1  | Cloud water mixing ratio                |
+  36 | 100  |   *  |      | QS       | kg kg-1  | Snow water mixing ratio                 |
+  39 | 100  |   *  |      | QG       | kg kg-1  | Graupel water mixing ratio              |
+  35 | 100  |   *  |      | QR       | kg kg-1  | Rain water mixing ratio                 |
+ 178 | 100  |   *  |      | QI       | kg kg-1  | Ice mixing ratio                        |
+  85 | 112  |   0  |    1 | T_SO0001 | K        | Soil temperature 1 cm below ground      |
+  85 | 112  |   1  |    3 | T_SO0002 | K        | Soil temperature 2 cm below ground      |
+  85 | 112  |   3  |    9 | T_SO0006 | K        | Soil temperature 6 cm below ground      |
+  85 | 112  |   9  |   27 | T_SO0018 | K        | Soil temperature 18 cm below ground     |
+  85 | 112  |  27  |   81 | T_SO0054 | K        | Soil temperature 54 cm below ground     |
+  85 | 112  |  81  |  243 | T_SO0162 | K        | Soil temperature 162 cm below ground    |
+  86 | 112  |   0  |    1 | W_SO0001 | m        | Soil moisture 1 cm below ground         |
+  86 | 112  |   1  |    3 | W_SO0002 | m        | Soil moisture 2 cm below ground         |
+  86 | 112  |   3  |    9 | W_SO0006 | m        | Soil moisture 6 cm below ground         |
+  86 | 112  |   9  |   27 | W_SO0018 | m        | Soil moisture 18 cm below ground        |
+  86 | 112  |  27  |   81 | W_SO0054 | m        | Soil moisture 54 cm below ground        |
+  86 | 112  |  81  |  243 | W_SO0162 | m        | Soil moisture 162 cm below ground       |
+-----+------+------+------+----------+---------+------------------------------------------+

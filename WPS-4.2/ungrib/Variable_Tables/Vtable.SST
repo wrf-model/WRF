@@ -1,0 +1,5 @@
+GRIB1| Level| From |  To  | metgrid  | metgrid | metgrid                                 |GRIB2|GRIB2|GRIB2|GRIB2|
+Param| Type |Level1|Level2| Name     | Units   | Description                             |Discp|Catgy|Param|Level|
+-----+------+------+------+----------+---------+-----------------------------------------+-----------------------+
+  11 |   1  |   0  |      | SST      | K       | Sea Surface Temperature                 |  0 |  0 |  0  |   1 |
+-----+------+------+------+----------+---------+-----------------------------------------+-----------------------+

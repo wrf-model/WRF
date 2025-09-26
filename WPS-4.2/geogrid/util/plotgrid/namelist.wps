@@ -1,0 +1,51 @@
+&share
+ wrf_core = 'ARW',
+ max_dom = 2,
+ start_date = '2006-08-16_12:00:00','2006-08-16_12:00:00',
+ end_date   = '2006-08-16_18:00:00','2006-08-16_12:00:00',
+ interval_seconds = 21600
+ io_form_geogrid = 2,
+/
+
+&geogrid
+ parent_id         =   1,   1,
+ parent_grid_ratio =   1,   3,
+ i_parent_start    =   1,  31,
+ j_parent_start    =   1,  17,
+ e_we              =  74, 112,
+ e_sn              =  61,  97,
+ geog_data_res     = '10m','2m',
+ dx = 30000,
+ dy = 30000,
+ map_proj = 'lambert',
+ ref_lat   =  34.83,
+ ref_lon   = -81.03,
+ truelat1  =  30.0,
+ truelat2  =  60.0,
+ stand_lon = -98.0,
+ geog_data_path = '/mmm/users/wrfhelp/WPS_GEOG'
+/
+
+&ungrib
+ out_format = 'WPS',
+ prefix = 'FILE',
+/
+
+&metgrid
+ fg_name = 'FILE'
+ io_form_metgrid = 2, 
+/
+
+&mod_levs
+ press_pa = 201300 , 200100 , 100000 , 
+             95000 ,  90000 , 
+             85000 ,  80000 , 
+             75000 ,  70000 , 
+             65000 ,  60000 , 
+             55000 ,  50000 , 
+             45000 ,  40000 , 
+             35000 ,  30000 , 
+             25000 ,  20000 , 
+             15000 ,  10000 , 
+              5000 ,   1000
+/

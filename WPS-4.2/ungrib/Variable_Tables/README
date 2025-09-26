@@ -1,0 +1,54 @@
+
+              Listing of Vtables
+
+Vtable.AFWAICE             U.S. Air Force Weather Agency ice fields.
+Vtable.AGRMETSNOW          U.S. Air Force Weather Agency Agricultural Meteorology fields (not publically available)
+Vtable.AGRMETSOIL 
+Vtable.AGRMETSOIL2 
+Vtable.AGRWRF
+
+Vtable.ARW                 WRF-ARW
+Vtable.ARWp
+Vtable.AVN0P5WRF           Grib 1 legacy Vtable for 0.5 degree NCEP AVN
+Vtable.AWIP                Grib 1 legacy Vtable for NCEP NGM 'AWIPS' grid
+
+Vtable.CFSR2_web           Climate Forecast System Reanalysis 2
+Vtable.CFSR_mean           Climate Forecast System Reanalysis Monthly mean from NOMADS.
+Vtable.CFSR_press_pgbh06   CFSR pressure-level output from NCAR
+Vtable.CFSR_sfc_flxf06     CFSR surface fields from NCAR
+
+Vtable.ECMWF               ECMWF files. Note that there is a wide variety of content in files called 'ECMWF output'.
+                           This Vtable is a general table for pressure-level output.
+Vtable.ECMWF_sigma         ECMWF sigma-level output
+Vtable.ERA-interim.ml           ERA interim model level
+Vtable.ERA-interim.ml.SSTMSKD   Masked SST
+Vtable.ERA-interim.pl           ERA interim pressure level output
+Vtable.ERA-interim.pl.SSTMSKD   Masked SST
+
+Vtable.GFDL                Grib 1 legacy Vtable for NOAA GFDL 
+Vtable.GFS                 NCEP Global Forecast System (can also be used for GDAS, FNL, AVN files)
+Vtable.GFS+TROP            NCEP GFS including the 10 tropopause / max wind level fields
+Vtable.GFSENS              NCEP GFS ensemble files (GEFS)
+Vtable.GODAS               NCEP's Global Ocean data assimilation system
+Vtable.GSM                 
+Vtable.JMAGSM              Japanese Meteorological Agency Global Spectral Model
+Vtable.NAM                 NCEP North American Mesoscale model
+Vtable.NARR                NCEP North American Regional Reanalysis
+Vtable.NCEP2               NCEP/DOE Reanalysis (Reanalysis-2)  (also called R2, CDAS2, NCEP2)
+Vtable.NNRP                NCEP/NCAR Reanalysis Project (Grib 1)
+Vtable.NOGAPS              U.S. Navy NOGAPS model
+Vtable.NOGAPS_needs_GFS_soil
+Vtable.NavySST             Grib 1 legacy Vtable for SST fields.
+Vtable.RAP.hybrid.ncep     NCEP Rapid Refresh (ARW) intepolated to hybrid levels (presumably for backward compatibility with RUC)
+Vtable.RAP.pressure.ncep   NCEP Rapid Refresh (ARW) pressure level output
+Vtable.RAP.sigma.gsd       NCEP Rapid Refresh (ARW) run by NOAA GSD
+Vtable.RUCb                NCEP RUC hybrid-level output
+Vtable.RUCp                NCEP RUC pressure-level output
+Vtable.SST                 Generic Vtable for SST files
+Vtable.TCRP                Twentieth Century Global Reanalysis Version 2
+Vtable.UKMO_ENDGame        U.K. Met Office model
+Vtable.UKMO_LANDSEA
+Vtable.UKMO_no_heights
+
+
+Updated 12 Aug 2014

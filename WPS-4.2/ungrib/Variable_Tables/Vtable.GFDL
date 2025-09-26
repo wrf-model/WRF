@@ -1,0 +1,19 @@
+GRIB1| Level| From |  To  | metgrid  |  metgrid | metgrid                                  |
+Param| Type |Level1|Level2| Name     |  Units   | Description                              |
+-----+------+------+------+----------+----------+------------------------------------------+
+  11 | 100  |   *  |      | TT       | K        | Temperature                              |
+  33 | 100  |   *  |      | UU       | m s-1    | U                                        |
+  34 | 100  |   *  |      | VV       | m s-1    | V                                        |
+  52 | 100  |   *  |      | RH       |          | Relative Humidity                        |
+  7  | 100  |   *  |      | HGT      | m        | Height                                   |
+  11 | 105  |   2  |      | TT       | %        | Temperature                              | At 2 m
+  52 | 105  |   2  |      | RH       | %        | Relative Humidity                        | At 2 m
+  33 | 105  |  35  |      | UU       | m s-1    | U                                        | At 10 m
+  34 | 105  |  35  |      | VV       | m s-1    | V                                        | At 10 m
+   1 |  1   |   0  |      | PSFC     | Pa       | Surface Pressure                         |
+   2 | 102  |   0  |      | PMSL     | Pa       | Sea-level Pressure                       |
+  81 |  1   |   0  |      | LANDSEA  |          | Land/Sea flag                            |
+   8 |  1   |   0  |      | SOILHGT  | m        | Terrain field of source analysis         | 
+  11 |  1   |   0  |      | SKINTEMP | K        | Skin temperature (can use for SST also)  | 
+  11 | 111  |  50  |      | SOILT050 | K        | Temperature at 50 cm below               |
+-----+------+------+------+----------+----------+------------------------------------------+

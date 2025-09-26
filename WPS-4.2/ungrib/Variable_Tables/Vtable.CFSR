@@ -1,0 +1,50 @@
+GRIB1| Level| From |  To  | metgrid  | metgrid | metgrid                                 |GRIB2|GRIB2|GRIB2|GRIB2|
+Param| Type |Level1|Level2| Name     | Units   | Description                             |Discp|Catgy|Param|Level|
+-----+------+------+------+----------+---------+-----------------------------------------+-----------------------+
+  11 | 100  |   *  |      | TT       | K       | Temperature                             |  0  |  0  |  0  | 100 |
+  33 | 100  |   *  |      | UU       | m s-1   | U                                       |  0  |  2  |  2  | 100 |
+  34 | 100  |   *  |      | VV       | m s-1   | V                                       |  0  |  2  |  3  | 100 |
+  52 | 100  |   *  |      | RH       | %       | Relative Humidity                       |  0  |  1  |  1  | 100 |
+   7 | 100  |   *  |      | HGT      | m       | Height                                  |  0  |  3  |  5  | 100 |
+   2 | 102  |   0  |      | PMSL     | Pa      | Sea-level Pressure                      |  0  |  3  |  1  | 101 |
+  11 | 105  |   2  |      | TT       | K       | Temperature       at 2 m                |  0  |  0  |  0  | 103 |
+     | 105  |   2  |      | RH       | %       | Relative Humidity at 2 m                |  0  |  1  |  1  | 103 |
+  51 | 105  |   2  |      | SPECHUMD | kg kg-1 |                                         |  0  |  1  |  0  | 103 |
+  33 | 105  |  10  |      | UU       | m s-1   | U                 at 10 m               |  0  |  2  |  2  | 103 |
+  34 | 105  |  10  |      | VV       | m s-1   | V                 at 10 m               |  0  |  2  |  3  | 103 |
+   1 |   1  |   0  |      | PSFC     | Pa      | Surface Pressure                        |  0  |  3  |  0  |   1 |
+ 144 | 112  |   0  |  10  | SM000010 | fraction| Soil Moist 0-10 cm below grn layer (Up) |  2  |  0  | 192 | 106 |
+ 144 | 112  |  10  |  40  | SM010040 | fraction| Soil Moist 10-40 cm below grn layer     |  2  |  0  | 192 | 106 |
+ 144 | 112  |  40  | 100  | SM040100 | fraction| Soil Moist 40-100 cm below grn layer    |  2  |  0  | 192 | 106 |
+ 144 | 112  | 100  | 200  | SM100200 | fraction| Soil Moist 100-200 cm below gr layer    |  2  |  0  | 192 | 106 |
+  11 | 112  |   0  |  10  | ST000010 | K       | T 0-10 cm below ground layer (Upper)    |  0  |  0  |  0  | 106 |
+  11 | 112  |  10  |  40  | ST010040 | K       | T 10-40 cm below ground layer (Upper)   |  0  |  0  |  0  | 106 |
+  11 | 112  |  40  | 100  | ST040100 | K       | T 40-100 cm below ground layer (Upper)  |  0  |  0  |  0  | 106 |
+  11 | 112  | 100  | 200  | ST100200 | K       | T 100-200 cm below ground layer (Bottom)|  0  |  0  |  0  | 106 |
+  91 |   1  |   0  |      | SEAICE   | proprtn | Ice flag                                | 10  |  2  |  0  |   1 |
+  81 |   1  |   0  |      | LANDSEA  | proprtn | Land/Sea flag (1=land, 0 or 2=sea)      |  2  |  0  |  0  |   1 |
+   7 |   1  |   0  |      | SOILHGT  | m       | Terrain field of source analysis        |  0  |  3  |  5  |   1 |
+  11 |   1  |   0  |      | SKINTEMP | K       | Skin temperature (can use for SST also) |  0  |  0  |  0  |   1 |
+  65 |   1  |   0  |      | SNOW     | kg m-2  | Water equivalent snow depth             |  0  |  1  | 13  |   1 |
+-----+------+------+------+----------+---------+-----------------------------------------+-----------------------+
+#
+#
+#  NCEP Climate Forecast System Reanalysis (CFSR) 1979-2010  http://rda.ucar.edu/datasets/ds093.0/   
+#  NCEP Climate Forecast System Reanalysis Version 2 (CFSv2) 2011-present http://rda.ucar.edu/datasets/ds094.0/   
+#   
+#  Grib2 0.5 degree 3-d files have 37 p-levels (1000 - 1 hPa) plus slp. (10 of the levels are above 100 hPa).
+#
+#  Prior to April 2011, need to download 2 files, a 3d pressure file (pgbh06.gdas.yyyymmddhh.grb2) and 
+#  a suface flux file (flxf06.gdas.yyyymmddhh.grb2). Each file contains a 6-h forecast. 
+#  To start at 00 UTC, use the 18 UTC file from the previous day. 
+#  Note that 00 hour files (distributed by NCDC) are not analyses and should not be used. 
+#  V1 surface files have the name flxf06.gdas.yyyymmddhh.grb2
+#  For CFSR V1 files, ungrib must be run twice - once with the pressure file and once with the surface file.
+#
+#  For CFSv2, only one file per time period is needed (cdas1.t00z.pgrbh06.grib2). It's recommended
+#  to use the 6-h forecast for WRF initialization.
+#
+#  This Vtable is similar to GFS/GDAS, but uses the pre-2015 definition for soil variables and 
+#  pre-2017 defiinition for LANDSEA.
+#
+#  The Vtable has been tested on the NCAR CFSR files. Modifications may be required for other sources

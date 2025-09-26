@@ -1,0 +1,41 @@
+&share
+ wrf_core         = 'ARW',
+ max_dom          = 2,
+ start_date       = '2019-03-06_00:00:00', '2019-03-06_00:00:00', '2019-03-06_00:00:00',
+ end_date         = '2019-03-30_00:00:00', '2019-03-30_00:00:00', '2019-03-06_23:00:00',
+ interval_seconds = 3600,
+ io_form_geogrid  = 2,
+! opt_output_from_geogrid_path = '/project/s938/gerberf/COSMO-WRF/CCAMM/input_WPS/GEO_EM_202012/smooth1/' 
+/
+
+&geogrid
+ parent_id         = 1, 1, 2, 3, 
+ parent_grid_ratio = 1, 5, 5, 3,
+ i_parent_start    = 1, 62, 50, 83, 88,
+ j_parent_start    = 1, 71, 100, 54, 55,
+ e_we              = 148, 151, 166, 199, 199,
+ e_sn              = 178, 181, 151, 199, 199,
+ geog_data_res     = '1s','1s',
+ dx                = 1250,
+ dy                = 1250,
+ map_proj          = 'lambert',
+ ref_x             = 1,
+ ref_y             = 1,
+ ref_lat           = 45.809758366,
+ ref_lon           = 8.611886272,
+ truelat1          = 46.4,
+ truelat2          = 47.2,
+ stand_lon         = 9.75, 
+ geog_data_path    = '/project/s938/WRF_STATIC_DATA/WPS_GEOG/'
+/
+
+&ungrib
+ out_format        = 'WPS',
+ prefix            = '/scratch/snx3000/vsharma/Paper_6/data/WPS_outputs/ungrib_output/FILE',
+/
+
+&metgrid
+ fg_name           = '/scratch/snx3000/vsharma/Paper_6/data/WPS_outputs/ungrib_output/FILE'
+ io_form_metgrid   = 2, 
+ opt_output_from_metgrid_path = '/scratch/snx3000/vsharma/Paper_6/data/WPS_outputs/metgrid_output/'
+/

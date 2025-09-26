@@ -1,0 +1,84 @@
+                                                           August 06, 2013
+                                                           W/SIB:VUONG
+
+g2lib Library.
+
+This library contains Fortran 90 decoder/encoder
+routines for GRIB edition 2, as well as indexing/searching
+utility routines.  The user API for the GRIB2 routines
+is described in file "grib2.doc".
+
+Some Fortran routines call "C" functions, which must
+follow a specific symbol naming convention used by your
+machine/loader to be linked successfully.
+If you are having trouble linking to the C routines
+in this library, please make sure the appropriate 
+machine is defined as an option in the CFLAGS
+variable in the makefile.  See the first few lines
+of the makefile for valid options.
+Recompile the library.
+
+We have added support for PNG and JPEG2000 image compression
+algorithms within the GRIB2 standard.  If you would like
+to compile this library to utilize these GRIB2 Templates,
+make sure that -DUSE_PNG and -DUSE_JPEG2000 are specified
+in the FDEFS variable in the makefile.  You will also need
+to download and install the external libraries listed below,
+if they are not already installed on your system.
+
+If you do not wish to bother with the external libs and
+don't need PNG and JPEG2000 support, you can remove the
+-DUSE_PNG and -DUSE_JPEG2000 flags from the FDEFS variable 
+in the makefile.
+
+
+-------------------------------------------------------------------------------
+
+     External Libraries:
+
+libjasper.a - This library is a C implementation of the JPEG-2000 Part-1 
+              standard (i.e., ISO/IEC 15444-1).  This library is required
+              if JPEG2000 support in GRIB2 is desired.  If not, remove
+              the -DUSE_JPEG2000 option from the FDEFS variable 
+              in the makefile.
+
+              Download version jasper-1.900.1 from the JasPer Project's
+              home page, http://www.ece.uvic.ca/~mdadams/jasper/.
+        
+              More information about JPEG2000 can be found at 
+              http://www.jpeg.org/JPEG2000.html.
+
+libpng.a      This library is a C implementation of the Portable Network
+              Graphics PNG image compression format.  This library is required
+              if PNG support in GRIB2 is desired.  If not, remove
+              the -DUSE_PNG option from the FDEFS variable
+              in the makefile.
+
+              If not already installed on your system, download version 
+              libpng-1.2.44 from http://www.libpng.org/pub/png/libpng.html.
+
+              More information about PNG can be found at 
+              http://www.libpng.org/pub/png/.
+
+libz.a        This library contains compression/decompression routines
+              used by libpng.a for PNG image compression support. 
+              This library is required if PNG support in GRIB2 is desired.  
+              If not, remove the -DUSE_PNG option from the FDEFS variable
+              in g2lib/makefile.
+
+              If not already installed on your system, download version 
+              zlib-1.2.6 from http://www.gzip.org/zlib/.
+
+-------------------------------------------------------------------------------
+
+A note about routine MOVA2I:
+
+Some routines in this library call subroutine MOVA2I, which is included in 
+our W3LIB library containing the GRIB1 decoder/encoder routines.  If you
+are using this library without libw3.a, you will need to compile mova2i.c 
+(included in this distribution) so it can be added to libg2.a.  Just add
+the line:
+
+        $(LIB)(mova2i.o) \
+
+to the list of routines in the makefile.

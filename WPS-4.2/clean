@@ -1,0 +1,73 @@
+#!/bin/csh -f
+
+set DEV_TOP = `pwd`
+
+set TOUCH = ORIG
+if ( ! -e configure.wps ) then
+	touch configure.wps
+	set TOUCH = TOUCH
+endif
+
+set nonomatch
+
+set DIRS = ( geogrid ungrib metgrid ungrib  ungrib   util     util      util        util        util       util         util      util  )
+set EXES = ( geogrid ungrib metgrid g1print g2print plotfmt plotgrids mod_levs rd_intermediate avg_tsfc calc_ecmwf_p height_ukmo int2nc )
+
+set i = 1
+foreach dir ( $DIRS )
+	if ( -d $dir ) then 
+		( cd $dir ; make -i DEV_TOP="${DEV_TOP}" TARGET="$EXES[$i].exe" clean )
+	endif
+	/bin/rm -f $EXES[$i].exe
+        if ( $EXES[$i] == "g1print" || $EXES[$i] == "g2print" ) then
+           /bin/rm -f util/$EXES[$i].exe
+        endif
+	@ i ++
+end
+
+#rm gmeta
+
+#if ( -e GRIBFILE.AAA ) then
+#	/bin/rm -f GRIBFILE.[A-Z][A-Z][A-Z]
+#endif
+
+#/bin/rm -f FILE:[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]_[0-9][0-9] >& /dev/null
+
+#if ( -e Vtable ) then
+#	/bin/rm -f Vtable
+#endif
+
+#foreach core ( em nmm ) 
+#	foreach io_form ( nc bin grib )
+#		/bin/rm -f geo_${core}.d[0-9][0-9].${io_form} >& /dev/null
+#		/bin/rm -f met_${core}.d[0-9][0-9].*.${io_form} >& /dev/null
+#	end
+#end
+
+#if ( -e geogrid.log ) then
+#	/bin/rm -f geogrid.log
+#endif
+
+#if ( -e metgrid.log ) then
+#	/bin/rm -f metgrid.log
+#endif
+
+if ( "$1" == '-a' ) then
+	/bin/rm -rf ./netcdf_links
+	foreach dir ( $DIRS )
+		if ( -d $dir ) then 
+			( cd $dir ; make -i DEV_TOP="${DEV_TOP}" TARGET="${dir}.exe" superclean >& /dev/null )
+		endif
+		if { test -h ${dir}.exe } then
+			/bin/rm -f ${dir}.exe
+		endif
+	end
+	if ( ( -e configure.wps ) && ( $TOUCH != TOUCH ) ) then
+		/bin/cp -p configure.wps configure.wps.backup
+		/bin/rm -f configure.wps
+	endif
+endif
+
+if ( ( $TOUCH == TOUCH ) && ( -e configure.wps ) ) then
+	/bin/rm -f configure.wps
+endif

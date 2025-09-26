@@ -1,0 +1,9 @@
+#!/bin/csh -f 
+set echo
+/bin/rm metgrid/src/cio.c
+/bin/cp geogrid/src/cio.c metgrid/src/cio.c
+/bin/rm ungrib/src/debug_cio.c
+/bin/cp geogrid/src/cio.c ungrib/src/debug_cio.c
+/bin/rm util/src/cio.c 
+/bin/cp geogrid/src/cio.c util/src/cio.c
+

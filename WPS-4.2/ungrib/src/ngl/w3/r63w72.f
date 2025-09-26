@@ -1,0 +1,125 @@
+      SUBROUTINE R63W72(KPDS,KGDS,IPDS,IGDS)
+C$$$  SUBPROGRAM DOCUMENTATION BLOCK
+C
+C SUBPROGRAM:    R63W72      CONVERT W3FI63 PARMS TO W3FI72 PARMS
+C   PRGMMR: IREDELL          ORG: W/NMC23     DATE: 92-10-31
+C
+C ABSTRACT: DETERMINES THE INTEGER PDS AND GDS PARAMETERS
+C           FOR THE GRIB1 PACKING ROUTINE W3FI72 GIVEN THE PARAMETERS
+C           RETURNED FROM THE GRIB1 UNPACKING ROUTINE W3FI63.
+C
+C PROGRAM HISTORY LOG:
+C   91-10-31  MARK IREDELL
+C   96-05-03  MARK IREDELL  CORRECTED SOME LEVEL TYPES AND
+C                           SOME DATA REPRESENTATION TYPES
+C   97-02-14  MARK IREDELL  ONLY ALTERED IPDS(26:27) FOR EXTENDED PDS
+C   98-06-01  CHRIS CARUSO  Y2K FIX FOR YEAR OF CENTURY
+C 2005-05-06  DIANE STOKES  RECOGNIZE LEVEL 236
+C
+C USAGE:    CALL R63W72(KPDS,KGDS,IPDS,IGDS)
+C
+C   INPUT ARGUMENT LIST:
+C     KPDS     - INTEGER (200) PDS PARAMETERS FROM W3FI63
+C     KGDS     - INTEGER (200) GDS PARAMETERS FROM W3FI63
+C
+C   OUTPUT ARGUMENT LIST:
+C     IPDS     - INTEGER (200) PDS PARAMETERS FOR W3FI72
+C     IGDS     - INTEGER (200) GDS PARAMETERS FOR W3FI72
+C
+C REMARKS: KGDS AND IGDS EXTEND BEYOND THEIR DIMENSIONS HERE
+C          IF PL PARAMETERS ARE PRESENT.
+C
+C ATTRIBUTES:
+C   LANGUAGE: CRAY FORTRAN
+C
+C$$$
+      DIMENSION KPDS(200),KGDS(200),IPDS(200),IGDS(200)
+C - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+C  DETERMINE PRODUCT DEFINITION SECTION (PDS) PARAMETERS
+      IF(KPDS(23).NE.2) THEN
+        IPDS(1)=28                      ! LENGTH OF PDS
+      ELSE
+        IPDS(1)=45                      ! LENGTH OF PDS
+      ENDIF
+      IPDS(2)=KPDS(19)                  ! PARAMETER TABLE VERSION
+      IPDS(3)=KPDS(1)                   ! ORIGINATING CENTER
+      IPDS(4)=KPDS(2)                   ! GENERATING MODEL
+      IPDS(5)=KPDS(3)                   ! GRID DEFINITION
+      IPDS(6)=MOD(KPDS(4)/128,2)        ! GDS FLAG
+      IPDS(7)=MOD(KPDS(4)/64,2)         ! BMS FLAG
+      IPDS(8)=KPDS(5)                   ! PARAMETER INDICATOR
+      IPDS(9)=KPDS(6)                   ! LEVEL TYPE
+      IF(KPDS(6).EQ.101.OR.KPDS(6).EQ.104.OR.KPDS(6).EQ.106.OR.
+     &   KPDS(6).EQ.108.OR.KPDS(6).EQ.110.OR.KPDS(6).EQ.112.OR.
+     &   KPDS(6).EQ.114.OR.KPDS(6).EQ.116.OR.KPDS(6).EQ.121.OR.
+     &   KPDS(6).EQ.128.OR.KPDS(6).EQ.141.OR.KPDS(6).EQ.236)  THEN
+        IPDS(10)=MOD(KPDS(7)/256,256)   ! LEVEL VALUE 1
+        IPDS(11)=MOD(KPDS(7),256)       ! LEVEL VALUE 2
+      ELSE
+        IPDS(10)=0                      ! LEVEL VALUE 1
+        IPDS(11)=KPDS(7)                ! LEVEL VALUE 2
+      ENDIF
+      IPDS(12)=KPDS(8)                  ! YEAR OF CENTURY
+      IPDS(13)=KPDS(9)                  ! MONTH
+      IPDS(14)=KPDS(10)                 ! DAY
+      IPDS(15)=KPDS(11)                 ! HOUR
+      IPDS(16)=KPDS(12)                 ! MINUTE
+      IPDS(17)=KPDS(13)                 ! FORECAST TIME UNIT
+      IPDS(18)=KPDS(14)                 ! TIME RANGE 1
+      IPDS(19)=KPDS(15)                 ! TIME RANGE 2
+      IPDS(20)=KPDS(16)                 ! TIME RANGE INDICATOR
+      IPDS(21)=KPDS(17)                 ! NUMBER IN AVERAGE
+      IPDS(22)=KPDS(20)                 ! NUMBER MISSING IN AVERAGE
+      IPDS(23)=KPDS(21)                 ! CENTURY
+      IPDS(24)=KPDS(23)                 ! SUBCENTER
+      IPDS(25)=KPDS(22)                 ! DECIMAL SCALING
+      IF(IPDS(1).GT.28) THEN
+        IPDS(26)=0                      ! PDS BYTE 29
+        IPDS(27)=0                      ! PDS BYTE 30
+      ENDIF
+C - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+C  DETERMINE GRID DEFINITION SECTION (GDS) PARAMETERS
+      IGDS(1)=KGDS(19)                  ! NUMBER OF VERTICAL COORDINATES
+      IGDS(2)=KGDS(20)                  ! VERTICAL COORDINATES
+      IGDS(3)=KGDS(1)                   ! DATA REPRESENTATION
+      IGDS(4)=KGDS(2)                   ! (UNIQUE TO REPRESENTATION)
+      IGDS(5)=KGDS(3)                   ! (UNIQUE TO REPRESENTATION)
+      IGDS(6)=KGDS(4)                   ! (UNIQUE TO REPRESENTATION)
+      IGDS(7)=KGDS(5)                   ! (UNIQUE TO REPRESENTATION)
+      IGDS(8)=KGDS(6)                   ! (UNIQUE TO REPRESENTATION)
+      IGDS(9)=KGDS(7)                   ! (UNIQUE TO REPRESENTATION)
+      IGDS(10)=KGDS(8)                  ! (UNIQUE TO REPRESENTATION)
+      IGDS(11)=KGDS(9)                  ! (UNIQUE TO REPRESENTATION)
+      IGDS(12)=KGDS(10)                 ! (UNIQUE TO REPRESENTATION)
+      IGDS(13)=KGDS(11)                 ! (UNIQUE TO REPRESENTATION)
+      IGDS(14)=KGDS(12)                 ! (UNIQUE TO REPRESENTATION)
+      IGDS(15)=KGDS(13)                 ! (UNIQUE TO REPRESENTATION)
+      IGDS(16)=KGDS(14)                 ! (UNIQUE TO REPRESENTATION)
+      IGDS(17)=KGDS(15)                 ! (UNIQUE TO REPRESENTATION)
+      IGDS(18)=KGDS(16)                 ! (UNIQUE TO REPRESENTATION)
+C  EXCEPTIONS FOR LATLON OR GAUSSIAN
+      IF(KGDS(1).EQ.0.OR.KGDS(1).EQ.4) THEN
+        IGDS(11)=KGDS(10)
+        IGDS(12)=KGDS(9)
+C  EXCEPTIONS FOR MERCATOR
+      ELSEIF(KGDS(1).EQ.1) THEN
+        IGDS(11)=KGDS(13)
+        IGDS(12)=KGDS(12)
+        IGDS(13)=KGDS(9)
+        IGDS(14)=KGDS(11)
+C  EXCEPTIONS FOR LAMBERT CONFORMAL
+      ELSEIF(KGDS(1).EQ.3) THEN
+        IGDS(15)=KGDS(12)
+        IGDS(16)=KGDS(13)
+        IGDS(17)=KGDS(14)
+        IGDS(18)=KGDS(15)
+      ENDIF
+C  EXTENSION FOR PL PARAMETERS
+      IF(KGDS(1).EQ.0.AND.KGDS(19).EQ.0.AND.KGDS(20).NE.255) THEN
+        DO J=1,KGDS(3)
+          IGDS(18+J)=KGDS(21+J)
+        ENDDO
+      ENDIF
+C - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+      RETURN
+      END

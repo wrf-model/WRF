@@ -1,0 +1,47 @@
+GRIB1| Level| From |  To  | metgrid  |  metgrid | metgrid                                 |GRIB2|GRIB2|GRIB2|GRIB2|
+Param| Type |Level1|Level2| Name     |  Units   | Description                             |Discp|Catgy|Param|Level|
+-----+------+------+------+----------+----------+-----------------------------------------+-----------------------+
+   7 | 107  |   *  |      | HGT      | m        | Height                                  |  0  |  3  |  5  | 104 |
+   1 | 107  |   *  |      | PRESSURE | Pa       | Pressure                                |  0  |  3  |  0  | 104 |
+  11 | 107  |   *  |      | TT       | K        | Temperature                             |  0  |  0  |  0  | 104 |
+  51 | 107  |   *  |      | SPECHUMD | kg kg-1  | Specific Humidity                       |  0  |  1  |  0  | 104 |
+  33 | 107  |   *  |      | UU       | m s-1    | U                                       |  0  |  2  |  2  | 104 |
+  34 | 107  |   *  |      | VV       | m s-1    | V                                       |  0  |  2  |  3  | 104 |
+ 153 | 107  |   *  |      | QC       | kg kg-1  | Cloud water mixing ratio                |  0  |  1  | 22  | 104 |
+ 170 | 107  |   *  |      | QR       | kg kg-1  | Rain water mixing ratio                 |  0  |  1  | 24  | 104 |
+  58 | 107  |   *  |      | QI       | kg kg-1  | Ice mixing ratio                        |  0  |  6  |  0  | 104 |
+ 171 | 107  |   *  |      | QS       | kg kg-1  | Snow water mixing ratio                 |  0  |  1  | 25  | 104 |
+ 179 | 107  |   *  |      | QG       | kg kg-1  | Graupel mixing ratio                    |  0  |  1  | 32  | 104 |
+     | 107  |   *  |      | RH       | %        | Relative Humidity                       |  0  |  1  |     | 104 |
+  11 | 105  |   2  |      | TT       | K        | Temperature at 2 m                      |  0  |  0  |  0  | 103 |
+  51 | 105  |   2  |      | SPECHUMD | kg kg-1  | Specific Humidity at 2 m                |  0  |  1  |  0  | 103 |
+     | 105  |   2  |      | RH       | %        | Relative Humidity at 2 m                |  0  |  1  |     | 103 |
+  33 | 105  |  10  |      | UU       | m s-1    | U at 10 m                               |  0  |  2  |  2  | 103 |
+  34 | 105  |  10  |      | VV       | m s-1    | V at 10 m                               |  0  |  2  |  3  | 103 |
+   1 |   1  |   0  |      | PSFC     | Pa       | Surface Pressure                        |  0  |  3  |  0  |   1 |
+   2 | 102  |   0  |      | PMSL     | Pa       | Sea-level Pressure                      |  0  |  3  |  1  | 101 |
+  65 |  1   |   0  |      | SNOW     | kg m-2   | Water equivalent snow depth             |  0  |  1  |  13 |   1 |
+  11 |  1   |   0  |      | SKINTEMP | K        | Snow Temp    5 cm below sfc ( = TSK )   |  0  |  0  |  0  |   1 |
+ 144 |   1  |   0  |      | SOILM000 | kg m-3   | Soil Moist   0 cm below ground          |  2  |  0  | 192 |   1 |
+ 144 | 111  |   5  |      | SOILM005 | kg m-3   | Soil Moist   5 cm below ground          |  2  |  0  | 192 | 106 |
+ 144 | 111  |  20  |      | SOILM020 | kg m-3   | Soil Moist  20 cm below ground          |  2  |  0  | 192 | 106 |
+ 144 | 111  |  40  |      | SOILM040 | kg m-3   | Soil Moist  40 cm below ground          |  2  |  0  | 192 | 106 |
+ 144 | 111  | 160  |      | SOILM160 | kg m-3   | Soil Moist 160 cm below ground          |  2  |  0  | 192 | 106 |
+ 144 | 111  | 300  |      | SOILM300 | kg m-3   | Soil Moist 300 cm below ground          |  2  |  0  | 192 | 106 |
+  85 |   1  |   0  |      | SOILT000 | K        | Soil Temp    0 cm below ground          |  2  |  0  |  2  |   1 |
+  85 | 111  |   5  |      | SOILT005 | K        | Soil Temp    5 cm below ground          |  2  |  0  |  2  | 106 |
+  85 | 111  |  20  |      | SOILT020 | K        | Soil Temp   20 cm below ground          |  2  |  0  |  2  | 106 |
+  85 | 111  |  40  |      | SOILT040 | K        | Soil Temp   40 cm below ground          |  2  |  0  |  2  | 106 |
+  85 | 111  | 160  |      | SOILT160 | K        | Soil Temp  160 cm below ground          |  2  |  0  |  2  | 106 |
+  85 | 111  | 300  |      | SOILT300 | K        | Soil Temp  300 cm below ground          |  2  |  0  |  2  | 106 |
+  91 |  1   |   0  |      | SEAICE   |          | Ice flag                                | 10  |  2  |  0  |   1 |
+ 223 |  1   |   0  |      | CANWAT   | kg m-2   | Plant Canopy Surface Water              |  2  |  0  | 196 |   1 |
+  81 |  1   |   0  |      | LANDSEA  | proprtn  | Land/Sea flag (1=land, 0 or 2=sea)      |  2  |  0  |  0  |   1 |
+-----+------+------+------+----------+----------+-----------------------------------------+-----------------------+
+
+
+#  Vtable for WRF-ARW output that has been processed by UPP and is on eta/sigma levels and in Grib format
+#
+#    Note that ARW output written directly to Grib format cannot be used by ungrib. WPS cannot process
+#    ARW output fields such as MU (instead of pressure) and Theta perturbation (instead of temperature).
+#

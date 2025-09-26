@@ -1,0 +1,34 @@
+&share
+ wrf_core = 'NMM',
+ max_dom = 1,
+ start_date = '2005-01-23_00:00:00',
+ end_date   = '2005-01-24_00:00:00',
+ interval_seconds = 10800
+ io_form_geogrid = 2,
+/
+
+&geogrid
+ parent_id         =   1,   1,
+ parent_grid_ratio =   1,   3,
+ i_parent_start    =   1,   17,
+ j_parent_start    =   1,   31,
+ e_we              =  56,   58,
+ e_sn              =  92,   100,
+ geog_data_res     = '5m',  '2m',
+ dx = 0.096290,
+ dy = 0.096011,
+ map_proj = 'rotated_ll',
+ ref_lat   =  42.00,
+ ref_lon   = -71.00,
+ geog_data_path = '/glade/work/wrfhelp/WPS_GEOG/'
+/
+
+&ungrib
+ out_format = 'WPS',
+ prefix = 'FILE',
+/
+
+&metgrid
+ fg_name = 'FILE'
+ io_form_metgrid = 2, 
+/

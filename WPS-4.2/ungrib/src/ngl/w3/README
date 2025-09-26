@@ -1,0 +1,21 @@
+                                                           Jul 29, 2004
+                                                           W/NP11:SAG
+                                                                                
+W3lib Library.
+                                                                                
+This library contains Fortran 90 decoder/encoder
+routines for GRIB edition 1, general date manipulation
+routines, and a Fortran 90 interface to "C"
+language I/O routines.  The user API for the GRIB1 routines
+is described in file "grib1.doc".
+                                                                                
+Some Fortran routines call "C" functions, which must
+follow a specific symbol naming convention used by your
+machine/loader to be linked successfully.
+If you are having trouble linking to the routines
+in this library, please make sure the appropriate
+machine is defined as an option in the CFLAGS
+variable in the Makefile.  See the first few lines
+of the Makefile for valid options.
+Recompile the library.
+

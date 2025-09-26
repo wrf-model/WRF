@@ -1,0 +1,38 @@
+GRIB | Level| Level| Level| metgrid  |  metgrid | metgrid                                  |
+Code | Code |   1  |   2  | Name     |  Units   | Description                              |
+-----+------+------+------+----------+----------+------------------------------------------+
+  11 | 100  |   *  |      | TT       | K        | Temperature                              |
+  33 | 100  |   *  |      | UU       | m s-1    | U                                        |
+  34 | 100  |   *  |      | VV       | m s-1    | V                  (from pgb file)       |
+  52 | 100  |   *  |      | RH       | %        | Relative Humidity                        |
+  7  | 100  |   *  |      | HGT      | m        | Height                                   |
+  11 | 105  |   2  |      | TT       | K        | Temperature        (from  flx file)      |
+  52 | 105  |   2  |      | RH       | %        | Relative Humidity  (from  flx file)      |
+  51 | 105  |   2  |      | SPECHUMD | kg kg-1  |                                          |
+  33 | 105  |  10  |      | UU       | m s-1    | U                  (from  flx file)      |
+  34 | 105  |  10  |      | VV       | m s-1    | V                  (from  flx file)      |
+   1 |   1  |   0  |      | PSFC     | Pa       | Surface Pressure   (from  flx file)      |
+   1 | 102  |   0  |      | PMSL     | Pa       | Sea-level Pressure (from  pgb file)      |
+  65 |  1   |   0  |      | SNOW     | kg m-2   | Water Equiv of Accum Snow Depth  (flx)   | 
+     |  1   |   0  |      | SNOWH    | m        | Physical Snow Depth                      |
+  11 |  1   |   0  |      | SKINTEMP | K        | Sea-Surface Temperature (from  flx file) |
+  11 | 112  |   0  | 10   | ST000010 | K        | T of 0-10 cm ground layer  (flx file)    |
+  11 | 112  |  10  | 200  | ST010200 | K        | T of 10-200 cm ground layer (flx file)   |
+ 144 | 112  |   0  | 10   | SM000010 | fraction | Soil Moisture of 0-10 cm gnd layer (flx) |
+ 144 | 112  |  10  | 200  | SM010200 | fraction | Soil Moisture of 10-200 cm ground layer  |
+  81 |  1   |   0  |      | LANDSEA  | proprtn  | Land/Sea flag                (flx file)  |
+   7 |  1   |   0  |      | SOILHGT  | m        | Terrain from source analysis (from pgb)  | 
+-----+------+------+------+----------+----------+------------------------------------------+
+#
+#
+#
+#  NCEP/DOE Reanalysis (Reanalysis-2)  2.5 degree, 17-levels (1000 to 10 hPa) plus sfc
+#  also called R2, CDAS2, NCEP2
+#
+#  Sea-level pressure is incorrectly coded in the grib file (it should be grib code 2 
+#  not grib code 1).
+#
+#  http://nomad3.ncep.noaa.gov/ncep_data/
+#  http://www.cpc.ncep.noaa.gov/products/wesley/reanalysis2/index.html
+#  http://dss.ucar.edu/datasets/ds091.0/
+#  mss:/DSS/DS091.0/

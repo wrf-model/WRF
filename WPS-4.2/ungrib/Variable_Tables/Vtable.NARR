@@ -1,0 +1,52 @@
+GRIB | Level| Level| Level| metgrid  |  metgrid | metgrid                                  |
+Code | Code |   1  |   2  | Name     |  Units   | Description                              |
+-----+------+------+------+----------+----------+------------------------------------------+
+  11 | 100  |   *  |      | TT       | K        | Temperature                              |
+  33 | 100  |   *  |      | UU       | m s-1    | U                                        |
+  34 | 100  |   *  |      | VV       | m s-1    | V                  (from .3D file)       |
+  51 | 100  |   *  |      | SPECHUMD | kg kg-1  |                                          |
+  52 | 100  |   *  |      | RH       | %        | Relative Humidity                        |
+  7  | 100  |   *  |      | HGT      | m        | Height                                   |
+  11 | 105  |   2  |      | TT       | K        | Temperature        (from .flx file)      |
+  52 | 105  |   2  |      | RH       | %        | Relative Humidity  (from .flx file)      |
+  33 | 105  |  10  |      | UU       | m s-1    | U                  (from .flx file)      |
+  34 | 105  |  10  |      | VV       | m s-1    | V                  (from .flx file)      |
+   1 |   1  |   0  |      | PSFC     | Pa       | Surface Pressure   (from .sfc file)      |
+ 130 | 102  |   0  |      | PMSL     | Pa       | Sea-level Pressure (from .flx file)      |
+  65 |  1   |   0  |      | SNOW     | kg m-2   | Water Equiv of Accum Snow Depth  (.sfc)  | 
+  11 |  1   |   0  |      | SKINTEMP | K        | Sea-Surface Temperature (from .sfc file) |
+ 223 |  1   |   0  |      | CANWAT   | kg m-2   | Plant Canopy Surface Water (.sfc file)   | 
+  85 | 112  |   0  | 10   | ST000010 | K        | T of 0-10 cm ground layer  (.flx file)   |
+  85 | 112  |  10  | 40   | ST010040 | K        | T of 10-40 cm ground layer (.flx file)   |
+  85 | 112  |  40  |100   | ST040100 | K        | T of 40-100 cm ground layer (.flx file)  |
+  85 | 112  | 100  |200   | ST100200 | K        | T of 100-200 cm ground layer (.flx file) |
+ 144 | 112  |  0   | 10   | SM000010 | fraction | Soil Moisture of 0-10 cm gnd layer (.flx)|
+ 144 | 112  | 10   | 40   | SM010040 | fraction | Soil Moisture of 10-40 cm ground layer   |
+ 144 | 112  | 40   |100   | SM040100 | fraction | Soil Moisture of 40-100 cm ground layer  |
+ 144 | 112  |100   |200   | SM100200 | fraction | Soil Moisture of 100-200 cm ground layer |
+  81 |  1   |   0  |      | LANDSEA  | proprtn  | Land/Sea flag          (from .fixed file)|
+   7 |  1   |   0  |      | SOILHGT  | m        | Terrain from source analysis             | 
+-----+------+------+------+----------+----------+------------------------------------------+
+#
+#
+#  North American Regional Reanalysis, 32 km (Grid 221), 29 p-levels (1000 - 100 hPa) plus sfc
+#  
+#  There is a mismatch between the landmask and the soil moisture fields along the
+#  western shore of Hudson Bay in the NARR output. To account for this problem, the
+#  following line should be added to the SM entries in METGRID.TBL 
+#  name= SM000010, SM010040, SM040100, SM100200
+#
+#       missing_value=-1.e30
+#
+#
+#   http://www.emc.ncep.noaa.gov/mmb/rreanl/
+#   http://www.cdc.noaa.gov/cdc/data.narr.html
+#
+#  The last 4 entries in the Vtable (LANDSEA, SOILHGT, SOILCAT, and VEGCAT) can be
+# obtained from the fixed files at http://wwwt.emc.ncep.noaa.gov/mmb/rreanl/index.html
+# (or from the NCAR archive), then 1) Run ungrib on the .fixed file and an initial time
+# of 1979-11-08_00.  2) rename the output file (NARR.CONSTANTS is a good choice;
+# i.e. mv FILE:1979-11-08_00 NARR.CONSTANTS) 3) Run ungrib on the .flx, .3D, and .sfc files
+# (or your NCDC grib files) 4) Run metgrid with constants_name = NARR.CONSTANTS in the namelist
+#
+#  Note that U and V in NARR output are earth relative

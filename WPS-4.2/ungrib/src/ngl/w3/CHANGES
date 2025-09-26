@@ -1,0 +1,40 @@
+
+w3lib-1.1  - August   2003 - Original version
+
+w3lib-1.2  - July     2004 - Added new grids
+
+w3lib-1.3  - December 2006 - Added new grids and corrected the LAT/LON increment
+
+w3lib-1.4  - May      2007 - Update routines (w3fi71.f and w3fi63.f) to add
+                               new data represent type 204 (CURVILINEAR ORTHOGONAL GRID)
+                               and corrected the LAT/LON increment and Added new
+                               grids
+
+w3lib-1.5  - NOV      2007 - Update routines (w3fi71.f and w3fi63.f) to add
+                             new grids (10, 99, 150, 151,197) and changed grid 198
+                             from Arkawa Staggered E-grid to Polar Stereographic grid.
+
+w3lib-1.6  - JAN      2008 - Update routines (w3fi71.f and w3fi63.f) to add
+                             new grids 195 and Changed grid 196 (from Arakawa-E to Mercator)
+
+w3lib-1.7  - JUN      2009 - Update routines (w3fi63.f) to handle grid 45
+
+w3lib-1.8  - JAN      2010 - Update routines (w3fi71.f and w3fi63.f) to add
+                             new grids 139 and 140
+
+w3lib-1.9  - AUG      2010 - added new grid 184, 199, 83 and
+                             redefined grid 90 for new rtma conus 1.27-km
+                             redefined grid 91 for new rtma alaska 2.976-km
+                             redefined grid 92 for new rtma alaska 1.488-km
+
+w3lib-2.0  - Jan      2011 - CHANGED GRID 94 TO ALASKA 6KM STAGGERED B-GRID
+                             CHANGED GRID 95 TO PUERTO RICO 3KM STAGGERED B-GRID
+                             CHANGED GRID 96 TO HAWAII 3KM STAGGERED B-GRID
+                             CHANGED GRID 96 TO HAWAII 3KM STAGGERED B-GRID
+                             CHANGED GRID 97 TO CONUS 4KM STAGGERED B-GRID
+                             CHANGED GRID 99 TO NAM 12KM STAGGERED B-GRID
+                             ADDED GRID 179 (12 KM POLAR STEREOGRAPHIC OVER NORTH AMERICA)
+                             CHANGED GRID 194 TO 3KM MERCATOR GRID OVER PUERTO RICO
+                             CORRECTED LATITUDE OF SW CORNER POINT OF GRID 151
+                             FIX ALLOCATION OF ARRAY BMS
+                             ADD GRID 205 - ROTATED LAT/LON A,B,C,D STAGGERS

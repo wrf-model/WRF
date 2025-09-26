@@ -1,0 +1,22 @@
+GRIB1| Level| From |  To  | metgrid  |  metgrid| metgrid                                 |GRIB2|GRIB2|GRIB2|GRIB2|
+Param| Type |Level1|Level2| Name     |  Units  | Description                             |Discp|Catgy|Param|Level|
+-----+------+------+------+----------+---------+-----------------------------------------+-----------------------+
+  11 | 100  |   *  |      | TT       | K       | Temperature                             |  0  |  0  |  0  | 100 |
+  33 | 100  |   *  |      | UU       | m s-1   | U                                       |  0  |  2  |  2  | 100 |
+  34 | 100  |   *  |      | VV       | m s-1   | V                                       |  0  |  2  |  3  | 100 |
+  52 | 100  |   *  |      | RH       | %       | Relative Humidity                       |  0  |  1  |  1  | 100 |
+   7 | 100  |   *  |      | HGT      | m       | Height                                  |  0  |  3  |  5  | 100 |
+  11 | 105  |   2  |      | TT       | K       | Temperature       at 2 m                |  0  |  0  |  0  | 103 |
+     | 105  |   2  |      | RH       | %       | Relative Humidity at 2 m (n/a in p file)|  0  |  1  |  1  | 103 |
+  51 | 105  |   2  |      | SPECHUMD | kg kg-1 |                                         |  0  |  1  |  0  | 103 |
+  33 | 105  |  10  |      | UU       | m s-1   | U                 at 10 m               |  0  |  2  |  2  | 103 |
+  34 | 105  |  10  |      | VV       | m s-1   | V                 at 10 m               |  0  |  2  |  3  | 103 |
+   1 |   1  |   0  |      | PSFC     | Pa      | Surface Pressure                        |  0  |  3  |  0  |   1 |
+ 129 | 102  |   0  |      | PMSL     | Pa      | Sea-level Pressure                      |  0  |  3  | 198 | 101 |
+   7 |   1  |   0  |      | SOILHGT  | m       | Terrain field of source analysis        |  0  |  3  |  5  |   1 |
+  65 |   1  |   0  |      | SNOW     | kg m-2  | Water equivalent snow depth             |  0  |  1  | 13  |   1 |
+  11 |   1  |   0  |      | SKINTEMP | K       | Temperature at ground sfc (from s file) |  0  |  0  |  0  |   1 |
+ 223 |   1  |   0  |      | CANWAT   | kg m-2  | Plant Canopy Surface Water              |  2  |  0  | 196 |   1 |
+ 224 |   1  |   0  |      | SOILCAT  | Tab4.213| Dominant soil type category             |  2  |  3  |  0  |   1 |
+ 225 |   1  |   0  |      | VEGCAT   | Tab4.212| Dominant land use category              |  2  |  0  | 198 |   1 |
+-----+------+------+------+----------+---------+-----------------------------------------+-----------------------+

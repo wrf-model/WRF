@@ -1,0 +1,832 @@
+########################################################################################################################
+#ARCH   Linux ppc64le POWER Linux, XL compiler # serial serial_NO_GRIB2 dmpar dmpar_NO_GRIB2
+#
+COMPRESSION_LIBS    = CONFIGURE_COMP_L
+COMPRESSION_INC     = CONFIGURE_COMP_I
+FDEFS               = CONFIGURE_FDEFS
+NCARG_LIBS          =
+NCARG_LIBS2         =
+FC                  = mpifort
+SFC                 = xlf2003_r
+CC                  = mpicc
+SCC                 = xlc_r
+LD                  = $(FC)
+FFLAGS              = -qfree=f90 -qufmt=be
+F77FLAGS            = -qfixed -qufmt=be
+FNGFLAGS            = $(FFLAGS)
+LDFLAGS             = -qopenmp
+CFLAGS              =
+CPP                 = cpp -P -traditional
+CPPFLAGS            = -Uvector -DBYTESWAP -DLINUX -DIO_NETCDF -DIO_BINARY -DIO_GRIB1 -DBIT32 CONFIGURE_MPI
+ARFLAGS             =
+########################################################################################################################
+#ARCH   Linux ppc64le POWER Linux, PGI compiler # serial serial_NO_GRIB2 dmpar dmpar_NO_GRIB2
+#
+COMPRESSION_LIBS    = CONFIGURE_COMP_L
+COMPRESSION_INC     = CONFIGURE_COMP_I
+FDEFS               = CONFIGURE_FDEFS
+NCARG_LIBS          =
+NCARG_LIBS2         =
+FC                  = mpifort
+SFC                 = pgfortran
+CC                  = mpicc
+SCC                 = pgcc
+LD                  = $(FC)
+FFLAGS              = -Mfree -byteswapio
+F77FLAGS            = -Mfixed -byteswapio
+FNGFLAGS            = $(FFLAGS)
+LDFLAGS             = -qopenmp
+CFLAGS              =
+CPP                 = cpp -P -traditional
+CPPFLAGS            = -Uvector -D_UNDERSCORE -DBYTESWAP -DLINUX -DIO_NETCDF -DIO_BINARY -DIO_GRIB1 -DBIT32 CONFIGURE_MPI
+ARFLAGS             =
+
+########################################################################################################################
+#ARCH   Linux ppc64 BG bglxf compiler with blxlc  # dmpar
+#
+COMPRESSION_LIBS    = -L$(JASPERLIB) -ljasper -lpng -lz
+COMPRESSION_INC     = -I$(JASPERINC)
+NCARG_LIBS          =
+NCARG_LIBS2         = -L/usr/local/lib64/r4i4 -lncarg -lncarg_gks -lncarg_c \
+                      -L/usr/X11R6/lib -lX11
+BGL_SYS             = /bgl/BlueLight/ppcfloor/bglsys
+MPI_INC             = -I$(BGL_SYS)/include
+MPI_LIB             = -L$(BGL_SYS)/lib -lmpich.rts -lmsglayer.rts -lrts.rts -ldevices.rts
+FC                  = blrts_xlf90
+SFC                 = blrts_xlf90
+CC                  = blrts_xlc
+LD                  = $(FC)
+FFLAGS              = -qfree=f90 $(MPI_INC)
+F77FLAGS            = -qfixed $(MPI_INC)
+FNGFLAGS            = $(FFLAGS)
+LDFLAGS             = 
+SCC                 = cc
+CFLAGS              = $(MPI_INC)
+# this might be different on different systems but we want the xlf version of cpp, not Linux's
+# on frost.ucar.edu
+CPP                 = /opt/ibmcmp/xlf/9.1/exe/cpp -P -traditional
+# on NYBlue
+CPP                 = /opt/ibmcmp/xlf/bg/10.1/exe/cpp -P -traditional
+CPPFLAGS            = -DAIX -DIBM4 -DIO_NETCDF -DIO_BINARY -DIO_GRIB1 -DBIT32 CONFIGURE_MPI
+ARFLAGS             =
+
+########################################################################################################################
+#ARCH    Linux i486 i586 i686, PGI compiler    # serial serial_NO_GRIB2 dmpar dmpar_NO_GRIB2
+#
+COMPRESSION_LIBS    = CONFIGURE_COMP_L
+COMPRESSION_INC     = CONFIGURE_COMP_I
+FDEFS               = CONFIGURE_FDEFS
+NCARG_LIBS2         = -L${PGI}/linux86/6.1/lib -lpgftnrtl -lpgc \
+                      -L/usr/lib/gcc-lib/i386-redhat-linux/3.2.3 -lg2c
+SFC                 = pgf90
+SCC                 = pgcc
+DM_FC               = mpif90
+DM_CC               = mpicc
+FC                  = CONFIGURE_FC
+CC                  = CONFIGURE_CC
+LD                  = $(FC)
+FFLAGS              = -Mfree -byteswapio -O
+F77FLAGS            = -Mfixed -byteswapio -O
+FCSUFFIX            =
+FNGFLAGS            = $(FFLAGS)
+LDFLAGS             =
+CFLAGS              = -O    
+CPP                 = /lib/cpp -P -traditional
+CPPFLAGS            = -D_UNDERSCORE -DBYTESWAP -DLINUX -DIO_NETCDF -DIO_BINARY -DIO_GRIB1 -DBIT32 CONFIGURE_MPI
+ARFLAGS             =
+CC_TOOLS            = 
+
+########################################################################################################################
+#ARCH    Linux i486 i586 i686, Intel compiler    # serial serial_NO_GRIB2 dmpar dmpar_NO_GRIB2
+#
+COMPRESSION_LIBS    = CONFIGURE_COMP_L
+COMPRESSION_INC     = CONFIGURE_COMP_I
+FDEFS               = CONFIGURE_FDEFS
+SFC                 = ifort
+SCC                 = icc
+DM_FC               = mpif90
+DM_CC               = mpicc
+FC                  = CONFIGURE_FC
+CC                  = CONFIGURE_CC 
+LD                  = $(FC)
+FFLAGS              = -FR -convert big_endian
+F77FLAGS            = -FI -convert big_endian
+FCSUFFIX            =
+FNGFLAGS            = $(FFLAGS)
+LDFLAGS             = -qopenmp
+CFLAGS              = -w
+CPP                 = /lib/cpp -P -traditional
+CPPFLAGS            = -D_UNDERSCORE -DBYTESWAP -DLINUX -DIO_NETCDF -DIO_BINARY -DIO_GRIB1 -DBIT32 CONFIGURE_MPI
+ARFLAGS             =
+CC_TOOLS            =
+
+########################################################################################################################
+#ARCH    Linux i486 i586 i686, g95   # serial serial_NO_GRIB2 dmpar dmpar_NO_GRIB2
+#
+COMPRESSION_LIBS    = CONFIGURE_COMP_L
+COMPRESSION_INC     = CONFIGURE_COMP_I
+FDEFS               = CONFIGURE_FDEFS
+SFC                 = g95
+SCC                 = gcc
+DM_FC               = mpif90
+DM_CC               = mpicc
+FC                  = CONFIGURE_FC
+CC                  = CONFIGURE_CC 
+LD                  = $(FC)
+FFLAGS              = -ffree-form -O -fendian=big
+F77FLAGS            = -ffixed-form -O -fendian=big
+FCSUFFIX            = 
+FNGFLAGS            = $(FFLAGS)
+LDFLAGS             = 
+CFLAGS              = 
+CPP                 = /usr/bin/cpp -P -traditional
+CPPFLAGS            = -D_DOUBLEUNDERSCORE -DBYTESWAP -DLINUXG95 -DIO_NETCDF -DBIT32 CONFIGURE_MPI
+ARFLAGS             =
+CC_TOOLS            = 
+
+########################################################################################################################
+#ARCH    Linux i486 i586 i686, gfortran   # serial serial_NO_GRIB2 dmpar dmpar_NO_GRIB2
+#
+COMPRESSION_LIBS    = CONFIGURE_COMP_L
+COMPRESSION_INC     = CONFIGURE_COMP_I
+FDEFS               = CONFIGURE_FDEFS
+SFC                 = gfortran
+SCC                 = gcc
+DM_FC               = mpif90
+DM_CC               = mpicc
+FC                  = CONFIGURE_FC 
+CC                  = CONFIGURE_CC
+LD                  = $(FC)
+FFLAGS              = -ffree-form -O -fconvert=big-endian -frecord-marker=4
+F77FLAGS            = -ffixed-form -O -fconvert=big-endian -frecord-marker=4
+FCSUFFIX            = 
+FNGFLAGS            = $(FFLAGS)
+LDFLAGS             = -fopenmp
+CFLAGS              =
+CPP                 = /usr/bin/cpp -P -traditional
+CPPFLAGS            = -D_UNDERSCORE -DBYTESWAP -DLINUX -DIO_NETCDF -DBIT32 -DNO_SIGNAL CONFIGURE_MPI
+RANLIB              = ranlib
+
+########################################################################################################################
+#ARCH    Linux x86_64, gfortran   # serial serial_NO_GRIB2 dmpar dmpar_NO_GRIB2
+#
+COMPRESSION_LIBS    = CONFIGURE_COMP_L
+COMPRESSION_INC     = CONFIGURE_COMP_I
+FDEFS               = CONFIGURE_FDEFS
+SFC                 = gfortran
+SCC                 = gcc
+DM_FC               = mpif90
+DM_CC               = mpicc
+FC                  = CONFIGURE_FC 
+CC                  = CONFIGURE_CC
+LD                  = $(FC)
+FFLAGS              = -ffree-form -O -fconvert=big-endian -frecord-marker=4
+F77FLAGS            = -ffixed-form -O -fconvert=big-endian -frecord-marker=4
+FCSUFFIX            = 
+FNGFLAGS            = $(FFLAGS)
+LDFLAGS             = -fopenmp
+CFLAGS              =
+CPP                 = /usr/bin/cpp -P -traditional
+CPPFLAGS            = -D_UNDERSCORE -DBYTESWAP -DLINUX -DIO_NETCDF -DBIT32 -DNO_SIGNAL CONFIGURE_MPI
+RANLIB              = ranlib 
+
+########################################################################################################################
+#ARCH    Linux x86_64, PGI compiler  # serial serial_NO_GRIB2 dmpar dmpar_NO_GRIB2
+#
+COMPRESSION_LIBS    = CONFIGURE_COMP_L
+COMPRESSION_INC     = CONFIGURE_COMP_I
+FDEFS               = CONFIGURE_FDEFS
+NCARG_LIBS2         = -L${PGI}/linux86-64/5.2/lib -lpgftnrtl -lpgc \
+                      -L/usr/lib64 -lg2c
+SFC                 = pgf90
+SCC                 = pgcc
+DM_FC               = mpif90
+DM_CC               = mpicc
+FC                  = CONFIGURE_FC
+CC                  = CONFIGURE_CC
+LD                  = $(FC) 
+FFLAGS              = -Mfree -byteswapio -O
+F77FLAGS            = -Mfixed -byteswapio -O
+FCSUFFIX            = 
+FNGFLAGS            = $(FFLAGS)
+LDFLAGS             = 
+CFLAGS              = -O
+CPP                 = /lib/cpp -P -traditional
+CPPFLAGS            = -D_UNDERSCORE -DBYTESWAP -DLINUX -DIO_NETCDF -DIO_BINARY -DIO_GRIB1 -DBIT32 CONFIGURE_MPI
+ARFLAGS             =
+CC_TOOLS            = 
+
+########################################################################################################################
+#ARCH    Linux x86_64, PGI compiler, SGI MPT  # serial serial_NO_GRIB2 dmpar dmpar_NO_GRIB2
+#
+COMPRESSION_LIBS    = CONFIGURE_COMP_L
+COMPRESSION_INC     = CONFIGURE_COMP_I
+FDEFS               = CONFIGURE_FDEFS
+NCARG_LIBS2         = -L${PGI}/linux86-64/5.2/lib -lpgftnrtl -lpgc \
+                      -L/usr/lib64 -lg2c
+SFC                 = pgf90
+SCC                 = pgcc
+DM_FC               = $(SFC) -I$(MPI_ROOT)/include
+DM_CC               = $(SCC) -I$(MPI_ROOT)/include
+FC                  = CONFIGURE_FC
+CC                  = CONFIGURE_CC
+LD                  = $(FC) 
+FFLAGS              = -Mfree -byteswapio -O
+F77FLAGS            = -Mfixed -byteswapio -O
+FCSUFFIX            = 
+FNGFLAGS            = $(FFLAGS)
+LDFLAGS             = -L$(MPI_ROOT)/lib -lmpi
+CFLAGS              = -w -O3
+CPP                 = /lib/cpp -P -traditional
+CPPFLAGS            = -D_UNDERSCORE -DBYTESWAP -DLINUX -DIO_NETCDF -DIO_BINARY -DIO_GRIB1 -DBIT32 CONFIGURE_MPI
+ARFLAGS             =
+CC_TOOLS            = 
+
+########################################################################################################################
+#ARCH   Linux x86_64, IA64 and Opteron   # serial serial_NO_GRIB2 dmpar dmpar_NO_GRIB2
+#
+COMPRESSION_LIBS    = CONFIGURE_COMP_L
+COMPRESSION_INC     = CONFIGURE_COMP_I
+FDEFS               = CONFIGURE_FDEFS
+SFC                 = pathf90
+SCC                 = pathcc
+DM_FC               = mpif90 -f90=pathf90
+DM_CC               = mpicc -cc=pathcc
+FC                  = CONFIGURE_FC
+CC                  = CONFIGURE_CC
+LD                  = $(FC)
+FFLAGS              = -freeform -fno-second-underscore -byteswapio -O
+F77FLAGS            = -byteswapio -fno-second-underscore -O
+FCSUFFIX            = 
+FNGFLAGS            = $(FFLAGS)
+LDFLAGS             = 
+CFLAGS              = -O
+CPP                 = /lib/cpp -P -traditional
+CPPFLAGS            = -D_UNDERSCORE -DBYTESWAP -DLINUX -DIO_NETCDF -DIO_BINARY -DIO_GRIB1 -DBIT32 CONFIGURE_MPI
+ARFLAGS             =
+CC_TOOLS            = 
+
+########################################################################################################################
+#ARCH    Linux x86_64, Intel compiler   # serial serial_NO_GRIB2 dmpar dmpar_NO_GRIB2
+#
+COMPRESSION_LIBS    = CONFIGURE_COMP_L
+COMPRESSION_INC     = CONFIGURE_COMP_I
+FDEFS               = CONFIGURE_FDEFS
+SFC                 = ifort
+SCC                 = icc
+DM_FC               = mpif90
+DM_CC               = mpicc
+FC                  = CONFIGURE_FC
+CC                  = CONFIGURE_CC
+LD                  = $(FC)
+FFLAGS              = -FR -convert big_endian
+F77FLAGS            = -FI -convert big_endian
+FCSUFFIX            = 
+FNGFLAGS            = $(FFLAGS)
+LDFLAGS             = -qopenmp 
+CFLAGS              = -w
+CPP                 = /lib/cpp -P -traditional
+CPPFLAGS            = -D_UNDERSCORE -DBYTESWAP -DLINUX -DIO_NETCDF -DIO_BINARY -DIO_GRIB1 -DBIT32 CONFIGURE_MPI
+ARFLAGS             =
+CC_TOOLS            = 
+
+########################################################################################################################
+#ARCH    Linux x86_64, Intel compiler, SGI MPT   # serial serial_NO_GRIB2 dmpar dmpar_NO_GRIB2
+#
+COMPRESSION_LIBS    = CONFIGURE_COMP_L
+COMPRESSION_INC     = CONFIGURE_COMP_I
+FDEFS               = CONFIGURE_FDEFS
+SFC                 = ifort
+SCC                 = icc
+DM_FC               = $(SFC) -I$(MPI_ROOT)/include
+DM_CC               = $(SCC) -I$(MPI_ROOT)/include
+FC                  = CONFIGURE_FC
+CC                  = CONFIGURE_CC
+LD                  = $(FC)
+FFLAGS              = -FR -convert big_endian
+F77FLAGS            = -FI -convert big_endian
+FCSUFFIX            = 
+FNGFLAGS            = $(FFLAGS)
+LDFLAGS             = -L$(MPI_ROOT)/lib -lmpi
+CFLAGS              = -w
+CPP                 = /lib/cpp -P -traditional
+CPPFLAGS            = -D_UNDERSCORE -DBYTESWAP -DLINUX -DIO_NETCDF -DIO_BINARY -DIO_GRIB1 -DBIT32 CONFIGURE_MPI
+ARFLAGS             =
+CC_TOOLS            = 
+
+########################################################################################################################
+#ARCH    Linux x86_64, Intel compiler, IBM POE   # serial serial_NO_GRIB2 dmpar dmpar_NO_GRIB2
+#
+COMPRESSION_LIBS    = CONFIGURE_COMP_L
+COMPRESSION_INC     = CONFIGURE_COMP_I
+FDEFS               = CONFIGURE_FDEFS
+SFC                 = ifort
+SCC                 = icc
+DM_FC               = mpfort
+DM_CC               = mpcc
+FC                  = CONFIGURE_FC
+CC                  = CONFIGURE_CC
+LD                  = $(FC)
+FFLAGS              = -FR -convert big_endian
+F77FLAGS            = -FI -convert big_endian
+FCSUFFIX            = 
+FNGFLAGS            = $(FFLAGS)
+LDFLAGS             = -qopenmp 
+CFLAGS              = -w
+CPP                 = /lib/cpp -P -traditional
+CPPFLAGS            = -D_UNDERSCORE -DBYTESWAP -DLINUX -DIO_NETCDF -DIO_BINARY -DIO_GRIB1 -DBIT32 CONFIGURE_MPI
+ARFLAGS             =
+CC_TOOLS            = 
+
+########################################################################################################################
+#ARCH    Darwin Intel PGI compiler  # serial serial_NO_GRIB2 dmpar dmpar_NO_GRIB2
+#
+COMPRESSION_LIBS    = CONFIGURE_COMP_L
+COMPRESSION_INC     = CONFIGURE_COMP_I
+FDEFS               = CONFIGURE_FDEFS
+SFC                 = pgf90
+SCC                 = pgcc
+DM_FC               = mpif90
+DM_CC               = mpicc
+FC                  = CONFIGURE_FC
+CC                  = CONFIGURE_CC
+LD                  = $(FC)
+FFLAGS              = -Mfree -byteswapio -O2
+F77FLAGS            = -Mfixed -byteswapio -O2
+FCSUFFIX            = 
+FNGFLAGS            = $(FFLAGS)
+LDFLAGS             = -g
+CFLAGS              = -O
+CPP                 = /usr/bin/cpp -P -traditional
+CPPFLAGS            = -D_UNDERSCORE -DBYTESWAP -DLINUX -DIO_NETCDF -DIO_BINARY -DIO_GRIB1 -DBIT32 -DMACOS CONFIGURE_MPI
+ARFLAGS             =
+RANLIB              = ranlib
+CC_TOOLS            = 
+
+########################################################################################################################
+#ARCH    Darwin Intel PGI compiler; optional DM -f90=pgf90  # serial serial_NO_GRIB2 dmpar dmpar_NO_GRIB2
+#
+COMPRESSION_LIBS    = CONFIGURE_COMP_L
+COMPRESSION_INC     = CONFIGURE_COMP_I
+FDEFS               = CONFIGURE_FDEFS
+SFC                 = pgf90
+SCC                 = pgcc
+DM_FC               = mpif90
+DM_CC               = mpicc
+FC                  = CONFIGURE_FC
+CC                  = CONFIGURE_CC
+LD                  = $(FC)
+FFLAGS              = -Mfree -byteswapio -O2
+F77FLAGS            = -Mfixed -byteswapio -O2
+FCSUFFIX            = 
+FNGFLAGS            = $(FFLAGS)
+LDFLAGS             = -g
+CFLAGS              = -O
+CPP                 = /usr/bin/cpp -P -traditional
+CPPFLAGS            = -D_UNDERSCORE -DBYTESWAP -DLINUX -DIO_NETCDF -DIO_BINARY -DIO_GRIB1 -DBIT32 -DMACOS CONFIGURE_MPI
+ARFLAGS             =
+RANLIB              = ranlib
+CC_TOOLS            = 
+
+########################################################################################################################
+#ARCH   Darwin Intel Intel compiler  # serial serial_NO_GRIB2 dmpar dmpar_NO_GRIB2
+#
+COMPRESSION_LIBS    = CONFIGURE_COMP_L
+COMPRESSION_INC     = CONFIGURE_COMP_I
+FDEFS               = CONFIGURE_FDEFS
+SFC                 = ifort
+SCC                 = icc
+DM_FC               = mpif90
+DM_CC               = mpicc
+FC                  = CONFIGURE_FC
+CC                  = CONFIGURE_CC
+LD                  = $(FC)
+FFLAGS              = -FR -convert big_endian
+F77FLAGS            = -FI -convert big_endian
+FCSUFFIX            = 
+FNGFLAGS            = $(FFLAGS)
+LDFLAGS             = -qopenmp 
+CFLAGS              = -w
+CPP                 = /usr/bin/cpp -P -traditional
+CPPFLAGS            = -D_UNDERSCORE -DBYTESWAP -DLINUX -DIO_NETCDF -DIO_BINARY -DIO_GRIB1 -DBIT32 -DMACOS CONFIGURE_MPI
+ARFLAGS             =
+CC_TOOLS            = 
+
+########################################################################################################################
+#ARCH    Darwin Intel g95 compiler    # serial serial_NO_GRIB2 dmpar dmpar_NO_GRIB2
+#
+COMPRESSION_LIBS    = CONFIGURE_COMP_L
+COMPRESSION_INC     = CONFIGURE_COMP_I
+FDEFS               = CONFIGURE_FDEFS
+SFC                 = g95
+SCC                 = gcc
+DM_FC               = mpif90 -f90=g95
+DM_CC               = mpicc -cc=gcc
+FC                  = CONFIGURE_FC
+CC                  = CONFIGURE_CC
+LD                  = $(FC)
+FFLAGS              = -ffree-form -g -fendian=big
+F77FLAGS            = -ffixed-form -g -fendian=big
+FCSUFFIX            = 
+FNGFLAGS            = $(FFLAGS)
+LDFLAGS             = -g
+CFLAGS              = -g
+CPP                 = /usr/bin/cpp -P -traditional
+CPPFLAGS            = -D_DOUBLEUNDERSCORE -DBYTESWAP -DIO_NETCDF -DBIT32 -DMACOS  CONFIGURE_MPI
+ARFLAGS             =
+RANLIB              = ranlib
+CC_TOOLS            = 
+
+########################################################################################################################
+#ARCH    Darwin Intel gfortran/gcc   # serial serial_NO_GRIB2 dmpar dmpar_NO_GRIB2
+#
+COMPRESSION_LIBS    = CONFIGURE_COMP_L
+COMPRESSION_INC     = CONFIGURE_COMP_I
+FDEFS               = CONFIGURE_FDEFS
+SFC                 = gfortran
+SCC                 = gcc
+DM_FC               = mpif90
+DM_CC               = mpicc
+FC                  = CONFIGURE_FC
+CC                  = CONFIGURE_CC
+LD                  = $(FC)
+FFLAGS              = -ffree-form -O -fconvert=big-endian -frecord-marker=4
+F77FLAGS            = -ffixed-form -O -fconvert=big-endian -frecord-marker=4
+FCSUFFIX            = 
+FNGFLAGS            = $(FFLAGS)
+LDFLAGS             =
+CFLAGS              =
+CPP                 = /usr/bin/cpp -P -traditional
+CPPFLAGS            = -D_UNDERSCORE -DBYTESWAP -DIO_NETCDF -DBIT32 -DMACOS -DNO_SIGNAL CONFIGURE_MPI
+ARFLAGS             =
+RANLIB              = ranlib
+CC_TOOLS            =
+
+########################################################################################################################
+#ARCH    Darwin Intel gfortran/clang   # serial serial_NO_GRIB2 dmpar dmpar_NO_GRIB2
+#
+COMPRESSION_LIBS    = CONFIGURE_COMP_L
+COMPRESSION_INC     = CONFIGURE_COMP_I
+FDEFS               = CONFIGURE_FDEFS
+SFC                 = gfortran
+SCC                 = clang
+DM_FC               = mpif90
+DM_CC               = mpicc
+FC                  = CONFIGURE_FC
+CC                  = CONFIGURE_CC
+LD                  = $(FC)
+FFLAGS              = -ffree-form -O -fconvert=big-endian -frecord-marker=4
+F77FLAGS            = -ffixed-form -O -fconvert=big-endian -frecord-marker=4
+FCSUFFIX            =
+FNGFLAGS            = $(FFLAGS)
+# For a WRF OpenMP build, add the gomp library for WPS
+LDFLAGS             = # -lgomp 
+CFLAGS              =
+CPP                 = /usr/bin/cpp -P -traditional
+CPPFLAGS            = -D_UNDERSCORE -DBYTESWAP -DIO_NETCDF -DBIT32 -DMACOS -DNO_SIGNAL CONFIGURE_MPI
+ARFLAGS             =
+RANLIB              = ranlib
+CC_TOOLS            =
+
+########################################################################################################################
+#ARCH    Darwin PPC xlf   # serial serial_NO_GRIB2
+#
+COMPRESSION_LIBS    = CONFIGURE_COMP_L
+COMPRESSION_INC     = CONFIGURE_COMP_I
+FDEFS               = CONFIGURE_FDEFS
+NCARG_LIBS          = -L$(NCARG_ROOT)/lib -lncarg -lcgm -lncarg_gks -lncarg_c \
+                      -L/usr/X11R6/lib -lX11 \
+                      -L/opt/ibmcmp/xlf/8.1/lib -lg2c
+SFC                 = xlf90_r
+SCC                 = gcc-3.3 # NCAR silly thing
+SCC                 = cc
+DM_FC               = mpif90 -f90=$(SFC)
+DM_CC               = mpicc -cc=$(SCC)
+FC                  = CONFIGURE_FC
+CC                  = CONFIGURE_CC
+LD                  = $(FC)
+FFLAGS              = -qfree
+F77FLAGS            = -qfixed
+FCSUFFIX            = 
+FNGFLAGS            = $(FFLAGS) -qextname
+LDFLAGS             = -Wl,-stack_size,10000000,-stack_addr,0xc000000
+CFLAGS              = -O
+CPP                 = /usr/bin/cpp -P -traditional
+CPPFLAGS            = -DAIX -DMACOS -DIO_NETCDF -DIO_BINARY -DIO_GRIB1 -DBIT32 CONFIGURE_MPI
+ARFLAGS             =
+RANLIB              = ranlib
+CC_TOOLS            = 
+#CC                 = gcc-3.3 # NCAR silly thing
+
+########################################################################################################################
+#ARCH    Darwin PPC xlf gcc3.3 SystemStubs  # serial serial_NO_GRIB2
+#
+COMPRESSION_LIBS    = CONFIGURE_COMP_L
+COMPRESSION_INC     = CONFIGURE_COMP_I
+FDEFS               = CONFIGURE_FDEFS
+NCARG_LIBS          = -L$(NCARG_ROOT)/lib -lncarg -lcgm -lncarg_gks -lncarg_c \
+                      -L/usr/X11R6/lib -lX11 \
+                      -L/opt/ibmcmp/xlf/8.1/lib -lg2c
+SFC                 = xlf90_r
+SCC                 = gcc-3.3
+DM_FC               = mpif90 -f90=$(SFC)
+DM_CC               = mpicc -cc=$(SCC)
+FFLAGS              = -qfree
+F77FLAGS            = -qfixed
+FNGFLAGS            = $(FFLAGS) -qextname
+LDFLAGS             = -Wl,-stack_size,10000000,-stack_addr,0xc0000000 -L/usr/lib -lSystemStubs
+FC                  = CONFIGURE_FC
+CC                  = CONFIGURE_CC
+CFLAGS              = -O
+CPP                 = /usr/bin/cpp -P -traditional
+CPPFLAGS            = -DAIX -DMACOS -DIO_NETCDF -DIO_BINARY -DIO_GRIB1 -DBIT32 CONFIGURE_MPI
+RANLIB              = ranlib
+
+########################################################################################################################
+#ARCH    Darwin PPC g95   # serial serial_NO_GRIB2 dmpar dmpar_NO_GRIB2
+#
+COMPRESSION_LIBS    = CONFIGURE_COMP_L
+COMPRESSION_INC     = CONFIGURE_COMP_I
+FDEFS               = CONFIGURE_FDEFS
+SFC                 = g95
+SCC                 = gcc
+DM_FC               = mpif90 -f90=g95
+DM_CC               = mpicc -cc=gcc
+FC                  = CONFIGURE_FC
+CC                  = CONFIGURE_CC
+LD                  = $(FC)
+FFLAGS              = -ffree-form -g -fno-second-underscore
+F77FLAGS            = -ffixed-form -g -fno-second-underscore
+FCSUFFIX            = 
+FNGFLAGS            = $(FFLAGS)
+LDFLAGS             = -g
+CFLAGS              = -g
+CPP                 = /usr/bin/cpp -P -traditional
+CPPFLAGS            = -D_UNDERSCORE -DBYTESWAP -DLINUXG95 -DIO_NETCDF -DBIT32 CONFIGURE_MPI
+ARFLAGS             =
+RANLIB              = ranlib
+CC_TOOLS            =
+
+########################################################################################################################
+#ARCH    AIX      # serial serial_NO_GRIB2 dmpar dmpar_NO_GRIB2
+#
+COMPRESSION_LIBS    = CONFIGURE_COMP_L
+COMPRESSION_INC     = CONFIGURE_COMP_I
+FDEFS               = CONFIGURE_FDEFS
+NCARG_LIBS          =
+NCARG_LIBS2         = -L/usr/local/lib64/r4i4 -lncarg -lncarg_gks -lncarg_c \
+                      -L/usr/X11R6/lib -lX11 -lpng_ncl -lz_ncl
+SFC                 = xlf90_r
+SCC                 = cc
+DM_FC               = mpxlf90_r
+DM_CC               = mpcc_r
+FC                  = CONFIGURE_FC
+CC                  = CONFIGURE_CC
+LD                  = $(FC)
+AR                  = ar
+FFLAGS              = -qfree=f90
+F77FLAGS            = -qfixed
+FCSUFFIX            = -qsuffix=f=f90
+FNGFLAGS            = $(FFLAGS)
+LDFLAGS             =
+CFLAGS              =
+CPP                 = /usr/lib/cpp -P -traditional
+CPPFLAGS            = -DAIX -DIBM4 -DIO_NETCDF -DIO_BINARY -DIO_GRIB1 -DBIT32 CONFIGURE_MPI
+ARFLAGS             =
+
+########################################################################################################################
+#ARCH    Compaq OSF1 alpha    # serial serial_NO_GRIB2 dmpar dmpar_NO_GRIB2
+#
+COMPRESSION_LIBS    = CONFIGURE_COMP_L
+COMPRESSION_INC     = CONFIGURE_COMP_I
+FDEFS               = CONFIGURE_FDEFS 
+SFC                 = f90
+SCC                 = cc
+DM_FC               = mpif90
+DM_CC               = mpicc
+FC                  = CONFIGURE_FC
+CC                  = CONFIGURE_FC
+LD                  = $(FC)
+FFLAGS              = -free -convert big_endian
+F77FLAGS            = -convert big_endian
+FNGFLAGS            = $(FFLAGS)
+LDFLAGS             =    
+CFLAGS              =    
+CPP                 = /usr/bin/cpp -P -traditional
+CPPFLAGS            = -D_UNDERSCORE -DBYTESWAP -DALPHA -DIO_NETCDF -DIO_BINARY -DIO_GRIB1 -DBIT32  CONFIGURE_MPI
+ARFLAGS             =
+
+########################################################################################################################
+#ARCH    Linux x86_64 g95 compiler    # serial serial_NO_GRIB2 dmpar dmpar_NO_GRIB2
+#
+COMPRESSION_LIBS    = CONFIGURE_COMP_L
+COMPRESSION_INC     = CONFIGURE_COMP_I
+FDEFS               = CONFIGURE_FDEFS
+SFC                 = g95
+SCC                 = gcc
+DM_FC               = mpif90 -f90=$(SFC)
+DM_CC               = mpicc -cc=$(SCC)
+FC                  = CONFIGURE_FC
+CC                  = CONFIGURE_CC
+LD                  = $(FC)
+FFLAGS              = -ffree-form -g -fno-second-underscore
+F77FLAGS            = -ffixed-form -g -fno-second-underscore
+FCSUFFIX            = 
+FNGFLAGS            = $(FFLAGS)
+LDFLAGS             = -g
+CFLAGS              = -g
+CPP                 = /usr/bin/cpp -P -traditional
+CPPFLAGS            = -D_UNDERSCORE -DBYTESWAP -DLINUXG95 -DIO_NETCDF -DBIT32 CONFIGURE_MPI
+ARFLAGS             =
+
+########################################################################################################################
+#ARCH    CYGWIN_NT i686 x86_64 PGI compiler on Windows   # serial_NO_GRIB2 dmpar_NO_GRIB2
+#
+COMPRESSION_LIBS    = CONFIGURE_COMP_L
+COMPRESSION_INC     = CONFIGURE_COMP_I
+FDEFS               = CONFIGURE_FDEFS
+#NCARG_LIBS2        = -L${PGI}/linux86/6.1/lib -lpgftnrtl -lpgc \
+#                     -L/usr/lib/gcc-lib/i386-redhat-linux/3.2.3 -lg2c
+WRF_LIB             = $(WRF_DIR)/external/io_grib1/libio_grib1.a \
+                      $(WRF_DIR)/external/io_grib_share/libio_grib_share.a \
+                      $(WRF_DIR)/external/io_int/libwrfio_int.a \
+                      $(WRF_DIR)/external/io_netcdf/libwrfio_nf.a \
+                      $(NETCDF)/lib/libnetcdf.lib
+SFC                 = pgf90
+SCC                 = pgcc
+DM_FC               = pgf90 -Mmpi=msmpi
+DM_CC               = pgcc -Mmpi=msmpi
+FC                  = CONFIGURE_FC
+CC                  = CONFIGURE_CC
+LD                  = $(FC)
+FFLAGS              = -Mfree -g
+F77FLAGS            = -Mfixed -g
+FCSUFFIX            = 
+FNGFLAGS            = $(FFLAGS)
+LDFLAGS             = -g
+CFLAGS              = -g
+CPP                 = cpp -P -traditional
+CPPFLAGS            = -D_UNDERSCORE -DBYTESWAP -DWIN32 -DIO_NETCDF -DIO_BINARY -DIO_GRIB1 -DBIT32 CONFIGURE_MPI
+ARFLAGS             =
+
+########################################################################################################################
+#ARCH    SGI IRIX64     # serial serial_NO_GRIB2
+#
+COMPRESSION_LIBS    = CONFIGURE_COMP_L
+COMPRESSION_INC     = CONFIGURE_COMP_I
+FDEFS               = CONFIGURE_FDEFS
+SFC                 = f90
+SCC                 = cc
+DM_FC               = mpif90
+DM_CC               = mpicc
+FC                  = CONFIGURE_FC
+CC                  = CONFIGURE_CC
+LD                  = $(FC)
+FFLAGS              = -freeform -64
+F77FLAGS            = -64
+FCSUFFIX            = 
+FNGFLAGS            = $(FFLAGS)
+LDFLAGS             = -64
+CFLAGS              = -64
+CPP                 = /lib/cpp -P -traditional
+CPPFLAGS            = -D_UNDERSCORE -DSGI -DIO_NETCDF -DIO_BINARY -DIO_GRIB1 -DBIT32 CONFIGURE_MPI
+ARFLAGS             =
+CC_TOOLS            = 
+
+########################################################################################################################
+#ARCH    SGI Altix 4700 Linux ia64 Intel   # dmpar
+#
+#COMPRESSION_LIBS   = -L/contrib/jasper/lib -ljasper \
+#                     -L/contrib/libpng/lib -lpng \
+#                     -L/contrib/zlib/lib -lz
+#COMPRESSION_INC    = -I/contrib/zlib/include \
+#                     -I/contrib/jasper/include \
+#                     -I/contrib/libpng/include
+COMPRESSION_LIBS    = CONFIGURE_COMP_L
+COMPRESSION_INC     = CONFIGURE_COMP_I
+FDEFS               = CONFIGURE_FDEFS
+SFC                 = ifort
+SCC                 = icc
+DM_FC               = ifort -lmpi
+DM_CC               = icc -lmpi
+FC                  = CONFIGURE_FC
+CC                  = CONFIGURE_CC
+LD                  = $(FC)
+FFLAGS              = -FR -convert big_endian
+F77FLAGS            = -FI -convert big_endian
+FCSUFFIX            = 
+FNGFLAGS            = 
+LDFLAGS             = 
+CFLAGS              = -w
+CPP                 = /lib/cpp -P -traditional
+CPPFLAGS            = -D_UNDERSCORE -DBYTESWAP -DLINUX -DIO_NETCDF -DIO_BINARY -DIO_GRIB1 -DBIT32 CONFIGURE_MPI
+ARFLAGS             =
+CC_TOOLS            = 
+
+########################################################################################################################
+#ARCH    Sun SunOS    # serial serial_NO_GRIB2
+#
+COMPRESSION_LIBS    = CONFIGURE_COMP_L
+COMPRESSION_INC     = CONFIGURE_COMP_I
+FDEFS               = CONFIGURE_FDEFS
+SFC                 = f90
+SCC                 = cc
+DM_FC               = 
+DM_CC               = 
+FC                  = CONFIGURE_FC
+CC                  = CONFIGURE_CC
+LD                  = $(FC)
+FFLAGS              = -free
+F77FLAGS            = 
+FCSUFFIX            = 
+FNGFLAGS            = $(FFLAGS)
+LDFLAGS             = 
+CFLAGS              = -O
+CPP                 = /usr/ccs/lib/cpp -P -traditional
+CPPFLAGS            = -D_UNDERSCORE -DIO_NETCDF -DIO_BINARY -DIO_GRIB1 -DBIT32 CONFIGURE_MPI
+ARFLAGS             =
+
+########################################################################################################################
+#ARCH   Cray XE/XC CLE/Linux x86_64, Cray compiler  # serial serial_NO_GRIB2 dmpar dmpar_NO_GRIB2
+#
+COMPRESSION_LIBS    = CONFIGURE_COMP_L
+COMPRESSION_INC     = CONFIGURE_COMP_I
+FDEFS               = CONFIGURE_FDEFS
+SFC                 = ftn
+SCC                 = gcc
+DM_FC               = ftn
+DM_CC               = cc
+FC                  = CONFIGURE_FC
+CC                  = CONFIGURE_CC
+LD                  = $(FC)
+FFLAGS              = -N255 -f free -h byteswapio
+F77FLAGS            = -N255 -f fixed -h byteswapio
+FCSUFFIX            =
+FNGFLAGS            = $(FFLAGS)
+LDFLAGS             = -qopenmp
+CFLAGS              = -O2
+CPP                 = /lib/cpp -P -traditional
+CPPFLAGS            = -D_UNDERSCORE -DBYTESWAP -DLINUX -DIO_NETCDF -DIO_BINARY -DIO_GRIB1 -DBIT32 CONFIGURE_MPI
+ARFLAGS             =
+CC_TOOLS            =
+
+########################################################################################################################
+#ARCH   Cray XC CLE/Linux x86_64, Intel compiler  # serial serial_NO_GRIB2 dmpar dmpar_NO_GRIB2
+#
+COMPRESSION_LIBS    = CONFIGURE_COMP_L
+COMPRESSION_INC     = CONFIGURE_COMP_I
+FDEFS               = CONFIGURE_FDEFS
+SFC                 = ftn
+SCC                 = cc
+DM_FC               = $(SFC)
+DM_CC               = $(SCC) 
+FC                  = CONFIGURE_FC
+CC                  = CONFIGURE_CC
+LD                  = $(FC)
+FFLAGS              = -FR -convert big_endian
+F77FLAGS            = -FI -convert big_endian
+FCSUFFIX            =
+FNGFLAGS            = $(FFLAGS)
+LDFLAGS             = -qopenmp
+CFLAGS              =
+CPP                 = /lib/cpp -P -traditional
+CPPFLAGS            = -D_UNDERSCORE -DBYTESWAP -DLINUX -DIO_NETCDF -DIO_BINARY -DIO_GRIB1 -DBIT32 CONFIGURE_MPI
+ARFLAGS             =
+CC_TOOLS            =
+
+########################################################################################################################
+#ARCH    NULL   # serial serial_NO_GRIB2 dmpar dmpar_NO_GRIB2
+
+#DM_FC              = 
+#DM_CC              = 
+#FC                 = 
+#SFC                = 
+#LD                 = 
+#RWORDSIZE          = 
+#PROMOTION          = 
+#FCOPTIM            = 
+#FCREDUCEDOPT       = 
+#FCNOOPT            = 
+#FCDEBUG            = 
+#FORMAT_FIXED       = 
+#FORMAT_FREE        = 
+#FCSUFFIX           = 
+#BYTESWAPIO         = 
+#FCBASEOPTS         = 
+#MODULE_SRCH_FLAG   =
+#TRADFLAG           = 
+#CPP                = 
+#AR                 = 
+#FFLAGS             = 
+#F77FLAGS           = 
+#FCSUFFIX           = 
+#FNGFLAGS           = 
+#LDFLAGS            = 
+#CC                 = 
+#SCC                = 
+#CFLAGS             =
+#CPP                = 
+#CPPFLAGS           = 
+#ARFLAGS            =
+#RANLIB              = 
+#CC_TOOLS            = 

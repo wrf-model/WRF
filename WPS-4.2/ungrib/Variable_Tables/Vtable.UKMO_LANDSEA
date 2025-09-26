@@ -1,0 +1,5 @@
+GRIB1| Level| From |  To  | metgrid  | metgrid | metgrid                                 |GRIB2|GRIB2|GRIB2|GRIB2|
+Param| Type |Level1|Level2| Name     | Units   | Description                             |Discp|Catgy|Param|Level|
+-----+------+------+------+----------+---------+-----------------------------------------+-----------------------+
+  81 |   1  |   0  |      | LANDSEA  | Mask    | Land/Sea flag (1=land, 0=sea)           |  2  |  0  |  0  |   1 |
+-----+------+------+------+----------+---------+-----------------------------------------+-----------------------+

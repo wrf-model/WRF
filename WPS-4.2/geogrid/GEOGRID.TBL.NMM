@@ -1,0 +1,218 @@
+# See options.txt for a (somewhat up to date) list of the 
+# options that may be specified here.
+===============================
+name = HCNVX
+        priority = 1
+        dest_type = continuous
+        interp_option = default:average_4pt
+        fill_missing = 0.
+        rel_path = default:hcnvx/
+===============================
+name = HSTDV
+        priority = 1
+        dest_type = continuous
+        interp_option = default:average_4pt
+        fill_missing = 0.
+        rel_path = default:hstdv/
+===============================
+name = HASYW
+        priority = 1
+        dest_type = continuous
+        interp_option = default:average_4pt
+        fill_missing = 0.
+        rel_path = default:hasyw/
+===============================
+name = HASYS
+        priority = 1
+        dest_type = continuous
+        interp_option = default:average_4pt
+        fill_missing = 0.
+        rel_path = default:hasys/
+===============================
+name = HASYSW
+        priority = 1
+        dest_type = continuous
+        interp_option = default:average_4pt
+        fill_missing = 0.
+        rel_path = default:hasysw/
+===============================
+name = HASYNW
+        priority = 1
+        dest_type = continuous
+        interp_option = default:average_4pt
+        fill_missing = 0.
+        rel_path = default:hasynw/
+===============================
+name = HLENW
+        priority = 1
+        dest_type = continuous
+        interp_option = default:average_4pt
+        fill_missing = 0.
+        rel_path = default:hlenw/
+===============================
+name = HLENS
+        priority = 1
+        dest_type = continuous
+        interp_option = default:average_4pt
+        fill_missing = 0.
+        rel_path = default:hlens/
+===============================
+name = HLENSW
+        priority = 1
+        dest_type = continuous
+        interp_option = default:average_4pt
+        fill_missing = 0.
+        rel_path = default:hlensw/
+===============================
+name = HLENNW
+        priority = 1
+        dest_type = continuous
+        interp_option = default:average_4pt
+        fill_missing = 0.
+        rel_path = default:hlennw/
+===============================
+name = HANIS
+        priority = 1
+        dest_type = continuous
+        interp_option = default:average_4pt
+        fill_missing = 0.
+        rel_path = default:hanis/
+===============================
+name = HSLOP
+        priority = 1
+        dest_type = continuous
+        interp_option = default:average_4pt
+        fill_missing = 0.
+        rel_path = default:hslop/
+===============================
+name = HANGL
+        priority = 1
+        dest_type = continuous
+        interp_option = default:average_4pt
+        fill_missing = 0.
+        rel_path = default:hangl/
+===============================
+name = HZMAX
+        priority = 1
+        dest_type = continuous
+        interp_option = default:average_4pt
+        fill_missing = 0.
+        rel_path = default:hzmax/
+===============================
+name = HGT_M
+        priority = 1
+        dest_type = continuous
+        interp_option =     30s:average_gcell(4.0)+four_pt+average_4pt
+        interp_option =      2m:four_pt
+        interp_option =      5m:four_pt
+        interp_option =     10m:four_pt
+        interp_option = default:four_pt
+        smooth_option = smth-desmth; smooth_passes=1
+        fill_missing=0.
+        rel_path=     30s:topo_30s/
+        rel_path=      2m:topo_2m/
+        rel_path=      5m:topo_5m/
+        rel_path=     10m:topo_10m/
+        rel_path= default:topo_2m/
+===============================
+name = HGT_V
+        output_stagger = VV
+        priority = 1
+        dest_type = continuous
+        interp_option =     30s:average_gcell(4.0)+four_pt+average_4pt
+        interp_option =      2m:four_pt
+        interp_option =      5m:four_pt
+        interp_option =     10m:four_pt
+        interp_option = default:four_pt
+        smooth_option = smth-desmth; smooth_passes=1
+        fill_missing=0.
+        rel_path=     30s:topo_30s/
+        rel_path=      2m:topo_2m/
+        rel_path=      5m:topo_5m/
+        rel_path=     10m:topo_10m/
+        rel_path= default:topo_2m/
+===============================
+name=LANDUSEF
+        priority=1
+        dest_type=categorical
+        z_dim_name=land_cat
+        landmask_water = modis_30s:17            # Calculate a landmask from this field
+        landmask_water =   default:16            # Calculate a landmask from this field
+        dominant=LU_INDEX
+        interp_option =     modis_30s:nearest_neighbor
+        interp_option =     30s:nearest_neighbor
+        interp_option =      2m:four_pt
+        interp_option =      5m:four_pt
+        interp_option =     10m:four_pt
+        interp_option = default:four_pt
+        rel_path=     modis_30s:modis_landuse_20class_30s/
+        rel_path=     30s:landuse_30s/
+        rel_path=      2m:landuse_2m/
+        rel_path=      5m:landuse_5m/
+        rel_path=     10m:landuse_10m/
+        rel_path= default:landuse_2m/
+===============================
+name=SOILTEMP
+        priority=1
+        dest_type=continuous
+        interp_option=default:sixteen_pt+four_pt+average_4pt+average_16pt+search
+        masked=water
+        fill_missing=0.
+        rel_path=default:soiltemp_1deg/
+===============================
+name=SOILCTOP
+        priority=1
+        dest_type=categorical
+        z_dim_name=soil_cat
+        interp_option =     30s:nearest_neighbor
+        interp_option =      2m:four_pt
+        interp_option =      5m:four_pt
+        interp_option =     10m:four_pt
+        interp_option = default:four_pt
+        rel_path=     30s:soiltype_top_30s/
+        rel_path=      2m:soiltype_top_2m/
+        rel_path=      5m:soiltype_top_5m/
+        rel_path=     10m:soiltype_top_10m/
+        rel_path= default:soiltype_top_2m/
+===============================
+name=SOILCBOT
+        priority=1
+        dest_type=categorical
+        z_dim_name=soil_cat
+        interp_option =     30s:nearest_neighbor
+        interp_option =      2m:four_pt
+        interp_option =      5m:four_pt
+        interp_option =     10m:four_pt
+        interp_option = default:four_pt
+        rel_path=     30s:soiltype_bot_30s/
+        rel_path=      2m:soiltype_bot_2m/
+        rel_path=      5m:soiltype_bot_5m/
+        rel_path=     10m:soiltype_bot_10m/
+        rel_path= default:soiltype_bot_2m/
+===============================
+name=ALBEDO12M
+        priority=1
+        dest_type=continuous
+        z_dim_name=month
+        masked = water
+        fill_missing = 8.
+        interp_option=default:four_pt+average_4pt+average_16pt+search
+        rel_path=default:albedo_ncep/
+===============================
+name=GREENFRAC
+        priority=1
+        dest_type=continuous
+        interp_option=default:four_pt+average_4pt+average_16pt+search
+        z_dim_name=month
+        masked = water
+        fill_missing = 0.
+        rel_path=default:greenfrac/
+===============================
+name=SNOALB
+        priority=1
+        dest_type=continuous
+        interp_option=default:four_pt+average_4pt+average_16pt+search
+        masked = water
+        fill_missing = 0.
+        rel_path=default:maxsnowalb/
+===============================

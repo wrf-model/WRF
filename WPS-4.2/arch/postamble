@@ -1,0 +1,27 @@
+#
+#	Macros, these should be generic for all machines
+
+LN		=	ln -sf
+MAKE		=	make -i -r
+RM		= 	/bin/rm -f
+CP		= 	/bin/cp
+AR		=	ar ru
+
+.IGNORE:
+.SUFFIXES: .c .f .F .o
+
+#	There is probably no reason to modify these rules
+
+.c.o:
+	$(RM) $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $<	
+
+.f.o:
+	$(RM) $@ $*.mod
+	$(FC) $(F77FLAGS) -c $< $(WRF_INCLUDE)
+
+.F.o:
+	$(RM) $@ $*.mod
+	$(CPP) $(CPPFLAGS) $(FDEFS) $(WRF_INCLUDE) $< > $*.f90
+	$(FC) $(FFLAGS) -c $*.f90 $(WRF_INCLUDE)
+#	$(RM) $*.f90

@@ -1,0 +1,44 @@
+GRIB | Level| Level| Level| metgrid  |  metgrid | metgrid                                  |
+Code | Code |   1  |   2  | Name     |  Units   | Description                              |
+-----+------+------+------+----------+----------+------------------------------------------+
+  11 | 100  |   *  |      | TT       | K        | Temperature                              |
+  33 | 100  |   *  |      | UU       | m s-1    | U                                        |
+  34 | 100  |   *  |      | VV       | m s-1    | V                  (from .prs file)      |
+  51 | 100  |   *  |      | SPECHUMD | kg kg-1  |                                          |
+  52 | 100  |   *  |      | RH       | %        | Relative Humidity                        |
+  7  | 100  |   *  |      | HGT      | m        | Height                                   |
+  11 | 105  |   2  |      | TT       | K        | Temperature        (from .flx file)      |
+  52 | 105  |   2  |      | RH       | %        | Relative Humidity  (from .flx file)      |
+  51 | 105  |   2  |      | SPECHUMD | kg kg-1  |                                          |
+  33 | 105  |  10  |      | UU       | m s-1    | U                  (from .flx file)      |
+  34 | 105  |  10  |      | VV       | m s-1    | V                  (from .flx file)      |
+   1 |   1  |   0  |      | PSFC     | Pa       | Surface Pressure   (from .flx file)      |
+   2 | 102  |   0  |      | PMSL     | Pa       | Sea-level Pressure (from .prs file)      |
+  65 |  1   |   0  |      | SNOW     | kg m-2   | Water Equiv of Accum Snow Depth  (.flx)  | 
+  11 |  1   |   0  |      | SKINTEMP | K        | Sea-Surface Temperature (from .flx file) |
+  11 | 112  |   0  | 10   | ST000010 | K        | T of 0-10 cm ground layer  (.flx file)   |
+  11 | 112  |  10  | 40   | ST010040 | K        | T of 10-40 cm ground layer (.flx file)   |
+  11 | 112  |  40  |100   | ST040100 | K        | T of 40-100 cm ground layer (.flx file)  |
+  11 | 112  | 100  |200   | ST100200 | K        | T of 100-200 cm ground layer (.flx file) |
+ 144 | 112  |  0   | 10   | SM000010 | fraction | Soil Moisture of 0-10 cm gnd layer (.flx)|
+ 144 | 112  | 10   | 40   | SM010040 | fraction | Soil Moisture of 10-40 cm ground layer   |
+ 144 | 112  | 40   |100   | SM040100 | fraction | Soil Moisture of 40-100 cm ground layer  |
+ 144 | 112  |100   |200   | SM100200 | fraction | Soil Moisture of 100-200 cm ground layer |
+  81 |  1   |   0  |      | LANDSEA  | proprtn  | Land/Sea flag          (from .flx file)  |
+   7 |  1   |   0  |      | SOILHGT  | m        | Terrain from source analysis             | 
+  91 |  1   |   0  |      | SEAICE   | proprtn  | Ice flag                                 |
+-----+------+------+------+----------+----------+------------------------------------------+
+#
+#
+#  Twentieth Century Global Reanalysis Version 2, 2 deg (Grid 255), 24 p-levels (1000 - 10 hPa) plus sfc
+#  
+#
+#   http://rda.ucar.edu/datasets/ds131.1/   
+#   http://www.esrl.noaa.gov/psd/data/20thC_Rean/
+#
+#  Need to download 2 files, a 3d pressure file and a suface flux file. Note that as for most
+#  reanalysis data sets the soil variables are 6-hour forecasts.
+#
+#  The Vtable has been tested on the NCAR TCRP files. Modifications may be required for other sources
+#
+# Note that soil temps are miscoded as '11' instead of '85'

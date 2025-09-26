@@ -1,0 +1,6 @@
+GRIB | Level| Level| Level| metgrid  |  metgrid | metgrid                                  |
+Code | Code |   1  |   2  | Name     |  Units   | Description                              |
+-----+------+------+------+----------+----------+------------------------------------------+
+  65 |  1   |   0  |      | SNOW     | kg m-2   | Water Equivalent Snow Depth              |
+  66 |  1   |   0  |      | SNOWH    | m        | Height of Snow on Ground (Depth of Snow) |
+-----+------+------+------+----------+----------+------------------------------------------+

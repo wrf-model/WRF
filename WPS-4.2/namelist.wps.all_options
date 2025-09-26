@@ -1,0 +1,103 @@
+&share
+ wrf_core = 'ARW',
+ max_dom = 2,
+ start_date = '2006-08-16_12:00:00','2006-08-16_12:00:00',
+ end_date   = '2006-08-16_18:00:00','2006-08-16_12:00:00',
+ interval_seconds = 21600
+ active_grid = .true., .true.,
+ subgrid_ratio_x = 1
+ subgrid_ratio_y = 1
+ io_form_geogrid = 2,
+ opt_output_from_geogrid_path = './',
+ debug_level = 0
+/
+ start_date = '2000-01-24_12:00:00','2000-01-24_12:00:00',
+ end_date   = '2000-01-25_12:00:00','2000-01-24_12:00:00',
+ start_year   = 2006, 2006,
+ start_month  =   08,   08,
+ start_day    =   16,   16,
+ start_hour   =   12,   12,
+ start_minute =   00,   00,
+ start_second =   00,   00,
+ end_year     = 2006, 2006,
+ end_month    =   08,   08,
+ end_day      =   16,   16,
+ end_hour     =   18,   12,
+ end_minute   =   00,   00,
+ end_second   =   00,   00,
+
+&geogrid
+ parent_id         =   1,   1,
+ parent_grid_ratio =   1,   3,
+ i_parent_start    =   1,  31,
+ j_parent_start    =   1,  17,
+ s_we              =   1,   1,
+ e_we              =  74, 112,
+ s_sn              =   1,   1,
+ e_sn              =  61,  97,
+ !
+ !!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT NOTE !!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ ! The default datasets used to produce the MAXSNOALB and ALBEDO12M
+ ! fields have changed in WPS v4.0. These fields are now interpolated
+ ! from MODIS-based datasets.
+ !
+ ! To match the output given by the default namelist.wps in WPS v3.9.1,
+ ! the following setting for geog_data_res may be used:
+ !
+ ! geog_data_res = 'maxsnowalb_ncep+albedo_ncep+default', 'maxsnowalb_ncep+albedo_ncep+default',
+ !
+ !!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT NOTE !!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ !
+ geog_data_res = 'default','default',
+ dx        = 30000,
+ dy        = 30000,
+ map_proj  = 'lambert',
+ ref_lat   =  34.83,
+ ref_lon   = -81.03,
+ ref_x     =  37.0,
+ ref_y     =  30.5,
+ truelat1  =  30.0,
+ truelat2  =  60.0,
+ stand_lon = -98.0,
+ geog_data_path = '/glade/work/wrfhelp/WPS_GEOG/'
+ opt_geogrid_tbl_path = 'geogrid/'
+/
+ geog_data_res     = 'modis_lakes+10m','modis_lakes+2m',
+ geog_data_res     = 'usgs_lakes+10m','usgs_lakes+2m',
+
+&ungrib
+ out_format = 'WPS',
+ prefix     = 'FILE',
+ ec_rec_len = 26214508,
+ pmin = 100.
+/
+
+&metgrid
+ fg_name         = 'FILE'
+ constants_name  = './TAVGSFC'
+ io_form_metgrid = 2, 
+ opt_output_from_metgrid_path = './',
+ opt_metgrid_tbl_path         = 'metgrid/',
+ process_only_bdy = 5,
+/
+
+&mod_levs
+ press_pa = 201300 , 200100 , 100000 , 
+             95000 ,  90000 , 
+             85000 ,  80000 , 
+             75000 ,  70000 , 
+             65000 ,  60000 , 
+             55000 ,  50000 , 
+             45000 ,  40000 , 
+             35000 ,  30000 , 
+             25000 ,  20000 , 
+             15000 ,  10000 , 
+              5000 ,   1000
+/
+
+&plotfmt
+ ix = 100
+ jx = 100
+ ioff = 30
+ joff = 30
+/

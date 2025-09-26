@@ -1,0 +1,41 @@
+GRIB1| Level| From |  To  | metgrid  | metgrid | metgrid                                 |GRIB2|GRIB2|GRIB2|GRIB2|GB2|
+Param| Type |Level1|Level2| Name     | Units   | Description                             |Discp|Catgy|Param|Level|PDT|
+-----+------+------+------+----------+---------+-----------------------------------------+---------------------------+
+  11 | 100  |   *  |      | TT       | K       | Temperature                             |  0  |  0  |  0  | 100 | 1 |
+  33 | 100  |   *  |      | UU       | m s-1   | U                                       |  0  |  2  |  2  | 100 | 1 |
+  34 | 100  |   *  |      | VV       | m s-1   | V                                       |  0  |  2  |  3  | 100 | 1 |
+  52 | 100  |   *  |      | RH       | %       | Relative Humidity                       |  0  |  1  |  1  | 100 | 1 |
+   7 | 100  |   *  |      | HGT      | m       | Height                                  |  0  |  3  |  5  | 100 | 1 |
+  11 | 105  |   2  |      | TT       | K       | Temperature       at 2 m                |  0  |  0  |  0  | 103 | 1 |
+  52 | 105  |   2  |      | RH       | %       | Relative Humidity at 2 m                |  0  |  1  |  1  | 103 | 1 |
+  33 | 105  |  10  |      | UU       | m s-1   | U                 at 10 m               |  0  |  2  |  2  | 103 | 1 |
+  34 | 105  |  10  |      | VV       | m s-1   | V                 at 10 m               |  0  |  2  |  3  | 103 | 1 |
+   1 |   1  |   0  |      | PSFC     | Pa      | Surface Pressure                        |  0  |  3  |  0  |   1 | 1 |
+   2 | 102  |   0  |      | PMSL     | Pa      | Sea-level Pressure                      |  0  |  3  |  1  | 101 | 1 |
+ 144 | 112  |   0  |  10  | SM000010 | fraction| Soil Moist 0-10 cm below grn layer (Up) |  2  |  0  | 192 | 106 | 1 |
+ 144 | 112  |  10  |  40  | SM010040 | fraction| Soil Moist 10-40 cm below grn layer     |  2  |  0  | 192 | 106 | 1 |
+ 144 | 112  |  40  | 100  | SM040100 | fraction| Soil Moist 40-100 cm below grn layer    |  2  |  0  | 192 | 106 | 1 |
+ 144 | 112  | 100  | 200  | SM100200 | fraction| Soil Moist 100-200 cm below gr layer    |  2  |  0  | 192 | 106 | 1 |
+  85 | 112  |   0  |  10  | ST000010 | K       | T 0-10 cm below ground layer (Upper)    |  2  |  0  |  2  | 106 | 1 |
+  85 | 112  |  10  |  40  | ST010040 | K       | T 10-40 cm below ground layer (Upper)   |  2  |  0  |  2  | 106 | 1 |
+  85 | 112  |  40  | 100  | ST040100 | K       | T 40-100 cm below ground layer (Upper)  |  2  |  0  |  2  | 106 | 1 |
+  85 | 112  | 100  | 200  | ST100200 | K       | T 100-200 cm below ground layer (Bottom)|  2  |  0  |  2  | 106 | 1 |
+  91 |   1  |   0  |      | SEAICE   | proprtn | Ice flag                                | 10  |  2  |  0  |   1 | 1 |
+  81 |   1  |   0  |      | LANDSEA  | proprtn | Land/Sea flag (1=land, 0 or 2=sea)      |  2  |  0  |  0  |   1 | 1 |
+   7 |   1  |   0  |      | SOILHGT  | m       | Terrain field of source analysis        |  0  |  3  |  5  |   1 | 1 |
+  11 |   1  |   0  |      | SKINTEMP | K       | Skin temperature (can use for SST also) |  0  |  0  |  0  |   1 | 1 |
+  65 |   1  |   0  |      | SNOW     | kg m-2  | Water equivalent snow depth             |  0  |  1  | 13  |   1 | 1 |
+ 223 |   1  |   0  |      | CANWAT   | kg m-2  | Plant Canopy Surface Water              |  2  |  0  | 196 |   1 | 1 |
+-----+------+------+------+----------+---------+-----------------------------------------+---------------------------+
+#
+#  Vtable for SREF pressure-level data from the NCEP server.
+#
+# ftp://ftpprd.ncep.noaa.gov/pub/data/nccf/com/sref/prod/sref.ccyymmdd/hh/pgrb/
+#
+#  For use with SREF files produced after 15z 21 October 2015
+#
+#                                         approx.    grid    hours      domain  dx      notes
+#                                        file size   no.
+#
+#  sref_arw.t15z.pgrb132.ctl.f00.grib2    72000 Kb   132      87        conus   16
+#  sref_arw.t15z.pgrb212.ctl.f00.grib2     4800 Kb   212      87        conus   40

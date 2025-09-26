@@ -1,0 +1,15 @@
+GRIB | Level| Level| Level| METGRID  |  METGRID | METGRID                                  |
+Code | Code |   1  |   2  | Name     |  Units   | Description                              |
+-----+------+------+------+----------+----------+------------------------------------------+
+ 195 | 237  |   0  |   0  | H1ML     | m        | bottom ocn mixed layer depth             |
+ 195 | 238  |   0  |   0  | H0ML     | m        | bottom ocn isothermal layer depth        |
+  13 | 160  |   *  |      | pot      | K        | potential temperature                    |
+  13 | 160  |   5  |      | pot1     | K        | potential temperature                    |
+  13 | 160  |  15  |      | pot2     | K        | potential temperature                    |
+  13 | 160  |  25  |      | pot3     | K        | potential temperature                    |
+  13 | 160  |  35  |      | pot4     | K        | potential temperature                    |
+  13 | 160  |  45  |      | pot5     | K        | potential temperature                    |
+  13 | 160  |  55  |      | pot6     | K        | potential temperature                    |
+-----+------+------+------+----------+----------+------------------------------------------+
+#
+#  NCEP's Global Ocean data assimilation system

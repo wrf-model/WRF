@@ -1,0 +1,28 @@
+GRIB1| Level| From |  To  | metgrid  | metgrid | metgrid                                 |GRIB2|GRIB2|GRIB2|GRIB2|
+Param| Type |Level1|Level2| Name     | Units   | Description                             |Discp|Catgy|Param|Level|
+-----+------+------+------+----------+---------+-----------------------------------------+-----------------------+
+  11 | 109  |   *  |      | TT       | K       | Temperature                             |  0  |  0  |  0  | 100 |
+  33 | 109  |   *  |      | UU       | m s-1   | U                                       |  0  |  2  |  2  | 100 |
+  34 | 109  |   *  |      | VV       | m s-1   | V                                       |  0  |  2  |  3  | 100 |
+  51 | 109  |   *  |      | SPECHUMD | kg kg-1 |                                         |  0  |  1  |  1  | 100 |
+     | 109  |   *  |      | RH       | %       | Relative Humidity                       |  0  |  1  |  1  | 100 |
+   1 | 109  |   *  |      | PRESSURE | Pa      | Pressure                                |  0  |  3  |  5  | 100 |
+  11 | 105  |   2  |      | TT       | K       | Temperature       at 2 m                |  0  |  0  |  0  | 103 |
+  17 | 105  |   2  |      | DEWPT    | K       |                                         |  0  |  1  |  1  | 103 |
+     | 105  |   2  |      | RH       | %       | Relative Humidity at 2 m                |  0  |  1  |  1  | 103 |
+  33 | 105  |  10  |      | UU       | m s-1   | U                 at 10 m               |  0  |  2  |  2  | 103 |
+  34 | 105  |  10  |      | VV       | m s-1   | V                 at 10 m               |  0  |  2  |  3  | 103 |
+   1 |   1  |   0  |      | PSFC     | Pa      | Surface Pressure                        |  0  |  3  |  0  |   1 |
+   2 | 102  |   0  |      | PMSL     | Pa      | Sea-level Pressure                      |  0  |  3  |  1  | 101 |
+  11 |   1  |   0  |      | SKINTEMP | K       | Skin Temperature                        |  0  |  0  |  0  | 103 |
+  86 | 106  |  10  |      | SM000010 | fraction| Soil Moist 0-10 cm below grn layer      |  2  |  3  | 193 | 106 |
+  86 | 106  |  35  |      | SM010035 | fraction| Soil Moist 10-35 cm below grn layer     |  2  |  3  | 193 | 106 |
+  86 | 106  | 100  |      | SM035100 | fraction| Soil Moist 35-100 cm below grn layer    |  2  |  3  | 193 | 106 |
+  86 | 106  | 300  |      | SM100300 | fraction| Soil Moist 100-300 cm below gr layer    |  2  |  3  | 193 | 106 |
+  85 | 106  |  10  |      | ST000010 | K       | T 0-10 cm below ground layer            |  2  |  3  | 192 | 106 |
+  85 | 106  |  35  |      | ST010035 | K       | T 10-35 cm below ground layer           |  2  |  3  | 192 | 106 |
+  85 | 106  | 100  |      | ST035100 | K       | T 35-100 cm below ground layer          |  2  |  3  | 192 | 106 |
+  85 | 106  | 300  |      | ST100300 | K       | T 100-300 cm below ground layer         |  2  |  3  | 192 | 106 |
+ 148 |   1  |   0  |      | SOILHGT  | m       | Topography Elevation                    |  2  |  0  |  0  |   1 |
+ 159 |   1  |   0  |      | SEAICE   | proprtn | Seaice fraction, 0=none, 1=covered      |  2  |  0  |  0  |   1 |
+-----+------+------+------+----------+---------+-----------------------------------------+-----------------------+

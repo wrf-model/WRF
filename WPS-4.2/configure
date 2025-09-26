@@ -1,0 +1,433 @@
+#!/bin/sh
+
+arg1=$1
+
+# Look for netcdf
+if test -z "$NETCDF" ; then
+  for p in /usr/local/netcdf
+  do
+    if test -d $p ; then
+      NETCDF=$p
+      break
+    fi
+  done
+fi
+
+if  test -z "$NETCDF"  ; then
+ 
+  if [ `hostname | cut -c 1-2` = "bs" -o \
+       `hostname | cut -c 1-2` = "bv" -o \
+       `hostname` = "tempest" -o `hostname` = "lightning" ] ; then
+    echo 'Compiling on an NCAR system with weird paths to NetCDF'
+    echo 'Setting up a local NetCDF directory with symlinks'
+    if ( test -d ./netcdf_links ) ; then
+      echo 'A directory ./netcdf_links already exists. Continuing.'
+    else
+      mkdir ./netcdf_links
+      if [ -z "$OBJECT_MODE" ] ; then
+         OBJECT_MODE=32 
+         export OBJECT_MODE
+      fi
+      if [ $OBJECT_MODE -ne 64 -a \( `hostname | cut -c 1-2` = "bs" \) ] ; then
+        ( cd ./netcdf_links ; ln -s /usr/local/lib32/r4i4 ./lib ; \
+                              ln -s /usr/local/include ./include )
+      else
+        ( cd ./netcdf_links ; ln -s /usr/local/lib64/r4i4 ./lib ; \
+                              ln -s /usr/local/include ./include )
+      fi
+    fi
+    NETCDF=`pwd`/netcdf_links
+    export NETCDF
+
+
+  else
+    bedone=""
+    if [ -d ./netcdf_links ] ; then
+      echo '** There is an existing ./netcdf_links file. Should I use? [y]'
+      read resp
+      if [ "$resp" = "y" ] ; then
+        NETCDF=`pwd`/netcdf_links
+        bedone="yes"
+      else
+        echo 'Removing existing ./netcdf_links directory'
+        /bin/rm -fr ./netcdf_links
+      fi
+    else
+      echo '** WARNING: No path to NETCDF and environment variable NETCDF not set.'
+      echo '** would you like me to try to fix? [y]'
+    fi
+    netcdfipath=""
+    netcdflpath=""
+    while [ -z "$bedone" ] ; do 
+      read resp
+      if [ "$resp" = "y" -o -z "$resp" ]  ; then
+        if [ -d ./netcdf_links ] ; then
+          echo 'There is already a ./netcdf_links directory. Okay to use links'
+          echo 'in this directory for NetCDF include and lib dirs? [y]'
+          read resp
+          if [ "$resp" = "y" ] ; then
+            NETCDF=`pwd`/netcdf_links
+            export NETCDF
+            bedone="yes"
+            continue
+          fi
+        fi
+        if [ -z "$netcdfipath" ] ; then
+          echo 'Enter full path to NetCDF include directory on your system'
+          read resp
+          if [ ! -d "$resp" ] ; then
+            echo "invalid path: $resp. Try again? [y]" ; continue
+          fi
+          netcdfipath=$resp
+        fi
+        if  [ -z "$netcdflpath" ] ; then
+          echo 'Enter full path to NetCDF library directory on your system'
+          read resp
+          if [ ! -d "$resp" ] ; then
+            echo "invalid path: $resp. Try again? [y]" ; continue
+          fi
+          netcdflpath=$resp
+        fi
+
+        if [ -n "$netcdflpath" -a -n "$netcdfipath" ] ; then
+          if [ -d ./netcdf_links ] ; then
+            echo 'Existing ./netcdf_links directory. Okay to remove. [y]'
+            read resp
+            if [ "$resp" = "y" ]  ; then
+              /bin/rm -fr ./netcdf_links
+            fi
+          fi
+          mkdir ./netcdf_links
+          cd ./netcdf_links 
+            ln -s "$netcdfipath" include
+            ln -s "$netcdflpath" lib
+          cd ..
+          echo created new ./netcdf_links directory
+          /bin/ls -lF ./netcdf_links
+          NETCDF=`pwd`/netcdf_links
+          export NETCDF
+          bedone="yes"
+        fi
+      else
+        bedone="yes"
+      fi
+    done
+  fi
+fi
+
+if [ -n "$NETCDF" ] ; then
+  echo "Will use NETCDF in dir: $NETCDF"
+  # for 3.6.2 and greater there might be a second library, libnetcdff.a .  Check for this and use
+  # if available
+  NETCDFF=" "
+  if [ -f "$NETCDF/lib/libnetcdff.a" ] ; then
+    NETCDFF="-lnetcdff"
+  fi
+else
+  echo "Will configure for use without NetCDF"
+fi
+
+  # if the uname command exists, give it a shot and see if
+  # we can narrow the choices; otherwise, spam 'em
+  os="ARCH"
+  mach="ARCH"
+  type uname > /dev/null
+if [ $? -eq 0 ] ; then
+    os=`uname`
+    if [ "$os" = "AIX" -o "$os" = "IRIX" -o "$os" = "IRIX64" -o "$os" = "SunOS" -o "$os" = "HP-UX"  -o "$os" = "Darwin" ] ; then
+      mach="ARCH"
+    else
+      xxx=`expr "$os" : '\(.........\).*'`
+      if [ "$xxx"  = "CYGWIN_NT" ] ; then
+        os=$xxx
+      fi
+      if [ "$os" = "OSF1" -o "$os" = "Linux" -o "$os" = "UNICOS/mp" -o "$os" = "UNIX_System_V" -o "$os" = "CYGWIN_NT" ] ; then
+        mach=`uname -m`
+      else
+        os="ARCH"
+        mach="ARCH"
+      fi
+    fi
+fi
+
+wrf_dir="none"
+standard_wrf_dirs="WRF WRF-4.0.3 WRF-4.0.2 WRF-4.0.1 WRF-4.0 WRFV3"
+
+#
+# If no WRF_DIR environment variable is set, try to locate a WRF build in one
+# of the expected directory names one directory level up; otherwise, try to use
+# the WRF I/O library from the code in $WRF_DIR
+#
+if [ -z "$WRF_DIR" ]; then
+#   for d in WRF WRF-4.0.3 WRF-4.0.2 WRF-4.0.1 WRF-4.0 WRFV3; do
+   for d in ${standard_wrf_dirs}; do
+      if [ -e ../${d}/external/io_netcdf/libwrfio_nf.a ]; then
+         echo "Found what looks like a valid WRF I/O library in ../${d}"
+         wrf_dir="../${d}"
+         break
+      fi
+   done
+else
+   if [ ! -e ${WRF_DIR}/external/io_netcdf/libwrfio_nf.a ]; then
+      echo ""
+      echo "Error: The \$WRF_DIR environment variable was set, but the WRF code at"
+      echo "       ${WRF_DIR} doesn't appear to have been successfully compiled"
+      echo ""
+      exit
+   fi
+
+   echo "Using WRF I/O library in WRF build identified by \$WRF_DIR: ${WRF_DIR}"
+   wrf_dir=$WRF_DIR
+fi
+
+if [ $wrf_dir = "none" ]; then
+   echo ""
+   echo "Error: No compiled WRF code found. Please check that the WRF model has been compiled"
+   echo "       one directory level up (i.e., ../) in a directory named 'WRF', 'WRF-4.0.3', 'WRF-4.0.2', etc.,"
+   echo "       or specify the full path to the compiled WRF model with the environment variable \$WRF_DIR ."
+   echo ""
+   exit
+fi
+
+# Found perl, so proceed with configuration
+perl arch/Config.pl -perl=$PERL -netcdf=$NETCDF -netcdff=$NETCDFF -os=$os -mach=$mach -wrfdir=$wrf_dir
+
+
+#Checking cross-compiling capability for some particular environment 
+#on Linux and Mac box
+
+if [ $os = "Linux" -o $os = "Darwin" ]; then
+
+  SFC=`grep '^SFC' configure.wps | awk '{print $3}'`
+  SCC=`grep '^SCC' configure.wps | awk '{print $3}'`
+
+  SFC="`type $SFC 2>/dev/null | awk '{print $NF}' | sed -e 's/(//g;s/)//g'`"
+  SCC="`type $SCC 2>/dev/null | awk '{print $NF}' | sed -e 's/(//g;s/)//g'`"
+
+  if [ -e $NETCDF/lib/libnetcdf.a -a "$SFC" != "" -a "$SCC" != "" ]; then
+
+    SFC_MULTI_ABI=0
+    SCC_MULTI_ABI=0
+    CROSS_COMPILING=0
+
+    foo=foo_$$
+
+    echo
+    echo Testing for NetCDF, C and Fortran compiler
+    echo
+
+cat > ${foo}.c <<EOF 
+ int main(int argc, char ** argv)
+ {
+     return (0);
+ }
+EOF
+
+cat > ${foo}.f <<EOF
+          program test_exit
+            integer :: STATUS = 0
+            call EXIT(STATUS)
+          end program test_exit
+EOF
+
+    nct=`nm $NETCDF/lib/libnetcdf.a | grep '^0' | cut -d' ' -f 1 | head -1 | wc -c | awk '{print $1+0}'`
+    if [ "$nct" -eq "9" ]; then
+      netcdf_arch="32-bit"
+    else
+      netcdf_arch="64-bit"
+    fi
+
+    $SFC -o ${foo} ${foo}.f > /dev/null 2>&1 
+    SFC_arch="`file ${foo} | grep -o -E '[0-9]{2}-bit|i386'`"
+    rm ${foo} ${foo}.o 2> /dev/null
+
+    $SCC -o ${foo} ${foo}.c > /dev/null 2>&1
+    SCC_arch="`file ${foo} | grep -o -E '[0-9]{2}-bit|i386'`"
+    rm ${foo} ${foo}.o 2> /dev/null
+
+    if [ "$SFC_arch" = "" -o "$SCC_arch" = "" ]; then
+      echo "  One of compilers testing failed!"
+      echo "  Please check your compiler"
+      echo 
+      rm -f ${foo} ${foo}.[cfo] 2> /dev/null
+      exit
+    else
+      cp configure.wps configure.wps.edit
+    fi
+
+    case $netcdf_arch in
+
+      32-bit|i386 )
+
+      if [ "$SFC_arch" = "64-bit" ] ; then
+        CROSS_COMPILING=1
+        $SFC -m32 -o ${foo} ${foo}.f > /dev/null 2>&1
+        if [ $? = 0 ]; then
+          SFC_MULTI_ABI=1
+          sed '/^SFC.*=/s/$/ -m32/' configure.wps.edit > configure.wps.tmp
+          mv configure.wps.tmp configure.wps.edit
+        fi
+      fi
+      if [ "$SCC_arch" = "64-bit" ] ; then
+        CROSS_COMPILING=1
+        $SCC -m32 -o ${foo} ${foo}.c > /dev/null 2>&1
+        if [ $? = 0 ]; then
+          SCC_MULTI_ABI=1
+          sed '/^SCC.*=/s/$/ -m32/' configure.wps.edit > configure.wps.tmp
+          mv configure.wps.tmp  configure.wps.edit
+        fi
+      fi
+
+      if [ $CROSS_COMPILING -eq 1 ] ; then
+        echo NOTE:
+        echo This installation NetCDF is 32-bit
+        if [ \( $SFC_MULTI_ABI -ne 1 -a "$SFC_arch" = "64-bit" \) \
+             -o \( $SCC_MULTI_ABI -ne 1 -a "$SCC_arch" = "64-bit" \) ] ; then
+             rm configure.wps.edit
+             echo One of compilers is 64-bit and doesn\'t support cross-compiling.
+             echo Please check your NETCDF lib and compiler
+        else
+          echo -m32 is appended to configure.wps
+          echo It will be forced to build in 32-bit.
+          echo If you don\'t want 32-bit binaries, please use 64-bit NetCDF, and re-run the configure script.
+        fi
+      fi
+      ;;
+
+      64-bit )
+
+      if [ "$SFC_arch" = "32-bit" -o "$SFC_arch" = "i386" ] ; then
+        CROSS_COMPILING=1
+        $SFC -m64 -o ${foo} ${foo}.f > /dev/null 2>&1
+        if [ $? = 0 ]; then
+          SFC_MULTI_ABI=1
+          sed '/^SFC.*=/s/$/ -m64/' configure.wps.edit > configure.wps.tmp
+          mv configure.wps.tmp configure.wps.edit
+        fi
+      fi
+      if [ "$SCC_arch" = "32-bit" -o "$SCC_arch" = "i386" ] ; then
+        CROSS_COMPILING=1
+        $SCC -m64 -o ${foo} ${foo}.c > /dev/null 2>&1
+        if [ $? = 0 ]; then
+          SCC_MULTI_ABI=1
+          sed '/^SCC.*=/s/$/ -m64/' configure.wps.edit > configure.wps.tmp
+          mv configure.wps.tmp configure.wps.edit
+        fi
+      fi
+
+      if [ $CROSS_COMPILING -eq 1 ] ; then
+        echo NOTE:
+        echo This installation NetCDF is 64-bit
+        if [ \( $SFC_MULTI_ABI -ne 1 -a "$SFC_arch" != "64-bit" \) \
+            -o \( $SCC_MULTI_ABI -ne 1 -a "$SCC_arch" != "64-bit" \) ]; then
+            rm configure.wps.edit
+            echo One of Compilers is 32-bit and doesn\'t support cross-compiling.
+            echo Please check your NetCDF lib and compiler
+        else
+          echo -m64 is appended to configure.wps
+          echo It will be forced to build in 64-bit. 
+          echo If you don\'t want 64-bit binaries, please use 32-bit NetCDF, and re-run the configure script.
+        fi
+      fi
+      ;;
+    esac
+    rm -f ${foo} ${foo}.[cfo] 2> /dev/null
+
+    if [ -e configure.wps.edit ]; then 
+      mv configure.wps.edit configure.wps
+    fi
+
+    if [ $CROSS_COMPILING -eq 0 ] ; then
+      echo This installation NetCDF is $netcdf_arch
+      echo C compiler is $SCC_arch
+      echo Fortran compiler is $SFC_arch
+    fi
+    echo
+
+    #  Does our Fortran work with the given NETCDF library.
+
+      /bin/rm -f fort_netcdf.f fort_netcdf
+cat > fort_netcdf.f <<EOF 
+        program foo
+        include 'netcdf.inc'
+        integer ncid , status 
+        status = nf_open ( 'foo.nc' , 0 , ncid ) 
+        print *,'status = ',status
+        end program
+EOF
+    FFLAGS=`grep ^FFLAGS configure.wps | cut -d"=" -f2-`
+    cp $NETCDF/include/netcdf.inc .
+    FC=`grep ^SFC configure.wps | cut -d"=" -f2-`
+    $FC ${FFLAGS} fort_netcdf.f -o fort_netcdf -L${NETCDF}/lib $NETCDFF -lnetcdf > /dev/null 2>&1 
+    if [ -f "fort_netcdf" ] ; then
+      ./fort_netcdf > /dev/null 2>&1
+      if [ $? = 0 ]; then
+        /bin/rm -f fort_netcdf.f fort_netcdf.o fort_netcdf netcdf.inc
+      else
+        echo
+        echo "Your Fortran + NETCDF did not run successfully."
+        echo
+      fi
+    else
+      echo
+      echo "Your versions of Fortran and NETCDF are not consistent."
+      echo
+    fi
+
+cat > c_test.c <<EOF
+#ifndef CRAY
+# ifdef NOUNDERSCORE
+#      define C_TEST c_test
+# else
+#   if defined ( F2CSTYLE ) || defined ( _DOUBLEUNDERSCORE )
+#      define C_TEST c_test__
+#   else
+#      define C_TEST c_test_
+#   endif
+# endif
+#endif
+#include <stdio.h>
+
+int C_TEST ( float *xx, int *ii )
+
+{
+ printf("OK print in C function.  \n" ) ;
+ printf("Values are xx = %5.2f and ii = %d \n", *xx, *ii ) ;
+ return(0) ;
+}
+EOF
+    CFLAGS=`grep ^CFLAGS configure.wps | cut -d"=" -f2-`
+    CPPFLAGS=`grep ^CPPFLAGS configure.wps | cut -d"=" -f2-`
+    CC=`grep ^SCC configure.wps | cut -d"=" -f2-`
+    ${CC} -c ${CFLAGS} ${CPPFLAGS} c_test.c
+
+cat > f_test.f90 <<EOF
+PROGRAM f_test
+   INTEGER :: ii
+   REAL    :: xx
+
+   ii = 1
+   xx = 2
+
+   CALL c_test ( xx , ii ) 
+
+END PROGRAM f_test
+EOF
+    $FC ${FFLAGS} f_test.f90 -o cf_test c_test.o > /dev/null 2>&1 
+    if [ -f "cf_test" ] ; then
+      ./cf_test > /dev/null 2>&1
+      if [ $? = 0 ]; then
+        /bin/rm -f cf_test c_test.c c_test.o f_test.f90 f_test.o
+      else
+        echo
+        echo "Your Fortran + C did not run successfully."
+        echo
+      fi
+    else
+      echo
+      echo "Your versions of Fortran and C are not consistent."
+      echo
+    fi
+
+  fi
+fi

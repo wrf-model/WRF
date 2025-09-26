@@ -1,0 +1,175 @@
+[Snowpack]
+MEAS_TSS = FALSE
+ENFORCE_MEASURED_SNOW_HEIGHTS = FALSE
+SW_MODE = INCOMING
+INCOMING_LONGWAVE = TRUE
+T_INTERNAL = 8
+HEIGHT_OF_WIND_VALUE = 5.5
+HEIGHT_OF_METEO_VALUES = 4.5
+ATMOSPHERIC_STABILITY = MO_HOLTSLAG
+ROUGHNESS_LENGTH = 0.2
+NUMBER_SLOPES = 1
+CALCULATION_STEP_LENGTH = 15.0		#take care that the accumulation resampling for HNW reflects this value
+CHANGE_BC = FALSE
+THRESH_CHANGE_BC = -1.0
+SNP_SOIL = TRUE
+SOIL_FLUX = TRUE
+GEO_HEAT = 0.06
+CANOPY = 0
+FORCING = ATMOS
+
+[SnowpackAdvanced]
+VARIANT = DEFAULT
+RESEARCH_MODE = TRUE
+ALLOW_ADAPTIVE_TIMESTEPPING = TRUE
+SNOW_EROSION = FALSE
+DETECT_GRASS = TRUE
+HN_DENSITY = PARAMETERIZED
+HN_DENSITY_PARAMETERIZATION = ZWART
+AVG_METHOD_HYDRAULIC_CONDUCTIVITY = ARITHMETICMEAN
+#T_CRAZY_MIN = 50
+#WATERTRANSPORTMODEL_SNOW = RICHARDSEQUATION
+#WATERTRANSPORTMODEL_SOIL = RICHARDSEQUATION
+WATERTRANSPORTMODEL_SNOW = BUCKET
+WATERTRANSPORTMODEL_SOIL = BUCKET
+ENABLE_VAPOUR_TRANSPORT = FALSE
+ENABLE_VAPOUR_TRANSPORT_SOIL = FALSE
+WATER_VAPOR_TRANSPORT_TIMESTEP=60 			; in second, it is better to be selected as 60 sec when SNOAPCK simulation time step is 15min
+WATER_VAPOR_TRANSPORT_IMPLICIT_FACTOR=1.0 	; =1 fully implicit which is more stable, =0.5 Crank-Nicolson which should be used with WATER_VAPOR_TRANSPORT_TIMESTEP_ADJUST=TRUE
+MEAS_INCOMING_LONGWAVE = TRUE
+FORCE_ADD_SNOWFALL = FALSE
+;MINIMUM_L_ELEMENT = 0.01
+;REDUCE_N_ELEMENTS = 2
+;COMBINE_ELEMENTS = TRUE
+;COMB_THRESH_L = 0.01
+;LB_COND_WATERFLUX = FREEDRAINAGE
+#HEIGHT_NEW_ELEM= 0.0012
+#MINIMUM_L_ELEMENT=0.0005
+#COMBINE_ELEMENTS=FALSE
+
+#T_CRAZY_MAX = 500.0
+#T_CRAZY_MIN = 100.0
+
+
+[General]
+BUFF_CHUNK_SIZE = 360
+
+
+[Input]
+COORDSYS	= CH1903
+COORDPARAM	= NULL
+TIME_ZONE	= 1
+SNOWPATH	= input
+DEPTH = 0.25 0.5 1.0 1.5 2.0
+
+METEO		= SMET
+STATION1   	= COSMO
+METEOPATH 	= ./input
+
+PSUM::CREATE	= CST
+PSUM::CST::value	= 0.0
+
+#PSUM_PH::CREATE = PRECSPLITTING
+#PSUM_PH::PRECSPLITTING::type = THRESH 
+#PSUM_PH::PRECSPLITTING::snow = 274.35
+
+
+[Output]
+EXPERIMENT=2015-2016\ no\ vapor
+METEOPATH = ./output
+BACKUP_DAYS_BETWEEN = 400
+FIRST_BACKUP = 400
+TS_WRITE = FALSE
+TS_START = 0.0
+TS_DAYS_BETWEEN =0.125 #0.125
+PROF_WRITE = FALSE
+PROF_START = 0.0
+PROF_DAYS_BETWEEN =0.125 #0.125
+COORDSYS	= CH1903
+COORDPARAM	= NULL
+TIME_ZONE	= 1
+SNOWPATH	= output
+OUT_HAZ = FALSE
+OUT_SOILEB = FALSE
+
+
+[Interpolations1D]
+WINDOW_SIZE    = 43200
+PSUM::resample  = accumulate
+PSUM::accumulate::period = 900
+
+HS::resample   = linear
+
+TSS::resample  = linear
+
+TA::resample   = linear
+
+TSG::resample  = linear
+
+RH::resample   = linear
+RH::nearest::interpolate = true
+
+VW::resample   = nearest
+
+RSWR::resample = linear
+RSWR::linear   = extrapolate
+
+ISWR::resample = linear
+ISWR::linear   = extrapolate
+
+ILWR::resample = linear
+ILWR::linear   = extrapolate
+
+
+
+VW::nearest::extrapolate = true
+DW::nearest::extrapolate = true
+
+
+[Filters]
+PSUM::filter1 = min
+PSUM::arg1::soft = true
+PSUM::arg1::min = 0.0
+
+TA::filter1 = min_max
+TA::arg1::min = 240
+TA::arg1::max = 320
+
+RH::filter1     = min_max
+RH::arg1::min   = 0.01
+RH::arg1::max   = 1.2
+RH::filter2     = min_max
+RH::arg2::soft  = true
+RH::arg2::min   = 0.05
+RH::arg2::max   = 1.0
+
+
+TSS::filter1     = min_max
+TSS::arg1::min   = 195
+TSS::arg1::max   = 325
+TSS::filter2     = min_max
+TSS::arg2::soft  = true
+TSS::arg2::min   = 200
+TSS::arg2::max   = 320
+
+TSG::filter1     = min_max
+TSG::arg1::min   = 195
+TSG::arg1::max   = 325
+TSG::filter2     = min_max
+TSG::arg2::soft  = true
+TSG::arg2::min   = 200
+TSG::arg2::max   = 320
+
+HS::filter1 = min
+HS::arg1::soft = true
+HS::arg1::min = 0.0
+HS::filter2 = rate
+HS::arg2::max = 5.55e-5 ;0.20 m/h
+
+VW::filter1 = min_max
+VW::arg1::min = -2
+VW::arg1::max = 70
+VW::filter2 = min_max
+VW::arg2::soft = true
+VW::arg2::min = 0.2
+VW::arg2::max = 50.0

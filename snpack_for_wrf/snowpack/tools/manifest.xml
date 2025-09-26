@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<manifest>
+	<file>
+		<name>Snowpack-3.4.5-x86_64.tar.gz</name>
+		<summary>Linux binary tarball</summary>
+		<description>Binary package: Snowpack bundled with MeteoIO, compiled for x86_64. Compiled on Ubuntu 14.04</description>
+		<replaces>Snowpack-3.4.1-x86_64.tar.gz</replaces>
+		<labels>
+			<label>Type:Archive</label>
+			<label>OpSys:Linux</label>
+		</labels>
+	</file>
+	<file>
+		<name>Snowpack-3.4.5-x86_64.deb</name>
+		<summary>Linux DEB binary package</summary>
+		<description>Binary package: Snowpack bundled with MeteoIO, compiled for x86_64. Compiled on Ubuntu 14.04</description>
+		<replaces>Snowpack-3.4.1-x86_64.deb</replaces>
+		<labels>
+			<label>Type:Package</label>
+			<label>OpSys:Linux</label>
+		</labels>
+	</file>
+	<file>
+		<name>Snowpack-3.4.5-x86_64.rpm</name>
+		<summary>Linux RPM binary package</summary>
+		<description>Binary package: Snowpack bundled with MeteoIO, compiled for x86_64. Compiled on Ubuntu 14.04</description>
+		<replaces>Snowpack-3.4.1-x86_64.rpm</replaces>
+		<labels>
+			<label>Type:Package</label>
+			<label>OpSys:Linux</label>
+		</labels>
+	</file>
+	<file>
+		<name>Snowpack-3.4.5-x86_64.dmg</name>
+		<summary>OsX Installer</summary>
+		<description>OsX binary package: Snowpack bundled with MeteoIO, compiled with XCode on Intel.</description>
+		<replaces>Snowpack-3.4.1-x86_64.dmg</replaces>
+		<labels>
+			<label>Type:Installer</label>
+			<label>OpSys:OSX</label>
+		</labels>
+	</file>
+	<file>
+		<name>Snowpack-3.4.5-x86_64.exe</name>
+		<summary>Windows Installer</summary>
+		<description>Windows installer: Snowpack bundled with MeteoIO, compiled for x86_64 with gcc4.9</description>
+		<replaces>Snowpack-3.4.1-x86_64.exe</replaces>
+		<labels>
+			<label>Type:Installer</label>
+			<label>OpSys:Windows</label>
+		</labels>
+	</file>
+	<file>
+		<name>Snowpack-3.4.5-doc.tar.gz</name>
+		<summary>Documentation only package</summary>
+		<description>Documentation only package</description>
+		<replaces>Snowpack-3.4.1-doc.tar.gz</replaces>
+		<labels>
+			<label>Type:Docs</label>
+			<label>Other:Featured</label>
+			<label>OpSys:All</label>
+		</labels>
+	</file>
+	<file>
+		<name>Snowpack-3.4.5-src.tar.gz</name>
+		<summary>Source package</summary>
+		<description>Please have a look at <a href="http://models.slf.ch/p/snowpack/page/Getting-started/">Getting-started</a> for instructions. <b>Please use cmake for building Snowpack!</b>
+        </description>
+		<replaces>Snowpack-3.4.1.tar.gz</replaces>
+		<labels>
+			<label>Type:Source</label>
+			<label>OpSys:All</label>
+		</labels>
+	</file>
+</manifest>

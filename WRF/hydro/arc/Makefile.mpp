@@ -1,0 +1,23 @@
+# Makefile 
+
+all:
+	(make -f Makefile.comm BASIC)
+
+BASIC:
+	(cd utils     ; make -f Makefile)
+	make -C Routing/Overland
+	(cd MPP     ; make -f Makefile)
+	(cd Data_Rec     ; make -f Makefile)
+	make -C Debug_Utilities/
+	(cd Routing; make -f Makefile)
+	(cd HYDRO_drv;   make -f Makefile)
+
+clean:
+	(cd utils     ; make -f Makefile clean)
+	make -C Routing/Overland clean
+	(cd Data_Rec; make -f Makefile clean)
+	(cd HYDRO_drv; make -f Makefile clean)
+	(cd MPP; make -f Makefile clean)
+	make -C Debug_Utilities/ clean
+	(cd Routing;    make -f Makefile clean)
+	(rm -f lib/*.a */*.mod */*.o CPL/*/*.o CPL/*/*.mod)

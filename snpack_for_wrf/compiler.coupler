@@ -1,0 +1,12 @@
+mkdir -p ./snow_libs
+
+cd ./main_coupler
+make clean
+make
+mv ./libcoupler.a ../snow_libs/lib/
+mkdir ../snow_libs/include/coupler
+mv ./*.mod ../snow_libs/include/coupler/
+make clean
+
+cd ..
+export SNOWLIBS=$(pwd)

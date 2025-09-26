@@ -1,0 +1,53 @@
+&share
+ wrf_core = 'NMM',
+ max_dom = 3,
+ start_date = '2012-10-26_12:00:00',
+ end_date   = '2012-10-31_12:00:00',
+ interval_seconds = 432000
+ io_form_geogrid = 2,
+ nocolons = T,
+/
+
+&geogrid
+  parent_id = 1, 1, 2,
+  parent_grid_ratio = 1, 3, 3,
+  i_parent_start = 1, 10, 10,
+  j_parent_start = 1, 10, 10,
+  e_we = 288, 265, 235,
+  e_sn = 576, 532, 472,
+  geog_data_res = "2m", "2m", "2m",
+  dx = 0.135,
+  dy = 0.135,
+  map_proj = "rotated_ll",
+  ref_lat   =  21.0,
+  ref_lon   =  287.250,
+  stand_lon =  287.250,
+  geog_data_path = '/glade/p/ral/jnt/tools/geog/'
+  opt_geogrid_tbl_path = "./",
+/
+
+&ungrib
+ out_format = 'WPS',
+ prefix = 'GFS',
+/
+
+&metgrid
+ fg_name = 'new_GFS',
+ io_form_metgrid = 2,
+ opt_metgrid_tbl_path = "./",
+/
+
+&mod_levs
+ press_pa = 201300 , 200100 , 100000 ,
+             95000 ,  90000 ,
+             85000 ,  80000 ,
+             75000 ,  70000 ,
+             65000 ,  60000 ,
+             55000 ,  50000 ,
+             45000 ,  40000 ,
+             35000 ,  30000 ,
+             25000 ,  20000 ,
+             15000 ,  10000 ,
+              5000 ,   1000
+/
+

@@ -1,0 +1,74 @@
+&NOAHLSM_OFFLINE
+
+HRLDAS_SETUP_FILE = "./DOMAIN/wrfinput_d01.nc"
+INDIR = "./FORCING"
+SPATIAL_FILENAME = "./DOMAIN/soil_properties.nc"
+OUTDIR = "./"
+
+START_YEAR  = 2013
+START_MONTH = 09
+START_DAY   = 12
+START_HOUR  = 04
+START_MIN   = 00
+
+RESTART_FILENAME_REQUESTED = "RESTART.2013091204_DOMAIN1"
+
+! Specification of simulation length in days OR hours
+KDAY = 1
+! KHOUR = 8
+
+! Physics options (see the documentation for details)
+DYNAMIC_VEG_OPTION                = 4
+CANOPY_STOMATAL_RESISTANCE_OPTION = 1
+BTR_OPTION                        = 1
+RUNOFF_OPTION                     = 3
+SURFACE_DRAG_OPTION               = 1
+FROZEN_SOIL_OPTION                = 1
+SUPERCOOLED_WATER_OPTION          = 1
+RADIATIVE_TRANSFER_OPTION         = 3
+SNOW_ALBEDO_OPTION                = 2
+PCP_PARTITION_OPTION              = 1
+TBOT_OPTION                       = 2
+TEMP_TIME_SCHEME_OPTION           = 3
+GLACIER_OPTION                    = 2
+SURFACE_RESISTANCE_OPTION         = 4
+
+! Timesteps in units of seconds
+FORCING_TIMESTEP = 3600
+NOAH_TIMESTEP    = 3600
+OUTPUT_TIMESTEP  = 3600
+
+! Land surface model restart file write frequency
+RESTART_FREQUENCY_HOURS = 2
+
+! Split output after split_output_count output times.
+SPLIT_OUTPUT_COUNT = 1
+
+! Soil layer specification
+NSOIL=4
+soil_thick_input(1) = 0.10
+soil_thick_input(2) = 0.30
+soil_thick_input(3) = 0.60
+soil_thick_input(4) = 1.00
+
+! Forcing data measurement height for winds, temp, humidity
+ZLVL = 10.0
+
+! Restart file format options
+rst_bi_in = 0      !0: use netcdf input restart file
+                   !1: use parallel io for reading multiple restart files (1 per core)
+rst_bi_out = 0     !0: use netcdf output restart file
+                   !1: use parallel io for outputting multiple restart files (1 per core)
+
+/
+
+&WRF_HYDRO_OFFLINE
+
+! Specification of forcing data:  1=HRLDAS-hr format, 2=HRLDAS-min format, 3=WRF,
+!    4=Idealized, 5=Idealized w/ Spec. Precip.,
+!    6=HRLDAS-hourly fomat w/ Spec. Precip., 7=WRF w/ Spec. Precip.,
+!    9=Channel-only forcing, see hydro.namelist output_channelBucket_influxes
+!    10=Channel+Bucket only forcing, see hydro.namelist output_channelBucket_influxes
+FORC_TYP = 1
+
+/

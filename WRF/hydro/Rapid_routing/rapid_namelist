@@ -1,0 +1,109 @@
+&NL_namelist
+!*******************************************************************************
+!Runtime options 
+!*******************************************************************************
+BS_opt_Qinit       =.false.
+!.false. --> no initialization       .true. --> initialization
+
+BS_opt_forcing     =.false.
+!.false. --> no forcing              .true. --> forcing
+
+IS_opt_routing     =1
+!1       --> matrix-based Muskingum  2      --> traditional Muskingum
+
+IS_opt_run         =1
+!1       --> regular run             2      --> parameter optimization
+
+IS_opt_phi         =1
+!1       --> phi1                    2      --> phi2
+
+!*******************************************************************************
+!Temporal information
+!*******************************************************************************
+ZS_TauM=252460800
+!315619200 !3600*24*3652days NASA-project !San-Gua 2004-2007 Case!3600*24*1460=126144000
+!3600*24*4527
+!ZS_TauM=26092800 !Texas 2013.12.03-2014.09.30 Case, lpr 2014-03-12
+!3600*24*302
+!ZS_dtM=86400
+
+!modified on 2014/04/03
+!3600*24=86400
+ZS_dtM=86400
+!3600*3=10800
+
+
+ZS_TauO=315532800      !15724800
+!3600*24*182=15724800
+ZS_dtO=86400
+!ZS_dtO=10800
+!3600*24=86400
+
+ZS_TauR=10800
+!3600*3=10800
+ZS_dtR=900
+
+!*******************************************************************************
+!Domain in which input data is available
+!*******************************************************************************
+IS_reachtot        =68143 !for Texas; 5175 for San-Gua
+modcou_connect_file='./forecast_input_tx/rapid_connect_Reg12.csv'
+IS_max_up          =4
+m3_nc_file         ='./forecast_input_tx/m3_riv_2000_2007_NoahMP_Texas.nc'
+
+!*******************************************************************************
+!Domain in which model runs
+!*******************************************************************************
+IS_reachbas        =68143 !5175
+basin_id_file      ='./forecast_input_tx/basin_id_Reg12_hydroseq.csv'
+
+!*******************************************************************************
+!Initialization
+!*******************************************************************************
+Qinit_file         =''
+
+!*******************************************************************************
+!Available forcing data
+!*******************************************************************************
+!IS_forcingtot      =3
+!forcingtot_id_file ='./input_San_Guad/forcingtot_id_dam_springs.csv'
+!Qfor_file          ='./input_San_Guad/Qfor_dam_springs_2004_2007.csv'     
+
+!*******************************************************************************
+!Forcing data used as model runs
+!*******************************************************************************
+!IS_forcinguse      =3
+!forcinguse_id_file ='./input_San_Guad/forcinguse_id_dam_springs.csv'
+
+!*******************************************************************************
+!Regular model run
+!*******************************************************************************
+k_file             ='./forecast_input_tx/k_Reg12_Noah_MP_pb0.csv'
+x_file             ='./forecast_input_tx/x_Reg12_Noah_MP_pb0.csv'
+Qout_nc_file       ='./output_forecast_tx/Texas.2000.2007.NoahMP.Calibed.nc'
+
+!*******************************************************************************
+!Optimization
+!*******************************************************************************
+!ZS_phifac          =0.001
+!------------------------------------------------------------------------------
+!Routing parameters
+!------------------------------------------------------------------------------
+!kfac_file          ='./input_tx_noahmp_00_12_opt/kfac_TX_1km_hour.csv'   
+!xfac_file          ='' 
+!ZS_knorm_init      =4 
+!ZS_xnorm_init      =1
+!------------------------------------------------------------------------------
+!Gage observations
+!------------------------------------------------------------------------------
+!IS_gagetot         =248
+!gagetot_id_file    ='./input_tx_noahmp_00_12_opt/gage_id_Reg12_2000_2007_full.csv'
+!Qobs_file          ='./input_tx_noahmp_00_12_opt/Qobs_Reg12_2000_2007_full.csv'
+!Qobsbarrec_file    =''     
+!IS_gageuse         =248
+!gageuse_id_file    ='./input_tx_noahmp_00_12_opt/gage_id_Reg12_2000_2007_full.csv'
+!IS_strt_opt        =1
+!*******************************************************************************
+!End name list
+!*******************************************************************************
+/

@@ -1,0 +1,41 @@
+INCLUDE_DIRECTORIES("${PROJECT_SOURCE_DIR}/")
+
+SET(meteoFilters_sources
+	meteoFilters/FilterSuppr.cc
+	meteoFilters/FilterMin.cc
+	meteoFilters/FilterMax.cc
+	meteoFilters/FilterMinMax.cc
+	meteoFilters/FilterMinMaxConditional.cc
+	meteoFilters/FilterMAD.cc
+	meteoFilters/FilterStdDev.cc
+	meteoFilters/FilterTukey.cc
+	meteoFilters/FilterPotentialSW.cc
+	meteoFilters/FilterRate.cc
+	meteoFilters/FilterUnheatedPSUM.cc
+	meteoFilters/FilterParticle.cc
+	meteoFilters/FilterKalman.cc
+	meteoFilters/FilterMaths.cc
+	meteoFilters/ProcAggregate.cc
+	meteoFilters/ProcIIR.cc
+	meteoFilters/ProcUnventilatedT.cc
+	meteoFilters/ProcQuantileMapping.cc
+	meteoFilters/ProcShade.cc
+	meteoFilters/ProcPSUMDistribute.cc
+	meteoFilters/ProcDeAccumulate.cc
+	meteoFilters/ProcUndercatch_WMO.cc
+	meteoFilters/ProcUndercatch_Hamon.cc
+	meteoFilters/ProcUndercatch_Forland.cc
+	meteoFilters/ProcAdd.cc
+	meteoFilters/ProcMult.cc
+	meteoFilters/ProcExpSmoothing.cc
+	meteoFilters/ProcWMASmoothing.cc
+	meteoFilters/ProcRHWaterToIce.cc
+	meteoFilters/FilterNoChange.cc
+	meteoFilters/FilterTimeconsistency.cc
+	meteoFilters/FilterDeGrass.cc
+	meteoFilters/TimeFilters.cc
+	meteoFilters/FilterDespikingPS.cc
+	meteoFilters/ProcessingBlock.cc
+	meteoFilters/ProcessingStack.cc
+	meteoFilters/WindowedFilter.cc
+)

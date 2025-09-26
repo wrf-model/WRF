@@ -1,0 +1,202 @@
+#!/bin/csh -f
+
+
+echo "===================================================="
+echo starting compile_wkc
+
+setenv WKC_DIRNAME KPP
+
+setenv WRFC_ROOT  `pwd`
+setenv WKC_HOME ${WRFC_ROOT}/chem/${WKC_DIRNAME}
+
+
+
+# KPP_HOME: environment variable needed by KPP
+# note: this is not plain KPP
+setenv KPP_HOME ${WKC_HOME}/kpp/kpp-2.1
+mkdir -p ${KPP_HOME}/bin
+setenv WKC_KPP ${KPP_HOME}/bin/kpp
+
+
+#write Makefile_kpp.defs
+rm -f ${WKC_HOME}/configure.kpp
+${WKC_HOME}/configure_kpp
+
+# ...and link it
+rm -f ${KPP_HOME}/Makefile.defs
+ln -s ${WKC_HOME}/configure.kpp  ${KPP_HOME}/Makefile.defs
+
+
+# some preliminaries
+if (! -e chem/Makefile_org ) then
+cp  chem/Makefile  chem/Makefile_org
+endif
+
+if ( ! -e chem/module_wkppc_constants.F ) then
+ln -s  ${WKC_DIRNAME}/module_wkppc_constants.F chem
+endif
+
+
+#compile kpp
+echo compile kpp
+cd $KPP_HOME; make; cd $WRFC_ROOT
+
+echo "-----------------------------------------"
+
+
+( cd $WKC_HOME/util/wkc; ./linker.csh unlink )
+
+( cd $WKC_HOME/util/wkc; ./linker.csh link )
+
+#compile the coupler
+echo compile the coupler
+cd $WKC_HOME/util/wkc; make -i -r 
+
+#compile the tuv_kpp
+echo compile the tuv_kpp
+make -f Makefile.tuv
+
+echo "-----------------------------------------"
+
+# if Registry was edited touch run_wkc  
+echo check if Registry was touched
+cd $WKC_HOME/util; make
+
+echo "-----------------------------------------"
+echo "Run kpp for mechanisms in chem/KPP/mechanisms"
+
+
+
+# run make (-> kpp) in each subdir
+
+cd $WKC_HOME
+set kpp_files = ( mechanisms/*/*.kpp )
+
+# Remove tuv inc files
+set found = 0
+if ( -e ${WRFC_ROOT}/inc/tuv2wrf_jvals.inc ) then
+  rm -f ${WRFC_ROOT}/inc/tuv2wrf_jvals.inc;
+endif
+if ( -e ${WRFC_ROOT}/inc/tuvdef_jvals.inc ) then
+  rm -f ${WRFC_ROOT}/inc/tuvdef_jvals.inc;
+endif
+
+foreach file ( $kpp_files )
+
+echo "========================================================="
+
+set kdir = `echo $file:h`
+set kfile = `echo $file:t`
+echo $kdir
+
+ if (! -e  $kdir/Makefile ) then
+    rm -f  $kdir/Makefile
+   echo  ln -s  ../../util/Makefile_kpp $kdir/Makefile
+   ln -s  ../../util/Makefile_kpp $kdir/Makefile
+ endif
+
+
+    set model = `echo $kfile | sed 's/.kpp//g'`
+
+
+    
+    
+
+# if necessary, create a few .inc files in chem/KPP/inc
+#  which can be used to add code in the automatically
+#  generated files module_kpp_xxx_interface.f
+# these files will not be removed during cleanup!!! 
+
+   util/create_inc_files.csh $model 
+
+
+
+  cd $kdir
+  echo model $model
+  make MODEL=$model KPP=$WKC_KPP WRFC_ROOT=$WRFC_ROOT  
+
+# generate tuv photolysis inc files
+  if( -e $model.tuv.jmap ) then
+    if( $found == 0 ) then
+      $WKC_HOME/util/wkc/tuv_kpp FIRST
+      set found = 1
+    endif
+    $WKC_HOME/util/wkc/tuv_kpp $model
+  endif
+
+   if (  `echo $WRFC_ROOT | awk '{print ( length ( $1 ) > 40 ) }' `) then
+   echo WARNING: If kpp fails here the path to WRF-Chem might be too long for yacc ...
+   endif
+
+  cd $WKC_HOME
+
+
+# direct addressing in the decomp subroutine (similar to a code by
+#  Edwin Spee, CWI, Amsterdam)
+ ( cd ${WKC_HOME}/util/write_decomp; ./write_decom.csh ${model} ../../.. )
+
+end
+
+# finish tuv photolysis inc files
+if( $found == 1 ) then
+  $WKC_HOME/util/wkc/tuv_kpp LAST
+endif
+
+echo "========================================================="
+
+###################################################
+ 
+# link the remaining .inc files in chem/KPP/inc
+set kincfiles = ( inc/*.inc )
+ 
+foreach kincfile ( $kincfiles ) 
+ 
+ if ( ! -e ${WRFC_ROOT}/${kincfile} ) then
+   echo ln -s ../chem/${WKC_DIRNAME}/${kincfile}  ${WRFC_ROOT}/inc
+   ln -s ../chem/${WKC_DIRNAME}/${kincfile}  ${WRFC_ROOT}/inc
+ endif 
+
+end
+
+
+ 
+###################################################
+
+## run the coupler
+if ( -e util/run_wkc ) then 
+ echo " "
+ echo "RUN WRF-Chem KPP coupler ---------------------------"
+
+   cd $WRFC_ROOT
+
+    chem/KPP/util/wkc/registry_kpp -DDA_CORE=0 -DEM_CORE=1 -DBUILD_CHEM=1 Registry/Registry.EM_CHEM
+   
+   cd $WKC_HOME
+
+
+   rm -f util/run_wkc
+
+  
+   if ( $status ) then
+
+    echo "ERROR on exit KPP coupler"
+
+   else
+
+   
+    echo " back from KPP coupler: check generated code in chem directory" 
+   
+   endif
+
+else 
+
+echo " not running the WRF-Chem KPP coupler"
+
+endif
+
+
+
+echo end of compile_wkc
+echo "========================================================="
+
+exit 0

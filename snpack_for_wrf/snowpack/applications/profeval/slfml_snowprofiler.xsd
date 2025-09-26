@@ -1,0 +1,655 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+        xmlns:sp="http://www.slf.ch/snowprofile/1.0" 
+        targetNamespace="http://www.slf.ch/snowprofile/1.0" 
+        elementFormDefault="qualified" 
+        attributeFormDefault="unqualified" 
+        version="1.0">
+
+    <xs:element name="snowprofile" type="sp:snowprofile-type"></xs:element>
+    <xs:complexType name="snowprofile-type">
+        <xs:all>
+          <xs:element name="application-info" type="sp:application-info-type" maxOccurs="1"/>
+          <xs:element name="observer" type="sp:observertype" maxOccurs="1"/>
+          <xs:element name="header" type="sp:header-type" maxOccurs="1"/>
+          <xs:element name="rating" type="sp:rating-type" maxOccurs="1"/>
+          <xs:element name="profiletext-list" type="sp:profiletext-list-type" maxOccurs="1"/>
+          <xs:element name="profile" type="sp:profile-type"  maxOccurs="1"/>
+        </xs:all>
+    </xs:complexType>
+
+    <xs:element name="application-info" type="sp:application-info-type" />
+    <xs:complexType name="application-info-type">
+        <xs:all>
+          <xs:element name="application" type="xs:string" minOccurs="0" maxOccurs="1"/>
+          <xs:element name="cleint-version" type="xs:string" minOccurs="0" maxOccurs="1">
+            <xs:annotation>
+                <xs:documentation>Deprecated do to misspelled element name</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element name="client-version" type="xs:string" minOccurs="0" maxOccurs="1" />
+          <xs:element name="cleint-software" type="xs:string" minOccurs="0" maxOccurs="1" >
+            <xs:annotation>
+                <xs:documentation>Deprecated do to misspelled element name</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element name="client-software" type="xs:string" minOccurs="0" maxOccurs="1"/>
+          <xs:element name="profile-id" type="xs:string" minOccurs="0" maxOccurs="1"/>
+          <xs:element name="profile-version" type="xs:string" minOccurs="0" maxOccurs="1"/>
+          <xs:element name="loaddate" type="xs:dateTime" minOccurs="0" maxOccurs="1" />
+          <xs:element name="editdate" type="xs:dateTime" minOccurs="0" maxOccurs="1" />
+          <xs:element name="sps-map-flag" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
+          <xs:element name="file-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
+          <xs:element name="create-user" type="sp:user" minOccurs="0" maxOccurs="1"/>
+          <xs:element name="edit-user" type="sp:user" minOccurs="0" maxOccurs="1"/>
+        </xs:all>
+    </xs:complexType>
+
+    <xs:element name="observer" type="sp:observertype" />
+    <xs:complexType name="observertype">
+        <xs:all>
+            <xs:element name="name" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="organisation" type="xs:string" minOccurs="0" maxOccurs="1"/>
+        </xs:all>
+    </xs:complexType>
+    
+    <xs:element  name="header" type="sp:header-type"/>
+    <xs:complexType name="header-type">
+        <xs:all>
+            <xs:element name="profile-date" type="xs:dateTime" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="profile-number" type="xs:int" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="confidential" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="profile-reason" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="remark" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="state" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="location" type="sp:location-type" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="terrain" type="sp:terrain-type" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="weather" type="sp:weather-type" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="hastyPit" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
+        </xs:all>
+    </xs:complexType>
+
+    <xs:element  name="rating" type="sp:rating-type" />
+    <xs:complexType name="rating-type">
+        <xs:all>
+            <xs:element name="profile-class" type="xs:int" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="stability-class" type="xs:int" minOccurs="0" maxOccurs="1"/>
+        </xs:all>
+    </xs:complexType>
+
+    <xs:element  name="profiletext-list" type="sp:profiletext-list-type" />
+    <xs:complexType name="profiletext-list-type">
+        <xs:sequence>
+            <xs:element name="profiletext" minOccurs="0" maxOccurs="unbounded">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="boundingbox" minOccurs="0" maxOccurs="1">
+                            <xs:complexType>
+                                <xs:all>
+                                  <xs:element name="x" type="xs:int" minOccurs="0" maxOccurs="1"/>
+                                  <xs:element name="y" type="xs:int" minOccurs="0" maxOccurs="1"/>
+                                  <xs:element name="width" type="xs:int" minOccurs="0" maxOccurs="1"/>
+                                  <xs:element name="height" type="xs:int" minOccurs="0" maxOccurs="1" />
+                                </xs:all>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="text" type="xs:string" minOccurs="1" maxOccurs="1" />
+                    </xs:sequence>
+                    <xs:attribute name="id" type="xs:int" use="optional"/>
+                    <xs:attribute name="key" type="sp:key-type" use="required"/>
+                    <xs:attribute name="confidential" type="xs:boolean" use="optional"/>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:simpleType name="key-type">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="" />
+            <xs:enumeration value="TEXT_BLOCK_DEFAULT" />
+            <xs:enumeration value="TEXT_BLOCK_PROFILE_LOCATION" />
+            <xs:enumeration value="TEXT_BLOCK_PROFILE" />
+            <xs:enumeration value="TEXT_BLOCK_RUTSCHBLOCK" />
+            <xs:enumeration value="TEXT_BLOCK_SNOW_SURFACE" />
+            <xs:enumeration value="TEXT_BLOCK_SNOW_DRIFT" />
+            <xs:enumeration value="TEXT_BLOCK_ALARM_SIGNS" />
+            <xs:enumeration value="TEXT_BLOCK_AVALANCHES" />
+            <xs:enumeration value="TEXT_BLOCK_AVALANCHE_DANGER" />
+            <xs:enumeration value="TEXT_BLOCK_REMARK" />
+            <xs:enumeration value="TEXT_BLOCK_REMARK_CONFIDENTIAL" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:element name="profile" type="sp:profile-type" />
+    <xs:complexType name="profile-type">
+        <xs:all>
+            <xs:element name="snow-depth" type="sp:distance" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="profile-depth" type="sp:distance" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="water-equivalent" type="sp:integer-value" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="water-equivalent-snow-depth" type="sp:integer-value" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="tss" type="sp:temperature" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="snow-surface" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="snow-layer-profile" type="sp:snow-layer-profile-type" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="temperature-profile" type="sp:temperature-profile-type" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="thread-profile" type="sp:thread-profile-type" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="rutschblock-profile" type="sp:rutschblock-profile-type" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="compressiontest-profile" type="sp:compressiontest-profile-type" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="water-equivalent-profile" type="sp:water-equivalent-profile-type" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="ramm-profile" type="sp:ramm-profile-type" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="stabilityTests" type="sp:stabilityTests-type" minOccurs="0" maxOccurs="1" />
+        </xs:all>
+    </xs:complexType>
+
+
+    <xs:complexType name="snow-layer-profile-type">
+        <xs:sequence>
+            <xs:element name="layer" type="sp:snow-layer-type" minOccurs="0" maxOccurs="unbounded" />
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="temperature-profile-type">
+        <xs:sequence>
+            <xs:element name="layer" type="sp:temperature-layer-type" minOccurs="0" maxOccurs="unbounded" />
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:element name="thread-profile" type="sp:thread-profile-type" />
+    <xs:complexType name="thread-profile-type">
+        <xs:sequence>
+            <xs:element name="layer" type="sp:thread-layer-type" minOccurs="0" maxOccurs="unbounded" />
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="rutschblock-profile-type">
+        <xs:sequence>
+            <xs:element name="layer" type="sp:rutschblock-layer-type" minOccurs="0" maxOccurs="unbounded" />
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="compressiontest-profile-type">
+        <xs:sequence>
+            <xs:element name="layer" type="sp:compressiontest-layer-type" minOccurs="0" maxOccurs="unbounded" />
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="water-equivalent-profile-type">
+        <xs:sequence>
+            <xs:element name="layer" type="sp:water-equivalent-layer-type" minOccurs="0" maxOccurs="unbounded" />
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="ramm-profile-type">
+        <xs:sequence>
+            <xs:element name="layer" type="sp:ramm-layer-type" minOccurs="0" maxOccurs="unbounded" />
+        </xs:sequence>
+    </xs:complexType>
+    
+    <xs:element name="stabilityTests" type="sp:stabilityTests-type" />
+    <xs:complexType name="stabilityTests-type">
+    <xs:sequence>
+    	<xs:element name="stabilityTest" type="sp:stabilityTest-type" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+    </xs:complexType>
+    
+    <xs:element name="stabilityTest" type="sp:stabilityTest-type" />
+    <xs:complexType name="stabilityTest-type">
+    <xs:sequence>
+    <xs:element name="order-number" type="xs:int" minOccurs="1" maxOccurs="1"/>
+        <xs:choice>
+            <xs:element name="ect" type="sp:ect-stab-test-type" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="ct" type="sp:ct-stab-test-type" minOccurs="0" maxOccurs="unbounded"/>
+      <!--       <xs:element name="rb" type="sp:rutschblock-test-type" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="prop-saw" type="sp:prop-saw-test-type" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="shear-frame" type="sp:shear-frame-test-type" minOccurs="0" maxOccurs="unbounded"/> --> 
+        </xs:choice>
+    </xs:sequence>
+    </xs:complexType>
+    
+    <xs:complexType name="ct-stab-test-type">
+        <xs:complexContent>
+         <xs:extension base="sp:layer-type">
+                <xs:sequence>
+                    <xs:element name="score" type="sp:ct-score-type" minOccurs="0" maxOccurs="1"/>
+                    <xs:element name="fracture-character" type="sp:fracture-character-type" minOccurs="0" maxOccurs="1"/>
+                </xs:sequence>
+                </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="ect-stab-test-type">
+        <xs:complexContent>
+         <xs:extension base="sp:layer-type">
+                <xs:sequence>
+                    <xs:element name="score1" type="sp:ect-score-type" minOccurs="1" maxOccurs="1"/>    
+                    <xs:element name="score2" type="sp:ect-score-type" minOccurs="0" maxOccurs="1"/>     
+          <!--           <xs:element name="top" type="sp:distance" minOccurs="1" maxOccurs="1"/>
+            		<xs:element ref="sp:remark" minOccurs="0" maxOccurs="1"/>  -->
+                </xs:sequence>
+                </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="rutschblock-test-type">
+        <xs:complexContent>
+            <xs:extension base="sp:layer-type">
+                <xs:sequence>
+                    <xs:element name="score" type="sp:rb-score-type" minOccurs="0" maxOccurs="1"/>        
+                    <xs:element name="fracture-type" type="sp:fracture-type-type" minOccurs="0" maxOccurs="1"/>
+                    <xs:element name="fracture-plane" type="sp:fracture-plane-type" minOccurs="0" maxOccurs="1"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="user">
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute name="id" type="xs:string" />
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    
+    <xs:element name="location" type="sp:location-type" />
+    <xs:complexType name="location-type">
+        <xs:all>
+          <xs:element name="position" type="sp:position-type" minOccurs="0" maxOccurs="1" />
+          <xs:element name="elevation" type="sp:elevation-type" minOccurs="0" maxOccurs="1" />
+          <xs:element name="description" minOccurs="0" maxOccurs="1" >
+            <xs:complexType>
+                <xs:all>
+                  <xs:element name="name" type="xs:string" minOccurs="0" maxOccurs="1" />
+                  <xs:element name="region" type="xs:string" minOccurs="0" maxOccurs="1" />
+                  <xs:element name="kanton" type="xs:string" minOccurs="0" maxOccurs="1" />
+                  <xs:element name="country" type="xs:string" minOccurs="0" maxOccurs="1" />
+                  <xs:element name="stat_abk" type="xs:string" minOccurs="0" maxOccurs="1" />
+                  <xs:element name="station" type="xs:string" minOccurs="0" maxOccurs="1" />
+                  <xs:element name="map" type="xs:int" minOccurs="0" maxOccurs="1" />
+                </xs:all>
+            </xs:complexType>
+          </xs:element>
+        </xs:all>
+    </xs:complexType>
+    
+    <xs:complexType name="terrain-type">
+        <xs:all>
+            <xs:element name="aspect" type="xs:string" minOccurs="0" maxOccurs="1" />
+            <xs:element name="slope-angle" type="xs:int" minOccurs="0" maxOccurs="1" />
+        </xs:all>
+    </xs:complexType>
+    
+    <xs:complexType name="weather-type">
+        <xs:all>
+          <xs:element name="description" type="xs:string" minOccurs="0" maxOccurs="1" />
+          <xs:element name="sky-condition" type="xs:string" minOccurs="0" maxOccurs="1" />
+          <xs:element name="wind-direction" type="sp:direction" minOccurs="0" maxOccurs="1" />
+          <xs:element name="wind-speed" type="sp:speed" minOccurs="0" maxOccurs="1" nillable="true"/>
+            <xs:element name="air-temperature" type="sp:temperature" minOccurs="0" maxOccurs="1" />        
+        </xs:all>
+    </xs:complexType>
+
+    <xs:complexType  name="speed" >
+         <xs:simpleContent >
+            <xs:extension base="xs:int" >
+                <xs:attribute name="unit" type="sp:speed-unit"/>                
+            </xs:extension>
+         </xs:simpleContent>
+    </xs:complexType>
+
+    <xs:simpleType name="speed-unit">
+          <xs:restriction base="xs:string">
+              <xs:enumeration value="km/h" />
+              <xs:enumeration value="m/s" />
+              <xs:enumeration value="kn" />
+          </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="direction" >
+        <xs:restriction base="xs:string" >
+            <xs:enumeration value="N" />
+            <xs:enumeration value="NE" />
+            <xs:enumeration value="E" />
+            <xs:enumeration value="SE" />
+            <xs:enumeration value="S" />
+            <xs:enumeration value="SW" />
+            <xs:enumeration value="W" />
+            <xs:enumeration value="NW" />
+        </xs:restriction>
+    </xs:simpleType>    
+
+
+    <xs:complexType name="position-type">
+        <xs:all>
+            <xs:element name="x" type="xs:int" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="y" type="xs:int" minOccurs="1" maxOccurs="1"/>
+        </xs:all>
+        <xs:attribute name="system" type="sp:coordinate-system" use="required"/>
+    </xs:complexType>
+    
+    <xs:complexType name="elevation-type">
+        <xs:simpleContent>
+            <xs:extension base="xs:int">
+                <xs:attribute name="unit" type="sp:distance-unit" use="required"/>
+            </xs:extension>                
+        </xs:simpleContent>
+    </xs:complexType>
+
+    <xs:simpleType name="coordinate-system">
+          <xs:restriction base="xs:string">
+              <xs:enumeration value="swissgrid" >
+                  <xs:annotation>
+                      <xs:documentation>
+                          Swiss coordinate system. 
+                          Lower left corner is the base of the system.
+                          Unit is m. 
+                          X-values go from left to right. X-range is 0 to 499999
+                          Y-values go from bottom to top. Y-range is 500000 to 999999
+                      </xs:documentation>
+                  </xs:annotation>
+              </xs:enumeration>
+          </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="distance-unit">
+          <xs:restriction base="xs:string">
+              <xs:enumeration value="m" />
+              <xs:enumeration value="cm" />
+              <xs:enumeration value="mm" />
+          </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="density-unit">
+          <xs:restriction base="xs:string">
+              <xs:enumeration value="kg/m3" />
+              <xs:enumeration value="kg/cm3" />
+          </xs:restriction>
+    </xs:simpleType>
+
+
+    <xs:simpleType name="force-unit">
+          <xs:restriction base="xs:string">
+              <xs:enumeration value="N" />
+          </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="temperature-unit">
+          <xs:restriction base="xs:string">
+              <xs:enumeration value="Celsius" />
+          </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="integer-value">
+        <xs:simpleContent>
+            <xs:extension base="xs:int">
+                <xs:attribute name="unit" type="xs:string" use="required"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    
+    <xs:complexType name="distance">
+        <xs:simpleContent>
+            <xs:extension base="xs:float">
+                <xs:attribute name="unit" type="sp:distance-unit" use="required"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+
+    <xs:complexType name="density">
+        <xs:simpleContent>
+            <xs:extension base="xs:float">
+                <xs:attribute name="unit" type="sp:density-unit" use="required"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    
+    <xs:complexType name="force">
+        <xs:simpleContent>
+            <xs:extension base="xs:float">
+                <xs:attribute name="unit" type="sp:force-unit" use="required"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+
+    <xs:complexType name="temperature">
+        <xs:simpleContent>
+            <xs:extension base="xs:float">
+                <xs:attribute name="unit" type="sp:temperature-unit" use="required"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+
+    <xs:complexType name="string-value">
+        <xs:simpleContent>
+            <xs:extension base="xs:short">
+                <xs:attribute name="id" type="xs:string" />
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+
+
+    <xs:element name="remark" type="xs:string" />
+    <xs:complexType name="layer-type">
+        <xs:sequence>            
+            <xs:element name="top" type="sp:distance" minOccurs="1" maxOccurs="1"/>
+            <xs:element ref="sp:remark" minOccurs="0" maxOccurs="1"/> 
+        </xs:sequence>
+    </xs:complexType>
+    
+    <xs:element name="snow-layer" type="sp:snow-layer-type" />
+    <xs:complexType name="snow-layer-type">
+        <xs:complexContent>
+            <xs:extension base="sp:layer-type">
+                <xs:sequence>
+                    <xs:element name="wetness" type="sp:wettness-type" minOccurs="0" maxOccurs="unbounded"/>
+                    <xs:element name="hardness" type="sp:hardness-type" minOccurs="0" maxOccurs="unbounded"/>
+                    <xs:element name="size-avg" type="sp:distance" minOccurs="0" maxOccurs="1"/>
+                    <xs:element name="size-max" type="sp:distance" minOccurs="0" maxOccurs="1"/>                    
+                    <xs:element name="grain-type" type="xs:int" minOccurs="0" maxOccurs="unbounded"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="temperature-layer-type">
+        <xs:complexContent>
+            <xs:extension base="sp:layer-type">
+                <xs:sequence>
+                    <xs:element name="snow-temperature" type="sp:temperature" />
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="thread-layer-type">
+        <xs:complexContent>
+            <xs:extension base="sp:layer-type">
+                <xs:sequence>
+                    <xs:element name="thread-color" type="sp:color-type" />
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="rutschblock-layer-type">
+        <xs:complexContent>
+            <xs:extension base="sp:layer-type">
+                <xs:sequence>
+                    <xs:element name="score" type="sp:rb-score-type" minOccurs="0" maxOccurs="1"/>        
+                    <xs:element name="fracture-type" type="sp:fracture-type-type" minOccurs="0" maxOccurs="1"/>
+                    <xs:element name="fracture-plane" type="sp:fracture-plane-type" minOccurs="0" maxOccurs="1"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="compressiontest-layer-type">
+        <xs:complexContent>
+            <xs:extension base="sp:layer-type">
+                <xs:sequence>
+                    <xs:element name="score" type="sp:ct-score-type" minOccurs="0" maxOccurs="1"/>        
+                    <xs:element name="fracture-type" type="sp:fracture-type-type" minOccurs="0" maxOccurs="1"/>
+                    <xs:element name="fracture-plane" type="sp:fracture-plane-type" minOccurs="0" maxOccurs="1"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:element name="water-equivalent-layer" type="sp:water-equivalent-layer-type" />
+    <xs:complexType name="water-equivalent-layer-type">
+        <xs:complexContent>
+            <xs:extension base="sp:layer-type">
+                <xs:sequence>
+                    <xs:element name="height" type="sp:distance" />
+                    <xs:element name="water-equivalent" type="sp:distance" />
+                    <xs:element name="density" type="sp:density" />
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+   <xs:element name="ramm-layer" type="sp:ramm-layer-type" />
+   <xs:complexType name="ramm-layer-type">
+      <xs:sequence>
+          <xs:element name="tubes" type="xs:int" minOccurs="0" maxOccurs="1"/>
+          <xs:element name="drops" type="sp:drop-type" minOccurs="0" maxOccurs="1" />
+          <xs:element name="penetration" type="sp:penetration-type" minOccurs="1" maxOccurs="1" />
+          <xs:element name="resistence" type="sp:force" minOccurs="1" maxOccurs="1" />
+          <xs:element name="remark" type="xs:string" minOccurs="0" maxOccurs="1"/>
+      </xs:sequence>
+    </xs:complexType>
+    
+    <xs:simpleType   name="color-type">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="black" />
+            <xs:enumeration value="red" />
+            <xs:enumeration value="green" />
+            <xs:enumeration value="blue" />
+            <xs:enumeration value="yellow" />
+            <xs:enumeration value="orange" />
+        </xs:restriction>
+    </xs:simpleType>    
+    
+    <xs:complexType name="drop-type" >
+        <xs:sequence>
+            <xs:element name="strokes" type="xs:int" minOccurs="1" maxOccurs="1" />
+            <xs:element name="height" type="sp:distance" minOccurs="1" maxOccurs="1" />
+        </xs:sequence>
+    </xs:complexType>
+    
+    <xs:complexType name="penetration-type" >
+        <xs:sequence>
+            <xs:element name="total" type="sp:distance" minOccurs="1" maxOccurs="1" />
+            <xs:element name="depth" type="sp:distance" minOccurs="1" maxOccurs="1" />
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:simpleType name="wettness-type">
+        <xs:restriction base="xs:int">
+            <xs:minInclusive value="1" />
+            <xs:maxInclusive value="8" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="hardness-type">
+        <xs:restriction base="xs:int">
+            <xs:minInclusive value="1" />
+            <xs:maxInclusive value="8" />
+        </xs:restriction>
+    </xs:simpleType>
+
+   <xs:simpleType name="rb-score-type">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="" />
+            <xs:enumeration value="1 while digging" />
+            <xs:enumeration value="2 walk on block by ski" />
+            <xs:enumeration value="3 seesaw" />
+            <xs:enumeration value="4 jump once on block by ski" />
+            <xs:enumeration value="5 jump twice more on block by ski" />
+            <xs:enumeration value="6 jump on block by foot" />
+            <xs:enumeration value="7 no failure" />
+        </xs:restriction>
+    </xs:simpleType>
+    
+    <xs:simpleType name="ect-score-type">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="0" />
+            <xs:enumeration value="1" />
+            <xs:enumeration value="2" />
+            <xs:enumeration value="3" />
+            <xs:enumeration value="4" />
+            <xs:enumeration value="5" />
+            <xs:enumeration value="6" />
+            <xs:enumeration value="7" />
+            <xs:enumeration value="8" />
+            <xs:enumeration value="9" />
+            <xs:enumeration value="10" />
+            <xs:enumeration value="11" />
+            <xs:enumeration value="12" />
+            <xs:enumeration value="13" />
+            <xs:enumeration value="14" />
+            <xs:enumeration value="15" />
+            <xs:enumeration value="16" />
+            <xs:enumeration value="17" />
+            <xs:enumeration value="18" />
+            <xs:enumeration value="19" />
+            <xs:enumeration value="20" />
+            <xs:enumeration value="21" />
+            <xs:enumeration value="22" />
+            <xs:enumeration value="23" />
+            <xs:enumeration value="24" />
+            <xs:enumeration value="25" />
+            <xs:enumeration value="26" />
+            <xs:enumeration value="27" />
+            <xs:enumeration value="28" />
+            <xs:enumeration value="29" />
+            <xs:enumeration value="30" />
+            <xs:enumeration value="nf" />
+            <xs:enumeration value="pp" />
+            <xs:enumeration value="np" />
+        </xs:restriction>
+    </xs:simpleType>
+
+   <xs:simpleType name="ct-score-type">
+        <xs:restriction base="xs:int">
+        </xs:restriction>
+    </xs:simpleType>
+
+   <xs:simpleType name="fracture-type-type">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="" />
+            <xs:enumeration value="block" />
+            <xs:enumeration value="ski" />
+            <xs:enumeration value="edge" />
+        </xs:restriction>
+    </xs:simpleType>
+
+   <xs:simpleType name="fracture-plane-type">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="" />
+            <xs:enumeration value="plain" />
+            <xs:enumeration value="coarse" />
+            <xs:enumeration value="irregular" />
+        </xs:restriction>
+    </xs:simpleType>
+    
+       <xs:simpleType name="fracture-character-type">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="" />
+            <xs:enumeration value="B" />
+            <xs:enumeration value="RP" />
+            <xs:enumeration value="PC" />
+            <xs:enumeration value="SC" />
+            <xs:enumeration value="SP" />
+        </xs:restriction>
+    </xs:simpleType>
+
+   <xs:simpleType name="profile-state">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="draft" />
+            <xs:enumeration value="release" />
+            <xs:enumeration value="test" />
+            <xs:enumeration value="error" />
+        </xs:restriction>
+    </xs:simpleType>
+
+</xs:schema>
+

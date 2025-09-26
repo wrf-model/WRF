@@ -1,0 +1,37 @@
+README.Idealized_HWRF
+Last updated:  Nov 2016
+
+This README file provides a short overview of the HWRF idealized tropical cyclone test case. For details, please refer to the HWRF user’s guide and scientific documentation at http://www.dtcenter.org/HurrWRF/users/docs/index.php.
+
+
+Initial conditions are specified using an idealized vortex superposed on a base state quiescent sounding. The initial base state temperature and humidity profile is prescribed in file sound.d, while the vortex properties are specified in input.d. 
+
+
+The default initial vortex has an intensity of 20 m/s and a radius of maximum wind of 90 km. To initialize the idealized vortex, the nonlinear balance equation in the pressure-based sigma coordinate system described in Wang (1995),  and  reported in Bao et al. (2012) and  Gopalakrishnan et al. (2011 and 2013), is solved within the rotated latitude–longitude E-grid framework. 
+
+
+The default initial ambient base state assumes a f-plane at the latitude of 12.5 deg. Options for f-plane and beta-plane can be found in namelist file input.d. The sea surface temperature is time-invariant and horizontally homogeneous, with the default set to 302K. No land is used in the simulation domain. 
+
+
+The lateral boundary conditions used in the HWRF idealized simulation are the same as  used in real data cases. This inevitably leads to some reflection when gravity waves emanating from the vortex reach the outer domain lateral boundaries.
+
+The landfalling option is selected in the namelist file land.nml.  The default is to NOT include landfall.  The land strip can be configured to move underneath of the idealized storm (which remains centered), either east-to-west or west-to-east.  The landfall option must be used with the GFDL slab land surface model.
+
+The idealized simulation is configured  for the operational HWRF triple nested domain configuration with grid spacing at 18-, 6-, and 2-km.  All the operational atmospheric physics, as well as the supported experimental physics options in HWRF, can be used in  the idealized HWRF framework.
+
+
+
+
+References
+
+
+J.-W. Bao, S. G. Gopalakrishnan, S. A. Michelson, F. D. Marks, and M. T. Montgomery,2012:Impact of physics representations in the HWRFX on simulated hurricane structure and pressure–wind relationships. Mon. Wea. Rev., 140, 3278-3299
+
+
+Gopalakrishnan,  S.  G.,  F. Marks,  X.  Zhang, J.-W.  Bao,  K.-S.  Yeh,  and  R.  Atlas, 2011: The experimental HWRF System: a study on the influence of horizontal resolution on the structure and intensity changes in tropical cyclones using an idealized framework. Mon. Wea. Rev., 139, 1762–1784.
+
+
+Gopalakrishnan, S. G., F. Marks, J. A. Zhang, X. Zhang, J.-W. Bao, and V. Tallapragada, 2013: A study of the impacts of vertical diffusion on the structure and intensity of the tropical Cyclones using the high-resolution HWRF system. J. Atmos. Sci., 70, 524–541.
+
+
+Wang, Y., 1995: An inverse balance equation in sigma coordinates for model initialization. Mon. Wea. Rev., 123, 482–488.

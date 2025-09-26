@@ -1,0 +1,177 @@
+[General]
+BUFF_CHUNK_SIZE = 370
+BUFF_BEFORE = 1.5
+
+[Input]
+COORDSYS = UPS
+COORDPARAM = S
+TIME_ZONE = 0
+
+METEO = SMET
+METEOPATH = ./input
+STATION1 = domeA_erodible
+
+SNOWFILE1 = domeA_erodible
+
+PSUM_PH::create = PRECSPLITTING
+PSUM_PH::PRECSPLITTING::type = THRESH
+PSUM_PH::PRECSPLITTING::snow = 274.35
+
+[Output]
+COORDSYS = UPS
+COORDPARAM = S
+TIME_ZONE = 0
+
+METEOPATH = ./output
+
+METEO = SMET
+
+TS_WRITE = false
+TS_FORMAT = SMET
+TS_START = 0.0
+TS_DAYS_BETWEEN = 1.0
+
+PROF_WRITE = false
+PROF_FORMAT = PRO
+PROF_START = 0.0
+PROF_DAYS_BETWEEN = 1.0
+
+BACKUP_DAYS_BETWEEN = 3000.0
+FIRST_BACKUP = 3000.0
+AVGSUM_TIME_SERIES = false
+
+[Snowpack]
+MEAS_TSS = false
+ENFORCE_MEASURED_SNOW_HEIGHTS = false
+SW_MODE = INCOMING
+FORCING = ATMOS
+HEIGHT_OF_WIND_VALUE = 12.
+HEIGHT_OF_METEO_VALUES = 12.
+ATMOSPHERIC_STABILITY = MO_HOLTSLAG
+ROUGHNESS_LENGTH = 0.002
+CALCULATION_STEP_LENGTH = 0.25 ;cf interactions with HNW::accumulate
+CHANGE_BC = false
+THRESH_CHANGE_BC = -1.0
+SNP_SOIL = false
+SOIL_FLUX = true
+GEO_HEAT = 0.00
+CANOPY = false
+
+[SnowpackAdvanced]
+VARIANT = ANTARCTICA
+MAX_NUMBER_MEAS_TEMPERATURES = 7
+MEAS_INCOMING_LONGWAVE = true
+ALLOW_ADAPTIVE_TIMESTEPPING = true
+;FIXED_POSITIONS = 
+; use 320 kg m-3 for fixed density
+HN_DENSITY = EVENT
+SNOW_EROSION = false
+SNOW_REDISTRIBUTION = false
+MASS_BALANCE = false
+ALPINE3D = false
+FORCE_ADD_SNOWFALL = true
+MINIMUM_L_ELEMENT = 0.001
+REDUCE_N_ELEMENTS = 2
+HEIGHT_NEW_ELEM = 0.001
+COMBINE_ELEMENTS = true
+COMB_THRESH_L = 0.01
+ADJUST_HEIGHT_OF_WIND_VALUE = false
+ALBEDO_PARAMETERIZATION = RACMO
+SNOW_ALBEDO = PARAMETERIZED
+SOOT_PPMV = 0.0
+SW_ABSORPTION_SCHEME = MULTI_BAND
+ENABLE_VAPOUR_TRANSPORT = false
+JAM = false
+LB_COND_WATERFLUX = FREEDRAINAGE
+METAMORPHISM_MODEL = DEFAULT
+THRESH_DTEMP_AIR_SNOW = 60.0
+THRESH_RAIN = 1.2
+THRESH_RH = 0.0
+VISCOSITY_MODEL = DEFAULT
+WATERTRANSPORTMODEL_SNOW = BUCKET
+WATERTRANSPORTMODEL_SOIL = BUCKET
+WATER_LAYER = false
+T_CRAZY_MAX = 320.0
+T_CRAZY_MIN = 140.0
+NEW_SNOW_GRAIN_SIZE = 0.2
+
+;SALTATION_MODEL = DOORSCHOT
+
+[Filters]
+TA::filter1 = min_max
+TA::arg1::min = 320
+TA::arg1::max = 140
+
+RH::filter1 = min_max
+RH::arg1::min = 0.01
+RH::arg1::max = 1.2
+RH::filter2 = min_max
+RH::arg2::soft = true
+RH::arg2::min = 0.01
+RH::arg2::max = 1.0
+
+ISWR::filter1 = min_max
+ISWR::arg1::min = -10
+ISWR::arg1::max = 1500
+ISWR::filter2 = min_max
+ISWR::arg2::soft = true
+ISWR::arg2::min = 0
+ISWR::arg2::max = 1500
+
+RSWR::filter1 = min_max
+RSWR::arg1::min = -10
+RSWR::arg1::max = 1500
+RSWR::filter2 = min_max
+RSWR::arg2::soft = true
+RSWR::arg2::min = 0
+RSWR::arg2::max = 1500
+
+#for TA between 190 and 280 K
+ILWR::filter1 = min_max
+ILWR::arg1::min = 30
+ILWR::arg1::max = 355
+ILWR::filter2 = min_max
+ILWR::arg2::soft = true
+ILWR::arg2::min = 35
+ILWR::arg2::max = 350
+
+TSS::filter1 = min_max
+TSS::arg1::min = 180
+TSS::arg1::max = 275
+
+TSG::filter1 = min_max
+TSG::arg1::min = 200
+TSG::arg1::max = 275
+
+VW::filter1 = min_max
+VW::arg1::min = -2
+VW::arg1::max = 70
+VW::filter2 = min_max
+VW::arg2::soft = true
+VW::arg2::min = 0
+VW::arg2::max = 50
+
+[Interpolations1D]
+WINDOW_SIZE = 439200 ;that is 5 d and 2 h; 1 d = 86400
+
+PSUM::resample = accumulate
+PSUM::accumulate::period = 15
+
+RHO_HN::resample = none
+
+HS::resample = linear
+HS::linear::window_size	=	219600
+
+TSG::resample = linear
+TSG::linear::window_size	=	219600
+
+VW::resample = nearest
+VW::nearest::extrapolate = true
+
+DW::resample = nearest
+DW::nearest::extrapolate = true
+
+[Generators]
+TSG::generators = CST
+TSG::cst::value = 218.4 ;there is a large gap in the data -> fill with this value
+

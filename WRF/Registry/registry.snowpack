@@ -1,0 +1,145 @@
+# FOR SNOWPACK
+
+rconfig   integer num_bs_sfc_layers       namelist,physics      1            11      irh    "num_of_bs_snow_layers"         ""      ""  
+rconfig   integer no_snpack_lay_to_sav    namelist,physics      1            100      irh    "no_snpack_lay_to_sav"          ""      "" 
+# some dimension variables needed
+dimspec    snpacky 2     namelist=no_snpack_lay_to_sav     z     snowpack_layers
+dimspec    snc_N   2     namelist=num_bs_sfc_layers        z     snowpack_surface_layer
+
+# moist variable for blowing snow mixing ratio
+state   real    bs_qi          ikjftb   moist       1         -   i0rhusdf=(bdy_interp:dt)  "bs_qi"  "qi blowing snow"   "kg kg-1"
+# scalar variable for blowing snow number conc
+state   real    bs_qni         ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "bs_qni"         "blowing snow Number concentration" "# kg-1"
+
+state   real    in_drift       ij      misc         1         -     i012rhd    "SNOW_DRIFT" "SNOW DRIFT" "kg m-1 s-1"
+state   real    in_conc        ij      misc         1         -     i012rhd    "SNOW_IN_AIR" "SNOW MASS in air" "kg m-2"
+state   real    in_csalt       ij      misc         1         -     i012rhd    "SNOW_CONC_SALTATION" "SNOW CONC at SALTATION HEIGHT" "kg m-3"
+state   real    in_q_lb        ij      misc         1         -     i012rhd    "SURFACE_SNOW_MIX_RATIO" "SNOW MIXING RATIO AT LB" "kg kg-1"
+state   real    in_N_lb        ij      misc         1         -     i012rhd    "SURFACE_SNOW_NUMBER_MIX_RATIO" "SNOW NUMBER MIXING RATIO AT LB" "1 kg-1"
+state   real    in_hsalt       ij      misc         1         -     i012rhd    "SALTATION_HEIGHT" "Height of saltation layer" "m"
+state   real    ice_fluxq      ij      misc         1         -     i012rhd    "ICE_Q_FLUX" "ICE Q FLUX AT LB " "m s-1"
+state   real    ice_fluxN      ij      misc         1         -     i012rhd    "ICE_N_FLUX" "ICE N FLUX AT LB" "kg-1 m s-1"
+
+state   real    m_budg_precip  ij      misc         1         -     i012rhd    "M_BUDG_PREC"  "Mass Budget Precip" "kg m-2"
+state   real    m_budg_erosion ij      misc         1         -     i012rhd    "M_BUDG_EROD"  "Mass Budget Erosion" "kg m-2"
+state   real    m_budg_sublim  ij      misc         1         -     i012rhd    "M_BUDG_SUBL"  "Mass Budget Sublim" "kg m-2"
+state   real    m_budg_deposit ij      misc         1         -     i012rhd    "M_BUDG_DEPOT" "Mass Budget Deposit" "kg m-2"
+state   real    m_budg_swe     ij      misc         1         -     i012rhd    "M_BUDG_dSWE"   "Mass Budget SWE change" "kg m-2"
+state   real    m_budg_melt     ij      misc         1         -     i012rhd    "M_BUDG_MELT"   "Mass Budget melt" "kg m-2"
+state   real    m_budg_refreeze ij      misc         1         -     i012rhd    "M_BUDG_REFREEZE"   "Mass Budget refreeze" "kg m-2"
+
+state   real    e_budg_lw_in   ij      misc         1         -     i012rhd    "E_BUDG_LWIN" "Energy Budget LW IN" "W m-2"
+state   real    e_budg_lw_out  ij      misc         1         -     i012rhd    "E_BUDG_LWOUT" "Energy Budget LW OUT" "W m-2"
+state   real    e_budg_sw_in   ij      misc         1         -     i012rhd    "E_BUDG_SWIN" "Energy Budget SW IN" "W m-2"
+state   real    e_budg_sw_out  ij      misc         1         -     i012rhd    "E_BUDG_SWOUT" "Energy Budget SW OUT" "W m-2"
+state   real    e_budg_sensib  ij      misc         1         -     i012rhd    "E_BUDG_SENS" "Energy Budget Sensible" "W m-2"
+state   real    e_budg_latent  ij      misc         1         -     i012rhd    "E_BUDG_LATENT" "Energy Budget Latent" "W m-2"
+state   real    e_budg_low_bc  ij      misc         1         -     i012rhd    "E_BUDG_LOWBC" "Energy Budget LOW BC" "W m-2"
+state   real    e_budg_raine   ij      misc         1         -     i012rhd    "E_BUDG_RAINE" "Energy Budget RAIN" "W m-2"
+state   real    e_budg_totale  ij      misc         1         -     i012rhd    "E_BUDG_dU" "Energy Budget Internal Energy Change " "W m-2"
+
+state integer   glo_counter    ij      misc         1         -     i012rhd    "SNPACK_CON" "snowpack counter points" "number"
+
+state   real    sn_qsfx        ij      misc         1         -     i012rhd    "snpack_qsfx" "blowing snow mix ratio upward flux" "kg kg-1"
+state   real    sn_nsfx        ij      misc         1         -     i012rhd    "snpack_nsfx" "blowing snow num. conc. upward flux" "kg kg"
+state   real    corr_q_for_rad ij      misc         1         -     i012rhd    "rad_correction_q" "blowing snow rad corr. for z=1" "kg kg-1"
+state   real    corr_N_for_rad ij      misc         1         -     i012rhd    "rad_correction_N" "blowing snow rad corr. for z=1" "# kg-1"
+state   real    snpack_psi_s   ij      misc         1         -     i012rhd    "snpack_stab"  "atmospheric stability" "-"
+
+state   real    sn_T     i{snpacky}j   misc         1         Z     rhd=(interp_fcn_nn)     "snpack_T"  "snowpack temperature" "K"
+state   real    sn_thick i{snpacky}j   misc         1         Z     rhd=(interp_fcn_nn)     "sn_thick"  "snowpack thickness" "m"
+state   real    sn_volI  i{snpacky}j   misc         1         Z     rhd=(interp_fcn_nn)     "sn_volI"   "Ice volume fraction" "%"
+state   real    sn_volW  i{snpacky}j   misc         1         Z     rhd=(interp_fcn_nn)     "sn_volW"   "water volume fraction" "%"
+state   real    sn_volV  i{snpacky}j   misc         1         Z     rhd=(interp_fcn_nn)     "sn_volV"   "air volume fraction" "%"
+state   real    sn_rg    i{snpacky}j   misc         1         Z     rhd=(interp_fcn_nn)     "sn_rg"   "grain size" "mm"
+state   real    sn_rb    i{snpacky}j   misc         1         Z     rhd=(interp_fcn_nn)     "sn_rb"   "bond size" "mm"
+state   real    sn_dd    i{snpacky}j   misc         1         Z     rhd=(interp_fcn_nn)     "sn_dd"   "dendricity" "-"
+state   real    sn_sp    i{snpacky}j   misc         1         Z     rhd=(interp_fcn_nn)     "sn_sp"   "sphericity" "-"
+state   real    sn_cdot  i{snpacky}j   misc         1         Z     rhd=(interp_fcn_nn)     "sn_cdot" "snpack_strain" "-"
+state   real    sn_meta  i{snpacky}j   misc         1         Z     rhd=(interp_fcn_nn)     "sn_metamo"   "metamo" "-"
+state   real    sn_depd  i{snpacky}j   misc         1         Z     rhd=(interp_fcn_nn)     "sn_depd"  "sn_layer_dep" "-"
+state   real    sn_graintype  i{snpacky}j   misc    1         Z     rhd=(interp_fcn_nn)     "sn_graintype"  "sn_graintype" "-"
+state   real    sn_mk  i{snpacky}j   misc           1         Z     rhd=(interp_fcn_nn)     "sn_mk"  "sn_grain_mk" "-"
+
+
+
+state   integer sn_nlayers ij          misc         1         -     rhd=(interp_fcni)   "sn_nlayers" "snowpack layers" "-"
+
+#state   real    sn_T     i{snpacky}j   misc         1         Z     rhd=(interp_fcn_nn_snpack:xice,xland)     "snpack_T"  "snowpack temperature" "K"
+#state   real    sn_thick i{snpacky}j   misc         1         Z     rhd=(interp_fcn_nn_snpack:xice,xland)     "sn_thick"  "snowpack thickness" "m"
+#state   real    sn_volI  i{snpacky}j   misc         1         Z     rhd=(interp_fcn_nn_snpack:xice,xland)     "sn_volI"   "Ice volume fraction" "%"
+#state   real    sn_volW  i{snpacky}j   misc         1         Z     rhd=(interp_fcn_nn_snpack:xice,xland)     "sn_volW"   "water volume fraction" "%"
+#state   real    sn_volV  i{snpacky}j   misc         1         Z     rhd=(interp_fcn_nn_snpack:xice,xland)     "sn_volV"   "air volume fraction" "%"
+#state   real    sn_rg    i{snpacky}j   misc         1         Z     rhd=(interp_fcn_nn_snpack:xice,xland)     "sn_rg"   "grain size" "mm"
+#state   real    sn_rb    i{snpacky}j   misc         1         Z     rhd=(interp_fcn_nn_snpack:xice,xland)     "sn_rb"   "bond size" "mm"
+#state   real    sn_dd    i{snpacky}j   misc         1         Z     rhd=(interp_fcn_nn_snpack:xice,xland)     "sn_dd"   "dendricity" "-"
+#state   real    sn_sp    i{snpacky}j   misc         1         Z     rhd=(interp_fcn_nn_snpack:xice,xland)     "sn_sp"   "sphericity" "-"
+#state   real    sn_cdot  i{snpacky}j   misc         1         Z     rhd=(interp_fcn_nn_snpack:xice,xland)     "sn_cdot" "snpack_strain" "-"
+#state   real    sn_meta  i{snpacky}j   misc         1         Z     rhd=(interp_fcn_nn_snpack:xice,xland)     "sn_metamo"   "metamo" "-"
+#state   real    sn_depd  i{snpacky}j   misc         1         Z     rhd=(interp_fcn_nn_snpack:xice,xland)     "sn_depd"  "sn_layer_dep" "-"
+#state   integer sn_nlayers ij          misc         1         -     rhd=(interp_fcni_nn_snpack:xice,xland)   "sn_nlayers" "snowpack layers" "-"
+
+state   real    sn_qs    i{snc_N}j   misc         1         -     i012rhd=(interp_fcn_nn) "sn_qs" "sn surface_qs" "kg kg-1"
+state   real    sn_ns    i{snc_N}j   misc         1         -     i012rhd=(interp_fcn_nn) "sn_ns" "sn surface_ns" "# kg-1"
+state   real    snc_Z    i{snc_N}j   misc         1         Z     i012rhd=(interp_fcn_nn) "sn_c_height" "sn surface heights" "m"
+state   real    sfc_T    i{snc_N}j   misc         1         -     i012rhd={interp_fcn_nn) "sfc_T" "surface layer temperature" "K"
+state   real    sfc_Q    i{snc_N}j   misc         1         -     i012rhd=(interp_fcn_nn) "sfc_Q" "surface layer spec. humidity" "kg kg-1"
+state   real    sfc_RH   i{snc_N}j   misc         1         -     i012rhd=(interp_fcn_nn) "sfc_RH" "surface layer RH" "%"
+state   real    sfc_SQ   i{snc_N}j   misc         1         -     i012rhd=(interp_fcn_nn) "sfc_SQ" "surface layer source Q" "kg kg-1 s-1 "
+state   real    sfc_SN   i{snc_N}j   misc         1         -     i012rhd=(interp_fcn_nn) "sfc_SN" "surface layer source N" "s-1 "
+state   real    sfc_meanR i{snc_N}j  misc         1         -     i012rhd=(interp_fcn_nn) "sfc_meanR" "surface layer mean radius" "m"
+state   real    sfc_SQ_HFX ij        misc         1         -     i012rhd=(interp_fcn_nn) "sfc_bs_HFX" "sensible heat due to blowing snow" "W m-2"
+state   real    sfc_SQ_QFX ij        misc         1         -     i012rhd=(interp_fcn_nn) "sfc_bs_QFX" "latent heat due to blowing snow" " kg m-2 s-1"
+state   real    bs_meanR   ikj       misc         1         -     i012rhd=(interp_fcn_nn) "bs_meanR" "blowing snow mean radius" "m"
+state   real    bs_sedi    ij        misc         1         -     i012rhd=(interp_fcn_nn) "bs_sedi" "blowing snow sedimentation" "mm"
+state   real    bs_sublim  ij        misc         1         -     i012rhd=(interp_fcn_nn) "bs_sublim" "blowing snow sublimation" "kg m-2"
+
+state   real    global_bs_bdg_div ij misc         1         -     i012rhd=(interp_fcn_nn) "bs_div"  "accum. blowing snow divergence" "kg m-2"
+state   real    global_bs_bdg_xch ij misc         1         -     i012rhd=(interp_fcn_nn) "bs_xch"  "accum. blowing snow exchange" "kg m-2"
+
+state   real    sfc_qi_drift i{snc_N}j misc       1         -     i012rhd=(interp_fcn_nn) "bs_qi_drift" "blowing snow mass drift" "kg kg-1 m s-1"
+state   real    sfc_qni_drift i{snc_N}j misc      1         -     i012rhd=(interp_fcn_nn) "bs_qni_drift" "blowing snow number drift" "# kg-1 m s-1"
+state   real    bs_sfc_qi_advt i{snc_N}j misc     1         -     i012rhd=(interp_fcn_nn) "bs_qi_advect" "blowing snow mass advect" "kg kg-1 "
+state   real    bs_sfc_qni_advt i{snc_N}j misc    1         -     i012rhd=(interp_fcn_nn) "bs_qni_advect" "blowing snow number advect" "# kg-1"
+
+
+state   real    sfc_u_angle ij       misc         1         -     i012rhd=(interp_fcn_nn) "bs_u_angle" "blowing snow u angle " " "
+state   real    sfc_v_angle ij       misc         1         -     i012rhd=(interp_fcn_nn) "bs_v_angle" "blowing snow v angle " " "
+
+state   real    bs_qi_rad  ikj       misc         1         -     i012rhd=(interp_fcn_nn) "bs_qi_rad"  "blowing snow mixing ratio for radiation" "kg kg-1"
+state   real    bs_qni_rad ikj       misc         1         -     i012rhd=(interp_fcn_nn) "bs_qni_rad" "blowing snow number ratio for radiation" "# kg -1"
+
+state   real    bs_qi_sublim3d ikj   misc         1         -     i012rhd=(interp_fcn_nn) "bs_qi_sublim3d" "blowing snow sublimation" "kg kg-1 s-1"
+state   real    sn_qi_sublim3d i{snc_N}j   misc         1         -     i012rhd=(interp_fcn_nn) "sn_qi_sublim3d" "sfc layer bs snow sublim" "kg kg-1 s-1"
+
+rconfig   logical  blowing_snow   namelist,physics     max_domains   .true.
+rconfig   logical  sn_start_from_file namelist,physics max_domains   .true.
+rconfig   logical  blowing_snow_sublimation namelist,physics max_domains .false.
+rconfig   logical  bs_rad_effect  namelist,physics     max_domains   .true.
+rconfig   real  snpack_dt      namelist,physics     max_domains         0     irh "snpack_dt"  "Number of minutes between SNPACK calls "
+rconfig   real  snpack_write_dt      namelist,physics     max_domains   0     irh "snpack_write_dt"  "Number of minutes between SNPACK outputs "
+
+
+# some halos for advection of blowing snow
+halo      HALO_EM_BLOWINGSNOW dyn_em 48:in_drift,u_phy,v_phy,sfc_qi_drift,\
+                                       sfc_qni_drift,sfc_u_angle,sfc_v_angle
+
+# Add blowing snow variables for timeseries output
+state    real   ts_snd          ?!       misc      -         -      -        "TS_SND"         "Snow drift" "kg m-1 s-1"
+state    real   ts_hsalt        ?!       misc      -         -      -        "TS_hsalt"       "saltation height" "m"
+state    real   ts_q_lb         ?!       misc      -         -      -        "TS_salt_q"      "saltation mass mixing ratio" "kg kg-1"
+state    real   ts_N_lb         ?!       misc      -         -      -        "TS_salt_N"      "saltation number mixing ratio" "# kg-1"
+state    real   ts_uthresh      ?!       misc      -         -      -        "TS_uthresh"     "threshold friction velocity"   "m s-1"
+
+state    real   ts_qi_profile  ?!k       misc      -         -      -        "TS_QI_PROFILE"  "Blowing snow mass mixing ratio" "kg kg-1"
+state    real   ts_qni_profile  ?!k       misc      -         -      -        "TS_QNI_PROFILE"  "Blowing snow number mixing ratio" "# kg-1"
+state    real   ts_sfc_qi_profile  ?!{snc_N} misc      -         -      -        "TS_SFCQI_PROFILE"  "Surface blowing snow mixing ratio" "kg kg-1"
+state    real   ts_sfc_qni_profile ?!{snc_N} misc      -         -      -        "TS_SFCQNI_PROFILE"  "Surface blowing snow number concentration" "# kg-1"
+state    real   ts_sfc_qd_profile  ?!{snc_N} misc      -         -      -        "TS_SFCQD_PROFILE"  "snow drift mass" "kg m^-2 s-1"
+state    real   ts_sfc_nd_profile  ?!{snc_N} misc      -         -      -        "TS_SFCND_PROFILE"  "snow drift number" "# m^-2 s-1"
+
+
+
+# Add snowpack mode
+rconfig  character snpack_mode namelist,physics 1 "none" rh "snowpack mode selection" "snowpack mode: antarctica, land" "character string"

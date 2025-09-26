@@ -1,0 +1,198 @@
+&time_control
+ run_days                            = 360,
+ run_hours                           = 0,
+ run_minutes                         = 0,
+ run_seconds                         = 0,
+ start_year                          = 2010, 2017, 2017, 2017,
+ start_month                         = 07,   06,   06,   06,
+ start_day                           = 01,   01,   01,   01,
+ start_hour                          = 00,   00,   00,   00,
+ start_minute                        = 00,   00,   00,   00,
+ start_second                        = 00,   00,   00,   00,
+ end_year                            = 2010, 2017, 2017, 2017,
+ end_month                           = 07,   06,   06,   06,
+ end_day                             = 01,   30,   30,   30, 
+ end_hour                            = 06,   18,   18,   18,
+ end_minute                          = 00,   00,   00,   00,
+ end_second                          = 00,   00,   00,   00,
+ interval_seconds                    = 21600
+ input_from_file                     = .true.,.true.,.true.,.true.,
+ history_interval_d                  = 30, 3600, 3600, 3600,
+ frames_per_outfile                  = 12, 8760, 8760, 8760,
+ history_outname                     = './wrfout/wrfout_AA230x230_CWv1.0_nudg_d<domain>_<date>.nc',
+ restart                             = .false.,
+ restart_interval                    = 43200,
+ rst_inname                          = './restart/wrfrst_d<domain>_<date>',
+ rst_outname                         = './restart/wrfrst_d<domain>_<date>',
+ !override_restart_timers             = .true.,
+ write_hist_at_0h_rst                = .true.,
+ reset_simulation_start              = .true.,
+ io_form_history                     = 2
+ io_form_restart                     = 2
+ io_form_input                       = 2
+ io_form_boundary                    = 2
+ debug_level                         = 0
+ auxinput4_inname                    = "wrflowinp_d<domain>", 
+ auxinput4_interval                  = 360, 360, 360, 360,
+ io_form_auxinput4                   = 2,
+ io_form_auxhist24                   = 2,
+ auxhist24_interval                  = 360,
+ auxhist24_outname		     = "./outhist/outhist_AA230x230_CWv1.0_nudg_d<domain>_<date>.nc"
+ frames_per_auxhist24		     = 1440
+ io_form_auxhist12                   = 2,
+ auxhist12_interval                  = 1440,
+ auxhist12_outname                   = "./snpack/snowpack_d<domain>_<date>.nc",
+ frames_per_auxhist12                = 1000,
+ iofields_filename                   = "outhist_variables_CRYOWRF.txt","myoutfields.txt","myoutfields.txt","myoutfields.txt",
+! add mean output fields
+ mean_diag                           = 1,
+ mean_diag_interval                  = 60,
+ auxhist5_outname                    = "./wrfmean/wrf_mean_d<domain>_<date>.nc"
+ io_form_auxhist5                    = 2,
+ frames_per_auxhist5                 = 8640,
+ diurnal_diag                        = 0,
+/
+
+&domains
+ time_step                           = 90, ! 150 before
+ time_step_fract_num                 = 0,
+ time_step_fract_den                 = 1,
+ max_dom                             = 1,
+ e_we                                = 64,    256,    256,    256,
+ e_sn                                = 64,    256,    256,    256,
+ e_vert                              = 64,     64,     64,     64,
+ auto_levels_opt                     = 2,
+! max_dz                              = 200,
+ dzbot                               = 20,
+ dzstretch_s                         = 1.1,
+ p_top_requested                     = 10000,
+ num_metgrid_levels                  = 30,
+ num_metgrid_soil_levels             = 4,
+ dx                                  = 27000.0, 9000.0,  3000.0, 1000.0,
+ dy                                  = 27000.0, 9000.0,  3000.0, 1000.0,
+ grid_id                             = 1,  2,  3,  4,
+ parent_id                           = 1,  1,  2,  3,
+ i_parent_start                      = 1, 115, 160, 100,
+ j_parent_start                      = 1, 85, 58, 90,
+ parent_grid_ratio                   = 1, 3, 3, 3,
+ parent_time_step_ratio              = 1, 3, 3, 3,
+ feedback                            = 0,
+ smooth_option                       = 0
+
+! nproc_x                             = 23,
+! nproc_y                             = 12,
+
+ max_ts_locs                         = 74,
+ ts_buf_size                         = 34560,
+ max_ts_level                        = 15,
+ tslist_unstagger_winds              = True,
+ 
+
+ /
+
+&physics
+ mp_physics                          = 10,     8,     8,  8,
+ ra_lw_physics                       = 4,     24,     24,   24,
+ ra_sw_physics                       = 4,     24,     24,   24,
+ radt                                = 15,     10,     5,   5,
+ sf_sfclay_physics                   = 5,     5,     5,   5,
+ sf_surface_physics                  = 18,     4,     4,   4,
+ bl_pbl_physics                      = 5,     6,     6,   6,
+ bl_mynn_tkeadvect                   = .true.,.true.,.true.,.true.,
+ bl_mynn_cloudmix                    = 1,1,1,1,
+! bl_mynn_edmf_mom                   = 1,1,1,1,
+! bl_mynn_edmf_tke                   = 1,1,1,1,
+ scalar_pblmix                       = 1, 
+ bl_mynn_mixlength                   = 1,
+ bl_mynn_mixscalars                  = 1,
+ bldt                                = 0,     0,     0,   0,
+ cu_physics                          = 1,     1,     0,   0,
+ cudt                                = 6,     5,     0,   0,
+ isfflx                              = 1,
+ ifsnow                              = 1,
+ icloud                              = 1,
+ surface_input_source                = 3,
+ num_soil_layers                     = 4,
+ num_land_cat                        = 21,
+ sf_urban_physics                    = 0,     0,     0,   0,
+ mp_zero_out                         = 0,
+ mp_zero_out_thresh                  = 1.e-10,
+ fractional_seaice                   = 1,
+ seaice_threshold                    = 0,
+ SST_UPDATE                          = 1,
+ SEAICE_ALBEDO_OPT                   = 0,
+ SEAICE_ALBEDO_DEFAULT               = 0.65,
+ blowing_snow                        = .true.,
+ blowing_snow_sublimation            = .true.,
+ bs_rad_effect                       = .false.,
+ sn_start_from_file                  = .true.,
+ num_bs_sfc_layers                   = 8,
+ no_snpack_lay_to_sav                = 500,
+ snpack_dt                           = 900,
+ snpack_write_dt                     = 3600,
+ snpack_mode                         = 'antarctica'
+ /
+
+&fdda
+ grid_fdda = 1,0,0,0
+ gfdda_inname = "wrffdda_d<domain>",
+ gfdda_interval_m = 360,360,360,360,
+ io_form_gfdda = 2,
+ fgdt = 0,0,0,0
+ if_no_pbl_nudging_uv = 1,0,0,0
+ if_zfac_uv = 1,1,1,1
+ k_zfac_uv  = 45,
+ guv = 0.00015,0.00015,0.00015,0.00015,
+ !xwavenum = 4,2,1,1
+ !ywavenum = 4,2,1,1
+ !if_ramping = 0,
+ !dtramp_min = 60.0,
+ /
+
+&dynamics
+ rk_ord                              = 3,
+ w_damping                           = 0,
+ diff_opt                            = 1,      1,      1,    1,
+ km_opt                              = 4,      4,      4,    4,
+ sfs_opt                             = 0,      0,      0,    0,
+ m_opt                               = 0,      0,      0,    0,
+ diff_6th_opt                        = 0,      0,      0,    0,
+ diff_6th_factor                     = 0.12,   0.12,   0.12,  0.12,
+ base_temp                           = 270.
+ damp_opt                            = 3,
+ zdamp                               = 5000.,  5000.,  5000.,  5000.,
+ dampcoef                            = 0.2,    0.2,    0.2,    0.2,  
+ khdif                               = 0,      0,      0,      0,
+ kvdif                               = 0,      0,      0,      0,
+ non_hydrostatic                     = .true., .true., .true., .true.,
+ moist_adv_opt                       = 1,      4,      4,    4, 
+ scalar_adv_opt                      = 1,      4,      4,    4, 
+ tke_adv_opt                         = 1,      4,      4,    4,
+ c_s                                 = 0.25,
+ c_k                                 = 0.10,
+ use_q_diabatic                      = 1,
+ gwd_opt                             = 1,
+ /
+
+ &bdy_control
+ spec_bdy_width                      = 5,
+ spec_zone                           = 1,
+ relax_zone                          = 4,
+ specified                           = .true., .false.,.false., .false.,
+ nested                              = .false., .true., .true., .true.,
+ /
+
+ &grib2
+ /
+
+ &diags
+ z_lev_diags                        = 0,
+ num_z_levels                       = 1,
+ z_levels                           = -8.0,
+ solar_diagnostics                  = 1,
+ /
+
+ &namelist_quilt
+ nio_tasks_per_group = 0,
+ nio_groups = 1,
+ /

@@ -1,0 +1,3 @@
+EXPORTS
+Java_ch_slf_gin_jnative_MeteoIOJNIInterface_executeInterpolation
+Java_ch_slf_gin_jnative_MeteoIOJNIInterface_executeInterpolationSubDem

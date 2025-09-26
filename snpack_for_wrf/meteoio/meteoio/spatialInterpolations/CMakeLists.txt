@@ -1,0 +1,28 @@
+INCLUDE_DIRECTORIES("${PROJECT_SOURCE_DIR}/")
+
+SET(spatialInterpolations_sources
+	spatialInterpolations/InterpolationAlgorithms.cc
+	spatialInterpolations/ALSScaleAlgorithm.cc
+	spatialInterpolations/AvgAlgorithm.cc
+	spatialInterpolations/AvgLapseAlgorithm.cc
+	spatialInterpolations/ConstAlgorithm.cc
+	spatialInterpolations/IDWAlgorithm.cc
+	spatialInterpolations/IDWSlopesAlgorithm.cc
+	spatialInterpolations/IDWLapseAlgorithm.cc
+	spatialInterpolations/IDWLapseLocalAlgorithm.cc
+	spatialInterpolations/ILWREpsAlgorithm.cc
+	spatialInterpolations/ListonWindAlgorithm.cc
+	spatialInterpolations/NearestNeighbourAlgorithm.cc
+	spatialInterpolations/NoneAlgorithm.cc
+	spatialInterpolations/ODKrigAlgorithm.cc
+	spatialInterpolations/ODKrigLapseAlgorithm.cc
+	spatialInterpolations/PPhaseAlgorithm.cc
+	spatialInterpolations/RHListonAlgorithm.cc
+	spatialInterpolations/RyanWindAlgorithm.cc
+	spatialInterpolations/SnowPsumAlgorithm.cc
+	spatialInterpolations/StdPressAlgorithm.cc
+	spatialInterpolations/SwRadAlgorithm.cc
+	spatialInterpolations/UserAlgorithm.cc
+	spatialInterpolations/WinstralAlgorithm.cc
+	spatialInterpolations/WinstralListonAlgorithm.cc
+)

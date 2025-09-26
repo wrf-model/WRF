@@ -1,0 +1,13 @@
+Begin4
+Title:          snowpack
+Version:        3.4.5
+Entered-date:   2017-12-06
+Description:    SNOWPACK model ([Bartelt 2002], [Lehning 2002a], [Lehning 2002b]) for physical modeling of snow pack as a library. It can therefore be integrated into other models.
+Keywords:       snow pack model
+Author:         bavay@slf.ch (Mathias Bavay)
+Maintained-by:  bavay@slf.ch (Mathias Bavay)
+Primary-site:   http://models.slf.ch p/snowpack/downloads/313/get/
+                12.25 M Snowpack-3.4.5-src.tar.gz
+Platforms:      Linux and other Unices, Windows, OsX
+Copying-policy: GNU Lesser Public License version 3
+End

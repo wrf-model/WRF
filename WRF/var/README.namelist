@@ -1,0 +1,599 @@
+Description of WRFDA namelist variables, defined in Registry/registry.var
+--------------------------------------------------------------------------------
+
+ Note: variables followed by (...) indicate that this variable can or needs to
+       be defined for more than 1 value.
+
+&wrfvar1
+  update_sfcdiags         = .false. ; .false.: not updating T2/Q2/U10/V10/TH2 with WRFDA re-diagnosed values.
+                                    ;          set to .true. only when using sf_sfclay_physics=91 in WRF and
+                                    ;          the first guess file contains QSFC, ZNT, UST, MOL, PBLH, HFX,
+                                    ;          QFX, and REGIME from the WRF model.
+                                    ; .true.: updating T2/Q2/U10/V10/TH2 with WRFDA re-diagnosed values.
+                                    ;         if not using sf_sfclay_physics=91 in WRF and QSFC, ZNT, UST, MOL,
+                                    ;         PBLH, HFX, QFX, and REGIME are not available in the first guess,
+                                    ;         there will be large inconsistency between WRFDA and WRF
+                                    ;         T2/Q2/U10/V10/TH2
+  use_wrf_sfcinfo         = .true.  ;
+  use_background_errors   = .true.  ;
+  write_iv_gpsztd         = .false. ; .true.: write out ztd innov information
+  write_increments        = .false. ; .true.: write out a binary analysis_increment file
+  var4d                   = .false. ; .true.: 4D-VAR
+  var4d_bin               = 3600    ; second, Observation sub-window bin legnth for 4D-Var
+  var4d_bin_rain          = 3600    ; second, precipitation observation sub-window length for 4D-Var 
+  var4d_lbc               = .true.  ; on/off switch for lateral boundary control in 4D-Var
+  multi_inc               = 0       ; >0: multi-incremental run
+     ; print_detail_xxx: output extra (sometimes can be too many) diagnostics for debugging.
+     ; not recommended to turn them on for production runs.
+  print_detail_radar      = .false.
+  print_detail_rain       = .false.
+  print_detail_rad        = .false.
+  print_detail_xa         = .false.
+  print_detail_xb         = .false.
+  print_detail_obs        = .false.
+  print_detail_map        = .false.
+  print_detail_grad       = .false. ; .true.: to print out detailed gradient of each observation type at
+                                    ;         the first and final iterations.
+  print_detail_outerloop  = .false. ; .true.: to write out wrfvar_output file at different outer loops
+  check_max_iv_print      = .true.  ; obsolete (only used by Radar)
+  write_gts_omb_oma       = .true.  ;(default)
+  write_rej_obs_conv      = .false. ;(default), the information is not too helpful
+  write_unpert_obs        = .false. ;(default), the information is not usually used
+/
+&wrfvar2
+  analysis_accu           = 900     ; seconds, if time difference between namelist setting
+                                    ; (analysis_date) and date info read in from first guess
+                                    ; is larger than analysis_accu, WRFDA will abort
+  calc_w_increment        = .false. ; .true.: the increment of the vertical velocity w will be 
+                                    ;         diagnosed based on the increments of other fields.
+                                    ;         If use_radarobs=.true., the w increments are always
+                                    ;         calculated.
+  dt_cloud_model          = .false. ; 
+
+  wind_sd                 = .false. ; .true.: wind values which are reported as speed/direction will be assimilated as such
+                                    ; .false.: default behavior: all wind obs are converted to u/v prior to assimilation
+  wind_sd_buoy            = .false. ; -  "obs. types employing wind_sd"
+  wind_sd_synop           = .false. ; -  "obs. types employing wind_sd"
+  wind_sd_ships           = .false. ; -  "obs. types employing wind_sd"
+  wind_sd_metar           = .false. ; -  "obs. types employing wind_sd"
+  wind_sd_sound           = .false. ; -  "obs. types employing wind_sd"
+  wind_sd_pilot           = .false. ; -  "obs. types employing wind_sd"
+  wind_sd_airep           = .false. ; -  "obs. types employing wind_sd"
+  wind_sd_qscat           = .false. ; -  "obs. types employing wind_sd"
+  wind_sd_tamdar          = .false. ; -  "obs. types employing wind_sd"
+  wind_sd_geoamv          = .false. ; -  "obs. types employing wind_sd"
+  wind_sd_mtgirs          = .false. ; -  "obs. types employing wind_sd"
+  wind_sd_polaramv        = .false. ; -  "obs. types employing wind_sd"
+  wind_sd_profiler        = .false. ; -  "obs. types employing wind_sd"
+  wind_stats_sd           = .false. ; -  "statistics output as sd" ""  ""
+
+  qc_rej_both             = .false  ; .true.: if either u or v (spd or dir) do not pass quality control, both obs are rejected
+                                    ; .false.: default behavior: qc on wind obs is handled individually
+/
+&wrfvar3
+  fg_format               = 1       ; 1: fg_format_wrf_arw_regional (default)
+                                    ; 2: wrf-nmm format             (untested)
+                                    ; 3: fg_format_wrf_arw_global   (untested)
+                                    ; 4: fg_format_kma_global       (untested)
+  ob_format               = 2       ; 1: ob_format_bufr (NCEP PREPBUFR), read in data from ob.bufr
+                                    ; 2: ob_format_ascii (output from obsproc), read in data from ob.ascii (default)
+  ob_format_gpsro         = 2       ; for ob_format=2 only...when ob_format=1, GPSRO will be read from ob.bufr
+                                    ; 1: read in GPSRO data from gpsro.bufr
+                                    ; 2: read in GPSRO data from ob.ascii (default)
+  num_fgat_time           = 1       ; 1: 3DVAR
+                                    ; > 1: number of time slots for FGAT and 4DVAR
+/
+&wrfvar4
+  thin_conv                         = .true.  ; for ob_format=1 (NCEP PREPBUFR) only.
+                                              ; thinning is mandatory for ob_format=1 as time-duplicate 
+                                              ; data are "thinned" within thinning routine, however, 
+                                              ; thin_conv can be set to .false. for debugging purpose.
+  thin_conv_ascii                   = .false. ; .true.: thinning for ob_format=2 (ASCII) observations 
+  thin_mesh_conv (max_instruments)  = 20.0    ; km, size of thinning mesh boxes for conventional (non-radiance) 
+                                              ; observations. Each observation type can set its thinning mesh and 
+                                              ; the index/order follows the definition in 
+                                              ; WRFDA/var/da/da_control/da_control.f90
+     ; use_xxxobs - .true.: assimilate xxx obs if available
+     ;              .false.: do not assimilate xxx obs even if available
+  use_synopobs            = .true.   
+  use_shipsobs            = .true.
+  use_metarobs            = .true.
+  use_soundobs            = .true.
+  use_pilotobs            = .true.
+  use_airepobs            = .true.
+  use_geoamvobs           = .true.
+  use_polaramvobs         = .true.
+  use_bogusobs            = .true.
+  use_buoyobs             = .true.
+  use_profilerobs         = .true.
+  use_satemobs            = .true.
+  use_gpspwobs            = .true.
+  use_gpsztdobs           = .false.  ; .true.: Assimilate GPS Zenith Total Delay data
+  use_gpsrefobs           = .true.   ; Assimilate GPSRO in refractivity quantity
+  use_gpsephobs           = .false.  ; .true.: new in V4.0 for applying non-local Excess PHase operator.
+  top_km_gpsro            = 30.0     ; control the rejection of higher observations
+  bot_km_gpsro            = 0.0      ; control the rejection of lower observations
+  use_qscatobs            = .true.
+  use_radarobs            = .false.  ; .true.: Assimilate radar data; see User's Guide for more information
+  use_radar_rv            = .false.  ; Assimilate radar velocity observations
+  use_radar_rf            = .false.  ; Assimilate radar reflectivity using original reflectivity operator (total mixing ratio)
+  use_radar_rhv           = .false.  ; Assimilate retrieved hydrometeors (qr, qs, qg) from radar reflectivity
+  use_radar_rqv           = .false.  ; Assimilate estimated humidity (qv) from radar reflectivity
+  use_rainobs             = .false.  ; .true.: Assimilate precipitation data; see User's Guide for more information
+  thin_rainobs            = .true.   ; perform thinning on preciptation data
+  use_airsretobs          = .true.   ; Assimilate retrieved T/Q profiles from AIRS instrument
+     ; the satellite radiance use_xxxobs variables below only control whether
+     ; WRFDA will read in the corresponding xxxx.bufr file; they do not control
+     ; if the data will be assimilated or not.
+     ; Some more variables have to be set in &wrfvar14 in order
+     ; to assimilate radiance data.
+  use_hirs2obs            = .false.  ; .true.: to read in data from hirs2.bufr
+  use_hirs3obs            = .false.  ; .true.: to read in data from hirs3.bufr
+  use_hirs4obs            = .false.  ; .true.: to read in data from hirs4.bufr
+  use_mhsobs              = .false.  ; .true.: to read in data from mhs.bufr
+  use_msuobs              = .false.  ; .true.: to read in data from msu.bufr
+  use_amsuaobs            = .false.  ; .true.: to read in data from amsua.bufr
+  use_amsubobs            = .false.  ; .true.: to read in data from amsub.bufr
+  use_airsobs             = .false.  ; .true.: to read in data from airs.bufr
+  use_eos_amsuaobs        = .false.  ; .true.: to read in EOS AMSUA data from airs.bufr
+  use_ssmisobs            = .false.  ; .true.: to read in data from ssmis.bufr
+  use_atmsobs             = .false.  ; .true.: to read in data from atms.bufr
+  use_iasiobs             = .false.  ; .true.: to read in data from iasi.bufr
+  use_seviriobs           = .false.  ; .true.: to read in data from seviri.bufr
+  use_amsr2obs            = .false.  ; .true.: to read in AMSR2 data. The file names depend on the data type;
+                                     ;         see the User's Guide for more details
+  use_goesimgobs          = .false.  ;
+  use_obs_errfac          = .false.  ; .true.: apply obs error tuning factors if errfac.dat is available
+                                     ; for conventional data only
+/
+&wrfvar5
+  check_max_iv            = .true.   ; .true.: reject the observations whose innovations (O-B) are
+                                     ;         larger than a maximum value defined as a multiple of
+                                     ;         the observation error for each observation.
+                                     ;         i.e., inv > (obs_error*factor) --> fails_error_max
+                                     ;         the default maximum value is 5 times the observation error.
+                                     ;         the factor of 5 can be changed through max_error_* settings.
+  max_error_t             = 5.0      ; maximum check_max_iv error check factor for t
+  max_error_uv            = 5.0      ; maximum check_max_iv error check factor for u and v
+  max_error_pw            = 5.0      ; maximum check_max_iv error check factor for precipitable water
+  max_error_ref           = 5.0      ; maximum check_max_iv error check factor for gps refractivity
+  max_error_eph           = 5.0      ;
+  max_error_q             = 5.0      ; maximum check_max_iv error check factor for specific humidity
+  max_error_p             = 5.0      ; maximum check_max_iv error check factor for pressure
+  max_error_thickness     = 5.0      ; maximum check_max_iv error check factor for thickness
+  max_error_rv            = 5.0      ; maximum check_max_iv error check factor for radar radial velocity
+  max_error_rf            = 5.0      ; maximum check_max_iv error check factor for radar reflectivity
+  max_error_rain          = 5.0      ; maximum check_max_iv error check factor for precipitation 
+  max_omb_spd             = 100.0    ; Max absolute value of innovation for wind speed obs in m/s; if 
+                                     ; innov. is greater than this value it will be set to zero
+  max_omb_dir             = 1000.0   ; Max absolute value of innovation for wind direction obs in degrees; 
+                                     ; if innov. is greater than this value it will be set to zero
+  max_error_spd           = 5.0      ; maximum check_max_iv error check factor for wind speed
+  max_error_dir           = 5.0      ; maximum check_max_iv error check factor for wind direction
+  put_rand_seed           = .false.  ; For RANDOMCV
+                                     ; true:  enter your own seed numbers to generate random background perturbations. 
+                                     ; false: perturbations will be generated "randomly" and give new perturbations each time
+/
+&wrfvar6   ; for minimization options
+  max_ext_its                  = 1         ; number of outer loops
+  ntmax (max_outer_iterations) = 75        ; maximum number of iterations in inner loop 
+                                           ; (used dimension: max_ext_its)
+  eps (max_outer_iterations)   = 0.01      ; minimization convergence criterion (used dimension: max_ext_its)
+                                           ; minimization stops when the norm of the gradient of the cost 
+                                           ; function gradient is reduced by a factor of eps.
+                                           ; inner minimization stops either when the criterion is met or 
+                                           ; when inner iterations reach ntmax.
+  orthonorm_gradient           = .false.   ; .true.: the gradient vectors are stored during 
+                                           ;         the Conjugate Gradient for each iteration and 
+                                           ;         used to re-orthogonalize the new gradient. 
+                                           ;         This requires extra storage of large vectors 
+                                           ;         (each one being the size of the control variable)
+                                           ;         but results in a better convergence of the 
+                                           ;         Conjugate Gradient after around 20 iterations.
+/
+&wrfvar7
+  cv_options              = 5         ; 3: NCEP Background Error model
+                                      ; 5: NCAR Background Error model (default)
+                                      ; 6: Moisture-multivariate background error statistics
+                                      ; 7: New NCAR Background Error model (CV7)
+  ; For cv_options= 5, 6, or 7, be.dat must be generated by GEN_BE. See User's Guide for details.
+  ;
+  ; as1 - as5 are for cv_options=3 only
+  as1 (3)         = 0.25, 1.0, 1.5    ; tuning factors for variance, horizontal and vertical scales for 
+                                      ; control variable 1 = stream function. For cv_options=3 only.
+  as2 (3)         = 0.25, 1.0, 1.5    ; tuning factors for variance, horizontal and vertical scales for 
+                                      ; control variable 2 - unbalanced potential velocity. For cv_options=3 only.
+  as3 (3)         = 0.25, 1.0, 1.5    ; tuning factors for variance, horizontal and vertical scales for 
+                                      ; control variable 3 - unbalanced temperature. For cv_options=3 only.
+  as4 (3)         = 0.25, 1.0, 1.5    ; tuning factors for variance, horizontal and vertical scales for 
+                                      ; control variable 4 - pseudo relative humidity. For cv_options=3 only.
+  as5 (3)         = 0.25, 1.0, 1.5    ; tuning factors for variance, horizontal and vertical scales for 
+                                      ; control variable 5 - unbalanced surface pressure. For cv_options=3 only.
+
+  rf_passes               = 6         ; number of passes of recursive filter.
+  ; var_scaling1-5 and len_scaling1-5 are for cv_options=5, 6, and 7 only
+  var_scaling1 (max_outer_iterations)  = 1.0   ; tuning factor of background error covariance for control variable 1.
+                                               ; control variable 1 is stream function for cv_options=5 and 6.
+                                               ; control variable 1 is u-wind component for cv_options=7.
+  var_scaling2 (max_outer_iterations)  = 1.0   ; tuning factor of background error covariance for control variable 2.
+                                               ; control variable 2 is unbalanced velocity potential for cv_options=5 and 6.
+                                               ; control variable 2 is v-wind component for cv_options=7.
+  var_scaling3 (max_outer_iterations)  = 1.0   ; tuning factor of background error covariance for control variable 3.
+                                               ; control variable 3 is unbalanced temperature for cv_options=5 and 6.
+                                               ; control variable 3 is temperature for cv_options=7.
+  var_scaling4 (max_outer_iterations)  = 1.0   ; tuning factor of background error covariance for control variable 4.
+                                               ; control variable 4 is pseudo relative humidity for cv_options=5 and 7.
+                                               ; control variable 4 is unbalanced pseudo relative humidity for cv_options=6.
+  var_scaling5 (max_outer_iterations)  = 1.0   ; tuning factor of background error covariance for control variable 5.
+                                               ; control variable 5 is unbalanced surface pressure for cv_options=5 and 6.
+                                               ; control variable 5 is surface pressure for cv_options=7.
+  var_scaling6 (max_outer_iterations)  = 1.0   ; cloud liquid water
+  var_scaling6 (max_outer_iterations)  = 1.0   ; rain water
+  var_scaling6 (max_outer_iterations)  = 1.0   ; ice water
+  var_scaling6 (max_outer_iterations)  = 1.0   ; snow
+  var_scaling6 (max_outer_iterations)  = 1.0   ; grauple
+  var_scaling6 (max_outer_iterations)  = 1.0   ; vertical velocity
+  ; see the above description about the meaning of control variables 1-5.
+  len_scaling1 (max_outer_iterations)  = 1.0   ; tuning factor of scale-length for control variable 1.
+  len_scaling2 (max_outer_iterations)  = 1.0   ; tuning factor of scale-length for control variable 2.
+  len_scaling3 (max_outer_iterations)  = 1.0   ; tuning factor of scale-length for control variable 3.
+  len_scaling4 (max_outer_iterations)  = 1.0   ; tuning factor of scale-length for control variable 4.
+  len_scaling5 (max_outer_iterations)  = 1.0   ; tuning factor of scale-length for control variable 5.
+  len_scaling6 (max_outer_iterations)  = 1.0   ; tuning factor of scale-length for control variable 6.
+  len_scaling7 (max_outer_iterations)  = 1.0   ; tuning factor of scale-length for control variable 7.
+  len_scaling8 (max_outer_iterations)  = 1.0   ; tuning factor of scale-length for control variable 8.
+  len_scaling9 (max_outer_iterations)  = 1.0   ; tuning factor of scale-length for control variable 9.
+  len_scaling10(max_outer_iterations)  = 1.0   ; tuning factor of scale-length for control variable 10.
+  len_scaling11(max_outer_iterations)  = 1.0   ; tuning factor of scale-length for control variable 11.
+  je_factor               = 1.0       ; ensemble covariance weighting factor
+  cloud_cv_options        = 0         ; 0: no cloud control variables
+                                      ; 1: Total water (qt) is the moist/cloud control variable.
+                                      ;    Cloud water and rainwater are combined with water vapor as total water.
+                                      ;    A warm-rain scheme is used to partition the total water into water vapor,
+                                      ;    cloud water and rainwater during minimization.
+                                      ; 2: Moist control variable is pseudo relative humidity.
+                                      ;    The additional 5 cloud control variables are cloud water, rainwater, cloud ice,
+                                      ;    snow and graupel. Both horizontal and vertical correlations are considered.
+                                      ;    This option requires the background error statistics information of the
+                                      ;    aforementioned 5 cloud variables to be included in the be.dat file.
+                                      ; 3: Moist control variable is pseudo relative humidity. The additional 5 cloud
+                                      ;    control variables are cloud water, rainwater, cloud ice, snow and graupel.
+                                      ;    Only horizontal correlation is considered. Length scales and variances are
+                                      ;    hard-coded in var/da/da_setup_structures/da_setup_be_regional.inc.
+/
+&wrfvar8 ; not used
+/
+&wrfvar9   ; for program tracing. trace_use=.true. gives additional performance diagnostics
+           ; (calling tree, local routine timings, overall routine timings, memory usage)
+           ; It does not change results, but does add runtime overhead.
+  stdout                  = 6         ; unit number for standard output
+  stderr                  = 0         ; unit number for error output
+  trace_unit              = 7         ; Unit number for tracing output
+                                      ; note that units 10 and 9 are reserved for reading namelist.input
+                                      ; and writing namelist.output respectively.
+  trace_pe                = 0         ; Currently, statistics are always calculated for all processors, 
+                                      ; and output by processor 0.
+  trace_repeat_head       = 10        ; the number of times any trace statement will produce output 
+                                      ; for any particular routine. This stops overwhelming trace output
+                                      ; when a routine is called multiple times. Once this limit is reached 
+                                      ; a 'going quiet' message is written to the trace file, and no more 
+                                      ; output is produced from the routine, though statistics are still gathered.
+  trace_repeat_body       = 10        ; see trace_repeat_head description
+  trace_max_depth         = 30        ; define the deepest level to which tracing writes output
+  trace_use               = .false.   ; .true.: activate tracing
+  trace_use_frequent      = .false.
+  trace_use_dull          = .false.
+  trace_memory            = .true.    ; .true.: calculate allocated memory using a mallinfo call.
+                                      ;         On some platforms (Cray and Mac), mallinfo is not available 
+                                      ;         and no memory monitoring can be done.
+  trace_all_pes           = .false.   ; .true.: tracing is output for all pes. As stated in trace_pe, 
+                                      ;         this does not change processor statistics. 
+  trace_csv               = .true.    ; .true.: tracing statistics are written to a xxxx.csv file in CSV format
+  use_html                = .true.    ; .true.: tracing and error reporting routines will include HTML tags.
+  warnings_are_fatal      = .false.   ; .true.: warning messages that would normally allow the 
+                                      ;         program to continue are treated as fatal errors.
+/
+&wrfvar10   ; for code developers
+  test_transforms         = .false.   ; .true.: perform adjoint tests
+  test_gradient           = .false.   ; .true.: perform gradient test
+/
+&wrfvar11
+  cv_options_hum          = 1       ; do not change
+  check_rh                = 0       ; 0: no supersaturation check after minimization
+                                    ; 1: supersaturation (rh> 100%) and minimum rh (rh<10%) check, 
+                                    ;    and make the local adjustment of q.
+                                    ; 2: supersaturation (rh> 95%) and minimum rh (rh<11%) check, 
+                                    ;    and make the multi-level q adjustment under the constraint 
+                                    ;    of conserved column integrated water vapor
+  sfc_assi_options        = 1       ; 1: surface observations will be assimilated based on the 
+                                    ;    lowest model level first guess. Observations are not used
+                                    ;    when the height difference of the elevation of the observing
+                                    ;    site and the lowest model level height is larger than the
+                                    ;    height (in meters) specified in namelist max_stheight_diff.
+                                    ; 2: surface observations will be assimilated based on surface 
+                                    ;    similarity theory in PBL. Innovations are computed based 
+                                    ;    on 10-m wind, 2-m temperature and 2-m moisture. 
+  max_stheight_diff       = 100.0   ; threshold in meters. See sfc_assi_options=1.
+  max_stheight_diff_ztd   = 1000.0  ; threshold in meters. For ZTD, stations whose |Zdiff|>max_stHeight_diff_ztd will not be assimilated
+  consider_xap4ztd        = .true.  ; whether or not including xa%p in TL/AD of xtoztd operator
+  obs_err_inflate         = .false. ; .true.: inflate obs error by exp(|Zdiff|/stn_ht_diff_scale) for
+                                    ; SYNOP t, p, q with sfc_assi_options=1 only.
+                                    ; Zdiff is the height difference between model and station that is
+                                    ; calculated in WRFDA.
+  stn_ht_diff_scale       = 200.0   ; height in meters used for calculating obs error inflation factors
+                                    ; when obs_err_inflate = .true.
+  psfc_from_slp           = .false. ; .false.: use reported Psfc.
+                                    ;          This is the recommended (default) option.
+                                    ; .true.: when sfc_assi_options=1, re-calculates Psfc from SLP
+                                    ;         when the observation elevation is below the lowest
+                                    ;         model level height. This is the behavior before V3.8.
+  calculate_cg_cost_fn    = .false. ; .true.: Compute and write out cost function of each iteration
+                                    ;         into a file cost_fn for diagnostic purpose.
+                                    ; .false.: Only the initial and final cost functions are computed
+                                    ;          and output in cost_fn.
+                                    ;          The cost function values in rsl.out.0000 are estimates.
+                                    ; The actual cost function of each iteration is not needed for
+                                    ; minimization. For production runs, set calculate_cg_cost_fn=
+                                    ; .false. to reduce run time.
+  write_detail_grad_fn    = .false. ; .true.: calculate and write out detailed gradient components of
+                                    ;         each iteration into a file grad_fn for diagnostic purpose.
+                                    ;         This will increase runtime, especially for 4DVAR.
+                                    ; The summed gradient info is available in rsl.out.0000.
+                                    ; Keeping write_detail_grad_fn=false (default) is the best practice.
+
+  seed_array1             = 1       ; First integer for seeding the random function when put_rand_seed=.true.
+  seed_array2             = 1       ; Second integer for seeding the random function when put_rand_seed=.true.
+                                    ; It is not necessary to change both seeds to get different perturbations
+/
+&wrfvar12
+  use_wpec                = .false. ; true: enables the WPEC dynamic constraint term
+  wpec_factor             = 0.001   ; WPEC dynamic constraint weighting factor (1/gamma)
+  balance_type            = 3       ; for use_wpec=true
+                                    ;   1 = geostrophic term
+                                    ;   2 = cyclostrophic term
+                                    ;   3 = geostrophic + cyclostrophic terms (default; recommended)
+
+  use_divc                = .false. ; switch for divergence constraint
+  divc_factor             = 1000.   ;  
+
+  use_lsac                = .false. ; switch for large scale analysis constraint
+  lsac_nh_step            =  1      ; increment step in grid points in the horizontal direction
+  lsac_nv_step            =  1      ; increment step in grid points in the vertical direction
+  lsac_nv_start           =  1      ; index of starting grid point in the vertical direction
+  lsac_use_u              =  .true. ; switch for large scale u analysis constraint
+  lsac_use_v              =  .true. ; switch for large scale v analysis constraint
+  lsac_use_t              =  .true. ; switch for large scale t analysis constraint
+  lsac_use_q              =  .true. ; switch for large scale q analysis constraint
+  lsac_u_error            =  2.5    ; m/s
+  lsac_v_error            =  2.5    ; m/s
+  lsac_t_error            =  2.0    ; degree C
+  lsac_q_error            =  0.002  ; kg/kg
+  lsac_print_details      =  .false.; switch for printout
+/
+&wrfvar13
+  max_vert_var1           = 99.0   ; specify the maximum truncation value (in percentage)
+                                   ; to explain the variance of stream function
+                                   ; in eigenvector decomposition
+  max_vert_var2           = 99.0   ; specify the maximum truncation value (in percentage)
+                                   ; to explain the variance of unbalanced potential velocity
+                                   ; in eigenvector decomposition
+  max_vert_var3           = 99.0   ; specify the maximum truncation value (in percentage)
+                                   ; to explain the variance of unbalanced temperature
+                                   ; in eigenvector decomposition
+  max_vert_var4           = 99.0   ; specify the maximum truncation value (in percentage)
+                                   ; to explain the variance of pseudo relative humidity
+                                   ; in eigenvector decomposition
+  max_vert_var5           = 99.0   ; for unbalanced surface pressure, it should be a non-zero
+                                   ; positive number.
+  max_vert_var6           = 99.0
+  max_vert_var7           = 99.0
+  max_vert_var8           = 99.0
+  max_vert_var9           = 99.0
+  max_vert_var10          = 99.0
+  max_vert_var11          = 99.0
+
+                                   ; set max_vert_var5=0.0 only for offline VarBC applications.
+  psi_chi_factor          = 1.0    ; Contribution of stream function in defining balanced part of velocity potential. For cv_options=6 only.
+  psi_t_factor            = 1.0    ; Contribution of stream function in defining balanced part of temperature. For cv_options=6 only.
+  psi_ps_factor           = 1.0    ; Contribution of stream function in defining balanced part of surface pressure. For cv_options=6 only.
+  psi_rh_factor           = 1.0    ; Contribution of stream function in defining balanced part of moisture. For cv_options=6 only.
+  chi_u_t_factor          = 1.0    ; Contribution of the unbalanced part of velocity potential in defining balanced part of temperature. For cv_options=6 only.
+  chi_u_ps_factor         = 1.0    ; Contribution of the unbalanced part of velocity potential in defining balanced part of surface pressure. For cv_options=6 only.
+  chi_u_rh_factor         = 1.0    ; Contribution of the unbalanced part of velocity potential in defining balanced part of moisture. For cv_options=6 only.
+  t_u_rh_factor           = 1.0    ; Contribution of the unbalanced part of temperature in defining balanced part of moisture. For cv_options=6 only.
+  ps_u_rh_factor          = 1.0    ; Contribution of the unbalanced part of surface pressure in defining balanced part of moisture. For cv_options=6 only.
+/
+&wrfvar14
+     ; the following 4 variables (rtminit_nsensor, rtminit_platform, rtminit_satid, rtminit_sensor) 
+     ; together control what sensors from which platforms will be assimilated.
+  rtminit_nsensor                     = 1        ; total number of sensors to be assimilated
+  rtminit_platform (max_instruments)  = -1       ; platforms IDs array (used dimension: rtminit_nsensor)
+                                                 ; e.g., 1 for NOAA, 9 for EOS, 10 for METOP and 2 for DMSP
+  rtminit_satid (max_instruments)     = -1.0     ; satellite IDs array (used dimension: rtminit_nsensor)
+  rtminit_sensor (max_instruments)    = -1.0     ; sensor IDs array (used dimension: rtminit_nsensor)
+                                                 ; e.g., 0 for HIRS, 3 for AMSU-A, 4 for AMSU-B, 
+                                                 ;      15 for MHS, 10 for SSMIS, 11 for AIRS
+  rad_monitoring (max_instruments)    = 0        ; integer array (used dimension: rtminit_nsensor)
+                                                 ; 0: assimilating mode
+                                                 ; 1: monitoring mode (only calculate innovations)
+  thinning_mesh (max_instruments)     = 60.0     ; real array (used dimension: rtminit_nsensor)
+                                                 ; specify thinning mesh size (in KM) for different sensors.
+  thinning                            = .true.   ; .true.: perform thinning on radiance data
+  qc_rad                              = .true.   ; .true.: perform quality control. Use .false. only for testing/debugging
+  write_iv_rad_ascii                  = .false.  ; .true.: output radiance Observation minus Background files, 
+                                                 ;         which are in ASCII format and separated by 
+                                                 ;         sensors and processors.
+  write_oa_rad_ascii                  = .true.   ; .true.: output radiance Observation minus Analysis files 
+                                                 ;         (including also O minus B), which are in ASCII format
+                                                 ;          and separated by sensors and processors.
+  use_error_factor_rad                = .false.  ; .true.: use a radiance error tuning factor file 
+                                                 ;         "radiance_error.factor", which can be created 
+                                                 ;         with empirical values or generated using variational
+                                                 ;         tuning method (Desroziers and Ivanov, 2001)
+  use_antcorr (max_instruments)       = .false.  ; .true.: perform Antenna Correction in CRTM
+  rtm_option                          = 1        ; which RTM (Radiative Transfer Model) to use (see User's Guide)
+                                                 ;         1: RTTOV (WRFDA must be compiled with RTTOV)
+                                                 ;         2: CRTM  (WRFDA must be compiled with CRTM)
+  only_sea_rad                        = .false.  ; .true.: assimilate radiance over water only
+  use_varbc                           = .true.   ; .true.: perform Variational Bias Correction.
+                                                 ;         An ASCII parameter file "VARBC.in" is required.
+                                                 ;         (a template is provided with the source code)
+  freeze_varbc                        = .false.  ; .true: together with use_varbc=.false., keep the VarBC
+                                                 ;        bias parameters constant in time. In this case,
+                                                 ;        the bias correction is read and applied to the
+                                                 ;        innovations, but it is not updated during the
+                                                 ;        minimization.
+  varbc_factor                        = 1.0      ; for scaling the VarBC preconditioning
+  varbc_nbgerr                        = 5000     ;
+  varbc_nobsmin                       = 10       ; defines the minimum number of observations required for 
+                                                 ; the computation of the predictor statistics during the 
+                                                 ; first assimilation cycle. If there are not enough data 
+                                                 ; (according to "VARBC_NOBSMIN") on the first cycle, the 
+                                                 ; next cycle will perform a coldstart again.
+  use_clddet_mmr                      = false    ; .true. :use the MMR scheme to conduct cloud detection for infrared radiance
+  use_clddet_ecmwf                    = false    ; .true. :use the ECMWF operational scheme to conduct cloud detection for infrared radiance.
+  airs_warmest_fov                    = .false.  ; .true.: uses the observation brightness temperature for 
+                                                 ;         AIRS Window channel #914 as criterion for GSI 
+                                                 ;         thinning (with a higher amplitude than the distance 
+                                                 ;         from the observation location to the nearest grid point).
+  use_crtm_kmatrix                    = .true.   ; .true. use CRTM K matrix rather than calling CRTM TL
+                                                 ;        and AD routines for gradient calculation, which
+                                                 ;        reduces runtime noticeably. 
+  use_rttov_kmatrix                   = .false.  ; .true. use RTTOV K matrix rather than calling RTTOV TL
+                                                 ;        and AD routines for gradient calculation, which
+                                                 ;        reduces runtime noticeably. 
+  rttov_emis_atlas_ir                 = 0        ; 0: do not use IR emissivity atlas
+                                                 ; 1: use IR emissivity atlas (recommended)
+  rttov_emis_atlas_mw                 = 0        ; 0: do not use MW emissivity atlas
+                                                 ; 1: use TELSEM MW emissivity atlas (recommended)
+                                                 ; 2: use CNRM MW emissivity atlas
+  use_blacklist_rad                   = .true.   ; .true.: to switch off the assimilation of known problematic
+                                                 ;         channels (up to year 2012) that are hard-coded in
+                                                 ;         var/da/da_radiance/da_blacklist_rad.inc.
+                                                 ; .false.: users need to specify proper channel selections
+                                                 ;          in the radiance_info files.
+ calc_weightfunc                      = .false.  ; 
+/
+&wrfvar15   ; needs to be set together with &wrfvar19
+  num_pseudo              = 0          ; set the number of pseudo ob, either 0 or 1 (single ob)
+                                       ; when num_pseudo=1, all other obs will be switched off
+  pseudo_x                = 1.0        ; set the X-position (I) of the ob in model grid-point units
+  pseudo_y                = 1.0        ; set the Y-position (J) of the ob in model grid-point units
+  pseudo_z                = 1.0        ; set the Z-position (K) of the ob in vertical level index,
+                                       ;     in bottom-up order.
+  pseudo_val              = 1.0        ; set the innovation of the pseudo ob.  
+                                       ; wind in m/s, pressure in Pa, temperature in K,
+                                       ; specific humidity in kg/kg
+  pseudo_err              = 1.0        ; set the error of the pseudo ob. Same units as pseudo_val.
+                                       ; if pseudo_var="q", pseudo_err=0.001 is more reasonable.
+/
+&wrfvar16   ; for hybrid WRF-Var/ensemble
+  alphacv_method          = 2          ; 1: ensemble perturbations in control variable space
+                                       ; 2: ensemble perturbations in model variable space
+  ensdim_alpha            = 0          ; ensemble size
+  alpha_corr_type         = 3          ; 1: alpha_corr_type_exp
+                                       ; 2: alpha_corr_type_soar
+                                       ; 3: alpha_corr_type_gaussian (default)
+  alpha_corr_scale        = 200.0      ; km, 
+  ep_para_read            = 0          ; how ensemble perturbations are read. 0: serial read; 1: parallel read
+  rden_bin                = 1          ; number of bins/batches to read ensemble perturbations in parallel
+  alpha_std_dev           = 1.0        ;
+  alpha_vertloc_opt       = 2          ; new option since v4.2 (to replace previous alpha_vertloc)
+                                       ; for choosing the source of vertical localization for alpha control variable
+                                       ; 0: no vertical localization applied for alpha control variable.
+                                       ; 1: read in vertloc function from be.vertloc.dat. The same behavior as pre-v4.2.
+                                       ; 2: (default, recommended) let WRFDA calculate logP-based vertical localization. be.vertloc.dat will be written out.
+  alpha_hydrometeors      = .false.    ; switch for cloud alpha control variables
+  hybrid_dual_res         = .false.    ; swithc for dual-resolution hybrid
+  dual_res_upscale_opt    = 3          ;
+  use_4denvar             = .false.    ; switch for activating 4D-Ensemble-Var" 
+/
+&wrfvar17
+  analysis_type           = "3D-VAR"   ; "3D-VAR": 3D-VAR mode (default)
+                                       ; "QC-OBS": 3D-VAR mode plus extra filtered_obs output
+                                       ; "VERIFY": verification mode.
+                                       ;           WRFDA resets check_max_iv=.false. and ntmax=0
+                                       ; "RANDOMCV": for creating ensemble perturbations
+  n_randomcv              = 1          ; number of realizations of randomcv
+                                       ; set to > 1 to get multiple perturbed output in one execution
+  adj_sens	          = .false.    ; .true.: write out gradient of Jo for adjoint sensitivity
+/
+&wrfvar18   ; needs to set &wrfvar21 and &wrfvar22 as well if ob_format=1 and/or radiances are used.
+  analysis_date           = "2002-08-03_00:00:00.0000"   ; specify the analysis time. It should be 
+                                                         ; consistent with the first guess time.
+                                                         ; If time difference between analysis_date
+                                                         ; and date info read in from first guess 
+                                                         ; is larger than analysis_accu, WRFDA will 
+                                                         ; abort.
+/
+&wrfvar19   ; needs to be set together with &wrfvar15
+  pseudo_var              = "t"   ; set the pseudo ob variable
+                                  ;   "t": temperature
+                                  ;   "u": X-direction component of wind
+                                  ;   "v": Y-direction component of wind
+                                  ;   "p": pressure
+                                  ;   "q": specific humidity
+                                  ;  "pw": total precipitable water
+                                  ; "ref": refractivity
+                                  ; "ztd": zenith total delay
+/
+&wrfvar20
+  documentation_url       = "http://www.mmm.ucar.edu/people/wrfhelp/wrfvar/code/trunk"
+/
+&wrfvar21
+  time_window_min         = "2002-08-02_21:00:00.0000"  ; start time of assimilation time window
+                                                        ; used for ob_format=1 and radiances to select
+                                                        ; observations inside the defined time_window.
+                                                        ; Also used for ob_format=2 to check if the obs
+                                                        ; are within the specified time window.
+/
+&wrfvar22
+  time_window_max         = "2002-08-03_03:00:00.0000"  ; end time of assimilation time window
+                                                        ; used for ob_format=1 and radiances to select
+                                                        ; observations inside the defined time_window.
+                                                        ; Also used for ob_format=2 to check if the obs
+                                                        ; are within the specified time window.
+/
+&radar_da
+  ; tuning parameters for use_radar_rqv=.true. only
+  ; except that radar_non_precip_opt applies to both use_radar_rhv=.true. and use_radar_rqv=.true.
+  radar_non_precip_opt    = 0         ; 0: do not consider non-precipitating radar echo
+                                      ; 1: KNU scheme for assimilating non-precipitating radar echo
+  radar_non_precip_rf     = -999.99   ; reflectivity (dBZ) value used to indicate non-precip ob
+  radar_non_precip_rh_w   = 95.0      ; RH (%) wrt water for non_precip rqv
+  radar_non_precip_rh_i   = 85.0      ; RH (%) wrt ice for non_precip rqv
+  cloudbase_calc_opt      = 1         ; how model LCL is calculated
+                                      ; 1: KNU scheme
+                                      ; 2: NCAR scheme
+  radar_saturated_rf      = 25.0      ; reflectivity (dBZ) value used to indicate saturated rqv
+  radar_rqv_thresh1       = 40.0      ; reflectivity (dBZ) threshold for scaling down rqv
+  radar_rqv_thresh2       = 50.0      ; reflectivity (dBZ) threshold for scaling down rqv
+  radar_rqv_rh1           = 95.0      ; RH (%) for (radar_saturated_rf < rf < radar_rqv_thresh1)
+  radar_rqv_rh2           = 85.0      ; RH (%) for (radar_rqv_thresh1 < rf < radar_rqv_thresh2)
+  radar_rqv_h_lbound      = -999.0    ; height (m) lower bound for rqv
+  radar_rqv_h_ubound      = -999.0    ; height (m) upper bound for rqv
+  radar_rhv_err_opt       = 1         ;(default) 1: calculated (original), 2: from namelist
+  radar_rhv_rrn_err       = 0.15      ;(default) obs error of retrieved qrain in g/kg
+  radar_rhv_rsn_err       = 0.15      ;(default) obs error of retrieved qsnow in g/kg
+  radar_rhv_rgr_err       = 0.15      ;(default) obs error of retrieved qgraup in g/kg
+  write_oa_radar_ascii    = .true.    ;(default)
+/
+&obs_opt
+  gpsro_drift             = 1         ; horizontal drifting for GPSRO.  0=no drift, 1=drift
+  gpseph_opt              = 1         ; 0: local operator variant, 1: non-local
+  gpseph_loadbalance      = .true.    ;
+/
+&perturbation   ; settings related to the 4D-Var penalty term option, which controls the
+                ; high-frequency gravity waves using a digital filter.
+  jcdfi_use               = .false.  ; .true.: include JcDF term in the cost function
+                                     ; .false.: ignore JcDF term in the cost function
+  jcdfi_diag              = 1        ; 0: no diagnostic information for JcDF term in J
+                                     ; 1: print diagnostic information for JcDF term in J
+  jcdfi_penalty           = 10       ; The weight gived to JcDF term during minimization
+  enable_identity         = .false.  ; .true.: use identity adjoint and tangent linear model in 4D-Var
+                                     ; .false. use full adjoint and tangent linear model in 4D-Var
+  trajectory_io           = .true.   ; .true.: use memory I/O in 4D-Var for data exchange
+                                     ; .false.: use disk I/O in 4D-Var for data exchange
+  var4d_detail_out	  = .false.  ; .true.: output extra diagnostics for debugging 4D-Var
+  var4d_run               = .true.   ; true: exlcude the P calculation in start_em
+/

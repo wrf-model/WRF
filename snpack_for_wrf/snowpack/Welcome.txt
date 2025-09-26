@@ -1,0 +1,17 @@
+SNOWPACK is a multi-purpose snow and land-surface model, which focusses on a detailed description of the mass and energy exchange between the snow, the atmosphere and optionally with the vegetation cover and the soil. It also includes a detailed treatment of mass and energy fluxes within these media.
+
+SNOWPACK has originally been developed to support avalanche warning (Lehning et al., 1999) and thus features a very detailed description of snow properties including weak layer characterization (Stoessel et al., 2009), phase changes and water transport in snow (Hirashima et al., 2010). A particular feature is the treatment of soil and snow as a continuum with a choice of a few up to several hundred layers. While a main application is still on avalanche warning in countries from Switzerland (Schirmer et al., 2009) to Japan (Nishimura et al., 2005), the applications range from climate change assessments (Rasmus et al., 2004; Bavay et al., 2009) and superimposed ice simulations (Obleitner and Lehning, 2004) to permafrost sensitivity studies (Luetschg et al., 2008) and the simulation of snow storage (Olefs and Lehning, 2010).
+
+In order to ease the integration of SNOWPACK into other models, it is now structured as a library (libsnowpack) and an application that uses the library to perform simulations (snowpack). This library is available under LGPL version 3 or above, see www.gnu.org.
+
+References:
+    * [Lehning et al., 2002a] Lehning, M., Bartelt, P., Brown, R.L., Fierz, C., and Satyawali, P.K. 2002.
+        A physical SNOWPACK model for the Swiss avalanche warning, Part II. Snow microstructure,
+        Cold Regions Science and Technology 35, 2002, 147–167.
+    * [Lehning et al., 2002b] Lehning, M., Bartelt, P., Brown, R.L., and Fierz, C. 2002.
+        A physical SNOWPACK model for the Swiss avalanche warning, Part III: meteorological forcing, thin layer formation and evaluation,
+        Cold Regions Science and Technology 35, 2002, 169–184.
+    * [Lehning and Fierz, 2008] Lehning, M., and Fierz, C. 2008.
+        Assessment of snow transport in avalanche terrain,
+        Cold Regions Science and Technology 51, 2008, 240–252
+

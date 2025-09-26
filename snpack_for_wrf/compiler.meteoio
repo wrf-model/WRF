@@ -1,0 +1,16 @@
+# compile meteoio first
+
+mkdir -p ./snow_libs
+
+cd ./meteoio
+mkdir ./build
+cd ./build
+cmake -DCMAKE_INSTALL_PREFIX=../../snow_libs ..
+make -j9
+make install
+cd ..
+rm -rf ./build ./lib/*
+cd ..
+
+export SNOWLIBS=$(pwd)
+

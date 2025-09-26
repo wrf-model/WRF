@@ -1,0 +1,16 @@
+# compile snowpack second
+
+mkdir -p ./snow_libs
+
+cd ./snowpack
+mkdir ./build
+cd ./build
+cmake -DMETEOIO_INCLUDE_DIR=../../snow_libs/include -DMETEOIO_LIBRARY=../../snow_libs/lib/libmeteoio.a -DCMAKE_INSTALL_PREFIX=../../snow_libs ..
+make -j9
+make install
+cd ..
+rm -rf ./build ./lib/*
+cd ..
+
+export SNOWLIBS=$(pwd)
+

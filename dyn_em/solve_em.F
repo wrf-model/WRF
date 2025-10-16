@@ -2199,7 +2199,6 @@ BENCH_END(small_step_finish_tim)
 !</pre>
 !</DESCRIPTION>
 
-
 #ifdef CORDEXDIAG
 #ifdef CDXWRF
 #if CDXWRF>=4

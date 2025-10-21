@@ -66,11 +66,11 @@ if ( NOT "${FSEEKO64}" )
 endif()
 
 
-# Check if underscores are needing for implicit c-Fortran intrefacing functions that
+# Check if underscores are needed for implicit c-Fortran interfacing functions that
 # don't use ISO C binding to map symbols
 wrf_conf_check(
                 # try_run() with more than one source was introduced in CMake 3.25+
-                # so we won't use it here until we see reasonable need to incease the 
+                # so we won't use it here until we see reasonable need to increase the 
                 # version requirements
                 RESULT_VAR             NOUNDERSCORE_SYMBOL
                 SOURCES                ${CMAKE_CURRENT_SOURCE_DIR}/check_underscore.c ${CMAKE_CURRENT_SOURCE_DIR}/check_underscore.f90

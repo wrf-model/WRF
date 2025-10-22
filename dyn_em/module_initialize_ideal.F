@@ -86,7 +86,7 @@ CONTAINS
                                   ids, ide, jds, jde, kds, kde, &
                                   ims, ime, jms, jme, kms, kme, &
                                   its, ite, jts, jte, kts, kte, &
-                                  i, j, k, kk
+                                  a, i, j, k, kk
 
    ! Local data
 
@@ -112,6 +112,10 @@ CONTAINS
    LOGICAL :: moisture_init
    LOGICAL :: stretch_grid, dry_sounding
    character (len=256) :: mminlu2
+
+! Multiple perturbation bubbles in em_quarter_ss
+   REAL, DIMENSION(10) :: pert_x, pert_y, pert_dt
+   INTEGER :: end_loop_a
 
    REAL    :: xa1, xal1,pii,hm1  !  data for intercomparison setup from dale
 !  space for initial jet in b_wave
@@ -205,13 +209,63 @@ CONTAINS
   CASE ( quarter_ss, squall2d_x, squall2d_y )
 
    stretch_grid = .true.
-   delt = 3.
+!   delt = 3.
 !   z_scale = .40
    z_scale = 8000./config_flags%ztop
    pi = 2.*asin(1.0)
    write(6,*) ' pi is ',pi
-   nxc = (ide-ids)/2
-   nyc = (jde-jds)/2
+   IF (config_flags%num_perts > 0) THEN
+      pert_x(1) = config_flags%pert_1_x
+      pert_x(2) = config_flags%pert_2_x
+      pert_x(3) = config_flags%pert_3_x
+      pert_x(4) = config_flags%pert_4_x
+      pert_x(5) = config_flags%pert_5_x
+      pert_x(6) = config_flags%pert_6_x
+      pert_x(7) = config_flags%pert_7_x
+      pert_x(8) = config_flags%pert_8_x
+      pert_x(9) = config_flags%pert_9_x
+      pert_x(10) = config_flags%pert_10_x
+      pert_y(1) = config_flags%pert_1_y
+      pert_y(2) = config_flags%pert_2_y
+      pert_y(3) = config_flags%pert_3_y
+      pert_y(4) = config_flags%pert_4_y
+      pert_y(5) = config_flags%pert_5_y
+      pert_y(6) = config_flags%pert_6_y
+      pert_y(7) = config_flags%pert_7_y
+      pert_y(8) = config_flags%pert_8_y
+      pert_y(9) = config_flags%pert_9_y
+      pert_y(10) = config_flags%pert_10_y
+      pert_dt(1) = config_flags%pert_1_delT
+      pert_dt(2) = config_flags%pert_2_delT
+      pert_dt(3) = config_flags%pert_3_delT
+      pert_dt(4) = config_flags%pert_4_delT
+      pert_dt(5) = config_flags%pert_5_delT
+      pert_dt(6) = config_flags%pert_6_delT
+      pert_dt(7) = config_flags%pert_7_delT
+      pert_dt(8) = config_flags%pert_8_delT
+      pert_dt(9) = config_flags%pert_9_delT
+      pert_dt(10) = config_flags%pert_10_delT
+      end_loop_a = config_flags%num_perts
+   ELSE
+    end_loop_a = 1
+    IF (config_flags%pert_1_delt .gt. 0.) THEN
+       pert_dt(1) = config_flags%pert_1_delt
+    ELSE
+       pert_dt(1) = 3.
+    ENDIF
+    IF (config_flags%pert_1_x .gt. 0) THEN
+       pert_x(1) = INT(config_flags%pert_1_x)
+    ELSE
+       pert_x(1) = (ide-ids)/2
+     !  nxc = (ide-ids)/2
+    END IF
+    IF (config_flags%pert_1_y .gt. 0) THEN
+       pert_y(1) = INT(config_flags%pert_1_y)
+    ELSE
+       pert_y(1) = (jde-jds)/2
+     !  nyc = (jde-jds)/2
+    END IF
+   END IF
 
   CASE (grav2d_x)
 
@@ -1089,24 +1143,27 @@ CONTAINS
   CASE (quarter_ss)
 !  QSS thermal perturbation to kick off convection
 
-  write(6,*) ' nxc, nyc for perturbation ',nxc,nyc
-  write(6,*) ' delt for perturbation ',delt
+  DO A = 1,end_loop_a
+    nyc = pert_y(a)
+    nxc = pert_x(a)
+    delt = pert_dt(a)
+    write(6,*) ' nxc, nyc for perturbation ',nxc,nyc
+    write(6,*) ' delt for perturbation ',delt
+    DO J = jts, min(jde-1,jte)
+      yrad = (config_flags%dy*float(j-nyc)) / 10000. ! bubble is 10-km across, regardless of grid spacing
+  !   yrad = 0.
+      DO I = its, min(ide-1,ite)
+        xrad = config_flags%dx*float(i-nxc)/10000.
+  !     xrad = 0.
+        DO K = 1, kte-1
 
-  DO J = jts, min(jde-1,jte)
-    yrad = config_flags%dy*float(j-nyc)/10000.
-!   yrad = 0.
-    DO I = its, min(ide-1,ite)
-      xrad = config_flags%dx*float(i-nxc)/10000.
-!     xrad = 0.
-      DO K = 1, kte-1
-
-!  put in preturbation theta (bubble) and recalc density.  note,
+!  put in perturbation theta (bubble) and recalc density.  note,
 !  the mass in the column is not changing, so when theta changes,
 !  we recompute density and geopotential
 
         zrad = 0.5*(grid%ph_1(i,k,j)+grid%ph_1(i,k+1,j)  &
                    +grid%phb(i,k,j)+grid%phb(i,k+1,j))/g
-        zrad = (zrad-1500.)/1500.
+        zrad = (zrad-1500.)/1500. ! Bubble has 1.5 km vertical radius, centered 1500 m above ground
         RAD=SQRT(xrad*xrad+yrad*yrad+zrad*zrad)
         IF(RAD <= 1.) THEN
            grid%t_1(i,k,j)=grid%t_1(i,k,j)+delt*COS(.5*PI*RAD)**2
@@ -1131,6 +1188,7 @@ CONTAINS
 
     ENDDO
   ENDDO
+  END DO ! A - number of perturbation bubbles to create
   CASE (squall2d_x)
 !  QSS thermal perturbation to kick off convection
 

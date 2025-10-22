@@ -3814,6 +3814,18 @@ BENCH_START(micro_driver_tim)
                  ! Optional
       &        , RAINNC=grid%rainnc, RAINNCV=grid%rainncv                 &
       &        , SNOWNC=grid%snownc, SNOWNCV=grid%snowncv                 &
+               ! jdduda
+               , MAX_PRATE=grid%max_prate                                 &
+               , MAX_PRATE_1MIN=grid%max_prate_1min                       &
+               , MAX_PRATE_5MIN=grid%max_prate_5min                       &
+               , MAX_PRATE_10MIN=grid%max_prate_10min                     &
+               , MAX_COMPREF=grid%max_compref                             &
+               , HISTORY_INTERVAL=config_flags%history_interval           &
+               , HISTORY_INTERVAL_M=config_flags%history_interval_m       &
+               , HISTORY_INTERVAL_S=config_flags%history_interval_s       &
+               , ADAPTIVE_TS=config_flags%use_adaptive_time_step          &
+               , MAX_TIME_STEP=grid%max_time_step                          &
+               ! jdduda
       &        , GRAUPELNC=grid%graupelnc, GRAUPELNCV=grid%graupelncv     & ! for milbrandt2mom
       &        , HAILNC=grid%hailnc, HAILNCV=grid%hailncv                 &
       &        , HAIL_MAXK1=grid%hail_maxk1,HAIL_MAX2D=grid%hail_max2d    &

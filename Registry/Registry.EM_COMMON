@@ -1594,6 +1594,13 @@ state    real  GRAUPELNCV       ij      misc        1         -      r        "G
 state    real  HAILNCV          ij      misc        1         -      r        "HAILNCV"               "TIME-STEP NONCONVECTIVE HAIL"                            "mm"
 state    real  refl_10cm       ikj      dyn_em      1         -      hdu      "refl_10cm"             "Radar reflectivity (lamda = 10 cm)"  "dBZ"
 state    real  mskf_refl_10cm  ikj      dyn_em      1         -      hdu      "mskf_refl_10cm"        "Full Radar reflectivity (lamda = 10 cm)"  "dBZ"
+! jdduda
+state    real  MAX_PRATE        ij      misc        1         -      rh       "MAX_PRATE"             "Time-maximum instantaneous precipitation rate"           "mm s-1"
+state    real  MAX_PRATE_1MIN   ij      misc        1         -      rh       "MAX_PRATE_1MIN"        "Time-maximum 1-minute averaged precipitation rate"       "mm s-1"
+state    real  MAX_PRATE_5MIN   ij      misc        1         -      rh       "MAX_PRATE_5MIN"        "Time-maximum 5-minute averaged precipitation rate"       "mm s-1"
+state    real  MAX_PRATE_10MIN   ij      misc        1         -     rh       "MAX_PRATE_10MIN"       "Time-maximum 10-minute averaged precipitation rate"      "mm s-1"
+state    real  MAX_COMPREF      ij      misc        1         -      rh       "MAX_COMPREF"           "Time-maximum composite reflectivity"                     "dBZ"
+! jdduda
 state    real    th_old          ikj      misc        1         -      rusd        "TH_OLD"              "Old Value of Th"   "K"
 state    real    qv_old          ikj      misc        1         -      rusd        "QV_OLD"              "Old Value of qv"   "kg kg-1"
 state    real    vmi3d          ikj     misc        1         -     hdu       "v_ice"                 "Mass-weighted ice fallspeed cat 1"  "m s-1"
@@ -3006,6 +3013,38 @@ rconfig   real        windfarm_tke_factor namelist,physics      1              0
 #
 # Ideal case selection
 rconfig   integer     ideal_case          namelist,ideal        1              0       rh       "ideal_case"                 ""      ""
+# options that impact quarter_ss only
+rconfig   integer     num_perts           namelist,ideal        max_domains    0       rh       "num_perts"                 ""      ""
+rconfig   integer     pert_1_x            namelist,ideal        max_domains    0       rh       "pert_1_x"                 ""      ""
+rconfig   integer     pert_1_y            namelist,ideal        max_domains    0       rh       "pert_1_y"                 ""      ""
+rconfig   real        pert_1_delt         namelist,ideal        max_domains    3.      rh       "pert_1_delt"                 ""      ""
+rconfig   integer     pert_2_x            namelist,ideal        max_domains    0       rh       "pert_2_x"                 ""      ""
+rconfig   integer     pert_2_y            namelist,ideal        max_domains    0       rh       "pert_2_y"                 ""      ""
+rconfig   real        pert_2_delt         namelist,ideal        max_domains    3.      rh       "pert_2_delt"                 ""      ""
+rconfig   integer     pert_3_x            namelist,ideal        max_domains    0       rh       "pert_3_x"                 ""      ""
+rconfig   integer     pert_3_y            namelist,ideal        max_domains    0       rh       "pert_3_y"                 ""      ""
+rconfig   real        pert_3_delt         namelist,ideal        max_domains    3.      rh       "pert_3_delt"                 ""      ""
+rconfig   integer     pert_4_x            namelist,ideal        max_domains    0       rh       "pert_4_x"                 ""      ""
+rconfig   integer     pert_4_y            namelist,ideal        max_domains    0       rh       "pert_4_y"                 ""      ""
+rconfig   real        pert_4_delt         namelist,ideal        max_domains    3.      rh       "pert_4_delt"                 ""      ""
+rconfig   integer     pert_5_x            namelist,ideal        max_domains    0       rh       "pert_5_x"                 ""      ""
+rconfig   integer     pert_5_y            namelist,ideal        max_domains    0       rh       "pert_5_y"                 ""      ""
+rconfig   real        pert_5_delt         namelist,ideal        max_domains    3.      rh       "pert_5_delt"                 ""      ""
+rconfig   integer     pert_6_x            namelist,ideal        max_domains    0       rh       "pert_6_x"                 ""      ""
+rconfig   integer     pert_6_y            namelist,ideal        max_domains    0       rh       "pert_6_y"                 ""      ""
+rconfig   real        pert_6_delt         namelist,ideal        max_domains    3.      rh       "pert_6_delt"                 ""      ""
+rconfig   integer     pert_7_x            namelist,ideal        max_domains    0       rh       "pert_7_x"                 ""      ""
+rconfig   integer     pert_7_y            namelist,ideal        max_domains    0       rh       "pert_7_y"                 ""      ""
+rconfig   real        pert_7_delt         namelist,ideal        max_domains    3.      rh       "pert_7_delt"                 ""      ""
+rconfig   integer     pert_8_x            namelist,ideal        max_domains    0       rh       "pert_8_x"                 ""      ""
+rconfig   integer     pert_8_y            namelist,ideal        max_domains    0       rh       "pert_8_y"                 ""      ""
+rconfig   real        pert_8_delt         namelist,ideal        max_domains    3.      rh       "pert_8_delt"                 ""      ""
+rconfig   integer     pert_9_x            namelist,ideal        max_domains    0       rh       "pert_9_x"                 ""      ""
+rconfig   integer     pert_9_y            namelist,ideal        max_domains    0       rh       "pert_9_y"                 ""      ""
+rconfig   real        pert_9_delt         namelist,ideal        max_domains    3.      rh       "pert_9_delt"                 ""      ""
+rconfig   integer     pert_10_x           namelist,ideal        max_domains    0       rh       "pert_10_x"                 ""      ""
+rconfig   integer     pert_10_y           namelist,ideal        max_domains    0       rh       "pert_10_y"                 ""      ""
+rconfig   real        pert_10_delt        namelist,ideal        max_domains    3.      rh       "pert_10_delt"                 ""      ""
 #---------------------------------------------------------------------------------------------------------------------------------------
 # Package Declarations
 #                                               

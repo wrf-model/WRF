@@ -100,6 +100,7 @@ SUBROUTINE microphysics_driver(                                          &
 !NUWRF JJS 20110525 ^^^^^
 !                     ,ccntype                                           & ! for mp_milbrandt2mom
                       ,u,v,w,z                                          &   
+                      ,max_prate,max_prate_1min,max_prate_5min,max_prate_10min,max_compref &
                       ,rainnc,    rainncv                                &
                       ,snownc,    snowncv                                &
                       ,hailnc,    hailncv                                &
@@ -162,8 +163,10 @@ SUBROUTINE microphysics_driver(                                          &
                       ,perts_qsnow, perts_ni                             &
                       ,pert_thom_qv,pert_thom_qc,pert_thom_qi            &
                       ,pert_thom_qs,pert_thom_ni                         &
-					  ,cloudnc											 &
-                                                                         )
+                      ,cloudnc                                           &
+                      ,history_interval, history_interval_m, history_interval_s & ! jdduda
+                      ,adaptive_ts, max_time_step &  ! jdduda
+                                     )
 
 ! Framework
    USE module_state_description, ONLY :                                  &
@@ -689,8 +692,15 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                                                       ,GRAUPELNCV &
                                                           ,HAILNC &
                                                          ,HAILNCV &
-														 ,CLOUDNC &
-                                          ,hail_maxk1, hail_max2d
+							 ,CLOUDNC &
+                                          ,hail_maxk1, hail_max2d &
+                                                        ! jdduda
+                                                       ,max_prate &
+                                                  ,max_prate_1min &
+                                                  ,max_prate_5min &
+                                                 ,max_prate_10min &
+                                                     ,max_compref 
+                                                       ! jdduda
                                                           
 #if ( WRF_CHEM == 1)
 ! NUWRF JJS 20110525 vvvvv
@@ -785,12 +795,20 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 
    REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(IN):: IRRIGATION !ARI
    REAL,  OPTIONAL, INTENT(IN)::  irr_daily_amount, julian_in, xtime, gmt
+   INTEGER, OPTIONAL, INTENT(IN) :: history_interval, history_interval_m, history_interval_s ! jdduda
    INTEGER, OPTIONAL, INTENT(IN ):: sf_surf_irr_scheme, irr_start_hour, irr_num_hours, &
                                     irr_start_julianday,irr_end_julianday,irr_freq,irr_ph
    REAL, PARAMETER    :: PI_GRECO=3.14159
-   INTEGER  :: end_hour,a,b,xt24,irr_day,timing
+   INTEGER  :: end_hour,a,b,xt24,irr_day,timing, idump ! jdduda
    REAL :: constants_irrigation,tloc,irr_start,phase
    INTEGER, OPTIONAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) :: irr_rand_field
+
+   ! jdduda
+   REAL                                       :: time_from_output
+   INTEGER, INTENT(IN)                        :: max_time_step
+   LOGICAL, INTENT(IN)                        :: adaptive_ts
+   LOGICAL                                    :: reset_arrays = .FALSE.
+   ! jdduda
 
 ! To accommodate shared physics
    character*256 :: errmsg
@@ -822,6 +840,32 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
       WRITE( wrf_err_message , * ) 'microphysics_driver: GLOBAL w max/min = ', wmax, wmin
       CALL wrf_message ( wrf_err_message )
    ENDIF
+
+    ! jdduda - formulate logic to reset precip arrays in subroutine calc_precip_max
+    IF (PRESENT(history_interval_m) .and. PRESENT(history_interval_s)) THEN
+       idump = (history_interval_m * 60. + history_interval_s) / dt
+       time_from_output = mod( xtime, REAL(history_interval_m*60.+history_interval_s) )
+    ELSE
+       idump = (history_interval * 60.) / dt
+       time_from_output = mod( xtime, REAL(history_interval) )
+    END IF
+
+    IF ( adaptive_ts .EQV. .TRUE. ) THEN
+!       if timestep is adaptive, use new resetting method;
+!       also, we are multiplying max_time_step with 1.05; because of rounding error,
+!       the time_from_output can become slightly larger than max_time_step when
+!       adaptive time step is maximized, in which case the if condition below fails to detect
+!       that we just wrote an output
+       IF ( ( time_from_output .GT. 0 ) .AND. ( time_from_output .LE. ( ( max_time_step * 1.05 ) / 60. ) ) )  THEN
+          reset_arrays = .TRUE.
+       ENDIF
+    ELSE
+!       if timestep is fixed, use original resetting method
+       IF ( MOD((itimestep - 1), idump) .eq. 0 )  THEN
+          reset_arrays = .TRUE.
+       ENDIF
+    ENDIF
+    ! jdduda
 
 #ifdef XEON_OPTIMIZED_WSM5
    ! the OpenMP loops are inside the scheme when running on MIC
@@ -2902,6 +2946,40 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 
       END SELECT micro_select
 
+      ! jdduda
+      IF (mp_physics == THOMPSON .or. &
+          mp_physics == THOMPSONGH .or. &
+          mp_physics == THOMPSONAERO .or. &
+          mp_physics == MORR_TWO_MOMENT .or. &
+          mp_physics == MORR_TM_AERO .or. &
+          mp_physics == MILBRANDT2MOM .or. &
+          mp_physics == NSSL_2MOM .or. &
+          mp_physics == LINSCHEME .or. &
+          mp_physics == P3_1CATEGORY .or. &
+          mp_physics == P3_1CATEGORY_NC .or. &
+          mp_physics == P3_2CATEGORY .or. &
+          mp_physics == P3_1CAT_3MOM .or. &
+          mp_physics == WSM5SCHEME .or. &
+          mp_physics == WSM6SCHEME .or. &
+          mp_physics == WSM7SCHEME .or. &
+          mp_physics == WDM5SCHEME .or. &
+          mp_physics == WDM6SCHEME .or. &
+          mp_physics == WDM7SCHEME .or. &
+          mp_physics == FER_MP_HIRES .or. &
+          mp_physics == FER_MP_HIRES_ADVECT) THEN
+          
+             IF (reset_arrays .eqv. .true.) THEN
+                max_prate = 0.
+                max_prate_1min = 0.
+                max_prate_5min = 0.
+                max_prate_10min = 0.
+                max_compref = -35.
+             END IF
+             call calc_prate_max(its,ims,ite,ime,jts,jms,jte,jme,kts,kms,kte,kme,rainncv,rainnc,dt, &
+                                 max_prate,max_prate_1min,max_prate_5min,max_prate_10min,refl_10cm,max_compref)
+      END IF
+      ! jdduda
+
    ENDDO
    !$OMP END PARALLEL DO
 
@@ -3000,5 +3078,103 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
      end do
 
    end subroutine Remove_multi_perturb_mp_perturbations
+
+   ! jdduda
+   subroutine calc_prate_max(its,ims,ite,ime,jts,jms,jte,jme,kts,kms,kte,kme,rainncv,rainnc,time_step, &
+                             max_prate,max_prate_1min,max_prate_5min,max_prate_10min,reflectivity_3D,max_compref)
+
+      ! Subroutine inputs
+      INTEGER, INTENT(IN) :: its, ims, ite, ime, jts, jms, jte, jme, kts, kms, kte, kme
+      REAL, INTENT(IN) :: time_step
+      REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: max_prate, &
+                                                    max_prate_1min, &
+                                                    max_prate_5min, &
+                                                   max_prate_10min, &
+                                                       max_compref
+      REAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: rainncv, rainnc
+      REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN) :: reflectivity_3D
+      REAL, DIMENSION(:,:,:), ALLOCATABLE, SAVE :: rolling_precip_1min,rolling_precip_5min,rolling_precip_10min
+
+      !local variables and arrays:
+      character(len=16) :: desc
+      integer:: i,j,k,z
+      integer :: n_sub_windows
+      integer, dimension(5) :: sub_limit, sub_window_len
+      logical, dimension(5), save :: init_rolling_precip_array = .false.
+      REAL, DIMENSION(5) :: n_dt_sub, sub_window_time
+
+      n_sub_windows = 3
+      sub_window_len(:n_sub_windows) = 60*(/1,5,10/) ! min -> sec
+      do z = 1,n_sub_windows
+         n_dt_sub(z) = sub_window_len(z)/time_step
+         ! Account for time steps that do not divide evenly into 1, 5, or 10 minutes
+         if (abs(fraction(n_dt_sub(z))) .gt. 1e-6) then
+            sub_limit(z) = nint(n_dt_sub(z)) + 1
+            sub_window_time(z) = time_step*(sub_limit(z)-1)
+         else
+            sub_limit(z) = sub_window_len(z)/time_step + 1
+            sub_window_time(z) = sub_window_len(z)
+         end if
+         if (sub_limit(z) == 1) then
+            write(desc,'(I3)') int(sub_window_len(z)/60.)
+            write(6,*) 'WARNING: model time step is coarser than '//trim(adjustl(desc))//' minute(s) and thus the ave_prate_[1-/5-/10-]min array will be either all zeros or meaningless.'
+            init_rolling_precip_array(z) = .true.
+         end if
+      end do
+      ! if all is okay, allocate rolling precip arrays just once and never again
+      if (.not. init_rolling_precip_array(1)) then
+         allocate(rolling_precip_1min(sub_limit(1),its:ite,jts:jte))
+         rolling_precip_1min = 0.
+         init_rolling_precip_array(1) = .true.
+      end if
+      if (.not. init_rolling_precip_array(2)) then
+         allocate(rolling_precip_5min(sub_limit(2),its:ite,jts:jte))
+         rolling_precip_5min = 0.
+         init_rolling_precip_array(2) = .true.
+      end if
+      if (.not. init_rolling_precip_array(3)) then
+         allocate(rolling_precip_10min(sub_limit(3),its:ite,jts:jte))
+         rolling_precip_10min = 0.
+         init_rolling_precip_array(3) = .true.
+      end if
+
+    DO i = its,ite
+     DO j = jts,jte
+
+      max_prate(i,j) = max(rainncv(i,j)/time_step,max_prate(i,j))
+
+      ! update rolling precipitation totals for sub-history-interval average-precipitation-rate calculation
+      ! 1-minute prate
+      IF (allocated(rolling_precip_1min)) THEN
+         DO k = sub_limit(1)-1,1,-1
+            rolling_precip_1min(k+1,:,:) = rolling_precip_1min(k,:,:)
+         END DO
+         rolling_precip_1min(1,i,j) = rainnc(i,j)
+         max_prate_1min(i,j) = max((rolling_precip_1min(1,i,j) - rolling_precip_1min(sub_limit(1),i,j))/sub_window_time(1),max_prate_1min(i,j))
+      END IF
+      ! 5-minute prate
+      IF (allocated(rolling_precip_5min)) THEN
+         DO k = sub_limit(2)-1,1,-1
+            rolling_precip_5min(k+1,:,:) = rolling_precip_5min(k,:,:)
+         END DO
+         rolling_precip_5min(1,i,j) = rainnc(i,j)
+         max_prate_5min(i,j) = max((rolling_precip_5min(1,i,j) - rolling_precip_5min(sub_limit(2),i,j))/sub_window_time(2),max_prate_5min(i,j))
+      END IF
+      ! 10-minute prate
+      IF (allocated(rolling_precip_10min)) THEN
+         DO k = sub_limit(3)-1,1,-1
+            rolling_precip_10min(k+1,:,:) = rolling_precip_10min(k,:,:)
+         END DO
+         rolling_precip_10min(1,i,j) = rainnc(i,j)
+         max_prate_10min(i,j) = max((rolling_precip_10min(1,i,j) - rolling_precip_10min(sub_limit(3),i,j))/sub_window_time(3),max_prate_10min(i,j))
+      END IF
+
+      max_compref(i,j) = max(max_compref(i,j),MAXVAL(reflectivity_3D(i,:,j)))
+
+     END DO
+    END DO
+
+   end subroutine calc_prate_max
+   ! jdduda
 
 END MODULE module_microphysics_driver

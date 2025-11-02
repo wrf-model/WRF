@@ -16,7 +16,7 @@ SUBROUTINE microphysics_driver(                                          &
                       ,chem_opt, progn                                   &
                       ,cldfra, cldfra_old, exch_h, nsource               &
                       ,qlsink, precr, preci, precs, precg                &
-                      ,xland,snowh,xice,itimestep                        &
+                      ,xland,snowh,itimestep                             &
                       ,f_ice_phy,f_rain_phy,f_rimef_phy                  &
                       ,lowlyr,sr, id                                     &
                       ,ids,ide, jds,jde, kds,kde                         &
@@ -111,7 +111,6 @@ SUBROUTINE microphysics_driver(                                          &
 #endif
                       ,qnwfa2d, qnifa2d, qnbca2d                         & ! for water/ice-friendly/black carbon aerosols
                       ,qnocbb2d, qnbcbb2d                                & ! for biomass burning aerosols
-                      ,ssat,ssati                                        &
                       ,refl_10cm                                         & ! HM, 9/22/09, add for refl
                       ,vmi3d                                             & ! for P3 
                       ,di3d                                              & ! for P3 
@@ -162,16 +161,27 @@ SUBROUTINE microphysics_driver(                                          &
                       ,perts_qsnow, perts_ni                             &
                       ,pert_thom_qv,pert_thom_qc,pert_thom_qi            &
                       ,pert_thom_qs,pert_thom_ni                         &
-					  ,cloudnc											 &
+!Dynamic Lightning
+                      ,curr_secs &
+                      ,light_pe_curr  &
+                      ,light_ne_curr  &
+                      ,light_neu_curr  &
+                      ,lpi2d  &
+                      ,lpi3d  &
+                      ,f_light_pe  &
+                      ,f_light_ne  &
+                      ,f_light_neu  &
+                      ,lpos,lneg,lneu &
+                      ,l_obs,num_light_periods &
                                                                          )
 
 ! Framework
    USE module_state_description, ONLY :                                  &
                      KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME    &
-                    ,WSM6SCHEME, ETAMPNEW, FER_MP_HIRES, THOMPSON, THOMPSONAERO, RCON_MP_SCHEME, THOMPSONGH, FAST_KHAIN_LYNN_SHPUND, MORR_TWO_MOMENT     &
+                    ,WSM6SCHEME, ETAMPNEW, FER_MP_HIRES, THOMPSON, THOMPSONAERO, THOMPSONGH, FAST_KHAIN_LYNN_SHPUND, MORR_TWO_MOMENT     &
                     ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME, NSSL_2MOM, MADWRF_MP  &
                     ,FER_MP_HIRES_ADVECT & 
-                    ,WSM7SCHEME, WDM7SCHEME, UDMSCHEME &
+                    ,WSM7SCHEME, WDM7SCHEME &
                     ,NUWRF4ICESCHEME &
                     ,MILBRANDT2MOM , CAMMGMPSCHEME,FULL_KHAIN_LYNN, P3_1CATEGORY, P3_1CATEGORY_NC, P3_2CATEGORY, P3_1CAT_3MOM &
                     ,MORR_TM_AERO, JENSEN_ISHMAEL, SPRINKLER, NTU !,MILBRANDT3MOM
@@ -207,6 +217,9 @@ SUBROUTINE microphysics_driver(                                          &
 #endif
 
 ! *** add new modules of schemes here
+   USE module_calc_lpi_new
+   USE module_ltng_pe
+   USE module_ltng_strokes
 
    USE module_mp_kessler
 #if ( WRFPLUS == 1 )
@@ -222,7 +235,6 @@ SUBROUTINE microphysics_driver(                                          &
    USE module_mp_wsm7
    USE module_mp_etanew
    USE module_mp_fer_hires
-   USE module_mp_rcon
    USE module_mp_thompson
    USE module_mp_full_sbm
 #if ( BUILD_SBM_FAST == 1 )
@@ -240,7 +252,6 @@ SUBROUTINE microphysics_driver(                                          &
    USE module_mp_wdm5
    USE module_mp_wdm6
    USE module_mp_wdm7
-   USE module_mp_udm
    USE module_mp_milbrandt2mom
 # if (EM_CORE == 1)
    USE module_mp_cammgmp_driver, ONLY: CAMMGMP ! CAM5's microphysics driver
@@ -599,8 +610,16 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 !
 
    REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN)   :: XLAND
+!Lightning
+   REAL   ,    INTENT(IN   )    :: curr_secs
+   REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT),OPTIONAL   :: LPOS,LNEG,LNEU
+   INTEGER, INTENT(IN )::   num_light_periods
+   REAL, DIMENSION( ims:ime , 1:num_light_periods , jms:jme ),                 &
+        INTENT(IN) ::       l_obs
+   REAL, DIMENSION( ims:ime , jms:jme ),INTENT(INOUT) ::       lpi2d
+   REAL, DIMENSION( ims:ime ,kms:kme, jms:jme ),INTENT(INOUT) ::       lpi3d
+
    REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN), OPTIONAL   :: SNOWH
-   REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN)   :: XICE
 
    REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(OUT)   :: SR
 
@@ -611,7 +630,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 !
 ! Optional
 !
-   REAL, OPTIONAL, DIMENSION( ims:ime , kms:kme, jms:jme ) , INTENT(OUT) :: refl_10cm,ssat,ssati
+   REAL, OPTIONAL, DIMENSION( ims:ime , kms:kme, jms:jme ) , INTENT(OUT) :: refl_10cm
    REAL, OPTIONAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: &  ! for ntu3m
                    qdcn_curr,qtcn_curr,qccn_curr,qrcn_curr,qnin_curr,   &  ! for ntu3m
                    fi_curr,fs_curr,vi_curr,vs_curr,vg_curr,ai_curr,     &  ! for ntu3m
@@ -653,7 +672,8 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,kext_ft_qic,kext_ft_qip,kext_ft_qid &
                  ,kext_ft_qs,kext_ft_qg                           &
                  ,qnwfa_curr,qnifa_curr,qnbca_curr                & ! Added by G. Thompson
-                 ,qvolg_curr,qvolh_curr, qrimef_curr
+                 ,qvolg_curr,qvolh_curr, qrimef_curr &
+                 ,light_pe_curr,light_neu_curr,light_ne_curr
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          OPTIONAL,                                                &
@@ -689,7 +709,6 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                                                       ,GRAUPELNCV &
                                                           ,HAILNC &
                                                          ,HAILNCV &
-														 ,CLOUDNC &
                                           ,hail_maxk1, hail_max2d
                                                           
 #if ( WRF_CHEM == 1)
@@ -730,7 +749,8 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                        ,f_qvoli,f_qaoli                                      & ! for Jensen ISHMAEL
                        ,f_qvoli2,f_qaoli2                                    & ! for Jensen ISHMAEL
                        ,f_qi3,f_qni3,f_qvoli3,f_qaoli3                       & ! for Jensen ISHMAEL
-                       ,f_qnwfa, f_qnifa, f_qnbca                             ! Added by G. Thompson
+                       ,f_qnwfa, f_qnifa, f_qnbca  &                       ! Added by G. Thompson
+                       ,f_light_pe,f_light_ne,f_light_neu
 
 
    LOGICAL, OPTIONAL, INTENT(IN) :: diagflag
@@ -1031,90 +1051,6 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                 CALL wrf_error_fatal ( 'arguments not present for calling mkessler' )
              ENDIF
 #endif
-!
-!
-        CASE (RCON_MP_SCHEME)
-
-             CALL wrf_debug ( 100 , 'microphysics_driver: calling RCON' )
-             IF ( PRESENT( QV_CURR ) .AND. PRESENT ( QC_CURR )   .AND.  &
-                  PRESENT( QR_CURR ) .AND. PRESENT ( QI_CURR )   .AND.  &
-                  PRESENT( QS_CURR ) .AND. PRESENT ( QG_CURR )   .AND.  &
-                  PRESENT( QNR_CURR) .AND. PRESENT ( QNI_CURR)   .AND.  &
-                  PRESENT( QNC_CURR) .AND. PRESENT ( QNWFA_CURR) .AND.  &
-                  PRESENT( QNIFA_CURR).AND.PRESENT ( QNWFA2D)    .AND.  &
-                  PRESENT( QNIFA2D)                              .AND.  &
-                  PRESENT( SNOWNC)   .AND. PRESENT ( SNOWNCV)    .AND.  &
-                  PRESENT( GRAUPELNC).AND. PRESENT ( GRAUPELNCV) .AND.  &
-                  PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) ) THEN
-#if ( WRF_CHEM == 1 )
-                 qv_b4mp(its:ite,kts:kte,jts:jte) = qv_curr(its:ite,kts:kte,jts:jte)
-                 qc_b4mp(its:ite,kts:kte,jts:jte) = qc_curr(its:ite,kts:kte,jts:jte)
-                 qi_b4mp(its:ite,kts:kte,jts:jte) = qi_curr(its:ite,kts:kte,jts:jte)
-                 qs_b4mp(its:ite,kts:kte,jts:jte) = qs_curr(its:ite,kts:kte,jts:jte)
-#endif
-             CALL mp_rcon_driver(                          &
-                     QV=qv_curr,                         &
-                     QC=qc_curr,                         &
-                     QR=qr_curr,                         &
-                     QI=qi_curr,                         &
-                     QS=qs_curr,                         &
-                     QG=qg_curr,                         &
-                     NI=qni_curr,                        &
-                     NR=qnr_curr,                        &
-                     NC=qnc_curr,                        &
-                     NWFA=qnwfa_curr,                    &
-                     NIFA=qnifa_curr,                    &
-                     NBCA=qnbca_curr,                    &
-                     NWFA2D=qnwfa2d,                     &
-                     NIFA2D=qnifa2d,                     &
-                     NBCA2D=qnbca2d,                     &
-                     aer_init_opt=config_flags%aer_init_opt,   &
-                     wif_input_opt=config_flags%wif_input_opt, &
-                     TH=th,                              &
-                     PII=pi_phy,                         &
-                     P=p,                                &
-                     W=w,                                &
-                     DZ=dz8w,                            &
-                     DT_IN=dt,                           &
-                     ITIMESTEP=itimestep,                &
-                     RAINNC=RAINNC,                      &
-                     RAINNCV=RAINNCV,                    &
-                     CLOUDNC=CLOUDNC,                    &
-                     SNOWNC=SNOWNC,                      &
-                     SNOWNCV=SNOWNCV,                    &
-                     GRAUPELNC=GRAUPELNC,                &
-                     GRAUPELNCV=GRAUPELNCV,              &
-                     SR=SR,                              &
-#if ( WRF_CHEM == 1 )
-                     WETSCAV_ON=config_flags%wetscav_onoff == 1, &
-                     RAINPROD=rainprod,                  &
-                     EVAPPROD=evapprod,                  &
-#endif
-                     REFL_10CM=refl_10cm,                &
-                     diagflag=diagflag,                  &
-                     ke_diag = ke_diag,                  &
-                     do_radar_ref=do_radar_ref,          &
-                     re_cloud=re_cloud,                  &
-                     re_ice=re_ice,                      &
-                     re_snow=re_snow,                    &
-                     has_reqc=has_reqc,                  & 
-                     has_reqi=has_reqi,                  & 
-                     has_reqs=has_reqs,                  & 
-                 IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde, &
-                 IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme, &
-                 ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte)	
-
-
-              IF (config_flags%aer_fire_emit_opt.gt.0)  then
-                CALL wrf_debug ( 200 , ' call fire_emis_simple_plumerise' )
-                CALL fire_emis_simple_plumerise (config_flags%wif_fire_inj, config_flags%aer_fire_emit_opt  &
-                    ,z_at_mass, pblh, qnwfa_curr, qnbca_curr   &
-                    ,qnocbb2d, qnbcbb2d, dt, ids, ide, jds, jde, kds, kde                    &
-                    ,ims, ime, jms, jme, kms, kme, its, ite, jts, jte, kts, kte                       )
-              ENDIF
-             ELSE
-                CALL wrf_error_fatal ( 'arguments not present for calling rcon' )
-             ENDIF
 !
         CASE (THOMPSONAERO)
               if (pert_thom .and. multi_perturb == 1) then
@@ -2078,9 +2014,6 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      GRPLNCV  = GRAUPELNCV,              &
                      SR=SR,                              &
                      dbz      = refl_10cm,               &
-                     ssat3d   = ssat,                    &
-                     ssati    = ssati,                   &
-                     nssl_ssat_output = config_flags%nssl_ssat_output, &
 #if ( WRF_CHEM == 1 )
                     WETSCAV_ON = config_flags%wetscav_onoff == 1, &
                     EVAPPROD=evapprod,RAINPROD=rainprod, &
@@ -2659,58 +2592,6 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                CALL wrf_error_fatal ( 'arguments not present for calling wdm7')
              ENDIF
 
-        CASE (UDMSCHEME)
-             CALL wrf_debug ( 100 , 'microphysics_driver: calling udm' )
-             IF ( PRESENT( QV_CURR ) .AND. PRESENT ( QC_CURR ) .AND.  &
-                  PRESENT( QR_CURR ) .AND. PRESENT ( QI_CURR ) .AND.  &
-                  PRESENT( QS_CURR ) .AND. PRESENT ( QG_CURR ) .AND.  &
-                  PRESENT( QH_CURR ) .AND.                            &
-                  PRESENT( QNN_CURR ) .AND. PRESENT ( QNC_CURR ) .AND. &
-                  PRESENT( QNR_CURR ).AND.                            &
-                  PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV )  ) THEN
-             CALL udm(                                              &
-                  TH=th                                             &
-                 ,Q=qv_curr                                         &
-                 ,QC=qc_curr                                        &
-                 ,QR=qr_curr                                        &
-                 ,QI=qi_curr                                        &
-                 ,QS=qs_curr                                        &
-                 ,QG=qg_curr                                        &
-                 ,QH=qh_curr                                        &
-                 ,NN=qnn_curr                                       &
-                 ,NC=qnc_curr                                       &
-                 ,NR=qnr_curr                                       &
-                 ,DEN=rho,PII=pi_phy,P=p,DELZ=dz8w                  &
-                 ,DELT=dt,G=g,CPD=cp,CPV=cpv,CCN0=ccn_conc          & ! RAS
-                 ,RD=r_d,RV=r_v,T0C=svpt0                           &
-                 ,EP1=ep_1, EP2=ep_2, QMIN=epsilon                  &
-                 ,XLS=xls, XLV0=xlv, XLF0=xlf                       &
-                 ,DEN0=rhoair0, DENR=rhowater                       &
-                 ,CLIQ=cliq,CICE=cice,PSAT=psat                     &
-                 ,xland=xland, xice=xice                            &  ! land mask, 1: land, 2: water
-                 ,RAIN=rainnc ,RAINNCV=rainncv                      &
-                 ,SNOW=snownc ,SNOWNCV=snowncv                      &
-                 ,SR=sr                                             &
-                 ,REFL_10CM=refl_10cm                               &  ! added for radar reflectivity
-                 ,diagflag=diagflag                                 &  ! added for radar reflectivity
-                 ,do_radar_ref=do_radar_ref                         &  ! added for radar reflectivity
-                 ,GRAUPEL=graupelnc ,GRAUPELNCV=graupelncv          &
-                 ,HAIL=hailnc ,HAILNCV=hailncv                      &
-                 ,ITIMESTEP=itimestep                               &
-                 ,has_reqc=has_reqc                                 &  ! for radiation +
-                 ,has_reqi=has_reqi                                 &
-                 ,has_reqs=has_reqs                                 &
-                 ,re_cloud=re_cloud                                 &
-                 ,re_ice=re_ice                                     &
-                 ,re_snow=re_snow                                   &  ! for radiation -
-                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
-                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
-                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
-                                                                    )
-             ELSE
-               CALL wrf_error_fatal ( 'arguments not present for calling udm')
-             ENDIF
-
         CASE (ETAMPNEW)    !-- Operational 4-km High-Resolution Window (HRW) version
              CALL wrf_debug ( 100 , 'microphysics_driver: calling etampnew')
 
@@ -2901,7 +2782,68 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
          CALL wrf_error_fatal ( wrf_err_message )
 
       END SELECT micro_select
+#if (EM_CORE==1)
 
+            IF (  PRESENT ( QC_CURR )   .AND.  &
+                  PRESENT( QR_CURR ) .AND. PRESENT ( QI_CURR )   .AND.  &
+                  PRESENT( QS_CURR ) .AND. PRESENT ( QG_CURR ))Then
+!           print*,'config_flags%dyn_lightning_option = ',config_flags%dyn_lightning_option
+            if (config_flags%dyn_lightning_option.eq.1)then   
+            CALL   calc_lpi_new( &
+                     W=w,                              &
+                     PI_PHY=pi_phy, RHO_PHY=rho,             &
+                     TH_PHY=TH,P_PHY=p,                  &
+                     DZ8w=dz8w,                            &
+                     QC=qc_curr,                         &
+                     QR=qr_curr,                         &
+                     QI=qi_curr,                         &
+                     QS=qs_curr,                         &
+                     QG=qg_curr,                         &
+                     lpi2d = lpi2d,      &
+                     lpi3d = lpi3d      &
+                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte)
+            CALL   calc_dyn_pe(dx=dx,dy=dy, &
+                     W=w,                              &
+                     PI_PHY=pi_phy, RHO_PHY=rho,             &
+                     TH_PHY=TH,P_PHY=p,                  &
+                     DZ8w=dz8w,                            &
+                     QC=qc_curr,                         &
+                     QR=qr_curr,                         &
+                     QI=qi_curr,                         &
+                     QS=qs_curr,                         &
+                     QG=qg_curr,                         &
+                     light_pe=light_pe_curr,                         &
+                     light_ne=light_ne_curr,                         &
+                     light_neu=light_neu_curr,                         &
+                     dt=dt &
+                 ,coul_pos=config_flags%coul_pos  &
+                 ,coul_neg=config_flags%coul_neg  &
+                 ,coul_neu=config_flags%coul_neu  &
+                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte)
+             CALL   calcstroke(dx=dx,dy=dy,&
+                     W=w,                              &
+                     PI_PHY=pi_phy, RHO_PHY=rho,             &
+                     TH_PHY=TH,P_PHY=p,                  &
+                     DZ8w=dz8w,                            &
+                     light_pe=light_pe_curr,                         &
+                     light_ne=light_ne_curr,                         &
+                     light_neu=light_neu_curr,                         &
+                     lpos=lpos,lneg=lneg,lneu=lneu  &
+                 ,j_pos=config_flags%j_pos  &
+                 ,j_neg=config_flags%j_neg  &
+                 ,j_neu=config_flags%j_neu  &
+                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte)
+              END IF
+             ELSE
+                CALL wrf_error_fatal ( 'arguments not present for calling dynamic lightning scheme' )
+             ENDIF
+#endif
    ENDDO
    !$OMP END PARALLEL DO
 

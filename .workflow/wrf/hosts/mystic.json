@@ -1,0 +1,17 @@
+{
+  "hosts":
+  {
+    "mmm-mystic":
+    {
+      "default_env" : "gnu",
+      "environments":
+      {
+        "gnu": { "env_vars" : [ { "cmd" : "prepend", "var" : "PATH", "val" : "/home/aislas/dependencies/mpich/bin" } ] } 
+      },
+      "resources":
+      {
+        "cpus" : 20
+      }
+    }
+  }
+}

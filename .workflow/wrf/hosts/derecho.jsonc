@@ -1,0 +1,57 @@
+{
+  "hosts" :
+  {
+    "derecho" :
+    {
+      "type" : "PBSHost",
+      "resources" :
+      {
+        "cpu" :
+        {
+          "nodes" : 20,
+          "exclusive" : true,
+          "resources" : { "cpus" : 128, "memory" : "256gb" }
+        }
+      },
+      "local_resources" :
+      {
+        // prevent thrashing of the login nodes
+        "cpus" : 12
+      },
+      "base_env" :
+      {
+        "lmod_path" : "/glade/u/apps/derecho/24.12/spack/opt/spack/lmod/8.7.37/gcc/12.4.0/nr3e/lmod/lmod/init/env_modules_python.py",
+        "env_scripts" : [ "/etc/profile.d/z00_modules.sh" ]
+      },
+      "mapping" :
+      {
+        "ncpus" : [ "cpu", "cpus", "ncpu" ]
+      },
+      "queue" : "main",
+      "account" : "NMMM0012",
+      "config" :
+      {
+        "wrf_coop" :
+        {
+          "run_wrf_case_path" : "/glade/work/aislas/wrf-model/SCRIPTS/Namelists/weekly/",
+          "run_wrf_met_path" : "/glade/work/aislas/github/data/wrf/regtest/Data/"
+        }
+      }
+    }
+  },
+  "patches" :
+  {
+    "actions" :
+    {
+      // CMake builds
+      "[build_.*]" : { "resources" : { "derecho" : { "cpus" : 16 } } },
+      "[build_cmake.*gnu.*]" : { "resources" : { "derecho" : { "timelimit" : "00:10:00" } } },
+      "[build_cmake.*intel.*]" : { "resources" : { "derecho" : { "timelimit" : "00:20:00" } } },
+      "[build_cmake.*nvhpc.*]" : { "resources" : { "derecho" : { "timelimit" : "00:20:00" } } },
+      // Make builds
+      "[build_make.*gnu.*]" : { "resources" : { "derecho" : { "timelimit" : "00:15:00" } } },
+      "[build_make.*intel.*]" : { "resources" : { "derecho" : { "timelimit" : "00:45:00" } } },
+      "[build_make.*nvhpc.*]" : { "resources" : { "derecho" : { "timelimit" : "00:45:00" } } }
+    }
+  }
+}

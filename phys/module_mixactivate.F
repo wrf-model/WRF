@@ -3114,6 +3114,7 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
       integer :: dev_idx
       ! Host arrays (match real32 API; keep contiguous/target)
       real(real32), allocatable :: input_array(:,:), output_array(:,:)
+      real(real32) :: tmp_swap
       ! Misc
       integer :: idx
       character(len=256) :: msg
@@ -4212,6 +4213,21 @@ output_array = 0.0_real32
          do n=1,2; do m=1,2; input_array(1,idx) = hygro(m,n); idx = idx + 1; end do; end do
          idx = 1
          do n=1,2; do m=1,2; output_array(1,idx) = 0.0; idx = idx + 1; end do; end do
+
+         ! 9 <-> 10
+         tmp_swap            = input_array(9,1)
+         input_array(9,1)    = input_array(10,1)
+         input_array(10,1)   = tmp_swap
+
+         ! 5 <-> 6
+         tmp_swap            = input_array(5,1)
+         input_array(5,1)    = input_array(6,1)
+         input_array(6,1)    = tmp_swap
+
+         ! 13 <-> 14
+         tmp_swap            = input_array(13,1)
+         input_array(13,1)   = input_array(14,1)
+         input_array(14,1)   = tmp_swap
 
          ! Rank-2 shapes (features, batch)
          in_shape  = [ int(in_dim,  c_int), 1_c_int ]

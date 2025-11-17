@@ -20,84 +20,84 @@ CONTAINS
 ! 06-nov-2005 rce - grid_id & ktau added to arg list
 ! 25-apr-2006 rce - dens_aer is (g/cm3), NOT (kg/m3)
       subroutine prescribe_aerosol_mixactivate (                      &
-		grid_id, ktau, dtstep, naer,                          &
-		ccn_conc, chem_opt,                                   & ! RAS
-		rho_phy, th_phy, pi_phy, w, cldfra, cldfra_old,       &
-		z, dz8w, p_at_w, t_at_w, exch_h,                      &
+        grid_id, ktau, dtstep, naer,                          &
+        ccn_conc, chem_opt,                                   & ! RAS
+        rho_phy, th_phy, pi_phy, w, cldfra, cldfra_old,       &
+        z, dz8w, p_at_w, t_at_w, exch_h,                      &
         qv, qc, qi, qndrop3d,                                &
         nsource,                                              &
-		ids,ide, jds,jde, kds,kde,                            &
-		ims,ime, jms,jme, kms,kme,                            &
-		its,ite, jts,jte, kts,kte,                            &
-		f_qc, f_qi, cn                                        )
+        ids,ide, jds,jde, kds,kde,                            &
+        ims,ime, jms,jme, kms,kme,                            &
+        its,ite, jts,jte, kts,kte,                            &
+        f_qc, f_qi, cn                                        )
 
 !        USE module_configure
 
 ! wrapper to call mixactivate for mosaic description of aerosol
 
-	implicit none
+    implicit none
 
 !   subr arguments
-	integer, intent(in) ::                  &
-		grid_id, ktau,                  &
-		ids, ide, jds, jde, kds, kde,   &
-		ims, ime, jms, jme, kms, kme,   &
-		its, ite, jts, jte, kts, kte
+    integer, intent(in) ::                  &
+        grid_id, ktau,                  &
+        ids, ide, jds, jde, kds, kde,   &
+        ims, ime, jms, jme, kms, kme,   &
+        its, ite, jts, jte, kts, kte
 
-	real, intent(in) :: dtstep
-	real, intent(inout) :: naer ! aerosol number (/kg)
+    real, intent(in) :: dtstep
+    real, intent(inout) :: naer ! aerosol number (/kg)
         real, intent(in) :: ccn_conc ! CCN conc set within namelist
         integer, optional, intent(in) :: chem_opt
 
-	real, intent(in),   &
-		dimension( ims:ime, kms:kme, jms:jme ) :: &
-		rho_phy, th_phy, pi_phy, w,  &
-		z, dz8w, p_at_w, t_at_w, exch_h
+    real, intent(in),   &
+        dimension( ims:ime, kms:kme, jms:jme ) :: &
+        rho_phy, th_phy, pi_phy, w,  &
+        z, dz8w, p_at_w, t_at_w, exch_h
 
-	real, intent(inout),   &
-		dimension( ims:ime, kms:kme, jms:jme ) :: cldfra, cldfra_old
+    real, intent(inout),   &
+        dimension( ims:ime, kms:kme, jms:jme ) :: cldfra, cldfra_old
 
-	real, intent(in),   &
-		dimension( ims:ime, kms:kme, jms:jme ) :: &
-		qv, qc, qi
+    real, intent(in),   &
+        dimension( ims:ime, kms:kme, jms:jme ) :: &
+        qv, qc, qi
 
-	real, intent(inout), optional,  &
-		dimension( ims:ime, kms:kme, jms:jme ) :: &
-		cn ! single-size CCN concentration
+    real, intent(inout), optional,  &
+        dimension( ims:ime, kms:kme, jms:jme ) :: &
+        cn ! single-size CCN concentration
 
-	real, intent(inout),   &
-		dimension( ims:ime, kms:kme, jms:jme ) :: &
-		qndrop3d
+    real, intent(inout),   &
+        dimension( ims:ime, kms:kme, jms:jme ) :: &
+        qndrop3d
 
-	real, intent(out),   &
-		dimension( ims:ime, kms:kme, jms:jme) :: nsource
+    real, intent(out),   &
+        dimension( ims:ime, kms:kme, jms:jme) :: nsource
 
     LOGICAL, OPTIONAL :: f_qc, f_qi
 
 ! local vars
-	integer maxd_aphase, maxd_atype, maxd_asize, maxd_acomp, max_chem
-	parameter (maxd_aphase=2,maxd_atype=1,maxd_asize=1,maxd_acomp=1, max_chem=10)
-	real ddvel(its:ite, jts:jte, max_chem) ! dry deposition velosity
-	real qsrflx(ims:ime, jms:jme, max_chem) ! dry deposition flux of aerosol
-	real chem(ims:ime, kms:kme, jms:jme, max_chem) ! chem array
-	integer i,j,k,l,m,n,p
-	real hygro( its:ite, kts:kte, jts:jte, maxd_asize, maxd_atype ) ! bulk
-	integer ntype_aer, nsize_aer(maxd_atype),ncomp_aer(maxd_atype), nphase_aer
-      	integer massptr_aer( maxd_acomp, maxd_asize, maxd_atype, maxd_aphase ),   &
-      	  waterptr_aer( maxd_asize, maxd_atype ),   &
-      	  numptr_aer( maxd_asize, maxd_atype, maxd_aphase ), &
-	  ai_phase, cw_phase
+    integer maxd_aphase, maxd_atype, maxd_asize, maxd_acomp, max_chem
+    parameter (maxd_aphase=2,maxd_atype=1,maxd_asize=1,maxd_acomp=1, max_chem=10)
+    real ddvel(its:ite, jts:jte, max_chem) ! dry deposition velosity
+    real qsrflx(ims:ime, jms:jme, max_chem) ! dry deposition flux of aerosol
+    real chem(ims:ime, kms:kme, jms:jme, max_chem) ! chem array
+    integer i,j,k,l,m,n,p
+    real hygro( its:ite, kts:kte, jts:jte, maxd_asize, maxd_atype ) ! bulk
+    integer ntype_aer, nsize_aer(maxd_atype),ncomp_aer(maxd_atype), nphase_aer
+        integer massptr_aer( maxd_acomp, maxd_asize, maxd_atype, maxd_aphase ),   &
+          waterptr_aer( maxd_asize, maxd_atype ),   &
+          numptr_aer( maxd_asize, maxd_atype, maxd_aphase ), &
+      ai_phase, cw_phase
         real dlo_sect( maxd_asize, maxd_atype ),   & ! minimum size of section (cm)
              dhi_sect( maxd_asize, maxd_atype ),   & ! maximum size of section (cm)
-	     sigmag_aer(maxd_asize, maxd_atype),   & ! geometric standard deviation of aerosol size dist
-	     dgnum_aer(maxd_asize, maxd_atype),    & ! median diameter (cm) of number distrib of mode
-	     dens_aer( maxd_acomp, maxd_atype),    & ! density (g/cm3) of material
-	     mw_aer( maxd_acomp, maxd_atype),      & ! molecular weight (g/mole)
-	     dpvolmean_aer(maxd_asize, maxd_atype)   ! mean-volume diameter (cm) of mode
+         sigmag_aer(maxd_asize, maxd_atype),   & ! geometric standard deviation of aerosol size dist
+         dgnum_aer(maxd_asize, maxd_atype),    & ! median diameter (cm) of number distrib of mode
+         dens_aer( maxd_acomp, maxd_atype),    & ! density (g/cm3) of material
+         mw_aer( maxd_acomp, maxd_atype),      & ! molecular weight (g/mole)
+         dpvolmean_aer(maxd_asize, maxd_atype)   ! mean-volume diameter (cm) of mode
 ! terminology:  (pi/6) * (mean-volume diameter)**3 ==
 !       (volume mixing ratio of section/mode)/(number mixing ratio)
-	real, dimension(ims:ime,kms:kme,jms:jme) :: &
-	     ccn1,ccn2,ccn3,ccn4,ccn5,ccn6,&
+    real, dimension(ims:ime,kms:kme,jms:jme) :: &
+         ccn1,ccn2,ccn3,ccn4,ccn5,ccn6,&
            fn11,fn12,fn13,fn14,fn21,fn22,fn23,fn24,&
            fn31,fn32,fn33,fn34,fn41,fn42,fn43,fn44,&
            na11,na12,na13,na14,na21,na22,na23,na24,&
@@ -112,31 +112,31 @@ CONTAINS
            sg31,sg32,sg33,sg34,sg41,sg42,sg43,sg44,&
            hg11,hg12,hg13,hg14,hg21,hg22,hg23,hg24,&
            hg31,hg32,hg33,hg34,hg41,hg42,hg43,hg44
-	integer idrydep_onoff
-	real, dimension(ims:ime,kms:kme,jms:jme) :: t_phy
-	integer msectional
+    integer idrydep_onoff
+    real, dimension(ims:ime,kms:kme,jms:jme) :: t_phy
+    integer msectional
 
 
-	  integer ptr
-	  real maer
+      integer ptr
+      real maer
 
 !      if(naer.lt.1.)then
-!	     naer=1000.e6 ! #/kg default value
+!        naer=1000.e6 ! #/kg default value
 !      endif
       IF ( (naer.lt.1.) .OR. ( PRESENT(chem_opt) .AND. (chem_opt.eq.401))) THEN
              naer = ccn_conc !CCN value set in namelist
       ENDIF
-	  ai_phase=1
-	  cw_phase=2
-	  idrydep_onoff = 0
-	  msectional = 0
+      ai_phase=1
+      cw_phase=2
+      idrydep_onoff = 0
+      msectional = 0
 
-	  t_phy(its:ite,kts:kte,jts:jte)=th_phy(its:ite,kts:kte,jts:jte)*pi_phy(its:ite,kts:kte,jts:jte)
+      t_phy(its:ite,kts:kte,jts:jte)=th_phy(its:ite,kts:kte,jts:jte)*pi_phy(its:ite,kts:kte,jts:jte)
 
       ntype_aer=maxd_atype
       do n=1,ntype_aer
          nsize_aer(n)=maxd_asize
-	 ncomp_aer(n)=maxd_acomp
+     ncomp_aer(n)=maxd_acomp
       end do
       nphase_aer=maxd_aphase
 
@@ -145,14 +145,14 @@ CONTAINS
        do m=1,nsize_aer(n)
           dlo_sect( m,n )=0.01e-4    ! minimum size of section (cm)
           dhi_sect( m,n )=0.5e-4    ! maximum size of section (cm)
-	  sigmag_aer(m,n)=2.      ! geometric standard deviation of aerosol size dist
-	  dgnum_aer(m,n)=0.1e-4       ! median diameter (cm) of number distrib of mode
-	  dpvolmean_aer(m,n) = dgnum_aer(m,n) * exp( 1.5 * (log(sigmag_aer(m,n)))**2 )
-	  end do
-	  do l=1,ncomp_aer(n)
-	     dens_aer( l, n)=1.0   ! density (g/cm3) of material
-	     mw_aer( l, n)=132. ! molecular weight (g/mole)
-	  end do
+      sigmag_aer(m,n)=2.      ! geometric standard deviation of aerosol size dist
+      dgnum_aer(m,n)=0.1e-4       ! median diameter (cm) of number distrib of mode
+      dpvolmean_aer(m,n) = dgnum_aer(m,n) * exp( 1.5 * (log(sigmag_aer(m,n)))**2 )
+      end do
+      do l=1,ncomp_aer(n)
+         dens_aer( l, n)=1.0   ! density (g/cm3) of material
+         mw_aer( l, n)=132. ! molecular weight (g/mole)
+      end do
       end do
        ptr=0
        do p=1,nphase_aer
@@ -176,16 +176,16 @@ CONTAINS
        do p=1,maxd_aphase
        do n=1,ntype_aer
        do m=1,nsize_aer(n)
-	  do l=1,ncomp_aer(n)
+      do l=1,ncomp_aer(n)
           ptr=ptr+1
-	     if(ptr.gt.max_chem)then
-	        write(6,*)'ptr,max_chem=',ptr,max_chem,' in prescribe_aerosol_mixactivate'
-	        call wrf_error_fatal("1")
-	     endif
-	     massptr_aer(l, m, n, p)=ptr
+         if(ptr.gt.max_chem)then
+            write(6,*)'ptr,max_chem=',ptr,max_chem,' in prescribe_aerosol_mixactivate'
+            call wrf_error_fatal("1")
+         endif
+         massptr_aer(l, m, n, p)=ptr
 ! maer is ug/kg-air;  naer is #/kg-air;  dgnum is cm;  dens_aer is g/cm3
 ! 1.e6 factor converts g to ug
-	     maer= 1.0e6 * naer * dens_aer(l,n) * ( (3.1416/6.) *   &
+         maer= 1.0e6 * naer * dens_aer(l,n) * ( (3.1416/6.) *   &
                  (dgnum_aer(m,n)**3) * exp( 4.5*((log(sigmag_aer(m,n)))**2) ) )
            if(p.eq.ai_phase)then
             IF ( present( cn ) ) THEN
@@ -199,21 +199,21 @@ CONTAINS
               chem(its:ite,kts:kte,jts:jte,ptr)=0.
            endif
         end do
-	end do ! size
-	end do ! type
-	end do ! phase
+    end do ! size
+    end do ! type
+    end do ! phase
        do n=1,ntype_aer
        do m=1,nsize_aer(n)
           ptr=ptr+1
-	  if(ptr.gt.max_chem)then
-	     write(6,*)'ptr,max_chem=',ptr,max_chem,' in prescribe_aerosol_mixactivate'
-	     call wrf_error_fatal("1")
-	  endif
-!wig	  waterptr_aer(m, n)=ptr
-	  waterptr_aer(m, n)=-1
-	end do ! size
-	end do ! type
-	ddvel(its:ite,jts:jte,:)=0.
+      if(ptr.gt.max_chem)then
+         write(6,*)'ptr,max_chem=',ptr,max_chem,' in prescribe_aerosol_mixactivate'
+         call wrf_error_fatal("1")
+      endif
+!wig      waterptr_aer(m, n)=ptr
+      waterptr_aer(m, n)=-1
+    end do ! size
+    end do ! type
+    ddvel(its:ite,jts:jte,:)=0.
     hygro(its:ite,kts:kte,jts:jte,:,:) = 0.5
 
 ! 06-nov-2005 rce - grid_id & ktau added to arg list
@@ -567,15 +567,15 @@ OVERALL_MAIN_I_LOOP: do i=its,ite
 ! initialization for current i .........................................
 
      do k=kts+1,kte
-	    zs(k)=1./(zm(i,k,j)-zm(i,k-1,j))
-	 enddo
-	 zs(kts)=zs(kts+1)
+        zs(k)=1./(zm(i,k,j)-zm(i,k-1,j))
+     enddo
+     zs(kts)=zs(kts+1)
      zs(kte+1)=0.
 
      do k=kts,kte
-!!$	    if(qndrop3d(i,k,j).lt.-10.e6.or.qndrop3d(i,k,j).gt.1.E20)then
-!!$!	       call wrf_error_fatal("1")
-!!$	    endif
+!!$     if(qndrop3d(i,k,j).lt.-10.e6.or.qndrop3d(i,k,j).gt.1.E20)then
+!!$!           call wrf_error_fatal("1")
+!!$     endif
         if(f_qi)then
            qcld=qc(i,k,j)+qi(i,k,j)
         else
@@ -593,7 +593,7 @@ OVERALL_MAIN_I_LOOP: do i=its,ite
            lcldfra_old(k)=0.
         endif
         qndrop(k)=qndrop3d(i,k,j)
-!	    qndrop(k)=1.e5
+!       qndrop(k)=1.e5
         cs(k)=rho(i,k,j) ! air density (kg/m3)
         dz(k)=dz8w(i,k,j)
         do n=1,ntype_aer
@@ -3103,7 +3103,7 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
 
       ! FTorch variables
       logical :: model_loaded = .false.
-      type(torch_model)  :: ml_model
+      type(torch_model), save   :: ml_model
       type(torch_tensor) :: model_input_tensor, model_output_tensor
       type(torch_tensor) :: tin, tout, in_t(1), out_t(1)          ! arrays-of-tensors for forward()
       integer(c_int) :: in_shape(2), out_shape(2)  ! shapes for 1D arrays
@@ -4179,23 +4179,15 @@ input_array  = 0.0_real32
 output_array = 0.0_real32
 
 ! Try to load the model 
-      model_loaded = .false.
-      if (.not. model_loaded) then
+   if (.not. model_loaded) then
         ! Load model on CPU (use enum, not string)
-         write(6,*)'Load model on CPU 0'
          CALL wrf_debug(15,'Load model on CPU 00')
-         print *, 'Load model on CPU 1'
-         write(wrf_err_message,*) 'ELoad model on CPU 00'
-
          call torch_model_load( ml_model, &
             '/pscratch/sd/y/yanxia/PINN_Parcel_Model/artifacts/deployment/mlp_wrapper.pt', &
             device_type = torch_kCPU, device_index = 0 )
-
          model_loaded = .true.
-         write(wrf_err_message,*) 'ML activation model loaded successfully2'
-         write(6,*)'ML activation model loaded successfully2'
-         CALL wrf_debug(15,'ML activation model loaded successfully2')
-
+         CALL wrf_debug(15,'ML activation model loaded successfully')
+   else
          idx = 1
          input_array(1,idx) = tair;              idx = idx + 1
          input_array(1,idx) = pres/100;          idx = idx + 1
@@ -4204,30 +4196,32 @@ output_array = 0.0_real32
          do n=1,2; do m=1,2; input_array(1,idx) = na(m,n)*1e-6;    idx = idx + 1; end do; end do
          do n=1,2; do m=1,2
             if (na(m,n) > 0.0) then
-               input_array(1,idx) = real( ((volc(m,n)/(ccc*na(m,n)))**third)*1e6, kind=real32 )
+               !input_array(1,idx) = real( ((volc(m,n)/(ccc*na(m,n)))**third)*1e6, kind=real32 )
+               input_array(1,idx) = real(exp(-1.5*alnsign(m,n)*alnsign(m,n))* (3.*volc(m,n)/(4.*pi*na(m,n)))**third*1e6, kind=real32 )
             else
                input_array(1,idx) = 0.0_real32
             end if
             idx = idx + 1
          end do; end do
+
          do n=1,2; do m=1,2; input_array(1,idx) = hygro(m,n); idx = idx + 1; end do; end do
          idx = 1
          do n=1,2; do m=1,2; output_array(1,idx) = 0.0; idx = idx + 1; end do; end do
 
          ! 9 <-> 10
-         tmp_swap            = input_array(9,1)
-         input_array(9,1)    = input_array(10,1)
-         input_array(10,1)   = tmp_swap
+         tmp_swap            = input_array(1,9)
+         input_array(1,9)    = input_array(1,10)
+         input_array(1,10)   = tmp_swap
 
          ! 5 <-> 6
-         tmp_swap            = input_array(5,1)
-         input_array(5,1)    = input_array(6,1)
-         input_array(6,1)    = tmp_swap
+         tmp_swap            = input_array(1,5)
+         input_array(1,5)    = input_array(1,6)
+         input_array(1,6)    = tmp_swap
 
          ! 13 <-> 14
-         tmp_swap            = input_array(13,1)
-         input_array(13,1)   = input_array(14,1)
-         input_array(14,1)   = tmp_swap
+         tmp_swap            = input_array(1,13)
+         input_array(1,13)   = input_array(1,14)
+         input_array(1,14)   = tmp_swap
 
          ! Rank-2 shapes (features, batch)
          in_shape  = [ int(in_dim,  c_int), 1_c_int ]
@@ -4244,9 +4238,8 @@ output_array = 0.0_real32
 
          dev_idx   = int(0, kind=c_int)
          ! Input/Output tensor from host buffer (CPU) 
-         
          call torch_tensor_from_array_real32_2d_default_layout( &
-         tin,  input_array,  torch_kCPU, requires_grad=.false. )
+            tin,  input_array,  torch_kCPU, requires_grad=.false. )
 
          CALL wrf_debug(15,'tin finished')
          ! Forward expects arrays-of-tensors, even for single in/out
@@ -4286,12 +4279,12 @@ output_array = 0.0_real32
          CALL wrf_debug(15, TRIM(msg))
          WRITE(msg,*) 'input_array(16,1)=hygro', input_array(16,1)
          CALL wrf_debug(15, TRIM(msg))
-
          call torch_tensor_from_array_real32_2d_default_layout( &
-         tout, output_array, torch_kCPU, requires_grad=.false. )
-         CALL wrf_debug(15,'tout finished')
+            tout, output_array, torch_kCPU, requires_grad=.false. )
+            CALL wrf_debug(15,'tout finished')
          out_t(1) = tout
-         
+         CALL wrf_debug(15,'tout finished2')
+         CALL wrf_debug(15,'torch_model_forward start')
          call torch_model_forward(ml_model, in_t, out_t)
          CALL wrf_debug(15,'torch_model_forward finished')
          ! ---------------- print emulator outputs ----------------
@@ -4299,7 +4292,6 @@ output_array = 0.0_real32
          write(msg,'(A,I0,A,ES12.5)') 'ML output_array(1,', n, ')=', output_array(1,n)
          call wrf_debug(15, trim(msg))
          end do
-
          WRITE(msg,*) 'fn(1,1)=', fn(1,1)
          CALL wrf_debug(15, TRIM(msg))
          WRITE(msg,*) 'fn(2,1)=', fn(2,1)
@@ -4312,171 +4304,172 @@ output_array = 0.0_real32
          ! ===== Map emulator outputs -> fn(m,n) in bin order (idx = 1..out_dim) =====
          idx = 1
          do n = 1, 2
-         do m = 1, 2
-            fn(m,n) = max( 0.0, min( 1.0, real(output_array(1,idx)) ) )
-            idx = idx + 1
-         end do
+            do m = 1, 2
+               fn(m,n) = max( 0.0, min( 1.0, real(output_array(1,idx)) ) )
+               idx = idx + 1
+            end do
          end do
 
          ! ===== Recompute fs, fm consistently with the new fn =====
 
          if ( (isectional == 2) .or. (isectional == 4) ) then
-         ! ---------------- SECTIONAL branch ----------------
-         do n = 1, ntype_aer
-            do m = 1, nsize_aer(n)
+            ! ---------------- SECTIONAL branch ----------------
+            do n = 1, ntype_aer
+               do m = 1, nsize_aer(n)
 
-               if ( bin_is_empty(m,n) ) then
-               fn(m,n) = 0.0
-               fs(m,n) = 0.0
-               fm(m,n) = 0.0
-               cycle
-               end if
+                  if ( bin_is_empty(m,n) ) then
+                  fn(m,n) = 0.0
+                  fs(m,n) = 0.0
+                  fm(m,n) = 0.0
+                  cycle
+                  end if
 
-               if (fn(m,n) <= 0.0) then
-               fn(m,n) = 0.0
-               fs(m,n) = 0.0
-               fm(m,n) = 0.0
-               cycle
-               else if (fn(m,n) >= 1.0) then
-               fn(m,n) = 1.0
-               fs(m,n) = 1.0
-               fm(m,n) = 1.0
-               cycle
-               end if
+                  if (fn(m,n) <= 0.0) then
+                  fn(m,n) = 0.0
+                  fs(m,n) = 0.0
+                  fm(m,n) = 0.0
+                  cycle
+                  else if (fn(m,n) >= 1.0) then
+                  fn(m,n) = 1.0
+                  fs(m,n) = 1.0
+                  fm(m,n) = 1.0
+                  cycle
+                  end if
 
-               ! Recover phi_ml from: fn = a*(1-phi_ml) + 0.5*b*(1-phi_ml^2)
-               a1_ml = asub(m,n)
-               b1_ml = bsub(m,n)
-               AA_ml = 0.5*b1_ml
-               BB_ml = a1_ml
-               CC_ml = fn(m,n) - a1_ml - 0.5*b1_ml
+                  ! Recover phi_ml from: fn = a*(1-phi_ml) + 0.5*b*(1-phi_ml^2)
+                  a1_ml = asub(m,n)
+                  b1_ml = bsub(m,n)
+                  AA_ml = 0.5*b1_ml
+                  BB_ml = a1_ml
+                  CC_ml = fn(m,n) - a1_ml - 0.5*b1_ml
 
-               if (abs(AA_ml) < 1.0e-30) then
-               ! Degenerate: fn ≈ a*(1-phi_ml) => phi_ml ≈ 1 - fn/a
-               if (a1_ml > 1.0e-30) then
-                  phi_ml = 1.0 - fn(m,n)/a1_ml
-               else
-                  phi_ml = 1.0
-               end if
-               else
-               disc_ml = BB_ml*BB_ml - 4.0*AA_ml*CC_ml
-               if (disc_ml < 0.0) disc_ml = 0.0
-               phi1_ml = (-BB_ml + sqrt(disc_ml)) / (2.0*AA_ml)
-               phi2_ml = (-BB_ml - sqrt(disc_ml)) / (2.0*AA_ml)
-               phi_ml  = 0.5
-               if ( (phi1_ml >= 0.0) .and. (phi1_ml <= 1.0) ) then
-                  phi_ml = phi1_ml
-               else if ( (phi2_ml >= 0.0) .and. (phi2_ml <= 1.0) ) then
-                  phi_ml = phi2_ml
-               end if
-               end if
-               if (phi_ml < 0.0) phi_ml = 0.0
-               if (phi_ml > 1.0) phi_ml = 1.0
+                  if (abs(AA_ml) < 1.0e-30) then
+                  ! Degenerate: fn ≈ a*(1-phi_ml) => phi_ml ≈ 1 - fn/a
+                  if (a1_ml > 1.0e-30) then
+                     phi_ml = 1.0 - fn(m,n)/a1_ml
+                  else
+                     phi_ml = 1.0
+                  end if
+                  else
+                  disc_ml = BB_ml*BB_ml - 4.0*AA_ml*CC_ml
+                  if (disc_ml < 0.0) disc_ml = 0.0
+                  phi1_ml = (-BB_ml + sqrt(disc_ml)) / (2.0*AA_ml)
+                  phi2_ml = (-BB_ml - sqrt(disc_ml)) / (2.0*AA_ml)
+                  phi_ml  = 0.5
+                  if ( (phi1_ml >= 0.0) .and. (phi1_ml <= 1.0) ) then
+                     phi_ml = phi1_ml
+                  else if ( (phi2_ml >= 0.0) .and. (phi2_ml <= 1.0) ) then
+                     phi_ml = phi2_ml
+                  end if
+                  end if
+                  if (phi_ml < 0.0) phi_ml = 0.0
+                  if (phi_ml > 1.0) phi_ml = 1.0
 
-               ! Recompute fm (mass fraction)
-               phiyy_ml = phi_ml
-               fm(m,n) = ( yhi(m,n)/ymean(m,n) ) * ( 0.5*asub(m,n)*(1.0 - phiyy_ml*phiyy_ml) + &
-                                                   third*bsub(m,n)*(1.0 - phiyy_ml*phiyy_ml*phiyy_ml) )
+                  ! Recompute fm (mass fraction)
+                  phiyy_ml = phi_ml
+                  fm(m,n) = ( yhi(m,n)/ymean(m,n) ) * ( 0.5*asub(m,n)*(1.0 - phiyy_ml*phiyy_ml) + &
+                                                      third*bsub(m,n)*(1.0 - phiyy_ml*phiyy_ml*phiyy_ml) )
 
-               if (fm(m,n) < fn(m,n)) fm(m,n) = fn(m,n)
-               if (fm(m,n) > 1.0)     fm(m,n) = 1.0
+                  if (fm(m,n) < fn(m,n)) fm(m,n) = fn(m,n)
+                  if (fm(m,n) > 1.0)     fm(m,n) = 1.0
 
-               dumaa_fm_ml = fn(m,n)*( yhi(m,n)/ymean(m,n) )
-               if (fm(m,n) > dumaa_fm_ml) fm(m,n) = dumaa_fm_ml
-               dumaa_fm_ml = 1.0 + (fn(m,n)-1.0)*( ylo(m,n)/ymean(m,n) )
-               if (fm(m,n) > dumaa_fm_ml) fm(m,n) = dumaa_fm_ml
+                  dumaa_fm_ml = fn(m,n)*( yhi(m,n)/ymean(m,n) )
+                  if (fm(m,n) > dumaa_fm_ml) fm(m,n) = dumaa_fm_ml
+                  dumaa_fm_ml = 1.0 + (fn(m,n)-1.0)*( ylo(m,n)/ymean(m,n) )
+                  if (fm(m,n) > dumaa_fm_ml) fm(m,n) = dumaa_fm_ml
 
-               ! Recompute fs (surface fraction) 
-               betayy_ml  = ylo(m,n)/yhi(m,n)
-               dumaa_fs_ml = phiyy_ml**twothird
-               dumbb_fs_ml = betayy_ml**twothird
+                  ! Recompute fs (surface fraction) 
+                  betayy_ml  = ylo(m,n)/yhi(m,n)
+                  dumaa_fs_ml = phiyy_ml**twothird
+                  dumbb_fs_ml = betayy_ml**twothird
 
-               fs(m,n) = ( asub(m,n)*(1.0 - phiyy_ml*dumaa_fs_ml) + 0.625*bsub(m,n)*(1.0 - phiyy_ml*phiyy_ml*dumaa_fs_ml) ) / &
-                        ( asub(m,n)*(1.0 - betayy_ml*dumbb_fs_ml) + 0.625*bsub(m,n)*(1.0 - betayy_ml*betayy_ml*dumbb_fs_ml) )
+                  fs(m,n) = ( asub(m,n)*(1.0 - phiyy_ml*dumaa_fs_ml) + 0.625*bsub(m,n)*(1.0 - phiyy_ml*phiyy_ml*dumaa_fs_ml) ) / &
+                           ( asub(m,n)*(1.0 - betayy_ml*dumbb_fs_ml) + 0.625*bsub(m,n)*(1.0 - betayy_ml*betayy_ml*dumbb_fs_ml) )
 
-               if (fs(m,n) < fn(m,n)) fs(m,n) = fn(m,n)
-               if (fs(m,n) > fm(m,n)) fs(m,n) = fm(m,n)
+                  if (fs(m,n) < fn(m,n)) fs(m,n) = fn(m,n)
+                  if (fs(m,n) > fm(m,n)) fs(m,n) = fm(m,n)
 
+               end do
             end do
-         end do
 
          else
-         ! ---------------- MODAL branch ----------------
-         ! Invert fn = 0.5*(1 - erf(x)) via a few Newton steps on erf(x) = 1 - 2*fn
-         do n = 1, ntype_aer
-            do m = 1, nsize_aer(n)
+            ! ---------------- MODAL branch ----------------
+            ! Invert fn = 0.5*(1 - erf(x)) via a few Newton steps on erf(x) = 1 - 2*fn
+            do n = 1, ntype_aer
+               do m = 1, nsize_aer(n)
 
-               if ( bin_is_empty(m,n) ) then
-               fn(m,n) = 0.0
-               fs(m,n) = 0.0
-               fm(m,n) = 0.0
-               cycle
-               end if
+                  if ( bin_is_empty(m,n) ) then
+                  fn(m,n) = 0.0
+                  fs(m,n) = 0.0
+                  fm(m,n) = 0.0
+                  cycle
+                  end if
 
-               if (fn(m,n) <= 0.0) then
-               fn(m,n) = 0.0
-               fs(m,n) = 0.0
-               fm(m,n) = 0.0
-               cycle
-               else if (fn(m,n) >= 1.0) then
-               fn(m,n) = 1.0
-               fs(m,n) = 1.0
-               fm(m,n) = 1.0
-               cycle
-               end if
+                  if (fn(m,n) <= 0.0) then
+                  fn(m,n) = 0.0
+                  fs(m,n) = 0.0
+                  fm(m,n) = 0.0
+                  cycle
+                  else if (fn(m,n) >= 1.0) then
+                  fn(m,n) = 1.0
+                  fs(m,n) = 1.0
+                  fm(m,n) = 1.0
+                  cycle
+                  end if
 
-               rhs_ml = 1.0 - 2.0*fn(m,n)
+                  rhs_ml = 1.0 - 2.0*fn(m,n)
 
-               ! Winitzki-style initial guess for erfinv(rhs_ml)
-               if (rhs_ml >= 0.0) then
-               x = 1.0
-               else
-               x = -1.0
-               end if
-               ! A ~ 0.147 (constant in the approximation)
-               x = x * sqrt( sqrt( ( (2.0/(pi*0.147)) + 0.5*log(1.0 - rhs_ml*rhs_ml) )**2 - &
-                                    log(1.0 - rhs_ml*rhs_ml)/0.147 ) - &
-                           ( (2.0/(pi*0.147)) + 0.5*log(1.0 - rhs_ml*rhs_ml) ) )
+                  ! Winitzki-style initial guess for erfinv(rhs_ml)
+                  if (rhs_ml >= 0.0) then
+                  x = 1.0
+                  else
+                  x = -1.0
+                  end if
+                  ! A ~ 0.147 (constant in the approximation)
+                  x = x * sqrt( sqrt( ( (2.0/(pi*0.147)) + 0.5*log(1.0 - rhs_ml*rhs_ml) )**2 - &
+                                       log(1.0 - rhs_ml*rhs_ml)/0.147 ) - &
+                              ( (2.0/(pi*0.147)) + 0.5*log(1.0 - rhs_ml*rhs_ml) ) )
 
-               do it_ml = 1, 4
-               fval_ml  = erf(x) - rhs_ml
-               dfval_ml = 2.0/sqrt(pi) * exp( -x*x )
-               x     = x - fval_ml/dfval_ml
+                  do it_ml = 1, 4
+                  fval_ml  = erf(x) - rhs_ml
+                  dfval_ml = 2.0/sqrt(pi) * exp( -x*x )
+                  x     = x - fval_ml/dfval_ml
+                  end do
+
+                  sigma_ml  = alnsign(m,n)
+                  fs(m,n) = 0.5 * ( 1.0 - erf( x - sqrt(2.0) * sigma_ml ) )
+                  fm(m,n) = 0.5 * ( 1.0 - erf( x - 1.5*sqrt(2.0) * sigma_ml ) )
+
+                  if (fs(m,n) < fn(m,n)) fs(m,n) = fn(m,n)
+                  if (fm(m,n) < fs(m,n)) fm(m,n) = fs(m,n)
+                  if (fm(m,n) > 1.0)     fm(m,n) = 1.0
+
                end do
-
-               sigma_ml  = alnsign(m,n)
-               fs(m,n) = 0.5 * ( 1.0 - erf( x - sqrt(2.0) * sigma_ml ) )
-               fm(m,n) = 0.5 * ( 1.0 - erf( x - 1.5*sqrt(2.0) * sigma_ml ) )
-
-               if (fs(m,n) < fn(m,n)) fs(m,n) = fn(m,n)
-               if (fm(m,n) < fs(m,n)) fm(m,n) = fs(m,n)
-               if (fm(m,n) > 1.0)     fm(m,n) = 1.0
-
             end do
-         end do
          end if
 
          ! ===== Refresh fluxes with the new fractions =====
          if ( (top .and. wbar < 0.0) .or. ( (.not. top) .and. wbar > 0.0 ) ) then
-         do n = 1, ntype_aer
-            do m = 1, nsize_aer(n)
-               fluxn(m,n) = fn(m,n) * wbar
-               fluxs(m,n) = fs(m,n) * wbar
-               fluxm(m,n) = fm(m,n) * wbar
+            do n = 1, ntype_aer
+               do m = 1, nsize_aer(n)
+                  fluxn(m,n) = fn(m,n) * wbar
+                  fluxs(m,n) = fs(m,n) * wbar
+                  fluxm(m,n) = fm(m,n) * wbar
+               end do
             end do
-         end do
-         flux_fullact = wbar
-         else
-         do n = 1, ntype_aer
-            do m = 1, nsize_aer(n)
-               fluxn(m,n) = 0.0
-               fluxs(m,n) = 0.0
-               fluxm(m,n) = 0.0
+            flux_fullact = wbar
+            else
+            do n = 1, ntype_aer
+               do m = 1, nsize_aer(n)
+                  fluxn(m,n) = 0.0
+                  fluxs(m,n) = 0.0
+                  fluxm(m,n) = 0.0
+               end do
             end do
-         end do
-         flux_fullact = 0.0
+            flux_fullact = 0.0
          end if
-      end if
+   end if
+
 ! Liran add ML end ====================================
 
       return

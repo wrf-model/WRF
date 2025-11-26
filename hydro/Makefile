@@ -1,6 +1,7 @@
-# Makefile 
+# Makefile
 #
-CMD = Run/wrf_hydro.exe
+CMD = Run/wrf_hydro
+.PHONY: $(CMD)
 
 all: $(CMD)
 
@@ -8,7 +9,7 @@ $(CMD):
 	@if [ ! -d "Run" ]; then \
 		(mkdir Run);\
 	fi
-	(rm -f Run/wrf_hydro.exe   )
+	(rm -f Run/wrf_hydro   )
 	(make -f Makefile.comm BASIC)
 	@if [ -d "LandModel_cpl" ]; then \
 	(cd LandModel_cpl; make) \
@@ -24,16 +25,16 @@ $(CMD):
 	(cd LandModel; make ) \
 	fi
 
-debug:: 
-	@echo 'F90FLAGS := $$(DEBUGFLAGS) $$(F90FLAGS)' >> ./macros 
+debug::
+	@echo 'F90FLAGS := $$(DEBUGFLAGS) $$(F90FLAGS)' >> ./macros
 	@echo 'F90FLAGS := $$(DEBUGFLAGS) $$(F90FLAGS)' >> ./LandModel/user_build_options
 debug:: $(CMD)
 
 install:
-	-rm -f ./Run/wrf_hydro.exe; \
-	mv LandModel/run/hrldas.exe  ./Run/wrf_hydro.exe
+	-rm -f ./Run/wrf_hydro
+	mv LandModel/run/hrldas.exe  ./Run/wrf_hydro
 test:
-	@echo "No libraries or utilities are built, skip testing." 
+	@echo "No libraries or utilities are built, skip testing."
 clean:
 	@if [ -d "LandModel_cpl" ]; then \
 	(cd LandModel_cpl; make clean) \
@@ -42,7 +43,7 @@ clean:
 	@if [ -d "LandModel" ]; then \
 	(cd LandModel; make clean) \
 	fi
-	if [ $(WRF_HYDRO_RAPID) -eq 1 ]; then \
-		(cd Rapid_routing; make -f makefile.cpl clean); \
+	@if [ "$(WRF_HYDRO_RAPID)" = "1" ]; then \
+	(cd Rapid_routing; make -f makefile.cpl clean); \
 	fi
-	(rm -f */*.mod */*.o lib/*.a Run/wrf_hydro.exe)
+	(rm -f */*.mod */*.o lib/*.a Run/wrf_hydro)

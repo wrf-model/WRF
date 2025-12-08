@@ -17,7 +17,7 @@ def add_build_for_envs_cmake( orch ):
       id = f"{core}_{case}_{env}_{build_type}{sm_desc}{dm_desc}".lower()
 
       action = sane.Action( f"build_cmake_{id}" )
-      action.config["command"]     = ".workflow/wrf/scripts/buildCMake.sh"
+      action.config["command"]     = ".sane/wrf/scripts/buildCMake.sh"
       action.config["compiler"]    = env2opt[envs.index(env)]
       action.config["build_dir"]   = "_${{ id }}"
       action.config["install_dir"] = "install_${{ id }}"
@@ -53,7 +53,7 @@ def add_build_for_envs_make( orch ):
   # Assumes x86
   env2opt = [ 32, 13, 76, 52 ]
 
-  par_opt = { "serial" : 0, "smpar" : 1, "dmpar" : 2, "dm+sm" : 3 }
+  par_opt = { "serial" : 0, "smpar" : 1, "dmpar" : 2, "dm_sm" : 3 }
   debug = [ True, False ]
   targets = [ "em_real", "em_fire", "em_b_wave" ]
   orch.log( f"Creating Make build permutations..." ) 
@@ -62,7 +62,7 @@ def add_build_for_envs_make( orch ):
     id = f"{target}_{env}_{build_type}_{opt}".lower()
 
     action = sane.Action( f"build_make_{id}" )
-    action.config["command"]     = ".workflow/wrf/scripts/buildMake.sh"
+    action.config["command"]     = ".sane/wrf/scripts/buildMake.sh"
     action.config["compile_opt"] = env2opt[envs.index(env)] + par_opt[opt]
     action.config["build_dir"]   = "_${{ id }}"
     action.config["target"]      = target

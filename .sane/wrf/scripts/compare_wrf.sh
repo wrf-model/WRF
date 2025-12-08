@@ -4,6 +4,12 @@ original=$2
 shift
 shift
 folders=$*
+
+# For make builds that rely on modifying LD_LIBRARY_PATH
+if [ -n "$NETCDF" ] && [ $( ldd $diff_exec | grep "not found" -c ) -gt 0 ]; then
+  export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$NETCDF/lib/:$NETCDF/lib64
+fi
+
 echo "Comparing outputs stored in $original to $folders"
 
 errorMsg=""

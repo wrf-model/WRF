@@ -81,7 +81,7 @@ class WRFBase( sane.Action ):
       self.log( f"Adding MPI command to arguments for wrf  : '{self.mpi_cmd}'" )
       self.config["arguments"].extend( [ "-p", self.mpi_cmd ] )
     if self.use_omp:
-      self.log( f"Adding OMPTHREADS count to arguments : '{self.omp_threads}'" )
+      self.log( f"Adding OMP_NUM_THREADS count to arguments : '{self.omp_threads}'" )
       self.config["arguments"].extend( [ "-o", self.omp_threads ] )
 
     if self.use_mpi and self.use_omp:
@@ -460,7 +460,7 @@ class RunWRF( WRFBase ):
 #       self.config["arguments"].extend( [ "-q", self.mpi_cmd_init ] )
 #       self.config["arguments"].extend( [ "-p", self.mpi_cmd_wrf ] )
 #     if self.use_omp:
-#       self.log( f"Adding OMPTHREADS count to arguments : '{self.omp_threads}'" )
+#       self.log( f"Adding OMP_NUM_THREADS count to arguments : '{self.omp_threads}'" )
 #       self.config["arguments"].extend( [ "-o", self.omp_threads ] )
 
 #     if self.use_mpi and self.use_omp:

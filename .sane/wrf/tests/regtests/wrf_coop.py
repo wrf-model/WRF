@@ -192,6 +192,8 @@ def wrf_coop_reg_tests( orch ):
 
       # Create the initial conditions for this nml
       init_wrf = run_wrf.InitWRF( f"{wrf_case}_{nml_case}_init" )
+      init_wrf.omp_threads = 1
+      init_wrf.use_omp     = True
 
       # Create the config dict to set the parameters for this init wrf
       cfg = dict_update( copy.deepcopy( base_cfg ), copy.deepcopy( default_init ) )
@@ -250,6 +252,7 @@ def wrf_coop_reg_tests( orch ):
         # Not very intesive
         action.local = True
         action.add_dependencies( *[ f"{wrf_case}_{nml_case}_{comp}" for comp in case_dict["compare"] ], build )
+        action.add_resource_requirements( { "cpus" : 1 } )
         orch.add_action( action )
     # Now add one final action that allows us to run this full case
     action = sane.Action( f"{wrf_case}" )

@@ -10,6 +10,14 @@ if [ -n "$NETCDF" ] && [ $( ldd $diff_exec | grep "not found" -c ) -gt 0 ]; then
   export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$NETCDF/lib/:$NETCDF/lib64
 fi
 
+# Make sure OMP doesn't do multiple comparisons
+export OMP_NUM_THREADS=1
+
+# Go to a temp directory to make sure any comparison files generated are
+# just for this file
+comp_dir=$( mktemp -d tmp_comp.XXXXXXXX )
+cd $comp_dir
+
 echo "Comparing outputs stored in $original to $folders"
 
 errorMsg=""
@@ -19,11 +27,15 @@ for folder in $folders; do
   echo ""
   echo "Checking $folder..."
   for io_type in input out; do
+    echo ""
+    echo ""
     echo "Checking $io_type..."
     for dom in d01 d02 d03; do
       if [ -e $original/wrf${io_type}_${dom}* ]; then
         echo ""
         echo "Checking $dom..."
+        rm -f fort.98 fort.88
+
         if [ ! -e $folder/wrf${io_type}_${dom}* ]; then
           # Domain does not exist in our current run but in the provided folder, that should not happen -FAIL!
           currentErrorMsg="Domain $( ls $original/wrf${io_type}_${dom}* ) file $dom exists in $original but not in $folder, cannot compare results"
@@ -64,6 +76,9 @@ for folder in $folders; do
     done
   done
 done
+
+cd -
+rm $comp_dir
 
 if [ -z "$errorMsg" ]; then
   echo "All comparisons equal"

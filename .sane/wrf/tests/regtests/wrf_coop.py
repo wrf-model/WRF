@@ -185,6 +185,7 @@ def wrf_coop_reg_tests( orch ):
       nml = f"namelist.input.{nml_case}"
       base_cfg = copy.deepcopy( default )
       base_cfg["wrf_nml"]            = nml
+      base_cfg["config"]             = {}
       base_cfg["config"]["case"]     = wrf_case
       base_cfg["config"]["target"]   = case_dict["target"]
       base_cfg["config"]["build"]    = build
@@ -195,6 +196,7 @@ def wrf_coop_reg_tests( orch ):
       # Create the config dict to set the parameters for this init wrf
       cfg = dict_update( copy.deepcopy( base_cfg ), copy.deepcopy( default_init ) )
       cfg = dict_update( cfg, copy.deepcopy( default_par_opt["serial"] ) )
+      cfg["config"]["par_opt"] = "SERIAL"
 
       init_wrf.add_dependencies( cfg["config"]["build"] )
       init_wrf.load_config( cfg )
@@ -212,15 +214,17 @@ def wrf_coop_reg_tests( orch ):
         specifics = { c : general_cfg.pop( c, {} ) for c in case_dict["compare"] }
 
         # Create the config dict
-        cfg = dict_update( copy.deepcopy( base_cfg ), copy.deepcopy( default_par_opt[comp]) )
+        cfg = dict_update( copy.deepcopy( base_cfg ), copy.deepcopy( default_run ) )
+        cfg = dict_update( cfg, copy.deepcopy( default_par_opt[comp]) )
         cfg = dict_update( dict_update( cfg, general_cfg ), specifics[comp] )
+        cfg["config"]["par_opt"] = comp.upper()
 
         # Force psuedo-serial operation
         action.use_mpi = True
         action.use_omp = True
         if comp == "mpi":
           action.omp_threads = 1
-        elif comp == "omp":
+        elif comp == "openmp":
           action.mpi_ranks   = 1
         else:
           action.mpi_ranks   = 1
@@ -228,8 +232,7 @@ def wrf_coop_reg_tests( orch ):
 
         # Capture output data
         action.outputs["data"]      = cfg["wrf_run_dir"]
-        action.add_dependencies( cfg["config"]["build"] )
-
+        action.add_dependencies( cfg["config"]["build"], init_wrf.id )
         action.load_config( cfg )
         orch.add_action( action )
 

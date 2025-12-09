@@ -78,8 +78,8 @@ class WRFBase( sane.Action ):
     self.wrf_nml = self.dereference( self.wrf_nml )
 
     if self.use_mpi:
-      self.log( f"Adding MPI command to arguments for wrf  : '{self.mpi_cmd_wrf}'" )
-      self.config["arguments"].extend( [ "-p", self.mpi_cmd_wrf ] )
+      self.log( f"Adding MPI command to arguments for wrf  : '{self.mpi_cmd}'" )
+      self.config["arguments"].extend( [ "-p", self.mpi_cmd ] )
     if self.use_omp:
       self.log( f"Adding OMPTHREADS count to arguments : '{self.omp_threads}'" )
       self.config["arguments"].extend( [ "-o", self.omp_threads ] )
@@ -99,7 +99,6 @@ class WRFBase( sane.Action ):
     full_case_path = self.resolve_path_exists( os.path.join( self.wrf_case_path, self.wrf_case ) )
 
     # build location exists
-    self.log( self.dependencies )
     self.wrf_dir = self.dereference( self.wrf_dir )
     self.wrf_dir = self.resolve_path_exists( self.wrf_dir )
 
@@ -108,8 +107,9 @@ class WRFBase( sane.Action ):
 
     if self.modify_environ:
       self.log( "Adding to LD_LIBRARY_PATH..." )
-      os.environ["LD_LIBRARY_PATH"] += f':{os.environ["NETCDF"]}/lib'
-      os.environ["LD_LIBRARY_PATH"] += f':{os.environ["NETCDF"]}/lib64'
+      ld_lib  = os.environ.get( "LD_LIBRARY_PATH", "" )
+      ld_lib += f':{os.environ["NETCDF"]}/lib:{os.environ["NETCDF"]}/lib64'
+      os.environ["LD_LIBRARY_PATH"] = ld_lib
 
     self.pop_logscope()
 
@@ -190,19 +190,15 @@ class InitWRF( WRFBase ):
 class RunWRF( WRFBase ):
   def __init__( self, id ):
     super().__init__( id )
+    self.wrf_exec       = "wrf.exe"
+
     # Override directly or inherit from InitWRF
     self.wrf_case       = None
     self.wrf_case_path  = None
     self.wrf_dir        = None
     self.wrf_run_dir    = None
     self.modify_environ = None
-    self.wrf_exec       = None
     self.wrf_nml        = None
-    self.mpi_cmd        = None
-    self.use_mpi        = None
-    self.use_omp        = None
-    self.mpi_ranks      = None
-    self.omp_threads    = None
 
     # Should we setup the dir again
     self._create_run_dir = True
@@ -225,13 +221,7 @@ class RunWRF( WRFBase ):
                 "wrf_dir",
                 "wrf_run_dir",
                 "modify_environ",
-                "wrf_exec",
-                "wrf_nml",
-                "mpi_cmd",
-                "use_mpi",
-                "use_omp",
-                "mpi_ranks",
-                "omp_threads"
+                "wrf_nml"
                 ]
       inherit = []
       for attr in attrs:

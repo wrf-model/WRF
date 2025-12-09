@@ -4,7 +4,7 @@ help()
   echo "./run_wrf.sh [options]"
   echo "  -f <folder>               Folder to run wrf in, assuming everything is setup there already"
   echo "  -r <exec>                 WRF executable for WRF, default is wrf.exe"
-  echo "  -o <n>                    OMPTHREADS setting for sm/openmp usage"
+  echo "  -o <n>                    OMP_NUM_THREADS setting for sm/openmp usage"
   echo "  -p <mpirun cmd>           Parallel launch command (MPI) for executable, e.g. mpirun, mpiexec_mpt, mpiexec -np 8 --oversubscribe"
   echo "if provided, these override the namelist inside the run folder"
   echo "  -n <file>                 Namelist to run for wrf inside run folder, otherwise namelist.input"
@@ -78,7 +78,8 @@ if [ ! -x "${wrf_exec}" ]; then
 fi
 
 if [ ! -z "${ompthreads}" ]; then
-  export OMPTHREADS=$ompthreads
+  echo "Setting OMP_NUM_THREADS=$ompthreads"
+  export OMP_NUM_THREADS=$ompthreads
 fi
 
 ################################################################################
@@ -98,13 +99,17 @@ echo "Running $mpi_cmd $wrf_exec"
 
 eval "$mpi_cmd $wrf_exec" &
 wrf_pid=$!
-sleep 5 # sleep to let the file be made, as -F is not a standard option on tail
 
 if [ -n "$mpi_cmd" ]; then
-  if [ $( ls ./rsl.out.* 2>/dev/null | wc -l ) -ne 0 ]; then
-    # Output the rsl. output
-    tail -f $( ls ./rsl.out.* | sort | head -n 1 ) --pid $wrf_pid -n 9999
-  fi
+  until [ $( ls ./rsl.out.* 2>/dev/null | wc -l ) -ne 0 ]; do
+    sleep 1
+    # check if the process is done or failed
+    if ! kill -0 $wrf_pid >/dev/null 2>&1; then
+      break
+    fi
+  done
+  # Output the rsl. output
+  tail -f $( ls ./rsl.out.* | sort | head -n 1 ) --pid $wrf_pid -n 9999
 fi
 
 # Get exit status

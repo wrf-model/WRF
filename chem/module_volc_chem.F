@@ -1,7 +1,12 @@
 ! 17 Oct. 2024. A. Ukhov (KAUST). Oxidation of SO2 into Sulf using OH and H2O2
 ! based on module_gocart_chem.
-! 13 Dec. 2025. A. Ukhov (KAUST). Contribution of volcanic Sulf and ash into PM2.5 and PM10
+! 13 Dec. 2024. A. Ukhov (KAUST). Contribution of volcanic Sulf and ash into PM2.5 and PM10
 
+! More details in:
+! A. Ukhov, G. Stenchikov, J. Schnell, R. Ahmadov, U. Rizza, G. Grell, and I. Hoteit. 
+! Enhancing volcanic eruption simulations with the wrf-chem v4.8.
+! Geoscientific Model Development, 18(23):9805–9825, 2025. doi: 10.5194/
+! gmd-18-9805-2025. URL https://gmd.copernicus.org/articles/18/9805/2025/.
 
 MODULE MODULE_VOLC_CHEM
 

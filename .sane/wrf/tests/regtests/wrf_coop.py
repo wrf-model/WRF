@@ -7,11 +7,13 @@ import wrf.custom_actions.run_wrf as run_wrf
 
 @sane.register
 def wrf_coop_reg_tests( orch ):
+  # init and run are based off of this default
   default = {
               "wrf_run_dir"   : "regtests/output/${{ id }}",
               "environment" : "gnu",
               "modify_environ" : True,
             }
+  # init settings, most of which are inherited to run
   default_init = {
                   "wrf_case"      : "${{ config.case }}/${{ config.par_opt }}",
                   "wrf_case_path" : "${{ host_info.config.wrf_coop.run_wrf_case_path }}",
@@ -24,15 +26,33 @@ def wrf_coop_reg_tests( orch ):
                     "wrf_dir" : "${{ config.target }}"
                   }
                  }
+  # run settings
   default_run = {
                   "resources" : { "cpus" : 8 },
                 }
+  # override cummulative settings based on run mode
   default_par_opt = {
                      "serial" : { "resources" : { "timelimit" : "00:20:00", "cpus" : 1 } },
                      "openmp" : { "resources" : { "timelimit" : "00:20:00" } },
                      "mpi"    : { "resources" : { "timelimit" : "00:10:00" } },
                     }
+
+  ##############################################################################
+  ## Test cases
+  ##
+  ## These test cases are laid out to mirror the structure of the original
+  ## WRF Coop testing layout. The root node is the primary test case that
+  ## determines the parent namelist case folder. Under this dictionary
+  ## a list of comparisons, target wrf/test/ folder and set of namelist to test
+  ## are provided. The comparisons are used to determine run parameters as well
+  ## as the sub-folder in the parent namelist case folder. The most notable
+  ## customization here is that the "nml_cases" keys note the namelist.<suffix>
+  ## while the dict value provides config overrides beyond the aggregated
+  ## defaults. These dicts *can* also hold sub-dicts matching the "compare" list
+  ## to provide comparison-specific overrides for that specific namelist.
+  ##############################################################################
   wrf_cases = {
+    # Most of these need BUILD_RRTMG_FAST=1 and BUILD_RRTMK=1
     "em_real" :
     {
       "compare" : ["serial", "mpi", "openmp"],
@@ -51,7 +71,7 @@ def wrf_coop_reg_tests( orch ):
       "target"  : "em_real",
       "nml_cases" :
       {
-        "03"   : { },  # needs BUILD_RRTMG_FAST and BUILD_RRTMK
+        "03"   : { },
         "03DF" : { }
       }
     },
@@ -95,7 +115,7 @@ def wrf_coop_reg_tests( orch ):
       "target"  : "em_real",
       "nml_cases" :
       {
-        "52DF" : { }  # needs BUILD_RRTMG_FAST and BUILD_RRTMK
+        "52DF" : { }
       }
     },
     "em_realF" :
@@ -175,6 +195,23 @@ def wrf_coop_reg_tests( orch ):
     }
   }
 
+  ##############################################################################
+  ## Create the Actions
+  ##
+  ## for each case:
+  ##   for each the namelist that will be tested:
+  ##     create an InitWRF action that will create the initial conditions for
+  ##     this namelist only once
+  ##
+  ##     for each comparison type:
+  ##       create a RunWRF with a dependency to the above InitWRF
+  ##
+  ##     if multiple comparisons:
+  ##       create a comparison sane.Action dependent on all RunWRF for this nml
+  ##
+  ##     create a final sync sane.Action that does nothing but is dependent on
+  ##     the comparison sane.Action or all the RunWRF if the comparison DNE
+  ##############################################################################
   for wrf_case, case_dict in wrf_cases.items():
     # Loop over all the base and A-L cases
     build = f"build_make_{case_dict['target']}_gnu_debug_dm_sm"
@@ -265,8 +302,3 @@ def wrf_coop_reg_tests( orch ):
     else:
       action.add_dependencies( *[ f"{wrf_case}_{nml_case}_{comp}" for comp in case_dict["compare"] for nml_case in case_dict["nml_cases"] ] )
     orch.add_action( action )
-
-
-
-
-

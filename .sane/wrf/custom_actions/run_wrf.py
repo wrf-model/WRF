@@ -39,24 +39,24 @@ class WRFBase( sane.Action ):
     self.outputs["mpi_ranks"]      = "${{ mpi_ranks }}"
     self.outputs["omp_threads"]    = "${{ omp_threads }}"
 
-  def load_extra_config( self, config, origin ):
-    self.wrf_case       = config.pop( "wrf_case", None )
-    self.wrf_case_path  = config.pop( "wrf_case_path", self.wrf_case_path )
-    self.wrf_run_dir    = config.pop( "wrf_run_dir", self.wrf_run_dir )
-    self.wrf_dir        = config.pop( "wrf_dir", self.wrf_dir )
+  def load_extra_options( self, options, origin ):
+    self.wrf_case       = options.pop( "wrf_case", None )
+    self.wrf_case_path  = options.pop( "wrf_case_path", self.wrf_case_path )
+    self.wrf_run_dir    = options.pop( "wrf_run_dir", self.wrf_run_dir )
+    self.wrf_dir        = options.pop( "wrf_dir", self.wrf_dir )
 
     # Do not check for execs existing yet as those may be created by other actions
-    self.wrf_exec       = config.pop( "wrf_exec", self.wrf_exec )
-    self.wrf_nml        = config.pop( "wrf_nml", self.wrf_nml )
+    self.wrf_exec       = options.pop( "wrf_exec", self.wrf_exec )
+    self.wrf_nml        = options.pop( "wrf_nml", self.wrf_nml )
 
-    self.mpi_cmd        = config.pop( "mpi_cmd",      self.mpi_cmd )
-    self.use_mpi        = config.pop( "use_mpi",      self.use_mpi )
-    self.use_omp        = config.pop( "use_omp",      self.use_omp )
-    self.mpi_ranks      = config.pop( "mpi_ranks",    self.mpi_ranks )
-    self.omp_threads    = config.pop( "omp_threads",  self.omp_threads )
+    self.mpi_cmd        = options.pop( "mpi_cmd",      self.mpi_cmd )
+    self.use_mpi        = options.pop( "use_mpi",      self.use_mpi )
+    self.use_omp        = options.pop( "use_omp",      self.use_omp )
+    self.mpi_ranks      = options.pop( "mpi_ranks",    self.mpi_ranks )
+    self.omp_threads    = options.pop( "omp_threads",  self.omp_threads )
 
-    self.modify_environ    = config.pop( "modify_environ",  self.modify_environ )
-    super().load_extra_config( config, origin )
+    self.modify_environ    = options.pop( "modify_environ",  self.modify_environ )
+    super().load_extra_options( options, origin )
 
   def pre_launch( self ):
     # Preflight checks
@@ -156,10 +156,10 @@ class InitWRF( WRFBase ):
                                 "-n", "${{ wrf_nml }}"
                                 ]
 
-  def load_extra_config( self, config, origin ):
-    super().load_extra_config( config, origin )
-    self.wrf_met_path   = config.pop( "wrf_met_path", self.wrf_met_path )
-    self.wrf_met_folder = config.pop( "wrf_met_folder", self.wrf_met_folder )
+  def load_extra_options( self, options, origin ):
+    super().load_extra_options( options, origin )
+    self.wrf_met_path   = options.pop( "wrf_met_path", self.wrf_met_path )
+    self.wrf_met_folder = options.pop( "wrf_met_folder", self.wrf_met_folder )
 
   def pre_launch( self ):
     super().pre_launch()
@@ -258,50 +258,48 @@ class RunWRF( WRFBase ):
     self.__exec_raw__ = prev_exec_raw
 
 
-# class RunWRFRestart( RunWRF ):
-#   def __init__( self, id ):
-#     super().__init__( id )
-#     self.wrf_restart_nml = "namelist.input.restart"
-#     self.wrf_diff_exec = "./external/io_netcdf/diffwrf"
-#     self.hist_comparisons = 1
+class RunWRFRestart( RunWRF ):
+  def __init__( self, id ):
+    super().__init__( id )
+    self.wrf_restart_nml = "namelist.input.restart"
+    self.wrf_diff_exec = "./external/io_netcdf/diffwrf"
+    self.hist_comparisons = 1
 
-#   def load_extra_config( self, config, origin ):
-#     self.wrf_restart_nml = config.pop( "wrf_restart_nml", self.wrf_restart_nml )
-#     self.hist_comparisons = config.pop( "hist_comparisons", self.hist_comparisons )
-#     super().load_extra_config( config, origin )
+  def load_extra_options( self, options, origin ):
+    self.wrf_restart_nml = options.pop( "wrf_restart_nml", self.wrf_restart_nml )
+    self.hist_comparisons = options.pop( "hist_comparisons", self.hist_comparisons )
+    super().load_extra_options( options, origin )
 
-#   def pre_launch( self ):
-#     super().pre_launch( )
-#     if self.wrf_restart_nml is None:
-#       raise ValueError( "No restart namelist specified" )
+  def pre_launch( self ):
+    super().pre_launch( )
+    if self.wrf_restart_nml is None:
+      raise ValueError( "No restart namelist specified" )
 
-#     full_case_path = self.resolve_path_exists( os.path.join( self.wrf_case_path, self.wrf_case ) )
-#     self.wrf_restart_nml = self.dereference( self.wrf_restart_nml )
-#     self.file_exists_in_path( full_case_path, self.wrf_restart_nml )
+    full_case_path = self.resolve_path_exists( os.path.join( self.wrf_case_path, self.wrf_case ) )
+    self.wrf_restart_nml = self.dereference( self.wrf_restart_nml )
+    self.file_exists_in_path( full_case_path, self.wrf_restart_nml )
 
-#     self.wrf_diff_exec = self.dereference( self.wrf_diff_exec )
+    self.wrf_diff_exec = self.dereference( self.wrf_diff_exec )
 
-#   def run( self ):
-#     retval = super().run()
-#     if retval != 0:
-#       return retval
+  def run( self ):
+    retval = super().run()
+    if retval != 0:
+      return retval
 
-#     arg_dict = {
-#                 self.config["arguments"][i] : self.config["arguments"][i+1]
-#                 for i in range( 0, len(self.config["arguments"]), 2 )
-#               }
-#     arg_dict.pop( "-i", None )
-#     arg_dict.pop( "-q", None )
-#     arg_dict["-n"] = self.wrf_restart_nml
-#     arg_dict["-d"] = self.wrf_diff_exec
-#     arg_dict["-t"] = self.hist_comparisons
-#     self.config["command"] = ".sane/scripts/run_wrf_restart.sh"
-#     self.config["arguments"] = list( itertools.chain( *zip( arg_dict.keys(), arg_dict.values() ) ) )
+    arg_dict = {
+                self.config["arguments"][i] : self.config["arguments"][i+1]
+                for i in range( 0, len(self.config["arguments"]), 2 )
+              }
+    arg_dict["-n"] = self.wrf_restart_nml
+    arg_dict["-d"] = self.wrf_diff_exec
+    arg_dict["-t"] = self.hist_comparisons
+    self.config["command"] = ".sane/scripts/run_wrf_restart.sh"
+    self.config["arguments"] = list( itertools.chain( *zip( arg_dict.keys(), arg_dict.values() ) ) )
 
-#     self.push_logscope( "run" )
-#     self.log( "Running restart namelist now" )
-#     self.pop_logscope()
+    self.push_logscope( "run" )
+    self.log( "Running restart namelist now" )
+    self.pop_logscope()
 
-#     # Do it again :)
-#     retval = super().run()
-#     return retval
+    # Do it again :)
+    retval = super().run()
+    return retval

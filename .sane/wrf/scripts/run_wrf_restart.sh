@@ -2,10 +2,10 @@
 help()
 {
   echo "./run_wrf_restart.sh [options]"
-  echo "  -r <folder>               Folder to run wrf in, assuming everything is setup there already and WRF has already been run"
+  echo "  -f <folder>               Folder to run wrf in, assuming everything is setup there already and WRF has already been run"
   echo "  -d <exec>                 Diff executable to use for comparing runs, default is ./external/io_netcdf/diffwrf"
-  echo "  -w <exec>                 WRF executable for WRF, default is wrf.exe"
-  echo "  -o <n>                    OMPTHREADS setting for sm/openmp usage"
+  echo "  -r <exec>                 WRF executable for WRF, default is wrf.exe"
+  echo "  -o <n>                    OMP_NUM_THREADS setting for sm/openmp usage"
   echo "  -p <mpirun cmd>           Parallel launch command (MPI) for wrf, e.g. mpirun, mpiexec_mpt, mpiexec -np 8 --oversubscribe"
   echo "  -t <num comparisons>      Number of history files to compare, starting from the end of the restart"
   echo "if provided, these override the namelist inside the run folder"
@@ -30,7 +30,7 @@ banner()
 
 finish()
 {
-  banner 42 "STOP $namelist"
+  banner 42 "STOP $cmd"
 
   # If somehow we got here, make sure we report errors
   if [ ! -z "$err" ]; then
@@ -43,25 +43,25 @@ echo "Input arguments:"
 echo "$*"
 
 wrf_nml="namelist.input"
-wrf="wrf.exe"
+wrf_exec="wrf.exe"
 diffwrf="./external/io_netcdf/diffwrf"
 hist_comparisons=1
-while getopts r:d:w:o:q:p:t:n:h opt; do
+while getopts f:d:r:o:p:t:n:h opt; do
   case $opt in
-    r)
-      run_dir="$OPTARG"
+    f)
+      run_folder="$OPTARG"
     ;;
     d)
       diffwrf="$OPTARG"
     ;;
-    w)
-      wrf="$OPTARG"
+    r)
+      wrf_exec="$OPTARG"
     ;;
     o)
       ompthreads="$OPTARG"
     ;;
     p)
-      mpi_wrf="$OPTARG"
+      mpi_cmd="$OPTARG"
     ;;
     t)
       hist_comparisons="$OPTARG"
@@ -80,12 +80,12 @@ done
 diffwrf=$( realpath $diffwrf )
 
 # Go to run location now - We only operate here from now on
-cd $run_dir || exit $?
+cd $run_folder || exit $?
 
-wrf=$( realpath $( find -L $run_dir -type f -name $wrf | head -n 1 ) )
+wrf_exec=$( realpath $( find -L $run_folder -type f -name $wrf_exec | head -n 1 ) )
 
 # Check our paths
-if [ ! -x "${wrf}" ]; then
+if [ ! -x "${wrf_exec}" ]; then
   echo "No wrf executable found"
   exit 1
 fi
@@ -94,11 +94,12 @@ if [ ! -x "${diffwrf}" ]; then
   exit 1
 fi
 if [ ! -z "${ompthreads}" ]; then
-  export OMPTHREADS=$ompthreads
+  echo "Setting OMP_NUM_THREADS=$ompthreads"
+  export OMP_NUM_THREADS=$ompthreads
 fi
 
 ################################################################################
-
+cmd="$mpi_cmd $wrf_exec $wrf_nml"
 banner 42 "START $wrf_nml"
 # Move previous output of previous run to safe spot
 ls wrfout_d0* | xargs -i mv {} {}.orig
@@ -116,23 +117,27 @@ if [ "$wrf_nml" != "namelist.input" ]; then
 fi
 
 # run wrf
-echo "Running $mpi_wrf $wrf"
+echo "Running $mpi_cmd $wrf_exec"
 
-eval "$mpi_wrf $wrf" &
+eval "$mpi_cmd $wrf_exec" &
 wrf_pid=$!
-sleep 1
 
-if [ -n "$mpi_wrf" ]; then
-  if [ $( ls ./rsl.out.* 2>/dev/null | wc -l ) -ne 0 ]; then
-    # Output the rsl. output
-    tail -f $( ls ./rsl.out.* | sort | head -n 1 ) --pid $wrf_pid -n 9999
-  fi
+if [ -n "$mpi_cmd" ]; then
+  until [ $( ls ./rsl.out.* 2>/dev/null | wc -l ) -ne 0 ]; do
+    sleep 1
+    # check if the process is done or failed
+    if ! kill -0 $wrf_pid >/dev/null 2>&1; then
+      break
+    fi
+  done
+  # Output the rsl. output
+  tail -f $( ls ./rsl.out.* | sort | head -n 1 ) --pid $wrf_pid -n 9999
 fi
 
 wait $wrf_pid
 result=$?
 if [ $result -ne 0 ]; then
-  err="[$wrf_nml] $mpi_wrf $wrf failed"
+  err="[$wrf_nml] $mpi_cmd $wrf_exec failed"
   finish
 fi
 

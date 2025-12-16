@@ -42,7 +42,7 @@ echo "$*"
 
 wrf_nml="namelist.input"
 wrf_exec="wrf.exe"
-while getopts f:r:i:w:o:q:p:n:h opt; do
+while getopts f:r:o:p:n:h opt; do
   case $opt in
     f)
       run_folder="$OPTARG"

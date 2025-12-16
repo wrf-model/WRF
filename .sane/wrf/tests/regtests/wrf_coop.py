@@ -1,7 +1,7 @@
 import copy
 
 import sane
-from sane.json_config import recursive_update as dict_update
+from sane.helpers import recursive_update as dict_update
 import wrf.custom_actions.run_wrf as run_wrf
 
 
@@ -220,12 +220,12 @@ def wrf_coop_reg_tests( orch ):
       # Within a case, loop over the specific namelist to test
       # as well as any specific config options for that nml case
       nml = f"namelist.input.{nml_case}"
-      base_cfg = copy.deepcopy( default )
-      base_cfg["wrf_nml"]            = nml
-      base_cfg["config"]             = {}
-      base_cfg["config"]["case"]     = wrf_case
-      base_cfg["config"]["target"]   = case_dict["target"]
-      base_cfg["config"]["build"]    = build
+      base_opts = copy.deepcopy( default )
+      base_opts["wrf_nml"]            = nml
+      base_opts["config"]             = {}
+      base_opts["config"]["case"]     = wrf_case
+      base_opts["config"]["target"]   = case_dict["target"]
+      base_opts["config"]["build"]    = build
 
       # Create the initial conditions for this nml
       init_wrf = run_wrf.InitWRF( f"{wrf_case}_{nml_case}_init" )
@@ -233,12 +233,12 @@ def wrf_coop_reg_tests( orch ):
       init_wrf.use_omp     = True
 
       # Create the config dict to set the parameters for this init wrf
-      cfg = dict_update( copy.deepcopy( base_cfg ), copy.deepcopy( default_init ) )
-      cfg = dict_update( cfg, copy.deepcopy( default_par_opt["serial"] ) )
-      cfg["config"]["par_opt"] = "SERIAL"
+      opts = dict_update( copy.deepcopy( base_opts ), copy.deepcopy( default_init ) )
+      opts = dict_update( opts, copy.deepcopy( default_par_opt["serial"] ) )
+      opts["config"]["par_opt"] = "SERIAL"
 
-      init_wrf.add_dependencies( cfg["config"]["build"] )
-      init_wrf.load_config( cfg )
+      init_wrf.add_dependencies( opts["config"]["build"] )
+      init_wrf.load_options( opts )
       orch.add_action( init_wrf )
 
       for comp in case_dict["compare"]:
@@ -248,15 +248,15 @@ def wrf_coop_reg_tests( orch ):
         action = run_wrf.RunWRF( id )
 
         # Get the general options for this nml case
-        general_cfg = copy.deepcopy( config )
+        general_opts = copy.deepcopy( config )
         # pull out the specifics
-        specifics = { c : general_cfg.pop( c, {} ) for c in case_dict["compare"] }
+        specifics = { c : general_opts.pop( c, {} ) for c in case_dict["compare"] }
 
         # Create the config dict
-        cfg = dict_update( copy.deepcopy( base_cfg ), copy.deepcopy( default_run ) )
-        cfg = dict_update( cfg, copy.deepcopy( default_par_opt[comp]) )
-        cfg = dict_update( dict_update( cfg, general_cfg ), specifics[comp] )
-        cfg["config"]["par_opt"] = comp.upper()
+        opts = dict_update( copy.deepcopy( base_opts ), copy.deepcopy( default_run ) )
+        opts = dict_update( opts, copy.deepcopy( default_par_opt[comp]) )
+        opts = dict_update( dict_update( opts, general_opts ), specifics[comp] )
+        opts["config"]["par_opt"] = comp.upper()
 
         # Force psuedo-serial operation
         action.use_mpi = True
@@ -270,9 +270,9 @@ def wrf_coop_reg_tests( orch ):
           action.omp_threads = 1
 
         # Capture output data
-        action.outputs["data"]      = cfg["wrf_run_dir"]
-        action.add_dependencies( cfg["config"]["build"], init_wrf.id )
-        action.load_config( cfg )
+        action.outputs["data"]      = opts["wrf_run_dir"]
+        action.add_dependencies( opts["config"]["build"], init_wrf.id )
+        action.load_options( opts )
         orch.add_action( action )
 
       if len( case_dict["compare"] ) > 1:

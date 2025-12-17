@@ -27,7 +27,7 @@
       {
         "ncpus" : [ "cpu", "cpus", "ncpu" ]
       },
-      "queue" : "main -l job_priority=premium",
+      "queue" : "main",
       "account" : "NMMM0012",
       "config" :
       {

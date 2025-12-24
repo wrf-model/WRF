@@ -85,7 +85,7 @@ if [[ -z $theArgument ]]; then
     echo "---------------------------------------------------"
     echo "     1        nvfort  nvidia parallel"
     echo "     2         gfort  gfortran parallel"
-    echo "     3         ifort  intel parallel"
+    echo "     3     ifx|ifort  intel parallel"
     echo "     4          cray  cray (ftn) parallel"
     echo "     5     ifort_omp  intel openmp"
     echo "     6 intel.cray_xc  intel parallel (cray_xc)"
@@ -114,9 +114,9 @@ if [[ "$theArgument" == "2" ]] || [[ "$theArgument" == "gfort" ]]; then
     echo "Configured: gfort"
 fi
 
-if [[ "$theArgument" == "3" ]] || [[ "$theArgument" == "ifort" ]]; then
+if [[ "$theArgument" == "3" ]] || [[ "$theArgument" =~ ^(ifort|ifx|intel)$ ]]; then
     cp arc/macros.mpp.ifort macros
-    echo "Configured: ifort"
+    echo "Configured: Intel"
     cp arc/Makefile.mpp Makefile.comm
 fi
 

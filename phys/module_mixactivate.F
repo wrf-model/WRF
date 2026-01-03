@@ -29,9 +29,9 @@ CONTAINS
         ids,ide, jds,jde, kds,kde,                            &
         ims,ime, jms,jme, kms,kme,                            &
         its,ite, jts,jte, kts,kte,                            &
-        f_qc, f_qi, cn                                        )
+        f_qc, f_qi, cn, config_flags                          )
 
-!        USE module_configure
+        USE module_configure, only: grid_config_rec_type
 
 ! wrapper to call mixactivate for mosaic description of aerosol
 
@@ -73,6 +73,8 @@ CONTAINS
         dimension( ims:ime, kms:kme, jms:jme) :: nsource
 
     LOGICAL, OPTIONAL :: f_qc, f_qi
+
+    type(grid_config_rec_type), intent(in) :: config_flags
 
 ! local vars
     integer maxd_aphase, maxd_atype, maxd_asize, maxd_acomp, max_chem
@@ -246,7 +248,7 @@ CONTAINS
            hg31,hg32,hg33,hg34,hg41,hg42,hg43,hg44,&
             ccn1, ccn2, ccn3, ccn4, ccn5, ccn6, nsource,       &
             grid_id, ktau, dtstep, &
-            F_QC=f_qc, F_QI=f_qi                              )
+            F_QC=f_qc, F_QI=f_qi, CONFIG_FLAGS=config_flags   )
 
 
        ! ERM : If CCN field was passed in, then copy back the new field, which is the first
@@ -291,7 +293,7 @@ subroutine mixactivate(  msectional,            &
            hg31,hg32,hg33,hg34,hg41,hg42,hg43,hg44,&
            ccn1, ccn2, ccn3, ccn4, ccn5, ccn6, nsource,       &
            grid_id, ktau, dtstep, &
-           f_qc, f_qi                       )
+           f_qc, f_qi, config_flags                       )
 
 
 !     vertical diffusion and nucleation of cloud droplets
@@ -300,6 +302,7 @@ subroutine mixactivate(  msectional,            &
 
   USE module_model_constants, only: g, rhowater, xlv, cp, rvovrd, r_d, r_v, mwdry, ep_2
   USE module_radiation_driver, only: cal_cldfra2
+  USE module_configure, only: grid_config_rec_type
 
   implicit none
 
@@ -375,6 +378,7 @@ subroutine mixactivate(  msectional,            &
   real, intent(out), dimension(ims:ime,kms:kme,jms:jme) :: nsource, &  ! droplet number source (#/kg/s)
        ccn1,ccn2,ccn3,ccn4,ccn5,ccn6  ! number conc of aerosols activated at supersat
 
+  type(grid_config_rec_type), intent(in) :: config_flags
 
 !--------------------Local storage-------------------------------------
 !
@@ -767,11 +771,20 @@ GROW_SHRINK_MAIN_K_LOOP: do k=kts,kte
            enddo
 
 ! 06-nov-2005 rce - grid_id & ktau added to arg list
-           call activate_ml(wbar,wmix,wdiab,wmin,wmax,temp(i,k,j),cs(k), qv(i,k,j), &
-                msectional, maxd_atype, ntype_aer, maxd_asize, nsize_aer,    &
-                naerosol, vaerosol,  &
-                dlo_sect,dhi_sect,sigmag_aer,hygro_aer,              &
-                fn,fs,fm,fluxn,fluxs,fluxm,flux_fullact(k), grid_id, ktau, i, j, k )
+! Check namelist flag to decide between ML activation or traditional activation
+           if (config_flags%use_ml_activate == 1) then
+              call activate_ml(wbar,wmix,wdiab,wmin,wmax,temp(i,k,j),cs(k), qv(i,k,j), &
+                   msectional, maxd_atype, ntype_aer, maxd_asize, nsize_aer,    &
+                   naerosol, vaerosol,  &
+                   dlo_sect,dhi_sect,sigmag_aer,hygro_aer,              &
+                   fn,fs,fm,fluxn,fluxs,fluxm,flux_fullact(k), grid_id, ktau, i, j, k )
+           else
+              call activate(wbar,wmix,wdiab,wmin,wmax,temp(i,k,j),cs(k), &
+                   msectional, maxd_atype, ntype_aer, maxd_asize, nsize_aer,    &
+                   naerosol, vaerosol,  &
+                   dlo_sect,dhi_sect,sigmag_aer,hygro_aer,              &
+                   fn,fs,fm,fluxn,fluxs,fluxm,flux_fullact(k), grid_id, ktau, i, j, k )
+           endif
            do n = 1,ntype_aer
               do m = 1,nsize_aer(n)
                 if ((abs(m - 1.0) < eps) .and. (abs(n - 1.0) < eps)) then
@@ -1048,11 +1061,20 @@ OLD_CLOUD_MAIN_K_LOOP: do k=kts,kte
                  enddo
 !          print *,'old cloud wbar,wmix=',wbar,wmix
 
-                 call activate_ml(wbar,wmix,wdiab,wmin,wmax,temp(i,k,j),cs(k), qv(i,k,j),&
-                      msectional, maxd_atype, ntype_aer, maxd_asize, nsize_aer,    &
-                      naerosol, vaerosol,  &
-                      dlo_sect,dhi_sect, sigmag_aer,hygro_aer,                    &
-                      fn,fs,fm,fluxn,fluxs,fluxm,flux_fullact(k), grid_id, ktau, i, j, k )
+! Check namelist flag to decide between ML activation or traditional activation
+                 if (config_flags%use_ml_activate == 1) then
+                    call activate_ml(wbar,wmix,wdiab,wmin,wmax,temp(i,k,j),cs(k), qv(i,k,j),&
+                         msectional, maxd_atype, ntype_aer, maxd_asize, nsize_aer,    &
+                         naerosol, vaerosol,  &
+                         dlo_sect,dhi_sect, sigmag_aer,hygro_aer,                    &
+                         fn,fs,fm,fluxn,fluxs,fluxm,flux_fullact(k), grid_id, ktau, i, j, k )
+                 else
+                    call activate(wbar,wmix,wdiab,wmin,wmax,temp(i,k,j),cs(k), &
+                         msectional, maxd_atype, ntype_aer, maxd_asize, nsize_aer,    &
+                         naerosol, vaerosol,  &
+                         dlo_sect,dhi_sect, sigmag_aer,hygro_aer,                    &
+                         fn,fs,fm,fluxn,fluxs,fluxm,flux_fullact(k), grid_id, ktau, i, j, k )
+                 endif
                   do n=1,ntype_aer
                         do m=1,nsize_aer(n)
                               if ((abs(m - 1.0) < eps) .and. (abs(n - 1.0) < eps)) then

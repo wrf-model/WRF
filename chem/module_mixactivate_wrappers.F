@@ -162,7 +162,7 @@ CONTAINS
            hg31,hg32,hg33,hg34,hg41,hg42,hg43,hg44,&
 	       ccn1, ccn2, ccn3, ccn4, ccn5, ccn6, nsource,       &
 	       id, ktau, dtstep, &
-           f_qc, f_qi               )
+           f_qc, f_qi, config_flags               )
 
       end subroutine mosaic_mixactivate
 
@@ -386,7 +386,7 @@ CONTAINS
            hg31,hg32,hg33,hg34,hg41,hg42,hg43,hg44,&
 	       ccn1, ccn2, ccn3, ccn4, ccn5, ccn6, nsource,       &
 	       id, ktau, dtstep, &
-           f_qc, f_qi               )
+           f_qc, f_qi, config_flags               )
 
       end subroutine sorgam_mixactivate
 

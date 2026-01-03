@@ -20,6 +20,7 @@ state    real   SST_INPUT        ij     misc        1         -     rh   "SST_IN
 
 # Chem Scalars
 rconfig   integer     chem_opt            namelist,physics	max_domains    0       rh       "chem_opt"              ""      ""
+rconfig   integer     use_ml_activate     namelist,physics	max_domains    1       rh       "use_ml_activate"       "Use ML activation (1) or traditional activation (0)"      ""
 state   real    -              ikjftb   chem        1         -     -    -                                       
 #
 # Tracer Scalars: If you want full resolved and non-resolved dispersion, compile WRF-Chem

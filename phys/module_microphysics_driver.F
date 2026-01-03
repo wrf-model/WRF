@@ -928,7 +928,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                   ids,ide, jds,jde, kds,kde,                    &
                   ims,ime, jms,jme, kms,kme,                    &
                   its,ite, jts,jte, kts,kte,                    &
-                  F_QC=f_qc, F_QI=f_qi                          )
+                  F_QC=f_qc, F_QI=f_qi, CONFIG_FLAGS=config_flags )
           END IF
        ELSEIF ( (chem_opt==0 .OR. chem_opt==401) .AND. progn==1 .AND.    &
                  (mp_physics==NSSL_2MOM .and. config_flags%nssl_2moment_on==1)) THEN

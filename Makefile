@@ -108,11 +108,13 @@ framework_only : configcheck
 
 wrf : framework_only
 	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" physics
-	@if [ \( ! -f run/MPTABLE.TBL \) -o \
-	     \( ! -f phys/module_sf_noahmpdrv.F \) -o \
-	     \( ! -f phys/module_sf_noahmp_glacier.F \) -o \
-	     \( ! -f phys/module_sf_noahmp_groundwater.F \) -o \
-	     \( ! -f phys/module_sf_noahmplsm.F \) ] ; then \
+	@if [ \( ! -f run/NoahmpTable.TBL \) -o \
+	     \( ! -f phys/noahmp/drivers/wrf/NoahmpWRFmainMod.F90 \) -o \
+	     \( ! -f phys/noahmp/drivers/wrf/NoahmpIOVarType.F90 \) -o \
+	     \( ! -f phys/noahmp/drivers/wrf/GroundWaterMmfMod.F90 \) -o \
+	     \( ! -f phys/noahmp/src/NoahmpMainMod.F90 \) -o \
+	     \( ! -f phys/noahmp/src/NoahmpVarType.F90 \) -o \
+	     \( ! -f phys/noahmp/drivers/wrf/NoahmpUrbanDriverMainMod.F90 \) ] ; then \
 	   echo " " ; \
 	   echo "------------------------------------------------------------------------------" ; \
 	   echo "Error Error Error NoahMP submodule files not populating WRF directories" ; \
@@ -126,7 +128,7 @@ wrf : framework_only
 	fi
 	@if [ \( ! -f phys/module_bl_mynnedmf.F \) -o \
 	    \( ! -f phys/module_bl_mynnedmf_common.F \) -o \
-	    \( ! -f phys/module_bl_mynnedmf_common.F \) ] ; then \
+	    \( ! -f phys/module_bl_mynnedmf_driver.F \) ] ; then \
 	  echo " " ; \
 	  echo "------------------------------------------------------------------------------" ; \
 	  echo "Error Error Error MYNN-EDMF submodule files not populating WRF directories" ; \

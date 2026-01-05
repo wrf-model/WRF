@@ -139,7 +139,11 @@ CONTAINS
                          IRRSPLH, qtdrain,                                &
                          gecros_state,                                    & ! Optional gecros crop
                          XSAIXY, LAI,                                     & ! Optional Noah-MP
-                         T2MVXY, T2MBXY, CHSTARXY ,                       & ! Optional Noah-MP
+                         T2MVXY, T2MBXY, CHSTARXY, FSATXY, WSURFXY,       & ! Optional Noah-MP
+                         snrdsxy, snfrxy, bcphixy, bcphoxy, ocphixy, ocphoxy, dust1xy,        &
+                         dust2xy, dust3xy, dust4xy, dust5xy, massconcbcphixy, massconcbcphoxy,&
+                         massconcocphixy, massconcocphoxy, massconcdust1xy, massconcdust2xy,  &
+                         massconcdust3xy, massconcdust4xy, massconcdust5xy,                   &
                          SMOISEQ  ,SMCWTDXY ,RECHXY, DEEPRECHXY, AREAXY,  & ! Optional Noah-MP 
                          WTDDT , STEPWTD ,QRFSXY ,QSPRINGSXY ,QSLATXY,    & ! Optional Noah-MP
                          FDEPTHXY, RIVERBEDXY, EQZWT, RIVERCONDXY, PEXPXY, & ! Optional Noah-MP
@@ -543,6 +547,28 @@ CONTAINS
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: T2MVXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: T2MBXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: CHSTARXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: FSATXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: WSURFXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0,jms:jme) :: snrdsxy
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0,jms:jme) :: snfrxy
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0,jms:jme) :: bcphixy
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0,jms:jme) :: bcphoxy
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0,jms:jme) :: ocphixy
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0,jms:jme) :: ocphoxy
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0,jms:jme) :: dust1xy
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0,jms:jme) :: dust2xy
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0,jms:jme) :: dust3xy
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0,jms:jme) :: dust4xy
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0,jms:jme) :: dust5xy
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0,jms:jme) :: massconcbcphixy
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0,jms:jme) :: massconcbcphoxy
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0,jms:jme) :: massconcocphixy
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0,jms:jme) :: massconcocphoxy
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0,jms:jme) :: massconcdust1xy
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0,jms:jme) :: massconcdust2xy
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0,jms:jme) :: massconcdust3xy
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0,jms:jme) :: massconcdust4xy
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0,jms:jme) :: massconcdust5xy
    REAL,    OPTIONAL, DIMENSION(ims:ime,1:num_soil_layers,jms:jme) :: SMOISEQ 
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: SMCWTDXY   
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: DEEPRECHXY
@@ -862,7 +888,10 @@ CONTAINS
    LOGICAL :: rdmaxalb
    INTEGER :: mfshconv
    INTEGER :: icloud_cu
-   INTEGER :: iopt_run
+   INTEGER :: iopt_runsub
+   INTEGER :: iopt_soil
+   INTEGER :: iopt_alb
+   INTEGER :: iopt_wetland
    INTEGER :: aercu_opt !PSH/TWG 
    REAL    :: aercu_fct !PSH/TWG 
 
@@ -963,10 +992,13 @@ CHARACTER(LEN=8) :: name
    LakeModel = config_flags%sf_lake_physics
    mfshconv=config_flags%mfshconv
    IF(PRESENT(SMOISEQ)) THEN
-      iopt_run=config_flags%opt_run
+      iopt_runsub=config_flags%opt_runsub
    ELSE
-      iopt_run=-1
+      iopt_runsub=-1
    END IF
+   iopt_soil = config_flags%opt_soil
+   iopt_alb  = config_flags%opt_alb
+   iopt_wetland = config_flags%opt_wetland
 #if ( EM_CORE == 1 )
    obs_twindo_cg=model_config_rec%obs_twindo(1)
    obs_twindo=config_flags%obs_twindo
@@ -1467,8 +1499,13 @@ CHARACTER(LEN=8) :: name
                 FDEPTHXY, RIVERBEDXY, EQZWT, RIVERCONDXY, PEXPXY, & 
                 rechclim  ,                                     &
                 ISICE,                                 &
-                T2MVXY,T2MBXY,CHSTARXY ,                        &
-                allowed_to_read , iopt_run ,                    &
+                T2MVXY,T2MBXY,CHSTARXY, FSATXY, WSURFXY,        &
+                snrdsxy, snfrxy, bcphixy, bcphoxy, ocphixy, ocphoxy, dust1xy,        &
+                dust2xy, dust3xy, dust4xy, dust5xy, massconcbcphixy, massconcbcphoxy,&
+                massconcocphixy, massconcocphoxy, massconcdust1xy, massconcdust2xy,  &
+                massconcdust3xy, massconcdust4xy, massconcdust5xy,                   &
+                allowed_to_read , iopt_runsub,                  &
+                iopt_soil, iopt_alb, iopt_wetland,              &
                 start_of_simulation ,                           &
                 lakedepth2d,  savedtke12d,  snowdp2d,   h2osno2d,       & !lake
                 snl2d,        t_grnd2d,     t_lake3d,   lake_icefrac3d, & !lake
@@ -2498,9 +2535,14 @@ CHARACTER(LEN=8) :: name
                 WTDDT, STEPWTD,QRFSXY ,QSPRINGSXY ,QSLATXY,     &
                 FDEPTHXY, RIVERBEDXY, EQZWT, RIVERCONDXY, PEXPXY, & 
                 rechclim  ,                                     &
-                ISICE,                                 &
-                T2MVXY, T2MBXY ,CHSTARXY,                       &
-                allowed_to_read, iopt_run ,                     &
+                ISICE,                                          &
+                T2MVXY, T2MBXY ,CHSTARXY, FSATXY, WSURFXY,      &
+                snrdsxy, snfrxy, bcphixy, bcphoxy, ocphixy, ocphoxy, dust1xy,        &
+                dust2xy, dust3xy, dust4xy, dust5xy, massconcbcphixy, massconcbcphoxy,&
+                massconcocphixy, massconcocphoxy, massconcdust1xy, massconcdust2xy,  &
+                massconcdust3xy, massconcdust4xy, massconcdust5xy,                   &
+                allowed_to_read, iopt_runsub,                   &
+                iopt_soil, iopt_alb, iopt_wetland,              &
                 start_of_simulation,                            &
                 lakedepth2d,  savedtke12d,  snowdp2d,   h2osno2d,       & !lake
                 snl2d,        t_grnd2d,     t_lake3d,   lake_icefrac3d, & !lake
@@ -2638,9 +2680,9 @@ CHARACTER(LEN=8) :: name
    USE module_sf_myjsfc
    USE module_sf_qnsesfc
    USE module_sf_noahdrv
-   USE module_sf_noahlsm, only : LCZ_1,LCZ_2,LCZ_3,LCZ_4,LCZ_5,LCZ_6,LCZ_7,LCZ_8,LCZ_9,LCZ_10,LCZ_11
-   USE module_sf_noahmpdrv
-   USE noahmp_tables, ONLY: LCZ_1_TABLE,LCZ_2_TABLE,LCZ_3_TABLE,LCZ_4_TABLE,LCZ_5_TABLE,LCZ_6_TABLE,LCZ_7_TABLE,LCZ_8_TABLE,LCZ_9_TABLE,LCZ_10_TABLE,LCZ_11_TABLE
+   USE module_sf_noahlsm, only : LCZ_1,LCZ_2,LCZ_3,LCZ_4,LCZ_5,LCZ_6,LCZ_7,LCZ_8,LCZ_9,LCZ_10,LCZ_11   
+   USE NoahmpWRFinitMod
+   USE NoahmpIOVarType
 #ifdef WRF_USE_CLM
    USE module_sf_clm, only : clminit
 #endif
@@ -2690,7 +2732,8 @@ CHARACTER(LEN=8) :: name
                                       its, ite, jts, jte, kts, kte
    INTEGER , INTENT(IN)        ::     num_soil_layers
    INTEGER , INTENT(IN)        ::     SF_URBAN_PHYSICS 
-   INTEGER , INTENT(IN)        ::     IOPT_RUN
+   INTEGER , INTENT(IN)        ::     IOPT_RUNSUB
+   INTEGER , INTENT(IN)        ::     IOPT_SOIL,IOPT_ALB,IOPT_WETLAND
    INTEGER , INTENT(IN)        ::     itimestep
 
 !   INTEGER , INTENT(IN)        ::     LakeModel
@@ -2814,6 +2857,28 @@ CHARACTER(LEN=8) :: name
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: T2MVXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: T2MBXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: CHSTARXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: FSATXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: WSURFXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0,jms:jme) :: snrdsxy
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0,jms:jme) :: snfrxy 
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0,jms:jme) :: bcphixy
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0,jms:jme) :: bcphoxy
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0,jms:jme) :: ocphixy
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0,jms:jme) :: ocphoxy        
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0,jms:jme) :: dust1xy        
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0,jms:jme) :: dust2xy        
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0,jms:jme) :: dust3xy
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0,jms:jme) :: dust4xy
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0,jms:jme) :: dust5xy       
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0,jms:jme) :: massconcbcphixy
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0,jms:jme) :: massconcbcphoxy
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0,jms:jme) :: massconcocphixy
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0,jms:jme) :: massconcocphoxy
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0,jms:jme) :: massconcdust1xy
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0,jms:jme) :: massconcdust2xy
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0,jms:jme) :: massconcdust3xy
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0,jms:jme) :: massconcdust4xy
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0,jms:jme) :: massconcdust5xy
    REAL,    OPTIONAL, DIMENSION(ims:ime,1:num_soil_layers,jms:jme) :: SMOISEQ
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: SMCWTDXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: DEEPRECHXY
@@ -3403,7 +3468,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
              CALL wrf_error_fatal ( 'NoahMP does not work with NLCD data. Stop.' )
           ENDIF
 
-          CALL NOAHMP_INIT(MMINLU, SNOW,SNOWH,CANWAT,ISLTYP,IVGTYP,XLAT,                 &
+          CALL NoahmpWRFinit(MMINLU, SNOW,SNOWH,CANWAT,ISLTYP,IVGTYP,XLAT,                  &
                      TSLB,SMOIS,SH2O,DZS, FNDSOILW, FNDSNOWH,          &
                      TSK,isnowxy  ,tvxy     ,tgxy     ,canicexy ,TMN,XICE,                  &
                      canliqxy ,eahxy    ,tahxy    ,cmxy     ,chxy     ,                     &
@@ -3415,11 +3480,16 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                      irnumsi  ,irnummi  ,irnumfi  ,irwatsi,    &
                      irwatmi  ,irwatfi  ,ireloss  ,irsivol,    &
                      irmivol  ,irfivol  ,irrsplh  ,            &
-                     t2mvxy   ,t2mbxy   ,chstarxy ,            &
+                     t2mvxy, t2mbxy, chstarxy, fsatxy, wsurfxy,&
+                     snrdsxy, snfrxy, bcphixy, bcphoxy, ocphixy, ocphoxy, dust1xy,        &
+                     dust2xy, dust3xy, dust4xy, dust5xy, massconcbcphixy, massconcbcphoxy,&
+                     massconcocphixy, massconcocphoxy, massconcdust1xy, massconcdust2xy,  &
+                     massconcdust3xy, massconcdust4xy, massconcdust5xy,                   &
                      num_soil_layers, restart,                 &
-                     allowed_to_read, iopt_run , iopt_crop,    &
+                     allowed_to_read, iopt_runsub, iopt_crop,  &
                      iopt_irr, iopt_irrm,                      &
-                     sf_urban_physics,                         &  ! urban scheme
+                     sf_urban_physics, iopt_soil, iopt_alb,    &
+                     iopt_wetland,                             &
                      ids,ide, jds,jde, kds,kde,                &
                      ims,ime, jms,jme, kms,kme,                &
                      its,ite, jts,jte, kts,kte                 &
@@ -3439,9 +3509,12 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                                 config_flags%slucm_distributed_drag)
                 CALL urban_var_init(ISURBAN,TSK,TSLB,TMN,IVGTYP,               & !urban
                               ims,ime,jms,jme,kms,kme,num_soil_layers,         & !urban
-                              LCZ_1_TABLE,LCZ_2_TABLE,LCZ_3_TABLE,LCZ_4_TABLE, & !urban
-                              LCZ_5_TABLE,LCZ_6_TABLE,LCZ_7_TABLE,LCZ_8_TABLE, & !urban
-                              LCZ_9_TABLE,LCZ_10_TABLE,LCZ_11_TABLE,           & !urban
+                              NoahmpIO%LCZ_1_TABLE,NoahmpIO%LCZ_2_TABLE,       & !urban
+                              NoahmpIO%LCZ_3_TABLE,NoahmpIO%LCZ_4_TABLE,       & !urban
+                              NoahmpIO%LCZ_5_TABLE,NoahmpIO%LCZ_6_TABLE,       & !urban
+                              NoahmpIO%LCZ_7_TABLE,NoahmpIO%LCZ_8_TABLE,       & !urban
+                              NoahmpIO%LCZ_9_TABLE,NoahmpIO%LCZ_10_TABLE,      & !urban
+                              NoahmpIO%LCZ_11_TABLE,                           & !urban
                               restart,sf_urban_physics,                        & !urban
                               XXXR_URB2D,XXXB_URB2D,XXXG_URB2D,XXXC_URB2D,     & !urban
                               TR_URB2D,TB_URB2D,TG_URB2D,TC_URB2D,QC_URB2D,    & !urban

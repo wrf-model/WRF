@@ -3,7 +3,7 @@
 set nonomatch
 
 
-foreach dir ( frame chem share dyn_em phys phys/physics_mmm cmaq main tools wrftladj )
+foreach dir ( frame chem share dyn_em phys phys/physics_mmm cmaq main tools wrftladj phys/noahmp/drivers/wrf phys/noahmp/src phys/noahmp/utility)
   if ( -d $dir ) then
      if ( $dir == cmaq ) then
         ( cd $dir ; echo $dir ; /bin/rm -f *.o *.mod ) >& /dev/null
@@ -80,9 +80,8 @@ if ( "$arg" == '-a' || "$arg" == '-aa' ) then
     /bin/rm -f configure.wrf.backup
     /bin/rm -f Registry/Registry.backup
     /bin/rm -f run/namelist.input.backup.*
-    /bin/rm -f phys/module_sf_noahmpdrv.F phys/module_sf_noahmp_glacier.F \
-               phys/module_sf_noahmp_groundwater.F phys/module_sf_noahmplsm.F \
-               run/MPTABLE.TBL
+    /bin/rm -fr phys/noahmp
+    /bin/rm -fr run/NoahmpTable.TBL run/snicar_*.nc
     /bin/rm -f phys/module_bl_mynnedmf.F phys/module_bl_mynnedmf_common.F \
                phys/module_bl_mynnedmf_driver.F
   endif

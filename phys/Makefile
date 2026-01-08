@@ -73,10 +73,10 @@ MODULES = \
 	module_cu_tiedtke.o\
 	module_cu_ntiedtke.o\
 	module_cu_gd.o \
-        module_cu_gf_ctrans.o \
-	module_cu_gf_wrfdrv.o \
-	module_cu_gf_deep.o \
-	module_cu_gf_sh.o \
+	module_cu_gfl_common.o \
+	module_cu_gfl_deep.o \
+	module_cu_gfl_sh.o \
+	module_cu_gfl_wrf.o \
 	module_cu_ksas.o \
 	module_cu_nsas.o \
 	module_cu_sas.o \
@@ -282,6 +282,17 @@ submodules :
 		ln -sf MYNN-EDMF/WRF/module_bl_mynnedmf_driver.F90 module_bl_mynnedmf_driver.F ; \
 	else \
 		echo No action required for MYNN-EDMF submodule ; \
+	fi
+	@if [ \( ! -f module_cu_gfl_wrf.F \) -o \( ! -f module_cu_gfl_common.F \) -o \
+	      \( ! -f module_cu_gfl_deep.F \) -o \( ! -f module_cu_gfl_sh.F \) ] ; then \
+	      	echo Pulling in GFL submodule ; \
+		( cd .. ; git submodule update --init --recursive ) ; \
+		ln -sf GFL/module_cu_gfl_sh.F  module_cu_gfl_sh.F; \
+		ln -sf GFL/module_cu_gfl_deep.F  module_cu_gfl_deep.F; \
+		ln -sf GFL/WRF/module_cu_gfl_common.F module_cu_gfl_common.F ; \
+		ln -sf GFL/WRF/module_cu_gfl_wrf.F module_cu_gfl_wrf.F ; \
+	else \
+		echo No action required for GFL submodule ; \
 	fi
 	
 clean:

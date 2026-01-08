@@ -1139,6 +1139,7 @@ endif
                       grid%massconcocphixy, grid%massconcocphoxy, grid%massconcdust1xy,         &   ! Optional Noah-MP
                       grid%massconcdust2xy, grid%massconcdust3xy, grid%massconcdust4xy,         &   ! Optional Noah-MP
                       grid%massconcdust5xy,                                                     &   ! Optional Noah-MP
+                      grid%ALBSOILDIRXY, grid%ALBSOILDIFXY,                                     &   ! Optional Noah-MP
                       grid%SMOISEQ  ,grid%SMCWTDXY ,grid%RECHXY, grid%DEEPRECHXY, grid%AREAXY,  & ! Optional Noah-MP
                       config_flags%wtddt ,grid%stepwtd ,grid%QRFSXY ,grid%QSPRINGSXY ,grid%QSLATXY, & ! Optional Noah-MP
                       grid%FDEPTHXY, grid%RIVERBEDXY, grid%EQZWT, grid%RIVERCONDXY, grid%PEXPXY, & ! Optional Noah-MP

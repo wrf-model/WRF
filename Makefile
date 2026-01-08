@@ -624,7 +624,10 @@ em_real : wrf
 	  ( cd test/em_esmf_exp ; /bin/rm -f URBPARM.TBL ; ln -s ../../run/URBPARM.TBL . ) ; \
 	  ( cd test/em_esmf_exp ; /bin/rm -f URBPARM_LCZ.TBL ; ln -s ../../run/URBPARM_LCZ.TBL . ) ; \
 	  ( cd test/em_esmf_exp ; /bin/rm -f VEGPARM.TBL ; ln -s ../../run/VEGPARM.TBL . ) ; \
-	  ( cd test/em_esmf_exp ; /bin/rm -f MPTABLE.TBL ; ln -s ../../run/MPTABLE.TBL . ) ; \
+	  ( cd test/em_esmf_exp ; /bin/rm -f NoahmpTable.TBL ; ln -s ../../run/NoahmpTable.TBL . ) ; \
+          ( cd test/em_esmf_exp ; /bin/rm -f snicar_drdt_bst_fit_60_c070416.nc ; ln -s ../../run/snicar_drdt_bst_fit_60_c070416.nc . ) ; \
+          ( cd test/em_esmf_exp ; /bin/rm -f snicar_optics_480bnd_c012422.nc ; ln -s ../../run/snicar_optics_480bnd_c012422.nc . ) ; \
+          ( cd test/em_esmf_exp ; /bin/rm -f snicar_optics_5bnd_c013122.nc ; ln -s ../../run/snicar_optics_5bnd_c013122.nc . ) ; \
 	  ( cd test/em_esmf_exp ; /bin/rm -f tr49t67 ; ln -s ../../run/tr49t67 . ) ; \
 	  ( cd test/em_esmf_exp ; /bin/rm -f tr49t85 ; ln -s ../../run/tr49t85 . ) ; \
 	  ( cd test/em_esmf_exp ; /bin/rm -f tr67t85 ; ln -s ../../run/tr67t85 . ) ; \
@@ -710,7 +713,10 @@ em_real : wrf
 	( cd test/em_real ; /bin/rm -f URBPARM.TBL ; ln -s ../../run/URBPARM.TBL . )
 	( cd test/em_real ; /bin/rm -f URBPARM_LCZ.TBL ; ln -s ../../run/URBPARM_LCZ.TBL . )
 	( cd test/em_real ; /bin/rm -f VEGPARM.TBL ; ln -s ../../run/VEGPARM.TBL . )
-	( cd test/em_real ; /bin/rm -f MPTABLE.TBL ; ln -s ../../run/MPTABLE.TBL . )
+	( cd test/em_real ; /bin/rm -f NoahmpTable.TBL ; ln -s ../../run/NoahmpTable.TBL . )
+	( cd test/em_real ; /bin/rm -f snicar_drdt_bst_fit_60_c070416.nc ; ln -s ../../run/snicar_drdt_bst_fit_60_c070416.nc . )
+	( cd test/em_real ; /bin/rm -f snicar_optics_480bnd_c012422.nc ; ln -s ../../run/snicar_optics_480bnd_c012422.nc . )
+	( cd test/em_real ; /bin/rm -f snicar_optics_5bnd_c013122.nc ; ln -s ../../run/snicar_optics_5bnd_c013122.nc . )
 	( cd test/em_real ; /bin/rm -f tr49t67 ; ln -s ../../run/tr49t67 . )
 	( cd test/em_real ; /bin/rm -f tr49t85 ; ln -s ../../run/tr49t85 . )
 	( cd test/em_real ; /bin/rm -f tr67t85 ; ln -s ../../run/tr67t85 . )

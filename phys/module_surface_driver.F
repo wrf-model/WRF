@@ -85,6 +85,7 @@ CONTAINS
      &          ,MassConcBCPHIXY, MassConcBCPHOXY, MassConcOCPHIXY                  &
      &          ,MassConcOCPHOXY, MassConcDUST1XY, MassConcDUST2XY                  &
      &          ,MassConcDUST3XY, MassConcDUST4XY, MassConcDUST5XY                  &
+     &          ,ALBSOILDIRXY, ALBSOILDIFXY                                         &
            ! Noah-MP irrigation
      &          ,IRFRACT  ,SIFRACT   ,MIFRACT   ,FIFRACT   ,IRNUMSI   ,IRNUMMI      &
      &          ,IRNUMFI  ,IRWATSI   ,IRWATMI   ,IRWATFI   ,IRELOSS   ,IRSIVOL      &
@@ -934,6 +935,7 @@ CONTAINS
                                                                      MassConcDUST1XY, MassConcDUST2XY, &
                                                                      MassConcDUST3XY, MassConcDUST4XY, &
                                                                      MassConcDUST5XY
+   REAL, OPTIONAL, DIMENSION(ims:ime,1:2,jms:jme), INTENT(INOUT) :: ALBSOILDIRXY, ALBSOILDIFXY
 
    REAL, OPTIONAL, DIMENSION(ims:ime , jms:jme)                   , INTENT(  OUT) :: eflxbxy,soilenergy, snowenergy
    REAL, OPTIONAL, DIMENSION(ims:ime , 1:num_soil_layers, jms:jme), INTENT(INOUT) :: acc_etrani
@@ -3215,6 +3217,7 @@ CONTAINS
                MassConcBCPHIXY, MassConcBCPHOXY, MassConcOCPHIXY,             & ! SNICAR variable
                MassConcOCPHOXY, MassConcDUST1XY, MassConcDUST2XY,             & ! SNICAR variable
                MassConcDUST3XY, MassConcDUST4XY, MassConcDUST5XY,             & ! SNICAR variable
+               ALBSOILDIRXY, ALBSOILDIFXY,                                    & ! SNICAR variable
 #ifdef WRF_HYDRO
                  sfcheadrt,INFXSRT,soldrain,qtiledrain,ZWATBLE2D,             &    !O
 #endif

@@ -144,6 +144,7 @@ CONTAINS
                          dust2xy, dust3xy, dust4xy, dust5xy, massconcbcphixy, massconcbcphoxy,&
                          massconcocphixy, massconcocphoxy, massconcdust1xy, massconcdust2xy,  &
                          massconcdust3xy, massconcdust4xy, massconcdust5xy,                   &
+                         ALBSOILDIRXY, ALBSOILDIFXY,                                          &
                          SMOISEQ  ,SMCWTDXY ,RECHXY, DEEPRECHXY, AREAXY,  & ! Optional Noah-MP 
                          WTDDT , STEPWTD ,QRFSXY ,QSPRINGSXY ,QSLATXY,    & ! Optional Noah-MP
                          FDEPTHXY, RIVERBEDXY, EQZWT, RIVERCONDXY, PEXPXY, & ! Optional Noah-MP
@@ -569,6 +570,8 @@ CONTAINS
    REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0,jms:jme) :: massconcdust3xy
    REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0,jms:jme) :: massconcdust4xy
    REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0,jms:jme) :: massconcdust5xy
+   REAL,    OPTIONAL, DIMENSION(ims:ime,1:2,jms:jme)  :: ALBSOILDIRXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,1:2,jms:jme)  :: ALBSOILDIFXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,1:num_soil_layers,jms:jme) :: SMOISEQ 
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: SMCWTDXY   
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: DEEPRECHXY
@@ -892,6 +895,10 @@ CONTAINS
    INTEGER :: iopt_soil
    INTEGER :: iopt_alb
    INTEGER :: iopt_wetland
+   INTEGER :: SNICAR_SNOWOPTICS_OPT
+   INTEGER :: SNICAR_DUSTOPTICS_OPT
+   INTEGER :: SNICAR_SOLARSPEC_OPT
+   INTEGER :: SNICAR_BANDNUMBER_OPT
    INTEGER :: aercu_opt !PSH/TWG 
    REAL    :: aercu_fct !PSH/TWG 
 
@@ -999,6 +1006,10 @@ CHARACTER(LEN=8) :: name
    iopt_soil = config_flags%opt_soil
    iopt_alb  = config_flags%opt_alb
    iopt_wetland = config_flags%opt_wetland
+   SNICAR_SNOWOPTICS_OPT = config_flags%SNICAR_SNOWOPTICS_OPT
+   SNICAR_DUSTOPTICS_OPT = config_flags%SNICAR_DUSTOPTICS_OPT
+   SNICAR_SOLARSPEC_OPT  = config_flags%SNICAR_SOLARSPEC_OPT
+   SNICAR_BANDNUMBER_OPT = config_flags%SNICAR_BANDNUMBER_OPT
 #if ( EM_CORE == 1 )
    obs_twindo_cg=model_config_rec%obs_twindo(1)
    obs_twindo=config_flags%obs_twindo
@@ -1504,8 +1515,11 @@ CHARACTER(LEN=8) :: name
                 dust2xy, dust3xy, dust4xy, dust5xy, massconcbcphixy, massconcbcphoxy,&
                 massconcocphixy, massconcocphoxy, massconcdust1xy, massconcdust2xy,  &
                 massconcdust3xy, massconcdust4xy, massconcdust5xy,                   &
+                ALBSOILDIRXY, ALBSOILDIFXY,                                          &
                 allowed_to_read , iopt_runsub,                  &
                 iopt_soil, iopt_alb, iopt_wetland,              &
+                SNICAR_SNOWOPTICS_OPT, SNICAR_DUSTOPTICS_OPT,   & ! optional SNICAR option
+                SNICAR_SOLARSPEC_OPT,  SNICAR_BANDNUMBER_OPT,   & ! optional SNICAR option
                 start_of_simulation ,                           &
                 lakedepth2d,  savedtke12d,  snowdp2d,   h2osno2d,       & !lake
                 snl2d,        t_grnd2d,     t_lake3d,   lake_icefrac3d, & !lake
@@ -2541,8 +2555,11 @@ CHARACTER(LEN=8) :: name
                 dust2xy, dust3xy, dust4xy, dust5xy, massconcbcphixy, massconcbcphoxy,&
                 massconcocphixy, massconcocphoxy, massconcdust1xy, massconcdust2xy,  &
                 massconcdust3xy, massconcdust4xy, massconcdust5xy,                   &
+                ALBSOILDIRXY, ALBSOILDIFXY,                                          &
                 allowed_to_read, iopt_runsub,                   &
                 iopt_soil, iopt_alb, iopt_wetland,              &
+                SNICAR_SNOWOPTICS_OPT, SNICAR_DUSTOPTICS_OPT,   & ! optional SNICAR option
+                SNICAR_SOLARSPEC_OPT,  SNICAR_BANDNUMBER_OPT,   & ! optional SNICAR option
                 start_of_simulation,                            &
                 lakedepth2d,  savedtke12d,  snowdp2d,   h2osno2d,       & !lake
                 snl2d,        t_grnd2d,     t_lake3d,   lake_icefrac3d, & !lake
@@ -2734,6 +2751,10 @@ CHARACTER(LEN=8) :: name
    INTEGER , INTENT(IN)        ::     SF_URBAN_PHYSICS 
    INTEGER , INTENT(IN)        ::     IOPT_RUNSUB
    INTEGER , INTENT(IN)        ::     IOPT_SOIL,IOPT_ALB,IOPT_WETLAND
+   INTEGER , INTENT(IN), OPTIONAL ::  SNICAR_SNOWOPTICS_OPT, &
+                                      SNICAR_DUSTOPTICS_OPT, &
+                                      SNICAR_SOLARSPEC_OPT,  &
+                                      SNICAR_BANDNUMBER_OPT
    INTEGER , INTENT(IN)        ::     itimestep
 
 !   INTEGER , INTENT(IN)        ::     LakeModel
@@ -2879,6 +2900,8 @@ CHARACTER(LEN=8) :: name
    REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0,jms:jme) :: massconcdust3xy
    REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0,jms:jme) :: massconcdust4xy
    REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0,jms:jme) :: massconcdust5xy
+   REAL,    OPTIONAL, DIMENSION(ims:ime,1:2,jms:jme)  :: ALBSOILDIRXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,1:2,jms:jme)  :: ALBSOILDIFXY   
    REAL,    OPTIONAL, DIMENSION(ims:ime,1:num_soil_layers,jms:jme) :: SMOISEQ
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: SMCWTDXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: DEEPRECHXY
@@ -3485,11 +3508,14 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                      dust2xy, dust3xy, dust4xy, dust5xy, massconcbcphixy, massconcbcphoxy,&
                      massconcocphixy, massconcocphoxy, massconcdust1xy, massconcdust2xy,  &
                      massconcdust3xy, massconcdust4xy, massconcdust5xy,                   &
+                     ALBSOILDIRXY, ALBSOILDIFXY,                                          &
                      num_soil_layers, restart,                 &
                      allowed_to_read, iopt_runsub, iopt_crop,  &
                      iopt_irr, iopt_irrm,                      &
                      sf_urban_physics, iopt_soil, iopt_alb,    &
                      iopt_wetland,                             &
+                     SNICAR_SNOWOPTICS_OPT, SNICAR_DUSTOPTICS_OPT, & ! optional SNICAR option
+                     SNICAR_SOLARSPEC_OPT,  SNICAR_BANDNUMBER_OPT, & ! optional SNICAR option
                      ids,ide, jds,jde, kds,kde,                &
                      ims,ime, jms,jme, kms,kme,                &
                      its,ite, jts,jte, kts,kte                 &

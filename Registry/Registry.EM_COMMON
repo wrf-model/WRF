@@ -2427,7 +2427,8 @@ rconfig   integer  nssl_3moment           namelist,physics      1             0 
 rconfig   integer  nssl_density_on        namelist,physics      1            -1       rh       "NSSL graupel/hail density flag"  ""      ""
 rconfig   integer  nssl_ssat_output       namelist,physics      1             0       rh       "NSSL ssat output flag"  ""      ""
 
-
+rconfig   integer  tempo_aerosolaware     namelist,physics      1             1       rh       "TEMPO aerosol-aware flag"  ""      ""
+rconfig   integer  tempo_hailware         namelist,physics      1             1       rh       "TEMPO hail-aware flag"  ""      ""
 
 rconfig   integer     CCNTY               namelist,physics      1            2        rh       "Aerosol background type for NTU microphysics"  ""   ""
 
@@ -3040,6 +3041,7 @@ package   wdm7scheme      mp_physics==26               -             moist:qv,qc
 package   udmscheme       mp_physics==27               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnn,qnc,qnr;state:re_cloud,re_ice,re_snow
 package   thompsonaero    mp_physics==28               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr,qnc,qnwfa,qnifa,qnbca;state:re_cloud,re_ice,re_snow,qnwfa2d,qnifa2d,taod5503d,taod5502d
 package   thompsongh      mp_physics==38               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr,qnc,qng,qvolg,qnwfa,qnifa,qnbca;state:re_cloud,re_ice,re_snow,qnwfa2d,qnifa2d,taod5503d,taod5502d
+package   tempo           mp_physics==88               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr;state:re_cloud,re_ice,re_snow
 package   p3_1category    mp_physics==50               -             moist:qv,qc,qr,qi;scalar:qni,qnr,qir,qib;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,refl_10cm,th_old,qv_old
 package   p3_1category_nc mp_physics==51               -             moist:qv,qc,qr,qi;scalar:qnc,qni,qnr,qir,qib;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,refl_10cm,th_old,qv_old
 package   p3_2category    mp_physics==52               -             moist:qv,qc,qr,qi,qi2;scalar:qnc,qni,qnr,qir,qib,qni2,qir2,qib2;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,vmi3d_2,rhopo3d_2,di3d_2,refl_10cm,th_old,qv_old
@@ -3062,7 +3064,8 @@ package   nssl_graupelvol nssl_density_on==1           -             scalar:qvol
 package   nssl_hailvol    nssl_density_on==2           -             scalar:qvolg,qvolh
 package   nssl_ssat_out   nssl_ssat_output==1          -             state:ssat
 package   nssl_ssati_out  nssl_ssat_output==2          -             state:ssat,ssati
-
+package   tempo_aerosol   tempo_aerosolaware==1        -             scalar:qnc,qnwfa,qnifa
+package   tempo_hail      tempo_hailaware==1           -             scalar:qng,qvolg
 
 package   radar_refl      compute_radar_ref==1         -             state:refl_10cm,refd_max
 endif

@@ -97,6 +97,15 @@ MODULES = \
 	module_mp_etanew.o \
 	module_mp_fer_hires.o \
 	module_mp_thompson.o \
+	module_mp_tempo_cfgs.o \
+	module_mp_tempo_params.o \
+	module_mp_tempo_utils.o \
+	module_mp_tempo_diags.o \
+	module_mp_tempo_ml.o \
+	module_mp_tempo_init.o \
+	module_mp_tempo_aerosols.o \
+	module_mp_tempo_main.o \
+	module_mp_tempo_driver.o \
 	module_mp_rcon.o \
         module_fire_emis.o \
 	module_mp_SBM_polar_radar.o \
@@ -234,7 +243,7 @@ DIAGNOSTIC_MODULES_EM = \
 	module_diag_zld.o \
 	module_diag_trad_fields.o \
         module_diag_solar.o
-  
+
 PHYSMMM_MODULES = \
 	physics_mmm/sf_sfclayrev.o \
 	physics_mmm/cu_ntiedtke.o \
@@ -245,17 +254,6 @@ PHYSMMM_MODULES = \
         physics_mmm/bl_gwdo.o \
         physics_mmm/bl_ysu.o
 
-TEMPO_MODULES = \
-	module_mp_tempo_cfgs.o \
-	module_mp_tempo_params.o \
-	module_mp_tempo_utils.o \
-	module_mp_tempo_diags.o \
-	module_mp_tempo_ml.o \
-	module_mp_tempo_init.o \
-	module_mp_tempo_aerosols.o \
-	module_mp_tempo_main.o \
-	module_mp_tempo_driver.o
-
 OBJS    =
 
 LIBTARGET    =  physics
@@ -265,11 +263,11 @@ $(LIBTARGET) :
 	(cd .. && ./tools/manage_externals/checkout_externals --externals ./arch/Externals.cfg)
 	$(MAKE) $(J) non_nmm ; \
 	$(AR) $(ARFLAGS) ../main/$(LIBWRFLIB) $(MODULES) $(OBJS)  \
-		$(FIRE_MODULES) $(DIAGNOSTIC_MODULES_EM) $(PHYSMMM_MODULES) $(TEMPO_MODULES)
+		$(FIRE_MODULES) $(DIAGNOSTIC_MODULES_EM) $(PHYSMMM_MODULES)
 
 include ../configure.wrf
 
-non_nmm : $(MODULES) $(FIRE_MODULES) $(OBJS) $(DIAGNOSTIC_MODULES_EM) $(TEMPO_MODULES)
+non_nmm : $(MODULES) $(FIRE_MODULES) $(OBJS) $(DIAGNOSTIC_MODULES_EM)
 
 submodules :
 	@if [ \( ! -f module_sf_noahmpdrv.F \) -o \( ! -f module_sf_noahmp_glacier.F \) -o \

@@ -174,7 +174,7 @@ SUBROUTINE microphysics_driver(                                          &
                     ,WSM7SCHEME, WDM7SCHEME, UDMSCHEME &
                     ,NUWRF4ICESCHEME &
                     ,MILBRANDT2MOM , CAMMGMPSCHEME,FULL_KHAIN_LYNN, P3_1CATEGORY, P3_1CATEGORY_NC, P3_2CATEGORY, P3_1CAT_3MOM &
-                    ,MORR_TM_AERO, JENSEN_ISHMAEL, SPRINKLER, NTU !,MILBRANDT3MOM
+                    ,MORR_TM_AERO, JENSEN_ISHMAEL, SPRINKLER, NTU, TEMPO !,MILBRANDT3MOM
    USE module_state_description, ONLY : WSM6RSCHEME
 #if ( WRFPLUS == 1 )
    USE module_state_description, ONLY : LSCONDSCHEME, MKESSLERSCHEME
@@ -224,6 +224,8 @@ SUBROUTINE microphysics_driver(                                          &
    USE module_mp_fer_hires
    USE module_mp_rcon
    USE module_mp_thompson
+   USE module_mp_tempo_cfgs, only : ty_tempo_cfgs
+   USE module_mp_tempo_driver, only : tempo_driver, ty_tempo_driver_diags
    USE module_mp_full_sbm
 #if ( BUILD_SBM_FAST == 1 )
    USE module_mp_fast_sbm
@@ -796,6 +798,9 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
    character*256 :: errmsg
    integer :: errflg
 
+   type(ty_tempo_cfgs) :: tempo_cfgs
+   type(ty_tempo_driver_diags) :: tempo_driver_diags
+   logical :: config_tempo_aerosolaware, config_tempo_hailaware
 !---------------------------------------------------------------------
 !  check for microphysics type.  We need a clean way to
 !  specify these things!
@@ -1380,6 +1385,43 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling thompson_et_al' )
+             ENDIF
+        CASE (TEMPO)
+             CALL wrf_debug ( 100 , 'microphysics_driver: calling tempo' )
+             IF ( PRESENT( QV_CURR ) .AND. PRESENT ( QC_CURR ) .AND.  &
+                  PRESENT( QR_CURR ) .AND. PRESENT ( QI_CURR ) .AND.  &
+                  PRESENT( QS_CURR ) .AND. PRESENT ( QG_CURR ) .AND.  &
+                  PRESENT( QNR_CURR) .AND. PRESENT ( QNI_CURR)) THEN
+
+         config_tempo_aerosolaware = .false.
+         config_tempo_hailaware = .false.
+         if (config_flags%tempo_aerosolaware == 1) config_tempo_aerosolaware = .true.
+         if (config_flags%tempo_hailaware == 1) config_tempo_hailaware = .true.
+         tempo_cfgs%aerosolaware_flag = config_tempo_aerosolaware
+         tempo_cfgs%hailaware_flag = config_tempo_hailaware
+             CALL tempo_driver(                          &
+                     tempo_cfgs=tempo_cfgs,              &
+                     dt=dt,                              &
+                     itimestep=itimestep,                &
+                     th=th,                              &
+                     pii=pi_phy,                         &
+                     p=p,                                &
+                     w=w,                                &
+                     dz=dz8w,                            &
+                     qv=qv_curr,                         &
+                     qc=qc_curr,                         &
+                     qr=qr_curr,                         &
+                     qi=qi_curr,                         &
+                     qs=qs_curr,                         &
+                     qg=qg_curr,                         &
+                     ni=qni_curr,                        &
+                     nr=qnr_curr,                        &
+                     ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde, &
+                     ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme, &
+                     its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte, &
+                     tempo_diags = tempo_driver_diags)
+             ELSE
+                CALL wrf_error_fatal ( 'arguments not present for calling tempo' )
              ENDIF
 #if (EM_CORE==1)
         CASE (NTU)

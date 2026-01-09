@@ -1270,7 +1270,7 @@ CONTAINS
               ,do_capsuppress=do_capsuppress                    &
               ,cap_suppress_loc=cap_suppress_loc                &
 #endif                                 
-
+                                                                )
      CASE (GFLSCHEME)
          CALL wrf_debug(100,'in grelldrv')
 
@@ -1294,7 +1294,7 @@ CONTAINS
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte)
-                                                                )
+
      CASE (CAMZMSCHEME)
           IF (PRESENT(z_at_w) .AND. PRESENT(mavail)                 &
                  .AND. PRESENT(pblh) .AND. PRESENT(psfc).AND.PRESENT(RQCNCUTEN))THEN

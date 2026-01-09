@@ -4407,6 +4407,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    USE module_mp_wdm6
    USE module_mp_wdm7
    USE module_mp_udm
+   USE module_mp_tempo_cfgs, only : ty_tempo_cfgs
    USE module_mp_tempo_init, only : tempo_init
 #if (WRFPLUS != 1) & !defined( VAR4D )
    USE module_mp_nssl_2mom, only: nssl_2mom_init
@@ -4452,6 +4453,8 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    INTEGER, INTENT(IN) :: num_sc                                               !  G. Thompson
    REAL, DIMENSION(ims:ime,kms:kme,jms:jme, num_sc), INTENT(INOUT):: scalar    !  G. Thompson
 
+   type(ty_tempo_cfgs) :: tempo_cfgs ! for tempo
+   logical :: config_tempo_aerosolaware, config_tempo_hailaware
 ! Local
    INTEGER :: i, j, itf, jtf
    REAL, DIMENSION(20) :: nssl_params
@@ -4580,9 +4583,13 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                           IMS=ims, IME=ime, JMS=jms, JME=jme, KMS=kms, KME=kme,   &
                           ITS=its, ITE=ite, JTS=jts, JTE=jte, KTS=kts, KTE=kte)
 
-     CASE (TEMPO)
-         CALL tempo_init(aerosolaware_flag=config_flags%tempo_aerosolaware, &
-             hailaware_flag=config_flags%tempo_hailaware)
+      CASE (TEMPO)
+         config_tempo_aerosolaware = .false.
+         config_tempo_hailaware = .false.
+         if (config_flags%tempo_aerosolaware == 1) config_tempo_aerosolaware = .true.
+         if (config_flags%tempo_hailaware == 1) config_tempo_hailaware = .true.
+         CALL tempo_init(aerosolaware_flag=config_tempo_aerosolaware, &
+             hailaware_flag=config_tempo_hailaware, tempo_cfgs=tempo_cfgs)
 
      CASE (MORR_TWO_MOMENT)
          CALL morr_two_moment_init( config_flags%morr_rimed_ice )

@@ -245,6 +245,17 @@ PHYSMMM_MODULES = \
         physics_mmm/bl_gwdo.o \
         physics_mmm/bl_ysu.o
 
+TEMPO_MODULES = \
+	module_mp_tempo_cfgs.o \
+	module_mp_tempo_params.o \
+	module_mp_tempo_utils.o \
+	module_mp_tempo_diags.o \
+	module_mp_tempo_ml.o \
+	module_mp_tempo_init.o \
+	module_mp_tempo_aerosols.o \
+	module_mp_tempo_main.o \
+	module_mp_tempo_driver.o
+
 OBJS    =
 
 LIBTARGET    =  physics
@@ -254,11 +265,11 @@ $(LIBTARGET) :
 	(cd .. && ./tools/manage_externals/checkout_externals --externals ./arch/Externals.cfg)
 	$(MAKE) $(J) non_nmm ; \
 	$(AR) $(ARFLAGS) ../main/$(LIBWRFLIB) $(MODULES) $(OBJS)  \
-		$(FIRE_MODULES) $(DIAGNOSTIC_MODULES_EM) $(PHYSMMM_MODULES)
+		$(FIRE_MODULES) $(DIAGNOSTIC_MODULES_EM) $(PHYSMMM_MODULES) $(TEMPO_MODULES)
 
 include ../configure.wrf
 
-non_nmm : $(MODULES) $(FIRE_MODULES) $(OBJS) $(DIAGNOSTIC_MODULES_EM)
+non_nmm : $(MODULES) $(FIRE_MODULES) $(OBJS) $(DIAGNOSTIC_MODULES_EM) $(TEMPO_MODULES)
 
 submodules :
 	@if [ \( ! -f module_sf_noahmpdrv.F \) -o \( ! -f module_sf_noahmp_glacier.F \) -o \
@@ -282,6 +293,25 @@ submodules :
 		ln -sf MYNN-EDMF/WRF/module_bl_mynnedmf_driver.F90 module_bl_mynnedmf_driver.F ; \
 	else \
 		echo No action required for MYNN-EDMF submodule ; \
+	fi
+	@if [ \( ! -f module_mp_tempo_driver.F90 \) -o \( ! -f module_mp_tempo_main.F90 \) -o \
+	      \( ! -f module_mp_tempo_init.F90 \) -o \( ! -f module_mp_tempo_aerosols.F90 \) -o \
+	      \( ! -f module_mp_tempo_ml.F90 \) -o \( ! -f modulemp_tempo_diags.F90 \) -o \
+              \( ! -f module_mp_tempo_utils.F90 \) -o \( ! -f module_mp_tempo_params.F90 \) -o \
+              \( ! -f module_mp_tempo_cfgs.F90 \) ] ; then \
+                echo Pulling in TEMPO submodule ; \
+		( cd .. ; git submodule update --init --recursive ) ; \
+		ln -sf TEMPO/src/module_mp_tempo_cfgs.F90 module_mp_tempo_cfgs.F90 ; \
+		ln -sf TEMPO/src/module_mp_tempo_params.F90 module_mp_tempo_params.F90 ; \
+		ln -sf TEMPO/src/module_mp_tempo_utils.F90 module_mp_tempo_utils.F90 ; \
+		ln -sf TEMPO/src/module_mp_tempo_diags.F90 module_mp_tempo_diags.F90 ; \
+		ln -sf TEMPO/src/module_mp_tempo_ml.F90 module_mp_tempo_ml.F90 ; \
+		ln -sf TEMPO/src/module_mp_tempo_init.F90 module_mp_tempo_init.F90 ; \
+		ln -sf TEMPO/src/module_mp_tempo_aerosols.F90 module_mp_tempo_aerosols.F90 ; \
+		ln -sf TEMPO/src/module_mp_tempo_main.F90 module_mp_tempo_main.F90 ; \
+		ln -sf TEMPO/src/module_mp_tempo_driver.F90 module_mp_tempo_driver.F90 ; \
+	else \
+		echo No action required for TEMPO submodule ; \
 	fi
 	
 clean:

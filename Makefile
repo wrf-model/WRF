@@ -138,6 +138,22 @@ wrf : framework_only
 	  echo "MYNN-EDMF submodule files populating WRF directories" ; \
 	  echo "------------------------------------------------------------------------------" ; \
 	fi
+	@if [ \( ! -f phys/module_mp_tempo_driver.F90 \) -o \( ! -f phys/module_mp_tempo_main.F90 \) -o \
+	      \( ! -f phys/module_mp_tempo_init.F90 \) -o \( ! -f phys/module_mp_tempo_aerosols.F90 \) -o \
+	      \( ! -f phys/module_mp_tempo_ml.F90 \) -o \( ! -f phys/module_mp_tempo_diags.F90 \) -o \
+              \( ! -f phys/module_mp_tempo_utils.F90 \) -o \( ! -f phys/module_mp_tempo_params.F90 \) -o \
+              \( ! -f phys/module_mp_tempo_cfgs.F90 \) ] ; then \
+	  echo " " ; \
+	  echo "------------------------------------------------------------------------------" ; \
+	  echo "Error Error Error TEMPO submodule files not populating WRF directories" ; \
+	  echo "------------------------------------------------------------------------------" ; \
+	  echo " " ; \
+	  exit 31 ; \
+	else \
+	  echo "------------------------------------------------------------------------------" ; \
+	  echo "TEMPO submodule files populating WRF directories" ; \
+	  echo "------------------------------------------------------------------------------" ; \
+	fi
 	if [ $(WRF_CHEM) -eq 1 ]    ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" chemics ; fi
 	if [ $(WRF_EM_CORE) -eq 1 ]    ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" em_core ; fi
 	if [ $(WRF_HYDRO) -eq 1 ]   ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" wrf_hydro ; fi

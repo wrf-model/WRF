@@ -222,6 +222,9 @@ These steps must be followed prior the re-compilation of the WRF model (it requi
     - Adding CDXWRF=2, one needs to remove the comment ##CDXWRF1## and ##CDXWRF2## at the beginning of the line of the definition of certain variables
     - Adding CDXWRF=3, one needs to remove the comment ##CDXWRF1##, ##CDXWRF2## and ##CDXWRF3## at the beginning of the line of the definition of certain variables
     - Adding CDXWRF=4, one needs to remove the comment ##CDXWRF1##, ##CDXWRF2##, ##CDXWRF3## and ##CDXWRF4## at the beginning of the line of the definition of certain variables
+     $ sed -i 's/##CDXWRF1##//g' Registry/registry.cordex_comp
+     $ sed -i 's/##CDXWRF2##//g' Registry/registry.cordex_comp
+     $ sed -i 's/##CDXWRF3##//g' Registry/registry.cordex_comp
 
  - Additionally, one can also get the instantaneous values for the variables which only certain statistics (accumulation, minimum, mean, ...) are provided. In order to get them, one need to:
   a.- Search in 'phys/module_diagnostics_driver.F' and 'phys/module_diag_cordex.F' the lines of code marked with 'INSTVALS' and change accordingly. 

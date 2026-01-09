@@ -1415,8 +1415,8 @@ CONTAINS
                     ,FRACSOIL10CM=grid%fracsoil10cm                        &
 #ifdef CDXWRF
 #if CDXWRF>=1
-
-#elif CDXWRF>=4
+#endif
+#if CDXWRF>=4
                     ,DIABH=grid%h_diabatic                                 &
                     ,QVTTEND=grid%qvttend, QCTTEND=grid%qcttend            & 
                     ,QRTTEND=grid%qrttend, QSTTEND=grid%qsttend            &

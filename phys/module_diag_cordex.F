@@ -752,6 +752,8 @@ CONTAINS
     fogvisbltymean
   REAL, DIMENSION(ims:ime,jms:jme), INTENT(inout)        :: tdsmin, tdsmax, tdsmean
   REAL, DIMENSION(ims:ime,jms:jme), INTENT(inout)        :: twsmin, twsmax, twsmean
+#else
+  REAL, DIMENSION(ims:ime,kms:kme,jms:jme)               :: ta, press, zg, hur
 #endif
 #if CDXWRF>=4
   REAL, DIMENSION(ims:ime,jms:jme), INTENT(inout)        :: wbacdh
@@ -784,8 +786,6 @@ CONTAINS
   REAL, DIMENSION(ims:ime,Nwbdswssrng,jms:jme),                                                       &
     INTENT(inout)                                        :: wbdswsstres
 #endif
-#else
-  REAL, DIMENSION(ims:ime,kms:kme,jms:jme)               :: ta, press, zg
 #endif
   REAL, DIMENSION(ims:ime,jms:jme), INTENT(out)          :: uas, vas, wss, wbds, hurs, huss
   REAL, DIMENSION(ims:ime,jms:jme), INTENT(out)          :: psl
@@ -845,7 +845,6 @@ CONTAINS
   REAL, DIMENSION(ims:ime,jms:jme)                       :: wsgshp, ugustwindhp, vgustwindhp
   INTEGER, DIMENSION(ims:ime,jms:jme)                    :: gustpointb01, gustpointhp
   REAL, DIMENSION(ims:ime,jms:jme)                       :: potevap, potevapgen
-#ifdef CDXWRF
 #if CDXWRF>=1
   REAL, DIMENSION(ims:ime,jms:jme)                       :: cape, cin, zlfc, plfc, lidx
   REAL, DIMENSION(ims:ime,jms:jme)                       :: iut, ivt  
@@ -860,7 +859,6 @@ CONTAINS
   INTEGER                                                :: itas, ihurs, iwbds, iwss
 #endif
 #if CDXWRF>=4
-#endif
 #endif
 !! End of INSTVALS
 
@@ -980,12 +978,13 @@ CONTAINS
         ! air-temperature
         CALL var_ta(thp(i,:,j), press(i,:,j), dimz, ta(i,:,j))
 
+#if CXWRF>= 2
         ! 2m relative humidity
         CALL var_hurs(t2(i,j), ps(i,j), q2(i,j), hurs(i,j))
 
         ! 10m Earth rotated winds
         CALL var_uasvas(u10(i,j), v10(i,j), sina(i,j), cosa(i,j), uas(i,j), vas(i,j))
-
+#endif
         ! Not using var_vertint, since we have a full loop in soil_layers
         !! mrso
         !WRITE(msg,*) '  ' // TRIM(fname) // ': computing MRSO diagnostic'
@@ -1192,7 +1191,6 @@ CONTAINS
           potevapgen(i,j) = 0.
         END IF
 
-#ifdef CDXWRF
 #if CDXWRF>=1
         ! relative humidity
         CALL var_hur(t(i,:,j), press(i,:,j), qv(i,:,j), dimz, hur(i,:,j))
@@ -1364,7 +1362,6 @@ CONTAINS
         END IF
 
 #endif
-#endif
 
         ijdbg = .FALSE.
       END DO
@@ -1526,7 +1523,8 @@ CONTAINS
           ! Horizontal water transport
           iutmean(i,j) = iut(i,j)
           ivtmean(i,j) = ivt(i,j)
-
+#endif
+#if CDXWR>=2
           ! fog
           IF (fog(i,j) == 1) THEN
             tfog(i,j) = dt
@@ -1759,6 +1757,8 @@ CONTAINS
             END IF
             WRITE(msg,*) '    iut:', iut(i,j), ' ivt:', ivt(i,j)
             CALL wrf_debug(75,msg)
+#endif
+#if CDXWRF>=2
             WRITE(msg,*)'    fog:', fog(i,j), ' tfog:', tfog(i,j), ' vis:', vis(i,j), ' vismin:',     &
               fogvisbltymin(i,j), ' vismax:', fogvisbltymax(i,j), ' vismean:', fogvisbltymean(i,j)
             CALL wrf_debug(75,msg)
@@ -1920,7 +1920,8 @@ CONTAINS
           ! Horizontal water transport
           iutmean(i,j) = iutmean(i,j) + iut(i,j)
           ivtmean(i,j) = ivtmean(i,j) + ivt(i,j)
-
+#endif
+#if CDXWRF>=2
           ! fog
           IF (fog(i,j) == 1) THEN
             tfog(i,j) = tfog(i,j) + dt
@@ -2208,7 +2209,9 @@ CONTAINS
               CALL wrf_debug(75,msg)
             END IF
             WRITE(msg,*) '    iutmean:', iutmean(i,j), ' ivtmean:', ivtmean(i,j)
-            CALL wrf_debug(75,msg)            
+            CALL wrf_debug(75,msg)
+#endif
+#if CDXWRF>=2
             WRITE(msg,*)'    fog:', fog(i,j), ' tfog:', tfog(i,j), ' vis:', vis(i,j), ' vismin:',     &
               fogvisbltymin(i,j), ' vismax:', fogvisbltymax(i,j), ' vismean:', fogvisbltymean(i,j)
             CALL wrf_debug(75,msg)

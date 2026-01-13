@@ -1391,7 +1391,10 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
              IF ( PRESENT( QV_CURR ) .AND. PRESENT ( QC_CURR ) .AND.  &
                   PRESENT( QR_CURR ) .AND. PRESENT ( QI_CURR ) .AND.  &
                   PRESENT( QS_CURR ) .AND. PRESENT ( QG_CURR ) .AND.  &
-                  PRESENT( QNR_CURR) .AND. PRESENT ( QNI_CURR)) THEN
+                  PRESENT( QNR_CURR) .AND. PRESENT ( QNI_CURR) .AND.  &
+                  PRESENT( QNG_CURR) .AND. PRESENT ( QVOLG_CURR) .AND.  &
+                  PRESENT( QNC_CURR) .AND. PRESENT ( QNWFA_CURR) .AND.  &
+                  PRESENT( QNIFA_CURR)) THEN
 
          config_tempo_aerosolaware = .false.
          config_tempo_hailaware = .false.
@@ -1416,10 +1419,34 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      qg=qg_curr,                         &
                      ni=qni_curr,                        &
                      nr=qnr_curr,                        &
+                     nc=qnc_curr,                        &
+                     nwfa=qnwfa_curr,                    &
+                     nifa=qnifa_curr,                    &
+                     ng=qng_curr,                        &
+                     qb=qvolg_curr,                      &
                      ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde, &
                      ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme, &
                      its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte, &
                      tempo_diags = tempo_driver_diags)
+             do j = jts, jte
+                do i = its, ite
+                   snownc(i,j) = snownc(i,j) + tempo_driver_diags%snow_liquid_equiv_precip(i,j)
+                   snowncv(i,j) = tempo_driver_diags%snow_liquid_equiv_precip(i,j)
+                   graupelnc(i,j) = graupelnc(i,j) + tempo_driver_diags%graupel_liquid_equiv_precip(i,j)
+                   graupelncv(i,j) = tempo_driver_diags%graupel_liquid_equiv_precip(i,j)
+                   rainncv(i,j) = tempo_driver_diags%rain_precip(i,j) + &
+                        snowncv(i,j) + graupelncv(i,j) + tempo_driver_diags%ice_liquid_equiv_precip(i,j)
+                   rainnc(i,j) = rainnc(i,j) + (tempo_driver_diags%rain_precip(i,j) + &
+                        snowncv(i,j) + graupelncv(i,j) + tempo_driver_diags%ice_liquid_equiv_precip(i,j))
+                   sr(i,j) = tempo_driver_diags%frozen_fraction(i,j)
+                   do k = kts, kte
+                      refl_10cm(i,k,j) = tempo_driver_diags%refl10cm(i,k,j)
+                      re_cloud(i,k,j) = tempo_driver_diags%re_cloud(i,k,j)
+                      re_ice(i,k,j) = tempo_driver_diags%re_ice(i,k,j)
+                      re_snow(i,k,j) = tempo_driver_diags%re_snow(i,k,j)
+                   enddo
+                enddo
+             enddo
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling tempo' )
              ENDIF

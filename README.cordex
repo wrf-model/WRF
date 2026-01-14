@@ -192,19 +192,27 @@ Efficiency constrains make necessary to introduce a system of compilation in ord
 * INSTALLATION
 These steps must be followed prior the re-compilation of the WRF model (it requires a clean -a)
 
- 1.- Check to the right branch
+ 1.- Getting the code from the fork in a $INSTDIR
+   $ cd $INSTDIR
+   $ git clone git@github.com:LluisFB/WRF.git
+   $ cd WRF
+
+ 2.- Getting submodules
+   $ git submodule update --init --recursive
+
+ 3.- Check to the right branch
    $ git checkout cdxwrf
    
    ** NOTE **: assuming that you got the right submodules [e.g. noahMP] (when downloading the fork) !!
 
- 2.- Clean the code (in order to avoid to run again configure one can make a copy of the 'configure.wrf' and recover it after the clean, otherwise it is erased)
+ 4.- Clean the code (in order to avoid to run again configure one can make a copy of the 'configure.wrf' and recover it after the clean, otherwise it is erased)
    $ cp configure.wrf configure.cordex.wrf
    $ ./clean -a
    $ cp configure.cordex.wrf configure.wrf
 
- 3.- edit the `configure.wrf' and add the line (after the line -DNETCDF and/or -DCLWRFGHG)
+ 5.- edit the `configure.wrf' and add the line (after the line -DNETCDF and/or -DCLWRFGHG)
                       -DCORDEXDIAG \
- 4.- Set up (or not) the pre-compilation variable CDXWRF (after the line -DCORDEXDIAG)
+ 6.- Set up (or not) the pre-compilation variable CDXWRF (after the line -DCORDEXDIAG)
                       -DCDXWRF=[value] \
 
   Accordingly to the value given to the pre-compilation variable CDXWRF one obtains:

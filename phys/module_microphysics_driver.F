@@ -225,7 +225,8 @@ SUBROUTINE microphysics_driver(                                          &
    USE module_mp_rcon
    USE module_mp_thompson
    USE module_mp_tempo_cfgs, only : ty_tempo_cfgs
-   USE module_mp_tempo_driver, only : tempo_driver, ty_tempo_driver_diags
+   USE module_mp_tempo_driver, only : tempo_driver, ty_tempo_driver_diags, &
+      tempo_aerosol_surface_emissions
    USE module_mp_full_sbm
 #if ( BUILD_SBM_FAST == 1 )
    USE module_mp_fast_sbm
@@ -1386,22 +1387,27 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling thompson_et_al' )
              ENDIF
-        CASE (TEMPO)
+          CASE (TEMPO)
+             ! add surface emissions
+             if (present(qnwfa_curr) .and. present(qnwfa2d)) then
+                call tempo_aerosol_surface_emissions(dt=dt, &
+                     nwfa=qnwfa_curr, nwfa2d=qnwfa2d, &
+                     ims=ims, ime=ime, jms=jms, &
+                     jme=jme, kms=kms, kme=kme, kts=kts)
+             endif
+
              CALL wrf_debug ( 100 , 'microphysics_driver: calling tempo' )
              IF ( PRESENT( QV_CURR ) .AND. PRESENT ( QC_CURR ) .AND.  &
                   PRESENT( QR_CURR ) .AND. PRESENT ( QI_CURR ) .AND.  &
                   PRESENT( QS_CURR ) .AND. PRESENT ( QG_CURR ) .AND.  &
-                  PRESENT( QNR_CURR) .AND. PRESENT ( QNI_CURR) .AND.  &
-                  PRESENT( QNG_CURR) .AND. PRESENT ( QVOLG_CURR) .AND.  &
-                  PRESENT( QNC_CURR) .AND. PRESENT ( QNWFA_CURR) .AND.  &
-                  PRESENT( QNIFA_CURR)) THEN
+                  PRESENT( QNR_CURR) .AND. PRESENT ( QNI_CURR)) THEN
 
-         config_tempo_aerosolaware = .false.
-         config_tempo_hailaware = .false.
-         if (config_flags%tempo_aerosolaware == 1) config_tempo_aerosolaware = .true.
-         if (config_flags%tempo_hailaware == 1) config_tempo_hailaware = .true.
-         tempo_cfgs%aerosolaware_flag = config_tempo_aerosolaware
-         tempo_cfgs%hailaware_flag = config_tempo_hailaware
+             config_tempo_aerosolaware = .false.
+             config_tempo_hailaware = .false.
+             if (config_flags%tempo_aerosolaware == 1) config_tempo_aerosolaware = .true.
+             if (config_flags%tempo_hailaware == 1) config_tempo_hailaware = .true.
+             tempo_cfgs%aerosolaware_flag = config_tempo_aerosolaware
+             tempo_cfgs%hailaware_flag = config_tempo_hailaware
              CALL tempo_driver(                          &
                      tempo_cfgs=tempo_cfgs,              &
                      dt=dt,                              &
@@ -1419,31 +1425,63 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      qg=qg_curr,                         &
                      ni=qni_curr,                        &
                      nr=qnr_curr,                        &
-                     nc=qnc_curr,                        &
-                     nwfa=qnwfa_curr,                    &
-                     nifa=qnifa_curr,                    &
-                     ng=qng_curr,                        &
-                     qb=qvolg_curr,                      &
+                     nc=qnc_curr,                        & ! optionally present when tempo_aerosolaware == 1
+                     nwfa=qnwfa_curr,                    & ! optionally present when tempo_aerosolaware == 1
+                     nifa=qnifa_curr,                    & ! optionally present when tempo_aerosolaware == 1
+                     ng=qng_curr,                        & ! optionally present when tempo_hailaware == 1
+                     qb=qvolg_curr,                      & ! optionally present when tempo_hailaware == 1
                      ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde, &
                      ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme, &
                      its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte, &
                      tempo_diags = tempo_driver_diags)
+             ! map tempo diagnostics to WRF variable names noting that some wrf variables are optional
              do j = jts, jte
                 do i = its, ite
-                   snownc(i,j) = snownc(i,j) + tempo_driver_diags%snow_liquid_equiv_precip(i,j)
-                   snowncv(i,j) = tempo_driver_diags%snow_liquid_equiv_precip(i,j)
-                   graupelnc(i,j) = graupelnc(i,j) + tempo_driver_diags%graupel_liquid_equiv_precip(i,j)
-                   graupelncv(i,j) = tempo_driver_diags%graupel_liquid_equiv_precip(i,j)
-                   rainncv(i,j) = tempo_driver_diags%rain_precip(i,j) + &
-                        snowncv(i,j) + graupelncv(i,j) + tempo_driver_diags%ice_liquid_equiv_precip(i,j)
-                   rainnc(i,j) = rainnc(i,j) + (tempo_driver_diags%rain_precip(i,j) + &
-                        snowncv(i,j) + graupelncv(i,j) + tempo_driver_diags%ice_liquid_equiv_precip(i,j))
+                   if (present(snowncv)) then
+                      snowncv(i,j) = tempo_driver_diags%ice_liquid_equiv_precip(i,j) + &
+                           tempo_driver_diags%snow_liquid_equiv_precip(i,j)
+                   endif
+                   if (present(snownc)) snownc(i,j) = snownc(i,j) + snownvc(i,j)
+
+                   if (present(graupelncv)) then
+                      graupelncv(i,j) = tempo_driver_diags%graupel_liquid_equiv_precip(i,j)
+                   endif
+                   if (present(graupelnc)) graupelnc(i,j) = graupelnc(i,j) + graupelncv(i,j)
+
+                   if (present(rainncv)) then
+                      rainncv(i,j) = tempo_driver_diags%rain_precip(i,j) + snowncv(i,j) + graupelncv(i,j)
+                   endif
+                   if (present(rainnc)) rainnc(i,j) = rainnc(i,j) + rainncv(i,j)
+                   ! ratio of frozen precipitation to total is not optional in wrf
                    sr(i,j) = tempo_driver_diags%frozen_fraction(i,j)
+
+                   if (present(hail_maxk1)) then
+                      if (allocated(tempo_driver_diags%max_hail_diameter_sfc)) then
+                         hail_maxk1(i,j) = tempo_driver_diags%max_hail_diameter_sfc(i,j)
+                      endif
+                   endif
+                   if (present(hail_max2d)) then
+                      if (allocated(tempo_driver_diags%max_hail_diameter_column)) then
+                         hail_max2d(i,j) = tempo_driver_diags%max_hail_diameter_column(i,j)
+                      endif
+                   endif
+                   ! 3d tempo diagnostics
                    do k = kts, kte
-                      refl_10cm(i,k,j) = tempo_driver_diags%refl10cm(i,k,j)
-                      re_cloud(i,k,j) = tempo_driver_diags%re_cloud(i,k,j)
-                      re_ice(i,k,j) = tempo_driver_diags%re_ice(i,k,j)
-                      re_snow(i,k,j) = tempo_driver_diags%re_snow(i,k,j)
+                      if (present(refl_10cm)) then
+                         if (allocated(tempo_driver_diags%refl10cm)) then
+                            refl_10cm(i,k,j) = tempo_driver_diags%refl10cm(i,k,j)
+                         endif
+                      endif
+                      ! effective radius values are not optional in wrf
+                      if (allocated(tempo_driver_diags%re_cloud)) then
+                         re_cloud(i,k,j) = tempo_driver_diags%re_cloud(i,k,j)
+                      endif
+                      if (allocated(tempo_driver_diags%re_ice)) then
+                         re_ice(i,k,j) = tempo_driver_diags%re_ice(i,k,j)
+                      endif
+                      if (allocated(tempo_driver_diags%re_snow)) then
+                         re_snow(i,k,j) = tempo_driver_diags%re_snow(i,k,j)
+                      endif
                    enddo
                 enddo
              enddo

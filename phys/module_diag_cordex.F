@@ -1,4 +1,5 @@
 MODULE module_diag_cordex
+#ifdef CORDEXDIAG
 ! WRF module to compute atmospheric model diagnostics required by CORDEX
 ! L. Fita, CIMA. December 2017
 !
@@ -3003,4 +3004,5 @@ CONTAINS
   END SUBROUTINE cordex_hf_output_calc
 #endif
 
+#endif
 END MODULE module_diag_cordex

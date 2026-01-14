@@ -1441,7 +1441,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                       snowncv(i,j) = tempo_driver_diags%ice_liquid_equiv_precip(i,j) + &
                            tempo_driver_diags%snow_liquid_equiv_precip(i,j)
                    endif
-                   if (present(snownc)) snownc(i,j) = snownc(i,j) + snownvc(i,j)
+                   if (present(snownc)) snownc(i,j) = snownc(i,j) + snowncv(i,j)
 
                    if (present(graupelncv)) then
                       graupelncv(i,j) = tempo_driver_diags%graupel_liquid_equiv_precip(i,j)

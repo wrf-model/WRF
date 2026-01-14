@@ -228,6 +228,45 @@ FGR: 0.0
 DZGR:  0.05 0.10 0.15 0.20
 
 #
+# FVG: Fraction of vegetated ground in the urban canyon (0-1)
+#      (sf_urban_physics=1)
+#
+
+FVG: 0.0
+
+#
+# TREEOPTION [ 0: No urban trees, 1: Enable urban trees ]
+#      (sf_urban_physics=1)
+#
+
+TREEOPTION: 1
+
+#
+# RTREE: Tree crown radius [ m ]
+# HTREE: Tree crown center height [ m ]
+# DTREE: Tree crown center distance from wall [ m ]
+# LAI_TREE: Tree leaf area index [ - ]
+# LAI_VEG: Vegetated ground leaf area index [ - ]
+# Z0VG: Roughness length for momentum of vegetated ground [ m ]
+# Z0HVG: Roughness length for heat of vegetated ground [ m ]
+# CAPVG: Heat capacity of vegetated ground [ J m{-3} K{-1} ]
+# EPSVG: Emissivity of vegetated ground [ - ]
+# EPST: Emissivity of tree canopy [ - ]
+#      (sf_urban_physics=1, TREEOPTION=1)
+#
+
+RTREE: 1, 1.5, 2.0
+HTREE: 3.0, 3.6, 4.2
+DTREE: 4.2, 4.7, 5.0
+LAI_TREE: 2.0, 2.0, 2.0
+LAI_VEG: 2.0, 2.0, 2.0
+Z0VG: 0.01, 0.01, 0.01
+Z0HVG: 0.001, 0.001, 0.001
+CAPVG: 1.3E6, 1.3E6, 1.3E6
+EPSVG: 0.93, 0.93, 0.93
+EPST: 0.9, 0.9, 0.9
+
+#
 # FRC_URB:  Fraction of the urban landscape which does not have natural
 #           vegetation. [ Fraction ]
 #      (sf_urban_physics=1,2,3)

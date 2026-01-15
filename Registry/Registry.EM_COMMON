@@ -1169,6 +1169,7 @@ state   real   OL1              ij     misc        1         -     i012rhd   "OL
 state   real   OL2              ij     misc        1         -     i012rhd   "OL2"                   "NON-DIMENSIONAL EFFECTIVE OROGRAPHIC LENGTH FOR SOUTHERLY FLOW"        ""
 state   real   OL3              ij     misc        1         -     i012rhd   "OL3"                   "NON-DIMENSIONAL EFFECTIVE OROGRAPHIC LENGTH FOR SOUTH-WESTERLY FLOW"   ""
 state   real   OL4              ij     misc        1         -     i012rhd   "OL4"                   "NON-DIMENSIONAL EFFECTIVE OROGRAPHIC LENGTH FOR NORTH-WESTERLY FLOW"   ""
+state   real   ELVMAX           ij     misc        1         -     i012rhd   "ELVMAX"                "MAXIMUM OROGRAPHIC HEIGHT"   "m"
 
 # Additional for GSL gravity wave drag suite
 state   real   DTAUX3D_ls      ikj     misc        1         -     rh        "DTAUX3D_ls"            "LOCAL U GWDO STRESS LARGE-SCALE"   "m s-1"
@@ -2473,6 +2474,9 @@ rconfig   integer     bl_pbl_physics      namelist,physics	max_domains    -1    
 rconfig   integer     tke_budget          namelist,physics      max_domains    0       rh       "tke_budget"                    ""      ""
 rconfig   integer     ysu_topdown_pblmix  namelist,physics      1              1       rh       "ysu_topdown_pblmix"            ""      ""
 rconfig   integer     shinhong_tke_diag   namelist,physics      max_domains    0       rh       "shinhong_tke_diag"             ""      ""
+rconfig   logical     shinhong_scu_mixing namelist,physics      max_domains    .false.  rh      "shinhong_scu_mixing"           "strato-cumulus(scu ) downdraft mixing for shinhong pbl"     ""
+rconfig   logical     shinhong_nonlocal_flux namelist,physics      max_domains    .false.  rh      "shinhong_nonlocal_flux"     ".false.:counter-gradient (ysu), .true.:shinhong-LES type nonlocal flux"     ""
+rconfig   logical     shinhong_ke_dissipation namelist,physics      max_domains    .false.  rh      "shinhong_ke_dissipation"     "additional heating due to kinetic energy dissipation"     ""
 rconfig   logical     bl_mynn_tkeadvect   namelist,physics      max_domains    .false.  rh      "bl_mynn_tkeadvect"             ""      ""
 rconfig   integer     bl_mynn_cloudpdf    namelist,physics      1              2       irh      "bl_mynn_cloudpdf"              "0:original, 1:Kuwano, 2:Chaboreau-Bechtold"            ""
 rconfig   integer     bl_mynn_mixlength   namelist,physics      1              1       irh      "bl_mynn_mixlength"             "0:original,1:RAP/HRRR,2:new blending&cloud mix length" ""
@@ -2853,6 +2857,10 @@ rconfig   integer damp_opt                namelist,dynamics	1             3     
 rconfig   integer rad_nudge               namelist,dynamics	1             0       irh    "rad_nudge"             ""      ""
 rconfig   integer gwd_opt                 namelist,dynamics     max_domains   0       irh    "gwd_opt"               ""      ""
 rconfig   integer gwd_diags               namelist,dynamics     1             0       irh    "gwd_diags"             "switch to turn on extra gwd diagnostics if available for given gwd_opt"      ""
+rconfig   real    gwd_dx_factor           namelist,dynamics	max_domains    2.   rh    "gwd_dx_factor" "effective grid factor for kim gravity wave drag"   ""
+rconfig   logical gwd_if_nonhyd           namelist,dynamics	max_domains   .true.  rh   "gwd_if_nonhyd" "non_hydrostatic option for kim gravity wave drag"   ""
+rconfig   logical kim_tofd                namelist,dynamics	max_domains   .true.  rh   "kim_tofd" "turbulent form drag (tofd) option for kim gravity wave drag"   ""
+rconfig   real    tofd_factor             namelist,dynamics	max_domains   .003   rh    "tofd_factor" "factor in  kim tofd scheme"   ""
 rconfig   real    zdamp                   namelist,dynamics	max_domains    5000.   h    "zdamp"         ""      ""
 rconfig   real    dampcoef                namelist,dynamics     max_domains    0.2     h    "dampcoef"              ""      ""
 rconfig   real    khdif                   namelist,dynamics	max_domains    0       h    "khdif"         ""      ""
@@ -3255,7 +3263,7 @@ package   swintopt2      swint_opt==2               -              state:swdown2
 package   aercuopt       aercu_used==1              -              state:aeromcu,CU_UAF,EFCS,EFIS,EFSS,qr_cu,qs_cu,nc_cu,ni_cu,nr_cu,ns_cu,ccn_cu,aerovar;aerocu:cu_sulfate,cu_seasalt,cu_dust1,cu_dust2,cu_dust3,cu_dust4,cu_phoocar,cu_phiocar,cu_phobcar,cu_phibcar
 
 package   slopeopt       slope_rad==1               -              -
-package   gwd_used_1     gwd_used==1                -              state:oc12d,oa1,oa2,oa3,oa4,ol1,ol2,ol3,ol4,dtaux3d,dtauy3d,dusfcg,dvsfcg
+package   gwd_used_1     gwd_used==1                -              state:oc12d,oa1,oa2,oa3,oa4,ol1,ol2,ol3,ol4,elvmax,dtaux3d,dtauy3d,dusfcg,dvsfcg
 package   gwd_used_3     gwd_used==3                -              state:var2dls,oc12dls,oa1ls,oa2ls,oa3ls,oa4ls,ol1ls,ol2ls,ol3ls,ol4ls,var2dss,oc12dss,oa1ss,oa2ss,oa3ss,oa4ss,ol1ss,ol2ss,ol3ss,ol4ss 
 package   gwd_diags_used_3   gwd_diags_used==3      -              state:dtaux3d_ls,dtauy3d_ls,dtaux3d_bl,dtauy3d_bl,dtaux3d_ss,dtauy3d_ss,dtaux3d_fd,dtauy3d_fd,dusfcg_ls,dvsfcg_ls,dusfcg_bl,dvsfcg_bl,dusfcg_ss,dvsfcg_ss,dusfcg_fd,dvsfcg_fd
 package   nogwdopt       gwd_opt==0                 -              -

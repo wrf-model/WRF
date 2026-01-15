@@ -256,6 +256,7 @@ target_sources(
                   # Shared physics
                   physics_mmm/bl_gwdo.F90
                   physics_mmm/bl_ysu.F90
+                  physics_mmm/bl_shinhong.F90
                   physics_mmm/cu_ntiedtke.F90
                   physics_mmm/module_libmassv.F90
                   physics_mmm/mp_radar.F90

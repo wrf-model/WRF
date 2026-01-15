@@ -1455,21 +1455,25 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                    ! ratio of frozen precipitation to total is not optional in wrf
                    sr(i,j) = tempo_driver_diags%frozen_fraction(i,j)
 
-                   if (present(hail_maxk1)) then
-                      if (allocated(tempo_driver_diags%max_hail_diameter_sfc)) then
-                         hail_maxk1(i,j) = tempo_driver_diags%max_hail_diameter_sfc(i,j)
+                   if (config_flags%nwp_diagnostics == 1) then
+                      if (present(hail_maxk1)) then
+                         if (allocated(tempo_driver_diags%max_hail_diameter_sfc)) then
+                            hail_maxk1(i,j) = tempo_driver_diags%max_hail_diameter_sfc(i,j)
+                         endif
                       endif
-                   endif
-                   if (present(hail_max2d)) then
-                      if (allocated(tempo_driver_diags%max_hail_diameter_column)) then
-                         hail_max2d(i,j) = tempo_driver_diags%max_hail_diameter_column(i,j)
+                      if (present(hail_max2d)) then
+                         if (allocated(tempo_driver_diags%max_hail_diameter_column)) then
+                            hail_max2d(i,j) = tempo_driver_diags%max_hail_diameter_column(i,j)
+                         endif
                       endif
                    endif
                    ! 3d tempo diagnostics
                    do k = kts, kte
-                      if (present(refl_10cm)) then
-                         if (allocated(tempo_driver_diags%refl10cm)) then
-                            refl_10cm(i,k,j) = tempo_driver_diags%refl10cm(i,k,j)
+                      if (do_radar_ref == 1) then
+                         if (present(refl_10cm)) then
+                            if (allocated(tempo_driver_diags%refl10cm)) then
+                               refl_10cm(i,k,j) = tempo_driver_diags%refl10cm(i,k,j)
+                            endif
                          endif
                       endif
                       ! effective radius values are not optional in wrf

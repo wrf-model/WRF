@@ -4408,7 +4408,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    USE module_mp_wdm7
    USE module_mp_udm
    USE module_mp_tempo_cfgs, only : ty_tempo_cfgs
-   USE module_mp_tempo_init, only : tempo_init
+   USE module_mp_tempo_driver, only : tempo_init
 #if (WRFPLUS != 1) & !defined( VAR4D )
    USE module_mp_nssl_2mom, only: nssl_2mom_init
 #endif

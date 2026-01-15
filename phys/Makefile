@@ -102,7 +102,6 @@ MODULES = \
 	module_mp_tempo_utils.o \
 	module_mp_tempo_diags.o \
 	module_mp_tempo_ml.o \
-	module_mp_tempo_init.o \
 	module_mp_tempo_aerosols.o \
 	module_mp_tempo_main.o \
 	module_mp_tempo_driver.o \
@@ -293,10 +292,9 @@ submodules :
 		echo No action required for MYNN-EDMF submodule ; \
 	fi
 	@if [ \( ! -f module_mp_tempo_driver.F90 \) -o \( ! -f module_mp_tempo_main.F90 \) -o \
-	      \( ! -f module_mp_tempo_init.F90 \) -o \( ! -f module_mp_tempo_aerosols.F90 \) -o \
+	      \( ! -f module_mp_tempo_cfgs.F90 \) -o \( ! -f module_mp_tempo_aerosols.F90 \) -o \
 	      \( ! -f module_mp_tempo_ml.F90 \) -o \( ! -f modulemp_tempo_diags.F90 \) -o \
-              \( ! -f module_mp_tempo_utils.F90 \) -o \( ! -f module_mp_tempo_params.F90 \) -o \
-              \( ! -f module_mp_tempo_cfgs.F90 \) ] ; then \
+              \( ! -f module_mp_tempo_utils.F90 \) -o \( ! -f module_mp_tempo_params.F90 \) ] ; then \
                 echo Pulling in TEMPO submodule ; \
 		( cd .. ; git submodule update --init --recursive ) ; \
 		ln -sf TEMPO/src/module_mp_tempo_cfgs.F90 module_mp_tempo_cfgs.F90 ; \
@@ -304,7 +302,6 @@ submodules :
 		ln -sf TEMPO/src/module_mp_tempo_utils.F90 module_mp_tempo_utils.F90 ; \
 		ln -sf TEMPO/src/module_mp_tempo_diags.F90 module_mp_tempo_diags.F90 ; \
 		ln -sf TEMPO/src/module_mp_tempo_ml.F90 module_mp_tempo_ml.F90 ; \
-		ln -sf TEMPO/src/module_mp_tempo_init.F90 module_mp_tempo_init.F90 ; \
 		ln -sf TEMPO/src/module_mp_tempo_aerosols.F90 module_mp_tempo_aerosols.F90 ; \
 		ln -sf TEMPO/src/module_mp_tempo_main.F90 module_mp_tempo_main.F90 ; \
 		ln -sf TEMPO/src/module_mp_tempo_driver.F90 module_mp_tempo_driver.F90 ; \

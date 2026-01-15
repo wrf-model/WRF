@@ -89,9 +89,9 @@ use module_model_constants, only :  piconst
    INTEGER                         :: IMP_SCHEME, IRI_SCHEME
    INTEGER                         :: alhoption       ! anthropogenic latent heat option
    INTEGER                         :: groption        ! anthropogenic latent heat option
+   LOGICAL                         :: distributed_aerodynamics_option
    REAL                            :: fgr             ! green roof fraction
    REAL                            :: oasis           ! urban oasis parameter
-   REAL                            :: fvg_data = 0.0  ! vegetated ground fraction from URBPARM
    REAL, DIMENSION(1:4)            :: DZGR            ! Layer depth of green roof 
    REAL, DIMENSION(1:4)            :: alhseason       ! seasonal variation of alh
    REAL, DIMENSION(1:48)           :: alhdiuprf       ! alh diurnal profile, tloc2: 1-48
@@ -104,6 +104,7 @@ use module_model_constants, only :  piconst
 
 !===Huang and Wang, 2025/12/28, urban nature-based solutions for single layer UCM (including trees)===
    INTEGER                         :: TREEOPTION      ! Urban Tree&Vegetation Option ! add by yuqi
+   REAL                            :: fvg_data = 0.0  ! vegetated ground fraction from URBPARM
    REAL, ALLOCATABLE, DIMENSION(:) :: RTREE_TBL       ! Tree crown radius
    REAL, ALLOCATABLE, DIMENSION(:) :: HTREE_TBL       ! Tree crown center height
    REAL, ALLOCATABLE, DIMENSION(:) :: DTREE_TBL       ! Tree crown center distance from wall (half canyon width currently)
@@ -332,7 +333,7 @@ use module_model_constants, only :  piconst
                     DRELR,DRELB,DRELG,FLXHUMR,FLXHUMB,FLXHUMG,        &
                     ! added by Chenghao Wang
 	              TVG,TT,XXXVG,TVGL,SMG,CMCG,FLXHUMVG,FLXHUMT,    & ! H (add by huang)
-                    lf_urb_s, z0_urb, vegfrac                         & ! I (distributed aerodynamics)
+                    lf_urb_s, z0_urb, vegfrac_in                      & ! I (distributed aerodynamics)
                     )
    IMPLICIT NONE
 
@@ -516,6 +517,13 @@ use module_model_constants, only :  piconst
    REAL, INTENT(INOUT) :: zo_check  ! check for printing ZOC
 
 !-------------------------------------------------------------------------------
+! I: Distributed aerodynamics parameters
+!-------------------------------------------------------------------------------
+   REAL, INTENT(IN) :: lf_urb_s ! frontal area index [-]
+   REAL, INTENT(IN) :: z0_urb   ! roughness length [m]
+   REAL, INTENT(IN) :: vegfrac_in  ! vegetation fraction (0 to 1) [-]
+
+!-------------------------------------------------------------------------------
 ! O: output variables from Urban to LSM 
 !-------------------------------------------------------------------------------
 
@@ -662,10 +670,12 @@ use module_model_constants, only :  piconst
    REAL :: PSIX, PSIT, PSIX2, PSIT2, PSIX10, PSIT10
 
    REAL :: TRP, TBP, TGP, TCP, QCP, TST, QST      ! TCP is local variable ? (yuqi)
+   REAL :: TSP, CHS_LOCAL, CHS2_LOCAL
 
    REAL :: WDR,HGT2,BW,DHGT
    REAL, parameter :: VonK = 0.4
    REAL :: lambda_f,alpha_macd,beta_macd,lambda_fr
+   REAL :: lambda_p, vegfrac
 
    INTEGER :: iteration, K, NUDAPT 
    INTEGER :: tloc, tloc2, Kalh
@@ -712,7 +722,10 @@ use module_model_constants, only :  piconst
    integer,parameter ::  IMPR  = 1     
    integer,parameter ::  IMPB  = 2      
    integer,parameter ::  IMPG  = 3    
-															
+
+   IF (distributed_aerodynamics_option .and. groption == 1) THEN
+     FATAL_ERROR("slucm_distributed_drag is not compatible with groption")
+   END IF															
 !-------------------------------------------------------------------------------
 ! Set parameters
 !-------------------------------------------------------------------------------
@@ -747,7 +760,7 @@ use module_model_constants, only :  piconst
 
 ! Glotfelty, 2012/07/05, NUDAPT Modification
 
- if(mh_urb.gt.0.0)THEN 
+ if(mh_urb.gt.0.0 .and. .not. distributed_aerodynamics_option)THEN 
   !write(mesg,*) 'Mean Height NUDAPT',mh_urb
   !WRITE_MESSAGE(mesg)
   !write(mesg,*) 'Mean Height Table',ZR
@@ -903,6 +916,25 @@ use module_model_constants, only :  piconst
    endif
    if(alhoption==1) ALH = ALH*alhdiuprf(tloc2)*alhseason(Kalh)
 
+   IF (distributed_aerodynamics_option) THEN
+     ZDC = 0.
+     IF (Z0_URB > MH_URB) THEN
+       FATAL_ERROR("Z0_URB is larger than MH_URB")
+     END IF
+     ZR = MAX(MH_URB, 3.5)
+     Z0C = MAX(Z0_URB, 0.1)
+     lambda_p = MAX(0.05, MIN(1.0, LP_URB))
+     lambda_f = MAX(0.05, MIN(1.0, LF_URB_S))
+
+     R = lambda_p
+     RW = 1 - R
+     SVF = kanda_kawai_svf(lambda_p, lambda_f)
+
+     vegfrac = MIN(0.9, MAX(0.1, vegfrac_in))
+
+     HGT = lambda_f
+   END IF
+
    IF( ZDC+Z0C+2. >= ZA) THEN
     FATAL_ERROR("ZDC + Z0C + 2m is larger than the 1st WRF level - Stop in subroutine urban - change ZDC and Z0C" ) 
    END IF
@@ -938,7 +970,9 @@ use module_model_constants, only :  piconst
    TCP=TC
    QCP=QC
 
-   !TSP = (TR * R + TB * W + TG * RW) / (R + RW + W)		   ! comment this  (yuqi)									   
+   TSP = (TR * R + TB * W + TG * RW) / (R + RW + W)		   ! for force-restore chw	
+
+   
 !===Yang,2014/10/08, urban hydrological variables for single layer UCM===
    FLXHUMRP = FLXHUMR
    FLXHUMBP = FLXHUMB
@@ -981,11 +1015,11 @@ use module_model_constants, only :  piconst
      ZC=0.7*ZR
      XLB=0.4*(ZR-ZDC)
      ! BB formulation from Inoue (1963)
-#ifdef DOUBLE_PRECISION                                                 ! dlog is newly added (yuqi) 
-     BB = 0.4 * ZR / ( XLB * dlog( ( ZR - ZDC ) / Z0C ) )
-#else
+! #ifdef DOUBLE_PRECISION                                                 ! dlog is newly added (yuqi) - code follows HRLDAS (2025 summer)
+!     BB = 0.4 * ZR / ( XLB * dlog( ( ZR - ZDC ) / Z0C ) )
+! #else
      BB = 0.4 * ZR / ( XLB * alog( ( ZR - ZDC ) / Z0C ) )
-#endif
+! #endif
      UC=UR*EXP(-BB*(1.-ZC/ZR))
    ELSE
      ! PRINT *, 'Warning ZR + 2m  is larger than the 1st WRF level' 
@@ -999,6 +1033,7 @@ use module_model_constants, only :  piconst
 
    SHADOW = .true.
 !   SHADOW = .false.
+! SHADOW has not been activated in previous versions of SLUCM (chenghao) - it's not turned on
 
    IF (SSG > 0.0) THEN
 
@@ -1168,10 +1203,22 @@ use module_model_constants, only :  piconst
   
    ! note that CHR_URB contains UA (=CHR_MOS*UA)
    RLMO_URB=0.0
+   IF (distributed_aerodynamics_option) THEN
+     T1VC = TSP* (1.0+ 0.61 * QA)
+     CALL SFCDIF_URB (ZA,Z0C,T1VC,TH2V,UA,AKANDA_URBAN,CMC_URB,CHC_URB,RLMO_URB,CDC,Z0HC,vegfrac)
+     CHC = CHC_URB / UA ! canopy bulk transfer coef.
+     ALPHAC = RHO * CP * CHC_URB
+     CHR = CHC * R / (R + W + RW) ! local bulk transfer coef for roof
+     CHB = CHC * W / (R + W + RW) ! local bulk transfer coef for building wall
+     CHG = CHC * RW / (R + W + RW) ! local bulk transfer coef for floor
+     ALPHAR = RHO * CP * CHR * UA
+     ALPHAB = RHO * CP * CHB * UA
+     ALPHAG = RHO * CP * CHG * UA
+   ELSE
    CALL SFCDIF_URB (ZA,Z0R,T1VR,TH2V,UA,AKANDA_URBAN,CMR_URB,CHR_URB,RLMO_URB,CDR)
    ALPHAR =  RHO*CP*CHR_URB
    CHR=ALPHAR/RHO/CP/UA
-	 
+   END IF
 
 ! Yang, 03/12/2014 -- LH for impervious roof surface  
    RAIN1 = RAIN * 0.001 /3600          ! CONVERT FROM mm/hr to m/s
@@ -1182,8 +1229,9 @@ use module_model_constants, only :  piconst
    IF (IMP_SCHEME==2) then
    IF (FLXHUMRP <= 0.) FLXHUMRP = 0. 
 !  Compute water retention depth from previous time step 
-   DrelR = DrelRP+(RAIN1-FLXHUMRP)*DELT/porimp(IMPR)
-!   IF (RAIN > 0. .AND. DrelR < DrelRP) DrelR = DrelRP  ! remove this line to allow Drel to decrease even when RAIN > 0
+   ! Convert kinematic water flux to evaporation in m/s: multiply flux by rho_air/who_water in SI units																									   
+   DrelR = DrelRP+(RAIN1-FLXHUMRP)*DELT/porimp(IMPR) ! '*RHOO/1000.' removed following HRLKDAS code (Yuqi)
+!   IF (RAIN > 0. .AND. DrelR < DrelRP) DrelR = DrelRP  ! remove this line to allow Drel to decrease even when RAIN > 0 (chenghao wang)
   
    IF (DrelR <= 0.) then
    DrelR  = 0.0
@@ -1336,8 +1384,8 @@ use module_model_constants, only :  piconst
        ELEGR= ETAR* RHO * EL /RHOO * 100
           
        CALL TDFCND (DF1,SMR(KZ), QUARTZ, SMCMAX )
-       DF1 = DF1 * EXP(-2.0 * SHDFAC)          ! why multiple by exp? (yuqi)
-       RGR = EPSV*(RX-SIG*(TGRP**4.)/60.)        ! change TGRP to TA in the new version (yuqi)
+       DF1 = DF1 * EXP(-2.0 * SHDFAC)          ! why multiple by exp? (Yuqi)
+       RGR = EPSV*(RX-SIG*(TGRP**4.)/60.)        ! change TGRP to TA in the new version (Yuqi) - bug
        RGRR= (SGR+RGR) * 697.7 * 60.
        RCH = RHOO*CPP*CHGR
        RR1 = EPSV*(TA**4) * 6.48E-8 / (PS* CHGR) + 1.0
@@ -1386,7 +1434,16 @@ ENDIF
 !-------------------------------------------------------------------------------
 !  CHC, CHB, CDB, BETB, CHG, CDG, BETG
 !-------------------------------------------------------------------------------
- 			  
+
+   ! Z=ZA-ZDC
+   ! BHC=LOG(Z0C/Z0HC)/0.4
+   ! RIBC=(9.8*2./(TA+TCP))*(TA-TCP)*(Z+Z0C)/(UA*UA)
+   !
+   ! CALL mos(XXXC,ALPHAC,CDC,BHC,RIBC,Z,Z0C,UA,TA,TCP,RHO)
+   ! Virtual temperatures needed by SFCDIF routine from Noah
+
+   IF (.not. distributed_aerodynamics_option) THEN
+
    T1VC = TCP* (1.0+ 0.61 * QA) 
    RLMO_URB=0.0
    CALL SFCDIF_URB(ZA,Z0C,T1VC,TH2V,UA,AKANDA_URBAN,CMC_URB,CHC_URB,RLMO_URB,CDC)      ! CDC: momentum exchange coefficient for canopy (yuqi)
@@ -1415,7 +1472,8 @@ ENDIF
    CHC=ALPHAC/RHO/CP/UA
    CHB=ALPHAB/RHO/CP/UC
    CHG=ALPHAG/RHO/CP/UC
-  
+   END IF
+
 !Yang 10/10/2013 -- LH from impervious wall and ground
  IF (IMP_SCHEME==1) then
    BETB=0.0
@@ -1426,10 +1484,10 @@ ENDIF
    IF (FLXHUMBP <= 0.) FLXHUMBP = 0. 
    IF (FLXHUMGP <= 0.) FLXHUMGP = 0. 
 ! Compute water retention from previous time step for wall and ground
-  DrelB = DrelBP+(RAIN1-FLXHUMBP)*DELT/porimp(IMPB)            ! POTENTIAL ERROR (YUQI)
- !   IF (RAIN > 0. .AND. DrelB < DrelBP) DrelB = DrelBP ! remove this line to allow Drel to decrease even when RAIN > 0
-  DrelG = DrelGP+(RAIN1-FLXHUMGP)*DELT/porimp(IMPG)  
- !   IF (RAIN > 0. .AND. DrelG < DrelGP) DrelG = DrelGP ! remove this line to allow Drel to decrease even when RAIN > 0
+  DrelB = DrelBP+(RAIN1-FLXHUMBP)*DELT/porimp(IMPB)            ! '*RHOO/1000.' removed following HRLKDAS code (Yuqi)
+ !   IF (RAIN > 0. .AND. DrelB < DrelBP) DrelB = DrelBP ! remove this line to allow Drel to decrease even when RAIN > 0 (Chenghao)
+  DrelG = DrelGP+(RAIN1-FLXHUMGP)*DELT/porimp(IMPG)  ! '*RHOO/1000.' removed following HRLKDAS code (Yuqi)
+ !   IF (RAIN > 0. .AND. DrelG < DrelGP) DrelG = DrelGP ! remove this line to allow Drel to decrease even when RAIN > 0 (Chenghao)
   
   IF (DrelB <= 0.) then
   DrelB   = 0.0
@@ -1517,6 +1575,23 @@ ENDIF
        DRGDTB=DRGDTB1+DRGDTB2
        DRGDTG=DRGDTG1+DRGDTG2
 
+       IF (distributed_aerodynamics_option) THEN
+         HB=RHO*CP*CHB*UA*(TBP-TA)*100.
+         HG=RHO*CP*CHG*UA*(TGP-TA)*100.
+
+         DHBDTB=RHO*CP*CHB*UA*100.
+         DHBDTG=0.
+         DHGDTG=RHO*CP*CHG*UA*100.
+         DHGDTB=0.
+
+         ELEB=RHO*EL*CHB*UA*BETB*(QS0B-QA)*100.
+         ELEG=RHO*EL*CHG*UA*BETG*(QS0G-QA)*100.
+
+         DELEBDTB=RHO*EL*CHB*UA*BETB*DQS0BDTB*100.
+         DELEBDTG=0.
+         DELEGDTG=RHO*EL*CHG*UA*BETG*DQS0GDTG*100.
+         DELEGDTB=0.
+       ELSE
        HB=RHO*CP*CHB*UC*(TBP-TCP)*100.
        HG=RHO*CP*CHG*UC*(TGP-TCP)*100.
 
@@ -1538,7 +1613,7 @@ ENDIF
        DELEBDTG=RHO*EL*CHB*UC*BETB*(0.-DQCDTG)*100.
        DELEGDTG=RHO*EL*CHG*UC*BETG*(DQS0GDTG-DQCDTG)*100.
        DELEGDTB=RHO*EL*CHG*UC*BETG*(0.-DQCDTB)*100.
-       !ENDIF
+       ENDIF
 
        G0B=AKSB*(TBP-TBL(1))/(DZB(1)/2.)
        G0G=AKSG*(TGP-TGL(1))/(DZG(1)/2.)
@@ -1565,7 +1640,10 @@ ENDIF
 
        TBP = TB
        TGP = TG
- 
+
+       IF (distributed_aerodynamics_option) THEN
+         DTC = 0.0
+       ELSE 
        TC1=RW*ALPHAC+RW*ALPHAG+W*ALPHAB
        TC2=RW*ALPHAC*TA+RW*ALPHAG*TGP+W*ALPHAB*TBP
        TC=TC2/TC1
@@ -1577,7 +1655,7 @@ ENDIF
        DTC=TCP - TC
        TCP=TC
        QCP=QC
-       !END IF
+       END IF
 
        IF( ABS(F) < 0.000001 .AND. ABS(DTB) < 0.000001 &
         .AND. ABS(GF) < 0.000001 .AND. ABS(DTG) < 0.000001 &
@@ -1585,14 +1663,14 @@ ENDIF
 
      END DO
 
-	  CALL multi_layer(num_wall_layers,BOUNDB,G0B,CAPB,AKSB,TBL,DZB,DELT,TBLEND)   ! I missed this two function in last year (yuqi)
+	 CALL multi_layer(num_wall_layers,BOUNDB,G0B,CAPB,AKSB,TBL,DZB,DELT,TBLEND)
 
      CALL multi_layer(num_road_layers,BOUNDG,G0G,CAPG,AKSG,TGL,DZG,DELT,TGLEND)
-     ELSE
+   ELSE
 
-     !-------------------------------------------------------------------------------
-     !  TB, TG  by Force-Restore Method 
-     !-------------------------------------------------------------------------------
+!-------------------------------------------------------------------------------
+!  TB, TG  by Force-Restore Method 
+!-------------------------------------------------------------------------------
 
        ES=6.11*EXP((2.5*10.**6./461.51)*(TBP-273.15)/(273.15*TBP) )
        QS0B=0.622*ES/(PS-0.378*ES)       
@@ -2166,13 +2244,13 @@ ENDIF
    END IF
 
 
-   FLXTHB=HB/RHO/CP/100
-   FLXHUMB=ELEB/RHO/EL/100
-   FLXTHG=HG/RHO/CP/100
-   FLXHUMG=ELEG/RHO/EL/100
-   FLXTHVG=HVG/RHO/CP/100    ! ADD BY (Huang)
-   FLXHUMVG=ELEVG/RHO/EL/100               
-   FLXTHT=HT/RHO/CP/100      
+   FLXTHB=HB/RHO/CP/100.
+   FLXHUMB=ELEB/RHO/EL/100.
+   FLXTHG=HG/RHO/CP/100.
+   FLXHUMG=ELEG/RHO/EL/100.
+   FLXTHVG=HVG/RHO/CP/100.    ! ADD BY (Huang)
+   FLXHUMVG=ELEVG/RHO/EL/100.               
+   FLXTHT=HT/RHO/CP/100.      
    FLXHUMT=ELET/RHOO/ELL     ! ADD BY (Huang)
 !-------------------------------------------------------------------------------
 ! Total Fluxes from Urban Canopy
@@ -2229,11 +2307,11 @@ ENDIF
      FLXTH  = ( R*FLXTHR  + W*FLXTHB  + RW*FLXTHG )
      FLXHUM = ( R*FLXHUMR + W*FLXHUMB + RW*FLXHUMG )
    ENDIF
-   !IF (distributed_aerodynamics_option) THEN
-     !FLXUV = CDC * UA * UA
-   !ELSE
+   IF (distributed_aerodynamics_option) THEN
+     FLXUV = CDC * UA * UA
+   ELSE
    FLXUV  = ( R*CDR + RW*CDC )*UA*UA
-   !ENDIF
+   ENDIF
    FLXG =   ( R*G0R + W*G0B + RW*G0G )
    LNET =     R*RR + W*RB + RW*RG
  ENDIF
@@ -2275,16 +2353,16 @@ ENDIF
      PSIH = -5. * XXX
    ELSE
      X = (1.-16.*XXX)**0.25
-#ifdef DOUBLE_PRECISION                  ! newly added in thie version (yuqi)
-
-     PSIM = 2.*DLOG((1.+X)/2.) + DLOG((1.+X*X)/2.) - 2.*ATAN(X) + PI/2.
-     PSIH = 2.*DLOG((1.+X*X)/2.)
-#else
+! #ifdef DOUBLE_PRECISION                  ! newly added in thie version (yuqi)
+! Code follows HRLDAS here (2025 summer) (Yuqi)
+!     PSIM = 2.*DLOG((1.+X)/2.) + DLOG((1.+X*X)/2.) - 2.*ATAN(X) + PI/2.
+!     PSIH = 2.*DLOG((1.+X*X)/2.)
+!#else
      PSIM = 2.*ALOG((1.+X)/2.) + ALOG((1.+X*X)/2.) - 2.*ATAN(X) + PI/2.
      PSIH = 2.*ALOG((1.+X*X)/2.)
-#endif
+!#endif
    END IF
-#ifdef DOUBLE_PRECISION                 !newly added in this version (yuqi)
+!#ifdef DOUBLE_PRECISION                 !newly added in this version (yuqi)
 
    GZ1OZ0 = DLOG(Z/Z0)
    CD = 0.4**2./(DLOG(Z/Z0)-PSIM)**2.
@@ -2295,6 +2373,7 @@ ENDIF
 
    GZ1OZ0 = ALOG(Z/Z0)
    CD = 0.4**2./(ALOG(Z/Z0)-PSIM)**2.
+   CHS_LOCAL = 0.4 * UST / (ALOG(Z / Z0H) - PSIH)												 
 !
 !m   CH = 0.4**2./(ALOG(Z/Z0)-PSIM)/(ALOG(Z/Z0H)-PSIH)
    CHS = 0.4*UST/(ALOG(Z/Z0H)-PSIH) ! cenlin 03/09/2023: uncomment to allow CHS calc for offline hrldas-urban
@@ -2325,25 +2404,25 @@ ENDIF
       PSIH2 = -5. * XXX2
    ELSE
       X = (1.-16.*XXX2)**0.25
-#ifdef DOUBLE_PRECISION          
+!#ifdef DOUBLE_PRECISION          
 
-      PSIM2 = 2.*DLOG((1.+X)/2.) + DLOG((1.+X*X)/2.) - 2.*ATAN(X) + 2.*ATAN(1.)     ! newly added in this version (yuqi)
-      PSIH2 = 2.*DLOG((1.+X*X)/2.)
-#else
+!      PSIM2 = 2.*DLOG((1.+X)/2.) + DLOG((1.+X*X)/2.) - 2.*ATAN(X) + 2.*ATAN(1.)     ! newly added in this version (yuqi)
+!      PSIH2 = 2.*DLOG((1.+X*X)/2.)
+!#else
       PSIM2 = 2.*ALOG((1.+X)/2.) + ALOG((1.+X*X)/2.) - 2.*ATAN(X) + 2.*ATAN(1.)
       PSIH2 = 2.*ALOG((1.+X*X)/2.)
 
-#endif
+!#endif
    END IF
 !
-#ifdef DOUBLE_PRECISION
+!#ifdef DOUBLE_PRECISION
 
-   CHS2 = 0.4*UST/(DLOG(2./Z0H)-PSIH2) ! cenlin 03/09/2023: uncomment to allow CHS2 calc for offline hrldas-urban    ! newly added in this version (yuqi)
+!   CHS2 = 0.4*UST/(DLOG(2./Z0H)-PSIH2) ! cenlin 03/09/2023: uncomment to allow CHS2 calc for offline hrldas-urban    ! newly commented in this version following WRF v4.7.1 (yuqi)
 !
-#else
-   CHS2 = 0.4*UST/(ALOG(2./Z0H)-PSIH2) ! cenlin 03/09/2023: uncomment to allow CHS2 calc for offline hrldas-urban
+!#else
+!   CHS2 = 0.4*UST/(ALOG(2./Z0H)-PSIH2) ! cenlin 03/09/2023: uncomment to allow CHS2 calc for offline hrldas-urban
 
-#endif
+!#endif
 
    XXX10 = (10./Z)*XXX
    IF ( XXX10 >= 1. ) XXX10 = 1.
@@ -2354,26 +2433,26 @@ ENDIF
       PSIH10 = -5. * XXX10
    ELSE
       X = (1.-16.*XXX10)**0.25
-#ifdef DOUBLE_PRECISION
-      PSIM10 = 2.*DLOG((1.+X)/2.) + DLOG((1.+X*X)/2.) - 2.*ATAN(X) + 2.*ATAN(1.)       ! newly added in this version (yuqi)
-      PSIH10 = 2.*DLOG((1.+X*X)/2.)                                                    ! newly added in this version (yuqi)
-#else
+!#ifdef DOUBLE_PRECISION
+!      PSIM10 = 2.*DLOG((1.+X)/2.) + DLOG((1.+X*X)/2.) - 2.*ATAN(X) + 2.*ATAN(1.)       ! newly added in this version (yuqi)
+!      PSIH10 = 2.*DLOG((1.+X*X)/2.)                                                    ! newly added in this version (yuqi)
+!#else
       PSIM10 = 2.*ALOG((1.+X)/2.) + ALOG((1.+X*X)/2.) - 2.*ATAN(X) + 2.*ATAN(1.)
       PSIH10 = 2.*ALOG((1.+X*X)/2.)
-#endif
+!#endif
 
    END IF
-#ifdef DOUBLE_PRECISION                 ! newly added below in this version (yuqi)
+!#ifdef DOUBLE_PRECISION                 ! newly added below in this version (yuqi)
 
-   PSIX = DLOG(Z/Z0) - PSIM
-   PSIT = DLOG(Z/Z0H) - PSIH
+!   PSIX = DLOG(Z/Z0) - PSIM
+!   PSIT = DLOG(Z/Z0H) - PSIH
 
-   PSIX2 = DLOG(2./Z0) - PSIM2
-   PSIT2 = DLOG(2./Z0H) - PSIH2
+!   PSIX2 = DLOG(2./Z0) - PSIM2
+!   PSIT2 = DLOG(2./Z0H) - PSIH2
 
-   PSIX10 = DLOG(10./Z0) - PSIM10
-   PSIT10 = DLOG(10./Z0H) - PSIH10
-#else
+!   PSIX10 = DLOG(10./Z0) - PSIM10
+!   PSIT10 = DLOG(10./Z0H) - PSIH10
+!#else
    PSIX = ALOG(Z/Z0) - PSIM
    PSIT = ALOG(Z/Z0H) - PSIH
 
@@ -2383,21 +2462,21 @@ ENDIF
    PSIX10 = ALOG(10./Z0) - PSIM10
    PSIT10 = ALOG(10./Z0H) - PSIH10
 
-#endif
+!#endif
    U10 = U1 * (PSIX10/PSIX)       ! u at 10 m [m/s]
    V10 = V1 * (PSIX10/PSIX)       ! v at 10 m [m/s]
 
 !   TH2 = TS + (TA-TS)*(PSIT2/PSIT)   ! potential temp at 2 m [K]
 !  TH2 = TS + (TA-TS)*(PSIT2/PSIT)   ! Fei: this seems to be temp (not potential) at 2 m [K]
 !Fei: consistant with M-O theory
-   !IF (distributed_aerodynamics_option) THEN       ! comment this in the new version (yuqi)
-   !  CHS2_LOCAL = 0.4 * UST / (ALOG(2. / Z0H) - PSIH2)
-   !  TH2 = TS + (TA - TS) * (CHS_LOCAL / CHS2_LOCAL)
-   !  Q2 = QS + (QA - QS) * (CHS_LOCAL / CHS2_LOCAL)
-   !ELSE											
+   IF (distributed_aerodynamics_option) THEN       ! comment this in the new version (yuqi)
+     CHS2_LOCAL = 0.4 * UST / (ALOG(2. / Z0H) - PSIH2)
+     TH2 = TS + (TA - TS) * (CHS_LOCAL / CHS2_LOCAL)
+     Q2 = QS + (QA - QS) * (CHS_LOCAL / CHS2_LOCAL)
+   ELSE
    TH2 = TS + (TA-TS) *(CHS/CHS2) 
-
    Q2 = QS + (QA-QS)*(PSIT2/PSIT)    ! humidity at 2 m       [-]
+   END IF
 
 !   TS = (LW/SIG_SI/0.88)**0.25       ! Radiative temperature [K]
 
@@ -2437,18 +2516,18 @@ ENDIF
 
         X=(1.-16.*XXX)**0.25
         X0=(1.-16.*XXX0)**0.25
-#ifdef DOUBLE_PRECISION                                   ! newly added in the new version (yuqi)
+!#ifdef DOUBLE_PRECISION                                   ! newly added in the new version (yuqi)
 
-        PSIM=DLOG((Z+Z0)/Z0) &
-            -DLOG((X+1.)**2.*(X**2.+1.)) &
-            +2.*ATAN(X) &
-            +DLOG((X+1.)**2.*(X0**2.+1.)) &
-            -2.*ATAN(X0)
-        FAIH=1./SQRT(1.-16.*XXX)
-        PSIH=DLOG((Z+Z0)/Z0)+0.4*B1 &
-            -2.*DLOG(SQRT(1.-16.*XXX)+1.) &
-            +2.*DLOG(SQRT(1.-16.*XXX0)+1.)
-#else
+!        PSIM=DLOG((Z+Z0)/Z0) &
+!            -DLOG((X+1.)**2.*(X**2.+1.)) &
+!            +2.*ATAN(X) &
+!            +DLOG((X+1.)**2.*(X0**2.+1.)) &
+!            -2.*ATAN(X0)
+!        FAIH=1./SQRT(1.-16.*XXX)
+!        PSIH=DLOG((Z+Z0)/Z0)+0.4*B1 &
+!            -2.*DLOG(SQRT(1.-16.*XXX)+1.) &
+!            +2.*DLOG(SQRT(1.-16.*XXX0)+1.)
+!#else
         PSIM=ALOG((Z+Z0)/Z0) &
             -ALOG((X+1.)**2.*(X**2.+1.)) &
             +2.*ATAN(X) &
@@ -2459,7 +2538,7 @@ ENDIF
             -2.*ALOG(SQRT(1.-16.*XXX)+1.) &
             +2.*ALOG(SQRT(1.-16.*XXX0)+1.)
 
-#endif
+!#endif
         DPSIM=(1.-16.*XXX)**(-0.25)/XXX &
              -(1.-16.*XXX0)**(-0.25)/XXX
         DPSIH=1./SQRT(1.-16.*XXX)/XXX &
@@ -2479,30 +2558,30 @@ ENDIF
    ELSE IF(RIB >= 0.142857) THEN
 
       XXX=0.714
-#ifdef DOUBLE_PRECISION
-      PSIM=DLOG((Z+Z0)/Z0)+7.*XXX          ! newly added in the new version (yuqi)
-#else
+!#ifdef DOUBLE_PRECISION
+!      PSIM=DLOG((Z+Z0)/Z0)+7.*XXX          ! newly added in the new version (yuqi)
+!#else
       PSIM=ALOG((Z+Z0)/Z0)+7.*XXX
-#endif
+!#endif
       PSIH=PSIM+0.4*B1
 
    ELSE
-#ifdef DOUBLE_PRECISION
-      AL=DLOG((Z+Z0)/Z0)                    ! newly added in the new version (yuqi)
-#else
+!#ifdef DOUBLE_PRECISION
+!      AL=DLOG((Z+Z0)/Z0)                    ! newly added in the new version (yuqi)
+!#else
       AL=ALOG((Z+Z0)/Z0)
-#endif
+!#endif
       XKB=0.4*B1
       DD=-4.*RIB*7.*XKB*AL+(AL+XKB)**2.
       IF(DD <= 0.) DD=0.
       XXX=(AL+XKB-2.*RIB*7.*AL-SQRT(DD))/(2.*(RIB*7.**2-7.))
-#ifdef DOUBLE_PRECISION
+!#ifdef DOUBLE_PRECISION
 
-      PSIM=DLOG((Z+Z0)/Z0)+7.*MIN(XXX,0.714)             ! newly added in the new version (yuqi)
-#else
+!      PSIM=DLOG((Z+Z0)/Z0)+7.*MIN(XXX,0.714)             ! newly added in the new version (yuqi)
+!#else
       PSIM=ALOG((Z+Z0)/Z0)+7.*MIN(XXX,0.714)
 
-#endif
+!#endif
       PSIH=PSIM+0.4*B1
 
    END IF
@@ -2531,13 +2610,13 @@ ENDIF
    REAL, INTENT(INOUT) :: RIB
    REAL                :: A2, XX, CH, CMB, CHB
 
-#ifdef DOUBLE_PRECISION
+!#ifdef DOUBLE_PRECISION
 
-   A2=(0.4/DLOG(Z/Z0))**2.                   ! newly added in the new version (yuqi)
-#else
+!   A2=(0.4/DLOG(Z/Z0))**2.                   ! newly added in the new version (yuqi)
+!#else
    A2=(0.4/ALOG(Z/Z0))**2.
 
-#endif
+!#endif
    IF(RIB <= -15.) RIB=-15.
 
    IF(RIB >= 0.0) THEN
@@ -2574,11 +2653,11 @@ ENDIF
    REAL, INTENT(INOUT) :: RIB 
    REAL                :: A2, FM, FH, CH, CHH 
 
-#ifdef DOUBLE_PRECISION
-   A2=(0.4/DLOG(Z/Z0))**2.                  ! newly added in the new version (yuqi)
-#else
+!#ifdef DOUBLE_PRECISION
+!   A2=(0.4/DLOG(Z/Z0))**2.                  ! newly added in the new version (yuqi)
+!#else
    A2=(0.4/ALOG(Z/Z0))**2.
-#endif
+!#endif
    IF(RIB <= -15.) RIB=-15.
 
    IF(RIB >= 0.0) THEN 
@@ -2826,11 +2905,10 @@ ENDIF
    INTEGER :: num_road_layers
    INTEGER :: dummy 
    REAL    :: DHGT, HGT, VFWS, VFGS
-   REAL    :: fvg
+   REAL    :: fvg  ! Yuqi
 
    REAL, allocatable, dimension(:) :: ROOF_WIDTH
    REAL, allocatable, dimension(:) :: ROAD_WIDTH
-   LOGICAL :: distributed_aerodynamics_option
 
    character(len=512) :: string
    character(len=128) :: name
@@ -3040,9 +3118,9 @@ ENDIF
             ALLOCATE( HSESF_TBL(ICATE), stat=allocate_status )
             if(allocate_status /= 0) FATAL_ERROR('Error allocating HSESF_TBL in urban_param_init')
             ALLOCATE( PV_FRAC_ROOF_TBL(ICATE), stat=allocate_status )
-            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating PV_FRAC_ROOF_TBL in urban_param_init')
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating PV_FRAC_ROOF_TBL in urban_param_init')
             ALLOCATE( GR_FRAC_ROOF_TBL(ICATE), stat=allocate_status )
-            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating GR_FRAC_ROOF_TBL in urban_param_init')
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating GR_FRAC_ROOF_TBL in urban_param_init')
 
          endif
          numdir_tbl = 0
@@ -3283,7 +3361,6 @@ ENDIF
 
    CLOSE(11)
 
-
    ! Assign a few table values that do not need to come from URBPARM.TBL
 
    Z0HB_TBL = 0.1 * Z0B_TBL
@@ -3406,7 +3483,7 @@ ENDIF
                              CMCR_URB2D,TGR_URB2D,TGRL_URB3D,SMR_URB3D,    & ! inout
                              DRELR_URB2D,DRELB_URB2D,DRELG_URB2D,          & ! inout
                              FLXHUMR_URB2D, FLXHUMB_URB2D, FLXHUMG_URB2D,  & ! inout
-							 TVG_URB2D,XXXVG_URB2D,TVGL_URB3D,SMG_URB3D,TT_URB2D,CMCG_URB2D,FLXHUMVG_URB2D,FLXHUMT_URB2D,    & ! inout (add by huang)																														 
+							 TVG_URB2D,XXXVG_URB2D,TVGL_URB3D,SMG_URB3D,TT_URB2D,CMCG_URB2D,FLXHUMVG_URB2D,FLXHUMT_URB2D,    & ! inout (add by Yuqi Huang)																														 
                              A_U_BEP,A_V_BEP,A_T_BEP,A_Q_BEP,              & ! inout multi-layer urban
                              A_E_BEP,B_U_BEP,B_V_BEP,                      & ! inout multi-layer urban
                              B_T_BEP,B_Q_BEP,B_E_BEP,DLG_BEP,              & ! inout multi-layer urban
@@ -3471,7 +3548,7 @@ ENDIF
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: RN_URB2D
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TS_URB2D
 
-!-----------add by huang ----------------
+!-----------add by Yuqi Huang ----------------
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TVG_URB2D
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TT_URB2D
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: XXXVG_URB2D
@@ -3566,20 +3643,20 @@ ENDIF
 !m
 !FS   FRC_URB2D(I,J)=0.
       UTYPE_URB2D(I,J)=0
-      !distributed_aerodynamics_check: IF (distributed_aerodynamics_option) THEN   ! comment this in the new version (yuqi)
-      !  IF (IVGTYP(I, J) == ISURBAN) THEN
-      !    UTYPE_URB2D(I, J) = 2
-      !  ELSE
-      !    UTYPE_URB2D(I, J) = 0
-      !  END IF
-      !ELSE																			   
+      distributed_aerodynamics_check: IF (distributed_aerodynamics_option) THEN   ! comment this in the new version (yuqi)
+        IF (IVGTYP(I, J) == ISURBAN) THEN
+          UTYPE_URB2D(I, J) = 2
+        ELSE
+          UTYPE_URB2D(I, J) = 0
+        END IF
+      ELSE																			   
       SWITCH_URB=1
 
             IF( IVGTYP(I,J) == ISURBAN)  THEN
                IF(use_wudapt_lcz==0) THEN
                   UTYPE_URB2D(I,J) = 2  ! for default. high-intensity
                ELSE
-                  UTYPE_URB2D(I,J) = 5  ! for default. high-intensity        ! WRONG, SHOULD BE Op M-Rise (YUQI)
+                  UTYPE_URB2D(I,J) = 5  ! for default. open mid-rise (Yuqi)
                ENDIF
             ELSE IF( IVGTYP(I,J) == LCZ_1) THEN
                UTYPE_URB2D(I,J) = 1
@@ -3655,6 +3732,7 @@ ENDIF
                    ENDDO
                 ENDIF
             ENDIF
+      END IF distributed_aerodynamics_check										   
 
 
       QC_URB2D(I,J)=0.01
@@ -3708,7 +3786,7 @@ ENDIF
           TGRL_URB3D(I,3,J)=TLAYER0_URB(I,2,J)+0.
           TGRL_URB3D(I,4,J)=TLAYER0_URB(I,2,J)+(TLAYER0_URB(I,3,J)-TLAYER0_URB(I,2,J))*0.29
 
-          TVGL_URB3D(I,1,J)=TLAYER0_URB(I,1,J)+0.                               ! below 4 line added by yuqi
+          TVGL_URB3D(I,1,J)=TLAYER0_URB(I,1,J)+0.                               ! the 4 lines below added by yuqi
           TVGL_URB3D(I,2,J)=0.5*(TLAYER0_URB(I,1,J)+TLAYER0_URB(I,2,J))
           TVGL_URB3D(I,3,J)=TLAYER0_URB(I,2,J)+0.
           TVGL_URB3D(I,4,J)=TLAYER0_URB(I,2,J)+(TLAYER0_URB(I,3,J)-TLAYER0_URB(I,2,J))*0.29																	   
@@ -3829,7 +3907,7 @@ ENDIF
       IF (CHECK.EQ.0)THEN
       IF(IVGTYP(I,J).EQ.1)THEN
         write(mesg,*) 'Sample of Urban settings'
-        call wrf_message(mesg)
+        WRITE_MESSAGE(mesg)
         write(mesg,*) 'TSURFACE0_URB',TSURFACE0_URB(I,J)
         WRITE_MESSAGE(mesg)
         write(mesg,*) 'TDEEP0_URB', TDEEP0_URB(I,J)
@@ -3947,7 +4025,7 @@ ENDIF
 END SUBROUTINE bisection
 !===========================================================================
 
-SUBROUTINE SFCDIF_URB (ZLM,Z0,THZ0,THLM,SFCSPD,AKANDA,AKMS,AKHS,RLMO,CD)  ! they deleted those two variables (ZT_OUT,VEGFRAC) (yuqi)
+SUBROUTINE SFCDIF_URB (ZLM,Z0,THZ0,THLM,SFCSPD,AKANDA,AKMS,AKHS,RLMO,CD,ZT_OUT,VEGFRAC)
 
 ! ----------------------------------------------------------------------
 ! SUBROUTINE SFCDIF_URB (Urban version of SFCDIF_off)
@@ -3966,6 +4044,8 @@ SUBROUTINE SFCDIF_URB (ZLM,Z0,THZ0,THLM,SFCSPD,AKANDA,AKMS,AKHS,RLMO,CD)  ! they
       REAL     SFCSPD, AKANDA, AKMS, AKHS, ZU, ZT, RDZ, CXCH
       REAL     DTHV, DU2, BTGH, WSTAR2, USTAR, ZSLU, ZSLT, RLOGU, RLOGT
       REAL     RLMO, ZETALT, ZETALU, ZETAU, ZETAT, XLU4, XLT4, XU4, XT4
+      REAL, INTENT(OUT), OPTIONAL :: ZT_OUT
+      REAL, INTENT(IN), OPTIONAL :: VEGFRAC
 !CC   ......REAL ZTFC
 
       REAL     XLU, XLT, XU, XT, PSMZ, SIMM, PSHZ, SIMH, USTARK, RLMN,  &
@@ -3996,9 +4076,9 @@ SUBROUTINE SFCDIF_URB (ZLM,Z0,THZ0,THLM,SFCSPD,AKANDA,AKMS,AKHS,RLMO,CD)  ! they
 ! LECH'S SURFACE FUNCTIONS               ! E.q A7&A8 (YUQI)
 ! ----------------------------------------------------------------------
       PSLMU (ZZ)= -0.96* log (1.0-4.5* ZZ)
-      PSLMS (ZZ)= (ZZ/RFC) -2.076* (1. -1./ (ZZ +1.))            ! RRIC shuold be 1/ RFC , they fixed this problem in the new version (yuqi)
+      PSLMS (ZZ)= (ZZ/RFC) -2.076* (1. -1./ (ZZ +1.))
       PSLHU (ZZ)= -0.96* log (1.0-4.5* ZZ)
-      PSLHS (ZZ)= ZZ * RFAC -2.076* (1. - exp(-1.2 * ZZ))        ! PSLHS (ZZ)= ZZ * RFAC -2.076* (1. -1./ (ZZ +1.)) in the previous code (yuqi)
+      PSLHS (ZZ)= ZZ * RFAC -2.076* (1. - exp(-1.2 * ZZ))        ! bug fixed in 4.7.1 (Yuqi)
 ! ----------------------------------------------------------------------
 ! PAULSON'S SURFACE FUNCTIONS             ! E.q A5&A6 (YUQI)
 ! ---------------------------------------------------------------------- 
@@ -4042,11 +4122,12 @@ SUBROUTINE SFCDIF_URB (ZLM,Z0,THZ0,THLM,SFCSPD,AKANDA,AKMS,AKHS,RLMO,CD)  ! they
 ! ----------------------------------------------------------------------
 ! KCL/TL Try Kanda approach instead (Kanda et al. 2007, JAMC)
 !      ZT = EXP (ZILFC * SQRT (USTAR * Z0))* Z0
-     !IF (PRESENT(VEGFRAC)) THEN       ! they comment this in the new version (yuqi)
-      !  ! Kawai et al. (2009) JAMC
-       ! ZT = EXP (2.0-(AKANDA-0.9*VEGFRAC**0.29)*(SQVISC**2 * USTAR * Z0)**0.25)* Z0
-      !ELSE										  
+      IF (PRESENT(VEGFRAC)) THEN       ! commented out in HRLDAS (yuqi)
+        ! Kawai et al. (2009) JAMC
+        ZT = EXP (2.0-(AKANDA-0.9*VEGFRAC**0.29)*(SQVISC**2 * USTAR * Z0)**0.25)* Z0
+      ELSE
       ZT = EXP (2.0-AKANDA*(SQVISC**2 * USTAR * Z0)**0.25)* Z0   ! thermal roughness length (yuqi)
+      END IF
       
       ZSLU = ZLM + ZU      ! effective momentum surface layer depth (yuqi)
 
@@ -4117,11 +4198,12 @@ SUBROUTINE SFCDIF_URB (ZLM,Z0,THZ0,THLM,SFCSPD,AKANDA,AKMS,AKHS,RLMO,CD)  ! they
             USTAR = MAX (SQRT (AKMS * SQRT (DU2+ WSTAR2)),EPSUST)     ! update Ustar since AKMS has been updated by SIMM (yuqi)
             !KCL/TL
             !ZT = EXP (ZILFC * SQRT (USTAR * Z0))* Z0
-           ! IF (PRESENT(VEGFRAC)) THEN      ! they comment this in the new version (yuqi)
-           !   ! Kawai et al. (2009) JAMC
-            !  ZT = EXP (2.0-(AKANDA-0.9*VEGFRAC**0.29)*(SQVISC**2 * USTAR * Z0)**0.25)* Z0
-           ! ELSE									  
+            IF (PRESENT(VEGFRAC)) THEN      ! they comment this in the new version (yuqi)
+              ! Kawai et al. (2009) JAMC
+              ZT = EXP (2.0-(AKANDA-0.9*VEGFRAC**0.29)*(SQVISC**2 * USTAR * Z0)**0.25)* Z0
+            ELSE									  
             ZT = EXP (2.0-AKANDA*(SQVISC**2 * USTAR * Z0)**0.25)* Z0    ! update ZT (yuqi)
+            END IF				  
             ZSLT = ZLM + ZT
             RLOGT = log (ZSLT / ZT)
             USTARK = USTAR * VKRM
@@ -4145,7 +4227,7 @@ SUBROUTINE SFCDIF_URB (ZLM,Z0,THZ0,THLM,SFCSPD,AKANDA,AKMS,AKHS,RLMO,CD)  ! they
       END DO
 
       CD = USTAR*USTAR/SFCSPD**2    ! calculate the drag coefficient (yuqi)
-	  ! IF (PRESENT(ZT_OUT)) ZT_OUT = ZT	 ! they comment this in the new version (yuqi)						  
+	  IF (PRESENT(ZT_OUT)) ZT_OUT = ZT	 ! they comment this in the new version (yuqi)						  
 ! ----------------------------------------------------------------------
   END SUBROUTINE SFCDIF_URB
 ! ----------------------------------------------------------------------
@@ -4525,7 +4607,7 @@ SUBROUTINE SFCDIF_URB (ZLM,Z0,THZ0,THLM,SFCSPD,AKANDA,AKMS,AKHS,RLMO,CD)  ! they
          ELSE
             WPLUS = 0.
          END IF
-         SMC (K) = MAX ( MIN (STOT,SMCMAX),0.07 )          ! change 0.066 to 0.07 in oder to avoid floating invalid error in root_uptake step! (yuqi)
+         SMC (K) = MAX ( MIN (STOT,SMCMAX),0.07 )          ! change 0.066 to 0.07 in order to avoid floating invalid error in root_uptake step (Yuqi)
       END DO
 
 ! ----------------------------------------------------------------------
@@ -4789,7 +4871,7 @@ SUBROUTINE SFCDIF_URB (ZLM,Z0,THZ0,THLM,SFCSPD,AKANDA,AKMS,AKHS,RLMO,CD)  ! they
 ! SPECIAL CASE OF BOTTOM LAYER (CONCRETE ROOF)
 ! ----------------------------------------------------------------------
             HCPCT = CAPR * 4.1868 * 1.E6
-            DF1K  = 3.24                ! this one is default in NOAH_MP technical notebook page 47 (yuqi)
+            DF1K  = 3.24                ! default in NOAH_MP technical notebook page 47 (yuqi)
 ! ----------------------------------------------------------------------
 ! CALC THE VERTICAL TEMP GRADIENT THRU BOTTOM LAYER.
 ! ----------------------------------------------------------------------

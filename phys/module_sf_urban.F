@@ -105,9 +105,10 @@ use module_model_constants, only :  piconst
 !===Huang and Wang, 2025/12/28, urban nature-based solutions for single layer UCM (including trees)===
    INTEGER                         :: TREEOPTION      ! Urban Tree&Vegetation Option ! add by yuqi
    REAL                            :: fvg_data = 0.0  ! vegetated ground fraction from URBPARM
-   REAL, ALLOCATABLE, DIMENSION(:) :: RTREE_TBL       ! Tree crown radius
-   REAL, ALLOCATABLE, DIMENSION(:) :: HTREE_TBL       ! Tree crown center height
-   REAL, ALLOCATABLE, DIMENSION(:) :: DTREE_TBL       ! Tree crown center distance from wall (half canyon width currently)
+   REAL, ALLOCATABLE, DIMENSION(:) :: RTREE_TBL       ! Tree crown radius [normalized]
+   REAL, ALLOCATABLE, DIMENSION(:) :: RTREE_M_TBL     ! Tree crown radius in meter
+   REAL, ALLOCATABLE, DIMENSION(:) :: HTREE_TBL       ! Tree crown center height [normalized]
+   REAL, ALLOCATABLE, DIMENSION(:) :: DTREE_TBL       ! Tree crown center distance from wall (half canyon width currently) [normalized]
    REAL, ALLOCATABLE, DIMENSION(:) :: LAI_TREE_TBL    ! Tree leaf area index
    REAL, ALLOCATABLE, DIMENSION(:) :: LAI_VEG_TBL     ! Vegetated ground leaf area index
    REAL, ALLOCATABLE, DIMENSION(:) :: Z0VG_TBL        ! Roughness length for momentum of vegetated ground
@@ -422,7 +423,7 @@ use module_model_constants, only :  piconst
    REAL(Kind = 8) :: DRS_LEAF, M,D,DD,FE,DFE,S,DM,KK,L,N
    REAL(Kind = 8) :: DELEVGDTVG,DELEVGDTT,DELETDTB,DELETDTG,DELETDTVG,DELETDTT,DTCDTVG,DTCDTT ! derivatives wrt temperature (latent heat)
    REAL :: DQCDTVG,DQCDTT,ELEVG,KVG,G0VG,DG0BDTVG,DG0BDTT,DG0GDTVG,DG0GDTT,DG0VGDTB,DG0VGDTG,DG0VGDTVG,DG0VGDTT ! derivatives wrt temperature
-   REAL(Kind = 8) :: WF,A,B,C,E,FF,GG,H,VGF,I,J,TF,O,P,CHARA,det,det_tol      !,RVGT  
+   REAL(Kind = 8) :: WF,A,B,C,E,FF,GG,H,VGF,I,J,TF,O,P,CHARA      !,RVGT  
    REAL :: SSOILG  ! Soil Heat Flux output from SHFLX W/m2  
    REAL :: TGE, TGEP, QS0GE, ALPHAGE, FLXTHVG, FLXTHT ! effective ground values
    REAL :: CMCGP     ! Canopy Intercepted Water on Vegetated Ground
@@ -443,6 +444,7 @@ use module_model_constants, only :  piconst
    REAL                    :: EPSVG         ! Vegetated Ground Emissivity
    REAL                    :: EPST          ! Tree Emissivity
    REAL                    :: RTREE         ! Radius of Tree Crown Center
+   REAL                    :: RTREE_M       ! Radius of Tree Crown Center in meters																			   
    REAL                    :: DTREE         ! Distance of Tree Crown Center From Wall (RW/2)
    REAL                    :: HTREE         ! Height of Tree Crown Center
    REAL                    :: LAI_VEG       ! Vegetated Ground Leaf Areal Index  
@@ -744,8 +746,8 @@ use module_model_constants, only :  piconst
                   AH,CAPR,CAPB,CAPG,AKSR,AKSB,AKSG,ALBR,ALBB,    &
                   ALBG,EPSR,EPSB,EPSG,Z0R,Z0B,Z0G,Z0HB,Z0HG,     &
                   BETR,BETB,BETG,TRLEND,TBLEND,TGLEND,           &
-                  RTREE,HTREE,DTREE,LAI_TREE,LAI_VEG,            &    ! added by yuqi
-                   Z0VG,Z0HVG,CAPVG,EPSVG,EPST,                   &    ! added by yuqi
+                  RTREE,RTREE_M,HTREE,DTREE,LAI_TREE,LAI_VEG,    &    ! added by yuqi
+                   Z0VG,Z0HVG,CAPVG,EPSVG,EPST,                  &    ! added by yuqi
 !for BEP
                    NUMDIR, STREET_DIRECTION, STREET_WIDTH,        & 
                    BUILDING_WIDTH, NUMHGT, HEIGHT_BIN,            & 
@@ -1953,7 +1955,7 @@ ENDIF
          END IF
          ELET = MIN(POTENTIAL_ELET, ELET)    ! unit: W/m2
 
-         CALL ROOT_UPTAKE(SROOT, NVG, SMG, SMCMAX, SMCDRY, RTREE, LAI_TREE, DZVG, ZSOILG, ELET, FVG, RW)
+         CALL ROOT_UPTAKE(SROOT, NVG, SMG, SMCMAX, SMCDRY, RTREE_M, LAI_TREE, DZVG, ZSOILG, ELET, FVG, RW)
 
      
          ! HT = CPP * RHOO * ALPHAT * (TTP - TCP)                              ! change to residual method (yuqi)    
@@ -2032,16 +2034,12 @@ ENDIF
          KK = DRVGDTVG - DHVGDTVG - DELEVGDTVG - DG0VGDTVG 
 
 
-         det = A*(FF*KK-GG*J)-B*(E*KK-GG*I)+C*(E*J-FF*I)
-         det_tol = 1.0D-8
+         CHARA = 1/(A*(FF*KK-GG*J)-B*(E*KK-GG*I)+C*(E*J-FF*I))
          
          ! Near-singular check: if determinant is too small, fall back to tolerance
-         IF (ABS(det) < det_tol) THEN
-            det = SIGN(det_tol, det)
-            WRITE_MESSAGE("WARNING: Singular matrix in Urban Tree Energy Budget; using det_tol")
+         IF (ABS(A*(FF*KK-GG*J)-B*(E*KK-GG*I)+C*(E*J-FF*I)) < 1.0E-8) THEN
+            FATAL_ERROR("WARNING: Singular matrix in Urban Tree Energy Budget")  ! Fall back to a determinant with magnitude det_tol, preserving sign
          END IF
- 
-         CHARA = 1.0 / det
   
          DTB =  -CHARA* (WF*(FF*KK-GG*J)+GF*(C*J-B*KK)+VGF*(B*GG-C*FF))
          DTG =  -CHARA* (WF*(GG*I-E*KK)+GF*(A*KK-C*I)+VGF*(C*E-A*GG))
@@ -2769,7 +2767,7 @@ ENDIF
                          CAPR,CAPB,CAPG,AKSR,AKSB,AKSG,ALBR,ALBB,ALBG, & ! out
                          EPSR,EPSB,EPSG,Z0R,Z0B,Z0G,Z0HB,Z0HG,         & ! out
                          BETR,BETB,BETG,TRLEND,TBLEND,TGLEND,          & ! out
-                         RTREE,HTREE,DTREE,LAI_TREE,LAI_VEG,           & ! out   ! added by yuqi
+                         RTREE,RTREE_M,HTREE,DTREE,LAI_TREE,LAI_VEG,   & ! out   ! added by yuqi
                          Z0VG,Z0HVG,CAPVG,EPSVG,EPST,                  & ! out   ! added by yuqi
 !for BEP
                          NUMDIR, STREET_DIRECTION, STREET_WIDTH,       & ! out
@@ -2785,7 +2783,7 @@ ENDIF
                            CAPR,CAPB,CAPG,AKSR,AKSB,AKSG,ALBR,ALBB,ALBG, &
                            SIGMA_ZED,                                    &
                            EPSR,EPSB,EPSG,Z0R,Z0B,Z0G,Z0HB,Z0HG,         &
-                           BETR,BETB,BETG,TRLEND,TBLEND,TGLEND,RTREE,HTREE,&
+                           BETR,BETB,BETG,TRLEND,TBLEND,TGLEND,RTREE,RTREE_M,HTREE,&
                            DTREE,LAI_TREE,LAI_VEG,Z0VG,Z0HVG,CAPVG,EPSVG,EPST   ! added by yuqi
    REAL, INTENT(OUT)    :: AKANDA_URBAN
 !for BEP
@@ -2839,6 +2837,7 @@ ENDIF
    TBLEND=  TBLEND_TBL(UTYPE)
    TGLEND=  TGLEND_TBL(UTYPE)
    RTREE=   RTREE_TBL(UTYPE)   ! added by yuqi
+   RTREE_M = RTREE_M_TBL(UTYPE)							   
    HTREE=   HTREE_TBL(UTYPE)
    DTREE=   DTREE_TBL(UTYPE)
    LAI_TREE=LAI_TREE_TBL(UTYPE)
@@ -3053,6 +3052,8 @@ ENDIF
             if(allocate_status /= 0) FATAL_ERROR('Error allocating FRC_URB_TBL in urban_param_init')
             ALLOCATE( RTREE_TBL(ICATE), stat=allocate_status )                                                  ! added by yuqi
             if(allocate_status /= 0) FATAL_ERROR('Error allocating RTREE_TBL in urban_param_init')
+			ALLOCATE( RTREE_M_TBL(ICATE), stat=allocate_status )                                                  ! added by yuqi
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating RTREE_M_TBL in urban_param_init')																													 																			
             ALLOCATE( HTREE_TBL(ICATE), stat=allocate_status )
             if(allocate_status /= 0) FATAL_ERROR('Error allocating HTREE_TBL in urban_param_init')
             ALLOCATE( DTREE_TBL(ICATE), stat=allocate_status )
@@ -3374,6 +3375,12 @@ ENDIF
 
       ! R:  Normalized Roof Width (a.k.a. "building coverage ratio")
       R_TBL(LC)  = ROOF_WIDTH(LC) / ( ROAD_WIDTH(LC) + ROOF_WIDTH(LC) )
+
+	  ! normalized rtree_tbl, dtree_tbl and htree_tbl                  ! added by yuqi to normalize tree dimension
+      RTREE_M_TBL(LC) = RTREE_TBL(LC)
+      RTREE_TBL(LC) = RTREE_TBL(LC) / (ROAD_WIDTH(LC) + ROOF_WIDTH(LC))
+      DTREE_TBL(LC) = DTREE_TBL(LC) / (ROAD_WIDTH(LC) + ROOF_WIDTH(LC))
+      HTREE_TBL(LC) = HTREE_TBL(LC) / (ROAD_WIDTH(LC) + ROOF_WIDTH(LC))
 
       RW_TBL(LC) = 1.0 - R_TBL(LC)
       BETR_TBL(LC) = 0.0

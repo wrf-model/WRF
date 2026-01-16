@@ -46,6 +46,7 @@
    USE module_diag_zld, ONLY : zld
    USE module_trad_fields, ONLY : trad_fields
 
+   USE NoahmpIOVarType
 !!debug
 !USE module_compute_geop
 
@@ -96,6 +97,7 @@
    REAL :: spongeweight
    LOGICAL :: first_trip_for_this_domain, start_of_simulation, fill_w_flag
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
+   type(NoahmpIO_type) :: NoahmpIO
 
 #if (WRF_CHEM != 1)
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: cldfra_old
@@ -1278,13 +1280,13 @@ endif
                       ,grid%NC_CU, grid%NI_CU, grid%NR_CU, grid%NS_CU,grid%CCN_CU                    &
                       ,grid%alevsiz_cu,grid%num_months,grid%no_src_types_cu,grid%aeromcu             &
                       ,grid%aeropcu,grid%EFCG,grid%EFCS,grid%EFIG,grid%EFIS,grid%EFSG,grid%EFSS      &
-                      )
+                      ,NoahmpIO)
        ENDDO ! loop of tiles for phy_init
 
        if(.not.grid%restart) then
 
          if(config_flags%sf_surface_physics .eq. NOAHMPSCHEME .and. config_flags%opt_runsub .eq. 5) then
-              call NoahmpGroundwaterInitMain ( grid ,                                                   &
+              call NoahmpGroundwaterInitMain (NoahmpIO, grid ,                                          &
                  config_flags%num_soil_layers, grid%dzs, grid%isltyp, grid%ivgtyp, config_flags%wtddt , &
                  grid%fdepthxy   , grid%ht     , grid%riverbedxy, grid%eqzwt     ,                      &
                  grid%rivercondxy, grid%pexpxy , grid%areaxy    , grid%zwtxy     ,                      &

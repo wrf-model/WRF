@@ -1141,6 +1141,9 @@ module_sf_noahlsm_glacial_only.o: \
 noahmp/drivers/wrf/NoahmpWRFmainMod.o: \
         noahmp/drivers/wrf/NoahmpIOVarType.o \
         noahmp/drivers/wrf/NoahmpDriverMainMod.o \
+        noahmp/drivers/wrf/NoahmpIOVarInitMod.o \
+        noahmp/drivers/wrf/NoahmpReadTableMod.o \
+        noahmp/src/SnowInputSnicarMod.o \
         module_sf_urban.o
 
 
@@ -1209,7 +1212,8 @@ noahmp/drivers/wrf/NoahmpReadTableMod.o: \
 
 noahmp/drivers/wrf/PedoTransferSR2006Mod.o: \
         noahmp/utility/Machine.o \
-        noahmp/drivers/wrf/NoahmpIOVarType.o
+        noahmp/drivers/wrf/NoahmpIOVarType.o \
+        noahmp/src/NoahmpVarType.o
 
 
 noahmp/drivers/wrf/ConfigVarOutTransferMod.o: \
@@ -4272,6 +4276,7 @@ start_em.o : \
 	../phys/module_firebrand_spotting.o \
 	../phys/module_fr_fire_driver_wrf.o \
 	../phys/module_lightning_driver.o \
+        ../phys/noahmp/drivers/wrf/NoahmpIOVarType.o \
 	../share/module_llxy.o \
 	../share/module_model_constants.o \
 	../phys/module_physics_init.o \

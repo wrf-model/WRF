@@ -278,7 +278,7 @@ CONTAINS
                          ,alevsiz_cu,num_months,no_src_types_cu,aeromcu,aeropcu   & ! PSH/TWG 06/10/16                         
                          ,EFCG,EFCS,EFIG,EFIS,EFSG,EFSS                           & ! TWG
 #endif
-                          )
+                         ,NoahmpIO )
 
 !-----------------------------------------------------------------
    USE module_domain
@@ -290,6 +290,8 @@ CONTAINS
 #endif
    USE module_wind_fitch
    USE module_wind_mav  ! Yulong add for WLM
+   USE NoahmpIOVarType
+
    IMPLICIT NONE
 !-----------------------------------------------------------------
    TYPE (grid_config_rec_type)              :: config_flags
@@ -328,6 +330,7 @@ CONTAINS
           INTENT(INOUT) ::                                  OZMIXM
    REAL,  DIMENSION( ims:ime, alevsiz, jms:jme, n_ozmixm-1, no_src_types ), OPTIONAL, &
           INTENT(INOUT) ::                                  aerodm
+   type(NoahmpIO_type), OPTIONAL, intent(inout) :: NoahmpIO
 
 #if ( EM_CORE == 1 )
   !PSH/TWG 06/10/16
@@ -1515,7 +1518,7 @@ CHARACTER(LEN=8) :: name
                 dust2xy, dust3xy, dust4xy, dust5xy, massconcbcphixy, massconcbcphoxy,&
                 massconcocphixy, massconcocphoxy, massconcdust1xy, massconcdust2xy,  &
                 massconcdust3xy, massconcdust4xy, massconcdust5xy,                   &
-                ALBSOILDIRXY, ALBSOILDIFXY,                                          &
+                ALBSOILDIRXY, ALBSOILDIFXY, NoahmpIO,                                &
                 allowed_to_read , iopt_runsub,                  &
                 iopt_soil, iopt_alb, iopt_wetland,              &
                 SNICAR_SNOWOPTICS_OPT, SNICAR_DUSTOPTICS_OPT,   & ! optional SNICAR option
@@ -2555,7 +2558,7 @@ CHARACTER(LEN=8) :: name
                 dust2xy, dust3xy, dust4xy, dust5xy, massconcbcphixy, massconcbcphoxy,&
                 massconcocphixy, massconcocphoxy, massconcdust1xy, massconcdust2xy,  &
                 massconcdust3xy, massconcdust4xy, massconcdust5xy,                   &
-                ALBSOILDIRXY, ALBSOILDIFXY,                                          &
+                ALBSOILDIRXY, ALBSOILDIFXY, NoahmpIO,           &
                 allowed_to_read, iopt_runsub,                   &
                 iopt_soil, iopt_alb, iopt_wetland,              &
                 SNICAR_SNOWOPTICS_OPT, SNICAR_DUSTOPTICS_OPT,   & ! optional SNICAR option
@@ -2938,6 +2941,8 @@ CHARACTER(LEN=8) :: name
    INTEGER, OPTIONAL, DIMENSION(ims:ime,jms:jme) :: IRNUMFI 
 ! tile drainage
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: qtdrain
+! new NoahmpIO variables
+   type(NoahmpIO_type), OPTIONAL, intent(inout) :: NoahmpIO
 
 !URBAN
 !   REAL, DIMENSION(1:num_roof_layers), INTENT(INOUT) :: DZR  !Optional urban
@@ -3491,7 +3496,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
              CALL wrf_error_fatal ( 'NoahMP does not work with NLCD data. Stop.' )
           ENDIF
 
-          CALL NoahmpWRFinit(MMINLU, SNOW,SNOWH,CANWAT,ISLTYP,IVGTYP,XLAT,                  &
+          CALL NoahmpWRFinit(NoahmpIO, MMINLU, SNOW,SNOWH,CANWAT,ISLTYP,IVGTYP,XLAT,        &
                      TSLB,SMOIS,SH2O,DZS, FNDSOILW, FNDSNOWH,          &
                      TSK,isnowxy  ,tvxy     ,tgxy     ,canicexy ,TMN,XICE,                  &
                      canliqxy ,eahxy    ,tahxy    ,cmxy     ,chxy     ,                     &
@@ -3523,8 +3528,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                      ,smoiseq  ,smcwtdxy ,rechxy   ,deeprechxy, qtdrain, areaxy ,dx, dy, msftx, msfty,&
                      wtddt    ,stepwtd  ,dt  ,qrfsxy ,qspringsxy  ,qslatxy,                  &
                      fdepthxy ,ht       ,riverbedxy ,eqzwt ,rivercondxy ,pexpxy,              &
-                     rechclim,                  &
-                     gecros_state                              & ! Optional gecros crop
+                     rechclim                  &
 #endif
                      )
 

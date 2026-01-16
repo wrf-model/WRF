@@ -1291,6 +1291,9 @@ CONTAINS
    REAL    :: tconst,tprior,tnew,yrday,deltat
    REAL    :: SWSAVE
    REAL,       DIMENSION( ims:ime, jms:jme )          ::  GSWSAVE
+! new NoahmpIO variables
+   type(NoahmpIO_type) :: NoahmpIO
+
 !-------------------------------------------------
 ! urban related variables are added to declaration
 !-------------------------------------------------
@@ -3159,7 +3162,7 @@ CONTAINS
          if(HYDRO_dt .ge. 0) HYDRO_dt = dtbl
 #endif
          CALL wrf_debug(100,'in NOAHMP DRV')
-         CALL NoahmpWRFmain(ITIMESTEP,   YR, JULIAN_IN,   COSZEN, XLAT,XLONG, &
+         CALL NoahmpWRFmain(NoahmpIO,ITIMESTEP,YR,JULIAN_IN,COSZEN,XLAT,XLONG, &
 	           DZ8W,     DTBL,      DZS,     NUM_SOIL_LAYERS,         DX, &
 		 IVGTYP,   ISLTYP,   VEGFRA,   SHDMAX,       TMN,             &
 		  XLAND,     XICE,     XICE_THRESHOLD,   CROPCAT,             &
@@ -3188,7 +3191,6 @@ CONTAINS
 		ZSNSOXY,  SNICEXY,  SNLIQXY, LFMASSXY,  RTMASSXY,   STMASSXY, &
 		 WOODXY, STBLCPXY, FASTCPXY,      LAI,    XSAIXY,    TAUSSXY, &
 	        SMOISEQ, SMCWTDXY,DEEPRECHXY,  RECHXY,   GRAINXY,      GDDXY,PGSXY, & ! IN/OUT Noah MP only
-               GECROS_STATE,                                                  & ! IN/OUT gecros model
                 QTDRAIN,   TD_FRACTION,                                       & ! IN/OUT tile drainage
 	         T2MVXY,   T2MBXY,   Q2MVXY,   Q2MBXY,                        &
                  TRADXY,    NEEXY,    GPPXY,    NPPXY,    FVEGXY,    RUNSFXY, &
@@ -3230,7 +3232,7 @@ CONTAINS
 
          IF(SF_URBAN_PHYSICS > 0 ) THEN  !urban
          
-	   call noahmp_urban (sf_urban_physics,     NUM_SOIL_LAYERS,     IVGTYP,ITIMESTEP,  & ! IN : Model configuration 
+	   call noahmp_urban (NoahmpIO, sf_urban_physics,NUM_SOIL_LAYERS,IVGTYP,ITIMESTEP,  & ! IN : Model configuration 
                                DTBL,         COSZEN,     XLAT_URB2D,                        & ! IN : Time/Space-related
                               T_PHY,        QV_CURR,          U_PHY,      V_PHY,   SWDOWN,  & ! IN : Forcing
                              SWDDIR,         SWDDIF,                                        &
@@ -3293,7 +3295,7 @@ CONTAINS
 
 !gmm update wtable from lateral flow and shed water to rivers
 
-           CALL WTABLE_mmf_noahmp(num_soil_layers,xland,xice, xice_threshold, isice,          &
+           CALL WTABLE_mmf_noahmp(NoahmpIO,num_soil_layers,xland,xice, xice_threshold, isice, &
                                   isltyp,smoiseq,dzs,wtddt,                                   &
                                   fdepthxy,areaxy,ht,isurban,ivgtyp,                          &
                                   rivercondxy,riverbedxy,eqzwt,pexpxy,                        &
@@ -3488,7 +3490,7 @@ CONTAINS
 !------------------------------------------------------------------
 
        ELSE
-         CALL wrf_error_fatal('Lacking arguments for NOAHMPLSM in surface driver')
+         CALL wrf_error_fatal('Lacking arguments for NoahmpWRFmain in surface driver')
        ENDIF
 
      CASE (RUCLSMSCHEME)

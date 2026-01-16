@@ -362,9 +362,6 @@ use module_model_constants, only :  piconst
    REAL, DIMENSION(1:num_road_layers), INTENT(INOUT) :: SMG          ! Soil Moisture at Each Layer on Vegetated Ground
    REAL, INTENT(INOUT):: CMCG          ! Canopy Intercepted Water on Vegetated Ground
    REAL, INTENT(INOUT):: FLXHUMVG, FLXHUMT  ! Evaporation Over Vegetated Ground and Tree 
-   REAL, INTENT(IN)   :: lf_urb_s      ! Frontal area index (no wind directional dependency)
-   REAL, INTENT(IN)   :: z0_urb        ! Roughness length for momentum from NUDAPT
-   REAL, INTENT(IN)   :: vegfrac       ! Vegetation fraction from LSM
    !-------------------------------------------------------------------------------
    ! L: Local variables
    !-------------------------------------------------------------------------------
@@ -1230,7 +1227,7 @@ use module_model_constants, only :  piconst
    IF (FLXHUMRP <= 0.) FLXHUMRP = 0. 
 !  Compute water retention depth from previous time step 
    ! Convert kinematic water flux to evaporation in m/s: multiply flux by rho_air/who_water in SI units																									   
-   DrelR = DrelRP+(RAIN1-FLXHUMRP)*DELT/porimp(IMPR) ! '*RHOO/1000.' removed following HRLKDAS code (Yuqi)
+   DrelR = DrelRP+(RAIN1-FLXHUMRP*RHOO/1000.)*DELT/porimp(IMPR)
 !   IF (RAIN > 0. .AND. DrelR < DrelRP) DrelR = DrelRP  ! remove this line to allow Drel to decrease even when RAIN > 0 (chenghao wang)
   
    IF (DrelR <= 0.) then
@@ -1484,9 +1481,9 @@ ENDIF
    IF (FLXHUMBP <= 0.) FLXHUMBP = 0. 
    IF (FLXHUMGP <= 0.) FLXHUMGP = 0. 
 ! Compute water retention from previous time step for wall and ground
-  DrelB = DrelBP+(RAIN1-FLXHUMBP)*DELT/porimp(IMPB)            ! '*RHOO/1000.' removed following HRLKDAS code (Yuqi)
+  DrelB = DrelBP+(RAIN1-FLXHUMBP*RHOO/1000.)*DELT/porimp(IMPB)
  !   IF (RAIN > 0. .AND. DrelB < DrelBP) DrelB = DrelBP ! remove this line to allow Drel to decrease even when RAIN > 0 (Chenghao)
-  DrelG = DrelGP+(RAIN1-FLXHUMGP)*DELT/porimp(IMPG)  ! '*RHOO/1000.' removed following HRLKDAS code (Yuqi)
+  DrelG = DrelGP+(RAIN1-FLXHUMGP*RHOO/1000.)*DELT/porimp(IMPG)
  !   IF (RAIN > 0. .AND. DrelG < DrelGP) DrelG = DrelGP ! remove this line to allow Drel to decrease even when RAIN > 0 (Chenghao)
   
   IF (DrelB <= 0.) then
@@ -2364,22 +2361,22 @@ ENDIF
    END IF
 !#ifdef DOUBLE_PRECISION                 !newly added in this version (yuqi)
 
-   GZ1OZ0 = DLOG(Z/Z0)
-   CD = 0.4**2./(DLOG(Z/Z0)-PSIM)**2.
+!   GZ1OZ0 = DLOG(Z/Z0)
+!   CD = 0.4**2./(DLOG(Z/Z0)-PSIM)**2.
 !
 !m   CH = 0.4**2./(ALOG(Z/Z0)-PSIM)/(ALOG(Z/Z0H)-PSIH)
-   CHS = 0.4*UST/(DLOG(Z/Z0H)-PSIH) ! cenlin 03/09/2023: uncomment to allow CHS calc for offline hrldas-urban
-#else
+!   CHS = 0.4*UST/(DLOG(Z/Z0H)-PSIH) ! cenlin 03/09/2023: uncomment to allow CHS calc for offline hrldas-urban
+!#else
 
    GZ1OZ0 = ALOG(Z/Z0)
    CD = 0.4**2./(ALOG(Z/Z0)-PSIM)**2.
    CHS_LOCAL = 0.4 * UST / (ALOG(Z / Z0H) - PSIH)												 
 !
 !m   CH = 0.4**2./(ALOG(Z/Z0)-PSIM)/(ALOG(Z/Z0H)-PSIH)
-   CHS = 0.4*UST/(ALOG(Z/Z0H)-PSIH) ! cenlin 03/09/2023: uncomment to allow CHS calc for offline hrldas-urban
+!   CHS = 0.4*UST/(ALOG(Z/Z0H)-PSIH) ! cenlin 03/09/2023: uncomment to allow CHS calc for offline hrldas-urban
 
 
-#endif
+!#endif
 !m   TS = TA + FLXTH/CH/UA    ! surface potential temp (flux temp)
 !m   QS = QA + FLXHUM/CH/UA   ! surface humidity
 !

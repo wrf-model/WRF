@@ -173,7 +173,11 @@ MODULES = \
 	module_sf_3dpwp.o \
 	module_sf_myjsfc.o \
 	module_sf_qnsesfc.o \
-	module_sf_mynn.o \
+	module_sf_mynnsfc_common.o \
+	module_sf_mynnsfc_driver.o \
+	module_sf_mynnsfc_land.o \
+	module_sf_mynnsfc_water.o \
+	module_sf_mynnsfc_ice.o \
 	module_sf_fogdes.o \
 	module_sf_pxsfclay.o \
 	module_sf_temfsfclay.o \

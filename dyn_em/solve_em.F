@@ -3983,8 +3983,17 @@ BENCH_START(micro_driver_tim)
       &        ,pert_thom_qc=config_flags%pert_thom_qc                   &
       &        ,pert_thom_qi=config_flags%pert_thom_qi                   &
       &        ,pert_thom_qs=config_flags%pert_thom_qs                   &
-      &        ,pert_thom_ni=config_flags%pert_thom_ni					 &
-	  &		   ,cloudnc=grid%cloudnc 									 &
+      &        ,pert_thom_ni=config_flags%pert_thom_ni                   &
+      &        ,cloudnc=grid%cloudnc                                     &
+! Dynamic Lightning Scheme
+      &        ,light_pe_curr=scalar(ims,kms,jms,P_light_pe), F_light_pe=F_light_pe   &
+      &        ,light_ne_curr=scalar(ims,kms,jms,P_light_ne), F_light_ne=F_light_ne   &
+      &        ,light_neu_curr=scalar(ims,kms,jms,P_light_neu), F_light_neu=F_light_neu   &
+      &        ,lpos=grid%lpos,lneg=grid%lneg,lneu=grid%lneu             &
+!     &        ,l_obs=grid%l_obs                                         &
+      &        ,lpi2d=grid%lpi2d,lpi3d=grid%lpi3d                        &
+!     &        ,num_light_periods=config_flags%num_light_periods         &
+!     &        ,curr_secs=curr_secs )
 	)
 
                                                                           

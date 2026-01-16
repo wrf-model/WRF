@@ -200,6 +200,9 @@ MODULES = \
 	module_ltng_cpmpr92z.o \
 	module_ltng_crmpr92.o \
 	module_ltng_iccg.o \
+	module_calc_lpi_new.o \
+	module_ltng_pe.o \
+	module_ltng_strokes.o \
 	module_fdda_psufddagd.o \
 	module_fdda_spnudging.o \
 	module_fddagd_driver.o  \

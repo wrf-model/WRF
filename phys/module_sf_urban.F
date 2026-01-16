@@ -422,7 +422,7 @@ use module_model_constants, only :  piconst
    REAL(Kind = 8) :: DRS_LEAF, M,D,DD,FE,DFE,S,DM,KK,L,N
    REAL(Kind = 8) :: DELEVGDTVG,DELEVGDTT,DELETDTB,DELETDTG,DELETDTVG,DELETDTT,DTCDTVG,DTCDTT ! derivatives wrt temperature (latent heat)
    REAL :: DQCDTVG,DQCDTT,ELEVG,KVG,G0VG,DG0BDTVG,DG0BDTT,DG0GDTVG,DG0GDTT,DG0VGDTB,DG0VGDTG,DG0VGDTVG,DG0VGDTT ! derivatives wrt temperature
-   REAL(Kind = 8) :: WF,A,B,C,E,FF,GG,H,VGF,I,J,TF,O,P,CHARA      !,RVGT  
+   REAL(Kind = 8) :: WF,A,B,C,E,FF,GG,H,VGF,I,J,TF,O,P,CHARA,det,det_tol      !,RVGT  
    REAL :: SSOILG  ! Soil Heat Flux output from SHFLX W/m2  
    REAL :: TGE, TGEP, QS0GE, ALPHAGE, FLXTHVG, FLXTHT ! effective ground values
    REAL :: CMCGP     ! Canopy Intercepted Water on Vegetated Ground
@@ -2032,12 +2032,16 @@ ENDIF
          KK = DRVGDTVG - DHVGDTVG - DELEVGDTVG - DG0VGDTVG 
 
 
-         CHARA = 1/(A*(FF*KK-GG*J)-B*(E*KK-GG*I)+C*(E*J-FF*I))
+         det = A*(FF*KK-GG*J)-B*(E*KK-GG*I)+C*(E*J-FF*I)
+         det_tol = 1.0D-8
          
          ! Near-singular check: if determinant is too small, fall back to tolerance
-         IF (ABS(A*(FF*KK-GG*J)-B*(E*KK-GG*I)+C*(E*J-FF*I)) < 1.0E-8) THEN
-            FATAL_ERROR("WARNING: Singular matrix in Urban Tree Energy Budget")  ! Fall back to a determinant with magnitude det_tol, preserving sign
+         IF (ABS(det) < det_tol) THEN
+            det = SIGN(det_tol, det)
+            WRITE_MESSAGE("WARNING: Singular matrix in Urban Tree Energy Budget; using det_tol")
          END IF
+ 
+         CHARA = 1.0 / det
   
          DTB =  -CHARA* (WF*(FF*KK-GG*J)+GF*(C*J-B*KK)+VGF*(B*GG-C*FF))
          DTG =  -CHARA* (WF*(GG*I-E*KK)+GF*(A*KK-C*I)+VGF*(C*E-A*GG))

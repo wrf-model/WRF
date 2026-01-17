@@ -142,7 +142,7 @@ wrf : framework_only
 	    \( ! -f phys/module_sf_mynnsfc_land.F \) -o \
 	    \( ! -f phys/module_sf_mynnsfc_water.F \) -o \
 	    \( ! -f phys/module_sf_mynnsfc_ice.F \) -o \
-	    \( ! -f phys/module_sf_mynnedmf_common.F \) ] ; then \
+	    \( ! -f phys/module_sf_mynnsfc_common.F \) ] ; then \
 	  echo " " ; \
 	  echo "------------------------------------------------------------------------------" ; \
 	  echo "Error Error Error MYNN-SFC submodule files not populating WRF directories" ; \

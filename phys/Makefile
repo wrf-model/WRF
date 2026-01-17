@@ -128,12 +128,12 @@ MODULES = \
 	module_ra_rrtmg_aero_optical_util_cmaq.o \
 	module_ra_rrtmg_lwf.o  \
 	module_ra_rrtmg_swf.o  \
-        module_ra_rrtmg_lwk.o  \
-        module_ra_rrtmg_swk.o  \
-        module_ra_cam_support.o \
-        module_ra_cam.o \
+	module_ra_rrtmg_lwk.o  \
+	module_ra_rrtmg_swk.o  \
+	module_ra_cam_support.o \
+	module_ra_cam.o \
 	module_ra_gfdleta.o \
-        module_ra_flg.o \
+	module_ra_flg.o \
 	module_ra_hs.o  \
 	module_ra_eclipse.o \
 	module_ra_aerosol.o  \
@@ -289,7 +289,7 @@ submodules :
 	fi
 	@if [ \( ! -f module_sf_mynnsfc_driver.F \) -o \( ! -f module_sf_mynnsfc_common.F \) -o \
 	      \( ! -f module_sf_mynnsfc_land.F \) -o \( ! -f module_sf_mynnsfc_water.F \) -o \
-	      \( ! -f module_sf_mynnsfc_ice.F \)] ; then \
+	      \( ! -f module_sf_mynnsfc_ice.F \) ] ; then \
 		echo Pulling in MYNN-SFC submodule ; \
 		( cd .. ; git submodule update --init --recursive ) ; \
 		ln -sf MYNN-SFC/WRF/module_sf_mynnsfc_driver.F90 module_sf_mynnsfc_driver.F ; \

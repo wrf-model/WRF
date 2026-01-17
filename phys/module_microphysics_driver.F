@@ -512,8 +512,8 @@ SUBROUTINE microphysics_driver(                                          &
     INTEGER, DIMENSION( ims:ime , jms:jme ), INTENT(IN), OPTIONAL::   IVGTYP
     REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN), OPTIONAL    :: XLAT, XLONG
 !Dynamic Lightning
-   REAL, DIMENSION( ims:ime , jms:jme ),INTENT(INOUT) ::       lpi2d
-   REAL, DIMENSION( ims:ime ,kms:kme, jms:jme ),INTENT(INOUT) ::       lpi3d
+   REAL, DIMENSION( ims:ime , jms:jme ),INTENT(INOUT),OPTIONAL ::       lpi2d
+   REAL, DIMENSION( ims:ime ,kms:kme, jms:jme ),INTENT(INOUT),OPTIONAL ::       lpi3d
    REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT),OPTIONAL   :: LPOS,LNEG,LNEU
 
 !=================
@@ -673,8 +673,8 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,qvolg_curr,qvolh_curr,qrimef_curr
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
-         OPTIONAL, INTENT(INOUT ) ::                              &
-                  light_pe_curr,light_neu_curr,light_ne_curr        ! Dynamic Lightning
+         OPTIONAL,                                                &
+         INTENT(INOUT ) :: light_pe_curr,light_neu_curr,light_ne_curr        ! Dynamic Lightning
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          OPTIONAL,                                                &

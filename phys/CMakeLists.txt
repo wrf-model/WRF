@@ -213,10 +213,10 @@ target_sources(
                   module_sf_lake.F
                   module_sf_myjsfc.F
                   module_sf_mynnsfc_common.F
-		  module_sf_mynnsfc_driver.F
-		  module_sf_mynnsfc_land.F
-		  module_sf_mynnsfc_water.F
-		  module_sf_mynnsfc_ice.F
+                  module_sf_mynnsfc_driver.F
+                  module_sf_mynnsfc_land.F
+                  module_sf_mynnsfc_water.F
+                  module_sf_mynnsfc_ice.F
                   module_sf_noah_seaice.F
                   module_sf_noah_seaice_drv.F
                   module_sf_noahdrv.F

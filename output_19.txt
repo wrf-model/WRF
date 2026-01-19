@@ -1,0 +1,3054 @@
+Fri Jan 16 19:49:36 UTC 2026
+Fri Jan 16 19:49:36 UTC 2026
+Fri Jan 16 19:49:39 UTC 2026
+Sending build context to Docker daemon  947.2kB
+Step 1/7 : FROM kkeene44/wrf-coop:version16
+ ---> 39c7656b7bc2
+Step 2/7 : MAINTAINER Kelly Werner <kkeene@ucar.edu>
+ ---> Running in cb21c81b02b6
+Removing intermediate container cb21c81b02b6
+ ---> c288f80c1728
+Step 3/7 : RUN git clone https://github.com/chenghaow/WRF.git WRF   && cd WRF   && git checkout urban_nbs   && cd ..
+ ---> Running in 11a93e837188
+Cloning into 'WRF'...
+[91mChecking out files:  47% (2314/4918)   [0m[91mChecking out files:  48% (2361/4918)   [0m[91mChecking out files:  49% (2410/4918)   [0m[91mChecking out files:  50% (2459/4918)   [0m[91mChecking out files:  51% (2509/4918)   [0m[91mChecking out files:  52% (2558/4918)   [0m[91mChecking out files:  53% (2607/4918)   [0m[91mChecking out files:  54% (2656/4918)   [0m[91mChecking out files:  55% (2705/4918)   [0m[91mChecking out files:  56% (2755/4918)   [0m[91mChecking out files:  57% (2804/4918)   [0m[91mChecking out files:  58% (2853/4918)   [0m[91mChecking out files:  59% (2902/4918)   [0m[91mChecking out files:  60% (2951/4918)   [0m[91mChecking out files:  61% (3000/4918)   [0m[91mChecking out files:  62% (3050/4918)   [0m[91mChecking out files:  63% (3099/4918)   [0m[91mChecking out files:  64% (3148/4918)   [0m[91mChecking out files:  65% (3197/4918)   [0m[91mChecking out files:  66% (3246/4918)   [0m[91mChecking out files:  67% (3296/4918)   [0m[91mChecking out files:  68% (3345/4918)   [0m[91mChecking out files:  69% (3394/4918)   [0m[91mChecking out files:  70% (3443/4918)   [0m[91mChecking out files:  71% (3492/4918)   [0m[91mChecking out files:  72% (3541/4918)   [0m[91mChecking out files:  73% (3591/4918)   [0m[91mChecking out files:  74% (3640/4918)   [0m[91mChecking out files:  75% (3689/4918)   [0m[91mChecking out files:  76% (3738/4918)   [0m[91mChecking out files:  77% (3787/4918)   [0m[91mChecking out files:  78% (3837/4918)   [0m[91mChecking out files:  79% (3886/4918)   [0m[91mChecking out files:  80% (3935/4918)   [0m[91mChecking out files:  81% (3984/4918)   [0m[91mChecking out files:  82% (4033/4918)   [0m[91mChecking out files:  83% (4082/4918)   [0m[91mChecking out files:  84% (4132/4918)   [0m[91mChecking out files:  85% (4181/4918)   [0m[91mChecking out files:  86% (4230/4918)   [0m[91mChecking out files:  87% (4279/4918)   [0m[91mChecking out files:  88% (4328/4918)   [0m[91mChecking out files:  89% (4378/4918)   [0m[91mChecking out files:  90% (4427/4918)   [0m[91mChecking out files:  91% (4476/4918)   [0m[91mChecking out files:  92% (4525/4918)   [0m[91mChecking out files:  93% (4574/4918)   [0m[91mChecking out files:  94% (4623/4918)   [0m[91mChecking out files:  95% (4673/4918)   [0m[91mChecking out files:  96% (4722/4918)   [0m[91mChecking out files:  97% (4771/4918)   [0m[91mChecking out files:  98% (4820/4918)   [0m[91mChecking out files:  99% (4869/4918)   [0m[91mChecking out files: 100% (4918/4918)   [0m[91mChecking out files: 100% (4918/4918), done.
+[0m[91mSwitched to a new branch 'urban_nbs'
+[0mBranch urban_nbs set up to track remote branch urban_nbs from origin.
+Removing intermediate container 11a93e837188
+ ---> 07c5c8e21b1d
+Step 4/7 : RUN git clone https://github.com/wrf-model/SCRIPTS.git SCRIPTS   && cp SCRIPTS/rd_l2_norm.py . && chmod 755 rd_l2_norm.py   && cp SCRIPTS/script.csh .    && chmod 755 script.csh      && cp SCRIPTS/da_builds.csh . && chmod 755 da_builds.csh   && ln -sf SCRIPTS/Namelists .
+ ---> Running in eb6e9e73baad
+Cloning into 'SCRIPTS'...
+Removing intermediate container eb6e9e73baad
+ ---> 56f03682a33e
+Step 5/7 : RUN git clone https://github.com/wrf-model/wrf_feature_testing.git wrf_feature_testing   && cd wrf_feature_testing && mv * .. && cd ..
+ ---> Running in 8860f42c61e4
+Cloning into 'wrf_feature_testing'...
+Removing intermediate container 8860f42c61e4
+ ---> a29872f98b80
+Step 6/7 : VOLUME /wrf
+ ---> Running in 538c8a38d5aa
+Removing intermediate container 538c8a38d5aa
+ ---> 691d838878b3
+Step 7/7 : CMD ["/bin/tcsh"]
+ ---> Running in 15ebd724d6a2
+Removing intermediate container 15ebd724d6a2
+ ---> 52f7bc0502cf
+Successfully built 52f7bc0502cf
+Successfully tagged wrf_regtest:latest
+Fri Jan 16 19:54:13 UTC 2026
+Fri Jan 16 19:58:27 UTC 2026
+Untagged: wrf_regtest:latest
+Deleted: sha256:52f7bc0502cfe5581803dbd6c7f145da62198ed66f65c33d811563c8e1273e73
+Deleted: sha256:691d838878b383a5c51868cb29b463f4fc2cf0ac184e183f82e987024325891d
+Deleted: sha256:a29872f98b80efb169960c8364ae87432bababd49e632da034778d2f9f1e7140
+Deleted: sha256:f3d00117d95d9c243ace1ebf17f92d0691b56cefb1c2e988a00565fd604179e6
+Deleted: sha256:56f03682a33e43a4f3dcf6064e94bd832f6db23437c058c7606dbd3d7032ec4a
+Deleted: sha256:f6fdf91505f32ff2fbe787aaf9a55885fd56093d8359229627300f2c652a49a0
+Deleted: sha256:07c5c8e21b1df612ba0ee812c67df80f5cdf5f0d2ddeafad5e11a8e1c1e91921
+Deleted: sha256:eae5aeefe2ae19eb65e0eb4fe036e30fa08c9a87d20c687dac3014616eb6f0b3
+Deleted: sha256:c288f80c1728cc8c34b1ba4c014e16bf31d720b6538ce63f947d50ece2efa44c
+Deleted Volumes:
+a267c1600ed1b72b4584ae1e80b556608422542bf6dee4bb1e46136f31383ed8
+
+Total reclaimed space: 4.525GB
+TYPE            TOTAL     ACTIVE    SIZE      RECLAIMABLE
+Images          3         0         12.05GB   12.05GB (100%)
+Containers      0         0         0B        0B
+Local Volumes   0         0         0B        0B
+Build Cache     0         0         0B        0B
+Fri Jan 16 19:58:29 UTC 2026
+==============================================================
+==============================================================
+                         SERIAL START
+==============================================================
+TEST CASE = test_019s
+Fri Jan 16 19:54:13 UTC 2026
+Build container
+3024546323d93c0a5cc89f11985f11881ea16ad33ecbe2444db8c8c4b6436511
+Fri Jan 16 19:54:43 UTC 2026
+Build WRF executable
+Fri Jan 16 19:57:07 UTC 2026
+96124 -rwxr-xr-x 1 wrfuser wrf 98429936 Jan 16 19:57 WRF/main/wrf.exe
+76600 -rwxr-xr-x 1 wrfuser wrf 78435112 Jan 16 19:57 WRF/main/real.exe
+SUCCESSFUL BUILD
+0 -rw-r--r-- 1 wrfuser wrf 0 Jan 16 19:57 SUCCESS_BUILD_WRF_em_real_32
+Fri Jan 16 19:57:07 UTC 2026
+Fri Jan 16 19:57:07 UTC 2026
+Fri Jan 16 19:57:07 UTC 2026
+======================================================================
+RUN WRF test_019s for em_real 32 em_realG, NML = kiaps1NE
+0 = STATUS test_019s em em_real 32 kiaps1NE
+Fri Jan 16 19:58:03 UTC 2026
+PRE-PROC OUTPUT
+ Ntasks in X            1 , ntasks in Y            1
+  Domain # 1: dx = 30000.000 m
+  Domain # 2: dx = 10000.000 m
+REAL_EM V4.7.1 PREPROCESSOR
+git commit 48489fa8bf2fe2e2bbd48a947a4a982a9bc0145c
+ *************************************
+ Parent domain
+ ids,ide,jds,jde            1          74           1          61
+ ims,ime,jms,jme           -4          79          -4          66
+ ips,ipe,jps,jpe            1          74           1          61
+ *************************************
+DYNAMICS OPTION: Eulerian Mass Coordinate
+   alloc_space_field: domain            1 ,             261772676  bytes allocated
+Time period #   1 to process = 2000-01-24_12:00:00.
+Time period #   2 to process = 2000-01-24_18:00:00.
+Time period #   3 to process = 2000-01-25_00:00:00.
+Time period #   4 to process = 2000-01-25_06:00:00.
+Time period #   5 to process = 2000-01-25_12:00:00.
+Total analysis times to input =    5.
+  
+ -----------------------------------------------------------------------------
+  
+ Domain  1: Current date being processed: 2000-01-24_12:00:00.0000, which is loop #   1 out of    5
+ configflags%julyr, %julday, %gmt:        2000          24   12.0000000    
+d01 2000-01-24_12:00:00  Yes, this special data is acceptable to use: OUTPUT FROM METGRID V3.5.1
+d01 2000-01-24_12:00:00  Input data is acceptable to use: met_em.d01.2000-01-24_12:00:00.nc
+ metgrid input_wrf.F first_date_input = 2000-01-24_12:00:00
+ metgrid input_wrf.F first_date_nml = 2000-01-24_12:00:00
+d01 2000-01-24_12:00:00 Timing for input          0 s.
+d01 2000-01-24_12:00:00          flag_soil_layers read from met_em file is  1
+Max map factor in domain 1 =  1.03. Scale the dt in the model accordingly.
+Using sfcprs3 to compute psfc
+ using new automatic levels program
+           1   50.0000000       50.0000000      0.993814707    
+           2   64.0000000       114.000000      0.985950649       1.27999997    
+           3   81.5615997       195.561600      0.976014256       1.27440000    
+           4   103.369164       298.930756      0.963557541       1.26737535    
+           5   130.105835       429.036591      0.948093116       1.25865233    
+           6   162.366577       591.403198      0.929123759       1.24795771    
+           7   200.531372       791.934570      0.906191230       1.23505330    
+           8   244.605652       1036.54028      0.878942370       1.21978748    
+           9   294.054565       1330.59485      0.847207963       1.20215774    
+          10   347.683685       1678.27856      0.811077714       1.18237817    
+          11   403.635223       2081.91382      0.770949006       1.16092658    
+          12   459.557220       2541.47095      0.727525413       1.13854587    
+          13   512.947266       3054.41821      0.681755364       1.11617708    
+          14   564.242004       3618.66016      0.634503603       1.10000002    
+          15   620.666199       4239.32617      0.586030483       1.10000002    
+   25416.3906       4239.32617              48          15
+          16   641.729248       4881.05566      0.539505005    
+          17   641.729248       5522.78516      0.496368796    
+          18   641.729248       6164.51465      0.456375003    
+          19   641.729248       6806.24414      0.419294685    
+          20   641.729248       7447.97363      0.384915590    
+          21   641.729248       8089.70312      0.353040993    
+          22   641.729248       8731.43262      0.323488355    
+          23   641.729248       9373.16211      0.296088606    
+          24   641.729248       10014.8916      0.270684928    
+          25   641.729248       10656.6211      0.247131839    
+          26   641.729248       11298.3506      0.225294545    
+          27   641.729248       11940.0801      0.205048084    
+          28   641.729248       12581.8096      0.186276540    
+          29   641.729248       13223.5391      0.168872476    
+          30   641.729248       13865.2686      0.152736247    
+          31   641.729248       14506.9980      0.137775511    
+          32   641.729248       15148.7275      0.123904645    
+          33   641.729248       15790.4570      0.111044265    
+          34   641.729248       16432.1855       9.91207659E-02
+          35   641.729248       17073.9141       8.80658925E-02
+          36   641.729248       17715.6426       7.78163150E-02
+          37   641.729248       18357.3711       6.83134124E-02
+          38   641.729248       18999.0996       5.95027767E-02
+          39   641.729248       19640.8281       5.13339527E-02
+          40   641.729248       20282.5566       4.37602475E-02
+          41   641.729248       20924.2852       3.67382728E-02
+          42   641.729248       21566.0137       3.02278325E-02
+          43   641.729248       22207.7422       2.41916627E-02
+          44   641.729248       22849.4707       1.85952410E-02
+          45   641.729248       23491.1992       1.34064760E-02
+          46   641.729248       24132.9277       8.59571900E-03
+          47   641.729248       24774.6562       4.13541310E-03
+          48   641.729248       25416.3848       2.56990127E-08
+    1.0000    0.9938    0.9860    0.9760    0.9636    0.9481    0.9291    0.9062    0.8789    0.8472
+    0.8111    0.7709    0.7275    0.6818    0.6345    0.5860    0.5395    0.4964    0.4564    0.4193
+    0.3849    0.3530    0.3235    0.2961    0.2707    0.2471    0.2253    0.2050    0.1863    0.1689
+    0.1527    0.1378    0.1239    0.1110    0.0991    0.0881    0.0778    0.0683    0.0595    0.0513
+    0.0438    0.0367    0.0302    0.0242    0.0186    0.0134    0.0086    0.0041    0.0000
+Full level index =    1     Height =     0.0 m
+Full level index =    2     Height =    50.0 m      Thickness =   50.0 m
+Full level index =    3     Height =   113.9 m      Thickness =   63.9 m
+Full level index =    4     Height =   195.2 m      Thickness =   81.3 m
+Full level index =    5     Height =   298.0 m      Thickness =  102.8 m
+Full level index =    6     Height =   427.2 m      Thickness =  129.1 m
+Full level index =    7     Height =   587.8 m      Thickness =  160.7 m
+Full level index =    8     Height =   785.5 m      Thickness =  197.7 m
+Full level index =    9     Height =  1025.6 m      Thickness =  240.0 m
+Full level index =   10     Height =  1312.6 m      Thickness =  287.0 m
+Full level index =   11     Height =  1649.6 m      Thickness =  337.0 m
+Full level index =   12     Height =  2037.7 m      Thickness =  388.2 m
+Full level index =   13     Height =  2475.6 m      Thickness =  437.9 m
+Full level index =   14     Height =  2959.3 m      Thickness =  483.7 m
+Full level index =   15     Height =  3485.1 m      Thickness =  525.8 m
+Full level index =   16     Height =  4056.1 m      Thickness =  570.9 m
+Full level index =   17     Height =  4638.1 m      Thickness =  582.1 m
+Full level index =   18     Height =  5211.8 m      Thickness =  573.7 m
+Full level index =   19     Height =  5777.2 m      Thickness =  565.3 m
+Full level index =   20     Height =  6334.1 m      Thickness =  557.0 m
+Full level index =   21     Height =  6882.7 m      Thickness =  548.6 m
+Full level index =   22     Height =  7423.0 m      Thickness =  540.2 m
+Full level index =   23     Height =  7954.8 m      Thickness =  531.9 m
+Full level index =   24     Height =  8478.3 m      Thickness =  523.5 m
+Full level index =   25     Height =  8993.5 m      Thickness =  515.1 m
+Full level index =   26     Height =  9500.3 m      Thickness =  506.8 m
+Full level index =   27     Height =  9998.7 m      Thickness =  498.4 m
+Full level index =   28     Height = 10488.7 m      Thickness =  490.0 m
+Full level index =   29     Height = 10970.4 m      Thickness =  481.7 m
+Full level index =   30     Height = 11443.7 m      Thickness =  473.3 m
+Full level index =   31     Height = 11908.7 m      Thickness =  465.0 m
+Full level index =   32     Height = 12365.3 m      Thickness =  456.6 m
+Full level index =   33     Height = 12813.5 m      Thickness =  448.2 m
+Full level index =   34     Height = 13255.9 m      Thickness =  442.4 m
+Full level index =   35     Height = 13698.2 m      Thickness =  442.4 m
+Full level index =   36     Height = 14140.6 m      Thickness =  442.4 m
+Full level index =   37     Height = 14582.9 m      Thickness =  442.4 m
+Full level index =   38     Height = 15025.3 m      Thickness =  442.4 m
+Full level index =   39     Height = 15467.7 m      Thickness =  442.4 m
+Full level index =   40     Height = 15910.0 m      Thickness =  442.4 m
+Full level index =   41     Height = 16352.4 m      Thickness =  442.4 m
+Full level index =   42     Height = 16794.7 m      Thickness =  442.4 m
+Full level index =   43     Height = 17237.1 m      Thickness =  442.4 m
+Full level index =   44     Height = 17679.5 m      Thickness =  442.4 m
+Full level index =   45     Height = 18121.8 m      Thickness =  442.4 m
+Full level index =   46     Height = 18564.2 m      Thickness =  442.4 m
+Full level index =   47     Height = 19006.5 m      Thickness =  442.4 m
+Full level index =   48     Height = 19448.9 m      Thickness =  442.4 m
+Full level index =   49     Height = 19891.3 m      Thickness =  442.4 m
+p_top =   5000. Pa, dzbot =   50.0 m, dzstretch_s/u =   1.30  1.10
+d01 2000-01-24_12:00:00 Using inland lakes with average surface temperature
+ Assume Noah LSM input
+ LAND  CHANGE =            0
+ WATER CHANGE =            0
+d01 2000-01-24_12:00:00 Timing for processing          1 s.
+d01 2000-01-24_12:00:00 Timing for output          0 s.
+d01 2000-01-24_12:00:00 Timing for loop #    1 =          1 s.
+  
+ -----------------------------------------------------------------------------
+  
+ Domain  1: Current date being processed: 2000-01-24_18:00:00.0000, which is loop #   2 out of    5
+ configflags%julyr, %julday, %gmt:        2000          24   18.0000000    
+d01 2000-01-24_18:00:00  Yes, this special data is acceptable to use: OUTPUT FROM METGRID V3.5.1
+d01 2000-01-24_18:00:00  Input data is acceptable to use: met_em.d01.2000-01-24_18:00:00.nc
+ metgrid input_wrf.F first_date_input = 2000-01-24_18:00:00
+ metgrid input_wrf.F first_date_nml = 2000-01-24_12:00:00
+d01 2000-01-24_18:00:00 Timing for input          0 s.
+d01 2000-01-24_18:00:00          flag_soil_layers read from met_em file is  1
+Using sfcprs3 to compute psfc
+d01 2000-01-24_18:00:00 Using inland lakes with average surface temperature
+ Assume Noah LSM input
+ LAND  CHANGE =            0
+ WATER CHANGE =            0
+d01 2000-01-24_18:00:00 Timing for processing          0 s.
+ LBC valid between these times 2000-01-24_12:00:00 and 2000-01-24_18:00:00
+d01 2000-01-24_18:00:00 Timing for output          0 s.
+d01 2000-01-24_18:00:00 Timing for loop #    2 =          0 s.
+  
+ -----------------------------------------------------------------------------
+  
+ Domain  1: Current date being processed: 2000-01-25_00:00:00.0000, which is loop #   3 out of    5
+ configflags%julyr, %julday, %gmt:        2000          25   0.00000000    
+d01 2000-01-25_00:00:00  Yes, this special data is acceptable to use: OUTPUT FROM METGRID V3.5.1
+d01 2000-01-25_00:00:00  Input data is acceptable to use: met_em.d01.2000-01-25_00:00:00.nc
+ metgrid input_wrf.F first_date_input = 2000-01-25_00:00:00
+ metgrid input_wrf.F first_date_nml = 2000-01-24_12:00:00
+d01 2000-01-25_00:00:00 Timing for input          0 s.
+d01 2000-01-25_00:00:00          flag_soil_layers read from met_em file is  1
+Using sfcprs3 to compute psfc
+d01 2000-01-25_00:00:00 Using inland lakes with average surface temperature
+ Assume Noah LSM input
+ LAND  CHANGE =            0
+ WATER CHANGE =            0
+d01 2000-01-25_00:00:00 Timing for processing          0 s.
+ LBC valid between these times 2000-01-24_18:00:00 and 2000-01-25_00:00:00
+d01 2000-01-25_00:00:00 Timing for output          0 s.
+d01 2000-01-25_00:00:00 Timing for loop #    3 =          0 s.
+  
+ -----------------------------------------------------------------------------
+  
+ Domain  1: Current date being processed: 2000-01-25_06:00:00.0000, which is loop #   4 out of    5
+ configflags%julyr, %julday, %gmt:        2000          25   6.00000000    
+d01 2000-01-25_06:00:00  Yes, this special data is acceptable to use: OUTPUT FROM METGRID V3.5.1
+d01 2000-01-25_06:00:00  Input data is acceptable to use: met_em.d01.2000-01-25_06:00:00.nc
+ metgrid input_wrf.F first_date_input = 2000-01-25_06:00:00
+ metgrid input_wrf.F first_date_nml = 2000-01-24_12:00:00
+d01 2000-01-25_06:00:00 Timing for input          0 s.
+d01 2000-01-25_06:00:00          flag_soil_layers read from met_em file is  1
+Using sfcprs3 to compute psfc
+d01 2000-01-25_06:00:00 Using inland lakes with average surface temperature
+ Assume Noah LSM input
+ LAND  CHANGE =            0
+ WATER CHANGE =            0
+d01 2000-01-25_06:00:00 Timing for processing          0 s.
+ LBC valid between these times 2000-01-25_00:00:00 and 2000-01-25_06:00:00
+d01 2000-01-25_06:00:00 Timing for output          0 s.
+d01 2000-01-25_06:00:00 Timing for loop #    4 =          0 s.
+  
+ -----------------------------------------------------------------------------
+  
+ Domain  1: Current date being processed: 2000-01-25_12:00:00.0000, which is loop #   5 out of    5
+ configflags%julyr, %julday, %gmt:        2000          25   12.0000000    
+d01 2000-01-25_12:00:00  Yes, this special data is acceptable to use: OUTPUT FROM METGRID V3.5.1
+d01 2000-01-25_12:00:00  Input data is acceptable to use: met_em.d01.2000-01-25_12:00:00.nc
+ metgrid input_wrf.F first_date_input = 2000-01-25_12:00:00
+ metgrid input_wrf.F first_date_nml = 2000-01-24_12:00:00
+d01 2000-01-25_12:00:00 Timing for input          0 s.
+d01 2000-01-25_12:00:00          flag_soil_layers read from met_em file is  1
+Using sfcprs3 to compute psfc
+d01 2000-01-25_12:00:00 Using inland lakes with average surface temperature
+ Assume Noah LSM input
+ LAND  CHANGE =            0
+ WATER CHANGE =            0
+d01 2000-01-25_12:00:00 Timing for processing          0 s.
+ LBC valid between these times 2000-01-25_06:00:00 and 2000-01-25_12:00:00
+d01 2000-01-25_12:00:00 Timing for output          0 s.
+d01 2000-01-25_12:00:00 Timing for loop #    5 =          0 s.
+ *************************************
+ Nesting domain
+ ids,ide,jds,jde            1          31           1          31
+ ims,ime,jms,jme           -4          36          -4          36
+ ips,ipe,jps,jpe            1          31           1          31
+ INTERMEDIATE domain
+ ids,ide,jds,jde           29          44          15          30
+ ims,ime,jms,jme           24          49          10          35
+ ips,ipe,jps,jpe           27          46          13          32
+ *************************************
+d01 2000-01-25_12:00:00  alloc_space_field: domain            2 ,               9802000  bytes allocated
+d01 2000-01-25_12:00:00  alloc_space_field: domain            2 ,              80175652  bytes allocated
+Time period #   1 to process = 2000-01-24_12:00:00.
+Time period #   2 to process = 2000-01-24_18:00:00.
+Time period #   3 to process = 2000-01-25_00:00:00.
+Time period #   4 to process = 2000-01-25_06:00:00.
+Time period #   5 to process = 2000-01-25_12:00:00.
+Total analysis times to input =    5.
+  
+ -----------------------------------------------------------------------------
+  
+ Domain  2: Current date being processed: 2000-01-24_12:00:00.0000, which is loop #   1 out of    5
+ configflags%julyr, %julday, %gmt:        2000          24   12.0000000    
+d02 2000-01-24_12:00:00  Yes, this special data is acceptable to use: OUTPUT FROM METGRID V3.5.1
+d02 2000-01-24_12:00:00  Input data is acceptable to use: met_em.d02.2000-01-24_12:00:00.nc
+ metgrid input_wrf.F first_date_input = 2000-01-24_12:00:00
+ metgrid input_wrf.F first_date_nml = 2000-01-24_12:00:00
+d02 2000-01-24_12:00:00 Timing for input          0 s.
+d02 2000-01-24_12:00:00          flag_soil_layers read from met_em file is  1
+Using sfcprs3 to compute psfc
+ using new automatic levels program
+           1   50.0000000       50.0000000      0.993814707    
+           2   64.0000000       114.000000      0.985950649       1.27999997    
+           3   81.5615997       195.561600      0.976014256       1.27440000    
+           4   103.369164       298.930756      0.963557541       1.26737535    
+           5   130.105835       429.036591      0.948093116       1.25865233    
+           6   162.366577       591.403198      0.929123759       1.24795771    
+           7   200.531372       791.934570      0.906191230       1.23505330    
+           8   244.605652       1036.54028      0.878942370       1.21978748    
+           9   294.054565       1330.59485      0.847207963       1.20215774    
+          10   347.683685       1678.27856      0.811077714       1.18237817    
+          11   403.635223       2081.91382      0.770949006       1.16092658    
+          12   459.557220       2541.47095      0.727525413       1.13854587    
+          13   512.947266       3054.41821      0.681755364       1.11617708    
+          14   564.242004       3618.66016      0.634503603       1.10000002    
+          15   620.666199       4239.32617      0.586030483       1.10000002    
+   25416.3906       4239.32617              48          15
+          16   641.729248       4881.05566      0.539505005    
+          17   641.729248       5522.78516      0.496368796    
+          18   641.729248       6164.51465      0.456375003    
+          19   641.729248       6806.24414      0.419294685    
+          20   641.729248       7447.97363      0.384915590    
+          21   641.729248       8089.70312      0.353040993    
+          22   641.729248       8731.43262      0.323488355    
+          23   641.729248       9373.16211      0.296088606    
+          24   641.729248       10014.8916      0.270684928    
+          25   641.729248       10656.6211      0.247131839    
+          26   641.729248       11298.3506      0.225294545    
+          27   641.729248       11940.0801      0.205048084    
+          28   641.729248       12581.8096      0.186276540    
+          29   641.729248       13223.5391      0.168872476    
+          30   641.729248       13865.2686      0.152736247    
+          31   641.729248       14506.9980      0.137775511    
+          32   641.729248       15148.7275      0.123904645    
+          33   641.729248       15790.4570      0.111044265    
+          34   641.729248       16432.1855       9.91207659E-02
+          35   641.729248       17073.9141       8.80658925E-02
+          36   641.729248       17715.6426       7.78163150E-02
+          37   641.729248       18357.3711       6.83134124E-02
+          38   641.729248       18999.0996       5.95027767E-02
+          39   641.729248       19640.8281       5.13339527E-02
+          40   641.729248       20282.5566       4.37602475E-02
+          41   641.729248       20924.2852       3.67382728E-02
+          42   641.729248       21566.0137       3.02278325E-02
+          43   641.729248       22207.7422       2.41916627E-02
+          44   641.729248       22849.4707       1.85952410E-02
+          45   641.729248       23491.1992       1.34064760E-02
+          46   641.729248       24132.9277       8.59571900E-03
+          47   641.729248       24774.6562       4.13541310E-03
+          48   641.729248       25416.3848       2.56990127E-08
+    1.0000    0.9938    0.9860    0.9760    0.9636    0.9481    0.9291    0.9062    0.8789    0.8472
+    0.8111    0.7709    0.7275    0.6818    0.6345    0.5860    0.5395    0.4964    0.4564    0.4193
+    0.3849    0.3530    0.3235    0.2961    0.2707    0.2471    0.2253    0.2050    0.1863    0.1689
+    0.1527    0.1378    0.1239    0.1110    0.0991    0.0881    0.0778    0.0683    0.0595    0.0513
+    0.0438    0.0367    0.0302    0.0242    0.0186    0.0134    0.0086    0.0041    0.0000
+Full level index =    1     Height =     0.0 m
+Full level index =    2     Height =    50.0 m      Thickness =   50.0 m
+Full level index =    3     Height =   113.9 m      Thickness =   63.9 m
+Full level index =    4     Height =   195.2 m      Thickness =   81.3 m
+Full level index =    5     Height =   298.0 m      Thickness =  102.8 m
+Full level index =    6     Height =   427.2 m      Thickness =  129.1 m
+Full level index =    7     Height =   587.8 m      Thickness =  160.7 m
+Full level index =    8     Height =   785.5 m      Thickness =  197.7 m
+Full level index =    9     Height =  1025.6 m      Thickness =  240.0 m
+Full level index =   10     Height =  1312.6 m      Thickness =  287.0 m
+Full level index =   11     Height =  1649.6 m      Thickness =  337.0 m
+Full level index =   12     Height =  2037.7 m      Thickness =  388.2 m
+Full level index =   13     Height =  2475.6 m      Thickness =  437.9 m
+Full level index =   14     Height =  2959.3 m      Thickness =  483.7 m
+Full level index =   15     Height =  3485.1 m      Thickness =  525.8 m
+Full level index =   16     Height =  4056.1 m      Thickness =  570.9 m
+Full level index =   17     Height =  4638.1 m      Thickness =  582.1 m
+Full level index =   18     Height =  5211.8 m      Thickness =  573.7 m
+Full level index =   19     Height =  5777.2 m      Thickness =  565.3 m
+Full level index =   20     Height =  6334.1 m      Thickness =  557.0 m
+Full level index =   21     Height =  6882.7 m      Thickness =  548.6 m
+Full level index =   22     Height =  7423.0 m      Thickness =  540.2 m
+Full level index =   23     Height =  7954.8 m      Thickness =  531.9 m
+Full level index =   24     Height =  8478.3 m      Thickness =  523.5 m
+Full level index =   25     Height =  8993.5 m      Thickness =  515.1 m
+Full level index =   26     Height =  9500.3 m      Thickness =  506.8 m
+Full level index =   27     Height =  9998.7 m      Thickness =  498.4 m
+Full level index =   28     Height = 10488.7 m      Thickness =  490.0 m
+Full level index =   29     Height = 10970.4 m      Thickness =  481.7 m
+Full level index =   30     Height = 11443.7 m      Thickness =  473.3 m
+Full level index =   31     Height = 11908.7 m      Thickness =  465.0 m
+Full level index =   32     Height = 12365.3 m      Thickness =  456.6 m
+Full level index =   33     Height = 12813.5 m      Thickness =  448.2 m
+Full level index =   34     Height = 13255.9 m      Thickness =  442.4 m
+Full level index =   35     Height = 13698.2 m      Thickness =  442.4 m
+Full level index =   36     Height = 14140.6 m      Thickness =  442.4 m
+Full level index =   37     Height = 14582.9 m      Thickness =  442.4 m
+Full level index =   38     Height = 15025.3 m      Thickness =  442.4 m
+Full level index =   39     Height = 15467.7 m      Thickness =  442.4 m
+Full level index =   40     Height = 15910.0 m      Thickness =  442.4 m
+Full level index =   41     Height = 16352.4 m      Thickness =  442.4 m
+Full level index =   42     Height = 16794.7 m      Thickness =  442.4 m
+Full level index =   43     Height = 17237.1 m      Thickness =  442.4 m
+Full level index =   44     Height = 17679.5 m      Thickness =  442.4 m
+Full level index =   45     Height = 18121.8 m      Thickness =  442.4 m
+Full level index =   46     Height = 18564.2 m      Thickness =  442.4 m
+Full level index =   47     Height = 19006.5 m      Thickness =  442.4 m
+Full level index =   48     Height = 19448.9 m      Thickness =  442.4 m
+Full level index =   49     Height = 19891.3 m      Thickness =  442.4 m
+p_top =   5000. Pa, dzbot =   50.0 m, dzstretch_s/u =   1.30  1.10
+d02 2000-01-24_12:00:00 Using inland lakes with average surface temperature
+ Assume Noah LSM input
+ LAND  CHANGE =            0
+ WATER CHANGE =            0
+d02 2000-01-24_12:00:00 Timing for processing          0 s.
+d02 2000-01-24_12:00:00 Timing for output          0 s.
+d02 2000-01-24_12:00:00 Timing for loop #    1 =          0 s.
+d01 2000-01-25_12:00:00 real_em: SUCCESS COMPLETE REAL_EM INIT
+MODEL OUTPUT
+ Ntasks in X            1 , ntasks in Y            1
+  Domain # 1: dx = 30000.000 m
+  Domain # 2: dx = 10000.000 m
+WRF V4.7.1 MODEL
+git commit 48489fa8bf2fe2e2bbd48a947a4a982a9bc0145c
+ *************************************
+ Parent domain
+ ids,ide,jds,jde            1          74           1          61
+ ims,ime,jms,jme           -4          79          -4          66
+ ips,ipe,jps,jpe            1          74           1          61
+ *************************************
+DYNAMICS OPTION: Eulerian Mass Coordinate
+   alloc_space_field: domain            1 ,             239753588  bytes allocated
+  med_initialdata_input: calling input_input
+   Input data is acceptable to use: wrfinput_d01
+ CURRENT DATE          = 2000-01-24_12:00:00
+ SIMULATION START DATE = 2000-01-24_12:00:00
+Timing for processing wrfinput file (stream 0) for domain        1:    0.09337 elapsed seconds
+Max map factor in domain 1 =  1.03. Scale the dt in the model accordingly.
+ D01: Time step                              =    180.000000      (s)
+ D01: Grid Distance                          =    30.0000000      (km)
+ D01: Grid Distance Ratio dt/dx              =    6.00000000      (s/km)
+ D01: Ratio Including Maximum Map Factor     =    6.16505098      (s/km)
+ D01: NML defined reasonable_time_step_ratio =    6.00000000
+INPUT LandUse = "USGS"
+ LANDUSE TYPE = "USGS" FOUND          61  CATEGORIES           2  SEASONS WATER CATEGORY =           16  SNOW CATEGORY =           24
+ SOIL TEXTURE CLASSIFICATION = STAS FOUND          19  CATEGORIES
+ *************************************
+ Nesting domain
+ ids,ide,jds,jde            1          31           1          31
+ ims,ime,jms,jme           -4          36          -4          36
+ ips,ipe,jps,jpe            1          31           1          31
+ INTERMEDIATE domain
+ ids,ide,jds,jde           29          44          15          30
+ ims,ime,jms,jme           24          49          10          35
+ ips,ipe,jps,jpe           27          46          13          32
+ *************************************
+d01 2000-01-24_12:00:00  alloc_space_field: domain            2 ,               9802000  bytes allocated
+d01 2000-01-24_12:00:00  alloc_space_field: domain            2 ,              73969400  bytes allocated
+d01 2000-01-24_12:00:00 *** Initializing nest domain # 2 from an input file. ***
+d01 2000-01-24_12:00:00 med_initialdata_input: calling input_input
+d01 2000-01-24_12:00:00  Input data is acceptable to use: wrfinput_d02
+Timing for processing wrfinput file (stream 0) for domain        2:    0.02369 elapsed seconds
+INPUT LandUse = "USGS"
+ LANDUSE TYPE = "USGS" FOUND          61  CATEGORIES           2  SEASONS WATER CATEGORY =           16  SNOW CATEGORY =           24
+ SOIL TEXTURE CLASSIFICATION = STAS FOUND          19  CATEGORIES
+INPUT LandUse = "USGS"
+ LANDUSE TYPE = "USGS" FOUND          61  CATEGORIES           2  SEASONS WATER CATEGORY =           16  SNOW CATEGORY =           24
+ SOIL TEXTURE CLASSIFICATION = STAS FOUND          19  CATEGORIES
+Max map factor in domain 1 =  1.03. Scale the dt in the model accordingly.
+ D01: Time step                              =    180.000000      (s)
+ D01: Grid Distance                          =    30.0000000      (km)
+ D01: Grid Distance Ratio dt/dx              =    6.00000000      (s/km)
+ D01: Ratio Including Maximum Map Factor     =    6.16505098      (s/km)
+ D01: NML defined reasonable_time_step_ratio =    6.00000000
+INPUT LandUse = "USGS"
+ LANDUSE TYPE = "USGS" FOUND          61  CATEGORIES           2  SEASONS WATER CATEGORY =           16  SNOW CATEGORY =           24
+ SOIL TEXTURE CLASSIFICATION = STAS FOUND          19  CATEGORIES
+Timing for Writing wrfout_d01_2000-01-24_12:00:00 for domain        1:    0.50419 elapsed seconds
+d01 2000-01-24_12:00:00  Input data is acceptable to use: wrfbdy_d01
+Timing for processing lateral boundary for domain        1:    0.02385 elapsed seconds
+ Tile Strategy is not specified. Assuming 1D-Y
+WRF TILE   1 IS      1 IE     74 JS      1 JE     61
+WRF NUMBER OF TILES =   1
+d01 2000-01-24_12:00:00  ----------------------------------------
+d01 2000-01-24_12:00:00  W-DAMPING  BEGINS AT W-COURANT NUMBER =    1.00000000
+d01 2000-01-24_12:00:00  ----------------------------------------
+Timing for Writing wrfout_d02_2000-01-24_12:00:00 for domain        2:    0.42996 elapsed seconds
+ Tile Strategy is not specified. Assuming 1D-Y
+WRF TILE   1 IS      1 IE     31 JS      1 JE     31
+WRF NUMBER OF TILES =   1
+Timing for main: time 2000-01-24_12:01:00 on domain   2:    2.37222 elapsed seconds
+Timing for main: time 2000-01-24_12:02:00 on domain   2:    0.86195 elapsed seconds
+Timing for main: time 2000-01-24_12:03:00 on domain   2:    0.85435 elapsed seconds
+Timing for main: time 2000-01-24_12:03:00 on domain   1:   20.92515 elapsed seconds
+Timing for main: time 2000-01-24_12:04:00 on domain   2:    0.85324 elapsed seconds
+Timing for main: time 2000-01-24_12:05:00 on domain   2:    0.87455 elapsed seconds
+Timing for main: time 2000-01-24_12:06:00 on domain   2:    0.85276 elapsed seconds
+Timing for main: time 2000-01-24_12:06:00 on domain   1:    8.04496 elapsed seconds
+Timing for main: time 2000-01-24_12:07:00 on domain   2:    1.95263 elapsed seconds
+Timing for main: time 2000-01-24_12:08:00 on domain   2:    0.85909 elapsed seconds
+Timing for main: time 2000-01-24_12:09:00 on domain   2:    0.85520 elapsed seconds
+Timing for Writing wrfout_d02_2000-01-24_12:09:00 for domain        2:    0.02551 elapsed seconds
+Timing for main: time 2000-01-24_12:09:00 on domain   1:   18.34575 elapsed seconds
+Timing for Writing wrfout_d01_2000-01-24_12:09:00 for domain        1:    0.09999 elapsed seconds
+d01 2000-01-24_12:09:00 wrf: SUCCESS COMPLETE WRF
+46832 -rw-r--r-- 1 wrfuser wrf 47953188 Jan 16 19:57 wrfout_d01_2000-01-24_12:00:00
+ 9716 -rw-r--r-- 1 wrfuser wrf  9948132 Jan 16 19:57 wrfout_d02_2000-01-24_12:00:00
+0 -rw-r--r-- 1 wrfuser wrf 0 Jan 16 19:57 SUCCESS_RUN_REAL_em_real_32_em_realG_kiaps1NE
+0 -rw-r--r-- 1 wrfuser wrf 0 Jan 16 19:58 SUCCESS_RUN_WRF_d01_em_real_32_em_realG_kiaps1NE
+Fri Jan 16 19:58:03 UTC 2026
+Fri Jan 16 19:58:03 UTC 2026
+======================================================================
+RUN WRF test_019s for em_real 32 em_realG, NML = kiaps2
+9 = STATUS test_019s em em_real 32 kiaps2
+Fri Jan 16 19:58:17 UTC 2026
+PRE-PROC OUTPUT
+ Ntasks in X            1 , ntasks in Y            1
+  Domain # 1: dx = 30000.000 m
+REAL_EM V4.7.1 PREPROCESSOR
+git commit 48489fa8bf2fe2e2bbd48a947a4a982a9bc0145c
+ *************************************
+ Parent domain
+ ids,ide,jds,jde            1          74           1          61
+ ims,ime,jms,jme           -4          79          -4          66
+ ips,ipe,jps,jpe            1          74           1          61
+ *************************************
+DYNAMICS OPTION: Eulerian Mass Coordinate
+   alloc_space_field: domain            1 ,             284197316  bytes allocated
+Time period #   1 to process = 2000-01-24_12:00:00.
+Time period #   2 to process = 2000-01-24_18:00:00.
+Time period #   3 to process = 2000-01-25_00:00:00.
+Time period #   4 to process = 2000-01-25_06:00:00.
+Time period #   5 to process = 2000-01-25_12:00:00.
+Total analysis times to input =    5.
+  
+ -----------------------------------------------------------------------------
+  
+ Domain  1: Current date being processed: 2000-01-24_12:00:00.0000, which is loop #   1 out of    5
+ configflags%julyr, %julday, %gmt:        2000          24   12.0000000    
+d01 2000-01-24_12:00:00  Yes, this special data is acceptable to use: OUTPUT FROM METGRID V3.5.1
+d01 2000-01-24_12:00:00  Input data is acceptable to use: met_em.d01.2000-01-24_12:00:00.nc
+ metgrid input_wrf.F first_date_input = 2000-01-24_12:00:00
+ metgrid input_wrf.F first_date_nml = 2000-01-24_12:00:00
+d01 2000-01-24_12:00:00 Timing for input          0 s.
+d01 2000-01-24_12:00:00          flag_soil_layers read from met_em file is  1
+Max map factor in domain 1 =  1.03. Scale the dt in the model accordingly.
+Using sfcprs3 to compute psfc
+ using new automatic levels program
+           1   50.0000000       50.0000000      0.993814707    
+           2   64.0000000       114.000000      0.985950649       1.27999997    
+           3   81.5615997       195.561600      0.976014256       1.27440000    
+           4   103.369164       298.930756      0.963557541       1.26737535    
+           5   130.105835       429.036591      0.948093116       1.25865233    
+           6   162.366577       591.403198      0.929123759       1.24795771    
+           7   200.531372       791.934570      0.906191230       1.23505330    
+           8   244.605652       1036.54028      0.878942370       1.21978748    
+           9   294.054565       1330.59485      0.847207963       1.20215774    
+          10   347.683685       1678.27856      0.811077714       1.18237817    
+          11   403.635223       2081.91382      0.770949006       1.16092658    
+          12   459.557220       2541.47095      0.727525413       1.13854587    
+          13   512.947266       3054.41821      0.681755364       1.11617708    
+          14   564.242004       3618.66016      0.634503603       1.10000002    
+          15   620.666199       4239.32617      0.586030483       1.10000002    
+   25416.3906       4239.32617              48          15
+          16   641.729248       4881.05566      0.539505005    
+          17   641.729248       5522.78516      0.496368796    
+          18   641.729248       6164.51465      0.456375003    
+          19   641.729248       6806.24414      0.419294685    
+          20   641.729248       7447.97363      0.384915590    
+          21   641.729248       8089.70312      0.353040993    
+          22   641.729248       8731.43262      0.323488355    
+          23   641.729248       9373.16211      0.296088606    
+          24   641.729248       10014.8916      0.270684928    
+          25   641.729248       10656.6211      0.247131839    
+          26   641.729248       11298.3506      0.225294545    
+          27   641.729248       11940.0801      0.205048084    
+          28   641.729248       12581.8096      0.186276540    
+          29   641.729248       13223.5391      0.168872476    
+          30   641.729248       13865.2686      0.152736247    
+          31   641.729248       14506.9980      0.137775511    
+          32   641.729248       15148.7275      0.123904645    
+          33   641.729248       15790.4570      0.111044265    
+          34   641.729248       16432.1855       9.91207659E-02
+          35   641.729248       17073.9141       8.80658925E-02
+          36   641.729248       17715.6426       7.78163150E-02
+          37   641.729248       18357.3711       6.83134124E-02
+          38   641.729248       18999.0996       5.95027767E-02
+          39   641.729248       19640.8281       5.13339527E-02
+          40   641.729248       20282.5566       4.37602475E-02
+          41   641.729248       20924.2852       3.67382728E-02
+          42   641.729248       21566.0137       3.02278325E-02
+          43   641.729248       22207.7422       2.41916627E-02
+          44   641.729248       22849.4707       1.85952410E-02
+          45   641.729248       23491.1992       1.34064760E-02
+          46   641.729248       24132.9277       8.59571900E-03
+          47   641.729248       24774.6562       4.13541310E-03
+          48   641.729248       25416.3848       2.56990127E-08
+    1.0000    0.9938    0.9860    0.9760    0.9636    0.9481    0.9291    0.9062    0.8789    0.8472
+    0.8111    0.7709    0.7275    0.6818    0.6345    0.5860    0.5395    0.4964    0.4564    0.4193
+    0.3849    0.3530    0.3235    0.2961    0.2707    0.2471    0.2253    0.2050    0.1863    0.1689
+    0.1527    0.1378    0.1239    0.1110    0.0991    0.0881    0.0778    0.0683    0.0595    0.0513
+    0.0438    0.0367    0.0302    0.0242    0.0186    0.0134    0.0086    0.0041    0.0000
+Full level index =    1     Height =     0.0 m
+Full level index =    2     Height =    50.0 m      Thickness =   50.0 m
+Full level index =    3     Height =   113.9 m      Thickness =   63.9 m
+Full level index =    4     Height =   195.2 m      Thickness =   81.3 m
+Full level index =    5     Height =   298.0 m      Thickness =  102.8 m
+Full level index =    6     Height =   427.2 m      Thickness =  129.1 m
+Full level index =    7     Height =   587.8 m      Thickness =  160.7 m
+Full level index =    8     Height =   785.5 m      Thickness =  197.7 m
+Full level index =    9     Height =  1025.6 m      Thickness =  240.0 m
+Full level index =   10     Height =  1312.6 m      Thickness =  287.0 m
+Full level index =   11     Height =  1649.6 m      Thickness =  337.0 m
+Full level index =   12     Height =  2037.7 m      Thickness =  388.2 m
+Full level index =   13     Height =  2475.6 m      Thickness =  437.9 m
+Full level index =   14     Height =  2959.3 m      Thickness =  483.7 m
+Full level index =   15     Height =  3485.1 m      Thickness =  525.8 m
+Full level index =   16     Height =  4056.1 m      Thickness =  570.9 m
+Full level index =   17     Height =  4638.1 m      Thickness =  582.1 m
+Full level index =   18     Height =  5211.8 m      Thickness =  573.7 m
+Full level index =   19     Height =  5777.2 m      Thickness =  565.3 m
+Full level index =   20     Height =  6334.1 m      Thickness =  557.0 m
+Full level index =   21     Height =  6882.7 m      Thickness =  548.6 m
+Full level index =   22     Height =  7423.0 m      Thickness =  540.2 m
+Full level index =   23     Height =  7954.8 m      Thickness =  531.9 m
+Full level index =   24     Height =  8478.3 m      Thickness =  523.5 m
+Full level index =   25     Height =  8993.5 m      Thickness =  515.1 m
+Full level index =   26     Height =  9500.3 m      Thickness =  506.8 m
+Full level index =   27     Height =  9998.7 m      Thickness =  498.4 m
+Full level index =   28     Height = 10488.7 m      Thickness =  490.0 m
+Full level index =   29     Height = 10970.4 m      Thickness =  481.7 m
+Full level index =   30     Height = 11443.7 m      Thickness =  473.3 m
+Full level index =   31     Height = 11908.7 m      Thickness =  465.0 m
+Full level index =   32     Height = 12365.3 m      Thickness =  456.6 m
+Full level index =   33     Height = 12813.5 m      Thickness =  448.2 m
+Full level index =   34     Height = 13255.9 m      Thickness =  442.4 m
+Full level index =   35     Height = 13698.2 m      Thickness =  442.4 m
+Full level index =   36     Height = 14140.6 m      Thickness =  442.4 m
+Full level index =   37     Height = 14582.9 m      Thickness =  442.4 m
+Full level index =   38     Height = 15025.3 m      Thickness =  442.4 m
+Full level index =   39     Height = 15467.7 m      Thickness =  442.4 m
+Full level index =   40     Height = 15910.0 m      Thickness =  442.4 m
+Full level index =   41     Height = 16352.4 m      Thickness =  442.4 m
+Full level index =   42     Height = 16794.7 m      Thickness =  442.4 m
+Full level index =   43     Height = 17237.1 m      Thickness =  442.4 m
+Full level index =   44     Height = 17679.5 m      Thickness =  442.4 m
+Full level index =   45     Height = 18121.8 m      Thickness =  442.4 m
+Full level index =   46     Height = 18564.2 m      Thickness =  442.4 m
+Full level index =   47     Height = 19006.5 m      Thickness =  442.4 m
+Full level index =   48     Height = 19448.9 m      Thickness =  442.4 m
+Full level index =   49     Height = 19891.3 m      Thickness =  442.4 m
+p_top =   5000. Pa, dzbot =   50.0 m, dzstretch_s/u =   1.30  1.10
+d01 2000-01-24_12:00:00 Using inland lakes with average surface temperature
+ Assume Noah LSM input
+ LAND  CHANGE =            0
+ WATER CHANGE =            0
+d01 2000-01-24_12:00:00 Timing for processing          1 s.
+d01 2000-01-24_12:00:00 Timing for output          0 s.
+d01 2000-01-24_12:00:00 Timing for loop #    1 =          1 s.
+  
+ -----------------------------------------------------------------------------
+  
+ Domain  1: Current date being processed: 2000-01-24_18:00:00.0000, which is loop #   2 out of    5
+ configflags%julyr, %julday, %gmt:        2000          24   18.0000000    
+d01 2000-01-24_18:00:00  Yes, this special data is acceptable to use: OUTPUT FROM METGRID V3.5.1
+d01 2000-01-24_18:00:00  Input data is acceptable to use: met_em.d01.2000-01-24_18:00:00.nc
+ metgrid input_wrf.F first_date_input = 2000-01-24_18:00:00
+ metgrid input_wrf.F first_date_nml = 2000-01-24_12:00:00
+d01 2000-01-24_18:00:00 Timing for input          0 s.
+d01 2000-01-24_18:00:00          flag_soil_layers read from met_em file is  1
+Using sfcprs3 to compute psfc
+d01 2000-01-24_18:00:00 Using inland lakes with average surface temperature
+ Assume Noah LSM input
+ LAND  CHANGE =            0
+ WATER CHANGE =            0
+d01 2000-01-24_18:00:00 Timing for processing          0 s.
+ LBC valid between these times 2000-01-24_12:00:00 and 2000-01-24_18:00:00
+d01 2000-01-24_18:00:00 Timing for output          0 s.
+d01 2000-01-24_18:00:00 Timing for loop #    2 =          0 s.
+  
+ -----------------------------------------------------------------------------
+  
+ Domain  1: Current date being processed: 2000-01-25_00:00:00.0000, which is loop #   3 out of    5
+ configflags%julyr, %julday, %gmt:        2000          25   0.00000000    
+d01 2000-01-25_00:00:00  Yes, this special data is acceptable to use: OUTPUT FROM METGRID V3.5.1
+d01 2000-01-25_00:00:00  Input data is acceptable to use: met_em.d01.2000-01-25_00:00:00.nc
+ metgrid input_wrf.F first_date_input = 2000-01-25_00:00:00
+ metgrid input_wrf.F first_date_nml = 2000-01-24_12:00:00
+d01 2000-01-25_00:00:00 Timing for input          0 s.
+d01 2000-01-25_00:00:00          flag_soil_layers read from met_em file is  1
+Using sfcprs3 to compute psfc
+d01 2000-01-25_00:00:00 Using inland lakes with average surface temperature
+ Assume Noah LSM input
+ LAND  CHANGE =            0
+ WATER CHANGE =            0
+d01 2000-01-25_00:00:00 Timing for processing          0 s.
+ LBC valid between these times 2000-01-24_18:00:00 and 2000-01-25_00:00:00
+d01 2000-01-25_00:00:00 Timing for output          0 s.
+d01 2000-01-25_00:00:00 Timing for loop #    3 =          0 s.
+  
+ -----------------------------------------------------------------------------
+  
+ Domain  1: Current date being processed: 2000-01-25_06:00:00.0000, which is loop #   4 out of    5
+ configflags%julyr, %julday, %gmt:        2000          25   6.00000000    
+d01 2000-01-25_06:00:00  Yes, this special data is acceptable to use: OUTPUT FROM METGRID V3.5.1
+d01 2000-01-25_06:00:00  Input data is acceptable to use: met_em.d01.2000-01-25_06:00:00.nc
+ metgrid input_wrf.F first_date_input = 2000-01-25_06:00:00
+ metgrid input_wrf.F first_date_nml = 2000-01-24_12:00:00
+d01 2000-01-25_06:00:00 Timing for input          0 s.
+d01 2000-01-25_06:00:00          flag_soil_layers read from met_em file is  1
+Using sfcprs3 to compute psfc
+d01 2000-01-25_06:00:00 Using inland lakes with average surface temperature
+ Assume Noah LSM input
+ LAND  CHANGE =            0
+ WATER CHANGE =            0
+d01 2000-01-25_06:00:00 Timing for processing          0 s.
+ LBC valid between these times 2000-01-25_00:00:00 and 2000-01-25_06:00:00
+d01 2000-01-25_06:00:00 Timing for output          0 s.
+d01 2000-01-25_06:00:00 Timing for loop #    4 =          0 s.
+  
+ -----------------------------------------------------------------------------
+  
+ Domain  1: Current date being processed: 2000-01-25_12:00:00.0000, which is loop #   5 out of    5
+ configflags%julyr, %julday, %gmt:        2000          25   12.0000000    
+d01 2000-01-25_12:00:00  Yes, this special data is acceptable to use: OUTPUT FROM METGRID V3.5.1
+d01 2000-01-25_12:00:00  Input data is acceptable to use: met_em.d01.2000-01-25_12:00:00.nc
+ metgrid input_wrf.F first_date_input = 2000-01-25_12:00:00
+ metgrid input_wrf.F first_date_nml = 2000-01-24_12:00:00
+d01 2000-01-25_12:00:00 Timing for input          0 s.
+d01 2000-01-25_12:00:00          flag_soil_layers read from met_em file is  1
+Using sfcprs3 to compute psfc
+d01 2000-01-25_12:00:00 Using inland lakes with average surface temperature
+ Assume Noah LSM input
+ LAND  CHANGE =            0
+ WATER CHANGE =            0
+d01 2000-01-25_12:00:00 Timing for processing          0 s.
+ LBC valid between these times 2000-01-25_06:00:00 and 2000-01-25_12:00:00
+d01 2000-01-25_12:00:00 Timing for output          0 s.
+d01 2000-01-25_12:00:00 Timing for loop #    5 =          0 s.
+d01 2000-01-25_12:00:00 real_em: SUCCESS COMPLETE REAL_EM INIT
+MODEL OUTPUT
+ Ntasks in X            1 , ntasks in Y            1
+  Domain # 1: dx = 30000.000 m
+WRF V4.7.1 MODEL
+git commit 48489fa8bf2fe2e2bbd48a947a4a982a9bc0145c
+ *************************************
+ Parent domain
+ ids,ide,jds,jde            1          74           1          61
+ ims,ime,jms,jme           -4          79          -4          66
+ ips,ipe,jps,jpe            1          74           1          61
+ *************************************
+DYNAMICS OPTION: Eulerian Mass Coordinate
+   alloc_space_field: domain            1 ,             262178228  bytes allocated
+  med_initialdata_input: calling input_input
+   Input data is acceptable to use: wrfinput_d01
+ CURRENT DATE          = 2000-01-24_12:00:00
+ SIMULATION START DATE = 2000-01-24_12:00:00
+Timing for processing wrfinput file (stream 0) for domain        1:    0.11499 elapsed seconds
+Max map factor in domain 1 =  1.03. Scale the dt in the model accordingly.
+ D01: Time step                              =    180.000000      (s)
+ D01: Grid Distance                          =    30.0000000      (km)
+ D01: Grid Distance Ratio dt/dx              =    6.00000000      (s/km)
+ D01: Ratio Including Maximum Map Factor     =    6.16505098      (s/km)
+ D01: NML defined reasonable_time_step_ratio =    6.00000000
+INPUT LandUse = "USGS"
+ LANDUSE TYPE = "USGS" FOUND          61  CATEGORIES           2  SEASONS WATER CATEGORY =           16  SNOW CATEGORY =           24
+ SOIL TEXTURE CLASSIFICATION = STAS FOUND          19  CATEGORIES
+ USING DEFAULT URBAN MORPHOLOGY
+ Sample of Urban settings
+ TSURFACE0_URB   261.187134
+ TDEEP0_URB   284.838043
+ IVGTYP           1
+ TR_URB2D   261.187134
+ TB_URB2D   261.187134
+ TG_URB2D   261.187134
+ TC_URB2D   261.187134
+ QC_URB2D   9.99999978E-03
+ XXXR_URB2D   0.00000000
+ SH_URB2D   0.00000000
+ LH_URB2D   0.00000000
+ G_URB2D   0.00000000
+ RN_URB2D   0.00000000
+ TS_URB2D   261.187134
+ LF_AC_URB3D   0.00000000
+ SF_AC_URB3D   0.00000000
+ CM_AC_URB3D   0.00000000
+ SFVENT_URB3D   0.00000000
+ LFVENT_URB3D   0.00000000
+ FRC_URB2D  0.899999976
+ UTYPE_URB2D           2
+ I           8 J          40
+ num_urban_hi          15
+ USING DEFAULT URBAN MORPHOLOGY
+ USING DEFAULT URBAN MORPHOLOGY
+ USING DEFAULT URBAN MORPHOLOGY
+ USING DEFAULT URBAN MORPHOLOGY
+ USING DEFAULT URBAN MORPHOLOGY
+ USING DEFAULT URBAN MORPHOLOGY
+ USING DEFAULT URBAN MORPHOLOGY
+ USING DEFAULT URBAN MORPHOLOGY
+ USING DEFAULT URBAN MORPHOLOGY
+ USING DEFAULT URBAN MORPHOLOGY
+ USING DEFAULT URBAN MORPHOLOGY
+ USING DEFAULT URBAN MORPHOLOGY
+ USING DEFAULT URBAN MORPHOLOGY
+ USING DEFAULT URBAN MORPHOLOGY
+ USING DEFAULT URBAN MORPHOLOGY
+ USING DEFAULT URBAN MORPHOLOGY
+ USING DEFAULT URBAN MORPHOLOGY
+ USING DEFAULT URBAN MORPHOLOGY
+ USING DEFAULT URBAN MORPHOLOGY
+Timing for Writing wrfout_d01_2000-01-24_12:00:00 for domain        1:    0.49732 elapsed seconds
+d01 2000-01-24_12:00:00  Input data is acceptable to use: wrfbdy_d01
+Timing for processing lateral boundary for domain        1:    0.02384 elapsed seconds
+ Tile Strategy is not specified. Assuming 1D-Y
+WRF TILE   1 IS      1 IE     74 JS      1 JE     61
+WRF NUMBER OF TILES =   1
+-------------- FATAL CALLED ---------------
+FATAL CALLED FROM FILE:  <stdin>  LINE:    2037
+WARNING: Singular matrix in Urban Tree Energy Budget
+-------------------------------------------
+-------------- FATAL CALLED ---------------
+FATAL CALLED FROM FILE:  <stdin>  LINE:    2037
+WARNING: Singular matrix in Urban Tree Energy Budget
+-------------------------------------------
+Note: The following floating-point exceptions are signalling: IEEE_DIVIDE_BY_ZERO IEEE_UNDERFLOW_FLAG IEEE_DENORMAL
+ 
+NAMELIST  
+ &time_control
+ run_days = 0,
+ run_hours = 0,
+ run_minutes = 0,
+ run_seconds                         = 1800,
+ start_year                          = 2000, 2000, 2000,
+ start_month                         = 01,   01,   01,
+ start_day                           = 24,   24,   24,
+ start_hour                          = 12,   12,   12,
+ start_minute                        = 00,   00,   00,
+ start_second                        = 00,   00,   00,
+ end_year                            = 2000, 2000, 2000,
+ end_month                           = 01,   01,   01,
+ end_day                             = 25,   25,   25,
+ end_hour                            = 12,   12,   12,
+ end_minute                          = 00,   00,   00,
+ end_second                          = 00,   00,   00,
+ interval_seconds                    = 21600
+ input_from_file                     = .true.,.false.,.false.
+ history_interval                    = 30,  60,   60,
+ frames_per_outfile = 200, 1000, 1000,
+ restart                             = .false.,
+ restart_interval                    = 5000,
+ io_form_history                     = 2
+ io_form_restart                     = 2
+ io_form_input                       = 2
+ io_form_boundary                    = 2
+ debug_level                         = 0
+ auxinput1_inname                    = "met_em.d<domain>.<date>"
+ /
+
+ &domains
+ time_step                           = 180,
+ time_step_fract_num                 = 0,
+ time_step_fract_den                 = 1,
+ max_dom                             = 1,
+ s_we                                = 1,     1,     1,
+ e_we                                = 74,    31,    31,
+ s_sn                                = 1,     1,     1,
+ e_sn                                = 61,    31,    31,
+ s_vert                              = 1,     1,     1,
+ e_vert                              = 49,    49,    49,
+ p_top_requested                     = 5000,
+ num_metgrid_levels                  = 26,
+ num_metgrid_soil_levels             = 4,
+ dx                                  = 30000, 10000,  3333,
+ dy                                  = 30000, 10000,  3333,
+ grid_id                             = 1,     2,     3,
+ parent_id                           = 0,     1,     2,
+ i_parent_start                      = 0,     31,    30,
+ j_parent_start                      = 0,     17,    30,
+ parent_grid_ratio                   = 1,     3,     3,
+ parent_time_step_ratio              = 1,     3,     3,
+ feedback                            = 1,
+ smooth_option                       = 0
+ use_adaptive_time_step              = .FALSE.
+ step_to_output_time                 = .FALSE.
+ /
+
+ &physics
+ fractional_seaice                   = 0,
+ mp_physics                          = 16,    16,    16,
+ ra_lw_physics                       = 14,    14,    14,
+ ra_sw_physics                       = 14,    14,    14,
+ radt                                = 21,    21,    21,
+ sf_sfclay_physics                   = 91,    91,    91,
+ sf_surface_physics                  = 4,     4,     4,
+ bl_pbl_physics                      = 1,     1,     1,
+ bldt                                = 0,     0,     0,
+ cu_physics                          = 14,    14,    0,
+ sf_urban_physics                    = 1,     1,     1,
+ shcu_physics                        = 4,     4,     4,
+ topo_shading                        = 0,     0,     0,
+ cudt                                = 5,     5,     5,
+ isfflx                              = 1,
+ ifsnow                              = 0,
+ icloud                              = 1,
+ surface_input_source                = 1,
+ num_soil_layers                     = 5,
+ num_land_cat                        = 28,
+ mp_zero_out                         = 0,
+ maxiens                             = 1,
+ maxens                              = 3,
+ maxens2                             = 3,
+ maxens3                             = 16,
+ ensdim                              = 144,
+ aer_opt                             = 2,
+ aer_type                            = 1,
+ aer_aod550_opt                      = 1,
+ aer_aod550_val                      = 0.12
+ aer_angexp_opt                      = 1,
+ aer_angexp_val                      = 1.3
+ aer_ssa_opt                         = 1,
+ aer_ssa_val                         = 0.85
+ aer_asy_opt                         = 1,
+ aer_asy_val                         = 0.90
+ ghg_input                           = 0
+ /
+
+ &fdda
+ /
+
+ &dynamics
+ w_damping                           = 0,
+ diff_opt                            = 1,
+ km_opt                              = 4,
+ diff_6th_opt                        = 0,      0,      0,
+ diff_6th_factor                     = 0.12,   0.12,   0.12,
+ base_temp                           = 290.
+ damp_opt                            = 3,
+ zdamp                               = 5000.,  5000.,  5000.,
+ dampcoef                            = 0.05,   0.05,   0.05
+ khdif                               = 0,      0,      0,
+ kvdif                               = 0,      0,      0,
+ non_hydrostatic                     = .true., .true., .true.,
+ moist_adv_opt                       = 2,      2,      2,      
+ scalar_adv_opt                      = 2,      2,      2,     
+ chem_adv_opt                        = 0,      0,      0,     
+ tke_adv_opt                         = 0,      0,      0,     
+ gwd_opt                             = 0,
+ /
+
+ &bdy_control
+ spec_bdy_width                      = 5,
+ spec_zone                           = 1,
+ relax_zone                          = 4,
+ specified                           = .true., .false.,.false.,
+ nested                              = .false., .true., .true.,
+ /
+
+ &grib2
+ /
+
+ &namelist_quilt
+ nio_tasks_per_group = 0,
+ nio_groups = 1,
+ /
+
+ &dfi_control
+ dfi_opt                             = 0
+ dfi_nfilter                         = 7
+ dfi_write_filtered_input            = .false.
+ dfi_write_dfi_history               = .false.
+ dfi_cutoff_seconds                  = 3600  
+ dfi_time_dim                        = 1000 
+ dfi_bckstop_year                    = 2000
+ dfi_bckstop_month                   = 01  
+ dfi_bckstop_day                     = 24  
+ dfi_bckstop_hour                    = 11  
+ dfi_bckstop_minute                  = 00  
+ dfi_bckstop_second                  = 00  
+ dfi_fwdstop_year                    = 2000
+ dfi_fwdstop_month                   = 01  
+ dfi_fwdstop_day                     = 24  
+ dfi_fwdstop_hour                    = 12  
+ dfi_fwdstop_minute                  = 30  
+ dfi_fwdstop_second                  = 00  
+ /
+
+LSF_TIME=0:10
+PBS_TIME=0:10:00
+NQS_TIME=0:10:00
+21784 -rw-r--r-- 1 wrfuser wrf 22305916 Jan 16 19:58 wrfout_d01_2000-01-24_12:00:00
+0 -rw-r--r-- 1 wrfuser wrf 0 Jan 16 19:58 FAIL_RUN_WRF_d01_em_real_32_em_realG_kiaps2
+0 -rw-r--r-- 1 wrfuser wrf 0 Jan 16 19:58 SUCCESS_RUN_REAL_em_real_32_em_realG_kiaps2
+Fri Jan 16 19:58:17 UTC 2026
+Fri Jan 16 19:58:17 UTC 2026
+test_019s
+Fri Jan 16 19:58:27 UTC 2026
+test_019s
+Fri Jan 16 19:58:27 UTC 2026
+Fri Jan 16 19:49:13 UTC 2026
+Fri Jan 16 19:49:13 UTC 2026
+Fri Jan 16 19:49:17 UTC 2026
+Sending build context to Docker daemon  947.2kB
+Step 1/7 : FROM kkeene44/wrf-coop:version16
+ ---> 39c7656b7bc2
+Step 2/7 : MAINTAINER Kelly Werner <kkeene@ucar.edu>
+ ---> Running in 101200c005c8
+Removing intermediate container 101200c005c8
+ ---> a71acd03980d
+Step 3/7 : RUN git clone https://github.com/chenghaow/WRF.git WRF   && cd WRF   && git checkout urban_nbs   && cd ..
+ ---> Running in 620b4e660805
+Cloning into 'WRF'...
+[91mChecking out files:  47% (2314/4918)   [0m[91mChecking out files:  48% (2361/4918)   [0m[91mChecking out files:  49% (2410/4918)   [0m[91mChecking out files:  50% (2459/4918)   [0m[91mChecking out files:  51% (2509/4918)   [0m[91mChecking out files:  52% (2558/4918)   [0m[91mChecking out files:  53% (2607/4918)   [0m[91mChecking out files:  54% (2656/4918)   [0m[91mChecking out files:  55% (2705/4918)   [0m[91mChecking out files:  56% (2755/4918)   [0m[91mChecking out files:  57% (2804/4918)   [0m[91mChecking out files:  58% (2853/4918)   [0m[91mChecking out files:  59% (2902/4918)   [0m[91mChecking out files:  60% (2951/4918)   [0m[91mChecking out files:  61% (3000/4918)   [0m[91mChecking out files:  62% (3050/4918)   [0m[91mChecking out files:  63% (3099/4918)   [0m[91mChecking out files:  64% (3148/4918)   [0m[91mChecking out files:  65% (3197/4918)   [0m[91mChecking out files:  66% (3246/4918)   [0m[91mChecking out files:  67% (3296/4918)   [0m[91mChecking out files:  68% (3345/4918)   [0m[91mChecking out files:  69% (3394/4918)   [0m[91mChecking out files:  70% (3443/4918)   [0m[91mChecking out files:  71% (3492/4918)   [0m[91mChecking out files:  72% (3541/4918)   [0m[91mChecking out files:  73% (3591/4918)   [0m[91mChecking out files:  74% (3640/4918)   [0m[91mChecking out files:  75% (3689/4918)   [0m[91mChecking out files:  76% (3738/4918)   [0m[91mChecking out files:  77% (3787/4918)   [0m[91mChecking out files:  78% (3837/4918)   [0m[91mChecking out files:  79% (3886/4918)   [0m[91mChecking out files:  80% (3935/4918)   [0m[91mChecking out files:  81% (3984/4918)   [0m[91mChecking out files:  82% (4033/4918)   [0m[91mChecking out files:  83% (4082/4918)   [0m[91mChecking out files:  84% (4132/4918)   [0m[91mChecking out files:  85% (4181/4918)   [0m[91mChecking out files:  86% (4230/4918)   [0m[91mChecking out files:  87% (4279/4918)   [0m[91mChecking out files:  88% (4328/4918)   [0m[91mChecking out files:  89% (4378/4918)   [0m[91mChecking out files:  90% (4427/4918)   [0m[91mChecking out files:  91% (4476/4918)   [0m[91mChecking out files:  92% (4525/4918)   [0m[91mChecking out files:  93% (4574/4918)   [0m[91mChecking out files:  94% (4623/4918)   [0m[91mChecking out files:  95% (4673/4918)   [0m[91mChecking out files:  96% (4722/4918)   [0m[91mChecking out files:  97% (4771/4918)   [0m[91mChecking out files:  98% (4820/4918)   [0m[91mChecking out files:  99% (4869/4918)   [0m[91mChecking out files: 100% (4918/4918)   [0m[91mChecking out files: 100% (4918/4918), done.
+[0m[91mSwitched to a new branch 'urban_nbs'
+[0mBranch urban_nbs set up to track remote branch urban_nbs from origin.
+Removing intermediate container 620b4e660805
+ ---> 69ad7eba8f70
+Step 4/7 : RUN git clone https://github.com/wrf-model/SCRIPTS.git SCRIPTS   && cp SCRIPTS/rd_l2_norm.py . && chmod 755 rd_l2_norm.py   && cp SCRIPTS/script.csh .    && chmod 755 script.csh      && cp SCRIPTS/da_builds.csh . && chmod 755 da_builds.csh   && ln -sf SCRIPTS/Namelists .
+ ---> Running in 2dd0f1a3b5ac
+Cloning into 'SCRIPTS'...
+Removing intermediate container 2dd0f1a3b5ac
+ ---> ae98f21cdec7
+Step 5/7 : RUN git clone https://github.com/wrf-model/wrf_feature_testing.git wrf_feature_testing   && cd wrf_feature_testing && mv * .. && cd ..
+ ---> Running in 32fb19b8cf68
+Cloning into 'wrf_feature_testing'...
+Removing intermediate container 32fb19b8cf68
+ ---> bb264c08ea69
+Step 6/7 : VOLUME /wrf
+ ---> Running in ad5fe85bf464
+Removing intermediate container ad5fe85bf464
+ ---> 39e480bc8edf
+Step 7/7 : CMD ["/bin/tcsh"]
+ ---> Running in 797bea325c3c
+Removing intermediate container 797bea325c3c
+ ---> bbe5828e7400
+Successfully built bbe5828e7400
+Successfully tagged wrf_regtest:latest
+Fri Jan 16 19:53:54 UTC 2026
+Fri Jan 16 19:57:23 UTC 2026
+Untagged: wrf_regtest:latest
+Deleted: sha256:bbe5828e7400ba02d45f3f8d6ff0f982da350b3c5e0fc185fed3dec531617363
+Deleted: sha256:39e480bc8edf7a56809426c2037f4ab26fa401bbc2282c78fadbf3b061195128
+Deleted: sha256:bb264c08ea69322049929d4118e38fdf7aa820b2d90581a7f9da47a538904c28
+Deleted: sha256:83f6345872e3d3b4c4f211c09fcc24bdd2982d9582522dd9d9b1c2370761f389
+Deleted: sha256:ae98f21cdec78b4c765788febb43369063c5bd4b93e7fc69f4283c850d023880
+Deleted: sha256:ace7cb8ab827783cf89f945a3607ab8df2a376ad9643371e6232aed2364c1eed
+Deleted: sha256:69ad7eba8f7069e904fc6c905cf66adab079d8c9e95694e8067539a898e1637c
+Deleted: sha256:890742a89c3b33460a161438820170bc0547c53a9dfe1cba00b49e14bc454881
+Deleted: sha256:a71acd03980d9d78ac037337935d19fdd4eb0768698a29573d9b1b4872994330
+Deleted Volumes:
+60a06f8ca1a98d0db22e0f1a56561d0be58c30466681c43866e0d78772a40901
+
+Total reclaimed space: 4.527GB
+TYPE            TOTAL     ACTIVE    SIZE      RECLAIMABLE
+Images          3         0         12.05GB   12.05GB (100%)
+Containers      0         0         0B        0B
+Local Volumes   0         0         0B        0B
+Build Cache     0         0         0B        0B
+Fri Jan 16 19:57:24 UTC 2026
+==============================================================
+==============================================================
+                         OPENMP START
+==============================================================
+TEST CASE = test_019o
+Fri Jan 16 19:53:54 UTC 2026
+Build container
+1eec6154d8657402119ef650b4d8265f21fac00d8e3633073a346ae9dffe4f8c
+Fri Jan 16 19:54:24 UTC 2026
+Build WRF executable
+Fri Jan 16 19:56:49 UTC 2026
+96800 -rwxr-xr-x 1 wrfuser wrf 99122104 Jan 16 19:56 WRF/main/wrf.exe
+76756 -rwxr-xr-x 1 wrfuser wrf 78595416 Jan 16 19:56 WRF/main/real.exe
+SUCCESSFUL BUILD
+0 -rw-r--r-- 1 wrfuser wrf 0 Jan 16 19:56 SUCCESS_BUILD_WRF_em_real_33
+Fri Jan 16 19:56:49 UTC 2026
+Fri Jan 16 19:56:49 UTC 2026
+Fri Jan 16 19:56:49 UTC 2026
+======================================================================
+RUN WRF test_019o for em_real 33 em_realG, NML = kiaps1NE
+0 = STATUS test_019o em em_real 33 kiaps1NE
+Fri Jan 16 19:57:07 UTC 2026
+PRE-PROC OUTPUT
+ Ntasks in X            1 , ntasks in Y            1
+Domain # 1: dx = 30000.000 m
+Domain # 2: dx = 10000.000 m
+REAL_EM V4.7.1 PREPROCESSOR
+git commit 48489fa8bf2fe2e2bbd48a947a4a982a9bc0145c
+ *************************************
+ Parent domain
+ ids,ide,jds,jde            1          74           1          61
+ ims,ime,jms,jme           -4          79          -4          66
+ ips,ipe,jps,jpe            1          74           1          61
+ *************************************
+DYNAMICS OPTION: Eulerian Mass Coordinate
+ alloc_space_field: domain            1 ,             261772676  bytes allocated
+Time period #   1 to process = 2000-01-24_12:00:00.
+Time period #   2 to process = 2000-01-24_18:00:00.
+Time period #   3 to process = 2000-01-25_00:00:00.
+Time period #   4 to process = 2000-01-25_06:00:00.
+Time period #   5 to process = 2000-01-25_12:00:00.
+Total analysis times to input =    5.
+  
+ -----------------------------------------------------------------------------
+  
+ Domain  1: Current date being processed: 2000-01-24_12:00:00.0000, which is loop #   1 out of    5
+ configflags%julyr, %julday, %gmt:        2000          24   12.0000000    
+ Yes, this special data is acceptable to use: OUTPUT FROM METGRID V3.5.1
+ Input data is acceptable to use: met_em.d01.2000-01-24_12:00:00.nc
+ metgrid input_wrf.F first_date_input = 2000-01-24_12:00:00
+ metgrid input_wrf.F first_date_nml = 2000-01-24_12:00:00
+Timing for input          0 s.
+         flag_soil_layers read from met_em file is  1
+Max map factor in domain 1 =  1.03. Scale the dt in the model accordingly.
+Using sfcprs3 to compute psfc
+ using new automatic levels program
+           1   50.0000000       50.0000000      0.993814707    
+           2   64.0000000       114.000000      0.985950649       1.27999997    
+           3   81.5615997       195.561600      0.976014256       1.27440000    
+           4   103.369164       298.930756      0.963557541       1.26737535    
+           5   130.105835       429.036591      0.948093116       1.25865233    
+           6   162.366577       591.403198      0.929123759       1.24795771    
+           7   200.531372       791.934570      0.906191230       1.23505330    
+           8   244.605652       1036.54028      0.878942370       1.21978748    
+           9   294.054565       1330.59485      0.847207963       1.20215774    
+          10   347.683685       1678.27856      0.811077714       1.18237817    
+          11   403.635223       2081.91382      0.770949006       1.16092658    
+          12   459.557220       2541.47095      0.727525413       1.13854587    
+          13   512.947266       3054.41821      0.681755364       1.11617708    
+          14   564.242004       3618.66016      0.634503603       1.10000002    
+          15   620.666199       4239.32617      0.586030483       1.10000002    
+   25416.3906       4239.32617              48          15
+          16   641.729248       4881.05566      0.539505005    
+          17   641.729248       5522.78516      0.496368796    
+          18   641.729248       6164.51465      0.456375003    
+          19   641.729248       6806.24414      0.419294685    
+          20   641.729248       7447.97363      0.384915590    
+          21   641.729248       8089.70312      0.353040993    
+          22   641.729248       8731.43262      0.323488355    
+          23   641.729248       9373.16211      0.296088606    
+          24   641.729248       10014.8916      0.270684928    
+          25   641.729248       10656.6211      0.247131839    
+          26   641.729248       11298.3506      0.225294545    
+          27   641.729248       11940.0801      0.205048084    
+          28   641.729248       12581.8096      0.186276540    
+          29   641.729248       13223.5391      0.168872476    
+          30   641.729248       13865.2686      0.152736247    
+          31   641.729248       14506.9980      0.137775511    
+          32   641.729248       15148.7275      0.123904645    
+          33   641.729248       15790.4570      0.111044265    
+          34   641.729248       16432.1855       9.91207659E-02
+          35   641.729248       17073.9141       8.80658925E-02
+          36   641.729248       17715.6426       7.78163150E-02
+          37   641.729248       18357.3711       6.83134124E-02
+          38   641.729248       18999.0996       5.95027767E-02
+          39   641.729248       19640.8281       5.13339527E-02
+          40   641.729248       20282.5566       4.37602475E-02
+          41   641.729248       20924.2852       3.67382728E-02
+          42   641.729248       21566.0137       3.02278325E-02
+          43   641.729248       22207.7422       2.41916627E-02
+          44   641.729248       22849.4707       1.85952410E-02
+          45   641.729248       23491.1992       1.34064760E-02
+          46   641.729248       24132.9277       8.59571900E-03
+          47   641.729248       24774.6562       4.13541310E-03
+          48   641.729248       25416.3848       2.56990127E-08
+    1.0000    0.9938    0.9860    0.9760    0.9636    0.9481    0.9291    0.9062    0.8789    0.8472
+    0.8111    0.7709    0.7275    0.6818    0.6345    0.5860    0.5395    0.4964    0.4564    0.4193
+    0.3849    0.3530    0.3235    0.2961    0.2707    0.2471    0.2253    0.2050    0.1863    0.1689
+    0.1527    0.1378    0.1239    0.1110    0.0991    0.0881    0.0778    0.0683    0.0595    0.0513
+    0.0438    0.0367    0.0302    0.0242    0.0186    0.0134    0.0086    0.0041    0.0000
+Full level index =    1     Height =     0.0 m
+Full level index =    2     Height =    50.0 m      Thickness =   50.0 m
+Full level index =    3     Height =   113.9 m      Thickness =   63.9 m
+Full level index =    4     Height =   195.2 m      Thickness =   81.3 m
+Full level index =    5     Height =   298.0 m      Thickness =  102.8 m
+Full level index =    6     Height =   427.2 m      Thickness =  129.1 m
+Full level index =    7     Height =   587.8 m      Thickness =  160.7 m
+Full level index =    8     Height =   785.5 m      Thickness =  197.7 m
+Full level index =    9     Height =  1025.6 m      Thickness =  240.0 m
+Full level index =   10     Height =  1312.6 m      Thickness =  287.0 m
+Full level index =   11     Height =  1649.6 m      Thickness =  337.0 m
+Full level index =   12     Height =  2037.7 m      Thickness =  388.2 m
+Full level index =   13     Height =  2475.6 m      Thickness =  437.9 m
+Full level index =   14     Height =  2959.3 m      Thickness =  483.7 m
+Full level index =   15     Height =  3485.1 m      Thickness =  525.8 m
+Full level index =   16     Height =  4056.1 m      Thickness =  570.9 m
+Full level index =   17     Height =  4638.1 m      Thickness =  582.1 m
+Full level index =   18     Height =  5211.8 m      Thickness =  573.7 m
+Full level index =   19     Height =  5777.2 m      Thickness =  565.3 m
+Full level index =   20     Height =  6334.1 m      Thickness =  557.0 m
+Full level index =   21     Height =  6882.7 m      Thickness =  548.6 m
+Full level index =   22     Height =  7423.0 m      Thickness =  540.2 m
+Full level index =   23     Height =  7954.8 m      Thickness =  531.9 m
+Full level index =   24     Height =  8478.3 m      Thickness =  523.5 m
+Full level index =   25     Height =  8993.5 m      Thickness =  515.1 m
+Full level index =   26     Height =  9500.3 m      Thickness =  506.8 m
+Full level index =   27     Height =  9998.7 m      Thickness =  498.4 m
+Full level index =   28     Height = 10488.7 m      Thickness =  490.0 m
+Full level index =   29     Height = 10970.4 m      Thickness =  481.7 m
+Full level index =   30     Height = 11443.7 m      Thickness =  473.3 m
+Full level index =   31     Height = 11908.7 m      Thickness =  465.0 m
+Full level index =   32     Height = 12365.3 m      Thickness =  456.6 m
+Full level index =   33     Height = 12813.5 m      Thickness =  448.2 m
+Full level index =   34     Height = 13255.9 m      Thickness =  442.4 m
+Full level index =   35     Height = 13698.2 m      Thickness =  442.4 m
+Full level index =   36     Height = 14140.6 m      Thickness =  442.4 m
+Full level index =   37     Height = 14582.9 m      Thickness =  442.4 m
+Full level index =   38     Height = 15025.3 m      Thickness =  442.4 m
+Full level index =   39     Height = 15467.7 m      Thickness =  442.4 m
+Full level index =   40     Height = 15910.0 m      Thickness =  442.4 m
+Full level index =   41     Height = 16352.4 m      Thickness =  442.4 m
+Full level index =   42     Height = 16794.7 m      Thickness =  442.4 m
+Full level index =   43     Height = 17237.1 m      Thickness =  442.4 m
+Full level index =   44     Height = 17679.5 m      Thickness =  442.4 m
+Full level index =   45     Height = 18121.8 m      Thickness =  442.4 m
+Full level index =   46     Height = 18564.2 m      Thickness =  442.4 m
+Full level index =   47     Height = 19006.5 m      Thickness =  442.4 m
+Full level index =   48     Height = 19448.9 m      Thickness =  442.4 m
+Full level index =   49     Height = 19891.3 m      Thickness =  442.4 m
+p_top =   5000. Pa, dzbot =   50.0 m, dzstretch_s/u =   1.30  1.10
+Using inland lakes with average surface temperature
+ Assume Noah LSM input
+ LAND  CHANGE =            0
+ WATER CHANGE =            0
+Timing for processing          1 s.
+Timing for output          0 s.
+Timing for loop #    1 =          1 s.
+  
+ -----------------------------------------------------------------------------
+  
+ Domain  1: Current date being processed: 2000-01-24_18:00:00.0000, which is loop #   2 out of    5
+ configflags%julyr, %julday, %gmt:        2000          24   18.0000000    
+ Yes, this special data is acceptable to use: OUTPUT FROM METGRID V3.5.1
+ Input data is acceptable to use: met_em.d01.2000-01-24_18:00:00.nc
+ metgrid input_wrf.F first_date_input = 2000-01-24_18:00:00
+ metgrid input_wrf.F first_date_nml = 2000-01-24_12:00:00
+Timing for input          0 s.
+         flag_soil_layers read from met_em file is  1
+Using sfcprs3 to compute psfc
+Using inland lakes with average surface temperature
+ Assume Noah LSM input
+ LAND  CHANGE =            0
+ WATER CHANGE =            0
+Timing for processing          0 s.
+ LBC valid between these times 2000-01-24_12:00:00 and 2000-01-24_18:00:00
+Timing for output          0 s.
+Timing for loop #    2 =          0 s.
+  
+ -----------------------------------------------------------------------------
+  
+ Domain  1: Current date being processed: 2000-01-25_00:00:00.0000, which is loop #   3 out of    5
+ configflags%julyr, %julday, %gmt:        2000          25   0.00000000    
+ Yes, this special data is acceptable to use: OUTPUT FROM METGRID V3.5.1
+ Input data is acceptable to use: met_em.d01.2000-01-25_00:00:00.nc
+ metgrid input_wrf.F first_date_input = 2000-01-25_00:00:00
+ metgrid input_wrf.F first_date_nml = 2000-01-24_12:00:00
+Timing for input          0 s.
+         flag_soil_layers read from met_em file is  1
+Using sfcprs3 to compute psfc
+Using inland lakes with average surface temperature
+ Assume Noah LSM input
+ LAND  CHANGE =            0
+ WATER CHANGE =            0
+Timing for processing          0 s.
+ LBC valid between these times 2000-01-24_18:00:00 and 2000-01-25_00:00:00
+Timing for output          0 s.
+Timing for loop #    3 =          0 s.
+  
+ -----------------------------------------------------------------------------
+  
+ Domain  1: Current date being processed: 2000-01-25_06:00:00.0000, which is loop #   4 out of    5
+ configflags%julyr, %julday, %gmt:        2000          25   6.00000000    
+ Yes, this special data is acceptable to use: OUTPUT FROM METGRID V3.5.1
+ Input data is acceptable to use: met_em.d01.2000-01-25_06:00:00.nc
+ metgrid input_wrf.F first_date_input = 2000-01-25_06:00:00
+ metgrid input_wrf.F first_date_nml = 2000-01-24_12:00:00
+Timing for input          0 s.
+         flag_soil_layers read from met_em file is  1
+Using sfcprs3 to compute psfc
+Using inland lakes with average surface temperature
+ Assume Noah LSM input
+ LAND  CHANGE =            0
+ WATER CHANGE =            0
+Timing for processing          0 s.
+ LBC valid between these times 2000-01-25_00:00:00 and 2000-01-25_06:00:00
+Timing for output          0 s.
+Timing for loop #    4 =          0 s.
+  
+ -----------------------------------------------------------------------------
+  
+ Domain  1: Current date being processed: 2000-01-25_12:00:00.0000, which is loop #   5 out of    5
+ configflags%julyr, %julday, %gmt:        2000          25   12.0000000    
+ Yes, this special data is acceptable to use: OUTPUT FROM METGRID V3.5.1
+ Input data is acceptable to use: met_em.d01.2000-01-25_12:00:00.nc
+ metgrid input_wrf.F first_date_input = 2000-01-25_12:00:00
+ metgrid input_wrf.F first_date_nml = 2000-01-24_12:00:00
+Timing for input          0 s.
+         flag_soil_layers read from met_em file is  1
+Using sfcprs3 to compute psfc
+Using inland lakes with average surface temperature
+ Assume Noah LSM input
+ LAND  CHANGE =            0
+ WATER CHANGE =            0
+Timing for processing          0 s.
+ LBC valid between these times 2000-01-25_06:00:00 and 2000-01-25_12:00:00
+Timing for output          0 s.
+Timing for loop #    5 =          0 s.
+ *************************************
+ Nesting domain
+ ids,ide,jds,jde            1          31           1          31
+ ims,ime,jms,jme           -4          36          -4          36
+ ips,ipe,jps,jpe            1          31           1          31
+ INTERMEDIATE domain
+ ids,ide,jds,jde           29          44          15          30
+ ims,ime,jms,jme           24          49          10          35
+ ips,ipe,jps,jpe           27          46          13          32
+ *************************************
+ alloc_space_field: domain            2 ,               9802000  bytes allocated
+ alloc_space_field: domain            2 ,              80175652  bytes allocated
+Time period #   1 to process = 2000-01-24_12:00:00.
+Time period #   2 to process = 2000-01-24_18:00:00.
+Time period #   3 to process = 2000-01-25_00:00:00.
+Time period #   4 to process = 2000-01-25_06:00:00.
+Time period #   5 to process = 2000-01-25_12:00:00.
+Total analysis times to input =    5.
+  
+ -----------------------------------------------------------------------------
+  
+ Domain  2: Current date being processed: 2000-01-24_12:00:00.0000, which is loop #   1 out of    5
+ configflags%julyr, %julday, %gmt:        2000          24   12.0000000    
+ Yes, this special data is acceptable to use: OUTPUT FROM METGRID V3.5.1
+ Input data is acceptable to use: met_em.d02.2000-01-24_12:00:00.nc
+ metgrid input_wrf.F first_date_input = 2000-01-24_12:00:00
+ metgrid input_wrf.F first_date_nml = 2000-01-24_12:00:00
+Timing for input          0 s.
+         flag_soil_layers read from met_em file is  1
+Using sfcprs3 to compute psfc
+ using new automatic levels program
+           1   50.0000000       50.0000000      0.993814707    
+           2   64.0000000       114.000000      0.985950649       1.27999997    
+           3   81.5615997       195.561600      0.976014256       1.27440000    
+           4   103.369164       298.930756      0.963557541       1.26737535    
+           5   130.105835       429.036591      0.948093116       1.25865233    
+           6   162.366577       591.403198      0.929123759       1.24795771    
+           7   200.531372       791.934570      0.906191230       1.23505330    
+           8   244.605652       1036.54028      0.878942370       1.21978748    
+           9   294.054565       1330.59485      0.847207963       1.20215774    
+          10   347.683685       1678.27856      0.811077714       1.18237817    
+          11   403.635223       2081.91382      0.770949006       1.16092658    
+          12   459.557220       2541.47095      0.727525413       1.13854587    
+          13   512.947266       3054.41821      0.681755364       1.11617708    
+          14   564.242004       3618.66016      0.634503603       1.10000002    
+          15   620.666199       4239.32617      0.586030483       1.10000002    
+   25416.3906       4239.32617              48          15
+          16   641.729248       4881.05566      0.539505005    
+          17   641.729248       5522.78516      0.496368796    
+          18   641.729248       6164.51465      0.456375003    
+          19   641.729248       6806.24414      0.419294685    
+          20   641.729248       7447.97363      0.384915590    
+          21   641.729248       8089.70312      0.353040993    
+          22   641.729248       8731.43262      0.323488355    
+          23   641.729248       9373.16211      0.296088606    
+          24   641.729248       10014.8916      0.270684928    
+          25   641.729248       10656.6211      0.247131839    
+          26   641.729248       11298.3506      0.225294545    
+          27   641.729248       11940.0801      0.205048084    
+          28   641.729248       12581.8096      0.186276540    
+          29   641.729248       13223.5391      0.168872476    
+          30   641.729248       13865.2686      0.152736247    
+          31   641.729248       14506.9980      0.137775511    
+          32   641.729248       15148.7275      0.123904645    
+          33   641.729248       15790.4570      0.111044265    
+          34   641.729248       16432.1855       9.91207659E-02
+          35   641.729248       17073.9141       8.80658925E-02
+          36   641.729248       17715.6426       7.78163150E-02
+          37   641.729248       18357.3711       6.83134124E-02
+          38   641.729248       18999.0996       5.95027767E-02
+          39   641.729248       19640.8281       5.13339527E-02
+          40   641.729248       20282.5566       4.37602475E-02
+          41   641.729248       20924.2852       3.67382728E-02
+          42   641.729248       21566.0137       3.02278325E-02
+          43   641.729248       22207.7422       2.41916627E-02
+          44   641.729248       22849.4707       1.85952410E-02
+          45   641.729248       23491.1992       1.34064760E-02
+          46   641.729248       24132.9277       8.59571900E-03
+          47   641.729248       24774.6562       4.13541310E-03
+          48   641.729248       25416.3848       2.56990127E-08
+    1.0000    0.9938    0.9860    0.9760    0.9636    0.9481    0.9291    0.9062    0.8789    0.8472
+    0.8111    0.7709    0.7275    0.6818    0.6345    0.5860    0.5395    0.4964    0.4564    0.4193
+    0.3849    0.3530    0.3235    0.2961    0.2707    0.2471    0.2253    0.2050    0.1863    0.1689
+    0.1527    0.1378    0.1239    0.1110    0.0991    0.0881    0.0778    0.0683    0.0595    0.0513
+    0.0438    0.0367    0.0302    0.0242    0.0186    0.0134    0.0086    0.0041    0.0000
+Full level index =    1     Height =     0.0 m
+Full level index =    2     Height =    50.0 m      Thickness =   50.0 m
+Full level index =    3     Height =   113.9 m      Thickness =   63.9 m
+Full level index =    4     Height =   195.2 m      Thickness =   81.3 m
+Full level index =    5     Height =   298.0 m      Thickness =  102.8 m
+Full level index =    6     Height =   427.2 m      Thickness =  129.1 m
+Full level index =    7     Height =   587.8 m      Thickness =  160.7 m
+Full level index =    8     Height =   785.5 m      Thickness =  197.7 m
+Full level index =    9     Height =  1025.6 m      Thickness =  240.0 m
+Full level index =   10     Height =  1312.6 m      Thickness =  287.0 m
+Full level index =   11     Height =  1649.6 m      Thickness =  337.0 m
+Full level index =   12     Height =  2037.7 m      Thickness =  388.2 m
+Full level index =   13     Height =  2475.6 m      Thickness =  437.9 m
+Full level index =   14     Height =  2959.3 m      Thickness =  483.7 m
+Full level index =   15     Height =  3485.1 m      Thickness =  525.8 m
+Full level index =   16     Height =  4056.1 m      Thickness =  570.9 m
+Full level index =   17     Height =  4638.1 m      Thickness =  582.1 m
+Full level index =   18     Height =  5211.8 m      Thickness =  573.7 m
+Full level index =   19     Height =  5777.2 m      Thickness =  565.3 m
+Full level index =   20     Height =  6334.1 m      Thickness =  557.0 m
+Full level index =   21     Height =  6882.7 m      Thickness =  548.6 m
+Full level index =   22     Height =  7423.0 m      Thickness =  540.2 m
+Full level index =   23     Height =  7954.8 m      Thickness =  531.9 m
+Full level index =   24     Height =  8478.3 m      Thickness =  523.5 m
+Full level index =   25     Height =  8993.5 m      Thickness =  515.1 m
+Full level index =   26     Height =  9500.3 m      Thickness =  506.8 m
+Full level index =   27     Height =  9998.7 m      Thickness =  498.4 m
+Full level index =   28     Height = 10488.7 m      Thickness =  490.0 m
+Full level index =   29     Height = 10970.4 m      Thickness =  481.7 m
+Full level index =   30     Height = 11443.7 m      Thickness =  473.3 m
+Full level index =   31     Height = 11908.7 m      Thickness =  465.0 m
+Full level index =   32     Height = 12365.3 m      Thickness =  456.6 m
+Full level index =   33     Height = 12813.5 m      Thickness =  448.2 m
+Full level index =   34     Height = 13255.9 m      Thickness =  442.4 m
+Full level index =   35     Height = 13698.2 m      Thickness =  442.4 m
+Full level index =   36     Height = 14140.6 m      Thickness =  442.4 m
+Full level index =   37     Height = 14582.9 m      Thickness =  442.4 m
+Full level index =   38     Height = 15025.3 m      Thickness =  442.4 m
+Full level index =   39     Height = 15467.7 m      Thickness =  442.4 m
+Full level index =   40     Height = 15910.0 m      Thickness =  442.4 m
+Full level index =   41     Height = 16352.4 m      Thickness =  442.4 m
+Full level index =   42     Height = 16794.7 m      Thickness =  442.4 m
+Full level index =   43     Height = 17237.1 m      Thickness =  442.4 m
+Full level index =   44     Height = 17679.5 m      Thickness =  442.4 m
+Full level index =   45     Height = 18121.8 m      Thickness =  442.4 m
+Full level index =   46     Height = 18564.2 m      Thickness =  442.4 m
+Full level index =   47     Height = 19006.5 m      Thickness =  442.4 m
+Full level index =   48     Height = 19448.9 m      Thickness =  442.4 m
+Full level index =   49     Height = 19891.3 m      Thickness =  442.4 m
+p_top =   5000. Pa, dzbot =   50.0 m, dzstretch_s/u =   1.30  1.10
+Using inland lakes with average surface temperature
+ Assume Noah LSM input
+ LAND  CHANGE =            0
+ WATER CHANGE =            0
+Timing for processing          0 s.
+Timing for output          0 s.
+Timing for loop #    1 =          0 s.
+real_em: SUCCESS COMPLETE REAL_EM INIT
+MODEL OUTPUT
+ Ntasks in X            1 , ntasks in Y            1
+Domain # 1: dx = 30000.000 m
+Domain # 2: dx = 10000.000 m
+WRF V4.7.1 MODEL
+git commit 48489fa8bf2fe2e2bbd48a947a4a982a9bc0145c
+ *************************************
+ Parent domain
+ ids,ide,jds,jde            1          74           1          61
+ ims,ime,jms,jme           -4          79          -4          66
+ ips,ipe,jps,jpe            1          74           1          61
+ *************************************
+DYNAMICS OPTION: Eulerian Mass Coordinate
+ alloc_space_field: domain            1 ,             239753588  bytes allocated
+med_initialdata_input: calling input_input
+ Input data is acceptable to use: wrfinput_d01
+ CURRENT DATE          = 2000-01-24_12:00:00
+ SIMULATION START DATE = 2000-01-24_12:00:00
+Timing for processing wrfinput file (stream 0) for domain        1:    0.05776 elapsed seconds
+Max map factor in domain 1 =  1.03. Scale the dt in the model accordingly.
+ D01: Time step                              =    180.000000      (s)
+ D01: Grid Distance                          =    30.0000000      (km)
+ D01: Grid Distance Ratio dt/dx              =    6.00000000      (s/km)
+ D01: Ratio Including Maximum Map Factor     =    6.16505098      (s/km)
+ D01: NML defined reasonable_time_step_ratio =    6.00000000
+INPUT LandUse = "USGS"
+ LANDUSE TYPE = "USGS" FOUND          61  CATEGORIES           2  SEASONS WATER CATEGORY =           16  SNOW CATEGORY =           24
+ SOIL TEXTURE CLASSIFICATION = STAS FOUND          19  CATEGORIES
+ *************************************
+ Nesting domain
+ ids,ide,jds,jde            1          31           1          31
+ ims,ime,jms,jme           -4          36          -4          36
+ ips,ipe,jps,jpe            1          31           1          31
+ INTERMEDIATE domain
+ ids,ide,jds,jde           29          44          15          30
+ ims,ime,jms,jme           24          49          10          35
+ ips,ipe,jps,jpe           27          46          13          32
+ *************************************
+ alloc_space_field: domain            2 ,               9802000  bytes allocated
+ alloc_space_field: domain            2 ,              73969400  bytes allocated
+*** Initializing nest domain # 2 from an input file. ***
+med_initialdata_input: calling input_input
+ Input data is acceptable to use: wrfinput_d02
+Timing for processing wrfinput file (stream 0) for domain        2:    0.01748 elapsed seconds
+INPUT LandUse = "USGS"
+ LANDUSE TYPE = "USGS" FOUND          61  CATEGORIES           2  SEASONS WATER CATEGORY =           16  SNOW CATEGORY =           24
+ SOIL TEXTURE CLASSIFICATION = STAS FOUND          19  CATEGORIES
+INPUT LandUse = "USGS"
+ LANDUSE TYPE = "USGS" FOUND          61  CATEGORIES           2  SEASONS WATER CATEGORY =           16  SNOW CATEGORY =           24
+ SOIL TEXTURE CLASSIFICATION = STAS FOUND          19  CATEGORIES
+Max map factor in domain 1 =  1.03. Scale the dt in the model accordingly.
+ D01: Time step                              =    180.000000      (s)
+ D01: Grid Distance                          =    30.0000000      (km)
+ D01: Grid Distance Ratio dt/dx              =    6.00000000      (s/km)
+ D01: Ratio Including Maximum Map Factor     =    6.16505098      (s/km)
+ D01: NML defined reasonable_time_step_ratio =    6.00000000
+INPUT LandUse = "USGS"
+ LANDUSE TYPE = "USGS" FOUND          61  CATEGORIES           2  SEASONS WATER CATEGORY =           16  SNOW CATEGORY =           24
+ SOIL TEXTURE CLASSIFICATION = STAS FOUND          19  CATEGORIES
+Timing for Writing wrfout_d01_2000-01-24_12:00:00 for domain        1:    0.49763 elapsed seconds
+ Input data is acceptable to use: wrfbdy_d01
+Timing for processing lateral boundary for domain        1:    0.01510 elapsed seconds
+WRF NUMBER OF TILES FROM OMP_GET_MAX_THREADS =   8
+ Tile Strategy is not specified. Assuming 1D-Y
+WRF TILE   1 IS      1 IE     74 JS      1 JE      8
+WRF TILE   2 IS      1 IE     74 JS      9 JE     16
+WRF TILE   3 IS      1 IE     74 JS     17 JE     24
+WRF TILE   4 IS      1 IE     74 JS     25 JE     31
+WRF TILE   5 IS      1 IE     74 JS     32 JE     38
+WRF TILE   6 IS      1 IE     74 JS     39 JE     45
+WRF TILE   7 IS      1 IE     74 JS     46 JE     53
+WRF TILE   8 IS      1 IE     74 JS     54 JE     61
+WRF NUMBER OF TILES =   8
+Timing for Writing wrfout_d02_2000-01-24_12:00:00 for domain        2:    0.44814 elapsed seconds
+WRF NUMBER OF TILES FROM OMP_GET_MAX_THREADS =   8
+ Tile Strategy is not specified. Assuming 1D-Y
+WRF TILE   1 IS      1 IE     31 JS      1 JE      4
+WRF TILE   2 IS      1 IE     31 JS      5 JE      8
+WRF TILE   3 IS      1 IE     31 JS      9 JE     12
+WRF TILE   4 IS      1 IE     31 JS     13 JE     16
+WRF TILE   5 IS      1 IE     31 JS     17 JE     19
+WRF TILE   6 IS      1 IE     31 JS     20 JE     23
+WRF TILE   7 IS      1 IE     31 JS     24 JE     27
+WRF TILE   8 IS      1 IE     31 JS     28 JE     31
+WRF NUMBER OF TILES =   8
+Timing for main: time 2000-01-24_12:01:00 on domain   2:    0.73036 elapsed seconds
+Timing for main: time 2000-01-24_12:02:00 on domain   2:    0.13394 elapsed seconds
+Timing for main: time 2000-01-24_12:03:00 on domain   2:    0.13207 elapsed seconds
+Timing for main: time 2000-01-24_12:03:00 on domain   1:    4.78615 elapsed seconds
+Timing for main: time 2000-01-24_12:04:00 on domain   2:    0.13211 elapsed seconds
+Timing for main: time 2000-01-24_12:05:00 on domain   2:    0.13463 elapsed seconds
+Timing for main: time 2000-01-24_12:06:00 on domain   2:    0.13197 elapsed seconds
+Timing for main: time 2000-01-24_12:06:00 on domain   1:    1.24301 elapsed seconds
+Timing for main: time 2000-01-24_12:07:00 on domain   2:    0.28644 elapsed seconds
+Timing for main: time 2000-01-24_12:08:00 on domain   2:    0.13397 elapsed seconds
+Timing for main: time 2000-01-24_12:09:00 on domain   2:    0.13279 elapsed seconds
+Timing for Writing wrfout_d02_2000-01-24_12:09:00 for domain        2:    0.02209 elapsed seconds
+Timing for main: time 2000-01-24_12:09:00 on domain   1:    2.74744 elapsed seconds
+Timing for Writing wrfout_d01_2000-01-24_12:09:00 for domain        1:    0.07631 elapsed seconds
+wrf: SUCCESS COMPLETE WRF
+46832 -rw-r--r-- 1 wrfuser wrf 47953188 Jan 16 19:57 wrfout_d01_2000-01-24_12:00:00
+ 9716 -rw-r--r-- 1 wrfuser wrf  9948132 Jan 16 19:57 wrfout_d02_2000-01-24_12:00:00
+0 -rw-r--r-- 1 wrfuser wrf 0 Jan 16 19:56 SUCCESS_RUN_REAL_em_real_33_em_realG_kiaps1NE
+0 -rw-r--r-- 1 wrfuser wrf 0 Jan 16 19:57 SUCCESS_RUN_WRF_d01_em_real_33_em_realG_kiaps1NE
+Fri Jan 16 19:57:07 UTC 2026
+Fri Jan 16 19:57:07 UTC 2026
+======================================================================
+RUN WRF test_019o for em_real 33 em_realG, NML = kiaps2
+9 = STATUS test_019o em em_real 33 kiaps2
+Fri Jan 16 19:57:12 UTC 2026
+PRE-PROC OUTPUT
+ Ntasks in X            1 , ntasks in Y            1
+Domain # 1: dx = 30000.000 m
+REAL_EM V4.7.1 PREPROCESSOR
+git commit 48489fa8bf2fe2e2bbd48a947a4a982a9bc0145c
+ *************************************
+ Parent domain
+ ids,ide,jds,jde            1          74           1          61
+ ims,ime,jms,jme           -4          79          -4          66
+ ips,ipe,jps,jpe            1          74           1          61
+ *************************************
+DYNAMICS OPTION: Eulerian Mass Coordinate
+ alloc_space_field: domain            1 ,             284197316  bytes allocated
+Time period #   1 to process = 2000-01-24_12:00:00.
+Time period #   2 to process = 2000-01-24_18:00:00.
+Time period #   3 to process = 2000-01-25_00:00:00.
+Time period #   4 to process = 2000-01-25_06:00:00.
+Time period #   5 to process = 2000-01-25_12:00:00.
+Total analysis times to input =    5.
+  
+ -----------------------------------------------------------------------------
+  
+ Domain  1: Current date being processed: 2000-01-24_12:00:00.0000, which is loop #   1 out of    5
+ configflags%julyr, %julday, %gmt:        2000          24   12.0000000    
+ Yes, this special data is acceptable to use: OUTPUT FROM METGRID V3.5.1
+ Input data is acceptable to use: met_em.d01.2000-01-24_12:00:00.nc
+ metgrid input_wrf.F first_date_input = 2000-01-24_12:00:00
+ metgrid input_wrf.F first_date_nml = 2000-01-24_12:00:00
+Timing for input          0 s.
+         flag_soil_layers read from met_em file is  1
+Max map factor in domain 1 =  1.03. Scale the dt in the model accordingly.
+Using sfcprs3 to compute psfc
+ using new automatic levels program
+           1   50.0000000       50.0000000      0.993814707    
+           2   64.0000000       114.000000      0.985950649       1.27999997    
+           3   81.5615997       195.561600      0.976014256       1.27440000    
+           4   103.369164       298.930756      0.963557541       1.26737535    
+           5   130.105835       429.036591      0.948093116       1.25865233    
+           6   162.366577       591.403198      0.929123759       1.24795771    
+           7   200.531372       791.934570      0.906191230       1.23505330    
+           8   244.605652       1036.54028      0.878942370       1.21978748    
+           9   294.054565       1330.59485      0.847207963       1.20215774    
+          10   347.683685       1678.27856      0.811077714       1.18237817    
+          11   403.635223       2081.91382      0.770949006       1.16092658    
+          12   459.557220       2541.47095      0.727525413       1.13854587    
+          13   512.947266       3054.41821      0.681755364       1.11617708    
+          14   564.242004       3618.66016      0.634503603       1.10000002    
+          15   620.666199       4239.32617      0.586030483       1.10000002    
+   25416.3906       4239.32617              48          15
+          16   641.729248       4881.05566      0.539505005    
+          17   641.729248       5522.78516      0.496368796    
+          18   641.729248       6164.51465      0.456375003    
+          19   641.729248       6806.24414      0.419294685    
+          20   641.729248       7447.97363      0.384915590    
+          21   641.729248       8089.70312      0.353040993    
+          22   641.729248       8731.43262      0.323488355    
+          23   641.729248       9373.16211      0.296088606    
+          24   641.729248       10014.8916      0.270684928    
+          25   641.729248       10656.6211      0.247131839    
+          26   641.729248       11298.3506      0.225294545    
+          27   641.729248       11940.0801      0.205048084    
+          28   641.729248       12581.8096      0.186276540    
+          29   641.729248       13223.5391      0.168872476    
+          30   641.729248       13865.2686      0.152736247    
+          31   641.729248       14506.9980      0.137775511    
+          32   641.729248       15148.7275      0.123904645    
+          33   641.729248       15790.4570      0.111044265    
+          34   641.729248       16432.1855       9.91207659E-02
+          35   641.729248       17073.9141       8.80658925E-02
+          36   641.729248       17715.6426       7.78163150E-02
+          37   641.729248       18357.3711       6.83134124E-02
+          38   641.729248       18999.0996       5.95027767E-02
+          39   641.729248       19640.8281       5.13339527E-02
+          40   641.729248       20282.5566       4.37602475E-02
+          41   641.729248       20924.2852       3.67382728E-02
+          42   641.729248       21566.0137       3.02278325E-02
+          43   641.729248       22207.7422       2.41916627E-02
+          44   641.729248       22849.4707       1.85952410E-02
+          45   641.729248       23491.1992       1.34064760E-02
+          46   641.729248       24132.9277       8.59571900E-03
+          47   641.729248       24774.6562       4.13541310E-03
+          48   641.729248       25416.3848       2.56990127E-08
+    1.0000    0.9938    0.9860    0.9760    0.9636    0.9481    0.9291    0.9062    0.8789    0.8472
+    0.8111    0.7709    0.7275    0.6818    0.6345    0.5860    0.5395    0.4964    0.4564    0.4193
+    0.3849    0.3530    0.3235    0.2961    0.2707    0.2471    0.2253    0.2050    0.1863    0.1689
+    0.1527    0.1378    0.1239    0.1110    0.0991    0.0881    0.0778    0.0683    0.0595    0.0513
+    0.0438    0.0367    0.0302    0.0242    0.0186    0.0134    0.0086    0.0041    0.0000
+Full level index =    1     Height =     0.0 m
+Full level index =    2     Height =    50.0 m      Thickness =   50.0 m
+Full level index =    3     Height =   113.9 m      Thickness =   63.9 m
+Full level index =    4     Height =   195.2 m      Thickness =   81.3 m
+Full level index =    5     Height =   298.0 m      Thickness =  102.8 m
+Full level index =    6     Height =   427.2 m      Thickness =  129.1 m
+Full level index =    7     Height =   587.8 m      Thickness =  160.7 m
+Full level index =    8     Height =   785.5 m      Thickness =  197.7 m
+Full level index =    9     Height =  1025.6 m      Thickness =  240.0 m
+Full level index =   10     Height =  1312.6 m      Thickness =  287.0 m
+Full level index =   11     Height =  1649.6 m      Thickness =  337.0 m
+Full level index =   12     Height =  2037.7 m      Thickness =  388.2 m
+Full level index =   13     Height =  2475.6 m      Thickness =  437.9 m
+Full level index =   14     Height =  2959.3 m      Thickness =  483.7 m
+Full level index =   15     Height =  3485.1 m      Thickness =  525.8 m
+Full level index =   16     Height =  4056.1 m      Thickness =  570.9 m
+Full level index =   17     Height =  4638.1 m      Thickness =  582.1 m
+Full level index =   18     Height =  5211.8 m      Thickness =  573.7 m
+Full level index =   19     Height =  5777.2 m      Thickness =  565.3 m
+Full level index =   20     Height =  6334.1 m      Thickness =  557.0 m
+Full level index =   21     Height =  6882.7 m      Thickness =  548.6 m
+Full level index =   22     Height =  7423.0 m      Thickness =  540.2 m
+Full level index =   23     Height =  7954.8 m      Thickness =  531.9 m
+Full level index =   24     Height =  8478.3 m      Thickness =  523.5 m
+Full level index =   25     Height =  8993.5 m      Thickness =  515.1 m
+Full level index =   26     Height =  9500.3 m      Thickness =  506.8 m
+Full level index =   27     Height =  9998.7 m      Thickness =  498.4 m
+Full level index =   28     Height = 10488.7 m      Thickness =  490.0 m
+Full level index =   29     Height = 10970.4 m      Thickness =  481.7 m
+Full level index =   30     Height = 11443.7 m      Thickness =  473.3 m
+Full level index =   31     Height = 11908.7 m      Thickness =  465.0 m
+Full level index =   32     Height = 12365.3 m      Thickness =  456.6 m
+Full level index =   33     Height = 12813.5 m      Thickness =  448.2 m
+Full level index =   34     Height = 13255.9 m      Thickness =  442.4 m
+Full level index =   35     Height = 13698.2 m      Thickness =  442.4 m
+Full level index =   36     Height = 14140.6 m      Thickness =  442.4 m
+Full level index =   37     Height = 14582.9 m      Thickness =  442.4 m
+Full level index =   38     Height = 15025.3 m      Thickness =  442.4 m
+Full level index =   39     Height = 15467.7 m      Thickness =  442.4 m
+Full level index =   40     Height = 15910.0 m      Thickness =  442.4 m
+Full level index =   41     Height = 16352.4 m      Thickness =  442.4 m
+Full level index =   42     Height = 16794.7 m      Thickness =  442.4 m
+Full level index =   43     Height = 17237.1 m      Thickness =  442.4 m
+Full level index =   44     Height = 17679.5 m      Thickness =  442.4 m
+Full level index =   45     Height = 18121.8 m      Thickness =  442.4 m
+Full level index =   46     Height = 18564.2 m      Thickness =  442.4 m
+Full level index =   47     Height = 19006.5 m      Thickness =  442.4 m
+Full level index =   48     Height = 19448.9 m      Thickness =  442.4 m
+Full level index =   49     Height = 19891.3 m      Thickness =  442.4 m
+p_top =   5000. Pa, dzbot =   50.0 m, dzstretch_s/u =   1.30  1.10
+Using inland lakes with average surface temperature
+ Assume Noah LSM input
+ LAND  CHANGE =            0
+ WATER CHANGE =            0
+Timing for processing          1 s.
+Timing for output          0 s.
+Timing for loop #    1 =          1 s.
+  
+ -----------------------------------------------------------------------------
+  
+ Domain  1: Current date being processed: 2000-01-24_18:00:00.0000, which is loop #   2 out of    5
+ configflags%julyr, %julday, %gmt:        2000          24   18.0000000    
+ Yes, this special data is acceptable to use: OUTPUT FROM METGRID V3.5.1
+ Input data is acceptable to use: met_em.d01.2000-01-24_18:00:00.nc
+ metgrid input_wrf.F first_date_input = 2000-01-24_18:00:00
+ metgrid input_wrf.F first_date_nml = 2000-01-24_12:00:00
+Timing for input          0 s.
+         flag_soil_layers read from met_em file is  1
+Using sfcprs3 to compute psfc
+Using inland lakes with average surface temperature
+ Assume Noah LSM input
+ LAND  CHANGE =            0
+ WATER CHANGE =            0
+Timing for processing          0 s.
+ LBC valid between these times 2000-01-24_12:00:00 and 2000-01-24_18:00:00
+Timing for output          0 s.
+Timing for loop #    2 =          0 s.
+  
+ -----------------------------------------------------------------------------
+  
+ Domain  1: Current date being processed: 2000-01-25_00:00:00.0000, which is loop #   3 out of    5
+ configflags%julyr, %julday, %gmt:        2000          25   0.00000000    
+ Yes, this special data is acceptable to use: OUTPUT FROM METGRID V3.5.1
+ Input data is acceptable to use: met_em.d01.2000-01-25_00:00:00.nc
+ metgrid input_wrf.F first_date_input = 2000-01-25_00:00:00
+ metgrid input_wrf.F first_date_nml = 2000-01-24_12:00:00
+Timing for input          0 s.
+         flag_soil_layers read from met_em file is  1
+Using sfcprs3 to compute psfc
+Using inland lakes with average surface temperature
+ Assume Noah LSM input
+ LAND  CHANGE =            0
+ WATER CHANGE =            0
+Timing for processing          0 s.
+ LBC valid between these times 2000-01-24_18:00:00 and 2000-01-25_00:00:00
+Timing for output          0 s.
+Timing for loop #    3 =          0 s.
+  
+ -----------------------------------------------------------------------------
+  
+ Domain  1: Current date being processed: 2000-01-25_06:00:00.0000, which is loop #   4 out of    5
+ configflags%julyr, %julday, %gmt:        2000          25   6.00000000    
+ Yes, this special data is acceptable to use: OUTPUT FROM METGRID V3.5.1
+ Input data is acceptable to use: met_em.d01.2000-01-25_06:00:00.nc
+ metgrid input_wrf.F first_date_input = 2000-01-25_06:00:00
+ metgrid input_wrf.F first_date_nml = 2000-01-24_12:00:00
+Timing for input          0 s.
+         flag_soil_layers read from met_em file is  1
+Using sfcprs3 to compute psfc
+Using inland lakes with average surface temperature
+ Assume Noah LSM input
+ LAND  CHANGE =            0
+ WATER CHANGE =            0
+Timing for processing          0 s.
+ LBC valid between these times 2000-01-25_00:00:00 and 2000-01-25_06:00:00
+Timing for output          0 s.
+Timing for loop #    4 =          0 s.
+  
+ -----------------------------------------------------------------------------
+  
+ Domain  1: Current date being processed: 2000-01-25_12:00:00.0000, which is loop #   5 out of    5
+ configflags%julyr, %julday, %gmt:        2000          25   12.0000000    
+ Yes, this special data is acceptable to use: OUTPUT FROM METGRID V3.5.1
+ Input data is acceptable to use: met_em.d01.2000-01-25_12:00:00.nc
+ metgrid input_wrf.F first_date_input = 2000-01-25_12:00:00
+ metgrid input_wrf.F first_date_nml = 2000-01-24_12:00:00
+Timing for input          0 s.
+         flag_soil_layers read from met_em file is  1
+Using sfcprs3 to compute psfc
+Using inland lakes with average surface temperature
+ Assume Noah LSM input
+ LAND  CHANGE =            0
+ WATER CHANGE =            0
+Timing for processing          0 s.
+ LBC valid between these times 2000-01-25_06:00:00 and 2000-01-25_12:00:00
+Timing for output          0 s.
+Timing for loop #    5 =          0 s.
+real_em: SUCCESS COMPLETE REAL_EM INIT
+MODEL OUTPUT
+ Ntasks in X            1 , ntasks in Y            1
+Domain # 1: dx = 30000.000 m
+WRF V4.7.1 MODEL
+git commit 48489fa8bf2fe2e2bbd48a947a4a982a9bc0145c
+ *************************************
+ Parent domain
+ ids,ide,jds,jde            1          74           1          61
+ ims,ime,jms,jme           -4          79          -4          66
+ ips,ipe,jps,jpe            1          74           1          61
+ *************************************
+DYNAMICS OPTION: Eulerian Mass Coordinate
+ alloc_space_field: domain            1 ,             262178228  bytes allocated
+med_initialdata_input: calling input_input
+ Input data is acceptable to use: wrfinput_d01
+ CURRENT DATE          = 2000-01-24_12:00:00
+ SIMULATION START DATE = 2000-01-24_12:00:00
+Timing for processing wrfinput file (stream 0) for domain        1:    0.07109 elapsed seconds
+Max map factor in domain 1 =  1.03. Scale the dt in the model accordingly.
+ D01: Time step                              =    180.000000      (s)
+ D01: Grid Distance                          =    30.0000000      (km)
+ D01: Grid Distance Ratio dt/dx              =    6.00000000      (s/km)
+ D01: Ratio Including Maximum Map Factor     =    6.16505098      (s/km)
+ D01: NML defined reasonable_time_step_ratio =    6.00000000
+INPUT LandUse = "USGS"
+ LANDUSE TYPE = "USGS" FOUND          61  CATEGORIES           2  SEASONS WATER CATEGORY =           16  SNOW CATEGORY =           24
+ SOIL TEXTURE CLASSIFICATION = STAS FOUND          19  CATEGORIES
+ USING DEFAULT URBAN MORPHOLOGY
+ Sample of Urban settings
+ TSURFACE0_URB   261.187134
+ TDEEP0_URB   284.838043
+ IVGTYP           1
+ TR_URB2D   261.187134
+ TB_URB2D   261.187134
+ TG_URB2D   261.187134
+ TC_URB2D   261.187134
+ QC_URB2D   9.99999978E-03
+ XXXR_URB2D   0.00000000
+ SH_URB2D   0.00000000
+ LH_URB2D   0.00000000
+ G_URB2D   0.00000000
+ RN_URB2D   0.00000000
+ TS_URB2D   261.187134
+ LF_AC_URB3D   0.00000000
+ SF_AC_URB3D   0.00000000
+ CM_AC_URB3D   0.00000000
+ SFVENT_URB3D   0.00000000
+ LFVENT_URB3D   0.00000000
+ FRC_URB2D  0.899999976
+ UTYPE_URB2D           2
+ I           8 J          40
+ num_urban_hi          15
+ USING DEFAULT URBAN MORPHOLOGY
+ USING DEFAULT URBAN MORPHOLOGY
+ USING DEFAULT URBAN MORPHOLOGY
+ USING DEFAULT URBAN MORPHOLOGY
+ USING DEFAULT URBAN MORPHOLOGY
+ USING DEFAULT URBAN MORPHOLOGY
+ USING DEFAULT URBAN MORPHOLOGY
+ USING DEFAULT URBAN MORPHOLOGY
+ USING DEFAULT URBAN MORPHOLOGY
+ USING DEFAULT URBAN MORPHOLOGY
+ USING DEFAULT URBAN MORPHOLOGY
+ USING DEFAULT URBAN MORPHOLOGY
+ USING DEFAULT URBAN MORPHOLOGY
+ USING DEFAULT URBAN MORPHOLOGY
+ USING DEFAULT URBAN MORPHOLOGY
+ USING DEFAULT URBAN MORPHOLOGY
+ USING DEFAULT URBAN MORPHOLOGY
+ USING DEFAULT URBAN MORPHOLOGY
+ USING DEFAULT URBAN MORPHOLOGY
+Timing for Writing wrfout_d01_2000-01-24_12:00:00 for domain        1:    0.49249 elapsed seconds
+ Input data is acceptable to use: wrfbdy_d01
+Timing for processing lateral boundary for domain        1:    0.01503 elapsed seconds
+WRF NUMBER OF TILES FROM OMP_GET_MAX_THREADS =   8
+ Tile Strategy is not specified. Assuming 1D-Y
+WRF TILE   1 IS      1 IE     74 JS      1 JE      8
+WRF TILE   2 IS      1 IE     74 JS      9 JE     16
+WRF TILE   3 IS      1 IE     74 JS     17 JE     24
+WRF TILE   4 IS      1 IE     74 JS     25 JE     31
+WRF TILE   5 IS      1 IE     74 JS     32 JE     38
+WRF TILE   6 IS      1 IE     74 JS     39 JE     45
+WRF TILE   7 IS      1 IE     74 JS     46 JE     53
+WRF TILE   8 IS      1 IE     74 JS     54 JE     61
+WRF NUMBER OF TILES =   8
+-------------- FATAL CALLED ---------------
+FATAL CALLED FROM FILE:  <stdin>  LINE:    2037
+WARNING: Singular matrix in Urban Tree Energy Budget
+-------------------------------------------
+-------------- FATAL CALLED ---------------
+FATAL CALLED FROM FILE:  <stdin>  LINE:    2037
+WARNING: Singular matrix in Urban Tree Energy Budget
+-------------------------------------------
+Note: The following floating-point exceptions are signalling: IEEE_DIVIDE_BY_ZERO IEEE_UNDERFLOW_FLAG IEEE_DENORMAL
+ 
+NAMELIST  
+ &time_control
+ run_days = 0,
+ run_hours = 0,
+ run_minutes = 0,
+ run_seconds                         = 1800,
+ start_year                          = 2000, 2000, 2000,
+ start_month                         = 01,   01,   01,
+ start_day                           = 24,   24,   24,
+ start_hour                          = 12,   12,   12,
+ start_minute                        = 00,   00,   00,
+ start_second                        = 00,   00,   00,
+ end_year                            = 2000, 2000, 2000,
+ end_month                           = 01,   01,   01,
+ end_day                             = 25,   25,   25,
+ end_hour                            = 12,   12,   12,
+ end_minute                          = 00,   00,   00,
+ end_second                          = 00,   00,   00,
+ interval_seconds                    = 21600
+ input_from_file                     = .true.,.false.,.false.
+ history_interval                    = 30,  60,   60,
+ frames_per_outfile = 200, 1000, 1000,
+ restart                             = .false.,
+ restart_interval                    = 5000,
+ io_form_history                     = 2
+ io_form_restart                     = 2
+ io_form_input                       = 2
+ io_form_boundary                    = 2
+ debug_level                         = 0
+ auxinput1_inname                    = "met_em.d<domain>.<date>"
+ /
+
+ &domains
+ time_step                           = 180,
+ time_step_fract_num                 = 0,
+ time_step_fract_den                 = 1,
+ max_dom                             = 1,
+ s_we                                = 1,     1,     1,
+ e_we                                = 74,    31,    31,
+ s_sn                                = 1,     1,     1,
+ e_sn                                = 61,    31,    31,
+ s_vert                              = 1,     1,     1,
+ e_vert                              = 49,    49,    49,
+ p_top_requested                     = 5000,
+ num_metgrid_levels                  = 26,
+ num_metgrid_soil_levels             = 4,
+ dx                                  = 30000, 10000,  3333,
+ dy                                  = 30000, 10000,  3333,
+ grid_id                             = 1,     2,     3,
+ parent_id                           = 0,     1,     2,
+ i_parent_start                      = 0,     31,    30,
+ j_parent_start                      = 0,     17,    30,
+ parent_grid_ratio                   = 1,     3,     3,
+ parent_time_step_ratio              = 1,     3,     3,
+ feedback                            = 1,
+ smooth_option                       = 0
+ use_adaptive_time_step              = .FALSE.
+ step_to_output_time                 = .FALSE.
+ /
+
+ &physics
+ fractional_seaice                   = 0,
+ mp_physics                          = 16,    16,    16,
+ ra_lw_physics                       = 14,    14,    14,
+ ra_sw_physics                       = 14,    14,    14,
+ radt                                = 21,    21,    21,
+ sf_sfclay_physics                   = 91,    91,    91,
+ sf_surface_physics                  = 4,     4,     4,
+ bl_pbl_physics                      = 1,     1,     1,
+ bldt                                = 0,     0,     0,
+ cu_physics                          = 14,    14,    0,
+ sf_urban_physics                    = 1,     1,     1,
+ shcu_physics                        = 4,     4,     4,
+ topo_shading                        = 0,     0,     0,
+ cudt                                = 5,     5,     5,
+ isfflx                              = 1,
+ ifsnow                              = 0,
+ icloud                              = 1,
+ surface_input_source                = 1,
+ num_soil_layers                     = 5,
+ num_land_cat                        = 28,
+ mp_zero_out                         = 0,
+ maxiens                             = 1,
+ maxens                              = 3,
+ maxens2                             = 3,
+ maxens3                             = 16,
+ ensdim                              = 144,
+ aer_opt                             = 2,
+ aer_type                            = 1,
+ aer_aod550_opt                      = 1,
+ aer_aod550_val                      = 0.12
+ aer_angexp_opt                      = 1,
+ aer_angexp_val                      = 1.3
+ aer_ssa_opt                         = 1,
+ aer_ssa_val                         = 0.85
+ aer_asy_opt                         = 1,
+ aer_asy_val                         = 0.90
+ ghg_input                           = 0
+ /
+
+ &fdda
+ /
+
+ &dynamics
+ w_damping                           = 0,
+ diff_opt                            = 1,
+ km_opt                              = 4,
+ diff_6th_opt                        = 0,      0,      0,
+ diff_6th_factor                     = 0.12,   0.12,   0.12,
+ base_temp                           = 290.
+ damp_opt                            = 3,
+ zdamp                               = 5000.,  5000.,  5000.,
+ dampcoef                            = 0.05,   0.05,   0.05
+ khdif                               = 0,      0,      0,
+ kvdif                               = 0,      0,      0,
+ non_hydrostatic                     = .true., .true., .true.,
+ moist_adv_opt                       = 2,      2,      2,      
+ scalar_adv_opt                      = 2,      2,      2,     
+ chem_adv_opt                        = 0,      0,      0,     
+ tke_adv_opt                         = 0,      0,      0,     
+ gwd_opt                             = 0,
+ /
+
+ &bdy_control
+ spec_bdy_width                      = 5,
+ spec_zone                           = 1,
+ relax_zone                          = 4,
+ specified                           = .true., .false.,.false.,
+ nested                              = .false., .true., .true.,
+ /
+
+ &grib2
+ /
+
+ &namelist_quilt
+ nio_tasks_per_group = 0,
+ nio_groups = 1,
+ /
+
+ &dfi_control
+ dfi_opt                             = 0
+ dfi_nfilter                         = 7
+ dfi_write_filtered_input            = .false.
+ dfi_write_dfi_history               = .false.
+ dfi_cutoff_seconds                  = 3600  
+ dfi_time_dim                        = 1000 
+ dfi_bckstop_year                    = 2000
+ dfi_bckstop_month                   = 01  
+ dfi_bckstop_day                     = 24  
+ dfi_bckstop_hour                    = 11  
+ dfi_bckstop_minute                  = 00  
+ dfi_bckstop_second                  = 00  
+ dfi_fwdstop_year                    = 2000
+ dfi_fwdstop_month                   = 01  
+ dfi_fwdstop_day                     = 24  
+ dfi_fwdstop_hour                    = 12  
+ dfi_fwdstop_minute                  = 30  
+ dfi_fwdstop_second                  = 00  
+ /
+
+LSF_TIME=0:10
+PBS_TIME=0:10:00
+NQS_TIME=0:10:00
+21784 -rw-r--r-- 1 wrfuser wrf 22305916 Jan 16 19:57 wrfout_d01_2000-01-24_12:00:00
+0 -rw-r--r-- 1 wrfuser wrf 0 Jan 16 19:57 FAIL_RUN_WRF_d01_em_real_33_em_realG_kiaps2
+0 -rw-r--r-- 1 wrfuser wrf 0 Jan 16 19:57 SUCCESS_RUN_REAL_em_real_33_em_realG_kiaps2
+Fri Jan 16 19:57:13 UTC 2026
+Fri Jan 16 19:57:13 UTC 2026
+test_019o
+Fri Jan 16 19:57:23 UTC 2026
+test_019o
+Fri Jan 16 19:57:23 UTC 2026
+Fri Jan 16 19:48:59 UTC 2026
+Fri Jan 16 19:48:59 UTC 2026
+Fri Jan 16 19:49:02 UTC 2026
+Sending build context to Docker daemon  947.2kB
+Step 1/7 : FROM kkeene44/wrf-coop:version16
+ ---> 39c7656b7bc2
+Step 2/7 : MAINTAINER Kelly Werner <kkeene@ucar.edu>
+ ---> Running in aca366c0ccb3
+Removing intermediate container aca366c0ccb3
+ ---> 2b2618b6fc41
+Step 3/7 : RUN git clone https://github.com/chenghaow/WRF.git WRF   && cd WRF   && git checkout urban_nbs   && cd ..
+ ---> Running in ebbd469ebf41
+Cloning into 'WRF'...
+[91mChecking out files:  47% (2314/4918)   [0m[91mChecking out files:  48% (2361/4918)   [0m[91mChecking out files:  49% (2410/4918)   [0m[91mChecking out files:  50% (2459/4918)   [0m[91mChecking out files:  51% (2509/4918)   [0m[91mChecking out files:  52% (2558/4918)   [0m[91mChecking out files:  53% (2607/4918)   [0m[91mChecking out files:  54% (2656/4918)   [0m[91mChecking out files:  55% (2705/4918)   [0m[91mChecking out files:  56% (2755/4918)   [0m[91mChecking out files:  57% (2804/4918)   [0m[91mChecking out files:  58% (2853/4918)   [0m[91mChecking out files:  59% (2902/4918)   [0m[91mChecking out files:  60% (2951/4918)   [0m[91mChecking out files:  61% (3000/4918)   [0m[91mChecking out files:  62% (3050/4918)   [0m[91mChecking out files:  63% (3099/4918)   [0m[91mChecking out files:  64% (3148/4918)   [0m[91mChecking out files:  65% (3197/4918)   [0m[91mChecking out files:  66% (3246/4918)   [0m[91mChecking out files:  67% (3296/4918)   [0m[91mChecking out files:  68% (3345/4918)   [0m[91mChecking out files:  69% (3394/4918)   [0m[91mChecking out files:  70% (3443/4918)   [0m[91mChecking out files:  71% (3492/4918)   [0m[91mChecking out files:  72% (3541/4918)   [0m[91mChecking out files:  73% (3591/4918)   [0m[91mChecking out files:  74% (3640/4918)   [0m[91mChecking out files:  75% (3689/4918)   [0m[91mChecking out files:  76% (3738/4918)   [0m[91mChecking out files:  77% (3787/4918)   [0m[91mChecking out files:  78% (3837/4918)   [0m[91mChecking out files:  79% (3886/4918)   [0m[91mChecking out files:  80% (3935/4918)   [0m[91mChecking out files:  81% (3984/4918)   [0m[91mChecking out files:  82% (4033/4918)   [0m[91mChecking out files:  83% (4082/4918)   [0m[91mChecking out files:  84% (4132/4918)   [0m[91mChecking out files:  85% (4181/4918)   [0m[91mChecking out files:  86% (4230/4918)   [0m[91mChecking out files:  87% (4279/4918)   [0m[91mChecking out files:  88% (4328/4918)   [0m[91mChecking out files:  89% (4378/4918)   [0m[91mChecking out files:  90% (4427/4918)   [0m[91mChecking out files:  91% (4476/4918)   [0m[91mChecking out files:  92% (4525/4918)   [0m[91mChecking out files:  93% (4574/4918)   [0m[91mChecking out files:  94% (4623/4918)   [0m[91mChecking out files:  95% (4673/4918)   [0m[91mChecking out files:  96% (4722/4918)   [0m[91mChecking out files:  97% (4771/4918)   [0m[91mChecking out files:  98% (4820/4918)   [0m[91mChecking out files:  99% (4869/4918)   [0m[91mChecking out files: 100% (4918/4918)   [0m[91mChecking out files: 100% (4918/4918), done.
+[0m[91mSwitched to a new branch 'urban_nbs'
+[0mBranch urban_nbs set up to track remote branch urban_nbs from origin.
+Removing intermediate container ebbd469ebf41
+ ---> 0e76bf2dbb05
+Step 4/7 : RUN git clone https://github.com/wrf-model/SCRIPTS.git SCRIPTS   && cp SCRIPTS/rd_l2_norm.py . && chmod 755 rd_l2_norm.py   && cp SCRIPTS/script.csh .    && chmod 755 script.csh      && cp SCRIPTS/da_builds.csh . && chmod 755 da_builds.csh   && ln -sf SCRIPTS/Namelists .
+ ---> Running in 692ae1d822d0
+Cloning into 'SCRIPTS'...
+Removing intermediate container 692ae1d822d0
+ ---> 59989de6bccf
+Step 5/7 : RUN git clone https://github.com/wrf-model/wrf_feature_testing.git wrf_feature_testing   && cd wrf_feature_testing && mv * .. && cd ..
+ ---> Running in 0dbde7fe3ebc
+Cloning into 'wrf_feature_testing'...
+Removing intermediate container 0dbde7fe3ebc
+ ---> 5b5f704af9f5
+Step 6/7 : VOLUME /wrf
+ ---> Running in c1011e6d7071
+Removing intermediate container c1011e6d7071
+ ---> 6458c12cd686
+Step 7/7 : CMD ["/bin/tcsh"]
+ ---> Running in 207d20606d88
+Removing intermediate container 207d20606d88
+ ---> 7316c3ab779a
+Successfully built 7316c3ab779a
+Successfully tagged wrf_regtest:latest
+Fri Jan 16 19:53:25 UTC 2026
+Fri Jan 16 19:57:05 UTC 2026
+Untagged: wrf_regtest:latest
+Deleted: sha256:7316c3ab779a6e3b1ca983c7d49f6e064a4fa5fc9581586c37c9dd500a6dacf4
+Deleted: sha256:6458c12cd6862b1f2296c3ced91e109960d65b209a5007c064f102a49eb91eaa
+Deleted: sha256:5b5f704af9f56507d8694b65cc76bab765555b4863d16bddc1b90c22f99c2cda
+Deleted: sha256:e5c5b55d9ddf69263b281842bc6a6b025a2bc29be9ee5274102864edc01e342e
+Deleted: sha256:59989de6bccf36d99cb019784667dc1b8371b95794fa00787bb0decf0dc5972f
+Deleted: sha256:14697c6933b48f24edbb60366a71414bff60a6cf6346ad6fc67affe81ec1b342
+Deleted: sha256:0e76bf2dbb05a136f47d141427503d9811ab34081827fff4dbe5917154cc9347
+Deleted: sha256:c6144bd7c0191309e4aa11d00501b9ce72223844f192a49d4998742568769e42
+Deleted: sha256:2b2618b6fc4115902ba89c6f71cafc5ff37d016864494a59645e047347cd5756
+Deleted Volumes:
+0fd206d3b76b9a61636a1b258e806540032e5995ce6cde257ee0239a7c3235d6
+
+Total reclaimed space: 4.534GB
+TYPE            TOTAL     ACTIVE    SIZE      RECLAIMABLE
+Images          3         0         12.05GB   12.05GB (100%)
+Containers      0         0         0B        0B
+Local Volumes   0         0         0B        0B
+Build Cache     0         0         0B        0B
+Fri Jan 16 19:57:06 UTC 2026
+==============================================================
+==============================================================
+                         MPI START
+==============================================================
+TEST CASE = test_019m
+Fri Jan 16 19:53:25 UTC 2026
+Build container
+592039407ca171d6021f52b46bc75a6452091d5109efe36bce48009f456ca482
+Fri Jan 16 19:53:55 UTC 2026
+Build WRF executable
+Fri Jan 16 19:56:19 UTC 2026
+97112 -rwxr-xr-x 1 wrfuser wrf 99440496 Jan 16 19:56 WRF/main/wrf.exe
+77660 -rwxr-xr-x 1 wrfuser wrf 79520912 Jan 16 19:56 WRF/main/real.exe
+SUCCESSFUL BUILD
+0 -rw-r--r-- 1 wrfuser wrf 0 Jan 16 19:56 SUCCESS_BUILD_WRF_em_real_34
+Fri Jan 16 19:56:20 UTC 2026
+Fri Jan 16 19:56:20 UTC 2026
+Fri Jan 16 19:56:20 UTC 2026
+======================================================================
+RUN WRF test_019m for em_real 34 em_realG, NML = kiaps1NE
+0 = STATUS test_019m em em_real 34 kiaps1NE
+Fri Jan 16 19:56:47 UTC 2026
+PRE-PROC OUTPUT
+ starting wrf task            0  of            9
+ starting wrf task            3  of            9
+ starting wrf task            8  of            9
+ starting wrf task            4  of            9
+ starting wrf task            5  of            9
+ starting wrf task            6  of            9
+ starting wrf task            1  of            9
+ starting wrf task            7  of            9
+ starting wrf task            2  of            9
+taskid: 0 hostname: 592039407ca1
+ Ntasks in X            3 , ntasks in Y            3
+  Domain # 1: dx = 30000.000 m
+  Domain # 2: dx = 10000.000 m
+REAL_EM V4.7.1 PREPROCESSOR
+git commit 48489fa8bf2fe2e2bbd48a947a4a982a9bc0145c
+ *************************************
+ Parent domain
+ ids,ide,jds,jde            1          74           1          61
+ ims,ime,jms,jme           -4          32          -4          27
+ ips,ipe,jps,jpe            1          25           1          20
+ *************************************
+DYNAMICS OPTION: Eulerian Mass Coordinate
+   alloc_space_field: domain            1 ,              58775868  bytes allocated
+Time period #   1 to process = 2000-01-24_12:00:00.
+Time period #   2 to process = 2000-01-24_18:00:00.
+Time period #   3 to process = 2000-01-25_00:00:00.
+Time period #   4 to process = 2000-01-25_06:00:00.
+Time period #   5 to process = 2000-01-25_12:00:00.
+Total analysis times to input =    5.
+  
+ -----------------------------------------------------------------------------
+  
+ Domain  1: Current date being processed: 2000-01-24_12:00:00.0000, which is loop #   1 out of    5
+ configflags%julyr, %julday, %gmt:        2000          24   12.0000000    
+d01 2000-01-24_12:00:00  Yes, this special data is acceptable to use: OUTPUT FROM METGRID V3.5.1
+d01 2000-01-24_12:00:00  Input data is acceptable to use: met_em.d01.2000-01-24_12:00:00.nc
+ metgrid input_wrf.F first_date_input = 2000-01-24_12:00:00
+ metgrid input_wrf.F first_date_nml = 2000-01-24_12:00:00
+d01 2000-01-24_12:00:00 Timing for input          0 s.
+d01 2000-01-24_12:00:00          flag_soil_layers read from met_em file is  1
+Max map factor in domain 1 =  1.03. Scale the dt in the model accordingly.
+Using sfcprs3 to compute psfc
+ using new automatic levels program
+           1   50.0000000       50.0000000      0.993814707    
+           2   64.0000000       114.000000      0.985950649       1.27999997    
+           3   81.5615997       195.561600      0.976014256       1.27440000    
+           4   103.369164       298.930756      0.963557541       1.26737535    
+           5   130.105835       429.036591      0.948093116       1.25865233    
+           6   162.366577       591.403198      0.929123759       1.24795771    
+           7   200.531372       791.934570      0.906191230       1.23505330    
+           8   244.605652       1036.54028      0.878942370       1.21978748    
+           9   294.054565       1330.59485      0.847207963       1.20215774    
+          10   347.683685       1678.27856      0.811077714       1.18237817    
+          11   403.635223       2081.91382      0.770949006       1.16092658    
+          12   459.557220       2541.47095      0.727525413       1.13854587    
+          13   512.947266       3054.41821      0.681755364       1.11617708    
+          14   564.242004       3618.66016      0.634503603       1.10000002    
+          15   620.666199       4239.32617      0.586030483       1.10000002    
+   25416.3906       4239.32617              48          15
+          16   641.729248       4881.05566      0.539505005    
+          17   641.729248       5522.78516      0.496368796    
+          18   641.729248       6164.51465      0.456375003    
+          19   641.729248       6806.24414      0.419294685    
+          20   641.729248       7447.97363      0.384915590    
+          21   641.729248       8089.70312      0.353040993    
+          22   641.729248       8731.43262      0.323488355    
+          23   641.729248       9373.16211      0.296088606    
+          24   641.729248       10014.8916      0.270684928    
+          25   641.729248       10656.6211      0.247131839    
+          26   641.729248       11298.3506      0.225294545    
+          27   641.729248       11940.0801      0.205048084    
+          28   641.729248       12581.8096      0.186276540    
+          29   641.729248       13223.5391      0.168872476    
+          30   641.729248       13865.2686      0.152736247    
+          31   641.729248       14506.9980      0.137775511    
+          32   641.729248       15148.7275      0.123904645    
+          33   641.729248       15790.4570      0.111044265    
+          34   641.729248       16432.1855       9.91207659E-02
+          35   641.729248       17073.9141       8.80658925E-02
+          36   641.729248       17715.6426       7.78163150E-02
+          37   641.729248       18357.3711       6.83134124E-02
+          38   641.729248       18999.0996       5.95027767E-02
+          39   641.729248       19640.8281       5.13339527E-02
+          40   641.729248       20282.5566       4.37602475E-02
+          41   641.729248       20924.2852       3.67382728E-02
+          42   641.729248       21566.0137       3.02278325E-02
+          43   641.729248       22207.7422       2.41916627E-02
+          44   641.729248       22849.4707       1.85952410E-02
+          45   641.729248       23491.1992       1.34064760E-02
+          46   641.729248       24132.9277       8.59571900E-03
+          47   641.729248       24774.6562       4.13541310E-03
+          48   641.729248       25416.3848       2.56990127E-08
+    1.0000    0.9938    0.9860    0.9760    0.9636    0.9481    0.9291    0.9062    0.8789    0.8472
+    0.8111    0.7709    0.7275    0.6818    0.6345    0.5860    0.5395    0.4964    0.4564    0.4193
+    0.3849    0.3530    0.3235    0.2961    0.2707    0.2471    0.2253    0.2050    0.1863    0.1689
+    0.1527    0.1378    0.1239    0.1110    0.0991    0.0881    0.0778    0.0683    0.0595    0.0513
+    0.0438    0.0367    0.0302    0.0242    0.0186    0.0134    0.0086    0.0041    0.0000
+Full level index =    1     Height =     0.0 m
+Full level index =    2     Height =    50.0 m      Thickness =   50.0 m
+Full level index =    3     Height =   113.9 m      Thickness =   63.9 m
+Full level index =    4     Height =   195.2 m      Thickness =   81.3 m
+Full level index =    5     Height =   298.0 m      Thickness =  102.8 m
+Full level index =    6     Height =   427.2 m      Thickness =  129.1 m
+Full level index =    7     Height =   587.8 m      Thickness =  160.7 m
+Full level index =    8     Height =   785.5 m      Thickness =  197.7 m
+Full level index =    9     Height =  1025.6 m      Thickness =  240.0 m
+Full level index =   10     Height =  1312.6 m      Thickness =  287.0 m
+Full level index =   11     Height =  1649.6 m      Thickness =  337.0 m
+Full level index =   12     Height =  2037.7 m      Thickness =  388.2 m
+Full level index =   13     Height =  2475.6 m      Thickness =  437.9 m
+Full level index =   14     Height =  2959.3 m      Thickness =  483.7 m
+Full level index =   15     Height =  3485.1 m      Thickness =  525.8 m
+Full level index =   16     Height =  4056.1 m      Thickness =  570.9 m
+Full level index =   17     Height =  4638.1 m      Thickness =  582.1 m
+Full level index =   18     Height =  5211.8 m      Thickness =  573.7 m
+Full level index =   19     Height =  5777.2 m      Thickness =  565.3 m
+Full level index =   20     Height =  6334.1 m      Thickness =  557.0 m
+Full level index =   21     Height =  6882.7 m      Thickness =  548.6 m
+Full level index =   22     Height =  7423.0 m      Thickness =  540.2 m
+Full level index =   23     Height =  7954.8 m      Thickness =  531.9 m
+Full level index =   24     Height =  8478.3 m      Thickness =  523.5 m
+Full level index =   25     Height =  8993.5 m      Thickness =  515.1 m
+Full level index =   26     Height =  9500.3 m      Thickness =  506.8 m
+Full level index =   27     Height =  9998.7 m      Thickness =  498.4 m
+Full level index =   28     Height = 10488.7 m      Thickness =  490.0 m
+Full level index =   29     Height = 10970.4 m      Thickness =  481.7 m
+Full level index =   30     Height = 11443.7 m      Thickness =  473.3 m
+Full level index =   31     Height = 11908.7 m      Thickness =  465.0 m
+Full level index =   32     Height = 12365.3 m      Thickness =  456.6 m
+Full level index =   33     Height = 12813.5 m      Thickness =  448.2 m
+Full level index =   34     Height = 13255.9 m      Thickness =  442.4 m
+Full level index =   35     Height = 13698.2 m      Thickness =  442.4 m
+Full level index =   36     Height = 14140.6 m      Thickness =  442.4 m
+Full level index =   37     Height = 14582.9 m      Thickness =  442.4 m
+Full level index =   38     Height = 15025.3 m      Thickness =  442.4 m
+Full level index =   39     Height = 15467.7 m      Thickness =  442.4 m
+Full level index =   40     Height = 15910.0 m      Thickness =  442.4 m
+Full level index =   41     Height = 16352.4 m      Thickness =  442.4 m
+Full level index =   42     Height = 16794.7 m      Thickness =  442.4 m
+Full level index =   43     Height = 17237.1 m      Thickness =  442.4 m
+Full level index =   44     Height = 17679.5 m      Thickness =  442.4 m
+Full level index =   45     Height = 18121.8 m      Thickness =  442.4 m
+Full level index =   46     Height = 18564.2 m      Thickness =  442.4 m
+Full level index =   47     Height = 19006.5 m      Thickness =  442.4 m
+Full level index =   48     Height = 19448.9 m      Thickness =  442.4 m
+Full level index =   49     Height = 19891.3 m      Thickness =  442.4 m
+p_top =   5000. Pa, dzbot =   50.0 m, dzstretch_s/u =   1.30  1.10
+d01 2000-01-24_12:00:00 Using inland lakes with average surface temperature
+ Assume Noah LSM input
+ LAND  CHANGE =            0
+ WATER CHANGE =            0
+d01 2000-01-24_12:00:00 Timing for processing          0 s.
+d01 2000-01-24_12:00:00 Timing for output          0 s.
+d01 2000-01-24_12:00:00 Timing for loop #    1 =          1 s.
+  
+ -----------------------------------------------------------------------------
+  
+ Domain  1: Current date being processed: 2000-01-24_18:00:00.0000, which is loop #   2 out of    5
+ configflags%julyr, %julday, %gmt:        2000          24   18.0000000    
+d01 2000-01-24_18:00:00  Yes, this special data is acceptable to use: OUTPUT FROM METGRID V3.5.1
+d01 2000-01-24_18:00:00  Input data is acceptable to use: met_em.d01.2000-01-24_18:00:00.nc
+ metgrid input_wrf.F first_date_input = 2000-01-24_18:00:00
+ metgrid input_wrf.F first_date_nml = 2000-01-24_12:00:00
+d01 2000-01-24_18:00:00 Timing for input          0 s.
+d01 2000-01-24_18:00:00          flag_soil_layers read from met_em file is  1
+Using sfcprs3 to compute psfc
+d01 2000-01-24_18:00:00 Using inland lakes with average surface temperature
+ Assume Noah LSM input
+ LAND  CHANGE =            0
+ WATER CHANGE =            0
+d01 2000-01-24_18:00:00 Timing for processing          0 s.
+ LBC valid between these times 2000-01-24_12:00:00 and 2000-01-24_18:00:00
+d01 2000-01-24_18:00:00 Timing for output          0 s.
+d01 2000-01-24_18:00:00 Timing for loop #    2 =          1 s.
+  
+ -----------------------------------------------------------------------------
+  
+ Domain  1: Current date being processed: 2000-01-25_00:00:00.0000, which is loop #   3 out of    5
+ configflags%julyr, %julday, %gmt:        2000          25   0.00000000    
+d01 2000-01-25_00:00:00  Yes, this special data is acceptable to use: OUTPUT FROM METGRID V3.5.1
+d01 2000-01-25_00:00:00  Input data is acceptable to use: met_em.d01.2000-01-25_00:00:00.nc
+ metgrid input_wrf.F first_date_input = 2000-01-25_00:00:00
+ metgrid input_wrf.F first_date_nml = 2000-01-24_12:00:00
+d01 2000-01-25_00:00:00 Timing for input          0 s.
+d01 2000-01-25_00:00:00          flag_soil_layers read from met_em file is  1
+Using sfcprs3 to compute psfc
+d01 2000-01-25_00:00:00 Using inland lakes with average surface temperature
+ Assume Noah LSM input
+ LAND  CHANGE =            0
+ WATER CHANGE =            0
+d01 2000-01-25_00:00:00 Timing for processing          0 s.
+ LBC valid between these times 2000-01-24_18:00:00 and 2000-01-25_00:00:00
+d01 2000-01-25_00:00:00 Timing for output          0 s.
+d01 2000-01-25_00:00:00 Timing for loop #    3 =          0 s.
+  
+ -----------------------------------------------------------------------------
+  
+ Domain  1: Current date being processed: 2000-01-25_06:00:00.0000, which is loop #   4 out of    5
+ configflags%julyr, %julday, %gmt:        2000          25   6.00000000    
+d01 2000-01-25_06:00:00  Yes, this special data is acceptable to use: OUTPUT FROM METGRID V3.5.1
+d01 2000-01-25_06:00:00  Input data is acceptable to use: met_em.d01.2000-01-25_06:00:00.nc
+ metgrid input_wrf.F first_date_input = 2000-01-25_06:00:00
+ metgrid input_wrf.F first_date_nml = 2000-01-24_12:00:00
+d01 2000-01-25_06:00:00 Timing for input          0 s.
+d01 2000-01-25_06:00:00          flag_soil_layers read from met_em file is  1
+Using sfcprs3 to compute psfc
+d01 2000-01-25_06:00:00 Using inland lakes with average surface temperature
+ Assume Noah LSM input
+ LAND  CHANGE =            0
+ WATER CHANGE =            0
+d01 2000-01-25_06:00:00 Timing for processing          0 s.
+ LBC valid between these times 2000-01-25_00:00:00 and 2000-01-25_06:00:00
+d01 2000-01-25_06:00:00 Timing for output          0 s.
+d01 2000-01-25_06:00:00 Timing for loop #    4 =          0 s.
+  
+ -----------------------------------------------------------------------------
+  
+ Domain  1: Current date being processed: 2000-01-25_12:00:00.0000, which is loop #   5 out of    5
+ configflags%julyr, %julday, %gmt:        2000          25   12.0000000    
+d01 2000-01-25_12:00:00  Yes, this special data is acceptable to use: OUTPUT FROM METGRID V3.5.1
+d01 2000-01-25_12:00:00  Input data is acceptable to use: met_em.d01.2000-01-25_12:00:00.nc
+ metgrid input_wrf.F first_date_input = 2000-01-25_12:00:00
+ metgrid input_wrf.F first_date_nml = 2000-01-24_12:00:00
+d01 2000-01-25_12:00:00 Timing for input          0 s.
+d01 2000-01-25_12:00:00          flag_soil_layers read from met_em file is  1
+Using sfcprs3 to compute psfc
+d01 2000-01-25_12:00:00 Using inland lakes with average surface temperature
+ Assume Noah LSM input
+ LAND  CHANGE =            0
+ WATER CHANGE =            0
+d01 2000-01-25_12:00:00 Timing for processing          0 s.
+ LBC valid between these times 2000-01-25_06:00:00 and 2000-01-25_12:00:00
+d01 2000-01-25_12:00:00 Timing for output          0 s.
+d01 2000-01-25_12:00:00 Timing for loop #    5 =          0 s.
+ *************************************
+ Nesting domain
+ ids,ide,jds,jde            1          31           1          31
+ ims,ime,jms,jme           -4          21          -4          21
+ ips,ipe,jps,jpe            1          10           1          10
+ INTERMEDIATE domain
+ ids,ide,jds,jde           29          44          15          30
+ ims,ime,jms,jme           24          43          10          29
+ ips,ipe,jps,jpe           27          33          13          19
+ *************************************
+d01 2000-01-25_12:00:00  alloc_space_field: domain            2 ,               5800000  bytes allocated
+d01 2000-01-25_12:00:00  alloc_space_field: domain            2 ,              36604660  bytes allocated
+Time period #   1 to process = 2000-01-24_12:00:00.
+Time period #   2 to process = 2000-01-24_18:00:00.
+Time period #   3 to process = 2000-01-25_00:00:00.
+Time period #   4 to process = 2000-01-25_06:00:00.
+Time period #   5 to process = 2000-01-25_12:00:00.
+Total analysis times to input =    5.
+  
+ -----------------------------------------------------------------------------
+  
+ Domain  2: Current date being processed: 2000-01-24_12:00:00.0000, which is loop #   1 out of    5
+ configflags%julyr, %julday, %gmt:        2000          24   12.0000000    
+d02 2000-01-24_12:00:00  Yes, this special data is acceptable to use: OUTPUT FROM METGRID V3.5.1
+d02 2000-01-24_12:00:00  Input data is acceptable to use: met_em.d02.2000-01-24_12:00:00.nc
+ metgrid input_wrf.F first_date_input = 2000-01-24_12:00:00
+ metgrid input_wrf.F first_date_nml = 2000-01-24_12:00:00
+d02 2000-01-24_12:00:00 Timing for input          0 s.
+d02 2000-01-24_12:00:00          flag_soil_layers read from met_em file is  1
+Using sfcprs3 to compute psfc
+ using new automatic levels program
+           1   50.0000000       50.0000000      0.993814707    
+           2   64.0000000       114.000000      0.985950649       1.27999997    
+           3   81.5615997       195.561600      0.976014256       1.27440000    
+           4   103.369164       298.930756      0.963557541       1.26737535    
+           5   130.105835       429.036591      0.948093116       1.25865233    
+           6   162.366577       591.403198      0.929123759       1.24795771    
+           7   200.531372       791.934570      0.906191230       1.23505330    
+           8   244.605652       1036.54028      0.878942370       1.21978748    
+           9   294.054565       1330.59485      0.847207963       1.20215774    
+          10   347.683685       1678.27856      0.811077714       1.18237817    
+          11   403.635223       2081.91382      0.770949006       1.16092658    
+          12   459.557220       2541.47095      0.727525413       1.13854587    
+          13   512.947266       3054.41821      0.681755364       1.11617708    
+          14   564.242004       3618.66016      0.634503603       1.10000002    
+          15   620.666199       4239.32617      0.586030483       1.10000002    
+   25416.3906       4239.32617              48          15
+          16   641.729248       4881.05566      0.539505005    
+          17   641.729248       5522.78516      0.496368796    
+          18   641.729248       6164.51465      0.456375003    
+          19   641.729248       6806.24414      0.419294685    
+          20   641.729248       7447.97363      0.384915590    
+          21   641.729248       8089.70312      0.353040993    
+          22   641.729248       8731.43262      0.323488355    
+          23   641.729248       9373.16211      0.296088606    
+          24   641.729248       10014.8916      0.270684928    
+          25   641.729248       10656.6211      0.247131839    
+          26   641.729248       11298.3506      0.225294545    
+          27   641.729248       11940.0801      0.205048084    
+          28   641.729248       12581.8096      0.186276540    
+          29   641.729248       13223.5391      0.168872476    
+          30   641.729248       13865.2686      0.152736247    
+          31   641.729248       14506.9980      0.137775511    
+          32   641.729248       15148.7275      0.123904645    
+          33   641.729248       15790.4570      0.111044265    
+          34   641.729248       16432.1855       9.91207659E-02
+          35   641.729248       17073.9141       8.80658925E-02
+          36   641.729248       17715.6426       7.78163150E-02
+          37   641.729248       18357.3711       6.83134124E-02
+          38   641.729248       18999.0996       5.95027767E-02
+          39   641.729248       19640.8281       5.13339527E-02
+          40   641.729248       20282.5566       4.37602475E-02
+          41   641.729248       20924.2852       3.67382728E-02
+          42   641.729248       21566.0137       3.02278325E-02
+          43   641.729248       22207.7422       2.41916627E-02
+          44   641.729248       22849.4707       1.85952410E-02
+          45   641.729248       23491.1992       1.34064760E-02
+          46   641.729248       24132.9277       8.59571900E-03
+          47   641.729248       24774.6562       4.13541310E-03
+          48   641.729248       25416.3848       2.56990127E-08
+    1.0000    0.9938    0.9860    0.9760    0.9636    0.9481    0.9291    0.9062    0.8789    0.8472
+    0.8111    0.7709    0.7275    0.6818    0.6345    0.5860    0.5395    0.4964    0.4564    0.4193
+    0.3849    0.3530    0.3235    0.2961    0.2707    0.2471    0.2253    0.2050    0.1863    0.1689
+    0.1527    0.1378    0.1239    0.1110    0.0991    0.0881    0.0778    0.0683    0.0595    0.0513
+    0.0438    0.0367    0.0302    0.0242    0.0186    0.0134    0.0086    0.0041    0.0000
+Full level index =    1     Height =     0.0 m
+Full level index =    2     Height =    50.0 m      Thickness =   50.0 m
+Full level index =    3     Height =   113.9 m      Thickness =   63.9 m
+Full level index =    4     Height =   195.2 m      Thickness =   81.3 m
+Full level index =    5     Height =   298.0 m      Thickness =  102.8 m
+Full level index =    6     Height =   427.2 m      Thickness =  129.1 m
+Full level index =    7     Height =   587.8 m      Thickness =  160.7 m
+Full level index =    8     Height =   785.5 m      Thickness =  197.7 m
+Full level index =    9     Height =  1025.6 m      Thickness =  240.0 m
+Full level index =   10     Height =  1312.6 m      Thickness =  287.0 m
+Full level index =   11     Height =  1649.6 m      Thickness =  337.0 m
+Full level index =   12     Height =  2037.7 m      Thickness =  388.2 m
+Full level index =   13     Height =  2475.6 m      Thickness =  437.9 m
+Full level index =   14     Height =  2959.3 m      Thickness =  483.7 m
+Full level index =   15     Height =  3485.1 m      Thickness =  525.8 m
+Full level index =   16     Height =  4056.1 m      Thickness =  570.9 m
+Full level index =   17     Height =  4638.1 m      Thickness =  582.1 m
+Full level index =   18     Height =  5211.8 m      Thickness =  573.7 m
+Full level index =   19     Height =  5777.2 m      Thickness =  565.3 m
+Full level index =   20     Height =  6334.1 m      Thickness =  557.0 m
+Full level index =   21     Height =  6882.7 m      Thickness =  548.6 m
+Full level index =   22     Height =  7423.0 m      Thickness =  540.2 m
+Full level index =   23     Height =  7954.8 m      Thickness =  531.9 m
+Full level index =   24     Height =  8478.3 m      Thickness =  523.5 m
+Full level index =   25     Height =  8993.5 m      Thickness =  515.1 m
+Full level index =   26     Height =  9500.3 m      Thickness =  506.8 m
+Full level index =   27     Height =  9998.7 m      Thickness =  498.4 m
+Full level index =   28     Height = 10488.7 m      Thickness =  490.0 m
+Full level index =   29     Height = 10970.4 m      Thickness =  481.7 m
+Full level index =   30     Height = 11443.7 m      Thickness =  473.3 m
+Full level index =   31     Height = 11908.7 m      Thickness =  465.0 m
+Full level index =   32     Height = 12365.3 m      Thickness =  456.6 m
+Full level index =   33     Height = 12813.5 m      Thickness =  448.2 m
+Full level index =   34     Height = 13255.9 m      Thickness =  442.4 m
+Full level index =   35     Height = 13698.2 m      Thickness =  442.4 m
+Full level index =   36     Height = 14140.6 m      Thickness =  442.4 m
+Full level index =   37     Height = 14582.9 m      Thickness =  442.4 m
+Full level index =   38     Height = 15025.3 m      Thickness =  442.4 m
+Full level index =   39     Height = 15467.7 m      Thickness =  442.4 m
+Full level index =   40     Height = 15910.0 m      Thickness =  442.4 m
+Full level index =   41     Height = 16352.4 m      Thickness =  442.4 m
+Full level index =   42     Height = 16794.7 m      Thickness =  442.4 m
+Full level index =   43     Height = 17237.1 m      Thickness =  442.4 m
+Full level index =   44     Height = 17679.5 m      Thickness =  442.4 m
+Full level index =   45     Height = 18121.8 m      Thickness =  442.4 m
+Full level index =   46     Height = 18564.2 m      Thickness =  442.4 m
+Full level index =   47     Height = 19006.5 m      Thickness =  442.4 m
+Full level index =   48     Height = 19448.9 m      Thickness =  442.4 m
+Full level index =   49     Height = 19891.3 m      Thickness =  442.4 m
+p_top =   5000. Pa, dzbot =   50.0 m, dzstretch_s/u =   1.30  1.10
+d02 2000-01-24_12:00:00 Using inland lakes with average surface temperature
+ Assume Noah LSM input
+ LAND  CHANGE =            0
+ WATER CHANGE =            0
+d02 2000-01-24_12:00:00 Timing for processing          0 s.
+d02 2000-01-24_12:00:00 Timing for output          0 s.
+d02 2000-01-24_12:00:00 Timing for loop #    1 =          0 s.
+d01 2000-01-25_12:00:00 real_em: SUCCESS COMPLETE REAL_EM INIT
+MODEL OUTPUT
+taskid: 0 hostname: 592039407ca1
+Quilting with   1 groups of   0 I/O tasks.
+ Ntasks in X            1 , ntasks in Y            3
+  Domain # 1: dx = 30000.000 m
+  Domain # 2: dx = 10000.000 m
+WRF V4.7.1 MODEL
+git commit 48489fa8bf2fe2e2bbd48a947a4a982a9bc0145c
+ *************************************
+ Parent domain
+ ids,ide,jds,jde            1          74           1          61
+ ims,ime,jms,jme           -4          79          -4          27
+ ips,ipe,jps,jpe            1          74           1          20
+ *************************************
+DYNAMICS OPTION: Eulerian Mass Coordinate
+   alloc_space_field: domain            1 ,             114202076  bytes allocated
+  med_initialdata_input: calling input_input
+   Input data is acceptable to use: wrfinput_d01
+ CURRENT DATE          = 2000-01-24_12:00:00
+ SIMULATION START DATE = 2000-01-24_12:00:00
+Timing for processing wrfinput file (stream 0) for domain        1:    0.14385 elapsed seconds
+Max map factor in domain 1 =  1.03. Scale the dt in the model accordingly.
+ D01: Time step                              =    180.000000      (s)
+ D01: Grid Distance                          =    30.0000000      (km)
+ D01: Grid Distance Ratio dt/dx              =    6.00000000      (s/km)
+ D01: Ratio Including Maximum Map Factor     =    6.16505098      (s/km)
+ D01: NML defined reasonable_time_step_ratio =    6.00000000
+INPUT LandUse = "USGS"
+ LANDUSE TYPE = "USGS" FOUND          61  CATEGORIES           2  SEASONS WATER CATEGORY =           16  SNOW CATEGORY =           24
+ SOIL TEXTURE CLASSIFICATION = STAS FOUND          19  CATEGORIES
+ *************************************
+ Nesting domain
+ ids,ide,jds,jde            1          31           1          31
+ ims,ime,jms,jme           -4          36          -4          21
+ ips,ipe,jps,jpe            1          31           1          10
+ INTERMEDIATE domain
+ ids,ide,jds,jde           29          44          15          30
+ ims,ime,jms,jme           24          49          10          29
+ ips,ipe,jps,jpe           27          46          13          19
+ *************************************
+d01 2000-01-24_12:00:00  alloc_space_field: domain            2 ,               7540000  bytes allocated
+d01 2000-01-24_12:00:00  alloc_space_field: domain            2 ,              49825028  bytes allocated
+d01 2000-01-24_12:00:00 *** Initializing nest domain # 2 from an input file. ***
+d01 2000-01-24_12:00:00 med_initialdata_input: calling input_input
+d01 2000-01-24_12:00:00  Input data is acceptable to use: wrfinput_d02
+Timing for processing wrfinput file (stream 0) for domain        2:    0.04022 elapsed seconds
+INPUT LandUse = "USGS"
+ LANDUSE TYPE = "USGS" FOUND          61  CATEGORIES           2  SEASONS WATER CATEGORY =           16  SNOW CATEGORY =           24
+ SOIL TEXTURE CLASSIFICATION = STAS FOUND          19  CATEGORIES
+INPUT LandUse = "USGS"
+ LANDUSE TYPE = "USGS" FOUND          61  CATEGORIES           2  SEASONS WATER CATEGORY =           16  SNOW CATEGORY =           24
+ SOIL TEXTURE CLASSIFICATION = STAS FOUND          19  CATEGORIES
+Max map factor in domain 1 =  1.03. Scale the dt in the model accordingly.
+ D01: Time step                              =    180.000000      (s)
+ D01: Grid Distance                          =    30.0000000      (km)
+ D01: Grid Distance Ratio dt/dx              =    6.00000000      (s/km)
+ D01: Ratio Including Maximum Map Factor     =    6.16505098      (s/km)
+ D01: NML defined reasonable_time_step_ratio =    6.00000000
+INPUT LandUse = "USGS"
+ LANDUSE TYPE = "USGS" FOUND          61  CATEGORIES           2  SEASONS WATER CATEGORY =           16  SNOW CATEGORY =           24
+ SOIL TEXTURE CLASSIFICATION = STAS FOUND          19  CATEGORIES
+Timing for Writing wrfout_d01_2000-01-24_12:00:00 for domain        1:    0.61626 elapsed seconds
+d01 2000-01-24_12:00:00  Input data is acceptable to use: wrfbdy_d01
+Timing for processing lateral boundary for domain        1:    0.13912 elapsed seconds
+ Tile Strategy is not specified. Assuming 1D-Y
+WRF TILE   1 IS      1 IE     74 JS      1 JE     20
+WRF NUMBER OF TILES =   1
+d01 2000-01-24_12:00:00  ----------------------------------------
+d01 2000-01-24_12:00:00  W-DAMPING  BEGINS AT W-COURANT NUMBER =    1.00000000
+d01 2000-01-24_12:00:00  ----------------------------------------
+Timing for Writing wrfout_d02_2000-01-24_12:00:00 for domain        2:    0.49590 elapsed seconds
+ Tile Strategy is not specified. Assuming 1D-Y
+WRF TILE   1 IS      1 IE     31 JS      1 JE     10
+WRF NUMBER OF TILES =   1
+Timing for main: time 2000-01-24_12:01:00 on domain   2:    1.17218 elapsed seconds
+Timing for main: time 2000-01-24_12:02:00 on domain   2:    0.31735 elapsed seconds
+Timing for main: time 2000-01-24_12:03:00 on domain   2:    0.31561 elapsed seconds
+Timing for main: time 2000-01-24_12:03:00 on domain   1:    8.93046 elapsed seconds
+Timing for main: time 2000-01-24_12:04:00 on domain   2:    0.31768 elapsed seconds
+Timing for main: time 2000-01-24_12:05:00 on domain   2:    0.32113 elapsed seconds
+Timing for main: time 2000-01-24_12:06:00 on domain   2:    0.31542 elapsed seconds
+Timing for main: time 2000-01-24_12:06:00 on domain   1:    2.99234 elapsed seconds
+Timing for main: time 2000-01-24_12:07:00 on domain   2:    0.68330 elapsed seconds
+Timing for main: time 2000-01-24_12:08:00 on domain   2:    0.31533 elapsed seconds
+Timing for main: time 2000-01-24_12:09:00 on domain   2:    0.31560 elapsed seconds
+Timing for Writing wrfout_d02_2000-01-24_12:09:00 for domain        2:    0.04483 elapsed seconds
+Timing for main: time 2000-01-24_12:09:00 on domain   1:    6.62704 elapsed seconds
+Timing for Writing wrfout_d01_2000-01-24_12:09:00 for domain        1:    0.14409 elapsed seconds
+d01 2000-01-24_12:09:00 wrf: SUCCESS COMPLETE WRF
+46832 -rw-r--r-- 1 wrfuser wrf 47953188 Jan 16 19:56 wrfout_d01_2000-01-24_12:00:00
+ 9716 -rw-r--r-- 1 wrfuser wrf  9948132 Jan 16 19:56 wrfout_d02_2000-01-24_12:00:00
+0 -rw-r--r-- 1 wrfuser wrf 0 Jan 16 19:56 SUCCESS_RUN_REAL_em_real_34_em_realG_kiaps1NE
+0 -rw-r--r-- 1 wrfuser wrf 0 Jan 16 19:56 SUCCESS_RUN_WRF_d01_em_real_34_em_realG_kiaps1NE
+Fri Jan 16 19:56:47 UTC 2026
+Fri Jan 16 19:56:47 UTC 2026
+======================================================================
+RUN WRF test_019m for em_real 34 em_realG, NML = kiaps2
+9 = STATUS test_019m em em_real 34 kiaps2
+Fri Jan 16 19:56:54 UTC 2026
+PRE-PROC OUTPUT
+ starting wrf task            5  of            8
+ starting wrf task            7  of            8
+ starting wrf task            2  of            8
+ starting wrf task            0  of            8
+ starting wrf task            3  of            8
+ starting wrf task            4  of            8
+ starting wrf task            1  of            8
+ starting wrf task            6  of            8
+taskid: 0 hostname: 592039407ca1
+ Ntasks in X            2 , ntasks in Y            4
+  Domain # 1: dx = 30000.000 m
+REAL_EM V4.7.1 PREPROCESSOR
+git commit 48489fa8bf2fe2e2bbd48a947a4a982a9bc0145c
+ *************************************
+ Parent domain
+ ids,ide,jds,jde            1          74           1          61
+ ims,ime,jms,jme           -4          44          -4          22
+ ips,ipe,jps,jpe            1          37           1          15
+ *************************************
+DYNAMICS OPTION: Eulerian Mass Coordinate
+   alloc_space_field: domain            1 ,              69984072  bytes allocated
+Time period #   1 to process = 2000-01-24_12:00:00.
+Time period #   2 to process = 2000-01-24_18:00:00.
+Time period #   3 to process = 2000-01-25_00:00:00.
+Time period #   4 to process = 2000-01-25_06:00:00.
+Time period #   5 to process = 2000-01-25_12:00:00.
+Total analysis times to input =    5.
+  
+ -----------------------------------------------------------------------------
+  
+ Domain  1: Current date being processed: 2000-01-24_12:00:00.0000, which is loop #   1 out of    5
+ configflags%julyr, %julday, %gmt:        2000          24   12.0000000    
+d01 2000-01-24_12:00:00  Yes, this special data is acceptable to use: OUTPUT FROM METGRID V3.5.1
+d01 2000-01-24_12:00:00  Input data is acceptable to use: met_em.d01.2000-01-24_12:00:00.nc
+ metgrid input_wrf.F first_date_input = 2000-01-24_12:00:00
+ metgrid input_wrf.F first_date_nml = 2000-01-24_12:00:00
+d01 2000-01-24_12:00:00 Timing for input          0 s.
+d01 2000-01-24_12:00:00          flag_soil_layers read from met_em file is  1
+Max map factor in domain 1 =  1.03. Scale the dt in the model accordingly.
+Using sfcprs3 to compute psfc
+ using new automatic levels program
+           1   50.0000000       50.0000000      0.993814707    
+           2   64.0000000       114.000000      0.985950649       1.27999997    
+           3   81.5615997       195.561600      0.976014256       1.27440000    
+           4   103.369164       298.930756      0.963557541       1.26737535    
+           5   130.105835       429.036591      0.948093116       1.25865233    
+           6   162.366577       591.403198      0.929123759       1.24795771    
+           7   200.531372       791.934570      0.906191230       1.23505330    
+           8   244.605652       1036.54028      0.878942370       1.21978748    
+           9   294.054565       1330.59485      0.847207963       1.20215774    
+          10   347.683685       1678.27856      0.811077714       1.18237817    
+          11   403.635223       2081.91382      0.770949006       1.16092658    
+          12   459.557220       2541.47095      0.727525413       1.13854587    
+          13   512.947266       3054.41821      0.681755364       1.11617708    
+          14   564.242004       3618.66016      0.634503603       1.10000002    
+          15   620.666199       4239.32617      0.586030483       1.10000002    
+   25416.3906       4239.32617              48          15
+          16   641.729248       4881.05566      0.539505005    
+          17   641.729248       5522.78516      0.496368796    
+          18   641.729248       6164.51465      0.456375003    
+          19   641.729248       6806.24414      0.419294685    
+          20   641.729248       7447.97363      0.384915590    
+          21   641.729248       8089.70312      0.353040993    
+          22   641.729248       8731.43262      0.323488355    
+          23   641.729248       9373.16211      0.296088606    
+          24   641.729248       10014.8916      0.270684928    
+          25   641.729248       10656.6211      0.247131839    
+          26   641.729248       11298.3506      0.225294545    
+          27   641.729248       11940.0801      0.205048084    
+          28   641.729248       12581.8096      0.186276540    
+          29   641.729248       13223.5391      0.168872476    
+          30   641.729248       13865.2686      0.152736247    
+          31   641.729248       14506.9980      0.137775511    
+          32   641.729248       15148.7275      0.123904645    
+          33   641.729248       15790.4570      0.111044265    
+          34   641.729248       16432.1855       9.91207659E-02
+          35   641.729248       17073.9141       8.80658925E-02
+          36   641.729248       17715.6426       7.78163150E-02
+          37   641.729248       18357.3711       6.83134124E-02
+          38   641.729248       18999.0996       5.95027767E-02
+          39   641.729248       19640.8281       5.13339527E-02
+          40   641.729248       20282.5566       4.37602475E-02
+          41   641.729248       20924.2852       3.67382728E-02
+          42   641.729248       21566.0137       3.02278325E-02
+          43   641.729248       22207.7422       2.41916627E-02
+          44   641.729248       22849.4707       1.85952410E-02
+          45   641.729248       23491.1992       1.34064760E-02
+          46   641.729248       24132.9277       8.59571900E-03
+          47   641.729248       24774.6562       4.13541310E-03
+          48   641.729248       25416.3848       2.56990127E-08
+    1.0000    0.9938    0.9860    0.9760    0.9636    0.9481    0.9291    0.9062    0.8789    0.8472
+    0.8111    0.7709    0.7275    0.6818    0.6345    0.5860    0.5395    0.4964    0.4564    0.4193
+    0.3849    0.3530    0.3235    0.2961    0.2707    0.2471    0.2253    0.2050    0.1863    0.1689
+    0.1527    0.1378    0.1239    0.1110    0.0991    0.0881    0.0778    0.0683    0.0595    0.0513
+    0.0438    0.0367    0.0302    0.0242    0.0186    0.0134    0.0086    0.0041    0.0000
+Full level index =    1     Height =     0.0 m
+Full level index =    2     Height =    50.0 m      Thickness =   50.0 m
+Full level index =    3     Height =   113.9 m      Thickness =   63.9 m
+Full level index =    4     Height =   195.2 m      Thickness =   81.3 m
+Full level index =    5     Height =   298.0 m      Thickness =  102.8 m
+Full level index =    6     Height =   427.2 m      Thickness =  129.1 m
+Full level index =    7     Height =   587.8 m      Thickness =  160.7 m
+Full level index =    8     Height =   785.5 m      Thickness =  197.7 m
+Full level index =    9     Height =  1025.6 m      Thickness =  240.0 m
+Full level index =   10     Height =  1312.6 m      Thickness =  287.0 m
+Full level index =   11     Height =  1649.6 m      Thickness =  337.0 m
+Full level index =   12     Height =  2037.7 m      Thickness =  388.2 m
+Full level index =   13     Height =  2475.6 m      Thickness =  437.9 m
+Full level index =   14     Height =  2959.3 m      Thickness =  483.7 m
+Full level index =   15     Height =  3485.1 m      Thickness =  525.8 m
+Full level index =   16     Height =  4056.1 m      Thickness =  570.9 m
+Full level index =   17     Height =  4638.1 m      Thickness =  582.1 m
+Full level index =   18     Height =  5211.8 m      Thickness =  573.7 m
+Full level index =   19     Height =  5777.2 m      Thickness =  565.3 m
+Full level index =   20     Height =  6334.1 m      Thickness =  557.0 m
+Full level index =   21     Height =  6882.7 m      Thickness =  548.6 m
+Full level index =   22     Height =  7423.0 m      Thickness =  540.2 m
+Full level index =   23     Height =  7954.8 m      Thickness =  531.9 m
+Full level index =   24     Height =  8478.3 m      Thickness =  523.5 m
+Full level index =   25     Height =  8993.5 m      Thickness =  515.1 m
+Full level index =   26     Height =  9500.3 m      Thickness =  506.8 m
+Full level index =   27     Height =  9998.7 m      Thickness =  498.4 m
+Full level index =   28     Height = 10488.7 m      Thickness =  490.0 m
+Full level index =   29     Height = 10970.4 m      Thickness =  481.7 m
+Full level index =   30     Height = 11443.7 m      Thickness =  473.3 m
+Full level index =   31     Height = 11908.7 m      Thickness =  465.0 m
+Full level index =   32     Height = 12365.3 m      Thickness =  456.6 m
+Full level index =   33     Height = 12813.5 m      Thickness =  448.2 m
+Full level index =   34     Height = 13255.9 m      Thickness =  442.4 m
+Full level index =   35     Height = 13698.2 m      Thickness =  442.4 m
+Full level index =   36     Height = 14140.6 m      Thickness =  442.4 m
+Full level index =   37     Height = 14582.9 m      Thickness =  442.4 m
+Full level index =   38     Height = 15025.3 m      Thickness =  442.4 m
+Full level index =   39     Height = 15467.7 m      Thickness =  442.4 m
+Full level index =   40     Height = 15910.0 m      Thickness =  442.4 m
+Full level index =   41     Height = 16352.4 m      Thickness =  442.4 m
+Full level index =   42     Height = 16794.7 m      Thickness =  442.4 m
+Full level index =   43     Height = 17237.1 m      Thickness =  442.4 m
+Full level index =   44     Height = 17679.5 m      Thickness =  442.4 m
+Full level index =   45     Height = 18121.8 m      Thickness =  442.4 m
+Full level index =   46     Height = 18564.2 m      Thickness =  442.4 m
+Full level index =   47     Height = 19006.5 m      Thickness =  442.4 m
+Full level index =   48     Height = 19448.9 m      Thickness =  442.4 m
+Full level index =   49     Height = 19891.3 m      Thickness =  442.4 m
+p_top =   5000. Pa, dzbot =   50.0 m, dzstretch_s/u =   1.30  1.10
+d01 2000-01-24_12:00:00 Using inland lakes with average surface temperature
+ Assume Noah LSM input
+ LAND  CHANGE =            0
+ WATER CHANGE =            0
+d01 2000-01-24_12:00:00 Timing for processing          0 s.
+d01 2000-01-24_12:00:00 Timing for output          0 s.
+d01 2000-01-24_12:00:00 Timing for loop #    1 =          1 s.
+  
+ -----------------------------------------------------------------------------
+  
+ Domain  1: Current date being processed: 2000-01-24_18:00:00.0000, which is loop #   2 out of    5
+ configflags%julyr, %julday, %gmt:        2000          24   18.0000000    
+d01 2000-01-24_18:00:00  Yes, this special data is acceptable to use: OUTPUT FROM METGRID V3.5.1
+d01 2000-01-24_18:00:00  Input data is acceptable to use: met_em.d01.2000-01-24_18:00:00.nc
+ metgrid input_wrf.F first_date_input = 2000-01-24_18:00:00
+ metgrid input_wrf.F first_date_nml = 2000-01-24_12:00:00
+d01 2000-01-24_18:00:00 Timing for input          0 s.
+d01 2000-01-24_18:00:00          flag_soil_layers read from met_em file is  1
+Using sfcprs3 to compute psfc
+d01 2000-01-24_18:00:00 Using inland lakes with average surface temperature
+ Assume Noah LSM input
+ LAND  CHANGE =            0
+ WATER CHANGE =            0
+d01 2000-01-24_18:00:00 Timing for processing          0 s.
+ LBC valid between these times 2000-01-24_12:00:00 and 2000-01-24_18:00:00
+d01 2000-01-24_18:00:00 Timing for output          0 s.
+d01 2000-01-24_18:00:00 Timing for loop #    2 =          0 s.
+  
+ -----------------------------------------------------------------------------
+  
+ Domain  1: Current date being processed: 2000-01-25_00:00:00.0000, which is loop #   3 out of    5
+ configflags%julyr, %julday, %gmt:        2000          25   0.00000000    
+d01 2000-01-25_00:00:00  Yes, this special data is acceptable to use: OUTPUT FROM METGRID V3.5.1
+d01 2000-01-25_00:00:00  Input data is acceptable to use: met_em.d01.2000-01-25_00:00:00.nc
+ metgrid input_wrf.F first_date_input = 2000-01-25_00:00:00
+ metgrid input_wrf.F first_date_nml = 2000-01-24_12:00:00
+d01 2000-01-25_00:00:00 Timing for input          0 s.
+d01 2000-01-25_00:00:00          flag_soil_layers read from met_em file is  1
+Using sfcprs3 to compute psfc
+d01 2000-01-25_00:00:00 Using inland lakes with average surface temperature
+ Assume Noah LSM input
+ LAND  CHANGE =            0
+ WATER CHANGE =            0
+d01 2000-01-25_00:00:00 Timing for processing          0 s.
+ LBC valid between these times 2000-01-24_18:00:00 and 2000-01-25_00:00:00
+d01 2000-01-25_00:00:00 Timing for output          0 s.
+d01 2000-01-25_00:00:00 Timing for loop #    3 =          0 s.
+  
+ -----------------------------------------------------------------------------
+  
+ Domain  1: Current date being processed: 2000-01-25_06:00:00.0000, which is loop #   4 out of    5
+ configflags%julyr, %julday, %gmt:        2000          25   6.00000000    
+d01 2000-01-25_06:00:00  Yes, this special data is acceptable to use: OUTPUT FROM METGRID V3.5.1
+d01 2000-01-25_06:00:00  Input data is acceptable to use: met_em.d01.2000-01-25_06:00:00.nc
+ metgrid input_wrf.F first_date_input = 2000-01-25_06:00:00
+ metgrid input_wrf.F first_date_nml = 2000-01-24_12:00:00
+d01 2000-01-25_06:00:00 Timing for input          0 s.
+d01 2000-01-25_06:00:00          flag_soil_layers read from met_em file is  1
+Using sfcprs3 to compute psfc
+d01 2000-01-25_06:00:00 Using inland lakes with average surface temperature
+ Assume Noah LSM input
+ LAND  CHANGE =            0
+ WATER CHANGE =            0
+d01 2000-01-25_06:00:00 Timing for processing          0 s.
+ LBC valid between these times 2000-01-25_00:00:00 and 2000-01-25_06:00:00
+d01 2000-01-25_06:00:00 Timing for output          0 s.
+d01 2000-01-25_06:00:00 Timing for loop #    4 =          0 s.
+  
+ -----------------------------------------------------------------------------
+  
+ Domain  1: Current date being processed: 2000-01-25_12:00:00.0000, which is loop #   5 out of    5
+ configflags%julyr, %julday, %gmt:        2000          25   12.0000000    
+d01 2000-01-25_12:00:00  Yes, this special data is acceptable to use: OUTPUT FROM METGRID V3.5.1
+d01 2000-01-25_12:00:00  Input data is acceptable to use: met_em.d01.2000-01-25_12:00:00.nc
+ metgrid input_wrf.F first_date_input = 2000-01-25_12:00:00
+ metgrid input_wrf.F first_date_nml = 2000-01-24_12:00:00
+d01 2000-01-25_12:00:00 Timing for input          0 s.
+d01 2000-01-25_12:00:00          flag_soil_layers read from met_em file is  1
+Using sfcprs3 to compute psfc
+d01 2000-01-25_12:00:00 Using inland lakes with average surface temperature
+ Assume Noah LSM input
+ LAND  CHANGE =            0
+ WATER CHANGE =            0
+d01 2000-01-25_12:00:00 Timing for processing          0 s.
+ LBC valid between these times 2000-01-25_06:00:00 and 2000-01-25_12:00:00
+d01 2000-01-25_12:00:00 Timing for output          0 s.
+d01 2000-01-25_12:00:00 Timing for loop #    5 =          0 s.
+d01 2000-01-25_12:00:00 real_em: SUCCESS COMPLETE REAL_EM INIT
+MODEL OUTPUT
+taskid: 0 hostname: 592039407ca1
+Quilting with   1 groups of   0 I/O tasks.
+ Ntasks in X            1 , ntasks in Y            3
+  Domain # 1: dx = 30000.000 m
+WRF V4.7.1 MODEL
+git commit 48489fa8bf2fe2e2bbd48a947a4a982a9bc0145c
+ *************************************
+ Parent domain
+ ids,ide,jds,jde            1          74           1          61
+ ims,ime,jms,jme           -4          79          -4          27
+ ips,ipe,jps,jpe            1          74           1          20
+ *************************************
+DYNAMICS OPTION: Eulerian Mass Coordinate
+   alloc_space_field: domain            1 ,             124308956  bytes allocated
+  med_initialdata_input: calling input_input
+   Input data is acceptable to use: wrfinput_d01
+ CURRENT DATE          = 2000-01-24_12:00:00
+ SIMULATION START DATE = 2000-01-24_12:00:00
+Timing for processing wrfinput file (stream 0) for domain        1:    0.17439 elapsed seconds
+Max map factor in domain 1 =  1.03. Scale the dt in the model accordingly.
+ D01: Time step                              =    180.000000      (s)
+ D01: Grid Distance                          =    30.0000000      (km)
+ D01: Grid Distance Ratio dt/dx              =    6.00000000      (s/km)
+ D01: Ratio Including Maximum Map Factor     =    6.16505098      (s/km)
+ D01: NML defined reasonable_time_step_ratio =    6.00000000
+INPUT LandUse = "USGS"
+ LANDUSE TYPE = "USGS" FOUND          61  CATEGORIES           2  SEASONS WATER CATEGORY =           16  SNOW CATEGORY =           24
+ SOIL TEXTURE CLASSIFICATION = STAS FOUND          19  CATEGORIES
+ USING DEFAULT URBAN MORPHOLOGY
+ Sample of Urban settings
+ TSURFACE0_URB   288.058807
+ TDEEP0_URB   292.853699
+ IVGTYP           1
+ TR_URB2D   288.058807
+ TB_URB2D   288.058807
+ TG_URB2D   288.058807
+ TC_URB2D   288.058807
+ QC_URB2D   9.99999978E-03
+ XXXR_URB2D   0.00000000
+ SH_URB2D   0.00000000
+ LH_URB2D   0.00000000
+ G_URB2D   0.00000000
+ RN_URB2D   0.00000000
+ TS_URB2D   288.058807
+ LF_AC_URB3D   0.00000000
+ SF_AC_URB3D   0.00000000
+ CM_AC_URB3D   0.00000000
+ SFVENT_URB3D   0.00000000
+ LFVENT_URB3D   0.00000000
+ FRC_URB2D  0.899999976
+ UTYPE_URB2D           2
+ I          38 J           5
+ num_urban_hi          15
+Timing for Writing wrfout_d01_2000-01-24_12:00:00 for domain        1:    0.60318 elapsed seconds
+d01 2000-01-24_12:00:00  Input data is acceptable to use: wrfbdy_d01
+Timing for processing lateral boundary for domain        1:    0.14080 elapsed seconds
+ Tile Strategy is not specified. Assuming 1D-Y
+WRF TILE   1 IS      1 IE     74 JS      1 JE     20
+WRF NUMBER OF TILES =   1
+21784 -rw-r--r-- 1 wrfuser wrf 22305916 Jan 16 19:56 wrfout_d01_2000-01-24_12:00:00
+0 -rw-r--r-- 1 wrfuser wrf 0 Jan 16 19:56 FAIL_RUN_WRF_d01_em_real_34_em_realG_kiaps2
+0 -rw-r--r-- 1 wrfuser wrf 0 Jan 16 19:56 SUCCESS_RUN_REAL_em_real_34_em_realG_kiaps2
+Fri Jan 16 19:56:54 UTC 2026
+Fri Jan 16 19:56:54 UTC 2026
+test_019m
+Fri Jan 16 19:57:05 UTC 2026
+test_019m
+Fri Jan 16 19:57:05 UTC 2026
+Fri Jan 16 20:30:09 UTC 2026
+Current Working Directory
+/var/lib/jenkins/workspace/WRF-Feature-Regression-Test/3312/terraform
+LISTING OF FILES
+.:
+total 488
+  8 -rw-rw-r-- 1 jenkins jenkins   4262 Jan 16 20:30 email_01.txt
+192 -rwxrwxr-x 1 jenkins jenkins 102761 Jan 16 20:30 last_only_once.csh
+ 36 -rw-rw-r-- 1 jenkins jenkins  34077 Jan 16 20:30 part.sh
+  4 -rwxrwxr-x 1 jenkins jenkins    401 Jan 16 20:30 single_end.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   1144 Jan 16 20:30 single_init.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   1127 Jan 16 20:30 test_000m.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2133 Jan 16 20:30 test_001m.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2130 Jan 16 20:30 test_001s.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2522 Jan 16 20:30 test_002m.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2330 Jan 16 20:30 test_003m.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2138 Jan 16 20:30 test_003o.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2120 Jan 16 20:30 test_003s.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2331 Jan 16 20:30 test_004m.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2139 Jan 16 20:30 test_004o.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2121 Jan 16 20:30 test_004s.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2335 Jan 16 20:30 test_005m.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2143 Jan 16 20:30 test_005o.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2125 Jan 16 20:30 test_005s.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2336 Jan 16 20:30 test_006m.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2144 Jan 16 20:30 test_006o.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2126 Jan 16 20:30 test_006s.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2343 Jan 16 20:30 test_007m.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2152 Jan 16 20:30 test_007o.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2134 Jan 16 20:30 test_007s.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2206 Jan 16 20:30 test_008m.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2221 Jan 16 20:30 test_008o.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2203 Jan 16 20:30 test_008s.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2157 Jan 16 20:30 test_009m.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2172 Jan 16 20:30 test_009o.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2154 Jan 16 20:30 test_009s.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2340 Jan 16 20:30 test_010m.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2148 Jan 16 20:30 test_010o.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2130 Jan 16 20:30 test_010s.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2208 Jan 16 20:30 test_011m.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2223 Jan 16 20:30 test_011o.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2205 Jan 16 20:30 test_011s.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2119 Jan 16 20:30 test_012m.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2120 Jan 16 20:30 test_013m.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2135 Jan 16 20:30 test_013o.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2117 Jan 16 20:30 test_013s.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2169 Jan 16 20:30 test_014s.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2334 Jan 16 20:30 test_015m.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2142 Jan 16 20:30 test_015o.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2124 Jan 16 20:30 test_015s.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2331 Jan 16 20:30 test_016m.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2139 Jan 16 20:30 test_016o.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2121 Jan 16 20:30 test_016s.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2327 Jan 16 20:30 test_017m.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2135 Jan 16 20:30 test_017o.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2117 Jan 16 20:30 test_017s.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2327 Jan 16 20:30 test_018m.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2135 Jan 16 20:30 test_018o.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2117 Jan 16 20:30 test_018s.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2338 Jan 16 20:30 test_019m.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2146 Jan 16 20:30 test_019o.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2128 Jan 16 20:30 test_019s.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2351 Jan 16 20:30 test_020m.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2141 Jan 16 20:30 test_020s.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2330 Jan 16 20:30 test_021m.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2138 Jan 16 20:30 test_021o.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2120 Jan 16 20:30 test_021s.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2328 Jan 16 20:30 test_022m.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2136 Jan 16 20:30 test_022o.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2118 Jan 16 20:30 test_022s.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2197 Jan 16 20:30 test_023m.csh
+  4 -rwxrwxr-x 1 jenkins jenkins   2194 Jan 16 20:30 test_023s.csh
+LISTING OF FILES in /tmp/coop-repo_3312/wrf-coop
+/tmp/raw_output_3312/OUTPUT_19/home/ubuntu/wrf-stuff/wrf-coop/OUTPUT:
+total 0
+0 -rw-r--r-- 1 root root 0 Jan 16 19:58 FAIL_RUN_WRF_d01_em_real_32_em_realG_kiaps2
+0 -rw-r--r-- 1 root root 0 Jan 16 19:57 FAIL_RUN_WRF_d01_em_real_33_em_realG_kiaps2
+0 -rw-r--r-- 1 root root 0 Jan 16 19:56 FAIL_RUN_WRF_d01_em_real_34_em_realG_kiaps2
+0 -rw-r--r-- 1 root root 0 Jan 16 19:57 SUCCESS_BUILD_WRF_em_real_32
+0 -rw-r--r-- 1 root root 0 Jan 16 19:56 SUCCESS_BUILD_WRF_em_real_33
+0 -rw-r--r-- 1 root root 0 Jan 16 19:56 SUCCESS_BUILD_WRF_em_real_34
+0 -rw-r--r-- 1 root root 0 Jan 16 19:57 SUCCESS_RUN_REAL_em_real_32_em_realG_kiaps1NE
+0 -rw-r--r-- 1 root root 0 Jan 16 19:58 SUCCESS_RUN_REAL_em_real_32_em_realG_kiaps2
+0 -rw-r--r-- 1 root root 0 Jan 16 19:56 SUCCESS_RUN_REAL_em_real_33_em_realG_kiaps1NE
+0 -rw-r--r-- 1 root root 0 Jan 16 19:57 SUCCESS_RUN_REAL_em_real_33_em_realG_kiaps2
+0 -rw-r--r-- 1 root root 0 Jan 16 19:56 SUCCESS_RUN_REAL_em_real_34_em_realG_kiaps1NE
+0 -rw-r--r-- 1 root root 0 Jan 16 19:56 SUCCESS_RUN_REAL_em_real_34_em_realG_kiaps2
+0 -rw-r--r-- 1 root root 0 Jan 16 19:58 SUCCESS_RUN_WRF_d01_em_real_32_em_realG_kiaps1NE
+0 -rw-r--r-- 1 root root 0 Jan 16 19:57 SUCCESS_RUN_WRF_d01_em_real_33_em_realG_kiaps1NE
+0 -rw-r--r-- 1 root root 0 Jan 16 19:56 SUCCESS_RUN_WRF_d01_em_real_34_em_realG_kiaps1NE
+SUCCESS_RUN_WRF_d01_em_real_32_em_realG_kiaps1NE vs SUCCESS_RUN_WRF_d01_em_real_33_em_realG_kiaps1NE status = 0
+SUCCESS_RUN_WRF_d01_em_real_32_em_realG_kiaps1NE vs SUCCESS_RUN_WRF_d01_em_real_34_em_realG_kiaps1NE status = 0
+Fri Jan 16 20:30:09 UTC 2026
+total 0
+0 -rw-r--r-- 1 root root 0 Jan 16 19:58 FAIL_RUN_WRF_d01_em_real_32_em_realG_kiaps2
+0 -rw-r--r-- 1 root root 0 Jan 16 19:57 FAIL_RUN_WRF_d01_em_real_33_em_realG_kiaps2
+0 -rw-r--r-- 1 root root 0 Jan 16 19:56 FAIL_RUN_WRF_d01_em_real_34_em_realG_kiaps2
+0 -rw-r--r-- 1 root root 0 Jan 16 19:57 SUCCESS_BUILD_WRF_em_real_32
+0 -rw-r--r-- 1 root root 0 Jan 16 19:56 SUCCESS_BUILD_WRF_em_real_33
+0 -rw-r--r-- 1 root root 0 Jan 16 19:56 SUCCESS_BUILD_WRF_em_real_34
+0 -rw-r--r-- 1 root root 0 Jan 16 19:57 SUCCESS_RUN_REAL_em_real_32_em_realG_kiaps1NE
+0 -rw-r--r-- 1 root root 0 Jan 16 19:58 SUCCESS_RUN_REAL_em_real_32_em_realG_kiaps2
+0 -rw-r--r-- 1 root root 0 Jan 16 19:56 SUCCESS_RUN_REAL_em_real_33_em_realG_kiaps1NE
+0 -rw-r--r-- 1 root root 0 Jan 16 19:57 SUCCESS_RUN_REAL_em_real_33_em_realG_kiaps2
+0 -rw-r--r-- 1 root root 0 Jan 16 19:56 SUCCESS_RUN_REAL_em_real_34_em_realG_kiaps1NE
+0 -rw-r--r-- 1 root root 0 Jan 16 19:56 SUCCESS_RUN_REAL_em_real_34_em_realG_kiaps2
+0 -rw-r--r-- 1 root root 0 Jan 16 19:58 SUCCESS_RUN_WRF_d01_em_real_32_em_realG_kiaps1NE
+0 -rw-r--r-- 1 root root 0 Jan 16 19:57 SUCCESS_RUN_WRF_d01_em_real_33_em_realG_kiaps1NE
+0 -rw-r--r-- 1 root root 0 Jan 16 19:56 SUCCESS_RUN_WRF_d01_em_real_34_em_realG_kiaps1NE

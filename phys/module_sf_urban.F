@@ -424,7 +424,8 @@ use module_model_constants, only :  piconst
    REAL(Kind = 8) :: DELEVGDTVG,DELEVGDTT,DELETDTB,DELETDTG,DELETDTVG,DELETDTT,DTCDTVG,DTCDTT ! derivatives wrt temperature (latent heat)
    REAL :: DQCDTVG,DQCDTT,ELEVG,KVG,G0VG,DG0BDTVG,DG0BDTT,DG0GDTVG,DG0GDTT,DG0VGDTB,DG0VGDTG,DG0VGDTVG,DG0VGDTT ! derivatives wrt temperature
    REAL(Kind = 8) :: WF,A,B,C,E,FF,GG,H,VGF,I,J,TF,O,P,CHARA,det,det_tol,det_scale      !,RVGT  
-   REAL(Kind = 8) :: A_use,FF_use,KK_use,lambda,relax,max_step
+   REAL(Kind = 8) :: A_use,FF_use,KK_use,lambda,relax
+   REAL :: max_step
    REAL :: SSOILG  ! Soil Heat Flux output from SHFLX W/m2  
    REAL :: TGE, TGEP, QS0GE, ALPHAGE, FLXTHVG, FLXTHT ! effective ground values
    REAL :: CMCGP     ! Canopy Intercepted Water on Vegetated Ground
@@ -2043,7 +2044,7 @@ ENDIF
          FF_use = FF
          KK_use = KK
          relax = 1.0D0
-         max_step = 5.0D0
+         max_step = 5.0
          
          ! Near-singular check: regularize diagonals and relax the update
          IF (ABS(det) < det_tol) THEN

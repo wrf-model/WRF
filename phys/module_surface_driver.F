@@ -91,7 +91,7 @@ CONTAINS
      &          ,IRNUMFI  ,IRWATSI   ,IRWATMI   ,IRWATFI   ,IRELOSS   ,IRSIVOL      &
      &          ,IRMIVOL  ,IRFIVOL   ,IRRSPLH                                       &
            ! Noah-MP tile drainage
-     &          ,QTDRAIN  ,TD_FRACTION                                              &
+     &          ,QTDRAIN  ,TD_FRACTION                                   &
            ! Noah-MP ground water
      &          ,smcwtdxy ,rechxy   ,deeprechxy,fdepthxy,areaxy   ,rivercondxy, riverbedxy &
      &          ,eqzwt    ,pexpxy   ,qrfxy    ,qspringxy,qslatxy  ,qrfsxy, qlatxy, qspringsxy &
@@ -377,7 +377,7 @@ CONTAINS
    USE module_sf_gfs
    USE module_sf_noahdrv                           ! danli mosaic, the " ,only : lsm " needs to be deleted 
    USE module_sf_noahlsm,   only : LCZ_1,LCZ_2,LCZ_3,LCZ_4,LCZ_5,LCZ_6,LCZ_7,LCZ_8,LCZ_9,LCZ_10,LCZ_11
-   USE NoahmpIOVarType
+   USE NoahmpIOVarType, only : NoahmpIOdom
    USE NoahmpWRFmainMod
    USE NoahmpUrbanDriverMainMod, only : noahmp_urban
    USE GroundWaterMmfMod
@@ -1291,8 +1291,6 @@ CONTAINS
    REAL    :: tconst,tprior,tnew,yrday,deltat
    REAL    :: SWSAVE
    REAL,       DIMENSION( ims:ime, jms:jme )          ::  GSWSAVE
-! new NoahmpIO variables
-   type(NoahmpIO_type) :: NoahmpIO
 
 !-------------------------------------------------
 ! urban related variables are added to declaration
@@ -3162,7 +3160,8 @@ CONTAINS
          if(HYDRO_dt .ge. 0) HYDRO_dt = dtbl
 #endif
          CALL wrf_debug(100,'in NOAHMP DRV')
-         CALL NoahmpWRFmain(NoahmpIO,ITIMESTEP,YR,JULIAN_IN,COSZEN,XLAT,XLONG, &
+!$omp critical (noahmp_driver)
+         CALL NoahmpWRFmain(NoahmpIOdom(inest),ITIMESTEP,YR,JULIAN_IN,COSZEN,XLAT,XLONG, &
 	           DZ8W,     DTBL,      DZS,     NUM_SOIL_LAYERS,         DX, &
 		 IVGTYP,   ISLTYP,   VEGFRA,   SHDMAX,       TMN,             &
 		  XLAND,     XICE,     XICE_THRESHOLD,   CROPCAT,             &
@@ -3229,10 +3228,11 @@ CONTAINS
 ! variables below are optional
                 MP_RAINC =  RAINCV, MP_RAINNC =    RAINNCV, MP_SHCV = RAINSHV,&
 		MP_SNOW  = SNOWNCV, MP_GRAUP  = GRAUPELNCV, MP_HAIL = HAILNCV )
+!$omp end critical (noahmp_driver)
 
          IF(SF_URBAN_PHYSICS > 0 ) THEN  !urban
          
-	   call noahmp_urban (NoahmpIO, sf_urban_physics,NUM_SOIL_LAYERS,IVGTYP,ITIMESTEP,  & ! IN : Model configuration 
+	   call noahmp_urban (NoahmpIOdom(inest), sf_urban_physics,NUM_SOIL_LAYERS,IVGTYP,ITIMESTEP,  & ! IN : Model configuration 
                                DTBL,         COSZEN,     XLAT_URB2D,                        & ! IN : Time/Space-related
                               T_PHY,        QV_CURR,          U_PHY,      V_PHY,   SWDOWN,  & ! IN : Forcing
                              SWDDIR,         SWDDIF,                                        &
@@ -3295,7 +3295,7 @@ CONTAINS
 
 !gmm update wtable from lateral flow and shed water to rivers
 
-           CALL WTABLE_mmf_noahmp(NoahmpIO,num_soil_layers,xland,xice, xice_threshold, isice, &
+           CALL WTABLE_mmf_noahmp(NoahmpIOdom(inest),num_soil_layers,xland,xice, xice_threshold, isice, &
                                   isltyp,smoiseq,dzs,wtddt,                                   &
                                   fdepthxy,areaxy,ht,isurban,ivgtyp,                          &
                                   rivercondxy,riverbedxy,eqzwt,pexpxy,                        &
@@ -3404,12 +3404,12 @@ CONTAINS
                  ENDIF
                    TH2(I,J) = T2(I,J)*(1.E5/PSFC(I,J))**RCP
 !             ELSEIF (IVGTYP(I,J) == ISURBAN .OR. IVGTYP(I,J) == ISICE .OR. FVEGXY(I,J) == 0.0 ) THEN
-              ELSEIF (IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == NoahmpIO%LCZ_1_TABLE              .or. &
-                      IVGTYP(I,J) == NoahmpIO%LCZ_2_TABLE .or. IVGTYP(I,J) == NoahmpIO%LCZ_3_TABLE .or. &
-                      IVGTYP(I,J) == NoahmpIO%LCZ_4_TABLE .or. IVGTYP(I,J) == NoahmpIO%LCZ_5_TABLE .or. &
-                      IVGTYP(I,J) == NoahmpIO%LCZ_6_TABLE .or. IVGTYP(I,J) == NoahmpIO%LCZ_7_TABLE .or. &
-                      IVGTYP(I,J) == NoahmpIO%LCZ_8_TABLE .or. IVGTYP(I,J) == NoahmpIO%LCZ_9_TABLE .or. &
-                      IVGTYP(I,J) == NoahmpIO%LCZ_10_TABLE .or. IVGTYP(I,J) == NoahmpIO%LCZ_11_TABLE .or. &
+              ELSEIF (IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_1_TABLE              .or. &
+                      IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_2_TABLE .or. IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_3_TABLE .or. &
+                      IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_4_TABLE .or. IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_5_TABLE .or. &
+                      IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_6_TABLE .or. IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_7_TABLE .or. &
+                      IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_8_TABLE .or. IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_9_TABLE .or. &
+                      IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_10_TABLE .or. IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_11_TABLE .or. &
                       (IVGTYP(I,J) == ISICE .AND. XICE(I,J) .LT. XICE_THRESHOLD)) THEN
 
                    Q2(I,J)  = Q2MBXY(I,J)
@@ -3434,12 +3434,12 @@ CONTAINS
          IF(SF_URBAN_PHYSICS.eq.1) THEN
            DO j=j_start(ij),j_end(ij)                             !urban
              DO i=i_start(ij),i_end(ij)                           !urban
-               IF (IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == NoahmpIO%LCZ_1_TABLE              .or. &
-                   IVGTYP(I,J) == NoahmpIO%LCZ_2_TABLE .or. IVGTYP(I,J) == NoahmpIO%LCZ_3_TABLE .or. &
-                   IVGTYP(I,J) == NoahmpIO%LCZ_4_TABLE .or. IVGTYP(I,J) == NoahmpIO%LCZ_5_TABLE .or. &
-                   IVGTYP(I,J) == NoahmpIO%LCZ_6_TABLE .or. IVGTYP(I,J) == NoahmpIO%LCZ_7_TABLE .or. &
-                   IVGTYP(I,J) == NoahmpIO%LCZ_8_TABLE .or. IVGTYP(I,J) == NoahmpIO%LCZ_9_TABLE .or. &
-                   IVGTYP(I,J) == NoahmpIO%LCZ_10_TABLE .or. IVGTYP(I,J) == NoahmpIO%LCZ_11_TABLE) THEN
+               IF (IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_1_TABLE              .or. &
+                   IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_2_TABLE .or. IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_3_TABLE .or. &
+                   IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_4_TABLE .or. IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_5_TABLE .or. &
+                   IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_6_TABLE .or. IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_7_TABLE .or. &
+                   IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_8_TABLE .or. IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_9_TABLE .or. &
+                   IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_10_TABLE .or. IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_11_TABLE) THEN
 
                  Q2(I,J)  = (FVEGXY(I,J)*Q2MVXY(I,J) + (1.-FVEGXY(I,J))*Q2MBXY(I,J))*(1.-FRC_URB2D(I,J)) +   &
                              Q2_URB2D(I,J)*FRC_URB2D(I,J)
@@ -3461,12 +3461,12 @@ CONTAINS
          IF((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.eq.3)) THEN
            DO j=j_start(ij),j_end(ij)                             !urban
              DO i=i_start(ij),i_end(ij)                           !urban
-               IF (IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == NoahmpIO%LCZ_1_TABLE              .or. &
-                   IVGTYP(I,J) == NoahmpIO%LCZ_2_TABLE .or. IVGTYP(I,J) == NoahmpIO%LCZ_3_TABLE .or. &
-                   IVGTYP(I,J) == NoahmpIO%LCZ_4_TABLE .or. IVGTYP(I,J) == NoahmpIO%LCZ_5_TABLE .or. &
-                   IVGTYP(I,J) == NoahmpIO%LCZ_6_TABLE .or. IVGTYP(I,J) == NoahmpIO%LCZ_7_TABLE .or. &
-                   IVGTYP(I,J) == NoahmpIO%LCZ_8_TABLE .or. IVGTYP(I,J) == NoahmpIO%LCZ_9_TABLE .or. &
-                   IVGTYP(I,J) == NoahmpIO%LCZ_10_TABLE .or. IVGTYP(I,J) == NoahmpIO%LCZ_11_TABLE) THEN
+               IF (IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_1_TABLE              .or. &
+                   IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_2_TABLE .or. IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_3_TABLE .or. &
+                   IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_4_TABLE .or. IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_5_TABLE .or. &
+                   IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_6_TABLE .or. IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_7_TABLE .or. &
+                   IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_8_TABLE .or. IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_9_TABLE .or. &
+                   IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_10_TABLE .or. IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_11_TABLE) THEN
 
                 T2(I,J)   = TH_PHY(i,1,j)/((1.E5/PSFC(I,J))**RCP) !urban
                 TH2(I,J) = TH_PHY(i,1,j) !urban

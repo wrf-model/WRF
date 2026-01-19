@@ -290,7 +290,7 @@ CONTAINS
 #endif
    USE module_wind_fitch
    USE module_wind_mav  ! Yulong add for WLM
-   USE NoahmpIOVarType
+   USE NoahmpIOVarType, only : NoahmpIO_type
 
    IMPLICIT NONE
 !-----------------------------------------------------------------
@@ -2702,7 +2702,7 @@ CHARACTER(LEN=8) :: name
    USE module_sf_noahdrv
    USE module_sf_noahlsm, only : LCZ_1,LCZ_2,LCZ_3,LCZ_4,LCZ_5,LCZ_6,LCZ_7,LCZ_8,LCZ_9,LCZ_10,LCZ_11   
    USE NoahmpWRFinitMod
-   USE NoahmpIOVarType
+   USE NoahmpIOVarType, only : NoahmpIO_type
 #ifdef WRF_USE_CLM
    USE module_sf_clm, only : clminit
 #endif

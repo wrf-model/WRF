@@ -168,7 +168,7 @@ contains
                        grid%KMINFORCT,grid%KMAXFORCT,                     &
                        grid%LMINFORCT,grid%LMAXFORCT,                     &
                        grid%KMAXFORCTH,grid%LMAXFORCTH,                   &
-                       grid%time_step,grid%DX,grid%DY,                    &
+                       grid%dt,grid%DX,grid%DY,                    &
                        grid%gridpt_stddev_sppt,                           &
                        grid%lengthscale_sppt,                             &
                        grid%timescale_sppt,                               &
@@ -186,7 +186,7 @@ contains
                        grid%KMINFORCT,grid%KMAXFORCT,                     &
                        grid%LMINFORCT,grid%LMAXFORCT,                     &
                        grid%KMAXFORCTH,grid%LMAXFORCTH,                   &
-                       grid%time_step,grid%DX,grid%DY,                    &
+                       grid%dt,grid%DX,grid%DY,                    &
                        grid%gridpt_stddev_sppt,                           &
                        grid%lengthscale_sppt,                             &
                        grid%timescale_sppt,                               &
@@ -210,7 +210,7 @@ IF (grid%sppt_on==1) then
                        grid%KMINFORCT,grid%KMAXFORCT,                     &
                        grid%LMINFORCT,grid%LMAXFORCT,                     &
                        grid%KMAXFORCTH,grid%LMAXFORCTH,                   &
-                       grid%time_step,grid%DX,grid%DY,                    &
+                       grid%dt,grid%DX,grid%DY,                    &
                        grid%gridpt_stddev_sppt,                           &
                        grid%lengthscale_sppt,                             &
                        grid%timescale_sppt,                               &
@@ -234,7 +234,7 @@ IF (grid%sppt_on==1) then
                        grid%KMINFORCT,grid%KMAXFORCT,                     &
                        grid%LMINFORCT,grid%LMAXFORCT,                     &
                        grid%KMAXFORCTH,grid%LMAXFORCTH,                   &
-                       grid%time_step,grid%DX,grid%DY,                    &
+                       grid%dt,grid%DX,grid%DY,                    &
                        grid%gridpt_stddev_rand_pert,                      &
                        grid%lengthscale_rand_pert,                        &
                        grid%timescale_rand_pert,                          &
@@ -396,7 +396,7 @@ IF (grid%sppt_on==1) then
                        grid%KMINFORCT,grid%KMAXFORCT,                     &
                        grid%LMINFORCT,grid%LMAXFORCT,                     &
                        grid%KMAXFORCTH,grid%LMAXFORCTH,                   &
-                       grid%stepsp * grid%time_step,grid%DX,grid%DY,      &
+                       grid%stepsp * grid%dt,grid%DX,grid%DY,      &
                        grid%gridpt_stddev_mult3d(n),                      &
                        grid%lengthscale_mult3d(n),                        &
                        grid%timescale_mult3d(n),                          &
@@ -460,7 +460,7 @@ IF (grid%sppt_on==1) then
                        grid%KMINFORCT,grid%KMAXFORCT,                     &
                        grid%LMINFORCT,grid%LMAXFORCT,                     &
                        grid%KMAXFORCTH,grid%LMAXFORCTH,                   &
-                       grid%time_step,grid%DX,grid%DY,                    &
+                       grid%dt,grid%DX,grid%DY,                    &
                        grid%gridpt_stddev_spp_conv,                       &
                        grid%lengthscale_spp_conv,                         &
                        grid%timescale_spp_conv,                           &
@@ -483,7 +483,7 @@ IF (grid%sppt_on==1) then
                        grid%KMINFORCT,grid%KMAXFORCT,                     &
                        grid%LMINFORCT,grid%LMAXFORCT,                     &
                        grid%KMAXFORCTH,grid%LMAXFORCTH,                   &
-                       grid%time_step,grid%DX,grid%DY,                    &
+                       grid%dt,grid%DX,grid%DY,                    &
                        grid%gridpt_stddev_spp_pbl,                        &
                        grid%lengthscale_spp_pbl,                          &
                        grid%timescale_spp_pbl,                            &
@@ -506,7 +506,7 @@ IF (grid%sppt_on==1) then
                        grid%KMINFORCT,grid%KMAXFORCT,                     &
                        grid%LMINFORCT,grid%LMAXFORCT,                     &
                        grid%KMAXFORCTH,grid%LMAXFORCTH,                   &
-                       grid%time_step,grid%DX,grid%DY,                    &
+                       grid%dt,grid%DX,grid%DY,                    &
                        grid%gridpt_stddev_spp_lsm,                        &
                        grid%lengthscale_spp_lsm,                          &
                        grid%timescale_spp_lsm,                            &
@@ -552,7 +552,9 @@ IF (grid%sppt_on==1) then
       INTEGER , INTENT(IN)                      :: ids, ide, jds, jde, kds, kde,   &
                                                    ims, ime, jms, jme, kms, kme,   &
                                                    its, ite, jts, jte, kts, kte
-      INTEGER                                   :: IER,IK,IL,I,J,itime_step,skebs_vertstruc, &
+      REAL, INTENT(IN) :: itime_step ! jdduda
+      ! jdduda  ALL USES OF ITIME_STEP HAD BEEN ENCLOSED IN FLOAT(). THESE WERE REMOVED.
+      INTEGER                                   :: IER,IK,IL,I,J,skebs_vertstruc, & ! jdduda removed itime_step from this line
                                                    KMINFORCT,LMINFORCT,KMAXFORCT,LMAXFORCT,KMAXFORCTH,LMAXFORCTH, &
                                                    KMAX,LMAX,LENSAV,ILEV
       REAL                                      :: DX,DY,RY,RX,ALPH,RHOKLMAX,ZREF,RHOKL,EPS
@@ -617,7 +619,8 @@ IF (grid%sppt_on==1) then
 !     --------------------------------------------------------------------------------------
 !     ---------- INITIALIZE STOCHASTIC KINETIC-ENERGY BACKSCATTER SCHEME  (SKEBS) ----------
 !     --------------------------------------------------------------------------------------
-      ALPH   =  float(itime_step)/ZTAU ! approximation of 1.-exp(-itime_step/ZTAU_PSI)
+!      ALPH   =  float(itime_step)/ZTAU ! approximation of 1.-exp(-itime_step/ZTAU_PSI)
+      ALPH   =  itime_step/ZTAU ! approximation of 1.-exp(-itime_step/ZTAU_PSI)
       ZSIGMA2=1./(12.0*ALPH)
 
       if (is_print) then
@@ -633,7 +636,7 @@ IF (grid%sppt_on==1) then
       WRITE(*,'('' Minimal wavenumber of streamfunction forcing, KMINFORC ='',I10)') KMINFORCT
       WRITE(*,'('' Maximal wavenumber of streamfunction forcing, KMAXFORC ='',I10)') KMAXFORCT
       WRITE(*,'('' skebs_vertstruc                             '',I10)') skebs_vertstruc
-      WRITE(*,'('' Time step: itime_step='',I10)') itime_step
+      WRITE(*,'('' Time step: itime_step='',F10.3)') itime_step ! jdduda
       WRITE(*,'('' Decorrelation time of noise, ZTAU_PSI ='',E12.5)') ZTAU
       WRITE(*,'('' Variance of noise, ZSIGMA2_EPS  ='',E12.5)') ZSIGMA2
       WRITE(*,'('' Autoregressive parameter 1-ALPH_PSI ='',E12.5)') 1.-ALPH
@@ -660,7 +663,7 @@ IF (grid%sppt_on==1) then
 
      IF ((variable == 'P') .or. (variable == 'R') .or. (variable == 'S') .or. (variable == 'Q') .or. (variable == 'O')) then
       kappat= L_rand_perturb**2 ! L^2= kappa*T,  where L is a length scale in m; set to for L=100km
-      phi = exp (-float(itime_step)/tau_rand_perturb)
+      phi = exp (-itime_step/tau_rand_perturb) ! jdduda
       alph = 1.-phi
      endif
 
@@ -761,9 +764,9 @@ IF (grid%sppt_on==1) then
       enddo
       ZGAMMAN=4.0*ZGAMMAN !account for all quadrants, although only one is Filled
       if (variable == 'W') then
-         ZCONSTF0=SQRT(ALPH*TOT_BACKSCAT/(float(itime_step)*ZSIGMA2*ZGAMMAN))/(2*RPI)
+         ZCONSTF0=SQRT(ALPH*TOT_BACKSCAT/(itime_step*ZSIGMA2*ZGAMMAN))/(2*RPI)
       elseif  (variable == 'T') then     
-         ZCONSTF0=SQRT(T0*ALPH*TOT_BACKSCAT/(float(itime_step)*cp*ZSIGMA2*ZGAMMAN))
+         ZCONSTF0=SQRT(T0*ALPH*TOT_BACKSCAT/(itime_step*cp*ZSIGMA2*ZGAMMAN))
       elseif ((variable == 'P') .or. (variable == 'R') .or.  (variable == 'S') .or. (variable == 'O') .or.  (variable == 'Q     ')) then
          ZCONSTF0= gridpt_stddev_rand_perturb*sqrt((1.-phi**2)/(2.*ZGAMMAN))
       endif

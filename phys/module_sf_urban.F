@@ -1961,9 +1961,9 @@ ENDIF
 
      
          ! residual approach (Yuqi)    
-         HT = (SLEAF + RLEAF - ELET - (TT - TTP)/DELT*640) * (1/697.7/60)      ! following e.q 28 in (Ryu, 2016), unit same as HB, HG in [cal/cm2/s]
+         HT = (SLEAF + RLEAF - ELET - (TT - TTP)/DELT*640) * (1/697.7/60.)      ! following e.q 28 in (Ryu, 2016), unit same as HB, HG in [cal/cm2/s]
 
-         ALPHAT =  (RHO*CP*100.)/(1.27*RA_LEAF) ! unit [cal/cm2/s/K] ([g/cm3] * [cal/g/K] / [s/m] * [m/cm])
+         ! ALPHAT =  (RHO*CP*100.)/(1.27*RA_LEAF) ! unit [cal/cm2/s/K] ([g/cm3] * [cal/g/K] / [s/m] * [m/cm]) % commented out, no longer used for residual approach (Chenghao Wang)
          DTCDTB = (W  * ALPHAB)/(RW * ALPHAC + RW * FVG * ALPHAVG + RW * (1 - FVG) * ALPHAG + W * ALPHAB) 
          DTCDTG = (RW * ALPHAG * (1 - FVG))/(RW * ALPHAC + RW * FVG * ALPHAVG + RW * (1 - FVG) * ALPHAG + W * ALPHAB)
          DTCDTVG= (RW * ALPHAVG * FVG)/(RW * ALPHAC + RW * FVG * ALPHAVG + RW * (1 - FVG) * ALPHAG + W * ALPHAB)		 
@@ -2093,15 +2093,15 @@ ENDIF
 
          
          TC1 = RW * ALPHAC + RW * FVG * ALPHAVG + RW * (1 - FVG) * ALPHAG + W * ALPHAB
-         TC2 = RW * ALPHAC * TA + RW * FVG * ALPHAVG * TVGP + RW * (1 - FVG) * ALPHAG * TGP + W * ALPHAB * TBP + 2 * RTREE * LAI_TREE * (HT*(697.7 * 60.0)/(RHOO * CPP)) * ALPHAT 
+         TC2 = RW * ALPHAC * TA + RW * FVG * ALPHAVG * TVGP + RW * (1 - FVG) * ALPHAG * TGP + W * ALPHAB * TBP + 2 * RTREE * LAI_TREE * (HT/(RHO * CP))
          TC = TC2 / TC1
-		 ! Chenghao: HT unit is cgs, convert it back to W/m2 before dividing RHOO*CPP
+		 ! Chenghao: HT unit is cgs, keep it as is [RHO - g/cm3, CP - cal/g/K]
          ! print*, 'ALPHAT, ALPHAC, ALPHAVG, TC1, TC2, tmp=', ALPHAT, ALPHAC, ALPHAVG,TC1, TC2, 2 * RTREE * LAI_TREE * HT * ALPHAT ! add by yuqi
 
          QC1 = W * ALPHAB * BETB + RW * (1 - FVG) * ALPHAG * BETG + RW * FVG * ALPHAVG * BETVG + RW * ALPHAC
-         QC2 = W * ALPHAB * BETB * QS0B + RW * (1 - FVG) * ALPHAG * BETG * QS0G + RW * FVG * ALPHAVG * BETVG * QS0VG + RW * ALPHAC * QA + (2 * RTREE * LAI_TREE * (ELET/ELL/RHOO))
+         QC2 = W * ALPHAB * BETB * QS0B + RW * (1 - FVG) * ALPHAG * BETG * QS0G + RW * FVG * ALPHAVG * BETVG * QS0VG + RW * ALPHAC * QA + (2 * RTREE * LAI_TREE * (ELET/697.7/60.))
          QC=QC2/QC1
-		 ! Chenghao: ELET - [W/m2], ELL - [J/kg], RHOO - [kg/m^3]
+		 ! Chenghao: ELET - [W/m2], convert it to cgs to be consistent with all other terms (e.g., ALPHAB)
 
 
          ES=6.11*EXP( (2.5*10**6/461.51)*(TC-273.15)/(273.15*TC) ) 
@@ -2238,7 +2238,7 @@ ENDIF
        G0G=SG+RG-HG-ELEG    ! unit: cal/cm2/s
 
        RA_LEAF = 58 * (LAI_TREE**0.56) * SQRT(DLEAF/UC)             
-       HT = (SLEAF + RLEAF - ELET - (TT - TTP)/DELT*640)/697.7/60 ! HT in unit of cal/cm2/s (unit consistent with HB and HG)
+       HT = (SLEAF + RLEAF - ELET - (TT - TTP)/DELT*640)/697.7/60. ! HT in unit of cal/cm2/s (unit consistent with HB and HG)
        W2 = 0.5 * (SMGP(NVG/2-1) + SMGP(NVG/2))    ! POTENTIAL ERROR (YUQI)
        CALL STOMATAL(RS_LEAF, RSMIN, SLEAF, LAI_TREE, W2, SMCREF, SMCMAX, TC, TT, QC, QS0T) 
        CALL LELEAF(ELET, SLEAF, RLEAF, RA_LEAF, RS_LEAF, RHOO, TC, QC, QS0T)
@@ -2252,14 +2252,14 @@ ENDIF
        TGP=TG
        TTP=TT
        TC1 = RW * ALPHAC + RW * FVG * ALPHAVG + RW * (1 - FVG) * ALPHAG + W * ALPHAB
-       TC2 = RW * ALPHAC * TA + RW * FVG * ALPHAVG * TVGP + RW * (1 - FVG) * ALPHAG * TGP + W * ALPHAB * TBP + 2 * RTREE * LAI_TREE * (HT*(697.7 * 60.0)/(RHOO * CPP)) * ALPHAT 
+       TC2 = RW * ALPHAC * TA + RW * FVG * ALPHAVG * TVGP + RW * (1 - FVG) * ALPHAG * TGP + W * ALPHAB * TBP + 2 * RTREE * LAI_TREE * (HT/(RHO * CP))
        TC = TC2 / TC1
-	   ! Chenghao: HT unit is cgs, convert it back to W/m2 before dividing RHOO*CPP
+	   ! Chenghao: HT unit is cgs, keep it as is  [RHO - g/cm3, CP - cal/g/K]
 
        QC1 = W * ALPHAB * BETB + RW * (1 - FVG) * ALPHAG * BETG + RW * FVG * ALPHAVG * BETVG + RW * ALPHAC
-       QC2 = W * ALPHAB * BETB * QS0B + RW * (1 - FVG) * ALPHAG * BETG * QS0G + RW * FVG * ALPHAVG * BETVG * QS0VG + RW * ALPHAC * QA + (2 * RTREE * LAI_TREE * (ELET/ELL/RHOO))
+       QC2 = W * ALPHAB * BETB * QS0B + RW * (1 - FVG) * ALPHAG * BETG * QS0G + RW * FVG * ALPHAVG * BETVG * QS0VG + RW * ALPHAC * QA + (2 * RTREE * LAI_TREE * (ELET/697.7/60.))
        QC=QC2/QC1
-	! Chenghao: ELET - [W/m2], ELL - [J/kg], RHOO - [kg/m^3]
+	   ! Chenghao: ELET - [W/m2], convert it to cgs to be consistent with all other terms (e.g., ALPHAB)
 		 
        TCP=TC
        QCP=QC

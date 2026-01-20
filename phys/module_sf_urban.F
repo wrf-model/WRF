@@ -5318,12 +5318,17 @@ FUNCTION kanda_kawai_svf(lp, lf) RESULT (svf)
       REAL, PARAMETER     :: Lv     = 2.26E6
       REAL, PARAMETER     :: rWD    = 1.E3  ! density of water [kg/m3]
 
+      IF (FVG <= 0.0 .OR. RW <= 0.0 .OR. RTREE <= 0.0 .OR. LAI_TREE <= 0.0) THEN
+         SROOT(:) = 0.0
+         RETURN
+      END IF
+	  
       DO K = 1, NLAYER
          NORMQ(K) = (SMC(K) - SMCDRY)/(SMCMAX - SMCDRY)
          IF (NORMQ(K) .gt. QC2) THEN
-            ALPHAI(K) = (1 - NORMQ(K))/(1 - QC2)
+            ALPHAI(K) = 1.
          ELSEIF (NORMQ(K) .ge. QC1 .and. NORMQ(K) .le. QC2) THEN
-            ALPHAI(K) = 1
+            ALPHAI(K) = 1.
          ELSEIF (NORMQ(K) .lt. QC1 .and. NORMQ(K) .ge. 0) THEN
             ALPHAI(K) = NORMQ(K)/QC1
          ELSE

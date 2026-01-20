@@ -424,7 +424,7 @@ use module_model_constants, only :  piconst
    REAL(Kind = 8) :: DRS_LEAF, M,D,DD,FE,DFE,S,DM,KK,L,N
    REAL(Kind = 8) :: DELEVGDTVG,DELEVGDTT,DELETDTB,DELETDTG,DELETDTVG,DELETDTT,DTCDTVG,DTCDTT ! derivatives wrt temperature (latent heat)
    REAL :: DQCDTVG,DQCDTT,ELEVG,KVG,G0VG,DG0BDTVG,DG0BDTT,DG0GDTVG,DG0GDTT,DG0VGDTB,DG0VGDTG,DG0VGDTVG,DG0VGDTT ! derivatives wrt temperature
-   REAL(Kind = 8) :: WF,A,B,C,E,FF,GG,H,VGF,I,J,TF,O,P,CHARA,det,det_tol,det_scale      !,RVGT  
+   REAL(Kind = 8) :: WF,A,B,C,E,FF,GG,H,VGF,I,J,O,P,CHARA,det,det_tol,det_scale      !,RVGT  
    REAL(Kind = 8) :: A_use,FF_use,KK_use,lambda,relax
    REAL :: max_step
    REAL :: SSOILG  ! Soil Heat Flux output from SHFLX W/m2  
@@ -1744,7 +1744,7 @@ ENDIF
    ! MIX,DMIX,QSAT,DQSAT,ESAT,D,DD,FE,DFE,DRS_LEAF,S,M,KK,L,N,DELEBDTVG,DELEBDTT,DELEGDTVG,DELEGDTT,DELEVGDTB,DELEVGDTG,
    ! DELEVGDTVG,DELEVGDTT,DELETDTB,DELETDTG,DELETDTVG,DELETDTT,DTCDTVG,DTCDTT,DHBDTVG,DHBDTT,DHGDTVG,DHGDTT,DHVGDTB,DHVGDTG,DHVGDTVG,DHVGDTT,
    ! DHTDTB,DHTDTG,DHTDTVG,DHTDTT,DQCDTVG,DQCDTT,ELEVG,KVG,G0VG,DG0BDTVG,DG0BDTT,DG0GDTVG,DG0GDTT,DG0VGDTB,DG0VGDTG,DG0VGDTVG,DG0VGDTT,
-   ! WF,A,B,C,D,E,F,GG,H,VGF,I,J,KK,L,TF,M,N,O,P,CHARA,RVGT,CAPVG,TVGL,SSOILG
+   ! WF,A,B,C,D,E,F,GG,H,VGF,I,J,KK,L,M,N,O,P,CHARA,RVGT,CAPVG,TVGL,SSOILG
    ! TGEP,QS0GE,ALPHAGE,FLXTHVG,FLXHUMVG,FLXTHT,FLXHUMT
    !-------------------------------------------------------------------------------
 
@@ -1964,10 +1964,11 @@ ENDIF
          HT = (SLEAF + RLEAF - ELET - (TT - TTP)/DELT*640) * (1/697.7/60)      ! following e.q 28 in (Ryu, 2016), unit same as HB, HG in [cal/cm2/s]
 
          ALPHAT =  (RHO*CP*100.)/(1.27*RA_LEAF) ! unit [cal/cm2/s/K] ([g/cm3] * [cal/g/K] / [s/m] * [m/cm])
-         DTCDTB = (W  * ALPHAB)/(RW * ALPHAC + RW * FVG * ALPHAVG + RW * (1 - FVG) * ALPHAG + W * ALPHAB + 2 * RTREE * LAI_TREE * ALPHAT) 
-         DTCDTG = (RW * ALPHAG * (1 - FVG))/(RW * ALPHAC + RW * FVG * ALPHAVG + RW * (1 - FVG) * ALPHAG + W * ALPHAB + 2 * RTREE * LAI_TREE * ALPHAT)
-         DTCDTVG= (RW * ALPHAVG * FVG)/(RW * ALPHAC + RW * FVG * ALPHAVG + RW * (1 - FVG) * ALPHAG + W * ALPHAB + 2 * RTREE * LAI_TREE * ALPHAT)
-
+         DTCDTB = (W  * ALPHAB)/(RW * ALPHAC + RW * FVG * ALPHAVG + RW * (1 - FVG) * ALPHAG + W * ALPHAB) 
+         DTCDTG = (RW * ALPHAG * (1 - FVG))/(RW * ALPHAC + RW * FVG * ALPHAVG + RW * (1 - FVG) * ALPHAG + W * ALPHAB)
+         DTCDTVG= (RW * ALPHAVG * FVG)/(RW * ALPHAC + RW * FVG * ALPHAVG + RW * (1 - FVG) * ALPHAG + W * ALPHAB)		 
+		 
+		 
          DHBDTB=RHO*CP*CHB*UC*(1-DTCDTB)*100
          DHBDTG=RHO*CP*CHB*UC*(0-DTCDTG)*100
          DHBDTVG=RHO*CP*CHB*UC*(0-DTCDTVG)*100
@@ -1983,7 +1984,6 @@ ENDIF
          DQCDTG=RW * (1 - FVG) * ALPHAG * BETG * DQS0GDTG/(W * ALPHAB * BETB + RW * (1 - FVG) * ALPHAG * BETG + RW * FVG * ALPHAVG * BETVG + RW * ALPHAC) 
          DQCDTVG=RW * FVG * ALPHAVG * BETVG * DQS0VGDTVG/(W * ALPHAB * BETB + RW * (1 - FVG) * ALPHAG * BETG + RW * FVG * ALPHAVG * BETVG + RW * ALPHAC) 
 
-
          DELEBDTB=RHO*EL*CHB*UC*BETB*(DQS0BDTB-DQCDTB)*100
          DELEBDTG=RHO*EL*CHB*UC*BETB*(0-DQCDTG)*100
          DELEBDTVG=RHO*EL*CHB*UC*BETB*(0-DQCDTVG)*100
@@ -1994,7 +1994,7 @@ ENDIF
          DELEVGDTG=RHO*EL*CHVG*UC*BETVG*(0-DQCDTG)*100
          DELEVGDTVG=RHO*EL*CHVG*UC*BETVG*(DQS0VGDTVG-DQCDTVG)*100
 
-
+		 
           ELEVG = ETAG * EL * 0.1        ! unit: cal/cm2/s
          ! print*, 'actual et from vegetated ground=', ELEVG ! add by yuqi for testing purpose
 
@@ -2142,10 +2142,10 @@ ENDIF
          SRUN2 = SRUN2 + SRUN3 
 
 
-         IF( ABS(F) < 0.000001 .AND. ABS(DTB) < 0.000001 &
+         IF( ABS(WF) < 0.000001 .AND. ABS(DTB) < 0.000001 &
          .AND. ABS(GF) < 0.000001 .AND. ABS(DTG) < 0.000001 &
          .AND. ABS(VGF) < 0.000001 .AND. ABS(DTVG) < 0.000001 &
-         .AND. ABS(TF) < 0.000001  &                              ! .AND. ABS(DTT) < 0.000001 &
+         ! .AND. ABS(DTT) < 0.000001 &
          .AND. ABS(DTC) < 0.000001) EXIT
 
       END DO

@@ -232,7 +232,7 @@ DZGR:  0.05 0.10 0.15 0.20
 #      (sf_urban_physics=1)
 #
 
-FVG: 0.0
+FVG: 0.1
 
 #
 # TREEOPTION [ 0: No urban trees, 1: Enable urban trees ]
@@ -257,7 +257,7 @@ TREEOPTION: 1
 
 RTREE: 1, 1.5, 2.0
 HTREE: 3.0, 3.6, 4.2
-DTREE: 4.2, 4.7, 5.0
+DTREE: 4.15, 4.7, 5.0
 LAI_TREE: 2.0, 2.0, 2.0
 LAI_VEG: 2.0, 2.0, 2.0
 Z0VG: 0.01, 0.01, 0.01

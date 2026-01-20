@@ -62,7 +62,7 @@ FRC_URB: 0.5, 0.6, 0.75
 #      (sf_urban_physics=1)
 #
 
-FVG: 0.0
+FVG: 0.1
 
 #
 # TREEOPTION [ 0: No urban trees, 1: Enable urban trees ]

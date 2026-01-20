@@ -107,6 +107,7 @@ use module_model_constants, only :  piconst
    REAL                            :: fvg_data = 0.0  ! vegetated ground fraction from URBPARM
    REAL, ALLOCATABLE, DIMENSION(:) :: RTREE_TBL       ! Tree crown radius [normalized]
    REAL, ALLOCATABLE, DIMENSION(:) :: RTREE_M_TBL     ! Tree crown radius in meter
+   REAL, ALLOCATABLE, DIMENSION(:) :: RW_M_TBL        ! Road width in meter																		   
    REAL, ALLOCATABLE, DIMENSION(:) :: HTREE_TBL       ! Tree crown center height [normalized]
    REAL, ALLOCATABLE, DIMENSION(:) :: DTREE_TBL       ! Tree crown center distance from wall (half canyon width currently) [normalized]
    REAL, ALLOCATABLE, DIMENSION(:) :: LAI_TREE_TBL    ! Tree leaf area index
@@ -339,7 +340,7 @@ use module_model_constants, only :  piconst
    IMPLICIT NONE
 
    REAL, PARAMETER    :: CP=0.24          ! heat capacity of dry air  [cgs unit]  ! cal/g/c (yuqi)
-   REAL, PARAMETER    :: EL=583.          ! latent heat of vaporation [cgs unit]  ! cal/g (yuqi)
+   REAL, PARAMETER    :: EL=583.          ! latent heat of vaporization [cgs unit]  ! cal/g (yuqi)
    REAL, PARAMETER    :: SIG=8.17E-11     ! stefun bolzman constant   [cgs unit]  ! cal/cm^2/min/k^4
    REAL, PARAMETER    :: SIG_SI=5.67E-8   !                           [MKS unit]  ! w/m2/k^4 (yuqi)
    REAL, PARAMETER    :: AK=0.4           ! kalman const.                [-]
@@ -351,7 +352,7 @@ use module_model_constants, only :  piconst
    REAL, PARAMETER    :: ELL=2.442E+06    ! latent heat of vaporization [J/kg]
    REAL, PARAMETER    :: XKA=2.4E-5
 
-! -----------------------------------  Newly Define Urban Vegetation Related Variables Here For Testing Purpose (yuqi) -------------------------------------
+! -----------------------------------  Newly Define Urban Vegetation (NbS) Related Variables (Yuqi) -------------------------------------
    !-------------------------------------------------------------------------------
    ! H: Historical (state) variables of Urban : LSM <--> Urban
    !-------------------------------------------------------------------------------
@@ -360,7 +361,7 @@ use module_model_constants, only :  piconst
    REAL, INTENT(INOUT):: TT            ! Tree Temperature (At Previous Time Step) [K]
    REAL, INTENT(INOUT):: XXXVG         ! Monin-Obkhov length for Vegetated Ground   [dimensionless]
    REAL, DIMENSION(1:num_road_layers), INTENT(INOUT):: TVGL          ! Vegetated Ground Temperature (multi_layer approach)
-   REAL, DIMENSION(1:num_road_layers), INTENT(INOUT) :: SMG          ! Soil Moisture at Each Layer on Vegetated Ground
+   REAL, DIMENSION(1:num_road_layers), INTENT(INOUT) :: SMG          ! Soil Moisture at Each Layer on Vegetated Ground [-]
    REAL, INTENT(INOUT):: CMCG          ! Canopy Intercepted Water on Vegetated Ground
    REAL, INTENT(INOUT):: FLXHUMVG, FLXHUMT  ! Evaporation Over Vegetated Ground and Tree 
    !-------------------------------------------------------------------------------
@@ -387,10 +388,10 @@ use module_model_constants, only :  piconst
    REAL :: SRUN1     ! Surface Runoff for Vegetated Ground (Infiltration Excess)
    REAL :: SRUN2     ! Subsurface runoff for 2nd soil layer
    REAL :: SRUN3     ! Runoff Within Soil Layers
-   REAL, DIMENSION(1:num_road_layers) :: ZSOILG    ! Total Depth of Vegetated Ground (Negative) [cm], (Accumulated From Surface)
+   REAL, DIMENSION(1:num_road_layers) :: ZSOILG    ! Total Depth of Vegetated Ground (Negative) [m], (Accumulated From Surface)
    REAL, DIMENSION(1:num_road_layers) :: SMGP      ! Soil Moisture at Each Layer on Vegetated Ground at Pervious Time Step
    REAL, DIMENSION(1:num_road_layers) :: ETG       ! Vegetated Canopy Evapotranspiration
-   REAL, DIMENSION(1:num_road_layers) :: DZVG      ! Depth of Each Single Layer (Positive)[cm]    ! This Could be an Input Variable (yuqi)
+   REAL, DIMENSION(1:num_road_layers) :: DZVG      ! Depth of Each Single Layer (Positive)[m]    ! This Could be an Input Variable (yuqi)
    REAL :: QS0VG, DQS0VGDTVG, QS0T, DQS0TDTT       ! Saturation QS and derivative for vegetated ground/tree
    REAL :: EPVG      ! Potential Evaporation For Vegetated Ground [kg/m2/s]
    REAL :: EDIRG     ! Direct Evaporation From Vegetated Ground
@@ -418,7 +419,7 @@ use module_model_constants, only :  piconst
    REAL :: AVAILABLE_WATER_SUM, POTENTIAL_ELET     ! newly added by yuqi
    REAL :: QS0C      ! Saturation specific humidity at canyon air temperature
    CHARACTER(LEN=256)   :: WARN_MSG ! A character string for the warning message
-   REAL, DIMENSION(1:num_road_layers) :: SROOT, SROOTP     ! Root Water Uptake
+   REAL, DIMENSION(1:num_road_layers) :: SROOT, SROOTP     ! Root Water Uptake (m/s)
    REAL :: DES,MIX,DMIX,QSAT,DQSAT,ESAT,DESAT,DELEBDTVG,DELEBDTT,DELEGDTVG,DELEGDTT,DELEVGDTB,DELEVGDTG ! derivatives wrt humidity/saturation
    REAL(Kind = 8) :: DRS_LEAF, M,D,DD,FE,DFE,S,DM,KK,L,N
    REAL(Kind = 8) :: DELEVGDTVG,DELEVGDTT,DELETDTB,DELETDTG,DELETDTVG,DELETDTT,DTCDTVG,DTCDTT ! derivatives wrt temperature (latent heat)
@@ -437,8 +438,7 @@ use module_model_constants, only :  piconst
    REAL, PARAMETER    :: TREF  = 298.0     ! Unit = K
    REAL, PARAMETER    :: EREF  = 3167.0    ! Unit = K
    
-   !----------- local variables from read_para for testing only (yuqi)  ---------------
-!   INTEGER                                   :: TREEOPTION    ! Urban Tree&Vegetation Option
+   !----------- local variables from read_para (Yuqi)  ---------------
    REAL                    :: FVG           ! Vegetated Fraction for Ground 
    REAL                    :: Z0VG          ! Roughness Length for Momentum of Vegetated Ground
    REAL                    :: Z0HVG         ! Roughness Length for Heat of Vegetated Ground  
@@ -446,7 +446,8 @@ use module_model_constants, only :  piconst
    REAL                    :: EPSVG         ! Vegetated Ground Emissivity
    REAL                    :: EPST          ! Tree Emissivity
    REAL                    :: RTREE         ! Radius of Tree Crown Center
-   REAL                    :: RTREE_M       ! Radius of Tree Crown Center in meters																			   
+   REAL                    :: RTREE_M       ! Radius of Tree Crown Center in meters	
+   REAL                    :: RW_M          ! road width in meters																	   
    REAL                    :: DTREE         ! Distance of Tree Crown Center From Wall (RW/2)
    REAL                    :: HTREE         ! Height of Tree Crown Center
    REAL                    :: LAI_VEG       ! Vegetated Ground Leaf Areal Index  
@@ -748,7 +749,7 @@ use module_model_constants, only :  piconst
                   AH,CAPR,CAPB,CAPG,AKSR,AKSB,AKSG,ALBR,ALBB,    &
                   ALBG,EPSR,EPSB,EPSG,Z0R,Z0B,Z0G,Z0HB,Z0HG,     &
                   BETR,BETB,BETG,TRLEND,TBLEND,TGLEND,           &
-                  RTREE,RTREE_M,HTREE,DTREE,LAI_TREE,LAI_VEG,    &    ! added by yuqi
+                  RTREE,RTREE_M,RW_M,HTREE,DTREE,LAI_TREE,LAI_VEG,    &    ! added by yuqi
                    Z0VG,Z0HVG,CAPVG,EPSVG,EPST,                  &    ! added by yuqi
 !for BEP
                    NUMDIR, STREET_DIRECTION, STREET_WIDTH,        & 
@@ -959,7 +960,7 @@ use module_model_constants, only :  piconst
 ! Renew surface and layer temperatures
 !-------------------------------------------------------------------------------
 
-   SX=(SSGD+SSGQ)/697.7/60.  ! downward short wave radition [ly/min]
+   SX=(SSGD+SSGQ)/697.7/60.  ! downward short wave radition [ly/s] or [cal/cm2/s] - Chenghao Wang
    SD=SSGD/697.7/60.         ! downward direct short wave radiation
    SQ=SSGQ/697.7/60.         ! downward diffuse short wave radiation
    RX=LLG/697.7/60.          ! downward long wave radiation
@@ -1000,7 +1001,7 @@ use module_model_constants, only :  piconst
    TAV=TA*(1.+0.61*QA)
    PS=RHOO*287.*TAV/100. ![hPa]
 
-   ! ===Huang, 2024/07, urban tree & vegetation variables for UCM based on ASLUM
+   ! ===Yuqi Huang, 2024/07, urban tree & vegetation variables for UCM based on ASLUM
    TVGP   = TVG
    TGEP   = TGE
    CMCGP  = CMCG
@@ -1092,7 +1093,7 @@ use module_model_constants, only :  piconst
        SG1=SD*(RW-SLX)/RW*(1.-ALBG)+SQ*VFGS*(1.-ALBG)
        SB1=SD*SLX/W*(1.-ALBB)+SQ*VFWS*(1.-ALBB)
        SG2=SB1*ALBB/(1.-ALBB)*VFGW*(1.-ALBG)
-       SB2=SG1*ALBG/(1.-ALBG)*VFWG*(1.-ALBB) + SB1*ALBB*VFWW         ! newly added last term (yuqi)
+       SB2=SG1*ALBG/(1.-ALBG)*VFWG*(1.-ALBB) + SB1*ALBB*VFWW         ! newly added last term (Huang)
      ELSE                                    ! shadow effects model with urban vegetations (Huang)
        ! ------------------------------------------------------------------------------------------------------------------  
        ! tree module only activated under shadow case
@@ -1147,15 +1148,15 @@ use module_model_constants, only :  piconst
              (SDG + SQ * VFGS_TREE) * ALBG * VFTG_TREE * (1 - ALBT)    
      END IF
 
-     SR=SR1
+     SR=SR1    ! units: [cal/cm2/s]
      SGR=SGR1
      SG=SG1+SG2
-	  SVG=SVG1+SVG2	   ! added by yuqi	  
+	 SVG=SVG1+SVG2	   ! Huang
      SB=SB1+SB2
 
      IF (TREEOPTION == 1) THEN
-     ST = (ST1 + ST2) * 2. * PI * RTREE * (1 - TAU)
-     SLEAF = (ST / (2. * RTREE * LAI_TREE)) *697.7*60.   ! unit: w/m/m
+     ST = (ST1 + ST2) * 2. * PI * RTREE * (1 - TAU)      ! unit: [cal/cm2/s]
+     SLEAF = (ST / (2. * RTREE * LAI_TREE)) *697.7*60.   ! unit: [w/m/m]
      ELSE 
      ST = 0
      END IF
@@ -1374,7 +1375,7 @@ use module_model_constants, only :  piconst
        EDIR = EDIR  * 1000.0
        ETTR = ETTR  * 1000.0
        ECR  = ECR   * 1000.0
-       ETAR = EDIR + ETTR + ECR
+       ETAR = EDIR + ETTR + ECR ! [kg/m2/s]
        IF (ETAR < 1.E-20) ETAR = 0.0
 
        IF ( EPGR <= 0.0 ) THEN
@@ -1382,12 +1383,12 @@ use module_model_constants, only :  piconst
        ELSE
          BETGR = ETAR / EPGR 
        END IF   
-       ELEGR= ETAR* RHO * EL /RHOO * 100
+       ELEGR= ETAR* RHO * EL /RHOO * 100 ! [cal/cm2/s] [EL is cal/g]
           
        CALL TDFCND (DF1,SMR(KZ), QUARTZ, SMCMAX )
-       DF1 = DF1 * EXP(-2.0 * SHDFAC)          ! why multiple by exp? (Yuqi)
+       DF1 = DF1 * EXP(-2.0 * SHDFAC)
        RGR = EPSV*(RX-SIG*(TGRP**4.)/60.)        ! change TGRP to TA in the new version (Yuqi) - bug
-       RGRR= (SGR+RGR) * 697.7 * 60.
+       RGRR= (SGR+RGR) * 697.7 * 60. ! [cal/cm2/s]
        RCH = RHOO*CPP*CHGR
        RR1 = EPSV*(TA**4) * 6.48E-8 / (PS* CHGR) + 1.0
        IF (RAIN >  0.0) then
@@ -1404,7 +1405,7 @@ use module_model_constants, only :  piconst
        RUNOFF2 = RUNOFF2+ RUNOFF3      
        G0GR    = DF1*(TGRP-TGRL(1))/(DZGR(1)/2.)/697.7/60
 
-       FV = SGR + RGR - HGR - ELEGR - G0GR
+       FV = SGR + RGR - HGR - ELEGR - G0GR ! cgs unit
        DRRDTGR   = (-4.*EPSV*SIG*TGRP**3.)/60.
        DHRDTGR   = RHO*CP*CHGR*UA*100.
        DELERDTGR = RHO*EL*CHGR*UA*BETGR*DQS0GRDTGR*100.
@@ -1632,9 +1633,8 @@ ENDIF
        GX = DRGDTB - DHGDTB - DELEGDTB - DG0GDTB
        GY = DRGDTG - DHGDTG - DELEGDTG - DG0GDTG 
 
-       DTB =  (GF*FY-F*GY)/(FX*GY-GX*FY)      ! WHY CONSIDERING F(X) = GF*FY-F*GY (yuqi)
+       DTB =  (GF*FY-F*GY)/(FX*GY-GX*FY)
        DTG = -(GF+GX*DTB)/GY
-       ! print* , 'DTB, DTG=', DTB, DTG ! add by yuqi for testing purpose
        
        TB = TBP + DTB
        TG = TGP + DTG
@@ -1810,7 +1810,7 @@ ENDIF
          EDIRG = EDIRG  * 1000
          ETTG  = ETTG   * 1000
          ECG   = ECG    * 1000
-         ETAG  = EDIRG  + ETTG + ECG  ! unit: KG M-2 S-1
+         ETAG  = EDIRG  + ETTG + ECG  ! unit: converted from m/s to kg/m2/s (Chenghao)
          IF (ETAG < 1.E-20) ETAG = 0
          IF ( EPVG <= 0 ) THEN
             BETVG = 0
@@ -1834,7 +1834,7 @@ ENDIF
          QS0T=0.622*ES/(PS-0.378*ES)        
 
 
-         EPSGE   = (1 - FVG) * EPSG + FVG * EPSVG           ! DEFINE EFFECTIVE EPSV AND TEMPERATURE HERE (YUQI)
+         EPSGE   = (1 - FVG) * EPSG + FVG * EPSVG
          TGEP    = (1 - FVG) * TGP  + FVG * TVGP 
          
 	      
@@ -1946,27 +1946,24 @@ ENDIF
 
          AVAILABLE_WATER_SUM = 0.0
          DO K = 1, 3
-            AVAILABLE_WATER_SUM = AVAILABLE_WATER_SUM + ((SMG(K)-SMCWLT) * DZVG(K))
+            AVAILABLE_WATER_SUM = AVAILABLE_WATER_SUM + ((SMG(K)-SMCWLT) * DZVG(K)) ! unit: m (Yuqi)
          END DO
 
          IF ((RTREE > 0.) .AND. (LAI_TREE > 0.)) THEN
-            POTENTIAL_ELET = (ELL * 10 * AVAILABLE_WATER_SUM * FVG * RW / DELT) / &
-                              (2.0 * RTREE * LAI_TREE)
+            POTENTIAL_ELET = (ELL * 1000 * AVAILABLE_WATER_SUM * FVG * RW / DELT) / &
+                              (2.0 * RTREE * LAI_TREE) ! [J/kg]*[kg/m3]*[m]/[s] = [W/m2]
          ELSE
             POTENTIAL_ELET = 0.0
          END IF
          ELET = MIN(POTENTIAL_ELET, ELET)    ! unit: W/m2
 
-         CALL ROOT_UPTAKE(SROOT, NVG, SMG, SMCMAX, SMCDRY, RTREE_M, LAI_TREE, DZVG, ZSOILG, ELET, FVG, RW)
+         CALL ROOT_UPTAKE(SROOT, NVG, SMG, SMCMAX, SMCDRY, RTREE_M, LAI_TREE, DZVG, ZSOILG, ELET, FVG, RW_M)   ! SROOT unit: m/s (Yuqi)
 
      
-         ! HT = CPP * RHOO * ALPHAT * (TTP - TCP)                              ! change to residual method (yuqi)    
-         HT = (SLEAF + RLEAF - ELET - (TT - TTP)/DELT*640) * (1/697.7/60)      ! following e.q 28 in (ryu, 2016), unit same as HB, HG in [cal/cm2/s]
+         ! residual approach (Yuqi)    
+         HT = (SLEAF + RLEAF - ELET - (TT - TTP)/DELT*640) * (1/697.7/60)      ! following e.q 28 in (Ryu, 2016), unit same as HB, HG in [cal/cm2/s]
 
-         ! print*, 'TT, TTP=', TT, TTP                ! add by yuqi for testing purpose
-         ! print*, 'HT, HB, HG, HVG=', HT,HB, HG, HVG ! add by yuqi for testing purpose
-
-         ALPHAT =  RHO*CP/1.27/RA_LEAF
+         ALPHAT =  (RHO*CP*100.)/(1.27*RA_LEAF) ! unit [cal/cm2/s/K] ([g/cm3] * [cal/g/K] / [s/m] * [m/cm])
          DTCDTB = (W  * ALPHAB)/(RW * ALPHAC + RW * FVG * ALPHAVG + RW * (1 - FVG) * ALPHAG + W * ALPHAB + 2 * RTREE * LAI_TREE * ALPHAT) 
          DTCDTG = (RW * ALPHAG * (1 - FVG))/(RW * ALPHAC + RW * FVG * ALPHAVG + RW * (1 - FVG) * ALPHAG + W * ALPHAB + 2 * RTREE * LAI_TREE * ALPHAT)
          DTCDTVG= (RW * ALPHAVG * FVG)/(RW * ALPHAC + RW * FVG * ALPHAVG + RW * (1 - FVG) * ALPHAG + W * ALPHAB + 2 * RTREE * LAI_TREE * ALPHAT)
@@ -1998,15 +1995,15 @@ ENDIF
          DELEVGDTVG=RHO*EL*CHVG*UC*BETVG*(DQS0VGDTVG-DQCDTVG)*100
 
 
-          ELEVG = ETAG * EL * 0.1        ! ET FOR VEGE GROUND IS ALWAYS ACTUAL ET REGARDLESS OF aerodynamics SHCEME (YUQI)
+          ELEVG = ETAG * EL * 0.1        ! unit: cal/cm2/s
          ! print*, 'actual et from vegetated ground=', ELEVG ! add by yuqi for testing purpose
 
-         G0B=AKSB*(TBP-TBL(1))/(DZB(1)/2)
+         G0B=AKSB*(TBP-TBL(1))/(DZB(1)/2)  ! unit: cal/cm2/s  (yuqi)
          G0G=AKSG*(TGP-TGL(1))/(DZG(1)/2)
 
          CALL TDFCND (KVG,SMG(KZ), QUARTZ, SMCMAX )
          KVG = KVG * EXP(-2.0 * VFAC)  
-         G0VG= KVG * (TVGP-TVGL(1))/(DZVG(1)/2)/697.7/60   ! unit: cal/cm2/s
+         G0VG= KVG * (TVGP-TVGL(1))/(DZVG(1)/2.)/697.7/60   ! unit: cal/cm2/s (Yuqi)
          ! print*, 'G0B, G0G, G0VG=', G0B, G0G, G0VG
 
          DG0BDTB = 2 * AKSB/DZB(1)
@@ -2017,8 +2014,7 @@ ENDIF
          DG0GDTVG = 0
          DG0VGDTB = 0
          DG0VGDTG = 0
-         DG0VGDTVG = 2* KVG/DZVG(1)/697.7/60
-
+         DG0VGDTVG = 2 * KVG/DZVG(1)/697.7/60
 
          WF  = SB + RB - HB - ELEB - G0B
          A = DRBDTB - DHBDTB - DELEBDTB - DG0BDTB 
@@ -2097,13 +2093,15 @@ ENDIF
 
          
          TC1 = RW * ALPHAC + RW * FVG * ALPHAVG + RW * (1 - FVG) * ALPHAG + W * ALPHAB
-         TC2 = RW * ALPHAC * TA + RW * FVG * ALPHAVG * TVGP + RW * (1 - FVG) * ALPHAG * TGP + W * ALPHAB * TBP + 2 * RTREE * LAI_TREE * HT * ALPHAT 
+         TC2 = RW * ALPHAC * TA + RW * FVG * ALPHAVG * TVGP + RW * (1 - FVG) * ALPHAG * TGP + W * ALPHAB * TBP + 2 * RTREE * LAI_TREE * (HT*(697.7 * 60.0)/(RHOO * CPP)) * ALPHAT 
          TC = TC2 / TC1
+		 ! Chenghao: HT unit is cgs, convert it back to W/m2 before dividing RHOO*CPP
          ! print*, 'ALPHAT, ALPHAC, ALPHAVG, TC1, TC2, tmp=', ALPHAT, ALPHAC, ALPHAVG,TC1, TC2, 2 * RTREE * LAI_TREE * HT * ALPHAT ! add by yuqi
 
          QC1 = W * ALPHAB * BETB + RW * (1 - FVG) * ALPHAG * BETG + RW * FVG * ALPHAVG * BETVG + RW * ALPHAC
-         QC2 = W * ALPHAB * BETB * QS0B + RW * (1 - FVG) * ALPHAG * BETG * QS0G + RW * FVG * ALPHAVG * BETVG * QS0VG + RW * ALPHAC * QA + (2 * RTREE * LAI_TREE * ELET/697.7 / 60 / EL) * CP  
+         QC2 = W * ALPHAB * BETB * QS0B + RW * (1 - FVG) * ALPHAG * BETG * QS0G + RW * FVG * ALPHAVG * BETVG * QS0VG + RW * ALPHAC * QA + (2 * RTREE * LAI_TREE * (ELET/ELL/RHOO))
          QC=QC2/QC1
+		 ! Chenghao: ELET - [W/m2], ELL - [J/kg], RHOO - [kg/m^3]
 
 
          ES=6.11*EXP( (2.5*10**6/461.51)*(TC-273.15)/(273.15*TC) ) 
@@ -2151,14 +2149,14 @@ ENDIF
          .AND. ABS(DTC) < 0.000001) EXIT
 
       END DO
-      TT = TC   ! add by yuqi today
+      TT = TC   ! add by yuqi
       TTP = TT  ! update TTP (yuqi)
        
 
       CALL multi_layer(num_wall_layers,BOUNDB,G0B,CAPB,AKSB,TBL,DZB,DELT,TBLEND)
       CALL multi_layer(num_road_layers,BOUNDG,G0G,CAPG,AKSG,TGL,DZG,DELT,TGLEND)
-      !CALL SHFLX (SSOILG,TVGL,SMG,SMCMAX,NVG,TVGP,DELT,YY,ZZ1,ZSOILG,TGLEND,ZBOT,SMCWLT,KVG,QUARTZ,CSOIL,CAPVG)   ! go back to multi_layer (yuqi)
-      CALL multi_layer(num_road_layers,BOUNDG,G0VG,CAPVG,KVG,TVGL,DZVG,DELT,TGLEND)
+!      CALL multi_layer(num_road_layers,BOUNDG,G0VG,CAPVG,KVG,TVGL,DZVG,DELT,TGLEND) ! still need to fix DZVG unit if using this one (Chenghao 2026/01/20)
+	  CALL SHFLX (SSOILG,TVGL,SMG,SMCMAX,NVG,TVGP,DELT,YY,ZZ1,ZSOILG,TGLEND,ZBOT,SMCWLT,KVG,QUARTZ,CSOIL,CAPVG)   ! Update temperature in vegetated ground soil layer (yuqi)
       ! print*, 'TVGL=', TVGL   ! add by yuqi for testing purpose 
       !print*, 'Soil heat flux=', SSOILG  ! add by yuqi for testing purpose 
     
@@ -2183,7 +2181,7 @@ ENDIF
        EPSGE   = (1 - FVG) * EPSG + FVG * EPSVG           ! DEFINE NEW EPSVG HERE (YUQI)
        TGEP    = (1 - FVG) * TGP  + FVG * TVGP 
        QS0GE   = (1 - FVG) * QS0G + FVG * QS0VG
-       ALPHAGE = (1 - FVG) * ALPHAG + FVG * ALPHAVG       ! NOT SURE WHETHER CAN DEFINE LIKE THIS TO CALCULATE Tcan (YUQI)
+       ALPHAGE = (1 - FVG) * ALPHAG + FVG * ALPHAVG
 
        EMITW = EPSB * SIG * TBP**4/60
        EMITG = EPSGE * SIG * TGEP**4/60
@@ -2240,7 +2238,7 @@ ENDIF
        G0G=SG+RG-HG-ELEG    ! unit: cal/cm2/s
 
        RA_LEAF = 58 * (LAI_TREE**0.56) * SQRT(DLEAF/UC)             
-       HT = RHOO * CPP * (TTP - TCP) / RA_LEAF / (697.7 * 60.0)   ! HT in unit of cal/cm2/s
+       HT = (SLEAF + RLEAF - ELET - (TT - TTP)/DELT*640)/697.7/60 ! HT in unit of cal/cm2/s (unit consistent with HB and HG)
        W2 = 0.5 * (SMGP(NVG/2-1) + SMGP(NVG/2))    ! POTENTIAL ERROR (YUQI)
        CALL STOMATAL(RS_LEAF, RSMIN, SLEAF, LAI_TREE, W2, SMCREF, SMCMAX, TC, TT, QC, QS0T) 
        CALL LELEAF(ELET, SLEAF, RLEAF, RA_LEAF, RS_LEAF, RHOO, TC, QC, QS0T)
@@ -2253,15 +2251,16 @@ ENDIF
        TBP=TB
        TGP=TG
        TTP=TT
-
-       TC1 = RW * ALPHAC + RW * FVG * ALPHAVG + RW * (1 - FVG) * ALPHAG + W * ALPHAB + 2 * RTREE * LAI_TREE * ALPHAT
-       TC2 = RW * ALPHAC * TA + RW * FVG * ALPHAVG * TVGP + RW * (1 - FVG) * ALPHAG * TGP + W * ALPHAB * TBP + 2 * RTREE * LAI_TREE * TTP * ALPHAT
+       TC1 = RW * ALPHAC + RW * FVG * ALPHAVG + RW * (1 - FVG) * ALPHAG + W * ALPHAB
+       TC2 = RW * ALPHAC * TA + RW * FVG * ALPHAVG * TVGP + RW * (1 - FVG) * ALPHAG * TGP + W * ALPHAB * TBP + 2 * RTREE * LAI_TREE * (HT*(697.7 * 60.0)/(RHOO * CPP)) * ALPHAT 
        TC = TC2 / TC1
+	   ! Chenghao: HT unit is cgs, convert it back to W/m2 before dividing RHOO*CPP
 
        QC1 = W * ALPHAB * BETB + RW * (1 - FVG) * ALPHAG * BETG + RW * FVG * ALPHAVG * BETVG + RW * ALPHAC
-       QC2 = W * ALPHAB * BETB * QS0B + RW * (1 - FVG) * ALPHAG * BETG * QS0G + RW * FVG * ALPHAVG * BETVG * QS0VG + RW * ALPHAC * QA + 2 * RTREE * LAI_TREE * ELET   
+       QC2 = W * ALPHAB * BETB * QS0B + RW * (1 - FVG) * ALPHAG * BETG * QS0G + RW * FVG * ALPHAVG * BETVG * QS0VG + RW * ALPHAC * QA + (2 * RTREE * LAI_TREE * (ELET/ELL/RHOO))
        QC=QC2/QC1
-
+	! Chenghao: ELET - [W/m2], ELL - [J/kg], RHOO - [kg/m^3]
+		 
        TCP=TC
        QCP=QC
 
@@ -2271,59 +2270,65 @@ ENDIF
 
 
    FLXTHB=HB/RHO/CP/100.
-   FLXHUMB=ELEB/RHO/EL/100.
+   FLXHUMB=ELEB/RHO/EL/100. ! ELEB is cgs unit, final unit m/s
    FLXTHG=HG/RHO/CP/100.
-   FLXHUMG=ELEG/RHO/EL/100.
+   FLXHUMG=ELEG/RHO/EL/100. ! ELEG is cgs unit, final unit m/s
    FLXTHVG=HVG/RHO/CP/100.    ! ADD BY (Huang)
-   FLXHUMVG=ELEVG/RHO/EL/100.               
+   FLXHUMVG=ELEVG/RHO/EL/100. ! ELEVG is cgs unit, final unit m/s
    FLXTHT=HT/RHO/CP/100.      
-   FLXHUMT=ELET/RHOO/ELL     ! ADD BY (Huang)
+   FLXHUMT=(ELET/697.7/60)/RHO/EL/100.  ! ELET is W/m2, final unit m/s
 !-------------------------------------------------------------------------------
 ! Total Fluxes from Urban Canopy
 !-------------------------------------------------------------------------------
 !===Yang, 2014/10/08, cal. ah. alh. green roof===
  IF (groption==1 .and. TREEOPTION .ne. 1) THEN
-   IF (ahoption==1) THEN
-      FLXTH  = ((1.-FGR)*R*FLXTHR + FGR*R*FLXTHGR + W*FLXTHB + RW*FLXTHG)+ AH/RHOO/CPP
-	   
-      FLXHUM  = ((1.-FGR)*R*FLXHUMR + FGR*R*FLXHUMGR + W*FLXHUMB + RW*FLXHUMG)+ ALH/RHOO/ELL
-   ELSE
-						
-      FLXTH  = ((1.-FGR)*R*FLXTHR + FGR*R*FLXTHGR + W*FLXTHB + RW*FLXTHG)
-	   
-      FLXHUM  = ((1.-FGR)*R*FLXHUMR + FGR*R*FLXHUMGR + W*FLXHUMB + RW*FLXHUMG)
-   ENDIF
+   if(ahoption==1) then
+     FLXTH  = ((1.-FGR)*R*FLXTHR + FGR*R*FLXTHGR + W*FLXTHB + RW*FLXTHG)+ AH/RHOO/CPP
+   else
+     FLXTH  = ((1.-FGR)*R*FLXTHR + FGR*R*FLXTHGR + W*FLXTHB + RW*FLXTHG)
+   endif
+   if(alhoption==1) then
+     FLXHUM  = ((1.-FGR)*R*FLXHUMR + FGR*R*FLXHUMGR + W*FLXHUMB + RW*FLXHUMG)+ ALH/RHOO/ELL
+   else
+     FLXHUM  = ((1.-FGR)*R*FLXHUMR + FGR*R*FLXHUMGR + W*FLXHUMB + RW*FLXHUMG)
+   endif
    FLXUV  = ((1.-FGR)*R*CDR + FGR*R*CDGR + RW*CDC )*UA*UA
    FLXG =   ((1.-FGR)*R*G0R + FGR*R*G0GR+ W*G0B + RW*G0G)
    LNET =   (1.-FGR) * R * RR + FGR *R* RGR + W * RB +  RW * RG 
  
  ELSEIF (groption .ne. 1 .and. TREEOPTION == 1) THEN
-   IF (ahoption==1) THEN
-      FLXTH  = ( R*FLXTHR  + W*FLXTHB  + (1 - FVG) *  RW*FLXTHG + FVG * RW * FLXTHVG ) + AH/RHOO/CPP
-      FLXHUM = ( R*FLXHUMR + W*FLXHUMB + (1 - FVG) *  RW*FLXHUMG + FVG * RW * FLXHUMVG )+ ALH/RHOO/ELL
-   ELSE
-      FLXTH  = ( R*FLXTHR  + W*FLXTHB  + (1 - FVG) *  RW*FLXTHG + FVG * RW * FLXTHVG + FLXTHT*LAI_TREE*2*RTREE/(RW+R) )
-      FLXHUM = ( R*FLXHUMR + W*FLXHUMB + (1 - FVG) *  RW*FLXHUMG + FVG * RW * FLXHUMVG + FLXHUMT*LAI_TREE*2*RTREE/(RW+R) )
-   ENDIF
-   !IF (distributed_aerodynamics_option) THEN
-     !FLXUV = CDC * UA * UA
+   if (ahoption==1) then
+      FLXTH  = ( R*FLXTHR  + W*FLXTHB  + (1 - FVG) *  RW*FLXTHG + FVG * RW * FLXTHVG ) + AH/RHOO/CPP + FLXTHT*LAI_TREE*2*RTREE
+   else
+      FLXTH  = ( R*FLXTHR  + W*FLXTHB  + (1 - FVG) *  RW*FLXTHG + FVG * RW * FLXTHVG + FLXTHT*LAI_TREE*2*RTREE )
+   endif
+   if(alhoption==1) then
+      FLXHUM = ( R*FLXHUMR + W*FLXHUMB + (1 - FVG) *  RW*FLXHUMG + FVG * RW * FLXHUMVG )+ ALH/RHOO/ELL + FLXHUMT*LAI_TREE*2*RTREE
+   else   
+      FLXHUM = ( R*FLXHUMR + W*FLXHUMB + (1 - FVG) *  RW*FLXHUMG + FVG * RW * FLXHUMVG + FLXHUMT*LAI_TREE*2*RTREE )
+   endif
+   IF (distributed_aerodynamics_option) THEN
+     FLXUV = CDC * UA * UA
    !ELSE
    FLXUV  = ( R*CDR + RW*CDC )*UA*UA
-   !ENDIF
+   ENDIF
    FLXG =   R*G0R + W*G0B + (1 - FVG)*RW*G0G + FVG*RW*G0VG 
-   LNET =   R*RR + W*RB + (1 - FVG)*RW*RG + FVG*RW*RVG + RT * (2*PI*RTREE*(1-TAU))/(RW+R)
+   LNET =   R*RR + W*RB + (1 - FVG)*RW*RG + FVG*RW*RVG + RT * 2*PI*RTREE*(1-TAU)
 
  ELSEIF (groption == 1 .and. TREEOPTION == 1) THEN
-   IF (ahoption==1) THEN
-      FLXTH  = ( (1-FGR)*R*FLXTHR + FGR*R*FLXTHGR  + W*FLXTHB  + (1 - FVG) *  RW*FLXTHG + FVG * RW * FLXTHVG ) + AH/RHOO/CPP
-      FLXHUM = ( (1-FGR)*R*FLXHUMR + FGR*R*FLXHUMGR + W*FLXHUMB + (1 - FVG) *  RW*FLXHUMG + FVG * RW * FLXHUMVG )+ ALH/RHOO/ELL
-   ELSE
-      FLXTH  = ( (1-FGR)*R*FLXTHR + FGR*R*FLXTHGR  + W*FLXTHB  + (1 - FVG) *  RW*FLXTHG + FVG * RW * FLXTHVG + FLXTHT*LAI_TREE*2*RTREE/(RW+R))
-      FLXHUM = ( (1-FGR)*R*FLXHUMR + FGR*R*FLXHUMGR + W*FLXHUMB + (1 - FVG) *  RW*FLXHUMG + FVG * RW * FLXHUMVG + FLXHUMT*LAI_TREE*2*RTREE/(RW+R) )
-   ENDIF
+   if (ahoption==1) then
+      FLXTH  = ( (1-FGR)*R*FLXTHR + FGR*R*FLXTHGR  + W*FLXTHB  + (1 - FVG) *  RW*FLXTHG + FVG * RW * FLXTHVG ) + AH/RHOO/CPP + FLXTHT*LAI_TREE*2*RTREE
+   else
+      FLXTH  = ( (1-FGR)*R*FLXTHR + FGR*R*FLXTHGR  + W*FLXTHB  + (1 - FVG) *  RW*FLXTHG + FVG * RW * FLXTHVG + FLXTHT*LAI_TREE*2*RTREE)
+   endif 
+   if(alhoption==1) then
+      FLXHUM = ( (1-FGR)*R*FLXHUMR + FGR*R*FLXHUMGR + W*FLXHUMB + (1 - FVG) *  RW*FLXHUMG + FVG * RW * FLXHUMVG )+ ALH/RHOO/ELL + FLXHUMT*LAI_TREE*2*RTREE
+   else
+      FLXHUM = ( (1-FGR)*R*FLXHUMR + FGR*R*FLXHUMGR + W*FLXHUMB + (1 - FVG) *  RW*FLXHUMG + FVG * RW * FLXHUMVG + FLXHUMT*LAI_TREE*2*RTREE )
+   endif
    FLXUV  = ((1-FGR)*R*CDR + FGR*R*CDGR + RW*CDC )*UA*UA
-   FLXG =   (1-FGR)*R*G0R + FGR*R*G0GR+ W*G0B + + (1 - FVG)*RW*G0G + FVG*RW*G0VG 
-   LNET =   (1-FGR) * R * RR + FGR *R* RGR + W * RB + (1 - FVG)*RW*RG + FVG*RW*RVG + RT * (2*PI*RTREE*(1-TAU))/(RW+R)
+   FLXG =   (1-FGR)*R*G0R + FGR*R*G0GR+ W*G0B + (1 - FVG)*RW*G0G + FVG*RW*G0VG 
+   LNET =   (1-FGR) * R * RR + FGR *R* RGR + W * RB + (1 - FVG)*RW*RG + FVG*RW*RVG + RT * 2*PI*RTREE*(1-TAU)
 
  ELSE
    IF (ahoption==1) THEN
@@ -2794,7 +2799,7 @@ ENDIF
                          CAPR,CAPB,CAPG,AKSR,AKSB,AKSG,ALBR,ALBB,ALBG, & ! out
                          EPSR,EPSB,EPSG,Z0R,Z0B,Z0G,Z0HB,Z0HG,         & ! out
                          BETR,BETB,BETG,TRLEND,TBLEND,TGLEND,          & ! out
-                         RTREE,RTREE_M,HTREE,DTREE,LAI_TREE,LAI_VEG,   & ! out   ! added by yuqi
+                         RTREE,RTREE_M,RW_M,HTREE,DTREE,LAI_TREE,LAI_VEG,   & ! out   ! added by yuqi
                          Z0VG,Z0HVG,CAPVG,EPSVG,EPST,                  & ! out   ! added by yuqi
 !for BEP
                          NUMDIR, STREET_DIRECTION, STREET_WIDTH,       & ! out
@@ -2810,7 +2815,7 @@ ENDIF
                            CAPR,CAPB,CAPG,AKSR,AKSB,AKSG,ALBR,ALBB,ALBG, &
                            SIGMA_ZED,                                    &
                            EPSR,EPSB,EPSG,Z0R,Z0B,Z0G,Z0HB,Z0HG,         &
-                           BETR,BETB,BETG,TRLEND,TBLEND,TGLEND,RTREE,RTREE_M,HTREE,&
+                           BETR,BETB,BETG,TRLEND,TBLEND,TGLEND,RTREE,RTREE_M,RW_M,HTREE,&
                            DTREE,LAI_TREE,LAI_VEG,Z0VG,Z0HVG,CAPVG,EPSVG,EPST   ! added by yuqi
    REAL, INTENT(OUT)    :: AKANDA_URBAN
 !for BEP
@@ -2864,7 +2869,8 @@ ENDIF
    TBLEND=  TBLEND_TBL(UTYPE)
    TGLEND=  TGLEND_TBL(UTYPE)
    RTREE=   RTREE_TBL(UTYPE)   ! added by yuqi
-   RTREE_M = RTREE_M_TBL(UTYPE)							   
+   RTREE_M = RTREE_M_TBL(UTYPE)
+   RW_M   = RW_M_TBL(UTYPE)
    HTREE=   HTREE_TBL(UTYPE)
    DTREE=   DTREE_TBL(UTYPE)
    LAI_TREE=LAI_TREE_TBL(UTYPE)
@@ -3080,7 +3086,9 @@ ENDIF
             ALLOCATE( RTREE_TBL(ICATE), stat=allocate_status )                                                  ! added by yuqi
             if(allocate_status /= 0) FATAL_ERROR('Error allocating RTREE_TBL in urban_param_init')
 			ALLOCATE( RTREE_M_TBL(ICATE), stat=allocate_status )                                                  ! added by yuqi
-            if(allocate_status /= 0) FATAL_ERROR('Error allocating RTREE_M_TBL in urban_param_init')																													 																			
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating RTREE_M_TBL in urban_param_init')		
+            ALLOCATE( RW_M_TBL(ICATE), stat=allocate_status )                                                  ! added by yuqi
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating RW_M_TBL in urban_param_init')																											 																			
             ALLOCATE( HTREE_TBL(ICATE), stat=allocate_status )
             if(allocate_status /= 0) FATAL_ERROR('Error allocating HTREE_TBL in urban_param_init')
             ALLOCATE( DTREE_TBL(ICATE), stat=allocate_status )
@@ -3409,6 +3417,7 @@ ENDIF
       DTREE_TBL(LC) = DTREE_TBL(LC) / (ROAD_WIDTH(LC) + ROOF_WIDTH(LC))
       HTREE_TBL(LC) = HTREE_TBL(LC) / (ROAD_WIDTH(LC) + ROOF_WIDTH(LC))
 
+      RW_M_TBL(LC) = ROAD_WIDTH(LC)								   
       RW_TBL(LC) = 1.0 - R_TBL(LC)
       BETR_TBL(LC) = 0.0
       BETB_TBL(LC) = 0.0
@@ -5305,9 +5314,9 @@ FUNCTION kanda_kawai_svf(lp, lf) RESULT (svf)
       REAL, DIMENSION(1:NLAYER)  :: NORMQ, ALPHAI, ROOT, PART2
       REAL                :: ALPHABAR , PART1
       REAL, PARAMETER     :: QC1    = 0.6
-      REAL, PARAMETER     :: QC2    = 1.1     ! corrected by yuqi here
+      REAL, PARAMETER     :: QC2    = 1.0
       REAL, PARAMETER     :: Lv     = 2.26E6
-      REAL, PARAMETER     :: rWD    = 1.E3
+      REAL, PARAMETER     :: rWD    = 1.E3  ! density of water [kg/m3]
 
       DO K = 1, NLAYER
          NORMQ(K) = (SMC(K) - SMCDRY)/(SMCMAX - SMCDRY)
@@ -5317,6 +5326,8 @@ FUNCTION kanda_kawai_svf(lp, lf) RESULT (svf)
             ALPHAI(K) = 1
          ELSEIF (NORMQ(K) .lt. QC1 .and. NORMQ(K) .ge. 0) THEN
             ALPHAI(K) = NORMQ(K)/QC1
+         ELSE
+            ALPHAI(K) = 0.0
          END IF
       END DO
 
@@ -5328,6 +5339,11 @@ FUNCTION kanda_kawai_svf(lp, lf) RESULT (svf)
       DO K = 1, NLAYER
          ALPHABAR = ALPHABAR + ROOT(K)*ALPHAI(K)
       END DO
+
+      IF (ALPHABAR <= 1.0E-12) THEN
+         SROOT(:) = 0.0
+         RETURN
+      END IF
 
       DO K = 1, NLAYER
          PART1 = 2 * RTREE * LAI_TREE * (ELE/Lv)/rWD

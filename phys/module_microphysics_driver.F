@@ -225,7 +225,7 @@ SUBROUTINE microphysics_driver(                                          &
    USE module_mp_rcon
    USE module_mp_thompson
    USE module_mp_tempo_cfgs, only : ty_tempo_cfgs
-   USE module_mp_tempo_driver, only : tempo_driver, ty_tempo_driver_diags, &
+   USE module_mp_tempo_driver, only : tempo_run, ty_tempo_driver_diags, &
       tempo_aerosol_surface_emissions
    USE module_mp_full_sbm
 #if ( BUILD_SBM_FAST == 1 )
@@ -1408,7 +1408,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
              if (config_flags%tempo_hailaware == 1) config_tempo_hailaware = .true.
              tempo_cfgs%aerosolaware_flag = config_tempo_aerosolaware
              tempo_cfgs%hailaware_flag = config_tempo_hailaware
-             CALL tempo_driver(                          &
+             CALL tempo_run(                             &
                      tempo_cfgs=tempo_cfgs,              &
                      dt=dt,                              &
                      itimestep=itimestep,                &

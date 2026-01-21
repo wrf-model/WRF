@@ -771,7 +771,54 @@ CC_TOOLS        =      $(SCC)
 
 
 ###########################################################
-#ARCH    Linux x86_64 ppc64le, gfortran compiler with gcc  #serial smpar dmpar dm+sm
+#ARCH    Linux ppc64le, gfortran compiler with gcc  #serial smpar dmpar dm+sm
+#
+DESCRIPTION     =       GNU ($SFC/$SCC)
+DMPARALLEL      =       # 1
+OMPCPP          =       # -D_OPENMP
+OMP             =       # -fopenmp
+OMPCC           =       # -fopenmp
+SFC             =       gfortran
+SCC             =       gcc
+CCOMP           =       gcc
+DM_FC           =       mpif90 -f90=$(SFC)
+DM_CC           =       mpicc -cc=$(SCC)
+FC              =       CONFIGURE_FC
+CC              =       CONFIGURE_CC
+LD              =       $(FC)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
+PROMOTION       =       #-fdefault-real-8
+ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR  CONFIGURE_D_CTSM
+# to validate WRF correctness on aarch64 against x86_64; compile with x86 this alternate ARCH_LOCAL option; able to achieve identical output model on ubuntu 18.04 with gcc 10.2 (on graviton and intel processors)
+# ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR  CONFIGURE_D_CTSM -DAARCH64_X86_CORRECTNESS_FIX
+CFLAGS_LOCAL    =       -w -O3 -c  # -DRSL0_ONLY
+LDFLAGS_LOCAL   =       
+CPLUSPLUSLIB    =       
+ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
+FCOPTIM         =       -O2 -ftree-vectorize -funroll-loops
+FCREDUCEDOPT	=       $(FCOPTIM)
+FCNOOPT		=       -O0
+FCDEBUG         =       # -g $(FCNOOPT) # -ggdb -fbacktrace -fcheck=bounds,do,mem,pointer -ffpe-trap=invalid,zero,overflow
+FORMAT_FIXED    =       -ffixed-form
+FORMAT_FREE     =       -ffree-form -ffree-line-length-none
+FCSUFFIX        =       
+FCCOMPAT        =       
+BYTESWAPIO      =       -fconvert=big-endian -frecord-marker=4
+FCBASEOPTS_NO_G =       -w $(FORMAT_FREE) $(BYTESWAPIO) $(FCCOMPAT)
+FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
+MODULE_SRCH_FLAG =     
+TRADFLAG        =      CONFIGURE_TRADFLAG
+CPP             =      /lib/cpp -Uvector CONFIGURE_CPPFLAGS
+AR              =      ar
+ARFLAGS         =      ru
+M4              =      m4 -G
+RANLIB          =      ranlib
+RLFLAGS		=	
+CC_TOOLS        =      $(SCC) 
+NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
+
+###########################################################
+#ARCH    Linux x86_64 , gfortran compiler with gcc  #serial smpar dmpar dm+sm
 #
 DESCRIPTION     =       GNU ($SFC/$SCC)
 DMPARALLEL      =       # 1
@@ -1042,6 +1089,54 @@ M4              =      m4 -B 14000
 RANLIB          =      ranlib
 RLFLAGS		=	-c
 CC_TOOLS        =      $(SCC) 
+
+
+###########################################################
+#ARCH    Linux ppc64le, (Linux) gfortran with clang #serial smpar dmpar dm+sm
+#
+DESCRIPTION     =       IBM ($SFC/bm-clang)
+DMPARALLEL      =       # 1
+OMPCPP          =       # -D_OPENMP
+OMP             =       # -fopenmp
+OMPCC           =       # -fopenmp
+SFC             =       gfortran
+SCC             =       ibm-clang
+CCOMP           =       ibm-clang
+DM_FC           =       mpif90 -f90=$(SFC)
+DM_CC           =       mpicc -cc=$(SFC)
+FC              =       CONFIGURE_FC
+CC              =       CONFIGURE_CC
+LD              =       $(FC)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
+PROMOTION       =       #-fdefault-real-8
+ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR -DNATIVE_MASSV 
+CFLAGS_LOCAL    =       -w -Ofast -c   # -DRSL0_ONLY
+LDFLAGS_LOCAL   =
+CPLUSPLUSLIB    =       
+ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
+FCOPTIM         =       -O2 -ftree-vectorize -funroll-loops
+FCREDUCEDOPT	=       $(FCOPTIM)
+FCNOOPT         =       -O0
+FCDEBUG         =       # -g $(FCNOOPT) # -fbacktrace -ggdb -fcheck=bounds,do,mem,pointer -ffpe-trap=invalid,zero,overflow
+FORMAT_FIXED    =       -ffixed-form
+FORMAT_FREE     =       -ffree-form -ffree-line-length-none
+FCSUFFIX        =       
+FCCOMPAT        =       
+BYTESWAPIO      =       -fconvert=big-endian -frecord-marker=4
+FCBASEOPTS_NO_G =       -w $(FORMAT_FREE) $(BYTESWAPIO) $(FCCOMPAT)
+FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
+MODULE_SRCH_FLAG =
+TRADFLAG        =      CONFIGURE_TRADFLAG
+CPP             =      cpp -Uvector CONFIGURE_CPPFLAGS -xassembler-with-cpp
+AR              =      ar
+ARFLAGS         =      ru
+M4              =      m4 -B 14000
+RANLIB          =      ranlib
+RLFLAGS		=	-c
+CC_TOOLS        =      $(SCC)
+NETCDFPAR_BUILD	=      CONFIGURE_NETCDFPAR_BUILD
+
+
 
 
 ###########################################################

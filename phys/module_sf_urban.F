@@ -2309,8 +2309,8 @@ ENDIF
    endif
    IF (distributed_aerodynamics_option) THEN
      FLXUV = CDC * UA * UA
-   !ELSE
-   FLXUV  = ( R*CDR + RW*CDC )*UA*UA
+   ELSE
+     FLXUV  = ( R*CDR + RW*CDC )*UA*UA
    ENDIF
    FLXG =   R*G0R + W*G0B + (1 - FVG)*RW*G0G + FVG*RW*G0VG 
    LNET =   R*RR + W*RB + (1 - FVG)*RW*RG + FVG*RW*RVG + RT * 2*PI*RTREE*(1-TAU)

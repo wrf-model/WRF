@@ -1766,7 +1766,7 @@ ENDIF
       SRUN2 = 0.0
       SRUN3 = 0.0
 
-      DZVG = DZGR                                 ! set identical green roof depth and vegetated ground layer depth (yuqi)
+      DZVG = DZGR                                 ! set identical green roof depth and vegetated ground layer depth (Yuqi) [m]
       KZ = 1
       ZSOILG (KZ) = - DZVG (KZ)                   ! dz: (positive) depth of each single layer; zsoil: (negative) accumulated depth from ground  (yuqi)
       DO KZ = 2,NVG                               ! nvg: total layer of vegetated ground, = 4 in here (yuqi)
@@ -1995,7 +1995,7 @@ ENDIF
          DELEVGDTVG=RHO*EL*CHVG*UC*BETVG*(DQS0VGDTVG-DQCDTVG)*100
 
 		 
-          ELEVG = ETAG * EL * 0.1        ! unit: cal/cm2/s
+         ELEVG = ETAG * EL * 0.1        ! unit: cal/cm2/s
          ! print*, 'actual et from vegetated ground=', ELEVG ! add by yuqi for testing purpose
 
          G0B=AKSB*(TBP-TBL(1))/(DZB(1)/2)  ! unit: cal/cm2/s  (yuqi)
@@ -2155,8 +2155,8 @@ ENDIF
 
       CALL multi_layer(num_wall_layers,BOUNDB,G0B,CAPB,AKSB,TBL,DZB,DELT,TBLEND)
       CALL multi_layer(num_road_layers,BOUNDG,G0G,CAPG,AKSG,TGL,DZG,DELT,TGLEND)
-!      CALL multi_layer(num_road_layers,BOUNDG,G0VG,CAPVG,KVG,TVGL,DZVG,DELT,TGLEND) ! still need to fix DZVG unit if using this one (Chenghao 2026/01/20)
-	  CALL SHFLX (SSOILG,TVGL,SMG,SMCMAX,NVG,TVGP,DELT,YY,ZZ1,ZSOILG,TGLEND,ZBOT,SMCWLT,KVG,QUARTZ,CSOIL,CAPVG)   ! Update temperature in vegetated ground soil layer (yuqi)
+      CALL multi_layer(num_road_layers,BOUNDG,G0VG,CAPVG,KVG,TVGL,DZVG,DELT,TGLEND) ! double check DZVG unit ([m] as input) (Chenghao 2026/01/20)
+	  ! CALL SHFLX (SSOILG,TVGL,SMG,SMCMAX,NVG,TVGP,DELT,YY,ZZ1,ZSOILG,TGLEND,ZBOT,SMCWLT,KVG,QUARTZ,CSOIL,CAPVG)   ! Update temperature in vegetated ground soil layer (yuqi)
       ! print*, 'TVGL=', TVGL   ! add by yuqi for testing purpose 
       !print*, 'Soil heat flux=', SSOILG  ! add by yuqi for testing purpose 
     

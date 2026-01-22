@@ -1951,7 +1951,7 @@ ENDIF
 
          IF ((RTREE > 0.) .AND. (LAI_TREE > 0.)) THEN
             POTENTIAL_ELET = (ELL * 1000 * AVAILABLE_WATER_SUM * FVG * RW / DELT) / &
-                              (2.0 * RTREE * LAI_TREE) ! [J/kg]*[kg/m3]*[m]/[s] = [W/m2]
+                              (2.0 * RTREE * LAI_TREE) ! [J/kg]*[1000 kg/m3 - density]*[m]/[s] = [W/m2]
          ELSE
             POTENTIAL_ELET = 0.0
          END IF
@@ -1966,7 +1966,8 @@ ENDIF
          ! ALPHAT =  (RHO*CP*100.)/(1.27*RA_LEAF) ! unit [cal/cm2/s/K] ([g/cm3] * [cal/g/K] / [s/m] * [m/cm]) % commented out, no longer used for residual approach (Chenghao Wang)
          DTCDTB = (W  * ALPHAB)/(RW * ALPHAC + RW * FVG * ALPHAVG + RW * (1 - FVG) * ALPHAG + W * ALPHAB) 
          DTCDTG = (RW * ALPHAG * (1 - FVG))/(RW * ALPHAC + RW * FVG * ALPHAVG + RW * (1 - FVG) * ALPHAG + W * ALPHAB)
-         DTCDTVG= (RW * ALPHAVG * FVG)/(RW * ALPHAC + RW * FVG * ALPHAVG + RW * (1 - FVG) * ALPHAG + W * ALPHAB)		 
+         DTCDTVG= (RW * ALPHAVG * FVG)/(RW * ALPHAC + RW * FVG * ALPHAVG + RW * (1 - FVG) * ALPHAG + W * ALPHAB)
+         ! ALPHAs in the unit of cal/cm2/s/K 
 		 
 		 
          DHBDTB=RHO*CP*CHB*UC*(1-DTCDTB)*100
@@ -1980,9 +1981,10 @@ ENDIF
          DHVGDTVG=RHO*CP*CHVG*UC*(1-DTCDTVG)*100
 
 
-         DQCDTB=W*ALPHAB*BETB*DQS0BDTB/(W * ALPHAB * BETB + RW * (1 - FVG) * ALPHAG * BETG + RW * FVG * ALPHAVG * BETVG + RW * ALPHAC) 
-         DQCDTG=RW * (1 - FVG) * ALPHAG * BETG * DQS0GDTG/(W * ALPHAB * BETB + RW * (1 - FVG) * ALPHAG * BETG + RW * FVG * ALPHAVG * BETVG + RW * ALPHAC) 
-         DQCDTVG=RW * FVG * ALPHAVG * BETVG * DQS0VGDTVG/(W * ALPHAB * BETB + RW * (1 - FVG) * ALPHAG * BETG + RW * FVG * ALPHAVG * BETVG + RW * ALPHAC) 
+         DQCDTB=W*ALPHAB*BETB*DQS0BDTB/(W * ALPHAB * BETB + RW * (1 - FVG) * ALPHAG * BETG + RW * ALPHAC) 
+         DQCDTG=RW * (1 - FVG) * ALPHAG * BETG * DQS0GDTG/(W * ALPHAB * BETB + RW * (1 - FVG) * ALPHAG * BETG + RW * ALPHAC) 
+         ! DQCDTVG=0 ! no QS0VG in QC2
+		 DQCDTVG=RW * FVG * ALPHAVG * BETVG * DQS0VGDTVG/(W * ALPHAB * BETB + RW * (1 - FVG) * ALPHAG * BETG + RW * ALPHAC)
 
          DELEBDTB=RHO*EL*CHB*UC*BETB*(DQS0BDTB-DQCDTB)*100
          DELEBDTG=RHO*EL*CHB*UC*BETB*(0-DQCDTG)*100
@@ -2093,13 +2095,13 @@ ENDIF
 
          
          TC1 = RW * ALPHAC + RW * FVG * ALPHAVG + RW * (1 - FVG) * ALPHAG + W * ALPHAB
-         TC2 = RW * ALPHAC * TA + RW * FVG * ALPHAVG * TVGP + RW * (1 - FVG) * ALPHAG * TGP + W * ALPHAB * TBP + 2 * RTREE * LAI_TREE * (HT/(RHO * CP))
+         TC2 = RW * ALPHAC * TA + RW * FVG * ALPHAVG * TVGP + RW * (1 - FVG) * ALPHAG * TGP + W * ALPHAB * TBP + 2 * RTREE * LAI_TREE * (HT/100)
          TC = TC2 / TC1
 		 ! Chenghao: HT unit is cgs, keep it as is [RHO - g/cm3, CP - cal/g/K]
          ! print*, 'ALPHAT, ALPHAC, ALPHAVG, TC1, TC2, tmp=', ALPHAT, ALPHAC, ALPHAVG,TC1, TC2, 2 * RTREE * LAI_TREE * HT * ALPHAT ! add by yuqi
 
-         QC1 = W * ALPHAB * BETB + RW * (1 - FVG) * ALPHAG * BETG + RW * FVG * ALPHAVG * BETVG + RW * ALPHAC
-         QC2 = W * ALPHAB * BETB * QS0B + RW * (1 - FVG) * ALPHAG * BETG * QS0G + RW * FVG * ALPHAVG * BETVG * QS0VG + RW * ALPHAC * QA + (2 * RTREE * LAI_TREE * (ELET/697.7/60.))
+         QC1 = W * ALPHAB * BETB + RW * (1 - FVG) * ALPHAG * BETG + RW * ALPHAC
+         QC2 = W * ALPHAB * BETB * QS0B + RW * (1 - FVG) * ALPHAG * BETG * QS0G + RW * FVG * ETAG *CP / 1000 + RW * ALPHAC * QA + (2 * RTREE * LAI_TREE * CP * (ELET/697.7/60.)/100/EL)
          QC=QC2/QC1
 		 ! Chenghao: ELET - [W/m2], convert it to cgs to be consistent with all other terms (e.g., ALPHAB)
 
@@ -2155,8 +2157,8 @@ ENDIF
 
       CALL multi_layer(num_wall_layers,BOUNDB,G0B,CAPB,AKSB,TBL,DZB,DELT,TBLEND)
       CALL multi_layer(num_road_layers,BOUNDG,G0G,CAPG,AKSG,TGL,DZG,DELT,TGLEND)
-      CALL multi_layer(num_road_layers,BOUNDG,G0VG,CAPVG,KVG,TVGL,DZVG,DELT,TGLEND) ! double check DZVG unit ([m] as input) (Chenghao 2026/01/20)
-	  ! CALL SHFLX (SSOILG,TVGL,SMG,SMCMAX,NVG,TVGP,DELT,YY,ZZ1,ZSOILG,TGLEND,ZBOT,SMCWLT,KVG,QUARTZ,CSOIL,CAPVG)   ! Update temperature in vegetated ground soil layer (yuqi)
+      ! CALL multi_layer(num_road_layers,BOUNDG,G0VG,CAPVG,KVG,TVGL,DZVG*0.01,DELT,TGLEND) ! DZVG unit ([m] as input, needed to convert to[cm]) (Chenghao 2026/01/20)
+	  CALL SHFLX (SSOILG,TVGL,SMG,SMCMAX,NVG,TVGP,DELT,YY,ZZ1,ZSOILG,TGLEND,ZBOT,SMCWLT,KVG,QUARTZ,CSOIL,CAPVG)   ! Update temperature in vegetated ground soil layer (yuqi)
       ! print*, 'TVGL=', TVGL   ! add by yuqi for testing purpose 
       !print*, 'Soil heat flux=', SSOILG  ! add by yuqi for testing purpose 
     
@@ -2246,18 +2248,18 @@ ENDIF
 
        CALL force_restore(CAPB,AKSB,DELT,SB,RB,HB,ELEB,TBLEND,TBP,TB)
        CALL force_restore(CAPG,AKSG,DELT,SG,RG,HG,ELEG,TGLEND,TGP,TG)
-       CALL force_restore_tree(DELT,ST,RT,HT,ELET/(697.7*60),LAI_TREE,TTP,TT)
+       CALL force_restore_tree(DELT,ST,RT,HT,ELET/(697.7*60),LAI_TREE,TTP,TT) ! to be fixed (Yuqi 01/21/2026)
 
        TBP=TB
        TGP=TG
        TTP=TT
        TC1 = RW * ALPHAC + RW * FVG * ALPHAVG + RW * (1 - FVG) * ALPHAG + W * ALPHAB
-       TC2 = RW * ALPHAC * TA + RW * FVG * ALPHAVG * TVGP + RW * (1 - FVG) * ALPHAG * TGP + W * ALPHAB * TBP + 2 * RTREE * LAI_TREE * (HT/(RHO * CP))
+       TC2 = RW * ALPHAC * TA + RW * FVG * ALPHAVG * TVGP + RW * (1 - FVG) * ALPHAG * TGP + W * ALPHAB * TBP + 2 * RTREE * LAI_TREE * (HT/100)
        TC = TC2 / TC1
-	   ! Chenghao: HT unit is cgs, keep it as is  [RHO - g/cm3, CP - cal/g/K]
+	   ! Chenghao: HT unit is cgs, keep it as is [RHO - g/cm3, CP - cal/g/K]
 
-       QC1 = W * ALPHAB * BETB + RW * (1 - FVG) * ALPHAG * BETG + RW * FVG * ALPHAVG * BETVG + RW * ALPHAC
-       QC2 = W * ALPHAB * BETB * QS0B + RW * (1 - FVG) * ALPHAG * BETG * QS0G + RW * FVG * ALPHAVG * BETVG * QS0VG + RW * ALPHAC * QA + (2 * RTREE * LAI_TREE * (ELET/697.7/60.))
+       QC1 = W * ALPHAB * BETB + RW * (1 - FVG) * ALPHAG * BETG + RW * ALPHAC
+       QC2 = W * ALPHAB * BETB * QS0B + RW * (1 - FVG) * ALPHAG * BETG * QS0G + RW * FVG * ETAG *CP / 1000 + RW * ALPHAC * QA + (2 * RTREE * LAI_TREE * CP * (ELET/697.7/60.)/100/EL)
        QC=QC2/QC1
 	   ! Chenghao: ELET - [W/m2], convert it to cgs to be consistent with all other terms (e.g., ALPHAB)
 		 
@@ -2276,7 +2278,7 @@ ENDIF
    FLXTHVG=HVG/RHO/CP/100.    ! ADD BY (Huang)
    FLXHUMVG=ELEVG/RHO/EL/100. ! ELEVG is cgs unit, final unit m/s
    FLXTHT=HT/RHO/CP/100.      
-   FLXHUMT=(ELET/697.7/60)/RHO/EL/100.  ! ELET is W/m2, final unit m/s
+   FLXHUMT=ELET*(1/697.7/60.)/RHO/EL/100.  ! ELET is W/m2, final unit m/s
 !-------------------------------------------------------------------------------
 ! Total Fluxes from Urban Canopy
 !-------------------------------------------------------------------------------

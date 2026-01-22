@@ -3064,7 +3064,7 @@ package   nssl_graupelvol nssl_density_on==1           -             scalar:qvol
 package   nssl_hailvol    nssl_density_on==2           -             scalar:qvolg,qvolh
 package   nssl_ssat_out   nssl_ssat_output==1          -             state:ssat
 package   nssl_ssati_out  nssl_ssat_output==2          -             state:ssat,ssati
-package   tempo_aerosol   tempo_aerosolaware==1        -             scalar:qnc,qnwfa,qnifa,qnwfa2d
+package   tempo_aerosol   tempo_aerosolaware==1        -             scalar:qnc,qnwfa,qnifa;state:qnwfa2d,qnifa2d
 package   tempo_hail      tempo_hailaware==1           -             scalar:qng,qvolg
 
 package   radar_refl      compute_radar_ref==1         -             state:refl_10cm,refd_max

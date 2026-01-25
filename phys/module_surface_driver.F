@@ -5316,7 +5316,6 @@ CONTAINS
 
      REAL,     DIMENSION( ims:ime, jms:jme )                    , &
                INTENT(IN   )               ::             MAVAIL, &
-                                                            PBLH, &
                                                            XLAND, &
                                                              QCG, &
                                                             PSFC, &
@@ -5333,6 +5332,7 @@ CONTAINS
 
      REAL,     DIMENSION( ims:ime, jms:jme )                    , &
                INTENT(INOUT)               ::             REGIME, &
+                                                            PBLH, &
                                                              HFX, &
                                                              QFX, &
                                                               LH, &
@@ -5425,7 +5425,7 @@ CONTAINS
 !            TSK(i,j) = TSK_LOCAL(i,j)
 !        ENDDO
 !    ENDDO
-
+      
 ! Save the variables before the first call
 ! (for land/frozen water) to SFCLAY_mynn.
      BR_HOLD(its:ite,jts:jte)   = BR(its:ite,jts:jte)

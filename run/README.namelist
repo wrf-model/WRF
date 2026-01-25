@@ -1115,6 +1115,14 @@ Namelist variables for lake module:
  iccg_prescribed_den (max_dom)       = 1.       ! Denominator of user-specified prescribed IC:CG
  ltng_temp_upper                     = -45.     ! Temperature (C) of upper peak of LNOx vertical distribution for IC lightning (used by &chem lnox_opt=2).
  ltng_temp_lower                     = -15.     ! Temperatures (C) of lower peak of LNOx vertical distribution for both IC and CG lightning (used by &chem lnox_opt=2).
+ dyn_lightning_option (max_dom)      = 0        ! Switch for dynamic lightning option, = 1 is on
+ num_light_periods                   = 1        ! Legacy parameter, not used. 
+ coul_pos (max_dom)                  = 0.25e-4  ! Constant for positive charging of clouds 
+ coul_neg (max_dom)                  = 0.25e-4  ! Constant for negative charging of clouds 
+ coul_neu (max_dom)                  = 0.25e-4  ! Constant for charging of intracloud lightning
+ j_pos (max_dom)                     = 5.e9     ! Threshold for producing positive event
+ j_neg (max_dom)                     = 1.e9     ! Threshold for producing negative event
+ j_neu (max_dom)                     = 1.e9     ! Threshold for producing intracloud lightning event
 
 Options for MAD-WRF - see doc/README.madwrf for usage information 
  madwrf_opt = 0         ! MAD-WRF model: 0) Off, 1) Advect/diffuse passive hydrometeors (qcloud, qice, qsnow), 2) Nudge active microphysics hydrometeors to passive ones

@@ -2374,12 +2374,12 @@ CONTAINS
                p3d=p_phy,dz8w=dz8w,th3d=th_phy,rho=rho,              &
                psfc=psfc,chs=chs,chs2=chs2,cqs=cqs,cqs2=cqs2,cpm=cpm,&
                znt=znt,ust=ust,pblh=pblh,mavail=mavail,zol=zol,      &
-               mol=mol,regime=regime,psim=psim,psih=psih,            &
+               mol=mol,psim=psim,psih=psih,                          &
                xland=xland,hfx=hfx,qfx=qfx,lh=lh,tsk=tsk,            &
                flhc=flhc,flqc=flqc,qsfc=qsfc,rmol=rmol,              &
                u10=u10,v10=v10,th2=th2,t2=t2,q2=q2,snowh=snowh,      &
                gz1oz0=gz1oz0,wspd=wspd,br=br,dx=dx2d,                &
-               itimestep=itimestep,ch=ch,qcg=qcg,                    &
+               itimestep=itimestep,ch=ch,                            &
                spp_pbl=spp_pbl,pattern_spp_pbl=pattern_spp_pbl,      &
                xice=XICE,sst=SST,tsk_sea=TSK_SEA,                    &
                chs2_sea=CHS2_SEA,chs_sea=CHS_SEA,cpm_sea=CPM_SEA,    &
@@ -2404,19 +2404,19 @@ CONTAINS
                rho3d=rho,psfcpa=psfc,                              &
                chs=chs,chs2=chs2,cqs=cqs,cqs2=cqs2,cpm=cpm,        &
                znt=znt,ust=ust,pblh=pblh,mavail=mavail,zol=zol,    &
-               mol=mol,regime=regime,psim=psim,psih=psih,          &
+               mol=mol,psim=psim,psih=psih,                        &
                xland=xland,hfx=hfx,qfx=qfx,lh=lh,tsk=tsk,          &
                flhc=flhc,flqc=flqc,qsfc=qsfc,rmol=rmol,            &
                u10=u10,v10=v10,th2=th2,t2=t2,q2=q2,snowh=snowh,    &
                gz1oz0=gz1oz0,wspd=wspd,br=br,dx=dx2d,              &
-               itimestep=itimestep,ch=ch,qcg=qcg,                  &
+               itimestep=itimestep,ch=ch,                          &
                spp_pbl=spp_pbl,pattern_spp_pbl=pattern_spp_pbl,    &
                ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde,  &
                ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme,  &
                its=i_start(ij),ite=i_end(ij),jts=j_start(ij),      &
                jte=j_end(ij), kts=kts,kte=kte,                     &
                ustm=ustm,ck=ck,cka=cka,cd=cd,cda=cda,              &
-               sf_mynn_sfcflux_land=sf_mynn_sfcflux_land,          &                                                                                                                                                 
+               sf_mynn_sfcflux_land=sf_mynn_sfcflux_land,          &
                sf_mynn_sfcflux_water=sf_mynn_sfcflux_water,        &
                isfflx=isfflx,                                      &
                flag_lsm=sf_surface_physics,restart=restart_flag,   &
@@ -5268,11 +5268,11 @@ CONTAINS
    SUBROUTINE mynn_seaice_wrapper(U3D,V3D,T3D,QV3D,                &
               P3D,dz8w,th3d,rho,                                   &
               PSFC,CHS,CHS2,CQS,CQS2,CPM,                          &
-              ZNT,UST,PBLH,MAVAIL,ZOL,MOL,REGIME,PSIM,PSIH,        &
+              ZNT,UST,PBLH,MAVAIL,ZOL,MOL,PSIM,PSIH,               &
               XLAND,HFX,QFX,LH,TSK,FLHC,FLQC,QSFC,RMOL,            &
               U10,V10,TH2,T2,Q2,SNOWH,                             &
               GZ1OZ0,WSPD,BR,ISFFLX,DX,                            &
-              &itimestep,ch,qcg,                                   &
+              &itimestep,ch,                                       &
               &spp_pbl,pattern_spp_pbl,                            &
               XICE,SST,TSK_SEA,                                    &
               CHS2_SEA,CHS_SEA,CPM_SEA,CQS2_SEA,FLHC_SEA,FLQC_SEA, &
@@ -5317,7 +5317,6 @@ CONTAINS
      REAL,     DIMENSION( ims:ime, jms:jme )                    , &
                INTENT(IN   )               ::             MAVAIL, &
                                                            XLAND, &
-                                                             QCG, &
                                                             PSFC, &
                                                            SNOWH, &
                                                              TSK, &
@@ -5331,8 +5330,7 @@ CONTAINS
                                                               Q2
 
      REAL,     DIMENSION( ims:ime, jms:jme )                    , &
-               INTENT(INOUT)               ::             REGIME, &
-                                                            PBLH, &
+               INTENT(INOUT)               ::               PBLH, &
                                                              HFX, &
                                                              QFX, &
                                                               LH, &
@@ -5455,12 +5453,12 @@ CONTAINS
                rho3d=rho,psfcpa=psfc,                          &
                chs=chs,chs2=chs2,cqs=cqs,cqs2=cqs2,cpm=cpm,    &
                znt=znt,ust=ust,pblh=pblh,mavail=mavail,zol=zol,&
-               mol=mol,regime=regime,psim=psim,psih=psih,      &
+               mol=mol,psim=psim,psih=psih,                    &
                xland=xland,hfx=hfx,qfx=qfx,lh=lh,tsk=tsk_local,&
                flhc=flhc,flqc=flqc,qsfc=qsfc,rmol=rmol,        &
                u10=u10,v10=v10,th2=th2,t2=t2,q2=q2,snowh=snowh,&
                gz1oz0=gz1oz0,wspd=wspd,br=br,dx=dx,            &
-               itimestep=itimestep,ch=ch,qcg=qcg,              &
+               itimestep=itimestep,ch=ch,                      &
                spp_pbl=spp_pbl,pattern_spp_pbl=pattern_spp_pbl,&
                ids=ids,ide=ide,jds=jds,jde=jde,kds=kds,kde=kde,&
                ims=ims,ime=ime,jms=jms,jme=jme,kms=kms,kme=kme,&
@@ -5520,12 +5518,12 @@ CONTAINS
            qv3d=qv3d,p3d=p3d,dz8w=dz8w,th3d=th3d,rho3d=rho,psfcpa=psfc,        &
            chs=chs_sea,chs2=chs2_sea,cqs=cqs,cqs2=cqs2_sea,cpm=cpm_sea,        &
            znt=znt_sea,ust=ust_sea,pblh=pblh,mavail=mavail_sea,zol=zol_sea,    &
-           mol=mol_sea,regime=regime,psim=psim_sea,psih=psih_sea,              &
+           mol=mol_sea,psim=psim_sea,psih=psih_sea,                            &
            xland=xland_sea,hfx=hfx_sea,qfx=qfx_sea,lh=lh_sea,tsk=tsk_sea,      &
            flhc=flhc_sea,flqc=flqc_sea,qsfc=qsfc_sea,rmol=rmol_sea,            &
            u10=u10_sea,v10=v10_sea,th2=th2_sea,t2=t2_sea,q2=q2_sea,snowh=snowh,&
            gz1oz0=gz1oz0_sea,wspd=wspd_sea,br=br_sea,dx=dx,                    &
-           itimestep=itimestep,ch=ch,qcg=qcg,                                  &
+           itimestep=itimestep,ch=ch,                                          &
            spp_pbl=spp_pbl,pattern_spp_pbl=pattern_spp_pbl,                    &
            ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde,                  &
            ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme,                  &

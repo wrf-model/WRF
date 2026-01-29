@@ -99,12 +99,28 @@ if ( ${USE_RSL_LITE} )
       )
 endif()
 
+set( 
+    NON_DA_SOURCES 
+    module_cpl.F
+    module_cpl_oasis3.F
+    clog.c
+    libmassv.F
+    
+    module_clear_halos.F
+    module_comm_nesting_dm.F
+    module_integrate.F
+    module_sm.F
+    )
+
+if ( ${WRF_CORE} STREQUAL "DA" OR ${WRF_CORE} STREQUAL "DA_4D_VAR" )
+  set( NON_DA_SOURCES "" )
+endif()
+
 target_sources(
                 ${PROJECT_NAME}_Core
                 PRIVATE
+                  # Common sources used in all cores
                   module_internal_header_util.F
-
-
                   module_configure.F
                   module_driver_constants.F
                   module_domain_type.F
@@ -113,44 +129,36 @@ target_sources(
                   module_wrf_error.F
                   module_machine.F
                   module_timing.F
-                  # module_dm.F
                   ${MODULE_DM}
-                  module_cpl.F
-                  module_cpl_oasis3.F
-
 
                   ${nl_dyn_source}                                     # GENERATED
 
-                  clog.c
+                  
                   collect_on_comm.c
                   hires_timer.c
-                  libmassv.F
                   
-                  module_clear_halos.F
+
                   module_comm_dm.F
                   module_comm_dm_0.F
                   module_comm_dm_1.F
                   module_comm_dm_2.F
                   module_comm_dm_3.F
                   module_comm_dm_4.F
-                  module_comm_nesting_dm.F
-                  
-                  
-                                    
-                  module_integrate.F
-                  
+
                   module_io.F
                   module_io_quilt.F
                   
                   module_nesting.F
-                  module_quilt_outbuf_ops.F
-                  module_sm.F
+
                   module_tiles.F
-                  
-                  pack_utils.c
                   wrf_debug.F
                   wrf_num_bytes_between.c
                   wrf_shutdown.F
+
+                  pack_utils.c
+                  module_quilt_outbuf_ops.F
+
+                  ${NON_DA_SOURCES}
                   )
 
 # Disable optimizations on these files always

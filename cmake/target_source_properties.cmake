@@ -103,13 +103,16 @@ function( apply_target_source_properties )
                                   )
         if ( "${SOURCE_PROPERTY_${PROPERTY}}" STREQUAL "NOTFOUND" )
           # use target
+          if ( ${FUNC_PROP_DEBUG} )
+            message( STATUS "DEBUG [${SOURCE}] : Property ${PROPERTY}' not found, using target value '${TARGET_PROPERTY_${PROPERTY}}'" )
+          endif()
           set( SOURCE_PROPERTY_${PROPERTY} ${TARGET_PROPERTY_${PROPERTY}} )
         endif()
 
         # Now apply these as prop
         if ( NOT "${SOURCE_PROPERTY_${PROPERTY}}" STREQUAL "" )
           if ( ${FUNC_PROP_DEBUG} )
-            message( STATUS "DEBUG : Adding '${SOURCE_PROPERTY_${PROPERTY}}' as SOURCE_PROPERTY_${PROPERTY}")
+            message( STATUS "DEBUG [${SOURCE}] : Adding '${SOURCE_PROPERTY_${PROPERTY}}' as SOURCE_PROPERTY_${PROPERTY}")
           endif()
           list( APPEND SOURCE_PROPERTY_ALL ${SOURCE_PROPERTY_${PROPERTY}} )
         endif()
@@ -131,7 +134,7 @@ function( apply_target_source_properties )
         endif()
 
         if ( ${FUNC_PROP_DEBUG} )
-          message( STATUS "DEBUG : ${FUNC_PROP_AS_PROPERTY} being set to '${SOURCE_PROPERTY_ORIG} ${SOURCE_PROPERTY_ALL}'")
+          message( STATUS "DEBUG [${SOURCE}] : ${FUNC_PROP_AS_PROPERTY} being set to '${SOURCE_PROPERTY_ORIG} ${SOURCE_PROPERTY_ALL}'")
         endif()
 
         set_source_files_properties(

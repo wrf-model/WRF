@@ -248,15 +248,15 @@ $ ./clean -a
 * USAGE
  One need to add to the 'namelist.input' the auxiliary output number 8 (only for CDXWRF>=1, e.g. for every 10 minutes and 1-day files) & 9 (e.g. for output every 3 hours and 1-day files) at the `&history' section:
 
- auxhist8_outname = "wrfhfcdx_d<domain>_<date>"
- auxhist8_interval = 10, 10,
- frames_per_auxhist8 = 144, 144,
- io_form_auxhist8 = 2
+ auxhist18_outname = "wrfhfcdx_d<domain>_<date>"
+ auxhist18_interval = 10, 10,
+ frames_per_auxhist18 = 144, 144,
+ io_form_auxhist18 = 2
 
- auxhist9_outname = "wrfcdx_d<domain>_<date>"
- auxhist9_interval = 180, 180,
- frames_per_auxhist9 = 8, 8,
- io_form_auxhist9 = 2
+ auxhist19_outname = "wrfcdx_d<domain>_<date>"
+ auxhist19_interval = 180, 180,
+ frames_per_auxhist19 = 8, 8,
+ io_form_auxhist19 = 2
 
  Also a new section should be added (assuming it will get complex...)
 

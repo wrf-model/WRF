@@ -45,8 +45,10 @@
    USE module_diag_pld, ONLY : pld
    USE module_diag_zld, ONLY : zld
    USE module_trad_fields, ONLY : trad_fields
+#ifdef WRF_CFBM
      ! CFBM
    use initialize_mod, only : Init_fire_state_within_wrf
+#endif
 
 !!debug
 !USE module_compute_geop
@@ -137,10 +139,12 @@
    REAL :: dt_s, dx_km
 
    REAL :: max_mf, max_rot_angle
+#ifdef WRF_CFBM
    integer :: ifds, ifde, jfds, jfde, kfds, kfde, &
               ifms, ifme, jfms, jfme, kfms, kfme, &
               ifps, ifpe, jfps, jfpe, kfps, kfpe
    real :: cen_lat, cen_lon, truelat1, truelat2, stand_lon
+#endif
 
 
    CALL get_ijk_from_grid ( grid ,                              &
@@ -2184,6 +2188,7 @@ DEALLOCATE(dz8w)
 
        ! Community Fire Behavior model
      case (1)
+#ifdef WRF_CFBM
          ! Get fire dims
        call get_ijk_from_subgrid (grid, ifds, ifde, jfds, jfde, kfds, kfde, &
                                         ifms, ifme, jfms, jfme, kfms, kfme, &
@@ -2219,7 +2224,9 @@ DEALLOCATE(dz8w)
            map_proj = config_flags%map_proj, cen_lat = cen_lat, cen_lon = cen_lon, truelat1 = truelat1, &
            truelat2 = truelat2, stand_lon = stand_lon, nfuel_cat = grid%nfuel_cat, zsf = grid%zsf, &
            dzdxf = grid%dzdxf, dzdyf = grid%dzdyf)
-
+#else
+       call wrf_error_fatal ('CFBM requires compilation with CMake')
+#endif
      case (2)
    call fire_driver_em_init ( grid , config_flags    &
             ,ids,ide, kds,kde, jds,jde                &

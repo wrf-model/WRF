@@ -2199,6 +2199,7 @@ SUBROUTINE phy_fr_ten(config_flags,rk_step,n_moist,            &
                 ims, ime, jms, jme, kms, kme,                    &
                 its, ite, jts, jte, kts, kte                     )
 
+#ifdef WRF_CFBM
       CASE (CFBM)
 
            CALL add_a2a(rt_tendf,rthfrten,                       &
@@ -2212,7 +2213,7 @@ SUBROUTINE phy_fr_ten(config_flags,rk_step,n_moist,            &
                 ids,ide, jds, jde, kds, kde,                     &
                 ims, ime, jms, jme, kms, kme,                    &
                 its, ite, jts, jte, kts, kte                     )
-
+#endif
       CASE DEFAULT
 
    END SELECT

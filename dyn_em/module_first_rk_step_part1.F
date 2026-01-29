@@ -63,11 +63,12 @@ CONTAINS
 #endif
     USE module_utility
 
+#ifdef WRF_CFBM
       ! CFBM
     use advance_mod, only : Advance_state
     use wrf_mod, only : Interp_wrf2dvar_to_cfbm, Interp_wrfwinds_to_cfbm
     use wrf_mod, only : Provide_atm_feedback
-
+#endif
 
     IMPLICIT NONE
 
@@ -1348,7 +1349,7 @@ BENCH_END(pbl_driver_tim)
      Select_fire_model: select case (config_flags%ifire)
        case (0)
          continue
-
+#ifdef WRF_CFBM
        case (1)
            ! Interpolate from Atm to fire grid
          call Interp_wrf2dvar_to_cfbm (grid%znt, ims, ime, jms, jme, &
@@ -1423,7 +1424,7 @@ BENCH_END(pbl_driver_tim)
          endif
 
          call grid%fire_state%Handle_output (grid%cfbm_namelist)
-
+#endif
        case (2)
 ! Jan Mandel's call to SFIRE
 

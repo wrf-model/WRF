@@ -3990,10 +3990,7 @@ BENCH_START(micro_driver_tim)
       &        ,light_ne_curr=scalar(ims,kms,jms,P_light_ne), F_light_ne=F_light_ne   &
       &        ,light_neu_curr=scalar(ims,kms,jms,P_light_neu), F_light_neu=F_light_neu   &
       &        ,lpos=grid%lpos,lneg=grid%lneg,lneu=grid%lneu             &
-!     &        ,l_obs=grid%l_obs                                         &
       &        ,lpi2d=grid%lpi2d,lpi3d=grid%lpi3d                        &
-!     &        ,num_light_periods=config_flags%num_light_periods         &
-!     &        ,curr_secs=curr_secs )
 	)
 
                                                                           

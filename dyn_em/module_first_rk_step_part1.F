@@ -1217,12 +1217,16 @@ BENCH_START(pbl_driver_tim)
      &        ,icloud_bl=config_flags%icloud_bl                           &
      &        ,qc_bl=grid%qc_bl,qi_bl=grid%qi_bl,cldfra_bl=grid%cldfra_bl &
      &        ,bl_mynn_edmf=config_flags%bl_mynn_edmf                     &
+              ,bl_mynn_edmf_dd=config_flags%bl_mynn_edmf_dd               &
      &        ,bl_mynn_edmf_mom=config_flags%bl_mynn_edmf_mom             &
      &        ,bl_mynn_edmf_tke=config_flags%bl_mynn_edmf_tke             &
      &        ,bl_mynn_mixscalars=config_flags%bl_mynn_mixscalars         &
+     &        ,bl_mynn_mixaerosols=config_flags%bl_mynn_mixaerosols       &
+     &        ,bl_mynn_mixnumcon=config_flags%bl_mynn_mixnumcon           &
      &        ,bl_mynn_output=config_flags%bl_mynn_output                 &
      &        ,bl_mynn_cloudmix=config_flags%bl_mynn_cloudmix             &
      &        ,bl_mynn_mixqt=config_flags%bl_mynn_mixqt                   &
+     &        ,bl_mynn_ess=config_flags%bl_mynn_ess                       &     
      &        ,bl_mynn_closure=config_flags%bl_mynn_closure               &
      &        ,edmf_a=grid%edmf_a,edmf_w=grid%edmf_w                      &
      &        ,edmf_thl=grid%edmf_thl,edmf_qt=grid%edmf_qt                &
@@ -1234,6 +1238,7 @@ BENCH_START(pbl_driver_tim)
 !    &        ,K_m=grid%K_m, K_h=grid%K_h, K_q=grid%K_q                   &
      &        ,vdfg=grid%vdfg,maxwidth=grid%maxwidth,maxMF=grid%maxmf     &
      &        ,ztop_plume=grid%ztop_plume                                 &
+     &        ,excess_h=grid%excess_h,excess_q=grid%excess_q              &    
      &        ,spp_pbl=config_flags%spp_pbl                               &
      &        ,pattern_spp_pbl=grid%pattern_spp_pbl                       &
      &        ,restart=config_flags%restart,cycling=config_flags%cycling  &

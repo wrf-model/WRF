@@ -627,6 +627,10 @@ module_madwrf.o: \
 module_bl_ysu.o: \
 	ccpp_kind_types.o \
 	physics_mmm/bl_ysu.o
+
+module_bl_shinhong.o: \
+	ccpp_kind_types.o \
+	physics_mmm/bl_shinhong.o
   
 
 module_bl_myjpbl.o: \

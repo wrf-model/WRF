@@ -24,9 +24,7 @@ state    real   LNEG            ij     misc        1         -     irh05du      
 state    real   LNEU            ij     misc        1         -     irh05du      "LNEU"                   "Intra-Cloud Lightning Density"  "# time-1"
 state    real   LPI2D           ij     misc        1         -     rh05      "LPI2D"                   "Lightning Potential Index (2D)"  "J/kg"
 state    real   LPI3D           ikj     misc        1         -     rh05      "LPI3D"                   "Lightning Potential Index (3D)"  "J/kg"
-state    real  l_obs          i{lp}j      misc        1         -      irh05       "L_OBS"                  "Lightning OBS"      " "
 
-#package  dynlight_output dyn_lightning_option==1   -   scalar:light_pe,light_ne,light_neu;state:lneu,lneg,lpos,l_obs,lpi2d,lpi3d
 package  dynlight_output dyn_lightning_option==1   -   scalar:light_pe,light_ne,light_neu;state:lneu,lneg,lpos,lpi2d,lpi3d
 
 

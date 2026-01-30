@@ -2924,12 +2924,10 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 
       END SELECT micro_select
 
-      IF (  PRESENT ( QC_CURR )   .AND.  &
+      IF (config_flags%dyn_lightning_option.eq.1) THEN
+      IF (  PRESENT( QC_CURR ) .AND.  &
             PRESENT( QR_CURR ) .AND. PRESENT ( QI_CURR )   .AND.  &
             PRESENT( QS_CURR ) .AND. PRESENT ( QG_CURR )) THEN
-!           print*,'config_flags%dyn_lightning_option =
-!           ',config_flags%dyn_lightning_option
-            if (config_flags%dyn_lightning_option.eq.1) then
             CALL calc_lpi_new(                           &
                      W=w,                                &
                      PI_PHY=pi_phy, RHO_PHY=rho,         &
@@ -2982,10 +2980,10 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                     ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
                     ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                     ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte)
-              END IF
       ELSE
               CALL wrf_error_fatal ( 'arguments not present for calling dynamic lightning scheme' )
       ENDIF
+      END IF
 
    ENDDO
    !$OMP END PARALLEL DO

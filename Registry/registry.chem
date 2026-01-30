@@ -334,8 +334,8 @@ state    real  eseasc       i{dust}jf      emis_seas2      1         Z      -   
 # volcanic ash emissions
 #
 state   real     -              ikjf     emis_vol     -         -      -       -                      "Volcanic Emissions"         ""
-state    real  e_vash1          ikjf     emis_vol     1         Z      i{13}hr    "E_VASH1"               "Volcanic Emissions, bin1"   "ug/m2/s"
-state    real  e_vash2          ikjf     emis_vol     1         Z      i{13}hr    "E_VASH2"               "Volcanic Emissions, bin2"   "ug/m2/s"
+state    real  e_vash1          ikjf     emis_vol     1         Z      i{13}r    "E_VASH1"               "Volcanic Emissions, bin1"   "ug/m2/s"
+state    real  e_vash2          ikjf     emis_vol     1         Z      i{13}r    "E_VASH2"               "Volcanic Emissions, bin2"   "ug/m2/s"
 state    real  e_vash3          ikjf     emis_vol     1         Z      i{13}r    "E_VASH3"               "Volcanic Emissions, bin3"   "ug/m2/s"
 state    real  e_vash4          ikjf     emis_vol     1         Z      i{13}r    "E_VASH4"               "Volcanic Emissions, bin4"   "ug/m2/s"
 state    real  e_vash5          ikjf     emis_vol     1         Z      i{13}r    "E_VASH5"               "Volcanic Emissions, bin5"   "ug/m2/s"
@@ -345,6 +345,9 @@ state    real  e_vash8          ikjf     emis_vol     1         Z      i{13}r   
 state    real  e_vash9          ikjf     emis_vol     1         Z      i{13}r    "E_VASH9"               "Volcanic Emissions, bin9"   "ug/m2/s"
 state    real  e_vash10         ikjf     emis_vol     1         Z      i{13}r    "E_VASH10"              "Volcanic Emissions, bin10"  "ug/m2/s"
 state    real  e_vso2           ikjf     emis_vol     1         Z      i{13}r    "E_VSO2"                "Volcanic Emissions, SO2"    "mol/m2/h"
+state    real  e_vsulf          ikjf     emis_vol     1         Z      i{13}r    "E_VSULF"               "Volcanic Emissions, SULF"   "mol/m2/h"
+state    real  e_qv             ikjf     emis_vol     1         Z      i{13}r    "E_QV"                  "Volcanic Emissions, water vapor"  "kg/m2/s"
+state    real  e_start          ikjf     emis_vol     1         Z      i{13}r    "E_START"               "Volcanic Emissions, start"  ""
 #
 # biomassburning emission arrays (used by fire plume rise)
 state   real     -          ikjf    ebu      -        -        -         -                    "Biomass burnung Emissions"         ""
@@ -705,7 +708,6 @@ state    real  br_rto         ikj     misc        1         -      r        "BRN
 #
 # following used for volcanic eruptions only
 #
-state    real  ash_fall     ij      misc        1         -      r        "ASH_FALL"               "VOLCANIC ASH FALL"                 "kg/m2"
 state    real  erup_beg     ij      misc        1         -      i{13}    "ERUP_BEG"               "START TIME OF ERUPTION"        "?"
 state    real  erup_end     ij      misc        1         -      i{13}    "ERUP_END"               "END TIME OF ERUPTION"        "?"
 #
@@ -1100,8 +1102,21 @@ state   integer num_vert_mix     -     misc           -         -      r      "n
 #
 # Wet deposition
 #
-state    real  wd_so4_sc     ij        misc           1         -      rdu      "wd_so4_sc"     "SO4 surface wet deposition, accumulated (Sc)"            "mmol/m2"
-state    real  wd_no3_sc     ij        misc           1         -      rdu      "wd_no3_sc"     "NO3 surface wet deposition, accumulated (Sc)"            "mmol/m2"
+state    real  wd_so4_sc   ij        misc           1         -      rdu      "wd_so4_sc"     "SO4 surface wet deposition, accumulated (Sc)"            "mmol/m2"
+state    real  wd_no3_sc   ij        misc           1         -      rdu      "wd_no3_sc"     "NO3 surface wet deposition, accumulated (Sc)"            "mmol/m2"
+
+
+state    real     -             i%jf    volc_diags    -         -      -         -                    "Volcanic ash, so2 and sulf diagstics"                ""
+state    real  wd_ash_sc        i%jf    volc_diags    1         Z      rdu      "wd_ash_sc"       "ash surface large scale wet deposition, accumulated"   "g/m2"
+state    real  wd_ash_cu        i%jf    volc_diags    1         Z      rdu      "wd_ash_cu"       "ash surface wet deposition, accumulated (Cumul)"       "ug/m2"
+state    real  ash_drydep       i%jf    volc_diags    1         Z      rdu      "ash_drydep"       "Accumulated volcanic ash dry deposition"                "kg/m2"
+state    real  sulf_drydep      i%jf    volc_diags    1         Z      rdu      "sulf_drydep"      "Accumulated volcanic sulfate dry deposition"            "mol/m2"
+state    real  so2_drydep       i%jf    volc_diags    1         Z      rdu      "so2_drydep"      "Accumulated volcanic so2 dry deposition"                 "mol/m2"
+state    real  sulf_grav_setl   i%jf    volc_diags    1         Z      rdu      "sulf_grav_setl"  "Accumulated volcanic sulfate grav. settling"             "kg/m2"
+state    real  so2_oh_loss      i%jf    volc_diags    1         Z      rdu      "so2_oh_loss"     "Accumulated volcanic so2 loss due to OH"                 "kgS"
+state    real  so2_h2o2_loss    i%jf    volc_diags    1         Z      rdu      "so2_h2o2_loss"   "Accumulated volcanic so2 loss due to H2O2"               "kgS"
+state    real  ash_fall         i%jf    volc_diags    1         Z      rdu       "ash_fall"        "volcanic asg fall"                                    "kg/m2"
+
 # added wet deposition totals for NH4 and OA for MOZART coupled version
 state    real  wd_nh4_sc     ij        misc           1         -      rdu      "wd_nh4_sc"     "NH4 surface wet deposition, accumulated (Sc)"            "mmol/m2"
 state    real  wd_oa_sc      ij        misc           1         -      rdu      "wd_oa_sc"      "Organics surface wet deposition, accumulated (Sc)"       "mmol/m2"
@@ -4076,6 +4091,7 @@ package   ecrimechtno     emiss_opt==20                  -             emis_ant:
 #
 package   vash    emiss_opt_vol==1                   -             emis_vol:e_vash1,e_vash2,e_vash3,e_vash4,e_vash5,e_vash6,e_vash7,e_vash8,e_vash9,e_vash10
 package   vashso2 emiss_opt_vol==2                   -             emis_vol:e_vash1,e_vash2,e_vash3,e_vash4,e_vash5,e_vash6,e_vash7,e_vash8,e_vash9,e_vash10,e_vso2
+package   vashso2qv emiss_opt_vol==3                   -           emis_vol:e_vash1,e_vash2,e_vash3,e_vash4,e_vash5,e_vash6,e_vash7,e_vash8,e_vash9,e_vash10,e_vso2,e_qv,e_vsulf,e_start;volc_diags:wd_ash_sc,wd_ash_cu,ash_drydep,sulf_drydep,so2_drydep,sulf_grav_setl,so2_oh_loss,so2_h2o2_loss,ash_fall
 
 #
 

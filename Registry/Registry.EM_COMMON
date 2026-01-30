@@ -2487,6 +2487,8 @@ rconfig   integer     bl_mynn_mixqt       namelist,physics      max_domains    0
 rconfig   integer     bl_mynn_ess         namelist,physics      max_domains    1       irh      "bl_mynn_ess"                   "0:buoyancy flux functions,1: OGorman (2011)"           ""
 rconfig   integer     icloud_bl           namelist,physics      1              1       irh      "icloud_bl"                     "0:no subgrid cloud-radiation coupling,1:activated"     ""
 rconfig   real        bl_mynn_closure     namelist,physics      1              2.6     irh      "bl_mynn_closure"               "2.5: level2.5, 2.6: level 2.6, 3.0: level 3.0"         ""
+rconfig   integer     sf_mynn_sfcflux_land   namelist,physics   max_domains    0       irh      "sf_mynn_sfcflux_land"          "option for z0, zt, and zq over land"                   ""
+rconfig   integer     sf_mynn_sfcflux_water  namelist,physics   max_domains    1       irh      "sf_mynn_sfcflux_water"         "option for z0, zt, and zq over water"                  ""
 rconfig   integer     mfshconv            namelist,physics      max_domains    1       rh       "mfshconv"         "To activate mass flux scheme with qnse, 1=true or 0=false"      ""
 rconfig   integer     sf_urban_physics    namelist,physics      max_domains    0       rh       "sf_urban_physics"     "activate urban model  0=no, 1=Noah_UCM 2=BEP_UCM"   ""
 rconfig   real    BLDT                    namelist,physics      max_domains    0       h    "BLDT"          ""      ""

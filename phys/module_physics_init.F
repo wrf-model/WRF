@@ -2669,7 +2669,7 @@ CHARACTER(LEN=8) :: name
    USE module_bl_surface_drag
 #endif
    USE module_sf_temfsfclay
-   USE module_sf_mynn
+   USE module_sf_mynnsfc_driver
 #endif
 
 #if (NMM_CORE == 1)
@@ -3213,14 +3213,12 @@ CHARACTER(LEN=8) :: name
 #endif
 
 #if ( EM_CORE == 1 )
-!mynn 
-
         CASE (MYNNSFCSCHEME)
 
-           CALL mynn_sf_init_driver(allowed_to_read)
+           CALL mynnsfc_init(allowed_to_read,errmsg,errflg)
            isfc=5
-!          isfc=3
 
+           
       CASE (TEMFSFCSCHEME)
            CALL wrf_debug( 100, 'calling temfsfclayinit' )
            CALL temfsfclayinit( restart, allowed_to_read ,        &

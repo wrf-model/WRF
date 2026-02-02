@@ -9,4 +9,4 @@
 	url = https://github.com/NCAR/MYNN-EDMF
 [submodule "phys/TEMPO"]
 	path = phys/TEMPO
-	url = https://github.com/AndersJensen-NOAA/TEMPO.git
+	url = https://github.com/NCAR/TEMPO.git

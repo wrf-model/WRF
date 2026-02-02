@@ -1169,11 +1169,11 @@ end subroutine read_network_reexpression
 subroutine output_chan_connectivity( &
      inCHLAT,     inCHLON,             &   !! Channel grid lat, lon.
      inCHANLEN,                        &   !! The distance between channel grid centers in m.
-     inFROM_NODE, inTO_NODE,           &   !! Index of a given cell and the index which it flows to.
+     inFrom_node, inTo_node,           &   !! Index of a given cell and the index which it flows to.
      inCHANXI,    inCHANYJ,            &   !! Index on fine/routing grid of grid cells.
-     inTYPEL,     inLAKENODE           &   !! Lake type? and node? indications.
+     inTYPEL,     inLakeNode           &   !! Lake type? and node? indications.
 )
-
+  use iso_fortran_env, only: int64
 
 #ifdef MPP_LAND
 use module_mpp_land
@@ -1183,7 +1183,9 @@ implicit none
 
 !! These are the names used in module_HYDRO_io.F: SUBROUTINE READ_CHROUTING1
 real,    dimension(:),  intent(in) :: inCHLAT, inCHLON, inCHANLEN
-integer, dimension(:),  intent(in) :: inFROM_NODE, inTO_NODE, inCHANXI, inCHANYJ, inTYPEL, inLAKENODE
+integer, dimension(:),  intent(in) :: inCHANXI, inCHANYJ, inTYPEL
+integer(kind=int64), dimension(:), intent(in) :: inFrom_node, inTo_node
+integer(kind=int64), dimension(:), intent(in) :: inLakeNode
 
 integer            :: nStreamCells, streamCellDimID
 integer            :: iret, projInfo_flag
@@ -1196,7 +1198,9 @@ real, dimension(2) :: sp
 character(len=256), parameter :: output_flnm = "CHANNEL_CONNECTIVITY.nc"
 
 real,    allocatable, dimension(:) :: CHLAT, CHLON, CHANLEN
-integer, allocatable, dimension(:) :: FROM_NODE, TO_NODE, CHANXI, CHANYJ, TYPEL, LAKENODE
+integer, allocatable, dimension(:) :: CHANXI, CHANYJ, TYPEL
+integer(kind=int64), allocatable, dimension(:) :: from_node, to_node
+integer(kind=int64), allocatable, dimension(:) :: lakeNode
 
 !! handle the parallelization in this routine instead of in the main code.
 
@@ -1219,9 +1223,9 @@ call write_chanel_real(inChLon,     rt_domain(did)%map_l2g, &
                        rt_domain(did)%gnlinks, rt_domain(did)%nlinks, chLon)
 call write_chanel_real(inChanLen,   rt_domain(did)%map_l2g, &
                        rt_domain(did)%gnlinks, rt_domain(did)%nlinks, chanLen)
-call write_chanel_int(inFrom_node, rt_domain(did)%map_l2g, &
+call write_chanel_int8(inFrom_node, rt_domain(did)%map_l2g, &
                        rt_domain(did)%gnlinks, rt_domain(did)%nlinks, from_node)
-call write_chanel_int(inTo_node,   rt_domain(did)%map_l2g, &
+call write_chanel_int8(inTo_node,   rt_domain(did)%map_l2g, &
                        rt_domain(did)%gnlinks, rt_domain(did)%nlinks, to_node)
 call write_chanel_int(inChanXI,    rt_domain(did)%map_l2g, &
                        rt_domain(did)%gnlinks, rt_domain(did)%nlinks, chanXI)
@@ -1229,7 +1233,7 @@ call write_chanel_int(inChanYJ,    rt_domain(did)%map_l2g, &
                        rt_domain(did)%gnlinks, rt_domain(did)%nlinks, chanYJ)
 call write_chanel_int(inTypeL,     rt_domain(did)%map_l2g, &
                        rt_domain(did)%gnlinks, rt_domain(did)%nlinks, typeL)
-call write_chanel_int(inLakeNode,  rt_domain(did)%map_l2g, &
+call write_chanel_int8(inLakeNode,  rt_domain(did)%map_l2g, &
                        rt_domain(did)%gnlinks, rt_domain(did)%nlinks, lakeNode)
 
 #else

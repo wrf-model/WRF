@@ -33,6 +33,7 @@ contains
           character(len=256) :: route_lake_f=""
           character(len=256) :: route_direction_f=""
           character(len=256) :: route_order_f=""
+          character(len=256) :: diversions_file=""
           logical            :: reservoir_persistence_usgs
           logical            :: reservoir_persistence_usace
           character(len=256) :: reservoir_parameter_file=""
@@ -105,8 +106,8 @@ contains
             RT_OPTION, CHANRTSWCRT, channel_option, &
                     SUBRTSWCRT,OVRTSWCRT,AGGFACTRT, dtrt_ter,dtrt_ch,dxrt,&
                     GwSpinCycles, GwPreCycles, GwSpinUp, GwPreDiag, GwPreDiagInterval, gwIhShift, &
-                    GWBASESWCRT, gwChanCondSw, gwChanCondConstIn, gwChanCondConstOut , &
-                    route_topo_f,route_chan_f,route_link_f, compound_channel, route_lake_f, &
+                    GWBASESWCRT, gwChanCondSw, gwChanCondConstIn, gwChanCondConstOut, &
+                    route_topo_f,route_chan_f,route_link_f, compound_channel, route_lake_f, diversions_file, &
                     reservoir_persistence_usgs, reservoir_persistence_usace, reservoir_parameter_file, reservoir_usgs_timeslice_path, &
                     reservoir_usace_timeslice_path, reservoir_observation_lookback_hours, reservoir_observation_update_time_interval_seconds, &
                     reservoir_rfc_forecasts,  reservoir_rfc_forecasts_time_series_path, reservoir_rfc_forecasts_lookback_hours, &
@@ -248,6 +249,7 @@ contains
   nlst%DEEPGWSPIN = DEEPGWSPIN
   nlst%SOLVEG_INITSWC = SOLVEG_INITSWC
   nlst%reservoir_obs_dir = "testDirectory"
+  nlst%diversions_file = diversions_file
   nlst%reservoir_persistence_usgs = reservoir_persistence_usgs
   nlst%reservoir_persistence_usace = reservoir_persistence_usace
   nlst%reservoir_parameter_file = reservoir_parameter_file

@@ -4,7 +4,8 @@
 !                   William Gustafson (PNNL), Marc Salzmann (GFDL), and Georg Grell
 ! 10/12/2011 - Ravan Ahmadov (NOAA) updated to include the RACM_SOA_VBS option
 ! 10/08/2014 - Kai Wang and Yang Zhang (NCSU) updated to include the CB05_MADE/SORGAM and CB05_MADE/VBS options
-!
+! 28/10/2024 - A. Ukhov (KAUST) added diagnostic for large and convective scale washout of volcanic ash
+!              A. Ukhov (KAUST) added calculation of optical properties of ash and sulf aerosol.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     subroutine chem_driver ( grid , config_flags   &
  
@@ -42,6 +43,7 @@
   USE module_wetscav_driver, only: wetscav_driver
   USE module_wetdep_ls, only:wetdep_ls
   USE module_uoc_dustwd ! Claudia, 3 April 2014  [mklose 03082015]
+  USE module_vash_settling, only: wetdep_ls_volc        ! A. Ukhov (KAUST) 24 Oct 2024
   USE module_input_chem_data, only: last_chem_time, &
                                     mozcart_lbc_set, &
                                     bdy_chem_value_top_pv, &
@@ -815,7 +817,7 @@
        .or. config_flags%tracer_opt > 0 .or. config_flags%bio_emiss_opt == MEGAN2_CLM ) then
       call wrf_debug(15,'calling emissions driver')
 
-      call emissions_driver(grid%id,ktau,grid%dt,grid%DX,                                  &
+      call emissions_driver(grid%id,ktau,grid%dt,grid%DX,grid%DY,                          &
               adapt_step_flag, curr_secs,                                                  &
               grid%plumerisefire_frq,grid%stepfirepl,                                      &
               grid%bioemdt,grid%stepbioe,                                                  &
@@ -830,7 +832,7 @@
               grid%firesize_agef,grid%firesize_agsv,grid%firesize_aggr,                    &
               grid%u10,grid%v10,grid%ivgtyp,grid%isltyp,grid%gsw,grid%vegfra,grid%rmol,    &
               grid%ust,grid%znt,grid%dms_0,grid%erup_beg,grid%erup_end,                    &
-              grid%xland,grid%xlat,grid%xlong,                                             &
+              grid%xland,grid%xlat,grid%xlong,grid%msftx,grid%msfty,                       &
               z_at_w,zmid,grid%smois,dustin,seasin,                                        &
               grid%sebio_iso,grid%sebio_oli,grid%sebio_api,grid%sebio_lim,                 &
               grid%sebio_xyl,grid%sebio_hc3,grid%sebio_ete,grid%sebio_olt,                 &
@@ -915,9 +917,9 @@
 !
       if( do_photstep .and. &
            config_flags%chem_opt /= CHEM_TRACER .and. &
-           config_flags%chem_opt /= CHEM_VASH .and. &
-           config_flags%chem_opt /= CHEM_VOLC .and. &
-           config_flags%chem_opt /= CHEM_VOLC_4BIN .and. &
+           !config_flags%chem_opt /= CHEM_VASH .and. &          ! A. Ukhov. 28 Oct 2024
+           !config_flags%chem_opt /= CHEM_VOLC .and. &
+           !config_flags%chem_opt /= CHEM_VOLC_4BIN .and. &
            config_flags%chem_opt /= DUST .and. &
            config_flags%chem_opt /= CHEM_TRACE2 .and. &
            config_flags%chem_opt /= CO2_TRACER  .and. &
@@ -1053,7 +1055,8 @@
 	         grid%ccn1, grid%ccn2, grid%ccn3, grid%ccn4, grid%ccn5, grid%ccn6,    &
                  grid%qndropsource,grid%ivgtyp,grid%tsk,grid%gsw,grid%vegfra,pbl_h,   &
                  grid%rmol,grid%ust,grid%znt,grid%xlat,grid%xlong,                    &
-                 zmid,z_at_w,grid%xland,grid%ash_fall,                                &
+                 zmid,z_at_w,grid%xland,                                              &
+                 grid%volc_diags,        & ! A. Ukhov 18 Oct 2024. Volcanic diagnostics
                  grid%h2oaj,grid%h2oai,grid%nu3,grid%ac3,grid%cor3,grid%asulf,        &
                  grid%ahno3,grid%anh3,grid%cvaro1,grid%cvaro2,grid%cvalk1,grid%cvole1,&
                  grid%cvapi1,grid%cvapi2,grid%cvlim1,grid%cvlim2,grid%dep_vel_o3,     &
@@ -1157,8 +1160,9 @@
              U_phy,V_phy,t_phy,moist,dz8w,                                            &
              p_phy,XLV,CP,G,r_v,                                                      &
              z_at_w,grid%cu_co_ten,                                                   &
-             grid%wd_no3_cu,grid%wd_so4_cu,                                 &
+             grid%wd_no3_cu,grid%wd_so4_cu,                                           &
              grid%wd_nh4_cu,grid%wd_oa_cu,                                            &
+             volc_diags,                  & !A. Ukhov 18 Oct 2024. Volcanic diagnostics
              grid%wd_so2_cu, grid%wd_sulf_cu, grid%wd_hno3_cu, grid%wd_nh3_cu,        &
              grid%wd_cvasoa_cu, grid%wd_cvbsoa_cu, grid%wd_asoa_cu, grid%wd_bsoa_cu,  &
              grid%k22_shallow,grid%kbcon_shallow,grid%ktop_shallow,grid%xmb_shallow,  &
@@ -1186,8 +1190,9 @@
              U_phy,V_phy,t_phy,moist,dz8w,                                            &
              p_phy,XLV,CP,G,r_v,                                                      &
              z_at_w, grid%cu_co_ten,                                                  &
-             grid%wd_no3_cu,grid%wd_so4_cu,                                 &
+             grid%wd_no3_cu,grid%wd_so4_cu,                                           &
              grid%wd_nh4_cu,grid%wd_oa_cu,                                            &
+             volc_diags,                  & ! A. Ukhov 18 Oct 2024. Volcanic diagnostics
              grid%wd_so2_cu, grid%wd_sulf_cu, grid%wd_hno3_cu, grid%wd_nh3_cu,        &
              grid%wd_cvasoa_cu, grid%wd_cvbsoa_cu, grid%wd_asoa_cu, grid%wd_bsoa_cu,  &
              grid%k22_shallow,grid%kbcon_shallow,grid%ktop_shallow,grid%xmb_shallow,  &
@@ -1219,7 +1224,7 @@
      if( do_chemstep .and.                           &
           config_flags%chem_opt /= CHEM_TRACER .and. &
           config_flags%chem_opt /= CHEM_VASH .and. &
-          config_flags%chem_opt /= CHEM_VOLC .and. &
+          !config_flags%chem_opt /= CHEM_VOLC .and. &   ! A. Ukhov. 28 Oct 2024
           config_flags%chem_opt /= CHEM_VOLC_4BIN .and. &
           config_flags%chem_opt /= DUST .and. &
           config_flags%chem_opt /= CHEM_TRACE2 .and. &
@@ -1241,7 +1246,7 @@
 
           call mechanism_driver(grid%id,curr_secs,ktau,grid%dt,grid%ktauc,dtstepc,config_flags, &
               grid%gmt,ijulian,t_phy,moist,p8w,t8w,grid%gd_cldfr,                     &
-              p_phy,chem,rho,dz8w,grid%dx,g,                                          &
+              p_phy,chem,rho,dz8w,grid%dx,grid%dy,grid%msftx,grid%msfty,g,                                          &
               zmid,z_at_w,grid%xlat,grid%xlong,                                       &
               vdrog3,vcsulf_old,vcso2_old,vch2o2_old,grid%ttday,grid%tcosz,           &
               grid%ph_macr,grid%ph_o31d,grid%ph_o33p,grid%ph_no2,                     &
@@ -1257,6 +1262,7 @@
               grid%xylp,grid%apip,grid%isop,grid%hc3p,grid%ethp,grid%o3p,grid%tco3,   &
               grid%mo2,grid%o1d,grid%olnn,grid%rpho,grid%xo2,                         &
               grid%ketp,grid%olnd,                                                    &
+              grid%volc_diags,            & ! A. Ukhov 18 Oct 2024. Volcanic diagnostics
               ids,ide, jds,jde, kds,kde,                                              &
               ims,ime, jms,jme, kms,kme,                                              &
               its,ite,jts,jte,kts,kte        )
@@ -1672,25 +1678,29 @@ end if !Chemistry time step check
 ! since we do not have h2o2 as a variable, pass in p_h2o2 as zero
 ! will have to use backgrund value
 !
-        if(config_flags%chem_opt == CHEM_VOLC)then
-          CALL wrf_debug(15,'gocart so2-so4 conversion')
-          CALL  so2so4(0,chem,p_so2,p_sulf,p_h2o2,p_QC,T_PHY,MOIST,         &
-         grid%qc_cu, grid%gd_cldfr, config_flags%cu_diag,                   &
-         NUM_CHEM,NUM_MOIST,                                                &
-         ids,ide, jds,jde, kds,kde,                                         &
-         ims,ime, jms,jme, kms,kme,                                         &
-         its,ite, jts,jte, kts,kte                                          )
-        endif
 !
 !   now do wet removal; first LS if there is no explicit aqeous phase
-!
-        if(config_flags%wetscav_onoff<0)then
-           call wrf_debug(15,'calculate LS wet deposition')
-           call wetdep_ls(grid%dt,chem,grid%rainncv,moist,rho,num_moist, &
+         if(config_flags%wetscav_onoff<0)then
+            call wrf_debug(15,'calculate LS wet deposition')
+            if(config_flags%chem_opt == CHEM_VOLC .or. &
+              config_flags%chem_opt == chem_volc_4bin .or. &
+              config_flags%chem_opt == chem_vash) then
+
+              !A. Ukhov (KAUST). large scale scaveging for Ash, volcanic SO2 and Sulf
+              call wetdep_ls_volc(grid%dt,chem,grid%rainncv,moist,rho,num_moist, &
+                num_chem,numgas,dz8w,vvel,grid%chem_opt,                 &
+                grid%wd_so2_sc,grid%wd_sulf_sc,                          &
+                grid%volc_diags,                                         &
+                ids,ide, jds,jde, kds,kde,                               &
+                ims,ime, jms,jme, kms,kme,                               &
+                its,ite, jts,jte, kts,kte                                )
+            else
+              call wetdep_ls(grid%dt,chem,grid%rainncv,moist,rho,num_moist, &
                 num_chem,numgas,dz8w,vvel,grid%chem_opt,                 &
                 ids,ide, jds,jde, kds,kde,                               &
                 ims,ime, jms,jme, kms,kme,                               &
                 its,ite, jts,jte, kts,kte                                )
+            endif
          endif
 !
 ! Sum up the aerosol mass for radiation and diagnostic purposes. Unlike

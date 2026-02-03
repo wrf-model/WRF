@@ -152,6 +152,7 @@ target_sources(
                   module_cbmz_rodas_prep.F
                   module_ctrans_grell.F
                   module_gocart_chem.F
+                  module_volc_chem.F
                   module_input_tracer.F
                   module_lightning_nox_driver.F
                   module_lightning_nox_ott.F

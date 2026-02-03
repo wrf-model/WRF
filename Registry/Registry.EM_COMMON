@@ -1115,36 +1115,34 @@ state    real   cfm_temf       ij      misc        1         -     rh          "
 state    real   wm_temf        ij      misc        1         -     rh        "wm_temf"               "Velocity scale in TEMF surface layer scheme"      "m s-1"
 
 # MYNN PBL variables
-state   real   qke_adv         ikjftb  scalar      1         -      i0rusdf=(bdy_interp:dt) "qke_adv"       "twice TKE from MYNN"      "m2 s-2"
-state   real   qke             ikj     misc        1         -      irh      "qke"               "twice TKE from MYNN"      "m2 s-2"
-state   real   qSHEAR          ikj     misc        1         Z      h        "qSHEAR"            "TKE Production - shear"          "m2 s-2"
-state   real   qBUOY           ikj     misc        1         Z      h        "qBUOY"             "TKE Production - buoyancy"       "m2 s-2"
-state   real   qDISS           ikj     misc        1         Z      h        "qDISS"             "TKE dissipation"                 "m2 s-2"
-state   real   qWT             ikj     misc        1         Z      h        "qWT"               "TKE vertical transport"          "m2 s-2"
-state   real   dqke            ikj     misc        1         -      h        "Dtke"              "TKE change"                     "m2 s-2"
-state   real   tsq             ikj     misc        1         -      r        "tsq"               "liquid water pottemp variance"      "K2"
-state   real   qsq             ikj     misc        1         -      r        "qsq"               "total water variance"      "(kg/kg)**2"
-state   real   cov             ikj     misc        1         -      r        "cov"               "total water-liquid water pottemp covariance"   "K kg/kg"
-state   real   Sh3d            ikj     misc        1         -      r        "Sh3d"              "Stability function for heat"   ""
-state   real   Sm3d            ikj     misc        1         -      r        "Sm3d"              "Stability function for momentum"   ""
-state   real   ch               ij     misc        1         -      -        "ch"                "surface exchange coeff for heat"    "m s-1"
-#state   real   K_m             ikj     misc        1         -     -          "K_m"               "EXCHANGE COEFFICIENT for momentum "
-#state   real   K_h             ikj     misc        1         -     -          "K_h"               "EXCHANGE COEFFICIENT for heat "
-#state   real   K_q             ikj     misc        1         -     -          "K_q"               "EXCHANGE COEFFICIENT for qke "
-#MYNN-EDMF VARIABLES
-state   real   edmf_a          ikj     misc        1         -      h         "edmf_a"           "EDMF relative updraft  area - moist updrafts" "-"
-state   real   edmf_w          ikj     misc        1         -      h         "edmf_w"           "EDMF vertical velocity  - mean moist updrafts" "m s-1"
-state   real   edmf_thl        ikj     misc        1         -      h         "edmf_thl"         "EDMF thetaL  - mean moist updrafts" "K"
-state   real   edmf_qt         ikj     misc        1         -      h         "edmf_qt"          "EDMF qt  - mean moist updrafts" "kg kg-1"
-state   real   edmf_ent        ikj     misc        1         -      h         "edmf_ent"         "EDMF entrainment  - mean moist updrafts" "m-1"
-state   real   edmf_qc         ikj     misc        1         -      h         "edmf_qc"          "EDMF qc - mean moist updrafts" "kg kg-1"
-state   real   sub_thl3D       ikj     misc        1         -      h         "sub_thl3D"        "thetaL subsidence tendency from EDMF" "K s-1"
-state   real   sub_sqv3D       ikj     misc        1         -      h         "sub_sqv3D"        "qv subsidence tendency from EDMF" "kg kg-1 s-1"
+state   real   qke_adv         ikjftb  scalar      1         -      i0rusdf=(bdy_interp:dt) "qke_adv" "twice TKE from MYNN"              "m2 s-2"
+state   real   qke             ikj     misc        1         -      irh       "qke"              "twice TKE from MYNN"                   "m2 s-2"
+state   real   qSHEAR          ikj     misc        1         -      h         "qSHEAR"           "TKE Production - shear"                "m2 s-3"
+state   real   qBUOY           ikj     misc        1         -      h         "qBUOY"            "TKE Production - buoyancy"             "m2 s-3"
+state   real   qDISS           ikj     misc        1         -      h         "qDISS"            "TKE dissipation"                       "m2 s-3"
+state   real   qWT             ikj     misc        1         -      h         "qWT"              "TKE vertical transport"                "m2 s-3"
+state   real   dqke            ikj     misc        1         -      h         "Dtke"             "TKE change"                            "m2 s-2"
+state   real   tsq             ikj     misc        1         -      rh        "tsq"              "liquid water pottemp variance"         "K2"
+state   real   qsq             ikj     misc        1         -      rh        "qsq"              "total water variance"                  "(kg/kg)**2"
+state   real   cov             ikj     misc        1         -      rh        "cov"              "total water-liquid water pottemp covariance"   "K kg/kg"
+state   real   Sh3d            ikj     misc        1         -      rh        "Sh3d"             "Stability function for heat"           ""
+state   real   Sm3d            ikj     misc        1         -      rh        "Sm3d"             "Stability function for momentum"       ""
+state   real   ch               ij     misc        1         -      -         "ch"               "surface exchange coeff for heat"       "m s-1"
+state   real   edmf_a          ikj     misc        1         -      h         "edmf_a"           "EDMF relative updraft  area"           "-"
+state   real   edmf_w          ikj     misc        1         -      h         "edmf_w"           "EDMF mean vertical velocity"           "m s-1"
+state   real   edmf_thl        ikj     misc        1         -      h         "edmf_thl"         "EDMF thetaL"                           "K"
+state   real   edmf_qt         ikj     misc        1         -      h         "edmf_qt"          "EDMF qt"                               "kg kg-1"
+state   real   edmf_ent        ikj     misc        1         -      h         "edmf_ent"         "EDMF entrainment"                      "m-1"
+state   real   edmf_qc         ikj     misc        1         -      h         "edmf_qc"          "EDMF qc"                               "kg kg-1"
+state   real   sub_thl3D       ikj     misc        1         -      h         "sub_thl3D"        "thetaL subsidence tendency from EDMF"  "K s-1"
+state   real   sub_sqv3D       ikj     misc        1         -      h         "sub_sqv3D"        "qv subsidence tendency from EDMF"      "kg kg-1 s-1"
 state   real   det_thl3D       ikj     misc        1         -      h         "det_thl3D"        "thetaL detrainment tendency from EDMF" "K s-1"
-state   real   det_sqv3D       ikj     misc        1         -      h         "det_sqv3D"        "qv detrainment tendency from EDMF" "kg kg-1 s-1"
-state   real   maxMF            ij     misc        1         -      h         "maxMF"            "Maximum mass-flux (neg: all dry, pos: moist)"   "m/s * area"
-state   real   maxwidth         ij     misc        1         -      h         "maxwidth"         "Maximum plume width"   "m"
-state   real   ztop_plume       ij     misc        1         -      h         "ztop_plume"       "Height of tallest plume"   "m"
+state   real   det_sqv3D       ikj     misc        1         -      h         "det_sqv3D"        "qv detrainment tendency from EDMF"     "kg kg-1 s-1"
+state   real   maxMF            ij     misc        1         -      h         "maxMF"            "Maximum mass-flux (neg:dry, pos:moist)""m/s * area"
+state   real   maxwidth         ij     misc        1         -      h         "maxwidth"         "Maximum plume width"                   "m"
+state   real   ztop_plume       ij     misc        1         -      h         "ztop_plume"       "Height of tallest plume"               "m"
+state   real   excess_h         ij     misc        1         -      h         "excess_h"         "Max heat excess of plume initialization" "K"
+state   real   excess_q         ij     misc        1         -      h         "excess_q"         "Max moisture excess of plume initialization" "kg/kg"
 
 #FogDES variables
 state   real   fgdp             ij     misc        1         -      -        "fgdp"                "Accumulated fog deposition"    "mm"
@@ -1155,10 +1153,10 @@ state   real   vdfg             ij     misc        1         -      -        "vd
 state   real   exch_tke       ikj     misc        1         -      h       "EXCH_TKE"                 "Exchange coefficient TKE enhanced"      "m2 s-1"
 
 # Additional for gravity wave drag
-state   real   DTAUX3D         ikj     misc        1         -     rh        "DTAUX3D"               "LOCAL U GWDO STRESS"   "m s-1"
-state   real   DTAUY3D         ikj     misc        1         -     rh        "DTAUY3D"               "LOCAL V GWDO STRESS"   "m s-1"  
-state   real   DUSFCG           ij     misc        1         -     rh        "DUSFCG"                "COLUMN-INTEGRATED U GWDO STRESS"   "Pa m s-1"
-state   real   DVSFCG           ij     misc        1         -     rh        "DVSFCG"                "COLUMN-INTEGRATED V GWDO STRESS"   "Pa m s-1"
+state   real   DTAUX3D         ikj     misc        1         -     rh        "DTAUX3D"               "LOCAL U GWDO STRESS"   "m s-2"
+state   real   DTAUY3D         ikj     misc        1         -     rh        "DTAUY3D"               "LOCAL V GWDO STRESS"   "m s-2"
+state   real   DUSFCG           ij     misc        1         -     rh        "DUSFCG"                "COLUMN-INTEGRATED U GWDO STRESS"   "Pa"
+state   real   DVSFCG           ij     misc        1         -     rh        "DVSFCG"                "COLUMN-INTEGRATED V GWDO STRESS"   "Pa"
 state   real   VAR2D            ij     misc        1         -     i012rhd   "VAR"                   "STANDARD DEVIATION OF SUBGRID-SCALE OROGRAPHY"   "m"
 state   real   OC12D            ij     misc        1         -     i012rhd   "CON"                   "OROGRAPHIC CONVEXITY"                            ""
 state   real   OA1              ij     misc        1         -     i012rhd   "OA1"                   "ASYMMETRY OF SUBGRID-SCALE OROGRAPHY FOR WESTERLY FLOW"         ""
@@ -1171,22 +1169,22 @@ state   real   OL3              ij     misc        1         -     i012rhd   "OL
 state   real   OL4              ij     misc        1         -     i012rhd   "OL4"                   "NON-DIMENSIONAL EFFECTIVE OROGRAPHIC LENGTH FOR NORTH-WESTERLY FLOW"   ""
 
 # Additional for GSL gravity wave drag suite
-state   real   DTAUX3D_ls      ikj     misc        1         -     rh        "DTAUX3D_ls"            "LOCAL U GWDO STRESS LARGE-SCALE"   "m s-1"
-state   real   DTAUY3D_ls      ikj     misc        1         -     rh        "DTAUY3D_ls"            "LOCAL V GWDO STRESS LARGE-SCALE"   "m s-1"
-state   real   DTAUX3D_bl      ikj     misc        1         -     rh        "DTAUX3D_bl"            "LOCAL U GWDO STRESS BLOCKING"   "m s-1"
-state   real   DTAUY3D_bl      ikj     misc        1         -     rh        "DTAUY3D_bl"            "LOCAL V GWDO STRESS BLOCKING"   "m s-1"
-state   real   DTAUX3D_ss      ikj     misc        1         -     rh        "DTAUX3D_ss"            "LOCAL U GWDO STRESS SMALL-SCALE"   "m s-1"
-state   real   DTAUY3D_ss      ikj     misc        1         -     rh        "DTAUY3D_ss"            "LOCAL V GWDO STRESS SMALL-SCALE"   "m s-1"
-state   real   DTAUX3D_fd      ikj     misc        1         -     rh        "DTAUX3D_fd"            "LOCAL U GWDO STRESS FORM-DRAG"   "m s-1"
-state   real   DTAUY3D_fd      ikj     misc        1         -     rh        "DTAUY3D_fd"            "LOCAL V GWDO STRESS FORM-DRAG"   "m s-1"
-state   real   DUSFCG_ls        ij     misc        1         -     rh        "DUSFCG_ls"             "COLUMN-INTEGRATED U GWDO STRESS LARGE-SCALE"   "Pa m s-1"
-state   real   DVSFCG_ls        ij     misc        1         -     rh        "DVSFCG_ls"             "COLUMN-INTEGRATED V GWDO STRESS LARGE-SCALE"   "Pa m s-1"
-state   real   DUSFCG_bl        ij     misc        1         -     rh        "DUSFCG_bl"             "COLUMN-INTEGRATED U GWDO STRESS BLOCKING"   "Pa m s-1"
-state   real   DVSFCG_bl        ij     misc        1         -     rh        "DVSFCG_bl"             "COLUMN-INTEGRATED V GWDO STRESS BLOCKING"   "Pa m s-1"
-state   real   DUSFCG_ss        ij     misc        1         -     rh        "DUSFCG_ss"             "COLUMN-INTEGRATED U GWDO STRESS SMALL-SCALE"   "Pa m s-1"
-state   real   DVSFCG_ss        ij     misc        1         -     rh        "DVSFCG_ss"             "COLUMN-INTEGRATED V GWDO STRESS SMALL-SCALE"   "Pa m s-1"
-state   real   DUSFCG_fd        ij     misc        1         -     rh        "DUSFCG_fd"             "COLUMN-INTEGRATED U GWDO STRESS FORM-DRAG"   "Pa m s-1"
-state   real   DVSFCG_fd        ij     misc        1         -     rh        "DVSFCG_fd"             "COLUMN-INTEGRATED V GWDO STRESS FORM-DRAG"   "Pa m s-1"
+state   real   DTAUX3D_ls      ikj     misc        1         -     rh        "DTAUX3D_ls"            "LOCAL U GWDO STRESS LARGE-SCALE"   "m s-2"
+state   real   DTAUY3D_ls      ikj     misc        1         -     rh        "DTAUY3D_ls"            "LOCAL V GWDO STRESS LARGE-SCALE"   "m s-2"
+state   real   DTAUX3D_bl      ikj     misc        1         -     rh        "DTAUX3D_bl"            "LOCAL U GWDO STRESS BLOCKING"   "m s-2"
+state   real   DTAUY3D_bl      ikj     misc        1         -     rh        "DTAUY3D_bl"            "LOCAL V GWDO STRESS BLOCKING"   "m s-2"
+state   real   DTAUX3D_ss      ikj     misc        1         -     rh        "DTAUX3D_ss"            "LOCAL U GWDO STRESS SMALL-SCALE"   "m s-2"
+state   real   DTAUY3D_ss      ikj     misc        1         -     rh        "DTAUY3D_ss"            "LOCAL V GWDO STRESS SMALL-SCALE"   "m s-2"
+state   real   DTAUX3D_fd      ikj     misc        1         -     rh        "DTAUX3D_fd"            "LOCAL U GWDO STRESS FORM-DRAG"   "m s-2"
+state   real   DTAUY3D_fd      ikj     misc        1         -     rh        "DTAUY3D_fd"            "LOCAL V GWDO STRESS FORM-DRAG"   "m s-2"
+state   real   DUSFCG_ls        ij     misc        1         -     rh        "DUSFCG_ls"             "COLUMN-INTEGRATED U GWDO STRESS LARGE-SCALE"   "Pa"
+state   real   DVSFCG_ls        ij     misc        1         -     rh        "DVSFCG_ls"             "COLUMN-INTEGRATED V GWDO STRESS LARGE-SCALE"   "Pa"
+state   real   DUSFCG_bl        ij     misc        1         -     rh        "DUSFCG_bl"             "COLUMN-INTEGRATED U GWDO STRESS BLOCKING"   "Pa"
+state   real   DVSFCG_bl        ij     misc        1         -     rh        "DVSFCG_bl"             "COLUMN-INTEGRATED V GWDO STRESS BLOCKING"   "Pa"
+state   real   DUSFCG_ss        ij     misc        1         -     rh        "DUSFCG_ss"             "COLUMN-INTEGRATED U GWDO STRESS SMALL-SCALE"   "Pa"
+state   real   DVSFCG_ss        ij     misc        1         -     rh        "DVSFCG_ss"             "COLUMN-INTEGRATED V GWDO STRESS SMALL-SCALE"   "Pa"
+state   real   DUSFCG_fd        ij     misc        1         -     rh        "DUSFCG_fd"             "COLUMN-INTEGRATED U GWDO STRESS FORM-DRAG"   "Pa"
+state   real   DVSFCG_fd        ij     misc        1         -     rh        "DVSFCG_fd"             "COLUMN-INTEGRATED V GWDO STRESS FORM-DRAG"   "Pa"
 state   real   VAR2Dls          ij     misc        1         -     i012rhd   "VARls"                 "STANDARD DEVIATION of 2.5min-resolution topography"   "m"
 state   real   OC12Dls          ij     misc        1         -     i012rhd   "CONls"                 "OROGRAPHIC CONVEXITY of 2.5min-resolution topography"   ""
 state   real   OA1ls            ij     misc        1         -     i012rhd   "OA1ls"                 "OROGRAPHIC ASYMMETRY in West direction from 2.5min-resolution topography"   ""
@@ -2475,16 +2473,22 @@ rconfig   integer     ysu_topdown_pblmix  namelist,physics      1              1
 rconfig   integer     shinhong_tke_diag   namelist,physics      max_domains    0       rh       "shinhong_tke_diag"             ""      ""
 rconfig   logical     bl_mynn_tkeadvect   namelist,physics      max_domains    .false.  rh      "bl_mynn_tkeadvect"             ""      ""
 rconfig   integer     bl_mynn_cloudpdf    namelist,physics      1              2       irh      "bl_mynn_cloudpdf"              "0:original, 1:Kuwano, 2:Chaboreau-Bechtold"            ""
-rconfig   integer     bl_mynn_mixlength   namelist,physics      1              1       irh      "bl_mynn_mixlength"             "0:original,1:RAP/HRRR,2:new blending&cloud mix length" ""
-rconfig   integer     bl_mynn_edmf        namelist,physics      max_domains    1       irh      "bl_mynn_edmf"                  "0:off,1:activate mass-flux in mynn"                    ""
+rconfig   integer     bl_mynn_mixlength   namelist,physics      1              1       irh      "bl_mynn_mixlength"             "0:original,1:operational,2:new blending&cloud mix length" ""
+rconfig   integer     bl_mynn_edmf        namelist,physics      max_domains    1       irh      "bl_mynn_edmf"                  "0:off,1:activate implicit mass-flux,2:activate explicit mass-flux in mynn"                    ""
+rconfig   integer     bl_mynn_edmf_dd     namelist,physics      max_domains    0       irh      "bl_mynn_edmf_dd"               "0:off,1:downdrafts,2:analytical profiles"      ""
 rconfig   integer     bl_mynn_edmf_mom    namelist,physics      max_domains    1       irh      "bl_mynn_edmf_mom"              "0:off,1:activate mass-flux transport of momentum"      ""
 rconfig   integer     bl_mynn_edmf_tke    namelist,physics      max_domains    0       irh      "bl_mynn_edmf_tke"              "0:off,1:activate mass-flux transport of tke"           ""
-rconfig   integer     bl_mynn_mixscalars  namelist,physics      max_domains    1       irh      "bl_mynn_mixscalars"            "0:off,1:activate mixing of scalars (qnx, qnxfa) in MYNN"      ""
-rconfig   integer     bl_mynn_output      namelist,physics      max_domains    0       irh      "bl_mynn_output"                "0:off,1:Allocate and output extra 3D arrays"      ""
-rconfig   integer     bl_mynn_cloudmix    namelist,physics      max_domains    1       irh      "bl_mynn_cloudmix"              "0:off,1:activate mixing of all cloud species"          ""
+rconfig   integer     bl_mynn_mixscalars  namelist,physics      max_domains    0       irh      "bl_mynn_mixscalars"            "0:off,1:activate mixing of additional scalars in MYNN"      ""
+rconfig   integer     bl_mynn_mixaerosols namelist,physics      max_domains    1       irh      "bl_mynn_mixaerosols"           "0:off,1:activate mixing of aerosols (qnifa, qnwfa) in MYNN"      ""
+rconfig   integer     bl_mynn_mixnumcon   namelist,physics      max_domains    0       irh      "bl_mynn_mixnumcon"             "0:off,1:activate mixing of number concentrations (qnc, qni) in MYNN"      ""
+rconfig   integer     bl_mynn_output      namelist,physics      max_domains    0       irh      "bl_mynn_output"                "0:off,1:Allocate and output extra 3D arrays"           ""
+rconfig   integer     bl_mynn_cloudmix    namelist,physics      max_domains    1       irh      "bl_mynn_cloudmix"              "0:off,1:activate mixing of all cloud mass species"     ""
 rconfig   integer     bl_mynn_mixqt       namelist,physics      max_domains    0       irh      "bl_mynn_mixqt"                 "0:mix moisture species separate,1: mix total water"    ""
+rconfig   integer     bl_mynn_ess         namelist,physics      max_domains    1       irh      "bl_mynn_ess"                   "0:buoyancy flux functions,1: OGorman (2011)"           ""
 rconfig   integer     icloud_bl           namelist,physics      1              1       irh      "icloud_bl"                     "0:no subgrid cloud-radiation coupling,1:activated"     ""
 rconfig   real        bl_mynn_closure     namelist,physics      1              2.6     irh      "bl_mynn_closure"               "2.5: level2.5, 2.6: level 2.6, 3.0: level 3.0"         ""
+rconfig   integer     sf_mynn_sfcflux_land   namelist,physics   max_domains    0       irh      "sf_mynn_sfcflux_land"          "option for z0, zt, and zq over land"                   ""
+rconfig   integer     sf_mynn_sfcflux_water  namelist,physics   max_domains    1       irh      "sf_mynn_sfcflux_water"         "option for z0, zt, and zq over water"                  ""
 rconfig   integer     mfshconv            namelist,physics      max_domains    1       rh       "mfshconv"         "To activate mass flux scheme with qnse, 1=true or 0=false"      ""
 rconfig   integer     sf_urban_physics    namelist,physics      max_domains    0       rh       "sf_urban_physics"     "activate urban model  0=no, 1=Noah_UCM 2=BEP_UCM"   ""
 rconfig   real    BLDT                    namelist,physics      max_domains    0       h    "BLDT"          ""      ""
@@ -3175,7 +3179,7 @@ package   ysuscheme      bl_pbl_physics==1           -             -
 package   myjpblscheme   bl_pbl_physics==2           -             state:tke_pbl,el_pbl
 package   gfsscheme      bl_pbl_physics==3           -             -
 package   qnsepblscheme  bl_pbl_physics==4           -             state:tke_pbl,el_pbl,massflux_EDKF,entr_EDKF,detr_EDKF,thl_up,thv_up,rv_up,rt_up,rc_up,u_up,v_up,frac_up,rc_mf
-package   mynnpblscheme  bl_pbl_physics==5           -             scalar:qke_adv;state:qke,tke_pbl,sh3d,sm3d,tsq,qsq,cov,el_pbl
+package   mynnpblscheme  bl_pbl_physics==5           -             scalar:qke_adv;state:qke,sh3d,sm3d,tsq,qsq,cov,el_pbl,tke_pbl
 package   acmpblscheme   bl_pbl_physics==7           -             -
 package   boulacscheme   bl_pbl_physics==8           -             state:el_pbl,tke_pbl,wu_tur,wv_tur,wt_tur,wq_tur
 package   camuwpblscheme bl_pbl_physics==9           -             state:tauresx2d,tauresy2d,tpert2d,qpert2d,wpert2d,tke_pbl,smaw3d,wsedl3d,turbtype3d
@@ -3187,8 +3191,10 @@ package   kepsscheme     bl_pbl_physics==17          -             scalar:tke_ad
 package   mrfscheme      bl_pbl_physics==99          -             -
 
 package   tkebudget      tke_budget==1               -             state:qSHEAR,qBUOY,qDISS,qWT,dqke
-package   mynn_dmp_edmf  bl_mynn_edmf==1             -             state:ztop_plume,maxmf,maxwidth
-package   mynn_3Doutput  bl_mynn_output==1           -             state:edmf_a,edmf_w,edmf_thl,edmf_qt,edmf_ent,edmf_qc,sub_thl3D,sub_sqv3D,det_thl3D,det_sqv3D
+package   mynn_dmp_edmf1 bl_mynn_edmf==1             -             state:ztop_plume,maxmf,maxwidth,excess_h,excess_q
+package   mynn_dmp_edmf2 bl_mynn_edmf==2             -             state:ztop_plume,maxmf,maxwidth,excess_h,excess_q
+package   mynn_3Doutput1 bl_mynn_output==1           -             state:edmf_a,edmf_w,edmf_thl,edmf_qt,edmf_ent,edmf_qc,sub_thl3D,sub_sqv3D,det_thl3D,det_sqv3D
+package   mynn_3Doutput2 bl_mynn_output==2           -             state:edmf_a,edmf_w,edmf_thl,edmf_qt,edmf_ent,edmf_qc,sub_thl3D,sub_sqv3D,det_thl3D,det_sqv3D
 package   pbl_cloud      icloud_bl==1                -             state:cldfra_bl,qc_bl,qi_bl
 
 package   sms_3dtke      km_opt==5                   -             state:gamu,gamv,nlflux,dlk,l_diss,elmin,xkmv_meso

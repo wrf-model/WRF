@@ -49,8 +49,10 @@ MODULE module_mp_radar
       REAL, PUBLIC:: xam_r, xbm_r, xmu_r, xobmr
       REAL, PUBLIC:: xam_s, xbm_s, xmu_s, xoams, xobms, xocms
       REAL, PUBLIC:: xam_g, xbm_g, xmu_g, xoamg, xobmg, xocmg
-      REAL, PUBLIC:: xam_h, xbm_h, xmu_h, xoamh, xobmh, xocmh
+      REAL, PUBLIC:: xmu_h, xoamh, xobmh, xocmh
       REAL, PUBLIC:: xorg2, xosg2, xogg2, xohg2
+      REAL, PUBLIC:: xam_h = 0. ! Prevents fpe in debugging
+      REAL, PUBLIC:: xbm_h = 0. ! Prevents fpe in debugging
 
       INTEGER, PARAMETER, PUBLIC:: slen = 20
       CHARACTER(len=slen), PUBLIC::                                     &
@@ -222,9 +224,13 @@ CONTAINS
       xoamg = 1./xam_g
       xobmg = 1./xbm_g
       xocmg = xoamg**xobmg
-      xoamh = 1./xam_h
-      xobmh = 1./xbm_h
-      xocmh = xoamh**xobmh
+!     If statement prevents floating point exceptions in mp schemes
+!     which do not initialise the below
+      if ((xam_h .gt. 0.) .and. (xbm_h .gt. 0.)) then
+         xoamh = 1./xam_h
+         xobmh = 1./xbm_h
+         xocmh = xoamh**xobmh
+      endif
 
 
       end subroutine radar_init

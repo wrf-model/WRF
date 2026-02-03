@@ -1,17 +1,37 @@
+! 07/10/24 - A. Ukhov (KAUST), bug fix: ash mass balance was
+! violated in the "settling" routine. I.e. prev. discrtetisation scheme 
+! did not conserve the mass of ash. Code clean-up. 
+
+! 30/10/2024. A. UKhov (KAUST) Added dry deposition for volcanic ash, so2, sulf
+! 30/10/2024. A. UKhov (KAUST) Added large scale scaveging for ash, so2, sulf 
+
 MODULE MODULE_VASH_SETTLING
 
+  USE module_state_description, only: p_vash_1,p_vash_2,     &
+              p_vash_3,p_vash_4,p_vash_5,p_vash_6,p_vash_7,  &
+              p_vash_8,p_vash_9,p_vash_10,p_sulf,p_so2,      &
+              chem_vash,chem_volc,chem_volc_4bin,p_qc     ! A. Ukhov.                              
+
+!Vertical grid indeces
+!     _
+!i+3 |_| l2-3
+!i+2 |_| l2-2
+!i+1 |_| l2-1
+! i  |_|  l2
+!i-1 |_| l2+1
+!i-2 |_| l2+2
+!i-3 |_| l2+3
+!////////////
 CONTAINS
 
 SUBROUTINE vash_settling_driver(dt,config_flags,t_phy,moist,               &
-         chem,rho_phy,dz8w,p8w,p_phy,                                      &
-         ash_fall,dx,g,                                                    &
+         chem,rho_phy,dz8w,p8w,p_phy,volc_diags,dx,g,                      &
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )
+  
   USE module_configure
   USE module_state_description
-! USE module_data_gocart_dust
-! USE module_data_gocart_seas
   USE module_model_constants, ONLY: mwdry
   IMPLICIT NONE
    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
@@ -26,12 +46,13 @@ SUBROUTINE vash_settling_driver(dt,config_flags,t_phy,moist,               &
          INTENT(INOUT ) ::                                   chem
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ),                        &
           INTENT(IN   ) ::  t_phy,p_phy,dz8w,p8w,rho_phy
-   REAL,  DIMENSION( ims:ime , jms:jme ),                        &
-          INTENT(INOUT   ) ::  ash_fall
+
+  ! A. Ukhov,  Volcanic diagnostics
+  REAL, DIMENSION( ims:ime, jms:jme,1:9), INTENT(INOUT ) :: volc_diags
 
   REAL, INTENT(IN   ) :: dt,dx,g
-  integer :: nmx,i,j,k,kk,lmx,iseas,idust
-  real*8, DIMENSION (1,1,kte-kts+1) :: tmp,airden,airmas,p_mid,delz,rh
+  integer :: nmx,i,j,k,kk,lmx
+  real*8, DIMENSION (1,1,kte-kts+1) :: tmp,airden,p_mid,delz,rh
   real*8, DIMENSION (1,1,kte-kts+1,4) :: sea_salt
 !srf
   real*8, DIMENSION (1,1,kte-kts+1,10) :: ash
@@ -39,96 +60,94 @@ SUBROUTINE vash_settling_driver(dt,config_flags,t_phy,moist,               &
                                                      2500.,2500.,2500.,2500.,2500. /)
   real*8, DIMENSION (10), PARAMETER :: reff_ash(10)=(/0.5000D-3,&! 1.00 mm diameter 
                                                       0.3750D-3,&! 0.75 mm
-						      0.1875D-3,&!
-						      93.750D-6,&!
-						      46.875D-6,&!
-						      23.437D-6,&!
-						      11.719D-6,&!
-						      05.859D-6,&!
-						      02.930D-6,&!
-						      00.975D-6 /)! 3.9 um
+                                                      0.1875D-3,&!
+                                                      93.750D-6,&!
+                                                      46.875D-6,&!
+                                                      23.437D-6,&!
+                                                      11.719D-6,&!
+                                                      05.859D-6,&!
+                                                      02.930D-6,&!
+                                                      00.975D-6 /)! 3.9 um
   real*8, DIMENSION (10) :: bstl_ash
-  integer iash
-!srf
+  !real*8, DIMENSION (10,55) :: ash_speed
 
-!
-! bstl is for budgets
-!
-
-  real*8 conver,converi
-       conver=1.e-9
-       converi=1.e9
        lmx=kte-kts+1
+       
        do j=jts,jte
        do i=its,ite
-          kk=0
-	  bstl_ash(:)=0.
-	  ash(:,:,:,:)=0.
+        kk=0
+	        
+        bstl_ash(:)=0.
+	      ash(:,:,:,:)=0.
+    
           do k=kts,kte
-          kk=kk+1
-          p_mid(1,1,kk)=.01*p_phy(i,kte-k+kts,j)
-          delz(1,1,kk)=dz8w(i,kte-k+kts,j)
-          airmas(1,1,kk)=-(p8w(i,k+1,j)-p8w(i,k,j))/g
-          airden(1,1,kk)=rho_phy(i,k,j)
-          tmp(1,1,kk)=t_phy(i,k,j)
-          rh(1,1,kk) = .95
-          rh(1,1,kk) = MIN( .95, moist(i,k,j,p_qv) / &
-               (3.80*exp(17.27*(t_phy(i,k,j)-273.)/ &
-               (t_phy(i,k,j)-36.))/(.01*p_phy(i,k,j))))
-          rh(1,1,kk)=max(1.0D-1,rh(1,1,kk))
+            kk=kk+1
+            p_mid(1,1,kk)=.01*p_phy(i,kte-k+kts,j)
+            delz(1,1,kk)=dz8w(i,kte-k+kts,j)
+            airden(1,1,kk)=rho_phy(i,k,j)
+            tmp(1,1,kk)=t_phy(i,k,j)
+            rh(1,1,kk) = .95
+            rh(1,1,kk) = MIN( .95, moist(i,k,j,p_qv) / &
+                (3.80*exp(17.27*(t_phy(i,k,j)-273.)/ &
+                (t_phy(i,k,j)-36.))/(.01*p_phy(i,k,j))))
+            rh(1,1,kk)=max(1.0D-1,rh(1,1,kk))
           enddo
 
-!ash settling
-
-          iseas=0
-          idust=0
-	  iash =1
-	  
-          kk=0
-!         write(0,*)'1',chem(i,1,j,p_dust_4)
-          do k=kts,kte
-          kk=kk+1
-          ash(1,1,kk,7)=chem(i,k,j,p_vash_7)*conver
-          ash(1,1,kk,8)=chem(i,k,j,p_vash_8)*conver
-          ash(1,1,kk,9)=chem(i,k,j,p_vash_9)*conver
-          ash(1,1,kk,10)=chem(i,k,j,p_vash_10)*conver
-          enddo
-          if(config_flags%chem_opt == 400  .or. config_flags%chem_opt == 402 ) then
           kk=0
           do k=kts,kte
-          kk=kk+1
-          ash(1,1,kk,1)=chem(i,k,j,p_vash_1)*conver
-          ash(1,1,kk,2)=chem(i,k,j,p_vash_2)*conver
-          ash(1,1,kk,3)=chem(i,k,j,p_vash_3)*conver
-          ash(1,1,kk,4)=chem(i,k,j,p_vash_4)*conver
-          ash(1,1,kk,5)=chem(i,k,j,p_vash_5)*conver
-          ash(1,1,kk,6)=chem(i,k,j,p_vash_6)*conver
+            kk=kk+1
+            ash(1,1,kk,7)=chem(i,k,j,p_vash_7)
+            ash(1,1,kk,8)=chem(i,k,j,p_vash_8)
+            ash(1,1,kk,9)=chem(i,k,j,p_vash_9)
+            ash(1,1,kk,10)=chem(i,k,j,p_vash_10)
           enddo
+          
+          if(config_flags%chem_opt == CHEM_VASH  .or. config_flags%chem_opt == CHEM_VOLC ) then
+          kk=0
+            do k=kts,kte
+              kk=kk+1
+              ash(1,1,kk,1)=chem(i,k,j,p_vash_1)
+              ash(1,1,kk,2)=chem(i,k,j,p_vash_2)
+              ash(1,1,kk,3)=chem(i,k,j,p_vash_3)
+              ash(1,1,kk,4)=chem(i,k,j,p_vash_4)
+              ash(1,1,kk,5)=chem(i,k,j,p_vash_5)
+              ash(1,1,kk,6)=chem(i,k,j,p_vash_6)
+            enddo
           endif
 
-          call vsettling(1, 1, lmx, 10, g,&
-                    ash, tmp, p_mid, delz, airmas, &
-                    den_ash, reff_ash, dt, bstl_ash, rh, idust, iseas,iash)
+          call vsettling(1, 1, lmx, 10, g, ash, tmp, p_mid, delz, &
+                    den_ash, reff_ash, dt, bstl_ash, rh, airden)!,ash_speed)
+
+          !if(i==20.and.j==20) then
+          !  write(*,*)'1',ash_speed(1,:)
+          !  write(*,*)'2',ash_speed(2,:)
+          !          ...
+          !  write(*,*)'10',ash_speed(10,:)
+          !endif
+
+          !bstl_ash [ug/m2]. Ash fall in [kg/m2]
+          volc_diags(i,j,p_ash_fall) = volc_diags(i,j,p_ash_fall) + sum(1.e-9 * bstl_ash(1:10))      
+
           kk=0
-          ash_fall(i,j)=ash_fall(i,j)+sum(bstl_ash(1:10))
           do k=kts,kte
-          kk=kk+1
-            chem(i,k,j,p_vash_7)=ash(1,1,kk,7)*converi
-            chem(i,k,j,p_vash_8)=ash(1,1,kk,8)*converi
-            chem(i,k,j,p_vash_9)=ash(1,1,kk,9)*converi
-            chem(i,k,j,p_vash_10)=ash(1,1,kk,10)*converi
+            kk=kk+1
+            chem(i,k,j,p_vash_7)=ash(1,1,kk,7)
+            chem(i,k,j,p_vash_8)=ash(1,1,kk,8)
+            chem(i,k,j,p_vash_9)=ash(1,1,kk,9)
+            chem(i,k,j,p_vash_10)=ash(1,1,kk,10)
           enddo
-          if(config_flags%chem_opt == 400  .or. config_flags%chem_opt == 402 ) then
-          kk=0
-          do k=kts,kte
-          kk=kk+1
-            chem(i,k,j,p_vash_1)=ash(1,1,kk,1)*converi
-            chem(i,k,j,p_vash_2)=ash(1,1,kk,2)*converi
-            chem(i,k,j,p_vash_3)=ash(1,1,kk,3)*converi
-            chem(i,k,j,p_vash_4)=ash(1,1,kk,4)*converi
-            chem(i,k,j,p_vash_5)=ash(1,1,kk,5)*converi
-            chem(i,k,j,p_vash_6)=ash(1,1,kk,6)*converi
-          enddo
+          
+          if(config_flags%chem_opt == CHEM_VASH  .or. config_flags%chem_opt == CHEM_VOLC ) then
+            kk=0
+            do k=kts,kte
+              kk=kk+1
+              chem(i,k,j,p_vash_1)=ash(1,1,kk,1)
+              chem(i,k,j,p_vash_2)=ash(1,1,kk,2)
+              chem(i,k,j,p_vash_3)=ash(1,1,kk,3)
+              chem(i,k,j,p_vash_4)=ash(1,1,kk,4)
+              chem(i,k,j,p_vash_5)=ash(1,1,kk,5)
+              chem(i,k,j,p_vash_6)=ash(1,1,kk,6)
+            enddo
           endif
 
 !ash settling end
@@ -138,74 +157,51 @@ SUBROUTINE vash_settling_driver(dt,config_flags,t_phy,moist,               &
 END SUBROUTINE vash_settling_driver
 
 
-          subroutine vsettling(imx,jmx, lmx, nmx,g0, &
-                    tc, tmp, p_mid, delz, airmas, &
-                    den, reff, dt, bstl, rh, idust, iseas,iash)
-! ****************************************************************************
-! *                                                                          *
-! *  Calculate the loss by settling, using an implicit method                *
-! *                                                                          *
-! *  Input variables:                                                        *
-! *    SIGE(k)         - sigma coordinate of the vertical edges              *
-! *    PS(i,j)         - Surface pressure (mb)                               *
-! *    TMP(i,j,k)      - Air temperature  (K)                                *
-! *    CT(i,j)         - Surface exchange coeff for moisture
-! *                                                                          *
-! **************************************************************************** 
-
+subroutine vsettling(imx,jmx, lmx, nmx, g0, &
+         tc, tmp, p_mid, delz, den, reff, dt, bstl, rh,airden)!,ash_speed)
 
   IMPLICIT  NONE
 
-  INTEGER, INTENT(IN) :: imx, jmx, lmx, nmx,iseas,idust,iash
+  INTEGER, INTENT(IN) :: imx, jmx, lmx, nmx
   INTEGER :: ntdt
-  REAL, INTENT(IN) :: dt,g0 ! ,dyn_visc
-  REAL*8,    INTENT(IN) :: tmp(imx,jmx,lmx), delz(imx,jmx,lmx),  &
-                         airmas(imx,jmx,lmx), rh(imx,jmx,lmx), &
-                         den(nmx), reff(nmx), p_mid(imx,jmx,lmx)
+  REAL, INTENT(IN) :: dt,g0
+  REAL*8,    INTENT(IN) :: tmp(imx,jmx,lmx), delz(imx,jmx,lmx),   &
+                         rh(imx,jmx,lmx), den(nmx), reff(nmx),    &
+                         p_mid(imx,jmx,lmx),airden(imx,jmx,lmx)
   REAL*8, INTENT(INOUT) :: tc(imx,jmx,lmx,nmx)
   REAL*8, INTENT(OUT)   :: bstl(imx,jmx,nmx)
+  !real*8, INTENT(INOUT) :: ash_speed(10,55)
 
-  REAL*8    :: tc1(imx,jmx,lmx,nmx), dt_settl(nmx), rcm(nmx), rho(nmx)
+  REAL*8    :: dt_settl(nmx), rho(nmx)
   INTEGER :: ndt_settl(nmx)
-  REAL*8    :: dzmin, vsettl, dtmax, pres, rhb, rwet(nmx), ratio_r(nmx)
-  REAL*8    :: addmass,c_stokes, free_path, c_cun, viscosity, vd_cor, growth_fac
+  REAL*8    :: vd_cor(lmx)
+  REAL*8    :: dzmin, vsettl, dtmax, rwet(nmx)
+  REAL*8    :: addmass,c_stokes, free_path, c_cun, viscosity,R_tilde
   REAL,    PARAMETER :: dyn_visc = 1.5E-5
   INTEGER :: k, n, i, j, l, l2
-  ! for sea-salt:
-  REAL*8, PARAMETER :: c1=0.7674, c2=3.079, c3=2.573E-11, c4=-1.424 
 
   ! for OMP:
   REAL*8 :: rwet_priv(nmx), rho_priv(nmx)
 
   ! executable statements
 
-! IF (type) /= 'dust' .AND. TRIM(aero_type) /= 'sea_salt') RETURN
-  if(idust.ne.1.and.iseas.ne.1.and.iash.ne.1)return
-
   WHERE (tc(:,:,:,:) < 0.0) tc(:,:,:,:) = 1.0d-32
 
   dzmin = MINVAL(delz(:,:,:))
-  IF (idust == 1)     growth_fac = 1.0
-  IF (iseas == 1)     growth_fac = 3.0
-  IF (iash  == 1)     growth_fac = 1.0
-
-  DO k = 1,nmx
+  
+  DO k = 1,nmx ! number of bins
 
      ! Settling velocity (m/s) for each tracer (Stokes Law)
      ! DEN         density                        (kg/m3)
      ! REFF        effective radius               (m)
      ! dyn_visc    dynamic viscosity              (kg/m/s)
      ! g0          gravity                        (m/s2)
-     ! 3.0         corresponds to a growth of a factor 3 of radius with 100% RH
-     ! 0.5         upper limit with temp correction
 
-     tc1(:,:,:,k) = tc(:,:,:,k)
-     vsettl = 2.0/9.0 * g0 * den(k) * (growth_fac*reff(k))**2 / &
-              (0.5*dyn_visc)
+     vsettl = 4.0/9.0 * g0 * den(k) * reff(k)**2 / dyn_visc
 
      ! Determine the maximum time-step satisying the CFL condition:
      ! dt <= (dz)_min / v_settl
-     ntdt=INT(dt)
+     ntdt = INT(dt)
      dtmax = dzmin / vsettl
      ndt_settl(k) = MAX( 1, INT( ntdt /dtmax) )
      ! limit maximum number of iterations
@@ -213,99 +209,748 @@ END SUBROUTINE vash_settling_driver
      dt_settl(k) = REAL(ntdt) / REAL(ndt_settl(k))
 
      ! Particles radius in centimeters
-     IF (iseas.eq.1)rcm(k) = reff(k)*100.0
-!srf     IF (idust.eq.1)then
-     IF (idust.eq.1   .or. iash==1)then
-          rwet(k) = reff(k)
-          ratio_r(k) = 1.0
-          rho(k) = den(k)
-      endif
+      rwet(k) = reff(k)
+      rho(k) = den(k)
   END DO
-
-  ! Solve the bidiagonal matrix (l,l)
 
 !$OMP PARALLEL DO &
 !$OMP DEFAULT( SHARED ) &
-!$OMP PRIVATE( i,   j,   l,   l2, n,   k,   rhb, rwet_priv, ratio_r, c_stokes)&
+!$OMP PRIVATE( i,   j,   l,   l2, n,   k, rwet_priv, c_stokes)&
 !$OMP PRIVATE( free_path, c_cun, viscosity, rho_priv, vd_cor )
 
-  ! Loop over latitudes
-  DO j = 1,jmx
- 
-     DO k = 1,nmx
-        IF (idust.eq.1 .or. iash==1) THEN
-           rwet_priv(k) = rwet(k)
-           rho_priv(k)  = rho(k)
-        END IF
+  
+  DO j = 1,jmx                     ! lat loop
+  DO i = 1,imx                     ! lon loop
+     DO k = 1,nmx                   ! bin loop
+        rwet_priv(k) = rwet(k)
+        rho_priv(k)  = rho(k)
+
+        bstl(i,j,k)=0.
 
         DO n = 1,ndt_settl(k)
-
-           ! Solve each vertical layer successively (layer l)
-      
-           DO l = lmx,1,-1
+           DO l = lmx,1,-1          ! height loop, from top
               l2 = lmx - l + 1
 
-!           DO j = 1,jmx
-              DO i = 1,imx
+              ! Dynamic viscosity
+              c_stokes = 1.458E-6 * tmp(i,j,l)**1.5/(tmp(i,j,l) + 110.4) 
 
-                 ! Dynamic viscosity
-                 c_stokes = 1.458E-6 * tmp(i,j,l)**1.5/(tmp(i,j,l) + 110.4) 
+              ! Mean free path as a function of pressure (mb) and 
+              ! temperature (K)
+              ! order of p_mid is top->sfc
+              free_path = 1.1E-3/p_mid(i,j,l2)/SQRT(tmp(i,j,l))
 
-                 ! Mean free path as a function of pressure (mb) and 
-                 ! temperature (K)
-                 ! order of p_mid is top->sfc
-                 free_path = 1.1E-3/p_mid(i,j,l2)/SQRT(tmp(i,j,l))
-!!!                 free_path = 1.1E-3/p_edge(i,j,l2)/SQRT(tmp(i,j,l))
+              ! Slip Correction Factor
+              c_cun = 1.0+ free_path/rwet_priv(k)*(1.257 + 0.4*EXP(-1.1*rwet_priv(k)/free_path))
 
-                 ! Slip Correction Factor
-                 c_cun = 1.0+ free_path/rwet_priv(k)* &
-                      (1.257 + 0.4*EXP(-1.1*rwet_priv(k)/free_path))
+              ! Corrected dynamic viscosity (kg/m/s)
+              viscosity = c_stokes / c_cun
 
-                 ! Corrected dynamic viscosity (kg/m/s)
-                 viscosity = c_stokes / c_cun
+              ! Settling velocity, depends on temp
+              vd_cor(l) = 2.0/9.0*g0*rho_priv(k)*rwet_priv(k)**2/viscosity
 
-                 ! Settling velocity
-!                IF (iseas.eq.1) THEN
-!                   rho_priv(k) = ratio_r(k)*den(k) + (1.0 - ratio_r(k))*1000.0
-!                END IF
+              ! Correction of ash settling speed for partciles with radii>20 micron
+              ! details in Mailler, Sylvain, et al. 2023
+              if (k < 7) then              
+                    R_tilde = airden(i,j,l) * (2 * rwet_priv(k)) * vd_cor(l) / (2.*viscosity)
+                    if(R_tilde>0.0116)then
+                      vd_cor(l) = vd_cor(l) * (1 - (1 + (R_tilde /2.440)**(-0.4335))**(-1.905))
+                    endif
+              END IF
 
-                 vd_cor = 2.0/9.0*g0*rho_priv(k)*rwet_priv(k)**2/viscosity
+              ! Update mixing ratio. Order of delz is top->sfc
+              IF (l == lmx) THEN
+                tc(i,j,l,k) = tc(i,j,l,k) / (1.0 + dt_settl(k) * vd_cor(l)/delz(i,j,l2))
+              ELSE
+                if (l==1) then
+                  bstl(i,j,k) = bstl(i,j,k) + (tc(i,j,l,k) * dt_settl(k) * vd_cor(l)/delz(i,j,l2)) * &
+                                               airden(i,j,l) * delz(i,j,l2)  !ug/m2
+                endif
+                tc(i,j,l,k) = 1.0/(1.0 + dt_settl(k) * vd_cor(l)/delz(i,j,l2)) * &
+                      (tc(i,j,l,k) + tc(i,j,l+1,k) * dt_settl(k) * vd_cor(l+1) /delz(i,j,l2-1) * &
+                      ((airden(i,j,l+1)*delz(i,j,l2-1))/(airden(i,j,l)*delz(i,j,l2))))
+              END IF
 
-                 ! Update mixing ratio
-                 ! Order of delz is top->sfc
-                 IF (l == lmx) THEN
-                    tc(i,j,l,k) = tc(i,j,l,k) / &
-                         (1.0 + dt_settl(k)*vd_cor/delz(i,j,l2))
-                 ELSE
-                    tc(i,j,l,k) = 1.0/(1.0+dt_settl(k)*vd_cor/delz(i,j,l2))&
-                         *(tc(i,j,l,k) + dt_settl(k)*vd_cor /delz(i,j,l2-1) &
-                         * tc(i,j,l+1,k))
-                 END IF
-              END DO   !i
-!           END DO   !j
-        END DO  !l
+              !ash_speed(k,l)=vd_cor(l)
+              !write(*,*)'SA ',i,j,l2,k,vd_cor(l)!,delz(i,j,l2)
 
-     END DO  !n
-  END DO  !k
-
+           END DO  !l, height
+        END DO  !n, time
+     END DO  !k, bin
+ 
+  END DO   !i
   END DO   !j
 !$OMP END PARALLEL DO
 
-  DO n = 1,nmx
-     DO i = 1,imx
-        DO j = 1,jmx
-           bstl(i,j,n) = 0.0
-           addmass=0.
-           DO l = 1,lmx
-              addmass=addmass+(tc(i,j,l,n) - tc1(i,j,l,n)) * airmas(i,j,l)
-              IF (tc(i,j,l,n) < 0.0) tc(i,j,l,n) = 1.0D-32
-           END DO
-           if(addmass.gt.0.)addmass=0
-           bstl(i,j,n) = bstl(i,j,n) - addmass
-        END DO
-     END DO
-  END DO
-  
 END SUBROUTINE vsettling
+
+! A. Ukhov 30 October.
+! Volcanic ash, so2, sulf dry deposition. Based on gocart_drydep_driver()
+subroutine volc_ash_sulf_so2_drydep_driver(dtstep,      &
+        config_flags,numgas,                            &
+        t_phy,moist,p8w,t8w,rmol,aer_res,               &
+        p_phy,chem,rho_phy,dz8w,ddvel,xland,hfx,        &
+        tsk,pbl,ust,znt,volc_diags,                     &
+        ids,ide, jds,jde, kds,kde,                      &
+        ims,ime, jms,jme, kms,kme,                      &
+        its,ite, jts,jte, kts,kte                       )
+
+USE module_model_constants
+USE module_configure
+USE module_state_description
+
+IMPLICIT NONE
+
+INTEGER, INTENT(IN   ) :: ids,ide, jds,jde, kds,kde,    &
+                     ims,ime, jms,jme, kms,kme,    &
+                     its,ite, jts,jte, kts,kte,numgas
+!INTEGER, DIMENSION( ims:ime , jms:jme ),  INTENT(IN) :: ivgtyp
+
+REAL,      INTENT(IN   ) ::                    dtstep
+REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_moist ),     &
+INTENT(IN ) ::                                   moist
+REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem ),      &
+INTENT(INOUT ) ::                                 chem
+REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,    &
+INTENT(IN   ) ::             t_phy, p_phy,dz8w,t8w,p8w,rho_phy
+REAL, DIMENSION( its:ite, jts:jte, num_chem ),               &
+INTENT(INOUT) ::                            ddvel
+REAL,  DIMENSION( ims:ime , jms:jme )                   ,    &
+INTENT(IN) :: tsk,pbl,ust,rmol,xland,znt,hfx
+REAL, DIMENSION( its:ite, jts:jte ),  INTENT(IN)  ::  aer_res
+REAL, DIMENSION( ims:ime, jms:jme,1:9), INTENT(INOUT ) :: volc_diags
+
+!! .. Local Scalars ..
+INTEGER :: n, nr, ipr, imx,jmx,lmx
+
+integer :: ii,jj,kk,i,j,k,nv
+integer,dimension (1,1) :: ilwi,ireg
+
+REAL ::  rad, ta, z1
+real*8, dimension (1,1) :: z0,airden,delz_sfc,hflux,ts,pblz,ustar,ps
+REAL*8  :: dvel(1,1)
+LOGICAL :: highnh3, rainflag, vegflag, wetflag
+
+TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
+
+  do nv=numgas+1,num_chem
+    do j=jts,jte
+    do i=its,ite
+      ddvel(i,j,nv) = 0.
+    enddo
+    enddo
+  enddo
+
+  imx = 1
+  jmx = 1
+  lmx = 1
+  do j=jts,jte
+  do i=its,ite
+    ipr = 0
+    dvel(1,1) = 0._8
+    
+    if( xland(i,j) > 1.5 ) then
+      ilwi(1,1) = 1
+    else
+      ilwi(1,1) = 0
+    endif
+    ii = 1
+    ireg(1,1) = 1
+    airden(1,1)   = real( rho_phy(i,kts,j),kind=8 )
+    delz_sfc(1,1) = real( dz8w(i,kts,j),kind=8 )
+    ustar(1,1) = max( 1.e-1_8,real(ust(i,j),kind=8) )
+    hflux(1,1) = real( hfx(i,j),kind=8 )
+    pblz(1,1)  = real( pbl(i,j),kind=8 )
+    ps(1,1) = real(p8w(i,kts,j),kind=8)*.01_8
+    z0(1,1) = real( znt(i,j),kind=8 )
+    ts(1,1) = real( tsk(i,j),kind=8 )
+
+    call dry_depvel_ash_sulf_so2(config_flags,ipr,ii,imx,jmx,lmx,&
+                airden, delz_sfc, pblz, ts, ustar, hflux, ilwi, &
+                ps, z0, dvel,g,rmol(i,j),aer_res(i,j))
+    
+    if(config_flags%chem_opt == chem_vash  .or. config_flags%chem_opt == chem_volc ) then            
+      do nv = p_vash_1,p_vash_10
+        ddvel(i,j,nv) = real( dvel(1,1),kind=4 )
+      enddo
+    endif
+
+    if(config_flags%chem_opt == chem_volc_4bin) then            
+      do nv = p_vash_7,p_vash_10
+        ddvel(i,j,nv) = real( dvel(1,1),kind=4 )
+      enddo
+    endif
+
+    if(config_flags%chem_opt == chem_volc ) then
+      ddvel(i,j,p_sulf) = real( dvel(1,1),kind=4 )
+      !SO2
+      volc_diags(i,j,p_so2_drydep)= volc_diags(i,j,p_so2_drydep) + chem(i,1,j,p_so2) * airden(1,1) * ddvel(i,j,p_so2) * dtstep * 1.E-6 / 28.97 ![mol m^-2]
+      !sulf 
+      volc_diags(i,j,p_sulf_drydep)= volc_diags(i,j,p_sulf_drydep) + chem(i,1,j,p_sulf) * airden(1,1) * ddvel(i,j,p_sulf) * dtstep * 1.E-6 / 28.97 ![mol m^-2]
+    endif
+
+    !drydep [kg/m2] = drydep [kg/m2]+1.e-9*dt[s]*dvel [m/s] * airden [kg/m3] * chem [ug/kg]
+    !ashdrydep(i,j) = ashdrydep(i,j) + 1.e-9 * dtstep * dvel(1,1) * airden(1,1) * chem(i,1,j,p_vash_10)
+
+    volc_diags(i,j,p_ash_drydep) = volc_diags(i,j,p_ash_drydep) + 1.e-9 * dtstep * dvel(1,1) * airden(1,1) * &
+    (chem(i,1,j,p_vash_7) + chem(i,1,j,p_vash_8) + chem(i,1,j,p_vash_9) + chem(i,1,j,p_vash_10))
+
+    if(config_flags%chem_opt == chem_vash  .or. config_flags%chem_opt == chem_volc ) then
+      volc_diags(i,j,p_ash_drydep) = volc_diags(i,j,p_ash_drydep) + 1.e-9 * dtstep * dvel(1,1) * airden(1,1) * &
+      (chem(i,1,j,p_vash_1) + chem(i,1,j,p_vash_2) + chem(i,1,j,p_vash_3) + chem(i,1,j,p_vash_4)+ &
+       chem(i,1,j,p_vash_5) + chem(i,1,j,p_vash_6))
+  
+    endif
+
+  enddo
+  enddo
+
+end subroutine volc_ash_sulf_so2_drydep_driver
+
+SUBROUTINE dry_depvel_ash_sulf_so2( config_flags,ipr,ii,imx,jmx,lmx, &
+             airden, delz_sfc, pblz, ts, ustar, hflux, ilwi, &
+             ps, z0, dvel,g0,rmol,aer_res)
+
+  ! ****************************************************************************
+  ! *                                                                          *
+  ! *  Calculate dry deposition velocity.                                      *
+  ! *                                                                          *
+  ! *  Input variables:                                                        *
+  ! *    AEROSOL(k)      - Logical, T = aerosol species, F = gas species       *
+  ! *    IREG(i,j)       - # of landtypes in grid square                       *
+  ! *    ILAND(i,j,ldt)  - Land type ID for element ldt =1,IREG(i,j)           *
+  ! *    IUSE(i,j,ldt)   - Fraction of gridbox area occupied by land type      *
+  ! *                      element ldt                                         *
+  ! *    USTAR(i,j)      - Friction velocity (m s-1)                           *
+  ! *    DELZ_SFC(i,j)   - Thickness of layer above surface                    *
+  ! *    PBLZ(i,j)       - Mixing depth (m)                                    *
+  ! *    Z0(i,j)         - Roughness height (m)                                *
+  ! *                                                                          *
+  ! *  Determined in this subroutine (local):                                  *
+  ! *    OBK             - Monin-Obukhov length (m): set to 1.E5 m under       *
+  ! *                      neutral conditions                                  *
+  ! *    Rs(ldt)         - Bulk surface resistance(s m-1) for species k to     * 
+  ! *                      surface ldt                                         *
+  ! *    Ra              - Aerodynamic resistance.                             *
+  ! *    Rb              - Sublayer resistance.                                *
+  ! *    Rs              - Surface resistance.                                 *
+  ! *    Rttl            - Total deposition resistance (s m-1) for species k   *
+  ! *                      Rttl(k) = Ra + Rb + Rs.                             *
+  ! *                                                                          *
+  ! *  Returned:                                                               *
+  ! *    DVEL(i,j,k)     - Deposition velocity (m s-1) of species k            *
+  ! *    DRYDf(i,j,k)    - Deposition frequency (s-1) of species k,            *
+  ! *                    = DVEL / DELZ_SFC                                     *
+  ! *                                                                          *
+  ! **************************************************************************** 
+
+  USE module_configure
+
+    IMPLICIT NONE
+
+    REAL*8,    INTENT(IN)  :: airden(imx,jmx), delz_sfc(imx,jmx)
+    REAL*8,    INTENT(IN)  :: hflux(imx,jmx), ts(imx,jmx)
+    REAL*8,    INTENT(IN)  :: ustar(imx,jmx), pblz(imx,jmx)
+    REAL*8,    INTENT(IN)  :: ps(imx,jmx)
+    INTEGER, INTENT(IN)  :: ilwi(imx,jmx)
+    INTEGER, INTENT(IN)  :: imx,jmx,lmx
+    REAL*8,    INTENT(IN)  :: z0(imx,jmx)
+    REAL,    INTENT(IN)  :: g0,rmol,aer_res
+    REAL*8,    INTENT(OUT) :: dvel(imx,jmx)!, drydf(imx,jmx)
+
+    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
+
+    REAL*8    :: obk, vds, czh, rttl, frac, logmfrac, psi_h, cz, eps
+    REAL*8    :: vd, ra, rb, rs  
+    INTEGER :: ipr,i, j, k, ldt, iolson, ii
+    CHARACTER(LEN=50) :: msg
+    REAL*8     :: prss, tempk, tempc, xnu, ckustr, reyno, aird, diam, xm, z
+    REAL*8     :: frpath, speed, dg, dw, rt
+    REAL*8     :: rad0, rix, gfact, gfaci, rdc, rixx, rluxx, rgsx, rclx
+    REAL*8     :: dtmp1, dtmp2, dtmp3, dtmp4
+    REAL*8     :: biofit,vk
+
+    ! executable statements
+    j_loop: DO j = 1,jmx               
+    i_loop: DO i = 1,imx            
+      vk    = .4_8
+      vd    = 0._8
+      ra    = 0._8
+      rb    = 0._8 ! only required for gases (SO2)
+      rs    = 0.0_8
+
+      ! ****************************************************************************
+      ! *  Compute the the Monin-Obhukov length.                                   *
+      ! *  The direct computation of the Monin-Obhukov length is:                  *
+      ! *                                                                          *
+      ! *           - Air density * Cp * T(surface air) * Ustar^3                  *
+      ! *   OBK =   ----------------------------------------------                 *
+      ! *                    vK   * g  * Sensible Heat flux                        *
+      ! *                                                                          *
+      ! *    Cp = 1000 J/kg/K    = specific heat at constant pressure              *
+      ! *    vK = 0.4            = von Karman's constant                           *
+      ! ****************************************************************************
+
+      IF (abs(hflux(i,j)) <= 1.e-5_8) THEN
+        obk = 1.0E5_8
+      ELSE
+        ! MINVAL(hflux), MINVAL(airden), MINVAL(ustar) =??
+        obk = -airden(i,j) * 1000.0_8 * ts(i,j) * (ustar(i,j))**3 &
+              / (vk * real(g0,kind=8) * hflux(i,j)) 
+        ! -- debug:
+        IF ( obk == 0.0_8 ) WRITE(*,211) obk, i, j
+        211        FORMAT(1X,'OBK=', E11.2, 1X,' i,j = ', 2I4)
+      END IF
+        !       write(0,*)1./obk,rmol
+
+      if(rmol.ne.0.)then
+        obk=1._8/real(rmol,kind=8)
+      else
+        obk=1.e5_8
+      endif
+
+      !       cz = delz_sfc(i,j) / 2.0_8 ! center of the grid box above surface
+      cz = 2._8
+
+      ! ****************************************************************************
+      ! *  (1) Aerosodynamic resistance Ra and sublayer resistance Rb.             *
+      ! *                                                                          *
+      ! *  The Reynolds number REYNO diagnoses whether a surface is                *
+      ! *  aerodynamically rough (REYNO > 10) or smooth.  Surface is               *
+      ! *  rough in all cases except over water with low wind speeds.              *
+      ! *                                                                          *
+      ! *  For gas species over land and ice (REYNO >= 10) and for aerosol         *
+      ! *  species for all surfaces:                                               *
+      ! *                                                                          *
+      ! *      Ra = 1./VT          (VT from GEOS Kzz at L=1, m/s).                 *
+      ! *                                                                          *
+      ! *  The following equations are from Walcek et al, 1986:                    *
+      ! *                                                                          *
+      ! *  For gas species when REYNO < 10 (smooth), Ra and Rb are combined        *
+      ! *  as Ra:                                                                  *
+      ! *                                                                          *
+      ! *      Ra = { ln(ku* z1/Dg) - Sh } / ku*           eq.(13)                 *
+      ! *                                                                          *
+      ! *      where z1 is the altitude at the center of the lowest model layer    *
+      ! *               (CZ);                                                      *
+      ! *            Sh is a stability correction function;                        *
+      ! *            k  is the von Karman constant (0.4, vK);                      *
+      ! *            u* is the friction velocity (USTAR).                          *
+      ! *                                                                          *
+      ! *   Sh is computed as a function of z1 and L       eq ( 4) and (5)):       *
+      ! *                                                                          *
+      ! *    0 < z1/L <= 1:     Sh = -5 * z1/L                                     *
+      ! *    z1/L < 0:          Sh = exp{ 0.598 + 0.39*ln(E) - 0.09(ln(E))^2 }     *
+      ! *                       where E = min(1,-z1/L) (Balkanski, thesis).        *
+      ! *                                                                          *
+      ! *   For gas species when REYNO >= 10,                                      *
+      ! *                                                                          *
+      ! *      Rb = 2/ku* (Dair/Dg)**(2/3)                 eq.(12)                 *
+      ! *      where Dg is the gas diffusivity, and                                *
+      ! *            Dair is the air diffusivity.                                  *
+      ! *                                                                          *
+      ! *  For aerosol species, Rb is combined with surface resistance as Rs.      *
+      ! *                                                                          *
+      ! ****************************************************************************
+
+      frac = cz / obk
+      IF (frac > 1.0_8) frac = 1.0_8
+      IF (frac > 0.0_8 .AND. frac <= 1.0_8) THEN 
+        psi_h = -5.0_8*frac
+      ELSE IF (frac < 0.0_8) THEN
+        eps = MIN(1.0_8, -frac)
+        logmfrac = LOG(eps)
+        psi_h = EXP( 0.598_8 + 0.39_8 * logmfrac - 0.09_8 * (logmfrac)**2 )
+      END IF
+      !--------------------------------------------------------------
+      !  Aerosol species, Rs here is the combination of Rb and Rs.
+
+      ra = (LOG(cz/z0(i,j)) - psi_h) / (vk*ustar(i,j))
+
+      vds = 0.002_8*ustar(i,j)
+      IF (obk < 0.0_8) vds = vds * (1.0_8+(-300.0_8/obk)**0.6667_8)
+
+      czh  = pblz(i,j)/obk
+      IF (czh < -30.0_8) vds = 0.0009_8*ustar(i,j)*(-czh)**0.6667_8
+
+      IF( config_flags%chem_opt /= CHEM_VASH      .and.                  &
+        config_flags%chem_opt /= chem_volc_4bin           )THEN
+        ra = real(aer_res,kind=8)
+      ENDIF
+
+      ! --Set Vds to be less than VDSMAX (entry in input file divided --
+      !   by 1.E4). VDSMAX is taken from Table 2 of Walcek et al. [1986].
+      !   Invert to get corresponding R
+      !          if(ii.eq.1) then
+      !             rs=1.0_8/MIN(vds,2.0e-2_8)
+      !          else
+      rs=1.0_8/MIN(vds,2.0e-3_8)
+      !          endif
+
+      ! ------ Set max and min values for bulk surface resistances ------
+
+      rs= MAX(1.0_8, MIN(rs, 9.9990e+3_8))
+
+      ! ****************************************************************************
+      ! *                                                                          *
+      ! *  Compute dry deposition velocity.                                        *
+      ! *                                                                          *
+      ! *  IUSE is the fraction of the grid square occupied by surface ldt in      *
+      ! *  units of per mil (IUSE=500 -> 50% of the grid square).  Add the         *
+      ! *  contribution of surface type ldt to the deposition velocity; this is    *
+      ! *  a loop over all surface types in the gridbox.                           *
+      ! *                                                                          *
+      ! *  Total resistance = Ra + Rb + Rs.
+      ! *                                                                          *
+      ! ****************************************************************************
+
+      rttl = ra + rb + rs
+      vd   = vd + 1._8/rttl
+
+      ! ------ Load array DVEL ------
+      !if(ipr.eq.1) write(0,*)rs,ra,rb,vd
+      
+      dvel(i,j) = vd !* 1.2
+
+      ! -- Set a minimum value for DVEL
+      !    MIN(VdSO2)      = 2.0e-3 m/s  over ice
+      !                    = 3.0e-3 m/s  over land
+      !    MIN(vd_aerosol) = 1.0e-4 m/s
+
+      IF (dvel(i,j) < 1.0E-4_8) dvel(i,j) = 1.0E-4_8
+      
+      !drydf(i,j) = dvel(i,j) / delz_sfc(i,j)
+
+    END DO i_loop
+    END DO j_loop
+
+END SUBROUTINE dry_depvel_ash_sulf_so2
+
+
+! A. Ukhov 6 Nov 2024
+! Gravitational settling for volcanic sulfate aerosol (accumulation mode only)
+! Based on gocart_settling_driver and on 
+! Ukhov, A., et al, Improving dust simulations in WRF-Chem v4.1.3 coupled...,
+! Geosci. Model Dev., 14, 473–493, https://doi.org/10.5194/gmd-14-473-2021, 2021.
+SUBROUTINE sulf_settling_driver(dt,config_flags,t_phy,moist,           &
+              chem,rho_phy,dz8w,p8w,p_phy,dx,g,z_at_w,volc_diags,      &
+              ids,ide,jds,jde,kds,kde,                                 &
+              ims,ime,jms,jme,kms,kme,                                 &
+              its,ite,jts,jte,kts,kte)
+
+USE module_configure
+USE module_state_description
+USE module_data_sorgam, only: rhoso4
+IMPLICIT NONE
+
+TYPE(grid_config_rec_type), INTENT(IN) :: config_flags
+
+INTEGER, INTENT(IN) :: ids,ide, jds,jde, kds,kde,                  &
+                ims,ime, jms,jme, kms,kme,                  &
+                its,ite, jts,jte, kts,kte
+
+REAL, DIMENSION(ims:ime,kms:kme,jms:jme,num_moist), INTENT(IN) :: moist
+REAL, DIMENSION(ims:ime,kms:kme,jms:jme,num_chem), INTENT(INOUT) :: chem
+REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN) :: t_phy,p_phy,dz8w,p8w,rho_phy,z_at_w
+REAL, DIMENSION(ims:ime,jms:jme,1:9), INTENT(INOUT) :: volc_diags
+
+REAL, INTENT(IN) :: dt,dx,g
+INTEGER          :: i,j,k,kk,lmx
+REAL*8, DIMENSION (1,1,kte-kts+1)   :: tmp,airden,p_mid,delz,rh
+REAL*8, DIMENSION (1,1,kte-kts+1)   :: dsulf
+real*8 :: bstl_sulf
+REAL reff_sulf
+REAL,    PARAMETER :: dyn_visc = 1.5E-5
+REAL*8 convert_to_ppmv, convert_to_mixing_ratio
+
+!real*8, DIMENSION (1,55) :: sulf_speed
+
+! mean diameter for volcanic sulf accumulation mode [ m ]
+! same definition in module_optical_averaging.F::optical_prep_volc()
+REAL dginia_sulf
+PARAMETER (dginia_sulf=0.64E-6)
+! sigma-G for sulf accumulation mode          
+REAL sginia_sulf
+PARAMETER (sginia_sulf=1.6)
+
+
+convert_to_mixing_ratio = 1.e-6 * 96.066/28.97
+convert_to_ppmv = 1.e6 * 28.97/96.066
+
+! sulfate aerosol volume median radius = mu+3 * sigma^2
+!reff_sulf=(dginia_sulf/2.0) + exp(3.*log(sginia_sulf)**2)
+!reff_sulf=exp(log(dginia_sulf/2.0) + 3.*log(sginia_sulf)**2)
+
+
+!ATTENTION here 3.5*log(...) instead of 3*log(...)
+reff_sulf=exp(log(dginia_sulf/2.0) + 3.5*log(sginia_sulf)**2)
+
+
+lmx=kte-kts+1
+do j=jts,jte
+do i=its,ite
+
+  kk=0     
+  DO k=kts,kte
+      kk=kk+1
+      ! sulf in [ppmv], converting it into [kg/kg]
+      dsulf(1,1,kk)=convert_to_mixing_ratio * chem(i,k,j,p_sulf)
+      
+      p_mid(1,1,kk) = .01 * p_phy(i,kte-k+kts,j)
+      delz(1,1,kk)  = dz8w(i,kte-k+kts,j)             ! delz(1) = dz8w(kte), delz(lmx)=dz8w(kts)
+      airden(1,1,kk)= rho_phy(i,k,j)
+      tmp(1,1,kk)   = t_phy(i,k,j)
+      rh(1,1,kk)    = .95
+      rh(1,1,kk)    = MIN( .95, moist(i,k,j,p_qv) /               &
+            (3.80*exp(17.27*(t_phy(i,k,j)-273.)/                   &
+            (t_phy(i,k,j)-36.))/(.01*p_phy(i,k,j))))
+      rh(1,1,kk)=max(1.0D-1,rh(1,1,kk))
+  ENDDO
+
+  bstl_sulf=0.
+  CALL sulf_settling(1,1,lmx,g,dyn_visc,dsulf,tmp,p_mid,delz,rhoso4,reff_sulf,dt,rh,airden,bstl_sulf)!,sulf_speed)
+
+  kk = 0
+  DO k = kts,kte
+    kk = kk+1
+    chem(i,k,j,p_sulf) = convert_to_ppmv * dsulf(1,1,kk)    !converting sufl [kg/kg] into [ppmv]
+  ENDDO
+
+  !if(i==20.and.j==20) write(*,*)'1',sulf_speed(1,:)
+
+  !!!!bstl_sulf [ug/m2]. total sulf grav. set [kg/m2]
+  !!!!sulf_fall(i,j) = sulf_fall(i,j) + sum(1.e-9 * bstl_sulf)    
+
+  !bstl_sulf in [kg/kg][m/s]
+  volc_diags(i,j,p_sulf_grav_setl) = volc_diags(i,j,p_sulf_grav_setl) + bstl_sulf * airden(1,1,1) * dt   ![kg/m2]
+
+enddo  ! i
+enddo  ! j 
+
+END SUBROUTINE sulf_settling_driver
+
+
+subroutine sulf_settling(imx,jmx,lmx,g0,dyn_visc,tc,tmp, &
+          p_mid,delz, den,reff,dt,rh,airden,bstl)!,sulf_speed)
+              
+IMPLICIT  NONE
+
+INTEGER, INTENT(IN) :: imx, jmx, lmx
+INTEGER             :: ntdt
+REAL,    INTENT(IN) :: dt,g0,dyn_visc
+REAL*8,  INTENT(IN) :: tmp(imx,jmx,lmx), delz(imx,jmx,lmx),  &
+                rh(imx,jmx,lmx), p_mid(imx,jmx,lmx),airden(imx,jmx,lmx)
+
+REAL,  INTENT(IN) :: den, reff
+
+REAL*8, INTENT(INOUT) :: tc(imx,jmx,lmx)
+REAL*8, INTENT(OUT)   :: bstl
+
+!real*8, INTENT(INOUT) :: sulf_speed(1,55)
+!REAL*8, INTENT(OUT)   :: grasetvel(imx,jmx,lmx)
+
+REAL*8    :: dt_settl
+INTEGER   :: ndt_settl
+REAL*8    :: dzmin, vsettl, dtmax, rwet
+REAL*8    :: c_stokes, free_path, c_cun, viscosity
+REAL*8    :: vd_cor(lmx), vd_wk1
+
+REAL*8    :: transfer_to_below_level,cell_tc
+INTEGER   :: k, n, i, j, l, l2
+
+! for OMP:
+REAL*8 :: rwet_priv, rho_priv
+
+REAL(4),PARAMETER :: onethird = 1.0/3.0
+REAL(4),PARAMETER :: kappa = 1.19
+
+! Determine the maximum time-step satisying CFL: dt <= (dz)_min / v_settl
+dzmin = MINVAL(delz(:,:,:))
+vsettl = 4.0/9.0 * g0 * den * reff**2 / dyn_visc
+
+ntdt = INT(dt)
+dtmax = dzmin / vsettl
+ndt_settl = MAX( 1,INT(ntdt/dtmax) )
+
+! Limit maximum number of iterations
+IF (ndt_settl > 12) ndt_settl = 12
+dt_settl = REAL(ntdt) / REAL(ndt_settl)
+
+! assign effective radius and density
+rwet_priv = reff
+rho_priv  = den
+
+!alnsg2=log(sginia_sulf)**2
+
+!$OMP PARALLEL DO &
+!$OMP DEFAULT( SHARED ) &
+!$OMP PRIVATE( i,   j,   l,   l2, n,   k, rwet_priv, c_stokes)&
+!$OMP PRIVATE( free_path, c_cun, viscosity, rho_priv, vd_cor )
+
+DO j = 1,jmx                      ! lat loop
+DO i = 1,imx                    ! lon loop
+
+DO n = 1,ndt_settl            ! time loop 
+ 
+ transfer_to_below_level=0
+
+ DO l = lmx,1,-1            ! height loop, from top
+    l2 = lmx - l + 1
+
+    rwet_priv=reff*((1+rh(i,j,l)*(kappa-1))/(1-rh(i,j,l)))**onethird  ! Aerosol growth with relative humidity
+
+    c_stokes = 1.458E-6*tmp(i,j,l)**1.5/(tmp(i,j,l) + 110.4)    ! Dynamic viscosity
+    free_path = 1.1E-3/p_mid(i,j,l2)/SQRT(tmp(i,j,l))           ! Free path as func of pres(mb) and temp(K); order of p_mid: top->sfc
+
+    c_cun = 1.0+free_path/rwet_priv*(1.257 + 0.4*EXP(-1.1*rwet_priv/free_path))              ! Slip correction; This formula is from Davis (1945)
+    viscosity = c_stokes / c_cun                                ! Corrected dynamic viscosity (kg/m/s)
+
+    vd_cor(l) = 2./9.*g0*rho_priv*rwet_priv**2/viscosity  ! Settling velocity, depends on temp [m/s]
+
+    ! Update mixing ratio; order of delz: top->sfc            
+    cell_tc=tc(i,j,l)                           ! cell_tc - for temporal storage [kg/kg]            
+    vd_wk1 = dt_settl*vd_cor(l)/delz(i,j,l2)   ! fraction to leave level
+   
+    tc(i,j,l) = cell_tc * (1.- vd_wk1) + transfer_to_below_level          ! [kg/kg]
+
+    IF (l==1) THEN
+        bstl = bstl + vd_cor(l) * cell_tc/ndt_settl ! [kg/kg][m/s]
+       !grasetvel(i,j,k)=vd_cor(l)                                 ! [m/s]
+    ELSE
+       transfer_to_below_level = (cell_tc*vd_wk1)*((delz(i,j,l2)*airden(i,j,l))/(delz(i,j,l2+1)*airden(i,j,l-1))) ! [kg/kg]
+    ENDIF
+
+    !sulf_speed(1,l) = vd_cor(l)
+
+ ENDDO                 !l, height
+ENDDO                   !n, time
+ENDDO                     !i
+END DO                      !j
+!$OMP END PARALLEL DO
+
+END SUBROUTINE sulf_settling
+
+
+
+! A. Ukhov 30/10/2024. Large Scale scaveging Ash, SO2 and Sulf aerosols
+! Based on wetdep_ls() for GOCART aerosols
+subroutine wetdep_ls_volc(dt,var,rain,moist,rho,num_moist,          &
+  num_chem,numgas,dz8w,vvel,chem_opt,                               &
+  wd_so2_sc,wd_sulf_sc,volc_diags,                                  &
+  ids,ide, jds,jde, kds,kde,                                        &
+  ims,ime, jms,jme, kms,kme,                                        &
+  its,ite, jts,jte, kts,kte                                         )
+
+  USE module_state_description, only: p_wd_ash_sc
+  USE module_model_constants, ONLY: mwdry
+IMPLICIT NONE
+
+INTEGER,      INTENT(IN   ) :: num_chem,numgas,num_moist,               &
+                           chem_opt,                                &
+                           ids,ide, jds,jde, kds,kde,               &
+                           ims,ime, jms,jme, kms,kme,               &
+                           its,ite, jts,jte, kts,kte
+real, INTENT(IN ) :: dt
+REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_moist ),                &
+  INTENT(IN ) ::                                   moist
+REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ),                        &
+   INTENT(IN   ) :: rho,dz8w,vvel        
+REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ,1:num_chem),              &
+   INTENT(INOUT) :: var        
+REAL,  DIMENSION( ims:ime , jms:jme ),                                  &
+   INTENT(IN   ) :: rain
+
+!Accumulated large scale scaveged so2 and sulf
+REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) :: wd_so2_sc,wd_sulf_sc
+REAL, DIMENSION( ims:ime , jms:jme ,1:9), INTENT(INOUT) :: volc_diags
+
+REAL,  DIMENSION( its:ite ,  jts:jte ) :: var_sum,var_rmv
+REAL,  DIMENSION( its:ite ,  jts:jte ) :: frc,var_sum_clw,rain_clw     
+real :: dvar,factor,clsum,alpha!,rho_water
+integer :: nv,i,j,k,km
+
+!write(0,*) 'in wetdepls, numgas,num_chem = ',numgas,num_chem,chem_opt
+!in wetdepls, numgas,num_chem =            3          13         402
+  do nv=1,num_chem
+    
+    !if(nv.le. numgas .and. nv.ne.p_sulf)cycle
+    alpha = .5    ! scavenging factor
+
+    if(nv.eq.p_sulf .or. nv.eq.p_so2)alpha=1.
+    
+    do i=its,ite
+    do j=jts,jte
+        var_sum_clw(i,j)=0.
+        var_sum(i,j)=0.
+        !var_rmvl(i,:,j)=0.
+        frc(i,j)=0.
+        rain_clw(i,j)=0.
+        if(rain(i,j).gt.1.e-10)then
+        ! convert rain back to rate
+            rain_clw(i,j)=rain(i,j)/dt
+        ! total cloud water
+        !
+            do k=1,kte-1
+              dvar=max(0.,moist(i,k,j,p_qc)*rho(i,k,j)*vvel(i,k,j)*dz8w(i,k,j))
+              var_sum_clw(i,j)=var_sum_clw(i,j)+dvar
+              var_sum(i,j)=var_sum(i,j)+var(i,k,j,nv)*rho(i,k,j)
+            enddo
+            if(var_sum(i,j).gt.1.e-10 .and. var_sum_clw(i,j).gt.1.e-10 ) then
+        !        assuming that frc is onstant, it is my conversion factor 
+        !       (just like in convec. parameterization
+              frc(i,j)=rain_clw(i,j)/var_sum_clw(i,j)
+        !    write(0,*)'frc ', frc(i,j),var_sum_clw(i,j),var_sum(i,j)
+              frc(i,j)=max(1.e-6,min(frc(i,j),.005))
+            endif
+        endif
+    enddo   !j
+    enddo   !i
+    !
+    ! get rid of it
+    !
+    do i=its,ite
+    do j=jts,jte
+    if(rain(i,j).gt.1.e-10 .and. var_sum(i,j).gt.1.e-10 .and. var_sum_clw(i,j).gt.1.e-10)then
+      do k=kts,kte-2
+          if(var(i,k,j,nv).gt.1.e-16 .and. moist(i,k,j,p_qc).gt.0.)then
+            factor = max(0.,frc(i,j)*rho(i,k,j)*dz8w(i,k,j)*vvel(i,k,j))
+        !        write(0,*)'var before ',k,km,var(i,k,j,nv),factor
+            dvar=alpha*factor/(1+factor)*var(i,k,j,nv)
+            var(i,k,j,nv)=max(1.e-16,var(i,k,j,nv)-dvar)
+        !        write(0,*)'var after ',km,var(i,k,j,nv),dvar
+
+            ! accumulated scaveged volcanic SO2 and Sulf
+            if (chem_opt .eq. chem_volc) then
+                if(nv.eq.p_so2) then
+                  wd_so2_sc(i,j) = wd_so2_sc(i,j) + dvar *  rho(i,k,j) * dz8w(i,k,j)/mwdry ! mmol/m2
+                endif
+
+                if(nv.eq.p_sulf) then
+                  wd_sulf_sc(i,j) = wd_sulf_sc(i,j) + dvar * rho(i,k,j) * dz8w(i,k,j)/mwdry ! mmol/m2
+                endif
+            endif
+
+            ! accumulated scaveged volcanic ash
+            if (chem_opt .eq. chem_vash .OR. chem_opt .eq. chem_volc) then
+                if(nv.eq.p_vash_1 .or. nv.eq.p_vash_2 .or. nv.eq.p_vash_3 .or. nv.eq.p_vash_4 .or. &
+                  nv.eq.p_vash_5 .or. nv.eq.p_vash_6 .or. nv.eq.p_vash_7 .or. nv.eq.p_vash_8 .or. &
+                  nv.eq.p_vash_9 .or. nv.eq.p_vash_10) then
+                    volc_diags(i,j,p_wd_ash_sc) = volc_diags(i,j,p_wd_ash_sc) + 1.E-6 * dvar * rho(i,k,j) * dz8w(i,k,j) !g/m2
+                endif
+            endif
+
+            if(chem_opt == chem_volc_4bin) then
+                if(nv.eq.p_vash_7 .or. nv.eq.p_vash_8 .or. nv.eq.p_vash_9 .or. nv.eq.p_vash_10) then
+                  volc_diags(i,j,p_wd_ash_sc) = volc_diags(i,j,p_wd_ash_sc) + 1.E-6 * dvar * rho(i,k,j) * dz8w(i,k,j) !g/m2
+                endif
+            endif  
+          endif
+      enddo !k
+    !      var_rmv(i,j)=var_rmv(i,j)+var_rmvl(i,j)
+    endif   !rain...
+    enddo   !j
+    enddo   !i
+  enddo   !nv
+END SUBROUTINE WETDEP_LS_VOLC
+
 
 END MODULE MODULE_VASH_SETTLING

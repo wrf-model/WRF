@@ -26,7 +26,7 @@ function( wrf_conf_check )
 
   message( STATUS "Performing Check ${WRF_CFG_RESULT_VAR}" )
 
-  if ( DEFINED WRF_CFG_RUN )
+  if ( DEFINED WRF_CFG_RUN AND "${WRF_CFG_RUN}" )
     try_run( 
             ${WRF_CFG_RESULT_VAR}
             WRF_CFG_COMPILE_RESULT_VAR
@@ -61,9 +61,9 @@ function( wrf_conf_check )
     endif()
     
     if ( DEFINED WRF_CFG_MESSAGE )
-      message( ${WRF_CFG_MSG_TYPE} "${WRF_CFG_MESSAGE}" )
+      message( ${WRF_CFG_MSG_TYPE} "  ${WRF_CFG_MESSAGE}" )
     else()
-      message( ${WRF_CFG_MSG_TYPE} "${WRF_CFG_RESULT_VAR} marked as required, check failed" )
+      message( ${WRF_CFG_MSG_TYPE} "  ${WRF_CFG_RESULT_VAR} check failed" )
     endif()
   else()
     message( STATUS "Performing Check ${WRF_CFG_RESULT_VAR} - Success" )

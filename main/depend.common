@@ -734,9 +734,29 @@ module_bl_camuwpbl_driver.o: \
 	module_cam_esinti.o 
 
 
-module_sf_mynn.o: \
+module_sf_mynnsfc_common.o: \
 	../share/module_model_constants.o \
-	../frame/module_wrf_error.o 
+	../frame/module_state_description.o \
+	ccpp_kind_types.o
+
+
+module_sf_mynnsfc_land.o: \
+        module_sf_mynnsfc_common.o
+
+
+module_sf_mynnsfc_water.o: \
+        module_sf_mynnsfc_common.o
+
+
+module_sf_mynnsfc_ice.o: \
+        module_sf_mynnsfc_common.o
+
+
+module_sf_mynnsfc_driver.o: \
+	module_sf_mynnsfc_land.o \
+	module_sf_mynnsfc_water.o \
+	module_sf_mynnsfc_ice.o \
+	module_sf_mynnsfc_common.o
 
 
 module_sf_fogdes.o: \
@@ -2363,7 +2383,7 @@ module_physics_init.o: \
 	physics_mmm/sf_sfclayrev.o \
 	module_sf_slab.o \
 	module_sf_myjsfc.o \
-	module_sf_mynn.o \
+	module_sf_mynnsfc_driver.o \
 	module_sf_fogdes.o \
 	module_sf_urban.o \
 	module_sf_qnsesfc.o \
@@ -2636,7 +2656,7 @@ module_surface_driver.o: \
 	module_sf_ssib.o \
 	module_sf_ruclsm.o \
 	module_sf_pxlsm.o \
-	module_sf_mynn.o \
+	module_sf_mynnsfc_driver.o \
 	module_sf_fogdes.o \
 	module_sf_sfcdiags.o \
 	module_sf_sfcdiags_ruclsm.o \

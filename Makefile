@@ -127,8 +127,8 @@ wrf : framework_only
 	   echo "------------------------------------------------------------------------------" ; \
 	fi
 	@if [ \( ! -f phys/module_bl_mynnedmf.F \) -o \
-	    \( ! -f phys/module_bl_mynnedmf_common.F \) -o \
-	    \( ! -f phys/module_bl_mynnedmf_driver.F \) ] ; then \
+	    \( ! -f phys/module_bl_mynnedmf_driver.F \) -o \
+	    \( ! -f phys/module_bl_mynnedmf_common.F \) ] ; then \
 	  echo " " ; \
 	  echo "------------------------------------------------------------------------------" ; \
 	  echo "Error Error Error MYNN-EDMF submodule files not populating WRF directories" ; \
@@ -138,6 +138,22 @@ wrf : framework_only
 	else \
 	  echo "------------------------------------------------------------------------------" ; \
 	  echo "MYNN-EDMF submodule files populating WRF directories" ; \
+	  echo "------------------------------------------------------------------------------" ; \
+	fi
+	@if [ \( ! -f phys/module_sf_mynnsfc_driver.F \) -o \
+	    \( ! -f phys/module_sf_mynnsfc_land.F \) -o \
+	    \( ! -f phys/module_sf_mynnsfc_water.F \) -o \
+	    \( ! -f phys/module_sf_mynnsfc_ice.F \) -o \
+	    \( ! -f phys/module_sf_mynnsfc_common.F \) ] ; then \
+	  echo " " ; \
+	  echo "------------------------------------------------------------------------------" ; \
+	  echo "Error Error Error MYNN-SFC submodule files not populating WRF directories" ; \
+	  echo "------------------------------------------------------------------------------" ; \
+	  echo " " ; \
+	  exit 31 ; \
+	else \
+	  echo "------------------------------------------------------------------------------" ; \
+	  echo "MYNN-SFC submodule files populating WRF directories" ; \
 	  echo "------------------------------------------------------------------------------" ; \
 	fi
 	if [ $(WRF_CHEM) -eq 1 ]    ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" chemics ; fi

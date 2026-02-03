@@ -644,7 +644,7 @@ CONTAINS
 !-------------------------- NOAHMP model diagnostic output
    subroutine noahmp_output_calc(  ims,ime, jms,jme                                  ,&
       i_start  ,i_end    ,j_start  ,j_end    ,num_tiles                              ,&
-      dt       ,noahmp_acc_dt      ,curr_secs2,opt_run  ,stepwtd ,itimestep          ,&
+      dt       ,noahmp_acc_dt      ,curr_secs2,opt_runsub,stepwtd ,itimestep         ,&
       acsagv   ,acsagb   ,acirg    ,acshg    ,acevg     ,acghv   ,acpahg   ,acirb    ,&
       acshb    ,acevb    ,acghb    ,acpahb   ,acsav     ,acirc   ,acshc    ,acevc    ,&
       actr     ,acpahv   ,acswdnlsm,acswuplsm,                                        &
@@ -674,7 +674,7 @@ CONTAINS
 
    real   ,           intent(in) :: dt
    real   , optional, intent(in) :: noahmp_acc_dt, curr_secs2
-   integer, optional, intent(in) :: opt_run, stepwtd, itimestep
+   integer, optional, intent(in) :: opt_runsub, stepwtd, itimestep
 
    real, dimension( ims:ime, jms:jme ), optional, intent(inout) ::                    &
       acsagv   ,acsagb   ,acirg    ,acshg    ,acevg     ,acghv   ,acpahg   ,acirb    ,&
@@ -828,7 +828,7 @@ CONTAINS
          acponding(i,j)  = acponding(i,j)  +       ponding(i,j)
          acrainlsm(i,j)  = acrainlsm(i,j)  +  dt *  rainlsm(i,j)
          acsnowlsm(i,j)  = acsnowlsm(i,j)  +  dt *  snowlsm(i,j)
-         if(opt_run == 5) then
+         if(opt_runsub == 5) then
            if(mod(itimestep,stepwtd) == 0) then
              acqlat(i,j)     = acqlat(i,j)     +          qlat(i,j) * 1000.0
              acqrf(i,j)      = acqrf(i,j)      +           qrf(i,j) * 1000.0

@@ -57,10 +57,10 @@ RUC (Option 3):
 	VEGPARM.TBL
 
 NoahMP (Option 4):
-	LANDUSE.TBL
-	GENPARTM.TBL
-	MPTABLE.TBL
-	SOILPARM.TBL
+	NoahmpTable.TBL
+	snicar_drdt_bst_fit_60_c070416.nc
+	snicar_optics_480bnd_c012422.nc
+	snicar_optics_5bnd_c013122.nc
 
 CLM (Option 5):
 	LANDUSE.TBL

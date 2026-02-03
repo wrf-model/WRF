@@ -145,7 +145,10 @@ wrf_setup_targets(
 # Re-setup this particular file
 wrf_setup_files(
                 FILES
-                  ${PROJECT_SOURCE_DIR}/phys/noahmp/parameters/MPTABLE.TBL
+                  ${PROJECT_SOURCE_DIR}/phys/noahmp/parameters/NoahmpTable.TBL
+		  ${PROJECT_SOURCE_DIR}/phys/noahmp/parameters/snicar_drdt_bst_fit_60_c070416.nc
+		  ${PROJECT_SOURCE_DIR}/phys/noahmp/parameters/snicar_optics_480bnd_c012422.nc
+		  ${PROJECT_SOURCE_DIR}/phys/noahmp/parameters/snicar_optics_5bnd_c013122.nc
                 DEST_PATH
                   ${CMAKE_INSTALL_PREFIX}/run/
                 )

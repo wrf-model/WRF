@@ -283,14 +283,14 @@ submodules :
 	else \
 		echo No action required for MYNN-EDMF submodule ; \
 	fi
-	@if [ \( ! -f module_cu_gfl_wrf.F \) -o \( ! -f module_cu_gfl_common.F \) -o \
-	      \( ! -f module_cu_gfl_deep.F \) -o \( ! -f module_cu_gfl_sh.F \) ] ; then \
+	@if [ \( ! -f module_cu_gfl_wrf.F90 \) -o \( ! -f module_cu_gfl_common.F90 \) -o \
+	      \( ! -f module_cu_gfl_deep.F90 \) -o \( ! -f module_cu_gfl_sh.F90 \) ] ; then \
 	      	echo Pulling in GFL submodule ; \
 		( cd .. ; git submodule update --init --recursive ) ; \
-		ln -sf GFL/module_cu_gfl_sh.F  module_cu_gfl_sh.F; \
-		ln -sf GFL/module_cu_gfl_deep.F  module_cu_gfl_deep.F; \
-		ln -sf GFL/WRF/module_cu_gfl_common.F module_cu_gfl_common.F ; \
-		ln -sf GFL/WRF/module_cu_gfl_wrf.F module_cu_gfl_wrf.F ; \
+		ln -sf GFL/module_cu_gfl_sh.F90  module_cu_gfl_sh.F90; \
+		ln -sf GFL/module_cu_gfl_deep.F90  module_cu_gfl_deep.F90; \
+		ln -sf GFL/WRF/module_cu_gfl_common.F90 module_cu_gfl_common.F90 ; \
+		ln -sf GFL/WRF/module_cu_gfl_wrf.F90 module_cu_gfl_wrf.F90 ; \
 	else \
 		echo No action required for GFL submodule ; \
 	fi

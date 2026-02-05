@@ -984,6 +984,8 @@
                    ( model_config_rec % ra_sw_physics(i) .EQ. RRTMG_SWSCHEME       )   .OR.  &
                    ( model_config_rec % ra_sw_physics(i) .EQ. RRTMG_SWSCHEME_FAST  ) ) ) ) THEN
                ! This is OK, no way would a negation have been understandable!
+            ELSE IF ( model_config_rec % ra_sw_physics(i) == 0 ) THEN
+                    model_config_rec%ghg_input=0
             ELSE
                oops = oops + 1
             END IF
@@ -1766,14 +1768,15 @@
       END IF
 
 !-----------------------------------------------------------------------
-! If MYNN PBL is not used, set bl_mynn_edmf = 0 so that shallow convection
+! If MYNN PBL is not used, set bl_mynn_edmf = 0 and bl_mynn_edmf_dd = 0 so that shallow convection
 ! options can be set and we don't get additional output
 !-----------------------------------------------------------------------
 
       DO i = 1, model_config_rec % max_dom
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( ( model_config_rec % bl_pbl_physics(i) .NE. MYNNPBLSCHEME  ) ) THEN
-              model_config_rec % bl_mynn_edmf(i) = 0
+              model_config_rec % bl_mynn_edmf(i)   = 0
+              model_config_rec % bl_mynn_edmf_dd(i)= 0
               model_config_rec % bl_mynn_output(i) = 0
          END IF
       ENDDO
@@ -2487,7 +2490,8 @@
       END IF
 
 !-----------------------------------------------------------------------
-!  scalar_pblmix = 1 should be turned on for mp_physics=28 and mp_physics=29. But can be off for MYNN (when bl_mynn_mixscalars = 1)
+!  scalar_pblmix = 1 should be turned on for mp_physics=28 and mp_physics=29. But is recommended to be off for MYNN when
+!  bl_mynn_mixscalars = 1, or bl_mynn_mixnumcon = 1, or bl_mynn_mixaerosols = 1.
 !-----------------------------------------------------------------------
       oops = 0
       DO i = 1, model_config_rec % max_dom
@@ -2512,7 +2516,9 @@
       DO i = 1, model_config_rec % max_dom
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ((model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME) ) THEN
-            IF ( model_config_rec%bl_mynn_mixscalars(i) .EQ. 1 ) THEN
+            IF ( model_config_rec%bl_mynn_mixscalars(i) .EQ. 1 .OR. &
+                 model_config_rec%bl_mynn_mixnumcon(i)  .EQ. 1 .OR. &
+                 model_config_rec%bl_mynn_mixaerosols(i).EQ. 1 ) THEN
                 model_config_rec%scalar_pblmix(i) = 0
                 oops = oops + 1
             END IF
@@ -3152,7 +3158,7 @@
             IF ( model_config_rec % ra_lw_physics(i) == -1 ) model_config_rec % ra_lw_physics(i) = RRTMG_LWSCHEME        ! RRTMG LW
             IF ( model_config_rec % ra_sw_physics(i) == -1 ) model_config_rec % ra_sw_physics(i) = RRTMG_SWSCHEME        ! RRTMG SW
             IF ( model_config_rec % bl_pbl_physics(i) == -1 ) model_config_rec % bl_pbl_physics(i) = YSUSCHEME           ! YSU
-            IF ( model_config_rec % sf_sfclay_physics(i) == -1 ) model_config_rec % sf_sfclay_physics(i) = SFCLAYSCHEME  ! MM5
+            IF ( model_config_rec % sf_sfclay_physics(i) == -1 ) model_config_rec % sf_sfclay_physics(i) = SFCLAYREVSCHEME  ! revised MM5
             IF ( model_config_rec % sf_surface_physics(i) == -1 ) model_config_rec % sf_surface_physics(i) = LSMSCHEME   ! Noah
 
          END DO
@@ -3516,20 +3522,6 @@
             model_config_rec % fmoisti_interp(i) = 1
          ELSE 
             model_config_rec % fmoisti_interp(i) = 0
-         END IF
-      ENDDO
-#endif
-
-!-----------------------------------------------------------------------
-! If MYNN PBL is not used, set bl_mynn_edmf = 0 so that we don't get 
-! additional output 
-!-----------------------------------------------------------------------
-
-#if (EM_CORE == 1)
-      DO i = 1, model_config_rec % max_dom
-         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
-         IF ( ( model_config_rec % bl_pbl_physics(i) .NE. MYNNPBLSCHEME  ) ) THEN
-            model_config_rec % bl_mynn_edmf = 0
          END IF
       ENDDO
 #endif

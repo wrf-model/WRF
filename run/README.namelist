@@ -92,7 +92,7 @@ Other output options: Note all auxhist[1-24], auxinput[2-24] interval variables 
                                                     than the history file requires Registry.EM file change
  auxhist9_interval (max_dom)         = 10,      ! interval in minutes
  io_form_auxhist9                    = 2,       ! output in netCDF
- frames_per_auxhist9                 = 1000,    ! number of output times in this file
+ frames_per_auxhist9 (max_dom)       = 1000,    ! number of output times in this file
 
 For SST updating (used only with sst_update=1):
  
@@ -108,7 +108,7 @@ For additional regional climate surface fields
  auxhist3_outname                    = 'wrfxtrm_d<domain>_<date>' ! file name for added diagnostics
  io_form_auxhist3                    = 2        ! netcdf
  auxhist3_interval (max_dom)         = 1440     ! minutes between outputs (1440 gives daily max/min)
- frames_per_auxhist3                 = 1        ! output times per file
+ frames_per_auxhist3 (max_dom)       = 1        ! output times per file
                                                   Note: do restart only at multiple of auxhist3_intervals
 
 For observation nudging:
@@ -497,6 +497,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 17, 19, 21, 22: Legacy NSSL-MP options: see README.NSSLmp for equivalent settings with 18
                                      = 24, WSM 7-class scheme (separate hail and graupel categories)
                                      = 26, WDM 7-class scheme (separate hail and graupel categories)
+                                     = 27, UDM 7-class scheme, double moments in qnc and qnr plus qnn
                                      = 28, aerosol-aware Thompson scheme with water- and ice-friendly aerosol climatology 
                                        This option has two climatological aerosol input options:
                                        use_aero_icbc = .F. : use constant values
@@ -742,12 +743,8 @@ use_rap_aero_icbc                   = .false.   ! Set to .true. to ingest real-t
                                      = 2, Mellor-Yamada-Janjic TKE scheme
                                      = 3, Hybrid EDMF GFS scheme 
                                      = 4, Eddy-diffusivity Mass Flux, Quasi-Normal Scale Elimination PBL
-                                     = 5, MYNN 2.5 level TKE scheme, works with
-                                          sf_sfclay_physics=1 or 2 as well as 5
+                                     = 5, MYNN TKE scheme, works with sf_sfclay_physics=1 or 2 as well as 5
                                           (option 6 removed in 4.5, replaced by bl_mynn_closure options)
- bl_mynn_closure                          = 2.5: level 2.5
-                                            2.6: level 2.6
-                                            3.0: level 3.0                                         
                                      = 7, ACM2 (Pleim) PBL
                                      = 8, Bougeault and Lacarrere (BouLac) PBL
                                      = 9, UW boundary layer scheme from CAM5 (CESM 1_0_1)
@@ -776,17 +773,20 @@ use_rap_aero_icbc                   = .false.   ! Set to .true. to ingest real-t
 
  tke_budget (max_dom)                = 0,       ! default off; = 1 adds MYNN tke budget terms to output (new in 4.5)
                                                   (replacing bl_mynn_tkebudget in prior versions)
+ bl_mynn_closure                     = 2.5: level 2.5
+                                       2.6: level 2.6 (default)
+                                       3.0: level 3.0
  bl_mynn_tkeadvect (max_dom)         = .false., ! default off; = .true. do MYNN tke advection
  icloud_bl                                        option to couple the subgrid-scale clouds from the PBL scheme (MYNN only) 
                                                   to radiation schemes 
                                      0:  no coupling; 1: activate coupling to radiation (default)
- bl_mynn_cloudmix (max_dom)          = 0 ! default off; =1 activates mixing of qc and qi in MYNN
+ bl_mynn_cloudmix (max_dom)          activates mixing of qc and qi in MYNN
                                      0: no mixing of qc & qi; 1: mixing activated (default). 
                                         Note qnc and qni are mixed when scalar_pblmix =1.
  bl_mynn_mixlength                   option to change mixing length formulation in MYNN
                                      0: original as in Nakanishi and Niino 2009, 
-                                     1: RAP/HRRR (including BouLac in free atmosphere), 
-                                     2: experimental (default; includes cloud-specific mixing length and a scale-aware mixing 
+                                     1: RAP/HRRR (default; including BouLac in free atmosphere), 
+                                     2: experimental (includes cloud-specific mixing length and a scale-aware mixing 
                                         length, following Ito et al. 2015, BLM). Option 2 has been well tested with 
                                         the edmf options.
  bl_mynn_cloudpdf                    option to switch to different cloud PDFs to represent subgrid clouds

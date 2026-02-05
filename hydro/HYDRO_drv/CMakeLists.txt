@@ -8,8 +8,7 @@ target_link_libraries(hydro_driver PUBLIC
         hydro_data_rec
         hydro_routing
         hydro_debug_utils
-        PRIVATE
-          netCDF::netcdff
+        netCDF::netcdff
 )
 
 if(WRF_HYDRO_NUDGING STREQUAL "1")

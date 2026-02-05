@@ -5,6 +5,7 @@ wrf_conf_check(
                 SOURCES    ${PROJECT_SOURCE_DIR}/tools/fortran_2003_ieee_test.F
                 MESSAGE    "Some IEEE Fortran 2003 features missing, removing usage of these features"
                 )
+set(Fortran_2003_IEEE ${Fortran_2003_IEEE} PARENT_SCOPE)
 
 wrf_conf_check(
                 RUN
@@ -12,6 +13,7 @@ wrf_conf_check(
                 SOURCES    ${PROJECT_SOURCE_DIR}/tools/fortran_2003_iso_c_test.F
                 MESSAGE    "Some ISO_C Fortran 2003 features missing, removing usage ISO_C and stubbing code dependent on it"
                 )
+set(Fortran_2003_ISO_C ${Fortran_2003_ISO_C} PARENT_SCOPE)
 
 wrf_conf_check(
                 RUN
@@ -19,6 +21,7 @@ wrf_conf_check(
                 SOURCES    ${PROJECT_SOURCE_DIR}/tools/fortran_2003_flush_test.F
                 MESSAGE    "Standard FLUSH routine Fortran 2003 features missing, checking for alternate Fortran_2003_FFLUSH"
                 )
+set(Fortran_2003_FLUSH ${Fortran_2003_FLUSH} PARENT_SCOPE)
 
 if ( NOT ${Fortran_2003_FLUSH} )
   wrf_conf_check(
@@ -27,6 +30,7 @@ if ( NOT ${Fortran_2003_FLUSH} )
                   SOURCES    ${PROJECT_SOURCE_DIR}/tools/fortran_2003_fflush_test.F
                   MESSAGE    "Standard FFLUSH routine Fortran 2003 features missing, no alternate to FLUSH found, feature stubbed out"
                   )
+  set(Fortran_2003_FFLUSH ${Fortran_2003_FFLUSH} PARENT_SCOPE)
 endif()
 
 wrf_conf_check(
@@ -35,6 +39,7 @@ wrf_conf_check(
                 SOURCES    ${PROJECT_SOURCE_DIR}/tools/fortran_2008_gamma_test.F
                 MESSAGE    "Some Fortran 2003 features missing, removing usage gamma function intrinsic and stubbing code dependent on it"
                 )
+set(Fortran_2003_GAMMA ${Fortran_2003_GAMMA} PARENT_SCOPE)
 
 
 
@@ -46,6 +51,7 @@ wrf_conf_check(
                   COMPILE_DEFINITIONS -DTEST_FSEEKO64 -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE=1 -DFILE_TO_TEST="${PROJECT_SOURCE_DIR}/CMakeLists.txt"
                 MESSAGE                "fseeko64 not supported, checking alternate fseeko"
                 )
+set(FSEEKO64 ${FSEEKO64} PARENT_SCOPE)
 
 if ( NOT "${FSEEKO64}" )
   wrf_conf_check(
@@ -56,6 +62,32 @@ if ( NOT "${FSEEKO64}" )
                     COMPILE_DEFINITIONS -DTEST_FSEEKO -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE=1 -DFILE_TO_TEST="${PROJECT_SOURCE_DIR}/CMakeLists.txt"
                   MESSAGE                "fseeko not supported, compiling with fseek (caution with large files)"
                   )
+  set(FSEEKO ${FSEEKO} PARENT_SCOPE)
+endif()
+
+
+# Check if underscores are needed for implicit c-Fortran interfacing functions that
+# don't use ISO C binding to map symbols
+wrf_conf_check(
+                # try_run() with more than one source was introduced in CMake 3.25+
+                # so we won't use it here until we see reasonable need to increase the 
+                # version requirements
+                RESULT_VAR             NOUNDERSCORE_SYMBOL
+                SOURCES                ${CMAKE_CURRENT_SOURCE_DIR}/check_underscore.c ${CMAKE_CURRENT_SOURCE_DIR}/check_underscore.f90
+                OPTIONS
+                  COMPILE_DEFINITIONS -DNOUNDERSCORE
+                MESSAGE                "Implicit symbol usage between C and Fortran are not identical, checking with underscores"
+              )
+if ( NOT ${NOUNDERSCORE_SYMBOL} )
+  # If the above fails we NEED the following to work
+  wrf_conf_check(
+                  RESULT_VAR             UNDERSCORE_SYMBOL
+                  SOURCES                ${CMAKE_CURRENT_SOURCE_DIR}/check_underscore.c ${CMAKE_CURRENT_SOURCE_DIR}/check_underscore.f90
+                  OPTIONS
+                    COMPILE_DEFINITIONS -DUNDERSCORE
+                  MESSAGE                "Implicit symbol usage between C with underscores and Fortran did not link!"
+                  REQUIRED
+                )
 endif()
 
 # Unsure if this is even necessary. Defines littered throughout configure.defaults

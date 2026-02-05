@@ -2013,7 +2013,6 @@ endif
 #endif
 
 DEALLOCATE(z_at_q)
-DEALLOCATE(dz8w)
 
    IF (config_flags%p_lev_diags == PRESS_DIAGS ) THEN
     CALL wrf_debug ( 200 , ' PLD: pressure level diags' )
@@ -2179,6 +2178,7 @@ DEALLOCATE(dz8w)
                ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte   )
    ENDIF
 
+DEALLOCATE(dz8w)
 
 !  FIRE
    Select_fire_model: select case (config_flags%ifire)

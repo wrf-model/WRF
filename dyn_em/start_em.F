@@ -1148,6 +1148,9 @@ endif
                       grid%CMCR_URB2D,grid%TGR_URB2D,grid%TGRL_URB3D,grid%SMR_URB3D, & !Optional urban   
                       grid%DRELR_URB2D,grid%DRELB_URB2D,grid%DRELG_URB2D,    & !Optional urban
                       grid%FLXHUMR_URB2D,grid%FLXHUMB_URB2D,grid%FLXHUMG_URB2D,   & !Optional urban
+                      ! added by Chenghao Wang
+                      grid%TVG_URB2D,grid%XXXVG_URB2D,grid%TVGL_URB3D,grid%SMG_URB3D,grid%TT_URB2D, & !Optional urban
+                      grid%CMCG_URB2D,grid%FLXHUMVG_URB2D,grid%FLXHUMT_URB2D,       & !Optional urban
                       grid%TRB_URB4D,grid%TW1_URB4D,grid%TW2_URB4D,grid%TGB_URB4D,grid%TLEV_URB3D,  & !multi-layer urban
                       grid%QLEV_URB3D,grid%TW1LEV_URB3D,grid%TW2LEV_URB3D,        & !multi-layer urban
                       grid%TGLEV_URB3D,grid%TFLEV_URB3D,grid%SF_AC_URB3D,         & !multi-layer urban

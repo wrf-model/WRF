@@ -74,7 +74,8 @@ CONTAINS
 &    , tr_urb2d, tb_urb2d, tg_urb2d, tc_urb2d, qc_urb2d, xxxr_urb2d, &
 &    xxxb_urb2d, xxxg_urb2d, xxxc_urb2d, trl_urb3d, tbl_urb3d, tgl_urb3d&
 &    , sh_urb2d, lh_urb2d, g_urb2d, rn_urb2d, ts_urb2d, frc_urb2d, &
-&    utype_urb2d, trb_urb4d, tw1_urb4d, tw2_urb4d, tgb_urb4d, tlev_urb3d&
+&    utype_urb2d, tvg_urb2d, xxxvg_urb2d, tvgl_urb3d, smg_urb3d, tt_urb2d, &
+&    cmcg_urb2d, flxhumvg_urb2d, flxhumt_urb2d, trb_urb4d, tw1_urb4d, tw2_urb4d, tgb_urb4d, tlev_urb3d&
 &    , qlev_urb3d, tw1lev_urb3d, tw2lev_urb3d, tglev_urb3d, tflev_urb3d, &
 &    sf_ac_urb3d, lf_ac_urb3d, cm_ac_urb3d, sfvent_urb3d, lfvent_urb3d, &
 &    sfwin1_urb3d, sfwin2_urb3d, sfw1_urb3d, sfw2_urb3d, sfr_urb3d, &
@@ -279,6 +280,24 @@ CONTAINS
 !urban
     REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL, INTENT(INOUT) :: &
 &    xxxc_urb2d
+!urban
+    REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL, INTENT(INOUT) :: &
+&    tvg_urb2d
+!urban
+    REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL, INTENT(INOUT) :: &
+&    tt_urb2d
+!urban
+    REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL, INTENT(INOUT) :: &
+&    xxxvg_urb2d
+!urban
+    REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL, INTENT(INOUT) :: &
+&    cmcg_urb2d
+!urban
+    REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL, INTENT(INOUT) :: &
+&    flxhumvg_urb2d
+!urban
+    REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL, INTENT(INOUT) :: &
+&    flxhumt_urb2d
 !   REAL, DIMENSION(ims:ime, 1:num_roof_layers, jms:jme), INTENT(INOUT) :: TRL_URB3D !urban
 !   REAL, DIMENSION(ims:ime, 1:num_wall_layers, jms:jme), INTENT(INOUT) :: TBL_URB3D !urban
 !   REAL, DIMENSION(ims:ime, 1:num_road_layers, jms:jme), INTENT(INOUT) :: TGL_URB3D !urban
@@ -291,6 +310,12 @@ CONTAINS
 !urban
     REAL, DIMENSION(ims:ime, num_soil_layers, jms:jme), OPTIONAL, &
 &    INTENT(INOUT) :: tgl_urb3d
+!urban
+    REAL, DIMENSION(ims:ime, num_soil_layers, jms:jme), OPTIONAL, &
+&    INTENT(INOUT) :: tvgl_urb3d
+!urban
+    REAL, DIMENSION(ims:ime, num_soil_layers, jms:jme), OPTIONAL, &
+&    INTENT(INOUT) :: smg_urb3d
 !urban
     REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL, INTENT(INOUT) :: &
 &    sh_urb2d

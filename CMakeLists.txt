@@ -159,6 +159,7 @@ set( USE_IPO     OFF CACHE BOOL "USE_IPO"     )
 
 set( ENABLE_CHEM       OFF CACHE BOOL "ENABLE_CHEM"      )
 set( ENABLE_CMAQ       OFF CACHE BOOL "ENABLE_CMAQ"      )
+set( ENABLE_CFBM       OFF CACHE BOOL "ENABLE_CFBM"      )
 set( ENABLE_CTSM       OFF CACHE BOOL "ENABLE_CTSM"      )
 set( ENABLE_DFI_RADAR  OFF CACHE BOOL "ENABLE_DFI_RADAR" )
 set( ENABLE_HYDRO      OFF CACHE BOOL "ENABLE_HYDRO"     )
@@ -348,6 +349,24 @@ if ( ${MANAGE_EXTERNALS_STATUS} AND NOT ${MANAGE_EXTERNALS_STATUS} EQUAL 0 )
   message( FATAL_ERROR "Failed to checkout external repos via manage_externals" )
 else()
   message( STATUS "Finished checking out external repos via manage_externals" )
+endif()
+
+if ( ${ENABLE_CFBM} )
+  message( STATUS "Checking out CFBM external repo via manage_externals" )
+  set( LOG_FILE      ${CMAKE_CURRENT_BINARY_DIR}/checkout_externals_cfbm.log )
+  execute_process(
+                  COMMAND
+                    ${PROJECT_SOURCE_DIR}/tools/manage_externals/checkout_externals --externals ${PROJECT_SOURCE_DIR}/arch/OptionalExternals_cfbm.cfg
+                  WORKING_DIRECTORY       ${PROJECT_SOURCE_DIR}
+                  RESULT_VARIABLE         MANAGE_EXTERNALS_STATUS
+                  OUTPUT_FILE             ${LOG_FILE}
+                  ERROR_FILE              ${LOG_FILE}
+                  )
+  if ( ${MANAGE_EXTERNALS_STATUS} AND NOT ${MANAGE_EXTERNALS_STATUS} EQUAL 0 )
+    message( FATAL_ERROR "Failed to checkout cfbm external repo via manage_externals" )
+  else()
+    message( STATUS "Finished checking out cfbm external repo via manage_externals" )
+  endif()
 endif()
 
 
@@ -576,6 +595,7 @@ print_option( USE_IPO          20 )
 print_option( ENABLE_CHEM      20 )
 print_option( ENABLE_CLM       20 )
 print_option( ENABLE_CMAQ      20 )
+print_option( ENABLE_CFBM      20 )
 print_option( ENABLE_DFI_RADAR 20 )
 print_option( ENABLE_HYDRO     20 )
 print_option( ENABLE_KPP       20 )
@@ -738,6 +758,9 @@ if ( ${ENABLE_CHEM} )
 endif()
 if ( ${ENABLE_CMAQ} )
   list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS WRF_CMAQ=1 )
+endif()
+if ( ${ENABLE_CFBM} )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS WRF_CFBM )
 endif()
 if ( ${ENABLE_DFI_RADAR} )
   list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS WRF_DFI_RADAR=1 )
@@ -1071,6 +1094,7 @@ target_include_directories(
                               $<$<TARGET_EXISTS:bacio-1.3>:$<TARGET_PROPERTY:bacio-1.3,Fortran_MODULE_DIRECTORY>>
 
                             PRIVATE
+                              $<$<TARGET_EXISTS:firelib>:$<TARGET_PROPERTY:firelib,Fortran_MODULE_DIRECTORY>>
                               
                               ${PROJECT_SOURCE_DIR}/dyn_em
 
@@ -1124,6 +1148,7 @@ target_link_libraries(  ${PROJECT_NAME}_Core
                             fftpack5
 
                             $<TARGET_NAME_IF_EXISTS:wrfhydro>
+                            $<TARGET_NAME_IF_EXISTS:firelib>
                             $<TARGET_NAME_IF_EXISTS:atm_ocn>
                             $<TARGET_NAME_IF_EXISTS:io_adios2>
                             $<TARGET_NAME_IF_EXISTS:io_esmf>

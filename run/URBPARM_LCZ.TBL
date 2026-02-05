@@ -234,11 +234,11 @@ DZGR:  0.05 0.10 0.15 0.20
 FVG: 0.1
 
 #
-# TREEOPTION [ 0: No urban trees, 1: Enable urban trees ]
+# TREEOPTION [ 0: No urban trees - default, 1: Enable urban trees ]
 #      (sf_urban_physics=1)
 #
 
-TREEOPTION: 1
+TREEOPTION: 0
 
 #
 # RTREE: Tree crown radius [ m ]

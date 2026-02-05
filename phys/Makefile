@@ -283,6 +283,12 @@ submodules :
 	else \
 		echo No action required for MYNN-EDMF submodule ; \
 	fi
+	@if [ \( ! -f phys/physics_mmm/README.md \) ] ; then \
+		echo Pulling in MMM-physics submodule ; \
+		( cd .. ; git submodule update --init --recursive ) ; \
+	else \
+		echo No action required for MMM-physics submodule ; \
+	fi
 	
 clean:
 	@ echo 'use the clean script'

@@ -1040,7 +1040,7 @@ state   real   FM             ij     misc        1         -     -         "FM" 
 state   real   FH             ij     misc        1         -     -         "FH"                  "INTEGRATED FUNCTION FOR HEAT"         ""
 state   real   WSPD           ij     misc        1         -     -         "WSPD"                "Wind Speed At Lowest Model Level (may contain vconv)"           "m s-1"
 i1      real   GZ1OZ0         ij     misc        1         -     -         "GZ1OZ0"              "LOG OF Z1 over Z0"                     ""
-state   real   BR             ij     misc        1         -     -         "BR"                  "Bulk Richardson"                       ""
+state   real   BR             ij     misc        1         -     h         "BR"                  "Bulk Richardson"                       ""
 state   real   ZOL            ij     misc        1         -     -         "ZOL"                 "z/L"                                   ""
 
 # ysupbl variables for grims shallow convection
@@ -1945,7 +1945,7 @@ state    integer NYEAR          -       misc        1         -     r        "NY
 state    real    NDAY           -       misc        1         -     r        "NDAY"                  "ACCUM TIMESTEPS IN A DAY"                      ""
 state    real  XLAND            ij      misc        1         -     i02rhd=(interp_fcnm_imask)u=(copy_fcnm)       "XLAND"                 "LAND MASK (1 FOR LAND, 2 FOR WATER)"          ""      
 state    real  cplmask       i{ncpldom}j      misc        1       z        i0r     "CPLMASK"    "COUPLING MASK (0:VALUE FROM SST UPDATE; 1:VALUE FROM COUPLED OCEAN), vertical dim is number of external domains"  ""
-state    real  ZNT              ij      misc        1         -      i3r     "ZNT"                   "TIME-VARYING ROUGHNESS LENGTH"                "m"      
+state    real  ZNT              ij      misc        1         -      i3rh     "ZNT"                   "TIME-VARYING ROUGHNESS LENGTH"                "m"      
 state    real  CK               ij      misc        1         -      r        "CK"                    "ENTHALPY EXCHANGE COEFF AT 10 m"                      ""
 state    real  CKA              ij      misc        1         -      r        "CKA"                   "ENTHALPY EXCHANGE COEFF AT LOWEST MODEL LVL"          ""
 state    real  CD               ij      misc        1         -      r        "CD"                    "DRAG COEFF AT 10m"                      ""

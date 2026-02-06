@@ -60,7 +60,7 @@ SUBROUTINE G_CUMULUS_DRIVER(grid, ids, ide, jds, jde, kds, kde, ims, ime&
    USE module_model_constants
    USE module_state_description, ONLY:     KFSCHEME,BMJSCHEME         &
                                           ,KFETASCHEME,GDSCHEME       &
-                                          ,G3SCHEME,GFSCHEME          &
+                                          ,G3SCHEME,GFLSCHEME         &
                                           ,P_QC,P_QI,Param_FIRST_SCALAR &
                                           ,CAMZMSCHEME, SASSCHEME     &
                                           ,OSASSCHEME                 &

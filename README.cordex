@@ -225,11 +225,12 @@ These steps must be followed prior the re-compilation of the WRF model (it requi
    a.- make a copy of Registry/registry.cordex
      $ cp Registry/registry.cordex Registry/registry.cordex_comp
    b.- modify the Registry/registry.cordex_comp accordingly to the value of CDXWRF:
-    - Without adding CDXWRF, nothing needs to be changed
-    - Adding CDXWRF=1, one needs to remove the comment ##CDXWRF1## at the beginning of the line of the definition of certain variables
-    - Adding CDXWRF=2, one needs to remove the comment ##CDXWRF1## and ##CDXWRF2## at the beginning of the line of the definition of certain variables
-    - Adding CDXWRF=3, one needs to remove the comment ##CDXWRF1##, ##CDXWRF2## and ##CDXWRF3## at the beginning of the line of the definition of certain variables
-    - Adding CDXWRF=4, one needs to remove the comment ##CDXWRF1##, ##CDXWRF2##, ##CDXWRF3## and ##CDXWRF4## at the beginning of the line of the definition of certain variables
+    - User must provide a level for CDXWRF. 
+      > Adding CDXWRF=1, one needs to remove the comment ##CDXWRF1## at the beginning of the line of the definition of certain variables
+      > Adding CDXWRF=2, one needs to remove the comment ##CDXWRF1## and ##CDXWRF2## at the beginning of the line of the definition of certain variables
+      > Adding CDXWRF=3, one needs to remove the comment ##CDXWRF1##, ##CDXWRF2## and ##CDXWRF3## at the beginning of the line of the definition of certain variables
+      > Adding CDXWRF=4, one needs to remove the comment ##CDXWRF1##, ##CDXWRF2##, ##CDXWRF3## and ##CDXWRF4## at the beginning of the line of the definition of certain variables
+    - Example for CDXWRF=3
      $ sed -i 's/##CDXWRF1##//g' Registry/registry.cordex_comp
      $ sed -i 's/##CDXWRF2##//g' Registry/registry.cordex_comp
      $ sed -i 's/##CDXWRF3##//g' Registry/registry.cordex_comp

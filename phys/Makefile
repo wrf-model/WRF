@@ -277,6 +277,12 @@ submodules :
 	else \
 		echo No action required for NoahMP submodule ; \
 	fi
+	@if [ \( ! -f phys/physics_mmm/README.md \) ] ; then \
+		echo Pulling in MMM-physics submodule ; \
+		( cd .. ; git submodule update --init --recursive ) ; \
+	else \
+		echo No action required for MMM-physics submodule ; \
+	fi
 	@if [ \( ! -f module_bl_mynnedmf.F \) -o \( ! -f module_bl_mynnedmf_common.F \) -o \
 	      \( ! -f module_bl_mynnedmf_driver.F \) ] ; then \
 	      	echo Pulling in MYNN-EDMF submodule ; \
@@ -286,12 +292,6 @@ submodules :
 		ln -sf MYNN-EDMF/WRF/module_bl_mynnedmf_driver.F90 module_bl_mynnedmf_driver.F ; \
 	else \
 		echo No action required for MYNN-EDMF submodule ; \
-	fi
-	@if [ \( ! -f phys/physics_mmm/README.md \) ] ; then \
-		echo Pulling in MMM-physics submodule ; \
-		( cd .. ; git submodule update --init --recursive ) ; \
-	else \
-		echo No action required for MMM-physics submodule ; \
 	fi
 	@if [ \( ! -f module_sf_mynnsfc_driver.F \) -o \( ! -f module_sf_mynnsfc_common.F \) -o \
 	      \( ! -f module_sf_mynnsfc_land.F \) -o \( ! -f module_sf_mynnsfc_water.F \) -o \

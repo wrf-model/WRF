@@ -57,7 +57,7 @@ CONTAINS
 !-----------
 !-- DIAG_PRINT    print control: 0 - no diagnostics; 1 - dmudt only; 2 - all
 !-- DT            time step (second)
-!-- XTIME         forecast time
+!-- XTIME         forecast time (in minutes)
 !-- ACSWUPT
 !-- ACSWUPTC
 !-- ACSWDNT
@@ -213,7 +213,8 @@ CONTAINS
    CHARACTER*6       :: grid_str
 
    INTEGER, INTENT(IN) ::                                        &
-                                     history_interval,itimestep
+                                     history_interval, & ! units of sec
+                                     itimestep
 
    INTEGER :: idump
 
@@ -226,7 +227,7 @@ CONTAINS
 !  !$OMP PRIVATE ( ij )
    DO ij = 1 , num_tiles
 
-      IF (mod(curr_secs2, history_interval*60.) == 0.) THEN
+      IF (mod(curr_secs2, FLOAT(history_interval)) == 0.) THEN
          WRITE(outstring,*) 'Reseting accumulation to 0'
          CALL wrf_debug ( 10, TRIM(outstring) )
          DO j=j_start(ij),j_end(ij)
@@ -299,7 +300,7 @@ CONTAINS
 
    DO ij = 1 , num_tiles
 
-      IF (xtime .eq. 0.0)THEN
+      IF (curr_secs2 .eq. 0.0)THEN
         DO j=j_start(ij),j_end(ij)
         DO i=i_start(ij),i_end(ij)
           i_rainnc(i,j) = 0
@@ -320,7 +321,7 @@ CONTAINS
       ENDDO      
       ENDDO
 
-      IF (xtime .eq. 0.0 .and. bucket_J .gt. 0.0 .and. PRESENT(ACSWUPT))THEN
+      IF (curr_secs2 .eq. 0.0 .and. bucket_J .gt. 0.0 .and. PRESENT(ACSWUPT))THEN
         DO j=j_start(ij),j_end(ij)
         DO i=i_start(ij),i_end(ij)
           i_acswupt(i,j) = 0
@@ -334,7 +335,7 @@ CONTAINS
         ENDDO      
         ENDDO
       ENDIF
-      IF (xtime .eq. 0.0  .and. bucket_J .gt. 0.0 .and. PRESENT(ACLWUPT))THEN
+      IF (curr_secs2 .eq. 0.0  .and. bucket_J .gt. 0.0 .and. PRESENT(ACLWUPT))THEN
         DO j=j_start(ij),j_end(ij)
         DO i=i_start(ij),i_end(ij)
           i_aclwupt(i,j) = 0
@@ -463,7 +464,7 @@ CONTAINS
 
    if (diag_print .eq. 0 ) return
 
-   IF ( xtime .ne. 0. ) THEN
+   IF ( curr_secs2 .ne. 0. ) THEN
 
 ! COMPUTE THE NUMBER OF MASS GRID POINTS
    no_points = float((ide-ids)*(jde-jds))
@@ -626,7 +627,7 @@ CONTAINS
       ENDDO
       ENDDO
 
-      IF ( xtime .lt. 0.0001 ) THEN
+      IF ( curr_secs2 .lt. 0.0001 ) THEN
       DO j=j_start(ij),j_end(ij)
       DO i=i_start(ij),i_end(ij)
          dpsdt(i,j)=0.

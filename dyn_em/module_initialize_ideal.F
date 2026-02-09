@@ -96,6 +96,7 @@ CONTAINS
 
 
    INTEGER :: icm,jcm, ii, im1, jj, jm1, loop, error, fid, nxc, nyc, lm
+   REAL :: div_mag
    REAL    :: u_mean,v_mean, f0, p_surf, p_level, qvf, z_at_v, z_at_u
    REAL    :: z_scale, xrad, yrad, zrad, hgt, rad, delt, cof1, cof2
 !   REAL, EXTERNAL :: interp_0
@@ -1119,7 +1120,7 @@ CONTAINS
 !  first from the top of the model to the top pressure
     kk = kte-1  ! top level
     k=kk+1
-    qvf1 = 0.5*(moist(i,k,j,P_QV)+moist(i,kk,j,P_QV)) ! jdduda
+    qvf1 = 0.5*(moist(i,k,j,P_QV)+moist(i,kk,j,P_QV))
     qvf2 = 1./(1.+qvf1)
     qvf1 = qvf1*qvf2
     grid%p(i,kk,j) = - 0.5*((grid%c1f(k)*grid%Mu_1(i,j))+qvf1*(grid%c1f(k)*grid%Mub(i,j)+grid%c2f(k)))/grid%rdnw(kk)/qvf2
@@ -1237,17 +1238,27 @@ CONTAINS
         END IF
         END DO ! k
        
-        DO k = 1,k_cent
-        ! Input an updraft core extending from the height of the bubble to the bottom of the model 
+        DO k = 1,kte-1
+        ! Input an updraft core extending from the height of the bubble to the bottom of the model
+        ! Input a Gaussian shaped updraft embryo in the lower troposphere
            IF (config_flags%init_vv) THEN
-              rad = sqrt(xrad**2 + yrad**2)
-              IF (rad <= 1.) THEN
-                 hgt = 0.5*(grid%ph_1(i,k,j)+grid%ph_1(i,k+1,j) + grid%phb(i,k,j)+grid%phb(i,k+1,j))/g
-                 ! Can dissipate the core updraft velocity value closer to the ground - hence the zrad/pert_z factor
-                 PRINT *, k, hgt, hgt/pert_z(a), config_flags%init_w_core*(hgt/pert_z(a))*COS(0.5*PI*RAD)**2
-                 grid%w_2(i,k,j) = config_flags%init_w_core*(hgt/pert_z(a))*COS(0.5*PI*RAD)**2
-                 grid%ww(i,k,j) = config_flags%init_w_core*(hgt/pert_z(a))*COS(0.5*PI*RAD)**2
-              END IF
+              hgt = 0.5*(grid%ph_1(i,k,j)+grid%ph_1(i,k+1,j) + grid%phb(i,k,j)+grid%phb(i,k+1,j))/g
+              zrad = 0
+              ! Set a maximum altitude of the vertical velocity adjustment to 10 km
+              IF (hgt <= 10000.) zrad = exp(-((hgt-pert_z(1))/config_flags%vv_lz)**2)
+              rad = exp(-(config_flags%dx*(i-pert_x(1))/config_flags%vv_ly)**2) * exp(-(config_flags%dy*(j-pert_y(1))/config_flags%vv_ly)**2) * zrad
+              grid%w_1(i,k,j) = config_flags%init_w_core*rad
+              grid%w_2(i,k,j) = config_flags%init_w_core*rad
+              grid%ww(i,k,j) = config_flags%init_w_core*rad
+          !    rad = sqrt(xrad**2 + yrad**2)
+          !    IF (rad <= 1.) THEN
+          !       hgt = 0.5*(grid%ph_1(i,k,j)+grid%ph_1(i,k+1,j) + grid%phb(i,k,j)+grid%phb(i,k+1,j))/g
+          !       ! Can dissipate the core updraft velocity value closer to the ground - hence the zrad/pert_z factor
+          !       PRINT *, k, hgt, hgt/pert_z(a), config_flags%init_w_core*(hgt/pert_z(a))*COS(0.5*PI*RAD)**2
+          !       grid%w_1(i,k,j) = config_flags%init_w_core*(hgt/pert_z(a))*COS(0.5*PI*RAD)**2
+          !       grid%w_2(i,k,j) = config_flags%init_w_core*(hgt/pert_z(a))*COS(0.5*PI*RAD)**2
+          !       grid%ww(i,k,j) = config_flags%init_w_core*(hgt/pert_z(a))*COS(0.5*PI*RAD)**2
+          !    END IF
            END IF
         END DO ! k
 
@@ -1693,13 +1704,50 @@ CONTAINS
   ENDDO
   ENDIF
 
+  ! Modify initial wind field to include a convergence component
+  IF (model_config_rec%ideal_case == quarter_ss .and. config_flags%init_div) THEN
+     DO K = kts,kte
+     DO J = jts+1,min(jde-2,jte-1)
+     DO I = its+1,min(ide-2,ite-1)
+        hgt = 0.5*(grid%ph_1(i,k,j)+grid%ph_1(i,k+1,j) + grid%phb(i,k,j)+grid%phb(i,k+1,j))/g
+        zrad = MAX((config_flags%div_depth - hgt)/config_flags%div_depth,0.)
+        div_mag = zrad*config_flags%init_max_div * &
+                  exp(-(config_flags%dx*(i-pert_x(1))/config_flags%div_lx)**2) * &
+                  exp(-(config_flags%dy*(j-pert_y(1))/config_flags%div_ly)**2)
+    !    IF (K == 1 .and. J == pert_y(1)) PRINT *, J, I, exp(-(config_flags%dy*(j-pert_y(1))/config_flags%div_ly)**2), exp(-(config_flags%dx*(i-pert_x(1))/config_flags%div_lx)**2) * exp(-(config_flags%dy*(j-pert_y(1))/config_flags%div_ly)**2), config_flags%init_max_div*exp(-(config_flags%dx*(i-pert_x(1))/config_flags%div_lx)**2) * exp(-(config_flags%dy*(j-pert_y(1))/config_flags%div_ly)**2)
+    !    IF (K == 1 .and. I == pert_x(1)) PRINT *, J, I, exp(-(config_flags%dx*(i-pert_x(1))/config_flags%div_lx)**2), exp(-(config_flags%dx*(i-pert_x(1))/config_flags%div_lx)**2) * exp(-(config_flags%dy*(j-pert_y(1))/config_flags%div_ly)**2), config_flags%init_max_div*exp(-(config_flags%dx*(i-pert_x(1))/config_flags%div_lx)**2) * exp(-(config_flags%dy*(j-pert_y(1))/config_flags%div_ly)**2)
+        grid%u_1(i+1,k,j) = div_mag*config_flags%dx + grid%u_1(i-1,k,j)
+        grid%v_1(i,k,j+1) = div_mag*config_flags%dy + grid%v_1(i,k,j-1)
+    !    grid%u_2(i+1,k,j) = grid%u_1(i+1,k,j)
+    !    grid%v_2(i,k,j+1) = grid%v_1(i,k,j+1)
+     END DO
+     END DO
+     DO J = jds,jde
+        grid%u_1(ide,k,j) = 0.5*div_mag*config_flags%dx + grid%u_1(ide-1,k,j)
+        grid%u_1(1,k,j) = grid%u_1(2,k,j) - 0.5*div_mag*config_flags%dx
+     END DO
+     DO I = ids,ide
+        grid%v_1(i,k,jde) = 0.5*div_mag*config_flags%dy + grid%v_1(i,k,jde-1)
+        grid%v_1(i,k,1) = grid%v_1(i,k,2) - 0.5*div_mag*config_flags%dy
+     END DO
+     DO J = jds,jde
+     DO I = ids,ide
+        grid%u_2(i,k,j) = grid%u_1(i,k,j)
+        grid%v_2(i,k,j) = grid%v_1(i,k,j)
+     END DO
+     END DO
+     END DO
+  END IF
+
 !  set w
 
   DO J = jts, min(jde-1,jte)
   DO K = kts, kte
   DO I = its, min(ide-1,ite)
-    grid%w_1(i,k,j) = 0.
-    IF (.not. config_flags%init_vv) grid%w_2(i,k,j) = 0.
+    IF (.not. config_flags%init_vv) THEN
+       grid%w_2(i,k,j) = 0.
+       grid%w_1(i,k,j) = 0.
+    END IF
   ENDDO
   ENDDO
   ENDDO

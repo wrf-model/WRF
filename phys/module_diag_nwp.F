@@ -62,7 +62,7 @@ CONTAINS
 !-----------
 !-- DIAG_PRINT    print control: 0 - no diagnostics; 1 - dmudt only; 2 - all
 !-- DT            time step (second)
-!-- XTIME         forecast time
+!-- XTIME         forecast time (in minutes)
 !-- SBW           specified boundary width - used later
 !
 !-- P8W           3D pressure array at full eta levels
@@ -153,7 +153,8 @@ CONTAINS
    CHARACTER*6       :: grid_str
 
    INTEGER, INTENT(IN) ::                                        &
-                                     history_interval,itimestep
+                                     history_interval, & ! units of sec
+                                     itimestep
 
    REAL, DIMENSION( kms:kme ), INTENT(IN) ::                     &
                                                             znw
@@ -217,13 +218,13 @@ CONTAINS
 
 !-----------------------------------------------------------------
 
-    idump = (history_interval * 60.) / dt
+    idump = history_interval / dt
 
 ! IF ( MOD(itimestep, idump) .eq. 0 ) THEN
 !    WRITE(outstring,*) 'Computing PH0 for this domain with curr_secs2 = ', curr_secs2
 !    CALL wrf_message ( TRIM(outstring) )
 
-   time_from_output = mod( xtime, REAL(history_interval) )
+   time_from_output = mod( xtime*60, REAL(history_interval) ) ! convert xtime from min to sec 
 
 !   print *,' history_interval     = ', history_interval
 !   print *,' itimestep            = ', itimestep

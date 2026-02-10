@@ -287,10 +287,10 @@ submodules :
 	      \( ! -f module_cu_gfl_deep.F \) -o \( ! -f module_cu_gfl_sh.F \) ] ; then \
 	      	echo Pulling in GFL submodule ; \
 		( cd .. ; git submodule update --init --recursive ) ; \
-		ln -sf GFL/module_cu_gfl_sh.F  module_cu_gfl_sh.F; \
-		ln -sf GFL/module_cu_gfl_deep.F  module_cu_gfl_deep.F; \
-		ln -sf GFL/WRF/module_cu_gfl_common.F module_cu_gfl_common.F ; \
-		ln -sf GFL/WRF/module_cu_gfl_wrf.F module_cu_gfl_wrf.F ; \
+		ln -sf GFL/module_cu_gfl_sh.F90  module_cu_gfl_sh.F; \
+		ln -sf GFL/module_cu_gfl_deep.F90  module_cu_gfl_deep.F; \
+		ln -sf GFL/WRF/module_cu_gfl_common.F90 module_cu_gfl_common.F ; \
+		ln -sf GFL/WRF/module_cu_gfl_wrf.F90 module_cu_gfl_wrf.F ; \
 	else \
 		echo No action required for GFL submodule ; \
 	fi

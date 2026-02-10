@@ -78,7 +78,7 @@ for folder in $folders; do
 done
 
 cd -
-rm $comp_dir
+rm $comp_dir -r
 
 if [ -z "$errorMsg" ]; then
   echo "All comparisons equal"

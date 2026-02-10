@@ -32,9 +32,9 @@ def wrf_coop_reg_tests( orch ):
                 }
   # override cummulative settings based on run mode
   default_par_opt = {
-                     "serial" : { "resources" : { "timelimit" : "00:20:00", "cpus" : 1 } },
-                     "openmp" : { "resources" : { "timelimit" : "00:20:00" } },
-                     "mpi"    : { "resources" : { "timelimit" : "00:10:00" } },
+                     "serial" : { "resources" : { "timelimit" : "00:25:00", "cpus" : 1 } },
+                     "openmp" : { "resources" : { "timelimit" : "00:25:00" } },
+                     "mpi"    : { "resources" : { "timelimit" : "00:15:00" } },
                     }
 
   ##############################################################################

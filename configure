@@ -24,6 +24,8 @@ while [ $# -ge 1 ]; do
       -mach) shift ; WRF_MACH=$1 ;;
       -r8) rword=8 ;;
       -time) shift ; FORTRAN_COMPILER_TIMER=$1 ;;
+      -cordex) shift; CORDEX=$1 ;;
+      -instvals) CDX_INSTVALS=1 ;;
       chem) WRF_CHEM=1  ;;
       cmaq) WRF_CMAQ=1  ;;
       kpp) WRF_KPP=1  ;;
@@ -451,6 +453,33 @@ if [ -n "$WRF_VENUS" ] ; then
     compileflags="${compileflags}!-DPLANET!-DVENUS"
   fi
 fi
+
+if [ -n "$CORDEX" ]; then
+  echo building WRF for CORDEX=$CORDEX
+  compileflags="${compileflags}!-DCORDEXDIAG"
+  if [ -n "$CDX_INSTVALS" ]; then
+    if [ $CDX_INSTVALS = 1 ]; then
+      compileflags="${compileflags}!-DINSTVALS"
+    fi
+  fi
+  if [ $CORDEX -le 0 ]; then
+    echo "CORDEX option must have value >= 1"
+    exit -1
+  fi
+  if [ $CORDEX -ge 1 ] ; then
+    compileflags="${compileflags}!-DCDXWRF_1!-DCDXWRF=$CORDEX"
+  fi
+  if [ $CORDEX -ge 2 ] ; then
+    compileflags="${compileflags}!-DCDXWRF_2"
+  fi
+  if [ $CORDEX -ge 3 ] ; then
+    compileflags="${compileflags}!-DCDXWRF_3"
+  fi
+  if [ $CORDEX -ge 4 ] ; then
+    compileflags="${compileflags}!-DCDXWRF_4"
+  fi
+fi
+
 if [ -n "$WRF_QUIETLY" ]; then
   echo WRF_QUIETLY is now a synonym for WRF_LOG_BUFFERING
   echo setting WRF_LOG_BUFFERING to 1...

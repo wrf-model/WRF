@@ -331,22 +331,24 @@ CONTAINS
                       i_start,i_end,j_start,j_end,kts,kte,num_tiles,                                  &
                       num_soil_layers, n_moist,                                                       &
                       m_qv, m_qc, m_qr, m_qs, m_qi, m_qg, m_qh                                        &
-                    !! INSTVALS: Instantaneous values (uncomment and re-compile)
-!                      clt, cll, clm, clh,                                                             &
-!                      iut, ivt,                                                                       &
-!                      wsgs, ugustwind, vgustwind, gustpoint,                                          &
-!                      totwsgs, totugustwind, totvgustwind, gustpoint,                                 &
-!                      potevap, potevapogen,                                                           & 
 #ifdef CDXWRF
+#ifdef INSTVALS
+                    !! INSTVALS: Instantaneous values
+                     , clt, cll, clm, clh,                                                           &
+                     iut, ivt,                                                                       &
+                     wsgs, ugustwind, vgustwind, gustpoint,                                          &
+                     totwsgs, totugustwind, totvgustwind, gustpoint,                                 &
+                     potevap, potevapogen,                                                           & 
 #if CDXWRF>=1
-!                      cape, cin, zlfc, plfc, lidx,                                                    &
+                     cape, cin, zlfc, plfc, lidx,                                                    &
 #endif
 #if CDXWRF>=2
-!                      fog, fogvisblty,                                                                & 
-!                      tds, tws                                                                        & 
+                     fog, fogvisblty,                                                                & 
+                     tds, tws                                                                        & 
 #endif
 #endif
 !! End of INSTVALS
+#endif
                     )
 
 !----------------------------------------------------------------------

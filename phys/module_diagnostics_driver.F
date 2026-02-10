@@ -1305,8 +1305,10 @@ CONTAINS
            grid%cdxts = grid%tsk
 #ifdef CDXWRF
 #if CDXWRF>=4
+#ifdef INSTVALS
       !! INSTVALS: Instantaneous values (uncomment and re-compile)
-!           grid%cdxdiabh = grid%diab_h
+          grid%cdxdiabh = grid%diab_h
+#endif
 #endif
 #endif
          END IF
@@ -1581,28 +1583,31 @@ CONTAINS
                     ,N_MOIST=num_moist                                     &
                     ,M_QV=p_qv, M_QC=p_qc, M_QR=p_qr, M_QS=p_qs            &
                     ,M_QI=p_qi, M_QG=p_qg, M_QH=p_qh                       &
-!! INSTVALS: Instantaneous values (uncomment and re-compile)
-!                    ,CLT=grid%clt                                          &
-!                    ,CLL=grid%cll, CLM=grid%clm, CLH=grid%clh              &
-!                    ,WSGS=grid%wsgs, UGUSTWIND=grid%usgs                   &
-!                    ,VGUSTWIND=grid%vsgs, GUSTPOINT=grid%gustpoint         &
-!                    ,TOTWSGS=grid%totwsgs, TOTUGUSTWIND=grid%totusgs       &
-!                    ,TOTVGUSTWIND=grid%totvsgs                             &
-!                    ,TOTGUSTPOINT=grid%totgustpoint                        &
-!                    ,POTEVAPO=grid%potevapo                                &
-!                    ,POTEVAPOGEN=grid%potevapogen                          &
+#ifdef INSTVALS
+!! INSTVALS: Instantaneous values
+                   ,CLT=grid%clt                                          &
+                   ,CLL=grid%cll, CLM=grid%clm, CLH=grid%clh              &
+                   ,WSGS=grid%wsgs, UGUSTWIND=grid%usgs                   &
+                   ,VGUSTWIND=grid%vsgs, GUSTPOINT=grid%gustpoint         &
+                   ,TOTWSGS=grid%totwsgs, TOTUGUSTWIND=grid%totusgs       &
+                   ,TOTVGUSTWIND=grid%totvsgs                             &
+                   ,TOTGUSTPOINT=grid%totgustpoint                        &
+                   ,POTEVAPO=grid%potevapo                                &
+                   ,POTEVAPOGEN=grid%potevapogen                          &
 #ifdef CDXWRF
 #if CDXWRF>=1
-!                    ,CAPE=grid%cdxcape                                     &
-!                    ,CIN=grid%cin, ZLFC=grid%lfcz                          &
-!                    ,PLFC=grid%lfcp, LIDX=grid%li                          &
+                   ,CAPE=grid%cdxcape                                     &
+                   ,CIN=grid%cin, ZLFC=grid%lfcz                          &
+                   ,PLFC=grid%lfcp, LIDX=grid%li                          &
 #endif
 #if CDXWRF>=2
-!                    ,FOG=grid%fog, FOGVISBLTY=grid%fogvisblty              & 
-!                    ,TDS=grid%tds, TWS=grid%tws                            & 
+                   ,FOG=grid%fog, FOGVISBLTY=grid%fogvisblty              & 
+                   ,TDS=grid%tds, TWS=grid%tws                            & 
 #endif
 #endif
 !! End of INSTVALS
+#endif
+
                   )
 
 !!

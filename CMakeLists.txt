@@ -185,6 +185,8 @@ set( BUILD_RRTMK          OFF CACHE BOOL "BUILD_RRTMK"          )
 set( BUILD_SBM_FAST        ON CACHE BOOL "BUILD_SBM_FAST"       )
 set( SHOW_ALL_VARS_USED   OFF CACHE BOOL "SHOW_ALL_VARS_USED"   )
 
+# CORDEX Multivalue control
+set( CDXWRF               0   CACHE STRING "Control cordex diagnostics" )
 
 # TODO investigate if this needs set
 # Not cached, cannot be changed, do not touch
@@ -596,6 +598,7 @@ print_option( BUILD_RRTMG_FAST     20 )
 print_option( BUILD_RRTMK          20 )
 print_option( BUILD_SBM_FAST       20 )
 print_option( SHOW_ALL_VARS_USED   20 )
+print_option( CDXWRF               20 )
 
 print_option( WRFIO_NCD_NO_LARGE_FILE_SUPPORT 36 )
 
@@ -810,6 +813,16 @@ if ( ${KEEP_INT_AROUND} )
 endif()
 if ( ${LIMIT_ARGS} )
   list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS LIMIT_ARGS )
+endif()
+if ( ${CDXWRF} GREATER_EQUAL 1 )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS CORDEXDIAG CDXWRF=${CDXWRF} )
+  foreach( i RANGE 1 4 )
+    if ( ${CDXWRF} GREATER_EQUAL ${i} )
+      list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS CDXWRF_${i} )
+    endif()
+  endforeach()
+  # If you want INSTVALS uncomment this line
+  # list( APPEND PROJECT_COMPILE_OPTIONS_OPTIONS INSTVALS )
 endif()
 
 

@@ -6,10 +6,18 @@
       "type" : "PBSHost",
       "resources" :
       {
+        "cpudev" :
+        {
+          "nodes" : 1,
+          "exclusive" : false,
+          "queues" : [ "develop" ],
+          "resources" : { "cpus" : 256, "memory" : "235gb" }
+        },
         "cpu" :
         {
           "nodes" : 20,
           "exclusive" : true,
+          "queues" : [ "main" ],
           "resources" : { "cpus" : 128, "memory" : "256gb" }
         }
       },
@@ -27,7 +35,7 @@
       {
         "ncpus" : [ "cpu", "cpus", "ncpu" ]
       },
-      "queue" : "main",
+      // "queue" : "main",
       "account" : "NMMM0012",
       "config" :
       {

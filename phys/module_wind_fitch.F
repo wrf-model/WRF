@@ -61,6 +61,9 @@ MODULE module_wind_fitch
 !
   REAL :: turbws(maxvals,maxvals2),turbtc(maxvals,maxvals2),turbpw(maxvals,maxvals2)
   REAL :: correction_factor
+  ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/fraunhofer_license.txt
+  INTEGER :: induction_correction
+  ! END LICENSE
 !
 CONTAINS
 
@@ -69,7 +72,10 @@ CONTAINS
        &,z_at_w,u,v                 &
        &,dx,dz,dt,qke                            &
        &,du,dv                                   &
-       &,windfarm_opt,power,thrust               &
+       &,windfarm_opt,power                      &
+       ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/fraunhofer_license.txt
+       &,thrust                                  &
+       ! END LICENSE
        &,ids,ide,jds,jde,kds,kde                 &
        &,ims,ime,jms,jme,kms,kme                 &
        &,its,ite,jts,jte,kts,kte                 &
@@ -84,7 +90,10 @@ CONTAINS
   REAL, INTENT(IN) :: dx,dt
   REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN) :: dz,u,v,z_at_w
   REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: du,dv,qke
-  REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: power,thrust
+  REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: power
+  ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/fraunhofer_license.txt
+  REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: thrust
+  ! END LICENSE
 !
 ! Local
 !
@@ -102,19 +111,23 @@ CONTAINS
   REAL :: speedhub,speed1,speed2
   real :: power1,power2,area,ec,thrust1
   INTEGER :: kbot,ktop,kt
-  INTEGER :: ii ! BAMS: running index
-  INTEGER, DIMENSION(:), ALLOCATABLE :: idx ! BAMS: temporary array of indices
-  INTEGER :: nturb ! BAMS: number of turbines in grid cell
-
-  CHARACTER*256 num,input,message_wind
-
+  ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/fraunhofer_license.txt
+  REAL :: a_ind ! axial induction factor
+  REAL :: thrust1
+  INTEGER :: ii ! running index
+  INTEGER, DIMENSION(:), ALLOCATABLE :: idx ! temporary array of indices
+  INTEGER :: nturb ! number of turbines in grid cell
+  ! END LICENSE
+  
   itf=MIN0(ite,ide-1)
   jtf=MIN0(jte,jde-1)
   ktf=MIN0(kte,kde-1)
 
     wfdensity = 1.0/(dx*dx)   !  per turbine, so numerator is 1
     power=0.
+    ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/fraunhofer_license.txt
     thrust=0.
+    ! END LICENSE
 
     DO kt = 1,nt  
       IF ( windfarm_opt .eq. 1 ) THEN
@@ -126,10 +139,14 @@ CONTAINS
         i = ival(kt,id)
         j = jval(kt,id)
 
-        ! BAMS: Number of turbines in current grid cell
-        idx = PACK([(ii, ii=1,nt)], ival(:,id) == i) ! indices of values equal to i in ival
-        idx = PACK([(ii, ii=1,SIZE(jval(idx,id)))], jval(idx,id) == j) ! indices of values equal j in jval(idx)
-        nturb = SIZE(idx) ! number of turbines in grid cell (i,j)
+        ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/fraunhofer_license.txt
+        if (induction_correction == 1) then
+          ! BAMS: Number of turbines in current grid cell
+          idx = PACK([(ii, ii=1,nt)], ival(:,id) == i) ! indices of values equal to i in ival
+          idx = PACK([(ii, ii=1,SIZE(jval(idx,id)))], jval(idx,id) == j) ! indices of values equal j in jval(idx)
+          nturb = SIZE(idx) ! number of turbines in grid cell (i,j)
+        endif
+        ! END LICENSE
 !
          if (i.ne.-9999.and.j.ne.-9999) then
         IF (( its .LE. i .AND. i .LE. itf ) .AND. &
@@ -180,8 +197,11 @@ CONTAINS
               zheightl = z2 + 0.5*dz(i,k,j)
             ENDIF
           ENDDO
-!
-! ... BAMS: first iteration with induction first estimate
+      area = piconst/4.*diameter(kt)**2.       ! area swept by turbine blades
+
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/fraunhofer_license.txt
+        IF (induction_correction == 0) THEN ! original Fitch scheme
+      ! END LICENSE
           speed1=0.
           speed2=0.
           a_ind=0.01
@@ -197,42 +217,65 @@ CONTAINS
 !
 ! ... calculate TKE, power and thrust coeffs
 !
+              CALL dragcof(tkecof,powcof,thrcof,               &
+                           speedhub,cutin(kt),cutout(kt),   &
+                           npower(kt),diameter(kt),stc(kt),stc2(kt),nkind(kt))      
+
+
+        ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/fraunhofer_license.txt
+        ELSEIF (induction_correction == 1) THEN ! Fitch scheme with induction correction
+          ! ... BAMS: first iteration with induction first estimate
+          speed1=0.
+          speed2=0.
+          a_ind=0.01
+          if (ktop.eq.1) then
+           speedhub=sqrt(u(i,1,j)**2.+v(i,1,j)**2.)*hubheight(kt)/z1
+           speedhub=speedhub/((1-a_ind)**nturb)
+          else
+           speed1=sqrt(u(i,kbot,j)**2.+v(i,kbot,j)**2.)
+           speed2=sqrt(u(i,ktop,j)**2.+v(i,ktop,j)**2.)
+           speedhub=speed1+((speed2-speed1)/(z2-z1))*(hubheight(kt)-z1)
+           speedhub=speedhub/((1-a_ind)**nturb)
+          endif
+!
+! ... calculate TKE, power and thrust coeffs
+!
           CALL dragcof(tkecof,powcof,thrcof,               &
                         speedhub,cutin(kt),cutout(kt),   &
                         npower(kt),diameter(kt),stc(kt),stc2(kt),nkind(kt))
-!
-! ... BAMS: second iteration with induction
-          area = piconst/4.*diameter(kt)**2.       ! area swept by turbine blades; BAMS
+
+          ! ... BAMS: second iteration
           a_ind = 0.5 * (1 - sqrt(1 - thrcof))
           a_ind = a_ind * area / ( diameter(kt) * dx * &
                   MIN(ABS(1/COS(ATAN( ((v(i,ktop,j) + v(i,kbot,j))/2) / ((u(i,ktop,j) + u(i,kbot,j))/2) ))), &
-                      ABS(1/SIN(ATAN( ((v(i,ktop,j) + v(i,kbot,j))/2) / ((u(i,ktop,j) + u(i,kbot,j))/2) )))) )     ! Corrected induction factor BAMS
-
-!          write(message_wind,*)'Turbine #',kt,': ',thrcof,0.5 * (1 - sqrt(1 - thrcof)),a_ind
-!          CALL wrf_message(message_wind)
-
+                      ABS(1/SIN(ATAN( ((v(i,ktop,j) + v(i,kbot,j))/2) / ((u(i,ktop,j) + u(i,kbot,j))/2) )))) )     ! Corrected induction factor
+                          
           speed1=0.
           speed2=0.
           if (ktop.eq.1) then
           speedhub=sqrt(u(i,1,j)**2.+v(i,1,j)**2.)*hubheight(kt)/z1
-          speedhub=speedhub/((1-a_ind)**nturb) ! BAMS
+          speedhub=speedhub/((1-a_ind)**nturb)
           else
           speed1=sqrt(u(i,kbot,j)**2.+v(i,kbot,j)**2.)
           speed2=sqrt(u(i,ktop,j)**2.+v(i,ktop,j)**2.)
           speedhub=speed1+((speed2-speed1)/(z2-z1))*(hubheight(kt)-z1)
-          speedhub=speedhub/((1-a_ind)**nturb) ! BAMS
+          speedhub=speedhub/((1-a_ind)**nturb)
           endif
-
+          
          CALL dragcof(tkecof,powcof,thrcof,               &
                        speedhub,cutin(kt),cutout(kt),   &
                        npower(kt),diameter(kt),stc(kt),stc2(kt),nkind(kt))
+        ENDIF
+       ! END LICENSE
 !
 ! ... PAJ: Computation of power generated by the wind turbine ...
 !
           power1=0.5*1.23*speedhub**3.*area*powcof
           power(i,j)=power1+power(i,j)
+          ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/fraunhofer_license.txt
           thrust1=0.5*1.23*speedhub**2.*area*thrcof
           thrust(i,j)=thrust1+thrust(i,j)
+          ! END LICENSE
           power2=0.
 !
             DO k=k_turbine_bot,k_turbine_top ! loop over turbine blade levels
@@ -242,7 +285,12 @@ CONTAINS
               IF(z2 .GT. diameter(kt)) z2=diameter(kt) ! k+1 level higher than turbine upper blade tip
               CALL turbine_area(z1,z2,diameter(kt),wfdensity,tarea)
 !
-              speed=sqrt(u(i,k,j)**2.+v(i,k,j)**2.) / ((1-a_ind)**nturb) ! BAMS
+              speed=sqrt(u(i,k,j)**2.+v(i,k,j)**2.)
+              ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/fraunhofer_license.txt
+              IF (induction_correction == 1) THEN ! original Fitch scheme
+                speed= speed / ((1-a_ind)**nturb)
+              ENDIF
+              ! END LICENSE
               power2=power2+0.5*powcof*1.23*(speed**3.)*tarea/wfdensity
             ENDDO
 !
@@ -256,7 +304,12 @@ CONTAINS
 !
               CALL turbine_area(z1,z2,diameter(kt),wfdensity,tarea)
 !
-              speed=sqrt(u(i,k,j)**2.+v(i,k,j)**2.)  / ((1-a_ind)**nturb) ! BAMS
+              speed=sqrt(u(i,k,j)**2.+v(i,k,j)**2.)
+              ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/fraunhofer_license.txt
+              IF (induction_correction == 1) THEN ! original Fitch scheme
+                speed= speed / ((1-a_ind)**nturb)
+              ENDIF
+              ! END LICENSE
 !`
 ! ... PAJ: normalization introduced to conserve energy ...
 !
@@ -268,10 +321,22 @@ CONTAINS
 !
               ! output TKE
               qke(i,k,j) = qke(i,k,j)+speed**3.*tarea*tkecof*dt/dz(i,k,j)*ec
-              ! output u tendency
-              du(i,k,j) = du(i,k,j)-.5*(u(i,k,j)/((1-a_ind)**nturb))*thrcof*speed*tarea/dz(i,k,j)*ec ! BAMS
-              ! output v tendency
-              dv(i,k,j) = dv(i,k,j)-.5*(v(i,k,j)/((1-a_ind)**nturb))*thrcof*speed*tarea/dz(i,k,j)*ec ! BAMS
+              ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/fraunhofer_license.txt
+              IF (induction_correction == 0) THEN
+              ! END LICENSE
+                ! output u tendency
+                du(i,k,j) = du(i,k,j)-.5*u(i,k,j)*thrcof*speed*tarea/dz(i,k,j)*ec
+                ! output v tendency
+                dv(i,k,j) = dv(i,k,j)-.5*v(i,k,j)*thrcof*speed*tarea/dz(i,k,j)*ec
+
+              ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/fraunhofer_license.txt
+              ELSEIF (induction_correction == 1) THEN
+                ! output u tendency
+                du(i,k,j) = du(i,k,j)-.5*(u(i,k,j)/((1-a_ind)**nturb))*thrcof*speed*tarea/dz(i,k,j)*ec
+                ! output v tendency
+                dv(i,k,j) = dv(i,k,j)-.5*(v(i,k,j)/((1-a_ind)**nturb))*thrcof*speed*tarea/dz(i,k,j)*ec
+              ENDIF
+              ! END LICENSE
             ENDDO
           ENDIF
         ENDIF
@@ -353,7 +418,11 @@ CONTAINS
      thrcof = turbtc(nkind,nb)+(turbtc(nkind,nu)-turbtc(nkind,nb))/(turbws(nkind,nu)-turbws(nkind,nb))*(speed-turbws(nkind,nb))
     ENDIF
   ENDIF
-  thrcof = MAX(MIN(thrcof,0.9999),0.0001) ! BAMS
+  ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/fraunhofer_license.txt
+  IF (induction_correction == 1) THEN
+    thrcof = MAX(MIN(thrcof,0.9999),0.0001) ! BAMS
+  ENDIF
+  ! END LICENSE
 !
 ! ... power coeficient ...
 !
@@ -398,6 +467,9 @@ CONTAINS
 !
 
    correction_factor = config_flags%windfarm_tke_factor
+   ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/fraunhofer_license.txt
+   induction_correction = config_flags%windfarm_induction
+   ! END LICENSE
       IF ( wrf_dm_on_monitor() ) THEN
 !
 ! ... PAJ: Opens the file with the location of the wind turbines ...

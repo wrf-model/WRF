@@ -99,7 +99,6 @@ CONTAINS
 !
   REAL     blade_l_point,blade_u_point,zheightl,zheightu,z1,z2,tarea
   REAL     speed,tkecof,powcof,thrcof,wfdensity
-  REAL     a_ind ! BAMS
   INTEGER  itf,jtf,ktf
   INTEGER  i,j,k,n
   INTEGER  k_turbine_bot, k_turbine_top
@@ -109,7 +108,7 @@ CONTAINS
 ! ... PAJ: more variables ...
 !
   REAL :: speedhub,speed1,speed2
-  real :: power1,power2,area,ec,thrust1
+  real :: power1,power2,area,ec
   INTEGER :: kbot,ktop,kt
   ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/fraunhofer_license.txt
   REAL :: a_ind ! axial induction factor

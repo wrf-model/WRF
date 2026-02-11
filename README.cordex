@@ -285,7 +285,7 @@ $ ./clean -a
                             = 2: sfc [hus] (not available for Kunkel, 1984)
  zmlagen_diag               = 1: diagnostic of generic zmla after Nielsen-Gammon et al. (2008)
                             = 2: bulk-Richardson (Vogelezang and Holtslag, 1996; Seidel et al., 2004) (default)
- timedbg                    = frecuency in minutes of time-debugging (720, default)
+ timedbg                    = frequency in minutes of time-debugging (720, default)
  londbg                     = longitude in degrees of grid-point debugging (-999., not used) (-999., default)
  latdbg                     = latitude in degrees of grid-point debugging (-999., not used) (-999., default)
  wgsts_wbdswsstres          = whether wind gusts should be used for wbds-wss residence-time (0: no, 1: yes (1, default)

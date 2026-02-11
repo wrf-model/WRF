@@ -3394,9 +3394,7 @@ package   wrfhydro       wrf_hydro==1                -            state:SOLDRAIN
 
 #WRF Windfarm
 package   no_windfarm    windfarm_opt==0             -            -
-# THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/fraunhofer_license.txt
 package   fitchscheme    windfarm_opt==1             -            state:power,thrust
-# END LICENSE
 # Yulong add for WLM
 package   mavscheme      windfarm_opt==2             -            state:power
 

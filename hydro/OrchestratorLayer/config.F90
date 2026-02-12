@@ -124,6 +124,7 @@ module config_base
      character(len=256) :: route_link_f=""
      character(len=256) :: route_lake_f=""
      integer            :: lake_option
+     character(len=256) :: diversions_file=""
      logical            :: reservoir_persistence_usgs
      logical            :: reservoir_persistence_usace
      character(len=256) :: reservoir_parameter_file=""
@@ -170,7 +171,7 @@ module config_base
      integer            :: maxAgePairsBiasPersist
      logical            :: invDistTimeWeightBias
      logical            :: noConstInterfBias
-     character(len=256) :: timeSlicePath
+     character(len=256) :: timeSlicePath = "./nudgingTimeSliceObs/"
      integer            :: nLastObs
      integer            :: bucket_loss
      integer            :: imperv_adj
@@ -554,6 +555,7 @@ contains
     integer            :: channel_loss_option = 0
     character(len=256) :: route_lake_f=""
     integer            :: lake_option  !0: lakes off 1: level pool 2: passthrough, 3: reservoir da
+    character(len=256) :: diversions_file=""
     logical            :: reservoir_persistence_usgs
     logical            :: reservoir_persistence_usace
     character(len=256) :: reservoir_parameter_file=""
@@ -628,7 +630,7 @@ contains
          SUBRTSWCRT,OVRTSWCRT,AGGFACTRT, dtrt_ter,dtrt_ch,dxrt,&
          GwSpinCycles, GwPreCycles, GwSpinUp, GwPreDiag, GwPreDiagInterval, gwIhShift, &
          GWBASESWCRT, gwChanCondSw, gwChanCondConstIn, gwChanCondConstOut , &
-         route_topo_f,route_chan_f,route_link_f, compound_channel, channel_loss_option, lake_option, route_lake_f, &
+         route_topo_f,route_chan_f,route_link_f, compound_channel, channel_loss_option, lake_option, route_lake_f,  diversions_file, &
          route_direction_f,route_order_f,gwbasmskfil, &
          geo_finegrid_flnm, gwstrmfil,GW_RESTART,RSTRT_SWC,TERADJ_SOLAR, sys_cpl, &
          order_to_write , rst_typ, rst_bi_in, rst_bi_out, gwsoilcpl, &
@@ -879,6 +881,8 @@ contains
     nlst(did)%route_chan_f = route_chan_f
     nlst(did)%route_link_f = route_link_f
     nlst(did)%route_lake_f = route_lake_f
+
+    nlst(did)%diversions_file = diversions_file
 
     nlst(did)%reservoir_persistence_usgs = reservoir_persistence_usgs
     nlst(did)%reservoir_persistence_usace = reservoir_persistence_usace

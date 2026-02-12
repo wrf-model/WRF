@@ -29,6 +29,7 @@ module module_HYDRO_drv
 #endif
     use module_hydro_stop, only: HYDRO_stop
     use module_UDMAP, only: get_basn_area_nhd
+    use module_channel_diversions, only: init_diversions
     use netcdf
 
     implicit none
@@ -1582,6 +1583,11 @@ contains
 #ifdef WRF_HYDRO_NUDGING
         if(nlst(did)%CHANRTSWCRT .ne. 0) call init_stream_nudging
 #endif
+
+!#ifdef WRF_HYDRO_DIVERSIONS
+! TODO: should this check to make sure we have nudging on too? [RC]
+        call init_diversions(nlst(did)%diversions_file, nlst(did)%timeSlicePath)
+!#endif
 
 
 !    if (trim(nlst_rt(did)%restart_file) == "") then

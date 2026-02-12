@@ -1002,6 +1002,28 @@ module_mp_nssl_2mom.o: \
 	../frame/module_wrf_error.o \
 	../share/module_model_constants.o 
 
+module_mp_tempo_ml.o: \
+	module_mp_tempo_params.o
+module_mp_tempo_utils.o: \
+	module_mp_tempo_params.o
+module_mp_tempo_aerosols.o: \
+	module_mp_tempo_params.o
+module_mp_tempo_diags.o: \
+	module_mp_tempo_params.o \
+	module_mp_tempo_utils.o
+module_mp_tempo_driver.o : \
+	module_mp_tempo_params.o \
+	module_mp_tempo_cfgs.o \
+	module_mp_tempo_utils.o	\
+	module_mp_tempo_main.o \
+	module_mp_tempo_ml.o
+module_mp_tempo_main.o : \
+	module_mp_tempo_params.o \
+	module_mp_tempo_cfgs.o \
+	module_mp_tempo_utils.o \
+	module_mp_tempo_diags.o \
+	module_mp_tempo_aerosols.o \
+	module_mp_tempo_ml.o
 
 module_mp_fast_sbm.o: \
 	../frame/module_domain.o \
@@ -1362,6 +1384,8 @@ module_physics_init.o: \
 	module_fdda_spnudging.o \
 	module_fddaobs_rtfdda.o \
 	module_mp_thompson.o \
+	module_mp_tempo_cfgs.o \
+	module_mp_tempo_driver.o \
 	module_mp_rcon.o \
 	module_mp_gsfcgce.o \
 	module_mp_gsfcgce_4ice_nuwrf.o \
@@ -1409,6 +1433,8 @@ module_microphysics_driver.o: \
 	module_mp_wsm6r.o \
 	module_mp_fer_hires.o \
 	module_mp_thompson.o \
+	module_mp_tempo_cfgs.o \
+	module_mp_tempo_driver.o \
 	module_mp_rcon.o \
 	module_mp_gsfcgce.o \
 	module_mp_gsfcgce_4ice_nuwrf.o \

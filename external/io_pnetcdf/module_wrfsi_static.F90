@@ -6,7 +6,7 @@ CONTAINS
   SUBROUTINE open_wrfsi_static(dataroot,cdfid)
   
     IMPLICIT NONE
-#    include "pnetcdf.inc"
+#    include 'pnetcdf.inc'
     CHARACTER(LEN=*), INTENT(IN)   :: dataroot
     INTEGER, INTENT(OUT)           :: cdfid
     CHARACTER(LEN=255)            :: staticfile
@@ -53,7 +53,7 @@ CONTAINS
     ! contained in the input dataroot
 
     IMPLICIT NONE
-#    include "pnetcdf.inc"
+#    include 'pnetcdf.inc'
     CHARACTER(LEN=*), INTENT(IN)  :: dataroot
     INTEGER         , INTENT(OUT) :: nx
     INTEGER         , INTENT(OUT) :: ny
@@ -74,7 +74,7 @@ CONTAINS
   SUBROUTINE get_wrfsi_static_2d(dataroot, varname, data)
 
     IMPLICIT NONE
-#    include "pnetcdf.inc"
+#    include 'pnetcdf.inc'
     ! Gets any 2D variable from the static file
     CHARACTER(LEN=*), INTENT(IN)  :: dataroot
     CHARACTER(LEN=*), INTENT(IN)  :: varname

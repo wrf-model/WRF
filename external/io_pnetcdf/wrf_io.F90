@@ -359,7 +359,7 @@ end subroutine GetName
 subroutine GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
   use wrf_data_pnc
   include 'wrf_status_codes.h'
-  include "pnetcdf.inc"
+  include 'pnetcdf.inc'
   character (*)         ,intent(in)     :: IO
   integer               ,intent(in)     :: DataHandle
   character*(*)         ,intent(in)     :: DateStr
@@ -643,7 +643,7 @@ end subroutine UpperCase
 subroutine netcdf_err(err,Status)
   use wrf_data_pnc
   include 'wrf_status_codes.h'
-  include "pnetcdf.inc"
+  include 'pnetcdf.inc'
   integer  ,intent(in)  :: err
   integer  ,intent(out) :: Status
   character(len=80)     :: errmsg
@@ -664,7 +664,7 @@ subroutine FieldIO(IO,DataHandle,DateStr,Starts,Length,MemoryOrder &
                      ,FieldType,NCID,VarID,XField,Status)
   use wrf_data_pnc
   include 'wrf_status_codes.h'
-  include "pnetcdf.inc"
+  include 'pnetcdf.inc'
   character (*)              ,intent(in)    :: IO
   integer                    ,intent(in)    :: DataHandle
   character*(*)              ,intent(in)    :: DateStr
@@ -895,7 +895,7 @@ subroutine ext_pnc_open_for_read(DatasetName, Comm1, Comm2, SysDepInfo, DataHand
   use ext_pnc_support_routines
   implicit none
   include 'wrf_status_codes.h'
-  include "pnetcdf.inc"
+  include 'pnetcdf.inc'
   character *(*), INTENT(IN)   :: DatasetName
   integer       , INTENT(IN)   :: Comm1, Comm2
   character *(*), INTENT(IN)   :: SysDepInfo
@@ -916,7 +916,7 @@ subroutine ext_pnc_open_for_read_commit(DataHandle, Status)
   use ext_pnc_support_routines
   implicit none
   include 'wrf_status_codes.h'
-  include "pnetcdf.inc"
+  include 'pnetcdf.inc'
   integer, intent(in) :: DataHandle
   integer, intent(out) :: Status
   type(wrf_data_handle) ,pointer         :: DH
@@ -944,7 +944,7 @@ subroutine ext_pnc_open_for_read_begin( FileName, Comm, IOComm, SysDepInfo, Data
   use ext_pnc_support_routines
   implicit none
   include 'wrf_status_codes.h'
-  include "pnetcdf.inc"
+  include 'pnetcdf.inc'
   character*(*)         ,intent(IN)      :: FileName
   integer               ,intent(IN)      :: Comm
   integer               ,intent(IN)      :: IOComm
@@ -1077,7 +1077,7 @@ subroutine ext_pnc_open_for_update( FileName, Comm, IOComm, SysDepInfo, DataHand
   use ext_pnc_support_routines
   implicit none
   include 'wrf_status_codes.h'
-  include "pnetcdf.inc"
+  include 'pnetcdf.inc'
   character*(*)         ,intent(IN)      :: FileName
   integer               ,intent(IN)      :: Comm
   integer               ,intent(IN)      :: IOComm
@@ -1211,7 +1211,7 @@ SUBROUTINE ext_pnc_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,DataHand
   use ext_pnc_support_routines
   implicit none
   include 'wrf_status_codes.h'
-  include "pnetcdf.inc"
+  include 'pnetcdf.inc'
   character*(*)        ,intent(in)  :: FileName
   integer              ,intent(in)  :: Comm
   integer              ,intent(in)  :: IOComm
@@ -1328,7 +1328,7 @@ subroutine ext_pnc_open_for_write (DatasetName, Comm1, Comm2, &
   use ext_pnc_support_routines
   implicit none
   include 'wrf_status_codes.h'
-  include "pnetcdf.inc"
+  include 'pnetcdf.inc'
   character *(*), intent(in)  ::DatasetName
   integer       , intent(in)  ::Comm1, Comm2
   character *(*), intent(in)  ::SysDepInfo
@@ -1344,7 +1344,7 @@ SUBROUTINE ext_pnc_open_for_write_commit(DataHandle, Status)
   use ext_pnc_support_routines
   implicit none
   include 'wrf_status_codes.h'
-  include "pnetcdf.inc"
+  include 'pnetcdf.inc'
   integer              ,intent(in)  :: DataHandle
   integer              ,intent(out) :: Status
   type(wrf_data_handle),pointer     :: DH
@@ -1380,7 +1380,7 @@ subroutine ext_pnc_ioclose(DataHandle, Status)
   use ext_pnc_support_routines
   implicit none
   include 'wrf_status_codes.h'
-  include "pnetcdf.inc"
+  include 'pnetcdf.inc'
   integer              ,intent(in)  :: DataHandle
   integer              ,intent(out) :: Status
   type(wrf_data_handle),pointer     :: DH
@@ -1430,7 +1430,7 @@ subroutine ext_pnc_iosync( DataHandle, Status)
   use ext_pnc_support_routines
   implicit none
   include 'wrf_status_codes.h'
-  include "pnetcdf.inc"
+  include 'pnetcdf.inc'
   integer              ,intent(in)  :: DataHandle
   integer              ,intent(out) :: Status
   type(wrf_data_handle),pointer     :: DH
@@ -1477,7 +1477,7 @@ subroutine ext_pnc_redef( DataHandle, Status)
   use ext_pnc_support_routines
   implicit none
   include 'wrf_status_codes.h'
-  include "pnetcdf.inc"
+  include 'pnetcdf.inc'
   integer              ,intent(in)  :: DataHandle
   integer              ,intent(out) :: Status
   type(wrf_data_handle),pointer     :: DH
@@ -1525,7 +1525,7 @@ subroutine ext_pnc_enddef( DataHandle, Status)
   use ext_pnc_support_routines
   implicit none
   include 'wrf_status_codes.h'
-  include "pnetcdf.inc"
+  include 'pnetcdf.inc'
   integer              ,intent(in)  :: DataHandle
   integer              ,intent(out) :: Status
   type(wrf_data_handle),pointer     :: DH
@@ -1618,7 +1618,7 @@ subroutine ext_pnc_ioexit(Status)
   use ext_pnc_support_routines
   implicit none
   include 'wrf_status_codes.h'
-  include "pnetcdf.inc"
+  include 'pnetcdf.inc'
   integer       , INTENT(INOUT)     ::Status
   integer                           :: error
   type(wrf_data_handle),pointer     :: DH
@@ -2307,7 +2307,7 @@ subroutine ext_pnc_write_field(DataHandle,DateStr,Var,Field,FieldType,Comm, &
   use ext_pnc_support_routines
   implicit none
   include 'wrf_status_codes.h'
-  include "pnetcdf.inc"
+  include 'pnetcdf.inc'
   integer                       ,intent(in)    :: DataHandle
   character*(*)                 ,intent(in)    :: DateStr
   character*(*)                 ,intent(in)    :: Var
@@ -2629,7 +2629,7 @@ subroutine ext_pnc_read_field(DataHandle,DateStr,Var,Field,FieldType,Comm,  &
   use ext_pnc_support_routines
   implicit none
   include 'wrf_status_codes.h'
-  include "pnetcdf.inc"
+  include 'pnetcdf.inc'
   integer                       ,intent(in)    :: DataHandle
   character*(*)                 ,intent(in)    :: DateStr
   character*(*)                 ,intent(in)    :: Var
@@ -3075,7 +3075,7 @@ subroutine ext_pnc_get_next_var(DataHandle, VarName, Status)
   use ext_pnc_support_routines
   implicit none
   include 'wrf_status_codes.h'
-  include "pnetcdf.inc"
+  include 'pnetcdf.inc'
   integer               ,intent(in)     :: DataHandle
   character*(*)         ,intent(out)    :: VarName
   integer               ,intent(out)    :: Status
@@ -3122,7 +3122,7 @@ subroutine ext_pnc_end_of_frame(DataHandle, Status)
   use wrf_data_pnc
   use ext_pnc_support_routines
   implicit none
-  include "pnetcdf.inc"
+  include 'pnetcdf.inc'
   include 'wrf_status_codes.h'
   integer               ,intent(in)     :: DataHandle
   integer               ,intent(out)    :: Status
@@ -3138,7 +3138,7 @@ subroutine ext_pnc_get_var_info(DataHandle,Name,NDim,MemoryOrder,Stagger,DomainS
   use wrf_data_pnc
   use ext_pnc_support_routines
   implicit none
-  include "pnetcdf.inc"
+  include 'pnetcdf.inc'
   include 'wrf_status_codes.h'
   integer               ,intent(in)     :: DataHandle
   character*(*)         ,intent(in)     :: Name
@@ -3284,7 +3284,7 @@ subroutine ext_pnc_warning_str( Code, ReturnString, Status)
   use wrf_data_pnc
   use ext_pnc_support_routines
   implicit none
-  include "pnetcdf.inc"
+  include 'pnetcdf.inc'
   include 'wrf_status_codes.h'
   
   integer  , intent(in)  ::Code
@@ -3480,7 +3480,7 @@ subroutine ext_pnc_error_str( Code, ReturnString, Status)
   use wrf_data_pnc
   use ext_pnc_support_routines
   implicit none
-  include "pnetcdf.inc"
+  include 'pnetcdf.inc'
   include 'wrf_status_codes.h'
 
   integer  , intent(in)  ::Code
@@ -3528,7 +3528,7 @@ subroutine ext_pnc_end_independent_mode(DataHandle, Status)
   use wrf_data_pnc
   use ext_pnc_support_routines
   include 'wrf_status_codes.h'
-  include "pnetcdf.inc"
+  include 'pnetcdf.inc'
   integer               ,intent(in)     :: DataHandle
   integer               ,intent(out)    :: Status
   type(wrf_data_handle) ,pointer        :: DH
@@ -3551,7 +3551,7 @@ subroutine ext_pnc_start_independent_mode(DataHandle, Status)
   use wrf_data_pnc
   use ext_pnc_support_routines
   include 'wrf_status_codes.h'
-  include "pnetcdf.inc"
+  include 'pnetcdf.inc'
   integer               ,intent(in)     :: DataHandle
   integer               ,intent(out)    :: Status
   type(wrf_data_handle) ,pointer        :: DH

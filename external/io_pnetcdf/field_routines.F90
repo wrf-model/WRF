@@ -38,7 +38,7 @@ subroutine ext_pnc_RealFieldIO(Coll,IO,NCID,VarID,VStart,VCount,Data,Status)
   use ext_pnc_support_routines
   implicit none
   include 'wrf_status_codes.h'
-#  include "pnetcdf.inc"
+#  include 'pnetcdf.inc'
   logical                     ,intent(in)    :: Coll
   character (*)               ,intent(in)    :: IO
   integer                     ,intent(in)    :: NCID
@@ -79,7 +79,7 @@ subroutine ext_pnc_DoubleFieldIO(Coll,IO,NCID,VarID,VStart,VCount,Data,Status)
   use ext_pnc_support_routines
   implicit none
   include 'wrf_status_codes.h'
-#  include "pnetcdf.inc"
+#  include 'pnetcdf.inc'
   logical                     ,intent(in)    :: Coll
   character (*)               ,intent(in)    :: IO
   integer                     ,intent(in)    :: NCID
@@ -120,7 +120,7 @@ subroutine ext_pnc_IntFieldIO(Coll,IO,NCID,VarID,VStart,VCount,Data,Status)
   use ext_pnc_support_routines
   implicit none
   include 'wrf_status_codes.h'
-#  include "pnetcdf.inc"
+#  include 'pnetcdf.inc'
   logical                     ,intent(in)    :: Coll
   character (*)               ,intent(in)    :: IO
   integer                     ,intent(in)    :: NCID
@@ -161,7 +161,7 @@ subroutine ext_pnc_LogicalFieldIO(Coll,IO,NCID,VarID,VStart,VCount,Data,Status)
   use ext_pnc_support_routines
   implicit none
   include 'wrf_status_codes.h'
-#  include "pnetcdf.inc"
+#  include 'pnetcdf.inc'
   logical                                         ,intent(in)    :: Coll
   character (*)                                   ,intent(in)    :: IO
   integer                                         ,intent(in)    :: NCID

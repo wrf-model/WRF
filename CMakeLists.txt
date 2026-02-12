@@ -176,6 +176,12 @@ set( INTIO                ON CACHE BOOL "INTIO"               )
 set( KEEP_INT_AROUND      ON CACHE BOOL "KEEP_INT_AROUND"     )
 set( LIMIT_ARGS           ON CACHE BOOL "LIMIT_ARGS"          )
 
+# WRF DA
+set( ENABLE_CRTM          ON CACHE BOOL "ENABLE_CRTM"          ) # todo this is always set unless env var = 0 in make
+set( ENABLE_WAVELET       ON CACHE BOOL "ENABLE_WAVELET"       ) # todo I think this should always be on
+set( ENABLE_BUFR          ON CACHE BOOL "ENABLE_BUFR"          ) # todo I think the config is defaulting this on
+
+
 # Toggles, how do we want to best address these options? Environment vars are not
 # the best
 set( WRFIO_NCD_NO_LARGE_FILE_SUPPORT  OFF CACHE BOOL "WRFIO_NCD_NO_LARGE_FILE_SUPPORT" )
@@ -591,6 +597,12 @@ print_option( INTIO            20 )
 print_option( KEEP_INT_AROUND  20 )
 print_option( LIMIT_ARGS       20 )
 
+
+print_option( ENABLE_CRTM      20 )
+print_option( ENABLE_WAVELET   20 )
+print_option( ENABLE_BUFR      20 )
+
+
 print_option( FORCE_NETCDF_CLASSIC 20 )
 print_option( BUILD_RRTMG_FAST     20 )
 print_option( BUILD_RRTMK          20 )
@@ -845,8 +857,18 @@ else()
   list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS WRFPLUS=0 )
 endif()
 
-if ( "${WRF_CORE}" STREQUAL "DA_CORE" OR "${WRF_CORE}" STREQUAL "DA_4D_VAR" )
-  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS DA_CORE=1 )
+if ( "${WRF_CORE}" STREQUAL "DA" OR "${WRF_CORE}" STREQUAL "DA_4D_VAR" )
+  if ( ${ENABLE_WAVELET} )
+    list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS WAVELET )
+  endif()
+  if ( ${ENABLE_CRTM} )
+    list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS CRTM )
+  endif()
+  if ( ${ENABLE_BUFR} )
+    list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS BUFR )
+  endif()
+
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS DA_CORE=1 -DFFTPACK -DNORESHAPE )
 else()
   list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS DA_CORE=0 )
 endif()
@@ -964,7 +986,6 @@ add_dependencies(
                   )
 
 # Add directly to core
-add_subdirectory( phys     )
 add_subdirectory( share    )
 add_subdirectory( frame    )
 add_subdirectory( inc      )
@@ -981,10 +1002,15 @@ if ( ${WRF_CORE} STREQUAL "PLUS" )
   add_subdirectory( wrftladj )
 endif()
 
-add_subdirectory( dyn_em   )
-
-
-add_subdirectory( main     )
+if ( ${WRF_CORE} STREQUAL "DA" OR ${WRF_CORE} STREQUAL "DA_4D_VAR" )
+  # We don't create any of the drivers for WRF in DA mode
+  add_subdirectory( var )
+else()
+  # DA does not use any of this
+  add_subdirectory( dyn_em   )
+  add_subdirectory( phys     )
+  add_subdirectory( main     )
+endif()
 
 ################################################################################
 # Add subdirectory with case info
@@ -1070,6 +1096,12 @@ target_include_directories(
                               $<$<TARGET_EXISTS:g2lib>:$<TARGET_PROPERTY:g2lib,Fortran_MODULE_DIRECTORY>>
                               $<$<TARGET_EXISTS:bacio-1.3>:$<TARGET_PROPERTY:bacio-1.3,Fortran_MODULE_DIRECTORY>>
 
+                              # DA libs
+                              $<$<TARGET_EXISTS:CRTM>:$<TARGET_PROPERTY:CRTM,Fortran_MODULE_DIRECTORY>>
+                              $<$<TARGET_EXISTS:waveletf>:$<TARGET_PROPERTY:waveletf,Fortran_MODULE_DIRECTORY>>
+                              $<$<TARGET_EXISTS:bufr>:$<TARGET_PROPERTY:bufr,Fortran_MODULE_DIRECTORY>>
+
+
                             PRIVATE
                               
                               ${PROJECT_SOURCE_DIR}/dyn_em
@@ -1138,6 +1170,12 @@ target_link_libraries(  ${PROJECT_NAME}_Core
                             $<TARGET_NAME_IF_EXISTS:bacio-1.3>
 
                             $<TARGET_NAME_IF_EXISTS:RSL_LITE>
+
+                            # DA libs
+                            $<TARGET_NAME_IF_EXISTS:CRTM>
+                            $<TARGET_NAME_IF_EXISTS:wavelet>
+                            $<TARGET_NAME_IF_EXISTS:waveletf>
+                            $<TARGET_NAME_IF_EXISTS:bufr>
                       )
 
 ################################################################################

@@ -296,7 +296,7 @@ class RunWRFRestart( RunWRF ):
     arg_dict["-n"] = self.wrf_restart_nml
     arg_dict["-d"] = self.wrf_diff_exec
     arg_dict["-t"] = self.hist_comparisons
-    self.config["command"] = ".sane/scripts/run_wrf_restart.sh"
+    self.config["command"] = ".sane/wrf/scripts/run_wrf_restart.sh"
     self.config["arguments"] = list( itertools.chain( *zip( arg_dict.keys(), arg_dict.values() ) ) )
 
     self.push_logscope( "run" )

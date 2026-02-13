@@ -81,9 +81,19 @@ else()
   endforeach()
 
 
-  # A bug in previous netcdf-fortran cmake builds, extract from flibs
-  string( REGEX MATCH "^-L([^ ]*)" netCDF-Fortran_LIBRARY_LINK_LOCATION ${netCDF-Fortran_FLIBS} )
-  set( netCDF-Fortran_LIBRARY_DIR ${CMAKE_MATCH_1} )
+  # A bug in previous netcdf-fortran cmake builds, extract from prefix, flibs, or include in priority order
+  if( NOT "${netCDF-Fortran_PREFIX}" STREQUAL "" )
+    # fall back to the prefix
+    set( netCDF-Fortran_LIBRARY_DIR ${netCDF-Fortran_PREFIX} )
+  elseif ( NOT "${netCDF-Fortran_FLIBS}" STREQUAL "" )
+    # flibs valid
+    string( REGEX MATCH "^-L([^ ]*)" netCDF-Fortran_LIBRARY_LINK_LOCATION ${netCDF-Fortran_FLIBS} )
+    set( netCDF-Fortran_LIBRARY_DIR ${CMAKE_MATCH_1} )
+  else()
+    # fall back EVEN further to include
+    string( REGEX MATCH "^([^ ]*)/include" netCDF-Fortran_LIBRARY_LINK_LOCATION ${netCDF-Fortran_INCLUDE_DIR} )
+    set( netCDF-Fortran_LIBRARY_DIR ${CMAKE_MATCH_1} )
+  endif()
 
   set( netCDF-Fortran_DEFINITIONS  )
   set( netCDF-Fortran_LIBRARIES
@@ -99,6 +109,9 @@ else()
                 netcdff
                 PATHS ${netCDF-Fortran_LIBRARY_DIR}
                 NO_DEFAULT_PATH
+                PATH_SUFFIXES
+                  lib/
+                  lib64/
                 )
 endif()
 
@@ -110,6 +123,7 @@ find_package_handle_standard_args(
                                   netCDF-Fortran
                                   FOUND_VAR netCDF-Fortran_FOUND
                                   REQUIRED_VARS
+                                    netCDF-Fortran_LIBRARY
                                     netCDF-Fortran_INCLUDE_DIRS
                                     netCDF-Fortran_LIBRARIES
                                     netCDF-Fortran_VERSION

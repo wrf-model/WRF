@@ -1133,6 +1133,9 @@ Options for wind turbine drag parameterization:
                                                 ! 1 = The coordinate of the turbines are defined in terms of grid points
                                                 ! 2 = Valid only with windfarm_opt=2. The coordinate of the turbines are defined
                                                       in terms of lat-lon with the filename of 'windturbines-ll.txt'
+ ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/fraunhofer_license.txt                                                    
+ windfarm_induction                 = 1         ! Use the axial induction correction as described by Vollmer et al (2024). Valid only with 'windfarm_opt=1'. 0: Off, 1: On (default)
+ ! END LICENSE
  windfarm_wake_model                = 2         ! Subgrid-scale wind turbine wake model, valid only with windfarm_opt=2, default is 2
                                                 ! 1 = The Jensen model
                                                 ! 2 = The XA model

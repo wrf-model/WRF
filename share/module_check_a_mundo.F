@@ -2533,7 +2533,9 @@
 !  Set aer_init_opt for Thompson-MP-Aero (mp_physics=28) AND rcon mp (mp_physics=29)
 !-----------------------------------------------------------------------
      DO i = 1, model_config_rec % max_dom
-       IF ( model_config_rec%mp_physics(i) .EQ. THOMPSONAERO .OR. model_config_rec%mp_physics(i) .EQ. RCON_MP_SCHEME ) THEN
+      IF ( model_config_rec%mp_physics(i) .EQ. THOMPSONAERO .OR. &
+      (model_config_rec%mp_physics(i) .EQ. TEMPO .AND. model_config_rec%tempo_aerosolaware .EQ. 1) .OR. &
+      model_config_rec%mp_physics(i) .EQ. RCON_MP_SCHEME ) THEN
          IF ( model_config_rec%use_aero_icbc ) THEN
            model_config_rec%aer_init_opt = 1
          ELSE IF ( model_config_rec%use_rap_aero_icbc ) THEN

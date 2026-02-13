@@ -5,13 +5,29 @@
 #  The new dimspec.  We need to have the number of pressure levels to interpolate to.
 
 dimspec    np      2     namelist=num_press_levels         z     num_press_levels
+## L. Fita, CIMA. Feburary 2023
+#### Added for CORDEX!
+## L. Fita 2 grid coordinates for the londbg,latdbg
+dimspec    iit     2     constant=2                        z     iit
+
+## L. Fita. This should work, but WRF is not prepared for 4D output variables like this
+dimspec    ht      2     namelist=nhtasrng                 z     nhtasrng
+dimspec    hh      2     namelist=nhhursrng                z     nhhursrng
+dimspec    lt      2     namelist=nltasrng                 z     nltasrng
+dimspec    lh      2     namelist=nlhursrng                z     nlhursrng
+dimspec    wd      2     namelist=nwbdsrng                 z     nwbdsrng
+dimspec    ws      2     namelist=nwssrng                  z     nwssrng
+## L. Fita, so, WRF output will provide a (n[h/l]tasrng*n[h/l]hursrng) 3D variable instead
+dimspec    hth     2     namelist=nhtashursrng             z     nhtashursrng
+dimspec    lth     2     namelist=nltashursrng             z     nltashursrng
+dimspec    wds     2     namelist=nwbdswssrng              z     nwbdswssrng
 
 #  Namelist parameters
 
 rconfig   integer     p_lev_diags         namelist,diags   1            0   -    "flag to process vertical interp diagnostics: 0=nope, 1=yep" "flag"
 rconfig   integer     p_lev_diags_dfi     namelist,diags   1            0   -    "when doing p_level diags and dfi, turn off diags during 'non forecast'"
 rconfig   integer     num_press_levels    namelist,diags   1            0   -    "number of pressure levels to interpolate diagnostics to"    "index"
-rconfig   real            press_levels    namelist,diags   max_plevs    0   -    "array of pressure levels to interpolate diagnostics to"     "Pa"
+rconfig   real        press_levels        namelist,diags   max_plevs    0   -    "array of pressure levels to interpolate diagnostics to"     "Pa"
 rconfig   integer     use_tot_or_hyd_p    namelist,diags   1            2   -    "1=use total pressure, 2=use hydrostatic pressure"           "flag"
 rconfig   integer     extrap_below_grnd   namelist,diags   1            1   -    "1=no extrapolation, 2=extrapolate adiabatically"            "flag"
 rconfig   real        p_lev_missing       namelist,diags   1         -999   -    "missing values below ground, no extrapolation"              "constant"
@@ -30,12 +46,35 @@ state    real   rh_pl  i{np}j   misc    1  Z   h{23}  "RH_PL"   "Pressure level 
 state    real   ght_pl i{np}j   misc    1  Z   h{23}  "GHT_PL"  "Pressure level data, Geopotential Height"   "m"
 state    real   s_pl   i{np}j   misc    1  Z   h{23}  "S_PL"    "Pressure level data, Speed"                 "m s-1"
 state    real   td_pl  i{np}j   misc    1  Z   h{23}  "TD_PL"   "Pressure level data, Dew point temperature" "K"
-state    real   q_pl   i{np}j   misc    1  Z   h{23}  "Q_PL"    "Pressure level data, Mixing ratio"          "kg/kg"
+state    real   q_pl   i{np}j   misc    1  Z   h{23}  "Q_PL"    "Pressure level data, water vapour Mixing ratio"          "kg/kg"
+## L. Fita, CiMA. March 2018
+#### Added for CORDEX!
+state    real   hus_pl i{np}j   misc    1  Z   h{23}  "HUS_PL"  "Pressure level data, Sepcific humidity"                  "1"
+state    real   w_pl   i{np}j   misc    1  Z   h{23}  "W_PL"    "Pressure level data, W wind"                             "m s-1"
+state    real   uer_pl i{np}j   misc    1  Z   h{23}  "UER_PL"  "Pressure level data, U wind Earth-Rotated"               "m s-1"
+state    real   ver_pl i{np}j   misc    1  Z   h{23}  "VER_PL"  "Pressure level data, V wind Earth-Rotated"               "m s-1"
+state    real   ws_pl  i{np}j   misc    1  Z   h{23}  "WS_PL"   "Pressure level data, wind speed"                         "m s-1"
+state    real   qc_pl  i{np}j   misc    1  Z   h{23}  "QC_PL"   "Pressure level data, cloud mixing ratio"                 "kg/kg"
+state    real   qr_pl  i{np}j   misc    1  Z   h{23}  "QR_PL"   "Pressure level data, rain mixing ratio"                  "kg/kg"
+state    real   qs_pl  i{np}j   misc    1  Z   h{23}  "QS_PL"   "Pressure level data, snow mixing ratio"                  "kg/kg"
+state    real   qi_pl  i{np}j   misc    1  Z   h{23}  "QI_PL"   "Pressure level data, ice mixing ratio"                   "kg/kg"
+state    real   qg_pl  i{np}j   misc    1  Z   h{23}  "QG_PL"   "Pressure level data, graupel mixing ratio"               "kg/kg"
+state    real   qh_pl  i{np}j   misc    1  Z   h{23}  "QH_PL"   "Pressure level data, hail mixing ratio"                  "kg/kg"
+state    real   qv_pl_mc i{np}j  misc   1  Z   h{23}  "QV_PL_MC" "mass-conservative pressure level data, water vapour mixing ratio" "kg/kg"
+state    real   qc_pl_mc i{np}j  misc   1  Z   h{23}  "QC_PL_MC" "mass-conservative pressure level data, cloud mixing ratio" "kg/kg"
+state    real   qr_pl_mc i{np}j  misc   1  Z   h{23}  "QR_PL_MC" "mass-conservative pressure level data, rain mixing ratio"  "kg/kg"
+state    real   qs_pl_mc i{np}j  misc   1  Z   h{23}  "QS_PL_MC" "mass-conservative pressure level data, snow mixing ratio"  "kg/kg"
+state    real   qi_pl_mc i{np}j  misc   1  Z   h{23}  "QI_PL_MC" "mass-conservative pressure level data, ice mixing ratio"   "kg/kg"
+state    real   qg_pl_mc i{np}j  misc   1  Z   h{23}  "QG_PL_MC" "mass-conservative pressure level data, graupel mixing ratio" "kg/kg"
+state    real   qh_pl_mc i{np}j  misc   1  Z   h{23}  "QH_PL_MC" "mass-conservative pressure level data, hail mixing ratio"  "kg/kg"
 
 #  Package declarations
 
 package   skip_press_diags      p_lev_diags==0     -        -
-package        press_diags      p_lev_diags==1     -        state:p_pl,u_pl,v_pl,t_pl,rh_pl,ght_pl,s_pl,td_pl,q_pl
+## L. Fita, CiMA. March 2018
+#### Added for CORDEX!
+##package        press_diags      p_lev_diags==1     -        state:p_pl,u_pl,v_pl,t_pl,rh_pl,ght_pl,s_pl,td_pl,q_pl
+package        press_diags      p_lev_diags==1     -        state:p_pl,u_pl,v_pl,t_pl,rh_pl,ght_pl,s_pl,td_pl,q_pl,w_pl,hus_pl,uer_pl,ver_pl,ws_pl,qc_pl,qr_pl,qs_pl,qi_pl,qg_pl,qh_pl,qv_pl_mc,qc_pl_mc,qr_pl_mc,qs_pl_mc,qi_pl_mc,qg_pl_mc,qh_pl_mc
 
 
 

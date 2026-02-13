@@ -96,6 +96,7 @@ target_sources(
                   module_data_gocart_dust.F
                   module_diag_afwa.F
                   module_diag_cl.F
+                  module_diag_cordex.F
                   module_diag_functions.F
                   module_diag_hailcast.F
                   module_diag_misc.F
@@ -105,6 +106,7 @@ target_sources(
                   module_diag_solar.F
                   module_diag_trad_fields.F
                   module_diag_zld.F
+                  module_diagvar_cordex.F
                   module_diagnostics_driver.F
                   module_dust_emis.F
                   module_fdda_psufddagd.F

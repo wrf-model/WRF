@@ -1,0 +1,372 @@
+******* WRF module to compute atmospheric model diagnostics required by CORDEX on WRFV3.9.1.1
+* L. Fita, CIMA. December 2017
+
+See for more detail wiki page:
+http://wiki.cima.fcen.uba.ar/mediawiki/index.php/CDXWRF
+
+This module computes that variables required by CORDEX which usually are post-processed
+
+* Compilation & efficiency note
+
+Efficiency constrains make necessary to introduce a system of compilation in order to do not overload WRF execution. Long simulations are usually used in CORDEX experiments, thus model temporal efficiency is even more important. In order to achieve this, a new pre-compilation variable has been added. According to the value of this giving variable and accordingly modifications in the 'Registry/registry.cordex' file certain variables are computed and provided at the output. This is not very 'WRF'-friendly, since usually all options are directly available with just a single compilation, but it has been shown that the large amount of variables introduced by this module, it slows down too much (up to 40% of additional time) the running time of the model. See below for more details (INSTALLATION section)
+
+* Subroutines/Functions
+ - module_diag_cordex: Main subroutine to compute CORDEX required variables
+ - module_diagvar_cordex: subroutine with the specific computation of CORDEX required variables
+ - registry.cordex: required definition of the new CORDEX variables
+
+* Available diagnostics (accordingly to pre-compilation set-up and namelist options)
+
+** Instantaneous diagnostics (only computed on output times)
+ - prw: Total water path
+ - clwvi: Total liquid water path (QCLOUD + QRAIN)
+ - clivi: Total ice water path (QSNOW+QICE+QGRAUPEL+QHAIL)
+ - uas: 10m earth-rotated eastward wind [ms-1]
+ - vas: 10m earth-rotated northward wind [ms-1]
+ - wss: 10m wind speed [ms-1]
+ - hurs: 2m relative humidty [1]
+ - huss: 2m specific humidty [1]
+ - psl: sea level pressure [Pa] (three different ways)
+ - mrso: total soil moisture content [kgm-2]
+ - slw: total liquid water content [kgm-2]
+ - ws100: 100m wind speed [ms-1]
+ - uz100: 100m wind x-direction [ms-1]
+ - vz100: 100m wind y-direction [ms-1]
+ - tauu, tauuv: components of the downward wind stress at 10 m [m2s-2] (might be zero if sf_sfclay_physics /= 1, 5)
+ - tauugen, tauuvgen: generic components of the downward wind stress at 10 m [m2s-2]
+ - cdcdx: drag coefficient [-] (might be zero if sf_sfclay_physics /= 1, 5)
+ - cdgen: generic drag coefficient [-]
+ - ps: surface pressure [Pa]
+ - ts: skin temperature [K]
+ - zeroith: 0-isotherm [m]
+ - mrsol: moisture content of soil layer [kgm-2]
+ - mrsos: first layer soil moisture content (0-10 cm) [kgm-2]
+ - mrso: total soil moisture content [kgm-2]
+ - mrsll: liquid water content of soil layer [kgm-2]
+ - mrlso: total liquid water content of soil layer [kgm-2]
+ - mrlsos: liquid water content in Upper Portion of soil column (0-10cm) [kgm-2]
+ - mrsfl: frozen water content of soil layer [kgm-2]
+ - mrfso: total frozen water content of soil layer [kgm-2]
+ - mrfsos: frozen water content in Upper Portion of soil column (0-10cm) [kgm-2]
+
+* CDXWRF=1
+ - clivg: graupel water path (QGRAUPEL)
+ - clivh: hail water path (QHAIL)
+ - zmla: pbl height following a generic method [m]
+ - colmax: high-frequency maximum radar reflectivity in the column [dBz] (on auxhist8, wrfhfcdx)
+ 
+** Only if 'INSTVALS' modifications are made
+ - cape: Convective Available Potential Energy [Jkg-1] 
+ - cin: Convective inhibition [Jkg-1]
+ - zlfc: Height at the Level of free convection [m]
+ - plfc: Pressure at the Level of free convection [Pa]
+ - lidx: Lifted index [1]
+
+* CDXWRF=2
+ - ua: 3D earth-rotated eastward wind [ms-1]
+ - va: 3D earth-rotated northward wind [ms-1]
+ - ws: 3D wind speed [ms-1]
+ - ta: 3D air-temperature [K]
+ - press: 3D air pressure [Pa]
+ - zg: 3D geopotential height [m]
+ - hur: 3D relative humidty [1]
+ - hus: 3D specific humidty [1]
+
+** Accumulated or similar time dependency (computed at every time-step)
+!!!  NOTE: CLDFRAC is computed by the radiative scheme thus,
+!!!    bear in mind to configure the namelist.input that:
+!!!        auxhist9_interval > radt
+!!!    otherwise one obtains repeated values of clt, cll, clm, clh!! 
+!!!
+ - cltmean: mean clt [%]
+ - cllmean: mean cll [%]
+ - clmmean: mean clm [%]
+ - clhmean: mean clh [%]
+ - wsgsmax: maximum surface wind gust [ms-1]
+ - ugsmax: x maximum surface gust wind direction [ms-1]
+ - vgsmax: y maximum surface gust wind direction [ms-1]
+ - totwsgsmax: maximum surface wind gust [ms-1] (addition of different methods)
+ - totugsmax: eastward maximum surface gust wind direction [ms-1]
+ - totvgsmax: northward maximum surface gust wind direction [ms-1]
+ - totwsgspercen: percentage of times when grid point got total gust wind [\%]
+ - wsz100max: maximum 100m wind [ms-1] (two different methods)
+ - uz100max: eastward maximum 100m wind direction [ms-1]
+ - vz100max: northward maximum 100m wind direction [ms-1]
+ - sund: sunshine duration (ac. time with swdown > 120. Wm-2) [s]
+ - rsds: mean surface Downwelling Shortwave Radiation [Wm-2]
+ - rlds: mean surface Downwelling Longwave Radiation [Wm-2]
+ - hfls: mean surface Upward Latent Heat Flux [Wm-2]
+ - hfss: mean surface Upward Sensible Heat Flux [Wm-2]
+ - rsus: mean surface Upwelling Shortwave Radiation [Wm-2]
+ - rlus: mean surface Upwelling Longwave Radiation [Wm-2]
+ - rsusgen: mean generic surface Upwelling Shortwave Radiation [Wm-2]
+ - rlusgen: mean generic surface Upwelling Longwave Radiation [Wm-2]
+ - evspsbl: mean evaporation [kgm-2s-1]
+ - evspsblpot: mean potential evapotranspiration [kgm-2s-1]
+ - snc: mean snow area fraction [%]
+ - snd: mean snow depth [m]
+ - mrros: mean surface Runoff [kgm-2s-1]
+ - mrro: mean total  Runoff [kgm-2s-1]
+ - mrsol: mean total water content of soil layer [kgm-2]
+ - pr: precipitation flux [kgm-2s-1]
+ - prl: large scale precipitation flux [kgm-2s-1]
+ - prc: convective precipitation flux [kgm-2s-1]
+ - prsh: shallow-cumulus precipitation flux [kgm-2s-1]
+ - prsn: solid precipitation flux [kgm-2s-1]
+ - snw: accumulated snow  [ksm-2]
+ - rsdt: TOA incident shortwave radiation [kgm-2]
+ - rsut: TOA outgoing shortwave radiation [kgm-2]
+ - rlut: TOA outgoing Longwave radiation [kgm-2]
+ - mrsolmean: mean moisture content of soil layer [kgm-2]
+ - mrsosmean: mean first layer soil moisture content (0-10 cm) [kgm-2]
+ - mrsomean: mean total soil moisture content [kgm-2]
+ - mrsllmean: mean liquid water content of soil layer [kgm-2]
+ - mrlsomean: mean total liquid water content of soil layer [kgm-2]
+ - mrlsosmean: mean liquid water content in Upper Portion of soil column (0-10cm) [kgm-2]
+ - mrsflmean: mean frozen water content of soil layer [kgm-2]
+ - mrfsomean: mean total frozen water content of soil layer [kgm-2]
+ - mrfsosmean: mean frozen water content in Upper Portion of soil column (0-10cm) [kgm-2]
+
+* Only if 'INSTVALS' modifications are made
+ - clt: total cloud cover [%]
+ - cll: low-level cloud cover [%]
+ - clm: mid-level cloud cover [%]
+ - clh: high-level cloud cover [%]
+
+* CDXWRF=1
+ - capemin: minimum CAPE [Jkg-1]
+ - cinmin: minimum CIN [Jkg-1]
+ - zlfcmin: minimum height at LFC [m]
+ - plfcmin: minimum Pressure at LFC [Pa]
+ - lidxmin: minimum Lifted index [1]
+ - capemax: maximum CAPE [Jkg-1]
+ - cinmax: maximum CIN [Jkg-1]
+ - zlfcmax: maximum height at LFC [m]
+ - plfcmax: maximum Pressure at LFC [Pa]
+ - lidxmax: maximum Lifted index [1]
+ - capemean: mean CAPE [Jkg-1]
+ - cinmean: mean CIN [Jkg-1]
+ - zlfcmean: mean height at LFC [m]
+ - plfcmean: mean Pressure at LFC [Pa]
+ - lidxmean: mean Lifted index [1]
+ - prflux: high-frequency precipitation flux [kgm-2s-1] (on auxhist8, wrfhfcdx)
+
+* CDXWRF=2
+ - tfog: time of presence of fog [s]
+ - fogvisbltymin: minimun visibility inside fog [km]
+ - fogvisbltymax: maximun visibility inside fog [km]
+ - fogvisbltymean: mean visibility inside fog [km]
+ - tdsmin: minimum 2m dew point temperature [K]
+ - tdsmax: maximum 2m dew point temperature [K]
+ - tdsmean: mean 2m dew point temperature [K]
+ - twsmin: minimum 2m wet-bulb temperature [K]
+ - twsmax: maximum 2m wet-bulb temperature [K]
+ - twsmean: mean 2m wet-bulb temperature [K]
+
+* CDXWRF=3
+ - tashurstreshighres: high resolution of simultaneous temporal residence of 2-meter temperature and relative humidity
+ - tashurstreslowres: low resolution of simultaneous temporal residence of 2-meter temperature and relative humidity
+ - wbdswsstres: simultaneous temporal residence of 10-meter wind direction (from where it blows) and wind speed
+
+* CDXWRF=4
+ - wbacdiabh: Water-budget vertically integrated accumulated of diabatic heating from microphysics [K]
+ - wbacpw, wbacpw[c/r/s/i/g/h]: Water-budget vertically integrated accumulated total tendency for water vapour, cloud, rain, snow, ice, graupel, hail [mm]
+ - wbacf, wbacf[c/r/s/i/g/h]: Water-budget vertically integrated accumulated horizontal advection for water vapour, cloud, rain, snow, ice, graupel, hail [mm]
+ - wbacz, wbacz[c/r/s/i/g/h]: Water-budget vertically integrated accumulated vertical advection for water vapour, cloud, rain, snow, ice, graupel, hail [mm]
+ - wbacdiabh\{l/m/h\}: Water-budget vertically integrated accumulated of diabatic heating from microphysics at low, medium and high levels (same as cloudiness) [K]
+ - wbacpw{l/m/h}, wbacpw[c/r/s/i/g/h]{l/m/h}: Water-budget vertically integrated accumulated total tendency for water vapour, cloud, rain, snow, ice, graupel, hail at low, medium and high levels (same as cloudiness) [mm]
+ - wbacf{l/m/h}, wbacf[c/r/s/i/g/h]{l/m/h}: Water-budget vertically integrated accumulated horizontal advection for water vapour, cloud, rain, snow, ice, graupel, hail at low, medium and high levels (same as cloudiness) [mm]
+ - wbacz{l/m/h}, wbacz[c/r/s/i/g/h]{l/m/h}: Water-budget vertically integrated accumulated vertical advection for water vapour, cloud, rain, snow, ice, graupel, hail at low, medium and high levels (same as cloudiness) [mm]
+
+** Only if 'INSTVALS' modifications are made
+ - fog: whether point is inside fog (vis < 1km) [1]
+ - vis: visibility inside fog [km]
+ - tds: 2m dew point temperature [K]
+ - q[v/c/r/s/i/g/h]ttend: instantaneous 3D time-step tendency for water vapor, cloud, rain, snow, ice, graupel, hail [kgkg-1s-1] 
+ - q[v/c/r/s/i/g/h]_hadv: instantaneous horizontal advection for water vapor, cloud, rain, snow, ice, graupel, hail [kgkg-1]
+ - q[v/c/r/s/i/g/h]_zadv: instantaneous Vertical advection for water vapor, cloud, rain, snow, ice, graupel, hail [kgkg-1]
+
+ * Pressure interplation
+ - Interpolation on pressure levels of specific humidty (hus_pl), vertical wind speed (w_pl), Earth-rotated wind x-component (uer), Earth-rotated wind y-component (ver) and wind speed (ws) have been also introduced into the `wrfpress' output
+
+* INSTALLATION
+These steps must be followed prior the re-compilation of the WRF model (it requires a clean -a)
+
+ 1.- Getting the code from the fork in a $INSTDIR
+   $ cd $INSTDIR
+   $ git clone git@github.com:LluisFB/WRF.git
+   $ cd WRF
+
+ 2.- Getting submodules
+   $ git submodule update --init --recursive
+
+ 3.- Check to the right branch
+   $ git checkout cdxwrf
+   
+   ** NOTE **: assuming that you got the right submodules [e.g. noahMP] (when downloading the fork) !!
+
+ 4.- Clean the code (in order to avoid to run again configure one can make a copy of the 'configure.wrf' and recover it after the clean, otherwise it is erased)
+   $ cp configure.wrf configure.cordex.wrf
+   $ ./clean -a
+   $ cp configure.cordex.wrf configure.wrf
+
+ 5.- edit the `configure.wrf' and add the line (after the line -DNETCDF and/or -DCLWRFGHG)
+                      -DCORDEXDIAG \
+ 6.- Set up (or not) the pre-compilation variable CDXWRF (after the line -DCORDEXDIAG)
+                      -DCDXWRF=[value] \
+
+  Accordingly to the value given to the pre-compilation variable CDXWRF one obtains:
+   - Without adding the variable: all CORDEX 'Core' variables
+   - CDXWRF=1 CORDEX 'Tier' variables: clivg, clivh, zmla, [cape/cin/zlfc/plfc/lidx]{min/max/mean}
+   - CDXWRF=2 The same as with CDXWRF=1 and additional variables: ua, va, ws, ta, press, zg, hur, hus, tfog, fogvisbltymin, fogvisbltymax, fogvisbltymean, tdsmin, tdsmax, tdsmean
+   - CDXWRF=3 The same as with CDXWRF=1,2 and additional residence-time variables
+   - CDXWRF=4 The same as with CDXWRF=1,2 and 3 and the Water-Budget relarted ones: wbacdiabh, wbacpw, wbacpw[c/r/s/i/g/h], wbacf, wbacf[c/r/s/i/g/h], wbacz, wbacz[c/r/s/i/g/h], wbacdiabh{l/m/h}, wbacpw{l/m/h}, wbacpw[c/r/s/i/g/h]{l/m/h}, wbacf{l/m/h}, wbacf[c/r/s/i/g/h]{l/m/h}, wbacz{l/m/h}, wbacz[c/r/s/i/g/h]{l/m/h}
+  Simultanesouly, one needs to:
+   a.- make a copy of Registry/registry.cordex
+     $ cp Registry/registry.cordex Registry/registry.cordex_comp
+   b.- modify the Registry/registry.cordex_comp accordingly to the value of CDXWRF:
+    - User must provide a level for CDXWRF. 
+      > Adding CDXWRF=1, one needs to remove the comment ##CDXWRF1## at the beginning of the line of the definition of certain variables
+      > Adding CDXWRF=2, one needs to remove the comment ##CDXWRF1## and ##CDXWRF2## at the beginning of the line of the definition of certain variables
+      > Adding CDXWRF=3, one needs to remove the comment ##CDXWRF1##, ##CDXWRF2## and ##CDXWRF3## at the beginning of the line of the definition of certain variables
+      > Adding CDXWRF=4, one needs to remove the comment ##CDXWRF1##, ##CDXWRF2##, ##CDXWRF3## and ##CDXWRF4## at the beginning of the line of the definition of certain variables
+    - Example for CDXWRF=3
+     $ sed -i 's/##CDXWRF1##//g' Registry/registry.cordex_comp
+     $ sed -i 's/##CDXWRF2##//g' Registry/registry.cordex_comp
+     $ sed -i 's/##CDXWRF3##//g' Registry/registry.cordex_comp
+
+ - Additionally, one can also get the instantaneous values for the variables which only certain statistics (accumulation, minimum, mean, ...) are provided. In order to get them, one need to:
+  a.- Search in 'phys/module_diagnostics_driver.F' and 'phys/module_diag_cordex.F' the lines of code marked with 'INSTVALS' and change accordingly. 
+  b.- Modify Registry/registry.cordex accordingly (removing ##INST## at the beginning of the line of the definition of certain variables, and adding 'h9' to certain others)
+  c.- re-compile
+
+ 7.- compile as always
+  · ./compile em_real >& compile.log
+
+NOTE: after any change into a `Registry' related file, one needs to before the compilation refresh entirely the code throughout
+$ ./clean -a
+
+* USAGE
+ One need to add to the 'namelist.input' the auxiliary output number 8 (only for CDXWRF>=1, e.g. for every 10 minutes and 1-day files) & 9 (e.g. for output every 3 hours and 1-day files) at the `&history' section:
+
+ auxhist18_outname = "wrfhfcdx_d<domain>_<date>"
+ auxhist18_interval = 10, 10,
+ frames_per_auxhist18 = 144, 144,
+ io_form_auxhist18 = 2
+
+ auxhist19_outname = "wrfcdx_d<domain>_<date>"
+ auxhist19_interval = 180, 180,
+ frames_per_auxhist19 = 8, 8,
+ io_form_auxhist19 = 2
+
+ Also a new section should be added (assuming it will get complex...)
+
+&cordex
+ output_cordex              = 1 
+ psl_diag                   = 1: sea-level pressure diagnostic following hydrostatic Shuell correction
+                            = 2: psl diagnostic following a target pressure
+                            = 3: psl diagnostic following ECMWF method (default)
+ psmooth                    = 5: passes of neighborgh filtering (3x3-grid point mean) of psfc for psl_diag=2 (default 5)
+ ptarget                    = 70000.: pressure [Pa] target to be used by psl_diag=2 (default 70000.)
+ output_wb                  = 1: whether water-budget variables have to computed (1) or not (0, default)
+ wsgs_diag                  = 1: wind-gust diagnostic following Brasseur, 2001, MWR (default)
+                            = 2: wsgs folllowing heavy precipitation method
+ wsz100_diag                = 1: wind extraoplation at z100m_wind using power-law method (default)
+                            = 2: wind extraoplation at z100m_wind using Monin-Obukhov theory
+ z100_wind                  = 100.: height to extraplate winds (100. default)
+ zmlagen_dqv                = 0.1: percentage of variation of mixing ratio to determine mixed layer depth used in zmla computation (0.1 default)
+ zmlagen_dtheta             = 1.5: increment in K of potantial temperature from its minimum within the MLD used in zmla computation (1.5 default)
+ integer potevp_diag        = 1: potential evapotranspiration diagnostic following Penman-Monteith as in ORCHIDEE (default)
+ convxtrm_diag              = 0: diagnostic of extremes from convection indices: 0: No (default); 1: yes
+ fogvisibility_diag         = 1: diagnostic of visibility inside fog following Kunkel (1984)
+                            = 2: RUC method (Smirnova et al., 2000)
+                            = 3: FRAML 50% prob Gultepe and Milbrandt, (2010) (default)
+ fogvars                    = 1: variables to use to diagnose fog using 3D [hur] (default)
+                            = 2: sfc [hus] (not available for Kunkel, 1984)
+ zmlagen_diag               = 1: diagnostic of generic zmla after Nielsen-Gammon et al. (2008)
+                            = 2: bulk-Richardson (Vogelezang and Holtslag, 1996; Seidel et al., 2004) (default)
+ timedbg                    = frequency in minutes of time-debugging (720, default)
+ londbg                     = longitude in degrees of grid-point debugging (-999., not used) (-999., default)
+ latdbg                     = latitude in degrees of grid-point debugging (-999., not used) (-999., default)
+ wgsts_wbdswsstres          = whether wind gusts should be used for wbds-wss residence-time (0: no, 1: yes (1, default)
+
+#### ONLY for CDXWRF>=3
+  nhtasrng                  = amount + 1 of high-resolution bins for temporal residence of tas (38, default)
+  nhhursrng                 = amount + 1 of high-resolution bins for temporal residence of hurs (25, default)
+  nltasrng                  = amount + 1 of low-resolution bins for temporal residence of tas (21, default)
+  nlhursrng                 = amount + 1 of low-resolution bins for temporal residence of hurs (25, default)
+  nwbdsrng                  = amount + 1 of  bins for temporal residence of wbds (33, default)
+  nwssrng                   = amount + 1 of  bins for temporal residence of wss (22, default)
+  nhtashursrng              = amount + 1 of high-resolution bins for temporal residence of tas and hurs (nhtas+1)*(nhhurs+1) (950, default)
+  nltashursrng              = amount + 1 of low-resolution bins for temporal residence of wss and wbds (nwbds+1)*(nwss+1) (525, default)
+  nwbdswssrng               = amount + 1 of bins for temporal residence of wbds and wss (nwbds+1)*(nwss+1) (726, default)
+  htasrng                   = high-resolution bins for temporal residence of tas (/173.15,268.15,269.15,270.15,271.15,272.15,273.15,
+    274.15,275.15,276.15,277.15,278.15,279.15,280.15,281.15,282.15,283.15,284.15,285.15,286.15,287.15,288.15,289.15,
+    290.15,291.15,292.15,293.15,294.15,295.15,296.15,297.15,298.15,299.15,300.15,301.15,302.15,303.15,0.00,0.00,0.00,
+    0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00/)
+  hhursrng                  = high-resolution bins for temporal residence of hurs (/0.00,0.05,0.10,0.15,0.20,0.25,0.30,0.35,0.40,
+    0.45,0.50,0.55,0.60,0.65,0.70,0.75,0.80,0.85,0.90,0.95,1.00,1.05,1.10,1.15,0.00,0.00,0.00,0.00,0.00,0.00,0.00,
+    0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00/)
+  ltasrng                   = low-resolution bins for temporal residence of tas (/173.15,233.15,238.15,243.15,248.15,253.15,
+    258.15,263.15,268.15,273.15,278.15,283.15,288.15,293.15,298.15,303.15,308.15,313.15,318.15,323.15,0.00,0.00,0.00,
+    0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,
+    0.00,0.00,0.00,0.00,0.00/)
+  lhursrng                  = low-resolution bins for temporal residence of hurs (/0.00,0.05,0.10,0.15,0.20,0.25,0.30,0.35,0.40,0.45,
+    0.50,0.55,0.60,0.65,0.70,0.75,0.80,0.85,0.90,0.95,1.00,1.05,1.10,1.15,0.00,0.00,0.00,0.00,0.00,0.00,
+    0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00/)
+  wbdsrng                   = bins for temporal residence of wbds (/-0.0982,0.0982,0.2945,0.4909,0.6872,0.8836,   
+    1.0799,1.2763,1.4726,1.669,1.8653,2.0617,2.258,2.4544,2.6507,2.8471,3.0434,3.2398,3.4361,3.6325,3.8288,
+    4.0252,4.2215,4.4179,4.6142,4.8106,5.0069,5.2033,5.3996,5.596,5.7923,5.9887,6.185,0.0,0.0,0.0,0.0,0.0,
+    0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0/)
+  wssrng                    = bins for temporal residence of wss (/0.0,0.5,1.0,2.5,5.0,10.0,15.0,20.0,25.0,30.0,35.0,40.0,45.0,
+    50.0,60.0,70.0,80.0,90.0,100.0,125.0,150.0,200.0,95.2375,107.6506,120.5606,133.9489,147.7992,0.0,0.0,0.0,
+    0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0/)
+/
+
+
+`convxtrm_diag' parameter has only effect with CDXWRF=1
+`outputwb', `fogvisibility_diag' and `fogvars' parameters has only effect with CDXWRF=2
+
+# Optional values for wbds & wss residence-time
+## 
+# kt-based: [0., 2.5, 5., 10., 15., 20., 25., 30., 35., 40.. 45., 50., 60., 70., 80., 100., 150., 200., 250., 300. ]
+#   Transforming to ms-1 as wss = kt * 1852. / 3600.
+  nwssrng                   = amount + 1 of  bins for temporal residence of wss kt-based (20, default)
+  nwbdswssrng               = amount + 1 of bins for temporal residence of wbds and wss (nwbds+1)*(nwss+1) kt-based (660, default)
+  wssrng                    = bins for temporal residence of wss kt based (/0.0,1.2861,2.5722,5.1444,7.7167,10.2889,12.8611,
+    15.4333,18.0056,20.5778,23.15,25.7222,30.8667,36.0111,41.1556,51.4444,77.1667,102.8889,128.6111,154.3333,0.0,0.0,0.0,0.0,
+    0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0/)        
+   
+# Beafourt scale-based: [0., 0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5, 10.5, 11.5, 12.5, 13.5, 14.5, 15.5, 
+#   16.5, 17.5, 18.5, 19.5, 21.5, 23.5, 25.5, 27.5, 29.5, 31.5]
+#   FROM: https://en.wikipedia.org/wiki/Beaufort_scale
+#   Transforming to ms-1 as wss = 0.836*Bnum**(3./2.)
+  nwssrng                   = amount + 1 of  bins for temporal residence of wss Beafourt-based (27, default)
+  nwbdswssrng               = amount + 1 of bins for temporal residence of wbds and wss (nwbds+1)*(nwss+1) Beafourt-based (891, default)
+  wssrng                    = bins for temporal residence of wss Beafourt-based (/0.0,0.2956,1.5358,3.3046,5.474,7.9804,10.7833,
+    13.854,17.1711,20.7174,24.4789,28.444,32.6027,36.9463,41.4674,46.1592,51.0157,56.0315,61.2017,66.5218,71.9877,83.342,
+    95.2375,107.6506,120.5606,133.9489,147.7992,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,
+    0.0,0.0,0.0,0.0,0.0/)
+
+
+** Pressure interpolation
+
+ Remember to activate section &diags in order to get pressure-level vertical interpolation of state variables (assuming 6 levels only)
+
+ auxhist23_outname=”wrfpress_d<domain>_<date>”
+ io_form_auxhist23 = 2,
+ auxhist23_interval = 180, 60,
+ frames_per_auxhist23 = 8, 24,
+
+&diags
+ p_lev_diags = 1,
+ num_press_levels = 6,
+ press_levels = 100000, 92500, 85000, 70000, 50000, 20000
+ use_tot_or_hyd_p = 1
+ p_lev_missing = -999.
+/
+
+Optional 23 p-level values:
+ num_press_levels = 23,
+ press_levels = 100000,97500,95000,92500,90000,87500,85000,82500,80000,75000,70000,65000,60000,55000,50000,45000,40000,35000,30000,25000,20000,15000,10000,
+

@@ -70,6 +70,8 @@ done
 # Go to run location now - We only operate here from now on
 cd $run_folder || exit $?
 
+echo "Working out of : $PWD"
+
 wrf_exec=$( realpath $( find -L $run_folder -type f -name $wrf_exec | head -n 1 ) )
 
 if [ ! -x "${wrf_exec}" ]; then

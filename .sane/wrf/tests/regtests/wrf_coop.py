@@ -302,3 +302,48 @@ def wrf_coop_reg_tests( orch ):
     else:
       action.add_dependencies( *[ f"{wrf_case}_{nml_case}_{comp}" for comp in case_dict["compare"] for nml_case in case_dict["nml_cases"] ] )
     orch.add_action( action )
+
+
+@sane.register
+def wrf_coop_feature_restart_em_real( orch ):
+  # cases - just hard-code since we need the path from the host
+  cases = [
+            "basic",
+            "dfi",
+            "diff_opt_2",
+            "km_opt_1",
+            "km_opt_2",
+            "km_opt_3",
+            "nest_starts_later",
+            "nwp_diag",
+            "w_damping"
+            ]
+  build = "build_make_em_real_gnu_debug_dmpar"
+  for wrf_case in cases:
+    init_wrf = run_wrf.InitWRF( f"restart_{wrf_case}_init" )
+    restart  = run_wrf.RunWRFRestart( f"restart_{wrf_case}" )
+
+    init_wrf.wrf_case        = wrf_case
+    init_wrf.wrf_nml         = "namelist.input.1"
+    init_wrf.wrf_case_path   = "${{ host_info.config.wrf_restart.run_wrf_case_path }}"
+    init_wrf.wrf_met_path    = "${{ host_info.config.wrf_restart.run_wrf_met_path }}"
+    init_wrf.wrf_met_folder  = "standard"
+    init_wrf.wrf_dir         = "${{ dependencies.${{ config.build }}.outputs.build_dir }}/test/em_real"
+    init_wrf.wrf_run_dir     = "regtests/output/restart_${{ wrf_case }}"
+    init_wrf.environment     = "gnu"
+    init_wrf.modify_environ  = True
+    init_wrf.config["build"] = build 
+
+    init_wrf.add_resource_requirements( { "cpus" : 1, "timelimit" : "00:10:00" } )
+    init_wrf.add_dependencies( build )
+
+    # Inherit most attributes from init_wrf
+    restart.config["build"] = build 
+    restart.wrf_nml         = "namelist.input.2"
+    restart.wrf_restart_nml = "namelist.input.3"
+    restart.wrf_diff_exec   = "${{ dependencies.${{ config.build }}.outputs.build_dir }}/external/io_netcdf/diffwrf"
+    restart.add_dependencies( init_wrf.id, build )
+    restart.add_resource_requirements( { "cpus" : 8, "timelimit" : "00:25:00" } )
+
+    orch.add_action( init_wrf )
+    orch.add_action( restart )

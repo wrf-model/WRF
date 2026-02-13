@@ -147,7 +147,7 @@ wrf : framework_only
 	  echo " " ; \
 	  echo "------------------------------------------------------------------------------" ; \
 	  echo "Error Error Error TEMPO submodule files not populating WRF directories" ; \
-        fi
+	fi
 	@if [ \( ! -f phys/module_sf_mynnsfc_driver.F \) -o \
 	    \( ! -f phys/module_sf_mynnsfc_land.F \) -o \
 	    \( ! -f phys/module_sf_mynnsfc_water.F \) -o \

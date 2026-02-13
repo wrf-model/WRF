@@ -641,9 +641,11 @@ BENCH_START(surf_driver_tim)
      &        ,RMOL=grid%rmol          ,SFCEVP=grid%sfcevp      ,SFCEXC=grid%sfcexc      &
      &        ,SFCRUNOFF=grid%sfcrunoff,ACRUNOFF=grid%ACRUNOFF                           &
      &        ,opt_thcnd=config_flags%opt_thcnd                                          &
-     &        ,SF_SFCLAY_PHYSICS=config_flags%sf_sfclay_physics                        &
-     &        ,BL_PBL_PHYSICS=config_flags%bl_pbl_physics                              &
-     &        ,SF_SURFACE_PHYSICS=config_flags%sf_surface_physics  ,SH2O=grid%sh2o          &
+     &        ,SF_SFCLAY_PHYSICS=config_flags%sf_sfclay_physics                          &
+     &        ,BL_PBL_PHYSICS=config_flags%bl_pbl_physics                                &
+     &        ,SF_SURFACE_PHYSICS=config_flags%sf_surface_physics  ,SH2O=grid%sh2o       &
+     &        ,SF_MYNN_SFCFLUX_LAND=config_flags%sf_mynn_sfcflux_land                    &
+     &        ,SF_MYNN_SFCFLUX_WATER=config_flags%sf_mynn_sfcflux_water                  &
      &        ,SHDMAX=grid%shdmax      ,SHDMIN=grid%shdmin      ,SMOIS=grid%smois        &
      &        ,SHDAVG=grid%shdavg                                                        &
      &        ,SMSTAV=grid%smstav      ,SMSTOT=grid%smstot      ,SNOALB=grid%snoalb      &
@@ -793,6 +795,15 @@ BENCH_START(surf_driver_tim)
      &        ,FLXHUMR_URB2D=grid%flxhumr_urb2d                           & !H urban
      &        ,FLXHUMB_URB2D=grid%flxhumb_urb2d                           & !H urban
      &        ,FLXHUMG_URB2D=grid%flxhumg_urb2d                           & !H urban
+     &        ! added by Chenghao Wang
+     &        ,TVG_URB2D=grid%tvg_urb2d                                   & !H urban
+     &        ,XXXVG_URB2D=grid%xxxvg_urb2d                               & !H urban
+     &        ,TVGL_URB3D=grid%tvgl_urb3d                                 & !H urban
+     &        ,SMG_URB3D=grid%smg_urb3d                                   & !H urban
+     &        ,TT_URB2D=grid%tt_urb2d                                     & !H urban
+     &        ,CMCG_URB2D=grid%cmcg_urb2d                                 & !H urban
+     &        ,FLXHUMVG_URB2D=grid%flxhumvg_urb2d                         & !H urban
+     &        ,FLXHUMT_URB2D=grid%flxhumt_urb2d                           & !H urban
      &        ,TRL_URB3D=grid%trl_urb3d   ,TBL_URB3D=grid%tbl_urb3d       & !H urban
      &        ,TGL_URB3D=grid%tgl_urb3d                                   & !H urban
      &        ,SH_URB2D=grid%sh_urb2d     ,LH_URB2D=grid%lh_urb2d         &
@@ -1118,6 +1129,9 @@ BENCH_START(pbl_driver_tim)
      &         AKHS=grid%akhs          ,AKMS=grid%akms                              &
      &        ,BL_PBL_PHYSICS=config_flags%bl_pbl_physics                           &
      &        ,WINDFARM_OPT=config_flags%windfarm_opt,power=grid%power              &
+     ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/fraunhofer_license.txt
+     &        ,thrust=grid%thrust                                                   & 
+     ! END LICENSE
      &        ,windfarm_wake_model=config_flags%windfarm_wake_model          & ! Yulong add for WLM
      &        ,windfarm_overlap_method=config_flags%windfarm_overlap_method  & ! Yulong add for WLM
      &        ,BLDT=grid%bldt, CURR_SECS=curr_secs, ADAPT_STEP_FLAG=adapt_step_flag &
@@ -1224,12 +1238,16 @@ BENCH_START(pbl_driver_tim)
      &        ,icloud_bl=config_flags%icloud_bl                           &
      &        ,qc_bl=grid%qc_bl,qi_bl=grid%qi_bl,cldfra_bl=grid%cldfra_bl &
      &        ,bl_mynn_edmf=config_flags%bl_mynn_edmf                     &
+              ,bl_mynn_edmf_dd=config_flags%bl_mynn_edmf_dd               &
      &        ,bl_mynn_edmf_mom=config_flags%bl_mynn_edmf_mom             &
      &        ,bl_mynn_edmf_tke=config_flags%bl_mynn_edmf_tke             &
      &        ,bl_mynn_mixscalars=config_flags%bl_mynn_mixscalars         &
+     &        ,bl_mynn_mixaerosols=config_flags%bl_mynn_mixaerosols       &
+     &        ,bl_mynn_mixnumcon=config_flags%bl_mynn_mixnumcon           &
      &        ,bl_mynn_output=config_flags%bl_mynn_output                 &
      &        ,bl_mynn_cloudmix=config_flags%bl_mynn_cloudmix             &
      &        ,bl_mynn_mixqt=config_flags%bl_mynn_mixqt                   &
+     &        ,bl_mynn_ess=config_flags%bl_mynn_ess                       &     
      &        ,bl_mynn_closure=config_flags%bl_mynn_closure               &
      &        ,edmf_a=grid%edmf_a,edmf_w=grid%edmf_w                      &
      &        ,edmf_thl=grid%edmf_thl,edmf_qt=grid%edmf_qt                &
@@ -1241,6 +1259,7 @@ BENCH_START(pbl_driver_tim)
 !    &        ,K_m=grid%K_m, K_h=grid%K_h, K_q=grid%K_q                   &
      &        ,vdfg=grid%vdfg,maxwidth=grid%maxwidth,maxMF=grid%maxmf     &
      &        ,ztop_plume=grid%ztop_plume                                 &
+     &        ,excess_h=grid%excess_h,excess_q=grid%excess_q              &    
      &        ,spp_pbl=config_flags%spp_pbl                               &
      &        ,pattern_spp_pbl=grid%pattern_spp_pbl                       &
      &        ,restart=config_flags%restart,cycling=config_flags%cycling  &

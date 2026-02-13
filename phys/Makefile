@@ -97,6 +97,14 @@ MODULES = \
 	module_mp_etanew.o \
 	module_mp_fer_hires.o \
 	module_mp_thompson.o \
+	module_mp_tempo_cfgs.o \
+	module_mp_tempo_params.o \
+	module_mp_tempo_utils.o \
+	module_mp_tempo_diags.o \
+	module_mp_tempo_ml.o \
+	module_mp_tempo_aerosols.o \
+	module_mp_tempo_main.o \
+	module_mp_tempo_driver.o \
 	module_mp_rcon.o \
         module_fire_emis.o \
 	module_mp_SBM_polar_radar.o \
@@ -128,12 +136,12 @@ MODULES = \
 	module_ra_rrtmg_aero_optical_util_cmaq.o \
 	module_ra_rrtmg_lwf.o  \
 	module_ra_rrtmg_swf.o  \
-        module_ra_rrtmg_lwk.o  \
-        module_ra_rrtmg_swk.o  \
-        module_ra_cam_support.o \
-        module_ra_cam.o \
+	module_ra_rrtmg_lwk.o  \
+	module_ra_rrtmg_swk.o  \
+	module_ra_cam_support.o \
+	module_ra_cam.o \
 	module_ra_gfdleta.o \
-        module_ra_flg.o \
+	module_ra_flg.o \
 	module_ra_hs.o  \
 	module_ra_eclipse.o \
 	module_ra_aerosol.o  \
@@ -173,7 +181,11 @@ MODULES = \
 	module_sf_3dpwp.o \
 	module_sf_myjsfc.o \
 	module_sf_qnsesfc.o \
-	module_sf_mynn.o \
+	module_sf_mynnsfc_common.o \
+	module_sf_mynnsfc_driver.o \
+	module_sf_mynnsfc_land.o \
+	module_sf_mynnsfc_water.o \
+	module_sf_mynnsfc_ice.o \
 	module_sf_fogdes.o \
 	module_sf_pxsfclay.o \
 	module_sf_temfsfclay.o \
@@ -234,7 +246,7 @@ DIAGNOSTIC_MODULES_EM = \
 	module_diag_zld.o \
 	module_diag_trad_fields.o \
         module_diag_solar.o
-  
+
 PHYSMMM_MODULES = \
 	physics_mmm/sf_sfclayrev.o \
 	physics_mmm/cu_ntiedtke.o \
@@ -274,7 +286,13 @@ submodules :
 	else \
 		echo No action required for NoahMP submodule ; \
 	fi
-	@if [ \( ! -f module_bl_mynnedmf.F \) -o \( ! -f module_bl_mynedmf_common.F \) -o \
+	@if [ \( ! -f phys/physics_mmm/README.md \) ] ; then \
+		echo Pulling in MMM-physics submodule ; \
+		( cd .. ; git submodule update --init --recursive ) ; \
+	else \
+		echo No action required for MMM-physics submodule ; \
+	fi
+	@if [ \( ! -f module_bl_mynnedmf.F \) -o \( ! -f module_bl_mynnedmf_common.F \) -o \
 	      \( ! -f module_bl_mynnedmf_driver.F \) ] ; then \
 	      	echo Pulling in MYNN-EDMF submodule ; \
 		( cd .. ; git submodule update --init --recursive ) ; \
@@ -284,7 +302,37 @@ submodules :
 	else \
 		echo No action required for MYNN-EDMF submodule ; \
 	fi
+	@if [ \( ! -f module_mp_tempo_driver.F90 \) -o \( ! -f module_mp_tempo_main.F90 \) -o \
+	      \( ! -f module_mp_tempo_cfgs.F90 \) -o \( ! -f module_mp_tempo_aerosols.F90 \) -o \
+	      \( ! -f module_mp_tempo_ml.F90 \) -o \( ! -f modulemp_tempo_diags.F90 \) -o \
+              \( ! -f module_mp_tempo_utils.F90 \) -o \( ! -f module_mp_tempo_params.F90 \) ] ; then \
+                echo Pulling in TEMPO submodule ; \
+		( cd .. ; git submodule update --init --recursive ) ; \
+		ln -sf TEMPO/src/module_mp_tempo_cfgs.F90 module_mp_tempo_cfgs.F90 ; \
+		ln -sf TEMPO/src/module_mp_tempo_params.F90 module_mp_tempo_params.F90 ; \
+		ln -sf TEMPO/src/module_mp_tempo_utils.F90 module_mp_tempo_utils.F90 ; \
+		ln -sf TEMPO/src/module_mp_tempo_diags.F90 module_mp_tempo_diags.F90 ; \
+		ln -sf TEMPO/src/module_mp_tempo_ml.F90 module_mp_tempo_ml.F90 ; \
+		ln -sf TEMPO/src/module_mp_tempo_aerosols.F90 module_mp_tempo_aerosols.F90 ; \
+		ln -sf TEMPO/src/module_mp_tempo_main.F90 module_mp_tempo_main.F90 ; \
+		ln -sf TEMPO/src/module_mp_tempo_driver.F90 module_mp_tempo_driver.F90 ; \
+	else \
+		echo No action required for TEMPO submodule ; \
+	fi
 	
+	@if [ \( ! -f module_sf_mynnsfc_driver.F \) -o \( ! -f module_sf_mynnsfc_common.F \) -o \
+	      \( ! -f module_sf_mynnsfc_land.F \) -o \( ! -f module_sf_mynnsfc_water.F \) -o \
+	      \( ! -f module_sf_mynnsfc_ice.F \) ] ; then \
+		echo Pulling in MYNN-SFC submodule ; \
+		( cd .. ; git submodule update --init --recursive ) ; \
+		ln -sf MYNN-SFC/WRF/module_sf_mynnsfc_driver.F90 module_sf_mynnsfc_driver.F ; \
+		ln -sf MYNN-SFC/WRF/module_sf_mynnsfc_common.F90 module_sf_mynnsfc_common.F ; \
+		ln -sf MYNN-SFC/module_sf_mynnsfc_land.F90 module_sf_mynnsfc_land.F ; \
+		ln -sf MYNN-SFC/module_sf_mynnsfc_water.F90 module_sf_mynnsfc_water.F ; \
+		ln -sf MYNN-SFC/module_sf_mynnsfc_ice.F90 module_sf_mynnsfc_ice.F ; \
+	else \
+		echo No action required for MYNN-SFC submodule ; \
+	fi
 clean:
 	@ echo 'use the clean script'
 

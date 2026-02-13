@@ -37,6 +37,7 @@ CONTAINS
      &          ,scm_force_skintemp,scm_force_flux,t2,emiss           &
      &          ,sf_sfclay_physics,sf_surface_physics,ra_lw_physics   & 
      &          ,bl_pbl_physics                                       &
+     &          ,sf_mynn_sfcflux_land,sf_mynn_sfcflux_water           &
      &          ,mosaic_lu,mosaic_soil                                &
      &          ,landusef,soilctop,soilcbot,ra,rs,nlcat,nscat,vegf_px & ! PX-LSM
      &          ,snowncv, anal_interval, lai, imperv, canfra          & ! PX-LSM
@@ -181,7 +182,7 @@ CONTAINS
      &           ,dwt_livecrootn_to_cwdn,dwt_deadcrootn_to_cwdn,retransn &
 #endif
 !sw++
-                 ,pct_pft_input,num_pft_input,input_pft_flag  &
+     &           ,pct_pft_input,num_pft_input,input_pft_flag  &
 !sw--
             !  Optional urban
      &          ,slope_rad,topo_shading,shadowmask                    & !I solar
@@ -194,7 +195,9 @@ CONTAINS
      &          ,xxxr_urb2d,xxxb_urb2d,xxxg_urb2d,xxxc_urb2d          & !H urban
      &          ,cmcr_urb2d,tgr_urb2d,tgrl_urb3d,smr_urb3d            & !H urban
      &          ,julian,julyr,drelr_urb2d,drelb_urb2d,drelg_urb2d     & !H urban
-     &          ,flxhumr_urb2d,flxhumb_urb2d,flxhumg_urb2d            & !H urban
+     &          ,flxhumr_urb2d,flxhumb_urb2d,flxhumg_urb2d            & !H urban, added by Chenghao Wang
+     &          ,tvg_urb2d,xxxvg_urb2d,tvgl_urb3d,smg_urb3d,tt_urb2d  & !H urban
+     &          ,cmcg_urb2d,flxhumvg_urb2d,flxhumt_urb2d             & !H urban
      &          ,trl_urb3d,tbl_urb3d,tgl_urb3d                        & !H urban
      &          ,sh_urb2d,lh_urb2d,g_urb2d,rn_urb2d,ts_urb2d          & !H urban
      &          ,frc_urb2d, utype_urb2d                               & !H urban
@@ -385,7 +388,7 @@ CONTAINS
    USE module_sf_sfclayrev
    USE module_sf_noah_seaice_drv
 #if ( EM_CORE==1)
-   USE module_sf_mynn
+   USE module_sf_mynnsfc_driver
    USE module_sf_fogdes    ! Katata - fog deposition module
    USE module_sf_ocean_driver
    USE module_sf_idealscmsfclay
@@ -539,6 +542,8 @@ CONTAINS
 !-- DZS
 !-- num_soil_layers number of soil layer
 !-- IFSNOW      ifsnow=1 for snow-cover effects
+!-- sf_mynn_sfcflux_land   option for choosing z0, zt, and zq formulation over land
+!-- sf_mynn_sfcflux_water  option for choosing z0, zt, and zq formulation over water
 !-- sf_ocean_physics       whether to call ocean model from slab (1 = oml, 2=3d PWP)
 !-- oml_hml0      initial mixed layer depth (if real-data not available, default 50 m)
 !-- oml_gamma     lapse rate below mixed layer in ocean (default 0.14 K m-1)
@@ -632,6 +637,7 @@ CONTAINS
    INTEGER, INTENT(IN) :: sf_sfclay_physics, sf_surface_physics,      &
                           sf_urban_physics,ra_lw_physics,sst_update,  &
                           ra_sw_physics, bl_pbl_physics
+   INTEGER, INTENT(IN) :: sf_mynn_sfcflux_land,sf_mynn_sfcflux_water
    INTEGER, INTENT(IN),OPTIONAL :: sst_skin, tmn_update,              &
                                    scm_force_skintemp, scm_force_flux 
 
@@ -1307,11 +1313,22 @@ CONTAINS
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FLXHUMG_URB2D
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CMCR_URB2D
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TGR_URB2D
+     ! added by Chenghao Wang
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TVG_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TT_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: XXXVG_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CMCG_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FLXHUMVG_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FLXHUMT_URB2D
 
      REAL, OPTIONAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), &       !urban
            INTENT(INOUT)  :: TGRL_URB3D                                 !urban
      REAL, OPTIONAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), &       !urban
            INTENT(INOUT)  :: SMR_URB3D                                 !urban
+     REAL, OPTIONAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), &       !urban
+           INTENT(INOUT)  :: TVGL_URB3D                                 !urban
+     REAL, OPTIONAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), &       !urban
+           INTENT(INOUT)  :: SMG_URB3D                                 !urban
      REAL, OPTIONAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), &       !urban
            INTENT(INOUT)  :: TRL_URB3D                                 !urban
      REAL, OPTIONAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), &       !urban
@@ -2377,39 +2394,58 @@ CONTAINS
           CALL wrf_debug(100,'in MYNNSFC')
 
          IF (FRACTIONAL_SEAICE == 1) THEN
-          CALL MYNN_SEAICE_WRAPPER(u_phytmp,v_phytmp,t_phy,qv_curr,&
-               p_phy,dz8w,th_phy,rho,                              &
-               cp,g,rcp,r_d,xlv,psfc,chs,chs2,cqs2,cpm,            &
-               znt,ust,pblh,mavail,zol,mol,regime,psim,psih,       &
-               xland,hfx,qfx,lh,tsk,flhc,flqc,qgh,qsfc,rmol,       &
-               u10,v10,th2,t2,q2,SNOWH,                            &
-               gz1oz0,wspd,br,isfflx,dx,                           &
-               svp1,svp2,svp3,svpt0,ep_1,ep_2,karman,              &
-               itimestep,ch,qcg,                                   &
-               spp_pbl,pattern_spp_pbl,                            &
-               XICE,SST,TSK_SEA,                                   &
-               CHS2_SEA,CHS_SEA,CPM_SEA,CQS2_SEA,FLHC_SEA,FLQC_SEA,&
-               HFX_SEA,LH_SEA,QFX_SEA,QGH_SEA,QSFC_SEA,ZNT_SEA,    &
-               TICE2TSK_IF2COLD,XICE_THRESHOLD,                    &
-               ids,ide, jds,jde, kds,kde,                          &
-               ims,ime, jms,jme, kms,kme,                          &
-               i_start(ij),i_end(ij),j_start(ij),j_end(ij),kts,kte,&   
-               ustm,ck,cka,cd,cda,isftcflx,iz0tlnd                 )
+          CALL MYNN_SEAICE_WRAPPER(                                  &
+               u3d=u_phytmp,v3d=v_phytmp,t3d=t_phy,qv3d=qv_curr,     &
+               p3d=p_phy,dz8w=dz8w,th3d=th_phy,rho=rho,              &
+               psfc=psfc,chs=chs,chs2=chs2,cqs=cqs,cqs2=cqs2,cpm=cpm,&
+               znt=znt,ust=ust,pblh=pblh,mavail=mavail,zol=zol,      &
+               mol=mol,psim=psim,psih=psih,                          &
+               xland=xland,hfx=hfx,qfx=qfx,lh=lh,tsk=tsk,            &
+               flhc=flhc,flqc=flqc,qsfc=qsfc,rmol=rmol,              &
+               u10=u10,v10=v10,th2=th2,t2=t2,q2=q2,snowh=snowh,      &
+               gz1oz0=gz1oz0,wspd=wspd,br=br,dx=dx2d,                &
+               itimestep=itimestep,ch=ch,                            &
+               spp_pbl=spp_pbl,pattern_spp_pbl=pattern_spp_pbl,      &
+               xice=XICE,sst=SST,tsk_sea=TSK_SEA,                    &
+               chs2_sea=CHS2_SEA,chs_sea=CHS_SEA,cpm_sea=CPM_SEA,    &
+               cqs2_sea=CQS2_SEA,flhc_sea=FLHC_SEA,                  &
+               flqc_sea=FLQC_SEA,hfx_sea=HFX_SEA,lh_sea=LH_SEA,      &
+               qfx_sea=QFX_SEA,qsfc_sea=QSFC_SEA,                    &
+               znt_sea=ZNT_SEA,tice2tsk_if2cold=TICE2TSK_IF2COLD,    &
+               xice_threshold=XICE_THRESHOLD,                        &
+               ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde,    &
+               ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme,    &
+               its=i_start(ij),ite=i_end(ij),                        &
+               jts=j_start(ij),jte=j_end(ij),kts=kts,kte=kte,        &
+               ustm=ustm,ck=ck,cka=cka,cd=cd,cda=cda,                &
+               sf_mynn_sfcflux_land=sf_mynn_sfcflux_land,            &
+               sf_mynn_sfcflux_water=sf_mynn_sfcflux_water,          &
+               isfflx=isfflx,                                        &
+               flag_lsm=sf_surface_physics,restart=restart_flag,     &
+               errmsg=errmsg,errflg=errflg                           ) 
          ELSE
-          CALL SFCLAY_mynn(u_phytmp,v_phytmp,t_phy,qv_curr,        &
-               p_phy,dz8w,th_phy,rho,                              &
-               cp,g,rcp,r_d,xlv,psfc,chs,chs2,cqs2,cpm,            &
-               znt,ust,pblh,mavail,zol,mol,regime,psim,psih,       &
-               xland,hfx,qfx,lh,tsk,flhc,flqc,qgh,qsfc,rmol,       &
-               u10,v10,th2,t2,q2,SNOWH,                            &
-               gz1oz0,wspd,br,isfflx,dx,                           &
-               svp1,svp2,svp3,svpt0,ep_1,ep_2,karman,              &
-               itimestep,ch,qcg,                                   &
-               spp_pbl,pattern_spp_pbl,                            &
-               ids,ide, jds,jde, kds,kde,                          &
-               ims,ime, jms,jme, kms,kme,                          &
-               i_start(ij),i_end(ij),j_start(ij),j_end(ij),kts,kte,&
-               ustm,ck,cka,cd,cda,isftcflx,iz0tlnd                 )
+          CALL mynnsfc_driver(u3d=u_phytmp,v3d=v_phytmp,t3d=t_phy, &
+               qv3d=qv_curr,p3d=p_phy,dz8w=dz8w,th3d=th_phy,       &
+               rho3d=rho,psfcpa=psfc,                              &
+               chs=chs,chs2=chs2,cqs=cqs,cqs2=cqs2,cpm=cpm,        &
+               znt=znt,ust=ust,pblh=pblh,mavail=mavail,zol=zol,    &
+               mol=mol,psim=psim,psih=psih,                        &
+               xland=xland,hfx=hfx,qfx=qfx,lh=lh,tsk=tsk,          &
+               flhc=flhc,flqc=flqc,qsfc=qsfc,rmol=rmol,            &
+               u10=u10,v10=v10,th2=th2,t2=t2,q2=q2,snowh=snowh,    &
+               gz1oz0=gz1oz0,wspd=wspd,br=br,dx=dx2d,              &
+               itimestep=itimestep,ch=ch,                          &
+               spp_pbl=spp_pbl,pattern_spp_pbl=pattern_spp_pbl,    &
+               ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde,  &
+               ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme,  &
+               its=i_start(ij),ite=i_end(ij),jts=j_start(ij),      &
+               jte=j_end(ij), kts=kts,kte=kte,                     &
+               ustm=ustm,ck=ck,cka=cka,cd=cd,cda=cda,              &
+               sf_mynn_sfcflux_land=sf_mynn_sfcflux_land,          &
+               sf_mynn_sfcflux_water=sf_mynn_sfcflux_water,        &
+               isfflx=isfflx,                                      &
+               flag_lsm=sf_surface_physics,restart=restart_flag,   &
+               errmsg=errmsg,errflg=errflg                         )
          ENDIF
        ELSE
           CALL wrf_error_fatal('Lacking arguments for SFCLAY_mynn in surface driver')
@@ -2741,6 +2777,9 @@ CONTAINS
                 julian,julyr,                                   & !H urban
                 DRELR_URB2D,DRELB_URB2D,DRELG_URB2D,            & !H urban
                 FLXHUMR_URB2D,FLXHUMB_URB2D,FLXHUMG_URB2D,      & !H urban
+                ! added by Chenghao Wang
+                TVG_URB2D,XXXVG_URB2D,TVGL_URB3D,SMG_URB3D,TT_URB2D,CMCG_URB2D, & !H urban
+                FLXHUMVG_URB2D,FLXHUMT_URB2D,                   & !H urban
                 FRC_URB2D, UTYPE_URB2D,                         & !I urban
                 num_urban_ndm,                                  & !I multi-layer urban
                 urban_map_zrd,                                  & !I multi-layer urban
@@ -2875,6 +2914,8 @@ CONTAINS
                 CMCR_URB2D,TGR_URB2D,TGRL_URB3D,SMR_URB3D,      & !H urban
                 DRELR_URB2D,DRELB_URB2D,DRELG_URB2D,            & !H urban
                 FLXHUMR_URB2D,FLXHUMB_URB2D,FLXHUMG_URB2D,      & !H urban
+                TVG_URB2D,XXXVG_URB2D,TVGL_URB3D,SMG_URB3D,TT_URB2D,CMCG_URB2D, & !H urban
+                FLXHUMVG_URB2D,FLXHUMT_URB2D,                   & !H urban
                 julian, julyr,                                  & !H urban
                 FRC_URB2D, UTYPE_URB2D,                         & !I urban
                 num_urban_ndm,                                  & !I multi-layer urban
@@ -3221,6 +3262,8 @@ CONTAINS
                          cmcr_urb2d,      tgr_urb2d,     tgrl_urb3d,  smr_urb3d,            & !H urban
                         drelr_urb2d,    drelb_urb2d,    drelg_urb2d,                        & !H urban
                       flxhumr_urb2d,  flxhumb_urb2d,  flxhumg_urb2d,                        & !H urban
+                       tvg_urb2d,      xxxvg_urb2d,    tvgl_urb3d,     smg_urb3d, tt_urb2d, & !H urban
+                      cmcg_urb2d, flxhumvg_urb2d, flxhumt_urb2d,                            & !H urban
                              julian,          julyr,                                        & !H urban
                           frc_urb2d,    utype_urb2d,                                        & !I urban
                                 chs,           chs2,           cqs2,                        & !H
@@ -3817,6 +3860,8 @@ CONTAINS
                 cmcr_urb2d,tgr_urb2d,tgrl_urb3d,smr_urb3d,      & ! urban
                 drelr_urb2d,drelb_urb2d,drelg_urb2d,            & ! urban
                 flxhumr_urb2d,flxhumb_urb2d,flxhumg_urb2d,      &
+                tvg_urb2d,xxxvg_urb2d,tvgl_urb3d,smg_urb3d,tt_urb2d,  &
+                cmcg_urb2d,flxhumvg_urb2d,flxhumt_urb2d,              &
 ! CLM subgrids
                 numc,nump,sabv,sabg,lwup,snl, &
                 snowdp,wtc,wtp,h2osno,t_grnd,t_veg,         &
@@ -5256,36 +5301,40 @@ CONTAINS
 
    SUBROUTINE mynn_seaice_wrapper(U3D,V3D,T3D,QV3D,                &
               P3D,dz8w,th3d,rho,                                   &
-              CP,G,ROVCP,R,XLV,PSFC,CHS,CHS2,CQS2,CPM,             &
-              ZNT,UST,PBLH,MAVAIL,ZOL,MOL,REGIME,PSIM,PSIH,        &
-              XLAND,HFX,QFX,LH,TSK,FLHC,FLQC,QGH,QSFC,RMOL,        &
+              PSFC,CHS,CHS2,CQS,CQS2,CPM,                          &
+              ZNT,UST,PBLH,MAVAIL,ZOL,MOL,PSIM,PSIH,               &
+              XLAND,HFX,QFX,LH,TSK,FLHC,FLQC,QSFC,RMOL,            &
               U10,V10,TH2,T2,Q2,SNOWH,                             &
               GZ1OZ0,WSPD,BR,ISFFLX,DX,                            &
-              SVP1,SVP2,SVP3,SVPT0,EP1,EP2,KARMAN,                 &
-              &itimestep,ch,qcg,                                   &
+              &itimestep,ch,                                       &
               &spp_pbl,pattern_spp_pbl,                            &
               XICE,SST,TSK_SEA,                                    &
               CHS2_SEA,CHS_SEA,CPM_SEA,CQS2_SEA,FLHC_SEA,FLQC_SEA, &
-              HFX_SEA,LH_SEA,QFX_SEA,QGH_SEA,QSFC_SEA,ZNT_SEA,     &
+              HFX_SEA,LH_SEA,QFX_SEA,QSFC_SEA,ZNT_SEA,             &
               TICE2TSK_IF2COLD,XICE_THRESHOLD,                     &
               ids,ide, jds,jde, kds,kde,                           &
               ims,ime, jms,jme, kms,kme,                           &
               its,ite, jts,jte, kts,kte,                           &
-              ustm,ck,cka,cd,cda,isftcflx,iz0tlnd                  )
+              ustm,ck,cka,cd,cda,sf_mynn_sfcflux_land,             &
+              sf_mynn_sfcflux_water,flag_lsm,restart,              &
+              errmsg,errflg                                        )
 
-     USE module_sf_mynn
+     USE module_sf_mynnsfc_driver
 
      implicit none
+
+     !--- ccpp arguments:
+     character(len=*), intent(inout) :: errmsg
+     integer,          intent(inout) :: errflg
 
      INTEGER,  INTENT(IN )   ::       ids,ide, jds,jde, kds,kde,  &
                                       ims,ime, jms,jme, kms,kme,  &
                                       its,ite, jts,jte, kts,kte
      INTEGER,  INTENT(IN )   ::       itimestep, ISFFLX
-     INTEGER,  INTENT(IN ), optional ::  ISFTCFLX, IZ0TLND
-     REAL,     INTENT(IN )   ::       SVP1,SVP2,SVP3,SVPT0
-     REAL,     INTENT(IN )   ::       EP1,EP2,KARMAN,             &
-                                      CP,G,ROVCP,R,XLV,DX
-
+     INTEGER,  INTENT(IN ), optional ::  sf_mynn_sfcflux_land,    &
+                                         sf_mynn_sfcflux_water,   &
+                                         flag_lsm
+     LOGICAL,  INTENT(IN)    ::        restart
      INTEGER,  INTENT(IN), optional      ::     spp_pbl
      REAL,     DIMENSION( ims:ime, kms:kme, jms:jme ),            &
                INTENT(IN), OPTIONAL      ::   pattern_spp_pbl
@@ -5301,12 +5350,11 @@ CONTAINS
 
      REAL,     DIMENSION( ims:ime, jms:jme )                    , &
                INTENT(IN   )               ::             MAVAIL, &
-                                                            PBLH, &
                                                            XLAND, &
-                                                             QCG, &
                                                             PSFC, &
                                                            SNOWH, &
-                                                             TSK
+                                                             TSK, &
+                                                              dx
 
      REAL,     DIMENSION( ims:ime, jms:jme )                    , &
                INTENT(OUT  )               ::                U10, &
@@ -5316,18 +5364,18 @@ CONTAINS
                                                               Q2
 
      REAL,     DIMENSION( ims:ime, jms:jme )                    , &
-               INTENT(INOUT)               ::             REGIME, &
+               INTENT(INOUT)               ::               PBLH, &
                                                              HFX, &
                                                              QFX, &
                                                               LH, &
                                                         MOL,RMOL, &
                                                             QSFC, &
-                                                             QGH, &
                                                              ZNT, &
                                                              ZOL, &
                                                              UST, &
                                                              CPM, &
                                                             CHS2, &
+                                                             CQS, &
                                                             CQS2, &
                                                              CHS, &
                                                               CH, &
@@ -5358,7 +5406,6 @@ CONTAINS
                                                 HFX_SEA,          &
                                                 LH_SEA,           &
                                                 QFX_SEA,          &
-                                                QGH_SEA,          &
                                                 QSFC_SEA,         &
                                                 ZNT_SEA
 
@@ -5380,7 +5427,6 @@ CONTAINS
                  PSIH_SEA,                      PSIH_HOLD,        &
                  PSIM_SEA,                      PSIM_HOLD,        &
                                                 QFX_HOLD,         &
-                                                QGH_HOLD,         &
                                                 CPM_HOLD,         &
                  RMOL_SEA,                      RMOL_HOLD,        &
                  UST_SEA,                       UST_HOLD,         &
@@ -5411,7 +5457,7 @@ CONTAINS
 !            TSK(i,j) = TSK_LOCAL(i,j)
 !        ENDDO
 !    ENDDO
-
+      
 ! Save the variables before the first call
 ! (for land/frozen water) to SFCLAY_mynn.
      BR_HOLD(its:ite,jts:jte)   = BR(its:ite,jts:jte)
@@ -5425,7 +5471,6 @@ CONTAINS
      PSIH_HOLD(its:ite,jts:jte) = PSIH(its:ite,jts:jte)
      PSIM_HOLD(its:ite,jts:jte) = PSIM(its:ite,jts:jte)
      QFX_HOLD(its:ite,jts:jte)  = QFX(its:ite,jts:jte)
-     QGH_HOLD(its:ite,jts:jte)  = QGH(its:ite,jts:jte)
      RMOL_HOLD(its:ite,jts:jte) = RMOL(its:ite,jts:jte)
      UST_HOLD(its:ite,jts:jte)  = UST(its:ite,jts:jte)
      USTM_HOLD(its:ite,jts:jte) = USTM(its:ite,jts:jte)
@@ -5437,19 +5482,27 @@ CONTAINS
      ! for weighting after the second call to SFCLAY.
 
      ! land/frozen-water call
-     CALL SFCLAY_mynn(U3D,V3D,T3D,QV3D,P3D,dz8w,th3d,rho,     &
-          CP,G,ROVCP,R,XLV,PSFC,CHS,CHS2,CQS2,CPM,            &
-          ZNT,UST,PBLH,MAVAIL,ZOL,MOL,REGIME,PSIM,PSIH,       &
-          XLAND,HFX,QFX,LH,TSK_LOCAL,FLHC,FLQC,QGH,QSFC,RMOL, &
-          U10,V10,TH2,T2,Q2,SNOWH,                            &
-          GZ1OZ0,WSPD,BR,ISFFLX,DX,                           &
-          SVP1,SVP2,SVP3,SVPT0,EP1,EP2,KARMAN,                &
-          itimestep,ch,qcg,                                   &
-          spp_pbl,pattern_spp_pbl,                            &
-          ids,ide, jds,jde, kds,kde,                          &
-          ims,ime, jms,jme, kms,kme,                          &
-          its,ite, jts,jte, kts,kte,                          &
-          ustm,ck,cka,cd,cda,isftcflx,iz0tlnd                 )
+          CALL mynnsfc_driver(u3d=u3d,v3d=v3d,t3d=t3d,         &
+               qv3d=qv3d,p3d=p3d,dz8w=dz8w,th3d=th3d,          &
+               rho3d=rho,psfcpa=psfc,                          &
+               chs=chs,chs2=chs2,cqs=cqs,cqs2=cqs2,cpm=cpm,    &
+               znt=znt,ust=ust,pblh=pblh,mavail=mavail,zol=zol,&
+               mol=mol,psim=psim,psih=psih,                    &
+               xland=xland,hfx=hfx,qfx=qfx,lh=lh,tsk=tsk_local,&
+               flhc=flhc,flqc=flqc,qsfc=qsfc,rmol=rmol,        &
+               u10=u10,v10=v10,th2=th2,t2=t2,q2=q2,snowh=snowh,&
+               gz1oz0=gz1oz0,wspd=wspd,br=br,dx=dx,            &
+               itimestep=itimestep,ch=ch,                      &
+               spp_pbl=spp_pbl,pattern_spp_pbl=pattern_spp_pbl,&
+               ids=ids,ide=ide,jds=jds,jde=jde,kds=kds,kde=kde,&
+               ims=ims,ime=ime,jms=jms,jme=jme,kms=kms,kme=kme,&
+               its=its,ite=ite,jts=jts,jte=jte,kts=kts,kte=kte,&
+               ustm=ustm,ck=ck,cka=cka,cd=cd,cda=cda,          &
+               sf_mynn_sfcflux_land=sf_mynn_sfcflux_land,      &
+               sf_mynn_sfcflux_water=sf_mynn_sfcflux_water,    &
+               isfflx=isfflx,                                  &
+               flag_lsm=flag_lsm,restart=restart,              &
+               errmsg=errmsg,errflg=errflg                     )
 
      ! Set up lower boundary conditions to force an open-water call
       DO j = JTS , JTE
@@ -5487,7 +5540,6 @@ CONTAINS
      PSIH_SEA(its:ite,jts:jte) = PSIH_HOLD(its:ite,jts:jte)
      PSIM_SEA(its:ite,jts:jte) = PSIM_HOLD(its:ite,jts:jte)
      QFX_SEA(its:ite,jts:jte)  = QFX_HOLD(its:ite,jts:jte)
-     QGH_SEA(its:ite,jts:jte)  = QGH_HOLD(its:ite,jts:jte)
      RMOL_SEA(its:ite,jts:jte) = RMOL_HOLD(its:ite,jts:jte)
      UST_SEA(its:ite,jts:jte)  = UST_HOLD(its:ite,jts:jte)
      USTM_SEA(its:ite,jts:jte) = USTM_HOLD(its:ite,jts:jte)
@@ -5496,28 +5548,26 @@ CONTAINS
 
 
      ! open-water call
-          CALL SFCLAY_mynn(U3D,V3D,T3D,QV3D,P3D,dz8w,th3d,rho,     &
-               CP,G,ROVCP,R,XLV,PSFC,                              &
-               CHS_SEA,CHS2_SEA,CQS2_SEA,CPM_SEA,                  &
-               ZNT_SEA,UST_SEA,                                    &
-               PBLH,MAVAIL_SEA,                                    &
-               ZOL_SEA,MOL_SEA,REGIME,PSIM_SEA,PSIH_SEA,           &
-               XLAND_SEA,                                          &
-               HFX_SEA,QFX_SEA,LH_SEA,                             &
-               TSK_SEA,                                            &
-               FLHC_SEA,FLQC_SEA,QGH_SEA,QSFC_SEA,RMOL_SEA,        &
-               U10_SEA,V10_SEA,TH2_SEA,T2_SEA,Q2_SEA,SNOWH,        &
-               GZ1OZ0_SEA,WSPD_SEA,BR_SEA,                         &
-               ISFFLX,DX,                                          &
-               SVP1,SVP2,SVP3,SVPT0,EP1,EP2,KARMAN,                &
-               itimestep,CH_SEA,qcg,                               &
-               spp_pbl,pattern_spp_pbl,                            &
-               ids,ide, jds,jde, kds,kde,                          &
-               ims,ime, jms,jme, kms,kme,                          &
-               its,ite, jts,jte, kts,kte,                          &
-               ustm_sea,ck_sea,cka_sea,cd_sea,cda_sea,isftcflx,    &
-               iz0tlnd                                             )
-
+      CALL mynnsfc_driver(u3d=u3d,v3d=v3d,t3d=t3d,                             &
+           qv3d=qv3d,p3d=p3d,dz8w=dz8w,th3d=th3d,rho3d=rho,psfcpa=psfc,        &
+           chs=chs_sea,chs2=chs2_sea,cqs=cqs,cqs2=cqs2_sea,cpm=cpm_sea,        &
+           znt=znt_sea,ust=ust_sea,pblh=pblh,mavail=mavail_sea,zol=zol_sea,    &
+           mol=mol_sea,psim=psim_sea,psih=psih_sea,                            &
+           xland=xland_sea,hfx=hfx_sea,qfx=qfx_sea,lh=lh_sea,tsk=tsk_sea,      &
+           flhc=flhc_sea,flqc=flqc_sea,qsfc=qsfc_sea,rmol=rmol_sea,            &
+           u10=u10_sea,v10=v10_sea,th2=th2_sea,t2=t2_sea,q2=q2_sea,snowh=snowh,&
+           gz1oz0=gz1oz0_sea,wspd=wspd_sea,br=br_sea,dx=dx,                    &
+           itimestep=itimestep,ch=ch,                                          &
+           spp_pbl=spp_pbl,pattern_spp_pbl=pattern_spp_pbl,                    &
+           ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde,                  &
+           ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme,                  &
+           its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte,                  &
+           ustm=ustm_sea,ck=ck_sea,cka=cka_sea,cd=cd_sea,cda=cda_sea,          &
+           sf_mynn_sfcflux_land=sf_mynn_sfcflux_land,                          &
+           sf_mynn_sfcflux_water=sf_mynn_sfcflux_water,isfflx=isfflx,          &
+           flag_lsm=flag_lsm,restart=restart,                                  &
+           errmsg=errmsg,errflg=errflg                                         )
+               
      DO j = JTS , JTE
         DO i = ITS, ITE
            IF ( ( XICE(I,J) .GE. XICE_THRESHOLD )  .and.( XICE(i,j) .LE. 1.0 ) ) THEN
@@ -5536,7 +5586,6 @@ CONTAINS
               psih(i,j)   = psih(i,j)   * XICE(i,j) + (1.0-XICE(i,j)) * psih_sea(i,j)
               psim(i,j)   = psim(i,j)   * XICE(i,j) + (1.0-XICE(i,j)) * psim_sea(i,j)
               ! QFX  -- wait
-              ! QGH  -- wait
               rmol(i,j)   = rmol(i,j)   * XICE(i,j) + (1.0-XICE(i,j)) * rmol_sea(i,j)
               ust(i,j)    = ust(i,j)    * XICE(i,j) + (1.0-XICE(i,j)) * ust_sea(i,j)
               wspd(i,j)   = wspd(i,j)   * XICE(i,j) + (1.0-XICE(i,j)) * wspd_sea(i,j)

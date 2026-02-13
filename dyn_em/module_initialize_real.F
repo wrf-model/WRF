@@ -2332,7 +2332,8 @@ integer::oops1,oops2
             aer_init_opt = config_flags%aer_init_opt
 
             if_thompsonaero_3d: IF ((config_flags%mp_physics .EQ. THOMPSONAERO &
-				.OR. config_flags%mp_physics .EQ. RCON_MP_SCHEME) .AND. &
+                 .OR. (config_flags%mp_physics .EQ. TEMPO .AND. config_flags%tempo_aerosolaware .EQ. 1) &
+                 .OR. config_flags%mp_physics .EQ. RCON_MP_SCHEME) .AND. &
                 config_flags%wif_input_opt .GT. 0) THEN
 
             select_aer_init_opt_3d: select case (aer_init_opt)
@@ -2740,7 +2741,8 @@ integer::oops1,oops2
                end select select_aer_init_opt_3d
 
             ELSE IF ((config_flags%mp_physics .EQ. THOMPSONAERO &
-				.OR. config_flags%mp_physics .EQ. RCON_MP_SCHEME) .and. &
+                 .OR. (config_flags%mp_physics .EQ. TEMPO .AND. config_flags%tempo_aerosolaware .EQ. 1) &
+                 .OR. config_flags%mp_physics .EQ. RCON_MP_SCHEME) .and. &
                      config_flags%wif_input_opt .EQ. 0 ) THEN
                CALL wrf_error_fatal ('wif_input_opt=0 but mp_physics=28 or mp_physics=29' )
             END IF if_thompsonaero_3d
@@ -4510,7 +4512,8 @@ endif
 !+---+-----------------------------------------------------------------+
 
       if_thompsonaero_2d: IF ((config_flags%mp_physics .EQ. THOMPSONAERO &
-				.OR. config_flags%mp_physics .EQ. RCON_MP_SCHEME) .AND. &
+           .OR. (config_flags%mp_physics .EQ. TEMPO .AND. config_flags%tempo_aerosolaware .EQ. 1) &
+           .OR. config_flags%mp_physics .EQ. RCON_MP_SCHEME) .AND. &
                 config_flags%wif_input_opt .GT. 0) THEN
 
       select_aer_init_opt_2d: select case (aer_init_opt)
@@ -4533,7 +4536,11 @@ endif
                   do j = jts, min(jde-1,jte)
                   do i = its, min(ide-1,ite)
                      z1 = (grid%phb(i,2,j)-grid%phb(i,1,j))/g
-                     grid%qnwfa2d(i,j) = grid%w_wif_now(i,1,j) * 0.000196 * (50./z1)
+                     if (config_flags%mp_physics .EQ. TEMPO) then
+                        grid%qnwfa2d(i,j) = grid%w_wif_now(i,1,j) * 0.000196 * (5./z1)
+                     else
+                        grid%qnwfa2d(i,j) = grid%w_wif_now(i,1,j) * 0.000196 * (50./z1)
+                     endif
                   enddo
                   enddo
 

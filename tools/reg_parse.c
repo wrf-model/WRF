@@ -88,6 +88,8 @@
 static int ntracers = 0 ;
 static char tracers[1000][100] ;
 
+#define MAX_PATH 256
+
 int
 pre_parse( char * dir, FILE * infile, FILE * outfile )
 {
@@ -117,10 +119,12 @@ pre_parse( char * dir, FILE * infile, FILE * outfile )
     for ( p = inln ; ( *p == ' ' || *p == '	' ) && *p != '\0' ; p++ ) ;
     if ( !strncmp( p , "include", 7 ) &&  ! ( ifdef_stack_ptr >= 0 && ! ifdef_stack[ifdef_stack_ptr] ) ) {
       FILE *include_fp ;
-      char include_file_name_local_registry[128] ;
-      char include_file_name[128] ;
+      char include_file_name_local_registry[MAX_PATH] ;
+      char include_file_name[MAX_PATH] ;
       p += 7 ; for ( ; ( *p == ' ' || *p == '	' ) && *p != '\0' ; p++ ) ;
-      if ( strlen( p ) > 127 ) { fprintf(stderr,"Registry warning: invalid include file name: %s\n", p ) ; }
+
+      if ( strlen( p ) > MAX_PATH - 1 ) { fprintf(stderr,"Registry error: include file name too long: %s\n", p ) ; return 1; }
+      else if ( ( strlen( p ) + strlen( dir ) ) > MAX_PATH - 1 ) { fprintf(stderr,"Registry error: include file name too long when adding path: %s/%s\n", dir, p ) ; return 1; }
       else {
         
         sprintf( include_file_name_local_registry, "./Registry/%s", p ) ;
@@ -135,12 +139,14 @@ pre_parse( char * dir, FILE * infile, FILE * outfile )
         {
 
           fprintf(stderr,"including %s\n",include_file_name ) ;
-          pre_parse( dir , include_fp , outfile ) ;
+          int inc_retval = pre_parse( dir , include_fp , outfile ) ;
+          if ( inc_retval ) { return inc_retval; }
 
           fclose( include_fp ) ;
         } 
         else {
-          fprintf(stderr,"Registry warning: cannot open %s. Tried %s and %s Ignoring.\n", include_file_name, include_file_name, include_file_name_local_registry ) ;
+          fprintf(stderr,"Registry error: cannot open %s. Tried %s and %s.\n", include_file_name, include_file_name, include_file_name_local_registry ) ;
+          return 1;
         } 
       }
     }

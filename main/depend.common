@@ -738,9 +738,29 @@ module_bl_camuwpbl_driver.o: \
 	module_cam_esinti.o 
 
 
-module_sf_mynn.o: \
+module_sf_mynnsfc_common.o: \
 	../share/module_model_constants.o \
-	../frame/module_wrf_error.o 
+	../frame/module_state_description.o \
+	ccpp_kind_types.o
+
+
+module_sf_mynnsfc_land.o: \
+        module_sf_mynnsfc_common.o
+
+
+module_sf_mynnsfc_water.o: \
+        module_sf_mynnsfc_common.o
+
+
+module_sf_mynnsfc_ice.o: \
+        module_sf_mynnsfc_common.o
+
+
+module_sf_mynnsfc_driver.o: \
+	module_sf_mynnsfc_land.o \
+	module_sf_mynnsfc_water.o \
+	module_sf_mynnsfc_ice.o \
+	module_sf_mynnsfc_common.o
 
 
 module_sf_fogdes.o: \
@@ -986,6 +1006,28 @@ module_mp_nssl_2mom.o: \
 	../frame/module_wrf_error.o \
 	../share/module_model_constants.o 
 
+module_mp_tempo_ml.o: \
+	module_mp_tempo_params.o
+module_mp_tempo_utils.o: \
+	module_mp_tempo_params.o
+module_mp_tempo_aerosols.o: \
+	module_mp_tempo_params.o
+module_mp_tempo_diags.o: \
+	module_mp_tempo_params.o \
+	module_mp_tempo_utils.o
+module_mp_tempo_driver.o : \
+	module_mp_tempo_params.o \
+	module_mp_tempo_cfgs.o \
+	module_mp_tempo_utils.o	\
+	module_mp_tempo_main.o \
+	module_mp_tempo_ml.o
+module_mp_tempo_main.o : \
+	module_mp_tempo_params.o \
+	module_mp_tempo_cfgs.o \
+	module_mp_tempo_utils.o \
+	module_mp_tempo_diags.o \
+	module_mp_tempo_aerosols.o \
+	module_mp_tempo_ml.o
 
 module_mp_fast_sbm.o: \
 	../frame/module_domain.o \
@@ -1287,7 +1329,7 @@ module_physics_init.o: \
 	physics_mmm/sf_sfclayrev.o \
 	module_sf_slab.o \
 	module_sf_myjsfc.o \
-	module_sf_mynn.o \
+	module_sf_mynnsfc_driver.o \
 	module_sf_fogdes.o \
 	module_sf_urban.o \
 	module_sf_qnsesfc.o \
@@ -1346,6 +1388,8 @@ module_physics_init.o: \
 	module_fdda_spnudging.o \
 	module_fddaobs_rtfdda.o \
 	module_mp_thompson.o \
+	module_mp_tempo_cfgs.o \
+	module_mp_tempo_driver.o \
 	module_mp_rcon.o \
 	module_mp_gsfcgce.o \
 	module_mp_gsfcgce_4ice_nuwrf.o \
@@ -1393,6 +1437,8 @@ module_microphysics_driver.o: \
 	module_mp_wsm6r.o \
 	module_mp_fer_hires.o \
 	module_mp_thompson.o \
+	module_mp_tempo_cfgs.o \
+	module_mp_tempo_driver.o \
 	module_mp_rcon.o \
 	module_mp_gsfcgce.o \
 	module_mp_gsfcgce_4ice_nuwrf.o \
@@ -1562,7 +1608,7 @@ module_surface_driver.o: \
 	module_sf_noahmpdrv.o \
 	module_sf_ruclsm.o \
 	module_sf_pxlsm.o \
-	module_sf_mynn.o \
+	module_sf_mynnsfc_driver.o \
 	module_sf_fogdes.o \
 	module_sf_sfcdiags.o \
 	module_sf_sfcdiags_ruclsm.o \

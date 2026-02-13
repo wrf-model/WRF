@@ -158,6 +158,8 @@ CONTAINS
                          DRELR_URB2D,DRELB_URB2D,DRELG_URB2D,    & !Optional urban
                          FLXHUMR_URB2D,FLXHUMB_URB2D,            & !Optional urban
                          FLXHUMG_URB2D,                          & !Optional urban
+                         TVG_URB2D,XXXVG_URB2D,TVGL_URB3D,SMG_URB3D,TT_URB2D,CMCG_URB2D, &
+                         FLXHUMVG_URB2D,FLXHUMT_URB2D,            & !Optional urban
                          TRB_URB4D,TW1_URB4D,TW2_URB4D,          & !Optional multi-layer urban
                          TGB_URB4D,TLEV_URB3D,QLEV_URB3D,        & !Optional multi-layer urban
                          TW1LEV_URB3D,TW2LEV_URB3D,              & !Optional multi-layer urban
@@ -639,6 +641,13 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FLXHUMG_URB2D
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CMCR_URB2D
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TGR_URB2D
+   ! added by Chenghao Wang
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TVG_URB2D
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TT_URB2D
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: XXXVG_URB2D
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CMCG_URB2D
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FLXHUMVG_URB2D
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FLXHUMT_URB2D
 
 !   REAL, DIMENSION(ims:ime, 1:num_roof_layers, jms:jme), INTENT(INOUT) :: TRL_URB3D !urban
 !   REAL, DIMENSION(ims:ime, 1:num_wall_layers, jms:jme), INTENT(INOUT) :: TBL_URB3D !urban
@@ -648,6 +657,8 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION(ims:ime, 1:num_soil_layers, jms:jme), INTENT(INOUT) :: TGL_URB3D  !urban
    REAL, OPTIONAL, DIMENSION(ims:ime, 1:num_soil_layers, jms:jme), INTENT(INOUT) :: TGRL_URB3D  !urban
    REAL, OPTIONAL, DIMENSION(ims:ime, 1:num_soil_layers, jms:jme), INTENT(INOUT) :: SMR_URB3D  !urban
+   REAL, OPTIONAL, DIMENSION(ims:ime, 1:num_soil_layers, jms:jme), INTENT(INOUT) :: TVGL_URB3D  !urban
+   REAL, OPTIONAL, DIMENSION(ims:ime, 1:num_soil_layers, jms:jme), INTENT(INOUT) :: SMG_URB3D  !urban
 
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: SH_URB2D !urban
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LH_URB2D !urban
@@ -1004,6 +1015,7 @@ CHARACTER(LEN=8) :: name
          (config_flags%ra_sw_physics .eq. goddardswscheme ) ) .and. &
         (config_flags%mp_physics  .eq. THOMPSON .or.        &
          config_flags%mp_physics  .eq. THOMPSONAERO .or.    &
+         config_flags%mp_physics  .eq. TEMPO .or.           &
          config_flags%mp_physics  .eq. RCON_MP_SCHEME .or.  &
          (config_flags%mp_physics .eq. NSSL_2MOM .and. config_flags%nssl_2moment_on == 1) .or. &
          config_flags%mp_physics  .eq. WSM3SCHEME .or.      &
@@ -1040,6 +1052,7 @@ CHARACTER(LEN=8) :: name
       IF ((   config_flags%mp_physics == THOMPSON .OR.        &
 	      config_flags%mp_physics == RCON_MP_SCHEME .OR.  &
               config_flags%mp_physics == THOMPSONAERO .OR.    &
+              config_flags%mp_physics == TEMPO .OR.         &
               config_flags%mp_physics == WSM3SCHEME .OR.    &
               config_flags%mp_physics == WSM5SCHEME .OR.    &
               config_flags%mp_physics == WSM6SCHEME .OR.    &
@@ -1494,6 +1507,9 @@ CHARACTER(LEN=8) :: name
                 CMCR_URB2D,TGR_URB2D,TGRL_URB3D,SMR_URB3D,      & !Optional urban
                 DRELR_URB2D,DRELB_URB2D,DRELG_URB2D,            & !Optional urban
                 FLXHUMR_URB2D,FLXHUMB_URB2D,FLXHUMG_URB2D,      & !Optional urban
+                ! added by Chenghao Wang
+                TVG_URB2D,XXXVG_URB2D,TVGL_URB3D,SMG_URB3D,TT_URB2D,CMCG_URB2D, &
+                FLXHUMVG_URB2D,FLXHUMT_URB2D,                   & !Optional urban
                 num_urban_ndm,                                  & !Optional multi-layer urban
                 urban_map_zrd,                                  & !Optional multi-layer urban
                 urban_map_zwd,                                  & !Optional multi-layer urban
@@ -2527,6 +2543,8 @@ CHARACTER(LEN=8) :: name
                 CMCR_URB2D,TGR_URB2D,TGRL_URB3D,SMR_URB3D,      & !Optional urban
                 DRELR_URB2D,DRELB_URB2D,DRELG_URB2D,            & !Optional urban
                 FLXHUMR_URB2D,FLXHUMB_URB2D,FLXHUMG_URB2D,      & !Optional urban
+                TVG_URB2D,XXXVG_URB2D,TVGL_URB3D,SMG_URB3D,TT_URB2D,CMCG_URB2D, &
+                FLXHUMVG_URB2D,FLXHUMT_URB2D,                   & !Optional urban
                 num_urban_ndm,                                  & !Optional multi-layer urban
                 urban_map_zrd,                                  & !Optional multi-layer urban
                 urban_map_zwd,                                  & !Optional multi-layer urban
@@ -2669,7 +2687,7 @@ CHARACTER(LEN=8) :: name
    USE module_bl_surface_drag
 #endif
    USE module_sf_temfsfclay
-   USE module_sf_mynn
+   USE module_sf_mynnsfc_driver
 #endif
 
 #if (NMM_CORE == 1)
@@ -2875,6 +2893,13 @@ CHARACTER(LEN=8) :: name
     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FLXHUMG_URB2D !Optional urban
     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CMCR_URB2D    !Optional urban
     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TGR_URB2D     !Optional urban
+    ! added by Chenghao Wang
+    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TVG_URB2D     !Optional urban
+    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TT_URB2D      !Optional urban
+    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: XXXVG_URB2D   !Optional urban
+    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CMCG_URB2D    !Optional urban
+    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FLXHUMVG_URB2D !Optional urban
+    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FLXHUMT_URB2D !Optional urban
     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: SH_URB2D !Optional urban
     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LH_URB2D !Optional urban
     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: G_URB2D !Optional urban
@@ -2890,6 +2915,8 @@ CHARACTER(LEN=8) :: name
     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_soil_layers, jms:jme ), INTENT(INOUT) :: TGL_URB3D !Optional urban
     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_soil_layers, jms:jme ), INTENT(INOUT) :: TGRL_URB3D !Optional urban
     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_soil_layers, jms:jme ), INTENT(INOUT) :: SMR_URB3D !Optional urban
+    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_soil_layers, jms:jme ), INTENT(INOUT) :: TVGL_URB3D !Optional urban
+    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_soil_layers, jms:jme ), INTENT(INOUT) :: SMG_URB3D !Optional urban
 
     INTEGER , INTENT(IN)        ::     num_urban_ndm
     INTEGER , INTENT(IN)        ::     urban_map_zrd
@@ -3213,14 +3240,12 @@ CHARACTER(LEN=8) :: name
 #endif
 
 #if ( EM_CORE == 1 )
-!mynn 
-
         CASE (MYNNSFCSCHEME)
 
-           CALL mynn_sf_init_driver(allowed_to_read)
+           CALL mynnsfc_init(allowed_to_read,errmsg,errflg)
            isfc=5
-!          isfc=3
 
+           
       CASE (TEMFSFCSCHEME)
            CALL wrf_debug( 100, 'calling temfsfclayinit' )
            CALL temfsfclayinit( restart, allowed_to_read ,        &
@@ -3335,6 +3360,8 @@ CHARACTER(LEN=8) :: name
                               CMCR_URB2D,TGR_URB2D,TGRL_URB3D,SMR_URB3D,       & !urban
                               DRELR_URB2D,DRELB_URB2D,DRELG_URB2D,             & !urban
                               FLXHUMR_URB2D, FLXHUMB_URB2D, FLXHUMG_URB2D,     & !urban
+                              TVG_URB2D,XXXVG_URB2D,TVGL_URB3D,SMG_URB3D,TT_URB2D,CMCG_URB2D, & !urban
+                              FLXHUMVG_URB2D,FLXHUMT_URB2D,                    & !urban
                               A_U_BEP,A_V_BEP,A_T_BEP,A_Q_BEP,                 & !multi-layer urban
                               A_E_BEP,B_U_BEP,B_V_BEP,                         & !multi-layer urban
                               B_T_BEP,B_Q_BEP,B_E_BEP,DLG_BEP,                 & !multi-layer urban
@@ -3478,6 +3505,8 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                               CMCR_URB2D,TGR_URB2D,TGRL_URB3D,SMR_URB3D,       & !urban
                               DRELR_URB2D,DRELB_URB2D,DRELG_URB2D,             & !urban
                               FLXHUMR_URB2D, FLXHUMB_URB2D, FLXHUMG_URB2D,     & !urban
+                              TVG_URB2D,XXXVG_URB2D,TVGL_URB3D,SMG_URB3D,TT_URB2D,CMCG_URB2D, & !urban
+                              FLXHUMVG_URB2D,FLXHUMT_URB2D,                    & !urban
                               A_U_BEP,A_V_BEP,A_T_BEP,A_Q_BEP,                 & !multi-layer urban
                               A_E_BEP,B_U_BEP,B_V_BEP,                         & !multi-layer urban
                               B_T_BEP,B_Q_BEP,B_E_BEP,DLG_BEP,                 & !multi-layer urban
@@ -4407,6 +4436,8 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    USE module_mp_wdm6
    USE module_mp_wdm7
    USE module_mp_udm
+   USE module_mp_tempo_cfgs, only : ty_tempo_cfgs
+   USE module_mp_tempo_driver, only : tempo_init
 #if (WRFPLUS != 1) & !defined( VAR4D )
    USE module_mp_nssl_2mom, only: nssl_2mom_init
 #endif
@@ -4451,6 +4482,8 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    INTEGER, INTENT(IN) :: num_sc                                               !  G. Thompson
    REAL, DIMENSION(ims:ime,kms:kme,jms:jme, num_sc), INTENT(INOUT):: scalar    !  G. Thompson
 
+   type(ty_tempo_cfgs) :: tempo_cfgs ! for tempo
+   logical :: config_tempo_aerosolaware, config_tempo_hailaware
 ! Local
    INTEGER :: i, j, itf, jtf
    REAL, DIMENSION(20) :: nssl_params
@@ -4578,6 +4611,14 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                           IDS=ids, IDE=ide, JDS=jds, JDE=jde, KDS=kds, KDE=kde,   &
                           IMS=ims, IME=ime, JMS=jms, JME=jme, KMS=kms, KME=kme,   &
                           ITS=its, ITE=ite, JTS=jts, JTE=jte, KTS=kts, KTE=kte)
+
+      CASE (TEMPO)
+         config_tempo_aerosolaware = .false.
+         config_tempo_hailaware = .false.
+         if (config_flags%tempo_aerosolaware == 1) config_tempo_aerosolaware = .true.
+         if (config_flags%tempo_hailaware == 1) config_tempo_hailaware = .true.
+         CALL tempo_init(aerosolaware_flag=config_tempo_aerosolaware, &
+             hailaware_flag=config_tempo_hailaware, tempo_cfgs=tempo_cfgs)
 
      CASE (MORR_TWO_MOMENT)
          CALL morr_two_moment_init( config_flags%morr_rimed_ice )

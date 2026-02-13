@@ -791,6 +791,15 @@ BENCH_START(surf_driver_tim)
      &        ,FLXHUMR_URB2D=grid%flxhumr_urb2d                           & !H urban
      &        ,FLXHUMB_URB2D=grid%flxhumb_urb2d                           & !H urban
      &        ,FLXHUMG_URB2D=grid%flxhumg_urb2d                           & !H urban
+     &        ! added by Chenghao Wang
+     &        ,TVG_URB2D=grid%tvg_urb2d                                   & !H urban
+     &        ,XXXVG_URB2D=grid%xxxvg_urb2d                               & !H urban
+     &        ,TVGL_URB3D=grid%tvgl_urb3d                                 & !H urban
+     &        ,SMG_URB3D=grid%smg_urb3d                                   & !H urban
+     &        ,TT_URB2D=grid%tt_urb2d                                     & !H urban
+     &        ,CMCG_URB2D=grid%cmcg_urb2d                                 & !H urban
+     &        ,FLXHUMVG_URB2D=grid%flxhumvg_urb2d                         & !H urban
+     &        ,FLXHUMT_URB2D=grid%flxhumt_urb2d                           & !H urban
      &        ,TRL_URB3D=grid%trl_urb3d   ,TBL_URB3D=grid%tbl_urb3d       & !H urban
      &        ,TGL_URB3D=grid%tgl_urb3d                                   & !H urban
      &        ,SH_URB2D=grid%sh_urb2d     ,LH_URB2D=grid%lh_urb2d         &

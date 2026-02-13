@@ -178,7 +178,7 @@ CONTAINS
      &           ,dwt_livecrootn_to_cwdn,dwt_deadcrootn_to_cwdn,retransn &
 #endif
 !sw++
-                 ,pct_pft_input,num_pft_input,input_pft_flag  &
+     &           ,pct_pft_input,num_pft_input,input_pft_flag  &
 !sw--
             !  Optional urban
      &          ,slope_rad,topo_shading,shadowmask                    & !I solar
@@ -191,7 +191,9 @@ CONTAINS
      &          ,xxxr_urb2d,xxxb_urb2d,xxxg_urb2d,xxxc_urb2d          & !H urban
      &          ,cmcr_urb2d,tgr_urb2d,tgrl_urb3d,smr_urb3d            & !H urban
      &          ,julian,julyr,drelr_urb2d,drelb_urb2d,drelg_urb2d     & !H urban
-     &          ,flxhumr_urb2d,flxhumb_urb2d,flxhumg_urb2d            & !H urban
+     &          ,flxhumr_urb2d,flxhumb_urb2d,flxhumg_urb2d            & !H urban, added by Chenghao Wang
+     &          ,tvg_urb2d,xxxvg_urb2d,tvgl_urb3d,smg_urb3d,tt_urb2d  & !H urban
+     &          ,cmcg_urb2d,flxhumvg_urb2d,flxhumt_urb2d             & !H urban
      &          ,trl_urb3d,tbl_urb3d,tgl_urb3d                        & !H urban
      &          ,sh_urb2d,lh_urb2d,g_urb2d,rn_urb2d,ts_urb2d          & !H urban
      &          ,frc_urb2d, utype_urb2d                               & !H urban
@@ -1301,11 +1303,22 @@ CONTAINS
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FLXHUMG_URB2D
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CMCR_URB2D
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TGR_URB2D
+     ! added by Chenghao Wang
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TVG_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TT_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: XXXVG_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CMCG_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FLXHUMVG_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FLXHUMT_URB2D
 
      REAL, OPTIONAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), &       !urban
            INTENT(INOUT)  :: TGRL_URB3D                                 !urban
      REAL, OPTIONAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), &       !urban
            INTENT(INOUT)  :: SMR_URB3D                                 !urban
+     REAL, OPTIONAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), &       !urban
+           INTENT(INOUT)  :: TVGL_URB3D                                 !urban
+     REAL, OPTIONAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), &       !urban
+           INTENT(INOUT)  :: SMG_URB3D                                 !urban
      REAL, OPTIONAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), &       !urban
            INTENT(INOUT)  :: TRL_URB3D                                 !urban
      REAL, OPTIONAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), &       !urban
@@ -2752,6 +2765,9 @@ CONTAINS
                 julian,julyr,                                   & !H urban
                 DRELR_URB2D,DRELB_URB2D,DRELG_URB2D,            & !H urban
                 FLXHUMR_URB2D,FLXHUMB_URB2D,FLXHUMG_URB2D,      & !H urban
+                ! added by Chenghao Wang
+                TVG_URB2D,XXXVG_URB2D,TVGL_URB3D,SMG_URB3D,TT_URB2D,CMCG_URB2D, & !H urban
+                FLXHUMVG_URB2D,FLXHUMT_URB2D,                   & !H urban
                 FRC_URB2D, UTYPE_URB2D,                         & !I urban
                 num_urban_ndm,                                  & !I multi-layer urban
                 urban_map_zrd,                                  & !I multi-layer urban
@@ -2886,6 +2902,8 @@ CONTAINS
                 CMCR_URB2D,TGR_URB2D,TGRL_URB3D,SMR_URB3D,      & !H urban
                 DRELR_URB2D,DRELB_URB2D,DRELG_URB2D,            & !H urban
                 FLXHUMR_URB2D,FLXHUMB_URB2D,FLXHUMG_URB2D,      & !H urban
+                TVG_URB2D,XXXVG_URB2D,TVGL_URB3D,SMG_URB3D,TT_URB2D,CMCG_URB2D, & !H urban
+                FLXHUMVG_URB2D,FLXHUMT_URB2D,                   & !H urban
                 julian, julyr,                                  & !H urban
                 FRC_URB2D, UTYPE_URB2D,                         & !I urban
                 num_urban_ndm,                                  & !I multi-layer urban
@@ -3232,6 +3250,8 @@ CONTAINS
                          cmcr_urb2d,      tgr_urb2d,     tgrl_urb3d,  smr_urb3d,            & !H urban
                         drelr_urb2d,    drelb_urb2d,    drelg_urb2d,                        & !H urban
                       flxhumr_urb2d,  flxhumb_urb2d,  flxhumg_urb2d,                        & !H urban
+                       tvg_urb2d,      xxxvg_urb2d,    tvgl_urb3d,     smg_urb3d, tt_urb2d, & !H urban
+                      cmcg_urb2d, flxhumvg_urb2d, flxhumt_urb2d,                            & !H urban
                              julian,          julyr,                                        & !H urban
                           frc_urb2d,    utype_urb2d,                                        & !I urban
                                 chs,           chs2,           cqs2,                        & !H
@@ -3828,6 +3848,8 @@ CONTAINS
                 cmcr_urb2d,tgr_urb2d,tgrl_urb3d,smr_urb3d,      & ! urban
                 drelr_urb2d,drelb_urb2d,drelg_urb2d,            & ! urban
                 flxhumr_urb2d,flxhumb_urb2d,flxhumg_urb2d,      &
+                tvg_urb2d,xxxvg_urb2d,tvgl_urb3d,smg_urb3d,tt_urb2d,  &
+                cmcg_urb2d,flxhumvg_urb2d,flxhumt_urb2d,              &
 ! CLM subgrids
                 numc,nump,sabv,sabg,lwup,snl, &
                 snowdp,wtc,wtp,h2osno,t_grnd,t_veg,         &

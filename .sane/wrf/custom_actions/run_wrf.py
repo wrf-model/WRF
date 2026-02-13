@@ -105,6 +105,10 @@ class WRFBase( sane.Action ):
     # execs exist
     self.file_exists_in_path( self.wrf_dir, self.wrf_exec )
 
+    # Run location is resolved (we may need to create it)
+    self.wrf_run_dir = self.dereference( self.wrf_run_dir )
+    self.wrf_run_dir = self.resolve_path( self.working_directory, self.wrf_run_dir )
+
     if self.modify_environ:
       self.log( "Adding to LD_LIBRARY_PATH..." )
       ld_lib  = os.environ.get( "LD_LIBRARY_PATH", "" )
@@ -115,8 +119,7 @@ class WRFBase( sane.Action ):
 
   def setup_dir( self ):
     # OK! Create run dir
-    self.wrf_run_dir = self.dereference( self.wrf_run_dir )
-    self.wrf_run_dir = self.resolve_path( self.working_directory, self.wrf_run_dir )
+    self.log( "Setting up run directory..." )
     if os.path.isdir( self.wrf_run_dir ):
       self.log( f"Cleaning '{self.wrf_run_dir}'" )
       shutil.rmtree( self.wrf_run_dir )

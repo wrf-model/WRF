@@ -37,7 +37,7 @@
   use wrf_data_pnc
   use ext_pnc_support_routines
   implicit none
-  include 'pnetcdf.inc'
+  include "pnetcdf.inc"
   include 'wrf_status_codes.h'
   integer               ,intent(in)     :: DataHandle
   character*(*)         ,intent(in)     :: Element

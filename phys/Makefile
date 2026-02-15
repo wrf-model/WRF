@@ -250,8 +250,9 @@ PHYSMMM_MODULES = \
 	physics_mmm/mp_wsm6.o \
 	physics_mmm/mp_wsm6_effectRad.o \
 	physics_mmm/mp_radar.o \
-        physics_mmm/bl_gwdo.o \
-        physics_mmm/bl_ysu.o
+	physics_mmm/bl_gwdo.o \
+	physics_mmm/bl_shinhong.o \
+	physics_mmm/bl_ysu.o
 
 NOAHMP_MODULES = \
 	noahmp/drivers/wrf/NoahmpWRFinitMod.o \
@@ -421,7 +422,7 @@ LIBTARGET    =  physics
 TARGETDIR    =  ./
 
 $(LIBTARGET) :
-	(cd .. && ./tools/manage_externals/checkout_externals --externals ./arch/Externals.cfg)
+	(./../tools/manage_externals/checkout_externals --externals ./../arch/Externals.cfg)
 	$(MAKE) $(J) non_nmm ; \
 	$(AR) $(ARFLAGS) ../main/$(LIBWRFLIB) $(MODULES) $(OBJS)  \
 		$(FIRE_MODULES) $(DIAGNOSTIC_MODULES_EM) $(PHYSMMM_MODULES) $(NOAHMP_MODULES)

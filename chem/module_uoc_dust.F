@@ -16,7 +16,6 @@ MODULE uoc_dust
   USE qf03
   USE module_soilpsd
   USE module_sf_noahlsm, ONLY:DRYSMC
-  USE NOAHMP_TABLES, ONLY: DRYSMC_nmp => SMCDRY_TABLE
   USE module_sf_ruclsm,  ONLY:DRYSMC_ruc => DRYSMC
   
   CONTAINS
@@ -216,7 +215,7 @@ MODULE uoc_dust
          if (  config_flags%sf_surface_physics .eq. 3   ) then
              DRYSMC = DRYSMC_ruc
          elseif (  config_flags%sf_surface_physics .eq. 4   ) then
-             DRYSMC = DRYSMC_nmp                       
+             DRYSMC = DRYSMC
          elseif ( config_flags%sf_surface_physics .eq. 1 .or. & 
          &        config_flags%sf_surface_physics .eq. 5 .or. & 
          &        config_flags%sf_surface_physics .eq. 7 .or. & 

@@ -323,7 +323,7 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
  $sw_rwordsize = "8" if ( $sw_wrfplus_core eq "-DWRFPLUS=1" );
  if ( $sw_rwordsize eq "8" )
  {
-   $sw_promotion = "-DDOUBLE_PRECISION" ;
+   $sw_promotion = "-DDOUBLE_PRECISION -DDOUBLE_PREC" ;
  }
 
 # A separately-installed ESMF library is required to build the ESMF 

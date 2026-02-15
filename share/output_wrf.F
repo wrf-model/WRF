@@ -797,7 +797,8 @@ endif
         CALL wrf_put_dom_ti_integer   ( fid, 'DVEG',        config_flags%dveg        , 1 , ierr )
         CALL wrf_put_dom_ti_integer   ( fid, 'OPT_CRS',     config_flags%opt_crs     , 1 , ierr )
         CALL wrf_put_dom_ti_integer   ( fid, 'OPT_BTR',     config_flags%opt_btr     , 1 , ierr )
-        CALL wrf_put_dom_ti_integer   ( fid, 'OPT_RUN',     config_flags%opt_run     , 1 , ierr )
+        CALL wrf_put_dom_ti_integer   ( fid, 'OPT_RUNSUB',  config_flags%opt_runsub  , 1 , ierr )
+        CALL wrf_put_dom_ti_integer   ( fid, 'OPT_RUNSRF',  config_flags%opt_runsrf  , 1 , ierr )
         CALL wrf_put_dom_ti_integer   ( fid, 'OPT_FRZ',     config_flags%opt_frz     , 1 , ierr )
         CALL wrf_put_dom_ti_integer   ( fid, 'OPT_INF',     config_flags%opt_inf     , 1 , ierr )
         CALL wrf_put_dom_ti_integer   ( fid, 'OPT_RAD',     config_flags%opt_rad     , 1 , ierr )
@@ -812,6 +813,12 @@ endif
         CALL wrf_put_dom_ti_integer   ( fid, 'OPT_CROP',    config_flags%opt_crop    , 1 , ierr )
         CALL wrf_put_dom_ti_integer   ( fid, 'OPT_IRR',     config_flags%opt_irr     , 1 , ierr )
         CALL wrf_put_dom_ti_integer   ( fid, 'OPT_IRRM',    config_flags%opt_irrm    , 1 , ierr )
+        CALL wrf_put_dom_ti_integer   ( fid, 'OPT_COMPACT', config_flags%opt_compact , 1 , ierr )
+        CALL wrf_put_dom_ti_integer   ( fid, 'OPT_TKSNO',   config_flags%opt_tksno   , 1 , ierr )
+        CALL wrf_put_dom_ti_integer   ( fid, 'OPT_SCF',     config_flags%opt_scf     , 1 , ierr )
+        CALL wrf_put_dom_ti_integer   ( fid, 'OPT_WETLAND', config_flags%opt_wetland , 1 , ierr )
+        CALL wrf_put_dom_ti_integer   ( fid, 'OPT_TDRN',    config_flags%opt_tdrn    , 1 , ierr )
+        CALL wrf_put_dom_ti_integer   ( fid, 'OPT_INFDV',   config_flags%opt_infdv   , 1 , ierr )
       ENDIF
 
       CALL wrf_put_dom_ti_integer   ( fid, 'DFI_OPT',          config_flags%dfi_opt      , 1 , ierr )

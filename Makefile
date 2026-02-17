@@ -108,11 +108,13 @@ framework_only : configcheck
 
 wrf : framework_only
 	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" physics
-	@if [ \( ! -f run/MPTABLE.TBL \) -o \
-	     \( ! -f phys/module_sf_noahmpdrv.F \) -o \
-	     \( ! -f phys/module_sf_noahmp_glacier.F \) -o \
-	     \( ! -f phys/module_sf_noahmp_groundwater.F \) -o \
-	     \( ! -f phys/module_sf_noahmplsm.F \) ] ; then \
+	@if [ \( ! -f run/NoahmpTable.TBL \) -o \
+	     \( ! -f phys/noahmp/drivers/wrf/NoahmpWRFmainMod.F90 \) -o \
+	     \( ! -f phys/noahmp/drivers/wrf/NoahmpIOVarType.F90 \) -o \
+	     \( ! -f phys/noahmp/drivers/wrf/GroundWaterMmfMod.F90 \) -o \
+	     \( ! -f phys/noahmp/src/NoahmpMainMod.F90 \) -o \
+	     \( ! -f phys/noahmp/src/NoahmpVarType.F90 \) -o \
+	     \( ! -f phys/noahmp/drivers/wrf/NoahmpUrbanDriverMainMod.F90 \) ] ; then \
 	   echo " " ; \
 	   echo "------------------------------------------------------------------------------" ; \
 	   echo "Error Error Error NoahMP submodule files not populating WRF directories" ; \
@@ -145,6 +147,7 @@ wrf : framework_only
 	  echo " " ; \
 	  echo "------------------------------------------------------------------------------" ; \
 	  echo "Error Error Error TEMPO submodule files not populating WRF directories" ; \
+	fi
 	@if [ \( ! -f phys/module_sf_mynnsfc_driver.F \) -o \
 	    \( ! -f phys/module_sf_mynnsfc_land.F \) -o \
 	    \( ! -f phys/module_sf_mynnsfc_water.F \) -o \
@@ -646,7 +649,10 @@ em_real : wrf
 	  ( cd test/em_esmf_exp ; /bin/rm -f URBPARM.TBL ; ln -s ../../run/URBPARM.TBL . ) ; \
 	  ( cd test/em_esmf_exp ; /bin/rm -f URBPARM_LCZ.TBL ; ln -s ../../run/URBPARM_LCZ.TBL . ) ; \
 	  ( cd test/em_esmf_exp ; /bin/rm -f VEGPARM.TBL ; ln -s ../../run/VEGPARM.TBL . ) ; \
-	  ( cd test/em_esmf_exp ; /bin/rm -f MPTABLE.TBL ; ln -s ../../run/MPTABLE.TBL . ) ; \
+	  ( cd test/em_esmf_exp ; /bin/rm -f NoahmpTable.TBL ; ln -s ../../run/NoahmpTable.TBL . ) ; \
+          ( cd test/em_esmf_exp ; /bin/rm -f snicar_drdt_bst_fit_60_c070416.nc ; ln -s ../../run/snicar_drdt_bst_fit_60_c070416.nc . ) ; \
+          ( cd test/em_esmf_exp ; /bin/rm -f snicar_optics_480bnd_c012422.nc ; ln -s ../../run/snicar_optics_480bnd_c012422.nc . ) ; \
+          ( cd test/em_esmf_exp ; /bin/rm -f snicar_optics_5bnd_c013122.nc ; ln -s ../../run/snicar_optics_5bnd_c013122.nc . ) ; \
 	  ( cd test/em_esmf_exp ; /bin/rm -f tr49t67 ; ln -s ../../run/tr49t67 . ) ; \
 	  ( cd test/em_esmf_exp ; /bin/rm -f tr49t85 ; ln -s ../../run/tr49t85 . ) ; \
 	  ( cd test/em_esmf_exp ; /bin/rm -f tr67t85 ; ln -s ../../run/tr67t85 . ) ; \
@@ -732,7 +738,10 @@ em_real : wrf
 	( cd test/em_real ; /bin/rm -f URBPARM.TBL ; ln -s ../../run/URBPARM.TBL . )
 	( cd test/em_real ; /bin/rm -f URBPARM_LCZ.TBL ; ln -s ../../run/URBPARM_LCZ.TBL . )
 	( cd test/em_real ; /bin/rm -f VEGPARM.TBL ; ln -s ../../run/VEGPARM.TBL . )
-	( cd test/em_real ; /bin/rm -f MPTABLE.TBL ; ln -s ../../run/MPTABLE.TBL . )
+	( cd test/em_real ; /bin/rm -f NoahmpTable.TBL ; ln -s ../../run/NoahmpTable.TBL . )
+	( cd test/em_real ; /bin/rm -f snicar_drdt_bst_fit_60_c070416.nc ; ln -s ../../run/snicar_drdt_bst_fit_60_c070416.nc . )
+	( cd test/em_real ; /bin/rm -f snicar_optics_480bnd_c012422.nc ; ln -s ../../run/snicar_optics_480bnd_c012422.nc . )
+	( cd test/em_real ; /bin/rm -f snicar_optics_5bnd_c013122.nc ; ln -s ../../run/snicar_optics_5bnd_c013122.nc . )
 	( cd test/em_real ; /bin/rm -f tr49t67 ; ln -s ../../run/tr49t67 . )
 	( cd test/em_real ; /bin/rm -f tr49t85 ; ln -s ../../run/tr49t85 . )
 	( cd test/em_real ; /bin/rm -f tr67t85 ; ln -s ../../run/tr67t85 . )

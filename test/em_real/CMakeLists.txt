@@ -84,7 +84,10 @@ wrf_setup_files(
                   ${PROJECT_SOURCE_DIR}/run/URBPARM.TBL
                   ${PROJECT_SOURCE_DIR}/run/URBPARM_LCZ.TBL
                   ${PROJECT_SOURCE_DIR}/run/VEGPARM.TBL
-                  ${PROJECT_SOURCE_DIR}/phys/noahmp/parameters/MPTABLE.TBL
+		  ${PROJECT_SOURCE_DIR}/phys/noahmp/parameters/NoahmpTable.TBL
+		  ${PROJECT_SOURCE_DIR}/phys/noahmp/parameters/snicar_drdt_bst_fit_60_c070416.nc
+		  ${PROJECT_SOURCE_DIR}/phys/noahmp/parameters/snicar_optics_480bnd_c012422.nc
+		  ${PROJECT_SOURCE_DIR}/phys/noahmp/parameters/snicar_optics_5bnd_c013122.nc
                   ${PROJECT_SOURCE_DIR}/run/tr49t67
                   ${PROJECT_SOURCE_DIR}/run/tr49t85
                   ${PROJECT_SOURCE_DIR}/run/tr67t85

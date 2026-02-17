@@ -26,7 +26,7 @@
    USE module_comm_dm
    USE module_llxy, ONLY : proj_cassini
    USE module_physics_init
-   USE module_sf_noahmpdrv, ONLY : groundwater_init
+   USE NoahmpGroundwaterInitMod, ONLY: NoahmpGroundwaterInitMain
    USE module_lightning_driver, ONLY : lightning_init
    USE module_fr_fire_driver_wrf, ONLY : fire_driver_em_init
    USE module_firebrand_spotting, ONLY : firebrand_spotting_em_init
@@ -46,6 +46,7 @@
    USE module_diag_zld, ONLY : zld
    USE module_trad_fields, ONLY : trad_fields
 
+   USE NoahmpIOVarType, only : NoahmpIOdom
 !!debug
 !USE module_compute_geop
 
@@ -1004,7 +1005,7 @@
 !
 
 #ifdef DM_PARALLEL
-if(config_flags%sf_surface_physics.eq.NOAHMPSCHEME.and.config_flags%opt_run.eq.5)then
+if(config_flags%sf_surface_physics.eq.NOAHMPSCHEME.and.config_flags%opt_runsub.eq.5)then
 # include "HALO_EM_HYDRO_NOAHMP_INIT.inc"
 endif
 #endif
@@ -1132,7 +1133,14 @@ endif
                       grid%IRRSPLH, grid%qtdrain,                                               &   ! Optional Noah-MP
                       grid%gecros_state,                                                        &   ! Optional gecros crop
                       grid%XSAIXY,grid%LAI,                                                     &   ! Optional Noah-MP
-                      grid%T2MVXY, grid%T2MBXY, grid%CHSTARXY,                                  &   ! Optional Noah-MP
+                      grid%T2MVXY, grid%T2MBXY, grid%CHSTARXY, grid%FSATXY, grid%WSURFXY,       &   ! Optional Noah-MP
+                      grid%snrdsxy, grid%snfrxy, grid%bcphixy, grid%bcphoxy, grid%ocphixy,      &   ! Optional Noah-MP
+                      grid%ocphoxy, grid%dust1xy, grid%dust2xy, grid%dust3xy, grid%dust4xy,     &   ! Optional Noah-MP
+                      grid%dust5xy, grid%massconcbcphixy, grid%massconcbcphoxy,                 &   ! Optional Noah-MP
+                      grid%massconcocphixy, grid%massconcocphoxy, grid%massconcdust1xy,         &   ! Optional Noah-MP
+                      grid%massconcdust2xy, grid%massconcdust3xy, grid%massconcdust4xy,         &   ! Optional Noah-MP
+                      grid%massconcdust5xy,                                                     &   ! Optional Noah-MP
+                      grid%ALBSOILDIRXY, grid%ALBSOILDIFXY,                                     &   ! Optional Noah-MP
                       grid%SMOISEQ  ,grid%SMCWTDXY ,grid%RECHXY, grid%DEEPRECHXY, grid%AREAXY,  & ! Optional Noah-MP
                       config_flags%wtddt ,grid%stepwtd ,grid%QRFSXY ,grid%QSPRINGSXY ,grid%QSLATXY, & ! Optional Noah-MP
                       grid%FDEPTHXY, grid%RIVERBEDXY, grid%EQZWT, grid%RIVERCONDXY, grid%PEXPXY, & ! Optional Noah-MP
@@ -1274,13 +1282,13 @@ endif
                       ,grid%NC_CU, grid%NI_CU, grid%NR_CU, grid%NS_CU,grid%CCN_CU                    &
                       ,grid%alevsiz_cu,grid%num_months,grid%no_src_types_cu,grid%aeromcu             &
                       ,grid%aeropcu,grid%EFCG,grid%EFCS,grid%EFIG,grid%EFIS,grid%EFSG,grid%EFSS      &
-                      )
+                      ,NoahmpIOdom(grid%id))
        ENDDO ! loop of tiles for phy_init
 
        if(.not.grid%restart) then
 
-         if(config_flags%sf_surface_physics .eq. NOAHMPSCHEME .and. config_flags%opt_run .eq. 5) then
-              call groundwater_init ( grid ,                                                            &
+         if(config_flags%sf_surface_physics .eq. NOAHMPSCHEME .and. config_flags%opt_runsub .eq. 5) then
+              call NoahmpGroundwaterInitMain (NoahmpIOdom(grid%id), grid ,                              &
                  config_flags%num_soil_layers, grid%dzs, grid%isltyp, grid%ivgtyp, config_flags%wtddt , &
                  grid%fdepthxy   , grid%ht     , grid%riverbedxy, grid%eqzwt     ,                      &
                  grid%rivercondxy, grid%pexpxy , grid%areaxy    , grid%zwtxy     ,                      &
@@ -1434,7 +1442,7 @@ endif
 # include "PERIOD_BDY_EM_TKE.inc"
 # include "PERIOD_BDY_EM_SCALAR.inc"
 # include "PERIOD_BDY_EM_CHEM.inc"
-if(config_flags%sf_surface_physics.eq.NOAHMPSCHEME.and.config_flags%opt_run.eq.5)then
+if(config_flags%sf_surface_physics.eq.NOAHMPSCHEME.and.config_flags%opt_runsub.eq.5)then
 # include "HALO_EM_HYDRO_NOAHMP_INIT.inc"
 endif
 #endif

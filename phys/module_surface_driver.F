@@ -44,10 +44,11 @@ CONTAINS
      &          ,pxlsm_smois_init, pxlsm_soil_nudge                   & ! PX-LSM
      &          ,pxlsm_modis_veg, lai_px, wwlt_px, wfc_px                           & ! PX-LSM
      &          ,wsat_px, clay_px, csand_px, fmsand_px                              & ! PX-LSM
-     &          ,idveg    ,iopt_crs  ,iopt_btr  ,iopt_run  ,iopt_sfc  ,iopt_frz     &
+     &          ,idveg    ,iopt_crs  ,iopt_btr  ,iopt_runsub,iopt_sfc ,iopt_frz     &
      &          ,iopt_inf ,iopt_rad  ,iopt_alb  ,iopt_snf  ,iopt_tbot ,iopt_stc     &
      &          ,iopt_gla ,iopt_rsf  ,iopt_soil ,iopt_pedo ,iopt_crop ,iopt_irr     &
      &          ,iopt_irrm,iopt_infdv,iopt_tdrn ,soiltstep                          &
+     &          ,iopt_runsrf, iopt_tksno, iopt_compact, iopt_scf, iopt_wetland      &
      &          ,soilcomp  , soilcl1, soilcl2, soilcl3, soilcl4                     &
      &          ,isnowxy  ,tvxy      ,tgxy      ,canicexy  ,canliqxy  ,eahxy        &
      &          ,tahxy    ,cmxy      ,chxy      ,fwetxy    ,sneqvoxy  ,alboldxy     &
@@ -73,12 +74,25 @@ CONTAINS
      &          ,forczlsm  ,forcwlsm  ,acc_ssoil,acc_qinsur,acc_qseva ,acc_etrani   &
      &          ,eflxbxy   ,soilenergy,snowenergy, canhsxy                          &
      &          ,ACC_DWATERXY, ACC_PRCPXY, ACC_ECANXY, ACC_ETRANXY, ACC_EDIRXY      &
+     &          ,FSATXY, WSURFXY                                                    &
+           ! Noah-MP SNICAR snow albedo
+     &          ,SNICAR_BANDNUMBER_OPT, SNICAR_SOLARSPEC_OPT                        &
+     &          ,SNICAR_SNOWOPTICS_OPT, SNICAR_DUSTOPTICS_OPT                       &
+     &          ,SNICAR_RTSOLVER_OPT, SNICAR_SNOWSHAPE_OPT                          &
+     &          ,SNICAR_USE_AEROSOL, SNICAR_SNOWBC_INTMIX                           &
+     &          ,SNICAR_SNOWDUST_INTMIX, SNICAR_USE_OC                              &
+     &          ,SNICAR_AEROSOL_READTABLE, SNRDSXY, SNFRXY, BCPHIXY, BCPHOXY        &
+     &          ,OCPHIXY, OCPHOXY, DUST1XY, DUST2XY, DUST3XY, DUST4XY, DUST5XY      &
+     &          ,MassConcBCPHIXY, MassConcBCPHOXY, MassConcOCPHIXY                  &
+     &          ,MassConcOCPHOXY, MassConcDUST1XY, MassConcDUST2XY                  &
+     &          ,MassConcDUST3XY, MassConcDUST4XY, MassConcDUST5XY                  &
+     &          ,ALBSOILDIRXY, ALBSOILDIFXY                                         &
            ! Noah-MP irrigation
      &          ,IRFRACT  ,SIFRACT   ,MIFRACT   ,FIFRACT   ,IRNUMSI   ,IRNUMMI      &
      &          ,IRNUMFI  ,IRWATSI   ,IRWATMI   ,IRWATFI   ,IRELOSS   ,IRSIVOL      &
      &          ,IRMIVOL  ,IRFIVOL   ,IRRSPLH                                       &
            ! Noah-MP tile drainage
-     &          ,QTDRAIN  ,TD_FRACTION                                              &
+     &          ,QTDRAIN  ,TD_FRACTION                                   &
            ! Noah-MP ground water
      &          ,smcwtdxy ,rechxy   ,deeprechxy,fdepthxy,areaxy   ,rivercondxy, riverbedxy &
      &          ,eqzwt    ,pexpxy   ,qrfxy    ,qspringxy,qslatxy  ,qrfsxy, qlatxy, qspringsxy &
@@ -333,7 +347,7 @@ CONTAINS
      &          ,irrigation,sf_surf_irr_scheme, irr_daily_amount      & !IRRIG
      &          ,irr_start_hour,irr_num_hours,irr_start_julianday     &
      &          ,irr_end_julianday,irr_freq,irr_ph,irr_rand_field     &
-     &                                                             )
+     &                                                                )
 
    USE module_state_description, ONLY : SFCLAYSCHEME              &
                                        ,SFCLAYREVSCHEME           &
@@ -370,9 +384,10 @@ CONTAINS
    USE module_sf_gfs
    USE module_sf_noahdrv                           ! danli mosaic, the " ,only : lsm " needs to be deleted 
    USE module_sf_noahlsm,   only : LCZ_1,LCZ_2,LCZ_3,LCZ_4,LCZ_5,LCZ_6,LCZ_7,LCZ_8,LCZ_9,LCZ_10,LCZ_11
-   USE noahmp_tables, only : LCZ_1_TABLE,LCZ_2_TABLE,LCZ_3_TABLE,LCZ_4_TABLE,LCZ_5_TABLE,LCZ_6_TABLE,LCZ_7_TABLE,LCZ_8_TABLE,LCZ_9_TABLE,LCZ_10_TABLE,LCZ_11_TABLE
-   USE module_sf_noahmpdrv, only : noahmplsm, noahmp_urban
-   USE module_sf_noahmp_groundwater
+   USE NoahmpIOVarType, only : NoahmpIOdom
+   USE NoahmpWRFmainMod
+   USE NoahmpUrbanDriverMainMod, only : noahmp_urban
+   USE GroundWaterMmfMod
    USE module_sf_noah_seaice_drv
 #ifdef WRF_USE_CLM
    USE module_sf_clm
@@ -896,10 +911,17 @@ CONTAINS
 
 !  NoahMP specific fields
 
-   INTEGER, OPTIONAL, INTENT(IN) ::    idveg, iopt_crs, iopt_btr, iopt_run, iopt_sfc , iopt_frz, &
-                                    iopt_inf, iopt_rad, iopt_alb, iopt_snf, iopt_tbot, iopt_stc, &
-				    iopt_gla, iopt_rsf, iopt_soil,iopt_pedo,iopt_crop, iopt_irr, &
-                                    iopt_irrm,iopt_infdv,iopt_tdrn
+   INTEGER, OPTIONAL, INTENT(IN) ::    idveg, iopt_crs, iopt_btr,iopt_runsub, iopt_sfc, iopt_frz, &
+                                    iopt_inf, iopt_rad, iopt_alb, iopt_snf, iopt_tbot, iopt_stc,  &
+				    iopt_gla, iopt_rsf, iopt_soil,iopt_pedo,iopt_crop, iopt_irr,  &
+                                    iopt_irrm,iopt_infdv,iopt_tdrn,                               &
+                                    iopt_runsrf, iopt_tksno, iopt_compact, iopt_scf, iopt_wetland
+   ! SNICAR options
+   INTEGER, OPTIONAL, INTENT(IN) :: SNICAR_BANDNUMBER_OPT, SNICAR_SOLARSPEC_OPT, SNICAR_SNOWOPTICS_OPT, &
+                                    SNICAR_DUSTOPTICS_OPT, SNICAR_RTSOLVER_OPT, SNICAR_SNOWSHAPE_OPT
+   LOGICAL, OPTIONAL, INTENT(IN) :: SNICAR_USE_AEROSOL, SNICAR_SNOWBC_INTMIX, SNICAR_SNOWDUST_INTMIX, &
+                                    SNICAR_USE_OC, SNICAR_AEROSOL_READTABLE
+
    REAL,    OPTIONAL, INTENT(IN) :: soiltstep  ! NoahMP soil timestep (s)
    REAL,    OPTIONAL, DIMENSION(ims:ime ,8, jms:jme), INTENT(IN) :: SOILCOMP
    REAL,    OPTIONAL, DIMENSION(ims:ime , jms:jme)  , INTENT(IN) :: SOILCL1,SOILCL2,SOILCL3,SOILCL4
@@ -919,6 +941,18 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION(ims:ime , jms:jme)                   , INTENT(INOUT) :: acc_ssoil,acc_qinsur,acc_qseva
    REAL, OPTIONAL, DIMENSION(ims:ime , jms:jme)                   , INTENT(INOUT) :: ACC_DWATERXY, ACC_PRCPXY, &
                                                                                      ACC_ECANXY, ACC_ETRANXY, ACC_EDIRXY
+   REAL, OPTIONAL, DIMENSION(ims:ime , jms:jme)                   , INTENT(INOUT) :: FSATXY, WSURFXY
+   ! SNICAR variables
+   REAL, OPTIONAL, DIMENSION(ims:ime,-2:0,jms:jme), INTENT(INOUT) :: SNRDSXY, SNFRXY, BCPHIXY, BCPHOXY, &
+                                                                     OCPHIXY, OCPHOXY, DUST1XY, DUST2XY, &
+                                                                     DUST3XY, DUST4XY, DUST5XY, &
+                                                                     MassConcBCPHIXY, MassConcBCPHOXY, &
+                                                                     MassConcOCPHIXY, MassConcOCPHOXY, &
+                                                                     MassConcDUST1XY, MassConcDUST2XY, &
+                                                                     MassConcDUST3XY, MassConcDUST4XY, &
+                                                                     MassConcDUST5XY
+   REAL, OPTIONAL, DIMENSION(ims:ime,1:2,jms:jme), INTENT(INOUT) :: ALBSOILDIRXY, ALBSOILDIFXY
+
    REAL, OPTIONAL, DIMENSION(ims:ime , jms:jme)                   , INTENT(  OUT) :: eflxbxy,soilenergy, snowenergy
    REAL, OPTIONAL, DIMENSION(ims:ime , 1:num_soil_layers, jms:jme), INTENT(INOUT) :: acc_etrani
    REAL, OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(INOUT) ::    &
@@ -1273,6 +1307,7 @@ CONTAINS
    REAL    :: tconst,tprior,tnew,yrday,deltat
    REAL    :: SWSAVE
    REAL,       DIMENSION( ims:ime, jms:jme )          ::  GSWSAVE
+
 !-------------------------------------------------
 ! urban related variables are added to declaration
 !-------------------------------------------------
@@ -3178,15 +3213,17 @@ CONTAINS
          if(HYDRO_dt .ge. 0) HYDRO_dt = dtbl
 #endif
          CALL wrf_debug(100,'in NOAHMP DRV')
-         CALL noahmplsm(ITIMESTEP,       YR, JULIAN_IN,   COSZEN, XLAT,XLONG, &
+!$omp critical (noahmp_driver)
+         CALL NoahmpWRFmain(NoahmpIOdom(inest),ITIMESTEP,YR,JULIAN_IN,COSZEN,XLAT,XLONG, &
 	           DZ8W,     DTBL,      DZS,     NUM_SOIL_LAYERS,         DX, &
 		 IVGTYP,   ISLTYP,   VEGFRA,   SHDMAX,       TMN,             &
 		  XLAND,     XICE,     XICE_THRESHOLD,   CROPCAT,             &
-               PLANTING,  HARVEST,SEASON_GDD,                               &
-                  IDVEG, IOPT_CRS, IOPT_BTR, IOPT_RUN,  IOPT_SFC,   IOPT_FRZ, &
+               PLANTING,  HARVEST,SEASON_GDD,                                 &
+                  IDVEG, IOPT_CRS, IOPT_BTR, IOPT_RUNSUB, IOPT_SFC, IOPT_FRZ, &
 	       IOPT_INF, IOPT_RAD, IOPT_ALB, IOPT_SNF, IOPT_TBOT,   IOPT_STC, &
 	       IOPT_GLA, IOPT_RSF, IOPT_SOIL,IOPT_PEDO,IOPT_CROP,   IOPT_IRR, &
-              IOPT_IRRM, IOPT_INFDV, IOPT_TDRN, soiltstep,                    &
+               IOPT_IRRM, IOPT_INFDV, IOPT_TDRN, soiltstep,                   &
+               IOPT_RUNSRF, IOPT_TKSNO, IOPT_COMPACT, IOPT_SCF, IOPT_WETLAND, &
                 IZ0TLND, SF_URBAN_PHYSICS,                                    &
 	       SOILCOMP,  SOILCL1,  SOILCL2,  SOILCL3,   SOILCL4,             &
 		  T_PHY,  QV_CURR,    U_PHY,    V_PHY,    SWDOWN,    SWDDIR,  &
@@ -3206,7 +3243,6 @@ CONTAINS
 		ZSNSOXY,  SNICEXY,  SNLIQXY, LFMASSXY,  RTMASSXY,   STMASSXY, &
 		 WOODXY, STBLCPXY, FASTCPXY,      LAI,    XSAIXY,    TAUSSXY, &
 	        SMOISEQ, SMCWTDXY,DEEPRECHXY,  RECHXY,   GRAINXY,      GDDXY,PGSXY, & ! IN/OUT Noah MP only
-               GECROS_STATE,                                                  & ! IN/OUT gecros model
                 QTDRAIN,   TD_FRACTION,                                       & ! IN/OUT tile drainage
 	         T2MVXY,   T2MBXY,   Q2MVXY,   Q2MBXY,                        &
                  TRADXY,    NEEXY,    GPPXY,    NPPXY,    FVEGXY,    RUNSFXY, &
@@ -3224,6 +3260,18 @@ CONTAINS
                fpicexy,RAINLSM,SNOWLSM,forctlsm,forcqlsm,forcplsm,forczlsm,forcwlsm,&
                acc_ssoil, acc_qinsur, acc_qseva, acc_etrani, eflxbxy, soilenergy, snowenergy, canhsxy,&
                ACC_DWATERXY, ACC_PRCPXY, ACC_ECANXY, ACC_ETRANXY, ACC_EDIRXY, &
+               FSATXY, WSURFXY,                                               &
+               SNICAR_BANDNUMBER_OPT, SNICAR_SOLARSPEC_OPT,                   & ! SNICAR variable
+               SNICAR_SNOWOPTICS_OPT, SNICAR_DUSTOPTICS_OPT,                  & ! SNICAR variable
+               SNICAR_RTSOLVER_OPT, SNICAR_SNOWSHAPE_OPT,                     & ! SNICAR variable
+               SNICAR_USE_AEROSOL, SNICAR_SNOWBC_INTMIX,                      & ! SNICAR variable
+               SNICAR_SNOWDUST_INTMIX, SNICAR_USE_OC,                         & ! SNICAR variable
+               SNICAR_AEROSOL_READTABLE, SNRDSXY, SNFRXY, BCPHIXY, BCPHOXY,   & ! SNICAR variable
+               OCPHIXY, OCPHOXY, DUST1XY, DUST2XY, DUST3XY, DUST4XY, DUST5XY, & ! SNICAR variable
+               MassConcBCPHIXY, MassConcBCPHOXY, MassConcOCPHIXY,             & ! SNICAR variable
+               MassConcOCPHOXY, MassConcDUST1XY, MassConcDUST2XY,             & ! SNICAR variable
+               MassConcDUST3XY, MassConcDUST4XY, MassConcDUST5XY,             & ! SNICAR variable
+               ALBSOILDIRXY, ALBSOILDIFXY,                                    & ! SNICAR variable
 #ifdef WRF_HYDRO
                  sfcheadrt,INFXSRT,soldrain,qtiledrain,ZWATBLE2D,             &    !O
 #endif
@@ -3233,10 +3281,11 @@ CONTAINS
 ! variables below are optional
                 MP_RAINC =  RAINCV, MP_RAINNC =    RAINNCV, MP_SHCV = RAINSHV,&
 		MP_SNOW  = SNOWNCV, MP_GRAUP  = GRAUPELNCV, MP_HAIL = HAILNCV )
+!$omp end critical (noahmp_driver)
 
          IF(SF_URBAN_PHYSICS > 0 ) THEN  !urban
          
-	   call noahmp_urban (sf_urban_physics,     NUM_SOIL_LAYERS,     IVGTYP,ITIMESTEP,  & ! IN : Model configuration 
+	   call noahmp_urban (NoahmpIOdom(inest), sf_urban_physics,NUM_SOIL_LAYERS,IVGTYP,ITIMESTEP,  & ! IN : Model configuration 
                                DTBL,         COSZEN,     XLAT_URB2D,                        & ! IN : Time/Space-related
                               T_PHY,        QV_CURR,          U_PHY,      V_PHY,   SWDOWN,  & ! IN : Forcing
                              SWDDIR,         SWDDIF,                                        &
@@ -3295,20 +3344,20 @@ CONTAINS
 	 
 	 ENDIF 
 
-  IF ( iopt_run .EQ. 5 ) THEN
-     IF ( MOD(itimestep,STEPWTD) .EQ. 0 ) THEN ! STEPWTD always and only non-zero for iopt_run == 5
+  IF ( iopt_runsub .EQ. 5 ) THEN
+     IF ( MOD(itimestep,STEPWTD) .EQ. 0 ) THEN ! STEPWTD always and only non-zero for iopt_runsub == 5
            CALL wrf_debug( 100, 'calling WTABLE' )
 
 !gmm update wtable from lateral flow and shed water to rivers
 
-           CALL WTABLE_mmf_noahmp(num_soil_layers,xland,xice, xice_threshold, isice,        &
-                                  isltyp,smoiseq,dzs,wtddt,                                 &
-                                  fdepthxy,areaxy,ht,isurban,ivgtyp,                         &
-                                  rivercondxy,riverbedxy,eqzwt,pexpxy,                      &
-                                  smois,sh2o,smcwtdxy,zwtxy,qlatxy,qrfxy,deeprechxy,qspringxy,     &
-                                  qslatxy,qrfsxy,qspringsxy,rechxy,                        &
-                                  ids,ide, jds,jde, kds,kde,                             &
-                                  ims,ime, jms,jme, kms,kme,                             &
+           CALL WTABLE_mmf_noahmp(NoahmpIOdom(inest),num_soil_layers,xland,xice, xice_threshold, isice, &
+                                  isltyp,smoiseq,dzs,wtddt,                                   &
+                                  fdepthxy,areaxy,ht,isurban,ivgtyp,                          &
+                                  rivercondxy,riverbedxy,eqzwt,pexpxy,                        &
+                                  smois,sh2o,smcwtdxy,zwtxy,qlatxy,qrfxy,deeprechxy,qspringxy,&
+                                  qslatxy,qrfsxy,qspringsxy,rechxy,                           &
+                                  ids,ide, jds,jde, kds,kde,                                  &
+                                  ims,ime, jms,jme, kms,kme,                                  &
                                   i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte )
 
      END IF
@@ -3410,11 +3459,13 @@ CONTAINS
                  ENDIF
                    TH2(I,J) = T2(I,J)*(1.E5/PSFC(I,J))**RCP
 !             ELSEIF (IVGTYP(I,J) == ISURBAN .OR. IVGTYP(I,J) == ISICE .OR. FVEGXY(I,J) == 0.0 ) THEN
-              ELSEIF( IVGTYP(I,J) == ISURBAN    .or. IVGTYP(I,J) == LCZ_1_TABLE .or. IVGTYP(I,J) == LCZ_2_TABLE .or. &
-                      IVGTYP(I,J) == LCZ_3_TABLE      .or. IVGTYP(I,J) == LCZ_4_TABLE .or. IVGTYP(I,J) == LCZ_5_TABLE .or. &
-                      IVGTYP(I,J) == LCZ_6_TABLE      .or. IVGTYP(I,J) == LCZ_7_TABLE .or. IVGTYP(I,J) == LCZ_8_TABLE .or. &
-                      IVGTYP(I,J) == LCZ_9_TABLE      .or. IVGTYP(I,J) == LCZ_10_TABLE .or. IVGTYP(I,J) == LCZ_11_TABLE .or. &
-                     (IVGTYP(I,J) == ISICE .AND. XICE(I,J) .LT. XICE_THRESHOLD)) THEN
+              ELSEIF (IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_1_TABLE              .or. &
+                      IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_2_TABLE .or. IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_3_TABLE .or. &
+                      IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_4_TABLE .or. IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_5_TABLE .or. &
+                      IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_6_TABLE .or. IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_7_TABLE .or. &
+                      IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_8_TABLE .or. IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_9_TABLE .or. &
+                      IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_10_TABLE .or. IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_11_TABLE .or. &
+                      (IVGTYP(I,J) == ISICE .AND. XICE(I,J) .LT. XICE_THRESHOLD)) THEN
 
                    Q2(I,J)  = Q2MBXY(I,J)
                    T2(I,J)  = T2MBXY(I,J)
@@ -3438,10 +3489,13 @@ CONTAINS
          IF(SF_URBAN_PHYSICS.eq.1) THEN
            DO j=j_start(ij),j_end(ij)                             !urban
              DO i=i_start(ij),i_end(ij)                           !urban
-               IF( IVGTYP(I,J) == ISURBAN    .or. IVGTYP(I,J) == LCZ_1_TABLE .or. IVGTYP(I,J) == LCZ_2_TABLE .or. &
-                   IVGTYP(I,J) == LCZ_3_TABLE      .or. IVGTYP(I,J) == LCZ_4_TABLE .or. IVGTYP(I,J) == LCZ_5_TABLE .or. &
-                   IVGTYP(I,J) == LCZ_6_TABLE      .or. IVGTYP(I,J) == LCZ_7_TABLE .or. IVGTYP(I,J) == LCZ_8_TABLE .or. &
-                   IVGTYP(I,J) == LCZ_9_TABLE      .or. IVGTYP(I,J) == LCZ_10_TABLE .or. IVGTYP(I,J) == LCZ_11_TABLE )THEN
+               IF (IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_1_TABLE              .or. &
+                   IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_2_TABLE .or. IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_3_TABLE .or. &
+                   IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_4_TABLE .or. IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_5_TABLE .or. &
+                   IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_6_TABLE .or. IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_7_TABLE .or. &
+                   IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_8_TABLE .or. IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_9_TABLE .or. &
+                   IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_10_TABLE .or. IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_11_TABLE) THEN
+
                  Q2(I,J)  = (FVEGXY(I,J)*Q2MVXY(I,J) + (1.-FVEGXY(I,J))*Q2MBXY(I,J))*(1.-FRC_URB2D(I,J)) +   &
                              Q2_URB2D(I,J)*FRC_URB2D(I,J)
                  T2(I,J)  = (FVEGXY(I,J)*T2MVXY(I,J) + (1.-FVEGXY(I,J))*T2MBXY(I,J))*(1.-FRC_URB2D(I,J)) +   &
@@ -3462,10 +3516,13 @@ CONTAINS
          IF((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.eq.3)) THEN
            DO j=j_start(ij),j_end(ij)                             !urban
              DO i=i_start(ij),i_end(ij)                           !urban
-                IF( IVGTYP(I,J) == ISURBAN    .or. IVGTYP(I,J) == LCZ_1_TABLE .or. IVGTYP(I,J) == LCZ_2_TABLE .or. &
-                    IVGTYP(I,J) == LCZ_3_TABLE      .or. IVGTYP(I,J) == LCZ_4_TABLE .or. IVGTYP(I,J) == LCZ_5_TABLE .or. &
-                    IVGTYP(I,J) == LCZ_6_TABLE      .or. IVGTYP(I,J) == LCZ_7_TABLE .or. IVGTYP(I,J) == LCZ_8_TABLE .or. &
-                    IVGTYP(I,J) == LCZ_9_TABLE      .or. IVGTYP(I,J) == LCZ_10_TABLE .or. IVGTYP(I,J) == LCZ_11_TABLE )THEN
+               IF (IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_1_TABLE              .or. &
+                   IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_2_TABLE .or. IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_3_TABLE .or. &
+                   IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_4_TABLE .or. IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_5_TABLE .or. &
+                   IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_6_TABLE .or. IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_7_TABLE .or. &
+                   IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_8_TABLE .or. IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_9_TABLE .or. &
+                   IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_10_TABLE .or. IVGTYP(I,J) == NoahmpIOdom(inest)%LCZ_11_TABLE) THEN
+
                 T2(I,J)   = TH_PHY(i,1,j)/((1.E5/PSFC(I,J))**RCP) !urban
                 TH2(I,J) = TH_PHY(i,1,j) !urban
                 Q2(I,J)   = qv_curr(i,1,j)  !urban
@@ -3488,7 +3545,7 @@ CONTAINS
 !------------------------------------------------------------------
 
        ELSE
-         CALL wrf_error_fatal('Lacking arguments for NOAHMPLSM in surface driver')
+         CALL wrf_error_fatal('Lacking arguments for NoahmpWRFmain in surface driver')
        ENDIF
 
      CASE (RUCLSMSCHEME)

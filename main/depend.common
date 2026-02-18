@@ -734,9 +734,29 @@ module_bl_camuwpbl_driver.o: \
 	module_cam_esinti.o 
 
 
-module_sf_mynn.o: \
+module_sf_mynnsfc_common.o: \
 	../share/module_model_constants.o \
-	../frame/module_wrf_error.o 
+	../frame/module_state_description.o \
+	ccpp_kind_types.o
+
+
+module_sf_mynnsfc_land.o: \
+        module_sf_mynnsfc_common.o
+
+
+module_sf_mynnsfc_water.o: \
+        module_sf_mynnsfc_common.o
+
+
+module_sf_mynnsfc_ice.o: \
+        module_sf_mynnsfc_common.o
+
+
+module_sf_mynnsfc_driver.o: \
+	module_sf_mynnsfc_land.o \
+	module_sf_mynnsfc_water.o \
+	module_sf_mynnsfc_ice.o \
+	module_sf_mynnsfc_common.o
 
 
 module_sf_fogdes.o: \
@@ -982,6 +1002,28 @@ module_mp_nssl_2mom.o: \
 	../frame/module_wrf_error.o \
 	../share/module_model_constants.o 
 
+module_mp_tempo_ml.o: \
+	module_mp_tempo_params.o
+module_mp_tempo_utils.o: \
+	module_mp_tempo_params.o
+module_mp_tempo_aerosols.o: \
+	module_mp_tempo_params.o
+module_mp_tempo_diags.o: \
+	module_mp_tempo_params.o \
+	module_mp_tempo_utils.o
+module_mp_tempo_driver.o : \
+	module_mp_tempo_params.o \
+	module_mp_tempo_cfgs.o \
+	module_mp_tempo_utils.o	\
+	module_mp_tempo_main.o \
+	module_mp_tempo_ml.o
+module_mp_tempo_main.o : \
+	module_mp_tempo_params.o \
+	module_mp_tempo_cfgs.o \
+	module_mp_tempo_utils.o \
+	module_mp_tempo_diags.o \
+	module_mp_tempo_aerosols.o \
+	module_mp_tempo_ml.o
 
 module_mp_fast_sbm.o: \
 	../frame/module_domain.o \
@@ -1132,36 +1174,1116 @@ module_sf_noah_seaice.o: \
 	../share/module_model_constants.o 
 
 
-module_sf_noahmpdrv.o: \
-	../frame/module_comm_dm.o \
-	../frame/module_domain.o \
-	module_ra_gfdleta.o \
-	module_sf_noahmplsm.o \
-	module_data_gocart_dust.o \
-	module_sf_noahmp_glacier.o \
-	module_sf_noahmp_groundwater.o \
-	module_sf_gecros.o \
-	../share/module_model_constants.o \
-	module_sf_urban.o \
-	module_sf_bep.o \
-	module_sf_bep_bem.o 
-
-
 module_sf_noahlsm_glacial_only.o: \
-	../share/module_model_constants.o \
-	../frame/module_wrf_error.o \
-	module_sf_noahlsm.o \
-	module_sf_noahmplsm.o 
+        ../share/module_model_constants.o \
+        ../frame/module_wrf_error.o \
+        module_sf_noahlsm.o
 
 
-module_sf_noahmplsm.o: \
-	../share/module_model_constants.o \
-	module_sf_gecros.o \
-	module_sf_myjsfc.o 
+noahmp/drivers/wrf/NoahmpWRFmainMod.o: \
+        noahmp/drivers/wrf/NoahmpIOVarType.o \
+        noahmp/drivers/wrf/NoahmpDriverMainMod.o \
+        noahmp/drivers/wrf/NoahmpIOVarInitMod.o \
+        noahmp/drivers/wrf/NoahmpReadTableMod.o \
+        noahmp/src/SnowInputSnicarMod.o \
+        module_sf_urban.o
 
 
-module_sf_noahmp_groundwater.o: \
-	module_sf_noahmplsm.o 
+noahmp/drivers/wrf/NoahmpWRFinitMod.o: \
+        noahmp/drivers/wrf/NoahmpIOVarType.o \
+        noahmp/drivers/wrf/NoahmpIOVarInitMod.o \
+        noahmp/drivers/wrf/NoahmpReadTableMod.o \
+        noahmp/drivers/wrf/NoahmpInitMainMod.o \
+        noahmp/src/SnowInputSnicarMod.o
+
+
+noahmp/drivers/wrf/NoahmpUrbanDriverMainMod.o: \
+        module_sf_urban.o \
+        module_sf_bep.o \
+        module_sf_bep_bem.o \
+        module_ra_gfdleta.o \
+        ../share/module_model_constants.o \
+        noahmp/drivers/wrf/NoahmpIOVarType.o
+
+
+noahmp/drivers/wrf/NoahmpGroundwaterInitMod.o: \
+        noahmp/drivers/wrf/NoahmpIOVarType.o \
+        noahmp/drivers/wrf/GroundWaterMmfMod.o \
+        ../frame/module_comm_dm.o \
+        ../frame/module_domain.o \
+	../frame/module_dm.o
+
+
+noahmp/drivers/wrf/NoahmpDriverMainMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConfigVarInitMod.o \
+        noahmp/src/EnergyVarInitMod.o \
+        noahmp/src/ForcingVarInitMod.o \
+        noahmp/src/WaterVarInitMod.o \
+        noahmp/src/BiochemVarInitMod.o \
+        noahmp/src/NoahmpMainMod.o \
+        noahmp/src/NoahmpMainGlacierMod.o \
+        noahmp/drivers/wrf/NoahmpIOVarType.o \
+        noahmp/drivers/wrf/ConfigVarOutTransferMod.o \
+        noahmp/drivers/wrf/EnergyVarOutTransferMod.o \
+        noahmp/drivers/wrf/WaterVarOutTransferMod.o \
+        noahmp/drivers/wrf/BiochemVarOutTransferMod.o \
+        noahmp/drivers/wrf/ForcingVarOutTransferMod.o \
+        noahmp/drivers/wrf/ConfigVarInTransferMod.o \
+        noahmp/drivers/wrf/ForcingVarInTransferMod.o \
+        noahmp/drivers/wrf/EnergyVarInTransferMod.o \
+        noahmp/drivers/wrf/WaterVarInTransferMod.o \
+        noahmp/drivers/wrf/BiochemVarInTransferMod.o \
+        module_ra_gfdleta.o
+
+
+noahmp/drivers/wrf/NoahmpIOVarType.o: \
+        noahmp/utility/Machine.o
+
+
+noahmp/drivers/wrf/NoahmpIOVarInitMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/drivers/wrf/NoahmpIOVarType.o
+
+
+noahmp/drivers/wrf/NoahmpReadTableMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/drivers/wrf/NoahmpIOVarType.o
+
+
+noahmp/drivers/wrf/PedoTransferSR2006Mod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/drivers/wrf/NoahmpIOVarType.o \
+        noahmp/src/NoahmpVarType.o
+
+
+noahmp/drivers/wrf/ConfigVarOutTransferMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/drivers/wrf/NoahmpIOVarType.o \
+        noahmp/src/NoahmpVarType.o
+
+
+noahmp/drivers/wrf/ForcingVarOutTransferMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/drivers/wrf/NoahmpIOVarType.o \
+        noahmp/src/NoahmpVarType.o
+
+
+noahmp/drivers/wrf/EnergyVarOutTransferMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/drivers/wrf/NoahmpIOVarType.o \
+        noahmp/src/NoahmpVarType.o
+
+
+noahmp/drivers/wrf/WaterVarOutTransferMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/drivers/wrf/NoahmpIOVarType.o \
+        noahmp/src/NoahmpVarType.o
+
+
+noahmp/drivers/wrf/BiochemVarOutTransferMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/drivers/wrf/NoahmpIOVarType.o \
+        noahmp/src/NoahmpVarType.o
+
+
+noahmp/drivers/wrf/ConfigVarInTransferMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/drivers/wrf/NoahmpIOVarType.o \
+        noahmp/src/NoahmpVarType.o
+
+
+noahmp/drivers/wrf/ForcingVarInTransferMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/drivers/wrf/NoahmpIOVarType.o \
+        noahmp/src/NoahmpVarType.o
+
+
+noahmp/drivers/wrf/EnergyVarInTransferMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/drivers/wrf/NoahmpIOVarType.o \
+        noahmp/src/NoahmpVarType.o
+
+
+noahmp/drivers/wrf/BiochemVarInTransferMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/drivers/wrf/NoahmpIOVarType.o \
+        noahmp/src/NoahmpVarType.o
+
+
+noahmp/drivers/wrf/WaterVarInTransferMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/drivers/wrf/NoahmpIOVarType.o \
+        noahmp/drivers/wrf/PedoTransferSR2006Mod.o
+
+
+noahmp/drivers/wrf/NoahmpSnowInitMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/drivers/wrf/NoahmpIOVarType.o
+
+
+noahmp/drivers/wrf/NoahmpInitMainMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/drivers/wrf/NoahmpIOVarType.o \
+        noahmp/drivers/wrf/NoahmpSnowInitMod.o
+
+
+noahmp/drivers/wrf/GroundWaterMmfMod.o: \
+        noahmp/drivers/wrf/NoahmpIOVarType.o
+
+
+noahmp/utility/CheckNanMod.o: \
+        noahmp/utility/Machine.o
+
+
+noahmp/utility/PiecewiseLinearInterp1dMod.o: \
+        noahmp/utility/Machine.o
+
+
+noahmp/src/ConstantDefineMod.o: \
+        noahmp/utility/Machine.o
+
+
+noahmp/src/ConfigVarType.o: \
+        noahmp/utility/Machine.o
+
+
+noahmp/src/ForcingVarType.o: \
+        noahmp/utility/Machine.o
+
+
+noahmp/src/EnergyVarType.o: \
+        noahmp/utility/Machine.o
+
+
+noahmp/src/WaterVarType.o: \
+        noahmp/utility/Machine.o
+
+
+noahmp/src/BiochemVarType.o: \
+        noahmp/utility/Machine.o
+
+
+noahmp/src/NoahmpVarType.o: \
+        noahmp/src/ConfigVarType.o \
+        noahmp/src/ForcingVarType.o \
+        noahmp/src/EnergyVarType.o \
+        noahmp/src/WaterVarType.o \
+        noahmp/src/BiochemVarType.o
+
+
+noahmp/src/ConfigVarInitMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o
+
+
+noahmp/src/ForcingVarInitMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o
+
+
+noahmp/src/EnergyVarInitMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o
+
+
+noahmp/src/WaterVarInitMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o
+
+
+noahmp/src/BiochemVarInitMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o
+
+
+noahmp/src/CanopyHydrologyMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/GroundWaterTopModelMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/IrrigationFloodMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o \
+        noahmp/src/IrrigationInfilPhilipMod.o
+
+
+noahmp/src/IrrigationInfilPhilipMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o \
+        noahmp/src/SoilHydraulicPropertyMod.o
+
+
+noahmp/src/IrrigationMicroMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o \
+        noahmp/src/IrrigationInfilPhilipMod.o
+
+
+noahmp/src/MatrixSolverTriDiagonalMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/RunoffSubSurfaceDrainageMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/RunoffSubSurfaceEquiWaterTableMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o \
+        noahmp/src/WaterTableEquilibriumMod.o
+
+
+noahmp/src/RunoffSubSurfaceGroundWaterMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o \
+        noahmp/src/GroundWaterTopModelMod.o
+
+
+noahmp/src/RunoffSubSurfaceShallowMmfMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o \
+        noahmp/src/ShallowWaterTableMmfMod.o
+
+
+noahmp/src/RunoffSurfaceBatsMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/RunoffSurfaceDynamicVicMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o \
+        noahmp/src/SoilWaterInfilPhilipMod.o \
+        noahmp/src/RunoffSurfaceExcessDynamicVicMod.o \
+        noahmp/src/SoilWaterInfilSmithParlangeMod.o \
+        noahmp/src/SoilWaterInfilGreenAmptMod.o
+
+
+noahmp/src/RunoffSurfaceExcessDynamicVicMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/RunoffSurfaceFreeDrainMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o \
+        noahmp/src/SoilHydraulicPropertyMod.o
+
+
+noahmp/src/RunoffSurfaceTopModelEquiMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/RunoffSurfaceTopModelGrdMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+noahmp/src/RunoffSurfaceTopModelMmfMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/RunoffSurfaceVicMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/RunoffSurfaceXinAnJiangMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/RunoffSurfaceWetlandMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/WetlandWaterZhang22Mod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/ShallowWaterTableMmfMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/SnowfallBelowCanopyMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/SnowLayerCombineMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o \
+        noahmp/src/SnowLayerWaterComboMod.o
+
+
+noahmp/src/SnowLayerDivideMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o \
+        noahmp/src/SnowLayerWaterComboMod.o
+
+
+noahmp/src/SnowLayerWaterComboMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/SnowpackCompactionMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/SnowpackCompactionAR24Mod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/SnowpackHydrologyMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o \
+        noahmp/src/SnowLayerCombineMod.o
+
+
+noahmp/src/SnowWaterMainMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o \
+        noahmp/src/SnowfallBelowCanopyMod.o \
+        noahmp/src/SnowpackCompactionMod.o \
+        noahmp/src/SnowLayerDivideMod.o \
+        noahmp/src/SnowLayerCombineMod.o \
+        noahmp/src/SnowpackHydrologyMod.o \
+        noahmp/src/SnowpackCompactionAR24Mod.o \
+        noahmp/src/SnowAerosolSnicarMod.o
+
+
+noahmp/src/SoilHydraulicPropertyMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/SoilMoistureSolverMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o \
+        noahmp/src/MatrixSolverTriDiagonalMod.o
+
+
+noahmp/src/SoilWaterDiffusionRichardsMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o \
+        noahmp/src/SoilHydraulicPropertyMod.o
+
+
+noahmp/src/SoilWaterInfilGreenAmptMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o \
+        noahmp/src/SoilHydraulicPropertyMod.o
+
+
+noahmp/src/SoilWaterInfilPhilipMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o \
+        noahmp/src/SoilHydraulicPropertyMod.o
+
+
+noahmp/src/SoilWaterInfilSmithParlangeMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o \
+        noahmp/src/SoilHydraulicPropertyMod.o
+
+
+noahmp/src/SoilWaterMainMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o \
+        noahmp/src/RunoffSurfaceTopModelGrdMod.o \
+        noahmp/src/RunoffSurfaceTopModelEquiMod.o \
+        noahmp/src/RunoffSurfaceFreeDrainMod.o \
+        noahmp/src/RunoffSurfaceBatsMod.o \
+        noahmp/src/RunoffSurfaceTopModelMmfMod.o \
+        noahmp/src/RunoffSurfaceVicMod.o \
+        noahmp/src/RunoffSurfaceXinAnJiangMod.o \
+        noahmp/src/RunoffSurfaceDynamicVicMod.o \
+        noahmp/src/RunoffSubSurfaceEquiWaterTableMod.o \
+        noahmp/src/RunoffSubSurfaceGroundWaterMod.o \
+        noahmp/src/RunoffSubSurfaceDrainageMod.o \
+        noahmp/src/RunoffSubSurfaceShallowMmfMod.o \
+        noahmp/src/SoilWaterDiffusionRichardsMod.o \
+        noahmp/src/SoilMoistureSolverMod.o \
+        noahmp/src/TileDrainageSimpleMod.o \
+        noahmp/src/TileDrainageHooghoudtMod.o \
+        noahmp/src/RunoffSurfaceWetlandMod.o
+
+
+noahmp/src/TileDrainageEquiDepthMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/TileDrainageHooghoudtMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o \
+        noahmp/src/TileDrainageEquiDepthMod.o \
+        noahmp/src/WaterTableDepthSearchMod.o \
+        noahmp/src/WaterTableEquilibriumMod.o
+
+
+noahmp/src/TileDrainageSimpleMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/WaterMainMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o \
+        noahmp/src/CanopyHydrologyMod.o \
+        noahmp/src/SnowWaterMainMod.o \
+        noahmp/src/IrrigationFloodMod.o \
+        noahmp/src/IrrigationMicroMod.o \
+        noahmp/src/SoilWaterMainMod.o \
+        noahmp/src/WetlandWaterZhang22Mod.o
+
+
+noahmp/src/WaterTableDepthSearchMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/WaterTableEquilibriumMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/IrrigationTriggerMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/IrrigationSprinklerMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/utility/CheckNanMod.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o \
+        noahmp/src/IrrigationInfilPhilipMod.o
+
+
+noahmp/src/CanopyWaterInterceptMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/PrecipitationHeatAdvectMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/SnowThermalPropertyMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/SoilThermalPropertyMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/GroundThermalPropertyMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o \
+        noahmp/src/SnowThermalPropertyMod.o \
+        noahmp/src/SoilThermalPropertyMod.o
+
+
+noahmp/src/CanopyRadiationTwoStreamMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/GroundAlbedoMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/SnowAerosolSnicarMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/SnowAgingBatsMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/SnowAgingSnicarMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/SnowAlbedoBatsMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/SnowAlbedoClassMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/SnowAlbedoSnicarMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o \
+        noahmp/src/SnowRadiationSnicarMod.o
+
+
+noahmp/src/SnowFreshRadiusMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/SnowInputSnicarMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/drivers/wrf/NoahmpIOVarType.o
+
+
+noahmp/src/SnowRadiationSnicarMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/utility/PiecewiseLinearInterp1dMod.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/SurfaceAlbedoMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o \
+        noahmp/src/SnowAgingBatsMod.o \
+        noahmp/src/SnowAlbedoBatsMod.o \
+        noahmp/src/SnowAlbedoClassMod.o \
+        noahmp/src/SnowAlbedoSnicarMod.o \
+        noahmp/src/GroundAlbedoMod.o \
+        noahmp/src/CanopyRadiationTwoStreamMod.o \
+        noahmp/src/SnowAgingSnicarMod.o \
+        noahmp/src/SnowFreshRadiusMod.o
+
+
+noahmp/src/SurfaceRadiationMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/EnergyMainMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o \
+        noahmp/src/GroundThermalPropertyMod.o \
+        noahmp/src/SurfaceEnergyFluxVegetatedMod.o \
+        noahmp/src/SurfaceEnergyFluxBareGroundMod.o \
+        noahmp/src/SoilSnowTemperatureMainMod.o \
+        noahmp/src/SoilSnowWaterPhaseChangeMod.o \
+        noahmp/src/SnowCoverGroundNiu07Mod.o \
+        noahmp/src/SurfaceEmissivityMod.o \
+        noahmp/src/GroundRoughnessPropertyMod.o \
+        noahmp/src/PsychrometricVariableMod.o \
+        noahmp/src/ResistanceGroundEvaporationMod.o \
+        noahmp/src/SoilWaterTranspirationMod.o \
+        noahmp/src/SurfaceAlbedoMod.o \
+        noahmp/src/SurfaceRadiationMod.o \
+        noahmp/src/SnowCoverGroundAR25Mod.o
+
+
+noahmp/src/NoahmpMainMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o \
+        noahmp/src/IrrigationPrepareMod.o \
+        noahmp/src/IrrigationSprinklerMod.o \
+        noahmp/src/CanopyWaterInterceptMod.o \
+        noahmp/src/PrecipitationHeatAdvectMod.o \
+        noahmp/src/EnergyMainMod.o \
+        noahmp/src/WaterMainMod.o \
+        noahmp/src/AtmosForcingMod.o \
+        noahmp/src/BiochemCropMainMod.o \
+        noahmp/src/BiochemNatureVegMainMod.o \
+        noahmp/src/PhenologyMainMod.o \
+        noahmp/src/BalanceErrorCheckMod.o \
+        noahmp/src/GeneralInitMod.o
+
+
+noahmp/src/HumiditySaturationMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/ResistanceAboveCanopyChen97Mod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/ResistanceAboveCanopyMostMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/ResistanceCanopyStomataBallBerryMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/ResistanceCanopyStomataJarvisMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o \
+        noahmp/src/HumiditySaturationMod.o
+
+
+noahmp/src/ResistanceLeafToGroundMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/VaporPressureSaturationMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/SurfaceEnergyFluxVegetatedMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o \
+        noahmp/src/VaporPressureSaturationMod.o \
+        noahmp/src/ResistanceAboveCanopyMostMod.o \
+        noahmp/src/ResistanceAboveCanopyChen97Mod.o \
+        noahmp/src/ResistanceLeafToGroundMod.o \
+        noahmp/src/ResistanceCanopyStomataBallBerryMod.o \
+        noahmp/src/ResistanceCanopyStomataJarvisMod.o
+
+
+noahmp/src/ResistanceBareGroundChen97Mod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/ResistanceBareGroundMostMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/SurfaceEnergyFluxBareGroundMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o \
+        noahmp/src/VaporPressureSaturationMod.o \
+        noahmp/src/ResistanceBareGroundMostMod.o \
+        noahmp/src/ResistanceBareGroundChen97Mod.o
+
+
+noahmp/src/SoilSnowTemperatureSolverMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o \
+        noahmp/src/MatrixSolverTriDiagonalMod.o
+
+
+noahmp/src/SoilSnowThermalDiffusionMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/SoilSnowTemperatureMainMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o \
+        noahmp/src/SoilSnowTemperatureSolverMod.o \
+        noahmp/src/SoilSnowThermalDiffusionMod.o
+
+
+noahmp/src/SoilWaterSupercoolKoren99Mod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/SoilWaterSupercoolNiu06Mod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/SoilSnowWaterPhaseChangeMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o \
+        noahmp/src/SoilWaterSupercoolKoren99Mod.o \
+        noahmp/src/SoilWaterSupercoolNiu06Mod.o
+
+
+noahmp/src/GroundRoughnessPropertyMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/PsychrometricVariableMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/ResistanceGroundEvaporationMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/SnowCoverGroundNiu07Mod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/SnowCoverGroundAR25Mod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/SoilWaterTranspirationMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/SurfaceEmissivityMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/AtmosForcingMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/PhenologyMainMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/CropPhotosynthesisMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/CropGrowDegreeDayMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/CarbonFluxNatureVegMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/CarbonFluxCropMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/BiochemNatureVegMainMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o \
+        noahmp/src/CarbonFluxNatureVegMod.o
+
+
+noahmp/src/BiochemCropMainMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o \
+        noahmp/src/CarbonFluxCropMod.o \
+        noahmp/src/CropGrowDegreeDayMod.o \
+        noahmp/src/CropPhotosynthesisMod.o
+
+
+noahmp/src/IrrigationPrepareMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o \
+        noahmp/src/IrrigationTriggerMod.o
+
+
+noahmp/src/BalanceErrorCheckMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/GeneralInitMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/BalanceErrorCheckGlacierMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/EnergyMainGlacierMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o \
+        noahmp/src/SnowCoverGlacierMod.o \
+        noahmp/src/GroundRoughnessPropertyGlacierMod.o \
+        noahmp/src/GroundThermalPropertyGlacierMod.o \
+        noahmp/src/SurfaceAlbedoGlacierMod.o \
+        noahmp/src/SurfaceRadiationGlacierMod.o \
+        noahmp/src/SurfaceEmissivityGlacierMod.o \
+        noahmp/src/ResistanceGroundEvaporationGlacierMod.o \
+        noahmp/src/PsychrometricVariableGlacierMod.o \
+        noahmp/src/SurfaceEnergyFluxGlacierMod.o \
+        noahmp/src/GlacierTemperatureMainMod.o \
+        noahmp/src/GlacierPhaseChangeMod.o
+
+
+noahmp/src/GeneralInitGlacierMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/GlacierIceThermalPropertyMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/GlacierPhaseChangeMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/GlacierTemperatureMainMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o \
+        noahmp/src/GlacierTemperatureSolverMod.o \
+        noahmp/src/GlacierThermalDiffusionMod.o
+
+
+noahmp/src/GlacierTemperatureSolverMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o \
+        noahmp/src/MatrixSolverTriDiagonalMod.o
+
+
+noahmp/src/GlacierThermalDiffusionMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/GroundAlbedoGlacierMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/GroundRoughnessPropertyGlacierMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/GroundThermalPropertyGlacierMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o \
+        noahmp/src/SnowThermalPropertyMod.o \
+        noahmp/src/GlacierIceThermalPropertyMod.o
+
+
+noahmp/src/NoahmpMainGlacierMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o \
+        noahmp/src/AtmosForcingMod.o \
+        noahmp/src/GeneralInitGlacierMod.o \
+        noahmp/src/PrecipitationHeatAdvectGlacierMod.o \
+        noahmp/src/EnergyMainGlacierMod.o \
+        noahmp/src/WaterMainGlacierMod.o \
+        noahmp/src/BalanceErrorCheckGlacierMod.o
+
+
+noahmp/src/PrecipitationHeatAdvectGlacierMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/PsychrometricVariableGlacierMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/ResistanceGroundEvaporationGlacierMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/SnowCoverGlacierMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/SnowWaterMainGlacierMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o \
+        noahmp/src/SnowfallBelowCanopyMod.o \
+        noahmp/src/SnowpackCompactionMod.o \
+        noahmp/src/SnowLayerCombineMod.o \
+        noahmp/src/SnowLayerDivideMod.o \
+        noahmp/src/SnowpackHydrologyGlacierMod.o \
+        noahmp/src/SnowpackCompactionAR24Mod.o \
+        noahmp/src/SnowAerosolSnicarMod.o
+
+
+noahmp/src/SnowpackHydrologyGlacierMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o \
+        noahmp/src/SnowLayerCombineMod.o
+
+
+noahmp/src/SurfaceAlbedoGlacierMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o \
+        noahmp/src/SnowAgingBatsMod.o \
+        noahmp/src/SnowAlbedoBatsMod.o \
+        noahmp/src/SnowAlbedoClassMod.o \
+        noahmp/src/GroundAlbedoGlacierMod.o \
+        noahmp/src/SnowAlbedoSnicarMod.o \
+        noahmp/src/SnowAgingSnicarMod.o \
+        noahmp/src/SnowFreshRadiusMod.o
+
+
+noahmp/src/SurfaceEmissivityGlacierMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/SurfaceEnergyFluxGlacierMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o \
+        noahmp/src/VaporPressureSaturationMod.o \
+        noahmp/src/ResistanceBareGroundMostMod.o
+
+
+noahmp/src/SurfaceRadiationGlacierMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o
+
+
+noahmp/src/WaterMainGlacierMod.o: \
+        noahmp/utility/Machine.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConstantDefineMod.o \
+        noahmp/src/SnowWaterMainGlacierMod.o
 
 
 module_sf_bep.o: \
@@ -1283,7 +2405,7 @@ module_physics_init.o: \
 	physics_mmm/sf_sfclayrev.o \
 	module_sf_slab.o \
 	module_sf_myjsfc.o \
-	module_sf_mynn.o \
+	module_sf_mynnsfc_driver.o \
 	module_sf_fogdes.o \
 	module_sf_urban.o \
 	module_sf_qnsesfc.o \
@@ -1293,8 +2415,6 @@ module_physics_init.o: \
 	module_sf_clm.o \
 	module_sf_ctsm.o \
 	module_sf_ssib.o \
-	module_sf_noahmplsm.o \
-	module_sf_noahmpdrv.o \
 	module_sf_bep.o \
 	module_sf_bep_bem.o \
 	module_sf_ruclsm.o \
@@ -1342,6 +2462,8 @@ module_physics_init.o: \
 	module_fdda_spnudging.o \
 	module_fddaobs_rtfdda.o \
 	module_mp_thompson.o \
+	module_mp_tempo_cfgs.o \
+	module_mp_tempo_driver.o \
 	module_mp_rcon.o \
 	module_mp_gsfcgce.o \
 	module_mp_gsfcgce_4ice_nuwrf.o \
@@ -1366,7 +2488,9 @@ module_physics_init.o: \
 	../frame/module_wrf_error.o \
 	../frame/module_dm.o \
 	../share/module_llxy.o \
-	../share/module_model_constants.o 
+	../share/module_model_constants.o \
+        noahmp/drivers/wrf/NoahmpWRFinitMod.o \
+        noahmp/drivers/wrf/NoahmpIOVarType.o
 
 
 module_microphysics_driver.o: \
@@ -1389,6 +2513,8 @@ module_microphysics_driver.o: \
 	module_mp_wsm6r.o \
 	module_mp_fer_hires.o \
 	module_mp_thompson.o \
+	module_mp_tempo_cfgs.o \
+	module_mp_tempo_driver.o \
 	module_mp_rcon.o \
 	module_mp_gsfcgce.o \
 	module_mp_gsfcgce_4ice_nuwrf.o \
@@ -1550,15 +2676,13 @@ module_surface_driver.o: \
 	module_sf_pxsfclay.o \
 	module_sf_gfs.o \
 	module_sf_noah_seaice_drv.o \
-	module_sf_noahmp_groundwater.o \
 	module_sf_noahdrv.o \
 	module_sf_clm.o \
 	module_sf_ctsm.o \
 	module_sf_ssib.o \
-	module_sf_noahmpdrv.o \
 	module_sf_ruclsm.o \
 	module_sf_pxlsm.o \
-	module_sf_mynn.o \
+	module_sf_mynnsfc_driver.o \
 	module_sf_fogdes.o \
 	module_sf_sfcdiags.o \
 	module_sf_sfcdiags_ruclsm.o \
@@ -1574,7 +2698,11 @@ module_surface_driver.o: \
 	../frame/module_state_description.o \
 	../frame/module_configure.o \
 	../frame/module_cpl.o \
-	../share/module_model_constants.o 
+	../share/module_model_constants.o \
+        noahmp/drivers/wrf/NoahmpIOVarType.o \
+        noahmp/drivers/wrf/NoahmpWRFmainMod.o \
+        noahmp/drivers/wrf/NoahmpUrbanDriverMainMod.o \
+        noahmp/drivers/wrf/GroundWaterMmfMod.o 
 
 
 module_sf_ocean_driver.o: \
@@ -2993,7 +4121,7 @@ module_first_rk_step_part1.o: \
 	../phys/module_pbl_driver.o \
 	../phys/module_radiation_driver.o \
 	../phys/module_shallowcu_driver.o \
-	../phys/module_surface_driver.o 
+	../phys/module_surface_driver.o
 
 
 module_first_rk_step_part2.o: \
@@ -3203,10 +4331,11 @@ start_em.o : \
 	../phys/module_firebrand_spotting.o \
 	../phys/module_fr_fire_driver_wrf.o \
 	../phys/module_lightning_driver.o \
+        ../phys/noahmp/drivers/wrf/NoahmpIOVarType.o \
 	../share/module_llxy.o \
 	../share/module_model_constants.o \
 	../phys/module_physics_init.o \
-	../phys/noahmp/drivers/wrf/module_sf_noahmpdrv.o \
+	../phys/noahmp/drivers/wrf/NoahmpGroundwaterInitMod.o \
 	module_stoch.o \
 	../frame/module_tiles.o \
 	../share/module_trajectory.o \

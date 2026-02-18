@@ -603,6 +603,8 @@
                       grid%TRL_URB3D, grid%TBL_URB3D, grid%TGL_URB3D,        & !Optional urban
                       grid%SH_URB2D, grid%LH_URB2D, grid%G_URB2D, grid%RN_URB2D,  & !Optional urban
                       grid%TS_URB2D, grid%FRC_URB2D, grid%UTYPE_URB2D,      & !Optional urban
+                      grid%TVG_URB2D,grid%XXXVG_URB2D,grid%TVGL_URB3D,grid%SMG_URB3D,grid%TT_URB2D, & !Optional urban
+                      grid%CMCG_URB2D,grid%FLXHUMVG_URB2D,grid%FLXHUMT_URB2D,       & !Optional urban
                       grid%TRB_URB4D,grid%TW1_URB4D,grid%TW2_URB4D,grid%TGB_URB4D,grid%TLEV_URB3D,  & !multi-layer urban
                       grid%QLEV_URB3D,grid%TW1LEV_URB3D,grid%TW2LEV_URB3D,        & !multi-layer urban
                       grid%TGLEV_URB3D,grid%TFLEV_URB3D,grid%SF_AC_URB3D,         & !multi-layer urban 
@@ -836,4 +838,3 @@
      RETURN
 
    END SUBROUTINE a_start_domain_em
-

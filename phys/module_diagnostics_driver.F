@@ -1172,7 +1172,7 @@ CONTAINS
            num_tiles=grid%num_tiles                                       ,&
            dt=grid%dt                                                     ,&
            noahmp_acc_dt=config_flags%noahmp_acc_dt                       ,&
-           opt_run=config_flags%opt_run                                   ,&
+           opt_runsub=config_flags%opt_runsub                             ,&
            stepwtd=grid%stepwtd                                           ,&
            itimestep=grid%itimestep                                       ,&
            curr_secs2=curr_secs2                                          ,&

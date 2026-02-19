@@ -66,9 +66,10 @@ CONTAINS
                  ,hol, mol, regime                                 &
              ! Optional gravity-wave drag             
                  ,gwd_opt,gwd_diags                                &
+                 ,dx_factor,if_nonhyd                              &
                  ,dtaux3d,dtauy3d                                  &
                  ,dusfcg,dvsfcg,var2d,oc12d                        &
-                 ,oa1,oa2,oa3,oa4,ol1,ol2,ol3,ol4                  &
+                 ,oa1,oa2,oa3,oa4,ol1,ol2,ol3,ol4,elvmax           &
                  ,sina,cosa                                        &
                  ,dtaux3d_ls,dtauy3d_ls                            &
                  ,dtaux3d_bl,dtauy3d_bl                            &
@@ -723,6 +724,8 @@ CONTAINS
 !
    INTEGER,    OPTIONAL, INTENT(IN)    ::               gwd_opt,gwd_diags
    REAL,       OPTIONAL, INTENT(IN)    ::               p_top
+   REAL,       OPTIONAL, INTENT(IN)    ::               dx_factor
+   logical,    OPTIONAL, INTENT(IN)    ::               if_nonhyd
 !
   real,   dimension( ims:ime, kms:kme, jms:jme )                             , &
           optional                                                           , &
@@ -741,6 +744,7 @@ CONTAINS
   real,   dimension( ims:ime, jms:jme )                                      , &
           optional                                                           , &
              intent(in  )   ::                                          var2d, &
+                                                                       elvmax, &
                                                                         oc12d, &
                                                               oa1,oa2,oa3,oa4, &
                                                               ol1,ol2,ol3,ol4, &
@@ -2139,12 +2143,13 @@ CONTAINS
               ,VAR2D=var2d,OC12D=oc12d                              &
               ,OA2D1=oa1,OA2D2=oa2,OA2D3=oa3,OA2D4=oa4              &
               ,OL2D1=ol1,OL2D2=ol2,OL2D3=ol3,OL2D4=ol4              &
-              ,SINA=sina,COSA=cosa                                  &
+              ,elvmax=elvmax,SINA=sina,COSA=cosa                    &
               ,ZNU=znu,ZNW=znw,P_TOP=p_top                          &
               ,CP=cp,G=g,RD=r_d                                     &
               ,RV=r_v,EP1=ep_1,PI=3.141592653                       &
               ,DT=dtbl,DX=dx2d,KPBL2D=kpbl,ITIMESTEP=itimestep      &
               ,errmsg=errmsg,errflg=errflg                          &
+              ,dx_factor = dx_factor, if_nonhyd = if_nonhyd         &
               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      )

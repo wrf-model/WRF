@@ -155,18 +155,19 @@ set( USE_HDF5    OFF CACHE BOOL "USE_HDF5"    )
 set( USE_JASPER  OFF CACHE BOOL "USE_JASPER"  )
 set( USE_PIO     OFF CACHE BOOL "USE_PIO"     )
 set( USE_IPO     OFF CACHE BOOL "USE_IPO"     )
+set( USE_PNETCDF OFF CACHE BOOL "USE_PNETCDF" )
 
-
-set( ENABLE_CHEM       OFF CACHE BOOL "ENABLE_CHEM"      )
-set( ENABLE_CMAQ       OFF CACHE BOOL "ENABLE_CMAQ"      )
-set( ENABLE_CTSM       OFF CACHE BOOL "ENABLE_CTSM"      )
-set( ENABLE_DFI_RADAR  OFF CACHE BOOL "ENABLE_DFI_RADAR" )
-set( ENABLE_HYDRO      OFF CACHE BOOL "ENABLE_HYDRO"     )
-set( ENABLE_KPP        OFF CACHE BOOL "ENABLE_KPP"       )
-set( ENABLE_MARS       OFF CACHE BOOL "ENABLE_MARS"      )
-set( ENABLE_TERRAIN    OFF CACHE BOOL "ENABLE_TERRAIN"   )
-set( ENABLE_TITAN      OFF CACHE BOOL "ENABLE_TITAN"     )
-set( ENABLE_VENUS      OFF CACHE BOOL "ENABLE_VENUS"     )
+set( ENABLE_PNETCDF_QUILT OFF CACHE BOOL "ENABLE_PNETCDF_QUILT" )
+set( ENABLE_CHEM          OFF CACHE BOOL "ENABLE_CHEM"          )
+set( ENABLE_CMAQ          OFF CACHE BOOL "ENABLE_CMAQ"          )
+set( ENABLE_CTSM          OFF CACHE BOOL "ENABLE_CTSM"          )
+set( ENABLE_DFI_RADAR     OFF CACHE BOOL "ENABLE_DFI_RADAR"     )
+set( ENABLE_HYDRO         OFF CACHE BOOL "ENABLE_HYDRO"         )
+set( ENABLE_KPP           OFF CACHE BOOL "ENABLE_KPP"           )
+set( ENABLE_MARS          OFF CACHE BOOL "ENABLE_MARS"          )
+set( ENABLE_TERRAIN       OFF CACHE BOOL "ENABLE_TERRAIN"       )
+set( ENABLE_TITAN         OFF CACHE BOOL "ENABLE_TITAN"         )
+set( ENABLE_VENUS         OFF CACHE BOOL "ENABLE_VENUS"         )
 
 # What do these defines even do if they are always on????
 set( USE_ALLOCATABLES     ON CACHE BOOL "USE_ALLOCATABLES"    )
@@ -290,6 +291,16 @@ endif()
 
 if ( NOT ${WRFIO_NCD_NO_LARGE_FILE_SUPPORT} )
   message( STATUS "netCDF large file support not suppressed, if available it will be used" )
+endif()
+
+# PnetCDF options require MPI
+if ( ${ENABLE_PNETCDF_QUILT} AND NOT ${USE_PNETCDF} )
+  message( STATUS "PnetCDF Quilt IO requires PnetCDF" )
+  set( USE_PNETCDF ON CACHE BOOL "Required by configuration" FORCE )
+endif()
+if ( ${USE_PNETCDF} AND NOT ${USE_MPI} )
+  message( STATUS "PnetCDF require MPI usage" )
+  set( USE_MPI ON CACHE BOOL "Required by configuration" FORCE )
 endif()
 
 # Hydro option requires MPI
@@ -527,6 +538,12 @@ endif()
 # Will need our own finder
 # find_package( GPFS   REQUIRED )
 
+# Find this first in case we need to use pnetcdf's netCDF
+# Priority is given to pnetcdf due to performance
+if ( ${USE_PNETCDF} )
+  find_package( PnetCDF REQUIRED )
+endif()
+
 # Included is a lightweight finder, but we really should switch to using UniData's netCDF cmake config
 # The reason these are two separate and not COMPONENTS of one larger package is because that is the way UniData
 # has laid out the cmake configs for each respective package
@@ -548,12 +565,10 @@ if ( NOT ${FORCE_NETCDF_CLASSIC} )
   endif()
 endif()
 
-find_package( pnetCDF QUIET )
 
 # Attempt to find zlib packaged with netcdf first
 set( ZLIB_ROOT ${netCDF_PREFIX} )
 find_package( ZLIB   REQUIRED )
-find_package( CURL   REQUIRED )
 
 ################################################################################
 ##
@@ -773,6 +788,13 @@ if ( ${ENABLE_CTSM} )
 else()
   #!TODO there are some files that rely on this being 1, but that is never set by the legacy make system
   list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS WRF_USE_CLM )
+endif()
+
+if ( ${PnetCDF_FOUND} )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS PNETCDF )
+endif()
+if ( ${ENABLE_PNETCDF_QUILT} )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS PNETCDF_QUILT=1 )
 endif()
 
 # If force classic or no nc-4 support enable classic
@@ -1113,7 +1135,6 @@ target_include_directories(
                               ${PROJECT_SOURCE_DIR}/external/io_int
 
                               # Found Packages not handled through :: imported target
-                              ${pnetCDF_INCLUDE_DIRS}
                             )
 
 # Configure core
@@ -1131,8 +1152,8 @@ target_link_options( ${PROJECT_NAME}_Core PRIVATE ${WRF_LINK_FLAGS} )
 
 target_link_libraries(  ${PROJECT_NAME}_Core
                           PUBLIC
-                            netCDF::netcdff
-                            ${pnetCDF_LIBRARIES}
+                            $<TARGET_NAME_IF_EXISTS:PnetCDF::pnetcdf>
+                            $<TARGET_NAME_IF_EXISTS:netCDF::netcdff>
                             $<$<BOOL:${USE_MPI}>:$<TARGET_NAME_IF_EXISTS:MPI::MPI_Fortran>>
                             $<$<BOOL:${USE_OPENMP}>:$<TARGET_NAME_IF_EXISTS:OpenMP::OpenMP_Fortran>>
                             # This will add in target dependencies if they exist

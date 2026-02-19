@@ -700,6 +700,10 @@ BENCH_START(surf_driver_tim)
 #if ( EM_CORE == 1)
      &        ,LakeMask=grid%LakeMask                                               & !lake
      &        ,restart_flag=restart_flag                                            & !flag showing if is a restart timestep
+! TOFD for KIM gwdo scheme
+     &        ,kim_tofd=config_flags%kim_tofd                                       &
+     &        ,tofd_factor=config_flags%tofd_factor                                 &
+     &        ,VAR2D=grid%var2d                                                     &
 #endif
 ! CLM Varaibles
      &        ,NUMC=grid%numc,NUMP=grid%nump,SABV=grid%sabv,SABG=grid%sabg,         &

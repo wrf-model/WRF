@@ -10,15 +10,12 @@
 [submodule "phys/MYNN-EDMF"]
 	path = phys/MYNN-EDMF
 	url = https://github.com/NCAR/MYNN-EDMF
-<<<<<<< develop-gfl
-[submodule "phys/GFL"]
-	path = phys/GFL
-	url = https://github.com/NOAA-GSL/GFL
-=======
-[submodule "phys/TEMPO"]
-	path = phys/TEMPO
-	url = https://github.com/NCAR/TEMPO.git
 [submodule "phys/MYNN-SFC"]
 	path = phys/MYNN-SFC
 	url = https://github.com/NCAR/MYNN-SFC.git
->>>>>>> develop
+[submodule "phys/GFL"]
+	path = phys/GFL
+	url = https://github.com/NOAA-GSL/GFL
+[submodule "phys/TEMPO"]
+	path = phys/TEMPO
+	url = https://github.com/NCAR/TEMPO.git

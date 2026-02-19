@@ -242,8 +242,9 @@ PHYSMMM_MODULES = \
 	physics_mmm/mp_wsm6.o \
 	physics_mmm/mp_wsm6_effectRad.o \
 	physics_mmm/mp_radar.o \
-        physics_mmm/bl_gwdo.o \
-        physics_mmm/bl_ysu.o
+    physics_mmm/bl_gwdo.o \
+    physics_mmm/bl_shinhong.o \
+    physics_mmm/bl_ysu.o
 
 OBJS    =
 

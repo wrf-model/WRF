@@ -31,6 +31,9 @@ CONTAINS
                  ,windfarm_wake_model, windfarm_overlap_method     &
                  ,ysu_topdown_pblmix                               &
                  ,shinhong_tke_diag                                &
+                 ,shinhong_scu_mixing                              &
+                 ,shinhong_nonlocal_flux                           &
+                 ,shinhong_ke_dissipation                          &
               ! OPTIONAL for TEMF scheme
                  ,te_temf,km_temf,kh_temf                     &
                  ,shf_temf,qf_temf,uw_temf,vw_temf                &
@@ -422,6 +425,9 @@ CONTAINS
                INTENT(IN   )    ::                        LOWLYR
 !
    LOGICAL,      INTENT(IN   )    ::   warm_rain
+   LOGICAL,      INTENT(IN   )    ::   shinhong_scu_mixing
+   LOGICAL,      INTENT(IN   )    ::   shinhong_nonlocal_flux
+   LOGICAL,      INTENT(IN   )    ::   shinhong_ke_dissipation
    LOGICAL,      INTENT(IN   )    ::   is_CAMMGMP_used !BSINGH:01/31/2013: Added for CAMUWPBL
    LOGICAL,    OPTIONAL,   INTENT(IN   )    ::   restart,cycling !used by mynn
 
@@ -1298,33 +1304,44 @@ CONTAINS
                 PRESENT( hol      ) ) THEN
 !
              CALL shinhong(                                         &
-               U3D=u_phytmp,V3D=v_phytmp,TH3D=th_phy,T3D=t_phy      &
+               U3D=u_phytmp,V3D=v_phytmp,T3D=t_phy                  &
               ,QV3D=qv_curr,QC3D=qc_curr,QI3D=qi_curr               &
               ,P3D=p_phy,P3DI=p8w,PI3D=pi_phy                       &
               ,RUBLTEN=rublten,RVBLTEN=rvblten                      &
               ,RTHBLTEN=rthblten,RQVBLTEN=rqvblten                  &
               ,RQCBLTEN=rqcblten,RQIBLTEN=rqiblten                  &
-              ,FLAG_QI=flag_qi                                      &
+              ,FLAG_QI=flag_qi,FLAG_QC=flag_qc                      &
               ,CP=cp,G=g,ROVCP=rcp,RD=r_D,ROVG=rovg                 &
               ,DZ8W=dz8w,XLV=XLV,RV=r_v,PSFC=PSFC                   &
-              ,ZNU=znu,ZNW=znw,P_TOP=p_top                          &
               ,ZNT=znt,UST=ust,HPBL=pblh                            &
               ,PSIM=fm,PSIH=fhh,XLAND=xland                         &
               ,HFX=hfx,QFX=qfx                                      &
               ,U10=u10,V10=v10                                      &
+              ,UOCE=uoce,VOCE=voce                                  &
 ! paj
-              ,CTOPO=ctopo,CTOPO2=ctopo2                            &
-              ,SHINHONG_TKE_DIAG=shinhong_tke_diag                  &
+              ,shinhong_nonlocal_flux=shinhong_nonlocal_flux        &
+              ,shinhong_scu_mixing=shinhong_scu_mixing              &
+              ,shinhong_dissi_heating=shinhong_ke_dissipation       &
+              ,tke=tke_pbl,el=el_pbl,corf=f                         &
+              ,CTOPO=ctopo,CTOPO2=ctopo2,dx=dx2d                    &
               ,WSPD=wspd,BR=br,DT=dtbl,KPBL2D=kpbl                  &
               ,EP1=ep_1,EP2=ep_2,KARMAN=karman                      &
-              ,EXCH_H=exch_h,REGIME=regime                          &
-! for grims shallow convection with shinhongpbl
+              ,EXCH_H=exch_h,EXCH_M=exch_m                          &
+              ,RTHRATEN=RTHRATEN                                    &
+! for multilayer UCM
+              ,IDIFF=idiff,FLAG_BEP=flag_bep,FRC_URB2D=frc_urb2d    &
+              ,A_U_BEP=a_u_bep,A_V_BEP=a_v_bep,A_T_BEP=a_t_bep      &
+              ,A_Q_BEP=a_q_bep                                      &
+              ,A_E_BEP=a_e_bep,B_U_BEP=b_u_bep,B_V_BEP=b_v_bep      &
+              ,B_T_BEP=b_t_bep,B_Q_BEP=b_q_bep                      &
+              ,B_E_BEP=b_e_bep,DLG_BEP=dlg_bep                      &
+              ,DL_U_BEP=dl_u_bep,SF_BEP=sf_bep,VL_BEP=vl_bep        &
+! for grims shallow convection
               ,WSTAR=wstar,DELTA=delta                              &
-              ,TKE_PBL=tke_pbl,EL_PBL=el_pbl,CORF=f                 &
+              ,errmsg=errmsg,errflg=errflg                          &
               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
-              ,DX=dx,DY=dy                                          &
                                                                     )
            ELSE
                WRITE ( message , FMT = '(A,7(L1,1X))' )             &

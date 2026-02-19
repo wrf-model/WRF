@@ -461,6 +461,19 @@ submodules :
 	else \
 		echo No action required for MYNN-EDMF submodule ; \
 	fi
+	@if [ \( ! -f module_sf_mynnsfc_driver.F \) -o \( ! -f module_sf_mynnsfc_common.F \) -o \
+	      \( ! -f module_sf_mynnsfc_land.F \) -o \( ! -f module_sf_mynnsfc_water.F \) -o \
+	      \( ! -f module_sf_mynnsfc_ice.F \) ] ; then \
+		echo Pulling in MYNN-SFC submodule ; \
+		( cd .. ; git submodule update --init --recursive ) ; \
+		ln -sf MYNN-SFC/WRF/module_sf_mynnsfc_driver.F90 module_sf_mynnsfc_driver.F ; \
+		ln -sf MYNN-SFC/WRF/module_sf_mynnsfc_common.F90 module_sf_mynnsfc_common.F ; \
+		ln -sf MYNN-SFC/module_sf_mynnsfc_land.F90 module_sf_mynnsfc_land.F ; \
+		ln -sf MYNN-SFC/module_sf_mynnsfc_water.F90 module_sf_mynnsfc_water.F ; \
+		ln -sf MYNN-SFC/module_sf_mynnsfc_ice.F90 module_sf_mynnsfc_ice.F ; \
+	else \
+		echo No action required for MYNN-SFC submodule ; \
+	fi
 	@if [ \( ! -f module_cu_gfl_wrf.F \) -o \( ! -f module_cu_gfl_common.F \) -o \
 	      \( ! -f module_cu_gfl_deep.F \) -o \( ! -f module_cu_gfl_sh.F \) ] ; then \
 	      	echo Pulling in GFL submodule ; \
@@ -471,6 +484,7 @@ submodules :
 		ln -sf GFL/WRF/module_cu_gfl_wrf.F90 module_cu_gfl_wrf.F ; \
 	else \
 		echo No action required for GFL submodule ; \
+    fi
 	@if [ \( ! -f module_mp_tempo_driver.F90 \) -o \( ! -f module_mp_tempo_main.F90 \) -o \
 	      \( ! -f module_mp_tempo_cfgs.F90 \) -o \( ! -f module_mp_tempo_aerosols.F90 \) -o \
 	      \( ! -f module_mp_tempo_ml.F90 \) -o \( ! -f modulemp_tempo_diags.F90 \) -o \
@@ -488,20 +502,7 @@ submodules :
 	else \
 		echo No action required for TEMPO submodule ; \
 	fi
-	
-	@if [ \( ! -f module_sf_mynnsfc_driver.F \) -o \( ! -f module_sf_mynnsfc_common.F \) -o \
-	      \( ! -f module_sf_mynnsfc_land.F \) -o \( ! -f module_sf_mynnsfc_water.F \) -o \
-	      \( ! -f module_sf_mynnsfc_ice.F \) ] ; then \
-		echo Pulling in MYNN-SFC submodule ; \
-		( cd .. ; git submodule update --init --recursive ) ; \
-		ln -sf MYNN-SFC/WRF/module_sf_mynnsfc_driver.F90 module_sf_mynnsfc_driver.F ; \
-		ln -sf MYNN-SFC/WRF/module_sf_mynnsfc_common.F90 module_sf_mynnsfc_common.F ; \
-		ln -sf MYNN-SFC/module_sf_mynnsfc_land.F90 module_sf_mynnsfc_land.F ; \
-		ln -sf MYNN-SFC/module_sf_mynnsfc_water.F90 module_sf_mynnsfc_water.F ; \
-		ln -sf MYNN-SFC/module_sf_mynnsfc_ice.F90 module_sf_mynnsfc_ice.F ; \
-	else \
-		echo No action required for MYNN-SFC submodule ; \
-	fi
+
 clean:
 	@ echo 'use the clean script'
 

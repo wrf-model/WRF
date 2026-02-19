@@ -53,6 +53,7 @@ endif
 dimspec    snly    2     namelist=num_snow_layers          z     snow_layers
 dimspec    l       2     namelist=num_soil_layers          z     soil_layers
 dimspec    snsl    2     namelist=num_snso_layers          z     snso_layers
+dimspec    radn    2     namelist=num_radn_layers          z     radn_layers
 
 dimspec    umap0   2     namelist=num_urban_ndm            z     num_urban_ndm
 dimspec    umap1   2     namelist=urban_map_zrd            z     urban_map_zrd

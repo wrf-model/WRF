@@ -3,6 +3,7 @@
 !                   VERTMX was originally developed by Mariusz Pagowski and modified by
 !                   Richard C. Easter (PNNL)
 ! 10/11/2011 - Ravan Ahmadov (NOAA) updated to include the RACM_SOA_VBS option
+! 10/30/2024 - A. Ukhov (KAUST) added dry deposition of volcanic ash, so2, sulf
 !
 !WRF:MODEL_LAYER:CHEMICS
 !
@@ -13,22 +14,22 @@ CONTAINS
 
     subroutine dry_dep_driver(id,curr_secs,ktau,dtstep,config_flags,      &
                gmt,julday,t_phy,moist,scalar,p8w,t8w,w,alt,               &
-               p_phy,chem,tracer,rho_phy,dz8w,rh,exch_h,hfx,dx,           &  
+               p_phy,chem,tracer,rho_phy,dz8w,rh,exch_h,hfx,dx,           &
                cldfra, cldfra_old,raincv,seasin,dustin,                   &
                ccn1, ccn2, ccn3, ccn4, ccn5, ccn6, nsource,               &
                ivgtyp,tsk,gsw,vegfra,pbl,rmol,ust,znt,xlat,xlong,z,z_at_w,&
-               xland,ash_fall,h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,       &
+               xland,volc_diags,h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,     &
                anh3,cvaro1,cvaro2,                                        &
                cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,dep_vel_o3,      &
                ddlen,ddflx,                                               &
                emis_ant,ebu_in,                                           &
-               sf_urban_physics,numgas,current_month,dvel,snowh,          & 
+               sf_urban_physics,numgas,current_month,dvel,snowh,          &
                dustdrydep_1,dustdrydep_2,dustdrydep_3,                    &
                dustdrydep_4,dustdrydep_5,                                 &
-               depvelocity,                                               &               
+               depvelocity,                                               &
                dustgraset_1,dustgraset_2,dustgraset_3,                    &
                dustgraset_4,dustgraset_5,                                 &
-               setvel_1,setvel_2,setvel_3,setvel_4,setvel_5, imod,        &         
+               setvel_1,setvel_2,setvel_3,setvel_4,setvel_5, imod,        &
                is_CAMMGMP_used,                                           &
                dep_vel,num_vert_mix,                                      &
                ids,ide, jds,jde, kds,kde,                                 &
@@ -44,7 +45,7 @@ CONTAINS
   USE module_data_sorgam
   USE module_aerosols_sorgam
   USE module_gocart_settling
-  USE module_vash_settling
+  USE module_vash_settling, only: volc_ash_sulf_so2_drydep_driver,sulf_settling_driver,vash_settling_driver ! A.Ukhov
   USE module_gocart_drydep
   USE module_mosaic_drydep, only:  mosaic_drydep_driver
   USE module_mixactivate_wrappers, only: mosaic_mixactivate, sorgam_mixactivate, &
@@ -127,7 +128,12 @@ CONTAINS
                                                      xlat,      &
                                                      xlong,     &
                                                      snowh,     &
-                                          xland,znt,raincv,ash_fall
+                                          xland,znt,raincv
+
+   ! A. Ukhov Volcanic diagnostics
+   REAL, DIMENSION( ims:ime, jms:jme,1:9), INTENT(INOUT ) :: volc_diags
+
+
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,        &
           INTENT(INOUT ) ::                                     &
                     cldfra,     & ! cloud fraction current timestep
@@ -265,6 +271,7 @@ CONTAINS
            config_flags%chem_opt /= GHG_TRACER     .and.                  &
            config_flags%chem_opt /= CHEM_VASH      .and.                  &
            config_flags%chem_opt /= CHEM_VOLC_4BIN .and.                  &
+           config_flags%chem_opt /= CHEM_VOLC      .and.                  &    ! A. Ukhov
            config_flags%chem_opt /= DUST           .and.                  &
            config_flags%chem_opt /= GOCART_SIMPLE  .and.                  &
            config_flags%chem_opt /= GOCARTRACM_KPP )THEN
@@ -435,6 +442,28 @@ CONTAINS
                dustdrydep_1,dustdrydep_2,dustdrydep_3,                    &
                dustdrydep_4,dustdrydep_5,                                 &
                depvelocity,                                               &                    
+               ids,ide, jds,jde, kds,kde,                                 &
+               ims,ime, jms,jme, kms,kme,                                 &
+               its,ite, jts,jte, kts,kte                                  )
+
+      !A. UKhov Dry deposition of volcanic SO2, sulf, and ash
+      ELSEIF ( config_flags%chem_opt == CHEM_VOLC) then
+         call wesely_driver(id,ktau,dtstep,                               &
+               config_flags,current_month,                                &
+               gmt,julday,t_phy,moist,p8w,t8w,raincv,                     &
+               p_phy,chem,rho_phy,dz8w,ddvel,aer_res_def,aer_res_zcen,    &
+               ivgtyp,tsk,gsw,vegfra,pbl,rmol,ust,znt,xlat,xlong,z,z_at_w,&
+               snowh, numgas,                                             &
+               ids,ide, jds,jde, kds,kde,                                 &
+               ims,ime, jms,jme, kms,kme,                                 &
+               its,ite, jts,jte, kts,kte                                  )
+
+         call volc_ash_sulf_so2_drydep_driver(dtstep,                     &
+               config_flags,numgas,                                       &
+               t_phy,moist,p8w,t8w,rmol,aer_res_def,                      &
+               p_phy,chem,rho_phy,dz8w,ddvel,xland,hfx,                   &
+               tsk,pbl,ust,znt,                                           &
+               volc_diags,                                                &
                ids,ide, jds,jde, kds,kde,                                 &
                ims,ime, jms,jme, kms,kme,                                 &
                its,ite, jts,jte, kts,kte                                  )
@@ -1395,22 +1424,38 @@ CONTAINS
          dustin,seasin,dx,g, &
          dustgraset_1,dustgraset_2,dustgraset_3,                           &
          dustgraset_4,dustgraset_5,                                        &
-         setvel_1,setvel_2,setvel_3,setvel_4,setvel_5, imod,               &              
+         setvel_1,setvel_2,setvel_3,setvel_4,setvel_5, imod,               &
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )
-   CASE (CHEM_VASH, CHEM_VOLC, CHEM_VOLC_4BIN)
-       CALL wrf_debug(15,'call vash settling routine')
-         call vash_settling_driver(dtstep,config_flags,t_phy,moist,        &
-         chem,rho_phy,dz8w,p8w,p_phy,                                      &
-         ash_fall,dx,g,                                                    &
-         ids,ide, jds,jde, kds,kde,                                        &
-         ims,ime, jms,jme, kms,kme,                                        &
-         its,ite, jts,jte, kts,kte                                         )
-   CASE DEFAULT
-       CALL wrf_debug(15,'no settling routine')
    END SELECT settling_select
    ENDIF
+
+
+! A. Ukhov, 12 Oct 2024. added volc_diags
+vash_settling_select: SELECT CASE(config_flags%chem_opt)
+CASE (CHEM_VASH, CHEM_VOLC, CHEM_VOLC_4BIN)
+    CALL wrf_debug(15,'call vash grav. settling routine')
+      call vash_settling_driver(dtstep,config_flags,t_phy,moist,        &
+      chem,rho_phy,dz8w,p8w,p_phy,volc_diags,dx,g,                      &
+      ids,ide, jds,jde, kds,kde,                                        &
+      ims,ime, jms,jme, kms,kme,                                        &
+      its,ite, jts,jte, kts,kte                                         )
+
+      !A. Ukhov, 12 Oct 2024
+      if (config_flags%chem_opt.eq.CHEM_VOLC) then
+         CALL wrf_debug(15,'call sulf. aerosol grav. settling routine')
+         call sulf_settling_driver(dtstep,config_flags,t_phy,moist,    &
+         chem,rho_phy,dz8w,p8w,p_phy,dx,g,z_at_w,volc_diags,           &
+         ids,ide, jds,jde, kds,kde,                                    &
+         ims,ime, jms,jme, kms,kme,                                    &
+         its,ite, jts,jte, kts,kte)      
+      endif
+      
+CASE DEFAULT
+    CALL wrf_debug(15,'no settling routine')
+END SELECT vash_settling_select
+
 
        CALL wrf_debug(15,'end of dry_dep_driver')
 

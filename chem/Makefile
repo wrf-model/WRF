@@ -80,6 +80,7 @@ MODULES =                                 \
         module_gocart_dust.o              \
         module_gocart_dust_afwa.o         \
         module_gocart_seasalt.o           \
+		module_volc_chem.o                \
         module_uoc_dust.o                 \
         module_qf03.o                     \
         module_soilpsd.o                  \

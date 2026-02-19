@@ -5,14 +5,19 @@
 !                   Saulo Freitas (CPTEC), and Georg Grell
 !
 !
-! A. Ukhov, 11 March 2021, remove unused parameters in gocart_dust_driver(),
+! A. Ukhov (KAUST), 11 March 2021, remove unused parameters in gocart_dust_driver(),
 ! gocart_dust_afwa_driver(), and uoc_dust_driver() subroutines.
+
+! A. Ukhov (KAUST), 3 Oct 2024, added mapfac_mx and mapfac_my for
+! precise calculation of cell area. This is needed for volcanic eruption.
+! Corrected fractions for calculation of contribution of vash into PM2.5 and PM10.
+! Added new emiss_opt_vol=3 for emissions of volcanic sulfate and water vapor.
 
 MODULE module_emissions_driver
    IMPLICIT NONE
 CONTAINS
 
-    subroutine emissions_driver(id,ktau,dtstep,DX,                         &
+    subroutine emissions_driver(id,ktau,dtstep,DX,DY,                      &
          adapt_step_flag,curr_secs,                                        &
          plumerisefire_frq,stepfirepl,                                     &
          bioemdt,stepbioe,                                                 &
@@ -26,7 +31,7 @@ CONTAINS
          firesize_agsv,firesize_aggr,                                      &
          u10,v10,ivgtyp,isltyp,gsw,vegfra,rmol,ust,znt,dms_0,              &
          erup_beg,erup_end,                                                &
-         xland,xlat,xlong,z_at_w,z,smois,dustin,seasin,                    &
+         xland,xlat,xlong,mapfac_mx,mapfac_my,z_at_w,z,smois,dustin,seasin,&
          sebio_iso,sebio_oli,sebio_api,sebio_lim,sebio_xyl,                &
          sebio_hc3,sebio_ete,sebio_olt,sebio_ket,sebio_ald,                &   
          sebio_hcho,sebio_eth,sebio_ora2,sebio_co,sebio_nr,                &
@@ -124,7 +129,7 @@ CONTAINS
    INTEGER,      INTENT(IN   ) ::                                          &
                                   ktau,stepbioe,stepfirepl
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_moist ),                &
-         INTENT(IN ) ::                                   moist
+         INTENT(INOUT ) ::                                   moist
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem ),                 &
          INTENT(INOUT ) ::                                   chem
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_tracer ),               &
@@ -204,7 +209,8 @@ CONTAINS
                                                      rainnc,               &
                                                      potevp,               &
                                                      sfcevp,               &
-                                                     lu_index
+                                                     lu_index,             &
+                                                     mapfac_mx,mapfac_my
 
    REAL, DIMENSION( ims:ime , jms:jme )                  ,                 &
          OPTIONAL,                                                         &
@@ -312,7 +318,7 @@ CONTAINS
       real :: area,x1,percen_mass_umbrel,base_umbrel,ashz_above_vent
 
       REAL, INTENT(IN   ) ::                                           &
-           bioemdt, dtstep, dx, gmt, g
+           bioemdt, dtstep, dx, dy, gmt, g
 
       INTEGER, INTENT(IN   ) ::                                        &
            plumerisefire_frq
@@ -396,7 +402,7 @@ real, save :: freq_industry(24)    = &
       REAL :: convert2(its:ite,jts:jte)
 #endif
       CHARACTER (LEN=80) :: message
-      LOGICAL :: do_bioemiss, do_plumerisefire,do_ex_volcanoe
+      LOGICAL :: do_bioemiss, do_plumerisefire
 
       INTEGER :: imod  ! dust scheme option from namelist
 
@@ -416,7 +422,11 @@ real, save :: freq_industry(24)    = &
        base_umbrel=.25    ! fraction
 
       ivolcano=0
-      area=dx*dx
+      
+      !area=dx*dx
+      ! A. Ukhov 12 Oct 2024
+      area=(dx/mapfac_mx(i,j))*(dy/mapfac_my(i,j))
+
       dust_emiss_active    = 0
       seasalt_emiss_active = 0
       if(config_flags%dust_opt >= 2 )dust_emiss_active    = 1
@@ -433,8 +443,8 @@ real, save :: freq_industry(24)    = &
       gmtm=mod(gmtp,60.)
 !     write(0,*) 'gmtp,gmtm,curr_secs = ',gmtp,gmtm,curr_secs
 !
-      if(config_flags%emiss_opt_vol == 1 .or. config_flags%emiss_opt_vol == 2)then
-         do_ex_volcanoe = .false.
+      if(config_flags%emiss_opt_vol == 1 .or. config_flags%emiss_opt_vol == 2 .or. &
+          config_flags%emiss_opt_vol == 3 )then
 !
       emiss_ash_height = config_flags%emiss_ash_hgt
       if(emiss_ash_height.gt. 1.)then
@@ -448,7 +458,6 @@ real, save :: freq_industry(24)    = &
         so2_mass=1.5e4*3600.*1.e9/64./area
         eh=2600.*(emiss_ash_height*.0005)**4.1494
         emiss_ash_mass=eh*1.e9/area
-             
 ! volcanic emissions
 !       
         ashz_above_vent=emiss_ash_height - z_at_w(i,kts,j)                              
@@ -535,11 +544,12 @@ real, save :: freq_industry(24)    = &
       do j=jts,jte
       do i=its,ite
          ivolcano = 0
-        if(erup_end(i,j).le.0)cycle
+        if(erup_end(i,j).le.0 .and. config_flags%emiss_opt_vol .ne. 3)cycle
 !        if(emis_vol(i,kts,j,p_e_vash1).le.0.)cycle
 !
 !   erup_end is continuation in minutes
 !
+        if(config_flags%emiss_opt_vol .ne. 3) then
          begday=int(erup_beg(i,j)/1000.)-1
          beghr=int(erup_beg(i,j))-(begday+1)*1000
          begmin=00.
@@ -587,6 +597,13 @@ real, save :: freq_industry(24)    = &
             endif
          endif ! julday.ge.begday .and. julday.le.endday
 
+        ! A. Ukhov 12 Oct 2024.
+        elseif(config_flags%emiss_opt_vol .eq. 3) then 
+          if (emis_vol(i,kts,j,p_e_start) .le.0) cycle
+          ivolcano=1
+          !write(*,*)"volcano at ",ivolcano,i,j,emis_vol(i,kts,j,p_e_start),emis_vol(i,22,j,p_e_vso2),emis_vol(i,22,j,p_e_vash9)
+        endif !if(config_flags%emiss_opt_vol .ne. 3)
+     
       volc_select:  SELECT CASE(config_flags%chem_opt)
       CASE (GOCART_SIMPLE,MOZCART_KPP,T1_MOZCART_KPP,GOCARTRADM2,GOCARTRACM_KPP)
         CALL wrf_debug(15,'Adding volcanic emissions')
@@ -597,11 +614,11 @@ real, save :: freq_industry(24)    = &
                   enddo
                do k=kts,kte
                 conv=float(ivolcano)*alt(i,k,j)*dtstep/dz8w(i,k,j)
-                chem(i,k,j,p_p25)=chem(i,k,j,p_p25)+.5*emis_vol(i,k,j,p_e_vash10)*conv
+                chem(i,k,j,p_p25)=chem(i,k,j,p_p25)+ 0.672 * emis_vol(i,k,j,p_e_vash10)*conv  !vash10:[0.0-3.906] diam. (um) => log(2.5-0)/log(3.906-0)=0.672
                 chem(i,k,j,p_p10)=chem(i,k,j,p_p10)     &
-                                 +.5*emis_vol(i,k,j,p_e_vash10)*conv &
-                                 +emis_vol(i,k,j,p_e_vash9)*conv    &
-                                 +.5*emis_vol(i,k,j,p_e_vash8)*conv
+                                 + emis_vol(i,k,j,p_e_vash10)*conv &
+                                 + emis_vol(i,k,j,p_e_vash9)*conv    &
+                                 + 0.356 * emis_vol(i,k,j,p_e_vash8)*conv  ! vash8:[7.812-15.625] diam. (um) => (log(10)-log(7.812))/(log(15.625)-log(7.812))=0.356
                enddo
       CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_KPP,RACMSORG_KPP,RACMSORG_AQ,RACM_ESRLSORG_KPP, &
             RACMSORG_AQCHEM_KPP,RACM_ESRLSORG_AQCHEM_KPP)
@@ -630,9 +647,28 @@ real, save :: freq_industry(24)    = &
       CASE (CHEM_VOLC)
               CALL wrf_debug(15,'Adding volcanic emissions to case chem_volc')
                do k=kts,kte
-                 conv = float(ivolcano)*4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
-                 chem(i,k,j,p_so2)  = chem(i,k,j,p_so2)                   &
-                  +emis_vol(i,k,j,p_e_vso2)*conv
+                    !   p_e_vso2 in "ug/m2/min". p_so2 in ppmv
+                    if (config_flags%emiss_opt_vol == 2) then
+                         conv = float(ivolcano) *4.828e-4 * alt(i,k,j) * dtstep/(dz8w(i,k,j)*60.)
+                         chem(i,k,j,p_so2)  = chem(i,k,j,p_so2) + emis_vol(i,k,j,p_e_vso2) * conv
+                    endif
+
+                    ! A. Ukhov. volcanic emissions
+                    if (config_flags%emiss_opt_vol == 3) then
+                         ! p_e_vso2 in "ug/m2/min". p_so2 in ppmv
+                         conv = float(ivolcano) * 4.52656e-4 * alt(i,k,j) * dtstep/(dz8w(i,k,j)*60.)
+                         chem(i,k,j,p_so2)  = chem(i,k,j,p_so2) + emis_vol(i,k,j,p_e_vso2) * conv
+
+                         ! volcanic sulfate emission.
+                         ! p_e_vsulf in "ug/m2/min". p_sulf in ppmv
+                         conv = float(ivolcano) * 3.01771e-4 * alt(i,k,j) * dtstep/(dz8w(i,k,j)*60.)
+                         chem(i,k,j,p_sulf) = chem(i,k,j,p_sulf) + emis_vol(i,k,j,p_e_vsulf) * conv
+
+                         ! volcanic water vapor emission. p_qv in [kg/kg]
+                         ! p_e_qv in [kg/m2/sec]
+                         conv = float(ivolcano) * alt(i,k,j) * dtstep  / dz8w(i,k,j)
+                         moist(i,k,j,p_qv) = moist(i,k,j,p_qv) + emis_vol(i,k,j,p_e_qv) * conv
+                    endif
                enddo
                do k=kts,kte
                 conv=float(ivolcano)*alt(i,k,j)*dtstep/dz8w(i,k,j)
@@ -657,7 +693,7 @@ real, save :: freq_industry(24)    = &
                 chem(i,k,j,p_vash_10)=chem(i,k,j,p_vash_10)+emis_vol(i,k,j,p_e_vash10)*conv
                enddo
       CASE (CHEM_VASH)
-               CALL wrf_debug(15,'Adding volcanic emissions to case chem_volc')
+               CALL wrf_debug(15,'Adding volcanic emissions to case chem_vash')
                do k=kts,kte
                 conv=float(ivolcano)*alt(i,k,j)*dtstep/dz8w(i,k,j)
                 chem(i,k,j,p_vash_1)=chem(i,k,j,p_vash_1)+emis_vol(i,k,j,p_e_vash1)*conv
@@ -676,7 +712,7 @@ real, save :: freq_industry(24)    = &
 !!!!!!
       enddo
       enddo
-      ENDIF! config_flags%emiss_opt_vol == 1 .or. config_flags%emiss_opt_vol == 2
+      ENDIF! config_flags%emiss_opt_vol == 1, 2 or 3
 !--------------------------------------------------------------------------------------
       do_plumerisefire = .false.
       IF ( config_flags%biomass_burn_opt == BIOMASSB_MOZC .OR. &

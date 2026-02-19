@@ -4,9 +4,21 @@
 [submodule ".ci/hpc-workflows"]
 	path = .ci/hpc-workflows
 	url = https://github.com/islas/hpc-workflows
+[submodule "phys/physics_mmm"]
+	path = phys/physics_mmm
+	url = https://github.com/NCAR/MMM-physics.git
 [submodule "phys/MYNN-EDMF"]
 	path = phys/MYNN-EDMF
 	url = https://github.com/NCAR/MYNN-EDMF
+<<<<<<< develop-gfl
 [submodule "phys/GFL"]
 	path = phys/GFL
 	url = https://github.com/NOAA-GSL/GFL
+=======
+[submodule "phys/TEMPO"]
+	path = phys/TEMPO
+	url = https://github.com/NCAR/TEMPO.git
+[submodule "phys/MYNN-SFC"]
+	path = phys/MYNN-SFC
+	url = https://github.com/NCAR/MYNN-SFC.git
+>>>>>>> develop

@@ -23455,7 +23455,7 @@ contains
 !
 !
 ! !CALLED FROM:
-! subroutine SurfaceAlbedo in module SurfaceAlbedoMod (CLM)
+! subroutine SurfaceAlbedoClm in module SurfaceAlbedoClmMod (CLM)
 ! subroutine albice (CSIM)
 !
 ! !REVISION HISTORY:
@@ -27391,12 +27391,12 @@ contains
 
 end module accFldsMod
 
-module SurfaceRadiationMod
+module SurfaceRadiationClmMod
 
 !------------------------------------------------------------------------------
 !BOP
 !
-! !MODULE: SurfaceRadiationMod
+! !MODULE: SurfaceRadiationClmMod
 !
 ! !DESCRIPTION:
 ! Calculate solar fluxes absorbed by vegetation and ground surface
@@ -27411,7 +27411,7 @@ module SurfaceRadiationMod
   save
 !
 ! !PUBLIC MEMBER FUNCTIONS:
-  public :: SurfaceRadiation ! Solar fluxes absorbed by veg and ground surface
+  public :: SurfaceRadiationClm ! Solar fluxes absorbed by veg and ground surface
 !
 ! !REVISION HISTORY:
 ! Created by Mariana Vertenstein
@@ -27429,10 +27429,10 @@ contains
 !------------------------------------------------------------------------------
 !BOP
 !
-! !IROUTINE: SurfaceRadiation
+! !IROUTINE: SurfaceRadiationClm
 !
 ! !INTERFACE:
-   subroutine SurfaceRadiation(lbp, ubp, num_nourbanp, filter_nourbanp)
+   subroutine SurfaceRadiationClm(lbp, ubp, num_nourbanp, filter_nourbanp)
 !
 ! !DESCRIPTION: 
 ! Solar fluxes absorbed by vegetation and ground surface
@@ -28194,16 +28194,16 @@ contains
         end if
      end do 
 
-   end subroutine SurfaceRadiation
+   end subroutine SurfaceRadiationClm
 
-end module SurfaceRadiationMod
+end module SurfaceRadiationClmMod
 
-module SurfaceAlbedoMod
+module SurfaceAlbedoClmMod
 
 !-----------------------------------------------------------------------
 !BOP
 !
-! !MODULE: SurfaceAlbedoMod
+! !MODULE: SurfaceAlbedoClmMod
 !
 ! !DESCRIPTION:
 ! Performs surface albedo calculations
@@ -28221,7 +28221,7 @@ module SurfaceAlbedoMod
   save
 !
 ! !PUBLIC MEMBER FUNCTIONS:
-  public :: SurfaceAlbedo  ! Surface albedo and two-stream fluxes
+  public :: SurfaceAlbedoClm  ! Surface albedo and two-stream fluxes
 !
 ! !PRIVATE MEMBER FUNCTIONS:
   private :: SoilAlbedo    ! Determine ground surface albedo
@@ -28238,10 +28238,10 @@ contains
 !-----------------------------------------------------------------------
 !BOP
 !
-! !IROUTINE: SurfaceAlbedo
+! !IROUTINE: SurfaceAlbedoClm
 !
 ! !INTERFACE:
-  subroutine SurfaceAlbedo(lbg, ubg, lbc, ubc, lbp, ubp, &
+  subroutine SurfaceAlbedoClm(lbg, ubg, lbc, ubc, lbp, ubp, &
                            num_nourbanc, filter_nourbanc, &
                            num_nourbanp, filter_nourbanp, &
                            nextsw_cday, declinp1)
@@ -28835,7 +28835,7 @@ contains
        end do
     end do
 
-  end subroutine SurfaceAlbedo
+  end subroutine SurfaceAlbedoClm
 
 
 !-----------------------------------------------------------------------
@@ -28864,7 +28864,7 @@ contains
     real(r8), intent(in) :: albsni(lbc:ubc,numrad)     ! snow albedo (diffuse)
 !
 ! !CALLED FROM:
-! subroutine SurfaceAlbedo in this module
+! subroutine SurfaceAlbedoClm in this module
 !
 ! !REVISION HISTORY:
 ! Author: Gordon Bonan
@@ -28963,7 +28963,7 @@ contains
                 albsoi(c,ib) = albsod(c,ib)
              end if
 
-             ! Weighting is done in SurfaceAlbedo, after the call to SNICAR_RT
+             ! Weighting is done in SurfaceAlbedoClm, after the call to SNICAR_RT
              ! This had to be done, because SoilAlbedo is called before SNICAR_RT, so at
              ! this point, snow albedo is not yet known.
           end if
@@ -29006,7 +29006,7 @@ contains
     real(r8), intent(in)  :: tau(lbp:ubp,numrad)      ! leaf/stem tran weighted by fraction LAI and SAI
 !
 ! !CALLED FROM:
-! subroutine SurfaceAlbedo in this module
+! subroutine SurfaceAlbedoClm in this module
 !
 ! !REVISION HISTORY:
 ! Author: Gordon Bonan
@@ -29254,7 +29254,7 @@ contains
 
   end subroutine TwoStream
 
-end module SurfaceAlbedoMod
+end module SurfaceAlbedoClmMod
 
 module SoilTemperatureMod
 
@@ -56377,7 +56377,7 @@ subroutine iniTimeVar(snlx     ,snowdpx ,dzclmx  ,zclmx      ,&
   use clm_varpar           , only : nlevsoi,nlevgrnd, nlevsno, nlevlak,maxpatch
   use clm_varcon           , only : denice, denh2o, zlnd,istsoil,isturb
   use FracWetMod           , only : FracWet
-  use SurfaceAlbedoMod     , only : SurfaceAlbedo
+  use SurfaceAlbedoClmMod     , only : SurfaceAlbedoClm
   use globals              , only : month, day, calday
 #if (defined CN)
   use CNEcosystemDynMod    , only : CNEcosystemDyn
@@ -56655,7 +56655,7 @@ subroutine iniTimeVar(snlx     ,snowdpx ,dzclmx  ,zclmx      ,&
           end if
        end do
 
-     call SurfaceAlbedo(begg, endg, begc, endc, begp, endp,filter%num_nourbanc, filter%nourbanc, &
+     call SurfaceAlbedoClm(begg, endg, begc, endc, begp, endp,filter%num_nourbanc, filter%nourbanc, &
                            filter%num_nourbanp, filter%nourbanp, calday,declin)
 
 
@@ -57992,7 +57992,7 @@ subroutine driver (doalb,ilx,jlx,nextsw_cday, declinp1, declin, &
 !   + DGVMEcosystemDyn    DGVM ecosystem dynamics: vegetation phenology [!DGVM]
 !  -> EcosystemDyn        "static" ecosystem dynamics: vegetation phenology
 !                         and soil carbon [!DGVM]
-!  -> SurfaceAlbedo       albedos for next time step
+!  -> SurfaceAlbedoClm    albedos for next time step
 !  -> Biogeophysics2      soil/snow & ground temp and update surface fluxes
 !  -> pft2col             Average from PFT level to column level
 !  ====  End Loop 1 over clumps  ====
@@ -58047,7 +58047,7 @@ subroutine driver (doalb,ilx,jlx,nextsw_cday, declinp1, declin, &
   use clm_varcon          , only : set_caerdep_from_file,set_dustdep_from_file,zlnd, isturb, fpftdyn, fndepdyn !move  fpftdyn, fndepdyn to clm_varcon.F
   use DriverInitMod       , only : DriverInit
   use BalanceCheckMod     , only : BalanceCheck, BeginWaterBalance
-  use SurfaceRadiationMod , only : SurfaceRadiation
+  use SurfaceRadiationClmMod , only : SurfaceRadiationClm
   use Hydrology1Mod       , only : Hydrology1
   use Hydrology2Mod       , only : Hydrology2
   use HydrologyLakeMod    , only : HydrologyLake
@@ -58056,7 +58056,7 @@ subroutine driver (doalb,ilx,jlx,nextsw_cday, declinp1, declin, &
   use CanopyFluxesMod     , only : CanopyFluxes
   use Biogeophysics2Mod   , only : Biogeophysics2
   use BiogeophysicsLakeMod, only : BiogeophysicsLake
-  use SurfaceAlbedoMod    , only : SurfaceAlbedo
+  use SurfaceAlbedoClmMod , only : SurfaceAlbedoClm
   use pft2colMod          , only : pft2col
 !  use accFldsMod          , only : updateAccFlds
 !  use accumulMod          , only : accum_dealloc
@@ -58357,8 +58357,8 @@ subroutine driver (doalb,ilx,jlx,nextsw_cday, declinp1, declin, &
      ! Surface Radiation
      ! ============================================================================
 
-     call CLMDebug('SurfaceRadiation') !checked and modified according to CLM4
-     call SurfaceRadiation(begp, endp, filter%num_nourbanp, filter%nourbanp)
+     call CLMDebug('SurfaceRadiationClm') !checked and modified according to CLM4
+     call SurfaceRadiationClm(begp, endp, filter%num_nourbanp, filter%nourbanp)
 
 
 !ylu add  urban module from CLM4
@@ -58703,8 +58703,8 @@ subroutine driver (doalb,ilx,jlx,nextsw_cday, declinp1, declin, &
     if (doalb) then
 
         ! Albedos for non-urban columns
-        call CLMDebug('SurfaceAlbedo')  !checed and modified accoring to CLM4 --ylu
-        call SurfaceAlbedo(begg, endg, begc, endc, begp, endp, &
+        call CLMDebug('SurfaceAlbedoClm')  !checed and modified accoring to CLM4 --ylu
+        call SurfaceAlbedoClm(begg, endg, begc, endc, begp, endp, &
                            filter%num_nourbanc, filter%nourbanc, &
                            filter%num_nourbanp, filter%nourbanp,nextsw_cday ,declinp1)
 
@@ -58802,6 +58802,8 @@ CONTAINS
                 cmcr_urb2d,tgr_urb2d,tgrl_urb3d,smr_urb3d,      & ! urban
                 drelr_urb2d,drelb_urb2d,drelg_urb2d,            & ! urban
                 flxhumr_urb2d,flxhumb_urb2d,flxhumg_urb2d,      &
+                tvg_urb2d,xxxvg_urb2d,tvgl_urb3d,smg_urb3d,tt_urb2d,  &
+                cmcg_urb2d,flxhumvg_urb2d,flxhumt_urb2d,              &
 ! subgrids
                numc,nump,sabv,sabg,lwup,snl, &
                 snowdp,wtc,wtp,h2osno,t_grnd,t_veg,         &
@@ -59240,6 +59242,15 @@ CONTAINS
      REAL :: TGR_URB
      REAL, DIMENSION(1:num_roof_layers) :: SMR_URB  ! green roof layer moisture
      REAL, DIMENSION(1:num_roof_layers) :: TGRL_URB ! green roof layer temp [K]
+     ! added by Chenghao Wang
+     REAL :: TVG_URB
+     REAL :: TT_URB
+     REAL :: XXXVG_URB
+     REAL :: CMCG_URB
+     REAL :: FLXHUMVG_URB
+     REAL :: FLXHUMT_URB
+     REAL, DIMENSION(1:num_road_layers) :: TVGL_URB  ! vegetated ground layer temp [K]
+     REAL, DIMENSION(1:num_road_layers) :: SMG_URB   ! vegetated ground layer moisture
 
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: DRELR_URB2D
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: DRELB_URB2D
@@ -59247,10 +59258,19 @@ CONTAINS
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FLXHUMR_URB2D
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FLXHUMB_URB2D
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FLXHUMG_URB2D
+     ! added by Chenghao Wang
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TVG_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TT_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: XXXVG_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CMCG_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FLXHUMVG_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FLXHUMT_URB2D
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CMCR_URB2D
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TGR_URB2D
      REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_roof_layers, jms:jme ), INTENT(INOUT) :: TGRL_URB3D
      REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_roof_layers, jms:jme ), INTENT(INOUT) :: SMR_URB3D
+     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_road_layers, jms:jme ), INTENT(INOUT) :: TVGL_URB3D
+     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_road_layers, jms:jme ), INTENT(INOUT) :: SMG_URB3D
 
 ! state variable surface_driver <--> lsm <--> urban
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TR_URB2D
@@ -60281,6 +60301,8 @@ has_urban_physics : &
             END DO
             DO K = 1,num_road_layers
               TGL_URB(K) = TGL_URB3D(I,K,J)
+              TVGL_URB(K) = TVGL_URB3D(I,K,J)
+              SMG_URB(K) = SMG_URB3D(I,K,J)
             END DO
 !sw++
             TGR_URB   = TGR_URB2D(I,J)
@@ -60291,6 +60313,12 @@ has_urban_physics : &
             DRELR_URB = DRELR_URB2D(I,J)
             DRELB_URB = DRELB_URB2D(I,J)
             DRELG_URB = DRELG_URB2D(I,J)
+            TVG_URB = TVG_URB2D(I,J)
+            TT_URB = TT_URB2D(I,J)
+            XXXVG_URB = XXXVG_URB2D(I,J)
+            CMCG_URB = CMCG_URB2D(I,J)
+            FLXHUMVG_URB = FLXHUMVG_URB2D(I,J)
+            FLXHUMT_URB = FLXHUMT_URB2D(I,J)
 !sw--
 
             XXXR_URB = XXXR_URB2D(I,J)
@@ -60355,6 +60383,8 @@ has_urban_physics : &
                        TGRL_URB,SMR_URB,CMGR_URB, CHGR_URB, jmonth,     & ! H
                        DRELR_URB,DRELB_URB,                             & ! H
                        DRELG_URB,FLXHUMR_URB,FLXHUMB_URB,FLXHUMG_URB,   &
+                       ! added by Chenghao Wang
+                       TVG_URB,TT_URB,XXXVG_URB,TVGL_URB,SMG_URB,CMCG_URB,FLXHUMVG_URB,FLXHUMT_URB, &
                        lf_urb_s, z0_urb, vegfrac)
 !sw--
 
@@ -60390,6 +60420,8 @@ has_urban_physics : &
             END DO
             DO K = 1,num_road_layers
               TGL_URB3D(I,K,J) = TGL_URB(K)
+              TVGL_URB3D(I,K,J) = TVGL_URB(K)
+              SMG_URB3D(I,K,J) = SMG_URB(K)
             END DO
 !sw++
             TGR_URB2D(I,J)  = TGR_URB 
@@ -60400,6 +60432,12 @@ has_urban_physics : &
             DRELR_URB2D(I,J) = DRELR_URB 
             DRELB_URB2D(I,J) = DRELB_URB 
             DRELG_URB2D(I,J) = DRELG_URB
+            TVG_URB2D(I,J)=TVG_URB
+            TT_URB2D(I,J)=TT_URB
+            XXXVG_URB2D(I,J)=XXXVG_URB
+            CMCG_URB2D(I,J)=CMCG_URB
+            FLXHUMVG_URB2D(I,J)=FLXHUMVG_URB
+            FLXHUMT_URB2D(I,J)=FLXHUMT_URB
 !sw--
             XXXR_URB2D(I,J) = XXXR_URB
             XXXB_URB2D(I,J) = XXXB_URB

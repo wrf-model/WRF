@@ -28,6 +28,9 @@ CONTAINS
                  ,kpbl,mixht,ct,lh,snow,xice                       &
                  ,znu, znw, mut, p_top                             &
                  ,ctopo,ctopo2,windfarm_opt,power                  &
+                 ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/fraunhofer_license.txt
+                 ,thrust                                           &
+                 ! END LICENSE
                  ,windfarm_wake_model, windfarm_overlap_method     &
                  ,ysu_topdown_pblmix                               &
                  ,shinhong_tke_diag                                &
@@ -46,15 +49,18 @@ CONTAINS
                  ,bl_mynn_closure,bl_mynn_cloudpdf                 &
                  ,bl_mynn_mixlength                                &
                  ,icloud_bl,qc_bl,qi_bl,cldfra_bl                  &
-                 ,bl_mynn_edmf,bl_mynn_edmf_mom,bl_mynn_edmf_tke   &
-                 ,bl_mynn_mixscalars,bl_mynn_output                &
-                 ,bl_mynn_cloudmix,bl_mynn_mixqt                   &
+                 ,bl_mynn_edmf,bl_mynn_edmf_dd                     &
+                 ,bl_mynn_edmf_mom,bl_mynn_edmf_tke                &
+                 ,bl_mynn_mixscalars,bl_mynn_mixaerosols           &
+                 ,bl_mynn_mixnumcon,bl_mynn_output                 &
+                 ,bl_mynn_cloudmix,bl_mynn_mixqt,bl_mynn_ess       &
                  ,edmf_a,edmf_w,edmf_thl                           &
                  ,edmf_qt,edmf_ent,edmf_qc                         &
                  ,sub_thl3D,sub_sqv3D                              &
                  ,det_thl3D,det_sqv3D                              &
                  ,vdfg                                             &
                  ,maxwidth,maxMF,ztop_plume                        &
+                 ,excess_h,excess_q                                &
                  ,spp_pbl,pattern_spp_pbl                          &
               ! EEPS
                  ,pek,pep,pek_adv,pep_adv                          &
@@ -542,6 +548,9 @@ CONTAINS
                                                             VOCE, &
                                                               T2, &
                                                            POWER, &
+                                                           ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/fraunhofer_license.txt
+                                                           THRUST, &
+                                                           ! END LICENSE
                                                             WSPD
    REAL,       DIMENSION( ims:ime, jms:jme )                    , &
                INTENT(INOUT)    ::                     HPBL_HOLD
@@ -577,12 +586,16 @@ CONTAINS
                                      bl_mynn_cloudpdf,         &
                                      bl_mynn_mixlength,        &
                                      bl_mynn_edmf,             &
+                                     bl_mynn_edmf_dd,          &
                                      bl_mynn_edmf_mom,         &
                                      bl_mynn_edmf_tke,         &
                                      bl_mynn_mixscalars,       &
+                                     bl_mynn_mixaerosols,      &
+                                     bl_mynn_mixnumcon,        &
                                      bl_mynn_output,           &
                                      bl_mynn_cloudmix,         &
                                      bl_mynn_mixqt,            &
+                                     bl_mynn_ess,              &
                                      icloud_bl,                &
                                      tke_budget
 
@@ -594,9 +607,9 @@ CONTAINS
 
    REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,              &
         &    INTENT(INOUT)::                               vdfg
-
    REAL, OPTIONAL, DIMENSION( ims:ime , jms:jme ),              &
-        &    INTENT(OUT) ::           maxwidth,maxMF,ztop_plume
+        &    INTENT(OUT) ::           maxwidth,maxMF,ztop_plume,&
+                                              excess_h,excess_q
 
     REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ),     &
            INTENT(INOUT) ::         qnwfa_curr,qnifa_curr,qnbca_curr
@@ -1695,6 +1708,7 @@ CONTAINS
                    &det_thl3D=det_thl3D,det_sqv3D=det_sqv3D,             &
                    &maxwidth=maxwidth,maxMF=maxMF,                       &
                    &ztop_plume=ztop_plume,                               &
+                   &excess_h=excess_h,excess_q=excess_q,                 &
                    &RTHRATEN=RTHRATEN,                                   &
                    &bl_mynn_tkeadvect=bl_mynn_tkeadvect,                 &
                    &tke_budget=tke_budget,                               &
@@ -1702,13 +1716,17 @@ CONTAINS
                    &bl_mynn_mixlength=bl_mynn_mixlength,                 &
                    &icloud_bl=icloud_bl,                                 &
                    &bl_mynn_edmf=bl_mynn_edmf,                           &
+                   &bl_mynn_edmf_dd=bl_mynn_edmf_dd,                     &
                    &bl_mynn_edmf_mom=bl_mynn_edmf_mom,                   &
                    &bl_mynn_edmf_tke=bl_mynn_edmf_tke,                   &
                    &bl_mynn_mixscalars=bl_mynn_mixscalars,               &
+                   &bl_mynn_mixaerosols=bl_mynn_mixaerosols,             &
+                   &bl_mynn_mixnumcon=bl_mynn_mixnumcon,                 &
                    &bl_mynn_output=bl_mynn_output,                       &
                    &bl_mynn_cloudmix=bl_mynn_cloudmix,                   &
                    &bl_mynn_mixqt=bl_mynn_mixqt,                         &
                    &bl_mynn_closure=bl_mynn_closure,                     &
+                   &bl_mynn_ess=bl_mynn_ess,                             &
                    &spp_pbl=spp_pbl,pattern_spp_pbl=pattern_spp_pbl,     &
                    &FLAG_QC=flag_qc,FLAG_QI=flag_qi,FLAG_QS=flag_qs,     &
                    &FLAG_QNC=flag_qnc,FLAG_QNI=flag_qni,                 &
@@ -1769,7 +1787,7 @@ CONTAINS
 
            !fill scalar_tend array. The RQN*BLTEN arrays are no longer
            !passed to module_physics_addtendc.F (for MYNN)
-           IF (bl_mynn_mixscalars .eq. 1) THEN
+           IF (bl_mynn_mixnumcon .eq. 1) THEN
               IF (PRESENT( qni_curr ) .AND. Flag_qni) THEN
                 !print*,"Updating qni after mynn-edmf",P_QNI
                 DO j=j_start(ij),j_end(ij)
@@ -1790,6 +1808,8 @@ CONTAINS
                 enddo
                 enddo
               ENDIF
+           endif
+           if (bl_mynn_mixaerosols .eq. 1) then
               IF (PRESENT( qnwfa_curr ) .AND. Flag_qnwfa) THEN
                 !print*,"Updating qnwfa after mynn-edmf",P_QNWFA
                 DO j=j_start(ij),j_end(ij)
@@ -2057,6 +2077,9 @@ CONTAINS
                      &,QKE=qke                                           &
                      &,DU=rublten,DV=rvblten                             &
                      &,WINDFARM_OPT=windfarm_opt,POWER=power             &
+                     ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/fraunhofer_license.txt
+                     &,THRUST=thrust                                     &
+                     ! END LICENSE
                      &,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde   &
                      &,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme   &
                      &,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte   &

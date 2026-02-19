@@ -1166,7 +1166,7 @@ CONTAINS
     !  -----------------
     real                :: tdK      !~ Dewpoint temperature ( K )
     real                :: tC       !~ Temperature ( C )
-    real                :: tdC      !~ Dewpoint temperature ( K )
+    real                :: tdC      !~ Dewpoint temperature ( C )
     real                :: svapr    !~ Saturation vapor pressure ( Pa )
     real                :: vapr     !~ Ambient vapor pressure ( Pa )
     real                :: gamma    !~ Dummy term

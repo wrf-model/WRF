@@ -97,6 +97,14 @@ MODULES = \
 	module_mp_etanew.o \
 	module_mp_fer_hires.o \
 	module_mp_thompson.o \
+	module_mp_tempo_cfgs.o \
+	module_mp_tempo_params.o \
+	module_mp_tempo_utils.o \
+	module_mp_tempo_diags.o \
+	module_mp_tempo_ml.o \
+	module_mp_tempo_aerosols.o \
+	module_mp_tempo_main.o \
+	module_mp_tempo_driver.o \
 	module_mp_rcon.o \
         module_fire_emis.o \
 	module_mp_SBM_polar_radar.o \
@@ -152,11 +160,7 @@ MODULES = \
 	module_sf_noah_seaice.o \
 	module_sf_noah_seaice_drv.o \
 	module_sf_noahlsm_glacial_only.o \
-        module_sf_noahmp_groundwater.o \
         module_sf_gecros.o \
-	module_sf_noahmpdrv.o \
-	module_sf_noahmplsm.o \
-	module_sf_noahmp_glacier.o \
         module_sf_urban.o  \
         module_sf_bep.o  \
         module_sf_bep_bem.o \
@@ -238,7 +242,7 @@ DIAGNOSTIC_MODULES_EM = \
 	module_diag_zld.o \
 	module_diag_trad_fields.o \
         module_diag_solar.o
-  
+
 PHYSMMM_MODULES = \
 	physics_mmm/sf_sfclayrev.o \
 	physics_mmm/cu_ntiedtke.o \
@@ -249,6 +253,168 @@ PHYSMMM_MODULES = \
         physics_mmm/bl_gwdo.o \
         physics_mmm/bl_ysu.o
 
+NOAHMP_MODULES = \
+	noahmp/drivers/wrf/NoahmpWRFinitMod.o \
+        noahmp/drivers/wrf/NoahmpWRFmainMod.o \
+	noahmp/drivers/wrf/NoahmpUrbanDriverMainMod.o \
+        noahmp/drivers/wrf/NoahmpGroundwaterInitMod.o \
+        noahmp/drivers/wrf/NoahmpSnowInitMod.o \
+        noahmp/drivers/wrf/NoahmpInitMainMod.o \
+        noahmp/drivers/wrf/NoahmpDriverMainMod.o \
+        noahmp/drivers/wrf/NoahmpIOVarType.o \
+        noahmp/drivers/wrf/NoahmpIOVarInitMod.o \
+        noahmp/drivers/wrf/NoahmpReadTableMod.o \
+        noahmp/drivers/wrf/ConfigVarOutTransferMod.o \
+        noahmp/drivers/wrf/ForcingVarOutTransferMod.o \
+        noahmp/drivers/wrf/EnergyVarOutTransferMod.o \
+        noahmp/drivers/wrf/WaterVarOutTransferMod.o \
+        noahmp/drivers/wrf/BiochemVarOutTransferMod.o \
+        noahmp/drivers/wrf/ConfigVarInTransferMod.o \
+        noahmp/drivers/wrf/ForcingVarInTransferMod.o \
+        noahmp/drivers/wrf/EnergyVarInTransferMod.o \
+        noahmp/drivers/wrf/WaterVarInTransferMod.o \
+        noahmp/drivers/wrf/BiochemVarInTransferMod.o \
+        noahmp/drivers/wrf/GroundWaterMmfMod.o \
+        noahmp/drivers/wrf/PedoTransferSR2006Mod.o \
+        noahmp/utility/Machine.o \
+        noahmp/utility/CheckNanMod.o \
+        noahmp/utility/PiecewiseLinearInterp1dMod.o \
+        noahmp/src/ConstantDefineMod.o \
+        noahmp/src/ConfigVarType.o \
+        noahmp/src/ForcingVarType.o \
+        noahmp/src/EnergyVarType.o \
+        noahmp/src/WaterVarType.o \
+        noahmp/src/BiochemVarType.o \
+        noahmp/src/NoahmpVarType.o \
+        noahmp/src/ConfigVarInitMod.o \
+        noahmp/src/ForcingVarInitMod.o \
+        noahmp/src/EnergyVarInitMod.o \
+        noahmp/src/WaterVarInitMod.o \
+        noahmp/src/BiochemVarInitMod.o \
+        noahmp/src/CanopyHydrologyMod.o \
+        noahmp/src/GroundWaterTopModelMod.o \
+        noahmp/src/IrrigationFloodMod.o \
+        noahmp/src/IrrigationInfilPhilipMod.o \
+        noahmp/src/IrrigationMicroMod.o \
+        noahmp/src/MatrixSolverTriDiagonalMod.o \
+        noahmp/src/RunoffSubSurfaceDrainageMod.o \
+        noahmp/src/RunoffSubSurfaceEquiWaterTableMod.o \
+        noahmp/src/RunoffSubSurfaceGroundWaterMod.o \
+        noahmp/src/RunoffSubSurfaceShallowMmfMod.o \
+        noahmp/src/RunoffSurfaceBatsMod.o \
+        noahmp/src/RunoffSurfaceDynamicVicMod.o \
+        noahmp/src/RunoffSurfaceExcessDynamicVicMod.o \
+        noahmp/src/RunoffSurfaceFreeDrainMod.o \
+        noahmp/src/RunoffSurfaceTopModelEquiMod.o \
+        noahmp/src/RunoffSurfaceTopModelGrdMod.o \
+        noahmp/src/RunoffSurfaceTopModelMmfMod.o \
+        noahmp/src/RunoffSurfaceVicMod.o \
+        noahmp/src/RunoffSurfaceXinAnJiangMod.o \
+        noahmp/src/RunoffSurfaceWetlandMod.o \
+        noahmp/src/WetlandWaterZhang22Mod.o \
+        noahmp/src/ShallowWaterTableMmfMod.o \
+        noahmp/src/SnowfallBelowCanopyMod.o \
+        noahmp/src/SnowLayerCombineMod.o \
+        noahmp/src/SnowLayerDivideMod.o \
+        noahmp/src/SnowLayerWaterComboMod.o \
+        noahmp/src/SnowpackCompactionMod.o \
+        noahmp/src/SnowpackCompactionAR24Mod.o \
+        noahmp/src/SnowpackHydrologyMod.o \
+        noahmp/src/SnowWaterMainMod.o \
+        noahmp/src/SoilHydraulicPropertyMod.o \
+        noahmp/src/SoilMoistureSolverMod.o \
+        noahmp/src/SoilWaterDiffusionRichardsMod.o \
+        noahmp/src/SoilWaterInfilGreenAmptMod.o \
+        noahmp/src/SoilWaterInfilPhilipMod.o \
+        noahmp/src/SoilWaterInfilSmithParlangeMod.o \
+        noahmp/src/SoilWaterMainMod.o \
+        noahmp/src/TileDrainageEquiDepthMod.o \
+        noahmp/src/TileDrainageHooghoudtMod.o \
+        noahmp/src/TileDrainageSimpleMod.o \
+        noahmp/src/WaterMainMod.o \
+        noahmp/src/WaterTableDepthSearchMod.o \
+        noahmp/src/WaterTableEquilibriumMod.o \
+        noahmp/src/IrrigationTriggerMod.o \
+        noahmp/src/IrrigationSprinklerMod.o \
+        noahmp/src/CanopyWaterInterceptMod.o \
+        noahmp/src/PrecipitationHeatAdvectMod.o \
+        noahmp/src/SnowThermalPropertyMod.o \
+        noahmp/src/SoilThermalPropertyMod.o \
+        noahmp/src/GroundThermalPropertyMod.o \
+        noahmp/src/EnergyMainMod.o \
+        noahmp/src/NoahmpMainMod.o \
+        noahmp/src/SnowAerosolSnicarMod.o \
+        noahmp/src/SnowAgingBatsMod.o \
+        noahmp/src/SnowAgingSnicarMod.o \
+        noahmp/src/SnowAlbedoBatsMod.o \
+        noahmp/src/SnowAlbedoClassMod.o \
+        noahmp/src/SnowAlbedoSnicarMod.o \
+        noahmp/src/SnowFreshRadiusMod.o \
+        noahmp/src/SnowInputSnicarMod.o \
+        noahmp/src/SnowRadiationSnicarMod.o \
+        noahmp/src/GroundAlbedoMod.o \
+        noahmp/src/CanopyRadiationTwoStreamMod.o \
+        noahmp/src/SurfaceAlbedoMod.o \
+        noahmp/src/SurfaceRadiationMod.o \
+        noahmp/src/HumiditySaturationMod.o \
+        noahmp/src/ResistanceAboveCanopyChen97Mod.o \
+        noahmp/src/ResistanceAboveCanopyMostMod.o \
+        noahmp/src/ResistanceCanopyStomataBallBerryMod.o \
+        noahmp/src/ResistanceCanopyStomataJarvisMod.o \
+        noahmp/src/ResistanceLeafToGroundMod.o \
+        noahmp/src/VaporPressureSaturationMod.o \
+        noahmp/src/SurfaceEnergyFluxVegetatedMod.o \
+        noahmp/src/ResistanceBareGroundChen97Mod.o \
+        noahmp/src/ResistanceBareGroundMostMod.o \
+        noahmp/src/SurfaceEnergyFluxBareGroundMod.o \
+        noahmp/src/SoilSnowTemperatureMainMod.o \
+        noahmp/src/SoilSnowTemperatureSolverMod.o \
+        noahmp/src/SoilSnowThermalDiffusionMod.o \
+        noahmp/src/SoilSnowWaterPhaseChangeMod.o \
+        noahmp/src/SoilWaterSupercoolKoren99Mod.o \
+        noahmp/src/SoilWaterSupercoolNiu06Mod.o \
+        noahmp/src/SnowCoverGroundNiu07Mod.o \
+        noahmp/src/SnowCoverGroundAR25Mod.o \
+        noahmp/src/GroundRoughnessPropertyMod.o \
+        noahmp/src/SurfaceEmissivityMod.o \
+        noahmp/src/PsychrometricVariableMod.o \
+        noahmp/src/ResistanceGroundEvaporationMod.o \
+        noahmp/src/SoilWaterTranspirationMod.o \
+        noahmp/src/AtmosForcingMod.o \
+        noahmp/src/PhenologyMainMod.o \
+        noahmp/src/BiochemCropMainMod.o \
+        noahmp/src/BiochemNatureVegMainMod.o \
+        noahmp/src/CarbonFluxCropMod.o \
+        noahmp/src/CarbonFluxNatureVegMod.o \
+        noahmp/src/CropGrowDegreeDayMod.o \
+        noahmp/src/CropPhotosynthesisMod.o \
+        noahmp/src/IrrigationPrepareMod.o \
+        noahmp/src/BalanceErrorCheckMod.o \
+        noahmp/src/GeneralInitMod.o \
+        noahmp/src/BalanceErrorCheckGlacierMod.o \
+        noahmp/src/EnergyMainGlacierMod.o \
+        noahmp/src/GeneralInitGlacierMod.o \
+        noahmp/src/GlacierIceThermalPropertyMod.o \
+        noahmp/src/GlacierPhaseChangeMod.o \
+        noahmp/src/GlacierTemperatureMainMod.o \
+        noahmp/src/GlacierTemperatureSolverMod.o \
+        noahmp/src/GlacierThermalDiffusionMod.o \
+        noahmp/src/GroundAlbedoGlacierMod.o \
+        noahmp/src/GroundRoughnessPropertyGlacierMod.o \
+        noahmp/src/GroundThermalPropertyGlacierMod.o \
+        noahmp/src/NoahmpMainGlacierMod.o \
+        noahmp/src/PrecipitationHeatAdvectGlacierMod.o \
+        noahmp/src/PsychrometricVariableGlacierMod.o \
+        noahmp/src/ResistanceGroundEvaporationGlacierMod.o \
+        noahmp/src/SnowCoverGlacierMod.o \
+        noahmp/src/SnowWaterMainGlacierMod.o \
+        noahmp/src/SnowpackHydrologyGlacierMod.o \
+        noahmp/src/SurfaceAlbedoGlacierMod.o \
+        noahmp/src/SurfaceEmissivityGlacierMod.o \
+        noahmp/src/SurfaceEnergyFluxGlacierMod.o \
+        noahmp/src/SurfaceRadiationGlacierMod.o \
+        noahmp/src/WaterMainGlacierMod.o
+
 OBJS    =
 
 LIBTARGET    =  physics
@@ -258,22 +424,24 @@ $(LIBTARGET) :
 	(cd .. && ./tools/manage_externals/checkout_externals --externals ./arch/Externals.cfg)
 	$(MAKE) $(J) non_nmm ; \
 	$(AR) $(ARFLAGS) ../main/$(LIBWRFLIB) $(MODULES) $(OBJS)  \
-		$(FIRE_MODULES) $(DIAGNOSTIC_MODULES_EM) $(PHYSMMM_MODULES)
+		$(FIRE_MODULES) $(DIAGNOSTIC_MODULES_EM) $(PHYSMMM_MODULES) $(NOAHMP_MODULES)
 
 include ../configure.wrf
 
-non_nmm : $(MODULES) $(FIRE_MODULES) $(OBJS) $(DIAGNOSTIC_MODULES_EM)
+non_nmm : $(MODULES) $(FIRE_MODULES) $(OBJS) $(DIAGNOSTIC_MODULES_EM) $(NOAHMP_MODULES)
 
 submodules :
-	@if [ \( ! -f module_sf_noahmpdrv.F \) -o \( ! -f module_sf_noahmp_glacier.F \) -o \
-	      \( ! -f module_sf_noahmp_groundwater.F \) -o \( ! -f module_sf_noahmplsm.F \) ] ; then \
+	@if [ \( ! -f run/NoahmpTable.TBL \) -o \
+	      \( ! -f noahmp/drivers/wrf/NoahmpWRFmainMod.F90 \) -o \( ! -f noahmp/drivers/wrf/NoahmpWRFinitMod.F90 \) -o \
+              \( ! -f noahmp/drivers/wrf/NoahmpIOVarInitMod.F90 \) -o \( ! -f noahmp/drivers/wrf/NoahmpIOVarType.F90 \) -o \
+	      \( ! -f noahmp/drivers/wrf/GroundWaterMmfMod.F90 \) -o \( ! -f noahmp/drivers/wrf/NoahmpUrbanDriverMainMod.F90 \) -o \
+	      \( ! -f noahmp/src/NoahmpMainMod.F90 \) -o \( ! -f noahmp/src/NoahmpVarType.F90 \) ] ; then \
 		echo Pulling in NoahMP submodule ; \
 		( cd .. ; git submodule update --init --recursive ) ; \
-		ln -sf noahmp/drivers/wrf/module_sf_noahmpdrv.F . ; \
-		ln -sf noahmp/src/module_sf_noahmp_glacier.F . ; \
-		ln -sf noahmp/src/module_sf_noahmp_groundwater.F . ; \
-		ln -sf noahmp/src/module_sf_noahmplsm.F . ; \
-		( cd ../run ; ln -sf ../phys/noahmp/parameters/MPTABLE.TBL . ) ; \
+		( cd ../run ; ln -sf ../phys/noahmp/parameters/NoahmpTable.TBL . ) ; \
+		( cd ../run ; ln -sf ../phys/noahmp/parameters/snicar_drdt_bst_fit_60_c070416.nc . ) ; \
+		( cd ../run ; ln -sf ../phys/noahmp/parameters/snicar_optics_480bnd_c012422.nc . ) ; \
+		( cd ../run ; ln -sf ../phys/noahmp/parameters/snicar_optics_5bnd_c013122.nc . ) ; \
 	else \
 		echo No action required for NoahMP submodule ; \
 	fi
@@ -293,6 +461,24 @@ submodules :
 	else \
 		echo No action required for MYNN-EDMF submodule ; \
 	fi
+	@if [ \( ! -f module_mp_tempo_driver.F90 \) -o \( ! -f module_mp_tempo_main.F90 \) -o \
+	      \( ! -f module_mp_tempo_cfgs.F90 \) -o \( ! -f module_mp_tempo_aerosols.F90 \) -o \
+	      \( ! -f module_mp_tempo_ml.F90 \) -o \( ! -f modulemp_tempo_diags.F90 \) -o \
+              \( ! -f module_mp_tempo_utils.F90 \) -o \( ! -f module_mp_tempo_params.F90 \) ] ; then \
+                echo Pulling in TEMPO submodule ; \
+		( cd .. ; git submodule update --init --recursive ) ; \
+		ln -sf TEMPO/src/module_mp_tempo_cfgs.F90 module_mp_tempo_cfgs.F90 ; \
+		ln -sf TEMPO/src/module_mp_tempo_params.F90 module_mp_tempo_params.F90 ; \
+		ln -sf TEMPO/src/module_mp_tempo_utils.F90 module_mp_tempo_utils.F90 ; \
+		ln -sf TEMPO/src/module_mp_tempo_diags.F90 module_mp_tempo_diags.F90 ; \
+		ln -sf TEMPO/src/module_mp_tempo_ml.F90 module_mp_tempo_ml.F90 ; \
+		ln -sf TEMPO/src/module_mp_tempo_aerosols.F90 module_mp_tempo_aerosols.F90 ; \
+		ln -sf TEMPO/src/module_mp_tempo_main.F90 module_mp_tempo_main.F90 ; \
+		ln -sf TEMPO/src/module_mp_tempo_driver.F90 module_mp_tempo_driver.F90 ; \
+	else \
+		echo No action required for TEMPO submodule ; \
+	fi
+	
 	@if [ \( ! -f module_sf_mynnsfc_driver.F \) -o \( ! -f module_sf_mynnsfc_common.F \) -o \
 	      \( ! -f module_sf_mynnsfc_land.F \) -o \( ! -f module_sf_mynnsfc_water.F \) -o \
 	      \( ! -f module_sf_mynnsfc_ice.F \) ] ; then \

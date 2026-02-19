@@ -82,7 +82,7 @@ use module_io
         ENDIF
 
 !gmm add input for noamp hydro model here
-     IF ( config_flags%opt_run.eq.5 ) THEN
+     IF ( config_flags%opt_runsub.eq.5 ) THEN
 
         CALL construct_filename2a ( inpname , config_flags%auxinput7_inname &
                                  ,grid%id , 2 , timestr)

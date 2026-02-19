@@ -548,7 +548,7 @@ BENCH_START(surf_driver_tim)
 
 !gmm halo of wtd and riverflow for leafhydro
 #ifdef DM_PARALLEL
-  IF ( ( config_flags%sf_surface_physics.eq.NOAHMPSCHEME ) .and. ( config_flags%opt_run.eq.5 ) ) THEN
+  IF ( ( config_flags%sf_surface_physics.eq.NOAHMPSCHEME ) .and. (config_flags%opt_runsub.eq.5 ) ) THEN
        IF ( mod(grid%itimestep,grid%STEPWTD).eq.0 )  THEN
 #     include "HALO_EM_HYDRO_NOAHMP.inc"
        ENDIF
@@ -799,6 +799,15 @@ BENCH_START(surf_driver_tim)
      &        ,FLXHUMR_URB2D=grid%flxhumr_urb2d                           & !H urban
      &        ,FLXHUMB_URB2D=grid%flxhumb_urb2d                           & !H urban
      &        ,FLXHUMG_URB2D=grid%flxhumg_urb2d                           & !H urban
+     &        ! added by Chenghao Wang
+     &        ,TVG_URB2D=grid%tvg_urb2d                                   & !H urban
+     &        ,XXXVG_URB2D=grid%xxxvg_urb2d                               & !H urban
+     &        ,TVGL_URB3D=grid%tvgl_urb3d                                 & !H urban
+     &        ,SMG_URB3D=grid%smg_urb3d                                   & !H urban
+     &        ,TT_URB2D=grid%tt_urb2d                                     & !H urban
+     &        ,CMCG_URB2D=grid%cmcg_urb2d                                 & !H urban
+     &        ,FLXHUMVG_URB2D=grid%flxhumvg_urb2d                         & !H urban
+     &        ,FLXHUMT_URB2D=grid%flxhumt_urb2d                           & !H urban
      &        ,TRL_URB3D=grid%trl_urb3d   ,TBL_URB3D=grid%tbl_urb3d       & !H urban
      &        ,TGL_URB3D=grid%tgl_urb3d                                   & !H urban
      &        ,SH_URB2D=grid%sh_urb2d     ,LH_URB2D=grid%lh_urb2d         &
@@ -930,7 +939,7 @@ BENCH_START(surf_driver_tim)
      &        ,CSAND_PX=grid%csand_px, FMSAND_PX=grid%fmsand_px               &
 ! for Noah-MP LSM
      &        ,idveg=config_flags%dveg,         iopt_crs=config_flags%opt_crs &
-     &        ,iopt_btr=config_flags%opt_btr,   iopt_run=config_flags%opt_run &
+     &        ,iopt_btr=config_flags%opt_btr,iopt_runsub=config_flags%opt_runsub &
      &        ,iopt_sfc=config_flags%opt_sfc,   iopt_frz=config_flags%opt_frz &
      &        ,iopt_inf=config_flags%opt_inf,   iopt_rad=config_flags%opt_rad &
      &        ,iopt_alb=config_flags%opt_alb,   iopt_snf=config_flags%opt_snf &
@@ -940,7 +949,10 @@ BENCH_START(surf_driver_tim)
      &        ,iopt_crop=config_flags%opt_crop, iopt_irr=config_flags%opt_irr    &
      &        ,iopt_irrm=config_flags%opt_irrm                                   &
      &        ,iopt_infdv=config_flags%opt_infdv,iopt_tdrn=config_flags%opt_tdrn &
-     &        ,soiltstep=config_flags%soiltstep                                      &
+     &        ,soiltstep=config_flags%soiltstep                                  &
+     &        ,iopt_runsrf=config_flags%opt_runsrf,iopt_tksno=config_flags%opt_tksno &
+     &        ,iopt_compact=config_flags%opt_compact, iopt_scf=config_flags%opt_scf  &
+     &        ,iopt_wetland=config_flags%opt_wetland                                 &
      &        , isnowxy=grid%isnowxy  ,    tvxy=grid%tvxy    ,    tgxy=grid%tgxy     &
      &        ,canicexy=grid%canicexy ,canliqxy=grid%canliqxy,   eahxy=grid%eahxy    &
      &        ,   tahxy=grid%tahxy    ,    cmxy=grid%cmxy    ,    chxy=grid%chxy     &
@@ -990,6 +1002,30 @@ BENCH_START(surf_driver_tim)
      &        , soilenergy=grid%soilenergy ,snowenergy=grid%snowenergy,    canhsxy=grid%canhsxy    &
      &        , ACC_DWATERXY=grid%ACC_DWATERXY, ACC_PRCPXY=grid%ACC_PRCPXY,ACC_ECANXY=grid%ACC_ECANXY &
      &        , ACC_ETRANXY=grid%ACC_ETRANXY, ACC_EDIRXY=grid%ACC_EDIRXY  &
+! Noah-MP wetland
+     &        , FSATXY=grid%FSATXY, WSURFXY=grid%WSURFXY  &
+! Noah-MP SNICAR snow albedo
+     &        ,SNICAR_BANDNUMBER_OPT=config_flags%SNICAR_BANDNUMBER_OPT   &
+     &        ,SNICAR_SOLARSPEC_OPT=config_flags%SNICAR_SOLARSPEC_OPT     &
+     &        ,SNICAR_SNOWOPTICS_OPT=config_flags%SNICAR_SNOWOPTICS_OPT   &
+     &        ,SNICAR_DUSTOPTICS_OPT=config_flags%SNICAR_DUSTOPTICS_OPT   &
+     &        ,SNICAR_RTSOLVER_OPT=config_flags%SNICAR_RTSOLVER_OPT       &
+     &        ,SNICAR_SNOWSHAPE_OPT=config_flags%SNICAR_SNOWSHAPE_OPT     &
+     &        ,SNICAR_USE_AEROSOL=config_flags%SNICAR_USE_AEROSOL         &
+     &        ,SNICAR_SNOWBC_INTMIX=config_flags%SNICAR_SNOWBC_INTMIX     &
+     &        ,SNICAR_SNOWDUST_INTMIX=config_flags%SNICAR_SNOWDUST_INTMIX &
+     &        ,SNICAR_USE_OC=config_flags%SNICAR_USE_OC                   &
+     &        ,SNICAR_AEROSOL_READTABLE=config_flags%SNICAR_AEROSOL_READTABLE   &
+     &        ,SNRDSXY=grid%SNRDSXY, SNFRXY=grid%SNFRXY, BCPHIXY=grid%BCPHIXY   &
+     &        ,BCPHOXY=grid%BCPHOXY, OCPHIXY=grid%OCPHIXY, OCPHOXY=grid%OCPHOXY &
+     &        ,DUST1XY=grid%DUST1XY, DUST2XY=grid%DUST2XY, DUST3XY=grid%DUST3XY &
+     &        ,DUST4XY=grid%DUST4XY, DUST5XY=grid%DUST5XY    &
+     &        ,MassConcBCPHIXY=grid%MassConcBCPHIXY          &
+     &        ,MassConcBCPHOXY=grid%MassConcBCPHOXY, MassConcOCPHIXY=grid%MassConcOCPHIXY  &
+     &        ,MassConcOCPHOXY=grid%MassConcOCPHOXY, MassConcDUST1XY=grid%MassConcDUST1XY  &
+     &        ,MassConcDUST2XY=grid%MassConcDUST2XY, MassConcDUST3XY=grid%MassConcDUST3XY  &
+     &        ,MassConcDUST4XY=grid%MassConcDUST4XY, MassConcDUST5XY=grid%MassConcDUST5XY  &
+     &        ,ALBSOILDIRXY=grid%ALBSOILDIRXY, ALBSOILDIFXY=grid%ALBSOILDIFXY        &
 ! Noah-MP irrigation
      &        , IRFRACT=grid%IRFRACT  , SIFRACT=grid%SIFRACT ,MIFRACT=grid%MIFRACT   &
      &        , FIFRACT=grid%FIFRACT  , IRNUMSI=grid%IRNUMSI ,IRNUMMI=grid%IRNUMMI   &
@@ -1124,6 +1160,9 @@ BENCH_START(pbl_driver_tim)
      &         AKHS=grid%akhs          ,AKMS=grid%akms                              &
      &        ,BL_PBL_PHYSICS=config_flags%bl_pbl_physics                           &
      &        ,WINDFARM_OPT=config_flags%windfarm_opt,power=grid%power              &
+     ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/fraunhofer_license.txt
+     &        ,thrust=grid%thrust                                                   & 
+     ! END LICENSE
      &        ,windfarm_wake_model=config_flags%windfarm_wake_model          & ! Yulong add for WLM
      &        ,windfarm_overlap_method=config_flags%windfarm_overlap_method  & ! Yulong add for WLM
      &        ,BLDT=grid%bldt, CURR_SECS=curr_secs, ADAPT_STEP_FLAG=adapt_step_flag &

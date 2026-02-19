@@ -116,6 +116,10 @@ CONTAINS
      &          ,lakemask                                  & !lake
                 , restart_flag                             & ! restart_flag
 #endif
+! KIM TOFD
+                ,kim_tofd                                            & ! kim tofd
+                ,tofd_factor                                         & ! kim tofd
+                ,var2d                                               & ! kim tofd
             !  cyl ocean variable
                 ,OM_TMP,OM_S,OM_U,OM_V,OM_DEPTH,OM_ML,OM_LON          &
      &          ,OM_LAT,okms,okme,rdx,rdy,msfu,msfv,msft              &
@@ -634,6 +638,9 @@ CONTAINS
    INTEGER, INTENT(IN)::   IFNDSNOWSI
    LOGICAL, INTENT(IN)::   do_bioe
    LOGICAL, INTENT(IN)::   do_meganfile
+! kim tofd
+   REAL,    INTENT(IN)::   tofd_factor
+   LOGICAL, INTENT(IN)::   kim_tofd
 
    INTEGER, INTENT(IN)::   NLCAT, mosaic_lu, mosaic_soil
    INTEGER, INTENT(IN)::   NSCAT
@@ -705,6 +712,9 @@ CONTAINS
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   VEGFRA
 !------fds (06/2010)--------------------------
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   XICE
+!---------------------------------------------
+!------kim tofd (01/2025)--------------------------
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN)::   var2d
 !---------------------------------------------
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   ALBSI
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   ICEDEPTH
@@ -2155,6 +2165,7 @@ CONTAINS
                  gz1oz0,wspd,br,isfflx,dx2d,                         &
                  svp1,svp2,svp3,svpt0,ep_1,ep_2,karman,              &
                  P1000mb,lakemask,                                   &
+                 kim_tofd, tofd_factor, var2d,                       &
                  XICE,SST,TSK_SEA,                                                  &
                  CHS2_SEA,CHS_SEA,CPM_SEA,CQS2_SEA,FLHC_SEA,FLQC_SEA,               &
                  HFX_SEA,LH_SEA,QFX_SEA,QGH_SEA,QSFC_SEA,ZNT_SEA,                   &
@@ -2174,6 +2185,7 @@ CONTAINS
                gz1oz0,wspd,br,isfflx,dx2d,                         &
                svp1,svp2,svp3,svpt0,ep_1,ep_2,karman,              &
                P1000mb,lakemask,                                   &
+               kim_tofd, tofd_factor, var2d,                       &
                ids,ide, jds,jde, kds,kde,                          &
                ims,ime, jms,jme, kms,kme,                          &
                i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,    &
@@ -5935,6 +5947,7 @@ CONTAINS
                      SVP1,SVP2,SVP3,SVPT0,EP1,EP2,                 &
                      KARMAN,                                       &
                      P1000,LAKEMASK,                               &
+                     kim_tofd, tofd_factor, var2d,                 &
                      XICE,SST,TSK_SEA,                                                  &
                      CHS2_SEA,CHS_SEA,CPM_SEA,CQS2_SEA,FLHC_SEA,FLQC_SEA,               &
                      HFX_SEA,LH_SEA,QFX_SEA,QGH_SEA,QSFC_SEA,ZNT_SEA,                   &
@@ -5957,6 +5970,8 @@ CONTAINS
      REAL,     INTENT(IN )   ::        SVP1,SVP2,SVP3,SVPT0
      REAL,     INTENT(IN )   ::        EP1,EP2,KARMAN
      REAL,     INTENT(IN )   ::        P1000
+     logical, intent(in )    ::        kim_tofd
+     REAL,     INTENT(IN )   ::        tofd_factor
 
      REAL,     DIMENSION( ims:ime, kms:kme, jms:jme )           , &
                INTENT(IN   )   ::                           dz8w
@@ -5971,6 +5986,7 @@ CONTAINS
                                                             PBLH, &
                                                            XLAND, &
                                                         LAKEMASK, &
+                                                           var2d, &
                                                              TSK
      REAL,     DIMENSION( ims:ime, jms:jme )                    , &
                INTENT(OUT  )               ::                U10, &
@@ -6202,6 +6218,7 @@ CONTAINS
                  SVP1,SVP2,SVP3,SVPT0,EP1,EP2,                 &
                  KARMAN,                                       &
                  P1000,lakemask,                               &
+                 kim_tofd, tofd_factor, var2d,                 &
                  ids,ide, jds,jde, kds,kde,                    &
                  ims,ime, jms,jme, kms,kme,                    &
                  its,ite, jts,jte, kts,kte,                    &
@@ -6296,6 +6313,7 @@ CONTAINS
                  SVP1,SVP2,SVP3,SVPT0,EP1,EP2,                 &
                  KARMAN,                                       &
                  P1000,lakemask,                               &
+                 kim_tofd, tofd_factor, var2d,                 &
                  ids,ide, jds,jde, kds,kde,                    &
                  ims,ime, jms,jme, kms,kme,                    &
                  its,ite, jts,jte, kts,kte,                    & ! 0

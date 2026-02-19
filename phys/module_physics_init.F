@@ -3836,16 +3836,18 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
       CASE (SHINHONGSCHEME)
            if(isfc .ne. 1)CALL wrf_error_fatal &
             ( 'module_physics_init: Use sf_sfclay_physics= 1 or 91 for this pbl option' )
-           IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
-            ( 'module_physics_init: use ysu (option1), myj (option 2), or boulac (option 8) with BEP/BEM urban scheme' )
-           CALL shinhonginit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,&
-                        RQCBLTEN,RQIBLTEN,TKE_PBL,P_QI,       &
-                        PARAM_FIRST_SCALAR,                   &
-                        restart,                              &
-                        allowed_to_read ,                     &
-                        ids, ide, jds, jde, kds, kde,         &
-                        ims, ime, jms, jme, kms, kme,         &
-                        its, ite, jts, jte, kts, kte          )
+!          if(isfc .ne. 1)CALL wrf_error_fatal &
+!           ( 'module_physics_init: Use sf_sfclay_physics= 1 or 91 for this pbl option' )
+!          IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
+!           ( 'module_physics_init: use ysu (option1), myj (option 2), or boulac (option 8) with BEP/BEM urban scheme' )
+!          CALL shinhonginit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,&
+!                       RQCBLTEN,RQIBLTEN,TKE_PBL,P_QI,       &
+!                       PARAM_FIRST_SCALAR,                   &
+!                       restart,                              &
+!                       allowed_to_read ,                     &
+!                       ids, ide, jds, jde, kds, kde,         &
+!                       ims, ime, jms, jme, kms, kme,         &
+!                       its, ite, jts, jte, kts, kte          )
       CASE (MRFSCHEME)
            if(isfc .ne. 1)CALL wrf_error_fatal &
             ( 'module_physics_init: Use sf_sfclay_physics= 1 or 91 for this pbl option' )

@@ -7,3 +7,7 @@
 [submodule "phys/MYNN-EDMF"]
 	path = phys/MYNN-EDMF
 	url = https://github.com/NCAR/MYNN-EDMF
+[submodule "phys/physics_mmm"]
+    path = phys/physics_mmm
+    url = https://github.com/Songyou184/MMM-physics.git
+    branch = MMM2026-SFCLAY

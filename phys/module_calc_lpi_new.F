@@ -16,7 +16,7 @@ CONTAINS
                                       ims,ime, jms,jme, kms,kme , &
                                       its,ite, jts,jte, kts,kte
   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                 &
-        INTENT(IN) ::                                          &
+        INTENT(IN) ::                                             &
                                                               qc, &
                                                               qi, &
                                                               qr, &
@@ -24,24 +24,22 @@ CONTAINS
                                                               qg, &
                                                               qh
   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                 &
-        INTENT(INOUT),OPTIONAL ::                                          &
-                                                      lpi3d 
+        INTENT(INOUT),OPTIONAL ::                                 &
+                                                           lpi3d 
 !                                                     ,&
 !                                                     light_ne, &
 
-      REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
+      REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),               &
          INTENT(IN ) ::  w
-   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                    &
-         INTENT(IN) ::                                         th_phy
-!
+   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                &
+         INTENT(IN) ::                                     th_phy
 
-!
    REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                    &
          INTENT(IN   ) ::                                             &
-                                                                rho_phy, &
+                                                             rho_phy, &
                                                                 dz8w, &
                                                               pi_phy, &
-                                                                   p_phy
+                                                               p_phy
 
 !     REAL, INTENT(INOUT),  DIMENSION(ims:ime,jms:jme)::      &
 !    &                      prec_ice,wqg_m15

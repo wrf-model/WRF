@@ -15,7 +15,7 @@ MODULE module_big_step_utilities_em
 
    USE module_model_constants
    USE module_state_description, only: p_qg, p_qs, p_qi, gdscheme, tiedtkescheme, ntiedtkescheme, kfetascheme, mskfscheme, &
-       g3scheme, gfscheme,p_qv, param_first_scalar, p_qr, p_qc, DFI_FWD
+       g3scheme, gflscheme,p_qv, param_first_scalar, p_qr, p_qc, DFI_FWD
    USE module_configure, ONLY : grid_config_rec_type
    USE module_wrf_error
 
@@ -5287,7 +5287,7 @@ END SUBROUTINE phy_prep
 !  decouple advective forcing required by a few CPS schemes
 
    IF(( config_flags%cu_physics == GDSCHEME )      .OR. &
-      ( config_flags%cu_physics == GFSCHEME )      .OR. &
+      ( config_flags%cu_physics == GFLSCHEME )     .OR. &
       ( config_flags%cu_physics == G3SCHEME )      .OR. &
       ( config_flags%cu_physics == KFETASCHEME )   .OR. &
       ( config_flags%cu_physics == MSKFSCHEME )    .OR. &
@@ -5307,7 +5307,7 @@ END SUBROUTINE phy_prep
    END IF
 
    IF(( config_flags%cu_physics == GDSCHEME ) .OR.    &
-      ( config_flags%cu_physics == GFSCHEME ) .OR.    &
+      ( config_flags%cu_physics == GFLSCHEME ) .OR.   &
       ( config_flags%cu_physics == G3SCHEME ) .OR.    &
       ( config_flags%cu_physics == NTIEDTKESCHEME )) THEN
 

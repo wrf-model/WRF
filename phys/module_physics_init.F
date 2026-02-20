@@ -1165,7 +1165,7 @@ CHARACTER(LEN=8) :: name
    IF ( config_flags%cu_rad_feedback ) THEN
       IF ( config_flags%cu_physics == kfetascheme ) THEN
          icloud_cu = 2
-      ELSE IF ( config_flags%cu_physics == gfscheme .OR. &
+      ELSE IF ( config_flags%cu_physics == gflscheme .OR. &
                 config_flags%cu_physics == g3scheme .OR. &
                 config_flags%cu_physics == gdscheme ) THEN
          icloud_cu = 1
@@ -4234,7 +4234,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                       its, ite, jts, jte, kts, kte                )
 
 #if ( EM_CORE == 1 )
-     CASE (G3SCHEME,GFSCHEME)
+     CASE (G3SCHEME,GFLSCHEME)
           CALL g3init(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,        &
                       MASS_FLUX,cp,restart,                       &
                       P_QC,P_QI,PARAM_FIRST_SCALAR,               &

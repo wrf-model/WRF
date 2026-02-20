@@ -144,7 +144,7 @@ CONTAINS
    USE module_model_constants
    USE module_state_description, ONLY:     KFSCHEME,BMJSCHEME         &
                                           ,KFETASCHEME,GDSCHEME       &
-                                          ,G3SCHEME,GFSCHEME          &
+                                          ,G3SCHEME,GFLSCHEME         &
                                           ,P_QC,P_QI,Param_FIRST_SCALAR &
                                           ,CAMZMSCHEME, SASSCHEME     &
                                           ,OSASSCHEME                 &  
@@ -186,7 +186,7 @@ CONTAINS
    USE module_cu_mskf   , ONLY : mskf_cps
 #endif
    USE module_cu_gd     , ONLY : grelldrv
-   USE module_cu_gf_wrfdrv     , ONLY : gfdrv
+   USE module_cu_gfl    , ONLY : cu_grell_freitas_li
    USE module_cu_g3     , ONLY : g3drv,conv_grell_spread3d
 #if ( WRFPLUS == 1 )
    USE module_cu_du     , ONLY : DUCU   
@@ -886,7 +886,7 @@ CONTAINS
       !$OMP END PARALLEL DO
       endif
 
-      IF ( cu_physics == G3SCHEME .OR.  cu_physics == GFSCHEME .OR.     &
+      IF ( cu_physics == G3SCHEME .OR.  cu_physics == GFLSCHEME .OR.     &
            cu_physics == KFETASCHEME .OR. cu_physics == MSKFSCHEME) THEN 
 #ifdef DM_PARALLEL
 #include "HALO_CUP_G3_IN.inc"
@@ -1271,64 +1271,30 @@ CONTAINS
               ,cap_suppress_loc=cap_suppress_loc                &
 #endif                                 
                                                                 )
-     CASE (GFSCHEME)
-          CALL wrf_debug(100,'in grelldrv')
-#if ( WRF_DFI_RADAR == 1 )
-          if (do_capsuppress == 1) then
-            WRITE( wrf_err_message , * ) 'G3 do CAP suppress',its,jts,min( jte,jde-1 ),min( ite,ide-1 ),kte
-            CALL wrf_debug(200, wrf_err_message)
-            DO j = jts, min( jte,jde-1 )
-            DO i = its, min( ite,ide-1 )
-               cap_suppress_loc(i,j) = grid%dfi_tten_rad(i,kte,j)
-            ENDDO
-            ENDDO
-         endif
-#endif
+     CASE (GFLSCHEME)
+         CALL wrf_debug(100,'in grelldrv')
 
+         CALL CU_GRELL_FREITAS_LI(                                  &
+               itimestep=itimestep,dt=dt,dxcell=dx,u=u,v=v,w=w      &
+              ,t=t,q=qv_curr,rho=rho,p=p,pi=pi,p8w=p8w,dz8w=dz8w    &
+              ,ht=ht,xland=xland,hfx=hfx,qfx=qfx,gsw=gsw            &
+              ,rqvften=rqvften,rthften=rthften,rthblten=rthblten    &
+              ,rqvblten=rqvblten,rthraten=rthraten,kpbl=kpbl        &
+              ,xlv=xlv,cp=cp,g=g,r_v=r_v,ichoice_deep=clos_choice   &
+              ,ishallow_g3=ishallow,htop=htop,hbot=hbot             &
+              ,k22_shallow=k22_shallow,kbcon_shallow=kbcon_shallow  &
+              ,ktop_shallow=ktop_shallow,xmb_shallow=xmb_shallow    &
+              ,raincv=raincv,pratec=tmppratec,gdc=gd_cloud          &
+              ,gdc2=gd_cloud2,rthcuten=rthcuten,rqvcuten=rqvcuten   &
+              ,rqccuten=rqccuten,rqicuten=rqicuten                  &
+              ,rucuten=rucuten,rvcuten=rvcuten                      &
 #if ( WRF_CHEM == 1 )
-         numgas = get_last_gas(chem_opt)
+              ,num_chem=num_chem,chem3d_in=grid%chem                &
 #endif
+              ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
+              ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
+              ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte)
 
-         CALL GFDRV(spp_conv,pattern_spp_conv,field_conv,       &
-                DT=dt,DX=dx                                     &
-               ,RHO=rho,RAINCV=raincv,PRATEC=tmppratec          &
-               ,U=u,V=v,T=t,W=w,Q=qv_curr,P=p,PI=pi             &
-               ,DZ8W=dz8w ,P8W=p8w                              &
-               ,htop=htop,hbot=hbot,ktop_deep=ktop_deep         &
-               ,HT=ht,hfx=hfx,qfx=qfx,xland=xland               &
-               ,GDC=gd_cloud,GDC2=gd_cloud2,kpbl=kpbl           &
-               ,k22_shallow=k22_shallow                         &
-               ,kbcon_shallow=kbcon_shallow                     &
-               ,ktop_shallow=ktop_shallow                       &
-               ,xmb_shallow=xmb_shallow                         &
-               ,ichoice=clos_choice,ishallow_g3=ishallow        &
-               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
-               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
-!              ,IPS=ips,IPE=ipe,JPS=jps,JPE=jpe,KPS=kps,KPE=kpe &
-               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
-               ,PERIODIC_X=periodic_x,PERIODIC_Y=periodic_y     &
-              ! optionals
-               ,RTHCUTEN=RTHCUTEN ,RTHFTEN=RTHFTEN              &
-               ,RTHRATEN=RTHRATEN                               &
-               ,RQICUTEN=RQICUTEN ,RQVFTEN=RQVFTEN              &
-               ,rqvblten=rqvblten,rthblten=rthblten             &
-               ,RQVCUTEN=RQVCUTEN,RQCCUTEN=RQCCUTEN             &
-               ,dudt_phy=rucuten, dvdt_phy=rvcuten              &
-#if ( WRF_DFI_RADAR == 1 )
-                 ! Optional CAP suppress option
-               ,do_capsuppress=do_capsuppress                   &
-               ,cap_suppress_loc=cap_suppress_loc               &
-#endif 
-#if ( WRF_CHEM == 1 )
-              ,chem=grid%chem,tracer=grid%tracer                &
-              ,numgas=numgas       &
-              ,num_chem=num_chem,chemopt=chem_opt  &
-              ,num_tracer=num_tracer,traceropt=traceropt   &
-              ,conv_tr_wetscav=conv_tr_wetscav     &
-              ,conv_tr_aqchem=conv_tr_aqchem       &
-              ,chem_conv_tr=chem_conv_tr           &
-#endif  
-                                                                )
      CASE (CAMZMSCHEME)
           IF (PRESENT(z_at_w) .AND. PRESENT(mavail)                 &
                  .AND. PRESENT(pblh) .AND. PRESENT(psfc).AND.PRESENT(RQCNCUTEN))THEN

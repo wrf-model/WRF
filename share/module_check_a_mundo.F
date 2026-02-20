@@ -951,7 +951,7 @@
 
       GF_test : DO i = 1, model_config_rec % max_dom
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
-         IF ( model_config_rec % cu_physics(i) .EQ. GFSCHEME ) THEN
+         IF ( model_config_rec % cu_physics(i) .EQ. GFLSCHEME ) THEN
             wrf_err_message = '--- ERROR: cu_physics GF uses an intrinsic gamma function that is not available with this compiler'
             CALL wrf_message ( TRIM( wrf_err_message ) )
             wrf_err_message = '--- Change compilers, or change cu_physics option in the namelist.input file.'
@@ -2199,7 +2199,7 @@
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( ( model_config_rec%cu_rad_feedback(i) .EQV. .TRUE. )  .OR. &
               ( model_config_rec%cu_rad_feedback(i) .EQV. .true. ) ) THEN
-            IF ( ( model_config_rec%cu_physics(1) .EQ. GFSCHEME     ) .OR. &
+            IF ( ( model_config_rec%cu_physics(1) .EQ. GFLSCHEME    ) .OR. &
                  ( model_config_rec%cu_physics(1) .EQ. G3SCHEME     ) .OR. &
                  ( model_config_rec%cu_physics(1) .EQ. GDSCHEME     ) ) THEN
                wrf_err_message = '--- WARNING: Turning on cu_rad_feedback also requires setting cu_diag== 1'
@@ -2220,7 +2220,7 @@
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec%cu_diag(i) .EQ. G3TAVE ) THEN
           IF ( ( model_config_rec%cu_physics(i) .NE. GDSCHEME ) .AND. &
-               ( model_config_rec%cu_physics(i) .NE. GFSCHEME ) .AND. &
+               ( model_config_rec%cu_physics(i) .NE. GFLSCHEME ) .AND. &
                ( model_config_rec%cu_physics(i) .NE. KFCUPSCHEME ) .AND. &
                ( model_config_rec%cu_physics(i) .NE. G3SCHEME ) ) THEN
                 wrf_err_message = '--- ERROR: Using cu_diag=1 requires use of one of the following CU schemes:'
@@ -2290,7 +2290,7 @@
       DO i = 1, model_config_rec % max_dom
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( ( model_config_rec%cu_physics(i) .EQ. GDSCHEME ) .OR. &
-              ( model_config_rec%cu_physics(i) .EQ. GFSCHEME ) .OR. &
+              ( model_config_rec%cu_physics(i) .EQ. GFLSCHEME ) .OR. &
               ( model_config_rec%cu_physics(i) .EQ. KFCUPSCHEME ) .OR. &
               ( model_config_rec%cu_physics(i) .EQ. G3SCHEME ) ) THEN
             model_config_rec%cu_diag(i) = 1

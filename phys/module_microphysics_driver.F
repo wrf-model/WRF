@@ -162,7 +162,17 @@ SUBROUTINE microphysics_driver(                                          &
                       ,perts_qsnow, perts_ni                             &
                       ,pert_thom_qv,pert_thom_qc,pert_thom_qi            &
                       ,pert_thom_qs,pert_thom_ni                         &
-					  ,cloudnc											 &
+                      ,cloudnc                                           &
+!Dynamic Lightning
+                      ,light_pe_curr                                     &
+                      ,light_ne_curr                                     &
+                      ,light_neu_curr                                    &
+                      ,lpi2d                                             &
+                      ,lpi3d                                             &
+                      ,f_light_pe                                        &
+                      ,f_light_ne                                        &
+                      ,f_light_neu                                       &
+                      ,lpos,lneg,lneu                                    &
                                                                          )
 
 ! Framework
@@ -260,6 +270,9 @@ SUBROUTINE microphysics_driver(                                          &
    USE module_irrigation
 
    USE module_fire_emis
+   USE module_calc_lpi_new
+   USE module_ltng_pe
+   USE module_ltng_strokes
 
 !----------------------------------------------------------------------
    ! This driver calls subroutines for the microphys.
@@ -501,6 +514,10 @@ SUBROUTINE microphysics_driver(                                          &
 #endif
     INTEGER, DIMENSION( ims:ime , jms:jme ), INTENT(IN), OPTIONAL::   IVGTYP
     REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN), OPTIONAL    :: XLAT, XLONG
+!Dynamic Lightning
+   REAL, DIMENSION( ims:ime , jms:jme ),INTENT(INOUT),OPTIONAL ::       lpi2d
+   REAL, DIMENSION( ims:ime ,kms:kme, jms:jme ),INTENT(INOUT),OPTIONAL ::       lpi3d
+   REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT),OPTIONAL   :: LPOS,LNEG,LNEU
 
 !=================
 !Data for CAMMGMP scheme
@@ -656,7 +673,11 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,kext_ft_qic,kext_ft_qip,kext_ft_qid &
                  ,kext_ft_qs,kext_ft_qg                           &
                  ,qnwfa_curr,qnifa_curr,qnbca_curr                & ! Added by G. Thompson
-                 ,qvolg_curr,qvolh_curr, qrimef_curr
+                 ,qvolg_curr,qvolh_curr,qrimef_curr
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
+         OPTIONAL,                                                &
+         INTENT(INOUT ) :: light_pe_curr,light_neu_curr,light_ne_curr        ! Dynamic Lightning
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          OPTIONAL,                                                &
@@ -692,7 +713,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                                                       ,GRAUPELNCV &
                                                           ,HAILNC &
                                                          ,HAILNCV &
-														 ,CLOUDNC &
+                                                         ,CLOUDNC &
                                           ,hail_maxk1, hail_max2d
                                                           
 #if ( WRF_CHEM == 1)
@@ -733,7 +754,8 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                        ,f_qvoli,f_qaoli                                      & ! for Jensen ISHMAEL
                        ,f_qvoli2,f_qaoli2                                    & ! for Jensen ISHMAEL
                        ,f_qi3,f_qni3,f_qvoli3,f_qaoli3                       & ! for Jensen ISHMAEL
-                       ,f_qnwfa, f_qnifa, f_qnbca                             ! Added by G. Thompson
+                       ,f_qnwfa, f_qnifa, f_qnbca                            & ! Added by G. Thompson
+                       ,f_light_pe,f_light_ne,f_light_neu                      ! Dynamic Lightning
 
 
    LOGICAL, OPTIONAL, INTENT(IN) :: diagflag
@@ -3012,6 +3034,67 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
          CALL wrf_error_fatal ( wrf_err_message )
 
       END SELECT micro_select
+
+      IF (config_flags%dyn_lightning_option.eq.1) THEN
+      IF (  PRESENT( QC_CURR ) .AND.  &
+            PRESENT( QR_CURR ) .AND. PRESENT ( QI_CURR )   .AND.  &
+            PRESENT( QS_CURR ) .AND. PRESENT ( QG_CURR )) THEN
+            CALL calc_lpi_new(                           &
+                     W=w,                                &
+                     PI_PHY=pi_phy, RHO_PHY=rho,         &
+                     TH_PHY=TH,P_PHY=p,                  &
+                     DZ8w=dz8w,                          &
+                     QC=qc_curr,                         &
+                     QR=qr_curr,                         &
+                     QI=qi_curr,                         &
+                     QS=qs_curr,                         &
+                     QG=qg_curr,                         &
+                     QH=qh_curr,                         &
+                     lpi2d = lpi2d,                      &
+                     lpi3d = lpi3d                       &
+                    ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+                    ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                    ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte)
+            CALL   calc_dyn_pe(dx=dx,dy=dy, &
+                     W=w,                                &
+                     PI_PHY=pi_phy, RHO_PHY=rho,         &
+                     TH_PHY=TH,P_PHY=p,                  &
+                     DZ8w=dz8w,                          &
+                     QC=qc_curr,                         &
+                     QR=qr_curr,                         &
+                     QI=qi_curr,                         &
+                     QS=qs_curr,                         &
+                     QG=qg_curr,                         &
+                     QH=qh_curr,                         &
+                     light_pe=light_pe_curr,             &
+                     light_ne=light_ne_curr,             &
+                     light_neu=light_neu_curr,           &
+                     dt=dt                               &
+                    ,coul_pos=config_flags%coul_pos      &
+                    ,coul_neg=config_flags%coul_neg      &
+                    ,coul_neu=config_flags%coul_neu      &
+                    ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+                    ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                    ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte)
+             CALL   calcstroke(dx=dx,dy=dy,              &
+                     W=w,                                &
+                     PI_PHY=pi_phy, RHO_PHY=rho,         &
+                     TH_PHY=TH,P_PHY=p,                  &
+                     DZ8w=dz8w,                          &
+                     light_pe=light_pe_curr,             &
+                     light_ne=light_ne_curr,             &
+                     light_neu=light_neu_curr,           &
+                     lpos=lpos,lneg=lneg,lneu=lneu       &
+                    ,j_pos=config_flags%j_pos            &
+                    ,j_neg=config_flags%j_neg            &
+                    ,j_neu=config_flags%j_neu            &
+                    ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+                    ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                    ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte)
+      ELSE
+              CALL wrf_error_fatal ( 'arguments not present for calling dynamic lightning scheme' )
+      ENDIF
+      END IF
 
    ENDDO
    !$OMP END PARALLEL DO

@@ -134,6 +134,9 @@ target_sources(
                   module_ltng_crmpr92.F
                   module_ltng_iccg.F
                   module_ltng_lpi.F
+                  module_calc_lpi_new.F
+                  module_ltng_pe.F
+                  module_ltng_strokes.F
                   module_madwrf.F
                   module_microphysics_driver.F
                   module_microphysics_zero_out.F

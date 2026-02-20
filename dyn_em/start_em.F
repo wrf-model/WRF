@@ -7,7 +7,7 @@
 )
 
    USE module_domain, ONLY : domain, wrfu_timeinterval, get_ijk_from_grid, &
-        domain_setgmtetc
+        domain_setgmtetc, get_ijk_from_subgrid
    USE module_state_description
    USE module_driver_constants
    USE module_wrf_error
@@ -45,6 +45,10 @@
    USE module_diag_pld, ONLY : pld
    USE module_diag_zld, ONLY : zld
    USE module_trad_fields, ONLY : trad_fields
+#ifdef WRF_CFBM
+     ! CFBM
+   use initialize_mod, only : Init_fire_state_within_wrf
+#endif
 
    USE NoahmpIOVarType, only : NoahmpIOdom
 !!debug
@@ -136,6 +140,14 @@
    REAL :: dt_s, dx_km
 
    REAL :: max_mf, max_rot_angle
+#ifdef WRF_CFBM
+   integer :: ifds, ifde, jfds, jfde, kfds, kfde, &
+              ifms, ifme, jfms, jfme, kfms, kfme, &
+              ifps, ifpe, jfps, jfpe, kfps, kfpe
+   real :: cen_lat, cen_lon, truelat1, truelat2, stand_lon
+#endif
+
+
    CALL get_ijk_from_grid ( grid ,                              &
                            ids, ide, jds, jde, kds, kde,        &
                            ims, ime, jms, jme, kms, kme,        &
@@ -2226,8 +2238,53 @@ DEALLOCATE(z_at_q)
 DEALLOCATE(dz8w)
 
 !  FIRE
-if(config_flags%ifire.eq.2)then
+   Select_fire_model: select case (config_flags%ifire)
+       ! none
+     case (0)
+       continue
 
+       ! Community Fire Behavior model
+     case (1)
+#ifdef WRF_CFBM
+         ! Get fire dims
+       call get_ijk_from_subgrid (grid, ifds, ifde, jfds, jfde, kfds, kfde, &
+                                        ifms, ifme, jfms, jfme, kfms, kfme, &
+                                        ifps, ifpe, jfps, jfpe, kfps, kfpe)
+         ! Get projection parameters
+       call nl_get_cen_lat (grid%id, cen_lat)
+       call nl_get_cen_lon (grid%id, cen_lon)
+       call nl_get_truelat1 (grid%id, truelat1)
+       call nl_get_truelat2 (grid%id, truelat2)
+       call nl_get_stand_lon (grid%id, stand_lon)
+
+         ! Impose WRF start/end times to CFBM settings
+       grid%cfbm_namelist%start_year = config_flags%start_year
+       grid%cfbm_namelist%start_month = config_flags%start_month
+       grid%cfbm_namelist%start_day = config_flags%start_day
+       grid%cfbm_namelist%start_hour = config_flags%start_hour
+       grid%cfbm_namelist%start_minute = config_flags%start_minute
+       grid%cfbm_namelist%start_second = config_flags%start_second
+       grid%cfbm_namelist%end_year = config_flags%end_year
+       grid%cfbm_namelist%end_month = config_flags%end_month
+       grid%cfbm_namelist%end_day = config_flags%end_day
+       grid%cfbm_namelist%end_hour = config_flags%end_hour
+       grid%cfbm_namelist%end_minute = config_flags%end_minute
+       grid%cfbm_namelist%end_second = config_flags%end_second
+
+       call Init_fire_state_within_wrf (state = grid%fire_state, config_flags = grid%cfbm_namelist, &
+           ifds = ifds, ifde = ifde, ifms = ifms, ifme = ifme, ifps = ifps, ifpe = ifpe, &
+           jfds = jfds, jfde = jfde, jfms = jfms, jfme = jfme, jfps = jfps, jfpe = jfpe, &
+           kfds = kfds, kfde = kfde, kfms = kfms, kfme = kfme, kfps = kfps, kfpe = kfpe, &
+           kfts = kts, kfte = kte, ide = ide, jde = jde, &
+           dx = config_flags%dx, dy = config_flags%dy, &
+           sr_x = config_flags%sr_x, sr_y = config_flags%sr_y, &
+           map_proj = config_flags%map_proj, cen_lat = cen_lat, cen_lon = cen_lon, truelat1 = truelat1, &
+           truelat2 = truelat2, stand_lon = stand_lon, nfuel_cat = grid%nfuel_cat, zsf = grid%zsf, &
+           dzdxf = grid%dzdxf, dzdyf = grid%dzdyf)
+#else
+       call wrf_error_fatal ('CFBM requires compilation with CMake')
+#endif
+     case (2)
    call fire_driver_em_init ( grid , config_flags    &
             ,ids,ide, kds,kde, jds,jde                &
             ,ims,ime, kms,kme, jms,jme                &
@@ -2276,8 +2333,11 @@ if(config_flags%ifire.eq.2)then
 
    ENDIF
 !-----------------------------------------------------------------------
+     case default
 
-endif
+       CALL wrf_error_fatal ( 'The selected fire model does not exist' )
+   end select Select_fire_model
+
 
 #if ( WRFPLUS != 1 )
 if( grid%traj_opt /= no_trajectory ) then

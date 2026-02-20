@@ -4,6 +4,9 @@
 [submodule ".ci/hpc-workflows"]
 	path = .ci/hpc-workflows
 	url = https://github.com/islas/hpc-workflows
+[submodule "phys/fire_behavior"]
+	path = phys/fire_behavior
+	url = https://github.com/NCAR/fire_behavior.git
 [submodule "phys/physics_mmm"]
 	path = phys/physics_mmm
 	url = https://github.com/NCAR/MMM-physics.git

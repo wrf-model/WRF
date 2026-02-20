@@ -62,6 +62,14 @@ CONTAINS
 #endif
 #endif
     USE module_utility
+
+#ifdef WRF_CFBM
+      ! CFBM
+    use advance_mod, only : Advance_state
+    use wrf_mod, only : Interp_wrf2dvar_to_cfbm, Interp_wrfwinds_to_cfbm
+    use wrf_mod, only : Provide_atm_feedback
+#endif
+
     IMPLICIT NONE
 
     TYPE ( domain ), INTENT(INOUT) :: grid
@@ -1384,7 +1392,86 @@ BENCH_END(pbl_driver_tim)
 
 !*****
 ! fire 
+     Select_fire_model: select case (config_flags%ifire)
+       case (0)
+         continue
+#ifdef WRF_CFBM
+       case (1)
+           ! Interpolate from Atm to fire grid
+         call Interp_wrf2dvar_to_cfbm (grid%znt, ims, ime, jms, jme, &
+             grid%fire_state%ifms, grid%fire_state%ifme, grid%fire_state%jfms, grid%fire_state%jfme, &
+             grid%fire_state%ifps, grid%fire_state%ifpe, grid%fire_state%jfps, grid%fire_state%jfpe, &
+             grid%fire_state%lats, grid%fire_state%lons, grid%fire_state%proj, grid%fire_state%fz0)
 
+         call Interp_wrf2dvar_to_cfbm (grid%t2, ims, ime, jms, jme, &
+             grid%fire_state%ifms, grid%fire_state%ifme, grid%fire_state%jfms, grid%fire_state%jfme, &
+             grid%fire_state%ifps, grid%fire_state%ifpe, grid%fire_state%jfps, grid%fire_state%jfpe, &
+             grid%fire_state%lats, grid%fire_state%lons, grid%fire_state%proj, grid%fire_state%fire_t2)
+
+         call Interp_wrf2dvar_to_cfbm (grid%q2, ims, ime, jms, jme, &
+             grid%fire_state%ifms, grid%fire_state%ifme, grid%fire_state%jfms, grid%fire_state%jfme, &
+             grid%fire_state%ifps, grid%fire_state%ifpe, grid%fire_state%jfps, grid%fire_state%jfpe, &
+             grid%fire_state%lats, grid%fire_state%lons, grid%fire_state%proj, grid%fire_state%fire_q2)
+
+         call Interp_wrf2dvar_to_cfbm (grid%psfc, ims, ime, jms, jme, &
+             grid%fire_state%ifms, grid%fire_state%ifme, grid%fire_state%jfms, grid%fire_state%jfme, &
+             grid%fire_state%ifps, grid%fire_state%ifpe, grid%fire_state%jfps, grid%fire_state%jfpe, &
+             grid%fire_state%lats, grid%fire_state%lons, grid%fire_state%proj, grid%fire_state%fire_psfc)
+
+         call Interp_wrf2dvar_to_cfbm (grid%rainc + grid%rainnc, ims, ime, jms, jme, &
+             grid%fire_state%ifms, grid%fire_state%ifme, grid%fire_state%jfms, grid%fire_state%jfme, &
+             grid%fire_state%ifps, grid%fire_state%ifpe, grid%fire_state%jfps, grid%fire_state%jfpe, &
+             grid%fire_state%lats, grid%fire_state%lons, grid%fire_state%proj, grid%fire_state%fire_rain)
+
+         call Interp_wrfwinds_to_cfbm (grid%u_phy, grid%v_phy, grid%z_at_w, ims, ime, kms, kme, jms, jme, &
+             grid%fire_state%ifms, grid%fire_state%ifme, grid%fire_state%jfms, grid%fire_state%jfme, &
+             grid%fire_state%ifps, grid%fire_state%ifpe, grid%fire_state%jfps, grid%fire_state%jfpe, &
+             grid%fire_state%kfds, grid%fire_state%kfde, &
+             grid%fire_state%lats, grid%fire_state%lons, grid%fire_state%proj, grid%fire_state%fz0,  &
+             grid%cfbm_namelist%fire_lsm_zcoupling, grid%cfbm_namelist%fire_lsm_zcoupling_ref, &
+             grid%cfbm_namelist%fire_wind_height, grid%fire_state%uf, grid%fire_state%vf)
+
+         call Advance_state (grid = grid%fire_state, config_flags = grid%cfbm_namelist)
+
+         if (grid%fire_state%num_tiles == grid%num_tiles .and. &
+            grid%cfbm_namelist%tile_strategy == config_flags%tile_strategy) then
+           !$OMP PARALLEL DO   &
+           !$OMP PRIVATE (ij)
+           do ij = 1, grid%num_tiles
+             call Provide_atm_feedback (grid%cfbm_namelist,            &
+               grid%fire_state%ifms, grid%fire_state%ifme,             &
+               grid%fire_state%jfms, grid%fire_state%jfme,             &
+               grid%fire_state%i_start(ij), grid%fire_state%i_end(ij), &
+               grid%fire_state%j_start(ij), grid%fire_state%j_end(ij), &
+               grid%fire_state%ifps, grid%fire_state%ifpe,             &
+               grid%fire_state%jfps, grid%fire_state%jfpe,             &
+               ids, ide, kds, kde, jds, jde,                           &
+               ims, ime, kms, kme, jms, jme,                           &
+               grid%i_start(ij), grid%i_end(ij),                       &
+               k_start, k_end,                                         &
+               grid%j_start(ij), grid%j_end(ij),                       &
+               grid%sr_x, grid%sr_y,                                   &
+               grid%fire_state%emis_smoke, tracer(:,:,:,p_fire_smoke), &
+               config_flags%tracer_opt,                                &
+               p_phy, t_phy, moist(ims,kms,jms,P_QV),                  &
+               grid%aod5502d_smoke,                                    &
+               grid%fire_state%fgrnhfx, grid%fire_state%fgrnqfx,       &
+               grid%grnhfx, grid%grnqfx, grid%canhfx, grid%canqfx,     &
+               grid%grnsmk,                                            &
+               ! obsolete WRF flags
+               config_flags%fire_ext_grnd,config_flags%fire_ext_crwn,  &
+               config_flags%fire_crwn_hgt, grid%rho, dz8w,             &
+               grid%z_at_w, grid%mut, grid%c1h, grid%c2h,              &
+               grid%rthfrten, grid%rqvfrten)          ! theta and Qv tendencies
+           end do
+           !$OMP END PARALLEL DO
+         else
+           call wrf_error_fatal ('num_tiles in WRF and CFBM should match')
+         endif
+
+         call grid%fire_state%Handle_output (grid%cfbm_namelist)
+#endif
+       case (2)
 ! Jan Mandel's call to SFIRE
 
       IF ((grid%sr_x > 0 .OR. grid%sr_y > 0) .AND. config_flags%ifire == 2) THEN
@@ -1408,6 +1495,10 @@ BENCH_START(fire_driver_tim)
 BENCH_END(fire_driver_tim)
        ENDIF
 
+       case default
+         CALL wrf_error_fatal('The selected fire model does not exist')
+
+     end select Select_fire_model
 
 ! cumulus para.
 

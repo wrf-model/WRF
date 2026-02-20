@@ -225,6 +225,11 @@ SUBROUTINE solve_em ( grid , config_flags  &
    end interface
 #endif
 
+#ifdef CORDEXDIAG
+   INTEGER                                               :: i2, j2, k2
+   INTEGER                                               :: ix, iy, iz
+#endif
+
 ! Define benchmarking timers if -DBENCH is compiled
 #include "bench_solve_em_def.h"
 
@@ -2194,7 +2199,44 @@ BENCH_END(small_step_finish_tim)
 !</pre>
 !</DESCRIPTION>
 
+#ifdef CORDEXDIAG
+#ifdef CDXWRF
+#if CDXWRF>=4
 
+       ! L. Fita, CIMA. Feb. 2018
+       ! Initializing values it gives unitialize values on that unconsidered
+       ! species
+       !$OMP PARALLEL DO   &
+       !$OMP PRIVATE ( ij, tenddec )
+       moist_tile_loop_ini: DO ij = 1 , grid%num_tiles
+         DO iz=kms,kme
+           grid%qv_hadv(ims:ime,iz,jms:jme) = 0.
+           grid%qv_zadv(ims:ime,iz,jms:jme) = 0.
+           grid%qvttend = 0.
+           grid%qc_hadv(ims:ime,iz,jms:jme) = 0.
+           grid%qc_zadv(ims:ime,iz,jms:jme) = 0.
+           grid%qcttend = 0.
+           grid%qr_hadv(ims:ime,iz,jms:jme) = 0.
+           grid%qr_zadv(ims:ime,iz,jms:jme) = 0.
+           grid%qrttend = 0.
+           grid%qs_hadv(ims:ime,iz,jms:jme) = 0.
+           grid%qs_zadv(ims:ime,iz,jms:jme) = 0.
+           grid%qsttend = 0.
+           grid%qi_hadv(ims:ime,iz,jms:jme) = 0.
+           grid%qi_zadv(ims:ime,iz,jms:jme) = 0.
+           grid%qittend = 0.
+           grid%qg_hadv(ims:ime,iz,jms:jme) = 0.
+           grid%qg_zadv(ims:ime,iz,jms:jme) = 0.
+           grid%qgttend = 0.
+           grid%qh_hadv(ims:ime,iz,jms:jme) = 0.
+           grid%qh_zadv(ims:ime,iz,jms:jme) = 0.
+           grid%qhttend = 0.
+         END DO
+       END DO moist_tile_loop_ini
+       !$OMP END PARALLEL DO
+#endif
+#endif
+#endif
        moist_scalar_advance: IF (num_3d_m >= PARAM_FIRST_SCALAR )  THEN
 
          moist_variable_loop: DO im = PARAM_FIRST_SCALAR, num_3d_m
@@ -2209,7 +2251,15 @@ BENCH_END(small_step_finish_tim)
              moist_tile_loop_1: DO ij = 1 , grid%num_tiles
 
                CALL wrf_debug ( 200 , ' call rk_scalar_tend' )
+#ifdef CORDEXDIAG
+#ifdef CDXWRF
+#if CDXWRF>=4
+               tenddec = .true.
+#endif
+#endif
+#else
                tenddec = .false.
+#endif
 
 BENCH_START(rk_scalar_tend_tim)
                CALL rk_scalar_tend (  im, im, config_flags, tenddec,         & 
@@ -2303,13 +2353,29 @@ BENCH_END(rlx_bdy_scalar_tim)
              moist_tile_loop_2: DO ij = 1 , grid%num_tiles
 
                CALL wrf_debug ( 200 , ' call rk_update_scalar' )
+#ifdef CORDEXDIAG
+#ifdef CDXWRF
+#if CDXWRF>=4
+               tenddec = .true.
+#endif
+#endif
+#else
                tenddec = .false.
+#endif
 
 BENCH_START(update_scal_tim)
                CALL rk_update_scalar( scs=im, sce=im,                                  &
                                scalar_1=moist_old(ims,kms,jms,im),                     &
                                scalar_2=moist(ims,kms,jms,im),                         &
                                sc_tend=moist_tend(ims,kms,jms,im),                     &
+#ifdef CORDEXDIAG
+#ifdef CDXWRF
+#if CDXWRF>=4
+                               advh_t=advh_t(ims:ime,kms:kme,jms:jme,1),               &
+                               advz_t=advz_t(ims:ime,kms:kme,jms:jme,1),               &
+#endif
+#endif
+#endif
                                advect_tend=advect_tend,                                &
                                h_tendency=h_tendency, z_tendency=z_tendency,           & 
                                msftx=grid%msftx,msfty=grid%msfty,                      &
@@ -2336,6 +2402,96 @@ BENCH_START(update_scal_tim)
                            k_start    , k_end               )
                ENDIF
                ENDIF
+#ifdef CORDEXDIAG
+#ifdef CDXWRF
+#if CDXWRF>=4
+               IF (rk_step .eq. config_flags%rk_ord .AND. curr_secs2 > 0. .AND.  &
+                 config_flags%output_cordex == 1 .AND. config_flags%output_wb == 1) THEN
+! L. Fita, January 2018. CIMA
+! There is a need to keep the results for each specie since module provides
+! accumulated values
+                 IF (im == P_QV) THEN
+                   DO iz=kms,kme
+                     grid%qv_hadv(ims:ime,iz,jms:jme) = h_tendency(ims:ime,iz,jms:jme)*               &
+                       grid%msfty(ims:ime,jms:jme)/(grid%mu_2(ims:ime,jms:jme)+grid%mub(ims:ime,jms:jme))
+                     grid%qv_zadv(ims:ime,iz,jms:jme) = z_tendency(ims:ime,iz,jms:jme)*               &
+                       grid%msfty(ims:ime,jms:jme)/(grid%mu_2(ims:ime,jms:jme)+grid%mub(ims:ime,jms:jme))
+                     !grid%qv_hadv(ims:ime,iz,jms:jme) = advh_t(ims:ime,iz,jms:jme,1)
+                     !grid%qv_zadv(ims:ime,iz,jms:jme) = advz_t(ims:ime,iz,jms:jme,1)
+                   END DO
+                 END IF
+                 IF (im == P_QC) THEN
+                   DO iz=kms,kme
+                     grid%qc_hadv(ims:ime,iz,jms:jme) = h_tendency(ims:ime,iz,jms:jme)*               &
+                       grid%msfty(ims:ime,jms:jme)/(grid%mu_2(ims:ime,jms:jme)+grid%mub(ims:ime,jms:jme))
+                     grid%qc_zadv(ims:ime,iz,jms:jme) = z_tendency(ims:ime,iz,jms:jme)*               &
+                       grid%msfty(ims:ime,jms:jme)/(grid%mu_2(ims:ime,jms:jme)+grid%mub(ims:ime,jms:jme))
+                     !grid%qc_hadv(ims:ime,iz,jms:jme) = advh_t(ims:ime,iz,jms:jme,1)
+                     !grid%qc_zadv(ims:ime,iz,jms:jme) = advz_t(ims:ime,iz,jms:jme,1)
+                   END DO
+                 END IF
+                 IF (im == P_QR) THEN
+                   DO iz=kms,kme
+                     grid%qr_hadv(ims:ime,iz,jms:jme) = h_tendency(ims:ime,iz,jms:jme)*               &
+                       grid%msfty(ims:ime,jms:jme)/(grid%mu_2(ims:ime,jms:jme)+grid%mub(ims:ime,jms:jme))
+                     grid%qr_zadv(ims:ime,iz,jms:jme) = z_tendency(ims:ime,iz,jms:jme)*               &
+                       grid%msfty(ims:ime,jms:jme)/(grid%mu_2(ims:ime,jms:jme)+grid%mub(ims:ime,jms:jme))
+                     !grid%qr_hadv(ims:ime,iz,jms:jme) = advh_t(ims:ime,iz,jms:jme,1)
+                     !grid%qr_zadv(ims:ime,iz,jms:jme) = advz_t(ims:ime,iz,jms:jme,1)
+                   END DO
+                 END IF
+                 IF (im == P_QS) THEN
+                   DO iz=kms,kme
+                     grid%qs_hadv(ims:ime,iz,jms:jme) = h_tendency(ims:ime,iz,jms:jme)*               &
+                       grid%msfty(ims:ime,jms:jme)/(grid%mu_2(ims:ime,jms:jme)+grid%mub(ims:ime,jms:jme))
+                     grid%qs_zadv(ims:ime,iz,jms:jme) = z_tendency(ims:ime,iz,jms:jme)*               &
+                       grid%msfty(ims:ime,jms:jme)/(grid%mu_2(ims:ime,jms:jme)+grid%mub(ims:ime,jms:jme))
+                     !grid%qs_hadv(ims:ime,iz,jms:jme) = advh_t(ims:ime,iz,jms:jme,1)
+                     !grid%qs_zadv(ims:ime,iz,jms:jme) = advz_t(ims:ime,iz,jms:jme,1)
+                   END DO
+                 END IF
+                 IF (im == P_QI) THEN
+                   DO iz=kms,kme
+                     grid%qi_hadv(ims:ime,iz,jms:jme) = h_tendency(ims:ime,iz,jms:jme)*               &
+                       grid%msfty(ims:ime,jms:jme)/(grid%mu_2(ims:ime,jms:jme)+grid%mub(ims:ime,jms:jme))
+                     grid%qi_zadv(ims:ime,iz,jms:jme) = z_tendency(ims:ime,iz,jms:jme)*               &
+                       grid%msfty(ims:ime,jms:jme)/(grid%mu_2(ims:ime,jms:jme)+grid%mub(ims:ime,jms:jme))
+                     !grid%qi_hadv(ims:ime,iz,jms:jme) = advh_t(ims:ime,iz,jms:jme,1)
+                     !grid%qi_zadv(ims:ime,iz,jms:jme) = advz_t(ims:ime,iz,jms:jme,1)
+                   END DO
+                 END IF
+                 IF (im == P_QH) THEN
+                   DO iz=kms,kme
+                     grid%qh_hadv(ims:ime,iz,jms:jme) = h_tendency(ims:ime,iz,jms:jme)*               &
+                       grid%msfty(ims:ime,jms:jme)/(grid%mu_2(ims:ime,jms:jme)+grid%mub(ims:ime,jms:jme))
+                     grid%qh_zadv(ims:ime,iz,jms:jme) = z_tendency(ims:ime,iz,jms:jme)*               &
+                       grid%msfty(ims:ime,jms:jme)/(grid%mu_2(ims:ime,jms:jme)+grid%mub(ims:ime,jms:jme))
+                     !grid%qh_hadv(ims:ime,iz,jms:jme) = advh_t(ims:ime,iz,jms:jme,1)
+                     !grid%qh_zadv(ims:ime,iz,jms:jme) = advz_t(ims:ime,iz,jms:jme,1)
+                   END DO
+                 END IF
+                 IF (im == P_QG) THEN
+                   DO iz=kms,kme
+                     grid%qg_hadv(ims:ime,iz,jms:jme) = h_tendency(ims:ime,iz,jms:jme)*               &
+                       grid%msfty(ims:ime,jms:jme)/(grid%mu_2(ims:ime,jms:jme)+grid%mub(ims:ime,jms:jme))
+                     grid%qg_zadv(ims:ime,iz,jms:jme) = z_tendency(ims:ime,iz,jms:jme)*               &
+                       grid%msfty(ims:ime,jms:jme)/(grid%mu_2(ims:ime,jms:jme)+grid%mub(ims:ime,jms:jme))
+                     !grid%qg_hadv(ims:ime,iz,jms:jme) = advh_t(ims:ime,iz,jms:jme,1)
+                     !grid%qg_zadv(ims:ime,iz,jms:jme) = advz_t(ims:ime,iz,jms:jme,1)
+                   END DO
+                 END IF
+!                i2 = INT((ime + ims)/2)
+!                j2 = INT((jme + jms)/2)
+!                 WRITE(message,*)'    Lluis P_QV:', P_QV,' P_QC:',P_QC, ' P_QR:',P_QR,' P_QS:',P_QS,' P_QI:',P_QI,' P_QH:',P_QH,' P_QG:',P_QG
+!                 CALL wrf_debug(100,message)
+!                 WRITE(message,*)'    Lluis im:', im, ' 2 h_tend:', h_tendency(i2,2,j2), ' v_tend:', z_tendency(i2,2,j2), ' advh_t:', advh_t(i2,2,j2,1), ' advz_t 2:', advz_t(i2,2,j2,1) 
+!                 CALL wrf_debug(100,message)
+!                 WRITE(message,*)'    Lluis qvh:', grid%qv_hadv(i2,2,j2), ' qch:', grid%qc_hadv(i2,2,j2), ' qrh:', grid%qr_hadv(i2,2,j2), ' qsh:', grid%qs_hadv(i2,2,j2), ' qih:', grid%qh_hadv(i2,2,j2), ' qhh:', grid%qh_hadv(i2,2,j2), ' qgh:', grid%qg_hadv(i2,2,j2)
+!                 CALL wrf_debug(100,message)
+               END IF
+#endif
+#endif
+#endif
 BENCH_END(update_scal_tim)
 
 BENCH_START(flow_depbdy_tim)
@@ -4750,6 +4906,36 @@ BENCH_END(bc_2d_tim)
 
    END DO
    !$OMP END PARALLEL DO
+
+#ifdef CORDEXDIAG
+#ifdef CDXWRF
+#if CDXWRF>=4
+! Getting some variables for the Water budget
+   IF (config_flags%output_wb == 1 .AND. curr_secs2 > 0.) THEN
+     !!i2 = (ime+ims)/2
+     !!j2 = (jme+jms)/2
+     ! Avoiding floating point exceptions when compiling in debug mode
+
+     ! Inter-time step tendency (only for the existent species!!)
+     grid%qvttend = (moist(:,:,:,P_QV) - moist_old(:,:,:,P_QV))/REAL(model_config_rec%dt(grid%id))
+     grid%qcttend = (moist(:,:,:,P_QC) - moist_old(:,:,:,P_QC))/REAL(model_config_rec%dt(grid%id))
+     grid%qrttend = (moist(:,:,:,P_QR) - moist_old(:,:,:,P_QR))/REAL(model_config_rec%dt(grid%id))
+     IF (P_QS >= PARAM_FIRST_SCALAR) THEN
+       grid%qsttend = (moist(:,:,:,P_QS) - moist_old(:,:,:,P_QS))/REAL(model_config_rec%dt(grid%id))
+     ENDIF
+     IF (P_QI >= PARAM_FIRST_SCALAR) THEN
+       grid%qittend = (moist(:,:,:,P_QI) - moist_old(:,:,:,P_QI))/REAL(model_config_rec%dt(grid%id))
+     ENDIF
+     IF (P_QH >= PARAM_FIRST_SCALAR) THEN
+       grid%qhttend = (moist(:,:,:,P_QH) - moist_old(:,:,:,P_QH))/REAL(model_config_rec%dt(grid%id))
+     ENDIF
+     IF (P_QG >= PARAM_FIRST_SCALAR) THEN
+       grid%qgttend = (moist(:,:,:,P_QG) - moist_old(:,:,:,P_QG))/REAL(model_config_rec%dt(grid%id))
+     ENDIF
+   END IF
+#endif
+#endif
+#endif
 
 !-----------------------------------------------------------
 !  After all of the RK steps, after the microphysics, after p-rho-phi,

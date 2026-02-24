@@ -399,6 +399,8 @@ BENCH_START(a_pbl_driver_tim)
      &        ,qcg=grid%qcg, grav_settling=config_flags%grav_settling     &
 !GWD for ARW
      &        ,GWD_OPT=config_flags%gwd_opt &
+     &        ,dx_factor=config_flags%gwd_dx_factor                      &
+     &        ,if_nonhyd=config_flags%gwd_if_nonhyd                      &
      &        ,DTAUX3D=grid%dtaux3d,DTAUY3D=grid%dtauy3d &
      &        ,DTAUX3DB=grid%a_dtaux3d,DTAUY3DB=grid%a_dtauy3d &
      &        ,DUSFCG=grid%dusfcg,DVSFCG=grid%dvsfcg &
@@ -406,6 +408,7 @@ BENCH_START(a_pbl_driver_tim)
      &        ,VAR2D=grid%var2d,OC12D=grid%oc12d     &
      &        ,OA1=grid%oa1,OA2=grid%oa2,OA3=grid%oa3,OA4=grid%oa4        &
      &        ,OL1=grid%ol1,OL2=grid%ol2,OL3=grid%ol3,OL4=grid%ol4        &
+     &        ,elvmax=grid%elvmax                                         &
      &        ,SINA=grid%sina, COSA=grid%cosa                             &
      &        ,MFSHCONV=grid%mfshconv                                     & 
      &        ,MASSFLUX_EDKF=grid%massflux_EDKF                           & 

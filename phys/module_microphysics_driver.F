@@ -164,8 +164,8 @@ SUBROUTINE microphysics_driver(                                          &
                       ,pert_thom_qv,pert_thom_qc,pert_thom_qi            &
                       ,pert_thom_qs,pert_thom_ni                         &
                       ,cloudnc                                           &
-                      ,history_interval, history_interval_m, history_interval_s & ! jdduda
-                      ,adaptive_ts, max_time_step &  ! jdduda
+                      ,history_interval, history_interval_m, history_interval_s & 
+                      ,adaptive_ts, max_time_step &
                                      )
 
 ! Framework
@@ -694,13 +694,11 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                                                          ,HAILNCV &
 							 ,CLOUDNC &
                                           ,hail_maxk1, hail_max2d &
-                                                        ! jdduda
                                                        ,max_prate &
                                                   ,max_prate_1min &
                                                   ,max_prate_5min &
                                                  ,max_prate_10min &
                                                      ,max_compref 
-                                                       ! jdduda
                                                           
 #if ( WRF_CHEM == 1)
 ! NUWRF JJS 20110525 vvvvv
@@ -795,20 +793,18 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 
    REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(IN):: IRRIGATION !ARI
    REAL,  OPTIONAL, INTENT(IN)::  irr_daily_amount, julian_in, xtime, gmt
-   INTEGER, OPTIONAL, INTENT(IN) :: history_interval, history_interval_m, history_interval_s ! jdduda
+   INTEGER, OPTIONAL, INTENT(IN) :: history_interval, history_interval_m, history_interval_s 
    INTEGER, OPTIONAL, INTENT(IN ):: sf_surf_irr_scheme, irr_start_hour, irr_num_hours, &
                                     irr_start_julianday,irr_end_julianday,irr_freq,irr_ph
    REAL, PARAMETER    :: PI_GRECO=3.14159
-   INTEGER  :: end_hour,a,b,xt24,irr_day,timing, idump ! jdduda
+   INTEGER  :: end_hour,a,b,xt24,irr_day,timing, idump
    REAL :: constants_irrigation,tloc,irr_start,phase
    INTEGER, OPTIONAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) :: irr_rand_field
 
-   ! jdduda
    REAL                                       :: time_from_output
    INTEGER, INTENT(IN)                        :: max_time_step
    LOGICAL, INTENT(IN)                        :: adaptive_ts
-   LOGICAL                                    :: reset_arrays = .FALSE.
-   ! jdduda
+   LOGICAL                                    :: reset_arrays
 
 ! To accommodate shared physics
    character*256 :: errmsg
@@ -844,7 +840,6 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
       CALL wrf_message ( wrf_err_message )
    ENDIF
 
-    ! jdduda - formulate logic to reset precip arrays in subroutine calc_precip_max
     IF (PRESENT(history_interval_m) .and. PRESENT(history_interval_s)) THEN
        idump = (history_interval_m * 60. + history_interval_s) / dt
        time_from_output = mod( xtime, REAL(history_interval_m*60.+history_interval_s) )
@@ -853,6 +848,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
        time_from_output = mod( xtime, REAL(history_interval) )
     END IF
 
+    reset_arrays = .false.
     IF ( adaptive_ts .EQV. .TRUE. ) THEN
 !       if timestep is adaptive, use new resetting method;
 !       also, we are multiplying max_time_step with 1.05; because of rounding error,
@@ -868,7 +864,6 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
           reset_arrays = .TRUE.
        ENDIF
     ENDIF
-    ! jdduda
 
 #ifdef XEON_OPTIMIZED_WSM5
    ! the OpenMP loops are inside the scheme when running on MIC
@@ -2949,7 +2944,6 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 
       END SELECT micro_select
 
-      ! jdduda
       IF (mp_physics == THOMPSON .or. &
           mp_physics == THOMPSONGH .or. &
           mp_physics == THOMPSONAERO .or. &
@@ -2978,10 +2972,9 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                 max_prate_10min = 0.
                 max_compref = -35.
              END IF
-             call calc_prate_max(itimestep,i_mid,j_mid,its,ims,ite,ime,jts,jms,jte,jme,kts,kms,kte,kme,rainncv,rainnc,dt, &
+             call calc_prate_max(itimestep,xtime,i_mid,j_mid,its,ims,ite,ime,jts,jms,jte,jme,kts,kms,kte,kme,rainncv,rainnc,dt, &
                                  max_prate,max_prate_1min,max_prate_5min,max_prate_10min,refl_10cm,max_compref)
       END IF
-      ! jdduda
 
    ENDDO
    !$OMP END PARALLEL DO
@@ -3082,8 +3075,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 
    end subroutine Remove_multi_perturb_mp_perturbations
 
-   ! jdduda
-   subroutine calc_prate_max(timestep,cent_x,cent_y,its,ims,ite,ime,jts,jms,jte,jme,kts,kms,kte,kme,rainncv,rainnc,time_step, &
+   subroutine calc_prate_max(timestep,sim_min,cent_x,cent_y,its,ims,ite,ime,jts,jms,jte,jme,kts,kms,kte,kme,rainncv,rainnc,time_step, &
                              max_prate,max_prate_1min,max_prate_5min,max_prate_10min,reflectivity_3D,max_compref)
 
       ! Subroutine inputs
@@ -3104,7 +3096,6 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
       integer:: i,j,k,z
       integer :: n_sub_windows, max_steps_per_sub
       integer, dimension(5) :: steps_per_sub, sub_window_len
-!      logical, dimension(5), save :: init_rolling_precip_array = .false.
       logical, save :: init_rolling_precip_array = .false.
       REAL, DIMENSION(5) :: n_dt_sub, sub_window_time
       logical :: isopen
@@ -3126,7 +3117,6 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
          if (steps_per_sub(z) == 1) then
             write(desc,'(I3)') int(sub_window_len(z)/60.)
             write(6,*) 'WARNING: model time step is coarser than '//trim(adjustl(desc))//' minute(s) and thus the ave_prate_[1-/5-/10-]min array will be either all zeros or meaningless.'
-        !    init_rolling_precip_array(z) = .true.
             init_rolling_precip_array = .true.
          end if
       end do
@@ -3137,21 +3127,6 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
          rolling_precip = 0.
          init_rolling_precip_array = .true.
       end if
-!      if (.not. init_rolling_precip_array(1)) then
-!         allocate(rolling_precip_1min(steps_per_sub(1),its:ite,jts:jte))
-!         rolling_precip_1min = 0.
-!         init_rolling_precip_array(1) = .true.
-!      end if
-!      if (.not. init_rolling_precip_array(2)) then
-!         allocate(rolling_precip_5min(steps_per_sub(2),its:ite,jts:jte))
-!         rolling_precip_5min = 0.
-!         init_rolling_precip_array(2) = .true.
-!      end if
-!      if (.not. init_rolling_precip_array(3)) then
-!         allocate(rolling_precip_10min(steps_per_sub(3),its:ite,jts:jte))
-!         rolling_precip_10min = 0.
-!         init_rolling_precip_array(3) = .true.
-!      end if
 
       DO i = its,ite
        DO j = jts,jte
@@ -3176,35 +3151,6 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
            max_prate_5min(i,j) = max((rolling_precip(1,i,j) - rolling_precip(steps_per_sub(2),i,j))/sub_window_time(2),max_prate_5min(i,j))
            max_prate_10min(i,j) = max((rolling_precip(1,i,j) - rolling_precip(steps_per_sub(3),i,j))/sub_window_time(3),max_prate_10min(i,j))
         END IF
-  !      ! 1-minute prate
-  !      IF (allocated(rolling_precip_1min)) THEN
-  !         DO k = steps_per_sub(1)-1,1,-1
-       !       IF (i == cent_x .and. j == cent_y) PRINT '(A,I3,A,I3,A,F12.8,A,F12.8)', "rolling_precip_1min(",k+1,") will be replaced with rolling_precip_1min(",k,"), i.e, ", &
-       !           rolling_precip_1min(k+1,cent_x,cent_y), " from ",rolling_precip_1min(k,cent_x,cent_y)
-   !           rolling_precip_1min(k+1,i,j) = rolling_precip_1min(k,i,j)
-   !        END DO
-   !        rolling_precip_1min(1,i,j) = rainnc(i,j)
-       !    IF (i == cent_x .and. j == cent_y) PRINT *, "----------------------------------------------"
-       !    IF (i == cent_x .and. j == cent_y) PRINT '(A,F12.8,3X,F12.8)', "rolling_precip_1min(1) is now ", rolling_precip_1min(1,cent_x,cent_y), rainnc(cent_x,cent_y)
-       !    IF (i == cent_x .and. j == cent_y) PRINT '(A)', "----------------------------------------------"
-   !        max_prate_1min(i,j) = max((rolling_precip_1min(1,i,j) - rolling_precip_1min(steps_per_sub(1),i,j))/sub_window_time(1),max_prate_1min(i,j))
-   !     END IF
-   !     ! 5-minute prate
-   !     IF (allocated(rolling_precip_5min)) THEN
-   !        DO k = steps_per_sub(2)-1,1,-1
-   !           rolling_precip_5min(k+1,i,j) = rolling_precip_5min(k,i,j)
-   !        END DO
-   !        rolling_precip_5min(1,i,j) = rainnc(i,j)
-   !        max_prate_5min (i,j)= max((rolling_precip_5min(1,i,j) - rolling_precip_5min(steps_per_sub(2),i,j))/sub_window_time(2),max_prate_5min(i,j))
-   !     END IF
-   !     ! 10-minute prate
-   !     IF (allocated(rolling_precip_10min)) THEN
-   !        DO k = steps_per_sub(3)-1,1,-1
-   !           rolling_precip_10min(k+1,i,j) = rolling_precip_10min(k,i,j)
-   !        END DO
-   !        rolling_precip_10min(1,i,j) = rainnc(i,j)
-   !        max_prate_10min(i,j) = max((rolling_precip_10min(1,i,j) - rolling_precip_10min(steps_per_sub(3),i,j))/sub_window_time(3),max_prate_10min(i,j))
-   !     END IF
 
        END DO
       END DO
@@ -3245,34 +3191,39 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 
       IF ( cent_x >= its .and. cent_x <= ite .and. cent_y >= jts .and. cent_y <= jte) THEN
       inquire(unit=un1,opened=isopen)
-      IF (isopen) & 
-   !      WRITE(un1,'(A,I4,A,I4,A,I7,A,F14.10,A,F14.10,A,F14.10,A,F14.10,A,F10.3,A)') &
-   !         "1-min rolling precip at x=",cent_x,",y=",cent_y,", timestep #",timestep,": newest - oldest = ",rolling_precip_1min(1,cent_x,cent_y), &
-   !         " - ",rolling_precip_1min(steps_per_sub(1),cent_x,cent_y),", diff = ",rolling_precip_1min(1,cent_x,cent_y) - rolling_precip_1min(steps_per_sub(1),cent_x,cent_y), &
-   !         " [mm], rate = ",(rolling_precip_1min(1,cent_x,cent_y) - rolling_precip_1min(steps_per_sub(1),cent_x,cent_y))/sub_window_time(1), " [mm/s] (", &
-   !         3600*(rolling_precip_1min(1,cent_x,cent_y) - rolling_precip_1min(steps_per_sub(1),cent_x,cent_y))/sub_window_time(1), " [mm/hr])"
-         WRITE(un1,'(A,I4,A,I4,A,I7,A,F14.10,A,F14.10,A,F14.10,A,F14.10,A,F10.3,A)') &
-            "1-min rolling precip at x=",cent_x,",y=",cent_y,", timestep #",timestep,": newest - oldest = ",rolling_precip(1,cent_x,cent_y), &
-            " - ",rolling_precip(steps_per_sub(1),cent_x,cent_y),", diff = ",rolling_precip(1,cent_x,cent_y) - rolling_precip(steps_per_sub(1),cent_x,cent_y), &
-            " [mm], rate = ",(rolling_precip(1,cent_x,cent_y) - rolling_precip(steps_per_sub(1),cent_x,cent_y))/sub_window_time(1), " [mm/s] (", &
-            3600*(rolling_precip(1,cent_x,cent_y) - rolling_precip(steps_per_sub(1),cent_x,cent_y))/sub_window_time(1), " [mm/hr])"
+      IF (isopen) THEN
+         IF (timestep == 1) WRITE(un1,*) "grid point for data is ",cent_x,cent_y
+         WRITE(un1,'(A,F8.3,7(A,ES13.6))') &
+            "1-min rolling precip at time ",sim_min," [min]: newest - oldest = ", &
+            rolling_precip(1,cent_x,cent_y)," - ",rolling_precip(steps_per_sub(1),cent_x,cent_y), &
+            ", diff = ",rolling_precip(1,cent_x,cent_y) - rolling_precip(steps_per_sub(1),cent_x,cent_y), " [mm], &
+            &rate = ", 3600*(rolling_precip(1,cent_x,cent_y) - rolling_precip(steps_per_sub(1),cent_x,cent_y))/sub_window_time(1), " [mm/hr]), &
+            &(max: ", 3600*max_prate_1min(cent_x,cent_y), " [mm/hr]), &
+            &inst. value & inst. max: ",3600*rainncv(cent_x,cent_y)/time_step," / ",3600.*max_prate(cent_x,cent_y)
+      END IF
       inquire(unit=un2,opened=isopen)
-      IF (isopen) &
-         WRITE(un2,'(A,I4,A,I4,A,I7,A,F14.10,A,F14.10,A,F14.10,A,F14.10,A,F10.3,A)') &
-            "5-min rolling precip at x=",cent_x,",y=",cent_y,", timestep #",timestep,": newest - oldest = ",rolling_precip(1,cent_x,cent_y), &
-            " - ",rolling_precip(steps_per_sub(2),cent_x,cent_y),", diff = ",rolling_precip(1,cent_x,cent_y) - rolling_precip(steps_per_sub(2),cent_x,cent_y), &
-            " [mm], rate = ",(rolling_precip(1,cent_x,cent_y) - rolling_precip(steps_per_sub(2),cent_x,cent_y))/sub_window_time(2), " [mm/s] (", &
-            3600*(rolling_precip(1,cent_x,cent_y) - rolling_precip(steps_per_sub(2),cent_x,cent_y))/sub_window_time(2), " [mm/hr])"
+      IF (isopen) THEN
+         IF (timestep == 1) WRITE(un2,*) "grid point for data is ",cent_x,cent_y
+         WRITE(un2,'(A,F8.3,7(A,ES13.6))') &
+            "5-min rolling precip at time ",sim_min," [min]: newest - oldest = ", &
+            rolling_precip(1,cent_x,cent_y)," - ",rolling_precip(steps_per_sub(1),cent_x,cent_y), &
+            ", diff = ",rolling_precip(1,cent_x,cent_y) - rolling_precip(steps_per_sub(2),cent_x,cent_y), " [mm], &
+            &rate = ", 3600*(rolling_precip(1,cent_x,cent_y) - rolling_precip(steps_per_sub(2),cent_x,cent_y))/sub_window_time(2), " [mm/hr]), &
+            &(max: ", 3600*max_prate_5min(cent_x,cent_y), " [mm/hr]), &
+            &inst. value & inst. max: ",3600*rainncv(cent_x,cent_y)/time_step," / ",3600.*max_prate(cent_x,cent_y)
+      END IF
       inquire(unit=un3,opened=isopen)
       IF (isopen) THEN
-         WRITE(un3,'(A,I4,A,I4,A,I7,A,F14.10,A,F14.10,A,F14.10,A,F14.10,A,F10.3,A)') &
-            "10-min rolling precip at x=",cent_x,",y=",cent_y,", timestep #",timestep,": newest - oldest = ",rolling_precip(1,cent_x,cent_y), &
-            " - ",rolling_precip(steps_per_sub(3),cent_x,cent_y),", diff = ",rolling_precip(1,cent_x,cent_y) - rolling_precip(steps_per_sub(3),cent_x,cent_y), &
-            " [mm], rate = ",(rolling_precip(1,cent_x,cent_y) - rolling_precip(steps_per_sub(3),cent_x,cent_y))/sub_window_time(3), " [mm/s] (", &
-            3600*(rolling_precip(1,cent_x,cent_y) - rolling_precip(steps_per_sub(3),cent_x,cent_y))/sub_window_time(3), " [mm/hr])"
+         IF (timestep == 1) WRITE(un3,*) "grid point for data is ",cent_x,cent_y
+         WRITE(un3,'(A,F8.3,7(A,ES13.6))') &
+            "10-min rolling precip at time ",sim_min," [min]: newest - oldest = ", &
+            rolling_precip(1,cent_x,cent_y)," - ",rolling_precip(steps_per_sub(1),cent_x,cent_y), &
+            ", diff = ",rolling_precip(1,cent_x,cent_y) - rolling_precip(steps_per_sub(3),cent_x,cent_y), " [mm], &
+            &rate = ", 3600*(rolling_precip(1,cent_x,cent_y) - rolling_precip(steps_per_sub(3),cent_x,cent_y))/sub_window_time(3), " [mm/hr]), &
+            &(max: ", 3600*max_prate_10min(cent_x,cent_y), " [mm/hr]), &
+            &inst. value & inst. max: ",3600*rainncv(cent_x,cent_y)/time_step," / ",3600.*max_prate(cent_x,cent_y)
       END IF
       END IF
    end subroutine calc_prate_max
-   ! jdduda
 
 END MODULE module_microphysics_driver

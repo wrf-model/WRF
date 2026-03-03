@@ -1146,6 +1146,9 @@ BENCH_START(pbl_driver_tim)
      &        ,ZNT=grid%znt                                                    &
      &        ,ysu_topdown_pblmix=config_flags%ysu_topdown_pblmix              &
      &        ,shinhong_tke_diag=config_flags%shinhong_tke_diag               &
+     &        ,shinhong_scu_mixing=config_flags%shinhong_scu_mixing               &
+     &        ,shinhong_nonlocal_flux=config_flags%shinhong_nonlocal_flux               &
+     &        ,shinhong_ke_dissipation=config_flags%shinhong_ke_dissipation               &
 ! paj: topo_wind
      &        ,CTOPO=grid%ctopo,CTOPO2=grid%ctopo2                                   &
 ! variables added for BEP

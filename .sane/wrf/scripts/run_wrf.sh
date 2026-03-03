@@ -96,6 +96,11 @@ if [ "$wrf_nml" != "namelist.input" ]; then
   cp $wrf_nml namelist.input || exit $?
 fi
 
+if [ -n "$mpi_cmd" ]; then
+  # Clean any previous logs
+  rm -rf rsl.*
+fi
+
 # Run setup
 echo "Running $mpi_cmd $wrf_exec"
 

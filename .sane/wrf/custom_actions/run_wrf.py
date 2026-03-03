@@ -25,6 +25,9 @@ class WRFBase( sane.Action ):
     self.mpi_ranks      = "${{ resources.cpus }}"
     self.omp_threads    = "${{ resources.cpus }}"
 
+    # Other folders to pull data from
+    self.extra_data     = []
+
     # Make sure we can pass on all this info
     self.outputs["wrf_case"]       = "${{ wrf_case }}"
     self.outputs["wrf_case_path"]  = "${{ wrf_case_path }}"
@@ -38,6 +41,7 @@ class WRFBase( sane.Action ):
     self.outputs["use_omp"]        = "${{ use_omp }}"
     self.outputs["mpi_ranks"]      = "${{ mpi_ranks }}"
     self.outputs["omp_threads"]    = "${{ omp_threads }}"
+    self.outputs["extra_data"]     = self.extra_data
 
   def load_extra_options( self, options, origin ):
     self.wrf_case       = options.pop( "wrf_case", None )
@@ -56,6 +60,7 @@ class WRFBase( sane.Action ):
     self.omp_threads    = options.pop( "omp_threads",  self.omp_threads )
 
     self.modify_environ    = options.pop( "modify_environ",  self.modify_environ )
+    self.extra_data.extend( options.pop( "extra_data",  [] ) )
     super().load_extra_options( options, origin )
 
   def pre_launch( self ):
@@ -109,6 +114,9 @@ class WRFBase( sane.Action ):
     self.wrf_run_dir = self.dereference( self.wrf_run_dir )
     self.wrf_run_dir = self.resolve_path( self.working_directory, self.wrf_run_dir )
 
+    # Any extra paths
+    self.dereference( self.extra_data )
+
     if self.modify_environ:
       self.log( "Adding to LD_LIBRARY_PATH..." )
       ld_lib  = os.environ.get( "LD_LIBRARY_PATH", "" )
@@ -137,6 +145,12 @@ class WRFBase( sane.Action ):
 
     self.log( "Copying WRF case files..." )
     self.execute_subprocess( "cp", [ "-v", "--remove-destination", os.path.join( full_case_path, "*" ), self.wrf_run_dir ], verbose=True, shell=True )
+
+    if len( self.extra_data ) > 0:
+      self.log( "Linking extra data..." )
+      for extra_path in self.extra_data:
+        self.execute_subprocess( "ln", [ "-svf", os.path.join( extra_path, "*" ), self.wrf_run_dir ], verbose=True, shell=True )
+
     self.__exec_raw__ = prev_exec_raw
 
 
@@ -223,7 +237,8 @@ class RunWRF( WRFBase ):
                 "wrf_dir",
                 "wrf_run_dir",
                 "modify_environ",
-                "wrf_nml"
+                "wrf_nml",
+                "extra_data"
                 ]
       inherit = []
       for attr in attrs:

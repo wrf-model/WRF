@@ -332,7 +332,8 @@ def wrf_coop_feature_restart_em_real( orch ):
     init_wrf.wrf_run_dir     = "regtests/output/restart_${{ wrf_case }}"
     init_wrf.environment     = "gnu"
     init_wrf.modify_environ  = True
-    init_wrf.config["build"] = build 
+    init_wrf.config["build"] = build
+    init_wrf.extra_data.append( "${{ host_info.config.wrf_restart.run_wrf_met_path }}/additional" )
 
     init_wrf.add_resource_requirements( { "cpus" : 1, "timelimit" : "00:10:00" } )
     init_wrf.add_dependencies( build )

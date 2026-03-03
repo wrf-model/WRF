@@ -1283,14 +1283,14 @@ SUBROUTINE wrf_ioclose ( DataHandle, Status )
 !</DESCRIPTION>
   USE module_state_description
   IMPLICIT NONE
-  INTEGER ,       INTENT(IN)  :: DataHandle
-  INTEGER ,       INTENT(OUT) :: Status
+  INTEGER ,       INTENT(INOUT) :: DataHandle
+  INTEGER ,       INTENT(OUT)   :: Status
 #include "wrf_status_codes.h"
-  INTEGER, EXTERNAL           :: use_package
-  LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
-  INTEGER                     :: io_form
-  LOGICAL                     :: for_out
-  INTEGER                     :: Hndl
+  INTEGER, EXTERNAL             :: use_package
+  LOGICAL, EXTERNAL             :: wrf_dm_on_monitor, multi_files, use_output_servers_for
+  INTEGER                       :: io_form
+  LOGICAL                       :: for_out
+  INTEGER                       :: Hndl
 
   CALL wrf_debug( DEBUG_LVL, 'module_io.F: in wrf_ioclose' )
 
@@ -2087,13 +2087,14 @@ SUBROUTINE free_handle ( DataHandle )
 !</PRE>
 !</DESCRIPTION>
   IMPLICIT NONE
-  INTEGER, INTENT(IN)    :: DataHandle
+  INTEGER, INTENT(INOUT)    :: DataHandle
   INTEGER i
   IF ( .NOT. is_inited ) THEN
     CALL wrf_error_fatal( 'free_handle: not initialized' )
   ENDIF
   IF ( DataHandle .GE. 1 .AND. DataHandle .LE. MAX_WRF_IO_HANDLE ) THEN
     wrf_io_handles(DataHandle) = -999319
+    DataHandle = 0
   ENDIF
   RETURN
 END SUBROUTINE free_handle

@@ -118,7 +118,7 @@ echo $kdir
 # generate tuv photolysis inc files
   if( -e $model.tuv.jmap ) then
     if( $found == 0 ) then
-      $WKC_HOME/util/wkc/tuv_kpp FIRST ../../inc/
+      $WKC_HOME/util/wkc/tuv_kpp FIRST ../../../../inc/
       set found = 1
     endif
     $WKC_HOME/util/wkc/tuv_kpp $model ../../../../inc/

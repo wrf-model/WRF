@@ -59,7 +59,7 @@ if ( ${netCDF_HAS_PARALLEL} AND ${USE_MPI} )
   add_subdirectory( io_netcdfpar     )
 endif()
 
-if ( ${pnetCDF_FOUND} )
+if ( ${PnetCDF_FOUND} )
   message( STATUS "Adding [io_pnetcdf] to configuration" )
   add_subdirectory( io_pnetcdf       )
 endif()

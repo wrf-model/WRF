@@ -54,6 +54,11 @@ MODULE module_configure
    USE module_state_description
    USE module_wrf_error
 
+#ifdef WRF_CFBM
+   ! fire_behavior
+   use namelist_mod, only : namelist_t
+#endif
+
    TYPE model_config_rec_type
       SEQUENCE
 ! Statements that declare namelist variables are in this file
@@ -75,6 +80,9 @@ MODULE module_configure
 ! special entries (put here but not enshrined in Registry for one reason or other)
 
 !   CHARACTER (LEN=256) :: mminlu = ' '             ! character string for landuse table
+#ifdef WRF_CFBM
+   TYPE(namelist_t) :: cfbm_namelist
+#endif
 
 CONTAINS
 
@@ -227,6 +235,15 @@ CONTAINS
 
 #ifdef _WIN32
       model_config_rec%nocolons = .TRUE.   ! always no colons for Windows
+#endif
+
+#ifdef WRF_CFBM
+      do i = 1, max_dom
+        if (model_config_rec%ifire(i) == 1) then
+          call cfbm_namelist % Initialization( "namelist.cfbm" )
+          exit
+        end if
+      end do
 #endif
 
       RETURN

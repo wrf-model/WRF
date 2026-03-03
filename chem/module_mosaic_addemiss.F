@@ -1641,7 +1641,6 @@ size_loop: &
 
 
 
-END MODULE module_mosaic_addemiss
 
 !----------------------------------------------------------------------
 
@@ -2217,6 +2216,8 @@ END MODULE module_mosaic_addemiss
 
 
 end subroutine mosaic_dust_gocartemis
+
+END MODULE module_mosaic_addemiss
 !===========================================================================
 
 !----------------------------------------------------------------------

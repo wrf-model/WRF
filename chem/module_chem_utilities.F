@@ -78,7 +78,7 @@ CONTAINS
 
       p_phy(i,k,j) = p(i,k,j) + pb(i,k,j)
       t_phy(i,k,j) = (t(i,k,j)+t0)*(p_phy(i,k,j)/p1000mb)**rcp
-      rho(i,k,j) = 1./alt(i,k,j)*(1.+moist(i,k,j,P_QV))
+      rho(i,k,j) = 1./alt(i,k,j) !*(1.+moist(i,k,j,P_QV))
       u_phy(i,k,j) = 0.5*(u(i,k,j)+u(i+1,k,j))
       v_phy(i,k,j) = 0.5*(v(i,k,j)+v(i,k,j+1))
 

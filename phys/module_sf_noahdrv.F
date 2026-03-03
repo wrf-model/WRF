@@ -81,6 +81,9 @@ CONTAINS
                   CMCR_URB2D,TGR_URB2D,TGRL_URB3D,SMR_URB3D,    & !H urban
                   DRELR_URB2D,DRELB_URB2D,DRELG_URB2D,          & !H urban
                   FLXHUMR_URB2D,FLXHUMB_URB2D,FLXHUMG_URB2D,    & !H urban
+                  ! added by Chenghao Wang
+                  TVG_URB2D,XXXVG_URB2D,TVGL_URB3D,SMG_URB3D,TT_URB2D,CMCG_URB2D, & !H urban
+                  FLXHUMVG_URB2D,FLXHUMT_URB2D,                 & !H urban
                   julian, julyr,                                & !H urban
                   FRC_URB2D,UTYPE_URB2D,                        & !O
                   num_urban_ndm,                                & !I multi-layer urban
@@ -518,17 +521,34 @@ CONTAINS
      REAL :: TGR_URB
      REAL, DIMENSION(1:num_roof_layers) :: SMR_URB  ! green roof layer moisture
      REAL, DIMENSION(1:num_roof_layers) :: TGRL_URB ! green roof layer temp [K]
-
+     ! added by Chenghao Wang
+     REAL :: TVG_URB
+     REAL :: TT_URB
+     REAL :: XXXVG_URB
+     REAL :: CMCG_URB
+     REAL :: FLXHUMVG_URB
+     REAL :: FLXHUMT_URB
+     REAL, DIMENSION(1:num_road_layers) :: TVGL_URB  ! vegetated ground layer temp [K]
+     REAL, DIMENSION(1:num_road_layers) :: SMG_URB   ! vegetated ground layer moisture
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: DRELR_URB2D
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: DRELB_URB2D
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: DRELG_URB2D
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FLXHUMR_URB2D
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FLXHUMB_URB2D
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FLXHUMG_URB2D
+     ! added by Chenghao Wang
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TVG_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TT_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: XXXVG_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CMCG_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FLXHUMVG_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FLXHUMT_URB2D
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CMCR_URB2D
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TGR_URB2D
      REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_roof_layers, jms:jme ), INTENT(INOUT) :: TGRL_URB3D
      REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_roof_layers, jms:jme ), INTENT(INOUT) :: SMR_URB3D
+     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_road_layers, jms:jme ), INTENT(INOUT) :: TVGL_URB3D
+     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_road_layers, jms:jme ), INTENT(INOUT) :: SMG_URB3D
 
 
 ! state variable surface_driver <--> lsm <--> urban
@@ -1364,6 +1384,12 @@ CONTAINS
             FLXHUMR_URB = FLXHUMR_URB2D(I,J)
             FLXHUMB_URB = FLXHUMB_URB2D(I,J)
             FLXHUMG_URB = FLXHUMG_URB2D(I,J)
+            TVG_URB = TVG_URB2D(I,J)
+            TT_URB = TT_URB2D(I,J)
+            XXXVG_URB = XXXVG_URB2D(I,J)
+            CMCG_URB = CMCG_URB2D(I,J)
+            FLXHUMVG_URB = FLXHUMVG_URB2D(I,J)
+            FLXHUMT_URB = FLXHUMT_URB2D(I,J)
             DRELR_URB = DRELR_URB2D(I,J)
             DRELB_URB = DRELB_URB2D(I,J)
             DRELG_URB = DRELG_URB2D(I,J)
@@ -1378,6 +1404,8 @@ CONTAINS
             END DO
             DO K = 1,num_road_layers
               TGL_URB(K) = TGL_URB3D(I,K,J)
+              TVGL_URB(K) = TVGL_URB3D(I,K,J)
+              SMG_URB(K) = SMG_URB3D(I,K,J)
             END DO
 
             XXXR_URB = XXXR_URB2D(I,J)
@@ -1451,6 +1479,8 @@ CONTAINS
                        TGRL_URB,SMR_URB,CMGR_URB,CHGR_URB,jmonth,       & ! H
                        DRELR_URB,DRELB_URB,                             & ! H
                        DRELG_URB,FLXHUMR_URB,FLXHUMB_URB,FLXHUMG_URB,   &
+                       ! added by Chenghao Wang
+                       TVG_URB,TT_URB,XXXVG_URB,TVGL_URB,SMG_URB,CMCG_URB,FLXHUMVG_URB,FLXHUMT_URB, &
                        lf_urb_s, z0_urb, vegfrac)
 
 #if 0
@@ -1526,6 +1556,12 @@ CONTAINS
             FLXHUMR_URB2D(I,J)=FLXHUMR_URB 
             FLXHUMB_URB2D(I,J)=FLXHUMB_URB
             FLXHUMG_URB2D(I,J)=FLXHUMG_URB
+            TVG_URB2D(I,J)=TVG_URB
+            TT_URB2D(I,J)=TT_URB
+            XXXVG_URB2D(I,J)=XXXVG_URB
+            CMCG_URB2D(I,J)=CMCG_URB
+            FLXHUMVG_URB2D(I,J)=FLXHUMVG_URB
+            FLXHUMT_URB2D(I,J)=FLXHUMT_URB
             DRELR_URB2D(I,J) = DRELR_URB 
             DRELB_URB2D(I,J) = DRELB_URB 
             DRELG_URB2D(I,J) = DRELG_URB
@@ -1540,6 +1576,8 @@ CONTAINS
             END DO
             DO K = 1,num_road_layers
               TGL_URB3D(I,K,J) = TGL_URB(K)
+              TVGL_URB3D(I,K,J) = TVGL_URB(K)
+              SMG_URB3D(I,K,J) = SMG_URB(K)
             END DO
             XXXR_URB2D(I,J) = XXXR_URB
             XXXB_URB2D(I,J) = XXXB_URB
@@ -2413,6 +2451,8 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   julian,julyr,                                 & !H urban
                   DRELR_URB2D,DRELB_URB2D,DRELG_URB2D,          & !H urban
                   FLXHUMR_URB2D,FLXHUMB_URB2D,FLXHUMG_URB2D,    & !H urban
+                  TVG_URB2D,XXXVG_URB2D,TVGL_URB3D,SMG_URB3D,TT_URB2D,CMCG_URB2D, & !H urban
+                  FLXHUMVG_URB2D,FLXHUMT_URB2D,                 & !H urban
                   FRC_URB2D,UTYPE_URB2D,                        & !O
                   num_urban_ndm,                                & !I multi-layer urban
                   urban_map_zrd,                                & !I multi-layer urban
@@ -2850,6 +2890,15 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
      REAL :: TGR_URB
      REAL, DIMENSION(1:num_roof_layers) :: SMR_URB  ! green roof layer moisture
      REAL, DIMENSION(1:num_roof_layers) :: TGRL_URB ! green roof layer temp [K]
+     ! added by Chenghao Wang
+     REAL :: TVG_URB
+     REAL :: TT_URB
+     REAL :: XXXVG_URB
+     REAL :: CMCG_URB
+     REAL :: FLXHUMVG_URB
+     REAL :: FLXHUMT_URB
+     REAL, DIMENSION(1:num_road_layers) :: TVGL_URB  ! vegetated ground layer temp [K]
+     REAL, DIMENSION(1:num_road_layers) :: SMG_URB   ! vegetated ground layer moisture
 
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: DRELR_URB2D
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: DRELB_URB2D
@@ -2857,10 +2906,18 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FLXHUMR_URB2D
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FLXHUMB_URB2D
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FLXHUMG_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TVG_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TT_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: XXXVG_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CMCG_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FLXHUMVG_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FLXHUMT_URB2D
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CMCR_URB2D
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TGR_URB2D
      REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_roof_layers, jms:jme ), INTENT(INOUT) :: TGRL_URB3D
      REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_roof_layers, jms:jme ), INTENT(INOUT) :: SMR_URB3D
+     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_road_layers, jms:jme ), INTENT(INOUT) :: TVGL_URB3D
+     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_road_layers, jms:jme ), INTENT(INOUT) :: SMG_URB3D
 
 ! state variable surface_driver <--> lsm <--> urban
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TR_URB2D
@@ -3826,6 +3883,8 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   END DO
                   DO K = 1,num_road_layers
                     TGL_URB(K) = TGL_URB3D(I,K,J)
+                    TVGL_URB(K) = TVGL_URB3D(I,K,J)
+                    SMG_URB(K) = SMG_URB3D(I,K,J)
                   END DO
                   
                   TGR_URB   = TGR_URB2D(I,J)
@@ -3833,6 +3892,12 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   FLXHUMR_URB = FLXHUMR_URB2D(I,J)
                   FLXHUMB_URB = FLXHUMB_URB2D(I,J)
                   FLXHUMG_URB = FLXHUMG_URB2D(I,J)
+                  TVG_URB = TVG_URB2D(I,J)
+                  TT_URB = TT_URB2D(I,J)
+                  XXXVG_URB = XXXVG_URB2D(I,J)
+                  CMCG_URB = CMCG_URB2D(I,J)
+                  FLXHUMVG_URB = FLXHUMVG_URB2D(I,J)
+                  FLXHUMT_URB = FLXHUMT_URB2D(I,J)
                   DRELR_URB = DRELR_URB2D(I,J)
                   DRELB_URB = DRELB_URB2D(I,J)
                   DRELG_URB = DRELG_URB2D(I,J)
@@ -3907,6 +3972,8 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                              TGRL_URB,SMR_URB,CMGR_URB,CHGR_URB,jmonth,       & ! H
                              DRELR_URB,DRELB_URB,                             & ! H
                              DRELG_URB,FLXHUMR_URB,FLXHUMB_URB,FLXHUMG_URB,   &
+                             ! added by Chenghao Wang
+                             TVG_URB,TT_URB,XXXVG_URB,TVGL_URB,SMG_URB,CMCG_URB,FLXHUMVG_URB,FLXHUMT_URB, &
                              lf_urb_s, z0_urb, vegfrac)
 
 #if 0
@@ -3988,6 +4055,8 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   END DO
                   DO K = 1,num_road_layers
                     TGL_URB3D(I,K,J) = TGL_URB(K)
+                    TVGL_URB3D(I,K,J) = TVGL_URB(K)
+                    SMG_URB3D(I,K,J) = SMG_URB(K)
                   END DO
 
                   TGR_URB2D(I,J) =TGR_URB 
@@ -3995,6 +4064,12 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
             	    FLXHUMR_URB2D(I,J)=FLXHUMR_URB 
                   FLXHUMB_URB2D(I,J)=FLXHUMB_URB
                   FLXHUMG_URB2D(I,J)=FLXHUMG_URB
+                  TVG_URB2D(I,J)=TVG_URB
+                  TT_URB2D(I,J)=TT_URB
+                  XXXVG_URB2D(I,J)=XXXVG_URB
+                  CMCG_URB2D(I,J)=CMCG_URB
+                  FLXHUMVG_URB2D(I,J)=FLXHUMVG_URB
+                  FLXHUMT_URB2D(I,J)=FLXHUMT_URB
                   DRELR_URB2D(I,J) = DRELR_URB 
                   DRELB_URB2D(I,J) = DRELB_URB 
                   DRELG_URB2D(I,J) = DRELG_URB
@@ -4705,6 +4780,8 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   END DO
                   DO K = 1,num_road_layers
                     TGL_URB(K) = TGL_URB3D(I,K,J)
+                    TVGL_URB(K) = TVGL_URB3D(I,K,J)
+                    SMG_URB(K) = SMG_URB3D(I,K,J)
                   END DO
 
                   TGR_URB   = TGR_URB2D(I,J)
@@ -4712,6 +4789,12 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   FLXHUMR_URB = FLXHUMR_URB2D(I,J)
                   FLXHUMB_URB = FLXHUMB_URB2D(I,J)
                   FLXHUMG_URB = FLXHUMG_URB2D(I,J)
+                  TVG_URB = TVG_URB2D(I,J)
+                  TT_URB = TT_URB2D(I,J)
+                  XXXVG_URB = XXXVG_URB2D(I,J)
+                  CMCG_URB = CMCG_URB2D(I,J)
+                  FLXHUMVG_URB = FLXHUMVG_URB2D(I,J)
+                  FLXHUMT_URB = FLXHUMT_URB2D(I,J)
                   DRELR_URB = DRELR_URB2D(I,J)
                   DRELB_URB = DRELB_URB2D(I,J)
                   DRELG_URB = DRELG_URB2D(I,J)
@@ -4787,6 +4870,8 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                              TGRL_URB,SMR_URB,CMGR_URB,CHGR_URB,jmonth,       & ! H
                              DRELR_URB,DRELB_URB,                             & ! H
                              DRELG_URB,FLXHUMR_URB,FLXHUMB_URB,FLXHUMG_URB,   &
+                             ! added by Chenghao Wang
+                             TVG_URB,TT_URB,XXXVG_URB,TVGL_URB,SMG_URB,CMCG_URB,FLXHUMVG_URB,FLXHUMT_URB, &
                              lf_urb_s, z0_urb, vegfrac)
 
 #if 0
@@ -4865,6 +4950,8 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   END DO
                   DO K = 1,num_road_layers
                     TGL_URB3D(I,K,J) = TGL_URB(K)
+                    TVGL_URB3D(I,K,J) = TVGL_URB(K)
+                    SMG_URB3D(I,K,J) = SMG_URB(K)
                   END DO
                  
                   TGR_URB2D(I,J) =TGR_URB 
@@ -4872,6 +4959,12 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   FLXHUMR_URB2D(I,J)=FLXHUMR_URB 
                   FLXHUMB_URB2D(I,J)=FLXHUMB_URB
                   FLXHUMG_URB2D(I,J)=FLXHUMG_URB
+                  TVG_URB2D(I,J)=TVG_URB
+                  TT_URB2D(I,J)=TT_URB
+                  XXXVG_URB2D(I,J)=XXXVG_URB
+                  CMCG_URB2D(I,J)=CMCG_URB
+                  FLXHUMVG_URB2D(I,J)=FLXHUMVG_URB
+                  FLXHUMT_URB2D(I,J)=FLXHUMT_URB
                   DRELR_URB2D(I,J) = DRELR_URB 
                   DRELB_URB2D(I,J) = DRELB_URB 
                   DRELG_URB2D(I,J) = DRELG_URB

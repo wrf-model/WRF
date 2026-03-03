@@ -37,3 +37,7 @@ wrfout_d*
 rsl.out.*
 rsl.error.*
 *.log
+
+# Test generated files
+__pycache__/
+*.pkl

@@ -147,6 +147,10 @@ add_custom_command(
                       ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/inc
                     COMMAND
                       ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/frame
+                    # WRF DA shenanigans that date back so far back changing to some better layout may have unintended
+                    # consequences with external workflows. There is no harm in always doing this so that's why this is here
+                    COMMAND
+                      grep "^rconfig" ${PROJECT_SOURCE_DIR}/Registry/Registry.EM_COMMON > ${CMAKE_BINARY_DIR}/Registry/Registry.rconfig 2>&1
                     COMMAND
                       ${CMAKE_BINARY_DIR}/tools/registry ${REGISTRY_DEFS} -DNEW_BDYS ${REGISTRY_FILE} > ${CMAKE_BINARY_DIR}/registry.log 2>&1
                     #!TODO Just have the registry code actually check for failure or better yet rewrite the 

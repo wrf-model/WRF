@@ -155,18 +155,20 @@ set( USE_HDF5    OFF CACHE BOOL "USE_HDF5"    )
 set( USE_JASPER  OFF CACHE BOOL "USE_JASPER"  )
 set( USE_PIO     OFF CACHE BOOL "USE_PIO"     )
 set( USE_IPO     OFF CACHE BOOL "USE_IPO"     )
+set( USE_PNETCDF OFF CACHE BOOL "USE_PNETCDF" )
 
-
-set( ENABLE_CHEM       OFF CACHE BOOL "ENABLE_CHEM"      )
-set( ENABLE_CMAQ       OFF CACHE BOOL "ENABLE_CMAQ"      )
-set( ENABLE_CTSM       OFF CACHE BOOL "ENABLE_CTSM"      )
-set( ENABLE_DFI_RADAR  OFF CACHE BOOL "ENABLE_DFI_RADAR" )
-set( ENABLE_HYDRO      OFF CACHE BOOL "ENABLE_HYDRO"     )
-set( ENABLE_KPP        OFF CACHE BOOL "ENABLE_KPP"       )
-set( ENABLE_MARS       OFF CACHE BOOL "ENABLE_MARS"      )
-set( ENABLE_TERRAIN    OFF CACHE BOOL "ENABLE_TERRAIN"   )
-set( ENABLE_TITAN      OFF CACHE BOOL "ENABLE_TITAN"     )
-set( ENABLE_VENUS      OFF CACHE BOOL "ENABLE_VENUS"     )
+set( ENABLE_PNETCDF_QUILT OFF CACHE BOOL "ENABLE_PNETCDF_QUILT" )
+set( ENABLE_CHEM          OFF CACHE BOOL "ENABLE_CHEM"          )
+set( ENABLE_CMAQ          OFF CACHE BOOL "ENABLE_CMAQ"          )
+set( ENABLE_CFBM          OFF CACHE BOOL "ENABLE_CFBM"          )
+set( ENABLE_CTSM          OFF CACHE BOOL "ENABLE_CTSM"          )
+set( ENABLE_DFI_RADAR     OFF CACHE BOOL "ENABLE_DFI_RADAR"     )
+set( ENABLE_HYDRO         OFF CACHE BOOL "ENABLE_HYDRO"         )
+set( ENABLE_KPP           OFF CACHE BOOL "ENABLE_KPP"           )
+set( ENABLE_MARS          OFF CACHE BOOL "ENABLE_MARS"          )
+set( ENABLE_TERRAIN       OFF CACHE BOOL "ENABLE_TERRAIN"       )
+set( ENABLE_TITAN         OFF CACHE BOOL "ENABLE_TITAN"         )
+set( ENABLE_VENUS         OFF CACHE BOOL "ENABLE_VENUS"         )
 
 # What do these defines even do if they are always on????
 set( USE_ALLOCATABLES     ON CACHE BOOL "USE_ALLOCATABLES"    )
@@ -175,6 +177,12 @@ set( GRIB1                ON CACHE BOOL "GRIB1"               )
 set( INTIO                ON CACHE BOOL "INTIO"               )
 set( KEEP_INT_AROUND      ON CACHE BOOL "KEEP_INT_AROUND"     )
 set( LIMIT_ARGS           ON CACHE BOOL "LIMIT_ARGS"          )
+
+# WRF DA
+set( ENABLE_CRTM          ON CACHE BOOL "ENABLE_CRTM"          ) # todo this is always set unless env var = 0 in make
+set( ENABLE_WAVELET       ON CACHE BOOL "ENABLE_WAVELET"       ) # todo I think this should always be on
+set( ENABLE_BUFR          ON CACHE BOOL "ENABLE_BUFR"          ) # todo I think the config is defaulting this on
+
 
 # Toggles, how do we want to best address these options? Environment vars are not
 # the best
@@ -185,6 +193,8 @@ set( BUILD_RRTMK          OFF CACHE BOOL "BUILD_RRTMK"          )
 set( BUILD_SBM_FAST        ON CACHE BOOL "BUILD_SBM_FAST"       )
 set( SHOW_ALL_VARS_USED   OFF CACHE BOOL "SHOW_ALL_VARS_USED"   )
 
+# CORDEX Multivalue control
+set( CDXWRF               0   CACHE STRING "Control cordex diagnostics" )
 
 # TODO investigate if this needs set
 # Not cached, cannot be changed, do not touch
@@ -286,6 +296,16 @@ if ( NOT ${WRFIO_NCD_NO_LARGE_FILE_SUPPORT} )
   message( STATUS "netCDF large file support not suppressed, if available it will be used" )
 endif()
 
+# PnetCDF options require MPI
+if ( ${ENABLE_PNETCDF_QUILT} AND NOT ${USE_PNETCDF} )
+  message( STATUS "PnetCDF Quilt IO requires PnetCDF" )
+  set( USE_PNETCDF ON CACHE BOOL "Required by configuration" FORCE )
+endif()
+if ( ${USE_PNETCDF} AND NOT ${USE_MPI} )
+  message( STATUS "PnetCDF require MPI usage" )
+  set( USE_MPI ON CACHE BOOL "Required by configuration" FORCE )
+endif()
+
 # Hydro option requires MPI
 if ( ${ENABLE_HYDRO} AND NOT ${USE_MPI} )
   message( STATUS "WRF Hydro requires MPI usage" )
@@ -348,6 +368,24 @@ if ( ${MANAGE_EXTERNALS_STATUS} AND NOT ${MANAGE_EXTERNALS_STATUS} EQUAL 0 )
   message( FATAL_ERROR "Failed to checkout external repos via manage_externals" )
 else()
   message( STATUS "Finished checking out external repos via manage_externals" )
+endif()
+
+if ( ${ENABLE_CFBM} )
+  message( STATUS "Checking out CFBM external repo via manage_externals" )
+  set( LOG_FILE      ${CMAKE_CURRENT_BINARY_DIR}/checkout_externals_cfbm.log )
+  execute_process(
+                  COMMAND
+                    ${PROJECT_SOURCE_DIR}/tools/manage_externals/checkout_externals --externals ${PROJECT_SOURCE_DIR}/arch/OptionalExternals_cfbm.cfg
+                  WORKING_DIRECTORY       ${PROJECT_SOURCE_DIR}
+                  RESULT_VARIABLE         MANAGE_EXTERNALS_STATUS
+                  OUTPUT_FILE             ${LOG_FILE}
+                  ERROR_FILE              ${LOG_FILE}
+                  )
+  if ( ${MANAGE_EXTERNALS_STATUS} AND NOT ${MANAGE_EXTERNALS_STATUS} EQUAL 0 )
+    message( FATAL_ERROR "Failed to checkout cfbm external repo via manage_externals" )
+  else()
+    message( STATUS "Finished checking out cfbm external repo via manage_externals" )
+  endif()
 endif()
 
 
@@ -521,6 +559,12 @@ endif()
 # Will need our own finder
 # find_package( GPFS   REQUIRED )
 
+# Find this first in case we need to use pnetcdf's netCDF
+# Priority is given to pnetcdf due to performance
+if ( ${USE_PNETCDF} )
+  find_package( PnetCDF REQUIRED )
+endif()
+
 # Included is a lightweight finder, but we really should switch to using UniData's netCDF cmake config
 # The reason these are two separate and not COMPONENTS of one larger package is because that is the way UniData
 # has laid out the cmake configs for each respective package
@@ -542,12 +586,10 @@ if ( NOT ${FORCE_NETCDF_CLASSIC} )
   endif()
 endif()
 
-find_package( pnetCDF QUIET )
 
 # Attempt to find zlib packaged with netcdf first
 set( ZLIB_ROOT ${netCDF_PREFIX} )
 find_package( ZLIB   REQUIRED )
-find_package( CURL   REQUIRED )
 
 ################################################################################
 ##
@@ -576,6 +618,7 @@ print_option( USE_IPO          20 )
 print_option( ENABLE_CHEM      20 )
 print_option( ENABLE_CLM       20 )
 print_option( ENABLE_CMAQ      20 )
+print_option( ENABLE_CFBM      20 )
 print_option( ENABLE_DFI_RADAR 20 )
 print_option( ENABLE_HYDRO     20 )
 print_option( ENABLE_KPP       20 )
@@ -591,11 +634,18 @@ print_option( INTIO            20 )
 print_option( KEEP_INT_AROUND  20 )
 print_option( LIMIT_ARGS       20 )
 
+
+print_option( ENABLE_CRTM      20 )
+print_option( ENABLE_WAVELET   20 )
+print_option( ENABLE_BUFR      20 )
+
+
 print_option( FORCE_NETCDF_CLASSIC 20 )
 print_option( BUILD_RRTMG_FAST     20 )
 print_option( BUILD_RRTMK          20 )
 print_option( BUILD_SBM_FAST       20 )
 print_option( SHOW_ALL_VARS_USED   20 )
+print_option( CDXWRF               20 )
 
 print_option( WRFIO_NCD_NO_LARGE_FILE_SUPPORT 36 )
 
@@ -725,7 +775,7 @@ list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS
 # in code since cmake cannot handle basically any others :(
 # https://gitlab.kitware.com/cmake/cmake/-/issues/17398
 if ( ${USE_DOUBLE} )
-  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS DOUBLE_PRECISION )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS DOUBLE_PRECISION DOUBLE_PREC )
 endif()
 if ( ${ENABLE_CHEM} )
   list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS WRF_CHEM )
@@ -738,6 +788,9 @@ if ( ${ENABLE_CHEM} )
 endif()
 if ( ${ENABLE_CMAQ} )
   list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS WRF_CMAQ=1 )
+endif()
+if ( ${ENABLE_CFBM} )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS WRF_CFBM )
 endif()
 if ( ${ENABLE_DFI_RADAR} )
   list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS WRF_DFI_RADAR=1 )
@@ -761,6 +814,13 @@ if ( ${ENABLE_CTSM} )
 else()
   #!TODO there are some files that rely on this being 1, but that is never set by the legacy make system
   list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS WRF_USE_CLM )
+endif()
+
+if ( ${PnetCDF_FOUND} )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS PNETCDF )
+endif()
+if ( ${ENABLE_PNETCDF_QUILT} )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS PNETCDF_QUILT=1 )
 endif()
 
 # If force classic or no nc-4 support enable classic
@@ -811,6 +871,16 @@ endif()
 if ( ${LIMIT_ARGS} )
   list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS LIMIT_ARGS )
 endif()
+if ( ${CDXWRF} GREATER_EQUAL 1 )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS CORDEXDIAG CDXWRF=${CDXWRF} )
+  foreach( i RANGE 1 4 )
+    if ( ${CDXWRF} GREATER_EQUAL ${i} )
+      list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS CDXWRF_${i} )
+    endif()
+  endforeach()
+  # If you want INSTVALS uncomment this line
+  # list( APPEND PROJECT_COMPILE_OPTIONS_OPTIONS INSTVALS )
+endif()
 
 
 if ( ${BUILD_RRTMG_FAST} )
@@ -845,8 +915,18 @@ else()
   list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS WRFPLUS=0 )
 endif()
 
-if ( "${WRF_CORE}" STREQUAL "DA_CORE" OR "${WRF_CORE}" STREQUAL "DA_4D_VAR" )
-  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS DA_CORE=1 )
+if ( "${WRF_CORE}" STREQUAL "DA" OR "${WRF_CORE}" STREQUAL "DA_4D_VAR" )
+  if ( ${ENABLE_WAVELET} )
+    list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS WAVELET )
+  endif()
+  if ( ${ENABLE_CRTM} )
+    list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS CRTM )
+  endif()
+  if ( ${ENABLE_BUFR} )
+    list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS BUFR )
+  endif()
+
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS DA_CORE=1 -DFFTPACK -DNORESHAPE )
 else()
   list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS DA_CORE=0 )
 endif()
@@ -891,6 +971,12 @@ if ( "${FSEEKO64}" OR "${FSEEKO}" )
   endif()
 else()
   list( APPEND PROJECT_COMPILE_DEFINITIONS_CONFCHECK FSEEK_OK )
+endif()
+
+if ( ${NOUNDERSCORE_SYMBOL} )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_CONFCHECK NOUNDERSCORE )
+elseif( ${UNDERSCORE_SYMBOL} )
+  list( APPEND PROJECT_COMPILE_DEFINITIONS_CONFCHECK UNDERSCORE )
 endif()
 
 # I don't believe these are used anymore...
@@ -958,7 +1044,6 @@ add_dependencies(
                   )
 
 # Add directly to core
-add_subdirectory( phys     )
 add_subdirectory( share    )
 add_subdirectory( frame    )
 add_subdirectory( inc      )
@@ -975,10 +1060,15 @@ if ( ${WRF_CORE} STREQUAL "PLUS" )
   add_subdirectory( wrftladj )
 endif()
 
-add_subdirectory( dyn_em   )
-
-
-add_subdirectory( main     )
+if ( ${WRF_CORE} STREQUAL "DA" OR ${WRF_CORE} STREQUAL "DA_4D_VAR" )
+  # We don't create any of the drivers for WRF in DA mode
+  add_subdirectory( var )
+else()
+  # DA does not use any of this
+  add_subdirectory( dyn_em   )
+  add_subdirectory( phys     )
+  add_subdirectory( main     )
+endif()
 
 ################################################################################
 # Add subdirectory with case info
@@ -1064,7 +1154,14 @@ target_include_directories(
                               $<$<TARGET_EXISTS:g2lib>:$<TARGET_PROPERTY:g2lib,Fortran_MODULE_DIRECTORY>>
                               $<$<TARGET_EXISTS:bacio-1.3>:$<TARGET_PROPERTY:bacio-1.3,Fortran_MODULE_DIRECTORY>>
 
+                              # DA libs
+                              $<$<TARGET_EXISTS:CRTM>:$<TARGET_PROPERTY:CRTM,Fortran_MODULE_DIRECTORY>>
+                              $<$<TARGET_EXISTS:waveletf>:$<TARGET_PROPERTY:waveletf,Fortran_MODULE_DIRECTORY>>
+                              $<$<TARGET_EXISTS:bufr>:$<TARGET_PROPERTY:bufr,Fortran_MODULE_DIRECTORY>>
+
+
                             PRIVATE
+                              $<$<TARGET_EXISTS:firelib>:$<TARGET_PROPERTY:firelib,Fortran_MODULE_DIRECTORY>>
                               
                               ${PROJECT_SOURCE_DIR}/dyn_em
 
@@ -1075,7 +1172,6 @@ target_include_directories(
                               ${PROJECT_SOURCE_DIR}/external/io_int
 
                               # Found Packages not handled through :: imported target
-                              ${pnetCDF_INCLUDE_DIRS}
                             )
 
 # Configure core
@@ -1093,8 +1189,8 @@ target_link_options( ${PROJECT_NAME}_Core PRIVATE ${WRF_LINK_FLAGS} )
 
 target_link_libraries(  ${PROJECT_NAME}_Core
                           PUBLIC
-                            netCDF::netcdff
-                            ${pnetCDF_LIBRARIES}
+                            $<TARGET_NAME_IF_EXISTS:PnetCDF::pnetcdf>
+                            $<TARGET_NAME_IF_EXISTS:netCDF::netcdff>
                             $<$<BOOL:${USE_MPI}>:$<TARGET_NAME_IF_EXISTS:MPI::MPI_Fortran>>
                             $<$<BOOL:${USE_OPENMP}>:$<TARGET_NAME_IF_EXISTS:OpenMP::OpenMP_Fortran>>
                             # This will add in target dependencies if they exist
@@ -1118,6 +1214,7 @@ target_link_libraries(  ${PROJECT_NAME}_Core
                             fftpack5
 
                             $<TARGET_NAME_IF_EXISTS:wrfhydro>
+                            $<TARGET_NAME_IF_EXISTS:firelib>
                             $<TARGET_NAME_IF_EXISTS:atm_ocn>
                             $<TARGET_NAME_IF_EXISTS:io_adios2>
                             $<TARGET_NAME_IF_EXISTS:io_esmf>
@@ -1132,6 +1229,12 @@ target_link_libraries(  ${PROJECT_NAME}_Core
                             $<TARGET_NAME_IF_EXISTS:bacio-1.3>
 
                             $<TARGET_NAME_IF_EXISTS:RSL_LITE>
+
+                            # DA libs
+                            $<TARGET_NAME_IF_EXISTS:CRTM>
+                            $<TARGET_NAME_IF_EXISTS:wavelet>
+                            $<TARGET_NAME_IF_EXISTS:waveletf>
+                            $<TARGET_NAME_IF_EXISTS:bufr>
                       )
 
 ################################################################################

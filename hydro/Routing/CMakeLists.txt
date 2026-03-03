@@ -20,7 +20,6 @@ add_library(hydro_routing STATIC
 target_link_libraries(hydro_routing
        PRIVATE
        MPI::MPI_Fortran
-       netCDF::netcdff
        hydro_mpp
        hydro_utils
        hydro_orchestrator
@@ -31,4 +30,12 @@ target_link_libraries(hydro_routing
        hydro_routing_reservoirs_hybrid
        hydro_data_rec
        hydro_routing_reservoirs_rfc
+       hydro_routing_diversions
 )
+
+if (WRF_HYDRO_NUDGING_IO STREQUAL "1")
+  target_link_libraries(hydro_routing
+    PRIVATE
+    hydro_nudging_io
+  )
+endif()

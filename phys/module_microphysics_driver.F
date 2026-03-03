@@ -162,7 +162,17 @@ SUBROUTINE microphysics_driver(                                          &
                       ,perts_qsnow, perts_ni                             &
                       ,pert_thom_qv,pert_thom_qc,pert_thom_qi            &
                       ,pert_thom_qs,pert_thom_ni                         &
-					  ,cloudnc											 &
+                      ,cloudnc                                           &
+!Dynamic Lightning
+                      ,light_pe_curr                                     &
+                      ,light_ne_curr                                     &
+                      ,light_neu_curr                                    &
+                      ,lpi2d                                             &
+                      ,lpi3d                                             &
+                      ,f_light_pe                                        &
+                      ,f_light_ne                                        &
+                      ,f_light_neu                                       &
+                      ,lpos,lneg,lneu                                    &
                                                                          )
 
 ! Framework
@@ -174,7 +184,7 @@ SUBROUTINE microphysics_driver(                                          &
                     ,WSM7SCHEME, WDM7SCHEME, UDMSCHEME &
                     ,NUWRF4ICESCHEME &
                     ,MILBRANDT2MOM , CAMMGMPSCHEME,FULL_KHAIN_LYNN, P3_1CATEGORY, P3_1CATEGORY_NC, P3_2CATEGORY, P3_1CAT_3MOM &
-                    ,MORR_TM_AERO, JENSEN_ISHMAEL, SPRINKLER, NTU !,MILBRANDT3MOM
+                    ,MORR_TM_AERO, JENSEN_ISHMAEL, SPRINKLER, NTU, TEMPO !,MILBRANDT3MOM
    USE module_state_description, ONLY : WSM6RSCHEME
 #if ( WRFPLUS == 1 )
    USE module_state_description, ONLY : LSCONDSCHEME, MKESSLERSCHEME
@@ -224,6 +234,9 @@ SUBROUTINE microphysics_driver(                                          &
    USE module_mp_fer_hires
    USE module_mp_rcon
    USE module_mp_thompson
+   USE module_mp_tempo_cfgs, only : ty_tempo_cfgs
+   USE module_mp_tempo_driver, only : tempo_run, ty_tempo_driver_diags, &
+      tempo_aerosol_surface_emissions
    USE module_mp_full_sbm
 #if ( BUILD_SBM_FAST == 1 )
    USE module_mp_fast_sbm
@@ -257,6 +270,9 @@ SUBROUTINE microphysics_driver(                                          &
    USE module_irrigation
 
    USE module_fire_emis
+   USE module_calc_lpi_new
+   USE module_ltng_pe
+   USE module_ltng_strokes
 
 !----------------------------------------------------------------------
    ! This driver calls subroutines for the microphys.
@@ -498,6 +514,10 @@ SUBROUTINE microphysics_driver(                                          &
 #endif
     INTEGER, DIMENSION( ims:ime , jms:jme ), INTENT(IN), OPTIONAL::   IVGTYP
     REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN), OPTIONAL    :: XLAT, XLONG
+!Dynamic Lightning
+   REAL, DIMENSION( ims:ime , jms:jme ),INTENT(INOUT),OPTIONAL ::       lpi2d
+   REAL, DIMENSION( ims:ime ,kms:kme, jms:jme ),INTENT(INOUT),OPTIONAL ::       lpi3d
+   REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT),OPTIONAL   :: LPOS,LNEG,LNEU
 
 !=================
 !Data for CAMMGMP scheme
@@ -653,7 +673,11 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,kext_ft_qic,kext_ft_qip,kext_ft_qid &
                  ,kext_ft_qs,kext_ft_qg                           &
                  ,qnwfa_curr,qnifa_curr,qnbca_curr                & ! Added by G. Thompson
-                 ,qvolg_curr,qvolh_curr, qrimef_curr
+                 ,qvolg_curr,qvolh_curr,qrimef_curr
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
+         OPTIONAL,                                                &
+         INTENT(INOUT ) :: light_pe_curr,light_neu_curr,light_ne_curr        ! Dynamic Lightning
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          OPTIONAL,                                                &
@@ -689,7 +713,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                                                       ,GRAUPELNCV &
                                                           ,HAILNC &
                                                          ,HAILNCV &
-														 ,CLOUDNC &
+                                                         ,CLOUDNC &
                                           ,hail_maxk1, hail_max2d
                                                           
 #if ( WRF_CHEM == 1)
@@ -730,7 +754,8 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                        ,f_qvoli,f_qaoli                                      & ! for Jensen ISHMAEL
                        ,f_qvoli2,f_qaoli2                                    & ! for Jensen ISHMAEL
                        ,f_qi3,f_qni3,f_qvoli3,f_qaoli3                       & ! for Jensen ISHMAEL
-                       ,f_qnwfa, f_qnifa, f_qnbca                             ! Added by G. Thompson
+                       ,f_qnwfa, f_qnifa, f_qnbca                            & ! Added by G. Thompson
+                       ,f_light_pe,f_light_ne,f_light_neu                      ! Dynamic Lightning
 
 
    LOGICAL, OPTIONAL, INTENT(IN) :: diagflag
@@ -796,6 +821,9 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
    character*256 :: errmsg
    integer :: errflg
 
+   type(ty_tempo_cfgs) :: tempo_cfgs
+   type(ty_tempo_driver_diags) :: tempo_driver_diags
+   logical :: config_tempo_aerosolaware, config_tempo_hailaware
 !---------------------------------------------------------------------
 !  check for microphysics type.  We need a clean way to
 !  specify these things!
@@ -1380,6 +1408,111 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling thompson_et_al' )
+             ENDIF
+          CASE (TEMPO)
+             ! add surface emissions
+             if (present(qnwfa_curr) .and. present(qnwfa2d)) then
+                call tempo_aerosol_surface_emissions(dt=dt, &
+                     nwfa=qnwfa_curr, nwfa2d=qnwfa2d, &
+                     ims=ims, ime=ime, jms=jms, &
+                     jme=jme, kms=kms, kme=kme, kts=kts)
+             endif
+
+             CALL wrf_debug ( 100 , 'microphysics_driver: calling tempo' )
+             IF ( PRESENT( QV_CURR ) .AND. PRESENT ( QC_CURR ) .AND.  &
+                  PRESENT( QR_CURR ) .AND. PRESENT ( QI_CURR ) .AND.  &
+                  PRESENT( QS_CURR ) .AND. PRESENT ( QG_CURR ) .AND.  &
+                  PRESENT( QNR_CURR) .AND. PRESENT ( QNI_CURR)) THEN
+
+             config_tempo_aerosolaware = .false.
+             config_tempo_hailaware = .false.
+             if (config_flags%tempo_aerosolaware == 1) config_tempo_aerosolaware = .true.
+             if (config_flags%tempo_hailaware == 1) config_tempo_hailaware = .true.
+             tempo_cfgs%aerosolaware_flag = config_tempo_aerosolaware
+             tempo_cfgs%hailaware_flag = config_tempo_hailaware
+             CALL tempo_run(                             &
+                     tempo_cfgs=tempo_cfgs,              &
+                     dt=dt,                              &
+                     itimestep=itimestep,                &
+                     th=th,                              &
+                     pii=pi_phy,                         &
+                     p=p,                                &
+                     w=w,                                &
+                     dz=dz8w,                            &
+                     qv=qv_curr,                         &
+                     qc=qc_curr,                         &
+                     qr=qr_curr,                         &
+                     qi=qi_curr,                         &
+                     qs=qs_curr,                         &
+                     qg=qg_curr,                         &
+                     ni=qni_curr,                        &
+                     nr=qnr_curr,                        &
+                     nc=qnc_curr,                        & ! optionally present when tempo_aerosolaware == 1
+                     nwfa=qnwfa_curr,                    & ! optionally present when tempo_aerosolaware == 1
+                     nifa=qnifa_curr,                    & ! optionally present when tempo_aerosolaware == 1
+                     ng=qng_curr,                        & ! optionally present when tempo_hailaware == 1
+                     qb=qvolg_curr,                      & ! optionally present when tempo_hailaware == 1
+                     ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde, &
+                     ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme, &
+                     its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte, &
+                     tempo_diags = tempo_driver_diags)
+             ! map tempo diagnostics to WRF variable names noting that some wrf variables are optional
+             do j = jts, jte
+                do i = its, ite
+                   if (present(snowncv)) then
+                      snowncv(i,j) = tempo_driver_diags%ice_liquid_equiv_precip(i,j) + &
+                           tempo_driver_diags%snow_liquid_equiv_precip(i,j)
+                   endif
+                   if (present(snownc)) snownc(i,j) = snownc(i,j) + snowncv(i,j)
+
+                   if (present(graupelncv)) then
+                      graupelncv(i,j) = tempo_driver_diags%graupel_liquid_equiv_precip(i,j)
+                   endif
+                   if (present(graupelnc)) graupelnc(i,j) = graupelnc(i,j) + graupelncv(i,j)
+
+                   if (present(rainncv)) then
+                      rainncv(i,j) = tempo_driver_diags%rain_precip(i,j) + snowncv(i,j) + graupelncv(i,j)
+                   endif
+                   if (present(rainnc)) rainnc(i,j) = rainnc(i,j) + rainncv(i,j)
+                   ! ratio of frozen precipitation to total is not optional in wrf
+                   sr(i,j) = tempo_driver_diags%frozen_fraction(i,j)
+
+                   if (config_flags%nwp_diagnostics == 1) then
+                      if (present(hail_maxk1)) then
+                         if (allocated(tempo_driver_diags%max_hail_diameter_sfc)) then
+                            hail_maxk1(i,j) = tempo_driver_diags%max_hail_diameter_sfc(i,j)
+                         endif
+                      endif
+                      if (present(hail_max2d)) then
+                         if (allocated(tempo_driver_diags%max_hail_diameter_column)) then
+                            hail_max2d(i,j) = tempo_driver_diags%max_hail_diameter_column(i,j)
+                         endif
+                      endif
+                   endif
+                   ! 3d tempo diagnostics
+                   do k = kts, kte
+                      if (do_radar_ref == 1) then
+                         if (present(refl_10cm)) then
+                            if (allocated(tempo_driver_diags%refl10cm)) then
+                               refl_10cm(i,k,j) = tempo_driver_diags%refl10cm(i,k,j)
+                            endif
+                         endif
+                      endif
+                      ! effective radius values are not optional in wrf
+                      if (allocated(tempo_driver_diags%re_cloud)) then
+                         re_cloud(i,k,j) = tempo_driver_diags%re_cloud(i,k,j)
+                      endif
+                      if (allocated(tempo_driver_diags%re_ice)) then
+                         re_ice(i,k,j) = tempo_driver_diags%re_ice(i,k,j)
+                      endif
+                      if (allocated(tempo_driver_diags%re_snow)) then
+                         re_snow(i,k,j) = tempo_driver_diags%re_snow(i,k,j)
+                      endif
+                   enddo
+                enddo
+             enddo
+             ELSE
+                CALL wrf_error_fatal ( 'arguments not present for calling tempo' )
              ENDIF
 #if (EM_CORE==1)
         CASE (NTU)
@@ -2901,6 +3034,67 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
          CALL wrf_error_fatal ( wrf_err_message )
 
       END SELECT micro_select
+
+      IF (config_flags%dyn_lightning_option.eq.1) THEN
+      IF (  PRESENT( QC_CURR ) .AND.  &
+            PRESENT( QR_CURR ) .AND. PRESENT ( QI_CURR )   .AND.  &
+            PRESENT( QS_CURR ) .AND. PRESENT ( QG_CURR )) THEN
+            CALL calc_lpi_new(                           &
+                     W=w,                                &
+                     PI_PHY=pi_phy, RHO_PHY=rho,         &
+                     TH_PHY=TH,P_PHY=p,                  &
+                     DZ8w=dz8w,                          &
+                     QC=qc_curr,                         &
+                     QR=qr_curr,                         &
+                     QI=qi_curr,                         &
+                     QS=qs_curr,                         &
+                     QG=qg_curr,                         &
+                     QH=qh_curr,                         &
+                     lpi2d = lpi2d,                      &
+                     lpi3d = lpi3d                       &
+                    ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+                    ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                    ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte)
+            CALL   calc_dyn_pe(dx=dx,dy=dy, &
+                     W=w,                                &
+                     PI_PHY=pi_phy, RHO_PHY=rho,         &
+                     TH_PHY=TH,P_PHY=p,                  &
+                     DZ8w=dz8w,                          &
+                     QC=qc_curr,                         &
+                     QR=qr_curr,                         &
+                     QI=qi_curr,                         &
+                     QS=qs_curr,                         &
+                     QG=qg_curr,                         &
+                     QH=qh_curr,                         &
+                     light_pe=light_pe_curr,             &
+                     light_ne=light_ne_curr,             &
+                     light_neu=light_neu_curr,           &
+                     dt=dt                               &
+                    ,coul_pos=config_flags%coul_pos      &
+                    ,coul_neg=config_flags%coul_neg      &
+                    ,coul_neu=config_flags%coul_neu      &
+                    ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+                    ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                    ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte)
+             CALL   calcstroke(dx=dx,dy=dy,              &
+                     W=w,                                &
+                     PI_PHY=pi_phy, RHO_PHY=rho,         &
+                     TH_PHY=TH,P_PHY=p,                  &
+                     DZ8w=dz8w,                          &
+                     light_pe=light_pe_curr,             &
+                     light_ne=light_ne_curr,             &
+                     light_neu=light_neu_curr,           &
+                     lpos=lpos,lneg=lneg,lneu=lneu       &
+                    ,j_pos=config_flags%j_pos            &
+                    ,j_neg=config_flags%j_neg            &
+                    ,j_neu=config_flags%j_neu            &
+                    ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+                    ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                    ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte)
+      ELSE
+              CALL wrf_error_fatal ( 'arguments not present for calling dynamic lightning scheme' )
+      ENDIF
+      END IF
 
    ENDDO
    !$OMP END PARALLEL DO

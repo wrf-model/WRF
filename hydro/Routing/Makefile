@@ -83,6 +83,7 @@ module_RT.o: module_GW_baseflow.o \
              module_HYDRO_io.o \
              module_noah_chan_param_init_rt.o \
 	     module_UDMAP.o \
+             module_channel_routing.o \
 	     ../Data_Rec/module_namelist.o \
 	     ../Data_Rec/module_RT_data.o \
 	     ../Data_Rec/module_gw_gw2d_data.o
@@ -102,9 +103,11 @@ endif
 module_UDMAP.o: ../Data_Rec/module_namelist.o ../Data_Rec/module_RT_data.o
 
 ifneq ($(WRF_HYDRO_NUDGING),-DWRF_HYDRO_NUDGING)
-module_channel_routing.o: module_UDMAP.o
+module_channel_routing.o: module_UDMAP.o \
+			  Diversions/module_diversions.o
 else
-module_channel_routing.o: module_UDMAP.o\
+module_channel_routing.o: module_UDMAP.o \
+			  Diversions/module_diversions.o \
 			  ../nudging/module_date_utils_nudging.o \
 		          ../nudging/module_nudging_utils.o \
 			  ../nudging/module_stream_nudging.o

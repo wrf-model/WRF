@@ -42,6 +42,7 @@ module module_namelist_inc
           character(len=256) :: route_chan_f=""
           character(len=256) :: route_link_f=""
           character(len=256) :: route_lake_f=""
+          character(len=256) :: diversions_file=""
           logical            :: reservoir_persistence_usgs
           logical            :: reservoir_persistence_usace
           character(len=256) :: reservoir_parameter_file=""

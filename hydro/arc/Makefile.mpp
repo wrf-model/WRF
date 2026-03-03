@@ -1,4 +1,4 @@
-# Makefile 
+# Makefile
 
 all:
 	(make -f Makefile.comm BASIC)
@@ -6,8 +6,10 @@ all:
 BASIC:
 	make -C MPP
 	make -C IO
+	make -C utils/fortglob
 	make -C utils
 	make -C OrchestratorLayer
+	make -C Routing/Diversions
 	make -C Routing/Overland
 	make -C Routing/Subsurface
 	make -C Routing/Reservoirs
@@ -17,15 +19,17 @@ BASIC:
 	make -C HYDRO_drv
 
 clean:
-	(cd IO; make -f Makefile clean)
-	(cd OrchestratorLayer; make -f Makefile clean)
-	(cd utils     ; make -f Makefile clean)
+	make -C IO clean
+	make -C OrchestratorLayer clean
+	make -C utils clean
+	make -C utils/fortglob clean
+	make -C Routing/Diversions clean
 	make -C Routing/Overland clean
 	make -C Routing/Subsurface clean
 	make -C Routing/Reservoirs clean
-	(cd Data_Rec; make -f Makefile clean)
-	(cd HYDRO_drv; make -f Makefile clean)
-	(cd MPP; make -f Makefile clean)
+	make -C Data_Rec clean
+	make -C HYDRO_drv clean
+	make -C MPP clean
 	make -C Debug_Utilities/ clean
-	(cd Routing;    make -f Makefile clean)
+	make -C Routing clean
 	(rm -f lib/*.a */*.mod */*.o CPL/*/*.o CPL/*/*.mod)

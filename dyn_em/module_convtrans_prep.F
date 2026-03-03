@@ -112,8 +112,8 @@ subroutine convtrans_prep(gd_cloud,gd_cloud2,gd_cloud_a,         &
 !
   if(cu_phys.eq.3.or.cu_phys.eq.5.or.cu_phys.eq.93)then
 ! if(config_flags%cu_physics == GDSCHEME  .OR. &
-!    config_flags%cu_physics == GFSCHEME  .OR. &
-!    config_flags%cu_physics == GFSCHEME ) THEN
+!    config_flags%cu_physics == GFLSCHEME  .OR. &
+!    config_flags%cu_physics == GFLSCHEME ) THEN
 !    pmax=maxval(gd_cloud)
 !    pmin=maxval(gd_cloud2)
 !    print *,pmax,pmin

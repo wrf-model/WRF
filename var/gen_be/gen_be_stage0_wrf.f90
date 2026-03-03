@@ -39,8 +39,9 @@ program gen_be_stage0_wrf
    character (len=3)     :: ce                        ! Member index -> character.
    character (len=3)     :: ccv_options               ! Control variable input
 
-
+#ifndef __GFORTRAN__
    integer, external     :: iargc
+#endif
    integer               :: numarg
    integer               :: ne                        ! Ensemble size.
    integer               :: cv_options                ! Control variable option

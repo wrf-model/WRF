@@ -1,0 +1,51 @@
+{
+  "patches":
+  {
+    "hosts":
+    {
+      "derecho":
+      {
+        "default_env" : "gnu",
+        "environments" :
+        {
+          "gnu" :
+          {
+            "aliases" : [ "gcc" ],
+            "lmod_cmds" :
+            [
+              { "cmd" : "purge" },
+              { "cmd" : "load", "args" : [ "gcc", "cray-mpich", "netcdf", "cmake" ] }
+            ]
+          },
+          "intel-oneapi" :
+          {
+            "aliases" : [ "intel-llvm" ],
+            "lmod_cmds" :
+            [
+              { "cmd" : "purge" },
+              { "cmd" : "load", "args" : [ "intel-oneapi", "cray-mpich", "netcdf", "cmake" ] }
+            ]
+          },
+          "intel-classic" :
+          {
+            "lmod_cmds" :
+            [
+              // Because module is particular about flag placement :)
+              { "cmd" : "--force", "args" : [ "purge" ] },
+              { "cmd" : "load", "args" : [ "ncarenv/23.09", "intel-oneapi", "cray-mpich", "netcdf", "cmake" ] }
+            ]
+          },
+          "nvhpc" :
+          {
+            "aliases" : [ "pgi" ],
+            "lmod_cmds" :
+            [
+              { "cmd" : "purge" },
+              { "cmd" : "load", "args" : [ "nvhpc", "cray-mpich", "netcdf", "cmake" ] }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

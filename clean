@@ -3,7 +3,7 @@
 set nonomatch
 
 
-foreach dir ( frame chem share dyn_em phys phys/physics_mmm cmaq main tools wrftladj )
+foreach dir ( frame chem share dyn_em phys phys/physics_mmm cmaq main tools wrftladj phys/noahmp/drivers/wrf phys/noahmp/src phys/noahmp/utility)
   if ( -d $dir ) then
      if ( $dir == cmaq ) then
         ( cd $dir ; echo $dir ; /bin/rm -f *.o *.mod ) >& /dev/null
@@ -56,8 +56,8 @@ if ( "$arg" == '-a' || "$arg" == '-aa' ) then
 	  /bin/rm -f namelist.input ) >& /dev/null
     ( cd test/exp_real ; /bin/rm -f gm* out* fort* real* ) >& /dev/null
     ( cd test ; rm -f */*.exe */ETAMPNEW_DATA* */GENPARM.TBL */LANDUSE.TBL */README.namelist */README.physics_files \
-	  */RRTM_DATA */SOILPARM.TBL */VEGPARM.TBL */MPTABLE.TBL */URBPARM.TBL */URBPARM_LCZ.TBL */grib2map.tbl \
-	  */CAM_ABS_DATA */CAM_AEROPT_DATA \
+	  */RRTM_DATA */SOILPARM.TBL */VEGPARM.TBL */NoahmpTable.TBL */URBPARM.TBL */URBPARM_LCZ.TBL */grib2map.tbl \
+	  */CAM_ABS_DATA */CAM_AEROPT_DATA */snicar_*.nc \
 	  */CCN_ACTIVATE.BIN */STOCHPERT.TBL \
 	  */CAMtr_volume_mixing_ratio.RCP4.5 */CAMtr_volume_mixing_ratio.RCP6 */CAMtr_volume_mixing_ratio.RCP8.5 \
 	  */CAMtr_volume_mixing_ratio.A1B */CAMtr_volume_mixing_ratio.A2 */CAMtr_volume_mixing_ratio \
@@ -80,11 +80,14 @@ if ( "$arg" == '-a' || "$arg" == '-aa' ) then
     /bin/rm -f configure.wrf.backup
     /bin/rm -f Registry/Registry.backup
     /bin/rm -f run/namelist.input.backup.*
-    /bin/rm -f phys/module_sf_noahmpdrv.F phys/module_sf_noahmp_glacier.F \
-               phys/module_sf_noahmp_groundwater.F phys/module_sf_noahmplsm.F \
-               run/MPTABLE.TBL
+    /bin/rm -fr phys/noahmp
+    /bin/rm -f run/NoahmpTable.TBL run/snicar_*.nc
     /bin/rm -f phys/module_bl_mynnedmf.F phys/module_bl_mynnedmf_common.F \
                phys/module_bl_mynnedmf_driver.F
+    /bin/rm -f phys/module_mp_tempo_cfgs.F90 phys/module_mp_tempo_params.F90 \
+               phys/module_mp_tempo_utils.F90 phys/module_mp_tempo_diags.F90 \
+               phys/module_mp_tempo_ml.F90 phys/module_mp_tempo_driver.F90 \
+               phys/module_mp_tempo_aerosols.F90 phys/module_mp_tempo_main.F90
   endif
 endif
 

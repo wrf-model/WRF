@@ -509,10 +509,10 @@ use module_RT_data, only: rt_domain  !! JLM: this is only used in a c3 paramter 
       !comment out to prevent excessive file sizes when running model
       !print*, "qloss,dx,WP,WPk,depth,ChannK,qdc,ql,dt,D", qloss,dx,WP,WPk,depth,ChannK,qdc,ql,dt,D
       if((qloss*dt)/D > ((ql*dt)/D - C4)) then
-           qloss = ql - C4*(D/dt)
-           if (qloss < 0) then
-              print*, 'WARNING CHANNEL LOSS IS NEGATIVE',qloss
-           endif
+         qloss = ql - C4*(D/dt)
+         if ((qloss < 0) .and. (ChannK /= 0)) then
+            print*, 'WARNING CHANNEL LOSS IS NEGATIVE',qloss
+         endif
       endif
 
 ! ----------------------------------------------------------------
@@ -876,7 +876,7 @@ END SUBROUTINE SUBMUSKINGCUNGE
 !        endif
 
           do k = 1, NLINKSL
-            if(TYPEL(k) .ne. 2) then
+            if(TYPEL(k) .ne. 1) then
                QLINK(k,2) = tmpQLINK(k,2)
             endif
             QLINK(k,1) = QLINK(k,2)    !assing link flow of current to be previous for next time step
@@ -1645,7 +1645,8 @@ end subroutine drive_CHANNEL
                                          nudgeWAdvance,                      &
                                          nudge_apply_upstream_muskingumCunge
 #endif
-
+      use module_channel_diversions, only: calculate_diversion
+      use ieee_arithmetic, only: ieee_is_nan
 
        implicit none
 
@@ -1755,6 +1756,10 @@ end subroutine drive_CHANNEL
        integer, allocatable, dimension(:) :: tmpFinalResType
        real, allocatable,dimension(:) :: tmpAssimilatedValue
        character(len=256), allocatable,dimension(:) :: tmpAssimilatedSourceFile
+
+       ! diversions
+       real :: div_src, div_dst
+       character(*), parameter :: free = '(*(g0,1x))'
 
 #ifdef MPP_LAND
        if(my_id .eq. io_id) then
@@ -2004,6 +2009,41 @@ do nt = 1, nsteps
          !              tmpQLINK(k,2) = MUSKINGCUNGE(k,Qup, Quc, QLINK(k,1), &
          !                  QLateral(k), DTRT_CH, So(k),  CHANLEN(k), &
          !                  MannN(k), ChSSlp(k), Bw(k), Tw(k) )
+
+         ! HANDLE DIVERSIONS
+
+         call calculate_diversion(LINKID(k), Quc, div_src, div_dst)
+
+         if (div_src /= 0) then
+            ! remove from upstream
+#ifdef HYDRO_D
+            print free, "DEBUG: diverting", div_src, "of", Quc, "from link id =", LINKID(k) !, "on processor", my_id
+            if (div_src > Quc) &
+               print free, "DEBUG WARNING: diverted flow (", div_src, ") exceeds total flow, zeroing."
+#endif
+            Quc = max(0.0, Quc - div_src)
+            Qup = max(0.0, Qup - div_src)
+         end if
+
+         if (div_dst /= 0) then
+            ! apply observed value to downstream
+#ifdef HYDRO_D
+            print free, "DEBUG: diverting", div_dst, "to link id =", LINKID(k) !, "on processor", my_id
+#endif
+            Qup = div_dst
+            Quc = div_dst
+            tmpQLINK(k,2) = div_dst
+
+            ! reset any NaNs that got through
+            if (ieee_is_nan(div_dst)) then
+               ! fallback to zero if div_dst is NaN
+               if (ieee_is_nan(QLINK(k,1))) QLINK(k,1) = 0.0
+               if (ieee_is_nan(QLINK(k,2))) QLINK(k,2) = 0.0
+            else
+               if (ieee_is_nan(QLINK(k,1))) QLINK(k,1) = tmpQLINK(k,2)
+               if (ieee_is_nan(QLINK(k,2))) QLINK(k,2) = tmpQLINK(k,2)
+            end if
+         end if
 
 #ifdef WRF_HYDRO_NUDGING
          call nudge_apply_upstream_muskingumCunge( Qup,  Quc,  nudge(k),  k )

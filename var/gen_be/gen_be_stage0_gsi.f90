@@ -34,7 +34,9 @@ program gen_be_stage0_gsi
    character (len=3)     :: cne                       ! Ensemble size.
    character (len=3)     :: ce                        ! Member index -> character.
 
+#ifndef __GFORTRAN__
    integer, external     :: iargc
+#endif
    integer               :: numarg
    integer               :: ne                        ! Ensemble size.
    integer               :: i, j, k, member           ! Loop counters.

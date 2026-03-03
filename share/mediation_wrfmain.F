@@ -82,7 +82,7 @@ use module_io
         ENDIF
 
 !gmm add input for noamp hydro model here
-     IF ( config_flags%opt_run.eq.5 ) THEN
+     IF ( config_flags%opt_runsub.eq.5 ) THEN
 
         CALL construct_filename2a ( inpname , config_flags%auxinput7_inname &
                                  ,grid%id , 2 , timestr)
@@ -259,6 +259,10 @@ SUBROUTINE med_add_config_info_to_grid ( grid )
 #define SOURCE_REC_DEX (grid%id)
 #define DEST_RECORD   grid %
 #include "config_assigns.inc"
+
+#ifdef WRF_CFBM
+    grid % cfbm_namelist = cfbm_namelist
+#endif
 
    RETURN
 

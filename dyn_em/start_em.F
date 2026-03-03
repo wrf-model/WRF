@@ -7,7 +7,7 @@
 )
 
    USE module_domain, ONLY : domain, wrfu_timeinterval, get_ijk_from_grid, &
-        domain_setgmtetc
+        domain_setgmtetc, get_ijk_from_subgrid
    USE module_state_description
    USE module_driver_constants
    USE module_wrf_error
@@ -26,7 +26,7 @@
    USE module_comm_dm
    USE module_llxy, ONLY : proj_cassini
    USE module_physics_init
-   USE module_sf_noahmpdrv, ONLY : groundwater_init
+   USE NoahmpGroundwaterInitMod, ONLY: NoahmpGroundwaterInitMain
    USE module_lightning_driver, ONLY : lightning_init
    USE module_fr_fire_driver_wrf, ONLY : fire_driver_em_init
    USE module_firebrand_spotting, ONLY : firebrand_spotting_em_init
@@ -45,7 +45,12 @@
    USE module_diag_pld, ONLY : pld
    USE module_diag_zld, ONLY : zld
    USE module_trad_fields, ONLY : trad_fields
+#ifdef WRF_CFBM
+     ! CFBM
+   use initialize_mod, only : Init_fire_state_within_wrf
+#endif
 
+   USE NoahmpIOVarType, only : NoahmpIOdom
 !!debug
 !USE module_compute_geop
 
@@ -135,6 +140,14 @@
    REAL :: dt_s, dx_km
 
    REAL :: max_mf, max_rot_angle
+#ifdef WRF_CFBM
+   integer :: ifds, ifde, jfds, jfde, kfds, kfde, &
+              ifms, ifme, jfms, jfme, kfms, kfme, &
+              ifps, ifpe, jfps, jfpe, kfps, kfpe
+   real :: cen_lat, cen_lon, truelat1, truelat2, stand_lon
+#endif
+
+
    CALL get_ijk_from_grid ( grid ,                              &
                            ids, ide, jds, jde, kds, kde,        &
                            ims, ime, jms, jme, kms, kme,        &
@@ -1004,7 +1017,7 @@
 !
 
 #ifdef DM_PARALLEL
-if(config_flags%sf_surface_physics.eq.NOAHMPSCHEME.and.config_flags%opt_run.eq.5)then
+if(config_flags%sf_surface_physics.eq.NOAHMPSCHEME.and.config_flags%opt_runsub.eq.5)then
 # include "HALO_EM_HYDRO_NOAHMP_INIT.inc"
 endif
 #endif
@@ -1132,7 +1145,14 @@ endif
                       grid%IRRSPLH, grid%qtdrain,                                               &   ! Optional Noah-MP
                       grid%gecros_state,                                                        &   ! Optional gecros crop
                       grid%XSAIXY,grid%LAI,                                                     &   ! Optional Noah-MP
-                      grid%T2MVXY, grid%T2MBXY, grid%CHSTARXY,                                  &   ! Optional Noah-MP
+                      grid%T2MVXY, grid%T2MBXY, grid%CHSTARXY, grid%FSATXY, grid%WSURFXY,       &   ! Optional Noah-MP
+                      grid%snrdsxy, grid%snfrxy, grid%bcphixy, grid%bcphoxy, grid%ocphixy,      &   ! Optional Noah-MP
+                      grid%ocphoxy, grid%dust1xy, grid%dust2xy, grid%dust3xy, grid%dust4xy,     &   ! Optional Noah-MP
+                      grid%dust5xy, grid%massconcbcphixy, grid%massconcbcphoxy,                 &   ! Optional Noah-MP
+                      grid%massconcocphixy, grid%massconcocphoxy, grid%massconcdust1xy,         &   ! Optional Noah-MP
+                      grid%massconcdust2xy, grid%massconcdust3xy, grid%massconcdust4xy,         &   ! Optional Noah-MP
+                      grid%massconcdust5xy,                                                     &   ! Optional Noah-MP
+                      grid%ALBSOILDIRXY, grid%ALBSOILDIFXY,                                     &   ! Optional Noah-MP
                       grid%SMOISEQ  ,grid%SMCWTDXY ,grid%RECHXY, grid%DEEPRECHXY, grid%AREAXY,  & ! Optional Noah-MP
                       config_flags%wtddt ,grid%stepwtd ,grid%QRFSXY ,grid%QSPRINGSXY ,grid%QSLATXY, & ! Optional Noah-MP
                       grid%FDEPTHXY, grid%RIVERBEDXY, grid%EQZWT, grid%RIVERCONDXY, grid%PEXPXY, & ! Optional Noah-MP
@@ -1148,6 +1168,9 @@ endif
                       grid%CMCR_URB2D,grid%TGR_URB2D,grid%TGRL_URB3D,grid%SMR_URB3D, & !Optional urban   
                       grid%DRELR_URB2D,grid%DRELB_URB2D,grid%DRELG_URB2D,    & !Optional urban
                       grid%FLXHUMR_URB2D,grid%FLXHUMB_URB2D,grid%FLXHUMG_URB2D,   & !Optional urban
+                      ! added by Chenghao Wang
+                      grid%TVG_URB2D,grid%XXXVG_URB2D,grid%TVGL_URB3D,grid%SMG_URB3D,grid%TT_URB2D, & !Optional urban
+                      grid%CMCG_URB2D,grid%FLXHUMVG_URB2D,grid%FLXHUMT_URB2D,       & !Optional urban
                       grid%TRB_URB4D,grid%TW1_URB4D,grid%TW2_URB4D,grid%TGB_URB4D,grid%TLEV_URB3D,  & !multi-layer urban
                       grid%QLEV_URB3D,grid%TW1LEV_URB3D,grid%TW2LEV_URB3D,        & !multi-layer urban
                       grid%TGLEV_URB3D,grid%TFLEV_URB3D,grid%SF_AC_URB3D,         & !multi-layer urban
@@ -1271,13 +1294,27 @@ endif
                       ,grid%NC_CU, grid%NI_CU, grid%NR_CU, grid%NS_CU,grid%CCN_CU                    &
                       ,grid%alevsiz_cu,grid%num_months,grid%no_src_types_cu,grid%aeromcu             &
                       ,grid%aeropcu,grid%EFCG,grid%EFCS,grid%EFIG,grid%EFIS,grid%EFSG,grid%EFSS      &
+#ifdef CDXWRF
+                      ,grid%fracsoil10cm                                                             &
+                      ,model_config_rec%londbg, model_config_rec%latdbg                              &
+                      ,grid%ijdbg                                                                    &
+
+#if CDXWRF>=3
+                      ,model_config_rec%nhtasrng, model_config_rec%nhhursrng                         &
+                      ,model_config_rec%nltasrng, model_config_rec%nlhursrng                         &
+                      ,model_config_rec%nwbdsrng, model_config_rec%nwssrng                           &
+                      ,grid%htasbins, grid%hhursbins, grid%ltasbins, grid%lhursbins                  &
+                      ,grid%wbdsbins, grid%wssbins                                                   &
+#endif
+#endif
+                      ,NoahmpIOdom(grid%id)                                                          &
                       )
        ENDDO ! loop of tiles for phy_init
 
        if(.not.grid%restart) then
 
-         if(config_flags%sf_surface_physics .eq. NOAHMPSCHEME .and. config_flags%opt_run .eq. 5) then
-              call groundwater_init ( grid ,                                                            &
+         if(config_flags%sf_surface_physics .eq. NOAHMPSCHEME .and. config_flags%opt_runsub .eq. 5) then
+              call NoahmpGroundwaterInitMain (NoahmpIOdom(grid%id), grid ,                              &
                  config_flags%num_soil_layers, grid%dzs, grid%isltyp, grid%ivgtyp, config_flags%wtddt , &
                  grid%fdepthxy   , grid%ht     , grid%riverbedxy, grid%eqzwt     ,                      &
                  grid%rivercondxy, grid%pexpxy , grid%areaxy    , grid%zwtxy     ,                      &
@@ -1431,7 +1468,7 @@ endif
 # include "PERIOD_BDY_EM_TKE.inc"
 # include "PERIOD_BDY_EM_SCALAR.inc"
 # include "PERIOD_BDY_EM_CHEM.inc"
-if(config_flags%sf_surface_physics.eq.NOAHMPSCHEME.and.config_flags%opt_run.eq.5)then
+if(config_flags%sf_surface_physics.eq.NOAHMPSCHEME.and.config_flags%opt_runsub.eq.5)then
 # include "HALO_EM_HYDRO_NOAHMP_INIT.inc"
 endif
 #endif
@@ -2001,7 +2038,6 @@ endif
 #endif
 
 DEALLOCATE(z_at_q)
-DEALLOCATE(dz8w)
 
    IF (config_flags%p_lev_diags == PRESS_DIAGS ) THEN
     CALL wrf_debug ( 200 , ' PLD: pressure level diags' )
@@ -2044,6 +2080,38 @@ DEALLOCATE(dz8w)
                  ,s_pl  = grid%s_pl             &  
                  ,td_pl = grid%td_pl            &
                  ,q_pl = grid%q_pl              &
+#ifdef CORDEXDIAG
+                 ,sina = grid%sina              &
+                 ,cosa = grid%cosa              &
+                 ,psfc = grid%psfc              &
+                 ,topo = grid%ht                &
+                 ,alt = grid%alt                &
+                 ,p_top = config_flags%p_top_requested &
+                 ,iqc=moist(:,:,:,P_QC)         &
+                 ,iqr=moist(:,:,:,P_QR)         &
+                 ,iqs=moist(:,:,:,P_QS)         &
+                 ,iqi=moist(:,:,:,P_QI)         &
+                 ,iqg=moist(:,:,:,P_QG)         &
+                 ,iqh=moist(:,:,:,P_QH)         &
+                 ,hus_pl = grid%hus_pl          &
+                 ,w_pl = grid%w_pl              &
+                 ,uer_pl = grid%uer_pl          &
+                 ,ver_pl = grid%ver_pl          &
+                 ,ws_pl = grid%ws_pl            &
+                 ,qc_pl = grid%qc_pl            &
+                 ,qr_pl = grid%qr_pl            &
+                 ,qs_pl = grid%qs_pl            &
+                 ,qi_pl = grid%qi_pl            &
+                 ,qg_pl = grid%qg_pl            &
+                 ,qh_pl = grid%qh_pl            &
+                 ,qv_pl_mc = grid%qv_pl_mc      &  
+                 ,qc_pl_mc = grid%qc_pl_mc      &  
+                 ,qr_pl_mc = grid%qr_pl_mc      &  
+                 ,qs_pl_mc = grid%qs_pl_mc      &  
+                 ,qi_pl_mc = grid%qi_pl_mc      &  
+                 ,qg_pl_mc = grid%qg_pl_mc      &  
+                 ,qh_pl_mc = grid%qh_pl_mc      & 
+#endif
                  !  Dimension arguments
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde    &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme    &
@@ -2167,10 +2235,56 @@ DEALLOCATE(dz8w)
                ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte   )
    ENDIF
 
+DEALLOCATE(dz8w)
 
 !  FIRE
-if(config_flags%ifire.eq.2)then
+   Select_fire_model: select case (config_flags%ifire)
+       ! none
+     case (0)
+       continue
 
+       ! Community Fire Behavior model
+     case (1)
+#ifdef WRF_CFBM
+         ! Get fire dims
+       call get_ijk_from_subgrid (grid, ifds, ifde, jfds, jfde, kfds, kfde, &
+                                        ifms, ifme, jfms, jfme, kfms, kfme, &
+                                        ifps, ifpe, jfps, jfpe, kfps, kfpe)
+         ! Get projection parameters
+       call nl_get_cen_lat (grid%id, cen_lat)
+       call nl_get_cen_lon (grid%id, cen_lon)
+       call nl_get_truelat1 (grid%id, truelat1)
+       call nl_get_truelat2 (grid%id, truelat2)
+       call nl_get_stand_lon (grid%id, stand_lon)
+
+         ! Impose WRF start/end times to CFBM settings
+       grid%cfbm_namelist%start_year = config_flags%start_year
+       grid%cfbm_namelist%start_month = config_flags%start_month
+       grid%cfbm_namelist%start_day = config_flags%start_day
+       grid%cfbm_namelist%start_hour = config_flags%start_hour
+       grid%cfbm_namelist%start_minute = config_flags%start_minute
+       grid%cfbm_namelist%start_second = config_flags%start_second
+       grid%cfbm_namelist%end_year = config_flags%end_year
+       grid%cfbm_namelist%end_month = config_flags%end_month
+       grid%cfbm_namelist%end_day = config_flags%end_day
+       grid%cfbm_namelist%end_hour = config_flags%end_hour
+       grid%cfbm_namelist%end_minute = config_flags%end_minute
+       grid%cfbm_namelist%end_second = config_flags%end_second
+
+       call Init_fire_state_within_wrf (state = grid%fire_state, config_flags = grid%cfbm_namelist, &
+           ifds = ifds, ifde = ifde, ifms = ifms, ifme = ifme, ifps = ifps, ifpe = ifpe, &
+           jfds = jfds, jfde = jfde, jfms = jfms, jfme = jfme, jfps = jfps, jfpe = jfpe, &
+           kfds = kfds, kfde = kfde, kfms = kfms, kfme = kfme, kfps = kfps, kfpe = kfpe, &
+           kfts = kts, kfte = kte, ide = ide, jde = jde, &
+           dx = config_flags%dx, dy = config_flags%dy, &
+           sr_x = config_flags%sr_x, sr_y = config_flags%sr_y, &
+           map_proj = config_flags%map_proj, cen_lat = cen_lat, cen_lon = cen_lon, truelat1 = truelat1, &
+           truelat2 = truelat2, stand_lon = stand_lon, nfuel_cat = grid%nfuel_cat, zsf = grid%zsf, &
+           dzdxf = grid%dzdxf, dzdyf = grid%dzdyf)
+#else
+       call wrf_error_fatal ('CFBM requires compilation with CMake')
+#endif
+     case (2)
    call fire_driver_em_init ( grid , config_flags    &
             ,ids,ide, kds,kde, jds,jde                &
             ,ims,ime, kms,kme, jms,jme                &
@@ -2219,8 +2333,11 @@ if(config_flags%ifire.eq.2)then
 
    ENDIF
 !-----------------------------------------------------------------------
+     case default
 
-endif
+       CALL wrf_error_fatal ( 'The selected fire model does not exist' )
+   end select Select_fire_model
+
 
 #if ( WRFPLUS != 1 )
 if( grid%traj_opt /= no_trajectory ) then

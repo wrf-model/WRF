@@ -15,6 +15,10 @@ macro( wrf_setup_targets )
     set( WRF_SETUP_CMD create_symlink )
   endif()
 
+  if ( NOT EXISTS ${WRF_SETUP_DEST_PATH} )
+    file( MAKE_DIRECTORY ${WRF_SETUP_DEST_PATH} )
+  endif()
+
 
   foreach ( WRF_SETUP_TARGET ${WRF_SETUP_TARGETS} )
 

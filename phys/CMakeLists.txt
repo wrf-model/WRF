@@ -217,11 +217,6 @@ target_sources(
                   module_sf_idealscmsfclay.F
                   module_sf_lake.F
                   module_sf_myjsfc.F
-                  module_sf_mynnsfc_common.F
-                  module_sf_mynnsfc_driver.F
-                  module_sf_mynnsfc_land.F
-                  module_sf_mynnsfc_water.F
-                  module_sf_mynnsfc_ice.F
                   module_sf_noah_seaice.F
                   module_sf_noah_seaice_drv.F
                   module_sf_noahdrv.F
@@ -427,6 +422,13 @@ target_sources(
                   physics_mmm/mp_wsm6.F90
                   physics_mmm/mp_wsm6_effectRad.F90
                   physics_mmm/sf_sfclayrev.F90
+
+                  # MYNN-SFC
+                  MYNN-SFC/WRF/module_sf_mynnsfc_common.F90
+                  MYNN-SFC/WRF/module_sf_mynnsfc_driver.F90
+                  MYNN-SFC/module_sf_mynnsfc_land.F90
+                  MYNN-SFC/module_sf_mynnsfc_water.F90
+                  MYNN-SFC/module_sf_mynnsfc_ice.F90
 
                   # MYNN-EDMF
                   MYNN-EDMF/module_bl_mynnedmf.F90

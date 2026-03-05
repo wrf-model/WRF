@@ -75,10 +75,6 @@ target_sources(
                   module_cu_camzm_driver.F
                   module_cu_g3.F
                   module_cu_gd.F
-                  module_cu_gf_ctrans.F
-                  module_cu_gf_deep.F
-                  module_cu_gf_sh.F
-                  module_cu_gf_wrfdrv.F
                   module_cu_kf.F
                   module_cu_kfcup.F
                   module_cu_kfeta.F
@@ -432,6 +428,12 @@ target_sources(
                   MYNN-EDMF/module_bl_mynnedmf.F90
                   MYNN-EDMF/WRF/module_bl_mynnedmf_common.F90
                   MYNN-EDMF/WRF/module_bl_mynnedmf_driver.F90
+
+                  # GFL
+                  GFL/module_cu_gfl_deep.F90
+                  GFL/module_cu_gfl_sh.F90
+                  GFL/WRF/module_cu_gfl_common.F90
+                  GFL/WRF/module_cu_gfl_wrf.F90
                   )
 
 

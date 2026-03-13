@@ -203,15 +203,12 @@ CONTAINS
       ! END LICENSE
           speed1=0.
           speed2=0.
-          a_ind=0.01
           if (ktop.eq.1) then
            speedhub=sqrt(u(i,1,j)**2.+v(i,1,j)**2.)*hubheight(kt)/z1
-           speedhub=speedhub/((1-a_ind)**nturb) ! BAMS
           else
            speed1=sqrt(u(i,kbot,j)**2.+v(i,kbot,j)**2.)
            speed2=sqrt(u(i,ktop,j)**2.+v(i,ktop,j)**2.)
            speedhub=speed1+((speed2-speed1)/(z2-z1))*(hubheight(kt)-z1)
-           speedhub=speedhub/((1-a_ind)**nturb) ! BAMS
           endif
 !
 ! ... calculate TKE, power and thrust coeffs
@@ -226,7 +223,10 @@ CONTAINS
           ! ... BAMS: first iteration with induction first estimate
           speed1=0.
           speed2=0.
-          a_ind=0.01
+          a_ind=0.25 ! first guess induction factor
+          a_ind = a_ind * area / ( diameter(kt) * dx * &
+                  MIN(ABS(1/COS(ATAN( ((v(i,ktop,j) + v(i,kbot,j))/2) / ((u(i,ktop,j) + u(i,kbot,j))/2) ))), &
+                      ABS(1/SIN(ATAN( ((v(i,ktop,j) + v(i,kbot,j))/2) / ((u(i,ktop,j) + u(i,kbot,j))/2) )))) )     ! Correction
           if (ktop.eq.1) then
            speedhub=sqrt(u(i,1,j)**2.+v(i,1,j)**2.)*hubheight(kt)/z1
            speedhub=speedhub/((1-a_ind)**nturb)
@@ -244,10 +244,10 @@ CONTAINS
                         npower(kt),diameter(kt),stc(kt),stc2(kt),nkind(kt))
 
           ! ... BAMS: second iteration
-          a_ind = 0.5 * (1 - sqrt(1 - thrcof))
+          a_ind = 0.5 * (1 - sqrt(1 - thrcof)) ! second guess induction factor
           a_ind = a_ind * area / ( diameter(kt) * dx * &
                   MIN(ABS(1/COS(ATAN( ((v(i,ktop,j) + v(i,kbot,j))/2) / ((u(i,ktop,j) + u(i,kbot,j))/2) ))), &
-                      ABS(1/SIN(ATAN( ((v(i,ktop,j) + v(i,kbot,j))/2) / ((u(i,ktop,j) + u(i,kbot,j))/2) )))) )     ! Corrected induction factor
+                      ABS(1/SIN(ATAN( ((v(i,ktop,j) + v(i,kbot,j))/2) / ((u(i,ktop,j) + u(i,kbot,j))/2) )))) )     ! Correction
                           
           speed1=0.
           speed2=0.

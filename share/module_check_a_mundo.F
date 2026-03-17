@@ -2560,6 +2560,18 @@
      END DO
 
 !-----------------------------------------------------------------------
+!  If aer_opt=3 and TEMPO (mp_physics=88), need to use tempo_aerosolaware = 1
+!-----------------------------------------------------------------------
+     DO i = 1, model_config_rec % max_dom
+       IF ( model_config_rec%mp_physics(i) .EQ. TEMPO .AND. model_config_rec%aer_opt .EQ. 3 .AND. &
+            model_config_rec%tempo_aerosolaware .EQ. 0) THEN
+          model_config_rec%tempo_aerosolaware = 1
+          wrf_err_message = '--- WARNING: For TEMPO & aer_opt=3, tempo_aerosolaware must = 1'
+          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )  
+       END IF
+     END DO
+       
+!-----------------------------------------------------------------------
 !  Set aer_fire_emit_opt for Thompson-MP-Aero (mp_physics=28) AND rcon mp (mp_physics=29)
 !-----------------------------------------------------------------------
      DO i = 1, model_config_rec % max_dom

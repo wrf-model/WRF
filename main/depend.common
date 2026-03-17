@@ -2569,6 +2569,21 @@ module_cu_gf_ctrans.o: \
 	../frame/module_state_description.o 
 
 
+module_cu_gfl_common.o: \
+	ccpp_kind_types.o
+
+
+module_cu_gfl_sh.o: \
+	module_cu_gfl_deep.o \
+	module_cu_gfl_common.o
+
+
+module_cu_gfl_wrf.o: \
+	module_cu_gfl_deep.o \
+	module_cu_gfl_sh.o \
+	ccpp_kind_types.o
+
+
 module_cumulus_driver.o: \
 	../share/module_chem_share.o \
 	module_cu_kf.o \
@@ -2588,6 +2603,10 @@ module_cumulus_driver.o: \
 	module_cu_ntiedtke.o \
 	module_cu_mskf.o \
 	module_cu_kfcup.o \
+	module_cu_gfl_common.o \
+	module_cu_gfl_deep.o \
+	module_cu_gfl_sh.o \
+	module_cu_gfl_wrf.o \
 	../frame/module_state_description.o \
 	../frame/module_configure.o \
 	../frame/module_domain.o \

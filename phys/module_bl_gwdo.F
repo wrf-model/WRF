@@ -18,9 +18,10 @@
                  rublten,rvblten,                                             &
                  dtaux3d,dtauy3d,dusfcg,dvsfcg,                               &
                  var2d,oc12d,oa2d1,oa2d2,oa2d3,oa2d4,ol2d1,ol2d2,ol2d3,ol2d4, &
-                 sina,cosa,znu,znw,p_top,                                     &
+                 elvmax,sina,cosa,znu,znw,p_top,                              &
                  cp,g,rd,rv,ep1,pi,                                           &
                  dt,dx,kpbl2d,itimestep,                                      &
+                 dx_factor,if_nonhyd,                                         &
                  ids,ide, jds,jde, kds,kde,                                   &
                  ims,ime, jms,jme, kms,kme,                                   &
                  its,ite, jts,jte, kts,kte,                                   &
@@ -78,6 +79,8 @@
  integer,intent(in),dimension(ims:ime,jms:jme):: kpbl2d
 
  real(kind=kind_phys),intent(in):: dt,cp,g,rd,rv,ep1,pi
+ real(kind=kind_phys),intent(in):: dx_factor
+ logical             ,intent(in):: if_nonhyd
  real(kind=kind_phys),intent(in),optional:: p_top
 
  real(kind=kind_phys),intent(in),dimension(kms:kme),optional:: &
@@ -90,6 +93,7 @@
                                                                oc12d, &
                                              oa2d1,oa2d2,oa2d3,oa2d4, &
                                              ol2d1,ol2d2,ol2d3,ol2d4, &
+                                                              elvmax, &
                                                            sina,cosa
 
  real(kind=kind_phys),intent(in),dimension(ims:ime,kms:kme,jms:jme):: &
@@ -126,7 +130,7 @@
  integer:: i,j,k
 
  real(kind=kind_phys),dimension(its:ite):: &
-    var2d_hv,oc12d_hv,dx_hv,sina_hv,cosa_hv
+    var2d_hv,oc12d_hv,dx_hv,sina_hv,cosa_hv,elvmax_hv
  real(kind=kind_phys),dimension(its:ite):: &
     oa2d1_hv,oa2d2_hv,oa2d3_hv,oa2d4_hv,ol2d1_hv,ol2d2_hv,ol2d3_hv,ol2d4_hv
  real(kind=kind_phys),dimension(its:ite):: &
@@ -195,6 +199,7 @@
        ol2d2_hv(i) = ol2d2(i,j)
        ol2d3_hv(i) = ol2d3(i,j)
        ol2d4_hv(i) = ol2d4(i,j)
+       elvmax_hv(i) =elvmax(i,j)
     enddo
 
     call bl_gwdo_run(sina=sina_hv,cosa=cosa_hv                &
@@ -211,6 +216,8 @@
                     ,oa2d3=oa2d3_hv, oa2d4=oa2d4_hv           &
                     ,ol2d1=ol2d1_hv, ol2d2=ol2d2_hv           &
                     ,ol2d3=ol2d3_hv, ol2d4=ol2d4_hv           &
+                    ,omax=elvmax_hv                           &
+                    ,dx_factor=dx_factor,if_nonhyd=if_nonhyd  &
                     ,g_=g,cp_=cp,rd_=rd,rv_=rv,fv_=ep1,pi_=pi &
                     ,dxmeter=dx_hv,deltim=dt                  &
                     ,its=its,ite=ite,kte=kte,kme=kte+1        &

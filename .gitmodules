@@ -9,7 +9,7 @@
 	url = https://github.com/NCAR/fire_behavior.git
 [submodule "phys/physics_mmm"]
 	path = phys/physics_mmm
-	url = https://github.com/Songyou184/MMM-physics.git
+	url = https://github.com/NCAR/MMM-physics.git
 [submodule "phys/MYNN-EDMF"]
 	path = phys/MYNN-EDMF
 	url = https://github.com/NCAR/MYNN-EDMF

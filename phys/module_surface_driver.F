@@ -116,6 +116,10 @@ CONTAINS
      &          ,lakemask                                  & !lake
                 , restart_flag                             & ! restart_flag
 #endif
+! KIM TOFD
+                ,kim_tofd                                            & ! kim tofd
+                ,tofd_factor                                         & ! kim tofd
+                ,var2d                                               & ! kim tofd
             !  cyl ocean variable
                 ,OM_TMP,OM_S,OM_U,OM_V,OM_DEPTH,OM_ML,OM_LON          &
      &          ,OM_LAT,okms,okme,rdx,rdy,msfu,msfv,msft              &
@@ -634,6 +638,9 @@ CONTAINS
    INTEGER, INTENT(IN)::   IFNDSNOWSI
    LOGICAL, INTENT(IN)::   do_bioe
    LOGICAL, INTENT(IN)::   do_meganfile
+! kim tofd
+   REAL,    INTENT(IN)::   tofd_factor
+   LOGICAL, INTENT(IN)::   kim_tofd
 
    INTEGER, INTENT(IN)::   NLCAT, mosaic_lu, mosaic_soil
    INTEGER, INTENT(IN)::   NSCAT
@@ -705,6 +712,9 @@ CONTAINS
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   VEGFRA
 !------fds (06/2010)--------------------------
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   XICE
+!---------------------------------------------
+!------kim tofd (01/2025)--------------------------
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN)::   var2d
 !---------------------------------------------
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   ALBSI
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   ICEDEPTH
@@ -2155,6 +2165,7 @@ CONTAINS
                  gz1oz0,wspd,br,isfflx,dx2d,                         &
                  svp1,svp2,svp3,svpt0,ep_1,ep_2,karman,              &
                  P1000mb,lakemask,                                   &
+                 kim_tofd, tofd_factor, var2d,                       &
                  XICE,SST,TSK_SEA,                                                  &
                  CHS2_SEA,CHS_SEA,CPM_SEA,CQS2_SEA,FLHC_SEA,FLQC_SEA,               &
                  HFX_SEA,LH_SEA,QFX_SEA,QGH_SEA,QSFC_SEA,ZNT_SEA,                   &
@@ -2174,6 +2185,7 @@ CONTAINS
                gz1oz0,wspd,br,isfflx,dx2d,                         &
                svp1,svp2,svp3,svpt0,ep_1,ep_2,karman,              &
                P1000mb,lakemask,                                   &
+               kim_tofd, tofd_factor, var2d,                       &
                ids,ide, jds,jde, kds,kde,                          &
                ims,ime, jms,jme, kms,kme,                          &
                i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,    &
@@ -2422,14 +2434,14 @@ CONTAINS
                p3d=p_phy,dz8w=dz8w,th3d=th_phy,rho=rho,              &
                psfc=psfc,chs=chs,chs2=chs2,cqs=cqs,cqs2=cqs2,cpm=cpm,&
                znt=znt,ust=ust,pblh=pblh,mavail=mavail,zol=zol,      &
-               mol=mol,psim=psim,psih=psih,                          &
+               mol=mol,psim=psim,psih=psih,qgh=qgh,                  &
                xland=xland,hfx=hfx,qfx=qfx,lh=lh,tsk=tsk,            &
                flhc=flhc,flqc=flqc,qsfc=qsfc,rmol=rmol,              &
                u10=u10,v10=v10,th2=th2,t2=t2,q2=q2,snowh=snowh,      &
                gz1oz0=gz1oz0,wspd=wspd,br=br,dx=dx2d,                &
                itimestep=itimestep,ch=ch,                            &
                spp_pbl=spp_pbl,pattern_spp_pbl=pattern_spp_pbl,      &
-               xice=XICE,sst=SST,tsk_sea=TSK_SEA,                    &
+               xice=XICE,sst=SST,tsk_sea=TSK_SEA,qgh_sea=QGH_SEA,    &
                chs2_sea=CHS2_SEA,chs_sea=CHS_SEA,cpm_sea=CPM_SEA,    &
                cqs2_sea=CQS2_SEA,flhc_sea=FLHC_SEA,                  &
                flqc_sea=FLQC_SEA,hfx_sea=HFX_SEA,lh_sea=LH_SEA,      &
@@ -2443,7 +2455,8 @@ CONTAINS
                ustm=ustm,ck=ck,cka=cka,cd=cd,cda=cda,                &
                sf_mynn_sfcflux_land=sf_mynn_sfcflux_land,            &
                sf_mynn_sfcflux_water=sf_mynn_sfcflux_water,          &
-               isfflx=isfflx,                                        &
+               isfflx=isfflx,shalwater_z0=shalwater_z0,              &
+               water_depth=water_depth,lakemask=lakemask,            &
                flag_lsm=sf_surface_physics,restart=restart_flag,     &
                errmsg=errmsg,errflg=errflg                           ) 
          ELSE
@@ -2452,7 +2465,7 @@ CONTAINS
                rho3d=rho,psfcpa=psfc,                              &
                chs=chs,chs2=chs2,cqs=cqs,cqs2=cqs2,cpm=cpm,        &
                znt=znt,ust=ust,pblh=pblh,mavail=mavail,zol=zol,    &
-               mol=mol,psim=psim,psih=psih,                        &
+               mol=mol,psim=psim,psih=psih,qgh=qgh,                &
                xland=xland,hfx=hfx,qfx=qfx,lh=lh,tsk=tsk,          &
                flhc=flhc,flqc=flqc,qsfc=qsfc,rmol=rmol,            &
                u10=u10,v10=v10,th2=th2,t2=t2,q2=q2,snowh=snowh,    &
@@ -2466,7 +2479,8 @@ CONTAINS
                ustm=ustm,ck=ck,cka=cka,cd=cd,cda=cda,              &
                sf_mynn_sfcflux_land=sf_mynn_sfcflux_land,          &
                sf_mynn_sfcflux_water=sf_mynn_sfcflux_water,        &
-               isfflx=isfflx,                                      &
+               isfflx=isfflx,shalwater_z0=shalwater_z0,            &
+               water_depth=water_depth,lakemask=lakemask,          &
                flag_lsm=sf_surface_physics,restart=restart_flag,   &
                errmsg=errmsg,errflg=errflg                         )
          ENDIF
@@ -5348,12 +5362,12 @@ CONTAINS
               P3D,dz8w,th3d,rho,                                   &
               PSFC,CHS,CHS2,CQS,CQS2,CPM,                          &
               ZNT,UST,PBLH,MAVAIL,ZOL,MOL,PSIM,PSIH,               &
-              XLAND,HFX,QFX,LH,TSK,FLHC,FLQC,QSFC,RMOL,            &
+              XLAND,HFX,QFX,LH,TSK,FLHC,FLQC,QSFC,RMOL,QGH,        &
               U10,V10,TH2,T2,Q2,SNOWH,                             &
               GZ1OZ0,WSPD,BR,ISFFLX,DX,                            &
               &itimestep,ch,                                       &
               &spp_pbl,pattern_spp_pbl,                            &
-              XICE,SST,TSK_SEA,                                    &
+              XICE,SST,TSK_SEA,QGH_SEA,                            &
               CHS2_SEA,CHS_SEA,CPM_SEA,CQS2_SEA,FLHC_SEA,FLQC_SEA, &
               HFX_SEA,LH_SEA,QFX_SEA,QSFC_SEA,ZNT_SEA,             &
               TICE2TSK_IF2COLD,XICE_THRESHOLD,                     &
@@ -5362,6 +5376,7 @@ CONTAINS
               its,ite, jts,jte, kts,kte,                           &
               ustm,ck,cka,cd,cda,sf_mynn_sfcflux_land,             &
               sf_mynn_sfcflux_water,flag_lsm,restart,              &
+              shalwater_z0,water_depth,lakemask,                   &
               errmsg,errflg                                        )
 
      USE module_sf_mynnsfc_driver
@@ -5378,7 +5393,8 @@ CONTAINS
      INTEGER,  INTENT(IN )   ::       itimestep, ISFFLX
      INTEGER,  INTENT(IN ), optional ::  sf_mynn_sfcflux_land,    &
                                          sf_mynn_sfcflux_water,   &
-                                         flag_lsm
+                                         flag_lsm,                &
+                                         shalwater_z0
      LOGICAL,  INTENT(IN)    ::        restart
      INTEGER,  INTENT(IN), optional      ::     spp_pbl
      REAL,     DIMENSION( ims:ime, kms:kme, jms:jme ),            &
@@ -5396,6 +5412,8 @@ CONTAINS
      REAL,     DIMENSION( ims:ime, jms:jme )                    , &
                INTENT(IN   )               ::             MAVAIL, &
                                                            XLAND, &
+                                                     water_depth, &
+                                                        lakemask, &
                                                             PSFC, &
                                                            SNOWH, &
                                                              TSK, &
@@ -5415,6 +5433,7 @@ CONTAINS
                                                               LH, &
                                                         MOL,RMOL, &
                                                             QSFC, &
+                                                             QGH, &
                                                              ZNT, &
                                                              ZOL, &
                                                              UST, &
@@ -5451,6 +5470,7 @@ CONTAINS
                                                 HFX_SEA,          &
                                                 LH_SEA,           &
                                                 QFX_SEA,          &
+                                                QGH_SEA,          &
                                                 QSFC_SEA,         &
                                                 ZNT_SEA
 
@@ -5472,6 +5492,7 @@ CONTAINS
                  PSIH_SEA,                      PSIH_HOLD,        &
                  PSIM_SEA,                      PSIM_HOLD,        &
                                                 QFX_HOLD,         &
+                                                QGH_HOLD,         &
                                                 CPM_HOLD,         &
                  RMOL_SEA,                      RMOL_HOLD,        &
                  UST_SEA,                       UST_HOLD,         &
@@ -5516,6 +5537,7 @@ CONTAINS
      PSIH_HOLD(its:ite,jts:jte) = PSIH(its:ite,jts:jte)
      PSIM_HOLD(its:ite,jts:jte) = PSIM(its:ite,jts:jte)
      QFX_HOLD(its:ite,jts:jte)  = QFX(its:ite,jts:jte)
+     QGH_HOLD(its:ite,jts:jte)  = QGH(its:ite,jts:jte)
      RMOL_HOLD(its:ite,jts:jte) = RMOL(its:ite,jts:jte)
      UST_HOLD(its:ite,jts:jte)  = UST(its:ite,jts:jte)
      USTM_HOLD(its:ite,jts:jte) = USTM(its:ite,jts:jte)
@@ -5532,7 +5554,7 @@ CONTAINS
                rho3d=rho,psfcpa=psfc,                          &
                chs=chs,chs2=chs2,cqs=cqs,cqs2=cqs2,cpm=cpm,    &
                znt=znt,ust=ust,pblh=pblh,mavail=mavail,zol=zol,&
-               mol=mol,psim=psim,psih=psih,                    &
+               mol=mol,psim=psim,psih=psih,qgh=qgh,            &
                xland=xland,hfx=hfx,qfx=qfx,lh=lh,tsk=tsk_local,&
                flhc=flhc,flqc=flqc,qsfc=qsfc,rmol=rmol,        &
                u10=u10,v10=v10,th2=th2,t2=t2,q2=q2,snowh=snowh,&
@@ -5545,7 +5567,8 @@ CONTAINS
                ustm=ustm,ck=ck,cka=cka,cd=cd,cda=cda,          &
                sf_mynn_sfcflux_land=sf_mynn_sfcflux_land,      &
                sf_mynn_sfcflux_water=sf_mynn_sfcflux_water,    &
-               isfflx=isfflx,                                  &
+               isfflx=isfflx,shalwater_z0=shalwater_z0,        &
+               water_depth=water_depth,lakemask=lakemask,      &
                flag_lsm=flag_lsm,restart=restart,              &
                errmsg=errmsg,errflg=errflg                     )
 
@@ -5585,6 +5608,7 @@ CONTAINS
      PSIH_SEA(its:ite,jts:jte) = PSIH_HOLD(its:ite,jts:jte)
      PSIM_SEA(its:ite,jts:jte) = PSIM_HOLD(its:ite,jts:jte)
      QFX_SEA(its:ite,jts:jte)  = QFX_HOLD(its:ite,jts:jte)
+     QGH_SEA(its:ite,jts:jte)  = QGH_HOLD(its:ite,jts:jte)
      RMOL_SEA(its:ite,jts:jte) = RMOL_HOLD(its:ite,jts:jte)
      UST_SEA(its:ite,jts:jte)  = UST_HOLD(its:ite,jts:jte)
      USTM_SEA(its:ite,jts:jte) = USTM_HOLD(its:ite,jts:jte)
@@ -5597,7 +5621,7 @@ CONTAINS
            qv3d=qv3d,p3d=p3d,dz8w=dz8w,th3d=th3d,rho3d=rho,psfcpa=psfc,        &
            chs=chs_sea,chs2=chs2_sea,cqs=cqs,cqs2=cqs2_sea,cpm=cpm_sea,        &
            znt=znt_sea,ust=ust_sea,pblh=pblh,mavail=mavail_sea,zol=zol_sea,    &
-           mol=mol_sea,psim=psim_sea,psih=psih_sea,                            &
+           mol=mol_sea,psim=psim_sea,psih=psih_sea,qgh=qgh_sea,                &
            xland=xland_sea,hfx=hfx_sea,qfx=qfx_sea,lh=lh_sea,tsk=tsk_sea,      &
            flhc=flhc_sea,flqc=flqc_sea,qsfc=qsfc_sea,rmol=rmol_sea,            &
            u10=u10_sea,v10=v10_sea,th2=th2_sea,t2=t2_sea,q2=q2_sea,snowh=snowh,&
@@ -5631,6 +5655,7 @@ CONTAINS
               psih(i,j)   = psih(i,j)   * XICE(i,j) + (1.0-XICE(i,j)) * psih_sea(i,j)
               psim(i,j)   = psim(i,j)   * XICE(i,j) + (1.0-XICE(i,j)) * psim_sea(i,j)
               ! QFX  -- wait
+              ! QGH  -- wait
               rmol(i,j)   = rmol(i,j)   * XICE(i,j) + (1.0-XICE(i,j)) * rmol_sea(i,j)
               ust(i,j)    = ust(i,j)    * XICE(i,j) + (1.0-XICE(i,j)) * ust_sea(i,j)
               wspd(i,j)   = wspd(i,j)   * XICE(i,j) + (1.0-XICE(i,j)) * wspd_sea(i,j)
@@ -5935,6 +5960,7 @@ CONTAINS
                      SVP1,SVP2,SVP3,SVPT0,EP1,EP2,                 &
                      KARMAN,                                       &
                      P1000,LAKEMASK,                               &
+                     kim_tofd, tofd_factor, var2d,                 &
                      XICE,SST,TSK_SEA,                                                  &
                      CHS2_SEA,CHS_SEA,CPM_SEA,CQS2_SEA,FLHC_SEA,FLQC_SEA,               &
                      HFX_SEA,LH_SEA,QFX_SEA,QGH_SEA,QSFC_SEA,ZNT_SEA,                   &
@@ -5957,6 +5983,8 @@ CONTAINS
      REAL,     INTENT(IN )   ::        SVP1,SVP2,SVP3,SVPT0
      REAL,     INTENT(IN )   ::        EP1,EP2,KARMAN
      REAL,     INTENT(IN )   ::        P1000
+     logical, intent(in )    ::        kim_tofd
+     REAL,     INTENT(IN )   ::        tofd_factor
 
      REAL,     DIMENSION( ims:ime, kms:kme, jms:jme )           , &
                INTENT(IN   )   ::                           dz8w
@@ -5971,6 +5999,7 @@ CONTAINS
                                                             PBLH, &
                                                            XLAND, &
                                                         LAKEMASK, &
+                                                           var2d, &
                                                              TSK
      REAL,     DIMENSION( ims:ime, jms:jme )                    , &
                INTENT(OUT  )               ::                U10, &
@@ -6202,6 +6231,7 @@ CONTAINS
                  SVP1,SVP2,SVP3,SVPT0,EP1,EP2,                 &
                  KARMAN,                                       &
                  P1000,lakemask,                               &
+                 kim_tofd, tofd_factor, var2d,                 &
                  ids,ide, jds,jde, kds,kde,                    &
                  ims,ime, jms,jme, kms,kme,                    &
                  its,ite, jts,jte, kts,kte,                    &
@@ -6296,6 +6326,7 @@ CONTAINS
                  SVP1,SVP2,SVP3,SVPT0,EP1,EP2,                 &
                  KARMAN,                                       &
                  P1000,lakemask,                               &
+                 kim_tofd, tofd_factor, var2d,                 &
                  ids,ide, jds,jde, kds,kde,                    &
                  ims,ime, jms,jme, kms,kme,                    &
                  its,ite, jts,jte, kts,kte,                    & ! 0

@@ -710,6 +710,10 @@ BENCH_START(surf_driver_tim)
 #if ( EM_CORE == 1)
      &        ,LakeMask=grid%LakeMask                                               & !lake
      &        ,restart_flag=restart_flag                                            & !flag showing if is a restart timestep
+! TOFD for KIM gwdo scheme
+     &        ,kim_tofd=config_flags%kim_tofd                                       &
+     &        ,tofd_factor=config_flags%tofd_factor                                 &
+     &        ,VAR2D=grid%var2d                                                     &
 #endif
 ! CLM Varaibles
      &        ,NUMC=grid%numc,NUMP=grid%nump,SABV=grid%sabv,SABG=grid%sabg,         &
@@ -799,7 +803,7 @@ BENCH_START(surf_driver_tim)
      &        ,FLXHUMR_URB2D=grid%flxhumr_urb2d                           & !H urban
      &        ,FLXHUMB_URB2D=grid%flxhumb_urb2d                           & !H urban
      &        ,FLXHUMG_URB2D=grid%flxhumg_urb2d                           & !H urban
-     &        ! added by Chenghao Wang
+              ! added by Chenghao Wang
      &        ,TVG_URB2D=grid%tvg_urb2d                                   & !H urban
      &        ,XXXVG_URB2D=grid%xxxvg_urb2d                               & !H urban
      &        ,TVGL_URB3D=grid%tvgl_urb3d                                 & !H urban
@@ -1299,13 +1303,16 @@ BENCH_START(pbl_driver_tim)
      &        ,PEK_ADV=scalar(ims,kms,jms,P_pek_adv)                      &!TKEadvection
      &        ,PEP_ADV=scalar(ims,kms,jms,P_pep_adv)                      &!TKEadvection
 !GWD for ARW
-     &        ,GWD_OPT=config_flags%gwd_opt &
-     &        ,gwd_diags=config_flags%gwd_diags &
+     &        ,GWD_OPT=config_flags%gwd_opt                              &
+     &        ,gwd_diags=config_flags%gwd_diags                          &
+     &        ,dx_factor=config_flags%gwd_dx_factor                      &
+     &        ,if_nonhyd=config_flags%gwd_if_nonhyd                      &
      &        ,DTAUX3D=grid%dtaux3d,DTAUY3D=grid%dtauy3d &
      &        ,DUSFCG=grid%dusfcg,DVSFCG=grid%dvsfcg &
      &        ,VAR2D=grid%var2d,OC12D=grid%oc12d     &
      &        ,OA1=grid%oa1,OA2=grid%oa2,OA3=grid%oa3,OA4=grid%oa4        &
      &        ,OL1=grid%ol1,OL2=grid%ol2,OL3=grid%ol3,OL4=grid%ol4        &
+     &        ,elvmax=grid%elvmax                                         &
      &        ,SINA=grid%sina,COSA=grid%cosa                              &
      &        ,dtaux3d_ls=grid%dtaux3d_ls,dtauy3d_ls=grid%dtauy3d_ls      &
      &        ,dtaux3d_bl=grid%dtaux3d_bl,dtauy3d_bl=grid%dtauy3d_bl      &

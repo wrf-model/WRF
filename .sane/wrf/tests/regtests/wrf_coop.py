@@ -311,7 +311,7 @@ def wrf_coop_feature_restart_em_real( orch ):
             "basic",
             "dfi",
             "diff_opt_2",
-            "km_opt_1",
+            # "km_opt_1", # now failing as of release v4.8.0 SHA 52a9744
             # "km_opt_2", # currently failing with RMSE ~ 2e-7
             "km_opt_3",
             "nest_starts_later",

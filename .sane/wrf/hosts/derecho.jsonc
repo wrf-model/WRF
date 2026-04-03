@@ -47,7 +47,7 @@
         "wrf_restart" :
         {
           "run_wrf_case_path" : "/glade/work/aislas/wrf-model/wrf_feature_testing/cases/",
-          "run_wrf_met_path" : "/glade/work/aislas/github/data/wrf/regtest/Data/"
+          "run_wrf_met_path" : "/glade/work/aislas/github/data/wrf/restart/input/"
         }
       }
     }

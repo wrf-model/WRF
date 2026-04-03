@@ -104,7 +104,7 @@ fi
 cmd="$mpi_cmd $wrf_exec $wrf_nml"
 banner 42 "START $wrf_nml"
 # Move previous output of previous run to safe spot
-ls wrfout_d0* | xargs -i mv {} {}.orig
+ls wrfout_d0* | grep -vE "orig$" | xargs -i mv {} {}.orig
 
 if [ -n "$mpi_cmd" ]; then
   mv $( ls rsl.out.* | sort | head -n 1 ) rsl.out.orig

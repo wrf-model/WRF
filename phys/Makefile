@@ -493,7 +493,7 @@ submodules :
     fi
 	@if [ \( ! -f module_mp_tempo_driver.F90 \) -o \( ! -f module_mp_tempo_main.F90 \) -o \
 	      \( ! -f module_mp_tempo_cfgs.F90 \) -o \( ! -f module_mp_tempo_aerosols.F90 \) -o \
-	      \( ! -f module_mp_tempo_ml.F90 \) -o \( ! -f modulemp_tempo_diags.F90 \) -o \
+	      \( ! -f module_mp_tempo_ml.F90 \) -o \( ! -f module_mp_tempo_diags.F90 \) -o \
               \( ! -f module_mp_tempo_utils.F90 \) -o \( ! -f module_mp_tempo_params.F90 \) ] ; then \
                 echo Pulling in TEMPO submodule ; \
 		( cd .. ; git submodule update --init --recursive ) ; \

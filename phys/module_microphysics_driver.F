@@ -1480,12 +1480,12 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                    if (config_flags%nwp_diagnostics == 1) then
                       if (present(hail_maxk1)) then
                          if (allocated(tempo_driver_diags%max_hail_diameter_sfc)) then
-                            hail_maxk1(i,j) = tempo_driver_diags%max_hail_diameter_sfc(i,j)
+                            hail_maxk1(i,j) = 1.e-3 * tempo_driver_diags%max_hail_diameter_sfc(i,j)
                          endif
                       endif
                       if (present(hail_max2d)) then
                          if (allocated(tempo_driver_diags%max_hail_diameter_column)) then
-                            hail_max2d(i,j) = tempo_driver_diags%max_hail_diameter_column(i,j)
+                            hail_max2d(i,j) = 1.e-3 * tempo_driver_diags%max_hail_diameter_column(i,j)
                          endif
                       endif
                    endif

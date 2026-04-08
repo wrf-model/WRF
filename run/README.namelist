@@ -805,12 +805,12 @@ use_rap_aero_icbc                   = .false.   ! Set to .true. to ingest real-t
                                        0    no TKE transport (default);1: activate TKE transport
  bl_mynn_output (max_dom)            = 0,  ! = 0: do not output extra arrays (default)
                                        1   ! = 1: allocate and output extra 3D arrays from MYNN-EDMF mass-flux component
- bl_mynn_mixaerosols		     = 1,  ! = 0: do not mix qnwfa, qnifa, or qnbca
+ bl_mynn_mixaerosols (max_dom)	     = 1,  ! = 0: do not mix qnwfa, qnifa, or qnbca
  				           ! = 1: mix aerosols (default)
- bl_mynn_mixnumcon		     = 0,  ! = 0: do not mix number concentrations (qnc, qni) (default)
+ bl_mynn_mixnumcon (max_dom)	     = 0,  ! = 0: do not mix number concentrations (qnc, qni) (default)
  				           ! = 1: mix number concentrations
  bl_mynn_mixscalars (max_dom)        = 0   ! = 0: off, 1: activate mixing of scalars (must set up 4D scalar array manually in WRF)
- bl_mynn_ess	    		     = 1   ! = 0: use Chaboureau and Bechtold (2002) buoyancy-flux relationships to estimate effect static stability
+ bl_mynn_ess (max_dom)  		   ! = 0: use Chaboureau and Bechtold (2002) buoyancy-flux relationships to estimate effect static stability
  				           ! = 1: use modified OGorman (2011, JAS) effective static stability
  bl_mynn_mixqt (max_dom)             = 0   ! mixing moisture species separately, 1: mixing total water (do not use)
 

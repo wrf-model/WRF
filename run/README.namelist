@@ -775,6 +775,7 @@ use_rap_aero_icbc                   = .false.   ! Set to .true. to ingest real-t
                                                   (replacing bl_mynn_tkebudget in prior versions)
  bl_mynn_closure                     = 2.5: level 2.5
                                        2.6: level 2.6 (default)
+				       2.7: level 2.7 (TTE)
                                        3.0: level 3.0
  bl_mynn_tkeadvect (max_dom)         = .false., ! default off; = .true. do MYNN tke advection
  icloud_bl                                        option to couple the subgrid-scale clouds from the PBL scheme (MYNN only) 
@@ -793,7 +794,7 @@ use_rap_aero_icbc                   = .false.   ! Set to .true. to ingest real-t
                                      0: original (Sommeria and Deardorf 1977); 
                                      1: Kuwano et al 2010, similar to option 0, but uses resolved scale gradients 
                                         as opposed to higher order moments ; 
-                                     2: from Chaboureau and Bechtold (2002, JAS, with mods, default) 
+                                     2: heavily modified Chaboureau and Bechtold (2002, JAS, default) 
  bl_mynn_edmf (max_dom)              = 1   ! activate mass-flux option in MYNN, 0: mass-flux option off
                                              Related (hidden) options: 
  bl_mynn_edmf_mom (max_dom)          = 1   ! - activates momentum transport in MYNN mass-flux scheme 
@@ -802,10 +803,16 @@ use_rap_aero_icbc                   = .false.   ! Set to .true. to ingest real-t
  bl_mynn_edmf_tke (max_dom)          = 0,  ! default; = 1 activates TKE transport in MYNN mass-flux scheme 
                                             (assuming bl_mynn_edmf > 0)
                                        0    no TKE transport (default);1: activate TKE transport
- bl_mynn_output (max_dom)            = 0,  ! do not output extra arrays
-                                       1    allocate and output extra 3D arrays from MYNN PBL
- bl_mynn_mixscalars (max_dom)        = 0   ! off, 1: activate mixing of scalars
- bl_mynn_mixqt (max_dom)             = 0   ! mixing moisture species separately, 1: mixing total water
+ bl_mynn_output (max_dom)            = 0,  ! = 0: do not output extra arrays (default)
+                                       1   ! = 1: allocate and output extra 3D arrays from MYNN-EDMF mass-flux component
+ bl_mynn_mixaerosols		     = 1,  ! = 0: do not mix qnwfa, qnifa, or qnbca
+ 				           ! = 1: mix aerosols (default)
+ bl_mynn_mixnumcon		     = 0,  ! = 0: do not mix number concentrations (qnc, qni) (default)
+ 				           ! = 1: mix number concentrations
+ bl_mynn_mixscalars (max_dom)        = 0   ! = 0: off, 1: activate mixing of scalars (must set up 4D scalar array manually in WRF)
+ bl_mynn_ess	    		     = 1   ! = 0: use Chaboureau and Bechtold (2002) buoyancy-flux relationships to estimate effect static stability
+ 				           ! = 1: use modified OGorman (2011, JAS) effective static stability
+ bl_mynn_mixqt (max_dom)             = 0   ! mixing moisture species separately, 1: mixing total water (do not use)
 
  scalar_pblmix (max_dom)             = 1 ! mix scalar fields consistent with PBL option (exch_h)
  tracer_pblmix (max_dom)             = 1 ! mix tracer fields consistent with PBL option (exch_h)
@@ -1051,8 +1058,12 @@ use_rap_aero_icbc                   = .false.   ! Set to .true. to ingest real-t
  seaice_thickness_default            = 3.0      ! default value of seaice thickness for seaice_thickness_opt=0
  tice2tsk_if2cold                    = .false.  ! set Tice to Tsk to avoid unrealistically low sea ice temperatures
  iz0tlnd                             = 0        ! thermal roughness length for sfclay (0 = old, 1 = veg dependent Chen-Zhang Czil,
-                                                      2 = Zilitinkevitch (czil=0.1))
-                                                      for mynn sfc (0=Zilitinkevitch (def),1=Chen-Zhang,2=mod Yang,3=const zt)
+                                                !     2 = Zilitinkevitch (czil=0.1)).
+						! Note for mynn sfc, this iz0tlnd option has been replaced by sf_mynn_sfcflux_water and sf_mynn_sfcflux_land
+ sf_mynn_sfcflux_water		     = 1        ! MYNN-SFC option for the calculation of z0, zt and zq over water
+ 				                ! 0:COARE3.0, 1:COARE3.5 (default), 2:Davis/COARE3.5 ,3:Davis/Garratt, 4:Taylor-Yelland
+ sf_mynn_sfcflux_land                = 0        ! MYNN-SFC option for the calculation of zt and zq over land
+						! 0:constant Czil (default), 1:variable Czil, 2:Yang (2008)
  mp_tend_lim                         = 10.,     ! limit on temp tendency from mp latent heating from radar data assimilation
  prec_acc_dt (max_dom)               = 0.,      ! number of minutes in precipitation bucket - will add three
                                                   new 2d output fields: prec_acc_c, prec_acc_nc and snow_acc_nc

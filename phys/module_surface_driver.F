@@ -5635,7 +5635,7 @@ CONTAINS
            ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme,                  &
            its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte,                  &
            ustm=ustm_sea,ck=ck_sea,cka=cka_sea,cd=cd_sea,cda=cda_sea,          &
-           xice=xice,xice_threshold=xice_threshold,	                       &
+           xice=xice,xice_threshold=xice_threshold,                            &
            sf_mynn_sfcflux_land=sf_mynn_sfcflux_land,                          &
            sf_mynn_sfcflux_water=sf_mynn_sfcflux_water,isfflx=isfflx,          &
            flag_lsm=flag_lsm,restart=restart,                                  &

@@ -103,8 +103,9 @@ use module_model_constants, only :  piconst
 !
 
 !===Huang and Wang, 2025/12/28, urban nature-based solutions for single layer UCM (including trees)===
-   INTEGER                         :: TREEOPTION      ! Urban Tree&Vegetation Option ! add by yuqi
-   REAL                            :: fvg_data = 0.0  ! vegetated ground fraction from URBPARM
+   INTEGER                         :: TREEOPTION      ! Urban Tree&Vegetation Option ! urban-nbs
+   INTEGER                         :: TTscheme        ! Tree temperature solution   [0: diagnostic, 1: prognostic]
+   REAL, ALLOCATABLE, DIMENSION(:) :: FVG_TBL         ! vegetated ground fraction from URBPARM
    REAL, ALLOCATABLE, DIMENSION(:) :: RTREE_TBL       ! Tree crown radius [normalized]
    REAL, ALLOCATABLE, DIMENSION(:) :: RTREE_M_TBL     ! Tree crown radius in meter
    REAL, ALLOCATABLE, DIMENSION(:) :: RW_M_TBL        ! Road width in meter																		   
@@ -117,6 +118,8 @@ use module_model_constants, only :  piconst
    REAL, ALLOCATABLE, DIMENSION(:) :: CAPVG_TBL       ! Heat capacity of vegetated ground
    REAL, ALLOCATABLE, DIMENSION(:) :: EPSVG_TBL       ! Emissivity of vegetated ground
    REAL, ALLOCATABLE, DIMENSION(:) :: EPST_TBL        ! Emissivity of tree canopy
+   REAL, ALLOCATABLE, DIMENSION(:) :: ALBVG_TBL       ! Emissivity of vegetated ground
+   REAL, ALLOCATABLE, DIMENSION(:) :: ALBT_TBL        ! Emissivity of tree canopy																						   
 !===end urban nature-based solutions processes===
 
    CHARACTER (LEN=256) , PRIVATE   :: mesg
@@ -138,7 +141,7 @@ use module_model_constants, only :  piconst
 !      NCAR/RAP mukul@ucar.edu
 !
 ! Purpose:
-!     Calculate surface temeprature, fluxes, canopy air temperature, and canopy wind
+!     Calculate surface temperature, fluxes, canopy air temperature, and canopy wind
 !
 ! Subroutines:
 !     module_sf_urban
@@ -151,8 +154,8 @@ use module_model_constants, only :  piconst
 !
 ! Input Data from WRF [MKS unit]:
 !
-!     UTYPE  [-]     : Urban type. 1=Commercial/Industrial; 2=High-intensity residential; 
-!                    : 3=low-intensity residential 
+!     UTYPE  [-]     : Urban type. 1=low-intensity residential; 2=High-intensity residential; 
+!                    : 3= Commercial/Industrial
 !     TA     [K]     : Potential temperature at 1st wrf level (absolute temp)
 !     QA     [kg/kg] : Mixing ratio at 1st atmospheric level
 !     UA     [m/s]   : Wind speed at 1st atmospheric level
@@ -180,7 +183,7 @@ use module_model_constants, only :  piconst
 !     OMG    [rad]   : solar hour angle
 !     XLAT   [deg]   : latitude
 !     DELT   [sec]   : Time step
-!     ZNT    [m]     : Roughnes length
+!     ZNT    [m]     : Roughness length
 !
 ! Output Data to WRF [MKS unit]:
 !
@@ -302,7 +305,8 @@ use module_model_constants, only :  piconst
 !     Kusaka et al. (2001) Bound.-Layer Meteor., vol.101, p329-358
 !
 ! History:
-!     2025/11,         modified by Yuqi Huang, Chenghao Wang (Univ. Oklahoma) [urban nature-based solutions, including trees]
+!     2025/11,         modified by Yuqi Huang, Chenghao Wang (Univ. Oklahoma) [urban nature-based solutions]
+!     2024/08,         modified by Yuqi Huang, Chenghao Wang (Univ. Oklahoma) [detailed code annotation]
 !     2014/10,         modified by Jiachuan Yang (ASU)
 !     2006/06          modified by H. Kusaka (Univ. Tsukuba), M. Tewari 
 !     2005/10/26,      modified by Fei Chen, Mukul Tewari
@@ -333,16 +337,15 @@ use module_model_constants, only :  piconst
                     lp_urb,hgt_urb,frc_urb,lb_urb,zo_check,           & ! O
                     CMCR,TGR,TGRL,SMR,CMGR_URB,CHGR_URB,jmonth,       & ! H
                     DRELR,DRELB,DRELG,FLXHUMR,FLXHUMB,FLXHUMG,        &
-                    ! added by Chenghao Wang
-	              TVG,TT,XXXVG,TVGL,SMG,CMCG,FLXHUMVG,FLXHUMT,    & ! H (add by huang)
+	                 TVG,TT,XXXVG,TVGL,SMG,CMCG,FLXHUMVG,FLXHUMT,      & ! H (add in urban-nbs)
                     lf_urb_s, z0_urb, vegfrac_in                      & ! I (distributed aerodynamics)
                     )
    IMPLICIT NONE
 
-   REAL, PARAMETER    :: CP=0.24          ! heat capacity of dry air  [cgs unit]  ! cal/g/c (yuqi)
-   REAL, PARAMETER    :: EL=583.          ! latent heat of vaporization [cgs unit]  ! cal/g (yuqi)
+   REAL, PARAMETER    :: CP=0.24          ! heat capacity of dry air  [cgs unit]  ! cal/g/c
+   REAL, PARAMETER    :: EL=583.          ! latent heat of vaporization [cgs unit]  ! cal/g
    REAL, PARAMETER    :: SIG=8.17E-11     ! stefun bolzman constant   [cgs unit]  ! cal/cm^2/min/k^4
-   REAL, PARAMETER    :: SIG_SI=5.67E-8   !                           [MKS unit]  ! w/m2/k^4 (yuqi)
+   REAL, PARAMETER    :: SIG_SI=5.67E-8   !                           [MKS unit]  ! w/m2/k^4
    REAL, PARAMETER    :: AK=0.4           ! kalman const.                [-]
    REAL, PARAMETER    :: PI=3.14159       ! pi                           [-]
    REAL, PARAMETER    :: TETENA=7.5       ! const. of Tetens Equation    [-]
@@ -369,7 +372,6 @@ use module_model_constants, only :  piconst
    !-------------------------------------------------------------------------------
    REAL :: TVGP, TTP ! Temperature at Pervious Time Step
    REAL :: ALBGE     ! Effective Surface Albedo of Ground 
-   REAL :: ALBVG     ! Surface Albedo of Vegetated Ground
    REAL :: XI        ! Tree Shadow Related Variable
    REAL :: ANGLE, TAN1, TAN2               ! Reference Angles Between Tree and Roof 
    REAL :: SDT       ! Direct Short Wave Radiation incident on Tree
@@ -391,7 +393,7 @@ use module_model_constants, only :  piconst
    REAL, DIMENSION(1:num_road_layers) :: ZSOILG    ! Total Depth of Vegetated Ground (Negative) [m], (Accumulated From Surface)
    REAL, DIMENSION(1:num_road_layers) :: SMGP      ! Soil Moisture at Each Layer on Vegetated Ground at Pervious Time Step
    REAL, DIMENSION(1:num_road_layers) :: ETG       ! Vegetated Canopy Evapotranspiration
-   REAL, DIMENSION(1:num_road_layers) :: DZVG      ! Depth of Each Single Layer (Positive)[m]    ! This Could be an Input Variable (yuqi)
+   REAL, DIMENSION(1:num_road_layers) :: DZVG      ! Depth of Each Single Layer (Positive)[m]   
    REAL :: QS0VG, DQS0VGDTVG, QS0T, DQS0TDTT       ! Saturation QS and derivative for vegetated ground/tree
    REAL :: EPVG      ! Potential Evaporation For Vegetated Ground [kg/m2/s]
    REAL :: EDIRG     ! Direct Evaporation From Vegetated Ground
@@ -415,8 +417,8 @@ use module_model_constants, only :  piconst
    REAL :: ALPHAT    ! sensible heat transfer coefficient for urban trees
    REAL :: W2        ! Deep Soil Moisture
    REAL :: RS_LEAF   ! Leaf Stomatal Resistance
-   REAL :: ELET      ! Latent Heat of Tree Leaf    ! w/m/m (yuqi)
-   REAL :: AVAILABLE_WATER_SUM, POTENTIAL_ELET     ! newly added by yuqi
+   REAL :: ELET      ! Latent Heat of Tree Leaf    ! w/m/m 
+   REAL :: AVAILABLE_WATER_SUM, POTENTIAL_ELET    
    REAL :: QS0C      ! Saturation specific humidity at canyon air temperature
    CHARACTER(LEN=256)   :: WARN_MSG ! A character string for the warning message
    REAL, DIMENSION(1:num_road_layers) :: SROOT, SROOTP     ! Root Water Uptake (m/s)
@@ -424,8 +426,8 @@ use module_model_constants, only :  piconst
    REAL(Kind = 8) :: DRS_LEAF, M,D,DD,FE,DFE,S,DM,KK,L,N
    REAL(Kind = 8) :: DELEVGDTVG,DELEVGDTT,DELETDTB,DELETDTG,DELETDTVG,DELETDTT,DTCDTVG,DTCDTT ! derivatives wrt temperature (latent heat)
    REAL :: DQCDTVG,DQCDTT,ELEVG,KVG,G0VG,DG0BDTVG,DG0BDTT,DG0GDTVG,DG0GDTT,DG0VGDTB,DG0VGDTG,DG0VGDTVG,DG0VGDTT ! derivatives wrt temperature
-   REAL(Kind = 8) :: WF,A,B,C,E,FF,GG,H,VGF,I,J,O,P,CHARA,det,det_tol,det_scale      !,RVGT  
-   REAL(Kind = 8) :: A_use,FF_use,KK_use,lambda,relax
+   REAL(Kind = 8) :: WF,A,B,C,E,FF,GG,H,VGF,I,J,O,P,CHARA,det,det_tol,det_scale        
+   REAL(Kind = 8) :: A_use,FF_use,KK_use,lambda,relax,W2_num,W2_den,den_qc
    REAL :: max_step
    REAL :: SSOILG  ! Soil Heat Flux output from SHFLX W/m2  
    REAL :: TGE, TGEP, QS0GE, ALPHAGE, FLXTHVG, FLXTHT ! effective ground values
@@ -433,12 +435,11 @@ use module_model_constants, only :  piconst
    !----------- fixed universe parameters for urban vegetation  ---------------
    INTEGER, PARAMETER :: NVG   = 4         ! Total Layer of Vegetated Ground
    REAL, PARAMETER    :: CPP=1004.5        ! heat capacity of dry air    [J/K/kg]
-   REAL, PARAMETER    :: ALBT  = 0.2       ! Leaf Surface Albedo
    REAL, PARAMETER    :: DLEAF = 0.1       ! Unit = m
    REAL, PARAMETER    :: TREF  = 298.0     ! Unit = K
    REAL, PARAMETER    :: EREF  = 3167.0    ! Unit = K
    
-   !----------- local variables from read_para (Yuqi)  ---------------
+   !----------- local variables from read_para (urban-nbs)  ---------------
    REAL                    :: FVG           ! Vegetated Fraction for Ground 
    REAL                    :: Z0VG          ! Roughness Length for Momentum of Vegetated Ground
    REAL                    :: Z0HVG         ! Roughness Length for Heat of Vegetated Ground  
@@ -450,8 +451,10 @@ use module_model_constants, only :  piconst
    REAL                    :: RW_M          ! road width in meters																	   
    REAL                    :: DTREE         ! Distance of Tree Crown Center From Wall (RW/2)
    REAL                    :: HTREE         ! Height of Tree Crown Center
-   REAL                    :: LAI_VEG       ! Vegetated Ground Leaf Areal Index  
-   REAL                    :: LAI_TREE      ! Leaf Area Index of Trees (Could be an input)
+   REAL                    :: ALBT          ! Leaf Surface Albedo
+   REAL                    :: ALBVG         ! Vegetated ground albedo																					   
+   REAL                    :: LAI_TREE      ! Leaf Area Index of Trees 
+   REAL                    :: LAI_VEG       ! Vegetated Ground Leaf Areal Index  																					 
 ! -------------------------------------End Urban Vegetation Variable Define-----------------------------------------------------------------------------------------------------
 
 
@@ -478,8 +481,8 @@ use module_model_constants, only :  piconst
 ! I: input variables from LSM to Urban
 !-------------------------------------------------------------------------------
 
-   INTEGER, INTENT(IN) :: UTYPE ! urban type [1=Commercial/Industrial, 2=High-intensity residential, 
-                                ! 3=low-intensity residential]
+   INTEGER, INTENT(IN) :: UTYPE ! urban type [1=low-intensity residential, 2=High-intensity residential, 
+                                ! 3=Commercial/Industrial]
    INTEGER, INTENT(IN) :: jmonth! current month 
    REAL, INTENT(IN)    :: TA   ! potential temp at 1st atmospheric level [K]
    REAL, INTENT(IN)    :: QA   ! mixing ratio at 1st atmospheric level  [kg/kg]
@@ -511,7 +514,7 @@ use module_model_constants, only :  piconst
 !-------------------------------------------------------------------------------
    REAL, INTENT(INOUT) :: mh_urb   ! mean building height [m]
    REAL, INTENT(INOUT) :: stdh_urb ! standard deviation of building height [m]
-   REAL, INTENT(INOUT) :: hgt_urb  ! area weighted mean building height [m]      ! if hgt_urb>0 use NUDAPT else use default urban parameter table (yuqi)
+   REAL, INTENT(INOUT) :: hgt_urb  ! area weighted mean building height [m]      ! if hgt_urb>0 use NUDAPT else use default urban parameter table
    REAL, INTENT(INOUT) :: lp_urb   ! plan area fraction [-]
    REAL, INTENT(INOUT) :: frc_urb  ! urban fraction [-]
    REAL, INTENT(INOUT) :: lb_urb   ! building surface to plan area ratio [-]
@@ -607,7 +610,7 @@ use module_model_constants, only :  piconst
    REAL :: RLMO_URB
    REAL :: AKANDA_URBAN
    
-   REAL :: TH2X                                                !m
+   REAL :: TH2X  !m
    
    INTEGER :: BOUNDR, BOUNDB, BOUNDG
    INTEGER :: CH_SCHEME, TS_SCHEME
@@ -671,7 +674,7 @@ use module_model_constants, only :  piconst
    REAL :: XXX2, PSIM2, PSIH2, XXX10, PSIM10, PSIH10
    REAL :: PSIX, PSIT, PSIX2, PSIT2, PSIX10, PSIT10
 
-   REAL :: TRP, TBP, TGP, TCP, QCP, TST, QST      ! TCP is local variable ? (yuqi)
+   REAL :: TRP, TBP, TGP, TCP, QCP, TST, QST      
    REAL :: TSP, CHS_LOCAL, CHS2_LOCAL
 
    REAL :: WDR,HGT2,BW,DHGT
@@ -696,14 +699,14 @@ use module_model_constants, only :  piconst
 !   REAL :: DQS0GRDTGR, ETR, ECR,RAIN1, RAINDR, DEW, ETAR, BETGR
    REAL :: DQS0GRDTGR, ECR,RAIN1, RAINDR, DEW, ETAR, BETGR
 !   REAL :: DF1, RGR, RGRR, RCH, RR1, RR2, YY, ZZ1, SSOILR
-   REAL :: DF1, RGR, RGRR, RCH, YY, ZZ1, SSOILR, RVGT !(RVGT add by yuqi)
+   REAL :: DF1, RGR, RGRR, RCH, YY, ZZ1, SSOILR, RVGT !(RVGT add by Yuqi)
    REAL :: DRRDTGR, DHRDTGR, DELERDTGR, DG0RDTGR, DFDVT  
    real,parameter  :: SHDFAC   = 0.80   ! Vegetated area fraction of green roof vegetation
    real,parameter  :: ALBV     = 0.20   ! green roof albedo
    real,parameter  :: EPSV     = 0.93   ! green roof emissivity
    real,parameter  :: LAI      = 1.50   ! leaf area index on green roof
    real,parameter  :: CMCMAX   = 0.5E-3 ! Maximum canopy interception capacity   
-   real,parameter  :: SMCREF   = 0.329  ! Reference soil moisture
+   real,parameter  :: SMCREF   = 0.329  ! Reference soil moisture  ! below variables should be soil type dependent (Yuqi)
    real,parameter  :: SMCDRY   = 0.066  ! Residual  soil moisture
    real,parameter  :: SMCWLT   = 0.084  ! Wilting point        
    real,parameter  :: SMCMAX   = 0.439  ! Saturated soil moisture
@@ -748,9 +751,9 @@ use module_model_constants, only :  piconst
   CALL read_param(UTYPE,ZR,SIGMA_ZED,Z0C,Z0HC,ZDC,SVF,R,RW,HGT,  &
                   AH,CAPR,CAPB,CAPG,AKSR,AKSB,AKSG,ALBR,ALBB,    &
                   ALBG,EPSR,EPSB,EPSG,Z0R,Z0B,Z0G,Z0HB,Z0HG,     &
-                  BETR,BETB,BETG,TRLEND,TBLEND,TGLEND,           &
-                  RTREE,RTREE_M,RW_M,HTREE,DTREE,LAI_TREE,LAI_VEG,    &    ! added by yuqi
-                   Z0VG,Z0HVG,CAPVG,EPSVG,EPST,                  &    ! added by yuqi
+                  BETR,BETB,BETG,TRLEND,TBLEND,TGLEND,ALBVG,ALBT,FVG, &
+                  RTREE,RTREE_M,RW_M,HTREE,DTREE,LAI_TREE,LAI_VEG,    &    ! urban-nbs
+                   Z0VG,Z0HVG,CAPVG,EPSVG,EPST,                  &    ! urban-nbs
 !for BEP
                    NUMDIR, STREET_DIRECTION, STREET_WIDTH,        & 
                    BUILDING_WIDTH, NUMHGT, HEIGHT_BIN,            & 
@@ -758,7 +761,7 @@ use module_model_constants, only :  piconst
 !end BEP
                   BOUNDR,BOUNDB,BOUNDG,CH_SCHEME,TS_SCHEME,      &
                   AKANDA_URBAN,ALH)
-   FVG = FVG_DATA
+
 
 ! Glotfelty, 2012/07/05, NUDAPT Modification
 
@@ -799,7 +802,7 @@ use module_model_constants, only :  piconst
   !WRITE_MESSAGE(mesg)
  
  !Calculate Building Width and Street Width Based on BEP formulation
- if(lb_urb.gt.lp_urb)THEN             ! building surface to plan area ratio > plain area fraction  (yuqi)
+ if(lb_urb.gt.lp_urb)THEN             ! building surface to plan area ratio > plain area fraction
   BW=2.*hgt_urb*lp_urb/(lb_urb-lp_urb)
   SW=2.*hgt_urb*lp_urb*((frc_urb/lp_urb)-1.)/(lb_urb-lp_urb)
   !write(mesg,*) 'Building Width',BW
@@ -854,10 +857,10 @@ use module_model_constants, only :  piconst
       beta_macd  = 1.0
 
 
-      ZDC = ZR * ( 1.0 + ( alpha_macd ** ( -R ) )  * ( R - 1.0 ) )             ! e.q 23 in Macdonald's (1998) (yuqi)
+      ZDC = ZR * ( 1.0 + ( alpha_macd ** ( -R ) )  * ( R - 1.0 ) )             ! e.q 23 in Macdonald's (1998)
 
       Z0C = ZR * ( 1.0 - ZDC/ZR ) * &
-           exp (-(0.5 * beta_macd * Cd / (VonK**2) * ( 1.0-ZDC/ZR) * lambda_f )**(-0.5))         ! e.q 26 in Macdonald's (1998) (yuqi)
+           exp (-(0.5 * beta_macd * Cd / (VonK**2) * ( 1.0-ZDC/ZR) * lambda_f )**(-0.5))         ! e.q 26 in Macdonald's (1998)
      
       if(zo_check.eq.1)THEN
         write(mesg,*) 'Roughness Length NUDAPT',Z0C
@@ -1017,7 +1020,7 @@ use module_model_constants, only :  piconst
      ZC=0.7*ZR
      XLB=0.4*(ZR-ZDC)
      ! BB formulation from Inoue (1963)
-! #ifdef DOUBLE_PRECISION                                                 ! dlog is newly added (yuqi) - code follows HRLDAS (2025 summer)
+! #ifdef DOUBLE_PRECISION                                                 ! dlog is newly added (Yuqi) - code follows HRLDAS (2025 summer)
 !     BB = 0.4 * ZR / ( XLB * dlog( ( ZR - ZDC ) / Z0C ) )
 ! #else
      BB = 0.4 * ZR / ( XLB * alog( ( ZR - ZDC ) / Z0C ) )
@@ -1037,6 +1040,11 @@ use module_model_constants, only :  piconst
 !   SHADOW = .false.
 ! SHADOW has not been activated in previous versions of SLUCM (chenghao) - it's not turned on
 
+   TAU = EXP(-0.61 * LAI_TREE)
+   IF (TREEOPTION .eq. 1 ) THEN
+      CALL VF_TREE_ANALYTICAL(RW, HGT, HTREE, RTREE, TAU, VFGS_TREE, VFGW_TREE, VFGT_TREE, VFWS_TREE, VFWG_TREE, VFWW_TREE, VFWT_TREE, VFTS_TREE, VFTG_TREE, VFTW_TREE)
+   END IF
+   
    IF (SSG > 0.0) THEN
 
      IF(SHADOW) THEN              ! shadow effects, calculate SLX
@@ -1084,7 +1092,7 @@ use module_model_constants, only :  piconst
        SG1=SX*VFGS*(1.-ALBG)
        SB1=SX*VFWS*(1.-ALBB)
        SG2=SB1*ALBB/(1.-ALBB)*VFGW*(1.-ALBG)
-       SB2=SG1*ALBG/(1.-ALBG)*VFWG*(1.-ALBB) + SB1*ALBB*VFWW    ! add one term in the new version (yuqi)
+       SB2=SG1*ALBG/(1.-ALBG)*VFWG*(1.-ALBB) + SB1*ALBB*VFWW    ! add one term in the new version (urban-nbs)
 
      ELSEIF (TREEOPTION .ne. 1) THEN         ! shadow effects model without urban vegetations
 
@@ -1093,17 +1101,17 @@ use module_model_constants, only :  piconst
        SG1=SD*(RW-SLX)/RW*(1.-ALBG)+SQ*VFGS*(1.-ALBG)
        SB1=SD*SLX/W*(1.-ALBB)+SQ*VFWS*(1.-ALBB)
        SG2=SB1*ALBB/(1.-ALBB)*VFGW*(1.-ALBG)
-       SB2=SG1*ALBG/(1.-ALBG)*VFWG*(1.-ALBB) + SB1*ALBB*VFWW         ! newly added last term (Huang)
-     ELSE                                    ! shadow effects model with urban vegetations (Huang)
+       SB2=SG1*ALBG/(1.-ALBG)*VFWG*(1.-ALBB) + SB1*ALBB*VFWW         ! newly added last term (urban-nbs)
+     ELSE                                    ! shadow effects model with urban vegetations (urban-nbs)
        ! ------------------------------------------------------------------------------------------------------------------  
        ! tree module only activated under shadow case
        ! ------------------------------------------------------------------------------------------------------------------ 
-       IF ( HTREE+RTREE .gt. ZR) THEN   ! add by Huang
+       IF ( HTREE+RTREE .gt. ZR) THEN   ! add in urban-nbs
            FATAL_ERROR("tree crown protrude roof height, adjust tree size")
        END IF
         
        ALBGE = (1. - FVG) * ALBG + FVG * ALBVG
-       XI = SLX/HGT             !  check if XI matches with our ucm, (yuqi)
+       XI = SLX/HGT             !  check if XI matches with offline UCM (urban-nbs)
 
        ANGLE = DTREE**2. + (HGT - HTREE)**2. - RTREE**2.
        TAN1 = (RTREE * (HGT-HTREE) + DTREE * SQRT(ANGLE))/((HGT - HTREE) * SQRT(ANGLE) - RTREE * DTREE)
@@ -1120,13 +1128,11 @@ use module_model_constants, only :  piconst
        ELSE                                           ! XI <= tan2 in the sun - completely illuminated
          SDT = SD * (2. * RTREE * SQRT(1. + XI**2.))/(2. * PI * RTREE)
        END IF
-       print*, 'THEATAZ is:', THEATAZ      ! add by yuqi for testing purpose
+       print*, 'THEATAZ is:', THEATAZ      ! urban-nbs for testing purpose
        
-       TAU = EXP(-0.61 * LAI_TREE)
+
        CALL SHADOW_TREE(XI, HGT, RW, HTREE, RTREE, DTREE, CHI_SHADED, ETA_SHADED, CHI_SHADED_TREE, ETA_SHADED_TREE)
-       ! print*, 'road weidth, building height, tree height, tree radius are:', RW, HGT, HTREE, RTREE       ! add by yuqi for testing purpose
-       CALL VF_TREE_ANALYTICAL(RW, HGT, HTREE, RTREE, TAU, VFGS_TREE, VFGW_TREE, VFGT_TREE, VFWS_TREE, VFWG_TREE, VFWW_TREE, VFWT_TREE, VFTS_TREE, VFTG_TREE, VFTW_TREE)
-       
+       ! print*, 'road weidth, building height, tree height, tree radius are:', RW, HGT, HTREE, RTREE       ! add for urban-nbs for testing purpose
 
        SDG = SD * (RW - CHI_SHADED + CHI_SHADED_TREE * TAU)/RW 
        SDB = SD * XI * (HGT - ETA_SHADED +ETA_SHADED_TREE * TAU)/W
@@ -1151,7 +1157,7 @@ use module_model_constants, only :  piconst
      SR=SR1    ! units: [cal/cm2/s]
      SGR=SGR1
      SG=SG1+SG2
-	 SVG=SVG1+SVG2	   ! Huang
+     SVG=SVG1+SVG2	   ! urban-nbs
      SB=SB1+SB2
 
      IF (TREEOPTION == 1) THEN
@@ -1347,14 +1353,12 @@ use module_model_constants, only :  piconst
        QS0GR=0.622*ES/(PS-0.378*ES) 
        DQS0GRDTGR = DESDT*0.622*PS/((PS-0.378*ES)**2.) 
        EPGR=RHOO*CHGR*UA*(QS0GR-QA)   ! Potential evaporation [kg/m2/s]
-       ! print*, 'vegetated roof temperature is:', TGRP       ! add by yuqi for testing purpose
-       ! print*, 'potential et from vegetated roof is:', EPGR       ! add by yuqi for testing purpose 
        
        IF (EPGR > 0.0) THEN
        ! Direct evaporation from soil on green roof 
        CALL DIREVAP (EDIR,EPGR,SMRP(KZ),SHDFAC,SMCMAX,SMCDRY,FXEXP)         ! CONTRIBUTED FROM BARE SOIL
        ! Evapotranspiration and canopy intercepted evaporation
-       CALL TRANSP  (ETTR,ETR,ECR,SHDFAC,EPGR,CMCRP,CFACTR,CMCMAX,LAI,RSMIN,RSMAX,RGL,SX, &     ! CONTRIBUTED FROM VEGETED all layers (yuqi)
+       CALL TRANSP  (ETTR,ETR,ECR,SHDFAC,EPGR,CMCRP,CFACTR,CMCMAX,LAI,RSMIN,RSMAX,RGL,SX, &     ! CONTRIBUTED FROM VEGETED all layers
                      TGRP,TA,QA,SMRP,SMCWLT,SMCREF,CPP,PS,CHGR,EPSV,DELT,NROOT,NGR,DZGR, &
                      ZSOILR,HS)
        ! Update moisture in soil layers
@@ -1410,7 +1414,7 @@ use module_model_constants, only :  piconst
        DHRDTGR   = RHO*CP*CHGR*UA*100.
        DELERDTGR = RHO*EL*CHGR*UA*BETGR*DQS0GRDTGR*100.
        DG0RDTGR  = 2.*DF1/ DZGR(KZ) * ( 1.0 / 4.1868 ) * 1.E-4
-       DFDVT = DRRDTGR - DHRDTGR - DELERDTGR - DG0RDTGR        ! HERE USE ETP INSTEAD OF ACTUAL ET TO DERIVE DELEDTGR (YUQI)
+       DFDVT = DRRDTGR - DHRDTGR - DELERDTGR - DG0RDTGR        
        DTGR = FV/DFDVT/ 6
        TGR  = TGRP - DTGR
        TGRP = TGR
@@ -1448,7 +1452,7 @@ ENDIF
 
    T1VC = TCP* (1.0+ 0.61 * QA) 
    RLMO_URB=0.0
-   CALL SFCDIF_URB(ZA,Z0C,T1VC,TH2V,UA,AKANDA_URBAN,CMC_URB,CHC_URB,RLMO_URB,CDC)      ! CDC: momentum exchange coefficient for canopy (yuqi)
+   CALL SFCDIF_URB(ZA,Z0C,T1VC,TH2V,UA,AKANDA_URBAN,CMC_URB,CHC_URB,RLMO_URB,CDC)      ! CDC: momentum exchange coefficient for canopy
    ALPHAC =  RHO*CP*CHC_URB
 
    IF (CH_SCHEME == 1) THEN 
@@ -1730,8 +1734,7 @@ ENDIF
 
    ELSE
    !-------------------------------------------------------------------------------
-   ! ENERGY BUDGET WITH URBAN TREE (Huang)
-   ! VFAC: VEGE FRACTION IN VEGETATED GROUND, SIMILAR TO SHDFAC, BUT SHOULD BE PARAMETERIZED (YUQI)
+   ! ENERGY BUDGET WITH URBAN TREE (urban-nbs)																					   
    ! NEW VARIABLES: 
    ! BHVG,Z0VG,Z0HVG,RIBVG,TVGP,XXXVG,ALPHAVG,CDVG,CHVG,SRUN1,SRUN2,SRUN3,ZSOILG(total depth),DZVG(depth of each single layer),
    ! QS0VG,DQS0VGDTVG,QS0T,DQS0TDTT,EPVG,EDIRG,ETTG,ETG,ECG,LAI_VEG,NVG,DRIPG,ETAG,BETVG,
@@ -1751,7 +1754,7 @@ ENDIF
     IF (TS_SCHEME == 1) THEN
 
       ! ------------ FIRST CALCULATE CHVG, CDVG, BETVG----------
-      IF (CH_SCHEME == 1) THEN                    ! calculate heat exchange coefficient for vegetated ground (yuqi)
+      IF (CH_SCHEME == 1) THEN                    ! calculate heat exchange coefficient for vegetated ground
          Z=ZDC
          BHVG=LOG(Z0VG/Z0HVG)/0.4
          RIBVG=(9.8*2/(TCP+TVGP))*(TCP-TVGP)*(Z+Z0VG)/(UC*UC)
@@ -1762,39 +1765,64 @@ ENDIF
       END IF
       CHVG=ALPHAVG/RHO/CP/UC
 
-      SRUN1 = 0.0                                 ! mainly following green roof's scheme below (yuqi)
+      SRUN1 = 0.0                                 ! mainly following green roof's scheme below (urban-nbs)
       SRUN2 = 0.0
       SRUN3 = 0.0
 
       DZVG = DZGR                                 ! set identical green roof depth and vegetated ground layer depth (Yuqi) [m]
       KZ = 1
-      ZSOILG (KZ) = - DZVG (KZ)                   ! dz: (positive) depth of each single layer; zsoil: (negative) accumulated depth from ground  (yuqi)
-      DO KZ = 2,NVG                               ! nvg: total layer of vegetated ground, = 4 in here (yuqi)
+      ZSOILG (KZ) = - DZVG (KZ)                   ! dz: (positive) depth of each single layer; zsoil: (negative) accumulated depth from ground
+      DO KZ = 2,NVG                               ! nvg: total layer of vegetated ground, = 4 in here (urban-nbs)
          ZSOILG (KZ) = - DZVG(KZ) + ZSOILG (KZ -1)
       END DO
 
-      TTP = TCP
+      IF (TTscheme .eq. 0 ) THEN   ! Option1: residual approach / diagnostic approach
+         TTP = TCP 
+      ELSEIF (TTscheme .eq. 1 ) THEN  ! Option2:  resistance approach / prognostic approach
+         TTP = TT        
+      ENDIF		
+
+      ES=6.11*EXP( (2.5*10**6/461.51)*(TTP-273.15)/(273.15*TTP) )        
+      QS0T=0.622*ES/(PS-0.378*ES)   
+      RA_LEAF = 58 * (LAI_TREE**0.56) * SQRT(DLEAF/UC) 
+
+      ! Option1: mid-layer approach
+      !W2 = 0.5 * (SMG(NVG/2-1) + SMG(NVG/2))   
+      
+      ! Option2:  weighted averaged approach
+      W2_num = 0.0
+      W2_den = 0.0
+      DO K = 1, 3
+         W2_num = W2_num + SMG(K) * DZVG(K)
+         W2_den = W2_den + DZVG(K)
+      END DO
+      W2 = W2_num / W2_den
+
+      CALL STOMATAL(RS_LEAF, RSMIN, SLEAF, LAI_TREE, W2, SMCWLT, SMCMAX, TCP, TTP, QCP, QS0T)
+
       DO ITERATION=1,100
-         ! print* , 'Current iteration:', ITERATION
+
+         TBP = MAX(223.15, MIN(353.15, TBP))
+         TGP = MAX(223.15, MIN(353.15, TGP))
+         TVGP = MAX(223.15, MIN(353.15, TVGP))
+		 
          KZ=1     
          ES=6.11*EXP( (2.5*10**6/461.51)*(TVGP-273.15)/(273.15*TVGP) )
          DESDT=(2.5*10**6/461.51)*ES/(TVGP**2)
          QS0VG=0.622*ES/(PS-0.378*ES) 
          DQS0VGDTVG = DESDT*0.622*PS/((PS-0.378*ES)**2) 
          EPVG=RHOO*CHVG*UC*(QS0VG-QCP)
+		 
+         SMGP = MAX(SMGP, SMCWLT) !urban-nbs
+         SMGP = MIN(SMGP, SMCMAX)
 
-
-         !print*, 'vegetated ground temperature is:', TVGP             ! add by yuqi for testing purpose
-         !print*, 'potential et from vegetated ground is:', EPVG       ! add by yuqi for testing purpose 
-         !print*, 'soil moisture for vegetated ground is:', SMGP       ! add by yuqi for testing purpose
-
-         VFAC = 1.0 - EXP(-0.52 * LAI_VEG)           ! following PhenologyMainMod.F90 in Noah_MP (yuqi) 
+         VFAC = 1.0 - EXP(-0.52 * LAI_VEG)           ! following PhenologyMainMod.F90 in Noah_MP (urban-nbs) 
          IF (EPVG > 0.0) THEN 
-            CALL DIREVAP (EDIRG,EPVG,SMGP(KZ),VFAC,SMCMAX,SMCDRY,FXEXP)                              ! CONTRIBUTED FROM BARE SOIL (YUQI) 
-            CALL TRANSP  (ETTG,ETG,ECG,VFAC,EPVG,CMCGP,CFACTR,CMCMAX,LAI_VEG,RSMIN,RSMAX,RGL,SX, &   ! CONTRIBUTED FROM VEGETED, USE TC AND QC INSTEAD OF TA AND QA (YUQI) 
-                         TVGP,TCP,QCP,SMGP,SMCWLT,SMCREF,CPP,PS,CHVG,EPSVG,DELT,NROOT,NVG,DZVG, &   ! NROOT IS NUMBER OF VEGE ROOT, SAME AS IN GREEN ROOF (YUQI) 
+            CALL DIREVAP (EDIRG,EPVG,SMGP(KZ),VFAC,SMCMAX,SMCDRY,FXEXP)                              ! CONTRIBUTED FROM BARE SOIL (urban-nbs) 
+            CALL TRANSP  (ETTG,ETG,ECG,VFAC,EPVG,CMCGP,CFACTR,CMCMAX,LAI_VEG,RSMIN,RSMAX,RGL,SX, &   ! CONTRIBUTED FROM VEGETED, USE TC AND QC INSTEAD OF TA AND QA (urban-nbs) 
+                         TVGP,TCP,QCP,SMGP,SMCWLT,SMCREF,CPP,PS,CHVG,EPSVG,DELT,NROOT,NVG,DZVG, &    ! NROOT IS NUMBER OF VEGE ROOT, SAME AS IN GREEN ROOF (urban-nbs) 
                            ZSOILG,HS) 
-            CALL SMFLX   (SMGP,SMG,NVG,CMCGP,CMCG,DELT,RAIN,ZSOILG,SMCMAX,BEXP,SMCWLT,SROOTP,DKSAT,&   ! NVG: LAYER OF VEGETATED GROUND (YUQI) 
+            CALL SMFLX   (SMGP,SMG,NVG,CMCGP,CMCG,DELT,RAIN,ZSOILG,SMCMAX,BEXP,SMCWLT,SROOTP,DKSAT,&   ! NVG: LAYER OF VEGETATED GROUND (urban-nbs) 
                            DWSAT,VFAC,CMCMAX,SRUN1,SRUN2,SRUN3,EDIRG,ECG,ETG,DRIPG)   
          ELSE
             DEW  = - EPVG
@@ -1805,8 +1833,10 @@ ENDIF
             CALL SMFLX (SMGP,SMG,NVG,CMCGP,CMCG,DELT,RAINDR,ZSOILG,SMCMAX,BEXP,SMCWLT,SROOTP,DKSAT, &
                         DWSAT,VFAC,CMCMAX,SRUN1,SRUN2,SRUN3,EDIRG,ECG,ETG,DRIPG)  
          END IF
-         ! print*, 'Vegetated soil moisture=', SMG ! add by yuqi for testing purpose
 
+         SMG = MAX(SMG, SMCWLT)   
+         SMG = MIN(SMG, SMCMAX)
+		 
          EDIRG = EDIRG  * 1000
          ETTG  = ETTG   * 1000
          ECG   = ECG    * 1000
@@ -1827,15 +1857,11 @@ ENDIF
          ES=6.11*EXP( (2.5*10**6/461.51)*(TGP-273.15)/(273.15*TGP) ) 
          DESDT=(2.5*10**6/461.51)*ES/(TGP**2)
          QS0G=0.622*ES/(PS-0.378*ES)        
-         DQS0GDTG=DESDT*0.622*PS/((PS-0.378*ES)**2) 
+         DQS0GDTG=DESDT*0.622*PS/((PS-0.378*ES)**2)    
 
          ES=6.11*EXP( (2.5*10**6/461.51)*(TTP-273.15)/(273.15*TTP) )        
-         DESDT=(2.5*10**6/461.51)*ES/(TTP**2)
-         QS0T=0.622*ES/(PS-0.378*ES)        
-
-
+         QS0T=0.622*ES/(PS-0.378*ES)   
          EPSGE   = (1 - FVG) * EPSG + FVG * EPSVG
-         TGEP    = (1 - FVG) * TGP  + FVG * TVGP 
          
 	      
          EMITW = EPSB * SIG * TBP**4./60
@@ -1884,7 +1910,6 @@ ENDIF
          RVG= RVG1+RVG2   ! Note: unit as cal/cm2/s
          RT = RT1 + RT2   ! Note: unit as cal/cm2/s
          RLEAF =  RT * (2 * PI * RTREE * (1-TAU))/(2 * RTREE * LAI_TREE) *697.7*60.   ! unit: w/m/m
-         ! print*,'RB, RVG, RT, RLEAF=', RB, RVG, RT, RLEAF ! add by yuqi for testing purpose
 
 
          DRBDTB1 = EPSB * (4 * EPSB * SIG * TB**3 * VFWW_TREE - 4 * SIG * TB**3)/60      
@@ -1939,31 +1964,34 @@ ENDIF
          ELEB=RHO*EL*CHB*UC*BETB*(QS0B-QCP)*100   ! Note: unit [cal/cm2/s]
          ELEG=RHO*EL*CHG*UC*BETG*(QS0G-QCP)*100   ! Note: unit [cal/cm2/s]
 
-         RA_LEAF = 58 * (LAI_TREE**0.56) * SQRT(DLEAF/UC)          ! DLEAF = 0.1 (YUQI)  
-         W2 = 0.5 * (SMGP(NVG/2-1) + SMGP(NVG/2))                  
-         CALL STOMATAL(RS_LEAF, RSMIN, SLEAF, LAI_TREE, W2, SMCREF, SMCMAX, TCP, TT, QCP, QS0T) 
+         
          CALL LELEAF(ELET, SLEAF, RLEAF, RA_LEAF, RS_LEAF, RHOO, TCP, QCP, QS0T)
 
          AVAILABLE_WATER_SUM = 0.0
          DO K = 1, 3
-            AVAILABLE_WATER_SUM = AVAILABLE_WATER_SUM + ((SMG(K)-SMCWLT) * DZVG(K)) ! unit: m (Yuqi)
+            AVAILABLE_WATER_SUM = AVAILABLE_WATER_SUM + ((SMG(K)-SMCWLT) * DZVG(K)) ! unit: m (urban-nbs)
          END DO
 
          IF ((RTREE > 0.) .AND. (LAI_TREE > 0.)) THEN
             POTENTIAL_ELET = (ELL * 1000 * AVAILABLE_WATER_SUM * FVG * RW / DELT) / &
-                              (2.0 * RTREE * LAI_TREE) ! [J/kg]*[1000 kg/m3 - density]*[m]/[s] = [W/m2]
+                              (2.0 * RTREE * LAI_TREE)                          ! [J/kg]*[1000 kg/m3 - density]*[m]/[s] = [W/m2]
          ELSE
             POTENTIAL_ELET = 0.0
          END IF
          ELET = MIN(POTENTIAL_ELET, ELET)    ! unit: W/m2
 
-         CALL ROOT_UPTAKE(SROOT, NVG, SMG, SMCMAX, SMCDRY, RTREE_M, LAI_TREE, DZVG, ZSOILG, ELET, FVG, RW_M)   ! SROOT unit: m/s (Yuqi)
-
+         CALL ROOT_UPTAKE(SROOT, NVG, SMG, SMCMAX, SMCDRY, RTREE_M, LAI_TREE, DZVG, ZSOILG, ELET, FVG, RW_M)   ! SROOT unit: m/s (urban-nbs)
+         SROOTP = SROOT ! update root water uptake (urban-nbs)
      
-         ! residual approach (Yuqi)    
-         HT = (SLEAF + RLEAF - ELET - (TT - TTP)/DELT*640) * (1/697.7/60.)      ! following e.q 28 in (Ryu, 2016), unit same as HB, HG in [cal/cm2/s]
 
-         ! ALPHAT =  (RHO*CP*100.)/(1.27*RA_LEAF) ! unit [cal/cm2/s/K] ([g/cm3] * [cal/g/K] / [s/m] * [m/cm]) % commented out, no longer used for residual approach (Chenghao Wang)
+         IF (TTscheme .eq. 0 ) THEN       ! Option1: residual approach / diagnostic approach
+            HT = (SLEAF + RLEAF - ELET - (TT - TTP)/DELT*640) * (1/697.7/60.)      ! following e.q 28 in (Ryu, 2016), unit same as HB, HG in [cal/cm2/s]
+         ELSEIF (TTscheme .eq. 1 ) THEN   ! Option2:  resistance approach / prognostic approach
+            ALPHAT = (RHO * CP * 100) / (1.274 * RA_LEAF)        ! unit [cal/cm2/s/K] ([g/cm3] * [cal/g/K] / [s/m] * [m/cm]) 
+            HT = ALPHAT * (TTP - TCP)	       
+         ENDIF	
+
+
          DTCDTB = (W  * ALPHAB)/(RW * ALPHAC + RW * FVG * ALPHAVG + RW * (1 - FVG) * ALPHAG + W * ALPHAB) 
          DTCDTG = (RW * ALPHAG * (1 - FVG))/(RW * ALPHAC + RW * FVG * ALPHAVG + RW * (1 - FVG) * ALPHAG + W * ALPHAB)
          DTCDTVG= (RW * ALPHAVG * FVG)/(RW * ALPHAC + RW * FVG * ALPHAVG + RW * (1 - FVG) * ALPHAG + W * ALPHAB)
@@ -1980,11 +2008,11 @@ ENDIF
          DHVGDTG=RHO*CP*CHVG*UC*(0-DTCDTG)*100
          DHVGDTVG=RHO*CP*CHVG*UC*(1-DTCDTVG)*100
 
-
-         DQCDTB=W*ALPHAB*BETB*DQS0BDTB/(W * ALPHAB * BETB + RW * (1 - FVG) * ALPHAG * BETG + RW * ALPHAC) 
-         DQCDTG=RW * (1 - FVG) * ALPHAG * BETG * DQS0GDTG/(W * ALPHAB * BETB + RW * (1 - FVG) * ALPHAG * BETG + RW * ALPHAC) 
+         den_qc = W * ALPHAB * BETB + RW * (1 - FVG) * ALPHAG * BETG + RW * FVG * ALPHAVG * BETVG + RW * ALPHAC
+         DQCDTB=W*ALPHAB*BETB*DQS0BDTB/den_qc 
+         DQCDTG=RW * (1 - FVG) * ALPHAG * BETG * DQS0GDTG/den_qc 															
          ! DQCDTVG=0 ! no QS0VG in QC2
-		 DQCDTVG=RW * FVG * ALPHAVG * BETVG * DQS0VGDTVG/(W * ALPHAB * BETB + RW * (1 - FVG) * ALPHAG * BETG + RW * ALPHAC)
+		   DQCDTVG=RW * FVG * ALPHAVG * BETVG * DQS0VGDTVG/den_qc
 
          DELEBDTB=RHO*EL*CHB*UC*BETB*(DQS0BDTB-DQCDTB)*100
          DELEBDTG=RHO*EL*CHB*UC*BETB*(0-DQCDTG)*100
@@ -1998,15 +2026,14 @@ ENDIF
 
 		 
          ELEVG = ETAG * EL * 0.1        ! unit: cal/cm2/s
-         ! print*, 'actual et from vegetated ground=', ELEVG ! add by yuqi for testing purpose
 
-         G0B=AKSB*(TBP-TBL(1))/(DZB(1)/2)  ! unit: cal/cm2/s  (yuqi)
+         G0B=AKSB*(TBP-TBL(1))/(DZB(1)/2)  ! unit: cal/cm2/s
          G0G=AKSG*(TGP-TGL(1))/(DZG(1)/2)
 
          CALL TDFCND (KVG,SMG(KZ), QUARTZ, SMCMAX )
-         KVG = KVG * EXP(-2.0 * VFAC)  
-         G0VG= KVG * (TVGP-TVGL(1))/(DZVG(1)/2.)/697.7/60   ! unit: cal/cm2/s (Yuqi)
-         ! print*, 'G0B, G0G, G0VG=', G0B, G0G, G0VG
+         !KVG = KVG * EXP(-2.0 * VFAC)                      ! comment this to allow heat to be transferred efficiently to deeper soil (urban-nbs, Yuqi)
+         G0VG= KVG * (TVGP-TVGL(1))/(DZVG(1)/2.)/697.7/60   ! unit: cal/cm2/s
+
 
          DG0BDTB = 2 * AKSB/DZB(1)
          DG0BDTG = 0
@@ -2074,17 +2101,14 @@ ENDIF
          TB = TBP + DTB
          TG = TGP + DTG
          TVG= TVGP+DTVG
-
-
-         ! print*, 'DTB, DTG, DTVG=', DTB, DTG, DTVG ! add by yuqi for testing purpose
+         TGE = (1 - FVG) * TG  + FVG * TVG 
 
          TBP = TB
          TGP = TG
          TVGP= TVG
-         
-         ! print*, 'TBP, TGP, TVGP=',TBP, TGP, TVGP ! add by yuqi for testing purpose
-
-         ! After updating the temperatures (e.g., TBP = TB)   (yuqi)
+         TGEP=TGE
+		 
+         ! After updating the temperatures (e.g., TBP = TB) (urban-nbs)
          TBP = MAX(223.15, MIN(353.15, TBP)) !-50C to +80C
          TGP = MAX(223.15, MIN(353.15, TGP))
          TVGP = MAX(223.15, MIN(353.15, TVGP))
@@ -2097,13 +2121,15 @@ ENDIF
          TC1 = RW * ALPHAC + RW * FVG * ALPHAVG + RW * (1 - FVG) * ALPHAG + W * ALPHAB
          TC2 = RW * ALPHAC * TA + RW * FVG * ALPHAVG * TVGP + RW * (1 - FVG) * ALPHAG * TGP + W * ALPHAB * TBP + 2 * RTREE * LAI_TREE * (HT/100)
          TC = TC2 / TC1
-		 ! Chenghao: HT unit is cgs, keep it as is [RHO - g/cm3, CP - cal/g/K]
-         ! print*, 'ALPHAT, ALPHAC, ALPHAVG, TC1, TC2, tmp=', ALPHAT, ALPHAC, ALPHAVG,TC1, TC2, 2 * RTREE * LAI_TREE * HT * ALPHAT ! add by yuqi
-
+         TC = MAX(223.15, MIN(353.15, TC))
+         TCP = TC                          ! update TCP  (urban-nbs)
+		 
+		   ! Chenghao: HT unit is cgs, keep it as is [RHO - g/cm3, CP - cal/g/K]
+  
          QC1 = W * ALPHAB * BETB + RW * (1 - FVG) * ALPHAG * BETG + RW * ALPHAC
          QC2 = W * ALPHAB * BETB * QS0B + RW * (1 - FVG) * ALPHAG * BETG * QS0G + RW * FVG * ETAG *CP / 1000 + RW * ALPHAC * QA + (2 * RTREE * LAI_TREE * CP * (ELET/697.7/60.)/100/EL)
          QC=QC2/QC1
-		 ! Chenghao: ELET - [W/m2], convert it to cgs to be consistent with all other terms (e.g., ALPHAB)
+		   ! Chenghao: ELET - [W/m2], convert it to cgs to be consistent with all other terms (e.g., ALPHAB)
 
 
          ES=6.11*EXP( (2.5*10**6/461.51)*(TC-273.15)/(273.15*TC) ) 
@@ -2119,26 +2145,26 @@ ENDIF
             WRITE_MESSAGE(WARN_MSG)
          END IF
 
-         ! print*, 'ELET, QS0B, QS0G, QS0VG,QC1,QC2=', ELET, QS0B, QS0G, QS0VG, QC1,QC2 ! add by yuqi
 
-         TT = TC ! update TT (yuqi)
-         !TTP = TT  ! update TTP (yuqi)
+         IF (TTscheme .eq. 0 ) THEN       ! Option1: residual approach / diagnostic approach
+            TT = TC ! update TT (urban-nbs)
+         ELSEIF (TTscheme .eq. 1 ) THEN   ! Option2:  resistance approach / prognostic approach
+            TT = TTP + 0.1 * (TC - TTP)
+         ENDIF	
 
          DTC = TCP - TC
-         TCP = TC    ! update TCP  (yuqi)
          QCP = QC
-         !END IF
-         ! print*, 'updated TT ,TC and QC=', TT, TC, QC ! add by yuqi for testing purpose
+
 
          RVGT= (SVG+RVG) * 697.7 * 60.
          RCH = RHOO*CPP*CHVG
-         RR1 = EPSVG*(TVGP**4) * 6.48E-8 / (PS* CHVG) + 1.0   ! FOLLOWING JIACHUAN'S SCHEME, BUT DIFFERENT FROM OSU CODE (YUQI)
-         IF (RAIN >  0.0) THEN                                ! May cause some problem sicne we can't use TA to linearize TC, we can do that for TR (yuqi)
+         RR1 = EPSVG*(TVGP**4) * 6.48E-8 / (PS* CHVG) + 1.0   ! FOLLOWING YANG'S SCHEME, BUT DIFFERENT FROM OSU CODE (urban-nbs)
+         IF (RAIN >  0.0) THEN                                ! May cause some problem sicne we can't use TA to linearize TC, we can do that for TR (urban-nbs)
                RR2 = RR1 + RAIN / 3600 * 4.218E+3 / RCH
          ELSE
                RR2 = RR1
          END IF
-         YY  = TVG + (RVGT / RCH - BETVG * EPVG * ELL/ RCH) / RR2  ! THIS TVG IS WRONG (yuqi)
+         YY  = TVG + (RVGT / RCH - BETVG * EPVG * ELL/ RCH) / RR2  
          ZZ1 = KVG / (-0.5 * ZSOILG (KZ) * RCH * RR2 ) + 1.0
          SRUN3 = SRUN3/ DELT
          SRUN2 = SRUN2 + SRUN3 
@@ -2151,21 +2177,18 @@ ENDIF
          .AND. ABS(DTC) < 0.000001) EXIT
 
       END DO
-      TT = TC   ! add by yuqi
-      TTP = TT  ! update TTP (yuqi)
        
 
       CALL multi_layer(num_wall_layers,BOUNDB,G0B,CAPB,AKSB,TBL,DZB,DELT,TBLEND)
       CALL multi_layer(num_road_layers,BOUNDG,G0G,CAPG,AKSG,TGL,DZG,DELT,TGLEND)
-      ! CALL multi_layer(num_road_layers,BOUNDG,G0VG,CAPVG,KVG,TVGL,DZVG*0.01,DELT,TGLEND) ! DZVG unit ([m] as input, needed to convert to[cm]) (Chenghao 2026/01/20)
-	  CALL SHFLX (SSOILG,TVGL,SMG,SMCMAX,NVG,TVGP,DELT,YY,ZZ1,ZSOILG,TGLEND,ZBOT,SMCWLT,KVG,QUARTZ,CSOIL,CAPVG)   ! Update temperature in vegetated ground soil layer (yuqi)
-      ! print*, 'TVGL=', TVGL   ! add by yuqi for testing purpose 
-      !print*, 'Soil heat flux=', SSOILG  ! add by yuqi for testing purpose 
+      ! CALL multi_layer(num_road_layers,BOUNDG,G0VG,CAPVG,KVG/697.7/60,TVGL,DZVG*0.01,DELT,TGLEND) ! DZVG unit ([m] as input, needed to convert to[cm]) (Chenghao 2026/01/20)
+	  CALL SHFLX (SSOILG,TVGL,SMG,SMCMAX,NVG,TVGP,DELT,YY,ZZ1,ZSOILG,TGLEND,ZBOT,SMCWLT,KVG,QUARTZ,CSOIL,CAPVG)   ! Update temperature in vegetated ground soil layer (urban-nbs)
+
     
     ELSE
        !-------------------------------------------------------------------------------
        !  TB, TG  by Force-Restore Method 
-       !  Note, Conflict With Vegetated Ground Scheme (Huang)
+       !  Note, Conflict With Vegetated Ground Scheme (urban-nbs)
        !-------------------------------------------------------------------------------
   
        ES=6.11*EXP( (2.5*10**6/461.51)*(TBP-273.15)/(273.15*TBP) ) 
@@ -2177,10 +2200,10 @@ ENDIF
        ES=6.11*EXP( (2.5*10**6/461.51)*(TTP-273.15)/(273.15*TTP) )        
        QS0T=0.622*ES/(PS-0.378*ES)        
 
-       ES=6.11*EXP( (2.5*10**6/461.51)*(TVGP-273.15)/(273.15*TVGP) )   ! following green roof scheme (yuqi)
+       ES=6.11*EXP( (2.5*10**6/461.51)*(TVGP-273.15)/(273.15*TVGP) )   ! following green roof scheme (urban-nbs)
        QS0VG=0.622*ES/(PS-0.378*ES) 
 
-       EPSGE   = (1 - FVG) * EPSG + FVG * EPSVG           ! DEFINE NEW EPSVG HERE (YUQI)
+       EPSGE   = (1 - FVG) * EPSG + FVG * EPSVG           ! DEFINE NEW EPSVG HERE (urban-nbs)
        TGEP    = (1 - FVG) * TGP  + FVG * TVGP 
        QS0GE   = (1 - FVG) * QS0G + FVG * QS0VG
        ALPHAGE = (1 - FVG) * ALPHAG + FVG * ALPHAVG
@@ -2241,7 +2264,7 @@ ENDIF
 
        RA_LEAF = 58 * (LAI_TREE**0.56) * SQRT(DLEAF/UC)             
        HT = (SLEAF + RLEAF - ELET - (TT - TTP)/DELT*640)/697.7/60. ! HT in unit of cal/cm2/s (unit consistent with HB and HG)
-       W2 = 0.5 * (SMGP(NVG/2-1) + SMGP(NVG/2))    ! POTENTIAL ERROR (YUQI)
+       W2 = 0.5 * (SMGP(NVG/2-1) + SMGP(NVG/2))    ! POTENTIAL ERROR (Yuqi urban-nbs)
        CALL STOMATAL(RS_LEAF, RSMIN, SLEAF, LAI_TREE, W2, SMCREF, SMCMAX, TC, TT, QC, QS0T) 
        CALL LELEAF(ELET, SLEAF, RLEAF, RA_LEAF, RS_LEAF, RHOO, TC, QC, QS0T)
 
@@ -2256,12 +2279,12 @@ ENDIF
        TC1 = RW * ALPHAC + RW * FVG * ALPHAVG + RW * (1 - FVG) * ALPHAG + W * ALPHAB
        TC2 = RW * ALPHAC * TA + RW * FVG * ALPHAVG * TVGP + RW * (1 - FVG) * ALPHAG * TGP + W * ALPHAB * TBP + 2 * RTREE * LAI_TREE * (HT/100)
        TC = TC2 / TC1
-	   ! Chenghao: HT unit is cgs, keep it as is [RHO - g/cm3, CP - cal/g/K]
+	    ! Chenghao: HT unit is cgs, keep it as is [RHO - g/cm3, CP - cal/g/K]
 
        QC1 = W * ALPHAB * BETB + RW * (1 - FVG) * ALPHAG * BETG + RW * ALPHAC
        QC2 = W * ALPHAB * BETB * QS0B + RW * (1 - FVG) * ALPHAG * BETG * QS0G + RW * FVG * ETAG *CP / 1000 + RW * ALPHAC * QA + (2 * RTREE * LAI_TREE * CP * (ELET/697.7/60.)/100/EL)
        QC=QC2/QC1
-	   ! Chenghao: ELET - [W/m2], convert it to cgs to be consistent with all other terms (e.g., ALPHAB)
+	    ! Chenghao: ELET - [W/m2], convert it to cgs to be consistent with all other terms (e.g., ALPHAB)
 		 
        TCP=TC
        QCP=QC
@@ -2275,7 +2298,7 @@ ENDIF
    FLXHUMB=ELEB/RHO/EL/100. ! ELEB is cgs unit, final unit m/s
    FLXTHG=HG/RHO/CP/100.
    FLXHUMG=ELEG/RHO/EL/100. ! ELEG is cgs unit, final unit m/s
-   FLXTHVG=HVG/RHO/CP/100.    ! ADD BY (Huang)
+   FLXTHVG=HVG/RHO/CP/100.    ! ADD IN urban-nbs
    FLXHUMVG=ELEVG/RHO/EL/100. ! ELEVG is cgs unit, final unit m/s
    FLXTHT=HT/RHO/CP/100.      
    FLXHUMT=ELET*(1/697.7/60.)/RHO/EL/100.  ! ELET is W/m2, final unit m/s
@@ -2386,7 +2409,7 @@ ENDIF
      PSIH = -5. * XXX
    ELSE
      X = (1.-16.*XXX)**0.25
-! #ifdef DOUBLE_PRECISION                  ! newly added in thie version (yuqi)
+! #ifdef DOUBLE_PRECISION                  ! newly added in this version (nbs comment)
 ! Code follows HRLDAS here (2025 summer) (Yuqi)
 !     PSIM = 2.*DLOG((1.+X)/2.) + DLOG((1.+X*X)/2.) - 2.*ATAN(X) + PI/2.
 !     PSIH = 2.*DLOG((1.+X*X)/2.)
@@ -2395,7 +2418,7 @@ ENDIF
      PSIH = 2.*ALOG((1.+X*X)/2.)
 !#endif
    END IF
-!#ifdef DOUBLE_PRECISION                 !newly added in this version (yuqi)
+!#ifdef DOUBLE_PRECISION                 !newly added in this version (nbs comment)
 
 !   GZ1OZ0 = DLOG(Z/Z0)
 !   CD = 0.4**2./(DLOG(Z/Z0)-PSIM)**2.
@@ -2416,7 +2439,7 @@ ENDIF
 !m   TS = TA + FLXTH/CH/UA    ! surface potential temp (flux temp)
 !m   QS = QA + FLXHUM/CH/UA   ! surface humidity
 !
-   !IF (distributed_aerodynamics_option) THEN      ! comment this in the new version (yuqi)
+   !IF (distributed_aerodynamics_option) THEN      ! comment this in the new version (urban-nbs comment)
    !  TS = TA + FLXTH / (ALPHAC / (RHO * CP))  ! surface potential temp (flux temp)
    !  QS = QA + FLXHUM / (ALPHAC / (RHO * CP)) ! surface humidity
    !ELSE																				  
@@ -2439,7 +2462,7 @@ ENDIF
       X = (1.-16.*XXX2)**0.25
 !#ifdef DOUBLE_PRECISION          
 
-!      PSIM2 = 2.*DLOG((1.+X)/2.) + DLOG((1.+X*X)/2.) - 2.*ATAN(X) + 2.*ATAN(1.)     ! newly added in this version (yuqi)
+!      PSIM2 = 2.*DLOG((1.+X)/2.) + DLOG((1.+X*X)/2.) - 2.*ATAN(X) + 2.*ATAN(1.)     ! newly added in this version (nbs comment)
 !      PSIH2 = 2.*DLOG((1.+X*X)/2.)
 !#else
       PSIM2 = 2.*ALOG((1.+X)/2.) + ALOG((1.+X*X)/2.) - 2.*ATAN(X) + 2.*ATAN(1.)
@@ -2450,7 +2473,7 @@ ENDIF
 !
 !#ifdef DOUBLE_PRECISION
 
-!   CHS2 = 0.4*UST/(DLOG(2./Z0H)-PSIH2) ! cenlin 03/09/2023: uncomment to allow CHS2 calc for offline hrldas-urban    ! newly commented in this version following WRF v4.7.1 (yuqi)
+!   CHS2 = 0.4*UST/(DLOG(2./Z0H)-PSIH2) ! cenlin 03/09/2023: uncomment to allow CHS2 calc for offline hrldas-urban    ! newly commented in this version following WRF v4.7.1 (urban-nbs comment)
 !
 !#else
 !   CHS2 = 0.4*UST/(ALOG(2./Z0H)-PSIH2) ! cenlin 03/09/2023: uncomment to allow CHS2 calc for offline hrldas-urban
@@ -2467,15 +2490,15 @@ ENDIF
    ELSE
       X = (1.-16.*XXX10)**0.25
 !#ifdef DOUBLE_PRECISION
-!      PSIM10 = 2.*DLOG((1.+X)/2.) + DLOG((1.+X*X)/2.) - 2.*ATAN(X) + 2.*ATAN(1.)       ! newly added in this version (yuqi)
-!      PSIH10 = 2.*DLOG((1.+X*X)/2.)                                                    ! newly added in this version (yuqi)
+!      PSIM10 = 2.*DLOG((1.+X)/2.) + DLOG((1.+X*X)/2.) - 2.*ATAN(X) + 2.*ATAN(1.)       ! newly added in this version (nbs comment)
+!      PSIH10 = 2.*DLOG((1.+X*X)/2.)                                                    ! newly added in this version (nbs comment)
 !#else
       PSIM10 = 2.*ALOG((1.+X)/2.) + ALOG((1.+X*X)/2.) - 2.*ATAN(X) + 2.*ATAN(1.)
       PSIH10 = 2.*ALOG((1.+X*X)/2.)
 !#endif
 
    END IF
-!#ifdef DOUBLE_PRECISION                 ! newly added below in this version (yuqi)
+!#ifdef DOUBLE_PRECISION                 ! newly added below in this version (urban-nbs comment)
 
 !   PSIX = DLOG(Z/Z0) - PSIM
 !   PSIT = DLOG(Z/Z0H) - PSIH
@@ -2502,7 +2525,7 @@ ENDIF
 !   TH2 = TS + (TA-TS)*(PSIT2/PSIT)   ! potential temp at 2 m [K]
 !  TH2 = TS + (TA-TS)*(PSIT2/PSIT)   ! Fei: this seems to be temp (not potential) at 2 m [K]
 !Fei: consistant with M-O theory
-   IF (distributed_aerodynamics_option) THEN       ! comment this in the new version (yuqi)
+   IF (distributed_aerodynamics_option) THEN       ! comment this in the new version (urban-nbs comment)
      CHS2_LOCAL = 0.4 * UST / (ALOG(2. / Z0H) - PSIH2)
      TH2 = TS + (TA - TS) * (CHS_LOCAL / CHS2_LOCAL)
      Q2 = QS + (QA - QS) * (CHS_LOCAL / CHS2_LOCAL)
@@ -2549,7 +2572,7 @@ ENDIF
 
         X=(1.-16.*XXX)**0.25
         X0=(1.-16.*XXX0)**0.25
-!#ifdef DOUBLE_PRECISION                                   ! newly added in the new version (yuqi)
+!#ifdef DOUBLE_PRECISION                                   ! newly added in the new version (nbs comment)
 
 !        PSIM=DLOG((Z+Z0)/Z0) &
 !            -DLOG((X+1.)**2.*(X**2.+1.)) &
@@ -2564,7 +2587,7 @@ ENDIF
         PSIM=ALOG((Z+Z0)/Z0) &
             -ALOG((X+1.)**2.*(X**2.+1.)) &
             +2.*ATAN(X) &
-            +ALOG((X0+1.)**2.*(X0**2.+1.)) &          ! they replace first X as X0 in here (yuqi)
+            +ALOG((X0+1.)**2.*(X0**2.+1.)) &          ! replace first X with X0 in the new version (urban-nbs comment)
             -2.*ATAN(X0)
         FAIH=1./SQRT(1.-16.*XXX)
         PSIH=ALOG((Z+Z0)/Z0)+0.4*B1 &
@@ -2592,7 +2615,7 @@ ENDIF
 
       XXX=0.714
 !#ifdef DOUBLE_PRECISION
-!      PSIM=DLOG((Z+Z0)/Z0)+7.*XXX          ! newly added in the new version (yuqi)
+!      PSIM=DLOG((Z+Z0)/Z0)+7.*XXX          ! newly added in the new version (nbs comment)
 !#else
       PSIM=ALOG((Z+Z0)/Z0)+7.*XXX
 !#endif
@@ -2600,7 +2623,7 @@ ENDIF
 
    ELSE
 !#ifdef DOUBLE_PRECISION
-!      AL=DLOG((Z+Z0)/Z0)                    ! newly added in the new version (yuqi)
+!      AL=DLOG((Z+Z0)/Z0)                    ! newly added in the new version (nbs comment)
 !#else
       AL=ALOG((Z+Z0)/Z0)
 !#endif
@@ -2610,7 +2633,7 @@ ENDIF
       XXX=(AL+XKB-2.*RIB*7.*AL-SQRT(DD))/(2.*(RIB*7.**2-7.))
 !#ifdef DOUBLE_PRECISION
 
-!      PSIM=DLOG((Z+Z0)/Z0)+7.*MIN(XXX,0.714)             ! newly added in the new version (yuqi)
+!      PSIM=DLOG((Z+Z0)/Z0)+7.*MIN(XXX,0.714)             ! newly added in the new version (nbs comment)
 !#else
       PSIM=ALOG((Z+Z0)/Z0)+7.*MIN(XXX,0.714)
 
@@ -2645,7 +2668,7 @@ ENDIF
 
 !#ifdef DOUBLE_PRECISION
 
-!   A2=(0.4/DLOG(Z/Z0))**2.                   ! newly added in the new version (yuqi)
+!   A2=(0.4/DLOG(Z/Z0))**2.                   ! newly added in the new version (nbs comment)
 !#else
    A2=(0.4/ALOG(Z/Z0))**2.
 
@@ -2687,7 +2710,7 @@ ENDIF
    REAL                :: A2, FM, FH, CH, CHH 
 
 !#ifdef DOUBLE_PRECISION
-!   A2=(0.4/DLOG(Z/Z0))**2.                  ! newly added in the new version (yuqi)
+!   A2=(0.4/DLOG(Z/Z0))**2.                  ! newly added in the new version (nbs comment)
 !#else
    A2=(0.4/ALOG(Z/Z0))**2.
 !#endif
@@ -2800,9 +2823,9 @@ ENDIF
                          ZR,SIGMA_ZED,Z0C,Z0HC,ZDC,SVF,R,RW,HGT,AH,    & ! out
                          CAPR,CAPB,CAPG,AKSR,AKSB,AKSG,ALBR,ALBB,ALBG, & ! out
                          EPSR,EPSB,EPSG,Z0R,Z0B,Z0G,Z0HB,Z0HG,         & ! out
-                         BETR,BETB,BETG,TRLEND,TBLEND,TGLEND,          & ! out
-                         RTREE,RTREE_M,RW_M,HTREE,DTREE,LAI_TREE,LAI_VEG,   & ! out   ! added by yuqi
-                         Z0VG,Z0HVG,CAPVG,EPSVG,EPST,                  & ! out   ! added by yuqi
+                         BETR,BETB,BETG,TRLEND,TBLEND,TGLEND,ALBVG,ALBT,FVG, & ! out
+                         RTREE,RTREE_M,RW_M,HTREE,DTREE,LAI_TREE,LAI_VEG,    & ! out   ! urban-nbs
+                         Z0VG,Z0HVG,CAPVG,EPSVG,EPST,                  & ! out   ! urban-nbs
 !for BEP
                          NUMDIR, STREET_DIRECTION, STREET_WIDTH,       & ! out
                          BUILDING_WIDTH, NUMHGT, HEIGHT_BIN,           & ! out
@@ -2818,7 +2841,7 @@ ENDIF
                            SIGMA_ZED,                                    &
                            EPSR,EPSB,EPSG,Z0R,Z0B,Z0G,Z0HB,Z0HG,         &
                            BETR,BETB,BETG,TRLEND,TBLEND,TGLEND,RTREE,RTREE_M,RW_M,HTREE,&
-                           DTREE,LAI_TREE,LAI_VEG,Z0VG,Z0HVG,CAPVG,EPSVG,EPST   ! added by yuqi
+                           DTREE,LAI_TREE,LAI_VEG,Z0VG,Z0HVG,CAPVG,EPSVG,EPST,ALBVG,ALBT,FVG   ! added for urban-nbs
    REAL, INTENT(OUT)    :: AKANDA_URBAN
 !for BEP
    INTEGER,                     INTENT(OUT) :: NUMDIR
@@ -2870,7 +2893,7 @@ ENDIF
    TRLEND=  TRLEND_TBL(UTYPE)
    TBLEND=  TBLEND_TBL(UTYPE)
    TGLEND=  TGLEND_TBL(UTYPE)
-   RTREE=   RTREE_TBL(UTYPE)   ! added by yuqi
+   RTREE=   RTREE_TBL(UTYPE)   ! urban-nbs
    RTREE_M = RTREE_M_TBL(UTYPE)
    RW_M   = RW_M_TBL(UTYPE)
    HTREE=   HTREE_TBL(UTYPE)
@@ -2882,15 +2905,15 @@ ENDIF
    CAPVG= CAPVG_TBL(UTYPE)
    EPSVG= EPSVG_TBL(UTYPE)
    EPST = EPST_TBL(UTYPE)
-   
-
-
+   ALBVG=   ALBVG_TBL(UTYPE)
+   ALBT =   ALBT_TBL(UTYPE)
    BOUNDR=  BOUNDR_DATA
    BOUNDB=  BOUNDB_DATA
    BOUNDG=  BOUNDG_DATA
    CH_SCHEME = CH_SCHEME_DATA
    TS_SCHEME = TS_SCHEME_DATA
    AKANDA_URBAN = AKANDA_URBAN_TBL(UTYPE)
+   FVG = FVG_TBL(UTYPE)						 
 
 !for BEP
 
@@ -2940,7 +2963,7 @@ ENDIF
    INTEGER :: num_road_layers
    INTEGER :: dummy 
    REAL    :: DHGT, HGT, VFWS, VFGS
-   REAL    :: fvg  ! Yuqi
+   REAL    :: fvg  ! urban-nbs
 
    REAL, allocatable, dimension(:) :: ROOF_WIDTH
    REAL, allocatable, dimension(:) :: ROAD_WIDTH
@@ -3085,11 +3108,13 @@ ENDIF
             if(allocate_status /= 0) FATAL_ERROR('Error allocating TGLEND_TBL in urban_param_init')
             ALLOCATE( FRC_URB_TBL(ICATE), stat=allocate_status )
             if(allocate_status /= 0) FATAL_ERROR('Error allocating FRC_URB_TBL in urban_param_init')
-            ALLOCATE( RTREE_TBL(ICATE), stat=allocate_status )                                                  ! added by yuqi
+            ALLOCATE( FVG_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating FVG_TBL in urban_param_init')
+            ALLOCATE( RTREE_TBL(ICATE), stat=allocate_status )
             if(allocate_status /= 0) FATAL_ERROR('Error allocating RTREE_TBL in urban_param_init')
-			ALLOCATE( RTREE_M_TBL(ICATE), stat=allocate_status )                                                  ! added by yuqi
+			   ALLOCATE( RTREE_M_TBL(ICATE), stat=allocate_status )
             if(allocate_status /= 0) FATAL_ERROR('Error allocating RTREE_M_TBL in urban_param_init')		
-            ALLOCATE( RW_M_TBL(ICATE), stat=allocate_status )                                                  ! added by yuqi
+            ALLOCATE( RW_M_TBL(ICATE), stat=allocate_status )
             if(allocate_status /= 0) FATAL_ERROR('Error allocating RW_M_TBL in urban_param_init')																											 																			
             ALLOCATE( HTREE_TBL(ICATE), stat=allocate_status )
             if(allocate_status /= 0) FATAL_ERROR('Error allocating HTREE_TBL in urban_param_init')
@@ -3109,6 +3134,10 @@ ENDIF
             if(allocate_status /= 0) FATAL_ERROR('Error allocating EPSVG_TBL in urban_param_init')
             ALLOCATE( EPST_TBL(ICATE), stat=allocate_status )
             if(allocate_status /= 0) FATAL_ERROR('Error allocating EPST_TBL in urban_param_init')
+            ALLOCATE( ALBVG_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating ALBVG_TBL in urban_param_init')																											 																			
+            ALLOCATE( ALBT_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating ALBT_TBL in urban_param_init')            
             ! ALLOCATE( ROOF_WIDTH(ICATE), stat=allocate_status )
             ! if(allocate_status /= 0) FATAL_ERROR('Error allocating ROOF_WIDTH in urban_param_init')
             ! ALLOCATE( ROAD_WIDTH(ICATE), stat=allocate_status )
@@ -3287,8 +3316,7 @@ ENDIF
       else if (name == "DZGR") then
          read(string(indx+1:),*) dzgr(1:4)
       else if (name == "FVG") then
-         read(string(indx+1:),*) fvg
-         fvg_data = fvg
+         read(string(indx+1:),*) fvg_tbl(1:icate)
       else if (name == "RTREE") then
          read(string(indx+1:),*) rtree_tbl(1:icate)
       else if (name == "HTREE") then
@@ -3305,7 +3333,7 @@ ENDIF
          read(string(indx+1:),*) z0hvg_tbl(1:icate)
       else if (name == "CAPVG") then
          read(string(indx+1:),*) capvg_tbl(1:icate)
-   ! Convert CAPVG_TBL from J m{-3} K{-1} to cal cm{-3} deg{-1}
+      ! Convert CAPVG_TBL from J m{-3} K{-1} to cal cm{-3} deg{-1}
          capvg_tbl = capvg_tbl * ( 1.0 / 4.1868 ) * 1.E-6
       else if (name == "EPSVG") then
          read(string(indx+1:),*) epsvg_tbl(1:icate)
@@ -3314,6 +3342,12 @@ ENDIF
          read(string(indx+1:),*) epst_tbl(1:icate)
       else if (name == "TREEOPTION") then
          read(string(indx+1:),*) treeoption
+      else if (name == "TTscheme") then
+         read(string(indx+1:),*) ttscheme
+	   else if (name == "ALBVG") then
+         read(string(indx+1:),*) albvg_tbl(1:icate)
+      else if (name == "ALBT") then
+         read(string(indx+1:),*) albt_tbl(1:icate)							   
 !for BEP
       else if (name == "STREET PARAMETERS") then
 
@@ -3413,7 +3447,7 @@ ENDIF
       ! R:  Normalized Roof Width (a.k.a. "building coverage ratio")
       R_TBL(LC)  = ROOF_WIDTH(LC) / ( ROAD_WIDTH(LC) + ROOF_WIDTH(LC) )
 
-	  ! normalized rtree_tbl, dtree_tbl and htree_tbl                  ! added by yuqi to normalize tree dimension
+	  ! normalized rtree_tbl, dtree_tbl and htree_tbl                  ! urban-nbs to normalize tree dimension
       RTREE_M_TBL(LC) = RTREE_TBL(LC)
       RTREE_TBL(LC) = RTREE_TBL(LC) / (ROAD_WIDTH(LC) + ROOF_WIDTH(LC))
       DTREE_TBL(LC) = DTREE_TBL(LC) / (ROAD_WIDTH(LC) + ROOF_WIDTH(LC))
@@ -3529,7 +3563,7 @@ ENDIF
                              CMCR_URB2D,TGR_URB2D,TGRL_URB3D,SMR_URB3D,    & ! inout
                              DRELR_URB2D,DRELB_URB2D,DRELG_URB2D,          & ! inout
                              FLXHUMR_URB2D, FLXHUMB_URB2D, FLXHUMG_URB2D,  & ! inout
-							 TVG_URB2D,XXXVG_URB2D,TVGL_URB3D,SMG_URB3D,TT_URB2D,CMCG_URB2D,FLXHUMVG_URB2D,FLXHUMT_URB2D,    & ! inout (add by Yuqi Huang)																														 
+                             TVG_URB2D,XXXVG_URB2D,TVGL_URB3D,SMG_URB3D,TT_URB2D,CMCG_URB2D,FLXHUMVG_URB2D,FLXHUMT_URB2D,    & ! inout (urban-nbs)																														 
                              A_U_BEP,A_V_BEP,A_T_BEP,A_Q_BEP,              & ! inout multi-layer urban
                              A_E_BEP,B_U_BEP,B_V_BEP,                      & ! inout multi-layer urban
                              B_T_BEP,B_Q_BEP,B_E_BEP,DLG_BEP,              & ! inout multi-layer urban
@@ -3594,7 +3628,7 @@ ENDIF
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: RN_URB2D
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TS_URB2D
 
-!-----------add by Yuqi Huang ----------------
+!-----------add for urban-nbs ----------------
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TVG_URB2D
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TT_URB2D
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: XXXVG_URB2D
@@ -3689,7 +3723,7 @@ ENDIF
 !m
 !FS   FRC_URB2D(I,J)=0.
       UTYPE_URB2D(I,J)=0
-      distributed_aerodynamics_check: IF (distributed_aerodynamics_option) THEN   ! comment this in the new version (yuqi)
+      distributed_aerodynamics_check: IF (distributed_aerodynamics_option) THEN   ! comment this in the new version (urban-nbs comment)
         IF (IVGTYP(I, J) == ISURBAN) THEN
           UTYPE_URB2D(I, J) = 2
         ELSE
@@ -3702,7 +3736,7 @@ ENDIF
                IF(use_wudapt_lcz==0) THEN
                   UTYPE_URB2D(I,J) = 2  ! for default. high-intensity
                ELSE
-                  UTYPE_URB2D(I,J) = 5  ! for default. open mid-rise (Yuqi)
+                  UTYPE_URB2D(I,J) = 5  ! for default. open mid-rise
                ENDIF
             ELSE IF( IVGTYP(I,J) == LCZ_1) THEN
                UTYPE_URB2D(I,J) = 1
@@ -3789,7 +3823,7 @@ ENDIF
       XXXB_URB2D(I,J)=0.
       XXXG_URB2D(I,J)=0.
       XXXC_URB2D(I,J)=0.
-      XXXVG_URB2D(I,J)=0. ! add by huang										
+      XXXVG_URB2D(I,J)=0. ! add in urban-nbs										
 
       IF ( sf_urban_physics == 1 ) THEN
       DRELR_URB2D(I,J) = 0.
@@ -3798,13 +3832,13 @@ ENDIF
       FLXHUMR_URB2D(I,J) = 0.
       FLXHUMB_URB2D(I,J) = 0.
       FLXHUMG_URB2D(I,J) = 0.
-      FLXHUMVG_URB2D(I,J) = 0. ! add by huang
-      FLXHUMT_URB2D(I,J) = 0. ! add by huang											 									
+      FLXHUMVG_URB2D(I,J) = 0. ! add in urban-nbs
+      FLXHUMT_URB2D(I,J) = 0. ! add in urban-nbs											 									
       CMCR_URB2D(I,J)  = 0.
-      CMCG_URB2D(I,J)  = 0. ! add by huang										  
+      CMCG_URB2D(I,J)  = 0. ! add in urban-nbs										  
       TGR_URB2D(I,J)=TSURFACE0_URB(I,J)+0.
-      TVG_URB2D(I,J)=TSURFACE0_URB(I,J)+0.  ! add by huang
-      TT_URB2D(I,J) =TSURFACE0_URB(I,J)+0.  ! add by huang														  														  
+      TVG_URB2D(I,J)=TSURFACE0_URB(I,J)+0.  ! add in urban-nbs
+      TT_URB2D(I,J) =TSURFACE0_URB(I,J)+0.  ! add in urban-nbs														  														  
       ENDIF
 
       TC_URB2D(I,J)=TSURFACE0_URB(I,J)+0.
@@ -3832,7 +3866,7 @@ ENDIF
           TGRL_URB3D(I,3,J)=TLAYER0_URB(I,2,J)+0.
           TGRL_URB3D(I,4,J)=TLAYER0_URB(I,2,J)+(TLAYER0_URB(I,3,J)-TLAYER0_URB(I,2,J))*0.29
 
-          TVGL_URB3D(I,1,J)=TLAYER0_URB(I,1,J)+0.                               ! the 4 lines below added by yuqi
+          TVGL_URB3D(I,1,J)=TLAYER0_URB(I,1,J)+0.                               ! 4 lines below - urban-nbs
           TVGL_URB3D(I,2,J)=0.5*(TLAYER0_URB(I,1,J)+TLAYER0_URB(I,2,J))
           TVGL_URB3D(I,3,J)=TLAYER0_URB(I,2,J)+0.
           TVGL_URB3D(I,4,J)=TLAYER0_URB(I,2,J)+(TLAYER0_URB(I,3,J)-TLAYER0_URB(I,2,J))*0.29																	   
@@ -3840,7 +3874,7 @@ ENDIF
           SMR_URB3D(I,2,J)=0.2
           SMR_URB3D(I,3,J)=0.2
           SMR_URB3D(I,4,J)=0.
-          SMG_URB3D(I,1,J)=0.2  ! add by huang
+          SMG_URB3D(I,1,J)=0.2  ! add in urban-nbs
           SMG_URB3D(I,2,J)=0.2
           SMG_URB3D(I,3,J)=0.2
           SMG_URB3D(I,4,J)=0.0											  
@@ -4119,14 +4153,14 @@ SUBROUTINE SFCDIF_URB (ZLM,Z0,THZ0,THLM,SFCSPD,AKANDA,AKMS,AKHS,RLMO,CD,ZT_OUT,V
 ! OVER SOLID SURFACE (LAND, SEA-ICE).
 ! ----------------------------------------------------------------------
 ! ----------------------------------------------------------------------
-! LECH'S SURFACE FUNCTIONS               ! E.q A7&A8 (YUQI)
+! LECH'S SURFACE FUNCTIONS               ! E.q A7&A8
 ! ----------------------------------------------------------------------
       PSLMU (ZZ)= -0.96* log (1.0-4.5* ZZ)
       PSLMS (ZZ)= (ZZ/RFC) -2.076* (1. -1./ (ZZ +1.))
       PSLHU (ZZ)= -0.96* log (1.0-4.5* ZZ)
-      PSLHS (ZZ)= ZZ * RFAC -2.076* (1. - exp(-1.2 * ZZ))        ! bug fixed in 4.7.1 (Yuqi)
+      PSLHS (ZZ)= ZZ * RFAC -2.076* (1. - exp(-1.2 * ZZ))        ! bug fixed in 4.7.1
 ! ----------------------------------------------------------------------
-! PAULSON'S SURFACE FUNCTIONS             ! E.q A5&A6 (YUQI)
+! PAULSON'S SURFACE FUNCTIONS             ! E.q A5&A6
 ! ---------------------------------------------------------------------- 
       PSPMU (XX)= -2.* log ( (XX +1.)*0.5) - log ( (XX * XX +1.)*0.5) +2.* ATAN (XX) - PIHF
       PSPMS (YY)= 5.* YY
@@ -4143,13 +4177,13 @@ SUBROUTINE SFCDIF_URB (ZLM,Z0,THZ0,THLM,SFCSPD,AKANDA,AKMS,AKHS,RLMO,CD,ZT_OUT,V
 ! ----------------------------------------------------------------------
 !      ZILFC = - CZIL * VKRM * SQVISC
 !     C.......ZT=Z0*ZTFC
-      ZU = Z0               ! momentum roughness length (yuqi), here set ZU = Z0 to initialize momentum roughness length
-      RDZ = 1./ ZLM         ! ZLM is initial mixing length (yuqi)
-      CXCH = EXCM * RDZ     ! used to limit the AKHS (kinematic heat transfer coefficient) and AKMS (kinematic momentum transfer coefficient)  (yuqi)
-      DTHV = THLM - THZ0    ! Theta_V term in Obukhov Length, which is the potential temperature different of first layer atmosphere and Urban level  (yuqi)
+      ZU = Z0               ! momentum roughness length, here set ZU = Z0 to initialize momentum roughness length
+      RDZ = 1./ ZLM         ! ZLM is initial mixing length
+      CXCH = EXCM * RDZ     ! used to limit the AKHS (kinematic heat transfer coefficient) and AKMS (kinematic momentum transfer coefficient) 
+      DTHV = THLM - THZ0    ! Theta_V term in Obukhov Length, which is the potential temperature different of first layer atmosphere and Urban level 
 
 ! ----------------------------------------------------------------------
-! BELJARS CORRECTION OF USTAR   ! used to correct friction velocity (yuqi)
+! BELJARS CORRECTION OF USTAR   ! used to correct friction velocity
 ! ----------------------------------------------------------------------
       DU2 = MAX (SFCSPD * SFCSPD,EPSU2)
 !cc   If statements to avoid TANGENT LINEAR problems near zero
@@ -4163,31 +4197,31 @@ SUBROUTINE SFCDIF_URB (ZLM,Z0,THZ0,THLM,SFCSPD,AKANDA,AKMS,AKHS,RLMO,CD,ZT_OUT,V
 ! ----------------------------------------------------------------------
 ! ZILITINKEVITCH APPROACH FOR ZT
 ! ----------------------------------------------------------------------
-      USTAR = MAX (SQRT (AKMS * SQRT (DU2+ WSTAR2)),EPSUST)    ! give an initial value of friction velocity (here AKMS might from last iteration) (yuqi)
+      USTAR = MAX (SQRT (AKMS * SQRT (DU2+ WSTAR2)),EPSUST)    ! give an initial value of friction velocity (here AKMS might from last iteration)
 
 ! ----------------------------------------------------------------------
 ! KCL/TL Try Kanda approach instead (Kanda et al. 2007, JAMC)
 !      ZT = EXP (ZILFC * SQRT (USTAR * Z0))* Z0
-      IF (PRESENT(VEGFRAC)) THEN       ! commented out in HRLDAS (yuqi)
+      IF (PRESENT(VEGFRAC)) THEN       ! commented out in HRLDAS
         ! Kawai et al. (2009) JAMC
         ZT = EXP (2.0-(AKANDA-0.9*VEGFRAC**0.29)*(SQVISC**2 * USTAR * Z0)**0.25)* Z0
       ELSE
-      ZT = EXP (2.0-AKANDA*(SQVISC**2 * USTAR * Z0)**0.25)* Z0   ! thermal roughness length (yuqi)
+        ZT = EXP (2.0-AKANDA*(SQVISC**2 * USTAR * Z0)**0.25)* Z0   ! thermal roughness length
       END IF
       
-      ZSLU = ZLM + ZU      ! effective momentum surface layer depth (yuqi)
+      ZSLU = ZLM + ZU      ! effective momentum surface layer depth
 
-      ZSLT = ZLM + ZT      ! effective thermal surface layer depth (yuqi)
+      ZSLT = ZLM + ZT      ! effective thermal surface layer depth
       RLOGU = log (ZSLU / ZU)
 
       RLOGT = log (ZSLT / ZT)
 
-      RLMO = ELFC * AKHS * DTHV / USTAR **3      ! RLMO: 1/Obukhov length, AKHS is w'theta_v' term which is to be parameterized (yuqi)
+      RLMO = ELFC * AKHS * DTHV / USTAR **3      ! RLMO: 1/Obukhov length, AKHS is w'theta_v' term which is to be parameterized
 ! ----------------------------------------------------------------------
 ! 1./MONIN-OBUKKHOV LENGTH-SCALE
 ! ----------------------------------------------------------------------
       DO ITR = 1,ITRMX
-         ZETALT = MAX (ZSLT * RLMO,ZTMIN)   ! before each iternation, first calculate ZETALT (which is dimensionless stability parameter, which is ζ=z/L)  (yuqi)
+         ZETALT = MAX (ZSLT * RLMO,ZTMIN)   ! before each iternation, first calculate ZETALT (which is dimensionless stability parameter, which is ζ=z/L) 
          RLMO = ZETALT / ZSLT
          ZETALU = ZSLU * RLMO
          ZETAU = ZU * RLMO   ! dimensionless stability parameter for momentum at surface layer, which is ζm=zm/L
@@ -4195,7 +4229,7 @@ SUBROUTINE SFCDIF_URB (ZLM,Z0,THZ0,THLM,SFCSPD,AKANDA,AKMS,AKHS,RLMO,CD,ZT_OUT,V
 
 
          IF (ILECH .eq. 0) THEN
-            IF (RLMO .lt. 0.0)THEN       ! unstable condition where ζ<0 (yuqi)
+            IF (RLMO .lt. 0.0)THEN       ! unstable condition where ζ<0
                XLU4 = 1. -16.* ZETALU
                XLT4 = 1. -16.* ZETALT
                XU4 = 1. -16.* ZETAU
@@ -4211,7 +4245,7 @@ SUBROUTINE SFCDIF_URB (ZLM,Z0,THZ0,THLM,SFCSPD,AKANDA,AKMS,AKHS,RLMO,CD,ZT_OUT,V
                SIMM = PSPMU (XLU) - PSMZ + RLOGU
                PSHZ = PSPHU (XT)
                SIMH = PSPHU (XLT) - PSHZ + RLOGT
-            ELSE                         ! stable condition where ζ>0 (yuqi)
+            ELSE                         ! stable condition where ζ>0
                ZETALU = MIN (ZETALU,ZTMAX)
                ZETALT = MIN (ZETALT,ZTMAX)
                PSMZ = PSPMS (ZETAU)
@@ -4238,42 +4272,42 @@ SUBROUTINE SFCDIF_URB (ZLM,Z0,THZ0,THLM,SFCSPD,AKANDA,AKMS,AKHS,RLMO,CD,ZT_OUT,V
             END IF
          END IF
 ! ----------------------------------------------------------------------
-! BELJAARS CORRECTION FOR USTAR                  ! BELJAARS conflict with BelJARS (yuqi)
+! BELJAARS CORRECTION FOR USTAR                  ! BELJAARS conflict with BelJARS
 ! ----------------------------------------------------------------------
 
-            USTAR = MAX (SQRT (AKMS * SQRT (DU2+ WSTAR2)),EPSUST)     ! update Ustar since AKMS has been updated by SIMM (yuqi)
+            USTAR = MAX (SQRT (AKMS * SQRT (DU2+ WSTAR2)),EPSUST)     ! update Ustar since AKMS has been updated by SIMM
             !KCL/TL
             !ZT = EXP (ZILFC * SQRT (USTAR * Z0))* Z0
-            IF (PRESENT(VEGFRAC)) THEN      ! they comment this in the new version (yuqi)
+            IF (PRESENT(VEGFRAC)) THEN      ! they comment this in the new version (urban-nbs comment)
               ! Kawai et al. (2009) JAMC
               ZT = EXP (2.0-(AKANDA-0.9*VEGFRAC**0.29)*(SQVISC**2 * USTAR * Z0)**0.25)* Z0
             ELSE									  
-            ZT = EXP (2.0-AKANDA*(SQVISC**2 * USTAR * Z0)**0.25)* Z0    ! update ZT (yuqi)
+            ZT = EXP (2.0-AKANDA*(SQVISC**2 * USTAR * Z0)**0.25)* Z0    ! update ZT
             END IF				  
             ZSLT = ZLM + ZT
             RLOGT = log (ZSLT / ZT)
             USTARK = USTAR * VKRM
-            AKMS = MAX (USTARK / SIMM,CXCH)    ! update AKMS and AKHS (yuqi)
+            AKMS = MAX (USTARK / SIMM,CXCH)    ! update AKMS and AKHS
             AKHS = MAX (USTARK / SIMH,CXCH)
 !
          IF (BTGH * AKHS * DTHV .ne. 0.0) THEN
-            WSTAR2 = WWST2* ABS (BTGH * AKHS * DTHV)** (2./3.)    ! update WSTAR2 (yuqi)
+            WSTAR2 = WWST2* ABS (BTGH * AKHS * DTHV)** (2./3.)    ! update WSTAR2
          ELSE
             WSTAR2 = 0.0
          END IF
 !-----------------------------------------------------------------------
-         RLMN = ELFC * AKHS * DTHV / USTAR **3     ! updata the 1/L (yuqi)
+         RLMN = ELFC * AKHS * DTHV / USTAR **3     ! updata the 1/L
 !-----------------------------------------------------------------------
 !     IF(ABS((RLMN-RLMO)/RLMA).LT.EPSIT)    GO TO 110
 !-----------------------------------------------------------------------
-         RLMA = RLMO * WOLD+ RLMN * WNEW      !  performe a weighted average of the previous RLMO and the newly calculated RLMN  (yuqi)
+         RLMA = RLMO * WOLD+ RLMN * WNEW      !  performe a weighted average of the previous RLMO and the newly calculated RLMN 
 !-----------------------------------------------------------------------
-         RLMO = RLMA     ! assgin to the RLMO and finally get inversed MO length which is 1/L (yuqi)
+         RLMO = RLMA     ! assgin to the RLMO and finally get inversed MO length which is 1/L
 
       END DO
 
-      CD = USTAR*USTAR/SFCSPD**2    ! calculate the drag coefficient (yuqi)
-	  IF (PRESENT(ZT_OUT)) ZT_OUT = ZT	 ! they comment this in the new version (yuqi)						  
+      CD = USTAR*USTAR/SFCSPD**2    ! calculate the drag coefficient
+	  IF (PRESENT(ZT_OUT)) ZT_OUT = ZT	 ! they comment this in the new version (urban-nbs comment)						  
 ! ----------------------------------------------------------------------
   END SUBROUTINE SFCDIF_URB
 ! ----------------------------------------------------------------------
@@ -4374,7 +4408,7 @@ SUBROUTINE SFCDIF_URB (ZLM,Z0,THZ0,THLM,SFCSPD,AKANDA,AKMS,AKHS,RLMO,CD,ZT_OUT,V
       
       RCSOIL = MAX (RCSOIL,0.0001)
 
-      RC = RSMIN / (LAI * RCS * RCT * RCQ * RCSOIL)   ! canopy resistance (yuqi)
+      RC = RSMIN / (LAI * RCS * RCT * RCQ * RCSOIL)   ! canopy resistance
       DESDT = 0.622*SLV*EA/461.51/TA/TA/1013
       DELTA = (SLV / CPP)* DESDT
       RR = (4.* EPSV *SIGMA * 287.04 / CPP)* (TA **4.)/ (TS * CH) + 1.0
@@ -4396,12 +4430,12 @@ SUBROUTINE SFCDIF_URB (ZLM,Z0,THZ0,THLM,SFCSPD,AKANDA,AKMS,AKHS,RLMO,CD,ZT_OUT,V
       
       DO K = 1, NROOT 
          ET(K) = ETT1 * GX (K) / DENOM
-         ETT   = ETT + ET (K)            ! Evapotranspiration from all the layers (yuqi)
+         ETT   = ETT + ET (K)            ! Evapotranspiration from all the layers
       END DO
       
       
       IF (CMC > 0.0) THEN
-      EC = SHDFAC * ( ( CMC / CMCMAX ) ** CFACTR ) * ETP1 * 0.001     ! evaporation of precipitation intercepted by the canopy (yuqi)
+      EC = SHDFAC * ( ( CMC / CMCMAX ) ** CFACTR ) * ETP1 * 0.001     ! evaporation of precipitation intercepted by the canopy urban-nbs
       ELSE
       EC = 0.0
       END IF
@@ -4414,7 +4448,7 @@ SUBROUTINE SFCDIF_URB (ZLM,Z0,THZ0,THLM,SFCSPD,AKANDA,AKMS,AKHS,RLMO,CD,ZT_OUT,V
 ! ----------------------------------------------------------------------
   
        SUBROUTINE SMFLX (SMCP,SMC,NSOIL,CMCP,CMC,DT,PRCP1,ZSOIL,       &
-     &                   SMCMAX,BEXP,SMCWLT,SROOT,DKSAT,DWSAT,               &     ! added sroot variable (yuqi)
+     &                   SMCMAX,BEXP,SMCWLT,SROOT,DKSAT,DWSAT,               &     ! added sroot variable (urban-nbs)
      &                   SHDFAC,CMCMAX,RUNOFF1,RUNOFF2,RUNOFF3,        &
                          EDIR,EC,ET,DRIP)              
 
@@ -4441,17 +4475,17 @@ SUBROUTINE SFCDIF_URB (ZLM,Z0,THZ0,THLM,SFCSPD,AKANDA,AKMS,AKHS,RLMO,CD,ZT_OUT,V
 ! ADD PRECIPITATION TO EXISTING CMC.IF RESULTING AMT EXCEEDS MAX CAPACITY,
 ! IT BECOMES DRIP AND WILL FALL TO THE GRND.
 ! ----------------------------------------------------------------------
-      RHSCT = SHDFAC * PRCP1 * 0.001 /3600. - EC      ! how many water currently in the canopy after rain (gain) and evaporation (loss) (yuqi)
+      RHSCT = SHDFAC * PRCP1 * 0.001 /3600. - EC      ! how many water currently in the canopy after rain (gain) and evaporation (loss) (urban-nbs)
       DRIP = 0.
       TRHSCT = DT * RHSCT
-      EXCESS = CMCP + TRHSCT                          ! update the current canopy water (yuqi)
+      EXCESS = CMCP + TRHSCT                          ! update the current canopy water (urban-nbs)
 
 ! ----------------------------------------------------------------------
 ! PCPDRP IS THE COMBINED PRCP1 AND DRIP (FROM CMCP) THAT GOES INTO THE
 ! SOIL
 ! ----------------------------------------------------------------------
       IF (EXCESS > CMCMAX) DRIP = EXCESS - CMCMAX
-      PCPDRP = (1. - SHDFAC) * PRCP1 * 0.001 /3600. + DRIP / DT     ! total surfce water influx (yuqi)
+      PCPDRP = (1. - SHDFAC) * PRCP1 * 0.001 /3600. + DRIP / DT     ! total surfce water influx (urban-nbs)
 
 ! ----------------------------------------------------------------------
 ! CALL SUBROUTINES SRT AND SSTEP TO SOLVE THE SOIL MOISTURE
@@ -4511,7 +4545,7 @@ SUBROUTINE SFCDIF_URB (ZLM,Z0,THZ0,THLM,SFCSPD,AKANDA,AKMS,AKHS,RLMO,CD,ZT_OUT,V
          DDMAX (3) = (ZSOIL (2) - ZSOIL (3))* SMCAV
          DDMAX (3) = DDMAX (3)* (1.0- (SMCP (3) - SMCWLT)/ SMCAV)
          
-         DD = DDMAX(1)+DDMAX(2)+DDMAX(3)    ! accumulated maximum holdable soil water for all three layers (yuqi)
+         DD = DDMAX(1)+DDMAX(2)+DDMAX(3)    ! accumulated maximum holdable soil water for all three layers (urban-nbs)
          DT1 = DT/86400
          KDT = 3.0 * DKSAT / PAR
          VAL = (1. - EXP ( - KDT * DT1))
@@ -4519,7 +4553,7 @@ SUBROUTINE SFCDIF_URB (ZLM,Z0,THZ0,THLM,SFCSPD,AKANDA,AKMS,AKHS,RLMO,CD,ZT_OUT,V
          PX = PCPDRP * DT
          IF (PX <  0.0) PX = 0.0
 
-         INFMAX = (PX * (DDT / (PX + DDT)))/ DT     ! identical to 'InfilRateMax' in Noah_MP schaake scheme (yuqi)
+         INFMAX = (PX * (DDT / (PX + DDT)))/ DT     ! identical to 'InfilRateMax' in Noah_MP schaake scheme (urban-nbs)
          MXSMC = SMCP (1)
          CALL WDFCND (WDF,WCND,MXSMC,SMCMAX,BEXP,DKSAT,DWSAT)
          INFMAX = MAX (INFMAX,WCND)
@@ -4527,7 +4561,7 @@ SUBROUTINE SFCDIF_URB (ZLM,Z0,THZ0,THLM,SFCSPD,AKANDA,AKMS,AKHS,RLMO,CD,ZT_OUT,V
          
 
          IF (PCPDRP >  INFMAX) THEN
-          RUNOFF1  = PCPDRP - INFMAX     ! runoff1 is excess infiltration runoff (yuqi)
+          RUNOFF1  = PCPDRP - INFMAX     ! runoff1 is excess infiltration runoff (urban-nbs)
           PDDUM = INFMAX
          END IF
         END IF
@@ -4539,8 +4573,8 @@ SUBROUTINE SFCDIF_URB (ZLM,Z0,THZ0,THLM,SFCSPD,AKANDA,AKMS,AKHS,RLMO,CD,ZT_OUT,V
       AI (1) = 0.0
       BI (1) = WDF * DDZ / ( - ZSOIL (1) )
       CI (1) = - BI (1)   
-      DSMDZ = (SMCP (1) - SMCP (2) )/( - 0.5 * ZSOIL(2))      ! Eq.3.7.253 (i=1) in noah_mp decument (yuqi)
-      RHSTT (1) = (WDF * DSMDZ + WCND- PDDUM + EDIR + ET(1)+ SROOT(1))/ ZSOIL (1)   ! should minus conductivity between two layers (yuqi)
+      DSMDZ = (SMCP (1) - SMCP (2) )/( - 0.5 * ZSOIL(2))      ! Eq.3.7.253 (i=1) in noah_mp decument (urban-nbs)
+      RHSTT (1) = (WDF * DSMDZ + WCND- PDDUM + EDIR + ET(1)+ SROOT(1))/ ZSOIL (1)   ! should minus conductivity between two layers (urban-nbs)
       SSTT = WDF * DSMDZ + WCND+ EDIR + ET(1)           ! DON'T KNOW WHAT IS THIS, maybe for testing purpose (yuqi)
 
 ! ----------------------------------------------------------------------
@@ -4567,7 +4601,7 @@ SUBROUTINE SFCDIF_URB (ZLM,Z0,THZ0,THLM,SFCSPD,AKANDA,AKMS,AKHS,RLMO,CD,ZT_OUT,V
          AI (K) = - WDF * DDZ / DENOM2
          BI (K) = - ( AI (K) + CI (K) )
          IF (K .eq. NSOIL-1) THEN
-            RUNOFF2 = 0.0                         ! subsurface runoff for layer 2 (yuqi)
+            RUNOFF2 = 0.0                         ! subsurface runoff for layer 2
          END IF
          IF (K .ne. NSOIL-1) THEN
             WDF = WDF2
@@ -4610,8 +4644,8 @@ SUBROUTINE SFCDIF_URB (ZLM,Z0,THZ0,THLM,SFCSPD,AKANDA,AKMS,AKHS,RLMO,CD,ZT_OUT,V
 ! CREATE 'AMOUNT' VALUES OF VARIABLES TO BE INPUT TO THE
 ! TRI-DIAGONAL MATRIX ROUTINE.
 ! ----------------------------------------------------------------------
-      DO K = 1,NSOIL-1                                ! E.q. 3.7.265 in noah_mp document (yuqi)
-         RHSTT (K) = RHSTT (K) * DT                   ! update matric coefficient to solve the saturation excess water for each soil layer (yuqi)
+      DO K = 1,NSOIL-1                                ! E.q. 3.7.265 in noah_mp document
+         RHSTT (K) = RHSTT (K) * DT                   ! update matric coefficient to solve the saturation excess water for each soil layer
          AI (K) = AI (K) * DT
          BI (K) = 1. + BI (K) * DT
          CI (K) = CI (K) * DT
@@ -4640,7 +4674,7 @@ SUBROUTINE SFCDIF_URB (ZLM,Z0,THZ0,THLM,SFCSPD,AKANDA,AKMS,AKHS,RLMO,CD,ZT_OUT,V
       DDZ = - ZSOIL (1)
       DO K = 1,NSOIL-1
          IF (K /= 1) DDZ = ZSOIL (K - 1) - ZSOIL (K)
-         SMCOUT (K) = SMCP (K) + CI (K) + WPLUS / DDZ         ! previous soil moisture + updated soil water + soil water surplus from above layer (yuqi)
+         SMCOUT (K) = SMCP (K) + CI (K) + WPLUS / DDZ         ! previous soil moisture + updated soil water + soil water surplus from above layer
          STOT = SMCOUT (K)
          IF (STOT > SMCMAX) THEN
             IF (K .eq. 1) THEN
@@ -4653,14 +4687,14 @@ SUBROUTINE SFCDIF_URB (ZLM,Z0,THZ0,THLM,SFCSPD,AKANDA,AKMS,AKHS,RLMO,CD,ZT_OUT,V
          ELSE
             WPLUS = 0.
          END IF
-         SMC (K) = MAX ( MIN (STOT,SMCMAX),0.07 )          ! change 0.066 to 0.07 in order to avoid floating invalid error in root_uptake step (Yuqi)
+         SMC (K) = MAX ( MIN (STOT,SMCMAX),0.07 )          ! change 0.066 to 0.07 in order to avoid floating invalid error in root_uptake step (urban-nbs)
       END DO
 
 ! ----------------------------------------------------------------------
 ! UPDATE CANOPY WATER CONTENT/INTERCEPTION (CMC).  CONVERT RHSCT TO
 ! AN 'AMOUNT' VALUE AND ADD TO PREVIOUS CMC VALUE TO GET NEW CMC.
 ! ----------------------------------------------------------------------
-      RUNOFF3 = WPLUS                            ! subsurface runoff for layer 3 (yuqi)
+      RUNOFF3 = WPLUS                            ! subsurface runoff for layer 3)
       CMC = CMCP + DT * RHSCT
       IF (CMC < 1.E-20) CMC = 0.0
       CMC = MIN (CMC,CMCMAX)
@@ -4736,7 +4770,7 @@ SUBROUTINE SFCDIF_URB (ZLM,Z0,THZ0,THLM,SFCSPD,AKANDA,AKMS,AKHS,RLMO,CD,ZT_OUT,V
 ! ----------------------------------------------------------------------
 ! INITIALIZE EQN COEF C FOR THE LOWEST SOIL LAYER
 ! ----------------------------------------------------------------------
-      C (NSOIL) = 0.0                                      ! follow E.q 3.7.294-3.7.301 in noah_mp document (yuqi)
+      C (NSOIL) = 0.0                                      ! follow E.q 3.7.294-3.7.301 in noah_mp document
       P (1) = - C (1) / B (1)
       DELTA (1) = D (1) / B (1)
       DO K = 2,NSOIL
@@ -4754,7 +4788,7 @@ SUBROUTINE SFCDIF_URB (ZLM,Z0,THZ0,THLM,SFCSPD,AKANDA,AKMS,AKHS,RLMO,CD,ZT_OUT,V
 ! ----------------------------------------------------------------------
       DO K = 2,NSOIL
          KK = NSOIL - K + 1
-         P (KK) = P (KK) * P (KK +1) + DELTA (KK)        ! E.q 3.7.301 in noah_mp document (yuqi)
+         P (KK) = P (KK) * P (KK +1) + DELTA (KK)        ! E.q 3.7.301 in noah_mp document
       END DO
 ! ----------------------------------------------------------------------
   END SUBROUTINE ROSR12
@@ -4778,7 +4812,7 @@ SUBROUTINE SFCDIF_URB (ZLM,Z0,THZ0,THLM,SFCSPD,AKANDA,AKMS,AKHS,RLMO,CD,ZT_OUT,V
       REAL, INTENT(IN)      :: DF1,DT,SMCMAX, SMCWLT, TBOT,YY, ZBOT,ZZ1, QUARTZ
       REAL, INTENT(IN)      :: CSOIL, CAPR
       REAL, INTENT(INOUT)   :: T1
-      REAL, INTENT(OUT)     :: SSOIL               ! output : soil heat flux, w/m-2 (yuqi)
+      REAL, INTENT(OUT)     :: SSOIL               ! output : soil heat flux, w/m-2
       REAL, DIMENSION(1:NSOIL), INTENT(IN)    :: SMC,ZSOIL
       REAL, DIMENSION(1:NSOIL), INTENT(INOUT) :: STC
       REAL, DIMENSION(1:NSOIL)             :: AI, BI, CI, STCF,RHSTS
@@ -4912,12 +4946,12 @@ SUBROUTINE SFCDIF_URB (ZLM,Z0,THZ0,THLM,SFCSPD,AKANDA,AKMS,AKHS,RLMO,CD,ZT_OUT,V
             IF (ITAVG) THEN
                CALL TBND (STC (K),TBOT,ZSOIL,ZBOT,K,NSOIL,TBK1)
             END IF        
-         ELSE                     !(k=nsoil, for last layer)  (yuqi) 
+         ELSE                     !(k=nsoil, for last layer)
 ! ----------------------------------------------------------------------
 ! SPECIAL CASE OF BOTTOM LAYER (CONCRETE ROOF)
 ! ----------------------------------------------------------------------
             HCPCT = CAPR * 4.1868 * 1.E6
-            DF1K  = 3.24                ! default in NOAH_MP technical notebook page 47 (yuqi)
+            DF1K  = 3.24                ! default in NOAH_MP technical notebook page 47
 ! ----------------------------------------------------------------------
 ! CALC THE VERTICAL TEMP GRADIENT THRU BOTTOM LAYER.
 ! ----------------------------------------------------------------------
@@ -5143,7 +5177,7 @@ FUNCTION kanda_kawai_svf(lp, lf) RESULT (svf)
 
    
 ! ----------------------------------------------------------------------
-! SHADOW_TREE : CALCULATE SHADOW CAST BY TREES AND WALLS  (Huang)
+! SHADOW_TREE : CALCULATE SHADOW CAST BY TREES AND WALLS  (urban-nbs)
 ! ----------------------------------------------------------------------   
    SUBROUTINE SHADOW_TREE (XI, H, W, HTREE, RTREE, DTREE, CHI_SHADED, ETA_SHADED, &
                               CHI_SHADED_TREE, ETA_SHADED_TREE)
@@ -5203,7 +5237,7 @@ FUNCTION kanda_kawai_svf(lp, lf) RESULT (svf)
 ! ----------------------------------------------------------------------
 
 ! ----------------------------------------------------------------------
-! STOMATAL : CALCULATE LEAF STOMATAL RESISTANCE (Huang)
+! STOMATAL : CALCULATE LEAF STOMATAL RESISTANCE (urban-nbs)
 ! ----------------------------------------------------------------------   
       SUBROUTINE STOMATAL(RS, RSMIN, SD_FACET, LAI, W2, WR, WS, TA, TS, QA, QSAT)
 
@@ -5251,7 +5285,7 @@ FUNCTION kanda_kawai_svf(lp, lf) RESULT (svf)
 
 
 ! ----------------------------------------------------------------------
-! LELEAF : CALCULATE LATENT HEAT OF TREE LEAF (Huang)
+! LELEAF : CALCULATE LATENT HEAT OF TREE LEAF (urban-nbs)
 ! ---------------------------------------------------------------------- 
 
    SUBROUTINE LELEAF (LE, SW, LW, RA_LEAF, RS_LEAF, RA, TA, QA, QSAT)
@@ -5281,7 +5315,7 @@ FUNCTION kanda_kawai_svf(lp, lf) RESULT (svf)
 
 
 ! ----------------------------------------------------------------------
-! force_restore_tree (Huang) 
+! force_restore_tree (urban-nbs) 
 ! Refer to Sang and Soon, BLM, 2007
 ! ---------------------------------------------------------------------- 
 
@@ -5303,7 +5337,7 @@ FUNCTION kanda_kawai_svf(lp, lf) RESULT (svf)
 
 
 ! ----------------------------------------------------------------------
-! ROOT WATER UPTAKE (Huang) 
+! ROOT WATER UPTAKE (urban-nbs) 
 ! FOLLOWING NOAH_MP, C. He, P. Valayamkunnath, & refactor team (He et al. 2023)
 ! ---------------------------------------------------------------------- 
 

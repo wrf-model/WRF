@@ -20,6 +20,7 @@
    USE module_dm, ONLY : wrf_dm_min_real, wrf_dm_max_real, wrf_dm_maxval, &
         ntasks_x, ntasks_y, &
         local_communicator_periodic, local_communicator, mytask, ntasks
+
 #else
    USE module_dm, ONLY : wrf_dm_min_real, wrf_dm_max_real
 #endif
@@ -2280,7 +2281,7 @@ DEALLOCATE(dz8w)
            sr_x = config_flags%sr_x, sr_y = config_flags%sr_y, &
            map_proj = config_flags%map_proj, cen_lat = cen_lat, cen_lon = cen_lon, truelat1 = truelat1, &
            truelat2 = truelat2, stand_lon = stand_lon, nfuel_cat = grid%nfuel_cat, zsf = grid%zsf, &
-           dzdxf = grid%dzdxf, dzdyf = grid%dzdyf)
+           dzdxf = grid%dzdxf, dzdyf = grid%dzdyf, communicator = grid%communicator)
 #else
        call wrf_error_fatal ('CFBM requires compilation with CMake')
 #endif

@@ -146,7 +146,6 @@
               ifms, ifme, jfms, jfme, kfms, kfme, &
               ifps, ifpe, jfps, jfpe, kfps, kfpe
    real :: cen_lat, cen_lon, truelat1, truelat2, stand_lon
-!   integer :: ierr ! To be removed
 #endif
 
 
@@ -2248,11 +2247,9 @@ DEALLOCATE(dz8w)
        ! Community Fire Behavior model
      case (1)
 #ifdef WRF_CFBM
-         ! Broadcast the namelist
 #ifdef DM_PARALLEL
+         ! Broadcast the namelist
        call grid%cfbm_namelist%Broadcast_nml (grid%communicator)
-!       print *, 'grid%cfbm_namelist%fire_num_ignitions = ', grid%cfbm_namelist%fire_num_ignitions
-!       call MPI_Barrier(grid%communicator, ierr)
 #endif
 
          ! Get fire dims

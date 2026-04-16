@@ -120,7 +120,13 @@ CONTAINS
 
       REAL :: p_top_requested , temp
       INTEGER :: num_metgrid_levels
-      INTEGER, PARAMETER :: num_wif_levels_default = 30
+!
+!     INTEGER, PARAMETER :: num_wif_levels_default = 30 ! for Thompson aero
+!     num_wif_levels_default is set to a namelsit variable not only for 
+!     thompson scheme (=30), but also for other schemes, such sa udm (=25)
+!     .... tae-ho moon, 08-24-2025
+!
+      INTEGER :: num_wif_levels_default 
       INTEGER :: aer_init_opt
       REAL , DIMENSION(max_eta) :: eta_levels
 
@@ -2331,8 +2337,15 @@ integer::oops1,oops2
 
             aer_init_opt = config_flags%aer_init_opt
 
+            num_wif_levels_default = 30   
+            IF ( config_flags%mp_physics .EQ. UDMSCHEME ) THEN 
+                num_wif_levels_default = 25
+            END IF 
+
             if_thompsonaero_3d: IF ((config_flags%mp_physics .EQ. THOMPSONAERO &
-				.OR. config_flags%mp_physics .EQ. RCON_MP_SCHEME) .AND. &
+!				.OR. config_flags%mp_physics .EQ. RCON_MP_SCHEME) .AND. & 
+				.OR. config_flags%mp_physics .EQ. RCON_MP_SCHEME .OR.   &
+                config_flags%mp_physics .EQ. UDMSCHEME) .AND. & 
                 config_flags%wif_input_opt .GT. 0) THEN
 
             select_aer_init_opt_3d: select case (aer_init_opt)
@@ -4510,7 +4523,8 @@ endif
 !+---+-----------------------------------------------------------------+
 
       if_thompsonaero_2d: IF ((config_flags%mp_physics .EQ. THOMPSONAERO &
-				.OR. config_flags%mp_physics .EQ. RCON_MP_SCHEME) .AND. &
+!				.OR. config_flags%mp_physics .EQ. RCON_MP_SCHEME) .AND. & 
+				.OR. config_flags%mp_physics .EQ. RCON_MP_SCHEME .OR. config_flags%mp_physics .EQ. UDMSCHEME) .AND. &
                 config_flags%wif_input_opt .GT. 0) THEN
 
       select_aer_init_opt_2d: select case (aer_init_opt)

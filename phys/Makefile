@@ -240,6 +240,7 @@ PHYSMMM_MODULES = \
 	physics_mmm/cu_ntiedtke.o \
 	physics_mmm/module_libmassv.o \
 	physics_mmm/mp_wsm6.o \
+	physics_mmm/mp_udm.o \
 	physics_mmm/mp_wsm6_effectRad.o \
 	physics_mmm/mp_radar.o \
         physics_mmm/bl_gwdo.o \

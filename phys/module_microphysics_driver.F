@@ -2661,13 +2661,15 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 
         CASE (UDMSCHEME)
              CALL wrf_debug ( 100 , 'microphysics_driver: calling udm' )
-             IF ( PRESENT( QV_CURR ) .AND. PRESENT ( QC_CURR ) .AND.  &
-                  PRESENT( QR_CURR ) .AND. PRESENT ( QI_CURR ) .AND.  &
-                  PRESENT( QS_CURR ) .AND. PRESENT ( QG_CURR ) .AND.  &
-                  PRESENT( QH_CURR ) .AND.                            &
-                  PRESENT( QNN_CURR ) .AND. PRESENT ( QNC_CURR ) .AND. &
-                  PRESENT( QNR_CURR ).AND.                            &
-                  PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV )  ) THEN
+             IF ( PRESENT( QV_CURR ) .AND. PRESENT ( QC_CURR ) .AND.        &
+                  PRESENT( QR_CURR ) .AND. PRESENT ( QI_CURR ) .AND.        &
+                  PRESENT( QS_CURR ) .AND. PRESENT ( QG_CURR ) .AND.        &
+                  PRESENT( QH_CURR ) .AND.                                  &
+                  PRESENT( QNN_CURR ) .AND. PRESENT ( QNC_CURR )  .AND.     &
+                  PRESENT( QNR_CURR ).AND.                                  &
+                  PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV )    .AND.     &
+                  PRESENT ( QNWFA_CURR ) .AND. PRESENT( QNIFA_CURR ) .AND.  & 
+                  PRESENT ( QNWFA2D ) .AND. PRESENT( QNIFA2D ) ) THEN 
              CALL udm(                                              &
                   TH=th                                             &
                  ,Q=qv_curr                                         &
@@ -2681,7 +2683,8 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,NC=qnc_curr                                       &
                  ,NR=qnr_curr                                       &
                  ,DEN=rho,PII=pi_phy,P=p,DELZ=dz8w                  &
-                 ,DELT=dt,G=g,CPD=cp,CPV=cpv,CCN0=ccn_conc          & ! RAS
+                 ,DELT=dt,dx=dx, dy=dy                              &
+                 ,G=g,CPD=cp,CPV=cpv,CCN0=ccn_conc                  & 
                  ,RD=r_d,RV=r_v,T0C=svpt0                           &
                  ,EP1=ep_1, EP2=ep_2, QMIN=epsilon                  &
                  ,XLS=xls, XLV0=xlv, XLF0=xlf                       &
@@ -2706,6 +2709,14 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
+                 ,NWFA=qnwfa_curr                                   & 
+                 ,NIFA=qnifa_curr                                   &
+                 ,NWFA2D=qnwfa2d                                    & 
+                 ,NIFA2D=qnifa2d                                    & 
+                 ,aer_init_opt=config_flags%aer_init_opt            & 
+                 ,wif_input_opt=config_flags%wif_input_opt          & 
+                 ,if_aerosol_aware=config_flags%if_aerosol_aware    & 
+                 ,errmsg=errmsg, errflg=errflg                      & 
                                                                     )
              ELSE
                CALL wrf_error_fatal ( 'arguments not present for calling udm')

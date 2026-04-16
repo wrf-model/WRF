@@ -2526,10 +2526,11 @@
       END IF
 
 !-----------------------------------------------------------------------
-!  Set aer_init_opt for Thompson-MP-Aero (mp_physics=28) AND rcon mp (mp_physics=29)
+!  Set aer_init_opt for Thompson-MP-Aero (mp_physics=28) AND rcon mp (mp_physics=29) AND udm (mp_physics=27) 
 !-----------------------------------------------------------------------
      DO i = 1, model_config_rec % max_dom
-       IF ( model_config_rec%mp_physics(i) .EQ. THOMPSONAERO .OR. model_config_rec%mp_physics(i) .EQ. RCON_MP_SCHEME ) THEN
+       IF ( model_config_rec%mp_physics(i) .EQ. THOMPSONAERO .OR. model_config_rec%mp_physics(i) .EQ. RCON_MP_SCHEME &
+          .OR. model_config_rec%mp_physics(i) .EQ. UDMSCHEME ) THEN 
          IF ( model_config_rec%use_aero_icbc ) THEN
            model_config_rec%aer_init_opt = 1
          ELSE IF ( model_config_rec%use_rap_aero_icbc ) THEN
@@ -2539,7 +2540,7 @@
      END DO
 
 !-----------------------------------------------------------------------
-!  Check if qna_update=0 when aer_init_opt>1 for Thompson-MP-Aero (mp_physics=28) AND rcon mp (mp_physics=29
+!  Check if qna_update=0 when aer_init_opt>1 for Thompson-MP-Aero (mp_physics=28) AND rcon mp (mp_physics=29) 
 !-----------------------------------------------------------------------
      DO i = 1, model_config_rec % max_dom
        IF ( model_config_rec%mp_physics(i) .EQ. THOMPSONAERO .OR. model_config_rec%mp_physics(i) .EQ. RCON_MP_SCHEME ) THEN

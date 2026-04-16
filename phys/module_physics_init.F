@@ -1,4 +1,3 @@
-!WRF:MODEL_LAYER:INITIALIZATION
 !
 
 !  This MODULE holds the routines which are used to perform model start-up operations
@@ -4404,7 +4403,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    USE module_mp_wdm5
    USE module_mp_wdm6
    USE module_mp_wdm7
-   USE module_mp_udm
+   USE mp_udm
 #if (WRFPLUS != 1) & !defined( VAR4D )
    USE module_mp_nssl_2mom, only: nssl_2mom_init
 #endif
@@ -4606,10 +4605,16 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
      CASE (WDM7SCHEME)
           CALL wdm7init(rhoair0,rhowater,rhosnow,cliq,cpv,ccn_conc, allowed_to_read )
      CASE (UDMSCHEME)
-          CALL udminit(rhoair0,rhowater,rhosnow,cliq,cpv,ccn_conc, allowed_to_read )
-          call udm_funct_shape_setup
-          call udm_funct_svp_setup
-          call udm_funct_lb2017_setup
+         IF(start_of_simulation.or.restart.or.config_flags%cycling)     &
+            CALL mp_udm_init(den0=rhoair0,denr=rhowater,dens=rhosnow,cl=cliq, &
+                 cv=cpv,ccn0=ccn_conc,&
+                          NWFA2D=qnwfa2d,                               &
+                          NWFA=scalar(ims,kms,jms,P_QNWFA),             &
+                          NIFA=scalar(ims,kms,jms,P_QNIFA),             &
+                          if_aerosol_aware=config_flags%if_aerosol_aware,     &
+                          IDS=ids, IDE=ide, JDS=jds, JDE=jde, KDS=kds, KDE=kde,   &
+                          IMS=ims, IME=ime, JMS=jms, JME=jme, KMS=kms, KME=kme,   &
+                          ITS=its, ITE=ite, JTS=jts, JTE=jte, KTS=kts, KTE=kte)
 #if (EM_CORE==1)
      CASE (NTU)
           CALL ntu_init(PHB,PH,P,PB,inv_dens,QV,QDCN,QTCN,QCCN,QRCN,   &

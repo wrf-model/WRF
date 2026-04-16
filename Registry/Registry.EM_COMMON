@@ -2656,6 +2656,7 @@ rconfig   real    sas_pgcon               namelist,physics      max_domains  0.5
 rconfig   integer scalar_pblmix           namelist,physics      max_domains  0         h    "mix 4d scalar variables with pbl scheme 0=no 1=yes" ""
 rconfig   integer tracer_pblmix           namelist,physics      max_domains  1         h    "mix 4d tracer variables with pbl scheme 0=no 1=yes" ""
 rconfig   logical use_aero_icbc           namelist,physics     	1              .false. rh    "use_aero_icbc"  "Use GOCART climo 3D aerosols IC/BC data in Thompson-MP-Aero"  "logical flag"
+rconfig   logical if_aerosol_aware        namelist,physics     	1              .true.  rh    "if_aerosol_aware"  "Use CAMS aerosols IC/BC data in UDM Aerosol"  "logical flag"
 rconfig   logical use_rap_aero_icbc       namelist,physics      1              .false. r     "use_rap_aero_icbc"  "Use GOCART climo 3D aerosols IC/BC data in Thompson-MP-Aero from RAP"  "logical flag"
 rconfig   integer aer_init_opt            derived               1              0       irh   "aer_init_opt"   "surrogate to handle aerosol IC/BC data in Thompson-MP-Aero: 0=no IC/BC aerosol, 1=climo, 2=first guess"
 rconfig   logical wif_fire_emit           namelist,physics      1              .false. irh   "wif_fire_emit"  "Activate biomass burning emissionsu in Thompson-MP-Aero"  " "
@@ -3037,7 +3038,7 @@ package   wdm6scheme      mp_physics==16               -             moist:qv,qc
 package   nssl_2mom       mp_physics==18               -             moist:qv,qc,qr,qi,qs,qg
 package   wsm7scheme      mp_physics==24               -             moist:qv,qc,qr,qi,qs,qg,qh;state:re_cloud,re_ice,re_snow
 package   wdm7scheme      mp_physics==26               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnn,qnc,qnr;state:re_cloud,re_ice,re_snow
-package   udmscheme       mp_physics==27               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnn,qnc,qnr;state:re_cloud,re_ice,re_snow
+package   udmscheme       mp_physics==27               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnn,qnc,qnr,qnwfa,qnifa;state:re_cloud,re_ice,re_snow,qnwfa2d,qnifa2d,taod5503d,taod5502d
 package   thompsonaero    mp_physics==28               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr,qnc,qnwfa,qnifa,qnbca;state:re_cloud,re_ice,re_snow,qnwfa2d,qnifa2d,taod5503d,taod5502d
 package   thompsongh      mp_physics==38               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr,qnc,qng,qvolg,qnwfa,qnifa,qnbca;state:re_cloud,re_ice,re_snow,qnwfa2d,qnifa2d,taod5503d,taod5502d
 package   p3_1category    mp_physics==50               -             moist:qv,qc,qr,qi;scalar:qni,qnr,qir,qib;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,refl_10cm,th_old,qv_old
@@ -3095,7 +3096,7 @@ package   nssl_2mom_dfi     mp_physics_dfi==18       -             dfi_moist:dfi
 #package   nssl_2momg_dfi    mp_physics_dfi==22       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qndrop,dfi_qnr,dfi_qni,dfi_qns,dfi_qng,dfi_qvolg;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
 package   wsm7scheme_dfi    mp_physics_dfi==24       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
 package   wdm7scheme_dfi    mp_physics_dfi==26       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;dfi_scalar:dfi_qnn,dfi_qnc,dfi_qnr;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
-package   udmscheme_dfi     mp_physics_dfi==27       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;dfi_scalar:dfi_qnn,dfi_qnc,dfi_qnr;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
+package   udmscheme_dfi     mp_physics_dfi==27       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;dfi_scalar:dfi_qnn,dfi_qnc,dfi_qnr,dfi_qnwfa,dfi_qnifa;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow 
 package   thompsonaero_dfi  mp_physics_dfi==28       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qnr,dfi_qnc,dfi_qnwfa,dfi_qnifa,dfi_qnbca;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
 package   thompsongh_dfi    mp_physics_dfi==38       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qnr,dfi_qng,dfi_qvolg,dfi_qnc,dfi_qnwfa,dfi_qnifa,dfi_qnbca;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
 package   p3_1category_dfi  mp_physics_dfi==50       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi;dfi_scalar:dfi_qni,dfi_qnr,dfi_qir,dfi_qib;state:dfi_re_cloud,dfi_re_ice

@@ -1350,6 +1350,7 @@ module_physics_init.o: \
 	module_mp_nssl_2mom.o \
 	module_mp_wdm5.o \
 	module_mp_wdm6.o \
+	physics_mmm/mp_udm.o \
 	module_cam_physconst.o \
 	module_cam_shr_kind_mod.o \
 	module_mp_cammgmp_driver.o \
@@ -1398,6 +1399,7 @@ module_microphysics_driver.o: \
 	module_mp_nssl_2mom.o \
 	module_mp_wdm5.o \
 	module_mp_wdm6.o \
+	module_mp_udm.o \
 	module_mp_cammgmp_driver.o \
 	module_irrigation.o \
 	module_mp_fast_sbm.o \
@@ -1791,6 +1793,10 @@ module_mp_wdm6.o: \
 	../share/module_model_constants.o \
 	module_mp_radar.o 
 
+module_mp_udm.o: \
+	ccpp_kind_types.o \
+	physics_mmm/mp_radar.o \
+	physics_mmm/mp_udm.o
 
 module_mp_morr_two_moment.o: \
 	../share/module_model_constants.o \
@@ -1861,6 +1867,10 @@ physics_mmm/mp_wsm6.o: \
 	physics_mmm/mp_radar.o \
 	physics_mmm/module_libmassv.o
 
+physics_mmm/mp_udm.o: \
+	ccpp_kind_types.o \
+	physics_mmm/mp_radar.o \
+	physics_mmm/module_libmassv.o
 
 physics_mmm/mp_wsm6_effectRad.o: \
 	ccpp_kind_types.o \

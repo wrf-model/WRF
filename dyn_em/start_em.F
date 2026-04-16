@@ -146,6 +146,7 @@
               ifms, ifme, jfms, jfme, kfms, kfme, &
               ifps, ifpe, jfps, jfpe, kfps, kfpe
    real :: cen_lat, cen_lon, truelat1, truelat2, stand_lon
+   logical :: is_cfbm_initialized = .false.
 #endif
 
 
@@ -2247,10 +2248,15 @@ DEALLOCATE(dz8w)
        ! Community Fire Behavior model
      case (1)
 #ifdef WRF_CFBM
+       Init_cfbm: if (.not. is_cfbm_initialized) then
 #ifdef DM_PARALLEL
          ! Broadcast the namelist
        call grid%cfbm_namelist%Broadcast_nml (grid%communicator)
 #endif
+
+       if (abs (grid%dt - grid%cfbm_namelist%dt) > 1.0e-5) then
+         call wrf_error_fatal ('CFBM dt should match WRF dt for the fire domain')
+       end if
 
          ! Get fire dims
        call get_ijk_from_subgrid (grid, ifds, ifde, jfds, jfde, kfds, kfde, &
@@ -2287,6 +2293,10 @@ DEALLOCATE(dz8w)
            map_proj = config_flags%map_proj, cen_lat = cen_lat, cen_lon = cen_lon, truelat1 = truelat1, &
            truelat2 = truelat2, stand_lon = stand_lon, nfuel_cat = grid%nfuel_cat, zsf = grid%zsf, &
            dzdxf = grid%dzdxf, dzdyf = grid%dzdyf, communicator = grid%communicator)
+
+         is_cfbm_initialized = .true.
+
+       end if Init_cfbm
 #else
        call wrf_error_fatal ('CFBM requires compilation with CMake')
 #endif

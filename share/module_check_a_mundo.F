@@ -2775,6 +2775,24 @@
       END IF
 
 !-----------------------------------------------------------------------
+! CFBM checks
+!-----------------------------------------------------------------------
+
+      ! CFBM can be active in only one domain
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+        IF (model_config_rec%ifire(i) == 1) THEN
+          oops = oops + 1
+        END IF
+      END DO
+
+      IF ( oops .GT. 1 ) THEN
+        wrf_err_message = '--- ERROR: CFBM can be active in only one domain'
+        CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+        count_fatal_error = count_fatal_error + 1
+      END IF
+
+!-----------------------------------------------------------------------
 ! This WRF version does not support trajectories on a global domain
 !-----------------------------------------------------------------------
       IF (  model_config_rec % polar(1) .AND. &

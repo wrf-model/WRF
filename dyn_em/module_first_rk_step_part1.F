@@ -56,7 +56,7 @@ CONTAINS
 #ifdef DM_PARALLEL
     USE module_dm, ONLY : local_communicator, mytask, ntasks, ntasks_x, ntasks_y, local_communicator_periodic, wrf_dm_maxval
     USE module_comm_dm, ONLY : halo_em_phys_a_sub,halo_em_fdda_sfc_sub,halo_pwp_sub,halo_em_chem_e_3_sub, &
-    halo_em_chem_e_5_sub, halo_em_hydro_noahmp_sub
+    halo_em_chem_e_5_sub, halo_em_hydro_noahmp_sub, halo_em_tracer_e_5_sub
 #if ( WRFPLUS == 1 )
     USE module_comm_dm, ONLY : halo_em_phys_a_bl_surf_sub
 #endif
@@ -1475,6 +1475,12 @@ BENCH_END(pbl_driver_tim)
                grid%rthfrten, grid%rqvfrten)          ! theta and Qv tendencies
            end do
            !$OMP END PARALLEL DO
+
+           if (config_flags%tracer_opt == 3) then
+#ifdef DM_PARALLEL
+#     include "HALO_EM_TRACER_E_5.inc"
+#endif
+           end if
          else
            call wrf_error_fatal ('num_tiles in WRF and CFBM should match')
          endif

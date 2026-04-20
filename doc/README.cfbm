@@ -1,0 +1,11 @@
+
+WRF should be compiled with CMake in order to use the Community Fire Behavior model:
+git clone --recurse-submodules https://github.com/wrf-model/WRF
+./configure_new -- -DENABLE_CFBM=ON
+./compile_new
+
+To activate the model you need to set ifire = 1 in the fire block of the WRF namelist.
+This instructs WRF to read the CFBM namelist: namelist.cfbm
+
+In a given WRF simulation, CFBM can only be activated in one domain.
+

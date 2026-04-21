@@ -14,7 +14,7 @@ This is an example of the namelist.cfbm:
 
  &time
  dt = 2               ! WRF time step [s] for the nest CFBM is active
- interval_output = 2  ! Frequency [Min] saving fire output
+ interval_output = 2  ! Frequency [s] saving fire output
 /
 
  &atm

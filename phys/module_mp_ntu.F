@@ -5692,7 +5692,6 @@
             VTNRG = SQRT(VTN0*VTN0+0.04*VTNR*VTNG)
             VTARG = SQRT(VTAX*VTAX+0.04*VTAR*VTAG)
             RHOGW = (QG1D+QR1D)/(QG1D/RHOG+QR1D/RHOW+ISMALL)
-            RATIO = (RHOGW/DNGRM)**THRD
             STOKE = (RHOW*ABS(VTQ0)*MVDR**2.)/(9.*MUA*MVDG)
             STOKE = MAX(1.5,MIN(10.,STOKE))
             ERG   = 5.5E-1*LOG10(2.51*STOKE)                            ! parameterization based on Cober and List, 1993 [JAS]
@@ -5705,6 +5704,7 @@
                DNGRM = 3.E2*(-5.E5*MVDR*0.6*VTQRG/TC1D)**0.44
             ENDIF
             DNGRM = MIN(MAX(DNGRM,RHOIMIN),RHOG0)
+            RATIO = (RHOGW/DNGRM)**THRD
             IF (MVDG.GE.2.E-4.AND.MVDG.GE.MVDR) THEN
                QRMrg = QRMR1*ERG*VTQRG*NG1D*(GG3*GR4+2.*GG2*GR5+GR6)
                NRMrg = NRMR1*ERG*VTNRG*NG1D*(GG3+2.*GG2*GR2+GR3)

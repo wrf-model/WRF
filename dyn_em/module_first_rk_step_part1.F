@@ -66,8 +66,8 @@ CONTAINS
 #ifdef WRF_CFBM
       ! CFBM
     use advance_mod, only : Advance_state
-    use wrf_mod, only : Interp_wrf2dvar_to_cfbm, Interp_wrfwinds_to_cfbm
-    use wrf_mod, only : Provide_atm_feedback
+    use wrf_mod, only : Interp_wrf2dvar_to_cfbm, Interp_wrfwinds_to_cfbm, Provide_atm_feedback
+    use interp_mod, only : VINTERP_WINDS_FROM_3D_WINDS, VINTERP_WINDS_FROM_10M_WINDS
 #endif
 
     IMPLICIT NONE
@@ -1433,13 +1433,33 @@ BENCH_END(pbl_driver_tim)
              grid%fire_state%ifps, grid%fire_state%ifpe, grid%fire_state%jfps, grid%fire_state%jfpe, &
              grid%fire_state%lats, grid%fire_state%lons, grid%fire_state%proj, grid%fire_state%fire_rain)
 
-         call Interp_wrfwinds_to_cfbm (grid%u_phy, grid%v_phy, grid%z_at_w, ims, ime, kms, kme, jms, jme, &
-             grid%fire_state%ifms, grid%fire_state%ifme, grid%fire_state%jfms, grid%fire_state%jfme, &
-             grid%fire_state%ifps, grid%fire_state%ifpe, grid%fire_state%jfps, grid%fire_state%jfpe, &
-             grid%fire_state%kfds, grid%fire_state%kfde, &
-             grid%fire_state%lats, grid%fire_state%lons, grid%fire_state%proj, grid%fire_state%fz0,  &
-             grid%cfbm_namelist%fire_lsm_zcoupling, grid%cfbm_namelist%fire_lsm_zcoupling_ref, &
-             grid%cfbm_namelist%fire_wind_height, grid%fire_state%uf, grid%fire_state%vf)
+         Select_vinterp_opt: select case  (grid%cfbm_namelist%wind_vinterp_opt)
+           case (VINTERP_WINDS_FROM_3D_WINDS)
+             call Interp_wrfwinds_to_cfbm (grid%u_phy, grid%v_phy, grid%z_at_w, ims, ime, kms, kme, jms, jme, &
+                 grid%fire_state%ifms, grid%fire_state%ifme, grid%fire_state%jfms, grid%fire_state%jfme, &
+                 grid%fire_state%ifps, grid%fire_state%ifpe, grid%fire_state%jfps, grid%fire_state%jfpe, &
+                 grid%fire_state%kfds, grid%fire_state%kfde, &
+                 grid%fire_state%lats, grid%fire_state%lons, grid%fire_state%proj, grid%fire_state%fz0,  &
+                 grid%cfbm_namelist%fire_lsm_zcoupling, grid%cfbm_namelist%fire_lsm_zcoupling_ref, &
+                 grid%cfbm_namelist%fire_wind_height, grid%fire_state%uf, grid%fire_state%vf)
+
+           case (VINTERP_WINDS_FROM_10M_WINDS)
+             call Interp_wrf2dvar_to_cfbm (grid%u10, ims, ime, jms, jme, &
+                 grid%fire_state%ifms, grid%fire_state%ifme, grid%fire_state%jfms, grid%fire_state%jfme, &
+                 grid%fire_state%ifps, grid%fire_state%ifpe, grid%fire_state%jfps, grid%fire_state%jfpe, &
+                 grid%fire_state%lats, grid%fire_state%lons, grid%fire_state%proj, grid%fire_state%uf)
+
+             call Interp_wrf2dvar_to_cfbm (grid%v10, ims, ime, jms, jme, &
+                 grid%fire_state%ifms, grid%fire_state%ifme, grid%fire_state%jfms, grid%fire_state%jfme, &
+                 grid%fire_state%ifps, grid%fire_state%ifpe, grid%fire_state%jfps, grid%fire_state%jfpe, &
+                 grid%fire_state%lats, grid%fire_state%lons, grid%fire_state%proj, grid%fire_state%vf)
+
+             call grid%fire_state%Apply_wafs ()
+
+           case default
+             call wrf_error_fatal ('The vertical wind interpolation option does not exist in CFBM')
+
+         end select Select_vinterp_opt
 
          call Advance_state (grid = grid%fire_state, config_flags = grid%cfbm_namelist)
 

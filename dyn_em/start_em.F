@@ -25,7 +25,7 @@
    USE module_dm, ONLY : wrf_dm_min_real, wrf_dm_max_real
 #endif
    USE module_comm_dm
-   USE module_llxy, ONLY : proj_cassini
+   USE module_llxy, ONLY : proj_cassini, PROJ_LC
    USE module_physics_init
    USE NoahmpGroundwaterInitMod, ONLY: NoahmpGroundwaterInitMain
    USE module_lightning_driver, ONLY : lightning_init
@@ -2256,6 +2256,10 @@ DEALLOCATE(dz8w)
 
        if (abs (grid%dt - grid%cfbm_namelist%dt) > 1.0e-5) then
          call wrf_error_fatal ('CFBM dt should match WRF dt for the fire domain')
+       end if
+
+       if (config_flags%map_proj /= PROJ_LC) then
+         call wrf_error_fatal ('CFBM only supports Lambert Conformal projections at this moment')
        end if
 
          ! Get fire dims

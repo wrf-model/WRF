@@ -9,6 +9,7 @@ This instructs WRF to read the CFBM namelist: namelist.cfbm
 
 In a given WRF simulation, CFBM can only be activated in one domain.
 
+It only works with Lambert-Conformal projections at this time.
 
 This is an example of the namelist.cfbm:
 

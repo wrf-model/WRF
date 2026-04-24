@@ -802,8 +802,10 @@ use_rap_aero_icbc                   = .false.   ! Set to .true. to ingest real-t
  bl_mynn_edmf_tke (max_dom)          = 0,  ! default; = 1 activates TKE transport in MYNN mass-flux scheme 
                                             (assuming bl_mynn_edmf > 0)
                                        0    no TKE transport (default);1: activate TKE transport
- bl_mynn_output (max_dom)            = 0,  ! do not output extra arrays
-                                       1    allocate and output extra 3D arrays from MYNN PBL
+ bl_mynn_edmf_dd (max_dom)	     = 0,  ! default = 0; 1 activates downdraft component in MYNN
+ bl_mynn_output (max_dom)            = 0,  ! default = 0; do not output extra arrays
+                                           ! =1:allocate and output extra 3D arrays from MYNN PBL for mass flux updrafts
+				           ! =2:allocate and output extra 3D arrays from MYNN PBL for mass flux downdrafts
  bl_mynn_mixscalars (max_dom)        = 0   ! off, 1: activate mixing of scalars
  bl_mynn_mixqt (max_dom)             = 0   ! mixing moisture species separately, 1: mixing total water
 

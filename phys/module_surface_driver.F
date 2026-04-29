@@ -112,9 +112,8 @@ CONTAINS
      &          ,zi3d,         watsat3d,     csol3d,     tkmg3d         & !lake
      &          ,tkdry3d,      tksatu3d,     LakeModel,  lake_min_elev     & !lake
 #if (EM_CORE==1)
- !    &          ,lakemask,  lakeflag                                  & !lake
-     &          ,lakemask                                  & !lake
-                , restart_flag                             & ! restart_flag
+     &          ,lakemask                                               & !lake
+                , restart_flag                                          & ! restart_flag
 #endif
 ! KIM TOFD
                 ,kim_tofd                                            & ! kim tofd

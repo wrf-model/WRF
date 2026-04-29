@@ -811,7 +811,9 @@ use_rap_aero_icbc                   = .false.   ! Set to .true. to ingest real-t
 
  scalar_pblmix (max_dom)             = 1 ! mix scalar fields consistent with PBL option (exch_h)
  tracer_pblmix (max_dom)             = 1 ! mix tracer fields consistent with PBL option (exch_h)
- shinhong_tke_diag (max_dom)         = 0 ! diagnostic TKE and mixing length from Shin-Hong PBL
+ shinhong_nonlocal_flux (max_dom)    = .true.,  ! default;  =.false. to use YSU (gamma-type) option
+ shinhong_scu_mixing (max_dom)       = .false., ! strato-cumulus mixing (topdown mxing in YSU pbl)
+ shinhong_ke_dissipation (max_dom)   = .false., ! heating due to kinetic energy dissipation
  opt_thcnd                                 option to treat thermal conductivity in Noah LSM
                                      = 1,  original (default)
                                      = 2,  McCumber and Pielke for silt loam and sandy loam
@@ -1722,8 +1724,12 @@ The following are for observation nudging:
  swap_pole_with_next_j               = .false.  ! T/F replace the entire j=1 (jds-1) with the values from j=2 (jds-2)
  actual_distance_average             = .false.  ! T/F average the field at each i location in the j-loop with a number of grid points based on a map-factor ratio
  gwd_opt (max_dom)                   = 0       ! for running without gravity wave drag
-                                     = 1       ; for running with gravity wave drag (Choi and Hong 2015)
+                                     = 1       ; for running with KIM gravity wave drag
                                      = 3       ; NOAA/GSL gravity wave drag and turbulent orographic form drag
+ kim_tofd                            = .false. ! .true., KIM turbulent orographic form drag for sfclay_physics=1 (TOFD)
+ tofd_factor                         = .003    ! a factor to compute TOFD in surface layer physics
+ gwd_if_nonhyd                       = .true.  ! whether to incorporate the nonhydrostatic effect in KIM GWD
+ gwd_dx_factor                       = 2.      ! effective grid spacing ratio in KIM GWD
  gwd_diags                           = 0       ; set to 1 to output diagnostics for gwd_opt = 3
  sfs_opt (max_dom)                   = 0       ! nonlinear backscatter and anisotropy (NBA) off
                                      = 1       ! NBA1 using diagnostic stress terms (km_opt=2,3 for scalars)

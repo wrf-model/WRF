@@ -71,8 +71,8 @@ SUBROUTINE microphysics_driver(                                          &
                       ,f_qns,f_qnr,f_qng,f_qnc,f_qnn,f_qh,f_qnh          &
                       ,            f_qzr,f_qzi,f_qzs,f_qzg,f_qzh         &
                       ,f_qvolg,f_qvolh                                   &
-                      ,f_qic,f_qip,f_qid &
-                      ,f_qnic,f_qnip,f_qnid &
+                      ,f_qic,f_qip,f_qid                                 &
+                      ,f_qnic,f_qnip,f_qnid                              &
                       ,f_qir,f_qib                                       & ! for P3
                       ,f_qi2,f_qni2,f_qir2,f_qib2                        & ! for P3
                       ,f_qvoli,f_qaoli                                   & ! for Jensen ISHMAEL

@@ -2531,6 +2531,9 @@ module_microphysics_driver.o: \
 	module_mp_cammgmp_driver.o \
 	module_irrigation.o \
 	module_mp_fast_sbm.o \
+	module_calc_lpi_new.o \
+	module_ltng_pe.o \
+	module_ltng_strokes.o \
 	../frame/module_driver_constants.o \
 	../frame/module_state_description.o \
 	../frame/module_wrf_error.o \

@@ -1155,6 +1155,11 @@ state   real   maxwidth         ij     misc        1         -      h         "m
 state   real   ztop_plume       ij     misc        1         -      h         "ztop_plume"       "Height of tallest plume"               "m"
 state   real   excess_h         ij     misc        1         -      h         "excess_h"         "Max heat excess of plume initialization" "K"
 state   real   excess_q         ij     misc        1         -      h         "excess_q"         "Max moisture excess of plume initialization" "kg/kg"
+state   real   maxMF_dd         ij     misc        1         -      h         "maxMF_dd"         "Maximum mass-flux of downdrafts"       "m/s * area"
+state   real   maxwidth_dd      ij     misc        1         -      h         "maxwidth_dd"      "Maximum downdraft width"               "m"
+state   real   maxtkeprod       ij     misc        1         -      h         "maxtkeprod"       "Maximum tke production by clout top cooling" "m2/s2/hr"
+state   real   cldtop_cooling   ij     misc        1         -      h         "cldtop_cooling"   "Radiative cooling at cloud top"        "K/hr"
+state   real   ent_eff          ij     misc        1         -      h         "ent_eff"          "Entrainment efficiency for cloud tops" "unitless"
 
 #FogDES variables
 state   real   fgdp             ij     misc        1         -      -        "fgdp"                "Accumulated fog deposition"    "mm"
@@ -3236,8 +3241,8 @@ package   kepsscheme     bl_pbl_physics==17          -             scalar:tke_ad
 package   mrfscheme      bl_pbl_physics==99          -             -
 
 package   tkebudget      tke_budget==1               -             state:qSHEAR,qBUOY,qDISS,qWT,dqke
-package   mynn_dmp_edmf1 bl_mynn_edmf==1             -             state:ztop_plume,maxmf,maxwidth,excess_h,excess_q
-package   mynn_dmp_edmf2 bl_mynn_edmf==2             -             state:ztop_plume,maxmf,maxwidth,excess_h,excess_q
+package   mynn_dmp_edmf1 bl_mynn_edmf==1             -             state:ztop_plume,maxmf,maxwidth,excess_h,excess_q,maxmf_dd,maxwidth_dd,maxtkeprod,cldtop_cooling,ent_eff
+package   mynn_dmp_edmf2 bl_mynn_edmf==2             -             state:ztop_plume,maxmf,maxwidth,excess_h,excess_q,maxmf_dd,maxwidth_dd,maxtkeprod,cldtop_cooling,ent_eff
 package   mynn_3Doutput1 bl_mynn_output==1           -             state:edmf_a,edmf_w,edmf_thl,edmf_qt,edmf_ent,edmf_qc,sub_thl3D,sub_sqv3D,det_thl3D,det_sqv3D
 package   mynn_3Doutput2 bl_mynn_output==2           -             state:edmf_a,edmf_w,edmf_thl,edmf_qt,edmf_ent,edmf_qc,sub_thl3D,sub_sqv3D,det_thl3D,det_sqv3D
 package   pbl_cloud      icloud_bl==1                -             state:cldfra_bl,qc_bl,qi_bl

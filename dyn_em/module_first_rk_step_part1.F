@@ -1293,7 +1293,9 @@ BENCH_START(pbl_driver_tim)
      &        ,qcg=grid%qcg, grav_settling=config_flags%grav_settling     &
 !    &        ,K_m=grid%K_m, K_h=grid%K_h, K_q=grid%K_q                   &
      &        ,vdfg=grid%vdfg,maxwidth=grid%maxwidth,maxMF=grid%maxmf     &
-     &        ,ztop_plume=grid%ztop_plume                                 &
+     &        ,ztop_plume=grid%ztop_plume,maxmf_dd=grid%maxmf_dd          &
+     &        ,maxtkeprod=grid%maxtkeprod,maxwidth_dd=grid%maxwidth_dd    &
+     &        ,cldtop_cooling=grid%cldtop_cooling,ent_eff=grid%ent_eff    &
      &        ,excess_h=grid%excess_h,excess_q=grid%excess_q              &    
      &        ,spp_pbl=config_flags%spp_pbl                               &
      &        ,pattern_spp_pbl=grid%pattern_spp_pbl                       &

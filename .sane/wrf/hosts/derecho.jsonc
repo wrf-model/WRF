@@ -63,9 +63,11 @@
       "[build_cmake.*intel.*]" : { "resources" : { "derecho" : { "timelimit" : "00:20:00" } } },
       "[build_cmake.*nvhpc.*]" : { "resources" : { "derecho" : { "timelimit" : "00:20:00" } } },
       // Make builds
-      "[build_make.*gnu.*]" : { "resources" : { "derecho" : { "timelimit" : "00:15:00" } } },
-      "[build_make.*intel.*]" : { "resources" : { "derecho" : { "timelimit" : "00:45:00" } } },
-      "[build_make.*nvhpc.*]" : { "resources" : { "derecho" : { "timelimit" : "00:45:00" } } }
+      "[build_make.*gnu.*]" : { "resources" : { "derecho" : { "timelimit" : "00:20:00" } } },
+      "[build_make.*intel.*]" : { "resources" : { "derecho" : { "timelimit" : "00:55:00" } } },
+      "[build_make.*nvhpc.*]" : { "resources" : { "derecho" : { "timelimit" : "00:45:00" } } },
+      // Intel oneapi memory reqs
+      "[build_.*intel-oneapi.*]" : { "resources" : { "derecho" : { "memory" : "64gb" } } }
     }
   }
 }

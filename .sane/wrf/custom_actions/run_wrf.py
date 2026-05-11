@@ -1,9 +1,10 @@
 import os
+import copy
 import itertools
 import shutil
 
 import sane
-
+import wrf.custom_actions.nml as nml_io
 
 class WRFBase( sane.Action ):
   def __init__( self, id ):
@@ -28,6 +29,9 @@ class WRFBase( sane.Action ):
     # Other folders to pull data from
     self.extra_data     = []
 
+    # Namelist patches
+    self.nml_patches    = {}
+
     # Make sure we can pass on all this info
     self.outputs["wrf_case"]       = "${{ wrf_case }}"
     self.outputs["wrf_case_path"]  = "${{ wrf_case_path }}"
@@ -41,7 +45,21 @@ class WRFBase( sane.Action ):
     self.outputs["use_omp"]        = "${{ use_omp }}"
     self.outputs["mpi_ranks"]      = "${{ mpi_ranks }}"
     self.outputs["omp_threads"]    = "${{ omp_threads }}"
-    self.outputs["extra_data"]     = self.extra_data
+    self.outputs["extra_data"]     = "${{ extra_data }}"
+    self.outputs["nml_patches"]    = "${{ nml_patches }}"
+
+  def patch_nml( self, nml ):
+    nml_basename = os.path.basename( nml )
+    if nml_basename in self.nml_patches:
+      nml_dict = nml_io.load_nml( nml )
+
+      nml_dict_patched = sane.helpers.recursive_update( copy.deepcopy(nml_dict), self.nml_patches[nml_basename] )
+
+      if nml_dict == nml_dict_patched:
+        self.log( f"Namelist '{nml}' already patched" )
+      else:
+        self.log( f"Applying patch to '{nml}'" )
+        nml_io.dump_nml( nml, nml_dict_patched )
 
   def load_extra_options( self, options, origin ):
     self.wrf_case       = options.pop( "wrf_case", None )
@@ -61,6 +79,7 @@ class WRFBase( sane.Action ):
 
     self.modify_environ    = options.pop( "modify_environ",  self.modify_environ )
     self.extra_data.extend( options.pop( "extra_data",  [] ) )
+    sane.helpers.recursive_update( self.nml_patches, options.pop( "nml_patches",  {} ) )
     super().load_extra_options( options, origin )
 
   def pre_launch( self ):
@@ -191,6 +210,8 @@ class InitWRF( WRFBase ):
     self.setup_wrf()
     self.setup_metfiles()
 
+    self.patch_nml( os.path.join( self.wrf_run_dir, self.wrf_nml ) )
+
   def setup_metfiles( self ):
     full_met_path = self.resolve_path_exists( os.path.join( self.wrf_met_path, self.wrf_met_folder ) )
 
@@ -264,6 +285,8 @@ class RunWRF( WRFBase ):
       # Copy files needed from dep
       self.setup_input()
 
+    self.patch_nml( os.path.join( self.wrf_run_dir, self.wrf_nml ) )
+
   def setup_input( self ):
     # copy over input files
     full_init_path = self.resolve_path_exists( self.dependencies[self._inherit_dep]["outputs"]["wrf_run_dir"] )
@@ -296,6 +319,10 @@ class RunWRFRestart( RunWRF ):
     self.file_exists_in_path( full_case_path, self.wrf_restart_nml )
 
     self.wrf_diff_exec = self.dereference( self.wrf_diff_exec )
+
+  def pre_run( self ):
+    super().pre_run()
+    self.patch_nml( os.path.join( self.wrf_run_dir, self.wrf_restart_nml ) )
 
   def run( self ):
     retval = super().run()

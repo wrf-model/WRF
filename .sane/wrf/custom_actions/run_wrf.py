@@ -195,12 +195,11 @@ class InitWRF( WRFBase ):
     full_met_path = self.resolve_path_exists( os.path.join( self.wrf_met_path, self.wrf_met_folder ) )
 
     # copy over execs, then metfiles, then case to run dir
-    prev_exec_raw = self.__exec_raw__
-    self.__exec_raw__ = False
+    self.push_exec_raw( False )
     # This should work as everything should be absolute paths
     self.log( "Linking WRF metfiles..." )
     self.execute_subprocess( "ln", [ "-svf", os.path.join( full_met_path, "*" ), self.wrf_run_dir ], verbose=True, shell=True )
-    self.__exec_raw__ = prev_exec_raw
+    self.pop_exec_raw()
 
 
 class RunWRF( WRFBase ):
@@ -268,12 +267,11 @@ class RunWRF( WRFBase ):
   def setup_input( self ):
     # copy over input files
     full_init_path = self.resolve_path_exists( self.dependencies[self._inherit_dep]["outputs"]["wrf_run_dir"] )
-    prev_exec_raw = self.__exec_raw__
-    self.__exec_raw__ = False
+    self.push_exec_raw( False )
     # This should work as everything should be absolute paths
     self.log( "Linking input files..." )
     self.execute_subprocess( "ln", [ "-svf", os.path.join( full_init_path, "wrf*_d*" ), self.wrf_run_dir ], verbose=True, shell=True )
-    self.__exec_raw__ = prev_exec_raw
+    self.pop_exec_raw()
 
 
 class RunWRFRestart( RunWRF ):

@@ -33,7 +33,8 @@
       },
       "mapping" :
       {
-        "ncpus" : [ "cpu", "cpus", "ncpu" ]
+        "ncpus" : [ "cpu", "cpus", "ncpu" ],
+        "mem" : ["memory"]
       },
       // "queue" : "main",
       "account" : "NMMM0012",

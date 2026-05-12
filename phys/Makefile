@@ -273,7 +273,7 @@ submodules :
 	else \
 		echo No action required for NoahMP submodule ; \
 	fi
-	@if [ \( ! -f module_bl_mynnedmf.F \) -o \( ! -f module_bl_mynedmf_common.F \) -o \
+	@if [ \( ! -f module_bl_mynnedmf.F \) -o \( ! -f module_bl_mynnedmf_common.F \) -o \
 	      \( ! -f module_bl_mynnedmf_driver.F \) ] ; then \
 	      	echo Pulling in MYNN-EDMF submodule ; \
 		( cd .. ; git submodule update --init --recursive ) ; \

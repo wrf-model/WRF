@@ -84,7 +84,6 @@ class WRFBase( sane.Action ):
 
   def pre_launch( self ):
     # Preflight checks
-    self.push_logscope( "pre_launch" )
 
     # case path and case exist, force assignment check
     self.wrf_case_path  = self.resolve_path_exists( self.dereference( self.wrf_case_path ) )
@@ -114,12 +113,9 @@ class WRFBase( sane.Action ):
         self.log( msg, level=40 )
         raise Exception( msg )
 
-    self.pop_logscope()
-
   def pre_run( self ):
     # Now check for things that should be here for sure since any dependencies would be 
     # finished by now
-    self.push_logscope( "pre_run" )
     full_case_path = self.resolve_path_exists( os.path.join( self.wrf_case_path, self.wrf_case ) )
 
     # build location exists
@@ -141,8 +137,6 @@ class WRFBase( sane.Action ):
       ld_lib  = os.environ.get( "LD_LIBRARY_PATH", "" )
       ld_lib += f':{os.environ["NETCDF"]}/lib:{os.environ["NETCDF"]}/lib64'
       os.environ["LD_LIBRARY_PATH"] = ld_lib
-
-    self.pop_logscope()
 
   def setup_dir( self ):
     # OK! Create run dir
@@ -339,9 +333,7 @@ class RunWRFRestart( RunWRF ):
     self.config["command"] = ".sane/wrf/scripts/run_wrf_restart.sh"
     self.config["arguments"] = list( itertools.chain( *zip( arg_dict.keys(), arg_dict.values() ) ) )
 
-    self.push_logscope( "run" )
     self.log( "Running restart namelist now" )
-    self.pop_logscope()
 
     # Do it again :)
     retval = super().run()

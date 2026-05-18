@@ -3822,8 +3822,7 @@ ENDIF
       XXXR_URB2D(I,J)=0.
       XXXB_URB2D(I,J)=0.
       XXXG_URB2D(I,J)=0.
-      XXXC_URB2D(I,J)=0.
-      XXXVG_URB2D(I,J)=0. ! add in urban-nbs										
+      XXXC_URB2D(I,J)=0.										
 
       IF ( sf_urban_physics == 1 ) THEN
       DRELR_URB2D(I,J) = 0.
@@ -3838,7 +3837,8 @@ ENDIF
       CMCG_URB2D(I,J)  = 0. ! add in urban-nbs										  
       TGR_URB2D(I,J)=TSURFACE0_URB(I,J)+0.
       TVG_URB2D(I,J)=TSURFACE0_URB(I,J)+0.  ! add in urban-nbs
-      TT_URB2D(I,J) =TSURFACE0_URB(I,J)+0.  ! add in urban-nbs														  														  
+      TT_URB2D(I,J) =TSURFACE0_URB(I,J)+0.  ! add in urban-nbs	
+      XXXVG_URB2D(I,J)=0. ! add in urban-nbs	  
       ENDIF
 
       TC_URB2D(I,J)=TSURFACE0_URB(I,J)+0.

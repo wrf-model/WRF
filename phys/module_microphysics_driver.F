@@ -87,9 +87,8 @@ SUBROUTINE microphysics_driver(                                          &
                       ,hail,ice2                                         & ! for mp_gsfcgce
 !NUWRF JJS 20110525 vvvvv
                       ,phys_tot, physc, physe, physd, physs, physm, physf& ! for gsfcgce
-                      ,acphys_tot, acphysc, acphyse, acphysd  & ! for gsfcgce
-                      ,acphyss, acphysm, acphysf              & ! for gsfcgce
-
+                      ,acphys_tot, acphysc, acphyse, acphysd             & ! for gsfcgce
+                      ,acphyss, acphysm, acphysf                         & ! for gsfcgce
                       ,re_cloud_gsfc, re_rain_gsfc, re_ice_gsfc          &
                       ,re_snow_gsfc, re_graupel_gsfc, re_hail_gsfc       & ! cloud effective radius
                       ,precr3d, preci3d, precs3d, precg3d, prech3d       &

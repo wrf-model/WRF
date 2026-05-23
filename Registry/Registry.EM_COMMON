@@ -1157,7 +1157,7 @@ state   real   excess_h         ij     misc        1         -      h         "e
 state   real   excess_q         ij     misc        1         -      h         "excess_q"         "Max moisture excess of plume initialization" "kg/kg"
 state   real   maxMF_dd         ij     misc        1         -      h         "maxMF_dd"         "Maximum mass-flux of downdrafts"       "m/s * area"
 state   real   maxwidth_dd      ij     misc        1         -      h         "maxwidth_dd"      "Maximum downdraft width"               "m"
-state   real   maxtkeprod       ij     misc        1         -      h         "maxtkeprod"       "Maximum tke production by clout top cooling" "m2/s2/hr"
+state   real   maxtkeprod       ij     misc        1         -      h         "maxtkeprod"       "Maximum tke production by cloud top cooling" "m2/s2/hr"
 state   real   cldtop_cooling   ij     misc        1         -      h         "cldtop_cooling"   "Radiative cooling at cloud top"        "K/hr"
 state   real   ent_eff          ij     misc        1         -      h         "ent_eff"          "Entrainment efficiency for cloud tops" "unitless"
 
@@ -3229,7 +3229,7 @@ package   ysuscheme      bl_pbl_physics==1           -             -
 package   myjpblscheme   bl_pbl_physics==2           -             state:tke_pbl,el_pbl
 package   gfsscheme      bl_pbl_physics==3           -             -
 package   qnsepblscheme  bl_pbl_physics==4           -             state:tke_pbl,el_pbl,massflux_EDKF,entr_EDKF,detr_EDKF,thl_up,thv_up,rv_up,rt_up,rc_up,u_up,v_up,frac_up,rc_mf
-package   mynnpblscheme  bl_pbl_physics==5           -             scalar:qke_adv;state:qke,sh3d,sm3d,tsq,qsq,cov,el_pbl,tke_pbl
+package   mynnpblscheme  bl_pbl_physics==5           -             scalar:qke_adv;state:qke,sh3d,sm3d,tsq,qsq,cov,cldfra_bl,qc_bl,qi_bl,el_pbl,tke_pbl
 package   acmpblscheme   bl_pbl_physics==7           -             -
 package   boulacscheme   bl_pbl_physics==8           -             state:el_pbl,tke_pbl,wu_tur,wv_tur,wt_tur,wq_tur
 package   camuwpblscheme bl_pbl_physics==9           -             state:tauresx2d,tauresy2d,tpert2d,qpert2d,wpert2d,tke_pbl,smaw3d,wsedl3d,turbtype3d
@@ -3245,7 +3245,6 @@ package   mynn_dmp_edmf1 bl_mynn_edmf==1             -             state:ztop_pl
 package   mynn_dmp_edmf2 bl_mynn_edmf==2             -             state:ztop_plume,maxmf,maxwidth,excess_h,excess_q,maxmf_dd,maxwidth_dd,maxtkeprod,cldtop_cooling,ent_eff
 package   mynn_3Doutput1 bl_mynn_output==1           -             state:edmf_a,edmf_w,edmf_thl,edmf_qt,edmf_ent,edmf_qc,sub_thl3D,sub_sqv3D,det_thl3D,det_sqv3D
 package   mynn_3Doutput2 bl_mynn_output==2           -             state:edmf_a,edmf_w,edmf_thl,edmf_qt,edmf_ent,edmf_qc,sub_thl3D,sub_sqv3D,det_thl3D,det_sqv3D
-package   pbl_cloud      icloud_bl==1                -             state:cldfra_bl,qc_bl,qi_bl
 
 package   sms_3dtke      km_opt==5                   -             state:gamu,gamv,nlflux,dlk,l_diss,elmin,xkmv_meso
 

@@ -841,7 +841,7 @@ use_rap_aero_icbc                   = .false.   ! Set to .true. to ingest real-t
                                      = 0, no cumulus
                                      = 1, Kain-Fritsch (new Eta) scheme
                                      = 2, Betts-Miller-Janjic scheme
-                                     = 3, Grell-Freitas ensemble scheme
+                                     = 3, Grell-Freitas-Li scheme
                                      = 4, Scale-aware GFS Simplified Arakawa-Schubert (SAS) scheme 
                                      = 5, Grell 3D ensemble scheme
                                      = 6, Modifed Tiedtke scheme
@@ -868,7 +868,7 @@ use_rap_aero_icbc                   = .false.   ! Set to .true. to ingest real-t
                                           This scheme only works with MYJ PBL scheme, and should not be combined with icloud=3
                                           This scheme can also work with MYNN PBL scheme, but one should turn off EDMF (bl_mynn_edmf=0)
 
- ishallow                            = 0, !  = 1 turns on shallow convection, used with Grell 3D ensemble schemes (cu_physics = 3 or 5)
+ ishallow                            = 0, !  = 1 turns on shallow convection, used with GFL and Grell 3D ensemble schemes (cu_physics = 3 or 5)
  clos_choice                         = 0, !  closure choice (place holder only)
  cu_diag (max_dom)                   = 0, !  additional t-averaged stuff for cu physics (cu_phys = 3, 5, 10, and 93 only)
  kf_edrates (max_dom)                = 0, !  Add entrainment/detrainment rates and convective timescale output variables for KF-based 

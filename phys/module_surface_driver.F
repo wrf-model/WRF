@@ -268,6 +268,9 @@ CONTAINS
      &          ,tml,t0ml,hml,h0ml,huml,hvml,f,tmoml                  &
      &          ,oml_relaxation_time                                  &
      &          ,ustm,ck,cka,cd,cda,isftcflx,iz0tlnd                  &
+!$$$$$$$$$$$$$$$$$$$$$-Inserted by PN, MS, PS, and SKM-$$$$$$$$$$$$$$$$
+     &         ,psimh_stab_opt, psimh_unstab_opt                      &
+!$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
      &         ,isurban, mminlu                                       &
      &          ,snotime                                              &
      &           ,rdlai2d                                             &
@@ -346,10 +349,15 @@ CONTAINS
      &          ,irrigation,sf_surf_irr_scheme, irr_daily_amount      & !IRRIG
      &          ,irr_start_hour,irr_num_hours,irr_start_julianday     &
      &          ,irr_end_julianday,irr_freq,irr_ph,irr_rand_field     &
-     &                                                                )
+!$$$$$$$$$$$$$$$$$$$$$$-Inserted by PN, MS, PS, and SKM-$$$$$$$$$$$$$$$
+     &          ,FM_hat, FH_hat                             )
+!$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
    USE module_state_description, ONLY : SFCLAYSCHEME              &
                                        ,SFCLAYREVSCHEME           &
+!$$$$$$$$$$$$$$$$$$$$$$$$$$-Inserted by PN, MS, PS, and SKM-$$$$$$$$$$$$$
+                                       ,SFCLAYREV_IITD_SCHEME     &
+!$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
                                        ,MYJSFCSCHEME              &
                                        ,QNSESFCSCHEME             &
                                        ,MYJPBLSCHEME              &
@@ -400,6 +408,9 @@ CONTAINS
    USE module_sf_pxlsm
    USE module_sf_temfsfclay
    USE module_sf_sfclayrev
+!$$$$$$$$$$$$$$$$$$$$$$$$$$$$$-Inserted by PN, MS, PS, and SKM-$$$$$$$$$
+   USE module_sf_sfclayrev_IITD
+!$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
    USE module_sf_noah_seaice_drv
 #if ( EM_CORE==1)
    USE module_sf_mynnsfc_driver
@@ -848,6 +859,10 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   PSHLTR
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   FHH
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   FM
+!$$$$$$$$$$$$$$$$$$$$$$$$$$$$$-Inserted by PN, MS, PS, and SKM-$$$$$$$$$
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   FM_hat
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   FH_hat
+!$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   PSIH
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   PSIM
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   Q10
@@ -1099,6 +1114,9 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(IN):: diffuse_frac
 
    INTEGER, OPTIONAL, INTENT(IN )::   ISFTCFLX,IZ0TLND
+!$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$-Inserted by PN, MS, PS, and SKM-$$$$$$$$$
+   INTEGER, INTENT(IN)           :: psimh_stab_opt, psimh_unstab_opt
+!$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
    INTEGER, OPTIONAL, INTENT(IN )::   SF_OCEAN_PHYSICS
    REAL   , OPTIONAL, INTENT(IN )::   OML_HML0
    REAL   , OPTIONAL, INTENT(IN )::   OML_GAMMA
@@ -1967,6 +1985,9 @@ CONTAINS
   isisfc = ( FRACTIONAL_SEAICE .EQ. 1  .AND. (          &
             (sf_sfclay_physics .EQ. SFCLAYSCHEME ) .OR. &
             (sf_sfclay_physics .EQ. SFCLAYREVSCHEME ) .OR. &
+!$$$$$$$$$$$$$$$$$$$$$$$$$$$$-Inserted by PN, MS, PS, and SKM-$$$$$$$$$$
+            (sf_sfclay_physics .EQ. SFCLAYREV_IITD_SCHEME) .OR. &
+!$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
             (sf_sfclay_physics .EQ. PXSFCSCHEME  ) .OR. &
             (sf_sfclay_physics .EQ. MYJSFCSCHEME ) .OR. &
             (sf_sfclay_physics .EQ. QNSESFCSCHEME ) .OR. &  !emt
@@ -2203,6 +2224,62 @@ CONTAINS
        ELSE
          CALL wrf_error_fatal('Lacking arguments for SFCLAY in surface driver')
        ENDIF
+
+!$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$-Inserted by PN, MS, PS, and SKM-$$$$$$$
+     CASE (SFCLAYREV_IITD_SCHEME)
+! DX varies spatially in NMM, therefore, SFCLAY cannot be called
+! because it takes a scalar DX. NMM passes in a dummy value for this
+! scalar.  NEEDS FURTHER ATTENTION. JM 20050215
+       IF (PRESENT(qv_curr)                            .AND.    &
+           PRESENT(mol)        .AND.  PRESENT(regime)  .AND.    &
+                                                      .TRUE. ) THEN
+         CALL wrf_debug( 100, 'in SFCLAY' )
+         IF ( FRACTIONAL_SEAICE == 1 ) THEN
+             CALL SFCLAYREV_SEAICE_WRAPPER(u_phytmp,v_phytmp,t_phy,qv_curr,&
+                 p_phy,dz8w,cp,g,rcp,r_d,xlv,psfc,chs,chs2,cqs2,cpm, &
+                 znt,ust,pblh,mavail,zol,mol,regime,psim,psih,fm,fhh, &
+                 xland,hfx,qfx,lh,tsk,flhc,flqc,qgh,qsfc,rmol,       &
+                 u10,v10,th2,t2,q2,                                  &
+                 gz1oz0,wspd,br,isfflx,dx2d,                         &
+                 svp1,svp2,svp3,svpt0,ep_1,ep_2,karman,              &
+                 P1000mb,lakemask,                                   &
+                 XICE,SST,TSK_SEA,                                                  &
+                 CHS2_SEA,CHS_SEA,CPM_SEA,CQS2_SEA,FLHC_SEA,FLQC_SEA,               &
+                 HFX_SEA,LH_SEA,QFX_SEA,QGH_SEA,QSFC_SEA,ZNT_SEA,                   &
+                 ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
+                 ids,ide, jds,jde, kds,kde,                          &
+                 ims,ime, jms,jme, kms,kme,                          &
+                 i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,    &
+                 ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,                &
+                 shalwater_z0,water_depth,                           &
+                 scm_force_flux,sf_surface_physics,errmsg,errflg     )         
+         ELSE                                                    
+           CALL SFCLAYREV_IITD(u_phytmp,v_phytmp,t_phy,qv_curr,&
+               p_phy,dz8w,cp,g,rcp,r_d,xlv,psfc,chs,chs2,cqs2,cpm, &
+               znt,ust,pblh,mavail,zol,mol,regime,psim,psih,fm,fhh, &
+               fm_hat,fh_hat,xland,hfx,qfx,lh,tsk,flhc,flqc,qgh,qsfc,rmol, &
+               u10,v10,th2,t2,q2,                                  &
+               gz1oz0,wspd,br,isfflx,dx,                           &
+               svp1,svp2,svp3,svpt0,ep_1,ep_2,karman,eomeg,stbolt, &
+               P1000mb,                                            &
+               ids,ide, jds,jde, kds,kde,                          &
+               ims,ime, jms,jme, kms,kme,                          &
+               i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,    &
+               ustm,ck,cka,cd,cda,isftcflx,iz0tlnd, psimh_stab_opt, &
+                psimh_unstab_opt, scm_force_flux    )
+#if ( EM_CORE==1)
+           DO j = j_start(ij),j_end(ij)
+           DO i = i_start(ij),i_end(ij)
+             ch(i,j) = chs (i,j)
+!!             ch(i,j) = flhc(i,j)/( cpm(i,j)*rho(i,kts,j) )
+           end do
+           end do
+#endif
+         ENDIF
+       ELSE
+         CALL wrf_error_fatal('Lacking arguments for SFCLAY in surface driver')
+       ENDIF
+!$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
      CASE (PXSFCSCHEME)
        IF (PRESENT(qv_curr)                            .AND.    &

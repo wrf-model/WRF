@@ -2407,6 +2407,7 @@ module_physics_init.o: \
 	module_ra_flg.o \
 	module_sf_sfclay.o \
 	physics_mmm/sf_sfclayrev.o \
+        module_sf_sfclayrev_IITD.o \
 	module_sf_slab.o \
 	module_sf_myjsfc.o \
 	module_sf_mynnsfc_driver.o \
@@ -2696,6 +2697,7 @@ module_surface_driver.o: \
 	module_sf_noahlsm.o \
 	module_sf_sfclay.o \
 	module_sf_sfclayrev.o \
+        module_sf_sfclayrev_IITD.o \
 	module_sf_slab.o \
 	module_sf_myjsfc.o \
 	module_sf_qnsesfc.o \

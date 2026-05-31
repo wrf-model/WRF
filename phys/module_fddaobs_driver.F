@@ -235,7 +235,10 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
     IF( config_flags%sf_sfclay_physics /= sfclayscheme &
   .AND. config_flags%sf_sfclay_physics /= mynnsfcscheme &
   .AND. config_flags%sf_sfclay_physics /= pxsfcscheme &
-  .AND. config_flags%sf_sfclay_physics /= sfclayrevscheme ) THEN
+  .AND. config_flags%sf_sfclay_physics /= sfclayrevscheme &
+!$$$$$$$$$$$$$$$$$$$$$-Inserted by PN, MS, PS, and SKM-$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+  .AND. config_flags%sf_sfclay_physics /= sfclayrev_IITD_scheme ) THEN
+!$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
       DO j = jts, jte
       DO i = its, ite
            IF( pblh(i,j) > z_at_w(i,2,j)-ht(i,j) ) THEN

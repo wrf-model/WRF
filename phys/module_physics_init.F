@@ -280,6 +280,9 @@ CONTAINS
                          ,alevsiz_cu,num_months,no_src_types_cu,aeromcu,aeropcu   & ! PSH/TWG 06/10/16                         
                          ,EFCG,EFCS,EFIG,EFIS,EFSG,EFSS                           & ! TWG
 #endif
+!$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$-Inserted by PN, MS, PS, and SKM-$$$$$
+                         , psimh_stab_opt,psimh_unstab_opt                        &
+!$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 #ifdef CDXWRF
                          ,fracsoil10cm                                            &
                          ,londbg, latdbg                                          &
@@ -1664,6 +1667,9 @@ CHARACTER(LEN=8) :: name
                 ALBEDOsubgrid,LHsubgrid,HFXsubgrid,LWUPsubgrid,     &
                 Q2subgrid,SABVsubgrid,SABGsubgrid,NRAsubgrid,       &
                 SWUPsubgrid,lhsoi,lhveg,lhtran                      &
+!$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$-Inserted by PN, MS, PS, and SKM-$$$$$$$$$$$$$$$$$$$$
+                ,psimh_stab_opt,psimh_unstab_opt                    &
+!$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 #if (WRF_USE_CLM == 1) && ( WRF_CHEM == 1)
                 ,megan_specifier, megan_factors_file                &
                 ,megan_mapped_emisfctrs                             &
@@ -2738,6 +2744,9 @@ CHARACTER(LEN=8) :: name
                 ,megan_mapped_emisfctrs                  &
 #endif
 ! end of CLM vraiables 
+!$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$-Inserted by PN, MS, PS, and SKM-$$$$$$$$$$$$$$$$$$$$$$$
+                ,psimh_stab_opt, psimh_unstab_opt               &
+!$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
                 ,landusef,landusef2,NLCAT                       & ! danli mosaic
                 ,sf_surface_mosaic, mosaic_cat                  & ! danli mosaic
                 ,mosaic_cat_index                               & ! danli mosaic  
@@ -2761,6 +2770,9 @@ CHARACTER(LEN=8) :: name
 !--------------------------------------------------------------------
    USE module_sf_sfclay
    USE sf_sfclayrev
+!$$$$$$$$$$$$$$$$$$$$$$$$-Inserted by PN, MS, PS, and SKM-$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+   USE module_sf_sfclayrev_IITD
+!$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
    USE module_sf_slab
    USE module_sf_pxsfclay
    USE module_bl_ysu
@@ -3185,7 +3197,9 @@ CHARACTER(LEN=8) :: name
                                         TSK_SAVE
    LOGICAL,  INTENT(IN) :: start_of_simulation
    INTEGER :: i,j,patch
-
+!$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$-Inserted by PN, MS, PS, and SKM-$$$$$$$$$
+   INTEGER, INTENT(IN)  :: psimh_stab_opt, psimh_unstab_opt
+!$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 ! CLM varaibles
    INTEGER , INTENT(IN)        ::     maxpatch
    REAL, OPTIONAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN)    ::  HT
@@ -3328,6 +3342,11 @@ CHARACTER(LEN=8) :: name
                         xland,LakeModel,lake_depth,lakemask   )
            END IF
            isfc = 1
+!$$$$$$$$$$$$$$$$$$$$$$$-Inserted PN, MS, PS, and SKM-$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+      CASE (SFCLAYREV_IITD_SCHEME)
+           CALL sfclayrevinit_IITD(psimh_stab_opt,psimh_unstab_opt)
+           isfc = 1
+!$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
       CASE (PXSFCSCHEME)
            CALL pxsfclayinit( allowed_to_read )
            isfc = 7

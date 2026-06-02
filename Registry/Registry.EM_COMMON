@@ -2419,6 +2419,7 @@ rconfig   logical  write_thompson_mp38table   namelist,physics     1           .
 rconfig   integer     mp_physics          namelist,physics	max_domains    -1     irh       "mp_physics"            ""      ""
 #rconfig   integer     milbrandt_ccntype   namelist,physics      max_domains    0       rh       "milbrandt select maritime(1)/continental(2)"  ""      ""
 rconfig   real     nssl_cccn              namelist,physics      1            0.5e9    rh       "Base CCN concentration for NSSL microphysics"  ""      ""
+rconfig   real     nssl_alphar            namelist,physics      1             0       rh       "Rain PSD shape paramter"  ""      ""
 rconfig   real     nssl_alphah            namelist,physics      1             0       rh       "Graupel PSD shape paramter"  ""      ""
 rconfig   real     nssl_alphahl           namelist,physics      1             1       rh       "Hail PSD shape paramter"  ""      ""
 rconfig   real     nssl_cnoh              namelist,physics      1            4.e5     rh       "Graupel intercept paramter"  ""      ""

@@ -11,6 +11,10 @@ subroutine da_transform_xtoy_qscat_adj(grid, iv, jo_grad_y, jo_grad_x)
    type (iv_type), intent(in)    :: iv          ! obs. inc vector (o-b).
    type (y_type) , intent(in)    :: jo_grad_y   ! grad_y(jo)
    type (x_type) , intent(inout) :: jo_grad_x   ! grad_x(jo)
+   integer :: i, j, k  ! Index dimension.
+   real    :: dx, dxm  ! Interpolation weights.
+   real    :: dy, dym  ! Interpolation weights.
+   real    :: znt, rib, ht, za, bn, fm, bd
 
    integer :: n        ! Loop counter.
 
@@ -18,6 +22,7 @@ subroutine da_transform_xtoy_qscat_adj(grid, iv, jo_grad_y, jo_grad_x)
    real, allocatable :: v(:,:)
    real, allocatable :: ub(:,:)
    real, allocatable :: vb(:,:)
+   real    :: v_h(kms:kme)      ! Model value h at ob hor. location.
 
    if (trace_use_dull) call da_trace_entry("da_transform_xtoy_qscat_adj")
 
@@ -37,6 +42,35 @@ subroutine da_transform_xtoy_qscat_adj(grid, iv, jo_grad_y, jo_grad_x)
       else
           u(1,n) = jo_grad_y%qscat(n)%u
           v(1,n) = jo_grad_y%qscat(n)%v
+      end if
+
+      if (qscat_neutral) then
+         i   = iv%info(qscat)%i(1,n)
+         j   = iv%info(qscat)%j(1,n)
+         dx  = iv%info(qscat)%dx(1,n)
+         dy  = iv%info(qscat)%dy(1,n)
+         dxm = iv%info(qscat)%dxm(1,n)
+         dym = iv%info(qscat)%dym(1,n)
+         do k=kts,kte
+            v_h(k) = dym*(dxm*grid%xb%h(i,j,k)+dx*grid%xb%h(i+1,j,k)) + dy*(dxm*grid%xb%h(i,j+1,k)+dx*grid%xb%h(i+1,j+1,k))
+         end do
+
+         znt = dym*(dxm*grid%znt(i,j) + dx*grid%znt(i+1,j)) + dy*(dxm*grid%znt(i,j+1) + dx*grid%znt(i+1,j+1))
+         rib = dym*(dxm*grid%br(i,j)  + dx*grid%br(i+1,j))  + dy*(dxm*grid%br(i,j+1)  + dx*grid%br(i+1,j+1))
+         ht  = dym*(dxm*grid%ht(i,j)  + dx*grid%ht(i+1,j))  + dy*(dxm*grid%ht(i,j+1)  + dx*grid%ht(i+1,j+1))
+
+         za  = v_h(kts) - ht 
+
+         bn = log( 1 + za/znt )
+         if (rib < 0) then
+            fm=1-10 * rib / ( 1-75 * rib * bn * sqrt( 1+10/znt ) )
+         else
+            fm = 1 / (1 + 10 * rib / sqrt(1 + 5*rib ) )
+         end if
+         bd = bn/sqrt(fm)
+
+         u(1,n) = u(1,n) * log( 1 + 10/znt ) / bd
+         v(1,n) = v(1,n) * log( 1 + 10/znt ) / bd
       end if
    end do
 

@@ -103,7 +103,7 @@ IF ( ncd_ok_to_put_dom_ti( DataHandle ) ) THEN
       return
     endif
   elseif (DH%FileStatus == WRF_FILE_OPENED_FOR_WRITE) then
-    stat = NFMPI_REDEF(DH%NCID)
+    call try_redef(DH, stat)
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) &

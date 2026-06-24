@@ -4157,7 +4157,7 @@ END subroutine optical_prep_modal_soa_vbs
                        (ref_index_nh4no3 * mass_no3 / dens_no3) +  &
                        (ref_index_nh4no3 * mass_nh4 / dens_nh4) +  &
                        (ref_index_oin    * mass_oin / dens_oin) +  &
-                       (lwref_index_dust(ns)    * mass_oin / dens_dust)  +  &
+                       (lwref_index_dust(ns)    * mass_soil / dens_dust)  +  &
                        (lwref_index_oc(ns)     * mass_oc  / dens_oc) +   &
                        (lwref_index_nacl(ns)   * mass_na  / dens_na) +   &
                        (lwref_index_nacl(ns)   * mass_cl  / dens_cl) +   &
@@ -5083,21 +5083,25 @@ END subroutine optical_prep_modal_soa_vbs
 
 ! check for refr and refi outside of lookup table range to prevent unstable extrapolation 'binterp' below
           if (refr < refrtabsw(1,ns)) then
-             refr = refrtabsw(1,ns)
-             write(*,*) 'Warning: refr is smaller than lookup table range and reset to minimum bound at SW band ', ns
-          endif
-          if (refr > refrtabsw(prefr,ns)) then
-             refr = refrtabsw(prefr,ns)
-             write(*,*) 'Warning: refr is larger than lookup table range and reset to maximum bound at SW band ', ns
-          endif
-          if (refi < refitabsw(1,ns)) then
-             refi = refitabsw(1,ns)
-             write(*,*) 'Warning: refi is smaller than lookup table range and reset to minimum bound at SW band ', ns
-          endif
-          if (refi > refitabsw(prefi,ns)) then
-             refi = refitabsw(prefi,ns)
-             write(*,*) 'Warning: refi is larger than lookup table range and reset to maximum bound at SW band ', ns
-          endif
+            refr = refrtabsw(1,ns)
+            if (number_bin_col(m,klevel).ge.1.e-10) &
+               write(*,*) 'Warning: refr is smaller than lookup table range and reset to minimum bound at SW band ', ns
+         endif
+         if (refr > refrtabsw(prefr,ns)) then
+            refr = refrtabsw(prefr,ns)
+            if (number_bin_col(m,klevel).ge.1.e-10) &
+               write(*,*) 'Warning: refr is larger than lookup table range and reset to maximum bound at SW band ', ns
+         endif
+         if (refi < refitabsw(1,ns)) then
+            refi = refitabsw(1,ns)
+            if (number_bin_col(m,klevel).ge.1.e-10) &
+               write(*,*) 'Warning: refi is smaller than lookup table range and reset to minimum bound at SW band ', ns
+         endif
+         if (refi > refitabsw(prefi,ns)) then
+            if (number_bin_col(m,klevel).ge.1.e-10 .and. abs(refi).gt.1.e-12) &
+               write(*,*) 'Warning: refi is larger than lookup table range and reset to maximum bound at SW band ', ns
+            refi = refitabsw(prefi,ns)
+         endif
 
 ! interpolate coefficients linear in refractive index
 ! first call calcs itab,jtab,ttab,utab
@@ -5358,21 +5362,25 @@ END subroutine optical_prep_modal_soa_vbs
 
 ! check for refr and refi outside of lookup table range to prevent unstable extrapolation 'binterp' below
           if (refr < refrtablw(1,ns)) then
-             refr = refrtablw(1,ns)
-             write(*,*) 'Warning: refr is smaller than lookup table range and reset to minimum bound at LW band ', ns
-          endif
-          if (refr > refrtablw(prefr,ns)) then
-             refr = refrtablw(prefr,ns)
-             write(*,*) 'Warning: refr is larger than lookup table range and reset to maximum bound at LW band ', ns
-          endif
-          if (refi < refitablw(1,ns)) then    
-             refi = refitablw(1,ns)
-             write(*,*) 'Warning: refi is smaller than lookup table range and reset to minimum bound at LW band ', ns
-          endif
-          if (refi > refitablw(prefi,ns)) then
-             refi = refitablw(prefi,ns)
-             write(*,*) 'Warning: refi is larger than lookup table range and reset to maximum bound at LW band ', ns
-          endif
+            refr = refrtablw(1,ns)
+            if (number_bin_col(m,klevel).ge.1.e-10) &
+               write(*,*) 'Warning: refr is smaller than lookup table range and reset to minimum bound at LW band ', ns
+         endif
+         if (refr > refrtablw(prefr,ns)) then
+            refr = refrtablw(prefr,ns)
+            if (number_bin_col(m,klevel).ge.1.e-10) &
+               write(*,*) 'Warning: refr is larger than lookup table range and reset to maximum bound at LW band ', ns
+         endif
+         if (refi < refitablw(1,ns)) then
+            refi = refitablw(1,ns)
+            if (number_bin_col(m,klevel).ge.1.e-10) &
+               write(*,*) 'Warning: refi is smaller than lookup table range and reset to minimum bound at LW band ', ns
+         endif
+         if (refi > refitablw(prefi,ns)) then
+            if (number_bin_col(m,klevel).ge.1.e-10 .and. abs(refi).gt.1.e-12) &
+               write(*,*) 'Warning: refi is larger than lookup table range and reset to maximum bound at LW band ', ns
+            refi = refitablw(prefi,ns)
+         endif
 
 ! interpolate coefficients linear in refractive index
 ! first call calcs itab,jtab,ttab,utab

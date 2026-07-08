@@ -62,7 +62,7 @@ FRC_URB: 0.5, 0.6, 0.75
 #      (sf_urban_physics=1)
 #
 
-FVG: 0.1
+FVG: 0.2,0.2,0.2
 
 #
 # TREEOPTION [ 0: No urban trees - default, 1: Enable urban trees ]
@@ -70,6 +70,13 @@ FVG: 0.1
 #
 
 TREEOPTION: 0
+
+#
+# TTscheme [ 0: diagnostic approach - default, 1: prognostic approach ]
+#      (sf_urban_physics=1)
+#
+
+TTscheme: 0
 
 #
 # RTREE: Tree crown radius [ m ]
@@ -82,6 +89,8 @@ TREEOPTION: 0
 # CAPVG: Heat capacity of vegetated ground [ J m{-3} K{-1} ]
 # EPSVG: Emissivity of vegetated ground [ - ]
 # EPST: Emissivity of tree canopy [ - ]
+# ALBVG: Albedo of vegetated ground [ - ]
+# ALBT:  Albedo of tree canopy [ - ]
 #      (sf_urban_physics=1, TREEOPTION=1)
 #
 
@@ -95,6 +104,8 @@ Z0HVG: 0.001, 0.001, 0.001
 CAPVG: 1.3E6, 1.3E6, 1.3E6
 EPSVG: 0.93, 0.93, 0.93
 EPST: 0.9, 0.9, 0.9
+ALBVG: 0.2, 0.2, 0.2
+ALBT: 0.15, 0.15, 0.15
 
 #
 # CAPR:  Heat capacity of roof  [ J m{-3} K{-1} ]

@@ -255,8 +255,9 @@ PHYSMMM_MODULES = \
 	physics_mmm/mp_wsm6.o \
 	physics_mmm/mp_wsm6_effectRad.o \
 	physics_mmm/mp_radar.o \
-        physics_mmm/bl_gwdo.o \
-        physics_mmm/bl_ysu.o
+    physics_mmm/bl_gwdo.o \
+    physics_mmm/bl_shinhong.o \
+    physics_mmm/bl_ysu.o
 
 NOAHMP_MODULES = \
 	noahmp/drivers/wrf/NoahmpWRFinitMod.o \
@@ -492,7 +493,7 @@ submodules :
     fi
 	@if [ \( ! -f module_mp_tempo_driver.F90 \) -o \( ! -f module_mp_tempo_main.F90 \) -o \
 	      \( ! -f module_mp_tempo_cfgs.F90 \) -o \( ! -f module_mp_tempo_aerosols.F90 \) -o \
-	      \( ! -f module_mp_tempo_ml.F90 \) -o \( ! -f modulemp_tempo_diags.F90 \) -o \
+	      \( ! -f module_mp_tempo_ml.F90 \) -o \( ! -f module_mp_tempo_diags.F90 \) -o \
               \( ! -f module_mp_tempo_utils.F90 \) -o \( ! -f module_mp_tempo_params.F90 \) ] ; then \
                 echo Pulling in TEMPO submodule ; \
 		( cd .. ; git submodule update --init --recursive ) ; \

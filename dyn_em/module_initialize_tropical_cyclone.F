@@ -484,11 +484,13 @@ CONTAINS
       grid%phb(i,k,j) = grid%phb(i,k-1,j) - grid%dnw(k-1)*(grid%c1h(k-1)*grid%mub(i,j)+grid%c2h(k-1))*grid%alb(i,k-1,j)
     ENDDO
 
-  ENDDO
-  ENDDO
+    if ((i.eq.1).and.(j.eq.1)) then
+      write(6,*) ' ptop is ',grid%p_top
+      write(6,*) ' base state grid%mub(1,1), p_surf is ',grid%mub(1,1),grid%mub(1,1)+grid%p_top
+    endif  
 
-  write(6,*) ' ptop is ',grid%p_top
-  write(6,*) ' base state grid%mub(1,1), p_surf is ',grid%mub(1,1),grid%mub(1,1)+grid%p_top
+  ENDDO
+  ENDDO
 
 !  calculate full state for each column - this includes moisture.
 
@@ -586,8 +588,8 @@ CONTAINS
     nref = 1 + int( float(ide-ids+1)/2.0 )
     kref = kte-1
 
-    print *,'  ids,ide,kds,kds  = ',ids,ide,kds,kde
-    print *,'  its,ite,kts,kts  = ',its,ite,kts,kte
+    print *,'  ids,ide,kds,kde  = ',ids,ide,kds,kde
+    print *,'  its,ite,kts,kte  = ',its,ite,kts,kte
     print *,'  nref,fcor        = ',nref,fcor
     print *,'  r0,rmax,vmax,zdd = ',r0,rmax,vmax,zdd
 
@@ -607,22 +609,39 @@ CONTAINS
     allocate( qvref(nref,0:kref+1))
 
     ! get base state:
+    if ((its.eq.1).and.(jts.eq.1)) then
+    do k=1,kref
+      th0(k) = t0+grid%t_1(its,k,jts)
+      qv0(k) = moist(its,k,jts,P_QV)
+      thv0(k) = th0(k)*(1.0+(r_v/r_d)*qv0(k))/(1.0+qv0(k))
+      zref(k) = 0.5*(grid%phb(its,k,jts)+grid%phb(its,k+1,jts)+grid%ph_1(its,k,jts)+grid%ph_1(its,k+1,jts))/g
+    enddo
+    do k=1,kref
+      prs0(k) = grid%p(its,k,jts)+grid%pb(its,k,jts)
+      pi0(k) = (prs0(k)/p0)**(r_d/cp)
+      E1=1000.0*SVP1*EXP(SVP2*(th0(k)*pi0(k)-SVPT0)/(th0(k)*pi0(k)-SVP3))
+      qvs = EP_2*E1/(prs0(k)-E1)
+      rh0(k) = qv0(k)/qvs
+    enddo
+    endif
+
+#ifdef DM_PARALLEL
+    CALL wrf_dm_bcast_real( th0 , kref+2 )
+    CALL wrf_dm_bcast_real( qv0 , kref+2 )
+    CALL wrf_dm_bcast_real( thv0 , kref+2 )
+    CALL wrf_dm_bcast_real( zref , kref+2 )
+    CALL wrf_dm_bcast_real( prs0 , kref+2 )
+    CALL wrf_dm_bcast_real( pi0 , kref+2 )
+    CALL wrf_dm_bcast_real( rh0 , kref+2 )
+#endif
+
     print *,'  zref,th0,qv0,thv0:'
     do k=1,kref
-      th0(k) = t0+grid%t_1(1,k,1)
-      qv0(k) = moist(1,k,1,P_QV)
-      thv0(k) = th0(k)*(1.0+(r_v/r_d)*qv0(k))/(1.0+qv0(k))
-      zref(k) = 0.5*(grid%phb(1,k,1)+grid%phb(1,k+1,1)+grid%ph_1(1,k,1)+grid%ph_1(1,k+1,1))/g
       print *,k,zref(k),th0(k),qv0(k),thv0(k)
     enddo
 
     print *,'  prs0,pi0,rh0:'
     do k=1,kref
-      prs0(k) = grid%p(1,k,1)+grid%pb(1,k,1)
-      pi0(k) = (prs0(k)/p0)**(r_d/cp)
-      E1=1000.0*SVP1*EXP(SVP2*(th0(k)*pi0(k)-SVPT0)/(th0(k)*pi0(k)-SVP3))
-      qvs = EP_2*E1/(prs0(k)-E1)
-      rh0(k) = qv0(k)/qvs
       print *,k,prs0(k),pi0(k),rh0(k)
     enddo
 
@@ -1016,20 +1035,21 @@ CONTAINS
 	endif 
 !#endif
 
-   write(6,*) ' grid%mu_1 from comp ', grid%mu_1(1,1)
+   write(6,*) ' grid%mu_1 from comp ', grid%mu_1(its,jts)
    write(6,*) ' full state sounding from comp, ph, grid%p, grid%al, grid%t_1, qv '
    do k=1,kde-1
-     write(6,'(i3,1x,5(1x,1pe10.3))') k, grid%ph_1(1,k,1)+grid%phb(1,k,1), &
-                                      grid%p(1,k,1)+grid%pb(1,k,1), grid%alt(1,k,1), &
-                                      grid%t_1(1,k,1)+t0, moist(1,k,1,P_QV)
+     write(6,'(i3,1x,5(1x,1pe10.3))') k, grid%ph_1(its,k,jts)+grid%phb(its,k,jts), &
+                                      grid%p(its,k,jts)+grid%pb(its,k,jts), grid%alt(its,k,jts), &
+                                      grid%t_1(its,k,jts)+t0, moist(its,k,jts,P_QV)
    enddo
 
    write(6,*) ' pert state sounding from comp, grid%ph_1, pp, alp, grid%t_1, qv '
    do k=1,kde-1
-     write(6,'(i3,1x,5(1x,1pe10.3))') k, grid%ph_1(1,k,1), &
-                                      grid%p(1,k,1), grid%al(1,k,1), &
-                                      grid%t_1(1,k,1), moist(1,k,1,P_QV)
+     write(6,'(i3,1x,5(1x,1pe10.3))') k, grid%ph_1(its,k,jts), &
+                                      grid%p(its,k,jts), grid%al(its,k,jts), &
+                                      grid%t_1(its,k,jts), moist(its,k,jts,P_QV)
    enddo
+
 
 !! interp v
 !
@@ -1100,13 +1120,22 @@ CONTAINS
   ENDDO
   ENDDO
 
+  if ((its.eq.1).and.(jts.eq.1)) then
   DO k=1,kte-1
-    grid%t_base(k) = grid%t_1(1,k,1)
-    grid%qv_base(k) = moist(1,k,1,P_QV)
-    grid%u_base(k) = grid%u_1(1,k,1)
-    grid%v_base(k) = grid%v_1(1,k,1)
-    grid%z_base(k) = 0.5*(grid%phb(1,k,1)+grid%phb(1,k+1,1)+grid%ph_1(1,k,1)+grid%ph_1(1,k+1,1))/g
+    grid%t_base(k) = grid%t_1(its,k,jts)
+    grid%qv_base(k) = moist(its,k,jts,P_QV)
+    grid%u_base(k) = grid%u_1(its,k,jts)
+    grid%v_base(k) = grid%v_1(its,k,jts)
+    grid%z_base(k) = 0.5*(grid%phb(its,k,jts)+grid%phb(its,k+1,jts)+grid%ph_1(its,k,jts)+grid%ph_1(its,k+1,jts))/g
   ENDDO
+  endif
+#ifdef DM_PARALLEL
+    CALL wrf_dm_bcast_real( grid%t_base , kte )
+    CALL wrf_dm_bcast_real( grid%qv_base , kte )
+    CALL wrf_dm_bcast_real( grid%u_base , kte )
+    CALL wrf_dm_bcast_real( grid%v_base , kte )
+    CALL wrf_dm_bcast_real( grid%z_base , kte )
+#endif
 
   DO J = jts, min(jde-1,jte)
   DO I = its, min(ide-1,ite)

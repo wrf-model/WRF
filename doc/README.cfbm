@@ -1,0 +1,35 @@
+
+WRF should be compiled with CMake in order to use the Community Fire Behavior model:
+git clone --recurse-submodules https://github.com/wrf-model/WRF
+./configure_new -- -DENABLE_CFBM=ON
+./compile_new
+
+To activate the model you need to set ifire = 1 in the fire block of the WRF namelist.
+This instructs WRF to read the CFBM namelist: namelist.cfbm
+
+In a given WRF simulation, CFBM can only be activated in one domain.
+
+It only works with Lambert-Conformal projections at this time.
+
+This is an example of the namelist.cfbm:
+
+ &time
+ dt = 2               ! WRF time step [s] for the nest CFBM is active
+ interval_output = 2  ! Frequency [s] saving fire output
+/
+
+ &atm
+ /
+
+ &fire
+ fire_num_ignitions = 1,
+ fire_ignition_ros1 =   1.2,
+ fire_ignition_start_lat1 = 39.68,
+ fire_ignition_start_lon1 = -103.58,
+ fire_ignition_end_lat1 = 39.68,
+ fire_ignition_end_lon1 = -103.58,
+ fire_ignition_radius1 = 2000.0,
+ fire_ignition_start_time1 = 6.0,
+ fire_ignition_end_time1 = 60.0,
+/
+

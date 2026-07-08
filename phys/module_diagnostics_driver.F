@@ -1307,7 +1307,7 @@ CONTAINS
 #if CDXWRF>=4
 #ifdef INSTVALS
       !! INSTVALS: Instantaneous values (uncomment and re-compile)
-          grid%cdxdiabh = grid%diab_h
+          grid%cdxdiabh = grid%h_diabatic
 #endif
 #endif
 #endif
@@ -1587,13 +1587,14 @@ CONTAINS
 !! INSTVALS: Instantaneous values
                    ,CLT=grid%clt                                          &
                    ,CLL=grid%cll, CLM=grid%clm, CLH=grid%clh              &
+                   ,IUT=grid%iut, IVT=grid%ivt                            &
                    ,WSGS=grid%wsgs, UGUSTWIND=grid%usgs                   &
                    ,VGUSTWIND=grid%vsgs, GUSTPOINT=grid%gustpoint         &
                    ,TOTWSGS=grid%totwsgs, TOTUGUSTWIND=grid%totusgs       &
                    ,TOTVGUSTWIND=grid%totvsgs                             &
                    ,TOTGUSTPOINT=grid%totgustpoint                        &
-                   ,POTEVAPO=grid%potevapo                                &
-                   ,POTEVAPOGEN=grid%potevapogen                          &
+                   ,POTEVAP=grid%potevapo                                 &
+                   ,POTEVAPGEN=grid%potevapogen                           &
 #ifdef CDXWRF
 #if CDXWRF>=1
                    ,CAPE=grid%cdxcape                                     &
@@ -1601,8 +1602,10 @@ CONTAINS
                    ,PLFC=grid%lfcp, LIDX=grid%li                          &
 #endif
 #if CDXWRF>=2
-                   ,FOG=grid%fog, FOGVISBLTY=grid%fogvisblty              & 
+                   ,FOG=grid%fog, VIS=grid%fogvisblty                     & 
                    ,TDS=grid%tds, TWS=grid%tws                            & 
+#endif
+#if CDXWRF>=4
 #endif
 #endif
 !! End of INSTVALS

@@ -337,14 +337,16 @@ CONTAINS
                      , clt, cll, clm, clh,                                                           &
                      iut, ivt,                                                                       &
                      wsgs, ugustwind, vgustwind, gustpoint,                                          &
-                     totwsgs, totugustwind, totvgustwind, gustpoint,                                 &
-                     potevap, potevapogen,                                                           & 
+                     totwsgs, totugustwind, totvgustwind, totgustpoint,                              &
+                     potevap, potevapgen,                                                            &
 #if CDXWRF>=1
                      cape, cin, zlfc, plfc, lidx,                                                    &
 #endif
 #if CDXWRF>=2
-                     fog, fogvisblty,                                                                & 
+                     fog, vis,                                                                       & 
                      tds, tws                                                                        & 
+#endif
+#if CDXWRF>=4
 #endif
 #endif
 !! End of INSTVALS
@@ -758,6 +760,19 @@ CONTAINS
 #else
   REAL, DIMENSION(ims:ime,kms:kme,jms:jme)               :: ta, press, zg, hur
 #endif
+#if CDXWRF>=3
+! if WRF could output rank 5 or higher variables...
+!  REAL, DIMENSION(ims:ime,jms:jme,Nhtasrng,Nhhursrng),                                                &
+!    INTENT(inout)                                        :: tashurstreshighres
+!  REAL, DIMENSION(ims:ime,jms:jme,Nltasrng,Nlhursrng),                                                &
+!    INTENT(inout)                                        :: tashurstreslowres
+  REAL, DIMENSION(ims:ime,Nhtashursrng,jms:jme),                                                      &
+    INTENT(inout)                                        :: tashurstreshighres
+  REAL, DIMENSION(ims:ime,Nltashursrng,jms:jme),                                                      &
+    INTENT(inout)                                        :: tashurstreslowres
+  REAL, DIMENSION(ims:ime,Nwbdswssrng,jms:jme),                                                       &
+    INTENT(inout)                                        :: wbdswsstres
+#endif
 #if CDXWRF>=4
   REAL, DIMENSION(ims:ime,jms:jme), INTENT(inout)        :: wbacdh
   REAL, DIMENSION(ims:ime,jms:jme), INTENT(inout)        :: wbacpw, wbacpwc, wbacpwr, wbacpws,        &
@@ -776,18 +791,6 @@ CONTAINS
   REAL, DIMENSION(ims:ime,jms:jme), INTENT(inout)        :: wbaczlv, wbaczmv, wbaczhv,                &
     wbaczlc, wbaczmc, wbaczhc, wbaczlr, wbaczmr, wbaczhr, wbaczls, wbaczms, wbaczhs,                  &
     wbaczli, wbaczmi, wbaczhi, wbaczlg, wbaczmg, wbaczhg, wbaczlh, wbaczmh, wbaczhh
-#endif
-#if CDXWRF>=3
-!  REAL, DIMENSION(ims:ime,jms:jme,Nhtasrng,Nhhursrng),                                                &
-!    INTENT(inout)                                        :: tashurstreshighres
-!  REAL, DIMENSION(ims:ime,jms:jme,Nltasrng,Nlhursrng),                                                &
-!    INTENT(inout)                                        :: tashurstreslowres
-  REAL, DIMENSION(ims:ime,Nhtashursrng,jms:jme),                                                      &
-    INTENT(inout)                                        :: tashurstreshighres
-  REAL, DIMENSION(ims:ime,Nltashursrng,jms:jme),                                                      &
-    INTENT(inout)                                        :: tashurstreslowres
-  REAL, DIMENSION(ims:ime,Nwbdswssrng,jms:jme),                                                       &
-    INTENT(inout)                                        :: wbdswsstres
 #endif
 #endif
   REAL, DIMENSION(ims:ime,jms:jme), INTENT(out)          :: uas, vas, wss, wbds, hurs, huss
@@ -819,34 +822,35 @@ CONTAINS
   REAL, DIMENSION(ims:ime,jms:jme), INTENT(inout)        :: rsdt, rsut, rlut
   REAL, DIMENSION(ims:ime,jms:jme), INTENT(inout)        :: tas_hm, qvs_hm
 
-!! INSTVALS: Instantaneous values (uncomment and recompile)
-!  REAL, DIMENSION(ims:ime,jms:jme), INTENT(out)          :: clt, cll, clm, clh
-!  REAL, DIMENSION(ims:ime,jms:jme), INTENT(out)          :: wsgs, ugustwind, vgustwind
-!  INTEGER, DIMENSION(ims:ime,jms:jme), INTENT(out)       :: gustpoint
-!  REAL, DIMENSION(ims:ime,jms:jme), INTENT(out)          :: totwsgs, totugustwind, totvgustwind
-!  INTEGER, DIMENSION(ims:ime,jms:jme), INTENT(out)       :: totgustpoint
-!  REAL, DIMENSION(ims:ime,jms:jme), INTENT(out)          :: potevap, potevapgen
-#ifdef CDXWRF
+#ifdef INSTVALS
+!! INSTVALS: Instantaneous values
+  REAL, DIMENSION(ims:ime,jms:jme), INTENT(out)          :: clt, cll, clm, clh
+  REAL, DIMENSION(ims:ime,jms:jme), INTENT(out)          :: wsgs, ugustwind, vgustwind
+  INTEGER, DIMENSION(ims:ime,jms:jme), INTENT(out)       :: gustpoint
+  REAL, DIMENSION(ims:ime,jms:jme), INTENT(out)          :: totwsgs, totugustwind, totvgustwind
+  INTEGER, DIMENSION(ims:ime,jms:jme), INTENT(out)       :: totgustpoint
+  REAL, DIMENSION(ims:ime,jms:jme), INTENT(out)          :: potevap, potevapgen
 #if CDXWRF>=1
-!  REAL, DIMENSION(ims:ime,jms:jme), INTENT(out)          :: cape, cin, zlfc, plfc, lidx
-!  REAL, DIMENSION(ims:ime,jms:jme), INTENT(out)          :: iut, ivt
+  REAL, DIMENSION(ims:ime,jms:jme), INTENT(out)          :: cape, cin, zlfc, plfc, lidx
+  REAL, DIMENSION(ims:ime,jms:jme), INTENT(out)          :: iut, ivt
 #endif
 #if CDXWRF>=2
-!  INTEGER, DIMENSION(ims:ime,jms:jme), INTENT(out)       :: fog
-!  REAL, DIMENSION(ims:ime,jms:jme), INTENT(out)          :: vis
-!  REAL, DIMENSION(ims:ime,jms:jme), INTENT(out)          :: tds
-!  REAL, DIMENSION(ims:ime,jms:jme), INTENT(out)          :: tws
+  INTEGER, DIMENSION(ims:ime,jms:jme), INTENT(out)       :: fog
+  REAL, DIMENSION(ims:ime,jms:jme), INTENT(out)          :: vis
+  REAL, DIMENSION(ims:ime,jms:jme), INTENT(out)          :: tds
+  REAL, DIMENSION(ims:ime,jms:jme), INTENT(out)          :: tws
 #endif
+#if CDXWRF>=3
 #endif
-!! INSTVALS: comment these lines
+#if CDXWRF>=4
+#endif
+#else
+!! INSTVALS: without output
   REAL, DIMENSION(ims:ime,jms:jme)                       :: clt, cll, clm, clh
   REAL, DIMENSION(ims:ime,jms:jme)                       :: wsgs, ugustwind, vgustwind
   INTEGER, DIMENSION(ims:ime,jms:jme)                    :: gustpoint
   REAL, DIMENSION(ims:ime,jms:jme)                       :: totwsgs, totugustwind, totvgustwind
   INTEGER, DIMENSION(ims:ime,jms:jme)                    :: totgustpoint
-  REAL, DIMENSION(ims:ime,jms:jme)                       :: wsgsb01, ugustwindb01, vgustwindb01
-  REAL, DIMENSION(ims:ime,jms:jme)                       :: wsgshp, ugustwindhp, vgustwindhp
-  INTEGER, DIMENSION(ims:ime,jms:jme)                    :: gustpointb01, gustpointhp
   REAL, DIMENSION(ims:ime,jms:jme)                       :: potevap, potevapgen
 #if CDXWRF>=1
   REAL, DIMENSION(ims:ime,jms:jme)                       :: cape, cin, zlfc, plfc, lidx
@@ -859,9 +863,9 @@ CONTAINS
   REAL, DIMENSION(ims:ime,jms:jme)                       :: tws
 #endif
 #if CDXWRF>=3
-  INTEGER                                                :: itas, ihurs, iwbds, iwss
 #endif
 #if CDXWRF>=4
+#endif
 #endif
 !! End of INSTVALS
 
@@ -882,11 +886,16 @@ CONTAINS
   REAL, DIMENSION(kms:kme)                               :: qvar, zagl, ri, qsolid
   REAL, DIMENSION(ims:ime,kms:kme+1,jms:jme)             :: stzg
   REAL, DIMENSION(ims:ime,jms:jme)                       :: smoothp
+  REAL, DIMENSION(ims:ime,jms:jme)                       :: wsgsb01, ugustwindb01, vgustwindb01
+  REAL, DIMENSION(ims:ime,jms:jme)                       :: wsgshp, ugustwindhp, vgustwindhp
+  INTEGER, DIMENSION(ims:ime,jms:jme)                    :: gustpointb01, gustpointhp
+
 #ifdef CDXWRF
 #if CDXWRF>=1
 
 #endif
 #if CDXWRF>=3
+  INTEGER                                                :: itas, ihurs, iwbds, iwss
   REAL                                                   :: uuas, vvas
   REAL, DIMENSION(ims:ime,jms:jme)                       :: wbdsv, wssv
 #endif
@@ -981,7 +990,7 @@ CONTAINS
         ! air-temperature
         CALL var_ta(thp(i,:,j), press(i,:,j), dimz, ta(i,:,j))
 
-#if CXWRF>= 2
+#if CDXWRF>= 2
         ! 2m relative humidity
         CALL var_hurs(t2(i,j), ps(i,j), q2(i,j), hurs(i,j))
 
@@ -2312,6 +2321,14 @@ CONTAINS
           j_1 = MAX(j-1,j_start(ij))
           !WRITE(msg, *)'i:',i,' i+1', i+1, ' j:', j, ' j+1:', j+1, ' ilims:', i_start(ij), i_end(ij), ' jlims:', j_start(ij), j_end(ij)
           !CALL wrf_debug(10,'  ' // TRIM(msg) )
+
+#if CDXWRF< 2
+          ! 2m relative humidity
+          CALL var_hurs(t2(i,j), ps(i,j), q2(i,j), hurs(i,j))
+
+          ! 10m Earth rotated winds
+          CALL var_uasvas(u10(i,j), v10(i,j), sina(i,j), cosa(i,j), uas(i,j), vas(i,j))
+#endif
 
           ! Height above surface at half-mass levels
           zsfc = zg(i,:,j)-hgt(i,j)

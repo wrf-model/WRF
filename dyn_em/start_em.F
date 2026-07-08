@@ -20,11 +20,12 @@
    USE module_dm, ONLY : wrf_dm_min_real, wrf_dm_max_real, wrf_dm_maxval, &
         ntasks_x, ntasks_y, &
         local_communicator_periodic, local_communicator, mytask, ntasks
+
 #else
    USE module_dm, ONLY : wrf_dm_min_real, wrf_dm_max_real
 #endif
    USE module_comm_dm
-   USE module_llxy, ONLY : proj_cassini
+   USE module_llxy, ONLY : proj_cassini, PROJ_LC
    USE module_physics_init
    USE NoahmpGroundwaterInitMod, ONLY: NoahmpGroundwaterInitMain
    USE module_lightning_driver, ONLY : lightning_init
@@ -145,6 +146,7 @@
               ifms, ifme, jfms, jfme, kfms, kfme, &
               ifps, ifpe, jfps, jfpe, kfps, kfpe
    real :: cen_lat, cen_lon, truelat1, truelat2, stand_lon
+   logical :: is_cfbm_initialized = .false.
 #endif
 
 
@@ -2246,6 +2248,20 @@ DEALLOCATE(dz8w)
        ! Community Fire Behavior model
      case (1)
 #ifdef WRF_CFBM
+       Init_cfbm: if (.not. is_cfbm_initialized) then
+#ifdef DM_PARALLEL
+         ! Broadcast the namelist
+       call grid%cfbm_namelist%Broadcast_nml (grid%communicator)
+#endif
+
+       if (abs (grid%dt - grid%cfbm_namelist%dt) > 1.0e-5) then
+         call wrf_error_fatal ('CFBM dt should match WRF dt for the fire domain')
+       end if
+
+       if (config_flags%map_proj /= PROJ_LC) then
+         call wrf_error_fatal ('CFBM only supports Lambert Conformal projections at this moment')
+       end if
+
          ! Get fire dims
        call get_ijk_from_subgrid (grid, ifds, ifde, jfds, jfde, kfds, kfde, &
                                         ifms, ifme, jfms, jfme, kfms, kfme, &
@@ -2280,7 +2296,11 @@ DEALLOCATE(dz8w)
            sr_x = config_flags%sr_x, sr_y = config_flags%sr_y, &
            map_proj = config_flags%map_proj, cen_lat = cen_lat, cen_lon = cen_lon, truelat1 = truelat1, &
            truelat2 = truelat2, stand_lon = stand_lon, nfuel_cat = grid%nfuel_cat, zsf = grid%zsf, &
-           dzdxf = grid%dzdxf, dzdyf = grid%dzdyf)
+           dzdxf = grid%dzdxf, dzdyf = grid%dzdyf, communicator = grid%communicator)
+
+         is_cfbm_initialized = .true.
+
+       end if Init_cfbm
 #else
        call wrf_error_fatal ('CFBM requires compilation with CMake')
 #endif

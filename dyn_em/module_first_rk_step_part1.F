@@ -56,7 +56,7 @@ CONTAINS
 #ifdef DM_PARALLEL
     USE module_dm, ONLY : local_communicator, mytask, ntasks, ntasks_x, ntasks_y, local_communicator_periodic, wrf_dm_maxval
     USE module_comm_dm, ONLY : halo_em_phys_a_sub,halo_em_fdda_sfc_sub,halo_pwp_sub,halo_em_chem_e_3_sub, &
-    halo_em_chem_e_5_sub, halo_em_hydro_noahmp_sub
+    halo_em_chem_e_5_sub, halo_em_hydro_noahmp_sub, halo_em_tracer_e_5_sub, halo_em_cfbm_sub
 #if ( WRFPLUS == 1 )
     USE module_comm_dm, ONLY : halo_em_phys_a_bl_surf_sub
 #endif
@@ -64,10 +64,11 @@ CONTAINS
     USE module_utility
 
 #ifdef WRF_CFBM
-      ! CFBM
+      ! CFBM modules
     use advance_mod, only : Advance_state
-    use wrf_mod, only : Interp_wrf2dvar_to_cfbm, Interp_wrfwinds_to_cfbm
-    use wrf_mod, only : Provide_atm_feedback
+    use wrf_mod, only : Interp_wrfwinds_to_cfbm, Provide_atm_feedback
+    use interp_mod, only : VINTERP_WINDS_FROM_3D_WINDS, VINTERP_WINDS_FROM_10M_WINDS
+    use coupling_mod, only : Interp_horizontal
 #endif
 
     IMPLICIT NONE
@@ -710,6 +711,10 @@ BENCH_START(surf_driver_tim)
 #if ( EM_CORE == 1)
      &        ,LakeMask=grid%LakeMask                                               & !lake
      &        ,restart_flag=restart_flag                                            & !flag showing if is a restart timestep
+! TOFD for KIM gwdo scheme
+     &        ,kim_tofd=config_flags%kim_tofd                                       &
+     &        ,tofd_factor=config_flags%tofd_factor                                 &
+     &        ,VAR2D=grid%var2d                                                     &
 #endif
 ! CLM Varaibles
      &        ,NUMC=grid%numc,NUMP=grid%nump,SABV=grid%sabv,SABG=grid%sabg,         &
@@ -799,7 +804,7 @@ BENCH_START(surf_driver_tim)
      &        ,FLXHUMR_URB2D=grid%flxhumr_urb2d                           & !H urban
      &        ,FLXHUMB_URB2D=grid%flxhumb_urb2d                           & !H urban
      &        ,FLXHUMG_URB2D=grid%flxhumg_urb2d                           & !H urban
-     &        ! added by Chenghao Wang
+              ! added by Chenghao Wang
      &        ,TVG_URB2D=grid%tvg_urb2d                                   & !H urban
      &        ,XXXVG_URB2D=grid%xxxvg_urb2d                               & !H urban
      &        ,TVGL_URB3D=grid%tvgl_urb3d                                 & !H urban
@@ -1195,6 +1200,9 @@ BENCH_START(pbl_driver_tim)
      &        ,ZNT=grid%znt                                                    &
      &        ,ysu_topdown_pblmix=config_flags%ysu_topdown_pblmix              &
      &        ,shinhong_tke_diag=config_flags%shinhong_tke_diag               &
+     &        ,shinhong_scu_mixing=config_flags%shinhong_scu_mixing               &
+     &        ,shinhong_nonlocal_flux=config_flags%shinhong_nonlocal_flux               &
+     &        ,shinhong_ke_dissipation=config_flags%shinhong_ke_dissipation               &
 ! paj: topo_wind
      &        ,CTOPO=grid%ctopo,CTOPO2=grid%ctopo2                                   &
 ! variables added for BEP
@@ -1263,7 +1271,6 @@ BENCH_START(pbl_driver_tim)
      &        ,tke_budget=config_flags%tke_budget                         &
      &        ,bl_mynn_cloudpdf=config_flags%bl_mynn_cloudpdf             &
      &        ,bl_mynn_mixlength=config_flags%bl_mynn_mixlength           &
-     &        ,icloud_bl=config_flags%icloud_bl                           &
      &        ,qc_bl=grid%qc_bl,qi_bl=grid%qi_bl,cldfra_bl=grid%cldfra_bl &
      &        ,bl_mynn_edmf=config_flags%bl_mynn_edmf                     &
               ,bl_mynn_edmf_dd=config_flags%bl_mynn_edmf_dd               &
@@ -1286,7 +1293,9 @@ BENCH_START(pbl_driver_tim)
      &        ,qcg=grid%qcg, grav_settling=config_flags%grav_settling     &
 !    &        ,K_m=grid%K_m, K_h=grid%K_h, K_q=grid%K_q                   &
      &        ,vdfg=grid%vdfg,maxwidth=grid%maxwidth,maxMF=grid%maxmf     &
-     &        ,ztop_plume=grid%ztop_plume                                 &
+     &        ,ztop_plume=grid%ztop_plume,maxmf_dd=grid%maxmf_dd          &
+     &        ,maxtkeprod=grid%maxtkeprod,maxwidth_dd=grid%maxwidth_dd    &
+     &        ,cldtop_cooling=grid%cldtop_cooling,ent_eff=grid%ent_eff    &
      &        ,excess_h=grid%excess_h,excess_q=grid%excess_q              &    
      &        ,spp_pbl=config_flags%spp_pbl                               &
      &        ,pattern_spp_pbl=grid%pattern_spp_pbl                       &
@@ -1296,13 +1305,16 @@ BENCH_START(pbl_driver_tim)
      &        ,PEK_ADV=scalar(ims,kms,jms,P_pek_adv)                      &!TKEadvection
      &        ,PEP_ADV=scalar(ims,kms,jms,P_pep_adv)                      &!TKEadvection
 !GWD for ARW
-     &        ,GWD_OPT=config_flags%gwd_opt &
-     &        ,gwd_diags=config_flags%gwd_diags &
+     &        ,GWD_OPT=config_flags%gwd_opt                              &
+     &        ,gwd_diags=config_flags%gwd_diags                          &
+     &        ,dx_factor=config_flags%gwd_dx_factor                      &
+     &        ,if_nonhyd=config_flags%gwd_if_nonhyd                      &
      &        ,DTAUX3D=grid%dtaux3d,DTAUY3D=grid%dtauy3d &
      &        ,DUSFCG=grid%dusfcg,DVSFCG=grid%dvsfcg &
      &        ,VAR2D=grid%var2d,OC12D=grid%oc12d     &
      &        ,OA1=grid%oa1,OA2=grid%oa2,OA3=grid%oa3,OA4=grid%oa4        &
      &        ,OL1=grid%ol1,OL2=grid%ol2,OL3=grid%ol3,OL4=grid%ol4        &
+     &        ,elvmax=grid%elvmax                                         &
      &        ,SINA=grid%sina,COSA=grid%cosa                              &
      &        ,dtaux3d_ls=grid%dtaux3d_ls,dtauy3d_ls=grid%dtauy3d_ls      &
      &        ,dtaux3d_bl=grid%dtaux3d_bl,dtauy3d_bl=grid%dtauy3d_bl      &
@@ -1398,38 +1410,68 @@ BENCH_END(pbl_driver_tim)
 #ifdef WRF_CFBM
        case (1)
            ! Interpolate from Atm to fire grid
-         call Interp_wrf2dvar_to_cfbm (grid%znt, ims, ime, jms, jme, &
+#ifdef DM_PARALLEL
+#     include "HALO_EM_CFBM.inc"
+#endif
+         call Interp_horizontal (grid%znt, grid%fire_state%proj, ims, ime, jms, jme, &
              grid%fire_state%ifms, grid%fire_state%ifme, grid%fire_state%jfms, grid%fire_state%jfme, &
-             grid%fire_state%ifps, grid%fire_state%ifpe, grid%fire_state%jfps, grid%fire_state%jfpe, &
-             grid%fire_state%lats, grid%fire_state%lons, grid%fire_state%proj, grid%fire_state%fz0)
+             grid%fire_state%num_tiles, grid%fire_state%i_start, grid%fire_state%i_end, grid%fire_state%j_start, &
+             grid%fire_state%j_end, grid%cfbm_namelist%hinterp_opt, grid%fire_state%lats, grid%fire_state%lons, &
+             grid%fire_state%fz0)
 
-         call Interp_wrf2dvar_to_cfbm (grid%t2, ims, ime, jms, jme, &
+         call Interp_horizontal (grid%t2, grid%fire_state%proj, ims, ime, jms, jme, &
              grid%fire_state%ifms, grid%fire_state%ifme, grid%fire_state%jfms, grid%fire_state%jfme, &
-             grid%fire_state%ifps, grid%fire_state%ifpe, grid%fire_state%jfps, grid%fire_state%jfpe, &
-             grid%fire_state%lats, grid%fire_state%lons, grid%fire_state%proj, grid%fire_state%fire_t2)
+             grid%fire_state%num_tiles, grid%fire_state%i_start, grid%fire_state%i_end, grid%fire_state%j_start, &
+             grid%fire_state%j_end, grid%cfbm_namelist%hinterp_opt, grid%fire_state%lats, grid%fire_state%lons, &
+             grid%fire_state%fire_t2)
 
-         call Interp_wrf2dvar_to_cfbm (grid%q2, ims, ime, jms, jme, &
+         call Interp_horizontal (grid%q2, grid%fire_state%proj, ims, ime, jms, jme, &
              grid%fire_state%ifms, grid%fire_state%ifme, grid%fire_state%jfms, grid%fire_state%jfme, &
-             grid%fire_state%ifps, grid%fire_state%ifpe, grid%fire_state%jfps, grid%fire_state%jfpe, &
-             grid%fire_state%lats, grid%fire_state%lons, grid%fire_state%proj, grid%fire_state%fire_q2)
+             grid%fire_state%num_tiles, grid%fire_state%i_start, grid%fire_state%i_end, grid%fire_state%j_start, &
+             grid%fire_state%j_end, grid%cfbm_namelist%hinterp_opt, grid%fire_state%lats, grid%fire_state%lons, &
+             grid%fire_state%fire_q2)
 
-         call Interp_wrf2dvar_to_cfbm (grid%psfc, ims, ime, jms, jme, &
+         call Interp_horizontal (grid%psfc, grid%fire_state%proj, ims, ime, jms, jme, &
              grid%fire_state%ifms, grid%fire_state%ifme, grid%fire_state%jfms, grid%fire_state%jfme, &
-             grid%fire_state%ifps, grid%fire_state%ifpe, grid%fire_state%jfps, grid%fire_state%jfpe, &
-             grid%fire_state%lats, grid%fire_state%lons, grid%fire_state%proj, grid%fire_state%fire_psfc)
+             grid%fire_state%num_tiles, grid%fire_state%i_start, grid%fire_state%i_end, grid%fire_state%j_start, &
+             grid%fire_state%j_end, grid%cfbm_namelist%hinterp_opt, grid%fire_state%lats, grid%fire_state%lons, &
+             grid%fire_state%fire_psfc)
 
-         call Interp_wrf2dvar_to_cfbm (grid%rainc + grid%rainnc, ims, ime, jms, jme, &
+         call Interp_horizontal (grid%rainc + grid%rainnc, grid%fire_state%proj, ims, ime, jms, jme, &
              grid%fire_state%ifms, grid%fire_state%ifme, grid%fire_state%jfms, grid%fire_state%jfme, &
-             grid%fire_state%ifps, grid%fire_state%ifpe, grid%fire_state%jfps, grid%fire_state%jfpe, &
-             grid%fire_state%lats, grid%fire_state%lons, grid%fire_state%proj, grid%fire_state%fire_rain)
+             grid%fire_state%num_tiles, grid%fire_state%i_start, grid%fire_state%i_end, grid%fire_state%j_start, &
+             grid%fire_state%j_end, grid%cfbm_namelist%hinterp_opt, grid%fire_state%lats, grid%fire_state%lons, &
+             grid%fire_state%fire_rain)
 
-         call Interp_wrfwinds_to_cfbm (grid%u_phy, grid%v_phy, grid%z_at_w, ims, ime, kms, kme, jms, jme, &
-             grid%fire_state%ifms, grid%fire_state%ifme, grid%fire_state%jfms, grid%fire_state%jfme, &
-             grid%fire_state%ifps, grid%fire_state%ifpe, grid%fire_state%jfps, grid%fire_state%jfpe, &
-             grid%fire_state%kfds, grid%fire_state%kfde, &
-             grid%fire_state%lats, grid%fire_state%lons, grid%fire_state%proj, grid%fire_state%fz0,  &
-             grid%cfbm_namelist%fire_lsm_zcoupling, grid%cfbm_namelist%fire_lsm_zcoupling_ref, &
-             grid%cfbm_namelist%fire_wind_height, grid%fire_state%uf, grid%fire_state%vf)
+         Select_vinterp_opt: select case  (grid%cfbm_namelist%wind_vinterp_opt)
+           case (VINTERP_WINDS_FROM_3D_WINDS)
+             call Interp_wrfwinds_to_cfbm (grid%u_phy, grid%v_phy, grid%z_at_w, ims, ime, kms, kme, jms, jme, &
+                 grid%fire_state%ifms, grid%fire_state%ifme, grid%fire_state%jfms, grid%fire_state%jfme, &
+                 grid%fire_state%ifps, grid%fire_state%ifpe, grid%fire_state%jfps, grid%fire_state%jfpe, &
+                 grid%fire_state%kfds, grid%fire_state%kfde, &
+                 grid%fire_state%lats, grid%fire_state%lons, grid%fire_state%proj, grid%fire_state%fz0,  &
+                 grid%cfbm_namelist%fire_lsm_zcoupling, grid%cfbm_namelist%fire_lsm_zcoupling_ref, &
+                 grid%cfbm_namelist%fire_wind_height, grid%fire_state%uf, grid%fire_state%vf)
+
+           case (VINTERP_WINDS_FROM_10M_WINDS)
+             call Interp_horizontal (grid%u10, grid%fire_state%proj, ims, ime, jms, jme, &
+                 grid%fire_state%ifms, grid%fire_state%ifme, grid%fire_state%jfms, grid%fire_state%jfme, &
+                 grid%fire_state%num_tiles, grid%fire_state%i_start, grid%fire_state%i_end, grid%fire_state%j_start, &
+                 grid%fire_state%j_end, grid%cfbm_namelist%hinterp_opt, grid%fire_state%lats, grid%fire_state%lons, &
+                 grid%fire_state%uf)
+
+             call Interp_horizontal (grid%v10, grid%fire_state%proj, ims, ime, jms, jme, &
+                 grid%fire_state%ifms, grid%fire_state%ifme, grid%fire_state%jfms, grid%fire_state%jfme, &
+                 grid%fire_state%num_tiles, grid%fire_state%i_start, grid%fire_state%i_end, grid%fire_state%j_start, &
+                 grid%fire_state%j_end, grid%cfbm_namelist%hinterp_opt, grid%fire_state%lats, grid%fire_state%lons, &
+                 grid%fire_state%vf)
+
+             call grid%fire_state%Apply_wafs ()
+
+           case default
+             call wrf_error_fatal ('The vertical wind interpolation option does not exist in CFBM')
+
+         end select Select_vinterp_opt
 
          call Advance_state (grid = grid%fire_state, config_flags = grid%cfbm_namelist)
 
@@ -1465,6 +1507,12 @@ BENCH_END(pbl_driver_tim)
                grid%rthfrten, grid%rqvfrten)          ! theta and Qv tendencies
            end do
            !$OMP END PARALLEL DO
+
+           if (config_flags%tracer_opt == 3) then
+#ifdef DM_PARALLEL
+#     include "HALO_EM_TRACER_E_5.inc"
+#endif
+           end if
          else
            call wrf_error_fatal ('num_tiles in WRF and CFBM should match')
          endif

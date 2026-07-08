@@ -75,10 +75,6 @@ target_sources(
                   module_cu_camzm_driver.F
                   module_cu_g3.F
                   module_cu_gd.F
-                  module_cu_gf_ctrans.F
-                  module_cu_gf_deep.F
-                  module_cu_gf_sh.F
-                  module_cu_gf_wrfdrv.F
                   module_cu_kf.F
                   module_cu_kfcup.F
                   module_cu_kfeta.F
@@ -217,11 +213,6 @@ target_sources(
                   module_sf_idealscmsfclay.F
                   module_sf_lake.F
                   module_sf_myjsfc.F
-                  module_sf_mynnsfc_common.F
-                  module_sf_mynnsfc_driver.F
-                  module_sf_mynnsfc_land.F
-                  module_sf_mynnsfc_water.F
-                  module_sf_mynnsfc_ice.F
                   module_sf_noah_seaice.F
                   module_sf_noah_seaice_drv.F
                   module_sf_noahdrv.F
@@ -421,6 +412,7 @@ target_sources(
                   # Shared physics
                   physics_mmm/bl_gwdo.F90
                   physics_mmm/bl_ysu.F90
+                  physics_mmm/bl_shinhong.F90
                   physics_mmm/cu_ntiedtke.F90
                   physics_mmm/module_libmassv.F90
                   physics_mmm/mp_radar.F90
@@ -428,10 +420,32 @@ target_sources(
                   physics_mmm/mp_wsm6_effectRad.F90
                   physics_mmm/sf_sfclayrev.F90
 
+                  # MYNN-SFC
+                  MYNN-SFC/WRF/module_sf_mynnsfc_common.F90
+                  MYNN-SFC/WRF/module_sf_mynnsfc_driver.F90
+                  MYNN-SFC/module_sf_mynnsfc_land.F90
+                  MYNN-SFC/module_sf_mynnsfc_water.F90
+                  MYNN-SFC/module_sf_mynnsfc_ice.F90
+
                   # MYNN-EDMF
                   MYNN-EDMF/module_bl_mynnedmf.F90
                   MYNN-EDMF/WRF/module_bl_mynnedmf_common.F90
                   MYNN-EDMF/WRF/module_bl_mynnedmf_driver.F90
+
+                  # TEMPO
+                  TEMPO/src/module_mp_tempo_cfgs.F90
+                  TEMPO/src/module_mp_tempo_params.F90
+                  TEMPO/src/module_mp_tempo_utils.F90
+                  TEMPO/src/module_mp_tempo_diags.F90
+                  TEMPO/src/module_mp_tempo_ml.F90
+                  TEMPO/src/module_mp_tempo_aerosols.F90
+                  TEMPO/src/module_mp_tempo_main.F90
+                  TEMPO/src/module_mp_tempo_driver.F90
+                  # GFL
+                  GFL/module_cu_gfl_deep.F90
+                  GFL/module_cu_gfl_sh.F90
+                  GFL/WRF/module_cu_gfl_common.F90
+                  GFL/WRF/module_cu_gfl_wrf.F90
                   )
 
 

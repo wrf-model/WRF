@@ -2744,7 +2744,8 @@ integer::oops1,oops2
                  .OR. (config_flags%mp_physics .EQ. TEMPO .AND. config_flags%tempo_aerosolaware .EQ. 1) &
                  .OR. config_flags%mp_physics .EQ. RCON_MP_SCHEME) .and. &
                      config_flags%wif_input_opt .EQ. 0 ) THEN
-               CALL wrf_error_fatal ('wif_input_opt=0 but mp_physics=28 or mp_physics=29' )
+               CALL wrf_error_fatal ( & 
+               'wif_input_opt=0 but mp_physics=28, 29, or 88' )
             END IF if_thompsonaero_3d
 
 !=========================================================================================

@@ -255,10 +255,10 @@ Namelist variables specifically for the WPS input for real:
                                                   = 2: it uses an alternative way (less biased 
                                                   when compared against input data) to compute height in program 
                                                   real and pressure in model.
- wif_input_opt                       = 0        ! = 1: option to process the Water Ice Friendly Aerosol input from metgrid for use with mp_physics=28,29
+ wif_input_opt                       = 0        ! = 1: option to process the Water Ice Friendly Aerosol input from metgrid for use with mp_physics=28,29, or 88 with tempo_aerosolaware=1
                                                   = 2: since V4.4, option to use black carbon aerosol category with mp_physics=28,29, as well as its radiative effect. Must include
                                                        file QNWFA_QNIFA_QNBCA_SIGMA_MONTHLY.dat during WPS 
- num_wif_levels                      = 30       ! number of levels in the Thompson Water Ice Friendly aerosols (mp_physic=28,29) 
+ num_wif_levels                      = 30       ! number of levels in the Thompson Water Ice Friendly aerosols (mp_physic=28,29, or 88 with tempo_aerosolaware=1)
  p_top_requested                     = 5000     ! p_top (Pa) to use in the model
  vert_refine_fact                    = 1        ! vertical refinement factor for ndown, not used for concurrent vertical grid refinement
  vert_refine_method (max_dom)        = 0        ! vertical refinement method
@@ -530,7 +530,7 @@ use_rap_aero_icbc                   = .false.   ! Set to .true. to ingest real-t
                                          2  ! continental clean (default), for ntu3m
                                          3  ! continental average, for ntu3m
                                          4  ! continental urban, for ntu3m
-
+                                     = 88, TEMPO (Thompson-Eidhammer Microphysics Parameterization for Operations)
                                      = 95, Ferrier (old Eta) microphysics
                                      = 96, Madwrf
                                      = 97, Goddard GCE scheme (also uses gsfcgce_hail, gsfcgce_2ice)
@@ -775,6 +775,7 @@ use_rap_aero_icbc                   = .false.   ! Set to .true. to ingest real-t
                                                   (replacing bl_mynn_tkebudget in prior versions)
  bl_mynn_closure                     = 2.5: level 2.5
                                        2.6: level 2.6 (default)
+				       2.7: level 2.7 (TTE)
                                        3.0: level 3.0
  bl_mynn_tkeadvect (max_dom)         = .false., ! default off; = .true. do MYNN tke advection
  icloud_bl                                        option to couple the subgrid-scale clouds from the PBL scheme (MYNN only) 
@@ -793,7 +794,7 @@ use_rap_aero_icbc                   = .false.   ! Set to .true. to ingest real-t
                                      0: original (Sommeria and Deardorf 1977); 
                                      1: Kuwano et al 2010, similar to option 0, but uses resolved scale gradients 
                                         as opposed to higher order moments ; 
-                                     2: from Chaboureau and Bechtold (2002, JAS, with mods, default) 
+                                     2: heavily modified Chaboureau and Bechtold (2002, JAS, default) 
  bl_mynn_edmf (max_dom)              = 1   ! activate mass-flux option in MYNN, 0: mass-flux option off
                                              Related (hidden) options: 
  bl_mynn_edmf_mom (max_dom)          = 1   ! - activates momentum transport in MYNN mass-flux scheme 
@@ -802,14 +803,28 @@ use_rap_aero_icbc                   = .false.   ! Set to .true. to ingest real-t
  bl_mynn_edmf_tke (max_dom)          = 0,  ! default; = 1 activates TKE transport in MYNN mass-flux scheme 
                                             (assuming bl_mynn_edmf > 0)
                                        0    no TKE transport (default);1: activate TKE transport
- bl_mynn_output (max_dom)            = 0,  ! do not output extra arrays
-                                       1    allocate and output extra 3D arrays from MYNN PBL
+ bl_mynn_output (max_dom)            = 0,  ! = 0: do not output extra arrays (default)
+                                       1   ! = 1: allocate and output extra 3D arrays from MYNN-EDMF mass-flux component
+ bl_mynn_mixaerosols (max_dom)	     = 1,  ! = 0: do not mix qnwfa, qnifa, or qnbca
+ 				           ! = 1: mix aerosols (default)
+ bl_mynn_mixnumcon (max_dom)	     = 0,  ! = 0: do not mix number concentrations (qnc, qni) (default)
+ 				           ! = 1: mix number concentrations
+ bl_mynn_mixscalars (max_dom)        = 0   ! = 0: off, 1: activate mixing of scalars (must set up 4D scalar array manually in WRF)
+ bl_mynn_ess (max_dom)  		   ! = 0: use Chaboureau and Bechtold (2002) buoyancy-flux relationships to estimate effect static stability
+ 				           ! = 1: use modified OGorman (2011, JAS) effective static stability
+ bl_mynn_mixqt (max_dom)             = 0   ! mixing moisture species separately, 1: mixing total water (do not use)
+ bl_mynn_edmf_dd (max_dom)	     = 0,  ! default = 0; 1 activates downdraft component in MYNN
+ bl_mynn_output (max_dom)            = 0,  ! default = 0; do not output extra arrays
+                                           ! =1:allocate and output extra 3D arrays from MYNN PBL for mass flux updrafts
+				           ! =2:allocate and output extra 3D arrays from MYNN PBL for mass flux downdrafts
  bl_mynn_mixscalars (max_dom)        = 0   ! off, 1: activate mixing of scalars
  bl_mynn_mixqt (max_dom)             = 0   ! mixing moisture species separately, 1: mixing total water
 
  scalar_pblmix (max_dom)             = 1 ! mix scalar fields consistent with PBL option (exch_h)
  tracer_pblmix (max_dom)             = 1 ! mix tracer fields consistent with PBL option (exch_h)
- shinhong_tke_diag (max_dom)         = 0 ! diagnostic TKE and mixing length from Shin-Hong PBL
+ shinhong_nonlocal_flux (max_dom)    = .true.,  ! default;  =.false. to use YSU (gamma-type) option
+ shinhong_scu_mixing (max_dom)       = .false., ! strato-cumulus mixing (topdown mxing in YSU pbl)
+ shinhong_ke_dissipation (max_dom)   = .false., ! heating due to kinetic energy dissipation
  opt_thcnd                                 option to treat thermal conductivity in Noah LSM
                                      = 1,  original (default)
                                      = 2,  McCumber and Pielke for silt loam and sandy loam
@@ -826,7 +841,7 @@ use_rap_aero_icbc                   = .false.   ! Set to .true. to ingest real-t
                                      = 0, no cumulus
                                      = 1, Kain-Fritsch (new Eta) scheme
                                      = 2, Betts-Miller-Janjic scheme
-                                     = 3, Grell-Freitas ensemble scheme
+                                     = 3, Grell-Freitas-Li scheme
                                      = 4, Scale-aware GFS Simplified Arakawa-Schubert (SAS) scheme 
                                      = 5, Grell 3D ensemble scheme
                                      = 6, Modifed Tiedtke scheme
@@ -853,7 +868,7 @@ use_rap_aero_icbc                   = .false.   ! Set to .true. to ingest real-t
                                           This scheme only works with MYJ PBL scheme, and should not be combined with icloud=3
                                           This scheme can also work with MYNN PBL scheme, but one should turn off EDMF (bl_mynn_edmf=0)
 
- ishallow                            = 0, !  = 1 turns on shallow convection, used with Grell 3D ensemble schemes (cu_physics = 3 or 5)
+ ishallow                            = 0, !  = 1 turns on shallow convection, used with GFL and Grell 3D ensemble schemes (cu_physics = 3 or 5)
  clos_choice                         = 0, !  closure choice (place holder only)
  cu_diag (max_dom)                   = 0, !  additional t-averaged stuff for cu physics (cu_phys = 3, 5, 10, and 93 only)
  kf_edrates (max_dom)                = 0, !  Add entrainment/detrainment rates and convective timescale output variables for KF-based 
@@ -1051,8 +1066,12 @@ use_rap_aero_icbc                   = .false.   ! Set to .true. to ingest real-t
  seaice_thickness_default            = 3.0      ! default value of seaice thickness for seaice_thickness_opt=0
  tice2tsk_if2cold                    = .false.  ! set Tice to Tsk to avoid unrealistically low sea ice temperatures
  iz0tlnd                             = 0        ! thermal roughness length for sfclay (0 = old, 1 = veg dependent Chen-Zhang Czil,
-                                                      2 = Zilitinkevitch (czil=0.1))
-                                                      for mynn sfc (0=Zilitinkevitch (def),1=Chen-Zhang,2=mod Yang,3=const zt)
+                                                !     2 = Zilitinkevitch (czil=0.1)).
+						! Note for mynn sfc, this iz0tlnd option has been replaced by sf_mynn_sfcflux_water and sf_mynn_sfcflux_land
+ sf_mynn_sfcflux_water		     = 1        ! MYNN-SFC option for the calculation of z0, zt and zq over water
+ 				                ! 0:COARE3.0, 1:COARE3.5 (default), 2:Davis/COARE3.5 ,3:Davis/Garratt, 4:Taylor-Yelland
+ sf_mynn_sfcflux_land                = 0        ! MYNN-SFC option for the calculation of zt and zq over land
+						! 0:constant Czil (default), 1:variable Czil, 2:Yang (2008)
  mp_tend_lim                         = 10.,     ! limit on temp tendency from mp latent heating from radar data assimilation
  prec_acc_dt (max_dom)               = 0.,      ! number of minutes in precipitation bucket - will add three
                                                   new 2d output fields: prec_acc_c, prec_acc_nc and snow_acc_nc
@@ -1329,7 +1348,7 @@ Options for use with the Noah-MP Land Surface Model (sf_surface_physics=4):
                                                      5 = Miguez-Macho & Fan groundwater scheme (Miguez-Macho et al. 2007 JGR; Fan et al. 2007 JGR)
                                                            geogrid must have been run with GEOGRID.TBL.ARW.noahmp, use with caution
                                                      6 = Variable Infiltration Capacity Model surface runoff scheme (Wood et al., 1992, JGR)
-                                                     7 = Xiananjiang Infiltration and surface runoff scheme ((Jayawardena and Zhou, 2000)
+                                                     7 = Xinanjiang Infiltration and surface runoff scheme ((Jayawardena and Zhou, 2000)
                                                      8 = Dynamic VIC surface runoff scheme (Liang and Xie, 2001)
  opt_runsub                         = 3,        ! Noah-MP Subsurface Runoff option (Same option set as surface runoff option)
  opt_infdv                          = 0,        ! Noah-MP infiltration option in dynamic VIC runoff scheme (only works for opt_run=8)
@@ -1720,8 +1739,12 @@ The following are for observation nudging:
  swap_pole_with_next_j               = .false.  ! T/F replace the entire j=1 (jds-1) with the values from j=2 (jds-2)
  actual_distance_average             = .false.  ! T/F average the field at each i location in the j-loop with a number of grid points based on a map-factor ratio
  gwd_opt (max_dom)                   = 0       ! for running without gravity wave drag
-                                     = 1       ; for running with gravity wave drag (Choi and Hong 2015)
+                                     = 1       ; for running with KIM gravity wave drag
                                      = 3       ; NOAA/GSL gravity wave drag and turbulent orographic form drag
+ kim_tofd                            = .false. ! .true., KIM turbulent orographic form drag for sfclay_physics=1 (TOFD)
+ tofd_factor                         = .003    ! a factor to compute TOFD in surface layer physics
+ gwd_if_nonhyd                       = .true.  ! whether to incorporate the nonhydrostatic effect in KIM GWD
+ gwd_dx_factor                       = 2.      ! effective grid spacing ratio in KIM GWD
  gwd_diags                           = 0       ; set to 1 to output diagnostics for gwd_opt = 3
  sfs_opt (max_dom)                   = 0       ! nonlinear backscatter and anisotropy (NBA) off
                                      = 1       ! NBA1 using diagnostic stress terms (km_opt=2,3 for scalars)

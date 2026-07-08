@@ -511,7 +511,7 @@ MODULE module_mp_nssl_2mom
   integer, private :: ished2cld = 0  ! 1: Send shed liquid (from wet growth) to cloud droplets
 
   integer, private :: ihmlt = 2      ! 1=old melting with vmlt; 2=new melting using mean volume diam of graupel/hail
-  integer, private :: imltshddmr = 2 ! 0 (default)=mean diameter of drops produced during melting+shedding as before (using mean diameter of graupel/hail
+  integer, private :: imltshddmr = 1 ! 0 (default)=mean diameter of drops produced during melting+shedding as before (using mean diameter of graupel/hail
                             ! and max mean diameter of rain)
                             ! 1=new method where mean diameter of rain during melting is adjusted linearly downward 
                             ! toward 3 mm for large (> sheddiam) graupel and hail, to take into account shedding of 
@@ -2068,13 +2068,13 @@ MODULE module_mp_nssl_2mom
      &  ((1. + alphahl)*(2. + alphahl)*(3. + alphahl)*(4. + alphah)*(5. + alphah)*(6. + alphah))
 
       IF ( ipconc <= 5 ) THEN 
-        imltshddmr = Min(1, imltshddmr)
+!        imltshddmr = Min(1, imltshddmr)
         ibinhmlr = 0
         ibinhlmlr = 0
       ENDIF
 
       IF ( ipconc > 5 .and. (ibinhmlr == 0 .and. ibinhlmlr == 0 ) ) THEN 
-        imltshddmr = Min(1, imltshddmr)
+!        imltshddmr = Min(1, imltshddmr)
       ENDIF
 
 !      write(0,*) 'rz,rzhl = ', rz,rzhl

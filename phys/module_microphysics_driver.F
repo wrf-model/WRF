@@ -71,8 +71,8 @@ SUBROUTINE microphysics_driver(                                          &
                       ,f_qns,f_qnr,f_qng,f_qnc,f_qnn,f_qh,f_qnh          &
                       ,            f_qzr,f_qzi,f_qzs,f_qzg,f_qzh         &
                       ,f_qvolg,f_qvolh                                   &
-                      ,f_qic,f_qip,f_qid &
-                      ,f_qnic,f_qnip,f_qnid &
+                      ,f_qic,f_qip,f_qid                                 &
+                      ,f_qnic,f_qnip,f_qnid                              &
                       ,f_qir,f_qib                                       & ! for P3
                       ,f_qi2,f_qni2,f_qir2,f_qib2                        & ! for P3
                       ,f_qvoli,f_qaoli                                   & ! for Jensen ISHMAEL
@@ -87,9 +87,8 @@ SUBROUTINE microphysics_driver(                                          &
                       ,hail,ice2                                         & ! for mp_gsfcgce
 !NUWRF JJS 20110525 vvvvv
                       ,phys_tot, physc, physe, physd, physs, physm, physf& ! for gsfcgce
-                      ,acphys_tot, acphysc, acphyse, acphysd  & ! for gsfcgce
-                      ,acphyss, acphysm, acphysf              & ! for gsfcgce
-
+                      ,acphys_tot, acphysc, acphyse, acphysd             & ! for gsfcgce
+                      ,acphyss, acphysm, acphysf                         & ! for gsfcgce
                       ,re_cloud_gsfc, re_rain_gsfc, re_ice_gsfc          &
                       ,re_snow_gsfc, re_graupel_gsfc, re_hail_gsfc       & ! cloud effective radius
                       ,precr3d, preci3d, precs3d, precg3d, prech3d       &
@@ -1480,12 +1479,12 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                    if (config_flags%nwp_diagnostics == 1) then
                       if (present(hail_maxk1)) then
                          if (allocated(tempo_driver_diags%max_hail_diameter_sfc)) then
-                            hail_maxk1(i,j) = tempo_driver_diags%max_hail_diameter_sfc(i,j)
+                            hail_maxk1(i,j) = 1.e-3 * tempo_driver_diags%max_hail_diameter_sfc(i,j)
                          endif
                       endif
                       if (present(hail_max2d)) then
                          if (allocated(tempo_driver_diags%max_hail_diameter_column)) then
-                            hail_max2d(i,j) = tempo_driver_diags%max_hail_diameter_column(i,j)
+                            hail_max2d(i,j) = 1.e-3 * tempo_driver_diags%max_hail_diameter_column(i,j)
                          endif
                       endif
                    endif

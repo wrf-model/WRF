@@ -2533,7 +2533,7 @@ subroutine udm2d(t1, q1                                          &
 !
      do n = 1, niter
        do k = ktop, kts, -1
-         if(qrs(k,i,1)>qrmin) then
+         if(qrs(k,i,1)>0.) then
            denqr(k) = dend(k,i)*qrs(k,i,1)
            denqn(k) = dend(k,i)*ncr(k,i,3)
          else
@@ -2549,13 +2549,8 @@ subroutine udm2d(t1, q1                                          &
        call semi_lagrangian(1,kdim,max(ktop,2),dend(:,i),denfac(:,i),t(:,i),   &
             delz(:,i),vtn(:),denqn(:),qnpath,dtcfl,lat,i)
        do k = ktop, kts, -1
-         if(denqr(k)>qrmin) then
-           qrs(k,i,1) = max(denqr(k)/dend(k,i),0.)
-           ncr(k,i,3) = max(denqn(k)/dend(k,i),0.)
-         else
-           qrs(k,i,1) = 0.0
-           ncr(k,i,3) = 0.0
-         endif
+         qrs(k,i,1) = max(denqr(k)/dend(k,i),0.)
+         ncr(k,i,3) = max(denqn(k)/dend(k,i),0.)
        enddo
 !
        precip_r = qrpath/dtcld + precip_r   ! [kgm-2s-1]

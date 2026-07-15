@@ -5,8 +5,8 @@
 !! author Songyou Hong [hong@ucar.edu, songyouhong@gmail.com]
 !!
   module module_mp_udm
-   use module_mp_radar
-   use module_gfs_machine , only : kind_phys
+  use module_mp_radar
+  use module_gfs_machine , only : kind_phys
 !
 !-------------------------------------------------------------------------------
 ! parameters for microphysical processes

@@ -2682,6 +2682,8 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,NN=qnn_curr                                       &
                  ,NC=qnc_curr                                       &
                  ,NR=qnr_curr                                       &
+                 ,w=w                                               &
+                 ,tke=tke_pbl                                       &
                  ,DEN=rho,PII=pi_phy,P=p,DELZ=dz8w                  &
                  ,DELT=dt,dx=dx, dy=dy                              &
                  ,G=g,CPD=cp,CPV=cpv,CCN0=ccn_conc                  & 

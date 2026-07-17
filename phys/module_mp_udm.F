@@ -1,6 +1,3 @@
-#define WRF
-#define HAIL
-#define DOUBLE
 !
 !>\file module_mp_udm.F90
 !!
@@ -22,6 +19,7 @@ contains
 !
 subroutine udm(th, q, qc, qr, qi, qs, qg, qh                                   &
                  ,nn, nc, nr                                                   &
+                 ,w, tke                                                       &
                  ,den, pii, p, delz                                            &
                  ,delt, dx, dy, g, cpd, cpv, ccn0, rd, rv, t0c                 &
                  ,ep1, ep2, qmin                                               &
@@ -69,6 +67,7 @@ subroutine udm(th, q, qc, qr, qi, qs, qg, qh                                   &
                                                              den, &
                                                              pii, &
                                                                p, &
+                                                               w, &
                                                             delz
   real, dimension( ims:ime , kms:kme , jms:jme ),                 &
         intent(inout) ::                                          &
@@ -85,6 +84,9 @@ subroutine udm(th, q, qc, qr, qi, qs, qg, qh                                   &
                                                               nn, &
                                                               nc, &
                                                               nr
+  real, dimension( ims:ime , kms:kme , jms:jme ), optional,       &
+        intent(in) ::                                             &
+                                                             tke
   real, dimension( ims:ime , jms:jme ),                           &
         intent(inout) ::                                    rain, &
                                                          rainncv, &
@@ -141,6 +143,8 @@ subroutine udm(th, q, qc, qr, qi, qs, qg, qh                                   &
   real, dimension( its:ite , kts:kte )    :: &
                                                  nifa_hv,nwfa_hv, &
                                              nn_hv, nc_hv, nr_hv
+  real, dimension( its:ite , kts:kte )    :: &
+                                                     w_hv,tke_hv
 
  real(kind=kind_phys),dimension(its:ite):: &
                                         rainncv_hv,rain_hv,sr_hv, &
@@ -253,6 +257,19 @@ subroutine udm(th, q, qc, qr, qi, qs, qg, qh                                   &
          endif
        enddo
      endif
+     tke_hv(:,:) = 0.
+     if(PRESENT(tke)) then
+       do k = kts,kte
+         do i = its,ite
+           tke_hv(i,k) = max(tke(i,k,j),0.0001)
+         enddo
+       enddo
+     endif
+     do k = kts,kte
+       do i = its,ite
+         w_hv(i,k) = w(i,k,j)
+       enddo
+     enddo
 !
 !------precipitation -----------------------------------------------------------
 !
@@ -288,12 +305,9 @@ subroutine udm(th, q, qc, qr, qi, qs, qg, qh                                   &
 !
      call mp_udm_run(ncol=ncol,nlev=nlev,t1=t_hv,q1=qv_hv            &
                  ,qc1=qc_hv,qr1=qr_hv,qi1=qi_hv,qs1=qs_hv,qg1=qg_hv  & 
-#ifdef HAIL
                  ,qh1=qh_hv                                          & 
-#endif
-#ifdef DOUBLE
                  ,nn1=nn_hv,nc1=nc_hv,nr1=nr_hv                      &
-#endif
+                 ,w1=w_hv,tke1=tke_hv                                &
                  ,den1=den_hv,p1=p_hv,delz1=delz_hv                  &
                  ,delt=delt,g=g,cpd=cpd,cpv=cpv,rd=rd,rv=rv          &
                  ,t0c=t0c,ep1=ep1,ep2=ep2,qmin=qmin                  &
@@ -303,11 +317,9 @@ subroutine udm(th, q, qc, qr, qi, qs, qg, qh                                   &
                  ,area=area_hv,slimsk=slimsk_hv                      &
                  ,rain=rain_hv,snow=snow_hv                          &
                  ,graupel=graupel_hv,hail=hail_hv                    &
-#ifdef WRF
                  ,rainncv=rainncv_hv,sr=sr_hv                        &
                  ,snowncv=snowncv_hv,graupelncv=graupelncv_hv        &
                  ,hailncv=hailncv_hv                                 &
-#endif
                  ,itimestep=itimestep                                &
                  ,nifa1=nifa_hv                                      &
                  ,if_aerosol_activated=if_aerosol_activated          & 
@@ -370,20 +382,12 @@ subroutine udm(th, q, qc, qr, qi, qs, qg, qh                                   &
                qr1d(k) = qr(i,k,j)
                qs1d(k) = qs(i,k,j)
                qg1d(k) = qg(i,k,j)
-#ifdef HAIL
                qh1d(k) = qh(i,k,j)
-#endif
-#ifdef DOUBLE
                nr1d(k) = nr(i,k,j)
-#endif
             enddo
             call udm_mp_reflectivity (qv1d, qr1d, qs1d, qg1d,       &
-#ifdef DOUBLE
                     nr1d,                                           &
-#endif
-#ifdef HAIL
                     qh1d,                                           &
-#endif
                     t1d, p1d, dbz, kts, kte, i, j)
             do k = kts, kte
                refl_10cm(i,k,j) = max(-35., dbz(k))
@@ -402,16 +406,10 @@ subroutine udm(th, q, qc, qr, qi, qs, qg, qh                                   &
            qc1d(k) = qc(i,k,j)
            qi1d(k) = qi(i,k,j)
            qs1d(k) = qs(i,k,j)
-#ifdef DOUBLE
            nc1d(k) = nc(i,k,j)
-#endif
          enddo
          call udm_mp_effective_radius(t1d,qc1d,qi1d,qs1d,den1d,qmin, t0c    &
-#ifdef DOUBLE
                             ,nc1d                                           &
-#else
-                            ,t1d                                            &
-#endif
                             ,re_qc, re_qi, re_qs, kts, kte, i, j)
          do k=kts,kte
            re_cloud(i,k,j) = max(recmin, min(re_qc(k), recmax))

@@ -508,7 +508,7 @@ CONTAINS
            IF( config_flags%sf_sfclay_physics /= sfclayscheme &
          .AND. config_flags%sf_sfclay_physics /= mynnsfcscheme &
          .AND. config_flags%sf_sfclay_physics /= pxsfcscheme &
-         .AND. config_flags%sf_sfclay_physics /= sfclayrevscheme 
+         .AND. config_flags%sf_sfclay_physics /= sfclayrevscheme & 
 !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$-Inserted by PN, MS, PS, and SKM-$$$$$$$$$$$$$$$$$$$$$$
          .AND. config_flags%sf_sfclay_physics /= sfclayrev_IITD_scheme ) THEN
 !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$

@@ -1,4 +1,3 @@
-!
 !>\file module_mp_udm.F90
 !!
 !! This file is the module_mp_udm micorphysics shceme.
@@ -40,7 +39,7 @@ subroutine udm(th, q, qc, qr, qi, qs, qg, qh                                   &
                  ,its,ite, jts,jte, kts,kte                                    &
                  ,nwfa, nifa                                                   &
                  ,nwfa2d, nifa2d                                               &
-                 ,aer_init_opt, wif_input_opt, if_aerosol_aware                &
+                 ,if_aerosol_aware                                             &
                  ,errmsg, errflg                                               &
 #ifdef wrf_chem
                  ,evapprod,rainprod                                            &
@@ -120,9 +119,6 @@ subroutine udm(th, q, qc, qr, qi, qs, qg, qh                                   &
    real, dimension( ims:ime, jms:jme ), intent(in), optional ::   &
                                                           nwfa2d, &
                                                           nifa2d
-   integer, intent(in) ::                                         &
-                                                    aer_init_opt, &
-                                                   wif_input_opt 
 #ifdef wrf_chem
  real(kind=kind_phys),intent(inout), &
           dimension(ims:ime,kms:kme,jms:jme ):: rainprod,evapprod
@@ -164,7 +160,6 @@ subroutine udm(th, q, qc, qr, qi, qs, qg, qh                                   &
   real, dimension( ims:ime, kms:kme, jms:jme ), &
                           optional, intent(inout) :: refl_10cm
 !
-  character*256:: mp_debug
 !-------------------------------------------------------------------------------
 ! min max  effective radius (m)
 !

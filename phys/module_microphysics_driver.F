@@ -2715,8 +2715,6 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,NIFA=qnifa_curr                                   &
                  ,NWFA2D=qnwfa2d                                    & 
                  ,NIFA2D=qnifa2d                                    & 
-                 ,aer_init_opt=config_flags%aer_init_opt            & 
-                 ,wif_input_opt=config_flags%wif_input_opt          & 
                  ,if_aerosol_aware=config_flags%if_aerosol_aware    & 
                  ,errmsg=errmsg, errflg=errflg                      & 
                                                                     )

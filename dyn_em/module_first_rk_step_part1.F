@@ -687,6 +687,10 @@ BENCH_START(surf_driver_tim)
      &        ,USTM=grid%ustm          ,CK=grid%ck         ,CKA=grid%cka            &
      &                                 ,CD=grid%cd         ,CDA=grid%cda            &
      &        ,ISFTCFLX=config_flags%isftcflx, IZ0TLND=config_flags%iz0tlnd         &
+!$$$$$$$$$$$$$$$$$$$$-Inserted by PN, MS, PS, and SKM-$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+     &        ,PSIMH_STAB_OPT=config_flags%psimh_stab_opt                           &
+     &        ,PSIMH_UNSTAB_OPT=config_flags%psimh_unstab_opt                       &
+!$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
      &        ,SF_OCEAN_PHYSICS=config_flags%sf_ocean_physics                       &
      &        ,OML_HML0=config_flags%oml_hml0 ,OML_GAMMA=config_flags%oml_gamma     &
      &        ,TML=grid%tml, T0ML=grid%t0ml, HML=grid%hml, H0ML=grid%h0ml           &
@@ -1128,6 +1132,9 @@ BENCH_START(surf_driver_tim)
      &        ,spp_lsm=config_flags%spp_lsm,pattern_spp_lsm=grid%pattern_spp_lsm     & !SPP
      &        ,field_sf=grid%field_sf                                                & !SPP
      &        ,spp_pbl=config_flags%spp_pbl,pattern_spp_pbl=grid%pattern_spp_pbl     & !SPP
+!$$$$$$$$$$$$$$$$$$$$$$$$$$-Inserted by PN, MS, PS, and SKM-$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+     &        ,FM_hat=grid%fm_hat, FH_hat=grid%fh_hat                                &
+!$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
   ! WRF-Solar EPS: Noah LSM
      &        ,multi_perturb=config_flags% multi_perturb                             & 
      &        ,pert_noah=config_flags%pert_noah                                      &

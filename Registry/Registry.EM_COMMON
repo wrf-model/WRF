@@ -1050,6 +1050,10 @@ i1      real   PSIM           ij     misc        1         -     -         "PSIM
 i1      real   PSIH           ij     misc        1         -     -         "PSIH"                "SIMILARITY FUNCTION FOR HEAT"         ""
 state   real   FM             ij     misc        1         -     -         "FM"                  "INTEGRATED FUNCTION FOR MOMENTUM"     ""
 state   real   FH             ij     misc        1         -     -         "FH"                  "INTEGRATED FUNCTION FOR HEAT"         ""
+#$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$-Inserted by PN, MS, PS, and SKM-$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$     $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+state   real   FM_hat         ij     misc        1         -     -         "FM_HAT"              " "                                         ""
+state   real   FH_hat         ij     misc        1         -     -         "FH_HAT"               ""                                         ""
+#$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 state   real   WSPD           ij     misc        1         -     -         "WSPD"                "Wind Speed At Lowest Model Level (may contain vconv)"           "m s-1"
 i1      real   GZ1OZ0         ij     misc        1         -     -         "GZ1OZ0"              "LOG OF Z1 over Z0"                     ""
 state   real   BR             ij     misc        1         -     -         "BR"                  "Bulk Richardson"                       ""
@@ -2656,6 +2660,10 @@ rconfig   integer isftcflx                namelist,physics      1            0  
 rconfig   integer iz0tlnd                 namelist,physics      1            0         h     "iz0tlnd"    "switch to control land thermal roughness length"   ""
 rconfig   logical kim_tofd                namelist,physics      max_domains   .false.  rh    "kim_tofd"   "turbulent form drag (tofd) option for kim gravity wave drag"   ""
 rconfig   real    tofd_factor             namelist,physics      max_domains   .003     rh    "tofd_factor" "factor in  kim tofd scheme"   ""
+#!$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$-Inserted by PN, MS, PS, and SKM-$$$$$$$$$$$$$$$$$$$$$$$$$$$
+rconfig   integer psimh_stab_opt           namelist,physics      1            0         -     "psimh_stab_op     t"  "0: CB05, 1: GR07, 2: SR20, 3: GRY20, 4: H90, 5: BH91, 6: D91" ""
+rconfig   integer psimh_unstab_opt        namelist,physics      1             0        -     "psimh_unstab_o     pt"  "0: F96, 1: BD71, 2: CL73, 3: KY90 functions" "" 
+#$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 rconfig   real    shadlen                 namelist,physics      1            25000.    -     "shadow_length" "maximum length of orographic shadow" "m"
 rconfig   integer slope_rad               namelist,physics      max_domains    0       -     "slope_rad"  "1: use slope-dependent radiation, 0:not" ""
 rconfig   integer topo_shading            namelist,physics      max_domains    0       -     "topo_shading" "1: apply topographic shading to radiation, 0:not" ""
@@ -3195,6 +3203,9 @@ package   gfssfcscheme       sf_sfclay_physics==3        -             -
 package   qnsesfcscheme      sf_sfclay_physics==4        -             state:u10e,v10e
 package   mynnsfcscheme      sf_sfclay_physics==5        -             -
 package   pxsfcscheme        sf_sfclay_physics==7        -             -
+#!$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$-Inserted by PN, MS, PS, and SKM-$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+package   sfclayrev_IITD_scheme sf_sfclay_physics==8     -             -
+#$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 package   temfsfcscheme      sf_sfclay_physics==10       -             state:wm_temf
 package   idealscmsfcscheme  sf_sfclay_physics==89       -             -
 package   sfclayscheme       sf_sfclay_physics==91       -             -

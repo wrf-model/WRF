@@ -1296,6 +1296,10 @@ endif
                       ,grid%NC_CU, grid%NI_CU, grid%NR_CU, grid%NS_CU,grid%CCN_CU                    &
                       ,grid%alevsiz_cu,grid%num_months,grid%no_src_types_cu,grid%aeromcu             &
                       ,grid%aeropcu,grid%EFCG,grid%EFCS,grid%EFIG,grid%EFIS,grid%EFSG,grid%EFSS      &
+!$$$$$$$$$$$$$$$$$$$$$$$$$$$$$-Inserted by PN, MS, PS, and SKM-$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+                      ,grid%psimh_stab_opt                                                           &
+                      ,grid%psimh_unstab_opt                                                         &
+!$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 #ifdef CDXWRF
                       ,grid%fracsoil10cm                                                             &
                       ,model_config_rec%londbg, model_config_rec%latdbg                              &

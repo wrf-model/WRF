@@ -445,6 +445,9 @@ CONTAINS
 
    INTEGER , INTENT(OUT) :: STEPRA, STEPBL, STEPCU
    INTEGER , INTENT(IN) :: JULYR, JULDAY
+!$$$$$$$$$$$$$$$$$$$$$$$$$$-Inserted by PN, MS, PS, and SKM-$$$$$$$$$$$$$$$
+   INTEGER , INTENT(IN) :: psimh_stab_opt, psimh_unstab_opt
+!$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
 ! cps
 

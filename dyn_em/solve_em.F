@@ -5125,7 +5125,7 @@ BENCH_END(bc_2d_tim)
    if (wrf_cmaq_option .gt. 0) then
       COUNTER = COUNTER + 1
 
-      if ( .not. cmaq_wrf_feedback .and. firstime) then
+      if ( .not. feedback_restart .and. firstime) then
          grid%prev_rainnc = 0.0
          grid%prev_rainc  = 0.0
       end if

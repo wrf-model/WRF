@@ -423,8 +423,7 @@ real, save :: freq_industry(24)    = &
 
       ivolcano=0
       
-      !area=dx*dx
-      ! A. Ukhov 12 Oct 2024
+      
       area=dx*dx
 
       dust_emiss_active    = 0

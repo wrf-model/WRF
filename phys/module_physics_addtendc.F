@@ -2151,8 +2151,7 @@ SUBROUTINE phy_fr_ten(config_flags,rk_step,n_moist,            &
                       ims, ime, jms, jme, kms, kme,              &
                       its, ite, jts, jte, kts, kte               )
 !-----------------------------------------------------------------
-   USE module_state_description, ONLY :                         &
-                   FIRE_SFIRE
+   USE module_state_description, ONLY : FIRE_SFIRE
 !-----------------------------------------------------------------
    IMPLICIT NONE
 !-----------------------------------------------------------------

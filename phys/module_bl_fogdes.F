@@ -119,7 +119,7 @@ CONTAINS
           gfluxm=0.
        ENDIF
 
-         ! LS added
+      
       IF ( qc_curr(i,k+1,j) > qcgmin) THEN
           gfluxp=grav_settling2*gno*(qc_curr(i,k+1,j))**gpw
        ELSE
@@ -133,14 +133,14 @@ CONTAINS
        !print*,"dqc=",dqc(i,k,j)," gfluxm=",gfluxm," gfluxp=",gfluxp
 
        DO k=kts+1,kte-1
-          ! LS added
+          
           IF ( qc_curr(i,k+1,j) > qcgmin) THEN
              gfluxp=grav_settling2*gno*(qc_curr(i,k+1,j))**gpw
           ELSE
              gfluxp=0.
           ENDIF
 
-          !LS added
+          
           IF ( qc_curr(i,k,j) > qcgmin) THEN
              gfluxm=grav_settling2*gno*(qc_curr(i,k,j))**gpw
           ELSE

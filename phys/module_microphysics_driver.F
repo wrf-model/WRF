@@ -1529,7 +1529,11 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      QCCN=qccn_curr,QRCN=qrcn_curr,QNIN=qnin_curr,      &
                      FI=fi_curr,FS=fs_curr,VI=vi_curr,VS=vs_curr,       &
                      VG=vg_curr,AI=ai_curr,AS=as_curr,AG=ag_curr,       &
-                     AH=ah_curr,I3M=i3m_curr,RAINNC=rainnc,             &
+                     AH=ah_curr,I3M=i3m_curr,has_reqc=has_reqc,         &
+                     has_reqi=has_reqi,has_reqs=has_reqs,               &
+                     re_cloud=re_cloud,re_ice=re_ice,re_snow=re_snow,   &
+                     DBZM=refl_10cm,diagflag=diagflag,                  &
+                     do_radar_ref=do_radar_ref,RAINNC=rainnc,           &
                      RAINNCV=rainncv,SNOWNC=snownc,SNOWNCV=snowncv,     &
                      GRAPNC=graupelnc,GRAPNCV=graupelncv,               &
                      HAILNC=hailnc,HAILNCV=hailncv,                     &

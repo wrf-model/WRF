@@ -118,10 +118,7 @@ CONTAINS
        ELSE
           gfluxm=0.
        ENDIF
-       ! old
-       ! IF (.5*(qc_curr(i,k+1,j)+qc_curr(i,k,j)) > qcgmin) THEN
-         ! gfluxp=grav_settling2*gno* &
-         !       & (.5*(qc_curr(i,k+1,j)+qc_curr(i,k,j)))**gpw
+
          ! LS added
       IF ( qc_curr(i,k+1,j) > qcgmin) THEN
           gfluxp=grav_settling2*gno*(qc_curr(i,k+1,j))**gpw
@@ -136,20 +133,13 @@ CONTAINS
        !print*,"dqc=",dqc(i,k,j)," gfluxm=",gfluxm," gfluxp=",gfluxp
 
        DO k=kts+1,kte-1
-          ! old
-          ! IF (.5*(qc_curr(i,k+1,j)+qc_curr(i,k,j)) > qcgmin) THEN
-          !   gfluxp=grav_settling2*gno* &
-          !         & (.5*(qc_curr(i,k+1,j)+qc_curr(i,k,j)))**gpw
           ! LS added
           IF ( qc_curr(i,k+1,j) > qcgmin) THEN
              gfluxp=grav_settling2*gno*(qc_curr(i,k+1,j))**gpw
           ELSE
              gfluxp=0.
           ENDIF
-          ! old
-          ! IF (.5*(qc_curr(i,k-1,j)+qc_curr(i,k,j)) > qcgmin) THEN
-          !   gfluxm=grav_settling2*gno* &
-          !        & (.5*(qc_curr(i,k-1,j)+qc_curr(i,k,j)))**gpw
+
           !LS added
           IF ( qc_curr(i,k,j) > qcgmin) THEN
              gfluxm=grav_settling2*gno*(qc_curr(i,k,j))**gpw

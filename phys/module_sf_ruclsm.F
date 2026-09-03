@@ -4032,6 +4032,10 @@ print *, 'tso before calling snowtemp: ', tso
    33  continue
 !--- the nzs element in cotso and rhtso will be for snow
 !--- there will be 2 layers in snow if it is deeper than deltsn+snth
+!--- default to one snow layer: on the thin-snow path (snhei < snth)
+!--- neither branch below is taken, and ilnb is read for the tsnav
+!--- recalculation at the end of this routine
+       ilnb=1
        if(snhei.ge.snth) then
         if(snhei.le.deltsn+snth) then
 !-- 1-layer snow model
@@ -5115,6 +5119,10 @@ print *, 'snowtemp: snhei,snth,soilt1: ',snhei,snth,soilt1,soilt
    33  continue
 !--- the nzs element in cotso and rhtso will be for snow
 !--- there will be 2 layers in snow if it is deeper than deltsn+snth
+!--- default to one snow layer: on the thin-snow path (snhei < snth)
+!--- neither branch below is taken, and ilnb is read for the tsnav
+!--- recalculation at the end of this routine
+       ilnb=1
        if(snhei.ge.snth) then
         if(snhei.le.deltsn+snth) then
 !-- 1-layer snow model

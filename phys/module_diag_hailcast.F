@@ -647,7 +647,7 @@ END SUBROUTINE hailcast_diagnostic_driver
        IF (TCA(k).gt.242.155) THEN
            icefactor = 1.
        ELSE IF ((TCA(k).LE.242.155).AND.(TCA(k).GT.235.155)) THEN
-           icefactor = (1-(242.155-TCA(k))/5.)
+           icefactor = (1-(242.155-TCA(k))/7.)
        ELSE
            icefactor = 0.
        ENDIF

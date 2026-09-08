@@ -4608,13 +4608,8 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
          IF(start_of_simulation.or.restart.or.config_flags%cycling)     &
             CALL mp_udm_init(den0=rhoair0,denr=rhowater,dens=rhosnow,cl=cliq, &
                  cv=cpv,ccn0=ccn_conc,&
-                          NWFA2D=qnwfa2d,                               &
-                          NWFA=scalar(ims,kms,jms,P_QNWFA),             &
-                          NIFA=scalar(ims,kms,jms,P_QNIFA),             &
                           if_aerosol_aware=config_flags%if_aerosol_aware,     &
-                          IDS=ids, IDE=ide, JDS=jds, JDE=jde, KDS=kds, KDE=kde,   &
-                          IMS=ims, IME=ime, JMS=jms, JME=jme, KMS=kms, KME=kme,   &
-                          ITS=its, ITE=ite, JTS=jts, JTE=jte, KTS=kts, KTE=kte)
+                          f_nwfa = f_qnwfa, f_nifa = f_qnifa )
 #if (EM_CORE==1)
      CASE (NTU)
           CALL ntu_init(PHB,PH,P,PB,inv_dens,QV,QDCN,QTCN,QCCN,QRCN,   &

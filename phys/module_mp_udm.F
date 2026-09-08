@@ -1,3 +1,4 @@
+!
 !>\file module_mp_udm.F90
 !!
 !! This file is the module_mp_udm micorphysics shceme.
@@ -7,7 +8,6 @@
   use ccpp_kind_types,only: kind_phys
   use mp_udm, only : mp_udm_run, mp_udm_init, if_aerosol_activated
   use mp_udm, only : udm_mp_effective_radius, udm_mp_reflectivity
-  use module_wrf_error
 
   implicit none
    public:: udm
@@ -20,7 +20,7 @@ subroutine udm(th, q, qc, qr, qi, qs, qg, qh                                   &
                  ,nn, nc, nr                                                   &
                  ,w, tke                                                       &
                  ,den, pii, p, delz                                            &
-                 ,delt, dx, dy, g, cpd, cpv, ccn0, rd, rv, t0c                 &
+                 ,delt, area, ccn0, g, cpd, cpv, rd, rv, t0c                   &
                  ,ep1, ep2, qmin                                               &
                  ,xls, xlv0, xlf0, den0, denr                                  &
                  ,cliq, cice, psat                                             &
@@ -32,14 +32,13 @@ subroutine udm(th, q, qc, qr, qi, qs, qg, qh                                   &
                  ,graupel, graupelncv                                          &
                  ,hail, hailncv                                                &
                  ,itimestep                                                    &
+                 ,if_aerosol_aware                                             &
+                 ,nwfa, nifa, nwfa2d, nifa2d                                   &
                  ,has_reqc, has_reqi, has_reqs                                 &
                  ,re_cloud, re_ice, re_snow                                    &
                  ,ids,ide, jds,jde, kds,kde                                    &
                  ,ims,ime, jms,jme, kms,kme                                    &
                  ,its,ite, jts,jte, kts,kte                                    &
-                 ,nwfa, nifa                                                   &
-                 ,nwfa2d, nifa2d                                               &
-                 ,if_aerosol_aware                                             &
                  ,errmsg, errflg                                               &
 #ifdef wrf_chem
                  ,evapprod,rainprod                                            &
@@ -51,7 +50,7 @@ subroutine udm(th, q, qc, qr, qi, qs, qg, qh                                   &
   integer,           intent(in   ) :: ids,ide, jds,jde, kds,kde ,     &
                                       ims,ime, jms,jme, kms,kme ,     &
                                       its,ite, jts,jte, kts,kte
-  real,              intent(in   ) :: delt, dx, dy,                   &
+  real,              intent(in   ) :: delt,                           &
                                       g, ccn0, rd, rv, t0c,           &
                                       den0, cpd, cpv, ep1, ep2,       &
                                       qmin, xls, xlv0, xlf0, cliq,    &
@@ -61,6 +60,7 @@ subroutine udm(th, q, qc, qr, qi, qs, qg, qh                                   &
 !
   real, dimension( ims:ime , jms:jme ), intent(in) ::      xland
   real, dimension( ims:ime , jms:jme ), intent(in) ::      xice
+  real, dimension( ims:ime , jms:jme ), intent(in) ::      area
   real, dimension( ims:ime , kms:kme , jms:jme ),                 &
         intent(in   ) ::                                          &
                                                              den, &
@@ -175,9 +175,6 @@ subroutine udm(th, q, qc, qr, qi, qs, qg, qh                                   &
 !
   ncol = ite-its+1
   nlev = kte-kts+1
-#ifdef PRT
-  print*,' if_aerosol_activated = ',if_aerosol_activated
-#endif
 !-------------------------------------------------------------------------------
 !
    do j=jts,jte     ! j - loop
@@ -189,7 +186,7 @@ subroutine udm(th, q, qc, qr, qi, qs, qg, qh                                   &
          slimsk_hv(i) = 1
        endif
        if(xice(i,j) > 0.5) slimsk_hv(i) = 2
-       area_hv(i) = dx * dy
+       area_hv(i) = area(i,j)
 !
        rain_hv(i)    = rain(i,j)
        rainncv_hv(i) = rainncv(i,j)

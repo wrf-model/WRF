@@ -777,6 +777,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
    LOGICAL :: channel
    LOGICAL :: nssl_progn = .false.
    REAL    :: z0, z1, z2, w1, w2
+   REAL , DIMENSION( ims:ime , jms:jme )  :: area
 
    integer, parameter :: ntot = 50
    real :: wmin, wmax
@@ -2670,6 +2671,11 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                   PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV )    .AND.     &
                   PRESENT ( QNWFA_CURR ) .AND. PRESENT( QNIFA_CURR ) .AND.  & 
                   PRESENT ( QNWFA2D ) .AND. PRESENT( QNIFA2D ) ) THEN 
+                  do j = jts, jte
+                     do i = its, ite
+                        area(i,j) = dx * dy
+                     enddo
+                  enddo
              CALL udm(                                              &
                   TH=th                                             &
                  ,Q=qv_curr                                         &
@@ -2685,7 +2691,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,w=w                                               &
                  ,tke=tke_pbl                                       &
                  ,DEN=rho,PII=pi_phy,P=p,DELZ=dz8w                  &
-                 ,DELT=dt,dx=dx, dy=dy                              &
+                 ,DELT=dt,area=area                                 &
                  ,G=g,CPD=cp,CPV=cpv,CCN0=ccn_conc                  & 
                  ,RD=r_d,RV=r_v,T0C=svpt0                           &
                  ,EP1=ep_1, EP2=ep_2, QMIN=epsilon                  &

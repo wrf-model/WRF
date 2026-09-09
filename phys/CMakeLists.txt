@@ -398,6 +398,7 @@ target_sources(
                   module_sf_sstskin.F
                   module_sf_temfsfclay.F
                   module_sf_tmnupdate.F
+                  module_sf_slucm_bem.F
                   module_sf_urban.F
                   module_shallowcu_driver.F
                   module_shcu_camuwshcu.F

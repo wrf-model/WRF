@@ -8,7 +8,11 @@ use module_wrf_error
 #define FATAL_ERROR(M) call wrf_error_fatal( M )
 #define WRITE_MESSAGE(M) call wrf_message( M )
 #endif
-use module_model_constants, only :  piconst
+
+use module_model_constants, only : piconst
+use module_sf_slucm_bem, only : slucm_bem_calculate,                &
+                                slucm_bem_update_inner_layer
+
 !===============================================================================
 !     Single-Layer Urban Canopy Model for WRF Noah-LSM
 !     Original Version: 2002/11/06 by Hiroyuki Kusaka
@@ -46,6 +50,7 @@ use module_model_constants, only :  piconst
    REAL, ALLOCATABLE, DIMENSION(:) :: GAPTEMP_TBL
    REAL, ALLOCATABLE, DIMENSION(:) :: TARGHUM_TBL
    REAL, ALLOCATABLE, DIMENSION(:) :: GAPHUM_TBL
+   REAL, ALLOCATABLE, DIMENSION(:) :: TAUHUM_TBL
    REAL, ALLOCATABLE, DIMENSION(:) :: PERFLO_TBL
    REAL, ALLOCATABLE, DIMENSION(:) :: PV_FRAC_ROOF_TBL !GRZ
    REAL, ALLOCATABLE, DIMENSION(:) :: GR_FRAC_ROOF_TBL !GRZ
@@ -63,7 +68,15 @@ use module_model_constants, only :  piconst
    REAL, ALLOCATABLE, DIMENSION(:) :: Z0HB_TBL, Z0HG_TBL
    REAL, ALLOCATABLE, DIMENSION(:) :: TRLEND_TBL, TBLEND_TBL, TGLEND_TBL
    REAL, ALLOCATABLE, DIMENSION(:) :: AKANDA_URBAN_TBL
-                  
+! -- start -- Yuya Takane, 2022/12/28
+   REAL, ALLOCATABLE, DIMENSION(:) :: AB_BUILD_RATIO_TBL
+!   REAL, DIMENSION(1:24,1:3)       :: AC_FLOOR_RATIO_TBL
+   REAL, ALLOCATABLE, DIMENSION(:,:) :: AC_FLOOR_RATIO_TBL  ! Yuya Takane, 2025.11.16
+   REAL, ALLOCATABLE, DIMENSION(:) :: AC_USAGE_RATIO_CL_TBL
+   REAL, ALLOCATABLE, DIMENSION(:) :: AC_USAGE_RATIO_HT_TBL
+   REAL, ALLOCATABLE, DIMENSION(:) :: VENT_FREQ_TBL
+   REAL, ALLOCATABLE, DIMENSION(:) :: AH_TRAFFIC_TBL
+! -- end -- Yuya Takane, 2022/12/28
 !for BEP
 
    ! MAXDIRS :: The maximum number of street directions we're allowed to define
@@ -82,6 +95,8 @@ use module_model_constants, only :  piconst
    INTEGER                         :: BOUNDR_DATA,BOUNDB_DATA,BOUNDG_DATA
    INTEGER                         :: CH_SCHEME_DATA, TS_SCHEME_DATA
    INTEGER                         :: ahoption        ! Miao, 2007/01/17, cal. ah
+   INTEGER                         :: sbemoption      ! Yuya Takane, 2025.06.21
+   INTEGER                         :: copoption       ! Yuya Takane, 2022/12/30
    REAL, DIMENSION(1:24)           :: ahdiuprf        ! ah diurnal profile, tloc: 1-24
    REAL, DIMENSION(1:24)           :: hsequip_tbl
 
@@ -99,6 +114,13 @@ use module_model_constants, only :  piconst
    REAL, DIMENSION(1:3)            :: dengimp         ! maximum water-holding depth of pavement
 
 !===end hydrological processes===
+
+   REAL, DIMENSION(1:20)           :: ROOF_WIDTH_kike   !Kikegawa20240808, Yuya Takane
+   REAL, DIMENSION(1:20)           :: ROAD_WIDTH_kike   !Kikegawa20240808, Yuya Takane
+
+   INTEGER                         :: LCZ_SWITCH_kike   !Kikegawa20240821, Yuya Takane
+
+   INTEGER                         :: allocate_status 
 
 !
 
@@ -337,9 +359,17 @@ use module_model_constants, only :  piconst
                     lp_urb,hgt_urb,frc_urb,lb_urb,zo_check,           & ! O
                     CMCR,TGR,TGRL,SMR,CMGR_URB,CHGR_URB,jmonth,       & ! H
                     DRELR,DRELB,DRELG,FLXHUMR,FLXHUMB,FLXHUMG,        &
-	                 TVG,TT,XXXVG,TVGL,SMG,CMCG,FLXHUMVG,FLXHUMT,      & ! H (add in urban-nbs)
-                    lf_urb_s, z0_urb, vegfrac_in                      & ! I (distributed aerodynamics)
-                    )
+                     TVG,TT,XXXVG,TVGL,SMG,CMCG,FLXHUMVG,FLXHUMT,      & ! H (urban-nbs)
+                     lf_urb_s, z0_urb, vegfrac_in,                     & ! I (distributed aerodynamics)
+                     QF_URB, QFB_URB,                                  &
+                     QFB_CL_URB, QFB_HT_URB,                           &
+                     QFL_URB, QFBL_URB,                                &
+                     ECAC_URB, EC_URB, COP_URB,                        &
+                     Tin_URB, Hin_URB, Hout_URB,                       &
+                     TWin_URB, TGin_URB, WBGTin_URB, MRTin_URB,        &
+                     QBCHT, QBRHT, QRCHT, QRRHT, QVENT,                &
+                     qin_URB, EVENT, Ein_URB, Eout_URB,                &
+                     itimestep )
    IMPLICIT NONE
 
    REAL, PARAMETER    :: CP=0.24          ! heat capacity of dry air  [cgs unit]  ! cal/g/c
@@ -577,6 +607,11 @@ use module_model_constants, only :  piconst
    REAL, DIMENSION(1:num_roof_layers), INTENT(INOUT) :: TRL
    REAL, DIMENSION(1:num_wall_layers), INTENT(INOUT) :: TBL
    REAL, DIMENSION(1:num_road_layers), INTENT(INOUT) :: TGL
+! -- start -- Yuya Takane, 2024.08.07
+   REAL, DIMENSION(1:num_roof_layers) :: TRLP
+   REAL, DIMENSION(1:num_wall_layers) :: TBLP
+   integer, INTENT(IN) :: itimestep   ! A counter for the timesteps in the main loop TIMELOOP.
+! -- end -- Yuya Takane, 2024.08.07
 
 !===Yang,2014/10/08, urban hydrological variables for single layer UCM===
 ! FLXHUMR: evaporation over roof  [m/s];     FLXHUMRP: at previous time step [m/s]
@@ -609,8 +644,21 @@ use module_model_constants, only :  piconst
    REAL :: T1VR, T1VC,TH2V
    REAL :: RLMO_URB
    REAL :: AKANDA_URBAN
-   
-   REAL :: TH2X  !m
+! -- start -- Yuya Takane, 2022/12/13
+   REAL :: HSEQUIP_SCALE_FACTOR, COP, PERFLO, TARGTEMP, GAPTEMP
+   REAL :: TARGHUM, GAPHUM, TAUHUM
+   REAL,    DIMENSION (1:24) :: HSEQUIP
+   REAL :: ROOF_WIDTH2, ROAD_WIDTH2
+   REAL :: BEM_CANYON_WIDTH
+   REAL :: AB_BUILD_RATIO  ! the ratio of abandoned houses/buildings to all the houses/buildings in a city block
+   REAL,    DIMENSION (1:24) :: AC_FLOOR_RATIO  ! the ratio of air-conditioned floor area to total floor area
+   REAL :: AC_USAGE_RATIO_CL  ! the ratio of AC usage for cooling or heating to all the cooling and heating equipment
+   REAL :: AC_USAGE_RATIO_HT  ! the ratio of AC usage for cooling or heating to all the cooling and heating equipment
+   REAL :: VENT_FREQ          ! ventilation frequency per hour [h-1]
+   REAL :: AH_TRAFFIC         ! AH from traffic [W m-2]
+! -- end -- Yuya Takane, 2022/12/13
+
+   REAL :: TH2X                                                !m
    
    INTEGER :: BOUNDR, BOUNDB, BOUNDG
    INTEGER :: CH_SCHEME, TS_SCHEME
@@ -674,7 +722,45 @@ use module_model_constants, only :  piconst
    REAL :: XXX2, PSIM2, PSIH2, XXX10, PSIM10, PSIH10
    REAL :: PSIX, PSIT, PSIX2, PSIT2, PSIX10, PSIT10
 
-   REAL :: TRP, TBP, TGP, TCP, QCP, TST, QST      
+! -- start -- Yuya Takane, 2022/12/13
+   REAL :: QF_URB              ! Total anthropogenic heat (from buildings + traffic) [W/m/m]
+   REAL :: QFB_URB             ! Anthropogenic heat from buildings [W/m/m]
+   REAL :: QFB_CL_URB          ! QFB for cooling [W/m/m]
+   REAL :: QFB_HT_URB          ! QFB for heating [W/m/m]
+   REAL :: QFL_URB             ! Total anthropogenic latent heat (from buildings + traffic) [W/m/m]
+   REAL :: QFBL_URB            ! Anthropogenic latent heat from buldings by cooling tower [W/m/m]
+   REAL :: ECAC_URB            ! Electricity consumption by AC use [W/m/m]
+   REAL :: EC_URB              ! ECAC + BASELOAD
+   REAL :: AP_BASELOAD         ! BASELOAD by appliance [W/floor-m2]
+   REAL :: E_AP_BASELOAD       ! latent BASELOAD by appliance [W/floor-m2]
+   real,parameter  :: HEAT_PERSON  = 43.7  ! sensible heat generation by a person [W/person]
+   real,parameter  :: E_HEAT_PERSON = HEAT_PERSON * 0.1 ! latent heat generation [W/person]
+   real,parameter  :: FLOOR_HEIGHT =  3.0  ! floor height [m]
+   REAL :: COP_URB             ! simulated COP [-]
+! -- end -- Yuya Takane, 2022/12/03
+! -- start -- Yuya Takane, 2024.08.07
+   REAL :: QBCHT               ! convection heat transfer from wall [W/m2]
+   REAL :: QBRHT               ! radiative heat transfer from wall [W/m2]
+   REAL :: QRCHT               ! convection heat transfer from roof [W/m2]
+   REAL :: QRRHT               ! radiative heat transfer from roof [W/m2]
+   REAL :: QVENT               ! sensible heat exchange by ventilation per unit canyon length [W m-1]
+   REAL :: EVENT               ! latent heat exchange by ventilation per unit canyon length [W m-1]
+   REAL :: Tin_URB             ! indoor temperature [K]
+   REAL :: TinP                ! indoor temperature at previous time step [K]
+   REAL, INTENT(INOUT) :: qin_URB ! SLUCM+BEM indoor specific-humidity state [kg kg-1]
+   REAL :: qinP                ! previous indoor specific humidity [kg kg-1]
+   REAL :: TWin_URB            ! indoor wet-bulb temperature [K]
+   REAL :: TGin_URB            ! indoor globe temperature [K]
+   REAL :: WBGTin_URB          ! indoor wet-bulb globe temperature (WBGT) [K]
+   REAL :: MRTin_URB           ! indoor mean radiative temperature (MRT) [K]
+   REAL :: Hin_URB             ! indoor sensible heat load per unit canyon length [W m-1]
+   REAL :: Hout_URB            ! sensible load processed by HVAC per unit canyon length [W m-1]
+   REAL :: Ein_URB             ! indoor latent heat load per unit canyon length [W m-1]
+   REAL :: Eout_URB            ! latent load processed by HVAC per unit canyon length [W m-1]
+   real, parameter  :: RMF = 200000. ! Overall volumetric sensible heat capacity of indoor air (including furniture and inner walls) [J/indoor-air-m3/K]
+! -- end -- Yuya Takane, 2024.08.07
+
+   REAL :: TRP, TBP, TGP, TCP, QCP, TST, QST
    REAL :: TSP, CHS_LOCAL, CHS2_LOCAL
 
    REAL :: WDR,HGT2,BW,DHGT
@@ -735,12 +821,10 @@ use module_model_constants, only :  piconst
 ! Set parameters
 !-------------------------------------------------------------------------------
 
-! Miao, 2007/01/17, cal. ah
-   if(ahoption==1) then
-     tloc=mod(int(OMG/PI*180./15.+12.+0.5 ),24)
-     if(tloc.lt.0) tloc=tloc+24
-     if(tloc==0) tloc=24
-   endif
+! Local hour is used by AH and by SLUCM+BEM equipment schedules.
+   tloc=mod(int(OMG/PI*180./15.+12.+0.5 ),24)
+   if(tloc.lt.0) tloc=tloc+24
+   if(tloc==0) tloc=24
 ! Yang, 2014/10/08, cal. alh
    if(alhoption==1) then
      tloc2=mod(int((OMG/PI*180./15.+12.)*2.+0.5 ),48)
@@ -759,9 +843,71 @@ use module_model_constants, only :  piconst
                    BUILDING_WIDTH, NUMHGT, HEIGHT_BIN,            & 
                   HPERCENT_BIN,                                  & 
 !end BEP
-                  BOUNDR,BOUNDB,BOUNDG,CH_SCHEME,TS_SCHEME,      &
-                  AKANDA_URBAN,ALH)
+                   BOUNDR,BOUNDB,BOUNDG,CH_SCHEME,TS_SCHEME,      &
+! -- start -- Yuya Takane, 2022/12/01
+!                   AKANDA_URBAN,ALH)
+                   AKANDA_URBAN,ALH,                              &
+                   HSEQUIP, HSEQUIP_SCALE_FACTOR, COP, PERFLO,    &
+                   TARGTEMP, GAPTEMP, TARGHUM, GAPHUM, TAUHUM,  &
+                   AB_BUILD_RATIO, AC_FLOOR_RATIO,                &
+                   AC_USAGE_RATIO_CL, AC_USAGE_RATIO_HT,          &
+                   VENT_FREQ, AH_TRAFFIC )
+! -- end -- Yuya Takane, 2022/12/01
 
+!-------------------------------------------------------------------------------
+! SLUCM+BEM setup. Keep table selection in module_sf_urban, but pass only the
+! selected scalar values to module_sf_slucm_bem. For distributed aerodynamics,
+! the BEM canyon widths are replaced below after grid-resolved morphology is set.
+!-------------------------------------------------------------------------------
+   IF (sbemoption /= 0 .AND. sbemoption /= 1) THEN
+     FATAL_ERROR('SLUCM+BEM: SBEMOPTION must be 0 or 1')
+   END IF
+
+   ROOF_WIDTH2 = ROOF_WIDTH_kike(UTYPE)
+   ROAD_WIDTH2 = ROAD_WIDTH_kike(UTYPE)
+
+   QRCHT = 0.0
+   QRRHT = 0.0
+   QBCHT = 0.0
+   QBRHT = 0.0
+   QVENT = 0.0
+   qinP = 0.0
+
+   IF (sbemoption == 1) THEN
+     IF (TS_SCHEME /= 1) THEN
+       FATAL_ERROR('SLUCM+BEM requires TS_SCHEME = 1 (multilayer)')
+     END IF
+     IF (num_roof_layers < 2 .OR. num_wall_layers < 2) THEN
+       FATAL_ERROR('SLUCM+BEM requires at least two roof and wall layers')
+     END IF
+
+     IF (GAPTEMP < 0.0) THEN
+       FATAL_ERROR('SLUCM+BEM requires GAPTEMP >= 0 K')
+     END IF
+     IF (TARGHUM <= 0.0 .OR. TARGHUM >= 0.1) THEN
+       FATAL_ERROR('SLUCM+BEM latent load requires 0 < TARGHUM < 0.1 kg kg-1')
+     END IF
+     IF (GAPHUM < 0.0 .OR. TARGHUM + GAPHUM >= 0.1) THEN
+       FATAL_ERROR('SLUCM+BEM requires 0 <= GAPHUM and TARGHUM+GAPHUM < 0.1')
+     END IF
+     IF (TAUHUM <= DELT) THEN
+       FATAL_ERROR('SLUCM+BEM requires TAUHUM greater than the WRF time step')
+     END IF
+
+     ! TIN_URB2D is restart-capable.  A valid saved value takes precedence
+     ! even when a restarted integration reports itimestep == 1.  The explicit
+     ! urban_var_init initialization below normally supplies TARGTEMP on a cold
+     ! start; this validity fallback also protects older initial files.
+     TinP = TARGTEMP
+     IF (Tin_URB > 200.0 .AND. Tin_URB < 350.0) TinP = Tin_URB
+     Tin_URB = TinP
+
+     ! QIN_URB2D is the two-dimensional SLUCM+BEM indoor-specific-humidity
+     ! state.  QLEV_URB3D remains reserved for BEP+BEM and is not used here.
+     qinP = TARGHUM
+     IF (qin_URB > 0.0 .AND. qin_URB < 0.1) qinP = qin_URB
+     qin_URB = qinP
+   END IF
 
 ! Glotfelty, 2012/07/05, NUDAPT Modification
 
@@ -909,7 +1055,22 @@ use module_model_constants, only :  piconst
  !End NUDAPT Modification
 
 ! Miao, 2007/01/17, cal. ah
-   if(ahoption==1) AH=AH*ahdiuprf(tloc)
+! -- start -- Yuya Takane, 2022/12/25
+!   if(ahoption==1) AH=AH*ahdiuprf(tloc)
+!   if(ahoption==1 .or. ahoption==2) AH=AH*ahdiuprf(tloc)
+   if(ahoption==1) then
+     if(sbemoption==0) then 
+       AH=AH*ahdiuprf(tloc)
+     else if(sbemoption==1) then 
+       AH_TRAFFIC=AH_TRAFFIC*ahdiuprf(tloc)
+     endif
+   endif
+! -- end -- Yuya Takane, 2022/12/25
+
+! -- start -- Yuya Takane, 2022/12/13
+   AP_BASELOAD = HSEQUIP_SCALE_FACTOR * HSEQUIP(tloc)
+   E_AP_BASELOAD = 0.0 * HSEQUIP(tloc)
+! -- start -- Yuya Takane, 2022/12/13
 
 ! Yang, 2014/10/08, cal. alh
    Kalh=0
@@ -938,6 +1099,26 @@ use module_model_constants, only :  piconst
      vegfrac = MIN(0.9, MAX(0.1, vegfrac_in))
 
      HGT = lambda_f
+
+     ! Make the BEM geometry consistent with the grid-resolved morphology used
+     ! by distributed SLUCM. In the equivalent two-dimensional canyon,
+     !   R   = roof_width / (roof_width + road_width) = lambda_p
+     !   HGT = ZR / (roof_width + road_width)         = lambda_f
+     ! so the dimensional widths follow from the inverse transformation below.
+     ! This override is limited to SBEMOPTION=1; SBEMOPTION=0 remains unchanged.
+     IF (sbemoption == 1) THEN
+       IF (ZR <= 0.0 .OR. HGT <= 0.0) THEN
+         FATAL_ERROR('SLUCM+BEM distributed geometry requires positive ZR and HGT')
+       END IF
+
+       BEM_CANYON_WIDTH = ZR / HGT
+       ROOF_WIDTH2 = R * BEM_CANYON_WIDTH
+       ROAD_WIDTH2 = RW * BEM_CANYON_WIDTH
+
+       IF (ROOF_WIDTH2 <= 0.0 .OR. ROAD_WIDTH2 < 0.0) THEN
+         FATAL_ERROR('SLUCM+BEM derived invalid distributed roof/road widths')
+       END IF
+     END IF
    END IF
 
    IF( ZDC+Z0C+2. >= ZA) THEN
@@ -1303,9 +1484,26 @@ use module_model_constants, only :  piconst
      END DO
 
 ! multi-layer heat equation model
+     TRLP = TRL
+     CALL multi_layer(num_roof_layers,BOUNDR,G0R,CAPR,AKSR,      &
+                      TRL,DZR,DELT,TRLEND)
 
-     CALL multi_layer(num_roof_layers,BOUNDR,G0R,CAPR,AKSR,TRL,DZR,DELT,TRLEND)
-
+     IF (sbemoption == 1) THEN
+       CALL slucm_bem_update_inner_layer(                        &
+            num_layers          = num_roof_layers,              &
+            cap_cgs             = CAPR,                         &
+            conductivity_cgs    = AKSR,                         &
+            layer_depth_cm      = DZR,                          &
+            dt                  = DELT,                         &
+            emissivity          = EPSR,                         &
+            sigma_si            = SIG_SI,                       &
+            characteristic_height = FLOOR_HEIGHT,               &
+            indoor_temp_prev    = TinP,                         &
+            layer_temp_prev     = TRLP,                         &
+            layer_temp          = TRL,                          &
+            q_conv              = QRCHT,                        &
+            q_rad               = QRRHT)
+     END IF
    ELSE
 
      ES=6.11*EXP( (2.5*10.**6./461.51)*(TRP-273.15)/(273.15*TRP) )
@@ -1646,9 +1844,9 @@ ENDIF
        TBP = TB
        TGP = TG
 
-       IF (distributed_aerodynamics_option) THEN
-         DTC = 0.0
-       ELSE 
+! Yuya Takane(2025/06/06)       IF (distributed_aerodynamics_option) THEN
+! Yuya Takane(2025/06/06)         DTC = 0.0
+! Yuya Takane(2025/06/06)       ELSE
        TC1=RW*ALPHAC+RW*ALPHAG+W*ALPHAB
        TC2=RW*ALPHAC*TA+RW*ALPHAG*TGP+W*ALPHAB*TBP
        TC=TC2/TC1
@@ -1660,7 +1858,7 @@ ENDIF
        DTC=TCP - TC
        TCP=TC
        QCP=QC
-       END IF
+! Yuya Takane(2025/06/06)       END IF
 
        IF( ABS(F) < 0.000001 .AND. ABS(DTB) < 0.000001 &
         .AND. ABS(GF) < 0.000001 .AND. ABS(DTG) < 0.000001 &
@@ -1668,9 +1866,31 @@ ENDIF
 
      END DO
 
-	 CALL multi_layer(num_wall_layers,BOUNDB,G0B,CAPB,AKSB,TBL,DZB,DELT,TBLEND)
+! multi-layer heat equation models
+     TBLP = TBL
+     CALL multi_layer(num_wall_layers,BOUNDB,G0B,CAPB,AKSB,     &
+                      TBL,DZB,DELT,TBLEND)
 
-     CALL multi_layer(num_road_layers,BOUNDG,G0G,CAPG,AKSG,TGL,DZG,DELT,TGLEND)
+     IF (sbemoption == 1) THEN
+       CALL slucm_bem_update_inner_layer(                        &
+            num_layers          = num_wall_layers,              &
+            cap_cgs             = CAPB,                         &
+            conductivity_cgs    = AKSB,                         &
+            layer_depth_cm      = DZB,                          &
+            dt                  = DELT,                         &
+            emissivity          = EPSB,                         &
+            sigma_si            = SIG_SI,                       &
+            characteristic_height = FLOOR_HEIGHT,               &
+            indoor_temp_prev    = TinP,                         &
+            layer_temp_prev     = TBLP,                         &
+            layer_temp          = TBL,                          &
+            q_conv              = QBCHT,                        &
+            q_rad               = QBRHT)
+     END IF
+
+     CALL multi_layer(num_road_layers,BOUNDG,G0G,CAPG,AKSG,     &
+                      TGL,DZG,DELT,TGLEND)
+
    ELSE
 
 !-------------------------------------------------------------------------------
@@ -2179,8 +2399,32 @@ ENDIF
       END DO
        
 
-      CALL multi_layer(num_wall_layers,BOUNDB,G0B,CAPB,AKSB,TBL,DZB,DELT,TBLEND)
-      CALL multi_layer(num_road_layers,BOUNDG,G0G,CAPG,AKSG,TGL,DZG,DELT,TGLEND)
+      ! Keep the TREEOPTION=1 wall path coupled to SLUCM+BEM in the
+      ! same order as the non-tree multi-layer wall path.  TBLP is the
+      ! previous-step inner-wall state required by slucm_bem_calculate.
+      TBLP = TBL
+      CALL multi_layer(num_wall_layers,BOUNDB,G0B,CAPB,AKSB,     &
+                       TBL,DZB,DELT,TBLEND)
+
+      IF (sbemoption == 1) THEN
+        CALL slucm_bem_update_inner_layer(                        &
+             num_layers          = num_wall_layers,              &
+             cap_cgs             = CAPB,                         &
+             conductivity_cgs    = AKSB,                         &
+             layer_depth_cm      = DZB,                          &
+             dt                  = DELT,                         &
+             emissivity          = EPSB,                         &
+             sigma_si            = SIG_SI,                       &
+             characteristic_height = FLOOR_HEIGHT,               &
+             indoor_temp_prev    = TinP,                         &
+             layer_temp_prev     = TBLP,                         &
+             layer_temp          = TBL,                          &
+             q_conv              = QBCHT,                        &
+             q_rad               = QBRHT)
+      END IF
+
+      CALL multi_layer(num_road_layers,BOUNDG,G0G,CAPG,AKSG,     &
+                       TGL,DZG,DELT,TGLEND)
       ! CALL multi_layer(num_road_layers,BOUNDG,G0VG,CAPVG,KVG/697.7/60,TVGL,DZVG*0.01,DELT,TGLEND) ! DZVG unit ([m] as input, needed to convert to[cm]) (Chenghao 2026/01/20)
 	  CALL SHFLX (SSOILG,TVGL,SMG,SMCMAX,NVG,TVGP,DELT,YY,ZZ1,ZSOILG,TGLEND,ZBOT,SMCWLT,KVG,QUARTZ,CSOIL,CAPVG)   ! Update temperature in vegetated ground soil layer (urban-nbs)
 
@@ -2303,74 +2547,165 @@ ENDIF
    FLXTHT=HT/RHO/CP/100.      
    FLXHUMT=ELET*(1/697.7/60.)/RHO/EL/100.  ! ELET is W/m2, final unit m/s
 !-------------------------------------------------------------------------------
+! SLUCM+BEM calculation (one call per urban time step)
+!-------------------------------------------------------------------------------
+   QF_URB     = 0.0
+   QFB_URB    = 0.0
+   QFB_CL_URB = 0.0
+   QFB_HT_URB = 0.0
+   QFL_URB    = 0.0
+   QFBL_URB   = 0.0
+   ECAC_URB   = 0.0
+   EC_URB     = 0.0
+   COP_URB    = 0.0
+   Hin_URB    = 0.0
+   Hout_URB   = 0.0
+   EVENT       = 0.0
+   Ein_URB     = 0.0
+   Eout_URB    = 0.0
+   qin_URB     = qinP
+   TWin_URB   = 0.0
+   TGin_URB   = 0.0
+   WBGTin_URB = 0.0
+   MRTin_URB  = 0.0
+   QVENT      = 0.0
+
+   IF (sbemoption == 1) THEN
+     CALL slucm_bem_calculate(                                         &
+          urban_type          = UTYPE,                            &
+          month               = jmonth,                           &
+          local_hour          = tloc,                             &
+          cop_option          = copoption,                        &
+          lcz_switch          = LCZ_SWITCH_kike,                  &
+          perflo              = PERFLO,                           &
+          heat_person         = HEAT_PERSON,                      &
+          latent_heat_person  = E_HEAT_PERSON,                    &
+          appliance_baseload  = AP_BASELOAD,                      &
+          latent_appliance_baseload = E_AP_BASELOAD,              &
+          building_height     = ZR,                               &
+          floor_height        = FLOOR_HEIGHT,                     &
+          cp_air              = CPP,                              &
+          latent_heat_vapor   = ELL,                              &
+          air_density         = RHOO,                             &
+          effective_heat_capacity = RMF,                          &
+          ventilation_frequency = VENT_FREQ,                      &
+          canyon_temp         = TCP,                              &
+          canyon_specific_humidity = QCP,                         &
+          indoor_temp_prev    = TinP,                             &
+          indoor_specific_humidity_prev = qinP,                   &
+          pressure_pa         = PS * 100.0,                       &
+          roof_conv_flux      = QRCHT,                            &
+          roof_rad_flux       = QRRHT,                            &
+          wall_conv_flux      = QBCHT,                            &
+          wall_rad_flux       = QBRHT,                            &
+          rated_cop           = COP,                              &
+          latitude            = XLAT,                             &
+          abandoned_ratio     = AB_BUILD_RATIO,                  &
+          heating_usage_ratio = AC_USAGE_RATIO_HT,               &
+          cooling_usage_ratio = AC_USAGE_RATIO_CL,               &
+          target_temp         = TARGTEMP,                         &
+          temperature_deadband = GAPTEMP,                         &
+          target_specific_humidity = TARGHUM,                     &
+          humidity_deadband    = GAPHUM,                          &
+          humidity_relaxation_time = TAUHUM,                      &
+          dt                  = DELT,                             &
+          roof_width          = ROOF_WIDTH2,                      &
+          road_width          = ROAD_WIDTH2,                      &
+          ac_floor_ratio      = AC_FLOOR_RATIO,                   &
+          roof_inner_temp_prev = TRLP(num_roof_layers),           &
+          wall_inner_temp_prev = TBLP(num_wall_layers),           &
+          qvent               = QVENT,                            &
+          event               = EVENT,                            &
+          indoor_load         = Hin_URB,                          &
+          indoor_latent_load  = Ein_URB,                          &
+          simulated_cop       = COP_URB,                          &
+          qfb                 = QFB_URB,                          &
+          qfb_heating         = QFB_HT_URB,                       &
+          qfb_cooling         = QFB_CL_URB,                       &
+          qfbl                = QFBL_URB,                         &
+          processed_load      = Hout_URB,                         &
+          processed_latent_load = Eout_URB,                       &
+          indoor_temp         = Tin_URB,                          &
+          indoor_specific_humidity = qin_URB,                     &
+          indoor_mrt          = MRTin_URB,                        &
+          indoor_globe_temp   = TGin_URB,                         &
+          indoor_wetbulb_temp = TWin_URB,                         &
+          indoor_wbgt         = WBGTin_URB,                       &
+          ecac                = ECAC_URB,                         &
+          ec                  = EC_URB)
+
+   ELSE
+     Tin_URB = 0.0
+   END IF
+
+!-------------------------------------------------------------------------------
 ! Total Fluxes from Urban Canopy
 !-------------------------------------------------------------------------------
-!===Yang, 2014/10/08, cal. ah. alh. green roof===
+! First calculate the standard SLUCM fluxes, including the v4.8.0
+! urban ground-vegetation and street-tree terms.  AH/ALH and BEM source terms
+! are then added once below so that they are not duplicated across branches.
  IF (groption==1 .and. TREEOPTION .ne. 1) THEN
-   if(ahoption==1) then
-     FLXTH  = ((1.-FGR)*R*FLXTHR + FGR*R*FLXTHGR + W*FLXTHB + RW*FLXTHG)+ AH/RHOO/CPP
-   else
-     FLXTH  = ((1.-FGR)*R*FLXTHR + FGR*R*FLXTHGR + W*FLXTHB + RW*FLXTHG)
-   endif
-   if(alhoption==1) then
-     FLXHUM  = ((1.-FGR)*R*FLXHUMR + FGR*R*FLXHUMGR + W*FLXHUMB + RW*FLXHUMG)+ ALH/RHOO/ELL
-   else
-     FLXHUM  = ((1.-FGR)*R*FLXHUMR + FGR*R*FLXHUMGR + W*FLXHUMB + RW*FLXHUMG)
-   endif
-   FLXUV  = ((1.-FGR)*R*CDR + FGR*R*CDGR + RW*CDC )*UA*UA
-   FLXG =   ((1.-FGR)*R*G0R + FGR*R*G0GR+ W*G0B + RW*G0G)
-   LNET =   (1.-FGR) * R * RR + FGR *R* RGR + W * RB +  RW * RG 
- 
+   FLXTH  = (1.-FGR)*R*FLXTHR + FGR*R*FLXTHGR + W*FLXTHB + RW*FLXTHG
+   FLXHUM = (1.-FGR)*R*FLXHUMR + FGR*R*FLXHUMGR + W*FLXHUMB + RW*FLXHUMG
+   FLXUV  = ((1.-FGR)*R*CDR + FGR*R*CDGR + RW*CDC)*UA*UA
+   FLXG   = (1.-FGR)*R*G0R + FGR*R*G0GR + W*G0B + RW*G0G
+   LNET   = (1.-FGR)*R*RR + FGR*R*RGR + W*RB + RW*RG
+
  ELSEIF (groption .ne. 1 .and. TREEOPTION == 1) THEN
-   if (ahoption==1) then
-      FLXTH  = ( R*FLXTHR  + W*FLXTHB  + (1 - FVG) *  RW*FLXTHG + FVG * RW * FLXTHVG ) + AH/RHOO/CPP + FLXTHT*LAI_TREE*2*RTREE
-   else
-      FLXTH  = ( R*FLXTHR  + W*FLXTHB  + (1 - FVG) *  RW*FLXTHG + FVG * RW * FLXTHVG + FLXTHT*LAI_TREE*2*RTREE )
-   endif
-   if(alhoption==1) then
-      FLXHUM = ( R*FLXHUMR + W*FLXHUMB + (1 - FVG) *  RW*FLXHUMG + FVG * RW * FLXHUMVG )+ ALH/RHOO/ELL + FLXHUMT*LAI_TREE*2*RTREE
-   else   
-      FLXHUM = ( R*FLXHUMR + W*FLXHUMB + (1 - FVG) *  RW*FLXHUMG + FVG * RW * FLXHUMVG + FLXHUMT*LAI_TREE*2*RTREE )
-   endif
+   FLXTH  = R*FLXTHR + W*FLXTHB + (1.-FVG)*RW*FLXTHG              &
+          + FVG*RW*FLXTHVG + FLXTHT*LAI_TREE*2*RTREE
+   FLXHUM = R*FLXHUMR + W*FLXHUMB + (1.-FVG)*RW*FLXHUMG          &
+          + FVG*RW*FLXHUMVG + FLXHUMT*LAI_TREE*2*RTREE
    IF (distributed_aerodynamics_option) THEN
      FLXUV = CDC * UA * UA
    ELSE
-     FLXUV  = ( R*CDR + RW*CDC )*UA*UA
+     FLXUV = (R*CDR + RW*CDC)*UA*UA
    ENDIF
-   FLXG =   R*G0R + W*G0B + (1 - FVG)*RW*G0G + FVG*RW*G0VG 
-   LNET =   R*RR + W*RB + (1 - FVG)*RW*RG + FVG*RW*RVG + RT * 2*PI*RTREE*(1-TAU)
+   FLXG = R*G0R + W*G0B + (1.-FVG)*RW*G0G + FVG*RW*G0VG
+   LNET = R*RR + W*RB + (1.-FVG)*RW*RG + FVG*RW*RVG             &
+        + RT*2*PI*RTREE*(1.-TAU)
 
  ELSEIF (groption == 1 .and. TREEOPTION == 1) THEN
-   if (ahoption==1) then
-      FLXTH  = ( (1-FGR)*R*FLXTHR + FGR*R*FLXTHGR  + W*FLXTHB  + (1 - FVG) *  RW*FLXTHG + FVG * RW * FLXTHVG ) + AH/RHOO/CPP + FLXTHT*LAI_TREE*2*RTREE
-   else
-      FLXTH  = ( (1-FGR)*R*FLXTHR + FGR*R*FLXTHGR  + W*FLXTHB  + (1 - FVG) *  RW*FLXTHG + FVG * RW * FLXTHVG + FLXTHT*LAI_TREE*2*RTREE)
-   endif 
-   if(alhoption==1) then
-      FLXHUM = ( (1-FGR)*R*FLXHUMR + FGR*R*FLXHUMGR + W*FLXHUMB + (1 - FVG) *  RW*FLXHUMG + FVG * RW * FLXHUMVG )+ ALH/RHOO/ELL + FLXHUMT*LAI_TREE*2*RTREE
-   else
-      FLXHUM = ( (1-FGR)*R*FLXHUMR + FGR*R*FLXHUMGR + W*FLXHUMB + (1 - FVG) *  RW*FLXHUMG + FVG * RW * FLXHUMVG + FLXHUMT*LAI_TREE*2*RTREE )
-   endif
-   FLXUV  = ((1-FGR)*R*CDR + FGR*R*CDGR + RW*CDC )*UA*UA
-   FLXG =   (1-FGR)*R*G0R + FGR*R*G0GR+ W*G0B + (1 - FVG)*RW*G0G + FVG*RW*G0VG 
-   LNET =   (1-FGR) * R * RR + FGR *R* RGR + W * RB + (1 - FVG)*RW*RG + FVG*RW*RVG + RT * 2*PI*RTREE*(1-TAU)
+   FLXTH  = (1.-FGR)*R*FLXTHR + FGR*R*FLXTHGR + W*FLXTHB        &
+          + (1.-FVG)*RW*FLXTHG + FVG*RW*FLXTHVG                 &
+          + FLXTHT*LAI_TREE*2*RTREE
+   FLXHUM = (1.-FGR)*R*FLXHUMR + FGR*R*FLXHUMGR + W*FLXHUMB    &
+          + (1.-FVG)*RW*FLXHUMG + FVG*RW*FLXHUMVG               &
+          + FLXHUMT*LAI_TREE*2*RTREE
+   FLXUV = ((1.-FGR)*R*CDR + FGR*R*CDGR + RW*CDC)*UA*UA
+   FLXG = (1.-FGR)*R*G0R + FGR*R*G0GR + W*G0B                  &
+        + (1.-FVG)*RW*G0G + FVG*RW*G0VG
+   LNET = (1.-FGR)*R*RR + FGR*R*RGR + W*RB                     &
+        + (1.-FVG)*RW*RG + FVG*RW*RVG                          &
+        + RT*2*PI*RTREE*(1.-TAU)
 
  ELSE
-   IF (ahoption==1) THEN
-     FLXTH  = ( R*FLXTHR  + W*FLXTHB  + RW*FLXTHG ) + AH/RHOO/CPP					
-     FLXHUM = ( R*FLXHUMR + W*FLXHUMB + RW*FLXHUMG )+ ALH/RHOO/ELL
-   ELSE
-     FLXTH  = ( R*FLXTHR  + W*FLXTHB  + RW*FLXTHG )
-     FLXHUM = ( R*FLXHUMR + W*FLXHUMB + RW*FLXHUMG )
-   ENDIF
+   FLXTH  = R*FLXTHR + W*FLXTHB + RW*FLXTHG
+   FLXHUM = R*FLXHUMR + W*FLXHUMB + RW*FLXHUMG
    IF (distributed_aerodynamics_option) THEN
      FLXUV = CDC * UA * UA
    ELSE
-   FLXUV  = ( R*CDR + RW*CDC )*UA*UA
+     FLXUV = (R*CDR + RW*CDC)*UA*UA
    ENDIF
-   FLXG =   ( R*G0R + W*G0B + RW*G0G )
-   LNET =     R*RR + W*RB + RW*RG
+   FLXG = R*G0R + W*G0B + RW*G0G
+   LNET = R*RR + W*RB + RW*RG
  ENDIF
+
+ IF (sbemoption == 1) THEN
+   ! Preserve the supplied SLUCM+BEM formulation: traffic AH is combined with
+   ! the building heat calculated by BEM.
+   QF_URB = AH_TRAFFIC + QFB_URB
+ ELSE IF (ahoption == 1) THEN
+   QF_URB = AH
+ END IF
+ FLXTH = FLXTH + QF_URB/RHOO/CPP
+
+ ! Prescribed anthropogenic latent heat (ALH) and cooling-tower latent
+ ! heat (QFBL) are independent sources.
+ QFL_URB = 0.0
+ IF (alhoption == 1) QFL_URB = QFL_URB + ALH
+ IF (sbemoption == 1) QFL_URB = QFL_URB + QFBL_URB
+ FLXHUM = FLXHUM + QFL_URB/RHOO/ELL
 
 !----------------------------------------------------------------------------
 ! Convert Unit: FLUXES and u* T* q*  --> WRF
@@ -2777,22 +3112,22 @@ ENDIF
 
    DO K=2,KM-1
       A(K) = -2.*AKS/(DZ(K-1)+DZ(K))
-      B(K) = CAP*DZ(K)/DELT + 2.*AKS/(DZ(K-1)+DZ(K)) + 2.*AKS/(DZ(K)+DZ(K+1)) 
+      B(K) = CAP*DZ(K)/DELT + 2.*AKS/(DZ(K-1)+DZ(K)) + 2.*AKS/(DZ(K)+DZ(K+1))
       C(K) = -2.*AKS/(DZ(K)+DZ(K+1))
       D(K) = CAP*DZ(K)/DELT*TSL(K)
-   END DO 
+   END DO
 
    IF(BOUND == 1) THEN                  ! Flux=0
       A(KM) = -2.*AKS/(DZ(KM-1)+DZ(KM))
-      B(KM) = CAP*DZ(KM)/DELT + 2.*AKS/(DZ(KM-1)+DZ(KM))  
+      B(KM) = CAP*DZ(KM)/DELT + 2.*AKS/(DZ(KM-1)+DZ(KM))
       C(KM) = 0.0
       D(KM) = CAP*DZ(KM)/DELT*TSL(KM)
    ELSE                                 ! T=constant
       A(KM) = -2.*AKS/(DZ(KM-1)+DZ(KM))
-      B(KM) = CAP*DZ(KM)/DELT + 2.*AKS/(DZ(KM-1)+DZ(KM)) + 2.*AKS/(DZ(KM)+DZEND) 
+      B(KM) = CAP*DZ(KM)/DELT + 2.*AKS/(DZ(KM-1)+DZ(KM)) + 2.*AKS/(DZ(KM)+DZEND)
       C(KM) = 0.0
       D(KM) = CAP*DZ(KM)/DELT*TSL(KM) + 2.*AKS*TSLEND/(DZ(KM)+DZEND)
-   END IF 
+   END IF
 
    P(1) = -C(1)/B(1)
    Q(1) =  D(1)/B(1)
@@ -2800,19 +3135,19 @@ ENDIF
    DO K=2,KM
       P(K) = -C(K)/(A(K)*P(K-1)+B(K))
       Q(K) = (-A(K)*Q(K-1)+D(K))/(A(K)*P(K-1)+B(K))
-   END DO 
+   END DO
 
    X(KM) = Q(KM)
 
    DO K=KM-1,1,-1
       X(K) = P(K)*X(K+1)+Q(K)
-   END DO 
+   END DO
 
    DO K=1,KM
       TSL(K) = X(K)
-   END DO 
+   END DO
 
-   RETURN 
+   RETURN
    END SUBROUTINE multi_layer
 !===============================================================================
 !
@@ -2832,7 +3167,15 @@ ENDIF
                          HPERCENT_BIN,                                 & ! out
 !end BEP
                          BOUNDR,BOUNDB,BOUNDG,CH_SCHEME,TS_SCHEME,     & ! out
-                         AKANDA_URBAN,ALH)         ! out
+! -- start -- Yuya Takane, 2022/12/01
+!                         AKANDA_URBAN,ALH)         ! out
+                         AKANDA_URBAN,ALH,                             & ! out
+                         HSEQUIP, HSEQUIP_SCALE_FACTOR, COP, PERFLO,   & ! out
+                         TARGTEMP, GAPTEMP, TARGHUM, GAPHUM, TAUHUM,  &
+                         AB_BUILD_RATIO, AC_FLOOR_RATIO,               &
+                         AC_USAGE_RATIO_CL, AC_USAGE_RATIO_HT,         &
+                         VENT_FREQ, AH_TRAFFIC )
+! -- end -- Yuya Takane, 2022/12/01
 
    INTEGER, INTENT(IN)  :: UTYPE 
 
@@ -2843,6 +3186,16 @@ ENDIF
                            BETR,BETB,BETG,TRLEND,TBLEND,TGLEND,RTREE,RTREE_M,RW_M,HTREE,&
                            DTREE,LAI_TREE,LAI_VEG,Z0VG,Z0HVG,CAPVG,EPSVG,EPST,ALBVG,ALBT,FVG   ! added for urban-nbs
    REAL, INTENT(OUT)    :: AKANDA_URBAN
+! -- start -- ! Yuya Takane, 2022/12/01
+   REAL, INTENT(OUT)    :: HSEQUIP_SCALE_FACTOR, COP, PERFLO
+   REAL, INTENT(OUT)    :: TARGTEMP, GAPTEMP, TARGHUM, GAPHUM, TAUHUM
+   REAL,    DIMENSION(1:24), INTENT(OUT) :: HSEQUIP
+   REAL, INTENT(OUT)    :: AB_BUILD_RATIO
+   REAL,    DIMENSION(1:24), INTENT(OUT) :: AC_FLOOR_RATIO
+   REAL, INTENT(OUT)    :: AC_USAGE_RATIO_CL, AC_USAGE_RATIO_HT
+   REAL, INTENT(OUT)    :: VENT_FREQ
+   REAL, INTENT(OUT)    :: AH_TRAFFIC
+! -- end -- ! Yuya Takane, 2022/12/01
 !for BEP
    INTEGER,                     INTENT(OUT) :: NUMDIR
    REAL,    DIMENSION(MAXDIRS), INTENT(OUT) :: STREET_DIRECTION
@@ -2913,7 +3266,25 @@ ENDIF
    CH_SCHEME = CH_SCHEME_DATA
    TS_SCHEME = TS_SCHEME_DATA
    AKANDA_URBAN = AKANDA_URBAN_TBL(UTYPE)
-   FVG = FVG_TBL(UTYPE)						 
+! -- start -- Yuya Takane, 2022/12/01
+   HSEQUIP = hsequip_tbl(1:24)
+   HSEQUIP_SCALE_FACTOR = HSESF_TBL(UTYPE)
+   COP = COP_TBL(UTYPE)
+   PERFLO = PERFLO_TBL(UTYPE)
+   TARGTEMP = TARGTEMP_TBL(UTYPE)
+   GAPTEMP = GAPTEMP_TBL(UTYPE)
+   TARGHUM = TARGHUM_TBL(UTYPE)
+   GAPHUM = GAPHUM_TBL(UTYPE)
+   TAUHUM = TAUHUM_TBL(UTYPE)
+   AB_BUILD_RATIO = AB_BUILD_RATIO_TBL(UTYPE)
+   AC_FLOOR_RATIO = AC_FLOOR_RATIO_TBL(1:24,UTYPE)
+   AC_USAGE_RATIO_CL = AC_USAGE_RATIO_CL_TBL(UTYPE)
+   AC_USAGE_RATIO_HT = AC_USAGE_RATIO_HT_TBL(UTYPE)
+   VENT_FREQ         = VENT_FREQ_TBL(UTYPE)
+   AH_TRAFFIC        = AH_TRAFFIC_TBL(UTYPE)
+! -- end -- Yuya Takane, 2022/12/01
+ 
+   FVG = FVG_TBL(UTYPE)
 
 !for BEP
 
@@ -3181,6 +3552,8 @@ ENDIF
             if(allocate_status /= 0) FATAL_ERROR('Error allocating TARGHUM_TBL in urban_param_init')
             ALLOCATE( GAPHUM_TBL(ICATE), stat=allocate_status )
             if(allocate_status /= 0) FATAL_ERROR('Error allocating GAPHUM_TBL in urban_param_init')
+            ALLOCATE( TAUHUM_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating TAUHUM_TBL in urban_param_init')
             ALLOCATE( PERFLO_TBL(ICATE), stat=allocate_status )
             if(allocate_status /= 0) FATAL_ERROR('Error allocating PERFLO_TBL in urban_param_init')
             ALLOCATE( HSESF_TBL(ICATE), stat=allocate_status )
@@ -3189,8 +3562,29 @@ ENDIF
             if(allocate_status /= 0) FATAL_ERROR('Error allocating PV_FRAC_ROOF_TBL in urban_param_init')
             ALLOCATE( GR_FRAC_ROOF_TBL(ICATE), stat=allocate_status )
             if(allocate_status /= 0) FATAL_ERROR('Error allocating GR_FRAC_ROOF_TBL in urban_param_init')
+! -- start -- Yuya Takane, 2022/12/28
+            ALLOCATE( AB_BUILD_RATIO_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating AB_BUILD_RATIO_TBL in urban_param_init')
+            ALLOCATE( AC_FLOOR_RATIO_TBL(24, ICATE), stat=allocate_status )  ! Yuya Takane, 2025.11.16
+            if (allocate_status /= 0) FATAL_ERROR('Error allocating AC_FLOOR_RATIO_TBL in urban_param_init') ! Yuya Takane, 2025.11.16
+            ALLOCATE( AC_USAGE_RATIO_CL_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating AC_USAGE_RATIO_CL_TBL in urban_param_init')
+            ALLOCATE( AC_USAGE_RATIO_HT_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating AC_USAGE_RATIO_HT_TBL in urban_param_init')
+            ALLOCATE( VENT_FREQ_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating VENT_FREQ_TBL in urban_param_init')
+            ALLOCATE( AH_TRAFFIC_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) FATAL_ERROR('Error allocating AH_TRAFFIC_TBL in urban_param_init')
+! -- end -- Yuya Takane, 2022/12/28
 
          endif
+         ! A missing TARGHUM entry must fail deterministically rather than
+         ! leave an uninitialized value that can accidentally appear valid.
+         TARGHUM_TBL = 0.0
+         GAPTEMP_TBL = 0.0
+         GAPHUM_TBL = 0.0
+         TAUHUM_TBL = 3600.0
+
          numdir_tbl = 0
          street_direction_tbl = -1.E36
          street_width_tbl = 0
@@ -3291,6 +3685,12 @@ ENDIF
          read(string(indx+1:),*) ts_scheme_data
       else if (name == "AHOPTION") then
          read(string(indx+1:),*) ahoption
+! -- start -- Yuya Takane, 2022/12/30
+      else if (name == "SBEMOPTION") then
+         read(string(indx+1:),*) sbemoption
+      else if (name == "COPOPTION") then
+         read(string(indx+1:),*) copoption
+! -- end -- Yuya Takane, 2022/12/30
       else if (name == "AHDIUPRF") then
          read(string(indx+1:),*) ahdiuprf(1:24)
       else if (name == "ALHOPTION") then
@@ -3409,6 +3809,8 @@ ENDIF
          read(string(indx+1:),*) targhum_tbl(1:icate)
       else if ( name == "GAPHUM") then
          read(string(indx+1:),*) gaphum_tbl(1:icate)
+      else if ( name == "TAUHUM") then
+         read(string(indx+1:),*) tauhum_tbl(1:icate)
       else if ( name == "PERFLO") then
          read(string(indx+1:),*) perflo_tbl(1:icate)
       else if (name == "HSEQUIP") then
@@ -3425,6 +3827,26 @@ ENDIF
          read(string(indx+1:),*) gr_flag_tbl
       else if (name == "GR_TYPE") then
          read(string(indx+1:),*) gr_type_tbl
+! -- start -- Yuya Takane, 2022/12/28
+      else if (name == "AB_BUILD_RATIO") then
+         read(string(indx+1:),*) ab_build_ratio_tbl(1:icate)
+      else if (name == "AC_FLOOR_RATIO") then
+         ACLOOP : do
+            read(11,'(A512)', iostat=iostatus) string
+            if (string(1:1) == "#") cycle ACLOOP
+            if (trim(string) == "") cycle ACLOOP
+            if (string == "END AC_FLOOR_RATIO") exit ACLOOP
+            read(string, *) k, ac_floor_ratio_tbl(1:24,k)
+         enddo ACLOOP
+      else if (name == "AC_USAGE_RATIO_CL") then
+         read(string(indx+1:),*) ac_usage_ratio_cl_tbl(1:icate)
+      else if (name == "AC_USAGE_RATIO_HT") then
+         read(string(indx+1:),*) ac_usage_ratio_ht_tbl(1:icate)
+      else if (name == "VENT_FREQ") then
+         read(string(indx+1:),*) vent_freq_tbl(1:icate)
+      else if (name == "AH_TRAFFIC") then
+         read(string(indx+1:),*) ah_traffic_tbl(1:icate)
+! -- end -- Yuya Takane, 2022/12/28
 
 !end BEP         
       else
@@ -3511,12 +3933,74 @@ ENDIF
 
      VFGS=1.-2.*VFWS*HGT_TBL(LC)/RW_TBL(LC)
      SVF_TBL(LC)=VFGS
+
+! Start Kikegawa20240808, Yuya Takane
+     ROOF_WIDTH_kike(LC) = ROOF_WIDTH(LC)
+     ROAD_WIDTH_kike(LC) = ROAD_WIDTH(LC)
+! End Kikegawa20240808, Yuya Takane
+  
    END DO
+
+   CALL slucm_bem_report_loaded_parameters
 
    deallocate(roof_width)
    deallocate(road_width)
 
    END SUBROUTINE urban_param_init
+
+!===========================================================================
+! Report the BEM parameters that were actually read into the model tables.
+! WRITE_MESSAGE maps to wrf_message in WRF, so these lines appear in rsl.
+!===========================================================================
+   SUBROUTINE slucm_bem_report_loaded_parameters
+   IMPLICIT NONE
+   INTEGER :: LC, H1, H2
+
+   WRITE_MESSAGE('SLUCM+BEM: BEM parameters read by urban_param_init')
+   WRITE(mesg,'(A,I0,A,I0,A,I0)') 'SLUCM+BEM: ICATE=', ICATE, &
+        ' SBEMOPTION=', sbemoption, ' COPOPTION=', copoption
+   WRITE_MESSAGE(mesg)
+
+   IF (distributed_aerodynamics_option .AND. sbemoption == 1) THEN
+      WRITE_MESSAGE('SLUCM+BEM: distributed BEM geometry enabled')
+      WRITE_MESSAGE('SLUCM+BEM: widths use L=ZR/HGT, roof=R*L, road=RW*L')
+   END IF
+
+   DO H1 = 1, 24, 6
+      H2 = MIN(H1 + 5, 24)
+      WRITE(mesg,'(A,I2.2,A,I2.2,A,6(1X,ES12.5))') &
+           'SLUCM+BEM: HSEQUIP(',H1,':',H2,')=',HSEQUIP_TBL(H1:H2)
+      WRITE_MESSAGE(mesg)
+      WRITE(mesg,'(A,I2.2,A,I2.2,A,6(1X,ES12.5))') &
+           'SLUCM+BEM: AHDIUPRF(',H1,':',H2,')=',AHDIUPRF(H1:H2)
+      WRITE_MESSAGE(mesg)
+   END DO
+
+   DO LC = 1, ICATE
+      WRITE(mesg,'(A,I0,A,3(1X,ES12.5))') 'SLUCM+BEM: category=',LC, &
+           ' COP PERFLO HSEQUIP_SCALE_FACTOR=',COP_TBL(LC), &
+           PERFLO_TBL(LC),HSESF_TBL(LC)
+      WRITE_MESSAGE(mesg)
+      WRITE(mesg,'(A,I0,A,5(1X,ES12.5))') 'SLUCM+BEM: category=',LC, &
+           ' TARGTEMP GAPTEMP TARGHUM GAPHUM TAUHUM=', &
+           TARGTEMP_TBL(LC),GAPTEMP_TBL(LC),TARGHUM_TBL(LC), &
+           GAPHUM_TBL(LC),TAUHUM_TBL(LC)
+      WRITE_MESSAGE(mesg)
+      WRITE(mesg,'(A,I0,A,5(1X,ES12.5))') 'SLUCM+BEM: category=',LC, &
+           ' AB_BUILD AC_USE_CL AC_USE_HT VENT_FREQ AH_TRAFFIC=', &
+           AB_BUILD_RATIO_TBL(LC),AC_USAGE_RATIO_CL_TBL(LC), &
+           AC_USAGE_RATIO_HT_TBL(LC),VENT_FREQ_TBL(LC),AH_TRAFFIC_TBL(LC)
+      WRITE_MESSAGE(mesg)
+      DO H1 = 1, 24, 6
+         H2 = MIN(H1 + 5, 24)
+         WRITE(mesg,'(A,I0,A,I2.2,A,I2.2,A,6(1X,ES12.5))') &
+              'SLUCM+BEM: category=',LC,' AC_FLOOR_RATIO(',H1,':',H2,')=', &
+              AC_FLOOR_RATIO_TBL(H1:H2,LC)
+         WRITE_MESSAGE(mesg)
+      END DO
+   END DO
+
+   END SUBROUTINE slucm_bem_report_loaded_parameters
 !===========================================================================
 !
 ! subroutine urban_var_init: initialization of urban state variables
@@ -3568,7 +4052,8 @@ ENDIF
                              A_E_BEP,B_U_BEP,B_V_BEP,                      & ! inout multi-layer urban
                              B_T_BEP,B_Q_BEP,B_E_BEP,DLG_BEP,              & ! inout multi-layer urban
                              DL_U_BEP,SF_BEP,VL_BEP,                       & ! inout multi-layer urban
-                             FRC_URB2D, UTYPE_URB2D,USE_WUDAPT_LCZ)                         ! inout
+                             FRC_URB2D, UTYPE_URB2D,USE_WUDAPT_LCZ,          & ! inout
+                             TIN_URB2D,QIN_URB2D)                            ! optional SLUCM+BEM state
    IMPLICIT NONE
 
    INTEGER, INTENT(IN) :: ISURBAN, sf_urban_physics,use_wudapt_lcz
@@ -3699,11 +4184,15 @@ ENDIF
 !
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FRC_URB2D
    INTEGER, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: UTYPE_URB2D
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TIN_URB2D
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: QIN_URB2D
    INTEGER                                            :: UTYPE_URB
 !FS
    INTEGER :: SWITCH_URB
 
    INTEGER :: I,J,K,CHECK
+
+   CALL nl_get_use_wudapt_lcz  ( 1 , LCZ_SWITCH_kike ) !Kikegawa20240821   
 
    CHECK = 0
 
@@ -3825,6 +4314,14 @@ ENDIF
       XXXC_URB2D(I,J)=0.										
 
       IF ( sf_urban_physics == 1 ) THEN
+      ! Initialize the actual SLUCM+BEM restart states at a fresh start.
+      ! QLEV_URB3D is BEP+BEM state and is deliberately not touched here.
+      IF (sbemoption == 1 .AND. UTYPE_URB2D(I,J) > 0) THEN
+         IF (PRESENT(TIN_URB2D)) &
+              TIN_URB2D(I,J) = TARGTEMP_TBL(UTYPE_URB2D(I,J))
+         IF (PRESENT(QIN_URB2D)) &
+              QIN_URB2D(I,J) = TARGHUM_TBL(UTYPE_URB2D(I,J))
+      END IF
       DRELR_URB2D(I,J) = 0.
       DRELB_URB2D(I,J) = 0.
       DRELG_URB2D(I,J) = 0.

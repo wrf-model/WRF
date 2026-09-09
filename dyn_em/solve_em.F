@@ -2494,9 +2494,19 @@ BENCH_START(update_scal_tim)
 #endif
 BENCH_END(update_scal_tim)
 
+             ENDDO moist_tile_loop_2
+             !$OMP END PARALLEL DO
+
+!  Must stay in its own tile loop: flow_dep_bdy reads a fixed global row,
+!  field(i_inner,k,jbe-spec_zone), that another tile may still be writing in
+!  rk_update_scalar.  The barrier ending moist_tile_loop_2 makes it safe.
+
 BENCH_START(flow_depbdy_tim)
                IF( config_flags%specified .AND. ( .NOT. config_flags%have_bcs_moist ) ) THEN
                  IF(im .ne. P_QV)THEN
+             !$OMP PARALLEL DO   &
+             !$OMP PRIVATE ( ij )
+             moist_tile_loop_3: DO ij = 1 , grid%num_tiles
                    CALL flow_dep_bdy  (  moist(ims,kms,jms,im),                 &
                                 grid%ru_m, grid%rv_m, config_flags,             &
                                 grid%spec_zone,                                 &
@@ -2506,12 +2516,11 @@ BENCH_START(flow_depbdy_tim)
                                 grid%i_start(ij), grid%i_end(ij),               &
                                 grid%j_start(ij), grid%j_end(ij),               &
                                 k_start, k_end                               )
+             ENDDO moist_tile_loop_3
+             !$OMP END PARALLEL DO
                  ENDIF
                ENDIF
 BENCH_END(flow_depbdy_tim)
-
-             ENDDO moist_tile_loop_2
-             !$OMP END PARALLEL DO
 
            ENDIF  !-- if (grid%adv_moist_cond .or. im==p_qv ) then
 

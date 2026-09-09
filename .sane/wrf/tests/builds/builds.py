@@ -20,7 +20,7 @@ def add_build_for_envs_cmake( orch ):
       action.config["command"]     = ".sane/wrf/scripts/buildCMake.sh"
       action.config["compiler"]    = env2opt[envs.index(env)]
       action.config["build_dir"]   = "_${{ id }}"
-      action.config["install_dir"] = "install_${{ id }}"
+      action.config["install_dir"] = orch.working_directory + "/install_${{ id }}"
       action.config["build_type"]  = build_type
       action.config["core"]        = core
       action.config["case"]        = case
@@ -28,6 +28,7 @@ def add_build_for_envs_cmake( orch ):
       action.config["sm"]          = sm
 
       action.outputs["install_dir"] = action.config["install_dir"]
+      action.outputs["build_dir"]   = action.config["install_dir"]
       args = []
 
       config_cmd = [ "-p ${{ config.compiler }}", "-d", "${{ config.build_dir }}", "-i", "${{ config.install_dir }}" ]
@@ -64,12 +65,14 @@ def add_build_for_envs_make( orch ):
     action = sane.Action( f"build_make_{id}" )
     action.config["command"]     = ".sane/wrf/scripts/buildMake.sh"
     action.config["compile_opt"] = env2opt[envs.index(env)] + par_opt[opt]
-    action.config["build_dir"]   = "_${{ id }}"
+    action.config["install_dir"]   = "_${{ id }}"
     action.config["target"]      = target
     action.config["nesting"]     = 1
     action.config["par_opt"]     = opt
     action.config["optstr"]      = "-d" if dbg else ""
-    action.outputs["build_dir"]  = action.config["build_dir"]
+    
+    action.outputs["install_dir"] = action.config["install_dir"]
+    action.outputs["build_dir"]   = action.config["install_dir"]
     args = []
 
     args.extend( [ "-c", "${{ config.compile_opt }}", "-n", "${{ config.nesting }}" ] )
@@ -77,7 +80,7 @@ def add_build_for_envs_make( orch ):
       args.extend( [ "-o", "${{ config.optstr }}" ] )
 
     args.extend( [ "-b", "${{ config.target }} -j ${{ resources.cpus }}" ] )
-    args.extend( [ "-d", "${{ config.build_dir }}" ] )
+    args.extend( [ "-d", "${{ config.install_dir }}" ] )
 
     action.config["arguments"] = args
     action.add_resource_requirements( { "cpus" : 8 } )

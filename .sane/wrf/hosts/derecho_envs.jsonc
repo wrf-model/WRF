@@ -23,7 +23,7 @@
             "lmod_cmds" :
             [
               { "cmd" : "purge" },
-              { "cmd" : "load", "args" : [ "intel-oneapi", "cray-mpich", "netcdf", "cmake" ] }
+              { "cmd" : "load", "args" : [ "intel", "cray-mpich", "netcdf", "cmake" ] }
             ]
           },
           "intel-classic" :
@@ -32,7 +32,7 @@
             [
               // Because module is particular about flag placement :)
               { "cmd" : "--force", "args" : [ "purge" ] },
-              { "cmd" : "load", "args" : [ "ncarenv/23.09", "intel-oneapi", "cray-mpich", "netcdf", "cmake" ] }
+              { "cmd" : "load", "args" : [ "ncarenv/23.09", "intel-classic", "cray-mpich", "netcdf", "cmake" ] }
             ]
           },
           "nvhpc" :

@@ -38,7 +38,7 @@ MODULE MODULE_VOLC_CHEM
              INTENT(IN   ) ::                                                 &
                  xlat,xlong,ttday,tcosz,mapfac_mx,mapfac_my
    
-      REAL, DIMENSION( ims:ime , jms:jme ,1:9), INTENT(INOUT) :: volc_diags
+      REAL, DIMENSION( ims:ime , jms:jme ,num_volc_diags), INTENT(INOUT) :: volc_diags
    
       REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ),                        &
              OPTIONAL,                                                        &

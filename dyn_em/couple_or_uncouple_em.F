@@ -83,7 +83,14 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple &
 !   end if
 
 
-   IF ( config_flags%periodic_x .OR. config_flags%periodic_y ) THEN
+   ! Keep physical mass halos consistent with the current boundary mass.
+   ! The final specified-boundary update in solve_em follows the ordinary
+   ! physical-BC fill.  A continued run can therefore retain older mass in
+   ! its exterior halo, whereas start_em rebuilds that halo on a restart.
+   ! The south/west staggered factors below read jds-1 / ids-1; refresh
+   ! their inputs on both paths before coupling or uncoupling.
+   IF ( config_flags%periodic_x .OR. config_flags%periodic_y .OR. &
+        config_flags%nested .OR. config_flags%specified ) THEN
      CALL set_physical_bc2d( grid%mub, 't',  &
                              config_flags,           &
                              ids,ide, jds,jde,   & ! domain dims

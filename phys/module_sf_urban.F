@@ -2542,10 +2542,19 @@ ENDIF
    FLXHUMB=ELEB/RHO/EL/100. ! ELEB is cgs unit, final unit m/s
    FLXTHG=HG/RHO/CP/100.
    FLXHUMG=ELEG/RHO/EL/100. ! ELEG is cgs unit, final unit m/s
+   ! Tree/vegetated-ground fluxes are only calculated when TREEOPTION=1.
+   ! Do not read undefined HVG/ELEVG/HT/ELET in the TREEOPTION=0 path.
+   IF (TREEOPTION == 1) THEN
    FLXTHVG=HVG/RHO/CP/100.    ! ADD IN urban-nbs
    FLXHUMVG=ELEVG/RHO/EL/100. ! ELEVG is cgs unit, final unit m/s
    FLXTHT=HT/RHO/CP/100.      
    FLXHUMT=ELET*(1/697.7/60.)/RHO/EL/100.  ! ELET is W/m2, final unit m/s
+   ELSE
+     FLXTHVG = 0.0
+     FLXHUMVG = 0.0
+     FLXTHT = 0.0
+     FLXHUMT = 0.0
+   END IF
 !-------------------------------------------------------------------------------
 ! SLUCM+BEM calculation (one call per urban time step)
 !-------------------------------------------------------------------------------

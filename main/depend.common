@@ -3002,11 +3002,33 @@ physics_mmm/mp_wsm6_effectRad.o: \
 	physics_mmm/mp_wsm6.o
 
 
+physics_mmm/mp_radar.o: \
+	ccpp_kind_types.o
+
+
 physics_mmm/bl_ysu.o: \
 	ccpp_kind_types.o
 
 
 physics_mmm/bl_gwdo.o : \
+	ccpp_kind_types.o
+
+
+physics_mmm/bl_shinhong.o: \
+	ccpp_kind_types.o
+
+
+physics_mmm/bl_mynn_subroutines.o: \
+	ccpp_kind_types.o \
+	physics_mmm/mynn_shared.o
+
+
+physics_mmm/bl_mynn.o: \
+	ccpp_kind_types.o \
+	physics_mmm/bl_mynn_subroutines.o
+
+
+physics_mmm/mynn_shared.o: \
 	ccpp_kind_types.o
 
 

@@ -34,6 +34,8 @@ wrfbdy_d*
 wrfinput_d*
 wrfout_d*
 *.nc
+!run/rrtmgp-*.nc
+!test/rrtmgp/*.f90
 rsl.out.*
 rsl.error.*
 *.log

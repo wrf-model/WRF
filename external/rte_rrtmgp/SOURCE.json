@@ -1,0 +1,8 @@
+{
+  "repository": "https://github.com/NCAR/rte-rrtmgp",
+  "commit": "41c5fcd950fed09b8afe186dede266824eca7fd3",
+  "ufs_ccpp_commit": "3e6660c6df54e95a0871e990c2294dd397ae3860",
+  "local_changes": [
+    "LUT reader uses current rrtmgp-data field names and ice diameter coordinates"
+  ]
+}

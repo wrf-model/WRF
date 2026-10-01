@@ -978,10 +978,10 @@
             IF ( ( ( model_config_rec % ra_lw_physics(i) .EQ. CAMLWSCHEME          )   .AND. &
                    ( model_config_rec % ra_sw_physics(i) .EQ. CAMSWSCHEME          ) ) .OR.  &
                ( ( ( model_config_rec % ra_lw_physics(i) .EQ. RRTMSCHEME           )   .OR.  &
-                   ( model_config_rec % ra_lw_physics(i) .EQ. RRTMG_LWSCHEME       )   .OR.  &
+                   ( model_config_rec % ra_lw_physics(i) .EQ. RRTMG_LWSCHEME       .OR. model_config_rec % ra_lw_physics(i) .EQ. RRTMGP_LWSCHEME )   .OR.  &
                    ( model_config_rec % ra_lw_physics(i) .EQ. RRTMG_LWSCHEME_FAST  ) ) .AND. &
                  ( ( model_config_rec % ra_sw_physics(i) .EQ. SWRADSCHEME          )   .OR.  &
-                   ( model_config_rec % ra_sw_physics(i) .EQ. RRTMG_SWSCHEME       )   .OR.  &
+                   ( model_config_rec % ra_sw_physics(i) .EQ. RRTMG_SWSCHEME       .OR. model_config_rec % ra_sw_physics(i) .EQ. RRTMGP_SWSCHEME )   .OR.  &
                    ( model_config_rec % ra_sw_physics(i) .EQ. RRTMG_SWSCHEME_FAST  ) ) ) ) THEN
                ! This is OK, no way would a negation have been understandable!
             ELSE IF ( model_config_rec % ra_sw_physics(i) == 0 ) THEN
@@ -2720,10 +2720,10 @@
         IF (model_config_rec%vert_refine_method(i) .NE. 0) THEN
           IF ( ( ( model_config_rec%ra_lw_physics(i) .EQ. 0                   ) .OR. &
                  ( model_config_rec%ra_lw_physics(i) .EQ. RRTMSCHEME          ) .OR. &
-                 ( model_config_rec%ra_lw_physics(i) .EQ. RRTMG_LWSCHEME      ) ) .AND. &
+                 ( model_config_rec%ra_lw_physics(i) .EQ. RRTMG_LWSCHEME      .OR. model_config_rec%ra_lw_physics(i) .EQ. RRTMGP_LWSCHEME ) ) .AND. &
                ( ( model_config_rec%ra_sw_physics(i) .EQ. 0                   ) .OR. &
                  ( model_config_rec%ra_sw_physics(i) .EQ. SWRADSCHEME         ) .OR. &
-                 ( model_config_rec%ra_sw_physics(i) .EQ. RRTMG_SWSCHEME      ) ) ) THEN
+                 ( model_config_rec%ra_sw_physics(i) .EQ. RRTMG_SWSCHEME      .OR. model_config_rec%ra_sw_physics(i) .EQ. RRTMGP_SWSCHEME ) ) ) THEN
              !  We are OK, I just hate writing backwards / negative / convoluted if tests
              !  that are not easily comprehensible.
           ELSE
@@ -2909,6 +2909,15 @@
 #endif
 
 !-----------------------------------------------------------------------
+! RRTMGP baseline supports clear sky and McICA overlap 0--3, with aerosol feedback disabled.
+      DO i=1,model_config_rec%max_dom
+        IF(model_config_rec%ra_lw_physics(i)==RRTMGP_LWSCHEME.OR. &
+           model_config_rec%ra_sw_physics(i)==RRTMGP_SWSCHEME) THEN
+          IF(model_config_rec%aer_opt/=0.OR.model_config_rec%cldovrlp<0.OR.model_config_rec%cldovrlp>3) &
+            CALL wrf_error_fatal('RRTMGP baseline requires aer_opt=0 and cldovrlp=0,1,2,3')
+        END IF
+      END DO
+
 !  If the RRTMG FAST schemes are requested, check that the code with
 !  built to use them.
 !-----------------------------------------------------------------------
@@ -2945,8 +2954,8 @@
 !  than RRTMG_LWSCHEME and RRTMG_SWSCHEME.
 !-----------------------------------------------------------------------
 
-      IF ( ( model_config_rec % ra_lw_physics(1) .EQ. RRTMG_LWSCHEME )  .OR. &
-           ( model_config_rec % ra_sw_physics(1) .EQ. RRTMG_SWSCHEME )  .OR. &
+      IF ( ( model_config_rec % ra_lw_physics(1) .EQ. RRTMG_LWSCHEME .OR. model_config_rec % ra_lw_physics(1) .EQ. RRTMGP_LWSCHEME )  .OR. &
+           ( model_config_rec % ra_sw_physics(1) .EQ. RRTMG_SWSCHEME .OR. model_config_rec % ra_sw_physics(1) .EQ. RRTMGP_SWSCHEME )  .OR. &
            ( model_config_rec % ra_lw_physics(1) .EQ. RRTMK_LWSCHEME )  .OR. &
            ( model_config_rec % ra_lw_physics(1) .EQ. RRTMK_SWSCHEME )  .OR. &
            ( model_config_rec % ra_lw_physics(1) .EQ. RRTMG_LWSCHEME_FAST )  .OR. &
@@ -2969,7 +2978,7 @@
       DO i = 1, model_config_rec % max_dom
         IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec%ra_sw_eclipse == 1 ) THEN
-          IF ( ( model_config_rec%ra_sw_physics(i) .EQ. RRTMG_SWSCHEME      ) .OR. &
+          IF ( ( model_config_rec%ra_sw_physics(i) .EQ. RRTMG_SWSCHEME      .OR. model_config_rec%ra_sw_physics(i) .EQ. RRTMGP_SWSCHEME ) .OR. &
                ( model_config_rec%ra_sw_physics(i) .EQ. SWRADSCHEME         ) .OR. &
                ( model_config_rec%ra_sw_physics(i) .EQ. GSFCSWSCHEME        ) .OR. &
                ( model_config_rec%ra_sw_physics(i) .EQ. GODDARDSWSCHEME     ) ) THEN
@@ -3563,8 +3572,8 @@
 ! ra_lw_physics or ra_sw_physics is set to one of the RRTMG schemes.
 !-----------------------------------------------------------------------
 
-      IF (( model_config_rec % ra_lw_physics(1) .EQ. RRTMG_LWSCHEME      ) .OR. &
-          ( model_config_rec % ra_sw_physics(1) .EQ. RRTMG_SWSCHEME      ) .OR. &
+      IF (( model_config_rec % ra_lw_physics(1) .EQ. RRTMG_LWSCHEME      .OR. model_config_rec % ra_lw_physics(1) .EQ. RRTMGP_LWSCHEME ) .OR. &
+          ( model_config_rec % ra_sw_physics(1) .EQ. RRTMG_SWSCHEME      .OR. model_config_rec % ra_sw_physics(1) .EQ. RRTMGP_SWSCHEME ) .OR. &
           ( model_config_rec % ra_lw_physics(1) .EQ. RRTMK_LWSCHEME      ) .OR. &
           ( model_config_rec % ra_sw_physics(1) .EQ. RRTMK_SWSCHEME      ) .OR. &
           ( model_config_rec % ra_lw_physics(1) .EQ. RRTMG_LWSCHEME_FAST ) .OR. &

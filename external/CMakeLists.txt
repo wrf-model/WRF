@@ -87,3 +87,5 @@ if ( ${USE_RSL_LITE} )
 endif()
 
 
+
+add_subdirectory(rte_rrtmgp)

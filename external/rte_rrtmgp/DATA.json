@@ -1,0 +1,42 @@
+{
+  "repository": "earth-system-radiation/rrtmgp-data",
+  "commit": "ea788bb39876948fa8d2c235665ccff19b4686b5",
+  "files": [
+    {
+      "filename": "rrtmgp-gas-lw-g128.nc",
+      "url": "https://raw.githubusercontent.com/earth-system-radiation/rrtmgp-data/ea788bb39876948fa8d2c235665ccff19b4686b5/rrtmgp-gas-lw-g128.nc",
+      "sha256": "70ad65d116531122660318e5da2a2af9db74b425916202860e9527ef2375b8f6",
+      "size_bytes": 11679993
+    },
+    {
+      "filename": "rrtmgp-gas-sw-g112.nc",
+      "url": "https://raw.githubusercontent.com/earth-system-radiation/rrtmgp-data/ea788bb39876948fa8d2c235665ccff19b4686b5/rrtmgp-gas-sw-g112.nc",
+      "sha256": "361ed541324068ded28a275a4dd757bcaa0a845aebefa630f43a04678668fe62",
+      "size_bytes": 5949944
+    },
+    {
+      "filename": "rrtmgp-clouds-lw-bnd.nc",
+      "url": "https://raw.githubusercontent.com/earth-system-radiation/rrtmgp-data/ea788bb39876948fa8d2c235665ccff19b4686b5/rrtmgp-clouds-lw-bnd.nc",
+      "sha256": "09d6704c5b863b4c3ceb417d20bb3076ec492e6bf2dfbcc9f3c5996a3706f0b0",
+      "size_bytes": 49919
+    },
+    {
+      "filename": "rrtmgp-clouds-sw-bnd.nc",
+      "url": "https://raw.githubusercontent.com/earth-system-radiation/rrtmgp-data/ea788bb39876948fa8d2c235665ccff19b4686b5/rrtmgp-clouds-sw-bnd.nc",
+      "sha256": "7671835992a45afe66244b591a02c0b3df73d7d59ecb746bbffd9763497651cd",
+      "size_bytes": 47659
+    },
+    {
+      "filename": "LICENSE",
+      "url": "https://raw.githubusercontent.com/earth-system-radiation/rrtmgp-data/ea788bb39876948fa8d2c235665ccff19b4686b5/LICENSE",
+      "sha256": "dfe678892093791b1e4338e9f053c5f2ee592cfd8aa5859ba92a61a8d574ea3f",
+      "size_bytes": 1586
+    },
+    {
+      "filename": "README.md",
+      "url": "https://raw.githubusercontent.com/earth-system-radiation/rrtmgp-data/ea788bb39876948fa8d2c235665ccff19b4686b5/README.md",
+      "sha256": "682811f726153957b4e33de139e868e28c2cde44455e67af00556576404eb1d8",
+      "size_bytes": 877
+    }
+  ]
+}

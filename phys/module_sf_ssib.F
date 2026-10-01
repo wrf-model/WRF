@@ -1149,7 +1149,7 @@ CONTAINS
       SUNANG=AMAX1(SUNANGLE,0.01746)
 ! By Zhenxin 2011-06-20
 !      IF (sw_physics.eq.3) THEN
-       IF (sw_physics.eq.3 .or. sw_physics.eq.4) THEN
+       IF (sw_physics.eq.3 .or. sw_physics.eq.4 .or. sw_physics.eq.37) THEN
 ! End By Zhenxin 2011-06-20
 !**********************************************
 !fds - RADFRAC from radiation scheme 3 (06/2010)
@@ -1615,7 +1615,7 @@ CONTAINS
 !
 ! By Zhenxin 2011-06-20
 !      IF (sw_physics.eq.3) THEN
-       IF (sw_physics.eq.3 .or. sw_physics.eq.4) THEN
+       IF (sw_physics.eq.3 .or. sw_physics.eq.4 .or. sw_physics.eq.37) THEN
 ! End by Zhenxin 2011-06-20 
 
 !**********************************************

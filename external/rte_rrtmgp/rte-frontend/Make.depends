@@ -1,0 +1,51 @@
+RTE_FORTRAN_INTERFACE = \
+  mo_rte_kind.o \
+  mo_rte_config.o \
+  mo_rte_util_array_validation.o \
+  mo_optical_props.o \
+  mo_source_functions.o \
+  mo_fluxes.o \
+  mo_rte_lw.o \
+  mo_rte_sw.o 
+
+##################################
+# RTE - Radiative transfer for energetics
+##################################
+#
+#
+mo_rte_config.o: mo_rte_config.F90 mo_rte_kind.o
+#
+#
+mo_rte_util_array_validation.o: mo_rte_util_array_validation.F90 mo_rte_kind.o
+#
+# Optical properties
+#
+mo_optical_props.o:         mo_rte_kind.o mo_rte_util_array_validation.o mo_optical_props_kernels.o mo_optical_props.F90
+#
+# Source functions
+#
+mo_source_functions.o:      mo_rte_kind.o mo_optical_props.o mo_source_functions.F90
+#
+# Flux reduction
+#
+mo_fluxes.o:                mo_rte_kind.o mo_fluxes_broadband_kernels.o mo_rte_config.o mo_optical_props.o mo_rte_util_array_validation.o mo_fluxes.F90
+
+mo_rte_lw.o: mo_rte_kind.o \
+  mo_rte_config.o \
+  mo_rte_util_array.o \
+  mo_rte_util_array_validation.o \
+	mo_optical_props.o  \
+  mo_source_functions.o \
+	mo_fluxes.o \
+  mo_rte_solver_kernels.o \
+	mo_rte_lw.F90
+
+mo_rte_sw.o: mo_rte_kind.o \
+  mo_rte_config.o \
+  mo_rte_util_array.o \
+  mo_rte_util_array_validation.o \
+	mo_optical_props.o  \
+  mo_source_functions.o \
+	mo_fluxes.o \
+  mo_rte_solver_kernels.o \
+	mo_rte_sw.F90

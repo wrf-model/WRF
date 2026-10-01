@@ -1,0 +1,6 @@
+RRTMGP_FORTRAN_KERNELS = mo_gas_optics_rrtmgp_kernels.o
+
+#
+# Gas optics
+#
+mo_gas_optics_rrtmgp_kernels.o: $(RTE_FORTRAN_KERNELS) mo_gas_optics_rrtmgp_kernels.F90

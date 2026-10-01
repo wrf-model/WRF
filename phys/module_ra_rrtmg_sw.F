@@ -10097,10 +10097,13 @@ CONTAINS
                        ,sw_zbbcddir                               & ! WRF-CMAQ twoway coupled model
                        ,sw_dirdflux                               & ! WRF-CMAQ twoway coupled model
                        ,sw_difdflux                               & ! WRF-CMAQ twoway coupled model
-                       )
+                        ,use_rrtmgp )
 !------------------------------------------------------------------
    USE MODULE_RA_CLWRF_SUPPORT, ONLY : read_CAMgases
+   USE module_ra_rrtmgp, ONLY: rrtmgp_sw_column
    IMPLICIT NONE
+   LOGICAL, OPTIONAL, INTENT(IN) :: use_rrtmgp
+   LOGICAL :: run_rrtmgp
 !------------------------------------------------------------------
    LOGICAL, INTENT(IN )      ::        warm_rain
    LOGICAL, INTENT(IN )      ::   is_CAMMGMP_used ! Added for CAM5 RRTMG<->CAMMGMP
@@ -10526,6 +10529,18 @@ CONTAINS
     LOGICAL, EXTERNAL :: wrf_dm_on_monitor
 
 !------------------------------------------------------------------
+    run_rrtmgp=.FALSE.
+    IF(PRESENT(use_rrtmgp)) run_rrtmgp=use_rrtmgp
+    IF(run_rrtmgp) THEN
+      IF(cldovrlp<0.OR.cldovrlp>3) CALL wrf_error_fatal('RRTMGP supports cldovrlp=0,1,2,3')
+      IF(PRESENT(aer_ra_feedback)) THEN
+        IF(aer_ra_feedback/=0) CALL wrf_error_fatal('RRTMGP aerosol feedback is not yet supported')
+      END IF
+      IF(PRESENT(aer_opt)) THEN
+        IF(aer_opt/=0) CALL wrf_error_fatal('RRTMGP requires aer_opt=0')
+      END IF
+      IF(proceed_cmaq_sw) CALL wrf_error_fatal('RRTMGP CMAQ feedback is not yet supported')
+    END IF
 #if ( WRF_CHEM == 1 )
       IF ( aer_ra_feedback == 1) then
       IF ( .NOT. &
@@ -11223,11 +11238,13 @@ CONTAINS
 
 ! Sub-column generator for McICA
          lat = XLAT(i,j) !retrieve scalar latitude for column calculation
+         IF(.NOT.run_rrtmgp) THEN
          call mcica_subcol_sw(iplon, ncol, nlay, icld, permuteseed, irng, play, &
                        cldfrac, ciwpth, clwpth, cswpth, rei, rel, res, taucld, ssacld, asmcld, fsfcld, &
                        hgt, idcor, juldat, lat, &
                        cldfmcl, ciwpmcl, clwpmcl, cswpmcl, reicmcl, relqmcl, resnmcl, &
                        taucmcl, ssacmcl, asmcmcl, fsfcmcl)
+         END IF
 
 
 !--------------------------------------------------------------------------
@@ -11461,6 +11478,14 @@ CONTAINS
 
 ! Call RRTMG shortwave radiation model
 
+         IF(run_rrtmgp) THEN
+           CALL rrtmgp_sw_column(play,plev,tlay,h2ovmr,co2vmr,o3vmr,n2ovmr,ch4vmr,o2vmr, &
+             asdir,asdif,aldir,aldif,coszen,scon,cldfrac,clwpth,ciwpth,cswpth,rel,rei,res,iceflgsw,icld, &
+             i+104729*j+INT(julian)*1009+7919,swuflx,swdflx,swhr,swuflxc,swdflxc,swhrc, &
+             swdkdir,swdkdif,swdkdirc,sibvisdir,sibvisdif,sibnirdir,sibnirdif)
+           swuflxcln=swuflx; swdflxcln=swdflx
+           loc_sw_zbbcddir=swdkdirc(1,1); loc_sw_dirdflux=swdkdir(1,1); loc_sw_difdflux=swdkdif(1,1)
+         ELSE
          call rrtmg_sw &
             (ncol    ,nlay    ,icld    , &
              play    ,plev    ,tlay    ,tlev    ,tsfc   , &
@@ -11482,6 +11507,7 @@ CONTAINS
              ,loc_sw_dirdflux                      &  ! WRF-CMAQ twoway coupled model
              ,loc_sw_difdflux                      &  ! WRF-CMAQ twoway coupled model
                                                    )
+         END IF
 
          ! WRF-CMAQ twoway coupled model
          if (present(sw_zbbcddir)) then

@@ -185,6 +185,7 @@ target_sources(
                   module_ra_hs.F
                   module_ra_rrtm.F
                   module_ra_rrtmg_aero_optical_util_cmaq.F
+                  module_ra_rrtmgp.F
                   module_ra_rrtmg_lw.F
                   # module_ra_rrtmg_lwf.F
                   ${CMAKE_CURRENT_BINARY_DIR}/preproc/module_ra_rrtmg_lwf.f90
@@ -460,3 +461,5 @@ if ( ${ENABLE_CFBM} )
   set( OPENMP ${USE_OPENMP} )
   add_subdirectory( fire_behavior )
 endif()
+
+target_link_libraries(${PROJECT_NAME}_Core PRIVATE wrf_rrtmgp)

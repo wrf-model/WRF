@@ -1,0 +1,27 @@
+RTE_FORTRAN_KERNELS = \
+  mo_rte_kind.o \
+  mo_rte_util_array.o \
+  mo_rte_solver_kernels.o \
+  mo_optical_props_kernels.o \
+  mo_fluxes_broadband_kernels.o \
+
+#
+# Array utilities 
+#
+mo_rte_util_array.o:            mo_rte_kind.o mo_rte_util_array.F90
+  
+#
+# Optical properties
+#
+mo_optical_props_kernels.o:     mo_rte_kind.o mo_optical_props_kernels.F90
+
+#
+# Flux reduction
+#
+mo_fluxes_broadband_kernels.o : mo_rte_kind.o mo_fluxes_broadband_kernels.F90
+
+#
+# Radiative transfer
+#
+mo_rte_solver_kernels.o:        mo_rte_kind.o mo_rte_util_array.o mo_rte_solver_kernels.F90
+

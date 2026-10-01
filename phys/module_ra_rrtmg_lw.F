@@ -11604,12 +11604,15 @@ CONTAINS
                        ims,ime, jms,jme, kms,kme,                 &
                        its,ite, jts,jte, kts,kte,                 &
                        lwupflx, lwupflxc, lwdnflx, lwdnflxc       &
-                                                                  )
+                                                                   ,use_rrtmgp )
 !------------------------------------------------------------------
 !ccc To use clWRF time varying trace gases
    USE MODULE_RA_CLWRF_SUPPORT, ONLY : read_CAMgases
 
+   USE module_ra_rrtmgp, ONLY: rrtmgp_lw_column
    IMPLICIT NONE
+   LOGICAL, OPTIONAL, INTENT(IN) :: use_rrtmgp
+   LOGICAL :: run_rrtmgp
 !------------------------------------------------------------------
    LOGICAL, INTENT(IN )      ::        warm_rain
    LOGICAL, INTENT(IN )      ::   is_CAMMGMP_used ! Added for CAM5 RRTMG<->CAMMGMP
@@ -11931,6 +11934,14 @@ CONTAINS
                   266.13,263.96,261.54,258.93,256.15,253.23,      &
                   249.89,246.67,243.48,240.25,236.66,233.86/    
 !------------------------------------------------------------------
+    run_rrtmgp=.FALSE.
+    IF(PRESENT(use_rrtmgp)) run_rrtmgp=use_rrtmgp
+    IF(run_rrtmgp) THEN
+      IF(cldovrlp<0.OR.cldovrlp>3) CALL wrf_error_fatal('RRTMGP supports cldovrlp=0,1,2,3')
+      IF(PRESENT(aer_ra_feedback)) THEN
+        IF(aer_ra_feedback/=0) CALL wrf_error_fatal('RRTMGP aerosol feedback is not yet supported')
+      END IF
+    END IF
 #if ( WRF_CHEM == 1 )
       IF ( aer_ra_feedback == 1) then
       IF ( .NOT. &
@@ -12690,10 +12701,12 @@ CONTAINS
 
 ! Sub-column generator for McICA
          lat=xlat(i,j) !retrieve scalar latitude for column calculation
+         IF(.NOT.run_rrtmgp) THEN
          call mcica_subcol_lw(iplon, ncol, nlay, icld, permuteseed, irng, play, &
                        cldfrac, ciwpth, clwpth, cswpth, rei, rel, res, taucld, &
                        hgt, idcor, juldat, lat, &
                        cldfmcl, ciwpmcl, clwpmcl, cswpmcl, reicmcl, relqmcl, resnmcl, taucmcl)
+         END IF
 
 !--------------------------------------------------------------------------
 ! Aerosol optical depth, single scattering albedo and asymmetry parameter -czhao 03/2010
@@ -12766,6 +12779,12 @@ CONTAINS
 #endif
 
 ! Call RRTMG longwave radiation model
+         IF(run_rrtmgp) THEN
+           CALL rrtmgp_lw_column(play,plev,tlay,tlev,tsfc,h2ovmr,co2vmr,o3vmr,n2ovmr,ch4vmr,o2vmr,emis, &
+             cldfrac,clwpth,ciwpth,cswpth,rel,rei,res,iceflglw,icld, &
+             i+104729*j+INT(julian)*1009,uflx,dflx,hr,uflxc,dflxc,hrc)
+           uflxcln=uflx; dflxcln=dflx
+         ELSE
          call rrtmg_lw &
             (ncol    ,nlay    ,icld    , &
              play    ,plev    ,tlay    ,tlev    ,tsfc    , & 
@@ -12776,6 +12795,7 @@ CONTAINS
              tauaer  , &
              uflx    ,dflx    ,hr      ,uflxc   ,dflxc,  hrc, &
              uflxcln ,dflxcln, calc_clean_atm_diag )
+         END IF
 
 ! Output downard surface flux, and outgoing longwave flux and cloud forcing 
 ! at the top of atmosphere (W/m2)

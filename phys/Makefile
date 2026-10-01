@@ -131,6 +131,7 @@ MODULES = \
 	module_ra_goddard.o \
         module_ra_effective_radius.o \
 	module_ra_rrtm.o  \
+	module_ra_rrtmgp.o  \
 	module_ra_rrtmg_lw.o  \
 	module_ra_rrtmg_sw.o  \
 	module_ra_rrtmg_aero_optical_util_cmaq.o \
@@ -426,11 +427,11 @@ OBJS    =
 LIBTARGET    =  physics
 TARGETDIR    =  ./
 
-$(LIBTARGET) :
+$(LIBTARGET) : rrtmgp
 	(cd .. && ./tools/manage_externals/checkout_externals --externals ./arch/Externals.cfg)
 	$(MAKE) $(J) non_nmm ; \
 	$(AR) $(ARFLAGS) ../main/$(LIBWRFLIB) $(MODULES) $(OBJS)  \
-		$(FIRE_MODULES) $(DIAGNOSTIC_MODULES_EM) $(PHYSMMM_MODULES) $(NOAHMP_MODULES)
+		$(FIRE_MODULES) $(DIAGNOSTIC_MODULES_EM) $(PHYSMMM_MODULES) $(NOAHMP_MODULES) ../external/rte_rrtmgp/build/*.o
 
 include ../configure.wrf
 
@@ -516,3 +517,7 @@ clean:
 # DO NOT DELETE
 
 include ../main/depend.common
+
+.PHONY: rrtmgp
+rrtmgp:
+	$(MAKE) -C ../external/rte_rrtmgp/build FC="$(SFC)" FCFLAGS="$(PROMOTION) $(FCOPTIM) $(FCBASEOPTS) $(OMP)" NETCDFPATH="$(NETCDFPATH)" libs

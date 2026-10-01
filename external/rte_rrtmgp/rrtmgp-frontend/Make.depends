@@ -1,0 +1,40 @@
+RRTMGP_FORTRAN_INTERFACE = \
+  mo_gas_optics_util_string.o \
+	mo_gas_optics_constants.o \
+  mo_gas_concentrations.o \
+  mo_gas_optics.o \
+  mo_gas_optics_rrtmgp.o
+
+#####
+# RRTMGP: RRTM for GCM Applications - Parallel
+#   Built on top of RTE, requiring mo_rte_kind.o, mo_rte_util_array.o, mo_rte_util_array_validation.o, mo_optical_props.o
+#
+# Physical constants
+#
+mo_gas_optics_constants.o: $(RTE_FORTRAN_INTERFACE) mo_gas_optics_constants.F90
+#
+# Utility
+#
+mo_gas_optics_util_string.o:  mo_gas_optics_util_string.F90
+
+#
+# Gas concentrations - used by gas optics base class
+#
+mo_gas_concentrations.o: $(RTE_FORTRAN_INTERFACE) mo_gas_concentrations.F90
+
+#
+# Gas optics base class
+#
+mo_gas_optics.o: \
+  $(RTE_FORTRAN_INTERFACE) mo_gas_concentrations.o \
+  mo_gas_optics.F90
+
+#
+# RRTMGP gas optics
+# 
+mo_gas_optics_rrtmgp.o: \
+  $(RTE_FORTRAN_INTERFACE) \
+  mo_gas_optics_constants.o mo_gas_optics_util_string.o  \
+  mo_gas_concentrations.o \
+  mo_gas_optics.o \
+  mo_gas_optics_rrtmgp_kernels.o mo_gas_optics_rrtmgp.F90

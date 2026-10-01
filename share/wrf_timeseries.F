@@ -518,6 +518,7 @@ SUBROUTINE calc_ts( grid )
             ! Calc extra solar variables if FARMS or RRTMG/RRTMG FAST
             if ( config_flags%swint_opt == 2 .or. &
                  config_flags%ra_sw_physics == RRTMG_SWSCHEME .or. &
+                 config_flags%ra_sw_physics == RRTMGP_SWSCHEME .or. &
                  config_flags%ra_sw_physics == RRTMG_SWSCHEME_FAST ) then
               grid%ts_swdownc(n,i) = grid%swdownc(ix,iy)
               grid%ts_swddnic(n,i) = grid%swddnic(ix,iy)

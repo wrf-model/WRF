@@ -253,6 +253,7 @@ CONTAINS
 ! !USES:
    USE module_state_description, ONLY : RRTMSCHEME, GFDLLWSCHEME        &
                                        ,RRTMG_LWSCHEME, RRTMG_SWSCHEME  &
+                                       ,RRTMGP_LWSCHEME, RRTMGP_SWSCHEME &
 #if( BUILD_RRTMG_FAST == 1)
                                        ,RRTMG_LWSCHEME_FAST, RRTMG_SWSCHEME_FAST  &
 #endif
@@ -1632,7 +1633,7 @@ CONTAINS
               allocate(ssaaer_sw(ims:ime, kms:kme, jms:jme, 1:11))
               allocate(asyaer_sw(ims:ime, kms:kme, jms:jme, 1:11))
 
-           case(RRTMG_SWSCHEME &
+           case(RRTMG_SWSCHEME,RRTMGP_SWSCHEME &
 #if( BUILD_RRTMG_FAST == 1)
                 ,RRTMG_SWSCHEME_FAST &
 #endif
@@ -1651,7 +1652,7 @@ CONTAINS
 ! Allocate aerosol arrays used by aer_opt = 3 option, and explicit AOD from QNWFA+QNIFA(+QNBCA)   (Trude)
    IF (PRESENT(f_qnwfa) .AND. PRESENT(f_qnifa) .AND. PRESENT(taod5503d) .AND.  PRESENT(taod5502d)) THEN
       IF (F_QNWFA .AND. aer_opt.eq.3 .AND.                              &
-                 (sw_physics.eq.RRTMG_SWSCHEME                          &
+                 ((sw_physics.eq.RRTMG_SWSCHEME.OR.sw_physics.eq.RRTMGP_SWSCHEME) &
 #if( BUILD_RRTMG_FAST == 1)
                   .OR. sw_physics.eq.RRTMG_SWSCHEME_FAST                &
 #endif
@@ -2023,7 +2024,7 @@ CONTAINS
                 CALL wrf_error_fatal ( 'arguments not present for calling cam radiation' )
              ENDIF
 
-        CASE (RRTMG_LWSCHEME)
+        CASE (RRTMG_LWSCHEME,RRTMGP_LWSCHEME)
 
              CALL wrf_debug (100, 'CALL rrtmg_lw')
 
@@ -2097,7 +2098,7 @@ CONTAINS
                   ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte,&
                   LWUPFLX=LWUPFLX,LWUPFLXC=LWUPFLXC,                &
                   LWDNFLX=LWDNFLX,LWDNFLXC=LWDNFLXC,                &
-                  mp_physics=mp_physics                             )
+                  mp_physics=mp_physics                             ,USE_RRTMGP=(lw_physics==RRTMGP_LWSCHEME) )
 
 
 #if( BUILD_RRTMK == 1)
@@ -2282,7 +2283,7 @@ CONTAINS
      IF ( aer_opt .EQ. 2 ) THEN
      swrad_aerosol_select2: select case(sw_physics)
 
-        case(RRTMG_SWSCHEME &
+        case(RRTMG_SWSCHEME,RRTMGP_SWSCHEME &
 #if( BUILD_RRTMG_FAST == 1)
              ,RRTMG_SWSCHEME_FAST &
 #endif
@@ -2530,7 +2531,7 @@ CONTAINS
              ENDDO
              ENDDO
 
-        CASE (RRTMG_SWSCHEME)
+        CASE (RRTMG_SWSCHEME,RRTMGP_SWSCHEME)
 
              CALL wrf_debug(100, 'CALL rrtmg_sw')
 
@@ -2675,7 +2676,7 @@ CONTAINS
                      sw_zbbcddir=sw_zbbcddir,                           & ! WRF-CMAQ coupled model
                      sw_dirdflux=sw_dirdflux,                           & ! WRF-CMAQ coupled model
                      sw_difdflux=sw_difdflux                            & ! WRF-CMAQ coupled model
-                                                                        )
+                                                                        ,USE_RRTMGP=(sw_physics==RRTMGP_SWSCHEME) )
 
              ! = WRF-CMAQ twoway coupled model
              if (proceed_cmaq_sw) then
@@ -2883,6 +2884,7 @@ CONTAINS
      ! surface direct and diffuse SW fluxes computation. Only for schemes other than RRTMG and Goddard
      ! Backup method in case sw scheme in use does not provide surface SW direct and diffuse irradiances
      IF ((sw_physics .NE. RRTMG_SWSCHEME) &
+           .AND. (sw_physics .NE. RRTMGP_SWSCHEME) &
 #if( BUILD_RRTMG_FAST == 1)
            .AND. (sw_physics .NE. RRTMG_SWSCHEME_FAST) &
 #endif
@@ -3170,7 +3172,7 @@ CONTAINS
      accumulate_lw_select: SELECT CASE(lw_physics)
 
      CASE (CAMLWSCHEME,& 
-           RRTMG_LWSCHEME &
+           RRTMG_LWSCHEME,RRTMGP_LWSCHEME &
 #if( BUILD_RRTMG_FAST == 1)
            ,RRTMG_LWSCHEME_FAST &
 #endif
@@ -3211,7 +3213,7 @@ CONTAINS
      accumulate_sw_select: SELECT CASE(sw_physics)
 
      CASE (CAMSWSCHEME,&
-           RRTMG_SWSCHEME &
+           RRTMG_SWSCHEME,RRTMGP_SWSCHEME &
 #if( BUILD_RRTMG_FAST == 1)
            ,RRTMG_SWSCHEME_FAST &
 #endif

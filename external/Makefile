@@ -1,6 +1,7 @@
 
 
 superclean :
+	@( cd rte_rrtmgp/build ; make -s clean )
 	@( cd esmf_time_f90 ;  make -s superclean )
 	@( cd io_pnetcdf ;  make -s superclean )
 	@( cd io_pio ;  make -s superclean )
@@ -17,5 +18,4 @@ superclean :
 	@( cd RSL_LITE ; make -s superclean )
 	@( cd fftpack/fftpack5 ; make -s superclean )
 	@( cd atm_ocn ; make -s superclean )
-
 

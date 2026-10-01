@@ -82,6 +82,8 @@ diffwrf=$( realpath $diffwrf )
 # Go to run location now - We only operate here from now on
 cd $run_folder || exit $?
 
+echo "Working out of : $PWD"
+
 wrf_exec=$( realpath $( find -L $run_folder -type f -name $wrf_exec | head -n 1 ) )
 
 # Check our paths
@@ -102,8 +104,11 @@ fi
 cmd="$mpi_cmd $wrf_exec $wrf_nml"
 banner 42 "START $wrf_nml"
 # Move previous output of previous run to safe spot
-ls wrfout_d0* | xargs -i mv {} {}.orig
-cp $( ls rsl.out.* | sort | head -n 1 ) rsl.out.orig
+ls wrfout_d0* | grep -vE "orig$" | xargs -i mv {} {}.orig
+
+if [ -n "$mpi_cmd" ]; then
+  mv $( ls rsl.out.* | sort | head -n 1 ) rsl.out.orig
+fi
 
 # Remove previous diffing
 rm *.diff_log

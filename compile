@@ -23,7 +23,14 @@ endif
 echo "    CHARACTER (LEN=*), PARAMETER :: commit_version = '$v'" > inc/commit_decl
 
 #----------------------------------
-if ( ! $?WRF_KPP )   setenv WRF_KPP  0
+# Use the configured feature flags, not the caller's environment.
+# configure accepts both command-line options and legacy environment settings.
+setenv WRF_CHEM 0
+grep -q '^[ ]*ENVCOMPDEFS[ ]*=.*-DWRF_CHEM.*' configure.wrf
+if ( $status == 0 ) setenv WRF_CHEM 1
+setenv WRF_KPP 0
+grep -q '^[ ]*ENVCOMPDEFS[ ]*=.*-DWRF_KPP.*' configure.wrf
+if ( $status == 0 ) setenv WRF_KPP 1
 if ( $WRF_KPP == 1 ) then
   chem/KPP/compile_wkc
 endif

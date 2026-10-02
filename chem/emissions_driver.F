@@ -423,10 +423,6 @@ real, save :: freq_industry(24)    = &
 
       ivolcano=0
       
-      !area=dx*dx
-      ! A. Ukhov 12 Oct 2024
-      area=(dx/mapfac_mx(i,j))*(dy/mapfac_my(i,j))
-
       dust_emiss_active    = 0
       seasalt_emiss_active = 0
       if(config_flags%dust_opt >= 2 )dust_emiss_active    = 1
@@ -448,13 +444,15 @@ real, save :: freq_industry(24)    = &
 !
       emiss_ash_height = config_flags%emiss_ash_hgt
       if(emiss_ash_height.gt. 1.)then
-      write(message,'(" ADJUSTED ASH HEIGHT: ",2f15.3)') emiss_ash_height, area
+      write(message,'(" ADJUSTED ASH HEIGHT: ",f15.3)') emiss_ash_height
       CALL WRF_DEBUG (15,message)
 ! for volcanic ash transport, vash variables are in mix ratio here...
 
       do j=jts,jte
       do i=its,ite
         if(erup_end(i,j).gt.0)then
+        ! A. Ukhov 12 Oct 2024: use map factors for volcanic cell area.
+        area=(dx/mapfac_mx(i,j))*(dy/mapfac_my(i,j))
         so2_mass=1.5e4*3600.*1.e9/64./area
         eh=2600.*(emiss_ash_height*.0005)**4.1494
         emiss_ash_mass=eh*1.e9/area

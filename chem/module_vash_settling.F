@@ -10,7 +10,8 @@ MODULE MODULE_VASH_SETTLING
   USE module_state_description, only: p_vash_1,p_vash_2,     &
               p_vash_3,p_vash_4,p_vash_5,p_vash_6,p_vash_7,  &
               p_vash_8,p_vash_9,p_vash_10,p_sulf,p_so2,      &
-              chem_vash,chem_volc,chem_volc_4bin,p_qc     ! A. Ukhov.                              
+              chem_vash,chem_volc,chem_volc_4bin,p_qc,       &
+              num_volc_diags     ! A. Ukhov.
 
 !Vertical grid indeces
 !     _
@@ -48,7 +49,7 @@ SUBROUTINE vash_settling_driver(dt,config_flags,t_phy,moist,               &
           INTENT(IN   ) ::  t_phy,p_phy,dz8w,p8w,rho_phy
 
   ! A. Ukhov,  Volcanic diagnostics
-  REAL, DIMENSION( ims:ime, jms:jme,1:9), INTENT(INOUT ) :: volc_diags
+  REAL, DIMENSION( ims:ime, jms:jme,num_volc_diags), INTENT(INOUT ) :: volc_diags
 
   REAL, INTENT(IN   ) :: dt,dx,g
   integer :: nmx,i,j,k,kk,lmx
@@ -317,7 +318,7 @@ INTENT(INOUT) ::                            ddvel
 REAL,  DIMENSION( ims:ime , jms:jme )                   ,    &
 INTENT(IN) :: tsk,pbl,ust,rmol,xland,znt,hfx
 REAL, DIMENSION( its:ite, jts:jte ),  INTENT(IN)  ::  aer_res
-REAL, DIMENSION( ims:ime, jms:jme,1:9), INTENT(INOUT ) :: volc_diags
+REAL, DIMENSION( ims:ime, jms:jme,num_volc_diags), INTENT(INOUT ) :: volc_diags
 
 !! .. Local Scalars ..
 INTEGER :: n, nr, ipr, imx,jmx,lmx
@@ -651,7 +652,7 @@ INTEGER, INTENT(IN) :: ids,ide, jds,jde, kds,kde,                  &
 REAL, DIMENSION(ims:ime,kms:kme,jms:jme,num_moist), INTENT(IN) :: moist
 REAL, DIMENSION(ims:ime,kms:kme,jms:jme,num_chem), INTENT(INOUT) :: chem
 REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN) :: t_phy,p_phy,dz8w,p8w,rho_phy,z_at_w
-REAL, DIMENSION(ims:ime,jms:jme,1:9), INTENT(INOUT) :: volc_diags
+REAL, DIMENSION(ims:ime,jms:jme,num_volc_diags), INTENT(INOUT) :: volc_diags
 
 REAL, INTENT(IN) :: dt,dx,g
 INTEGER          :: i,j,k,kk,lmx
@@ -861,7 +862,7 @@ REAL,  DIMENSION( ims:ime , jms:jme ),                                  &
 
 !Accumulated large scale scaveged so2 and sulf
 REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) :: wd_so2_sc,wd_sulf_sc
-REAL, DIMENSION( ims:ime , jms:jme ,1:9), INTENT(INOUT) :: volc_diags
+REAL, DIMENSION( ims:ime , jms:jme ,num_volc_diags), INTENT(INOUT) :: volc_diags
 
 REAL,  DIMENSION( its:ite ,  jts:jte ) :: var_sum,var_rmv
 REAL,  DIMENSION( its:ite ,  jts:jte ) :: frc,var_sum_clw,rain_clw     

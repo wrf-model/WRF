@@ -7,7 +7,7 @@ USE module_dep_simple
 USE module_state_description, only:p_co,p_qv,p_so2,p_hno3,p_hno4,p_n2o5,p_nh3,p_h2o2, &
                               p_o3,p_ora1,p_op1,p_paa,p_sulf,p_so4aj,p_nh4aj,p_no3aj, &
                               p_bc1,p_bc2,p_oc1,p_oc2,p_seas_1,p_seas_2,     &
-                              p_seas_3,p_seas_4,p_dms,                       &
+                              p_seas_3,p_seas_4,p_dms,num_volc_diags,        &
                               p_facd,p_mepx,p_pacd
 USE module_state_description, only:p_cvasoaX,p_cvasoa1,p_cvasoa2,p_cvasoa3,p_cvasoa4,&
                               p_cvbsoaX,p_cvbsoa1,p_cvbsoa2,p_cvbsoa3,p_cvbsoa4
@@ -144,7 +144,7 @@ CONTAINS
 ! Accumulated wet deposition
 !
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) :: wd_no3,wd_so4
-   REAL, DIMENSION( ims:ime , jms:jme ,1:9), INTENT(INOUT) :: volc_diags ! A. Ukhov
+   REAL, DIMENSION( ims:ime , jms:jme, num_volc_diags), INTENT(INOUT) :: volc_diags ! A. Ukhov
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) :: wd_nh4,wd_oa, &
                                      wd_so2, wd_sulf, wd_hno3, wd_nh3
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) :: &
@@ -1992,7 +1992,7 @@ END subroutine cup_env_clev_tr
 !
       if (conv_tr_wetscav == 1) then
         
-        
+          dens = 0.1*p(i,k)/t(i,k)*mwdry/8.314472 ! kg/m3
           tfac = (HL_t0 - t(i,k))/(t(i,k)*HL_t0)
           do nv=2,num_chem
             

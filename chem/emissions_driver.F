@@ -423,8 +423,9 @@ real, save :: freq_industry(24)    = &
 
       ivolcano=0
       
-      
-      area=dx*dx
+      !area=dx*dx
+      ! A. Ukhov 12 Oct 2024
+      area=(dx/mapfac_mx(i,j))*(dy/mapfac_my(i,j))
 
       dust_emiss_active    = 0
       seasalt_emiss_active = 0

@@ -4157,7 +4157,7 @@ END subroutine optical_prep_modal_soa_vbs
                        (ref_index_nh4no3 * mass_no3 / dens_no3) +  &
                        (ref_index_nh4no3 * mass_nh4 / dens_nh4) +  &
                        (ref_index_oin    * mass_oin / dens_oin) +  &
-                       (lwref_index_dust(ns)    * mass_oin / dens_dust)  +  &
+                       (lwref_index_dust(ns)    * mass_soil / dens_dust)  +  &
                        (lwref_index_oc(ns)     * mass_oc  / dens_oc) +   &
                        (lwref_index_nacl(ns)   * mass_na  / dens_na) +   &
                        (lwref_index_nacl(ns)   * mass_cl  / dens_cl) +   &

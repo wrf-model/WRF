@@ -13,15 +13,17 @@ def wrf_coop_reg_tests( orch ):
             }
   # init settings, most of which are inherited to run
   default_init = {
-                  "wrf_case"      : "${{ config.case }}/${{ config.par_opt }}",
-                  "wrf_case_path" : "${{ host_info.config.wrf_coop.run_wrf_case_path }}",
-                  "wrf_met_path"  : "${{ host_info.config.wrf_coop.run_wrf_met_path }}",
-                  "wrf_met_folder": "em_real",
+                  "wrf_nml"       : "${{ config.wrf_case_path }}/${{ config.case }}/${{ config.par_opt }}/${{ config.wrf_nml }}",
+                  "wrf_met_path"  : "${{ host_info.config.wrf_coop.run_wrf_met_path }}/em_real",
                   "wrf_dir"       : "${{ dependencies.${{ config.build }}.outputs.install_dir }}/test/${{ config.wrf_dir }}",
                   "resources"     : { "cpus" : 1 },
                   "config" :
                   {
-                    "wrf_dir" : "${{ config.target }}"
+                    "wrf_case_path" : "${{ host_info.config.wrf_coop.run_wrf_case_path }}"
+                    # To be filled out by the action creation
+                    # "wrf_dir"  : "",
+                    # "wrf_nml"  : "",
+                    # "wrf_case" : ""
                   }
                  }
   # run settings
@@ -226,11 +228,14 @@ def wrf_coop_reg_tests( orch ):
         # as well as any specific config options for that nml case
         nml = f"namelist.input.{nml_case}"
         base_opts = copy.deepcopy( default )
-        base_opts["wrf_run_dir"]        = f"regtests/output/${{{{ id }}}}_{build_type}"
-        base_opts["wrf_nml"]            = nml
+        base_opts["wrf_run_dir"]        = "regtests/output/${{ id }}"
+
+        # We will use nested config options to facilitate easy namelist selection
+        # that routes to the case folder style setup
         base_opts["config"]             = {}
         base_opts["config"]["case"]     = wrf_case
-        base_opts["config"]["target"]   = case_dict["target"]
+        base_opts["config"]["wrf_nml"]  = nml
+        base_opts["config"]["wrf_dir"]  = case_dict["target"]
         base_opts["config"]["build"]    = build
         base_opts["modify_environ"]     = build_type == "make"
 
@@ -327,13 +332,16 @@ def wrf_chem_tests( orch ):
         for mode in builds:
           init = run_wrf.InitWRF( f"{case}_{nml}_init_{mode}_{build_type}" )
           init.environment = "gnu"
-          init.wrf_case = case
-          init.wrf_case_path = "${{ host_info.config.wrf_coop.run_wrf_case_path }}"
-          init.wrf_met_path = "${{ host_info.config.wrf_coop.run_wrf_met_path }}"
-          init.wrf_met_folder = "em_chem"
+          # init.wrf_case = case
+          init.wrf_nml = "${{ config.wrf_case_path }}/${{ config.wrf_case }}/${{ config.wrf_nml }}"
+          init.wrf_met_path = "${{ host_info.config.wrf_coop.run_wrf_met_path }}/${{ config.wrf_case }}/"
           init.wrf_dir = f"${{{{ dependencies.{builds[mode]}.outputs.install_dir }}}}/test/em_real"
-          init.wrf_run_dir = orch.working_directory + f"/regtests/output/{case}_{nml}_{mode}_{build_type}"
-          init.wrf_nml = f"namelist.input.{nml}"
+
+          init.config["wrf_nml"]  = f"namelist.input.{nml}"
+          init.config["wrf_case"] = case
+          init.config["wrf_case_path"] = "${{ host_info.config.wrf_coop.run_wrf_case_path }}"
+
+          init.wrf_run_dir = "regtests/output/${{ id }}"
           init.modify_environ = build_type == "make"
           init.use_mpi = mode == "mpi"
           init.add_dependencies( builds[mode] )

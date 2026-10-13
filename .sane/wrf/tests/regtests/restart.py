@@ -43,16 +43,19 @@ def feature_restart_em_real( orch ):
         init_wrf.nml_patch = patches[wrf_case]
         restart.nml_patch  = patches[wrf_case]
 
-      init_wrf.wrf_case        = wrf_case
-      init_wrf.wrf_nml         = "namelist.input.1"
-      init_wrf.wrf_case_path   = "${{ host_info.config.wrf_restart.run_wrf_case_path }}"
-      init_wrf.wrf_met_path    = "${{ host_info.config.wrf_restart.run_wrf_met_path }}"
-      init_wrf.wrf_met_folder  = "standard"
+
+      init_wrf.wrf_nml         = "${{ config.wrf_case_path }}/${{ config.wrf_case }}/namelist.input.1"
+      init_wrf.wrf_met_path    = "${{ host_info.config.wrf_restart.run_wrf_met_path }}/standard/"
+
       init_wrf.wrf_dir         = "${{ dependencies.${{ config.build }}.outputs.install_dir }}/test/em_real"
-      init_wrf.wrf_run_dir     = f"regtests/output/restart_${{{{ wrf_case }}}}_{build_type}"
+      # Run everything out of the same folder
+      init_wrf.wrf_run_dir     = f"regtests/output/{restart.id}"
       init_wrf.environment     = "gnu"
       init_wrf.modify_environ  = True
-      init_wrf.config["build"] = build
+
+      init_wrf.config["build"]    = build
+      init_wrf.config["wrf_case"] = wrf_case
+      init_wrf.config["wrf_case_path"] = "${{ host_info.config.wrf_restart.run_wrf_case_path }}"
       init_wrf.extra_data.append( "${{ host_info.config.wrf_restart.run_wrf_met_path }}/additional" )
 
       init_wrf.add_resource_requirements( { "cpus" : 1, "timelimit" : "00:10:00" } )
@@ -60,9 +63,11 @@ def feature_restart_em_real( orch ):
 
       # Inherit most attributes from init_wrf
       restart.config["build"] = build
+      restart.config["wrf_case"] = wrf_case
+      restart.config["wrf_case_path"] = "${{ host_info.config.wrf_restart.run_wrf_case_path }}"
       restart.environment     = "gnu"
-      restart.wrf_nml         = "namelist.input.2"
-      restart.wrf_restart_nml = "namelist.input.3"
+      restart.wrf_nml         = "${{ config.wrf_case_path }}/${{ config.wrf_case }}/namelist.input.2"
+      restart.wrf_restart_nml = "${{ config.wrf_case_path }}/${{ config.wrf_case }}/namelist.input.3"
       restart.wrf_diff_exec   = "${{ dependencies.${{ config.build }}.outputs.diffwrf_nc }}"
       restart.add_dependencies( init_wrf.id, build )
       restart.add_resource_requirements( { "cpus" : 8, "timelimit" : "00:25:00" } )

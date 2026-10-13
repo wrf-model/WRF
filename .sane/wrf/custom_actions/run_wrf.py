@@ -9,22 +9,17 @@ import wrf.custom_actions.nml as nml_io
 class WRFBase( sane.Action ):
   def __init__( self, id ):
     super().__init__( id )
-
-    #: The basename for execution. By default controls the input/output basenames
-    self.wrf_case       = None
-    #: Root dir to use to locate a set of cases
-    self.wrf_case_path  = "${{ host_info.config.run_wrf_case_path }}"
     #: Location of executables
     self.wrf_dir        = "test/em_real"
     #: Location of where to run case. Directory does not need to exist yet
-    self.wrf_run_dir    = "./output/${{ wrf_case }}"
+    self.wrf_run_dir    = "./output/"
 
     #: For legacy WRF build, on-the-fly modification of environment to allow library finding
     self.modify_environ = False
 
     #: Name of WRF executable to use
     self.wrf_exec       = None
-    #: Namelist to use from ${{ self.wrf_case_path }}/${{ self.wrf_case }} as the namelist to run
+    #: Namelist to use for execution
     self.wrf_nml        = "namelist.input"
 
     # Control execution
@@ -46,9 +41,9 @@ class WRFBase( sane.Action ):
     #: e.g. { "domains" : { "dx" : 1500 }, "time_control" : { "history_interval" : [600, 30] } }
     self.nml_patch    = {}
 
+    self.__wrf_nml_basename__ = "none"
+
     # Make sure we can pass on all this info
-    self.outputs["wrf_case"]       = "${{ wrf_case }}"
-    self.outputs["wrf_case_path"]  = "${{ wrf_case_path }}"
     self.outputs["wrf_dir"]        = "${{ wrf_dir }}"
     self.outputs["wrf_run_dir"]    = "${{ wrf_run_dir }}"
     self.outputs["modify_environ"] = "${{ modify_environ }}"
@@ -80,8 +75,6 @@ class WRFBase( sane.Action ):
       nml_io.dump_nml( nml, nml_dict_patched )
 
   def load_extra_options( self, options, origin, **kwargs ):
-    self.wrf_case       = options.pop( "wrf_case", None )
-    self.wrf_case_path  = options.pop( "wrf_case_path", self.wrf_case_path )
     self.wrf_run_dir    = options.pop( "wrf_run_dir", self.wrf_run_dir )
     self.wrf_dir        = options.pop( "wrf_dir", self.wrf_dir )
 
@@ -104,21 +97,11 @@ class WRFBase( sane.Action ):
     """Perform preflight check to make sure case path exists, a case selection is provided,
     the chosen nml exists, and MPI/OpenMP injection.
     """
-
-    # case path and case exist, force assignment check
-    self.wrf_case_path  = self.resolve_path_exists( self.dereference( self.wrf_case_path ) )
-    self.wrf_case       = self.dereference( self.wrf_case )
-
-    if self.wrf_case is None:
-      msg = "No case provided"
-      self.log( msg, level=50 )
-      raise ValueError( msg )
-    # case nml exist
-    full_case_path = self.resolve_path_exists( os.path.join( self.wrf_case_path, self.wrf_case ) )
-    self.wrf_nml       = self.dereference( self.wrf_nml )
-    self.file_exists_in_path( full_case_path, self.wrf_nml )
-
-    self.wrf_nml = self.dereference( self.wrf_nml )
+    # nml exist
+    wrf_nml = self.dereference( self.wrf_nml )
+    if not os.path.isfile( wrf_nml ):
+      err = self.log( f"File '{wrf_nml}' not found", level=50 )
+      raise FileNotFoundError( err )
 
     if self.use_mpi:
       self.log( f"Adding MPI command to arguments for wrf  : '{self.mpi_cmd}'" )
@@ -137,7 +120,6 @@ class WRFBase( sane.Action ):
     """Perform critical checks to ensure WRF exec exists, resolve run dir, and modify env"""
     # Now check for things that should be here for sure since any dependencies would be 
     # finished by now
-    full_case_path = self.resolve_path_exists( os.path.join( self.wrf_case_path, self.wrf_case ) )
 
     # build location exists
     self.wrf_dir = self.dereference( self.wrf_dir )
@@ -152,6 +134,12 @@ class WRFBase( sane.Action ):
 
     # Any extra paths
     self.dereference( self.extra_data )
+
+    # The namelist full path
+    self.wrf_nml = self.dereference( self.wrf_nml )
+
+    # basename to use when running after it is copied to run dir
+    self.__wrf_nml_basename__ = os.path.basename( self.wrf_nml )
 
     if self.modify_environ:
       self.log( "Adding to LD_LIBRARY_PATH..." )
@@ -169,23 +157,17 @@ class WRFBase( sane.Action ):
     os.makedirs( self.wrf_run_dir, exist_ok=True )
 
   def setup_wrf( self ):
-    """Setup the run directory
+    """Setup the run directory with WRF execs and extra data
     
     Use framework subprocess execution to:
     * Symlink WRF executable directory (including necessary data/run tables)
-    * Copy all case files
     * Symlink any additional data
     """
-    full_case_path = self.resolve_path_exists( os.path.join( self.wrf_case_path, self.wrf_case ) )
-
     # copy over execs, then metfiles, then case to run dir
     self.push_exec_raw( False )
     # This should work as everything should be absolute paths
     self.log( "Linking WRF executables..." )
     self.execute_subprocess( "ln", [ "-svf", os.path.join( self.wrf_dir, "*" ), self.wrf_run_dir ], verbose=True, shell=True )
-
-    self.log( "Copying WRF case files..." )
-    self.execute_subprocess( "cp", [ "-v", "--remove-destination", os.path.join( full_case_path, "*" ), self.wrf_run_dir ], verbose=True, shell=True )
 
     if len( self.extra_data ) > 0:
       self.log( "Linking extra data..." )
@@ -194,18 +176,25 @@ class WRFBase( sane.Action ):
 
     self.pop_exec_raw()
 
+  def setup_nml( self, nml=None ):
+    """Copy over the namelist"""
+    if nml is None:
+      nml = self.wrf_nml
+    self.push_exec_raw( False )
+    self.log( f"Copying WRF namelist {nml}..." )
+    self.execute_subprocess( "cp", [ "-v", "--remove-destination", nml, self.wrf_run_dir ], verbose=True, shell=True )
+    self.pop_exec_raw()
+
+
 
 class InitWRF( WRFBase ):
   def __init__( self, id ):
     super().__init__( id )
     self.wrf_exec       = "real.exe"
 
-    #: Specific folder to use for WPS metfiles
-    self.wrf_met_folder = "${{ wrf_case }}"
-    #: Root dir of set of metfile folders
-    self.wrf_met_path   = "${{ host_info.config.run_wrf_met_path }}"
+    #: Folder folder to use for WPS metfiles 
+    self.wrf_met_path   = "my_data_path/"
 
-    self.outputs["wrf_met_folder"] = "${{ wrf_met_folder }}"
     self.outputs["wrf_met_path"]   = "${{ wrf_met_path }}"
 
     # Not user input
@@ -213,21 +202,18 @@ class InitWRF( WRFBase ):
     self.config["arguments"] = [
                                 "-f", "${{ wrf_run_dir }}",
                                 "-r", "${{ wrf_exec }}",
-                                "-n", "${{ wrf_nml }}"
+                                "-n", "${{ __wrf_nml_basename__ }}"
                                 ]
 
   def load_extra_options( self, options, origin, **kwargs ):
     super().load_extra_options( options, origin, **kwargs )
     self.wrf_met_path   = options.pop( "wrf_met_path", self.wrf_met_path )
-    self.wrf_met_folder = options.pop( "wrf_met_folder", self.wrf_met_folder )
 
   def pre_launch( self ):
     """Run base :py:meth:`RunWRF.pre_launch()` and then ensure metfile folder exists"""
     super().pre_launch()
     # met path exists
-    self.wrf_met_folder = self.dereference( self.wrf_met_folder )
     self.wrf_met_path = self.resolve_path_exists( self.dereference( self.wrf_met_path ) )
-    full_met_path = self.resolve_path_exists( os.path.join( self.wrf_met_path, self.wrf_met_folder ) )
 
   def pre_run( self ):
     """Run base :py:meth:`RunWRF.pre_run()` and then create and setup the run directory, symlink metfiles, and patch namelist"""
@@ -236,17 +222,16 @@ class InitWRF( WRFBase ):
     self.setup_wrf()
     self.setup_metfiles()
 
-    self.patch_nml( os.path.join( self.wrf_run_dir, self.wrf_nml ), self.nml_patch )
+    self.setup_nml()
+    self.patch_nml( os.path.join( self.wrf_run_dir, self.__wrf_nml_basename__ ), self.nml_patch )
 
   def setup_metfiles( self ):
     """Symlink metfiles"""
-    full_met_path = self.resolve_path_exists( os.path.join( self.wrf_met_path, self.wrf_met_folder ) )
-
     # copy over execs, then metfiles, then case to run dir
     self.push_exec_raw( False )
     # This should work as everything should be absolute paths
     self.log( "Linking WRF metfiles..." )
-    self.execute_subprocess( "ln", [ "-svf", os.path.join( full_met_path, "*" ), self.wrf_run_dir ], verbose=True, shell=True )
+    self.execute_subprocess( "ln", [ "-svf", os.path.join( self.wrf_met_path, "*" ), self.wrf_run_dir ], verbose=True, shell=True )
     self.pop_exec_raw()
 
 
@@ -256,8 +241,6 @@ class RunWRF( WRFBase ):
     self.wrf_exec       = "wrf.exe"
 
     # Override directly or inherit from InitWRF
-    self.wrf_case       = None
-    self.wrf_case_path  = None
     self.wrf_dir        = None
     self.wrf_run_dir    = None
     self.modify_environ = None
@@ -272,7 +255,7 @@ class RunWRF( WRFBase ):
     self.config["arguments"] = [
                                 "-f", "${{ wrf_run_dir }}",
                                 "-r", "${{ wrf_exec }}",
-                                "-n", "${{ wrf_nml }}"
+                                "-n", "${{ __wrf_nml_basename__ }}"
                                 ]
 
   def pre_launch( self ):
@@ -281,8 +264,6 @@ class RunWRF( WRFBase ):
     # If a dependency can provide us info that we are missing
     for dep_name, dep_info in self.dependencies.items():
       attrs = [
-                "wrf_case",
-                "wrf_case_path",
                 "wrf_dir",
                 "wrf_run_dir",
                 "modify_environ",
@@ -316,7 +297,8 @@ class RunWRF( WRFBase ):
       # Copy files needed from dep
       self.setup_input()
 
-    self.patch_nml( os.path.join( self.wrf_run_dir, self.wrf_nml ), self.nml_patch )
+    self.setup_nml()
+    self.patch_nml( os.path.join( self.wrf_run_dir, self.__wrf_nml_basename__ ), self.nml_patch )
 
   def setup_input( self ):
     """Symlink input files from InitWRF if run directory is different"""
@@ -339,9 +321,17 @@ class RunWRFRestart( RunWRF ):
     #: Number of history files to compare per domain, starting from latest
     self.hist_comparisons = 1
 
+    self.__wrf_restart_nml_basename__ = "none"
+
+    #: Namelist patch applied as a recursive dictionary update to the namelist with groups,
+    #: e.g. { "domains" : { "dx" : 1500 }, "time_control" : { "history_interval" : [600, 30] } }
+    self.nml_restart_patch    = {}
+
   def load_extra_options( self, options, origin, **kwargs ):
     self.wrf_restart_nml = options.pop( "wrf_restart_nml", self.wrf_restart_nml )
     self.hist_comparisons = options.pop( "hist_comparisons", self.hist_comparisons )
+    sane.helpers.recursive_update( self.nml_patch, options.pop( "nml_patch",  {} ) )
+
     super().load_extra_options( options, origin, **kwargs )
 
   def pre_launch( self ):
@@ -349,15 +339,26 @@ class RunWRFRestart( RunWRF ):
     if self.wrf_restart_nml is None:
       raise ValueError( "No restart namelist specified" )
 
-    full_case_path = self.resolve_path_exists( os.path.join( self.wrf_case_path, self.wrf_case ) )
-    self.wrf_restart_nml = self.dereference( self.wrf_restart_nml )
-    self.file_exists_in_path( full_case_path, self.wrf_restart_nml )
+    # nml exist
+    wrf_restart_nml = self.dereference( self.wrf_restart_nml )
+    if not os.path.isfile( wrf_restart_nml ):
+      err = self.log( f"File '{wrf_restart_nml}' not found", level=50 )
+      raise FileNotFoundError( err )
 
     self.wrf_diff_exec = self.dereference( self.wrf_diff_exec )
 
   def pre_run( self ):
     super().pre_run()
-    self.patch_nml( os.path.join( self.wrf_run_dir, self.wrf_restart_nml ), self.nml_patch )
+
+    # The namelist full path stored temporarily
+    self.wrf_restart_nml = self.dereference( self.wrf_restart_nml )
+    # We will now refer to this via relative path
+    self.__wrf_restart_nml_basename__ = os.path.basename( self.wrf_restart_nml )
+
+    if self.wrf_restart_nml != self.wrf_nml:
+      self.setup_nml( self.wrf_restart_nml )
+
+    self.patch_nml( os.path.join( self.wrf_run_dir, os.path.basename( self.__wrf_restart_nml_basename__ ) ), self.nml_restart_patch )
 
   def run( self ):
     retval = super().run()
@@ -368,7 +369,7 @@ class RunWRFRestart( RunWRF ):
                 self.config["arguments"][i] : self.config["arguments"][i+1]
                 for i in range( 0, len(self.config["arguments"]), 2 )
               }
-    arg_dict["-n"] = self.wrf_restart_nml
+    arg_dict["-n"] = self.__wrf_restart_nml_basename__
     arg_dict["-d"] = self.wrf_diff_exec
     arg_dict["-t"] = self.hist_comparisons
     self.config["command"] = ".sane/wrf/scripts/run_wrf_restart.sh"

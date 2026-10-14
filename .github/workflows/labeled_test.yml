@@ -1,0 +1,197 @@
+on :
+  workflow_call :
+    inputs :
+      # Label control
+      label : 
+        required : true
+        type     : string
+      name     :
+        required : true
+        type     : string
+      event_name :
+        required : true
+        type     : string
+      event_number: 
+        required : true
+        type     : string
+      event_label: 
+        required : true
+        type     : string
+      ref        :
+        required : true
+        type     : string
+      sha        :
+        required : true
+        type     : string
+
+      # SANE Workflow
+      paths:
+        required : true
+        type     : string
+      dry_run:
+        required : false
+        type     : boolean
+        default  : false
+      host:
+        required : false
+        type     : string
+      actions:
+        required : false
+        type     : string
+        default  : '[]'
+      actions_filter:
+        required : false
+        type     : string
+      args     :
+        required : false
+        type     : string
+      patch:
+        required : false
+        type     : string
+      upload :
+        required : false
+        type     : string
+        default  : 'on_failure'
+      cache:
+        required : false
+        type     : boolean
+      cache_id:
+        required : false
+        type     : string
+      venv:
+        required : false
+        type     : string
+        default  : './venv/sane'
+      python_dependencies:
+        required : false
+        type     : string
+        default  : '[]'
+      upgrade:
+        required : false
+        type     : boolean
+        default  : true
+
+      # Skip known test failures (use cautiously)
+      known_test_errors:
+        required : false
+        type     : string
+        default  : '[]'
+
+jobs:
+  labeled_test:
+    # Is 5 days a reasonable wait time for testing?
+    timeout-minutes: 7200
+    name: Run ${{ inputs.name }} on ${{ inputs.host }}
+    runs-on: ${{ inputs.host }}
+    env:
+      KNOWN_TEST_ERRORS: ${{ inputs.known_test_errors }}
+    steps:
+    # Don't use gh checks as they are woefully underdeveloped as a feature leading
+    # to confusing UI and misplaced metrics
+    # https://github.com/orgs/community/discussions/24616
+    - name: Set pending status
+      id: check_run_start
+      uses: actions/github-script@v8
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          github.rest.repos.createCommitStatus({
+            owner:      context.repo.owner,
+            repo:       context.repo.repo,
+            sha:        '${{ inputs.event_name == 'push' && github.sha || inputs.sha }}',
+            target_url: '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}',
+            description: '${{ inputs.name }}',
+            context:     '${{ inputs.host }}/${{ inputs.label }}',
+            state:      'pending'
+          })
+
+    - uses: actions/checkout@v6
+      with:
+        submodules: true
+        ref: ${{ inputs.event_name == 'push' && github.ref || inputs.ref }}
+
+    - uses: islas/sane-workflows-action@v1.2.1
+      name: ${{ inputs.name }}
+      id: sane_workflows
+      # Composite actions replace the inputs context before continue-on-error is evaluated.
+      continue-on-error: ${{ env.KNOWN_TEST_ERRORS != '[]' }}
+      with:
+        id       : ${{ inputs.label }}
+        paths    : ${{ inputs.paths }}
+        dry_run  : ${{ inputs.dry_run }}
+        host     : ${{ inputs.host }}
+        actions  : ${{ inputs.actions }}
+        actions_filter : ${{ inputs.actions_filter }}
+        args     : ${{ inputs.args }}
+        patch    : ${{ inputs.patch }}
+        upload   : ${{ inputs.upload }}
+        cache    : ${{ inputs.cache }}
+        cache_id : ${{ inputs.cache_id }}
+        venv     : ${{ inputs.venv }}
+        python_dependencies : ${{ inputs.python_dependencies }}
+        upgrade  : ${{ inputs.upgrade }}
+        pre      : true
+        artifact_string: '${{ inputs.event_number }}-{0}_logfiles'
+
+    - name: Filter known test errors
+      if: ${{ inputs.known_test_errors != '[]' }}
+      id: check_filtered
+      shell: python
+      run: |
+        import json
+        import re
+        from pathlib import Path
+        import os
+
+        workflow = "${{ steps.sane_workflows.outputs.save_location }}/orchestrator.json"
+        actions  = json.loads( Path( workflow ).read_text() )["actions"]
+        failed   = [ a for a, info in actions.items() if info["status"] == "failure" ]
+
+        known_test_errors = [ re.compile(s) for s in json.loads( """${{ inputs.known_test_errors }}""" ) ]
+
+        filtered = [ s for s in failed if not any( r.search(s) for r in known_test_errors ) ]
+
+        if len( filtered ) > 0:
+          print( "Workflow contains unignored Action errors" )
+          print( filtered )
+          with open( os.environ['GITHUB_ENV'], "a" ) as f:
+            f.write( "failure=true" )
+
+    - name: Set status based on filtered tests
+      if: ${{ inputs.known_test_errors != '[]' }}
+      uses: actions/github-script@v8
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          // Set job status
+          if (process.env.failure === 'true')
+          {
+            core.setFailed('Workflow contains unignored Action errors, see workflow error')
+          }
+
+    - name: Set completed status
+      if: ${{ always() }}
+      uses: actions/github-script@v8
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          github.rest.repos.createCommitStatus({
+            owner:        context.repo.owner,
+            repo:         context.repo.repo,
+            sha:          '${{ inputs.event_name == 'push' && github.sha || inputs.sha }}',
+            target_url:   '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}',
+            description:  '${{ inputs.name }}',
+            context:      '${{ inputs.host }}/${{ inputs.label }}',
+            state:        '${{ job.status == 'success' && 'success' || 'failure' }}'
+          })
+
+    - name : Remove '${{ inputs.label }}' label
+      if : ${{ always() && inputs.event_label == inputs.label }}
+      env:
+        PR_NUMBER: ${{ inputs.event_number }}
+      run: |
+        curl \
+          -X DELETE \
+          -H "Accept: application/vnd.github.v3+json" \
+          -H 'Authorization: token ${{ github.token }}' \
+          https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/labels/${{ inputs.label }}

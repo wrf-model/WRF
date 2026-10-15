@@ -26,7 +26,7 @@ jobs:
     if : >-
       contains(
         fromJson(
-          '["make-tests","cmake-tests","em_real-tests","em_chem-tests","restart-tests","all-tests"]',
+          '["make-tests","cmake-tests","em_real-tests","em_chem-tests","restart-tests","all-tests"]'),
           github.event.label.name )
       || github.event_name == 'push'
     name: Queue Test (${{ github.event_name == 'push' && github.ref_name || github.event.label.name }})

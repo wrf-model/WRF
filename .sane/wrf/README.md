@@ -162,7 +162,8 @@ A couple chemistry builds exists for the GNU environment, using the permutations
 
 ## WRF Coop
 The WRF Coop Tests were originally created in a CentOS container. These ports aim to
-isolate the core logic from the container environment concerns.
+isolate the core logic from the container environment concerns. Each test is mirrored
+in Make and CMake build systems so that both are tested.
 
 ### WRF EM_REAL
 The following tests cover the WRF Coop Test port:
@@ -311,10 +312,6 @@ the same.
     Current options are:
     ```python
     #### Applicable to all types of runs ####
-    #: The basename for execution. By default controls the input/output basenames
-    self.wrf_case       = None
-    #: Root dir to use to locate a set of cases
-    self.wrf_case_path  = "${{ host_info.config.run_wrf_case_path }}"
     #: Location of executables
     self.wrf_dir        = "test/em_real"
     #: Location of where to run case. Directory does not need to exist yet
@@ -323,7 +320,7 @@ the same.
     self.modify_environ = False
     #: Name of WRF executable to use
     self.wrf_exec       = None
-    #: Namelist to use from ${{ self.wrf_case_path }}/${{ self.wrf_case }} as the namelist to run
+    #: Namelist to use for execution
     self.wrf_nml        = "namelist.input"
     #: Exact MPI command to execute. Generally should not need to modify
     self.mpi_cmd        = "mpirun -np ${{ mpi_ranks }}"
@@ -337,14 +334,12 @@ the same.
     self.omp_threads    = "${{ resources.cpus }}"
     #: List of other folders to pull data from, all data symlinked to run dir
     self.extra_data     = []
-    #: Namelist patches indexed by basename of namelist file and applied as a recursive
-    #: dictionary update to the namelist, e.g. { "my_run.nml" : { "dx" : 1500, "history_interval" : [600, 30] } }
+    #: Namelist patch applied as a recursive dictionary update to the namelist with groups,
+    #: e.g. { "domains" : { "dx" : 1500 }, "time_control" : { "history_interval" : [600, 30] } }
     self.nml_patches    = {}
 
     #### FOR InitWRF ####
-    #: Specific folder to use for WPS metfiles
-    self.wrf_met_folder = "${{ wrf_case }}"
-    #: Root dir of set of metfile folders
+    #: Folder folder to use for WPS metfiles 
     self.wrf_met_path   = "${{ host_info.config.run_wrf_met_path }}"
 
     #### FOR RestartWRF ####
@@ -354,6 +349,9 @@ the same.
     self.wrf_diff_exec = "./external/io_netcdf/diffwrf"
     #: Number of history files to compare per domain, starting from latest
     self.hist_comparisons = 1
+    #: Namelist patch applied as a recursive dictionary update to the namelist with groups,
+    #: e.g. { "domains" : { "dx" : 1500 }, "time_control" : { "history_interval" : [600, 30] } }
+    self.nml_restart_patch    = {}
     ```
 
 

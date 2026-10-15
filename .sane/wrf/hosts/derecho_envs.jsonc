@@ -76,9 +76,9 @@
       "priority" : -100,
       "actions" :
       {
-        // KPP builds require longer + more memory than the general GNU Make limit.
-        "[build_[c]?make_em_chem_kpp_gnu_debug_serial]" : { "resources" : { "derecho" : { "memory" : "32gb", "timelimit" : "00:45:00" } } },
-        "[build_[c]?make_em_chem_kpp_gnu_debug_mpi]" : { "resources" : { "derecho" : { "memory" : "32gb", "timelimit" : "00:50:00" } } }
+        // Chem + KPP builds require longer + more memory than the general GNU Make limit.
+        "[build_[c]?make_em_chem(_kpp)?_gnu_debug_serial]" : { "resources" : { "derecho" : { "memory" : "32gb", "timelimit" : "00:45:00" } } },
+        "[build_[c]?make_em_chem(_kpp)?_gnu_debug_mpi]" : { "resources" : { "derecho" : { "memory" : "32gb", "timelimit" : "00:50:00" } } }
       }
     }
   ]

@@ -36,8 +36,6 @@ on:
           - em_real-tests
           - restart-tests
 
-env:
-  LABEL: '["{0}", "all-tests"]'
 # https://docs.github.com/en/actions/sharing-automations/reusing-workflows#supported-keywords-for-jobs-that-call-a-reusable-workflow
 # Also https://stackoverflow.com/a/74959635
 # TL;DR - For public repositories the safest approach will be to use the default read permissions, but at the cost
@@ -57,7 +55,7 @@ env:
 # https://stackoverflow.com/a/68940067
 jobs:
   cmake-tests:
-    if : ${{ contains( fromJson( format( env.LABEL, 'cmake-tests' ), inputs.event_label ) || inputs.event_name == 'push' }}
+    if : ${{ contains( fromJson('["all-tests","cmake-tests"]'), inputs.event_label ) || inputs.event_name == 'push' }}
     # I am leaving this here for posterity if this is to be replicated in private repositories for testing
     permissions:
       contents: read
@@ -98,7 +96,7 @@ jobs:
         [ "build_cmake_(em_real|em_b_wave).*_dm" ]
 
   make-tests:
-    if : ${{ contains( fromJson( format( env.LABEL, 'make-tests' ), inputs.event_label ) || inputs.event_name == 'push' }}
+    if : ${{ contains( fromJson('["all-tests","make-tests"]'), inputs.event_label ) || inputs.event_name == 'push' }}
     # I am leaving this here for posterity if this is to be replicated in private repositories for testing
     permissions:
       contents: read
@@ -139,7 +137,7 @@ jobs:
         [ "build_make_(em_real|em_b_wave).*_dm" ]
 
   em_real-tests:
-    if : ${{ contains( fromJson( format( env.LABEL, 'em_real-tests' ), inputs.event_label ) || inputs.event_name == 'push' }}
+    if : ${{ contains( fromJson('["all-tests","em_real-tests"]'), inputs.event_label ) || inputs.event_name == 'push' }}
     # I am leaving this here for posterity if this is to be replicated in private repositories for testing
     permissions:
       contents: read
@@ -185,7 +183,7 @@ jobs:
         ]
 
   em_chem-tests:
-    if : ${{ contains( fromJson( format( env.LABEL, 'em_real-tests' ), inputs.event_label ) || inputs.event_name == 'push' }}
+    if : ${{ contains( fromJson('["all-tests","em_real-tests"]'), inputs.event_label ) || inputs.event_name == 'push' }}
     # I am leaving this here for posterity if this is to be replicated in private repositories for testing
     permissions:
       contents: read
@@ -226,7 +224,7 @@ jobs:
         [ "em_chem(_kpp)?" ]
 
   restart-tests:
-    if : ${{ contains( fromJson( format( env.LABEL, 'restart-tests' ), inputs.event_label ) || inputs.event_name == 'push' }}
+    if : ${{ contains( fromJson('["all-tests","restart-tests"]'), inputs.event_label ) || inputs.event_name == 'push' }}
     # I am leaving this here for posterity if this is to be replicated in private repositories for testing
     permissions:
       contents: read

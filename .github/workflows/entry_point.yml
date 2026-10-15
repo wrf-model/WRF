@@ -11,16 +11,6 @@ on:
   pull_request:
     types:    [ labeled ]
 
-env:
-  ACCEPTED_TEST_LABELS: |
-    [
-      "make-tests",
-      "cmake-tests",
-      "em_real-tests",
-      "em_chem-tests",
-      "restart-tests",
-      "all-tests"
-    ]
 
 # Write our tests out this way for easier legibility
 # testsSet    :
@@ -33,7 +23,12 @@ env:
 # https://stackoverflow.com/a/68940067
 jobs:
   queue_tests:
-    if : ${{ contains( fromJson(env.ACCEPTED_TEST_LABELS), github.event.label.name ) || github.event_name == 'push' }}
+    if : >-
+      contains(
+        fromJson(
+          '["make-tests","cmake-tests","em_real-tests","em_chem-tests","restart-tests","all-tests"]',
+          github.event.label.name )
+      || github.event_name == 'push'
     name: Queue Test (${{ github.event_name == 'push' && github.ref_name || github.event.label.name }})
     runs-on: ubuntu-latest
     permissions:

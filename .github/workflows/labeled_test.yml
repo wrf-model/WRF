@@ -110,7 +110,7 @@ jobs:
         submodules: true
         ref: ${{ inputs.event_name == 'push' && github.ref || inputs.ref }}
 
-    - uses: islas/sane-workflows-action@v1.2.1
+    - uses: islas/sane-workflows-action@v1.2.2
       name: ${{ inputs.name }}
       id: sane_workflows
       # Composite actions replace the inputs context before continue-on-error is evaluated.

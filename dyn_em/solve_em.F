@@ -4010,6 +4010,7 @@ BENCH_START(micro_driver_tim)
       &        , QNID_CURR=scalar(ims,kms,jms,P_QNID), F_QNID=F_QNID          &
       &        , QIR_CURR=scalar(ims,kms,jms,P_QIR), F_QIR=F_QIR          & ! for P3
       &        , QIB_CURR=scalar(ims,kms,jms,P_QIB), F_QIB=F_QIB          & ! for P3
+      &        , QIL_CURR=scalar(ims,kms,jms,P_QIL), F_QIL=F_QIL          & ! for P3 liquid fraction
       &        , QVOLI_CURR=scalar(ims,kms,jms,P_QVOLI), F_QVOLI=F_QVOLI  & ! for Jensen ISHMAEL
       &        , QAOLI_CURR=scalar(ims,kms,jms,P_QAOLI), F_QAOLI=F_QAOLI  & ! for Jensen ISHMAEL
       &        , QI2_CURR=moist(ims,kms,jms,P_QI2), F_QI2=F_QI2           & ! for P3

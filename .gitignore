@@ -41,3 +41,7 @@ rsl.error.*
 # Test generated files
 __pycache__/
 *.pkl
+
+# P3 lookup tables are tracked gzipped (run/*.gz); unzipped copies are local
+run/p3_lookupTable_*.dat-*
+!run/p3_lookupTable_*.gz

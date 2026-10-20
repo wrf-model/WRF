@@ -559,6 +559,8 @@ state   real    qir            ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QIR"           "Rime ice mass-1 mixing ratio" "kg kg(-1)"
 state   real    qib            ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QIB"           "Rime ice volume-1 mixing ratio" "m(3) kg(-1)"
+state   real    qil            ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "QIL"           "Liquid on ice mass-1 mixing ratio" "kg kg(-1)"
 state   real    qir2            ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QIR2"           "Rime ice mass-2 mixing ratio" "kg kg(-1)"
 state   real    qib2            ikjftb  scalar      1         -     \
@@ -3095,7 +3097,7 @@ package   tempo           mp_physics==88               -             moist:qv,qc
 package   p3_1category    mp_physics==50               -             moist:qv,qc,qr,qi;scalar:qni,qnr,qir,qib;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,refl_10cm,th_old,qv_old
 package   p3_1category_nc mp_physics==51               -             moist:qv,qc,qr,qi;scalar:qnc,qni,qnr,qir,qib;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,refl_10cm,th_old,qv_old
 package   p3_2category    mp_physics==52               -             moist:qv,qc,qr,qi,qi2;scalar:qnc,qni,qnr,qir,qib,qni2,qir2,qib2;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,vmi3d_2,rhopo3d_2,di3d_2,refl_10cm,th_old,qv_old
-package   p3_1cat_3mom    mp_physics==53               -             moist:qv,qc,qr,qi;scalar:qnc,qni,qnr,qir,qib,qzi;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,refl_10cm,th_old,qv_old
+package   p3_1cat_3mom    mp_physics==53               -             moist:qv,qc,qr,qi;scalar:qnc,qni,qnr,qir,qib,qil,qzi;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,refl_10cm,th_old,qv_old
 package   morr_tm_aero    mp_physics==40               -             moist:qv,qc,qr,qi,qs,qg;scalar:qnc,qni,qns,qnr,qng;state:rqrcuten,rqscuten,rqicuten,EFCG,EFIG,EFSG,WACT,CCN1_GS,CCN2_GS,CCN3_GS,CCN4_GS,CCN5_GS,CCN6_GS,CCN7_GS,re_cloud,re_ice,re_snow,mskf_refl_10cm
 package   jensen_ishmael  mp_physics==55               -             moist:qv,qc,qr,qi,qi2,qi3;scalar:qnr,qni,qvoli,qaoli,qni2,qvoli2,qaoli2,qni3,qvoli3,qaoli3;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,phii3d,itype,vmi3d_2,rhopo3d_2,di3d_2,phii3d_2,itype_2,vmi3d_3,rhopo3d_3,di3d_3,phii3d_3,itype_3,refl_10cm
 package   ntu             mp_physics==56               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh,qdcn,qtcn,qccn,qrcn,qnin,fi,fs,vi,vs,vg,ai,as,ag,ah,i3m

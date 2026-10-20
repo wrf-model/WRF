@@ -51,7 +51,9 @@ if ( "$arg" == '-a' || "$arg" == '-aa' ) then
     /bin/rm -f configure.wrf >& /dev/null
   endif
   if ( "$arg" != '-aa' ) then
-    ( cd run ; /bin/rm -f gm* out* fort* ideal* *.exe input_sounding p3_lookupTable_1.dat-3momI_v5.1.6 ; \
+    ( cd run ; /bin/rm -f gm* out* fort* ideal* *.exe input_sounding ; \
+	  /bin/rm -f p3_lookupTable_1.dat-v6.9-2momI p3_lookupTable_1.dat-v6.9-3momI \
+	            p3_lookupTable_2.dat-v6.2 p3_lookupTable_3.dat-v1.4 ; \
 	  /bin/cp -f namelist.input namelist.input.backup.`date +%Y-%m-%d_%H_%M_%S` ; \
 	  /bin/rm -f namelist.input ) >& /dev/null
     ( cd test/exp_real ; /bin/rm -f gm* out* fort* real* ) >& /dev/null

@@ -27,8 +27,8 @@
 !    https://github.com/P3-microphysics/P3-microphysics                                    !
 !__________________________________________________________________________________________!
 !                                                                                          !
-! Version:       5.6.2                                                                     !
-! Last updated:  2026 Sep                                                                  !
+! Version:       5.6.2+sbaut                                                               !
+! Last updated:  2026 Oct                                                                  !
 !__________________________________________________________________________________________!
 
  MODULE microphy_p3
@@ -225,7 +225,7 @@
 
 ! Local variables and parameters:
  logical, save                  :: is_init = .false.
- character(len=1024), parameter :: version_p3                    = '5.6.2'
+ character(len=1024), parameter :: version_p3                    = '5.6.2+sbaut'
  character(len=1024), parameter :: version_intended_table_1_2mom = '6.9-2momI'
  character(len=1024), parameter :: version_intended_table_1_3mom = '6.9-3momI'
  character(len=1024), parameter :: version_intended_table_2      = '6.2'
@@ -3887,7 +3887,8 @@ call cpu_time(timer_start(3))
                 dum   = 1.-qc(i,k)*iSCF(i,k)/(qc(i,k)*iSCF(i,k)+qr(i,k)*iSPF(i,k)*       &
                         (SPF(i,k)-SPF_clr(i,k)))
                 dum1  = 600.*dum**0.68*(1.-dum**0.68)**3
-                qcaut =  kc*1.9230769e-5*(nu(i,k)+2.)*(nu(i,k)+4.)/(nu(i,k)+1.)**2*      &
+               ! 1.9230769e+5 = 1/(20 x*), x* = 2.6e-7 g; cgs units, like kc
+                qcaut =  kc*1.9230769e+5*(nu(i,k)+2.)*(nu(i,k)+4.)/(nu(i,k)+1.)**2*      &
                          (rho(i,k)*qc(i,k)*iSCF(i,k)*1.e-3)**4/                          &
                          (rho(i,k)*nc(i,k)*iSCF(i,k)*1.e-6)**2*(1.+                      &
                          dum1/(1.-dum)**2)*1000.*i_rho(i,k)*SCF(i,k)

@@ -15422,8 +15422,9 @@ integer,external :: omp_get_thread_num
                                                          inflglw, &
                                                         iceflglw, &
                                                         liqflglw
-! the mod in the macro below is to quiet range checking 
-#define TILEPTS (jte-jts+1)*(ite-its+1)+mod((jte-jts+1)*(ite-its+1),CHNK)
+! Use integer division to round down to the smallest chunk count
+! that fits the tile data, then multiply to get a multiple of chunks
+#define TILEPTS (CHNK*(((jte-jts+1)*(ite-its+1)+CHNK-1)/CHNK))
 ! Dimension with extra layer from model top to TOA
     real, dimension( TILEPTS, kts:nlayers+1 )  ::                 &
                                                             plev, &

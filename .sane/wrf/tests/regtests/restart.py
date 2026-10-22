@@ -40,8 +40,9 @@ def feature_restart_em_real( orch ):
       restart  = run_wrf.RunWRFRestart( f"restart_{wrf_case}_{build_type}" )
 
       if wrf_case in patches:
-        init_wrf.nml_patch = patches[wrf_case]
-        restart.nml_patch  = patches[wrf_case]
+        init_wrf.nml_patch        = patches[wrf_case]
+        restart.nml_patch         = patches[wrf_case]
+        restart.nml_restart_patch = patches[wrf_case]
 
 
       init_wrf.wrf_nml         = "${{ config.wrf_case_path }}/${{ config.wrf_case }}/namelist.input.1"

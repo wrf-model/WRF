@@ -83,26 +83,26 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple &
 !   end if
 
 
-   IF ( config_flags%periodic_x .OR. config_flags%periodic_y ) THEN
-     CALL set_physical_bc2d( grid%mub, 't',  &
+   ! Apply boundary conditions to mub, mu_1, and mu_2 before coupling or
+   ! uncoupling. The u and v mass factors use neighboring mass points.
+   CALL set_physical_bc2d( grid%mub, 't',  &
                              config_flags,           &
                              ids,ide, jds,jde,   & ! domain dims
                              ims,ime, jms,jme,   & ! memory dims
                              ips,ipe, jps,jpe,   & ! patch  dims
                              ips,ipe, jps,jpe   )
-     CALL set_physical_bc2d( grid%mu_1, 't',  &
+   CALL set_physical_bc2d( grid%mu_1, 't',  &
                              config_flags,           &
                              ids,ide, jds,jde,   & ! domain dims
                              ims,ime, jms,jme,   & ! memory dims
                              ips,ipe, jps,jpe,   & ! patch  dims
                              ips,ipe, jps,jpe   )
-     CALL set_physical_bc2d( grid%mu_2, 't',  &
+   CALL set_physical_bc2d( grid%mu_2, 't',  &
                              config_flags,           &
                              ids,ide, jds,jde,   & ! domain dims
                              ims,ime, jms,jme,   & ! memory dims
                              ips,ipe, jps,jpe,   & ! patch  dims
                              ips,ipe, jps,jpe   )
-   ENDIF
 
 
 #ifdef DM_PARALLEL

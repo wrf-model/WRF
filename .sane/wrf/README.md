@@ -22,6 +22,16 @@ python3 -m pip install --pre sane-workflows
 sane_runner --path .sane/ --actions em_real --run
 ```
 
+Note that after you do this once, you can reactivate the environment in new terminal
+sessions by sourcing the same `activate` script.
+```bash
+# Once setup, this is the only command needed to make the commands available
+source .venv/wrf_testing/bin/activate
+```
+
+See https://docs.python.org/3/library/venv.html#creating-virtual-environments for
+more details on Python virtual environments.
+
 Once run, the results are printed to the terminal and stored in the `log/` folder
 as:
 | File               | Contents |
@@ -55,6 +65,47 @@ sane_view logs --errors
   restart_basic                     : /glade/work/aislas/wrf-model/wrf/log/restart_basic.log
   restart_w_damping                 : /glade/work/aislas/wrf-model/wrf/log/restart_w_damping.log
 ```
+
+
+To view what will be run, use the `--list` flag and optionally the `--view_graph`
+flag to see dependency order. For instance:
+```bash
+sane_runner -p .sane/ -f "restart_(basic|nwp_diag)_make" --view_graph --list
+...
+2026-09-28 09:34:45 INFO     [sane_runner]            Listing actions:
+2026-09-28 09:34:45 INFO     [orchestrator]             restart_basic_make     restart_nwp_diag_make  
+2026-09-28 09:34:45 INFO     [orchestrator]           
+2026-09-28 09:34:45 INFO     [orchestrator]           Action Graph:
+2026-09-28 09:34:45 INFO     [orchestrator]             • build_make_em_real_gnu_debug_dm
+2026-09-28 09:34:45 INFO     [orchestrator]             ┡➢• restart_basic_init_make
+2026-09-28 09:34:45 INFO     [orchestrator]             ┡➢│╌• restart_nwp_diag_init_make
+2026-09-28 09:34:45 INFO     [orchestrator]             ┡➢┺➢│╌• restart_basic_make ✧
+2026-09-28 09:34:45 INFO     [orchestrator]             ┗➢╌╌┺➢• restart_nwp_diag_make ✧
+2026-09-28 09:34:45 INFO     [sane_runner]            Finished
+...
+```
+
+The command line graph rendition may seem confusing at first, but it may make more
+sense if you use this reference:
+
+https://sane-workflows.readthedocs.io/en/latest/user_guide/running.html#view-graph
+
+The gist of it is dependencies are read horizontally for all `┗➢`, and the parent Action is followed
+vertically until the `•` (text to the right is the Action name).
+
+Looking at the above example in more detail for `restart_nwp_diag_make`, dependency
+connections were replaced with `O` and the actual parent Action noted with `X`
+to help identifcation with respect to other Actions. Thus, we can see that
+`restart_nwp_diag_make` depends on both `build_make_em_real_gnu_debug_dm`
+and `restart_nwp_diag_init_make`.
+```bash
+X build_make_em_real_gnu_debug_dm
+┡➢• restart_basic_init_make
+┡➢│╌X restart_nwp_diag_init_make
+┡➢┺➢│╌• restart_basic_make ✧
+O➢╌╌O➢• restart_nwp_diag_make ✧
+```
+
 
 # Structure
 The tests are now written in the [SANE Workflows](https://github.com/islas/sane_workflows) framework, which solves most of the issues faced by the other setups. Data is still spread across multiple locations, but that is separate from the testing code.

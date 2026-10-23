@@ -5,6 +5,7 @@ help()
   echo "  -c                        Configuration build type, piped directly into configure"
   echo "  -b                        Build command passed into compile"
   echo "  -r                        Clean command passed into cleanCmake"
+  echo "  -f                        Fresh build (clean old build if it exists)"
   echo "  -h                  Print this message"
   echo ""
 }
@@ -13,7 +14,8 @@ help()
 echo "Input arguments:"
 echo "$*"
 
-while getopts c:b:r:h opt; do
+freshBuild="true"
+while getopts c:b:r:f:h opt; do
   case $opt in
     c)
       configuration="$OPTARG"
@@ -24,6 +26,9 @@ while getopts c:b:r:h opt; do
     r)
       cleanCommand="$OPTARG"
     ;;
+    f)
+      freshBuild=$( echo "$OPTARG" | tr '[:upper:]' '[:lower:]' )
+    ;;
     h)  help; exit 0 ;;
     *)  help; exit 1 ;;
     :)  help; exit 1 ;;
@@ -31,14 +36,11 @@ while getopts c:b:r:h opt; do
   esac
 done
 
-# Now evaluate env vars in case it pulls from hostenv.sh
-if [ ! -z "$envVars" ]; then
-  setenvStr "$envVars"
+if [ "$freshBuild" = "true" ]; then
+  echo "./cleanCMake.sh -a $cleanCommand"
+  ./cleanCMake.sh -a $cleanCommand
+  echo "Clean done"
 fi
-
-echo "./cleanCMake.sh -a $cleanCommand"
-./cleanCMake.sh -a $cleanCommand
-echo "Clean done"
 
 echo "./configure_new $configuration"
 ./configure_new $configuration

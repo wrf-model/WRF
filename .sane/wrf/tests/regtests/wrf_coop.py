@@ -7,36 +7,6 @@ import wrf.custom_actions.run_wrf as run_wrf
 
 @sane.register
 def wrf_coop_reg_tests( orch ):
-  # init and run are based off of this default
-  default = {
-              "environment" : "gnu"
-            }
-  # init settings, most of which are inherited to run
-  default_init = {
-                  "wrf_nml"       : "${{ config.wrf_case_path }}/${{ config.case }}/${{ config.par_opt }}/${{ config.wrf_nml }}",
-                  "wrf_met_path"  : "${{ host_info.config.wrf_coop.run_wrf_met_path }}/em_real",
-                  "wrf_dir"       : "${{ dependencies.${{ config.build }}.outputs.install_dir }}/test/${{ config.wrf_dir }}",
-                  "resources"     : { "cpus" : 1 },
-                  "config" :
-                  {
-                    "wrf_case_path" : "${{ host_info.config.wrf_coop.run_wrf_case_path }}"
-                    # To be filled out by the action creation
-                    # "wrf_dir"  : "",
-                    # "wrf_nml"  : "",
-                    # "wrf_case" : ""
-                  }
-                 }
-  # run settings
-  default_run = {
-                  "resources" : { "cpus" : 8 },
-                }
-  # override cummulative settings based on run mode
-  default_par_opt = {
-                     "serial" : { "resources" : { "timelimit" : "00:25:00", "cpus" : 1 } },
-                     "openmp" : { "resources" : { "timelimit" : "00:25:00" } },
-                     "mpi"    : { "resources" : { "timelimit" : "00:15:00" } },
-                    }
-
   ##############################################################################
   ## Test cases
   ##
@@ -195,6 +165,97 @@ def wrf_coop_reg_tests( orch ):
     }
   }
 
+  add_coop_cases( orch, wrf_cases )
+
+
+@sane.register
+def wrf_ideal_tests( orch ):
+  # WRF Coop regression+feature build.csh TEST_GEN=SOME, matching em_real.
+  # em_quarter_ss8 uses the em_quarter_ss executable compiled with real size 8.
+  wrf_cases = {
+    "em_quarter_ss" : {
+      "target" : "em_quarter_ss",
+      "compare" : [ "serial", "mpi", "openmp" ],
+      "nml_cases" : { "02NE" : {}, "03" : {}, "03NE" : {} }
+    },
+    "em_quarter_ss8" : {
+      "target" : "em_quarter_ss", "build_target" : "em_quarter_ss8",
+      "compare" : [ "serial", "mpi", "openmp" ],
+      "nml_cases" : { "08" : {}, "09" : {} }
+    },
+    "em_b_wave" : {
+      "target" : "em_b_wave",
+      "compare" : [ "serial", "mpi", "openmp" ],
+      "nml_cases" : { "1NE" : {}, "2" : {}, "2NE" : {}, "3" : {} }
+    },
+    "em_fire" : {
+      "target" : "em_fire",
+      "compare" : [ "serial", "mpi", "openmp" ],
+      "nml_cases" : { "01" : {} }
+    },
+    # WRF rejects distributed-memory builds for this 3-cell-wide 2D case.
+    # Keep the true serial exception explicit here for both build systems.
+    "em_hill2d_x" : {
+      "target" : "em_hill2d_x",
+      "builds" : {
+        "make" : "build_make_em_hill2d_x_gnu_debug_serial",
+        "cmake" : "build_cmake_em_hill2d_x_gnu_debug"
+      },
+      "options" : { "use_mpi" : False },
+      "compare" : [ "serial" ],
+      "nml_cases" : { "01" : {} }
+    }
+  }
+  add_coop_cases( orch, wrf_cases, ideal=True )
+
+  for case in [ *wrf_cases, "em_ideal" ]:
+    suite = sane.Action( case )
+    suite.environment = "gnu"
+    suite.local = True
+    suite.config["command"] = "echo"
+    suite.config["arguments"] = [ f"{case}: Make and CMake ideal tests passed" ]
+    dependencies = [ case ] if case != "em_ideal" else list( wrf_cases )
+    suite.add_dependencies( *[ f"{dep}_{build}" for dep in dependencies for build in [ "make", "cmake" ] ] )
+    suite.add_resource_requirements( { "cpus" : 1 } )
+    orch.add_action( suite )
+
+
+def add_coop_cases( orch, wrf_cases, ideal=False ):
+  # init and run are based off of this default
+  default = {
+              "environment" : "gnu"
+            }
+  # init settings, most of which are inherited to run
+  default_init = {
+                  "wrf_nml"       : "${{ config.wrf_case_path }}/${{ config.case }}/${{ config.par_opt }}/${{ config.wrf_nml }}",
+                  "wrf_met_path"  : "${{ host_info.config.wrf_coop.run_wrf_met_path }}/em_real",
+                  "wrf_dir"       : "${{ dependencies.${{ config.build }}.outputs.install_dir }}/test/${{ config.wrf_dir }}",
+                  "resources"     : { "cpus" : 1 },
+                  "config" :
+                  {
+                    "wrf_case_path" : "${{ host_info.config.wrf_coop.run_wrf_case_path }}"
+                    # To be filled out by the action creation
+                    # "wrf_dir"  : "",
+                    # "wrf_nml"  : "",
+                    # "wrf_case" : ""
+                  }
+                 }
+  # run settings
+  default_run = {
+                  "resources" : { "cpus" : 8 },
+                }
+  # override cummulative settings based on run mode
+  default_par_opt = {
+                     "serial" : { "resources" : { "timelimit" : "00:25:00", "cpus" : 1 } },
+                     "openmp" : { "resources" : { "timelimit" : "00:25:00" } },
+                     "mpi"    : { "resources" : { "timelimit" : "00:15:00" } },
+                    }
+
+  if ideal:
+    default_init["wrf_nml"] = "${{ config.wrf_case_path }}/${{ config.case }}/${{ config.wrf_nml }}"
+    default_init["wrf_met_path"] = "${{ host_info.config.wrf_coop.run_wrf_met_path }}/${{ config.case }}"
+    default_init["wrf_exec"] = "ideal.exe"
+
   builds = [
             ( "build_make_{core}_gnu_debug_dm_sm", "make" ),
             ( "build_cmake_{core}_gnu_debug_dm_sm", "cmake" )
@@ -220,14 +281,16 @@ def wrf_coop_reg_tests( orch ):
   ##############################################################################
   for build_name, build_type in builds:
     for wrf_case, case_dict in wrf_cases.items():
-      # Loop over all the base and A-L cases
-      build = build_name.format( core=case_dict['target'] )
+      # Loop over the selected WRF Coop cases
+      build = case_dict.get( "builds", {} ).get(
+        build_type, build_name.format( core=case_dict.get( 'build_target', case_dict['target'] ) )
+      )
 
       for nml_case, config in case_dict["nml_cases"].items():
         # Within a case, loop over the specific namelist to test
         # as well as any specific config options for that nml case
         nml = f"namelist.input.{nml_case}"
-        base_opts = copy.deepcopy( default )
+        base_opts = dict_update( copy.deepcopy( default ), copy.deepcopy( case_dict.get( "options", {} ) ) )
         base_opts["wrf_run_dir"]        = "regtests/output/${{ id }}"
 
         # We will use nested config options to facilitate easy namelist selection
@@ -270,7 +333,7 @@ def wrf_coop_reg_tests( orch ):
           opts = dict_update( dict_update( opts, general_opts ), specifics[comp] )
           opts["config"]["par_opt"] = comp.upper()
 
-          # Force psuedo-serial operation
+          # Select pseudo-serial operation for parallel builds
           action.use_mpi = True
           action.use_omp = True
           if comp == "mpi":
@@ -305,6 +368,8 @@ def wrf_coop_reg_tests( orch ):
           orch.add_action( action )
       # Now add one final action that allows us to run this full case
       action = sane.Action( f"{wrf_case}_{build_type}" )
+      action.environment = default["environment"]
+      action.add_resource_requirements( { "cpus" : 1 } )
       # just a sync
       action.local = True
       action.config["command"] = "echo"

@@ -188,6 +188,55 @@ respectively.
 More information on originating source can be found here:\
 https://github.com/wrf-model/wrf-coop/blob/master/README_user.md
 
+### WRF Ideal
+
+The ideal cases use WRF Coop's `regression+feature` branch, `TEST_GEN=SOME`
+selection:
+
+| Suite | Namelist suffixes | Execution modes |
+|-------|-------------------|-----------------|
+| `em_quarter_ss` | `02NE`, `03`, `03NE` | serial, MPI, OpenMP |
+| `em_quarter_ss8` | `08`, `09` | serial, MPI, OpenMP |
+| `em_b_wave` | `1NE`, `2`, `2NE`, `3` | serial, MPI, OpenMP |
+| `em_fire` | `01` | serial, MPI, OpenMP |
+| `em_hill2d_x` | `01` | serial |
+
+Select `em_ideal` to run all five suites with both Make and CMake, or select a
+suite with `_make` or `_cmake` to choose one build system. Individual namelists
+and execution modes follow the `em_real` naming pattern, for example
+`em_b_wave_1NE_mpi_cmake`.
+
+Like `em_real`, each namelist runs `InitWRF` once per build system, then runs
+WRF in separate directories for serial, MPI, and OpenMP and compares their
+outputs with that build's `diffwrf`. The parallel suites use GNU debug DM+SM
+builds, selecting one rank/thread for pseudo-serial execution.
+
+Hill is the explicit exception: WRF rejects its three-cell-wide 2D domain with
+MPI enabled, even at one rank. It uses true serial builds in both build systems
+(`build_make_em_hill2d_x_gnu_debug_serial` and
+`build_cmake_em_hill2d_x_gnu_debug`), disables nesting, and executes directly.
+It checks successful execution and output creation without a parallel comparison.
+This exception is declared in the hill case; the shared generator retains
+DM+SM builds as its default.
+
+Initialization uses the existing `run_init.sh` helper with `ideal.exe`.
+Only the parent `wrfinput_d01` is required for ideal initialization; WRF
+initializes nested domains when the model starts.
+Namelists are read directly from
+`<run_wrf_case_path>/<suite>/namelist.input.<suffix>`; soundings, jet data,
+and other case inputs come from `<run_wrf_met_path>/<suite>/` using the
+existing host `wrf_coop` configuration. The double precision suite uses
+`em_quarter_ss8` namelists/data with the `em_quarter_ss` executable compiled
+using Make `-r8` or CMake `USE_DOUBLE=ON`.
+
+```bash
+# Run all ideal cases on Derecho
+sane_runner -p .sane -sh derecho -a em_ideal -r
+```
+
+Reference selection and execution restrictions:
+https://github.com/wrf-model/wrf-coop/blob/regression%2Bfeature/build.csh
+
 ### WRF Chemistry
 
 The chem tests are also ported from WRF Coop.

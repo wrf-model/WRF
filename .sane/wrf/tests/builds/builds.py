@@ -8,10 +8,13 @@ def add_build_for_envs_cmake( orch ):
   sm_opt = [ "ON", "OFF" ]
   dm_opt = [ "ON", "OFF" ]
   build_types = [ "Release", "Debug" ]
-  configurations = { "ARW" : [ "EM_REAL", "EM_FIRE", "EM_B_WAVE" ] }
+  configurations = { "ARW" : [ "EM_REAL", "EM_FIRE", "EM_B_WAVE", "EM_QUARTER_SS", "EM_QUARTER_SS8", "EM_HILL2D_X" ] }
   orch.log( f"Creating CMake build permutations..." ) 
   for core, env, build_type, sm, dm in itertools.product( configurations, envs, build_types, sm_opt, dm_opt ):
     for case in configurations[core]:
+      # WRF rejects distributed-memory builds for this 2D case.
+      if case == "EM_HILL2D_X" and dm == "ON":
+        continue
       sm_desc = "_sm" if sm == "ON" else ""
       dm_desc = "_dm" if dm == "ON" else ""
       id = f"{case}_{env}_{build_type}{dm_desc}{sm_desc}".lower()
@@ -23,7 +26,9 @@ def add_build_for_envs_cmake( orch ):
       action.config["install_dir"] = orch.working_directory + "/install_${{ id }}"
       action.config["build_type"]  = build_type
       action.config["core"]        = core
-      action.config["case"]        = case
+      action.config["case"]        = "EM_QUARTER_SS" if case == "EM_QUARTER_SS8" else case
+      action.config["nesting"]     = "NONE" if case == "EM_HILL2D_X" else "BASIC"
+      action.config["double"]      = "ON" if case == "EM_QUARTER_SS8" else "OFF"
       action.config["dm"]          = dm
       action.config["sm"]          = sm
       action.config["clean_build"] = True
@@ -34,9 +39,9 @@ def add_build_for_envs_cmake( orch ):
       args = []
 
       config_cmd = [ "-p ${{ config.compiler }}", "-d", "${{ config.build_dir }}", "-i", "${{ config.install_dir }}" ]
-      config_cmd.extend( [ "-x -- -DWRF_NESTING=BASIC", "-DCMAKE_BUILD_TYPE=${{ config.build_type }}" ] )
+      config_cmd.extend( [ "-x -- -DWRF_NESTING=${{ config.nesting }}", "-DCMAKE_BUILD_TYPE=${{ config.build_type }}" ] )
       config_cmd.extend( [ "-DWRF_CORE=${{ config.core }}", "-DWRF_CASE=${{ config.case }}" ] )
-      config_cmd.extend( [ "-DUSE_MPI=${{ config.dm }}", "-DUSE_OPENMP=${{ config.sm }}" ] )
+      config_cmd.extend( [ "-DUSE_MPI=${{ config.dm }}", "-DUSE_OPENMP=${{ config.sm }}", "-DUSE_DOUBLE=${{ config.double }}" ] )
       build_cmd = [ "${{ config.build_dir }}", "-j ${{ resources.cpus }}" ]
       clean_cmd = [ "-d", "${{ config.build_dir }}", "-i", "${{ config.install_dir }}" ]
 
@@ -59,9 +64,11 @@ def add_build_for_envs_make( orch ):
 
   par_opt = { "serial" : 0, "sm" : 1, "dm" : 2, "dm_sm" : 3 }
   debug = [ True, False ]
-  targets = [ "em_real", "em_fire", "em_b_wave" ]
+  targets = [ "em_real", "em_fire", "em_b_wave", "em_quarter_ss", "em_quarter_ss8", "em_hill2d_x" ]
   orch.log( f"Creating Make build permutations..." ) 
   for target, env, dbg, opt in itertools.product( targets, envs, debug, par_opt ):
+    if target == "em_hill2d_x" and opt in [ "dm", "dm_sm" ]:
+      continue
     build_type = "debug" if dbg else "release"
     id = f"{target}_{env}_{build_type}_{opt}".lower()
 
@@ -69,10 +76,12 @@ def add_build_for_envs_make( orch ):
     action.config["command"]     = ".sane/wrf/scripts/buildMake.sh"
     action.config["compile_opt"] = env2opt[envs.index(env)] + par_opt[opt]
     action.config["install_dir"]   = "_${{ id }}"
-    action.config["target"]      = target
-    action.config["nesting"]     = 1
+    action.config["target"]      = "em_quarter_ss" if target == "em_quarter_ss8" else target
+    action.config["nesting"]     = 0 if target == "em_hill2d_x" else 1
     action.config["par_opt"]     = opt
     action.config["optstr"]      = "-d" if dbg else ""
+    if target == "em_quarter_ss8":
+      action.config["optstr"] = ( action.config["optstr"] + " -r8" ).strip()
     action.config["clean_build"] = True
     
     action.outputs["install_dir"] = action.config["install_dir"]

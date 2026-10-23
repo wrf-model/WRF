@@ -181,7 +181,7 @@ def wrf_ideal_tests( orch ):
     "em_quarter_ss8" : {
       "target" : "em_quarter_ss", "build_target" : "em_quarter_ss8",
       "compare" : [ "serial", "mpi", "openmp" ],
-      "nml_cases" : { "08" : {}, "09" : {} }
+      "nml_cases" : { "08" : { "resources" : { "memory" : "12gb" } }, "09" : { "resources" : { "memory" : "12gb" } } }
     },
     "em_b_wave" : {
       "target" : "em_b_wave",

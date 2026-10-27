@@ -42,6 +42,5 @@ rsl.error.*
 __pycache__/
 *.pkl
 
-# P3 lookup tables are tracked gzipped (run/*.gz); unzipped copies are local
+# P3 lookup tables are unzipped into run/ from the P3 submodule (phys/P3/lookup_tables)
 run/p3_lookupTable_*.dat-*
-!run/p3_lookupTable_*.gz

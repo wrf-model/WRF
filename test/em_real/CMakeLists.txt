@@ -14,8 +14,8 @@ wrf_setup_targets(
                   USE_SYMLINKS
                   )
 
-# P3 lookup tables are stored gzipped in run/ (the 3momI table exceeds GitHub's 100 MB file limit);
-# unzip any that are missing or older than their .gz file before they are set up below
+# P3 lookup tables are stored gzipped in the P3 submodule (the 3momI table exceeds GitHub's 100 MB
+# file limit); unzip into run/ any that are missing or older than their .gz file before they are set up below
 foreach ( P3_TABLE
             p3_lookupTable_1.dat-v6.9-2momI
             p3_lookupTable_1.dat-v6.9-3momI
@@ -23,18 +23,19 @@ foreach ( P3_TABLE
             p3_lookupTable_3.dat-v1.4
           )
   set( P3_TABLE_FILE ${PROJECT_SOURCE_DIR}/run/${P3_TABLE} )
+  set( P3_TABLE_GZ   ${PROJECT_SOURCE_DIR}/phys/P3/lookup_tables/${P3_TABLE}.gz )
   install(
           CODE "
-                if ( NOT EXISTS ${P3_TABLE_FILE} OR NOT ${P3_TABLE_FILE} IS_NEWER_THAN ${P3_TABLE_FILE}.gz )
-                  message( STATUS \"Unzipping P3 lookup table ${P3_TABLE_FILE}.gz\" )
+                if ( NOT EXISTS ${P3_TABLE_FILE} OR NOT ${P3_TABLE_FILE} IS_NEWER_THAN ${P3_TABLE_GZ} )
+                  message( STATUS \"Unzipping P3 lookup table ${P3_TABLE_GZ}\" )
                   execute_process(
-                                  COMMAND         gzip -dc ${P3_TABLE_FILE}.gz
+                                  COMMAND         gzip -dc ${P3_TABLE_GZ}
                                   OUTPUT_FILE     ${P3_TABLE_FILE}.tmp
                                   RESULT_VARIABLE P3_UNZIP_RESULT
                                   )
                   if ( NOT P3_UNZIP_RESULT EQUAL 0 )
                     file( REMOVE ${P3_TABLE_FILE}.tmp )
-                    message( FATAL_ERROR \"Error unzipping P3 lookup table ${P3_TABLE_FILE}.gz\" )
+                    message( FATAL_ERROR \"Error unzipping P3 lookup table ${P3_TABLE_GZ}\" )
                   endif()
                   file( RENAME ${P3_TABLE_FILE}.tmp ${P3_TABLE_FILE} )
                 endif()

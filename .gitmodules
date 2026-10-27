@@ -22,3 +22,6 @@
 [submodule "phys/TEMPO"]
 	path = phys/TEMPO
 	url = https://github.com/NCAR/TEMPO.git
+[submodule "phys/P3"]
+	path = phys/P3
+	url = https://github.com/P3-microphysics/P3-microphysics.git

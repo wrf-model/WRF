@@ -2099,11 +2099,15 @@
       END IF
 
 !-----------------------------------------------------------------------
-! For nwp_diagnostics = 1, history_interval must be used.           
+! For nwp_diagnostics = 1, a non-zero history_interval must be used.           
 !-----------------------------------------------------------------------
 
       IF ( ( model_config_rec%nwp_diagnostics .NE. 0 ) .AND. &
-           ( model_config_rec%history_interval(1) .EQ. 0 ) ) THEN
+             model_config_rec%history_interval(1) .EQ. 0 .AND. &
+             model_config_rec%history_interval_d(1) .EQ. 0 .AND. &
+             model_config_rec%history_interval_h(1) .EQ. 0 .AND. &
+             model_config_rec%history_interval_m(1) .EQ. 0 .AND. &
+             model_config_rec%history_interval_s(1) .EQ. 0 ) THEN
          wrf_err_message = '--- ERROR:  nwp_diagnostics requires the use of "history_interval" namelist.'
          CALL wrf_message ( wrf_err_message )
          wrf_err_message = '---         Replace interval variable with "history_interval".'

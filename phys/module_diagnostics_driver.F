@@ -196,6 +196,13 @@ CONTAINS
 #endif
 
 #endif
+      REAL :: full_history_interval 
+
+      IF (config_flags%history_interval == 0) THEN
+         full_history_interval = 86400*config_flags%history_interval_d + 3600*config_flags%history_interval_h + 60*config_flags%history_interval_m + config_flags%history_interval_s
+      ELSE
+         full_history_interval = 86400*config_flags%history_interval_d + 3600*config_flags%history_interval_h + 60*config_flags%history_interval + config_flags%history_interval_s
+      END IF
 
       !=============================================================
       !  Start of executable code
@@ -261,9 +268,9 @@ CONTAINS
       !WRF-HAILCAST diagnostic - hail size prediction
       HAILCAST: IF ( config_flags%hailcast_opt /= 0 ) THEN
 
-      IF ( ( config_flags%history_interval == 0 ) ) THEN
+      IF ( ( full_history_interval .lt. 1e-5 ) ) THEN
             WRITE (diag_message , * ) &
-            "HAILCAST Error : No 'history_interval' defined in namelist"
+            "HAILCAST Error : history_interval in namelist is 0. Set to non-zero value"
             CALL wrf_error_fatal ( diag_message )
         END IF
 
@@ -415,7 +422,7 @@ CONTAINS
                 ,PREC_ACC_NC=grid%prec_acc_nc                        &
                 ,PREC_ACC_DT=config_flags%prec_acc_dt                &
                 ,CURR_SECS2=curr_secs2                               &
-                ,HISTORY_INTERVAL=grid%history_interval              &
+                ,HISTORY_INTERVAL=full_history_interval              &
                 ,ITIMESTEP=grid%itimestep                            &
                 ,cu_used=grid%cu_used                                &
                 ,shcu_used=grid%shcu_used                            &
@@ -457,7 +464,7 @@ CONTAINS
                 ,CURR_SECS2=curr_secs2                               &
                 ,NWP_DIAGNOSTICS=config_flags%nwp_diagnostics        &
                 ,DIAGFLAG=diag_flag                                  &
-                ,HISTORY_INTERVAL=grid%history_interval              &
+                ,HISTORY_INTERVAL=full_history_interval              &
                 ,ITIMESTEP=grid%itimestep                            &
                 ,U10=grid%u10,V10=grid%v10,W=grid%w_2                &
                 ,WSPD10MAX=grid%wspd10max                            &
@@ -505,7 +512,7 @@ CONTAINS
                 ,CURR_SECS2=curr_secs2                               &
                 ,NWP_DIAGNOSTICS=config_flags%nwp_diagnostics        &
                 ,DIAGFLAG=diag_flag                                  &
-                ,HISTORY_INTERVAL=grid%history_interval              &
+                ,HISTORY_INTERVAL=full_history_interval              &
                 ,ITIMESTEP=grid%itimestep                            &
                 ,U10=grid%u10,V10=grid%v10,W=grid%w_2                &
                 ,WSPD10MAX=grid%wspd10max                            &
@@ -555,7 +562,7 @@ CONTAINS
                 ,CURR_SECS2=curr_secs2                               &
                 ,NWP_DIAGNOSTICS=config_flags%nwp_diagnostics        &
                 ,DIAGFLAG=diag_flag                                  &
-                ,HISTORY_INTERVAL=grid%history_interval              &
+                ,HISTORY_INTERVAL=full_history_interval              &
                 ,ITIMESTEP=grid%itimestep                            &
                 ,U10=grid%u10,V10=grid%v10,W=grid%w_2                &
                 ,WSPD10MAX=grid%wspd10max                            &
@@ -607,7 +614,7 @@ CONTAINS
                 ,CURR_SECS2=curr_secs2                               &
                 ,NWP_DIAGNOSTICS=config_flags%nwp_diagnostics        &
                 ,DIAGFLAG=diag_flag                                  &
-                ,HISTORY_INTERVAL=grid%history_interval              &
+                ,HISTORY_INTERVAL=full_history_interval              &
                 ,ITIMESTEP=grid%itimestep                            &
                 ,U10=grid%u10,V10=grid%v10,W=grid%w_2                &
                 ,WSPD10MAX=grid%wspd10max                            &
@@ -657,7 +664,7 @@ CONTAINS
                 ,CURR_SECS2=curr_secs2                               &
                 ,NWP_DIAGNOSTICS=config_flags%nwp_diagnostics        &
                 ,DIAGFLAG=diag_flag                                  &
-                ,HISTORY_INTERVAL=grid%history_interval              &
+                ,HISTORY_INTERVAL=full_history_interval              &
                 ,ITIMESTEP=grid%itimestep                            &
                 ,U10=grid%u10,V10=grid%v10,W=grid%w_2                &
                 ,WSPD10MAX=grid%wspd10max                            &
@@ -734,7 +741,7 @@ CONTAINS
                 ,CURR_SECS2=curr_secs2                               &
                 ,NWP_DIAGNOSTICS=config_flags%nwp_diagnostics        &
                 ,DIAGFLAG=diag_flag                                  &
-                ,HISTORY_INTERVAL=grid%history_interval              &
+                ,HISTORY_INTERVAL=full_history_interval              &
                 ,ITIMESTEP=grid%itimestep                            &
                 ,U10=grid%u10,V10=grid%v10,W=grid%w_2                &
                 ,WSPD10MAX=grid%wspd10max                            &
@@ -1006,9 +1013,9 @@ CONTAINS
 
       AFWA_DIAGS : IF ( config_flags%afwa_diag_opt == 1 ) THEN
 
-         IF ( ( config_flags%history_interval == 0 ) ) THEN
+         IF ( ( full_history_interval .lt. 1e-5 ) ) THEN
             WRITE (diag_message , * ) &
-            "AFWA Diagnostics Error : No 'history_interval' defined in namelist"
+            "AFWA Diagnostics Error : history_interval in namelist is 0. Set to non-zero value"
             CALL wrf_error_fatal ( diag_message )
          END IF
 

@@ -41,3 +41,6 @@ rsl.error.*
 # Test generated files
 __pycache__/
 *.pkl
+
+# P3 lookup tables are unzipped into run/ from the P3 submodule (phys/P3/lookup_tables)
+run/p3_lookupTable_*.dat-*

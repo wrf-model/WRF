@@ -148,6 +148,18 @@ wrf : framework_only
 	  echo "------------------------------------------------------------------------------" ; \
 	  echo "Error Error Error TEMPO submodule files not populating WRF directories" ; \
 	fi
+	@if [ \( ! -f phys/module_mp_p3.F \) -o \( ! -d phys/P3/lookup_tables \) ] ; then \
+	  echo " " ; \
+	  echo "------------------------------------------------------------------------------" ; \
+	  echo "Error Error Error P3 submodule files not populating WRF directories" ; \
+	  echo "------------------------------------------------------------------------------" ; \
+	  echo " " ; \
+	  exit 31 ; \
+	else \
+	  echo "------------------------------------------------------------------------------" ; \
+	  echo "P3 submodule files populating WRF directories" ; \
+	  echo "------------------------------------------------------------------------------" ; \
+	fi
 	@if [ \( ! -f phys/module_sf_mynnsfc_driver.F \) -o \
 	    \( ! -f phys/module_sf_mynnsfc_land.F \) -o \
 	    \( ! -f phys/module_sf_mynnsfc_water.F \) -o \
@@ -173,6 +185,16 @@ wrf : framework_only
 	if [ $(ESMF_COUPLING) -eq 1 ] ; then \
 	  ( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em em_wrf_SST_ESMF ) ; \
 	fi
+# P3 lookup tables are stored gzipped in the P3 submodule (the 3momI table exceeds GitHub's 100 MB
+# file limit); unzip into run/ any that are missing or older than their .gz file
+	@for f in p3_lookupTable_1.dat-v6.9-2momI p3_lookupTable_1.dat-v6.9-3momI \
+	          p3_lookupTable_2.dat-v6.2 p3_lookupTable_3.dat-v1.4 ; do \
+	  if [ \( ! -f run/$$f \) -o \( phys/P3/lookup_tables/$$f.gz -nt run/$$f \) ] ; then \
+	    echo "Unzipping P3 lookup table phys/P3/lookup_tables/$$f.gz" ; \
+	    gzip -dc phys/P3/lookup_tables/$$f.gz > run/$$f.tmp && mv -f run/$$f.tmp run/$$f || \
+	      { /bin/rm -f run/$$f.tmp ; echo "Error unzipping P3 lookup table phys/P3/lookup_tables/$$f.gz" ; exit 32 ; } ; \
+	  fi ; \
+	done
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
 
@@ -626,9 +648,10 @@ em_real : wrf
                ln -sf ../../run/aerosol_plev.formatted . ;             \
                ln -sf ../../run/eclipse_besselian_elements.dat . ;     \
                ln -sf ../../run/CCN_ACTIVATE.BIN . ;                   \
-	       ln -sf ../../run/p3_lookupTable_1.dat-v5.4_2momI . ;    \
-               ln -sf ../../run/p3_lookupTable_1.dat-v5.4_3momI . ;    \
-               ln -sf ../../run/p3_lookupTable_2.dat-v5.3 . ;          \
+	       ln -sf ../../run/p3_lookupTable_1.dat-v6.9-2momI . ;    \
+               ln -sf ../../run/p3_lookupTable_1.dat-v6.9-3momI . ;    \
+               ln -sf ../../run/p3_lookupTable_2.dat-v6.2 . ;          \
+               ln -sf ../../run/p3_lookupTable_3.dat-v1.4 . ;          \
                ln -sf ../../run/HLC.TBL . ;                            \
                ln -sf ../../run/wind-turbine-1.tbl . ;                 \
                ln -sf ../../run/ishmael-gamma-tab.bin . ;              \
@@ -711,9 +734,10 @@ em_real : wrf
              ln -sf ../../run/bulkdens.asc_s_0_03_0_9 . ;           \
              ln -sf ../../run/bulkradii.asc_s_0_03_0_9 . ;          \
              ln -sf ../../run/CCN_ACTIVATE.BIN . ;                  \
-             ln -sf ../../run/p3_lookupTable_1.dat-v5.4_2momI . ;   \
-             ln -sf ../../run/p3_lookupTable_1.dat-v5.4_3momI . ;   \
-             ln -sf ../../run/p3_lookupTable_2.dat-v5.3 . ;         \
+             ln -sf ../../run/p3_lookupTable_1.dat-v6.9-2momI . ;   \
+             ln -sf ../../run/p3_lookupTable_1.dat-v6.9-3momI . ;   \
+             ln -sf ../../run/p3_lookupTable_2.dat-v6.2 . ;         \
+             ln -sf ../../run/p3_lookupTable_3.dat-v1.4 . ;         \
              ln -sf ../../run/HLC.TBL . ;                           \
              ln -sf ../../run/wind-turbine-1.tbl . ;                \
              ln -sf ../../run/ishmael-gamma-tab.bin . ;             \

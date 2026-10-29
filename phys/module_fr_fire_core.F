@@ -2081,7 +2081,7 @@ threshold_AV=fire_viscosity_ngp*dx
                 if(fire_upwind_split.eq.1)then   
 
                     ! one-sided upwinding
-                    te = te - max(advx,0.)*diffLx - min(advx,0.)*diffRy &
+                    te = te - max(advx,0.)*diffLx - min(advx,0.)*diffRx &
                             - max(advy,0.)*diffLy - min(advy,0.)*diffRy
 
 

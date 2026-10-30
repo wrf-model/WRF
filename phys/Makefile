@@ -472,11 +472,11 @@ submodules :
 	      \( ! -f module_sf_mynnsfc_ice.F \) ] ; then \
 		echo Pulling in MYNN-SFC submodule ; \
 		( cd .. ; git submodule update --init --recursive ) ; \
-		ln -sf MYNN-SFC/WRF/module_sf_mynnsfc_driver.F90 module_sf_mynnsfc_driver.F ; \
-		ln -sf MYNN-SFC/WRF/module_sf_mynnsfc_common.F90 module_sf_mynnsfc_common.F ; \
-		ln -sf MYNN-SFC/module_sf_mynnsfc_land.F90 module_sf_mynnsfc_land.F ; \
-		ln -sf MYNN-SFC/module_sf_mynnsfc_water.F90 module_sf_mynnsfc_water.F ; \
-		ln -sf MYNN-SFC/module_sf_mynnsfc_ice.F90 module_sf_mynnsfc_ice.F ; \
+		ln -sf MYNN-SFC/src/module_sf_mynnsfc_driver.F90 module_sf_mynnsfc_driver.F ; \
+		ln -sf MYNN-SFC/src/WRF/module_sf_mynnsfc_common.F90 module_sf_mynnsfc_common.F ; \
+		ln -sf MYNN-SFC/src/module_sf_mynnsfc_land.F90 module_sf_mynnsfc_land.F ; \
+		ln -sf MYNN-SFC/src/module_sf_mynnsfc_water.F90 module_sf_mynnsfc_water.F ; \
+		ln -sf MYNN-SFC/src/module_sf_mynnsfc_ice.F90 module_sf_mynnsfc_ice.F ; \
 	else \
 		echo No action required for MYNN-SFC submodule ; \
 	fi

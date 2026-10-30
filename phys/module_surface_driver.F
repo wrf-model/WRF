@@ -2051,14 +2051,27 @@ CONTAINS
             v_phytmp(i,k,j)=v_phy(i,k,j)+v_frame
             u_phytmp(i,k,j)=u_phy(i,k,j)+u_frame
           ENDDO
-! remove surface currents for atmospheric low-level winds
-          u_phytmp(i,kts,j)=u_phytmp(i,kts,j)-uoce(i,j)
-          v_phytmp(i,kts,j)=v_phytmp(i,kts,j)-voce(i,j)
        ENDDO
        ENDDO
      ENDDO
      !$OMP END PARALLEL DO
 
+     !remove surface currents for atmospheric lowest-level winds, unless using mynn-sfc,
+     !which removes the surface currents inside the surface-layer scheme
+     if (sf_sfclay_physics .NE. MYNNSFCSCHEME) then
+       !$OMP PARALLEL DO   &
+       !$OMP PRIVATE ( ij, i, j)
+       DO ij = 1 , num_tiles
+         DO j=j_start(ij),j_end(ij)
+         DO i=i_start(ij),i_end(ij)
+            u_phytmp(i,kts,j)=u_phytmp(i,kts,j)-uoce(i,j)
+            v_phytmp(i,kts,j)=v_phytmp(i,kts,j)-voce(i,j)
+         ENDDO
+         ENDDO
+       ENDDO
+       !$OMP END PARALLEL DO
+     endif
+       
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij, i, j, k )
      DO ij = 1 , num_tiles
@@ -2452,6 +2465,7 @@ CONTAINS
                its=i_start(ij),ite=i_end(ij),                        &
                jts=j_start(ij),jte=j_end(ij),kts=kts,kte=kte,        &
                ustm=ustm,ck=ck,cka=cka,cd=cd,cda=cda,                &
+               uoce=uoce,voce=voce,                                  &
                sf_mynn_sfcflux_land=sf_mynn_sfcflux_land,            &
                sf_mynn_sfcflux_water=sf_mynn_sfcflux_water,          &
                isfflx=isfflx,shalwater_z0=shalwater_z0,              &
@@ -2476,6 +2490,7 @@ CONTAINS
                its=i_start(ij),ite=i_end(ij),jts=j_start(ij),      &
                jte=j_end(ij), kts=kts,kte=kte,                     &
                ustm=ustm,ck=ck,cka=cka,cd=cd,cda=cda,              &
+               uoce=uoce,voce=voce,                                &
                xice=xice,xice_threshold=xice_threshold,            &
                sf_mynn_sfcflux_land=sf_mynn_sfcflux_land,          &
                sf_mynn_sfcflux_water=sf_mynn_sfcflux_water,        &
@@ -5375,6 +5390,7 @@ CONTAINS
               ims,ime, jms,jme, kms,kme,                           &
               its,ite, jts,jte, kts,kte,                           &
               ustm,ck,cka,cd,cda,                                  &
+              uoce,voce,                                           &
               sf_mynn_sfcflux_land,sf_mynn_sfcflux_water,          &
               flag_lsm,restart,                                    &
               shalwater_z0,water_depth,lakemask,                   &
@@ -5420,6 +5436,10 @@ CONTAINS
                                                              TSK, &
                                                               dx
 
+     REAL,     DIMENSION( ims:ime, jms:jme )                    , &
+               INTENT(IN   ), optional     ::               uoce, &
+                                                            voce
+                                                              
      REAL,     DIMENSION( ims:ime, jms:jme )                    , &
                INTENT(OUT  )               ::                U10, &
                                                              V10, &
@@ -5566,6 +5586,7 @@ CONTAINS
                ims=ims,ime=ime,jms=jms,jme=jme,kms=kms,kme=kme,&
                its=its,ite=ite,jts=jts,jte=jte,kts=kts,kte=kte,&
                ustm=ustm,ck=ck,cka=cka,cd=cd,cda=cda,          &
+               uoce=uoce,voce=voce,                            &
                xice=xice,xice_threshold=xice_threshold,        &
                sf_mynn_sfcflux_land=sf_mynn_sfcflux_land,      &
                sf_mynn_sfcflux_water=sf_mynn_sfcflux_water,    &
@@ -5634,6 +5655,7 @@ CONTAINS
            ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme,                  &
            its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte,                  &
            ustm=ustm_sea,ck=ck_sea,cka=cka_sea,cd=cd_sea,cda=cda_sea,          &
+           uoce=uoce,voce=voce,                                                &
            xice=xice,xice_threshold=xice_threshold,                            &
            sf_mynn_sfcflux_land=sf_mynn_sfcflux_land,                          &
            sf_mynn_sfcflux_water=sf_mynn_sfcflux_water,isfflx=isfflx,          &

@@ -1914,8 +1914,9 @@ type(fire_params),intent(in)::fp
 !*** local 
 real:: te,diffLx,diffLy,diffRx,diffRy, & 
    diffCx,diffCy,diff2x,diff2y,grad,rr, &
-   ros_base,ros_wind,ros_slope,ros_back,advx,advy,scale,nvx,nvy, &
-   speed,tanphi
+   ros_base,ros_wind,ros_slope,ros_back,scale,nvx,nvy, &
+   speed, &
+   sxm,sxp,sym,syp,spd_w,phi_w,tan_s,phi_s,r0_ms,vwx,vwy,vsx,vsy,adv_w,adv_s
 integer::i,j,itso,iteo,jtso,jteo
 character(len=128)msg
 
@@ -2062,28 +2063,44 @@ threshold_AV=fire_viscosity_ngp*dx
                 ! normal direction backing rate only
                 te = - ros_base*grad
 
-		! advection in wind direction 
-                if (abs(speed)> eps) then
-                    advx=fp%vx(i,j)*ros_wind/speed
-                    advy=fp%vy(i,j)*ros_wind/speed
-                else 
-                    advx=0
-                    advy=0
-                endif
+                if(fire_upwind_split.eq.1)then
 
-                tanphi =  fp%dzdxf(i,j)*nvx + fp%dzdyf(i,j)*nvy
-		! advection from slope direction 
-                if(abs(tanphi)>eps) then
-                    advx=advx+fp%dzdxf(i,j)*ros_slope/tanphi
-                    advy=advy+fp%dzdyf(i,j)*ros_slope/tanphi
-                endif
-
-                if(fire_upwind_split.eq.1)then   
-
-                    ! one-sided upwinding
-                    te = te - max(advx,0.)*diffLx - min(advx,0.)*diffRy &
-                            - max(advy,0.)*diffLy - min(advy,0.)*diffRy
-
+                    ! split Hamiltonian, as ERF (directional_split_hamiltonian):
+                    !   phi_t = -R0*|grad phi| - max(Vw.grad phi,0) - max(Vs.grad phi,0)
+                    ! Vw = R0*phi_w(|U|) U/|U|, Vs = R0*phi_s(|grad z|) grad z/|grad z|, with phi_w and phi_s the
+                    ! Rothermel wind and slope factors of fire_ros. Unlike ros_wind/speed and ros_slope/tanphi, these
+                    ! do not depend on the front normal. Each term is upwinded component-wise by the sign of its own
+                    ! velocity, with WENO5 one-sided derivatives in the band and first order elsewhere.
+                    if (abs(lfn(i,j)).lt.threshold_HLu .and. &
+                        .not.(i.lt.ids+bdy_eno1 .OR. i.gt.ide-bdy_eno1 .OR. j.lt.jds+bdy_eno1 .OR. j.gt.jde-bdy_eno1)) then
+                        sxm=select_weno5(dx,lfn(i,j),lfn(i-1,j),lfn(i-2,j),lfn(i-3,j),lfn(i+1,j),lfn(i+2,j),lfn(i+3,j),1.)
+                        sxp=select_weno5(dx,lfn(i,j),lfn(i-1,j),lfn(i-2,j),lfn(i-3,j),lfn(i+1,j),lfn(i+2,j),lfn(i+3,j),-1.)
+                        sym=select_weno5(dy,lfn(i,j),lfn(i,j-1),lfn(i,j-2),lfn(i,j-3),lfn(i,j+1),lfn(i,j+2),lfn(i,j+3),1.)
+                        syp=select_weno5(dy,lfn(i,j),lfn(i,j-1),lfn(i,j-2),lfn(i,j-3),lfn(i,j+1),lfn(i,j+2),lfn(i,j+3),-1.)
+                    else
+                        sxm=diffLx; sxp=diffRx; sym=diffLy; syp=diffRy
+                    endif
+                    r0_ms=fp%r_0(i,j)*.00508          ! base rate in m/s, as in fire_ros
+                    spd_w=sqrt(fp%vx(i,j)*fp%vx(i,j)+fp%vy(i,j)*fp%vy(i,j))
+                    phi_w=0.
+                    if (spd_w.gt.1.e-12) phi_w=(min(spd_w,30.)*196.850)**fp%bbb(i,j)*fp%phiwc(i,j)   ! wind in ft/min
+                    tan_s=sqrt(fp%dzdxf(i,j)*fp%dzdxf(i,j)+fp%dzdyf(i,j)*fp%dzdyf(i,j))
+                    phi_s=0.
+                    if (tan_s.gt.1.e-12) phi_s=5.275*(fp%betafl(i,j))**(-0.3)*tan_s**2
+                    vwx=0.; vwy=0.; vsx=0.; vsy=0.
+                    if (spd_w.gt.1.e-12) then
+                        vwx=r0_ms*phi_w*fp%vx(i,j)/spd_w
+                        vwy=r0_ms*phi_w*fp%vy(i,j)/spd_w
+                    endif
+                    if (tan_s.gt.1.e-12) then
+                        vsx=r0_ms*phi_s*fp%dzdxf(i,j)/tan_s
+                        vsy=r0_ms*phi_s*fp%dzdyf(i,j)/tan_s
+                    endif
+                    if (vwx.gt.0.) then; adv_w=vwx*sxm; else; adv_w=vwx*sxp; endif
+                    if (vwy.gt.0.) then; adv_w=adv_w+vwy*sym; else; adv_w=adv_w+vwy*syp; endif
+                    if (vsx.gt.0.) then; adv_s=vsx*sxm; else; adv_s=vsx*sxp; endif
+                    if (vsy.gt.0.) then; adv_s=adv_s+vsy*sym; else; adv_s=adv_s+vsy*syp; endif
+                    te = te - max(adv_w,0.) - max(adv_s,0.)
 
                 elseif(fire_upwind_split.eq.2)then   
  
@@ -2110,7 +2127,12 @@ threshold_AV=fire_viscosity_ngp*dx
             else
               fire_viscosity_var=fire_viscosity
             endif
-            te=te + fire_viscosity_var*abs(rr)*((diffRx-diffLx)+(diffRy-diffLy))
+            if (fire_upwind_split.eq.0) then
+                te=te + fire_viscosity_var*abs(rr)*((diffRx-diffLx)+(diffRy-diffLy))
+            else
+                ! split Hamiltonian: viscosity scaled by the isotropic rate only, as in ERF
+                te=te + fire_viscosity_var*abs(ros_base)*((diffRx-diffLx)+(diffRy-diffLy))
+            endif
             tend(i,j)=te
         enddo
     enddo        

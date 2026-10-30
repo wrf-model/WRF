@@ -257,7 +257,7 @@ rconfig   integer fire_fuel_left_irl     namelist,fire         max_domains      
 rconfig   integer fire_fuel_left_jrl     namelist,fire         max_domains           2       -      "fire_fuel_left_jrl"   "submesh to compute fuel lwft, even, at least 2" ""
 rconfig   integer fire_grows_only        namelist,fire         max_domains            1       -     "fire_grows_only" "if >0 level set function cannot increase = fire can only grow" "1"
 rconfig   integer fire_upwinding         namelist,fire         max_domains            9       -     "fire_upwinding" "upwind normal spread: 1=standard, 2=godunov, 3=eno, 4=sethian, 5=2nd-order, 6=WENO3, 7=WENO5, 8=hybrid WENO3/ENO1, 9=hybrid WENO5/ENO1" "1"
-rconfig   integer fire_upwind_split      namelist,fire         max_domains            0       -     "fire_upwind_split" "1=upwind advection separately from normal direction spread" "1"
+rconfig   integer fire_upwind_split      namelist,fire         max_domains            0       -     "fire_upwind_split" "1=split Hamiltonian, wind and slope advection upwinded separately from the normal-direction spread" "1"
 rconfig   real    fire_viscosity         namelist,fire         max_domains           0.4     -      "fire_viscosity"   "artificial viscosity in level set method" "1"
 rconfig   real    fire_lfn_ext_up        namelist,fire         max_domains           1.0     -      "fire_lfn_ext_up"   "0.=extend level set function at boundary by reflection, 1.=always up" "1"
 rconfig   integer fire_topo_from_atm     namelist,fire         max_domains            1      -      "fire_topo_from_atm" "0 = do nothing, 1 = populate ZSF by interpolating from atmosphere" "1"

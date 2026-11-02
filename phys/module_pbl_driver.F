@@ -1717,8 +1717,7 @@ CONTAINS
 #if (WRF_CHEM == 1)
                    &mix_chem=mynn_chem_vertmx,                           &
                    &chem3d=chem,vd3d=vd(:,kts,:,:),                      &
-                   &nchem=nchem,kdvel=kdvel,                             &
-                   &ndvel=ndvel,num_vert_mix=num_vert_mix,               &
+                   &nchem=nchem,ndvel=ndvel,num_vert_mix=num_vert_mix,   &
 !                   &FRP_MEAN=FRP_MEAN,EMIS_ANT_NO=EMIS_ANT_NO,           & !to be included soon
 !                   &enh_mix=enh_vermix,                                  & !to be included soon
 #endif

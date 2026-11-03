@@ -2254,6 +2254,24 @@ DEALLOCATE(dz8w)
        call grid%cfbm_namelist%Broadcast_nml (grid%communicator)
 #endif
 
+         ! WRF owns restart selection and checkpoint scheduling. Check the
+         ! original CFBM input before replacing its logical restart flag.
+       if (grid%cfbm_namelist%restart_interval /= -1) then
+         call wrf_error_fatal ('Coupled CFBM requires restart_interval = -1 in namelist.cfbm; ' // &
+             'set checkpoint timing in WRF namelist.input')
+       end if
+       if (grid%cfbm_namelist%restart .and. .not. config_flags%restart) then
+         call wrf_error_fatal ('CFBM restart = .true. requires WRF restart = .true. in namelist.input; ' // &
+             'coupled restart needs matching atmosphere and fire checkpoints')
+       end if
+
+       if (wrf_dm_on_monitor()) then
+         write (message, '(a,l1)') 'CFBM restart selection is controlled by WRF: restart = ', config_flags%restart
+         call wrf_message (trim (message))
+         call wrf_message ('CFBM checkpoint timing is controlled by the WRF restart alarm; ' // &
+             'namelist.cfbm restart_interval = -1 disables only independent CFBM scheduling')
+       end if
+
        if (abs (grid%dt - grid%cfbm_namelist%dt) > 1.0e-5) then
          call wrf_error_fatal ('CFBM dt should match WRF dt for the fire domain')
        end if
@@ -2280,6 +2298,7 @@ DEALLOCATE(dz8w)
        grid%cfbm_namelist%start_hour = config_flags%start_hour
        grid%cfbm_namelist%start_minute = config_flags%start_minute
        grid%cfbm_namelist%start_second = config_flags%start_second
+       grid%cfbm_namelist%restart = config_flags%restart
        grid%cfbm_namelist%end_year = config_flags%end_year
        grid%cfbm_namelist%end_month = config_flags%end_month
        grid%cfbm_namelist%end_day = config_flags%end_day

@@ -57,6 +57,7 @@ CONTAINS
     USE module_dm, ONLY : local_communicator, mytask, ntasks, ntasks_x, ntasks_y, local_communicator_periodic, wrf_dm_maxval
     USE module_comm_dm, ONLY : halo_em_phys_a_sub,halo_em_fdda_sfc_sub,halo_pwp_sub,halo_em_chem_e_3_sub, &
     halo_em_chem_e_5_sub, halo_em_hydro_noahmp_sub, halo_em_tracer_e_5_sub, halo_em_cfbm_sub
+    USE module_comm_dm, ONLY : halo_em_cfbm_winds_sub
 #if ( WRFPLUS == 1 )
     USE module_comm_dm, ONLY : halo_em_phys_a_bl_surf_sub
 #endif
@@ -139,6 +140,9 @@ CONTAINS
     REAL, DIMENSION( ims:ime, jms:jme ) :: ht_loc, mixht
     REAL, DIMENSION( ims:ime, jms:jme ) :: hpbl_hold
     INTEGER                             :: i, j, istart, iend, jstart, jend
+#ifdef WRF_CFBM
+    INTEGER :: i_src_start, i_src_end, j_src_start, j_src_end
+#endif
 
 
 
@@ -1413,31 +1417,43 @@ BENCH_END(pbl_driver_tim)
 #ifdef DM_PARALLEL
 #     include "HALO_EM_CFBM.inc"
 #endif
-         call Interp_horizontal (grid%znt, grid%fire_state%proj, ims, ime, jms, jme, &
+         ! These atmospheric fields occupy physical mass cells. Retain MPI
+         ! neighbors inside the domain and exclude unfilled outer storage.
+         i_src_start = max (ims, ids)
+         i_src_end = min (ime, ide - 1)
+         j_src_start = max (jms, jds)
+         j_src_end = min (jme, jde - 1)
+         call Interp_horizontal (grid%znt(i_src_start:i_src_end, j_src_start:j_src_end), &
+             grid%fire_state%proj, i_src_start, i_src_end, j_src_start, j_src_end, &
              grid%fire_state%ifms, grid%fire_state%ifme, grid%fire_state%jfms, grid%fire_state%jfme, &
              grid%fire_state%num_tiles, grid%fire_state%i_start, grid%fire_state%i_end, grid%fire_state%j_start, &
              grid%fire_state%j_end, grid%cfbm_namelist%hinterp_opt, grid%fire_state%lats, grid%fire_state%lons, &
              grid%fire_state%fz0)
 
-         call Interp_horizontal (grid%t2, grid%fire_state%proj, ims, ime, jms, jme, &
+         call Interp_horizontal (grid%t2(i_src_start:i_src_end, j_src_start:j_src_end), &
+             grid%fire_state%proj, i_src_start, i_src_end, j_src_start, j_src_end, &
              grid%fire_state%ifms, grid%fire_state%ifme, grid%fire_state%jfms, grid%fire_state%jfme, &
              grid%fire_state%num_tiles, grid%fire_state%i_start, grid%fire_state%i_end, grid%fire_state%j_start, &
              grid%fire_state%j_end, grid%cfbm_namelist%hinterp_opt, grid%fire_state%lats, grid%fire_state%lons, &
              grid%fire_state%fire_t2)
 
-         call Interp_horizontal (grid%q2, grid%fire_state%proj, ims, ime, jms, jme, &
+         call Interp_horizontal (grid%q2(i_src_start:i_src_end, j_src_start:j_src_end), &
+             grid%fire_state%proj, i_src_start, i_src_end, j_src_start, j_src_end, &
              grid%fire_state%ifms, grid%fire_state%ifme, grid%fire_state%jfms, grid%fire_state%jfme, &
              grid%fire_state%num_tiles, grid%fire_state%i_start, grid%fire_state%i_end, grid%fire_state%j_start, &
              grid%fire_state%j_end, grid%cfbm_namelist%hinterp_opt, grid%fire_state%lats, grid%fire_state%lons, &
              grid%fire_state%fire_q2)
 
-         call Interp_horizontal (grid%psfc, grid%fire_state%proj, ims, ime, jms, jme, &
+         call Interp_horizontal (grid%psfc(i_src_start:i_src_end, j_src_start:j_src_end), &
+             grid%fire_state%proj, i_src_start, i_src_end, j_src_start, j_src_end, &
              grid%fire_state%ifms, grid%fire_state%ifme, grid%fire_state%jfms, grid%fire_state%jfme, &
              grid%fire_state%num_tiles, grid%fire_state%i_start, grid%fire_state%i_end, grid%fire_state%j_start, &
              grid%fire_state%j_end, grid%cfbm_namelist%hinterp_opt, grid%fire_state%lats, grid%fire_state%lons, &
              grid%fire_state%fire_psfc)
 
-         call Interp_horizontal (grid%rainc + grid%rainnc, grid%fire_state%proj, ims, ime, jms, jme, &
+         call Interp_horizontal (grid%rainc(i_src_start:i_src_end, j_src_start:j_src_end) + &
+             grid%rainnc(i_src_start:i_src_end, j_src_start:j_src_end), &
+             grid%fire_state%proj, i_src_start, i_src_end, j_src_start, j_src_end, &
              grid%fire_state%ifms, grid%fire_state%ifme, grid%fire_state%jfms, grid%fire_state%jfme, &
              grid%fire_state%num_tiles, grid%fire_state%i_start, grid%fire_state%i_end, grid%fire_state%j_start, &
              grid%fire_state%j_end, grid%cfbm_namelist%hinterp_opt, grid%fire_state%lats, grid%fire_state%lons, &
@@ -1445,22 +1461,33 @@ BENCH_END(pbl_driver_tim)
 
          Select_vinterp_opt: select case  (grid%cfbm_namelist%wind_vinterp_opt)
            case (VINTERP_WINDS_FROM_3D_WINDS)
+             ! Remapping near MPI patch edges needs current neighboring profiles,
+             ! including on the first step after loading a restart checkpoint.
+#ifdef DM_PARALLEL
+#     include "HALO_EM_CFBM_WINDS.inc"
+#endif
              call Interp_wrfwinds_to_cfbm (grid%u_phy, grid%v_phy, grid%z_at_w, ims, ime, kms, kme, jms, jme, &
+                 ids, ide, jds, jde, &
                  grid%fire_state%ifms, grid%fire_state%ifme, grid%fire_state%jfms, grid%fire_state%jfme, &
-                 grid%fire_state%ifps, grid%fire_state%ifpe, grid%fire_state%jfps, grid%fire_state%jfpe, &
                  grid%fire_state%kfds, grid%fire_state%kfde, &
-                 grid%fire_state%lats, grid%fire_state%lons, grid%fire_state%proj, grid%fire_state%fz0,  &
+                 grid%fire_state%num_tiles, grid%fire_state%i_start, grid%fire_state%i_end, &
+                 grid%fire_state%j_start, grid%fire_state%j_end, &
+                 grid%fire_state%lats, grid%fire_state%lons, grid%fire_state%proj, grid%fire_state%fz0, &
+                 grid%fire_state%zsf, &
                  grid%cfbm_namelist%fire_lsm_zcoupling, grid%cfbm_namelist%fire_lsm_zcoupling_ref, &
-                 grid%cfbm_namelist%fire_wind_height, grid%fire_state%uf, grid%fire_state%vf)
+                 grid%cfbm_namelist%fire_wind_height, grid%fire_state%uf, grid%fire_state%vf, &
+                 grid%cfbm_namelist%hinterp_opt)
 
            case (VINTERP_WINDS_FROM_10M_WINDS)
-             call Interp_horizontal (grid%u10, grid%fire_state%proj, ims, ime, jms, jme, &
+             call Interp_horizontal (grid%u10(i_src_start:i_src_end, j_src_start:j_src_end), &
+                 grid%fire_state%proj, i_src_start, i_src_end, j_src_start, j_src_end, &
                  grid%fire_state%ifms, grid%fire_state%ifme, grid%fire_state%jfms, grid%fire_state%jfme, &
                  grid%fire_state%num_tiles, grid%fire_state%i_start, grid%fire_state%i_end, grid%fire_state%j_start, &
                  grid%fire_state%j_end, grid%cfbm_namelist%hinterp_opt, grid%fire_state%lats, grid%fire_state%lons, &
                  grid%fire_state%uf)
 
-             call Interp_horizontal (grid%v10, grid%fire_state%proj, ims, ime, jms, jme, &
+             call Interp_horizontal (grid%v10(i_src_start:i_src_end, j_src_start:j_src_end), &
+                 grid%fire_state%proj, i_src_start, i_src_end, j_src_start, j_src_end, &
                  grid%fire_state%ifms, grid%fire_state%ifme, grid%fire_state%jfms, grid%fire_state%jfme, &
                  grid%fire_state%num_tiles, grid%fire_state%i_start, grid%fire_state%i_end, grid%fire_state%j_start, &
                  grid%fire_state%j_end, grid%cfbm_namelist%hinterp_opt, grid%fire_state%lats, grid%fire_state%lons, &
@@ -1518,6 +1545,11 @@ BENCH_END(pbl_driver_tim)
          endif
 
          call grid%fire_state%Handle_output (grid%cfbm_namelist)
+
+         ! Write matching fire state when WRF schedules a restart checkpoint.
+         if (present (restart_flag)) then
+           if (restart_flag) call grid%fire_state%Write_restart (grid%cfbm_namelist)
+         end if
 #endif
        case (2)
 ! Jan Mandel's call to SFIRE

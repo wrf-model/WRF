@@ -5451,7 +5451,7 @@ CONTAINS
      REAL,     DIMENSION( ims:ime, jms:jme )                    , &
                INTENT(OUT), OPTIONAL  ::      ck,cka,cd,cda
      REAL,     DIMENSION( ims:ime, jms:jme )                    , &
-               INTENT(INOUT), OPTIONAL  ::    ustm
+               INTENT(INOUT)  ::    ustm
 
 !--------------------------------------------------------------------
 !    New for wrapper
@@ -5543,11 +5543,7 @@ CONTAINS
      QGH_HOLD(its:ite,jts:jte)  = QGH(its:ite,jts:jte)
      RMOL_HOLD(its:ite,jts:jte) = RMOL(its:ite,jts:jte)
      UST_HOLD(its:ite,jts:jte)  = UST(its:ite,jts:jte)
-     IF ( PRESENT ( USTM ) ) THEN
-        USTM_HOLD(its:ite,jts:jte) = USTM(its:ite,jts:jte)
-     ELSE
-        USTM_HOLD(its:ite,jts:jte) = 0.
-     ENDIF
+     USTM_HOLD(its:ite,jts:jte) = USTM(its:ite,jts:jte)
      WSPD_HOLD(its:ite,jts:jte) = WSPD(its:ite,jts:jte)
      ZNT_HOLD(its:ite,jts:jte)  = ZNT(its:ite,jts:jte)
      ZOL_HOLD(its:ite,jts:jte)  = ZOL(its:ite,jts:jte)
@@ -5689,9 +5685,7 @@ CONTAINS
               t2(i,j)     = t2(i,j)  * XICE(i,j) + (1.0-XICE(i,j)) * t2_sea(i,j)
               th2(i,j)    = th2(i,j) * XICE(i,j) + (1.0-XICE(i,j)) * th2_sea(i,j)
               u10(i,j)    = u10(i,j) * XICE(i,j) + (1.0-XICE(i,j)) * u10_sea(i,j)
-              IF ( PRESENT ( USTM ) ) THEN
-                 USTM(i,j)= USTM(i,j)* XICE(i,j) + (1.0-XICE(i,j)) * USTM_sea(i,j)
-              ENDIF
+              USTM(i,j)= USTM(i,j)* XICE(i,j) + (1.0-XICE(i,j)) * USTM_sea(i,j)
               v10(i,j)    = v10(i,j) * XICE(i,j) + (1.0-XICE(i,j)) * v10_sea(i,j)
            ENDIF
         END DO
@@ -6056,7 +6050,7 @@ CONTAINS
 
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
                INTENT(OUT)     ::                   ck,cka,cd,cda
-     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
+     REAL,           DIMENSION( ims:ime, jms:jme )              , &
                INTENT(INOUT)   ::                            ustm
 
      INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX,IZ0TLND
@@ -6216,11 +6210,7 @@ CONTAINS
      V10_HOLD(its:ite,jts:jte)    = V10(its:ite,jts:jte) !fds (01/2014)
      ! USTM is read by the scheme (averaged with the new value), so the
      ! open-water call must start from the same input as the land/ice call.
-     IF ( PRESENT ( USTM ) ) THEN
-        USTM_HOLD(its:ite,jts:jte) = USTM(its:ite,jts:jte)
-     ELSE
-        USTM_HOLD(its:ite,jts:jte) = 0.
-     ENDIF
+     USTM_HOLD(its:ite,jts:jte) = USTM(its:ite,jts:jte)
      
 ! INTENT(OUT) from SFCLAY.  Input shouldn't matter, but we'll want to
 ! keep things around for weighting after the second call to SFCLAY.
@@ -6395,9 +6385,7 @@ CONTAINS
               t2(i,j)     = ( t2(i,j)     * XICE(i,j) ) + ( (1.0-XICE(i,j)) * t2_sea(i,j)     )
               th2(i,j)    = ( th2(i,j)    * XICE(i,j) ) + ( (1.0-XICE(i,j)) * th2_sea(i,j)    )
               u10(i,j)    = ( u10(i,j)    * XICE(i,j) ) + ( (1.0-XICE(i,j)) * u10_sea(i,j)    )
-              IF ( PRESENT ( USTM ) ) THEN
-                 USTM(i,j)    = ( USTM(i,j)    * XICE(i,j) ) + ( (1.0-XICE(i,j)) * USTM_sea(i,j)    )
-              ENDIF
+              USTM(i,j)    = ( USTM(i,j)    * XICE(i,j) ) + ( (1.0-XICE(i,j)) * USTM_sea(i,j)    )
               v10(i,j)    = ( v10(i,j)    * XICE(i,j) ) + ( (1.0-XICE(i,j)) * v10_sea(i,j)    )
            ENDIF
         END DO
@@ -6502,7 +6490,7 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
 
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
                INTENT(OUT)     ::                   ck,cka,cd,cda
-     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
+     REAL,           DIMENSION( ims:ime, jms:jme )              , &
                INTENT(INOUT)   ::                            ustm
 
      INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX,IZ0TLND
@@ -6657,11 +6645,7 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
      V10_HOLD(its:ite,jts:jte)    = V10(its:ite,jts:jte) !fds (01/2014)
      ! USTM is read by the scheme (averaged with the new value), so the
      ! open-water call must start from the same input as the land/ice call.
-     IF ( PRESENT ( USTM ) ) THEN
-        USTM_HOLD(its:ite,jts:jte) = USTM(its:ite,jts:jte)
-     ELSE
-        USTM_HOLD(its:ite,jts:jte) = 0.
-     ENDIF
+     USTM_HOLD(its:ite,jts:jte) = USTM(its:ite,jts:jte)
      
 ! INTENT(OUT) from SFCLAY.  Input shouldn't matter, but we'll want to
 ! keep things around for weighting after the second call to SFCLAY.
@@ -6832,9 +6816,7 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
               t2(i,j)     = ( t2(i,j)     * XICE(i,j) ) + ( (1.0-XICE(i,j)) * t2_sea(i,j)     )
               th2(i,j)    = ( th2(i,j)    * XICE(i,j) ) + ( (1.0-XICE(i,j)) * th2_sea(i,j)    )
               u10(i,j)    = ( u10(i,j)    * XICE(i,j) ) + ( (1.0-XICE(i,j)) * u10_sea(i,j)    )
-              IF ( PRESENT ( USTM ) ) THEN
-                 USTM(i,j)    = ( USTM(i,j)    * XICE(i,j) ) + ( (1.0-XICE(i,j)) * USTM_sea(i,j)    )
-              ENDIF
+              USTM(i,j)    = ( USTM(i,j)    * XICE(i,j) ) + ( (1.0-XICE(i,j)) * USTM_sea(i,j)    )
               v10(i,j)    = ( v10(i,j)    * XICE(i,j) ) + ( (1.0-XICE(i,j)) * v10_sea(i,j)    )
            ENDIF
         END DO

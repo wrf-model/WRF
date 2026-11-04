@@ -826,7 +826,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
    REAL :: constants_irrigation,tloc,irr_start,phase
    INTEGER, OPTIONAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) :: irr_rand_field
 
-   REAL                                       :: time_from_output
+   REAL                                       :: time_from_output, full_history_interval
    INTEGER, INTENT(IN)                        :: max_time_step
    LOGICAL, INTENT(IN)                        :: adaptive_ts
    LOGICAL                                    :: reset_arrays
@@ -890,13 +890,14 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
       CALL wrf_message ( wrf_err_message )
    ENDIF
 
-   IF (PRESENT(history_interval_m) .and. PRESENT(history_interval_s)) THEN
-     idump = (history_interval_m * 60. + history_interval_s) / dt
-     time_from_output = mod( xtime, REAL(history_interval_m*60.+history_interval_s) )
+   IF (config_flags%history_interval == 0) THEN
+      full_history_interval = 86400*config_flags%history_interval_d + 3600*config_flags%history_interval_h + 60*config_flags%history_interval_m + config_flags%history_interval_s
    ELSE
-     idump = (history_interval * 60.) / dt
-     time_from_output = mod( xtime, REAL(history_interval) )
+      full_history_interval = 86400*config_flags%history_interval_d + 3600*config_flags%history_interval_h + 60*config_flags%history_interval + config_flags%history_interval_s
    END IF
+
+   idump = full_history_interval / dt
+   time_from_output = mod( xtime, full_history_interval )
 
    reset_arrays = .false.
    IF ( adaptive_ts .EQV. .TRUE. ) THEN

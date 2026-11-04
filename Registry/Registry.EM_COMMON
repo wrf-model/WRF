@@ -1608,6 +1608,11 @@ state    real  HAILNC           ij      misc        1         -      rhdu     "H
 state    real  SNOWNCV          ij      misc        1         -      r        "SNOWNCV"               "TIME-STEP NONCONVECTIVE SNOW AND ICE"                    "mm"
 state    real  GRAUPELNCV       ij      misc        1         -      r        "GRAUPELNCV"            "TIME-STEP NONCONVECTIVE GRAUPEL"                         "mm"
 state    real  HAILNCV          ij      misc        1         -      r        "HAILNCV"               "TIME-STEP NONCONVECTIVE HAIL"                            "mm"
+state    real  MAX_PRATE        ij      misc        1         -      rh       "MAX_PRATE"             "Time-maximum instantaneous precipitation rate"           "mm s-1"
+state    real  MAX_PRATE_1MIN   ij      misc        1         -      rh       "MAX_PRATE_1MIN"        "Time-maximum 1-minute averaged precipitation rate"       "mm s-1"
+state    real  MAX_PRATE_5MIN   ij      misc        1         -      rh       "MAX_PRATE_5MIN"        "Time-maximum 5-minute averaged precipitation rate"       "mm s-1"
+state    real  MAX_PRATE_10MIN   ij      misc        1         -     rh       "MAX_PRATE_10MIN"       "Time-maximum 10-minute averaged precipitation rate"      "mm s-1"
+state    real  MAX_COMPREF      ij      misc        1         -      rh       "MAX_COMPREF"           "Time-maximum composite reflectivity"                     "dBZ"
 state    real  refl_10cm       ikj      dyn_em      1         -      hdu      "refl_10cm"             "Radar reflectivity (lamda = 10 cm)"  "dBZ"
 state    real  mskf_refl_10cm  ikj      dyn_em      1         -      hdu      "mskf_refl_10cm"        "Full Radar reflectivity (lamda = 10 cm)"  "dBZ"
 state    real    th_old          ikj      misc        1         -      rusd        "TH_OLD"              "Old Value of Th"   "K"
@@ -2455,7 +2460,25 @@ rconfig   integer  nudge_light_timee      namelist,physics      max_domains   72
 rconfig   integer  nudge_light_int        namelist,physics      max_domains   600     rh       "time interval in sec of input lightning data files"  ""      ""
 rconfig   character  path_to_files        namelist,physics      1             "~/WRFV3/"    rh   "path on local machine of input lightning data files"  ""      ""
 
-
+# Maximum precipitation rate diagnostics
+! grid coordinates for outputting model timestep precipitation rate information
+rconfig   integer     n_pcp_diag_pts      namelist,physics      max_domains    0        -        "n_pcp_diag_pts"            ""      ""
+rconfig   integer     pcp_diag_x_1        namelist,physics      max_domains    0        -        "pcp_diag_x_1"              ""      ""
+rconfig   integer     pcp_diag_y_1        namelist,physics      max_domains    0        -        "pcp_diag_y_1"              ""      ""
+rconfig   integer     pcp_diag_x_2        namelist,physics      max_domains    0        -        "pcp_diag_x_2"              ""      ""
+rconfig   integer     pcp_diag_y_2        namelist,physics      max_domains    0        -        "pcp_diag_y_2"              ""      ""
+rconfig   integer     pcp_diag_x_3        namelist,physics      max_domains    0        -        "pcp_diag_x_3"              ""      ""
+rconfig   integer     pcp_diag_y_3        namelist,physics      max_domains    0        -        "pcp_diag_y_3"              ""      ""
+rconfig   integer     pcp_diag_x_4        namelist,physics      max_domains    0        -        "pcp_diag_x_4"              ""      ""
+rconfig   integer     pcp_diag_y_4        namelist,physics      max_domains    0        -        "pcp_diag_y_4"              ""      ""
+rconfig   integer     pcp_diag_x_5        namelist,physics      max_domains    0        -        "pcp_diag_x_5"              ""      ""
+rconfig   integer     pcp_diag_y_5        namelist,physics      max_domains    0        -        "pcp_diag_y_5"              ""      ""
+rconfig   integer     pcp_diag_x_6        namelist,physics      max_domains    0        -        "pcp_diag_x_6"              ""      ""
+rconfig   integer     pcp_diag_y_6        namelist,physics      max_domains    0        -        "pcp_diag_y_6"              ""      ""
+rconfig   integer     pcp_diag_x_7        namelist,physics      max_domains    0        -        "pcp_diag_x_7"              ""      ""
+rconfig   integer     pcp_diag_y_7        namelist,physics      max_domains    0        -        "pcp_diag_y_7"              ""      ""
+rconfig   integer     pcp_diag_x_8        namelist,physics      max_domains    0        -        "pcp_diag_x_8"              ""      ""
+rconfig   integer     pcp_diag_y_8        namelist,physics      max_domains    0        -        "pcp_diag_y_8"              ""      ""
 
 
 rconfig   integer     gsfcgce_hail        namelist,physics      1              0       rh       "gsfcgce select hail/graupel"  ""      ""

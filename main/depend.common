@@ -2564,6 +2564,10 @@ module_cu_gfl_wrf.o: \
 	ccpp_kind_types.o
 
 
+module_cu_gfl_deep.o: \
+	module_cu_gfl_common.o
+
+
 module_cumulus_driver.o: \
 	../share/module_chem_share.o \
 	module_cu_kf.o \

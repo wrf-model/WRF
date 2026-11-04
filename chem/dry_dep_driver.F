@@ -131,7 +131,7 @@ CONTAINS
                                           xland,znt,raincv
 
    ! A. Ukhov Volcanic diagnostics
-   REAL, DIMENSION( ims:ime, jms:jme,1:9), INTENT(INOUT ) :: volc_diags
+   REAL, DIMENSION( ims:ime, jms:jme,num_volc_diags), INTENT(INOUT ) :: volc_diags
 
 
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,        &

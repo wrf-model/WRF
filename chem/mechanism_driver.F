@@ -72,7 +72,7 @@
                ketp,olnd
 
    ! A. Ukhov 24 Oct 2024, Volcanic diagnostics
-   REAL, DIMENSION( ims:ime , jms:jme ,1:9), INTENT(INOUT) :: volc_diags
+   REAL, DIMENSION( ims:ime , jms:jme ,num_volc_diags), INTENT(INOUT) :: volc_diags
 !
 ! on input from meteorological model 
 !

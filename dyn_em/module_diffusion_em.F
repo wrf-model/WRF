@@ -2831,7 +2831,7 @@ END SUBROUTINE smag2d_km
                                  + 2.*bbb*beta*(tke(i,k,j) - zdo_sup))))/bbb/beta
                            ELSE
                               IF(theta(i,izz,j).NE.theta(i,k,j)) THEN
-                                 tl = (tke(i,k,j) - zdo_sup)/(beta*(theta(i,izz,j) - theta(i,k,j)))
+                                 tl = (tke(i,k,j) - zdo_sup)/(beta*(theta(i,k,j) - theta(i,izz,j)))
                               ELSE
                                  tl = 0.
                               ENDIF

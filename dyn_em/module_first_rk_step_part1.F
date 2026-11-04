@@ -1849,8 +1849,10 @@ BENCH_START(shcu_driver_tim)
 
 #if (WRF_CHEM == 1)
 #ifdef DM_PARALLEL
-      IF( config_flags%shcu_physics == CAMUWSHCUSCHEME ) THEN
-         CALL wrf_debug ( 200 , ' call HALO CHEM AFTER SHALLOW CUMULUS' )
+      ! Grell-Freitas also updates chemistry in place before scalar advection.
+      IF( config_flags%shcu_physics == CAMUWSHCUSCHEME .OR. &
+          (config_flags%cu_physics == GFLSCHEME .AND. num_chem >= PARAM_FIRST_SCALAR) ) THEN
+         CALL wrf_debug ( 200 , ' call HALO CHEM AFTER CUMULUS' )
          IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
 #      include "HALO_EM_CHEM_E_3.inc"
          ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN

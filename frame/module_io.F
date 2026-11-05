@@ -39,6 +39,8 @@ MODULE module_io
                                                 ! are_bdys_distributed, bdys_are_distributed and
                                                 ! bdys_not_distributed routines access this flag
   CHARACTER*256 extradims
+  INTEGER(kind=8) :: bput_buffer_size_history = -1
+  INTEGER(kind=8) :: bput_buffer_size_restart = -1
 
 !<DESCRIPTION>
 !<PRE>
@@ -70,6 +72,52 @@ MODULE module_io
     io_form_for_stream = io_form
     RETURN
   END FUNCTION io_form_for_stream
+
+! BputSetBufferSize:
+! Set the buffer size used by PnetCDF bput calls.
+SUBROUTINE BputSetBufferSize(fid, bput_buffer_size)
+  INTEGER, INTENT(IN) :: fid
+  INTEGER(KIND=8), INTENT(IN) :: bput_buffer_size
+  INTEGER :: Hndl, Hopened
+  LOGICAL :: for_out
+#ifdef PNETCDF
+  call get_handle(Hndl, Hopened, for_out, fid)
+  call ext_pnc_bput_set_buffer_size(Hndl, bput_buffer_size)
+#endif
+END SUBROUTINE BputSetBufferSize
+
+! BputWait:
+! Flush all cached reqs to the file. Wait/block till finished.
+SUBROUTINE BputWait(fid)
+  INTEGER, INTENT(IN) :: fid
+  INTEGER :: Hndl, Hopened
+  LOGICAL :: for_out
+#ifdef PNETCDF
+  call get_handle(Hndl, Hopened, for_out, fid)
+  call ext_pnc_bput_wait(Hndl)
+#endif
+END SUBROUTINE BputWait
+
+! An helper routine to call enddef for PnetCDF and NetCDF(PAR).
+! So that define mode is only entered once. (This is an optimization)
+! Currently the optimization is only implemented for PnetCDF.
+SUBROUTINE wrf_enddef(fid)
+  INTEGER, INTENT(IN) :: fid
+  INTEGER :: Hndl, io_form, status
+  LOGICAL :: for_out
+  INTEGER, EXTERNAL           :: use_package
+
+  call get_handle(Hndl, io_form, for_out, fid)
+
+  SELECT CASE (use_package(io_form))
+
+#ifdef PNETCDF
+    CASE(io_pnetcdf)
+      call ext_pnc_enddef(Hndl, status)
+#endif
+
+  ENDSELECT
+END SUBROUTINE wrf_enddef
 
 !--- ioinit
 

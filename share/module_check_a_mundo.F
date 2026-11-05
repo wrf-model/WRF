@@ -406,7 +406,7 @@
 !-----------------------------------------------------------------------
 ! Check that LES PBL is only paired with acceptable other PBL options.
 ! Currently, problems occur with any CG PBL option that has a packaged 
-! scalar component: MYNN2, MYNN3, EEPS. This test is also if a user 
+! scalar component: MYNN, EEPS. This test is also if a user 
 ! chooses to not run a PBL scheme on a finer domain, but use a PBL 
 ! parameterized scheme on a coarser domain (obviously, just for testing 
 ! purposes).
@@ -1745,7 +1745,7 @@
       END IF
 
 !-----------------------------------------------------------------------
-!  shcu_physics = 3 (grimsshcuscheme) only works with YSU & MYNN PBL.
+!  shcu_physics = 3 (grimsshcuscheme) only works with YSU & SHINHONG PBL.
 !-----------------------------------------------------------------------
 
       oops = 0
@@ -1753,8 +1753,7 @@
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
          IF ( model_config_rec%shcu_physics(i) .EQ. GRIMSSHCUSCHEME ) THEN
             IF ( (model_config_rec%bl_pbl_physics(i) .EQ. YSUSCHEME) .OR. &
-                 (model_config_rec%bl_pbl_physics(i) .EQ. SHINHONGSCHEME) .OR. &
-                 (model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME ) ) THEN
+                 (model_config_rec%bl_pbl_physics(i) .EQ. SHINHONGSCHEME) ) THEN
                !NO PROBLEM
             ELSE
                model_config_rec%shcu_physics(i) = 0
@@ -1763,7 +1762,7 @@
          END IF
       ENDDO      ! Loop over domains
       IF ( oops .GT. 0 ) THEN
-         wrf_err_message = '--- NOTE: bl_pbl_physics /= 1,5,6,11 implies shcu_physics cannot be 3, resetting'
+         wrf_err_message = '--- NOTE: bl_pbl_physics /= 1,11 implies shcu_physics cannot be 3, resetting'
          CALL wrf_debug ( 1, wrf_err_message )
       END IF
 
@@ -1777,7 +1776,8 @@
          IF ( ( model_config_rec % bl_pbl_physics(i) .NE. MYNNPBLSCHEME  ) ) THEN
               model_config_rec % bl_mynn_edmf(i)   = 0
               model_config_rec % bl_mynn_edmf_dd(i)= 0
-              model_config_rec % bl_mynn_output(i) = 0
+              model_config_rec % bl_mynn_diags2d(i)= 0
+              model_config_rec % bl_mynn_diags3d(i)= 0
          END IF
       ENDDO
 

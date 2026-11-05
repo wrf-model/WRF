@@ -43,9 +43,10 @@ MODULES = \
 	module_bl_myjpbl.o \
 	module_bl_qnsepbl.o \
 	module_bl_acm.o \
-        module_bl_mynnedmf_common.o \
-        module_bl_mynnedmf.o \
-        module_bl_mynnedmf_driver.o \
+	module_bl_mynnedmf_common.o \
+	module_bl_mynnedmf_diags.o \
+	module_bl_mynnedmf.o \
+	module_bl_mynnedmf_driver.o \
 	module_bl_fogdes.o \
 	module_bl_gwdo.o \
 	module_bl_gwdo_gsl.o \
@@ -458,12 +459,13 @@ submodules :
 		echo No action required for MMM-physics submodule ; \
 	fi
 	@if [ \( ! -f module_bl_mynnedmf.F \) -o \( ! -f module_bl_mynnedmf_common.F \) -o \
-	      \( ! -f module_bl_mynnedmf_driver.F \) ] ; then \
+	      \( ! -f module_bl_mynnedmf_diags.F \) -o \( ! -f module_bl_mynnedmf_driver.F \) ] ; then \
 	      	echo Pulling in MYNN-EDMF submodule ; \
 		( cd .. ; git submodule update --init --recursive ) ; \
-		ln -sf MYNN-EDMF/module_bl_mynnedmf.F90 module_bl_mynnedmf.F ; \
-		ln -sf MYNN-EDMF/WRF/module_bl_mynnedmf_common.F90 module_bl_mynnedmf_common.F ; \
-		ln -sf MYNN-EDMF/WRF/module_bl_mynnedmf_driver.F90 module_bl_mynnedmf_driver.F ; \
+		ln -sf MYNN-EDMF/src/module_bl_mynnedmf.F90 module_bl_mynnedmf.F ; \
+		ln -sf MYNN-EDMF/src/module_bl_mynnedmf_diags.F90 module_bl_mynnedmf_diags.F ; \
+		ln -sf MYNN-EDMF/src/WRF/module_bl_mynnedmf_common.F90 module_bl_mynnedmf_common.F ; \
+		ln -sf MYNN-EDMF/src/module_bl_mynnedmf_driver.F90 module_bl_mynnedmf_driver.F ; \
 	else \
 		echo No action required for MYNN-EDMF submodule ; \
 	fi

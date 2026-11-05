@@ -1160,6 +1160,15 @@ state   real   maxwidth_dd      ij     misc        1         -      h         "m
 state   real   maxtkeprod       ij     misc        1         -      h         "maxtkeprod"       "Maximum tke production by cloud top cooling" "m2/s2/hr"
 state   real   cldtop_cooling   ij     misc        1         -      h         "cldtop_cooling"   "Radiative cooling at cloud top"        "K/hr"
 state   real   ent_eff          ij     misc        1         -      h         "ent_eff"          "Entrainment efficiency for cloud tops" "unitless"
+state   real   lwp_bl           ij     misc        1         -      h         "lwp_bl"           "liquid water path (including MYNN clouds)" "g m-2"
+state   real   iwp_bl           ij     misc        1         -      h         "iwp_bl"           "ice water path (including MYNN clouds)" "g m-2"
+state   real   swp_bl           ij     misc        1         -      h         "swp_bl"           "snow water path"                       "g m-2"
+state   real   wspd10           ij     misc        1         -      h         "wspd10"           "wind speed at 10 m agl"                "m s-1"
+state   real   wspd80           ij     misc        1         -      h         "wspd80"           "wind speed at 80 m agl"                "m s-1"
+state   real   wspd160          ij     misc        1         -      h         "wspd160"          "wind speed at 160 m agl"               "m s-1"
+state   real   cldceil          ij     misc        1         -      h         "cldceil"          "cloud ceiling (including MYNN clouds)" "m"
+state   real   maxcldfra        ij     misc        1         -      h         "maxcldfra"        "max cloud fraction in the column"      "fraction"
+state   real   maxcldfra_pbl    ij     misc        1         -      h         "maxcldfra_pbl"    "max cloud fraction between sfc and pblh+1km" "fraction"
 
 #FogDES variables
 state   real   fgdp             ij     misc        1         -      -        "fgdp"                "Accumulated fog deposition"    "mm"
@@ -2496,17 +2505,18 @@ rconfig   logical     shinhong_ke_dissipation namelist,physics      max_domains 
 rconfig   logical     bl_mynn_tkeadvect   namelist,physics      max_domains    .false.  rh      "bl_mynn_tkeadvect"             ""      ""
 rconfig   integer     bl_mynn_cloudpdf    namelist,physics      1              2       irh      "bl_mynn_cloudpdf"              "0:original, 1:Kuwano, 2:Chaboreau-Bechtold"            ""
 rconfig   integer     bl_mynn_mixlength   namelist,physics      1              1       irh      "bl_mynn_mixlength"             "0:original,1:operational,2:new blending&cloud mix length" ""
-rconfig   integer     bl_mynn_edmf        namelist,physics      max_domains    1       irh      "bl_mynn_edmf"                  "0:off,1:activate implicit mass-flux,2:activate explicit mass-flux in mynn"                    ""
+rconfig   integer     bl_mynn_edmf        namelist,physics      max_domains    1       irh      "bl_mynn_edmf"                  "0:off,1:activate implicit mass-flux,2:activate explicit mass-flux in mynn"  ""
 rconfig   integer     bl_mynn_edmf_dd     namelist,physics      max_domains    0       irh      "bl_mynn_edmf_dd"               "0:off,1:downdrafts,2:analytical profiles"      ""
 rconfig   integer     bl_mynn_edmf_mom    namelist,physics      max_domains    1       irh      "bl_mynn_edmf_mom"              "0:off,1:activate mass-flux transport of momentum"      ""
 rconfig   integer     bl_mynn_edmf_tke    namelist,physics      max_domains    0       irh      "bl_mynn_edmf_tke"              "0:off,1:activate mass-flux transport of tke"           ""
 rconfig   integer     bl_mynn_mixscalars  namelist,physics      max_domains    0       irh      "bl_mynn_mixscalars"            "0:off,1:activate mixing of additional scalars in MYNN"      ""
 rconfig   integer     bl_mynn_mixaerosols namelist,physics      max_domains    1       irh      "bl_mynn_mixaerosols"           "0:off,1:activate mixing of aerosols (qnifa, qnwfa) in MYNN"      ""
 rconfig   integer     bl_mynn_mixnumcon   namelist,physics      max_domains    0       irh      "bl_mynn_mixnumcon"             "0:off,1:activate mixing of number concentrations (qnc, qni) in MYNN"      ""
-rconfig   integer     bl_mynn_output      namelist,physics      max_domains    0       irh      "bl_mynn_output"                "0:off,1:Allocate and output extra 3D arrays"           ""
+rconfig   integer     bl_mynn_diags3d     namelist,physics      max_domains    0       irh      "bl_mynn_diags3d"               "0:off,1:Allocate/output 3D updraft arrays,2:downdraft arrays"           ""
+rconfig   integer     bl_mynn_diags2d     namelist,physics      max_domains    0       irh      "bl_mynn_diags2d"               "0:off,1:realtime mode-output some 2d diags,2:research mode-output all 2d diags"    ""
 rconfig   integer     bl_mynn_cloudmix    namelist,physics      max_domains    1       irh      "bl_mynn_cloudmix"              "0:off,1:activate mixing of all cloud mass species"     ""
 rconfig   integer     bl_mynn_mixqt       namelist,physics      max_domains    0       irh      "bl_mynn_mixqt"                 "0:mix moisture species separate,1: mix total water"    ""
-rconfig   integer     bl_mynn_ess         namelist,physics      max_domains    1       irh      "bl_mynn_ess"                   "0:buoyancy flux functions,1: OGorman (2011)"           ""
+rconfig   integer     bl_mynn_ess         namelist,physics      max_domains    0       irh      "bl_mynn_ess"                   "0:buoyancy flux functions,1: OGorman (2011)"           ""
 rconfig   integer     icloud_bl           namelist,physics      1              1       irh      "icloud_bl"                     "0:no subgrid cloud-radiation coupling,1:activated"     ""
 rconfig   real        bl_mynn_closure     namelist,physics      1              2.6     irh      "bl_mynn_closure"               "2.5: level2.5, 2.6: level 2.6, 3.0: level 3.0"         ""
 rconfig   integer     sf_mynn_sfcflux_land   namelist,physics   max_domains    0       irh      "sf_mynn_sfcflux_land"          "option for z0, zt, and zq over land"                   ""
@@ -3243,8 +3253,12 @@ package   mrfscheme      bl_pbl_physics==99          -             -
 package   tkebudget      tke_budget==1               -             state:qSHEAR,qBUOY,qDISS,qWT,dqke
 package   mynn_dmp_edmf1 bl_mynn_edmf==1             -             state:ztop_plume,maxmf,maxwidth,excess_h,excess_q,maxmf_dd,maxwidth_dd,maxtkeprod,cldtop_cooling,ent_eff
 package   mynn_dmp_edmf2 bl_mynn_edmf==2             -             state:ztop_plume,maxmf,maxwidth,excess_h,excess_q,maxmf_dd,maxwidth_dd,maxtkeprod,cldtop_cooling,ent_eff
-package   mynn_3Doutput1 bl_mynn_output==1           -             state:edmf_a,edmf_w,edmf_thl,edmf_qt,edmf_ent,edmf_qc,sub_thl3D,sub_sqv3D,det_thl3D,det_sqv3D
-package   mynn_3Doutput2 bl_mynn_output==2           -             state:edmf_a,edmf_w,edmf_thl,edmf_qt,edmf_ent,edmf_qc,sub_thl3D,sub_sqv3D,det_thl3D,det_sqv3D
+package   mynn_3Doutput0 bl_mynn_diags3d==0          -             -
+package   mynn_3Doutput1 bl_mynn_diags3d==1          -             state:edmf_a,edmf_w,edmf_thl,edmf_qt,edmf_ent,edmf_qc,sub_thl3D,sub_sqv3D,det_thl3D,det_sqv3D
+package   mynn_3Doutput2 bl_mynn_diags3d==2          -             state:edmf_a,edmf_w,edmf_thl,edmf_qt,edmf_ent,edmf_qc,sub_thl3D,sub_sqv3D,det_thl3D,det_sqv3D
+package   mynn_2Doutput0 bl_mynn_diags2d==0   	     -	      	   -
+package   mynn_2Doutput1 bl_mynn_diags2d==1          -             state:lwp_bl,iwp_bl,swp_bl,cldceil
+package   mynn_2Doutput2 bl_mynn_diags2d==2          -             state:lwp_bl,iwp_bl,swp_bl,cldceil,wspd10,wspd80,wspd160,maxcldfra,maxcldfra_pbl
 
 package   sms_3dtke      km_opt==5                   -             state:gamu,gamv,nlflux,dlk,l_diss,elmin,xkmv_meso
 

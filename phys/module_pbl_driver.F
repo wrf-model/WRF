@@ -860,7 +860,7 @@ CONTAINS
    LOGICAL :: flag_bep
    LOGICAL :: flag_myjsfc
    LOGICAL :: flag_qv, flag_qc, flag_qr, flag_qi, flag_qs, flag_qg, &
-      flag_qnc,flag_qni, flag_qnwfa, flag_qnifa, flag_qnbca
+              flag_qnc,flag_qni, flag_qnwfa, flag_qnifa, flag_qnbca
    LOGICAL, parameter:: flag_qoz=.false.
    CHARACTER*256 :: message
    REAL    :: next_bl_time

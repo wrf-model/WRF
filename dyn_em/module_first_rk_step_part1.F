@@ -140,9 +140,6 @@ CONTAINS
     REAL, DIMENSION( ims:ime, jms:jme ) :: ht_loc, mixht
     REAL, DIMENSION( ims:ime, jms:jme ) :: hpbl_hold
     INTEGER                             :: i, j, istart, iend, jstart, jend
-#ifdef WRF_CFBM
-    INTEGER :: i_src_start, i_src_end, j_src_start, j_src_end
-#endif
 
 
 
@@ -1417,43 +1414,37 @@ BENCH_END(pbl_driver_tim)
 #ifdef DM_PARALLEL
 #     include "HALO_EM_CFBM.inc"
 #endif
-         ! These atmospheric fields occupy physical mass cells. Retain MPI
-         ! neighbors inside the domain and exclude unfilled outer storage.
-         i_src_start = max (ims, ids)
-         i_src_end = min (ime, ide - 1)
-         j_src_start = max (jms, jds)
-         j_src_end = min (jme, jde - 1)
-         call Interp_horizontal (grid%znt(i_src_start:i_src_end, j_src_start:j_src_end), &
-             grid%fire_state%proj, i_src_start, i_src_end, j_src_start, j_src_end, &
+         ! Mass-field domain ends are inclusive; pass memory bounds separately.
+         call Interp_horizontal (grid%znt, grid%fire_state%proj, ims, ime, jms, jme, &
+             ids, ide - 1, jds, jde - 1, &
              grid%fire_state%ifms, grid%fire_state%ifme, grid%fire_state%jfms, grid%fire_state%jfme, &
              grid%fire_state%num_tiles, grid%fire_state%i_start, grid%fire_state%i_end, grid%fire_state%j_start, &
              grid%fire_state%j_end, grid%cfbm_namelist%hinterp_opt, grid%fire_state%lats, grid%fire_state%lons, &
              grid%fire_state%fz0)
 
-         call Interp_horizontal (grid%t2(i_src_start:i_src_end, j_src_start:j_src_end), &
-             grid%fire_state%proj, i_src_start, i_src_end, j_src_start, j_src_end, &
+         call Interp_horizontal (grid%t2, grid%fire_state%proj, ims, ime, jms, jme, &
+             ids, ide - 1, jds, jde - 1, &
              grid%fire_state%ifms, grid%fire_state%ifme, grid%fire_state%jfms, grid%fire_state%jfme, &
              grid%fire_state%num_tiles, grid%fire_state%i_start, grid%fire_state%i_end, grid%fire_state%j_start, &
              grid%fire_state%j_end, grid%cfbm_namelist%hinterp_opt, grid%fire_state%lats, grid%fire_state%lons, &
              grid%fire_state%fire_t2)
 
-         call Interp_horizontal (grid%q2(i_src_start:i_src_end, j_src_start:j_src_end), &
-             grid%fire_state%proj, i_src_start, i_src_end, j_src_start, j_src_end, &
+         call Interp_horizontal (grid%q2, grid%fire_state%proj, ims, ime, jms, jme, &
+             ids, ide - 1, jds, jde - 1, &
              grid%fire_state%ifms, grid%fire_state%ifme, grid%fire_state%jfms, grid%fire_state%jfme, &
              grid%fire_state%num_tiles, grid%fire_state%i_start, grid%fire_state%i_end, grid%fire_state%j_start, &
              grid%fire_state%j_end, grid%cfbm_namelist%hinterp_opt, grid%fire_state%lats, grid%fire_state%lons, &
              grid%fire_state%fire_q2)
 
-         call Interp_horizontal (grid%psfc(i_src_start:i_src_end, j_src_start:j_src_end), &
-             grid%fire_state%proj, i_src_start, i_src_end, j_src_start, j_src_end, &
+         call Interp_horizontal (grid%psfc, grid%fire_state%proj, ims, ime, jms, jme, &
+             ids, ide - 1, jds, jde - 1, &
              grid%fire_state%ifms, grid%fire_state%ifme, grid%fire_state%jfms, grid%fire_state%jfme, &
              grid%fire_state%num_tiles, grid%fire_state%i_start, grid%fire_state%i_end, grid%fire_state%j_start, &
              grid%fire_state%j_end, grid%cfbm_namelist%hinterp_opt, grid%fire_state%lats, grid%fire_state%lons, &
              grid%fire_state%fire_psfc)
 
-         call Interp_horizontal (grid%rainc(i_src_start:i_src_end, j_src_start:j_src_end) + &
-             grid%rainnc(i_src_start:i_src_end, j_src_start:j_src_end), &
-             grid%fire_state%proj, i_src_start, i_src_end, j_src_start, j_src_end, &
+         call Interp_horizontal (grid%rainc + grid%rainnc, grid%fire_state%proj, ims, ime, jms, jme, &
+             ids, ide - 1, jds, jde - 1, &
              grid%fire_state%ifms, grid%fire_state%ifme, grid%fire_state%jfms, grid%fire_state%jfme, &
              grid%fire_state%num_tiles, grid%fire_state%i_start, grid%fire_state%i_end, grid%fire_state%j_start, &
              grid%fire_state%j_end, grid%cfbm_namelist%hinterp_opt, grid%fire_state%lats, grid%fire_state%lons, &
@@ -1467,7 +1458,7 @@ BENCH_END(pbl_driver_tim)
 #     include "HALO_EM_CFBM_WINDS.inc"
 #endif
              call Interp_wrfwinds_to_cfbm (grid%u_phy, grid%v_phy, grid%z_at_w, ims, ime, kms, kme, jms, jme, &
-                 ids, ide, jds, jde, &
+                 ids, ide - 1, jds, jde - 1, &
                  grid%fire_state%ifms, grid%fire_state%ifme, grid%fire_state%jfms, grid%fire_state%jfme, &
                  grid%fire_state%kfds, grid%fire_state%kfde, &
                  grid%fire_state%num_tiles, grid%fire_state%i_start, grid%fire_state%i_end, &
@@ -1479,15 +1470,15 @@ BENCH_END(pbl_driver_tim)
                  grid%cfbm_namelist%hinterp_opt)
 
            case (VINTERP_WINDS_FROM_10M_WINDS)
-             call Interp_horizontal (grid%u10(i_src_start:i_src_end, j_src_start:j_src_end), &
-                 grid%fire_state%proj, i_src_start, i_src_end, j_src_start, j_src_end, &
+             call Interp_horizontal (grid%u10, grid%fire_state%proj, ims, ime, jms, jme, &
+                 ids, ide - 1, jds, jde - 1, &
                  grid%fire_state%ifms, grid%fire_state%ifme, grid%fire_state%jfms, grid%fire_state%jfme, &
                  grid%fire_state%num_tiles, grid%fire_state%i_start, grid%fire_state%i_end, grid%fire_state%j_start, &
                  grid%fire_state%j_end, grid%cfbm_namelist%hinterp_opt, grid%fire_state%lats, grid%fire_state%lons, &
                  grid%fire_state%uf)
 
-             call Interp_horizontal (grid%v10(i_src_start:i_src_end, j_src_start:j_src_end), &
-                 grid%fire_state%proj, i_src_start, i_src_end, j_src_start, j_src_end, &
+             call Interp_horizontal (grid%v10, grid%fire_state%proj, ims, ime, jms, jme, &
+                 ids, ide - 1, jds, jde - 1, &
                  grid%fire_state%ifms, grid%fire_state%ifme, grid%fire_state%jfms, grid%fire_state%jfme, &
                  grid%fire_state%num_tiles, grid%fire_state%i_start, grid%fire_state%i_end, grid%fire_state%j_start, &
                  grid%fire_state%j_end, grid%cfbm_namelist%hinterp_opt, grid%fire_state%lats, grid%fire_state%lons, &

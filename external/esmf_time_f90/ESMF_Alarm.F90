@@ -166,7 +166,7 @@
 !     \item[{[RingInterval]}]
 !          Optional ring interval for repeating alarms
 !     \item[{[StopTime]}]
-!          Optional stop time for repeating alarms
+!          Optional stop time for repeating alarms (unchanged if absent)
 !     \item[Enabled]
 !          Alarm enabled/disabled
 !     \item[{[rc]}]
@@ -179,7 +179,11 @@
       IF ( ASSOCIATED( alarm%alarmint ) ) THEN
         alarm%alarmint%RingTimeSet = .FALSE.
         alarm%alarmint%RingIntervalSet = .FALSE.
-        alarm%alarmint%StopTimeSet = .FALSE.
+        ! A stop time is kept unless a new one is passed, as in ESMF.
+        ! ESMF_AlarmCreate clears it on a new alarm.  The restart re-arm in
+        ! input_wrf passes only RingInterval and RingTime, and clearing the
+        ! stop time there made a stream with an *_end setting run on to the
+        ! end of the run.
         IF ( PRESENT( RingInterval ) ) THEN
           ! force RingInterval to be positive
           alarm%alarmint%RingInterval = &

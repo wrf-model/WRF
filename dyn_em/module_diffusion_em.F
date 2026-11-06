@@ -5218,8 +5218,9 @@ END SUBROUTINE vertical_diffusion_s
          amf3        = snlflux0*enlfrac2(i,j)/deltaoh(i,j)
          bmf3        = -amf3*mlfrac
          hfxpbl(i,j) = amf3+bmf3
+         ! the partition function multiplies the whole nonlocal flux once,
+         ! entrainment part included, below
          pth1        = pthnl(delxy,hpbl(i,j))
-         hfxpbl(i,j) = hfxpbl(i,j)*pth1
 
         DO k = kts, ktf
            zfacmf(i,k,j) = max((zq(i,k+1,j)/hpbl(i,j)),zfmin)

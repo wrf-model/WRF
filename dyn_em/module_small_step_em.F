@@ -971,7 +971,7 @@ SUBROUTINE advance_mu_t( ww, ww_1, u, u_1, v, v_1,            &
                          c1h, c2h, c1f, c2f,                  &
                          c3h, c4h, c3f, c4f,                  &
                          uam, vam, wwam, t, t_1,              &
-                         t_ave, ft, mu_tend,                  &
+                         t_ave, ft, mu_tend, mu_relax_tend,   &
                          rdx, rdy, dts, epssm,                &
                          dnw, fnm, fnp, rdnw,                 &
                          msfux, msfuy, msfvx, msfvx_inv,      &
@@ -1015,7 +1015,7 @@ SUBROUTINE advance_mu_t( ww, ww_1, u, u_1, v, v_1,            &
                                                             msfvy,&
                                                             msftx,&
                                                             msfty,&
-                                                            mu_tend
+                                                            mu_tend, mu_relax_tend
   REAL, DIMENSION( ims:ime , jms:jme ),    INTENT(  OUT) :: muave, &
                                                             muts,  &
                                                             mudf
@@ -1101,8 +1101,8 @@ SUBROUTINE advance_mu_t( ww, ww_1, u, u_1, v, v_1,            &
      ENDDO
      DO i=i_start, i_end
        MUAVE(i,j) = MU(i,j)
-       MU(i,j) = MU(i,j)+dts*(DMDT(i)+MU_TEND(i,j))
-       MUDF(i,j) = (DMDT(i)+MU_TEND(i,j)) ! save tendency for div damp filter
+       MU(i,j) = MU(i,j)+dts*(DMDT(i)+MU_TEND(i,j)+MU_RELAX_TEND(i,j))
+       MUDF(i,j) = (DMDT(i)+MU_TEND(i,j)+MU_RELAX_TEND(i,j)) ! save tendency for div damp filter
        MUTS(i,j) = MUT(i,j)+MU(i,j)
        MUAVE(i,j) =.5*((1.+epssm)*MU(i,j)+(1.-epssm)*MUAVE(i,j))
      ENDDO

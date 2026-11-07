@@ -120,7 +120,7 @@ use module_sf_slucm_bem, only : slucm_bem_calculate,                &
 
    INTEGER                         :: LCZ_SWITCH_kike   !Kikegawa20240821, Yuya Takane
 
-   INTEGER                         :: allocate_status 
+   INTEGER                         :: allocate_status
 
 !
 
@@ -757,7 +757,7 @@ use module_sf_slucm_bem, only : slucm_bem_calculate,                &
    REAL :: Hout_URB            ! sensible load processed by HVAC per unit canyon length [W m-1]
    REAL :: Ein_URB             ! indoor latent heat load per unit canyon length [W m-1]
    REAL :: Eout_URB            ! latent load processed by HVAC per unit canyon length [W m-1]
-   real, parameter  :: RMF = 200000. ! Overall volumetric sensible heat capacity of indoor air (including furniture and inner walls) [J/indoor-air-m3/K]
+   REAL, PARAMETER :: RMF = 20000. ! Indoor contents heat capacity [J m-3 K-1]; air added separately
 ! -- end -- Yuya Takane, 2024.08.07
 
    REAL :: TRP, TBP, TGP, TCP, QCP, TST, QST
@@ -1059,9 +1059,9 @@ use module_sf_slucm_bem, only : slucm_bem_calculate,                &
 !   if(ahoption==1) AH=AH*ahdiuprf(tloc)
 !   if(ahoption==1 .or. ahoption==2) AH=AH*ahdiuprf(tloc)
    if(ahoption==1) then
-     if(sbemoption==0) then 
+     if(sbemoption==0) then
        AH=AH*ahdiuprf(tloc)
-     else if(sbemoption==1) then 
+     else if(sbemoption==1) then
        AH_TRAFFIC=AH_TRAFFIC*ahdiuprf(tloc)
      endif
    endif
@@ -3292,7 +3292,7 @@ ENDIF
    VENT_FREQ         = VENT_FREQ_TBL(UTYPE)
    AH_TRAFFIC        = AH_TRAFFIC_TBL(UTYPE)
 ! -- end -- Yuya Takane, 2022/12/01
- 
+
    FVG = FVG_TBL(UTYPE)
 
 !for BEP
@@ -3947,7 +3947,7 @@ ENDIF
      ROOF_WIDTH_kike(LC) = ROOF_WIDTH(LC)
      ROAD_WIDTH_kike(LC) = ROAD_WIDTH(LC)
 ! End Kikegawa20240808, Yuya Takane
-  
+
    END DO
 
    CALL slucm_bem_report_loaded_parameters
@@ -4201,7 +4201,7 @@ ENDIF
 
    INTEGER :: I,J,K,CHECK
 
-   CALL nl_get_use_wudapt_lcz  ( 1 , LCZ_SWITCH_kike ) !Kikegawa20240821   
+   CALL nl_get_use_wudapt_lcz  ( 1 , LCZ_SWITCH_kike ) !Kikegawa20240821
 
    CHECK = 0
 

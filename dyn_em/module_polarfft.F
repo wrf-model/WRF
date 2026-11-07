@@ -624,11 +624,10 @@ SUBROUTINE polar_filter_3d( f, xlat, piggyback, fft_filter_lat, dvlat, &
 
      ! determine whether or not to filter the data
 
-     if(xlat(ids,j).gt.0.) then
-        lat = xlat(ids,j)-dvlat
-     else
-        lat = xlat(ids,j)+dvlat
-     endif
+     ! xlat is the mass-row latitude. A v row lies dvlat south of mass row j
+     ! in both hemispheres (j increases northward), so the same shift applies
+     ! on either side of the equator (dvlat = 0 for mass-point fields).
+     lat = xlat(ids,j)-dvlat
 
      IF (abs(lat) >= fft_filter_lat) THEN
 

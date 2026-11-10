@@ -939,11 +939,20 @@ BENCH_START(relax_bdy_dry_tim)
      !$OMP PRIVATE ( ij )
      DO ij = 1 , grid%num_tiles
 
+       IF ( rk_step == 1 ) THEN
+         ! mu relaxation is computed at the first RK stage and held for all stages
+         CALL zero_tend2d( mu_relax_tend,                       &
+                           ids, ide, jds, jde, 1, 1,            &
+                           ims, ime, jms, jme, 1, 1,            &
+                           grid%i_start(ij), grid%i_end(ij),    &
+                           grid%j_start(ij), grid%j_end(ij), 1, 1 )
+       ENDIF
+
        IF ( (config_flags%specified .or. config_flags%nested) .and. ( rk_step == 1 ) ) THEN 
 
          CALL relax_bdy_dry ( config_flags,                                &
                               grid%u_save, grid%v_save, ph_save, grid%t_save,             &
-                              w_save, mu_tend, grid%c1h, grid%c2h, grid%c1f, grid%c2f, &
+                              w_save, mu_relax_tend, grid%c1h, grid%c2h, grid%c1f, grid%c2f, &
                               grid%ru, grid%rv, grid%ph_2, grid%t_2,                           &
                               grid%w_2, grid%mu_2, grid%mut,                              &
                               grid%u_bxs,grid%u_bxe,grid%u_bys,grid%u_bye, &
@@ -1401,7 +1410,7 @@ BENCH_START(advance_mu_t_tim)
                           grid%c3h, grid%c4h, grid%c3f, grid%c4f,                       &
                           grid%ru_m, grid%rv_m, grid%ww_m,                              &
                           grid%t_2, grid%t_save, t_2save, t_tend,                       &
-                          mu_tend,                                                      &
+                          mu_tend, mu_relax_tend,                                       &
                           grid%rdx, grid%rdy, dts_rk, grid%epssm,                       &
                           grid%dnw, grid%fnm, grid%fnp, grid%rdnw,                      &
                           grid%msfux,grid%msfuy, grid%msfvx, grid%msfvx_inv,            &

@@ -302,6 +302,7 @@ i1       real   muave           ij     dyn_em      1          -
 i1       real   mu_save         ij     dyn_em      1          -     
 i1       real   mu_tend         ij     dyn_em      1          -     
 i1       real   mu_tendf        ij     dyn_em      1          -     
+i1       real   mu_relax_tend   ij     dyn_em      1          -
 
 #diagnostic for looking at nest position in output. A mungy version of terrain height.
 state    real   nest_pos        ij     misc        1   -   rhu=(mark_domain)  "NEST_POS"

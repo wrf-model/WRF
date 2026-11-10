@@ -70,6 +70,9 @@
         type(ESMF_Alarm) :: alarmtmp
          ! TBH:  ignore allocate errors, for now
         ALLOCATE( alarmtmp%alarmint )
+        ! ESMF_AlarmSet keeps a stop time it is not passed, so a new alarm
+        ! starts without one.
+        alarmtmp%alarmint%StopTimeSet = .FALSE.
         CALL ESMF_AlarmSet( alarmtmp,                  &
                             RingTime=RingTime,         &
                             RingInterval=RingInterval, &

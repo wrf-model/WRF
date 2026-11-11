@@ -6,7 +6,7 @@ Error: Usage: linker.csh option
 exit
 endif 
 
-set files=( data.c data.h misc.c my_strtok.c  protos.h reg_parse.c registry.h  type.c sym.c sym.h symtab_gen.c )
+set files=( data.c data.h misc.c my_strtok.c  protos.h reg_parse.c registry.h  type.c sym.c sym.h symtab_gen.c gen_streams.c )
 
 
 foreach file ( $files )

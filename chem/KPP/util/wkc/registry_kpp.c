@@ -108,6 +108,8 @@ int main( int argc, char *argv[], char *env[] )
     argv++ ;
   }
 
+  gen_io_boilerplate();
+
   init_parser() ;
   init_type_table() ;
   init_dim_table() ;

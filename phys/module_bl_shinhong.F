@@ -358,6 +358,8 @@
             pi3d_hv(i,k) = pi3d(i,k,j)
             dz8w_hv(i,k) = dz8w(i,k,j)
             rthraten_hv(i,k) = rthraten(i,k,j)
+            tke_hv(i,k) = tke(i,k,j)
+            el_hv(i,k) = el(i,k,j)
          end do
       end do
 

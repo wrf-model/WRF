@@ -1250,13 +1250,16 @@ SUBROUTINE advance_w( w, rw_tend, ww, w_save, u, v,  &
       REAL, DIMENSION( kms:kme ),INTENT(IN   ) :: c1h, c2h, c1f, c2f, &
                                                   c3h, c4h, c3f, c4f
 !  Stack based 3d data, tile size.
-      REAL, DIMENSION( its:ite ) :: mut_inv, msft_inv
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      REAL, DIMENSION( its:ite ) :: msft_inv, q_dp, dphi_km1
+      ! END LICENSE
       REAL, DIMENSION( its:ite, kts:kte ) :: rhs, wdwn
       INTEGER :: i,j,k, i_start, i_end, j_start, j_end, k_start, k_end
-      REAL, DIMENSION (kts:kte) :: dampwt
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      REAL :: dampwt_s, q_dp_k, dphi_k
+      ! END LICENSE
       real :: htop,hbot,hdepth,hk
       real    :: pi,dampmag
-      REAL :: muthk, muthkm1
 !<DESCRIPTION>
 !
 !  advance_w advances the implicit w and geopotential equations.
@@ -1309,51 +1312,26 @@ SUBROUTINE advance_w( w, rw_tend, ww, w_save, u, v,  &
     DO i=i_start, i_end
        msft_inv(i) = 1./msfty(i,j)
     ENDDO
-    DO k=1, k_end
-    DO i=i_start, i_end
-      t_2ave(i,k,j)=.5*((1.+epssm)*t_2(i,k,j)       &
-                    +(1.-epssm)*t_2ave(i,k,j))
-      t_2ave(i,k,j)=(t_2ave(i,k,j) + (c1h(k)*Muave(i,j))*t0) &
-                    /((c1h(k)*Muts(i,j)+c2h(k))*(t0+t_1(i,k,j)))
-      rhs(i,k+1) = dts*(ph_tend(i,k+1,j) + .5*g*(1.-epssm)*w(i,k+1,j))
-    ENDDO
-    ENDDO
 !   building up RHS of phi equation
 !   ph_tend contains terms 1 and 2; now adding 3 and 4 in stages:
 !   here rhs = delta t [ph_tend + ~g*w/2 - ~ww * partial d phi/dz]
     IF (config_flags%phi_adv_z == 2) THEN
       !  First get staggered partial d/dnu(phi) and then multiply with omega
       !  to avoid double staggering of omega
-
       DO k=1, k_end
       DO i=i_start, i_end
-         wdwn(i,k+1)=rdnw(k)*(ph_1(i,k+1,j)-ph_1(i,k,j)+phb(i,k+1,j)-phb(i,k,j))
+        ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+        t_2ave(i,k,j)=.5*((1.+epssm)*t_2(i,k,j)       &
+                      +(1.-epssm)*t_2ave(i,k,j))
+        t_2ave(i,k,j)=(t_2ave(i,k,j) + (c1h(k)*Muave(i,j))*t0) &
+                      /((c1h(k)*Muts(i,j)+c2h(k))*(t0+t_1(i,k,j)))
+        rhs(i,k+1) = dts*(ph_tend(i,k+1,j) + .5*g*(1.-epssm)*w(i,k+1,j))
+        wdwn(i,k+1)=rdnw(k)*(ph_1(i,k+1,j)-ph_1(i,k,j)+phb(i,k+1,j)-phb(i,k,j))
+        ! END LICENSE
       ENDDO
       ENDDO
 
-      DO k=2,k_end
-      DO i=i_start, i_end
-         rhs(i,k) = rhs(i,k)-dts*ww(i,k,j)*( fnm(k)*wdwn(i,k+1)  &
-                                            +fnp(k)*wdwn(i,k  ) )
-      ENDDO
-      ENDDO
-    ELSE
-      !  First destagger omega and multiply with partial d/dnu(phi), then stagger the product
-
-      DO k=1, k_end
-      DO i=i_start, i_end
-         wdwn(i,k+1)=.5*(ww(i,k+1,j)+ww(i,k,j))*rdnw(k)    &
-              *(ph_1(i,k+1,j)-ph_1(i,k,j)+phb(i,k+1,j)-phb(i,k,j))
-      ENDDO
-      ENDDO
-
-      DO k=2,k_end
-      DO i=i_start, i_end
-         rhs(i,k) = rhs(i,k)-dts*( fnm(k)*wdwn(i,k+1)  &
-                                  +fnp(k)*wdwn(i,k  ) )
-      ENDDO
-      ENDDO
-    ENDIF
+! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
 !  NOTE:  phi'' is not coupled with the map-scale factor  (1/m),
 !         but it's tendency is, so must multiply by msft here
 !   Comments on map scale factors:
@@ -1363,12 +1341,54 @@ SUBROUTINE advance_w( w, rw_tend, ww, w_save, u, v,  &
 !                                                      partial d phi/dz]
 !            = ph_previous + (msft*delta t/mu)*[ph_tend + ~g*w/2 - ~ww *
 !                                                         partial d phi/dz]
-    DO k=2,k_end+1
-    DO i=i_start, i_end
-      rhs(i,k) = ph(i,k,j) + msfty(i,j)*rhs(i,k)/(c1f(k)*mut(i,j)+c2f(k))
-      if(top_lid .and. k.eq.k_end+1)rhs(i,k)=0.
-    ENDDO
-    ENDDO
+! END LICENSE
+      DO k=2,k_end
+      DO i=i_start, i_end
+         rhs(i,k) = rhs(i,k)-dts*ww(i,k,j)*( fnm(k)*wdwn(i,k+1)  &
+                                            +fnp(k)*wdwn(i,k  ) )
+         ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+         rhs(i,k) = ph(i,k,j) + msfty(i,j)*rhs(i,k)/(c1f(k)*mut(i,j)+c2f(k))
+         ! END LICENSE
+      ENDDO
+      ENDDO
+    ELSE
+      !  First destagger omega and multiply with partial d/dnu(phi), then stagger the product
+      DO k=1, k_end
+      DO i=i_start, i_end
+        ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+        t_2ave(i,k,j)=.5*((1.+epssm)*t_2(i,k,j)       &
+                      +(1.-epssm)*t_2ave(i,k,j))
+        t_2ave(i,k,j)=(t_2ave(i,k,j) + (c1h(k)*Muave(i,j))*t0) &
+                      /((c1h(k)*Muts(i,j)+c2h(k))*(t0+t_1(i,k,j)))
+        rhs(i,k+1) = dts*(ph_tend(i,k+1,j) + .5*g*(1.-epssm)*w(i,k+1,j))
+        wdwn(i,k+1)=.5*(ww(i,k+1,j)+ww(i,k,j))*rdnw(k)    &
+             *(ph_1(i,k+1,j)-ph_1(i,k,j)+phb(i,k+1,j)-phb(i,k,j))
+        ! END LICENSE
+      ENDDO
+      ENDDO
+
+      DO k=2,k_end
+      DO i=i_start, i_end
+         rhs(i,k) = rhs(i,k)-dts*( fnm(k)*wdwn(i,k+1)  &
+                                  +fnp(k)*wdwn(i,k  ) )
+         ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+         rhs(i,k) = ph(i,k,j) + msfty(i,j)*rhs(i,k)/(c1f(k)*mut(i,j)+c2f(k))
+         ! END LICENSE
+      ENDDO
+      ENDDO
+    ENDIF
+    ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+    IF (top_lid) THEN
+      DO i=i_start, i_end
+        rhs(i,k_end+1) = 0.
+      ENDDO
+    ELSE
+      k = k_end+1
+      DO i=i_start, i_end
+        rhs(i,k) = ph(i,k,j) + msfty(i,j)*rhs(i,k)/(c1f(k)*mut(i,j)+c2f(k))
+      ENDDO
+    ENDIF
+    ! END LICENSE
 !  lower boundary condition on w
 !   Comments on map scale factors:
 !   Chain rule: if Z=Z(X,Y) [true at the surface] then
@@ -1392,7 +1412,12 @@ SUBROUTINE advance_w( w, rw_tend, ww, w_save, u, v,  &
         *(cf1*u(i+1,1,j)+cf2*u(i+1,2,j)+cf3*u(i+1,3,j))    &
                         +(ht(i,j  )-ht(i-1,j))             &
         *(cf1*u(i  ,1,j)+cf2*u(i  ,2,j)+cf3*u(i  ,3,j))  )
-     ENDDO
+       ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+       q_dp(i) = c2a(i,1,j)*rdnw(1)/(c1h(1)*MUT(i,j)+c2h(1))
+       dphi_km1(i) = (1.+epssm)*(rhs(i,2)-rhs(i,1))        &
+                    +(1.-epssm)*(ph(i,2,j)-ph(i,1,j))
+    ENDDO
+       ! END LICENSE
 !
 ! Jammed 3 doubly nested loops over k/i into 1 for slight improvement
 ! in efficiency.  No change in results (bit-for-bit). JM 20040514
@@ -1401,68 +1426,90 @@ SUBROUTINE advance_w( w, rw_tend, ww, w_save, u, v,  &
 !   above surface, begin by adding delta t * previous (coupled) w tendency
     DO k=2,k_end
       DO i=i_start, i_end
-        
+        ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+        q_dp_k = c2a(i,k,j)*rdnw(k)/(c1h(k)*MUT(i,j)+c2h(k))
+        dphi_k = (1.+epssm)*(rhs(i,k+1)-rhs(i,k))                  &
+                +(1.-epssm)*(ph(i,k+1,j)-ph(i,k,j))
+        ! END LICENSE
         w(i,k,j)=w(i,k,j)+dts*rw_tend(i,k,j)                       &
                  + msft_inv(i)*cqw(i,k,j)*(                        &
             +.5*dts*g*rdn(k)*                                      &
-             (c2a(i,k  ,j)*rdnw(k  )/(c1h(k)*MUT(i,j)+c2h(k))                         &
-        *((1.+epssm)*(rhs(i,k+1  )-rhs(i,k    ))                   &
-         +(1.-epssm)*(ph(i,k+1,j)-ph(i,k  ,j)))                    &
-             -c2a(i,k-1,j)*rdnw(k-1)/(c1h(k-1)*MUT(i,j)+c2h(k-1))                       &
-        *((1.+epssm)*(rhs(i,k    )-rhs(i,k-1  ))                   &
-         +(1.-epssm)*(ph(i,k  ,j)-ph(i,k-1,j)))))                  &
+             ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+             (q_dp_k*dphi_k - q_dp(i)*dphi_km1(i)))                &
+             ! END LICENSE
                 +dts*g*msft_inv(i)*(rdn(k)*                        &
              (c2a(i,k  ,j)*alt(i,k  ,j)*t_2ave(i,k  ,j)            &
              -c2a(i,k-1,j)*alt(i,k-1,j)*t_2ave(i,k-1,j))           &
               - (c1f(k)*muave(i,j)))
+        ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+        w(i,k,j)=(w(i,k,j)-a(i,k,j)*w(i,k-1,j))*alpha(i,k,j)
+        q_dp(i) = q_dp_k
+        dphi_km1(i) = dphi_k
+        ! END LICENSE
       ENDDO
     ENDDO
     K=k_end+1
-    DO i=i_start, i_end
-       w(i,k,j)=w(i,k,j)+dts*rw_tend(i,k,j)                         &
-           +msft_inv(i)*(                                        &
-         -.5*dts*g/(c1h(k-1)*MUT(i,j)+c2h(k-1))*rdnw(k-1)**2*2.*c2a(i,k-1,j)            &
-             *((1.+epssm)*(rhs(i,k  )-rhs(i,k-1  ))                 &
-              +(1.-epssm)*(ph(i,k,j)-ph(i,k-1,j)))                  &
-         -dts*g*(2.*rdnw(k-1)*                                      &
-                   c2a(i,k-1,j)*alt(i,k-1,j)*t_2ave(i,k-1,j)        &
-              + (c1f(k)*muave(i,j))) )
-       if(top_lid)w(i,k,j) = 0.
-    ENDDO
-
-    DO k=2,k_end+1
-    DO i=i_start, i_end
-       w(i,k,j)=(w(i,k,j)-a(i,k,j)*w(i,k-1,j))*alpha(i,k,j)
-    ENDDO
-    ENDDO
-
-    DO k=k_end,2,-1
-    DO i=i_start, i_end
-       w (i,k,j)=w (i,k,j)-gamma(i,k,j)*w(i,k+1,j)
-    ENDDO
-    ENDDO
+    ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+    IF (top_lid) THEN
+      DO i=i_start, i_end
+        w(i,k,j)=(0.-a(i,k,j)*w(i,k-1,j))*alpha(i,k,j)
+      ENDDO
+    ELSE
+      DO i=i_start, i_end
+        w(i,k,j)=w(i,k,j)+dts*rw_tend(i,k,j)                         &
+            +msft_inv(i)*(                                           &
+          -.5*dts*g/(c1h(k-1)*MUT(i,j)+c2h(k-1))*rdnw(k-1)**2*2.*c2a(i,k-1,j) &
+              *dphi_km1(i)                                           &
+          -dts*g*(2.*rdnw(k-1)*                                      &
+                    c2a(i,k-1,j)*alt(i,k-1,j)*t_2ave(i,k-1,j)        &
+               + (c1f(k)*muave(i,j))) )
+        w(i,k,j)=(w(i,k,j)-a(i,k,j)*w(i,k-1,j))*alpha(i,k,j)
+      ENDDO
+    ENDIF
+    ! END LICENSE
 
     IF (config_flags%damp_opt .eq. 3) THEN
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      DO k=k_end,2,-1
+      DO i=i_start, i_end
+         w (i,k,j)=w (i,k,j)-gamma(i,k,j)*w(i,k+1,j)
+      ENDDO
+      ENDDO
+      ! END LICENSE
       DO k=k_end+1,2,-1
       DO i=i_start, i_end
           htop=(ph_1(i,k_end+1,j)+phb(i,k_end+1,j))/g
           hk=(ph_1(i,k,j)+phb(i,k,j))/g
           hbot=htop-hdepth
-          dampwt(k) = 0.
+          ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+          dampwt_s = 0.
+          ! END LICENSE
           if(hk .ge. hbot)then
-            dampwt(k) = dampmag*sin(0.5*pi*(hk-hbot)/hdepth)*sin(0.5*pi*(hk-hbot)/hdepth)
+            ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+            dampwt_s = dampmag*sin(0.5*pi*(hk-hbot)/hdepth)*sin(0.5*pi*(hk-hbot)/hdepth)
+            ! END LICENSE
           endif
-          w(i,k,j) = (w(i,k,j) - dampwt(k)*(c1f(k)*mut(i,j)+c2f(k))*w_save(i,k,j))/(1.+dampwt(k))
+          ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+          w(i,k,j) = (w(i,k,j) - dampwt_s*(c1f(k)*mut(i,j)+c2f(k))*w_save(i,k,j))/(1.+dampwt_s)
+          ph(i,k,j) = rhs(i,k)+msfty(i,j)*.5*dts*g*(1.+epssm) &
+                         *w(i,k,j)/(c1f(k)*muts(i,j)+c2f(k))
+      ENDDO
+      ENDDO
+    ELSE
+      k = k_end+1
+      DO i=i_start, i_end
+         ph(i,k,j) = rhs(i,k)+msfty(i,j)*.5*dts*g*(1.+epssm) &
+                        *w(i,k,j)/(c1f(k)*muts(i,j)+c2f(k))
+      ENDDO
+      DO k=k_end,2,-1
+      DO i=i_start, i_end
+         w (i,k,j)=w (i,k,j)-gamma(i,k,j)*w(i,k+1,j)
+         ph(i,k,j) = rhs(i,k)+msfty(i,j)*.5*dts*g*(1.+epssm) &
+                        *w(i,k,j)/(c1f(k)*muts(i,j)+c2f(k))
+          ! END LICENSE
       ENDDO
       ENDDO
     ENDIF
-
-    DO k=k_end+1,2,-1
-    DO i=i_start, i_end
-       ph(i,k,j) = rhs(i,k)+msfty(i,j)*.5*dts*g*(1.+epssm) &
-                      *w(i,k,j)/(c1f(k)*muts(i,j)+c2f(k))
-    ENDDO
-    ENDDO
 
   ENDDO j_loop_w
 

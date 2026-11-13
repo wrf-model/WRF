@@ -1,0 +1,1213 @@
+{
+  "kind": "wrf_pr2452_ventilation_verified_evidence_summary_v1",
+  "review_date": "2026-11-13",
+  "status": "NUMERICAL_AND_INTEGRATION_REVIEW_ACCEPTED_WITH_LIMITS",
+  "numerical_integration_review_passed": true,
+  "ready_for_pr_review": true,
+  "physical_acceptance": false,
+  "full_restart_payloads_equal": false,
+  "all_configurations_validated": false,
+  "scope": {
+    "changes": [
+      "same-step opposing outdoor ventilation exchange",
+      "within-step HVAC and dehumidification onset",
+      "preservation of zero and very low indoor specific humidity"
+    ],
+    "treeoption": 0,
+    "full_wrf_model_runs_completed": 7,
+    "land_surface_paths_exercised": [
+      "Noah-MP distributed",
+      "Noah standard canyon with LCZ"
+    ],
+    "excludes": [
+      "ILS land-use changes",
+      "ILS T2/Q2 output additions",
+      "MATSIRO units",
+      "proposed ILS U10 formulation",
+      "TREEOPTION=1"
+    ]
+  },
+  "source_provenance": {
+    "wrf_baseline_commit": "6099d9f632e204cc8ed4b01e1a8adba1da753a47",
+    "ils_reference_commit": "3e6bda9b4ce1a212b1b4f1b2006fb351ec50f082",
+    "candidate_model_changes_uncommitted_during_tests": true,
+    "candidate_physics_sha256": {
+      "phys/module_sf_slucm_bem.F": "d2d8d5d53367d28947353f42de3e0e69ca1e650364687ea58be546f8f86a68ea",
+      "phys/module_sf_urban.F": "b6de15c191255c2ae9b8a6ff953791479a313df5a3a19ce987a7ef6d22a6b2d1"
+    },
+    "native_test_input_sha256": {
+      "test/slucm_bem/bem_controls_regression.f90": "784b7c36732b4104571226c2678e0e8f44eabfc42b291a74021b165895d01675",
+      "test/slucm_bem/run_native.py": "681966d35f8852841f2a8188539b728619b1971e70dc6e5a987dcd42f3f20da1",
+      "test/slucm_bem/urban_exchange_regression.F90": "bec33a07a0e35cfe38a9317c2836180d9551c96233ac33e99f95632b1d99cb92",
+      "test/slucm_bem/wrf_test_stubs.F90": "f3edf8b80f3dc64067377defd1c67e04f9e0d2012e0ccad017b1686e31c692a3"
+    },
+    "unchanged_test_inputs_sha256": {
+      "share/module_model_constants.F": "5b80377fecdc18a5f0ad38d3b6c15cfc86ad5d76701adbbbb08a08698d0f7062",
+      "run/URBPARM.TBL": "f827ed18145ea692365861c4e377d46f4f67e63f8332a96a4d1cc9a84a5b188a",
+      "run/URBPARM_LCZ.TBL": "aea3c2401253dd098f3df7bebfd9f5af17cee08eaef3975ea709a32c14a7696c"
+    },
+    "submodules": {
+      "phys/noahmp": "3af036b0329ad9b91290d253f2651d6737d333ab",
+      "phys/physics_mmm": "550b5b494758ad2756394e93cb08b5709b8feb83"
+    },
+    "physics_and_native_test_bytes_unchanged_during_documentation_finalization": true
+  },
+  "native_intel": {
+    "compiler_version": "ifx (IFX) 2024.0.2 20231213",
+    "verified_flags": [
+      "-fpp",
+      "-free",
+      "-extend-source",
+      "-O2",
+      "-traceback",
+      "-check",
+      "bounds",
+      "-fp-model=strict"
+    ],
+    "verified_command": "python3 -I test/slucm_bem/run_native.py --fc ifx --fflags='-O2 -traceback -check bounds -fp-model=strict'",
+    "passed": true,
+    "counts": {
+      "bem_cases": 42,
+      "urban_cases": 84,
+      "expected_failure_exits": 16,
+      "exact_baseline_records": 56,
+      "values_per_record": 147
+    },
+    "exact_snapshot_comparisons": [
+      {
+        "mode": "sbem0",
+        "table": "3urban",
+        "records": 7,
+        "values_per_record": 147,
+        "exact": true,
+        "sha256": "0c45b418b466cbde2bb42aa3fc452fb1b91aa6260f98fb4b3681f00186a4c436"
+      },
+      {
+        "mode": "sbem0",
+        "table": "lcz",
+        "records": 21,
+        "values_per_record": 147,
+        "exact": true,
+        "sha256": "8a3ca40a25f010a7cbc1c12a0363ef6f7016ce14f2eedece52b23ec033d5803f"
+      },
+      {
+        "mode": "zeroexchange",
+        "table": "3urban",
+        "records": 7,
+        "values_per_record": 147,
+        "exact": true,
+        "sha256": "b704cb20dd20d38f36d16d1a2be46fe31157775ad6e0e352e0d170730b7de6af"
+      },
+      {
+        "mode": "zeroexchange",
+        "table": "lcz",
+        "records": 21,
+        "values_per_record": 147,
+        "exact": true,
+        "sha256": "1cb43323c57dcdc6ce3d011f92d89ebcc9215f48e5ad1ce814c2e113f262beaa"
+      }
+    ],
+    "initial_default_fp_result": {
+      "passed": false,
+      "flags": [
+        "-fpp",
+        "-free",
+        "-extend-source",
+        "-O2",
+        "-traceback",
+        "-check",
+        "bounds"
+      ],
+      "error": "Exact baseline regression failed: sbem0 3urban",
+      "interpretation": "The initial default-floating-point exact SBEM0 comparison failed. It is retained as a failure; strict success does not waive it or establish success for all floating-point modes."
+    },
+    "scope": {
+      "actual_bem_module": true,
+      "actual_complete_urban_module": true,
+      "actual_model_constants_and_tables": true,
+      "synthetic_single_column_forcing": true,
+      "treeoption": 0,
+      "full_wrf_build": false,
+      "noah_or_noahmp_driver_integration": false,
+      "mpi_execution": false,
+      "wrf_restart_io": false,
+      "serializing_single_column_call_state_only": true,
+      "physical_acceptance": false
+    },
+    "gnu_record": "test/slucm_bem/validation_gfortran_20261113.json"
+  },
+  "full_wrf_build": {
+    "passed": true,
+    "command": [
+      "./compile",
+      "-j",
+      "2",
+      "wrf"
+    ],
+    "returncode": 0,
+    "compiler": "Intel ifx/icx 2024.0.2",
+    "physics_flags": "-O3 -ip -fp-model precise -w -ftz -align all -fno-alias -FR -convert big_endian",
+    "required_objects_recompiled": [
+      "phys/module_sf_slucm_bem.o",
+      "phys/module_sf_urban.o",
+      "phys/module_sf_noahdrv.o",
+      "phys/module_sf_clm.o",
+      "phys/noahmp/drivers/wrf/NoahmpWRFmainMod.o",
+      "phys/noahmp/drivers/wrf/NoahmpUrbanDriverMainMod.o",
+      "phys/module_sf_bep.o",
+      "phys/module_sf_bep_bem.o",
+      "phys/module_physics_init.o"
+    ],
+    "existing_module_physics_init_optimization": "-O0",
+    "incremental_build": true,
+    "limit": "The required changed modules and callers were recompiled and linked; every retained object was not independently rebuilt from a clean checkout. real.exe was not rebuilt.",
+    "executable_sha256": {
+      "baseline": "ac16edf6cd064a7bdf79b36f65050dd024f817f00dc07922da5d2fbd91fa166b",
+      "candidate": "75f28e57492b55a36ea2b5e995578dbbccc48b88c0e3f6a70b119f28a4fd8b36"
+    },
+    "configuration_equivalence": "Only DM_CC: mpicc -cc=icx versus mpicc with I_MPI_CC=icx"
+  },
+  "summer_noahmp_distributed": {
+    "configuration": {
+      "sf_surface_physics": 4,
+      "sf_urban_physics": 1,
+      "slucm_distributed_drag": true,
+      "use_wudapt_lcz": 0,
+      "treeoption": 0,
+      "urban_table_categories": 3,
+      "mpi_ranks": 32,
+      "mpi_layout": [
+        4,
+        8
+      ],
+      "openmp_threads": 1,
+      "domain_dt_seconds": [
+        100,
+        20,
+        4
+      ],
+      "start_utc": "2018-07-20_00:00:00",
+      "end_utc": "2018-07-20_00:30:00",
+      "restart_split_utc": "2018-07-20_00:15:00",
+      "history_interval_minutes": 5
+    },
+    "original_five_run_report_status": "WRF_PR2452_SHORT_RUN_CORE_PASS_REVIEW_REQUIRED",
+    "original_five_run_report_passed": false,
+    "original_report_preserved": true,
+    "post_split_and_regression_gates_passed": true,
+    "original_runs": {
+      "baseline_sbem0": {
+        "status": "MODEL_RUN_PASS",
+        "start_utc": "2018-07-20_00:00:00",
+        "end_utc": "2018-07-20_00:30:00",
+        "returncode": 0,
+        "elapsed_seconds": 220.9343015810009,
+        "mpi_rank_records": 32,
+        "domain_steps": {
+          "3": 450,
+          "2": 90,
+          "1": 18
+        },
+        "fatal_message_count": 0,
+        "cfl_message_count": 0,
+        "history_files": 21,
+        "history_screen_passed": true,
+        "namelist_input_sha256": "1768e1a72fb681f8bf8a8ec87be4ea55b282bcf4cef567ea6b5a62f405e00687",
+        "urban_table_sha256": "08b7a423e445721c3b6a3cd28c83e940467972955967f0d447cab6946151fd64"
+      },
+      "candidate_sbem0": {
+        "status": "MODEL_RUN_PASS",
+        "start_utc": "2018-07-20_00:00:00",
+        "end_utc": "2018-07-20_00:30:00",
+        "returncode": 0,
+        "elapsed_seconds": 216.99530815985054,
+        "mpi_rank_records": 32,
+        "domain_steps": {
+          "3": 450,
+          "2": 90,
+          "1": 18
+        },
+        "fatal_message_count": 0,
+        "cfl_message_count": 0,
+        "history_files": 21,
+        "history_screen_passed": true,
+        "namelist_input_sha256": "1768e1a72fb681f8bf8a8ec87be4ea55b282bcf4cef567ea6b5a62f405e00687",
+        "urban_table_sha256": "08b7a423e445721c3b6a3cd28c83e940467972955967f0d447cab6946151fd64"
+      },
+      "baseline_sbem1": {
+        "status": "MODEL_RUN_PASS",
+        "start_utc": "2018-07-20_00:00:00",
+        "end_utc": "2018-07-20_00:30:00",
+        "returncode": 0,
+        "elapsed_seconds": 243.6898016340565,
+        "mpi_rank_records": 32,
+        "domain_steps": {
+          "3": 450,
+          "2": 90,
+          "1": 18
+        },
+        "fatal_message_count": 0,
+        "cfl_message_count": 0,
+        "history_files": 21,
+        "history_screen_passed": true,
+        "namelist_input_sha256": "c35cfe141ddf268764b4acb4e03d64238a191f4fc3b7c46bed09d96a086078e5",
+        "urban_table_sha256": "a7ba464db9534b7062b8cd66c01e516df47388d9792a0423e67e76798f30c1a9"
+      },
+      "candidate_sbem1": {
+        "status": "MODEL_RUN_PASS",
+        "start_utc": "2018-07-20_00:00:00",
+        "end_utc": "2018-07-20_00:30:00",
+        "returncode": 0,
+        "elapsed_seconds": 240.40389956301078,
+        "mpi_rank_records": 32,
+        "domain_steps": {
+          "3": 450,
+          "2": 90,
+          "1": 18
+        },
+        "fatal_message_count": 0,
+        "cfl_message_count": 0,
+        "history_files": 21,
+        "history_screen_passed": true,
+        "namelist_input_sha256": "c35cfe141ddf268764b4acb4e03d64238a191f4fc3b7c46bed09d96a086078e5",
+        "urban_table_sha256": "a7ba464db9534b7062b8cd66c01e516df47388d9792a0423e67e76798f30c1a9"
+      },
+      "candidate_restart": {
+        "status": "MODEL_RUN_PASS",
+        "start_utc": "2018-07-20_00:15:00",
+        "end_utc": "2018-07-20_00:30:00",
+        "returncode": 0,
+        "elapsed_seconds": 144.36071768891998,
+        "mpi_rank_records": 32,
+        "domain_steps": {
+          "3": 225,
+          "2": 45,
+          "1": 9
+        },
+        "fatal_message_count": 0,
+        "cfl_message_count": 0,
+        "history_files": 12,
+        "history_screen_passed": true,
+        "namelist_input_sha256": "db17b590db84e031787e833cf8d9e44991757ffc64dd9be56d8e37da37df824d",
+        "urban_table_sha256": "a7ba464db9534b7062b8cd66c01e516df47388d9792a0423e67e76798f30c1a9"
+      }
+    },
+    "additional_baseline_restart": {
+      "status": "MODEL_RUN_PASS",
+      "start_utc": "2018-07-20_00:15:00",
+      "end_utc": "2018-07-20_00:30:00",
+      "returncode": 0,
+      "elapsed_seconds": 112.46746121579781,
+      "mpi_rank_records": 32,
+      "domain_steps": {
+        "3": 225,
+        "2": 45,
+        "1": 9
+      },
+      "fatal_message_count": 0,
+      "cfl_message_count": 0,
+      "history_files": 12,
+      "history_screen_passed": true,
+      "namelist_input_sha256": "db17b590db84e031787e833cf8d9e44991757ffc64dd9be56d8e37da37df824d",
+      "urban_table_sha256": "a7ba464db9534b7062b8cd66c01e516df47388d9792a0423e67e76798f30c1a9"
+    },
+    "candidate_comparisons": {
+      "sbem0_old_new": {
+        "file_pairs": 21,
+        "variable_records": 6678,
+        "payload_equal": true,
+        "schema_equal": true,
+        "variables_with_differences": []
+      },
+      "restart_post_split": {
+        "file_pairs": 9,
+        "variable_records": 2862,
+        "payload_equal": true,
+        "schema_equal": true,
+        "variables_with_differences": []
+      },
+      "restart_at_split": {
+        "file_pairs": 3,
+        "variable_records": 954,
+        "payload_equal": false,
+        "schema_equal": true,
+        "variables_with_differences": [
+          "EIN_URB2D",
+          "EVENT_URB2D",
+          "LH_URB",
+          "QC_URB",
+          "SH_URB",
+          "U10E",
+          "V10E"
+        ]
+      },
+      "restart_final_state": {
+        "file_pairs": 3,
+        "variable_records": 2749,
+        "payload_equal": false,
+        "schema_equal": true,
+        "variables_with_differences": [
+          "CROPCAT"
+        ]
+      }
+    },
+    "active_urban_cells_by_domain": {
+      "d01": 37,
+      "d02": 633,
+      "d03": 8167
+    },
+    "post_initialization_urban_cell_time_samples": 53022,
+    "sample_definition": "Nested-domain grid cells times saved outputs; not unique geographic cells.",
+    "candidate_urban_field_ranges": {
+      "TC_URB": {
+        "units": "K",
+        "samples": 53022,
+        "minimum": 296.0823974609375,
+        "maximum": 309.3306579589844,
+        "invalid_or_fill_values": 0,
+        "nonzero_samples": 53022,
+        "negative_samples": 0
+      },
+      "QC_URB": {
+        "units": "kg kg{-1}",
+        "samples": 53022,
+        "minimum": 0.013702251017093658,
+        "maximum": 0.020049359649419785,
+        "invalid_or_fill_values": 0,
+        "nonzero_samples": 53022,
+        "negative_samples": 0
+      },
+      "SH_URB": {
+        "units": "W m{-2}",
+        "samples": 53022,
+        "minimum": 90.35352325439453,
+        "maximum": 428.7021179199219,
+        "invalid_or_fill_values": 0,
+        "nonzero_samples": 53022,
+        "negative_samples": 0
+      },
+      "LH_URB": {
+        "units": "W m{-2}",
+        "samples": 53022,
+        "minimum": -31.84525489807129,
+        "maximum": -0.054497718811035156,
+        "invalid_or_fill_values": 0,
+        "nonzero_samples": 53022,
+        "negative_samples": 53022
+      },
+      "TIN_URB2D": {
+        "units": "K",
+        "samples": 53022,
+        "minimum": 296.0450439453125,
+        "maximum": 301.32574462890625,
+        "invalid_or_fill_values": 0,
+        "nonzero_samples": 53022,
+        "negative_samples": 0
+      },
+      "QIN_URB2D": {
+        "units": "kg kg{-1}",
+        "samples": 53022,
+        "minimum": 0.005364732351154089,
+        "maximum": 0.008343608118593693,
+        "invalid_or_fill_values": 0,
+        "nonzero_samples": 53022,
+        "negative_samples": 0
+      },
+      "QVENT_URB2D": {
+        "units": "W m{-1}",
+        "samples": 53022,
+        "minimum": -8.216723442077637,
+        "maximum": 665.6767578125,
+        "invalid_or_fill_values": 0,
+        "nonzero_samples": 53022,
+        "negative_samples": 7
+      },
+      "EVENT_URB2D": {
+        "units": "W m{-1}",
+        "samples": 53022,
+        "minimum": 31.39484214782715,
+        "maximum": 3033.30712890625,
+        "invalid_or_fill_values": 0,
+        "nonzero_samples": 53022,
+        "negative_samples": 0
+      },
+      "QFB_URB2D": {
+        "units": "W m{-2}",
+        "samples": 53022,
+        "minimum": 0.0,
+        "maximum": 0.0,
+        "invalid_or_fill_values": 0,
+        "nonzero_samples": 0,
+        "negative_samples": 0
+      },
+      "QFLB_URB2D": {
+        "units": "W m{-2}",
+        "samples": 53022,
+        "minimum": 0.0,
+        "maximum": 0.0,
+        "invalid_or_fill_values": 0,
+        "nonzero_samples": 0,
+        "negative_samples": 0
+      },
+      "ECAC_URB2D": {
+        "units": "W floor-m{-2}",
+        "samples": 53022,
+        "minimum": 0.0,
+        "maximum": 0.0,
+        "invalid_or_fill_values": 0,
+        "nonzero_samples": 0,
+        "negative_samples": 0
+      },
+      "HFX": {
+        "units": "W m-2",
+        "samples": 53022,
+        "minimum": 103.92644500732422,
+        "maximum": 1127.1934814453125,
+        "invalid_or_fill_values": 0,
+        "nonzero_samples": 53022,
+        "negative_samples": 0
+      },
+      "LH": {
+        "units": "W m-2",
+        "samples": 53022,
+        "minimum": -6.330816268920898,
+        "maximum": 319.5636901855469,
+        "invalid_or_fill_values": 0,
+        "nonzero_samples": 53022,
+        "negative_samples": 10
+      },
+      "QFX": {
+        "units": "kg m-2 s-1",
+        "samples": 53022,
+        "minimum": -2.8347494662739336e-06,
+        "maximum": 0.000127295425045304,
+        "invalid_or_fill_values": 0,
+        "nonzero_samples": 53022,
+        "negative_samples": 18
+      },
+      "T2": {
+        "units": "K",
+        "samples": 53022,
+        "minimum": 292.72589111328125,
+        "maximum": 306.9444274902344,
+        "invalid_or_fill_values": 0,
+        "nonzero_samples": 53022,
+        "negative_samples": 0
+      },
+      "Q2": {
+        "units": "kg kg-1",
+        "samples": 53022,
+        "minimum": 0.013941723853349686,
+        "maximum": 0.020748477429151535,
+        "invalid_or_fill_values": 0,
+        "nonzero_samples": 53022,
+        "negative_samples": 0
+      }
+    },
+    "outdoor_response": {
+      "TC_URB": {
+        "units": "K",
+        "domain_time_records": 18,
+        "records_with_changes": 18,
+        "changed_urban_cell_time_samples": 53016,
+        "maximum_absolute_candidate_minus_baseline": 0.3021240234375
+      },
+      "QC_URB": {
+        "units": "kg kg{-1}",
+        "domain_time_records": 18,
+        "records_with_changes": 18,
+        "changed_urban_cell_time_samples": 53022,
+        "maximum_absolute_candidate_minus_baseline": 0.0009066741913557053
+      },
+      "SH_URB": {
+        "units": "W m{-2}",
+        "domain_time_records": 18,
+        "records_with_changes": 18,
+        "changed_urban_cell_time_samples": 53022,
+        "maximum_absolute_candidate_minus_baseline": 7.278045654296875
+      },
+      "LH_URB": {
+        "units": "W m{-2}",
+        "domain_time_records": 18,
+        "records_with_changes": 18,
+        "changed_urban_cell_time_samples": 53022,
+        "maximum_absolute_candidate_minus_baseline": 32.23925492167473
+      },
+      "HFX": {
+        "units": "W m-2",
+        "domain_time_records": 18,
+        "records_with_changes": 18,
+        "changed_urban_cell_time_samples": 53021,
+        "maximum_absolute_candidate_minus_baseline": 6.747894287109375
+      },
+      "LH": {
+        "units": "W m-2",
+        "domain_time_records": 18,
+        "records_with_changes": 18,
+        "changed_urban_cell_time_samples": 53022,
+        "maximum_absolute_candidate_minus_baseline": 28.883275985717773
+      },
+      "QVENT_URB2D": {
+        "units": "W m{-1}",
+        "domain_time_records": 18,
+        "records_with_changes": 18,
+        "changed_urban_cell_time_samples": 53022,
+        "maximum_absolute_candidate_minus_baseline": 27.55865478515625
+      },
+      "EVENT_URB2D": {
+        "units": "W m{-1}",
+        "domain_time_records": 18,
+        "records_with_changes": 18,
+        "changed_urban_cell_time_samples": 53022,
+        "maximum_absolute_candidate_minus_baseline": 199.779296875
+      },
+      "TIN_URB2D": {
+        "units": "K",
+        "domain_time_records": 18,
+        "records_with_changes": 18,
+        "changed_urban_cell_time_samples": 36005,
+        "maximum_absolute_candidate_minus_baseline": 0.01007080078125
+      },
+      "QIN_URB2D": {
+        "units": "kg kg{-1}",
+        "domain_time_records": 18,
+        "records_with_changes": 18,
+        "changed_urban_cell_time_samples": 53022,
+        "maximum_absolute_candidate_minus_baseline": 0.00018324051052331924
+      },
+      "QFB_URB2D": {
+        "units": "W m{-2}",
+        "domain_time_records": 18,
+        "records_with_changes": 0,
+        "changed_urban_cell_time_samples": 0,
+        "maximum_absolute_candidate_minus_baseline": 0.0
+      },
+      "QFLB_URB2D": {
+        "units": "W m{-2}",
+        "domain_time_records": 18,
+        "records_with_changes": 0,
+        "changed_urban_cell_time_samples": 0,
+        "maximum_absolute_candidate_minus_baseline": 0.0
+      }
+    },
+    "outdoor_response_attribution_limit": "All three ported changes together; differences are not attribution to ventilation alone",
+    "summer_hvac_activity": "QFB_URB2D, QFLB_URB2D and ECAC_URB2D are all zero in saved post-initialization urban samples."
+  },
+  "restart_residual_review": {
+    "status": "RESTART_RESIDUALS_REPRODUCED_IN_BASELINE",
+    "review_gate_passed": true,
+    "pre_existing_residual_behavior_reproduced": true,
+    "post_split_saved_variable_payloads_exact_for_both_executables": true,
+    "post_split_file_pairs_per_executable": 9,
+    "post_split_variable_records_per_executable": 2862,
+    "first_saved_post_split_time_utc": "2018-07-20_00:20:00",
+    "at_split_file_pairs": 3,
+    "at_split_variable_records": 954,
+    "at_split_differing_variable_records": 21,
+    "at_split_fields": [
+      "EIN_URB2D",
+      "EVENT_URB2D",
+      "LH_URB",
+      "QC_URB",
+      "SH_URB",
+      "U10E",
+      "V10E"
+    ],
+    "at_split_restart_side_residual_payloads_identical_across_executables": true,
+    "at_split_interpretation": "The reset payloads and affected masks match across executables. Continuous-run physical values may differ, so equality of difference magnitudes is not asserted.",
+    "final_checkpoint_file_pairs": 3,
+    "final_checkpoint_variable_records": 2749,
+    "final_checkpoint_exact_variable_records": 2746,
+    "final_checkpoint_differing_field": "CROPCAT",
+    "cropcat_changed_cells": {
+      "d01": 6528,
+      "d02": 6953,
+      "d03": 24512
+    },
+    "cropcat_continuous_to_restart": [
+      0,
+      -9999
+    ],
+    "cropcat_payloads_and_difference_pattern_reproduced": true,
+    "metadata_residual_signatures_reproduced": true,
+    "metadata_differences": {
+      "START_DATE": [
+        "2018-07-20_00:00:00",
+        "2018-07-20_00:15:00"
+      ],
+      "WRF_ALARM_SECS_TIL_NEXT_RING_30": [
+        19800,
+        20700
+      ],
+      "WRF_ALARM_SECS_TIL_NEXT_RING_55": [
+        -1800,
+        -900
+      ]
+    },
+    "full_restart_payloads_equal": false,
+    "candidate_comparison_basis": "Reused complete original comparison reports; reread startup residual fields and final CROPCAT payloads, requiring their current difference counts, extrema and first bitwise samples to reproduce archived records. Unchanged candidate fields are not freshly rehashed, and those archived comparisons do not supply full payload hashes.",
+    "interpretation": "A successful review attributes the retained residual behavior to the baseline executable under this same split. It does not waive residuals, declare initial restart diagnostics valid, or establish full restart/physical acceptance."
+  },
+  "winter_noah_lcz": {
+    "run": {
+      "status": "MODEL_RUN_PASS",
+      "start_utc": "2017-02-01_00:00:00",
+      "end_utc": "2017-02-01_00:30:00",
+      "returncode": 0,
+      "elapsed_seconds": 336.6374403941445,
+      "mpi_rank_records": 32,
+      "domain_steps": {
+        "3": 900,
+        "2": 180,
+        "1": 36
+      },
+      "fatal_message_count": 0,
+      "cfl_message_count": 0,
+      "history_files": 21,
+      "history_screen_passed": true,
+      "namelist_input_sha256": "e1ec3bcb91796cf6494146c6e30cbd59c95326cccc1ed5425a0b8e1e9e51256a",
+      "urban_table_sha256": "5042698d2fe0c01d2f4c203e06ef0f6704b186ca4b8e33a13d97a86775976d65"
+    },
+    "configuration": {
+      "sf_surface_physics": 2,
+      "sf_urban_physics": 1,
+      "use_wudapt_lcz": 1,
+      "slucm_distributed_drag": false,
+      "sbemoption": 1,
+      "treeoption": 0,
+      "ts_scheme": 1,
+      "mpi_ranks": 32,
+      "mpi_layout": [
+        4,
+        8
+      ],
+      "openmp_threads": 1,
+      "domain_dt_seconds": [
+        50,
+        10,
+        2
+      ],
+      "history_interval_minutes": 5
+    },
+    "effective_configuration_verified": true,
+    "land_category_map": {
+      "51": 1,
+      "52": 2,
+      "53": 3,
+      "54": 4,
+      "55": 5,
+      "56": 6,
+      "57": 7,
+      "58": 8,
+      "59": 9,
+      "60": 10,
+      "61": 11
+    },
+    "input_zero_fraction_is_valid_before_urban_initialization": true,
+    "input_land_types": {
+      "d01": {
+        "positive_fraction_cells": 0,
+        "explicit_lcz_cells": 27,
+        "default_isurban_cells": 0,
+        "modeled_urban_land_cells": 27,
+        "predicted_urban_type_counts": {
+          "6": 13,
+          "9": 4,
+          "2": 7,
+          "3": 1,
+          "8": 2
+        }
+      },
+      "d02": {
+        "positive_fraction_cells": 0,
+        "explicit_lcz_cells": 690,
+        "default_isurban_cells": 0,
+        "modeled_urban_land_cells": 690,
+        "predicted_urban_type_counts": {
+          "9": 62,
+          "8": 120,
+          "6": 347,
+          "3": 45,
+          "2": 67,
+          "5": 47,
+          "10": 2
+        }
+      },
+      "d03": {
+        "positive_fraction_cells": 0,
+        "explicit_lcz_cells": 10093,
+        "default_isurban_cells": 0,
+        "modeled_urban_land_cells": 10093,
+        "predicted_urban_type_counts": {
+          "3": 399,
+          "6": 4550,
+          "9": 1118,
+          "8": 1186,
+          "2": 1493,
+          "5": 1223,
+          "10": 59,
+          "4": 35,
+          "1": 30
+        }
+      }
+    },
+    "initialized_active_urban_cells": {
+      "d01": 27,
+      "d02": 690,
+      "d03": 10093
+    },
+    "coverage": {
+      "post_integration_records": 18,
+      "post_integration_urban_samples_by_domain": {
+        "d01": 162,
+        "d02": 4140,
+        "d03": 60558
+      },
+      "urban_classes_by_domain": {
+        "d01": [
+          2,
+          3,
+          6,
+          8,
+          9
+        ],
+        "d02": [
+          2,
+          3,
+          5,
+          6,
+          8,
+          9,
+          10
+        ],
+        "d03": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          8,
+          9,
+          10
+        ]
+      },
+      "field_activity": {
+        "TC_URB": {
+          "samples": 64860,
+          "nonzero_samples": 64860,
+          "zero_samples": 0,
+          "negative_samples": 0
+        },
+        "QC_URB": {
+          "samples": 64860,
+          "nonzero_samples": 64860,
+          "zero_samples": 0,
+          "negative_samples": 0
+        },
+        "SH_URB": {
+          "samples": 64860,
+          "nonzero_samples": 64860,
+          "zero_samples": 0,
+          "negative_samples": 0
+        },
+        "LH_URB": {
+          "samples": 64860,
+          "nonzero_samples": 64860,
+          "zero_samples": 0,
+          "negative_samples": 0
+        },
+        "TIN_URB2D": {
+          "samples": 64860,
+          "nonzero_samples": 64860,
+          "zero_samples": 0,
+          "negative_samples": 0
+        },
+        "QIN_URB2D": {
+          "samples": 64860,
+          "nonzero_samples": 64860,
+          "zero_samples": 0,
+          "negative_samples": 0
+        },
+        "QVENT_URB2D": {
+          "samples": 64860,
+          "nonzero_samples": 64860,
+          "zero_samples": 0,
+          "negative_samples": 64860
+        },
+        "EVENT_URB2D": {
+          "samples": 64860,
+          "nonzero_samples": 64860,
+          "zero_samples": 0,
+          "negative_samples": 64858
+        },
+        "QFB_URB2D": {
+          "samples": 64860,
+          "nonzero_samples": 13338,
+          "zero_samples": 51522,
+          "negative_samples": 13338
+        },
+        "QFLB_URB2D": {
+          "samples": 64860,
+          "nonzero_samples": 0,
+          "zero_samples": 64860,
+          "negative_samples": 0
+        },
+        "ECAC_URB2D": {
+          "samples": 64860,
+          "nonzero_samples": 13338,
+          "zero_samples": 51522,
+          "negative_samples": 0
+        },
+        "HFX": {
+          "samples": 64860,
+          "nonzero_samples": 64860,
+          "zero_samples": 0,
+          "negative_samples": 0
+        },
+        "LH": {
+          "samples": 64860,
+          "nonzero_samples": 64860,
+          "zero_samples": 0,
+          "negative_samples": 0
+        },
+        "QFX": {
+          "samples": 64860,
+          "nonzero_samples": 64860,
+          "zero_samples": 0,
+          "negative_samples": 0
+        },
+        "T2": {
+          "samples": 64860,
+          "nonzero_samples": 64860,
+          "zero_samples": 0,
+          "negative_samples": 0
+        },
+        "Q2": {
+          "samples": 64860,
+          "nonzero_samples": 64860,
+          "zero_samples": 0,
+          "negative_samples": 0
+        }
+      },
+      "hvac_activity_is_coverage_only": true
+    },
+    "observed_urban_types": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      8,
+      9,
+      10
+    ],
+    "absent_urban_types": [
+      7,
+      11
+    ],
+    "post_initialization_urban_field_ranges": {
+      "TC_URB": {
+        "units": "K",
+        "samples": 64860,
+        "minimum": 254.8057098388672,
+        "maximum": 288.71649169921875,
+        "invalid_or_fill_values": 0,
+        "nonzero_samples": 64860,
+        "negative_samples": 0
+      },
+      "QC_URB": {
+        "units": "kg kg{-1}",
+        "samples": 64860,
+        "minimum": 0.0015913390088826418,
+        "maximum": 0.005050089675933123,
+        "invalid_or_fill_values": 0,
+        "nonzero_samples": 64860,
+        "negative_samples": 0
+      },
+      "SH_URB": {
+        "units": "W m{-2}",
+        "samples": 64860,
+        "minimum": 54.745079040527344,
+        "maximum": 183.7576446533203,
+        "invalid_or_fill_values": 0,
+        "nonzero_samples": 64860,
+        "negative_samples": 0
+      },
+      "LH_URB": {
+        "units": "W m{-2}",
+        "samples": 64860,
+        "minimum": 0.020796669647097588,
+        "maximum": 23.4564266204834,
+        "invalid_or_fill_values": 0,
+        "nonzero_samples": 64860,
+        "negative_samples": 0
+      },
+      "TIN_URB2D": {
+        "units": "K",
+        "samples": 64860,
+        "minimum": 295.78265380859375,
+        "maximum": 300.2440185546875,
+        "invalid_or_fill_values": 0,
+        "nonzero_samples": 64860,
+        "negative_samples": 0
+      },
+      "QIN_URB2D": {
+        "units": "kg kg{-1}",
+        "samples": 64860,
+        "minimum": 0.003732578130438924,
+        "maximum": 0.005048809573054314,
+        "invalid_or_fill_values": 0,
+        "nonzero_samples": 64860,
+        "negative_samples": 0
+      },
+      "QVENT_URB2D": {
+        "units": "W m{-1}",
+        "samples": 64860,
+        "minimum": -2951.924560546875,
+        "maximum": -120.31306457519531,
+        "invalid_or_fill_values": 0,
+        "nonzero_samples": 64860,
+        "negative_samples": 64860
+      },
+      "EVENT_URB2D": {
+        "units": "W m{-1}",
+        "samples": 64860,
+        "minimum": -605.94873046875,
+        "maximum": 1.2934744358062744,
+        "invalid_or_fill_values": 0,
+        "nonzero_samples": 64860,
+        "negative_samples": 64858
+      },
+      "QFB_URB2D": {
+        "units": "W m{-2}",
+        "samples": 64860,
+        "minimum": -253.09788513183594,
+        "maximum": 0.0,
+        "invalid_or_fill_values": 0,
+        "nonzero_samples": 13338,
+        "negative_samples": 13338
+      },
+      "QFLB_URB2D": {
+        "units": "W m{-2}",
+        "samples": 64860,
+        "minimum": 0.0,
+        "maximum": 0.0,
+        "invalid_or_fill_values": 0,
+        "nonzero_samples": 0,
+        "negative_samples": 0
+      },
+      "ECAC_URB2D": {
+        "units": "W floor-m{-2}",
+        "samples": 64860,
+        "minimum": 0.0,
+        "maximum": 18.747217178344727,
+        "invalid_or_fill_values": 0,
+        "nonzero_samples": 13338,
+        "negative_samples": 0
+      },
+      "HFX": {
+        "units": "W m-2",
+        "samples": 64860,
+        "minimum": 32.0970344543457,
+        "maximum": 177.95388793945312,
+        "invalid_or_fill_values": 0,
+        "nonzero_samples": 64860,
+        "negative_samples": 0
+      },
+      "LH": {
+        "units": "W m-2",
+        "samples": 64860,
+        "minimum": 4.623997688293457,
+        "maximum": 74.01536560058594,
+        "invalid_or_fill_values": 0,
+        "nonzero_samples": 64860,
+        "negative_samples": 0
+      },
+      "QFX": {
+        "units": "kg m-2 s-1",
+        "samples": 64860,
+        "minimum": 1.8606704088597326e-06,
+        "maximum": 2.739652518357616e-05,
+        "invalid_or_fill_values": 0,
+        "nonzero_samples": 64860,
+        "negative_samples": 0
+      },
+      "T2": {
+        "units": "K",
+        "samples": 64860,
+        "minimum": 269.67718505859375,
+        "maximum": 283.8573303222656,
+        "invalid_or_fill_values": 0,
+        "nonzero_samples": 64860,
+        "negative_samples": 0
+      },
+      "Q2": {
+        "units": "kg kg-1",
+        "samples": 64860,
+        "minimum": 0.0012446489417925477,
+        "maximum": 0.005187598522752523,
+        "invalid_or_fill_values": 0,
+        "nonzero_samples": 64860,
+        "negative_samples": 0
+      }
+    },
+    "full_grid_fields": {
+      "T2": {
+        "samples": 495126,
+        "invalid_or_fill_values": 0,
+        "minimum": 250.4131622314453,
+        "maximum": 294.4154357910156,
+        "units": "K"
+      },
+      "Q2": {
+        "samples": 495126,
+        "invalid_or_fill_values": 0,
+        "minimum": 0.00037553731817752123,
+        "maximum": 0.012171968817710876,
+        "units": "kg kg-1"
+      },
+      "HFX": {
+        "samples": 495126,
+        "invalid_or_fill_values": 0,
+        "minimum": -73.93795013427734,
+        "maximum": 342.6753234863281,
+        "units": "W m-2"
+      },
+      "LH": {
+        "samples": 495126,
+        "invalid_or_fill_values": 0,
+        "minimum": -1.2498985528945923,
+        "maximum": 429.34515380859375,
+        "units": "W m-2"
+      }
+    },
+    "heating_nonzero_samples_by_saved_time": {
+      "2017-02-01_00:05:00": 0,
+      "2017-02-01_00:10:00": 0,
+      "2017-02-01_00:15:00": 0,
+      "2017-02-01_00:20:00": 123,
+      "2017-02-01_00:25:00": 5339,
+      "2017-02-01_00:30:00": 7876
+    },
+    "heating_interpretation": "Nonzero negative QFB and positive ECAC occur in 13,338 of 64,860 nested urban cell-time samples. This exercises heating during integration; five-minute output does not verify the within-step onset fraction independently.",
+    "latent_hvac_and_dry_endpoint_limit": "No latent HVAC activity or zero/extremely low QIN endpoint occurs in the saved winter outputs. Native tests provide direct endpoint evidence.",
+    "fraction_verification_limit": "Saved checks verify finite FRC in [0,1], positive active fractions, expected cell counts and classes. A cellwise equality comparison to table fractions is not retained.",
+    "physical_review_observation": {
+      "d03_minimum_TC_K_by_saved_time": {
+        "2017-02-01_00:05:00": 277.086669921875,
+        "2017-02-01_00:10:00": 277.4556579589844,
+        "2017-02-01_00:15:00": 277.6005554199219,
+        "2017-02-01_00:20:00": 268.8482360839844,
+        "2017-02-01_00:25:00": 256.88336181640625,
+        "2017-02-01_00:30:00": 254.8057098388672
+      },
+      "minimum_TC_K": 254.8057098388672,
+      "minimum_TC_degrees_C": -18.34429016113279,
+      "interpretation": "The low canyon temperature remains a physical-review concern. Candidate-only winter coverage cannot attribute it specifically to ventilation or establish its absence in the baseline. Summaries lack the co-located forcing, geometry and budget terms needed for that assessment."
+    },
+    "scope": "Post-integration finite/fill, nonnegative-humidity and positive-absolute-temperature checks; no observational or general physical acceptance"
+  },
+  "supplement_status": "WRF_PR2452_SUPPLEMENT_PASS_WITH_DOCUMENTED_RESTART_RESIDUALS",
+  "supplement_passed": true,
+  "supplement_helper_revision": "v2-input-urban-initialization",
+  "raw_evidence": {
+    "intel_native_initial_report": {
+      "filename": "native_report.json",
+      "bytes": 55254,
+      "sha256": "d302e3c7021b9e20308c8648fc10278e40b66786c79c6ecf3f67ab027e7aa08e"
+    },
+    "intel_native_strict_report": {
+      "filename": "native_report.json",
+      "bytes": 61335,
+      "sha256": "9df9124182ab2679519f5035dc524f7c1b200e2be704f94889fe0eb24e862565"
+    },
+    "intel_native_strict_archive": {
+      "filename": "ifx_strict_review.tar.gz",
+      "bytes": 210973,
+      "sha256": "6461cb56a3937a83d8b38017ecbd61988c20b30be61e92f133f72f4683ff0dc6"
+    },
+    "candidate_build_report": {
+      "filename": "build_report.json",
+      "bytes": 32926,
+      "sha256": "7d03acd8e03e0cca5ef4c731c432226d9fe82315de158d785cb11af96b60591d"
+    },
+    "five_run_report": {
+      "filename": "run_report.json",
+      "bytes": 768531,
+      "sha256": "234de11c21371aeb609bcca8351584ab728d8291a2b60dc8f19ef7178bdff5c9"
+    },
+    "five_run_archive": {
+      "filename": "wrf_short_review.tar.gz",
+      "bytes": 622138,
+      "sha256": "a49bd626642e452e8fc9082ec1a972a480d55024d7b87df421e6edcd9dc1bae2"
+    },
+    "sbem0_comparison": {
+      "filename": "sbem0_comparison.json",
+      "bytes": 18849,
+      "sha256": "707e8eb92037d78650ee878282c52a744771762cc7aa8c0a6b1a4159453ff684"
+    },
+    "candidate_restart_post_split": {
+      "filename": "restart_post_split_comparison.json",
+      "bytes": 13577,
+      "sha256": "5907d97645b89c972c57b4f4b1d3d3edd81e2f813720b7e636c240d2d43a82c9"
+    },
+    "candidate_restart_at_split": {
+      "filename": "restart_at_split_comparison.json",
+      "bytes": 34729,
+      "sha256": "59cf848cc1345bc811c0cf4b1699daa0b77910156d867bbe4dc41897c8f51aaa"
+    },
+    "candidate_restart_final_state": {
+      "filename": "restart_final_state_comparison.json",
+      "bytes": 12564,
+      "sha256": "c8cfc235d94912eacbd5efd6e24d7149ab9cac8c77cbd1d3e83e89828afd3753"
+    },
+    "sbem1_outdoor_effect": {
+      "filename": "sbem1_outdoor_effect.json",
+      "bytes": 44699,
+      "sha256": "d73dbee598441050ff19ed3cf64705d06437b379983e6b274ac7d476109f72af"
+    },
+    "supplement_report": {
+      "filename": "run_report.json",
+      "bytes": 575601,
+      "sha256": "c3a952f1ed9318911812d1c9e42eae6422ffc1e8a93ee7f326a0a1b60156653e"
+    },
+    "supplement_archive": {
+      "filename": "wrf_supplement_review.tar.gz",
+      "bytes": 551562,
+      "sha256": "d48ee4f813337077c89e5fc2dc78530021a291f64dd3bb74a5784d1f7c8a49b2"
+    },
+    "restart_residual_audit": {
+      "filename": "restart_residual_audit.json",
+      "bytes": 109439,
+      "sha256": "bc6bb8dc5a4663233ee457046c41445a3fe1e98b3eb7fb3a7a415063e8c8b7eb"
+    },
+    "baseline_restart_post_split": {
+      "filename": "baseline_restart_post_split_comparison.json",
+      "bytes": 13604,
+      "sha256": "f5ea2aaee5b4485d85b611954bfb6dc071c440f7ef5c3657e3501f6956476450"
+    },
+    "baseline_restart_at_split": {
+      "filename": "baseline_restart_at_split_comparison.json",
+      "bytes": 34734,
+      "sha256": "438f4999590bb7646e24366df3355f7636ff39155c9f036d08784b602306e833"
+    },
+    "baseline_restart_final_state": {
+      "filename": "baseline_restart_final_state_comparison.json",
+      "bytes": 12573,
+      "sha256": "922b86d956a9efbf6cf3f81090602d2e4dcdd6bf8a8ad6a57ab89510d8c850ab"
+    }
+  },
+  "review_limits": [
+    "This derived record summarizes actual user-executed reports, logs and recorded comparisons; model simulations were not rerun during review.",
+    "Raw NetCDF outputs remain with the model operator and are not in the uploaded evidence archives or this repository summary.",
+    "The first helper did not hash every saved NetCDF output. The old 00:15 checkpoint was not hashed during that run. This supplement records its current hash and exact copy, checks Times and executable/input/configuration lineage, then compares the new restart with the saved old continuous run. It cannot retrospectively prove that every saved NetCDF byte has been unchanged since the original run.",
+    "The native single-column state replay alone does not establish WRF restart-I/O correctness. Full-model evidence is reported separately here.",
+    "Saved post-restart outputs are exact at five-minute intervals, not asserted at every intervening timestep.",
+    "Finite-value screening covers 16 selected urban fields and four full-grid fields; it is not an all-variable physical-validity audit.",
+    "No independent full surface/building/canopy budget was reconstructed from these saved coupled-run statistics; native tests cover the numerical identities.",
+    "The earlier 48-hour runs and figures at commit 6099d9f6 predate these physics corrections and are not validation of the corrected enabled-BEM response.",
+    "Neither general physical acceptance nor the separate ILS TC/U10/forcing-height/input-data issues is closed. The winter low-TC observation is explicitly retained."
+  ]
+}

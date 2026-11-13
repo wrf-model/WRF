@@ -1,5 +1,7 @@
 MODULE module_sf_slucm_bem
 
+  USE, INTRINSIC :: ieee_arithmetic, ONLY : ieee_is_finite
+
   IMPLICIT NONE
   PRIVATE
 
@@ -93,7 +95,10 @@ CONTAINS
 ! scalar parameters selected from URBPARM.TBL or URBPARM_LCZ.TBL; when
 ! distributed aerodynamics is active, the caller may instead derive the BEM
 ! canyon geometry from grid-resolved morphology. module_sf_urban therefore
-! remains the only external urban-physics interface.
+! remains the only external urban-physics interface. The optional state_valid
+! flag lets a coupled caller reject an invalid trial without accepting its
+! state or invoking a serial STOP inside a parallel model. Standalone callers
+! that omit the flag stop explicitly on an invalid balance.
 !===============================================================================
   SUBROUTINE slucm_bem_calculate(                                      &
        urban_type, month, local_hour, cop_option, lcz_switch,     &
@@ -117,7 +122,7 @@ CONTAINS
        processed_load, processed_latent_load,                    &
        indoor_temp, indoor_specific_humidity, indoor_mrt,        &
        indoor_globe_temp, indoor_wetbulb_temp, indoor_wbgt,     &
-       ecac, ec)
+       ecac, ec, state_valid)
 
     IMPLICIT NONE
 
@@ -184,6 +189,7 @@ CONTAINS
     REAL, INTENT(OUT) :: indoor_wbgt
     REAL, INTENT(OUT) :: ecac
     REAL, INTENT(OUT) :: ec
+    LOGICAL, INTENT(OUT), OPTIONAL :: state_valid
 
     LOGICAL :: heating_mode
     REAL, PARAMETER :: minimum_specific_humidity = 1.0E-4
@@ -210,6 +216,7 @@ CONTAINS
     REAL :: safe_cop
 
     ! Explicit initialization prevents option-dependent undefined outputs.
+    IF (PRESENT(state_valid)) state_valid = .FALSE.
     qvent = 0.0
     event = 0.0
     indoor_load = 0.0
@@ -230,6 +237,31 @@ CONTAINS
     ecac = 0.0
     ec = 0.0
 
+    ! A zero or very small humidity is a valid state. Reject invalid inputs
+    ! instead of replacing the state with a setpoint or an arbitrary floor.
+    IF (.NOT. ALL(ieee_is_finite((/dt, humidity_relaxation_time,  &
+         ventilation_frequency, indoor_temp_prev, canyon_temp,  &
+         indoor_specific_humidity_prev, canyon_specific_humidity, &
+         building_height, floor_height, roof_width, road_width,   &
+         cp_air, latent_heat_vapor, air_density,                  &
+         effective_heat_capacity/)))) THEN
+      IF (PRESENT(state_valid)) RETURN
+      ERROR STOP 'slucm_bem_calculate: nonfinite balance input'
+    END IF
+    IF (dt <= 0.0 .OR. humidity_relaxation_time <= 0.0 .OR.       &
+        ventilation_frequency < 0.0 .OR.                        &
+        indoor_specific_humidity_prev < 0.0 .OR.                &
+        canyon_specific_humidity < 0.0) THEN
+      IF (PRESENT(state_valid)) RETURN
+      ERROR STOP 'slucm_bem_calculate: invalid time, ventilation or humidity'
+    END IF
+    IF (floor_height <= 0.0 .OR. building_height <= 0.0 .OR.     &
+        roof_width <= 0.0 .OR. cp_air <= 0.0 .OR.                &
+        latent_heat_vapor <= 0.0 .OR. air_density <= 0.0) THEN
+      IF (PRESENT(state_valid)) RETURN
+      ERROR STOP 'slucm_bem_calculate: invalid geometry or air properties'
+    END IF
+
     occupant_baseload = perflo * heat_person
     total_baseload = appliance_baseload + occupant_baseload
 
@@ -246,6 +278,18 @@ CONTAINS
 
     indoor_moisture_capacity = latent_heat_vapor * air_density    &
          * building_height * roof_width
+
+    IF (.NOT. ALL(ieee_is_finite((/land_area, floor_area,         &
+         indoor_heat_capacity, indoor_moisture_capacity/)))) THEN
+      IF (PRESENT(state_valid)) RETURN
+      ERROR STOP 'slucm_bem_calculate: nonfinite geometry or capacity'
+    END IF
+    IF (land_area <= 0.0 .OR. floor_area <= 0.0 .OR.              &
+        indoor_heat_capacity <= 0.0 .OR.                        &
+        indoor_moisture_capacity <= 0.0) THEN
+      IF (PRESENT(state_valid)) RETURN
+      ERROR STOP 'slucm_bem_calculate: nonpositive geometry or capacity'
+    END IF
 
     air_volume_flow = ventilation_frequency                       &
          * (building_height * roof_width) / 3600.0
@@ -302,6 +346,16 @@ CONTAINS
              * building_height * roof_width                       &
              * (indoor_temp_prev - temp_lower_limit) / dt
         processed_load = MIN(0.0, sensible_control_load)
+      ELSE IF (active_floor_fraction > 0.0) THEN
+        ! Resolve arrival at the lower threshold during this WRF step.
+        ! The frozen-load Euler trajectory uses the full prognostic heat
+        ! capacity, including furnishings. Only the time remaining after
+        ! arrival contributes to this step-mean heating load. The active-
+        ! state restoration formula above retains its air heat capacity.
+        sensible_control_load = indoor_load + indoor_heat_capacity &
+             * (indoor_temp_prev - temp_lower_limit) / dt
+        processed_load = active_floor_fraction                    &
+             * MIN(0.0, sensible_control_load)
       END IF
     ELSE
       IF (active_floor_fraction > 0.0 .AND.                       &
@@ -311,18 +365,36 @@ CONTAINS
              * building_height * roof_width                       &
              * (indoor_temp_prev - temp_upper_limit) / dt
         processed_load = MAX(0.0, sensible_control_load)
+      ELSE IF (active_floor_fraction > 0.0) THEN
+        ! For a threshold crossing, t_hit=C*(T_upper-T_old)/Hin.
+        ! The mean load is active_fraction*Hin*(1-t_hit/dt). This
+        ! algebraic form is zero when the frozen load does not cross.
+        ! It uses the caller's WRF dt; no hourly ILS subcycling is added.
+        sensible_control_load = indoor_load + indoor_heat_capacity &
+             * (indoor_temp_prev - temp_upper_limit) / dt
+        processed_load = active_floor_fraction                    &
+             * MAX(0.0, sensible_control_load)
       END IF
 
       ! Dehumidification is activated independently of the sensible cooling
       ! condition. The excess humidity is relaxed toward the upper comfort
-      ! limit over humidity_relaxation_time, not over the WRF model time step.
-      IF (active_floor_fraction > 0.0 .AND.                       &
-          indoor_specific_humidity_prev > humidity_upper_limit) THEN
-        latent_control_load = indoor_latent_load * active_floor_fraction &
-             + active_floor_fraction * indoor_moisture_capacity   &
-             * (indoor_specific_humidity_prev                     &
-             - humidity_upper_limit) / humidity_relaxation_time
-        processed_latent_load = MAX(0.0, latent_control_load)
+      ! limit over humidity_relaxation_time once already active. At/below
+      ! the threshold, account for arrival within this Euler step instead
+      ! of deferring the entire latent load until the next model step.
+      IF (active_floor_fraction > 0.0) THEN
+        IF (indoor_specific_humidity_prev > humidity_upper_limit) THEN
+          latent_control_load = indoor_latent_load * active_floor_fraction &
+               + active_floor_fraction * indoor_moisture_capacity &
+               * (indoor_specific_humidity_prev                   &
+               - humidity_upper_limit) / humidity_relaxation_time
+          processed_latent_load = MAX(0.0, latent_control_load)
+        ELSE
+          latent_control_load = indoor_latent_load                &
+               + indoor_moisture_capacity                         &
+               * (indoor_specific_humidity_prev - humidity_upper_limit) / dt
+          processed_latent_load = active_floor_fraction           &
+               * MAX(0.0, latent_control_load)
+        END IF
 
         ! Prevent the dehumidification term from driving qin below its lower
         ! bound in one WRF time step, even if an extreme parameter is supplied.
@@ -341,8 +413,18 @@ CONTAINS
     indoor_specific_humidity = indoor_specific_humidity_prev      &
          + (dt / indoor_moisture_capacity)                        &
          * (indoor_latent_load - processed_latent_load)
-    indoor_specific_humidity = MAX(minimum_specific_humidity,     &
-                                   indoor_specific_humidity)
+    ! The HVAC removal cap protects its own control floor. A physically
+    ! drier room must not be humidified merely by taking a time step.
+    ! Keep the conservative update; an invalid trial is rejected by the
+    ! coupled caller (or stops explicitly for a standalone legacy call).
+    IF (.NOT. ALL(ieee_is_finite((/indoor_temp, indoor_specific_humidity/)))) THEN
+      IF (PRESENT(state_valid)) RETURN
+      ERROR STOP 'slucm_bem_calculate: nonfinite indoor update'
+    END IF
+    IF (indoor_specific_humidity < 0.0) THEN
+      IF (PRESENT(state_valid)) RETURN
+      ERROR STOP 'slucm_bem_calculate: negative indoor humidity update'
+    END IF
 
     ! Compute electricity and outdoor heat exchange from the load actually
     ! processed by HVAC. Therefore QFB/QFBL and ECAC are exactly zero when
@@ -374,6 +456,7 @@ CONTAINS
          indoor_wbgt)
 
     ec = ecac + appliance_baseload + latent_appliance_baseload
+    IF (PRESENT(state_valid)) state_valid = .TRUE.
 
   END SUBROUTINE slucm_bem_calculate
 

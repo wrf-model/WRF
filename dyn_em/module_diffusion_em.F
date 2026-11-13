@@ -24,7 +24,9 @@
                                    fnm, fnp, cf1, cf2, cf3, zx, zy,  &
                                    ids, ide, jds, jde, kds, kde,     &
                                    ims, ime, jms, jme, kms, kme,     &
-                                   its, ite, jts, jte, kts, kte      )
+                                   ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+                                   its, ite, jts_in, jte_in, kts, kte )
+                                   ! END LICENSE
 
 ! History:     Sep 2003  Changes by Jason Knievel and George Bryan, NCAR
 !              Oct 2001  Converted to mass core by Bill Skamarock, NCAR
@@ -59,7 +61,9 @@
     INTEGER, INTENT( IN )  &
     :: ids, ide, jds, jde, kds, kde, &
        ims, ime, jms, jme, kms, kme, &
-       its, ite, jts, jte, kts, kte
+       ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+       its, ite, jts_in, jte_in, kts, kte
+       ! END LICENSE
 
     REAL, INTENT( IN )  &
     :: rdx, rdy, cf1, cf2, cf3
@@ -81,6 +85,25 @@
    REAL , DIMENSION(ims:ime, kms:kme, jms:jme, n_nba_rij), INTENT(INOUT) &
    :: nba_rij
 
+    ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+    INTEGER, PARAMETER :: J_STRIP = 4
+    INTEGER :: jb, je_s
+
+    ! Sweep 4-row j-strips so the eight 3D automatic scratch arrays stay cache-resident;
+    ! merge strips within 2 rows of jds/jde so boundary conditions match full-tile bounds.
+    jb = jts_in
+    DO WHILE ( jb <= jte_in )
+      je_s = MIN( MAX( jb + J_STRIP - 1, jds + 2 ), jte_in )
+      IF ( je_s >= jde - 2 ) je_s = jte_in
+      CALL cal_deform_and_div_strip( jb, je_s )
+      jb = je_s + 1
+    END DO
+
+    CONTAINS
+
+    SUBROUTINE cal_deform_and_div_strip( jts, jte )
+    INTEGER, INTENT( IN ) :: jts, jte
+    ! END LICENSE
 
 ! Local variables.
 
@@ -1186,6 +1209,10 @@
 ! The second three (defor12, defor13, defor23) of six deformation terms
 ! are now calculated at vorticity points.
 !=======================================================================
+
+    ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+    END SUBROUTINE cal_deform_and_div_strip
+    ! END LICENSE
 
     END SUBROUTINE cal_deform_and_div
 

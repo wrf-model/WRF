@@ -141,7 +141,12 @@
         INTEGER inbuf(ims:ime,kms:kme,jms:jme), outbuf(*)
         INTEGER js, je, ks, ke, is, ie, curs
         ! Local
-        INTEGER i,j,k,p
+        ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+        INTEGER i,j,k,p,ni,ni4
+        ! 4-way unroll prevents gfortran -O2 from lowering short halo rows to per-row memcpy calls
+        ni = MAX(0, ie - is + 1)
+        ni4 = IAND(ni, -4)
+        ! END LICENSE
 !$OMP PARALLEL PRIVATE (i,j,k,p) 
 #ifndef _OPENMP
         p = 1
@@ -152,10 +157,28 @@
         p = (j-js)*(ie-is+1)*(ke-ks+1)+1
 #endif
           DO k = ks, ke
-            DO i = is, ie
-              outbuf(p) = inbuf(i,k,j)
-              p = p + 1
+            ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+            DO i = 0, ni4 - 1, 4
+              outbuf(p+i)   = inbuf(is+i,  k,j)
+              outbuf(p+i+1) = inbuf(is+i+1,k,j)
+              outbuf(p+i+2) = inbuf(is+i+2,k,j)
+              outbuf(p+i+3) = inbuf(is+i+3,k,j)
+            ! END LICENSE
             ENDDO
+            ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+            SELECT CASE (ni - ni4)
+            CASE (3)
+              outbuf(p+ni4)   = inbuf(is+ni4,  k,j)
+              outbuf(p+ni4+1) = inbuf(is+ni4+1,k,j)
+              outbuf(p+ni4+2) = inbuf(is+ni4+2,k,j)
+            CASE (2)
+              outbuf(p+ni4)   = inbuf(is+ni4,  k,j)
+              outbuf(p+ni4+1) = inbuf(is+ni4+1,k,j)
+            CASE (1)
+              outbuf(p+ni4)   = inbuf(is+ni4,  k,j)
+            END SELECT
+            p = p + ni
+            ! END LICENSE
           ENDDO
         ENDDO
 !$OMP END DO
@@ -202,7 +225,12 @@
         INTEGER outbuf(ims:ime,kms:kme,jms:jme), inbuf(*)
         INTEGER js, je, ks, ke, is, ie, curs
         ! Local
-        INTEGER i,j,k,p
+        ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+        INTEGER i,j,k,p,ni,ni4
+        ! 4-way unroll prevents gfortran -O2 from lowering short halo rows to per-row memcpy calls
+        ni = MAX(0, ie - is + 1)
+        ni4 = IAND(ni, -4)
+        ! END LICENSE
 !$OMP PARALLEL PRIVATE (i,j,k,p) 
 #ifndef _OPENMP
         p = 1
@@ -213,10 +241,28 @@
         p = (j-js)*(ie-is+1)*(ke-ks+1)+1
 #endif
           DO k = ks, ke
-            DO i = is, ie
-              outbuf(i,k,j) = inbuf(p)
-              p = p + 1
+            ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+            DO i = 0, ni4 - 1, 4
+              outbuf(is+i,  k,j) = inbuf(p+i)
+              outbuf(is+i+1,k,j) = inbuf(p+i+1)
+              outbuf(is+i+2,k,j) = inbuf(p+i+2)
+              outbuf(is+i+3,k,j) = inbuf(p+i+3)
+            ! END LICENSE
             ENDDO
+            ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+            SELECT CASE (ni - ni4)
+            CASE (3)
+              outbuf(is+ni4,  k,j) = inbuf(p+ni4)
+              outbuf(is+ni4+1,k,j) = inbuf(p+ni4+1)
+              outbuf(is+ni4+2,k,j) = inbuf(p+ni4+2)
+            CASE (2)
+              outbuf(is+ni4,  k,j) = inbuf(p+ni4)
+              outbuf(is+ni4+1,k,j) = inbuf(p+ni4+1)
+            CASE (1)
+              outbuf(is+ni4,  k,j) = inbuf(p+ni4)
+            END SELECT
+            p = p + ni
+            ! END LICENSE
           ENDDO
         ENDDO
 !$OMP END DO
@@ -384,7 +430,12 @@
         INTEGER inbuf(ims:ime,jms:jme,kms:kme), outbuf(*)
         INTEGER js, je, ks, ke, is, ie, curs
         ! Local
-        INTEGER i,j,k,p
+        ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+        INTEGER i,j,k,p,ni,ni4
+        ! 4-way unroll prevents gfortran -O2 from lowering short halo rows to per-row memcpy calls
+        ni = MAX(0, ie - is + 1)
+        ni4 = IAND(ni, -4)
+        ! END LICENSE
 !$OMP PARALLEL PRIVATE (i,j,k,p) 
 #ifndef _OPENMP
         p = 1
@@ -395,10 +446,28 @@
         p = (k-ks)*(je-js+1)*(ie-is+1)+1
 #endif
           DO j = js, je
-            DO i = is, ie
-              outbuf(p) = inbuf(i,j,k)
-              p = p + 1
+            ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+            DO i = 0, ni4 - 1, 4
+              outbuf(p+i)   = inbuf(is+i,  j,k)
+              outbuf(p+i+1) = inbuf(is+i+1,j,k)
+              outbuf(p+i+2) = inbuf(is+i+2,j,k)
+              outbuf(p+i+3) = inbuf(is+i+3,j,k)
+            ! END LICENSE
             ENDDO
+            ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+            SELECT CASE (ni - ni4)
+            CASE (3)
+              outbuf(p+ni4)   = inbuf(is+ni4,  j,k)
+              outbuf(p+ni4+1) = inbuf(is+ni4+1,j,k)
+              outbuf(p+ni4+2) = inbuf(is+ni4+2,j,k)
+            CASE (2)
+              outbuf(p+ni4)   = inbuf(is+ni4,  j,k)
+              outbuf(p+ni4+1) = inbuf(is+ni4+1,j,k)
+            CASE (1)
+              outbuf(p+ni4)   = inbuf(is+ni4,  j,k)
+            END SELECT
+            p = p + ni
+            ! END LICENSE
           ENDDO
         ENDDO
 !$OMP END DO
@@ -444,7 +513,12 @@
         INTEGER outbuf(ims:ime,jms:jme,kms:kme), inbuf(*)
         INTEGER js, je, ks, ke, is, ie, curs
         ! Local
-        INTEGER i,j,k,p
+        ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+        INTEGER i,j,k,p,ni,ni4
+        ! 4-way unroll prevents gfortran -O2 from lowering short halo rows to per-row memcpy calls
+        ni = MAX(0, ie - is + 1)
+        ni4 = IAND(ni, -4)
+        ! END LICENSE
 !$OMP PARALLEL PRIVATE (i,j,k,p) 
 #ifndef _OPENMP
         p = 1
@@ -455,10 +529,28 @@
         p = (k-ks)*(je-js+1)*(ie-is+1)+1
 #endif
           DO j = js, je
-            DO i = is, ie
-              outbuf(i,j,k) = inbuf(p)
-              p = p + 1
+            ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+            DO i = 0, ni4 - 1, 4
+              outbuf(is+i,  j,k) = inbuf(p+i)
+              outbuf(is+i+1,j,k) = inbuf(p+i+1)
+              outbuf(is+i+2,j,k) = inbuf(p+i+2)
+              outbuf(is+i+3,j,k) = inbuf(p+i+3)
+            ! END LICENSE
             ENDDO
+            ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+            SELECT CASE (ni - ni4)
+            CASE (3)
+              outbuf(is+ni4,  j,k) = inbuf(p+ni4)
+              outbuf(is+ni4+1,j,k) = inbuf(p+ni4+1)
+              outbuf(is+ni4+2,j,k) = inbuf(p+ni4+2)
+            CASE (2)
+              outbuf(is+ni4,  j,k) = inbuf(p+ni4)
+              outbuf(is+ni4+1,j,k) = inbuf(p+ni4+1)
+            CASE (1)
+              outbuf(is+ni4,  j,k) = inbuf(p+ni4)
+            END SELECT
+            p = p + ni
+            ! END LICENSE
           ENDDO
         ENDDO
 !$OMP END DO

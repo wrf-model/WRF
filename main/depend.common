@@ -4032,7 +4032,8 @@ module_sf_sstskin.o: \
 
 
 module_sf_urban.o: \
-	../frame/module_wrf_error.o 
+	../frame/module_wrf_error.o \
+	module_sf_slucm_bem.o
 
 
 module_wind_fitch.o: \

@@ -1145,6 +1145,10 @@
       CHARACTER*256:: mp_debug
       
       integer :: kediagloc
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      logical :: skip_mp
+      real :: qv_tmp, qvsi_tmp, sati_tmp, ssati_tmp
+      ! END LICENSE
 
 !+---+
 
@@ -1218,17 +1222,68 @@
          ENDIF
          SR(i,j) = 0.
 
+         ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+         ! Matches mp_thompson no_micro early exit (qc..qg <= R1 and ssati <= 0; see mp_thompson)
+         skip_mp = .true.
+         ! END LICENSE
          do k = kts, kte
             t1d(k) = th(i,k,j)*pii(i,k,j)
             p1d(k) = p(i,k,j)
-            w1d(k) = w(i,k,j)
-            dz1d(k) = dz(i,k,j)
             qv1d(k) = qv(i,k,j)
             qc1d(k) = qc(i,k,j)
             qi1d(k) = qi(i,k,j)
             qr1d(k) = qr(i,k,j)
             qs1d(k) = qs(i,k,j)
             qg1d(k) = qg(i,k,j)
+            ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+            if (qc1d(k) .gt. R1 .or. qi1d(k) .gt. R1 .or. qr1d(k) .gt. R1 &
+     &          .or. qs1d(k) .gt. R1 .or. qg1d(k) .gt. R1) then
+               skip_mp = .false.
+            elseif (skip_mp) then
+               qv_tmp = MAX(1.E-10, qv1d(k))
+               if (t1d(k) - 273.15 .le. 0.0) then
+                  qvsi_tmp = rsif(p1d(k), t1d(k))
+               else
+                  qvsi_tmp = rslf(p1d(k), t1d(k))
+               endif
+               sati_tmp = qv_tmp/qvsi_tmp
+               ssati_tmp = sati_tmp - 1.
+               if (abs(ssati_tmp) .lt. eps) ssati_tmp = 0.0
+               if (ssati_tmp .gt. 0.0) skip_mp = .false.
+            endif
+         enddo
+
+         if (skip_mp) then
+            qc1d(kts:kte) = 0.0
+            nc1d(kts:kte) = 0.0
+            qi1d(kts:kte) = 0.0
+            ni1d(kts:kte) = 0.0
+            qr1d(kts:kte) = 0.0
+            nr1d(kts:kte) = 0.0
+            qs1d(kts:kte) = 0.0
+            qg1d(kts:kte) = 0.0
+            ng1d(kts:kte) = 0.0
+            qb1d(kts:kte) = 0.0
+#if ( WRF_CHEM == 1 )
+            if (wetscav_on) then
+               rainprod1d(kts:kte) = 0.0
+               evapprod1d(kts:kte) = 0.0
+            endif
+#endif
+            if (is_aerosol_aware) then
+               nwfa1d(kts:kte) = nwfa(i,kts:kte,j)
+               nifa1d(kts:kte) = nifa(i,kts:kte,j)
+               if (wif_input_opt .eq. 2) then
+                  nbca1d(kts:kte) = nbca(i,kts:kte,j)
+               else
+                  nbca1d(kts:kte) = 0.0
+               endif
+            endif
+         else
+         do k = kts, kte
+            w1d(k) = w(i,k,j)
+            dz1d(k) = dz(i,k,j)
+            ! END LICENSE
             ni1d(k) = ni(i,k,j)
             nr1d(k) = nr(i,k,j)
             rho(k) = 0.622*p1d(k)/(R*t1d(k)*(qv1d(k)+0.622))
@@ -1290,6 +1345,9 @@
                       wetscav_on, rainprod1d, evapprod1d, &
 #endif
                       kts, kte, dt, i, j)
+         ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+         endif
+         ! END LICENSE
 
          pcp_ra(i,j) = pptrain
          pcp_sn(i,j) = pptsnow
@@ -2001,7 +2059,9 @@
          twet(k) = temp(k)
       enddo
 
-      if (k_melting .gt. 0) then
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      if (k_melting .gt. 0 .and. (ANY(L_qs) .or. ANY(L_qg))) then
+      ! END LICENSE
          do k = kts, k_melting
             if (satw(k) .lt. 0.999) then
                dew_t = MIN(temp(k)-0.001, t_dew(pres(k), qv(k))) 
@@ -2154,6 +2214,10 @@
 !..Compute warm-rain process terms (except evap done later).
 !+---+-----------------------------------------------------------------+
 
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      mvd_c(:) = D0c
+      if (ANY(L_qr) .or. ANY(L_qc)) then
+      ! END LICENSE
       do k = kts, kte
 
 !..Rain self-collection follows Seifert, 1994 and drop break-up
@@ -2232,6 +2296,9 @@
          endif
 
       enddo
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      endif
+      ! END LICENSE
 
 !+---+-----------------------------------------------------------------+
 !..Compute all frozen hydrometeor species' process terms.
@@ -3370,23 +3437,35 @@
 !..Calculate y-intercept, slope values for graupel.
 !+---+-----------------------------------------------------------------+
 
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      if (ANY(L_qg)) then
+      ! END LICENSE
       do k = kte, kts, -1
          lamg = (am_g(idx_bg(k))*cgg(3,1)*ogg2*ng(k)/rg(k))**obmg
          ilamg(k) = 1./lamg
          N0_g(k) = ng(k)*ogg2*lamg**cge(2,1)
       enddo
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      endif
+      ! END LICENSE
 
       endif
 
 !+---+-----------------------------------------------------------------+
 !..Calculate y-intercept, slope values for rain.
 !+---+-----------------------------------------------------------------+
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      if (ANY(L_qr)) then
+      ! END LICENSE
       do k = kte, kts, -1
          lamr = (am_r*crg(3)*org2*nr(k)/rr(k))**obmr
          ilamr(k) = 1./lamr
          mvd_r(k) = (3.0 + mu_r + 0.672) / lamr
          N0_r(k) = nr(k)*org2*lamr**cre(2)
       enddo
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      endif
+      ! END LICENSE
 
 !+---+-----------------------------------------------------------------+
 !..Cloud water condensation and evaporation.  Nucleate cloud droplets
@@ -5619,6 +5698,10 @@
       re_qc1d(:) = RE_QC_BG
       re_qi1d(:) = RE_QI_BG
       re_qs1d(:) = RE_QS_BG
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      if (.not. (ANY(qc1d .gt. 0.0) .or. ANY(qi1d .gt. 0.0) &
+     &    .or. ANY(qs1d .gt. 0.0))) return
+      ! END LICENSE
 
       do k = kts, kte
          rho(k) = 0.622*p1d(k)/(R*t1d(k)*(qv1d(k)+0.622))

@@ -78,7 +78,7 @@ end if
 
 do j=j_st,j_en
     jbase=jtfs+jr*(j-jts)
-    do i=i_st,i_st
+    do i=i_st,i_en
        ibase=ifts+ir*(i-its)
        do joff=0,jr-1
            j_f=joff+jbase

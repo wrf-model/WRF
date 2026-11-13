@@ -4098,8 +4098,6 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
 
 ! LOCAL VAR
 
-   REAL , DIMENSION( ims:ime, kms:kme, jms:jme)  ::    var_mix
-
    INTEGER :: im, i,j,k
    INTEGER :: i_start, i_end, j_start, j_end
 
@@ -4249,33 +4247,25 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
 !*****************************************
 
    IF ( config_flags%mix_full_fields ) THEN
-
-     DO j=jts,min(jte,jde-1)
-     DO k=kts,kte-1
-     DO i=its,min(ite,ide-1)
-       var_mix(i,k,j) = thp(i,k,j)
-     ENDDO
-     ENDDO
-     ENDDO
-
+     ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+     CALL vertical_diffusion_s( rt_tendf, config_flags, thp, xkhv,   &
+                                dn, dnw, rdz, rdzw, fnm, fnp, rho,   &
+                                .false.,                             &
+                                ids, ide, jds, jde, kds, kde,        &
+                                ims, ime, jms, jme, kms, kme,        &
+                                its, ite, jts, jte, kts, kte        )
+     ! END LICENSE
    ELSE
-
-     DO j=jts,min(jte,jde-1)
-     DO k=kts,kte-1
-     DO i=its,min(ite,ide-1)
-       var_mix(i,k,j) = thp(i,k,j) - t_base(k)
-     ENDDO
-     ENDDO
-     ENDDO
-
+     ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+     CALL vertical_diffusion_s( rt_tendf, config_flags, thp, xkhv,   &
+                                dn, dnw, rdz, rdzw, fnm, fnp, rho,   &
+                                .false.,                             &
+                                ids, ide, jds, jde, kds, kde,        &
+                                ims, ime, jms, jme, kms, kme,        &
+                                its, ite, jts, jte, kts, kte,        &
+                                var_base=t_base                     )
+     ! END LICENSE
    END IF
-
-   CALL vertical_diffusion_s( rt_tendf, config_flags, var_mix, xkhv, &
-                              dn, dnw, rdz, rdzw, fnm, fnp, rho,     &
-                              .false.,                               &
-                              ids, ide, jds, jde, kds, kde,          &
-                              ims, ime, jms, jme, kms, kme,          &
-                              its, ite, jts, jte, kts, kte          )
 
 
 !*****************************************
@@ -4345,36 +4335,31 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
      moist_loop: do im = PARAM_FIRST_SCALAR, n_moist
 
        IF ( (.not. config_flags%mix_full_fields) .and. (im == P_QV) ) THEN
-
-         DO j=jts,min(jte,jde-1)
-         DO k=kts,kte-1
-         DO i=its,min(ite,ide-1)
-          var_mix(i,k,j) = moist(i,k,j,im) - qv_base(k)
-         ENDDO
-         ENDDO
-         ENDDO
-
-       ELSE
-
-         DO j=jts,min(jte,jde-1)
-         DO k=kts,kte-1
-         DO i=its,min(ite,ide-1)
-          var_mix(i,k,j) = moist(i,k,j,im)
-         ENDDO
-         ENDDO
-         ENDDO
-
-       END IF
-
-
+          ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
           CALL vertical_diffusion_s( moist_tendf(ims,kms,jms,im),         &
-                                     config_flags, var_mix,               &
+                                     config_flags, moist(ims,kms,jms,im), &
+                                     xkhv,                                &
+                                     dn, dnw, rdz, rdzw, fnm, fnp, rho,   &
+                                     .false.,                             &
+                                     ids, ide, jds, jde, kds, kde,        &
+                                     ims, ime, jms, jme, kms, kme,        &
+                                     its, ite, jts, jte, kts, kte,        &
+                                     var_base=qv_base                    )
+          ! END LICENSE
+       ELSE
+          CALL vertical_diffusion_s( moist_tendf(ims,kms,jms,im),         &
+                                     ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+                                     config_flags, moist(ims,kms,jms,im), &
+                                     ! END LICENSE
                                      xkhv,                                &
                                      dn, dnw, rdz, rdzw, fnm, fnp, rho,   &
                                      .false.,                             &
                                      ids, ide, jds, jde, kds, kde,        &
                                      ims, ime, jms, jme, kms, kme,        &
                                      its, ite, jts, jte, kts, kte        )
+       ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+       END IF
+       ! END LICENSE
 
 !*****************************************
 !*****************************************
@@ -4791,7 +4776,9 @@ SUBROUTINE vertical_diffusion_s( tendency, config_flags, var, xkhv,       &
                                  doing_tke,                               &
                                  ids, ide, jds, jde, kds, kde,            &
                                  ims, ime, jms, jme, kms, kme,            &
-                                 its, ite, jts, jte, kts, kte            )
+                                 ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+                                 its, ite, jts, jte, kts, kte, var_base  )
+                                 ! END LICENSE
 
 !-----------------------------------------------------------------------
 ! Begin declarations.
@@ -4820,17 +4807,19 @@ SUBROUTINE vertical_diffusion_s( tendency, config_flags, var, xkhv,       &
                                                                      rdz, &
                                                                     rdzw, &
                                                                      rho
+   ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+   REAL , DIMENSION( kms:kme ) , INTENT(IN   ), OPTIONAL       :: var_base
+   ! END LICENSE
 ! LOCAL VARS
 
    INTEGER :: i, j, k, ktf
 
    INTEGER :: i_start, i_end, j_start, j_end
 
-   REAL , DIMENSION( its:ite, kts:kte, jts:jte)            ::        H3, &
-                                                                 xkxavg, &
-                                                                  rravg
-
-   REAL , DIMENSION( its:ite, kts:kte, jts:jte)            ::  tmptendf
+   ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+   REAL , DIMENSION( its:ite, kts:kte )                    ::        H3
+   REAL :: xkxavg_s, tmptendf_s, dv
+   ! END LICENSE
 
 ! End declarations.
 !-----------------------------------------------------------------------
@@ -4853,56 +4842,53 @@ SUBROUTINE vertical_diffusion_s( tendency, config_flags, var, xkhv,       &
       IF ( config_flags%periodic_x ) i_start = its
       IF ( config_flags%periodic_x ) i_end = MIN(ite,ide-1)
 
-   IF (doing_tke) THEN
-      DO j = j_start, j_end
-      DO k = kts,ktf
-      DO i = i_start, i_end
-         tmptendf(i,k,j)=tendency(i,k,j)
-      ENDDO
-      ENDDO
-      ENDDO
-   ENDIF
-
 ! H3
 
-   xkxavg = 0.
-
    DO j = j_start, j_end
-   DO k = kts+1,ktf
-   DO i = i_start, i_end
-      xkxavg(i,k,j)=fnm(k)*xkhv(i,k,j)+fnp(k)*xkhv(i,k-1,j)
-      xkxavg(i,k,j)=xkxavg(i,k,j)*(fnm(k)*rho(i,k,j)+fnp(k)*rho(i,k-1,j))
-      H3(i,k,j)=-xkxavg(i,k,j)*(var(i,k,j)-var(i,k-1,j))*rdz(i,k,j)
-   ENDDO
-   ENDDO
-   ENDDO
-
-   DO j = j_start, j_end
-   DO i = i_start, i_end
-      H3(i,kts,j)=0.
-      H3(i,ktf+1,j)=0.
-   ENDDO
-   ENDDO
-
-   DO j = j_start, j_end
-   DO k = kts,ktf
-   DO i = i_start, i_end
-      tendency(i,k,j)=tendency(i,k,j)  &
-                       +   g * (H3(i,k+1,j)-H3(i,k,j))/dnw(k)
-   ENDDO
-   ENDDO
-   ENDDO
-
-   IF (doing_tke) THEN
-      DO j = j_start, j_end
-      DO k = kts,ktf
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      IF ( PRESENT(var_base) ) THEN
+         DO k = kts+1, ktf
+         DO i = i_start, i_end
+            xkxavg_s = fnm(k)*xkhv(i,k,j) + fnp(k)*xkhv(i,k-1,j)
+            xkxavg_s = xkxavg_s * ( fnm(k)*rho(i,k,j) + fnp(k)*rho(i,k-1,j) )
+            dv = ( var(i,k,j) - var_base(k) ) - ( var(i,k-1,j) - var_base(k-1) )
+            H3(i,k) = -xkxavg_s * dv * rdz(i,k,j)
+         ENDDO
+         ENDDO
+      ELSE
+         DO k = kts+1, ktf
+         DO i = i_start, i_end
+            xkxavg_s = fnm(k)*xkhv(i,k,j) + fnp(k)*xkhv(i,k-1,j)
+            xkxavg_s = xkxavg_s * ( fnm(k)*rho(i,k,j) + fnp(k)*rho(i,k-1,j) )
+            H3(i,k) = -xkxavg_s * ( var(i,k,j) - var(i,k-1,j) ) * rdz(i,k,j)
+         ENDDO
+         ENDDO
+      ENDIF
+      ! END LICENSE
       DO i = i_start, i_end
-          tendency(i,k,j)=tmptendf(i,k,j)+2.* &
-                          (tendency(i,k,j)-tmptendf(i,k,j))
+         ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+         H3(i,kts) = 0.
+         H3(i,ktf+1) = 0.
+         ! END LICENSE
       ENDDO
-      ENDDO
-      ENDDO
-   ENDIF
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      IF ( doing_tke ) THEN
+         DO k = kts, ktf
+         DO i = i_start, i_end
+            tmptendf_s = tendency(i,k,j)
+            tendency(i,k,j) = tmptendf_s + g * ( H3(i,k+1) - H3(i,k) ) / dnw(k)
+            tendency(i,k,j) = tmptendf_s + 2. * ( tendency(i,k,j) - tmptendf_s )
+         ENDDO
+         ENDDO
+      ELSE
+         DO k = kts, ktf
+         DO i = i_start, i_end
+            tendency(i,k,j) = tendency(i,k,j) + g * ( H3(i,k+1) - H3(i,k) ) / dnw(k)
+         ENDDO
+         ENDDO
+      ENDIF
+   ENDDO
+      ! END LICENSE
 
 END SUBROUTINE vertical_diffusion_s
 

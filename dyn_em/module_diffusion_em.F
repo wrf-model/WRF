@@ -5153,6 +5153,10 @@ END SUBROUTINE vertical_diffusion_s
        gamv(i,j) = pu1 * brint*v_phy(i,1,j)/wspd(i,j)
       ELSE
        pblflg(i,j) = .false.
+! gamu and gamv are kept between steps and applied in the vertical diffusion
+! every step, so clear them where the column is no longer convective
+       gamu(i,j) = 0.
+       gamv(i,j) = 0.
       ENDIF
   ENDDO
   ENDDO

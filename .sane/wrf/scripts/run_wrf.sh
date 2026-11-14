@@ -84,6 +84,9 @@ if [ ! -z "${ompthreads}" ]; then
   export OMP_NUM_THREADS=$ompthreads
 fi
 
+# Clean up previous WRF runs
+rm wrfout_d* real.print.out* wrf.print.out* wrf_d0*_runstats.out qr_acr_qg_V4.dat fort.98 fort.88 -rf
+
 ################################################################################
 cmd="$mpi_cmd $wrf_exec $wrf_nml"
 banner 42 "START $cmd"

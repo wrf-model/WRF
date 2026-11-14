@@ -7,6 +7,7 @@ help()
   echo "  -o                        Configuration optstring passed into configure"
   echo "  -b                        Build command passed into compile"
   echo "  -d                        Build directory, default is './'"
+  echo "  -f                        Fresh build (clean old build if it exists)"
   echo "  -h                  Print this message"
   echo ""
 }
@@ -15,7 +16,8 @@ echo "Input arguments:"
 echo "$*"
 
 buildDirectory="./"
-while getopts c:n:o:b:d:h opt; do
+freshBuild="true"
+while getopts c:n:o:b:d:f:h opt; do
   case $opt in
     c)
       configuration="$OPTARG"
@@ -32,6 +34,9 @@ while getopts c:n:o:b:d:h opt; do
     d)
       buildDirectory="$OPTARG"
     ;;
+    f)
+      freshBuild=$( echo "$OPTARG" | tr '[:upper:]' '[:lower:]' )
+    ;;
     h)  help; exit 0 ;;
     *)  help; exit 1 ;;
     :)  help; exit 1 ;;
@@ -40,7 +45,7 @@ while getopts c:n:o:b:d:h opt; do
 done
 
 if [ "$buildDirectory" != "./" ]; then
-  if [ -d "$buildDirectory" ]; then
+  if [ -d "$buildDirectory" ] && [ "$freshBuild" = "true" ]; then
     echo "Removing $buildDirectory"
     rm -rf $buildDirectory
   fi
@@ -57,7 +62,9 @@ if [ "$buildDirectory" != "./" ]; then
   cd $buildDirectory
 fi
 
-./clean -a
+if [ "$freshBuild" = "true" ]; then
+  ./clean -a
+fi
 
 echo "Compiling with option $configuration nesting=$nesting and additional flags '$configOpt'"
 ./configure $configOpt << EOF

@@ -124,6 +124,11 @@ fi
 
 # Check output per domain
 maxDom=$( grep max_dom namelist.input |  awk '{print $3}' | tr -d ',' )
+# Ideal initialization writes only the parent domain. Nested domains are
+# initialized by wrf.exe from that parent, rather than separate wrfinput files.
+if [ "$( basename "$wrf_init" )" = "ideal" ] || [ "$( basename "$wrf_init" )" = "ideal.exe" ]; then
+  maxDom=1
+fi
 currentDom=0
 while [ $currentDom -lt $maxDom ]; do
   currentDom=$(( $currentDom + 1 ))

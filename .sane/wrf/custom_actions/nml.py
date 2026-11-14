@@ -25,7 +25,7 @@ def load_nml( filename ):
   for match in re.finditer( r"&(?P<group>\w+)(?P<kv_pairs>.*?)\n*^[ ]*/", contents, re.S | re.M ):
     group = match.group( "group" )
     nml[group] = OrderedDict()
-    for kv_match in re.finditer( r"^[ ]+(?P<key>\w+)[ ]*=[ ]*(?P<value>.*?)$", match.group("kv_pairs"), re.M ):
+    for kv_match in re.finditer( r"^[ \t]+(?P<key>\w+)[ \t]*=[ \t]*(?P<value>.*?)$", match.group("kv_pairs"), re.M ):
       key = kv_match.group( "key" )
       values = list(
                     filter(

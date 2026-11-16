@@ -1070,6 +1070,8 @@ CONTAINS
       IF ( grid%is_intermediate ) RETURN                ! short circuit
       IF ( TRIM(fname) .EQ. "NONE_SPECIFIED" ) RETURN   ! short circuit
 
+      count_em = 0    ! also defined when the OPEN below fails
+
       IF ( wrf_dm_on_monitor() ) THEN
         OPEN ( UNIT   = read_unit    ,      &
                FILE   = TRIM(fname)      ,      &
@@ -1190,7 +1192,12 @@ CONTAINS
             CALL wrf_error_fatal('Set ignore_iofields_warn to true in namelist to ignore')
           ELSE
             IF ( .NOT. you_warned_me ) THEN
-              if ( .NOT. you_warned_me2(count_em,id) ) CALL wrf_message(mess)  ! Don't repeat the W A R N I N G message
+              ! count_em is 0 when no field was read (file did not open, or no field line before the problem)
+              IF ( count_em .LT. 1 ) THEN
+                CALL wrf_message(mess)
+              ELSE IF ( .NOT. you_warned_me2(count_em,id) ) THEN
+                CALL wrf_message(mess)  ! Don't repeat the W A R N I N G message
+              ENDIF
               WRITE(mess,*)'Ignoring problems reading ',TRIM(fname) 
               CALL wrf_message(mess)
               CALL wrf_message('Continuing.  To make this a fatal error, set ignore_iofields_warn to false in namelist' )

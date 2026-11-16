@@ -1270,6 +1270,7 @@ CONTAINS
       real  tl,tl2,qql,dql,qqd
       real  th,th2,qqh,dqh
       real  zsum,qsum,dim,dip,c1,con1,fa1,fa2
+      real  ztop
       real  allold, allnew, zz, dzamin, cflmax, decfl
       real  dz(km), ww(km), qq(km), wd(km), wa(km), was(km)
       real  den(km), denfac(km), tk(km)
@@ -1412,7 +1413,8 @@ CONTAINS
                            cycle find_kb
                          endif
                enddo find_kb
-               find_kt : do kk=kt,km
+               ztop = zi(k+1)
+               find_kt : do kk=kt,km+1
                          if( zi(k+1).le.za(kk) ) then
                            kt = kk
                            exit find_kt
@@ -1420,11 +1422,16 @@ CONTAINS
                            cycle find_kt
                          endif
                enddo find_kt
+! layer top above the top arrival interface: nothing arrives above za(km+1)
+               if( kk.gt.km+1 ) then
+                 kt = km+1
+                 ztop = za(km+1)
+               endif
                kt = kt - 1
 ! compute q with piecewise constant method
                if( kt.eq.kb ) then
                  tl=(zi(k)-za(kb))/dza(kb)
-                 th=(zi(k+1)-za(kb))/dza(kb)
+                 th=(ztop-za(kb))/dza(kb)
                  tl2=tl*tl
                  th2=th*th
                  qqd=0.5*(qpi(kb)-qmi(kb))
@@ -1445,7 +1452,7 @@ CONTAINS
                    qsum = qsum + qa(m) * dza(m)
                  enddo
                  endif
-                 th=(zi(k+1)-za(kt))/dza(kt)
+                 th=(ztop-za(kt))/dza(kt)
                  th2=th*th
                  qqd=0.5*(qpi(kt)-qmi(kt))
                  dqh=qqd*th2+qmi(kt)*th
@@ -1453,6 +1460,8 @@ CONTAINS
                  qsum  = qsum + dqh*dza(kt)
                  qn(k) = qsum/zsum
                endif
+! the means above cover only zi(k) to ztop; the rest of the layer is empty
+               if( ztop.lt.zi(k+1) ) qn(k) = qn(k)*(ztop-zi(k))/dz(k)
                cycle intp
              endif
 !
@@ -1464,7 +1473,13 @@ CONTAINS
                       precip(i) = precip(i) + qa(k)*dza(k)
                       cycle sum_precip
                     else if ( za(k).lt.0.0 .and. za(k+1).ge.0.0 ) then
-                      precip(i) = precip(i) + qa(k)*(0.0-za(k))
+                      if( qpi(k).eq.qmi(k) ) then
+                        precip(i) = precip(i) + qa(k)*(0.0-za(k))
+                      else
+                        tl=(0.0-za(k))/dza(k)
+                        qqd=0.5*(qpi(k)-qmi(k))
+                        precip(i) = precip(i) + (qqd*tl*tl+qmi(k)*tl)*dza(k)
+                      endif
                       exit sum_precip
                     endif
                     exit sum_precip

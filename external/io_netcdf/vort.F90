@@ -116,6 +116,8 @@ end module read_util_module
 
   integer, external :: iargc
   logical, external :: iveceq
+  ! pressure (Pa) of the surface whose height compute_500mb_height returns
+  integer, parameter :: track_level = 50000
 
   levlim = -1
 
@@ -225,7 +227,7 @@ if ( Justplot ) then
                             ierr)
 
     CALL compute_500mb_height  ( ph, phb, p, pb,                  &
-                                   height,                          &
+                                   height, track_level,             &
                                    ids, ide, jds, jde, kds, kde,    &
                                    ims, ime, jms, jme, kms, kme,    &
                                    its, ite, jts, jte, kts, kte    )

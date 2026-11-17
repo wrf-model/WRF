@@ -6079,7 +6079,9 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
                                 rdx, rdy, rdzw, dt,            &
                                 ids, ide, jds, jde, kds, kde,  &
                                 ims, ime, jms, jme, kms, kme,  &
-                                its, ite, jts, jte, kts, kte  )
+                                ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+                                its, ite, jts_in, jte_in, kts, kte  )
+                                ! END LICENSE
 
 !  this is a first cut at a positive definite advection option
 !  for scalars in WRF.  This version is memory intensive ->
@@ -6102,7 +6104,9 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
    INTEGER ,                 INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
                                               ims, ime, jms, jme, kms, kme, &
-                                              its, ite, jts, jte, kts, kte
+                                              ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+                                              its, ite, jts_in, jte_in, kts, kte
+                                              ! END LICENSE
 
    REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(IN   ) :: field,     &
                                                                       field_old, &
@@ -6131,6 +6135,26 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
                                                                   rdy,  &
                                                                   dt
    INTEGER ,                                     INTENT(IN   ) :: time_step
+
+   ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+   INTEGER, PARAMETER :: J_STRIP = 6
+   INTEGER :: jb, je_s
+
+   ! Sweep 6-row j-strips so the eight automatic flux arrays stay L2/L3-resident;
+   ! merge boundary strips within 4 rows of jds/jde so degrade_ys/degrade_ye match full-tile bounds.
+   jb = jts_in
+   DO WHILE ( jb <= jte_in )
+     je_s = MIN( MAX( jb + J_STRIP - 1, jds + 4 ), jte_in )
+     IF ( je_s >= jde - 4 ) je_s = jte_in
+     CALL advect_scalar_pd_strip( jb, je_s )
+     jb = je_s + 1
+   END DO
+
+   CONTAINS
+
+   SUBROUTINE advect_scalar_pd_strip( jts, jte )
+   INTEGER, INTENT(IN) :: jts, jte
+   ! END LICENSE
 
    ! Local data
    
@@ -7881,6 +7905,10 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
   ENDDO
   ENDDO
   END IF
+
+   ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+   END SUBROUTINE advect_scalar_pd_strip
+   ! END LICENSE
 
 END SUBROUTINE advect_scalar_pd
 

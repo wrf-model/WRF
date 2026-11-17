@@ -1638,7 +1638,9 @@ SUBROUTINE rk_update_scalar( scs, sce,                      &
    REAL    :: sc_middle, msfsq
    REAL, DIMENSION(its:ite) :: muold, munew
 
-   REAL, DIMENSION(its:ite, kts:kte, jts:jte  ) :: tendency
+   ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+   REAL, DIMENSION(its:ite, kts:kte) :: tendency
+   ! END LICENSE
 
    INTEGER :: i_start,i_end,j_start,j_end,k_start,k_end
    INTEGER :: i_start_spc,i_end_spc,j_start_spc,j_end_spc,k_start_spc,k_end_spc
@@ -1687,29 +1689,38 @@ SUBROUTINE rk_update_scalar( scs, sce,                      &
        DO  j = jts, min(jte,jde-1)
        DO  k = kts, min(kte,kde-1)
        DO  i = its, min(ite,ide-1)
-           tendency(i,k,j) = 0.
+           ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+           tendency(i,k) = 0.
+           ! END LICENSE
        ENDDO
        ENDDO
-       ENDDO
-   
-       DO  j = j_start,j_end
+
+       ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+       IF ( j >= j_start .AND. j <= j_end ) THEN
+       ! END LICENSE
        DO  k = k_start,k_end
        DO  i = i_start,i_end
           ! scalar was coupled with my
-           tendency(i,k,j) = advect_tend(i,k,j) * msfty(i,j)
+           ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+           tendency(i,k) = advect_tend(i,k,j) * msfty(i,j)
+           ! END LICENSE
        ENDDO
        ENDDO
-       ENDDO
-   
-       DO  j = j_start_spc,j_end_spc
+       ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+       END IF
+
+       IF ( j >= j_start_spc .AND. j <= j_end_spc ) THEN
+       ! END LICENSE
        DO  k = k_start_spc,k_end_spc
        DO  i = i_start_spc,i_end_spc
-           tendency(i,k,j) = tendency(i,k,j) + sc_tend(i,k,j,im)
+           ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+           tendency(i,k) = tendency(i,k) + sc_tend(i,k,j,im)
+           ! END LICENSE
        ENDDO
        ENDDO
-       ENDDO
-   
-      DO  j = jts, min(jte,jde-1)
+       ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+       END IF
+       ! END LICENSE
 
       DO  i = its, min(ite,ide-1)
         MUOLD(i) = MU_OLD(i,j) + MU_BASE(i,j)
@@ -1721,7 +1732,9 @@ SUBROUTINE rk_update_scalar( scs, sce,                      &
 
         scalar_1(i,k,j,im) = scalar_2(i,k,j,im)
         scalar_2(i,k,j,im) = ((c1(k)*muold(i)+c2(k))*scalar_1(i,k,j,im)   &
-                             + dt*tendency(i,k,j))/(c1(k)*munew(i)+c2(k))
+                             ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+                             + dt*tendency(i,k))/(c1(k)*munew(i)+c2(k))
+                             ! END LICENSE
 
       ENDDO
       ENDDO
@@ -1738,29 +1751,38 @@ SUBROUTINE rk_update_scalar( scs, sce,                      &
        DO  j = jts, min(jte,jde-1)
        DO  k = kts, min(kte,kde-1)
        DO  i = its, min(ite,ide-1)
-           tendency(i,k,j) = 0.
-       ENDDO
-       ENDDO
-       ENDDO
-   
-       DO  j = j_start,j_end
-       DO  k = k_start,k_end
-       DO  i = i_start,i_end
-           ! scalar was coupled with my
-           tendency(i,k,j) = advect_tend(i,k,j) * msfty(i,j)
-       ENDDO
-       ENDDO
-       ENDDO
-   
-       DO  j = j_start_spc,j_end_spc
-       DO  k = k_start_spc,k_end_spc
-       DO  i = i_start_spc,i_end_spc
-           tendency(i,k,j) = tendency(i,k,j) + sc_tend(i,k,j,im)
-       ENDDO
+           ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+           tendency(i,k) = 0.
+           ! END LICENSE
        ENDDO
        ENDDO
 
-      DO  j = jts, min(jte,jde-1)
+       ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+       IF ( j >= j_start .AND. j <= j_end ) THEN
+       ! END LICENSE
+       DO  k = k_start,k_end
+       DO  i = i_start,i_end
+           ! scalar was coupled with my
+           ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+           tendency(i,k) = advect_tend(i,k,j) * msfty(i,j)
+           ! END LICENSE
+       ENDDO
+       ENDDO
+       ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+       END IF
+
+       IF ( j >= j_start_spc .AND. j <= j_end_spc ) THEN
+       ! END LICENSE
+       DO  k = k_start_spc,k_end_spc
+       DO  i = i_start_spc,i_end_spc
+           ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+           tendency(i,k) = tendency(i,k) + sc_tend(i,k,j,im)
+           ! END LICENSE
+       ENDDO
+       ENDDO
+       ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+       END IF
+       ! END LICENSE
 
       DO  i = its, min(ite,ide-1)
         MUOLD(i) = MU_OLD(i,j) + MU_BASE(i,j)
@@ -1771,7 +1793,9 @@ SUBROUTINE rk_update_scalar( scs, sce,                      &
       DO  i = its, min(ite,ide-1)
 
         scalar_2(i,k,j,im) = ((c1(k)*muold(i)+c2(k))*scalar_1(i,k,j,im)   &
-                             + dt*tendency(i,k,j))/(c1(k)*munew(i)+c2(k))
+                             ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+                             + dt*tendency(i,k))/(c1(k)*munew(i)+c2(k))
+                             ! END LICENSE
 
       ENDDO
       ENDDO
@@ -1837,7 +1861,9 @@ SUBROUTINE rk_update_scalar_pd( scs, sce,                      &
    REAL    :: sc_middle, msfsq
    REAL, DIMENSION(its:ite) :: muold, munew
 
-   REAL, DIMENSION(its:ite, kts:kte, jts:jte  ) :: tendency
+   ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+   REAL, DIMENSION(its:ite, kts:kte) :: tendency
+   ! END LICENSE
 
    INTEGER :: i_start,i_end,j_start,j_end,k_start,k_end
    INTEGER :: i_start_spc,i_end_spc,j_start_spc,j_end_spc,k_start_spc,k_end_spc
@@ -1881,21 +1907,26 @@ SUBROUTINE rk_update_scalar_pd( scs, sce,                      &
        DO  j = jts, min(jte,jde-1)
        DO  k = kts, min(kte,kde-1)
        DO  i = its, min(ite,ide-1)
-           tendency(i,k,j) = 0.
-       ENDDO
-       ENDDO
-       ENDDO
-   
-       DO  j = j_start_spc,j_end_spc
-       DO  k = k_start_spc,k_end_spc
-       DO  i = i_start_spc,i_end_spc
-           tendency(i,k,j) = tendency(i,k,j) + sc_tend(i,k,j,im)
-           sc_tend(i,k,j,im) = 0.
-       ENDDO
+           ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+           tendency(i,k) = 0.
+           ! END LICENSE
        ENDDO
        ENDDO
 
-      DO  j = jts, min(jte,jde-1)
+       ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+       IF ( j >= j_start_spc .AND. j <= j_end_spc ) THEN
+       ! END LICENSE
+       DO  k = k_start_spc,k_end_spc
+       DO  i = i_start_spc,i_end_spc
+           ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+           tendency(i,k) = tendency(i,k) + sc_tend(i,k,j,im)
+           ! END LICENSE
+           sc_tend(i,k,j,im) = 0.
+       ENDDO
+       ENDDO
+       ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+       END IF
+       ! END LICENSE
 
       DO  i = its, min(ite,ide-1)
         MUOLD(i) = MU_OLD(i,j) + MU_BASE(i,j)
@@ -1906,7 +1937,9 @@ SUBROUTINE rk_update_scalar_pd( scs, sce,                      &
       DO  i = its, min(ite,ide-1)
 
         scalar(i,k,j,im) = ((c1(k)*muold(i)+c2(k))*scalar(i,k,j,im)   &
-                             + dt*tendency(i,k,j))/(c1(k)*munew(i)+c2(k))
+                             ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+                             + dt*tendency(i,k))/(c1(k)*munew(i)+c2(k))
+                             ! END LICENSE
       ENDDO
       ENDDO
       ENDDO

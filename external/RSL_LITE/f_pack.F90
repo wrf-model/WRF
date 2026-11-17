@@ -143,7 +143,7 @@
         ! Local
         ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
         INTEGER i,j,k,p,ni,ni4
-        ! 4-way unroll prevents gfortran -O2 from lowering short halo rows to per-row memcpy calls
+        ! 4-way unroll prevents gfortran -O2 from lowering short halo rows to per-row memcpy calls.
         ni = MAX(0, ie - is + 1)
         ni4 = IAND(ni, -4)
         ! END LICENSE

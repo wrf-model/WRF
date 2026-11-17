@@ -1340,7 +1340,7 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
      END IF
 
      IF ( can_skip_zero .AND. .NOT. (moist_step .AND. im == P_QV) ) THEN
-       ! Include +-4 halo cells matching up to 6th-order advection stencil reach
+       ! Include +-4 halo cells matching up to 6th-order advection stencil reach.
        all_zero = .TRUE.
        zero_chk: DO j = MAX(jms, jts-4), MIN(jme, jte+4)
          DO k = kts, MIN(kte, kde-1)

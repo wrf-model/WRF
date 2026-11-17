@@ -6444,14 +6444,10 @@ END SUBROUTINE phy_bc
 !
 ! Local variables.
 
-    REAL, DIMENSION( its:ite, kts:kte, jts:jte )  &
-    :: dthrdn
-
-    REAL, DIMENSION( its:ite, kts:kte, jts:jte )  &
+    ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+    REAL, DIMENSION( its:ite, kts:kte, 1:1 )  &
+    ! END LICENSE
     :: l_scale
-
-    REAL, DIMENSION( its:ite )  &
-    :: sumtke,  sumtkez
 
     INTEGER  &
     :: i, j, k, ktf, i_start, i_end, j_start, j_end
@@ -6487,13 +6483,20 @@ END SUBROUTINE phy_bc
       IF ( config_flags%periodic_x ) i_start = its
       IF ( config_flags%periodic_x ) i_end = MIN( ite, ide-1 )
 
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      ! Pass j, j for (jts, jte) so calc_l_scale populates the single-row l_scale(:,:,1:1) slab in place
+      DO j = j_start, j_end
+      ! END LICENSE
       CALL calc_l_scale( config_flags, tke, BN2, l_scale,      &
-                         i_start, i_end, ktf, j_start, j_end,  &
+                         ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+                         i_start, i_end, ktf, j, j,            &
+                         ! END LICENSE
                          dx, dy, rdzw, msftx, msfty,           &
                          ids, ide, jds, jde, kds, kde,         &
                          ims, ime, jms, jme, kms, kme,         &
-                         its, ite, jts, jte, kts, kte          )
-      DO j = j_start, j_end
+                         ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+                         its, ite, j, j, kts, kte              )
+                         ! END LICENSE
       DO k = kts, ktf
       DO i = i_start, i_end
         deltas  = ( dx/msftx(i,j) * dy/msfty(i,j) / rdzw(i,k,j) )**0.33333333
@@ -6505,7 +6508,9 @@ END SUBROUTINE phy_bc
         IF ( k .eq. kts .or. k .eq. ktf ) then
           coefc = 3.9
         ELSE
-          coefc = ce1 + ce2 * l_scale(i,k,j) / deltas
+          ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+          coefc = ce1 + ce2 * l_scale(i,k,1) / deltas
+          ! END LICENSE
         END IF
 
 ! XZ
@@ -6513,10 +6518,14 @@ END SUBROUTINE phy_bc
           delxy = SQRT(dx/msftx(i,j)*dy/msfty(i,j))
           pu1 = pu(delxy,hpbl(i,j))
           coefc_m = 0.3 !  
-          l_diss(i,k,j) = (1.0-pu1)*l_scale(i,k,j)/coefc + pu1*dlk(i,k,j)/coefc_m
+          ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+          l_diss(i,k,j) = (1.0-pu1)*l_scale(i,k,1)/coefc + pu1*dlk(i,k,j)/coefc_m
+          ! END LICENSE
         ELSE 
           tendency(i,k,j) = tendency(i,k,j) - &
-                           (c1(k)*mu(i,j)+c2(k)) * coefc * tketmp**1.5 / l_scale(i,k,j)
+                           ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+                           (c1(k)*mu(i,j)+c2(k)) * coefc * tketmp**1.5 / l_scale(i,k,1)
+                           ! END LICENSE
         ENDIF !
       END DO
       END DO
@@ -6624,13 +6633,9 @@ END SUBROUTINE phy_bc
     REAL  &
     :: mtau
 
-    REAL, DIMENSION( its-1:ite+1, kts:kte, jts-1:jte+1 )  &
-    :: avg, titau, tmp2
-
-    REAL, DIMENSION( its:ite, kts:kte, jts:jte )  &
-    :: titau12, tmp1, zxavg, zyavg
-
-    REAL :: absU, cd0, Cd
+    ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+    REAL :: absU, cd0, Cd, avg_s, tend_s, cmu, d00, d01, d10, d11
+    ! END LICENSE
 
 ! End declarations.
 !-----------------------------------------------------------------------
@@ -6655,108 +6660,47 @@ END SUBROUTINE phy_bc
       IF ( config_flags%periodic_x ) i_start = its
       IF ( config_flags%periodic_x ) i_end = MIN( ite, ide-1 )
 
-    DO j = j_start, j_end
-    DO k = kts, ktf
-    DO i = i_start, i_end
-      zxavg(i,k,j) = 0.25 * ( zx(i,k  ,j) + zx(i+1,k  ,j) + &
-                              zx(i,k+1,j) + zx(i+1,k+1,j)  )
-      zyavg(i,k,j) = 0.25 * ( zy(i,k  ,j) + zy(i,k  ,j+1) + &
-                              zy(i,k+1,j) + zy(i,k+1,j+1)  )
-    END DO
-    END DO
-    END DO
-
 ! Begin calculating production of turbulence due to shear.  The approach
 ! is to add together contributions from six terms, each of which is the
 ! square of a deformation that is then multiplied by an exchange
 ! coefficiant.  The same exchange coefficient is assumed for horizontal
 ! and vertical coefficients for some of the terms (the vertical value is
 ! the one used).
-
 ! For defor11.
-
-   DO j = j_start, j_end
-   DO k = kts, ktf
-   DO i = i_start, i_end
-      tendency(i,k,j) = tendency(i,k,j) + 0.5 *  &
-                     (c1(k)*mu(i,j)+c2(k)) * xkmh(i,k,j) * ( ( defor11(i,k,j) )**2 )
-   END DO
-   END DO
-   END DO
-
 ! For defor22.
-
-   DO j = j_start, j_end
-   DO k = kts, ktf
-   DO i = i_start, i_end
-      tendency(i,k,j) = tendency(i,k,j) + 0.5 *  &
-                     (c1(k)*mu(i,j)+c2(k)) * xkmh(i,k,j) * ( ( defor22(i,k,j) )**2 )
-   END DO
-   END DO
-   END DO
-
 ! For defor33.
-
-   DO j = j_start, j_end
-   DO k = kts, ktf
-   DO i = i_start, i_end
-      tendency(i,k,j) = tendency(i,k,j) + 0.5 *  &
-                     (c1(k)*mu(i,j)+c2(k)) * xkmv(i,k,j) * ( ( defor33(i,k,j) )**2 )
-   END DO
-   END DO
-   END DO
-
 ! For defor12.
-
-   DO j = j_start, j_end
-   DO k = kts, ktf
-   DO i = i_start, i_end
-      avg(i,k,j) = 0.25 *  &
-                  ( ( defor12(i  ,k,j)**2 ) + ( defor12(i  ,k,j+1)**2 ) +  &
-                    ( defor12(i+1,k,j)**2 ) + ( defor12(i+1,k,j+1)**2 ) )
-   END DO
-   END DO
-   END DO
-
-   DO j = j_start, j_end
-   DO k = kts, ktf
-   DO i = i_start, i_end
-      tendency(i,k,j) = tendency(i,k,j) + (c1(k)*mu(i,j)+c2(k)) * xkmh(i,k,j) * avg(i,k,j)
-   END DO
-   END DO
-   END DO
-
 ! For defor13.
 
     DO j = j_start, j_end
-    DO k = kts+1, ktf
-    DO i = i_start, i_end+1
-      tmp2(i,k,j) = defor13(i,k,j)
-    END DO
-    END DO
-    END DO
-
-    DO j = j_start, j_end
-    DO i = i_start, i_end+1
-      tmp2(i,kts  ,j) = 0.0
-      tmp2(i,ktf+1,j) = 0.0
-    END DO
-    END DO
-
-    DO j = j_start, j_end
     DO k = kts, ktf
     DO i = i_start, i_end
-      avg(i,k,j) = 0.25 *  &
-                   ( ( tmp2(i  ,k+1,j)**2 ) + ( tmp2(i  ,k,j)**2 ) +  &
-                     ( tmp2(i+1,k+1,j)**2 ) + ( tmp2(i+1,k,j)**2 ) )
-    END DO
-    END DO
-    END DO
-
-    DO j = j_start, j_end
-    DO k = kts, ktf
-    DO i = i_start, i_end
-       tendency(i,k,j) = tendency(i,k,j) + (c1(k)*mu(i,j)+c2(k)) * xkmv(i,k,j) * avg(i,k,j)
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      ! Fuse shear components into scalar accumulators with explicit k == kts/ktf zero-boundary guards
+      cmu = c1(k)*mu(i,j) + c2(k)
+      tend_s = tendency(i,k,j) + 0.5 * cmu * xkmh(i,k,j) * ( defor11(i,k,j)**2 )
+      tend_s = tend_s + 0.5 * cmu * xkmh(i,k,j) * ( defor22(i,k,j)**2 )
+      tend_s = tend_s + 0.5 * cmu * xkmv(i,k,j) * ( defor33(i,k,j)**2 )
+      avg_s = 0.25 * ( ( defor12(i  ,k,j)**2 ) + ( defor12(i  ,k,j+1)**2 ) + &
+                       ( defor12(i+1,k,j)**2 ) + ( defor12(i+1,k,j+1)**2 ) )
+      tend_s = tend_s + cmu * xkmh(i,k,j) * avg_s
+      IF ( k == kts ) THEN
+        d00 = 0.0
+        d10 = 0.0
+      ELSE
+        d00 = defor13(i  ,k,j)
+        d10 = defor13(i+1,k,j)
+      END IF
+      IF ( k == ktf ) THEN
+        d01 = 0.0
+        d11 = 0.0
+      ELSE
+        d01 = defor13(i  ,k+1,j)
+        d11 = defor13(i+1,k+1,j)
+      END IF
+      avg_s = 0.25 * ( ( d01**2 ) + ( d00**2 ) + ( d11**2 ) + ( d10**2 ) )
+      tendency(i,k,j) = tend_s + cmu * xkmv(i,k,j) * avg_s
+      ! END LICENSE
     END DO
     END DO
     END DO
@@ -6802,35 +6746,27 @@ END SUBROUTINE phy_bc
 
 ! For defor23.
 
-    DO j = j_start, j_end+1
-    DO k = kts+1, ktf
-    DO i = i_start, i_end
-      tmp2(i,k,j) = defor23(i,k,j)
-    END DO
-    END DO
-    END DO
-
-    DO j = j_start, j_end+1
-    DO i = i_start, i_end
-      tmp2(i,kts,  j) = 0.0
-      tmp2(i,ktf+1,j) = 0.0
-    END DO
-    END DO
-
     DO j = j_start, j_end
     DO k = kts, ktf
     DO i = i_start, i_end
-      avg(i,k,j) = 0.25 *  &
-                   ( ( tmp2(i,k+1,j  )**2 ) + ( tmp2(i,k,j  )**2) +  &
-                     ( tmp2(i,k+1,j+1)**2 ) + ( tmp2(i,k,j+1)**2) )
-    END DO
-    END DO
-    END DO
-
-    DO j = j_start, j_end
-    DO k = kts, ktf
-    DO i = i_start, i_end
-      tendency(i,k,j) = tendency(i,k,j) + (c1(k)*mu(i,j)+c2(k)) * xkmv(i,k,j) * avg(i,k,j)
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      IF ( k == kts ) THEN
+        d00 = 0.0
+        d10 = 0.0
+      ELSE
+        d00 = defor23(i,k  ,j  )
+        d10 = defor23(i,k  ,j+1)
+      END IF
+      IF ( k == ktf ) THEN
+        d01 = 0.0
+        d11 = 0.0
+      ELSE
+        d01 = defor23(i,k+1,j  )
+        d11 = defor23(i,k+1,j+1)
+      END IF
+      avg_s = 0.25 * ( ( d01**2 ) + ( d00**2 ) + ( d11**2 ) + ( d10**2 ) )
+      tendency(i,k,j) = tendency(i,k,j) + (c1(k)*mu(i,j)+c2(k)) * xkmv(i,k,j) * avg_s
+      ! END LICENSE
     END DO
     END DO
     END DO

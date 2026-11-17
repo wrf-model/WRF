@@ -932,11 +932,7 @@ END MODULE module_interp_info
      nrjo2 = nrj/2
 
      nfx = nri * nrj
-   !$OMP PARALLEL DO   &
-   !$OMP PRIVATE ( i,j,k,ni,nj,ci,cj,ip,jp,nk,ck,nf,icmask,psca )
-     DO k = ckts, ckte
         icmask = .FALSE.
-        DO nf = 1,nfx
            DO j = cjms,cjme
               nj = (j-jpos) * nrj + ( nrjo2 + 1 )  ! j point on nest
               DO i = cims,cime
@@ -958,6 +954,17 @@ END MODULE module_interp_info
                     endif
                   endif
                 endif
+              ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+              ENDDO           ! i
+           ENDDO              ! j
+     ! icmask depends only on (i,j); compute it once before the vertical OpenMP loop
+   !$OMP PARALLEL DO   &
+   !$OMP PRIVATE ( i,j,k,ni,nj,ci,cj,ip,jp,nk,ck,nf,psca )
+     DO k = ckts, ckte
+        DO nf = 1,nfx
+           DO j = cjms,cjme
+              DO i = cims,cime
+              ! END LICENSE
                 psca(i,j,nf) = cfld(i,k,j)
               ENDDO           ! i
            ENDDO              ! j

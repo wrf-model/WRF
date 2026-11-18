@@ -2851,8 +2851,8 @@ SUBROUTINE horizontal_diffusion ( name, field, tendency, MUT, c1, c2,  &
                 0.25*((c1(k)*MUT(i,j)+c2(k))+(c1(k)*MUT(i,j-1)+c2(k))+(c1(k)*MUT(i+1,j-1)+c2(k))+(c1(k)*MUT(i+1,j)+c2(k)))* &
                 0.25*(xkmhd(i,k,j)+xkmhd(i,k,j-1)+xkmhd(i+1,k,j-1)+xkmhd(i+1,k,j))*rdx
          mrdx=msfvx(i,j)*msfvy(i,j)*rdx
-         mkrdym=(msfty(i,j-1)/msftx(i,j-1))*xkmhd(i,k,j-1)*rdy
-         mkrdyp=(msfty(i,j)/msftx(i,j))*xkmhd(i,k,j)*rdy
+         mkrdym=(msfty(i,j-1)/msftx(i,j-1))*(c1(k)*MUT(i,j-1)+c2(k))*xkmhd(i,k,j-1)*rdy
+         mkrdyp=(msfty(i,j)/msftx(i,j))*(c1(k)*MUT(i,j)+c2(k))*xkmhd(i,k,j)*rdy
          mrdy=msfvx(i,j)*msfvy(i,j)*rdy
 
             tendency(i,k,j)=tendency(i,k,j)+( &

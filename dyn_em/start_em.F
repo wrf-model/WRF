@@ -326,6 +326,9 @@
        ENDDO
     endif
 
+! Initialize mask-based tiles before stochastic spinup uses the tile bounds.
+   CALL set_tiles ( grid , grid%imask_nostag, ims, ime, jms, jme, ips, ipe, jps, jpe )
+
 !   --- SETUP AND INITIALIZE STOCHASTIC PERTURBATION SCHEMES ---
 
    IF ( grid%itimestep .EQ. 0 ) THEN
@@ -1004,7 +1007,6 @@
 !-----------------------------------------------------------------------------
 
 
-   CALL set_tiles ( grid , grid%imask_nostag, ims, ime, jms, jme, ips, ipe, jps, jpe )
 !
 ! Phy init can do reads and broadcasts when initializing physics -- landuse for example. However, if
 ! we're running on a reduced mesh (that is, some tasks don't have any work) we have to at least let them

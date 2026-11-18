@@ -106,10 +106,11 @@ clean:
 
 # DEPENDENCIES : only dependencies after this line (don't remove the word DEPENDENCIES)
 
-module_bc_em.o: ../share/module_bc.o \
-                ../share/module_model_constants.o \
-                ../frame/module_configure.o \
-                ../frame/module_wrf_error.o
+../dyn_em/module_bc_em.o: \
+	module_bc.o \
+	module_model_constants.o \
+	../frame/module_configure.o \
+	../frame/module_wrf_error.o
 
 include ../main/depend.common
 

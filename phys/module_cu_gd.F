@@ -4227,7 +4227,6 @@ CONTAINS
      ENDDO
      ENDDO
 
-   ENDIF
      DO j=jts,jtf
      DO i=its,itf
         APR_GR(i,j)=0.
@@ -4240,6 +4239,7 @@ CONTAINS
         APR_CAPMI(i,j)=0.
      ENDDO
      ENDDO
+   ENDIF
 
    END SUBROUTINE gdinit
 

@@ -28,6 +28,7 @@ real
 tc
 ideal
 wrf
+!wrf/
 
 # Model inputs/outputs
 wrfbdy_d*

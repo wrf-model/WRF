@@ -170,7 +170,7 @@
              intent(out  )   ::                                        exch_h, &
                                                                        exch_m
    real(kind=kind_phys),     dimension( ims:ime, kms:kme, jms:jme )          , &
-             intent(out  )   ::                                           tke, &
+             intent(inout)   ::                                           tke, &
                                                                            el
    real(kind=kind_phys),     dimension( ims:ime, jms:jme )                   , &
              intent(out  )   ::                                         wstar

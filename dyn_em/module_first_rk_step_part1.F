@@ -1279,7 +1279,8 @@ BENCH_START(pbl_driver_tim)
      &        ,bl_mynn_mixscalars=config_flags%bl_mynn_mixscalars         &
      &        ,bl_mynn_mixaerosols=config_flags%bl_mynn_mixaerosols       &
      &        ,bl_mynn_mixnumcon=config_flags%bl_mynn_mixnumcon           &
-     &        ,bl_mynn_output=config_flags%bl_mynn_output                 &
+     &        ,bl_mynn_diags2d=config_flags%bl_mynn_diags2d               & 
+     &        ,bl_mynn_diags3d=config_flags%bl_mynn_diags3d               &
      &        ,bl_mynn_cloudmix=config_flags%bl_mynn_cloudmix             &
      &        ,bl_mynn_mixqt=config_flags%bl_mynn_mixqt                   &
      &        ,bl_mynn_ess=config_flags%bl_mynn_ess                       &     
@@ -1296,7 +1297,11 @@ BENCH_START(pbl_driver_tim)
      &        ,ztop_plume=grid%ztop_plume,maxmf_dd=grid%maxmf_dd          &
      &        ,maxtkeprod=grid%maxtkeprod,maxwidth_dd=grid%maxwidth_dd    &
      &        ,cldtop_cooling=grid%cldtop_cooling,ent_eff=grid%ent_eff    &
-     &        ,excess_h=grid%excess_h,excess_q=grid%excess_q              &    
+     &        ,excess_h=grid%excess_h,excess_q=grid%excess_q              &
+     &        ,lwp_bl=grid%lwp_bl,iwp_bl=grid%iwp_bl,swp_bl=grid%swp_bl   &
+     &        ,cldceil=grid%cldceil                                       &
+     &        ,wspd10=grid%wspd10,wspd80=grid%wspd80,wspd160=grid%wspd160 &
+     &        ,maxcldfra=grid%maxcldfra,maxcldfra_pbl=grid%maxcldfra_pbl  &
      &        ,spp_pbl=config_flags%spp_pbl                               &
      &        ,pattern_spp_pbl=grid%pattern_spp_pbl                       &
      &        ,restart=config_flags%restart,cycling=config_flags%cycling  &

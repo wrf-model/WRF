@@ -321,7 +321,9 @@
 
                 CALL WRFU_TimeIntervalSet(interval,S=seconds)
                 ringTime = curtime + interval
-                CALL WRFU_AlarmSet( grid%alarms(i), RingInterval=interval, RingTime=ringTime )
+                ! interval is the time to the next ring; the ring interval
+                ! stays the stream's own (interval2), as for the input streams
+                CALL WRFU_AlarmSet( grid%alarms(i), RingInterval=interval2, RingTime=ringTime )
 
               ENDIF
 

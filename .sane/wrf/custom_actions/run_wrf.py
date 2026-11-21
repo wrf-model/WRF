@@ -82,7 +82,7 @@ class WRFBase( sane.Action ):
         self.log( f"Applying patch to '{nml}'" )
         nml_io.dump_nml( nml, nml_dict_patched )
 
-  def load_extra_options( self, options, origin ):
+  def load_extra_options( self, options, origin, **kwargs ):
     self.wrf_case       = options.pop( "wrf_case", None )
     self.wrf_case_path  = options.pop( "wrf_case_path", self.wrf_case_path )
     self.wrf_run_dir    = options.pop( "wrf_run_dir", self.wrf_run_dir )
@@ -101,7 +101,7 @@ class WRFBase( sane.Action ):
     self.modify_environ    = options.pop( "modify_environ",  self.modify_environ )
     self.extra_data.extend( options.pop( "extra_data",  [] ) )
     sane.helpers.recursive_update( self.nml_patches, options.pop( "nml_patches",  {} ) )
-    super().load_extra_options( options, origin )
+    super().load_extra_options( options, origin, **kwargs )
 
   def pre_launch( self ):
     """Perform preflight check to make sure case path exists, a case selection is provided,
@@ -219,8 +219,8 @@ class InitWRF( WRFBase ):
                                 "-n", "${{ wrf_nml }}"
                                 ]
 
-  def load_extra_options( self, options, origin ):
-    super().load_extra_options( options, origin )
+  def load_extra_options( self, options, origin, **kwargs ):
+    super().load_extra_options( options, origin, **kwargs )
     self.wrf_met_path   = options.pop( "wrf_met_path", self.wrf_met_path )
     self.wrf_met_folder = options.pop( "wrf_met_folder", self.wrf_met_folder )
 
@@ -341,10 +341,10 @@ class RunWRFRestart( RunWRF ):
     #: Number of history files to compare per domain, starting from latest
     self.hist_comparisons = 1
 
-  def load_extra_options( self, options, origin ):
+  def load_extra_options( self, options, origin, **kwargs ):
     self.wrf_restart_nml = options.pop( "wrf_restart_nml", self.wrf_restart_nml )
     self.hist_comparisons = options.pop( "hist_comparisons", self.hist_comparisons )
-    super().load_extra_options( options, origin )
+    super().load_extra_options( options, origin, **kwargs )
 
   def pre_launch( self ):
     super().pre_launch( )

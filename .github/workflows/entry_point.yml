@@ -10,7 +10,8 @@ on:
 # https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#pull-request-events-for-forked-repositories-2
   pull_request:
     types:    [ labeled ]
-  
+
+
 # Write our tests out this way for easier legibility
 # testsSet    :
 #   - key : value
@@ -22,7 +23,12 @@ on:
 # https://stackoverflow.com/a/68940067
 jobs:
   queue_tests:
-    if : ${{ contains( fromJson('["compile-tests","all-tests"]'), github.event.label.name ) || github.event_name == 'push' }}
+    if : >-
+      contains(
+        fromJson(
+          '["make-tests","cmake-tests","em_real-tests","em_chem-tests","restart-tests","all-tests"]'),
+          github.event.label.name )
+      || github.event_name == 'push'
     name: Queue Test (${{ github.event_name == 'push' && github.ref_name || github.event.label.name }})
     runs-on: ubuntu-latest
     permissions:
@@ -32,10 +38,11 @@ jobs:
         run : |
           curl  -L \
                 -X POST \
+                --fail-with-body \
                 -H "Accept: application/vnd.github+json" \
                 -H "Authorization: Bearer ${{ github.token }}" \
                 -H "X-GitHub-Api-Version: 2022-11-28" \
-                https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/ci.yml/dispatches \
+                https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/sane_ci.yml/dispatches \
                 --data-binary @- << EOF
                 {
                   "ref"     : "${{ github.event_name == 'push' && github.ref_name || github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref || github.event.pull_request.base.ref }}",
@@ -43,7 +50,7 @@ jobs:
                   {
                     "event_name"    : "${{ github.event_name }}",
                     "event_number"  : "${{ github.event.number }}",
-                    "test"          : "${{ github.event.label.name }}",
+                    "event_label"   : "${{ github.event.label.name }}",
                     "ref"           : "${{ github.ref }}",
                     "sha"           : "${{ github.event_name == 'push' && github.sha || github.event.pull_request.head.sha }}"
                   }

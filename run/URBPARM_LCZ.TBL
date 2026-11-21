@@ -499,6 +499,13 @@ TARGHUM: 0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0
 #
 
 GAPHUM: 0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005
+
+#
+# TAUHUM:  Relaxation time scale for HVAC dehumidification, [ s ]
+#           This is independent of the WRF numerical time step.
+#
+
+TAUHUM: 3600., 3600., 3600., 3600., 3600., 3600., 3600., 3600., 3600., 3600., 3600.
 #
 # PERFLO:  Peak number of occupants per unit floor area, [ person/m^2 ]
 #      (sf_urban_physics=3)

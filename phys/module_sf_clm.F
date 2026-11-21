@@ -58790,6 +58790,7 @@ CONTAINS
                 uc_urb2d,                                       & !H urban
                 xxxr_urb2d,xxxb_urb2d,xxxg_urb2d,xxxc_urb2d,    & !H urban
                 trl_urb3d,tbl_urb3d,tgl_urb3d,                  & !H urban
+                qin_urb2d,                                       & !H SLUCM+BEM indoor humidity state
                 sh_urb2d,lh_urb2d,g_urb2d,rn_urb2d,ts_urb2d,    & !H urban
                 psim_urb2d,psih_urb2d,u10_urb2d,v10_urb2d,      & !O urban
                 GZ1OZ0_urb2d, AKMS_URB2D,                       & !O urban
@@ -59293,6 +59294,7 @@ CONTAINS
      REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_roof_layers, jms:jme ), INTENT(INOUT) :: TRL_URB3D
      REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_wall_layers, jms:jme ), INTENT(INOUT) :: TBL_URB3D
      REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_road_layers, jms:jme ), INTENT(INOUT) :: TGL_URB3D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: QIN_URB2D
 
    REAL :: CMR_URB, CHR_URB, CMC_URB, CHC_URB, CMGR_URB, CHGR_URB
 
@@ -59340,6 +59342,33 @@ CONTAINS
      REAL :: CHS_URB
      REAL :: CHS2_URB
      REAL :: UST_URB
+! -- start -- SLUCM+BEM local diagnostics
+   REAL :: QF_URB
+   REAL :: QFB_URB
+   REAL :: QFB_CL_URB
+   REAL :: QFB_HT_URB
+   REAL :: QFL_URB
+   REAL :: QFLB_URB
+   REAL :: ECAC_URB
+   REAL :: EC_URB
+   REAL :: COP_URB
+   REAL :: TIN_URB
+   REAL :: TWIN_URB
+   REAL :: TGIN_URB
+   REAL :: WBGTIN_URB
+   REAL :: MRTIN_URB
+   REAL :: HIN_URB
+   REAL :: HOUT_URB
+   REAL :: QBCHT_URB
+   REAL :: QBRHT_URB
+   REAL :: QRCHT_URB
+   REAL :: QRRHT_URB
+   REAL :: QVENT_URB
+   REAL :: QIN_URB
+   REAL :: EVENT_URB
+   REAL :: EIN_URB
+   REAL :: EOUT_URB
+! -- end -- SLUCM+BEM local diagnostics
 ! ----------------------------------------------------------------------
 ! DECLARATIONS END - urban
 ! ----------------------------------------------------------------------
@@ -60360,6 +60389,8 @@ has_urban_physics : &
 !sw++
             CALL cal_mon_day(julday,julyr,jmonth,jday)
 !sw--
+            qin_URB = 0.0
+            IF (PRESENT(QIN_URB2D)) qin_URB = QIN_URB2D(I,J)
             CALL urban(LSOLAR_URB,                                      & ! I
                        num_roof_layers,num_wall_layers,num_road_layers, & ! C
                        DZR,DZB,DZG,                                     & ! C
@@ -60385,8 +60416,20 @@ has_urban_physics : &
                        DRELG_URB,FLXHUMR_URB,FLXHUMB_URB,FLXHUMG_URB,   &
                        ! added by Chenghao Wang
                        TVG_URB,TT_URB,XXXVG_URB,TVGL_URB,SMG_URB,CMCG_URB,FLXHUMVG_URB,FLXHUMT_URB, &
-                       lf_urb_s, z0_urb, vegfrac)
+                       lf_urb_s, z0_urb, vegfrac,                       &
+                       QF_URB, QFB_URB,                                 &
+                       QFB_CL_URB, QFB_HT_URB,                          &
+                       QFL_URB, QFLB_URB,                               &
+                       ECAC_URB, EC_URB, COP_URB,                       &
+                       TIN_URB, HIN_URB, HOUT_URB,                      &
+                       TWIN_URB, TGIN_URB, WBGTIN_URB, MRTIN_URB,       &
+                       QBCHT_URB, QBRHT_URB,                            &
+                       QRCHT_URB, QRRHT_URB, QVENT_URB,                 &
+                       QIN_URB, EVENT_URB, EIN_URB, EOUT_URB,           &
+                       NSTEP )
 !sw--
+
+                       IF (PRESENT(QIN_URB2D)) QIN_URB2D(I,J) = QIN_URB
 
             TS_URB2D(I,J) = TS_URB
 

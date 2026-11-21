@@ -42,7 +42,7 @@ CONTAINS
     USE module_domain, ONLY : domain, domain_clock_get, get_ijk_from_subgrid
     USE module_configure, ONLY : grid_config_rec_type, model_config_rec
     USE module_radiation_driver, ONLY : pre_radiation_driver, radiation_driver
-    USE module_surface_driver, ONLY : surface_driver
+    USE module_surface_driver, ONLY : surface_driver, slucm_bem_surface_fields_type
     USE module_cumulus_driver, ONLY : cumulus_driver
     USE module_shallowcu_driver, ONLY : shallowcu_driver
     USE module_pbl_driver, ONLY : pbl_driver
@@ -73,6 +73,8 @@ CONTAINS
 
     IMPLICIT NONE
 
+
+    TYPE(slucm_bem_surface_fields_type) :: slucm_bem_fields
     TYPE ( domain ), INTENT(INOUT) :: grid
     TYPE ( grid_config_rec_type ), INTENT(IN) :: config_flags
     TYPE(WRFU_Time)                :: currentTime
@@ -133,6 +135,8 @@ CONTAINS
     LOGICAL, INTENT(IN), OPTIONAL :: feedback_is_ready  ! For WRF-CMAQ coupled model, indicates feedback information is available
 
 ! Local
+! -- start -- SLUCM+BEM surface field bundle declaration
+! -- end -- SLUCM+BEM surface field bundle declaration
     real :: HYDRO_dt
     REAL, DIMENSION( ims:ime, jms:jme ) :: exch_temf  ! 1/7/09 WA
 
@@ -597,6 +601,35 @@ BENCH_START(surf_driver_tim)
       do_bioe = .false.
       do_meganfile = .false.
 #endif
+! -- start -- SLUCM+BEM surface field bundle bindings
+! -- end -- SLUCM+BEM surface field bundle bindings
+! -- start -- SLUCM+BEM surface-field bundle
+      slucm_bem_fields%QF_URB2D => grid%qf_urb2d
+      slucm_bem_fields%QFB_URB2D => grid%qfb_urb2d
+      slucm_bem_fields%QFB_CL_URB2D => grid%qfb_cl_urb2d
+      slucm_bem_fields%QFB_HT_URB2D => grid%qfb_ht_urb2d
+      slucm_bem_fields%QFL_URB2D => grid%qfl_urb2d
+      slucm_bem_fields%QFLB_URB2D => grid%qflb_urb2d
+      slucm_bem_fields%ECAC_URB2D => grid%ecac_urb2d
+      slucm_bem_fields%EC_URB2D => grid%ec_urb2d
+      slucm_bem_fields%COP_URB2D => grid%cop_urb2d
+      slucm_bem_fields%TIN_URB2D => grid%tin_urb2d
+      slucm_bem_fields%TWIN_URB2D => grid%twin_urb2d
+      slucm_bem_fields%TGIN_URB2D => grid%tgin_urb2d
+      slucm_bem_fields%WBGTIN_URB2D => grid%wbgtin_urb2d
+      slucm_bem_fields%MRTIN_URB2D => grid%mrtin_urb2d
+      slucm_bem_fields%HIN_URB2D => grid%hin_urb2d
+      slucm_bem_fields%HOUT_URB2D => grid%hout_urb2d
+      slucm_bem_fields%QBCHT_URB2D => grid%qbcht_urb2d
+      slucm_bem_fields%QBRHT_URB2D => grid%qbrht_urb2d
+      slucm_bem_fields%QRCHT_URB2D => grid%qrcht_urb2d
+      slucm_bem_fields%QRRHT_URB2D => grid%qrrht_urb2d
+      slucm_bem_fields%QVENT_URB2D => grid%qvent_urb2d
+      slucm_bem_fields%QIN_URB2D => grid%qin_urb2d
+      slucm_bem_fields%EVENT_URB2D => grid%event_urb2d
+      slucm_bem_fields%EIN_URB2D => grid%ein_urb2d
+      slucm_bem_fields%EOUT_URB2D => grid%eout_urb2d
+! -- end -- SLUCM+BEM surface-field bundle
 
 
 
@@ -1128,6 +1161,11 @@ BENCH_START(surf_driver_tim)
      &        ,spp_lsm=config_flags%spp_lsm,pattern_spp_lsm=grid%pattern_spp_lsm     & !SPP
      &        ,field_sf=grid%field_sf                                                & !SPP
      &        ,spp_pbl=config_flags%spp_pbl,pattern_spp_pbl=grid%pattern_spp_pbl     & !SPP
+! -- start -- SLUCM+BEM bundled surface fields
+     &        ,SLUCM_BEM_FIELDS=slucm_bem_fields                                  &
+! -- end -- SLUCM+BEM bundled surface fields
+! -- start -- SLUCM+BEM surface field bundle argument
+! -- end -- SLUCM+BEM surface field bundle argument
   ! WRF-Solar EPS: Noah LSM
      &        ,multi_perturb=config_flags% multi_perturb                             & 
      &        ,pert_noah=config_flags%pert_noah                                      &

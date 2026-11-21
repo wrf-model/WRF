@@ -1,0 +1,346 @@
+{
+  "kind": "wrf_slucm_bem_native_summary_v1",
+  "date_jst": "2026-11-13",
+  "baseline_commit": "6099d9f632e204cc8ed4b01e1a8adba1da753a47",
+  "ils_reference_commit": "3e6bda9b4ce1a212b1b4f1b2006fb351ec50f082",
+  "numerical_conservation_pass": true,
+  "scope": {
+    "actual_bem_module": true,
+    "actual_complete_urban_module": true,
+    "actual_model_constants_and_tables": true,
+    "synthetic_single_column_forcing": true,
+    "treeoption": 0,
+    "full_wrf_build": false,
+    "noah_or_noahmp_driver_integration": false,
+    "mpi_execution": false,
+    "wrf_restart_io": false,
+    "serializing_single_column_call_state_only": true,
+    "physical_acceptance": false
+  },
+  "sources": {
+    "phys/module_sf_slucm_bem.F": {
+      "sha256": "d2d8d5d53367d28947353f42de3e0e69ca1e650364687ea58be546f8f86a68ea",
+      "bytes": 31853
+    },
+    "phys/module_sf_urban.F": {
+      "sha256": "b6de15c191255c2ae9b8a6ff953791479a313df5a3a19ce987a7ef6d22a6b2d1",
+      "bytes": 294687
+    },
+    "share/module_model_constants.F": {
+      "sha256": "5b80377fecdc18a5f0ad38d3b6c15cfc86ad5d76701adbbbb08a08698d0f7062",
+      "bytes": 8280
+    },
+    "run/URBPARM.TBL": {
+      "sha256": "f827ed18145ea692365861c4e377d46f4f67e63f8332a96a4d1cc9a84a5b188a",
+      "bytes": 13436
+    },
+    "run/URBPARM_LCZ.TBL": {
+      "sha256": "aea3c2401253dd098f3df7bebfd9f5af17cee08eaef3975ea709a32c14a7696c",
+      "bytes": 18194
+    },
+    "test/slucm_bem/wrf_test_stubs.F90": {
+      "sha256": "f3edf8b80f3dc64067377defd1c67e04f9e0d2012e0ccad017b1686e31c692a3",
+      "bytes": 1055
+    },
+    "test/slucm_bem/bem_controls_regression.f90": {
+      "sha256": "784b7c36732b4104571226c2678e0e8f44eabfc42b291a74021b165895d01675",
+      "bytes": 17991
+    },
+    "test/slucm_bem/urban_exchange_regression.F90": {
+      "sha256": "bec33a07a0e35cfe38a9317c2836180d9551c96233ac33e99f95632b1d99cb92",
+      "bytes": 29441
+    },
+    "test/slucm_bem/run_native.py": {
+      "sha256": "681966d35f8852841f2a8188539b728619b1971e70dc6e5a987dcd42f3f20da1",
+      "bytes": 15018
+    }
+  },
+  "baseline_sources": {
+    "phys/module_sf_slucm_bem.F": "a7b13e70e8904616c6e9e36f8e7e80465ff407c99be2c5a4b8ec376d53c6dd03",
+    "phys/module_sf_urban.F": "bbcdc5c7082f47602911b2fdf81f756058a4d8ba8eff805eecfd5c786debd78b"
+  },
+  "configurations": [
+    {
+      "compiler": "GNU Fortran (Debian 14.2.0-19) 14.2.0",
+      "flags": [
+        "-cpp",
+        "-ffree-form",
+        "-ffree-line-length-none",
+        "-O0",
+        "-g",
+        "-fcheck=all",
+        "-fbacktrace"
+      ],
+      "passed": true,
+      "counts": {
+        "bem_cases": 42,
+        "urban_cases": 84,
+        "expected_failure_exits": 16,
+        "exact_baseline_records": 56,
+        "values_per_record": 147
+      },
+      "coupling_traces": 76,
+      "iterations_min": 2,
+      "iterations_max": 9,
+      "max_absolute_residual_w_m2": [
+        0.005741119385,
+        0.005336761475
+      ],
+      "exact_snapshot_comparisons": [
+        {
+          "mode": "sbem0",
+          "table": "3urban",
+          "records": 7,
+          "values_per_record": 147,
+          "exact": true,
+          "sha256": "0c45b418b466cbde2bb42aa3fc452fb1b91aa6260f98fb4b3681f00186a4c436"
+        },
+        {
+          "mode": "sbem0",
+          "table": "lcz",
+          "records": 21,
+          "values_per_record": 147,
+          "exact": true,
+          "sha256": "cdcf6ca436b285ddc2b56e84f5518f24d88c187dd71796b17a5ea971c36dd2c5"
+        },
+        {
+          "mode": "zeroexchange",
+          "table": "3urban",
+          "records": 7,
+          "values_per_record": 147,
+          "exact": true,
+          "sha256": "b704cb20dd20d38f36d16d1a2be46fe31157775ad6e0e352e0d170730b7de6af"
+        },
+        {
+          "mode": "zeroexchange",
+          "table": "lcz",
+          "records": 21,
+          "values_per_record": 147,
+          "exact": true,
+          "sha256": "825f469fdecc565e9dc03254b53ff1801a65a01945a791c9f08e6ae22c05beac"
+        }
+      ]
+    },
+    {
+      "compiler": "GNU Fortran (Debian 14.2.0-19) 14.2.0",
+      "flags": [
+        "-cpp",
+        "-ffree-form",
+        "-ffree-line-length-none",
+        "-O2",
+        "-g",
+        "-fcheck=bounds",
+        "-fbacktrace"
+      ],
+      "passed": true,
+      "counts": {
+        "bem_cases": 42,
+        "urban_cases": 84,
+        "expected_failure_exits": 16,
+        "exact_baseline_records": 56,
+        "values_per_record": 147
+      },
+      "coupling_traces": 76,
+      "iterations_min": 2,
+      "iterations_max": 9,
+      "max_absolute_residual_w_m2": [
+        0.005741119385,
+        0.005336761475
+      ],
+      "exact_snapshot_comparisons": [
+        {
+          "mode": "sbem0",
+          "table": "3urban",
+          "records": 7,
+          "values_per_record": 147,
+          "exact": true,
+          "sha256": "0c45b418b466cbde2bb42aa3fc452fb1b91aa6260f98fb4b3681f00186a4c436"
+        },
+        {
+          "mode": "sbem0",
+          "table": "lcz",
+          "records": 21,
+          "values_per_record": 147,
+          "exact": true,
+          "sha256": "cdcf6ca436b285ddc2b56e84f5518f24d88c187dd71796b17a5ea971c36dd2c5"
+        },
+        {
+          "mode": "zeroexchange",
+          "table": "3urban",
+          "records": 7,
+          "values_per_record": 147,
+          "exact": true,
+          "sha256": "b704cb20dd20d38f36d16d1a2be46fe31157775ad6e0e352e0d170730b7de6af"
+        },
+        {
+          "mode": "zeroexchange",
+          "table": "lcz",
+          "records": 21,
+          "values_per_record": 147,
+          "exact": true,
+          "sha256": "825f469fdecc565e9dc03254b53ff1801a65a01945a791c9f08e6ae22c05beac"
+        }
+      ]
+    }
+  ],
+  "case_inventories": [
+    {
+      "suite": "bem_controls.exe",
+      "arguments": [],
+      "cases": [
+        "active_cooling_and_dehumidification",
+        "active_variable_cop",
+        "off_without_threshold_crossing",
+        "cooling_cannot_heat",
+        "active_north_heating",
+        "active_south_heating",
+        "active_lcz_1",
+        "active_lcz_2",
+        "active_lcz_3",
+        "active_lcz_4",
+        "active_lcz_5",
+        "active_lcz_6",
+        "active_lcz_7",
+        "active_lcz_8",
+        "active_lcz_9",
+        "active_lcz_10",
+        "active_three_urban_commercial",
+        "dry_no_flux_1",
+        "dry_no_flux_2",
+        "dry_no_flux_3",
+        "dry_no_flux_4",
+        "pure_ventilation_1",
+        "pure_ventilation_2",
+        "temperature_onset_1_fraction_1",
+        "temperature_onset_2_fraction_1",
+        "temperature_onset_1_fraction_2",
+        "temperature_onset_2_fraction_2",
+        "temperature_onset_1_fraction_3",
+        "temperature_onset_2_fraction_3",
+        "humidity_onset_fraction_1",
+        "humidity_onset_fraction_2",
+        "humidity_onset_fraction_3",
+        "end_step_threshold",
+        "start_at_threshold",
+        "threshold_continuity",
+        "removal_capacity_bound",
+        "invalid_dt_flag",
+        "invalid_tau_flag",
+        "invalid_geometry_flag",
+        "invalid_humidity_flag",
+        "nonfinite_input_flag",
+        "negative_update_flag"
+      ]
+    },
+    {
+      "suite": "urban_exchange.exe",
+      "arguments": [
+        "suite",
+        "3urban"
+      ],
+      "cases": [
+        "canopy_type_1_dt_6",
+        "canopy_type_1_dt_30",
+        "canopy_type_1_dt_60",
+        "canopy_type_1_dt_180",
+        "canopy_type_2_dt_6",
+        "canopy_type_2_dt_30",
+        "canopy_type_2_dt_60",
+        "canopy_type_2_dt_180",
+        "canopy_type_3_dt_6",
+        "canopy_type_3_dt_30",
+        "canopy_type_3_dt_60",
+        "canopy_type_3_dt_180",
+        "exchange_sign_1",
+        "exchange_sign_2",
+        "valid_dry_indoor_state_1",
+        "valid_dry_indoor_state_2",
+        "valid_dry_indoor_state_3",
+        "partial_ac_latent_equipment",
+        "no_repeated_tile_fraction",
+        "wet_trial_state_restore",
+        "no_old_qf_forcing",
+        "distributed_local_geometry",
+        "greenroof_water_state_restore",
+        "monin_obukhov_canyon_exchange",
+        "winter_hvac_off_exchange",
+        "coupled_control_threshold_crossing",
+        "external_source_routing",
+        "state_serialization_replay"
+      ]
+    },
+    {
+      "suite": "urban_exchange.exe",
+      "arguments": [
+        "suite",
+        "lcz"
+      ],
+      "cases": [
+        "canopy_type_1_dt_6",
+        "canopy_type_1_dt_30",
+        "canopy_type_1_dt_60",
+        "canopy_type_1_dt_180",
+        "canopy_type_2_dt_6",
+        "canopy_type_2_dt_30",
+        "canopy_type_2_dt_60",
+        "canopy_type_2_dt_180",
+        "canopy_type_3_dt_6",
+        "canopy_type_3_dt_30",
+        "canopy_type_3_dt_60",
+        "canopy_type_3_dt_180",
+        "canopy_type_4_dt_6",
+        "canopy_type_4_dt_30",
+        "canopy_type_4_dt_60",
+        "canopy_type_4_dt_180",
+        "canopy_type_5_dt_6",
+        "canopy_type_5_dt_30",
+        "canopy_type_5_dt_60",
+        "canopy_type_5_dt_180",
+        "canopy_type_6_dt_6",
+        "canopy_type_6_dt_30",
+        "canopy_type_6_dt_60",
+        "canopy_type_6_dt_180",
+        "canopy_type_7_dt_6",
+        "canopy_type_7_dt_30",
+        "canopy_type_7_dt_60",
+        "canopy_type_7_dt_180",
+        "canopy_type_8_dt_6",
+        "canopy_type_8_dt_30",
+        "canopy_type_8_dt_60",
+        "canopy_type_8_dt_180",
+        "canopy_type_9_dt_6",
+        "canopy_type_9_dt_30",
+        "canopy_type_9_dt_60",
+        "canopy_type_9_dt_180",
+        "canopy_type_10_dt_6",
+        "canopy_type_10_dt_30",
+        "canopy_type_10_dt_60",
+        "canopy_type_10_dt_180",
+        "exchange_sign_1",
+        "exchange_sign_2",
+        "valid_dry_indoor_state_1",
+        "valid_dry_indoor_state_2",
+        "valid_dry_indoor_state_3",
+        "partial_ac_latent_equipment",
+        "no_repeated_tile_fraction",
+        "wet_trial_state_restore",
+        "no_old_qf_forcing",
+        "distributed_local_geometry",
+        "greenroof_water_state_restore",
+        "monin_obukhov_canyon_exchange",
+        "winter_hvac_off_exchange",
+        "coupled_control_threshold_crossing",
+        "external_source_routing",
+        "state_serialization_replay"
+      ]
+    }
+  ],
+  "limits": [
+    "Synthetic single-column inputs; no observed physical acceptance.",
+    "No full WRF build or Noah/Noah-MP MPI integration in this environment.",
+    "State serialization replay is not WRF restart I/O/halo validation.",
+    "GNU Fortran executed; Intel execution is pending.",
+    "TREEOPTION=1 remains outside validated scope.",
+    "Distributed TA/QA surface-exchange parameterization retained."
+  ]
+}

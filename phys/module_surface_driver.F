@@ -2,6 +2,39 @@
 !
 MODULE module_surface_driver
   real, private, parameter :: QVAPOR_MIN = 0.0, SMOIS_MIN = 0.0, SMOIS_MAX = 1.0
+  ! -- start -- SLUCM+BEM surface-field bundle type
+  ! Bundle the SLUCM+BEM two-dimensional WRF state fields into one
+  ! surface_driver dummy argument.  This keeps Intel ifx builds below the
+  ! compiler limit of 255 dummy arguments while preserving the field-by-field
+  ! interfaces used by the Noah, Noah-MP, CLM, and urban drivers below.
+  TYPE, PUBLIC :: slucm_bem_surface_fields_type
+    REAL, POINTER :: QF_URB2D(:,:) => NULL()
+    REAL, POINTER :: QFB_URB2D(:,:) => NULL()
+    REAL, POINTER :: QFB_CL_URB2D(:,:) => NULL()
+    REAL, POINTER :: QFB_HT_URB2D(:,:) => NULL()
+    REAL, POINTER :: QFL_URB2D(:,:) => NULL()
+    REAL, POINTER :: QFLB_URB2D(:,:) => NULL()
+    REAL, POINTER :: ECAC_URB2D(:,:) => NULL()
+    REAL, POINTER :: EC_URB2D(:,:) => NULL()
+    REAL, POINTER :: COP_URB2D(:,:) => NULL()
+    REAL, POINTER :: TIN_URB2D(:,:) => NULL()
+    REAL, POINTER :: TWIN_URB2D(:,:) => NULL()
+    REAL, POINTER :: TGIN_URB2D(:,:) => NULL()
+    REAL, POINTER :: WBGTIN_URB2D(:,:) => NULL()
+    REAL, POINTER :: MRTIN_URB2D(:,:) => NULL()
+    REAL, POINTER :: HIN_URB2D(:,:) => NULL()
+    REAL, POINTER :: HOUT_URB2D(:,:) => NULL()
+    REAL, POINTER :: QBCHT_URB2D(:,:) => NULL()
+    REAL, POINTER :: QBRHT_URB2D(:,:) => NULL()
+    REAL, POINTER :: QRCHT_URB2D(:,:) => NULL()
+    REAL, POINTER :: QRRHT_URB2D(:,:) => NULL()
+    REAL, POINTER :: QVENT_URB2D(:,:) => NULL()
+    REAL, POINTER :: QIN_URB2D(:,:) => NULL()
+    REAL, POINTER :: EVENT_URB2D(:,:) => NULL()
+    REAL, POINTER :: EIN_URB2D(:,:) => NULL()
+    REAL, POINTER :: EOUT_URB2D(:,:) => NULL()
+  END TYPE slucm_bem_surface_fields_type
+  ! -- end -- SLUCM+BEM surface-field bundle type
 CONTAINS
 
    SUBROUTINE surface_driver(                                         &
@@ -346,7 +379,10 @@ CONTAINS
      &          ,irrigation,sf_surf_irr_scheme, irr_daily_amount      & !IRRIG
      &          ,irr_start_hour,irr_num_hours,irr_start_julianday     &
      &          ,irr_end_julianday,irr_freq,irr_ph,irr_rand_field     &
-     &                                                                )
+! -- start -- SLUCM+BEM bundled surface fields
+     &          ,slucm_bem_fields                                    &
+! -- end -- SLUCM+BEM bundled surface fields
+     &                                                             )
 
    USE module_state_description, ONLY : SFCLAYSCHEME              &
                                        ,SFCLAYREVSCHEME           &
@@ -1492,6 +1528,34 @@ CONTAINS
    INTEGER , OPTIONAL , INTENT(IN)        :: id
 !
   real,    dimension(ims:ime,1:maxpatch,jms:jme ) ::  q_ref2m   ! clm
+! -- start -- SLUCM+BEM bundled surface fields
+     TYPE(slucm_bem_surface_fields_type), INTENT(INOUT) :: slucm_bem_fields
+     REAL, POINTER :: QF_URB2D(:,:)
+     REAL, POINTER :: QFB_URB2D(:,:)
+     REAL, POINTER :: QFB_CL_URB2D(:,:)
+     REAL, POINTER :: QFB_HT_URB2D(:,:)
+     REAL, POINTER :: QFL_URB2D(:,:)
+     REAL, POINTER :: QFLB_URB2D(:,:)
+     REAL, POINTER :: ECAC_URB2D(:,:)
+     REAL, POINTER :: EC_URB2D(:,:)
+     REAL, POINTER :: COP_URB2D(:,:)
+     REAL, POINTER :: TIN_URB2D(:,:)
+     REAL, POINTER :: TWIN_URB2D(:,:)
+     REAL, POINTER :: TGIN_URB2D(:,:)
+     REAL, POINTER :: WBGTIN_URB2D(:,:)
+     REAL, POINTER :: MRTIN_URB2D(:,:)
+     REAL, POINTER :: HIN_URB2D(:,:)
+     REAL, POINTER :: HOUT_URB2D(:,:)
+     REAL, POINTER :: QBCHT_URB2D(:,:)
+     REAL, POINTER :: QBRHT_URB2D(:,:)
+     REAL, POINTER :: QRCHT_URB2D(:,:)
+     REAL, POINTER :: QRRHT_URB2D(:,:)
+     REAL, POINTER :: QVENT_URB2D(:,:)
+     REAL, POINTER :: QIN_URB2D(:,:)
+     REAL, POINTER :: EVENT_URB2D(:,:)
+     REAL, POINTER :: EIN_URB2D(:,:)
+     REAL, POINTER :: EOUT_URB2D(:,:)
+! -- end -- SLUCM+BEM bundled surface fields
 
   real,  intent(inout),optional :: t_veg24(ims:ime,1:maxpatch,jms:jme)      ! voce accum variables
   real,  intent(inout),optional :: t_veg240(ims:ime,1:maxpatch,jms:jme)
@@ -1537,6 +1601,33 @@ CONTAINS
 !
 !------------------------------------------------------------------
 ! Initialize local variables
+! -- start -- SLUCM+BEM bundled surface-field aliases
+  QF_URB2D => slucm_bem_fields%QF_URB2D
+  QFB_URB2D => slucm_bem_fields%QFB_URB2D
+  QFB_CL_URB2D => slucm_bem_fields%QFB_CL_URB2D
+  QFB_HT_URB2D => slucm_bem_fields%QFB_HT_URB2D
+  QFL_URB2D => slucm_bem_fields%QFL_URB2D
+  QFLB_URB2D => slucm_bem_fields%QFLB_URB2D
+  ECAC_URB2D => slucm_bem_fields%ECAC_URB2D
+  EC_URB2D => slucm_bem_fields%EC_URB2D
+  COP_URB2D => slucm_bem_fields%COP_URB2D
+  TIN_URB2D => slucm_bem_fields%TIN_URB2D
+  TWIN_URB2D => slucm_bem_fields%TWIN_URB2D
+  TGIN_URB2D => slucm_bem_fields%TGIN_URB2D
+  WBGTIN_URB2D => slucm_bem_fields%WBGTIN_URB2D
+  MRTIN_URB2D => slucm_bem_fields%MRTIN_URB2D
+  HIN_URB2D => slucm_bem_fields%HIN_URB2D
+  HOUT_URB2D => slucm_bem_fields%HOUT_URB2D
+  QBCHT_URB2D => slucm_bem_fields%QBCHT_URB2D
+  QBRHT_URB2D => slucm_bem_fields%QBRHT_URB2D
+  QRCHT_URB2D => slucm_bem_fields%QRCHT_URB2D
+  QRRHT_URB2D => slucm_bem_fields%QRRHT_URB2D
+  QVENT_URB2D => slucm_bem_fields%QVENT_URB2D
+  QIN_URB2D => slucm_bem_fields%QIN_URB2D
+  EVENT_URB2D => slucm_bem_fields%EVENT_URB2D
+  EIN_URB2D => slucm_bem_fields%EIN_URB2D
+  EOUT_URB2D => slucm_bem_fields%EOUT_URB2D
+! -- end -- SLUCM+BEM bundled surface-field aliases
   q_ref2m = 0.0
 !------------------------------------------------------------------
 !
@@ -2858,7 +2949,8 @@ CONTAINS
                 ,sfcheadrt,INFXSRT, soldrain                    & !hydro
 #endif
                 ,SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM, fasdas    & ! fasdas
-                ,RS,XLAIDYN,IRRIGATION_CHANNEL)
+                ,RS,XLAIDYN,IRRIGATION_CHANNEL                         &
+                ,QIN_URB2D, EVENT_URB2D, EIN_URB2D, EOUT_URB2D )        ! SLUCM+BEM humidity state and latent diagnostics
            ELSE
                CALL wrf_error_fatal('Lack arguments to call lsm_mosaic')
            ENDIF
@@ -2993,7 +3085,23 @@ CONTAINS
                 ,sfcheadrt,INFXSRT, soldrain                    &
 #endif
                 ,SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM, fasdas    &
-                ,RS,XLAIDYN,IRRIGATION_CHANNEL)
+! -- start -- Yuya Takane, 2022/12/21
+!                ,RS,XLAIDYN,IRRIGATION_CHANNEL)
+                ,RS,XLAIDYN,IRRIGATION_CHANNEL                  &
+                ,qf_urb2d, qfb_urb2d                            &
+                ,qfb_cl_urb2d                                   &
+                ,qfb_ht_urb2d                                   &
+                ,qfl_urb2d, qflb_urb2d                          &
+                ,ecac_urb2d, ec_urb2d                           &
+! -- end -- Yuya Takane, 2022/12/21
+! -- start -- Yuya Takane, 2024.08.07
+                ,cop_urb2d                                      &
+                ,tin_urb2d, hin_urb2d, hout_urb2d               &
+                ,twin_urb2d, tgin_urb2d, wbgtin_urb2d, mrtin_urb2d &
+                ,qbcht_urb2d, qbrht_urb2d                       &
+                ,qrcht_urb2d, qrrht_urb2d, qvent_urb2d                 &
+                ,qin_urb2d, event_urb2d, ein_urb2d, eout_urb2d ) !     &
+! -- end -- Yuya Takane, 2024.08.07
          ENDIF
 
          if (pert_noah .and. multi_perturb == 1) then
@@ -3317,6 +3425,13 @@ CONTAINS
                       cmcg_urb2d, flxhumvg_urb2d, flxhumt_urb2d,                            & !H urban
                              julian,          julyr,                                        & !H urban
                           frc_urb2d,    utype_urb2d,                                        & !I urban
+                           qf_urb2d,      qfb_urb2d,   qfb_cl_urb2d, qfb_ht_urb2d,          & !I urban, Yuya Takane, 2025.10.25
+                          qfl_urb2d,     qflb_urb2d,     ecac_urb2d,     ec_urb2d,          & !I urban, Yuya Takane, 2025.10.25
+                          cop_urb2d,      tin_urb2d,      hin_urb2d,   hout_urb2d,          & !I urban, Yuya Takane, 2025.10.25
+                         twin_urb2d,     tgin_urb2d,   wbgtin_urb2d,  mrtin_urb2d,          & !I urban, Yuya Takane, 2025.10.25
+                        qbcht_urb2d,    qbrht_urb2d,    qrcht_urb2d,  qrrht_urb2d,          & !I urban, Yuya Takane, 2025.10.25
+                        qvent_urb2d,                                                        & !I urban, Yuya Takane, 2025.10.25
+                          qin_urb2d,    event_urb2d,      ein_urb2d,   eout_urb2d,          & !O SLUCM+BEM latent diagnostics
                                 chs,           chs2,           cqs2,                        & !H
                       num_urban_ndm,  urban_map_zrd,  urban_map_zwd, urban_map_gd,          & !I multi-layer urban
                        urban_map_zd,  urban_map_zdf,   urban_map_bd, urban_map_wd,          & !I multi-layer urban
@@ -3907,6 +4022,7 @@ CONTAINS
                 uc_urb2d,                                       & !H urban
                 xxxr_urb2d,xxxb_urb2d,xxxg_urb2d,xxxc_urb2d,    & !H urban
                 trl_urb3d,tbl_urb3d,tgl_urb3d,                  & !H urban
+                qin_urb2d,                                       & !H SLUCM+BEM indoor humidity state
                 sh_urb2d,lh_urb2d,g_urb2d,rn_urb2d,ts_urb2d,    & !H urban
                 psim_urb2d,psih_urb2d,u10_urb2d,v10_urb2d,      & !O urban
                 GZ1OZ0_urb2d, AKMS_URB2D,                       & !O urban

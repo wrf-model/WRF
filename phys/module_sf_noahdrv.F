@@ -81,9 +81,8 @@ CONTAINS
                   CMCR_URB2D,TGR_URB2D,TGRL_URB3D,SMR_URB3D,    & !H urban
                   DRELR_URB2D,DRELB_URB2D,DRELG_URB2D,          & !H urban
                   FLXHUMR_URB2D,FLXHUMB_URB2D,FLXHUMG_URB2D,    & !H urban
-                  ! added by Chenghao Wang
-                  TVG_URB2D,XXXVG_URB2D,TVGL_URB3D,SMG_URB3D,TT_URB2D,CMCG_URB2D, & !H urban
-                  FLXHUMVG_URB2D,FLXHUMT_URB2D,                 & !H urban
+                  TVG_URB2D,XXXVG_URB2D,TVGL_URB3D,SMG_URB3D,TT_URB2D,CMCG_URB2D, & !H urban-nbs
+                  FLXHUMVG_URB2D,FLXHUMT_URB2D,                 & !H urban-nbs
                   julian, julyr,                                & !H urban
                   FRC_URB2D,UTYPE_URB2D,                        & !O
                   num_urban_ndm,                                & !I multi-layer urban
@@ -126,6 +125,21 @@ CONTAINS
                  ,SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM, fasdas     &   !fasdas
                  ,RC2,XLAI2                                         &
                  ,IRR_CHAN                                          &
+! -- start -- Yuya Takane, 2022/12/21
+                 ,QF_URB2D, QFB_URB2D                               &
+                 ,QFB_CL_URB2D                                      &
+                 ,QFB_HT_URB2D                                      &
+                 ,QFL_URB2D, QFLB_URB2D                             &
+                 ,ECAC_URB2D, EC_URB2D                              &
+                 ,COP_URB2D                                         &
+! -- end -- Yuya Takane, 2022/12/21
+! -- start -- Yuya Takane, 2024.08.07
+                 ,Tin_URB2D, Hin_URB2D, Hout_URB2D                  &
+                 ,TWin_URB2D, TGin_URB2D, WBGTin_URB2D, MRTin_URB2D &
+                 ,QBCHT_URB2D, QBRHT_URB2D                          &
+                 ,QRCHT_URB2D, QRRHT_URB2D, QVENT_URB2D             &
+                 ,QIN_URB2D, EVENT_URB2D, EIN_URB2D, EOUT_URB2D     &
+! -- end -- Yuya Takane, 2024.08.07
                  )
 
 !----------------------------------------------------------------
@@ -521,22 +535,17 @@ CONTAINS
      REAL :: TGR_URB
      REAL, DIMENSION(1:num_roof_layers) :: SMR_URB  ! green roof layer moisture
      REAL, DIMENSION(1:num_roof_layers) :: TGRL_URB ! green roof layer temp [K]
-     ! added by Chenghao Wang
-     REAL :: TVG_URB
-     REAL :: TT_URB
-     REAL :: XXXVG_URB
-     REAL :: CMCG_URB
-     REAL :: FLXHUMVG_URB
-     REAL :: FLXHUMT_URB
-     REAL, DIMENSION(1:num_road_layers) :: TVGL_URB  ! vegetated ground layer temp [K]
-     REAL, DIMENSION(1:num_road_layers) :: SMG_URB   ! vegetated ground layer moisture
+     REAL :: TVG_URB, TT_URB, XXXVG_URB, CMCG_URB
+     REAL :: FLXHUMVG_URB, FLXHUMT_URB
+     REAL, DIMENSION(1:num_road_layers) :: TVGL_URB ! vegetated ground layer temp [K]
+     REAL, DIMENSION(1:num_road_layers) :: SMG_URB  ! vegetated ground layer moisture
+
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: DRELR_URB2D
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: DRELB_URB2D
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: DRELG_URB2D
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FLXHUMR_URB2D
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FLXHUMB_URB2D
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FLXHUMG_URB2D
-     ! added by Chenghao Wang
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TVG_URB2D
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TT_URB2D
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: XXXVG_URB2D
@@ -713,6 +722,58 @@ CONTAINS
    REAL :: CMR_URB, CHR_URB, CMC_URB, CHC_URB, CMGR_URB, CHGR_URB
    REAL :: frc_urb,lb_urb
    REAL :: check 
+! -- start -- Yuya Takane, 2022/12/18
+   REAL, DIMENSION( ims:ime, jms:jme ) :: QF_URB2D
+   REAL, DIMENSION( ims:ime, jms:jme ) :: QFB_URB2D
+   REAL, DIMENSION( ims:ime, jms:jme ) :: QFB_CL_URB2D
+   REAL, DIMENSION( ims:ime, jms:jme ) :: QFB_HT_URB2D
+   REAL, DIMENSION( ims:ime, jms:jme ) :: QFL_URB2D
+   REAL, DIMENSION( ims:ime, jms:jme ) :: QFLB_URB2D
+   REAL, DIMENSION( ims:ime, jms:jme ) :: ECAC_URB2D
+   REAL, DIMENSION( ims:ime, jms:jme ) :: EC_URB2D
+   REAL, DIMENSION( ims:ime, jms:jme ) :: COP_URB2D
+   REAL, DIMENSION( ims:ime, jms:jme ) :: Tin_URB2D  ! 2024.08.07
+   REAL, DIMENSION( ims:ime, jms:jme ) :: TWin_URB2D   ! 2024.11.19
+   REAL, DIMENSION( ims:ime, jms:jme ) :: TGin_URB2D   ! 2024.11.19
+   REAL, DIMENSION( ims:ime, jms:jme ) :: WBGTin_URB2D ! 2024.11.19
+   REAL, DIMENSION( ims:ime, jms:jme ) :: MRTin_URB2D  ! 2024.11.19
+   REAL, DIMENSION( ims:ime, jms:jme ) :: Hin_URB2D  ! 2024.08.07
+   REAL, DIMENSION( ims:ime, jms:jme ) :: Hout_URB2D  ! 2024.08.07
+   REAL, DIMENSION( ims:ime, jms:jme ) :: QBCHT_URB2D  ! 2024.10.08
+   REAL, DIMENSION( ims:ime, jms:jme ) :: QBRHT_URB2D  ! 2024.10.08
+   REAL, DIMENSION( ims:ime, jms:jme ) :: QRCHT_URB2D  ! 2024.10.08
+   REAL, DIMENSION( ims:ime, jms:jme ) :: QRRHT_URB2D  ! 2024.10.08
+   REAL, DIMENSION( ims:ime, jms:jme ) :: QVENT_URB2D  ! 2024.10.24
+   REAL, DIMENSION( ims:ime, jms:jme ) :: QIN_URB2D    ! indoor specific humidity [kg kg-1]
+   REAL, DIMENSION( ims:ime, jms:jme ) :: EVENT_URB2D  ! latent ventilation exchange [W]
+   REAL, DIMENSION( ims:ime, jms:jme ) :: EIN_URB2D    ! indoor latent heat load [W]
+   REAL, DIMENSION( ims:ime, jms:jme ) :: EOUT_URB2D   ! HVAC-processed latent load [W]
+   REAL :: QF_URB
+   REAL :: QFB_URB
+   REAL :: QFB_CL_URB
+   REAL :: QFB_HT_URB
+   REAL :: QFL_URB
+   REAL :: QFLB_URB
+   REAL :: ECAC_URB
+   REAL :: EC_URB
+   REAL :: COP_URB
+   REAL :: Tin_URB  ! 2024.08.07
+   REAL :: TWin_URB    ! 2024.11.19
+   REAL :: TGin_URB    ! 2024.11.19
+   REAL :: WBGTin_URB  ! 2024.11.19
+   REAL :: MRTin_URB   ! 2024.11.19
+   REAL :: Hin_URB  ! 2024.08.07
+   REAL :: Hout_URB  ! 2024.08.07
+   REAL :: QBCHT_URB  ! 2024.10.08
+   REAL :: QBRHT_URB  ! 2024.10.08
+   REAL :: QRCHT_URB  ! 2024.10.08
+   REAL :: QRRHT_URB  ! 2024.10.08
+   REAL :: QVENT_URB  ! 2024.10.24
+   REAL :: qin_URB    ! indoor specific humidity diagnostic [kg kg-1]
+   REAL :: EVENT_URB  ! latent heat exchange by ventilation [W]
+   REAL :: Ein_URB    ! indoor latent heat load [W]
+   REAL :: Eout_URB   ! HVAC-processed latent load [W]
+! -- end -- Yuya Takane, 2022/12/18
 ! ----------------------------------------------------------------------
 ! DECLARATIONS END - urban
 ! ----------------------------------------------------------------------
@@ -1412,6 +1473,10 @@ CONTAINS
             XXXB_URB = XXXB_URB2D(I,J)
             XXXG_URB = XXXG_URB2D(I,J)
             XXXC_URB = XXXC_URB2D(I,J)
+
+! -- start -- Yuya Takane, 2024.10.07
+            Tin_URB  = Tin_URB2D(I,J)
+! -- end -- Yuya Takane, 2024.10.07
 !
 !
 !      Limits to avoid dividing by small number
@@ -1458,6 +1523,7 @@ CONTAINS
 !
 ! Call urban
             CALL cal_mon_day(julian,julyr,jmonth,jday)
+            qin_URB = QIN_URB2D(I,J)
             CALL urban(LSOLAR_URB,                                      & ! I
                        num_roof_layers,num_wall_layers,num_road_layers, & ! C
                        DZR,DZB,DZG,                                     & ! C
@@ -1479,10 +1545,23 @@ CONTAINS
                        TGRL_URB,SMR_URB,CMGR_URB,CHGR_URB,jmonth,       & ! H
                        DRELR_URB,DRELB_URB,                             & ! H
                        DRELG_URB,FLXHUMR_URB,FLXHUMB_URB,FLXHUMG_URB,   &
-                       ! added by Chenghao Wang
                        TVG_URB,TT_URB,XXXVG_URB,TVGL_URB,SMG_URB,CMCG_URB,FLXHUMVG_URB,FLXHUMT_URB, &
-                       lf_urb_s, z0_urb, vegfrac)
-
+! -- start -- Yuya Takane, 2022/12/22
+!                       lf_urb_s, z0_urb, vegfrac)
+                       lf_urb_s, z0_urb, vegfrac,                       &
+                       QF_URB, QFB_URB,                                 &
+                       QFB_CL_URB, QFB_HT_URB,                          &
+                       QFL_URB, QFLB_URB,                               &
+! -- end -- Yuya Takane, 2022/12/22
+! -- start -- Yuya Takane, 2024.08.07
+                       ECAC_URB, EC_URB, COP_URB,                       &
+                       Tin_URB, Hin_URB, Hout_URB,                      &
+                       TWin_URB, TGin_URB, WBGTin_URB, MRTin_URB,       &
+                       QBCHT_URB, QBRHT_URB,                            &
+                       QRCHT_URB, QRRHT_URB, QVENT_URB,                 &
+                       qin_URB, EVENT_URB, Ein_URB, Eout_URB,           &
+                       itimestep )
+! -- end -- Yuya Takane, 2024.08.07
 #if 0
           IF(IPRINT) THEN
 
@@ -1597,6 +1676,35 @@ CONTAINS
             Q2_URB2D(I,J)    = Q2_URB
             UST_URB2D(I,J)   = UST_URB
             AKMS_URB2D(I,J)  = KARMAN * UST_URB2D(I,J)/(GZ1OZ0_URB2D(I,J)-PSIM_URB2D(I,J))
+! -- start -- Yuya Takane, 2022/12/21
+            QF_URB2D(I,J)     = QF_URB
+            QFB_URB2D(I,J)    = QFB_URB
+            QFB_CL_URB2D(I,J) = QFB_CL_URB
+            QFB_HT_URB2D(I,J) = QFB_HT_URB
+            QFL_URB2D(I,J)    = QFL_URB
+            QFLB_URB2D(I,J)   = QFLB_URB
+            ECAC_URB2D(I,J)   = ECAC_URB
+            EC_URB2D(I,J)     = EC_URB
+            COP_URB2D(I,J)    = COP_URB
+! -- end -- Yuya Takane, 2022/12/21
+! -- start -- Yuya Takane, 2024.08.07
+            Tin_URB2D(I,J)    = Tin_URB
+            TWin_URB2D(I,J)   = TWin_URB
+            TGin_URB2D(I,J)   = TGin_URB
+            WBGTin_URB2D(I,J) = WBGTin_URB
+            MRTin_URB2D(I,J)  = MRTin_URB
+            Hin_URB2D(I,J)    = Hin_URB
+            Hout_URB2D(I,J)   = Hout_URB
+            QBCHT_URB2D(I,J)  = QBCHT_URB
+            QBRHT_URB2D(I,J)  = QBRHT_URB
+            QRCHT_URB2D(I,J)  = QRCHT_URB
+            QRRHT_URB2D(I,J)  = QRRHT_URB
+            QVENT_URB2D(I,J)  = QVENT_URB
+            QIN_URB2D(I,J)    = qin_URB
+            EVENT_URB2D(I,J)  = EVENT_URB
+            EIN_URB2D(I,J)    = Ein_URB
+            EOUT_URB2D(I,J)   = Eout_URB
+! -- end -- Yuya Takane, 2024.08.07
             IF (PRESENT(CMR_SFCDIF)) THEN
                CMR_SFCDIF(I,J) = CMR_URB
                CHR_SFCDIF(I,J) = CHR_URB
@@ -2451,8 +2559,8 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   julian,julyr,                                 & !H urban
                   DRELR_URB2D,DRELB_URB2D,DRELG_URB2D,          & !H urban
                   FLXHUMR_URB2D,FLXHUMB_URB2D,FLXHUMG_URB2D,    & !H urban
-                  TVG_URB2D,XXXVG_URB2D,TVGL_URB3D,SMG_URB3D,TT_URB2D,CMCG_URB2D, & !H urban
-                  FLXHUMVG_URB2D,FLXHUMT_URB2D,                 & !H urban
+                  TVG_URB2D,XXXVG_URB2D,TVGL_URB3D,SMG_URB3D,TT_URB2D,CMCG_URB2D, & !H urban-nbs
+                  FLXHUMVG_URB2D,FLXHUMT_URB2D,                 & !H urban-nbs
                   FRC_URB2D,UTYPE_URB2D,                        & !O
                   num_urban_ndm,                                & !I multi-layer urban
                   urban_map_zrd,                                & !I multi-layer urban
@@ -2496,6 +2604,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                  ,SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM, fasdas     &   !fasdas
                  ,RC2,XLAI2                                     & !O
                  ,IRR_CHAN                                      &
+                 ,QIN_URB2D, EVENT_URB2D, EIN_URB2D, EOUT_URB2D & ! I/O SLUCM+BEM humidity state and diagnostics
                   )
 
 !----------------------------------------------------------------
@@ -2890,15 +2999,10 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
      REAL :: TGR_URB
      REAL, DIMENSION(1:num_roof_layers) :: SMR_URB  ! green roof layer moisture
      REAL, DIMENSION(1:num_roof_layers) :: TGRL_URB ! green roof layer temp [K]
-     ! added by Chenghao Wang
-     REAL :: TVG_URB
-     REAL :: TT_URB
-     REAL :: XXXVG_URB
-     REAL :: CMCG_URB
-     REAL :: FLXHUMVG_URB
-     REAL :: FLXHUMT_URB
-     REAL, DIMENSION(1:num_road_layers) :: TVGL_URB  ! vegetated ground layer temp [K]
-     REAL, DIMENSION(1:num_road_layers) :: SMG_URB   ! vegetated ground layer moisture
+     REAL :: TVG_URB, TT_URB, XXXVG_URB, CMCG_URB
+     REAL :: FLXHUMVG_URB, FLXHUMT_URB
+     REAL, DIMENSION(1:num_road_layers) :: TVGL_URB ! vegetated ground layer temp [K]
+     REAL, DIMENSION(1:num_road_layers) :: SMG_URB  ! vegetated ground layer moisture
 
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: DRELR_URB2D
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: DRELB_URB2D
@@ -3081,6 +3185,58 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
    REAL :: CMR_URB, CHR_URB, CMC_URB, CHC_URB, CMGR_URB, CHGR_URB
    REAL :: frc_urb,lb_urb
    REAL :: check 
+! -- start -- Yuya Takane, 2022/12/22
+   REAL, DIMENSION( ims:ime, jms:jme ) :: QF_URB2D
+   REAL, DIMENSION( ims:ime, jms:jme ) :: QFB_URB2D
+   REAL, DIMENSION( ims:ime, jms:jme ) :: QFB_CL_URB2D
+   REAL, DIMENSION( ims:ime, jms:jme ) :: QFB_HT_URB2D
+   REAL, DIMENSION( ims:ime, jms:jme ) :: QFL_URB2D
+   REAL, DIMENSION( ims:ime, jms:jme ) :: QFLB_URB2D
+   REAL, DIMENSION( ims:ime, jms:jme ) :: ECAC_URB2D
+   REAL, DIMENSION( ims:ime, jms:jme ) :: EC_URB2D
+   REAL, DIMENSION( ims:ime, jms:jme ) :: COP_URB2D
+   REAL, DIMENSION( ims:ime, jms:jme ) :: Tin_URB2D  ! 2024.08.07
+   REAL, DIMENSION( ims:ime, jms:jme ) :: TWin_URB2D   ! 2024.11.19
+   REAL, DIMENSION( ims:ime, jms:jme ) :: TGin_URB2D   ! 2024.11.19
+   REAL, DIMENSION( ims:ime, jms:jme ) :: WBGTin_URB2D ! 2024.11.19
+   REAL, DIMENSION( ims:ime, jms:jme ) :: MRTin_URB2D  ! 2024.11.19
+   REAL, DIMENSION( ims:ime, jms:jme ) :: Hin_URB2D  ! 2024.08.07
+   REAL, DIMENSION( ims:ime, jms:jme ) :: Hout_URB2D  ! 2024.08.07
+   REAL, DIMENSION( ims:ime, jms:jme ) :: QBCHT_URB2D  ! 2024.10.08
+   REAL, DIMENSION( ims:ime, jms:jme ) :: QBRHT_URB2D  ! 2024.10.08
+   REAL, DIMENSION( ims:ime, jms:jme ) :: QRCHT_URB2D  ! 2024.10.08
+   REAL, DIMENSION( ims:ime, jms:jme ) :: QRRHT_URB2D  ! 2024.10.08
+   REAL, DIMENSION( ims:ime, jms:jme ) :: QVENT_URB2D  ! 2024.10.24
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: QIN_URB2D
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: EVENT_URB2D
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: EIN_URB2D
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: EOUT_URB2D
+   REAL :: QF_URB
+   REAL :: QFB_URB
+   REAL :: QFB_CL_URB
+   REAL :: QFB_HT_URB
+   REAL :: QFL_URB
+   REAL :: QFLB_URB
+   REAL :: ECAC_URB
+   REAL :: EC_URB
+   REAL :: COP_URB
+   REAL :: Tin_URB  ! 2024.08.07
+   REAL :: TWin_URB   ! 2024.11.19
+   REAL :: TGin_URB   ! 2024.11.19
+   REAL :: WBGTin_URB ! 2024.11.19
+   REAL :: MRTin_URB  ! 2024.11.19
+   REAL :: Hin_URB  ! 2024.08.07
+   REAL :: Hout_URB  ! 2024.08.07
+   REAL :: QBCHT_URB  ! 2024.10.08
+   REAL :: QBRHT_URB  ! 2024.10.08
+   REAL :: QRCHT_URB  ! 2024.10.08
+   REAL :: QRRHT_URB  ! 2024.10.08
+   REAL :: QVENT_URB  ! 2024.10.24
+   REAL :: qin_URB    ! indoor specific humidity diagnostic [kg kg-1]
+   REAL :: EVENT_URB  ! latent heat exchange by ventilation [W]
+   REAL :: Ein_URB    ! indoor latent heat load [W]
+   REAL :: Eout_URB   ! HVAC-processed latent load [W]
+! -- end -- Yuya Takane, 2022/12/22
 ! ----------------------------------------------------------------------
 ! DECLARATIONS END - urban
 ! ----------------------------------------------------------------------
@@ -3951,6 +4107,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
       !
       ! Call urban
                   CALL cal_mon_day(julian,julyr,jmonth,jday)      
+                  qin_URB = QIN_URB2D(I,J)
                   CALL urban(LSOLAR_URB,                                      & ! I
                              num_roof_layers,num_wall_layers,num_road_layers, & ! C
                              DZR,DZB,DZG,                                     & ! C
@@ -3972,9 +4129,23 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                              TGRL_URB,SMR_URB,CMGR_URB,CHGR_URB,jmonth,       & ! H
                              DRELR_URB,DRELB_URB,                             & ! H
                              DRELG_URB,FLXHUMR_URB,FLXHUMB_URB,FLXHUMG_URB,   &
-                             ! added by Chenghao Wang
-                             TVG_URB,TT_URB,XXXVG_URB,TVGL_URB,SMG_URB,CMCG_URB,FLXHUMVG_URB,FLXHUMT_URB, &
-                             lf_urb_s, z0_urb, vegfrac)
+                       TVG_URB,TT_URB,XXXVG_URB,TVGL_URB,SMG_URB,CMCG_URB,FLXHUMVG_URB,FLXHUMT_URB, &
+! -- start -- Yuya Takane, 2022/12/22
+!                             lf_urb_s, z0_urb, vegfrac)
+                             lf_urb_s, z0_urb, vegfrac,                       &
+                             QF_URB, QFB_URB,                                 &
+                             QFB_CL_URB, QFB_HT_URB,                          &
+                             QFL_URB, QFLB_URB,                               &
+! -- end -- Yuya Takane, 2022/12/22
+! -- start -- Yuya Takane, 2024.08.07
+                             ECAC_URB, EC_URB, COP_URB,                       &
+                             Tin_URB, Hin_URB, Hout_URB,                      &
+                             TWin_URB, TGin_URB, WBGTin_URB, MRTin_URB,       &
+                             QBCHT_URB, QBRHT_URB,                            &
+                             QRCHT_URB, QRRHT_URB, QVENT_URB,                 &
+                             qin_URB, EVENT_URB, Ein_URB, Eout_URB,           &
+                             itimestep )
+! -- end -- Yuya Takane, 2024.08.07
 
 #if 0
                 IF(IPRINT) THEN
@@ -4092,6 +4263,35 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   Q2_URB2D(I,J)    = Q2_URB
                   UST_URB2D(I,J)   = UST_URB
                   AKMS_URB2D(I,J)  = KARMAN * UST_URB2D(I,J)/(GZ1OZ0_URB2D(I,J)-PSIM_URB2D(I,J))
+! -- start -- Yuya Takane, 2022/12/21
+                  QF_URB2D(I,J)     = QF_URB
+                  QFB_URB2D(I,J)    = QFB_URB
+                  QFB_CL_URB2D(I,J) = QFB_CL_URB
+                  QFB_HT_URB2D(I,J) = QFB_HT_URB
+                  QFL_URB2D(I,J)    = QFL_URB
+                  QFLB_URB2D(I,J)   = QFLB_URB
+                  ECAC_URB2D(I,J)   = ECAC_URB
+                  EC_URB2D(I,J)     = EC_URB
+                  COP_URB2D(I,J)    = COP_URB
+! -- end -- Yuya Takane, 2022/12/21
+! -- start -- Yuya Takane, 2024.08.07
+                  Tin_URB2D(I,J)    = Tin_URB
+                  TWin_URB2D(I,J)   = TWin_URB
+                  TGin_URB2D(I,J)   = TGin_URB
+                  WBGTin_URB2D(I,J) = WBGTin_URB
+                  MRTin_URB2D(I,J)  = MRTin_URB
+                  Hin_URB2D(I,J)    = Hin_URB
+                  Hout_URB2D(I,J)   = Hout_URB
+                  QBCHT_URB2D(I,J)  = QBCHT_URB
+                  QBRHT_URB2D(I,J)  = QBRHT_URB
+                  QRCHT_URB2D(I,J)  = QRCHT_URB
+                  QRRHT_URB2D(I,J)  = QRRHT_URB
+                  QVENT_URB2D(I,J)  = QVENT_URB
+                  QIN_URB2D(I,J)    = qin_URB
+                  EVENT_URB2D(I,J)  = EVENT_URB
+                  EIN_URB2D(I,J)    = Ein_URB
+                  EOUT_URB2D(I,J)   = Eout_URB
+! -- end -- Yuya Takane, 2024.08.07
                   IF (PRESENT(CMR_SFCDIF)) THEN
                      CMR_SFCDIF(I,J) = CMR_URB
                      CHR_SFCDIF(I,J) = CHR_URB
@@ -4849,6 +5049,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
       !
       ! Call urban
                   CALL cal_mon_day(julian,julyr,jmonth,jday)        
+                  qin_URB = QIN_URB2D(I,J)
                   CALL urban(LSOLAR_URB,                                      & ! I
                              num_roof_layers,num_wall_layers,num_road_layers, & ! C
                              DZR,DZB,DZG,                                     & ! C
@@ -4870,9 +5071,23 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                              TGRL_URB,SMR_URB,CMGR_URB,CHGR_URB,jmonth,       & ! H
                              DRELR_URB,DRELB_URB,                             & ! H
                              DRELG_URB,FLXHUMR_URB,FLXHUMB_URB,FLXHUMG_URB,   &
-                             ! added by Chenghao Wang
-                             TVG_URB,TT_URB,XXXVG_URB,TVGL_URB,SMG_URB,CMCG_URB,FLXHUMVG_URB,FLXHUMT_URB, &
-                             lf_urb_s, z0_urb, vegfrac)
+                       TVG_URB,TT_URB,XXXVG_URB,TVGL_URB,SMG_URB,CMCG_URB,FLXHUMVG_URB,FLXHUMT_URB, &
+! -- start -- Yuya Takane, 2022/12/22
+!                             lf_urb_s, z0_urb, vegfrac)
+                             lf_urb_s, z0_urb, vegfrac,                       &
+                             QF_URB, QFB_URB,                                 &
+                             QFB_CL_URB, QFB_HT_URB,                          &
+                             QFL_URB, QFLB_URB,                               &
+! -- end -- Yuya Takane, 2022/12/22
+! -- start -- Yuya Takane, 2024.08.07
+                             ECAC_URB, EC_URB, COP_URB,                       &
+                             Tin_URB, Hin_URB, Hout_URB,                      &
+                             TWin_URB, TGin_URB, WBGTin_URB, MRTin_URB,       &
+                             QBCHT_URB, QBRHT_URB,                            &
+                             QRCHT_URB, QRRHT_URB, QVENT_URB,                 &
+                             qin_URB, EVENT_URB, Ein_URB, Eout_URB,           &
+                             itimestep )
+! -- end -- Yuya Takane, 2024.08.07
 
 #if 0
                 IF(IPRINT) THEN
@@ -4987,6 +5202,35 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   Q2_URB2D(I,J)    = Q2_URB
                   UST_URB2D(I,J)   = UST_URB
                   AKMS_URB2D(I,J)  = KARMAN * UST_URB2D(I,J)/(GZ1OZ0_URB2D(I,J)-PSIM_URB2D(I,J))
+! -- start -- Yuya Takane, 2022/12/21
+                  QF_URB2D(I,J)     = QF_URB
+                  QFB_URB2D(I,J)    = QFB_URB
+                  QFB_CL_URB2D(I,J) = QFB_CL_URB
+                  QFB_HT_URB2D(I,J) = QFB_HT_URB
+                  QFL_URB2D(I,J)    = QFL_URB
+                  QFLB_URB2D(I,J)   = QFLB_URB
+                  ECAC_URB2D(I,J)   = ECAC_URB
+                  EC_URB2D(I,J)     = EC_URB
+                  COP_URB2D(I,J)    = COP_URB
+! -- end -- Yuya Takane, 2022/12/21
+! -- start -- Yuya Takane, 2024.08.07
+                  Tin_URB2D(I,J)    = Tin_URB
+                  TWin_URB2D(I,J)   = TWin_URB
+                  TGin_URB2D(I,J)   = TGin_URB
+                  WBGTin_URB2D(I,J) = WBGTin_URB
+                  MRTin_URB2D(I,J)  = MRTin_URB
+                  Hin_URB2D(I,J)    = Hin_URB
+                  Hout_URB2D(I,J)   = Hout_URB
+                  QBCHT_URB2D(I,J)  = QBCHT_URB
+                  QBRHT_URB2D(I,J)  = QBRHT_URB
+                  QRCHT_URB2D(I,J)  = QRCHT_URB
+                  QRRHT_URB2D(I,J)  = QRRHT_URB
+                  QVENT_URB2D(I,J)  = QVENT_URB
+                  QIN_URB2D(I,J)    = qin_URB
+                  EVENT_URB2D(I,J)  = EVENT_URB
+                  EIN_URB2D(I,J)    = Ein_URB
+                  EOUT_URB2D(I,J)   = Eout_URB
+! -- end -- Yuya Takane, 2024.08.07
                   IF (PRESENT(CMR_SFCDIF)) THEN
                      CMR_SFCDIF(I,J) = CMR_URB
                      CHR_SFCDIF(I,J) = CHR_URB

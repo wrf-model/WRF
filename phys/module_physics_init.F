@@ -159,6 +159,7 @@ CONTAINS
                          TRL_URB3D, TBL_URB3D, TGL_URB3D,        & !Optional urban
                          SH_URB2D, LH_URB2D, G_URB2D, RN_URB2D,  & !Optional urban
                          TS_URB2D, FRC_URB2D, UTYPE_URB2D,       & !Optional urban
+                         TIN_URB2D, QIN_URB2D,                   & !Optional SLUCM+BEM state
                          CMCR_URB2D,TGR_URB2D,TGRL_URB3D,SMR_URB3D, & !Optional urban
                          DRELR_URB2D,DRELB_URB2D,DRELG_URB2D,    & !Optional urban
                          FLXHUMR_URB2D,FLXHUMB_URB2D,            & !Optional urban
@@ -711,6 +712,8 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TS_URB2D !urban
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FRC_URB2D !urban
    INTEGER, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: UTYPE_URB2D !urban
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TIN_URB2D !SLUCM+BEM
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: QIN_URB2D !SLUCM+BEM
 
    INTEGER , INTENT(IN)        :: num_urban_ndm
    INTEGER , INTENT(IN)        :: urban_map_zrd
@@ -1587,6 +1590,7 @@ CHARACTER(LEN=8) :: name
                 TRL_URB3D, TBL_URB3D, TGL_URB3D,                & !Optional urban
                 SH_URB2D, LH_URB2D, G_URB2D, RN_URB2D,          & !Optional urban
                 TS_URB2D, FRC_URB2D, UTYPE_URB2D,               & 
+                TIN_URB2D, QIN_URB2D,                   & !Optional SLUCM+BEM state
                 SF_URBAN_PHYSICS,                               & !Optional urban
                 CMCR_URB2D,TGR_URB2D,TGRL_URB3D,SMR_URB3D,      & !Optional urban
                 DRELR_URB2D,DRELB_URB2D,DRELG_URB2D,            & !Optional urban
@@ -2657,6 +2661,7 @@ CHARACTER(LEN=8) :: name
                 TRL_URB3D, TBL_URB3D, TGL_URB3D,                & !Optional urban
                 SH_URB2D,LH_URB2D,G_URB2D,RN_URB2D,             & !Optional urban
                 TS_URB2D, FRC_URB2D, UTYPE_URB2D,               &
+                TIN_URB2D, QIN_URB2D,                   & !Optional SLUCM+BEM state
                 SF_URBAN_PHYSICS,                               & !Optional urban
                 CMCR_URB2D,TGR_URB2D,TGRL_URB3D,SMR_URB3D,      & !Optional urban
                 DRELR_URB2D,DRELB_URB2D,DRELG_URB2D,            & !Optional urban
@@ -3056,6 +3061,8 @@ CHARACTER(LEN=8) :: name
     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TS_URB2D !Optional urban
     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FRC_URB2D !Optional urban
     INTEGER, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: UTYPE_URB2D !Optional urban
+    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TIN_URB2D !SLUCM+BEM
+    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: QIN_URB2D !SLUCM+BEM
 !    REAL, DIMENSION( ims:ime, 1:num_roof_layers, jms:jme ), INTENT(INOUT) :: TRL_URB3D !Optional urban
 !    REAL, DIMENSION( ims:ime, 1:num_wall_layers, jms:jme ), INTENT(INOUT) :: TBL_URB3D !Optional urban
 !    REAL, DIMENSION( ims:ime, 1:num_road_layers, jms:jme ), INTENT(INOUT) :: TGL_URB3D !Optional urban
@@ -3515,7 +3522,8 @@ CHARACTER(LEN=8) :: name
                               A_E_BEP,B_U_BEP,B_V_BEP,                         & !multi-layer urban
                               B_T_BEP,B_Q_BEP,B_E_BEP,DLG_BEP,                 & !multi-layer urban
                               DL_U_BEP,SF_BEP,VL_BEP,                          & !multi-layer urban
-                              FRC_URB2D, UTYPE_URB2D,config_flags%use_wudapt_lcz)  !urban
+                              FRC_URB2D, UTYPE_URB2D,config_flags%use_wudapt_lcz, &
+                              TIN_URB2D, QIN_URB2D)  !urban
           
 
                max_utype_urb2d = maxval(UTYPE_URB2D)*1.0
@@ -3670,7 +3678,8 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                               A_E_BEP,B_U_BEP,B_V_BEP,                         & !multi-layer urban
                               B_T_BEP,B_Q_BEP,B_E_BEP,DLG_BEP,                 & !multi-layer urban
                               DL_U_BEP,SF_BEP,VL_BEP,                          & !multi-layer urban
-                              FRC_URB2D, UTYPE_URB2D,config_flags%use_wudapt_lcz)!urban
+                              FRC_URB2D, UTYPE_URB2D,config_flags%use_wudapt_lcz, &
+                              TIN_URB2D, QIN_URB2D)!urban
 
                max_utype_urb2d = maxval(UTYPE_URB2D)*1.0
 #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )

@@ -33,6 +33,7 @@ target_sources(
                   ${PROJECT_SOURCE_DIR}/tools/misc.c
                   ${PROJECT_SOURCE_DIR}/tools/sym.c
                   ${PROJECT_SOURCE_DIR}/tools/symtab_gen.c
+                  ${PROJECT_SOURCE_DIR}/tools/gen_streams.c
 
                   gen_kpp.c
                   get_wrf_chem_specs.c
@@ -130,6 +131,7 @@ add_custom_target(
 
 
 add_dependencies( ${PROJECT_NAME}_Core registry_kpp_code )
+add_dependencies( registry_code registry_kpp_code )
 target_sources(
                 ${PROJECT_NAME}_Core
                 PRIVATE

@@ -1654,6 +1654,12 @@
             model_config_rec%auxinput11_end_h(i) = 0
             model_config_rec%auxinput11_end_m(i) = 0
             model_config_rec%auxinput11_end_s(i) = 0
+         ELSE IF ( model_config_rec%fdda_end(i) .LE. 0. ) THEN
+            WRITE (wrf_err_message, FMT='(A,I6,A,I0,A)') '--- WARNING: obs_nudge_opt = 1 for domain ', &
+                         i, ' but fdda_end = ', NINT( model_config_rec%fdda_end(i) ), &
+                         ' min: obs nudging stops after the first time step.'
+            CALL wrf_message ( TRIM( wrf_err_message ) )
+            CALL wrf_message ( '---          Set fdda_end past the time obs nudging should end, in minutes from the simulation start.' )
          END IF
 
       ENDDO      ! Loop over domains

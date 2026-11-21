@@ -1,0 +1,2675 @@
+{
+  "schema_version": 1,
+  "date_jst": "2026-11-21",
+  "prechange_commit": "9a6f9edc660e9574dcd4a51a4ba91c7025f24ea6",
+  "status": "pass",
+  "claim_scope": "Compiled production physics with synthetic single-column forcing. Full WRF/MPI/Noah/Noah-MP/restart-file and observational acceptance remain unverified for this addition.",
+  "greenroof_native": {
+    "kind": "wrf_greenroof_native_v1",
+    "passed": true,
+    "scope": {
+      "actual_complete_urban_module": true,
+      "actual_bem_module": true,
+      "actual_constants_and_tables": true,
+      "synthetic_forcing": true,
+      "treeoption": 0,
+      "full_wrf_build": false,
+      "noah_noahmp_driver_integration": false,
+      "mpi": false,
+      "wrf_restart_io": false,
+      "single_column_serialization_only": true,
+      "physical_acceptance": false
+    },
+    "baseline_commit": "9a6f9edc660e9574dcd4a51a4ba91c7025f24ea6",
+    "sources": {
+      "phys/module_sf_urban.F": {
+        "sha256": "95c1e1d67e53a5ae7aef987495f43978582820e8fa6f967638813c4fb87e8e3d",
+        "bytes": 301932,
+        "path": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/candidate/phys/module_sf_urban.F"
+      },
+      "phys/module_sf_slucm_bem.F": {
+        "sha256": "0d9ac0fe0866b5c7029d1d61544bd5855653ede0c042132d51a1b6c7aea330ba",
+        "bytes": 31952,
+        "path": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/candidate/phys/module_sf_slucm_bem.F"
+      },
+      "phys/module_sf_greenroof_bem.F": {
+        "sha256": "c3b5b808a80e20f6787a18627b3a6ee7523ed5cbece30e63de7f9eb4a4373766",
+        "bytes": 6972,
+        "path": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/candidate/phys/module_sf_greenroof_bem.F"
+      },
+      "share/module_model_constants.F": {
+        "sha256": "5b80377fecdc18a5f0ad38d3b6c15cfc86ad5d76701adbbbb08a08698d0f7062",
+        "bytes": 8280,
+        "path": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/candidate/share/module_model_constants.F"
+      },
+      "run/URBPARM.TBL": {
+        "sha256": "f827ed18145ea692365861c4e377d46f4f67e63f8332a96a4d1cc9a84a5b188a",
+        "bytes": 13436,
+        "path": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/candidate/run/URBPARM.TBL"
+      },
+      "run/URBPARM_LCZ.TBL": {
+        "sha256": "aea3c2401253dd098f3df7bebfd9f5af17cee08eaef3975ea709a32c14a7696c",
+        "bytes": 18194,
+        "path": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/candidate/run/URBPARM_LCZ.TBL"
+      },
+      "urban_greenroof_regression.F90": {
+        "sha256": "a7242e71b742a2b9cbcf4d035fd173a22858254a03973841e536f607571a8285",
+        "bytes": 20479,
+        "path": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/candidate/test/slucm_bem/urban_greenroof_regression.F90"
+      },
+      "wrf_test_stubs.F90": {
+        "sha256": "f3edf8b80f3dc64067377defd1c67e04f9e0d2012e0ccad017b1686e31c692a3",
+        "bytes": 1055,
+        "path": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/candidate/test/slucm_bem/wrf_test_stubs.F90"
+      },
+      "greenroof_column_invariants.F90": {
+        "sha256": "5a63404427658b5dd610ee97d0a02c6aa5dc46951498ee5df306abbb975c125e",
+        "bytes": 6245,
+        "path": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/candidate/test/slucm_bem/greenroof_column_invariants.F90"
+      },
+      "greenroof_column_status.F90": {
+        "sha256": "715ca034894b08f2a804f9e51d841740e72da7c10c8271ae8eea72b9ec2f738d",
+        "bytes": 1469,
+        "path": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/candidate/test/slucm_bem/greenroof_column_status.F90"
+      },
+      "run_greenroof.py": {
+        "sha256": "eb04b783743d68fce65139d6a05502b327ed69049bc57a8da548a9b2b437e687",
+        "bytes": 10356,
+        "path": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/candidate/test/slucm_bem/run_greenroof.py"
+      }
+    },
+    "compilations": [
+      {
+        "command": [
+          "<workspace>/slucm_integration_20261121/toolchain/bin/gfortran",
+          "-cpp",
+          "-ffree-form",
+          "-ffree-line-length-none",
+          "-O0",
+          "-g",
+          "-fcheck=all",
+          "-fbacktrace",
+          "-ffpe-trap=invalid,zero",
+          "-mfma",
+          "-march=native",
+          "-ffp-contract=fast",
+          "-ffp-contract=off",
+          "-DBASELINE_ONLY",
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/baseline/wrf_test_stubs.F90",
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/baseline/module_model_constants.F",
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/baseline/module_sf_slucm_bem.F",
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/baseline/module_sf_urban.F",
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/baseline/urban_greenroof_regression.F90",
+          "-o",
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/baseline/urban_greenroof.exe"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/baseline",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/baseline/compile.log",
+        "returncode": 0,
+        "seconds": 1.570629596710205
+      },
+      {
+        "command": [
+          "<workspace>/slucm_integration_20261121/toolchain/bin/gfortran",
+          "-cpp",
+          "-ffree-form",
+          "-ffree-line-length-none",
+          "-O0",
+          "-g",
+          "-fcheck=all",
+          "-fbacktrace",
+          "-ffpe-trap=invalid,zero",
+          "-mfma",
+          "-march=native",
+          "-ffp-contract=fast",
+          "-ffp-contract=off",
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate/wrf_test_stubs.F90",
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate/module_model_constants.F",
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate/module_sf_greenroof_bem.F",
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate/module_sf_slucm_bem.F",
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate/module_sf_urban.F",
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate/urban_greenroof_regression.F90",
+          "-o",
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate/urban_greenroof.exe"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate/compile.log",
+        "returncode": 0,
+        "seconds": 1.5372951030731201
+      },
+      {
+        "command": [
+          "<workspace>/slucm_integration_20261121/toolchain/bin/gfortran",
+          "-cpp",
+          "-ffree-form",
+          "-ffree-line-length-none",
+          "-O0",
+          "-g",
+          "-fcheck=all",
+          "-fbacktrace",
+          "-ffpe-trap=invalid,zero,overflow",
+          "-mfma",
+          "-march=native",
+          "-ffp-contract=fast",
+          "-ffp-contract=off",
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/greenroof_column_invariants/module_sf_greenroof_bem.F",
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/greenroof_column_invariants/greenroof_column_invariants.F90",
+          "-o",
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/greenroof_column_invariants/column.exe"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/greenroof_column_invariants",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/greenroof_column_invariants/compile.log",
+        "returncode": 0,
+        "seconds": 0.125777006149292
+      },
+      {
+        "command": [
+          "<workspace>/slucm_integration_20261121/toolchain/bin/gfortran",
+          "-cpp",
+          "-ffree-form",
+          "-ffree-line-length-none",
+          "-O0",
+          "-g",
+          "-fcheck=all",
+          "-fbacktrace",
+          "-ffpe-trap=invalid,zero,overflow",
+          "-mfma",
+          "-march=native",
+          "-ffp-contract=fast",
+          "-ffp-contract=off",
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/greenroof_column_status/module_sf_greenroof_bem.F",
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/greenroof_column_status/greenroof_column_status.F90",
+          "-o",
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/greenroof_column_status/column.exe"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/greenroof_column_status",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/greenroof_column_status/compile.log",
+        "returncode": 0,
+        "seconds": 0.09611868858337402
+      }
+    ],
+    "runs": [
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/greenroof_column_invariants/column.exe"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/greenroof_column_invariants",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/greenroof_column_invariants/run.log",
+        "returncode": 0,
+        "seconds": 0.0026907920837402344,
+        "cases": [
+          "ISOTHERMAL_PASS",
+          "STEADY_RESISTANCE_PASS",
+          "TRANSIENT_CONSERVATION_PASS",
+          "SURFACE_DERIVATIVE_PASS",
+          "TIME_REFINEMENT_PASS"
+        ],
+        "metrics": {
+          "STEADY_HEAT_FLUX_WM2": 20.456713949494308,
+          "MAX_CELL_RESIDUAL_WM2": 2.3264112858356611e-10,
+          "TOTAL_ENERGY_RESIDUAL_WM2": 8.411404905928066e-11,
+          "DERIVATIVE_ABS_ERROR_WM2K": 4.4143533273199864e-10,
+          "DT120_MINUS_DT60_MAX_K": 0.00826524995784439,
+          "DT60_MINUS_DT30_MAX_K": 0.004154693636962747,
+          "REFINEMENT_RATIO": 0.5026700533139482
+        }
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/greenroof_column_status/column.exe"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/greenroof_column_status",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/greenroof_column_status/run.log",
+        "returncode": 0,
+        "seconds": 0.0017299652099609375,
+        "expected_invalid_status_count": 6,
+        "insulated_column_valid": true
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/baseline/urban_greenroof.exe",
+          "snapshot_disabled",
+          "3urban"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/baseline",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/baseline/snapshot_disabled_3urban.log",
+        "returncode": 0,
+        "seconds": 0.007784605026245117
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate/urban_greenroof.exe",
+          "snapshot_disabled",
+          "3urban"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate/snapshot_disabled_3urban.log",
+        "returncode": 0,
+        "seconds": 0.0074727535247802734
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/baseline/urban_greenroof.exe",
+          "snapshot_nonbem_green",
+          "3urban"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/baseline",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/baseline/snapshot_nonbem_green_3urban.log",
+        "returncode": 0,
+        "seconds": 0.005468606948852539
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate/urban_greenroof.exe",
+          "snapshot_nonbem_green",
+          "3urban"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate/snapshot_nonbem_green_3urban.log",
+        "returncode": 0,
+        "seconds": 0.005710124969482422
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/baseline/urban_greenroof.exe",
+          "snapshot_fgr0",
+          "3urban"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/baseline",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/baseline/snapshot_fgr0_3urban.log",
+        "returncode": 0,
+        "seconds": 0.030501842498779297
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate/urban_greenroof.exe",
+          "snapshot_fgr0",
+          "3urban"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate/snapshot_fgr0_3urban.log",
+        "returncode": 0,
+        "seconds": 0.025822877883911133
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate/urban_greenroof.exe",
+          "suite",
+          "3urban"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate/suite_3urban.log",
+        "returncode": 0,
+        "seconds": 0.8815734386444092,
+        "cases": [
+          "zero_area_bypass",
+          "category1_dt6_f25",
+          "category1_dt6_f50",
+          "category1_dt6_f100",
+          "category1_dt30_f25",
+          "category1_dt30_f50",
+          "category1_dt30_f100",
+          "category1_dt60_f25",
+          "category1_dt60_f50",
+          "category1_dt60_f100",
+          "category1_dt180_f25",
+          "category1_dt180_f50",
+          "category1_dt180_f100",
+          "category2_dt6_f25",
+          "category2_dt6_f50",
+          "category2_dt6_f100",
+          "category2_dt30_f25",
+          "category2_dt30_f50",
+          "category2_dt30_f100",
+          "category2_dt60_f25",
+          "category2_dt60_f50",
+          "category2_dt60_f100",
+          "category2_dt180_f25",
+          "category2_dt180_f50",
+          "category2_dt180_f100",
+          "category3_dt6_f25",
+          "category3_dt6_f50",
+          "category3_dt6_f100",
+          "category3_dt30_f25",
+          "category3_dt30_f50",
+          "category3_dt30_f100",
+          "category3_dt60_f25",
+          "category3_dt60_f50",
+          "category3_dt60_f100",
+          "category3_dt180_f25",
+          "category3_dt180_f50",
+          "category3_dt180_f100",
+          "72hour_evolution",
+          "greenroof_state_serialization_replay"
+        ],
+        "maxima": {
+          "solver_residual_wm2": 9.413881230102561e-09,
+          "surface_residual_wm2": 0.009941691532731056,
+          "storage_residual_wm2": 1.047891126964117,
+          "cell_residual_wm2": 0.5508648816117606,
+          "indoor_load_mismatch_w_per_m": 7.100901700596296e-05,
+          "storage_roundoff_bound_wm2": 2.165875201765915,
+          "storage_residual_to_bound_ratio": 0.9307108268188004
+        }
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate/urban_greenroof.exe",
+          "invalid_fgr",
+          "3urban"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate/invalid_fgr_3urban.log",
+        "returncode": 1,
+        "seconds": 0.006674766540527344,
+        "expected_rejection": true
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate/urban_greenroof.exe",
+          "invalid_dz",
+          "3urban"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate/invalid_dz_3urban.log",
+        "returncode": 1,
+        "seconds": 0.010477781295776367,
+        "expected_rejection": true
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate/urban_greenroof.exe",
+          "invalid_nonfinite_fgr",
+          "3urban"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate/invalid_nonfinite_fgr_3urban.log",
+        "returncode": 1,
+        "seconds": 0.006342411041259766,
+        "expected_rejection": true
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate/urban_greenroof.exe",
+          "invalid_distributed",
+          "3urban"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate/invalid_distributed_3urban.log",
+        "returncode": 1,
+        "seconds": 0.00833272933959961,
+        "expected_rejection": true
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/baseline/urban_greenroof.exe",
+          "snapshot_disabled",
+          "lcz"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/baseline",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/baseline/snapshot_disabled_lcz.log",
+        "returncode": 0,
+        "seconds": 0.026688337326049805
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate/urban_greenroof.exe",
+          "snapshot_disabled",
+          "lcz"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate/snapshot_disabled_lcz.log",
+        "returncode": 0,
+        "seconds": 0.02998495101928711
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/baseline/urban_greenroof.exe",
+          "snapshot_nonbem_green",
+          "lcz"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/baseline",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/baseline/snapshot_nonbem_green_lcz.log",
+        "returncode": 0,
+        "seconds": 0.014234066009521484
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate/urban_greenroof.exe",
+          "snapshot_nonbem_green",
+          "lcz"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate/snapshot_nonbem_green_lcz.log",
+        "returncode": 0,
+        "seconds": 0.013957023620605469
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/baseline/urban_greenroof.exe",
+          "snapshot_fgr0",
+          "lcz"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/baseline",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/baseline/snapshot_fgr0_lcz.log",
+        "returncode": 0,
+        "seconds": 0.05945134162902832
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate/urban_greenroof.exe",
+          "snapshot_fgr0",
+          "lcz"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate/snapshot_fgr0_lcz.log",
+        "returncode": 0,
+        "seconds": 0.061928510665893555
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate/urban_greenroof.exe",
+          "suite",
+          "lcz"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate/suite_lcz.log",
+        "returncode": 0,
+        "seconds": 1.6189625263214111,
+        "cases": [
+          "zero_area_bypass",
+          "category1_dt6_f25",
+          "category1_dt6_f50",
+          "category1_dt6_f100",
+          "category1_dt30_f25",
+          "category1_dt30_f50",
+          "category1_dt30_f100",
+          "category1_dt60_f25",
+          "category1_dt60_f50",
+          "category1_dt60_f100",
+          "category1_dt180_f25",
+          "category1_dt180_f50",
+          "category1_dt180_f100",
+          "category2_dt6_f25",
+          "category2_dt6_f50",
+          "category2_dt6_f100",
+          "category2_dt30_f25",
+          "category2_dt30_f50",
+          "category2_dt30_f100",
+          "category2_dt60_f25",
+          "category2_dt60_f50",
+          "category2_dt60_f100",
+          "category2_dt180_f25",
+          "category2_dt180_f50",
+          "category2_dt180_f100",
+          "category3_dt6_f25",
+          "category3_dt6_f50",
+          "category3_dt6_f100",
+          "category3_dt30_f25",
+          "category3_dt30_f50",
+          "category3_dt30_f100",
+          "category3_dt60_f25",
+          "category3_dt60_f50",
+          "category3_dt60_f100",
+          "category3_dt180_f25",
+          "category3_dt180_f50",
+          "category3_dt180_f100",
+          "category4_dt6_f25",
+          "category4_dt6_f50",
+          "category4_dt6_f100",
+          "category4_dt30_f25",
+          "category4_dt30_f50",
+          "category4_dt30_f100",
+          "category4_dt60_f25",
+          "category4_dt60_f50",
+          "category4_dt60_f100",
+          "category4_dt180_f25",
+          "category4_dt180_f50",
+          "category4_dt180_f100",
+          "category5_dt6_f25",
+          "category5_dt6_f50",
+          "category5_dt6_f100",
+          "category5_dt30_f25",
+          "category5_dt30_f50",
+          "category5_dt30_f100",
+          "category5_dt60_f25",
+          "category5_dt60_f50",
+          "category5_dt60_f100",
+          "category5_dt180_f25",
+          "category5_dt180_f50",
+          "category5_dt180_f100",
+          "category6_dt6_f25",
+          "category6_dt6_f50",
+          "category6_dt6_f100",
+          "category6_dt30_f25",
+          "category6_dt30_f50",
+          "category6_dt30_f100",
+          "category6_dt60_f25",
+          "category6_dt60_f50",
+          "category6_dt60_f100",
+          "category6_dt180_f25",
+          "category6_dt180_f50",
+          "category6_dt180_f100",
+          "category7_dt6_f25",
+          "category7_dt6_f50",
+          "category7_dt6_f100",
+          "category7_dt30_f25",
+          "category7_dt30_f50",
+          "category7_dt30_f100",
+          "category7_dt60_f25",
+          "category7_dt60_f50",
+          "category7_dt60_f100",
+          "category7_dt180_f25",
+          "category7_dt180_f50",
+          "category7_dt180_f100",
+          "category8_dt6_f25",
+          "category8_dt6_f50",
+          "category8_dt6_f100",
+          "category8_dt30_f25",
+          "category8_dt30_f50",
+          "category8_dt30_f100",
+          "category8_dt60_f25",
+          "category8_dt60_f50",
+          "category8_dt60_f100",
+          "category8_dt180_f25",
+          "category8_dt180_f50",
+          "category8_dt180_f100",
+          "category9_dt6_f25",
+          "category9_dt6_f50",
+          "category9_dt6_f100",
+          "category9_dt30_f25",
+          "category9_dt30_f50",
+          "category9_dt30_f100",
+          "category9_dt60_f25",
+          "category9_dt60_f50",
+          "category9_dt60_f100",
+          "category9_dt180_f25",
+          "category9_dt180_f50",
+          "category9_dt180_f100",
+          "category10_dt6_f25",
+          "category10_dt6_f50",
+          "category10_dt6_f100",
+          "category10_dt30_f25",
+          "category10_dt30_f50",
+          "category10_dt30_f100",
+          "category10_dt60_f25",
+          "category10_dt60_f50",
+          "category10_dt60_f100",
+          "category10_dt180_f25",
+          "category10_dt180_f50",
+          "category10_dt180_f100",
+          "72hour_evolution",
+          "greenroof_state_serialization_replay"
+        ],
+        "maxima": {
+          "solver_residual_wm2": 1.076791633636276e-08,
+          "surface_residual_wm2": 0.009892957750707865,
+          "storage_residual_wm2": 1.326036878708699,
+          "cell_residual_wm2": 0.671213911145788,
+          "indoor_load_mismatch_w_per_m": 0.0008583103299315553,
+          "storage_roundoff_bound_wm2": 2.328636103790432,
+          "storage_residual_to_bound_ratio": 0.8992092612051119
+        }
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate/urban_greenroof.exe",
+          "invalid_fgr",
+          "lcz"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate/invalid_fgr_lcz.log",
+        "returncode": 1,
+        "seconds": 0.007139444351196289,
+        "expected_rejection": true
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate/urban_greenroof.exe",
+          "invalid_dz",
+          "lcz"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate/invalid_dz_lcz.log",
+        "returncode": 1,
+        "seconds": 0.005871772766113281,
+        "expected_rejection": true
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate/urban_greenroof.exe",
+          "invalid_nonfinite_fgr",
+          "lcz"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate/invalid_nonfinite_fgr_lcz.log",
+        "returncode": 1,
+        "seconds": 0.006334543228149414,
+        "expected_rejection": true
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate/urban_greenroof.exe",
+          "invalid_distributed",
+          "lcz"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/greenroof_fma_off_01/candidate/invalid_distributed_lcz.log",
+        "returncode": 1,
+        "seconds": 0.005900382995605469,
+        "expected_rejection": true
+      }
+    ],
+    "exact_snapshots": [
+      {
+        "mode": "snapshot_disabled",
+        "table": "3urban",
+        "records": 72,
+        "values_per_record": 147,
+        "sha256": "a6ec6b5352c30b47229c3538d82cc7807965bfc09b945f1396f68f6764b8985b",
+        "passed": true
+      },
+      {
+        "mode": "snapshot_nonbem_green",
+        "table": "3urban",
+        "records": 72,
+        "values_per_record": 147,
+        "sha256": "0312259971fd0c490e76cdeee35cf8280b264545da4b09ae31d290f8d60b77e3",
+        "passed": true
+      },
+      {
+        "mode": "snapshot_fgr0",
+        "table": "3urban",
+        "records": 72,
+        "values_per_record": 147,
+        "sha256": "f8dbdeabc12e8565bcbadaf12822142b969c4586601b053e530ef87b1936a0c0",
+        "passed": true
+      },
+      {
+        "mode": "snapshot_disabled",
+        "table": "lcz",
+        "records": 240,
+        "values_per_record": 147,
+        "sha256": "6d87d72d3f9d7a5c96fe0c3bf7d25440566afa3d01c040fca1e9eb98d7ada4ec",
+        "passed": true
+      },
+      {
+        "mode": "snapshot_nonbem_green",
+        "table": "lcz",
+        "records": 240,
+        "values_per_record": 147,
+        "sha256": "9d584c5f1c2bfcd9303d419b16b6be107141b5433508191f768db224bfd3da2d",
+        "passed": true
+      },
+      {
+        "mode": "snapshot_fgr0",
+        "table": "lcz",
+        "records": 240,
+        "values_per_record": 147,
+        "sha256": "b4353b10690a4bafcef304eb32a4f90374c94b07c478dab2dc7953fc728d79b4",
+        "passed": true
+      }
+    ],
+    "compiler": {
+      "path": "<workspace>/slucm_integration_20261121/toolchain/bin/gfortran",
+      "version": "GNU Fortran (Debian 14.2.0-19) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+      "flags": [
+        "-cpp",
+        "-ffree-form",
+        "-ffree-line-length-none",
+        "-O0",
+        "-g",
+        "-fcheck=all",
+        "-fbacktrace",
+        "-ffpe-trap=invalid,zero",
+        "-mfma",
+        "-march=native",
+        "-ffp-contract=fast",
+        "-ffp-contract=off"
+      ]
+    }
+  },
+  "existing_controls_exchange": {
+    "kind": "wrf_slucm_bem_native_validation_v1",
+    "passed": true,
+    "numerical_conservation_pass": true,
+    "scope": {
+      "actual_bem_module": true,
+      "actual_complete_urban_module": true,
+      "actual_model_constants_and_tables": true,
+      "synthetic_single_column_forcing": true,
+      "treeoption": 0,
+      "full_wrf_build": false,
+      "noah_or_noahmp_driver_integration": false,
+      "mpi_execution": false,
+      "wrf_restart_io": false,
+      "serializing_single_column_call_state_only": true,
+      "physical_acceptance": false
+    },
+    "baseline_commit": "6099d9f632e204cc8ed4b01e1a8adba1da753a47",
+    "baseline_lookup_ref": "6099d9f632e204cc8ed4b01e1a8adba1da753a47",
+    "output_directory": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01",
+    "compilations": [
+      {
+        "command": [
+          "<workspace>/slucm_integration_20261121/toolchain/bin/gfortran",
+          "-cpp",
+          "-ffree-form",
+          "-ffree-line-length-none",
+          "-O2",
+          "-g",
+          "-fcheck=bounds",
+          "-fbacktrace",
+          "-mfma",
+          "-march=native",
+          "-ffp-contract=fast",
+          "-ffp-contract=off",
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/bem/module_sf_slucm_bem_reference.f90",
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/bem/module_sf_slucm_bem.F",
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/bem/bem_controls_regression.f90",
+          "-o",
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/bem/bem_controls.exe"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/bem",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/bem/bem_controls.exe.compile.log",
+        "returncode": 0,
+        "elapsed_seconds": 0.7598557472229004
+      },
+      {
+        "command": [
+          "<workspace>/slucm_integration_20261121/toolchain/bin/gfortran",
+          "-cpp",
+          "-ffree-form",
+          "-ffree-line-length-none",
+          "-O2",
+          "-g",
+          "-fcheck=bounds",
+          "-fbacktrace",
+          "-mfma",
+          "-march=native",
+          "-ffp-contract=fast",
+          "-ffp-contract=off",
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate/wrf_test_stubs.F90",
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate/module_model_constants.F",
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate/module_sf_greenroof_bem.F",
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate/module_sf_slucm_bem.F",
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate/module_sf_urban.F",
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate/urban_exchange_regression.F90",
+          "-o",
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate/urban_exchange.exe"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate/urban_exchange.exe.compile.log",
+        "returncode": 0,
+        "elapsed_seconds": 6.56595253944397
+      },
+      {
+        "command": [
+          "<workspace>/slucm_integration_20261121/toolchain/bin/gfortran",
+          "-cpp",
+          "-ffree-form",
+          "-ffree-line-length-none",
+          "-O2",
+          "-g",
+          "-fcheck=bounds",
+          "-fbacktrace",
+          "-mfma",
+          "-march=native",
+          "-ffp-contract=fast",
+          "-ffp-contract=off",
+          "-DBASELINE_ONLY",
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/baseline/wrf_test_stubs.F90",
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/baseline/module_model_constants.F",
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/baseline/module_sf_slucm_bem.F",
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/baseline/module_sf_urban.F",
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/baseline/urban_exchange_regression.F90",
+          "-o",
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/baseline/urban_exchange.exe"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/baseline",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/baseline/urban_exchange.exe.compile.log",
+        "returncode": 0,
+        "elapsed_seconds": 4.851155519485474
+      }
+    ],
+    "runs": [
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/bem/bem_controls.exe"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/bem",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/bem/controls.log",
+        "returncode": 0,
+        "elapsed_seconds": 0.002600431442260742,
+        "passed": true,
+        "cases": [
+          "active_cooling_and_dehumidification",
+          "active_variable_cop",
+          "off_without_threshold_crossing",
+          "cooling_cannot_heat",
+          "active_north_heating",
+          "active_south_heating",
+          "active_lcz_1",
+          "active_lcz_2",
+          "active_lcz_3",
+          "active_lcz_4",
+          "active_lcz_5",
+          "active_lcz_6",
+          "active_lcz_7",
+          "active_lcz_8",
+          "active_lcz_9",
+          "active_lcz_10",
+          "active_three_urban_commercial",
+          "dry_no_flux_1",
+          "dry_no_flux_2",
+          "dry_no_flux_3",
+          "dry_no_flux_4",
+          "pure_ventilation_1",
+          "pure_ventilation_2",
+          "temperature_onset_1_fraction_1",
+          "temperature_onset_2_fraction_1",
+          "temperature_onset_1_fraction_2",
+          "temperature_onset_2_fraction_2",
+          "temperature_onset_1_fraction_3",
+          "temperature_onset_2_fraction_3",
+          "humidity_onset_fraction_1",
+          "humidity_onset_fraction_2",
+          "humidity_onset_fraction_3",
+          "end_step_threshold",
+          "start_at_threshold",
+          "threshold_continuity",
+          "removal_capacity_bound",
+          "invalid_dt_flag",
+          "invalid_tau_flag",
+          "invalid_geometry_flag",
+          "invalid_humidity_flag",
+          "nonfinite_input_flag",
+          "negative_update_flag"
+        ]
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/bem/bem_controls.exe",
+          "invalid_dt"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/bem",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/bem/invalid_dt.log",
+        "returncode": 1,
+        "elapsed_seconds": 0.004631519317626953,
+        "passed": true
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/bem/bem_controls.exe",
+          "invalid_tau"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/bem",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/bem/invalid_tau.log",
+        "returncode": 1,
+        "elapsed_seconds": 0.005334138870239258,
+        "passed": true
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/bem/bem_controls.exe",
+          "invalid_geometry"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/bem",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/bem/invalid_geometry.log",
+        "returncode": 1,
+        "elapsed_seconds": 0.003746509552001953,
+        "passed": true
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/bem/bem_controls.exe",
+          "invalid_humidity"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/bem",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/bem/invalid_humidity.log",
+        "returncode": 1,
+        "elapsed_seconds": 0.0034971237182617188,
+        "passed": true
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/bem/bem_controls.exe",
+          "nonfinite_input"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/bem",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/bem/nonfinite_input.log",
+        "returncode": 1,
+        "elapsed_seconds": 0.003437519073486328,
+        "passed": true
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/bem/bem_controls.exe",
+          "negative_update"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/bem",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/bem/negative_update.log",
+        "returncode": 1,
+        "elapsed_seconds": 0.0034761428833007812,
+        "passed": true
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate/urban_exchange.exe",
+          "suite",
+          "3urban"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate/suite_3urban.log",
+        "returncode": 0,
+        "elapsed_seconds": 0.00481724739074707,
+        "passed": true,
+        "cases": [
+          "canopy_type_1_dt_6",
+          "canopy_type_1_dt_30",
+          "canopy_type_1_dt_60",
+          "canopy_type_1_dt_180",
+          "canopy_type_2_dt_6",
+          "canopy_type_2_dt_30",
+          "canopy_type_2_dt_60",
+          "canopy_type_2_dt_180",
+          "canopy_type_3_dt_6",
+          "canopy_type_3_dt_30",
+          "canopy_type_3_dt_60",
+          "canopy_type_3_dt_180",
+          "exchange_sign_1",
+          "exchange_sign_2",
+          "valid_dry_indoor_state_1",
+          "valid_dry_indoor_state_2",
+          "valid_dry_indoor_state_3",
+          "partial_ac_latent_equipment",
+          "no_repeated_tile_fraction",
+          "wet_trial_state_restore",
+          "no_old_qf_forcing",
+          "distributed_local_geometry",
+          "greenroof_water_state_restore",
+          "monin_obukhov_canyon_exchange",
+          "winter_hvac_off_exchange",
+          "coupled_control_threshold_crossing",
+          "external_source_routing",
+          "state_serialization_replay"
+        ],
+        "coupling": [
+          {
+            "case": "canopy_type_1_dt_6",
+            "iterations": 6,
+            "residual_w_m2": [
+              -1.335144043e-05,
+              -9.536743164e-07
+            ],
+            "source_w_m2": [
+              -9.895442009,
+              -11.5194025
+            ],
+            "tc_k": 306.8213501,
+            "qc_kg_kg": 0.01266064122,
+            "sh_w_m2": 48.7501297,
+            "lh_w_m2": -11.51940441
+          },
+          {
+            "case": "canopy_type_1_dt_30",
+            "iterations": 6,
+            "residual_w_m2": [
+              -1.335144043e-05,
+              -9.536743164e-07
+            ],
+            "source_w_m2": [
+              -9.895442009,
+              -11.5194025
+            ],
+            "tc_k": 306.8213501,
+            "qc_kg_kg": 0.01266064122,
+            "sh_w_m2": 48.7501297,
+            "lh_w_m2": -11.51940441
+          },
+          {
+            "case": "canopy_type_1_dt_60",
+            "iterations": 6,
+            "residual_w_m2": [
+              -1.335144043e-05,
+              -9.536743164e-07
+            ],
+            "source_w_m2": [
+              -9.895442009,
+              -11.5194025
+            ],
+            "tc_k": 306.8213501,
+            "qc_kg_kg": 0.01266064122,
+            "sh_w_m2": 48.7501297,
+            "lh_w_m2": -11.51940441
+          },
+          {
+            "case": "canopy_type_1_dt_180",
+            "iterations": 6,
+            "residual_w_m2": [
+              -1.335144043e-05,
+              -9.536743164e-07
+            ],
+            "source_w_m2": [
+              -9.895442009,
+              -11.5194025
+            ],
+            "tc_k": 306.8213501,
+            "qc_kg_kg": 0.01266064122,
+            "sh_w_m2": 48.7501297,
+            "lh_w_m2": -11.51940441
+          },
+          {
+            "case": "canopy_type_2_dt_6",
+            "iterations": 6,
+            "residual_w_m2": [
+              -7.629394531e-06,
+              1.907348633e-06
+            ],
+            "source_w_m2": [
+              -13.91793346,
+              -15.82289886
+            ],
+            "tc_k": 306.0844727,
+            "qc_kg_kg": 0.01218358614,
+            "sh_w_m2": 47.51027679,
+            "lh_w_m2": -15.82289696
+          },
+          {
+            "case": "canopy_type_2_dt_30",
+            "iterations": 6,
+            "residual_w_m2": [
+              -7.629394531e-06,
+              1.907348633e-06
+            ],
+            "source_w_m2": [
+              -13.91793346,
+              -15.82289886
+            ],
+            "tc_k": 306.0844727,
+            "qc_kg_kg": 0.01218358614,
+            "sh_w_m2": 47.51027679,
+            "lh_w_m2": -15.82289696
+          },
+          {
+            "case": "canopy_type_2_dt_60",
+            "iterations": 6,
+            "residual_w_m2": [
+              -7.629394531e-06,
+              1.907348633e-06
+            ],
+            "source_w_m2": [
+              -13.91793346,
+              -15.82289886
+            ],
+            "tc_k": 306.0844727,
+            "qc_kg_kg": 0.01218358614,
+            "sh_w_m2": 47.51027679,
+            "lh_w_m2": -15.82289696
+          },
+          {
+            "case": "canopy_type_2_dt_180",
+            "iterations": 6,
+            "residual_w_m2": [
+              -7.629394531e-06,
+              1.907348633e-06
+            ],
+            "source_w_m2": [
+              -13.91793346,
+              -15.82289886
+            ],
+            "tc_k": 306.0844727,
+            "qc_kg_kg": 0.01218358614,
+            "sh_w_m2": 47.51027679,
+            "lh_w_m2": -15.82289696
+          },
+          {
+            "case": "canopy_type_3_dt_6",
+            "iterations": 6,
+            "residual_w_m2": [
+              0.0,
+              0.0
+            ],
+            "source_w_m2": [
+              -17.57762527,
+              -19.44637489
+            ],
+            "tc_k": 305.4993286,
+            "qc_kg_kg": 0.01177797932,
+            "sh_w_m2": 45.157547,
+            "lh_w_m2": -19.44637489
+          },
+          {
+            "case": "canopy_type_3_dt_30",
+            "iterations": 6,
+            "residual_w_m2": [
+              0.0,
+              0.0
+            ],
+            "source_w_m2": [
+              -17.57762527,
+              -19.44637489
+            ],
+            "tc_k": 305.4993286,
+            "qc_kg_kg": 0.01177797932,
+            "sh_w_m2": 45.157547,
+            "lh_w_m2": -19.44637489
+          },
+          {
+            "case": "canopy_type_3_dt_60",
+            "iterations": 6,
+            "residual_w_m2": [
+              0.0,
+              0.0
+            ],
+            "source_w_m2": [
+              -17.57762527,
+              -19.44637489
+            ],
+            "tc_k": 305.4993286,
+            "qc_kg_kg": 0.01177797932,
+            "sh_w_m2": 45.157547,
+            "lh_w_m2": -19.44637489
+          },
+          {
+            "case": "canopy_type_3_dt_180",
+            "iterations": 6,
+            "residual_w_m2": [
+              0.0,
+              0.0
+            ],
+            "source_w_m2": [
+              -17.57762527,
+              -19.44637489
+            ],
+            "tc_k": 305.4993286,
+            "qc_kg_kg": 0.01177797932,
+            "sh_w_m2": 45.157547,
+            "lh_w_m2": -19.44637489
+          },
+          {
+            "case": "exchange_sign_1",
+            "iterations": 6,
+            "residual_w_m2": [
+              2.861022949e-05,
+              0.0
+            ],
+            "source_w_m2": [
+              -25.80287743,
+              -24.99375153
+            ],
+            "tc_k": 305.2749023,
+            "qc_kg_kg": 0.01109398063,
+            "sh_w_m2": 43.27922058,
+            "lh_w_m2": -24.99375153
+          },
+          {
+            "case": "exchange_sign_2",
+            "iterations": 6,
+            "residual_w_m2": [
+              -4.386901855e-05,
+              0.0
+            ],
+            "source_w_m2": [
+              20.1195488,
+              71.4074707
+            ],
+            "tc_k": 306.9882507,
+            "qc_kg_kg": 0.01330344472,
+            "sh_w_m2": 119.2005386,
+            "lh_w_m2": 71.4074707
+          },
+          {
+            "case": "valid_dry_indoor_state_1",
+            "iterations": 2,
+            "residual_w_m2": [
+              0.0,
+              0.0
+            ],
+            "source_w_m2": [
+              0.0,
+              0.0
+            ],
+            "tc_k": 307.7832642,
+            "qc_kg_kg": 0.01400000043,
+            "sh_w_m2": 52.15307617,
+            "lh_w_m2": 0.0
+          },
+          {
+            "case": "valid_dry_indoor_state_2",
+            "iterations": 2,
+            "residual_w_m2": [
+              0.0,
+              0.0
+            ],
+            "source_w_m2": [
+              0.0,
+              0.0
+            ],
+            "tc_k": 307.7832642,
+            "qc_kg_kg": 0.01400000043,
+            "sh_w_m2": 52.15307617,
+            "lh_w_m2": 0.0
+          },
+          {
+            "case": "valid_dry_indoor_state_3",
+            "iterations": 2,
+            "residual_w_m2": [
+              0.0,
+              0.0
+            ],
+            "source_w_m2": [
+              0.0,
+              0.0
+            ],
+            "tc_k": 307.7832642,
+            "qc_kg_kg": 0.01400000043,
+            "sh_w_m2": 52.15307617,
+            "lh_w_m2": 0.0
+          },
+          {
+            "case": "partial_ac_latent_equipment",
+            "iterations": 6,
+            "residual_w_m2": [
+              4.577636719e-05,
+              -7.629394531e-05
+            ],
+            "source_w_m2": [
+              197.8091583,
+              76.47862244
+            ],
+            "tc_k": 322.778656,
+            "qc_kg_kg": 0.02273876034,
+            "sh_w_m2": 107.3627853,
+            "lh_w_m2": 76.47854614
+          },
+          {
+            "case": "wet_trial_state_restore",
+            "iterations": 5,
+            "residual_w_m2": [
+              -0.002210617065,
+              0.0002574920654
+            ],
+            "source_w_m2": [
+              -8.29734993,
+              -27.13332367
+            ],
+            "tc_k": 304.914856,
+            "qc_kg_kg": 0.02033320256,
+            "sh_w_m2": 33.35424042,
+            "lh_w_m2": 93.82641602
+          },
+          {
+            "case": "distributed_local_geometry",
+            "iterations": 5,
+            "residual_w_m2": [
+              -0.003828048706,
+              0.004102706909
+            ],
+            "source_w_m2": [
+              -13.63715744,
+              -20.11892128
+            ],
+            "tc_k": 305.184906,
+            "qc_kg_kg": 0.01317777019,
+            "sh_w_m2": 52.23403549,
+            "lh_w_m2": -20.11481857
+          },
+          {
+            "case": "greenroof_water_state_restore",
+            "iterations": 5,
+            "residual_w_m2": [
+              -0.005741119385,
+              0.005336761475
+            ],
+            "source_w_m2": [
+              -9.267111778,
+              -18.07881927
+            ],
+            "tc_k": 306.0775757,
+            "qc_kg_kg": 0.0158813186,
+            "sh_w_m2": 37.90657425,
+            "lh_w_m2": 38.13590622
+          },
+          {
+            "case": "monin_obukhov_canyon_exchange",
+            "iterations": 6,
+            "residual_w_m2": [
+              -2.574920654e-05,
+              0.0
+            ],
+            "source_w_m2": [
+              -9.255149841,
+              -11.51940346
+            ],
+            "tc_k": 306.0564575,
+            "qc_kg_kg": 0.01266064122,
+            "sh_w_m2": 46.04430008,
+            "lh_w_m2": -11.51940441
+          },
+          {
+            "case": "winter_hvac_off_exchange",
+            "iterations": 5,
+            "residual_w_m2": [
+              0.003158569336,
+              -0.004057884216
+            ],
+            "source_w_m2": [
+              6.126877308,
+              10.4055624
+            ],
+            "tc_k": 285.6769104,
+            "qc_kg_kg": 0.003888695035,
+            "sh_w_m2": 73.44714355,
+            "lh_w_m2": 10.40150452
+          },
+          {
+            "case": "coupled_control_threshold_crossing",
+            "iterations": 5,
+            "residual_w_m2": [
+              -7.319450378e-05,
+              0.0001792907715
+            ],
+            "source_w_m2": [
+              3.202312708,
+              -8.229935646
+            ],
+            "tc_k": 308.0945129,
+            "qc_kg_kg": 0.01304310653,
+            "sh_w_m2": 53.25437164,
+            "lh_w_m2": -8.229756355
+          }
+        ]
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate/urban_exchange.exe",
+          "invalid_allroof_canyon",
+          "3urban"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate/invalid_allroof_canyon_3urban.log",
+        "returncode": 1,
+        "elapsed_seconds": 0.005805253982543945,
+        "passed": true
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate/urban_exchange.exe",
+          "invalid_negative_qin",
+          "3urban"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate/invalid_negative_qin_3urban.log",
+        "returncode": 1,
+        "elapsed_seconds": 0.005988597869873047,
+        "passed": true
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate/urban_exchange.exe",
+          "invalid_nonfinite_qin",
+          "3urban"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate/invalid_nonfinite_qin_3urban.log",
+        "returncode": 1,
+        "elapsed_seconds": 0.005489826202392578,
+        "passed": true
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate/urban_exchange.exe",
+          "invalid_predicted_qin",
+          "3urban"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate/invalid_predicted_qin_3urban.log",
+        "returncode": 1,
+        "elapsed_seconds": 0.0055544376373291016,
+        "passed": true
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate/urban_exchange.exe",
+          "invalid_predicted_tin",
+          "3urban"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate/invalid_predicted_tin_3urban.log",
+        "returncode": 1,
+        "elapsed_seconds": 0.005934000015258789,
+        "passed": true
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate/urban_exchange.exe",
+          "suite",
+          "lcz"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate/suite_lcz.log",
+        "returncode": 0,
+        "elapsed_seconds": 0.006522178649902344,
+        "passed": true,
+        "cases": [
+          "canopy_type_1_dt_6",
+          "canopy_type_1_dt_30",
+          "canopy_type_1_dt_60",
+          "canopy_type_1_dt_180",
+          "canopy_type_2_dt_6",
+          "canopy_type_2_dt_30",
+          "canopy_type_2_dt_60",
+          "canopy_type_2_dt_180",
+          "canopy_type_3_dt_6",
+          "canopy_type_3_dt_30",
+          "canopy_type_3_dt_60",
+          "canopy_type_3_dt_180",
+          "canopy_type_4_dt_6",
+          "canopy_type_4_dt_30",
+          "canopy_type_4_dt_60",
+          "canopy_type_4_dt_180",
+          "canopy_type_5_dt_6",
+          "canopy_type_5_dt_30",
+          "canopy_type_5_dt_60",
+          "canopy_type_5_dt_180",
+          "canopy_type_6_dt_6",
+          "canopy_type_6_dt_30",
+          "canopy_type_6_dt_60",
+          "canopy_type_6_dt_180",
+          "canopy_type_7_dt_6",
+          "canopy_type_7_dt_30",
+          "canopy_type_7_dt_60",
+          "canopy_type_7_dt_180",
+          "canopy_type_8_dt_6",
+          "canopy_type_8_dt_30",
+          "canopy_type_8_dt_60",
+          "canopy_type_8_dt_180",
+          "canopy_type_9_dt_6",
+          "canopy_type_9_dt_30",
+          "canopy_type_9_dt_60",
+          "canopy_type_9_dt_180",
+          "canopy_type_10_dt_6",
+          "canopy_type_10_dt_30",
+          "canopy_type_10_dt_60",
+          "canopy_type_10_dt_180",
+          "exchange_sign_1",
+          "exchange_sign_2",
+          "valid_dry_indoor_state_1",
+          "valid_dry_indoor_state_2",
+          "valid_dry_indoor_state_3",
+          "partial_ac_latent_equipment",
+          "no_repeated_tile_fraction",
+          "wet_trial_state_restore",
+          "no_old_qf_forcing",
+          "distributed_local_geometry",
+          "greenroof_water_state_restore",
+          "monin_obukhov_canyon_exchange",
+          "winter_hvac_off_exchange",
+          "coupled_control_threshold_crossing",
+          "external_source_routing",
+          "state_serialization_replay"
+        ],
+        "coupling": [
+          {
+            "case": "canopy_type_1_dt_6",
+            "iterations": 6,
+            "residual_w_m2": [
+              -0.0001068115234,
+              4.196166992e-05
+            ],
+            "source_w_m2": [
+              -47.72248077,
+              -38.44678497
+            ],
+            "tc_k": 302.224762,
+            "qc_kg_kg": 0.009394216351,
+            "sh_w_m2": 20.1797905,
+            "lh_w_m2": -38.44674301
+          },
+          {
+            "case": "canopy_type_1_dt_30",
+            "iterations": 6,
+            "residual_w_m2": [
+              -0.0001068115234,
+              4.196166992e-05
+            ],
+            "source_w_m2": [
+              -47.72248077,
+              -38.44678497
+            ],
+            "tc_k": 302.224762,
+            "qc_kg_kg": 0.009394216351,
+            "sh_w_m2": 20.1797905,
+            "lh_w_m2": -38.44674301
+          },
+          {
+            "case": "canopy_type_1_dt_60",
+            "iterations": 6,
+            "residual_w_m2": [
+              -0.0001068115234,
+              4.196166992e-05
+            ],
+            "source_w_m2": [
+              -47.72248077,
+              -38.44678497
+            ],
+            "tc_k": 302.224762,
+            "qc_kg_kg": 0.009394216351,
+            "sh_w_m2": 20.1797905,
+            "lh_w_m2": -38.44674301
+          },
+          {
+            "case": "canopy_type_1_dt_180",
+            "iterations": 6,
+            "residual_w_m2": [
+              -0.0001068115234,
+              4.196166992e-05
+            ],
+            "source_w_m2": [
+              -47.72248077,
+              -38.44678497
+            ],
+            "tc_k": 302.224762,
+            "qc_kg_kg": 0.009394216351,
+            "sh_w_m2": 20.1797905,
+            "lh_w_m2": -38.44674301
+          },
+          {
+            "case": "canopy_type_2_dt_6",
+            "iterations": 6,
+            "residual_w_m2": [
+              -6.866455078e-05,
+              -5.722045898e-06
+            ],
+            "source_w_m2": [
+              -28.66579819,
+              -26.71090889
+            ],
+            "tc_k": 303.0053101,
+            "qc_kg_kg": 0.01006835885,
+            "sh_w_m2": 26.43482018,
+            "lh_w_m2": -26.7109127
+          },
+          {
+            "case": "canopy_type_2_dt_30",
+            "iterations": 6,
+            "residual_w_m2": [
+              -6.866455078e-05,
+              -5.722045898e-06
+            ],
+            "source_w_m2": [
+              -28.66579819,
+              -26.71090889
+            ],
+            "tc_k": 303.0053101,
+            "qc_kg_kg": 0.01006835885,
+            "sh_w_m2": 26.43482018,
+            "lh_w_m2": -26.7109127
+          },
+          {
+            "case": "canopy_type_2_dt_60",
+            "iterations": 6,
+            "residual_w_m2": [
+              -6.866455078e-05,
+              -5.722045898e-06
+            ],
+            "source_w_m2": [
+              -28.66579819,
+              -26.71090889
+            ],
+            "tc_k": 303.0053101,
+            "qc_kg_kg": 0.01006835885,
+            "sh_w_m2": 26.43482018,
+            "lh_w_m2": -26.7109127
+          },
+          {
+            "case": "canopy_type_2_dt_180",
+            "iterations": 6,
+            "residual_w_m2": [
+              -6.866455078e-05,
+              -5.722045898e-06
+            ],
+            "source_w_m2": [
+              -28.66579819,
+              -26.71090889
+            ],
+            "tc_k": 303.0053101,
+            "qc_kg_kg": 0.01006835885,
+            "sh_w_m2": 26.43482018,
+            "lh_w_m2": -26.7109127
+          },
+          {
+            "case": "canopy_type_3_dt_6",
+            "iterations": 6,
+            "residual_w_m2": [
+              -8.106231689e-05,
+              -1.907348633e-06
+            ],
+            "source_w_m2": [
+              -12.9511013,
+              -15.23348331
+            ],
+            "tc_k": 304.1739807,
+            "qc_kg_kg": 0.01143866125,
+            "sh_w_m2": 27.6307869,
+            "lh_w_m2": -15.23348427
+          },
+          {
+            "case": "canopy_type_3_dt_30",
+            "iterations": 6,
+            "residual_w_m2": [
+              -8.106231689e-05,
+              -1.907348633e-06
+            ],
+            "source_w_m2": [
+              -12.9511013,
+              -15.23348331
+            ],
+            "tc_k": 304.1739807,
+            "qc_kg_kg": 0.01143866125,
+            "sh_w_m2": 27.6307869,
+            "lh_w_m2": -15.23348427
+          },
+          {
+            "case": "canopy_type_3_dt_60",
+            "iterations": 6,
+            "residual_w_m2": [
+              -8.106231689e-05,
+              -1.907348633e-06
+            ],
+            "source_w_m2": [
+              -12.9511013,
+              -15.23348331
+            ],
+            "tc_k": 304.1739807,
+            "qc_kg_kg": 0.01143866125,
+            "sh_w_m2": 27.6307869,
+            "lh_w_m2": -15.23348427
+          },
+          {
+            "case": "canopy_type_3_dt_180",
+            "iterations": 6,
+            "residual_w_m2": [
+              -8.106231689e-05,
+              -1.907348633e-06
+            ],
+            "source_w_m2": [
+              -12.9511013,
+              -15.23348331
+            ],
+            "tc_k": 304.1739807,
+            "qc_kg_kg": 0.01143866125,
+            "sh_w_m2": 27.6307869,
+            "lh_w_m2": -15.23348427
+          },
+          {
+            "case": "canopy_type_4_dt_6",
+            "iterations": 6,
+            "residual_w_m2": [
+              6.866455078e-05,
+              1.525878906e-05
+            ],
+            "source_w_m2": [
+              -45.94145584,
+              -39.65075684
+            ],
+            "tc_k": 302.9272156,
+            "qc_kg_kg": 0.00981431175,
+            "sh_w_m2": 14.50801468,
+            "lh_w_m2": -39.65074158
+          },
+          {
+            "case": "canopy_type_4_dt_30",
+            "iterations": 6,
+            "residual_w_m2": [
+              6.866455078e-05,
+              1.525878906e-05
+            ],
+            "source_w_m2": [
+              -45.94145584,
+              -39.65075684
+            ],
+            "tc_k": 302.9272156,
+            "qc_kg_kg": 0.00981431175,
+            "sh_w_m2": 14.50801468,
+            "lh_w_m2": -39.65074158
+          },
+          {
+            "case": "canopy_type_4_dt_60",
+            "iterations": 6,
+            "residual_w_m2": [
+              6.866455078e-05,
+              1.525878906e-05
+            ],
+            "source_w_m2": [
+              -45.94145584,
+              -39.65075684
+            ],
+            "tc_k": 302.9272156,
+            "qc_kg_kg": 0.00981431175,
+            "sh_w_m2": 14.50801468,
+            "lh_w_m2": -39.65074158
+          },
+          {
+            "case": "canopy_type_4_dt_180",
+            "iterations": 6,
+            "residual_w_m2": [
+              6.866455078e-05,
+              1.525878906e-05
+            ],
+            "source_w_m2": [
+              -45.94145584,
+              -39.65075684
+            ],
+            "tc_k": 302.9272156,
+            "qc_kg_kg": 0.00981431175,
+            "sh_w_m2": 14.50801468,
+            "lh_w_m2": -39.65074158
+          },
+          {
+            "case": "canopy_type_5_dt_6",
+            "iterations": 6,
+            "residual_w_m2": [
+              0.0001316070557,
+              0.0
+            ],
+            "source_w_m2": [
+              -24.64821053,
+              -26.56133842
+            ],
+            "tc_k": 304.8150635,
+            "qc_kg_kg": 0.01135075185,
+            "sh_w_m2": 23.67042923,
+            "lh_w_m2": -26.56133652
+          },
+          {
+            "case": "canopy_type_5_dt_30",
+            "iterations": 6,
+            "residual_w_m2": [
+              0.0001316070557,
+              0.0
+            ],
+            "source_w_m2": [
+              -24.64821053,
+              -26.56133842
+            ],
+            "tc_k": 304.8150635,
+            "qc_kg_kg": 0.01135075185,
+            "sh_w_m2": 23.67042923,
+            "lh_w_m2": -26.56133652
+          },
+          {
+            "case": "canopy_type_5_dt_60",
+            "iterations": 6,
+            "residual_w_m2": [
+              0.0001316070557,
+              0.0
+            ],
+            "source_w_m2": [
+              -24.64821053,
+              -26.56133842
+            ],
+            "tc_k": 304.8150635,
+            "qc_kg_kg": 0.01135075185,
+            "sh_w_m2": 23.67042923,
+            "lh_w_m2": -26.56133652
+          },
+          {
+            "case": "canopy_type_5_dt_180",
+            "iterations": 6,
+            "residual_w_m2": [
+              0.0001316070557,
+              0.0
+            ],
+            "source_w_m2": [
+              -24.64821053,
+              -26.56133842
+            ],
+            "tc_k": 304.8150635,
+            "qc_kg_kg": 0.01135075185,
+            "sh_w_m2": 23.67042923,
+            "lh_w_m2": -26.56133652
+          },
+          {
+            "case": "canopy_type_6_dt_6",
+            "iterations": 6,
+            "residual_w_m2": [
+              -1.335144043e-05,
+              0.0
+            ],
+            "source_w_m2": [
+              -11.59776688,
+              -14.16845894
+            ],
+            "tc_k": 305.6576843,
+            "qc_kg_kg": 0.01235568337,
+            "sh_w_m2": 29.45760345,
+            "lh_w_m2": -14.16845894
+          },
+          {
+            "case": "canopy_type_6_dt_30",
+            "iterations": 6,
+            "residual_w_m2": [
+              -1.335144043e-05,
+              0.0
+            ],
+            "source_w_m2": [
+              -11.59776688,
+              -14.16845894
+            ],
+            "tc_k": 305.6576843,
+            "qc_kg_kg": 0.01235568337,
+            "sh_w_m2": 29.45760345,
+            "lh_w_m2": -14.16845894
+          },
+          {
+            "case": "canopy_type_6_dt_60",
+            "iterations": 6,
+            "residual_w_m2": [
+              -1.335144043e-05,
+              0.0
+            ],
+            "source_w_m2": [
+              -11.59776688,
+              -14.16845894
+            ],
+            "tc_k": 305.6576843,
+            "qc_kg_kg": 0.01235568337,
+            "sh_w_m2": 29.45760345,
+            "lh_w_m2": -14.16845894
+          },
+          {
+            "case": "canopy_type_6_dt_180",
+            "iterations": 6,
+            "residual_w_m2": [
+              -1.335144043e-05,
+              0.0
+            ],
+            "source_w_m2": [
+              -11.59776688,
+              -14.16845894
+            ],
+            "tc_k": 305.6576843,
+            "qc_kg_kg": 0.01235568337,
+            "sh_w_m2": 29.45760345,
+            "lh_w_m2": -14.16845894
+          },
+          {
+            "case": "canopy_type_7_dt_6",
+            "iterations": 6,
+            "residual_w_m2": [
+              -1.192092896e-05,
+              -2.861022949e-06
+            ],
+            "source_w_m2": [
+              -7.684950829,
+              -4.066205025
+            ],
+            "tc_k": 303.6695862,
+            "qc_kg_kg": 0.00888690725,
+            "sh_w_m2": 8.858649254,
+            "lh_w_m2": -4.066207886
+          },
+          {
+            "case": "canopy_type_7_dt_30",
+            "iterations": 6,
+            "residual_w_m2": [
+              -1.192092896e-05,
+              -2.861022949e-06
+            ],
+            "source_w_m2": [
+              -7.684950829,
+              -4.066205025
+            ],
+            "tc_k": 303.6695862,
+            "qc_kg_kg": 0.00888690725,
+            "sh_w_m2": 8.858649254,
+            "lh_w_m2": -4.066207886
+          },
+          {
+            "case": "canopy_type_7_dt_60",
+            "iterations": 6,
+            "residual_w_m2": [
+              -1.192092896e-05,
+              -2.861022949e-06
+            ],
+            "source_w_m2": [
+              -7.684950829,
+              -4.066205025
+            ],
+            "tc_k": 303.6695862,
+            "qc_kg_kg": 0.00888690725,
+            "sh_w_m2": 8.858649254,
+            "lh_w_m2": -4.066207886
+          },
+          {
+            "case": "canopy_type_7_dt_180",
+            "iterations": 6,
+            "residual_w_m2": [
+              -1.192092896e-05,
+              -2.861022949e-06
+            ],
+            "source_w_m2": [
+              -7.684950829,
+              -4.066205025
+            ],
+            "tc_k": 303.6695862,
+            "qc_kg_kg": 0.00888690725,
+            "sh_w_m2": 8.858649254,
+            "lh_w_m2": -4.066207886
+          },
+          {
+            "case": "canopy_type_8_dt_6",
+            "iterations": 6,
+            "residual_w_m2": [
+              2.861022949e-05,
+              0.0
+            ],
+            "source_w_m2": [
+              -12.01027203,
+              -13.60605431
+            ],
+            "tc_k": 306.7241211,
+            "qc_kg_kg": 0.01246342529,
+            "sh_w_m2": 28.44169044,
+            "lh_w_m2": -13.60605335
+          },
+          {
+            "case": "canopy_type_8_dt_30",
+            "iterations": 6,
+            "residual_w_m2": [
+              2.861022949e-05,
+              0.0
+            ],
+            "source_w_m2": [
+              -12.01027203,
+              -13.60605431
+            ],
+            "tc_k": 306.7241211,
+            "qc_kg_kg": 0.01246342529,
+            "sh_w_m2": 28.44169044,
+            "lh_w_m2": -13.60605335
+          },
+          {
+            "case": "canopy_type_8_dt_60",
+            "iterations": 6,
+            "residual_w_m2": [
+              2.861022949e-05,
+              0.0
+            ],
+            "source_w_m2": [
+              -12.01027203,
+              -13.60605431
+            ],
+            "tc_k": 306.7241211,
+            "qc_kg_kg": 0.01246342529,
+            "sh_w_m2": 28.44169044,
+            "lh_w_m2": -13.60605335
+          },
+          {
+            "case": "canopy_type_8_dt_180",
+            "iterations": 6,
+            "residual_w_m2": [
+              2.861022949e-05,
+              0.0
+            ],
+            "source_w_m2": [
+              -12.01027203,
+              -13.60605431
+            ],
+            "tc_k": 306.7241211,
+            "qc_kg_kg": 0.01246342529,
+            "sh_w_m2": 28.44169044,
+            "lh_w_m2": -13.60605335
+          },
+          {
+            "case": "canopy_type_9_dt_6",
+            "iterations": 6,
+            "residual_w_m2": [
+              6.675720215e-06,
+              -1.907348633e-06
+            ],
+            "source_w_m2": [
+              -12.96981144,
+              -13.90943527
+            ],
+            "tc_k": 306.9143677,
+            "qc_kg_kg": 0.01225595269,
+            "sh_w_m2": 24.99598885,
+            "lh_w_m2": -13.90943718
+          },
+          {
+            "case": "canopy_type_9_dt_30",
+            "iterations": 6,
+            "residual_w_m2": [
+              6.675720215e-06,
+              -1.907348633e-06
+            ],
+            "source_w_m2": [
+              -12.96981144,
+              -13.90943527
+            ],
+            "tc_k": 306.9143677,
+            "qc_kg_kg": 0.01225595269,
+            "sh_w_m2": 24.99598885,
+            "lh_w_m2": -13.90943718
+          },
+          {
+            "case": "canopy_type_9_dt_60",
+            "iterations": 6,
+            "residual_w_m2": [
+              6.675720215e-06,
+              -1.907348633e-06
+            ],
+            "source_w_m2": [
+              -12.96981144,
+              -13.90943527
+            ],
+            "tc_k": 306.9143677,
+            "qc_kg_kg": 0.01225595269,
+            "sh_w_m2": 24.99598885,
+            "lh_w_m2": -13.90943718
+          },
+          {
+            "case": "canopy_type_9_dt_180",
+            "iterations": 6,
+            "residual_w_m2": [
+              6.675720215e-06,
+              -1.907348633e-06
+            ],
+            "source_w_m2": [
+              -12.96981144,
+              -13.90943527
+            ],
+            "tc_k": 306.9143677,
+            "qc_kg_kg": 0.01225595269,
+            "sh_w_m2": 24.99598885,
+            "lh_w_m2": -13.90943718
+          },
+          {
+            "case": "canopy_type_10_dt_6",
+            "iterations": 6,
+            "residual_w_m2": [
+              2.288818359e-05,
+              0.0
+            ],
+            "source_w_m2": [
+              -16.34712982,
+              -18.62562943
+            ],
+            "tc_k": 305.7489624,
+            "qc_kg_kg": 0.01203779969,
+            "sh_w_m2": 27.27208519,
+            "lh_w_m2": -18.62562943
+          },
+          {
+            "case": "canopy_type_10_dt_30",
+            "iterations": 6,
+            "residual_w_m2": [
+              2.288818359e-05,
+              0.0
+            ],
+            "source_w_m2": [
+              -16.34712982,
+              -18.62562943
+            ],
+            "tc_k": 305.7489624,
+            "qc_kg_kg": 0.01203779969,
+            "sh_w_m2": 27.27208519,
+            "lh_w_m2": -18.62562943
+          },
+          {
+            "case": "canopy_type_10_dt_60",
+            "iterations": 6,
+            "residual_w_m2": [
+              2.288818359e-05,
+              0.0
+            ],
+            "source_w_m2": [
+              -16.34712982,
+              -18.62562943
+            ],
+            "tc_k": 305.7489624,
+            "qc_kg_kg": 0.01203779969,
+            "sh_w_m2": 27.27208519,
+            "lh_w_m2": -18.62562943
+          },
+          {
+            "case": "canopy_type_10_dt_180",
+            "iterations": 6,
+            "residual_w_m2": [
+              2.288818359e-05,
+              0.0
+            ],
+            "source_w_m2": [
+              -16.34712982,
+              -18.62562943
+            ],
+            "tc_k": 305.7489624,
+            "qc_kg_kg": 0.01203779969,
+            "sh_w_m2": 27.27208519,
+            "lh_w_m2": -18.62562943
+          },
+          {
+            "case": "exchange_sign_1",
+            "iterations": 7,
+            "residual_w_m2": [
+              -0.0002593994141,
+              -9.918212891e-05
+            ],
+            "source_w_m2": [
+              -93.58332062,
+              -49.80285263
+            ],
+            "tc_k": 299.7225647,
+            "qc_kg_kg": 0.008033802733,
+            "sh_w_m2": 11.58724976,
+            "lh_w_m2": -49.802948
+          },
+          {
+            "case": "exchange_sign_2",
+            "iterations": 9,
+            "residual_w_m2": [
+              0.0007400512695,
+              7.629394531e-05
+            ],
+            "source_w_m2": [
+              111.1186142,
+              142.2874146
+            ],
+            "tc_k": 309.3925171,
+            "qc_kg_kg": 0.022046417,
+            "sh_w_m2": 128.3925934,
+            "lh_w_m2": 142.2874908
+          },
+          {
+            "case": "valid_dry_indoor_state_1",
+            "iterations": 2,
+            "residual_w_m2": [
+              0.0,
+              0.0
+            ],
+            "source_w_m2": [
+              0.0,
+              0.0
+            ],
+            "tc_k": 304.8285217,
+            "qc_kg_kg": 0.01400000043,
+            "sh_w_m2": 29.11992645,
+            "lh_w_m2": 0.0
+          },
+          {
+            "case": "valid_dry_indoor_state_2",
+            "iterations": 2,
+            "residual_w_m2": [
+              0.0,
+              0.0
+            ],
+            "source_w_m2": [
+              0.0,
+              0.0
+            ],
+            "tc_k": 304.8285217,
+            "qc_kg_kg": 0.01400000043,
+            "sh_w_m2": 29.11992645,
+            "lh_w_m2": 0.0
+          },
+          {
+            "case": "valid_dry_indoor_state_3",
+            "iterations": 2,
+            "residual_w_m2": [
+              0.0,
+              0.0
+            ],
+            "source_w_m2": [
+              0.0,
+              0.0
+            ],
+            "tc_k": 304.8285217,
+            "qc_kg_kg": 0.01400000043,
+            "sh_w_m2": 29.11992645,
+            "lh_w_m2": 0.0
+          },
+          {
+            "case": "partial_ac_latent_equipment",
+            "iterations": 8,
+            "residual_w_m2": [
+              0.0,
+              0.0
+            ],
+            "source_w_m2": [
+              844.2301025,
+              184.0514221
+            ],
+            "tc_k": 350.8842773,
+            "qc_kg_kg": 0.03604868054,
+            "sh_w_m2": 187.2605896,
+            "lh_w_m2": 184.0514221
+          },
+          {
+            "case": "wet_trial_state_restore",
+            "iterations": 6,
+            "residual_w_m2": [
+              -0.001045227051,
+              0.0004577636719
+            ],
+            "source_w_m2": [
+              -42.1738205,
+              -147.9011078
+            ],
+            "tc_k": 301.3848877,
+            "qc_kg_kg": 0.01621030271,
+            "sh_w_m2": 12.95771313,
+            "lh_w_m2": 53.35093689
+          },
+          {
+            "case": "distributed_local_geometry",
+            "iterations": 5,
+            "residual_w_m2": [
+              -0.003640174866,
+              0.003705978394
+            ],
+            "source_w_m2": [
+              -12.82879066,
+              -20.11856842
+            ],
+            "tc_k": 304.5812073,
+            "qc_kg_kg": 0.01317778323,
+            "sh_w_m2": 35.37598038,
+            "lh_w_m2": -20.11486244
+          },
+          {
+            "case": "greenroof_water_state_restore",
+            "iterations": 6,
+            "residual_w_m2": [
+              0.0001029968262,
+              0.0001907348633
+            ],
+            "source_w_m2": [
+              -45.32770538,
+              -89.59066772
+            ],
+            "tc_k": 301.8621826,
+            "qc_kg_kg": 0.01257911976,
+            "sh_w_m2": 14.84424305,
+            "lh_w_m2": 10.52963829
+          },
+          {
+            "case": "monin_obukhov_canyon_exchange",
+            "iterations": 6,
+            "residual_w_m2": [
+              -9.155273438e-05,
+              7.629394531e-06
+            ],
+            "source_w_m2": [
+              -26.43489456,
+              -38.44678116
+            ],
+            "tc_k": 299.0020142,
+            "qc_kg_kg": 0.009394218214,
+            "sh_w_m2": 9.113080025,
+            "lh_w_m2": -38.44676971
+          },
+          {
+            "case": "winter_hvac_off_exchange",
+            "iterations": 6,
+            "residual_w_m2": [
+              0.0001430511475,
+              0.0
+            ],
+            "source_w_m2": [
+              31.17865944,
+              37.32844925
+            ],
+            "tc_k": 288.2798157,
+            "qc_kg_kg": 0.006675423589,
+            "sh_w_m2": 86.73667145,
+            "lh_w_m2": 37.32844925
+          },
+          {
+            "case": "coupled_control_threshold_crossing",
+            "iterations": 6,
+            "residual_w_m2": [
+              2.670288086e-05,
+              -1.907348633e-06
+            ],
+            "source_w_m2": [
+              43.02251816,
+              -14.68848228
+            ],
+            "tc_k": 307.1758118,
+            "qc_kg_kg": 0.01224037446,
+            "sh_w_m2": 37.18003464,
+            "lh_w_m2": -14.68848324
+          }
+        ]
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate/urban_exchange.exe",
+          "invalid_allroof_canyon",
+          "lcz"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate/invalid_allroof_canyon_lcz.log",
+        "returncode": 1,
+        "elapsed_seconds": 0.006688594818115234,
+        "passed": true
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate/urban_exchange.exe",
+          "invalid_negative_qin",
+          "lcz"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate/invalid_negative_qin_lcz.log",
+        "returncode": 1,
+        "elapsed_seconds": 0.0065631866455078125,
+        "passed": true
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate/urban_exchange.exe",
+          "invalid_nonfinite_qin",
+          "lcz"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate/invalid_nonfinite_qin_lcz.log",
+        "returncode": 1,
+        "elapsed_seconds": 0.006345033645629883,
+        "passed": true
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate/urban_exchange.exe",
+          "invalid_predicted_qin",
+          "lcz"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate/invalid_predicted_qin_lcz.log",
+        "returncode": 1,
+        "elapsed_seconds": 0.0062367916107177734,
+        "passed": true
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate/urban_exchange.exe",
+          "invalid_predicted_tin",
+          "lcz"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate/invalid_predicted_tin_lcz.log",
+        "returncode": 1,
+        "elapsed_seconds": 0.005757808685302734,
+        "passed": true
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/baseline/urban_exchange.exe",
+          "sbem0",
+          "3urban"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/baseline",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/baseline/sbem0_3urban.log",
+        "returncode": 0,
+        "elapsed_seconds": 0.002660512924194336,
+        "passed": true,
+        "snapshot_path": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/baseline/sbem0_3urban.bin"
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate/urban_exchange.exe",
+          "sbem0",
+          "3urban"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate/sbem0_3urban.log",
+        "returncode": 0,
+        "elapsed_seconds": 0.0027077198028564453,
+        "passed": true,
+        "snapshot_path": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate/sbem0_3urban.bin"
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/baseline/urban_exchange.exe",
+          "sbem0",
+          "lcz"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/baseline",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/baseline/sbem0_lcz.log",
+        "returncode": 0,
+        "elapsed_seconds": 0.0030884742736816406,
+        "passed": true,
+        "snapshot_path": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/baseline/sbem0_lcz.bin"
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate/urban_exchange.exe",
+          "sbem0",
+          "lcz"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate/sbem0_lcz.log",
+        "returncode": 0,
+        "elapsed_seconds": 0.003159761428833008,
+        "passed": true,
+        "snapshot_path": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate/sbem0_lcz.bin"
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/baseline/urban_exchange.exe",
+          "zeroexchange",
+          "3urban"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/baseline",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/baseline/zeroexchange_3urban.log",
+        "returncode": 0,
+        "elapsed_seconds": 0.0030007362365722656,
+        "passed": true,
+        "snapshot_path": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/baseline/zeroexchange_3urban.bin"
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate/urban_exchange.exe",
+          "zeroexchange",
+          "3urban"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate/zeroexchange_3urban.log",
+        "returncode": 0,
+        "elapsed_seconds": 0.002341032028198242,
+        "passed": true,
+        "snapshot_path": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate/zeroexchange_3urban.bin"
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/baseline/urban_exchange.exe",
+          "zeroexchange",
+          "lcz"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/baseline",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/baseline/zeroexchange_lcz.log",
+        "returncode": 0,
+        "elapsed_seconds": 0.004187107086181641,
+        "passed": true,
+        "snapshot_path": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/baseline/zeroexchange_lcz.bin"
+      },
+      {
+        "command": [
+          "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate/urban_exchange.exe",
+          "zeroexchange",
+          "lcz"
+        ],
+        "cwd": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate",
+        "log": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate/zeroexchange_lcz.log",
+        "returncode": 0,
+        "elapsed_seconds": 0.003521442413330078,
+        "passed": true,
+        "snapshot_path": "<workspace>/slucm_crosshost_20261121/wrf_fma_fix/native_fma_off_01/candidate/zeroexchange_lcz.bin"
+      }
+    ],
+    "exact_snapshot_comparisons": [
+      {
+        "mode": "sbem0",
+        "table": "3urban",
+        "records": 7,
+        "values_per_record": 147,
+        "exact": true,
+        "sha256": "0c45b418b466cbde2bb42aa3fc452fb1b91aa6260f98fb4b3681f00186a4c436"
+      },
+      {
+        "mode": "sbem0",
+        "table": "lcz",
+        "records": 21,
+        "values_per_record": 147,
+        "exact": true,
+        "sha256": "cdcf6ca436b285ddc2b56e84f5518f24d88c187dd71796b17a5ea971c36dd2c5"
+      },
+      {
+        "mode": "zeroexchange",
+        "table": "3urban",
+        "records": 7,
+        "values_per_record": 147,
+        "exact": true,
+        "sha256": "b704cb20dd20d38f36d16d1a2be46fe31157775ad6e0e352e0d170730b7de6af"
+      },
+      {
+        "mode": "zeroexchange",
+        "table": "lcz",
+        "records": 21,
+        "values_per_record": 147,
+        "exact": true,
+        "sha256": "825f469fdecc565e9dc03254b53ff1801a65a01945a791c9f08e6ae22c05beac"
+      }
+    ],
+    "sources": {
+      "phys/module_sf_greenroof_bem.F": {
+        "sha256": "c3b5b808a80e20f6787a18627b3a6ee7523ed5cbece30e63de7f9eb4a4373766",
+        "bytes": 6972
+      },
+      "phys/module_sf_slucm_bem.F": {
+        "sha256": "0d9ac0fe0866b5c7029d1d61544bd5855653ede0c042132d51a1b6c7aea330ba",
+        "bytes": 31952
+      },
+      "phys/module_sf_urban.F": {
+        "sha256": "95c1e1d67e53a5ae7aef987495f43978582820e8fa6f967638813c4fb87e8e3d",
+        "bytes": 301932
+      },
+      "share/module_model_constants.F": {
+        "sha256": "5b80377fecdc18a5f0ad38d3b6c15cfc86ad5d76701adbbbb08a08698d0f7062",
+        "bytes": 8280
+      },
+      "run/URBPARM.TBL": {
+        "sha256": "f827ed18145ea692365861c4e377d46f4f67e63f8332a96a4d1cc9a84a5b188a",
+        "bytes": 13436
+      },
+      "run/URBPARM_LCZ.TBL": {
+        "sha256": "aea3c2401253dd098f3df7bebfd9f5af17cee08eaef3975ea709a32c14a7696c",
+        "bytes": 18194
+      },
+      "test/slucm_bem/wrf_test_stubs.F90": {
+        "sha256": "f3edf8b80f3dc64067377defd1c67e04f9e0d2012e0ccad017b1686e31c692a3",
+        "bytes": 1055
+      },
+      "test/slucm_bem/bem_controls_regression.f90": {
+        "sha256": "784b7c36732b4104571226c2678e0e8f44eabfc42b291a74021b165895d01675",
+        "bytes": 17991
+      },
+      "test/slucm_bem/urban_exchange_regression.F90": {
+        "sha256": "bec33a07a0e35cfe38a9317c2836180d9551c96233ac33e99f95632b1d99cb92",
+        "bytes": 29441
+      },
+      "test/slucm_bem/run_native.py": {
+        "sha256": "f026e9406805daafde0ff527955f737226ab21bfe60395f1458eb0240172c112",
+        "bytes": 15880
+      }
+    },
+    "compiler": {
+      "path": "<workspace>/slucm_integration_20261121/toolchain/bin/gfortran",
+      "family": "gnu",
+      "version": "GNU Fortran (Debian 14.2.0-19) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+      "flags": [
+        "-cpp",
+        "-ffree-form",
+        "-ffree-line-length-none",
+        "-O2",
+        "-g",
+        "-fcheck=bounds",
+        "-fbacktrace",
+        "-mfma",
+        "-march=native",
+        "-ffp-contract=fast",
+        "-ffp-contract=off"
+      ]
+    },
+    "baseline_sources": {
+      "phys/module_sf_slucm_bem.F": "a7b13e70e8904616c6e9e36f8e7e80465ff407c99be2c5a4b8ec376d53c6dd03",
+      "phys/module_sf_urban.F": "bbcdc5c7082f47602911b2fdf81f756058a4d8ba8eff805eecfd5c786debd78b"
+    },
+    "counts": {
+      "bem_cases": 42,
+      "urban_cases": 84,
+      "expected_failure_exits": 16,
+      "exact_baseline_records": 56,
+      "values_per_record": 147
+    }
+  },
+  "retained_preexisting_limitations": [
+    "The prior urban fixed-point solver overflows its first 2*HUGE comparison when floating-point overflow trapping is enabled. Complete urban fixtures trap invalid and zero; isolated new column fixtures also trap overflow.",
+    "Synthetic category 3, Tin=307 K, dt=6 s, AC fraction=0.6 fails the prior urban fixed-point solver at FGR=0. Reproduced with pre-change source. Targeted roof matrix uses Tin=299 K; thresholds were not relaxed."
+  ],
+  "test_build_policy": {
+    "revision": "20261121-fma-fix-3",
+    "verified_platform": "Linux x86_64, GNU Fortran 14.2.0",
+    "gnu_required_final_option": "-ffp-contract=off",
+    "applies_to": "Both native test runners, baseline and candidate; appended after defaults or custom --fflags.",
+    "native_default_optimization": "-O2",
+    "roof_default_optimization": "-O0",
+    "production_build_flags_changed": false,
+    "physics_or_fixtures_changed_by_this_revision": false,
+    "exact_comparison_or_tolerance_relaxed": false,
+    "mac_run_with_fixed_runners_verified": false,
+    "supersedes_validation_sha256": "05fb3bebe61fdeef100ff73074aee78f85263e011acf011e6056e7c3aef8f226",
+    "gcc_reference": "https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html#index-ffp-contract"
+  },
+  "mac_failure_analysis": {
+    "attachment_filename": "wrf_native_failure_20261121T063234Z_477294.zip",
+    "attachment_sha256": "efdf5a74520f135ed448984d9700681a9bff34134487803acab57dc7c344d600",
+    "compiler": "GNU Fortran (Homebrew GCC 16.2.0) 16.2.0",
+    "original_workflow_passed": false,
+    "original_published": false,
+    "compiled_successfully": 3,
+    "passing_checks_before_failure": {
+      "bem_cases": 42,
+      "urban_cases": 84,
+      "expected_failure_exits": 16
+    },
+    "failure": "Exact baseline regression failed: sbem0 3urban",
+    "differing_values": 3,
+    "compared_values": 1029,
+    "all_values_finite": true,
+    "differences_candidate_minus_baseline_w_m2": [
+      {
+        "record_1based": 2,
+        "field": "G",
+        "difference": -1.9311904907226562e-05
+      },
+      {
+        "record_1based": 4,
+        "field": "LW",
+        "difference": 3.0517578125e-05
+      },
+      {
+        "record_1based": 4,
+        "field": "G",
+        "difference": 2.4378299713134766e-05
+      }
+    ],
+    "linux_fma_reproduction_matches_differing_values_and_bits": true,
+    "reproduced_with_pre_roof_9a6_source": true,
+    "mac_linux_entire_snapshot_files_identical": false,
+    "mac_rerun_with_contract_off_pending": true
+  }
+}

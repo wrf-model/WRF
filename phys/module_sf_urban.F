@@ -12,7 +12,8 @@ use module_wrf_error
 use, intrinsic :: ieee_arithmetic, only : ieee_is_finite
 use module_model_constants, only : piconst
 use module_sf_slucm_bem, only : slucm_bem_calculate,                &
-                                slucm_bem_update_inner_layer
+                                slucm_bem_update_inner_layer, cal_chtc
+use module_sf_greenroof_bem, only : greenroof_column_step, greenroof_bem_diagnostics
 
 !===============================================================================
 !     Single-Layer Urban Canopy Model for WRF Noah-LSM
@@ -370,7 +371,7 @@ use module_sf_slucm_bem, only : slucm_bem_calculate,                &
                      TWin_URB, TGin_URB, WBGTin_URB, MRTin_URB,        &
                      QBCHT, QBRHT, QRCHT, QRRHT, QVENT,                &
                      qin_URB, EVENT, Ein_URB, Eout_URB,                &
-                     itimestep, COUPLING_ITERATIONS, COUPLING_RESIDUAL, COUPLING_SOURCE )
+                     itimestep, COUPLING_ITERATIONS, COUPLING_RESIDUAL, COUPLING_SOURCE, GREENROOF_DIAG )
 
    IMPLICIT NONE
    ! Each trial advances the same original interval, never the last trial.
@@ -496,6 +497,7 @@ use module_sf_slucm_bem, only : slucm_bem_calculate,                &
    REAL, INTENT(OUT) :: EVENT
    REAL, INTENT(OUT) :: Ein_URB
    REAL, INTENT(OUT) :: Eout_URB
+   TYPE(greenroof_bem_diagnostics), OPTIONAL, INTENT(OUT) :: GREENROOF_DIAG
    INTEGER, OPTIONAL, INTENT(OUT) :: COUPLING_ITERATIONS
    REAL, OPTIONAL, INTENT(OUT) :: COUPLING_RESIDUAL(2), COUPLING_SOURCE(2)
    INTEGER, PARAMETER :: max_trials = 80
@@ -585,7 +587,7 @@ use module_sf_slucm_bem, only : slucm_bem_calculate,                &
           EC_URB, COP_URB, Tin_URB, Hin_URB, Hout_URB, TWin_URB, &
           TGin_URB, WBGTin_URB, MRTin_URB, QBCHT, QBRHT, QRCHT, &
           QRRHT, QVENT, qin_URB, EVENT, Ein_URB, Eout_URB, &
-          itimestep, 0.0, 0.0, valid_trial, returned_net)
+          itimestep, 0.0, 0.0, valid_trial, returned_net, GREENROOF_DIAG)
      RETURN
    END IF
 
@@ -735,7 +737,7 @@ use module_sf_slucm_bem, only : slucm_bem_calculate,                &
           EC_URB, COP_URB, Tin_URB, Hin_URB, Hout_URB, TWin_URB, &
           TGin_URB, WBGTin_URB, MRTin_URB, QBCHT, QBRHT, QRCHT, &
           QRRHT, QVENT, qin_URB, EVENT, Ein_URB, Eout_URB, &
-          itimestep, source_h, source_le, valid_trial, returned_net)
+          itimestep, source_h, source_le, valid_trial, returned_net, GREENROOF_DIAG)
      IF (.NOT. valid_trial) THEN
        IF (valid_trials == 0) THEN
          WRITE(coupling_message,'(A,F10.4,A,I3,A,4ES13.5)') &
@@ -843,9 +845,10 @@ use module_sf_slucm_bem, only : slucm_bem_calculate,                &
                      TWin_URB, TGin_URB, WBGTin_URB, MRTin_URB,        &
                      QBCHT, QBRHT, QRCHT, QRRHT, QVENT,                &
                      qin_URB, EVENT, Ein_URB, Eout_URB,                &
-                     itimestep, NET_H_SOURCE, NET_LE_SOURCE, COUPLING_VALID, NET_EXCHANGE )
+                     itimestep, NET_H_SOURCE, NET_LE_SOURCE, COUPLING_VALID, NET_EXCHANGE, GREENROOF_DIAG )
    IMPLICIT NONE
 
+   TYPE(greenroof_bem_diagnostics), OPTIONAL, INTENT(OUT) :: GREENROOF_DIAG
    REAL, INTENT(IN) :: NET_H_SOURCE, NET_LE_SOURCE
    LOGICAL, INTENT(OUT) :: COUPLING_VALID
    REAL, INTENT(OUT) :: NET_EXCHANGE(2)
@@ -1294,6 +1297,21 @@ use module_sf_slucm_bem, only : slucm_bem_calculate,                &
    integer,parameter ::  IMPB  = 2      
    integer,parameter ::  IMPG  = 3    
 
+   ! Green-roof BEM connection. TGRL(1:3) are substrate cells and TGRL(4)
+   ! is the existing concrete roof cell. TRL remains the separate bare tile.
+   LOGICAL :: greenroof_coupled, gr_column_valid
+   TYPE(greenroof_bem_diagnostics) :: gr_diag
+   REAL(KIND=8) :: gr_old(4),gr_new(4),gr_capacity(4),gr_conductivity(4)
+   REAL(KIND=8) :: gr_dg_dtsurface,gr_hconv,gr_hrad,gr_old_inner,gr_hroom
+   REAL(KIND=8) :: gr_hlow,gr_hhigh,gr_htrial
+   REAL :: gr_k_local,gr_ch_local,gr_grashof,gr_prandtl
+   REAL :: gr_mrt_roof
+   INTEGER :: gr_film_iter
+   REAL, PARAMETER :: GR_FLUX_CGS_TO_SI=697.7*60.0
+
+   gr_diag=greenroof_bem_diagnostics()
+   IF (PRESENT(GREENROOF_DIAG)) GREENROOF_DIAG=gr_diag
+
    COUPLING_VALID = .TRUE.
    NET_EXCHANGE = 0.0
    BEM_SOURCE_T = 0.0
@@ -1392,6 +1410,44 @@ use module_sf_slucm_bem, only : slucm_bem_calculate,                &
      qinP = TARGHUM
      IF (qin_URB >= 0.0 .AND. qin_URB < 0.1) qinP = qin_URB
      qin_URB = qinP
+   END IF
+
+   ! The existing green-roof state has three substrate cells plus one
+   ! concrete cell. The fourth layer remains a concrete roof, not deep soil.
+   greenroof_coupled=.FALSE.
+   IF (GROPTION == 1) THEN
+     IF (.NOT. ieee_is_finite(FGR)) THEN
+       FATAL_ERROR('Green roof: FGR must be finite and in [0,1]')
+       RETURN
+     END IF
+     IF (FGR < 0.0 .OR. FGR > 1.0) THEN
+       FATAL_ERROR('Green roof: FGR must be finite and in [0,1]')
+       RETURN
+     END IF
+     greenroof_coupled=(sbemoption == 1 .AND. FGR > 0.0)
+   END IF
+   IF (greenroof_coupled) THEN
+     IF (TS_SCHEME /= 1 .OR. num_roof_layers /= 4) THEN
+       FATAL_ERROR('Green roof BEM requires TS_SCHEME=1 and four roof layers')
+       RETURN
+     END IF
+     IF (.NOT. ALL(ieee_is_finite(DZGR))) THEN
+       FATAL_ERROR('Green roof BEM requires four positive DZGR thicknesses in metres')
+       RETURN
+     END IF
+     IF (ANY(DZGR <= 0.0)) THEN
+       FATAL_ERROR('Green roof BEM requires four positive DZGR thicknesses in metres')
+       RETURN
+     END IF
+     IF (.NOT. ALL(ieee_is_finite((/CAPR,AKSR,TGR/))) .OR. &
+         .NOT. ALL(ieee_is_finite(TGRL))) THEN
+       FATAL_ERROR('Green roof BEM requires finite thermal parameters and state')
+       RETURN
+     END IF
+     IF (CAPR <= 0.0 .OR. AKSR <= 0.0) THEN
+       FATAL_ERROR('Green roof BEM requires positive concrete heat capacity and conductivity')
+       RETURN
+     END IF
    END IF
 
 ! Glotfelty, 2012/07/05, NUDAPT Modification
@@ -2036,6 +2092,38 @@ use module_sf_slucm_bem, only : slucm_bem_calculate,                &
       ZSOILR (KZ) = - DZGR(KZ) + ZSOILR (KZ -1)
    END DO
 
+   IF (greenroof_coupled) THEN
+     gr_old=REAL(TGRL,8)
+     ! Freeze interior film coefficients during this timestep, consistently
+     ! with the existing bare-roof/indoor temporal coupling.
+     CALL CAL_CHTC(FLOOR_HEIGHT,REAL(gr_old(4)-273.15_8),REAL(REAL(TinP,8)-273.15_8), &
+                   gr_grashof,gr_prandtl,gr_ch_local)
+     gr_hrad=REAL(4.0*EPSR*SIG_SI*TinP**3,8)
+     ! Evaluate natural convection at the inner surface rather than the
+     ! concrete cell centre. Bisection resolves its half-layer/film coupling
+     ! using the old state, then freezes the resulting coefficient for dt.
+     gr_hlow=0.0_8
+     gr_hhigh=MAX(1.0_8,2.0_8*REAL(gr_ch_local,8))
+     DO gr_film_iter=1,40
+       gr_htrial=0.5_8*(gr_hlow+gr_hhigh)
+       gr_old_inner=REAL(TinP,8)+(gr_old(4)-REAL(TinP,8))/ &
+                    (1.0_8+(gr_htrial+gr_hrad)*REAL(DZGR(4),8)/ &
+                     (2.0_8*REAL(AKSR,8)*418.68_8))
+       CALL CAL_CHTC(FLOOR_HEIGHT,REAL(gr_old_inner-273.15_8),REAL(REAL(TinP,8)-273.15_8), &
+                     gr_grashof,gr_prandtl,gr_ch_local)
+       IF (REAL(gr_ch_local,8) > gr_htrial) THEN
+         gr_hlow=gr_htrial
+       ELSE
+         gr_hhigh=gr_htrial
+       END IF
+       IF (gr_hhigh-gr_hlow < 1.0E-6_8*MAX(1.0_8,gr_htrial)) EXIT
+     END DO
+     gr_hconv=0.5_8*(gr_hlow+gr_hhigh)
+     gr_hroom=gr_hconv+gr_hrad
+     gr_old_inner=REAL(TinP,8)+(gr_old(4)-REAL(TinP,8))/ &
+                  (1.0_8+gr_hroom*REAL(DZGR(4),8)/(2.0_8*REAL(AKSR,8)*418.68_8))
+   END IF
+
    DO ITERATION=1,100
        KZ=1     
        ES=6.11*EXP( (2.5*10.**6./461.51)*(TGRP-273.15)/(273.15*TGRP) )
@@ -2060,6 +2148,7 @@ use module_sf_slucm_bem, only : slucm_bem_calculate,                &
        EDIR=0.0
        ECR =0.0
        ETTR=0.0
+       IF (greenroof_coupled) ETR=0.0
        CALL SMFLX (SMRP,SMR,NGR,CMCRP,CMCR,DELT,RAINDR,ZSOILR,SMCMAX,BEXP,SMCWLT,SROOT,DKSAT,&
                    DWSAT,SHDFAC,CMCMAX,RUNOFF1,RUNOFF2,RUNOFF3,EDIR,ECR,ETR,DRIP)  
        END IF
@@ -2097,14 +2186,49 @@ use module_sf_slucm_bem, only : slucm_bem_calculate,                &
        HGR=RHO*CP*CHGR*UA*(TGRP-TA)*100.     
        RUNOFF3 = RUNOFF3/ DELT
        RUNOFF2 = RUNOFF2+ RUNOFF3      
-       G0GR    = DF1*(TGRP-TGRL(1))/(DZGR(1)/2.)/697.7/60
+       IF (greenroof_coupled) THEN
+         DO KZ=1,3
+           gr_capacity(KZ)=REAL(SMR(KZ),8)*4.2E6_8 + &
+               (1.0_8-REAL(SMCMAX,8))*REAL(CSOIL,8) + &
+               (REAL(SMCMAX,8)-REAL(SMR(KZ),8))*1004.0_8
+           CALL TDFCND(gr_k_local,SMR(KZ),QUARTZ,SMCMAX)
+           gr_conductivity(KZ)=REAL(gr_k_local,8)
+         END DO
+         gr_conductivity(1)=REAL(DF1,8)
+         gr_capacity(4)=REAL(CAPR,8)*4.1868E6_8
+         gr_conductivity(4)=REAL(AKSR,8)*418.68_8
+         CALL greenroof_column_step(REAL(DELT,8),REAL(DZGR,8),gr_capacity, &
+              gr_conductivity,gr_old,REAL(TGRP,8),REAL(TinP,8), &
+              gr_hconv,gr_hrad,gr_new,gr_diag,gr_dg_dtsurface,gr_column_valid)
+         IF (.NOT. gr_column_valid) THEN
+           FATAL_ERROR('Green roof BEM: invalid thermal column input or solution')
+           RETURN
+         END IF
+         G0GR=REAL(gr_diag%surface_to_column_wm2/REAL(GR_FLUX_CGS_TO_SI,8))
+       ELSE
+         G0GR=DF1*(TGRP-TGRL(1))/(DZGR(1)/2.)/697.7/60
+       END IF
+
 
        FV = SGR + RGR - HGR - ELEGR - G0GR ! cgs unit
        DRRDTGR   = (-4.*EPSV*SIG*TGRP**3.)/60.
        DHRDTGR   = RHO*CP*CHGR*UA*100.
        DELERDTGR = RHO*EL*CHGR*UA*BETGR*DQS0GRDTGR*100.
        DG0RDTGR  = 2.*DF1/ DZGR(KZ) * ( 1.0 / 4.1868 ) * 1.E-4
+       IF (greenroof_coupled) DG0RDTGR=REAL(gr_dg_dtsurface/REAL(GR_FLUX_CGS_TO_SI,8))
        DFDVT = DRRDTGR - DHRDTGR - DELERDTGR - DG0RDTGR        
+       IF (greenroof_coupled) THEN
+         ! Test at the evaluated surface temperature. Every trial uses the
+         ! same old column/moisture state; only this accepted state is stored.
+         IF (ABS(FV)*GR_FLUX_CGS_TO_SI < 0.01) THEN
+           TGR=TGRP
+           EXIT
+         END IF
+         DTGR=MAX(-5.0,MIN(5.0,FV/DFDVT))
+         TGR=TGRP-DTGR
+         TGRP=TGR
+         CYCLE
+       END IF
        DTGR = FV/DFDVT/ 6
        TGR  = TGRP - DTGR
        TGRP = TGR
@@ -2113,9 +2237,36 @@ use module_sf_slucm_bem, only : slucm_bem_calculate,                &
        EXIT
        ENDIF
      END DO
-       ! Update temperature in soil layer
-       CALL SHFLX (SSOILR,TGRL,SMR,SMCMAX,NGR,TGRP,DELT,YY,ZZ1,ZSOILR,       &
-                  TRLEND,ZBOT,SMCWLT,DF1,QUARTZ,CSOIL,CAPR)
+       IF (greenroof_coupled) THEN
+         IF (ITERATION > 100) THEN
+           FATAL_ERROR('Green roof BEM: surface energy iteration failed')
+           RETURN
+         END IF
+         TGRL=REAL(gr_new)
+         gr_diag%fraction=REAL(FGR,8)
+         gr_diag%surface_residual_wm2=REAL(FV,8)*REAL(GR_FLUX_CGS_TO_SI,8)
+         ! Report storage of the actual single-precision history, including
+         ! its rounding residual; retain the double-precision solver residual.
+         gr_diag%storage_wm2=SUM(gr_capacity*REAL(DZGR,8)* &
+                                   (REAL(TGRL,8)-gr_old))/REAL(DELT,8)
+         gr_diag%column_residual_wm2=gr_diag%surface_to_column_wm2- &
+                           gr_diag%roof_to_indoor_wm2-gr_diag%storage_wm2
+         gr_diag%bare_roof_conv_wm2=REAL(QRCHT,8)
+         gr_diag%bare_roof_rad_wm2=REAL(QRRHT,8)
+         gr_diag%mixed_roof_conv_wm2=(1.0_8-REAL(FGR,8))*REAL(QRCHT,8)+ &
+                                    REAL(FGR,8)*gr_diag%roof_conv_wm2
+         gr_diag%mixed_roof_rad_wm2=(1.0_8-REAL(FGR,8))*REAL(QRRHT,8)+ &
+                                   REAL(FGR,8)*gr_diag%roof_rad_wm2
+         QRCHT=REAL(gr_diag%mixed_roof_conv_wm2)
+         QRRHT=REAL(gr_diag%mixed_roof_rad_wm2)
+         ! Existing BEM comfort diagnostics use previous inner temperatures.
+         gr_mrt_roof=(1.0-FGR)*TRLP(num_roof_layers)+FGR*REAL(gr_old_inner)
+         IF (PRESENT(GREENROOF_DIAG)) GREENROOF_DIAG=gr_diag
+       ELSE
+         ! Legacy non-BEM / zero-green-area path.
+         CALL SHFLX (SSOILR,TGRL,SMR,SMCMAX,NGR,TGRP,DELT,YY,ZZ1,ZSOILR, &
+                    TRLEND,ZBOT,SMCWLT,DF1,QUARTZ,CSOIL,CAPR)
+       END IF
    FLXTHGR=HGR/RHO/CP/100.
    FLXHUMGR=ELEGR/RHO/EL/100.
 ELSE
@@ -3169,6 +3320,15 @@ ENDIF
    MRTin_URB  = 0.0
    QVENT      = 0.0
 
+   IF (.NOT. greenroof_coupled .AND. sbemoption == 1) THEN
+     gr_mrt_roof=TRLP(num_roof_layers)
+     gr_diag%bare_roof_conv_wm2=REAL(QRCHT,8)
+     gr_diag%bare_roof_rad_wm2=REAL(QRRHT,8)
+     gr_diag%mixed_roof_conv_wm2=REAL(QRCHT,8)
+     gr_diag%mixed_roof_rad_wm2=REAL(QRRHT,8)
+     IF (PRESENT(GREENROOF_DIAG)) GREENROOF_DIAG=gr_diag
+   END IF
+
    IF (sbemoption == 1) THEN
      CALL slucm_bem_calculate(                                         &
           urban_type          = UTYPE,                            &
@@ -3211,7 +3371,7 @@ ENDIF
           roof_width          = ROOF_WIDTH2,                      &
           road_width          = ROAD_WIDTH2,                      &
           ac_floor_ratio      = AC_FLOOR_RATIO,                   &
-          roof_inner_temp_prev = TRLP(num_roof_layers),           &
+          roof_inner_temp_prev = gr_mrt_roof,                     &
           wall_inner_temp_prev = TBLP(num_wall_layers),           &
           qvent               = QVENT,                            &
           event               = EVENT,                            &

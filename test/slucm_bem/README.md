@@ -10,16 +10,42 @@ python3 -I test/slucm_bem/run_native.py --fc ifx \
 
 `ifort` and `gfortran` are also supported. Python 3.6 or later and its
 standard library suffice. No MPI, NetCDF, external meteorological input or
-network access is required. The default flags use `-O2`, bounds checks and
-traceback. Override the additional flags with `--fflags` when necessary;
-the required preprocessing/free-source flags are retained.
+network access is required. The controls runner's default flags use `-O2`,
+bounds checks and traceback. `--fflags` replaces those default options;
+the required preprocessing/free-source flags are retained. For GNU Fortran,
+both native runners append `-ffp-contract=off` after the selected options
+to give the reference and candidate the same uncontracted arithmetic policy.
 
 The explicit Intel floating-point flags above are the verified configuration
 for ifx 2024.0.2. Its initial run with the default flags, without an explicit
 floating-point model, failed the exact SBEM0/three-category comparison. That
-failure remains recorded; no comparison tolerance was relaxed. The runner
-defaults remain unchanged. GNU Fortran 14.2 passed the recorded O0 and O2
+failure remains recorded; no comparison tolerance was relaxed. Intel defaults
+remain unchanged. GNU Fortran 14.2 passed the earlier recorded O0 and O2
 configurations; see [the GNU record](validation_gfortran_20261113.json).
+
+### GNU floating-point contraction policy (21 November 2026)
+
+A Mac GNU Fortran 16.2 run passed 42 BEM cases, 84 urban cases and 16
+expected failure exits, then failed the exact `sbem0 3urban` comparison.
+Three of its 1,029 REAL32 values differed: two ground heat fluxes and one
+upward longwave flux. A GNU 14.2 run with FMA-capable code generation
+reproduced the same three differing values and bit patterns. The pre-roof
+`9a6f9ed` source also reproduced them against the pinned `6099d9f` reference.
+Adding only `-ffp-contract=off` to that controlled run restored all 56 exact
+baseline records without changing physics, fixtures or comparison tolerances.
+
+The required GNU option is limited to these test builds. It is also appended
+when `--fflags` is supplied, so an earlier contraction option cannot silently
+change the exact-comparison arithmetic policy. The controls runner keeps its
+`-O2` default, and the roof runner keeps its `-O0` diagnostic default and
+exception checks. All raw-byte comparisons and fixed reference hashes remain
+in force. This does not change WRF production build flags or certify the
+production compiler's coupled results. Mac re-execution with this policy
+must be recorded separately; a successful Linux run is not a Mac result.
+
+See GCC's [floating-point contraction option](https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html#index-ffp-contract)
+and the current [roof validation record](validation_greenroof_20261121.json)
+for the policy and the tested source/flag combinations.
 
 The runner creates a new temporary output directory and prints its
 `native_report.json` path. Use `--output-dir /path/to/new/directory` for an
@@ -96,3 +122,24 @@ configuration matrix and limits. Full restart-file equality remains false.
 Physical acceptance remains false, including the low canyon temperature
 retained in the winter result. Earlier long simulations and figures predate
 this correction and are not new validation results.
+
+
+## Green-roof thermal connection (21 November 2026)
+
+The current production urban module also depends on
+`module_sf_greenroof_bem.F`; `run_native.py` compiles it and includes its
+SHA256 in the recorded source set. All original checks and pinned
+reference hashes are retained. `--baseline-source-dir` can supply
+extracted reference source files when Git history is not available; their
+SHA256 values must still match the original pinned reference.
+
+Run the additional green-roof regression with:
+
+```bash
+python3 -I test/slucm_bem/run_greenroof.py --fc gfortran
+```
+
+See [the roof coupling documentation](../../doc/SLUCM_BEM_greenroof.md)
+for its thermal balances, configuration, scope and coupled acceptance
+tests. New native results do not extend the earlier full-WRF evidence
+to this source automatically.

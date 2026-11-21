@@ -29,7 +29,7 @@ BASELINE_HASHES = {
     "phys/module_sf_urban.F": "bbcdc5c7082f47602911b2fdf81f756058a4d8ba8eff805eecfd5c786debd78b",
 }
 SOURCE_PATHS = (
-    "phys/module_sf_slucm_bem.F", "phys/module_sf_urban.F",
+    "phys/module_sf_greenroof_bem.F", "phys/module_sf_slucm_bem.F", "phys/module_sf_urban.F",
     "share/module_model_constants.F", "run/URBPARM.TBL", "run/URBPARM_LCZ.TBL",
     "test/slucm_bem/wrf_test_stubs.F90",
     "test/slucm_bem/bem_controls_regression.f90",
@@ -140,10 +140,12 @@ def coupling_rows(output):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--fc", help="Fortran compiler executable (default: ifx, ifort, then gfortran)")
-    parser.add_argument("--fflags", help="Additional compiler flags; default is -O2 with bounds checks and traceback")
+    parser.add_argument("--fflags", help="Replace default compiler options (-O2 with bounds checks and traceback); GNU test builds always append -ffp-contract=off")
     parser.add_argument("--baseline-ref", default=BASELINE,
                         help="Local Git ref supplying the fixed 6099d9f source bytes; hashes must still match")
     parser.add_argument("--output-dir", type=Path, help="New directory for binaries, complete logs and native_report.json")
+    parser.add_argument("--baseline-source-dir", type=Path,
+                        help="Optional extracted 6099d9f sources; the same pinned SHA256 checks apply")
     args = parser.parse_args()
     if args.output_dir:
         work = args.output_dir.resolve()
@@ -183,17 +185,25 @@ def main():
         else:
             raise RegressionError("Supported compilers: ifx, ifort, gfortran; received " + version[:100])
         flags = required + (shlex.split(args.fflags) if args.fflags is not None else default)
+        # Test-only arithmetic: compare baseline and candidate without target-dependent
+        # FMA contraction; production WRF build options are not changed.
+        if family == "gnu":
+            flags.append("-ffp-contract=off")
         report["compiler"] = {"path": compiler, "family": family, "version": version.strip(), "flags": flags}
         require(re.fullmatch(r"[A-Za-z0-9_./-]+", args.baseline_ref) is not None,
                 "Invalid baseline Git ref syntax")
         baseline_sources = {}
         for path, expected in BASELINE_HASHES.items():
-            result = subprocess.run(["git", "show", args.baseline_ref + ":" + path], cwd=str(ROOT),
-                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            require(result.returncode == 0,
-                    "Pinned baseline is missing from this checkout: " + BASELINE + ". Obtain its Git history before testing.")
-            require(sha256(result.stdout) == expected, "Pinned baseline source differs: " + path)
-            baseline_sources[path] = result.stdout
+            if args.baseline_source_dir is not None:
+                baseline_data = (args.baseline_source_dir / path).read_bytes()
+            else:
+                result = subprocess.run(["git", "show", args.baseline_ref + ":" + path], cwd=str(ROOT),
+                                        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                require(result.returncode == 0,
+                        "Pinned baseline is missing from this checkout: " + BASELINE + ". Obtain its Git history before testing.")
+                baseline_data = result.stdout
+            require(sha256(baseline_data) == expected, "Pinned baseline source differs: " + path)
+            baseline_sources[path] = baseline_data
         report["baseline_sources"] = dict(BASELINE_HASHES)
         original_bem = baseline_sources["phys/module_sf_slucm_bem.F"]
         require(original_bem.count(b"MODULE module_sf_slucm_bem") == 2,
@@ -223,7 +233,8 @@ def main():
         executables = {}
         for name in ("candidate", "baseline"):
             directory = work / name
-            sources = infrastructure + [
+            greenroof_sources = [("module_sf_greenroof_bem.F", (ROOT / "phys/module_sf_greenroof_bem.F").read_bytes())] if name == "candidate" else []
+            sources = infrastructure + greenroof_sources + [
                 ("module_sf_slucm_bem.F", candidate_bem if name == "candidate" else original_bem),
                 ("module_sf_urban.F", candidate_urban if name == "candidate" else baseline_sources["phys/module_sf_urban.F"]),
                 ("urban_exchange_regression.F90", driver),

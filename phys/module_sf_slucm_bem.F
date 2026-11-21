@@ -7,6 +7,8 @@ MODULE module_sf_slucm_bem
 
   PUBLIC :: slucm_bem_calculate
   PUBLIC :: slucm_bem_update_inner_layer
+  ! Shared with the green-roof inner-surface boundary; temperatures in deg C.
+  PUBLIC :: cal_chtc
 
 CONTAINS
 

@@ -11,9 +11,7 @@
  public:: cu_ntiedtke_driver, &
           ntiedtkeinit
 
-
  contains
-
 
 !=================================================================================================================
  subroutine cu_ntiedtke_driver(                          &

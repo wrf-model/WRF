@@ -1239,6 +1239,28 @@ CONTAINS
       RETURN
    END FUNCTION getrealmpitype
 
+! internal, used below: the MPI pair type (value, rank) matching a REAL,
+! for the MAXLOC and MINLOC reductions, which need a pair type
+   INTEGER function getreal2mpitype()
+#ifndef STUBMPI
+      IMPLICIT NONE
+      INTEGER rtypesize, dtypesize, ierr
+      CALL mpi_type_size ( MPI_REAL, rtypesize, ierr )
+      CALL mpi_type_size ( MPI_DOUBLE_PRECISION, dtypesize, ierr )
+      IF ( RWORDSIZE .EQ. rtypesize ) THEN
+        getreal2mpitype = MPI_2REAL
+      ELSE IF ( RWORDSIZE .EQ. dtypesize ) THEN
+        getreal2mpitype = MPI_2DOUBLE_PRECISION
+      ELSE
+        CALL wrf_error_fatal ( 'RWORDSIZE or DWORDSIZE does not match any MPI type' )
+      END IF
+#else
+! required dummy initialization for function that is never called
+      getreal2mpitype = 1
+#endif
+      RETURN
+   END FUNCTION getreal2mpitype
+
    INTEGER FUNCTION wrf_dm_max_int ( inval )
       IMPLICIT NONE
 #ifndef STUBMPI
@@ -1419,11 +1441,11 @@ LOGICAL FUNCTION wrf_dm_land_logical ( inval )
       inreduce=(/ val, real(mytask) /)
       bcast=(/ idex,jdex /)
       CALL wrf_get_dm_communicator(comm)
-      call MPI_Allreduce(inreduce,outreduce,1,MPI_2REAL,&
+      call MPI_Allreduce(inreduce,outreduce,1,getreal2mpitype(),&
                          MPI_MAXLOC,comm,i)
       mrank=outreduce(2)
       val=outreduce(1)
-      call MPI_Bcast(bcast,2,MPI_REAL,mrank,comm,i)
+      call MPI_Bcast(bcast,2,MPI_INTEGER,mrank,comm,i)
       idex=bcast(1)
       jdex=bcast(2)
 # else
@@ -1444,11 +1466,11 @@ LOGICAL FUNCTION wrf_dm_land_logical ( inval )
       inreduce=(/ val, real(mytask) /)
       bcast=(/ idex,jdex /)
       CALL wrf_get_dm_communicator(comm)
-      call MPI_Allreduce(inreduce,outreduce,1,MPI_2REAL,&
+      call MPI_Allreduce(inreduce,outreduce,1,getreal2mpitype(),&
                          MPI_MINLOC,comm,i)
       mrank=outreduce(2)
       val=outreduce(1)
-      call MPI_Bcast(bcast,2,MPI_REAL,mrank,comm,i)
+      call MPI_Bcast(bcast,2,MPI_INTEGER,mrank,comm,i)
       idex=bcast(1)
       jdex=bcast(2)
 # else
@@ -1474,7 +1496,7 @@ LOGICAL FUNCTION wrf_dm_land_logical ( inval )
                          MPI_MAXLOC,comm,i)
       mrank=outreduce(2)
       val=outreduce(1)
-      call MPI_Bcast(bcast,2,MPI_DOUBLE_PRECISION,mrank,comm,i)
+      call MPI_Bcast(bcast,2,MPI_INTEGER,mrank,comm,i)
       idex=bcast(1)
       jdex=bcast(2)
 # else
@@ -1499,7 +1521,7 @@ LOGICAL FUNCTION wrf_dm_land_logical ( inval )
                          MPI_MINLOC,comm,i)
       mrank=outreduce(2)
       val=outreduce(1)
-      call MPI_Bcast(bcast,2,MPI_DOUBLE_PRECISION,mrank,comm,i)
+      call MPI_Bcast(bcast,2,MPI_INTEGER,mrank,comm,i)
       idex=bcast(1)
       jdex=bcast(2)
 # else

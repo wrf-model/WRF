@@ -3695,9 +3695,9 @@ SUBROUTINE horizontal_diffusion_w_2( tendency, config_flags,              &
      tendency(i,k,j)=tendency(i,k,j) +   g/(dn(k)*rdz(i,k,j)) *         &
            (mrdx*(titau1(i+1,k,j)-titau1(i,k,j))+                       &
             mrdy*(titau2(i,k,j+1)-titau2(i,k,j))-                       &
-            msfty(i,j)*rdz(i,k,j)*(zx_at_w(i,k,j)*(titau1avg(i,k,j)-titau1avg(i,k-1,j))+ &
-                                   zy_at_w(i,k,j)*(titau2avg(i,k,j)-titau2avg(i,k-1,j))  &
-                                  )                                     &
+            rdz(i,k,j)*(msftx(i,j)*zx_at_w(i,k,j)*(titau1avg(i,k,j)-titau1avg(i,k-1,j))+ &
+                        msfty(i,j)*zy_at_w(i,k,j)*(titau2avg(i,k,j)-titau2avg(i,k-1,j))  &
+                       )                                                &
            )
    ENDDO
    ENDDO

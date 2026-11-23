@@ -1561,6 +1561,7 @@ logical doit
       LOGICAL, DIMENSION(CHUNK) :: intp_mask, tmask
       INTEGER, DIMENSION(CHUNK) :: kb, kt
       REAL,    DIMENSION(CHUNK) :: tl,tl2,th,th2,qqd,qqh,qql,zsum,qsum,dql,dqh
+      REAL,    DIMENSION(CHUNK) :: ztop
       REAL,    DIMENSION(CHUNK) :: za_gath_t,za_gath_b
       REAL,    DIMENSION(CHUNK) :: qa_gath_b
       REAL,    DIMENSION(CHUNK) :: dza_gath_t,dza_gath_b
@@ -1726,12 +1727,18 @@ logical doit
              enddo find_kb
 
              tmask = intp_mask
-             find_kt : do kk=minkt,km
+             ztop = zi(:,k+1)
+             find_kt : do kk=minkt,km+1
                WHERE ( tmask .AND. zi(:,k+1).le.za(:,kk) )
                  kt = kk
                  tmask = .FALSE.
                END WHERE
              enddo find_kt
+! layer top above the top arrival interface: nothing arrives above za(km+1)
+             WHERE ( tmask )
+               kt = km+1
+               ztop = za(:,km+1)
+             END WHERE
              kt = max(kt - 1,1)
 
 !#define RANGE_CHECKING
@@ -1760,7 +1767,7 @@ logical doit
 
              WHERE ( kt .eq. kb .AND. intp_mask ) 
                tl=(zi(:,k)-za_gath_b)/dza_gath_b
-               th=(zi(:,k+1)-za_gath_b)/dza_gath_b
+               th=(ztop-za_gath_b)/dza_gath_b
                tl2 = tl*tl
                th2 = th*th
                qqd=0.5*(qpi_gath_b-qmi_gath_b)
@@ -1785,13 +1792,17 @@ logical doit
                endif
              enddo
              WHERE ( kt .gt. kb .AND. intp_mask )
-               th=(zi(:,k+1)-za_gath_t)/dza_gath_t
+               th=(ztop-za_gath_t)/dza_gath_t
                th2 = th*th
                qqd=0.5*(qpi_gath_t-qmi_gath_t)
                dqh=qqd*th2+qmi_gath_t*th
                zsum  = zsum + th*dza_gath_t
                qsum  = qsum + dqh*dza_gath_t
                qn(:,k) = qsum/zsum
+             END WHERE
+! the means above cover only zi(k) to ztop; the rest of the layer is empty
+             WHERE ( ztop.lt.zi(:,k+1) .AND. intp_mask )
+               qn(:,k) = qn(:,k)*(ztop-zi(:,k))/dz(:,k)
              END WHERE
        ENDDO intp
 !
@@ -1801,7 +1812,13 @@ logical doit
              WHERE ( za(:,k).lt.0.0 .and. za(:,k+1).lt.0.0 .AND. intp_mask )
                precip = precip + qa(:,k)*dza(:,k)
              ELSE WHERE ( za(:,k).lt.0.0 .and. za(:,k+1).ge.0.0 .AND. intp_mask)
-               precip = precip + qa(:,k)*(0.0-za(:,k))
+               WHERE ( qpi(:,k).eq.qmi(:,k) )
+                 precip = precip + qa(:,k)*(0.0-za(:,k))
+               ELSE WHERE
+                 tl=(0.0-za(:,k))/dza(:,k)
+                 qqd=0.5*(qpi(:,k)-qmi(:,k))
+                 precip = precip + (qqd*tl*tl+qmi(:,k)*tl)*dza(:,k)
+               END WHERE
                intp_mask = .FALSE.
              END WHERE
       enddo sum_precip

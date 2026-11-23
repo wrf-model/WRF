@@ -2280,16 +2280,6 @@ CONTAINS
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme        &
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte)
 
-          DEALLOCATE (a_u)       ! Implicit component for the momemtum in X-direction
-          DEALLOCATE (a_v)       ! Implicit component for the momemtum in Y-direction
-          DEALLOCATE (a_t)       ! Implicit component for the Pot. Temp.
-          DEALLOCATE (a_q)       ! Implicit component for the water vapor
-          DEALLOCATE (b_u)       ! Explicit component for the momemtum in X-direction
-          DEALLOCATE (b_v)       ! Explicit component for the momemtum in Y-direction
-          DEALLOCATE (b_t)       ! Explicit component for the Pot. Temp.
-          DEALLOCATE (b_q)       ! Explicit component for the water vapor
-          DEALLOCATE (sf )       ! surfaces
-          DEALLOCATE (vl )       ! volumes
      ENDIF       !idiff
       
           IF(scalar_pblmix .GT. 0)THEN
@@ -2326,6 +2316,20 @@ CONTAINS
 
    ENDDO
    !$OMP END PARALLEL DO
+
+! free the idiff = 1 work arrays only after every tile has used them
+   IF ( idiff .EQ. 1 ) THEN
+     DEALLOCATE (a_u)       ! Implicit component for the momemtum in X-direction
+     DEALLOCATE (a_v)       ! Implicit component for the momemtum in Y-direction
+     DEALLOCATE (a_t)       ! Implicit component for the Pot. Temp.
+     DEALLOCATE (a_q)       ! Implicit component for the water vapor
+     DEALLOCATE (b_u)       ! Explicit component for the momemtum in X-direction
+     DEALLOCATE (b_v)       ! Explicit component for the momemtum in Y-direction
+     DEALLOCATE (b_t)       ! Explicit component for the Pot. Temp.
+     DEALLOCATE (b_q)       ! Explicit component for the water vapor
+     DEALLOCATE (sf )       ! surfaces
+     DEALLOCATE (vl )       ! volumes
+   ENDIF
 
    ENDIF
 

@@ -70,6 +70,8 @@ done
 # Go to run location now - We only operate here from now on
 cd $run_folder || exit $?
 
+echo "Working out of : $PWD"
+
 wrf_exec=$( realpath $( find -L $run_folder -type f -name $wrf_exec | head -n 1 ) )
 
 if [ ! -x "${wrf_exec}" ]; then
@@ -92,6 +94,11 @@ if [ "$wrf_nml" != "namelist.input" ]; then
   # remove old namelist.input which may be a symlink in which case this would have failed
   rm namelist.input
   cp $wrf_nml namelist.input || exit $?
+fi
+
+if [ -n "$mpi_cmd" ]; then
+  # Clean any previous logs
+  rm -rf rsl.*
 fi
 
 # Run setup

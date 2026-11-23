@@ -2831,7 +2831,7 @@ END SUBROUTINE smag2d_km
                                  + 2.*bbb*beta*(tke(i,k,j) - zdo_sup))))/bbb/beta
                            ELSE
                               IF(theta(i,izz,j).NE.theta(i,k,j)) THEN
-                                 tl = (tke(i,k,j) - zdo_sup)/(beta*(theta(i,izz,j) - theta(i,k,j)))
+                                 tl = (tke(i,k,j) - zdo_sup)/(beta*(theta(i,k,j) - theta(i,izz,j)))
                               ELSE
                                  tl = 0.
                               ENDIF
@@ -5153,6 +5153,10 @@ END SUBROUTINE vertical_diffusion_s
        gamv(i,j) = pu1 * brint*v_phy(i,1,j)/wspd(i,j)
       ELSE
        pblflg(i,j) = .false.
+! gamu and gamv are kept between steps and applied in the vertical diffusion
+! every step, so clear them where the column is no longer convective
+       gamu(i,j) = 0.
+       gamv(i,j) = 0.
       ENDIF
   ENDDO
   ENDDO
@@ -5218,8 +5222,9 @@ END SUBROUTINE vertical_diffusion_s
          amf3        = snlflux0*enlfrac2(i,j)/deltaoh(i,j)
          bmf3        = -amf3*mlfrac
          hfxpbl(i,j) = amf3+bmf3
+         ! the partition function multiplies the whole nonlocal flux once,
+         ! entrainment part included, below
          pth1        = pthnl(delxy,hpbl(i,j))
-         hfxpbl(i,j) = hfxpbl(i,j)*pth1
 
         DO k = kts, ktf
            zfacmf(i,k,j) = max((zq(i,k+1,j)/hpbl(i,j)),zfmin)

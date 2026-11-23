@@ -77,7 +77,13 @@ CONTAINS
     do i = i_start, i_end
 
       p_phy(i,k,j) = p(i,k,j) + pb(i,k,j)
-      t_phy(i,k,j) = (t(i,k,j)+t0)*(p_phy(i,k,j)/p1000mb)**rcp
+!     Convert moist potential temperature to dry potential temperature, as in phy_prep.
+      IF ( ( config_flags%use_theta_m .EQ. 1 ) .AND. (P_QV .GE. PARAM_FIRST_SCALAR) ) THEN
+        t_phy(i,k,j) = (t(i,k,j)+t0)/(1.+R_v/R_d*moist(i,k,j,P_QV))
+      ELSE
+        t_phy(i,k,j) = t(i,k,j)+t0
+      END IF
+      t_phy(i,k,j) = t_phy(i,k,j)*(p_phy(i,k,j)/p1000mb)**rcp
       rho(i,k,j) = 1./alt(i,k,j) !*(1.+moist(i,k,j,P_QV))
       u_phy(i,k,j) = 0.5*(u(i,k,j)+u(i+1,k,j))
       v_phy(i,k,j) = 0.5*(v(i,k,j)+v(i,k,j+1))

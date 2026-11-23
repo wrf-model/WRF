@@ -618,7 +618,6 @@ module_clear_halos.o: \
 # DEPENDENCIES for phys
 
 module_madwrf.o: \
-	module_wrf_top.o \
 	../share/module_model_constants.o \
 	../share/module_soil_pre.o \
 	module_mp_thompson.o 
@@ -927,10 +926,7 @@ module_cu_osas.o: \
 
 
 module_cu_tiedtke.o: \
-	../share/module_model_constants.o \
-	module_gfs_machine.o \
-	module_gfs_funcphys.o \
-	module_gfs_physcons.o 
+	../share/module_model_constants.o
 
 
 module_cu_ntiedtke.o: \
@@ -2553,29 +2549,6 @@ module_shallowcu_driver.o: \
 	../share/module_model_constants.o 
 
 
-module_cu_gf_deep.o: \
-	module_cu_gf_ctrans.o 
-
-
-module_cu_gf_wrfdrv.o: \
-	module_cu_gf_ctrans.o \
-	module_gfs_physcons.o \
-	module_cu_gf_deep.o \
-	module_cu_gf_sh.o 
-
-
-module_cu_gf_sh.o: \
-	module_cu_gf_ctrans.o \
-	module_cu_gf_deep.o 
-
-
-module_cu_gf_ctrans.o: \
-	../chem/module_chem_utilities.o \
-	../share/module_HLaw.o \
-	../share/module_ctrans_aqchem.o \
-	../frame/module_state_description.o 
-
-
 module_cu_gfl_common.o: \
 	ccpp_kind_types.o
 
@@ -2591,11 +2564,14 @@ module_cu_gfl_wrf.o: \
 	ccpp_kind_types.o
 
 
+module_cu_gfl_deep.o: \
+	module_cu_gfl_common.o
+
+
 module_cumulus_driver.o: \
 	../share/module_chem_share.o \
 	module_cu_kf.o \
 	module_cu_g3.o \
-	module_cu_gf_wrfdrv.o \
 	module_cu_kfeta.o \
 	$(PHYS_CU) \
 	module_cu_bmj.o \
@@ -3030,11 +3006,33 @@ physics_mmm/mp_wsm6_effectRad.o: \
 	physics_mmm/mp_wsm6.o
 
 
+physics_mmm/mp_radar.o: \
+	ccpp_kind_types.o
+
+
 physics_mmm/bl_ysu.o: \
 	ccpp_kind_types.o
 
 
 physics_mmm/bl_gwdo.o : \
+	ccpp_kind_types.o
+
+
+physics_mmm/bl_shinhong.o: \
+	ccpp_kind_types.o
+
+
+physics_mmm/bl_mynn_subroutines.o: \
+	ccpp_kind_types.o \
+	physics_mmm/mynn_shared.o
+
+
+physics_mmm/bl_mynn.o: \
+	ccpp_kind_types.o \
+	physics_mmm/bl_mynn_subroutines.o
+
+
+physics_mmm/mynn_shared.o: \
 	ccpp_kind_types.o
 
 

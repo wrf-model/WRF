@@ -1351,7 +1351,7 @@ Options for use with the Noah-MP Land Surface Model (sf_surface_physics=4):
                                                      7 = Xinanjiang Infiltration and surface runoff scheme ((Jayawardena and Zhou, 2000)
                                                      8 = Dynamic VIC surface runoff scheme (Liang and Xie, 2001)
  opt_runsub                         = 3,        ! Noah-MP Subsurface Runoff option (Same option set as surface runoff option)
- opt_infdv                          = 0,        ! Noah-MP infiltration option in dynamic VIC runoff scheme (only works for opt_run=8)
+ opt_infdv                          = 0,        ! Noah-MP infiltration option in dynamic VIC runoff scheme (only works for opt_runsrf=8)
                                                      1 = Philip scheme
                                                      2 = Green-Ampt scheme
                                                      3 = Smith-Parlange scheme
@@ -1431,7 +1431,7 @@ Options for use with the Noah-MP Land Surface Model (sf_surface_physics=4):
                                                      1 = sprinkler method
                                                      2 = micro/drip irrigation
                                                      3 = surface flooding  
- opt_tdrn                           = 0,        ! Noah-MP tile drainage option (currently only tested and works with opt_run=3)
+ opt_tdrn                           = 0,        ! Noah-MP tile drainage option (currently only tested and works with opt_runsrf=3)
                                                          geogrid must have been run with GEOGRID.TBL.ARW.noahmp, use with caution
                                                      0 = No tile drainage
                                                      1 = Simple drainage

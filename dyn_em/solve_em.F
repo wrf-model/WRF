@@ -939,11 +939,20 @@ BENCH_START(relax_bdy_dry_tim)
      !$OMP PRIVATE ( ij )
      DO ij = 1 , grid%num_tiles
 
+       IF ( rk_step == 1 ) THEN
+         ! mu relaxation is computed at the first RK stage and held for all stages
+         CALL zero_tend2d( mu_relax_tend,                       &
+                           ids, ide, jds, jde, 1, 1,            &
+                           ims, ime, jms, jme, 1, 1,            &
+                           grid%i_start(ij), grid%i_end(ij),    &
+                           grid%j_start(ij), grid%j_end(ij), 1, 1 )
+       ENDIF
+
        IF ( (config_flags%specified .or. config_flags%nested) .and. ( rk_step == 1 ) ) THEN 
 
          CALL relax_bdy_dry ( config_flags,                                &
                               grid%u_save, grid%v_save, ph_save, grid%t_save,             &
-                              w_save, mu_tend, grid%c1h, grid%c2h, grid%c1f, grid%c2f, &
+                              w_save, mu_relax_tend, grid%c1h, grid%c2h, grid%c1f, grid%c2f, &
                               grid%ru, grid%rv, grid%ph_2, grid%t_2,                           &
                               grid%w_2, grid%mu_2, grid%mut,                              &
                               grid%u_bxs,grid%u_bxe,grid%u_bys,grid%u_bye, &
@@ -1401,7 +1410,7 @@ BENCH_START(advance_mu_t_tim)
                           grid%c3h, grid%c4h, grid%c3f, grid%c4f,                       &
                           grid%ru_m, grid%rv_m, grid%ww_m,                              &
                           grid%t_2, grid%t_save, t_2save, t_tend,                       &
-                          mu_tend,                                                      &
+                          mu_tend, mu_relax_tend,                                       &
                           grid%rdx, grid%rdy, dts_rk, grid%epssm,                       &
                           grid%dnw, grid%fnm, grid%fnp, grid%rdnw,                      &
                           grid%msfux,grid%msfuy, grid%msfvx, grid%msfvx_inv,            &
@@ -2494,9 +2503,19 @@ BENCH_START(update_scal_tim)
 #endif
 BENCH_END(update_scal_tim)
 
+             ENDDO moist_tile_loop_2
+             !$OMP END PARALLEL DO
+
+!  Must stay in its own tile loop: flow_dep_bdy reads a fixed global row,
+!  field(i_inner,k,jbe-spec_zone), that another tile may still be writing in
+!  rk_update_scalar.  The barrier ending moist_tile_loop_2 makes it safe.
+
 BENCH_START(flow_depbdy_tim)
                IF( config_flags%specified .AND. ( .NOT. config_flags%have_bcs_moist ) ) THEN
                  IF(im .ne. P_QV)THEN
+             !$OMP PARALLEL DO   &
+             !$OMP PRIVATE ( ij )
+             moist_tile_loop_3: DO ij = 1 , grid%num_tiles
                    CALL flow_dep_bdy  (  moist(ims,kms,jms,im),                 &
                                 grid%ru_m, grid%rv_m, config_flags,             &
                                 grid%spec_zone,                                 &
@@ -2506,12 +2525,11 @@ BENCH_START(flow_depbdy_tim)
                                 grid%i_start(ij), grid%i_end(ij),               &
                                 grid%j_start(ij), grid%j_end(ij),               &
                                 k_start, k_end                               )
+             ENDDO moist_tile_loop_3
+             !$OMP END PARALLEL DO
                  ENDIF
                ENDIF
 BENCH_END(flow_depbdy_tim)
-
-             ENDDO moist_tile_loop_2
-             !$OMP END PARALLEL DO
 
            ENDIF  !-- if (grid%adv_moist_cond .or. im==p_qv ) then
 
@@ -5125,7 +5143,7 @@ BENCH_END(bc_2d_tim)
    if (wrf_cmaq_option .gt. 0) then
       COUNTER = COUNTER + 1
 
-      if ( .not. cmaq_wrf_feedback .and. firstime) then
+      if ( .not. feedback_restart .and. firstime) then
          grid%prev_rainnc = 0.0
          grid%prev_rainc  = 0.0
       end if

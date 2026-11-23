@@ -112,6 +112,7 @@ else()
                 PATH_SUFFIXES
                   lib/
                   lib64/
+                  lib/${CMAKE_LIBRARY_ARCHITECTURE}/
                 )
 endif()
 

@@ -603,7 +603,7 @@ MODULE module_bl_boulac
              tl=(beta*(th(izz)-th(iz))+sqrt( max(0.,(beta*(th(izz)-th(iz)))**2.+2.*bbb*beta*(te(iz)-zdo_sup))))/bbb/beta
             else
              if(th(izz).ne.th(iz))then
-              tl=(te(iz)-zdo_sup)/(beta*(th(izz)-th(iz)))
+              tl=(te(iz)-zdo_sup)/(beta*(th(iz)-th(izz)))
              else
               tl=0.
              endif

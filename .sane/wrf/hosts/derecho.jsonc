@@ -33,7 +33,8 @@
       },
       "mapping" :
       {
-        "ncpus" : [ "cpu", "cpus", "ncpu" ]
+        "ncpus" : [ "cpu", "cpus", "ncpu" ],
+        "mem" : ["memory"]
       },
       // "queue" : "main",
       "account" : "NMMM0012",
@@ -41,8 +42,13 @@
       {
         "wrf_coop" :
         {
-          "run_wrf_case_path" : "/glade/work/aislas/wrf-model/SCRIPTS/Namelists/weekly/",
-          "run_wrf_met_path" : "/glade/work/aislas/github/data/wrf/regtest/Data/"
+          "run_wrf_case_path" : "/glade/campaign/mmm/wmr/testing/wrf/cases/SCRIPTS/Namelists/weekly/",
+          "run_wrf_met_path" : "/glade/campaign/mmm/wmr/testing/wrf/data/wrf_coop/Data/"
+        },
+        "wrf_restart" :
+        {
+          "run_wrf_case_path" : "/glade/campaign/mmm/wmr/testing/wrf/cases/wrf_feature_testing/cases/",
+          "run_wrf_met_path" : "/glade/campaign/mmm/wmr/testing/wrf/data/restart/input/"
         }
       }
     }
@@ -57,9 +63,11 @@
       "[build_cmake.*intel.*]" : { "resources" : { "derecho" : { "timelimit" : "00:20:00" } } },
       "[build_cmake.*nvhpc.*]" : { "resources" : { "derecho" : { "timelimit" : "00:20:00" } } },
       // Make builds
-      "[build_make.*gnu.*]" : { "resources" : { "derecho" : { "timelimit" : "00:15:00" } } },
-      "[build_make.*intel.*]" : { "resources" : { "derecho" : { "timelimit" : "00:45:00" } } },
-      "[build_make.*nvhpc.*]" : { "resources" : { "derecho" : { "timelimit" : "00:45:00" } } }
+      "[build_make.*gnu.*]" : { "resources" : { "derecho" : { "timelimit" : "00:20:00" } } },
+      "[build_make.*intel.*]" : { "resources" : { "derecho" : { "timelimit" : "00:55:00" } } },
+      "[build_make.*nvhpc.*]" : { "resources" : { "derecho" : { "timelimit" : "00:45:00" } } },
+      // Intel oneapi memory reqs
+      "[build_.*intel-oneapi.*]" : { "resources" : { "derecho" : { "memory" : "64gb" } } }
     }
   }
 }

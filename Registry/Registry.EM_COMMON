@@ -302,6 +302,7 @@ i1       real   muave           ij     dyn_em      1          -
 i1       real   mu_save         ij     dyn_em      1          -     
 i1       real   mu_tend         ij     dyn_em      1          -     
 i1       real   mu_tendf        ij     dyn_em      1          -     
+i1       real   mu_relax_tend   ij     dyn_em      1          -
 
 #diagnostic for looking at nest position in output. A mungy version of terrain height.
 state    real   nest_pos        ij     misc        1   -   rhu=(mark_domain)  "NEST_POS"
@@ -2733,8 +2734,8 @@ rconfig   integer opt_pedo    namelist,noah_mp      1           1         h    "
 rconfig   integer opt_crop    namelist,noah_mp      1           0         h    "opt_crop" "crop model option"   ""
 rconfig   integer opt_irr     namelist,noah_mp      1           0         h    "opt_irr"  "Noah-MP irrigation option"   ""
 rconfig   integer opt_irrm    namelist,noah_mp      1           0         h    "opt_irrm" "Noah-MP irrigation method option"   ""
-rconfig   integer opt_infdv   namelist,noah_mp      1           0         h    "opt_infdv" "Noah-MP infiltration option in dynamic VIC runoff scheme (only works with opt_run=8), 1->Philip; 2->Green-Ampt; 3->Smith-Parlange"
-rconfig   integer opt_tdrn    namelist,noah_mp      1           0         h    "opt_tdrn" "NoahMP tile drainage option (currently only tested & works with opt_run=3), 0->no tile drainage; 1->Simple drainage; 2->Hooghoudt scheme"
+rconfig   integer opt_infdv   namelist,noah_mp      1           0         h    "opt_infdv" "Noah-MP infiltration option in dynamic VIC runoff scheme (only works with opt_runsrf=8), 1->Philip; 2->Green-Ampt; 3->Smith-Parlange"
+rconfig   integer opt_tdrn    namelist,noah_mp      1           0         h    "opt_tdrn" "NoahMP tile drainage option (currently only tested & works with opt_runsrf=3), 0->no tile drainage; 1->Simple drainage; 2->Hooghoudt scheme"
 rconfig   real    soiltstep   namelist,noah_mp      1           0.        h    "soiltstep" "NoahMP soil process timestep (s) for solving soil temperature and water (default:0->same as main noahmp timestep)"
 rconfig   real    WTDDT               namelist,physics    max_domains   30.      h     "wtddt"    "minutes between calls to lateral hydro"  ""
 rconfig   real    noahmp_acc_dt       namelist,noah_mp      1           0.        h    "noahmp_acc_dt" "bucket reset time interval between outputs for noah-mp accumulation"   "minutes"
@@ -3554,6 +3555,7 @@ period    PERIOD_EM_COUPLE_B dyn_em 3:ph_1,ph_2,w_1,w_2,t_1,t_2,u_1,u_2,v_1,v_2,
                                        moist,chem,tracer,scalar
 
 halo      HALO_EM_CFBM dyn_em 8:znt,t2,q2,psfc,rainc,rainnc,u10,v10
+halo      HALO_EM_CFBM_WINDS dyn_em 8:u_phy,v_phy,z_at_w
 
 #cyl for trajectory 
 halo      HALO_EM_F dyn_em  24:muu,muv,mut

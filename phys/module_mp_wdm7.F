@@ -472,6 +472,7 @@ CONTAINS
         lamdc_tmp
   REAL, DIMENSION( its:ite , kts:kte ) ::                         &
         falkc, work1c, work2c, fallc
+  real, dimension(its:ite,kts:kte)   :: dqr,dnr
   REAL, DIMENSION( its:ite , kts:kte ) ::                         &
         pcact, prevp, psdep, pgdep, phdep, praut, psaut, pgaut,   &
         phaut, pracw, psacw, pgacw, phacw, pgaci, pgacr, pgacs,   &
@@ -830,10 +831,14 @@ CONTAINS
               falkn(i,k) = ncr(i,k,3)*workn(i,k)/mstep(i)
               fall(i,k,1) = fall(i,k,1)+falk(i,k,1)
               falln(i,k) = falln(i,k)+falkn(i,k)
-              qrs(i,k,1) = max(qrs(i,k,1)-(falk(i,k,1)-falk(i,k+1,1)           &
-                          *delz(i,k+1)/delz(i,k))*dtcld/den(i,k),0.)
-              ncr(i,k,3) = max(ncr(i,k,3)-(falkn(i,k)-falkn(i,k+1)*delz(i,k+1) &
-                          /delz(i,k))*dtcld,0.)
+              dqr(i,k) = min(falk(i,k,1)*dtcld/den(i,k),qrs(i,k,1))
+              dqr(i,k+1) = min(falk(i,k+1,1)*delz(i,k+1)/delz(i,k)              &
+                           *dtcld/den(i,k),qrs(i,k+1,1))
+              dnr(i,k) = min(falkn(i,k)*dtcld,ncr(i,k,3))
+              dnr(i,k+1) = min(falkn(i,k+1)*delz(i,k+1)/delz(i,k)*dtcld,        &
+                           ncr(i,k+1,3))
+              qrs(i,k,1) = max(qrs(i,k,1)-dqr(i,k)+dqr(i,k+1),0.)
+              ncr(i,k,3) = max(ncr(i,k,3)-dnr(i,k)+dnr(i,k+1),0.)
             endif
           enddo
         enddo
@@ -1634,15 +1639,18 @@ CONTAINS
 !
 ! pgwet: wet growth of graupel [LFO 43]
 !
-          rs0 = psat*exp(log(ttp/t0c)*xa)*exp(xb*(1.-ttp/t0c))
-          rs0 = min(rs0,0.99*p(i,k))
-          rs0 = ep2*rs0/(p(i,k)-rs0)
-          rs0 = max(rs0,qmin)
-          ghw1 = den(i,k)*hvap*diffus(t(i,k),p(i,k))*(rs0-q(i,k))              &
-               - xka(t(i,k),den(i,k))*(-supcol)
-          ghw2 = den(i,k)*(xlf0+cliq*(-supcol))
-          ghw3 = venfac(p(i,k),t(i,k),den(i,k))*sqrt(sqrt(g*den(i,k)/den0))
-          ghw4 = den(i,k)*(xlf0-cliq*supcol+cice*supcol)
+
+          if(qrs(i,k,4).gt.qcrmin.and.qrs(i,k,3).gt.qcrmin) then
+            rs0 = psat*exp(log(ttp/t0c)*xa)*exp(xb*(1.-ttp/t0c))
+            rs0 = min(rs0,0.99*p(i,k))
+            rs0 = ep2*rs0/(p(i,k)-rs0)
+            rs0 = max(rs0,qmin)
+            ghw1 = den(i,k)*hvap*diffus(t(i,k),p(i,k))*(rs0-q(i,k))            &
+                 - xka(t(i,k),den(i,k))*(-supcol)
+            ghw2 = den(i,k)*(xlf0+cliq*(-supcol))
+            ghw3 = venfac(p(i,k),t(i,k),den(i,k))*sqrt(sqrt(g*den(i,k)/den0))
+            ghw4 = den(i,k)*(xlf0-cliq*supcol+cice*supcol)
+          endif
           if(qrs(i,k,3).gt.qcrmin) then
             if(pgaci(i,k).gt.0.0) then
               egi = exp(0.07*(-supcol))
@@ -1655,6 +1663,13 @@ CONTAINS
                         +ghw4*(pgaci_w(i,k)+pgacs(i,k)))
             pgwet(i,k) = max(pgwet(i,k), 0.0)
           endif
+!
+!  graupel is assumed to increase in density upon reaching wet growth
+!
+         if(pgacw(i,k)+pgacr(i,k)<0.95*pgwet(i,k)) then
+           pgaci(i,k) = 0.0
+           pgacs(i,k) = 0.0
+         endif
 !
 ! phwet: wet growth of hail [LFO 43] 
 !
@@ -1670,6 +1685,14 @@ CONTAINS
                       +prech3*ghw3*rslope(i,k,4)**(2.75)                       &
                       +ghw4*(phaci_w(i,k)+phacs(i,k)))
           phwet(i,k) = max(phwet(i,k), 0.0)
+!
+!  hail is assumed to increase in density upon reaching wet growth
+!
+          if(phacw(i,k)+phacr(i,k)<0.95*phwet(i,k)) then
+            phaci(i,k) = 0.0
+            phacs(i,k) = 0.0
+            phacg(i,k) = 0.0
+          endif
           if(supcol.le.0) then
             xlf = xlf0
 !

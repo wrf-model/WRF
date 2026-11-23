@@ -980,7 +980,7 @@ structname, fname, structname, fname ) ;
       else if ( p->type->type_type == DERIVED )
       {
         sprintf(x,"%s%s%%",structname,p->name ) ;
-        gen_dealloc2(fp,x, p->type, idx, -1) ;
+        gen_dealloc2(fp,x, p->type, -1, numFiles) ;
       }
     }
   }

@@ -32,11 +32,13 @@ main( int argc, char *argv[], char *env[] )
   char *env_val ;
   int mypid ;
   int do_irr_diag ;
+  int reg_status ;
 #ifndef _WIN32
   struct rlimit rlim ;
 #endif
 
   mypid = (int) getpid() ;
+  reg_status = 0 ;
   strcpy( thiscom, argv[0] ) ;
   argv++ ;
 
@@ -225,6 +227,7 @@ main( int argc, char *argv[], char *env[] )
   }
   if ( pre_parse( dir, fp_in, fp_tmp ) ) {
     fprintf(stderr,"Problem with Registry File %s\n", fname_in ) ;
+    reg_status = 1 ;
     goto cleanup ;
   }
   sym_forget() ;
@@ -235,6 +238,7 @@ main( int argc, char *argv[], char *env[] )
   if (( fp_tmp = fopen( fname_tmp , "r" )) == NULL )
   {
     fprintf(stderr,"Registry program cannot open %s for reading. Ending.\n", fname_tmp ) ;
+    reg_status = 2 ;
     goto cleanup ;
   }
 
@@ -293,6 +297,8 @@ cleanup:
    }
    sprintf(command,"/bin/rm -f %s\n",fname_tmp );
 #endif
-   return system( command ) ;
+   /* A failure above must reach the caller even though the temporary file is still removed */
+   if ( system( command ) != 0 && reg_status == 0 ) reg_status = 1 ;
+   return reg_status ;
 }
 

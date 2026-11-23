@@ -100,7 +100,10 @@
    REAL :: pfu, pfd, phm
    REAL :: MPDT
    REAL :: spongeweight
+   REAL :: mub_old
+   REAL, DIMENSION(grid%sm32:grid%em32) :: phb_old
    LOGICAL :: first_trip_for_this_domain, start_of_simulation, fill_w_flag
+   LOGICAL :: keep_column_totals
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
 
 #if (WRF_CHEM != 1)
@@ -248,6 +251,12 @@
    ELSE
       first_trip_for_this_domain = .FALSE.
    END IF
+
+   !  A domain that has already integrated is here because a nest was just spawned on it
+   !  (med_nest_initial).  Note that now, before itimestep is reset just below: the base
+   !  state rebuild must then keep each column's total dry-air mass and geopotential.
+   keep_column_totals = ( grid%itimestep .GT. 0 ) .AND. &
+                        ( .NOT. ( config_flags%restart .OR. grid%moved ) )
 
    IF ( .not. ( config_flags%restart .or. grid%moved ) ) THEN
        grid%itimestep=0
@@ -623,6 +632,16 @@
             !  tiso (isothermal temperature at tropopause/lower stratosphere),
             !  p_strat (pressure at top of isothermal layer), A_strat (lapse rate in
             !  stratosphere above isothermal layer)
+            !  A domain that has already integrated comes through here when a nest is
+            !  spawned on it, after that nest's feedback.  Save the column's base state
+            !  so the rebuild below can keep the column's total dry-air mass and total
+            !  geopotential.
+            IF ( keep_column_totals ) THEN
+               mub_old = grid%MUB(i,j)
+               DO k = kts, kte
+                  phb_old(k) = grid%phb(i,k,j)
+               END DO
+            END IF
             p_surf = p00 * EXP ( -t00/a + ( (t00/a)**2 - 2.*g*grid%ht(i,j)/a/r_d ) **0.5 )
             DO k = 1, kte-1
                grid%pb(i,k,j) = grid%c3h(k)*(p_surf - grid%p_top) + grid%c4h(k) + grid%p_top
@@ -650,6 +669,18 @@
                   pfd = grid%c3f(k-1)*grid%MUB(i,j) + grid%c4f(k-1) + grid%p_top
                   phm = grid%c3h(k-1)*grid%MUB(i,j) + grid%c4h(k-1) + grid%p_top
                   grid%phb(i,k,j) = grid%phb(i,k-1,j) + grid%alb(i,k-1,j)*phm*LOG(pfd/pfu)
+               END DO
+            END IF
+            !  The fed-back MUB is the average of the nest's MUB over each parent cell,
+            !  while the rebuilt MUB is p_surf of the averaged terrain, and p_surf(ht) is
+            !  not linear.  Move the base-state change into the perturbation, so that
+            !  MUB+MU and PHB+PH are what the integrated state and the feedback left.
+            IF ( keep_column_totals ) THEN
+               grid%mu_1(i,j) = grid%mu_1(i,j) + ( mub_old - grid%MUB(i,j) )
+               grid%mu_2(i,j) = grid%mu_2(i,j) + ( mub_old - grid%MUB(i,j) )
+               DO k = kts, kte
+                  grid%ph_1(i,k,j) = grid%ph_1(i,k,j) + ( phb_old(k) - grid%phb(i,k,j) )
+                  grid%ph_2(i,k,j) = grid%ph_2(i,k,j) + ( phb_old(k) - grid%phb(i,k,j) )
                END DO
             END IF
          END DO

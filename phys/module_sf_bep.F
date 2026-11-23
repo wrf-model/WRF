@@ -386,8 +386,12 @@ use module_wrf_error
 
       endif ! first
 
-      do ix=its,ite
+! Visit the cells with ix innermost, following the memory layout of the
+! (ims:ime,1:n,jms:jme) urban state arrays. Each cell starts from locals that
+! are set again for that cell and updates only its own (ix,:,iy) data, so the
+! results do not depend on the order in which the cells are visited.
       do iy=jts,jte
+      do ix=its,ite
         if (FRC_URB2D(ix,iy).gt.0.) then    ! Calling BEP only for existing urban classes.	
            iurb=UTYPE_URB2D(ix,iy)
 
@@ -433,9 +437,13 @@ use module_wrf_error
          enddo
 	 z1D(kte+1)=z(ix,kte+1,iy)
 
-         do id=1,ndm
+! The gather and scatter loops below run in the order in which the ind_*
+! maps were built (last index fastest), so that consecutive iterations access
+! consecutive elements of the urban state arrays.
+
          do iz_u=1,nz_um
          do iw=1,nwr_u
+         do id=1,ndm
 !          tw1D(2*id-1,iz_u,iw)=tw1_u(ix,iy,ind_zwd(iz_u,iw,id))
 !          tw1D(2*id,iz_u,iw)=tw2_u(ix,iy,ind_zwd(iz_u,iw,id))
             if(ind_zwd(iz_u,iw,id).gt.urban_map_zwd)write(*,*)'ind_zwd too big w',ind_zwd(iz_u,iw,id)
@@ -445,13 +453,15 @@ use module_wrf_error
          enddo
          enddo
 	
-         do id=1,ndm
           do ig=1,ng_u
+          do id=1,ndm
 !           tg1D(id,ig)=tg_u(ix,iy,ind_gd(ig,id))
             tg1D(id,ig)=tgb_urb4d(ix,ind_gd(ig,id),iy)
           enddo
+          enddo
           do iz_u=1,nz_um
           do ir=1,nwr_u
+          do id=1,ndm
 !           tr1D(id,iz_u,ir)=tr_u(ix,iy,ind_zwd(iz_u,ir,id))
             if(ind_zwd(iz_u,ir,id).gt.urban_map_zwd)write(*,*)'ind_zwd too big r',ind_zwd(iz_u,ir,id)
             tr1D(id,iz_u,ir)=trb_urb4d(ix,ind_zwd(iz_u,ir,id),iy)
@@ -459,8 +469,8 @@ use module_wrf_error
           enddo
          enddo
 
-         do id=1,ndm
 	 do iz=1,nz_um
+         do id=1,ndm
 !	  sfw1D(2*id-1,iz)=sfw1(ix,iy,ind_zd(iz,id))
 !	  sfw1D(2*id,iz)=sfw2(ix,iy,ind_zd(iz,id))
 	  sfw1D(2*id-1,iz)=sfw1_urb3d(ix,ind_zd(iz,id),iy)
@@ -473,8 +483,8 @@ use module_wrf_error
 	  sfg1D(id)=sfg_urb3d(ix,id,iy)
 	 enddo
 	 
-	 do id=1,ndm
 	 do iz=1,nz_um
+	 do id=1,ndm
 !	  sfr1D(id,iz)=sfr(ix,iy,ind_zd(iz,id))
 	  sfr1D(id,iz)=sfr_urb3d(ix,ind_zd(iz,id),iy)
 	 enddo
@@ -505,8 +515,8 @@ use module_wrf_error
                    dlg1D,dl_u1D,sf1D,vl1D,rl_up(ix,iy),             &
                    rs_abs(ix,iy),emiss(ix,iy),grdflx_urb(ix,iy))                            
 !        write(*,*) 'salgo de BEP1D'
-         do id=1,ndm
 	 do iz=1,nz_um
+         do id=1,ndm
 	  sfw1_urb3d(ix,ind_zd(iz,id),iy)=sfw1D(2*id-1,iz) 
 	  sfw2_urb3d(ix,ind_zd(iz,id),iy)=sfw1D(2*id,iz) 
 	 enddo
@@ -516,27 +526,29 @@ use module_wrf_error
 	  sfg_urb3d(ix,id,iy)=sfg1D(id) 
 	 enddo
 	
-	 do id=1,ndm
 	 do iz=1,nz_um
+	 do id=1,ndm
 	  sfr_urb3d(ix,ind_zd(iz,id),iy)=sfr1D(id,iz)
 	 enddo
 	 enddo
 !
-         do id=1,ndm
          do iz_u=1,nz_um
          do iw=1,nwr_u
+         do id=1,ndm
           tw1_urb4d(ix,ind_zwd(iz_u,iw,id),iy)=tw1D(2*id-1,iz_u,iw)
           tw2_urb4d(ix,ind_zwd(iz_u,iw,id),iy)=tw1D(2*id,iz_u,iw)
          enddo
          enddo
          enddo
         
-         do id=1,ndm
           do ig=1,ng_u
+          do id=1,ndm
            tgb_urb4d(ix,ind_gd(ig,id),iy)=tg1D(id,ig)
+          enddo
           enddo
           do iz_u=1,nz_um
           do ir=1,nwr_u
+          do id=1,ndm
            trb_urb4d(ix,ind_zwd(iz_u,ir,id),iy)=tr1D(id,iz_u,ir)
           enddo
           enddo
@@ -574,8 +586,8 @@ use module_wrf_error
 !
          endif ! FRC_URB2D
    
-      enddo  ! iy
       enddo  ! ix
+      enddo  ! iy
 
 
         time_bep=time_bep+dt

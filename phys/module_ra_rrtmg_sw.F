@@ -1382,6 +1382,9 @@
 
 ! public interfaces/functions/subroutines
       public :: mcica_subcol_sw, generate_stochastic_clouds_sw
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      private :: kiss_cdf_col
+      ! END LICENSE
 
       contains
 
@@ -1700,7 +1703,10 @@
       real(kind=rb) :: rand_num_mt                     ! random number (Mersenne Twister)
 
 ! Flag to identify cloud fraction in subcolumns
-      logical,  dimension(nsubcol, ncol, nlay) :: isCloudy   ! flag that says whether a gridbox is cloudy
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      logical :: iscloudy   ! flag that says whether a gridbox is cloudy
+      logical :: has_cloud
+      ! END LICENSE
 
 ! Indices
       integer(kind=im) :: ilev, isubcol, i, n, ngbm    ! indices
@@ -1715,14 +1721,39 @@
       Zo_inv(:) = 1._rb / decorr_len(:)
 
 ! Ensure that cloud fractions are in bounds 
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      has_cloud = .false.
+      ! END LICENSE
       do ilev = 1, nlay
          do i = 1, ncol
             cldf(i,ilev) = cld(i,ilev)
             if (cldf(i,ilev) < cldmin) then
                cldf(i,ilev) = 0._rb
+            ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+            else
+               has_cloud = .true.
+            ! END LICENSE
             endif
          enddo
       enddo
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      if (.not. has_cloud .and. irng .eq. 0) then
+         do i = 1, ncol
+            if (pmid(i,1) .lt. pmid(i,2)) then
+               stop 'MCICA_SUBCOL: KISSVEC SEED GENERATOR REQUIRES PMID FROM BOTTOM FOUR LAYERS.'
+            endif
+         enddo
+         cld_stoch(1:nsubcol,1:ncol,1:nlay) = 0._rb
+         clwp_stoch(1:nsubcol,1:ncol,1:nlay) = 0._rb
+         ciwp_stoch(1:nsubcol,1:ncol,1:nlay) = 0._rb
+         cswp_stoch(1:nsubcol,1:ncol,1:nlay) = 0._rb
+         tauc_stoch(1:nsubcol,1:ncol,1:nlay) = 0._rb
+         ssac_stoch(1:nsubcol,1:ncol,1:nlay) = 1._rb
+         asmc_stoch(1:nsubcol,1:ncol,1:nlay) = 0._rb
+         fsfc_stoch(1:nsubcol,1:ncol,1:nlay) = 0._rb
+         return
+      endif
+      ! END LICENSE
 
 ! ----- Create seed  --------
    
@@ -1730,18 +1761,9 @@
       if (irng.eq.0) then   
 ! For kissvec, create a seed that depends on the state of the columns. Maybe not the best way, but it works.  
 ! Must use pmid from bottom four layers. 
-         do i=1,ncol
-            if (pmid(i,1).lt.pmid(i,2)) then
-               stop 'MCICA_SUBCOL: KISSVEC SEED GENERATOR REQUIRES PMID FROM BOTTOM FOUR LAYERS.'
-            endif
-            seed1(i) = (pmid(i,1) - int(pmid(i,1)))  * 1000000000_im
-            seed2(i) = (pmid(i,2) - int(pmid(i,2)))  * 1000000000_im
-            seed3(i) = (pmid(i,3) - int(pmid(i,3)))  * 1000000000_im
-            seed4(i) = (pmid(i,4) - int(pmid(i,4)))  * 1000000000_im
-          enddo
-         do i=1,changeSeed
-            call kissvec(seed1, seed2, seed3, seed4, rand_num)
-         enddo
+         ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+         call kiss_cdf_col(pmid, changeSeed, overlap, nsubcol, ncol, nlay, CDF, CDF2)
+         ! END LICENSE
       elseif (irng.eq.1) then
          randomNumbers = new_RandomNumberSequence(seed = changeSeed)
       endif 
@@ -1757,14 +1779,9 @@
 ! Random overlap
 ! i) pick a random value at every level
   
-         if (irng.eq.0) then 
-            do isubcol = 1,nsubcol
-               do ilev = 1,nlay
-                  call kissvec(seed1, seed2, seed3, seed4, rand_num)
-                  CDF(isubcol,:,ilev) = rand_num
-               enddo
-            enddo
-         elseif (irng.eq.1) then
+         ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+         if (irng.eq.1) then
+         ! END LICENSE
             do isubcol = 1, nsubcol
                do i = 1, ncol
                   do ilev = 1, nlay
@@ -1782,14 +1799,9 @@
 !    - if the layer above is cloudy, we use the same random number than in the layer above
 !    - if the layer above is clear, we use a new random number 
 
-         if (irng.eq.0) then 
-            do isubcol = 1,nsubcol
-               do ilev = 1,nlay
-                  call kissvec(seed1, seed2, seed3, seed4, rand_num)
-                  CDF(isubcol,:,ilev) = rand_num
-               enddo
-            enddo
-         elseif (irng.eq.1) then
+         ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+         if (irng.eq.1) then
+         ! END LICENSE
             do isubcol = 1, nsubcol
                do i = 1, ncol
                   do ilev = 1, nlay
@@ -1816,14 +1828,9 @@
 ! Maximum overlap
 ! i) pick same random numebr at every level  
 
-         if (irng.eq.0) then 
-            do isubcol = 1,nsubcol
-               call kissvec(seed1, seed2, seed3, seed4, rand_num)
-               do ilev = 1,nlay
-                  CDF(isubcol,:,ilev) = rand_num
-               enddo
-            enddo
-         elseif (irng.eq.1) then
+         ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+         if (irng.eq.1) then
+         ! END LICENSE
             do isubcol = 1, nsubcol
                do i = 1, ncol
                   rand_num_mt = getRandomReal(randomNumbers)
@@ -1854,16 +1861,9 @@
             enddo
 
             ! generate 2 streams of random numbers
-            if (irng.eq.0) then
-               do isubcol = 1,nsubcol
-                  do ilev = 1,nlay
-                     call kissvec(seed1, seed2, seed3, seed4, rand_num)
-                     CDF(isubcol, :, ilev) = rand_num
-                     call kissvec(seed1, seed2, seed3, seed4, rand_num)
-                     CDF2(isubcol, :, ilev) = rand_num
-                  enddo
-               enddo
-            elseif (irng.eq.1) then
+            ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+            if (irng.eq.1) then
+            ! END LICENSE
             do isubcol = 1, nsubcol
                do i = 1, ncol
                   do ilev = 1, nlay
@@ -1878,9 +1878,13 @@
 
          ! generate random numbers
          do ilev = 2,nlay
-            where (CDF2(:, :, ilev) < spread(alpha (:,ilev), dim=1, nCopies=nsubcol) )
-               CDF(:,:,ilev) = CDF(:,:,ilev-1)
-            end where
+            ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+            do i = 1, ncol
+               do isubcol = 1, nsubcol
+                  if (CDF2(isubcol,i,ilev) < alpha(i,ilev)) CDF(isubcol,i,ilev) = CDF(isubcol,i,ilev-1)
+               enddo
+            enddo
+            ! END LICENSE
          end do
 
 ! mji - Exponential-random cloud overlap option
@@ -1907,16 +1911,9 @@
        ! generate 2 streams of random numbers
        ! CDF2 is used to select which sub-columns are vertically correlated relative to alpha
        ! CDF  is used to select which sub-columns are treated as cloudy relative to cloud fraction
-       if (irng.eq.0) then 
-          do isubcol = 1,nsubcol
-             do ilev = 1,nlay
-                call kissvec(seed1, seed2, seed3, seed4, rand_num)
-                CDF(isubcol, :, ilev) = rand_num
-                call kissvec(seed1, seed2, seed3, seed4, rand_num)
-                CDF2(isubcol, :, ilev) = rand_num
-             end do
-          end do
-       elseif (irng.eq.1) then
+       ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+       if (irng.eq.1) then
+       ! END LICENSE
           do isubcol = 1, nsubcol
              do i = 1, ncol
                 do ilev = 1,nlay
@@ -1930,18 +1927,19 @@
        endif
        ! generate vertical correlations in random number arrays - bottom to top
        do ilev = 2,nlay
-          where (CDF2(:, :, ilev) < spread(alpha (:,ilev), dim=1, nCopies=nsubcol) )
-             CDF(:,:,ilev) = CDF(:,:,ilev-1) 
-          end where
+          ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+          do i = 1, ncol
+             do isubcol = 1, nsubcol
+                if (CDF2(isubcol,i,ilev) < alpha(i,ilev)) CDF(isubcol,i,ilev) = CDF(isubcol,i,ilev-1)
+             enddo
+          enddo
+          ! END LICENSE
        end do
 
       end select
 
  
 ! -- generate subcolumns for homogeneous clouds -----
-      do ilev = 1, nlay
-         isCloudy(:,:,ilev) = (CDF(:,:,ilev) >= 1._rb - spread(cldf(:,ilev), dim=1, nCopies=nsubcol) )
-      enddo
 
 ! where the subcolumn is cloudy, the subcolumn cloud fraction is 1;
 ! where the subcolumn is not cloudy, the subcolumn cloud fraction is 0;
@@ -1951,8 +1949,24 @@
       ngbm = ngb(1) - 1
       do ilev = 1,nlay
          do i = 1, ncol
+            ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+            if (cldf(i,ilev) == 0._rb .and. irng .eq. 0) then
+               cld_stoch(1:nsubcol,i,ilev) = 0._rb
+               clwp_stoch(1:nsubcol,i,ilev) = 0._rb
+               ciwp_stoch(1:nsubcol,i,ilev) = 0._rb
+               cswp_stoch(1:nsubcol,i,ilev) = 0._rb
+               tauc_stoch(1:nsubcol,i,ilev) = 0._rb
+               ssac_stoch(1:nsubcol,i,ilev) = 1._rb
+               asmc_stoch(1:nsubcol,i,ilev) = 0._rb
+               fsfc_stoch(1:nsubcol,i,ilev) = 0._rb
+               cycle
+            endif
+            ! END LICENSE
             do isubcol = 1, nsubcol
-               if ( iscloudy(isubcol,i,ilev) ) then
+               ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+               iscloudy = (CDF(isubcol,i,ilev) >= 1._rb - cldf(i,ilev))
+               if ( iscloudy ) then
+               ! END LICENSE
                   cld_stoch(isubcol,i,ilev) = 1._rb
                   clwp_stoch(isubcol,i,ilev) = clwp(i,ilev)
                   ciwp_stoch(isubcol,i,ilev) = ciwp(i,ilev)
@@ -2038,6 +2052,51 @@
       end do
     
       end subroutine kissvec
+
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      subroutine kiss_cdf_col(pmid, changeSeed, overlap, nsubcol, ncol, nlay, CDF, CDF2)
+      integer(kind=im), intent(in) :: changeSeed, overlap, nsubcol, ncol, nlay
+      real(kind=rb), intent(in) :: pmid(:,:)
+      real(kind=rb), intent(inout) :: CDF(nsubcol,ncol,nlay), CDF2(nsubcol,ncol,nlay)
+      integer(kind=im) :: i, ic, isubcol, ilev, nlev_draw, s1, s2, s3, s4, kiss
+      nlev_draw = merge(1_im, nlay, overlap .eq. 3)
+      do i = 1, ncol
+         if (pmid(i,1) .lt. pmid(i,2)) stop 'MCICA_SUBCOL: KISSVEC SEED GENERATOR REQUIRES PMID FROM BOTTOM FOUR LAYERS.'
+         s1 = (pmid(i,1) - int(pmid(i,1))) * 1000000000_im
+         s2 = (pmid(i,2) - int(pmid(i,2))) * 1000000000_im
+         s3 = (pmid(i,3) - int(pmid(i,3))) * 1000000000_im
+         s4 = (pmid(i,4) - int(pmid(i,4))) * 1000000000_im
+         do ic = 1, changeSeed
+            call kiss_step(s1, s2, s3, s4, kiss)
+         enddo
+         if (overlap .ge. 1 .and. overlap .le. 5) then
+            do isubcol = 1, nsubcol
+               do ilev = 1, nlev_draw
+                  call kiss_step(s1, s2, s3, s4, kiss)
+                  CDF(isubcol,i,ilev) = kiss * 2.328306e-10_rb + 0.5_rb
+                  if (overlap .ge. 4) then
+                     call kiss_step(s1, s2, s3, s4, kiss)
+                     CDF2(isubcol,i,ilev) = kiss * 2.328306e-10_rb + 0.5_rb
+                  endif
+               enddo
+               if (overlap .eq. 3 .and. nlay .gt. 1) CDF(isubcol,i,2:nlay) = CDF(isubcol,i,1)
+            enddo
+         endif
+      enddo
+      contains
+         pure subroutine kiss_step(s1, s2, s3, s4, kiss)
+         integer(kind=im), intent(inout) :: s1, s2, s3, s4
+         integer(kind=im), intent(out) :: kiss
+         integer(kind=im) :: m, k, n
+         m(k, n) = ieor(k, ishft(k, n))
+         s1 = 69069_im * s1 + 1327217885_im
+         s2 = m(m(m(s2, 13_im), -17_im), 5_im)
+         s3 = 18000_im * iand(s3, 65535_im) + ishft(s3, -16_im)
+         s4 = 30903_im * iand(s4, 65535_im) + ishft(s4, -16_im)
+         kiss = s1 + s2 + ishft(s3, 16_im) + s4
+         end subroutine kiss_step
+      end subroutine kiss_cdf_col
+      ! END LICENSE
 
       end module mcica_subcol_gen_sw
 
@@ -2171,6 +2230,9 @@
 
 ! Main layer loop
       do lay = 1, nlayers
+         ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+         if (.not. any(cldfmc(1:ngptsw,lay) .ge. cldmin)) cycle
+         ! END LICENSE
 
 ! Main g-point interval loop
          do ig = 1, ngptsw 
@@ -8363,7 +8425,9 @@
 
 ! ------- Local -------
 
-      logical :: lrtchkclr(nlayers),lrtchkcld(nlayers)
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      logical :: lrtchkclr(nlayers),lrtchkcld(nlayers),lhas_cld
+      ! END LICENSE
 
       integer(kind=im)  :: klev
       integer(kind=im) :: ib1, ib2, ibm, igt, ikl, ikp, ikx
@@ -8470,6 +8534,10 @@
 ! Top of g-point interval loop within each band (iw is cumulative counter) 
          do jg = 1,igt
             iw = iw+1
+            ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+            ! True if any layer has positive cloud fraction at this g-point
+            lhas_cld = any(pcldfmc(1:klev,iw) > 0.0_rb)
+            ! END LICENSE
 
 ! Apply adjustment for correct Earth/Sun distance and zenith angle to incoming solar flux
             zincflx(iw) = adjflux(jb) * zsflxzen(iw) * prmu0
@@ -8613,6 +8681,9 @@
 
 ! Total sky optical parameters (cloud properties already delta-scaled)
 !   Use this code if cloud properties are derived in rrtmg_sw_cldprop       
+            ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+            if (lhas_cld) then
+            ! END LICENSE
                if (icpr .ge. 1) then
             do jk=1,klev
                   ikl=klev+1-jk
@@ -8644,6 +8715,9 @@
                   zgco (jk) = (zgco(jk) - zf) / (1.0_rb - zf)
             enddo
                endif 
+            ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+            endif
+            ! END LICENSE
 
 ! End of layer loop
 
@@ -8652,6 +8726,28 @@
                             lrtchkclr, zgcc, prmu0, ztauc, zomcc, &
                             zrefc, zrefdc, ztrac, ztradc)
 
+            ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+            if (.not. lhas_cld) then
+               do jk=1,klev
+                  ze1 = ztauc(jk) / prmu0
+                  if (ze1 .le. od_lo) then
+                     zdbtmc = 1._rb - ze1 + 0.5_rb * ze1 * ze1
+                  else
+                     tblind = ze1 / (bpade + ze1)
+                     itind = tblint * tblind + 0.5_rb
+                     zdbtmc = exp_tbl(itind)
+                  endif
+                  zdbtc(jk) = zdbtmc
+                  ztdbtc(jk+1) = zdbtc(jk)*ztdbtc(jk)
+               enddo
+               call vrtqdr_sw(klev, iw, &
+                              zrefc, zrefdc, ztrac, ztradc, &
+                              zdbtc, zrdndc, zrupc, zrupdc, ztdbtc, &
+                              zcd, zcu)
+               zfd(1:klev+1,iw) = zcd(1:klev+1,iw)
+               zfu(1:klev+1,iw) = zcu(1:klev+1,iw)
+            else
+            ! END LICENSE
 ! Total sky reflectivities      
             call reftra_sw (klev, &
                             lrtchkcld, zgco, prmu0, ztauo, zomco, &
@@ -8720,6 +8816,9 @@
                            zref, zrefd, ztra, ztrad, &
                            zdbt, zrdnd, zrup, zrupd, ztdbt, &
                            zfd, zfu)
+            ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+            endif
+            ! END LICENSE
 
 ! Upwelling and downwelling fluxes at levels
 !   Two-stream calculations go from top to bottom; 

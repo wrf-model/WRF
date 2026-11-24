@@ -56,6 +56,32 @@
 
       IMPLICIT NONE
 
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      TYPE :: mp_thomp_ws
+         PRIVATE
+         REAL, ALLOCATABLE :: tten(:), qvten(:), qcten(:), qiten(:), qrten(:), qsten(:), qgten(:), qbten(:), &
+            niten(:), nrten(:), ncten(:), ngten(:), nwfaten(:), nifaten(:), nbcaten(:), temp(:), twet(:), pres(:), &
+            qv(:), rc(:), ri(:), rr(:), rs(:), rg(:), rb(:), ni(:), nr(:), nc(:), ns(:), ng(:), nwfa(:), nifa(:), &
+            nbca(:), rho(:), rhof(:), rhof2(:), qvs(:), qvsi(:), delQvs(:), satw(:), sati(:), ssatw(:), ssati(:), &
+            diffu(:), visco(:), vsc2(:), tcond(:), lvap(:), ocp(:), lvt2(:), mvd_r(:), mvd_c(:), mvd_g(:), smob(:), &
+            smo2(:), smo1(:), smo0(:), smoc(:), smod(:), smoe(:), smof(:), smog(:), sed_r(:), sed_s(:), sed_g(:), &
+            sed_i(:), sed_n(:), sed_c(:), sed_b(:), vts_boost(:), vtik(:), vtnik(:), vtrk(:), vtnrk(:), vtsk(:), &
+            vtgk(:), vtngk(:), vtck(:), vtnck(:)
+         DOUBLE PRECISION, ALLOCATABLE :: prw_vcd(:), pnc_wcd(:), pnc_wau(:), pnc_rcw(:), pnc_scw(:), pnc_gcw(:), &
+            pna_rca(:), pna_sca(:), pna_gca(:), pnd_rcd(:), pnd_scd(:), pnd_gcd(:), pnb_rcb(:), pnb_scb(:), &
+            pnb_gcb(:), prr_wau(:), prr_rcw(:), prr_rcs(:), prr_rcg(:), prr_sml(:), prr_gml(:), prr_rci(:), &
+            prv_rev(:), pnr_wau(:), pnr_rcs(:), pnr_rcg(:), pnr_rci(:), pnr_sml(:), pnr_gml(:), pnr_rev(:), &
+            pnr_rcr(:), pnr_rfz(:), pri_inu(:), pni_inu(:), pri_ihm(:), pni_ihm(:), pri_wfz(:), pni_wfz(:), &
+            pri_rfz(:), pni_rfz(:), pri_ide(:), pni_ide(:), pri_rci(:), pni_rci(:), pni_sci(:), pni_iau(:), &
+            pri_iha(:), pni_iha(:), prs_iau(:), prs_sci(:), prs_rcs(:), prs_scw(:), prs_sde(:), prs_ihm(:), &
+            prs_ide(:), prg_scw(:), prg_rfz(:), prg_gde(:), prg_gcw(:), prg_rci(:), prg_rcs(:), prg_rcg(:), &
+            prg_ihm(:), png_rcs(:), png_rcg(:), png_scw(:), png_gde(:), pbg_scw(:), pbg_rfz(:), pbg_gcw(:), &
+            pbg_rci(:), pbg_rcs(:), pbg_rcg(:), pbg_sml(:), pbg_gml(:), ilamr(:), ilamg(:), N0_r(:), N0_g(:)
+         INTEGER, ALLOCATABLE :: idx_bg(:)
+         LOGICAL, ALLOCATABLE :: L_qc(:), L_qi(:), L_qr(:), L_qs(:), L_qg(:)
+      END TYPE mp_thomp_ws
+      PRIVATE :: alloc_thomp_ws, mp_thompson_col
+      ! END LICENSE
       LOGICAL, PARAMETER, PRIVATE:: iiwarm = .false.
       LOGICAL, PRIVATE:: is_aerosol_aware = .false.
       LOGICAL, PARAMETER, PRIVATE:: dustyIce = .true.
@@ -1145,6 +1171,11 @@
       CHARACTER*256:: mp_debug
       
       integer :: kediagloc
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      logical :: skip_mp
+      real :: qv_tmp, qvsi_tmp, sati_tmp, ssati_tmp
+      type(mp_thomp_ws) :: ws
+      ! END LICENSE
 
 !+---+
 
@@ -1202,6 +1233,9 @@
          CALL wrf_debug(0, mp_debug)
       endif
 
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      call alloc_thomp_ws(ws, kts, kte)
+      ! END LICENSE
       j_loop:  do j = j_start, j_end
       i_loop:  do i = i_start, i_end
 
@@ -1218,17 +1252,68 @@
          ENDIF
          SR(i,j) = 0.
 
+         ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+         ! Matches mp_thompson no_micro early exit (qc..qg <= R1 and ssati <= 0; see mp_thompson)
+         skip_mp = .true.
+         ! END LICENSE
          do k = kts, kte
             t1d(k) = th(i,k,j)*pii(i,k,j)
             p1d(k) = p(i,k,j)
-            w1d(k) = w(i,k,j)
-            dz1d(k) = dz(i,k,j)
             qv1d(k) = qv(i,k,j)
             qc1d(k) = qc(i,k,j)
             qi1d(k) = qi(i,k,j)
             qr1d(k) = qr(i,k,j)
             qs1d(k) = qs(i,k,j)
             qg1d(k) = qg(i,k,j)
+            ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+            if (qc1d(k) .gt. R1 .or. qi1d(k) .gt. R1 .or. qr1d(k) .gt. R1 &
+     &          .or. qs1d(k) .gt. R1 .or. qg1d(k) .gt. R1) then
+               skip_mp = .false.
+            elseif (skip_mp) then
+               qv_tmp = MAX(1.E-10, qv1d(k))
+               if (t1d(k) - 273.15 .le. 0.0) then
+                  qvsi_tmp = rsif(p1d(k), t1d(k))
+               else
+                  qvsi_tmp = rslf(p1d(k), t1d(k))
+               endif
+               sati_tmp = qv_tmp/qvsi_tmp
+               ssati_tmp = sati_tmp - 1.
+               if (abs(ssati_tmp) .lt. eps) ssati_tmp = 0.0
+               if (ssati_tmp .gt. 0.0) skip_mp = .false.
+            endif
+         enddo
+
+         if (skip_mp) then
+            qc1d(kts:kte) = 0.0
+            nc1d(kts:kte) = 0.0
+            qi1d(kts:kte) = 0.0
+            ni1d(kts:kte) = 0.0
+            qr1d(kts:kte) = 0.0
+            nr1d(kts:kte) = 0.0
+            qs1d(kts:kte) = 0.0
+            qg1d(kts:kte) = 0.0
+            ng1d(kts:kte) = 0.0
+            qb1d(kts:kte) = 0.0
+#if ( WRF_CHEM == 1 )
+            if (wetscav_on) then
+               rainprod1d(kts:kte) = 0.0
+               evapprod1d(kts:kte) = 0.0
+            endif
+#endif
+            if (is_aerosol_aware) then
+               nwfa1d(kts:kte) = nwfa(i,kts:kte,j)
+               nifa1d(kts:kte) = nifa(i,kts:kte,j)
+               if (wif_input_opt .eq. 2) then
+                  nbca1d(kts:kte) = nbca(i,kts:kte,j)
+               else
+                  nbca1d(kts:kte) = 0.0
+               endif
+            endif
+         else
+         do k = kts, kte
+            w1d(k) = w(i,k,j)
+            dz1d(k) = dz(i,k,j)
+            ! END LICENSE
             ni1d(k) = ni(i,k,j)
             nr1d(k) = nr(i,k,j)
             rho(k) = 0.622*p1d(k)/(R*t1d(k)*(qv1d(k)+0.622))
@@ -1289,7 +1374,10 @@
 #if ( WRF_CHEM == 1 )
                       wetscav_on, rainprod1d, evapprod1d, &
 #endif
-                      kts, kte, dt, i, j)
+         ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+                      kts, kte, dt, i, j, ws)
+         endif
+         ! END LICENSE
 
          pcp_ra(i,j) = pptrain
          pcp_sn(i,j) = pptsnow
@@ -1510,6 +1598,51 @@
 !.. Thompson et al. (2004, 2008).
 !+---+-----------------------------------------------------------------+
 !
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      subroutine alloc_thomp_ws(ws, kts, kte)
+      implicit none
+      type(mp_thomp_ws), intent(inout) :: ws
+      integer, intent(in) :: kts, kte
+      allocate(ws%tten(kts:kte), ws%qvten(kts:kte), ws%qcten(kts:kte), ws%qiten(kts:kte), ws%qrten(kts:kte), &
+               ws%qsten(kts:kte), ws%qgten(kts:kte), ws%qbten(kts:kte), ws%niten(kts:kte), ws%nrten(kts:kte), &
+               ws%ncten(kts:kte), ws%ngten(kts:kte), ws%nwfaten(kts:kte), ws%nifaten(kts:kte), ws%nbcaten(kts:kte), &
+               ws%temp(kts:kte), ws%twet(kts:kte), ws%pres(kts:kte), ws%qv(kts:kte), ws%rc(kts:kte), &
+               ws%ri(kts:kte), ws%rr(kts:kte), ws%rs(kts:kte), ws%rg(kts:kte), ws%rb(kts:kte), ws%ni(kts:kte), &
+               ws%nr(kts:kte), ws%nc(kts:kte), ws%ns(kts:kte), ws%ng(kts:kte), ws%nwfa(kts:kte), ws%nifa(kts:kte), &
+               ws%nbca(kts:kte), ws%rho(kts:kte), ws%rhof(kts:kte), ws%rhof2(kts:kte), ws%qvs(kts:kte), &
+               ws%qvsi(kts:kte), ws%delQvs(kts:kte), ws%satw(kts:kte), ws%sati(kts:kte), ws%ssatw(kts:kte), &
+               ws%ssati(kts:kte), ws%diffu(kts:kte), ws%visco(kts:kte), ws%vsc2(kts:kte), ws%tcond(kts:kte), &
+               ws%lvap(kts:kte), ws%ocp(kts:kte), ws%lvt2(kts:kte), ws%mvd_r(kts:kte), ws%mvd_c(kts:kte), &
+               ws%mvd_g(kts:kte), ws%smob(kts:kte), ws%smo2(kts:kte), ws%smo1(kts:kte), ws%smo0(kts:kte), &
+               ws%smoc(kts:kte), ws%smod(kts:kte), ws%smoe(kts:kte), ws%smof(kts:kte), ws%smog(kts:kte), &
+               ws%sed_r(kts:kte), ws%sed_s(kts:kte), ws%sed_g(kts:kte), ws%sed_i(kts:kte), ws%sed_n(kts:kte), &
+               ws%sed_c(kts:kte), ws%sed_b(kts:kte), ws%vts_boost(kts:kte), ws%prw_vcd(kts:kte), &
+               ws%pnc_wcd(kts:kte), ws%pnc_wau(kts:kte), ws%pnc_rcw(kts:kte), ws%pnc_scw(kts:kte), &
+               ws%pnc_gcw(kts:kte), ws%pna_rca(kts:kte), ws%pna_sca(kts:kte), ws%pna_gca(kts:kte), &
+               ws%pnd_rcd(kts:kte), ws%pnd_scd(kts:kte), ws%pnd_gcd(kts:kte), ws%pnb_rcb(kts:kte), &
+               ws%pnb_scb(kts:kte), ws%pnb_gcb(kts:kte), ws%prr_wau(kts:kte), ws%prr_rcw(kts:kte), &
+               ws%prr_rcs(kts:kte), ws%prr_rcg(kts:kte), ws%prr_sml(kts:kte), ws%prr_gml(kts:kte), &
+               ws%prr_rci(kts:kte), ws%prv_rev(kts:kte), ws%pnr_wau(kts:kte), ws%pnr_rcs(kts:kte), &
+               ws%pnr_rcg(kts:kte), ws%pnr_rci(kts:kte), ws%pnr_sml(kts:kte), ws%pnr_gml(kts:kte), &
+               ws%pnr_rev(kts:kte), ws%pnr_rcr(kts:kte), ws%pnr_rfz(kts:kte), ws%pri_inu(kts:kte), &
+               ws%pni_inu(kts:kte), ws%pri_ihm(kts:kte), ws%pni_ihm(kts:kte), ws%pri_wfz(kts:kte), &
+               ws%pni_wfz(kts:kte), ws%pri_rfz(kts:kte), ws%pni_rfz(kts:kte), ws%pri_ide(kts:kte), &
+               ws%pni_ide(kts:kte), ws%pri_rci(kts:kte), ws%pni_rci(kts:kte), ws%pni_sci(kts:kte), &
+               ws%pni_iau(kts:kte), ws%pri_iha(kts:kte), ws%pni_iha(kts:kte), ws%prs_iau(kts:kte), &
+               ws%prs_sci(kts:kte), ws%prs_rcs(kts:kte), ws%prs_scw(kts:kte), ws%prs_sde(kts:kte), &
+               ws%prs_ihm(kts:kte), ws%prs_ide(kts:kte), ws%prg_scw(kts:kte), ws%prg_rfz(kts:kte), &
+               ws%prg_gde(kts:kte), ws%prg_gcw(kts:kte), ws%prg_rci(kts:kte), ws%prg_rcs(kts:kte), &
+               ws%prg_rcg(kts:kte), ws%prg_ihm(kts:kte), ws%png_rcs(kts:kte), ws%png_rcg(kts:kte), &
+               ws%png_scw(kts:kte), ws%png_gde(kts:kte), ws%pbg_scw(kts:kte), ws%pbg_rfz(kts:kte), &
+               ws%pbg_gcw(kts:kte), ws%pbg_rci(kts:kte), ws%pbg_rcs(kts:kte), ws%pbg_rcg(kts:kte), &
+               ws%pbg_sml(kts:kte), ws%pbg_gml(kts:kte), ws%ilamr(kts:kte), ws%ilamg(kts:kte), ws%N0_r(kts:kte), &
+               ws%N0_g(kts:kte), ws%vtik(kts:kte+1), ws%vtnik(kts:kte+1), ws%vtrk(kts:kte+1), ws%vtnrk(kts:kte+1), &
+               ws%vtsk(kts:kte+1), ws%vtgk(kts:kte+1), ws%vtngk(kts:kte+1), ws%vtck(kts:kte+1), &
+               ws%vtnck(kts:kte+1), ws%idx_bg(kts:kte), ws%L_qc(kts:kte), ws%L_qi(kts:kte), ws%L_qr(kts:kte), &
+               ws%L_qs(kts:kte), ws%L_qg(kts:kte))
+      end subroutine alloc_thomp_ws
+      ! END LICENSE
+
       subroutine mp_thompson (aer_init_opt, wif_input_opt, &
                           qv1d, qc1d, qi1d, qr1d, qs1d, qg1d, qb1d,       &
                           ni1d, nr1d, nc1d, ng1d, nwfa1d, nifa1d, nbca1d, &
@@ -1518,7 +1651,86 @@
 #if ( WRF_CHEM == 1 )
                           wetscav_on, rainprod, evapprod, &
 #endif
-                          kts, kte, dt, ii, jj)
+                          ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+                          kts, kte, dt, ii, jj, ws)
+      implicit none
+      INTEGER, OPTIONAL, INTENT(IN):: aer_init_opt, wif_input_opt
+      INTEGER, INTENT(IN):: kts, kte, ii, jj
+      REAL, DIMENSION(kts:kte), INTENT(INOUT):: &
+                          qv1d, qc1d, qi1d, qr1d, qs1d, qg1d, qb1d, &
+                          ni1d, nr1d, nc1d, ng1d, nwfa1d, nifa1d, nbca1d, t1d
+      REAL, DIMENSION(kts:kte), INTENT(IN):: p1d, w1d, dzq
+      REAL, INTENT(INOUT):: pptrain, pptsnow, pptgraul, pptice
+      REAL, INTENT(IN):: dt
+#if ( WRF_CHEM == 1 )
+      REAL, DIMENSION(kts:kte), INTENT(INOUT):: rainprod, evapprod
+      LOGICAL, INTENT(IN) :: wetscav_on
+#endif
+      type(mp_thomp_ws), intent(inout), target, optional :: ws
+      type(mp_thomp_ws), target :: ws_loc
+      type(mp_thomp_ws), pointer :: wp
+      if (present(ws)) then
+         wp => ws
+      else
+         call alloc_thomp_ws(ws_loc, kts, kte)
+         wp => ws_loc
+      endif
+      call mp_thompson_col(aer_init_opt, wif_input_opt, &
+                          qv1d, qc1d, qi1d, qr1d, qs1d, qg1d, qb1d, &
+                          ni1d, nr1d, nc1d, ng1d, nwfa1d, nifa1d, nbca1d, &
+                          t1d, p1d, w1d, dzq, &
+                          pptrain, pptsnow, pptgraul, pptice, &
+#if ( WRF_CHEM == 1 )
+                          wetscav_on, rainprod, evapprod, &
+#endif
+                          kts, kte, dt, ii, jj, &
+                          wp%tten, wp%qvten, wp%qcten, wp%qiten, wp%qrten, wp%qsten, wp%qgten, wp%qbten, wp%niten, &
+                          wp%nrten, wp%ncten, wp%ngten, wp%nwfaten, wp%nifaten, wp%nbcaten, wp%temp, wp%twet, &
+                          wp%pres, wp%qv, wp%rc, wp%ri, wp%rr, wp%rs, wp%rg, wp%rb, wp%ni, wp%nr, wp%nc, wp%ns, &
+                          wp%ng, wp%nwfa, wp%nifa, wp%nbca, wp%rho, wp%rhof, wp%rhof2, wp%qvs, wp%qvsi, wp%delQvs, &
+                          wp%satw, wp%sati, wp%ssatw, wp%ssati, wp%diffu, wp%visco, wp%vsc2, wp%tcond, wp%lvap, &
+                          wp%ocp, wp%lvt2, wp%mvd_r, wp%mvd_c, wp%mvd_g, wp%smob, wp%smo2, wp%smo1, wp%smo0, &
+                          wp%smoc, wp%smod, wp%smoe, wp%smof, wp%smog, wp%sed_r, wp%sed_s, wp%sed_g, wp%sed_i, &
+                          wp%sed_n, wp%sed_c, wp%sed_b, wp%vts_boost, wp%prw_vcd, wp%pnc_wcd, wp%pnc_wau, &
+                          wp%pnc_rcw, wp%pnc_scw, wp%pnc_gcw, wp%pna_rca, wp%pna_sca, wp%pna_gca, wp%pnd_rcd, &
+                          wp%pnd_scd, wp%pnd_gcd, wp%pnb_rcb, wp%pnb_scb, wp%pnb_gcb, wp%prr_wau, wp%prr_rcw, &
+                          wp%prr_rcs, wp%prr_rcg, wp%prr_sml, wp%prr_gml, wp%prr_rci, wp%prv_rev, wp%pnr_wau, &
+                          wp%pnr_rcs, wp%pnr_rcg, wp%pnr_rci, wp%pnr_sml, wp%pnr_gml, wp%pnr_rev, wp%pnr_rcr, &
+                          wp%pnr_rfz, wp%pri_inu, wp%pni_inu, wp%pri_ihm, wp%pni_ihm, wp%pri_wfz, wp%pni_wfz, &
+                          wp%pri_rfz, wp%pni_rfz, wp%pri_ide, wp%pni_ide, wp%pri_rci, wp%pni_rci, wp%pni_sci, &
+                          wp%pni_iau, wp%pri_iha, wp%pni_iha, wp%prs_iau, wp%prs_sci, wp%prs_rcs, wp%prs_scw, &
+                          wp%prs_sde, wp%prs_ihm, wp%prs_ide, wp%prg_scw, wp%prg_rfz, wp%prg_gde, wp%prg_gcw, &
+                          wp%prg_rci, wp%prg_rcs, wp%prg_rcg, wp%prg_ihm, wp%png_rcs, wp%png_rcg, wp%png_scw, &
+                          wp%png_gde, wp%pbg_scw, wp%pbg_rfz, wp%pbg_gcw, wp%pbg_rci, wp%pbg_rcs, wp%pbg_rcg, &
+                          wp%pbg_sml, wp%pbg_gml, wp%ilamr, wp%ilamg, wp%N0_r, wp%N0_g, wp%vtik, wp%vtnik, wp%vtrk, &
+                          wp%vtnrk, wp%vtsk, wp%vtgk, wp%vtngk, wp%vtck, wp%vtnck, wp%idx_bg, wp%L_qc, wp%L_qi, &
+                          wp%L_qr, wp%L_qs, wp%L_qg)
+      end subroutine mp_thompson
+
+      subroutine mp_thompson_col (aer_init_opt, wif_input_opt, &
+                          qv1d, qc1d, qi1d, qr1d, qs1d, qg1d, qb1d, &
+                          ni1d, nr1d, nc1d, ng1d, nwfa1d, nifa1d, nbca1d, &
+                          t1d, p1d, w1d, dzq, &
+                          pptrain, pptsnow, pptgraul, pptice, &
+#if ( WRF_CHEM == 1 )
+                          wetscav_on, rainprod, evapprod, &
+#endif
+                          kts, kte, dt, ii, jj, &
+                          tten, qvten, qcten, qiten, qrten, qsten, qgten, qbten, niten, nrten, ncten, ngten, &
+                          nwfaten, nifaten, nbcaten, temp, twet, pres, qv, rc, ri, rr, rs, rg, rb, ni, nr, nc, ns, &
+                          ng, nwfa, nifa, nbca, rho, rhof, rhof2, qvs, qvsi, delQvs, satw, sati, ssatw, ssati, &
+                          diffu, visco, vsc2, tcond, lvap, ocp, lvt2, mvd_r, mvd_c, mvd_g, smob, smo2, smo1, smo0, &
+                          smoc, smod, smoe, smof, smog, sed_r, sed_s, sed_g, sed_i, sed_n, sed_c, sed_b, vts_boost, &
+                          prw_vcd, pnc_wcd, pnc_wau, pnc_rcw, pnc_scw, pnc_gcw, pna_rca, pna_sca, pna_gca, pnd_rcd, &
+                          pnd_scd, pnd_gcd, pnb_rcb, pnb_scb, pnb_gcb, prr_wau, prr_rcw, prr_rcs, prr_rcg, prr_sml, &
+                          prr_gml, prr_rci, prv_rev, pnr_wau, pnr_rcs, pnr_rcg, pnr_rci, pnr_sml, pnr_gml, pnr_rev, &
+                          pnr_rcr, pnr_rfz, pri_inu, pni_inu, pri_ihm, pni_ihm, pri_wfz, pni_wfz, pri_rfz, pni_rfz, &
+                          pri_ide, pni_ide, pri_rci, pni_rci, pni_sci, pni_iau, pri_iha, pni_iha, prs_iau, prs_sci, &
+                          prs_rcs, prs_scw, prs_sde, prs_ihm, prs_ide, prg_scw, prg_rfz, prg_gde, prg_gcw, prg_rci, &
+                          prg_rcs, prg_rcg, prg_ihm, png_rcs, png_rcg, png_scw, png_gde, pbg_scw, pbg_rfz, pbg_gcw, &
+                          pbg_rci, pbg_rcs, pbg_rcg, pbg_sml, pbg_gml, ilamr, ilamg, N0_r, N0_g, vtik, vtnik, vtrk, &
+                          vtnrk, vtsk, vtgk, vtngk, vtck, vtnck, idx_bg, L_qc, L_qi, L_qr, L_qs, L_qg)
+                          ! END LICENSE
 
       implicit none
 
@@ -1538,6 +1750,9 @@
 #endif
 
 !..Local variables
+! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+!..1D (kts:kte) and (kts:kte+1) arrays below are workspace-backed dummy arguments
+! END LICENSE
       REAL, DIMENSION(kts:kte):: tten, qvten, qcten, qiten, qrten,            &
            qsten, qgten, qbten, niten, nrten, ncten, ngten, nwfaten, nifaten, &
                                                               nbcaten
@@ -2001,7 +2216,9 @@
          twet(k) = temp(k)
       enddo
 
-      if (k_melting .gt. 0) then
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      if (k_melting .gt. 0 .and. (ANY(L_qs) .or. ANY(L_qg))) then
+      ! END LICENSE
          do k = kts, k_melting
             if (satw(k) .lt. 0.999) then
                dew_t = MIN(temp(k)-0.001, t_dew(pres(k), qv(k))) 
@@ -2154,6 +2371,10 @@
 !..Compute warm-rain process terms (except evap done later).
 !+---+-----------------------------------------------------------------+
 
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      mvd_c(:) = D0c
+      if (ANY(L_qr) .or. ANY(L_qc)) then
+      ! END LICENSE
       do k = kts, kte
 
 !..Rain self-collection follows Seifert, 1994 and drop break-up
@@ -2232,6 +2453,9 @@
          endif
 
       enddo
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      endif
+      ! END LICENSE
 
 !+---+-----------------------------------------------------------------+
 !..Compute all frozen hydrometeor species' process terms.
@@ -3370,23 +3594,35 @@
 !..Calculate y-intercept, slope values for graupel.
 !+---+-----------------------------------------------------------------+
 
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      if (ANY(L_qg)) then
+      ! END LICENSE
       do k = kte, kts, -1
          lamg = (am_g(idx_bg(k))*cgg(3,1)*ogg2*ng(k)/rg(k))**obmg
          ilamg(k) = 1./lamg
          N0_g(k) = ng(k)*ogg2*lamg**cge(2,1)
       enddo
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      endif
+      ! END LICENSE
 
       endif
 
 !+---+-----------------------------------------------------------------+
 !..Calculate y-intercept, slope values for rain.
 !+---+-----------------------------------------------------------------+
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      if (ANY(L_qr)) then
+      ! END LICENSE
       do k = kte, kts, -1
          lamr = (am_r*crg(3)*org2*nr(k)/rr(k))**obmr
          ilamr(k) = 1./lamr
          mvd_r(k) = (3.0 + mu_r + 0.672) / lamr
          N0_r(k) = nr(k)*org2*lamr**cre(2)
       enddo
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      endif
+      ! END LICENSE
 
 !+---+-----------------------------------------------------------------+
 !..Cloud water condensation and evaporation.  Nucleate cloud droplets
@@ -4079,7 +4315,9 @@
 
       enddo
 
-      end subroutine mp_thompson
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      end subroutine mp_thompson_col
+      ! END LICENSE
 !+---+-----------------------------------------------------------------+
 !ctrlL
 !+---+-----------------------------------------------------------------+
@@ -5619,6 +5857,10 @@
       re_qc1d(:) = RE_QC_BG
       re_qi1d(:) = RE_QI_BG
       re_qs1d(:) = RE_QS_BG
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      if (.not. (ANY(qc1d .gt. 0.0) .or. ANY(qi1d .gt. 0.0) &
+     &    .or. ANY(qs1d .gt. 0.0))) return
+      ! END LICENSE
 
       do k = kts, kte
          rho(k) = 0.622*p1d(k)/(R*t1d(k)*(qv1d(k)+0.622))

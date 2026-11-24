@@ -33,6 +33,9 @@
       integer(kind=im), parameter :: mxmol  = 38
       integer(kind=im), parameter :: nstr   = 2
       integer(kind=im), parameter :: nmol   = 7
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      integer(kind=im), parameter :: i_vec  = 8
+      ! END LICENSE
 ! Use for 112 g-point model   
       integer(kind=im), parameter :: ngptsw = 112    !jpgpt
 ! Use for 224 g-point model   
@@ -8831,7 +8834,14 @@
 ! --------- Modules ---------
 
       use parkind, only : im => kind_im, rb => kind_rb
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      use parrrsw, only : i_vec
+      use rrsw_tbl, only : tblint, bpade, od_lo, exp_tbl
+      ! END LICENSE
       use rrsw_vsn
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      use rrsw_wvn, only : ngc, ngs
+      ! END LICENSE
       use mcica_subcol_gen_sw, only: mcica_subcol_sw
       use rrtmg_sw_cldprmc, only: cldprmc_sw
 ! *** Move the required call to rrtmg_sw_ini below and the following 
@@ -8839,11 +8849,17 @@
 !      use rrtmg_sw_init, only: rrtmg_sw_ini
       use rrtmg_sw_setcoef, only: setcoef_sw
       use rrtmg_sw_spcvmc, only: spcvmc_sw
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      use rrtmg_sw_taumol, only: taumol_sw
+      ! END LICENSE
 
       implicit none
 
 ! public interfaces/functions/subroutines
       public :: rrtmg_sw, inatm_sw, earth_sun
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      private :: spcvmc_sw_vec, vrtqdr_sw_vec, reftra_sw_vec, sw_exp1
+      ! END LICENSE
 
 !------------------------------------------------------------------
       contains
@@ -9131,6 +9147,9 @@
       integer(kind=im) :: k                   ! layer loop index
       integer(kind=im) :: ims                 ! value for changing mcica permute seed
       integer(kind=im) :: imca                ! flag for mcica [0=off, 1=on]
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      integer(kind=im) :: nvec, ic, icol_out
+      ! END LICENSE
 
       real(kind=rb) :: zepsec, zepzen         ! epsilon
       real(kind=rb) :: zdpgcp                 ! flux to heating conversion ratio
@@ -9271,6 +9290,27 @@
       real(kind=rb) :: dirdnir(nlay+2)        ! Direct downward shortwave flux, near-IR
       real(kind=rb) :: difdnir(nlay+2)        ! Diffuse downward shortwave flux, near-IR
 
+! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+! Compact i_vec-column batch arrays for SIMD shortwave solver path
+      integer(kind=im) :: laytrop_v(i_vec), jp_v(nlay+1,i_vec), jt_v(nlay+1,i_vec)
+      integer(kind=im) :: jt1_v(nlay+1,i_vec), indself_v(nlay+1,i_vec), indfor_v(nlay+1,i_vec)
+      real(kind=rb) :: pdp_v(i_vec,nlay+1), cossza_v(i_vec), albdif_v(i_vec,nbndsw), albdir_v(i_vec,nbndsw)
+      real(kind=rb) :: colh2o_v(nlay+1,i_vec), colco2_v(nlay+1,i_vec), colo3_v(nlay+1,i_vec)
+      real(kind=rb) :: coln2o_v(nlay+1,i_vec), colch4_v(nlay+1,i_vec), colo2_v(nlay+1,i_vec)
+      real(kind=rb) :: colmol_v(nlay+1,i_vec), co2mult_v(nlay+1,i_vec)
+      real(kind=rb) :: selffac_v(nlay+1,i_vec), selffrac_v(nlay+1,i_vec)
+      real(kind=rb) :: forfac_v(nlay+1,i_vec), forfrac_v(nlay+1,i_vec)
+      real(kind=rb) :: fac00_v(nlay+1,i_vec), fac01_v(nlay+1,i_vec), fac10_v(nlay+1,i_vec), fac11_v(nlay+1,i_vec)
+      real(kind=rb), allocatable :: zcldfmc_v(:,:,:), ztaucmc_v(:,:,:), ztaug_v(:,:,:), ztaur_v(:,:,:)
+      real(kind=rb), allocatable :: ztaormc_v(:,:,:), zasycmc_v(:,:,:), zomgcmc_v(:,:,:)
+      real(kind=rb) :: ztaua_v(i_vec,nlay+1,nbndsw), zasya_v(i_vec,nlay+1,nbndsw), zomga_v(i_vec,nlay+1,nbndsw)
+      real(kind=rb) :: zbbfd_v(i_vec,nlay+2), zbbfu_v(i_vec,nlay+2), zbbcd_v(i_vec,nlay+2), zbbcu_v(i_vec,nlay+2)
+      real(kind=rb) :: zuvfd_v(i_vec,nlay+2), zuvcd_v(i_vec,nlay+2), znifd_v(i_vec,nlay+2), znicd_v(i_vec,nlay+2)
+      real(kind=rb) :: zbbfddir_v(i_vec,nlay+2), zbbcddir_v(i_vec,nlay+2)
+      real(kind=rb) :: zuvfddir_v(i_vec,nlay+2), zuvcddir_v(i_vec,nlay+2)
+      real(kind=rb) :: znifddir_v(i_vec,nlay+2), znicddir_v(i_vec,nlay+2)
+! END LICENSE
+
 ! Output - inactive
 !      real(kind=rb) :: zuvfu(nlay+2)         ! temporary upward UV shortwave flux (w/m2)
 !      real(kind=rb) :: zuvfd(nlay+2)         ! temporary downward UV shortwave flux (w/m2)
@@ -9339,6 +9379,17 @@
 
 ! This is the main longitude/column loop in RRTMG.
 ! Modify to loop over all columns (nlon) or over daylight columns
+
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      nvec = merge(ncol / i_vec, 0_im, calc_clean_atm_diag .eq. 0 .and. rb .eq. 4 &
+                   .and. (icld .eq. 0 .or. inflgsw .ne. 0))
+      if (nvec > 0) then
+         allocate(zcldfmc_v(i_vec,nlay+1,ngptsw), ztaucmc_v(i_vec,nlay+1,ngptsw), &
+                  ztaormc_v(i_vec,nlay+1,ngptsw), zasycmc_v(i_vec,nlay+1,ngptsw), &
+                  zomgcmc_v(i_vec,nlay+1,ngptsw), ztaug_v(i_vec,nlay+1,ngptsw), &
+                  ztaur_v(i_vec,nlay+1,ngptsw))
+      endif
+      ! END LICENSE
 
       do iplon = 1, ncol
 
@@ -9478,6 +9529,71 @@
 
          endif
 
+
+! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+! Full i_vec-column SIMD path (tail columns fall through to scalar spcvmc_sw below)
+         if (iplon <= nvec * i_vec) then
+            ic = mod(iplon - 1, i_vec) + 1
+            laytrop_v(ic) = laytrop; cossza_v(ic) = cossza
+            albdif_v(ic,1:nbndsw) = albdif(1:nbndsw); albdir_v(ic,1:nbndsw) = albdir(1:nbndsw)
+            pdp_v(ic,1:nlayers) = pdp(1:nlayers); jp_v(1:nlayers,ic) = jp(1:nlayers)
+            jt_v(1:nlayers,ic) = jt(1:nlayers); jt1_v(1:nlayers,ic) = jt1(1:nlayers)
+            indself_v(1:nlayers,ic) = indself(1:nlayers); indfor_v(1:nlayers,ic) = indfor(1:nlayers)
+            co2mult_v(1:nlayers,ic) = co2mult(1:nlayers); colch4_v(1:nlayers,ic) = colch4(1:nlayers)
+            colco2_v(1:nlayers,ic) = colco2(1:nlayers); colh2o_v(1:nlayers,ic) = colh2o(1:nlayers)
+            colmol_v(1:nlayers,ic) = colmol(1:nlayers); coln2o_v(1:nlayers,ic) = coln2o(1:nlayers)
+            colo2_v(1:nlayers,ic) = colo2(1:nlayers); colo3_v(1:nlayers,ic) = colo3(1:nlayers)
+            fac00_v(1:nlayers,ic) = fac00(1:nlayers); fac01_v(1:nlayers,ic) = fac01(1:nlayers)
+            fac10_v(1:nlayers,ic) = fac10(1:nlayers); fac11_v(1:nlayers,ic) = fac11(1:nlayers)
+            selffac_v(1:nlayers,ic) = selffac(1:nlayers); selffrac_v(1:nlayers,ic) = selffrac(1:nlayers)
+            forfac_v(1:nlayers,ic) = forfac(1:nlayers); forfrac_v(1:nlayers,ic) = forfrac(1:nlayers)
+            zcldfmc_v(ic,1:nlayers,1:ngptsw) = zcldfmc(1:nlayers,1:ngptsw)
+            ztaucmc_v(ic,1:nlayers,1:ngptsw) = ztaucmc(1:nlayers,1:ngptsw)
+            zasycmc_v(ic,1:nlayers,1:ngptsw) = zasycmc(1:nlayers,1:ngptsw)
+            zomgcmc_v(ic,1:nlayers,1:ngptsw) = zomgcmc(1:nlayers,1:ngptsw)
+            ztaormc_v(ic,1:nlayers,1:ngptsw) = ztaormc(1:nlayers,1:ngptsw)
+            ztaua_v(ic,1:nlayers,1:nbndsw) = ztaua(1:nlayers,1:nbndsw)
+            zasya_v(ic,1:nlayers,1:nbndsw) = zasya(1:nlayers,1:nbndsw)
+            zomga_v(ic,1:nlayers,1:nbndsw) = zomga(1:nlayers,1:nbndsw)
+            if (ic < i_vec) cycle
+
+            call spcvmc_sw_vec &
+                (nlay, nlayers, istart, iend, icpr, iout, albdif_v, albdir_v, &
+                 zcldfmc_v, ztaucmc_v, zasycmc_v, zomgcmc_v, ztaormc_v, ztaug_v, ztaur_v, &
+                 ztaua_v, zasya_v, zomga_v, cossza_v, adjflux, laytrop_v, jp_v, jt_v, jt1_v, &
+                 co2mult_v, colch4_v, colco2_v, colh2o_v, colmol_v, coln2o_v, colo2_v, colo3_v, &
+                 fac00_v, fac01_v, fac10_v, fac11_v, selffac_v, selffrac_v, indself_v, &
+                 forfac_v, forfrac_v, indfor_v, zbbfd_v, zbbfu_v, zbbcd_v, zbbcu_v, &
+                 zuvfd_v, zuvcd_v, znifd_v, znicd_v, zbbfddir_v, zbbcddir_v, &
+                 zuvfddir_v, zuvcddir_v, znifddir_v, znicddir_v)
+
+            do ic = 1, i_vec
+               icol_out = iplon - i_vec + ic
+               do i = 1, nlayers + 1
+                  swuflxc(icol_out,i) = zbbcu_v(ic,i); swdflxc(icol_out,i) = zbbcd_v(ic,i)
+                  swuflx(icol_out,i) = zbbfu_v(ic,i); swdflx(icol_out,i) = zbbfd_v(ic,i)
+                  dirdflux(i) = zbbfddir_v(ic,i); difdflux(i) = swdflx(icol_out,i) - dirdflux(i)
+                  swdkdir(icol_out,i) = dirdflux(i); swdkdif(icol_out,i) = difdflux(i)
+                  swdkdirc(icol_out,i) = zbbcddir_v(ic,i)
+                  sibvisdir(icol_out,i) = zuvfddir_v(ic,i)
+                  sibvisdif(icol_out,i) = zuvfd_v(ic,i) - zuvfddir_v(ic,i)
+                  sibnirdir(icol_out,i) = znifddir_v(ic,i)
+                  sibnirdif(icol_out,i) = znifd_v(ic,i) - znifddir_v(ic,i)
+                  swnflxc(i) = swdflxc(icol_out,i) - swuflxc(icol_out,i)
+                  swnflx(i) = swdflx(icol_out,i) - swuflx(icol_out,i)
+                  swuflxcln(icol_out,i) = 0.0; swdflxcln(icol_out,i) = 0.0
+               enddo
+               do i = 1, nlayers
+                  zdpgcp = heatfac / pdp_v(ic,i)
+                  swhrc(icol_out,i) = (swnflxc(i+1) - swnflxc(i)) * zdpgcp
+                  swhr(icol_out,i) = (swnflx(i+1) - swnflx(i)) * zdpgcp
+               enddo
+               swhrc(icol_out,nlayers) = 0._rb; swhr(icol_out,nlayers) = 0._rb
+               zbbcddir(1) = zbbcddir_v(ic,1)
+            enddo
+            cycle
+         endif
+! END LICENSE
 
 ! Call the 2-stream radiation transfer model
 
@@ -10004,6 +10120,448 @@
 
       end subroutine inatm_sw
 
+! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+! Module-private i_vec-column SIMD shortwave two-stream kernels (r4, exact operand order).
+! 8-column vectorized adaptations of spcvmc_sw, reftra_sw, and vrtqdr_sw above;
+! doc/licenses/google_license.txt applies to Google's modifications.
+      pure elemental real(kind=rb) function sw_exp1(ze) result(zem)
+      real(kind=rb), intent(in) :: ze
+      integer(kind=im) :: itind
+
+      if (ze <= od_lo) then
+         zem = 1._rb - ze + 0.5_rb * ze * ze
+      else
+         itind = tblint * (ze / (bpade + ze)) + 0.5_rb
+         zem = exp_tbl(itind)
+      endif
+      end function sw_exp1
+
+
+      subroutine reftra_sw_vec(nlayers, lrtchk, pgg, prmuz, ptau, pw, &
+                               pref, prefd, ptra, ptrad)
+
+      integer(kind=im), intent(in) :: nlayers
+      logical, intent(in) :: lrtchk(i_vec,nlayers)
+      real(kind=rb), intent(in) :: pgg(i_vec,nlayers), prmuz(i_vec)
+      real(kind=rb), intent(in) :: ptau(i_vec,nlayers), pw(i_vec,nlayers)
+      real(kind=rb), intent(inout) :: pref(i_vec,nlayers+1), prefd(i_vec,nlayers+1)
+      real(kind=rb), intent(inout) :: ptra(i_vec,nlayers+1), ptrad(i_vec,nlayers+1)
+
+      logical :: lnoncons(i_vec)
+      integer(kind=im) :: jk, ic
+      real(kind=rb) :: za, zgt, zdenr, zdend, zemm, zg3, denom, zw_s, zg_s
+      real(kind=rb) :: zto1(i_vec), zw(i_vec), zg(i_vec), zwo(i_vec), za1(i_vec), za2(i_vec), zrk(i_vec), zrp(i_vec)
+      real(kind=rb) :: zgamma1(i_vec), zgamma2(i_vec), zgamma3(i_vec), zgamma4(i_vec), zbeta(i_vec)
+      real(kind=rb) :: zrp1(i_vec), zrm1(i_vec), zrk2(i_vec), zrpp(i_vec), zrkg(i_vec)
+      real(kind=rb) :: zr1(i_vec), zr2(i_vec), zr3(i_vec), zr4(i_vec), zr5(i_vec), zt1(i_vec), zt2(i_vec), zt3(i_vec)
+      real(kind=rb) :: ze1(i_vec), ze2(i_vec), zem1(i_vec), zem2(i_vec), zep1(i_vec), zep2(i_vec)
+      real(kind=rb), parameter :: zwcrit = 0.9999995_rb, eps = 1.e-08_rb
+
+      do jk = 1, nlayers
+         if (.not. any(lrtchk(1:i_vec,jk))) then
+            pref(1:i_vec,jk) = 0._rb; ptra(1:i_vec,jk) = 1._rb
+            prefd(1:i_vec,jk) = 0._rb; ptrad(1:i_vec,jk) = 1._rb
+            cycle
+         endif
+
+         do ic = 1, i_vec
+            zto1(ic) = ptau(ic,jk)
+            zw(ic) = pw(ic,jk)
+            zg(ic) = pgg(ic,jk)
+            denom = merge(1._rb - (1._rb - zw(ic)) * &
+                          (zg(ic) / merge(1._rb - zg(ic), 1._rb, zg(ic) /= 1._rb))**2, &
+                          1._rb, zg(ic) /= 1._rb)
+            zwo(ic) = merge(zw(ic) / merge(denom, 1._rb, denom /= 0._rb), &
+                            0._rb, zw(ic) > 0._rb .and. denom /= 0._rb)
+            lnoncons(ic) = lrtchk(ic,jk) .and. (zwo(ic) < zwcrit)
+         enddo
+
+         do ic = 1, i_vec
+            zw_s = merge(zw(ic), 0.5_rb, lnoncons(ic))
+            zg_s = merge(zg(ic), 0.0_rb, lnoncons(ic))
+            zg3 = 3._rb * zg_s
+            zgamma1(ic) = (8._rb - zw_s * (5._rb + zg3)) * 0.25_rb
+            zgamma2(ic) = 3._rb * (zw_s * (1._rb - zg_s)) * 0.25_rb
+            zgamma3(ic) = (2._rb - zg3 * prmuz(ic)) * 0.25_rb
+            zgamma4(ic) = 1._rb - zgamma3(ic)
+            za1(ic) = zgamma1(ic) * zgamma4(ic) + zgamma2(ic) * zgamma3(ic)
+            za2(ic) = zgamma1(ic) * zgamma3(ic) + zgamma2(ic) * zgamma4(ic)
+            zrk(ic) = sqrt(zgamma1(ic)**2 - zgamma2(ic)**2)
+            zrp(ic) = zrk(ic) * prmuz(ic)
+            zrp1(ic) = 1._rb + zrp(ic)
+            zrm1(ic) = 1._rb - zrp(ic)
+            zrk2(ic) = 2._rb * zrk(ic)
+            zrpp(ic) = 1._rb - zrp(ic) * zrp(ic)
+            zrkg(ic) = zrk(ic) + zgamma1(ic)
+            zr1(ic) = zrm1(ic) * (za2(ic) + zrk(ic) * zgamma3(ic))
+            zr2(ic) = zrp1(ic) * (za2(ic) - zrk(ic) * zgamma3(ic))
+            zr3(ic) = zrk2(ic) * (zgamma3(ic) - za2(ic) * prmuz(ic))
+            zr4(ic) = zrpp(ic) * zrkg(ic)
+            zr5(ic) = zrpp(ic) * (zrk(ic) - zgamma1(ic))
+            zt1(ic) = zrp1(ic) * (za1(ic) + zrk(ic) * zgamma4(ic))
+            zt2(ic) = zrm1(ic) * (za1(ic) - zrk(ic) * zgamma4(ic))
+            zt3(ic) = zrk2(ic) * (zgamma4(ic) + za1(ic) * prmuz(ic))
+            zbeta(ic) = (zgamma1(ic) - zrk(ic)) / zrkg(ic)
+            ze1(ic) = min(zrk(ic) * zto1(ic), 500._rb)
+            ze2(ic) = min(zto1(ic) / prmuz(ic), 500._rb)
+         enddo
+
+         do ic = 1, i_vec
+            zem1(ic) = sw_exp1(ze1(ic))
+            zem2(ic) = sw_exp1(ze2(ic))
+         enddo
+
+         do ic = 1, i_vec
+            zep1(ic) = 1._rb / zem1(ic)
+            zep2(ic) = 1._rb / zem2(ic)
+            zdenr = zr4(ic) * zep1(ic) + zr5(ic) * zem1(ic)
+            pref(ic,jk) = merge(eps, zw(ic) * (zr1(ic) * zep1(ic) - zr2(ic) * zem1(ic) - &
+                                zr3(ic) * zem2(ic)) / merge(zdenr, 1._rb, abs(zdenr) > eps), &
+                                zdenr >= -eps .and. zdenr <= eps)
+            ptra(ic,jk) = merge(zem2(ic), zem2(ic) - zem2(ic) * zw(ic) * &
+                                (zt1(ic) * zep1(ic) - zt2(ic) * zem1(ic) - zt3(ic) * zep2(ic)) / &
+                                merge(zdenr, 1._rb, abs(zdenr) > eps), &
+                                zdenr >= -eps .and. zdenr <= eps)
+            zemm = zem1(ic) * zem1(ic)
+            zdend = 1._rb / ((1._rb - zbeta(ic) * zemm) * zrkg(ic))
+            prefd(ic,jk) = zgamma2(ic) * (1._rb - zemm) * zdend
+            ptrad(ic,jk) = zrk2(ic) * zem1(ic) * zdend
+         enddo
+
+         if (.not. all(lnoncons(1:i_vec))) then
+            do ic = 1, i_vec
+               if (.not. lrtchk(ic,jk)) then
+                  pref(ic,jk) = 0._rb; ptra(ic,jk) = 1._rb
+                  prefd(ic,jk) = 0._rb; ptrad(ic,jk) = 1._rb
+               elseif (zwo(ic) >= zwcrit) then
+                  zg3 = 3._rb * zg(ic)
+                  za = ((8._rb - zw(ic) * (5._rb + zg3)) * 0.25_rb) * prmuz(ic)
+                  za1(ic) = za - (2._rb - zg3 * prmuz(ic)) * 0.25_rb
+                  zgt = ((8._rb - zw(ic) * (5._rb + zg3)) * 0.25_rb) * zto1(ic)
+                  ze1(ic) = min(zto1(ic) / prmuz(ic), 500._rb)
+                  ze2(ic) = sw_exp1(ze1(ic))
+                  pref(ic,jk) = (zgt - za1(ic) * (1._rb - ze2(ic))) / (1._rb + zgt)
+                  ptra(ic,jk) = 1._rb - pref(ic,jk)
+                  prefd(ic,jk) = zgt / (1._rb + zgt)
+                  ptrad(ic,jk) = 1._rb - prefd(ic,jk)
+                  if (ze2(ic) == 1.0_rb) then
+                     pref(ic,jk) = 0.0_rb; ptra(ic,jk) = 1.0_rb
+                     prefd(ic,jk) = 0.0_rb; ptrad(ic,jk) = 1.0_rb
+                  endif
+               endif
+            enddo
+         endif
+      enddo
+
+      end subroutine reftra_sw_vec
+
+
+      subroutine vrtqdr_sw_vec(klev, pref, prefd, ptra, ptrad, &
+                               pdbt, prdnd, prup, prupd, ptdbt, pfd, pfu, ztdn)
+
+      integer(kind=im), intent(in) :: klev
+      real(kind=rb), intent(in) :: pref(i_vec,klev+1), prefd(i_vec,klev+1)
+      real(kind=rb), intent(in) :: ptra(i_vec,klev+1), ptrad(i_vec,klev+1)
+      real(kind=rb), intent(in) :: pdbt(i_vec,klev+1), ptdbt(i_vec,klev+1)
+      real(kind=rb), intent(inout) :: prdnd(i_vec,klev+1), prup(i_vec,klev+1), prupd(i_vec,klev+1)
+      real(kind=rb), intent(out) :: pfd(i_vec,klev+1), pfu(i_vec,klev+1), ztdn(i_vec,klev+1)
+
+      integer(kind=im) :: ic, ikp, ikx, jk
+      real(kind=rb) :: zreflect
+
+      do ic = 1, i_vec
+         zreflect = 1._rb / (1._rb - prefd(ic,klev+1) * prefd(ic,klev))
+         prup(ic,klev) = pref(ic,klev) + (ptrad(ic,klev) * &
+                         ((ptra(ic,klev) - pdbt(ic,klev)) * prefd(ic,klev+1) + &
+                           pdbt(ic,klev) * pref(ic,klev+1))) * zreflect
+         prupd(ic,klev) = prefd(ic,klev) + ptrad(ic,klev) * ptrad(ic,klev) * &
+                          prefd(ic,klev+1) * zreflect
+      enddo
+
+      do jk = 1, klev - 1
+         ikp = klev + 1 - jk; ikx = ikp - 1
+         do ic = 1, i_vec
+            zreflect = 1._rb / (1._rb - prupd(ic,ikp) * prefd(ic,ikx))
+            prup(ic,ikx) = pref(ic,ikx) + (ptrad(ic,ikx) * &
+                           ((ptra(ic,ikx) - pdbt(ic,ikx)) * prupd(ic,ikp) + &
+                             pdbt(ic,ikx) * prup(ic,ikp))) * zreflect
+            prupd(ic,ikx) = prefd(ic,ikx) + ptrad(ic,ikx) * ptrad(ic,ikx) * &
+                            prupd(ic,ikp) * zreflect
+         enddo
+      enddo
+
+      do ic = 1, i_vec
+         ztdn(ic,1) = 1._rb; prdnd(ic,1) = 0._rb
+         ztdn(ic,2) = ptra(ic,1); prdnd(ic,2) = prefd(ic,1)
+      enddo
+
+      do jk = 2, klev
+         ikp = jk + 1
+         do ic = 1, i_vec
+            zreflect = 1._rb / (1._rb - prefd(ic,jk) * prdnd(ic,jk))
+            ztdn(ic,ikp) = ptdbt(ic,jk) * ptra(ic,jk) + &
+                           (ptrad(ic,jk) * ((ztdn(ic,jk) - ptdbt(ic,jk)) + &
+                            ptdbt(ic,jk) * pref(ic,jk) * prdnd(ic,jk))) * zreflect
+            prdnd(ic,ikp) = prefd(ic,jk) + ptrad(ic,jk) * ptrad(ic,jk) * &
+                            prdnd(ic,jk) * zreflect
+         enddo
+      enddo
+
+      do jk = 1, klev + 1
+         do ic = 1, i_vec
+            zreflect = 1._rb / (1._rb - prdnd(ic,jk) * prupd(ic,jk))
+            pfu(ic,jk) = (ptdbt(ic,jk) * prup(ic,jk) + &
+                          (ztdn(ic,jk) - ptdbt(ic,jk)) * prupd(ic,jk)) * zreflect
+            pfd(ic,jk) = ptdbt(ic,jk) + (ztdn(ic,jk) - ptdbt(ic,jk) + &
+                          ptdbt(ic,jk) * prup(ic,jk) * prdnd(ic,jk)) * zreflect
+         enddo
+      enddo
+
+      end subroutine vrtqdr_sw_vec
+
+
+      subroutine spcvmc_sw_vec &
+            (nlay, nlayers, istart, iend, icpr, iout, palbd, palbp, &
+             pcldfmc, ptaucmc, pasycmc, pomgcmc, ptaormc, ztaug, ztaur, &
+             ptaua, pasya, pomga, prmu0, adjflux, laytrop, jp, jt, jt1, &
+             co2mult, colch4, colco2, colh2o, colmol, coln2o, colo2, colo3, &
+             fac00, fac01, fac10, fac11, selffac, selffrac, indself, forfac, forfrac, indfor, &
+             pbbfd, pbbfu, pbbcd, pbbcu, puvfd, puvcd, pnifd, pnicd, &
+             pbbfddir, pbbcddir, puvfddir, puvcddir, pnifddir, pnicddir)
+
+      use parrrsw, only : nbndsw, ngptsw
+
+      integer(kind=im), intent(in) :: nlay, nlayers, istart, iend, icpr, iout
+      integer(kind=im), intent(in) :: laytrop(i_vec), jp(nlay+1,i_vec), jt(nlay+1,i_vec), jt1(nlay+1,i_vec)
+      integer(kind=im), intent(in) :: indself(nlay+1,i_vec), indfor(nlay+1,i_vec)
+      real(kind=rb), intent(in) :: palbd(i_vec,nbndsw), palbp(i_vec,nbndsw), prmu0(i_vec), adjflux(:)
+      real(kind=rb), intent(in) :: pcldfmc(i_vec,nlay+1,ngptsw), ptaucmc(i_vec,nlay+1,ngptsw), ptaormc(i_vec,nlay+1,ngptsw)
+      real(kind=rb), intent(in) :: pasycmc(i_vec,nlay+1,ngptsw), pomgcmc(i_vec,nlay+1,ngptsw)
+      real(kind=rb), intent(inout) :: ztaug(i_vec,nlay+1,ngptsw), ztaur(i_vec,nlay+1,ngptsw)
+      real(kind=rb), intent(in) :: ptaua(i_vec,nlay+1,nbndsw), pasya(i_vec,nlay+1,nbndsw), pomga(i_vec,nlay+1,nbndsw)
+      real(kind=rb), intent(in) :: co2mult(nlay+1,i_vec), colch4(nlay+1,i_vec), colco2(nlay+1,i_vec), colh2o(nlay+1,i_vec)
+      real(kind=rb), intent(in) :: colmol(nlay+1,i_vec), coln2o(nlay+1,i_vec), colo2(nlay+1,i_vec), colo3(nlay+1,i_vec)
+      real(kind=rb), intent(in) :: fac00(nlay+1,i_vec), fac01(nlay+1,i_vec), fac10(nlay+1,i_vec), fac11(nlay+1,i_vec)
+      real(kind=rb), intent(in) :: selffac(nlay+1,i_vec), selffrac(nlay+1,i_vec), forfac(nlay+1,i_vec), forfrac(nlay+1,i_vec)
+      real(kind=rb), intent(out) :: pbbfd(i_vec,nlay+2), pbbfu(i_vec,nlay+2), pbbcd(i_vec,nlay+2), pbbcu(i_vec,nlay+2)
+      real(kind=rb), intent(out) :: puvfd(i_vec,nlay+2), puvcd(i_vec,nlay+2), pnifd(i_vec,nlay+2), pnicd(i_vec,nlay+2)
+      real(kind=rb), intent(out) :: pbbfddir(i_vec,nlay+2), pbbcddir(i_vec,nlay+2), puvfddir(i_vec,nlay+2), puvcddir(i_vec,nlay+2)
+      real(kind=rb), intent(out) :: pnifddir(i_vec,nlay+2), pnicddir(i_vec,nlay+2)
+
+      logical :: lrtchkclr(i_vec,nlayers), lrtchkcld(i_vec,nlayers), lhas_cld
+      integer(kind=im) :: klev, ib1, ib2, ibm, igt, ikl, iw, jb, jg, jk, ic
+      real(kind=rb) :: zclear, zcloud, zf, zwf, repclc, zdbtmc_v(i_vec), zdbtmo_v(i_vec), zincflx(i_vec)
+      real(kind=rb) :: zdbt(i_vec,nlayers+1), zdbt_nodel(i_vec,nlayers+1), zdbtc(i_vec,nlayers+1)
+      real(kind=rb) :: zgcc(i_vec,nlayers), zgco(i_vec,nlayers), zomcc(i_vec,nlayers), zomco(i_vec,nlayers)
+      real(kind=rb) :: ztauc(i_vec,nlayers), ztauo(i_vec,nlayers), zrdnd(i_vec,nlayers+1), zrdndc(i_vec,nlayers+1)
+      real(kind=rb) :: zref(i_vec,nlayers+1), zrefc(i_vec,nlayers+1), zrefo(i_vec,nlayers+1)
+      real(kind=rb) :: zrefd(i_vec,nlayers+1), zrefdc(i_vec,nlayers+1), zrefdo(i_vec,nlayers+1)
+      real(kind=rb) :: zrup(i_vec,nlayers+1), zrupd(i_vec,nlayers+1), zrupc(i_vec,nlayers+1), zrupdc(i_vec,nlayers+1)
+      real(kind=rb) :: ztdbt(i_vec,nlayers+1), ztdbtc(i_vec,nlayers+1), ztdbt_nodel(i_vec,nlayers+1), ztdbtc_nodel(i_vec,nlayers+1)
+      real(kind=rb) :: ztra(i_vec,nlayers+1), ztrac(i_vec,nlayers+1), ztrao(i_vec,nlayers+1)
+      real(kind=rb) :: ztrad(i_vec,nlayers+1), ztradc(i_vec,nlayers+1), ztrado(i_vec,nlayers+1)
+      real(kind=rb) :: ztaug_col(nlayers,ngptsw), ztaur_col(nlayers,ngptsw), zsflx_col(ngptsw), zsflxzen(i_vec,ngptsw)
+      real(kind=rb) :: zcd(i_vec,nlayers+1), zcu(i_vec,nlayers+1), zfd(i_vec,nlayers+1), zfu(i_vec,nlayers+1), ztdn(i_vec,nlayers+1)
+
+      ib1 = istart; ib2 = iend; klev = nlayers; repclc = 1.e-12_rb
+
+      pbbcd = 0._rb; pbbcu = 0._rb
+      pbbfd = 0._rb; pbbfu = 0._rb
+      pbbcddir = 0._rb; pbbfddir = 0._rb
+      puvcd = 0._rb; puvfd = 0._rb
+      puvcddir = 0._rb; puvfddir = 0._rb
+      pnicd = 0._rb; pnifd = 0._rb
+      pnicddir = 0._rb; pnifddir = 0._rb
+
+      do ic = 1, i_vec
+         call taumol_sw(klev, colh2o(1:klev,ic), colco2(1:klev,ic), colch4(1:klev,ic), &
+                        colo2(1:klev,ic), colo3(1:klev,ic), colmol(1:klev,ic), laytrop(ic), &
+                        jp(1:klev,ic), jt(1:klev,ic), jt1(1:klev,ic), &
+                        fac00(1:klev,ic), fac01(1:klev,ic), fac10(1:klev,ic), fac11(1:klev,ic), &
+                        selffac(1:klev,ic), selffrac(1:klev,ic), indself(1:klev,ic), &
+                        forfac(1:klev,ic), forfrac(1:klev,ic), indfor(1:klev,ic), &
+                        zsflx_col, ztaug_col, ztaur_col)
+         zsflxzen(ic,1:ngptsw) = zsflx_col(1:ngptsw)
+         ztaug(ic,1:klev,1:ngptsw) = ztaug_col(1:klev,1:ngptsw)
+         ztaur(ic,1:klev,1:ngptsw) = ztaur_col(1:klev,1:ngptsw)
+      enddo
+      iw = 0
+
+      do jb = ib1, ib2
+         ibm = jb - 15; igt = ngc(ibm)
+         if (iout .gt. 0 .and. ibm .ge. 2) iw = ngs(ibm-1)
+
+         do jg = 1, igt
+            iw = iw + 1
+            lhas_cld = any(pcldfmc(1:i_vec,1:klev,iw) > 0.0_rb)
+
+            do ic = 1, i_vec
+               zincflx(ic) = adjflux(jb) * zsflxzen(ic,iw) * prmu0(ic)
+               ztdbtc(ic,1) = 1.0_rb; ztdbtc_nodel(ic,1) = 1.0_rb
+               zdbtc(ic,klev+1) = 0.0_rb; ztrac(ic,klev+1) = 0.0_rb; ztradc(ic,klev+1) = 0.0_rb
+               zrefc(ic,klev+1) = palbp(ic,ibm); zrefdc(ic,klev+1) = palbd(ic,ibm)
+               zrupc(ic,klev+1) = palbp(ic,ibm); zrupdc(ic,klev+1) = palbd(ic,ibm)
+               ztdbt(ic,1) = 1.0_rb; ztdbt_nodel(ic,1) = 1.0_rb
+               zdbt(ic,klev+1) = 0.0_rb; ztra(ic,klev+1) = 0.0_rb; ztrad(ic,klev+1) = 0.0_rb
+               zref(ic,klev+1) = palbp(ic,ibm); zrefd(ic,klev+1) = palbd(ic,ibm)
+               zrup(ic,klev+1) = palbp(ic,ibm); zrupd(ic,klev+1) = palbd(ic,ibm)
+            enddo
+
+            do jk = 1, klev
+               ikl = klev + 1 - jk
+               do ic = 1, i_vec
+                  lrtchkclr(ic,jk) = .true.
+                  lrtchkcld(ic,jk) = (pcldfmc(ic,ikl,iw) > repclc)
+                  ztauc(ic,jk) = ztaur(ic,ikl,iw) + ztaug(ic,ikl,iw) + ptaua(ic,ikl,ibm)
+                  zomcc(ic,jk) = ztaur(ic,ikl,iw) * 1.0_rb + ptaua(ic,ikl,ibm) * pomga(ic,ikl,ibm)
+                  zgcc(ic,jk) = pasya(ic,ikl,ibm) * pomga(ic,ikl,ibm) * ptaua(ic,ikl,ibm) / zomcc(ic,jk)
+                  zomcc(ic,jk) = zomcc(ic,jk) / ztauc(ic,jk)
+                  zdbtmc_v(ic) = sw_exp1(ztauc(ic,jk) / prmu0(ic))
+                  ztdbtc_nodel(ic,jk+1) = zdbtmc_v(ic) * ztdbtc_nodel(ic,jk)
+               enddo
+
+               if (any(pcldfmc(1:i_vec,ikl,iw) > 0.0_rb)) then
+                  do ic = 1, i_vec
+                     zcloud = pcldfmc(ic,ikl,iw)
+                     zdbtmo_v(ic) = sw_exp1(merge((ztauc(ic,jk) + ptaormc(ic,ikl,iw)) / prmu0(ic), &
+                                                  0.0_rb, zcloud > 0.0_rb))
+                     zdbt_nodel(ic,jk) = merge((1.0_rb - zcloud) * zdbtmc_v(ic) + &
+                                               zcloud * zdbtmo_v(ic), zdbtmc_v(ic), zcloud > 0.0_rb)
+                     ztdbt_nodel(ic,jk+1) = zdbt_nodel(ic,jk) * ztdbt_nodel(ic,jk)
+                  enddo
+               else
+                  do ic = 1, i_vec
+                     zdbt_nodel(ic,jk) = zdbtmc_v(ic)
+                     ztdbt_nodel(ic,jk+1) = zdbtmc_v(ic) * ztdbt_nodel(ic,jk)
+                  enddo
+               endif
+            enddo
+
+            do jk = 1, klev
+               do ic = 1, i_vec
+                  zf = zgcc(ic,jk) * zgcc(ic,jk)
+                  zwf = zomcc(ic,jk) * zf
+                  ztauc(ic,jk) = (1.0_rb - zwf) * ztauc(ic,jk)
+                  zomcc(ic,jk) = (zomcc(ic,jk) - zwf) / (1.0_rb - zwf)
+                  zgcc(ic,jk) = (zgcc(ic,jk) - zf) / (1.0_rb - zf)
+               enddo
+            enddo
+
+            call reftra_sw_vec(klev, lrtchkclr, zgcc, prmu0, ztauc, zomcc, &
+                               zrefc, zrefdc, ztrac, ztradc)
+
+            do jk = 1, klev
+               do ic = 1, i_vec
+                  zdbtc(ic,jk) = sw_exp1(ztauc(ic,jk) / prmu0(ic))
+                  ztdbtc(ic,jk+1) = zdbtc(ic,jk) * ztdbtc(ic,jk)
+               enddo
+            enddo
+
+            call vrtqdr_sw_vec(klev, zrefc, zrefdc, ztrac, ztradc, &
+                               zdbtc, zrdndc, zrupc, zrupdc, ztdbtc, zcd, zcu, ztdn)
+
+            if (lhas_cld) then
+               if (icpr .ge. 1) then
+                  do jk = 1, klev
+                     ikl = klev + 1 - jk
+                     if (any(pcldfmc(1:i_vec,ikl,iw) > 0.0_rb)) then
+                        do ic = 1, i_vec
+                           ztauo(ic,jk) = ztauc(ic,jk) + ptaucmc(ic,ikl,iw)
+                           zomco(ic,jk) = ztauc(ic,jk) * zomcc(ic,jk) + &
+                                          ptaucmc(ic,ikl,iw) * pomgcmc(ic,ikl,iw)
+                           zgco(ic,jk) = (ptaucmc(ic,ikl,iw) * pomgcmc(ic,ikl,iw) * &
+                                          pasycmc(ic,ikl,iw) + &
+                                          ztauc(ic,jk) * zomcc(ic,jk) * zgcc(ic,jk)) / zomco(ic,jk)
+                           zomco(ic,jk) = zomco(ic,jk) / ztauo(ic,jk)
+                        enddo
+                     else
+                        ztauo(1:i_vec,jk) = ztauc(1:i_vec,jk)
+                        zomco(1:i_vec,jk) = zomcc(1:i_vec,jk)
+                        zgco(1:i_vec,jk) = zgcc(1:i_vec,jk)
+                     endif
+                  enddo
+               endif
+
+               call reftra_sw_vec(klev, lrtchkcld, zgco, prmu0, ztauo, zomco, &
+                                  zrefo, zrefdo, ztrao, ztrado)
+
+               do jk = 1, klev
+                  ikl = klev + 1 - jk
+                  if (any(pcldfmc(1:i_vec,ikl,iw) > 0.0_rb)) then
+                     do ic = 1, i_vec
+                        zcloud = pcldfmc(ic,ikl,iw)
+                        zdbtmo_v(ic) = sw_exp1(merge(ztauo(ic,jk) / prmu0(ic), 0.0_rb, zcloud > 0.0_rb))
+                        if (zcloud > 0.0_rb) then
+                           zclear = 1.0_rb - zcloud
+                           zref(ic,jk) = zclear * zrefc(ic,jk) + zcloud * zrefo(ic,jk)
+                           zrefd(ic,jk) = zclear * zrefdc(ic,jk) + zcloud * zrefdo(ic,jk)
+                           ztra(ic,jk) = zclear * ztrac(ic,jk) + zcloud * ztrao(ic,jk)
+                           ztrad(ic,jk) = zclear * ztradc(ic,jk) + zcloud * ztrado(ic,jk)
+                           zdbt(ic,jk) = zclear * zdbtc(ic,jk) + zcloud * zdbtmo_v(ic)
+                        else
+                           zref(ic,jk) = zrefc(ic,jk); zrefd(ic,jk) = zrefdc(ic,jk)
+                           ztra(ic,jk) = ztrac(ic,jk); ztrad(ic,jk) = ztradc(ic,jk)
+                           zdbt(ic,jk) = zdbtc(ic,jk)
+                        endif
+                        ztdbt(ic,jk+1) = zdbt(ic,jk) * ztdbt(ic,jk)
+                     enddo
+                  else
+                     do ic = 1, i_vec
+                        zref(ic,jk) = zrefc(ic,jk); zrefd(ic,jk) = zrefdc(ic,jk)
+                        ztra(ic,jk) = ztrac(ic,jk); ztrad(ic,jk) = ztradc(ic,jk)
+                        zdbt(ic,jk) = zdbtc(ic,jk)
+                        ztdbt(ic,jk+1) = zdbtc(ic,jk) * ztdbt(ic,jk)
+                     enddo
+                  endif
+               enddo
+
+               call vrtqdr_sw_vec(klev, zref, zrefd, ztra, ztrad, &
+                                  zdbt, zrdnd, zrup, zrupd, ztdbt, zfd, zfu, ztdn)
+            else
+               zfd(1:i_vec,1:klev+1) = zcd(1:i_vec,1:klev+1)
+               zfu(1:i_vec,1:klev+1) = zcu(1:i_vec,1:klev+1)
+            endif
+
+            do jk = 1, klev + 1
+               ikl = klev + 2 - jk
+               do ic = 1, i_vec
+                  pbbfu(ic,ikl) = pbbfu(ic,ikl) + zincflx(ic) * zfu(ic,jk)
+                  pbbfd(ic,ikl) = pbbfd(ic,ikl) + zincflx(ic) * zfd(ic,jk)
+                  pbbcu(ic,ikl) = pbbcu(ic,ikl) + zincflx(ic) * zcu(ic,jk)
+                  pbbcd(ic,ikl) = pbbcd(ic,ikl) + zincflx(ic) * zcd(ic,jk)
+                  pbbfddir(ic,ikl) = pbbfddir(ic,ikl) + zincflx(ic) * ztdbt_nodel(ic,jk)
+                  pbbcddir(ic,ikl) = pbbcddir(ic,ikl) + zincflx(ic) * ztdbtc_nodel(ic,jk)
+               enddo
+            enddo
+
+            if (ibm >= 10 .and. ibm <= 13) then
+               do jk = 1, klev + 1
+                  ikl = klev + 2 - jk
+                  do ic = 1, i_vec
+                     puvcd(ic,ikl) = puvcd(ic,ikl) + zincflx(ic) * zcd(ic,jk)
+                     puvfd(ic,ikl) = puvfd(ic,ikl) + zincflx(ic) * zfd(ic,jk)
+                     puvcddir(ic,ikl) = puvcddir(ic,ikl) + zincflx(ic) * ztdbtc_nodel(ic,jk)
+                     puvfddir(ic,ikl) = puvfddir(ic,ikl) + zincflx(ic) * ztdbt_nodel(ic,jk)
+                  enddo
+               enddo
+            elseif (ibm == 14 .or. ibm <= 9) then
+               do jk = 1, klev + 1
+                  ikl = klev + 2 - jk
+                  do ic = 1, i_vec
+                     pnicd(ic,ikl) = pnicd(ic,ikl) + zincflx(ic) * zcd(ic,jk)
+                     pnifd(ic,ikl) = pnifd(ic,ikl) + zincflx(ic) * zfd(ic,jk)
+                     pnicddir(ic,ikl) = pnicddir(ic,ikl) + zincflx(ic) * ztdbtc_nodel(ic,jk)
+                     pnifddir(ic,ikl) = pnifddir(ic,ikl) + zincflx(ic) * ztdbt_nodel(ic,jk)
+                  enddo
+               enddo
+            endif
+         enddo
+      enddo
+
+      end subroutine spcvmc_sw_vec
+! END LICENSE
+
+
       end module rrtmg_sw_rad
 
 !------------------------------------------------------------------
@@ -10018,7 +10576,9 @@ USE module_state_description, ONLY : FER_MP_HIRES, FER_MP_HIRES_ADVECT
 #endif
 !USE module_dm
 
-use parrrsw, only : nbndsw, ngptsw, naerec
+! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+use parrrsw, only : nbndsw, ngptsw, naerec, i_vec
+! END LICENSE
 use rrtmg_sw_init, only: rrtmg_sw_ini
 use rrtmg_sw_rad, only: rrtmg_sw
 use mcica_subcol_gen_sw, only: mcica_subcol_sw
@@ -10425,6 +10985,21 @@ CONTAINS
                                                             scon, &  
                                                   snow_mass_factor
     integer ::                                            dyofyr
+    ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+    integer :: nbuf, ii_b(i_vec), jj_b(i_vec)
+    real :: scon_b
+    real, dimension(i_vec) :: coszrs_b, tsfc_b, coszen_b, asdir_b, asdif_b, aldir_b, aldif_b
+    real, dimension(i_vec, kts:kte+2) :: plev_b, tlev_b, swuflx_b, swdflx_b, swuflxc_b, swdflxc_b
+    real, dimension(i_vec, kts:kte+2) :: swuflxcln_b, swdflxcln_b, swdkdir_b, swdkdif_b, swdkdirc_b
+    real, dimension(i_vec, kts:kte+2) :: sibvisdir_b, sibvisdif_b, sibnirdir_b, sibnirdif_b
+    real, dimension(i_vec, kts:kte+1) :: play_b, tlay_b, h2ovmr_b, o3vmr_b, co2vmr_b, o2vmr_b
+    real, dimension(i_vec, kts:kte+1) :: ch4vmr_b, n2ovmr_b, relqmcl_b, reicmcl_b, resnmcl_b
+    real, dimension(i_vec, kts:kte+1) :: swhr_b, swhrc_b
+    real, allocatable, dimension(:,:,:) :: cldfmcl_b, clwpmcl_b, ciwpmcl_b, cswpmcl_b
+    real, allocatable, dimension(:,:,:) :: taucmcl_b, ssacmcl_b, asmcmcl_b, fsfcmcl_b
+    real, dimension(i_vec, kts:kte+1, nbndsw) :: tauaer_b, ssaaer_b, asmaer_b
+    real, dimension(i_vec, kts:kte+1, naerec) :: ecaer_b
+    ! END LICENSE
 
     integer:: idx_rei
     real:: corr
@@ -10571,6 +11146,9 @@ CONTAINS
 ! Pressures are in mb
 
 ! latitude loop
+  ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+  nbuf = 0; scon_b = 0.0
+  ! END LICENSE
   j_loop: do j = jts,jte
 
 ! longitude loop
@@ -11459,92 +12037,44 @@ CONTAINS
       endif
       ENDIF
 
-! Call RRTMG shortwave radiation model
-
-         call rrtmg_sw &
-            (ncol    ,nlay    ,icld    , &
-             play    ,plev    ,tlay    ,tlev    ,tsfc   , &
-             h2ovmr , o3vmr   ,co2vmr  ,ch4vmr  ,n2ovmr ,o2vmr , &
-             asdir   ,asdif   ,aldir   ,aldif   , &
-             coszen  ,adjes   ,dyofyr  ,scon    , &
-             inflgsw ,iceflgsw,liqflgsw,cldfmcl , &
-             taucmcl ,ssacmcl ,asmcmcl ,fsfcmcl , &
-             ciwpmcl ,clwpmcl ,cswpmcl, reicmcl ,relqmcl ,resnmcl, &
-             tauaer  ,ssaaer  ,asmaer  ,ecaer   , &
-             swuflx  ,swdflx  ,swhr    ,swuflxc ,swdflxc ,swhrc, swuflxcln, swdflxcln, aer_opt, &
-! -----      Zhenxin added for ssib coupiling 2011-06-20 --------!
-             sibvisdir, sibvisdif, sibnirdir, sibnirdif,         &
-! --------------------   End of addiation by Zhenxin 2011-06-20 ------!
-             swdkdir, swdkdif,                     &  ! jararias, 2012/08/10
-             swdkdirc                              &  ! PAJ
-             ,calc_clean_atm_diag                 &
-             ,loc_sw_zbbcddir                      &  ! WRF-CMAQ twoway coupled model
-             ,loc_sw_dirdflux                      &  ! WRF-CMAQ twoway coupled model
-             ,loc_sw_difdflux                      &  ! WRF-CMAQ twoway coupled model
-                                                   )
-
-         ! WRF-CMAQ twoway coupled model
-         if (present(sw_zbbcddir)) then
-            sw_zbbcddir(i,j) = loc_sw_zbbcddir
-            sw_dirdflux(i,j) = loc_sw_dirdflux
-            sw_difdflux(i,j) = loc_sw_difdflux
-         end if
-
-! Output net absorbed shortwave surface flux and shortwave cloud forcing
-! at the top of atmosphere (W/m2)
-         gsw(i,j) = swdflx(1,1) - swuflx(1,1)
-         swcf(i,j) = (swdflx(1,kte+2) - swuflx(1,kte+2)) - (swdflxc(1,kte+2) - swuflxc(1,kte+2))
-
-         if (present(swupt)) then 
-! Output up and down toa fluxes for total and clear sky
-            swupt(i,j)     = swuflx(1,kte+2)
-            swuptc(i,j)    = swuflxc(1,kte+2)
-            swdnt(i,j)     = swdflx(1,kte+2)
-            swdntc(i,j)    = swdflxc(1,kte+2)
-! Output up and down surface fluxes for total and clear sky
-            swupb(i,j)     = swuflx(1,1)
-            swupbc(i,j)    = swuflxc(1,1)
-            swdnb(i,j)     = swdflx(1,1)
-! Added by Zhenxin for 4 compenants of swdown radiation
-            swvisdir(i,j)  = sibvisdir(1,1)
-            swvisdif(i,j)  = sibvisdif(1,1)
-            swnirdir(i,j)  = sibnirdir(1,1)
-            swnirdif(i,j)  = sibnirdif(1,1)
-!  Ended, Zhenxin (2011/06/20)
-            swdnbc(i,j)    = swdflxc(1,1)
-            if(calc_clean_atm_diag .gt. 0)then
-            	swuptcln(i,j)  = swuflxcln(1,kte+2)
-            	swdntcln(i,j)  = swdflxcln(1,kte+2)
-            	swupbcln(i,j)  = swuflxcln(1,1)
-            	swdnbcln(i,j)  = swdflxcln(1,1)
-            end if
+! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+! Gather sunlit column into i_vec batch buffer for RRTMG shortwave solver
+         if (nbuf > 0 .and. scon /= scon_b) call flush_sw_batch()
+         if (.not. allocated(cldfmcl_b)) then
+            allocate(cldfmcl_b(ngptsw,i_vec,kts:kte+1), clwpmcl_b(ngptsw,i_vec,kts:kte+1), &
+                     ciwpmcl_b(ngptsw,i_vec,kts:kte+1), cswpmcl_b(ngptsw,i_vec,kts:kte+1), &
+                     taucmcl_b(ngptsw,i_vec,kts:kte+1), ssacmcl_b(ngptsw,i_vec,kts:kte+1), &
+                     asmcmcl_b(ngptsw,i_vec,kts:kte+1), fsfcmcl_b(ngptsw,i_vec,kts:kte+1))
+! END LICENSE
          endif
-            swddir(i,j)    = swdkdir(1,1)          ! jararias 2013/08/10
-            swddni(i,j)    = swddir(i,j) / coszrs  ! jararias 2013/08/10
-            swddif(i,j)    = swdkdif(1,1)          ! jararias 2013/08/10
-            swdownc(i, j)  = swdflxc(1,1)          ! PAJ: clear-sky GHI
-            swddirc(i,j)   = swdkdirc(1,1)         ! PAJ: clear-sky direct normal irradiance
-            swddnic(i,j)   = swddirc(i,j) / coszrs ! PAJ: clear-sky direct normal irradiance
-
-! Output up and down layer fluxes for total and clear sky.
-! Vertical ordering is from bottom to top in units of W m-2. 
-         if ( present (swupflx) ) then
-         do k=kts,kte+2
-            swupflx(i,k,j)  = swuflx(1,k)
-            swupflxc(i,k,j) = swuflxc(1,k)
-            swdnflx(i,k,j)  = swdflx(1,k)
-            swdnflxc(i,k,j) = swdflxc(1,k)
-         enddo
-         endif
-
-! Output heating rate tendency; convert heating rate from K/d to K/s
-! Heating rate arrays are ordered vertically from bottom to top here. 
-         do k=kts,kte 
-            tten1d(k) = swhr(ncol,k)/86400.
-            rthratensw(i,k,j) = tten1d(k)/pi3d(i,k,j)
-            tten1d(k) = swhrc(ncol,k)/86400.
-            rthratenswc(i,k,j) = tten1d(k)/pi3d(i,k,j)
-         enddo
+         ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+         nbuf = nbuf + 1
+         ii_b(nbuf) = i; jj_b(nbuf) = j; coszrs_b(nbuf) = coszrs; scon_b = scon
+         tsfc_b(nbuf) = tsfc(1); coszen_b(nbuf) = coszen(1)
+         asdir_b(nbuf) = asdir(1); asdif_b(nbuf) = asdif(1)
+         aldir_b(nbuf) = aldir(1); aldif_b(nbuf) = aldif(1)
+         plev_b(nbuf,kts:kte+2) = plev(1,kts:kte+2); tlev_b(nbuf,kts:kte+2) = tlev(1,kts:kte+2)
+         play_b(nbuf,kts:kte+1) = play(1,kts:kte+1); tlay_b(nbuf,kts:kte+1) = tlay(1,kts:kte+1)
+         h2ovmr_b(nbuf,kts:kte+1) = h2ovmr(1,kts:kte+1); o3vmr_b(nbuf,kts:kte+1) = o3vmr(1,kts:kte+1)
+         co2vmr_b(nbuf,kts:kte+1) = co2vmr(1,kts:kte+1); ch4vmr_b(nbuf,kts:kte+1) = ch4vmr(1,kts:kte+1)
+         n2ovmr_b(nbuf,kts:kte+1) = n2ovmr(1,kts:kte+1); o2vmr_b(nbuf,kts:kte+1) = o2vmr(1,kts:kte+1)
+         reicmcl_b(nbuf,kts:kte+1) = reicmcl(1,kts:kte+1)
+         relqmcl_b(nbuf,kts:kte+1) = relqmcl(1,kts:kte+1)
+         resnmcl_b(nbuf,kts:kte+1) = resnmcl(1,kts:kte+1)
+         cldfmcl_b(:,nbuf,kts:kte+1) = cldfmcl(:,1,kts:kte+1)
+         taucmcl_b(:,nbuf,kts:kte+1) = taucmcl(:,1,kts:kte+1)
+         ssacmcl_b(:,nbuf,kts:kte+1) = ssacmcl(:,1,kts:kte+1)
+         asmcmcl_b(:,nbuf,kts:kte+1) = asmcmcl(:,1,kts:kte+1)
+         fsfcmcl_b(:,nbuf,kts:kte+1) = fsfcmcl(:,1,kts:kte+1)
+         ciwpmcl_b(:,nbuf,kts:kte+1) = ciwpmcl(:,1,kts:kte+1)
+         clwpmcl_b(:,nbuf,kts:kte+1) = clwpmcl(:,1,kts:kte+1)
+         cswpmcl_b(:,nbuf,kts:kte+1) = cswpmcl(:,1,kts:kte+1)
+         tauaer_b(nbuf,kts:kte+1,:) = tauaer(1,kts:kte+1,:)
+         ssaaer_b(nbuf,kts:kte+1,:) = ssaaer(1,kts:kte+1,:)
+         asmaer_b(nbuf,kts:kte+1,:) = asmaer(1,kts:kte+1,:)
+         ecaer_b(nbuf,kts:kte+1,:) = ecaer(1,kts:kte+1,:)
+         if (nbuf == i_vec .or. present(sw_zbbcddir)) call flush_sw_batch()
+         ! END LICENSE
       else
 
          if (proceed_cmaq_sw) then   ! this is for WRF-CMAQ twoway coupled model
@@ -11599,9 +12129,97 @@ CONTAINS
 !
       end do i_loop
    end do j_loop                                           
-
+   ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+   if (nbuf > 0) call flush_sw_batch()
+   ! END LICENSE
 
 !-------------------------------------------------------------------
+! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+! Flush up to i_vec gathered sunlit columns through rrtmg_sw and scatter
+! total/clear-sky surface fluxes, direct/diffuse partitions, vertical flux
+! profiles, and heating rate tendencies back into tile arrays.
+!-------------------------------------------------------------------
+   CONTAINS
+
+      SUBROUTINE flush_sw_batch()
+         integer :: ibc, ii, jj, kk
+         real :: cz
+
+! Call RRTMG shortwave radiation model
+         call rrtmg_sw &
+            (nbuf, nlay, icld, play_b, plev_b, tlay_b, tlev_b, tsfc_b, &
+             h2ovmr_b, o3vmr_b, co2vmr_b, ch4vmr_b, n2ovmr_b, o2vmr_b, &
+             asdir_b, asdif_b, aldir_b, aldif_b, coszen_b, adjes, dyofyr, scon_b, &
+             inflgsw, iceflgsw, liqflgsw, cldfmcl_b, taucmcl_b, ssacmcl_b, asmcmcl_b, fsfcmcl_b, &
+             ciwpmcl_b, clwpmcl_b, cswpmcl_b, reicmcl_b, relqmcl_b, resnmcl_b, &
+             tauaer_b, ssaaer_b, asmaer_b, ecaer_b, &
+             swuflx_b, swdflx_b, swhr_b, swuflxc_b, swdflxc_b, swhrc_b, &
+             swuflxcln_b, swdflxcln_b, aer_opt, &
+! -----      Zhenxin added for ssib coupiling 2011-06-20 --------!
+             sibvisdir_b, sibvisdif_b, sibnirdir_b, sibnirdif_b, &
+! --------------------   End of addiation by Zhenxin 2011-06-20 ------!
+             swdkdir_b, swdkdif_b, &  ! jararias, 2012/08/10
+             swdkdirc_b, &  ! PAJ
+             calc_clean_atm_diag, &
+             loc_sw_zbbcddir, &  ! WRF-CMAQ twoway coupled model
+             loc_sw_dirdflux, &  ! WRF-CMAQ twoway coupled model
+             loc_sw_difdflux)    ! WRF-CMAQ twoway coupled model
+
+         do ibc = 1, nbuf
+            ii = ii_b(ibc); jj = jj_b(ibc); cz = coszrs_b(ibc)
+            ! WRF-CMAQ twoway coupled model
+            if (present(sw_zbbcddir)) then
+               sw_zbbcddir(ii,jj) = loc_sw_zbbcddir
+               sw_dirdflux(ii,jj) = loc_sw_dirdflux
+               sw_difdflux(ii,jj) = loc_sw_difdflux
+            endif
+! Output net absorbed shortwave surface flux and shortwave cloud forcing
+! at the top of atmosphere (W/m2)
+            gsw(ii,jj) = swdflx_b(ibc,1) - swuflx_b(ibc,1)
+            swcf(ii,jj) = (swdflx_b(ibc,kte+2) - swuflx_b(ibc,kte+2)) - &
+                          (swdflxc_b(ibc,kte+2) - swuflxc_b(ibc,kte+2))
+            if (present(swupt)) then
+! Output up and down toa fluxes for total and clear sky
+               swupt(ii,jj) = swuflx_b(ibc,kte+2); swuptc(ii,jj) = swuflxc_b(ibc,kte+2)
+               swdnt(ii,jj) = swdflx_b(ibc,kte+2); swdntc(ii,jj) = swdflxc_b(ibc,kte+2)
+! Output up and down surface fluxes for total and clear sky
+               swupb(ii,jj) = swuflx_b(ibc,1); swupbc(ii,jj) = swuflxc_b(ibc,1)
+               swdnb(ii,jj) = swdflx_b(ibc,1); swdnbc(ii,jj) = swdflxc_b(ibc,1)
+! Added by Zhenxin for 4 compenants of swdown radiation
+               swvisdir(ii,jj) = sibvisdir_b(ibc,1); swvisdif(ii,jj) = sibvisdif_b(ibc,1)
+               swnirdir(ii,jj) = sibnirdir_b(ibc,1); swnirdif(ii,jj) = sibnirdif_b(ibc,1)
+!  Ended, Zhenxin (2011/06/20)
+               if (calc_clean_atm_diag .gt. 0) then
+                  swuptcln(ii,jj) = swuflxcln_b(ibc,kte+2); swdntcln(ii,jj) = swdflxcln_b(ibc,kte+2)
+                  swupbcln(ii,jj) = swuflxcln_b(ibc,1); swdnbcln(ii,jj) = swdflxcln_b(ibc,1)
+               endif
+            endif
+            swddir(ii,jj) = swdkdir_b(ibc,1)    ! jararias 2013/08/10
+            swddni(ii,jj) = swddir(ii,jj) / cz  ! jararias 2013/08/10
+            swddif(ii,jj) = swdkdif_b(ibc,1)    ! jararias 2013/08/10
+            swdownc(ii,jj) = swdflxc_b(ibc,1)   ! PAJ: clear-sky GHI
+            swddirc(ii,jj) = swdkdirc_b(ibc,1)  ! PAJ: clear-sky direct normal irradiance
+            swddnic(ii,jj) = swddirc(ii,jj) / cz ! PAJ: clear-sky direct normal irradiance
+! Output up and down layer fluxes for total and clear sky.
+! Vertical ordering is from bottom to top in units of W m-2.
+            if (present(swupflx)) then
+               do kk = kts, kte + 2
+                  swupflx(ii,kk,jj) = swuflx_b(ibc,kk); swupflxc(ii,kk,jj) = swuflxc_b(ibc,kk)
+                  swdnflx(ii,kk,jj) = swdflx_b(ibc,kk); swdnflxc(ii,kk,jj) = swdflxc_b(ibc,kk)
+               enddo
+            endif
+! Output heating rate tendency; convert heating rate from K/d to K/s
+! Heating rate arrays are ordered vertically from bottom to top here.
+            do kk = kts, kte
+               tten1d(kk) = swhr_b(ibc,kk) / 86400.
+               rthratensw(ii,kk,jj) = tten1d(kk) / pi3d(ii,kk,jj)
+               tten1d(kk) = swhrc_b(ibc,kk) / 86400.
+               rthratenswc(ii,kk,jj) = tten1d(kk) / pi3d(ii,kk,jj)
+            enddo
+         enddo
+         nbuf = 0
+      END SUBROUTINE flush_sw_batch
+! END LICENSE
 
    END SUBROUTINE RRTMG_SWRAD
 

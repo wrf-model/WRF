@@ -55,7 +55,8 @@ CONTAINS
                  ,bl_mynn_edmf,bl_mynn_edmf_dd                     &
                  ,bl_mynn_edmf_mom,bl_mynn_edmf_tke                &
                  ,bl_mynn_mixscalars,bl_mynn_mixaerosols           &
-                 ,bl_mynn_mixnumcon,bl_mynn_output                 &
+                 ,bl_mynn_mixnumcon                                &
+                 ,bl_mynn_diags2d,bl_mynn_diags3d                  &
                  ,bl_mynn_cloudmix,bl_mynn_mixqt,bl_mynn_ess       &
                  ,edmf_a,edmf_w,edmf_thl                           &
                  ,edmf_qt,edmf_ent,edmf_qc                         &
@@ -66,6 +67,8 @@ CONTAINS
                  ,excess_h,excess_q                                &
                  ,maxmf_dd,maxwidth_dd,maxtkeprod                  &
                  ,cldtop_cooling,ent_eff                           &
+                 ,lwp_bl,iwp_bl,swp_bl,cldceil,wspd10,wspd80       &
+                 ,wspd160,maxcldfra,maxcldfra_pbl                  &
                  ,spp_pbl,pattern_spp_pbl                          &
               ! EEPS
                  ,pek,pep,pek_adv,pep_adv                          &
@@ -601,7 +604,8 @@ CONTAINS
                                      bl_mynn_mixscalars,       &
                                      bl_mynn_mixaerosols,      &
                                      bl_mynn_mixnumcon,        &
-                                     bl_mynn_output,           &
+                                     bl_mynn_diags2d,          &
+                                     bl_mynn_diags3d,          &
                                      bl_mynn_cloudmix,         &
                                      bl_mynn_mixqt,            &
                                      bl_mynn_ess,              &
@@ -616,9 +620,14 @@ CONTAINS
    REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,              &
         &    INTENT(INOUT)::                               vdfg
    REAL, OPTIONAL, DIMENSION( ims:ime , jms:jme ),              &
-        &    INTENT(OUT) ::          maxwidth,maxMF,ztop_plume, &
-                    maxmf_dd,maxtkeprod,cldtop_cooling,ent_eff, &
-                                 maxwidth_dd,excess_h,excess_q
+             INTENT(OUT) ::    maxwidth,maxMF,ztop_plume,       &
+                               maxmf_dd,maxtkeprod,             &
+                               cldtop_cooling,ent_eff,          &
+                               maxwidth_dd,excess_h,excess_q,   &
+                               cldceil,wspd10,wspd80,wspd160
+   REAL, OPTIONAL, DIMENSION( ims:ime , jms:jme ),              &
+           INTENT(INOUT) ::    lwp_bl,iwp_bl,swp_bl,            &
+                               maxcldfra,maxcldfra_pbl
 
     REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ),     &
            INTENT(INOUT) ::         qnwfa_curr,qnifa_curr,qnbca_curr
@@ -852,6 +861,7 @@ CONTAINS
    LOGICAL :: flag_myjsfc
    LOGICAL :: flag_qv, flag_qc, flag_qr, flag_qi, flag_qs, flag_qg, &
               flag_qnc,flag_qni, flag_qnwfa, flag_qnifa, flag_qnbca
+   LOGICAL, parameter:: flag_qoz=.false.
    CHARACTER*256 :: message
    REAL    :: next_bl_time
    LOGICAL :: run_param , doing_adapt_dt , decided
@@ -1693,23 +1703,23 @@ CONTAINS
 
               CALL mynnedmf_driver(                                      &
                    &initflag=initflag,restart=restart,cycling=cycling,   &
-                   &delt=dtbl,dz=dz8w,dxc=dx,znt=znt,                    &
+                   &delt=dtbl,dz=dz8w,dx=dx2d,znt=znt,                   &
                    &u=u_phy,v=v_phy,w=w,th=th_phy,qv=qv_curr,            &
                    &qc=qc_curr,qi=qi_curr,qs=qs_curr,                    &
                    &qnc=qnc_curr,qni=qni_curr,                           &
                    &QNWFA=qnwfa_curr,QNIFA=qnifa_curr,QNBCA=qnbca_curr,  &
 !                   &ozone=ozone,                                         &
-                   &p=p_phy,exner=pi_phy,rho=rho,T3D=t_phy,              &
+                   &p=p_phy,pint=p8w,exner=pi_phy,rho=rho,tk=t_phy,      &
                    &xland=xland,ts=tsk,qsfc=qsfc,ps=psfc,                &
                    &ust=ust,ch=ch,hfx=hfx,qfx=qfx,wspd=wspd,             &
                    &uoce=uoce,voce=voce,                                 & !Ocean currents
-                   &Qke=qke,qke_adv=qke_adv,Sh3d=Sh3d,Sm3d=Sm3d,         &
+                   &qke=qke,qke_adv=qke_adv,Sh3d=Sh3d,Sm3d=Sm3d,         &
 #if (WRF_CHEM == 1)
                    &mix_chem=mynn_chem_vertmx,                           &
-                   &chem3d=chem,vd3d=vd,nchem=nchem,kdvel=kdvel,         &
-                   &ndvel=ndvel,num_vert_mix=num_vert_mix,               &
+                   &chem3d=chem,vd3d=vd(:,kts,:,:),                      &
+                   &nchem=nchem,ndvel=ndvel,                             &
 !                   &FRP_MEAN=FRP_MEAN,EMIS_ANT_NO=EMIS_ANT_NO,           & !to be included soon
-!                   &fire_turb=enh_vermix,                                & !to be included soon
+!                   &enh_mix=enh_vermix,                                  & !to be included soon
 #endif
                    &Tsq=tsq,Qsq=qsq,Cov=cov,                             &
                    &RUBLTEN=rublten,RVBLTEN=rvblten,RTHBLTEN=rthblten,   &
@@ -1727,13 +1737,17 @@ CONTAINS
                    &qc_bl=qc_bl,qi_bl=qi_bl,cldfra_bl=cldfra_bl,         &
                    &edmf_a=edmf_a,edmf_w=edmf_w,edmf_qt=edmf_qt,         &
                    &edmf_thl=edmf_thl,edmf_ent=edmf_ent,edmf_qc=edmf_qc, &
-                   &sub_thl3D=sub_thl3D,sub_sqv3D=sub_sqv3D,             &
-                   &det_thl3D=det_thl3D,det_sqv3D=det_sqv3D,             &
+                   &sub_thl=sub_thl3D,sub_sqv=sub_sqv3D,                 &
+                   &det_thl=det_thl3D,det_sqv=det_sqv3D,                 &
                    &maxwidth=maxwidth,maxMF=maxMF,                       &
                    &ztop_plume=ztop_plume,maxmf_dd=maxmf_dd,             &
                    &maxtkeprod=maxtkeprod,cldtop_cooling=cldtop_cooling, &
                    &ent_eff=ent_eff,maxwidth_dd=maxwidth_dd,             &
                    &excess_h=excess_h,excess_q=excess_q,                 &
+                   &lwp=lwp_bl,iwp=iwp_bl,swp=swp_bl,                    &
+                   &cldceil=cldceil,wspd10=wspd10,wspd80=wspd80,         &
+                   &wspd160=wspd160,maxcldfra=maxcldfra,                 &
+                   &maxcldfra_pbl=maxcldfra_pbl,                         &
                    &RTHRATEN=RTHRATEN,                                   &
                    &bl_mynn_tkeadvect=bl_mynn_tkeadvect,                 &
                    &tke_budget=tke_budget,                               &
@@ -1746,16 +1760,18 @@ CONTAINS
                    &bl_mynn_mixscalars=bl_mynn_mixscalars,               &
                    &bl_mynn_mixaerosols=bl_mynn_mixaerosols,             &
                    &bl_mynn_mixnumcon=bl_mynn_mixnumcon,                 &
-                   &bl_mynn_output=bl_mynn_output,                       &
+                   &bl_mynn_diags2d=bl_mynn_diags2d,                     &
+                   &bl_mynn_diags3d=bl_mynn_diags3d,                     &
                    &bl_mynn_cloudmix=bl_mynn_cloudmix,                   &
                    &bl_mynn_mixqt=bl_mynn_mixqt,                         &
                    &bl_mynn_closure=bl_mynn_closure,                     &
                    &bl_mynn_ess=bl_mynn_ess,                             &
-                   &spp_pbl=spp_pbl,pattern_spp_pbl=pattern_spp_pbl,     &
-                   &FLAG_QC=flag_qc,FLAG_QI=flag_qi,FLAG_QS=flag_qs,     &
-                   &FLAG_QNC=flag_qnc,FLAG_QNI=flag_qni,                 &
-                   &FLAG_QNWFA=flag_qnwfa,FLAG_QNIFA=flag_qnifa,         &
-                   &FLAG_QNBCA=flag_qnbca,                               &
+                   &spp_pbl=spp_pbl,pattern_spp=pattern_spp_pbl,         &
+                   &F_QC=flag_qc,F_QI=flag_qi,F_QS=flag_qs,              &
+                   &F_QNC=flag_qnc,F_QNI=flag_qni,                       &
+                   &F_QNWFA=flag_qnwfa,F_QNIFA=flag_qnifa,               &
+                   &F_QNBCA=flag_qnbca,F_QOZ=flag_qoz,                   &
+                   &ERRMSG=errmsg,ERRFLG=errflg,                         &
                    &IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde,     &
                    &IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme,     &
                    &ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      )

@@ -86,7 +86,7 @@ CONTAINS
                                   ids, ide, jds, jde, kds, kde, &
                                   ims, ime, jms, jme, kms, kme, &
                                   its, ite, jts, jte, kts, kte, &
-                                  i, j, k, kk
+                                  a, i, j, k, kk
 
    ! Local data
 
@@ -96,11 +96,13 @@ CONTAINS
 
 
    INTEGER :: icm,jcm, ii, im1, jj, jm1, loop, error, fid, nxc, nyc, lm
+   REAL :: div_mag, u_pert, v_pert
    REAL    :: u_mean,v_mean, f0, p_surf, p_level, qvf, z_at_v, z_at_u
-   REAL    :: z_scale, xrad, yrad, zrad, rad, delt, cof1, cof2
+   REAL    :: z_scale, xrad, yrad, zrad, hgt, rad, delt, cof1, cof2
 !   REAL, EXTERNAL :: interp_0
    REAL    :: hm, xa
-   REAL    :: pi, rnd
+   REAL    :: pi, rnd, scaled_rnd
+   INTEGER :: scaled_rand_int, line_fract_pts, line_end_y1, line_end_y2
 
 !  stuff from original initialization that has been dropped from the Registry
    REAL    :: vnu, xnu, xnus, dinit0, cbh, p0_temp, t0_temp, zd, zt
@@ -112,6 +114,17 @@ CONTAINS
    LOGICAL :: moisture_init
    LOGICAL :: stretch_grid, dry_sounding
    character (len=256) :: mminlu2
+
+! Multiple perturbation bubbles in em_quarter_ss
+   REAL, DIMENSION(10) :: pert_x, pert_y, pert_z, pert_dt, pert_width
+   INTEGER :: end_loop_a, internal_i, internal_j, isize,jsize
+   REAL, DIMENSION(2) :: fct1,fct2,fract_to_bdy
+   REAL :: qv_internal
+
+   INTEGER :: seed_size
+   INTEGER, DIMENSION(:), ALLOCATABLE :: rng_seed
+   INTEGER :: k_cent
+   REAL :: min_zrad
 
    REAL    :: xa1, xal1,pii,hm1  !  data for intercomparison setup from dale
 !  space for initial jet in b_wave
@@ -178,6 +191,9 @@ CONTAINS
 
    CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
 
+  isize = ide-ids ! unstaggered size
+  jsize = jde-jds ! unstaggered size
+
   ideal_constants: SELECT CASE ( model_config_rec%ideal_case )
   CASE ( hill2d_x )
    hm = 100.
@@ -205,13 +221,84 @@ CONTAINS
   CASE ( quarter_ss, squall2d_x, squall2d_y )
 
    stretch_grid = .true.
-   delt = 3.
+!   delt = 3.
 !   z_scale = .40
    z_scale = 8000./config_flags%ztop
    pi = 2.*asin(1.0)
    write(6,*) ' pi is ',pi
-   nxc = (ide-ids)/2
-   nyc = (jde-jds)/2
+   IF (config_flags%num_perts > 0) THEN
+      ! The point here is to convert the namelist variables into arrays
+      pert_x(1) = config_flags%pert_1_x
+      pert_x(2) = config_flags%pert_2_x
+      pert_x(3) = config_flags%pert_3_x
+      pert_x(4) = config_flags%pert_4_x
+      pert_x(5) = config_flags%pert_5_x
+      pert_x(6) = config_flags%pert_6_x
+      pert_x(7) = config_flags%pert_7_x
+      pert_x(8) = config_flags%pert_8_x
+      pert_x(9) = config_flags%pert_9_x
+      pert_x(10) = config_flags%pert_10_x
+      pert_y(1) = config_flags%pert_1_y
+      pert_y(2) = config_flags%pert_2_y
+      pert_y(3) = config_flags%pert_3_y
+      pert_y(4) = config_flags%pert_4_y
+      pert_y(5) = config_flags%pert_5_y
+      pert_y(6) = config_flags%pert_6_y
+      pert_y(7) = config_flags%pert_7_y
+      pert_y(8) = config_flags%pert_8_y
+      pert_y(9) = config_flags%pert_9_y
+      pert_y(10) = config_flags%pert_10_y
+      pert_z(1) = config_flags%pert_1_z
+      pert_z(2) = config_flags%pert_2_z
+      pert_z(3) = config_flags%pert_3_z
+      pert_z(4) = config_flags%pert_4_z
+      pert_z(5) = config_flags%pert_5_z
+      pert_z(6) = config_flags%pert_6_z
+      pert_z(7) = config_flags%pert_7_z
+      pert_z(8) = config_flags%pert_8_z
+      pert_z(9) = config_flags%pert_9_z
+      pert_z(10) = config_flags%pert_10_z
+      pert_dt(1) = config_flags%pert_1_delT
+      pert_dt(2) = config_flags%pert_2_delT
+      pert_dt(3) = config_flags%pert_3_delT
+      pert_dt(4) = config_flags%pert_4_delT
+      pert_dt(5) = config_flags%pert_5_delT
+      pert_dt(6) = config_flags%pert_6_delT
+      pert_dt(7) = config_flags%pert_7_delT
+      pert_dt(8) = config_flags%pert_8_delT
+      pert_dt(9) = config_flags%pert_9_delT
+      pert_dt(10) = config_flags%pert_10_delT
+      pert_width(1) = config_flags%pert_1_width
+      pert_width(2) = config_flags%pert_2_width
+      pert_width(3) = config_flags%pert_3_width
+      pert_width(4) = config_flags%pert_4_width
+      pert_width(5) = config_flags%pert_5_width
+      pert_width(6) = config_flags%pert_6_width
+      pert_width(7) = config_flags%pert_7_width
+      pert_width(8) = config_flags%pert_8_width
+      pert_width(9) = config_flags%pert_9_width
+      pert_width(10) = config_flags%pert_10_width
+      end_loop_a = config_flags%num_perts
+   ELSE
+    end_loop_a = 1
+    nxc = (ide-ids)/2
+    nyc = (jde-jds)/2
+    pert_x(1) = nxc
+    pert_y(1) = nyc
+    pert_z(1) = 1500. ! currently overwritten anyway
+    pert_dt(1) = 3.
+    pert_width(1) = 10000.
+   END IF
+
+   ! Initialize random number generator using a fixed sequence that will be repeated every time the program runs
+   CALL random_seed(size=seed_size)
+   ALLOCATE(rng_seed(seed_size))
+   IF (config_flags%line_seed < 0 ) THEN
+      rng_seed = 15571
+   ELSE
+      rng_seed = config_flags%line_seed
+   END IF
+   CALL random_seed(put=rng_seed)
 
   CASE (grav2d_x)
 
@@ -1028,7 +1115,7 @@ CONTAINS
 !  first from the top of the model to the top pressure
     kk = kte-1  ! top level
     k=kk+1
-    qvf1 = 0.5*(moist(i,kk,j,P_QV)+moist(i,kk,j,P_QV))
+    qvf1 = 0.5*(moist(i,k,j,P_QV)+moist(i,kk,j,P_QV))
     qvf2 = 1./(1.+qvf1)
     qvf1 = qvf1*qvf2
     grid%p(i,kk,j) = - 0.5*((grid%c1f(k)*grid%Mu_1(i,j))+qvf1*(grid%c1f(k)*grid%Mub(i,j)+grid%c2f(k)))/grid%rdnw(kk)/qvf2
@@ -1089,37 +1176,101 @@ CONTAINS
   CASE (quarter_ss)
 !  QSS thermal perturbation to kick off convection
 
-  write(6,*) ' nxc, nyc for perturbation ',nxc,nyc
-  write(6,*) ' delt for perturbation ',delt
-
-  DO J = jts, min(jde-1,jte)
-    yrad = config_flags%dy*float(j-nyc)/10000.
-!   yrad = 0.
-    DO I = its, min(ide-1,ite)
-      xrad = config_flags%dx*float(i-nxc)/10000.
-!     xrad = 0.
-      DO K = 1, kte-1
+  DO A = 1,end_loop_a
+    nyc = pert_y(a)
+    nxc = pert_x(a)
+    delt = pert_dt(a)
+    write(6,*) ' nxc, nyc for perturbation #',a,nxc,nyc
+    write(6,*) ' delt for perturbation #',a,delt
+    DO J = jts, min(jde-1,jte)
+      yrad = (config_flags%dy*float(j-nyc)) / pert_width(a) ! bubble width is pert_width(a) [m]
+      IF (config_flags%linear_bubble) THEN
+         line_fract_pts = config_flags%line_fract*((jde-jds)+1)
+         line_end_y1 = nyc-(0.5*line_fract_pts)
+         line_end_y2 = nyc+(0.5*line_fract_pts)
+         IF (ABS(float(j-nyc)) .le. (0.5*line_fract_pts)) THEN
+            yrad = 0.0
+         ELSE IF (j .lt. nyc-(0.5*line_fract_pts)) THEN
+            yrad = (config_flags%dy*float(j-line_end_y1)) / pert_width(a) ! bubble width is pert_width(a) [m]
+         ELSE IF (j .gt. nyc+(0.5*line_fract_pts)) THEN
+            yrad = (config_flags%dy*float(j-line_end_y2)) / pert_width(a) ! bubble width is pert_width(a) [m]
+         END IF
+      END IF
+      DO I = its, min(ide-1,ite)
+        IF (config_flags%linear_bubble) THEN
+           IF (config_flags%line_seed == 0) THEN
+              scaled_rnd = 0.0
+           ELSE
+              CALL RANDOM_NUMBER(rnd)
+              scaled_rnd = 0.25*pert_width(a)*(rnd-0.5)
+           END IF
+           xrad = config_flags%dx*float(i-nxc)/(pert_width(a) + scaled_rnd)
+        ELSE
+           xrad = config_flags%dx*float(i-nxc)/pert_width(a)
+        END IF
+        k_cent = 0
+        min_zrad = 9.E+10
+        DO K = 1, kte-1
 
 !  put in preturbation theta (bubble) and recalc density.  note,
 !  the mass in the column is not changing, so when theta changes,
 !  we recompute density and geopotential
 
-        zrad = 0.5*(grid%ph_1(i,k,j)+grid%ph_1(i,k+1,j)  &
-                   +grid%phb(i,k,j)+grid%phb(i,k+1,j))/g
-        zrad = (zrad-1500.)/1500.
-        RAD=SQRT(xrad*xrad+yrad*yrad+zrad*zrad)
-        IF(RAD <= 1.) THEN
-           grid%t_1(i,k,j)=grid%t_1(i,k,j)+delt*COS(.5*PI*RAD)**2
-           grid%t_2(i,k,j)=grid%t_1(i,k,j)
-           qvf = 1. + rvovrd*moist(i,k,j,P_QV)
-           grid%alt(i,k,j) = (r_d/p1000mb)*(grid%t_1(i,k,j)+t0)*qvf* &
-                        (((grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm)
-           grid%al(i,k,j) = grid%alt(i,k,j) - grid%alb(i,k,j)
-        ENDIF
-      ENDDO
+          hgt = 0.5*(grid%ph_1(i,k,j)+grid%ph_1(i,k+1,j)  &
+                     +grid%phb(i,k,j)+grid%phb(i,k+1,j))/g
+          IF (pert_z(a) >= 0.) THEN
+             zrad = (hgt-pert_z(a))/1500. ! Bubble has 1.5 km vertical radius, centered pert_z above ground
+          ELSE
+             zrad = (hgt-1500)/1500. ! Bubble has 1.5 km vertical radius, centered 1.5 km above ground
+          END IF
+          IF (ABS(zrad) .lt. min_zrad) THEN
+             min_zrad = ABS(zrad)
+             k_cent = k
+          END IF
+          RAD=SQRT(xrad*xrad+yrad*yrad+zrad*zrad)
+          IF(RAD <= 1.) THEN
+             IF (config_flags%linear_bubble) THEN
+                IF (config_flags%line_seed == 0) THEN
+                   scaled_rnd = 0.0
+                ELSE
+                   CALL RANDOM_NUMBER(rnd)
+                   scaled_rnd = 0.5*rnd - 0.5
+                ENDIF
+                grid%t_1(i,k,j)=grid%t_1(i,k,j)+(delt+scaled_rnd)*COS(.5*PI*RAD)**2
+             ELSE
+                grid%t_1(i,k,j)=grid%t_1(i,k,j)+delt*COS(.5*PI*RAD)**2
+             END IF
+             grid%t_2(i,k,j)=grid%t_1(i,k,j)
+             qvf = 1. + rvovrd*moist(i,k,j,P_QV)
+             grid%alt(i,k,j) = (r_d/p1000mb)*(grid%t_1(i,k,j)+t0)*qvf* &
+                          (((grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm)
+             grid%al(i,k,j) = grid%alt(i,k,j) - grid%alb(i,k,j)
+          ENDIF
+        ENDDO ! k
+
+        DO k = 1,kte-1
+        ! Input an updraft core extending from the height of the bubble to the bottom of the model
+        ! Input a Gaussian shaped updraft embryo in the lower troposphere
+          IF (config_flags%init_vv) THEN
+            hgt = 0.5*(grid%ph_1(i,k,j)+grid%ph_1(i,k+1,j) + grid%phb(i,k,j)+grid%phb(i,k+1,j))/g
+            zrad = 0
+            ! Set a maximum altitude of the vertical velocity adjustment to 10 km
+            IF (hgt <= 10000.) zrad = exp(-((hgt-pert_z(1))/config_flags%vv_lz)**2)
+            rad = exp(-(config_flags%dx*(i-pert_x(1))/config_flags%vv_lx)**2) * exp(-(config_flags%dy*(j-pert_y(1))/config_flags%vv_ly)**2) * zrad
+            grid%w_1(i,k,j) = config_flags%init_w_core*rad
+            grid%w_2(i,k,j) = config_flags%init_w_core*rad
+            grid%ww(i,k,j) = config_flags%init_w_core*rad
+          END IF
+        END DO ! k
+
+      END DO ! i
+    END DO ! j
+  END DO ! A - number of perturbation bubbles to create
 
 !  rebalance hydrostatically
 
+  DO J = jts, min(jde-1,jte)
+    DO I = its, min(ide-1,ite)
       DO k = 2,kte
         grid%ph_1(i,k,j) = grid%ph_1(i,k-1,j) - (grid%dnw(k-1))*(       &
                      ((grid%c1h(k-1)*grid%mub(i,j)+grid%c2h(k-1))+(grid%c1h(k-1)*grid%mu_1(i,j)))*grid%al(i,k-1,j)+ &
@@ -1554,13 +1705,37 @@ CONTAINS
   ENDDO
   ENDIF
 
+  ! Modify initial wind field to include a convergence component
+  IF (model_config_rec%ideal_case == quarter_ss .and. config_flags%init_div) THEN
+     div_mag = -0.5*config_flags%init_max_div * 1.0/(1./config_flags%div_lx**2 + 1./config_flags%div_ly**2)
+     DO K = kts,kte
+     DO J = jts,min(jde-1,jte)
+     DO I = its,min(ide-1,ite)
+        rad = &
+              exp(-(config_flags%dx*(i-pert_x(1))/config_flags%div_lx)**2) * &
+              exp(-(config_flags%dy*(j-pert_y(1))/config_flags%div_ly)**2)
+        hgt = 0.5*(grid%ph_1(i,k,j)+grid%ph_1(i,k+1,j) + grid%phb(i,k,j)+grid%phb(i,k+1,j))/g
+        zrad = MAX((config_flags%div_depth - hgt)/config_flags%div_depth,0.)
+        u_pert = -2*zrad*div_mag*(config_flags%dx*(i-pert_x(1))/config_flags%div_lx**2) * rad
+        v_pert = -2*zrad*div_mag*(config_flags%dy*(i-pert_y(1))/config_flags%div_ly**2) * rad
+        grid%u_1(i,k,j) = grid%u_1(i,k,j) + u_pert
+        grid%v_1(i,k,j) = grid%v_1(i,k,j) + v_pert
+        grid%u_2(i,k,j) = grid%u_1(i,k,j)
+        grid%v_2(i,k,j) = grid%v_1(i,k,j)
+     END DO
+     END DO
+     END DO
+  END IF
+
 !  set w
 
   DO J = jts, min(jde-1,jte)
   DO K = kts, kte
   DO I = its, min(ide-1,ite)
-    grid%w_1(i,k,j) = 0.
-    grid%w_2(i,k,j) = 0.
+    IF (.not. config_flags%init_vv) THEN
+       grid%w_2(i,k,j) = 0.
+       grid%w_1(i,k,j) = 0.
+    END IF
   ENDDO
   ENDDO
   ENDDO

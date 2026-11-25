@@ -230,11 +230,15 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
 
    INTEGER ,               INTENT(IN   ) :: n_moist, rk_step
 
+   ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+   REAL , DIMENSION( ims:ime , kms:kme, jms:jme  ) , TARGET ,     &
+                                        INTENT(IN   ) :: ww
+   ! END LICENSE
+
    REAL , DIMENSION( ims:ime , kms:kme, jms:jme  ) ,              &
                                         INTENT(IN   ) :: ru,      &
                                                          rv,      &
                                                          rw,      &
-                                                         ww,      &
                                                          u,       &
                                                          v,       &
                                                          w,       &
@@ -264,8 +268,12 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                                                          rw_tend, &
                                                          t_tend,  &
                                                          ph_tend, &
-                                                         RTHFTEN, &
-                                                          u_save, &
+   ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+                                                         RTHFTEN
+
+   REAL , DIMENSION( ims:ime , kms:kme, jms:jme  ) ,              &
+                                        INTENT(INOUT) ::  u_save, &
+   ! END LICENSE
                                                           v_save, &
                                                           w_save, &
                                                          ph_save, &
@@ -341,7 +349,11 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
    REAL    :: dt_step
 
 ! IEVA declarations
-   REAL , DIMENSION( ims:ime, kms:kme, jms:jme ) :: wwE, wwI  
+   ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+   REAL , DIMENSION( ims:ime, kms:kme, jms:jme ), TARGET :: wwE
+   REAL , DIMENSION( ims:ime, kms:kme, jms:jme )         :: wwI
+   REAL , DIMENSION( :, :, : ), POINTER, CONTIGUOUS      :: ww_ptr
+   ! END LICENSE
    REAL , DIMENSION( ims:ime , jms:jme )         :: mut_old, mut_new                                                              
    REAL , DIMENSION( ims:ime , jms:jme )         :: muu_old, muu_new                                                              
    REAL , DIMENSION( ims:ime , jms:jme )         :: muv_old, muv_new                                                              
@@ -392,6 +404,10 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                     ims, ime, jms, jme, kms, kme, &
                     its, ite, jts, jte, kts, kte )
 
+   ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+   ! rk_tendency physics read zeroed *_save only on rk_step == 1; small_step_prep overwrites *_save before acoustic substeps
+   IF ( rk_step == 1 ) THEN
+   ! END LICENSE
    CALL zero_tend ( u_save,                       &
                     ids, ide, jds, jde, kds, kde, &
                     ims, ime, jms, jme, kms, kme, &
@@ -416,6 +432,9 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                     ids, ide, jds, jde, kds, kde, &
                     ims, ime, jms, jme, kms, kme, &
                     its, ite, jts, jte, kts, kte )
+   ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+   END IF
+   ! END LICENSE
 
    CALL zero_tend2d( mu_tend,                  &
                     ids, ide, jds, jde, 1, 1, &
@@ -433,6 +452,14 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
    dt_step  = dt / (rk_order - rk_step + 1)   ! needed for calculations using sub-rk step
 
                         
+! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+! IEVA ON/OFF
+
+   ieva = CHK_IEVA( config_flags, rk_step )
+
+   IF( ieva ) THEN
+! END LICENSE
+
 ! Code for splitting vertical velocity into ex/im parts
 
    CALL WW_SPLIT(wwE, wwI,                         &
@@ -445,13 +472,10 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                  ids, ide, jds, jde, kds, kde,     &
                  ims, ime, jms, jme, kms, kme,     &
                  its, ite, jts, jte, kts, kte )              
+   ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+   ww_ptr => wwE
+   ! END LICENSE
 
-! IEVA ON/OFF
-   
-   ieva = CHK_IEVA( config_flags, rk_step ) 
-
-   IF( ieva ) THEN
-   
 ! Need an estimate of the mut at the original ('n') time level...
 
    CALL calculate_full( mut_old,  mub, mu_old,     &
@@ -484,13 +508,19 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                        ims, ime, jms, jme, kms, kme, &
                        its, ite, jts, jte, kts, kte )
 
+   ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+   ELSE
+   ww_ptr => ww
+   ! END LICENSE
    ENDIF
 
 ! Okay do normal advection now....using the wwE array
 
    IF( (rk_step == rk_order) .and. ( adv_opt == WENO_MOM ) ) THEN
 
-     CALL advect_weno_u ( u, u , ru_tend, ru, rv, wwE,  &
+     ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+     CALL advect_weno_u ( u, u , ru_tend, ru, rv, ww_ptr,  &
+     ! END LICENSE
                           c1h, c2h,                     &
                           mut, time_step, config_flags, &
                           msfux, msfuy, msfvx, msfvy,   &
@@ -502,7 +532,9 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
 
    ELSE
 
-     CALL advect_u ( u, u , ru_tend, ru, rv, wwE,  &
+     ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+     CALL advect_u ( u, u , ru_tend, ru, rv, ww_ptr,  &
+     ! END LICENSE
                      c1h, c2h,                     &
                      mut, time_step, config_flags, &
                      msfux, msfuy, msfvx, msfvy,   &
@@ -531,7 +563,9 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
 
    IF( (rk_step == rk_order) .and. ( adv_opt == WENO_MOM ) ) THEN
 
-      CALL advect_weno_v ( v, v , rv_tend, ru, rv, wwE,  &
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      CALL advect_weno_v ( v, v , rv_tend, ru, rv, ww_ptr,  &
+      ! END LICENSE
                            c1h, c2h,                     &
                            mut, time_step, config_flags, &
                            msfux, msfuy, msfvx, msfvy,   &
@@ -543,7 +577,9 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
 
    ELSE
 
-     CALL advect_v ( v, v , rv_tend, ru, rv, wwE,  &
+     ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+     CALL advect_v ( v, v , rv_tend, ru, rv, ww_ptr,  &
+     ! END LICENSE
                      c1h, c2h,                     &
                      mut, time_step, config_flags, &
                      msfux, msfuy, msfvx, msfvy,   &
@@ -574,7 +610,9 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
 
      IF( (rk_step == rk_order) .and. ( adv_opt == WENO_MOM ) ) THEN
 
-       CALL advect_weno_w ( w, w, rw_tend, ru, rv, wwE,   &
+       ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+       CALL advect_weno_w ( w, w, rw_tend, ru, rv, ww_ptr,   &
+       ! END LICENSE
                             c1h, c2h,                     &
                             mut, time_step, config_flags, &
                             msfux, msfuy, msfvx, msfvy,   &
@@ -586,7 +624,9 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
 
      ELSE
      
-       CALL advect_w ( w, w, rw_tend, ru, rv, wwE,   &
+       ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+       CALL advect_w ( w, w, rw_tend, ru, rv, ww_ptr,   &
+       ! END LICENSE
                        c1h, c2h,                     &
                        mut, time_step, config_flags, &
                        msfux, msfuy, msfvx, msfvy,   &
@@ -611,7 +651,9 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
      
 ! also use weno for monotonic scalar option so that the h_ and z_tendency arrays are not needed
 
-     CALL advect_scalar_weno ( t, t, t_tend, ru, rv, wwE,     &
+     ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+     CALL advect_scalar_weno ( t, t, t_tend, ru, rv, ww_ptr,     &
+     ! END LICENSE
                                c1h, c2h, mut, time_step,      &
                                config_flags,                  &
                                msfux, msfuy, msfvx, msfvy,    &
@@ -622,7 +664,9 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                                its, ite, jts, jte, kts, kte  )
    ELSE
 
-     CALL advect_scalar ( t, t, t_tend, ru, rv, wwE,    &
+     ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+     CALL advect_scalar ( t, t, t_tend, ru, rv, ww_ptr,    &
+     ! END LICENSE
                           c1h, c2h,                     &
                           mut, time_step, config_flags, &
                           msfux, msfuy, msfvx, msfvy,   &
@@ -665,7 +709,9 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
 
    END IF
 
-   CALL rhs_ph( ph_tend, u, v, wwE, ph, ph, phb, w, &
+   ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+   CALL rhs_ph( ph_tend, u, v, ww_ptr, ph, ph, phb, w, &
+   ! END LICENSE
                 mut, muu, muv,                     &
                 c1f, c2f,                          &
                 fnm, fnp,                          &
@@ -1139,13 +1185,19 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
                                          INTENT(INOUT)  :: scalar_tends
                                                     
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme  ), INTENT(INOUT) :: advect_tend
-   REAL, DIMENSION(ims:ime, kms:kme, jms:jme  ), INTENT(  OUT) :: h_tendency, z_tendency
+   ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme  ), INTENT(INOUT) :: h_tendency, z_tendency
+   ! END LICENSE
 
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme  ), INTENT(OUT  ) :: RQVFTEN
 
+   ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme  ), TARGET,                      &
+                                                 INTENT(IN   ) ::     ww
+   ! END LICENSE
+
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme  ), INTENT(IN   ) ::     ru,     &
                                                                       rv,     &
-                                                                      ww,     &
                                                                       u_old,  &
                                                                       v_old,  &
                                                                       xkmhd,  &
@@ -1196,9 +1248,13 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
    REAL    :: khdq, kvdq, tendency
 
 ! IEVA variables
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: wwE, wwI  
-   REAL, DIMENSION( ims:ime, jms:jme )          :: mut_old  
-   LOGICAL                                      :: ieva
+   ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), TARGET :: wwE
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme )         :: wwI
+   REAL, DIMENSION( :, :, : ), POINTER, CONTIGUOUS      :: ww_ptr
+   REAL, DIMENSION( ims:ime, jms:jme )                  :: mut_old
+   LOGICAL                                              :: ieva, do_zero_hz, can_skip_zero, chk_old, all_zero
+   ! END LICENSE
 
 !<DESCRIPTION>
 !
@@ -1219,6 +1275,9 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
 
 ! Code for splitting vertical velocity into ex/im parts
 
+   ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+   IF ( ieva .OR. ( (rk_step == rk_order) .AND. (adv_opt == MONOTONIC) ) ) THEN
+   ! END LICENSE
    CALL WW_SPLIT(wwE, wwI,                         &
                  u_old,   v_old,    ww,            &
                  mut, rdnw, msfty,                 &
@@ -1229,6 +1288,12 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
                  ids, ide, jds, jde, kds, kde,     &
                  ims, ime, jms, jme, kms, kme,     &
                  its, ite, jts, jte, kts, kte )
+   ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+   ww_ptr => wwE
+   ELSE
+   ww_ptr => ww
+   END IF
+   ! END LICENSE
                  
                  
    IF( ieva ) THEN
@@ -1243,6 +1308,15 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
    
    CALL nl_get_time_step ( 1, time_step )
 
+   ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+   do_zero_hz = (rk_step == rk_order) .AND. &
+                (tenddec .OR. adv_opt == POSITIVEDEF .OR. adv_opt == MONOTONIC)
+   can_skip_zero = (.NOT. ieva) .AND. (.NOT. tenddec) .AND. (its <= ite) .AND. (jts <= jte) .AND. &
+                   (config_flags%h_sca_adv_order >= 2) .AND. (config_flags%h_sca_adv_order <= 6) .AND. &
+                   (config_flags%v_sca_adv_order >= 2) .AND. (config_flags%v_sca_adv_order <= 6)
+   chk_old = (rk_step == rk_order)
+   ! END LICENSE
+
    scalar_loop : DO im = scs, sce
 
      CALL zero_tend ( advect_tend(ims,kms,jms),     &
@@ -1250,6 +1324,9 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
                       ims, ime, jms, jme, kms, kme, &
                       its, ite, jts, jte, kts, kte )
 
+     ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+     IF ( do_zero_hz ) THEN
+     ! END LICENSE
      CALL zero_tend ( h_tendency(ims,kms,jms),      &
                       ids, ide, jds, jde, kds, kde, &
                       ims, ime, jms, jme, kms, kme, &
@@ -1259,6 +1336,30 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
                       ids, ide, jds, jde, kds, kde, &
                       ims, ime, jms, jme, kms, kme, &
                       its, ite, jts, jte, kts, kte )
+     ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+     END IF
+
+     IF ( can_skip_zero .AND. .NOT. (moist_step .AND. im == P_QV) ) THEN
+       ! Include +-4 halo cells matching up to 6th-order advection stencil reach.
+       all_zero = .TRUE.
+       zero_chk: DO j = MAX(jms, jts-4), MIN(jme, jte+4)
+         DO k = kts, MIN(kte, kde-1)
+           DO i = MAX(ims, its-4), MIN(ime, ite+4)
+             IF ( scalar(i,k,j,im) /= 0. ) THEN
+               all_zero = .FALSE.
+               EXIT zero_chk
+             ELSE IF ( chk_old ) THEN
+               IF ( scalar_old(i,k,j,im) /= 0. ) THEN
+                 all_zero = .FALSE.
+                 EXIT zero_chk
+               END IF
+             END IF
+           END DO
+         END DO
+       END DO zero_chk
+       IF ( all_zero ) CYCLE scalar_loop
+     END IF
+     ! END LICENSE
 
      CALL nl_get_time_step ( 1, time_step )
 
@@ -1269,7 +1370,9 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
                                       advect_tend(ims,kms,jms),           &
                                       h_tendency(ims,kms,jms),            &
                                       z_tendency(ims,kms,jms),            &
-                                      ru, rv, wwE, c1h, c2h,              &
+                                      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+                                      ru, rv, ww_ptr, c1h, c2h,              &
+                                      ! END LICENSE
                                       mut, mub, mu_old,                   &
                                       time_step, config_flags, tenddec,   &
                                       msfux, msfuy, msfvx, msfvy,         &
@@ -1301,7 +1404,9 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
         CALL advect_scalar_weno ( scalar(ims,kms,jms,im),        &
                                   scalar(ims,kms,jms,im),        &
                                   advect_tend(ims,kms,jms),      &
-                                  ru, rv, wwE, c1h, c2h,         &
+                                  ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+                                  ru, rv, ww_ptr, c1h, c2h,         &
+                                  ! END LICENSE
                                   mut, time_step,                &
                                   config_flags,                  &
                                   msfux, msfuy, msfvx, msfvy,    &
@@ -1316,7 +1421,9 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
         CALL advect_scalar_wenopd   ( scalar(ims,kms,jms,im),             &
                                       scalar_old(ims,kms,jms,im),         &
                                       advect_tend(ims,kms,jms),           &
-                                      ru, rv, wwE, c1h, c2h,              &
+                                      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+                                      ru, rv, ww_ptr, c1h, c2h,              &
+                                      ! END LICENSE
                                       mut, mub, mu_old,                   &
                                       time_step, config_flags,            &
                                       msfux, msfuy, msfvx, msfvy,         &
@@ -1331,7 +1438,9 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
         CALL advect_scalar     ( scalar(ims,kms,jms,im),        &
                                  scalar(ims,kms,jms,im),        &
                                  advect_tend(ims,kms,jms),      &
-                                 ru, rv, wwE, c1h, c2h,         &
+                                 ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+                                 ru, rv, ww_ptr, c1h, c2h,         &
+                                 ! END LICENSE
                                  mut, time_step,                &
                                  config_flags,                  &
                                  msfux, msfuy, msfvx, msfvy,    &

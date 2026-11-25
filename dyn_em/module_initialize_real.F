@@ -4811,6 +4811,7 @@ endif
 
       IF ( config_flags%mp_physics .EQ. THOMPSON .OR.                   &
                    config_flags%mp_physics .EQ. THOMPSONAERO .OR.       &
+                  (config_flags%mp_physics .EQ. TEMPO .AND. config_flags%tempo_aerosolaware .EQ. 1) .OR. &
 				   config_flags%mp_physics .EQ. RCON_MP_SCHEME          &
 				   ) THEN
 

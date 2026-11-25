@@ -101,7 +101,11 @@ subroutine da_map_set(proj_code,lat1,lon1,knowni,knownj,dx,stdlon,truelat1,truel
          ! Convert lon1 to 0->360 notation
          if (proj%lon1 < 0.0) proj%lon1 = proj%lon1 + 360.0
    
-         proj%cone = 1.0                                  
+         ! Cylindrical projection: meridians are parallel, so grid north is true north everywhere
+         ! and observed winds need no rotation (cone 0, as for Mercator). 1.0 (polar stereographic)
+         ! made da_ffdduv and da_earth_2_model_wind rotate every wind by (stand_lon - lon) degrees.
+         ! Rotated-pole lat-lon grids are rejected in da_setup_firstguess_wrf.
+         proj%cone = 0.0
       case default
          write(unit=message(1),fmt='(A,I2)') 'Unknown projection code: ', proj%code
          call da_error(__FILE__,__LINE__,message(1:1))

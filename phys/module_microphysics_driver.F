@@ -821,8 +821,11 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
    integer :: errflg
 
    type(ty_tempo_cfgs) :: tempo_cfgs
-   type(ty_tempo_driver_diags) :: tempo_driver_diags
-   logical :: config_tempo_aerosolaware, config_tempo_hailaware
+   ! One diagnostics container per tile: tempo_run allocates the components
+   ! with the bounds of the tile it is called for, and tiles may run in
+   ! separate OpenMP threads.
+   type(ty_tempo_driver_diags), allocatable :: tempo_tile_diags(:)
+   real :: tempo_snowncv, tempo_graupelncv
 !---------------------------------------------------------------------
 !  check for microphysics type.  We need a clean way to
 !  specify these things!
@@ -897,8 +900,21 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
    ELSE
 #endif
 
+   IF (mp_physics == TEMPO) THEN
+      ! Set the TEMPO configuration once, outside the threaded tile loop,
+      ! so it is shared read-only by all tiles.
+      tempo_cfgs%aerosolaware_flag = (config_flags%tempo_aerosolaware == 1)
+      tempo_cfgs%hailaware_flag = (config_flags%tempo_hailaware == 1)
+      ! Only compute 10-cm reflectivity when it will be output, as for Thompson
+      tempo_cfgs%refl10cm_flag = .false.
+      IF (PRESENT(diagflag) .AND. PRESENT(do_radar_ref)) THEN
+         tempo_cfgs%refl10cm_flag = (diagflag .AND. do_radar_ref == 1)
+      ENDIF
+      ALLOCATE(tempo_tile_diags(num_tiles))
+   ENDIF
+
    !$OMP PARALLEL DO   &
-   !$OMP PRIVATE ( ij, its, ite, jts, jte, i,j,k,n )
+   !$OMP PRIVATE ( ij, its, ite, jts, jte, i,j,k,n, tempo_snowncv, tempo_graupelncv )
 
    DO ij = 1 , num_tiles
        IF (channel) THEN
@@ -1409,18 +1425,20 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                 CALL wrf_error_fatal ( 'arguments not present for calling thompson_et_al' )
              ENDIF
           CASE (TEMPO)
-             ! add surface emissions
+             ! add surface emissions over this tile only (the driver is called per tile)
              if (present(qnwfa_curr) .and. present(qnwfa2d)) then
                 call tempo_aerosol_surface_emissions(dt=dt, &
-                     nwfa=qnwfa_curr, nwfa2d=qnwfa2d, &
-                     ims=ims, ime=ime, jms=jms, &
-                     jme=jme, kms=kms, kme=kme, kts=kts)
+                     nwfa=qnwfa_curr(its:ite,kms:kme,jts:jte), &
+                     nwfa2d=qnwfa2d(its:ite,jts:jte), &
+                     ims=its, ime=ite, jms=jts, &
+                     jme=jte, kms=kms, kme=kme, kts=kts)
              endif
              if (present(qnifa_curr) .and. present(qnifa2d)) then
                 call tempo_aerosol_surface_emissions(dt=dt, &
-                     nwfa=qnifa_curr, nwfa2d=qnifa2d, &
-                     ims=ims, ime=ime, jms=jms, &
-                     jme=jme, kms=kms, kme=kme, kts=kts)
+                     nwfa=qnifa_curr(its:ite,kms:kme,jts:jte), &
+                     nwfa2d=qnifa2d(its:ite,jts:jte), &
+                     ims=its, ime=ite, jms=jts, &
+                     jme=jte, kms=kms, kme=kme, kts=kts)
              endif
 
              CALL wrf_debug ( 100 , 'microphysics_driver: calling tempo' )
@@ -1429,12 +1447,6 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                   PRESENT( QS_CURR ) .AND. PRESENT ( QG_CURR ) .AND.  &
                   PRESENT( QNR_CURR) .AND. PRESENT ( QNI_CURR)) THEN
 
-             config_tempo_aerosolaware = .false.
-             config_tempo_hailaware = .false.
-             if (config_flags%tempo_aerosolaware == 1) config_tempo_aerosolaware = .true.
-             if (config_flags%tempo_hailaware == 1) config_tempo_hailaware = .true.
-             tempo_cfgs%aerosolaware_flag = config_tempo_aerosolaware
-             tempo_cfgs%hailaware_flag = config_tempo_hailaware
              CALL tempo_run(                             &
                      tempo_cfgs=tempo_cfgs,              &
                      dt=dt,                              &
@@ -1460,37 +1472,38 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde, &
                      ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme, &
                      its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte, &
-                     tempo_diags = tempo_driver_diags)
+                     tempo_diags = tempo_tile_diags(ij))
              ! map tempo diagnostics to WRF variable names noting that some wrf variables are optional
              do j = jts, jte
                 do i = its, ite
-                   if (present(snowncv)) then
-                      snowncv(i,j) = tempo_driver_diags%ice_liquid_equiv_precip(i,j) + &
-                           tempo_driver_diags%snow_liquid_equiv_precip(i,j)
-                   endif
-                   if (present(snownc)) snownc(i,j) = snownc(i,j) + snowncv(i,j)
+                   ! use locals so the total does not depend on optional arguments being present
+                   tempo_snowncv = tempo_tile_diags(ij)%ice_liquid_equiv_precip(i,j) + &
+                        tempo_tile_diags(ij)%snow_liquid_equiv_precip(i,j)
+                   tempo_graupelncv = tempo_tile_diags(ij)%graupel_liquid_equiv_precip(i,j)
 
-                   if (present(graupelncv)) then
-                      graupelncv(i,j) = tempo_driver_diags%graupel_liquid_equiv_precip(i,j)
-                   endif
-                   if (present(graupelnc)) graupelnc(i,j) = graupelnc(i,j) + graupelncv(i,j)
+                   if (present(snowncv)) snowncv(i,j) = tempo_snowncv
+                   if (present(snownc)) snownc(i,j) = snownc(i,j) + tempo_snowncv
+
+                   if (present(graupelncv)) graupelncv(i,j) = tempo_graupelncv
+                   if (present(graupelnc)) graupelnc(i,j) = graupelnc(i,j) + tempo_graupelncv
 
                    if (present(rainncv)) then
-                      rainncv(i,j) = tempo_driver_diags%rain_precip(i,j) + snowncv(i,j) + graupelncv(i,j)
+                      rainncv(i,j) = tempo_tile_diags(ij)%rain_precip(i,j) + tempo_snowncv + tempo_graupelncv
                    endif
-                   if (present(rainnc)) rainnc(i,j) = rainnc(i,j) + rainncv(i,j)
+                   if (present(rainnc)) rainnc(i,j) = rainnc(i,j) + &
+                        tempo_tile_diags(ij)%rain_precip(i,j) + tempo_snowncv + tempo_graupelncv
                    ! ratio of frozen precipitation to total is not optional in wrf
-                   sr(i,j) = tempo_driver_diags%frozen_fraction(i,j)
+                   sr(i,j) = tempo_tile_diags(ij)%frozen_fraction(i,j)
 
                    if (config_flags%nwp_diagnostics == 1) then
                       if (present(hail_maxk1)) then
-                         if (allocated(tempo_driver_diags%max_hail_diameter_sfc)) then
-                            hail_maxk1(i,j) = 1.e-3 * tempo_driver_diags%max_hail_diameter_sfc(i,j)
+                         if (allocated(tempo_tile_diags(ij)%max_hail_diameter_sfc)) then
+                            hail_maxk1(i,j) = 1.e-3 * tempo_tile_diags(ij)%max_hail_diameter_sfc(i,j)
                          endif
                       endif
                       if (present(hail_max2d)) then
-                         if (allocated(tempo_driver_diags%max_hail_diameter_column)) then
-                            hail_max2d(i,j) = 1.e-3 * tempo_driver_diags%max_hail_diameter_column(i,j)
+                         if (allocated(tempo_tile_diags(ij)%max_hail_diameter_column)) then
+                            hail_max2d(i,j) = 1.e-3 * tempo_tile_diags(ij)%max_hail_diameter_column(i,j)
                          endif
                       endif
                    endif
@@ -1498,20 +1511,20 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                    do k = kts, kte
                       if (do_radar_ref == 1) then
                          if (present(refl_10cm)) then
-                            if (allocated(tempo_driver_diags%refl10cm)) then
-                               refl_10cm(i,k,j) = tempo_driver_diags%refl10cm(i,k,j)
+                            if (allocated(tempo_tile_diags(ij)%refl10cm)) then
+                               refl_10cm(i,k,j) = tempo_tile_diags(ij)%refl10cm(i,k,j)
                             endif
                          endif
                       endif
                       ! effective radius values are not optional in wrf
-                      if (allocated(tempo_driver_diags%re_cloud)) then
-                         re_cloud(i,k,j) = tempo_driver_diags%re_cloud(i,k,j)
+                      if (allocated(tempo_tile_diags(ij)%re_cloud)) then
+                         re_cloud(i,k,j) = tempo_tile_diags(ij)%re_cloud(i,k,j)
                       endif
-                      if (allocated(tempo_driver_diags%re_ice)) then
-                         re_ice(i,k,j) = tempo_driver_diags%re_ice(i,k,j)
+                      if (allocated(tempo_tile_diags(ij)%re_ice)) then
+                         re_ice(i,k,j) = tempo_tile_diags(ij)%re_ice(i,k,j)
                       endif
-                      if (allocated(tempo_driver_diags%re_snow)) then
-                         re_snow(i,k,j) = tempo_driver_diags%re_snow(i,k,j)
+                      if (allocated(tempo_tile_diags(ij)%re_snow)) then
+                         re_snow(i,k,j) = tempo_tile_diags(ij)%re_snow(i,k,j)
                       endif
                    enddo
                 enddo
@@ -3107,6 +3120,8 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 
    ENDDO
    !$OMP END PARALLEL DO
+
+   IF (ALLOCATED(tempo_tile_diags)) DEALLOCATE(tempo_tile_diags)
 
 #ifdef XEON_OPTIMIZED_WSM5
    ENDIF

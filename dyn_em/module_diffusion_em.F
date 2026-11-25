@@ -1488,7 +1488,9 @@ END SUBROUTINE cal_dampkm
                              n_moist, cf1, cf2, cf3, warm_rain,  &
                              ids, ide, jds, jde, kds, kde,       &
                              ims, ime, jms, jme, kms, kme,       &
-                             its, ite, jts, jte, kts, kte        )
+                             ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+                             its, ite, jts_in, jte_in, kts, kte  )
+                             ! END LICENSE
 
 !-----------------------------------------------------------------------
 ! Begin declarations.
@@ -1502,7 +1504,9 @@ END SUBROUTINE cal_dampkm
     :: n_moist,  &
        ids, ide, jds, jde, kds, kde, &
        ims, ime, jms, jme, kms, kme, &
-       its, ite, jts, jte, kts, kte
+       ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+       its, ite, jts_in, jte_in, kts, kte
+       ! END LICENSE
 
     LOGICAL, INTENT( IN )  &
     :: warm_rain
@@ -1521,6 +1525,22 @@ END SUBROUTINE cal_dampkm
 
     REAL, DIMENSION( ims:ime, kms:kme, jms:jme, n_moist), INTENT( INOUT )  &
     :: moist
+
+    ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+    INTEGER, PARAMETER :: J_STRIP = 4
+    INTEGER :: jb, je_s
+
+    ! Sweep 4-row j-strips so tmp1, qvs, and qctmp stay cache-resident
+    DO jb = jts_in, jte_in, J_STRIP
+      je_s = MIN( jb + J_STRIP - 1, jte_in )
+      CALL calculate_N2_strip( jb, je_s )
+    END DO
+
+    CONTAINS
+
+    SUBROUTINE calculate_N2_strip( jts, jte )
+    INTEGER, INTENT( IN ) :: jts, jte
+    ! END LICENSE
 
 ! Local variables.
 
@@ -1709,6 +1729,10 @@ END SUBROUTINE cal_dampkm
     END DO
     END DO
 ! end of MARTA/WCS change
+
+    ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+    END SUBROUTINE calculate_N2_strip
+    ! END LICENSE
 
     END SUBROUTINE calculate_N2
 
@@ -1970,9 +1994,9 @@ SUBROUTINE smag2d_km( config_flags,xkmh,xkmv,xkhh,xkhv,                        &
 
    INTEGER :: i_start, i_end, j_start, j_end, ktf, i, j, k
    REAL    :: deltas, tmp, pr, mlen_h, c_s
-   REAL    :: dxm, dym, tmpzx, tmpzy, alpha, def_limit
-
-   REAL, DIMENSION( its:ite , kts:kte , jts:jte )                 ::     def2
+   ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+   REAL    :: dxm, dym, tmpzx, tmpzy, alpha, def_limit, def2_s
+   ! END LICENSE
 
 ! End declarations.
 !-----------------------------------------------------------------------
@@ -1998,22 +2022,20 @@ SUBROUTINE smag2d_km( config_flags,xkmh,xkmv,xkhh,xkhv,                        &
    pr=prandtl
    c_s = config_flags%c_s
 
-   do j=j_start,j_end
-   do k=kts,ktf
-   do i=i_start,i_end
-      def2(i,k,j)=0.25*((defor11(i,k,j)-defor22(i,k,j))*(defor11(i,k,j)-defor22(i,k,j)))
-      tmp=0.25*(defor12(i  ,k,j)+defor12(i  ,k,j+1)+ &
-                defor12(i+1,k,j)+defor12(i+1,k,j+1))
-      def2(i,k,j)=def2(i,k,j)+tmp*tmp
-   enddo
-   enddo
-   enddo
 !
       DO j = j_start, j_end
       DO k = kts, ktf
       DO i = i_start, i_end
+         ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+         def2_s = 0.25*((defor11(i,k,j)-defor22(i,k,j))*(defor11(i,k,j)-defor22(i,k,j)))
+         tmp = 0.25*(defor12(i  ,k,j)+defor12(i  ,k,j+1)+ &
+                     defor12(i+1,k,j)+defor12(i+1,k,j+1))
+         def2_s = def2_s + tmp*tmp
+         ! END LICENSE
          mlen_h=sqrt(dx/msftx(i,j) * dy/msfty(i,j))
-         tmp=sqrt(def2(i,k,j))
+         ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+         tmp=sqrt(def2_s)
+         ! END LICENSE
 !        xkmh(i,k,j)=max(c_s*c_s*mlen_h*mlen_h*tmp, 1.0E-6*mlen_h*mlen_h )
          xkmh(i,k,j)=c_s*c_s*mlen_h*mlen_h*tmp
          xkmh(i,k,j)=min(xkmh(i,k,j), 10.*mlen_h )
@@ -2112,10 +2134,14 @@ END SUBROUTINE smag2d_km
 !
 ! Local variables.
 
-    REAL, DIMENSION( its:ite, kts:kte, jts:jte )  &  
+    ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+    REAL, DIMENSION( its:ite, kts:kte, 1:1 )  &
+    ! END LICENSE
     :: l_scale
 
-    REAL, DIMENSION( its:ite, kts:kte, jts:jte )  &
+    ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+    REAL, ALLOCATABLE, DIMENSION( :, :, : )  &
+    ! END LICENSE
     :: dthrdn
 
     REAL  &
@@ -2131,8 +2157,9 @@ END SUBROUTINE smag2d_km
 !XZ
     REAL            :: pth1, delxy, pu1, xkmv_les, pr_inv_v_meso, pr_inv_v_les, pr 
     REAL            :: dxm, dym, tmpzx, tmpzy, alpha, def_limit, c_s, xkmh_t, xkhh_t 
-    REAL, DIMENSION( its:ite , kts:kte , jts:jte )   ::  def2
-    REAL, DIMENSION( its:ite , kts:kte , jts:jte )   ::  xkmh_s, xkhh_s
+    ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+    REAL, ALLOCATABLE, DIMENSION( :, :, : )          ::  def2, xkmh_s, xkhh_s
+    ! END LICENSE
     REAL, PARAMETER :: xkmvo = 0.0, xkhvo = 0.0 !background diffusivity
 !
 ! End declarations.
@@ -2173,6 +2200,11 @@ END SUBROUTINE smag2d_km
       ENDIF
     ENDIF
 
+    ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+    IF ( ( config_flags%km_opt .EQ. 2 .AND. isotropic .EQ. 0 ) .OR. &
+         config_flags%km_opt .EQ. 5 ) THEN
+    ALLOCATE( dthrdn(its:ite, kts:kte, jts:jte) )
+    ! END LICENSE
     DO j = j_start, j_end
     DO k = kts+1, ktf-1
     DO i = i_start, i_end
@@ -2199,6 +2231,9 @@ END SUBROUTINE smag2d_km
       dthrdn(i,k,j) = ( thetatop - theta(i,k-1,j) ) / tmpdz
     END DO
     END DO
+    ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+    END IF
+    ! END LICENSE
 
     IF ( config_flags%km_opt .EQ. 2 .and. isotropic .EQ. 0 ) THEN  !XZ
       DO j = j_start, j_end
@@ -2226,22 +2261,35 @@ END SUBROUTINE smag2d_km
     ENDIF  !XZ    
 
     IF ( config_flags%km_opt .eq.2.and.isotropic .NE. 0 ) THEN  ! XZ
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      ! Pass j, j for (jts, jte) so calc_l_scale populates the single-row l_scale(:,:,1:1) slab in place
+      DO j = j_start, j_end
+      ! END LICENSE
       CALL calc_l_scale( config_flags, tke, BN2, l_scale,      &
-                         i_start, i_end, ktf, j_start, j_end,  &
+                         ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+                         i_start, i_end, ktf, j, j,            &
+                         ! END LICENSE
                          dx, dy, rdzw, msftx, msfty,           &
                          ids, ide, jds, jde, kds, kde,         &
                          ims, ime, jms, jme, kms, kme,         &
-                         its, ite, jts, jte, kts, kte          )
-      DO j = j_start, j_end
+                         ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+                         its, ite, j, j, kts, kte              )
+                         ! END LICENSE
       DO k = kts, ktf
       DO i = i_start, i_end
         tmp          = SQRT( MAX( tke(i,k,j), tke_seed ) )
         deltas       = ( dx/msftx(i,j) * dy/msfty(i,j) / rdzw(i,k,j) )**0.33333333
-        xkmh(i,k,j)  = c_k * tmp * l_scale(i,k,j)
+        ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+        xkmh(i,k,j)  = c_k * tmp * l_scale(i,k,1)
+        ! END LICENSE
         xkmh(i,k,j)  = MIN( mix_upper_bound * dx/msftx(i,j) * dy/msfty(i,j) / dt,  xkmh(i,k,j) )
-        xkmv(i,k,j)  = c_k * tmp * l_scale(i,k,j)
+        ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+        xkmv(i,k,j)  = c_k * tmp * l_scale(i,k,1)
+        ! END LICENSE
         xkmv(i,k,j)  = MIN( mix_upper_bound / rdzw(i,k,j) / rdzw(i,k,j) / dt ,  xkmv(i,k,j) )
-        pr_inv       = 1.0 + 2.0 * l_scale(i,k,j) / deltas
+        ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+        pr_inv       = 1.0 + 2.0 * l_scale(i,k,1) / deltas
+        ! END LICENSE
         xkhh(i,k,j)  = MIN( mix_upper_bound * dx/msftx(i,j) * dy/msfty(i,j) / dt, xkmh(i,k,j) * pr_inv )
         xkhv(i,k,j)  = MIN( mix_upper_bound / rdzw(i,k,j) / rdzw(i,k,j) / dt, xkmv(i,k,j) * pr_inv )
       END DO
@@ -2251,6 +2299,11 @@ END SUBROUTINE smag2d_km
 
 !!!XZ
     IF(config_flags%km_opt .eq.5 ) THEN  ! 3DTKE diffusivity
+       ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+       ALLOCATE( def2(its:ite, kts:kte, jts:jte), &
+                 xkmh_s(its:ite, kts:kte, jts:jte), &
+                 xkhh_s(its:ite, kts:kte, jts:jte) )
+       ! END LICENSE
  
 !  smag_2d horizontal diffusivity 
        pr=prandtl

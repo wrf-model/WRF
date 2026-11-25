@@ -4,6 +4,7 @@ subroutine da_radial_velocity_adj(rv,p,u,v,w,qrn,ps,x,y,z,qrn9,rho)
    ! Purpose: adjoint of da_radial_velocity_lin
    ! History:
    !    08/2017 - bug fix for Vt (Siou-Ying Jiang, CWB, Taiwan)
+   !    06/2026 - bug fix for qrn adjoint gradient scaling (Weiyu Yang, NUIST, China)
    !-----------------------------------------------------------------------
 
    implicit none
@@ -20,7 +21,7 @@ subroutine da_radial_velocity_adj(rv,p,u,v,w,qrn,ps,x,y,z,qrn9,rho)
    real :: qrrc
    real :: qrn_g, qrn9_g
 
-   qrn_g = qrn *1000. ! kg/kg -> g/kg
+   qrn_g = 0.0        ! Initialize the local adjoint accumulator to 0.0 here
    qrn9_g= qrn9*1000. ! kg/kg -> g/kg
    qrrc = 0.01        ! g/kg
 
@@ -37,7 +38,7 @@ subroutine da_radial_velocity_adj(rv,p,u,v,w,qrn,ps,x,y,z,qrn9,rho)
 
    if (qrn9_g >  qrrc) then
       qrn_g = qrn_g + vt*0.675*alpha*qrn9_g**(-0.875)*rho**0.125
-      qrn   = qrn_g * 0.001  ! g/kg -> kg/kg
+      qrn   = qrn + qrn_g * 1000.  ! Proper adjoint accumulation following the transpose logic (* 1000.0)
    end if
 
    if (trace_use) call da_trace_exit("da_radial_velocity_adj")

@@ -393,6 +393,10 @@
               (model_config_rec % sf_sfclay_physics(i) .NE. nosfcscheme     .AND. &
                model_config_rec % sf_sfclay_physics(i) .NE. sfclayscheme    .AND. &
                model_config_rec % sf_sfclay_physics(i) .NE. sfclayrevscheme .AND. &
+!$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$-Inserted by PN, MS, PS, and SKM-$$$$$$$$$$$$$$
+               model_config_rec % sf_sfclay_physics(i) .NE. &
+               sfclayrev_IITD_scheme .AND.                  &
+!$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
                model_config_rec % sf_sfclay_physics(i) .NE. mynnsfcscheme  ) ) THEN
             wrf_err_message = '--- ERROR: SMS-3DTKE scheme works with sf_sfclay_physics = 0,1,5,91 '
             CALL wrf_message ( wrf_err_message )

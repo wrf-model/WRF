@@ -1416,6 +1416,12 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      ims=ims, ime=ime, jms=jms, &
                      jme=jme, kms=kms, kme=kme, kts=kts)
              endif
+             if (present(qnifa_curr) .and. present(qnifa2d)) then
+                call tempo_aerosol_surface_emissions(dt=dt, &
+                     nwfa=qnifa_curr, nwfa2d=qnifa2d, &
+                     ims=ims, ime=ime, jms=jms, &
+                     jme=jme, kms=kms, kme=kme, kts=kts)
+             endif
 
              CALL wrf_debug ( 100 , 'microphysics_driver: calling tempo' )
              IF ( PRESENT( QV_CURR ) .AND. PRESENT ( QC_CURR ) .AND.  &

@@ -1,51 +1,69 @@
 {
   "patches":
-  {
-    "hosts":
+  [
     {
-      "derecho":
+      "hosts":
       {
-        "default_env" : "gnu",
-        "environments" :
+        "derecho":
         {
-          "gnu" :
+          "default_env" : "gnu",
+          "environments" :
           {
-            "aliases" : [ "gcc" ],
-            "lmod_cmds" :
-            [
-              { "cmd" : "purge" },
-              { "cmd" : "load", "args" : [ "gcc", "cray-mpich", "netcdf", "cmake" ] }
-            ]
-          },
-          "intel-oneapi" :
-          {
-            "aliases" : [ "intel-llvm" ],
-            "lmod_cmds" :
-            [
-              { "cmd" : "purge" },
-              { "cmd" : "load", "args" : [ "intel", "cray-mpich", "netcdf", "cmake" ] }
-            ]
-          },
-          "intel-classic" :
-          {
-            "lmod_cmds" :
-            [
-              // Because module is particular about flag placement :)
-              { "cmd" : "--force", "args" : [ "purge" ] },
-              { "cmd" : "load", "args" : [ "ncarenv/23.09", "intel-classic", "cray-mpich", "netcdf", "cmake" ] }
-            ]
-          },
-          "nvhpc" :
-          {
-            "aliases" : [ "pgi" ],
-            "lmod_cmds" :
-            [
-              { "cmd" : "purge" },
-              { "cmd" : "load", "args" : [ "nvhpc", "cray-mpich", "netcdf", "cmake" ] }
-            ]
+            "gnu" :
+            {
+              "aliases" : [ "gcc" ],
+              "lmod_cmds" :
+              [
+                { "cmd" : "purge" },
+                { "cmd" : "load", "args" : [ "gcc", "cray-mpich", "netcdf", "cmake" ] }
+              ]
+            },
+            "intel-oneapi" :
+            {
+              "aliases" : [ "intel-llvm" ],
+              "lmod_cmds" :
+              [
+                { "cmd" : "purge" },
+                { "cmd" : "load", "args" : [ "intel", "cray-mpich", "netcdf", "cmake" ] }
+              ]
+            },
+            "intel-classic" :
+            {
+              "lmod_cmds" :
+              [
+                // Because module is particular about flag placement :)
+                { "cmd" : "--force", "args" : [ "purge" ] },
+                { "cmd" : "load", "args" : [ "ncarenv/23.09", "intel-classic", "cray-mpich", "netcdf", "cmake" ] }
+              ]
+            },
+            "nvhpc" :
+            {
+              "aliases" : [ "pgi" ],
+              "lmod_cmds" :
+              [
+                { "cmd" : "purge" },
+                { "cmd" : "load", "args" : [ "nvhpc", "cray-mpich", "netcdf", "cmake" ] }
+              ]
+            }
           }
         }
+      },
+      "actions" :
+      {
+        // CMake builds
+        "[build_.*]" : { "resources" : { "derecho" : { "cpus" : 16 } } },
+        "[build_cmake.*gnu.*]" : { "resources" : { "derecho" : { "timelimit" : "00:12:00" } } },
+        "[build_cmake.*intel.*]" : { "resources" : { "derecho" : { "timelimit" : "00:30:00" } } },
+        "[build_cmake.*nvhpc.*]" : { "resources" : { "derecho" : { "timelimit" : "00:30:00" } } },
+        // Make builds
+        "[build_make.*gnu.*]" : { "resources" : { "derecho" : { "timelimit" : "00:20:00" } } },
+        "[build_make.*intel.*]" : { "resources" : { "derecho" : { "timelimit" : "00:55:00" } } },
+        "[build_make.*nvhpc.*]" : { "resources" : { "derecho" : { "timelimit" : "00:45:00" } } },
+        // Memory reqs for builds needing a bit more
+        "[build_.*intel-oneapi.*]" : { "resources" : { "derecho" : { "memory" : "64gb" } } },
+        "[build_.*intel-classic.*]" : { "resources" : { "derecho" : { "memory" : "32gb" } } },
+        "[build_.*nvhpc.*]" : { "resources" : { "derecho" : { "memory" : "32gb" } } }
       }
     }
-  }
+  ]
 }

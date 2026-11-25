@@ -181,8 +181,8 @@ program da_update_bc
    num2d=23
    varsf(1)='MUB'
    varsf(2)='MU'
-   varsf(3)='MAPFAC_U'
-   varsf(4)='MAPFAC_V'
+   varsf(3)='MAPFAC_UY'   ! WRF couples u with msfuy (dyn_em/couple_or_uncouple_em.F)
+   varsf(4)='MAPFAC_VX'   ! and v with msfvx; they differ from MAPFAC_U/V on lat-lon grids
    varsf(5)='MAPFAC_M'
    varsf(6)='TMN'
    varsf(7)='SST'
@@ -344,14 +344,14 @@ program da_update_bc
 
          call da_get_var_2d_real_cdf( da_file, trim(varsf(n)), mub, &
                                    dims(1), dims(2), 1, debug)
-      case ('MAPFAC_U') ;
+      case ('MAPFAC_UY') ;
          if ( .not. update_lateral_bdy ) cycle
 
          allocate(msfu(dims(1), dims(2)))
 
          call da_get_var_2d_real_cdf( da_file, trim(varsf(n)), msfu, &
                                    dims(1), dims(2), 1, debug)
-      case ('MAPFAC_V') ;
+      case ('MAPFAC_VX') ;
          if ( .not. update_lateral_bdy ) cycle
 
          allocate(msfv(dims(1), dims(2)))

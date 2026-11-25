@@ -4802,7 +4802,7 @@ endif
 
 !+---+-----------------------------------------------------------------+
 !..Let us ensure that double-moment microphysics variables have numbers
-!.. where there is mass.  Currently doing this for Thompson-MP only, but
+!.. where there is mass.  Currently doing this for Thompson-MP and TEMPO, but
 !.. can consider doing it for every MP scheme that has 2-moment variables.
 !.. This is important because pressure-level RAP/HRRR files have mass but
 !.. not number values for example (whereas native model level files have
@@ -4811,7 +4811,7 @@ endif
 
       IF ( config_flags%mp_physics .EQ. THOMPSON .OR.                   &
                    config_flags%mp_physics .EQ. THOMPSONAERO .OR.       &
-                  (config_flags%mp_physics .EQ. TEMPO .AND. config_flags%tempo_aerosolaware .EQ. 1) .OR. &
+                   config_flags%mp_physics .EQ. TEMPO .OR.              &
 				   config_flags%mp_physics .EQ. RCON_MP_SCHEME          &
 				   ) THEN
 

@@ -512,9 +512,11 @@ SUBROUTINE calc_p_rho( al, p, ph,                    &
    k_start = kts
    k_end = min(kte,kde-1)
 
+   ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+   DO j=j_start, j_end
+   DO k=k_start, k_end
+   ! END LICENSE
    IF (non_hydrostatic) THEN
-     DO j=j_start, j_end
-     DO k=k_start, k_end
      DO i=i_start, i_end
 
 !  al computation is all dry, so ok with moisture
@@ -528,43 +530,33 @@ SUBROUTINE calc_p_rho( al, p, ph,                    &
                        /((c1h(k)*Mut(i,j)+c2h(k))*(t0+t_1(i,k,j)))-al (i,k,j))
 
      ENDDO
-     ENDDO
-     ENDDO
-
    ELSE  ! hydrostatic calculation
-
-       DO j=j_start, j_end
-       DO k=k_start, k_end
-       DO i=i_start, i_end
-         p(i,k,j)=MU(i,j)*c3h(k)
-         al(i,k,j)=alt(i,k,j)*(t_2(i,k,j)-(c1h(k)*mu(i,j))*t_1(i,k,j))           &
-                      /((c1h(k)*Mut(i,j)+c2h(k))*(t0+t_1(i,k,j)))-p(i,k,j)/c2a(i,k,j)
-         ph(i,k+1,j)=ph(i,k,j)-dnw(k)*((c1h(k)*Mut(i,j)+c2h(k))*al (i,k,j)              &
-                          +(c1h(k)*mu(i,j))*alt(i,k,j))
-       ENDDO
-       ENDDO
-       ENDDO
+     ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+     DO i=i_start, i_end
+       p(i,k,j)=MU(i,j)*c3h(k)
+       al(i,k,j)=alt(i,k,j)*(t_2(i,k,j)-(c1h(k)*mu(i,j))*t_1(i,k,j))           &
+                    /((c1h(k)*Mut(i,j)+c2h(k))*(t0+t_1(i,k,j)))-p(i,k,j)/c2a(i,k,j)
+       ph(i,k+1,j)=ph(i,k,j)-dnw(k)*((c1h(k)*Mut(i,j)+c2h(k))*al (i,k,j)              &
+                        +(c1h(k)*mu(i,j))*alt(i,k,j))
+     ENDDO
+     ! END LICENSE
    END IF
 !  divergence damping setup
-     IF (step == 0) then   ! we're initializing small timesteps
-       DO j=j_start, j_end
-       DO k=k_start, k_end
-       DO i=i_start, i_end
-         pm1(i,k,j)=p(i,k,j)
-       ENDDO
-       ENDDO
-       ENDDO
-     ELSE                     ! we're in the small timesteps 
-       DO j=j_start, j_end    ! and adding div damping component
-       DO k=k_start, k_end
-       DO i=i_start, i_end
-         ptmp = p(i,k,j)
-         p(i,k,j) = p(i,k,j) + smdiv*(p(i,k,j)-pm1(i,k,j))
-         pm1(i,k,j) = ptmp
-       ENDDO
-       ENDDO
-       ENDDO
-     END IF
+   ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+   IF (step == 0) then   ! we're initializing small timesteps
+     DO i=i_start, i_end
+       pm1(i,k,j)=p(i,k,j)
+     ENDDO
+   ELSE                     ! we're in the small timesteps
+     DO i=i_start, i_end    ! and adding div damping component
+       ptmp = p(i,k,j)
+       p(i,k,j) = p(i,k,j) + smdiv*(p(i,k,j)-pm1(i,k,j))
+       pm1(i,k,j) = ptmp
+     ENDDO
+   END IF
+   ENDDO
+   ENDDO
+   ! END LICENSE
 END SUBROUTINE calc_p_rho
 !----------------------------------------------------------------------
 SUBROUTINE calc_coef_w( a,alpha,gamma,              &
@@ -1119,7 +1111,6 @@ SUBROUTINE advance_mu_t( ww, ww_1, u, u_1, v, v_1,            &
        ww(i,k,j)=ww(i,k,j)-ww_1(i,k,j)
      END DO
      END DO
-   ENDDO
 ! CALCULATION OF THETA
 ! NOTE: theta'' is not coupled with the map-scale factor,
 !       while the theta'' tendency is coupled (i.e., mult by 1/msft)
@@ -1135,15 +1126,6 @@ SUBROUTINE advance_mu_t( ww, ww_1, u, u_1, v, v_1,            &
 ! adding previous tendency contribution which was map scale factor coupled
 ! (had been divided by msfty)
 ! need to uncouple before updating uncoupled Theta (by adding)
-   DO j=j_start, j_end
-     DO k=1,k_end
-     DO i=i_start, i_end
-       t_ave(i,k,j) = t(i,k,j)
-       t   (i,k,j) = t(i,k,j) + msfty(i,j)*dts*ft(i,k,j)
-     END DO
-     END DO
-   ENDDO   
-   DO j=j_start, j_end
      DO i=i_start, i_end
        wdtn(i,1  )=0.
        wdtn(i,kde)=0.
@@ -1158,8 +1140,13 @@ SUBROUTINE advance_mu_t( ww, ww_1, u, u_1, v, v_1,            &
 ! multiply by msfty to uncouple result for Theta from map scale factor
      DO k=1,k_end
      DO i=i_start, i_end
+       ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+       t_ave(i,k,j) = t(i,k,j)
+       ! END LICENSE
        ! multiplication by msfty uncouples result for Theta
-       t(i,k,j) = t(i,k,j) - dts*msfty(i,j)*(              &
+       ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+       t(i,k,j) = (t(i,k,j) + msfty(i,j)*dts*ft(i,k,j)) - dts*msfty(i,j)*( &
+       ! END LICENSE
                           ! multiplication by mx needed for RHS terms 1 & 2
                           msftx(i,j)*(                     &
                .5*rdy*                                     &

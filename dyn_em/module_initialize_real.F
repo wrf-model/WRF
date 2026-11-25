@@ -238,26 +238,29 @@ integer::oops1,oops2
          END IF
 
          IF ( ( (config_flags%mp_physics         .EQ. thompsonaero .OR. &
-				 config_flags%mp_physics         .EQ. rcon_mp_scheme &
+				 config_flags%mp_physics         .EQ. rcon_mp_scheme .OR. &
+				 ( config_flags%mp_physics .EQ. TEMPO .AND. config_flags%tempo_aerosolaware .EQ. 1 ) &
 				) ) .AND. &
               ( config_flags%dust_emis          .EQ. 1            ) .AND. ( flag_erod      .EQ. 0 ) ) THEN
-            CALL wrf_message ( '----- ERROR: mp=28 or mp=29 AND dust_emis= 1 AND flag_erod       = 0 ' )
+            CALL wrf_message ( '----- ERROR: mp=28, mp=29, or aerosol-aware mp=88 AND dust_emis= 1 AND flag_erod       = 0 ' )
             geogrid_flag_error = geogrid_flag_error + 1
          END IF
 
          IF ( ( (config_flags%mp_physics         .EQ. thompsonaero .OR. &
-				 config_flags%mp_physics         .EQ. rcon_mp_scheme &
+				 config_flags%mp_physics         .EQ. rcon_mp_scheme .OR. &
+				 ( config_flags%mp_physics .EQ. TEMPO .AND. config_flags%tempo_aerosolaware .EQ. 1 ) &
 				) ) .AND. &
               ( config_flags%dust_emis          .EQ. 1            ) .AND. ( flag_clayfrac  .EQ. 0 ) ) THEN
-            CALL wrf_message ( '----- ERROR: mp=28 or mp=29 AND dust_emis= 1 AND flag_clayfrac   = 0 ' )
+            CALL wrf_message ( '----- ERROR: mp=28, mp=29, or aerosol-aware mp=88 AND dust_emis= 1 AND flag_clayfrac   = 0 ' )
             geogrid_flag_error = geogrid_flag_error + 1
          END IF
 
          IF ( ( (config_flags%mp_physics         .EQ. thompsonaero .OR. &
-				 config_flags%mp_physics         .EQ. rcon_mp_scheme &
+				 config_flags%mp_physics         .EQ. rcon_mp_scheme .OR. &
+				 ( config_flags%mp_physics .EQ. TEMPO .AND. config_flags%tempo_aerosolaware .EQ. 1 ) &
 				) ) .AND. &
 				( config_flags%dust_emis          .EQ. 1            ) .AND. ( flag_sandfrac  .EQ. 0 ) ) THEN
-            CALL wrf_message ( '----- ERROR: mp=28 or mp=29 AND dust_emis= 1 AND flag_sandfrac   = 0 ' )
+            CALL wrf_message ( '----- ERROR: mp=28, mp=29, or aerosol-aware mp=88 AND dust_emis= 1 AND flag_sandfrac   = 0 ' )
             geogrid_flag_error = geogrid_flag_error + 1
          END IF
         

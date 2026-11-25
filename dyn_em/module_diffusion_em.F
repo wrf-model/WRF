@@ -3171,14 +3171,10 @@ SUBROUTINE horizontal_diffusion_u_2( tendency, config_flags,              &
    INTEGER :: i_start, i_end, j_start, j_end
    INTEGER :: is_ext,ie_ext,js_ext,je_ext
 
-   REAL , DIMENSION( its-1:ite+1, kts:kte, jts-1:jte+1)    :: titau1avg, &
-                                                              titau2avg, &
-                                                                 titau1, &
-                                                                 titau2, &
-                                                                 xkxavg, &
-                                                                  rravg, &
-                                                                zy_at_u, &
-                                                                zx_at_u
+   ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+   REAL , DIMENSION( its-1:ite+1, kts:kte, jts-1:jte+1) :: titau1, titau2
+   REAL , DIMENSION( its-1:ite+1, kts:kte)              :: titau1avg, titau2avg, zy_at_u, zx_at_u
+   ! END LICENSE
 
 ! new
 !                                                                 zxavg, &
@@ -3262,9 +3258,13 @@ SUBROUTINE horizontal_diffusion_u_2( tendency, config_flags,              &
    DO j = j_start, j_end
    DO k = kts+1,ktf
    DO i = i_start, i_end
-      titau1avg(i,k,j)=0.5*(fnm(k)*(titau1(i-1,k  ,j)+titau1(i,k  ,j))+ &
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      titau1avg(i,k)=0.5*(fnm(k)*(titau1(i-1,k  ,j)+titau1(i,k  ,j))+ &
+      ! END LICENSE
                             fnp(k)*(titau1(i-1,k-1,j)+titau1(i,k-1,j)))
-      titau2avg(i,k,j)=0.5*(fnm(k)*(titau2(i,k  ,j+1)+titau2(i,k  ,j))+ &
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      titau2avg(i,k)=0.5*(fnm(k)*(titau2(i,k  ,j+1)+titau2(i,k  ,j))+ &
+      ! END LICENSE
                             fnp(k)*(titau2(i,k-1,j+1)+titau2(i,k-1,j)))
 !     tmpzy = 0.25*( zy(i-1,k,j  )+zy(i,k,j  )+ &
 !                    zy(i-1,k,j+1)+zy(i,k,j+1)  )
@@ -3272,8 +3272,10 @@ SUBROUTINE horizontal_diffusion_u_2( tendency, config_flags,              &
 !      titau1avg(i,k,j)=titau1avg(i,k,j)*zx(i,k,j)*tmpzeta_z
 !      titau2avg(i,k,j)=titau2avg(i,k,j)*tmpzy    *tmpzeta_z
 
-      zx_at_u(i, k, j) = 0.5 * (zx(i, k, j) + zx(i, k + 1 , j))
-      zy_at_u(i, k, j) = 0.125 * (zy(i - 1, k, j) + zy(i, k, j) + &
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      zx_at_u(i, k) = 0.5 * (zx(i, k, j) + zx(i, k + 1 , j))
+      zy_at_u(i, k) = 0.125 * (zy(i - 1, k, j) + zy(i, k, j) + &
+      ! END LICENSE
           zy(i - 1, k, j + 1) + zy(i, k, j + 1) + zy(i - 1, k + 1, j) + &
           zy(i, k + 1, j) + zy(i - 1, k + 1, j + 1) + zy(i, k + 1, j + 1))
 
@@ -3282,22 +3284,20 @@ SUBROUTINE horizontal_diffusion_u_2( tendency, config_flags,              &
 
    ENDDO
    ENDDO
-   ENDDO
 !
-   DO j = j_start, j_end
    DO i = i_start, i_end
-      titau1avg(i,kts,j)=0.
-      titau1avg(i,ktf+1,j)=0.
-      titau2avg(i,kts,j)=0.
-      titau2avg(i,ktf+1,j)=0.
-      zx_at_u(i, kts, j) = 0.5 * (zx(i, kts, j) + zx(i, kts + 1 , j))
-      zy_at_u(i, kts, j) = 0.125 * (zy(i - 1, kts, j) + zy(i, kts, j) + &
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      titau1avg(i,kts)=0.
+      titau1avg(i,ktf+1)=0.
+      titau2avg(i,kts)=0.
+      titau2avg(i,ktf+1)=0.
+      zx_at_u(i, kts) = 0.5 * (zx(i, kts, j) + zx(i, kts + 1 , j))
+      zy_at_u(i, kts) = 0.125 * (zy(i - 1, kts, j) + zy(i, kts, j) + &
+      ! END LICENSE
           zy(i - 1, kts, j + 1) + zy(i, kts, j + 1) + zy(i - 1, kts + 1, j) + &
           zy(i, kts + 1, j) + zy(i - 1, kts + 1, j + 1) + zy(i, kts + 1, j + 1))
    ENDDO
-   ENDDO
 !
-   DO j = j_start, j_end
    DO k = kts,ktf
    DO i = i_start, i_end
 
@@ -3308,8 +3308,10 @@ SUBROUTINE horizontal_diffusion_u_2( tendency, config_flags,              &
       tendency(i,k,j)=tendency(i,k,j) +  g*tmpdz/dnw(k) *             &
            (mrdx*(titau1(i,k,j  ) - titau1(i-1,k,j)) +                &
             mrdy*(titau2(i,k,j+1) - titau2(i  ,k,j)) -                &
-            msfux(i,j)*zx_at_u(i,k,j)*(titau1avg(i,k+1,j)-titau1avg(i,k,j)) / tmpdz - &
-            msfuy(i,j)*zy_at_u(i,k,j)*(titau2avg(i,k+1,j)-titau2avg(i,k,j)) / tmpdz   &
+            ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+            msfux(i,j)*zx_at_u(i,k)*(titau1avg(i,k+1)-titau1avg(i,k)) / tmpdz - &
+            msfuy(i,j)*zy_at_u(i,k)*(titau2avg(i,k+1)-titau2avg(i,k)) / tmpdz   &
+            ! END LICENSE
                                                                   )
    ENDDO
    ENDDO
@@ -3376,14 +3378,10 @@ SUBROUTINE horizontal_diffusion_v_2( tendency, config_flags,              &
    INTEGER :: i_start, i_end, j_start, j_end
    INTEGER :: is_ext,ie_ext,js_ext,je_ext
 
-   REAL , DIMENSION( its-1:ite+1, kts:kte, jts-1:jte+1)    :: titau1avg, &
-                                                              titau2avg, &
-                                                                 titau1, &
-                                                                 titau2, &
-                                                                 xkxavg, &
-                                                                  rravg, &
-                                                                zy_at_v, &
-                                                                zx_at_v
+   ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+   REAL , DIMENSION( its-1:ite+1, kts:kte, jts-1:jte+1) :: titau1, titau2
+   REAL , DIMENSION( its-1:ite+1, kts:kte)              :: titau1avg, titau2avg, zy_at_v, zx_at_v
+   ! END LICENSE
 ! new
 !                                                                 zxavg, &
 !                                                                 zyavg
@@ -3460,17 +3458,25 @@ SUBROUTINE horizontal_diffusion_v_2( tendency, config_flags,              &
    DO j = j_start, j_end
    DO k = kts+1,ktf
    DO i = i_start, i_end
-      titau1avg(i,k,j)=0.5*(fnm(k)*(titau1(i+1,k  ,j)+titau1(i,k  ,j))+ &
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      titau1avg(i,k)=0.5*(fnm(k)*(titau1(i+1,k  ,j)+titau1(i,k  ,j))+ &
+      ! END LICENSE
                             fnp(k)*(titau1(i+1,k-1,j)+titau1(i,k-1,j)))
-      titau2avg(i,k,j)=0.5*(fnm(k)*(titau2(i,k  ,j-1)+titau2(i,k  ,j))+ &
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      titau2avg(i,k)=0.5*(fnm(k)*(titau2(i,k  ,j-1)+titau2(i,k  ,j))+ &
+      ! END LICENSE
                             fnp(k)*(titau2(i,k-1,j-1)+titau2(i,k-1,j)))
 
 !      tmpzx = 0.25*( zx(i,k,j  )+zx(i+1,k,j  )+ &
 !                     zx(i,k,j-1)+zx(i+1,k,j-1)  )
-      zx_at_v(i, k, j) = 0.125 * (zx(i, k, j) + zx(i + 1, k, j) +     &
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      zx_at_v(i, k) = 0.125 * (zx(i, k, j) + zx(i + 1, k, j) +     &
+      ! END LICENSE
           zx(i, k, j - 1) + zx(i + 1, k, j - 1) + zx(i, k + 1, j) +   &
           zx(i + 1, k + 1, j) + zx(i, k + 1, j - 1) + zx(i + 1, k + 1, j - 1))
-      zy_at_v(i, k, j) = 0.5 * (zy(i, k, j) + zy(i, k + 1 , j))
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      zy_at_v(i, k) = 0.5 * (zy(i, k, j) + zy(i, k + 1 , j))
+      ! END LICENSE
 
 !     titau1avg(i,k,j)=titau1avg(i,k,j)*tmpzx
 !     titau2avg(i,k,j)=titau2avg(i,k,j)*zy(i,k,j)
@@ -3478,22 +3484,22 @@ SUBROUTINE horizontal_diffusion_v_2( tendency, config_flags,              &
 
    ENDDO
    ENDDO
-   ENDDO
 
-   DO j = j_start, j_end
    DO i = i_start, i_end
-      titau1avg(i,kts,j)=0.
-      titau1avg(i,ktf+1,j)=0.
-      titau2avg(i,kts,j)=0.
-      titau2avg(i,ktf+1,j)=0.
-      zx_at_v(i, kts, j) = 0.125 * (zx(i, kts, j) + zx(i + 1, kts, j) +     &
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      titau1avg(i,kts)=0.
+      titau1avg(i,ktf+1)=0.
+      titau2avg(i,kts)=0.
+      titau2avg(i,ktf+1)=0.
+      zx_at_v(i, kts) = 0.125 * (zx(i, kts, j) + zx(i + 1, kts, j) +     &
+      ! END LICENSE
           zx(i, kts, j - 1) + zx(i + 1, kts, j - 1) + zx(i, kts + 1, j) + &
           zx(i + 1, kts + 1, j) + zx(i, kts + 1, j - 1) + zx(i + 1, kts + 1, j - 1))
-      zy_at_v(i, kts, j) = 0.5 * (zy(i, kts, j) + zy(i, kts + 1 , j))
-   ENDDO
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      zy_at_v(i, kts) = 0.5 * (zy(i, kts, j) + zy(i, kts + 1 , j))
+      ! END LICENSE
    ENDDO
 !
-   DO j = j_start, j_end
    DO k = kts,ktf
    DO i = i_start, i_end
 
@@ -3503,8 +3509,10 @@ SUBROUTINE horizontal_diffusion_v_2( tendency, config_flags,              &
       tendency(i,k,j)=tendency(i,k,j) +    g*tmpdz/dnw(k) *           &
            (mrdy*(titau2(i,k,j  ) - titau2(i,k,j-1)) +                &
             mrdx*(titau1(i+1,k,j) - titau1(i  ,k,j)) -                &
-            msfvx(i,j)*zx_at_v(i,k,j)*(titau1avg(i,k+1,j)-titau1avg(i,k,j)) / tmpdz - &
-            msfvy(i,j)*zy_at_v(i,k,j)*(titau2avg(i,k+1,j)-titau2avg(i,k,j)) / tmpdz   &
+            ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+            msfvx(i,j)*zx_at_v(i,k)*(titau1avg(i,k+1)-titau1avg(i,k)) / tmpdz - &
+            msfvy(i,j)*zy_at_v(i,k)*(titau2avg(i,k+1)-titau2avg(i,k)) / tmpdz   &
+            ! END LICENSE
                                                                   )
 
    ENDDO
@@ -3572,14 +3580,10 @@ SUBROUTINE horizontal_diffusion_w_2( tendency, config_flags,              &
    INTEGER :: i_start, i_end, j_start, j_end
    INTEGER :: is_ext,ie_ext,js_ext,je_ext
 
-   REAL , DIMENSION( its-1:ite+1, kts:kte, jts-1:jte+1)    :: titau1avg, &
-                                                              titau2avg, &
-                                                                 titau1, &
-                                                                 titau2, &
-                                                                 xkxavg, &
-                                                                  rravg, &
-                                                                zx_at_w, &
-                                                                zy_at_w
+   ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+   REAL , DIMENSION( its-1:ite+1, kts:kte, jts-1:jte+1) :: titau1, titau2
+   REAL , DIMENSION( its-1:ite+1, kts:kte)              :: titau1avg, titau2avg, zx_at_w, zy_at_w
+   ! END LICENSE
 ! new
 !                                                                 zxavg, &
 !                                                                 zyavg
@@ -3658,12 +3662,18 @@ SUBROUTINE horizontal_diffusion_w_2( tendency, config_flags,              &
    DO j = j_start, j_end
    DO k = kts,ktf
    DO i = i_start, i_end
-      titau1avg(i,k,j)=0.25*(titau1(i+1,k+1,j)+titau1(i,k+1,j)+ &
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      titau1avg(i,k)=0.25*(titau1(i+1,k+1,j)+titau1(i,k+1,j)+ &
+      ! END LICENSE
                              titau1(i+1,k  ,j)+titau1(i,k  ,j))
-      titau2avg(i,k,j)=0.25*(titau2(i,k+1,j+1)+titau2(i,k+1,j)+ &
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      titau2avg(i,k)=0.25*(titau2(i,k+1,j+1)+titau2(i,k+1,j)+ &
+      ! END LICENSE
                              titau2(i,k  ,j+1)+titau2(i,k  ,j))
-      zx_at_w(i, k, j) = 0.5 * (zx(i, k, j) + zx(i + 1, k, j))
-      zy_at_w(i, k, j) = 0.5 * (zy(i, k, j) + zy(i, k, j + 1))
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      zx_at_w(i, k) = 0.5 * (zx(i, k, j) + zx(i + 1, k, j))
+      zy_at_w(i, k) = 0.5 * (zy(i, k, j) + zy(i, k, j + 1))
+      ! END LICENSE
 ! new
 !      tmpzx  =0.25*( zx(i,k  ,j)+zx(i+1,k  ,j)+ &
 !                     zx(i,k+1,j)+zx(i+1,k+1,j)  )
@@ -3676,16 +3686,14 @@ SUBROUTINE horizontal_diffusion_w_2( tendency, config_flags,              &
 !      titau2avg(i,k,j)=titau2avg(i,k,j)*tmpzy*zeta_z(i,j)
    ENDDO
    ENDDO
-   ENDDO
 
-   DO j = j_start, j_end
    DO i = i_start, i_end
-      titau1avg(i,ktf+1,j)=0.
-      titau2avg(i,ktf+1,j)=0.
-   ENDDO
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      titau1avg(i,ktf+1)=0.
+      titau2avg(i,ktf+1)=0.
+      ! END LICENSE
    ENDDO
 
-   DO j = j_start, j_end
    DO k = kts+1,ktf
    DO i = i_start, i_end
 
@@ -3695,8 +3703,10 @@ SUBROUTINE horizontal_diffusion_w_2( tendency, config_flags,              &
      tendency(i,k,j)=tendency(i,k,j) +   g/(dn(k)*rdz(i,k,j)) *         &
            (mrdx*(titau1(i+1,k,j)-titau1(i,k,j))+                       &
             mrdy*(titau2(i,k,j+1)-titau2(i,k,j))-                       &
-            msfty(i,j)*rdz(i,k,j)*(zx_at_w(i,k,j)*(titau1avg(i,k,j)-titau1avg(i,k-1,j))+ &
-                                   zy_at_w(i,k,j)*(titau2avg(i,k,j)-titau2avg(i,k-1,j))  &
+            ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+            msfty(i,j)*rdz(i,k,j)*(zx_at_w(i,k)*(titau1avg(i,k)-titau1avg(i,k-1))+ &
+                                 zy_at_w(i,k)*(titau2avg(i,k)-titau2avg(i,k-1))  &
+            ! END LICENSE
                                   )                                     &
            )
    ENDDO
@@ -3767,15 +3777,11 @@ SUBROUTINE horizontal_diffusion_s (tendency, config_flags,                &
 
    INTEGER :: i_start, i_end, j_start, j_end
 
-   REAL , DIMENSION( its-1:ite+1, kts:kte, jts-1:jte+1)    ::     H1avg, &
-                                                                  H2avg, &
-                                                                     H1, &
-                                                                     H2, &
-                                                                 xkxavg, &
-                                                                zx_at_m, &
-                                                                zy_at_m
-
-   REAL , DIMENSION( its:ite, kts:kte, jts:jte)            ::  tmptendf
+   ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+   REAL , DIMENSION( its-1:ite+1, kts:kte, jts-1:jte+1) :: H1, H2
+   REAL , DIMENSION( its-1:ite+1, kts:kte)              :: H1avg, H2avg, xkxavg, zx_at_m, zy_at_m
+   REAL , DIMENSION( its:ite, kts:kte)                  :: tmptendf
+   ! END LICENSE
 
    REAL    :: mrdx, mrdy, rcoup
    REAL    :: tmpzx, tmpzy, tmpzeta_z, rdzu, rdzv
@@ -3823,58 +3829,52 @@ SUBROUTINE horizontal_diffusion_s (tendency, config_flags,                &
       IF ( config_flags%periodic_x ) i_start = its
       IF ( config_flags%periodic_x ) i_end = MIN(ite,ide-1)
 
-! diffusion of the TKE needs mutiple 2
-
-   IF ( doing_tke ) THEN
-      DO j = j_start, j_end
-      DO k = kts,ktf
-      DO i = i_start, i_end
-         tmptendf(i,k,j)=tendency(i,k,j)
-      ENDDO
-      ENDDO
-      ENDDO
-   ENDIF
-
 ! H1 = partial var over partial x
 
    DO j = j_start, j_end
    DO k = kts, ktf
    DO i = i_start, i_end + 1
-      xkxavg(i,k,j)=0.5*(xkhh(i-1,k,j)+xkhh(i,k,j))*0.5*(rho(i-1,k,j)+rho(i,k,j))
-   ENDDO
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      xkxavg(i,k)=0.5*(xkhh(i-1,k,j)+xkhh(i,k,j))*0.5*(rho(i-1,k,j)+rho(i,k,j))
+      ! END LICENSE
    ENDDO
    ENDDO
 
-   DO j = j_start, j_end
    DO k = kts+1, ktf
    DO i = i_start, i_end + 1
-      H1avg(i,k,j)=0.5*(fnm(k)*(var(i-1,k  ,j)+var(i,k  ,j))+  &
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      H1avg(i,k)=0.5*(fnm(k)*(var(i-1,k  ,j)+var(i,k  ,j))+  &
+      ! END LICENSE
                         fnp(k)*(var(i-1,k-1,j)+var(i,k-1,j)))
    ENDDO
    ENDDO
-   ENDDO
 
-   DO j = j_start, j_end
    DO i = i_start, i_end + 1
-      H1avg(i,kts  ,j)=0.5*(cf1*var(i  ,1,j)+cf2*var(i  ,2,j)+ &
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      H1avg(i,kts  )=0.5*(cf1*var(i  ,1,j)+cf2*var(i  ,2,j)+ &
+      ! END LICENSE
                             cf3*var(i  ,3,j)+cf1*var(i-1,1,j)+  &
                             cf2*var(i-1,2,j)+cf3*var(i-1,3,j))
-      H1avg(i,ktf+1,j)=0.5*(var(i,ktes1,j)+(var(i,ktes1,j)- &
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      H1avg(i,ktf+1)=0.5*(var(i,ktes1,j)+(var(i,ktes1,j)- &
+      ! END LICENSE
                             var(i,ktes2,j))*0.5*dnw(ktes1)/dn(ktes1)+ &
                             var(i-1,ktes1,j)+(var(i-1,ktes1,j)- &
                             var(i-1,ktes2,j))*0.5*dnw(ktes1)/dn(ktes1))
    ENDDO
-   ENDDO
 
-   DO j = j_start, j_end
    DO k = kts, ktf
    DO i = i_start, i_end + 1
 ! new
       tmpzx = 0.5*( zx(i,k,j)+ zx(i,k+1,j))
       rdzu = 2./(1./rdzw(i,k,j) + 1./rdzw(i-1,k,j))
-      H1(i,k,j)=-msfux(i,j)*xkxavg(i,k,j)*(                      &
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      H1(i,k,j)=-msfux(i,j)*xkxavg(i,k)*(                        &
+      ! END LICENSE
                  rdx*(var(i,k,j)-var(i-1,k,j)) - tmpzx*         &
-                     (H1avg(i,k+1,j)-H1avg(i,k,j))*rdzu )
+                     ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+                     (H1avg(i,k+1)-H1avg(i,k))*rdzu )
+                     ! END LICENSE
 
 !      tmpzeta_z = 0.5*(zeta_z(i,j)+zeta_z(i-1,j))
 !      H1(i,k,j)=-msfuy(i,j)*xkxavg(i,k,j)*(                         &
@@ -3889,41 +3889,47 @@ SUBROUTINE horizontal_diffusion_s (tendency, config_flags,                &
    DO j = j_start, j_end + 1
    DO k = kts, ktf
    DO i = i_start, i_end
-      xkxavg(i,k,j)=0.5*(xkhh(i,k,j-1)+xkhh(i,k,j))*0.5*(rho(i,k,j-1)+rho(i,k,j))
-   ENDDO
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      xkxavg(i,k)=0.5*(xkhh(i,k,j-1)+xkhh(i,k,j))*0.5*(rho(i,k,j-1)+rho(i,k,j))
+      ! END LICENSE
    ENDDO
    ENDDO
 
-   DO j = j_start, j_end + 1
    DO k = kts+1,   ktf
    DO i = i_start, i_end
-      H2avg(i,k,j)=0.5*(fnm(k)*(var(i,k  ,j-1)+var(i,k  ,j))+  &
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      H2avg(i,k)=0.5*(fnm(k)*(var(i,k  ,j-1)+var(i,k  ,j))+  &
+      ! END LICENSE
                         fnp(k)*(var(i,k-1,j-1)+var(i,k-1,j)))
    ENDDO
    ENDDO
-   ENDDO
 
-   DO j = j_start, j_end + 1
    DO i = i_start, i_end
-      H2avg(i,kts  ,j)=0.5*(cf1*var(i,1,j  )+cf2*var(i  ,2,j)+ &
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      H2avg(i,kts  )=0.5*(cf1*var(i,1,j  )+cf2*var(i  ,2,j)+ &
+      ! END LICENSE
                             cf3*var(i,3,j  )+cf1*var(i,1,j-1)+  &
                             cf2*var(i,2,j-1)+cf3*var(i,3,j-1))
-      H2avg(i,ktf+1,j)=0.5*(var(i,ktes1,j)+(var(i,ktes1,j)- &
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      H2avg(i,ktf+1)=0.5*(var(i,ktes1,j)+(var(i,ktes1,j)- &
+      ! END LICENSE
                             var(i,ktes2,j))*0.5*dnw(ktes1)/dn(ktes1)+ &
                             var(i,ktes1,j-1)+(var(i,ktes1,j-1)- &
                             var(i,ktes2,j-1))*0.5*dnw(ktes1)/dn(ktes1))
    ENDDO
-   ENDDO
 
-   DO j = j_start, j_end + 1
    DO k = kts, ktf
    DO i = i_start, i_end
 ! new
       tmpzy = 0.5*( zy(i,k,j)+ zy(i,k+1,j))
       rdzv = 2./(1./rdzw(i,k,j) + 1./rdzw(i,k,j-1))
-      H2(i,k,j)=-msfvy(i,j)*xkxavg(i,k,j)*(                       &
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      H2(i,k,j)=-msfvy(i,j)*xkxavg(i,k)*(                        &
+      ! END LICENSE
                  rdy*(var(i,k,j)-var(i,k,j-1)) - tmpzy*          &
-                     (H2avg(i ,k+1,j)-H2avg(i,k,j))*rdzv)
+                     ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+                     (H2avg(i ,k+1)-H2avg(i,k))*rdzv)
+                     ! END LICENSE
 
 !      tmpzeta_z = 0.5*(zeta_z(i,j)+zeta_z(i,j-1))
 !      H2(i,k,j)=-msfvy(i,j)*xkxavg(i,k,j)*(                         &
@@ -3933,12 +3939,30 @@ SUBROUTINE horizontal_diffusion_s (tendency, config_flags,                &
    ENDDO
    ENDDO
 
+! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+! diffusion of the TKE needs mutiple 2
+! END LICENSE
+
    DO j = j_start, j_end
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      IF ( doing_tke ) THEN
+         DO k = kts,ktf
+         DO i = i_start, i_end
+            tmptendf(i,k)=tendency(i,k,j)
+         ENDDO
+         ENDDO
+      ENDIF
+      ! END LICENSE
+
    DO k = kts+1, ktf
    DO i = i_start, i_end
-      H1avg(i,k,j)=0.5*(fnm(k)*(H1(i+1,k  ,j)+H1(i,k  ,j))+  &
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      H1avg(i,k)=0.5*(fnm(k)*(H1(i+1,k  ,j)+H1(i,k  ,j))+  &
+      ! END LICENSE
                         fnp(k)*(H1(i+1,k-1,j)+H1(i,k-1,j)))
-      H2avg(i,k,j)=0.5*(fnm(k)*(H2(i,k  ,j+1)+H2(i,k  ,j))+  &
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      H2avg(i,k)=0.5*(fnm(k)*(H2(i,k  ,j+1)+H2(i,k  ,j))+  &
+      ! END LICENSE
                         fnp(k)*(H2(i,k-1,j+1)+H2(i,k-1,j)))
 ! new
 !     zxavg(i,k,j)=fnm(k)*zx(i,k,j)+fnp(k)*zx(i,k-1,j)
@@ -3947,28 +3971,27 @@ SUBROUTINE horizontal_diffusion_s (tendency, config_flags,                &
 ! H1avg(i,k,j)=zx*H1avg*zeta_z
 ! H2avg(i,k,j)=zy*H2avg*zeta_z
 
-      zx_at_m(i, k, j) = 0.25*(zx(i,k,j)+ zx(i+1,k,j) + zx(i,k+1,j)+ zx(i+1,k+1,j))
-      zy_at_m(i, k, j) = 0.25*(zy(i,k,j)+ zy(i,k,j+1) + zy(i,k+1,j)+ zy(i,k+1,j+1))
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      zx_at_m(i, k) = 0.25*(zx(i,k,j)+ zx(i+1,k,j) + zx(i,k+1,j)+ zx(i+1,k+1,j))
+      zy_at_m(i, k) = 0.25*(zy(i,k,j)+ zy(i,k,j+1) + zy(i,k+1,j)+ zy(i,k+1,j+1))
+      ! END LICENSE
 
 !      H1avg(i,k,j)=H1avg(i,k,j)*tmpzx*zeta_z(i,j)
 !      H2avg(i,k,j)=H2avg(i,k,j)*tmpzy*zeta_z(i,j)
    ENDDO
    ENDDO
-   ENDDO
 
-   DO j = j_start, j_end
    DO i = i_start, i_end
-      H1avg(i,kts  ,j)=0.
-      H1avg(i,ktf+1,j)=0.
-      H2avg(i,kts  ,j)=0.
-      H2avg(i,ktf+1,j)=0.
-      zx_at_m(i, kts, j) = 0.25*(zx(i,kts,j)+ zx(i+1,kts,j) + zx(i,kts+1,j)+ zx(i+1,kts+1,j))
-      zy_at_m(i, kts, j) = 0.25*(zy(i,kts,j)+ zy(i,kts,j+1) + zy(i,kts+1,j)+ zy(i,kts+1,j+1))
-
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      H1avg(i,kts  )=0.
+      H1avg(i,ktf+1)=0.
+      H2avg(i,kts  )=0.
+      H2avg(i,ktf+1)=0.
+      zx_at_m(i, kts) = 0.25*(zx(i,kts,j)+ zx(i+1,kts,j) + zx(i,kts+1,j)+ zx(i+1,kts+1,j))
+      zy_at_m(i, kts) = 0.25*(zy(i,kts,j)+ zy(i,kts,j+1) + zy(i,kts+1,j)+ zy(i,kts+1,j+1))
+      ! END LICENSE
    ENDDO
-   ENDDO
 
-   DO j = j_start, j_end
    DO k = kts,ktf
    DO i = i_start, i_end
 
@@ -3978,23 +4001,27 @@ SUBROUTINE horizontal_diffusion_s (tendency, config_flags,                &
       tendency(i,k,j)=tendency(i,k,j) +   g/(dnw(k)*rdzw(i,k,j)) * &
            (mrdx*(H1(i+1,k,j)-H1(i  ,k,j)) +                       &
             mrdy*(H2(i,k,j+1)-H2(i,k,j  )) -                       &
-            msftx(i,j)*zx_at_m(i, k, j)*(H1avg(i,k+1,j)-H1avg(i,k,j))*rdzw(i,k,j) - &
-            msfty(i,j)*zy_at_m(i, k, j)*(H2avg(i,k+1,j)-H2avg(i,k,j))*rdzw(i,k,j)   &
+            ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+            msftx(i,j)*zx_at_m(i, k)*(H1avg(i,k+1)-H1avg(i,k))*rdzw(i,k,j) - &
+            msfty(i,j)*zy_at_m(i, k)*(H2avg(i,k+1)-H2avg(i,k))*rdzw(i,k,j)   &
+            ! END LICENSE
            )
-   ENDDO
    ENDDO
    ENDDO
 
    IF ( doing_tke ) THEN
-      DO j = j_start, j_end
       DO k = kts,ktf
       DO i = i_start, i_end
-          tendency(i,k,j)=tmptendf(i,k,j)+2.* &
-                          (tendency(i,k,j)-tmptendf(i,k,j))
-      ENDDO
+         ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+         tendency(i,k,j)=tmptendf(i,k)+2.* &
+                         (tendency(i,k,j)-tmptendf(i,k))
+         ! END LICENSE
       ENDDO
       ENDDO
    ENDIF
+   ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+   ENDDO
+   ! END LICENSE
 
 END SUBROUTINE horizontal_diffusion_s
 

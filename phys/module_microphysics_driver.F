@@ -825,7 +825,6 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
    ! with the bounds of the tile it is called for, and tiles may run in
    ! separate OpenMP threads.
    type(ty_tempo_driver_diags), allocatable :: tempo_tile_diags(:)
-   real :: tempo_snowncv, tempo_graupelncv
 !---------------------------------------------------------------------
 !  check for microphysics type.  We need a clean way to
 !  specify these things!
@@ -914,7 +913,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
    ENDIF
 
    !$OMP PARALLEL DO   &
-   !$OMP PRIVATE ( ij, its, ite, jts, jte, i,j,k,n, tempo_snowncv, tempo_graupelncv )
+   !$OMP PRIVATE ( ij, its, ite, jts, jte, i,j,k,n )
 
    DO ij = 1 , num_tiles
        IF (channel) THEN
@@ -1476,22 +1475,33 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
              ! map tempo diagnostics to WRF variable names noting that some wrf variables are optional
              do j = jts, jte
                 do i = its, ite
-                   ! use locals so the total does not depend on optional arguments being present
-                   tempo_snowncv = tempo_tile_diags(ij)%ice_liquid_equiv_precip(i,j) + &
+                   ! totals are built from the tempo diagnostics directly so they do not
+                   ! depend on the optional snowncv/graupelncv arguments being present
+                   if (present(snowncv)) then
+                      snowncv(i,j) = tempo_tile_diags(ij)%ice_liquid_equiv_precip(i,j) + &
+                           tempo_tile_diags(ij)%snow_liquid_equiv_precip(i,j)
+                   endif
+                   if (present(snownc)) snownc(i,j) = snownc(i,j) + &
+                        tempo_tile_diags(ij)%ice_liquid_equiv_precip(i,j) + &
                         tempo_tile_diags(ij)%snow_liquid_equiv_precip(i,j)
-                   tempo_graupelncv = tempo_tile_diags(ij)%graupel_liquid_equiv_precip(i,j)
 
-                   if (present(snowncv)) snowncv(i,j) = tempo_snowncv
-                   if (present(snownc)) snownc(i,j) = snownc(i,j) + tempo_snowncv
-
-                   if (present(graupelncv)) graupelncv(i,j) = tempo_graupelncv
-                   if (present(graupelnc)) graupelnc(i,j) = graupelnc(i,j) + tempo_graupelncv
+                   if (present(graupelncv)) then
+                      graupelncv(i,j) = tempo_tile_diags(ij)%graupel_liquid_equiv_precip(i,j)
+                   endif
+                   if (present(graupelnc)) graupelnc(i,j) = graupelnc(i,j) + &
+                        tempo_tile_diags(ij)%graupel_liquid_equiv_precip(i,j)
 
                    if (present(rainncv)) then
-                      rainncv(i,j) = tempo_tile_diags(ij)%rain_precip(i,j) + tempo_snowncv + tempo_graupelncv
+                      rainncv(i,j) = tempo_tile_diags(ij)%rain_precip(i,j) + &
+                           tempo_tile_diags(ij)%ice_liquid_equiv_precip(i,j) + &
+                           tempo_tile_diags(ij)%snow_liquid_equiv_precip(i,j) + &
+                           tempo_tile_diags(ij)%graupel_liquid_equiv_precip(i,j)
                    endif
                    if (present(rainnc)) rainnc(i,j) = rainnc(i,j) + &
-                        tempo_tile_diags(ij)%rain_precip(i,j) + tempo_snowncv + tempo_graupelncv
+                        tempo_tile_diags(ij)%rain_precip(i,j) + &
+                        tempo_tile_diags(ij)%ice_liquid_equiv_precip(i,j) + &
+                        tempo_tile_diags(ij)%snow_liquid_equiv_precip(i,j) + &
+                        tempo_tile_diags(ij)%graupel_liquid_equiv_precip(i,j)
                    ! ratio of frozen precipitation to total is not optional in wrf
                    sr(i,j) = tempo_tile_diags(ij)%frozen_fraction(i,j)
 

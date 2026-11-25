@@ -19,6 +19,7 @@ subroutine da_get_innov_vector_qscat (it,num_qcstat_conv, grid, ob, iv)
    real    :: dx, dxm  ! Interpolation weights.
    real    :: dy, dym  ! Interpolation weights.
    real    :: speed, direction
+   real    :: znt, rib, ht, za, bn, fm, bd
 
    real, allocatable :: model_u(:,:)  ! Model value u at ob location.
    real, allocatable :: model_v(:,:)  ! Model value v at ob location.
@@ -79,6 +80,33 @@ subroutine da_get_innov_vector_qscat (it,num_qcstat_conv, grid, ob, iv)
    call da_interp_lin_3d (grid%xb%v, iv%info(qscat), model_v)
 #endif
 
+   if (qscat_neutral) then
+      do n=iv%info(qscat)%n1,iv%info(qscat)%n2
+         ! [1.1] Get horizontal interpolation weights:
+         i   = iv%info(qscat)%i(1,n)
+         j   = iv%info(qscat)%j(1,n)
+         dx  = iv%info(qscat)%dx(1,n)
+         dy  = iv%info(qscat)%dy(1,n)
+         dxm = iv%info(qscat)%dxm(1,n)
+         dym = iv%info(qscat)%dym(1,n)
+
+         znt = dym*(dxm*grid%znt(i,j) + dx*grid%znt(i+1,j)) + dy*(dxm*grid%znt(i,j+1) + dx*grid%znt(i+1,j+1))
+         rib = dym*(dxm*grid%br(i,j)  + dx*grid%br(i+1,j))  + dy*(dxm*grid%br(i,j+1)  + dx*grid%br(i+1,j+1))
+         ht  = dym*(dxm*grid%ht(i,j)  + dx*grid%ht(i+1,j))  + dy*(dxm*grid%ht(i,j+1)  + dx*grid%ht(i+1,j+1))
+         
+         za  = v_h(kts) - ht 
+
+         bn = log( 1 + za/znt )
+         if (rib < 0) then
+            fm=1-10 * rib / ( 1-75 * rib * bn * sqrt( 1+10/znt ) )
+         else
+            fm = 1 / (1 + 10 * rib / sqrt(1 + 5*rib ) )
+         end if
+         bd = bn/sqrt(fm)
+         model_u(1, n) = model_u(1, n) * log( 1 + 10/znt ) / bd
+         model_v(1, n) = model_v(1, n) * log( 1 + 10/znt ) / bd
+      end do
+   end if
    do n=iv%info(qscat)%n1,iv%info(qscat)%n2
 
       !------------------------------------------------------------------------
@@ -119,6 +147,8 @@ subroutine da_get_innov_vector_qscat (it,num_qcstat_conv, grid, ob, iv)
 
    if ( check_max_iv ) &
       call da_check_max_iv_qscat(iv, it, num_qcstat_conv)       
+
+   if ( qc_qscat ) call da_qc_qscat(it, ob, grid, iv, num_qcstat_conv)
 
    deallocate (model_u)
    deallocate (model_v)

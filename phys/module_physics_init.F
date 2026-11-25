@@ -4789,13 +4789,41 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
         CALL jensen_ishmael_init()
 
      CASE (P3_1CATEGORY)
-         CALL p3_init('.',1,.false.,'WRF',i_err,.false.)
+         CALL p3_init(lookup_file_dir='.',   &
+                      nCat=1,                &
+                      trplMomI=.false.,     &
+                      liqfrac=.false.,      &
+                      model='WRF',           &
+                      stat=i_err,            &
+                      abort_on_err=.false.,  &
+                      dowr=.false.)
      CASE (P3_1CATEGORY_NC)
-         CALL p3_init('.',1,.false.,'WRF',i_err,.false.)
+         CALL p3_init(lookup_file_dir='.',   &
+                      nCat=1,                &
+                      trplMomI=.false.,     &
+                      liqfrac=.false.,      &
+                      model='WRF',           &
+                      stat=i_err,            &
+                      abort_on_err=.false.,  &
+                      dowr=.false.)
      CASE (P3_2CATEGORY)
-         CALL p3_init('.',2,.false.,'WRF',i_err,.false.)
+         CALL p3_init(lookup_file_dir='.',   &
+                      nCat=2,                &
+                      trplMomI=.false.,     &
+                      liqfrac=.false.,      &
+                      model='WRF',           &
+                      stat=i_err,            &
+                      abort_on_err=.false.,  &
+                      dowr=.false.)
      CASE (P3_1CAT_3MOM)
-         CALL p3_init('.',1,.true.,'WRF',i_err,.false.)
+         CALL p3_init(lookup_file_dir='.',   &
+                      nCat=1,                &
+                      trplMomI=.true.,     &
+                      liqfrac=.true.,      &
+                      model='WRF',           &
+                      stat=i_err,            &
+                      abort_on_err=.false.,  &
+                      dowr=.false.)
      CASE (MILBRANDT2MOM)
          CALL milbrandt2mom_init
 !      CASE (MILBRANDT3MOM)

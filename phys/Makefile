@@ -508,6 +508,13 @@ submodules :
 	else \
 		echo No action required for TEMPO submodule ; \
 	fi
+	@if [ \( ! -f module_mp_p3.F \) ] ; then \
+		echo Pulling in P3 submodule ; \
+		( cd .. ; git submodule update --init --recursive ) ; \
+		ln -sf P3/src/microphy_p3.f90 module_mp_p3.F ; \
+	else \
+		echo No action required for P3 submodule ; \
+	fi
 
 clean:
 	@ echo 'use the clean script'

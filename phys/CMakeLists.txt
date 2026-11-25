@@ -152,7 +152,6 @@ target_sources(
                   module_mp_morr_two_moment_aero.F
                   module_mp_nssl_2mom.F
                   module_mp_ntu.F
-                  module_mp_p3.F
                   module_mp_radar.F
                   module_mp_rcon.F
                   module_mp_SBM_polar_radar.F
@@ -441,6 +440,8 @@ target_sources(
                   TEMPO/src/module_mp_tempo_aerosols.F90
                   TEMPO/src/module_mp_tempo_main.F90
                   TEMPO/src/module_mp_tempo_driver.F90
+                  # P3
+                  P3/src/microphy_p3.f90
                   # GFL
                   GFL/module_cu_gfl_deep.F90
                   GFL/module_cu_gfl_sh.F90

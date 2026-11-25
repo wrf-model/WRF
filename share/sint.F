@@ -16,18 +16,21 @@
 !                                                                       
       REAL XF(ims:ime,jms:jme,NF)
 !                                                                       
-      REAL Y(ims:ime,jms:jme,-IOR:IOR),    &
-           Z(ims:ime,jms:jme,-IOR:IOR),    &
-           F(ims:ime,jms:jme,0:1)                                       
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      REAL Y(-IOR:IOR),                &
+           ZX(its:ite,jts-IOR:jte+IOR),&
+           F(0:1)
+      LOGICAL xmask(its:ite,jts-IOR:jte+IOR)
+      ! END LICENSE
 !
       INTEGER I,J,II,JJ,IIM
       INTEGER N2STAR, N2END, N1STAR, N1END
 !                                                                       
       DATA  EP/ 1.E-10/                                                 
 
-      REAL W(ims:ime,jms:jme),OV(ims:ime,jms:jme),UN(ims:ime,jms:jme)                     
-      REAL MXM(ims:ime,jms:jme),MN(ims:ime,jms:jme)                                 
-      REAL FL(ims:ime,jms:jme,0:1)                                            
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      REAL W,OV,UN,MXM,MN,FL(0:1)
+      ! END LICENSE
       REAL XIG(NF*NF), XJG(NF*NF)  ! NF is parent to child grid refinement ratio
       integer rr
 
@@ -42,6 +45,10 @@
       REAL pp, pn, x
       PP(X)=AMAX1(0.,X)                                                 
       PN(X)=AMIN1(0.,X)                                                 
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      ! Guard empty 1-cell boundary tiles before sweeping J = N2STAR-IOR..N2END+IOR
+      IF (its .GT. ite .OR. jts .GT. jte) RETURN
+      ! END LICENSE
 
       rr = nint(sqrt(float(nf)))
 !!      write(6,*) ' nf, rr are ',nf,rr
@@ -63,134 +70,73 @@
       N1STAR = its
       N1END  = ite
 
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      ! Precompute 5-row stencil mask so each unique x-pass row is computed once into ZX
+      xmask = .FALSE.
+      DO JJ = N2STAR, N2END
+        DO II = N1STAR, N1END
+          IF ( icmask(II,JJ) ) xmask(II, JJ-IOR:JJ+IOR) = .TRUE.
+        ENDDO
+      ENDDO
+      ! END LICENSE
       DO 2000 IIM=1,NF                                                  
 !                                                                       
 !  HERE STARTS RESIDUAL ADVECTION                                       
 !                                                                       
-        DO 9000 JJ=N2STAR,N2END                                         
-          DO 50 J=-IOR,IOR                                              
-
-            DO 51 I=-IOR,IOR                                            
-              DO 511 II=N1STAR,N1END                                    
-                IF ( icmask(II,JJ) ) Y(II,JJ,I)=XF(II+I,JJ+J,IIM)              
-  511         CONTINUE
-   51       CONTINUE                                                    
-
-            DO 811 II=N1STAR,N1END                                      
-              IF ( icmask(II,JJ) ) THEN
-                FL(II,JJ,0)=DONOR(Y(II,JJ,-1),Y(II,JJ,0),XIG(IIM))        
-                FL(II,JJ,1)=DONOR(Y(II,JJ,0),Y(II,JJ,1),XIG(IIM))           
+          ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+          DO 50 J=N2STAR-IOR,N2END+IOR
+            DO 811 II=N1STAR,N1END
+              IF ( xmask(II,J) ) THEN
+                Y(-2)=XF(II-2,J,IIM)
+                Y(-1)=XF(II-1,J,IIM)
+                Y(0)=XF(II,J,IIM)
+                Y(1)=XF(II+1,J,IIM)
+                Y(2)=XF(II+2,J,IIM)
+                FL(0)=DONOR(Y(-1),Y(0),XIG(IIM))
+                FL(1)=DONOR(Y(0),Y(1),XIG(IIM))
+                W=Y(0)-(FL(1)-FL(0))
+                MXM=AMAX1(Y(-1),Y(0),Y(1),W)
+                MN=AMIN1(Y(-1),Y(0),Y(1),W)
+                F(0)=TR4(Y(-2),Y(-1),Y(0),Y(1),XIG(IIM))
+                F(1)=TR4(Y(-1),Y(0),Y(1),Y(2),XIG(IIM))
+                F(0)=F(0)-FL(0)
+                F(1)=F(1)-FL(1)
+                OV=(MXM-W)/(-PN(F(1))+PP(F(0))+EP)
+                UN=(W-MN)/(PP(F(1))-PN(F(0))+EP)
+                F(0)=PP(F(0))*AMIN1(1.,OV)+PN(F(0))*AMIN1(1.,UN)
+                F(1)=PP(F(1))*AMIN1(1.,UN)+PN(F(1))*AMIN1(1.,OV)
+                ZX(II,J)=W-(F(1)-F(0))
+          ! END LICENSE
               ENDIF
   811         CONTINUE
-            DO 812 II=N1STAR,N1END                                      
-              IF ( icmask(II,JJ) ) W(II,JJ)=Y(II,JJ,0)-(FL(II,JJ,1)-FL(II,JJ,0))               
-  812         CONTINUE
-            DO 813 II=N1STAR,N1END                                      
-              IF ( icmask(II,JJ) ) THEN
-                MXM(II,JJ)=                                             &
-                         AMAX1(Y(II,JJ,-1),Y(II,JJ,0),Y(II,JJ,1),       &
-                         W(II,JJ))                                      
-                MN(II,JJ)=AMIN1(Y(II,JJ,-1),Y(II,JJ,0),Y(II,JJ,1),W(II,JJ)) 
-              ENDIF
-  813         CONTINUE
-            DO 312 II=N1STAR,N1END                                      
-              IF ( icmask(II,JJ) ) THEN
-                F(II,JJ,0)=                                               &
-                           TR4(Y(II,JJ,-2),Y(II,JJ,-1),Y(II,JJ,0),        &
-                           Y(II,JJ,1),XIG(IIM))                           
-                F(II,JJ,1)=                                                 &
-                         TR4(Y(II,JJ,-1),Y(II,JJ,0),Y(II,JJ,1),Y(II,JJ,2),&
-                         XIG(IIM))                                        
-                ENDIF
-  312         CONTINUE
-            DO 822 II=N1STAR,N1END                                      
-              IF ( icmask(II,JJ) ) THEN
-                F(II,JJ,0)=F(II,JJ,0)-FL(II,JJ,0)                         
-                F(II,JJ,1)=F(II,JJ,1)-FL(II,JJ,1)                           
-              ENDIF
-  822         CONTINUE
-            DO 823 II=N1STAR,N1END                                      
-              IF ( icmask(II,JJ) ) THEN
-                OV(II,JJ)=(MXM(II,JJ)-W(II,JJ))/(-PN(F(II,JJ,1))+         &
-                        PP(F(II,JJ,0))+EP)                              
-                UN(II,JJ)=(W(II,JJ)-MN(II,JJ))/(PP(F(II,JJ,1))-             &
-                      PN(F(II,JJ,0))+EP)                                
-              ENDIF
-  823         CONTINUE
-            DO 824 II=N1STAR,N1END                                      
-              IF ( icmask(II,JJ) ) THEN
-                F(II,JJ,0)=PP(F(II,JJ,0))*AMIN1(1.,OV(II,JJ))+            &
-                           PN(F(II,JJ,0))*AMIN1(1.,UN(II,JJ))             
-                F(II,JJ,1)=PP(F(II,JJ,1))*AMIN1(1.,UN(II,JJ))+            &
-                           PN(F(II,JJ,1))*AMIN1(1.,OV(II,JJ))             
-              ENDIF                                                    
-  824         CONTINUE                                                    
-            DO 825 II=N1STAR,N1END                                      
-              IF ( icmask(II,JJ) ) THEN
-                Y(II,JJ,0)=W(II,JJ)-(F(II,JJ,1)-F(II,JJ,0))                 
-              ENDIF
-  825         CONTINUE
-            DO 361 II=N1STAR,N1END                                      
-              IF ( icmask(II,JJ) ) Z(II,JJ,J)=Y(II,JJ,0)                                       
-  361         CONTINUE
 !                                                                       
 !  END IF FIRST J LOOP                                                  
 !                                                                       
- 8000       CONTINUE                                                    
    50     CONTINUE                                                      
-
+        ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+        DO 9000 JJ=N2STAR,N2END
+        ! END LICENSE
           DO 911 II=N1STAR,N1END                                        
             IF ( icmask(II,JJ) ) THEN
-              FL(II,JJ,0)=DONOR(Z(II,JJ,-1),Z(II,JJ,0),XJG(IIM))          
-              FL(II,JJ,1)=DONOR(Z(II,JJ,0),Z(II,JJ,1),XJG(IIM))             
+              ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+              FL(0)=DONOR(ZX(II,JJ-1),ZX(II,JJ),XJG(IIM))
+              FL(1)=DONOR(ZX(II,JJ),ZX(II,JJ+1),XJG(IIM))
+              W=ZX(II,JJ)-(FL(1)-FL(0))
+              MXM=AMAX1(ZX(II,JJ-1),ZX(II,JJ),ZX(II,JJ+1),W)
+              MN=AMIN1(ZX(II,JJ-1),ZX(II,JJ),ZX(II,JJ+1),W)
+              F(0)=TR4(ZX(II,JJ-2),ZX(II,JJ-1),ZX(II,JJ),ZX(II,JJ+1),XJG(IIM))
+              F(1)=TR4(ZX(II,JJ-1),ZX(II,JJ),ZX(II,JJ+1),ZX(II,JJ+2),XJG(IIM))
+              F(0)=F(0)-FL(0)
+              F(1)=F(1)-FL(1)
+              OV=(MXM-W)/(-PN(F(1))+PP(F(0))+EP)
+              UN=(W-MN)/(PP(F(1))-PN(F(0))+EP)
+              F(0)=PP(F(0))*AMIN1(1.,OV)+PN(F(0))*AMIN1(1.,UN)
+              F(1)=PP(F(1))*AMIN1(1.,UN)+PN(F(1))*AMIN1(1.,OV)
+              XF(II,JJ,IIM)=W-(F(1)-F(0))
+              ! END LICENSE
             ENDIF
   911       CONTINUE
-          DO 912 II=N1STAR,N1END                                        
-            IF ( icmask(II,JJ) ) W(II,JJ)=Z(II,JJ,0)-(FL(II,JJ,1)-FL(II,JJ,0))                 
-  912       CONTINUE
-          DO 913 II=N1STAR,N1END                                        
-            IF ( icmask(II,JJ) ) THEN
-              MXM(II,JJ)=AMAX1(Z(II,JJ,-1),Z(II,JJ,0),Z(II,JJ,1),W(II,JJ))
-              MN(II,JJ)=AMIN1(Z(II,JJ,-1),Z(II,JJ,0),Z(II,JJ,1),W(II,JJ))   
-            ENDIF
-  913       CONTINUE
-          DO 412 II=N1STAR,N1END                                        
-            IF ( icmask(II,JJ) ) THEN
-              F(II,JJ,0)=                                                 &
-                         TR4(Z(II,JJ,-2),Z(II,JJ,-1),Z(II,JJ,0),Z(II,JJ,1)&
-                         ,XJG(IIM))                                       
-              F(II,JJ,1)=                                                   &
-                         TR4(Z(II,JJ,-1),Z(II,JJ,0),Z(II,JJ,1),Z(II,JJ,2),  &
-                         XJG(IIM))                                          
-            ENDIF
-  412       CONTINUE
-          DO 922 II=N1STAR,N1END                                        
-            IF ( icmask(II,JJ) ) THEN
-              F(II,JJ,0)=F(II,JJ,0)-FL(II,JJ,0)                           
-              F(II,JJ,1)=F(II,JJ,1)-FL(II,JJ,1)                             
-            ENDIF
-  922       CONTINUE
-          DO 923 II=N1STAR,N1END                                        
-            IF ( icmask(II,JJ) ) THEN
-              OV(II,JJ)=(MXM(II,JJ)-W(II,JJ))/(-PN(F(II,JJ,1))+           &
-                        PP(F(II,JJ,0))+EP)                                
-              UN(II,JJ)=(W(II,JJ)-MN(II,JJ))/(PP(F(II,JJ,1))-PN(F(II,JJ,0))+ &
-                      EP)                                                 
-            ENDIF
-  923       CONTINUE
-          DO 924 II=N1STAR,N1END                                        
-            IF ( icmask(II,JJ) ) THEN
-              F(II,JJ,0)=PP(F(II,JJ,0))*AMIN1(1.,OV(II,JJ))+PN(F(II,JJ,0))  &
-                         *AMIN1(1.,UN(II,JJ))                             
-              F(II,JJ,1)=PP(F(II,JJ,1))*AMIN1(1.,UN(II,JJ))+PN(F(II,JJ,1))  &
-                         *AMIN1(1.,OV(II,JJ))                             
-            ENDIF
-  924     CONTINUE                                                      
  9000   CONTINUE                                                        
-        DO 925 JJ=N2STAR,N2END                                          
-          DO 925 II=N1STAR,N1END                                        
-            IF ( icmask(II,JJ) ) XF(II,JJ,IIM)=W(II,JJ)-(F(II,JJ,1)-F(II,JJ,0))                
-  925     CONTINUE
                                                                         
 !                                                                       
  2000 CONTINUE                                                          
@@ -219,7 +165,9 @@
       REAL XF1(ims:ime,jms:jme,NF)
 !                                                                       
       REAL Y(-IOR:IOR),    &
-           Z(ims:ime,-IOR:IOR),    &
+           ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+           ZX(its:ite,jts-IOR:jte+IOR),&
+           ! END LICENSE
            F(0:1)                                       
 !
       INTEGER I,J,II,JJ,IIM
@@ -247,6 +195,10 @@
       REAL pp, pn, x
       PP(X)=AMAX1(0.,X)                                                 
       PN(X)=AMIN1(0.,X)                                                 
+      ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+      ! Guard empty 1-cell boundary tiles before sweeping J = N2STAR-IOR..N2END+IOR
+      IF (its .GT. ite .OR. jts .GT. jte) RETURN
+      ! END LICENSE
 
       rr = nint(sqrt(float(nf)))
 
@@ -271,17 +223,21 @@
 !                                                                       
 !  HERE STARTS RESIDUAL ADVECTION                                       
 !                                                                       
-        DO 9000 JJ=N2STAR,N2END                                         
 !cdir unroll=5
-          DO 50 J=-IOR,IOR                                              
+          ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+          ! Compute each unique x-direction row once into ZX and reuse across adjacent JJ stencils
+          DO 50 J=N2STAR-IOR,N2END+IOR
+          ! END LICENSE
 
 !cdir unroll=5
               DO 511 II=N1STAR,N1END                                    
-                Y(-2)=XF1(II-2,JJ+J,IIM)              
-                Y(-1)=XF1(II-1,JJ+J,IIM)              
-                Y(0)=XF1(II,JJ+J,IIM)              
-                Y(1)=XF1(II+1,JJ+J,IIM)              
-                Y(2)=XF1(II+2,JJ+J,IIM)              
+                ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+                Y(-2)=XF1(II-2,J,IIM)
+                Y(-1)=XF1(II-1,J,IIM)
+                Y(0)=XF1(II,J,IIM)
+                Y(1)=XF1(II+1,J,IIM)
+                Y(2)=XF1(II+2,J,IIM)
+                ! END LICENSE
 
               FL(0)=DONOR(Y(-1),Y(0),XIG(IIM))        
               FL(1)=DONOR(Y(0),Y(1),XIG(IIM))           
@@ -307,25 +263,35 @@
               F(1)=PP(F(1))*AMIN1(1.,UN)+            &
                    PN(F(1))*AMIN1(1.,OV)             
               Y(0)=W-(F(1)-F(0))                 
-              Z(II,J)=Y(0)                                       
+              ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+              ZX(II,J)=Y(0)
+              ! END LICENSE
   511         CONTINUE
 !                                                                       
 !  END IF FIRST J LOOP                                                  
 !                                                                       
- 8000       CONTINUE                                                    
    50     CONTINUE                                                      
 
+        ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+        DO 9000 JJ=N2STAR,N2END
+        ! END LICENSE
           DO 911 II=N1STAR,N1END                                        
-            FL(0)=DONOR(Z(II,-1),Z(II,0),XJG(IIM))          
-            FL(1)=DONOR(Z(II,0),Z(II,1),XJG(IIM))             
-            W=Z(II,0)-(FL(1)-FL(0))                 
-            MXM=AMAX1(Z(II,-1),Z(II,0),Z(II,1),W)
-             MN=AMIN1(Z(II,-1),Z(II,0),Z(II,1),W)   
+            ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+            FL(0)=DONOR(ZX(II,JJ-1),ZX(II,JJ),XJG(IIM))
+            FL(1)=DONOR(ZX(II,JJ),ZX(II,JJ+1),XJG(IIM))
+            W=ZX(II,JJ)-(FL(1)-FL(0))
+            MXM=AMAX1(ZX(II,JJ-1),ZX(II,JJ),ZX(II,JJ+1),W)
+             MN=AMIN1(ZX(II,JJ-1),ZX(II,JJ),ZX(II,JJ+1),W)
+            ! END LICENSE
             F(0)=                                                 &
-                 TR4(Z(II,-2),Z(II,-1),Z(II,0),Z(II,1)&
+                 ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+                 TR4(ZX(II,JJ-2),ZX(II,JJ-1),ZX(II,JJ),ZX(II,JJ+1)&
+                 ! END LICENSE
                  ,XJG(IIM))                                       
             F(1)=                                                   &
-                 TR4(Z(II,-1),Z(II,0),Z(II,1),Z(II,2),  &
+                 ! THE FOLLOWING LINES OF CODE ARE LICENSED UNDER doc/licenses/google_license.txt
+                 TR4(ZX(II,JJ-1),ZX(II,JJ),ZX(II,JJ+1),ZX(II,JJ+2),  &
+                 ! END LICENSE
                  XJG(IIM))                                          
             F(0)=F(0)-FL(0)                           
             F(1)=F(1)-FL(1)                             

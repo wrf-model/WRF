@@ -138,7 +138,7 @@
   if( processingAerosols ) then
 !
 ! select aerosol optical property option
-! VOLUME: volume averaging of refractive indicies
+! VOLUME: volume averaging of refractive indices
 ! * for MADE/SORGAM, assume same 8 size bins as MOSAIC by default
 ! SHELL: shell-core approach, placeholder
 !

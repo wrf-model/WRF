@@ -29,7 +29,7 @@ subroutine da_get_solar_angles( yr, mt, dy, hr, mn, sc, &
    !   (https://github.com/jpjustiniano/Subroutines)                                |
    !                                                                                |
    !   For more accurate algorithms (±0.0003 deg.) across longer periods of time,   |
-   !   refer to the National Renewable Energy Laboratory (NREL) Solar Postion       |
+   !   refer to the National Renewable Energy Laboratory (NREL) Solar Position      |
    !   Algorithm (SPA), available in C, Matlab, and Python:                         |
    !     - https://rredc.nrel.gov/solar/codesandalgorithms/spa                      |
    !     - https://www.mathworks.com/matlabcentral/fileexchange/59903-nrel-s-solar-position-algorithm-spa |

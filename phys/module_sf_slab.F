@@ -501,7 +501,7 @@ CONTAINS
    90 CONTINUE                                                                   
       DO I=its,ite
 ! QSFC and CHKLOWQ needed by Eta PBL
-! WA added check for flqc = 0 to accomodate TEMF (and others?)
+! WA added check for flqc = 0 to accommodate TEMF (and others?)
         if ( FLQC(I) .ne. 0.) then
            QSFC(I)=QX(I)+QFX(I)/FLQC(I)
         else

@@ -420,7 +420,7 @@ contains
        end do
 #else
        !Balwinder.Singh@pnnl: Comments regarding spechygro:
-       !RCE origianl comment:"code involving specrefndxsw, specrefndxlw, and spechygro is temporary,
+       !RCE original comment:"code involving specrefndxsw, specrefndxlw, and spechygro is temporary,
        !and should be changed after cam radiation code is ported"
 
        ! 2010/06/16 rce
@@ -1108,7 +1108,7 @@ contains
        
        modeptr_accum_mp         = modeptr_accum
        modeptr_coarse_mp        = modeptr_coarse
-       modeptr_coardust_mp      = modeptr_coardust !BSINGH - declared for MAM7 complaince
+       modeptr_coardust_mp      = modeptr_coardust !BSINGH - declared for MAM7 compliance
        modeptr_aitken_mp        = modeptr_aitken
 
        numptrcw_amode_mp(:)     = numptrcw_amode(:)

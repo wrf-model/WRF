@@ -17,7 +17,7 @@ module overland_stream_and_lake_interface
          !FIXME maybe move ^^^ to mass balance
 
         !real :: lake_inflotrt   ! lake inflow from surface head
-        !Accumulated water contribution from surface cells to lake cells throught the simulation (mm)
+        !Accumulated water contribution from surface cells to lake cells throughout the simulation (mm)
         real :: accumulated_surface_water_to_lake
         !FIXME maybe move ^^^ to mass balance
 
@@ -26,7 +26,7 @@ module overland_stream_and_lake_interface
         !If the mask value is negative on gridded channel routing, then no channel routing occurs for that cell
         integer, allocatable, dimension(:,:) :: channel_mask
 
-        !integer, allocatable, dimension(:,:) :: lake_mskrt ! mask for identifing lake elements in channel network
+        !integer, allocatable, dimension(:,:) :: lake_mskrt ! mask for identifying lake elements in channel network
         !Mask for the grid cells to indicate which cells are part of lakes, 0 for no lake
         !other values range from 1-N, indicating the index to the lake objects represented by the cells with the
         !same values (i.e, all lask_mask cells with a value of 1 make up the gridded representation of lake object 1)
@@ -47,12 +47,12 @@ module overland_stream_and_lake_interface
 
     contains
 
-! this structure allocates and initalizes the members of an overland_stream_and_lake_interface strucutre
-! if members have allready been initalized they will not be altered and an error will be logged
+! this structure allocates and initializes the members of an overland_stream_and_lake_interface structure
+! if members have already been initialized they will not be altered and an error will be logged
 
 subroutine overland_stream_and_lake_interface_init(this,ix,jx)
     implicit none
-    class(overland_stream_and_lake_interface_struct), intent(inout) :: this ! the type object being initalized
+    class(overland_stream_and_lake_interface_struct), intent(inout) :: this ! the type object being initialized
     integer, intent(in) :: ix                     ! x grid size
     integer, intent(in) :: jx                     ! y grid size
 
@@ -95,10 +95,10 @@ subroutine overland_stream_and_lake_interface_init(this,ix,jx)
 
     if ( allocation_error ) &
         write(0,*) "attempt to allocate data in members of overland lakes and streams structure&
-        &that where allready allocated. The allocated members where not changed"    
+        &that where already allocated. The allocated members where not changed"
 end subroutine overland_stream_and_lake_interface_init
 
-! this procedure deallocates and overland_stream_and_lake_interface structure that was initalized with
+! this procedure deallocates and overland_stream_and_lake_interface structure that was initialized with
 ! overland_stream_and_lake_interface_init
 
 subroutine overland_stream_and_lake_interface_destroy(this)
@@ -137,7 +137,7 @@ subroutine overland_stream_and_lake_interface_destroy(this)
 
     if ( allocation_error ) &
         write(0,*) "attempt to deallocate data in members of overland streams and lakes structure&
-        &that where not allready allocated. The unallocated members where not changed"   
+        &that where not already allocated. The unallocated members where not changed"
 end subroutine overland_stream_and_lake_interface_destroy
 
 end module overland_stream_and_lake_interface

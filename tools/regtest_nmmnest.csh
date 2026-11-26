@@ -1,6 +1,6 @@
 #!/bin/csh
 
-# #BSUB -x                                # exlusive use of node (not_shared)
+# #BSUB -x                                # exclusive use of node (not_shared)
 # #BSUB -a mpich_gm                       # at NCAR: lightning
 # #BSUB -R "span[ptile=2]"                # how many tasks per node (1 or 2)
 #BSUB -a poe                            # at NCAR: bluevista

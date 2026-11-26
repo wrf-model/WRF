@@ -937,7 +937,7 @@ CONTAINS
 !     ITYPE:    VEGETATION TYPE
 !     ZLAT:     LATITUDE, SOUTH POLE IS -90 DEGREE AND NORTH POLE IS 90 DEGREE
 !     MONTH:    MONTH
-!     DAY:      CALENDER DATE
+!     DAY:      CALENDAR DATE
 !     IYEAR:    YEAR
 !                             OUTPUT
 !     ETMASS:   EVAPORATION (mm/step)
@@ -1458,7 +1458,7 @@ CONTAINS
 !     ITYPE:    VEGETATION TYPE
 !     ZLAT:     LATITUDE, SOUTH POLE IS -90 DEGREE AND NORTH POLE IS 90 DEGREE
 !     MONTH:    MONTH
-!     DAY:      CALENDER DATE
+!     DAY:      CALENDAR DATE
 !     IYEAR:    YEAR
 !                             OUTPUT
 !     ETMASS:   EVAPORATION (mm/step)
@@ -1513,10 +1513,10 @@ CONTAINS
       CTLPA=1.
 !     NROOT controls root distribution. nroot=1: root uniformly distributes
 !           in the soil layer;
-!     If NROOT not =1, root distribution is controled by rootp.
+!     If NROOT not =1, root distribution is controlled by rootp.
       NROOT=1
 !     INTG=?   TIME INTEGRATION OF SURFACE PHYSICAL VARIABLE IS DONE
-!     INTG=2:  LEAP-FROG IMPLICIT SCHEME.   INTG=1 BACKWORD IMPLICIT SCHEME
+!     INTG=2:  LEAP-FROG IMPLICIT SCHEME.   INTG=1 BACKWARD IMPLICIT SCHEME
       INTG=1  !!!!!! in MM5 version hardwired for INTG=1 !!!!!!!!!!!!!
 !------------------------------------------------
       ITYPE=13
@@ -5476,7 +5476,7 @@ CONTAINS
             swe=swe-egidw
             dzold=dzo(n)
             dzo(n)=dzo(n)-egidw*rhowater/bwo(n)
-!cs sun: following way to correct h(n) may lead to unballance of energy.
+!cs sun: following way to correct h(n) may lead to imbalance of energy.
              ho(n)=ho(n)*dzo(n)/dzold
              capac(2)=swe
          End if
@@ -5508,7 +5508,7 @@ CONTAINS
 !----------------------------------------------------------------------
       HRR = HR
       IF ( FG .LT. .5 ) HRR = 1.
-!cs SUn change RSURF = RSOIL*FG into followings: 02/03/99 start
+!cs SUn change RSURF = RSOIL*FG into following: 02/03/99 start
 !cl    IF (MDLSNO.eq.0.and.ISNOW.eq.0) THEN
       IF (ISNOW.eq.0) THEN
            RSURF = RSOIL
@@ -5550,7 +5550,7 @@ CONTAINS
 !----------------------------------------------------------------------
 !
 !cs Sun add following one statement IF (ISNOW.eq.0.and.MDLSNO.eq.0) go to
-!cs 401  CONTINUE  to skip folloing statements from
+!cs 401  CONTINUE  to skip following statements from
 !CS  ECF = SIGN( 1., ECPOT ) to 400   CONTINUE
 !cl    IF (ISNOW.eq.0.and.MDLSNO.eq.0) go to 401
       IF (ISNOW.eq.0) go to 401

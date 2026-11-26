@@ -4,7 +4,7 @@
 ! Generator (ADG) was developed and sponsored by LASG of IAP (1999-2010)
 ! The Copyright of the ADG system was declared by Walls at LASG, 1999-2010
 ! ======================================================================================
-! corrrected by zzma on 01/10/2011
+! corrected by zzma on 01/10/2011
 
 MODULE a_module_microphysics_zero_out
 

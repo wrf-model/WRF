@@ -186,7 +186,7 @@ convective_check: &
 
               WRITE (0,'(A)')  &
 '------------------------------------------------------------------------------'
-      WRITE (UNIT = 0, FMT = '(A,/)') 'CONVECTIVE ADJUSTEMENT TEST QC:'
+      WRITE (UNIT = 0, FMT = '(A,/)') 'CONVECTIVE ADJUSTMENT TEST QC:'
 
       IF (print_qc_conv) THEN
           WRITE (UNIT = 0, FMT = '(A,A,/)') &

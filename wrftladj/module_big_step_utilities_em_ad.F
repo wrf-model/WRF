@@ -9601,7 +9601,7 @@ SUBROUTINE a_calculate_full ( a_rfield, a_rfieldp, &
 !<DESCRIPTION>
 !
 !  calculate_full
-!  calculates full 3D field from pertubation and base field.
+!  calculates full 3D field from perturbation and base field.
 !
 !</DESCRIPTION>
 

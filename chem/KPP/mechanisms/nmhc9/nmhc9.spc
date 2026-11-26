@@ -8,7 +8,7 @@
 {7}   HCHO        = C + 2H + O ;       {A: formalydehyde}
 {8}   MeOH        = C + 4H + O ;       {A: CH3OH methanol }
 {8b}  MeO2NO2     = C + 3H + 4O + N ;  {A: methyl peroxy nitrate}
-{c  --- additionals to ch4 chemistry --- }
+{c  --- additional to ch4 chemistry --- }
 {9}   ISOP        = 5C + 8H;           {A: isoprene}
 {10}   ISOOH      = 5C + 10H + 3O;     {A: isoprene (hydro) peroxides}
 {11}  MVK         = 4C + 6H + O;       {A: methyl vinyl ketone + methacrolein}

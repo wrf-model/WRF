@@ -3068,7 +3068,7 @@ subroutine ext_n2c_fulldom  ( &
        nids, nide, njds, njde, nkds, nkde,   &
        nims, nime, njms, njme, nkms, nkme,   &
        nits, nite, njts, njte, nkts, nkte,   &
-       ipos, jpos ! nest start loctions within parent
+       ipos, jpos ! nest start locations within parent
   real, intent(out), dimension(cims:cime,cjms:cjme,ckms:ckme) :: cT,cQ,cPINT
   real, intent(inout), dimension(cims:cime,cjms:cjme,1) :: cPD
 

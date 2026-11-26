@@ -544,7 +544,7 @@ SUBROUTINE microphysics_driver(                                          &
       INTENT(IN), OPTIONAL ::                                                   &
                                                                  dlf, &    !Detraining cloud water tendendcy
                                                                 dlf2, &    !dq/dt due to export of cloud water into env by shal conv (kg/kg/s)
-                                                               t_phy, &    !Temprature at the mid points (K)
+                                                               t_phy, &    !Temperature at the mid points (K)
                                                                p_hyd, &    !Hydrostatic pressure(Pa)
                                                              p8w_hyd, &    !Hydrostatic Pressure at level interface (Pa)
                                                            z_at_mass, &    !Height above sea level at grid cell center (m)
@@ -977,7 +977,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 !NUWRF JJS 20110525 vvvvv
 ! Pack gocart aerosol species
 ! All aerosol species in chem are in "ug/kg-dryair"
-!  and conerted to (g/m**3)
+!  and converted to (g/m**3)
 
    aero(:,:,:,:) = 0.
    do k = kts, kte

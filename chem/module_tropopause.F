@@ -1,5 +1,5 @@
 ! This module is used to diagnose the location of the tropopause.
-! Two routines are specifed, a primary routine (twmo) which is tried first 
+! Two routines are specified, a primary routine (twmo) which is tried first
 ! and a backup routine (climate) which will be tried only if the first routine fails. 
 ! If the tropopause can not be identified by either routine, then a NOTFOUND is returned.
 !
@@ -235,7 +235,7 @@ tropo_bc_allocated : &
 master_proc : &
    IF( wrf_dm_on_monitor() ) THEN
       write(id_num,'(i3)') 100+id
-      write(message,*) 'tropopause_init: intializing domain ' // id_num(2:3)
+      write(message,*) 'tropopause_init: initializing domain ' // id_num(2:3)
       call wrf_message( trim(message) )
        
 !---------------------------------------------------------------------
@@ -444,7 +444,7 @@ master_proc_a : &
       deallocate(tropo_p_in)
       
       call wrf_message( ' ' )
-      write(message,*) 'tropopause_init: DONE intialized domain ',id
+      write(message,*) 'tropopause_init: DONE initialized domain ',id
       call wrf_message( trim(message) )
       call wrf_message( ' ' )
 
@@ -722,7 +722,7 @@ lev_loop_a : &
 
 !===========================================================================
 
-  ! Read the tropopause pressure in from a file containging a climatology. The
+  ! Read the tropopause pressure in from a file containing a climatology. The
   ! data is interpolated to the current dat of year and latitude.
   !
   ! NOTE: The data is read in during tropopause_init and stored in the module

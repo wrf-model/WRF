@@ -58,6 +58,6 @@ int i;
   printf("\n");
   CloseSaveData();
 
-    return 0; /*didnt return anything initially */
+    return 0; /*didn't return anything initially */
 
 }

@@ -297,7 +297,7 @@ CONTAINS
 ! program history log:
 !   10-07-01 jong-il han  initial operational implementation at ncep gfs
 !   10-12-01 jihyeon jang implemented into wrf
-!   18-05-04 jihyeon jang seperated the shallow convection module from nsas
+!   18-05-04 jihyeon jang separated the shallow convection module from nsas
 !
 ! subprograms called:
 !   fpvs     - function to compute saturation vapor pressure

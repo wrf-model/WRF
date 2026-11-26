@@ -58,7 +58,7 @@ END TYPE type_rad_FY3
    real(r_kind) tbmin,tbmax, tbbad
    ! real(r_kind) rmask
 
-   ! Instrument triplet, follow the convension of RTTOV 
+   ! Instrument triplet, follow the convention of RTTOV
    integer   :: platform_id, satellite_id, sensor_id
 
    ! pixel information
@@ -174,7 +174,7 @@ END TYPE type_rad_FY3
    num_tovs_local    = 0    ! number of obs within tile
    num_tovs_thinned  = 0    ! number of obs rejected by thinning
    num_tovs_used     = 0    ! number of obs entered into innovation computation
-   num_tovs_selected = 0    ! number of obs limited for debuging
+   num_tovs_selected = 0    ! number of obs limited for debugging
    iobs = 0                 ! for thinning, argument is inout
 
    ! 0.0  Open unit to satellite bufr file and read file header

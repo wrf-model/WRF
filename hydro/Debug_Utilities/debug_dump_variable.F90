@@ -20,7 +20,7 @@ module debug_dump_variable
 #ifdef MPP_LAND
     real, dimension(global_rt_nx,global_rt_ny) :: out_buffer
 
-        ! if we are in an mpi enviorment what needs to be done depends of if
+        ! if we are in an mpi environment what needs to be done depends of if
         ! this process is the IO process
         ! if we are not the IO process write_IO_real will send data to the IO process
         ! if we are the IO process write_IO_RT_real will return the global array for this
@@ -49,7 +49,7 @@ module debug_dump_variable
 #ifdef MPP_LAND
     real, dimension(global_rt_nx,global_rt_ny) :: out_buffer
 
-        ! if we are in an mpi enviorment what needs to be done depends of if
+        ! if we are in an mpi environment what needs to be done depends of if
         ! this process is the IO process
         ! if we are not the IO process write_IO_RT_real will send data to the IO process
         ! if we are the IO process write_IO_RT_real will return the global array for this

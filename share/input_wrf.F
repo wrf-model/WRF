@@ -560,7 +560,7 @@
 ! program_name is defined in module_domain and set in the main program for whatever application
 ! is using subroutine input_wrf (that is, the subroutine you are looking at here). Data files
 ! written by SI have P_TOP as a metadata item; the real program and wrf model have it as a
-! state variable. This test is to supress non-fatal but confusing messages from the model complaining
+! state variable. This test is to suppress non-fatal but confusing messages from the model complaining
 ! that P_TOP cannot be read from the metadata for this dataset.  JM 20040905
 
     IF ( program_name(1:7) .EQ. "REAL_EM" ) THEN
@@ -1690,8 +1690,8 @@
             ENDIF
           ELSE IF ( p%Ndim .EQ. 4 .AND. p%scalar_array ) THEN
 ! Use a different read routine, wrf_ext_read_field_arr, and pass in the
-! tracer indeces so that p%rfield_4d can be passsed in without arguments,
-! avoiding the possiblity of a copy-in/copy-out problem for some compilers.
+! tracer indices so that p%rfield_4d can be passed in without arguments,
+! avoiding the possibility of a copy-in/copy-out problem for some compilers.
 ! JM 20091208
             DO itrace = PARAM_FIRST_SCALAR , p%num_table(grid%id)
               IF ((p%Restart.AND.switch.EQ.restart_only).OR.on_stream( p%streams_table(grid%id,itrace)%stream,newswitch)) THEN

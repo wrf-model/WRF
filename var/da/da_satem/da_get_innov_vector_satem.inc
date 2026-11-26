@@ -101,7 +101,7 @@ subroutine da_get_innov_vector_satem(it, num_qcstat_conv,grid, ob, iv)
       else
 
 !   For other type of OBS, such as SOUND, the vertical range check was
-!   complted in DA_Interpolation/to_zk.inc, but SATEM never used to_zk.
+!   completed in DA_Interpolation/to_zk.inc, but SATEM never used to_zk.
 !   So it is need the check above the model lid (YRG, 02/21/2008):
 
                iv%Satem(n)%thickness(k)%qc = above_model_lid

@@ -18,7 +18,7 @@ rm if_required
 endif
 touch if_required
 
-# remove automatically genereated files in chem directory
+# remove automatically generated files in chem directory
 rm -f ../*kpp* >>& if_required
 
 #kpp 

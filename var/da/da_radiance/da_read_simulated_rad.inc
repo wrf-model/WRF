@@ -15,7 +15,7 @@ subroutine da_read_simulated_rad (iv)
 
    type (iv_type),  intent (inout) :: iv
 
-   ! Instrument triplet, follow the convension of RTTOV 
+   ! Instrument triplet, follow the convention of RTTOV
    integer   :: platform_id, satellite_id, sensor_id
 
    type (datalink_type) :: p

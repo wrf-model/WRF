@@ -1,7 +1,7 @@
 # SSiB variables (FDS June/2010)
-state    real   SSIB_FM           ij    misc        1         Z      r        "SSIB_FM"               "FM coeficient" ""
-state    real   SSIB_FH           ij    misc        1         Z      r        "SSIB_FH"               "FH coeficient" ""
-state    real   SSIB_CM           ij    misc        1         Z      r        "SSIB_CM"               "CM coeficient" ""
+state    real   SSIB_FM           ij    misc        1         Z      r        "SSIB_FM"               "FM coefficient" ""
+state    real   SSIB_FH           ij    misc        1         Z      r        "SSIB_FH"               "FH coefficient" ""
+state    real   SSIB_CM           ij    misc        1         Z      r        "SSIB_CM"               "CM coefficient" ""
 state    real   SSIBXDD           ij    misc        1         Z      r        "SSIBXDD"               "ZERO PLANE DISPLACEMENT"  ""
 state    real   SSIB_BR           ij    misc        1         Z      rh       "SIBBR"                 "SSiB Bulk Richardson Number" ""
 

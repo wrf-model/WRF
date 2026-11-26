@@ -1022,7 +1022,7 @@ BENCH_START(relax_bdy_dry_tim)
 
 !---------------------------------------------------------------------------------------------
 ! KRS 9/12/2012: Inserted new IF block calls to spec_bdy_dry_perturb. If peturb_bdy=1, SKEBS 
-! pattern passed in for perturbing the specified boundry conditions.  If peturb_bdy=2, user
+! pattern passed in for perturbing the specified boundary conditions.  If peturb_bdy=2, user
 ! must provide pattern.  mu_2, mub, msf* also passed in for coupling needed for tendecies.
 !---------------------------------------------------------------------------------------------
        IF( config_flags%specified .and. config_flags%perturb_bdy==1 ) THEN 
@@ -2213,7 +2213,7 @@ BENCH_END(small_step_finish_tim)
 #if CDXWRF>=4
 
        ! L. Fita, CIMA. Feb. 2018
-       ! Initializing values it gives unitialize values on that unconsidered
+       ! Initializing values it gives uninitialize values on that unconsidered
        ! species
        !$OMP PARALLEL DO   &
        !$OMP PRIVATE ( ij, tenddec )

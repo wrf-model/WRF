@@ -174,7 +174,7 @@ SUBROUTINE MODIFY_BEAMWIDTH ( nx, ny, image, sampling_dist,&
 ! Method:
 !   1) Pad the image to a power of 2 in each dimension.
 ! If FFT technique is to be used then: 
-!   2) Assuming Gaussian beam shapes, calcluate the input and output Modulation
+!   2) Assuming Gaussian beam shapes, calculate the input and output Modulation
 !      Transfer Functions (MTF).
 !   3) FFT image to frequency domain (2-D).
 !   4) Multiply by output MTF divided by input MTF. If a cut-off is specified

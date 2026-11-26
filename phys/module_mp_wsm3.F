@@ -27,11 +27,11 @@ MODULE module_mp_wsm3
    REAL, PARAMETER, PRIVATE :: lamdarmax = 8.e4   ! limited maximum value for slope parameter of rain
    REAL, PARAMETER, PRIVATE :: lamdasmax = 1.e5   ! limited maximum value for slope parameter of snow
    REAL, PARAMETER, PRIVATE :: lamdagmax = 6.e4   ! limited maximum value for slope parameter of graupel
-   REAL, PARAMETER, PRIVATE :: dicon = 11.9       ! constant for the cloud-ice diamter
-   REAL, PARAMETER, PRIVATE :: dimax = 500.e-6    ! limited maximum value for the cloud-ice diamter
+   REAL, PARAMETER, PRIVATE :: dicon = 11.9       ! constant for the cloud-ice diameter
+   REAL, PARAMETER, PRIVATE :: dimax = 500.e-6    ! limited maximum value for the cloud-ice diameter
    REAL, PARAMETER, PRIVATE :: n0s = 2.e6         ! temperature dependent intercept parameter snow 
    REAL, PARAMETER, PRIVATE :: alpha = .12        ! .122 exponen factor for n0s
-   REAL, PARAMETER, PRIVATE :: qcrmin = 1.e-9     ! minimun values for qr, qs, and qg
+   REAL, PARAMETER, PRIVATE :: qcrmin = 1.e-9     ! minimum values for qr, qs, and qg
    REAL, SAVE ::                                      &
              qc0, qck1, pidnc,                        &  
              bvtr1,bvtr2,bvtr3,bvtr4,g1pbr,           &
@@ -214,7 +214,7 @@ CONTAINS
 !
 !  This code is a 3-class simple ice microphyiscs scheme (WSM3) of the 
 !  Single-Moment MicroPhyiscs (WSMMP). The WSMMP assumes that ice nuclei
-!  number concentration is a function of temperature, and seperate assumption
+!  number concentration is a function of temperature, and separate assumption
 !  is developed, in which ice crystal number concentration is a function
 !  of ice amount. A theoretical background of the ice-microphysics and related
 !  processes in the WSMMPs are described in Hong et al. (2004).
@@ -703,7 +703,7 @@ CONTAINS
 !
 ! - follows the revised ice microphysics processes in HDC
 ! - the processes same as in RH83 and LFO behave
-!   following ice crystal hapits defined in HDC, inclduing
+!   following ice crystal hapits defined in HDC, including
 !   intercept parameter for snow (n0s), ice crystal number
 !   concentration (ni), ice nuclei number concentration
 !   (n0i), ice diameter (d)

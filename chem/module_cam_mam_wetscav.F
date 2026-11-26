@@ -247,12 +247,12 @@ contains
     !Following arrays are declared as NaN as they are NOT used currently but still passed into the parameterization
     cme(:,:) = nan
     
-    !*NOTE*In CAM bcphiwet,ocphiwet,dstwet1,dstwet2,dstwet3 and dstwet4 of cam_out data struture are updated to be used for surface model.This has 
-    !NOT been implemented in WRF yet
+    !*NOTE*In CAM bcphiwet,ocphiwet,dstwet1,dstwet2,dstwet3 and dstwet4 of cam_out data structure are updated to be used for surface model.
+    !This has NOT been implemented in WRF yet
     cam_out = nan
     
     !Dry static energy is initialized to NaN and its tendency flag is set to .FALSE.
-    !Dry static enery is NOT required for wetscavaging but it is required to call WRF 
+    !Dry static energy is NOT required for wetscavaging but it is required to call WRF
     !implementation of CAM's physics_update in CAMMGMP microphysics
     state_s(:,:) = nan
     ptend_ls     = .FALSE.
@@ -268,12 +268,12 @@ contains
        call wrf_error_fatal('Number of CAM Columns (NCOL) in CAM_MAM_WETSCAV scheme must be 1')
     endif
     
-    !Following varibales are set to NaN so that an error is produced whenever they are used
+    !Following variables are set to NaN so that an error is produced whenever they are used
     !calday is used only for Chemistry calculations inside the wetscav parameterization, which
     !is not implemented yet in WRF
     calday = nan
     
-    !Divide domain in chuncks and map WRF variables into CAM
+    !Divide domain in chunks and map WRF variables into CAM
     !Loop counters are named iw,jw,kw to represent that they index WRF sided variables
     !The CAM's side variables are kept almost same by just replacing '%' with an '_' [e.g state%t in CAM is state_t in WRF]
     
@@ -292,7 +292,7 @@ contains
              state_pmid(1,kflip)  = p_hyd(iw,kw,jw)                   !Pressure at the mid-points (Pa) [state%pmid in CAM]  
              dp                   = p8w(iw,kw,jw) - p8w(iw,kw+1,jw)   !Change in pressure (Pa) 
              state_pdel(1,kflip)  = dp
-             state_t(1,kflip)     = t_phy(iw,kw,jw)                   !Temprature at the mid points (K) [state%t in CAM]
+             state_t(1,kflip)     = t_phy(iw,kw,jw)                   !Temperature at the mid points (K) [state%t in CAM]
              
              !Following three formulas are obtained from ported CAM's ZM cumulus scheme
              !Values of 0 cause a crash in entropy
@@ -328,7 +328,7 @@ contains
                 endif
              enddo
              
-             !*NOTE* QME3D doesn't include contribution from MACROPHYSICS (CMELIQ).Assinment to CME is
+             !*NOTE* QME3D doesn't include contribution from MACROPHYSICS (CMELIQ).Assignment to CME is
              !Commented out currently as CME is NEVER used in wetscaging code
              !cme(1,kflip)         = qme3d(iw,kw,jw)
              cme(1,kflip)         = nan                                          !Net condensation rate (kg/kg/s)
@@ -488,7 +488,7 @@ contains
     ktf   = min(kte,kde-1)
     itf   = min(ite,ide-1)
 
-    !Map CAM veritcal level variables
+    !Map CAM vertical level variables
     pver  = ktf - kts + 1 
     pverp = pver + 1
 

@@ -69,7 +69,7 @@ MODULE module_mp_gsfcgce
 !..The following 6 variables moved here to facilitate reflectivity
 !.. calculation similar to other MP schemes, because when they get
 !.. declared later in the code (now commented out), it makes things
-!.. more difficult to integreate with the radar code.
+!.. more difficult to integrate with the radar code.
       REAL    , PARAMETER ::     xnor = 8.0e6
       REAL    , PARAMETER ::     xnos = 1.6e7
       REAL    , PARAMETER ::     xnoh = 2.0e5
@@ -284,7 +284,7 @@ CONTAINS
 !      CALL wrf_error_fatal3 ( "module_mp_lin.b" , 130 ,  'module_mp_lin: Improper use of Lin et al scheme; no ice phase. Please chose another one.')
 !   ENDIF
 
-! calculte fallflux and precipiation in MKS system
+! calculate fallflux and precipiation in MKS system
 
    call fall_flux(dt_in, qr, qi, qs, qg, p,                   &
                       rho, z, dz8w, ht, rainnc,               &
@@ -383,7 +383,7 @@ CONTAINS
   REAL,    DIMENSION( ims:ime , jms:jme ),                            &
            INTENT(IN   )               :: topo   
 
-! temperary vars
+! temporary vars
 
   REAL,    DIMENSION( kts:kte )           :: sqrhoz
   REAL                                    :: tmp1, term0
@@ -462,7 +462,7 @@ CONTAINS
 ! Calculate precipitation fluxes due to terminal velocities.
 !***********************************************************************
 !
-!- Calculate termianl velocity (vt?)  of precipitation q?z
+!- Calculate terminal velocity (vt?)  of precipitation q?z
 !- Find maximum vt? to determine the small delta t
 
  j_loop:  do j = jts, jte

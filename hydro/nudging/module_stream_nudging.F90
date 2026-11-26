@@ -75,7 +75,7 @@ end type obsStaticStructure_SoA
 ! The static obs/gage information - store here to perform calculations
 ! only once per cycle.
 ! Currently the dimensions of this are fixed to 10000 which should
-! work for the forseeable future. May want to consider some routine for
+! work for the foreseeable future. May want to consider some routine for
 ! augmenting this size if necessary.
 type(obsStaticStructure), allocatable, dimension(:) :: obsStaticStr
 type(obsStaticStructure_SoA) :: obsStaticStr_Soa
@@ -98,7 +98,7 @@ integer :: nGagesDomain   ! the number of gages specified
 
 !========================
 ! Nudging parameters structure, corresponding to NudgeParams.nc file.
-!! for dealloction purposes, might be better to put the dimension onthe derived type.
+!! for dealloction purposes, might be better to put the dimension on the derived type.
 type nudgingParamStructure
    character(len=15), allocatable, dimension(:)     :: usgsId
    real,              allocatable, dimension(:)     :: R
@@ -234,7 +234,7 @@ end subroutine init_stream_nudging_clock
 ! Author(s)/Contact(s):
 !   James L McCreight <jamesmcc><ucar><edu>
 ! Abstract:
-!   One-time initialization of certain stream nuding information. Some of this infomation
+!   One-time initialization of certain stream nuding information. Some of this information
 !   may be updated later in the run, but probably not frequently.
 ! History Log:
 !   7/23/15 -Created, JLM.
@@ -611,7 +611,7 @@ allocate(obsStaticStr_SoA%lastObsQuality(nlst(did)%nLastObs, size(nudgingParamsS
 if(my_id .eq. io_id) then
    if(temporalPersistence) then
 
-      !! Initalizing the structure is not contingent upon there
+      !! Initializing the structure is not contingent upon there
       !! being a file on disk
       obsStaticStr_SoA%lastObsDischarge      = real(-9999)
       obsStaticStr_SoA%lastObsModelDischarge = real(-9999)
@@ -1097,7 +1097,7 @@ do ii=1,nObsMiss ! if nObsMiss is zero, this loop is skipped?
                cycle !! skip this observation.
             endif
             theMask = obsStaticStr_SoA%usgsId .eq. obsTimeStr(tt)%obsStr(oo)%usgsId
-            !! This is a double (tripple?!) for loop... thanks to whUniLoop
+            !! This is a double (triple?!) for loop... thanks to whUniLoop
             obsTimeStr(tt)%obsStr(oo)%obsStaticInd = whUniLoop(theMask)
          end do
          deallocate(theMask)
@@ -1557,14 +1557,14 @@ if(my_id .eq. io_id) &
 #endif
      print*,'Ndg: nudgeSpatial = ', nudgeSpatial
 
-!! get the requsite files if necessary
+!! get the requisite files if necessary
 !! this solves/allocates upNetwkStr and downNetwkStr
 if(nudgeSpatial) call get_netwk_reexpression()
 
 ! loop over the entire structure and solve
 ! 1) the spatial info: %cellsAffected, %dist, %ws
 ! 2) the lastObs info: %lastObsDischarge, %lastObsModelDischarge, %lastObsTime, %lastObsQuality
-! 3) print diagnostics with or witout spatial info
+! 3) print diagnostics with or without spatial info
 
 allocate(nCellsInR(size(obsStaticStr_SoA%usgsId(:))))
 #ifdef MPP_LAND
@@ -1841,7 +1841,7 @@ character(len=15),               intent(in)    :: gageId
 if(.not. any(nwisNotRLAndParams_local .eq. gageId)) then
    nwisNotRLAndParamsCount_local=nwisNotRLAndParamsCount_local+1
    if(nwisNotRLAndParamsCount .gt. size(nwisNotRLAndParams)) &
-        call hydro_stop('accumulate_nwis_not_in_RLAndParams: coutn of gages from NWIS not found '  // &
+        call hydro_stop('accumulate_nwis_not_in_RLAndParams: count of gages from NWIS not found '  // &
                         'in intersection of RL and Param gages are exceeding the hardcoded limit:,'// &
                         ' maxNwisNotRLAndParamsCount')
    nwisNotRLAndParams_local(nwisNotRLAndParamsCount_local)=gageId
@@ -2569,7 +2569,7 @@ else if (temporalPersistence) then
       end if
    end if ! if(persistBias_local)
 
-   !! Must check this for both cases obs and persistance nudging
+   !! Must check this for both cases obs and persistence nudging
    !! JLM: currently not also checking the quality. May be ok, but not ideal.
    if(obsStaticStr_SoA%lastObsTime(nTimesLastObs,whGageId) .eq. missingLastObsTime) return
 
@@ -2591,7 +2591,7 @@ else if (temporalPersistence) then
    !! 5) what month is the flow in [1,12]
    read(hydroTime(6:7),*) flowMonth
 
-   !! 6) what thereshold is the flow?
+   !! 6) what threshold is the flow?
    whThresh=1  !! init value
    do tt=1,size(nudgingParamsStr%qThresh,1)
       if(discharge(obsInd) .gt. nudgingParamsStr%qThresh(tt, flowMonth, whPrstParams)) &
@@ -2605,7 +2605,7 @@ else if (temporalPersistence) then
    !! 9) what is the time difference with the last ob/obs?
    prstDtErrInt = -9999*60  ! JLM: magic value? set as a parameter above
    do tt=nTimesLastObs,1,-1
-      ! Conditons for rejecting obs
+      ! Conditions for rejecting obs
       if(persistBias_local) then
          if(.not. biasMask(tt)) cycle
       else
@@ -2743,7 +2743,7 @@ else if (temporalPersistence) then
 
    endif !! if(.not. persistBias_local) then; else;
 
-   !! Currently cant get here...
+   !! Currently can't get here...
    if((prstDtErr .lt. zero) .and. futureLastObsZero) nudge_term_link = zero
 
    !! Ensure the nudge does not make the streamflow less than zero.

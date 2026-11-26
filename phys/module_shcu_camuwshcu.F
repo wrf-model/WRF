@@ -804,7 +804,7 @@ end subroutine uwshcu_readnl
 
     !----- Variables describing conservative scalars of entraining downdrafts  at the 
     !      entraining interfaces, i.e., 'kbup <= k < kpen-1'. At the other interfaces,
-    !      belows are simply set to equal to those of updraft for simplicity - but it
+    !      below are simply set to equal to those of updraft for simplicity - but it
     !      does not influence numerical calculation.
 
     real(r8)    thlu_emf(0:mkx)                               !  Penetrative downdraft liquid potential temperature at entraining interfaces [ K ]
@@ -1089,7 +1089,7 @@ end subroutine uwshcu_readnl
 
     ! --------------------------------------------------------------------------------------------------------------- !
     ! Computation of the grid-mean condensate tendency.                                                               !
-    !     use_expconten = .true.  : explcitly compute tendency by condensate detrainment and compensating subsidence  !
+    !     use_expconten = .true.  : explicitly compute tendency by condensate detrainment and compensating subsidence !
     !     use_expconten = .false. : use the original proportional condensate tendency equation. ( original )          !
     ! --------------------------------------------------------------------------------------------------------------- !
 
@@ -1270,7 +1270,7 @@ end subroutine uwshcu_readnl
 
     !--------------------------------------------------------------!
     !                                                              !
-    ! Start the column i loop where i is a horozontal column index !
+    ! Start the column i loop where i is a horizontal column index !
     !                                                              !
     !--------------------------------------------------------------!
 
@@ -2360,7 +2360,7 @@ end subroutine uwshcu_readnl
        ! layer upto which cumulus panetrates ,i.e., cumulus w at the base !
        ! interface is positive, but becomes negative at the top interface.!
        ! Here, we initialize 'kbup' and 'kpen'. These initializations are !  
-       ! not trivial but important, expecially   in calculating turbulent !
+       ! not trivial but important, especially   in calculating turbulent !
        ! fluxes without confliction among several physics as explained in !
        ! detail in the part of turbulent fluxes calculation later.   Note !
        ! that regardless of whether 'kbup' and 'kpen' are updated or  not !
@@ -2374,10 +2374,10 @@ end subroutine uwshcu_readnl
        ! entrainment fluxes always occur at interfaces above the PBL  top !
        ! interfaces (i.e., only at interfaces k >=kinv ), which seems  to !
        ! be attractable considering that the most correct fluxes  at  the !
-       ! PBL top interface can be ontained from the 'fluxbelowinv'  using !
+       ! PBL top interface can be obtained from the 'fluxbelowinv'  using !
        ! reconstructed PBL height.                                        ! 
        ! The 'kbup = krel'(after going through the whole buoyancy sorting !
-       ! proces during updraft motion) implies that cumulus updraft  from !
+       ! process during updraft motion) implies that cumulus updraft from !
        ! the PBL top interface can not reach to the LFC,so that 'kbup' is !
        ! not updated during upward. This means that cumulus updraft   did !
        ! not fully overcome the buoyancy barrier above just the PBL top.  !
@@ -2397,7 +2397,7 @@ end subroutine uwshcu_readnl
        ! 'kinv-1' layer instead of 'kinv' layer for this case. This might !
        ! seems to be more dynamically reasonable, but I will choose the   !
        ! 'kbup = krel' choice since it is more compatible  with the other !
-       ! parts of the code, expecially, when we chose ' use_emf=.false. ' !
+       ! parts of the code, especially, when we chose ' use_emf=.false. ' !
        ! as explained in detail in turbulent flux calculation part.       !
        ! ---------------------------------------------------------------- ! 
 
@@ -2407,7 +2407,7 @@ end subroutine uwshcu_readnl
        ! ------------------------------------------------------------ !
        ! Since 'wtw' is continuously updated during vertical motion,  !
        ! I need below initialization command within this 'iter_scaleh'!
-       ! do loop. Similarily, I need initializations of environmental !
+       ! do loop. Similarly, I need initializations of environmental  !
        ! properties at 'krel' layer as below.                         !
        ! ------------------------------------------------------------ !
 
@@ -2621,7 +2621,7 @@ end subroutine uwshcu_readnl
 
           ! -------------------------------------------------------------------------- !
           ! Calculate cumulus updraft mass flux and penetrative entrainment mass flux. !
-          ! Note that  non-zero penetrative entrainment mass flux will be asigned only !
+          ! Note that non-zero penetrative entrainment mass flux will be assigned only !
           ! to interfaces from the top interface of 'kbup' layer to the base interface !
           ! of 'kpen' layer as will be shown later.                                    !
           ! -------------------------------------------------------------------------- !
@@ -2794,9 +2794,9 @@ end subroutine uwshcu_readnl
           end if      
           if( umf(k) .eq. 0._r8 ) wtw = -1._r8
 
-          ! -------------------------------------- !
-          ! Below block is just a dignostic output !
-          ! -------------------------------------- ! 
+          ! --------------------------------------- !
+          ! Below block is just a diagnostic output !
+          ! --------------------------------------- !
 
           excessu_arr(k) = excessu
           excess0_arr(k) = excess0
@@ -2853,7 +2853,7 @@ end subroutine uwshcu_readnl
           ! of 'fer',  which guarantees  that all previously updated thermodynamic !
           ! variables at the upper interface before applying 'rmaxfrac' constraint !
           ! are already internally consistent,  even though 'ufrc'  is  limited by !
-          ! 'rmaxfrac'. Thus, we don't need to go through interation loop again.If !
+          ! 'rmaxfrac'. Thus, we don't need to go through iteration loop again. If !
           ! If we update 'fer' however, we should go through above iteration loop. !
           ! ---------------------------------------------------------------------- !
             
@@ -3027,7 +3027,7 @@ end subroutine uwshcu_readnl
        ! important process which should be done cautiously. Various ways of !
        ! filtering are possible depending on cases mainly using the indices !
        ! of key layers - 'klcl','kinv','krel','klfc','kbup','kpen'. At this !
-       ! stage, the followings are all possible : 'kinv >= 2', 'klcl >= 1', !
+       ! stage, the following are all possible : 'kinv >= 2', 'klcl >= 1',  !
        ! 'krel >= kinv', 'kbup >= krel', 'kpen >= krel'. I must design this !
        ! filtering very cautiously, in such that none of  realistic cumulus !
        ! convection is arbitrarily turned-off. Potentially, I might turn-off! 
@@ -3084,7 +3084,7 @@ end subroutine uwshcu_readnl
        ! layer (interface index, kbup) and the top interface of 'kpen' layer, the !
        ! fractional lateral entrainment, fer(k) within these layers will be close !
        ! to zero - so it is likely that only strong lateral detrainment occurs in !
-       ! thses layers. Under this situation,we can easily calculate the amount of !
+       ! these layers. Under this situation,we can easily calculate the amount of !
        ! detrainment cumulus air into these negatively buoyanct layers by  simply !
        ! comparing cumulus updraft mass fluxes between the base and top interface !
        ! of each layer: emf(k) = emf(k-1)*exp(-fdr(k)*dp0(k))                     !
@@ -3141,7 +3141,7 @@ end subroutine uwshcu_readnl
              ! due to cumulus updraft induced compensating subsidence,  penetrative !
              ! entrainment induces compensating upwelling -     in order to prevent !  
              ! numerical instability in association with compensating upwelling, we !
-             ! should similarily limit the amount of penetrative entrainment at the !
+             ! should similarly limit the amount of penetrative entrainment at the  !
              ! interface by the amount of masses within the layer just above the    !
              ! penetratively entraining interface.                                  !
              ! -------------------------------------------------------------------- !
@@ -3241,7 +3241,7 @@ end subroutine uwshcu_readnl
        !                                                                   !
        !------------------------------------------------------------------ !
        ! It is very important to note that in calculating turbulent fluxes !
-       ! below, we must not double count turbulent flux at any interefaces.!
+       ! below, we must not double count turbulent flux at any interfaces. !
        ! In the below, turbulent fluxes at the interfaces (interface index !
        ! k) are calculated by the following 4 blocks in consecutive order: !
        !                                                                   !
@@ -3590,7 +3590,7 @@ end subroutine uwshcu_readnl
           ! 'dwten(k)','diten(k)' : Production rate of condensate  within the layer k !
           !      [ kg/kg/s ]        by the expels of condensate from cumulus updraft. !
           ! It is important to note that in terms of moisture tendency equation, this !
-          ! is a 'source' term of enviromental 'qt'.  More importantly,  these source !
+          ! is a 'source' term of environmental 'qt'.  More importantly, these source !
           ! are already counted in the turbulent heat and moisture fluxes we computed !
           ! until now, assuming all the expelled condensate remain in the layer where ! 
           ! it was formed. Thus, in calculation of 'qtten' and 'slten' below, we MUST !
@@ -3617,8 +3617,8 @@ end subroutine uwshcu_readnl
           ! This will be falled-out of the layer where it was formed and will be dumped !
           ! dumped into the release layer assuming that there is no evaporative cooling !
           ! while precipitable condensate moves to the relaes level. This is reasonable ! 
-          ! assumtion if cumulus is purely vertical and so the path along which precita !
-          ! ble condensate falls is fully saturared. This 're-allocation' process of    !
+          ! assumption if cumulus is purely vertical and so the path along which precita!
+          ! ble condensate falls is fully saturated. This 're-allocation' process of    !
           ! precipitable condensate into the release layer is fully described in this   !
           ! convection scheme. After that, the dumped water into the release layer will !
           ! falling down across the base of release layer ( or LCL, if  exact treatment ! 
@@ -3632,7 +3632,7 @@ end subroutine uwshcu_readnl
  
           ! ----------------------------------------------------------------------- !         
           ! 'rainflx','snowflx' : Cumulative rain and snow flux integrated from the ! 
-          !     [ kg/m2/s ]       release leyer to the 'kpen' layer. Note that even !
+          !     [ kg/m2/s ]       release layer to the 'kpen' layer. Note that even !
           ! though wtw(kpen) < 0 (and umf(kpen) = 0) at the top interface of 'kpen' !
           ! layer, 'dwten(kpen)' and diten(kpen)  were calculated after calculating !
           ! explicit cloud top height. Thus below calculation of precipitation flux !
@@ -3827,7 +3827,7 @@ end subroutine uwshcu_readnl
           !  [m/s]   This is so called 'reserved liquid water'  in other subroutines   ! 
           ! of CAM3, since the contribution of this term should not be included into   !
           ! the tendency of each layer or surface flux (precip)  within this cumulus   !
-          ! scheme. The adding of this term to the layer tendency will be done inthe   !
+          ! scheme. The adding of this term to the layer tendency will be done in the  !
           ! 'stratiform_tend', just after performing sediment process there.           !
           ! The main problem of these rather going-back-and-forth and stupid-seeming   ! 
           ! approach is that the sediment process of suspendened condensate will not   !
@@ -3886,8 +3886,8 @@ end subroutine uwshcu_readnl
           ! Note that evaporation is not allowed in the layers 'k >= krel' by !
           ! assuming that inside of cumulus cloud, across which precipitation !
           ! is falling down, is fully saturated.                              !
-          ! The asumptions in association with the 'evplimit_rain(snow)' are  !
-          !   1. Do not allow evaporation to supersate the layer              !
+          ! The assumptions in association with the 'evplimit_rain(snow)' are !
+          !   1. Do not allow evaporation to supersaturate the layer          !
           !   2. Do not evaporate more than the flux falling into the layer   !
           !   3. Total evaporation cannot exceed the input total surface flux !
           ! ----------------------------------------------------------------- !
@@ -3994,7 +3994,7 @@ end subroutine uwshcu_readnl
        ! equation in each layer, since this effect will be separately added later in !
        ! in 'stratiform_tend' just after performing sediment process there. In order !
        ! to be consistent with 'stratiform_tend', just subtract qc(k)  from tendency !
-       ! equation of each layer, but do not add it to the 'precip'. Apprently,  this !
+       ! equation of each layer, but do not add it to the 'precip'. Apparently, this !
        ! will violate energy and moisture conservations.    However, when performing !
        ! conservation check in 'tphysbc.F90' just after 'convect_shallow_tend',   we !
        ! will add 'qc(k)' ( rliq ) to the surface flux term just for the purpose  of !

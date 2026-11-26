@@ -2668,7 +2668,7 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
       subroutine maxsat_init(maxd_atype, ntype_aer, &
            maxd_asize, nsize_aer, alnsign, f1)
 
-!     Calculates the f1 paramter needed by maxsat.
+!     Calculates the f1 parameter needed by maxsat.
 
 !     Abdul-Razzak and Ghan, A parameterization of aerosol activation.
 !     2. Multiple aerosol types. J. Geophys. Res., 105, 6837-6844.
@@ -2718,7 +2718,7 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
 
 !      input
 
-       integer, intent(in) ::  num_chem ! maximum number of consituents
+       integer, intent(in) ::  num_chem ! maximum number of constituents
        integer, intent(in) ::  k,kmn,kmx
        real,    intent(in) ::  chem(kmn:kmx,num_chem) ! aerosol mass, number mixing ratios
        real,    intent(in) ::  cs  ! air density (kg/m3)

@@ -176,7 +176,7 @@ contains
 !   acsnow - run-toral swe of snowfall [mm]   
 !-- chklowq - is either 0 or 1 (so far set equal to 1).
 !--           used only in myjpbl. 
-!-- tice - sea ice temperture (c)
+!-- tice - sea ice temperature (c)
 !-- rhosice - sea ice density (kg m^-3)
 !-- capice - sea ice volumetric heat capacity (j/m^3/k)
 !-- thdifice - sea ice thermal diffusivity (m^2/s)
@@ -485,7 +485,7 @@ contains
             do k=1,nsl
        keepfr3dflag(i,k,j)=0.
             enddo
-!--- initializing snow fraction, thereshold = 32 mm of snow water or ~100 mm of snow height
+!--- initializing snow fraction, threshold = 32 mm of snow water or ~100 mm of snow height
         if((soilt1(i,j) .lt. 170.) .or. (soilt1(i,j) .gt.400.)) then
          if(snowc(i,j).gt.0.) then
            soilt1(i,j)=0.5*(soilt(i,j)+tso(i,1,j))
@@ -1717,7 +1717,7 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
   print *,'snow on soil albsn,emiss,snow_mosaic',i,j,albsn,emiss,snow_mosaic
     endif
 !28mar11  if canopy is covered with snow to 95% of its capacity and snow depth is
-! higher than patchy snow treshold - then snow albedo is not less than 0.55
+! higher than patchy snow threshold - then snow albedo is not less than 0.55
 ! (inspired by the flight from fairbanks to seatle)
 !test      if(cst.ge.0.95*sat .and. snowfrac .gt.0.99)then
 !        albsn=max(alb_snow,0.55)
@@ -2252,7 +2252,7 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
 !   soil
 !
 !     delt - time step (s)
-!     ktau - numver of time step
+!     ktau - number of time step
 !     conflx - depth of constant flux layer (m)
 !     j,i - the location of grid point
 !     ime, jme, kme, nzs - dimensions of the domain
@@ -3148,7 +3148,7 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
 !   in snow and soil, richards eqn. for soil covered with snow
 !
 !     delt - time step (s)
-!     ktau - numver of time step
+!     ktau - number of time step
 !     conflx - depth of constant flux layer (m)
 !     j,i - the location of grid point
 !     ime, jme,  nzs - dimensions of the domain
@@ -4553,7 +4553,7 @@ print *, 'd9sn,soilt,tsob : ', d9sn,soilt,tsob
 !   solved here and
 !
 !     delt - time step (s)
-!     ktau - numver of time step
+!     ktau - number of time step
 !     conflx - depth of constant flux layer (m)
 !     ime, jme, kme, nzs - dimensions of the domain 
 !     nroot - number of levels within the root zone
@@ -4864,7 +4864,7 @@ print *, 'd9sn,soilt,tsob : ', d9sn,soilt,tsob
 !   solved here to obtain snow and soil temperatures
 !
 !     delt - time step (s)
-!     ktau - numver of time step
+!     ktau - number of time step
 !     conflx - depth of constant flux layer (m)
 !     ime, jme, kme, nzs - dimensions of the domain 
 !     nroot - number of levels within the root zone
@@ -5574,7 +5574,7 @@ print *, 'snowtemp: snhei,snth,soilt1: ',snhei,snth,soilt1,soilt
 
       endif
 !18apr08 - if snow melt occurred then go into iteration for energy budget solution 
-     if(nmelt.eq.1) goto 212  ! second interation
+     if(nmelt.eq.1) goto 212  ! second iteration
  220  continue
 
       if(smelt.gt.0..and.rsm.gt.0.) then
@@ -6540,7 +6540,7 @@ print *,'infmax,infmax1,hydro(1)*soiliqw(1),-totliq', &
 !************************************************************************
 !  set-up soil and vegetation parameters in the case when
 !  snow disappears during the forecast and snow parameters
-!  shold be replaced by surface parameters according to
+!  should be replaced by surface parameters according to
 !  soil and vegetation types in this point.
 !
 !        output:
@@ -7179,10 +7179,10 @@ print *,'infmax,infmax1,hydro(1)*soiliqw(1),-totliq', &
 !          albedo, amd z0 are specified in land-use table; and shdfac is
 !          the monthly green vegetation data
 !             cmxtbl: max cnpy capacity (m)
-!              rsmin: mimimum stomatal resistance (s m-1)
+!              rsmin: minimum stomatal resistance (s m-1)
 !              rsmax: max. stomatal resistance (s m-1)
 !                rgl: parameters used in radiation stress function
-!                 hs: parameter used in vapor pressure deficit functio
+!                 hs: parameter used in vapor pressure deficit function
 !               topt: optimum transpiration air temperature. (k)
 !             cmcmax: maximum canopy water capacity
 !             cfactr: parameter used in the canopy inteception calculati

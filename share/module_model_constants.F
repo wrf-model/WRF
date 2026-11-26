@@ -20,7 +20,7 @@
    REAL    , PARAMETER :: cp           = 7.*r_d/2.  ! 
 
    REAL    , PARAMETER :: r_v          = 461.6      ! gas constant for water vapor (J deg^-1 kg^-1)
-   REAL    , PARAMETER :: cv           = cp-r_d     ! Specific heat of air at contant volume (J deg^-1 kg^-1)
+   REAL    , PARAMETER :: cv           = cp-r_d     ! Specific heat of air at constant volume (J deg^-1 kg^-1)
    REAL    , PARAMETER :: cpv          = 4.*r_v
    REAL    , PARAMETER :: cvv          = cpv-r_v    ! 
    REAL    , PARAMETER :: cvpm         = -cv/cp
@@ -34,7 +34,7 @@
    real    , parameter :: mwdry        = 28.966     ! molecular weight of dry air (g/mole)
 
    REAL    , PARAMETER :: p1000mb      = 100000.    ! pressure at 1000 hPa (pa)
-   REAL    , PARAMETER :: t0           = 300.       ! base state tempertaure (K) 
+   REAL    , PARAMETER :: t0           = 300.       ! base state temperature (K)
    REAL    , PARAMETER :: p0           = p1000mb    ! base state surface pressure (pa)
    REAL    , PARAMETER :: cpovcv       = cp/(cp-r_d)
    REAL    , PARAMETER :: cvovcp       = 1./cpovcv

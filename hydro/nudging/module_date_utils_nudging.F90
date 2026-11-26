@@ -1257,7 +1257,7 @@ end function mm_to_monthabbr
 ! Abstract: Round a time to some time resolution specified in minutes:
 !           1) the resolution evenly divides 60
 !           2) the first time chunk in a hour is centered on 0 minutes and
-!              subesquent chunks are centered on N*resoluton (mod 60).
+!              subesquent chunks are centered on N*resolution (mod 60).
 ! History Log:
 !   7/29/15 -Header Created, JLM
 ! Usage:
@@ -1305,7 +1305,7 @@ theMinute = theMinute + (theSecond/60.)
 ! What fraction of the time resolution is the current time?
 resMin = (theMinute * resolutionInv)
 ! Round to the time resolution.
-! nint doesnt document its rounding rule on gfortran! boo.
+! nint doesn't document its rounding rule on gfortran! boo.
 if(resMin - floor(resMin) .ge. .5) resMin=ceiling(resMin)
 if(resMin - floor(resMin) .lt. .5) resMin=floor(resMin)
 ! Convert back to regular minutes.

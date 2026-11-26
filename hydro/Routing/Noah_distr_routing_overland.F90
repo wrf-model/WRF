@@ -346,7 +346,7 @@ subroutine ov_rtng( &
                     END IF
                 END IF
 
-                !DJG Lake inflow withdrawl from surface head...(4/29/05)
+                !DJG Lake inflow withdrawal from surface head...(4/29/05)
 
 
                 IF (ovrt_data%streams_and_lakes%lake_mask(I,J) .gt. 0) THEN

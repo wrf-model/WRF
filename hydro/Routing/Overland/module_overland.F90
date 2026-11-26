@@ -1,6 +1,6 @@
 ! module overland_data.F
 ! Purpose: This module contains the overland struct class and its
-!          sub types. This types hold and catagorize the variables used
+!          sub types. This types hold and categorize the variables used
 !          in the overland routing code
 ! National Water Center
 ! Responsibility: Donald W Johnson donald.w.johnson@noaa.gov
@@ -28,7 +28,7 @@ module overland_data
         ! this means the result of calling associated(<pointer>)
         ! on a pointer that has not been set is unknown
         ! therefore associated can not be used as a guard
-        ! in inital pointer allocation
+        ! in initial pointer allocation
         logical, private :: pointer_allocation_guard = .false.
 
     contains
@@ -41,11 +41,11 @@ contains
 ! this procedure allocates the overland_struct
 subroutine overland_struct_init(this,lsm_ix,lsm_jx,rt_ix,rt_jx)
     implicit none
-    class(overland_struct), intent(inout) :: this ! the type object being initalized
+    class(overland_struct), intent(inout) :: this ! the type object being initialized
     integer, intent(in) :: lsm_ix                    ! lsm x grid size
     integer, intent(in) :: lsm_jx                    ! lsm y grid size
     integer, intent(in) :: rt_ix                     ! x grid size
-    integer, intent(in) :: rt_jx                     ! y grid size    allocate( thist%control )
+    integer, intent(in) :: rt_jx                     ! y grid size    allocate( this%control )
 
     if (this%pointer_allocation_guard .eqv. .false. ) then
         this%pointer_allocation_guard = .true.

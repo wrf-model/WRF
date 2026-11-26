@@ -275,7 +275,7 @@
 !=  Compute ozone optical depths as a function of altitude and wavelength
 !-----------------------------------------------------------------------------
 !=  PARAMETERS:
-!=  O3XS   - REAL, molecular absoprtion cross section (cm^2) of O3 at     (I)
+!=  O3XS   - REAL, molecular absorption cross section (cm^2) of O3 at     (I)
 !=           each specified wavelength and altitude
 !=  C      - REAL, ozone vertical column increments, molec cm-2, for each (I)
 !=           layer
@@ -365,7 +365,7 @@
 !=  column amount.
 !-----------------------------------------------------------------------------
 !=  PARAMETERS:
-!=  SO2_XS - REAL, molecular absoprtion cross section (cm^2) of O2 at     (I)
+!=  SO2_XS - REAL, molecular absorption cross section (cm^2) of O2 at     (I)
 !=           each specified wavelength
 !=  DTSO2  - REAL, optical depth due to SO2 absorption at each            (O)
 !=           specified altitude at each specified wavelength
@@ -400,7 +400,7 @@
 !=  Compute no2 optical depths as a function of altitude and wavelength
 !-----------------------------------------------------------------------------
 !=  PARAMETERS:
-!=  NO2_XS - REAL, molecular absoprtion cross section (cm^2) of no2 at    (I)
+!=  NO2_XS - REAL, molecular absorption cross section (cm^2) of no2 at    (I)
 !=           each specified wavelength and altitude
 !=  COLNO2 - REAL, no2 vertical column increments, molec cm-2, for each   (I)
 !=           layer

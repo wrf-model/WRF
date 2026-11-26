@@ -555,7 +555,7 @@ subroutine da_qc_ahi (it, i, nchan, ob, iv)
            end if
       end do	 ! nchan
  	  
-      !final QC decsion	 	
+      !final QC decision
       ! CSS comment out below. Dangerous, especially if satinfo(i)%iuse(k) = -1
       ! CSS also okay to fail 3std check if using symmetric error model for obs errors
       !if (crtm_cloud ) tb_qc(2:4) = qc_good  ! no qc  for crtm_cloud

@@ -7,8 +7,8 @@
 !2. QME3D computation is WRONG as it doesn't include CMELIQ contribution as CMELIQ is 
 !   computed in macrophysics, which is not ported into WRF yet
 !3. Computations such as cldfsnow,icswp etc. are not correct as CONCLD (convective 
-!   cloud fraction) variable is not avaible to microphysics
-!4. The code ouputs variables which can be used in RRTMG radiation but RRTMG radiation doesn't 
+!   cloud fraction) variable is not available to microphysics
+!4. The code outputs variables which can be used in RRTMG radiation but RRTMG radiation doesn't
 !   use these variables as of now
 !5. More robust cloud fraction calculation can be included in the future versions
 !----------------------------------------------------------------------------------------------------------
@@ -389,7 +389,7 @@ contains
     real(r8), dimension(pcols,kte) :: iciwp        ! In-cloud ice water path for radiation
     real(r8), dimension(pcols,kte) :: iclwp        ! In-cloud liquid water path for radiation
     
-    ! For rrtm optics. specificed distribution.
+    ! For rrtm optics. specified distribution.
     
     real(r8) :: mucon                                 ! Convective size distribution shape parameter
     real(r8) :: dcon                                  ! Convective size distribution effective radius (meters)  
@@ -526,7 +526,7 @@ contains
     real(r8)  prect(pcols)
     real(r8)  preci(pcols)
     
-    ! Output from microp_aero_ts for aerosol actication
+    ! Output from microp_aero_ts for aerosol activation
     real(r8)  naai(pcols,kte)      !ice nucleation number
     real(r8)  naai_hom(pcols,kte)  !ice nucleation number (homogeneous)
     real(r8)  npccn(pcols,kte)     !liquid activation number tendency
@@ -633,7 +633,7 @@ contains
     state_omega(:,:) = 0.0_r8 !Required for calling mmicro_pcond and microp_aero_ts. Used in microp_aero_ts for 
                               !calling dropmixnuc but **NEVER** used for any output from dropmixnuc
     
-    !Divide domain in chuncks and map WRF variables into CAM
+    !Divide domain in chunks and map WRF variables into CAM
     !Loop counters are named iw,jw,kw to represent that they index WRF sided variables
     !The CAM's side variables are kept almost same by just replacing '%' with an '_' [e.g state%t in CAM is state_t in WRF]
     
@@ -657,7 +657,7 @@ contains
              state_pdel(1,kflip)  = dp
              state_rpdel(1,kflip) = 1.0_r8/dp                         !Reciprocal of pressure difference (1/Pa) [state%rpdel in CAM]
              state_zm(1,kflip)    = z_sea_level(iw,kw,jw) - ht(iw,jw) !Height above the ground at the midpoints (m) [state%zm in CAM]
-             state_t(1,kflip)     = t_phy(iw,kw,jw)                   !Temprature at the mid points (K) [state%t in CAM]
+             state_t(1,kflip)     = t_phy(iw,kw,jw)                   !Temperature at the mid points (K) [state%t in CAM]
              state_s(1,kflip)     = cpair *th(iw,kw,jw)*pi_phy(iw,kw,jw) + gravit*state_zm(1,kflip) + phis(1) ! Dry static energy (m2/s2) [state%s in CAM]-Formula tested in vertical_diffusion.F90 of CAM
              
              !Following three formulas are obtained from ported CAM's ZM cumulus scheme
@@ -1057,7 +1057,7 @@ contains
           !     praio,qireso,mnuccro,pracso,meltsdt,frzrdt,mnuccdo	
           
           !in-out from the following call: qc,qi,nc,ni,cldo
-          !*NOTE*: Added nsout and nrout as an ouput
+          !*NOTE*: Added nsout and nrout as an output
           call mmicro_pcond( sub_column, lchnk, ncol, dtime, state1_t,    &
                state1_q(1,1,1), qc, qi,                                   &
                nc, ni, state1_pmid, state1_pdel, ast,                     &
@@ -1125,7 +1125,7 @@ contains
           end do
           
           !! Net microp_driver condensation rate
-          !*** IMPORTANT-WARNING ***: Following computation of QME will yeild WRONG answer as CMELIQ is set to zero
+          !*** IMPORTANT-WARNING ***: Following computation of QME will yield WRONG answer as CMELIQ is set to zero
           qme(:ncol,:pver) = cmeliq(:ncol,:pver) + cmeiout(:ncol,:pver) 
           
           
@@ -1402,7 +1402,7 @@ contains
   !---------------------------------------------------------------------------------------------
   subroutine physics_update(state_lchnk,dt,state_q,ptend_q,state_s,ptend_s,ptend_name,ptend_lq,ptend_ls,pcnst_in)
   ! This subroutine partially mimics CAM's subroutine by similar name in physics_type.F90 module
-  ! Please note that it is implimented just to serve the purpose of porting CAMMGMP scheme 
+  ! Please note that it is implemented just to serve the purpose of porting CAMMGMP scheme
   !
   !Author: Balwinder.Singh@pnl.gov
   !---------------------------------------------------------------------------------------------
@@ -1530,7 +1530,7 @@ contains
   !---------------------------------------------------------------------------------------------
   subroutine physics_ptend_init(ptend_name,ptend_q,ptend_s,ptend_lq,ptend_ls,pcnst_in)
   ! This subroutine partially mimics CAM's subroutine by similar name in physics_type.F90 module
-  ! Please note that it is implimented just to serve the purpose of porting CAMMGMP scheme 
+  ! Please note that it is implemented just to serve the purpose of porting CAMMGMP scheme
   !Author: Balwinder.Singh@pnl.gov
   !---------------------------------------------------------------------------------------------
     implicit none
@@ -1554,7 +1554,7 @@ contains
 !---------------------------------------------------------------------------------------------
   subroutine physics_ptend_reset(ptend_name,ptend_q,ptend_s,ptend_lq,ptend_ls,pcnst_in)
 ! This subroutine partially mimics CAM's subroutine by similar name in physics_type.F90 module
-! Please note that it is implimented just to serve the purpose of porting CAMMGMP scheme 
+! Please note that it is implemented just to serve the purpose of porting CAMMGMP scheme
 !Author: Balwinder.Singh@pnl.gov
 !---------------------------------------------------------------------------------------------
     implicit none
@@ -1591,7 +1591,7 @@ contains
 !---------------------------------------------------------------------------------------------
   subroutine physics_ptend_sum(ptend_ls,ptend_lq,ptend_s,ptend_q,ptend_sum_ls,ptend_sum_lq,ptend_sum_s,ptend_sum_q, pcnst_in)
 ! This subroutine partially mimics CAM's subroutine by similar name in physics_type.F90 module
-! Please note that it is implimented just to serve the purpose of porting CAMMGMP scheme 
+! Please note that it is implemented just to serve the purpose of porting CAMMGMP scheme
 !Author: Balwinder.Singh@pnl.gov
 !---------------------------------------------------------------------------------------------
 
@@ -1760,7 +1760,7 @@ contains
 
     !PMA
     !-------------------------------------------------------------------------------------------
-    !This simple scheme does the followings:
+    !This simple scheme does the following:
     !(1) QC detrained from convections are converted to (a) cloud water and (b) cloud ice in the
     !    cloudy part; and (c) vapor in the cloud-free part then latent heating from the phase 
     !    change
@@ -2133,7 +2133,7 @@ contains
     ktf   = min(kte,kde-1)
     itf   = min(ite,ide-1)
     
-    !Map CAM veritcal level variables 
+    !Map CAM vertical level variables
     pver  = ktf - kts + 1
     pverp = pver + 1
     

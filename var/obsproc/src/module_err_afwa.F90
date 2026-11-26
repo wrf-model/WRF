@@ -3934,7 +3934,7 @@ FUNCTION sensor (line) RESULT (f_sensor)
              EXIT
        ENDDO
 
-!  String is start after blank untill end of line
+!  String is start after blank until end of line
 
         f_sensor = line (c:LEN_TRIM (line))
 

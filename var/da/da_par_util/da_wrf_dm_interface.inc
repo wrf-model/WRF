@@ -50,7 +50,7 @@ subroutine da_proc_stats_combine(proc_ave, proc_err, proc_min, proc_max, &
 
    real,      intent(inout)      :: proc_ave       ! Processor average.
    real,      intent(inout)      :: proc_err       ! Processor rms error.
-   real,      intent(inout)      :: proc_min       ! Processor minumum.
+   real,      intent(inout)      :: proc_min       ! Processor minimum.
    real,      intent(inout)      :: proc_max       ! Processor maximum.
    integer,   intent(inout)      :: nobs_min       ! Obs number of minimum.
    integer,   intent(inout)      :: nobs_max       ! Obs number of maximum.

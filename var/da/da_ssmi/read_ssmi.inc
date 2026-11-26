@@ -322,7 +322,7 @@ subroutine p2lwp(ifreq,p,tc,theta,alw,xlat)
    implicit none        
    integer ifreq
    real p,alw,xlat,tc,theta
-   real alpha(3),threshhold
+   real alpha(3),threshold
    data alpha/2.08,2.05,1.78/
    real, parameter :: BAD = -1000.0
    real :: ext, costheta
@@ -338,18 +338,18 @@ subroutine p2lwp(ifreq,p,tc,theta,alw,xlat)
    !  get liquid water mass extinction coefficient
    ext = alw_ext(ifreq,tc)
 
-   ! compute colum cloud liquid water using Beer's Law
+   ! compute column cloud liquid water using Beer's Law
    costheta = cos(theta*pi/180.0)
    alw = (-costheta/(alpha(ifreq)*ext))*log(p)
 
    ! check for precipitation
-   threshhold=0.5
+   threshold=0.5
    !     write (unit=stdout,fmt=*) 'xlat=',xlat
-   if (xlat .gt. 20) threshhold=0.3
-   if (xlat .gt. 30) threshhold=0.1
-   !     if (xlat .gt. 40) threshhold=0.25
+   if (xlat .gt. 20) threshold=0.3
+   if (xlat .gt. 30) threshold=0.1
+   !     if (xlat .gt. 40) threshold=0.25
    !     if (alw .gt. 0.5) then
-   if (alw .gt. threshhold) then
+   if (alw .gt. threshold) then
       alw = BAD
       iprecip = 1
    end if

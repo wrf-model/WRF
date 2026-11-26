@@ -186,7 +186,7 @@ subroutine wetdepa_v2(t, p, q, pdel, &
          t(pcols,pver),        &! temperature
          p(pcols,pver),        &! pressure
          q(pcols,pver),        &! moisture
-         pdel(pcols,pver),     &! pressure thikness
+         pdel(pcols,pver),     &! pressure thickness
          cldt(pcols,pver),    &! total cloud fraction
          cldc(pcols,pver),     &! convective cloud fraction
          cmfdqr(pcols,pver),   &! rate of production of convective precip
@@ -283,7 +283,7 @@ subroutine wetdepa_v2(t, p, q, pdel, &
       real(r8) finc                 ! fraction of rem. rate by conv. rain
       real(r8) srcs1                ! work variable
       real(r8) srcs2                ! work variable
-      real(r8) tc                   ! temp in celcius
+      real(r8) tc                   ! temp in celsius
       real(r8) weight               ! fraction of condensate which is ice
       real(r8) cldmabs(pcols)       ! maximum cloud at or above this level
       real(r8) cldmabc(pcols)       ! maximum cloud at or above this level
@@ -667,7 +667,7 @@ subroutine wetdepa_v2(t, p, q, pdel, &
          t(pcols,pver),        &! temperature
          p(pcols,pver),        &! pressure
          q(pcols,pver),        &! moisture
-         pdel(pcols,pver),     &! pressure thikness
+         pdel(pcols,pver),     &! pressure thickness
          cldt(pcols,pver),    &! total cloud fraction
          cldc(pcols,pver),     &! convective cloud fraction
          cmfdqr(pcols,pver),   &! rate of production of convective precip
@@ -741,7 +741,7 @@ subroutine wetdepa_v2(t, p, q, pdel, &
       real(r8) finc                 ! fraction of rem. rate by conv. rain
       real(r8) srcs1                ! work variable
       real(r8) srcs2                ! work variable
-      real(r8) tc                   ! temp in celcius
+      real(r8) tc                   ! temp in celsius
       real(r8) weight               ! fraction of condensate which is ice
       real(r8) cldmabs(pcols)       ! maximum cloud at or above this level
       real(r8) cldmabc(pcols)       ! maximum cloud at or above this level
@@ -991,7 +991,7 @@ subroutine wetdepa_v2(t, p, q, pdel, &
          t(pcols,pver),        &! temperature
          p(pcols,pver),        &! pressure
          q(pcols,pver),        &! moisture
-         pdel(pcols,pver),     &! pressure thikness
+         pdel(pcols,pver),     &! pressure thickness
          cldt(pcols,pver),     &! total cloud fraction
          cldc(pcols,pver),     &! convective cloud fraction
          cmfdqr(pcols,pver),   &! rate of production of convective precip
@@ -1141,7 +1141,7 @@ subroutine wetdepa_v2(t, p, q, pdel, &
             ! this part of precip will be carried downward but at a new molarity of mpl 
             precic = pdog*(precs(i,k) + cmfdqr(i,k))
 
-            ! we cant take out more than entered, plus that available in the cloud
+            ! we can't take out more than entered, plus that available in the cloud
             !                  scavmax = scavab(i)+tracer(i,k)*cldt(i,k)/deltat*pdog
             scavmax = scavab(i)+tracer(i,k)*cldv(i,k)/deltat*pdog
 
@@ -1173,7 +1173,7 @@ subroutine wetdepa_v2(t, p, q, pdel, &
             ! first guess assuming that henries law works
             scavt1 = (scavab(i)-scavbl)/pdog*omsm
 
-            ! pjr this should not be required, but we put it in to make sure we cant remove too much
+            ! pjr this should not be required, but we put it in to make sure we can't remove too much
             ! remember, scavt1 is generally negative (indicating removal)
             scavt1 = max(scavt1,-tracer(i,k)*cldv(i,k)/deltat)
 

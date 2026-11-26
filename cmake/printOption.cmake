@@ -1,5 +1,5 @@
 # https://stackoverflow.com/a/19578320
-# Some color defintions
+# Some color definitions
 if ( NOT "${PRINT_OPTION_SUPPRESS_COLOR}" )
   if ( NOT WIN32 )
     string( ASCII 27 ESC )

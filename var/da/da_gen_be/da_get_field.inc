@@ -8,7 +8,7 @@ subroutine da_get_field( input_file, var, field_dims, dim1, dim2, dim3,k,field)
 
 #include "netcdf.inc"
    
-   character(len=200), intent(in)  :: input_file       ! NETCDF file nane.
+   character(len=200), intent(in)  :: input_file       ! NETCDF file name.
    character(len=10),  intent(in)  :: var              ! Variable to search for.
    integer,            intent(in)  :: field_dims       ! # Dimensions of field. 
    integer,            intent(in)  :: dim1             ! Dimension 1 of field. 

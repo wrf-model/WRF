@@ -13,7 +13,7 @@ module module_mosaic_init_aerpar
 
 !-------------------------------------------------------------------------------
   subroutine mosaic_init_aer_params
-    !BSINGH - All initialzations for Mosiac model
+    !BSINGH - All initializations for Mosiac model
 
     call load_mosaic_parameters
     
@@ -114,7 +114,7 @@ module module_mosaic_init_aerpar
     ! *** THE CODE WILL FAIL IF THEY ARE NOT FOLLOWED  ***
     !
     ! for the volatile inorganic and organic species (1 thru ngas_volatile)
-    !    the ixxx_a and ixxx_g must match (be indentical) for each aerosol-gas pair
+    !    the ixxx_a and ixxx_g must match (be identical) for each aerosol-gas pair
     !
     ! for the soa species, the ordering of the ixxx_a, ixxx_g, and jyyy
     !    must be identical

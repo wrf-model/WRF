@@ -346,7 +346,7 @@ subroutine inimc( tmeltx, rhonotx, gravitx, rh2ox)
       mcon07 = mcon01*sqrt(rhonot)*mcon02**mcon05/prhonos**mcon06
       mcon08 = -0.5_r8/(4._r8+d)
 
-!  find the level about 1mb, we wont do the microphysics above this level
+!  find the level about 1mb, we won't do the microphysics above this level
       k1mb = 1
       do k=1,pver-1
          if (hypm(k) < 1.e2_r8 .and. hypm(k+1) >= 1.e2_r8) then
@@ -1012,8 +1012,8 @@ subroutine pcond (lchnk   ,ncol    , &
              ctmp = (qtmp-qsn)/(1._r8+hlocp*dqsdt)/deltat
              cme(i,k) = cme(i,k)+ctmp
 !
-! save residual on cmeres to addtion to cme on entering next iteration
-! cme exit here contain the residual but overrided if back to iteration
+! save residual on cmeres to addition to cme on entering next iteration
+! cme exit here contain the residual but overridden if back to iteration
 !
              cmeres(i) = ctmp
           else

@@ -1144,7 +1144,7 @@ is_freezing : &
                    endif
                  endif
 !-----------------------------------------------------------------------
-!  For ice, accretion removal for hno3 and aerosols is propotional to riming, 
+!  For ice, accretion removal for hno3 and aerosols is proportional to riming,
 !  no accretion removal for gases
 !  remove only in mixed portion of cloud
 !  Limit DELTARIMEMASS to RNEW*DTSCAV for ice - evaporation of rimed ice to match
@@ -1240,8 +1240,8 @@ is_freezing : &
                    QTRAINCXB = FCXB*WRK
                  endif
 !-----------------------------------------------------------------------
-!  For rain, accretion removal is propotional to riming
-!  caclulate for hno3/aerosols and gases
+!  For rain, accretion removal is proportional to riming
+!  calculate for hno3/aerosols and gases
 !  Remove only in mixed portion of cloud
 !  Limit DELTARIMEMASS to RNEW*DTSCAV
 !-----------------------------------------------------------------------
@@ -1721,7 +1721,7 @@ subroutine RAINGAS( RRAIN, DTSCAV, CLWX, CFX, QM, QT, QTDIS, QTRAIN )
 !---NB this code does not consider the aqueous dissociation (eg, C-q) 
 !---   that makes uptake of HNO3 and H2SO4 so complete.  To do so would
 !---   require that we keep track of the pH of the falling rain.
-!---THUS the Henry's Law coefficient KHA needs to be enhanced to incldue this!
+!---THUS the Henry's Law coefficient KHA needs to be enhanced to include this!
 !---ALSO the possible formation of other soluble species from, eg, CH2O, H2O2
 !---   can be considered with enhanced values of KHA.
 !---
@@ -1768,7 +1768,7 @@ subroutine WASHGAS( RWASH, BOXF, DTSCAV, QTRTOP, HSTAR, TM, PR, QM, &
 !---NB this code does not consider the aqueous dissociation (eg, C-q) 
 !---   that makes uptake of HNO3 and H2SO4 so complete.  To do so would
 !---   require that we keep track of the pH of the falling rain.
-!---THUS the Henry's Law coefficient KHA needs to be enhanced to incldue this!
+!---THUS the Henry's Law coefficient KHA needs to be enhanced to include this!
 !---ALSO the possible formation of other soluble species from, eg, CH2O, H2O2
 !---   can be considered with enhanced values of KHA.
 !-----------------------------------------------------------------------

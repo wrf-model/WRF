@@ -338,7 +338,7 @@ MODULE module_wind_mav
                        radius, area, hubheight, xland_nt, terrain_nt, nt, dtheta, wake_model)
 
         ! sort all turbines from the most upstream turbine
-        ! NOT BASED on ax_dist because they are not at the same diretion. 
+        ! NOT BASED on ax_dist because they are not at the same direction.
         ! (a directed graph problem)
         call sort_turb(nt, num_ups, ups_index, tbindx)
 
@@ -547,7 +547,7 @@ MODULE module_wind_mav
   integer, intent(in) :: nt, tbindx(nt), num_ups(nt), ups_index(nt,nt), overlap_method
   integer,intent(in) :: tb_valid_cur(nt)
 
-  ! turbws, turbtc, turbpwcof, stc, stc2, nval are global varibles, not defined here
+  ! turbws, turbtc, turbpwcof, stc, stc2, nval are global variables, not defined here
   
   integer :: kt, it, jt, tt, nv
   real :: Udef_nt(nt), def_ij, tmp, thrcof
@@ -609,7 +609,7 @@ MODULE module_wind_mav
   integer, intent(in) :: nt, tbindx(nt), num_ups(nt), ups_index(nt,nt), overlap_method
   integer,intent(in) :: tb_valid_cur(nt)
 
-  ! turbws, turbtc, turbpwcof, stc, stc2, nval are global varibles, not defined here
+  ! turbws, turbtc, turbpwcof, stc, stc2, nval are global variables, not defined here
   
   real :: ky, kz
   integer :: kt, it, jt, tt, nv
@@ -684,7 +684,7 @@ MODULE module_wind_mav
   real :: gfun_GM
 
   integer, parameter :: ndisk = 50 ! 50x50 samples for montecarlo
-  real, parameter :: MAXD = 20. ! upsteam within 20d
+  real, parameter :: MAXD = 20. ! upstream within 20d
   integer :: ii, jd, kd, jt, tt, nblock
   integer :: ndiskpt 
   real :: diskpt(ndisk)
@@ -850,7 +850,7 @@ MODULE module_wind_mav
   integer :: k_turbine_bot, k_turbine_top
   real :: tmp_spd
 
-  ! turbws, turbtc, turbpwcof, stc, stc2, nval are global varibles, not defined here
+  ! turbws, turbtc, turbpwcof, stc, stc2, nval are global variables, not defined here
 
   do kt = 1, nt
 
@@ -859,7 +859,7 @@ MODULE module_wind_mav
       ! power for each tb
       !IF (windfarm_model == 3) THEN  ! GM model
       !! YL: For multi-grid cases, I don't have a solution for actual power by GM.
-      !! It might be scale with the maximun power for the wind farm.
+      !! It might be scale with the maximum power for the wind farm.
       !    IF (blockfrac(kt) == 0.) THEN
       !        power_GM = 1.
       !    ELSE
@@ -880,7 +880,7 @@ MODULE module_wind_mav
 
       !----------- WRF tendencies ------------
       ! only considering turbines in the current tile
-      ! the follwoing code is based on Fitch parameterization
+      ! the following code is based on Fitch parameterization
 
       i = ival(kt)
       j = jval(kt)
@@ -1016,7 +1016,7 @@ MODULE module_wind_mav
   real :: radius
   real, intent(out) :: blockfrac, blockdist, rblockdist
  
-  real, parameter :: MAXD = 20. ! upsteam within 20d
+  real, parameter :: MAXD = 20. ! upstream within 20d
   integer, parameter :: ndisk = 80
   real :: diameter, radius2, d, BR, BD, mindr, mindl
   integer :: tt, jt, numuptl, numuptr, jmindisl, jmindisr
@@ -1222,7 +1222,7 @@ MODULE module_wind_mav
   if (posi_dis <= sr_dis) then
       posi_angle = atan2(-yp, -xp) 
       spd = sqrt(u**2 + v**2)
-      !tmp1 = -(u*xp + v*yp) ! negative means ups diretion
+      !tmp1 = -(u*xp + v*yp) ! negative means ups direction
       tmp1 = real( -(u*xp + v*yp), kind = 8 )
       tmp2 = real( sqrt( (u**2 + v**2) * (xp**2 + yp**2) ), kind = 8)
 
@@ -1587,7 +1587,7 @@ subroutine cal_xturb_yturb(lat_nt, lon_nt, wf_id_nt, nt, xturb_nt, yturb_nt)
   real(kind=8) :: lon_tmp(nt), lat_wf(nt), lon_wf(nt)
   real(kind=8) :: lon_center, x, y
   real(kind=8) :: x_center, y_center
-  real(kind=8) :: off_dist = 600000. ! used to seprate wind farms
+  real(kind=8) :: off_dist = 600000. ! used to separate wind farms
   integer :: num_wf
 
   num_wf = 1
@@ -1693,7 +1693,7 @@ subroutine latlon_to_xy(latitude, longitude, central_lon, easting, northing)
 
   lon_rad = longitude*pi/180.
 
-  ! differenct from UTM, set center lon at the wind farm center
+  ! different from UTM, set center lon at the wind farm center
   central_lon_rad = central_lon*pi/180. 
 
   ! -pi to pi
@@ -1994,7 +1994,7 @@ end subroutine shell_sort_1D
 
           !!-------------- find ix, iy -----------------
           !igs = int(ide/2.5);   jgs = int(jde/2.5)  ! set wind farm center grid
-          igs = int(ide/3);   jgs = int(jde/3)  ! set wind farm right lower coner
+          igs = int(ide/3);   jgs = int(jde/3)  ! set wind farm right lower corner
 
           do i = 1, ide
               xgrid(i) = (i-1)*dx

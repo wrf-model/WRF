@@ -62,7 +62,7 @@ void (*forjac)(int,KPP_REAL,KPP_REAL [],KPP_REAL []) )
        L-stable Rosenbrock 3(2), with 
      strongly A-stable embedded formula for error control.  
 
-     All the arguments aggree with the KPP syntax.
+     All the arguments agree with the KPP syntax.
 
   INPUT ARGUMENTS:
      y = Vector of (NVAR) concentrations, contains the

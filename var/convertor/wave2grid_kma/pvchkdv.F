@@ -97,7 +97,7 @@ C : right-hand side calculation
      I   JSTA,JFIN,
      O   GPV)
 C**********************************************************************
-C full-level (L) pressure (PV) (HPA) calcualtion (log P)
+C full-level (L) pressure (PV) (HPA) calculation (log P)
 C                                            2000.01.19 Y.TAKEUCHI
 C<INPUT>
 C GPS(IMAX,JMAX): surface pressure (hPa)

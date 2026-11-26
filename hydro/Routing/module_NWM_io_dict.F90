@@ -64,7 +64,7 @@ type chrtMeta
    integer(kind=4), dimension(numChVars) :: validMinComp ! Valid min (after conversion to integer)
    integer(kind=4), dimension(numChVars) :: validMaxComp ! Valid max (after conversion to integer)
    real*8, dimension(numChVars) :: validMinDbl ! Valid minimum (before conversion to integer)
-   real*8, dimension(numChVars) :: validMaxDbl ! Valid maximum (before converstion to integer)
+   real*8, dimension(numChVars) :: validMaxDbl ! Valid maximum (before conversion to integer)
    integer(kind=4), dimension(numChVars) :: missingComp ! Missing value attribute (after conversion to integer)
    real, dimension(numChVars) :: missingReal ! Missing value attribute (before conversion to integer)
    real, dimension(numChVars) :: fillReal ! Fill value (before conversion to integer)
@@ -74,7 +74,7 @@ type chrtMeta
                                                  ! the actual data. This was done because time 0
                                                  ! output does not all contain valid data.
    real :: modelNdv ! NDV value represented within the model code
-   ! Time variable attribues
+   ! Time variable attributes
    character (len=64) :: timeLName ! long_name - usually valid output time
    character (len=64) :: timeUnits ! Usually seconds since 1/1/1970
    character (len=64) :: timeStName ! standard_name - usually time
@@ -143,7 +143,7 @@ type ldasMeta
    integer(kind=4), dimension(numLdasVars) :: validMinComp ! Valid min (after conversion to integer)
    integer(kind=4), dimension(numLdasVars) :: validMaxComp ! Valid max (after conversion to integer)
    real*8, dimension(numLdasVars) :: validMinDbl ! Valid minimum (before conversion to integer)
-   real*8, dimension(numLdasVars) :: validMaxDbl ! Valid maximum (before converstion to integer)
+   real*8, dimension(numLdasVars) :: validMaxDbl ! Valid maximum (before conversion to integer)
    integer(kind=4), dimension(numLdasVars) :: missingComp ! Missing value attribute (after conversion to integer)
    real, dimension(numLdasVars) :: missingReal ! Missing value attribute (before conversion to integer)
    real, dimension(numLdasVars) :: fillReal ! Fill value (before conversion to integer)
@@ -156,7 +156,7 @@ type ldasMeta
    real :: modelNdv2 ! Alternative NDV value in NoahMP
    real :: modelNdv3 ! Alternative NDV value in NoahMP
    integer :: modelNdvInt ! NDV value represented in model as integer
-   ! Time variable attribues
+   ! Time variable attributes
    character (len=64) :: timeLName ! long_name - usually valid output time
    character (len=64) :: timeUnits ! Usually seconds since 1/1/1970
    character (len=64) :: timeStName ! standard_name - usually time
@@ -216,7 +216,7 @@ type rtDomainMeta
    integer(kind=4), dimension(numRtDomainVars) :: validMinComp ! Valid min (after conversion to integer)
    integer(kind=4), dimension(numRtDomainVars) :: validMaxComp ! Valid max (after conversion to integer)
    real*8, dimension(numRtDomainVars) :: validMinDbl ! Valid minimum (before conversion to integer)
-   real*8, dimension(numRtDomainVars) :: validMaxDbl ! Valid maximum (before converstion to integer)
+   real*8, dimension(numRtDomainVars) :: validMaxDbl ! Valid maximum (before conversion to integer)
    integer(kind=4), dimension(numRtDomainVars) :: missingComp ! Missing value attribute (after conversion to integer)
    real, dimension(numRtDomainVars) :: missingReal ! Missing value attribute (before conversion to integer)
    real, dimension(numRtDomainVars) :: fillReal ! Fill value (before conversion to integer)
@@ -226,7 +226,7 @@ type rtDomainMeta
                                                        ! the actual data. This was done because time 0
                                                        ! output does not all contain valid data.
    real :: modelNdv ! NDV value represented within the model code
-   ! Time variable attribues
+   ! Time variable attributes
    character (len=64) :: timeLName ! long_name - usually valid output time
    character (len=64) :: timeUnits ! Usually seconds since 1/1/1970
    character (len=64) :: timeStName ! standard_name - usually time
@@ -287,7 +287,7 @@ type lakeMeta
    integer(kind=4), dimension(numLakeVars) :: validMinComp ! Valid min (after conversion to integer)
    integer(kind=4), dimension(numLakeVars) :: validMaxComp ! Valid max (after conversion to integer)
    real*8, dimension(numLakeVars) :: validMinDbl ! Valid minimum (before conversion to integer)
-   real*8, dimension(numLakeVars) :: validMaxDbl ! Valid maximum (before converstion to integer)
+   real*8, dimension(numLakeVars) :: validMaxDbl ! Valid maximum (before conversion to integer)
    integer(kind=4), dimension(numLakeVars) :: missingComp ! Missing value attribute (after conversion to integer)
    real, dimension(numLakeVars) :: missingReal ! Missing value attribute (before conversion to integer)
    real, dimension(numLakeVars) :: fillReal ! Fill value (before conversion to integer)
@@ -297,7 +297,7 @@ type lakeMeta
                                                    ! the actual data. This was done because time 0
                                                    ! output does not all contain valid data.
    real :: modelNdv ! NDV value represented within the model code
-   ! Time variable attribues
+   ! Time variable attributes
    character (len=64) :: timeLName ! long_name - usually valid output time
    character (len=64) :: timeUnits ! Usually seconds since 1/1/1970
    character (len=64) :: timeStName ! standard_name - usually time
@@ -368,7 +368,7 @@ type chrtGrdMeta
    integer(kind=4), dimension(numChGrdVars) :: validMinComp ! Valid min (after conversion to integer)
    integer(kind=4), dimension(numChGrdVars) :: validMaxComp ! Valid max (after conversion to integer)
    real*8, dimension(numChGrdVars) :: validMinDbl ! Valid minimum (before conversion to integer)
-   real*8, dimension(numChGrdVars) :: validMaxDbl ! Valid maximum (before converstion to integer)
+   real*8, dimension(numChGrdVars) :: validMaxDbl ! Valid maximum (before conversion to integer)
    integer(kind=4), dimension(numChGrdVars) :: missingComp ! Missing value attribute (after conversion to integer)
    real, dimension(numChGrdVars) :: missingReal ! Missing value attribute (before conversion to integer)
    real, dimension(numChGrdVars) :: fillReal ! Fill value (before conversion to integer)
@@ -380,7 +380,7 @@ type chrtGrdMeta
                                                        ! output does not all
                                                        ! contain valid data.
    real :: modelNdv ! NDV value represented within the model code
-   ! Time variable attribues
+   ! Time variable attributes
    character (len=64) :: timeLName ! long_name - usually valid output time
    character (len=64) :: timeUnits ! Usually seconds since 1/1/1970
    character (len=64) :: timeStName ! standard_name - usually time
@@ -444,7 +444,7 @@ type lsmMeta
    integer(kind=4), dimension(numLsmVars) :: validMinComp ! Valid min (after conversion to integer)
    integer(kind=4), dimension(numLsmVars) :: validMaxComp ! Valid max (after conversion to integer)
    real*8, dimension(numLsmVars) :: validMinDbl ! Valid minimum (before conversion to integer)
-   real*8, dimension(numLsmVars) :: validMaxDbl ! Valid maximum (before converstion to integer)
+   real*8, dimension(numLsmVars) :: validMaxDbl ! Valid maximum (before conversion to integer)
    integer(kind=4), dimension(numLsmVars) :: missingComp ! Missing value attribute (after conversion to integer)
    real, dimension(numLsmVars) :: missingReal ! Missing value attribute (before conversion to integer)
    real, dimension(numLsmVars) :: fillReal ! Fill value (before conversion to integer)
@@ -457,7 +457,7 @@ type lsmMeta
                                                    ! valid data.
    real :: modelNdv ! NDV value represented within the model code
    integer :: modelNdvInt ! NDV value represented in model as integer
-   ! Time variable attribues
+   ! Time variable attributes
    character (len=64) :: timeLName ! long_name - usually valid output time
    character (len=64) :: timeUnits ! Usually seconds since 1/1/1970
    character (len=64) :: timeStName ! standard_name - usually time
@@ -515,7 +515,7 @@ type chObsMeta
    integer(kind=4), dimension(numChObsVars) :: validMinComp ! Valid min (after conversion to integer)
    integer(kind=4), dimension(numChObsVars) :: validMaxComp ! Valid max (after conversion to integer)
    real*8, dimension(numChObsVars) :: validMinDbl ! Valid minimum (before conversion to integer)
-   real*8, dimension(numChObsVars) :: validMaxDbl ! Valid maximum (before converstion to integer)
+   real*8, dimension(numChObsVars) :: validMaxDbl ! Valid maximum (before conversion to integer)
    integer(kind=4), dimension(numChObsVars) :: missingComp ! Missing value attribute (after conversion to integer)
    real, dimension(numChObsVars) :: missingReal ! Missing value attribute (before conversion to integer)
    real, dimension(numChObsVars) :: fillReal ! Fill value (before conversion to integer)
@@ -526,7 +526,7 @@ type chObsMeta
                                                  ! done because time 0
                                                  ! output does not all contain valid data.
    real :: modelNdv ! NDV value represented within the model code
-   ! Time variable attribues
+   ! Time variable attributes
    character (len=64) :: timeLName ! long_name - usually valid output time
    character (len=64) :: timeUnits ! Usually seconds since 1/1/1970
    character (len=64) :: timeStName ! standard_name - usually time
@@ -589,7 +589,7 @@ type gwMeta
    integer(kind=4), dimension(numGwVars) :: validMinComp ! Valid min (after conversion to integer)
    integer(kind=4), dimension(numGwVars) :: validMaxComp ! Valid max (after conversion to integer)
    real*8, dimension(numGwVars) :: validMinDbl ! Valid minimum (before conversion to integer)
-   real*8, dimension(numGwVars) :: validMaxDbl ! Valid maximum (before converstion to integer)
+   real*8, dimension(numGwVars) :: validMaxDbl ! Valid maximum (before conversion to integer)
    integer(kind=4), dimension(numGwVars) :: missingComp ! Missing value attribute (after conversion to integer)
    real, dimension(numGwVars) :: missingReal ! Missing value attribute (before conversion to integer)
    real, dimension(numGwVars) :: fillReal ! Fill value (before conversion to integer)
@@ -601,7 +601,7 @@ type gwMeta
                                                    ! output does not all contain
                                                    ! valid data.
    real :: modelNdv ! NDV value represented within the model code
-   ! Time variable attribues
+   ! Time variable attributes
    character (len=64) :: timeLName ! long_name - usually valid output time
    character (len=64) :: timeUnits ! Usually seconds since 1/1/1970
    character (len=64) :: timeStName ! standard_name - usually time
@@ -710,7 +710,7 @@ subroutine initChrtDict(chrtOutDict,diagFlag,procId)
    chrtOutDict%cdm = 'Station'
    chrtOutDict%conventions = 'CF-1.6'
 
-   ! Next establish time attribues
+   ! Next establish time attributes
    chrtOutDict%timeLName = 'valid output time'
    chrtOutDict%timeUnits = 'minutes since 1970-01-01 00:00:00 UTC'
    chrtOutDict%timeStName = 'time'
@@ -1865,7 +1865,7 @@ subroutine initLakeDict(lakeOutDict,procId,diagFlag)
       endif
    endif
 
-   ! Next establish time attribues
+   ! Next establish time attributes
    lakeOutDict%timeLName = 'valid output time'
    lakeOutDict%timeUnits = 'minutes since 1970-01-01 00:00:00 UTC'
    lakeOutDict%timeStName = 'time'
@@ -2626,7 +2626,7 @@ subroutine initChanObsDict(chObsDict,diagFlag,procId)
    chObsDict%cdm = 'Station'
    chObsDict%conventions = 'CF-1.6'
 
-   ! Next establish time attribues
+   ! Next establish time attributes
    chObsDict%timeLName = 'valid output time'
    chObsDict%timeUnits = 'minutes since 1970-01-01 00:00:00 UTC'
    chObsDict%timeStName = 'time'
@@ -2709,7 +2709,7 @@ subroutine initGwDict(gwOutDict)
    !                   &PRIMEM[Greenwich,0.0],UNIT[Degree,0.017453292519943295]]'
    gwOutDict%conventions = 'CF-1.6'
 
-   ! Next establish time attribues
+   ! Next establish time attributes
    gwOutDict%timeLName = 'valid output time'
    gwOutDict%timeUnits = 'minutes since 1970-01-01 00:00:00 UTC'
    gwOutDict%timeStName = 'time'

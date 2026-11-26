@@ -93,7 +93,7 @@ subroutine da_cld_eff_radius(t,rho,qci,qrn,qsn,qgr,snow,xice,xland,method, &
    real :: piover6   ! pi/6
    real :: sum1_rain, sum2_rain, sum1_snow, sum2_snow, sum1_grau, sum2_grau
    real :: lamda_rain, lamda_snow, lamda_grau
-   real, dimension(32) :: psd_rain, psd_snow, psd_grau   ! partical size distribution
+   real, dimension(32) :: psd_rain, psd_snow, psd_grau   ! particle size distribution
 
 ! initialize
    reff_water = 0.0

@@ -682,7 +682,7 @@ rmaxtime = float(maxtime)
 !-- zerout all model tendencies
     call tend0_plumerise
 
-!-- bounday conditions (k=1)
+!-- boundary conditions (k=1)
     L=1
     call lbound()
 
@@ -700,11 +700,11 @@ rmaxtime = float(maxtime)
 !-- scalars entrainment, adiabatic
     call scl_misc(NM1)
     
-!-- scalars dinamic entrainment
+!-- scalars dynamic entrainment
      call  scl_dyn_entrain(NM1,nkp,wbar,w,adiabat,alpha,radius,tt,t,te,qvt,qv,qvenv,qct,qc,qht,qh,qit,qi,&
                     vel_e,vel_p,vel_t,rad_p,rad_t)
 
-!-- gravity wave damping using Rayleigh friction layer fot T
+!-- gravity wave damping using Rayleigh friction layer for T
     call damp_grav_wave(1,nm1,deltak,dt,zt,zm,w,t,tt,qv,qh,qi,qc,te,pe,qvenv)
 
 !-- microphysics
@@ -2096,7 +2096,7 @@ ELSE
 !                             
 !   CON = AK1 * (Q - TH)   !Kessler autoconversion rate
 !      
-!   IF (CON.LT.0.0) CON = 0.0   !havent reached threshold
+!   IF (CON.LT.0.0) CON = 0.0   !haven't reached threshold
  
    CON = max(0.,AK1 * (Q - TH)) ! versao otimizada
 !

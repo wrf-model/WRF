@@ -955,7 +955,7 @@ main_i_loop:   &
       real xlm( blksize )           ! atmospheric mean free path [ m ]
       real amu( blksize )           ! atmospheric dynamic viscosity [ kg/m s ]
       
-! *** followng is for future version       
+! *** following is for future version
       real vsed( blksize, naspcssed) ! sedimentation velocity [ m s**-1 ]
       real vdep( blksize, naspcsdep) ! deposition velocity [ m s**-1 ]
 

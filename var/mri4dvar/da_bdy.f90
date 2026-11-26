@@ -89,8 +89,8 @@ program da_bdy
         varbdy=trim(arg)
       case default
         Write(*,*) "Usage : "//trim(appname)//" [-fg filename] [-fg02 filename] [-bdy filename] [-o outputfile] [-h]"
-        Write(*,*) "  -fg     Optional, 1st time levle first guess file,         default - fg"
-        Write(*,*) "  -fg02   Optional, 2nd time levle first guess file,         default - fg02"
+        Write(*,*) "  -fg     Optional, 1st time level first guess file,         default - fg"
+        Write(*,*) "  -fg02   Optional, 2nd time level first guess file,         default - fg02"
         Write(*,*) "  -bdy    Optional, reference boundary file comes from real, default - wrfbdy_ref"
         Write(*,*) "  -o      Optional, output boundary file,                    default - varbdy_out"
         Write(*,*) "  -h      Show this usage"
@@ -113,25 +113,25 @@ program da_bdy
 
   status = nf90_inq_varid(ncidfg, "Times", vTimes_ID )
   if ( status /= nf90_noerr ) then
-    err_msg="Please make sure fg has a vaild Times variable"
+    err_msg="Please make sure fg has a valid Times variable"
     call nf90_handle_err(status, err_msg)
   endif
 
   status = nf90_get_var(ncidfg, vTimes_ID, fg_time)
   if ( status /= nf90_noerr ) then
-    err_msg="Please make sure fg has a vaild Time value"
+    err_msg="Please make sure fg has a valid Time value"
     call nf90_handle_err(status, err_msg)
   endif
 
   status = nf90_inq_varid(ncidfg02, "Times", vTimes_ID )
   if ( status /= nf90_noerr ) then
-    err_msg="Please make sure fg02 has a vaild Times variable"
+    err_msg="Please make sure fg02 has a valid Times variable"
     call nf90_handle_err(status, err_msg)
   endif
 
   status = nf90_get_var(ncidfg02, vTimes_ID, fg02_time)
   if ( status /= nf90_noerr ) then
-    err_msg="Please make sure fg02 has a vaild Time value"
+    err_msg="Please make sure fg02 has a valid Time value"
     call nf90_handle_err(status, err_msg)
   endif
 
@@ -153,7 +153,7 @@ program da_bdy
     case ( 0 )
       bdyfrq = 1
     case ( : -1 )
-      Write (*,*) "***WARNNING : time levle of fg is LATER then fg02's.***"
+      Write (*,*) "***WARNING : time level of fg is LATER then fg02's.***"
   end select
 
   write(i_char, '(i8)') bdyfrq
@@ -262,7 +262,7 @@ program da_bdy
 
     status = nf90_inquire_variable(ncidwrfbdy,varid,name=vNam,xtype=xtype,ndims=nDims,dimids=vDimIDs)
     if ( status /= nf90_noerr ) then
-      err_msg="Failed to inquire varialbe '"//trim(vNam)//"' for wrfbdy"
+      err_msg="Failed to inquire variable '"//trim(vNam)//"' for wrfbdy"
       call nf90_handle_err(status, err_msg)
     endif
 
@@ -487,7 +487,7 @@ program da_bdy
             end if
 
             status = nf90_inq_varid(ncidfg  , MSF_NAME , MSF_ID   )
-            err_msg="Failed to get varialbe MSF"
+            err_msg="Failed to get variable MSF"
             status =  nf90_get_var(ncidfg, MSF_ID, MSF, start=start_msf, count=cnt_msf, map=map_msf)
             if(status /= nf90_noerr) call nf90_handle_err(status, err_msg)
 
@@ -638,7 +638,7 @@ contains
     integer, intent(in)  :: dd
     integer              :: ival
 
-    ! DATE ROUTINE JD(YYYY, MM, DD) CONVERTS CALENDER DATE TO
+    ! DATE ROUTINE JD(YYYY, MM, DD) CONVERTS CALENDAR DATE TO
     ! JULIAN DATE.  SEE CACM 1968 11(10):657, LETTER TO THE
     ! EDITOR BY HENRY F. FLIEGEL AND THOMAS C. VAN FLANDERN.
     ! EXAMPLE JD(1970, 1, 1) = 2440588

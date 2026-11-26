@@ -18,16 +18,16 @@ CONTAINS
 !
 ! PURPOSE:
 ! -------
-!      FAST 2D INTERPOLATION OF MM5 2D FIELD AT OBSERVATIONS MM5 INDECES
+!      FAST 2D INTERPOLATION OF MM5 2D FIELD AT OBSERVATIONS MM5 INDICES
 !
 !  METHOD:
 !  -------
 !       PERFORM A BILINEAR INTERPOLATION OF MM5 GRIDDED 2D FIELD AT OBSERVATION
-!       LOCATION DEFINED IN MM5 INDECES
+!       LOCATION DEFINED IN MM5 INDICES
 !       ASSUME THAT OBSERVATION LATITUDE AND LONGITUDE HAVE ALREADY BEEN
-!       CONVERTED INTO MM5 INDECES
+!       CONVERTED INTO MM5 INDICES
 !
-!  BE CAREFULL WITH THE MM5 INDEXATION:
+!  BE CAREFUL WITH THE MM5 INDEXATION:
 !  ------------------------------------
 !
 !     i (latitude)
@@ -39,7 +39,7 @@ CONTAINS
 !
 !   INPUT:
 !   -----
-!      CONST:  PI, PJ        INTERPOLATION LOCATION IN MM5 INDECES
+!      CONST:  PI, PJ        INTERPOLATION LOCATION IN MM5 INDICES
 !      ACTIVE: PFIELD2       2D MM5 ARRAY DEFINED ON LATITUDE AND LONGITUDE
 !      CONST:  KIX, KJX      DIMENSION OF THE MM5 2D ARRAY TO INTERPOLATE
 !      CONST:  KCRS          FLAG = 1 WHEN PFIELD2 IS DEFINED AT MM5 CROSS PT
@@ -76,7 +76,7 @@ CONTAINS
 !------------------------------------------------------------------------------C
 
 
-! 1.  MODEL HORIZONTAL INDECES
+! 1.  MODEL HORIZONTAL INDICES
 ! ============================
 
       II = IFIX (PI)
@@ -87,8 +87,8 @@ CONTAINS
           (1 .LE. IJ) .AND. (IJ .LE. KJX-1)) THEN
 
 
-! 2.  HORIZONTAL INTERPOLATION COEFICIENTS
-! ========================================
+! 2.  HORIZONTAL INTERPOLATION COEFFICIENTS
+! =========================================
 !
 !     I+1,J |          | I+1,J+1 
 !         --+----------+---          
@@ -308,7 +308,7 @@ FUNCTION locate (x,xx) RESULT (index)
 
     ENDDO
 
-    IF (x .EQ. xx (1)) THEN      ! Set the output, being carefull with endpoints
+    IF (x .EQ. xx (1)) THEN      ! Set the output, being careful with endpoints
         index = 1
     ELSE IF (x .EQ. xx (n)) THEN
         index = n-1 

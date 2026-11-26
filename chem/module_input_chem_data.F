@@ -65,7 +65,7 @@ MODULE module_input_chem_data
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Initial atmospheric chemistry profile data
     INTEGER :: k_loop          ! Used for loop index
-    INTEGER :: lo              ! number of chemicals in inital profile
+    INTEGER :: lo              ! number of chemicals in initial profile
     INTEGER :: logg            ! number of final chemical species (nch-1)
     INTEGER :: kx              ! number of vertical levels in temp profile        
     INTEGER :: kxm1
@@ -89,7 +89,7 @@ MODULE module_input_chem_data
 !  The idealized profile is converted from the NALROM chemistry model.
 !
 ! The variable "iref" is the reference index 
-!    "fracref" is the reference fraction correpsonding to iref
+!    "fracref" is the reference fraction corresponding to iref
 !
 !  For example: WRF-Chem species number 1 for RADM is SO2.  iref(1)
 !  is 12, and XL(12,K) is the profile for SO2.
@@ -163,7 +163,7 @@ MODULE module_input_chem_data
 !wig: To match the xl profile to the correct species, match WRF's p_<species>
 !     flag with iref(p_<species>-1) to get the value of the first index in xl,
 !     e.g. p_o3=6, iref(6-1)=1, so xl(1,:) is the ozone profile.
-!     See gasprofile_init_pnnl for an explination of what height
+!     See gasprofile_init_pnnl for an explanation of what height
 !     each index represents.
       DATA (xl(1,k_loop),k_loop=1,kx) &
       / 1.68E-07, 1.68E-07, 5.79E-08, 5.24E-08, 5.26E-08, &
@@ -433,7 +433,7 @@ END SUBROUTINE setup_gasprofile_map_radm_racm
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Maps for indices and fractional apportionment of the default
 ! species profiles to the SAPRC99 species for ICs and BCs.
-! Code build atomatically using write_BD_and_IC_code.m script and
+! Code build automatically using write_BD_and_IC_code.m script and
 ! BD_and_IC_NALROM_to_WRF-SAPRC.txt file
 ! pablo-saide@uiowa.edu; 25-Aug-2009
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -979,7 +979,7 @@ SUBROUTINE input_chem_profile (si_grid)
 
     REAL, DIMENSION(nx1:nx2,nz1:nz2,ny1:ny2) :: PV
     REAL                                     :: preshPa, pv2o3_con
-    REAL      :: day_fac  ! SAM 10/3/17 temporal fac .from Xing etal.(2016) PV-O3 relat. - depnds only on julday
+    REAL      :: day_fac  ! SAM 10/3/17 temporal fac .from Xing etal.(2016) PV-O3 relat. - depends only on julday
     LOGICAL   :: PVBOOL
 
 
@@ -1504,7 +1504,7 @@ SUBROUTINE input_chem_profile (si_grid)
   END SUBROUTINE bdy_chem_value
 !**********************************************************************
 SUBROUTINE bdy_chem_value_ghg ( chem, nch )
-! This subroutine is called to set the boundary constan values for
+! This subroutine is called to set the boundary constant values for
 ! greenhouse gases when gas_bc_opt=16
 
     IMPLICIT NONE
@@ -1592,7 +1592,7 @@ END SUBROUTINE bdy_chem_value_ghg
       logical    :: have_bcs_chem
 
       REAL       :: pv2o3_con   ! for determination of O3/PV proportionality constant
-      REAL      :: day_fac  ! SAM 10/3/17 temporal fac .from Xing etal.(2016) PV-O3 relat. - depnds only on julday
+      REAL      :: day_fac  ! SAM 10/3/17 temporal fac .from Xing etal.(2016) PV-O3 relat. - depends only on julday
 
       chem_bv_def = conmin
       numgas = get_last_gas(config_flags%chem_opt)
@@ -2397,7 +2397,7 @@ END SUBROUTINE bdy_chem_value_ghg
 !   wig 22-Apr-2004, original routine                           *
 !       rce 25-apr-2004 - changed name to                       *
 !                         "sorgam_set_aer_bc_pnnl"              *
-!       wig  7-May-2004, added height dependance                *
+!       wig  7-May-2004, added height dependence                *
 !                                                               *
 !   CALLS THE FOLLOWING SUBROUTINES:  NONE                      *
 !                                                               *
@@ -2432,7 +2432,7 @@ END SUBROUTINE bdy_chem_value_ghg
 !!$!    ---------     ----------
 !!$!    <=2000        1.0
 !!$!    2000<z<3000   linear transition zone to 0.5
-!!$!    3000<z<5000   linear transision zone to 0.25
+!!$!    3000<z<5000   linear transition zone to 0.25
 !!$!    >=5000        0.25
 !!$!
 !!$! which translates to:
@@ -2455,7 +2455,7 @@ END SUBROUTINE bdy_chem_value_ghg
 !    ---------     ----------
 !    <=2000        1.0
 !    2000<z<3000   linear transition zone to 0.25
-!    3000<z<5000   linear transision zone to 0.125
+!    3000<z<5000   linear transition zone to 0.125
 !    >=5000        0.125
 !
 ! which translates to:
@@ -3787,7 +3787,7 @@ END SUBROUTINE PVS
 ! O3/PV factor versus latitude given by 5th order polynomial, for 3 pressure levels,
 ! with seasonal corrections. Here, seasonal correction neglected (July=0.9).
 ! 8/5/16 SAM: Constants in 5th order polynomial given at 58.56, 76.4 and 95.62 mb,
-! extrapolate those constants to 500mb for intialization and boundary conditions
+! extrapolate those constants to 500mb for initialization and boundary conditions
 ! below 95.62mb.
     xlt=abs(xlat) ! xlat must be in degrees
 

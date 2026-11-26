@@ -66,7 +66,7 @@
 !	    vtot = ntot * (pi/6) * (dmean**3)
 !	where vtot and ntot are total dry-volume and number for the section
 !	if dmean is outside the section boundaries (dlo_sect & dhi_sect), then
-!	    all the mass and number in the section are transfered to the
+!	    all the mass and number in the section are transferred to the
 !	    section with dlo_sect(nnew) < dmean < dhi_sect(nnew)
 !
 !   mass mixing ratios (mole/mole-air or g/mole-air) are in
@@ -463,7 +463,7 @@
 !
 !   routine calculates section movements for the moving-center approach
 !
-!   material in section n will be transfered to section nnewsave(1,n)
+!   material in section n will be transferred to section nnewsave(1,n)
 !
 !   the nnewsave are calculated here
 !   the actual transfer is done in another routine
@@ -587,11 +587,11 @@
 !
 !   routine calculates section movements for the mass-number-advection approach
 !
-!   material in section n will be transfered to sections
+!   material in section n will be transferred to sections
 !	nnewsave(1,n) and nnewsave(2,n)
-!   the fractions of mass/volume transfered to each are
+!   the fractions of mass/volume transferred to each are
 !	xferfracvol(1,n) and xferfracvol(2,n)
-!   the fractions of number transfered to each are
+!   the fractions of number transferred to each are
 !	xferfracnum(1,n) and xferfracnum(2,n)
 !
 !   the nnewsave, xferfracvol, and xferfracnum are calculated here

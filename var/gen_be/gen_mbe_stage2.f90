@@ -98,10 +98,10 @@ program gen_mbe_stage2
    real, allocatable   :: covar_chi_u_rh(:,:,:)      ! Covariance between rh and chi_u 
    real, allocatable   :: covar_temp_u_rh(:,:,:)     ! Covariance between rh and unbalanced temp
    
-   real, allocatable   :: regcoeff_psi_chi(:)        ! chi/psi regression cooefficient.
-   real, allocatable   :: regcoeff_psi_ps(:,:)       ! ps/psi regression cooefficient.
-   real, allocatable   :: regcoeff_psi_t(:,:,:)      ! t/psi regression cooefficient.
-   real, allocatable   :: regcoeff_psi_rh(:,:,:)     ! rh/psi regression cooefficient.
+   real, allocatable   :: regcoeff_psi_chi(:)        ! chi/psi regression coefficient.
+   real, allocatable   :: regcoeff_psi_ps(:,:)       ! ps/psi regression coefficient.
+   real, allocatable   :: regcoeff_psi_t(:,:,:)      ! t/psi regression coefficient.
+   real, allocatable   :: regcoeff_psi_rh(:,:,:)     ! rh/psi regression coefficient.
 
    real, allocatable   :: regcoeff_chi_u_ps(:,:)     ! ps/chi_u regression coefficient
    real, allocatable   :: regcoeff_chi_u_t(:,:,:)    ! t/chi_u regression coefficient

@@ -1,5 +1,5 @@
 !
-! This is a template for adding a package-dependent implemetnation of
+! This is a template for adding a package-dependent implementation of
 ! the I/O API.  You can use the name xxx since that is already set up
 ! as a placeholder in module_io.F, md_calls.m4, and the Registry, or
 ! you can change the name here and in those other places.  For additional

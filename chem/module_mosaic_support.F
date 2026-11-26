@@ -1,7 +1,7 @@
 #define MOSAIC_BOX
 module module_mosaic_support
   !Purpose: This module contains subroutines which have codes which depend upon 
-  !         the host code (CAM, WRF etc.). #defines are used to seprate codes
+  !         the host code (CAM, WRF etc.). #defines are used to separate codes
   !         which depends on the host code
 
 #ifdef CAM

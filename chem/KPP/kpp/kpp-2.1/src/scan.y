@@ -441,7 +441,7 @@ void ParserErrorMessage()
       ParserError("Missing rate after '%s'", crtToken );
       break; 
     case EQNSIGN: 
-      ParserError("Missing coeficient after '%s'", crtToken );
+      ParserError("Missing coefficient after '%s'", crtToken );
       break; 
     case EQNCOEF: 
       ParserError("Missing species after '%s'", crtToken );

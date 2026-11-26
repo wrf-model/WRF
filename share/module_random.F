@@ -14,7 +14,7 @@ module module_random
   ! the grid is given a different seed, but those seeds are based on
   ! the seed you provide.  If you do not provide one, the same value
   ! (0) will be used every time the model is run.  That is chosen
-  ! intentionally to ensure reproducability of results.  
+  ! intentionally to ensure reproducibility of results.
 
   ! The rand_grid routines will produce random numbers using the
   ! arrays of random number generators.  The floating-point

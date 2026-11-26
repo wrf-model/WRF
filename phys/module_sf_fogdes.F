@@ -47,7 +47,7 @@ CONTAINS
 !-- wspd          wind speed (m/s)
 !-- qc_curr       cloud water mixing ratio (kg/kg)
 !-- dqc           cloud water mixing ratio tendency (not used -
-!                 claculated in MYNN PBL scheme)
+!                 calculated in MYNN PBL scheme)
 !-- dtbl          timestep (s)
 !-- rho           density of the air (kg/m^3)
 !-- dp_fog        mean fog droplet diameter (m)

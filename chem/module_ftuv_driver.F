@@ -689,7 +689,7 @@ is_mozart : &
             CALL wrf_message( 'ftuv_init: failed to allocate column_density type col_dens' )
             CALL wrf_abort
           end if
-          write(err_msg,*) 'ftuv_init: intializing ',max_dom,' domains'
+          write(err_msg,*) 'ftuv_init: initializing ',max_dom,' domains'
           call wrf_message( trim(err_msg) )
           col_dens(:)%is_allocated = .false.
         endif
@@ -706,7 +706,7 @@ col_dens_allocated : &
             else
               filename = trim( config_flags%exo_coldens_inname )
             endif
-            err_msg = 'ftuv_init: intializing domain ' // id_num(2:3)
+            err_msg = 'ftuv_init: initializing domain ' // id_num(2:3)
             call wrf_message( trim(err_msg) )
             err_msg = 'ftuv_init: failed to open file ' // trim(filename)
             call handle_ncerr( nf_open( trim(filename), nf_noclobber, ncid ), trim(err_msg) )
@@ -991,7 +991,7 @@ include 'netcdf.inc'
       endif
 
 !---------------------------------------------------------------------
-!     intialize other modules
+!     initialize other modules
 !---------------------------------------------------------------------
       call schu_inti
       call wave_data_inti( nz )
@@ -1063,7 +1063,7 @@ include 'netcdf.inc'
       real(dp), intent(out) :: prate0(nz,njout)
 
 !----------------------------------------------------
-!     local arugments
+!     local arguments
 !----------------------------------------------------
       integer  :: astat, istat
       integer  :: k, n
@@ -1188,7 +1188,7 @@ include 'netcdf.inc'
       gaer999_ph(:) = 0.0_dp
 
 !----------------------------------------------------
-!     assgin vertical profiles
+!     assign vertical profiles
 !     model levels first
 !----------------------------------------------------
       z_ph(1:nlev)      = zin(1:nlev)

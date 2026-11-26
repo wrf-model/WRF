@@ -231,7 +231,7 @@ nudgingParamFile = "DOMAIN/nudgingParams.nc"
 
 ! Nudging restart file = "nudgingLastObsFile"
 ! nudgingLastObsFile defaults to '', which will look for nudgingLastObs.YYYY-mm-dd_HH:MM:SS.nc
-!   **AT THE INITALIZATION TIME OF THE RUN**. Set to a missing file to use no restart.
+!   **AT THE INITIALIZATION TIME OF THE RUN**. Set to a missing file to use no restart.
 !nudgingLastObsFile = '/a/nonexistent/file/gives/nudging/cold/start'
 
 !! Parallel input of nudging timeslice observation files?

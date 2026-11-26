@@ -30,7 +30,7 @@ program da_rad_diags
    character(len=6)                       :: file_prefix
    character(len=10)                      :: start_date, end_date
    namelist /record1/ nproc, instid, file_prefix, start_date, end_date, cycle_period
-           ! nproc: number of processsors used when writing out inv files
+           ! nproc: number of processors used when writing out inv files
            ! instid, eg dmsp-16-ssmis
            ! file_prefix, inv or oma
            ! start_date, end_date, eg 2006100100, 2006102800
@@ -160,7 +160,7 @@ ntime_loop: do itime = 1, ntime
             write(0,*) 'Error opening innovation radiance file ', trim(inpname(iproc))
             nerr = nerr + 1
             if ( nerr == nproc ) then
-               write(0,*) 'found no vaild files for ', trim(instid(iinst))
+               write(0,*) 'found no valid files for ', trim(instid(iinst))
                deallocate ( npixel )
                deallocate ( iunit )
                deallocate ( inpname )
@@ -348,7 +348,7 @@ ntime_loop: do itime = 1, ntime
             ncname = 'diags_'//trim(instid(iinst))//"_"//datestr1(itime)//'.nc'
             ios = NF_CREATE(trim(ncname), NF_NETCDF4, ncid)  ! Change to output netcdf4 files
            !ios = NF_CREATE(trim(ncname), NF_CLOBBER, ncid)  ! NF_CLOBBER specifies the default behavior of
-                                                             ! overwritting any existing dataset with the 
+                                                             ! overwriting any existing dataset with the
                                                              ! same file name
             if ( ios /= 0 ) then
                write(0,*) 'Error creating netcdf file: ', ncname

@@ -61,7 +61,7 @@ CONTAINS
     if ( flux ) then
 !!! 2-m Temperature - T2 
            if(CHS2(I,J).lt.1.E-5) then
-! may be to small treshold?
+! may be to small threshold?
 !         if(CHS2(I,J).lt.3.E-3 .AND. HFX(I,J).lt.0.) then
 ! when stable - let 2-m temperature be equal the first atm. level temp.
 !             TH2(I,J) = TSK(I,J)*(1.E5/PSFC(I,J))**ROVCP 

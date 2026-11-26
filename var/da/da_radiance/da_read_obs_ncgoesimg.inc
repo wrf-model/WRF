@@ -181,8 +181,8 @@ subroutine  da_read_obs_ncgoesimg (iv,infile)
    ptotal(0:num_fgat_time) = 0
    iobs = 0                 ! for thinning, argument is inout
 
-! 1.0 Read NC files: sepeate file for different channels
-!-------------------------------------------------------
+! 1.0 Read NC files: separate file for different channels
+!--------------------------------------------------------
 
 ! variables to read from NC file
 !--------------------------------
@@ -193,7 +193,7 @@ subroutine  da_read_obs_ncgoesimg (iv,infile)
       var2d(5)='bands'
       var2d(6)='data'
 
-! determine file existant and open file
+! determine file existent and open file
 !----------------------------------------
       write(input_file,fmt='(A,A,I2.2,A)') trim(infile),'-',01,'.nc'
       write(*,*) "Reading dimension of ", trim(input_file)
@@ -233,7 +233,7 @@ subroutine  da_read_obs_ncgoesimg (iv,infile)
       num_goesimg_used    = 0
       num_goesimg_thinned = 0
 
-! determine file existant and open file
+! determine file existent and open file
 !----------------------------------------
       write(input_file,fmt='(A,A,I2.2,A)') trim(infile),'-',ichan,'.nc'
       write(*,*) "Reading ", trim(input_file)

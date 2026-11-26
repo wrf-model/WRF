@@ -16,7 +16,7 @@
 ! minutes (just under 32 years of continuous simulation). Cannot remove all
 ! reliance on XTIME because actual end time is in absolute minutes. Using XTIME
 ! results in spectral nudging analyses ingested at the wrong times, beginning
-! 23 years and 3.5 months into a continous simulation. Purposefully not
+! 23 years and 3.5 months into a continuous simulation. Purposefully not
 ! modifying the ramping function because pragmatically we will not get
 ! very large XTIME values in any situation where the off-ramp for nudging would
 ! be used. (Tanya Spero, U.S. Environmental Protection Agency -- June 2024)
@@ -59,7 +59,7 @@ CONTAINS
    implicit none
 !-------------------------------------------------------------------
 !
-!   This code was implemented by Aijun Deng (Penn State).  The 3-D analysis nudging was comleted 
+!   This code was implemented by Aijun Deng (Penn State).  The 3-D analysis nudging was completed
 !   and released in December 2006.  The surface analysis nudging capability was added and 
 !   released in March 2009 with WRFV3.1.
 !
@@ -461,7 +461,7 @@ CONTAINS
    ENDIF
 !
 ! If the user-defined namelist switches (if_zfac_uv, if_zfac_t,
-! if_zfac_q swithes) are set to 1, compute the weighting function, wzfac(k,:),
+! if_zfac_q switches) are set to 1, compute the weighting function, wzfac(k,:),
 ! based on the namelist specified k values (k_zfac_uv, k_zfac_t and k_zfac_q) below which analysis 
 ! nudging is turned off (wzfac = 1 above k_zfac_x and = 0 in below k_zfac_x).  If all
 ! the switche are set to zero, wzfac = 1 (default value).
@@ -724,7 +724,7 @@ CONTAINS
 
 !-------------------------------------------------------------------
 !  
-!   This code was implemented by Aijun Deng (Penn State).  The 3-D analysis nudging was comleted
+!   This code was implemented by Aijun Deng (Penn State).  The 3-D analysis nudging was completed
 !   and released in December 2006.  The surface analysis nudging capability was added and
 !   released in March 2009 with WRFV3.1.
 !
@@ -868,7 +868,7 @@ CONTAINS
                  ! if the first model half-layer is greater than 10 meters 
                  ! and we are in the free convection regime (REGIME=4.0). else: no
    idd = 1       ! 1: Obs data density correction is applied. else: no
-   iqsat = 1     ! 1: Remove super saturation. eles: no
+   iqsat = 1     ! 1: Remove super saturation. else: no
    int4 = 1      ! 1: temporal ionterpolation. else: target nudging toward *_ndg_new values
 
    IF( analysis_interval_sfc <= 0 )CALL wrf_error_fatal('In grid sfc FDDA, sgfdda_interval_m must be > 0')
@@ -1521,7 +1521,7 @@ CONTAINS
         rvndgdten(i,k,j) = 0.
         rthndgdten(i,k,j) = 0.
         rqvndgdten(i,k,j) = 0.
-! TWG 2015 Psuedo radiative flux
+! TWG 2015 Pseudo radiative flux
         HFX_FDDA(i,k,j) = 0.
 ! TWG END
         if(k.eq.kts) rmundgdten(i,j) = 0.
@@ -1556,7 +1556,7 @@ CONTAINS
 !             WAVELENGTH COMPONENTS.
 !
 !    Implemented based on the same smoothing subroutine used in MM5, with modifications to
-!    remove the extra loop that causes unneccessary desmoothing.  Aijun Deng (Penn State),
+!    remove the extra loop that causes unnecessary desmoothing.  Aijun Deng (Penn State),
 !    December 2008 
 !
     IMPLICIT NONE

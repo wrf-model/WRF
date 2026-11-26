@@ -345,7 +345,7 @@ CONTAINS
               ENDIF
             ENDIF
 
-!......     QSTEN STORES GRAUPEL TENDENCY IF IT EXISTS, OTHERISE SNOW (V2)     
+!......     QSTEN STORES GRAUPEL TENDENCY IF IT EXISTS, OTHERWISE SNOW (V2)
 
             IF(PRESENT(RQICUTEN).AND.PRESENT(RQCCUTEN))THEN
               IF (F_QI) THEN
@@ -505,12 +505,12 @@ CONTAINS
 !
   ! hcd = moist static energy in downdraft
   ! zd normalized downdraft mass flux
-  ! dby = buoancy term
+  ! dby = buoyancy term
   ! entr = entrainment rate
   ! zd   = downdraft normalized mass flux
   ! entr= entrainment rate
   ! hcd = h in model cloud
-  ! bu = buoancy term
+  ! bu = buoyancy term
   ! zd = normalized downdraft mass flux
   ! gamma_cup = gamma on model cloud levels
   ! mentr_rate = entrainment rate
@@ -539,7 +539,7 @@ CONTAINS
   ! kbcon       = LFC of parcel from k22
   ! k22         = updraft originating level
   ! icoic       = flag if only want one closure (usually set to zero!)
-  ! dby = buoancy term
+  ! dby = buoyancy term
   ! ktop = cloud top (output)
   ! xmb    = total base mass flux
   ! hc = cloud moist static energy
@@ -1296,7 +1296,7 @@ CONTAINS
 !--- LARGE SCALE FORCING
 !
 !
-!------- CHECK wether aa0 should have been zero
+!------- CHECK whether aa0 should have been zero
 !
 !
       CALL cup_MAXIMI(HEO_CUP,3,KBMAX,K22x,ierr, &
@@ -1619,7 +1619,7 @@ CONTAINS
   ! he = moist static energy on model levels
   ! he_cup = moist static energy on model cloud levels
   ! hes_cup = saturation moist static energy on model cloud levels
-  ! dby = buoancy term
+  ! dby = buoyancy term
   ! cdd= detrainment function 
   ! z_cup = heights of model cloud levels 
   ! entr = entrainment rate
@@ -1714,7 +1714,7 @@ CONTAINS
   ! qes_cup = saturation q on model cloud levels
   ! hes_cup = saturation h on model cloud levels
   ! hcd = h in model cloud
-  ! bu = buoancy term
+  ! bu = buoyancy term
   ! zd = normalized downdraft mass flux
   ! gamma_cup = gamma on model cloud levels
   ! mentr_rate = entrainment rate
@@ -3278,7 +3278,7 @@ CONTAINS
         ids,ide, jds,jde, kds,kde,           &
         ims,ime, jms,jme, kms,kme,           &
         its,ite, jts,jte, kts,kte
-  ! dby = buoancy term
+  ! dby = buoyancy term
   ! ktop = cloud top (output)
   ! ilo  = flag
   ! ierr error value, maybe modified in this routine
@@ -3751,7 +3751,7 @@ CONTAINS
   ! aa0 cloud work function
   ! gamma_cup = gamma on model cloud levels
   ! t_cup = temperature (Kelvin) on model cloud levels
-  ! dby = buoancy term
+  ! dby = buoyancy term
   ! zu= normalized updraft mass flux
   ! z = heights of model levels 
   ! ierr error value, maybe modified in this routine
@@ -3830,7 +3830,7 @@ CONTAINS
   ! he = moist static energy on model levels
   ! he_cup = moist static energy on model cloud levels
   ! hes_cup = saturation moist static energy on model cloud levels
-  ! dby = buoancy term
+  ! dby = buoyancy term
   ! cd= detrainment function 
   ! z_cup = heights of model cloud levels 
   ! entr = entrainment rate
@@ -3931,7 +3931,7 @@ CONTAINS
   ! q = environmental q on model levels
   ! qe_cup = environmental q on model cloud levels
   ! qes_cup = saturation q on model cloud levels
-  ! dby = buoancy term
+  ! dby = buoyancy term
   ! cd= detrainment function 
   ! zu = normalized updraft mass flux
   ! gamma_cup = gamma on model cloud levels

@@ -41,7 +41,7 @@ real, save::            &
  fire_atm_feedback=1. , &  ! 1 = normal, 0. = one way coupling atmosphere -> fire only
  fire_viscosity=0.4,    &  ! artificial viscosity
  fire_lfn_ext_up=1.,    &  ! 0.=extend level set function at boundary by reflection, 1.=always up
- fire_lsm_zcoupling_ref=50., &  ! Reference height from wich u at fire_wind_hegiht is calculated using a logarithmic profile
+ fire_lsm_zcoupling_ref=50., &  ! Reference height from which u at fire_wind_hegiht is calculated using a logarithmic profile
  fire_viscosity_bg=0.4,      &  ! artificial viscosity in the near-front region 
  fire_viscosity_band=0.5,    &  ! number of times the hybrid advection band to transition from fire_viscosity_bg to fire_viscosity
  fire_slope_factor=1.0          ! slope correction factor
@@ -316,12 +316,12 @@ integer::its1,ite1,jts1,jte1
 integer,parameter::halo=1           ! only 1 domain halo is needed since ENO1 is used near domain boundaries
 !*** executable
 
-! for dislay only
+! for display only
 itso=its
 jtso=jts
 iteo=ite
 jteo=jte
-! go halo width beyond if at patch boundary but not at domain boudnary 
+! go halo width beyond if at patch boundary but not at domain boundary
 ! assume we have halo need to compute the value we do not have 
 ! the next thread that would conveniently computer the extended values at patch corners
 ! besides halo may not transfer values outside of the domain

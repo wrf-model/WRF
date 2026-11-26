@@ -680,7 +680,7 @@ IF (grid%sppt_on==1) then
       endif ! variable
 
 !     --------------------------------------------------------------------------------------
-!     --------------------  INITIALIZE  RANDOM PERTUBATIONS  -------------------------------
+!     --------------------  INITIALIZE  RANDOM PERTURBATIONS  ------------------------------
 !     --------------------------------------------------------------------------------------
      if (variable == 'R') then
       WRITE(*,'(''                                               '')')
@@ -737,7 +737,7 @@ IF (grid%sppt_on==1) then
 
      ZCHI    =  0.0
      ZGAMMAN  =  0.0
-      ! Fill lower left quadrant of ZCHI. For this range the indeces IK,IL
+      ! Fill lower left quadrant of ZCHI. For this range the indices IK,IL
       DO IK=jds-1,jde   ! These are now wavenumbers
       DO IL=ids-1,ide
       if (((sqrt((IK/RY*IK/RY)+(IL/RX*IL/RX)).lt.((KMAXFORCT+0.5)/RX)).and.&
@@ -1089,7 +1089,7 @@ IF (grid%sppt_on==1) then
       end subroutine perturb_physics_tend
 
 !     ------------------------------------------------------------------
-!!************** UPDATE SPECTRAL PATTERN AND TRANFORM GRIDPOINT SPACE***
+!!************* UPDATE SPECTRAL PATTERN AND TRANSFORM GRIDPOINT SPACE***
 !     ------------------------------------------------------------------
 ! This subroutine evolves the spectral pattern and transforms it back to gridpoint space.
 
@@ -1152,7 +1152,7 @@ IF (grid%sppt_on==1) then
       REAL                     ::               RY,RX
 
 
-! Local Variabels
+! Local Variables
       INTEGER                  ::               IK,IL,ILEV,NLON,NLAT,IJ,I,J,K
       INTEGER                  ::               gridsp32y,gridsm32y,gridsp32x,gridsm32x,gridsp32 ,gridsm32
       INTEGER                  ::               gridep32y,gridem32y,gridep32x,gridem32x,gridep32 ,gridem32
@@ -1468,7 +1468,7 @@ IF (grid%sppt_on==1) then
       KMAX=(jde-jds)+1
       LMAX=(ide-ids)+1
 
-      !map wave numbers K,L to indeces IK, IL
+      !map wave numbers K,L to indices IK, IL
       DO IK=1,KMAX/2+1
         wavenumber_k(IK)=IK-1
       ENDDO

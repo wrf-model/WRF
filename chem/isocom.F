@@ -45,7 +45,7 @@
 !  1. [WT] 
 !     DOUBLE PRECISION array of length [5].
 !     Total concentrations (GAS+AEROSOL) of species, expressed in moles/m3. 
-!     If the foreward probelm is solved (CNTRL(1)=0), array WT is 
+!     If the forward problem is solved (CNTRL(1)=0), array WT is
 !     identical to array WI.
 !     WT(1) - total sodium
 !     WT(2) - total sulfate
@@ -133,7 +133,7 @@
       DIMENSION WI(NCOMP), WT(NCOMP),   GAS(NGASAQ),  AERSLD(NSLDS),    &
                 AERLIQ(NIONS+NGASAQ+2), CNTRL(NCTRL), OTHER(NOTHER)
 !
-! *** PROBLEM TYPE (0=FOREWARD, 1=REVERSE) ******************************
+! *** PROBLEM TYPE (0=FORWARD, 1=REVERSE) ******************************
 !
       IPROB   = NINT(CNTRL(1))
 !
@@ -141,7 +141,7 @@
 !
       METSTBL = NINT(CNTRL(2))
 !
-! *** SOLVE FOREWARD PROBLEM ********************************************
+! *** SOLVE FORWARD PROBLEM ********************************************
 !
 50    IF (IPROB.EQ.0) THEN
          IF (WI(1)+WI(2)+WI(3)+WI(4)+WI(5) .LE. TINY) THEN ! Everything=0
@@ -335,7 +335,7 @@
 !
 ! *** ISORROPIA CODE
 ! *** SUBROUTINE GETPARM
-! *** THIS SUBROUTINE OBTAINS THE CURRENT VAULES OF THE SOLUTION 
+! *** THIS SUBROUTINE OBTAINS THE CURRENT VALUES OF THE SOLUTION
 !     PARAMETERS OF ISORROPIA
 !
 ! ======================== ARGUMENTS / USAGE ===========================
@@ -1270,7 +1270,7 @@
 ! *** SUBROUTINE ADJUST
 ! *** ADJUSTS FOR MASS BALANCE BETWEEN VOLATILE SPECIES AND SULFATE
 !     FIRST CALCULATE THE EXCESS OF EACH PRECURSOR, AND IF IT EXISTS, THEN
-!     ADJUST SEQUENTIALY AEROSOL PHASE SPECIES WHICH CONTAIN THE EXCESS
+!     ADJUST SEQUENTIALLY AEROSOL PHASE SPECIES WHICH CONTAIN THE EXCESS
 !     PRECURSOR.
 !
 ! *** COPYRIGHT 1996-2006, UNIVERSITY OF MIAMI, CARNEGIE MELLON UNIVERSITY,
@@ -1692,7 +1692,7 @@
 !     HCL(G) -> HCL(AQ)   AND  HCL(AQ) ->  (H+) + (CL-) 
 !     EQUILIBRIA, USING (H+) FROM THE SULFATES.
 !
-!     THIS IS THE VERSION USED BY THE INVERSE PROBLEM SOVER
+!     THIS IS THE VERSION USED BY THE INVERSE PROBLEM SOLVER
 !
 ! *** COPYRIGHT 1996-2006, UNIVERSITY OF MIAMI, CARNEGIE MELLON UNIVERSITY,
 ! *** GEORGIA INSTITUTE OF TECHNOLOGY
@@ -1794,7 +1794,7 @@
 !     ACID DISSOLVED IS CALCULATED FROM THE HNO3(G) -> HNO3(AQ) AND
 !     HNO3(AQ) -> (H+) + (CL-) EQUILIBRIA, USING (H+) FROM THE SULFATES.
 !
-!     THIS IS THE VERSION USED BY THE INVERSE PROBLEM SOVER
+!     THIS IS THE VERSION USED BY THE INVERSE PROBLEM SOLVER
 !
 ! *** COPYRIGHT 1996-2006, UNIVERSITY OF MIAMI, CARNEGIE MELLON UNIVERSITY,
 ! *** GEORGIA INSTITUTE OF TECHNOLOGY
@@ -1868,7 +1868,7 @@
       CC   =-CHI1/A1             
       DIAK = SQRT(BB*BB - 4.D0*CC)   ! Always > 0
       PSI  = 0.5*(-BB + DIAK)        ! One positive root
-      PSI  = MAX(TINY, MIN(PSI,CHI1))! Constrict in acceptible range
+      PSI  = MAX(TINY, MIN(PSI,CHI1))! Constrict in acceptable range
 !
 ! *** CALCULATE NH3 SPECIATION IN THE GAS PHASE *************************
 !
@@ -2508,7 +2508,7 @@
          MOLALR(6) = MIN(MOLAL(4), FRNH4)                  ! NH4CL
 !
 ! *** NA-NH4-SO4-NO3-CL SYSTEM ; SULFATE POOR ; SODIUM RICH CASE
-! *** RETREIVE DISSOLVED SALTS DIRECTLY FROM COMMON BLOCK /SOLUT/
+! *** RETRIEVE DISSOLVED SALTS DIRECTLY FROM COMMON BLOCK /SOLUT/
 !
       ELSE IF (SC.EQ.'H') THEN      
          MOLALR(1) = PSI7                                  ! NACL 
@@ -2522,7 +2522,7 @@
          MOLALR(6) = MIN(FRCL, FRNH4)                      ! NH4CL
 !
 ! *** NA-NH4-SO4-NO3-CL SYSTEM ; SULFATE RICH CASE ; NO FREE ACID
-! *** RETREIVE DISSOLVED SALTS DIRECTLY FROM COMMON BLOCK /SOLUT/
+! *** RETRIEVE DISSOLVED SALTS DIRECTLY FROM COMMON BLOCK /SOLUT/
 !
       ELSE IF (SC.EQ.'I') THEN      
          MOLALR(04) = PSI5                                 ! (NH4)2SO4
@@ -3820,7 +3820,7 @@
 !C  TOOLBOX LIBRARY v.1.0 (May 1995)
 !C
 !C  Program unit   : SUBROUTINE RPLSTR
-!C  Purpose        : REPLACE CHARACTERS OCCURING IN A STRING
+!C  Purpose        : REPLACE CHARACTERS OCCURRING IN A STRING
 !C  Author         : Athanasios Nenes
 !C
 !C  ======================= ARGUMENTS / USAGE =============================
@@ -3866,7 +3866,7 @@
 10    IP = INDEX(STRING,OLD)      ! SEE IF 'OLD' EXISTS IN 'STRING'
       IF (IP.EQ.0) RETURN         ! 'OLD' DOES NOT EXIST ; RETURN
       STRING(IP:IP+ILO-1) = NEW   ! REPLACE SUBSTRING 'OLD' WITH 'NEW'
-      GOTO 10                     ! GO FOR NEW OCCURANCE OF 'OLD'
+      GOTO 10                     ! GO FOR NEW OCCURRENCE OF 'OLD'
 !
       END
         
@@ -3885,7 +3885,7 @@
 !C
 !C  VAR        is the DOUBLE PRECISION variable which value is to be saved 
 !C  DEF        is a DOUBLE PRECISION variable, with the default value of VAR.        
-!C  PROMPT     is a CHARACTER varible containing the prompt string.     
+!C  PROMPT     is a CHARACTER variable containing the prompt string.
 !C  PRFMT      is a CHARACTER variable containing the FORMAT specifier
 !C             for the default value DEF.
 !C  IERR       is an INTEGER error flag, and has the values:
@@ -4057,7 +4057,7 @@
 !     MURRAY SPIEGER, McGRAW-HILL, NEW YORK, 1968
 !     (GREEK TRANSLATION: BY SOTIRIOS PERSIDES, ESPI, ATHENS, 1976)
 !
-!     A SPECIAL CASE IS CONSIDERED SEPERATELY ; WHEN A3 = 0, THEN
+!     A SPECIAL CASE IS CONSIDERED SEPARATELY ; WHEN A3 = 0, THEN
 !     ONE ROOT IS X=0.0, AND THE OTHER TWO FROM THE SOLUTION OF THE
 !     QUADRATIC EQUATION X**2 + A1*X + A2 = 0.0
 !     THIS SPECIAL CASE IS CONSIDERED BECAUSE THE ANALYTICAL FORMULA 
@@ -4386,7 +4386,7 @@
 ! *** THIS SUBROUTINE IS THE MASTER ROUTINE FOR THE ISORROPIA-PLUS
 !     THERMODYNAMIC EQUILIBRIUM AEROSOL MODEL (VERSION 1.0)
 !    
-! *** NOTE: THIS SUBROUTINE IS INCLUDED FOR BACKWARD COMPATABILITY ONLY.
+! *** NOTE: THIS SUBROUTINE IS INCLUDED FOR BACKWARD COMPATIBILITY ONLY.
 !     A PROGRAMMER SHOULD USE THE MORE COMPLETE SUBROUTINE ISOROPIA INSTEAD
 !
 ! ======================== ARGUMENTS / USAGE ===========================
@@ -4477,11 +4477,11 @@
                 AERSLD(NSLDS)
       LOGICAL   DRYI
 !
-! *** PROBLEM TYPE (0=FOREWARD, 1=REVERSE) ******************************
+! *** PROBLEM TYPE (0=FORWARD, 1=REVERSE) ******************************
 !
       IPROB = IPROBI
 !
-! *** SOLVE FOREWARD PROBLEM ********************************************
+! *** SOLVE FORWARD PROBLEM ********************************************
 !
       IF (IPROB.EQ.0) THEN
          IF (WI(1)+WI(2)+WI(3)+WI(4)+WI(5) .LE. TINY) THEN ! Everything=0
@@ -4550,14 +4550,14 @@
 ! *** THIS SUBROUTINE IS THE MASTER ROUTINE FOR THE ISORROPIA-PLUS
 !     THERMODYNAMIC EQUILIBRIUM AEROSOL MODEL (VERSIONS 0.x)
 !    
-! *** NOTE: THIS SUBROUTINE IS INCLUDED FOR BACKWARD COMPATABILITY ONLY.
+! *** NOTE: THIS SUBROUTINE IS INCLUDED FOR BACKWARD COMPATIBILITY ONLY.
 !     A PROGRAMMER SHOULD USE THE MORE COMPLETE SUBROUTINE ISOROPIA INSTEAD
 !
 !
 !     DEPENDING ON THE INPUT VALUES PROVIDED, THE FOLLOWING MODEL
 !     SUBVERSIONS ARE CALLED:
 !
-!     FOREWARD PROBLEM (IPROB=0):
+!     FORWARD PROBLEM (IPROB=0):
 !     Na      SO4      NH4       NO3      CL       SUBROUTINE CALLED 
 !     ----    ----     ----      ----     ----     -----------------
 !     0.0     >0.0     >0.0       0.0      0.0     SUBROUTINE ISRP1F
@@ -4585,11 +4585,11 @@
 !      INCLUDE 'ISRPIA.INC'
       DIMENSION WI(NCOMP)
 !
-! *** PROBLEM TYPE (0=FOREWARD, 1=REVERSE) ******************************
+! *** PROBLEM TYPE (0=FORWARD, 1=REVERSE) ******************************
 !
       IPROB = IPROBI
 !
-! *** SOLVE FOREWARD PROBLEM ********************************************
+! *** SOLVE FORWARD PROBLEM ********************************************
 !
       IF (IPROB.EQ.0) THEN
          IF (WI(1)+WI(2)+WI(3)+WI(4)+WI(5) .LE. TINY) THEN ! Everything=0

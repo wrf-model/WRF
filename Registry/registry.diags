@@ -5,7 +5,7 @@
 #  The new dimspec.  We need to have the number of pressure levels to interpolate to.
 
 dimspec    np      2     namelist=num_press_levels         z     num_press_levels
-## L. Fita, CIMA. Feburary 2023
+## L. Fita, CIMA. February 2023
 #### Added for CORDEX!
 ## L. Fita 2 grid coordinates for the londbg,latdbg
 dimspec    iit     2     constant=2                        z     iit
@@ -49,7 +49,7 @@ state    real   td_pl  i{np}j   misc    1  Z   h{23}  "TD_PL"   "Pressure level 
 state    real   q_pl   i{np}j   misc    1  Z   h{23}  "Q_PL"    "Pressure level data, water vapour Mixing ratio"          "kg/kg"
 ## L. Fita, CiMA. March 2018
 #### Added for CORDEX!
-state    real   hus_pl i{np}j   misc    1  Z   h{23}  "HUS_PL"  "Pressure level data, Sepcific humidity"                  "1"
+state    real   hus_pl i{np}j   misc    1  Z   h{23}  "HUS_PL"  "Pressure level data, Specific humidity"                  "1"
 state    real   w_pl   i{np}j   misc    1  Z   h{23}  "W_PL"    "Pressure level data, W wind"                             "m s-1"
 state    real   uer_pl i{np}j   misc    1  Z   h{23}  "UER_PL"  "Pressure level data, U wind Earth-Rotated"               "m s-1"
 state    real   ver_pl i{np}j   misc    1  Z   h{23}  "VER_PL"  "Pressure level data, V wind Earth-Rotated"               "m s-1"

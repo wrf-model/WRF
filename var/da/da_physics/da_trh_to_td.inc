@@ -27,7 +27,7 @@ subroutine da_trh_to_td (grid)
    !   references:
    !   -----------
    !    R. R. Rogers and M. K. Yau, 1989: a short course in cloud physics,
-   !                                   3nd edition, pergamon press, page 14-19.
+   !                                   3rd edition, pergamon press, page 14-19.
    !
    !   verification set:
    !   -----------------

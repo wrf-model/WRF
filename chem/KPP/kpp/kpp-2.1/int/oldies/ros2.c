@@ -65,7 +65,7 @@ int ROS2(int N,KPP_REAL T, KPP_REAL Tnext,KPP_REAL Hmin,KPP_REAL Hmax,
      
                                                                                 
 /*
-     All the arguments aggree with the KPP syntax.
+     All the arguments agree with the KPP syntax.
 
   INPUT ARGUMENTS:
      y = Vector of (NVAR) concentrations, contains the

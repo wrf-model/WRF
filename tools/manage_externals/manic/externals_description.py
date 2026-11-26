@@ -574,7 +574,7 @@ class ExternalsDescription(dict):
         """
         submod_desc = None      # Only load submodules info once
         for field in self:
-            # truely optional
+            # truly optional
             if self.EXTERNALS not in self[field]:
                 self[field][self.EXTERNALS] = EMPTY_STR
 

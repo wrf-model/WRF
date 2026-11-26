@@ -475,7 +475,7 @@ real, intent(in):: &
     unit_fxlong,unit_fxlat,                       & ! fxlong, fxlat units in m  
     fire_crwn_hgt,                                & ! lowest height crown fire heat is released (m)
     fire_ext_grnd,                                & ! extinction depth of surface fire heat flux (m)
-    fire_ext_crwn,                                & ! wind height for vertical interploation to fire spread
+    fire_ext_crwn,                                & ! wind height for vertical interpolation to fire spread
     fire_wind_height 
 
 
@@ -731,7 +731,7 @@ do ij=1,num_tiles
             ! set ideal fire mesh coordinates - used for ignition only
             ! do not forget to set unit_fxlong, unit_fxlat outside of parallel loop
 
-            ! DME: Next call added to fixe a bug when
+            ! DME: Next call added to fix a bug when
             ! initializing a nested domain (before, fxlong & fxlat where not
             ! assigned, they were supposed to be set by a mod in WPS 
             ! but here we use standard WPS therefore were zero and fire does not ignite)
@@ -941,7 +941,7 @@ do ij=1,num_tiles
           s = 1./(ir*jr)
           do j=jts,jte
             do i=its,ite
-                ! DME heat fluxes contribution for the case wiythout feedback
+                ! DME heat fluxes contribution for the case without feedback
                 grnhfx_fu(i,j)=grnhfx(i,j)*s
                 grnqfx_fu(i,j)=grnqfx(i,j)*s
                 ! scale surface fluxes to get the averages

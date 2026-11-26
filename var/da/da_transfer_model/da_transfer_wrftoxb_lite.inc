@@ -85,7 +85,7 @@ subroutine da_transfer_wrftoxb_lite(xbx, grid, config_flags)
    !
    ! Note, this is needed as u_2 and v_2 has no guarantee
    ! the most east column, and the most north row are
-   ! properly initailized for each tile.
+   ! properly initialized for each tile.
    !---------------------------------------------------------------
 
    ! Fill the halo region for u and v.

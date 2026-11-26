@@ -251,7 +251,7 @@ SUBROUTINE G_MICROPHYSICS_DRIVER(th, thd, rho, rhod, pi_phy, pi_phyd, p&
 !3D variables required for CAMMGMP scheme
 !Detraining cloud water tendendcy
 !dq/dt due to export of cloud water into environment by shallow convection(kg/kg/s)
-!Temprature at the mid points (K)
+!Temperature at the mid points (K)
 !Hydrostatic pressure(Pa)
 !Hydrostatic Pressure at level interface (Pa)
 !Height above sea level at layer interfaces (m) 

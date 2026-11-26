@@ -38,7 +38,7 @@ C TOUT - End Time
      &                  WORK,LWORK,IWORK,LIWORK,IDID)
 
       IF (IDID.LT.0) THEN
-        print *,'ATMRODAS: Unsucessfull exit at T=',
+        print *,'ATMRODAS: Unsuccessful exit at T=',
      &          TIN,' (IDID=',IDID,')'
       ENDIF
 
@@ -177,7 +177,7 @@ C ------- ENTRY POINTS FOR INTEGER WORKSPACE -----
          WRITE(6,*)' INSUFF. STORAGE FOR IWORK, MIN. LIWORK=',ISTORE
          ARRET=.TRUE.
       END IF
-C ------ WHEN A FAIL HAS OCCURED, WE RETURN WITH IDID=-1
+C ------ WHEN A FAIL HAS OCCURRED, WE RETURN WITH IDID=-1
       IF (ARRET) THEN
          IDID=-1
          RETURN

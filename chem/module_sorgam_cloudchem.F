@@ -1150,11 +1150,11 @@
 		tmpa = -7.0 ; tmpb = -7.0 ; tmpc = -7.0
 	    else
 !   tmpa is value of (ln(dpcut)-ln(dgvol))/ln(sigmag) for which
-!   "norm01 upper tail" cummulative pdf is equal to tmp_cwvolfrac
+!   "norm01 upper tail" cumulative pdf is equal to tmp_cwvolfrac
 		tmpa = norm01_uptail_inv( tmp_cwvolfrac )
 !   tmpb is corresponding value of (ln(dp)-ln(dgnum))/ln(sigmag)
 		tmpb = tmpa + 3.0*tmp_lnsg
-!   tmpc is corresponding "norm01 upper tail" cummulative pdf
+!   tmpc is corresponding "norm01 upper tail" cumulative pdf
 		tmpc = norm01_uptail( tmpb )
 !   minimum number of activated particles occurs when
 !   activated particles are dp>dpcut and interstitial are dp<dpcut,
@@ -1930,7 +1930,7 @@
 !-----------------------------------------------------------------------
 	real function norm01_uptail( x )
 !
-!   norm01_uptail = cummulative pdf complement of normal(0,1) pdf
+!   norm01_uptail = cumulative pdf complement of normal(0,1) pdf
 !            = integral from x to +infinity of [normal(0,1) pdf]
 !
 !   erfc_num_recipes is from press et al, numerical recipes, 1990, page 164

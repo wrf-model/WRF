@@ -1764,7 +1764,7 @@ CONTAINS
 #if ( WRF_CHEM == 1)
 ! Pack gocart aerosol species
 ! All aerosol species in chem are in "ug/kg-dryair"
-!  and conerted to (g/m**3)
+!  and converted to (g/m**3)
 
    aero(:,:,:,:) = 0.
    if ( (chem_opt == 300 .or. chem_opt == 301 .or. &
@@ -2838,7 +2838,7 @@ CONTAINS
 !--- the following FLGSWSCHEME is for testing only
         CASE (FLGSWSCHEME)
           flg_sw = .true.
-!--- No need to do anything since the short and long wave is calculted in one program
+!--- No need to do anything since the short and long wave is calculated in one program
 ! -- end 
 
         CASE DEFAULT
@@ -3465,7 +3465,7 @@ CONTAINS
 !---------------------------------------------------------------------
 !BOP
 ! !IROUTINE: radconst - compute radiation terms
-! !INTERFAC:
+! !INTERFACE:
    SUBROUTINE radconst(XTIME,DECLIN,SOLCON,JULIAN,                   &
                        DEGRAD,DPD                                    )
 !---------------------------------------------------------------------
@@ -3992,7 +3992,7 @@ CONTAINS
 !.. cloud fraction and is relatively good at getting widespread stratus
 !.. and stratoCu without caring whether any deep/shallow Cu param schemes
 !.. is making sub-grid-spacing clouds/precip.  Under the hood, this
-!.. scheme follows Mocko and Cotton (1995) in applicaiton of the
+!.. scheme follows Mocko and Cotton (1995) in application of the
 !.. Sundqvist et al (1989) scheme but using a grid-scale dependent
 !.. RH threshold, one each for land v. ocean points based on
 !.. experiences with HWRF testing.

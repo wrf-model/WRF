@@ -52,7 +52,7 @@ so use wisely.
 
 Forcing:  Solar forcing will follow the dates as specified in the
 namelist.  All other forcing (U_g, V_g, W, and advection) are specified
-in a file that comes in via an auxilliary input.  For example:
+in a file that comes in via an auxiliary input.  For example:
 
 &time_control
 auxinput3_inname                    = "force_ideal.nc"

@@ -102,7 +102,7 @@
 !   Restored previous formulation of snow reflectivity, as it was realized that the last change incorrectly assumed a fixed
 !     density independent of size. Generally lower snow reflectivity values as a result (no effect on microphysics)
 ! Other:
-!   Generic fall speed coeffecients (axx,bxx) to accomodate future frozen drops category (no effect)
+!   Generic fall speed coeffecients (axx,bxx) to accommodate future frozen drops category (no effect)
 !   Reordered collection coefficients (dab1lh) to be consistent (no effect)
 !   Switched to full calculation of rain number loss via collection by graupel (chacr; to be consisted with collection by hail) (minor effects)
 !---------------------------------------------------------------------
@@ -172,14 +172,14 @@
 !   Apply a 70 m/s fall speed limit for sedimentation
 !   Changed vapor ice nucleation to Meyers-Ferrier method (original scheme)
 !   New method for Bigg freezing (ibiggopt=2)
-!   Reduced snow aggregration efficiency and restricted aggregation to higher temperatures (assuming dendrites and mechanical aggregation)
+!   Reduced snow aggregation efficiency and restricted aggregation to higher temperatures (assuming dendrites and mechanical aggregation)
 !   Increased maximum graupel-droplet collection efficiency when hail is turned off (nssl_2momg)
 !   Updates for compatibility with WRF-NMM
 !   Added calculation of hail number concentration in calcnfromq (creates number concentration from mixing ratio
 !       when starting from an analysis). And fixed error in graupel intercept
 !   Bug fix in snow fall speeds
 !   Further fix in snow reflectivity
-!   Use diameter of maximum mass rather than mean diamter when checking maximum size
+!   Use diameter of maximum mass rather than mean diameter when checking maximum size
 !   Helped performance in sedimentation with flag "do_accurate_sedimentation" to control recalculation of fall speeds when
 !       more than one sub-time step is needed (often happens with large time steps and small dz near the ground):
 !        = .true. : recalculates fall speed after each substep (more accurate)
@@ -227,7 +227,7 @@ MODULE module_mp_nssl_2mom
   logical, parameter :: lwsm6 = .false. ! act like wsm6 for some single moment interactions
 
 ! some constants from WSM6
-  real, parameter  :: dimax = 500.e-6    ! limited maximum value for the cloud-ice diamter
+  real, parameter  :: dimax = 500.e-6    ! limited maximum value for the cloud-ice diameter
   real, parameter  :: roqimax = 2.08e22*dimax**8
   
 ! Params for dbz:
@@ -580,8 +580,8 @@ MODULE module_mp_nssl_2mom
   real   , private  :: dwtempmin = 242. ! lowest temperature to allow wet growth conversion to hail
   real   , private  :: dwehwmin = 0.   ! Minimum ehw to use to find wet growth diameter (if > ehw0, then wet growth diam becomes smaller)
   real   , private  :: dg0thresh = 0.15 ! graupel wet growth diameter above which we say do not bother
-  real   , private  :: wetgrthtoffset = -1. ! maximum temperature (Celcius) for wet growth (shedding)
-  real   , private  :: hailcnvtoffset = -2. ! maximum temperature (Celcius) for hail conversion
+  real   , private  :: wetgrthtoffset = -1. ! maximum temperature (Celsius) for wet growth (shedding)
+  real   , private  :: hailcnvtoffset = -2. ! maximum temperature (Celsius) for hail conversion
   integer :: ifddenfac = 0  ! = 1 to use density threshold to count FD as GR when converting to HL
   real    :: fddenthresh = 500. ! if ifddenfac > 0, then hail from FD with lower density are considered to come from graupel
   integer :: icvhl2h = 0   ! allow conversion of hail back to graupel when hail density gets close to minimum allowed
@@ -684,7 +684,7 @@ MODULE module_mp_nssl_2mom
                             ! 2 = add droplets with minimum radius of 30 microns
                             ! 3 = only add 1.5*cxmin to number concentration (allow max size to apply)
                             ! 4 = add droplets with minimum radius of 20 microns
-  real    :: maxsupersat = 1.9 ! maximum supersaturation ratio, above which a saturation adustment is done
+  real    :: maxsupersat = 1.9 ! maximum supersaturation ratio, above which a saturation adjustment is done
   real    :: maxlowtempss = 1.08 ! Sat. ratio threshold for allowing droplet nucleation at T < tfrh
   real    :: ssmxuf = 4.0 ! supersaturation at which to start using "ultrafine" CCN (if ccnuf > 0.)
   
@@ -779,7 +779,7 @@ MODULE module_mp_nssl_2mom
 
 !  integer, parameter :: lscmx = 100
 
-  integer :: lne = 0 ! last varible for transforming
+  integer :: lne = 0 ! last variable for transforming
 
   real :: cnoh0 = 4.0e+5
   real :: hwdn1 = 700.0
@@ -1072,7 +1072,7 @@ MODULE module_mp_nssl_2mom
 
       real, parameter :: cn_minlimit = 1.e3  ! 1.e3 m-3 = 0.001 cm-3
 
-      logical :: dm15_para = .false.  ! flag for DeMott et al. (2015) parameterization for heterogenous freezing, regardless of "ibfc"
+      logical :: dm15_para = .false.  ! flag for DeMott et al. (2015) parameterization for heterogeneous freezing, regardless of "ibfc"
 
 
 ! Note to users: Many of these options are for development and not guaranteed to perform well.
@@ -4108,7 +4108,7 @@ END SUBROUTINE nssl_2mom_driver
 ! #####################################################################
       Function delbk(bb,nu,mu,k)
 !   
-!  Purpose: Caluculates collection coefficients following Siefert (2006)
+!  Purpose: Calculates collection coefficients following Siefert (2006)
 !
 !  delbk is equation (90) (b collecting b -- self-collection)
 !  mass-diameter relationship: D = a*x**(b), where x = particle mass
@@ -4283,7 +4283,7 @@ END SUBROUTINE nssl_2mom_driver
 
       real :: alp, diam, diam1, hwdn
       
-!      real, parameter :: cmin = 0.001 ! threshold number per m^3 for maximum diamter (threshold from diag_nwp)
+!      real, parameter :: cmin = 0.001 ! threshold number per m^3 for maximum diameter (threshold from diag_nwp)
       DOUBLE PRECISION, PARAMETER:: thresh_conc = 0.0005d0                 ! number conc. of graupel/hail per cubic meter
       real :: cwchtmp,cwchltmp, maxdia
 
@@ -12890,7 +12890,7 @@ END SUBROUTINE nssl_2mom_driver
       logical , parameter :: alp0flag = .false.
 !
 !
-!  wind indicies
+!  wind indices
 !
       integer mu,mv,mw
       parameter (mu=1,mv=2,mw=3)
@@ -13008,7 +13008,7 @@ END SUBROUTINE nssl_2mom_driver
 ! snow parameters:
       real, parameter :: cexs = 0.1, cecs = 0.5 
       real, parameter :: rvt = 0.104  ! ratio of collection kernels (Zrnic et al, 1993)
-      real, parameter :: kfrag = 1.0e-6 ! rate coefficent for collisional splintering (Schuur & Rutledge 00b)
+      real, parameter :: kfrag = 1.0e-6 ! rate coefficient for collisional splintering (Schuur & Rutledge 00b)
       real, parameter :: mfrag = 1.0e-10 ! assumed ice fragment mass for collisional splintering (Schuur & Rutledge 00b)
       double precision cautn(ngs), rh(ngs), nh(ngs)
       real ex1, ft, rhoinv(ngs)
@@ -13477,8 +13477,8 @@ END SUBROUTINE nssl_2mom_driver
       real vhlshdr(ngs) !accreted water that leaves on hail (mixedphase)
       real vhmlr(ngs) !melt water that leaves graupel (single phase)
       real vhlmlr(ngs) !melt water that leaves hail (single phase)
-      real vhsoak(ngs) !  aquired water that seeps into graupel.
-      real vhlsoak(ngs) !  aquired water that seeps into hail.
+      real vhsoak(ngs) !  acquired water that seeps into graupel.
+      real vhlsoak(ngs) !  acquired water that seeps into hail.
       
 !
       real qsdpv(ngs),qssbv(ngs) ! qscnv(ngs),qsevv(ngs),
@@ -14053,7 +14053,7 @@ END SUBROUTINE nssl_2mom_driver
       ccimx = 5000.0e3   ! max of 5000 per liter
 
 !
-!  constants for paramerization
+!  constants for parameterization
 !
 !
 !  set save counter (number of saves):  nsvcnt
@@ -17712,7 +17712,7 @@ END SUBROUTINE nssl_2mom_driver
       IF ( ipconc .ge. 5 ) THEN
        IF ( qhacw(mgs) .gt. 0.0 .and. xmas(mgs,lc) .gt. 0.0 ) THEN
 
-!  This is the explict version of chacw, which turns out to be very close to the
+!  This is the explicit version of chacw, which turns out to be very close to the
 !  approximation that the droplet size does not change, to within a few percent.
 !  This may _not_ be the case for cnu other than zero!
 !          chacw(mgs) = (ehw(mgs)*cx(mgs,lc)*cx(mgs,lh)*(pi/4.)*
@@ -17820,7 +17820,7 @@ END SUBROUTINE nssl_2mom_driver
       IF ( lhl .gt. 1 .and. ipconc .ge. 5 ) THEN
        IF ( qhlacw(mgs) .gt. 0.0 .and. xmas(mgs,lc) .gt. 0.0 ) THEN
 
-!  This is the explict version of chacw, which turns out to be very close to the
+!  This is the explicit version of chacw, which turns out to be very close to the
 !  approximation that the droplet size does not change, to within a few percent.
 !  This may _not_ be the case for cnu other than zero!
 !          chlacw(mgs) = (ehlw(mgs)*cx(mgs,lc)*cx(mgs,lhl)*(pi/4.)*
@@ -18339,7 +18339,7 @@ END SUBROUTINE nssl_2mom_driver
                 zrfrzf(mgs) = 0.
               ENDIF
            ELSEIF ( dbigg < Max( biggsnowdiam, Max(dfrz,dhmn)) .and. ( ibiggsnow == 1 .or. ibiggsnow == 3 ) ) THEN ! { convert some to snow or ice crystals
-            ! temporarily store qrfrz and crfrz in snow terms and caclulate new crfrzf, qrfrzf, and zrfrzf. Leave crfrz etc. alone!
+            ! temporarily store qrfrz and crfrz in snow terms and calculate new crfrzf, qrfrzf, and zrfrzf. Leave crfrz etc. alone!
             
             crfrzs(mgs) = crfrz(mgs)
             qrfrzs(mgs) = qrfrz(mgs)
@@ -18973,7 +18973,7 @@ END SUBROUTINE nssl_2mom_driver
 
 
 !
-!  Ventilation coeficients
+!  Ventilation coefficients
 !
       do mgs = 1,ngscnt
       fvent(mgs) = (fschm(mgs)**(1./3.)) * (fakvisc(mgs)**(-0.5))
@@ -19741,7 +19741,7 @@ END SUBROUTINE nssl_2mom_driver
         temgtmp   = temg(mgs)
         temcgtmp  = temcg(mgs)
         qvaptmp   = qx(mgs,lv) ! qwvp(mgs) + qv0(mgs)
-        qvptmp    = 0.0 ! qwvp(mgs)  ! qv pertubation
+        qvptmp    = 0.0 ! qwvp(mgs)  ! qv perturbation
 
         qsstmp = qisstmp
 
@@ -25235,7 +25235,7 @@ END SUBROUTINE nssl_2mom_driver
              cx(mgs,il) = chw
              an(igs(mgs),jy,kgs(mgs),ln(il)) = chw
              ELSE
-             ! Usual resetting of reflectivity moment to force consisntency between Q, N, Z, and alpha when alpha = alphamin
+             ! Usual resetting of reflectivity moment to force consistency between Q, N, Z, and alpha when alpha = alphamin
              z1 = g1*dn(igs(mgs),jy,kgs(mgs))**2*(qr)*qr/chw
              z  = z1*(6./(pi*xdn(mgs,il)))**2
              zx(mgs,il) = z

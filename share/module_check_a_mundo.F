@@ -331,7 +331,7 @@
       DO i = 1, model_config_rec % max_dom
          IF ( .NOT. model_config_rec % grid_allowed(i) ) CYCLE
       IF ((model_config_rec%multi_perturb(i) == 1) .and. model_config_rec%use_adaptive_time_step) then
-            wrf_err_message = '--- ERROR: multi_perturb and adpative time step are not compatible.'
+            wrf_err_message = '--- ERROR: multi_perturb and adaptive time step are not compatible.'
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          count_fatal_error = count_fatal_error + 1
       END IF
@@ -2015,7 +2015,7 @@
 !-----------------------------------------------------------------------
 ! For RASM Diagnostics
 ! -verify that only one time interval is specified
-! -change the intervals to values used in RASM Diagnotics
+! -change the intervals to values used in RASM Diagnostics
 ! -verify that a time interval has been set
 !-----------------------------------------------------------------------
 
@@ -2175,7 +2175,7 @@
 
 !-----------------------------------------------------------------------
 ! When digital filtering is turned on, if no specific time step is given to be
-! used during the digitial filtering period, then the standard WRF time
+! used during the digital filtering period, then the standard WRF time
 ! step is used.  If neither time steps are specified, then fatal error.
 !-----------------------------------------------------------------------
 

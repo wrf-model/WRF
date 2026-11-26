@@ -463,7 +463,7 @@ int tsInitFileInfo (char path[])
       return(-1);
     }
 
-    /* skipps header */
+    /* skips header */
     fgets(buff, MAXLEN, fp);
 
     while (fscanf(fp, "%s %s %s", type, res, fn) != EOF) {

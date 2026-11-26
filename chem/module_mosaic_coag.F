@@ -946,7 +946,7 @@
 ! *********************************************************************
 !
 ! *********************************************************************
-!                       inialize new arrays
+!                       initialize new arrays
 ! *********************************************************************
 ! distrib  = initial conc (# cm-3 for num conc.; cm3 cm-3 for volume fractions)
 ! cc2      = initial, final volume conc (cm3 cm-3) for all particle types.

@@ -21,7 +21,7 @@ subroutine da_check_xtovptox_errors(xa, xa2_u, xa2_v, xa2_w, xa2_t, &
 
 
    real                           :: rms_fild    ! RMS of field.
-   real                           :: rms_diff    ! RMS of differnce.
+   real                           :: rms_diff    ! RMS of difference.
 
    real, dimension(ims:ime, jms:jme, kms:kme) :: diff ! Difference
 

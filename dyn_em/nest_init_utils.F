@@ -183,7 +183,7 @@ END SUBROUTINE init_domain_vert_nesting
 
 
 !this is a direct copy of a subroutine that is in ndown, but I couldn't link to the subroutine in ndown because it is compiled after this file
-!so a dependecy on ndown will not work. Additionally, ndown is not compiled for ideal cases. The variable is named parent in ndown, but it is actually operating on the nest. It has been renamed to nest here.
+!so a dependency on ndown will not work. Additionally, ndown is not compiled for ideal cases. The variable is named parent in ndown, but it is actually operating on the nest. It has been renamed to nest here.
       SUBROUTINE vert_cor_vertical_nesting_integer(nest,znw_c,k_dim_c)
          USE module_domain
          USE module_model_constants

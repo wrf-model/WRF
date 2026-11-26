@@ -22,7 +22,7 @@ MODULE module_streams
   INTEGER, PARAMETER :: RESTART_ALARM     = restart_only
   INTEGER, PARAMETER :: BOUNDARY_ALARM    = boundary_only
 
-  INTEGER, PARAMETER :: INPUTOUT_ALARM              = 2*(MAX_HISTORY)+3       ! for outputing input (e.g. for 3dvar)
+  INTEGER, PARAMETER :: INPUTOUT_ALARM              = 2*(MAX_HISTORY)+3       ! for outputting input (e.g. for 3dvar)
   INTEGER, PARAMETER :: ALARM_SUBTIME               = 2*(MAX_HISTORY)+4
   INTEGER, PARAMETER :: COMPUTE_VORTEX_CENTER_ALARM = 2*(MAX_HISTORY)+5
 

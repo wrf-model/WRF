@@ -34,13 +34,13 @@ MODULE module_mp_wsm7
    REAL, PARAMETER, PRIVATE :: lamdasmax = 1.e5   ! limited maximum value for slope parameter of snow
    REAL, PARAMETER, PRIVATE :: lamdagmax = 6.e4   ! limited maximum value for slope parameter of graupel
    REAL, PARAMETER, PRIVATE :: lamdahmax = 2.e4   ! limited maximum value for slope parameter of hail
-   REAL, PARAMETER, PRIVATE :: dicon = 11.9       ! constant for the cloud-ice diamter
-   REAL, PARAMETER, PRIVATE :: dimax = 500.e-6    ! limited maximum value for the cloud-ice diamter
+   REAL, PARAMETER, PRIVATE :: dicon = 11.9       ! constant for the cloud-ice diameter
+   REAL, PARAMETER, PRIVATE :: dimax = 500.e-6    ! limited maximum value for the cloud-ice diameter
    REAL, PARAMETER, PRIVATE :: n0s = 2.e6         ! temperature dependent intercept parameter snow
    REAL, PARAMETER, PRIVATE :: alpha = .12        ! .122 exponen factor for n0s
    REAL, PARAMETER, PRIVATE :: pfrz1 = 100.       ! constant in Biggs freezing
    REAL, PARAMETER, PRIVATE :: pfrz2 = 0.66       ! constant in Biggs freezing
-   REAL, PARAMETER, PRIVATE :: qcrmin = 1.e-9     ! minimun values for qr, qs, and qg
+   REAL, PARAMETER, PRIVATE :: qcrmin = 1.e-9     ! minimum values for qr, qs, and qg
    REAL, PARAMETER, PRIVATE :: eacrc = 1.0        ! Snow/cloud-water collection efficiency
    REAL, PARAMETER, PRIVATE :: eachr = 1.0        ! Hail/rain collection efficiency
    REAL, PARAMETER, PRIVATE :: eachs = 1.0        ! Hail/snow collection efficiency
@@ -296,7 +296,7 @@ CONTAINS
 !  This code is a 7-class hail phase microphyiscs scheme (WSM7) of the 
 !  Single-Moment MicroPhyiscs (WSMMP, Bae et al. 2018). The WSMMP assumes
 !  assumes that ice nuclei number concentration is a function of temperature, 
-!  and seperate assumption is developed, in which ice crystal number 
+!  and separate assumption is developed, in which ice crystal number
 !  concentration is a function of ice amount. A theoretical background of 
 !  the ice-microphysics and related processes in the WSMMPs are described 
 !  in Hong et al. (2004).
@@ -1053,7 +1053,7 @@ CONTAINS
 !
 ! - follows the revised ice microphysics processes in HDC
 ! - the processes same as in RH83 and RH84  and LFO behave
-!   following ice crystal hapits defined in HDC, inclduing
+!   following ice crystal hapits defined in HDC, including
 !   intercept parameter for snow (n0s), ice crystal number
 !   concentration (ni), ice nuclei number concentration
 !   (n0i), ice diameter (d)

@@ -51,7 +51,7 @@ module da_control
    ! Earth constants:
    real, parameter    :: gravity = 9.81        ! m/s - value used in WRF.
    ! real, parameter    :: earth_radius = 6378.15
-   real, parameter    :: earth_radius      = 6370.0          ! Be consistant with WRF
+   real, parameter    :: earth_radius      = 6370.0          ! Be consistent with WRF
    real, parameter    :: satellite_height  = 35800.0         ! used by da_get_satzen
    ! real, parameter    :: earth_omega  = 2.0*pi/86400.0  ! Omega
    real, parameter    :: earth_omega  = 0.000072921     ! Omega 7.2921*10**-5
@@ -316,8 +316,8 @@ module da_control
    real               :: coarse_ds            ! Coarse domain gridlength (km)
    real               :: start_x              ! i posn. of (1,1) in coarse domain.
    real               :: start_y              ! j posn. of (1,1) in coarse domain.
-   real               :: start_lat            ! Latitude coresponds to start_(x,y)
-   real               :: start_lon            ! Longitude coresponds to start_(x,y)
+   real               :: start_lat            ! Latitude corresponds to start_(x,y)
+   real               :: start_lon            ! Longitude corresponds to start_(x,y)
    real               :: delt_lat             ! Latitude increments for global grids
    real               :: delt_lon             ! Longitude increments for global grids
 
@@ -439,9 +439,9 @@ module da_control
                                            ! 
       wrong_t_sign            = - 9, &     ! Spike in Temperature profile 
                                            ! 
-      above_model_lid         = - 8, &     ! heigh above model lid
+      above_model_lid         = - 8, &     ! height above model lid
                                            ! => no action
-      far_below_model_surface = - 7, &     ! heigh far below model surface
+      far_below_model_surface = - 7, &     ! height far below model surface
                                            ! => no action
       below_model_surface     = - 6, &     ! height below model surface
                                            ! => no action
@@ -457,7 +457,7 @@ module da_control
                                            ! => no action
       good_quality            =   0, &     ! OBS datum has good quality
                                            !
-      convective_adjustment   =   1, &     ! convective adjustement check
+      convective_adjustment   =   1, &     ! convective adjustment check
                                            ! =>apply correction on t, td, rh and qv
       surface_correction      =   2, &     ! Surface datum
                                            ! => apply correction on datum

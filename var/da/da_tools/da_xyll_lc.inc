@@ -27,7 +27,7 @@ subroutine da_xyll_lc(x, y, proj, lat, lon)
    chi1 = (90.0 - proj%hemi*proj%truelat1)*rad_per_deg
    chi2 = (90.0 - proj%hemi*proj%truelat2)*rad_per_deg
 
-   ! See if we are in the southern hemispere and flip the indices
+   ! See if we are in the southern hemisphere and flip the indices
    ! if we are. 
    if (proj%hemi == -1.0) then 
       inew = -x + 2.0

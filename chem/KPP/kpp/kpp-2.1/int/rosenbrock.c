@@ -120,7 +120,7 @@ void INTEGRATE( KPP_REAL TIN, KPP_REAL TOUT )
 
 
    if (IERR < 0)
-     printf("\n Rosenbrock: Unsucessful step at T=%g: IERR=%d\n",
+     printf("\n Rosenbrock: Unsuccessful step at T=%g: IERR=%d\n",
          TIN,IERR);
    
    TIN = RPAR[10];      /* Exit time */
@@ -182,7 +182,7 @@ int Rosenbrock(KPP_REAL Y[], KPP_REAL Tstart, KPP_REAL Tend,
   *~~~>    RETURN VALUE (int):  
 
 -    IERR       -> job status upon return
-       - succes (positive value) or failure (negative value) -
+       - success (positive value) or failure (negative value) -
            =  1 : Success
            = -1 : Improper value for maximal no of steps
            = -2 : Selected Rosenbrock method not implemented
@@ -229,7 +229,7 @@ int Rosenbrock(KPP_REAL Y[], KPP_REAL Tstart, KPP_REAL Tend,
  
   *~~~>     OUTPUT PARAMETERS:
 
-    Note: each call to Rosenbrock adds the corrent no. of fcn calls
+    Note: each call to Rosenbrock adds the current no. of fcn calls
       to previous value of IPAR[10], and similar for the other params.
       Set IPAR(11:20) = 0 before call to avoid this accumulation.
 
@@ -348,7 +348,7 @@ int Rosenbrock(KPP_REAL Y[], KPP_REAL Tstart, KPP_REAL Tend,
       printf("\n User-selected FacMax: RPAR[4]=%e\n", RPAR[4]);
       return ros_ErrorMsg(-4,Tstart,ZERO);
    } /* end if */
-  /*~~~>   FacRej: Factor to decrease step after 2 succesive rejections */
+  /*~~~>   FacRej: Factor to decrease step after 2 successive rejections */
    if (RPAR[5] == ZERO) 
       FacRej = (KPP_REAL)0.1;
    else

@@ -1,9 +1,9 @@
 MODULE module_aer_opt_out
 ! SAM lower and upper wavelength limits (microns) for AFWA band averaging - 2 averaging bins considered here
-   REAL,    PARAMETER, PRIVATE ::   afwalowv1   = 3.  ! lower wavelength for first AFWA band average extinction coefficent
-   REAL,    PARAMETER, PRIVATE ::   afwahiwv1   = 5.  ! upper wavelength for first AFWA band average extinction coefficent
-   REAL,    PARAMETER, PRIVATE ::   afwalowv2   = 8.  ! lower wavelength for second AFWA band average extinction coefficent
-   REAL,    PARAMETER, PRIVATE ::   afwahiwv2   = 12. ! upper wavelength for second AFWA band average extinction coefficent
+   REAL,    PARAMETER, PRIVATE ::   afwalowv1   = 3.  ! lower wavelength for first AFWA band average extinction coefficient
+   REAL,    PARAMETER, PRIVATE ::   afwahiwv1   = 5.  ! upper wavelength for first AFWA band average extinction coefficient
+   REAL,    PARAMETER, PRIVATE ::   afwalowv2   = 8.  ! lower wavelength for second AFWA band average extinction coefficient
+   REAL,    PARAMETER, PRIVATE ::   afwahiwv2   = 12. ! upper wavelength for second AFWA band average extinction coefficient
 CONTAINS
    SUBROUTINE aer_opt_out(dz8w  &
                    ,ext_coeff,bscat_coeff,asym_par                &
@@ -33,14 +33,14 @@ USE module_configure, only:p_extcof3,p_extcof55,p_extcof106,p_extcof3_5,p_extcof
    integer :: i,j,k
 
 
-!SAM 10/22/09 AFWA ouput.  Fill following arrays:
-! 0.3 micron extinction coefficient (1/km), scattering coefficient (1/km), assymetry coefficient (unitless)
-! 0.55 micron extinction coefficient (1/km), scattering coefficient (1/km), assymetry coefficient (unitless)
-! 1.06 micron extinction coefficient (1/km), scattering coefficient (1/km), assymetry coefficient (unitless)
+!SAM 10/22/09 AFWA output.  Fill following arrays:
+! 0.3 micron extinction coefficient (1/km), scattering coefficient (1/km), asymmetry coefficient (unitless)
+! 0.55 micron extinction coefficient (1/km), scattering coefficient (1/km), asymmetry coefficient (unitless)
+! 1.06 micron extinction coefficient (1/km), scattering coefficient (1/km), asymmetry coefficient (unitless)
 ! 3. - 5. micron band averaged extinction coefficient (1/km)
 ! 8. - 12. micron band averaged extinction coefficient (1/km)
 ! As in PNNL MOSAIC, extrapolate or interpolate based on 300-999 nm Angstrom coefficient,
-! or linear interpolation/extrapolation between 300 and 999 nm for assymetry coefficient
+! or linear interpolation/extrapolation between 300 and 999 nm for asymmetry coefficient
       do j = jts,jte
       do k = kts,kte
       do i = its,ite

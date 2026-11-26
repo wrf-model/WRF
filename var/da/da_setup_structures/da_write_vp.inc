@@ -1,7 +1,7 @@
 subroutine da_write_vp (grid,vp,filename)
 
    !----------------------------------------------------------------------
-   ! Purpose: Write vp, full varibles after balance transform Up
+   ! Purpose: Write vp, full variables after balance transform Up
    !          will be interpolated into higher resolution by offline program
    ! Method:  based on da_write_increments.inc
    ! Author:  Zhiquan (Jake) Liu, NCAR/MMM, 2015-09

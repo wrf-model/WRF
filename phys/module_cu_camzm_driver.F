@@ -7,7 +7,7 @@ MODULE module_cu_camzm_driver
   !===========================================
   !1. Fracis is hardwired to 1 for first 3 constituents (vapor,liq mass,ice mass) 
   !   for WRF_CHEM simulations and first 5 constituents(liq # and ice #) for WRF
-  !   physcis ONLY runs. Should be generalized for other constituents (like snow,graupel etc.)
+  !   physics ONLY runs. Should be generalized for other constituents (like snow,graupel etc.)
   !
   !2. In CAM model, ZM scheme only acts up to 40 mb. In WRF, it will function all the way 
   !   to the model top no matter how high it is. We could do a better job at capping this 
@@ -930,7 +930,7 @@ SUBROUTINE get_tpert(bl_pbl_physics, sf_sfclay_physics, dx, &
 !...non-CAMUWPBL. Need MYJ SFC & PBL for now until other schemes
 !   get coded to give perturbations too.
 ! First, we need to determine if the conditions are stable or unstable.
-! We will do this by mimicing the bulk Richardson calculation from
+! We will do this by mimicking the bulk Richardson calculation from
 ! module_sf_sfclay.F because the MYJ scheme does not provide this info.
 ! The logic borrowed from the CuP shallow cumulus scheme. Non-MYJ sfc
 ! scheme code is commented out for now since we also require MYJ PBL

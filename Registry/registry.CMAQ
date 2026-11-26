@@ -28,8 +28,8 @@ rconfig  logical   feedback_restart     namelist,wrf_cmaq     1  .false.
 #state    real  sig_j               ikj           twoway_feedback_data      1    -      r      "sig_j"           "standard deviations j mode" ""
 #state    real  sig_k               ikj           twoway_feedback_data      1    -      r      "sig_k"           "standard deviations k mode" ""
 
-#state    real  prev_rainnc         ij            twoway_feedback_data      1    -      r      "prev_rainnc"     "previous accumlated rainnc" "mm"
-#state    real  prev_rainc          ij            twoway_feedback_data      1    -      r      "prev_rainc"      "previous accumlated rainc"  "mm"
+#state    real  prev_rainnc         ij            twoway_feedback_data      1    -      r      "prev_rainnc"     "previous accumulated rainnc" "mm"
+#state    real  prev_rainc          ij            twoway_feedback_data      1    -      r      "prev_rainc"      "previous accumulated rainc"  "mm"
 
 #state    real  ozone               ikj           twoway_feedback_data      1    -      r      "OZONE"           "ozone value" ""
 

@@ -17,8 +17,8 @@
 !=  The original input data are given on single, discrete points of an       =*
 !=  arbitrary grid and are being linearly interpolated onto a specified      =*
 !=  discrete target grid.  A typical example would be the re-gridding of a   =*
-!=  given data set for the vertical temperature profile to match the speci-  =*
-!=  fied altitude grid.                                                      =*
+!=  given data set for the vertical temperature profile to match the         =*
+!=  specified altitude grid.                                                 =*
 !=  Some caution should be used near the end points of the grids.  If the    =*
 !=  input data set does not span the range of the target grid, the remaining =*
 !=  points will be set to zero, as extrapolation is not permitted.           =*
@@ -151,7 +151,7 @@
       ngintv = ng - 1
       DO i = 1,ngintv
 
-! initalize:
+! initialize:
             area = 0.0
             xgl = xg(i)
             xgu = xg(i+1)
@@ -216,8 +216,8 @@
 !=  The input data are given on a set of bins (representing the integral     =*
 !=  of the input quantity over the range of each bin) and are being matched  =*
 !=  onto another set of bins (target grid).  A typical example would be an   =*
-!=  input data set spcifying the extra-terrestrial flux on wavelength inter- =*
-!=  vals, that has to be matched onto the working wavelength grid.           =*
+!=  input data set specifying the extra-terrestrial flux on wavelength       =*
+!=  intervals, that has to be matched onto the working wavelength grid.      =*
 !=  The resulting area in a given bin of the target grid is calculated by    =*
 !=  simply adding all fractional areas of the input data that cover that     =*
 !=  particular target bin.                                                   =*
@@ -243,7 +243,7 @@
 !=           y-value for bin i (i = 1..N-1)                                  =*
 !=  FoldIn - Switch for folding option of "overhang" data                 (I)=*
 !=           FoldIn = 0 -> No folding of "overhang" data                     =*
-!=           FoldIn = 1 -> Integerate "overhang" data and fold back into     =*
+!=           FoldIn = 1 -> Integrate "overhang" data and fold back into      =*
 !=                         last target bin                                   =*
 !-----------------------------------------------------------------------------*
 
@@ -327,8 +327,8 @@
 !=  The input data are given on a set of bins (representing the integral     =*
 !=  of the input quantity over the range of each bin) and are being matched  =*
 !=  onto another set of bins (target grid).  A typical example would be an   =*
-!=  input data set spcifying the extra-terrestrial flux on wavelength inter- =*
-!=  vals, that has to be matched onto the working wavelength grid.           =*
+!=  input data set specifying the extra-terrestrial flux on wavelength       =*
+!=  intervals, that has to be matched onto the working wavelength grid.      =*
 !=  The resulting area in a given bin of the target grid is calculated by    =*
 !=  simply adding all fractional areas of the input data that cover that     =*
 !=  particular target bin.                                                   =*
@@ -354,7 +354,7 @@
 !=           y-value for bin i (i = 1..N-1)                                  =*
 !=  FoldIn - Switch for folding option of "overhang" data                 (I)=*
 !=           FoldIn = 0 -> No folding of "overhang" data                     =*
-!=           FoldIn = 1 -> Integerate "overhang" data and fold back into     =*
+!=           FoldIn = 1 -> Integrate "overhang" data and fold back into      =*
 !=                         last target bin                                   =*
 !-----------------------------------------------------------------------------*
 

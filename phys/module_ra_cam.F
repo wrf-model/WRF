@@ -1116,7 +1116,7 @@ subroutine get_aerosol(c, julday, julian, dt, gmt, xtime, m_psp, m_psn, aerosolj
 !     on vertical grid specified by CAM (AEROSOLt)
 !
 !  Method:
-!     first determine which indexs of aerosols are the bounding data sets
+!     first determine which indexes of aerosols are the bounding data sets
 !     interpolate both onto vertical grid aerm(),aerp().
 !     from those two, interpolate in time.
 !
@@ -1170,7 +1170,7 @@ subroutine get_aerosol(c, julday, julian, dt, gmt, xtime, m_psp, m_psn, aerosolj
    real(r8) speciesmin(naer)              ! minimal value for each species
 !
 ! values before current time step "the minus month"
-! aerosolm(pcols,pver) is value of preceeding month's aerosol mmr
+! aerosolm(pcols,pver) is value of preceding month's aerosol mmr
 ! aerosolp(pcols,pver) is value of next month's aerosol mmr
 !  (think minus and plus or values to left and right of point to be interpolated)
 !
@@ -1324,7 +1324,7 @@ subroutine aerosol_indirect(ncol,lchnk,pcols,pver,ppcnst,landfrac,pmid,t,qm1,cld
 
   real(r8) wrel(pcols,pver)       ! weighted effective radius    [microns]
   real(r8) wlwc(pcols,pver)       ! weighted liq. water content  [kg/m^3 ]
-  real(r8) cldfrq(pcols,pver)     ! frequency of occurance of...
+  real(r8) cldfrq(pcols,pver)     ! frequency of occurrence of...
 !                                  ! clouds (cld => 0.01)         [fraction]
   real(r8) locPi                  ! my piece of the pi
   real(r8) Rdryair                ! gas constant of dry air   [J/deg/kg]
@@ -1332,7 +1332,7 @@ subroutine aerosol_indirect(ncol,lchnk,pcols,pver,ppcnst,landfrac,pmid,t,qm1,cld
   real(r8) Acoef                  ! m->A conversion factor; assumes
 !                                  ! Dbar=0.10, sigma=2.0      [g^-1    ]
   real(r8) rekappa                ! kappa in evaluation of re(lmod)
-  real(r8) recoef                 ! temp. coeficient for calc of re(lmod)
+  real(r8) recoef                 ! temp. coefficient for calc of re(lmod)
   real(r8) reexp                  ! 1.0/3.0
   real(r8) Ntotb                  ! temp var to hold below cloud ccn
 ! -- Parameters for background CDNC (from `ambient' non-sulfate aerosols)...
@@ -1744,7 +1744,7 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
    real(r8) esat(pcols,pverr)    ! saturation vapor pressure
    real(r8) qsat(pcols,pverr)    ! saturation specific humidity
 
-   real(r8) :: frc_day(pcols) ! = 1 for daylight, =0 for night colums
+   real(r8) :: frc_day(pcols) ! = 1 for daylight, =0 for night columns
    real(r8) :: aertau(pcols,nspint,naer_groups) ! Aerosol column optical depth
    real(r8) :: aerssa(pcols,nspint,naer_groups) ! Aerosol column averaged single scattering albedo
    real(r8) :: aerasm(pcols,nspint,naer_groups) ! Aerosol column averaged asymmetry parameter
@@ -2488,7 +2488,7 @@ subroutine radabs(lchnk   ,ncol    ,pcols, pver, pverp,   &
 
    real(r8) dvar             ! normalized variation in T_p/T_e/P/U
    real(r8) uvar             ! U * diffusivity factor
-   real(r8) uscl             ! factor for lineary scaling as U->0
+   real(r8) uscl             ! factor for linearly scaling as U->0
 
    real(r8) wu               ! weight for U
    real(r8) wu1              ! 1 - wu
@@ -3723,7 +3723,7 @@ subroutine radems(lchnk   ,ncol    ,pcols, pver, pverp,         &
    real(r8), intent(out) :: co2eml(pcols,pver)      ! Intrfc co2 normalzd plnck func drvtv
    real(r8), intent(out) :: co2t(pcols,pverp)       ! Tmp and prs weighted path length
    real(r8), intent(out) :: h2otr(pcols,pverp)      ! H2o transmission over o3 band
-   real(r8), intent(out) :: abplnk1(14,pcols,pverp) ! non-nearest layer Plack factor
+   real(r8), intent(out) :: abplnk1(14,pcols,pverp) ! non-nearest layer Planck factor
    real(r8), intent(out) :: abplnk2(14,pcols,pverp) ! nearest layer factor
 
 !
@@ -3884,7 +3884,7 @@ subroutine radems(lchnk   ,ncol    ,pcols, pver, pverp,         &
 
    real(r8) dvar             ! normalized variation in T_p/T_e/P/U
    real(r8) uvar             ! U * diffusivity factor
-   real(r8) uscl             ! factor for lineary scaling as U->0
+   real(r8) uscl             ! factor for linearly scaling as U->0
 
    real(r8) wu               ! weight for U
    real(r8) wu1              ! 1 - wu
@@ -4941,7 +4941,7 @@ subroutine radclwmx(lchnk   ,ncol    ,pcols, pver, pverp,         &
    real(r8) bn2o1(pcols,pverp)   ! pressure factor for n2o
    real(r8) bch4(pcols,pverp)    ! pressure factor for ch4
    real(r8) uptype(pcols,pverp)  ! p-type continuum path length
-   real(r8) abplnk1(14,pcols,pverp)  ! non-nearest layer Plack factor
+   real(r8) abplnk1(14,pcols,pverp)  ! non-nearest layer Planck factor
    real(r8) abplnk2(14,pcols,pverp)  ! nearest layer factor
 !
 !
@@ -5115,7 +5115,7 @@ subroutine radclwmx(lchnk   ,ncol    ,pcols, pver, pverp,         &
 !   cloud amounts = 1.  The random overlap assumption is equivalent to
 !   setting the flux boundary conditions (BCs) at the edges of each region
 !   equal to the mean all-sky flux at those boundaries.  Since the
-!   emissivity array for propogating BCs is only computed for the
+!   emissivity array for propagating BCs is only computed for the
 !   TOA BC, the flux BCs elsewhere in the atmosphere have to be formulated
 !   in terms of solutions to the random overlap equations.  This is done
 !   by writing the flux BCs as the sum of a clear-sky flux and emission
@@ -6162,7 +6162,7 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
 ! 
    real(r8) tauxar(pcols,0:pver) ! aerosol extinction optical depth
    real(r8) wa(pcols,0:pver) ! aerosol single scattering albedo
-   real(r8) ga(pcols,0:pver) ! aerosol assymetry parameter
+   real(r8) ga(pcols,0:pver) ! aerosol asymmetry parameter
    real(r8) fa(pcols,0:pver) ! aerosol forward scattered fraction
 
 ! 
@@ -7547,7 +7547,7 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
 ! Set the downwelling flux at the surface 
 ! 
          fsds(i) = fswdn(pverp)
-! amontornes-bcodina (2014-04-20) :: Save surface direct/difuse fluxes
+! amontornes-bcodina (2014-04-20) :: Save surface direct/diffuse fluxes
       fsdscdir(i) = fsdncdir(i,pverp) ! amontornes-bcodina (2014-04-20)
       fsdscdif(i) = fsdncdif(i,pverp) ! amontornes-bcodina (2014-04-20)
       fsdsdir(i)  = fsdndir(i,pverp)  ! amontornes-bcodina (2014-04-20)
@@ -7600,7 +7600,7 @@ subroutine raddedmx(pver, pverp, pcols, coszrs  ,ndayc   ,idayc   ,abh2o   , &
 !
    real(r8) trmin                ! Minimum total transmission allowed
    real(r8) wray                 ! Rayleigh single scatter albedo
-   real(r8) gray                 ! Rayleigh asymetry parameter
+   real(r8) gray                 ! Rayleigh asymmetry parameter
    real(r8) fray                 ! Rayleigh forward scattered fraction
 
    parameter (trmin = 1.e-3)

@@ -128,7 +128,7 @@
       nlev_srb = size( srb_o2_xs,dim=2 )
       nlev = nlyr
 !----------------------------------------------------------------------
-! initalize O2 cross sections 
+! initialize O2 cross sections
 !----------------------------------------------------------------------
       DO k = 1, nlev_srb
         srb_o2_xs(:,k) = o2_xs(:)
@@ -437,7 +437,7 @@
 
 !-----------------------------------------------------------------------------
 !     call Chebyshev Evaluation routine to calc A and B from
-!     set of 20 coeficients for each wavelength
+!     set of 20 coefficients for each wavelength
 !-----------------------------------------------------------------------------
 
       DO wn = 1,nsrb

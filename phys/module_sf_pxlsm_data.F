@@ -1,6 +1,6 @@
 !WRF:MODEL_LAYER:PHYSICS
 !
-! RG 10/2014 - Added LU-based SNOALB that is used for LU fraction weighted value if specificed.
+! RG 10/2014 - Added LU-based SNOALB that is used for LU fraction weighted value if specified.
 !            
 !
 

@@ -12,9 +12,9 @@ C                                                                               
 C -----------------------------------------------------------------------          RDDATA.12    
 C                                                                                  RDDATA.13    
 C    MIF : Array store integer variables information                               RDDATA.14    
-C    MIFC: Character array describs the MIF array                                  RDDATA.15    
+C    MIFC: Character array describes the MIF array                                 RDDATA.15
 C    MRF : Array store real variables information                                  RDDATA.16    
-C    MRFC: Character array describs the MRF array                                  RDDATA.17    
+C    MRFC: Character array describes the MRF array                                 RDDATA.17
       COMMON /HEADER/ MIF, MRF, MIFC, MRFC                                         RDDATA.18    
       INTEGER MIF(1000,20)                                                         RDDATA.19    
       REAL MRF(1000,20)                                                            RDDATA.20    
@@ -202,7 +202,7 @@ C                                                                               
 C                                                                                  RDDATA.148   
 999   CONTINUE                                                                     RDDATA.149   
       IEND = 1                                                                     RDDATA.150   
-      PRINT *,'EOF ENCOUTERED, IEND=',IEND                                         RDDATA.151   
+      PRINT *,'EOF ENCOUNTERED, IEND=',IEND                                        RDDATA.151
       RETURN                                                                       RDDATA.152   
 C                                                                                  RDDATA.153   
       END                                                                          RDDATA.154   
@@ -220,9 +220,9 @@ C                                                                               
 C -----------------------------------------------------------------------          WRDATA.12    
 C                                                                                  WRDATA.13    
 C    MIF : Array store integer variables information                               WRDATA.14    
-C    MIFC: Character array describs the MIF array                                  WRDATA.15    
+C    MIFC: Character array describes the MIF array                                 WRDATA.15
 C    MRF : Array store real variables information                                  WRDATA.16    
-C    MRFC: Character array describs the MRF array                                  WRDATA.17    
+C    MRFC: Character array describes the MRF array                                 WRDATA.17
       COMMON /HEADER/ MIF, MRF, MIFC, MRFC                                         WRDATA.18    
       INTEGER MIF(1000,20)                                                         WRDATA.19    
       REAL MRF(1000,20)                                                            WRDATA.20    

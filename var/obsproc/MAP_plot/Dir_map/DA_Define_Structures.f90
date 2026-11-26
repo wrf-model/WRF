@@ -215,8 +215,8 @@ MODULE DA_Define_Structures
    TYPE each_level_type
 
       TYPE (field_type)       :: pressure       ! Pressure in Pa
-      TYPE (field_type)       :: speed          ! Wind spped in m/s
-      TYPE (field_type)       :: direction      ! Wind dirction in degree
+      TYPE (field_type)       :: speed          ! Wind speed in m/s
+      TYPE (field_type)       :: direction      ! Wind direction in degree
       TYPE (field_type)       :: height         ! Height in m
       TYPE (field_type)       :: temperature    ! Temperature in K
       TYPE (field_type)       :: dew_point      ! Dew_point in K
@@ -231,7 +231,7 @@ MODULE DA_Define_Structures
 
         CHARACTER (LEN = 30)   :: name          ! Station name
         CHARACTER (LEN = 12)   :: platform      ! Instrument platform
-        CHARACTER (LEN =  5)   :: id            ! 5 digit station identifer
+        CHARACTER (LEN =  5)   :: id            ! 5 digit station identifier
         CHARACTER (LEN = 19)   :: date_char     ! CCYY-MM-DD_HH:MM:SS date
         INTEGER                :: levels        ! number of levels
         REAL                   :: lat           ! Latitude in degree

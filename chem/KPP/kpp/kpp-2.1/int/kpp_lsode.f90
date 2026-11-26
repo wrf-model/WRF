@@ -2550,7 +2550,7 @@ SUBROUTINE INTEGRATE( TIN, TOUT, &
 !                     but with other inputs unchanged.                  
 !           On return, JSTART is set to 1 to facilitate continuation.   
 !  KFLAG  = a completion code with the following meanings:              
-!                0  the step was succesful.                             
+!                0  the step was successful.
 !               -1  the requested error could not be achieved.          
 !               -2  corrector convergence could not be achieved.        
 !               -3  fatal error in PJAC or SLVS.                        
@@ -2942,7 +2942,7 @@ SUBROUTINE INTEGRATE( TIN, TOUT, &
       IRET = 2 
       GO TO 150 
 !-----------------------------------------------------------------------
-! Control reaches this section if 3 or more failures have occured.      
+! Control reaches this section if 3 or more failures have occurred.
 ! If 10 failures have occurred, exit with KFLAG = -1.                   
 ! It is assumed that the derivatives that have accumulated in the       
 ! YH array have errors of the wrong order.  Hence the first             

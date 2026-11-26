@@ -433,7 +433,7 @@ CONTAINS
 
  IF ( domain_active_this_task(1) ) THEN
    !  For EM (but not DA), if this is a DFI run, we can allocate some space.  We are
-   !  not allowing anyting tricky for nested DFI.  If there are any nested domains,
+   !  not allowing anything tricky for nested DFI.  If there are any nested domains,
    !  they all need to start at the same time.  Otherwise, why even do the DFI?  If
    !  the domains do not all start at the same time, then there will be inconsistencies,
    !  which is what DFI is supposed to address.
@@ -1705,7 +1705,7 @@ ENDIF
 
    CALL       wrf_message ( "wrf: calling adjoint integrate" )
 
-   ! Seeting for AD model
+   ! Setting for AD model
    model_config_rec%dyn_opt = dyn_em_ad
 
    model_config_rec%run_days = -1 * model_config_rec%run_days

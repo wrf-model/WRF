@@ -722,7 +722,7 @@ real(kind=kind_phys) RO(IM),xland1(IM)
       ENDIF
 !
 ! define critical Richardson number    by KWON: Vickers and Mahart(2004) J. Appl. Meteo.
-!  coef_ric=0.16 originally but it may too small: controled by namelist=0.25
+!  coef_ric=0.16 originally but it may too small: controlled by namelist=0.25
 !  Land and Ocean points are treated differently
 !  by Kwon
 !

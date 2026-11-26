@@ -27,7 +27,7 @@ type ignition_line_type
         end_x, &        ! x coordinate of the ignition line end point
         end_y, &        ! y coordinate of the ignition line end point
         start_time, &   ! ignition time for the start point from simulation start (s)
-        end_time, &     ! ignition time for the end poin from simulation start (s)
+        end_time, &     ! ignition time for the end point from simulation start (s)
         radius          ! all within this radius ignites immediately
 end type ignition_line_type
 
@@ -139,7 +139,7 @@ start_y    = ignition_line%start_y ! y coordinate of the ignition line start poi
 end_x      = ignition_line%end_x   ! x coordinate of the ignition line end point
 end_y      = ignition_line%end_y   ! y coordinate of the ignition line end point
 start_time = ignition_line%start_time ! ignition time for the start point from simulation start (s)
-end_time   = ignition_line%end_time! ignition time for the end poin from simulation start (s)
+end_time   = ignition_line%end_time! ignition time for the end point from simulation start (s)
 radius     = ignition_line%radius  ! all within this radius ignites immediately
 ros        = ignition_line%ros     ! rate of spread
 tos        = radius/ros            ! time of spread to the given radius
@@ -606,7 +606,7 @@ real, intent(in)::fuel_time_cell            ! time to burns off to 1/e
 ! The values of tign(i,j) where lfn(i,j)>=0 are ignored, tign(i,j)=0 is taken 
 ! when lfn(i,j)=0.
 !
-! The function computes an approxmation  of the integral
+! The function computes an approximation  of the integral
 !
 !
 !                                  /\
@@ -753,7 +753,7 @@ real, intent(in)::fuel_time_cell            ! time to burns off to 1/e
 ! The values of tign(i,j) where lfn(i,j)>=0 are ignored, tign(i,j)=0 is taken 
 ! when lfn(i,j)=0.
 !
-! The function computes an approxmation  of the integral
+! The function computes an approximation  of the integral
 !
 !
 !                                  /\
@@ -903,7 +903,7 @@ if(lfn11>=0. .or. t11>0.)t11=0.
 !*** case0 Do nothing
 if ( lfn00>=0 .and. lfn10>=0 .and. lfn01>=0 .and. lfn11>=0 ) then
     out = 1.0 !  fuel_left, no burning
-!*** case4 all four coners are burning
+!*** case4 all four corners are burning
 else if (lfn00<=0 .and. lfn10<=0 .and. lfn01<=0 .and. lfn11<=0) then
     ! least squares, A matrix for points
     mA(1,1)=0.0
@@ -952,7 +952,7 @@ else if (lfn00<=0 .and. lfn10<=0 .and. lfn01<=0 .and. lfn11<=0) then
     end if
 !*** case 1,2,3
 else
-    ! set xx, yy for the coner points
+    ! set xx, yy for the corner points
     ! move these values out of i and j loop to speed up
     xx(1) = -0.5
     xx(2) =  0.5
@@ -1591,7 +1591,7 @@ threshold_HLu=fire_lsm_band_ngp*dx
 
     
 dt_s=0.01*dx
-do nts=1,fire_lsm_reinit_iter ! iterate to solve to steady state (1 iter each time step is enoguh)
+do nts=1,fire_lsm_reinit_iter ! iterate to solve to steady state (1 iter each time step is enough)
     ! Runge-Kutta step 1 !
     
     call advance_ls_reinit( &
@@ -1599,7 +1599,7 @@ do nts=1,fire_lsm_reinit_iter ! iterate to solve to steady state (1 iter each ti
     ifds,ifde,jfds,jfde,    &           
     ifts,ifte,jfts,jfte,    &               
     dx,dy,dt_s,bdy_eno1,threshold_HLu, &               
-    lfn_s0,lfn_s3,lfn_s3,lfn_s1,1.0/3.0)   ! sign funcition, initial ls, current stage ls, next stage advanced ls, RK coefficient
+    lfn_s0,lfn_s3,lfn_s3,lfn_s1,1.0/3.0)   ! sign function, initial ls, current stage ls, next stage advanced ls, RK coefficient
 
 #ifdef DM_PARALLEL
 #      include "HALO_FIRE_LFN_S1.inc"
@@ -1659,7 +1659,7 @@ enddo ! end iterations for steady state solution of reinitialization PDE
 
     do j=jfts,jfte 
         do i=ifts,ifte 
-          lfn_out(i,j)=lfn_s3(i,j) ! assing to lfn_out the reinitialized level-set function
+          lfn_out(i,j)=lfn_s3(i,j) ! assign to lfn_out the reinitialized level-set function
           lfn_out(i,j)=min(lfn_out(i,j),lfn_in(i,j)) ! fire area can only increase
         enddo
     enddo
@@ -2154,8 +2154,8 @@ real diff2x,diffCx
 
 ! Godunov scheme: upwind differences, L or R or none    
 ! always test on > or < never = , much faster because of IEEE
-! central diff >= 0 => take left diff if >0, ortherwise 0
-! central diff <= 0 => take right diff if <0, ortherwise 0
+! central diff >= 0 => take left diff if >0, otherwise 0
+! central diff <= 0 => take right diff if <0, otherwise 0
 
 diff2x=0
 diffCx=diffRx+diffLx

@@ -60,7 +60,7 @@ contains
 
     subroutine subsurface_properties_init(this,ix,jx,nsoil,overland_data)
         implicit none
-        class(subsurface_properties_interface), intent(inout) :: this ! the type object being initalized
+        class(subsurface_properties_interface), intent(inout) :: this ! the type object being initialized
         integer, intent(in) :: ix                     ! x grid size
         integer, intent(in) :: jx                     ! y grid size
         integer, intent(in) :: nsoil                  ! number of soil layers
@@ -102,7 +102,7 @@ contains
 
         this%zsoil = 0.0
 
-        ! now initalize the shared properties from overland data
+        ! now initialize the shared properties from overland data
 
         if ( associated(overland_data%properties%surface_slope_x) ) then
             this%surface_slope_x => overland_data%properties%surface_slope_x

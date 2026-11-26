@@ -196,7 +196,7 @@ call wrf_message("**************************************************************
      CASE (SAPRC99_MOSAIC_4BIN_VBS2_KPP )
        CALL wrf_debug(15,'calling SAPRC99_MOSAIC_4BIN_VBS2_4BIN from chem_driver')
        call wrf_message("WARNING: SAPRC99_MOSAIC_4BIN_VBS2_4BIN chemistry option is highly experimental and not recommended for use.")
-!jdf   call wrf_error_fatal("WARNING: SAPRC99_MOSAIC_4BIN_VBS2_4BIN chemistry option is useable but does not fully pass regtesting. It is recommended that you contact Jerome.Fast@pnl.gov for information regarding this option.")
+!jdf   call wrf_error_fatal("WARNING: SAPRC99_MOSAIC_4BIN_VBS2_4BIN chemistry option is usable but does not fully pass regtesting. It is recommended that you contact Jerome.Fast@pnl.gov for information regarding this option.")
        !BSINGH(04/03/2014): Added SAPRC 8 bin non-aq
     CASE (SAPRC99_MOSAIC_8BIN_VBS2_KPP )
        CALL wrf_debug(15,'calling SAPRC99_MOSAIC_8BIN_VBS2_4BIN from chem_driver')
@@ -298,7 +298,7 @@ call wrf_message("**************************************************************
                               its, ite, jts, jte, kts )
    endif
 !-----------------------------------------------------------------------
-!  Check TUV photolysis for chem_opt compatability
+!  Check TUV photolysis for chem_opt compatibility
 !-----------------------------------------------------------------------
    if (config_flags%phot_opt == TUV ) then
      if (config_flags%chem_opt /= mozart_mosaic_4bin_kpp .and. &
@@ -373,7 +373,7 @@ call wrf_message("**************************************************************
        endif
    endif
 
-   !BSINGH - kfcup schme only works with Mosaic aqueoue packages:
+   !BSINGH - kfcup scheme only works with Mosaic aqueoue packages:
    ! *** NOTE ***
    ! KFCUP should in theory work with any chem_opt package that uses MOSAIC and has cloud-borne aerosols (*_aq*).
    ! However, it was only tested with chem_opt=203 (saprc99_mosaic_8bin_vbs2_aq_kpp)
@@ -465,13 +465,13 @@ call wrf_message("**************************************************************
              config_flags%chem_opt == 601 .OR.  config_flags%chem_opt == 611 ) then
             call wrf_debug( 15, 'using N2O5 heterogeneous chemistry without Cl- pathway')
         else
-            call wrf_error_fatal("ERROR: N2O5 heterogenous chemistry (without Cl- pathway) must be run with MOSAIC aerosol")
+            call wrf_error_fatal("ERROR: N2O5 heterogeneous chemistry (without Cl- pathway) must be run with MOSAIC aerosol")
         endif
     elseif ( config_flags%n2o5_hetchem == 2 ) then
         if( config_flags%chem_opt == 601 .OR. config_flags%chem_opt == 611 ) then
             call wrf_debug( 15, 'using full N2O5 heterogeneous chemistry')
         else
-            call wrf_error_fatal("ERROR: full N2O5 heterogenous chemistry must be run with MOSAIC aerosol coupled with gas-phase scheme which deals with ClNO2")
+            call wrf_error_fatal("ERROR: full N2O5 heterogeneous chemistry must be run with MOSAIC aerosol coupled with gas-phase scheme which deals with ClNO2")
         endif
     endif
 
@@ -487,10 +487,10 @@ call wrf_message("**************************************************************
       call wrf_error_fatal( trim(message_txt) )
     ELSE
       IF (trim(mminlu_loc) == 'USGS' .and. grid%num_land_cat <= 23 ) THEN
-        message_txt = " ERROR: CHEM_INIT: USGS land use map should have 24 or more catagories."
+        message_txt = " ERROR: CHEM_INIT: USGS land use map should have 24 or more categories."
         call wrf_error_fatal( trim(message_txt) )
       ELSEIF (trim(mminlu_loc) == 'MODIFIED_IGBP_MODIS_NOAH' .and. grid%num_land_cat <= 19 ) THEN
-        message_txt = " ERROR: CHEM_INIT: MODIS_NOAH land use map should have 20 or more catagories."
+        message_txt = " ERROR: CHEM_INIT: MODIS_NOAH land use map should have 20 or more categories."
         call wrf_error_fatal( trim(message_txt) )
       ENDIF
     ENDIF
@@ -1047,7 +1047,7 @@ CASE(GOCARTRACM_KPP,RACM_KPP,RACMPM_KPP,RACMSORG_KPP,RACM_MIM_KPP,RACM_ESRLSORG_
           enddo
        endif
 
-       !BSINGH(04/03/2014): Added 8 bin vbs non-aq pakage
+       !BSINGH(04/03/2014): Added 8 bin vbs non-aq package
     CASE (SAPRC99_MOSAIC_8BIN_VBS2_KPP)
        if(config_flags%chem_in_opt == 0 )then
           grid%vbs_nbin=2
@@ -2121,7 +2121,7 @@ ENDIF ghg_block
     end if
 
 ! 
-!-- initialization upper bounary and tropopause modules
+!-- initialization upper boundary and tropopause modules
 !
     if( config_flags%have_bcs_upper ) then
         CALL wrf_debug(00,'call upper boundary initialization')

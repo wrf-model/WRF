@@ -760,7 +760,7 @@ subroutine rt_nlst_check(nlst)
    endif
    if(nlst%outlake .ne. 0) then
       if(len(trim(nlst%route_lake_f)) .eq. 0) then
-         call hydro_stop('hydro.namelist ERROR: You MUST specify a route_lake_f to ouptut and run lakes.')
+         call hydro_stop('hydro.namelist ERROR: You MUST specify a route_lake_f to output and run lakes.')
       endif
    endif
    if(len(trim(nlst%route_lake_f)) .ne. 0) then

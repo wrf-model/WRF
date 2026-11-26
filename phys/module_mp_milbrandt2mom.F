@@ -8,7 +8,7 @@
 !  adjustments to the calling parameters for the interface to WRF.              !
 !                                                                               !
 !  For questions, bug reports, etc. pertaining to the scheme, or to request     !
-!  updates to the code (before the next offical WRF release) please contact     !
+!  updates to the code (before the next official WRF release) please contact    !
 !  Jason Milbrandt (Environment Canada) at jason.milbrandt@ec.gc.ca             !
 !                                                                               !
 !_______________________________________________________________________________!
@@ -443,7 +443,7 @@ END SUBROUTINE cfg
 ! 'trapAll = 1' means include trap for inconsistency in hydrometeor moments;
 ! otherwise, only trap for Q, T, and negative Qx, Nx.  This option is here
 ! to allow for Q<epsQ.and.N>epsN or Q>epsQ.and.N<epsN which can be produced
-! at the leading edges due to sedimentation and whose values are accpetable
+! at the leading edges due to sedimentation and whose values are acceptable
 ! since Dmax is imposed in SEDI (so one does not necessarily want to trap
 ! for inconsistency after sedimentation has been called).
 !
@@ -904,7 +904,7 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
 !          categories are also computed.
 !
 !          This subroutine and the associated modules form the single/double-moment
-!          switchable verion of the multimoment bulk microphysics package, the full
+!          switchable version of the multimoment bulk microphysics package, the full
 !          version of which is described in the references below.
 !
 !  References:  Milbrandt and Yau, (2005a), J. Atmos. Sci., vol.62, 3051-3064
@@ -934,7 +934,7 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
 ! precipDiag_ON      logical switch, .F. to suppress calc. of sfc precip types
 ! sedi_ON            logical switch, .F. to suppress sedimentation
 ! warmphase_ON       logical switch, .F. to suppress warm-phase (Part II)
-! autoconv_ON        logical switch, .F. to supppress autoconversion (cld->rn)
+! autoconv_ON        logical switch, .F. to suppress autoconversion (cld->rn)
 ! icephase_ON        logical switch, .F. to suppress ice-phase (Part I)
 ! snow_ON            logical switch, .F. to suppress snow initiation
 ! nk_BOTTOM          logical switch, .T. for  nk at bottom (GEM, 1dkin); .F. for nk at top (WRF, 2dkin)
@@ -1008,7 +1008,7 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
        iLAMc2,iLAMc3,iLAMc4,iLAMc5,iLAMc6,iQC,iQR,iQI,iQN,iQG,iQH,iEih,iEsh,        &
        N_c,N_r,N_i,N_s,N_g,N_h,fluxV_i,fluxV_g,fluxV_s,rhos_mlt,fracLiq
 
- !Variables that only need to be calulated on the first step (and saved):
+ !Variables that only need to be calculated on the first step (and saved):
   real, save :: idt,iMUc,cmr,cmi,cms,cmg,cmh,icmr,icmi,icmg,icms,icmh,idew,idei,    &
        ideh,ideg,GC1,imso,icexc9,cexr1,cexr2,cexr3,No_s_SM,No_r,idms,imgo,icexs2,   &
        cexr4,cexr5,cexr6,cexr9,icexr9,ckQr1,ckQr2,ckQr3,ckQi1,ckQi2,ckQi3,ckQi4,    &
@@ -1295,7 +1295,7 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
    imso   = 1./mso
   !bulk density parameters: [rho(D) = eds*D^fds]
   !  These are implied by the mass-diameter parameters, by computing the bulk
-  !  density of a sphere with the equaivalent mass.
+  !  density of a sphere with the equivalent mass.
   !  e.g. m(D) = cD^d = (pi/6)rhoD^3 and solve for rho(D)
    eds    = cms/PIov6
    fds    = dms-3.
@@ -1552,7 +1552,7 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
     iDP(:,k) = 1./(pres(:,k-kdir)-pres(:,k))
   enddo
 
- !Compute thickness of layers for sedimentation calculation: (optional use if height coordiates)
+ !Compute thickness of layers for sedimentation calculation: (optional use if height coordinates)
  ! note - from 'cldoptx4.ftn':  dz(i,k)= dp(i,k)/aird(i,k)*rec_grav
   iDZ = DE*GRAV*iDP
   DZ  = 1./iDZ  
@@ -2505,8 +2505,8 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
        ENDIF  ! ( if Tc<0C Block )
 
      !----- Prevent mass transfer from accretion during melting:  ---!
-     ! (only if exepcted NX (X=s,g,h) < 0 after source/sinks added)
-     ! The purpose is to prevent mass tranfer from cloud to X and then
+     ! (only if expected NX (X=s,g,h) < 0 after source/sinks added)
+     ! The purpose is to prevent mass transfer from cloud to X and then
      ! to vapor (during "prevent overdepletion" code) if all of X
      ! would otherwise be completely depleted (e.g. due to melting).
 
@@ -2841,7 +2841,7 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
   !  Equations for rain reflectivity (ZR) based on Milbrandt and Yau (2005b; JAS)    !
   !----------------------------------------------------------------------------------!
 
-  ! Part 3a - Warm-rain Coallescence:
+  ! Part 3a - Warm-rain Coalescence:
 
  IF (warmphase_ON) THEN
 
@@ -3013,7 +3013,7 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
                !      uses a polynomial approximation that is invalid for tiny WZ.
               NC(i,k) = max(NC(i,k), NccnFNC(WZ(i,k),T(i,k),pres(i,k),CCNtype))
            else
-             !condensation and negible or downward vertical motion:
+             !condensation and negligible or downward vertical motion:
               NC(i,k) = max(NC(i,k), N_c_SM)
            endif
         else
@@ -3414,7 +3414,7 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
            if (QN(i,k)>epsQ .and. N_s>epsN) tmp3 = cxi*Gzs*tmp9*QN(i,k)*QN(i,k)/N_s
            if (QG(i,k)>epsQ .and. N_g>epsN) tmp4 = cxi*Gzg*tmp9*QG(i,k)*QG(i,k)/N_g
            if (QH(i,k)>epsQ .and. N_h>epsN) tmp5 = cxi*Gzh*tmp9*QH(i,k)*QH(i,k)/N_h
-          !Modifiy dielectric constant for melting ice-phase categories:
+          !Modify dielectric constant for melting ice-phase categories:
            if ( T(i,k)>TRPL) then
              tmp2= tmp2*fdielec
              tmp3= tmp3*fdielec

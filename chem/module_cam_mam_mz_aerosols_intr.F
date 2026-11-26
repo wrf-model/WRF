@@ -400,7 +400,7 @@ contains
     real(r8), intent(in) :: rainmr(pcols, pver)         ! rain mixing ratio
     real(r8), intent(in) :: dlf(pcols,pver)            ! Detrainment of convective condensate
 #ifndef WRF_PORT
-    type(physics_ptend), intent(inout) :: ptend        ! indivdual parameterization tendencies
+    type(physics_ptend), intent(inout) :: ptend        ! individual parameterization tendencies
 #else
     character(*), intent(inout) :: ptend_name 
     logical,      intent(inout) :: ptend_lq(pcnst)
@@ -1036,7 +1036,7 @@ contains
     real(r8), intent(in) :: wetdens(pcols,pver,ntot_amode)
     real(r8), intent(inout) :: qaerwat(pcols,pver,ntot_amode)
 
-    type(physics_ptend), intent(inout) :: ptend          ! indivdual parameterization tendencies
+    type(physics_ptend), intent(inout) :: ptend          ! individual parameterization tendencies
     type(cam_out_t),     intent(inout) :: cam_out
     !
     ! Local variables
@@ -1086,7 +1086,7 @@ contains
     !   #################################
     !    call setdvel( ncol, landfrac, icefrac, ocnfrac, .001_r8, .001_r8, .001_r8, dvel )
     !  we get the ram1,fv from the land model as ram1in,fvin, but need to calculate it over oceans and ice.
-    !  better if we got thse from the ocean and ice model
+    !  better if we got these from the ocean and ice model
     !  for friction velocity, we use ustar (from taux and tauy), except over land, where we use fv from the land model.
 
     call calcram(ncol,landfrac,icefrac,ocnfrac,obklen,&

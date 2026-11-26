@@ -69,7 +69,7 @@ subroutine clean_4dvar
    ! Release linked list for trajectory
    call xtraj_io_initialize
    
-   ! Release linked list for ad. forcing and tl. pertubation
+   ! Release linked list for ad. forcing and tl. perturbation
    call adtl_initialize
 
    if (associated(model_grid)) nullify(model_grid)

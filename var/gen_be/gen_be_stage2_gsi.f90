@@ -59,7 +59,7 @@ program gen_be_stage2_gsi
      mype = 0
 #endif
 !------------------------------------------------------------
-!  Set default valuse for namelist parameters
+!  Set default values for namelist parameters
 !   
 !------------------------------------------------------------
 
@@ -160,7 +160,7 @@ program gen_be_stage2_gsi
     allocate( wnew(1:ncat,1:nz),anew(1:nz,1:nz), bnew(1:ncat,1:nz)) 
 
 !rizvi
-! compute_reg_coeff does folowing:
+! compute_reg_coeff does following:
 ! generates reg_psi_chi coeff [bnew(ncat,nz)-array] 
 ! generates reg_psi_ps  coeff [wnew(ncat,nz)-array] 
 ! generates reg_psi_t   coeff [anew(nz,nz)-array] 
@@ -629,7 +629,7 @@ anew=0.
    real                      :: vl_aero(1:num_aeros,1:nz)
 
 !----------------------------------------------------------------------------
-!  Single precission variables
+!  Single precision variables
 !-----------------------------------------------------------------------------
    real*4               :: sigl4(1:nz),rlat4(1:ncat), tmp4(1:ncat)
    real*4, allocatable  :: agv(:,:,:),wgv(:,:),bv(:,:)
@@ -1618,7 +1618,7 @@ subroutine get_basis(nz,rlenzsig_psi,zsig,bigxkm,vng,p8)
 ! input rlenzsig_psi: vertical length of psi in zsig unit
 ! input zsig: R/G*log(sigl)
 ! output bigxkm: sum vng(i,k)*vng(i,m)
-! output vng: basis function; normal decay btw 2 leyers
+! output vng: basis function; normal decay btw 2 layers
 ! output p8: sqrt(X(k,k)) 
 
   implicit none
@@ -1820,7 +1820,7 @@ subroutine cholsl(a,n,p,b,x)
 ! Chi
    read(24,err=100,end=99)vp 
    nrec=nrec+1
-! Fill zero vp fileds with adjacent value
+! Fill zero vp fields with adjacent value
    vp(:,1,:) =2*vp(:,2,:) - vp(:,3,:) 
    vp(1,:,:) =2*vp(2,:,:) - vp(3,:,:) 
 ! Temp

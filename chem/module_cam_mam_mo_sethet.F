@@ -40,7 +40,7 @@ contains
   subroutine sethet_inti
 
     !-----------------------------------------------------------------------      
-    !       ... intialize the wet removal rate constants routine
+    !       ... initialize the wet removal rate constants routine
     !-----------------------------------------------------------------------      
 
     use mo_chem_utls, only : get_het_ndx, get_spc_ndx
@@ -137,7 +137,7 @@ contains
        write(iulog,*) 'sethet_inti: new ndx ',so2_ndx,soa_ndx,so4_ndx,cb2_ndx,oc2_ndx, &
             nh3_ndx,nh4no3_ndx,sa1_ndx,sa2_ndx,sa3_ndx,sa4_ndx
        write(iulog,*) ' '
-       write(iulog,*) 'sethet_inti: diagnotics '
+       write(iulog,*) 'sethet_inti: diagnostics '
 #ifndef WRF_PORT
        write(iulog,'(10i5)') h2o2_ndx, hno3_ndx, ch2o_ndx, ch3ooh_ndx, ch3coooh_ndx, &
             ho2no2_ndx, ch3cocho_ndx, xooh_ndx, onitr_ndx, glyald_ndx, &
@@ -225,7 +225,7 @@ contains
     real(r8), parameter ::  liter_per_gram = 1.e-3_r8
     real(r8), parameter ::  avo2  = avo * liter_per_gram * cm3_2_m3 ! (liter/gm/mol*(m/cm)^3)
 
-    integer  ::      i, m, k, kk                 ! indicies
+    integer  ::      i, m, k, kk                 ! indices
     real(r8) ::      xkgm                        ! mass flux on rain drop
     real(r8) ::      all1, all2                  ! work variables
     real(r8) ::      stay                        ! fraction of layer traversed by falling drop in timestep delt
@@ -277,7 +277,7 @@ contains
 !
     !-----------------------------------------------------------------
     !        note: the press array is in pascals and must be
-    !              mutiplied by 10 to yield dynes/cm**2.
+    !              multiplied by 10 to yield dynes/cm**2.
     !-----------------------------------------------------------------
     !       ... set wet deposition for
     !           1. h2o2         2. hno3

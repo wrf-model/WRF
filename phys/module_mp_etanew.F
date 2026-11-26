@@ -864,7 +864,7 @@ MODULE module_mp_etanew
           WC=WC_col(L)        ! Grid-scale mixing ratio of total condensate (water or ice; kg/kg)
 !
 !-----------------------------------------------------------------------
-!--- Moisture variables below are mixing ratios & not specifc humidities
+!--- Moisture variables below are mixing ratios & not specific humidities
 !-----------------------------------------------------------------------
 !
           CLEAR=.TRUE.
@@ -900,7 +900,7 @@ MODULE module_mp_etanew
 !
 !--- Check if any ice is falling into layer from above
 !
-!--- NOTE that "SNOW" in variable names is synonomous with 
+!--- NOTE that "SNOW" in variable names is synonymous with
 !    large, precipitation ice particles
 !
           IF (ASNOW .GT. CLIMIT) THEN

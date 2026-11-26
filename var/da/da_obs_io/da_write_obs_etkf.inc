@@ -4,7 +4,7 @@ subroutine da_write_obs_etkf(ob, iv, re)
    ! Purpose: Writes out components of iv=O-B structure.
    !-------------------------------------------------------------------------   
    !
-   ! Arthur P. Mizzi (NCAR/MMM) February 2011 Modfied to output the extended ob.etkf file.  
+   ! Arthur P. Mizzi (NCAR/MMM) February 2011 Modified to output the extended ob.etkf file.
 
    implicit none
 

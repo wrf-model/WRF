@@ -15,7 +15,7 @@ macro( wrf_m4_preproc_fortran )
     set( WRF_PP_M4_PROGRAM_TO_USE ${WRF_PP_M4_PROGRAM} )
   endif()
 
-  # Santitize input
+  # Sanitize input
   if ( DEFINED WRF_PP_M4_TARGET_SCOPE )
     set( WRF_PP_M4_TARGET_DIRECTORY TARGET_DIRECTORY ${WRF_PP_M4_TARGET_SCOPE} )
   endif()

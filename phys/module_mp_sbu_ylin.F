@@ -274,7 +274,7 @@ CONTAINS
      REAL                                :: obp4, bp3, bp5, bp6, odp4,  &
                                             dp3, dp5, dp5o2
 
-! temperary vars
+! temporary vars
 
      REAL                              :: tmp, tmp0, tmp1, tmp2,tmp3,  &
                                           tmp4, tmpa,tmpb,tmpc,tmpd,alpha1,  &
@@ -385,7 +385,7 @@ CONTAINS
 !     qizodt      qi/dt
 !     qszodt      qs/dt
 !     qrzodt      qr/dt
-!     temcc       temperature in dregee C
+!     temcc       temperature in degree C
 !
 
       obp4=1.0/(bv_r+4.0)
@@ -548,7 +548,7 @@ CONTAINS
 ! Calculate precipitation fluxes due to terminal velocities.
 !***********************************************************************
 !
-!- Calculate termianl velocity (vt?)  of precipitation q?z
+!- Calculate terminal velocity (vt?)  of precipitation q?z
 !- Find maximum vt? to determine the small delta t
 !
 !-- rain

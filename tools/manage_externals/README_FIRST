@@ -1,9 +1,9 @@
 CESM is comprised of a number of different components that are
 developed and managed independently. Each component may have
-additional 'external' dependancies and optional parts that are also
+additional 'external' dependencies and optional parts that are also
 developed and managed independently.
 
-The checkout_externals.py tool manages retreiving and updating the
+The checkout_externals.py tool manages retrieving and updating the
 components and their externals so you have a complete set of source
 files for the model.
 

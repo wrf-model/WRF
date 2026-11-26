@@ -183,7 +183,7 @@ subroutine da_transfer_kmatoxb(xbx, grid)
          ! 
          ! The following code is to be activated after
          ! getting sst, land use, land mask and snow information for KMA grid
-         ! This infor needs to be packed in "KMA2NETCDF" convertor
+         ! This info needs to be packed in "KMA2NETCDF" convertor
          !                              
          !---------------------------------------------------------------------
 

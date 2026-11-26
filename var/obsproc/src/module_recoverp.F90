@@ -34,7 +34,7 @@ CONTAINS
 !        is completed (subroutine hp_sequence_check).
 !
 !    (2) second, a consistency check between the observed pressure and 
-!        height agaist the model reference state is completed
+!        height against the model reference state is completed
 !        (subroutine pressure_recover, FUNCTION hp_consist).
 !
 !    (3) To fill the missing pressure by using the observed pressure and

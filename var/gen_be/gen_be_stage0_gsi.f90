@@ -593,7 +593,7 @@ subroutine da_uv_to_div_c( dim1, dim2, ds, &
                            u, v, div )
    
 !------------------------------------------------------------------------------
-!  PURPOSE: Calculate divergence on a co-ordinate surface, given an input
+!  PURPOSE: Calculate divergence on a coordinate surface, given an input
 !           wind field on an Arakawa C-grid.
 !  
 !  NOTE: No boundary conditions required on the WRF Arakawa C-grid as
@@ -665,7 +665,7 @@ subroutine da_uv_to_vor_c( dim1, dim2, ds, &
                            u, v, vor )
 
 !------------------------------------------------------------------------------
-!  PURPOSE: Calculate vorticity on a co-ordinate surface, given an input
+!  PURPOSE: Calculate vorticity on a coordinate surface, given an input
 !           wind field on an Arakawa C-grid.
 !  
 !  NOTE: Zero vorticity boundary conditions.
@@ -767,7 +767,7 @@ subroutine da_psichi_to_uv_c( dim1, dim2, ds, &
    real, intent(in)   :: mapfac_u(1:dim1+1,1:dim2)    ! Map factor - u points.
    real, intent(in)   :: mapfac_v(1:dim1,1:dim2+1)    ! Map factor - u points.
    real, intent(in)   :: psi(1:dim1+1,1:dim2+1)       ! Streamfunction. 
-   real, intent(in)   :: chi(1:dim1,1:dim2)           ! Velcoity potential.
+   real, intent(in)   :: chi(1:dim1,1:dim2)           ! Velocity potential.
    real, intent(out)  :: u(1:dim1+1,1:dim2)           ! v wind.
    real, intent(out)  :: v(1:dim1,1:dim2+1)           ! v wind.
 

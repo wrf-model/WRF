@@ -1,6 +1,6 @@
   subroutine da_radzicevar_prepare_interceptpara(in0s,in0g,in0r,rn0_s,rn0_g,rn0_r,sonv,gonv,ronv)
    !----------------------------------------------------------------------
-   ! purpose: assigne the intercept parameter value and convert the unit 
+   ! purpose: assign the intercept parameter value and convert the unit
    !----------------------------------------------------------------------
     implicit none
     integer :: in0s,in0g,in0r

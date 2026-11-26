@@ -50,7 +50,7 @@ contains
 !-- cfm_temf    Column cloud fraction from TEMF BL scheme
 !-- exch_temf   Surface exchange coefficient (as for moisture) from TEMF surface layer scheme
 !-- flhc        Surface exchange coefficient for heat (needed by surface scheme)
-!-- flqc        Surface exchange coefficient for moisture (including moisture availablity)
+!-- flqc        Surface exchange coefficient for moisture (including moisture availability)
 !-- fCor        Coriolis parameter (from grid%f)
 !
 !-- u3d         3d u-velocity interpolated to theta points (m/s)

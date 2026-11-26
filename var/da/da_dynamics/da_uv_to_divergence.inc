@@ -1,7 +1,7 @@
 subroutine da_uv_to_divergence(xb, u, v, div)
 
    !---------------------------------------------------------------------------
-   !  Purpose: Calculate divergence on a co-ordinate surface, given an input
+   !  Purpose: Calculate divergence on a coordinate surface, given an input
    !           wind field.
    !
    !                        d   U      d   V

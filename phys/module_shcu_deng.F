@@ -228,7 +228,7 @@ CONTAINS
   ENDIF
 !
 !  Calculate the RH-based cloud fraction, CS, based on Xu and Randall (1996, JAS)  
-!  As shown in Deng et al. 2003a, the virtual cloud fraction CAREA is a wighted average
+!  As shown in Deng et al. 2003a, the virtual cloud fraction CAREA is a weighted average
 !  of Deng scheme-predicted cloud fraction, CLDLIQA and CS.  This effective cloud
 !  fraction is used in the radiation calculation.
 !
@@ -1009,7 +1009,7 @@ CONTAINS
         P_INI = PLCL
       END IF
 !
-! DETERMIN THE DEPTH OF SOURCE LAYER WHERE THE MASS IS IS REMOVED AS A RESULTS OF
+! DETERMINE THE DEPTH OF SOURCE LAYER WHERE THE MASS IS IS REMOVED AS A RESULTS OF
 ! CONVECTION.  THE DEPTH IS DEFINED AS A FUNCTION OF CLOUD RADIUS AND IS IN THE
 ! RANGE OF 10 MB TO 60 MB
 !
@@ -1040,7 +1040,7 @@ CONTAINS
 #endif
 !
 !&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-!     BEGINING OF UPDRAFT CACULATION
+!     BEGINNING OF UPDRAFT CALCULATION
 !&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 !
 !   COMPUTE INITIAL UPDRAFT MASS FLUX UMF(K)
@@ -1752,7 +1752,7 @@ CONTAINS
 !  ENDIF
 !
 !&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-!     BEGINING OF DOWNDRAFT CACULATION
+!     BEGINNING OF DOWNDRAFT CALCULATION
 !&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 !
 !...LET DOWNDRAFT ORIGINATE AT THE LEVEL OF MINIMUM SATURATION EQUIVALENT
@@ -2043,7 +2043,7 @@ CONTAINS
       AINC=1.
       IF(AINCMX.LT.AINC)AINC=AINCMX
 !
-!...SAVE THE RELEVENT VARIABLES FOR A UNIT UPDRFT AND DOWNDRFT...THEY WILL BE
+!...SAVE THE RELEVANT VARIABLES FOR A UNIT UPDRFT AND DOWNDRFT...THEY WILL BE
 !   ADJUSTED BY THE FACTOR AINC TO SATISFY THE STABILIZATION CLOSURE...
 !
       NCOUNT=0
@@ -2092,7 +2092,7 @@ CONTAINS
            DSOURCE, AINC2
 #endif
 !&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-!     BEGINING OF CLOSURE ASSUMPTION SELECTIONS
+!     BEGINNING OF CLOSURE ASSUMPTION SELECTIONS
 !&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 !
       IF(CAPEI(I,J) .LT. 100.0) THEN    ! averaging KF number of clouds
@@ -2955,7 +2955,7 @@ CONTAINS
       ENDIF
     ENDDO
 !&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-!     BEGINING OF DISSIPATION CACULATION
+!     BEGINNING OF DISSIPATION CALCULATION
 !   goto 345
 !&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 !
@@ -2997,7 +2997,7 @@ CONTAINS
 !
 !  VERTICAL DIFFUSION OF NBC LIQUID/ICE WATER CONTENT **********************
 !
-!  CALCULAT KH (VERTICAL DIFF COEF ) AND KR ( RADIATIVE INDUCED VERTICAL
+!  CALCULATE KH (VERTICAL DIFF COEF ) AND KR ( RADIATIVE INDUCED VERTICAL
 !  DIFF COEF).  KR IS CALCULATED AT KAMAX+1 (FULL LAYER AT CLOUD TOP), THEN
 !  CONSTANT UNTIL CLOUD TOP.  IT LINEARLY DROPS TO ZERO AT K1000, WHICH IS
 !  THE LARGER ONE OF KDCB AND K1000.
@@ -3089,7 +3089,7 @@ CONTAINS
 !
 !     THIS IS TO ENSURE THAT THE LAYER BELOW THE CLOUD BASE (KDCB-1) DOES
 !     NOT REACH SATURATION ONLY BECAUSE OF MIXING (USE 95% HERE).  ADJUST
-!     LFLUX(KDCB) SO THAT THE AMOUNT OF MASS TRANPORTED TO THIS LAYER IS
+!     LFLUX(KDCB) SO THAT THE AMOUNT OF MASS TRANSPORTED TO THIS LAYER IS
 !     LESS THAN THE AMOUNT OF MASS NEEDED TO RAISE THE RH TO 95%.
 !
       RHCR=0.95
@@ -3155,7 +3155,7 @@ CONTAINS
 !
 !     THIS IS TO ENSURE THAT THE LAYER BELOW THE EXPOSED CLOUD BASE (K-1) DOES
 !     NOT REACH SATURATION ONLY BECAUSE OF MIXING (USE 95% HERE).  ADJUST
-!     LFLUX(KDCB) SO THAT THE AMOUNT OF MASS TRANPORTED TO THIS LAYER IS
+!     LFLUX(KDCB) SO THAT THE AMOUNT OF MASS TRANSPORTED TO THIS LAYER IS
 !     LESS THAN THE AMOUNT OF MASS NEEDED TO RAISE THE RH TO 95%.
 !
       RHCR=0.95
@@ -3439,7 +3439,7 @@ CONTAINS
 
     ENDDO
 !&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
- 345  CONTINUE      ! END OF DISSIPATION CACULATION
+ 345  CONTINUE      ! END OF DISSIPATION CALCULATION
 !&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 !
 ! PUT INTO TAU-1 ARRAYS
@@ -3796,8 +3796,8 @@ CONTAINS
 !
 !  RATIO3 IS THE FRACTION OF LIQUID WATER IN FRESH CONDENSATE, RATIO4 IS
 !  THE FRACTION OF LIQUID WATER IN THE TOTAL AMOUNT OF CONDENSATE INVOLV
-!  IN THE PRECIPITATION PROCESS - NOTE THAT ONLY 60% OF THE FRESH CONDEN
-!  SATE IS IS ALLOWED TO PARTICIPATE IN THE CONVERSION PROCESS...
+!  IN THE PRECIPITATION PROCESS - NOTE THAT ONLY 60% OF THE FRESH
+!  CONDENSATE IS IS ALLOWED TO PARTICIPATE IN THE CONVERSION PROCESS...
 !
       RATIO3=QNEWLQ/(QNEW+1.E-8)
 !     OLDQ=QTOT
@@ -5265,7 +5265,7 @@ CONTAINS
 !
 ! lookup table for tlog(emix/aliq)
 !
-! set up intial values for lookup tables
+! set up initial values for lookup tables
 !
        astrt=1.e-3
        ainc=0.075
@@ -5423,7 +5423,7 @@ CONTAINS
 !
 ! lookup table for tlog(emix/aliq)
 !
-! set up intial values for lookup tables
+! set up initial values for lookup tables
 !
        astrt=1.e-3
        ainc=0.075

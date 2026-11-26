@@ -5,7 +5,7 @@ MODULE module_bl_boulac
 
 !------------------------------------------------------------------------
 !    Calculation of the tendency due to momentum, heat 
-!    and moisture turbulent fluxes follwing the approach 
+!    and moisture turbulent fluxes following the approach
 !    of Bougeault and Lacarrere, 1989 (MWR, 117, 1872-1890).
 !    The scheme computes a prognostic ecuation for TKE and derives 
 !    dissipation and turbulent coefficients using length scales.
@@ -19,8 +19,8 @@ MODULE module_bl_boulac
 ! 
 ! -----------------------------------------------------------------------
 !  Constant used in the module
-!  ck_b=constant used in the compuation of diffusion coefficients
-!  ceps_b=constant used inthe computation of dissipation
+!  ck_b=constant used in the computation of diffusion coefficients
+!  ceps_b=constant used in the computation of dissipation
 !  temin= minimum value allowed for TKE
 !  vk=von karman constant
 ! -----------------------------------------------------------------------
@@ -75,19 +75,19 @@ MODULE module_bl_boulac
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)    ::   PBLH          !PBL height
 !
 ! variable added for urban
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   )    ::a_u_bep        ! Implicit component for the momemtum in X-direction
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   )    ::a_v_bep        ! Implicit component for the momemtum in Y-direction
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   )    ::a_u_bep        ! Implicit component for the momentum in X-direction
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   )    ::a_v_bep        ! Implicit component for the momentum in Y-direction
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   )    ::a_t_bep        ! Implicit component for the Pot. Temp.
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   )    ::a_q_bep        ! Implicit component for Moisture
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   )    ::a_e_bep        ! Implicit component for the TKE
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   )    ::b_u_bep        ! Explicit component for the momemtum in X-direction
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   )    ::b_v_bep        ! Explicit component for the momemtum in Y-direction
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   )    ::b_u_bep        ! Explicit component for the momentum in X-direction
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   )    ::b_v_bep        ! Explicit component for the momentum in Y-direction
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   )    ::b_t_bep        ! Explicit component for the Pot. Temp.
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   )    ::b_q_bep        ! Explicit component for Moisture
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   )    ::b_e_bep        ! Explicit component for the TKE
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT)    ::dlg_bep        ! Height above ground (L_ground in formula (24) of the BLM paper). 
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   )    ::dl_u_bep        ! Length scale (lb in formula (22) ofthe BLM paper).
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   )    ::dl_u_bep        ! Length scale (lb in formula (22) of the BLM paper).
 ! urban surface and volumes        
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   )    ::sf_bep           ! surface of the urban grid cells
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   )    ::vl_bep             ! volume of the urban grid cells
@@ -152,7 +152,7 @@ MODULE module_bl_boulac
       real b_qc1D(kms:kme)               ! Explicit component of the liquid water sources or sinks
       real b_e1D(kms:kme)               ! Explicit component of the TKE sources or sinks
       real dlg1D(kms:kme)               ! Height above ground (L_ground in formula (24) of the BLM paper). 
-      real dl_u1D(kms:kme)              ! Length scale (lb in formula (22) ofthe BLM paper)
+      real dl_u1D(kms:kme)              ! Length scale (lb in formula (22) of the BLM paper)
       real sh1D(kms:kme)              ! shear
       real bu1D(kms:kme)              ! buoyancy
       real wu1D(kms:kme)              ! turbulent flux of momentum (x component)
@@ -179,7 +179,7 @@ MODULE module_bl_boulac
 !    
 
 !here I fix the value of the reference state equal to the value of the potnetial temperature
-! the only use of this variable in the code is to compute the paramter BETA = g/th0
+! the only use of this variable in the code is to compute the parameter BETA = g/th0
 ! I fix it to 300K. 
       
         do ix=its,ite
@@ -493,7 +493,7 @@ MODULE module_bl_boulac
       real a_e(kms:kme)               ! Implicit component of the TKE sources or sinks
       real b_e(kms:kme)               ! Explicit component of the TKE sources or sinks
       real dlg(kms:kme)               ! Height above ground (L_ground in formula (24) of the BLM paper). 
-      real dl_u(kms:kme)              ! Length scale (lb in formula (22) ofthe BLM paper)
+      real dl_u(kms:kme)              ! Length scale (lb in formula (22) of the BLM paper)
       real ufrac_int             ! urban fraction
 ! local variables not needed in principle, but that can be used to estimate the budget and turbulent fluxes
  

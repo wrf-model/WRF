@@ -14,7 +14,7 @@ subroutine da_read_obs_hdf5ahi (iv,infile_tb,infile_clp)
    !  To be developed: 
    !            1. more general variable names; 
    !            2. get time and dimension information from file
-   !            3. more readable and efficient programm
+   !            3. more readable and efficient program
    !------------------------------------------------------------------------------
 
    implicit none

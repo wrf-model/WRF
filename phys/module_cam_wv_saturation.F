@@ -31,7 +31,7 @@ module wv_saturation
   public estblf   ! saturation pressure table lookup
   public aqsat    ! Returns saturation vapor pressure
 #ifndef WRF_PORT
-  public aqsatd   ! Same as aqsat, but also returns a temperature derivitive
+  public aqsatd   ! Same as aqsat, but also returns a temperature derivative
 #endif
   public vqsatd   ! Vector version of aqsatd
   public fqsatd   ! Function version of vqsatd

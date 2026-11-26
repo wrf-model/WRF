@@ -347,7 +347,7 @@ if ( iv%info(gpsref)%n2 >= iv%info(gpsref)%n1 ) then
 
          do k=1, iv%info(gpsref)%levels(n)
 
-            ! incremetal refractivity or the relative error:
+            ! incremental refractivity or the relative error:
             !   abs[(O-B)/{(O+B)/2}]              (Lidia Cucurull 2005)
 
             percnt = 2.0 * abs(iv%gpsref(n)%ref(k)%inv / &

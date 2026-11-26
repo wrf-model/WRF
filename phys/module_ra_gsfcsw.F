@@ -6,7 +6,7 @@ MODULE module_ra_gsfcsw
    REAL,    PARAMETER, PRIVATE ::   thresh=1.e-9
    REAL,    SAVE               ::   center_lat
 
-!  Assign co2 and trace gases amount (units are parts/part by volumn)
+!  Assign co2 and trace gases amount (units are parts/part by volume)
 
    REAL,    PARAMETER, PRIVATE ::   co2   = 300.e-6
 
@@ -576,7 +576,7 @@ CONTAINS
       third=1./3.
       rhoh2o=1.e3
       relconst=3/(4.*pi*rhoh2o)
-!     minimun liquid water path to calculate rel
+!     minimum liquid water path to calculate rel
 !     corresponds to optical depth of 1.e-3 for radius 4 microns.
       lwpmin=3.e-5
       do k = kts-1, kte
@@ -656,7 +656,7 @@ CONTAINS
             taual(i,kte-k,ib)=tauaer400(i,k+1,j)*(0.4/midbands(ib))**ang ! notice reserved variable
  !       write(6,10001)i,k,ang,tauaer300(i,k+1,j),tauaer999(i,k+1,j),midbands(ib),taual(i,k,ib)
  !10001      format(i3,i3,5f12.6)
-! use ang exponent for closer wavelenghts
+! use ang exponent for closer wavelengths
            else 
             if(midbands(ib) .lt. 0.5) then
              ang=log(tauaer300(i,k+1,j)/tauaer400(i,k+1,j))/log(400./300.)
@@ -685,7 +685,7 @@ CONTAINS
 
 ! g - linear interpolation;extrapolation
            slope=(gaer600(i,k+1,j)-gaer400(i,k+1,j))/.2
-           asyal(i,kte-k,ib) = slope*(midbands(ib)-.6)+gaer600(i,k+1,j) ! notice reversed varaibles
+           asyal(i,kte-k,ib) = slope*(midbands(ib)-.6)+gaer600(i,k+1,j) ! notice reversed variables
            if(asyal(i,kte-k,ib).lt.0.5) asyal(i,kte-k,ib)=0.5
            if(asyal(i,kte-k,ib).ge.1.0) asyal(i,kte-k,ib)=1.0
         endif
@@ -869,7 +869,7 @@ CONTAINS
 !
 !  New feature of this version is:
 !   (1) An option is added for scaling the cloud optical thickness. If
-!       the fractional cloud cover, fcld, in an atmospheric model is alway 
+!       the fractional cloud cover, fcld, in an atmospheric model is always
 !       either 1 or 0 (i.e. partly cloudy sky is not allowed), it does
 !       not require the scaling of cloud optical thickness, and the
 !       option "overcast" can be set to .true.  Computation is faster
@@ -939,10 +939,10 @@ CONTAINS
 !  layer temperature (ta)                           k        m*ndim*np
 !  layer specific humidity (wa)                     gm/gm    m*ndim*np
 !  layer ozone concentration (oa)                   gm/gm    m*ndim*np
-!  co2 mixing ratio by volumn (co2)                 pppv       1
+!  co2 mixing ratio by volume (co2)                 pppv       1
 !  option for scaling cloud optical thickness       n/d        1
 !        overcast="true" if scaling is NOT required
-!        overcast="fasle" if scaling is required
+!        overcast="false" if scaling is required
 !  option for cloud optical thickness               n/d        1
 !        cldwater="true" if cwc is provided
 !        cldwater="false" if taucld is provided
@@ -1264,7 +1264,7 @@ CONTAINS
 !  layer pressure thickness (dp)                    mb       m*n*np
 !  option for scaling cloud optical thickness       n/d        1
 !        overcast="true" if scaling is NOT required
-!        overcast="fasle" if scaling is required
+!        overcast="false" if scaling is required
 !  input option for cloud optical thickness         n/d        1
 !        cldwater="true" if taucld is provided
 !        cldwater="false" if cwp is provided
@@ -1272,10 +1272,10 @@ CONTAINS
 !        index 1 for ice particles
 !        index 2 for liquid drops
 !  cloud optical thickness (taucld)                 n/d     m*ndim*np*2
-!       index 1 for ice paticles
+!       index 1 for ice particles
 !       index 2 for liquid particles
 !  effective cloud-particle size (reff)          micrometer m*ndim*np*2
-!       index 1 for ice paticles
+!       index 1 for ice particles
 !       index 2 for liquid particles
 !  level indiex separating high and                 n/d      m*n
 !       middle clouds (ict)
@@ -1684,7 +1684,7 @@ CONTAINS
 !  layer scaled-water vapor content (wh)          gm/cm^2    m*n*np
 !  option for scaling cloud optical thickness       n/d        1
 !        overcast="true" if scaling is NOT required
-!        overcast="fasle" if scaling is required
+!        overcast="false" if scaling is required
 !  input option for cloud optical thickness         n/d        1
 !        cldwater="true" if taucld is provided
 !        cldwater="false" if cwp is provided
@@ -1692,9 +1692,9 @@ CONTAINS
 !        index 1 for ice particles
 !        index 2 for liquid drops
 !  cloud optical thickness (taucld)                 n/d      m*ndim*np*2
-!        index 1 for ice paticles
+!        index 1 for ice particles
 !  effective cloud-particle size (reff)           micrometer m*ndim*np*2
-!        index 1 for ice paticles
+!        index 1 for ice particles
 !        index 2 for liquid particles
 !  level index separating high and                  n/d      m*n
 !        middle clouds (ict)

@@ -676,7 +676,7 @@ contains
 !   2003-08-28  parrish
 !   2004-05-13  kleist, documentation
 !   2004-07-15  todling, protex-compliant prologue
-!   2004-12-15  treadon - explicity set value for inges
+!   2004-12-15  treadon - explicitly set value for inges
 !   2005-05-24  pondeca - add the surface analysis option
 !   2006-04-06  middlecoff - changed inges from 21 to lendian_in so it can be set to little endian.
 !
@@ -1002,7 +1002,7 @@ contains
       allocate(region_dy(nlat,nlon),region_dx(nlat,nlon))
       allocate(coeffy(nlat,nlon),coeffx(nlat,nlon))
 
-!   trasfer earth lats and lons to arrays region_lat, region_lon
+!   transfer earth lats and lons to arrays region_lat, region_lon
 
       allocate(glat_an(nlon,nlat),glon_an(nlon,nlat))
       do k=1,nlon
@@ -1701,7 +1701,7 @@ contains
 !                           x -->
 !
 !   output argument list
-!     gout     - output unstaggered half grid  (reorganized for distibution to local domains)
+!     gout     - output unstaggered half grid  (reorganized for distribution to local domains)
 !
 ! attributes:
 !   language: f90
@@ -2036,7 +2036,7 @@ contains
    real(r_kind),dimension(nlon,nlat-2),intent(out):: grid_out         ! output grid
 
 ! !DESCRIPTION: This routine prepares grids for use in splib
-!               grid to spectral tranforms.  This preparation
+!               grid to spectral transforms.  This preparation
 !               entails to two steps
 !                  1) reorder indexing of the latitude direction.
 !                     The GSI ordering is south to north.  The 
@@ -2113,12 +2113,12 @@ contains
 !               The northern row contains the longitudinal mean of
 !               the adjacent northern row.
 !               
-!               The added rows correpsond to the south and north poles.
+!               The added rows correspond to the south and north poles.
 !
 !               In addition to adding latitude rows corresponding to the
 !               south and north poles, the routine reorder the output 
 !               array so that it is a one-dimensional array read in
-!               an order consisten with that assumed for total domain
+!               an order consistent with that assumed for total domain
 !               gsi grids.
 !
 !               The assumed order for the input grid is longitude as
@@ -2219,12 +2219,12 @@ contains
 !               The northern row contains the longitudinal mean of
 !               the adjacent northern row.
 !               
-!               The added rows correpsond to the south and north poles.
+!               The added rows correspond to the south and north poles.
 !
 !               In addition to adding latitude rows corresponding to the
 !               south and north poles, the routine reorder the output 
 !               array so that it is a one-dimensional array read in
-!               an order consisten with that assumed for total domain
+!               an order consistent with that assumed for total domain
 !               gsi grids.
 !
 !               The assumed order for the input grid is longitude as

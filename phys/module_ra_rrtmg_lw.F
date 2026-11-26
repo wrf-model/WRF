@@ -2102,7 +2102,7 @@ contains
       integer(kind=im), intent(in) :: permuteseed     ! if the cloud generator is called multiple times, 
                                                       ! permute the seed between each call.
                                                       ! between calls for LW and SW, recommended
-                                                      ! permuteseed differes by 'ngpt'
+                                                      ! permuteseed differs by 'ngpt'
       integer(kind=im), intent(inout) :: irng         ! flag for random number generator
                                                       !  0 = kissvec
                                                       !  1 = Mersenne Twister
@@ -2151,9 +2151,9 @@ contains
                                                       !    Dimensions: (ngptlw,ncol,nlay)
       real(kind=rb), intent(out) :: relqmcl(:,:)      ! liquid particle size (microns)
                                                       !    Dimensions: (ncol,nlay)
-      real(kind=rb), intent(out) :: reicmcl(:,:)      ! ice partcle size (microns)
+      real(kind=rb), intent(out) :: reicmcl(:,:)      ! ice particle size (microns)
                                                       !    Dimensions: (ncol,nlay)
-      real(kind=rb), intent(out) :: resnmcl(:,:)      ! snow partcle size (microns)
+      real(kind=rb), intent(out) :: resnmcl(:,:)      ! snow particle size (microns)
                                                       !    Dimensions: (ncol,nlay)
       real(kind=rb), intent(out) :: taucmcl(:,:,:)    ! in-cloud optical depth [mcica]
                                                       !    Dimensions: (ngptlw,ncol,nlay)
@@ -2505,7 +2505,7 @@ contains
        
       case(3) 
 ! Maximum overlap
-! i) pick the same random numebr at every level  
+! i) pick the same random number at every level
 
          if (irng.eq.0) then 
             do isubcol = 1,nsubcol
@@ -2829,10 +2829,10 @@ contains
 ! ------- Definitions -------
 
 !     Explanation of the method for each value of INFLAG.  Values of
-!     0 or 1 for INFLAG do not distingish being liquid and ice clouds.
+!     0 or 1 for INFLAG do not distinguish being liquid and ice clouds.
 !     INFLAG = 2 does distinguish between liquid and ice clouds, and
 !     requires further user input to specify the method to be used to 
-!     compute the aborption due to each.
+!     compute the absorption due to each.
 !     INFLAG = 0:  For each cloudy layer, the cloud fraction and (gray)
 !                  optical depth are input.  
 !     INFLAG = 1:  For each cloudy layer, the cloud fraction and cloud
@@ -2912,7 +2912,7 @@ contains
 !               cwp = ciwpmc(ig,lay) + clwpmc(ig,lay)
 !               taucmc(ig,lay) = abscld1 * cwp
 
-! Separate treatement of ice clouds and water clouds.
+! Separate treatment of ice clouds and water clouds.
             elseif(inflag .ge. 2) then
                radice = reicmc(lay)
 
@@ -7019,7 +7019,7 @@ contains
 
 ! Compute the optical depth by interpolating in ln(pressure), 
 ! temperature, and appropriate species.  Below laytrop, the water
-! vapor self-continuum adn foreign continuum is interpolated 
+! vapor self-continuum and foreign continuum is interpolated
 ! (in temperature) separately.  
 
 ! Lower atmosphere loop
@@ -8071,7 +8071,7 @@ contains
       enddo
 
 ! Perform g-point reduction from 16 per band (256 total points) to
-! a band dependant number (140 total points) for all absorption
+! a band dependent number (140 total points) for all absorption
 ! coefficient input data and Planck fraction input data.
 ! Compute relative weighting for new g-point combinations.
 
@@ -10734,7 +10734,7 @@ contains
 !    2) Monte Carlo Independent Column Approximation (McICA, Pincus et al., 
 !       JC, 2003) method is applied to the forward model calculation (imca = 1)
 !
-! This call to RRTMG_LW must be preceeded by a call to the module
+! This call to RRTMG_LW must be preceded by a call to the module
 !     mcica_subcol_gen_lw.f90 to run the McICA sub-column cloud generator,
 !     which will provide the cloud physical or cloud optical properties
 !     on the RRTMG quadrature point (ngpt) dimension.
@@ -12541,7 +12541,7 @@ CONTAINS
       third=1./3.
       rhoh2o=1.e3
       relconst=3/(4.*pi*rhoh2o)
-!     minimun liquid water path to calculate rel
+!     minimum liquid water path to calculate rel
 !     corresponds to optical depth of 1.e-3 for radius 4 microns.
       lwpmin=3.e-5
       do k = kts, kte

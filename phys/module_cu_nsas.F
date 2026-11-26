@@ -925,7 +925,7 @@ CONTAINS
      endif
    enddo
 !
-! cloud property below cloud base is modified by the entrainment proces
+! cloud property below cloud base is modified by the entrainment process
 !
    do k = kts1,kmax1
      do i = its,ite
@@ -1578,7 +1578,7 @@ CONTAINS
 !
 !------------------------------------------------------------------------------
 !
-! the above changed environment is now used to calulate the
+! the above changed environment is now used to calculate the
 ! effect the arbitrary cloud (with unit mass flux)
 ! which then is used to calculate the real mass flux,
 ! necessary to keep this change in balance with the large-scale

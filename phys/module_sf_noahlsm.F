@@ -137,7 +137,7 @@ CONTAINS
 !                ch-routine SFCDIF; true: Ch is brought in)
 !   LOCAL      Flag for local-site simulation (where there is no
 !              maps for albedo, veg fraction, and roughness
-!             true:  all LSM parameters (inluding albedo, veg fraction and
+!             true:  all LSM parameters (including albedo, veg fraction and
 !                    roughness length) will be defined by three tables
 !   LLANDUSE  (=USGS, using USGS landuse classification)
 !   LSOIL     (=STAS, using FAO/STATSGO soil texture classification)
@@ -177,7 +177,7 @@ CONTAINS
 !   PTU        PHOTO THERMAL UNIT (PLANT PHENOLOGY FOR ANNUALS/CROPS)
 !                (NOT YET USED, BUT PASSED TO REDPRM FOR FUTURE USE IN
 !                VEG PARMS)
-!   ALB        BACKROUND SNOW-FREE SURFACE ALBEDO (FRACTION), FOR JULIAN
+!   ALB        BACKGROUND SNOW-FREE SURFACE ALBEDO (FRACTION), FOR JULIAN
 !                DAY OF YEAR (USUALLY FROM TEMPORAL INTERPOLATION OF
 !                MONTHLY MEAN VALUES' CALLING PROG MAY OR MAY NOT
 !                INCLUDE DIURNAL SUN ANGLE EFFECT)
@@ -250,7 +250,7 @@ CONTAINS
 !   RUNOFF1    SURFACE RUNOFF (M S-1), NOT INFILTRATING THE SURFACE
 !   RUNOFF2    SUBSURFACE RUNOFF (M S-1), DRAINAGE OUT BOTTOM OF LAST
 !                SOIL LAYER (BASEFLOW)
-!   RUNOFF3    NUMERICAL TRUNCTATION IN EXCESS OF POROSITY (SMCMAX)
+!   RUNOFF3    NUMERICAL TRUNCATION IN EXCESS OF POROSITY (SMCMAX)
 !                FOR A GIVEN SOIL LAYER AT THE END OF A TIME STEP (M S-1).
 ! Note: the above RUNOFF2 is actually the sum of RUNOFF2 and RUNOFF3
 ! ----------------------------------------------------------------------
@@ -548,7 +548,7 @@ CONTAINS
 
 ! ----------------------------------------------------------------------
 ! PRECIP IS LIQUID (RAIN), HENCE SAVE IN THE PRECIP VARIABLE THAT
-! LATER CAN WHOLELY OR PARTIALLY INFILTRATE THE SOIL (ALONG WITH
+! LATER CAN WHOLLY OR PARTIALLY INFILTRATE THE SOIL (ALONG WITH
 ! ANY CANOPY "DRIP" ADDED TO THIS LATER)
 ! ----------------------------------------------------------------------
          ELSE
@@ -972,7 +972,7 @@ CONTAINS
 ! SNOALB IS CONSIDERED AS THE MAXIMUM SNOW ALBEDO FOR NEW SNOW, AT
 ! A VALUE OF 85%. SNOW ALBEDO CURVE DEFAULTS ARE FROM BRAS P.263. SHOULD
 ! NOT BE CHANGED EXCEPT FOR SERIOUS PROBLEMS WITH SNOW MELT.
-! TO IMPLEMENT ACCUMULATIN PARAMETERS, SNACCA AND SNACCB, ASSERT THAT IT
+! TO IMPLEMENT ACCUMULATION PARAMETERS, SNACCA AND SNACCB, ASSERT THAT IT
 ! IS INDEED ACCUMULATION SEASON. I.E. THAT SNOW SURFACE TEMP IS BELOW
 ! ZERO AND THE DATE FALLS BETWEEN OCTOBER AND FEBRUARY
 ! ----------------------------------------------------------------------
@@ -2324,8 +2324,8 @@ CONTAINS
 
       IMPLICIT NONE
 ! ----------------------------------------------------------------------
-! Internally set (default valuess)
-! all soil and vegetation parameters required for the execusion oF
+! Internally set (default values)
+! all soil and vegetation parameters required for the execution oF
 ! the Noah lsm are defined in VEGPARM.TBL, SOILPARM.TB, and GENPARM.TBL.
 ! ----------------------------------------------------------------------
 !     Vegetation parameters:
@@ -2334,10 +2334,10 @@ CONTAINS
 !              Z0BRD: Background roughness length
 !             SHDFAC: Green vegetation fraction
 !              NROOT: Rooting depth
-!              RSMIN: Mimimum stomatal resistance
+!              RSMIN: Minimum stomatal resistance
 !              RSMAX: Max. stomatal resistance
 !                RGL: Parameters used in radiation stress function
-!                 HS: Parameter used in vapor pressure deficit functio
+!                 HS: Parameter used in vapor pressure deficit function
 !               TOPT: Optimum transpiration air temperature.
 !             CMCMAX: Maximum canopy water capacity
 !             CFACTR: Parameter used in the canopy inteception calculation
@@ -2385,7 +2385,7 @@ CONTAINS
 ! 9            GLACIAL ICE
 ! BLANK        OCEAN/SEA
 !       SLOPE_DATA: linear reservoir coefficient
-!       SBETA_DATA: parameter used to caluculate vegetation effect on soil heat
+!       SBETA_DATA: parameter used to calculate vegetation effect on soil heat
 !       FXEXP_DAT:  soil evaporation exponent used in DEVAP
 !       CSOIL_DATA: soil heat capacity [J M-3 K-1]
 !       SALP_DATA: shape parameter of  distribution function of snow cover
@@ -2465,7 +2465,7 @@ CONTAINS
       FRZK = FRZK_DATA
       FXEXP = FXEXP_DATA
       REFKDT = REFKDT_DATA
-      PTU = 0.    ! (not used yet) to satisify intent(out)
+      PTU = 0.    ! (not used yet) to satisfy intent(out)
       KDT = REFKDT * DKSAT / REFDK
       CZIL = CZIL_DATA
       SLOPE = SLOPE_DATA (SLOPETYP)
@@ -2756,7 +2756,7 @@ CONTAINS
 !   OF SECTION 2 OF KALNAY AND KANAMITSU
 ! PCPDRP IS UNITS OF KG/M**2/S OR MM/S, ZSOIL IS NEGATIVE DEPTH IN M
 ! ----------------------------------------------------------------------
-!  According to Dr. Ken Mitchell's suggestion, add the second contraint
+!  According to Dr. Ken Mitchell's suggestion, add the second constraint
 !  to remove numerical instability of runoff and soil moisture
 !  FLIMIT is a limit value for FAC2
       FAC2=0.0
@@ -2845,7 +2845,7 @@ CONTAINS
       REAL ::  SNUPGRD = 0.02          ! UA: SWE limit for ground cover
 
 ! ----------------------------------------------------------------------
-! SNUP IS VEG-CLASS DEPENDENT SNOWDEPTH THRESHHOLD (SET IN ROUTINE
+! SNUP IS VEG-CLASS DEPENDENT SNOWDEPTH THRESHOLD (SET IN ROUTINE
 ! REDPRM) ABOVE WHICH SNOCVR=1.
 ! ----------------------------------------------------------------------
       IF (SNEQV < SNUP) THEN
@@ -3217,7 +3217,7 @@ CONTAINS
 ! CALCULATE AN 'EFFECTIVE SNOW-GRND SFC TEMP' (T12) BASED ON HEAT FLUXES
 ! BETWEEN THE SNOW PACK AND THE SOIL AND ON NET RADIATION.
 ! INCLUDE FLX1 (PRECIP-SNOW SFC) AND FLX2 (FREEZING RAIN LATENT HEAT)
-! FLUXES.  FLX1 FROM ABOVE, FLX2 BROUGHT IN VIA COMMOM BLOCK RITE.
+! FLUXES.  FLX1 FROM ABOVE, FLX2 BROUGHT IN VIA COMMON BLOCK RITE.
 ! FLX2 REFLECTS FREEZING RAIN LATENT HEAT FLUX USING T1 CALCULATED IN
 ! PENMAN.
 ! ----------------------------------------------------------------------
@@ -3375,7 +3375,7 @@ CONTAINS
 ! SPECIAL VALUES THAT ENSURE THAT GROUND HEAT FLUX CALCULATED IN SHFLX
 ! MATCHES THAT ALREADY COMPUTER FOR BELOW THE SNOWPACK, THUS THE SFC
 ! HEAT FLUX TO BE COMPUTED IN SHFLX WILL EFFECTIVELY BE THE FLUX AT THE
-! SNOW TOP SURFACE.  T11 IS A DUMMY ARGUEMENT SO WE WILL NOT USE THE
+! SNOW TOP SURFACE.  T11 IS A DUMMY ARGUMENT SO WE WILL NOT USE THE
 ! SKIN TEMP VALUE AS REVISED BY SHFLX.
 ! ----------------------------------------------------------------------
       ZZ1 = 1.0
@@ -3396,7 +3396,7 @@ CONTAINS
 
 ! ----------------------------------------------------------------------
 ! SNOW DEPTH AND DENSITY ADJUSTMENT BASED ON SNOW COMPACTION.  YY IS
-! ASSUMED TO BE THE SOIL TEMPERTURE AT THE TOP OF THE SOIL COLUMN.
+! ASSUMED TO BE THE SOIL TEMPERATURE AT THE TOP OF THE SOIL COLUMN.
 ! ----------------------------------------------------------------------
       ! LAND
       IF (ESD >  0.) THEN
@@ -3700,7 +3700,7 @@ CONTAINS
 
 ! ----------------------------------------------------------------------
 ! DETERMINE RAINFALL INFILTRATION RATE AND RUNOFF.  INCLUDE THE
-! INFILTRATION FORMULE FROM SCHAAKE AND KOREN MODEL.
+! INFILTRATION FORMULA FROM SCHAAKE AND KOREN MODEL.
 ! MODIFIED BY Q DUAN
 ! ----------------------------------------------------------------------
 ! ----------------------------------------------------------------------
@@ -3807,8 +3807,8 @@ CONTAINS
 
 ! ----------------------------------------------------------------------
 ! CORRECTION OF INFILTRATION LIMITATION:
-! IF INFMAX .LE. HYDROLIC CONDUCTIVITY ASSIGN INFMAX THE VALUE OF
-! HYDROLIC CONDUCTIVITY
+! IF INFMAX .LE. HYDRAULIC CONDUCTIVITY ASSIGN INFMAX THE VALUE OF
+! HYDRAULIC CONDUCTIVITY
 ! ----------------------------------------------------------------------
 !         MXSMC = MAX ( SH2OA(1), SH2OA(2) )
          INFMAX = INFMAX * FCR
@@ -4497,7 +4497,7 @@ IF ( OPT_THCND == 1 .OR. ( OPT_THCND == 2 .AND. (SOILTYP /= 4 .AND. SOILTYP /= 3
 ! GRADIENT OF UNFROZEN WATER. THE LATTER GRADIENT CAN BECOME VERY
 ! EXTREME IN FREEZING/THAWING SITUATIONS, AND GIVEN THE RELATIVELY
 ! FEW AND THICK SOIL LAYERS, THIS GRADIENT SUFFERES SERIOUS
-! TRUNCTION ERRORS YIELDING ERRONEOUSLY HIGH VERTICAL TRANSPORTS OF
+! TRUNCATION ERRORS YIELDING ERRONEOUSLY HIGH VERTICAL TRANSPORTS OF
 ! UNFROZEN WATER IN BOTH DIRECTIONS FROM HUGE HYDRAULIC DIFFUSIVITY.
 ! THEREFORE, WE FOUND WE HAD TO ARBITRARILY CONSTRAIN WDF
 ! --

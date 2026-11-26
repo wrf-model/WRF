@@ -39,9 +39,9 @@ SUBROUTINE check_completness (nobs_max, obs, number_of_obs, remove_above_lid, &
                               print_uncomplete)
 
 !-------------------------------------------------------------------------------
-! Check if level contains at least one valid data. When level is uncomplete:
+! Check if level contains at least one valid data. When level is incomplete:
 ! The all station is removed for single level station.
-! The uncomplete level only is removed for multi level station.
+! The incomplete level only is removed for multi level station.
 !-------------------------------------------------------------------------------
 
   USE module_type
@@ -75,7 +75,7 @@ SUBROUTINE check_completness (nobs_max, obs, number_of_obs, remove_above_lid, &
 
    WRITE (UNIT = 0, FMT = '(A)')  &
 '------------------------------------------------------------------------------'
-   WRITE (UNIT = 0, FMT = '(A,/)') 'LOOK FOR UNCOMPLETE DATA:'
+   WRITE (UNIT = 0, FMT = '(A,/)') 'LOOK FOR INCOMPLETE DATA:'
 
 
 ! 1. OPEN DIAGNOSTIC FILE

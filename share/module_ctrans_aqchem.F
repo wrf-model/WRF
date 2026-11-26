@@ -180,7 +180,7 @@ CONTAINS
 !                     Cambridge Univ. Press, 206 pp, 1995.  
 !      Snyder, J.P., "Map Projections-A Working Manual, U.S. Geological Survey
 !                     Paper 1395 U.S.GPO, Washington, DC, 1987.
-!      Stull, R. B., "An Introduction to Bounday Layer Meteorology", Kluwer, 
+!      Stull, R. B., "An Introduction to Boundary Layer Meteorology", Kluwer,
 !                     Dordrecht, 1988
 !.......................................................................
 
@@ -576,7 +576,7 @@ CONTAINS
       REAL         BETASO4
       REAL         A               ! iron's anion concentration
       REAL         AC              ! H+ concentration in cloudwater (mol/liter)
-      REAL         ACT1            ! activity corretion factor!single ions
+      REAL         ACT1            ! activity correction factor!single ions
       REAL         ACT2            ! activity factor correction!double ions
       REAL         ACTB            !
       REAL         AE              ! guess for H+ conc in cloudwater (mol/liter)
@@ -584,7 +584,7 @@ CONTAINS
       REAL         PRES_ATM        ! pressure (Atm)
       REAL         BB              ! lower limit guess of cloudwater pH
       REAL         CA              ! Calcium conc in cloudwater (mol/liter)
-      REAL         CAA             ! inital Calcium in cloudwater (mol/liter)
+      REAL         CAA             ! initial Calcium in cloudwater (mol/liter)
       REAL         CL              ! total Cl-  conc in cloudwater (mol/liter)
       REAL         CLACC           ! fine Cl- in cloudwater (mol/liter)
       REAL         CLACCA          ! initial fine Cl in cloudwater (mol/liter)
@@ -655,7 +655,7 @@ CONTAINS
       REAL         M3NEW           ! accumulation mode mass at time t
       REAL         M3OLD           ! accumulation mode mass at time 0
       REAL         MG              !
-      REAL         MGA             ! inital Mg in cloudwater (mol/liter)
+      REAL         MGA             ! initial Mg in cloudwater (mol/liter)
       REAL         MHPH            ! Henry's Law Constant for MHP
       REAL         MHPL            ! MHP conc in cloudwater (mol/liter)
       REAL         MN              ! Mn++ conc in cloudwater (mol/liter)

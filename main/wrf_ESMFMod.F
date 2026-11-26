@@ -595,7 +595,7 @@ CONTAINS
      ! that ESMF has already called MPI_INIT and respond appropriately.  
      CALL wrf_init( no_init1=.TRUE. )
 
-     ! For now, use settings from WRF component intialization to set up 
+     ! For now, use settings from WRF component initialization to set up
      ! top-level clock.  Per suggestion from ESMF Core team, these are passed 
      ! back as attributes on exportState.  
      CALL wrf_clockprint( 100, head_grid%domain_clock, &

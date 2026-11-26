@@ -568,7 +568,7 @@ contains
 
   !**********************************`*************************************
   ! MESA: Multicomponent Equilibrium Solver for Aerosols.
-  ! Computes equilibrum solid and liquid phases by integrating
+  ! Computes equilibrium solid and liquid phases by integrating
   ! pseudo-transient dissolution and precipitation reactions
   !
   ! author: Rahul A. Zaveri
@@ -1173,7 +1173,7 @@ contains
   
   !***********************************************************************
   ! MESA: Multicomponent Equilibrium Solver for Aerosol-phase
-  ! computes equilibrum solid and liquid phases by integrating
+  ! computes equilibrium solid and liquid phases by integrating
   ! pseudo-transient dissolution and precipitation reactions
   !
   ! author: Rahul A. Zaveri
@@ -5603,7 +5603,7 @@ contains
 
     if(D .gt. 0.)then     !       => 1 real and 2 complex roots
        icase = 1
-    elseif(D .eq. 0.)then !       => 3 real roots, atleast 2 identical
+    elseif(D .eq. 0.)then !       => 3 real roots, at least 2 identical
        icase = 2
     else  ! D < 0         => 3 distinct real roots
        icase = 3

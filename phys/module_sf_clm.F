@@ -142,7 +142,7 @@ module globals
 !ylu add   dt may be same as dtime, dtime=get_step_size(), dt=real(get_step_size(),r8)
   real(r8):: dt         !radiation time step (sec)
   integer :: iyear0
-  integer :: day_per_year  ! Get the number of days per year for currrent year
+  integer :: day_per_year  ! Get the number of days per year for current year
 
 !end add
   logical :: is_perpetual  = .false.    ! true when using perpetual calendar
@@ -457,9 +457,9 @@ module clm_varcon
   real(r8), parameter :: cday   = 86400.0_r8   !sec in calendar day ~ sec
 
   integer,  parameter :: idx_Mie_snw_mx = 1471           ! number of effective radius indices used in Mie lookup table [idx]
-  integer,  parameter :: idx_T_max      = 11             ! maxiumum temperature index used in aging lookup table [idx]
-  integer,  parameter :: idx_Tgrd_max   = 31             ! maxiumum temperature gradient index used in aging lookup table [idx]
-  integer,  parameter :: idx_rhos_max   = 8              ! maxiumum snow density index used in aging lookup table [idx]
+  integer,  parameter :: idx_T_max      = 11             ! maximum temperature index used in aging lookup table [idx]
+  integer,  parameter :: idx_Tgrd_max   = 31             ! maximum temperature gradient index used in aging lookup table [idx]
+  integer,  parameter :: idx_rhos_max   = 8              ! maximum snow density index used in aging lookup table [idx]
   integer,  parameter :: numrad_snw  =   5               ! number of spectral bands used in snow model [nbr]
 
 
@@ -1385,7 +1385,7 @@ module clmtype
 !   62 => (icol_sunwall)     urban sunwall
 !   63 => (icol_shadewall)   urban shadewall
 !   64 => (icol_road_imperv) urban impervious road
-!   65 => (icol_road_perv)   urban pervious road
+!   65 => (icol_road_perv)   urban previous road
 ! -------------------------------------------------------- 
 ! pft types can have values of
 ! -------------------------------------------------------- 
@@ -1435,7 +1435,7 @@ end type energy_balance_type
 ! water balance structure
 !----------------------------------------------------
 type, public :: water_balance_type
-   real(r8), pointer :: begwb(:)         !water mass begining of the time step
+   real(r8), pointer :: begwb(:)         !water mass beginning of the time step
    real(r8), pointer :: endwb(:)         !water mass end of the time step
    real(r8), pointer :: errh2o(:)        !water conservation error (mm H2O)
 end type water_balance_type
@@ -2478,8 +2478,8 @@ type, public :: column_pstate_type
    real(r8), pointer :: albgrd(:,:)           !ground albedo (direct) (numrad)
    real(r8), pointer :: albgri(:,:)           !ground albedo (diffuse) (numrad)
    real(r8), pointer :: rootr_column(:,:)     !effective fraction of roots in each soil layer (nlevgrnd)  
-   real(r8), pointer :: rootfr_road_perv(:,:) !fraction of roots in each soil layer for urban pervious road
-   real(r8), pointer :: rootr_road_perv(:,:)  !effective fraction of roots in each soil layer of urban pervious road
+   real(r8), pointer :: rootfr_road_perv(:,:) !fraction of roots in each soil layer for urban previous road
+   real(r8), pointer :: rootr_road_perv(:,:)  !effective fraction of roots in each soil layer of urban previous road
    real(r8), pointer :: wf(:)                 !soil water as frac. of whc for top 0.5 m
 !  real(r8), pointer :: xirrig(:)             !irrigation rate
    real(r8), pointer :: max_dayl(:)           !maximum daylength for this column (s)
@@ -3078,8 +3078,8 @@ type, public :: landunit_pstate_type
    real(r8), pointer :: sabs_shadewall_dif(:,:)  ! diffuse solar absorbed by shadewall per unit wall area per unit incident flux
    real(r8), pointer :: sabs_improad_dir(:,:)    ! direct  solar absorbed by impervious road per unit ground area per unit incident flux
    real(r8), pointer :: sabs_improad_dif(:,:)    ! diffuse solar absorbed by impervious road per unit ground area per unit incident flux
-   real(r8), pointer :: sabs_perroad_dir(:,:)    ! direct  solar absorbed by pervious road per unit ground area per unit incident flux
-   real(r8), pointer :: sabs_perroad_dif(:,:)    ! diffuse solar absorbed by pervious road per unit ground area per unit incident flux
+   real(r8), pointer :: sabs_perroad_dir(:,:)    ! direct  solar absorbed by previous road per unit ground area per unit incident flux
+   real(r8), pointer :: sabs_perroad_dif(:,:)    ! diffuse solar absorbed by previous road per unit ground area per unit incident flux
 end type landunit_pstate_type
 
 !----------------------------------------------------
@@ -3577,7 +3577,7 @@ type, public :: landunit_type
 
    ! Urban canyon related properties
    real(r8), pointer :: canyon_hwr(:)     ! urban landunit canyon height to width ratio (-)   
-   real(r8), pointer :: wtroad_perv(:)    ! urban landunit weight of pervious road column to total road (-)
+   real(r8), pointer :: wtroad_perv(:)    ! urban landunit weight of previous road column to total road (-)
    real(r8), pointer :: wtlunit_roof(:)   ! weight of roof with respect to urban landunit (-)
 
    ! Urban related info MV - this should be moved to land physical state - MV
@@ -4764,9 +4764,9 @@ contains
 !
 ! !ARGUMENTS:
     character(len=*),intent(in)  :: comp_name      ! MEGAN compound name
-    real(r8),        intent(out) :: factors(npfts) ! vegitation type factors for the compound of intrest
-    integer,         intent(out) :: class_n        ! MEGAN class number for the compound of intrest
-    real(r8),        intent(out) :: molecwght      ! molecular weight of the compound of intrest
+    real(r8),        intent(out) :: factors(npfts) ! vegitation type factors for the compound of interest
+    integer,         intent(out) :: class_n        ! MEGAN class number for the compound of interest
+    real(r8),        intent(out) :: molecwght      ! molecular weight of the compound of interest
 !
 !EOP
 !-----------------------------------------------------------------------
@@ -5180,7 +5180,7 @@ end module MEGANFactorsMod
 ! Handles MEGAN VOC emissions metadata for CLM produced chemical emissions
 ! MEGAN = Model of Emissions of Gases and Aerosols from Nature
 !
-! This reads the megan_emis_nl namelist in drv_flds_in and makes the relavent 
+! This reads the megan_emis_nl namelist in drv_flds_in and makes the relevant
 ! information available to CAM, CLM, and driver. The driver sets up CLM to CAM 
 ! communication for the  VOC flux fields. CLM needs to know what specific VOC
 ! fluxes need to be passed to the coupler and how to assimble the fluxes.  
@@ -5231,9 +5231,9 @@ module shr_megan_mod
      character(len=16)             :: name           ! compound name
      integer                       :: index          ! WRF spc index
      type(shr_megan_comp_ptr), pointer :: megan_comps(:) ! an array of pointers to megan emis compounds 
-     integer                       :: n_megan_comps  ! number of megan emis compounds than make up the emissions for this mechanis compound
+     integer                       :: n_megan_comps  ! number of megan emis compounds than make up the emissions for this mechanism compound
      !czhao add 
-     real,pointer                       :: megan_comps_ratio(:)  ! ratio of megan emis compounds to each mechanis compound
+     real,pointer                       :: megan_comps_ratio(:)  ! ratio of megan emis compounds to each mechanism compound
   end type shr_megan_mechcomp_t
 
   type(shr_megan_mechcomp_t), pointer :: shr_megan_mechcomps(:) ! array of chemical compounds (in CAM mechanism) than have MEGAN emissions
@@ -5265,7 +5265,7 @@ contains
   !
   ! megan_specifier is a series of strings where each string contains one 
   !  CAM chemistry constituent name (left of = sign) and one or more MEGAN 
-  !  compounds (seperated by + sign if more than one).  The specification of 
+  !  compounds (separated by + sign if more than one).  The specification of
   !  the MEGAN compounds to the right of the = signs tells the MEGAN VOC 
   !  model within CLM how to construct the VOC fluxes using the factors in 
   !  megan_factors_file and land surface state.
@@ -6118,7 +6118,7 @@ contains
 !
 !EOP
 !
-! LOCAL VARAIBLES:
+! LOCAL VARIABLES:
     integer :: begp, endp   ! per-proc beginning and ending pft indices
     integer :: begc, endc   ! per-proc beginning and ending column indices
     integer :: begl, endl   ! per-proc beginning and ending landunit indices
@@ -15688,7 +15688,7 @@ contains
 !
 !EOP
 !
-! LOCAL VARAIBLES:
+! LOCAL VARIABLES:
     integer :: begp, endp  ! per-clump beginning and ending pft indices
     integer :: begc, endc  ! per-clump beginning and ending column indices
     integer :: begl, endl  ! per-clump beginning and ending landunit indices
@@ -15766,7 +15766,7 @@ contains
 !
 !EOP
 !
-! LOCAL VARAIBLES:
+! LOCAL VARIABLES:
     integer , pointer :: ctype(:) ! column type
     integer :: c,l,p       ! column, landunit, pft indices
     integer :: fl          ! lake filter index
@@ -15889,7 +15889,7 @@ contains
        filter%num_pcropp = fl
 #endif
 
-       ! Create column-level hydrology filter (soil and Urban pervious road cols) 
+       ! Create column-level hydrology filter (soil and Urban previous road cols)
 
        f = 0
        do c = begc,endc
@@ -16055,7 +16055,7 @@ subroutine iniTimeConst
 !
 ! !REVISION HISTORY:
 ! Created by Gordon Bonan.
-! Updated to clm2.1 data structrues by Mariana Vertenstein
+! Updated to clm2.1 data structures by Mariana Vertenstein
 ! 4/26/05, Peter Thornton: Eliminated exponential decrease in saturated hydraulic
 !   conductivity (hksat) with depth. 
 ! Updated: Colette L. Heald (05/06) reading in VOC emission factors
@@ -16087,7 +16087,7 @@ subroutine iniTimeConst
   real(r8), pointer :: zi(:,:)            ! interface level below a "z" level (m)
   real(r8), pointer :: dz(:,:)            ! layer thickness depth (m)
   real(r8), pointer :: rootfr(:,:)        ! fraction of roots in each soil layer
-  real(r8), pointer :: rootfr_road_perv(:,:) ! fraction of roots in each soil layer for urban pervious road
+  real(r8), pointer :: rootfr_road_perv(:,:) ! fraction of roots in each soil layer for urban previous road
   real(r8), pointer :: rresis(:,:)        !root resistance by layer (0-1)  (nlevgrnd)	
   real(r8), pointer :: dewmx(:)           ! maximum allowed dew [mm]
   real(r8), pointer :: bsw(:,:)           ! Clapp and Hornberger "b" (nlevgrnd)  
@@ -16143,7 +16143,7 @@ subroutine iniTimeConst
   real(r8) :: om_sucsat    = 10.3_r8 ! saturated suction for organic matter (Letts, 2000)
   real(r8) :: om_csol      = 2.5_r8  ! heat capacity of peat soil *10^6 (J/K m3) (Farouki, 1986)
   real(r8) :: om_tkd       = 0.05_r8 ! thermal conductivity of dry organic soil (Farouki, 1981)
-  real(r8) :: om_b         = 2.7_r8  ! Clapp Hornberger paramater for oragnic soil (Letts, 2000)
+  real(r8) :: om_b         = 2.7_r8  ! Clapp Hornberger parameter for oragnic soil (Letts, 2000)
   real(r8) :: organic_max  = 130._r8 ! organic matter (kg/m3) where soil is assumed to act like peat 
   real(r8) :: csol_bedrock = 2.0e6_r8 ! vol. heat capacity of granite/sandstone  J/(m3 K)(Shabbir, 2000)
   real(r8) :: pc           = 0.5_r8   ! percolation threshold
@@ -16588,7 +16588,7 @@ subroutine iniTimeConst
             watfc(c,lev) = watsat(c,lev) * (0.1_r8 / (hksat(c,lev)*86400._r8))**(1._r8/(2._r8*bsw(c,lev)+3._r8))
          end do
          !
-         ! Urban pervious and impervious road
+         ! Urban previous and impervious road
          !
          ! Impervious road layers -- same as above except set watdry and watopt as missing
          if (ctype(c) == icol_road_imperv) then
@@ -16596,8 +16596,8 @@ subroutine iniTimeConst
                watdry(c,lev) = spval 
                watopt(c,lev) = spval 
             end do
-         ! pervious road layers -- same as above except also set rootfr_road_perv
-         ! Currently, pervious road has same properties as soil
+         ! previous road layers -- same as above except also set rootfr_road_perv
+         ! Currently, previous road has same properties as soil
          else if (ctype(c) == icol_road_perv) then 
             do lev = 1, nlevgrnd
                rootfr_road_perv(c,lev) = 0._r8
@@ -16878,7 +16878,7 @@ module initGridcellsMod
 ! !PUBLIC MEMBER FUNCTIONS:
   public initGridcells      ! Initialize sub-grid gridcell mapping
 !
-! !PIVATE MEMBER FUNCTIONS:
+! !PRIVATE MEMBER FUNCTIONS:
   private landunit_veg_compete
   private landunit_veg_noncompete
   private landunit_special
@@ -17800,7 +17800,7 @@ contains
    real(r8), intent(in)  :: obu(lbn:ubn)     ! monin-obukhov length (m)
    integer,  intent(in)  :: iter             ! iteration number
    real(r8), intent(in)  :: ur(lbn:ubn)      ! wind speed at reference height [m/s]
-   real(r8), intent(in)  :: um(lbn:ubn)      ! wind speed including the stablity effect [m/s]
+   real(r8), intent(in)  :: um(lbn:ubn)      ! wind speed including the stability effect [m/s]
    logical,  optional, intent(in)  :: landunit_index  ! optional argument that defines landunit or pft level
    real(r8), intent(out) :: ustar(lbn:ubn)   ! friction velocity [m/s]
    real(r8), intent(out) :: temp1(lbn:ubn)   ! relation for potential temperature profile
@@ -18607,9 +18607,9 @@ contains
     real(r8), parameter :: Asen = 0.33_r8                ! relative emission factor for new plants
     real(r8), parameter :: cce = 0.40_r8                 ! factor to set emissions to unity @ std
     real(r8), parameter :: cce1 = 0.47_r8                ! same as Cce but for non-accumulated vars
-    real(r8), parameter :: ca1 = 0.004_r8                ! empirical coefficent for alpha
-    real(r8), parameter :: ca2 = 0.0005_r8               ! empirical coefficent for alpha
-    real(r8), parameter :: ca3 = 0.0468_r8               ! empirical coefficent for cp
+    real(r8), parameter :: ca1 = 0.004_r8                ! empirical coefficient for alpha
+    real(r8), parameter :: ca2 = 0.0005_r8               ! empirical coefficient for alpha
+    real(r8), parameter :: ca3 = 0.0468_r8               ! empirical coefficient for cp
     real(r8), parameter :: par0_sun = 200._r8            ! std conditions for past 24 hrs [umol/m2/s]
     real(r8), parameter :: par0_shade = 50._r8           ! std conditions for past 24 hrs [umol/m2/s]
     real(r8), parameter :: co1 = 313._r8                 ! empirical coefficient
@@ -18971,7 +18971,7 @@ function get_map_EF(ivt_in,g_in)
 !
 ! !LOCAL VARIABLES:
 
-    ! varibles in
+    ! variables in
     integer, intent(in) :: ivt_in
     integer, intent(in) :: g_in
     real(r8)            :: get_map_EF
@@ -19033,7 +19033,7 @@ end function get_map_EF
 !  ARGUMENTS:
     implicit none
 
-    ! varibles in
+    ! variables in
     real(r8),intent(in) :: par_sun_in
     real(r8),intent(in) :: par24_sun_in
     real(r8),intent(in) :: par240_sun_in
@@ -19048,9 +19048,9 @@ end function get_map_EF
 
 !  LOCAL VARIABLES:
 
-    real(r8), parameter :: ca1 = 0.004_r8                  ! empirical coefficent for alpha
-    real(r8), parameter :: ca2 = 0.0005_r8                 ! empirical coefficent for alpha
-    real(r8), parameter :: ca3 = 0.0468_r8                 ! empirical coefficent for cp
+    real(r8), parameter :: ca1 = 0.004_r8                  ! empirical coefficient for alpha
+    real(r8), parameter :: ca2 = 0.0005_r8                 ! empirical coefficient for alpha
+    real(r8), parameter :: ca3 = 0.0468_r8                 ! empirical coefficient for cp
     real(r8), parameter :: par0_sun = 200._r8              ! std conditions for past 24 hrs [umol/m2/s]
     real(r8), parameter :: par0_shade = 50._r8             ! std conditions for past 24 hrs [umol/m2/s]
     real(r8), parameter :: alpha_fix = 0.001_r8            ! empirical coefficient
@@ -19114,7 +19114,7 @@ function get_gamma_L(fsun240_in,elai_in)
 !
 ! !LOCAL VARIABLES:
 
-    ! varibles in
+    ! variables in
     real(r8),intent(in) :: fsun240_in
     real(r8),intent(in) :: elai_in
     real(r8)            :: get_gamma_L             ! return value
@@ -19162,7 +19162,7 @@ function get_gamma_SM(clayfrac_in, sandfrac_in, h2osoi_vol_in, h2osoi_ice_in, dz
 !
 ! !LOCAL VARIABLES:
 
-    ! varibles in
+    ! variables in
     real(r8),intent(in) :: clayfrac_in
     real(r8),intent(in) :: sandfrac_in
     real(r8),intent(in) :: h2osoi_vol_in(nlevsoi)
@@ -19231,7 +19231,7 @@ function get_gamma_T(t_veg240_in, t_veg24_in,t_veg_in, ct1_in, ct2_in, betaT_in,
 ! Activity factor for temperature 
 !--------------------------------
 ! Calculate both a light-dependent fraction as in Guenther et al., 2006 for isoprene
-! of a max saturation type form. Also caculate a light-independent fraction of the
+! of a max saturation type form. Also calculate a light-independent fraction of the
 ! form of an exponential. Final activity factor depends on light dependent fraction
 ! of compound type.
 !
@@ -19243,7 +19243,7 @@ function get_gamma_T(t_veg240_in, t_veg24_in,t_veg_in, ct1_in, ct2_in, betaT_in,
 ! !ARGUMENTS:
     implicit none
 
-    ! varibles in
+    ! variables in
     real(r8),intent(in) :: t_veg240_in
     real(r8),intent(in) :: t_veg24_in
     real(r8),intent(in) :: t_veg_in
@@ -19323,7 +19323,7 @@ function get_gamma_A(ivt_in, elai_p_in,elai_in,nclass_in)
     implicit none
 ! !LOCAL VARIABLES:
 
-    ! varibles in
+    ! variables in
     integer,intent(in)  :: ivt_in
     integer,intent(in)  :: nclass_in
     real(r8),intent(in) :: elai_p_in
@@ -19394,7 +19394,7 @@ function get_gamma_C(cisun_in,cisha_in,forc_pbot_in,fsun_in)
     implicit none
 ! !LOCAL VARIABLES:
 
-    ! varibles in
+    ! variables in
     real(r8),intent(in) :: cisun_in
     real(r8),intent(in) :: cisha_in
     real(r8),intent(in) :: forc_pbot_in
@@ -19538,11 +19538,11 @@ contains
 ! !LOCAL VARIABLES:
 !EOP
 
-   integer  :: li,lf         ! loop initial/final indicies
-   integer  :: ci,cf         ! loop initial/final indicies
-   integer  :: pi,pf         ! loop initial/final indicies
+   integer  :: li,lf         ! loop initial/final indices
+   integer  :: ci,cf         ! loop initial/final indices
+   integer  :: pi,pf         ! loop initial/final indices
 
-   integer  :: g,l,c,p,k     ! loop indicies (grid,lunit,column,pft,vertical level)
+   integer  :: g,l,c,p,k     ! loop indices (grid,lunit,column,pft,vertical level)
 
    real(r8) :: wtgcell       ! weight relative to grid cell
    real(r8) :: wtcol         ! weight relative to column
@@ -19744,7 +19744,7 @@ module subgridAveMod
 ! !MODULE: subgridAveMod
 !
 ! !DESCRIPTION:
-! Utilities to perfrom subgrid averaging
+! Utilities to perform subgrid averaging
 !
 ! !USES:
   use shr_kind_mod, only: r8 => shr_kind_r8
@@ -19758,12 +19758,12 @@ module subgridAveMod
   save
 !
 ! !PUBLIC MEMBER FUNCTIONS:
-  public :: p2c   ! Perfrom an average from pfts to columns
-  public :: p2l   ! Perfrom an average from pfts to landunits
-  public :: p2g   ! Perfrom an average from pfts to gridcells
-  public :: c2l   ! Perfrom an average from columns to landunits
-  public :: c2g   ! Perfrom an average from columns to gridcells
-  public :: l2g   ! Perfrom an average from landunits to gridcells
+  public :: p2c   ! Perform an average from pfts to columns
+  public :: p2l   ! Perform an average from pfts to landunits
+  public :: p2g   ! Perform an average from pfts to gridcells
+  public :: c2l   ! Perform an average from columns to landunits
+  public :: c2g   ! Perform an average from columns to gridcells
+  public :: l2g   ! Perform an average from landunits to gridcells
 
   interface p2c
      module procedure p2c_1d
@@ -19809,7 +19809,7 @@ contains
   subroutine p2c_1d (lbp, ubp, lbc, ubc, parr, carr, p2c_scale_type)
 !
 ! !DESCRIPTION:
-! Perfrom subgrid-average from pfts to columns.
+! Perform subgrid-average from pfts to columns.
 ! Averaging is only done for points that are not equal to "spval".
 !
 ! !USES:
@@ -19924,7 +19924,7 @@ contains
   subroutine p2c_2d (lbp, ubp, lbc, ubc, num2d, parr, carr, p2c_scale_type)
 !
 ! !DESCRIPTION:
-! Perfrom subgrid-average from landunits to gridcells.
+! Perform subgrid-average from landunits to gridcells.
 ! Averaging is only done for points that are not equal to "spval".
 !
 ! !USES:
@@ -20189,7 +20189,7 @@ contains
        p2c_scale_type, c2l_scale_type)
 !
 ! !DESCRIPTION:
-! Perfrom subgrid-average from pfts to landunits
+! Perform subgrid-average from pfts to landunits
 ! Averaging is only done for points that are not equal to "spval".
 !
 ! !USES:
@@ -20380,7 +20380,7 @@ contains
        p2c_scale_type, c2l_scale_type)
 !
 ! !DESCRIPTION:
-! Perfrom subgrid-average from pfts to landunits
+! Perform subgrid-average from pfts to landunits
 ! Averaging is only done for points that are not equal to "spval".
 !
 ! !USES:
@@ -20574,7 +20574,7 @@ contains
        p2c_scale_type, c2l_scale_type, l2g_scale_type)
 !
 ! !DESCRIPTION:
-! Perfrom subgrid-average from pfts to gridcells.
+! Perform subgrid-average from pfts to gridcells.
 ! Averaging is only done for points that are not equal to "spval".
 !
 ! !USES:
@@ -20780,7 +20780,7 @@ contains
        parr, garr, p2c_scale_type, c2l_scale_type, l2g_scale_type)
 !
 ! !DESCRIPTION:
-! Perfrom subgrid-average from pfts to gridcells.
+! Perform subgrid-average from pfts to gridcells.
 ! Averaging is only done for points that are not equal to "spval".
 !
 ! !USES:
@@ -20989,7 +20989,7 @@ contains
   subroutine c2l_1d (lbc, ubc, lbl, ubl, carr, larr, c2l_scale_type)
 !
 ! !DESCRIPTION:
-! Perfrom subgrid-average from columns to landunits
+! Perform subgrid-average from columns to landunits
 ! Averaging is only done for points that are not equal to "spval".
 !
 ! !ARGUMENTS:
@@ -21163,7 +21163,7 @@ contains
   subroutine c2l_2d (lbc, ubc, lbl, ubl, num2d, carr, larr, c2l_scale_type)
 !
 ! !DESCRIPTION:
-! Perfrom subgrid-average from columns to landunits
+! Perform subgrid-average from columns to landunits
 ! Averaging is only done for points that are not equal to "spval".
 !
 ! !ARGUMENTS:
@@ -21344,7 +21344,7 @@ contains
        c2l_scale_type, l2g_scale_type)
 !
 ! !DESCRIPTION:
-! Perfrom subgrid-average from columns to gridcells.
+! Perform subgrid-average from columns to gridcells.
 ! Averaging is only done for points that are not equal to "spval".
 !
 ! !ARGUMENTS:
@@ -21535,7 +21535,7 @@ contains
        c2l_scale_type, l2g_scale_type)
 !
 ! !DESCRIPTION:
-! Perfrom subgrid-average from columns to gridcells.
+! Perform subgrid-average from columns to gridcells.
 ! Averaging is only done for points that are not equal to "spval".
 !
 ! !ARGUMENTS:
@@ -21730,7 +21730,7 @@ contains
   subroutine l2g_1d(lbl, ubl, lbg, ubg, larr, garr, l2g_scale_type)
 !
 ! !DESCRIPTION:
-! Perfrom subgrid-average from landunits to gridcells.
+! Perform subgrid-average from landunits to gridcells.
 ! Averaging is only done for points that are not equal to "spval".
 !
 ! !ARGUMENTS:
@@ -21847,7 +21847,7 @@ contains
   subroutine l2g_2d(lbl, ubl, lbg, ubg, num2d, larr, garr, l2g_scale_type)
 !
 ! !DESCRIPTION:
-! Perfrom subgrid-average from landunits to gridcells.
+! Perform subgrid-average from landunits to gridcells.
 ! Averaging is only done for points that are not equal to "spval".
 !
 ! !ARGUMENTS:
@@ -21970,7 +21970,7 @@ module pft2colMod
 ! !MODULE: pft2colMod
 !
 ! !DESCRIPTION:
-! Contains calls to methods to perfom averages over from pfts to columns
+! Contains calls to methods to perform averages over from pfts to columns
 ! for model variables.
 !
 ! !USES:
@@ -22845,7 +22845,7 @@ contains
 !ylu change pctspec to pctspec1, pctspec now to be a vector in clm_varsur,so pctspec can be used in pftdynMod.F
     real(r8) :: pctspec1                                  ! percent of gridcell made up of special landunits
     integer  :: cropcount                                ! temporary counter
-    real(r8) :: sumscl                                   ! temporory scalar sum
+    real(r8) :: sumscl                                   ! temporary scalar sum
     real(r8),allocatable :: sumvec(:)                                   ! temporary vector sum
     logical  :: found                                    ! temporary for error check
     integer  :: iindx, jindx                             ! temporary for error check
@@ -23014,7 +23014,7 @@ contains
 
 
 
-!CLM caculates urban separately. See module_sf_clm
+!CLM calculates urban separately. See module_sf_clm
 !             pcturb(g) = 0
 !             if(pctgla(g) .eq. 100 .or. pctlak(g) .eq. 100 .or.pctwet(g) .eq. 100) then
 !                pftid = 1    !no pft distribution for this grid cell 
@@ -23420,14 +23420,14 @@ module SNICARMod
   integer,  parameter :: idx_rhos_min   = 1              ! minimum snow density index used in aging lookup table [idx]
 
   integer,  parameter :: snw_rds_max_tbl = 1500          ! maximum effective radius defined in Mie lookup table [microns]
-  integer,  parameter :: snw_rds_min_tbl = 30            ! minimium effective radius defined in Mie lookup table [microns]
+  integer,  parameter :: snw_rds_min_tbl = 30            ! minimum effective radius defined in Mie lookup table [microns]
   real(r8), parameter :: snw_rds_max     = 1500._r8      ! maximum allowed snow effective radius [microns]
   real(r8), parameter :: snw_rds_refrz   = 1000._r8      ! effective radius of re-frozen snow [microns]
 
   real(r8), parameter :: min_snw = 1.0E-30_r8            ! minimum snow mass required for SNICAR RT calculation [kg m-2]
 
   !real(r8), parameter :: C1_liq_Brun89 = 1.28E-17_r8    ! constant for liquid water grain growth [m3 s-1], from Brun89
-  real(r8), parameter :: C1_liq_Brun89 = 0._r8           ! constant for liquid water grain growth [m3 s-1], from Brun89: zeroed to accomodate dry snow aging
+  real(r8), parameter :: C1_liq_Brun89 = 0._r8           ! constant for liquid water grain growth [m3 s-1], from Brun89: zeroed to accommodate dry snow aging
   real(r8), parameter :: C2_liq_Brun89 = 4.22E-13_r8     ! constant for liquid water grain growth [m3 s-1], from Brun89: corrected for LWC in units of percent
 
   real(r8), parameter :: tim_cns_bc_rmv  = 2.2E-8_r8     ! time constant for removal of BC in snow on sea-ice [s-1] (50% mass removal/year)
@@ -23575,7 +23575,7 @@ contains
     real(r8):: g(-nlevsno+1:0)                    ! weighted asymmetry parameter of snow+aerosol layer (lyr) [frc]
     real(r8):: tau_star(-nlevsno+1:0)             ! transformed (i.e. Delta-Eddington) optical depth of snow+aerosol layer (lyr) [unitless]
     real(r8):: omega_star(-nlevsno+1:0)           ! transformed (i.e. Delta-Eddington) SSA of snow+aerosol layer (lyr) [frc]
-    real(r8):: g_star(-nlevsno+1:0)               ! transformed (i.e. Delta-Eddington) asymmetry paramater of snow+aerosol layer (lyr) [frc]
+    real(r8):: g_star(-nlevsno+1:0)               ! transformed (i.e. Delta-Eddington) asymmetry parameter of snow+aerosol layer (lyr) [frc]
    
     integer :: g_idx, c_idx, l_idx                ! gridcell, column, and landunit indices [idx]
     integer :: bnd_idx                            ! spectral band index (1 <= bnd_idx <= numrad_snw) [idx]
@@ -23891,7 +23891,7 @@ contains
                    flx_slri_lcl(bnd_idx) = 1._r8
                 endif
 
-                ! Pre-emptive error handling: aerosols can reap havoc on these absorptive bands.
+                ! Preemptive error handling: aerosols can reap havoc on these absorptive bands.
                 ! Since extremely high soot concentrations have a negligible effect on these bands, zero them.
                 if ( (numrad_snw == 5).and.((bnd_idx == 5).or.(bnd_idx == 4)) ) then
                    mss_cnc_aer_lcl(:,:) = 0._r8
@@ -24192,7 +24192,7 @@ contains
 
                    ! changed on 20070408:
                    ! OK to put absorbed energy in the fictitous snow layer because routine SurfaceRadiation
-                   ! handles the case of no snow layers. Then, if a snow layer is addded between now and
+                   ! handles the case of no snow layers. Then, if a snow layer is added between now and
                    ! SurfaceRadiation (called in Hydrology1), absorbed energy will be properly distributed.
                    flx_abs_lcl(0,bnd_idx) = F_abs(0)
                    flx_abs_lcl(1,bnd_idx) = F_btm_net
@@ -24540,7 +24540,7 @@ contains
           ! snow density
           rhos = (h2osoi_liq(c_idx,i)+h2osoi_ice(c_idx,i)) / dz(c_idx,i)
 
-          ! best-fit table indecies
+          ! best-fit table indices
           T_idx    = nint((t_soisno(c_idx,i)-223) / 5) + 1
           Tgrd_idx = nint(dTdz(c_idx,i) / 10) + 1
           rhos_idx = nint((rhos-50) / 50) + 1
@@ -25411,9 +25411,9 @@ contains
     real(r8),save :: tLB =-1.0 ! upper bound time sample, model time is in [tLB,tUB]
     real(r8),save :: tUB =-2.0 ! lower bound time sample, model time is in [tLB,tUB]
     real(r8)      :: fUB,fLB   ! t-interp fracs for UB,LB
-    logical ,save :: firstCallA = .true.   ! id 1st occurance of case A
-    logical ,save :: firstCallB = .true.   ! id 1st occurance of case B
-    logical ,save :: firstCallC = .true.   ! id 1st occurance of case C
+    logical ,save :: firstCallA = .true.   ! id 1st occurrence of case A
+    logical ,save :: firstCallB = .true.   ! id 1st occurrence of case B
+    logical ,save :: firstCallC = .true.   ! id 1st occurrence of case C
     character(1)  :: case                  ! flags case A, B, or C
     logical       ::  readNewData          ! T <=> read new LB,UB data
     integer, parameter :: ndaypm(12) = &
@@ -25781,7 +25781,7 @@ contains
 !
 ! LOCAL VARIABLES:
     integer :: nf           ! field index
-    integer :: beg1d,end1d  ! beggining and end subgrid indices
+    integer :: beg1d,end1d  ! beginning and end subgrid indices
     integer :: num1d        ! total number subgrid indices
     integer :: begp, endp   ! per-proc beginning and ending pft indices
     integer :: begc, endc   ! per-proc beginning and ending column indices
@@ -26905,7 +26905,7 @@ contains
     end do
 
     ! Accumulate and extract T10
-    !(acumulates TSA as 10-day running mean)
+    !(accumulates TSA as 10-day running mean)
 
     call update_accum_field  ('T10', t_ref2m, nstep)
     call extract_accum_field ('T10', t10, nstep)
@@ -28034,7 +28034,7 @@ contains
               ! absorbed solar energy in each layer, we must redistribute the absorbed energy
               ! to avoid physically unrealistic conditions. The assumptions made below are 
               ! somewhat arbitrary, but this situation does not arise very frequently. 
-              ! This error handling is implemented to accomodate any value of the
+              ! This error handling is implemented to accommodate any value of the
               ! radiation frequency.
               if (abs(sabg_snl_sum-sabg(p)) > 0.00001_r8) then
                  if (snl(c) == 0) then
@@ -29557,7 +29557,7 @@ contains
                       eflx_heat_from_ac_pft(p) = 0._r8
                       eflx_traffic_pft(p) = 0._r8
                    end if
-                   ! Include transpiration term because needed for pervious road
+                   ! Include transpiration term because needed for previous road
                    ! and include wasteheat and traffic flux
                    eflx_gnet(p) = sabg(p) + dlrad(p)  &
                                   - eflx_lwrad_net(p) &
@@ -31773,7 +31773,7 @@ contains
        end if
     end do
 
-    ! No drainage for urban columns (except for pervious road as computed above)
+    ! No drainage for urban columns (except for previous road as computed above)
 
 !dir$ concurrent
 !cdir nodep
@@ -32856,7 +32856,7 @@ contains
     real(r8) :: dzsno(lbc:ubc,nlevsno) ! Snow layer thickness [m]
     real(r8) :: swice(lbc:ubc,nlevsno) ! Partial volume of ice [m3/m3]
     real(r8) :: swliq(lbc:ubc,nlevsno) ! Partial volume of liquid water [m3/m3]
-    real(r8) :: tsno(lbc:ubc ,nlevsno) ! Nodel temperature [K]
+    real(r8) :: tsno(lbc:ubc ,nlevsno) ! Nodal temperature [K]
     real(r8) :: zwice                  ! temporary
     real(r8) :: zwliq                  ! temporary
     real(r8) :: propor                 ! temporary
@@ -33336,7 +33336,7 @@ contains
     real(r8), intent(inout) :: dz    ! nodal thickness of 1 elements being combined [m]
     real(r8), intent(inout) :: wliq  ! liquid water of element 1
     real(r8), intent(inout) :: wice  ! ice of element 1 [kg/m2]
-    real(r8), intent(inout) :: t     ! nodel temperature of elment 1 [K]
+    real(r8), intent(inout) :: t     ! nodal temperature of element 1 [K]
 !
 ! !CALLED FROM:
 ! subroutine CombineSnowLayers in this module
@@ -33933,7 +33933,7 @@ contains
 !
     integer , pointer :: pcolumn(:)         !pft's column index
     integer , pointer :: pgridcell(:)       !pft's gridcell index
-    real(r8), pointer :: begwb(:)         !water mass begining of the time step
+    real(r8), pointer :: begwb(:)         !water mass beginning of the time step
     real(r8), pointer :: forc_snow(:)     !snow rate [mm/s]
     real(r8), pointer :: forc_rain(:)     !rain rate [mm/s]
     logical , pointer :: do_capsnow(:)    !true => do snow capping
@@ -34546,7 +34546,7 @@ contains
           frac_iceold(c,0) = 1._r8
        
 
-          ! intitialize SNICAR variables for fresh snow:
+          ! initialize SNICAR variables for fresh snow:
           snw_rds(c,0)    = snw_rds_min
 
           mss_bcpho(c,:)  = 0._r8
@@ -34698,7 +34698,7 @@ contains
     real(r8), pointer :: z(:,:)           ! layer depth  (m)
     real(r8), pointer :: forc_rain(:)     ! rain rate [mm/s]
     real(r8), pointer :: forc_snow(:)     ! snow rate [mm/s]
-    real(r8), pointer :: begwb(:)         ! water mass begining of the time step
+    real(r8), pointer :: begwb(:)         ! water mass beginning of the time step
     real(r8), pointer :: qflx_evap_tot(:) ! qflx_evap_soi + qflx_evap_veg + qflx_tran_veg
     real(r8), pointer :: bsw2(:,:)        ! Clapp and Hornberger "b" for CN code
     real(r8), pointer :: psisat(:,:)      ! soil water potential at saturation for CN code (MPa)
@@ -35706,7 +35706,7 @@ contains
    real(r8) :: dthv(lbp:ubp)         ! diff of vir. poten. temp. between ref. height and surface
    real(r8) :: dqh(lbp:ubp)          ! diff of humidity between ref. height and surface
    real(r8) :: obu(lbp:ubp)          ! Monin-Obukhov length (m)
-   real(r8) :: um(lbp:ubp)           ! wind speed including the stablity effect [m/s]
+   real(r8) :: um(lbp:ubp)           ! wind speed including the stability effect [m/s]
    real(r8) :: ur(lbp:ubp)           ! wind speed at reference height [m/s]
    real(r8) :: uaf(lbp:ubp)          ! velocity of air within foliage [m/s]
    real(r8) :: temp1(lbp:ubp)        ! relation for potential temperature profile
@@ -35749,7 +35749,7 @@ contains
    real(r8) :: de2mdT                ! derivative of 2 m height surface saturated vapor pressure on t_ref2m
    real(r8) :: qsat_ref2m            ! 2 m height surface saturated specific humidity [kg/kg]
    real(r8) :: dqsat2mdT             ! derivative of 2 m height surface saturated specific humidity on t_ref2m
-   real(r8) :: air(lbp:ubp),bir(lbp:ubp),cir(lbp:ubp)  ! atmos. radiation temporay set
+   real(r8) :: air(lbp:ubp),bir(lbp:ubp),cir(lbp:ubp)  ! atmos. radiation temporary set
    real(r8) :: dc1,dc2               ! derivative of energy flux [W/m2/K]
    real(r8) :: delt                  ! temporary
    real(r8) :: delq(lbp:ubp)         ! temporary
@@ -36632,7 +36632,7 @@ contains
      real(r8) :: wj      ! light limited photosynthesis (umol co2/m**2/s)
      real(r8) :: we      ! export limited photosynthesis (umol co2/m**2/s)
      real(r8) :: cp      ! co2 compensation point (pa)
-     real(r8) :: awc     ! intermediate calcuation for wc
+     real(r8) :: awc     ! intermediate calculation for wc
      real(r8) :: j       ! electron transport (umol co2/m**2/s)
      real(r8) :: cea     ! constrain ea or else model blows up
      real(r8) :: cf      ! s m**2/umol -> s/m
@@ -36981,7 +36981,7 @@ end module CanopyFluxesMod
 
     call get_proc_bounds(begg, endg, begl, endl, begc, endc, begp, endp)
 
-!coloum level
+!column level
 
    do c=begc,endc
     annsum_counter_buf(c)                 = clm3%g%l%c%cps%annsum_counter(c)
@@ -37565,7 +37565,7 @@ contains
 ! local pointers to original implicit out variables
 !
     real(r8), pointer :: h2ocan_col(:)         ! canopy water (mm H2O) (column level)
-    real(r8), pointer :: begwb(:)              ! water mass begining of the time step
+    real(r8), pointer :: begwb(:)              ! water mass beginning of the time step
 !
 ! !OTHER LOCAL VARIABLES:
 !
@@ -37684,7 +37684,7 @@ contains
     real(r8), pointer :: forc_snow(:)       ! snow rate [mm/s]
     real(r8), pointer :: forc_lwrad(:)      ! downward infrared (longwave) radiation (W/m**2)
     real(r8), pointer :: endwb(:)           ! water mass end of the time step
-    real(r8), pointer :: begwb(:)           ! water mass begining of the time step
+    real(r8), pointer :: begwb(:)           ! water mass beginning of the time step
     real(r8), pointer :: fsa(:)             ! solar radiation absorbed (total) (W/m**2)
     real(r8), pointer :: fsr(:)             ! solar radiation reflected (W/m**2)
     real(r8), pointer :: eflx_lwrad_out(:)  ! emitted infrared (longwave) radiation (W/m**2)
@@ -37949,7 +37949,7 @@ contains
        end if
     end do
     if ( found  .and. (nstep > 2) ) then
-       write(6,100)'BalanceCheck: longwave enery balance error',nstep,indexp,errlon(indexp)
+       write(6,100)'BalanceCheck: longwave energy balance error',nstep,indexp,errlon(indexp)
        write(6,*)'clm model is stopping'
        call endrun()
     end if
@@ -38184,7 +38184,7 @@ contains
     real(r8) :: dqh(lbp:ubp)           ! diff of humidity between ref. height and surface
     real(r8) :: obu(lbp:ubp)           ! Monin-Obukhov length (m)
     real(r8) :: ur(lbp:ubp)            ! wind speed at reference height [m/s]
-    real(r8) :: um(lbp:ubp)            ! wind speed including the stablity effect [m/s]
+    real(r8) :: um(lbp:ubp)            ! wind speed including the stability effect [m/s]
     real(r8) :: temp1(lbp:ubp)         ! relation for potential temperature profile
     real(r8) :: temp12m(lbp:ubp)       ! relation for potential temperature profile applied at 2-m
     real(r8) :: temp2(lbp:ubp)         ! relation for specific humidity profile
@@ -38623,10 +38623,10 @@ contains
     real(r8), pointer :: sucsat(:,:)      !minimum soil suction (mm)
     real(r8), pointer :: bsw(:,:)         !Clapp and Hornberger "b"
     real(r8), pointer :: watfc(:,:)       !volumetric soil water at field capacity
-    real(r8), pointer :: watopt(:,:)      !volumetric soil moisture corresponding to no restriction on ET from urban pervious surface
-    real(r8), pointer :: watdry(:,:)      !volumetric soil moisture corresponding to no restriction on ET from urban pervious surface
-    real(r8), pointer :: rootfr_road_perv(:,:) !fraction of roots in each soil layer for urban pervious road
-    real(r8), pointer :: rootr_road_perv(:,:) !effective fraction of roots in each soil layer for urban pervious road
+    real(r8), pointer :: watopt(:,:)      !volumetric soil moisture corresponding to no restriction on ET from urban previous surface
+    real(r8), pointer :: watdry(:,:)      !volumetric soil moisture corresponding to no restriction on ET from urban previous surface
+    real(r8), pointer :: rootfr_road_perv(:,:) !fraction of roots in each soil layer for urban previous road
+    real(r8), pointer :: rootr_road_perv(:,:) !effective fraction of roots in each soil layer for urban previous road
 !
 ! local pointers to implicit out arguments
 !
@@ -38683,7 +38683,7 @@ contains
     real(r8) :: fac     !soil wetness of surface layer
     real(r8) :: psit    !negative potential of soil
     real(r8) :: hr      !relative humidity
-    real(r8) :: hr_road_perv  !relative humidity for urban pervious road
+    real(r8) :: hr_road_perv  !relative humidity for urban previous road
     real(r8) :: wx      !partial volume of ice and water of surface layer
     real(r8) :: fac_fc        !soil wetness of surface layer relative to field capacity
     real(r8) :: eff_porosity  ! effective porosity in layer
@@ -38831,7 +38831,7 @@ contains
              if (wx < watfc(c,1) ) then  !when water content of ths top layer is less than that at F.C.
                 fac_fc  = min(1._r8, wx/watfc(c,1))  !eqn5.66 but divided by theta at field capacity
                 fac_fc  = max( fac_fc, 0.01_r8 )
-                ! modifiy soil beta by snow cover. soilbeta for snow surface is one
+                ! modify soil beta by snow cover. soilbeta for snow surface is one
                 soilbeta(c) = (1._r8-frac_sno(c))*0.25_r8*(1._r8 - cos(SHR_CONST_PI*fac_fc))**2._r8 &
                               + frac_sno(c)
              else   !when water content of ths top layer is more than that at F.C.
@@ -38839,7 +38839,7 @@ contains
              end if
 
              soilalpha(c) = qred
-          ! Pervious road depends on water in total soil column
+          ! Previous road depends on water in total soil column
           else if (ctype(c) == icol_road_perv) then
              do j = 1, nlevsoi
                 if (t_soisno(c,j) >= tfrz) then
@@ -39434,7 +39434,7 @@ contains
           ! interactions between urban columns.
 
           eflx_lwrad_del(p) = 4._r8*emg(c)*sb*tssbef(c,j)**3*tinc(c)
-          ! Include transpiration term because needed for pervious road
+          ! Include transpiration term because needed for previous road
           ! and wasteheat and traffic flux
           eflx_soil_grnd(p) = sabg(p) + dlrad(p) &
                               - eflx_lwrad_net(p) - eflx_lwrad_del(p) &
@@ -39780,7 +39780,7 @@ contains
     real(r8) :: thvstar                 ! virtual potential temperature scaling parameter
     real(r8) :: tksur                   ! thermal conductivity of snow/soil (w/m/kelvin)
     real(r8) :: tstar                   ! temperature scaling parameter
-    real(r8) :: um(lbp:ubp)             ! wind speed including the stablity effect [m/s]
+    real(r8) :: um(lbp:ubp)             ! wind speed including the stability effect [m/s]
     real(r8) :: ur(lbp:ubp)             ! wind speed at reference height [m/s]
     real(r8) :: ustar(lbp:ubp)          ! friction velocity [m/s]
     real(r8) :: wc                      ! convective velocity [m/s]
@@ -40797,7 +40797,7 @@ subroutine CNAllocation (lbp, ubp, lbc, ubc, &
 
 #if (defined CROP)
 
-      f5 = 0._r8 ! continued intializations from above
+      f5 = 0._r8 ! continued initializations from above
 
       if (ivt(p) >= npcropmin .and. croplive(p) == 1) then ! skip 2 generic crops
 
@@ -41017,7 +41017,7 @@ subroutine CNAllocation (lbp, ubp, lbc, ubc, &
       end if
 
       ! calculate the fraction of potential growth that can be
-      ! acheived with the N available to plants
+      ! achieved with the N available to plants
 
       if (col_plant_ndemand(c) > 0.0_r8) then
          fpg(c) = sminn_to_plant(c) / col_plant_ndemand(c)
@@ -49396,7 +49396,7 @@ subroutine CNSeasonDecidPhenology (num_soilp, filter_soilp)
          crit_onset_gdd = exp(4.8_r8 + 0.13_r8*(annavg_t2m(p) - SHR_CONST_TKFRZ))
 
          ! use solar declination information stored during Surface Albedo()
-         ! and latitude from gps to calcluate daylength (convert latitude from degrees to radians)
+         ! and latitude from gps to calculate daylength (convert latitude from degrees to radians)
          ! the constant 13750.9871 is the number of seconds per radian of hour-angle
 
          prev_dayl(p) = dayl(p)
@@ -49522,7 +49522,7 @@ subroutine CNSeasonDecidPhenology (num_soilp, filter_soilp)
                onset_counter(p) = ndays_on * 86400.0_r8
 
                ! move all the storage pools into transfer pools,
-               ! where they will be transfered to displayed growth over the onset period.
+               ! where they will be transferred to displayed growth over the onset period.
                ! this code was originally handled with call cn_storage_to_xfer(p)
                ! inlined during vectorization
 
@@ -49843,7 +49843,7 @@ subroutine CNStressDecidPhenology (num_soilp, filter_soilp)
          psi = soilpsi(c,3)
 
          ! use solar declination information stored during Surface Albedo()
-         ! and latitude from gps to calcluate daylength (convert latitude from degrees to radians)
+         ! and latitude from gps to calculate daylength (convert latitude from degrees to radians)
          ! the constant 13750.9871 is the number of seconds per radian of hour-angle
 
          lat = (SHR_CONST_PI/180._r8)*latdeg(pgridcell(p))
@@ -49984,7 +49984,7 @@ subroutine CNStressDecidPhenology (num_soilp, filter_soilp)
                onset_counter(p) = ndays_on * 86400._r8
 
                ! call subroutine to move all the storage pools into transfer pools,
-               ! where they will be transfered to displayed growth over the onset period.
+               ! where they will be transferred to displayed growth over the onset period.
                ! this code was originally handled with call cn_storage_to_xfer(p)
                ! inlined during vectorization
 
@@ -50533,7 +50533,7 @@ subroutine CropPhenology(num_pcropp, filter_pcropp)
 
             huileaf(p) = lfemerg(ivt(p)) * gddmaturity(p) ! 3-7% in wheat
 
-            ! calculate threshhold from phase 2 to phase 3:
+            ! calculate threshold from phase 2 to phase 3:
             ! from leaf emergence to beginning of grain-fill period
             ! this hypothetically occurs at the end of tassling, not the beginning
             ! tassel initiation typically begins at 0.5-0.55 * gddmaturity
@@ -56227,7 +56227,7 @@ contains
        call CLMDebug('Begin CNNDecompAlloc')
        call CNDecompAlloc(lbp, ubp, lbc, ubc, num_soilc, filter_soilc, num_soilp, filter_soilp) !CNDecompMod.F
 
-       ! CNphenology needs to be called after CNdecompAlloc, becuase it
+       ! CNphenology needs to be called after CNdecompAlloc, because it
        ! depends on current time-step fluxes to new growth on the last
        ! litterfall timestep in deciduous systems
 
@@ -56521,7 +56521,7 @@ subroutine iniTimeVar(snlx     ,snowdpx ,dzclmx  ,zclmx      ,&
   fwet               => clm3%g%l%c%p%pps%fwet
 
   ! Assign local pointers to derived subtypes components (pft-level)
-  ! The folowing pointers will only be used for lake points in this routine
+  ! The following pointers will only be used for lake points in this routine
   htop               => clm3%g%l%c%p%pps%htop
   hbot               => clm3%g%l%c%p%pps%hbot
   tlai               => clm3%g%l%c%p%pps%tlai
@@ -57111,7 +57111,7 @@ contains
 !!!
 
 !CLM4 -ylu 09 Feb 2011 The coupling model will read the NDEP_year at same level as LAI,SAI
-!therefor remove this part and even ndepFileMod.F
+!therefore remove this part and even ndepFileMod.F
    ! ------------------------------------------------------------------------
     ! Initialize dynamic nitrogen deposition
     ! ------------------------------------------------------------------------
@@ -58000,7 +58000,7 @@ subroutine driver (doalb,ilx,jlx,nextsw_cday, declinp1, declin, &
 !  ==== Begin Loop 2 over clumps ====
 !  -> Hydrology2          surface and soil hydrology
 !  -> Hydrology_Lake      lake hydrology
-!  -> SnowAge             update snow age for surface albedo calcualtion
+!  -> SnowAge             update snow age for surface albedo calculation
 !  -> BalanceCheck        check for errors in energy and water balances
 !  ====  End Loop 2 over clumps  ====
 !  -> write_diagnostic    output diagnostic if appropriate
@@ -58703,7 +58703,7 @@ subroutine driver (doalb,ilx,jlx,nextsw_cday, declinp1, declin, &
     if (doalb) then
 
         ! Albedos for non-urban columns
-        call CLMDebug('SurfaceAlbedoClm')  !checed and modified accoring to CLM4 --ylu
+        call CLMDebug('SurfaceAlbedoClm')  !checked and modified according to CLM4 --ylu
         call SurfaceAlbedoClm(begg, endg, begc, endc, begp, endp, &
                            filter%num_nourbanc, filter%nourbanc, &
                            filter%num_nourbanp, filter%nourbanp,nextsw_cday ,declinp1)
@@ -59064,7 +59064,7 @@ CONTAINS
   real :: ht(ims:ime,jms:jme)
   real :: xland (ims:ime,jms:jme)
   real :: xice (ims:ime,jms:jme)
-  real :: prec (ims:ime,jms:jme)              !total precipitation rate (mm; accumlated precipitation within DT)
+  real :: prec (ims:ime,jms:jme)              !total precipitation rate (mm; accumulated precipitation within DT)
   integer  :: ivgtyp(ims:ime,jms:jme)
   integer  :: isltyp (ims:ime,jms:jme)
 
@@ -59482,7 +59482,7 @@ is_land : &
       forc_soll_buf  = swd_buf*0.35_r8
       forc_solsd_buf = swd_buf*0.15_r8
       forc_solld_buf = swd_buf*0.15_r8
-    else                            !if use cam radiation, then we can directly use the seperate swd --ylu
+    else                            !if use cam radiation, then we can directly use the separate swd --ylu
       forc_sols_buf  = real( swvisdir(i,j),kind=r8 )
       forc_soll_buf  = real( swnirdir(i,j),kind=r8 )
       forc_solsd_buf = real( swvisdif(i,j),kind=r8 )
@@ -60399,7 +60399,7 @@ has_urban_physics : &
             tsxy(i,j)  = FRC_URB2D(I,J)*TS_URB+(1-FRC_URB2D(I,J))*tsxy_buf          ![K]
             qsfc(i,j)  = FRC_URB2D(I,J)*QS_URB+(1-FRC_URB2D(I,J))*qsfc(i,j)         ![-]
 
-! Renew Urban State Varialbes
+! Renew Urban State Variables
 
             TR_URB2D(I,J) = TR_URB
             TB_URB2D(I,J) = TB_URB

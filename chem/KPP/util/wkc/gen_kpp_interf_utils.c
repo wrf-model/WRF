@@ -336,7 +336,7 @@ wki_one_d_vars( FILE * ofile,   knode_t * pp )
    fprintf(ofile,"    TEMP = REAL(t_phy(i,k,j), KIND=dp)\n\n");
 
 
-   fprintf(ofile,"      ! convesion from ppmV to molecules/cm3 and back\n");
+   fprintf(ofile,"      ! conversion from ppmV to molecules/cm3 and back\n");
    fprintf(ofile,"     conv=1.E-6_dp*dens2con_a*rho_phy(i,k,j)\n");
    fprintf(ofile,"     oconv = 1.E0_dp/conv\n\n\n");
 

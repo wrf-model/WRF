@@ -106,7 +106,7 @@
 ! CALL F02ABF(XCOV,NX,NX,XVAL,XVEC,NX,W1,IFAIL)
   XVEC=XCOV
 !  CALL F02FAF('V','L',NX,XVEC,NX,XVAL,W1,JWORK,IFAIL)
-! tranform matrix to tridiagonal form
+! transform matrix to tridiagonal form
   call tred2(XVEC,NX,NX,XVAL,offdiag)
 ! QL decomposition
   call tqli(XVAL,offdiag,NX,NX,XVEC)
@@ -145,7 +145,7 @@
 
 ! ***     CALCULATE OFFSET VECTOR, CCOF0 :
 !         Y - YBAR  =  CCOF . (X-XBAR)
-!         THERFORE  Y = CCOF.X + CCOF0, WHERE CCOF0 = YBAR -CCOF.XBAR
+!         THEREFORE  Y = CCOF.X + CCOF0, WHERE CCOF0 = YBAR -CCOF.XBAR
 
   CCOF0 = YBAR - SUM(CCOF(NXE:NX)*XBAR(NXE:NX))
 

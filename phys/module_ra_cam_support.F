@@ -383,7 +383,7 @@ subroutine sortarray(n, ain, indxa)
 !
 ! Purpose:
 !       Sort an array
-! Alogrithm:
+! Algorithm:
 !       Based on Shell's sorting method.
 !
 ! Author: T. Craig
@@ -1187,7 +1187,7 @@ subroutine trcems(lchnk   ,ncol    ,pcols, pverp,               &
       end do
    end do
 
-!     Overlap H2O tranmission with STRAER continuum in 6 trace gas 
+!     Overlap H2O transmission with STRAER continuum in 6 trace gas
 !                 subbands
 
       do i=1,ncol
@@ -1611,7 +1611,7 @@ subroutine trcplk(lchnk   ,ncol    ,pcols, pver, pverp,         &
 ! output arguments
 !
    real(r8), intent(out) :: emplnk(14,pcols)         ! emissivity Planck factor
-   real(r8), intent(out) :: abplnk1(14,pcols,pverp)  ! non-nearest layer Plack factor
+   real(r8), intent(out) :: abplnk1(14,pcols,pverp)  ! non-nearest layer Planck factor
    real(r8), intent(out) :: abplnk2(14,pcols,pverp)  ! nearest layer factor
 
 !
@@ -2086,7 +2086,7 @@ subroutine vert_interpolate (Match_ps, aerosolc, m_hybi, paerlev, naer_c, pint, 
 
    real(r8) AEROSOL(pcols,pverp,naer)  ! cumulative mass of aerosol in column beneath upper
                                        ! interface of level in column at particular month
-   real(r8) dpl, dpu                   ! lower and upper intepolation factors
+   real(r8) dpl, dpu                   ! lower and upper interpolation factors
    real(r8) v_coord                    ! vertical coordinate
    real(r8) m_to_mmr                   ! mass to mass mixing ratio conversion factor
    real(r8) AER_diff                   ! temp var for difference between aerosol masses
@@ -3956,7 +3956,7 @@ USE module_wrf_error
 ! Variables for setting up H2O table
 !
    integer t                     ! path temperature
-   integer tmin                  ! mininum path temperature
+   integer tmin                  ! minimum path temperature
    integer tmax                  ! maximum path temperature
    integer itype                 ! type of sat. pressure (=0 -> H2O only)
    integer i

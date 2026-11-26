@@ -791,7 +791,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 !ajb      20040119: Note based on bugfix for dot/cross points split across processors,
 !ajb                which was actually a serial code fix: The ityp=2 (v-points) and
 !ajb                ityp=3 (mass-points) cases should not use the ityp=1 (u-points)
-!ajb                case rko! This is necessary for bit-for-bit reproducability
+!ajb                case rko! This is necessary for bit-for-bit reproducibility
 !ajb                with the parallel run.   (coarse mesh)
 
           if(abs(rko(n)+99).lt.1.)then
@@ -899,7 +899,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 !ajb      20040119: Note based on bugfix for dot/cross points split across processors,
 !ajb                which was actually a serial code fix: The ityp=2 (v-points) and
 !ajb                itype=3 (mass-points) cases should not use the ityp=1 (u-points)
-!ajb                case) rko! This is necessary for bit-for-bit reproducability
+!ajb                case) rko! This is necessary for bit-for-bit reproducibility
 !ajb                with parallel run.   (fine mesh)
 
           if(abs(rko(n)+99).lt.1.)then
@@ -2497,7 +2497,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
                 !negative QV innovations
                 IF((IVAR.EQ.4).AND.(obs_scl_neg_qv_innov.GT.0)) THEN
                  QVB_AT_CUR_LOC = QVB(I,K,J)
-                 !Vertically intepolate observed moisture
+                 !Vertically interpolate observed moisture
                  QVB_AT_OB_LOC=errf(10,nlo)+                               &
                               (errf(10,nhi)-errf(10,nlo))*pdiffj
                  !If the moisture innovation is negative and the model

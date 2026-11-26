@@ -105,7 +105,7 @@ SUBROUTINE INTEGRATE_ADJ( NADJ, Y, Lambda, TIN, TOUT, &
 !        ' Singular=',N_sng
 
    IF (IERR < 0) THEN
-     print *,'RosenbrockADJ: Unsucessful step at T=', &
+     print *,'RosenbrockADJ: Unsuccessful step at T=', &
          TIN,' (IERR=',IERR,')'
    ENDIF
 
@@ -383,7 +383,7 @@ SUBROUTINE RosenbrockADJ( Y, NADJ, Lambda,  &
 !-    ICNTRL(11:20)   -> integer output parameters
 !-    RCNTRL(11:20)   -> real output parameters
 !-    IERR       -> job status upon return
-!       - succes (positive value) or failure (negative value) -
+!       - success (positive value) or failure (negative value) -
 !           =  1 : Success
 !           = -1 : Improper value for maximal no of steps
 !           = -2 : Selected RosenbrockADJ method not implemented
@@ -445,7 +445,7 @@ SUBROUTINE RosenbrockADJ( Y, NADJ, Lambda,  &
 ! 
 !~~~>     OUTPUT PARAMETERS:
 !
-!    Note: each call to RosenbrockADJ adds the corrent no. of fcn calls
+!    Note: each call to RosenbrockADJ adds the current no. of fcn calls
 !      to previous value of ISTATUS(1), and similar for the other params.
 !      Set ISTATUS(1:10) = 0 before call to avoid this accumulation.
 !
@@ -616,7 +616,7 @@ SUBROUTINE RosenbrockADJ( Y, NADJ, Lambda,  &
       CALL ros_ErrorMsg(-4,Tstart,ZERO,IERR)
       RETURN      
    END IF
-!~~~>   FacRej: Factor to decrease step after 2 succesive rejections
+!~~~>   FacRej: Factor to decrease step after 2 successive rejections
    IF (RCNTRL(6) == ZERO) THEN
       FacRej = 0.1d0
    ELSEIF (RCNTRL(6) > ZERO) THEN
@@ -1085,7 +1085,7 @@ Stage: DO istage = 1, ros_S
         END IF
    END IF   
    
-!~~~> Succesful exit
+!~~~> Successful exit
    IERR = 1  !~~~> The integration was successful
 
    PRINT*,'Nacc after fwd =',Nacc
@@ -1261,7 +1261,7 @@ Stage: DO istage = ros_S, 1, -1
    
 !~~~> Save last state
    
-!~~~> Succesful exit
+!~~~> Successful exit
    IERR = 1  !~~~> The integration was successful
 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1515,7 +1515,7 @@ Stage: DO istage = 1, ros_S
 
    END DO TimeLoop 
       
-!~~~> Succesful exit
+!~~~> Successful exit
    IERR = 1  !~~~> The integration was successful
 
    WRITE(55,55) T, H, Y0(ind_NO2), Y0(ind_O3), &
@@ -1712,7 +1712,7 @@ Stage: DO istage = 1, ros_S
 
    END DO TimeLoop 
       
-!~~~> Succesful exit
+!~~~> Successful exit
    IERR = 1  !~~~> The integration was successful
 
    WRITE(55,55) T, H, Y0(ind_NO2), Y0(ind_O3), &

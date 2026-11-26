@@ -59,7 +59,7 @@ int RODAS3(int N,KPP_REAL T, KPP_REAL Tnext,KPP_REAL Hmin,KPP_REAL Hmax,
        Stiffly accurate Rosenbrock 3(2), with 
      stiffly accurate embedded formula for error control.  
 
-     All the arguments aggree with the KPP syntax.
+     All the arguments agree with the KPP syntax.
 
   INPUT ARGUMENTS:
     y = Vector of (NVAR) concentrations, contains the

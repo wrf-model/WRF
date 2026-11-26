@@ -633,7 +633,7 @@ main_test_on_cupflag: &  ! rce 11-may-2012
                     numBins, thBinSize, rBinSize,                   &
                     th_perturb, r_perturb, jfd                      )
 !
-! Determine the minimum frequency of occurance that we will allow to
+! Determine the minimum frequency of occurrence that we will allow to
 ! contribute to the results. This serves two purposes. It prevents large
 ! excursions from the mean that might creep in from mal-conditioned
 ! PBL structures. And, it also speeds up overall calculation time by
@@ -829,7 +829,7 @@ PERTLOOPS:     do jpert = 1,numBins
                         enddo  ! rce 11-may-2012 end
                      end if
 !
-! Or if shallow convection ocurred and we need to accumulate
+! Or if shallow convection occurred and we need to accumulate
 ! frequency weighted running sums of the results...
 !
                   else if( ishall == 1 ) then
@@ -1203,7 +1203,7 @@ main_test_on_deep_shall_freq: &  ! rce 11-may-2012
               ENDIF
             ENDIF
 
-!......     QSTEN STORES GRAUPEL TENDENCY IF IT EXISTS, OTHERISE SNOW (V2)
+!......     QSTEN STORES GRAUPEL TENDENCY IF IT EXISTS, OTHERWISE SNOW (V2)
 
             IF(PRESENT( rqicuten )) THEN
               IF ( F_QI ) THEN
@@ -1603,7 +1603,7 @@ main_test_on_deep_shall_freq: &  ! rce 11-may-2012
 !  check of different ~50 mb deep groups of adjacent model layers in
 !  the process of identifying updraft source layer (USL).  Note that 
 !  this search is terminated as soon as a buoyant parcel is found and 
-!  this parcel can produce a cloud greater than specifed minimum depth
+!  this parcel can produce a cloud greater than specified minimum depth
 !  (CHMIN)...For now, set interval at 15 mb...
 !
        NCHECK = 1
@@ -1681,7 +1681,7 @@ usl:   DO
              RETURN
            ENDIF
            !!KPBL=LC+NLAYRS-1   
-           KCLDLAYER=LC+NLAYRS-1       ! Added new veriable for top of cloud layer 
+           KCLDLAYER=LC+NLAYRS-1       ! Added new variable for top of cloud layer
            !!if(ishall .eq. 0) KPBL=LC !lkb, changed to only adjust mixed layer depth for deep convection  
 !
 !...********************************************************
@@ -1755,7 +1755,7 @@ usl:   DO
 !     
 !...CHECK TO SEE IF CLOUD IS BUOYANT USING FRITSCH-CHAPPELL TRIGGER
 !...FUNCTION DESCRIBED IN KAIN AND FRITSCH (1992)...W0 IS AN
-!...APROXIMATE VALUE FOR THE RUNNING-MEAN GRID-SCALE VERTICAL
+!...APPROXIMATE VALUE FOR THE RUNNING-MEAN GRID-SCALE VERTICAL
 !...VELOCITY, WHICH GIVES SMOOTHER FIELDS OF CONVECTIVE INITIATION
 !...THAN THE INSTANTANEOUS VALUE...FORMULA RELATING TEMPERATURE
 !...PERTURBATION TO VERTICAL VELOCITY HAS BEEN USED WITH THE MOST
@@ -2787,7 +2787,7 @@ d_mf:   IF(TDER.LT.1.)THEN
        AINC=1.
        IF(AINCMX.LT.AINC)AINC=AINCMX
 !     
-!...SAVE THE RELEVENT VARIABLES FOR A UNIT UPDRAFT AND DOWNDRAFT...THEY WILL 
+!...SAVE THE RELEVANT VARIABLES FOR A UNIT UPDRAFT AND DOWNDRAFT...THEY WILL
 !...BE ITERATIVELY ADJUSTED BY THE FACTOR AINC TO SATISFY THE STABILIZATION
 !...CLOSURE...
 !     
@@ -2835,7 +2835,7 @@ d_mf:   IF(TDER.LT.1.)THEN
 !         AINC = 0.1*DPTHMX*DXIJ*DXIJ/(VMFLCL*G*TIMEC)
           !!AINC = EVAC*DPTHMX*DX(I,J)*DX(I,J)/(VMFLCL*G*TIMEC)
           !!AINC = EVAC*DPTHMX*DXSQ/(VMFLCL*G*TIMEC)
-          AINC = EVAC*DPTHMX*DXSQ/(VMFLCL*G*TIMEC) * freq * 2.0  ! Use factor of two becuase only 1/2 of pdf would be expected to rise
+          AINC = EVAC*DPTHMX*DXSQ/(VMFLCL*G*TIMEC) * freq * 2.0  ! Use factor of two because only 1/2 of pdf would be expected to rise
           !!write(*,*) 'Larry ... old AINC ', AINC
           !!AINC = WLCL*freq*DXSQ*RHOLCL/(VMFLCL) ! This version uses mass flux from CuP
           !!AINC = 1
@@ -3125,7 +3125,7 @@ iter:     DO NCOUNT=1,10
 !            GOTO 265
             EXIT
           ENDIF
-!         If there are shallow clouds, relax 90% requiremnt
+!         If there are shallow clouds, relax 90% requirement
 !         This code is not needed, exit out of shallow cu happens earlier
           !!IF(ISHALL .EQ. 1) THEN
           !!  EXIT iter
@@ -3798,7 +3798,7 @@ iter:     DO NCOUNT=1,10
 !...ALLOW THE FREEZING OF LIQUID WATER IN THE UPDRAFT TO PROCEED AS AN 
 !...APPROXIMATELY LINEAR FUNCTION OF TEMPERATURE IN THE TEMPERATURE RANGE 
 !...TTFRZ TO TBFRZ...
-!...FOR COLDER TERMPERATURES, FREEZE ALL LIQUID WATER...
+!...FOR COLDER TEMPERATURES, FREEZE ALL LIQUID WATER...
 !...THERMODYNAMIC PROPERTIES ARE STILL CALCULATED WITH RESPECT TO LIQUID WATER
 !...TO ALLOW THE USE OF LOOKUP TABLE TO EXTRACT TMP FROM THETAE...
 !
@@ -3807,7 +3807,7 @@ iter:     DO NCOUNT=1,10
       RLF=RLS-RLC
       CPP=1004.5*(1.+0.89*QU)
 !
-!  A = D(es)/DT IS THAT CALCULATED FROM BUCK (1981) EMPERICAL FORMULAS
+!  A = D(es)/DT IS THAT CALCULATED FROM BUCK (1981) EMPIRICAL FORMULAS
 !  FOR SATURATION VAPOR PRESSURE...
 !
       A=(CLIQ-BLIQ*DLIQ)/((TU-DLIQ)*(TU-DLIQ))
@@ -3870,8 +3870,8 @@ iter:     DO NCOUNT=1,10
 !                                                                       
 !  RATIO3 IS THE FRACTION OF LIQUID WATER IN FRESH CONDENSATE, RATIO4 IS
 !  THE FRACTION OF LIQUID WATER IN THE TOTAL AMOUNT OF CONDENSATE INVOLV
-!  IN THE PRECIPITATION PROCESS - NOTE THAT ONLY 60% OF THE FRESH CONDEN
-!  SATE IS IS ALLOWED TO PARTICIPATE IN THE CONVERSION PROCESS...       
+!  IN THE PRECIPITATION PROCESS - NOTE THAT ONLY 60% OF THE FRESH
+!  CONDENSATE IS IS ALLOWED TO PARTICIPATE IN THE CONVERSION PROCESS...
 !                                                                       
       RATIO3=QNEWLQ/(QNEW+1.E-8)                                       
 !     OLDQ=QTOT                                                         
@@ -4277,7 +4277,7 @@ iter:     DO NCOUNT=1,10
 !
 ! lookup table for tlog(emix/aliq)
 !
-! set up intial values for lookup tables
+! set up initial values for lookup tables
 !
        astrt=1.e-3
        ainc=0.075
@@ -4523,7 +4523,7 @@ SUBROUTINE cup_jfd(slopeSfc, slopeEZ, sigmaSfc, sigmaEZ,                &
   centerBin = numBins / 2 + 1                 ! Find the center bin
   dslope = sign(max(abs(slopeEZ-slopeSfc),1e-15),slopeEZ-slopeSfc)
   jacobian = slopeEZ / dslope                 ! Compute the jacobian
-  !wig: 22-Dec-2006 added parentheses that had been inadvertantly dropped...
+  !wig: 22-Dec-2006 added parentheses that had been inadvertently dropped...
 !wig  constants = jacobian*thBinSize*rBinSize / (pi2*sigmaSfc*sigmaEZ)
   bigcheck = sqrt(huge(c))   ! 10/30/08 lkb 0.1*huge(c)
 !
@@ -4673,7 +4673,7 @@ SUBROUTINE cupSlopeSigma(dx, psfc, p, rho, dz8w, z, ht,                 &
 !
 ! Determine if each column is stable or (unstable or neutral). If the regime
 ! is already calculated by one of the surface schemes, we can use it. If not,
-! deterimine the stability based on the bulk richardson number. We only
+! determine the stability based on the bulk richardson number. We only
 ! care about stable vs. (neutral or unstable).
 !
    UnstableOrNeutral = .false.

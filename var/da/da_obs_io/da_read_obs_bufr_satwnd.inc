@@ -399,7 +399,7 @@ if ( rootproc ) then
                end if
             end if ! thin_conv_opt /= thin_superob, thin_superob_hv
             rlink % itg = itx
-         end if ! thin_conv_opt(polaramv) > nothin
+         end if ! thin_conv_opt(polaramv) > no_thin
 
          num_keep = num_keep + 1
 

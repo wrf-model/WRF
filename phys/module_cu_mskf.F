@@ -85,11 +85,11 @@
   integer, parameter :: naer_cu = 10        
   integer, parameter :: pcols = 1
 
-!constants remaped
+!constants remapped
   real(r8), private::  g              !gravity
   real(r8), private::  mw             !molecular weight of water
   real(r8), private::   r        !Dry air Gas constant
-  real(r8), private::   rv       !water vapor gas contstant
+  real(r8), private::   rv       !water vapor gas constant
   real(r8), private::   rr   !universal gas constant
   real(r8), private::   cpp                  !specific heat of dry air
   real(r8), private::   rhow               !density of liquid water
@@ -228,7 +228,7 @@ subroutine mskf_mphyi
 !   mw = mwh2o / 1000._r8      !molecular weight of water
 !   r= rair                   !Dry air Gas constant: note units(phys_constants
 !   are in J/K/kmol)
-!   rv= rh2o                   !water vapor gas contstant
+!   rv= rh2o                   !water vapor gas constant
 !   rr = r_universal           !universal gas constant
 !   cpp = cpair                 !specific heat of dry air
 !   rhow = rhoh2o              !density of liquid water
@@ -508,7 +508,7 @@ subroutine mskf_mphy(su,    qu,   mu,   du,   cmel, cmei, zf,  pm,  te,   qe, ep
 
 ! output for ice nucleation
   real(r8) :: nimey(pcols,pver)     !output number conc of ice nuclei due to meyers deposition (1/m3)
-  real(r8) :: nihf(pcols,pver)      !output number conc of ice nuclei due to heterogenous freezing (1/m3)
+  real(r8) :: nihf(pcols,pver)      !output number conc of ice nuclei due to heterogeneous freezing (1/m3)
   real(r8) :: nidep(pcols,pver)     !output number conc of ice nuclei due to deoposion nucleation (hetero nuc) (1/m3)
   real(r8) :: niimm(pcols,pver)     !output number conc of ice nuclei due to immersion freezing (hetero nuc) (1/m3)
   real(r8) :: effc(pcols,pver)    ! droplet effective radius (micron)
@@ -1233,7 +1233,7 @@ subroutine mskf_mphy(su,    qu,   mu,   du,   cmel, cmei, zf,  pm,  te,   qe, ep
              qr(i,k) = 0.0_r8
              nr(i,k) = 0.0_r8
          end if
-!          print *,'qric,nric,qr,nr afer autoconversion cld water to rain'
+!          print *,'qric,nric,qr,nr after autoconversion cld water to rain'
 !          print *, 'qric=',qric
 !          print *,
 !          'nric=',nric(i,15),i,nprc(15),prc(15),ncic(i,15),rhow,qcic(i,15)
@@ -2904,7 +2904,7 @@ end subroutine mskf_mphy
       dqsdt=latvap/(rh2o*tair*tair)*qs
       alpha=gravit*(latvap/(cpair*rh2o*tair*tair)-1./(rair*tair))
       gammaloc=(1+latvap/cpair*dqsdt)/(rhoair*qs)
-!     growth coefficent Abdul-Razzak & Ghan 1998 eqn 16
+!     growth coefficient Abdul-Razzak & Ghan 1998 eqn 16
 !     should depend on mean radius of mode to account for gas kinetic effects
       gloc=1./(rhoh2o/(diff0*rhoair*qs)                                    &
           +latvap*rhoh2o/(conduct0*tair)*(latvap/(rh2o*tair)-1.))
@@ -3716,7 +3716,7 @@ CONTAINS
         ENDDO
         ENDDO
         ENDDO
-! boundary value ( all processors will do the following? Or just those processsors handling sub-area including boundary)
+! boundary value ( all processors will do the following? Or just those processors handling sub-area including boundary)
         DO K = kts,kte
            DO J = jts-1,jte+1
             DO I = its-1,ite+1
@@ -3966,7 +3966,7 @@ CONTAINS
                 ENDDO
               ENDIF
 
-!......     QSTEN STORES GRAUPEL TENDENCY IF IT EXISTS, OTHERISE SNOW (V2)
+!......     QSTEN STORES GRAUPEL TENDENCY IF IT EXISTS, OTHERWISE SNOW (V2)
 
               IF ( F_QI ) THEN
                 DO K=kts,kte
@@ -4405,7 +4405,7 @@ CONTAINS
 !  check of different ~50 mb deep groups of adjacent model layers in
 !  the process of identifying updraft source layer (USL).  Note that 
 !  this search is terminated as soon as a buoyant parcel is found and 
-!  this parcel can produce a cloud greater than specifed minimum depth
+!  this parcel can produce a cloud greater than specified minimum depth
 !  (CHMIN)...For now, set interval at 15 mb...
 !
        NCHECK = 1
@@ -4870,7 +4870,7 @@ updraft:    DO NK=K,KL-1
 !
 !...REI IS THE RATE OF ENVIRONMENTAL INFLOW...
 ! New formulation for entrainment
-!ckay introduce DX dependcy for the TOKIOKA Parameter =0.03
+!ckay introduce DX dependency for the TOKIOKA Parameter =0.03
 !ckay Kim et al 2011; Kang et al 2009; Lin et al 2013;  GCM findings
 
               TOKIOKA = 0.03
@@ -5035,7 +5035,7 @@ updraft:    DO NK=K,KL-1
             DO KQ=KTS,KTE
               JK = KTE-KQ+1
                    zfu(1,JK) = zf_wrf(KQ)
-                   su(1,JK) = oldTU(KQ)*(1.0+0.622*QSATu(KQ)) + (G*zf_wrf(KQ))/CP !TWG updraft temperature calulation
+                   su(1,JK) = oldTU(KQ)*(1.0+0.622*QSATu(KQ)) + (G*zf_wrf(KQ))/CP !TWG updraft temperature calculation
                    quu(1,JK) = oldQU(KQ)/(1.+oldQU(KQ)) ! specific humidity of updraft
                    pru(1,JK) = P0(KQ)/100.0    ! in millibars
                    TEE(1,JK) = T0(KQ)    ! ccc
@@ -5907,7 +5907,7 @@ d_mf:   IF(TDER.LT.1.)THEN
        AINC=1.
        IF(AINCMX.LT.AINC)AINC=AINCMX
 !     
-!...SAVE THE RELEVENT VARIABLES FOR A UNIT UPDRAFT AND DOWNDRAFT...THEY WILL 
+!...SAVE THE RELEVANT VARIABLES FOR A UNIT UPDRAFT AND DOWNDRAFT...THEY WILL
 !...BE ITERATIVELY ADJUSTED BY THE FACTOR AINC TO SATISFY THE STABILIZATION
 !...CLOSURE...
 !     
@@ -7072,7 +7072,7 @@ iter:     DO NCOUNT=1,10
       RLF=RLS-RLC
       CPP=1004.5*(1.+0.89*QU)
 !
-!  A = D(es)/DT IS THAT CALCULATED FROM BUCK (1981) EMPERICAL FORMULAS
+!  A = D(es)/DT IS THAT CALCULATED FROM BUCK (1981) EMPIRICAL FORMULAS
 !  FOR SATURATION VAPOR PRESSURE...
 !
       A=(CLIQ-BLIQ*DLIQ)/((TU-DLIQ)*(TU-DLIQ))
@@ -7130,8 +7130,8 @@ iter:     DO NCOUNT=1,10
 !                                                                       
 !  RATIO3 IS THE FRACTION OF LIQUID WATER IN FRESH CONDENSATE, RATIO4 IS
 !  THE FRACTION OF LIQUID WATER IN THE TOTAL AMOUNT OF CONDENSATE INVOLV
-!  IN THE PRECIPITATION PROCESS - NOTE THAT ONLY 60% OF THE FRESH CONDEN
-!  SATE IS IS ALLOWED TO PARTICIPATE IN THE CONVERSION PROCESS...       
+!  IN THE PRECIPITATION PROCESS - NOTE THAT ONLY 60% OF THE FRESH
+!  CONDENSATE IS IS ALLOWED TO PARTICIPATE IN THE CONVERSION PROCESS...
 !                                                                       
       RATIO3=QNEWLQ/(QNEW+1.E-8)                                       
 !     OLDQ=QTOT                                                         
@@ -7332,7 +7332,7 @@ iter:     DO NCOUNT=1,10
                      RUCUTEN, RVCUTEN                               ) !JTR
 !--------------------------------------------------------------------
    IMPLICIT NONE
-!  SAVE !TWG 2017 add to avoid memeory issues
+!  SAVE !TWG 2017 add to avoid memory issues
 !--------------------------------------------------------------------
    LOGICAL , INTENT(IN)           ::  restart,allowed_to_read
    INTEGER , INTENT(IN)           ::  ids, ide, jds, jde, kds, kde, &
@@ -7538,7 +7538,7 @@ iter:     DO NCOUNT=1,10
 !
 ! lookup table for tlog(emix/aliq)
 !
-! set up intial values for lookup tables
+! set up initial values for lookup tables
 !
        astrt=1.e-3
        ainc=0.075

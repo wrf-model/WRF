@@ -132,7 +132,7 @@ END MODULE module_interp_info
 
 !=========================================================================
 
-! Overlapping linear horizontal iterpolation for mass, u, and v staggerings.
+! Overlapping linear horizontal interpolation for mass, u, and v staggerings.
 
    SUBROUTINE interp_fcn_blint    ( cfld,                                 &  ! CD field
                               cids, cide, ckds, ckde, cjds, cjde,   &
@@ -280,7 +280,7 @@ END MODULE module_interp_info
 
 !=========================================================================
 
-! Overlapping linear horizontal iterpolation for longitude
+! Overlapping linear horizontal interpolation for longitude
 
    SUBROUTINE interp_fcn_blint_ll    ( cfld_inp,                                 &  ! CD field
                               cids, cide, ckds, ckde, cjds, cjde,   &
@@ -2068,7 +2068,7 @@ END MODULE module_interp_info
    
      
  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!KAL this is a direct copy of a subroutine from ndown, but a dependency on ndown will not work because it is not always compiled (for ideal cases), and most likely not compliled in the order needed.
+!KAL this is a direct copy of a subroutine from ndown, but a dependency on ndown will not work because it is not always compiled (for ideal cases), and most likely not compiled in the order needed.
 
   SUBROUTINE inter_wrf_copy(pro_c,alt_c,kde_c,pro_n,alt_n,kde_n)
   
@@ -2106,7 +2106,7 @@ END MODULE module_interp_info
    END SUBROUTINE inter_wrf_copy
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!11
-!KAL this is a direct copy of a subroutine from ndown, but a dependency on ndown will not work because it is not always compiled (for ideal cases), and most likely not compliled in the order needed.
+!KAL this is a direct copy of a subroutine from ndown, but a dependency on ndown will not work because it is not always compiled (for ideal cases), and most likely not compiled in the order needed.
 
      subroutine  coeff_mon_wrf_copy(x,y,a,b,c,d,n)
      

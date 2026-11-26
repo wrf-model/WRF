@@ -474,7 +474,7 @@ END SUBROUTINE radm_driver
           dum(j) = amin1(rh(j),1.)
           dum(j) = amax1(dum(j),0.)
 !            RK(J,137) =  1./(600.*EXP(-(DUM(J)/.28)**2.8)+5.)
-!          RK(J,137)= CVMGP(0.2,0.0,DUM(J) - .70) ! HETEROGENOUS N2O5
+!          RK(J,137)= CVMGP(0.2,0.0,DUM(J) - .70) ! HETEROGENEOUS N2O5
           rk(j,23) = 0.0
 ! HOMOGENEOUS  N2O5   
           IF (dum(j)-.7>=0.) THEN

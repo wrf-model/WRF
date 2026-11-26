@@ -13,7 +13,7 @@ A suite of tests for the WRF model ARW (Advanced Research WRF) core
 can be found in the directory "test".  Each subdirectory in /test 
 contains the necessary data (except for the real data case) and 
 input files to run the test specific to that directory.  
-To run specific test, builld the WRF model
+To run specific test, build the WRF model
 and the necessary initialization routine by typing
 
 -> compile "test_name"

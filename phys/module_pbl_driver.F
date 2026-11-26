@@ -662,21 +662,21 @@ CONTAINS
 
 ! Bep changes: variable added for urban
    real, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) ::FRC_URB2D   ! URBAN Landuse fraction
-   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_u_bep        ! Implicit component for the momemtum in X-direction
-   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_v_bep        ! Implicit component for the momemtum in Y-direction
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_u_bep        ! Implicit component for the momentum in X-direction
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_v_bep        ! Implicit component for the momentum in Y-direction
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_t_bep        ! Implicit component for the Pot. Temp.
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_q_bep        ! Implicit component for Moisture
 
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_e_bep        ! Implicit component for the TKE
-   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::b_u_bep        ! Explicit component for the momemtum in X-direction
-   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::b_v_bep        ! Explicit component for the momemtum in Y-direction
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::b_u_bep        ! Explicit component for the momentum in X-direction
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::b_v_bep        ! Explicit component for the momentum in Y-direction
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::b_t_bep        ! Explicit component for the Pot. Temp.
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::b_q_bep        ! Explicit component for Moisture
 
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::b_e_bep        ! Explicit component for the TKE
 
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::dlg_bep        ! Height above ground (L_ground in formula (24) of the BLM paper). 
-   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::dl_u_bep        ! Length scale (lb in formula (22) ofthe BLM paper).
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::dl_u_bep        ! Length scale (lb in formula (22) of the BLM paper).
 ! urban surface and volumes        
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::sf_bep           ! surfaces
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::vl_bep            ! volumes
@@ -771,7 +771,7 @@ CONTAINS
                                                               ol1,ol2,ol3,ol4, &
                                                                     sina,cosa
 
-! Addtional topographic statistics based on 2.5min (large-scale) and 30sec orographic
+! Additional topographic statistics based on 2.5min (large-scale) and 30sec orographic
 ! (small-scale) GSL drag schemes
   real,   dimension( ims:ime, jms:jme )                                      , &
           optional                                                           , &
@@ -821,7 +821,7 @@ CONTAINS
                                                             PSFC
 
 ! make these allocatable depending on the setting of idiff
-! Typically, we try to avoide allocating and deallocating local storage like this
+! Typically, we try to avoid allocating and deallocating local storage like this
 ! so as not to fragment the stack. But at this point, the idiff = 1 case is disabled
 ! (set to 0 for all cases) and has to be set manually by users who want to work with
 ! it.  When it becomes a more standard option, this should be redone, either defining
@@ -829,13 +829,13 @@ CONTAINS
 ! or pass in an integer flag that can be used to dimension the arrays to 1:1:1 as
 ! local variables.  JM 20100316
 
-   REAL, ALLOCATABLE, DIMENSION( :, :, : )::a_u        ! Implicit component for the momemtum in X-direction
-   REAL, ALLOCATABLE, DIMENSION( :, :, : )::a_v        ! Implicit component for the momemtum in Y-direction
+   REAL, ALLOCATABLE, DIMENSION( :, :, : )::a_u        ! Implicit component for the momentum in X-direction
+   REAL, ALLOCATABLE, DIMENSION( :, :, : )::a_v        ! Implicit component for the momentum in Y-direction
    REAL, ALLOCATABLE, DIMENSION( :, :, : )::a_t        ! Implicit component for the Pot. Temp.
    REAL, ALLOCATABLE, DIMENSION( :, :, : )::a_q        ! Implicit component for the water vapor
 
-   REAL, ALLOCATABLE, DIMENSION( :, :, : )::b_u        ! Explicit component for the momemtum in X-direction
-   REAL, ALLOCATABLE, DIMENSION( :, :, : )::b_v        ! Explicit component for the momemtum in Y-direction
+   REAL, ALLOCATABLE, DIMENSION( :, :, : )::b_u        ! Explicit component for the momentum in X-direction
+   REAL, ALLOCATABLE, DIMENSION( :, :, : )::b_v        ! Explicit component for the momentum in Y-direction
    REAL, ALLOCATABLE, DIMENSION( :, :, : )::b_t        ! Explicit component for the Pot. Temp.
    REAL, ALLOCATABLE, DIMENSION( :, :, : )::b_q        ! Explicit component for the water vapor
 
@@ -1006,7 +1006,7 @@ CONTAINS
                call wrf_message("In order to proceed, for boundary layer calculations, the "// &
                                 "boundary layer time-step "// &
                                 "will be rounded to the nearest minute," )
-               call wrf_message("possibly resulting in innacurate results.")
+               call wrf_message("possibly resulting in inaccurate results.")
             END IF
             DTBL=bldt*60
          else
@@ -1022,12 +1022,12 @@ CONTAINS
        idiff=0
 
    IF ( idiff .EQ. 1 ) THEN
-     ALLOCATE (a_u(ims:ime,kms:kme,jms:jme))       ! Implicit component for the momemtum in X-direction
-     ALLOCATE (a_v(ims:ime,kms:kme,jms:jme))       ! Implicit component for the momemtum in Y-direction
+     ALLOCATE (a_u(ims:ime,kms:kme,jms:jme))       ! Implicit component for the momentum in X-direction
+     ALLOCATE (a_v(ims:ime,kms:kme,jms:jme))       ! Implicit component for the momentum in Y-direction
      ALLOCATE (a_t(ims:ime,kms:kme,jms:jme))       ! Implicit component for the Pot. Temp.
      ALLOCATE (a_q(ims:ime,kms:kme,jms:jme))       ! Implicit component for the water vapor
-     ALLOCATE (b_u(ims:ime,kms:kme,jms:jme))       ! Explicit component for the momemtum in X-direction
-     ALLOCATE (b_v(ims:ime,kms:kme,jms:jme))       ! Explicit component for the momemtum in Y-direction
+     ALLOCATE (b_u(ims:ime,kms:kme,jms:jme))       ! Explicit component for the momentum in X-direction
+     ALLOCATE (b_v(ims:ime,kms:kme,jms:jme))       ! Explicit component for the momentum in Y-direction
      ALLOCATE (b_t(ims:ime,kms:kme,jms:jme))       ! Explicit component for the Pot. Temp.
      ALLOCATE (b_q(ims:ime,kms:kme,jms:jme))       ! Explicit component for the water vapor
      ALLOCATE (sf(ims:ime,kms:kme,jms:jme) )       ! surfaces
@@ -1095,7 +1095,7 @@ CONTAINS
 ! Here we should put a switch: 
 ! if we do not use BEP, just initialize the values of the a, and b to zero, except for the lowest model level, 
 ! where the heat and momentum fluxes are introduced         
-! if we use BEP, use the values computed by BEP weigthed by the urban fraction.
+! if we use BEP, use the values computed by BEP weighted by the urban fraction.
 ! for the moment I put a simple "if" but it should be changed to a more elegant way after(using the CASE, maybe?)
 !!!!!!!!!!!!!!
 ! This is the more general way to go, however some of these variables (e. g. a_t, a_q) may be zero nearly all time. 
@@ -1140,13 +1140,13 @@ CONTAINS
            enddo
            sf(i,kte+1,j)=1.
 ! fix the values for the surface fluxes (source/sink terms)
-! here for momentum the resolution is done implicitely
-! while for heat and moisture is done explicitely 
+! here for momentum the resolution is done implicitly
+! while for heat and moisture is done explicitly
             a_u(i,1,j)=(-ust(I,J)*ust(I,J))/dz8w(i,1,j)/((u_phy(i,1,j)**2+v_phy(i,1,j)**2.)**.5)           
             a_v(i,1,j)=(-ust(I,J)*ust(I,J))/dz8w(i,1,j)/((u_phy(i,1,j)**2+v_phy(i,1,j)**2.)**.5)
             b_t(i,1,j)=hfx(i,j)/rho(i,1,j)/CP/dz8w(i,1,j)
             b_q(i,1,j)=qfx(i,j)/rho(i,1,j)/dz8w(i,1,j)
-!! if you want to solve also the heat and moisture fluxes implicitely, uncomment the following lines.
+!! if you want to solve also the heat and moisture fluxes implicitly, uncomment the following lines.
 !! (of course you will need the values of thz0,qz0,akhs).
 !             b_t(i,1,j)=akhs(i,j)*(thz0(I,J))/dz8w(i,1,j)
 !             b_q(i,1,j)=akhs(i,j)*(qz0(I,J))/dz8w(i,1,j)
@@ -2280,12 +2280,12 @@ CONTAINS
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme        &
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte)
 
-          DEALLOCATE (a_u)       ! Implicit component for the momemtum in X-direction
-          DEALLOCATE (a_v)       ! Implicit component for the momemtum in Y-direction
+          DEALLOCATE (a_u)       ! Implicit component for the momentum in X-direction
+          DEALLOCATE (a_v)       ! Implicit component for the momentum in Y-direction
           DEALLOCATE (a_t)       ! Implicit component for the Pot. Temp.
           DEALLOCATE (a_q)       ! Implicit component for the water vapor
-          DEALLOCATE (b_u)       ! Explicit component for the momemtum in X-direction
-          DEALLOCATE (b_v)       ! Explicit component for the momemtum in Y-direction
+          DEALLOCATE (b_u)       ! Explicit component for the momentum in X-direction
+          DEALLOCATE (b_v)       ! Explicit component for the momentum in Y-direction
           DEALLOCATE (b_t)       ! Explicit component for the Pot. Temp.
           DEALLOCATE (b_q)       ! Explicit component for the water vapor
           DEALLOCATE (sf )       ! surfaces
@@ -2461,7 +2461,7 @@ CONTAINS
 !      dM      1     d      dM
 !     ---- =----  ---(rho*K----)+AM+B
 !      dt     rho    dz     dz  
-! where A and B are the implict and explcit coefficients of the source/sink terms
+! where A and B are the implicit and explicit coefficients of the source/sink terms
 ! (at the lowest level the surface fluxes should go in these terms)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !-----------------------------------------------------------------------
@@ -2661,7 +2661,7 @@ CONTAINS
 !      dM      1     d      dM
 !     ---- =----  ---(rho*K----)+AM+B
 !      dt     rho    dz     dz  
-! where A and B are the implict and explcit coefficients of the source/sink terms
+! where A and B are the implicit and explicit coefficients of the source/sink terms
 ! (at the lowest level the surface fluxes should go in these terms)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !-----------------------------------------------------------------------

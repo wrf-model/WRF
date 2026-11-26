@@ -557,7 +557,7 @@ class GitRepository(Repository):
         else:
             stat.clean_state = ExternalStatus.STATUS_OK
 
-        # Now save the verbose status output incase the user wants to
+        # Now save the verbose status output in case the user wants to
         # see it.
         stat.status_output = self._git_status_verbose(repo_dir_path)
 
@@ -580,7 +580,7 @@ class GitRepository(Repository):
         should be an empty string to be considered 'clean'. Of course
         this assumes we only get an empty string from an status
         command on a clean checkout, and not some error
-        condition... Could alse use 'git diff --quiet'.
+        condition... Could also use 'git diff --quiet'.
 
         """
         is_dirty = False

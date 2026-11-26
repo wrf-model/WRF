@@ -115,7 +115,7 @@ def fatal_error(message):
 #
 # ---------------------------------------------------------------------
 def str_to_bool(bool_str):
-    """Convert a sting representation of as boolean into a true boolean.
+    """Convert a string representation of as boolean into a true boolean.
 
     Conversion should be case insensitive.
     """

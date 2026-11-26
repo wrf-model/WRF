@@ -1133,7 +1133,7 @@ case 39:
 /* rule 39 can match eol */
 YY_RULE_SETUP
 #line 139 "lexer.l"
-/* Ignore line-endings preceeded by \ */
+/* Ignore line-endings preceded by \ */
 	YY_BREAK
 case 40:
 YY_RULE_SETUP

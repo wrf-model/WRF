@@ -295,7 +295,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
        TYPE (domain) grid
        TYPE (grid_config_rec_type) config_flags
      END SUBROUTINE med_endup_step
-       ! mediation-supplied routine that intializes the nest from the grid
+       ! mediation-supplied routine that initializes the nest from the grid
        ! by interpolation
 
      SUBROUTINE Setup_Timekeeping( grid )

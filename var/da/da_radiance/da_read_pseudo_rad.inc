@@ -11,7 +11,7 @@ subroutine da_read_pseudo_rad (iv)
 
    type (iv_type),  intent (inout) :: iv
 
-   ! Instrument triplet, follow the convension of RTTOV 
+   ! Instrument triplet, follow the convention of RTTOV
    integer   :: platform_id, satellite_id, sensor_id
 
    real, allocatable    :: tb_inv(:)  !  bright temperatures

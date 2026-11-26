@@ -1318,7 +1318,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
                         TEMPIR_ifile = -1
 !                     else
 !                        write(unit=stdout,fmt='(A,F7.2,A)') &
-!                           '          TEMPIR: minimum time difference is accetable - ',TEMPIR_min_time_diff,' minutes'
+!                           '          TEMPIR: minimum time difference is acceptable - ',TEMPIR_min_time_diff,' minutes'
                      end if
                   end if
 
@@ -2541,7 +2541,7 @@ end subroutine jday2cal
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 subroutine da_get_cal_time(jmod,yr,mt,dy,hr,mn,sc)
-  ! Converts modified Julian time (in minutes) to Gregorian calender date
+  ! Converts modified Julian time (in minutes) to Gregorian calendar date
   ! Modified from this code: David G. Simpson, NASA Goddard, Accessed April 2018
   !         https://caps.gsfc.nasa.gov/simpson/software.html
 

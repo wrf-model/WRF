@@ -430,8 +430,8 @@ USE module_mp_radar
 !      print*,'itimestep = ',itimestep
 !        if (itimestep.gt.150)return
        if (itimestep.eq.1)then
-        if (iceprocs.eq.1) call wrf_message(" FULL SBM: ICE PROCESES ACTIVE ")
-        if (iceprocs.eq.0) call wrf_message(" FULL SBM: LIQUID PROCESES ONLY")
+        if (iceprocs.eq.1) call wrf_message(" FULL SBM: ICE PROCESSES ACTIVE ")
+        if (iceprocs.eq.0) call wrf_message(" FULL SBM: LIQUID PROCESSES ONLY")
        end if
        tmax = 0
 ! COAL BOTT IS EITHER CALLED EVERY TIME STEP OR TWICE
@@ -1111,7 +1111,7 @@ USE module_mp_radar
         END IF
 !Liquid Water
 !Alex is not responsible the "2" below.
-!Alex is responsible fo rthe geo_cs formulas.
+!Alex is responsible for the geo_cs formulas.
         kext_ql(i,k,j)=0.
         krr=0
         DO kr=p_ff1i01,p_ff1i33
@@ -2112,8 +2112,8 @@ USE module_mp_radar
      &        FORM="FORMATTED",STATUS="OLD",ERR=2070)
 	READ(hujisbm_unit1,900) XL,XI,XS,XG,XH          
 	CLOSE(hujisbm_unit1)
-!	print *, ' ***** file2: succesfull *******'
-        call wrf_message(" FULL SBM: ****** file2: succesfull  ******* ")
+!	print *, ' ***** file2: successful *******'
+        call wrf_message(" FULL SBM: ****** file2: successful  ******* ")
         ENDIF
         CALL wrf_dm_bcast_bytes ( XL , size ( XL ) * RWORDSIZE )
         CALL wrf_dm_bcast_bytes ( XI , size ( XI ) * RWORDSIZE )
@@ -2144,8 +2144,8 @@ USE module_mp_radar
      &        FORM="FORMATTED",STATUS="OLD",ERR=2070)
 	READ(hujisbm_unit1,900) VR1,VR2,VR3,VR4,VR5     
 	CLOSE(hujisbm_unit1)
-!	print *, ' ***** file3: succesfull *******'
-        call wrf_message(" FULL SBM: ****** file3: succesfull  ******* ")
+!	print *, ' ***** file3: successful *******'
+        call wrf_message(" FULL SBM: ****** file3: successful  ******* ")
         ENDIF
         CALL wrf_dm_bcast_bytes ( VR1 , size ( VR1 ) * RWORDSIZE )
         CALL wrf_dm_bcast_bytes ( VR2 , size ( VR2 ) * RWORDSIZE )
@@ -2193,8 +2193,8 @@ USE module_mp_radar
      &        FORM="FORMATTED",STATUS="OLD",ERR=2070)
 	READ(hujisbm_unit1,900) SLIC,TLIC,COEFIN,C2,C3,C4
 	CLOSE(hujisbm_unit1)
-!	print *, ' ***** file4: succesfull *******'
-        call wrf_message(" FULL SBM: ****** file4: succesfull  ******* ")
+!	print *, ' ***** file4: successful *******'
+        call wrf_message(" FULL SBM: ****** file4: successful  ******* ")
         END IF
         CALL wrf_dm_bcast_bytes ( SLIC , size ( SLIC ) * RWORDSIZE )
         CALL wrf_dm_bcast_bytes ( TLIC , size ( TLIC ) * RWORDSIZE )
@@ -2311,8 +2311,8 @@ USE module_mp_radar
      &        FORM="FORMATTED",STATUS="OLD",ERR=2070)
 	READ(hujisbm_unit1,900) RO1BL,RO2BL,RO3BL,RO4BL,RO5BL
 	CLOSE(hujisbm_unit1)
-!	print *, ' ***** file6: succesfull *******'
-        call wrf_message(" FULL SBM: ****** file6: succesfull  ******* ")
+!	print *, ' ***** file6: successful *******'
+        call wrf_message(" FULL SBM: ****** file6: successful  ******* ")
         END IF
         CALL wrf_dm_bcast_bytes (RO1BL  , size ( RO1BL ) * RWORDSIZE )
         CALL wrf_dm_bcast_bytes (RO2BL  , size ( RO2BL ) * RWORDSIZE )
@@ -2343,8 +2343,8 @@ USE module_mp_radar
      &        FORM="FORMATTED",STATUS="OLD",ERR=2070)
 	READ(hujisbm_unit1,*) RADXXO
 	CLOSE(hujisbm_unit1)
-!	print *, ' ***** file7: succesfull *******'
-        call wrf_message(" FULL SBM: ****** file7: succesfull  ******* ")
+!	print *, ' ***** file7: successful *******'
+        call wrf_message(" FULL SBM: ****** file7: successful  ******* ")
 !	PRINT *, '******* Hebrew Univ Cloud model-HUCM *******'
         call wrf_message(" FULL SBM: Hebrew Univ Cloud model-HUCM ")
 
@@ -5861,7 +5861,7 @@ USE module_mp_radar
 ! LEAVE REMAPPING ON
 !      IDROP=0
  
-! VALUES FOR SOME REMAPING VARIABLES
+! VALUES FOR SOME REMAPPING VARIABLES
 
         KRDROP_REMAP_MIN=8
 	KRDROP_REMAP_MAX=13 
@@ -8530,7 +8530,7 @@ USE module_mp_radar
         dimension g(nkr),ckxx(nkr,nkr),x(0:nkr)
         dimension chucm(nkr,nkr)
         double precision ima(nkr,nkr)
-! this is character values containes adresses of temporary files      
+! this is character values contains addresses of temporary files
         gmin=1.d-60
 !       gmin=1.d-15
 ! lower and upper integration limit ix0,ix1
@@ -10038,7 +10038,7 @@ rhoi = fm_i/V_i
 !
 ! ASSUME:- (1) snowflakes have an ice skeleton structure that
 ! is incollapsable,
-! but of varing AR, until completion of melting;
+! but of varying AR, until completion of melting;
 ! (2) melting occurs only at snowflake exterior surface and water
 ! then penetrates inside
 !

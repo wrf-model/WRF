@@ -1,5 +1,5 @@
 MODULE module_soilpsd
-! Soil particle-size distributions, based on data collected by G.H. McTainsh (g.mctainsh@griffith.edu.au) and collegues, 
+! Soil particle-size distributions, based on data collected by G.H. McTainsh (g.mctainsh@griffith.edu.au) and colleagues,
 ! Griffith University, Australia. The data has been processed by Harry Butler (harry.butler@usq.edu.au), 
 ! University of Southern Queensland, Australia, and Martina Klose (mklose@uni-koeln.de), University of Cologne, Germany. 
        integer, parameter :: mmax=4

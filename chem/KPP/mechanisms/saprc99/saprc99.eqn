@@ -1,4 +1,4 @@
-#EQUATIONS {SAPRC99 by Pablo Saide, atomatically built using reorder_eqs.m script }
+#EQUATIONS {SAPRC99 by Pablo Saide, automatically built using reorder_eqs.m script }
 
 {1} NO2 + hv = NO + O3P : j(Pj_no2) ;
 {2} O3P + M {O2+air} = O3 : 0.20946e0*C_M*ARR(5.68D-34,0.0_dp,-2.80_dp,TEMP) ;

@@ -63,7 +63,7 @@ main( int argc, char *argv[] )
     if ( !strncmp( inln, callln, strlen( callln ) - 1 ) ) {
 
       printf("   integr_edit: replacing  %s \n", inln);
-      fprintf(ofile, "!!!  use direct adressing in decomp \n");
+      fprintf(ofile, "!!!  use direct addressing in decomp \n");
       fprintf(ofile, "!!! %s", inln);
       fprintf(ofile, "CALL decomp_%s ( A, ising )\n", mechname );
 
@@ -72,7 +72,7 @@ main( int argc, char *argv[] )
     }
 
 
-    /* add decomp routine w. direct referncing */
+    /* add decomp routine w. direct referencing */
     if ( !strncmp (inln, endln, strlen(endln)-1) ) {
 
       if ( add_sub ) {

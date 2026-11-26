@@ -2,7 +2,7 @@ subroutine da_transform_xtoy_rttov (grid, iv, y )
 
    !---------------------------------------------------------------------------
    !  Purpose: transform from analysis increment to 
-   !                          pertubation radiance.
+   !                          perturbation radiance.
    !
    !  METHOD:  delta_y = H delta_x
    !           1. input reference state of RTTOV_TL

@@ -290,7 +290,7 @@ CONTAINS
          ! Then again, the assumptions of SAS break down when the
          ! gridscale is near the convection scale anyway.  In a large
          ! storm such as a hurricane, there is often no environment to
-         ! detrain into since adjancent gridsquares are also undergoing
+         ! detrain into since adjacent gridsquares are also undergoing
          ! active convection.  Each gridsquare will no longer have many
          ! updrafts and downdrafts.  At sub-convective timescales, you
          ! will find unstable columns for many (say, 5 second length)
@@ -2243,7 +2243,7 @@ CONTAINS
       enddo
 !c!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !c
-!c--- the above changed environment is now used to calulate the
+!c--- the above changed environment is now used to calculate the
 !c--- effect the arbitrary cloud (with unit mass flux)
 !c--- would have on the stability,
 !c--- which then is used to calculate the real mass flux,
@@ -2549,7 +2549,7 @@ CONTAINS
 !         acrtfct(i) = min(acrtfct(i),val2)
 !         acrtfct(i) = 1. - acrtfct(i)
 !c
-!c  modify acrtfct(i) by colume mean rh if rhbar(i) is greater than 80 percent
+!c  modify acrtfct(i) by column mean rh if rhbar(i) is greater than 80 percent
 !c
 !c         if(rhbar(i) >= .8) then
 !c           acrtfct(i) = acrtfct(i) * (.9 - min(rhbar(i),.9)) * 10.
@@ -2608,7 +2608,7 @@ CONTAINS
       enddo
 !c
 !c  compute cloud base mass flux as a function of the mean
-!c     updraft velcoity for the grid sizes where
+!c     updraft velocity for the grid sizes where
 !c    the quasi-equilibrium assumption of Arakawa-Schubert is not
 !c      valid any longer. 
 !c
@@ -4189,7 +4189,7 @@ CONTAINS
       enddo
 !c
 !c  compute cloud base mass flux as a function of the mean
-!c     updraft velcoity
+!c     updraft velocity
 !c
       do i= 1, im
         if(cnvflg(i)) then

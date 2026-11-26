@@ -26,7 +26,7 @@ foreach f ( $Registry_files )
 	     ( $f == Registry ) ) then
 	else
 
-		#	Check existend of file within last release
+		#	Check existence of file within last release
 
 		git diff ${LAST_RELEASE_HASH}:Registry/$f -- ../Registry/$f >& /dev/null
 		set OK = $status

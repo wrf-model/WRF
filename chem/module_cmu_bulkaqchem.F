@@ -541,7 +541,7 @@
 ! this routine prepares the necessary variables for the call
 ! to the stiff ode integrator (svode)
 ! its interface to the main code is the same as with the
-! assymptotic solver so one can interchange solvers easily
+! asymptotic solver so one can interchange solvers easily
 !
 ! last modification: june 13, 1998 by s.p.
 !
@@ -944,7 +944,7 @@
 !
 !     this is where the call to hybrd was made when
 !        the aqueous radical species were treated as steady state
-!     now we treate iradical.gt.0 same as iradical=100
+!     now we treat iradical.gt.0 same as iradical=100
 !
       go to 280
 !
@@ -1241,7 +1241,7 @@
 !     kn is the knudsen number
       kn=airl/radius
       ikn=1.0/kn
-!     acc is the accomodation coefficient assumed the same here for
+!     acc is the accommodation coefficient assumed the same here for
 !     all the species
       acc=0.01
 !     n is the coefficient entering the flux expression
@@ -1720,11 +1720,11 @@
 
 !      s u b r o u t i n e s     f o r    d r o p l e t     p r o g r a m
 !************************************************************************
-! this routine calculates the 20 equilibrium costants {akeq}, the 20
-! henry's law costants {akhen} and the 120 reaction rate costants {akre}
+! this routine calculates the 20 equilibrium constants {akeq}, the 20
+! henry's law constants {akhen} and the 120 reaction rate constants {akre}
 !             with only input the temperature (temp).
 !    included in the routine are the corresponding enthalpies
-!   {dheq,dhhen,dhre} and the costants at 298 k {bkeq,bkhen,bkre}.
+!   {dheq,dhhen,dhre} and the constants at 298 k {bkeq,bkhen,bkre}.
 !************************************************************************
 
        subroutine constants( temp, akeq, akhen, akre )
@@ -2258,7 +2258,7 @@
 !     kn is the knudsen number
       kn=airl/radius
       ikn=1.d0/kn
-!     acc is the accomodation coefficient assumed the same here for
+!     acc is the accommodation coefficient assumed the same here for
 !     all the species
       acc=0.1d0
 !     n is the coefficient entering the flux expression

@@ -397,7 +397,7 @@ CONTAINS
 !         =0.8
 ! xnor: intercept parameter of the raindrop size distribution
 !       = 0.08 cm-4 = 8.0e6 m-4
-! araut: time sacle for autoconversion of cloud water to raindrops
+! araut: time scale for autoconversion of cloud water to raindrops
 !       =1.0e-3 [s-1]
 ! ql0: mixing ratio threshold for cloud watercoalescence [kg/kg]
 ! vf1r: ventilation factors for rain =0.78
@@ -444,7 +444,7 @@ CONTAINS
                                           dp3, dp5, dp5o2
 
 
-! temperary vars
+! temporary vars
 
    REAL                                :: tmp, tmp0, tmp1, tmp2,tmp3,  &
                                           tmp4,delta2,delta3, delta4,  &
@@ -595,7 +595,7 @@ CONTAINS
 !     qrzodt      qr/dt
 !     qgzodt      qg/dt
 !
-!     temcc       temperature in dregee C
+!     temcc       temperature in degree C
 !
 
       obp4=1.0/(constb+4.0)
@@ -777,7 +777,7 @@ CONTAINS
 ! Calculate precipitation fluxes due to terminal velocities.
 !***********************************************************************
 !
-!- Calculate termianl velocity (vt?)  of precipitation q?z
+!- Calculate terminal velocity (vt?)  of precipitation q?z
 !- Find maximum vt? to determine the small delta t
 !
 !-- rain
@@ -2231,7 +2231,7 @@ CONTAINS
       tmp_temcc = tmp_tem - 273.15
 
       ! estimate lower bound on saturation vapor pressure 
-      !   (ice if <0C, liquid aboce)
+      !   (ice if <0C, liquid above)
       if (tmp_temcc .lt. 0.) then
          es=1000.*svp1*exp( 21.8745584*(tmp_tem-273.16)/(tmp_tem-7.66) ) !ice
       else

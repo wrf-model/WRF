@@ -444,7 +444,7 @@ CONTAINS
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme) :: a_rscalar
 
 
-!  Initilize local adjoint variable
+!  Initialize local adjoint variable
    a_rscalar = 0.0
 
    CALL a_relax_bdytend (a_rscalar, a_scalar_tend,             &

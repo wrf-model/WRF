@@ -1,7 +1,7 @@
 MODULE module_write
 
 !-----------------------------------------------------------------------------!
-! Output observations for intput into MM5 3D-VAR
+! Output observations for input into MM5 3D-VAR
 !
 !-----------------------------------------------------------------------------!
 !  HISTORY: 
@@ -93,7 +93,7 @@ counts: &
       endif
 
 !------------------------------------------------------------------------------!
-!     B. PRINT OBS USING THE NEW STRUCUTURE
+!     B. PRINT OBS USING THE NEW STRUCTURE
 !------------------------------------------------------------------------------!
 
       WRITE (0,'(A)')  &
@@ -798,7 +798,7 @@ stations_valid: &
 
 ! To keep the levels for use later. Because some of the BUOY data have the empty 
 ! data record from the NCAR archived LITTLE_R file, the number of levels could 
-! become 0, which is not cosistent with the usage in WRFVar (YRG, 02/24/2009):
+! become 0, which is not consistent with the usage in WRFVar (YRG, 02/24/2009):
 
       k_levels = obs (loop_index) % info % levels 
       if ( (fm == 18 .or. fm == 19 ) .and. &
@@ -1110,7 +1110,7 @@ SUBROUTINE output_prep (max_number_of_obs, obs, number_of_obs, windex,&
       bfout = 11
       bftable = 10
 
-! Initialilze cfm
+! Initialize cfm
 !---------------------------------------------------------------------
  
       cfm = 'UNKNOW'

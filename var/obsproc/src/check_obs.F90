@@ -3,9 +3,9 @@
 SUBROUTINE check_obs (nobs_max, obs, number_of_obs, variable)
 
 !-------------------------------------------------------------------------------
-! Check if level contains at least one valid data. When level is uncomplete:
+! Check if level contains at least one valid data. When level is incomplete:
 ! The all station is removed for single level station.
-! The uncomplete level only is removed for multi level station.
+! The incomplete level only is removed for multi level station.
 !-------------------------------------------------------------------------------
 
   USE module_type

@@ -4,7 +4,7 @@
 ! Energy (DOE). NEITHER THE GOVERNMENT NOR THE CONTRACTOR MAKES ANY WARRANTY,
 ! EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.
 !
-! miscellaneous debuging routines for CBMZ and MOSAIC
+! miscellaneous debugging routines for CBMZ and MOSAIC
 !**********************************************************************************  
 	module module_peg_util
 

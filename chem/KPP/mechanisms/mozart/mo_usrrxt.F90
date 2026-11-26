@@ -19,7 +19,7 @@
 
       subroutine usrrxt_inti
 !-----------------------------------------------------------------
-!        ... intialize the user reaction constants module
+!        ... initialize the user reaction constants module
 !-----------------------------------------------------------------
 
       use mo_chem_utls, only : get_rxt_ndx, get_spc_ndx

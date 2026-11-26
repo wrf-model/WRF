@@ -16,7 +16,7 @@ subroutine da_check_vp_errors(vp1, vp2, ne, &
 
    real                           :: inv_size    ! 1/size of array.
    real                           :: rms_fild    ! RMS of field.
-   real                           :: rms_diff    ! RMS of differnce.
+   real                           :: rms_diff    ! RMS of difference.
 
    real, dimension(its:ite, jts:jte, kts:kte) :: diff ! Difference
 !  real                           :: diff_alpha(its:ite,jts:jte,kts:kte,1:ne)

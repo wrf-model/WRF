@@ -395,7 +395,7 @@ int main (int argc, char **argv)
 
         dep = (Dependency *)h1->data;
 
-        /* If there are no dependencys, there is no need to output anything */
+        /* If there are no dependencies, there is no need to output anything */
         if (list_length(dep->includes) + list_length(dep->modules) == 0)
             continue;
 
@@ -425,7 +425,7 @@ int main (int argc, char **argv)
             } else {
                 mod = (Module *)l->data;
                 if (strcasecmp(mod->sourcefile, dep->sourcefile) == 0) {
-                    /* Dont' write *.mod-file to the dependency list if it 
+                    /* Don't write *.mod-file to the dependency list if it
                      * defined in the same file it is USEd from. */
                 } else {
                     if (options.obj_dir_set)

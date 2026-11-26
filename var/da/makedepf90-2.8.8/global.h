@@ -69,7 +69,7 @@ typedef struct {
     bool coco;          /* Look for coco set-files */
     bool obj_dir_set;  /* Option -b obj_dir was used */
     char *obj_dir;      /* Directory set by option -b */
-    bool src_dep;       /* List the source file in the dependencys */
+    bool src_dep;       /* List the source file in the dependencies */
     bool src_path_set;  /* option -I was used */
     List *src_path;     /* Path to search for source by -I*/
 } Options;

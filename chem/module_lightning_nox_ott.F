@@ -1,13 +1,13 @@
 !WRF:MODEL_LAYER:CHEMISTRY
 !
 ! Contains subroutine for converting flash rates into NO emissions
-! based on prescribed vertical distirbutions. Subroutines should behave
+! based on prescribed vertical distributions. Subroutines should behave
 ! the following way:
 !
 ! Input: flashes (#/s)
 ! Output: tendency (ppmv/s)
 !
-! The output will be muliplied by timestep and used to incremeent NO
+! The output will be multiplied by timestep and used to incremeent NO
 ! concentration and the respective passive tracer in lightning_nox_driver.
 !
 ! See module_lightning_nox_driver for more info.

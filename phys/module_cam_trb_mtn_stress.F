@@ -158,7 +158,7 @@
          ! ri  = 2._r8 * gravit * ( t(i,kt) * exner(i,kt) - t(i,kb) * exner(i,kb) ) * ( zm(i,kt) - zm(i,kb) ) &
          !                      / ( ( t(i,kt) + t(i,kb) ) * dv2 )
 
-         ! Calculate the instability function and modify the neutral drag cofficient.
+         ! Calculate the instability function and modify the neutral drag coefficient.
          ! We should probably follow more elegant approach like Louis et al (1982) or Bretherton and Park (2009) 
          ! but for now we use very crude approach : just 1 for ri < 0, 0 for ri > 1, and linear ramping.
 

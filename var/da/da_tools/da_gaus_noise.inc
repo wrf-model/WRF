@@ -17,7 +17,7 @@ real function da_gaus_noise(KDUM)
    !   output :
    !   ------
    !      argument
-   !         gauss_noise      : gaussian random betwen 
+   !         gauss_noise      : gaussian random between
    !      common              : none
    !
    !   workspace :              none

@@ -41,10 +41,10 @@ program gen_be_diags_read
 
    integer, allocatable:: bin(:,:,:)        ! Bin assigned to each 3D point.
    integer, allocatable:: bin2d(:,:)        ! Bin assigned to each 2D point.
-   real, allocatable   :: regcoeff_psi_chi(:)        ! psi/chi    regression cooefficient.
-   real, allocatable   :: regcoeff_psi_t(:,:,:)   ! psi/t   regression cooefficient.
-   real, allocatable   :: regcoeff_psi_ps(:,:)    ! psi/ps     regression cooefficient.
-   real, allocatable   :: regcoeff_psi_rh(:,:,:)  ! psi/rh     regression cooefficient.
+   real, allocatable   :: regcoeff_psi_chi(:)        ! psi/chi    regression coefficient.
+   real, allocatable   :: regcoeff_psi_t(:,:,:)   ! psi/t   regression coefficient.
+   real, allocatable   :: regcoeff_psi_ps(:,:)    ! psi/ps     regression coefficient.
+   real, allocatable   :: regcoeff_psi_rh(:,:,:)  ! psi/rh     regression coefficient.
    real, allocatable   :: regcoeff_chi_u_t(:,:,:) ! chi_u/t regression coefficient
    real, allocatable   :: regcoeff_chi_u_ps(:,:)  ! chi_u/ps   regression coefficient
    real, allocatable   :: regcoeff_chi_u_rh(:,:,:)! chi_u/rh   regression coefficient

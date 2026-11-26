@@ -200,7 +200,7 @@
           INTENT(OUT  ) ::                                          &
                                ph_aer01, ph_aer02, ph_aer03, ph_aer04
 !
-!tendencies:dvmrdt_sv13d,dvmrcwdt_sv13d are the tendencies which are passsed on from the CAM-MAM cloud chemistry
+!tendencies:dvmrdt_sv13d,dvmrcwdt_sv13d are the tendencies which are passed on from the CAM-MAM cloud chemistry
 !           to gasaerexch subroutine
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, gas_pcnst_pos ),          &

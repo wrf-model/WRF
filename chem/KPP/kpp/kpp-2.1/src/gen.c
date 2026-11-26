@@ -622,13 +622,13 @@ char buf1[100], buf2[100];
   if ( useWRFConform ) 
     {
        sprintf( buf1, "%s_Fun", rootFileName ); 
-  F_VAR      = DefFnc( buf1,      4, "time derivatives of variables - Agregate form");
+  F_VAR      = DefFnc( buf1,      4, "time derivatives of variables - Aggregate form");
        sprintf( buf2, "%s_Fun_SPLIT", rootFileName ); 
-  FSPLIT_VAR      = DefFnc( buf2,      4, "time derivatives of variables - Agregate form");
+  FSPLIT_VAR      = DefFnc( buf2,      4, "time derivatives of variables - Aggregate form");
     }
   else
     {
-  F_VAR      = DefFnc( "Fun",      4, "time derivatives of variables - Agregate form");
+  F_VAR      = DefFnc( "Fun",      4, "time derivatives of variables - Aggregate form");
   FSPLIT_VAR = DefFnc( "Fun_SPLIT", 5, "time derivatives of variables - Split form");
 
     }
@@ -769,13 +769,13 @@ char buf1[100], buf2[100];
   if ( useWRFConform ) 
     {
        sprintf( buf1, "%s_IRRFun", rootFileName ); 
-  F_VAR      = DefFnc( buf1,      4, "accumulated time derivatives of variables - Agregate form");
+  F_VAR      = DefFnc( buf1,      4, "accumulated time derivatives of variables - Aggregate form");
        sprintf( buf2, "%s_IRRFun_SPLIT", rootFileName ); 
-  FSPLIT_VAR      = DefFnc( buf2,      4, "accumulated time derivatives of variables - Agregate form");
+  FSPLIT_VAR      = DefFnc( buf2,      4, "accumulated time derivatives of variables - Aggregate form");
     }
   else
     {
-  F_VAR      = DefFnc( "IRRFun",      4, "accumulated time derivatives of variables - Agregate form");
+  F_VAR      = DefFnc( "IRRFun",      4, "accumulated time derivatives of variables - Aggregate form");
   FSPLIT_VAR = DefFnc( "IRRFun_SPLIT", 5, "accumulated time derivatives of variables - Split form");
 
     }
@@ -1248,7 +1248,7 @@ char buf1[100], buf2[100];
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 void GenerateHessian()
-/* Unlike Hess, this function deffers the sparse Data structure generation */
+/* Unlike Hess, this function defers the sparse Data structure generation */
 {
 int i, j, k;
 int used;

@@ -165,7 +165,7 @@ subroutine da_get_innov_vector_chem_sfc( it, num_qcstat_conv, grid, ob, iv)
    end if   !  (chem_cv_options >= 108)
 
 
-   ! Innovations and obs errors for chemic_surf (e.g., surfce concentration)
+   ! Innovations and obs errors for chemic_surf (e.g., surface concentration)
 
    do ichem = PARAM_FIRST_SCALAR, num_chemic_surf
 

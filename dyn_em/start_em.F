@@ -280,7 +280,7 @@
 ! adaptive time steps. If the value is significantly larger than reasonable,
 ! then stop immediately. Likely the user made a mistake.
 ! If the rule of thumb is 6 DX = DT, then anything > 10 is flagged.
-! Only look at domain 1, only do this for the firt time into this routine,
+! Only look at domain 1, only do this for the first time into this routine,
 ! only look at real-data cases (where the map projection is not Cartesian), 
 ! and only look at user-specified time steps (not the adaptive dt option).
 !-----------------------------------------------------------------------
@@ -791,7 +791,7 @@
        ENDDO
        ENDDO
        ENDDO
-  !  Everyone else runs thorugh here.  NOTE that we might also want to call the
+  !  Everyone else runs through here.  NOTE that we might also want to call the
   !  rebalancing ourselves for different set ups.  It does not impact HRRR, so
   !  it is an easy decision.
   ELSE

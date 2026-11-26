@@ -85,7 +85,7 @@ subroutine da_setup_runconstants(grid, xbx)
 
    call da_find_fft_trig_funcs(fft_size_j, xbx % trig_functs_y(:))
 
-   !-----Multiplicative coefficent for solution of spectral Poission eqn:
+   !-----Multiplicative coefficient for solution of spectral Poission eqn:
 
    !mslee.Bgrid
    ! const = -0.5 * grid%xb%ds * grid%xb%ds

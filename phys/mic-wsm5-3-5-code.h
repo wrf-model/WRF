@@ -19,7 +19,7 @@
 !
 !  This code is a 5-class mixed ice microphyiscs scheme (WSM5) of the 
 !  Single-Moment MicroPhyiscs (WSMMP). The WSMMP assumes that ice nuclei
-!  number concentration is a function of temperature, and seperate assumption
+!  number concentration is a function of temperature, and separate assumption
 !  is developed, in which ice crystal number concentration is a function
 !  of ice amount. A theoretical background of the ice-microphysics and related
 !  processes in the WSMMPs are described in Hong et al. (2004).
@@ -678,7 +678,7 @@
 !
 ! - follows the revised ice microphysics processes in HDC
 ! - the processes same as in RH83 and RH84  and LFO behave
-!   following ice crystal hapits defined in HDC, inclduing
+!   following ice crystal hapits defined in HDC, including
 !   intercept parameter for snow (n0s), ice crystal number
 !   concentration (ni), ice nuclei number concentration
 !   (n0i), ice diameter (d)

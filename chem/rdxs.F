@@ -119,7 +119,7 @@
 !=           wavelength grid                                                 =*
 !=  WL     - REAL, vector of lower limits of wavelength intervals in      (I)=*
 !=           working wavelength grid. In vacuum, nm                          =*
-!=  XS     - REAL, molecular absoprtion cross section (cm^2) of O3 at     (O)=*
+!=  XS     - REAL, molecular absorption cross section (cm^2) of O3 at     (O)=*
 !=           each specified wavelength (WMO value at 273)                    =*
 !-----------------------------------------------------------------------------*
 
@@ -929,7 +929,7 @@
 !=           wavelength grid                                                 =*
 !=  WL     - REAL, vector of lower limits of wavelength intervals in      (I)=*
 !=           working wavelength grid                                         =*
-!=  NO2XS  - REAL, molecular absoprtion cross section (cm^2) of NO2 at    (O)=*
+!=  NO2XS  - REAL, molecular absorption cross section (cm^2) of NO2 at    (O)=*
 !=           each specified wavelength                                       =*
 !-----------------------------------------------------------------------------*
 

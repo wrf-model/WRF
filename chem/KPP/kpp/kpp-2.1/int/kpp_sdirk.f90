@@ -323,7 +323,7 @@ SUBROUTINE INTEGRATE( TIN, TOUT, &
       PRINT * , 'User-selected FacMax: RCNTRL(5)=', RCNTRL(5)
       CALL SDIRK_ErrorMsg(-4,Tinitial,ZERO,IDID)
    END IF
-!~~~>   FacRej: Factor to decrease step after 2 succesive rejections
+!~~~>   FacRej: Factor to decrease step after 2 successive rejections
    IF (RCNTRL(6) == ZERO) THEN
       FacRej = 0.1_dp
    ELSEIF (RCNTRL(6) > ZERO) THEN

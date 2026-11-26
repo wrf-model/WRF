@@ -1105,7 +1105,7 @@
         end if
 
 !-------------------------------------------------------
-!     intialize sq
+!     initialize sq
 !-------------------------------------------------------
         do ij = 1, nj
           do iw = 1, nw-1
@@ -2151,7 +2151,7 @@ wave_loop : &
 !-----------------------------------------------------------------------------
 !** set out-of-range values:
 ! use low pressure limits for shorter wavelengths
-! set to zero beyound 327.5
+! set to zero beyond 327.5
 !-----------------------------------------------------------------------------
       if( w < 279._dp ) then
          fco = 0.05_dp

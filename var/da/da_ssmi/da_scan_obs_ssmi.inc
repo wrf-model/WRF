@@ -123,7 +123,7 @@ subroutine da_scan_obs_ssmi (iv, filename)
       ! check if obs is in horizontal domain
 
       ! Compute the model horizontal coordinate x, y
-      ! Check if obs is wihin horizontal domain
+      ! Check if obs is within horizontal domain
 
       call da_llxy (info, loc, outside)
 

@@ -62,7 +62,7 @@ C		WRITE(*,*)' LEVEL    MAX         MIN   OF ALPHA'
 C		DO L=1,LMAX
 C			WRITE(*,'(I3,2F13.8)')L,VMAX(L),VMIN(L)
 C		END DO
-C........ CACULATE Tv
+C........ CALCULATE Tv
 		DO I = 1, IMAX*JMAX
 			TV(I,1)=DPHI(I,1)/(ALPHA(I,1)*gas_constant)
 		END DO

@@ -6,7 +6,7 @@
 !   This radiation scheme is originally developed for NASA Global Modeling (GEOS)
 !   by Ming-Dah Chou and Max Suarez. When the radiation code was incorporated into 
 !   mesoscale model, Toshi Matsui optimized the code (1D driver) for high-resolution modeling, 
-!   and eventually single-scattering properties of clouds and aerosols throuth 
+!   and eventually single-scattering properties of clouds and aerosols through
 !   the NASA-Unified WRF project. Radiation code update radiative heating rate and 
 !   surface and TOA radiation fluxes. 
 !
@@ -23,7 +23,7 @@
 !
 ! goddardrad(preparation for radiative transfer)
 !     !-- sounding_interp (interpolate sounding climatology)
-!     |-- ozone_interp (intepolate ozone profile)
+!     |-- ozone_interp (interpolate ozone profile)
 !     |-- opt_cloud( derive cloud optiacl properties )
 !     |-- aero_opt( derive aerosol optiacl properties ) from module_gocart_coupling.F
 !     |-- swrad(compute SW radiative transfer)
@@ -79,7 +79,7 @@
 !   Oct  2008    , Toshi Matsui : All real parameters becomes double precision for stability. 
 !   Jun  2008    , Toshi Matsui : Sounding interp is called only for each j_loop
 !   Jun  2008    , Toshi Matsui : Vector loop (m) was completely removed, now radiation code is 
-!                                compltely 1dimensionalized (-> 30~40% speed up with O3 optimization)
+!                                completely 1dimensionalized (-> 30~40% speed up with O3 optimization)
 !   Apr  2008    , Toshi Matsui : Add stratosphere layrs options 
 !   Aug  2007    , Toshi Matsui : One-dimensinalized swrad to skip swrad for nighttime.
 !   Jun  2007    , Toshi Matsui ; Revise broadband flux reduction to avoid negative SW heating.
@@ -157,7 +157,7 @@
 ! two-stream radiative transfer computation, and only compute cloudy ski option.
 ! Fclear/Fcloud is estimated from pre-computed look-up table for the below cloud
 ! flux reduction due to CO2 and O2.  So, this option make SW radiation faster 1.5 time.
-! Difference in surface downwelling radiation betweeen true and false option is less than 1.W/m^2.
+! Difference in surface downwelling radiation between true and false option is less than 1.W/m^2.
    logical :: fast_overcast  
 
 ! (LW radiation option)
@@ -187,7 +187,7 @@
 !
 ! Radiation scheme here is 1D radiation same as common radiation scheme used in various 
 ! atmospheric model. In this scheme, when dx become a few km, many 1D assumption will be
-! invalid. So, this skip option will aggregate evey NxN horizontal grid to compute averaged
+! invalid. So, this skip option will aggregate every NxN horizontal grid to compute averaged
 ! flux and heating ratio. This N size can be 1(no aggregation), 2(2x2=4grids), or 3(3x3=9grid)
 ! determined by N = ij_skip = NINT(6000/dx), when iskip (= goddardrad_skip) = 1
 ! Overall, this option (depending on your dx) will gain ~ 5x speed, suitable for high-res
@@ -217,22 +217,22 @@
 !  - Do not change. These values are the lowest threshold, while avoiding numerical instability.
    real              , parameter :: cosz_min = 0.0001 ! threshold of minimum cos of solar zenith angle for SW rad
    real(Kind=fp_kind), parameter :: fcld_min = 0.01   ! threshold of minimum cloud fraction for account clooud
-   real(Kind=fp_kind), parameter :: taux_min = 0.0001 ! threshold of minimum optical depth for accouting cloud (0.02) 
+   real(Kind=fp_kind), parameter :: taux_min = 0.0001 ! threshold of minimum optical depth for accounting cloud (0.02)
    real(Kind=fp_kind), parameter :: opt_min  = 1.e-6  ! threshold of optical properties to avoid numerical instability. 
    real(Kind=fp_kind), parameter :: ssa_min = 0.e0       !minimamum of single scattering albedo
    real(Kind=fp_kind), parameter :: ssa_max = 0.999999e0 !maximum of single scattering albedo
-   real(Kind=fp_kind), parameter :: asy_min = -1.e0      !minimum of asymetry parameter
-   real(Kind=fp_kind), parameter :: asy_max =  1.e0      !maximum of asymetry parameter
-   real(Kind=fp_kind), parameter :: const_tiny =  tiny(1.)      !maximum of asymetry parameter
+   real(Kind=fp_kind), parameter :: asy_min = -1.e0      !minimum of asymmetry parameter
+   real(Kind=fp_kind), parameter :: asy_max =  1.e0      !maximum of asymmetry parameter
+   real(Kind=fp_kind), parameter :: const_tiny =  tiny(1.)      !maximum of asymmetry parameter
 
-   real,parameter :: q_min_condensate = 1.0e-5   ! siginificant minimum hydrometeor mixing ratio [g/m3]
-   real,parameter :: q_min_aerosol    = 1.0e-8  ! siginificant minimum aerosol mixing ratio [g/m3]
+   real,parameter :: q_min_condensate = 1.0e-5   ! significant minimum hydrometeor mixing ratio [g/m3]
+   real,parameter :: q_min_aerosol    = 1.0e-8  ! significant minimum aerosol mixing ratio [g/m3]
    real,parameter :: const_pi = 3.14159265e0
 
 !
 ! New unified single scalttering properties. 
 !
- logical,parameter :: new_method_aero = .false.  !defaut is false in march 2014 (Toshi Matsui)
+ logical,parameter :: new_method_aero = .false.  !default is false in march 2014 (Toshi Matsui)
 
 
 !
@@ -249,7 +249,7 @@
 !
 ! generalized 1- or 2-moment 6-class microphysics parameters with generalized gamma distribution 
 !
- type particle_gen !gen paticle type
+ type particle_gen !gen particle type
     real:: cloud,rain,ice,snow,graupel,hail
  end type particle_gen
 
@@ -258,7 +258,7 @@
 !
  integer,parameter :: id_amax    = 14  ! total number of  hydrometeor species id maxima
  
- type particle_gocart !GOCART paticle type
+ type particle_gocart !GOCART particle type
     real :: so4,blc,ocn,och,ssa,ssc,du1,du2,du3,du4,du5,du6,du7,du8
  end type particle_gocart
 
@@ -275,23 +275,23 @@
   type ( particle_gen ),allocatable,dimension(:,:,:) :: & ! particle_gen is defined in module_simulater 
      kext_lut_gen,  & ! extinction coefficient [km-1 / (g/m3) ]! dimension( mxpts_re_visir, mxband, 2)
      salb_lut_gen,  & ! single scattering albedo [-]
-     asym_lut_gen     ! asymetry parameter [-]
+     asym_lut_gen     ! asymmetry parameter [-]
 
   real,allocatable,dimension(:,:,:) :: &  !single scattering properties for solar radiation
      kext_sw_cloud,  & ! extinction coefficient [km-1 / (g/m3) ]
      salb_sw_cloud,  & ! single scattering albedo [-]
-     asym_sw_cloud     ! asymetry parameter [-]
+     asym_sw_cloud     ! asymmetry parameter [-]
 
   real,allocatable,dimension(:,:,:) :: &  !single scattering properties for thermal radiation
      kext_lw_cloud,  & ! extinction coefficient [km-1 / (g/m3) ]
      salb_lw_cloud,  & ! single scattering albedo [-]
-     asym_lw_cloud     ! asymetry parameter [-]
+     asym_lw_cloud     ! asymmetry parameter [-]
 
 
   type ( particle_gocart ),allocatable,dimension(:,:,:) :: & ! particle_gocart is defined in module_simulater 
      kext_lut_gocart,  & ! extinction coefficient [km-1 / (g/m3) ]! dimension( mxpts_re_visir, mxband, 2)
      salb_lut_gocart,  & ! single scattering albedo [-]
-     asym_lut_gocart     ! asymetry parameter [-]
+     asym_lut_gocart     ! asymmetry parameter [-]
 
   integer,parameter :: nband_sw = 11       !# of SW radiative band
   integer,parameter :: nband_lw = 10      ! # of LW radiation band
@@ -329,12 +329,12 @@
 
 ! bundled scattering array (mxpts_re_visir, max_spc, nband, mxisl )
  real,allocatable :: kext_q_unit_array (:,:,:,:) ! extinction cross section per unit mass [km-1 / (g/m3) ]
- real,allocatable :: omega_array       (:,:,:,:) ! signle scattering albedo [-]
- real,allocatable :: asym_array        (:,:,:,:) ! asymetry parameter (forward scattering fraction) [-]
+ real,allocatable :: omega_array       (:,:,:,:) ! single scattering albedo [-]
+ real,allocatable :: asym_array        (:,:,:,:) ! asymmetry parameter (forward scattering fraction) [-]
 
  real,allocatable :: kext_q_unit_aero_array (:,:,:,:) ! extinction cross section per unit mass [km-1 / (g/m3) ]
- real,allocatable :: omega_aero_array       (:,:,:,:) ! signle scattering albedo [-]
- real,allocatable :: asym_aero_array        (:,:,:,:) ! asymetry parameter (forward scattering fraction) [-]
+ real,allocatable :: omega_aero_array       (:,:,:,:) ! single scattering albedo [-]
+ real,allocatable :: asym_aero_array        (:,:,:,:) ! asymmetry parameter (forward scattering fraction) [-]
 
 
 
@@ -828,9 +828,9 @@ data ((mcdat(ilev,10,ifld),ifld=1,6),ilev=12,22)/  &
       recl=reclen)
    ! extinction cross section per unit mass [km-1 / (g/m3) ]
    read(11, rec=1) kext_q_unit_array
-   ! signle scattering albedo [-] 
+   ! single scattering albedo [-]
    read(11, rec=2) omega_array
-   ! asymetry parameter (forward scattering fraction) [-]
+   ! asymmetry parameter (forward scattering fraction) [-]
    read(11, rec=3) asym_array
    close(11)
 
@@ -950,13 +950,13 @@ data ((mcdat(ilev,10,ifld),ifld=1,6),ilev=12,22)/  &
    call check( nf90_get_var(ncid, varid, kext_q_unit_aero_array ))
 
    !
-   ! signle scattering albedo [-] 
+   ! single scattering albedo [-]
    !
    call check( nf90_inq_varid(ncid, 'omega' , varid ) )
    call check( nf90_get_var(ncid, varid, omega_aero_array ))
 
    !
-   ! asymetry parameter (forward scattering fraction) [-] 
+   ! asymmetry parameter (forward scattering fraction) [-]
    !
    call check( nf90_inq_varid(ncid, 'asym' , varid ) )
    call check( nf90_get_var(ncid, varid, asym_aero_array ))
@@ -980,7 +980,7 @@ data ((mcdat(ilev,10,ifld),ifld=1,6),ilev=12,22)/  &
 ! Check status of reading process of netCDF. 
 !
 ! History:
-! 05/2014  Toshi Matsui@NASA GSFC ; included optional statement for skiping
+! 05/2014  Toshi Matsui@NASA GSFC ; included optional statement for skipping
 ! 05/2007  Toshi Matsui@NASA GSFC ; Initial   
 !           
 ! References: 
@@ -1032,7 +1032,7 @@ data ((mcdat(ilev,10,ifld),ifld=1,6),ilev=12,22)/  &
                    ,ERBE_out                                      &  
                    ,itimestep, dt_in                              &  
                    ,sflxd                                         & !optional for sw
-                   ,swddir,swddni,swddif                          & !optinal for sw
+                   ,swddir,swddni,swddif                          & !optional for sw
                    ,coszen                                        & !optional for sw
                    ,obscur                                        & ! amontornes-bcodina 2015/09 solar eclipses
 #if (WRF_CHEM == 1)
@@ -1050,12 +1050,12 @@ data ((mcdat(ilev,10,ifld),ifld=1,6),ilev=12,22)/  &
 !
 ! Comments for vertical levels: 
 !
-! Vetical layers are reversed in this routine. 
+! Vertical layers are reversed in this routine.
 ! in wrf, kms (smallest number) is the bottom level and kme (largest
 ! number) is the top level.  in your scheme, if 1 is at the top level,
 ! then you have to reverse the order in the k direction.
 !
-! And, vertical dimesion of the input parameter is defined as 
+! And, vertical dimension of the input parameter is defined as
 !      kms:kme, which is equivalent to kts:kte+1
 !      e.g., if kme=61, kte = 60
 !
@@ -1332,27 +1332,27 @@ real, dimension( ims:ime, jms:jme ), intent(in)  :: &
 ! type ( particle_gocart ),dimension(nband_sw) :: & !particle_gocart is defined in module_simulater
 !     kext_gocart,  & ! extinction coefficient [km-1]
 !     salb_gocart,  & ! single scattering albedo [-]
-!     asym_gocart     ! asymetry parameter [-]
+!     asym_gocart     ! asymmetry parameter [-]
 
  real, dimension( CHUNK, kts:kte, nband_sw ) :: &
   taucl_sw, &  ! hydrometeor optical depth for SW bands 
   ssacl_sw, &  ! hydrometeor single scattering albedo for SW bands
-  asycl_sw     ! hydrometeor asymetry factor for SW bands
+  asycl_sw     ! hydrometeor asymmetry factor for SW bands
 
  real, dimension( CHUNK, kts:kte, nband_lw ) ::  &
   taucl_lw, &  ! hydrometeor optical depth for LW bands
   ssacl_lw, &  ! hydrometeor single scattering albedo for LW bands
-  asycl_lw     ! hydrometeor asymetry factor for LW bands
+  asycl_lw     ! hydrometeor asymmetry factor for LW bands
 
  real, dimension( CHUNK, kts:kte, nband_sw ) :: &
   taual_sw, &  ! aerosol optical depth for SW bands 
   ssaal_sw, &  ! aerosol single scattering albedo for SW bands
-  asyal_sw     ! aerosol asymetry factor for SW bands
+  asyal_sw     ! aerosol asymmetry factor for SW bands
 
  real, dimension( CHUNK, kts:kte, nband_lw ) ::  &
   taual_lw, &  ! aerosol optical depth for LW bands
   ssaal_lw, &  ! aerosol single scattering albedo for LW bands
-  asyal_lw     ! aerosol asymetry factor for LW bands
+  asyal_lw     ! aerosol asymmetry factor for LW bands
 
 #if (WRF_CHEM == 1)
  real, dimension( CHUNK, kts:kte, num_go) :: aero1d  !aerosol mass conc [g/m3] 1D reverse k order  (half layer)         
@@ -1378,7 +1378,7 @@ real, dimension( ims:ime, jms:jme ), intent(in)  :: &
  integer,dimension(CHUNK) :: ie,je !block array indice
 
  INTEGER :: ip, ic, ii
- logical :: no_micro(CHUNK), lmask(CHUNK) ! No update of theta tendancy (rthraten) and energy budget due to solar heating
+ logical :: no_micro(CHUNK), lmask(CHUNK) ! No update of theta tendency (rthraten) and energy budget due to solar heating
 
 ! now in local parameter for OMP purpose
 
@@ -1461,7 +1461,7 @@ real, dimension( ims:ime, jms:jme ), intent(in)  :: &
 
  if( iskip == 1 ) then
     !
-    ! nearest integer of 6000m devided by horizontal space
+    ! nearest integer of 6000m divided by horizontal space
     ! ranges from 1 ~ 3 (essentially become 2, when dx<=4000m)
     !
     ij_skip = min( 3,  max( 1, nint( 6000.0/dx ) ) ) !
@@ -2000,7 +2000,7 @@ real, dimension( ims:ime, jms:jme ), intent(in)  :: &
       if (cosz(ic) <= cosz_min ) then !night time skip 
 
         !
-        ! No update of theta tendancy (rthraten) and energy budget due to solar heating
+        ! No update of theta tendency (rthraten) and energy budget due to solar heating
         ! Note skip is located here in order to compute cloud/aerosol optical depth for 
         ! diagnostic output even during night. 
         !
@@ -2511,7 +2511,7 @@ real, dimension( ims:ime, jms:jme ), intent(in)  :: &
  implicit none
 !----------------------------------------------------------------------
 ! Comments: 
-! This routines interpolate ozone mixing ratio for a givne pressure profile 
+! This routines interpolate ozone mixing ratio for a given pressure profile
 ! using sounding climatology. 
 !
 ! History:
@@ -2589,7 +2589,7 @@ real, dimension( ims:ime, jms:jme ), intent(in)  :: &
 ! Comments: 
 ! This routines interpolate temperature, humidity, and ozone mixing ration 
 ! for additional stratospheric layers. 
-! This interpolation is a bit time comsuming, but create smooth transition of 
+! This interpolation is a bit time consuming, but create smooth transition of
 ! stratospheric temperature for large-domain simulation. (Toshi)
 !
 ! History:
@@ -2610,7 +2610,7 @@ real, dimension( ims:ime, jms:jme ), intent(in)  :: &
 !
 ! Interpolate sounding value for a given stratosphere pressure 
 !
-  do k = 1,mlev !stratosphere model leve
+  do k = 1,mlev !stratosphere model level
 
      if(pres(k)*100. <= mcdat_int(ilev_max,2) ) then
          print*, 'model pressure is ',pres(k)*100. ,'(mb)', &
@@ -2660,12 +2660,12 @@ real, dimension( ims:ime, jms:jme ), intent(in)  :: &
  real :: re            ! particle effective radius [micron]
  real,intent(in) :: kext_lut(mxpts_ref,nband) ! extinction coefficient per unit mass [km-1 / (g/m3) ]
  real,intent(in) :: salb_lut(mxpts_ref,nband) ! single scattering albedo [-]
- real,intent(in) :: asym_lut(mxpts_ref,nband) ! asymetry parameter [-]
+ real,intent(in) :: asym_lut(mxpts_ref,nband) ! asymmetry parameter [-]
  real,intent(in) :: pts_ref(mxpts_ref)  ! LUT of re index [micron]
  integer,intent(in) :: mxpts_ref           ! dimension of re index
  real,intent(out) :: kext(nband)   ! extinction coefficient [km-1] 
  real,intent(out) :: salb(nband)   ! single scattering albedo [-]
- real,intent(out) :: asym(nband)   ! asymetry parameter [-]
+ real,intent(out) :: asym(nband)   ! asymmetry parameter [-]
 
 !
 ! local parameter
@@ -2792,7 +2792,7 @@ real, dimension( ims:ime, jms:jme ), intent(in)  :: &
  type ( particle_gocart ),dimension(nband),intent(out) :: & ! particle_gocart is defined in module_simulater
      kext_gocart,  & ! extinction coefficient [km-1]
      salb_gocart,  & ! single scattering albedo [-]
-     asym_gocart     ! asymetry parameter [-]
+     asym_gocart     ! asymmetry parameter [-]
 
  type ( particle_gocart ) :: q   ! mixing ratio [g/m3]
  real :: rh ! relative humidity [0~1]  
@@ -2937,12 +2937,12 @@ real, dimension( ims:ime, jms:jme ), intent(in)  :: &
  real,intent(in) :: rh_in ! relative humidity [-] (0~1) 
  real,intent(in) :: kext_lut(mxpts,nband) ! extinction coefficient per unit mass [km-1 / (g/m3) ]
  real,intent(in) :: salb_lut(mxpts,nband) ! single scattering albedo [-]
- real,intent(in) :: asym_lut(mxpts,nband) ! asymetry parameter [-]
+ real,intent(in) :: asym_lut(mxpts,nband) ! asymmetry parameter [-]
  real,intent(in) :: pts_rh(mxpts)  ! LUT of re index [micron]
  integer,intent(in) :: mxpts          ! dimension of rh index
  real,intent(out) :: kext(nband)   ! extinction coefficient [km-1] 
  real,intent(out) :: salb(nband)   ! single scattering albedo [-]
- real,intent(out) :: asym(nband)   ! asymetry parameter [-]
+ real,intent(out) :: asym(nband)   ! asymmetry parameter [-]
 
 ! local parameter
  integer :: j                 ! loop index
@@ -3011,7 +3011,7 @@ real, dimension( ims:ime, jms:jme ), intent(in)  :: &
  type ( particle_gocart ),dimension(nband),intent(in) :: & ! particle_gocart is defined in module_simulater
      kext_gocart,  & ! extinction coefficient [km-1]
      salb_gocart,  & ! single scattering albedo [-]
-     asym_gocart     ! asymetry parameter [-]
+     asym_gocart     ! asymmetry parameter [-]
 
  real,dimension(nband),intent(out) :: tautot, salbtot, asymtot !total optical parameters
 
@@ -3076,7 +3076,7 @@ real, dimension( ims:ime, jms:jme ), intent(in)  :: &
 enddo
 
 !
-! total asymetry parameter
+! total asymmetry parameter
 !
  do n = 1, nband
 
@@ -3157,13 +3157,13 @@ enddo
 !  co2 mixing ratio by volume (co2)                 pppv        1
 !  option for scaling cloud optical thickness       n/d         1
 !        overcast="true" if scaling is not required
-!        overcast="fasle" if scaling is required
+!        overcast="false" if scaling is required
 !  cloud optical thickness (taucl)                  n/d       np*band
 !  cloud single scattering albedo (ssacl)           n/d       np*band
-!  cloud asymetry parameter (asycl)                 n/d       np*band
+!  cloud asymmetry parameter (asycl)                n/d       np*band
 !  aerosol optical thickness (taual)                n/d       np*band
 !  aerosol single scattering albedo (ssaal)         n/d       np*band
-!  aerosol asymetry parameter (asyal)               n/d       np*band
+!  aerosol asymmetry parameter (asyal)              n/d       np*band
 !  cloud amount (fcld)                            fraction   np
 !  level index separating high and middle           n/d         1
 !        clouds (ict)
@@ -5424,7 +5424,7 @@ enddo
 !  layer pressure thickness (dp)                    mb         np
 !  option for scaling cloud optical thickness       n/d         1
 !        overcast="true" if scaling is not required
-!        overcast="fasle" if scaling is required
+!        overcast="false" if scaling is required
 !  cloud water amount (cwp)                        gm/m**2     np*5
 !        index 1 for ice particles
 !        index 2 for liquid drops
@@ -5436,7 +5436,7 @@ enddo
 !       index 2 for liquid drops
 !       index 3 for rain drops
 !  effective cloud-particle size (reff)          micrometer    np*5
-!       index 1 for ice paticles
+!       index 1 for ice particles
 !       index 2 for liquid drops
 !       index 3 for rain drops
 !       index 4 for snow
@@ -5502,7 +5502,7 @@ enddo
  integer :: k,ib,ic
  integer ::  ih1,ih2,im1,im2,is1,is2
  real(fp_kind) :: taurs(CHUNK,np),tauoz(CHUNK,np),tauwv(CHUNK,np) ! TODO: scalarize
-! real(fp_kind) :: g(max_spc) !asymetry factors
+! real(fp_kind) :: g(max_spc) !asymmetry factors
  real(fp_kind) :: dsm
  real(fp_kind) :: tauclb(CHUNK,np,nband_sw)
  real(fp_kind) :: tauclf(CHUNK,np,nband_sw)
@@ -5599,7 +5599,7 @@ enddo
  if(lmask(ic) .eqv. .true.) then
      tauclb(ic,:,:) = taucl(ic,:,:)
      tauclf(ic,:,:) = taucl(ic,:,:)
-     cc(ic,1:3)=1.e0  !cc is the maximum cloud cover in each of the high, middle, and low cloud gruops
+     cc(ic,1:3)=1.e0  !cc is the maximum cloud cover in each of the high, middle, and low cloud groups
  endif
  ENDDO
 
@@ -5864,13 +5864,13 @@ enddo
 !  layer scaled-water vapor content (wh)          gm/cm^2      np
 !  option for scaling cloud optical thickness       n/d         1
 !        overcast="true" if scaling is not required
-!        overcast="fasle" if scaling is required
+!        overcast="false" if scaling is required
 !  cloud optical thickness (taucl)                  n/d       np*band
 !  cloud single scattering albedo (ssacl)           n/d       np*band
-!  cloud asymetry parameter (asycl)                 n/d       np*band
+!  cloud asymmetry parameter (asycl)                n/d       np*band
 !  aerosol optical thickness (taual)                n/d       np*band
 !  aerosol single scattering albedo (ssaal)         n/d       np*band
-!  aerosol asymetry parameter (asyal)               n/d       np*band
+!  aerosol asymmetry parameter (asyal)              n/d       np*band
 !      
 !  level index separating high and                  n/d       1 
 !        middle clouds (ict)
@@ -5921,7 +5921,7 @@ enddo
  parameter (nk=10,nband=3)
  real(fp_kind) :: taux
 ! real(fp_kind) :: w(max_spc) !expansion stuff
-! real(fp_kind) :: g(max_spc) !asymetry stuff
+! real(fp_kind) :: g(max_spc) !asymmetry stuff
  real(fp_kind) hk(nband,nk),xk(nk),ry(nband)
  real(fp_kind) aib(nband,2),awb(nband,2),arb(nband,2)
  real(fp_kind) aia(nband,3),awa(nband,3),ara(nband,3)
@@ -6135,7 +6135,7 @@ enddo
              ssatob(ic,k)=min(max(ssatau(ic,k)/tautob(ic,k),ssa_min),ssa_max)
              asytob(ic,k)=min(max(asysto(ic,k)/(ssatob(ic,k)*tautob(ic,k)),asy_min),asy_max)
 
-!     delta-eddington approximation for optical propeties
+!     delta-eddington approximation for optical properties
 !-----for direct incident radiation
 
    endif
@@ -6198,7 +6198,7 @@ enddo
                         /(  max(ssatof(ic,k)*tautof(ic,k),const_tiny)  ),asy_min),asy_max)
            endif
 
-!     delta-eddington approximation for optical propeties
+!     delta-eddington approximation for optical properties
 !-----for direct incident radiation
 
    endif
@@ -6912,7 +6912,7 @@ subroutine delta_eddington(tau,ssc,g0,cza,rr,tt,td)
         if(k .ge. ict(ic)-1 .and. k .le. icb(ic)-1 .and. lmask(ic) .eqv. .true.) then
           denm=ts(ic,k,im)/( 1.-rs(ic,k,im)*rxa(ic,k+1,im,is) )
           rra(ic,k,im,is)= rr(ic,k,im)+(td(ic,k,im)*rra(ic,k+1,im,is) &
-              +(tt(ic,k,im)-td(ic,k,im))*rxa(ic,k+1,im,is))*denm   !additiona -td(k,im)
+              +(tt(ic,k,im)-td(ic,k,im))*rxa(ic,k+1,im,is))*denm   !additional -td(k,im)
           rxa(ic,k,im,is)= rs(ic,k,im)+ts(ic,k,im) &
               *rxa(ic,k+1,im,is)*denm
         endif
@@ -6995,7 +6995,7 @@ subroutine delta_eddington(tau,ssc,g0,cza,rr,tt,td)
         if(k .le. ict(ic)-1 .and. lmask(ic) .eqv. .true.) then
           denm =ts(ic,k,ih)/(1.-rs(ic,k,ih)*rxa(ic,k+1,im,is))
           rra(ic,k,im,is)= rr(ic,k,ih)+(td(ic,k,ih)*rra(ic,k+1,im,is) &
-              +(tt(ic,k,ih)-td(ic,k,ih))*rxa(ic,k+1,im,is))*denm   !addittional -td(k,ih)
+              +(tt(ic,k,ih)-td(ic,k,ih))*rxa(ic,k+1,im,is))*denm   !additional -td(k,ih)
           rxa(ic,k,im,is)= rs(ic,k,ih)+ts(ic,k,ih) &
               *rxa(ic,k+1,im,is)*denm
         endif
@@ -7138,7 +7138,7 @@ subroutine delta_eddington(tau,ssc,g0,cza,rr,tt,td)
 !  are assumed maximally overlapped, and the cloud cover of a group is
 !  the maximum cloud cover of all the layers in the group.  clouds among
 !  the three groups are assumed randomly overlapped. the indices ict and
-!  icb correpond approximately to the 400 mb and 700 mb levels.
+!  icb correspond approximately to the 400 mb and 700 mb levels.
 !
 ! aerosols are allowed to be in any of the np layers. aerosol optical
 !  properties can be specified as functions of height and spectral band.
@@ -7189,10 +7189,10 @@ subroutine delta_eddington(tau,ssc,g0,cza,rr,tt,td)
 !   input option for cloud optical thickness           --      1
 !  cloud optical thickness (taucl)                  n/d       np*band
 !  cloud single scattering albedo (ssacl)           n/d       np*band
-!  cloud asymetry parameter (asycl)                 n/d       np*band
+!  cloud asymmetry parameter (asycl)                n/d       np*band
 !  aerosol optical thickness (taual)                n/d       np*band
 !  aerosol single scattering albedo (ssaal)         n/d       np*band
-!  aerosol asymetry parameter (asyal)               n/d       np*band
+!  aerosol asymmetry parameter (asyal)              n/d       np*band
 !   cloud amount (fcld)                             fraction   np
 !   level index separating high and middle             --      1
 !       clouds (ict)
@@ -10575,7 +10575,7 @@ subroutine delta_eddington(tau,ssc,g0,cza,rr,tt,td)
            taux=taucl(ic,k,ibn)  ! condensate optical depths
            if (taux.gt.taux_min .and. fcld(ic,k).gt.fcld_min) then  !pppp
               ww=ssaal(ic,k,ibn)  ! single-scattering albedo
-              gg=asyal(ic,k,ibn)  ! asymetry parameter         
+              gg=asyal(ic,k,ibn)  ! asymmetry parameter
 !-----parameterization of lw scattering following eqs. (6.8) and (6.9).
               ff=0.5+(0.3739+(0.0076+0.1185*gg)*gg)*gg
               taux=taux*(1.-ww*ff)
@@ -10972,7 +10972,7 @@ subroutine delta_eddington(tau,ssc,g0,cza,rr,tt,td)
          flc(ic,k)=flc(ic,k)+flcd(ic,k)+flcu(ic,k)
          flx(ic,k)=flx(ic,k)+flxd(ic,k)+flxu(ic,k)
          acflxu(ic,k)=acflxu(ic,k)+flxu(ic,k)   ! (LW upward must hold negative values)
-         acflxd(ic,k)=acflxd(ic,k)+flxd(ic,k)   ! (LW downward must hold postive values, and should=0 a
+         acflxd(ic,k)=acflxd(ic,k)+flxd(ic,k)   ! (LW downward must hold positive values, and should=0 a
        ENDDO
       enddo
 
@@ -12301,14 +12301,14 @@ subroutine delta_eddington(tau,ssc,g0,cza,rr,tt,td)
 
 !-----IO variables
  character(len=2), intent(in) :: sw_or_lw   ! character index that determines sw or lw radiation
- integer, intent(in) :: np             !model verical array size
+ integer, intent(in) :: np             !model vertical array size
  integer, intent(in) :: nband          !# of radiation bands
  real, intent(in)    :: dz(CHUNK,np)         !layer thickness [m]
  real, intent(in)    :: q(CHUNK,np ,id_hmax) !hydrometeor mass conc [g/m3]
  real, intent(inout)    :: re(CHUNK,np,id_hmax) !effective radius [um]
  real, intent(out)   :: tau(CHUNK,np,nband)  !total optical depth [-]
  real, intent(out)   :: ssa(CHUNK,np,nband)  !total single scattering albedo [-]
- real, intent(out)   :: asy(CHUNK,np,nband)  !total asymetry factor [-]
+ real, intent(out)   :: asy(CHUNK,np,nband)  !total asymmetry factor [-]
  integer, intent(in) :: irestrict 
 
 !-----Local variables
@@ -12329,7 +12329,7 @@ subroutine delta_eddington(tau,ssc,g0,cza,rr,tt,td)
  endif
 
 !
-! intialize
+! initialize
 !
 !dir$ vector aligned
  DO ic=1,irestrict
@@ -12398,9 +12398,9 @@ subroutine delta_eddington(tau,ssc,g0,cza,rr,tt,td)
        enddo type_loop
 
     !
-    ! compute total optical depth single scatterling albedo, asymetry parameters
+    ! compute total optical depth single scatterling albedo, asymmetry parameters
     !
-    band_loop: do n = 1,nband  !wavelengh loop
+    band_loop: do n = 1,nband  !wavelength loop
 !dir$ vector aligned
     DO ic=1,irestrict
        tau(ic,k,n) = sum( tau_typ(ic,n,1:id_hmax) )

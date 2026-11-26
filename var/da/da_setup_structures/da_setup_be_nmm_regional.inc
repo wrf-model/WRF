@@ -64,10 +64,10 @@ subroutine da_setup_be_nmm_regional(xb, be)
    character*80                :: var80c    
    integer                     :: ni, nj, nk, nk_2d, b         
    integer                     :: ix, jy, kz, mz
-   real, allocatable   :: regcoeff_psi_chi(:)        ! psi/chi    regression cooefficient.
-   real, allocatable   :: regcoeff_psi_t(:,:,:)      ! psi/t   regression cooefficient.
-   real, allocatable   :: regcoeff_psi_ps(:,:)       ! psi/ps     regression cooefficient.
-   real, allocatable   :: regcoeff_psi_rh(:,:,:)     ! psi/rh     regression cooefficient.
+   real, allocatable   :: regcoeff_psi_chi(:)        ! psi/chi    regression coefficient.
+   real, allocatable   :: regcoeff_psi_t(:,:,:)      ! psi/t   regression coefficient.
+   real, allocatable   :: regcoeff_psi_ps(:,:)       ! psi/ps     regression coefficient.
+   real, allocatable   :: regcoeff_psi_rh(:,:,:)     ! psi/rh     regression coefficient.
    real, allocatable   :: regcoeff_chi_u_t(:,:,:)    ! chi_u/t regression coefficient
    real, allocatable   :: regcoeff_chi_u_ps(:,:)     ! chi_u/ps   regression coefficient
    real, allocatable   :: regcoeff_chi_u_rh(:,:,:)   ! chi_u/rh   regression coefficient
@@ -374,7 +374,7 @@ subroutine da_setup_be_nmm_regional(xb, be)
    read (be_unit)  evec_loc
    read (be_unit)  eval_loc
    if( trim(adjustl(variable)) /= 'ps_u' ) then
-      message(1)=' Variable mismatch while transfering eigen values from BE file '
+      message(1)=' Variable mismatch while transferring eigen values from BE file '
       write (unit=message(2),fmt='(A,A)') ' Expected ps_u but got ',trim(adjustl(variable))
       call da_error(__FILE__,__LINE__,message(1:2))
    end if

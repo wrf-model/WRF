@@ -896,7 +896,7 @@
 !                   enforced on the final step before reaching tcrit
 !                   when itask = 4 or 5.)
 !
-! seth    rwork(8)  the element threshhold for sparsity determination
+! seth    rwork(8)  the element threshold for sparsity determination
 !                   when moss = 1 or 2.  if the absolute value of
 !                   an estimated jacobian element is .le. seth, it
 !                   will be assumed to be absent in the structure.
@@ -986,7 +986,7 @@
 !                   if moss = 0, because of added diagonal entries.)
 !
 ! ngp     iwork(20) the number of groups of column indices, used in
-!                   difference quotient jacobian aproximations if
+!                   difference quotient jacobian approximations if
 !                   miter = 2.  this is also the number of extra f
 !                   evaluations needed for each jacobian evaluation.
 !
@@ -1233,7 +1233,7 @@
 !
 ! in addition to subroutine lsodes, the lsodes package includes the
 ! following subroutines and function routines..
-!  iprep    acts as an iterface between lsodes and prep, and also does
+!  iprep    acts as an interface between lsodes and prep, and also does
 !           adjusting of work space pointers and work arrays.
 !  prep     is called by iprep to compute sparsity and do sparse matrix
 !           preprocessing if miter = 1 or 2.
@@ -4078,7 +4078,7 @@
 !
 !    note.. odrv and its subordinate routines have been modified to
 !    compute orderings for general matrices, not necessarily having any
-!    symmetry.  the miminum degree ordering is computed for the
+!    symmetry.  the minimum degree ordering is computed for the
 !    structure of the symmetric matrix  m + m-transpose.
 !    modifications to the original odrv module have been made in
 !    the coding in subroutine mdi, and in the initial comments in
@@ -4868,9 +4868,9 @@
 
 ! 18-may-2006 -- 
 !   the following values are produced on our current linux 
-!	workstations, when the data statments for 
+!	workstations, when the data statements for
 !	'motorola 68000 based machines' are used
-!   specifiying them using 'real' data statements should work fine
+!   specifying them using 'real' data statements should work fine
        data rmach(1) / 1.1754944000E-38 /
        data rmach(2) / 3.4028235000E+38 /
        data rmach(3) / 5.9604645000E-08 /
@@ -5269,7 +5269,7 @@
 !                    but with other inputs unchanged.
 !          on return, jstart is set to 1 to facilitate continuation.
 ! kflag  = a completion code with the following meanings..
-!               0  the step was succesful.
+!               0  the step was successful.
 !              -1  the requested error could not be achieved.
 !              -2  corrector convergence could not be achieved.
 !              -3  fatal error in pjac or slvs.
@@ -5624,7 +5624,7 @@
       iret = 2
       go to 150
 !-----------------------------------------------------------------------
-! control reaches this section if 3 or more failures have occured.
+! control reaches this section if 3 or more failures have occurred.
 ! if 10 failures have occurred, exit with kflag = -1.
 ! it is assumed that the derivatives that have accumulated in the
 ! yh array have errors of the wrong order.  hence the first

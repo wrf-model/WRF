@@ -106,7 +106,7 @@ program gen_be_ep2
       stop
    end if
 
-   ! Initialse to stop Cray compiler complaining
+   ! Initialise to stop Cray compiler complaining
    date=""
    cne=""
    directory=""

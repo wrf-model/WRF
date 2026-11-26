@@ -4,5 +4,5 @@ nscan
 3000
 area information for geocat netcdf4 and jaxa netcdf4 data: lonstart latstart nlongitude nlatitude
 1,1,1500,1000
-date infomation for cma hdf5 data
+date information for cma hdf5 data
 2016,07,18,19,00,00

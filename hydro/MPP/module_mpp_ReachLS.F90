@@ -602,7 +602,7 @@ MODULE MODULE_mpp_ReachLS
               endif
            else
               if(aLinksl(i) .gt. 0) then
-                 ! The MPI_Send takes what you give it and THEN treats each caracter as an array element.
+                 ! The MPI_Send takes what you give it and THEN treats each character as an array element.
                  call MPI_Send(inV(linkls_s(i):linkls_e(i)),       &
                       strLen*aLinksl(i),                           &
                       MPI_CHARACTER, i-1, tag, HYDRO_COMM_WORLD, ierr)
@@ -611,7 +611,7 @@ MODULE MODULE_mpp_ReachLS
         end do
      else
         if(aLinksl(my_id+1) .gt. 0) then
-           ! The MPI_Recv treats each caracter as an array element.
+           ! The MPI_Recv treats each character as an array element.
            call MPI_Recv(outV(1 : (linkls_e(my_id+1)-linkls_s(my_id+1)+1) ), &  !jlm should have +1
                 strLen*alinksl(my_id+1),                                              &
                 MPI_CHARACTER, io_id, tag, HYDRO_COMM_WORLD, mpp_status,ierr          )
@@ -847,7 +847,7 @@ MODULE MODULE_mpp_ReachLS
      else
         if(aLinksl(my_id+1) .gt. 0) then
            tag = 12
-           ! The MPI_Send takes what you give it and THEN treats each caracter as an array element.
+           ! The MPI_Send takes what you give it and THEN treats each character as an array element.
            call MPI_Send(inV(1:aLinksl(my_id+1)),              &
                 aLinksl(my_id+1),                       &
                 MPI_CHARACTER, io_id, tag, HYDRO_COMM_WORLD, ierr)

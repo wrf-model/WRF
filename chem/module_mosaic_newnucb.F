@@ -578,7 +578,7 @@
 !
 !    the correction of kerminen and kulmala (2002) is applied to account
 !    for loss of the new particles by coagulation as they are
-!    growing to the "host code mininum size"
+!    growing to the "host code minimum size"
 !
 ! revision history
 !    coded by rc easter, pnnl, xx-apr-2007
@@ -662,7 +662,7 @@
         real(r8), parameter :: avogad = 6.022e23   ! avogadro number (molecules/mol)
         real(r8), parameter :: mw_air = 28.966     ! dry-air mean molecular weight (g/mol)
 
-        real(r8), parameter :: accom_coef_h2so4 = 0.65   ! accomodation coef for h2so4 conden
+        real(r8), parameter :: accom_coef_h2so4 = 0.65   ! accommodation coef for h2so4 conden
 
 ! dry densities (kg/m3) molecular weights of aerosol 
 ! ammsulf, ammbisulf, and sulfacid (from mosaic  dens_electrolyte values)

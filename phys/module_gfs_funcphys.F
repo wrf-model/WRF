@@ -820,7 +820,7 @@ contains
 ! Abstract: Exactly compute saturation vapor pressure from temperature.
 !   The saturation vapor pressure over either liquid and ice is computed
 !   over liquid for temperatures above the triple point,
-!   over ice for temperatures 20 degress below the triple point,
+!   over ice for temperatures 20 degrees below the triple point,
 !   and a linear combination of the two for temperatures in between.
 !   The water model assumes a perfect gas, constant specific heats
 !   for gas, liquid and ice, and neglects the volume of the condensate.
@@ -1595,7 +1595,7 @@ contains
 !   A guess dewpoint temperature must be provided.
 !   The saturation vapor pressure over either liquid and ice is computed
 !   over liquid for temperatures above the triple point,
-!   over ice for temperatures 20 degress below the triple point,
+!   over ice for temperatures 20 degrees below the triple point,
 !   and a linear combination of the two for temperatures in between.
 !   The water model assumes a perfect gas, constant specific heats
 !   for gas, liquid and ice, and neglects the volume of the condensate.

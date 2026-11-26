@@ -7,7 +7,7 @@ subroutine da_tbatmos_adj(ifreq,theta,p0,wv,hwv,ta,gamma,lw,zcld,   &
    !-----------------------------------------------------------------
    ! Purpose: TBD
    ! Output : ADJ_p0,ADJ_wv,ADJ_hwv,ADJ_ta,ADJ_gamma,ADJ_lw,ADJ_zcld 
-   !          ADJ_theta (somtime theta is a variable)
+   !          ADJ_theta (sometime theta is a variable)
    ! Input  : ADJ_tbup,ADJ_tbdn,ADJ_tauatm
    ! Output mean fields : tbup,tbdn,tauatm
    !-----------------------------------------------------------------
@@ -74,7 +74,7 @@ subroutine da_tbatmos_adj(ifreq,theta,p0,wv,hwv,ta,gamma,lw,zcld,   &
 
 
    ! mu = secant(theta)
-   ! somtime theta is a variable
+   ! sometime theta is a variable
 
    mu     = 1.0/cos(theta*0.0174533)
 

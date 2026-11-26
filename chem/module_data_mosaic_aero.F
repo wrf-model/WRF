@@ -273,7 +273,7 @@ module module_data_mosaic_aero
   !    MOSAIC box model runs that emulate CAM5 behavior (e.g. for debugging etc.) - 
   !       their values should match those in the CAM5 run (usually 1)
   integer, save :: use_cam5mam_soa_params  = 0   ! if >0, use cam5-mam soa/soag parameter values
-  integer, save :: use_cam5mam_accom_coefs = 0   ! if >0, use cam5-mam accomodation coefficient values
+  integer, save :: use_cam5mam_accom_coefs = 0   ! if >0, use cam5-mam accommodation coefficient values
 
   integer, save :: 	&
        !it_mosaic,			   &  ! time-step index

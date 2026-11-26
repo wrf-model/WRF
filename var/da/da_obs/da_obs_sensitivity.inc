@@ -539,7 +539,7 @@ subroutine da_obs_sensitivity(ktr, iv)
             end if
          endif
 
-         ! output the impact for ploting
+         ! output the impact for plotting
          open(unit=iunit,file='obs_impact',form='formatted')
 
          write(iunit,'(A)') 'Impact of Conventional Observations: '

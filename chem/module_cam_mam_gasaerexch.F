@@ -899,7 +899,7 @@ subroutine gas_aer_uptkrates( ncol,       loffset,                &
 !       gas_conden_rate(Dp) = 2 * pi * gasdiffus * Dp * F(Kn,ac)
 !           F(Kn,ac) = Fuchs-Sutugin correction factor
 !           Kn = Knudsen number
-!           ac = accomodation coefficient
+!           ac = accommodation coefficient
 !
 
 !use modal_aero_data, only:  ntot_amode, ntot_amode, nspec_amode,   &
@@ -1012,7 +1012,7 @@ implicit none
 
 !   knudsen number
             knudsen = freepathx2/dp
-!   following assumes accomodation coefficient = ac = 0.65
+!   following assumes accommodation coefficient = ac = 0.65
 !   (Adams & Seinfeld, 2002, JGR, and references therein)
 !           fuchs_sutugin = (0.75*ac*(1. + knudsen)) /
 !                           (knudsen*(1.0 + knudsen + 0.283*ac) + 0.75*ac)
@@ -1086,7 +1086,7 @@ implicit none
       real(r8), parameter :: delh_vap_soa = 156.0e3
       ! delh_vap_soa = heat of vaporization for gas soa (J/mol)
       real(r8), parameter :: p0_soa_298 = 1.0e-10
-      ! p0_soa_298 = soa gas equilib vapor presssure (atm) at 298 k
+      ! p0_soa_298 = soa gas equilib vapor pressure (atm) at 298 k
       real(r8), parameter :: rgas = 8.3144   ! gas constant in J/K/mol
 
       real(r8) :: a_opoa(ntot_soamode)    ! oxidized-poa aerosol mixrat (mol/mol)
@@ -1100,7 +1100,7 @@ implicit none
       real(r8) :: g_star(ntot_soamode)    ! soa gas mixrat that is in equilib
                                           ! with each aerosol mode (mol/mol)
       real(r8) :: phi(ntot_soamode)       ! "relative driving force"
-      real(r8) :: p0_soa   ! soa gas equilib vapor presssure (atm)
+      real(r8) :: p0_soa   ! soa gas equilib vapor pressure (atm)
       real(r8) :: sat(ntot_soamode)
       real(r8) :: tcur     ! current integration time (from 0 s)
       real(r8) :: tmpa, tmpb

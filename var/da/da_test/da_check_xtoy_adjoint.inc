@@ -240,7 +240,7 @@ print*,__FILE__,jte,' xa2_v.xa2_v for row= ',jte+1,sum(xa2_v(its:ite, jte+1, kts
          if ( use_rainobs ) then
             if ( num_fgat_time > 1 .and. fgat_rain_flags(nobwin) ) then
 !!!            We can not calculate the hourly rainfall in adjoint check, here, we just make sure the adjoint 
-!!!            algorithm is correct mathmatically. so the amount of forcings doesn't matter
+!!!            algorithm is correct mathematically. so the amount of forcings doesn't matter
                a_hr_rainc (:,:,fgat_rain)=grid%g_rainc(:,:)
                a_hr_rainnc(:,:,fgat_rain)=grid%g_rainnc(:,:)
             endif
@@ -455,7 +455,7 @@ print*,__FILE__,jte,' grid%xa%v.grid%x%%v for row= ',jte+1,sum(grid%xa%v(its:ite
          if ( use_rainobs ) then
             if ( num_fgat_time > 1 .and. fgat_rain_flags(nobwin) ) then
 !!!            We can not calculate the hourly rainfall in adjoint check, just ensure the adjoint 
-!!!            algorithm is right mathmatically. so the amount of forcings doesn't matter
+!!!            algorithm is right mathematically. so the amount of forcings doesn't matter
                grid%g_rainc(:,:) = grid%g_rainc(:,:) + a_hr_rainc (:,:,fgat_rain)
                grid%g_rainnc(:,:) = grid%g_rainnc(:,:) + a_hr_rainnc(:,:,fgat_rain)
                a_hr_rainc (:,:,fgat_rain) = 0.0

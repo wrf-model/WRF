@@ -9,7 +9,7 @@ DFDR = function dFun_dRcoeff( V, F, NCOEFF, JCOEFF )
 % JCOEFF - a vector of integers containing the indices of reactions (rate
 %          coefficients) with respect to which we differentiate
 %      INTEGER JCOEFF(NCOEFF)       
-% DFDR  - a matrix containg derivative values; specifically, 
+% DFDR  - a matrix containing derivative values; specifically,
 %         column j contains d Fun(1:KPP_NVAR) / d RCT( JCOEFF(j) )
 %         for each 1 <= j <= NCOEFF
 %         This matrix is stored in a column-wise linearized format

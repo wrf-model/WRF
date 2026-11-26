@@ -218,7 +218,7 @@ SUBROUTINE advect_u   ( u, u_old, tendency,            &
    specified = .false.
    if(config_flags%specified .or. config_flags%nested) specified = .true.
 
-!  set order for vertical and horzontal flux operators
+!  set order for vertical and horizontal flux operators
 
    horz_order = config_flags%h_mom_adv_order
    vert_order = config_flags%v_mom_adv_order
@@ -4067,7 +4067,7 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
       ENDDO
       ENDDO
    
-      ! Polar boundary condtions
+      ! Polar boundary conditions
       ! These won't be covered in the loop above...
       IF (config_flags%polar) THEN
          IF (jts == jds) THEN
@@ -10296,7 +10296,7 @@ SUBROUTINE advect_scalar_mono   ( field, field_old, tendency,    &
 
    IF (mono_limit) THEN
 
-! montonic filter
+! monotonic filter
 
    i_start = its-1
    i_end   = MIN(ite,ide-1)+1
@@ -10368,7 +10368,7 @@ SUBROUTINE advect_scalar_mono   ( field, field_old, tendency,    &
 ! We need to correct for the partial divergence created by the IEVA scheme.
 ! If there is no implicit vertical advection, this term == 1.0.  
 ! Else, it rescales the qmax & qmin value to reflect the partial divergence present in both the
-! low-order and high-order fluxes because the VV field is partioned.
+! low-order and high-order fluxes because the VV field is partitioned.
 ! ----------------------------------------------------------------------------------------------
 
      ieva_corr = (c1(k)*mut(i,j)+c2(k))+dt*msfty(i,j)*rdzw(k)*(romI(i,k+1,j)-romI(i,k,j))
@@ -10989,7 +10989,7 @@ SUBROUTINE advect_weno_u ( u, u_old, tendency,            &
    specified = .false.
    if(config_flags%specified .or. config_flags%nested) specified = .true.
 
-!  set order for vertical and horzontal flux operators
+!  set order for vertical and horizontal flux operators
 
    horz_order = config_flags%h_mom_adv_order
    vert_order = config_flags%v_mom_adv_order

@@ -389,7 +389,7 @@ CONTAINS
 !
     integer, intent(in) :: m    ! constituent index
 
-    logical :: cnst_read_iv     ! true => read initial values from inital file
+    logical :: cnst_read_iv     ! true => read initial values from initial file
 !-----------------------------------------------------------------------
 
     cnst_read_iv = read_init_vals(m)

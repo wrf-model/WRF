@@ -808,7 +808,7 @@ CONTAINS
         Q2(I)=QSFC(I)+(QX(I)-QSFC(I))*PSIQ2/PSIQ                   
 !        T2(I) = TH2(I)*(PSFC(I)/100.)**ROVCP                     
         T2(I) = TH2(I)*(PSFCPA(I)/P1000mb)**ROVCP                     
-!       LATER Q2 WILL BE OVERWRITTEN FOR LAND POINTS IN SURFCE     
+!       LATER Q2 WILL BE OVERWRITTEN FOR LAND POINTS IN SURFACE
 !       QA2(I,J) = Q2(I)                                         
 !       UA10(I,J) = U10(I)                                      
 !       VA10(I,J) = V10(I)                                     

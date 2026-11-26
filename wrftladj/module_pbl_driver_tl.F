@@ -333,10 +333,10 @@ SUBROUTINE G_PBL_DRIVER(itimestep, dt, u_frame, v_frame, bldt, curr_secs&
 ! URBAN Landuse fraction
   REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL, INTENT(INOUT) :: &
 &  frc_urb2d
-! Implicit component for the momemtum in X-direction
+! Implicit component for the momentum in X-direction
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL, INTENT(INOUT) ::&
 &  a_u_bep
-! Implicit component for the momemtum in Y-direction
+! Implicit component for the momentum in Y-direction
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL, INTENT(INOUT) ::&
 &  a_v_bep
 ! Implicit component for the Pot. Temp.
@@ -348,10 +348,10 @@ SUBROUTINE G_PBL_DRIVER(itimestep, dt, u_frame, v_frame, bldt, curr_secs&
 ! Implicit component for the TKE
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL, INTENT(INOUT) ::&
 &  a_e_bep
-! Explicit component for the momemtum in X-direction
+! Explicit component for the momentum in X-direction
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL, INTENT(INOUT) ::&
 &  b_u_bep
-! Explicit component for the momemtum in Y-direction
+! Explicit component for the momentum in Y-direction
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL, INTENT(INOUT) ::&
 &  b_v_bep
 ! Explicit component for the Pot. Temp.
@@ -366,7 +366,7 @@ SUBROUTINE G_PBL_DRIVER(itimestep, dt, u_frame, v_frame, bldt, curr_secs&
 ! Height above ground (L_ground in formula (24) of the BLM paper). 
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL, INTENT(INOUT) ::&
 &  dlg_bep
-! Length scale (lb in formula (22) ofthe BLM paper).
+! Length scale (lb in formula (22) of the BLM paper).
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL, INTENT(INOUT) ::&
 &  dl_u_bep
 ! urban surface and volumes        
@@ -450,24 +450,24 @@ SUBROUTINE G_PBL_DRIVER(itimestep, dt, u_frame, v_frame, bldt, curr_secs&
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme) :: u_phytmpd
   REAL, DIMENSION(ims:ime, jms:jme) :: tskold, ustold, zntold, zol, psfc
 ! make these allocatable depending on the setting of idiff
-! Typically, we try to avoide allocating and deallocating local storage like this
+! Typically, we try to avoid allocating and deallocating local storage like this
 ! so as not to fragment the stack. But at this point, the idiff = 1 case is disabled
 ! (set to 0 for all cases) and has to be set manually by users who want to work with
 ! it.  When it becomes a more standard option, this should be redone, either defining
 ! these as state with package clauses to turn them on and off and passing them in,
 ! or pass in an integer flag that can be used to dimension the arrays to 1:1:1 as
 ! local variables.  JM 20100316
-! Implicit component for the momemtum in X-direction
+! Implicit component for the momentum in X-direction
   REAL, DIMENSION(:, :, :), ALLOCATABLE :: a_u
-! Implicit component for the momemtum in Y-direction
+! Implicit component for the momentum in Y-direction
   REAL, DIMENSION(:, :, :), ALLOCATABLE :: a_v
 ! Implicit component for the Pot. Temp.
   REAL, DIMENSION(:, :, :), ALLOCATABLE :: a_t
 ! Implicit component for the water vapor
   REAL, DIMENSION(:, :, :), ALLOCATABLE :: a_q
-! Explicit component for the momemtum in X-direction
+! Explicit component for the momentum in X-direction
   REAL, DIMENSION(:, :, :), ALLOCATABLE :: b_u
-! Explicit component for the momemtum in Y-direction
+! Explicit component for the momentum in Y-direction
   REAL, DIMENSION(:, :, :), ALLOCATABLE :: b_v
 ! Explicit component for the Pot. Temp.
   REAL, DIMENSION(:, :, :), ALLOCATABLE :: b_t
@@ -616,7 +616,7 @@ SUBROUTINE G_PBL_DRIVER(itimestep, dt, u_frame, v_frame, bldt, curr_secs&
 &            'In order to proceed, for boundary layer calculations, the '&
 &                       //'boundary layer time-step'//&
 &                       ' will be rounded to the nearest minute,')
-            CALL WRF_MESSAGE('possibly resulting in innacurate results.'&
+            CALL WRF_MESSAGE('possibly resulting in inaccurate results.'&
 &                      )
           END IF
           dtbl = bldt*60

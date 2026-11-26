@@ -108,7 +108,7 @@ program gen_be_stage3
    cdate = sdate
    first_time = .true.
 
-   if ( .not. data_on_levels ) then ! Can bypass [2] and [3] if outputing on levels.
+   if ( .not. data_on_levels ) then ! Can bypass [2] and [3] if outputting on levels.
 
       write(6,'(2a)')' [2] Process fields for variable ', variable
 
@@ -275,7 +275,7 @@ program gen_be_stage3
          end do
       end do
 
-   end if ! End bypass [2] and [3] if outputing on levels.
+   end if ! End bypass [2] and [3] if outputting on levels.
 
    write(6,'(2a)')' [4] Transform perturbations (or not), and output.'
 

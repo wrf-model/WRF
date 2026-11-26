@@ -113,18 +113,18 @@ C  Section  - Tables                                                          C
 C  Purpose  - To read in a single color index and check it for validity.      C
 C                                                                             C
 C  On entry - TEST is a logical that must be true for the index to be  parsed C
-C             from the table.  ERROR is true if an error has occured in which C
+C             from the table. ERROR is true if an error has occurred in which C
 C             case the index should not be parsed from the table.  DEFIND  is C
 C             a default color index to use if needed.  WHLINE is a whole line C
 C             taken from the current table.  I is the current place in WHLINE.C
 C             NAME is the name of the color index to use when giving an error C
 C             message.  SIZE is the number of characters in NAME.  ERRSEV in- C
-C             dicates what severity of error should stop execution.   UTIL is C
+C             dictates what severity of error should stop execution.  UTIL is C
 C             is the name of the utility using this routine.                  C
 C                                                                             C
 C  On exit  - COLIND  contains  the value set to the  color index.   NOPLT is C
-C             true if a non-correctable error has occured.  ERROR is true  if C
-C             an error has occured and is false otherwise.                    C
+C             true if a non-correctable error has occurred. ERROR is true  if C
+C             an error has occurred and is false otherwise.                   C
 C                                                                             C
 C  Notes    - Routine             Location of Definition                      C
 C             ----------------------------------------------------------------C
@@ -149,7 +149,7 @@ C  Integer variables
       integer          defind,           ! default color index             (in)
      *                 i,                ! position in WHLINE              (in)
      *                 size,             ! number of chars in NAME         (in)
-     *                 errsev            ! error severity comparitor       (in)
+     *                 errsev            ! error severity comparator       (in)
       integer          colind            ! color index                    (out)
       integer          j,                ! loop counter                 (local)
      *                 ier               ! error flag from GKS          (local)
@@ -157,7 +157,7 @@ C  Integer variables
 C  Logical variables
 
       logical          test,             ! use the table ?                 (in)
-     *                 error             ! has an error occured ?          (in)
+     *                 error             ! has an error occurred ?         (in)
       logical          noplt             ! will a plot be drawn ?         (out)
 
 C  Real variables
@@ -221,7 +221,7 @@ C  200 - 255 is reserved for MAPDRV
         end if
         goto 60
 
-C  If an error occured during the read tell the user
+C  If an error occurred during the read tell the user
 
 30      ermes(1:size) = name(1:size)
         ermes(size+1:size+17) = ' Input Conversion'
@@ -248,12 +248,12 @@ C  Format statements end.
 C*****************************************************************************C
 C  errfil   - this is a MAPDRV routine                                        C
 C  Section  - Error Handling                                                  C
-C  Purpose  - To assign fill colors after an  error has  occured in the  fill C
+C  Purpose  - To assign fill colors after an  error has  occurred in the fill C
 C             table read.                                                     C
 C                                                                             C
-C  On entry - FLNUM is the number of the color indicies still needed.         C
+C  On entry - FLNUM is the number of the color indices still needed.          C
 C                                                                             C
-C  On exit  - Those color indicies below  the  one erred upon,  and including C
+C  On exit  - Those color indices below  the  one erred upon,  and including  C
 C             the one erred upon have been set up with some valid guesses.    C
 C                                                                             C
 C  Notes    - Routine Name        Location of Definition                      C
@@ -261,7 +261,7 @@ C             ----------------------------------------------------------------C
 C             GSCR                GKS                                         C
 C             ----------------------------------------------------------------C
 C                                                                             C
-C  Assume   - GKS is open.  Color indicies above 200 are reserved for  MAPDRV C
+C  Assume   - GKS is open.  Color indices above 200 are reserved for  MAPDRV  C
 C             use.                                                            C
 C                                                                             C
 C  Author   - Jeremy Asbill       Date - July 13, 1990       for the MM4 club C
@@ -269,7 +269,7 @@ C*****************************************************************************C
 
 C  Integer variable
 
-      integer          flnum             ! number of indicies needed       (in)
+      integer          flnum             ! number of indices needed        (in)
       integer          fscolr,           ! for common block FLINFO
      *                 secolr,           ! for common block FLINFO
      *                 thcolr,           ! for common block FLINFO
@@ -488,7 +488,7 @@ C                                                                             C
 C  On entry - CVAL  is  a character variable  of fixed size that contains the C
 C             number to be converted to a real.  ERROR is false.              C
 C                                                                             C
-C  On exit  - RVAL  is the value in question.   If an error occured  ERROR is C
+C  On exit  - RVAL  is the value in question.  If an error occurred  ERROR is C
 C             TRUE otherwise it is FALSE.                                     C
 C                                                                             C
 C  Assume   - Nothing                                                         C
@@ -506,7 +506,7 @@ C  Integer variables
 
 C  Logical variables
 
-      logical          error             ! has an error occured ?         (out)
+      logical          error             ! has an error occurred ?        (out)
       logical          used              ! is a unit number in use ?    (local)
 
 C  Real variables
@@ -588,8 +588,8 @@ C             center latitude and longitude respectively.   ERRSEV  indicates C
 C             what severity of error will halt execution of the program.   If C
 C             BUFF  is negative, then no WISS workstation need be open.       C
 C                                                                             C
-C  On exit  - NOMAP is true if any errors occured.  The  counters in the com- C
-C             mon block  ERRORS have been initialized correctly.              C
+C  On exit  - NOMAP is true if any errors occurred.  The  counters in the     C
+C             common block  ERRORS have been initialized correctly.           C
 C                                                                             C
 C  Assume   - Nothing.                                                        C
 C                                                                             C
@@ -617,7 +617,7 @@ C  ECIRC is the circumference of the earth in kilometers
 
       parameter        (ecirc = 40023.8904)
 
-C  Character varaibles
+C  Character variables
 
       character*2      project           ! specifies projection            (in)
       character*60     ermes             ! error message string         (local)
@@ -627,7 +627,7 @@ C  Integer variables
       integer          imax,             ! y dimension size of entire grid (in)
      *                 jmax,             ! x dimension size of entire grid (in)
      *                 buff,             ! GFLASH buffer number to use     (in)
-     *                 errsev            ! error severity comparitor       (in)
+     *                 errsev            ! error severity comparator       (in)
       integer          error,            ! for common block ERRORS
      *                 warns             ! for common block ERRORS
       integer          ier,              ! error flag from GKS          (local)
@@ -655,7 +655,7 @@ C  Real variables
      *                 grds,             ! grid distance in kilometers     (in)
      *                 fsplat,           ! first standard parallel (LC)    (in)
      *                 ssplat,           ! second standard parallel (LC)   (in)
-     *                 cenlat,           ! center lattitude of domain      (in)
+     *                 cenlat,           ! center latitude of domain       (in)
      *                 cenlon            ! center longitude of domain      (in)
       real             red,              ! red component of color rep.  (local)
      *                 blue,             ! blue component of color rep. (local)
@@ -796,7 +796,7 @@ C  Check that the domain will even fit on the earth
         nomap = .true.
       end if
 
-C  Make sure the center lat and lon are withing reason
+C  Make sure the center lat and lon are within reason
 
       if ((cenlat .gt. 90) .or. (cenlat .lt. -90) .or.
      *    (cenlon .gt. 180) .or. (cenlon .lt. -180)) then
@@ -1251,7 +1251,7 @@ C  Purpose  - To generate esthetically pleasing maps for use in analysis pro- C
 C             gram.  It is the hopes of the programmer that this utility will C
 C             be used in GRAPH, RAWINS, TERRAIN and other programs of the MM4 C
 C             modelling system.  This utility is completely general and gives C
-C             the user flexibility in map appearence.                         C
+C             the user flexibility in map appearance.                         C
 C                                                                             C
 C  On entry - PROJECT  describes what projection is being  used.   FSPLAT and C
 C             SSPLAT are only valid if PROJECT = 'LC' and then they represent C
@@ -1447,7 +1447,7 @@ C  Start saving metacode instructions
 
       if (buff .ge. 0) call gflas1 (buff)
 
-C  Do not draw the map if a non-correctable error occured
+C  Do not draw the map if a non-correctable error occurred
 
       if (.not. nomap) then
 
@@ -1541,7 +1541,7 @@ C  Character variables
 
       character*2      wouts             ! for common block MOCDET
 
-C  Integer varaibles
+C  Integer variables
 
       integer          buff              ! GFLASH buffer to use            (in)
       integer          amapf(255000)     ! for common block ARAMAP
@@ -1870,7 +1870,7 @@ C  Purpose  - To set up a lat/lon line grid and draw it to the map.           C
 C                                                                             C
 C  On entry - The common block LLLDET contains the design information for the C
 C             grid.  The common block LLLCOL contains the color index for the C
-C             grid.   GRDS  conatins  the  grid distance  on the domain grid. C
+C             grid.   GRDS  contains  the  grid distance  on the domain grid. C
 C             FLMAP  tells us if the map was filled or not.   XPA  is  the  x C
 C             coord of the first grid point in the map.   XPB  is the x coord C
 C             of the last grid point  in  the map.   WLABS  tells what labels C
@@ -1968,7 +1968,7 @@ C  External routines
 
 C****************************  subroutine begin  *****************************C
 
-C  EZMAP internal parrameters used in this routine are:
+C  EZMAP internal parameters used in this routine are:
 C  GR  - lat/lon GRid interval
 C  DA  - lat/lon grid DAsh pattern
 C  C2  - lat/lon grid Color index
@@ -1981,7 +1981,7 @@ C  Set vertical slicing to 1 slice so that dash patterns will be okay
      *  call mapsti ('VS',1)
   
 C  See if grid needs to be masked
-C  We donn't need the areamap if
+C  We don't need the areamap if
 C    a - no lat/lon lines requested and
 C    b - no labels are requested
 
@@ -2112,7 +2112,7 @@ C  Integer variables
 
       integer          jend,             ! right grid point value, domain  (in)
      *                 iend,             ! top grid point value, domain    (in)
-     *                 errsev            ! error severity comparitor       (in)
+     *                 errsev            ! error severity comparator       (in)
       integer          wlabs,            ! for common block MLBDET
      *                 lbqul(2)          ! for common block MLBDET
       integer          imax,             ! for common block XYLLON
@@ -2212,7 +2212,7 @@ C  GR  - lat/lon GRid interval
 
 C  PLOTCHAR internal parameters use in this routine are:
 C  CD  - Complex or Duplex characters
-C  QU  - QUality of charcters
+C  QU  - QUality of characters
 
 C  Don't draw anything unless MAPDRV labels were requested or publication
 C  style grid was used
@@ -2273,7 +2273,7 @@ C  Set quality as the user requested in PLOTCHAR
         call pcseti ('CD',lbqul(1))
         call pcseti ('QU',lbqul(2))
 
-C  Change user vieport to look like the grid so XYTOLL will be useful
+C  Change user viewport to look like the grid so XYTOLL will be useful
 
         call getset (flsv,frsv,fbsv,ftsv,ulsv,ursv,ubsv,utsv,llsv)
         j = 0
@@ -2747,7 +2747,7 @@ C  PLOTCHAR internal parameters used in this routine are:
 C  CD  - Complex Duplex flag
 C  QU  - QUality forcing flag
 
-C  Make certian there is supposed to be a title plotted
+C  Make certain there is supposed to be a title plotted
 
       if ((nint(tlsiz) .ne. 0) .or. (nomap)) then
 
@@ -2845,12 +2845,12 @@ C             is the lat/lon line details flag.   WLABS  is the label details C
 C             flag.   TITLE  is true if a title will be drawn and false if no C
 C             title will be drawn.   ERRSEV  indicates the severity  of error C
 C             that will cause execution to halt.   NOMAP  is  true  if a non- C
-C             correctible error has occured  and no map is to be drawn and is C
+C             correctible error has occurred and no map is to be drawn and is C
 C             false otherwise.                                                C
 C                                                                             C
 C  On exit  - The color indication variables in common blocks LLLCOL, LABCOL, C
 C             OUTCOL, and PERCOL have been assigned correctly.  NOMAP is true C
-C             if a  non-correctible  error has  occured  and no map  is to be C
+C             if a  non-correctible  error has  occurred  and no map is to be C
 C             drawn and is false otherwise.                                   C
 C                                                                             C
 C  Assume   - Nothing.                                                        C
@@ -2895,7 +2895,7 @@ C  Logical variables
 
       logical          title,            ! put a title on the map ?        (in)
      *                 nomap             ! don't draw a map ?              (in)
-      logical          error,            ! has an error occured ?       (local)
+      logical          error,            ! has an error occurred ?      (local)
      *                 found,            ! was the table found ?        (local)
      *                 test              ! is this true ?               (local)
 
@@ -3154,8 +3154,8 @@ C             detail indicators appropriately.                                C
 C                                                                             C
 C  On entry - UNUM  is the unit number of the table file.   ERRSEV  indicates C
 C             the error severity at which execution should be halted.   NOMAP C
-C             is true if a non-correctable error has occured and no map is to C
-C             be made and is false otherwise.                                 C
+C             is true if a non-correctable error has occurred and no map is   C
+C             to be made and is false otherwise.                              C
 C                                                                             C
 C  On exit  - The information  variables in  common  blocks  MOCDET,  MOTDET, C
 C             LLLDET,  MLBDET, and MTLDET have been set up correctly.  OLLPLC C
@@ -3164,7 +3164,7 @@ C             driver what labels to use and TITLE tells the driver whether or C
 C             not a title is to be.  PERM is true if the perimeter with  tick C
 C             marks is to be drawn  and false if  the perimeter without  tick C
 C             marks should be drawn. NOMAP is true if a non-correctable error C
-C             has  occured and no map is to be made and is  false  otherwise. C
+C             has occurred and no map is to be made and is  false  otherwise. C
 C             If BUFF is negative special defaults are used.                  C
 C                                                                             C
 C  Assume   - Nothing.                                                        C
@@ -3412,7 +3412,7 @@ C    D  => GRDSH = 21845 ; or 0101010101010101 ; or Default
           else
             ermes(1:27)  = 'Lat/Lon Grid Dash Pattern, '
             ermes(28:29) = whline(i:i+1)
-            ermes(30:60) = ', Unknown, Default Uesd        '
+            ermes(30:60) = ', Unknown, Default Used        '
             call errhan ('MAPDRV',0,ermes,errsev)
             grdsh = 21845
           end if
@@ -4172,7 +4172,7 @@ C  so special defaults are used
       end if
 
 C  Handle mismatch errors
-C  First are lat/lon gird interval mismatch errors
+C  First are lat/lon grid interval mismatch errors
 
 110   ermes(1:37)  = 'Lat/Lon Grid Interval Type Mismatch  '
       ermes(38:60) = '                       '
@@ -4296,11 +4296,11 @@ C  Purpose  - To read in the map fill table and assign the map fill colors.   C
 C                                                                             C
 C  On entry - UNUM  is the unit  number of the table file.   ERRSEV indicates C
 C             severity of a error which will cause execution to halt.   NOMAP C
-C             is true if a non-correctable  error has  occured and  is  false C
+C             is true if a non-correctable  error has  occurred and is  false C
 C             otherwise.                                                      C
 C                                                                             C
 C  On exit  - FLMAP is true if the table  was there,  and is false otherwise. C
-C             The color indicies in common blocks FLINFO  and FLWATR have all C
+C             The color indices in common blocks FLINFO  and FLWATR have all  C
 C             been set up correctly.  If a non-correctable error has  occrued C
 C             NOMAP is true and is false otherwise.                           C
 C                                                                             C
@@ -4343,7 +4343,7 @@ C  Logical variables
 
       logical          flmap             ! color fill the map ?           (out)
       logical          nomap,            ! don't draw a map ?           (local)
-     *                 error,            ! has an error occured ?       (local)
+     *                 error,            ! has an error occurred ?      (local)
      *                 found             ! was the table found ?        (local)
 
 C  Common blocks
@@ -4634,7 +4634,7 @@ C  Integer variables
 
 C  Logical variables
 
-      logical          error             ! has an error occured ?          (in)
+      logical          error             ! has an error occurred ?         (in)
 
 C****************************  subroutine begin  *****************************C
 
@@ -4656,12 +4656,12 @@ C  Test until we find the first space or vertical bar
         end if
       end if
 
-C  If no error occured reassign PLACE and exit
+C  If no error occurred reassign PLACE and exit
 
       if (i .le. 80) then
         place = i
 
-C  If an error has occured let the calling routine know
+C  If an error has occurred let the calling routine know
 
       else
         error = .true.
@@ -4749,7 +4749,7 @@ C  under the heading of PLOTCHAR
       call pcseti ('QU',0)
       call gsplci (llcolr)
 
-C  Determin projection cone factor
+C  Determine projection cone factor
 
       if (project(1:2) .eq. 'LC') then
         xn = 0.716
@@ -4888,7 +4888,7 @@ C                                                                             C
 C  Author   - Jeremy Asbill       Date - July 14, 1990       for the MM4 club C
 C*****************************************************************************C
 
-C  Character varaibles
+C  Character variables
 
       character*2      project           ! specifies projection            (in)
 
@@ -4921,7 +4921,7 @@ C  Common blocks
       common /xyllon/  ds,               ! grid distance in kilometers
      *                 xlatc,            ! center latitude
      *                 xlonc,            ! center longitude
-     *                 imax,             ! maximum vertical gird point
+     *                 imax,             ! maximum vertical grid point
      *                 jmax              ! maximum horizontal grid point
 
 C****************************  subroutine begin  *****************************C
@@ -5064,7 +5064,7 @@ C                                                                             C
 C  Author   - Jeremy Asbill       Date - July 11, 1990       for the MM4 club C
 C*****************************************************************************C
 
-C  Integer varaibles
+C  Integer variables
 
       integer          llsv              ! junk filler                  (local)
 
@@ -5103,8 +5103,8 @@ C  Check to see if we have control over the set call
 
       if (doset) then
 
-C  If the map is almost sqare or is taller than it is wide, guarantee at least
-C  10% of the scren on the top and bottom.
+C  If the map is almost square or is taller than it is wide, guarantee at least
+C  10% of the screen on the top and bottom.
 C  Otherwise, guarantee ourselves at least 5% on the top and bottom
 
         if (temp .ge. dumy) then
@@ -5155,7 +5155,7 @@ C  Section  - Tables                                                          C
 C  Purpose  - To check and see if the requested table is there and place  the C
 C             file pointer to the first information line in the table.        C
 C                                                                             C
-C  On entry - UNUM is the unit number of the table file.  TABNAM cantains the C
+C  On entry - UNUM is the unit number of the table file.  TABNAM contains the C
 C             name of the table to check for.   ERRSEV  is the error severity C
 C             indicator.                                                      C
 C                                                                             C
@@ -5313,7 +5313,7 @@ C  Format statements end.
 C*****************************************************************************C
 C  xytoll   - This is a MAPDRV routine                                        C
 C  Section  - Labels                                                          C
-C  Purpose  - To  transform  mesoscale gird point coordinates into  latitude, C
+C  Purpose  - To  transform  mesoscale grid point coordinates into  latitude, C
 C             longitude coordinates.                                          C
 C                                                                             C
 C  On entry - J  and  I are an ordered pair representing a grid point in  the C
@@ -5372,7 +5372,7 @@ C  Common blocks
       common /xyllon/  grds,             ! grid distance in kilometers
      *                 clat,             ! center latitude
      *                 clon,             ! center longitude
-     *                 imax,             ! maximum vertical gird point
+     *                 imax,             ! maximum vertical grid point
      *                 jmax              ! maximum horizontal grid point
       common /lamstf/  confac,           ! cone factor to be used
      *                 fsparl,           ! first standard parallel lat.
@@ -5446,7 +5446,7 @@ C  Calculate the distance from the pole to J,I
      *         (i - ci) * grds
         end if
 
-C  Calculate out the Big Messy equation refered to as c1 in the document
+C  Calculate out the Big Messy equation referred to as c1 in the document
 C  from which this formula was taken
 
         bm = tan((pi * 0.5 - abs(fsparl * pi/180.0))/2.0) *
@@ -5638,7 +5638,7 @@ C  Integer variables
      *                 tsize,            ! # of characters in TITLE        (in)
      *                 unum,             ! unit number of info. files      (in)
      *                 doset,            ! set call indicator              (in)
-     *                 errsev            ! error severity comparitor       (in)
+     *                 errsev            ! error severity comparator       (in)
       integer          cmeth,            ! coloring method indicator    (local)
      *                 ctsiz             ! changeable version of TSIZE  (local)
 
@@ -5744,7 +5744,7 @@ C  Section  - Contour Lines                                                   C
 C  Purpose  - To draw contour lines to a plot.                                C
 C                                                                             C
 C  On entry - Needed information is passed in through common blocks. MASK in- C
-C             dicates how to draw the contours with respect to a map.         C
+C             dictates how to draw the contours with respect to a map.        C
 C                                                                             C
 C  On exit  - The contour lines have been drawn.                              C
 C                                                                             C
@@ -6120,7 +6120,7 @@ C*****************************************************************************C
 
 C  Character variables
 
-      character          cchar           ! PLOTCHAR command delimeter   (local)
+      character          cchar           ! PLOTCHAR command delimiter   (local)
       character*20       number          ! the converted number           (out)
 
 C  Integer variables
@@ -6141,7 +6141,7 @@ C  Real variables
 C****************************  Subroutine Begin  *****************************C
 
 C  The following PLOTCHAR internal parameters are used:
-C  FC  - Function Code delimeter character
+C  FC  - Function Code delimiter character
 
 C  Retrieve the current PLOTCHAR command character
 
@@ -6296,9 +6296,9 @@ C  Section  - CONPACK change routines                                         C
 C  Purpose  - To alter the character quality and the box fill color of the    C
 C             high low labels.                                                C
 C                                                                             C
-C  On entry - HQUAL in the common block HLQDET contains the necessary infor-  C
-C             maiton for character quality.  The common block BCOLORS has     C
-C             the box fill colors for the high low labels.                    C
+C  On entry - HQUAL in the common block HLQDET contains the necessary         C
+C             information for character quality.  The common block BCOLORS    C
+C             has the box fill colors for the high low labels.                C
 C                                                                             C
 C  On exit  - The PLOTCHAR internal parameters CD and QU have been set up     C
 C             properly.  The PLOTCHAR utility is documented in the NCAR       C
@@ -6377,14 +6377,14 @@ C             color the fills for line labels.                                C
 C                                                                             C
 C  On entry - LQUAL contains the information as to how the user wants to      C
 C             change the labels.  MFCOLOR and ZFCOLOR and MLCOLOR contain     C
-C             the indicies to use when coloring the labels.                   C
+C             the indices to use when coloring the labels.                    C
 C                                                                             C
 C  On exit  - The PLOTCHAR internal parameters CD and QU have been set up     C
 C             properly.  The PLOTCHAR utility is documented in the NCAR       C
 C             Graphics Guide to New Utilities Version 3.00.                   C
 C             CD - Use Complex or Duplex characters                           C
 C             QU - High Low or Medium Quality                                 C
-C             The proper indicies have been set up to color the fill boxes.   C
+C             The proper indices have been set up to color the fill boxes.    C
 C                                                                             C
 C  Assume   - GKS is open and either CPLBDR or CPLBDM has been called and is  C
 C             calling this routine.                                           C
@@ -6480,7 +6480,7 @@ C  Purpose  - To  calculate out ramps of colors.  The ramps change  gradually C
 C             from  one  color to another and are specified by the  partition C
 C             colors.                                                         C
 C                                                                             C
-C  On entry - All neccesary information is passed in through  common  blocks. C
+C  On entry - All necessary information is passed in through  common  blocks. C
 C                                                                             C
 C  On exit  - The variables NRMPS and  RAMPS have been set up in common block C
 C             RAMPSC.  NRMPS is a list of levels/partition. RAMPS is a set of C
@@ -6543,7 +6543,7 @@ C  Real variables
      *                 root,             ! calculation variable         (local)
      *                 divn              ! calculation variable         (local)
       
-C  Comon blocks
+C  Common blocks
 
       common /colind/  cmeth,            ! method of color plot
      *                 bckco,            ! not used
@@ -6747,7 +6747,7 @@ C  Calculate the red, green and blue components for the new color
                 bindn = bindt + (bindo - bindt) * mpy
               else
           
-C  If the curent partition is odd go down the ramp instead of up it
+C  If the current partition is odd go down the ramp instead of up it
 
                 root  = float(j) * divn
                 mpy   = root**2
@@ -6814,7 +6814,7 @@ C             plot.                                                           C
 C                                                                             C
 C  On entry - COLOR indicates whether to look for the CON COLORS table.  UNUM C
 C             is the unit number on  which to look for  the table. ERRSEV in- C
-C             dicates what severity of error should halt execution.    HFILB, C
+C             dictates what severity of error should halt execution.   HFILB, C
 C             TFILB  and  LFILB are logicals indicating if the high/low label C
 C             boxes, the title boxes and the line  label  boxes  respectively C
 C             should be fill.  ZL is true if a zero line will be drawn in the C
@@ -6853,7 +6853,7 @@ C  Character variables
 
 C  Integer variables
 
-      integer          errsev,           ! error severity comparitor       (in)
+      integer          errsev,           ! error severity comparator       (in)
      *                 unum              ! unit number of table file       (in)
       integer          ometh             ! out version of CMETH           (out)
       integer          cmeth,            ! for common block COLIND
@@ -6884,7 +6884,7 @@ C  Logical variables
      *                 lshd,             ! for common block FILDET
      *                 color             ! for common block FILDET
       logical          prput             ! for common block PERDET
-      logical          error,            ! has an error occured ?       (local)
+      logical          error,            ! has an error occurred ?      (local)
      *                 found,            ! was the table found ?        (local)
      *                 test              ! is this true ?               (local)
 
@@ -6909,11 +6909,11 @@ C  Common blocks
       common /fildet/  fill,             ! will the plot be filled ?
      *                 lshd,             ! draw contour lines over a fill ?
      *                 color             ! make the plot in color ?
-      common /noplot/  noplt             ! has a non-correctable erro occured ?
+      common /noplot/  noplt             ! has a non-correctable error occurred ?
 
 C****************************  subroutine begin  *****************************C
 
-C  If a non-correctable error has occured, don't bother reading the table
+C  If a non-correctable error has occurred, don't bother reading the table
 
       if (noplt) goto 90
 
@@ -6957,12 +6957,12 @@ C         used per partition; partitions specified by level values
 C  3   => User will specify a group of partitions with one color
 C         used per partition; partitions specified by level numbers
 C  4   => User will specify a group of partitions; color ramping will
-C         be done between two colors for each partition; partitons
+C         be done between two colors for each partition; partitions
 C         specified by level value
 C  5   => User will specify a group of partitions; color ramping will
 C         be done between two colors for each partition; partitions
 C         specified by level number
-C  6   => CONDRV chooses four partions and ramp between :
+C  6   => CONDRV chooses four partitions and ramp between :
 C         partition 1 : Blue to Cyan
 C         partition 2 : Cyan to Green
 C         partition 3 : Green to Yellow
@@ -7551,7 +7551,7 @@ C  Character variables
 
 C  Integer variables
 
-      integer          errsev,           ! error severity comparitor       (in)
+      integer          errsev,           ! error severity comparator       (in)
      *                 unum,             ! unit number of info. file       (in)
      *                 pnum              ! overlay indicator               (in)
       integer          ddpv(3)           ! for common block LWDPDT
@@ -7595,7 +7595,7 @@ C  Common blocks
       common /lwdpdt/  dlwv,             ! details line width values
      *                 ddpv              ! details dash pattern values
       common /perdet/  prput             ! put in a perimeter ?
-      common /noplot/  noplt             ! has a non-correctable erro occured ?
+      common /noplot/  noplt             ! has a non-correctable error occurred ?
 
 C****************************  subroutine begin  *****************************C
 
@@ -7603,7 +7603,7 @@ C  Check if we need to read in the table at all
 
       if (noplt) goto 130
 
-C  Initialze ERROR and output flags
+C  Initialize ERROR and output flags
 
       error = .false.
       lfilb = .false.
@@ -7632,7 +7632,7 @@ C  Set up error messages got errors in SEARCH and NEXT
 C  Parse the line starting with the color flag
 C  Y             => the plot will be color
 C  N             => the plot will not be color
-C  anything else => gives a waring
+C  anything else => gives a warning
 
         call search (whline,i,error)
         if (error) then
@@ -8303,7 +8303,7 @@ C  the title information
 125       continue
         end if
 
-C  Tell the user the details are set up, even if an error occured but
+C  Tell the user the details are set up, even if an error occurred but
 C  didn't stop execution
 
         print *, 'CONDRV - Contour Details Set Up'
@@ -8392,7 +8392,7 @@ C  Character variables
 
 C  Integer variables
 
-      integer          errsev            ! error severity comparitor       (in)
+      integer          errsev            ! error severity comparator       (in)
       integer          hstyl(2),         ! for common block HLODET
      *                 hsize,            ! for common block HLODET
      *                 hangl             ! for common block HLODET
@@ -8415,7 +8415,7 @@ C  Real variables
 C  Common blocks
 
       common /hlbdet/  hputb             ! draw boxes around highs and lows ?
-      common /hlodet/  hputp,            ! darw in perimeter on boxes ?
+      common /hlodet/  hputp,            ! draw in perimeter on boxes ?
      *                 hfilb,            ! fill in the the box ?
      *                 hprlw,            ! line width for box perimeter
      *                 hstyl,            ! high/low style indicator
@@ -8439,7 +8439,7 @@ C  Set up SEARCH and NEXT error strings
       p(1:23)  = 'Reading High/Low Inform'
       p(24:60) = 'ation Line, Too Few Entries On Line  '
       q(1:23)  = p(1:23)
-      q(24:60) = 'ation Line, Entry Is Bizzare         '
+      q(24:60) = 'ation Line, Entry Is Bizarre         '
 
 C  Do we want to draw in boxes
 
@@ -9078,20 +9078,20 @@ C  Character variables
 
 C  Integer variables
 
-      integer          errsev            ! error severity comparitor       (in)
+      integer          errsev            ! error severity comparator       (in)
       integer          lqual(2)          ! for common block LBQDET
       integer          lsize,            ! for common block LABDET
      *                 lortn,            ! for common block LABDET
      *                 langl,            ! for common block LABDET
      *                 lintv             ! for common block LABDET
 
-C  Logical varaibles
+C  Logical variables
 
       logical          ofilb             ! out version of LFILB           (out)
       logical          lputb,            ! for common block LABDET
      *                 lputp,            ! for common block LABDET
      *                 lfilb             ! for common block LABDET
-      logical          error             ! has an error occured ?       (local)
+      logical          error             ! has an error occurred ?      (local)
 
 C  Real variables
 
@@ -9279,7 +9279,7 @@ C  Anything else  => Give Warning message
           end if
         end if
 
-C  What line width should the box perimeter have?  This value is a mulitplier
+C  What line width should the box perimeter have?  This value is a multiplier
 C  by the normal line width, a "D" or a "d" indicates normal line width
 
         if ((lputp) .and. (.not. error)) then
@@ -9675,7 +9675,7 @@ C  Character variables
 
 C  Integer variables
 
-      integer          errsev,           ! error severity comparitor       (in)
+      integer          errsev,           ! error severity comparator       (in)
      *                 unum,             ! unit number of table file       (in)
      *                 cmeth             ! coloring method to use          (in)
       integer          ddpv(3)           ! for common block LWDPDT
@@ -9691,7 +9691,7 @@ C  Logical variables
       logical          noplt             ! don't make any plot ?           (in)
       logical          ints              ! for common block PARINF
       logical          found,            ! was the table found ?        (local)
-     *                 error,            ! has an error occured ?       (local)
+     *                 error,            ! has an error occurred ?      (local)
      *                 done              ! are all partitions in ?      (local)
 
 C  Real variables
@@ -9769,7 +9769,7 @@ C    reals
             ints = .false.
           end if
 
-C  This is the begining of the loop that is iterated once per line of the
+C  This is the beginning of the loop that is iterated once per line of the
 C  table
 
 10        nprt = nprt + 1
@@ -10207,7 +10207,7 @@ C  If the table was not found, deliver an error message
             pdpv(1)    = -1
           else
 
-C  If the table was found bu not complete give a different error message
+C  If the table was found but not complete give a different error message
 
             ermes(1:30)  = 'Partition Table Not Complete  '
             ermes(31:60) = '                              '
@@ -10279,7 +10279,7 @@ C  Character variables
 
 C  Integer variables
 
-      integer          errsev,           ! error severity comparitor       (in)
+      integer          errsev,           ! error severity comparator       (in)
      *                 tputl             ! label bar/title indicator       (in)
       integer          tsize             ! for common block TITDET
       integer          tqual(2)          ! for common block TIQDET
@@ -10291,7 +10291,7 @@ C  Logical variables
       logical          tputb,            ! for common block TITDET
      *                 tputp,            ! for common block TITDET
      *                 tfilb             ! for common block TITDET
-      logical          error             ! has an error occured ?       (local)
+      logical          error             ! has an error occurred ?      (local)
 
 C  Real variables
 
@@ -10729,7 +10729,7 @@ C  Integer variables
 
       integer          tsize,            ! # of chars in TITLE             (in)
      *                 pnum,             ! indicates what overlay this is  (in)
-     *                 errsev            ! error severity comparitor       (in)
+     *                 errsev            ! error severity comparator       (in)
       integer          lputl,            ! for common block QLBDET
      *                 tputl             ! for common block QLBDET
       integer          pcol              ! for common block PERCOL
@@ -10751,7 +10751,7 @@ C  Common blocks
      *                 tputl             ! draw in the title
       common /perdet/  prput             ! put in a perimeter ?
       common /percol/  pcol              ! color index for perimeter
-      common /noplot/  noplt             ! has a non-correctable erro occured ?
+      common /noplot/  noplt             ! has a non-correctable error occurred ?
 
 C****************************  Subroutine Begin  *****************************C
 
@@ -10827,7 +10827,7 @@ C                                                                             C
 C  On entry - XSTR, YSTR are the first point in the grid to be plotted.  XEND C
 C             and YEND are the last point in the  grid to be plotted.   These C
 C             two points should correspond to the lower left and  upper right C
-C             respecitvely, of a map on which the picture is overlayed. DOSET C
+C             respectively, of a map on which the picture is overlaid. DOSET  C
 C             is 1 if CONDRV should make a standard  set call and is 0 if  it C
 C             should use the users last call to the SPPS routine SET.  If DO- C
 C             set is negative CONDRV  makes the set call  considering a cross C
@@ -10892,7 +10892,7 @@ C  DUMY will represent the maps height
         dumy = float(xend - xstr + 1) * 0.9
       end if
 
-C  Ckeck to see if a standard set should be done
+C  Check to see if a standard set should be done
 
       if (doset .gt. 0) then
 
@@ -11352,7 +11352,7 @@ C  Character variables
 C  Integer variables
 
       integer          color,            ! index of original color         (in)
-     *                 errsev            ! error severity comparitor       (in)
+     *                 errsev            ! error severity comparator       (in)
       integer          ier,              ! error indicator for GQCR     (local)
      *                 i                 ! loop counter/place keeper    (local)
 
@@ -11513,8 +11513,8 @@ C             halt execution.  TSIZE is the number of characters declared for C
 C             the title length.  MASK indicates what type of masking will  be C
 C             used in regards to a map previously drawn.                      C
 C                                                                             C
-C  On exit  - NOPLT is true if any errors occured.  The  counters in the com- C
-C             mon block ERRORS have been initialized correctly.               C
+C  On exit  - NOPLT is true if any errors occurred.  The  counters in the     C
+C             common block ERRORS have been initialized correctly.            C
 C                                                                             C
 C  Assume   - Nothing.                                                        C
 C                                                                             C
@@ -11533,7 +11533,7 @@ C                                                                             C
 C  Author   - Jeremy Asbill      Date - August 10, 1990      for the MM4 club C
 C*****************************************************************************C
 
-C  Character varaibles
+C  Character variables
 
       character*2      mask              ! map masking indicator           (in)
       character*60     ermes             ! error message string         (local)
@@ -11549,7 +11549,7 @@ C  Integer variables
      *                 lmeth,            ! level specification indicator   (in)
      *                 pnum,             ! number of the plot              (in) 
      *                 tsize,            ! length of title string          (in)
-     *                 errsev            ! error severity comparitor       (in)
+     *                 errsev            ! error severity comparator       (in)
       integer          canbe             ! for common block CONFLG
       integer          opst,             ! GKS operation state          (local)
      *                 ier,              ! GKS error flag               (local)
@@ -11570,7 +11570,7 @@ C  Common blocks
 
       common /errors/  error,            ! error count
      *                 warns             ! warning count
-      common /noplot/  noplt             ! has a non-correctable erro occured ?
+      common /noplot/  noplt             ! has a non-correctable error occurred ?
       common /conflg/  canbe             ! map masking can be done if 722
 
 C****************************  subroutine begin  *****************************C
@@ -12234,7 +12234,7 @@ C*****************************  subroutine end  ******************************C
 
 C*****************************************************************************C
 C  prettl   - This is a CONDRV routine                                        C
-C  Section  - Desgin                                                          C
+C  Section  - Design                                                          C
 C  Purpose  - To preprocess the title for special CONDRV strings.             C
 C                                                                             C
 C  On entry - TLEN  is  the number of characters in the user specified  title C
@@ -12329,7 +12329,7 @@ C  minimum
 
           else if (title(i:i+16) .eq. '$Contour Minimum$') then
 
-C  Retrieve the contour mimimum from CONPACK
+C  Retrieve the contour minimum from CONPACK
 
             call cpgeti ('NCL',nlev)
             cval = 1.0E36
@@ -12638,7 +12638,7 @@ C  Integer variables
 
       integer          lmeth,            ! contour level spec. method ind. (in)
      *                 cmeth,            ! coloring method inicator        (in)
-     *                 errsev            ! error severity comparitor       (in)
+     *                 errsev            ! error severity comparator       (in)
 
 C  Real variables
 
@@ -12782,7 +12782,7 @@ C  Real variables
 C  Common blocks
 
       common /hlbdet/  hputb             ! draw boxes around highs and lows ?
-      common /hlodet/  hputp,            ! darw in perimeter on boxes ?
+      common /hlodet/  hputp,            ! draw in perimeter on boxes ?
      *                 hfilb,            ! fill in the the box ?
      *                 hprlw,            ! line width for box perimeter
      *                 hstyl,            ! high/low style indicator
@@ -13070,7 +13070,7 @@ C  Parameters
 C  Integer variables
 
       integer          lputl,            ! line label flag                 (in)
-     *                 errsev            ! error severity comparitor       (in)
+     *                 errsev            ! error severity comparator       (in)
       integer          lsize,            ! for common block LABDET
      *                 lortn,            ! for common block LABDET
      *                 langl,            ! for common block LABDET
@@ -13443,7 +13443,7 @@ C  not values
 20      continue
       else
 
-C  There are three valuse in the array DDPV, the first is the dash
+C  There are three values in the array DDPV, the first is the dash
 C  pattern for positive numbers, the second is for the zero line and
 C  the third is for negative numbers
 
@@ -13520,7 +13520,7 @@ C*****************************  subroutine end  ******************************C
 
 C*****************************************************************************C
 C  setttl   - This is a CONDRV routine                                        C
-C  Section  - Desgin                                                          C
+C  Section  - Design                                                          C
 C  Purpose  - To set up a title or information label to be drawn.             C
 C                                                                             C
 C  On entry - TLEN  is negative if an information label should be set up.  If C

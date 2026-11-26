@@ -1149,7 +1149,7 @@ ENDIF
 !--- The following arrays are integral calculations based on the mean 
 !    snow/graupel diameters, which vary from 50 microns to 1000 microns 
 !    (1 mm) at 1-micron intervals and assume exponential size distributions.
-!    The values are normalized and require being multipled by the number 
+!    The values are normalized and require being multiplied by the number
 !    concentration of large ice (NLICE).
 !---------------------------------------
 !    - VENTI1 - integrated quantity associated w/ ventilation effects 
@@ -1298,7 +1298,7 @@ big_loop: DO L=1,LSFC
 !
 !--- Check if any ice is falling into layer from above
 !
-!--- NOTE that "SNOW" in variable names is often synonomous with 
+!--- NOTE that "SNOW" in variable names is often synonymous with
 !    large, precipitation ice particles
 !
         IF (ASNOW .GT. CLIMIT) THEN
@@ -1321,7 +1321,7 @@ big_loop: DO L=1,LSFC
         RHgrd=RHC_col(L)    ! Threshold relative humidity for the onset of condensation
 !
 !-----------------------------------------------------------------------
-!--- Moisture variables below are mixing ratios & not specifc humidities
+!--- Moisture variables below are mixing ratios & not specific humidities
 !-----------------------------------------------------------------------
 !    
 !--- This check is to determine grid-scale saturation when no condensate is present

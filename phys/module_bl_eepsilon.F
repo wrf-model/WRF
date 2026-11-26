@@ -3,22 +3,22 @@
 !####################e-epsilon scheme##################################
 !   taken from the IPRC IRAM - Yuqing Wang, university of hawaii
 !   added and improved by Chunxi Zhang and Yuqing Wang to wrf4.2, 2020
-!   refenrences: Langland and Liou (1996, mwr, 124, 905-918)
+!   references: Langland and Liou (1996, mwr, 124, 905-918)
 !                Zhang et al.      (2020, mwr, 148, 1121-1145)
 !######################################################################
 ! 
 !  Updates since the original release
 !  03/2023
 !  Added the cloud top cooling effect for stratocumulus, which is similar
-!      to the one used in the MYNN PBL scheme. The critial step is to
-!      idendity stratocumulus. We used the method by Marquet and Bechtold (2020)
+!      to the one used in the MYNN PBL scheme. The critical step is to
+!      identity stratocumulus. We used the method by Marquet and Bechtold (2020)
 !  Added addtinal source term for stable boundary layer in the epsilon 
 !      equation to represent the energy drain on the eddy scale
 !      (Zeng et al. (2020))
-!  Fixed a bug for the TKE global varaible. A new variable pek_pbl is defined 
+!  Fixed a bug for the TKE global variable. A new variable pek_pbl is defined
 !  instead of  using tke_pbl in Register.EM_COMMON. Now pek_pbl,pep_pbl,pek_adv
 !  and pep_adv are all on the half levels. 
-!  Addded a few tweaks
+!  Added a few tweaks
 !
 !######################################################################
 module module_bl_eeps
@@ -840,7 +840,7 @@ contains
         am(j,1)=0.5*akm(j,1)/dzz(j,1)
       end do
 !
-!  to calculate the cofficients for the triangle matrix
+!  to calculate the coefficients for the triangle matrix
 !  for tke dissipation and solve the matrix
 !
       do k=1,km-1
@@ -866,7 +866,7 @@ contains
 !
       call tridiag(ax1,bx1,cx1,yy1,lq,km-1)
 !
-!  to calculate the cofficients for the triangle matrix
+!  to calculate the coefficients for the triangle matrix
 !  for tke and solve the matrix
 !
       do k=1,km-1
@@ -897,10 +897,10 @@ contains
       lvl = lvl + 1
       end do ! end while
 !
-!-------------------------------------------------------------
-!  to calculate the vertical diffusion coeficient for momentum 
+!--------------------------------------------------------------
+!  to calculate the vertical diffusion coefficient for momentum
 !  heat, moisture
-!-------------------------------------------------------------
+!--------------------------------------------------------------
 !  note: akm and akh at the first level (km) will not be used 
       do k=2,km
         do j=1,lq

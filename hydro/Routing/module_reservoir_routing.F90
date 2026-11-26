@@ -90,7 +90,7 @@ subroutine read_reservoir_obs(domainId)
       myId = 0
    endif
 
-   ! Open up and read in the NetCDF file containing disharge data.
+   ! Open up and read in the NetCDF file containing discharge data.
    if(myId .eq. 0) then
       ! Initialize our missing flag to 0. If at any point we don't find a file,
       ! the flag value will go to 1 to indicate no files were found.

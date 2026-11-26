@@ -321,7 +321,7 @@ subroutine calc_aerosol_goddard_sw(ht,dz8w,p,t3d,qv3d,aer_type,                 
        ! reserved for climatology
        case(1)
           if ((aer_asy_val .lt. -1) .or. (aer_asy_val .gt. 1)) then
-             write(wrf_err_message,'("aer_asy_val must be withing [-1,1]. Illegal value ",F7.4," found")') aer_asy_val
+             write(wrf_err_message,'("aer_asy_val must be within [-1,1]. Illegal value ",F7.4," found")') aer_asy_val
              call wrf_error_fatal(wrf_err_message)
           end if
           write( wrf_err_message , '("aer_asy_opt=",I1,": asymmetry parameter fixed to value ",F6.3)') aer_asy_opt,aer_asy_val
@@ -694,7 +694,7 @@ subroutine calc_aerosol_rrtmg_sw(ht,dz8w,p,t3d,qv3d,aer_type,                   
        ! reserved for climatology
        case(1)
           if ((aer_asy_val .lt. 0) .or. (aer_asy_val .gt. 1)) then
-             write(wrf_err_message,'("aer_asy_val must be withing [-1,1]. Illegal value ",F7.4," found")') aer_asy_val
+             write(wrf_err_message,'("aer_asy_val must be within [-1,1]. Illegal value ",F7.4," found")') aer_asy_val
              call wrf_error_fatal(wrf_err_message)
           end if
           write( wrf_err_message , '("aer_asy_opt=",I1,": asymmetry parameter fixed to value ",F6.3)') aer_asy_opt,aer_asy_val
@@ -1412,7 +1412,7 @@ subroutine aod_profiler(ht,dz8w,taod550,n_bands,   &
    ! input variables from driver are defined such as kms is sfc and
    ! kme is toa. Equivalently, kts is sfc and kte is toa
    do j=jts,jte
-      ! heigth profile
+      ! height profile
       !   kts=surface, kte=toa
       do i=its,ite
          z2d(i,kts)=ht(i,j)+0.5*dz8w(i,kts,j)

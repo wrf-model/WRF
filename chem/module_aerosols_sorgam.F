@@ -775,7 +775,7 @@ CONTAINS
       REAL XLM( BLKSIZE )           ! atmospheric mean free path [ m ]
       REAL AMU( BLKSIZE )           ! atmospheric dynamic viscosity [ kg/m s ]
       
-! *** followng is for future version       
+! *** following is for future version
       REAL VSED( BLKSIZE, NASPCSSED) ! sedimentation velocity [ m s**-1 ]
       REAL VDEP( BLKSIZE, NASPCSDEP) ! deposition velocity [ m s**-1 ]
 
@@ -1661,7 +1661,7 @@ END SUBROUTINE sorgam_depdriver
 !                        the error function. Also added coarse mode.
 !       Revised 9/18/97 by FSB to fix mass transfer from Aitken to
 !                       accumulation mode by coagulation
-!       Revised 10/27/97 by FSB to modify code to use primay emissions
+!       Revised 10/27/97 by FSB to modify code to use primary emissions
 !                        and to correct 3rd moment updates.
 !                        Also added coarse mode.
 !       Revised 11/4/97 by FSB to fix error in other anthropogenic PM2.5
@@ -1676,11 +1676,11 @@ END SUBROUTINE sorgam_depdriver
 !                        Euler step.
 !       Revised 1/6/98   by FSB Lowered minimum concentration for
 !                        sulfate aerosol to 0.1 [ ng / m**3 ].
-!       Revised 1/12/98  C30 replaces BRNA31 as a variable. C30 represen
+!       Revised 1/12/98  C30 replaces BRNA31 as a variable. C30 represent
 !                        intermodal transfer rate of 3rd moment in place
 !                        of 3rd moment coagulation rate.
 !       Revised 5/5/98   added new renaming criterion based on diameters
-!       Added   3/23/98  by BS condensational groth factors for organics
+!       Added   3/23/98  by BS condensational growth factors for organics
 
 !**********************************************************************
 
@@ -1696,7 +1696,7 @@ END SUBROUTINE sorgam_depdriver
       INTEGER blksize
 ! actual number of cells in arrays
       INTEGER numcells
-! nmber of species in CBLK        
+! number of species in CBLK
       INTEGER nspcsda
 ! model layer                     
       INTEGER layer
@@ -1811,7 +1811,7 @@ END SUBROUTINE sorgam_depdriver
 ! *** Statement function given for error function. Source is
 !     Meng, Z., and J.H.Seinfeld (1994) On the source of the submicromet
 !      droplet mode of urban and regional aerosols. Aerosol Sci. and Tec
-!      20:253-265. They cite Reasearch & Education Asociation (REA), (19
+!      20:253-265. They cite Research & Education Association (REA), (19
 !      Handbook of Mathematical, Scientific, and Engineering Formulas,
 !      Tables, Functions, Graphs, Transforms: REA, Piscataway, NJ. p. 49
 
@@ -2218,7 +2218,7 @@ END SUBROUTINE sorgam_depdriver
 
             cblk(lcell,vnu0) = phnum*cblk(lcell,vnu0)
 
-! *** Rename mass from Aitken mode to acumulation mode. The mass transfe
+! *** Rename mass from Aitken mode to accumulation mode. The mass transfe
 !     to the accumulation mode is proportional to the amount of 3rd mome
 !     transferred, therefore FM3 is used for mass transfer.
 
@@ -2346,7 +2346,7 @@ END SUBROUTINE sorgam_depdriver
 !     In sections 1 through 3, only the sulfates can affect the amount o
 !     on the particles.
 !     In section 4, we have fully neutralized sulfate, and extra ammoniu
-!     allows more nitrate to be present. Thus, the ammount of water is c
+!     allows more nitrate to be present. Thus, the amount of water is c
 !     using ZSR for ammonium sulfate and ammonium nitrate. Crystallizati
 !     assumed to occur in sections 2,3,and 4. See detailed discussion be
 
@@ -2603,7 +2603,7 @@ END SUBROUTINE sorgam_depdriver
 
       INTEGER nspcsda
 
-! nmber of species in CBLK        
+! number of species in CBLK
       REAL cblk(blksize,nspcsda) ! main array of variables         
       REAL blkta(blksize) ! Air temperature [ K ]           
       REAL pdensn(blksize) ! average particel density in Aitk
@@ -2918,10 +2918,10 @@ END SUBROUTINE sorgam_depdriver
       INTEGER blksize
 ! actual number of cells in arrays
       INTEGER numcells
-! nmber of species in CBLK        
+! number of species in CBLK
       INTEGER nspcsda,igrid,jgrid,kgrid
       REAL cblk(blksize,nspcsda) 
-! *** Meteorological information in blocked arays:
+! *** Meteorological information in blocked arrays:
 
 ! main array of variables         
       REAL blkta(blksize) ! Air temperature [ K ]                   
@@ -3109,10 +3109,10 @@ END SUBROUTINE sorgam_depdriver
       INTEGER blksize
 ! actual number of cells in arrays
       INTEGER numcells
-! nmber of species in CBLK        
+! number of species in CBLK
       INTEGER nspcsda
       REAL cblk(blksize,nspcsda) 
-! *** Meteorological information in blocked arays:
+! *** Meteorological information in blocked arrays:
 
 ! main array of variables         
       REAL blkta(blksize) ! Air temperature [ K ]                   
@@ -3944,7 +3944,7 @@ END SUBROUTINE sorgam_depdriver
 
       INTEGER nspcsda
 
-! nmber of species in CBLK        
+! number of species in CBLK
       REAL cblk(blksize,nspcsda) ! main array of variables          
       REAL blkta(blksize) ! Air temperature [ K ]            
       REAL blkprs(blksize) 
@@ -4166,8 +4166,8 @@ END SUBROUTINE sorgam_depdriver
 !bs  Given an initial guess X(1:N) for a root in N dimensions, find    !
 !bs  the root by globally convergent Newton's method. The vector of    !
 !bs  functions to be zeroed, called FVEC(1:N) in the routine below. is !
-!bs  retuned by a user-supplied function that must be called FUNCV and !
-!bs  have the declaration SUBROUTINE FUNCV(NX,FVEC). The output        !
+!bs  returned by a user-supplied function that must be called FUNCV    !
+!bs  and have the declaration SUBROUTINE FUNCV(NX,FVEC). The output    !
 !bs  quantity CHECK is false on a normal return and true if the        !
 !bs  routine has converged to a local minimum of the function FMIN     !
 !bs  defined below. In this case try restarting from a different       !
@@ -4177,8 +4177,8 @@ END SUBROUTINE sorgam_depdriver
 !bs  NP     : maximum expected value of N                              !
 !bs  MAXITS : maximum number of iterations                             !
 !bs  TOLF   : convergence criterion on function values                 !
-!bs  TOLMIN : criterion for decidingwhether spurios convergence to a   !
-!bs           minimum of FMIN has ocurred                              !
+!bs  TOLMIN : criterion for decidingwhether spurious convergence to a  !
+!bs           minimum of FMIN has occurred                             !
 !bs  TOLX   : convergence criterion on delta_X                         !
 !bs  STPMX  : scaled maximum step length allowed in line searches      !
 !bs                                                                    !
@@ -4328,7 +4328,7 @@ END SUBROUTINE sorgam_depdriver
 
 ! *** In this version, the method od RPM is followed where
 !     the diffusivity, the average molecular ve3locity, and
-!     the accomodation coefficient for sulfuric acid are used for
+!     the accommodation coefficient for sulfuric acid are used for
 !     the organics. This is for consistency.
 !       Future versions will use the correct values.  FSB 12/12/96
 
@@ -4540,7 +4540,7 @@ END SUBROUTINE sorgam_depdriver
 ! *** calculate the total change to sulfuric acid vapor from production
 !                      and condensation
 
-        vapor1 = cblk(lcell,vsulf) ! curent sulfuric acid vapor        
+        vapor1 = cblk(lcell,vsulf) ! current sulfuric acid vapor
         vapor2 = cblk(lcell,vsulf) - so4rat(lcell)* & 
           dt
 ! vapor at prev
@@ -4680,7 +4680,7 @@ END SUBROUTINE sorgam_depdriver
         chemrat = max(chemrat,0.0) 
 ! *** Now calculate the rate of condensation on existing particles.
 
-! Prevent CHEMRAT from being negativ
+! Prevent CHEMRAT from being negative
         cgrn3(lcell) = cgrn3(lcell) + chemrat*fconcn(lcell) + &
           chemrat_org*fconcn_org(lcell)
 
@@ -4830,7 +4830,7 @@ END SUBROUTINE sorgam_depdriver
 !   F.Binkowski 7/30/97   Changed to Bromley method for multicomponent
 !                         activity coefficients. The binary activity coe
 !                         are the same as the previous version
-!   F.Binkowski 8/1/97    Chenged minimum sulfate from 0.0 to 1.0e-6 i.e
+!   F.Binkowski 8/1/97    Changed minimum sulfate from 0.0 to 1.0e-6 i.e
 !                         1 picogram per cubic meter
 
 !-----------------------------------------------------------------------
@@ -4996,7 +4996,7 @@ END SUBROUTINE sorgam_depdriver
       REAL kan
 ! Variables used for ammonia solubili
       REAL khat
-! Equilibrium constant for nitric aci
+! Equilibrium constant for nitric acid
       REAL kna
 ! Henry's Law Constant for ammonia   
       REAL kph
@@ -5329,7 +5329,7 @@ END SUBROUTINE sorgam_depdriver
             RETURN
           END IF
 
-!...choose minimum positve root
+!...choose minimum positive root
 
           IF ((rr1*rr2)<0.0) THEN
             xno3 = max(rr1,rr2)
@@ -5716,7 +5716,7 @@ END SUBROUTINE sorgam_depdriver
 ! number of species in CBLK ciarev02           
       REAL cblk(blksize,nspcsda) 
 
-! *** Meteorological information in blocked arays:
+! *** Meteorological information in blocked arrays:
 
 ! *** Thermodynamic variables:
 
@@ -5983,16 +5983,16 @@ END SUBROUTINE sorgam_depdriver
 !bs  organic aerosol based on (pseudo-)ideal solution thermodynamics.  !
 !bs                                                                    !
 !bs  This code considers two cases:                                    !
-!bs   i) initil absorbing mass is existend in the aerosol phase        !
-!bs  ii) a threshold has to be exeeded before partitioning (even below !
-!bs      saturation) will take place.                                  !
+!bs   i) initil absorbing mass is existent in the aerosol phase        !
+!bs  ii) a threshold has to be exceeded before partitioning (even      !
+!bs      below saturation) will take place.                            !
 !bs                                                                    !
 !bs  The temperature dependence of the saturation concentrations are   !
 !bs  calculated using the Clausius-Clapeyron equation.                 !
 !bs                                                                    !
 !bs  It is assumed that the condensable vapors also evaporate if the   !
-!bs  saturation concentraion lowers e.g. due to temperature effects.   !
-!bs  Therefor negative production rates (= evaporation rates) are      !
+!bs  saturation concentration lowers e.g. due to temperature effects.  !
+!bs  Therefore negative production rates (= evaporation rates) are     !
 !bs  possible.                                                         !
 !bs                                                                    !
 !bs  If there is no absorbing mass at all the Pandis method is applied !
@@ -6196,7 +6196,7 @@ END SUBROUTINE sorgam_depdriver
 !bs *      average value is 222.5 g/mol
 !bs *
 !bs * molecular weights used are estimates taking the origin (reactants)
-!bs *      into account. This should be updated if more information abou
+!bs *      into account. This should be updated if more information about
 !bs *      the products is available.
 !bs *      First hints are taken from Forstner et al. (1997), Environ. S
 !bs *        Technol. 31(5), 1345-1358. and Forstner et al. (1997), Atmo
@@ -6232,7 +6232,7 @@ END SUBROUTINE sorgam_depdriver
 !bs *
 !bs
 !bs * alkane and alkene yields from:
-!bs * Moucheron M.C. and J. Milford: Development and testing of a proces
+!bs * Moucheron M.C. and J. Milford: Development and testing of a process
 !bs *    model for secondary organic aerosols. Air & Waste Manag. Assoc.
 !bs *    for presentation at the 89th Annual Meeting & Exhibition, Nashv
 !bs *    Tennessee, June 23-28, 96-FA130B.03, 1996.
@@ -6250,7 +6250,7 @@ END SUBROUTINE sorgam_depdriver
 !bs *               = mass yield * (M_terp / M_soa)
 !bs *               = mass yield * ( M(Terpenes) / M(pinonic acid) )
 !bs *               = mass yield * 136 / 184
-!bs * average for a-Pinene and Limonene, maybe splitted in future versio
+!bs * average for a-Pinene and Limonene, maybe split in future version
 !bs *    0.138 * 0.739 = 0.102; 0.345 * 0.739 = 0.254
 !bs * values for a-Pinene (molar yield) alpha1 = 0.028, alpha2 = 0.241
 !bs * values for limonene (molar yield) alpha1 = 0.163, alpha2 = 0.247
@@ -6428,7 +6428,7 @@ END SUBROUTINE sorgam_depdriver
           (cblk(lcell,vorgpaj)+cblk(lcell,vorgpai))/mworg + mnonow
 !bs
 !bs * If MINIT is set to zero partitioning will occur if the pure
-!bs * saturation concentation is exceeded (Pandis et al. 1992).
+!bs * saturation concentration is exceeded (Pandis et al. 1992).
 !bs * If some amount of absorbing organic mass is formed gas/particle
 !bs * partitioning will follow the ideal solution approach.
 !bs
@@ -7079,7 +7079,7 @@ END SUBROUTINE VDVG
 !   Gaussian Quadrature numerical integration over diameter range for each mode.
 ! Quadrature taken from Abramowitz and Stegun (1974), equation 25.4.46 and Table 25.10
 ! Quadrature points are the zeros of Hermite polynomials of order NGAUSdv
-!   Numerical Integration allows more complete discription of the
+!   Numerical Integration allows more complete description of the
 !   Cunningham Slip correction factor, Interception Term (not included previously),
 !   and the correction due to rebound for higher diameter particles.
 !   Sedimentation velocities the same as original Binkowski code, also the
@@ -7218,9 +7218,9 @@ END SUBROUTINE VDVG
 !       vdplim=.002*UTSCALE
         vdplim=min(vdplim,.02)
         RSURFQ=RA(LCELL)+1./vdplim
-!       RSURFQ=RA(LCELL)+1./(UTSCALE*(Eff_dif+Eff_imp+Eff_int)*RBcor) ! Total surface resistence
+!       RSURFQ=RA(LCELL)+1./(UTSCALE*(Eff_dif+Eff_imp+Eff_int)*RBcor) ! Total surface resistance
 !
-!   limit this here to be consisten with the gocart routine, which bases this on Walcek et al. 1986
+!   limit this here to be consistent with the gocart routine, which bases this on Walcek et al. 1986
 !
 !       RSURFQ=max(RSURFQ,50.)
         SUM0=SUM0+WGAUS(N)*(VSEDQ + 1./RSURFQ)  ! Quadrature sum for 0 moment
@@ -7248,9 +7248,9 @@ END SUBROUTINE VDVG
         vdplim=UTSCALE*(Eff_dif+Eff_imp+Eff_int)*RBcor
         vdplim=min(vdplim,.02)
         RSURFQ=RA(LCELL)+1./vdplim
-!       RSURFQ=RA(LCELL)+1./(UTSCALE*(Eff_dif+Eff_imp+Eff_int)*RBcor) ! Total surface resistence
+!       RSURFQ=RA(LCELL)+1./(UTSCALE*(Eff_dif+Eff_imp+Eff_int)*RBcor) ! Total surface resistance
 !
-!   limit this here to be consisten with the gocart routine, which bases this on Walcek et al. 1986
+!   limit this here to be consistent with the gocart routine, which bases this on Walcek et al. 1986
 !
 !       RSURFQ=max(RSURFQ,50.)
         SUM0=SUM0+WGAUS(N)*(VSEDQ + 1./RSURFQ)  ! Quadrature sum for 0 moment
@@ -7286,9 +7286,9 @@ END SUBROUTINE VDVG
         vdplim=min(vdplim,.02)
         vdplim=max(vdplim,1e-35) !wig: add check since occasionally a lg particle causes overflow of rsurfq
         RSURFQ=RA(LCELL)+1./vdplim
-!       RSURFQ=RA(LCELL)+1./(UTSCALE*(Eff_dif+Eff_imp+Eff_int)*RBcor) ! Total surface resistence
+!       RSURFQ=RA(LCELL)+1./(UTSCALE*(Eff_dif+Eff_imp+Eff_int)*RBcor) ! Total surface resistance
 !
-!   limit this here to be consisten with the gocart routine, which bases this on Walcek et al. 1986
+!   limit this here to be consistent with the gocart routine, which bases this on Walcek et al. 1986
 !
 !       RSURFQ=max(RSURFQ,50.)
         SUM0=SUM0+WGAUS(N)*(VSEDQ + 1./RSURFQ)  ! Quadrature sum for 0 moment
@@ -7608,7 +7608,7 @@ END SUBROUTINE VDVG_2
 !   wig, 21-Apr-2004, original version	                        *
 !   rce, 25-apr-2004 - name changes for consistency with        *
 !                          new aer_ic constants in Registry     *
-!   wig,  7-May-2004, added height dependance                   *
+!   wig,  7-May-2004, added height dependence                   *
 !                                                               *
 !   CALLS THE FOLLOWING SUBROUTINES: NONE                       *
 !                                                               *
@@ -7637,7 +7637,7 @@ END SUBROUTINE VDVG_2
 !!$!    ---------     ----------
 !!$!    <=2000        1.0
 !!$!    2000<z<3000   linear transition zone to 0.5
-!!$!    3000<z<5000   linear transision zone to 0.25
+!!$!    3000<z<5000   linear transition zone to 0.25
 !!$!    >=3000        0.25
 !!$!
 !!$! which translates to:
@@ -7660,7 +7660,7 @@ END SUBROUTINE VDVG_2
 !    ---------     ----------
 !    <=2000        1.0
 !    2000<z<3000   linear transition zone to 0.25
-!    3000<z<5000   linear transision zone to 0.125
+!    3000<z<5000   linear transition zone to 0.125
 !    >=5000        0.125
 !
 ! which translates to:
@@ -8168,7 +8168,7 @@ SUBROUTINE sorgam_seasalt_emiss(                                        &
        factaa = (dtstep/dz8w(i,k,j))*alt(i,k,j)
        factbb = factaa * dumspd10
 
-!   Apportion seasalt mass emissions assumming that seasalt is pure NaCl
+!   Apportion seasalt mass emissions assuming that seasalt is pure NaCl
        fracna = mw_na_aer / (mw_na_aer + mw_cl_aer)
        fraccl = 1.0 - fracna
 

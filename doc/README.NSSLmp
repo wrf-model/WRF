@@ -121,7 +121,7 @@ The June 2023 (WRF 4.6) update introduces changes in the default options for gra
   (nssl_mp_params namelist)
   icdx         - fall speed option for graupel (was 3, now is 6)
   icdxhl       - fall speed option for hail (was 3, now is 6)
-  ehw0,ehlw0   - Maximim droplet collection efficiencies for graupel (ehw0=0.75, now 0.9)
+  ehw0,ehlw0   - Maximum droplet collection efficiencies for graupel (ehw0=0.75, now 0.9)
                  and hail (ehlw0=0.75, now 0.9)
   ihlcnh       - graupel to hail conversion option (was 1, now 3)
 

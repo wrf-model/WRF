@@ -384,7 +384,7 @@ CONTAINS
      !  ---------------------------
      Pwat=0
      DO k = 1, nz
-       !Based on AMS PWAT defination (https://glossary.ametsoc.org/wiki/Precipitable_water)
+       !Based on AMS PWAT definition (https://glossary.ametsoc.org/wiki/Precipitable_water)
        !PWAT is corrected as the column accumulated water vapor rather than water vapor + cloud water.
        !Modified by Zhixiao
        Pwat = Pwat + qv(k) * dz8w(k) * rho(k)
@@ -536,11 +536,11 @@ CONTAINS
          prcl =  parcel
       END IF
   
-      !~ Initalize our parcel to be (sort of) surface based.  Because of
+      !~ Initialize our parcel to be (sort of) surface based.  Because of
       !~ issues we've been observing in the WRF model, specifically with
       !~ excessive surface moisture values at the surface, using a true
       !~ surface based parcel is resulting a more unstable environment
-      !~ than is actually occuring.  To address this, our surface parcel
+      !~ than is actually occurring.  To address this, our surface parcel
       !~ is now going to be defined as the parcel between 25-50 hPa
       !~ above the surface. UPDATE - now that this routine is in WRF,
       !~ going to trust surface info. GAC 20140415
@@ -646,7 +646,7 @@ CONTAINS
                !~ Above the LCL, our parcel is now undergoing moist adiabatic
                !~ cooling.  Because of the latent heating being undergone as
                !~ the parcel rises above the LFC, must iterative solve for the
-               !~ parcel temperature using equivalant potential temperature,
+               !~ parcel temperature using equivalent potential temperature,
                !~ which is conserved during both dry adiabatic and
                !~ pseudoadiabatic displacements.
                !  --------------------------------------------------------------
@@ -688,7 +688,7 @@ CONTAINS
                !  --------------------------------------------------------
                ptK   = srctheta / ( 100000.0/p(k) )**(Rd/Cp)
    
-               !~ Grab the parcel virtual temperture, can use the source
+               !~ Grab the parcel virtual temperature, can use the source
                !~ mixing ratio since we are undergoing dry adiabatic cooling
                !  ----------------------------------------------------------
                ptvK  = VirtualTemperature ( ptK, srcw )
@@ -714,7 +714,7 @@ CONTAINS
             !  --------------------------------------------------------
             ptK   = srctheta / ( 100000.0/p(k) )**(Rd/Cp)
    
-            !~ Grab the parcel virtual temperture, can use the source
+            !~ Grab the parcel virtual temperature, can use the source
             !~ mixing ratio since we are undergoing dry adiabatic cooling
             !  ----------------------------------------------------------
             ptvK  = VirtualTemperature ( ptK, srcw )
@@ -742,7 +742,7 @@ CONTAINS
       lfclev = -1
       ellev = -1 !Modified by Zhixiao
       DO k = sfc, nz !Modified by Zhixiao
-         !~ LFC is defiend as the highest level when negative buyancy turns postive.
+         !~ LFC is defined as the highest level when negative buyancy turns positive.
          !  -----------------------------------
          IF ( .not. flag .and. buoy (k) > REAL (0) .and. p (k) <= plcl ) THEN !Modified by Zhixiao
             flag = .true.
@@ -1155,8 +1155,8 @@ CONTAINS
 
     implicit none
 
-    !~ Variable delclaration
-    !  ---------------------
+    !~ Variable declaration
+    !  --------------------
     real, intent ( in ) :: p        !~ Pressure ( Pa )
     real, intent ( in ) :: tK       !~ Temperature ( K )
     real, intent ( in ) :: rh       !~ Relative Humidity ( % )

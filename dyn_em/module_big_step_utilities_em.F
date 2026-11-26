@@ -2555,7 +2555,7 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
    REAL    :: w_flag_cfl    = 1.2
    LOGICAL :: print_flag    = .true.
    SAVE    :: print_flag
-   INTEGER :: some1       ! Now have two catagories of CFL information, hence some1 & some2
+   INTEGER :: some1       ! Now have two categories of CFL information, hence some1 & some2
    INTEGER :: some2        
    INTEGER :: ieva
 
@@ -3609,7 +3609,7 @@ SUBROUTINE calculate_full ( rfield, rfieldb, rfieldp,     &
 !<DESCRIPTION>
 !
 !  calculate_full
-!  calculates full 3D field from pertubation and base field.
+!  calculates full 3D field from perturbation and base field.
 !  The input fields (mu base and perturbation mu) are communicated prior
 !  to this call. That fills the total field into the halo region. That
 !  extra row/column is only used by the IEVA scheme. Having the extra
@@ -5727,10 +5727,10 @@ END SUBROUTINE phy_prep_part2
          th_phy_m_t0(i,k,j) = t_new(i,k,j)
          h_diabatic(i,k,j) =  mpten / dt
 #else
-! pertubation theta_moist(new) = theta_dry(old)*(1+rv/rd qv(old))    +   ! term 1
-!                                delta theta_dry * (1+rv/rd qv(new)) +   ! term 2
-!                                (rv/rd)*delta qv * theta_dry(new)   -   ! term 3
-!                                300                                     ! term 4
+! perturbation theta_moist(new) = theta_dry(old)*(1+rv/rd qv(old))    +   ! term 1
+!                                 delta theta_dry * (1+rv/rd qv(new)) +   ! term 2
+!                                 (rv/rd)*delta qv * theta_dry(new)   -   ! term 3
+!                                 300                                     ! term 4
 !                    
          IF ( ( config_flags%use_theta_m .EQ. 1 ) .AND. (P_Qv .GE. PARAM_FIRST_SCALAR) ) THEN
             t_new(i,k,j) =  h_diabatic(i,k,j)*(1. + (R_v/R_d)*qv_diabatic(i,k,j)) + &

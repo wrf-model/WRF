@@ -301,7 +301,7 @@ real, save :: fr8b_bburn_mosaic(8) = &
 ! Added mapping routine from GOCART aerosol emission variables to MOSAIC 
 ! This will be the case if emissions were prepared using PREP-Chem in RAMD2-GOCART mode.
 ! (Use with emiss_opt = 5/6, ECPTEC/GOCART_ECPTEC, emiss_inpt_opt == emiss_inpt_default)
-!!! Maybe more consistant to add a new emiss_inpt_opt, but this requires more extensive changes 
+!!! Maybe more consistent to add a new emiss_inpt_opt, but this requires more extensive changes
 !!! and testing in other parts of WRF-Chem, may cause confusion... Thoughts?
 
             if( config_flags%emiss_opt == 5 .or. config_flags%emiss_opt == 6 ) then
@@ -910,7 +910,7 @@ size_loop: &
 		
 		seas_flux(i,j) = dumspd10*SUM(ssemfact_mass(1:nsize_aer(itype),itype))
 		
-			! apportion seasalt mass emissions assumming that seasalt is pure nacl
+			! apportion seasalt mass emissions assuming that seasalt is pure nacl
 			fracna = mw_na_aer / (mw_na_aer + mw_cl_aer)
 			fraccl = 1.0 - fracna
 		
@@ -939,7 +939,7 @@ size_loop: &
 		elseif(seasalt_emiss_active.eq.3 .or. seasalt_emiss_active.eq.4)then
 			do n = 1, nsize_aer(itype)
 
-				! apportion seasalt mass emissions assumming that seasalt is a 
+				! apportion seasalt mass emissions assuming that seasalt is a
 				! simple mix of pure nacl and a single primary organic 
 				if(seasalt_emiss_active.eq.3)then
 					fracorg = org_frac_low_activity(n)
@@ -992,7 +992,7 @@ size_loop: &
       		dpdrylo_cm, dpdryhi_cm,	  &
                 emitfact_numb, emitfact_surf, emitfact_mass )
 !c
-!c   computes seasalt emissions factors for a specifed 
+!c   computes seasalt emissions factors for a specified
 !c   dry particle size range
 !c	dpdrylo_cm  = lower dry diameter (cm)
 !c	dpdryhi_cm  = upper dry diameter (cm)
@@ -1239,7 +1239,7 @@ size_loop: &
       		dpdrylo_cm, dpdryhi_cm,	  &
                 emitfact_numb, emitfact_surf, emitfact_mass, nti, dp0gi, oc02um  )
 !c
-!c   computes seasalt emissions factors for a specifed 
+!c   computes seasalt emissions factors for a specified
 !c   dry particle size range
 !c	dpdrylo_cm  = lower dry diameter (cm)
 !c	dpdryhi_cm  = upper dry diameter (cm)
@@ -2009,7 +2009,7 @@ size_loop: &
 
 !====================================================================================
 ! add another dust emission scheme following GOCART mechanism  --czhao  09/17/2009
-! Ukhov A. 02/28/2022. Code clean up and refactoring. Removed dublicate mosaic_source_du().
+! Ukhov A. 02/28/2022. Code clean up and refactoring. Removed duplicate mosaic_source_du().
 ! Instead original source_du() is called from module_gocart_dust.F
 !====================================================================================
   subroutine mosaic_dust_gocartemis (dt,start_month,num_soil_layers,alt,  &            

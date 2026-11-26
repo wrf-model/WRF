@@ -1,7 +1,7 @@
 subroutine da_random_omb_all(iv, ob)
 
    !-------------------------------------------------------------------------
-   ! Purpose: Allocates observation structure and fills it fro iv.
+   ! Purpose: Allocates observation structure and fills it for iv.
    !-------------------------------------------------------------------------
 
    implicit none

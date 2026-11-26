@@ -93,7 +93,7 @@ else()
   set( netCDF_DEFINITIONS  )
   set( netCDF_LIBRARIES
       # All supported language variants will need this regardless - this may conflict with the RPATH in any
-      # supplemental packages so be careful to use compatible langauge versions of netCDF
+      # supplemental packages so be careful to use compatible language versions of netCDF
       $<$<OR:$<LINK_LANGUAGE:C>,$<LINK_LANGUAGE:Fortran>>:${netCDF_CLIBS}>
       )
   # Because we may need this for in-situ manual preprocessing do not use genex

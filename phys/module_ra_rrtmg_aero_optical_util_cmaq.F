@@ -172,7 +172,7 @@ MODULE rrtmg_aero_optical_util_module
 
 !***********************************************************************
 ! Subroutine BHMIE is the Bohren-Huffman Mie scattering subroutine
-!    to calculate scattering and absorption by a homogenous isotropic
+!    to calculate scattering and absorption by a homogeneous isotropic
 !    sphere.
 ! Given:
 !    X = 2*pi*a/lambda
@@ -204,7 +204,7 @@ MODULE rrtmg_aero_optical_util_module
 ! 93/06/01 (BTD): Changed AMAX1 to generic function MAX
 ! FSB April 09,2012 This code was modified by: 
 ! Prof.  Francis S. Binkowski University of North Carolina at
-! Chapel Hill, Institue for the Environment.
+! Chapel Hill, Institute for the Environment.
 !
 ! The modifications were made to enhance computation speed 
 ! for use in a three-dimensional code. This was done by
@@ -354,7 +354,7 @@ MODULE rrtmg_aero_optical_util_module
                             success, modulus )
      
 ! *** calculate the extinction and scattering coefficients and
-!     assymetry factors for each wavelength as a sum over the 
+!     asymmetry factors for each wavelength as a sum over the
 !     individual lognormal modes. Each mode may have a different 
 !     set of refractive indices.
 
@@ -374,7 +374,7 @@ MODULE rrtmg_aero_optical_util_module
 ! *** output variables 
    real, intent(out) :: bext    ! extinction coefficient [ 1 / m ]
    real, intent(out) :: bscat   ! scattering coefficient [ 1 / m ]
-   real, intent(out) :: g_bar   ! assymetry factor for Mie and molecular scattering
+   real, intent(out) :: g_bar   ! asymmetry factor for Mie and molecular scattering
    logical, intent(out) :: success ! flag for successful calculation
 ! *** internal variables
    INTEGER  :: j             ! loop index
@@ -382,7 +382,7 @@ MODULE rrtmg_aero_optical_util_module
    real     :: beta_Sc, bsc  !aerosol scattering coefficient 
  
    real     :: beta_Ex       ! aerosol extinction coefficients       
-   real     :: G             ! modal aerosol assymetry factors
+   real     :: G             ! modal aerosol asymmetry factors
    real     :: sum_g
    real     :: LSIGX
    real     :: lamdam1       ! 1/ lamda
@@ -427,12 +427,12 @@ MODULE rrtmg_aero_optical_util_module
 
 ! *** ghintBH returns the normalized values
 !     Calculate the actual extinction and scattering coefficients 
-!     by multplying by the modal volume and dividing by the wavelength
+!     by multiplying by the modal volume and dividing by the wavelength
          
        vfac  =  Vol(j) * lamdam1 
 
 ! *** sum to get total extinction and scattering 
-!     and contribution to the overal assymetry factor
+!     and contribution to the overall asymmetry factor
 
        bext    = bext  + vfac * beta_Ex  ! [ 1 / m ]
        bsc     = vfac * beta_Sc
@@ -441,7 +441,7 @@ MODULE rrtmg_aero_optical_util_module
 
     END DO  ! loop on modes  
        
-! *** calculate combined assymetry factor for all modes  
+! *** calculate combined asymmetry factor for all modes
 
     g_bar = sum_g / bscat ! changed to divide by bscat
 
@@ -628,7 +628,7 @@ MODULE rrtmg_aero_optical_util_module
 ! FSB a new version of Penndorf's equations. This version does 
 !     analytical integration for Qext, Qscat, Qabs to generate
 !     bext, bscat, babs. Note that the expressions for Qext & Qscat
-!     hve been divide through by xx.
+!     have been divide through by xx.
 !
 !     Reference:
 !     Caldas, M., V. Semiao, 2001, Radiative properties of small
@@ -850,7 +850,7 @@ MODULE rrtmg_aero_optical_util_module
 ! FSB a new version of Penndorf's equations. This version does 
 !     analytical integration for Qext, Qscat, Qabs to generate
 !     bext, bscat, babs. Note that the expressions for Qext & Qscat
-!     hve been divide through by xx.
+!     have been divide through by xx.
 !
 !     References:
 !       Penndorf, R., 1962a,Scattering and extinction coefficients for small
@@ -966,7 +966,7 @@ MODULE rrtmg_aero_optical_util_module
 ! FSB NOTE: this subroutine calculates for single mode     
      
 ! *** calculate the extinction and scattering coefficients and
-!     assymetry factors for each wavelength as a sum over the 
+!     asymmetry factors for each wavelength as a sum over the
 !     individual lognormal modes. Each mode may have a different 
 !     set of refractive indices.
 
@@ -983,7 +983,7 @@ MODULE rrtmg_aero_optical_util_module
 ! *** output variables 
    real, intent(out)    :: bext         ! extinction coefficient [ 1 / m ]
    real, intent(out)    :: bscat        ! scattering coefficient [ 1 / m ]
-   real, intent(out)    :: gfac         ! assymetry factor for Mie and molecular scattering
+   real, intent(out)    :: gfac         ! asymmetry factor for Mie and molecular scattering
    logical, intent(out) :: success      ! flag for successful calculation
       
 ! *** internal variables
@@ -991,7 +991,7 @@ MODULE rrtmg_aero_optical_util_module
    real :: beta_Sc       ! aerosol scattering coefficient 
  
    real :: beta_Ex       ! aerosol extinction coefficients       
-   real :: G             ! modal aerosol assymetry factors
+   real :: G             ! modal aerosol asymmetry factors
    real :: sum_g
    real :: LSIGX
    real :: lamdam1       ! 1/ lamda
@@ -1036,7 +1036,7 @@ MODULE rrtmg_aero_optical_util_module
 
 ! *** ghintBH returns the normalized values
 !     Calculate the actual extinction and scattering coefficients 
-!     by multplying by the modal volume and dividing by the wavelength
+!     by multiplying by the modal volume and dividing by the wavelength
          
     vfac  =  Vol * lamdam1         
     bext    = vfac * beta_Ex  ! [ 1 / m ]
@@ -1052,9 +1052,9 @@ MODULE rrtmg_aero_optical_util_module
                                VOLSHELL, DGNCOR, DGNSHELL, SIG,     &
                                bext, bscat, gfac, succesS )
      
-! FSB NOTE: values for one mode are returend      
+! FSB NOTE: values for one mode are returned
 ! *** calculate the extinction and scattering coefficients and
-!     assymetry factors for each wavelength as a sum over the 
+!     asymmetry factors for each wavelength as a sum over the
 !     individual lognormal modes. Each mode may have a different 
 !     set of refractive indices.
 
@@ -1074,7 +1074,7 @@ MODULE rrtmg_aero_optical_util_module
 ! *** output variables 
     real,intent(out)     ::  bext      ! extinction coefficient [ 1 / m ]
     real,intent(out)     ::  bscat     ! scattering coefficient [ 1 / m ]
-    real,intent(out)     ::  gfac      ! assymetry factor 
+    real,intent(out)     ::  gfac      ! asymmetry factor
     logical, intent(OUT) :: success    ! flag for successful calculation
       
 ! *** internal variables
@@ -1082,7 +1082,7 @@ MODULE rrtmg_aero_optical_util_module
     real    :: beta_Sc          ! aerosol scattering coefficient 
  
     real    :: beta_Ex          ! aerosol extinction coefficients       
-    real    :: G                ! modal aerosol assymetry factors
+    real    :: G                ! modal aerosol asymmetry factors
     real    :: LSIGX
     real    :: XX, YY           ! Mie size parameter
     real    :: expfac
@@ -1130,7 +1130,7 @@ MODULE rrtmg_aero_optical_util_module
 
 ! FSB ghintBH_CS returns the normalized values
 !     Calculate the actual extinction and scattering coefficients 
-!     by multplying by the modal volume and dividing by the wavelength.
+!     by multiplying by the modal volume and dividing by the wavelength.
 !     For the coated-sphere (core-shell) calculation use the combined
 !     volume         
          
@@ -1175,7 +1175,7 @@ MODULE rrtmg_aero_optical_util_module
    real :: beta_Sc       ! aerosol scattering coefficient 
  
    real :: beta_Ex       ! aerosol extinction coefficients       
-   real :: G             ! modal aerosol assymetry factors
+   real :: G             ! modal aerosol asymmetry factors
    real :: VLX, DGX, SIGX, LSIGX
    real :: lamdam1 ! 1/ lamda
    real :: alphav ! Mie size parameter
@@ -1862,7 +1862,7 @@ MODULE rrtmg_aero_optical_util_module
                   BN1%real_part*BN%real_part + BN1%imag_part*BN%imag_part)
      
         END IF
-! continue update for next interation        
+! continue update for next iteration
         psi0y  = psi1y
         psi1y  = psiy
         chi0y  = chi1y
@@ -2236,7 +2236,7 @@ MODULE rrtmg_aero_optical_util_module
 ! Arguments:
     real,    intent(in) :: X        ! X = pi*particle_diameter / Wavelength
     integer, intent(in) :: NMX      ! maximum number of terms in Mie series 
-    integer, intent(in) :: NSTOP    ! minumum number of terms in Mie series 
+    integer, intent(in) :: NSTOP    ! minimum number of terms in Mie series
     complex, intent(in) :: REFREL   ! refractive index
 
 !    REFREL = (complex refr. index of sphere)/(real index of medium)
@@ -2290,7 +2290,7 @@ MODULE rrtmg_aero_optical_util_module
 
 !***********************************************************************
 ! Subroutine BHMIE is the Bohren-Huffman Mie scattering subroutine
-!    to calculate scattering and absorption by a homogenous isotropic
+!    to calculate scattering and absorption by a homogeneous isotropic
 !    sphere.
 ! Given:
 !    X = 2*pi*a/lambda
@@ -2322,7 +2322,7 @@ MODULE rrtmg_aero_optical_util_module
 ! 93/06/01 (BTD): Changed AMAX1 to generic function MAX
 ! FSB April 09,2012 This code was modified by: 
 ! Prof.  Francis S. Binkowski University of North Carolina at
-! Chapel Hill, Institue for the Environment.
+! Chapel Hill, Institute for the Environment.
 !
 ! The modifications were made to enhance computation speed 
 ! for use in a three-dimensional code. This was done by
@@ -2486,11 +2486,11 @@ contains
 
 !FSB this version does a core-shell calculation with BHCOAT 04/11/2012    
 ! This version is set up to be used with RRTMG_SW <<<<<<<<
-!     wavelenght is calculated internally
+!     wavelength is calculated internally
 ! FSB This routine calculates the aerosol information ( tauaer, waer, 
 !     gaer, needed to calculate the solar radiation)  The calling 
 !     program specifies the location ( row, column, layer, 
-!     layer thicknes, and wave length for the calculation.   
+!     layer thickness, and wave length for the calculation.
 ! FSB 02/09/2011 Modifications made to subroutine ghintBH.
 ! FSB 04/14/2012 REmoved MODULUS, made changes to ghintBH.
 !     Put in option for core-shell (coated-sphere). 2
@@ -2522,7 +2522,7 @@ contains
 !FSB output aerosol radiative properties  [dimensionless]
       real, intent(out) ::  tauaer   ! aerosol extinction optical depth
       real, intent(out) ::  waer     ! aerosol single scattering albedo
-      real, intent(out) ::  gaer     ! aerosol assymetry parameter
+      real, intent(out) ::  gaer     ! aerosol asymmetry parameter
 
 ! FSB Internal variables
 

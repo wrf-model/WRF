@@ -8,7 +8,7 @@ subroutine da_add_noise_to_ob( iv, ob )
 !             06/23/2006  -   MPI update                    Syed RH Rizvi    
 !             07/03/2006  -   update for AIRS retrievals    Syed RH Rizvi    
 !
-!  Purpose: Allocates observation structure and fills it fro iv.
+!  Purpose: Allocates observation structure and fills it for iv.
 !---------------------------------------------------------------------------- 
   
    implicit none
@@ -803,7 +803,7 @@ subroutine da_add_noise_to_ob( iv, ob )
       do i = 1, iv%num_inst                 ! loop for sensor
          if ( iv%instid(i)%num_rad < 1 ) cycle
          do k = 1,iv%instid(i)%nchan        ! loop for channel
-!  Counting number of obs for channle k
+!  Counting number of obs for channel k
          num_obs = 0
          do n = 1,iv%instid(i)%num_rad      ! loop for pixel
            if(iv%instid(i)%info%proc_domain(1,n) .and. &

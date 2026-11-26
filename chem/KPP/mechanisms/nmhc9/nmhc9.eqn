@@ -1,6 +1,6 @@
 #EQUATIONS { -------- NMHC9(b) ---------------------------------------------------------- }
 { background+isoprene(MIM)+ethane+propane+propylene+ethene+n-butane chemistry }
-{ Modified MATCH-MPIC mechansim based on: von Kuhlmann, R., Lawrence, M. G., Crutzen, P. J., and Rasch, P. J. 2003: A model
+{ Modified MATCH-MPIC mechanism based on: von Kuhlmann, R., Lawrence, M. G., Crutzen, P. J., and Rasch, P. J. 2003: A model
   for studies of tropospheric ozone and nonmethane hydrocarbons: Model description and 
   ozone results. J. Geophys. Res., 108, doi:10.1029/2002JD002893 }
 { this file is based on RvKs Version, 09/2003: Time-stamp: <2004-06-28 16:27:25 kuhlmann> }

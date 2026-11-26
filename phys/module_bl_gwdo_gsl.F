@@ -309,7 +309,7 @@ contains
 !  additional 10-2d topographic statistics files are needed, including 
 !  orographic standard  deviation (var), convexity (oc1), asymmetry (oa4) 
 !  and ol (ol4). these data sets are prepared based on the 30 sec usgs orography
-!  hong (1999). the current scheme was implmented as in hong et al.(2008)
+!  hong (1999). the current scheme was implemented as in hong et al.(2008)
 !
 !  coded by song-you hong and young-joon kim and implemented by song-you hong
 !
@@ -339,7 +339,7 @@ contains
 !        steeneveld et al (2008), JAMC
 !        Tsiringakis et al. (2017), Q. J. R. Meteor. Soc.
 !
-!  notice : comparible or lower resolution orography files than model resolution
+!  notice : compatible or lower resolution orography files than model resolution
 !           are desirable in preprocess (wps) to prevent weakening of the drag
 !-------------------------------------------------------------------------------
 !

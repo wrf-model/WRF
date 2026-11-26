@@ -329,7 +329,7 @@ subroutine da_scale_background_errors_cv3 ( grid, be, it )
 !    write (*,'("a, be%sljy:sum^2=",e20.12)') sum(be%sljy*be%sljy)
 
     ! Above level ku, the sljy fields are set to a constant 
-    ! for psi and chi, i.e. homogenous:
+    ! for psi and chi, i.e. homogeneous:
     do n=1,2
        do k=max(ku(1), grid%xp%kpsy), grid%xp%kpey
           slim=1./global_fac(ic,jc)/hwll(ic,jc,k,n)
@@ -366,7 +366,7 @@ subroutine da_scale_background_errors_cv3 ( grid, be, it )
 !    write (*,'("a, be%slix:sum^2=",e20.12)') sum(be%slix*be%slix)
 
    ! Above level ku, the sljy fields are set to a constant 
-   ! for psi and chi, i.e. homogenous:
+   ! for psi and chi, i.e. homogeneous:
     do n=1,2
       do k=max(ku(1), grid%xp%kpsx), grid%xp%kpex
          slim=1./global_fac(ic,jc)/hwll(ic,jc,k,n)

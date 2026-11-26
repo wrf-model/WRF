@@ -542,7 +542,7 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
       CALL wrf_debug ( 100 , 'med_sidata_input: back from init_domain' )
 
 
-!!! not sure about this, but doesnt seem like needs to be called each time
+!!! not sure about this, but doesn't seem like needs to be called each time
       IF ( loop .EQ. 1 ) THEN
         CALL start_domain ( grid , .TRUE.)
       END IF
@@ -1563,7 +1563,7 @@ character *24 :: temp24 , temp24b
       current_date = temp24
       start_date = temp24b
 
-      !  OK, for all of the loops, we output the initialzation 
+      !  OK, for all of the loops, we output the initialization
       !  data, which would allow us to
       !  start the model at any of the available analysis time periods.
 
@@ -1678,7 +1678,7 @@ character *24 :: temp24 , temp24b
 
 #if ( HWRF == 1 )
   if(alloc_ph_arrays) then
-     call wrf_debug(1,'DEALLOCATE PREP_HYBRID BOUNARY ARRAYS')
+     call wrf_debug(1,'DEALLOCATE PREP_HYBRID BOUNDARY ARRAYS')
      deallocate(TB,QB,CWMB,UB,VB,PDB)
   endif
 #endif

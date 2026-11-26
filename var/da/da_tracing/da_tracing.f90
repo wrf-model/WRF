@@ -22,7 +22,7 @@ module da_tracing
    end interface
 
    integer, parameter :: TraceIndentAmount      = 2   ! default indent
-   integer, parameter :: MaxNoRoutines          = 440 ! maxium number of subroutines
+   integer, parameter :: MaxNoRoutines          = 440 ! maximum number of subroutines
    integer, parameter :: TraceNameLen           = 31  ! Length of trace name
 
    character (LEN=*), parameter :: &

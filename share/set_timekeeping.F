@@ -64,7 +64,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
                          'WRFU_TimeIntervalSet(one_hour) FAILED', &
                          __FILE__ , &
                          __LINE__  )
-   CALL WRFU_TimeIntervalSet ( forever, S=1700000000, rc=rc )  ! magic number; indicats an interval that is forever
+   CALL WRFU_TimeIntervalSet ( forever, S=1700000000, rc=rc )  ! magic number; indicates an interval that is forever
    CALL wrf_check_error( WRFU_SUCCESS, rc, &
                          'WRFU_TimeIntervalSet(forever) FAILED', &
                          __FILE__ , &

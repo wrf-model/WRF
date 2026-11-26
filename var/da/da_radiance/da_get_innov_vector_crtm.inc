@@ -5,7 +5,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
    !
    !  METHOD:  d = y - H(x)
    !       1. interpolate grid%xb to obs location
-   !       2. call foreward RTM to get simulated bright temperature 
+   !       2. call forward RTM to get simulated bright temperature
    !       3. obs BT - simulated BT
    !  HISTORY: 12/15/2008 effective radius unit is micron     Zhiquan Liu
    !---------------------------------------------------------------------------
@@ -45,8 +45,8 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
    real    :: model_rho(kms:kme)
    real, allocatable :: model_snow(:)  ! snow water equivalent, different from model_snowh,
                                        ! used in calculating reff_water
-   real, allocatable :: em_mspps(:)    ! emissivity caluclated using MSPPS algorithm
-   real              :: ts_mspps       ! surface temperature calcualted using MSPPS algorithm
+   real, allocatable :: em_mspps(:)    ! emissivity calculated using MSPPS algorithm
+   real              :: ts_mspps       ! surface temperature calculated using MSPPS algorithm
    character(len=19) :: date_char
 
    integer :: month, crtm_climat
@@ -62,7 +62,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
 
    real    :: total_od
 
-   ! CRTM local varaibles and types
+   ! CRTM local variables and types
    integer :: Allocate_Status
    integer :: n_layers, n_absorbers, n_clouds, n_aerosols
 !! for ecmwf cloud
@@ -237,7 +237,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
                                    Atmosphere(1)%n_layers )        !Input
       if ( .NOT.(ANY(crtm_rtsolution_associated(RTSolution))) ) then
          call da_error(__FILE__,__LINE__, &
-            (/"Error in allocating CRTM RTSolution Stucture"/))
+            (/"Error in allocating CRTM RTSolution Structure"/))
       end if
 
       calc_tb_clr = .false.
@@ -259,7 +259,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
                                       Atmosphere(1)%n_layers )        !Input
          if ( .NOT.(ANY(crtm_rtsolution_associated(RTSolution_clr))) ) then
             call da_error(__FILE__,__LINE__, &
-               (/"Error in allocating CRTM RTSolution_clr Stucture"/))
+               (/"Error in allocating CRTM RTSolution_clr Structure"/))
          end if
       end if !calc_tb_clr
 
@@ -275,7 +275,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
                                       Atmosphere(1)%n_layers )        !Input
          if ( .NOT.(ANY(crtm_rtsolution_associated(RTSolution_K))) ) then
             call da_error(__FILE__,__LINE__, &
-               (/"Error in allocating CRTM RTSolution_K Stucture"/))
+               (/"Error in allocating CRTM RTSolution_K Structure"/))
          end if
       end if
       
@@ -423,7 +423,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
                                       Atmosphere(1)%Cloud(4)%Effective_Radius(kte-k+1), &
                                       Atmosphere(1)%Cloud(5)%Effective_Radius(kte-k+1) )
 
-               ! reset the da_cld_eff_radius calcualted effective radius to constants if desired
+               ! reset the da_cld_eff_radius calculated effective radius to constants if desired
 
                Atmosphere(1)%Cloud(1)%Effective_Radius(kte-k+1)=10.0  ! in micron
                Atmosphere(1)%Cloud(2)%Effective_Radius(kte-k+1)=30.0  ! in micron
@@ -457,8 +457,8 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
 
          ! calculating full-level P from half-level P using
          ! linear interpolation: (pf-pf1)/(sigmaf-sigmaf1)=(ph2-ph1)/(sigmah2-sigmah1)
-         ! note: sigma is from bottem to top; pressure is from top to bottem
-         do k=kts,kte-1 ! from top to bottem
+         ! note: sigma is from bottom to top; pressure is from top to bottom
+         do k=kts,kte-1 ! from top to bottom
             Atmosphere(1)%Level_Pressure(k)= (Atmosphere(1)%Pressure(k+1) - Atmosphere(1)%Pressure(k))/ &
                                              (grid%xb%sigmah(kte-k) - grid%xb%sigmah(kte-k+1)) * &
                                              (grid%xb%sigmaf(kte-k+1) - grid%xb%sigmah(kte-k+1)) + &
@@ -550,7 +550,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
                  .and. model_isflg == 2 ) then
                call da_mspps_ts(ob%instid(inst)%tb(1:nchanl,n), nchanl,  &
                                 iv%instid(inst)%satzen(n), ts_mspps)
-               ! ts_mspps is initilaized as negative values in the
+               ! ts_mspps is initialized as negative values in the
                ! da_mspps_ts subroutine.  Apply only valid values here.
                if ( ts_mspps > 0.0 ) then
                   model_ts(n) = ts_mspps

@@ -1230,7 +1230,7 @@ real::t1,t2
 
       IF ( config_flags%polar ) THEN
 
-         !  No need to ouput boundary data for polar cases.
+         !  No need to output boundary data for polar cases.
 
       ELSE
 
@@ -1260,7 +1260,7 @@ real::t1,t2
       CALL domain_clockprint ( 150, grid, &
              'DEBUG assemble_output:  clock after 3rd current_date set,' )
 
-      !  OK, for all of the loops, we output the initialzation data, which would allow us to
+      !  OK, for all of the loops, we output the initialization data, which would allow us to
       !  start the model at any of the available analysis time periods.
 
       IF ( config_flags%all_ic_times ) THEN

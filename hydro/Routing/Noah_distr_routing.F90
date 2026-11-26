@@ -957,7 +957,7 @@ subroutine disaggregateDomain(IX, JX, NSOIL, IXRT, JXRT, AGGFACTRT, &
    ! States:
    real, intent(out), dimension(IX,JX,NSOIL)     :: SICE ! soil ice content on coarse grid (m3/m3)
    real, intent(out), dimension(IXRT,JXRT,NSOIL) :: SMCRT
-                                                    ! soil moisture contant on routing grid (m3/m3)
+                                                    ! soil moisture content on routing grid (m3/m3)
    real, intent(out), dimension(IXRT,JXRT)       :: INFXSUBRT
                                                     ! infiltration excess on routing grid (mm)
 
@@ -1147,7 +1147,7 @@ subroutine disaggregateDomain(IX, JX, NSOIL, IXRT, JXRT, AGGFACTRT, &
                ! Corrected to scale from 0 at SMCREF to full LKSAT*LKSATFAC at SMCMAX.
                ! This is a linear simplification of the true k to smc relationship to cover the
                ! range of conditions between smcmax and smcref. The DHSVM lateral routing
-               ! scheme assumes saturated conditions (and therfore ksat), but we are extending
+               ! scheme assumes saturated conditions (and therefore ksat), but we are extending
                ! that slightly to route water up until smcref.
                smScaleFact = (SMCRT(IXXRT,JYYRT,NSOIL) - SMCREFRT(IXXRT,JYYRT,NSOIL)) / &
                                 (SMCMAXRT(IXXRT,JYYRT,NSOIL) - SMCREFRT(IXXRT,JYYRT, NSOIL))

@@ -132,7 +132,7 @@ C                            Y.R. Guo  09/23/2005
 c        print '("TRUELAT1 and 2:",2F8.2/)', TRUELAT1, TRUELAT2
         
 c      PRINT *,'TERRAIN AND MAPDRV ONLY SUPPORT MERCATOR PROJECTION               SETUP.188
-c     *AT 0 DEGREE TURE LATITUDE, RESET TRUELAT1=0.'                              SETUP.189
+c     *AT 0 DEGREE TRUE LATITUDE, RESET TRUELAT1=0.'                              SETUP.189
 C ---------------------------------------------------------------------
 
       ENDIF 

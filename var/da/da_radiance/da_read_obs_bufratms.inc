@@ -10,7 +10,7 @@ subroutine da_read_obs_bufratms (obstype,iv, infile)
    !            3. assign sequential data structure to innovation structure
    !               and deallocate sequential data structure
    !   Peiming Dong Added NPP atms, 2012/4/17
-   !   Peiming Dong seperated the atms from da_read_obs_bufrtovs.inc in that
+   !   Peiming Dong separated the atms from da_read_obs_bufrtovs.inc in that
    !                all the data needs to be read in together first to make 
    !                the spatial average, 2013/1/10
    !---------------------------------------------------------------------------
@@ -81,7 +81,7 @@ subroutine da_read_obs_bufratms (obstype,iv, infile)
 !Dongpm
    real(r_double),dimension(n2bhdr):: bfr2bhdr
 
-   ! Instrument triplet, follow the convension of RTTOV 
+   ! Instrument triplet, follow the convention of RTTOV
    integer   :: platform_id, satellite_id, sensor_id
 
    ! pixel information
@@ -149,7 +149,7 @@ subroutine da_read_obs_bufratms (obstype,iv, infile)
    num_tovs_local    = 0    ! number of obs within tile
    num_tovs_thinned  = 0    ! number of obs rejected by thinning
    num_tovs_used     = 0    ! number of obs entered into innovation computation
-   num_tovs_selected = 0    ! number of obs limited for debuging
+   num_tovs_selected = 0    ! number of obs limited for debugging
    iobs = 0                 ! for thinning, argument is inout
 
    ! 0.0  Open unit to satellite bufr file and read file header

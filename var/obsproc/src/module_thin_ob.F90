@@ -230,7 +230,7 @@ stations_valid: &
 
       write(0,'(10X,"Total Number of Boxes ",I6)') num_box
 
-! 2.5.2 Print the total number of columes data available
+! 2.5.2 Print the total number of columns data available
 
         num_box = 0
         DO I = 1,MIX

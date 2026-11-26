@@ -877,7 +877,7 @@
 ! interrupting and restarting
 !
 ! if the integration of a given problem by dvode is to be
-! interrrupted and then later continued, such as when restarting
+! interrupted and then later continued, such as when restarting
 ! an interrupted run or alternating between two or more ode problems,
 ! the user should save, following the return from the last dvode call
 ! prior to the interruption, the contents of the call sequence
@@ -1146,7 +1146,7 @@
 ! the variables stored in the internal common blocks are as follows:
 !
 ! acnrm  = weighted r.m.s. norm of accumulated correction vectors.
-! ccmxj  = threshhold on drc for updating the jacobian. (see drc.)
+! ccmxj  = threshold on drc for updating the jacobian. (see drc.)
 ! conp   = the saved value of tq(5).
 ! crate  = estimated corrector convergence rate constant.
 ! drc    = relative change in h*rl1 since last dvjac call.
@@ -1189,7 +1189,7 @@
 !          on return, dvstep sets jstart = 1.
 ! jsv    = integer flag for jacobian saving, = sign(mf).
 ! kflag  = a completion code from dvstep with the following meanings:
-!               0      the step was succesful.
+!               0      the step was successful.
 !              -1      the requested error could not be achieved.
 !              -2      corrector convergence could not be achieved.
 !              -3, -4  fatal error in vnls (can not occur here).

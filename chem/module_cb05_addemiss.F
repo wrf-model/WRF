@@ -284,7 +284,7 @@ CONTAINS
 
 !
 ! apply gunther online biogenic gas emissions when bio_emiss_opt == GUNTHER1
-! only incoporated isoprene and terpene at the current stage for CB05
+! only incorporated isoprene and terpene at the current stage for CB05
 !
    if (config_flags%bio_emiss_opt == GUNTHER1) then
 

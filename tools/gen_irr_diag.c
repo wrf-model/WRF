@@ -90,7 +90,7 @@ int AppendReg( char *chem_opt, int ndx )
 //
         strip_blanks( inln, inln );
 //
-//  concatentate lines?
+//  concatenate lines?
 //
         if( rindex( inln,';' ) == NULL ) {
           do {

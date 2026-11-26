@@ -82,7 +82,7 @@ SUBROUTINE INTEGRATE_TLM( NTLM, Y, Y_tlm, TIN, TOUT, &
    !        ' Singular=',N_sng
 
    IF (IERR < 0) THEN
-     print *,'Rosenbrock: Unsucessful step at T=', &
+     print *,'Rosenbrock: Unsuccessful step at T=', &
          TIN,' (IERR=',IERR,')'
    END IF
    
@@ -148,7 +148,7 @@ SUBROUTINE RosenbrockTLM(Y,NTLM,Y_tlm,&
 !-    ICNTRL(11:20)     -> integer output parameters
 !-    RCNTRL(11:20)     -> real output parameters
 !-    IERR            -> job status upon return
-!       - succes (positive value) or failure (negative value) -
+!       - success (positive value) or failure (negative value) -
 !           =  1 : Success
 !           = -1 : Improper value for maximal no of steps
 !           = -2 : Selected Rosenbrock method not implemented
@@ -195,7 +195,7 @@ SUBROUTINE RosenbrockTLM(Y,NTLM,Y_tlm,&
 ! 
 !~~~>     OUTPUT PARAMETERS:
 !
-!    Note: each call to Rosenbrock adds the corrent no. of fcn calls
+!    Note: each call to Rosenbrock adds the current no. of fcn calls
 !      to previous value of ISTATUS(1), and similar for the other params.
 !      Set ISTATUS(1:10) = 0 before call to avoid this accumulation.
 !
@@ -342,7 +342,7 @@ SUBROUTINE RosenbrockTLM(Y,NTLM,Y_tlm,&
       CALL ros_ErrorMsg(-4,Tstart,ZERO,IERR)
       RETURN      
    END IF
-!~~~>   FacRej: Factor to decrease step after 2 succesive rejections
+!~~~>   FacRej: Factor to decrease step after 2 successive rejections
    IF (RCNTRL(6) == ZERO) THEN
       FacRej = 0.1d0
    ELSEIF (RCNTRL(6) > ZERO) THEN
@@ -498,7 +498,7 @@ END SUBROUTINE RosenbrockTLM
    KPP_REAL, INTENT(INOUT) :: Y(NVAR)
 !~~~> Input: Number of sensitivity coefficients
    INTEGER, INTENT(IN) :: NTLM 
-!~~~> Input: the initial sensitivites at Tstart; Output: the sensitivities at T   
+!~~~> Input: the initial sensitivities at Tstart; Output: the sensitivities at T
    KPP_REAL, INTENT(INOUT) :: Y_tlm(NVAR,NTLM)
 !~~~> Input: integration interval   
    KPP_REAL, INTENT(IN) :: Tstart,Tend      
@@ -717,7 +717,7 @@ Stage: DO istage = 1, ros_S
 
    END DO TimeLoop 
    
-!~~~> Succesful exit
+!~~~> Successful exit
    IERR = 1  !~~~> The integration was successful
 
   END SUBROUTINE ros_TLM_Int

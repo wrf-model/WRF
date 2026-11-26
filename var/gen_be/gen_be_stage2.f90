@@ -58,9 +58,9 @@ program gen_be_stage2
    real*8, allocatable :: evec(:,:)                  ! Gridpoint eigenvectors.
    real*8, allocatable :: eval(:)                    ! Gridpoint sqrt(eigenvalues).
    real, allocatable   :: LamInvET(:,:)              ! ET/sqrt(Eigenvalue).
-   real, allocatable   :: regcoeff1(:)               ! psi/chi regression cooefficient.
-   real, allocatable   :: regcoeff2(:,:)             ! psi/ps regression cooefficient.
-   real, allocatable   :: regcoeff3(:,:,:)           ! psi/T regression cooefficient.
+   real, allocatable   :: regcoeff1(:)               ! psi/chi regression coefficient.
+   real, allocatable   :: regcoeff2(:,:)             ! psi/ps regression coefficient.
+   real, allocatable   :: regcoeff3(:,:,:)           ! psi/T regression coefficient.
 
    namelist / gen_be_stage2_nl / start_date, end_date, interval, &
                                  ne, testing_eofs, allow_missing_dates

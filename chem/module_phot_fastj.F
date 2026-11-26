@@ -25,7 +25,7 @@
 ! aerosols on photolysis rates.
 !
 ! Please report any bugs or problems to Jerome Fast, the WRF-chem
-! implmentation team leader for PNNL.
+! implementation team leader for PNNL.
 !
 ! References: 
 ! * Wild, O., X. Zhu, M.J. Prather, (2000), Accurate simulation of in-
@@ -853,7 +853,7 @@
       iozone1,tauaer_550_1,jvalue,SZA_dum,lpar,jpnl, &
       sizeaer,extaer,waer,gaer,tauaer,l2,l3,l4,l5,l6,l7)
 ! input:
-! 	lat = latitute; must be real*8
+! 	lat = latitude; must be real*8
 ! 	lon = longitude; must be real*8
 ! 	surface_pressure (mb); real*4
 ! 	surface_albedo (broadband albedo); real*4
@@ -3147,14 +3147,14 @@
 ! above 5 km, the aden05 and aden23 models are the same
 ! below 5 km, the models differ as follows;
 ! aden05     0.99 km scale height (94% of extinction occurs below 5 km)
-! aden23     1.45 km scale heigth (80% of extinction occurs below 5 km)
+! aden23     1.45 km scale height (80% of extinction occurs below 5 km)
 !
 
 	implicit none
 	integer mz, nz
         parameter (mz=33)
         real v,aerd
-        real*8 zz ! compatability with fastj
+        real*8 zz ! compatibility with fastj
         real alt, aden05, aden23, aer05,aer23      
       dimension alt(mz),aden05(mz),aden23(mz)
 !jdf  dimension zbaer(*),dbaer(*)

@@ -198,7 +198,7 @@ KPP_REAL prm[4];
  
     mexEvalString(allvars);
 /*
-    mexPrintf("The KPP_ROOT model parameters were sucessfully initialized.\n");    
+    mexPrintf("The KPP_ROOT model parameters were successfully initialized.\n");
 */
     return;
   }
@@ -250,7 +250,7 @@ KPP_REAL prm[4];
     n  =                  mxGetN( FN_PRM );    
     if( !( (nd == 2) && ((m == 1) || (n == 1)) ) ) F9Error("<fn> must be a character string.");
     if( mxGetString( FN_PRM, fnp, MAX_BUF ) ) 
-      F9Error("Can not read function mane (too long?)");  
+      F9Error("Can not read function name (too long?)");
 
     Carr = mxCreateDoubleMatrix(1,NSPEC,mxREAL);
     fcp = mxGetPr(Carr);

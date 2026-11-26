@@ -60,7 +60,7 @@ ir=isz2/isz1
 jr=jsz2/jsz1
 avgw = 1.0/(ir*jr)
 
-! --- set loop indicies
+! --- set loop indices
 i_st = MAX(its,ids+1)
 i_en = MIN(ite,ide-2)
 j_st = MAX(jts,jds+1)
@@ -114,7 +114,7 @@ SUBROUTINE fire_tendency( &
     ims,ime, kms,kme, jms,jme,   &
     its,ite, kts,kte, jts,jte,   &
     grnhfx,grnqfx,canhfx,canqfx, & ! heat fluxes summed up to  atm grid
-    alfg,alfc,z1can,             & ! coeffients, properties, geometry
+    alfg,alfc,z1can,             & ! coefficients, properties, geometry
     fire_sfc_flx,fire_heat_peak,fire_tg_ub,  & !options for heat release
     zs,z_at_w,dz8w,mu,c1h,c2h,rho, &
     rthfrten,rqvfrten)             ! theta and Qv tendencies
@@ -168,7 +168,7 @@ SUBROUTINE fire_tendency( &
    REAL :: fact_g, fact_c
    REAL :: alfg_i, alfc_i
 
-   REAL, DIMENSION( its:ite,kts:kte,jts:jte ) :: prop_heat !proportion of heat to be released fro TG dist.
+   REAL, DIMENSION( its:ite,kts:kte,jts:jte ) :: prop_heat !proportion of heat to be released from TG dist.
 
    REAL, DIMENSION( its:ite,kts:kte,jts:jte ) :: hfx,qfx
    
@@ -198,7 +198,7 @@ SUBROUTINE fire_tendency( &
    call print_2d_stats(its,ite,jts,jte,ims,ime,jms,jme,grnhfx,'fire_tendency:grnhfx')
    call print_2d_stats(its,ite,jts,jte,ims,ime,jms,jme,grnqfx,'fire_tendency:grnqfx')
 
-! --- set loop indicies : note that
+! --- set loop indices : note that
 
    i_st = MAX(its,ids+1)
    i_en = MIN(ite,ide-1)

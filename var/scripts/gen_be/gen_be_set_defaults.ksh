@@ -8,7 +8,7 @@
 # The namelist parameters specified here is that sub-set of the entire
 # range of parameters for all namelists that we have found necessary
 # to change through experience of the applications tested so far. As
-# new applications are tests, additional environment valiables may
+# new applications are tests, additional environment variables may
 # be added. 
 
 #-----------------------------------------------------------------------

@@ -269,8 +269,8 @@
         ! phase: cloud thermodynamic phase (1=water, 2=ice)
         ! De: Cloud effective particle size (micron) 
         !     (For a water cloud, De=2*effective radius)
-        !     (For an ice cloud, the defination of De follows Fu. 1996.
-        !     Another useful defination is given by "Determination of ice cloud models using MODIS and MISR data" ) 
+        !     (For an ice cloud, the definition of De follows Fu. 1996.
+        !     Another useful definition is given by "Determination of ice cloud models using MODIS and MISR data" )
 
 
       implicit none

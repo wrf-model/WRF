@@ -17,7 +17,7 @@ MODULE module_data_soa_vbs
       REAL TOLF                 !bs convergence criterion on function values
       PARAMETER (TOLF = 1.E-09)
 
-      REAL TOLMIN                 !bs criterion whether superios convergence to
+      REAL TOLMIN                 !bs criterion whether spurious convergence to
       PARAMETER (TOLMIN = 1.E-12) !bs a minimum of fmin has occurred
 
       REAL TOLX                 !bs convergence criterion on delta_x
@@ -187,7 +187,7 @@ MODULE module_data_soa_vbs
       INTEGER vorgpai
       PARAMETER (vorgpai=28)
 
-! index for Accumulation mode aerosol elemen
+! index for Accumulation mode aerosol element
       INTEGER vecj
       PARAMETER (vecj=29)
 
@@ -420,7 +420,7 @@ INTEGER, PARAMETER :: pbsoa4=8
 !                     Cambridge Univ. Press, 206 pp, 1995.
 !      Snyder, J.P., Map Projections-A Working Manual, U.S. Geological
 !                     Paper 1395 U.S.GPO, Washington, DC, 1987.
-!      Stull, R. B., An Introduction to Bounday Layer Meteorology, Klu
+!      Stull, R. B., An Introduction to Boundary Layer Meteorology, Klu
 !                     Dordrecht, 1988
 
 ! Geometric Constants:
@@ -871,7 +871,7 @@ INTEGER, PARAMETER :: pbsoa4=8
       REAL diffsulf
       PARAMETER (diffsulf=9.362223E-06) 
 !bs updated from code of FSB 
-!bs Accomodation coefficient for organic
+!bs Accommodation coefficient for organic
       REAL alphaorg
       PARAMETER (alphaorg=1.0)                                    !bs Kleeman et al. '99 propose alpha
 !bs Bowman et al. '97 uses alpha = 1.

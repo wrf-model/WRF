@@ -52,7 +52,7 @@ subroutine da_transform_xtoy_ssmi_tb(grid, iv, y)
    !       psfc(i,j)     = (grid%xb%p(i,j,mkz)+grid%xb%Psac(i,j)*(1.0-grid%xb % sigmah(mkz)))*0.001
    !       TGL_psfc(i,j) =  grid%xa%p  (i,j,mkz)*0.01
 
-   !       ! sea surface temperature (k) (273 - 303) (doesnot change) 
+   !       ! sea surface temperature (k) (273 - 303) (does not change)
 
    !       sst(i,j)      = grid%xb%tgrn(i,j)
    !       TGL_sst(i,j)  = grid%xa%tgrn(1,1)
@@ -71,11 +71,11 @@ subroutine da_transform_xtoy_ssmi_tb(grid, iv, y)
    !       TGL_ta(i,j) = (grid%xa%t(i,j,mkz)-0.)*log(2.0/0.0001)/ &
    !                   log(zh(mkz)/0.0001)
 
-   !       ! gamma is an emperical formula and zcld is given for now
+   !       ! gamma is an empirical formula and zcld is given for now
 
    !       gamma(i,j) = (ta(i,j)-270)*0.023 + 5.03  ! effective lapse rate   (km) (4.0 - 6.5)
    !       zcld(i,j)  = 1                           ! effective cloud height (km)
-                                                     ! = 1 if no cloud infomation
+                                                     ! = 1 if no cloud information
    !       TGL_gamma(i,j) = TGL_ta(i,j)*0.023
    !       TGL_zcld(i,j)  = 0.0
 

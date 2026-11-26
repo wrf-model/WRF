@@ -139,7 +139,7 @@ subroutine output_chrt_NWM(domainId)
    integer, allocatable, dimension(:,:) :: varMetaInt
    integer(kind=int64), allocatable, dimension(:,:) :: varMetaInt8
 
-   character (len=64) :: modelConfigType ! This is character verion (long name) for the io_config_outputs
+   character (len=64) :: modelConfigType ! This is character version (long name) for the io_config_outputs
 
    ! Initialize the ascFlag to 1
    ascFlag = 1
@@ -179,12 +179,12 @@ subroutine output_chrt_NWM(domainId)
       myId = 0
    endif
 
-   ! Initialize NWM dictionary derived type containing all the necessary metadat
+   ! Initialize NWM dictionary derived type containing all the necessary metadata
    ! for the output file.
    call initChrtDict(fileMeta,diagFlag,myId)
 
    ! Depending on the NWM forecast config, we will be outputting different
-   ! varibles. DO NOT MODIFY THESE ARRAYS WITHOUT CONSULTING NCAR OR
+   ! variables. DO NOT MODIFY THESE ARRAYS WITHOUT CONSULTING NCAR OR
    ! OWP!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    if (nlst(1)%io_config_outputs .eq. 0) then
       ! All
@@ -935,7 +935,7 @@ subroutine output_chrt_NWM(domainId)
       ! NetCDF variable.
       do iTmp=1,fileMeta%numVars
          if(fileMeta%outFlag(iTmp) .eq. 1) then
-            ! We are outputing this variable.
+            ! We are outputting this variable.
             ! Convert reals to integer. If this is time zero, check to see if we
             ! need to convert all data to NDV
             if(minSinceSim .eq. 0 .and. fileMeta%timeZeroFlag(iTmp) .eq. 0) then
@@ -1088,7 +1088,7 @@ subroutine output_NoahMP_NWM(outDir,iGrid,output_timestep,itime,startdate,date,i
    integer, intent(in) :: zNum ! Number of vertical layers (most of the time 1)
    real, intent(in) :: varReal(ixPar,zNum,jxPar) ! Variable data to be written.
    integer, intent(inout) :: vegTyp(ixPar,jxPar) ! Vegetation type grid used to mask out variables.
-   integer, intent(in) :: varInd ! Variable index used to extact meta-data from.
+   integer, intent(in) :: varInd ! Variable index used to extract meta-data from.
 
    ! Derived types.
    type(ldasMeta) :: fileMeta
@@ -1126,7 +1126,7 @@ subroutine output_NoahMP_NWM(outDir,iGrid,output_timestep,itime,startdate,date,i
    real, allocatable, dimension(:,:) :: globalRealTmp
    real*8, allocatable, dimension(:) :: yCoord,xCoord,yCoord2
    real, allocatable, dimension(:,:,:) :: varRealTmp
-   character (len=64) :: modelConfigType ! This is character verion (long name) for the io_config_outputs
+   character (len=64) :: modelConfigType ! This is character version (long name) for the io_config_outputs
 
 #ifdef MPP_LAND
    mppFlag = 1
@@ -1208,7 +1208,7 @@ subroutine output_NoahMP_NWM(outDir,iGrid,output_timestep,itime,startdate,date,i
    fileMeta%totalValidTime = int(nlst(1)%khour * 3600 / output_timestep )  ! # number of valid time (#of output files)
 
    ! Depending on the NWM forecast config, we will be outputting different
-   ! varibles. DO NOT MODIFY THESE ARRAYS WITHOUT CONSULTING NCAR OR
+   ! variables. DO NOT MODIFY THESE ARRAYS WITHOUT CONSULTING NCAR OR
    ! OWP!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    if(nlst(1)%io_config_outputs .eq. 0) then
       ! All
@@ -1429,7 +1429,7 @@ subroutine output_NoahMP_NWM(outDir,iGrid,output_timestep,itime,startdate,date,i
               iret = nf90_def_dim(ftnNoahMP,'glacier_levels',fileMeta%act_lev,dimId(8))
          call nwmCheck(diagFlag,iret,'ERROR: Unable to define act_layers dimension')
          ! Only create vis_nir if we are outputting the two snow albedo variables.
-         ! Otherwise these are unecessary dimensions.
+         ! Otherwise these are unnecessary dimensions.
          if ((fileMeta%outFlag(96) .eq. 1) .or. (fileMeta%outFlag(96) .eq. 1)) then
          iret = nf90_def_dim(ftnNoahMP,'vis_nir',fileMeta%numSpectrumBands,dimId(7))
          call nwmCheck(diagFlag,iret,'ERROR: Unable to define vis_nir dimension')
@@ -1661,7 +1661,7 @@ subroutine output_NoahMP_NWM(outDir,iGrid,output_timestep,itime,startdate,date,i
    !     exist.
    ! 4.) Loop through real local grid, convert floating point
    !     values to integer via scale_factor/add_offset. If
-   !     missing value found, assign FillValue caluclated
+   !     missing value found, assign FillValue calculated
    !     in the dictionary.
    ! 5.) Use MPP utilities to collect local integer arrays
    !     into global integer array.
@@ -1838,7 +1838,7 @@ subroutine output_rt_NWM(domainId,iGrid)
    real, allocatable, dimension(:,:,:) :: globalOutReal
    real*8, allocatable, dimension(:) :: yCoord,xCoord,yCoord2
    integer :: numLev ! This will be 4 for soil moisture, and 1 for all other variables.
-   character (len=64) :: modelConfigType ! This is character verion (long name) for the io_config_outputs
+   character (len=64) :: modelConfigType ! This is character version (long name) for the io_config_outputs
    real :: scaleFactorReciprocal
 ! Establish macro variables to hlep guide this subroutine.
 #ifdef MPP_LAND
@@ -1870,7 +1870,7 @@ subroutine output_rt_NWM(domainId,iGrid)
       return
    endif
 
-   ! Initialize NWM dictionary derived type containing all the necessary metadat
+   ! Initialize NWM dictionary derived type containing all the necessary metadata
    ! for the output file.
    call initRtDomainDict(fileMeta,myId,diagFlag)
 
@@ -2407,7 +2407,7 @@ subroutine output_lakes_NWM(domainId,iGrid)
                                                      ! scale_factor/add_offset
                                                      ! have been applied.
    integer, allocatable, dimension(:) :: chIndArray ! Array of index values for
-   character (len=64) :: modelConfigType ! This is character verion (long name) for the io_config_outputs
+   character (len=64) :: modelConfigType ! This is character version (long name) for the io_config_outputs
 
    !each channel point. feature_id will need to be sorted in ascending order once
    !data is collected into the global array. From there, the index values are
@@ -2446,7 +2446,7 @@ subroutine output_lakes_NWM(domainId,iGrid)
       return
    endif
 
-   ! Initialize NWM dictionary derived type containing all the necessary metadat
+   ! Initialize NWM dictionary derived type containing all the necessary metadata
    ! for the output file.
    call initLakeDict(fileMeta,myId,diagFlag)
 
@@ -2914,7 +2914,7 @@ subroutine output_lakes_NWM(domainId,iGrid)
       ! variables.
       do iTmp=1,fileMeta%numVars
          if(fileMeta%outFlag(iTmp) .eq. 1) then
-            ! We are outputing this variable.
+            ! We are outputting this variable.
             ! Convert reals to integer. If we are on time 0, make sure we don't
             ! need to fill in with NDV values.
             if(minSinceSim .eq. 0 .and. fileMeta%timeZeroFlag(iTmp) .eq. 0) then
@@ -3028,7 +3028,7 @@ end subroutine output_lakes_NWM
 !==================================================================
 ! Program Name: output_chrtout_grd_NWM
 ! Author(s)/Contact(s): Logan R Karsten <karsten><ucar><edu>
-! Abstract: Ouptut routine for gridden streamflow variables
+! Abstract: Output routine for gridden streamflow variables
 !           for non-reach based routing.
 ! History Log:
 ! 8/6/17 - Created, LRK.
@@ -3095,7 +3095,7 @@ subroutine output_chrtout_grd_NWM(domainId,iGrid)
    ! allocatable arrays to hold coordinate values
    real*8, allocatable, dimension(:) :: yCoord,xCoord,yCoord2
 
-   character (len=64) :: modelConfigType ! This is character verion (long name) for the io_config_outputs
+   character (len=64) :: modelConfigType ! This is character version (long name) for the io_config_outputs
 
 ! Establish macro variables to hlep guide this subroutine.
 #ifdef MPP_LAND
@@ -3176,7 +3176,7 @@ subroutine output_chrtout_grd_NWM(domainId,iGrid)
    endif
    call write_IO_rt_int8(RT_DOMAIN(domainId)%GCH_NETLNK, CH_NETLNK)
 
-   ! Initialize NWM dictionary derived type containing all the necessary metadat
+   ! Initialize NWM dictionary derived type containing all the necessary metadata
    ! for the output file.
    call initChrtGrdDict(fileMeta,myId,diagFlag)
 
@@ -3538,7 +3538,7 @@ end subroutine output_chrtout_grd_NWM
 !===============================================================================
 ! Program Name: output_lsmOut_NWM
 ! Author(s)/Contact(s): Logan R Karsten <karsten><ucar><edu>
-! Abstract: Output routine fro diagnostic LSM grids.
+! Abstract: Output routine for diagnostic LSM grids.
 ! History Log:
 ! 8/9/17 -Created, LRK.
 ! Usage:
@@ -3595,7 +3595,7 @@ subroutine output_lsmOut_NWM(domainId)
    real, allocatable, dimension(:,:) :: localRealTmp, globalOutReal
    !integer, allocatable, dimension(:,:) :: globalCompTmp, localCompTmp
 
-   character (len=64) :: modelConfigType ! This is character verion (long name) for the io_config_outputs
+   character (len=64) :: modelConfigType ! This is character version (long name) for the io_config_outputs
 
 #ifdef MPP_LAND
    mppFlag = 1
@@ -4345,7 +4345,7 @@ subroutine output_chanObs_NWM(domainId)
                                                      ! have been applied.
    integer, allocatable, dimension(:) :: g_STRMFRXSTPTS, g_outInd
    integer, allocatable, dimension(:) :: frxstPtsLocal, g_STRMFRXSTPTSOut
-   character (len=64) :: modelConfigType ! This is character verion (long name) for the io_config_outputs
+   character (len=64) :: modelConfigType ! This is character version (long name) for the io_config_outputs
 
    ! Establish macro variables to hlep guide this subroutine.
 #ifdef WRF_HYDRO_NUDGING
@@ -4382,7 +4382,7 @@ subroutine output_chanObs_NWM(domainId)
       myId = 0
    endif
 
-   ! Initialize NWM dictionary derived type containing all the necessary metadat
+   ! Initialize NWM dictionary derived type containing all the necessary metadata
    ! for the output file.
    call initChanObsDict(fileMeta, diagFlag, myId)
 
@@ -4901,7 +4901,7 @@ subroutine output_chanObs_NWM(domainId)
       ! NetCDF variable.
       do iTmp=1,fileMeta%numVars
          if(fileMeta%outFlag(iTmp) .eq. 1) then
-            ! We are outputing this variable.
+            ! We are outputting this variable.
             ! Convert reals to integer. If this is time zero, check to see if we
             ! need to convert all data to NDV
             if(minSinceSim .eq. 0 .and. fileMeta%timeZeroFlag(iTmp) .eq. 0) then
@@ -5071,7 +5071,7 @@ subroutine output_gw_NWM(domainId,iGrid)
    integer, allocatable, dimension(:) :: varOutInt ! Array holding output variables after
                                                      ! scale_factor/add_offset
                                                      ! have been applied.
-   character (len=64) :: modelConfigType ! This is character verion (long name) for the io_config_outputs
+   character (len=64) :: modelConfigType ! This is character version (long name) for the io_config_outputs
 
    ! Establish macro variables to hlep guide this subroutine.
 #ifdef MPP_LAND
@@ -5103,7 +5103,7 @@ subroutine output_gw_NWM(domainId,iGrid)
       return
    endif
 
-   ! Initialize NWM dictionary derived type containing all the necessary metadat
+   ! Initialize NWM dictionary derived type containing all the necessary metadata
    ! for the output file.
    call initGwDict(fileMeta)
 
@@ -5423,7 +5423,7 @@ subroutine output_gw_NWM(domainId,iGrid)
       ! variables.
       do iTmp=1,fileMeta%numVars
          if(fileMeta%outFlag(iTmp) .eq. 1) then
-            ! We are outputing this variable.
+            ! We are outputting this variable.
             ! Convert reals to integer. If we are on time 0, make sure we don't
             ! need to fill in with NDV values.
             if(minSinceSim .eq. 0 .and. fileMeta%timeZeroFlag(iTmp) .eq. 0) then

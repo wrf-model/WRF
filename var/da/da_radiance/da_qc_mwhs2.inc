@@ -110,7 +110,7 @@ subroutine da_qc_mwhs2 (it, i, nchan, ob, iv)
          ! else 
          ! end if
 
-	!!!!! chanel 5 when ps ???? !!!!!
+	!!!!! channel 5 when ps ???? !!!!!
          if ((isflg .ne. 0) .and. (iv%instid(i)%ps(n) < 800.0)) then
             iv%instid(i)%tb_qc(15,n)  = qc_bad
             if (iv%instid(i)%info%proc_domain(1,n)) &

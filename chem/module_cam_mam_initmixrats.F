@@ -83,7 +83,7 @@
         do i = its, ite
 
         if (config_flags%aer_ic_opt == aer_ic_default) then
-! "default" ic values mimicing subr. aerosols_sorgam_init
+! "default" ic values mimicking subr. aerosols_sorgam_init
            chem(i,k,j,p_so4_a1)=chem(i,k,j,p_sulf)*convfac(i,k,j)* &
               96.0*splitfac*so4vaptoaer * so4_icbc_1p2_factor
            chem(i,k,j,p_so4_a2)=chem(i,k,j,p_sulf)*convfac(i,k,j)* &
@@ -403,7 +403,7 @@
 !    ---------     ----------
 !    <=2000        1.0
 !    2000<z<3000   linear transition zone to 0.25
-!    3000<z<5000   linear transision zone to 0.125
+!    3000<z<5000   linear transition zone to 0.125
 !    >=5000        0.125
 !
 ! which translates to:

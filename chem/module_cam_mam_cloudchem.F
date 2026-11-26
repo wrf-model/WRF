@@ -2,7 +2,7 @@
 !Future Modifications:
 !1. do_cam_sulfchem is hardwired in the current code. It should be obtained from 
 !   mz_aerosol_intr subroutine
-!2. Cloud fraction compuations yeild only 0 or 1 currently, no fractional value for
+!2. Cloud fraction compuations yield only 0 or 1 currently, no fractional value for
 !   cloud fraction 
 
 module module_cam_mam_cloudchem
@@ -188,7 +188,7 @@ contains
        call wrf_error_fatal('Number of CAM Columns (NCOL) in CAM_MAM_CLOUDCHEM scheme must be 1')
     endif
 
-    !Divide domain in chuncks and map WRF variables into CAM
+    !Divide domain in chunks and map WRF variables into CAM
     !Loop counters are named iw,jw,kw to represent that they index WRF sided variables
     
     itsm1     = its - 1
@@ -205,7 +205,7 @@ contains
              pmid(1,kflip)  = p_phy(iw,kw,jw)                   !Pressure at the mid-points (Pa) [state%pmid in CAM]
              dp             = p8w(iw,kw,jw) - p8w(iw,kw+1,jw)   !Change in pressure (Pa)
              pdel(1,kflip)  = dp
-             tfld(1,kflip)  = t_phy(iw,kw,jw)                   !Temprature at the mid points (K) [state%t in CAM]
+             tfld(1,kflip)  = t_phy(iw,kw,jw)                   !Temperature at the mid points (K) [state%t in CAM]
 
              !Following three formulas are obtained from ported CAM's ZM cumulus scheme
              !Values of 0 cause a crash in entropy
@@ -216,7 +216,7 @@ contains
              state_q(1,kflip,4)   = scalar(iw,kw,jw,P_QNC)*multFrc                  !Liquid cloud number
              state_q(1,kflip,5)   = scalar(iw,kw,jw,P_QNI)*multFrc                  !Ice cloud number
 
-             !Followiing formulas are obtained from Chemistry.F90 of CAM
+             !Following formulas are obtained from Chemistry.F90 of CAM
              qh2o(1,kflip)        = state_q(1,kflip,1)
              cwat(1,kflip)        = state_q(1,kflip,2) + state_q(1,kflip,3)
              cldnum(1,kflip)      = state_q(1,kflip,4)
@@ -245,7 +245,7 @@ contains
              invariants(1,kflip,:) = nan
              mbar(1,kflip)         = mwdry
 
-             !xhnm is air density in molecules/cm3 (Formulated by RCE, codded by balwinder.singh@pnnl.gov)
+             !xhnm is air density in molecules/cm3 (Formulated by RCE, coded by balwinder.singh@pnnl.gov)
              xhnm(1,kflip) = (avogad*1.0e-6_r8)/(mwdry*alt(iw,kw,jw)) !Note that avogad is in kmoles/moles
              !initialize dvmrdt_sv13d and dvmrcwdt_sv13d to zero
              dvmrdt_sv13d(iw,kw,jw,:)   = 0.0

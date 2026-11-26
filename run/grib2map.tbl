@@ -15,7 +15,7 @@
 # When the decimal scale factor is 0, the binary scale factor indicates the
 #   precision of the data in bits.
 #
-# The grib2 docuementation, available from http://, describes the decimal
+# The grib2 documentation, available from http://, describes the decimal
 #   and binary scale factors in more detail.
 # 
 #   

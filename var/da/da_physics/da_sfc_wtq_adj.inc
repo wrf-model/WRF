@@ -17,7 +17,7 @@ subroutine da_sfc_wtq_adj (psfc, tg, ps, ts, qs, us, vs, regime,&
    !   ps, ts, qs, us, vs, hs : model variable at lowlest half sigma level
    !   regime                 : PBL regime
    !
-   !  input Variables(pertubation):
+   !  input Variables(perturbation):
    ! 
    !   psfc_prime, tg_prime   : Surface pressure and ground temperature
    !   ps_prime, ts_prime,    : Model variables at the lowest half sigma
@@ -30,7 +30,7 @@ subroutine da_sfc_wtq_adj (psfc, tg, ps, ts, qs, us, vs, regime,&
    !   roughness              : roughness
    !   xland                  : land-water-mask (=2 water, =1 land)
    !
-   !  output Variables(pertubation):
+   !  output Variables(perturbation):
    !
    !   u10_prime, v10_prime   : 10-m high observed wind components
    !   t2_prime , q2_prime    : 2-m high observed temperature and mixing ratio

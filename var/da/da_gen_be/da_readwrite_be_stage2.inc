@@ -47,10 +47,10 @@ subroutine da_readwrite_be_stage2(outunit, nk)
 
    logical             :: allow_missing_dates        ! If data from stage 0 is not contiguous, attempt to continue
 
-   real, allocatable   :: regcoeff_psi_chi(:)        ! chi/psi regression cooefficient.
-   real, allocatable   :: regcoeff_psi_ps(:,:)       ! ps/psi regression cooefficient.
-   real, allocatable   :: regcoeff_psi_t(:,:,:)      ! t/psi regression cooefficient.
-   real, allocatable   :: regcoeff_psi_rh(:,:,:)     ! rh/psi regression cooefficient.
+   real, allocatable   :: regcoeff_psi_chi(:)        ! chi/psi regression coefficient.
+   real, allocatable   :: regcoeff_psi_ps(:,:)       ! ps/psi regression coefficient.
+   real, allocatable   :: regcoeff_psi_t(:,:,:)      ! t/psi regression coefficient.
+   real, allocatable   :: regcoeff_psi_rh(:,:,:)     ! rh/psi regression coefficient.
 
    real, allocatable   :: regcoeff_chi_u_ps(:,:)     ! ps/chi_u regression coefficient
    real, allocatable   :: regcoeff_chi_u_t(:,:,:)    ! t/chi_u regression coefficient

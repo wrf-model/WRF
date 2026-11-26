@@ -68,8 +68,8 @@ real :: tw, viscw                         ! temperature of water (C) and (dynami
 
 real :: colece                            ! collection efficiency
 
-real :: scrate, scavn                     ! scavanging rate (1/s)
-real :: delR, delv, rnflx, carea          ! help parameter for the determination of the scavanging rate
+real :: scrate, scavn                     ! scavenging rate (1/s)
+real :: delR, delv, rnflx, carea          ! help parameter for the determination of the scavenging rate
 real :: tair, pair                        ! current air temperature and pressure
 real :: rhoair                            ! dry air density (kg/m3) - rhoair=pa/(Ra*Ta)
 
@@ -108,7 +108,7 @@ dustwdload_1, dustwdload_2, dustwdload_3, dustwdload_4, dustwdload_5
 
 REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) ::                     &
 wetdep_1, wetdep_2, wetdep_3, wetdep_4, wetdep_5
-! loss in dust mixing ratio due to wet deposition in one coulmn for all size bins (ug/m2/s)
+! loss in dust mixing ratio due to wet deposition in one column for all size bins (ug/m2/s)
 
 REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN ) :: alt, dz8w
 ! altitude = 1/rhoair (kg/m3) & vertical grid-spacing delta-z / dz between full levels (m)
@@ -206,7 +206,7 @@ do j = jts, jte
       do l = 1,nrbins
        ! calculate collection efficiency for each dust bin (already in this loop) by each rain bin (already in this loop)
        call coleff(dbinmm(d),raind(l),den_dust(d),pair,tair,wt,vt(l),rhoair,visca,viscw,colece)
-       ! calculate scavanging rate
+       ! calculate scavenging rate
        delR = (rend(l+1)-rend(l))*1.e2 ! cm
        delv = (vt(l)-wt)*1.e2 ! cm/s
        delv = amax1(delv,0.)

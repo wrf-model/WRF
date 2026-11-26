@@ -42,7 +42,7 @@ program overland_tests
 
         type (overland_struct) :: overland_data
 
-        ! initalize the structure
+        ! initialize the structure
         call overland_data%init(ix,jx,ix,jx)
 
         ! test to see if control was associated

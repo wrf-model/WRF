@@ -159,7 +159,7 @@ CONTAINS
    CHARACTER (LEN=256) :: mminlu
 
 #if ( WRF_DFI_RADAR == 1 )
-    INTEGER  do_capsupress   ! =1 do CAP supress, other = don't
+    INTEGER  do_capsupress   ! =1 do CAP suppress, other = don't
 #endif
 
   CALL get_ijk_from_subgrid (  grid ,                   &

@@ -16,7 +16,7 @@
 !
 ! Among the most significant changes for rain productions are 1) the use of a wider cloud water DSD 
 ! of lognormal shape instead of the gamma DSD used by the Thompson–Eidhammer parameterization and 
-! 2) enhancement of the cloud-to-rain autoconversion parameterization to accomodate the new shape.
+! 2) enhancement of the cloud-to-rain autoconversion parameterization to accommodate the new shape.
 ! The changes here also allow for sedimentation of cloud water within the lowest model layer, which 
 ! effectively creates a drizzle mode in the scheme. One new diagnostic is provided in wrfout, CLOUDNC, 
 ! which is the accumulated cloud water at the surface, i.e. drizzle.
@@ -1855,7 +1855,7 @@
 
 		ln_sigma(k) = 0.20 !RC
 
-		!RC; This whole if block is written to accomodate lognormal cloud water.
+		!RC; This whole if block is written to accommodate lognormal cloud water.
 		if (qc1d(k) .gt. R1) then
 			no_micro = .false.
 			rc(k) = qc1d(k)*rho(k)
@@ -5083,7 +5083,7 @@
 !.. timestep.  Drops larger than D-star dont evaporate entirely so do
 !.. not affect number concentration.
 !+---+-----------------------------------------------------------------+
-!RC; Changes to accomodate the lognromal cloud water distribution
+!RC; Changes to accommodate the lognromal cloud water distribution
 	subroutine table_dropEvap
 
 	implicit none
@@ -5199,7 +5199,7 @@
 !.. and finally hygroscopicity, kappa.
 !.. TO_DO ITEM:  For radiation cooling producing fog, in which case the
 !.. updraft velocity could easily be negative, we could use the temp
-!.. and its tendency to diagnose a pretend postive updraft velocity.
+!.. and its tendency to diagnose a pretend positive updraft velocity.
 !+---+-----------------------------------------------------------------+
       real function activ_ncloud(Tt, Ww, NCCN)
 

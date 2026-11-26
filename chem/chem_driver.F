@@ -277,7 +277,7 @@
       REAL, DIMENSION( grid%sm31:grid%em31, grid%sm32:grid%em32, grid%sm33:grid%em33 ) :: &
          del_h2so4_gasprod  ! change to h2so4 during gas-phase chemistry, cam_mam packages
 
-      !Balwinder.Singh@pnnl.gov:dvmrdt_sv13d,dvmrcwdt_sv13d are the tendencies which are passsed on from the CAM-MAM cloud chemistry
+      !Balwinder.Singh@pnnl.gov:dvmrdt_sv13d,dvmrcwdt_sv13d are the tendencies which are passed on from the CAM-MAM cloud chemistry
       !to gasaerexch subroutine in cam_mam_aerchem_driver
       REAL, DIMENSION( grid%sm31:grid%em31, grid%sm32:grid%em32, grid%sm33:grid%em33,gas_pcnst_pos) :: dvmrdt_sv13d,dvmrcwdt_sv13d 
 
@@ -338,7 +338,7 @@
 ! Setup the adaptive timestep for the chem routines. Most of this follows
 ! what is in solve_em, except for the call to adjust time_step.
 !
-  !The necesssary variables exist for the EM core and using the adaptive
+  !The necessary variables exist for the EM core and using the adaptive
   !techniques will work even with a constant time step. In fact, they
   !prevent issues with restarts and changed time steps. So, we will
   !always use them with the EM core.
@@ -453,7 +453,7 @@
 
   ijds = min(ids, jds)
   ijde = max(ide, jde)
-   chem_minval = epsilc !chem_minval can be case dependant and set below...
+   chem_minval = epsilc !chem_minval can be case dependent and set below...
    chem_select: SELECT CASE(config_flags%chem_opt)
      CASE (RADM2)
        CALL wrf_debug(15,'calling radm2 from chem_driver')
@@ -913,7 +913,7 @@
     endif
 
 !
-! calculate aerosol optical properities
+! calculate aerosol optical properties
 !
       if( do_photstep .and. &
            config_flags%chem_opt /= CHEM_TRACER .and. &
@@ -1676,7 +1676,7 @@ end if !Chemistry time step check
 !
 ! do so2 to sulf conversion for full volc case
 ! since we do not have h2o2 as a variable, pass in p_h2o2 as zero
-! will have to use backgrund value
+! will have to use background value
 !
 !
 !   now do wet removal; first LS if there is no explicit aqeous phase

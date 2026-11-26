@@ -7,7 +7,7 @@ state real field_t_tend_perturb i{stoclev}j dyn_em 1 - rhdf=(p2c) "field_t_tend_
 
 # Namelist parameter
 rconfig   integer     perturb_bdy         namelist,stoch   1              0   -       "perturb lateral boundaries of fields U,V,T: 0=off, 1=on with SKEBS pattern, 2=on with user provided pattern"
-rconfig   integer     perturb_chem_bdy    namelist,stoch   1              0   -       "perturb lateral boundaries of chemical tracers: 0=off, 1=on with RAND_PERTURB patter"
+rconfig   integer     perturb_chem_bdy    namelist,stoch   1              0   -       "perturb lateral boundaries of chemical tracers: 0=off, 1=on with RAND_PERTURB pattern"
 
 # Package declarations
 package   no_perturb_bdy              perturb_bdy==0                  -             -

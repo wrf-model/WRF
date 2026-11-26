@@ -74,7 +74,7 @@ begin
    res@trXMaxF  =  f1&x(nj-1)                ; max value on x-axis
    res@trYMinF  =  1.0                   ; min value on y-axis
    res@trYMaxF  =  nk                    ; max value on y-axis
-   res@cnMinLevelValF =  0.0                 ; set mimimum contour level
+   res@cnMinLevelValF =  0.0                 ; set minimum contour level
    res@cnMaxLevelValF =  0.9                  ; set maximum contour level
    res@cnLevelSpacingF =  0.1                  ; set maximum contour level
    res@tiMainString    = " Chi_b.Chi correlation"     ; Main title
@@ -84,7 +84,7 @@ begin
    res@trXMaxF  =  f2&x(nj-1)                ; max value on x-axis
    res@trYMinF  =  1.0                   ; min value on y-axis
    res@trYMaxF  =  nk                    ; max value on y-axis
-   res@cnMinLevelValF =  0.0                 ; set mimimum contour level
+   res@cnMinLevelValF =  0.0                 ; set minimum contour level
    res@cnMaxLevelValF =  0.9                  ; set maximum contour level
    res@cnLevelSpacingF =  0.05                 ; set maximum contour level
    res@tiYAxisOn = False

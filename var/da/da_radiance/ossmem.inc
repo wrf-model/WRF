@@ -162,7 +162,7 @@ subroutine ossmem(ntype_index, theta,frequency,ts,tv,th,em_vector)
   if (data_invalid) RETURN
   
 
-!*** Get intial emissivity for each frequency
+!*** Get initial emissivity for each frequency
 
 ! v components
   do ich=1,nv

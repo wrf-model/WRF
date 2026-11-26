@@ -304,7 +304,7 @@ MODULE module_wrf_quilt
       compute_node = .TRUE.
 
 !<DESCRIPTION>
-! nio is number of io tasks per group.  If there arent enough tasks to satisfy
+! nio is number of io tasks per group.  If there aren't enough tasks to satisfy
 ! the requirement that there be at least as many compute tasks as io tasks in
 ! each group, then just print a warning and dump out of quilting
 !</DESCRIPTION>
@@ -620,8 +620,8 @@ character*120 sysline
 
 ! Work out whether this i/o server processor has one fewer associated compute proc than
 ! the most any processor has. Can happen when number of i/o tasks does not evenly divide
-! the number of compute tasks. This is needed to keep the i/o tasks sychronized on the
-! same message when they start commmunicating to stitch together an output.
+! the number of compute tasks. This is needed to keep the i/o tasks synchronized on the
+! same message when they start communicating to stitch together an output.
 !
 ! Compute processes associated with this task:
        CC = ntasks_io_group - 1
@@ -737,7 +737,7 @@ okay_to_w = .false.
           ! here and handled below as if it were received from the 
           ! compute processes. The clients (compute processes) must be
           ! careful to send this correctly (one compule process sends the actual
-          ! handle and everone else sends a zero, so the result sums to 
+          ! handle and everyone else sends a zero, so the result sums to
           ! the value of the handle).
           !
           ALLOCATE( obuf( 4096 ) )
@@ -1428,7 +1428,7 @@ okay_to_w = .false.
               END SELECT
 
             ENDDO !}
-! Now, the I/O server "root" has finshed handling all commands from the latest
+! Now, the I/O server "root" has finished handling all commands from the latest
 ! call to retrieve_pieces_of_field().
 
             IF (stored_write_record) THEN
@@ -1635,8 +1635,8 @@ okay_to_w = .false.
 
 ! Work out whether this i/o server processor has one fewer associated compute proc than
 ! the most any processor has. Can happen when number of i/o tasks does not evenly divide
-! the number of compute tasks. This is needed to keep the i/o tasks sychronized on the
-! same message when they start commmunicating to stitch together an output.
+! the number of compute tasks. This is needed to keep the i/o tasks synchronized on the
+! same message when they start communicating to stitch together an output.
 !
 ! Compute processes associated with this task:
        CC = ntasks_io_group - 1
@@ -1739,7 +1739,7 @@ okay_to_w = .false.
           ! here and handled below as if it were received from the 
           ! compute processes. The clients (compute processes) must be
           ! careful to send this correctly (one compule process sends the actual
-          ! handle and everone else sends a zero, so the result sums to 
+          ! handle and everyone else sends a zero, so the result sums to
           ! the value of the handle).
           !
           ALLOCATE( obuf( 4096 ) )
@@ -2457,7 +2457,7 @@ okay_to_w = .false.
               END SELECT
 
             ENDDO !}
-! Now, we have finshed handling all commands from the latest
+! Now, we have finished handling all commands from the latest
 ! call to retrieve_pieces_of_field().
 
             IF (stored_write_record) THEN
@@ -3032,7 +3032,7 @@ SUBROUTINE wrf_quilt_open_for_write_begin( FileName , gridid, Comm_compute, Comm
   CALL mpi_x_comm_size( comm_io_group , tasks_in_group , ierr )
 
 !!JMTIMING  CALL start_timing
-  ! send the size of my local buffer to the i/o task (reduced_dummy doesnt mean anything on client side)
+  ! send the size of my local buffer to the i/o task (reduced_dummy doesn't mean anything on client side)
   reduced = 0
   reduced(1) = hdrbufsize 
 #ifdef PNETCDF_QUILT
@@ -3108,7 +3108,7 @@ SUBROUTINE wrf_quilt_open_for_write_commit( DataHandle , Status )
   CALL mpi_x_comm_size( comm_io_group , tasks_in_group , ierr )
 
 !!JMTIMING  CALL start_timing
-  ! send the size of my local buffer to the i/o task (reduced_dummy doesnt mean anything on client side)
+  ! send the size of my local buffer to the i/o task (reduced_dummy doesn't mean anything on client side)
   reduced = 0
   reduced(1) = hdrbufsize 
 #ifdef PNETCDF_QUILT
@@ -3191,7 +3191,7 @@ SUBROUTINE wrf_quilt_inquire_filename ( DataHandle, FileName , FileStatus, Statu
 ! Does not require communication with I/O servers.
 !
 ! Note that the current implementation does not actually return FileName.
-! Currenlty, WRF does not use this returned value.  Fixing this would simply
+! Currently, WRF does not use this returned value.  Fixing this would simply
 ! require saving the file names on the client tasks in an array similar to
 ! okay_to_write().
 ! This routine is called only by client (compute) tasks.  
@@ -3268,7 +3268,7 @@ SUBROUTINE wrf_quilt_iosync ( DataHandle, Status )
     locsize = int_num_bytes_to_write(DataHandle)
 
 !    CALL start_timing
-    ! send the size of my local buffer to the i/o task (reduced_dummy doesnt mean anything on client side)
+    ! send the size of my local buffer to the i/o task (reduced_dummy doesn't mean anything on client side)
     reduced = 0
     reduced(1) = locsize 
 #ifdef PNETCDF_QUILT
@@ -3355,7 +3355,7 @@ SUBROUTINE wrf_quilt_ioclose ( DataHandle, Status )
   CALL mpi_x_comm_size( comm_io_group , tasks_in_group , ierr )
 
 !!JMTIMING  CALL start_timing
-  ! send the size of my local buffer to the i/o task (reduced_dummy doesnt mean anything on client side)
+  ! send the size of my local buffer to the i/o task (reduced_dummy doesn't mean anything on client side)
   reduced = 0
 #ifdef PNETCDF_QUILT
 ! If we're using pnetcdf then each IO server will need the handle as there is
@@ -3549,7 +3549,7 @@ SUBROUTINE wrf_quilt_set_time ( DataHandle, Data,  Status )
       CALL get_mpi_comm_io_groups( comm_io_group , iserver )
       CALL mpi_x_comm_size( comm_io_group , tasks_in_group , ierr )
 
-      ! send the size of my local buffer to the i/o task (reduced_dummy doesnt mean anything on client side)
+      ! send the size of my local buffer to the i/o task (reduced_dummy doesn't mean anything on client side)
       reduced = 0
       reduced(1) = hdrbufsize 
 #ifdef PNETCDF_QUILT
@@ -3666,7 +3666,7 @@ SUBROUTINE wrf_quilt_put_dom_ti_real ( DataHandle,Element,   Data, Count,  Statu
       CALL mpi_x_comm_size( comm_io_group , tasks_in_group , ierr )
 
 !!JMTIMING      CALL start_timing
-      ! send the size of my local buffer to the i/o task (reduced_dummy doesnt mean anything on client side)
+      ! send the size of my local buffer to the i/o task (reduced_dummy doesn't mean anything on client side)
       reduced = 0
       reduced(1) = hdrbufsize 
 #ifdef PNETCDF_QUILT
@@ -3825,7 +3825,7 @@ SUBROUTINE wrf_quilt_put_dom_ti_integer ( DataHandle,Element,   Data, Count,  St
       CALL mpi_x_comm_size( comm_io_group , tasks_in_group , ierr )
 
 !!JMTIMING      CALL start_timing
-      ! send the size of my local buffer to the i/o task (reduced_dummy doesnt mean anything on client side)
+      ! send the size of my local buffer to the i/o task (reduced_dummy doesn't mean anything on client side)
       reduced = 0
       reduced(1) = hdrbufsize 
 #ifdef PNETCDF_QUILT
@@ -3983,7 +3983,7 @@ SUBROUTINE wrf_quilt_put_dom_ti_char ( DataHandle, Element,  Data,  Status )
 !  write(0,*)'wrf_quilt_put_dom_ti_char ',iserver
       CALL get_mpi_comm_io_groups( comm_io_group , iserver )
       CALL mpi_x_comm_size( comm_io_group , tasks_in_group , ierr )
-      ! send the size of my local buffer to the i/o task (obufsize doesnt mean anything here)
+      ! send the size of my local buffer to the i/o task (obufsize doesn't mean anything here)
 !!JMTIMING!  CALL start_timing
 !write(0,*)'calling MPI_Barrier'
 !  CALL MPI_Barrier( mpi_comm_local, ierr )
@@ -3991,7 +3991,7 @@ SUBROUTINE wrf_quilt_put_dom_ti_char ( DataHandle, Element,  Data,  Status )
 !!JMTIMING!   CALL end_timing("MPI_Barrier in wrf_quilt_put_dom_ti_char")
 
 !!JMTIMING      CALL start_timing
-      ! send the size of my local buffer to the i/o task (reduced_dummy doesnt mean anything on client side)
+      ! send the size of my local buffer to the i/o task (reduced_dummy doesn't mean anything on client side)
       reduced_dummy = 0 
       reduced = 0
       reduced(1) = hdrbufsize 
@@ -4529,7 +4529,7 @@ SUBROUTINE wrf_quilt_put_var_ti_char ( DataHandle,Element,  Varname, Data,  Stat
       CALL mpi_x_comm_size( comm_io_group , tasks_in_group , ierr )
 
 !!JMTIMING      CALL start_timing
-      ! send the size of my local buffer to the i/o task (reduced_dummy doesnt mean anything on client side)
+      ! send the size of my local buffer to the i/o task (reduced_dummy doesn't mean anything on client side)
       reduced = 0
       reduced(1) = hdrbufsize 
 #ifdef PNETCDF_QUILT
@@ -4938,7 +4938,7 @@ SUBROUTINE wrf_quilt_write_field ( DataHandle , DateStr , VarName , Field , Fiel
       iserver = get_server_id ( DataHandle )
 !JMDEBUGwrite(0,*)'wrf_quilt_write_field (dryrun) ',iserver
       CALL get_mpi_comm_io_groups( comm_io_group , iserver )
-      ! send the size of my local buffer to the i/o task (obufsize doesnt mean anything here)
+      ! send the size of my local buffer to the i/o task (obufsize doesn't mean anything here)
 
       CALL mpi_x_comm_size( comm_io_group , tasks_in_group , ierr )
 
@@ -4950,7 +4950,7 @@ SUBROUTINE wrf_quilt_write_field ( DataHandle , DateStr , VarName , Field , Fiel
 
 
 !!ARPTIMING      CALL start_timing
-      ! send the size of my local buffer to the i/o task (reduced_dummy doesnt mean anything on client side)
+      ! send the size of my local buffer to the i/o task (reduced_dummy doesn't mean anything on client side)
       reduced = 0
       reduced(1) = hdrbufsize 
 #ifdef PNETCDF_QUILT

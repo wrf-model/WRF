@@ -65,7 +65,7 @@ MODULE module_cam_support
   !BSINGH - In simulations where no MAM chem package (501, 502,503 or 504) is used, 
   ! following integer(gas_pcnst_modal_aero_pos) is used to specify array dimensions, 
   ! so it has to have a positive value. It will assume a positive value in chemistry
-  ! initializations accordling to the chem package specified in the namelist
+  ! initializations according to the chem package specified in the namelist
   integer :: gas_pcnst_modal_aero_pos = -999888777 !Number of tracer constituents in CAM q array
 
   ! excluding water vapor, cloud water, cloud ice, droplet number, ice number
@@ -152,7 +152,7 @@ CONTAINS
     !------------------------------------------------------------------------
     USE module_wrf_error
     
-    ! Argument of the subroutine is made optional to accomodate endrun calls with no argument 
+    ! Argument of the subroutine is made optional to accommodate endrun calls with no argument
     character(len=*), intent(in), optional :: msg
     
     if(present(msg)) then
@@ -168,7 +168,7 @@ CONTAINS
   
   !------------------------------------------------------------------------
   SUBROUTINE t_stopf(event)
-    ! Stub to accomodate stop time calls of CAM
+    ! Stub to accommodate stop time calls of CAM
     !
     ! Replaces t_stopf in perf_mod module in CAM.
     !
@@ -182,7 +182,7 @@ CONTAINS
   
   !------------------------------------------------------------------------
   SUBROUTINE t_startf(event)
-    ! Stub to accomodate start time calls of CAM
+    ! Stub to accommodate start time calls of CAM
     !
     ! Replaces t_startf in perf_mod module in CAM.
     !
@@ -197,7 +197,7 @@ CONTAINS
   
   !------------------------------------------------------------------------
   SUBROUTINE outfld( fname, field, idim, c)
-    ! Stub to accomodate outfld calls of CAM
+    ! Stub to accommodate outfld calls of CAM
     !
     ! Replaces outfld in cam_history module in CAM.
     !
@@ -215,7 +215,7 @@ CONTAINS
   !------------------------------------------------------------------------
   SUBROUTINE addfld(fname, units, numlev, avgflag, long_name, &
        decomp_type, flag_xyfill, flag_isccplev, sampling_seq)
-    ! Stub to accomodate addfld calls of CAM
+    ! Stub to accommodate addfld calls of CAM
     !
     ! Replaces addfld in cam_history module in CAM.
     !
@@ -240,7 +240,7 @@ CONTAINS
   !------------------------------------------------------------------------
   SUBROUTINE ADD_DEFAULT (name, tindex, flag)
     !
-    ! Stub to accomodate add_default calls of CAM 
+    ! Stub to accommodate add_default calls of CAM
     ! Relaces add_default in cam_history module of CAM
     ! 
     ! Author: Balwinder.Singh@pnl.gov

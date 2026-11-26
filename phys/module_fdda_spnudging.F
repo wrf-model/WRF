@@ -12,7 +12,7 @@
 ! minutes (just under 32 years of continuous simulation). Cannot remove all
 ! reliance on XTIME because actual end time is in absolute minutes. Using XTIME
 ! results in spectral nudging analyses ingested at the wrong times, beginning
-! 23 years and 3.5 months into a continous simulation. Purposefully not
+! 23 years and 3.5 months into a continuous simulation. Purposefully not
 ! modifying the ramping function because pragmatically we will not get
 ! very large XTIME values in any situation where the off-ramp for nudging would
 ! be used. (Tanya Spero, U.S. Environmental Protection Agency -- June 2024)
@@ -296,12 +296,12 @@ CONTAINS
    itf=MIN0(ite,ide-1)
 !
 ! If the user-defined namelist switches (if_no_pbl_nudging_uv, if_no_pbl_nudging_t, 
-! if_no_pbl_nudging_ph swithes) are set to 1, compute the weighting function, wpbl(:,k,:,:), 
+! if_no_pbl_nudging_ph switches) are set to 1, compute the weighting function, wpbl(:,k,:,:),
 ! based on the PBL depth.  wpbl = 1 above the PBL and wpbl = 0 in the PBL.  If all 
 ! the switche are set to zero, wpbl = 1 (default value).
 !
 !GMM If those are set to zero, then check if the user-defined namelist switches (if_zfac_uv, if_zfac_t,
-! if_zfac_ph swithes) are set to 1, compute the weighting function, wzfac(k,:),
+! if_zfac_ph switches) are set to 1, compute the weighting function, wzfac(k,:),
 ! based on the namelist specified k values (k_zfac_uv, k_zfac_t and k_zfac_ph) 
 ! below which analysis nudging is turned off (wzfac = 1 above k_zfac_x and = 0 in below k_zfac_x).
 !  The strength of nudging increases linearly from k_zfac to kzfac + dk_zfac 
@@ -313,7 +313,7 @@ CONTAINS
 !      restrict nudging of potential temperature and water vapor mixing ratio
 !      above a layer.  Nudging of both theta and Qv will be at 0.5 strength
 !      at the user-defined layer and will be 0.0 above that layer.  Setting
-!      KTROP=0 will allow nudging to the top of the model.  U, V, andd PHI are
+!      KTROP=0 will allow nudging to the top of the model.  U, V, and PHI are
 !      not affected by KTROP.  KTROP is separate from the PBL and ZFAC options.
 !      Using KTROP with the PBL restriction can effectively limit nudging of
 !      theta and Qv to the free troposphere.  Ideally KTROP will be refined or
@@ -544,7 +544,7 @@ CONTAINS
 !
 ! When dtramp_min is positive, ramping starts at end_fdda_hour and ends at 
 ! end_fdda_hour+ABS(dtramp_min). In this case, the obs values are extrapolated using 
-! the obs tendency saved from the previous FDDA wondow.  More specifically for extrapolation, 
+! the obs tendency saved from the previous FDDA window.  More specifically for extrapolation,
 ! coef (see codes below) is recalculated to reflect extrapolation during the ramping period.
 !
    tfac = 1.0

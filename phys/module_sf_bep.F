@@ -147,17 +147,17 @@ use module_wrf_error
 !
 !    Implicit and explicit components of the source and sink terms at each levels,
 !     the fluxes can be computed as follow: FX = A*X + B   example: t_fluxes = a_t * pt + b_t
-      real a_u(ims:ime,kms:kme,jms:jme)         ! Implicit component for the momemtum in X-direction (center)
-      real a_v(ims:ime,kms:kme,jms:jme)         ! Implicit component for the momemtum in Y-direction (center)
+      real a_u(ims:ime,kms:kme,jms:jme)         ! Implicit component for the momentum in X-direction (center)
+      real a_v(ims:ime,kms:kme,jms:jme)         ! Implicit component for the momentum in Y-direction (center)
       real a_t(ims:ime,kms:kme,jms:jme)         ! Implicit component for the temperature
       real a_e(ims:ime,kms:kme,jms:jme)         ! Implicit component for the TKE
-      real b_u(ims:ime,kms:kme,jms:jme)         ! Explicit component for the momemtum in X-direction (center)
-      real b_v(ims:ime,kms:kme,jms:jme)         ! Explicit component for the momemtum in Y-direction (center)
+      real b_u(ims:ime,kms:kme,jms:jme)         ! Explicit component for the momentum in X-direction (center)
+      real b_v(ims:ime,kms:kme,jms:jme)         ! Explicit component for the momentum in Y-direction (center)
       real b_t(ims:ime,kms:kme,jms:jme)         ! Explicit component for the temperature
       real b_e(ims:ime,kms:kme,jms:jme)         ! Explicit component for the TKE
       real b_q(ims:ime,kms:kme,jms:jme)         ! Explicit component for the humidity
       real dlg(ims:ime,kms:kme,jms:jme)         ! Height above ground (L_ground in formula (24) of the BLM paper). 
-      real dl_u(ims:ime,kms:kme,jms:jme)        ! Length scale (lb in formula (22) ofthe BLM paper).
+      real dl_u(ims:ime,kms:kme,jms:jme)        ! Length scale (lb in formula (22) of the BLM paper).
 ! urban surface and volumes        
       real sf(ims:ime,kms:kme,jms:jme)           ! surface of the urban grid cells
       real vl(ims:ime,kms:kme,jms:jme)             ! volume of the urban grid cells
@@ -210,7 +210,7 @@ use module_wrf_error
       real emr_u(nurbmax)                     ! Emissivity of roof
 
 !   fww_u,fwg_u,fgw_u,fsw_u,fsg_u are the view factors used to compute the long wave
-!   and the short wave radation. 
+!   and the short wave radiation.
       real fww_u(nz_um,nz_um,ndm,nurbmax)       !  from wall to wall
       real fwg_u(nz_um,ndm,nurbmax)             !  from wall to ground
       real fgw_u(nz_um,ndm,nurbmax)             !  from ground to wall
@@ -284,7 +284,7 @@ use module_wrf_error
       real b_t1D(kms:kme)               ! Explicit component of the heat sources or sinks
       real b_e1D(kms:kme)               ! Explicit component of the TKE sources or sinks
       real dlg1D(kms:kme)               ! Height above ground (L_ground in formula (24) of the BLM paper). 
-      real dl_u1D(kms:kme)              ! Length scale (lb in formula (22) ofthe BLM paper)
+      real dl_u1D(kms:kme)              ! Length scale (lb in formula (22) of the BLM paper)
       real time_bep
 ! arrays used to collapse indexes
       integer ind_zwd(nz_um,nwr_u,ndm)
@@ -606,7 +606,7 @@ use module_wrf_error
 !  its number of levels "nz".
 ! The meteorological input parameters (wind, temperature, solar radiation)
 !  are specified on the "mesoscale grid".
-! The inputs concerning the building and street charateristics are defined
+! The inputs concerning the building and street characteristics are defined
 !  on a "urban grid". The "urban grid" is defined with its number of levels
 !  "nz_u" and its space step "dz_u".
 ! The input parameters are interpolated on the "urban grid". The sources or sinks
@@ -685,7 +685,7 @@ use module_wrf_error
       real emr                   ! Emissivity of roof
 
 !    fww,fwg,fgw,fsw,fsg are the view factors used to compute the long and 
-!    short wave radation. 
+!    short wave radiation.
 !    The calculation of these factor is explained in the Appendix A of the BLM paper
       real fww(nz_um,nz_um,ndm,nurbm)  !  from wall to wall
       real fwg(nz_um,ndm,nurbm)        !  from wall to ground
@@ -725,7 +725,7 @@ use module_wrf_error
       real sfr(ndm,nz_um)      ! Sensible heat flux from roofs
       real gfg(ndm)             ! Heat flux transferred from the surface of the ground (road) towards the interior
       real gfr(ndm,nz_um)     ! Heat flux transferred from the surface of the roof towards the interior
-      real gfw(2*ndm,nz_um)     ! Heat flux transfered from the surface of the walls towards the interior
+      real gfw(2*ndm,nz_um)     ! Heat flux transferred from the surface of the walls towards the interior
 ! ----------------------------------------------------------------------
 ! OUTPUT:
 ! ----------------------------------------------------------------------
@@ -746,7 +746,7 @@ use module_wrf_error
       real b_t(kms:kme)              ! Explicit component of the heat sources or sinks
       real b_e(kms:kme)              ! Explicit component of the TKE sources or sinks
       real dlg(kms:kme)              ! Height above ground (L_ground in formula (24) of the BLM paper). 
-      real dl_u(kms:kme)             ! Length scale (lb in formula (22) ofthe BLM paper).
+      real dl_u(kms:kme)             ! Length scale (lb in formula (22) of the BLM paper).
       
 ! ----------------------------------------------------------------------
 ! LOCAL:
@@ -806,7 +806,7 @@ use module_wrf_error
 ! END VARIABLES DEFINITIONS
 ! ----------------------------------------------------------------------
 
-! Fix some usefull parameters for the computation of the sources or sinks
+! Fix some useful parameters for the computation of the sources or sinks
 
       do iz=kts,kte
          dz(iz)=z(iz+1)-z(iz)
@@ -915,7 +915,7 @@ use module_wrf_error
                        pb_urb,pb,lp_urb,lb_urb,hgt_urb,frc_urb)        
 
 ! ----------------------------------------------------------------------
-!    This routine prepare some usefull parameters       
+!    This routine prepare some useful parameters
 ! ----------------------------------------------------------------------
 
       implicit none
@@ -1102,8 +1102,8 @@ use module_wrf_error
 ! ----------------------------------------------------------------------
 ! OUTPUT:
 ! ----------------------------------------------------------------------
-!!    real c_u(nz_u)        ! Interpolated paramters in the "urban grid"
-      real c_u(nz_um)       ! Interpolated paramters in the "urban grid"
+!!    real c_u(nz_u)        ! Interpolated parameters in the "urban grid"
+      real c_u(nz_um)       ! Interpolated parameters in the "urban grid"
 
        
 ! LOCAL:
@@ -1252,7 +1252,7 @@ use module_wrf_error
       real sfw(2*ndm,nz_um)     ! Sensible heat flux from walls
       real gfg(ndm)             ! Heat flux transferred from the surface of the ground (road) toward the interior
       real gfr(ndm,nz_um)     ! Heat flux transferred from the surface of the roof toward the interior
-      real gfw(2*ndm,nz_um)     ! Heat flux transfered from the surface of the walls toward the interior
+      real gfw(2*ndm,nz_um)     ! Heat flux transferred from the surface of the walls toward the interior
       real ss(nz_um)          ! Probability to have a building with height h
       real tg(ndm,ng_u)         ! Temperature in each layer of the ground [K]
       real tr(ndm,nz_um,nwr_u) ! Temperature in each layer of the roof [K]
@@ -1714,7 +1714,7 @@ use module_wrf_error
 ! OUTPUT:
 ! ----------------------------------------------------------------------     
       real dlg(kms:kme)              ! Height above ground (L_ground in formula (24) of the BLM paper). 
-      real dl_u(kms:kme)             ! Length scale (lb in formula (22) ofthe BLM paper).
+      real dl_u(kms:kme)             ! Length scale (lb in formula (22) of the BLM paper).
 
 ! ----------------------------------------------------------------------
 ! LOCAL:
@@ -1955,7 +1955,7 @@ use module_wrf_error
 ! This routine computes the effects of the reflections of long-wave 
 ! radiation in the street canyon by solving the system 
 ! of 2*nz_u+1 eqn. in 2*nz_u+1
-! unkonwn defined in A4, A5 and A6 of the paper (pages 295 and 296).
+! unknown defined in A4, A5 and A6 of the paper (pages 295 and 296).
 ! The system is solved by solving A X= B,
 ! with A matrix B vector, and X solution. 
 ! ----------------------------------------------------------------------
@@ -2101,7 +2101,7 @@ use module_wrf_error
 ! This routine computes the effects of the reflections of short-wave 
 ! (solar) radiation in the street canyon by solving the system 
 ! of 2*nz_u+1 eqn. in 2*nz_u+1
-! unkonwn defined in A4, A5 and A6 of the paper (pages 295 and 296).
+! unknown defined in A4, A5 and A6 of the paper (pages 295 and 296).
 ! The system is solved by solving A X= B,
 ! with A matrix B vector, and X solution. 
 ! ----------------------------------------------------------------------
@@ -2320,7 +2320,7 @@ use module_wrf_error
 
 ! ----------------------------------------------------------------------
 ! This routine solves the Fourier diffusion equation for heat in 
-! the material (wall, roof, or ground). Resolution is done implicitely.
+! the material (wall, roof, or ground). Resolution is done implicitly.
 ! Boundary conditions are: 
 ! - fixed temperature at the interior
 ! - energy budget at the surface
@@ -2699,7 +2699,7 @@ use module_wrf_error
      
 
 ! -----------------------------------------------------------------------
-!     This routine initialise the urban paramters for the BEP module
+!     This routine initialise the urban parameters for the BEP module
 !------------------------------------------------------------------------
 !
 !Initialize variables
@@ -2787,7 +2787,7 @@ use module_wrf_error
       integer id              ! Street direction number
       real ws                 ! Street width
       real z(nz_um)         ! Height of the urban grid levels
-      real dxy                ! Street lenght
+      real dxy                ! Street length
 
 
 ! -----------------------------------------------------------------------
@@ -2795,7 +2795,7 @@ use module_wrf_error
 !------------------------------------------------------------------------
 
 !   fww,fwg,fgw,fsw,fsg are the view factors used to compute the long wave
-!   and the short wave radation. They are the part of radiation from a surface
+!   and the short wave radiation. They are the part of radiation from a surface
 !   or from the sky to another surface.
 
       real fww(nz_um,nz_um,ndm,nurbm)            !  from wall to wall
@@ -3233,7 +3233,7 @@ use module_wrf_error
       integer id ! street direction
       integer ndu ! number of street directions
 !OUTPUT/INPUT
-      real rs_abs  ! absrobed solar radiationfor this street direction
+      real rs_abs  ! absorbed solar radiationfor this street direction
       real rl_up   ! upward longwave radiation for this street direction
       real emiss ! mean emissivity
       real grdflx_urb ! ground heat flux 
@@ -3338,7 +3338,7 @@ use module_wrf_error
 !------------------------------------------------------------------------
 
 !   fww_u,fwg_u,fgw_u,fsw_u,fsg_u are the view factors used to compute the long wave
-!   and the short wave radation. They are the part of radiation from a surface
+!   and the short wave radiation. They are the part of radiation from a surface
 !   or from the sky to another surface.
 
       real fww_u(nz_um,nz_um,ndm,nurbm)         !  from wall to wall

@@ -1284,7 +1284,7 @@
         call check_alloc( j, nz, nw-1 )
 
 ! options for NO2 cross section:
-! 1 = Davidson et al. (1988), indepedent of T
+! 1 = Davidson et al. (1988), independent of T
 ! 2 = JPL 1994 (same as JPL 1997, JPL 2002)
 ! 3 = Harder et al.
 ! 4 = JPL 2006, interpolating between midpoints of bins
@@ -5409,7 +5409,7 @@
 
 !** set out-of-range values:
 ! use low pressure limits for shorter wavelengths
-! set to zero beyound 327.5
+! set to zero beyond 327.5
 
       IF(w .LT. 279.) THEN
         fac(1:nz) = 0.95

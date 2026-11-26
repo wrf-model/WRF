@@ -267,7 +267,7 @@
 !       module_mosaic_driver.F based on the internal MOSAIC debug_level setting.
       integer, save :: istat_mosaic_fe1       
                        ! "fatal error status" for current problem (grid cell)
-                       ! negative value means a fatal error has occured
+                       ! negative value means a fatal error has occurred
       integer, save :: nfe1_mosaic_cur = 0
                        ! fatal error count for current host-code time step
       integer, save :: nfe1_mosaic_tot = 0

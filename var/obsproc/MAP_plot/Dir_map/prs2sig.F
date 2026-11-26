@@ -62,7 +62,7 @@ C                            | FIELDS RELATED TO WIND DO LINEAR
 C                                                                              
 C        ... LOG INTERPOLATION                                                 
 C                            | FIELDS RELATED TO MASS FIELD DO LOG
-         DO 21 K=1,KX       ! IS LINEARLY INTEPOLATION
+         DO 21 K=1,KX       ! IS LINEARLY INTERPOLATION
             ALS(K)=ALOG(10.*(SS(K)*PS+PTOP) + PP(K)/PS/100.)                
 21       CONTINUE                                                              
       END IF                                                                   

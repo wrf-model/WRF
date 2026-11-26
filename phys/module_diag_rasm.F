@@ -404,7 +404,7 @@ CONTAINS
     diurnal_output_freq = MONTHLY
     EmptyStr =""                      ! empty string used for processing 
 
-    ! intitialize 2 day test 
+    ! initialize 2 day test
     diurn_test = .false.       
     ! if testing generate daily instead of monthy     
     if (diurn_test) then
@@ -560,7 +560,7 @@ CONTAINS
        lwdnt_dtmp=lwdnt_dtmp/avg_nsteps
        
        CALL get_diurn_cycle(currentTime, xtime, dt, current_diurn_cycle)
-       ! accummulate averages, increment counter by one
+       ! accumulate averages, increment counter by one
        CALL var_accum_diurnal(psfc_dtmp, ime-ims+1,  NUM_DIURN_CYCLES, jme-jms+1, current_diurn_cycle, psfc_diurn) 
        CALL var_accum_diurnal(tsk_dtmp, ime-ims+1,  NUM_DIURN_CYCLES, jme-jms+1, current_diurn_cycle, tsk_diurn)
        CALL var_accum_diurnal(t2_dtmp, ime-ims+1,  NUM_DIURN_CYCLES, jme-jms+1, current_diurn_cycle, t2_diurn)
@@ -750,9 +750,9 @@ CONTAINS
     k=1 ! lowest level 
     DO j=jps, j_end            
        DO i=ips, i_end
-          ! calulate surface tempature at lowest level
+          ! calculate surface temperature at lowest level
           t_tmp = (t(i,k,j) + t0) * (((p(i,k,j) + pb(i,k,j))/p0) ** (rd/cp))
-          ! accumulate surface tempature at lowest level
+          ! accumulate surface temperature at lowest level
           t_accum(i,j) = t_accum(i,j) + t_tmp
        ENDDO
     ENDDO
@@ -797,7 +797,7 @@ CONTAINS
     do j=jps, j_end            
        do i=ips, i_end
 
-             ! calulate surface tempature at lowest level
+             ! calculate surface temperature at lowest level
              t_tmp = (t(i,k,j) + t0) * (((p(i,k,j) + pb(i,k,j))/p0) ** (rd/cp))
                   
              ! calculate virtual temperature at lowest model level
@@ -817,7 +817,7 @@ CONTAINS
              ! Use surface pressure for PMSL if we are at sea level.
              if ( abs(z/g) < 1.0E-4 )then
                 tmp_pmsl = psfc_tmp
-                ! Othewise, calculate based on ECMWF method
+                ! Otherwise, calculate based on ECMWF method
              else
                 tstar = tv * (1.0 + alpha * (psfc_tmp/p_tmp-1.0)) 
                 tt0 = tstar + xlapse*z/g
@@ -1211,7 +1211,7 @@ CONTAINS
     nextTime = currentTime + off
     call WRFU_TimeGet( nextTime, yy=yr, mm=mon, dd=day, h=hr)   
   
-    ! This is a 3hr cycle, therfore it the diurn_cycle 
+    ! This is a 3hr cycle, therefore it the diurn_cycle
     ! hr should be either (0,3,6,9,12,15,18 or 21)
     if (hr .eq. 3) then
        diurn_cycle = 1

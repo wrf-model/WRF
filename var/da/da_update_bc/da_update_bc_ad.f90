@@ -258,7 +258,7 @@ program da_update_bc_ad
    bdyname(3)='_BYS'
    bdyname(4)='_BYE'
 
-   ! boundary tendancy variables
+   ! boundary tendency variables
    tenname(1)='_BTXS'
    tenname(2)='_BTXE'
    tenname(3)='_BTYS'
@@ -302,7 +302,7 @@ program da_update_bc_ad
          call da_get_var_3d_real_cdf( bdy_sens, trim(vbt_name), tend3d, &
                                    dims(1), dims(2), dims(3), 1, debug)
 
-         ! calculate new tendancy 
+         ! calculate new tendency
          do l=1,dims(3)
             do k=1,dims(2)
                do i=1,dims(1)
@@ -498,11 +498,11 @@ program da_update_bc_ad
       ! get new variable at first time level
       call da_get_var_2d_real_cdf( bdy_sens, trim(var_name), frst2d, &
                                 dims(1), dims(2), 1, debug)
-      ! output new tendancy 
+      ! output new tendency
       call da_get_var_2d_real_cdf( bdy_sens, trim(vbt_name), tend2d, &
                                 dims(1), dims(2), 1, debug)
 
-      ! calculate new tendancy 
+      ! calculate new tendency
       do l=1,dims(2)
          do i=1,dims(1)
             frst2d(i,l)=frst2d(i,l)-tend2d(i,l)/bdyfrq

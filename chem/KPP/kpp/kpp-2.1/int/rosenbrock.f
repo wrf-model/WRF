@@ -43,7 +43,7 @@
 
 
       IF (IERR.LT.0) THEN
-        print *,'Rosenbrock: Unsucessful step at T=',
+        print *,'Rosenbrock: Unsuccessful step at T=',
      &          TIN,' (IERR=',IERR,')'
       ENDIF
       
@@ -102,7 +102,7 @@
 !-    IPAR(11:20)   -> integer output parameters
 !-    RPAR(11:20)   -> real output parameters
 !-    IERR          -> job status upon return
-!          - succes (positive value) or failure (negative value) -
+!          - success (positive value) or failure (negative value) -
 !                    =  1 : Success
 !                    = -1 : Improper value for maximal no of steps
 !                    = -2 : Selected Rosenbrock method not implemented
@@ -149,7 +149,7 @@
 ! 
 !~~~>     OUTPUT PARAMETERS:
 !
-!    Note: each call to Rosenbrock adds the corrent no. of fcn calls
+!    Note: each call to Rosenbrock adds the current no. of fcn calls
 !         to previous value of IPAR(11), and similar for the other params.
 !         Set IPAR(11:20) = 0 before call to avoid this accumulation.
 !
@@ -303,7 +303,7 @@
          CALL ros_ErrorMsg(-4,Tstart,ZERO,IERR)
 	 RETURN         
       END IF
-!~~~>   FacRej: Factor to decrease step after 2 succesive rejections
+!~~~>   FacRej: Factor to decrease step after 2 successive rejections
       IF (RPAR(6).EQ.ZERO) THEN
          FacRej = 0.1d0
       ELSEIF (RPAR(6).GT.ZERO) THEN
@@ -601,7 +601,7 @@
 
       END DO ! Time loop    
       
-!~~~> Succesful exit
+!~~~> Successful exit
       IERR = 1  !~~~> The integration was successful
 
       RETURN

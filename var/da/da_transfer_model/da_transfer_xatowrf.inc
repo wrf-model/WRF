@@ -410,7 +410,7 @@ subroutine da_transfer_xatowrf(grid, config_flags)
    end do
 
    !------------------------------------------------------------------------
-   ! For later plot and comparation Purpose only, zero out the unused var.
+   ! For later plot and comparison Purpose only, zero out the unused var.
    !------------------------------------------------------------------------
 
    ! The northern boundary

@@ -18,7 +18,7 @@ PROGRAM create_p3_lookuptable_2
 !    'RUNNING IN PARALLEL MODE' and follow instructions.  (In the future, a script
 !    will be written to automate this.)
 !
-! 2. Copy the 3 pieces of text below to create indivudual executable shell scripts.
+! 2. Copy the 3 pieces of text below to create individual executable shell scripts.
 
 ! 3. Run script 1 (./go_1-compile.ksh).  This script will recreate several
 !    versions of the full code, concatenating the -top.f90 and the -bottom.90 with
@@ -136,7 +136,7 @@ PROGRAM create_p3_lookuptable_2
          dcritr,csr,dsr,duml,dum3,rhodep,cgpold,m1,m2,m3,dt,mur,initlamr,lamv,Fr,        &
          rdumii,lammin,lammax,cs2,ds2,intgrR1,intgrR2,intgrR3,intgrR4,q_agg,n_agg
 
- real :: diagnostic_mui ! function to return diagnostic value of shape paramter, mu_i
+ real :: diagnostic_mui ! function to return diagnostic value of shape parameter, mu_i
  real :: Q_normalized   ! function
  real :: lambdai        ! function
  
@@ -209,7 +209,7 @@ PROGRAM create_p3_lookuptable_2
 ! Brown and Francis (1995)
  ds = 1.9
 ! cs = 0.01855 ! original, based on assumption of Dmax
- cs = 0.0121 ! scaled value based on assumtion of Dmean from Hogan et al. 2012, JAMC
+ cs = 0.0121 ! scaled value based on assumption of Dmean from Hogan et al. 2012, JAMC
 
 ! note: if using brown and francis, already in mks units!!!!!
 ! uncomment line below if using other snow m-D relationships
@@ -971,7 +971,7 @@ PROGRAM create_p3_lookuptable_2
 ! 1/kg^-1 s^-1)
 ! NOTE: For consideration of particle depletion, air density is assumed to be 1 kg m-3
 ! This problem could be avoided by using number concentration instead of number mixing ratio
-! for the lookup table calculations, and then not multipling process rate by air density 
+! for the lookup table calculations, and then not multiplying process rate by air density
 ! in the P3 code... TO BE FIXED IN THE FUTURE
 
 !                   sum1 = sum1+min((aas1*d1**bas1+aas2*d2**bas2)*delu*num(jj)*num(kk),   &

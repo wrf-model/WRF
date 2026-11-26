@@ -242,7 +242,7 @@ subroutine da_check_gradient(grid, config_flags, cv_size, xhat, cv, pdx, itertes
       ZTC00=ABS(zfabuf(1)-zf0)
       ZTC02=ABS(zfabuf(3)-zf0)
       IF( ZTC00/zabuf(1)  <=  1.5*(ZTC02/zabuf(3)) )THEN
-         write(6,*) 'GRTEST: function f looks continous.'
+         write(6,*) 'GRTEST: function f looks continuous.'
       ELSE
          write(6,*) 'GRTEST: WARNING f does not look continuous',&
           & ' (perhaps truncation problem)'

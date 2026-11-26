@@ -205,15 +205,15 @@ keyword_stmt: WORD EOSTMT {
     }
     | if other EOSTMT { 
         /* #if:s can't be completely ignored, since #else:s, #elif:s and
-         * #endif:s aren't.  An #if branch is allways taken, and so are any
+         * #endif:s aren't.  An #if branch is always taken, and so are any
          * following #else or #elif:s (ie. no 'skip_to_end'). */
         skip_i++;
         if (pp_ignore)  pp_ignore++;
         skip_to_end[skip_i] = false;
     }
     | elif other EOSTMT {
-        /* Allways taken unless an #ifdef or #ifndef-branch has been taken
-         * allready. */
+        /* Always taken unless an #ifdef or #ifndef-branch has been taken
+         * already. */
         if (skip_to_end[skip_i] && pp_ignore == 0)  pp_ignore = 1;
     }
     | else other EOSTMT {

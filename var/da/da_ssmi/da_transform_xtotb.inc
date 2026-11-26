@@ -20,7 +20,7 @@ subroutine da_transform_xtotb(grid)
 
          psfc          = 0.01*grid%xb%psfc(i,j)
 
-         ! sea surface temperature (k) (273 - 303) (doesnot change) 
+         ! sea surface temperature (k) (273 - 303) (does not change)
 
          sst           = grid%xb%tgrn(i,j)
 
@@ -30,12 +30,12 @@ subroutine da_transform_xtotb(grid)
                        (grid%xb%t(i,j,kts)-grid%xb%tgrn(i,j))*log(2.0/0.0001)/ &
                        log((grid%xb%h(i,j,kts) - grid%xb%terr(i,j))/0.0001)
 
-         ! gamma is an emperical formula and zcld is given for now
+         ! gamma is an empirical formula and zcld is given for now
 
          gamma   = (ta-270)*0.023 + 5.03  ! effective lapse rate(km) (4.0-6.5)
 
          zcld    = 1                           ! effective cloud height (km)
-                                               ! = 1 if no cloud infomation
+                                               ! = 1 if no cloud information
          ! total precipitable water in cm
          ! total precipitable water in (kg/m**2) (0 - 70)
 

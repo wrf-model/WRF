@@ -480,7 +480,7 @@ first_level: &
 
      ENDIF
 
-     !  Use the hydrostatic equation to correct the heigt
+     !  Use the hydrostatic equation to correct the height
 
      kwk = 0
 

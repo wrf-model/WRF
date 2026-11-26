@@ -115,7 +115,7 @@ subroutine da_read_obs_bufrseviri (obstype,iv,infile)
 
   ! Set standard parameters
   integer(i_kind),parameter:: ichan=-999  ! fov-based surface code is not channel specific for seviri 
-  real(r_kind),parameter:: expansion=one  ! exansion factor for fov-based location code. 
+  real(r_kind),parameter:: expansion=one  ! expansion factor for fov-based location code.
   real(r_kind),parameter:: tbmin  = 50._r_kind
   real(r_kind),parameter:: tbmax  = 550._r_kind
   real(r_kind),parameter:: earth_radius = 6371000._r_kind
@@ -437,7 +437,7 @@ subroutine da_read_obs_bufrseviri (obstype,iv,infile)
          if(iskip > 0)write(6,*) ' READ_SEVIRI : iskip > 0 ',iskip
 
          do l=1,nchan
-            data_all(l+nreal) = temperature(l+3)   ! brightness temerature
+            data_all(l+nreal) = temperature(l+3)   ! brightness temperature
          end do
 				
     ! 4.0 assign information to sequential radiance structure

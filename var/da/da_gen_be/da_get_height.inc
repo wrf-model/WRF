@@ -6,7 +6,7 @@ subroutine da_get_height( input_file, dim1, dim2, dim3, height)
    
    implicit none
    
-   character(len=200), intent(in)  :: input_file       ! NETCDF file nane.
+   character(len=200), intent(in)  :: input_file       ! NETCDF file name.
    integer,            intent(in)  :: dim1, dim2, dim3          ! Dimensions.
    real,               intent(out) :: height(1:dim1,1:dim2,1:dim3) ! Height.
 

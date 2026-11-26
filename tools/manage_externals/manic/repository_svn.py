@@ -189,7 +189,7 @@ then rerun checkout_externals.
         else:
             stat.clean_state = ExternalStatus.STATUS_OK
 
-        # Now save the verbose status output incase the user wants to
+        # Now save the verbose status output in case the user wants to
         # see it.
         stat.status_output = self._svn_status_verbose(repo_dir_path)
 

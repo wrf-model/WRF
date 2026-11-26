@@ -110,7 +110,7 @@ subroutine da_write_oa_radar_ascii ( ob, iv, re, it )
                            re%radar(n)%rgr(k)      ! O, O-B, qc, err, O-A rgr
                      end if ! check use_radar_rqv
                   end if ! check use_radar_rhv
-               end do ! leve loop
+               end do ! levels loop
             end if ! check proc_domain
          end do ! nlocal loop
       end if ! check num_obs

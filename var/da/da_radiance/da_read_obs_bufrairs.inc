@@ -84,7 +84,7 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
   end type airschan_list
   real(r_double), dimension(1:N_AIRSCHAN_LIST,1:N_MAXCHAN) :: airschan_list_array
   
-! BUFR talble file sequencial number
+! BUFR talble file sequential number
   character(len=512)  :: table_file
 
 
@@ -318,7 +318,7 @@ bufrfile:  do ibufr=1,numbufr
 
   loop_obspoints: do
 
-!   3.1 Read headder
+!   3.1 Read header
 !-------------------------------
      call readsb(lnbufr,iret)
 
@@ -390,7 +390,7 @@ bufrfile:  do ibufr=1,numbufr
      call ufbint(lnbufr,tocc,1,1,iret,'TOCC')
      
 !   4.0  Check observing position (lat/lon)
-!      QC1:  juge if data is in the domain, 
+!      QC1:  judge if data is in the domain,
 !            read next record if not
 !------------------------------------------
      if( abs(airsspot%clath) > R90  .or. &

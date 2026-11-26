@@ -18,7 +18,7 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
    !       made missing. Otherwise the bad obs (element) will also get 
    !       assmiilated with "max_iv_check = .false."
    !   (f) AMV's from Geostationary and Polar orbiting satellite are
-   !       seperated & used as profile
+   !       separated & used as profile
    !   (g) Currently only MODIS winds from Polar orbiting satellite are used
    !  Modifications:
    !

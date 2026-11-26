@@ -112,7 +112,7 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
    grid => parent_grid
    IF ( grid%active_this_task ) THEN
      CALL push_communicators_for_domain(grid%id)
-   ! swich config_flags to point to parent rconfig info
+   ! switch config_flags to point to parent rconfig info
      CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
      CALL couple_or_uncouple_em ( grid , config_flags ,  .true. &
 !

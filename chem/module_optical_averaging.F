@@ -22,7 +22,7 @@
 ! Email: Jerome.Fast@pnl.gov
 !
 ! Please report any bugs or problems to Jerome Fast, the WRF-chem
-! implmentation team leader for PNNL.
+! implementation team leader for PNNL.
 !
 ! Terms of Use:
 !  1) Users are requested to consult the primary author prior to
@@ -80,13 +80,13 @@
 ! There are two Mie routines included (option_mie):
 ! 1) subroutine mieaer: Employs a Chebyshev economization (Fast et al. 2006, Ghan
 !    et al. (2001) so that full Mie computations are called only once and then
-!    expansion coeffiecients are used for subsequent times to save CPU.  This
+!    expansion coefficients are used for subsequent times to save CPU.  This
 !    method is somewhat less accurate than full Mie calculation.
 ! 2) subroutine mieaer_sc: Full Mie calculation at each time step that also 
 !    permits computation of shell-core method.
 ! 
-! Sectional and modal size distributions are treated similary, but there is 
-! separate code currrently to handle differences between MOSAIC and MADE/SORGAM.
+! Sectional and modal size distributions are treated similarly, but there is
+! separate code currently to handle differences between MOSAIC and MADE/SORGAM.
 !
 ! Methodology for sectional:
 ! * 3-D arrays for refractive index, wet radius, and aerosol number produced by
@@ -629,7 +629,7 @@
    real  refr
    integer ns
 !
-! Define refractive indicies
+! Define refractive indices
 ! * assume na and cl are the same as nacl
 ! * assume so4, no3, and nh4 are the same as nh4no3
 ! * assume ca and co3 are the same as caco3
@@ -682,7 +682,7 @@
 !      ref_index_bc     = cmplx(1.82,0.74), old value
       ref_index_bc     = cmplx(1.85,0.71)
       ref_index_oin    = cmplx(1.55,0.006)  ! JCB, Feb. 20, 2008 
-!     ref_index_dust    = cmplx(1.55,0.003)  ! czhao, dust, then this refractive index should be wavelength depedent 
+!     ref_index_dust    = cmplx(1.55,0.003)  ! czhao, dust, then this refractive index should be wavelength dependent
       ref_index_aro1   = cmplx(1.45,0.)
       ref_index_aro2   = cmplx(1.45,0.)
       ref_index_alk1   = cmplx(1.45,0.)
@@ -1167,7 +1167,7 @@
         dtemp=dtemp*2.0
       enddo
 !
-! Define refractive indicies
+! Define refractive indices
 ! * assume na and cl are the same as nacl
 ! * assume so4, no3, and nh4 are the same as nh4no3
 ! * assume ca and co3 are the same as caco3
@@ -1222,7 +1222,7 @@
 !     ref_index_bc     = cmplx(1.82,0.74) old value
       ref_index_bc     = cmplx(1.85,0.71)
       ref_index_oin    = cmplx(1.55,0.006)  ! JCB, Feb. 20, 2008: "other inorganics" 
-!     ref_index_dust   = cmplx(1.55,0.003)  ! czhao, this refractive index should be wavelength depedent
+!     ref_index_dust   = cmplx(1.55,0.003)  ! czhao, this refractive index should be wavelength dependent
       ref_index_aro1   = cmplx(1.45,0.)
       ref_index_aro2   = cmplx(1.45,0.)
       ref_index_alk1   = cmplx(1.45,0.)
@@ -1835,7 +1835,7 @@ COMPLEX, DIMENSION( its:ite, kts:kte, jts:jte,1:nbin_o,nswbands),      &
         dtemp=dtemp*2.0
       enddo
 !
-! Define refractive indicies
+! Define refractive indices
 ! * assume na and cl are the same as nacl
 ! * assume so4, no3, and nh4 are the same as nh4no3
 ! * assume ca and co3 are the same as caco3
@@ -1891,7 +1891,7 @@ COMPLEX, DIMENSION( its:ite, kts:kte, jts:jte,1:nbin_o,nswbands),      &
       ref_index_bc     = cmplx(1.85,0.71)
       ref_index_oin    = cmplx(1.55,0.006)  ! JCB, Feb. 20, 2008: "other inorganics" 
 !      ref_index_dust   = cmplx(1.55,0.003)  ! czhao, this refractive index
-!      should be wavelength depedent
+!      should be wavelength dependent
 !      ref_index_aro1   = cmplx(1.45,0.)
 !      ref_index_aro2   = cmplx(1.45,0.)
 !      ref_index_alk1   = cmplx(1.45,0.)
@@ -2541,7 +2541,7 @@ END subroutine optical_prep_modal_soa_vbs
         dtemp=dtemp*2.0
       enddo
 !
-! Define refractive indicies
+! Define refractive indices
 ! * assume na and cl are the same as nacl
 ! * assume so4, no3, and nh4 are the same as nh4no3
 ! * assume ca and co3 are the same as caco3
@@ -2596,7 +2596,7 @@ END subroutine optical_prep_modal_soa_vbs
 !     ref_index_bc     = cmplx(1.82,0.74) old value
       ref_index_bc     = cmplx(1.85,0.71)
       ref_index_oin    = cmplx(1.55,0.006)  ! JCB, Feb. 20, 2008: "other inorganics"
-!     ref_index_dust   = cmplx(1.55,0.003)  ! czhao, this refractive index should be wavelength depedent
+!     ref_index_dust   = cmplx(1.55,0.003)  ! czhao, this refractive index should be wavelength dependent
       ref_index_aro1   = cmplx(1.45,0.)
       ref_index_aro2   = cmplx(1.45,0.)
       ref_index_alk1   = cmplx(1.45,0.)
@@ -3169,7 +3169,7 @@ END subroutine optical_prep_modal_soa_vbs
         dtemp=dtemp*2.0
       enddo
 !
-! Define refractive indicies
+! Define refractive indices
 ! * assume na and cl are the same as nacl
 ! * assume so4, no3, and nh4 are the same as nh4no3
 ! * assume ca and co3 are the same as caco3
@@ -3224,7 +3224,7 @@ END subroutine optical_prep_modal_soa_vbs
 !     ref_index_bc     = cmplx(1.82,0.74) old value
       ref_index_bc     = cmplx(1.85,0.71)
       ref_index_oin    = cmplx(1.55,0.006)  ! JCB, Feb. 20, 2008: "other inorganics" 
-!     ref_index_dust   = cmplx(1.55,0.003)  ! czhao, this refractive index should be wavelength depedent
+!     ref_index_dust   = cmplx(1.55,0.003)  ! czhao, this refractive index should be wavelength dependent
 !     ref_index_h2o    = cmplx(1.33,0.)
 !
 ! densities in g/cc
@@ -3657,8 +3657,8 @@ END subroutine optical_prep_modal_soa_vbs
    real  dgnum, dhi,  dlo, xlo, xhi, dxbin, relh_frc
    real dlo_sectm(nbin_o), dhi_sectm(nbin_o)
    integer, parameter :: nbin_omoz=9            ! A. Ukhov 09/17/24
-   real, save :: seasfrc_goc9bin(4,nbin_omoz)   ! GOCART seasalt size distibution - mass fracs in MOSAIC 9-bins
-   real, save :: dustfrc_goc9bin(ndust,nbin_omoz)   ! GOCART dust size distibution - mass fracs in MOSAIC 9-bins
+   real, save :: seasfrc_goc9bin(4,nbin_omoz)   ! GOCART seasalt size distribution - mass fracs in MOSAIC 9-bins
+   real, save :: dustfrc_goc9bin(ndust,nbin_omoz)   ! GOCART dust size distribution - mass fracs in MOSAIC 9-bins
    real  mass_bc1 , mass_bc2 , vol_bc2  , mass_bc1j , mass_bc2j,  &
          mass_bc1i , mass_bc2i  , vol_soil
    real*8 dlogoc, dhigoc
@@ -3757,7 +3757,7 @@ END subroutine optical_prep_modal_soa_vbs
 !       ENDIF
         endif
 !
-! Define refractive indicies
+! Define refractive indices
 ! * assume na and cl are the same as nacl
 ! * assume so4, no3, and nh4 are the same as nh4no3
 ! * assume ca and co3 are the same as caco3
@@ -4294,7 +4294,7 @@ END subroutine optical_prep_modal_soa_vbs
       real dhi,  dlo, xlo, xhi, dxbin, relh_frc
       real dlo_sectm(nbin_o), dhi_sectm(nbin_o)
       integer, parameter :: nbin_omoz=8
-      real, save :: ashfrc_vol10bin(10,nbin_omoz)   ! volcanic ash size distibution - mass fracs in MOSAIC 8-bins
+      real, save :: ashfrc_vol10bin(10,nbin_omoz)   ! volcanic ash size distribution - mass fracs in MOSAIC 8-bins
       real*8 dlogoc, dhigoc
       integer, save :: kcall
       data  kcall / 0 /
@@ -4369,7 +4369,7 @@ END subroutine optical_prep_modal_soa_vbs
             !-----
       endif !kcall
 
-      ! Define refractive indicies
+      ! Define refractive indices
       do ns = 1, nswbands
             swref_index_sulf(ns) = cmplx(refrsw_sulf(ns),refisw_sulf(ns))
             swref_index_ash(ns) = cmplx(refrsw_ash(ns),refisw_ash(ns))
@@ -4628,7 +4628,7 @@ END subroutine optical_prep_modal_soa_vbs
         real, intent(in),dimension(kts:kte)   :: dz
 
         !fitting variables
-        integer ltype ! total number of indicies of refraction
+        integer ltype ! total number of indices of refraction
         parameter (ltype = 1)  ! bracket refractive indices based on information from Rahul, 2002/11/07
         integer nrefr,nrefi,nr,ni
         save nrefr,nrefi
@@ -7814,7 +7814,7 @@ END subroutine optical_prep_modal_soa_vbs
 !          SUPPLEMENTARY VALUE, SEE COMMENTS BELOW ON ELTRMX;
 !      JX: TOTAL NUMBER OF THETD FOR WHICH THE COMPUTATIONS ARE
 !          REQUIRED.  JX SHOULD NOT EXCEED IT UNLESS THE DIMENSIONS
-!          STATEMENTS ARE APPROPRIATEDLY MODIFIED;
+!          STATEMENTS ARE APPROPRIATELY MODIFIED;
 !
 !      THE DEFINITIONS FOR THE FOLLOWING SYMBOLS CAN BE FOUND IN LIGHT
 !          SCATTERING BY SMALL PARTICLES, H.C.VAN DE HULST, JOHN WILEY
@@ -8101,7 +8101,7 @@ END subroutine optical_prep_modal_soa_vbs
       TE(2) = DIMAG(FNBP)
       T(1) = 1.50D0
 !
-!    FROM HERE TO THE STATMENT NUMBER 90, ELTRMX(I,J,K) HAS
+!    FROM HERE TO THE STATEMENT NUMBER 90, ELTRMX(I,J,K) HAS
 !    FOLLOWING MEANING:
 !    ELTRMX(1,J,K): REAL PART OF THE FIRST COMPLEX AMPLITUDE.
 !    ELTRMX(2,J,K): IMAGINARY PART OF THE FIRST COMPLEX AMPLITUDE.
@@ -8639,7 +8639,7 @@ END subroutine optical_prep_modal_soa_vbs
 
 !     /*--------------------------------------------------------*/
 !     /* Check to make sure that the user-requested number of   */
-!     /* scattering angles does not excede the current maximum  */
+!     /* scattering angles does not exceed the current maximum  */
 !     /* limit.                                                 */
 !     /*--------------------------------------------------------*/
 

@@ -178,7 +178,7 @@ SUBROUTINE reduce_qc (QC)
       ELSE IF ((qc .LT. from_background) .AND. (qc .GE. convective_adjustment))&
       THEN
 
-                qc =   1               ! convective adjustement correction
+                qc =   1               ! convective adjustment correction
 
       ELSE IF ((qc .LT. convective_adjustment).AND.(qc .GE. Hydrostatic_recover)) THEN
 

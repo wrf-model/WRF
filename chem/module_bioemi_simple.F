@@ -953,7 +953,7 @@ END SUBROUTINE bio_emissions
       SUBROUTINE biogen(iland,ta,rad,eiso,emter,eovoc,e_n,vocsc,eisoc,emterc, &
           eovocc,e_nn,pa,mminlu,isn,vegflag)
 
-!     THIS PROGRAMM COMPUTES THE ACTUAL BIOGENIC EMISSION RATE FOR
+!     THIS PROGRAM COMPUTES THE ACTUAL BIOGENIC EMISSION RATE FOR
 !     ISOPRENE, MONTERPENES, OTHER ORGANIC COMPOUNDS, AND NITROGEN FOR
 !     EACH GRID CELL DEPENDING ON TEMPERATURE AND GLOBAL RADIATION
 !***********************************************************************
@@ -986,7 +986,7 @@ END SUBROUTINE bio_emissions
 !        AEF_N(NLU)  - Emissionsfaktor fuer Stickstoff
 !                      in ng N /(m*m*sec)
 !        ECF_ISO    - dimensionsloser Korrekturfaktor fuer Isopren,
-!                      abhaengig von Temperatur und Strahlung
+!                      abhaengig von Temperature und Strahlung
 !        ECF_OVOC     dimensionsloser Korrekturfaktor fuer die
 !                      sonstigen fluechtigen Kohlenwasserstoffe
 !        ECF_MTER     dimensionsloser Korrekturfaktor fuer die
@@ -1155,7 +1155,7 @@ END SUBROUTINE bio_emissions
       SUBROUTINE biosplit(iland,eiso,emter,eovoc,e_n,emiss_bio,ne_area, &
           vegfrc, &
           config_flags, mminlu,vegflag)
-!     THIS PROGRAMM SPLITS THE BIOGENIC EMISSION RATES FOR
+!     THIS PROGRAM SPLITS THE BIOGENIC EMISSION RATES FOR
 !     MONOTERPENES AND OTHER ORGANIC COMPOUNDS INTO THE
 !     COMPOUND CLASSES OF THE CHEMISTRY MODEL
 !     --- VERSION FOR RADM2 AND RACM CHEMISTRY ---
@@ -1190,7 +1190,7 @@ END SUBROUTINE bio_emissions
 !        Isidorov et al., Atmospheric Environment 19 (1985), 1-8
 !        Martin et al., Abstract Air & Waste Management Association''s
 !        90th Annual Meeting & Exhibition, Toronto 1997, Paper 97-RP139.
-!        Winer et al., Final Report 1983, California Air Resources Bord,
+!        Winer et al., Final Report 1983, California Air Resources Board,
 !        Contract No. AO-056-32
 !        For the RADM 2 chemistry, most of the monoterpenes are grouped
 !        into the OLI class

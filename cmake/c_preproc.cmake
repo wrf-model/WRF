@@ -11,7 +11,7 @@ macro( wrf_c_preproc_fortran )
                         ${ARGN}
                         )
 
-  # Santitize input
+  # Sanitize input
   if ( DEFINED WRF_PP_F_TARGET_SCOPE )
     set( WRF_PP_F_TARGET_DIRECTORY TARGET_DIRECTORY ${WRF_PP_F_TARGET_SCOPE} )
   endif()
@@ -94,7 +94,7 @@ macro( wrf_c_preproc_fortran )
 
 endmacro()
 
-# Helper macro to take current defintions and santize them with -D, compatible with generator expressions
+# Helper macro to take current definitions and sanitize them with -D, compatible with generator expressions
 # for use when definitions are needed at generation time for custom commands
 macro( wrf_expand_definitions )
   set( options        )

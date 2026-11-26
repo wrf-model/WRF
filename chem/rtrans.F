@@ -241,7 +241,7 @@
 !-----------------------------------------------------------------------------
 ! For calculations of Associated Legendre Polynomials for GAMA1,2,3,4
 ! in delta-function, modified quadrature, hemispheric constant,
-! Hybrid modified Eddington-delta function metods, p633,Table1.
+! Hybrid modified Eddington-delta function methods, p633,Table1.
 ! W.E.Meador and W.R.Weaver, GAS,1980,v37,p.630
 ! W.J.Wiscombe and G.W. Grams, GAS,1976,v33,p2440, 
 ! uncomment the following two lines and the appropriate statements further
@@ -490,7 +490,7 @@ layer_loop : &
 
       SUBROUTINE tridag( a, b, c, r, u, n)
 !-----------------------------------------------------------------------------
-! solve tridiagonal system.  From Numerical Recipies, p. 40
+! solve tridiagonal system.  From Numerical Recipes, p. 40
 !-----------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------

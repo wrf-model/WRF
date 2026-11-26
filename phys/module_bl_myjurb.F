@@ -373,7 +373,7 @@
            enddo
           endif
 !UCM end
-! Multi-layer UCM - caculate B_E at grid faces
+! Multi-layer UCM - calculate B_E at grid faces
 !          SFK(1)=1
          IF (FLAG_BEP) THEN
           DO K=KTE,KTS,-1

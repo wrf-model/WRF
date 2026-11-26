@@ -3,7 +3,7 @@ subroutine da_qc_crtm (it, ob, iv)
    !---------------------------------------------------------------------------
    ! Purpose: perform quality control for radiance data.
    !
-   ! METHOD:  seperated QC for each sensor
+   ! METHOD:  separated QC for each sensor
    !---------------------------------------------------------------------------
 
    implicit none

@@ -8,7 +8,7 @@
  
   Preditors(1:5): 1.0, w, (optional: Mach, dT/dt, T)
  
-  Number of aircrafts currently involved in this table 
+  Number of aircraft currently involved in this table
    20
 *
  00751  1 1 1  0.041  0.149  0.137  0.239  0.176  0.338  0.273  0.261  0.240  0.223  0.436  0.304  0.270  0.208  0.236

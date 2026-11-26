@@ -74,7 +74,7 @@ CONTAINS
            5.6712963e-4*( timeq ))
 
 
-    !------------- anthropogenic diurnal cycle (industrial,residencial, ...)
+    !------------- anthropogenic diurnal cycle (industrial,residential, ...)
     ! weekly cycle
     ! week day
     iweek= int(((float(julday)/7. - &

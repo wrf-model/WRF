@@ -1678,7 +1678,7 @@ END SUBROUTINE madronich1_driver
         ! The following modifications were made:
         ! - No climatological input any more
         ! - Arbitrary vertical grid
-        ! - Several seperate cloud layers are possible. Number of additional
+        ! - Several separate cloud layers are possible. Number of additional
         ! layers within the clouds depends on the optical depth
         ! - Vertically inhogeneous clouds are possible now
         ! - No variable values in commons any more
@@ -1751,7 +1751,7 @@ END SUBROUTINE madronich1_driver
         nn = mkxcc + 1 + nabv
 
         ! omray = single scattering albedoph, rayleigh.  use 1.00
-        ! gray =  asymetry factor for rayleigh scattering.  use 0.0
+        ! gray =  asymmetry factor for rayleigh scattering.  use 0.0
         ! arayl(kl) = rayleigh scattering cross section, from
         ! frohlich and shaw, appl.opt. v.11, p.1773 (1980).
         ! overrides tabulation of jdata.base
@@ -1774,7 +1774,7 @@ END SUBROUTINE madronich1_driver
         ! normalized later (in subroutine subgrid) to total vertical dep
         ! this wavelength.
         ! omaer = aerosol single scattering albedoph.  use 0.99 for now.
-        ! gaer = aerosol asymetry factor.  use 0.61 (hansen and travis 197
+        ! gaer = aerosol asymmetry factor.  use 0.61 (hansen and travis 197
         ! (these are assuming particles of about 0.1 micron radius
         ! index of refraction of about 1.65 + 0.002i.
         ! haer = the aerosol scale height at top of atmosphere
@@ -2251,7 +2251,7 @@ END SUBROUTINE madronich1_driver
             END IF
 
             dzt = zz(i) - z(lev)
-            ! number of layers depents on optical depth
+            ! number of layers depends on optical depth
             idt = max(ifix(cloud(i)*dzt*fnum),1)
             dzu = dzt/float(idt)
             vcld(lev) = cloud(i)
@@ -2284,7 +2284,7 @@ END SUBROUTINE madronich1_driver
             IF (i==nn) GO TO 20
             ! if(lev.ne.1) vcld(lev)=cloud(i)
             dzt = (zz(i+1)-zz(i))*.5
-            ! number of layers depents on optical depth
+            ! number of layers depends on optical depth
             idt = max(ifix(cloud(i)*dzt*fnum),1)
             dzo = dzt/float(idt)
 
@@ -3019,7 +3019,7 @@ END SUBROUTINE madronich1_driver
 
 ! For calculations of Associated Legendre Polynomials for GAMA1,2,3,4
 ! in delta-function, modified quadrature, hemispheric constant,
-! Hybrid modified Eddington-delta function metods, p633,Table1.
+! Hybrid modified Eddington-delta function methods, p633,Table1.
 ! W.E.Meador and W.R.Weaver, GAS,1980,v37,p.630
 ! W.J.Wiscombe and G.W. Grams, GAS,1976,v33,p2440, 
 ! uncomment the following two lines and the appropriate statements further
@@ -3192,7 +3192,7 @@ END SUBROUTINE madronich1_driver
 
 ! Calculations of Associated Legendre Polynomials for GAMA1,2,3,4
 ! in delta-function, modified quadrature, hemispheric constant,
-! Hybrid modified Eddington-delta function metods, p633,Table1.
+! Hybrid modified Eddington-delta function methods, p633,Table1.
 ! W.E.Meador and W.R.Weaver, GAS,1980,v37,p.630
 ! W.J.Wiscombe and G.W. Grams, GAS,1976,v33,p2440
 !      YLM0 = 2.
@@ -3398,7 +3398,7 @@ END SUBROUTINE madronich1_driver
       SUBROUTINE tridag(a,b,c,r,u,n)
 
 !_______________________________________________________________________
-! solves tridiagonal system.  From Numerical Recipies, p. 40
+! solves tridiagonal system.  From Numerical Recipes, p. 40
 !_______________________________________________________________________
 
       IMPLICIT NONE

@@ -4041,7 +4041,7 @@ END SUBROUTINE A_SMALL_STEP_FINISH
    ENDDO
    K =k_end+1
    DO i =i_start, i_end
-!DELETE JUST FOR TUNNING
+!DELETE JUST FOR TUNING
    Tmpv001 =w(i,k,j) +dts*rw_tend(i,k,j)
    Tmpv002 =-.5*dts*g*mut_inv(i)*rdnw(k-1)**2*2.*c2a(i,k-1,j)
    Tmpv003 =rhs(i,k) -rhs(i,k-1)
@@ -4144,7 +4144,7 @@ END SUBROUTINE A_SMALL_STEP_FINISH
 ! Ning Pan, 2010-07-09 - No need to recalculate ph
 !   DO k =k_end+1, 2, -1
 !   DO i =i_start, i_end
-!DELETE! JUST FOR TUNNING
+!DELETE! JUST FOR TUNING
 !!   Tmpv001 =msfty(i,j)*.5*dts*g*(1.+epssm)*w(i,k,j)/muts(i,j)
 !!   Tmpv002 =rhs(i,k) +Tmpv001
 !!   ph(i,k,j) =Tmpv002
@@ -4154,7 +4154,7 @@ END SUBROUTINE A_SMALL_STEP_FINISH
 
    DO k =2, k_end+1, 1
    DO i =i_end, i_start, -1
-!DELETE JUST FOR TUNNING
+!DELETE JUST FOR TUNING
    a_Tmpv2 =a_ph(i,k,j)
    a_ph(i,k,j) =0.0
    a_rhs(i,k) =a_rhs(i,k) +a_Tmpv2
@@ -4257,7 +4257,7 @@ END SUBROUTINE A_SMALL_STEP_FINISH
    K=k_end+1      ! Added by Ning Pan, 2010-07-09
    DO i =i_end, i_start, -1
 
-!DELETE JUST FOR TUNNING
+!DELETE JUST FOR TUNING
    IF(top_lid) THEN
 
    w(i,k,j) =Tmpv2014(i)

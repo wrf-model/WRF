@@ -2,7 +2,7 @@ MODULE module_hetn2o5
 
 
 !temporary:
-! from dentener and crutzen for 5S, 160E on 100mb levels startin at 1000mb
+! from dentener and crutzen for 5S, 160E on 100mb levels starting at 1000mb
     REAL, PARAMETER, DIMENSION(10) :: &
         kheti = (/4.2e-5, 3.8e-5, 1.e-5,3.e-6,4.e-6, 2.e-6,3.e-6,5.e-6,1.3e-5,1.8e-5/)
 

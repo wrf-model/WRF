@@ -6,7 +6,7 @@
 ! Inputs: total lightning flash rate (#/s)
 ! Outputs: ic flash rate (#/s), cg flash rate (#/s)
 !
-! See comments preceeding each method for details
+! See comments preceding each method for details
 !
 !**********************************************************************
 
@@ -42,7 +42,7 @@
  INTEGER, INTENT(IN   )    ::       ims,ime, jms,jme, kms,kme
  INTEGER, INTENT(IN   )    ::       ips,ipe, jps,jpe, kps,kpe
 
-! Primary inputs and outpus
+! Primary inputs and outputs
  REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN   ) :: total_flashrate   
  REAL, DIMENSION( ims:ime, jms:jme ), INTENT(  OUT) :: ic_flashrate, cg_flashrate
 
@@ -112,7 +112,7 @@
  INTEGER, INTENT(IN   )    ::       ims,ime, jms,jme, kms,kme
  INTEGER, INTENT(IN   )    ::       ips,ipe, jps,jpe, kps,kpe
 
-! Primary inputs and outpus
+! Primary inputs and outputs
  REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN   ) :: total_flashrate   
  REAL, DIMENSION( ims:ime, jms:jme ), INTENT(  OUT) :: ic_flashrate, cg_flashrate
 
@@ -199,7 +199,7 @@
  INTEGER, INTENT(IN   )    ::       ims,ime, jms,jme, kms,kme
  INTEGER, INTENT(IN   )    ::       ips,ipe, jps,jpe, kps,kpe
 
-! Primary inputs and outpus
+! Primary inputs and outputs
  REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) :: total_flashrate   
  REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(  OUT) :: ic_flashrate, cg_flashrate
 
@@ -283,7 +283,7 @@
  INTEGER, INTENT(IN   )    ::       ims,ime, jms,jme, kms,kme
  INTEGER, INTENT(IN   )    ::       ips,ipe, jps,jpe, kps,kpe
 
-! Primary inputs and outpus
+! Primary inputs and outputs
  REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN   ) :: total_flashrate   
  REAL, DIMENSION( ims:ime, jms:jme ), INTENT(  OUT) :: ic_flashrate, cg_flashrate
 

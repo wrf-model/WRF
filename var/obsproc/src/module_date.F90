@@ -35,7 +35,7 @@ CONTAINS
       !  on entry     -  iunit   -  logical unit to output error messages
       
       !  on exit      -  idts    -  the change in time in seconds.
-      !  on exit      -  pass    -  False if input sting is not a date
+      !  on exit      -  pass    -  False if input string is not a date
       
       CHARACTER (LEN=*) , INTENT(INOUT) :: ndate, odate
       INTEGER           , INTENT(OUT)   :: idts
@@ -1142,7 +1142,7 @@ SUBROUTINE geth_idts_2 (ndate, odate, idts, pass, iunit)
       !  on entry     -  iunit   -  logical unit to output error messages
       
       !  on exit      -  idts    -  the change in time in seconds.
-      !  on exit      -  pass    -  False if input sting is not a date
+      !  on exit      -  pass    -  False if input string is not a date
       
       CHARACTER (LEN=*) , INTENT(IN) :: ndate, odate
       INTEGER           , INTENT(OUT)   :: idts

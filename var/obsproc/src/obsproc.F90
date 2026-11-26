@@ -99,8 +99,8 @@ PROGRAM main_obsproc
       CALL get_namelist (trim(nml_filename))
 
 
-! 2.  SET THE MM5 MAP PROJECTION COEFICIENTS
-! ==========================================
+! 2.  SET THE MM5 MAP PROJECTION COEFFICIENTS
+! ===========================================
    
 ! 2.1 Height at model lid
 !     -------------------
@@ -117,8 +117,8 @@ PROGRAM main_obsproc
 !          ", height_max_icao=", height_max_icao,  &
 !          ", ptop=", ptop, ", pis0=", pis0
 
-! 2.2 Map coeficients
-!     ---------------
+! 2.2 Map coefficients
+!     ----------------
 
        CALL setup (domain_check_h, iproj, phic, xlonc, truelat1, truelat2, &
 #ifdef BKG
@@ -219,7 +219,7 @@ PROGRAM main_obsproc
       !  puts duplicate location observations next to each other.
       !  Then, merge the observations to (try to) remove all duplicates and
       !  build composite data.
-      !  Then, sort obervations upon time, type and location
+      !  Then, sort observations upon time, type and location
 
 ! 4.1 Recover the missing pressure based on the observed heights under
 !     hydrostatic assumption or the model reference state.
@@ -312,13 +312,13 @@ PROGRAM main_obsproc
 
          !Otherwise, use ncep value as default
          !write(0,'(/A/A/)') "!!! WARNING *** WARNING *** WARNING *** WARNING !!!", &
-         !"<< NO AFWA OBS ERRORS FILE (obserr.txt) AVAILABE, USE NCEP ERROR AS DEFAULT >>"
+         !"<< NO AFWA OBS ERRORS FILE (obserr.txt) AVAILABLE, USE NCEP ERROR AS DEFAULT >>"
          !CALL obs_err_ncep (max_number_of_obs, obs, number_of_obs)
 
       ENDIF
 
-! 6.  CHECK COMPLETNESS AND QUALITY CONTROL PURELY BASED ON THE OBS DATA
-! ======================================================================
+! 6.  CHECK COMPLETENESS AND QUALITY CONTROL PURELY BASED ON THE OBS DATA
+! =======================================================================
 
 ! 6.1 Vertical consistency check and dry convective adjustment QC
 !     -----------------------------------------------------------
@@ -333,8 +333,8 @@ PROGRAM main_obsproc
       CALL proc_qc2 (max_number_of_obs , obs , number_of_obs, &
                      qc_test_above_lid, print_qc_lid) 
 
-! 6.2 Check completness (Remove levels without data and too low or too high)
-!     ---------------------------------------------------------------------
+! 6.2 Check completeness (Remove levels without data and too low or too high)
+!     ----------------------------------------------------------------------
 
       caption (7*icor+1:7*(icor+1)) = "UNCOMPL"
 

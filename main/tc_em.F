@@ -537,7 +537,7 @@ SUBROUTINE assemble_output ( grid , config_flags , loop , time_loop_max,current_
 
    INTEGER , INTENT(IN)         :: loop , time_loop_max
 
-!These values are in the name list and are avaiable from
+!These values are in the name list and are available from
 !from the config_flags.
    real    :: vmax(max_bogus),vmax_ratio,rankine_lid
    real    :: rmax(max_bogus),stand_lon,cen_lat,ptop_in_pa
@@ -970,7 +970,7 @@ SUBROUTINE tc_bogus(centerlat,stdlon,nproj,truelat1,truelat2,dsm,ew,ns,nz,ptop_i
  IF ( ( x0 .LT. 1. ) .OR. ( x0 .GT. REAL(ew-1) ) .OR. &
               ( y0 .LT. 1. ) .OR. ( y0 .GT. REAL(ns-1) ) ) THEN
          PRINT '(A,I3,A,A,A)','         Storm position is outside the computational domain.'
-         PRINT '(A,2F6.2,A)' ,'         Storm postion: (x,y) = ',x0,y0,'.'
+         PRINT '(A,2F6.2,A)' ,'         Storm position: (x,y) = ',x0,y0,'.'
          stop
  END IF
 
@@ -990,7 +990,7 @@ SUBROUTINE tc_bogus(centerlat,stdlon,nproj,truelat1,truelat2,dsm,ew,ns,nz,ptop_i
  ns_gcntr    = y0  !ns center grid location
 !For right now we are adding 0.5 to the grid location this
 !makes the output of the wrf tc_bogus scheme analogous to the
-!ouput of the MM5 tc_bogus scheme.
+!output of the MM5 tc_bogus scheme.
  ew_gcntr    = x0 + 0.5
  ns_gcntr    = y0 + 0.5
 
@@ -1656,7 +1656,7 @@ END SUBROUTINE tc_bogus
             end do
          end do
 
-!Our indicies are from 2 to ns-2 and ew-2.  This is because out
+!Our indices are from 2 to ns-2 and ew-2.  This is because out
 !map scale factors are not defined for the entire grid.
          do j = 2,ns-2
             do i = 2,ew-2
@@ -1736,7 +1736,7 @@ END SUBROUTINE tc_bogus
                v(i,j) = vin(i,k,j)
             end do
          end do
-!Our indicies are from 2 to ns-2 and ew-2.  This is because out
+!Our indices are from 2 to ns-2 and ew-2.  This is because out
 !map scale factors are not defined for the entire grid.
          do j = 2,ns-2
             do i = 2,ew-2
@@ -2307,7 +2307,7 @@ END SUBROUTINE mass2_Vstag
 !-----------------------------------------------------------------------------------------
 
 !  Background u field.
-!  Subtract the first quess wind field from the original winds.
+!  Subtract the first guess wind field from the original winds.
    do j=1,ns-1
       do k=1,nz
          do i=1,ew
@@ -2444,7 +2444,7 @@ subroutine final_RH(rh2,rh0,rhmx,strmci,strmcj,rmax_nstrm,ew,ns,nz,k00, &
 
      integer :: ew,ns,nz
      real :: rh2(ew-1,nz,ns-1)  !The final output relative humidity.
-     real :: rh0(ew-1,nz,ns-1)  !First quess rh read from the metgrid input file.
+     real :: rh0(ew-1,nz,ns-1)  !First guess rh read from the metgrid input file.
      real :: rhmx(nz)
      real :: ew_gcntr !ew grid center as returned from the map projection routines.
      real :: ns_gcntr !ns grid center as returned from the map projection routines.

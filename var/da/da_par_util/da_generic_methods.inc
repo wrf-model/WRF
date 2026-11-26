@@ -277,7 +277,7 @@ subroutine da_res_generic_alloc_and_set( res_generic, val_index, values)
    !           deallocate pointers to vector data.  In this particular case, 
    !           any vector data allocated here is later passed by reference to 
    !           a global specific object via call to residual_*_from_generic() 
-   !          (called from y_type_insert_sound_global()) and later explictly 
+   !          (called from y_type_insert_sound_global()) and later explicitly
    !           deallocated via call to free_global_*().
    !---------------------------------------------------------------------------
 

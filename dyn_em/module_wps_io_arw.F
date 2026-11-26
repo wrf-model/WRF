@@ -1716,7 +1716,7 @@ subroutine inventory_wrf_binary_file(in_unit,wrf_ges_filename,nrecs, &
 890  continue
      write(a_message,*)' problem in inventory_wrf_binary_file, beginning and ending rec len words unequal'
      CALL wrf_message ( a_message )               
-     write(a_message,*)'     begining reclen =',lensave
+     write(a_message,*)'     beginning reclen =',lensave
      CALL wrf_message ( a_message )               
      write(a_message,*)'       ending reclen =',lenrec
      CALL wrf_message ( a_message )               
@@ -1893,7 +1893,7 @@ subroutine count_recs_wrf_binary_file(in_unit,wrf_ges_filename,nrecs)
 
 890  continue
      write(6,*)' problem in count_recs_wrf_binary_file, beginning and ending rec len words unequal'
-     write(6,*)'     begining reclen =',lensave
+     write(6,*)'     beginning reclen =',lensave
      write(6,*)'       ending reclen =',lenrec
      close(in_unit)
      call wrf_error_fatal("bad reclen stuff")

@@ -34,8 +34,8 @@
 !    peaut         - collection efficiency
 !    xncr          - maritime cloud in contrast to 3.e8 in tc80
 !    xmyu          - the dynamic viscosity kg m-1 s-1 
-!    dicon         - constant for the cloud-ice diamter
-!    dimax         - limited maximum value for the cloud-ice diamter
+!    dicon         - constant for the cloud-ice diameter
+!    dimax         - limited maximum value for the cloud-ice diameter
 !    pfrz1, pfrz2  - constant in Biggs freezing
 !    qcrmin        - minimum values for qr and qs
 !    ncmin         - minimum value for nc
@@ -371,7 +371,7 @@
 !        semi-lagrangian sedimentation (JH,2010),hong, aug 2009
 !        ==> higher accuracy and efficient at lower resolutions
 !        reflectivity computation from greg thompson, lim, jun 2011
-!        ==> only dignostic, but with removal of too large drops
+!        ==> only diagnostic, but with removal of too large drops
 !        add hail option from afwa, aug 2014 
 !        ==> switch graupel or hail by changing no, den, fall vel.
 !        effetive radius of hydrometeors, bae from kiaps, jan 2015
@@ -384,7 +384,7 @@
 !        bug fix hydrometeros update before condensation process of rain,
 !           bae from kiaps, oct2017
 !        bug fix in snow melting and autoconversion.
-!        ==> Revisions enchance melting and autoconverison.
+!        ==> Revisions enhance melting and autoconverison.
 !           hong from noaa, july 2023 
 !        remedy for tiny nc in the presence of qc (nc = xncr, 300/cm**3)
 !        ==> prevents the crash in computing autoconversion
@@ -1264,7 +1264,7 @@
 !
 ! - follows the revised ice microphysics processes in HDC
 ! - the processes same as in RH83 and RH84  and LFO behave
-!   following ice crystal hapits defined in HDC, inclduing
+!   following ice crystal hapits defined in HDC, including
 !   intercept parameter for snow (n0s), ice crystal number
 !   concentration (ni), ice nuclei number concentration
 !   (n0i), ice diameter (d)

@@ -52,7 +52,7 @@
     implicit none
     integer, save :: NFRACT = 0, &  !add for fractional cloud:=1, fraction; =0, no
    &                 NAERO  = 0, &  !add for aerosol: =0, no aerosol; = 1, aerosol uniform value included; =2, get data from file
-   &                 NINHO = 0 , &  ! if =0, horizontal homogenious; = 1, inhomogeneous
+   &                 NINHO = 0 , &  ! if =0, horizontal homogeneous; = 1, inhomogeneous
    &                 NINHO_VERT, &
    &                 NPDE   = 2, &  !add for ice crystal size parameterization:
                                     ! =4, para. via IWC & AOD using A-Tran satellite data;
@@ -67,7 +67,7 @@
                                     !nice=0, use old ones (FLIce93);
                                     !nice=1, use new coefficients for ice by Feng; 
                                     !nice=2, use new coefficients by Qing Yue 2006;
-                                    !seperate tropics and midlatitute: nice = 3, tropics; nice = 4, midlat
+                                    !separate tropics and midlatitute: nice = 3, tropics; nice = 4, midlat
     integer, save :: itps(mxac) = 0              ,  & !aerosol type: itps(iac)=1 stands for existing aerosol type iac
    &                 nfraca    = 1               ,  & ! --if nfraca=0, use aerosol types and fractions passed from the driver
                                                       !      nfraca=1, use precribed total AOD, aerosol types and fractions; 
@@ -11821,7 +11821,7 @@ MODULE module_ra_FLG
 !!c       c_inho = 0.8
 !
 !!c--- determine n_group(k), cld_group(k), and area_group(k,1), area_group(k,2)
-!!c--- hight,middle, and low three cloud groups
+!!c--- high,middle, and low three cloud groups
 !        do k=1,ngroup
 !!c       do k=1,3
 !
@@ -12156,7 +12156,7 @@ MODULE module_ra_FLG
 !c       c_inho = 0.8
 
 !c--- determine n_group(k), cld_group(k), and area_group(k,1), area_group(k,2)
-!c--- hight,middle, and low three cloud groups
+!c--- high,middle, and low three cloud groups
       do k=1,ngroup
 !        kl = (k-1)*ngroup + nv1 - nclouds 
         kl = (k-1)*nsubcld + nv1 - nsubcld*ngroup 
@@ -12497,7 +12497,7 @@ MODULE module_ra_FLG
 !!c--- test 0.8
 !!c	c_inho = 0.8
 !!c--- determine n_group(k), cld_group(k), and area_group(k,1), area_group(k,2)
-!!c--- hight,middle, and low three cloud groups
+!!c--- high,middle, and low three cloud groups
 !!c        do k=1,3
 !        do k=1,ngroup
 !!c        kl = (k-1)*3 + 7
@@ -13352,7 +13352,7 @@ MODULE module_ra_FLG
 !c 4. The method is not different in principle from the general scheme of
 !c    Gaussian elimination with backsubstitution, but carefully optimized
 !c    so as to minimize arithmetic operations.  Partial  pivoting is used
-!c    to quarantee  method's numerical stability,  which will  not change
+!c    to guarantee  method's numerical stability,  which will  not change
 !c    the basic pattern of sparsity of the matrix.
 !c 5. Scaling special problems so as to make  its nonzero matrix elements
 !c    have comparable magnitudes, which will ameliorate the stability.
@@ -14340,7 +14340,7 @@ MODULE module_ra_FLG
 !	parameter(nsub=5 ,nfuo=15,nwo=nsub*nfuo)
 !    common /aot_spect_5/  wlo2(5,15) , hkas(5,15) ,sflx (5,15)
 !	parameter(nsub=25,nfuo=15 ,nwo=nsub*nfuo)
-!	common /aot_spect_25/ wlo2(25,15) , hkas(25,15) ,sflx (25,15)  !!! Higer resolution Convolution
+!	common /aot_spect_25/ wlo2(25,15) , hkas(25,15) ,sflx (25,15)  !!! Higher resolution Convolution
       implicit none
       
       integer                    :: irh,itp
@@ -15051,7 +15051,7 @@ MODULE module_ra_FLG
  
         case(3)        ! For AOT_SPLINEFIT
       
-          if ( ifg == 0 ) then ! Find Aerosol weighted collumn mean RH index 
+          if ( ifg == 0 ) then ! Find Aerosol weighted column mean RH index
             rirh=0
             do m =mtop,nv
               rirh = rirh + rhp(m)* tauxxx(m)  !! Aerosol Profile weighted mean RH

@@ -177,7 +177,7 @@ CONTAINS
 !                 SOLOUT FURNISHES THE SOLUTION "Y" AT THE NR-TH
 !                    GRID-POINT "T" (THEREBY THE INITIAL VALUE IS
 !                    THE FIRST GRID-POINT).
-!                 "TOLD" IS THE PRECEEDING GRID-POINT.
+!                 "TOLD" IS THE PRECEDING GRID-POINT.
 !                 "IRTRN" SERVES TO INTERRUPT THE INTEGRATION. IF IRTRN
 !                    IS SET <0, SEULEX RETURNS TO THE CALLING PROGRAM.
 !                 DO NOT CHANGE THE ENTRIES OF RC(LRC),IC(LIC)!
@@ -430,7 +430,7 @@ CONTAINS
       CALL SEULEX_ErrorMsg(-8,Tinitial,ZERO,IERR)
       RETURN
    END IF
-!~~~>   FacRej: Factor to decrease step after 2 succesive rejections
+!~~~>   FacRej: Factor to decrease step after 2 successive rejections
    IF (RCNTRL(6) == ZERO) THEN
       FacRej = 0.1_dp
    ELSEIF (RCNTRL(6) > ZERO) THEN

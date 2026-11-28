@@ -56,7 +56,7 @@ var_scaling12=1.0, 1.0, …, # array with a dimension of 45*max_outer_iterations
                            # of aerosol/gas analysis variables at different
                            # outer loops. Default values are 1 (no inflation).
 
-len_scaling12=1.0, 1.0, …, # arrary with a dimension of 45*max_outer_iterations, 
+len_scaling12=1.0, 1.0, …, # array with a dimension of 45*max_outer_iterations,
                            # inflation factors of chemical background error length scales. 
                            # Default values is 1.
 

@@ -376,7 +376,7 @@ CONTAINS
          volg = (1.0 - mra * fm) * vg
         else
          !..all air pockets are filled with meltwater, now the
-         !.. entire ice sceleton melts homogeneously:
+         !.. entire ice skeleton melts homogeneously:
          volg = (x_g - x_w) / 900.0 + x_w / 1000.
         endif
 

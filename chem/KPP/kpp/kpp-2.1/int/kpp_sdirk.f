@@ -35,7 +35,7 @@ C TOUT - End Time
      &                  WORK,LWORK,IWORK,LIWORK,LRCONT,IDID)
 
       IF (IDID.LT.0) THEN
-        print *,'ATMSDIRK: Unsucessfull exit at T=',
+        print *,'ATMSDIRK: Unsuccessful exit at T=',
      &          TIN,' (IDID=',IDID,')'
       ENDIF
 
@@ -212,7 +212,7 @@ C --------- CONTROL OF LENGTH OF COMMON BLOCK "CONT" -------
          WRITE(6,*)' INSUFF. STORAGE FOR RCONT, MIN. LRCONT=',5*N+2
          ARRET=.TRUE.
       END IF
-C ------ WHEN A FAIL HAS OCCURED, WE RETURN WITH IDID=-1
+C ------ WHEN A FAIL HAS OCCURRED, WE RETURN WITH IDID=-1
       IF (ARRET) THEN
          IDID=-1
          RETURN
@@ -522,7 +522,7 @@ C ---     BAD CONVERGENCE OR NUMBER OF ITERATIONS TO LARGE
             NSOL=NSOL+1
             IF (FACCON*DYNO.GT.FNEWT) GOTO 40
 
-C --- END OF SIMPILFIED NEWTON
+C --- END OF SIMPLIFIED NEWTON
       IF (ISTAGE.EQ.1) THEN
           DO I=1,N
             Z1(I) = Z(I)

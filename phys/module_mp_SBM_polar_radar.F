@@ -91,7 +91,7 @@ real, parameter, dimension(nfws(5)) :: fws_hail=(/(1.0/(nfws(5)-1)*(i-1),i=1,nfw
 
 ! JCS - Array of wavelengths used in the polarimetric emulator/polar_hucm.F90
 ! Wavelengths should be in units of cm. The number of wavelengths must match the
-! number of filesnames and the size of the FILENAMES array
+! number of filenames and the size of the FILENAMES array
 INTEGER,parameter :: nwavelengths = 1
 DOUBLE PRECISION :: WAVELENGTH1, WAVELENGTH2, WAVELENGTH3
 DOUBLE PRECISION, DIMENSION(3),parameter :: WAVELENGTHS = (/11.0D0, 5.5D0, 3.2D0/)
@@ -448,7 +448,7 @@ END MODULE scatt_tables
 ! +----------------------------------------------------------------------------+
 MODULE module_mp_SBM_polar_radar
 
-! Kind paramater
+! Kind parameter
 INTEGER, PARAMETER, PRIVATE:: R8SIZE = 8
 INTEGER, PARAMETER, PRIVATE:: R4SIZE = 4
 
@@ -1482,7 +1482,7 @@ public polar_hucm
 
       !implicit double precision (a-h,o-z)
        implicit none
-! ### INterface
+! ### Interface
 	  double precision :: den_bulk
       complex(8) :: dc_ice, dc_snow, ratc ! ### [KS] : complex(8)
 ! ### Interface
@@ -1768,7 +1768,7 @@ public polar_hucm
 ! ### Interface
  	  double precision :: wl, fd_mass, den_bulk, fract_mass_water
       complex(8) :: dc_water,dc_ice,dc_wet,num,denum,f_a,f_b,f_a0,f_b0
-! ### INterfcae
+! ### Interface
 
       double precision, parameter :: pi = 3.14159265D0, den_water = 1.0d0, den_ice = 0.91d0
 	  double precision :: degree, dd_dry, aspect_dry, aspect, aspect2, dd_melt, fvw, aspect_melt, dd, rp, &
@@ -1999,7 +1999,7 @@ public polar_hucm
 ! JCS -- Modified list of arguments and equation for dd.  Now, dc_wet_inner
 ! represents the dc of the inner spongy 'layer', whereas dc_wet represents the
 ! dc for the entire particle. We need both because the t_matrix scattering
-! subroutine still assume a homogeneous mixture; in contast, the two-layer
+! subroutine still assume a homogeneous mixture; in contrast, the two-layer
 ! Rayleigh calculations work on the spongy inner layer, for which dc_wet_inner
 ! is used.
       subroutine calc_scattering_grau2 &

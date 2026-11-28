@@ -1,4 +1,4 @@
-! This subrouting includs the data structure and tools used for NHDPlus network mapping.
+! This subrouting includes the data structure and tools used for NHDPlus network mapping.
 module module_UDMAP
 
   use config_base, only: nlst
@@ -50,7 +50,7 @@ integer, allocatable, dimension(:) :: bufi,bufj
 
 contains
     subroutine UDMP_ini(nlinksl,ixrt,jxrt,rtmask, OVRTSWCRT, SUBRTSWCRT,cell_area)
-!This is the driver for user defined mapping file funciton application.
+!This is the driver for user defined mapping file function application.
         integer :: ixrt, jxrt, OVRTSWCRT, SUBRTSWCRT, nlinksl
         integer, intent(in), dimension(ixrt,jxrt):: rtmask
         integer :: npid    !local variable.
@@ -358,7 +358,7 @@ contains
         enddo
 
 
-! maping grid_i, grid_j and weight
+! mapping grid_i, grid_j and weight
         kk = 0
         m  = 1
         c  = 1
@@ -464,7 +464,7 @@ contains
           if(ivar .ne. 0) then
                write(6,*) "Read Variable Error file: ",trim(fileName)
                write(6,*) "Read Error: could not find ",trim(var_name)
-               call hydro_stop("In get1d_real8() - failed to read netcdf varialbe name. ")
+               call hydro_stop("In get1d_real8() - failed to read netcdf variable name. ")
           end if
           iret = nf_get_var_double(ncid, varid, out_buff)
           iret = nf_close(ncid)

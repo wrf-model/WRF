@@ -64,7 +64,7 @@ contains
   !--------------------------------------------------------------------------------------------------------------!
   !--------------------------------------------------------------------------------------------------------------!
   !.. This subroutine currently reads in the ice-cloud collection,
-  !.. ice-rain collecion, gamma calculations, and inherent growth ratio 
+  !.. ice-rain collection, gamma calculations, and inherent growth ratio
   !.. data lookup tables and calculates the ice-ice aggregation lookup table. 
 
   subroutine jensen_ishmael_init
@@ -321,7 +321,7 @@ contains
     integer, parameter :: ICE3 = 3 !.. Aggregates
 
   !.. Use tile locations for our variables
-  !.. Make everthing 1D for our loop
+  !.. Make everything 1D for our loop
   !.. These variables go in and out of newmicro
     real, dimension(kts:kte) ::                    &  
          th1d, qv1d, qc1d, qr1d, nr1d, p1d, dz1d,  &
@@ -576,7 +576,7 @@ contains
   !.. Local variables for Aggregation
     real :: dn1, dn2, dn3, phiagg1, phiagg2, phiagg3
 
-  !.. Fall speeds (some not used) and effectice ice radius variables
+  !.. Fall speeds (some not used) and effective ice radius variables
     real, dimension(kts:kte) :: vtrm, vtrn, vtrmc, vtrnc, nc
     real, dimension(cat, kts:kte) :: vtrni1, effi, vtrmi1, vtrzi1
 
@@ -866,7 +866,7 @@ contains
 
   !.. Inherent growth ratio data from Lamb and Scott 1972 and Chen and Lamb 1994
   !.. Assumes planar particles at temperatures below -20C (see Bailey and Hallett)
-  !.. Function of temperature only (thanks to JHY and GHB for moving this fuction to where it belongs)        
+  !.. Function of temperature only (thanks to JHY and GHB for moving this function to where it belongs)
           igr = get_igr(igrdata, temp)
           if((temp-T0).lt.-20.) then
              igr=0.7
@@ -1115,7 +1115,7 @@ contains
                 
   !--------------------------------------------------------------------------------------------------------------!
   !--------------------------------------------------------------------------------------------------------------!
-  !.. Inital volume, iwc, #/m^3 for vapor growth
+  !.. Initial volume, iwc, #/m^3 for vapor growth
                 gamma_arg = NU+2.+deltastr(cc)
                 gi=MIN((MAX((NINT((gamma_arg*100000.)-355000+1)),1)),505001)
 
@@ -1268,7 +1268,7 @@ contains
                    
                 endif !.. End ice-rain rime density calculation
              
-  !.. Caculate the volume after riming
+  !.. Calculate the volume after riming
                 gamma_arg = NU+2.+deltastr(cc)
                 gi=MIN((MAX((NINT((gamma_arg*100000.)-355000+1)),1)),505001)
                 vfr = fourthirdspi*rnfr**3*gamma_tab(gi)*i_gammnu
@@ -1325,8 +1325,8 @@ contains
                          cnfr = phifr*anfr*gammnu/gamma_tab(gi)
                       endif
 
-  !.. For long time steps, riming can cause oblate ice to become prolate or vise versa
-  !.. This prevents that from occuring
+  !.. For long time steps, riming can cause oblate ice to become prolate or vice versa
+  !.. This prevents that from occurring
                       if(phibr.le.1..and.phifr.gt.1.) then
                          phifr = 0.99
                          gamma_arg = NU-1.+deltastr(cc)
@@ -1405,7 +1405,7 @@ contains
                    cmlt(cc) = amlt(cc)*cni(cc)/ani(cc)*(1.+(2.*deltastr(cc)))/(2.+deltastr(cc))
 
                 endif
-             enddo    !.. End the loop over ice speices
+             enddo    !.. End the loop over ice species
           endif       !.. End if ice
           
   !--------------------------------------------------------------------------------------------------------------!
@@ -1867,7 +1867,7 @@ contains
              ci(cc,k) = max(ci(cc,k),QASMALL)
              
   !.. If vapor growth of ice is going to cause
-  !.. subsaturated condtions, reduce vapor growth
+  !.. subsaturated conditions, reduce vapor growth
   !.. rates (done above) and rediagnose the axes
              if(vgflag.and.qi(cc,k).gt.QSMALL) then
                 alphstr=ao**(1.-deltastr(cc))
@@ -1952,7 +1952,7 @@ contains
                    qi(cc,k)=0.
                 endif
                 
-  !.. Keep everyting in bounds after melting
+  !.. Keep everything in bounds after melting
                 if(qi(cc,k).gt.QSMALL) then
                    ni(cc,k)=max(ni(cc,k),QNSMALL)
                    ai(cc,k)=max(ai(cc,k),QASMALL)
@@ -2197,7 +2197,7 @@ contains
   !.. Assume constant density/delta*, loss of mass and number
 
   !..With the new delta* and density after nucleation re-diagnose a and c           
-  !..Use the old density and deltastr for loss values e.g. q1 = q1 - (transfered to q2)
+  !..Use the old density and deltastr for loss values e.g. q1 = q1 - (transferred to q2)
 
                 alphstr=ao**(1.-deltastr(cc))
                 alphv=fourthirdspi*alphstr
@@ -2563,7 +2563,7 @@ contains
   !--------------------------------------------------------------------------------------------------------------!
   !--------------------------------------------------------------------------------------------------------------!
   !.. Determine the ice radiative properties 
-  !.. For simlicity this is 
+  !.. For simplicity this is
   !.. Planar ice:   integral of a^2c / integral of a^2
   !.. Columnar ice: integral of a^2c / integral of a*c
 
@@ -3850,7 +3850,7 @@ contains
 
   !--------------------------------------------------------------------------------------------------------------!
   !--------------------------------------------------------------------------------------------------------------!
-  !.. Aggregation routine (see Jensen et al. 2017, implentation by JYH and AAJ)
+  !.. Aggregation routine (see Jensen et al. 2017, implementation by JYH and AAJ)
   !.. See Walko et al. 1995 and Meyers et al. 1997 for more details
   subroutine aggregation(dtdum,rhoairdum,tempdum,qdum1,ndum1,ddum1,qdum2,ndum2,ddum2, &
        qdum3,ndum3,ddum3,rhodum1,rhodum2,phidum1,phidum2,coltab,coltabn,              &
@@ -3937,7 +3937,7 @@ contains
     rictmax=0.9999*float(ndn)
     
   !.. Collection integral multipliers for number and mass mixing ratio loss                                 
-  !.. due to self collection from a cateogry. Multipliers for the gain term                                 
+  !.. due to self collection from a category. Multipliers for the gain term
   !.. for aggregates given as well. Below this are the multipliers for                                      
   !.. cross collection. These should be correct but a more detailed                                         
   !.. mathematical treatment is warranted. JYH Sept 2016.                                                   
@@ -3967,7 +3967,7 @@ contains
   !.. collection routine                                                                                    
   !.. nz = # vertical levels                                                                                
   !.. kp1 = lowest level with cloud                                                                         
-  !.. kp2 = higest level with cloud                                                                         
+  !.. kp2 = highest level with cloud
   !.. 3 => the first is the collector                                                                       
   !.. 3 => the second is the collectee                                                                      
   !.. 5 => where the collection goes (aggregates)                                                           

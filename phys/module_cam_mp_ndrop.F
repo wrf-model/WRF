@@ -1238,10 +1238,10 @@ old_cloud_nsubmix_loop: &
 !            number mode radius (m)
 !           write(iulog,*)'alogsig,volc,na=',alogsig(m),volc(m),na(m)
             amcube(m)=(3.*volume(m)/(4.*pi*exp45logsig(m)*na(m)))  ! only if variable size dist
-!           growth coefficent Abdul-Razzak & Ghan 1998 eqn 16
+!           growth coefficient Abdul-Razzak & Ghan 1998 eqn 16
 !           should depend on mean radius of mode to account for gas kinetic effects
 !           see Fountoukis and Nenes, JGR2005 and Meskhidze et al., JGR2006
-!           for approriate size to use for effective diffusivity.
+!           for appropriate size to use for effective diffusivity.
             g=1._r8/(rhoh2o/(diff0*rhoair*qs)                                    &
               +latvap*rhoh2o/(conduct0*tair)*(latvap/(rh2o*tair)-1._r8))
             sqrtg(m)=sqrt(g)

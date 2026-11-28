@@ -3036,7 +3036,7 @@ cycle
          END IF
       END DO
 
-      !  Find the bin for the maximimum value of the original data.
+      !  Find the bin for the maximum value of the original data.
 
       bin_orig = -1
       bin_loop_orig : DO ib = 1 , num_special_bins
@@ -3050,7 +3050,7 @@ cycle
          END DO cat_loop_orig
       END DO bin_loop_orig
 
-      !  Find the bin for the maximimum value of the aggregated data.
+      !  Find the bin for the maximum value of the aggregated data.
 
       bin_work = -1
       bin_loop_work : DO ib = 1 , num_special_bins

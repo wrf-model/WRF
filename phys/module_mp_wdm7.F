@@ -39,13 +39,13 @@ MODULE module_mp_wdm7
    REAL, PARAMETER, PRIVATE :: lamdasmax = 1.e5   ! limited maximum value for slope parameter of snow
    REAL, PARAMETER, PRIVATE :: lamdagmax = 6.e4   ! limited maximum value for slope parameter of graupel 
    REAL, PARAMETER, PRIVATE :: lamdahmax = 2.e4   ! limited maximum value for slope parameter of hail
-   REAL, PARAMETER, PRIVATE :: dicon = 11.9       ! constant for the cloud-ice diamter
-   REAL, PARAMETER, PRIVATE :: dimax = 500.e-6    ! limited maximum value for the cloud-ice diamter
+   REAL, PARAMETER, PRIVATE :: dicon = 11.9       ! constant for the cloud-ice diameter
+   REAL, PARAMETER, PRIVATE :: dimax = 500.e-6    ! limited maximum value for the cloud-ice diameter
    REAL, PARAMETER, PRIVATE :: n0s = 2.e6         ! temperature dependent intercept parameter snow 
    REAL, PARAMETER, PRIVATE :: alpha = .12        ! .122 exponen factor for n0s
    REAL, PARAMETER, PRIVATE :: pfrz1 = 100.       ! constant in Biggs freezing
    REAL, PARAMETER, PRIVATE :: pfrz2 = 0.66       ! constant in Biggs freezing
-   REAL, PARAMETER, PRIVATE :: qcrmin = 1.e-9     ! minimun values for qr, qs, and qg 
+   REAL, PARAMETER, PRIVATE :: qcrmin = 1.e-9     ! minimum values for qr, qs, and qg
    REAL, PARAMETER, PRIVATE :: ncmin = 1.e1       ! minimum value for Nc 
    REAL, PARAMETER, PRIVATE :: nrmin = 1.e-2      ! minimum value for Nr
    REAL, PARAMETER, PRIVATE :: eacrc = 1.0        ! Snow/cloud-water collection efficiency
@@ -384,7 +384,7 @@ CONTAINS
 !        The code was first implemented in WRF in v4.1
 !        Further Development:
 !        bug fix in snow melting and autoconversion.
-!        ==> Revisions enchance melting and autoconverison.
+!        ==> Revisions enhance melting and autoconverison.
 !           hong from noaa, july2023
 !        remedy for tiny nc in the presence of qc (nc = xncr, 300/cm**3)
 !        ==> prevents the crashed in computing autoconversion
@@ -1321,7 +1321,7 @@ CONTAINS
 !
 ! - follows the revised ice microphysics processes in HDC
 ! - the processes same as in RH83 and RH84  and LFO behave
-!   following ice crystal hapits defined in HDC, inclduing
+!   following ice crystal hapits defined in HDC, including
 !   intercept parameter for snow (n0s), ice crystal number
 !   concentration (ni), ice nuclei number concentration
 !   (n0i), ice diameter (d)

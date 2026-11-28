@@ -288,7 +288,7 @@
 	iodestatus_count(6) = iodestatus_count(6) + 1
 
 !   compute rate constants
-!   transfer/map incoming photolysis rate contants to local array
+!   transfer/map incoming photolysis rate contents to local array
       call gasphotoconstants( rk_photo,   &
 	    i_boxtest_units_convert,               &
 	    it,jt,kt, ims,ime, jms,jme, kms,kme,   &

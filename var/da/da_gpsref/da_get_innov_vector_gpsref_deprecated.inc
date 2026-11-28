@@ -403,7 +403,7 @@ end if
       if (.not. anal_type_verify) then
             do k=1, iv%info(gpsref)%levels(n)
 
-               ! incremetal refractivity or the relative error:
+               ! incremental refractivity or the relative error:
                !   abs[(O-B)/{(O+B)/2}]              (Lidia Cucurull 2005)
 
                ntotal = ntotal + 1

@@ -412,7 +412,7 @@ if ( substr($vv,0,5)  eq "grid%" ) {
           $r[9] = uc $r[9] ;
           $r[10] =~ s/`/ /g ;
           $r[10] = uc $r[10] ;
-	  print "**  Registry Definition: <class> $r[0] <type> $r[1] <varname> ", uc $r[2]," <decription> \"$r[9]\" <units> \"$r[10]\"\n"
+	  print "**  Registry Definition: <class> $r[0] <type> $r[1] <varname> ", uc $r[2]," <description> \"$r[9]\" <units> \"$r[10]\"\n"
 	}
       }
     }

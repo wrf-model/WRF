@@ -362,7 +362,7 @@
       subroutine modal_aero_kohler(   &
           rdry_in, hygro, s, rwet_out, im, imx )
 
-! calculates equlibrium radius r of haze droplets as function of
+! calculates equilibrium radius r of haze droplets as function of
 ! dry particle mass and relative humidity s using kohler solution
 ! given in pruppacher and klett (eqn 6-35)
 

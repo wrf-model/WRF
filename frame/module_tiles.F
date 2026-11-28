@@ -359,7 +359,7 @@ CONTAINS
           num_tiles = num_tiles_x * num_tiles_y
        ELSE
          IF ( num_tiles_x >= 1 .or. num_tiles_y >= 1 ) THEN
-        ! adjust num_tiles_? if several ones are omited
+        ! adjust num_tiles_? if several ones are omitted
            IF ( num_tiles_x >= 1 .and. num_tiles_y >= 1 ) THEN
               !adjust num_tiles
                num_tiles=num_tiles_x*num_tiles_y;
@@ -461,7 +461,7 @@ CONTAINS
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! this version sets the tiles based on a passed in integer mask
-! the assumption here is that the mask is relatively straigthforward
+! the assumption here is that the mask is relatively straightforward
 ! and coverable with 2 or three rectangles. No weird stuff...
 
   SUBROUTINE set_tiles3 ( grid , imask, ims, ime, jms, jme, ips, ipe, jps, jpe )

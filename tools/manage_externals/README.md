@@ -153,7 +153,7 @@ The root of the source tree will be referred to as `${SRC_ROOT}` below.
 
     Note: 'externals_only' will only process the external's own
     external description file without trying to manage a repository
-    for the component. This is used for retreiving externals for
+    for the component. This is used for retrieving externals for
     standalone components like cam and clm. If the source root of the
     externals_only component is the same as the main source root, then
     the local path must be set to '.', the unix current working
@@ -222,7 +222,7 @@ The root of the source tree will be referred to as `${SRC_ROOT}` below.
     See the "SPARSE CHECKOUT" section of https://git-scm.com/docs/git-read-tree
     Default: sparse checkout is disabled
 
-  * Lines begining with '#' or ';' are comments and will be ignored.
+  * Lines beginning with '#' or ';' are comments and will be ignored.
 
 # Obtaining this tool, reporting issues, etc.
 

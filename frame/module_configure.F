@@ -184,7 +184,7 @@ CONTAINS
 #  include "namelist_defaults.inc"
 
 #if (DA_CORE == 1)
-! Override the default values, because we can not assigned a arrary with different values in registry.
+! Override the default values, because we can not assigned a array with different values in registry.
 
       as1(1:3) = (/ 0.25, 1.0, 1.5 /)
       as2(1:3) = (/ 0.25, 1.0, 1.5 /)
@@ -504,7 +504,7 @@ CONTAINS
 
         READ   ( UNIT = nml_read_unit , NML = dynamics , iostat=nml_error )
 
-        IF ( nml_error .EQ. 0 ) then    ! Successul, rm variables must be problem
+        IF ( nml_error .EQ. 0 ) then    ! Successful, rm variables must be problem
            CALL wrf_debug(0, "-- Are pd_moist, pd_chem, pd_tke, or pd_scalar still in your "// &
                                TRIM(nml_name)//" namelist?")
            CALL wrf_debug(0, "-- Replace them with moist_adv_opt, chem_adv_opt, tke_adv_opt "// &
@@ -516,7 +516,7 @@ CONTAINS
 
         READ   ( UNIT = nml_read_unit , NML = physics , iostat=nml_error )
 
-        IF ( nml_error .EQ. 0 ) then    ! Successul, rm variables must be problem
+        IF ( nml_error .EQ. 0 ) then    ! Successful, rm variables must be problem
            CALL wrf_debug(0, "-- Is ucmcall still in your "// TRIM(nml_name)//" namelist?")
            CALL wrf_debug(0, "-- Replace it with sf_urban_physics")
         ENDIF
@@ -526,7 +526,7 @@ CONTAINS
 
         READ   ( UNIT = nml_read_unit , NML = fdda , iostat=nml_error )
 
-        IF ( nml_error .EQ. 0 ) then    ! Successul, rm variables must be problem
+        IF ( nml_error .EQ. 0 ) then    ! Successful, rm variables must be problem
            CALL wrf_debug(0, "-- Is obs_nobs_prt still in your "// TRIM(nml_name)//" namelist?")
            CALL wrf_debug(0, "-- Replace it with obs_prt_max")
         ENDIF
@@ -536,7 +536,7 @@ CONTAINS
 
         READ   ( UNIT = nml_read_unit , NML = wrfvar1 , iostat=nml_error )
 
-        IF ( nml_error .EQ. 0 ) then    ! Successul, rm variables must be problem
+        IF ( nml_error .EQ. 0 ) then    ! Successful, rm variables must be problem
            CALL wrf_debug(0, "-- Are global, print_detail_airep, print_detail_timing still in your "// &
                               TRIM(nml_name)//" namelist?")
            CALL wrf_debug(0, "-- Remove global, print_detail_airep, print_detail_timing "// &
@@ -548,7 +548,7 @@ CONTAINS
 
         READ   ( UNIT = nml_read_unit , NML = wrfvar2 , iostat=nml_error )
 
-        IF ( nml_error .EQ. 0 ) then    ! Successul, rm variables must be problem
+        IF ( nml_error .EQ. 0 ) then    ! Successful, rm variables must be problem
            CALL wrf_debug(0, "-- Are write_qcw, write_qrn, write_qci, write_qsn, write_qgr, "// &
                              "write_filtered_obs still in your "// &
                               TRIM(nml_name)//" namelist?")
@@ -561,7 +561,7 @@ CONTAINS
 
         READ   ( UNIT = nml_read_unit , NML = wrfvar4 , iostat=nml_error )
 
-        IF ( nml_error .EQ. 0 ) then    ! Successul, rm variables must be problem
+        IF ( nml_error .EQ. 0 ) then    ! Successful, rm variables must be problem
            CALL wrf_debug(0, "-- Is use_3dvar_phy or use_eos_radobs still in your "// &
                               TRIM(nml_name)//" namelist?")
            CALL wrf_debug(0, "-- Remove use_3dvar_phy, use_eos_radobs as they are obsolete.")
@@ -572,7 +572,7 @@ CONTAINS
 
      READ   ( UNIT = nml_read_unit , NML = wrfvar14 , iostat=nml_error )
 
-        IF ( nml_error .EQ. 0 ) then    ! Successul, rm variables must be problem
+        IF ( nml_error .EQ. 0 ) then    ! Successful, rm variables must be problem
            CALL wrf_debug(0, "-- Are use_crtm_kmatrix_fast, spccoeff_file, taucoeff_file, "// &
                              "aerosolcoeff_file, cloudcoeff_file, emiscoeff_file still in your "// &
                               TRIM(nml_name)//" namelist?")
@@ -584,7 +584,7 @@ CONTAINS
 
      READ   ( UNIT = nml_read_unit , NML = wrfvar16 , iostat=nml_error )
 
-        IF ( nml_error .EQ. 0 ) then    ! Successul, rm variables must be problem
+        IF ( nml_error .EQ. 0 ) then    ! Successful, rm variables must be problem
            CALL wrf_debug(0, "-- Is alpha_vertloc still in your "// &
                               TRIM(nml_name)//" namelist?")
            CALL wrf_debug(0, "-- Remove it as it is obsolete.")
@@ -678,7 +678,7 @@ SUBROUTINE set_scalar_indices_from_config ( idomain , dummy2, dummy1 )
 !necessary that these indices be reset each time a different grid is to
 !be computed on.
 !
-!The scalar idices are set according to the particular physics
+!The scalar indices are set according to the particular physics
 !packages -- more specifically in the case of the moisture tracers, microphysics
 !packages -- that are stored for each domain in model_config_rec and
 !indexed by the grid id, passed in as an argument to this routine.  (The

@@ -468,7 +468,7 @@ is_d01 : &
 master_proc : &
       IF( wrf_dm_on_monitor() ) THEN
         write(id_num,'(i3)') 100+id
-        write(message,*) 'upper_bc_init: intializing domain ' // id_num(2:3)
+        write(message,*) 'upper_bc_init: initializing domain ' // id_num(2:3)
         CALL wrf_message( trim(message) )
        
 !---------------------------------------------------------------------
@@ -800,7 +800,7 @@ species_loop : &
       deallocate( lat_interp)
       
       call wrf_message( ' ' )
-      write(message,*) 'upper_bc_init: DONE intialized domain ',id
+      write(message,*) 'upper_bc_init: DONE initialized domain ',id
       call wrf_message( trim(message) )
       call wrf_message( ' ' )
 
@@ -962,7 +962,7 @@ include 'netcdf.inc'
                                      its, ite, jts, jte, kts, kte   )
                                   
 !---------------------------------------------------------------------
-!	... Determine indicies and deltas for transform
+!	... Determine indices and deltas for transform
 !           Note : it is assumed that the latitude and longitude
 !                  arrays are monotonic
 !--------------------------------------------------------------------
@@ -1025,7 +1025,7 @@ include 'netcdf.inc'
      end if
  
 !---------------------------------------------------------------------
-! ... Set interpolation latitude indicies and del_lat
+! ... Set interpolation latitude indices and del_lat
 !---------------------------------------------------------------------
       do j = jts,jend
       do i = its,iend

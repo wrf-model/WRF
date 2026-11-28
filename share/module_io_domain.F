@@ -473,7 +473,7 @@ SUBROUTINE maybe_remove_colons( FileName )
   LOGICAL nocolons
   l = LEN(TRIM(FileName))
 ! do not change first two characters (naive way of dealing with
-! possiblity of drive name in a microsoft path
+! possibility of drive name in a microsoft path
   CALL nl_get_nocolons(1,nocolons)
   IF ( nocolons ) THEN
     DO i = 3, l

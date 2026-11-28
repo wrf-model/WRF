@@ -1,5 +1,5 @@
 module gsi_thinning
-!$$$ subprogram documenation block
+!$$$ subprogram documentation block
 !
 ! abstract:  This module contains code which may be used to selectively
 !            thin satellite data.
@@ -67,7 +67,7 @@ module gsi_thinning
 contains
 
   subroutine makegrids (n,rmesh,ifgat)
-! compute dimention of thinning box
+! compute dimension of thinning box
 ! output (mlat,mlonx,istart_val)
     implicit none
 
@@ -170,7 +170,7 @@ contains
   end subroutine makegrids
 
   subroutine make3grids (n,rmesh, thin_3d, nlev)
-! compute dimention of thinning box
+! compute dimension of thinning box
 ! output (mlat,mlonx,istart_val)
     implicit none
 

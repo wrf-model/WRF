@@ -4,7 +4,7 @@ subroutine da_llxy_default (xlati,xloni,x,y)
    ! Purpose:  calculates the (x,y) location (dot) in the mesoscale grids
    ! -------   from latitudes and longitudes
    !
-   !           for global domain co-ordinates
+   !           for global domain coordinates
    !
    !  input:
    !  -----

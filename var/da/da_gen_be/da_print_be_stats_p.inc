@@ -26,9 +26,9 @@ subroutine da_print_be_stats_p(outunit, ni, nj, nk, num_bins, num_bins2d, bin, &
    integer, intent(in) :: num_bins2d                      ! Number of 2D field bins.
    integer, intent(in) :: bin(1:ni,1:nj,1:nk)             ! Bin assigned to each 3D point.
    integer, intent(in) :: bin2d(1:ni,1:nj)                ! Bin assigned to each 3D point.
-   real, intent(in)    :: regcoeff1(1:num_bins)           ! psi/chi regression cooefficient.
-   real, intent(in)    :: regcoeff2(1:nk,1:num_bins2d)    ! psi/ps regression cooefficient.
-   real, intent(in)    :: regcoeff3(1:nk,1:nk,1:num_bins2d) ! psi/T regression cooefficient.
+   real, intent(in)    :: regcoeff1(1:num_bins)           ! psi/chi regression coefficient.
+   real, intent(in)    :: regcoeff2(1:nk,1:num_bins2d)    ! psi/ps regression coefficient.
+   real, intent(in)    :: regcoeff3(1:nk,1:nk,1:num_bins2d) ! psi/T regression coefficient.
 
    integer             :: k1, k2, i, k, j, b, number      ! Loop counters.
 

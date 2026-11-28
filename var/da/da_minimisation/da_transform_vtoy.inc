@@ -124,7 +124,7 @@ subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, xbx, &
 
       end do
       
-      ! Caculate var4d_bin_rain rainfall
+      ! Calculate var4d_bin_rain rainfall
       if (num_fgat_time > 1 .and. use_rainobs) then
          do nobwin=num_fgat_time, 1, -1
             if ( .not. fgat_rain_flags(nobwin) ) cycle

@@ -44,7 +44,7 @@ C The global variable DDMTYPE distinguishes between:
 C      DDMTYPE = 0 : sensitivities w.r.t. initial values
 C      DDMTYPE = 1 : sensitivities w.r.t. parameters
 C
-C     All the arguments aggree with the KPP syntax.
+C     All the arguments agree with the KPP syntax.
 C
 C  INPUT ARGUMENTS:
 C     y = Vector of:   (1:NVAR) concentrations, followed by
@@ -361,7 +361,7 @@ C ======= Rejected/Accepted Step ============================
  250      CONTINUE
           T = Tplus
 	  IF (.NOT.IsReject) THEN
-	      H = Hnew   ! Do not increase stepsize IF previos step was rejected
+	      H = Hnew   ! Do not increase stepsize IF previous step was rejected
 	  END IF    
           IsReject = .false.
           Naccept = Naccept+1

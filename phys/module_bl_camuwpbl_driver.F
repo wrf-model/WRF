@@ -28,7 +28,7 @@ MODULE module_bl_camuwpbl_driver
   !! and static energy. Separate modules compute                                                          !  
   !!   1. stresses associated with turbulent flow over orography                                          !
   !!      ( turbulent mountain stress )                                                                   !
-  !!   2. eddy diffusivities, including nonlocal tranport terms                                           !
+  !!   2. eddy diffusivities, including nonlocal transport terms                                          !
   !!   3. molecular diffusivities                                                                         ! 
   !!   4. coming soon... gravity wave drag                                                                !  
   !! Lastly, a implicit diffusion solver is called, and tendencies retrieved by                           !
@@ -393,7 +393,7 @@ CONTAINS
              pdel8(  1,kflip)    = dp
              rpdel8(  1,kflip)   = 1.0_r8/dp     ! Reciprocal of pressure difference (1/Pa)     [state%rpdel in CAM]
              zm8(     1,kflip)   = z(i,k,j)-ht(i,j)      ! Height above the ground at the midpoints (m) [state%zm    in CAM]
-             t8(      1,kflip)   = t_phy(i,k,j)  ! Temprature at the mid points (K)             [state%t     in CAM]
+             t8(      1,kflip)   = t_phy(i,k,j)  ! Temperature at the mid points (K)            [state%t     in CAM]
              
              s8(      1,kflip)   = cpair *t8(1,kflip) + gravit*zm8(1,kflip) + phis(1) ! Dry static energy (m2/s2) [state%s in CAM]-Formula tested in vertical_diffusion.F90 of CAM
              qrl8(    1,kflip)   = rthratenlw(i,k,j) * exner(i,k,j) * cpair * dp ! Long Wave heating rate (W/kg*Pa)- Formula obtained from definition of qrlw(pcols,pver) in eddy_diff.F90 in CAM
@@ -499,7 +499,7 @@ CONTAINS
           endif
           
           !-------------------------------------------------------------------------------------!
-          !We are currenly using just water vapour flux at the surface, rest are set to zero
+          !We are currently using just water vapour flux at the surface, rest are set to zero
           !-------------------------------------------------------------------------------------!
           cflx(:pcols,1)   = qfx(i,j) ! Surface constituent flux (kg/m2/s)
           
@@ -662,7 +662,7 @@ CONTAINS
           cloudtnd(:ncol,:pver,:) = ( cloudtnd(:ncol,:pver,:) - cloud(:ncol,:pver,:) ) * rztodt
 
           !! ----------------------------------------------------------- !
-          !! In order to perform 'pseudo-conservative varible diffusion' !
+          !! In order to perform 'pseudo-conservative variable diffusion'!
           !! perform the following two stages:                           !
           !!                                                             !
           !! I.  Re-set (1) 'qvten' by 'qtten', and 'qlten = qiten = 0'  !
@@ -858,7 +858,7 @@ CONTAINS
 
     !This subroutine is based on vertical_diffusion_init of CAM. This subroutine 
     !initializes variables for vertical diffusion subroutine calls. The layout 
-    !is kept similar to the original CAM subroutine to facillitate future adaptations.
+    !is kept similar to the original CAM subroutine to facilitate future adaptations.
     !Called by : physics_init.F
     !Calls: vd_register, cnst_get_ind, wrf_error_fatal,init_eddy_diff,init_tms,init_vdiff 
 !-----------------------------------------------------------------------------------------
@@ -907,7 +907,7 @@ CONTAINS
     ktf   = min(kte,kde-1)
     itf   = min(ite,ide-1)
     
-    !Map CAM veritcal level variables
+    !Map CAM vertical level variables
     pver  = ktf - kts + 1
     pverp = pver + 1
     
@@ -934,7 +934,7 @@ CONTAINS
     !! Initialize molecular diffusivity module                                                  !
     !! Molecular diffusion turned on above ~60 km (50 Pa) if model top is above ~90 km (.1 Pa). !
     !! Note that computing molecular diffusivities is a trivial expense, but constituent        !
-    !! diffusivities depend on their molecular weights. Decomposing the diffusion matric        !
+    !! diffusivities depend on their molecular weights. Decomposing the diffusion matrix        !
     !! for each constituent is a needless expense unless the diffusivity is significant.        !
     !! ---------------------------------------------------------------------------------------- !
     

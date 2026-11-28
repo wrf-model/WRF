@@ -1175,7 +1175,7 @@ program reservoir_unit_tests
             print *, "========================================================================"
         else
             print *, "========================================================================"
-            print *, 'AK RFC Forecasts Pass Throug Fallback Test Failed'
+            print *, 'AK RFC Forecasts Pass Through Fallback Test Failed'
             print *, 'Outflow should be 144.120911'
             print *, 'dynamic_reservoir_type needs to be 1 because reservoir outputs level pool instead of RFC forecast'
             print *, "========================================================================"

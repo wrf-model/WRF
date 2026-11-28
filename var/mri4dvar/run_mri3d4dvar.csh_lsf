@@ -83,7 +83,7 @@ endif
 #               CentOS, commands may not run as your expect, double check 
 #               it before using.
 #
-#               Not fullly test with all platforms, use it at your own risk
+#               Not fully test with all platforms, use it at your own risk
 #
 # jliu@ucar.edu, MMM/NCAR, 01/13/2012
 #

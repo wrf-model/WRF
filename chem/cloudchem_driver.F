@@ -138,7 +138,7 @@
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_scalar ),         &
          INTENT(IN ) ::                                   scalar    !Balwinder.Singh@pnnl.gov: Variables required for CAM-MAM cloud chemistry
 !
-!tendencies:dvmrdt_sv13d,dvmrcwdt_sv13d are the tendencies which are passsed on from the CAM-MAM cloud chemistry
+!tendencies:dvmrdt_sv13d,dvmrcwdt_sv13d are the tendencies which are passed on from the CAM-MAM cloud chemistry
 !           to gasaerexch subroutine in cam_mam_aerchem_driver
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, gas_pcnst_pos ),          &

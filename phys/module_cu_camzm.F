@@ -132,7 +132,7 @@ subroutine zmconv_readnl(nlfile)
 ! WRF_PORT currently uses hard-wired values for the namelist input. The
 ! values could easily be setup to come from the Registry in the future.
 ! The hard-wired values are the defaults for the fv core. They should be
-! verified by somebody knowledgable on the matter.
+! verified by somebody knowledgeable on the matter.
    c0_lnd = 0.0059D0 
    c0_ocn = 0.0450D0 
    ke     = 1.0E-6 
@@ -992,7 +992,7 @@ subroutine zm_conv_evap(ncol,lchnk, &
           evplimit = max(1._r8 - q(i,k)/qsat(i,k), 0._r8)
 
 ! total evaporation depends on flux in the top of the layer
-! flux prec is the net production above layer minus evaporation into environmet
+! flux prec is the net production above layer minus evaporation into environment
           evpprec(i) = ke * (1._r8 - cldfrc(i,k)) * evplimit * sqrt(flxprec(i,k))
 !**********************************************************
 !!          evpprec(i) = 0.    ! turn off evaporation for now
@@ -1313,7 +1313,7 @@ subroutine convtran(lchnk   , &
 
 ! version 3 limit fluxes outside convection to mass in appropriate layer
 ! these limiters are probably only safe for positive definite quantitities
-! it assumes that mu and md already satify a courant number limit of 1
+! it assumes that mu and md already satisfy a courant number limit of 1
                fluxin =  mu(i,kp1)*conu(i,kp1)+ mu(i,k)*min(chat(i,k),const(i,km1)) &
                          -(md(i,k)  *cond(i,k) + md(i,kp1)*min(chat(i,kp1),const(i,kp1)))
                fluxout = mu(i,k)*conu(i,k) + mu(i,kp1)*min(chat(i,kp1),const(i,k)) &
@@ -2687,7 +2687,7 @@ subroutine cldprp(lchnk   , &
 ! The differencing is somewhat strange (e.g. du(i,k)*ql(i,k+1)) but is
 ! consistently applied.
 !    mu, ql are interface quantities
-!    cu, du, eu, rprd are midpoint quantites
+!    cu, du, eu, rprd are midpoint quantities
    do k = pver,msg + 2,-1
       do i = 1,il2g
          rprd(i,k) = 0._r8
@@ -2844,7 +2844,7 @@ subroutine closure(lchnk   , &
    real(r8), intent(in) :: dsubcld(pcols)       ! thickness of subcloud layer
 
    integer, intent(in) :: lcl(pcols)        ! index of lcl
-   integer, intent(in) :: lel(pcols)        ! index of launch leve
+   integer, intent(in) :: lel(pcols)        ! index of launch level
    integer, intent(in) :: jt(pcols)         ! top of updraft
    integer, intent(in) :: mx(pcols)         ! base of updraft
 !
@@ -3276,7 +3276,7 @@ subroutine buoyan_dilute(lchnk   ,ncol    , &
 
 ! LCL dilute calculation - initialize to mx(i)
 ! Determine lcl in parcel_dilute and get pl,tl after parcel_dilute
-! Original code actually sets LCL as level above wher condensate forms.
+! Original code actually sets LCL as level above where condensate forms.
 ! Therefore in parcel_dilute lcl(i) will be at first level where qsmix < qtmix.
 
    do i = 1,ncol ! Initialise LCL variables.
@@ -3412,7 +3412,7 @@ real(r8), intent(out), dimension(pcols,pver) :: tpv   ! Define tpv within this r
 ! loop then we need to dimension sp,atp,mp,xsh2o with ncol.
 
 
-real(r8) tmix(pcols,pver)        ! Tempertaure of the entraining parcel.
+real(r8) tmix(pcols,pver)        ! Temperature of the entraining parcel.
 real(r8) qtmix(pcols,pver)       ! Total water of the entraining parcel.
 real(r8) qsmix(pcols,pver)       ! Saturated mixing ratio at the tmix.
 real(r8) smix(pcols,pver)        ! Entropy of the entraining parcel.

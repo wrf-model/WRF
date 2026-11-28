@@ -84,17 +84,17 @@ CONTAINS
 !                          physics in the WRF-ARW. Journal of Applied Meteorology and Climatology, 49, 760-774. 
 ! REVISION HISTORY:
 !     AX     4/2005  - developed the initial WRF version based on the MM5 PX LSM
-!     RG     2/2008  - Completed testing of the intial working version of PX LSM, released in WRFV3.0 early 2008
+!     RG     2/2008  - Completed testing of the initial working version of PX LSM, released in WRFV3.0 early 2008
 !     DW     8/2011  - Landuse specific versions of PX (USGS/NLCD/MODIS) were unified into a single code with
 !                      landuse characteristics defined in module_sf_pxsfclay.F.
 !     RG     12/2011 - Basic code clean, removed commented out debug statements, lined up columns, etc.
 !     RG     01/2012 - Removed FIRSTIME Logic that computes PX Landuse characteristics at first time step only. This resulted 
 !                      in different solutions when OpenMP was used and would not work with moving domains.
 !     RG     08/2012 - Added CURR_SECS variable in argument list as replacement for PX internal CURRTIME internally comp var.
-!                      This is neccessary for PX to correctly interpolate analyses for soil nudging. In this same calculation
+!                      This is necessary for PX to correctly interpolate analyses for soil nudging. In this same calculation
 !                      logic was added for cases where user does not specify the analysis interval, or no analysis interval is
 !                      relevant as in the no PX soil nudging via namelist (pxlsm_soil_nudge = 0). Prior to this fix the default
-!                      analysis interval was zero, so if not speficied a divide by zero was the result. Also, changes were made to 
+!                      analysis interval was zero, so if not specified a divide by zero was the result. Also, changes were made to
 !                      ensure PX LSM will work with not only MODIS and USGS, but also both the 40 and 50 class NLCD-MODIS data.
 !                      Also, coupled module_sf_pxlsm_data.F was updated so landuse characteristics across datasets are more
 !                      consistent. Albedo for NLCD two grassland categories were lowered from 23 and 25 to 18 and 19.
@@ -164,7 +164,7 @@ CONTAINS
 
 !-- SMOIS        total soil moisture content (volumetric fraction)
 !-- TSLB         soil temp (k)
-!-- MAVAIL       Moisture availibility of soil
+!-- MAVAIL       Moisture availability of soil
 !-- TA2          2-m temperature
 !-- QA2          2-m mixing ratio
 
@@ -184,8 +184,8 @@ CONTAINS
 !-- VEGF_PX      Veg fraction recomputed and used by PX LSM
 !-- ISLTYP       Soil type
 
-!-- RA           Aerodynamic resistence			
-!-- RS           Stomatal resistence			
+!-- RA           Aerodynamic resistance
+!-- RS           Stomatal resistance
 !-- LAI          read in Leaf area index (weighted according to fractional landuse)
 !-- ZNT          rougness length
 !-- QSFC         Sat. water vapor mixing ratio at the surface interface
@@ -228,7 +228,7 @@ CONTAINS
 
 !-- T2OBS             Analysis temperature interpolated from prior and next in time analysese
 !-- Q2OBS             Analysis moisture interpolated from prior and next in time analysese
-!-- PXLSM_SMOIS_INIT  Flag to intialize deep soil moisture to a value derived from moisture availiability.
+!-- PXLSM_SMOIS_INIT  Flag to initialize deep soil moisture to a value derived from moisture availability.
 !-- PXLSM_SOIL_NUDGE  Flag to use soil moisture and temperature nudging in the PX LSM
 !                     This is typically done for the first simulation.
 !-- pxlsm_modis_veg   Use MODIS vegetation option: 1 yes, 0 no
@@ -445,7 +445,7 @@ CONTAINS
           ELSE
             ISLTYP(I,J) = 14                    ! STATSGO type for water
 
-            !-- aded for MODIS model
+            !-- added for MODIS model
             FWWLT = 0.1
             FWFC = 1.0
             FWSAT = 1.0
@@ -457,7 +457,7 @@ CONTAINS
 
           ENDIF
 
-          !-- aded for MODIS model
+          !-- added for MODIS model
           WWLT_PX(I,J) = FWWLT
           WFC_PX(I,J) = FWFC
           WSAT_PX(I,J) = FWSAT
@@ -484,7 +484,7 @@ CONTAINS
           WR     = 1.0E-3*CANWAT(I,J)                 ! convert CANWAT from mm to m for PXLSM
           THETA1 = TH3D(i,1,j)                        ! potential temp at first layer
           SNOBS  = SNOW(I,J)                          ! Set snow cover to existing model value
-                                                      !   this is overwritten below if snow analysis is availiable
+                                                      !   this is overwritten below if snow analysis is available
                                                       !   otherwise snow cover remains constant through simulation
                    
           IF(PXLSM_SOIL_NUDGE .EQ. 1) THEN                   
@@ -593,7 +593,7 @@ CONTAINS
           !-------------------------------------------------------------
 
 
-          SOLDN  = GSW(I,J) / (1.0 - ALBEDO(I,J))     ! downward shortwave radiaton
+          SOLDN  = GSW(I,J) / (1.0 - ALBEDO(I,J))     ! downward shortwave radiation
           ISNOW = SNOWC(I,J)
 
 
@@ -666,7 +666,7 @@ CONTAINS
           RAW         = RA(I,J) + 4.503 / USTAR
           QSFC(I,J)   = QFX(I,J) * RAW / DENS1 + QV1
           
-       ENDDO !  END MIAN I LOOP
+       ENDDO !  END MAIN I LOOP
       ENDDO  !  END MAIN J LOOP
       
 !------------------------------------------------------
@@ -826,7 +826,7 @@ CONTAINS
           XALB(I,J)   = 0.0                                                            
           XSNOALB(I,J)= 0.0                                                            
 
-          ! Code that may be needed in case these arrays are not intialized
+          ! Code that may be needed in case these arrays are not initialized
           ! with zero by real.exe when not defined by GEOGRID or present 
           ! in met_em* files
           !IMPERV(I,J) = AMAX1(0.0001,IMPERV(I,J))                                                           
@@ -838,7 +838,7 @@ CONTAINS
 
       DO J = jts,jte
         DO I = its,ite
-          !-- Initialize 2 and 3-D veg parameters to be caculated
+          !-- Initialize 2 and 3-D veg parameters to be calculated
           DO K=1,NLCAT
             LAIMX(K) = LAI0(K)                                                       
             LAIMN(K) = LAIMN0(K)                                                   
@@ -1010,7 +1010,7 @@ CONTAINS
           ENDIF
 
           !-- Compute wetlands fraction for proper MMLUIN data set
-          !-- Note: if LU categories change, these hard coded indicies must be updated
+          !-- Note: if LU categories change, these hard coded indices must be updated
           IF (LAND_USE_TYPE == 'USGS') THEN
             WETFRA(I,J)  = LANDUSEF(I,17,J)+LANDUSEF(I,18,J)
           ELSE IF (LAND_USE_TYPE == 'USGS28') THEN
@@ -1030,7 +1030,7 @@ CONTAINS
           XALB(I,J)   = XALB(I,J) * 0.01
           XSNOALB(I,J)= XSNOALB(I,J) * 0.01
         
-          !-------Adjustment according to CANFRA and IMPERV fo NLCD40 only -----------
+          !-------Adjustment according to CANFRA and IMPERV for NLCD40 only -----------
           FIMP = IMPERV(I,J) * 0.01
           FCAN = CANFRA(I,J) * 0.01
           IF (LAND_USE_TYPE == 'NLCD40') THEN
@@ -1086,11 +1086,11 @@ CONTAINS
 !    LWDN:    LONG-WAVE RADIATION
 !    EMISSI:  EMISSIVITY
 !    Z1:      HEIGHT OF THE LOWEST HALF LAYER
-!    MOL:     MONIN-OBUKOV LENGH (M)
+!    MOL:     MONIN-OBUKOV LENGTH (M)
 !    ZNT:     ROUGHNESS LENGTH (M)
 !    UST:     FRICTION VELOCITY (M/S)
 !    TST:     Turbulent moisture scale
-!    RA:      AERODYNAMIC RESISTENCE
+!    RA:      AERODYNAMIC RESISTANCE
 !    PSURF:   P AT SURFACE (CB)
 !    DENS1:   AIR DENSITY AT THE FIRST HALF LAYER
 !    QV1:     Air humidity at first half layer
@@ -1111,7 +1111,7 @@ CONTAINS
 !    WETFRA:  Fraction of Wetlands area 
 !    THZ1OB:  Observed TEMP FROM ANAL OF OBS TEMPS AT SCREEN HT
 !    RHOBS:   Observed relative humidity at SCREEN HT
-!    RSTMIN   Minimum Stomatol resistence
+!    RSTMIN   Minimum Stomatol resistance
 !... Outputs from SURFPX
 !    RADNET: Net radiation
 !    HFX:    SENSIBLE HEAT FLUX (W / M^2)
@@ -1119,8 +1119,8 @@ CONTAINS
 !    GRDFLX: Ground heat flux (W / M^2)
 !    QST:    Turbulent moisture scale
 !    CAPG:   THERMAL CAPACITY OF GROUND SLAB (J/M^2/K)
-!    RS:     Surface resistence
-!    RA:     Surface aerodynamic resistence
+!    RS:     Surface resistance
+!    RA:     Surface aerodynamic resistance
 !    EG:     evaporation from ground (bare soil)
 !    ER:     evaporation from canopy
 !    ETR:    transpiration from vegetation
@@ -1214,7 +1214,7 @@ CONTAINS
       ! inverse of the value above gives CT_IMPERV value of 1/0.000021 = 4.762E-6 K m2 J-1
 
       ! The middle value will be used for now. 850 J kg-1 K-1. This needs to be converted from J/K per kg to area using 
-      ! the approxiate concrete/asphalt density and layer thickness or represenative thickness. For starters (12/2011)
+      ! the approximate concrete/asphalt density and layer thickness or representative thickness. For starters (12/2011)
       ! well not use the PX first layer thickness, but representative thickness of most roads/parkinglots/buildings.
       ! for now welll use 6 inches or about 15 cm or 0.15 m. Density of concrete (normal) from 
       ! Dorf, Richard. Engineering Handbook. New York: CRC Press, 1996. is ~2400 kg m-3.
@@ -1548,7 +1548,7 @@ CONTAINS
 !-- ER           evaporation from canopy
 !-- ETR          transpiration from vegetation
 !-- CQ4          CQ4 is used for the implicit calculation of TG in SURFACE
-!-- RS           surface resistence
+!-- RS           surface resistance
 !-- FASS         parameter for soil moisture nudging
 !-- SIGG         near ground-first layer moisture difference for evap or dew (1)
 !-------------------------------------------------------------------------
@@ -1735,7 +1735,7 @@ CONTAINS
                            WG, W2    )                            ! OUT
      !------------------------------------------------------------------------
      !     SOILPROP COMPUTES SOIL PARAMETERS FOR BOTH BOTTOM AND TOP LAYERS
-     !              USING FRACTIONAL SOIL TYPE. A HARD CODED OPTION IS AVAILIABLE
+     !              USING FRACTIONAL SOIL TYPE. A HARD CODED OPTION IS AVAILABLE
      !              TO COMPUTE THE SOIL PARAMETERS USING FRACTIONAL INFORMATION, OR
      !              TO JUST USE SOIL PARAMETERS OF THE DOMINANT SOIL TYPE
      !------------------------------------------------------------------------
@@ -1900,7 +1900,7 @@ CONTAINS
       FFMSAND = AVFMS
       FCLAY   = AVC
   
-      ! Continous formulation of secondary soil parmeters (Noilhan and Mahfouf 1996)
+      ! Continuous formulation of secondary soil parameters (Noilhan and Mahfouf 1996)
       FWSAT = (-1.08 * AVS + 494.305) * 1.0E-3
       FWWLT = 37.1342E-3 * SQRT(AVC)
       FWFC  = 89.0467E-3 * AVC**0.3496
@@ -1914,7 +1914,7 @@ CONTAINS
       FWRES = 0.00123 * AVC - 0.00066 * AVSLT + 0.0405  !J. Pleim fitted function
       FWRES = AMAX1(FWRES, 0.01)                        !L. Ran set minimum
     
-    ! Compute W2 using soil moisture availiability if pxlsm_smois_init (in namelist) is not zero
+    ! Compute W2 using soil moisture availability if pxlsm_smois_init (in namelist) is not zero
     IF (ITIMESTEP .EQ. 1 .AND. PXLSM_SMOIS_INIT .GT. 0) THEN
        WG = FWWLT + (0.5*(FWSAT+FWFC) - FWWLT)  * MAVAIL 
        W2 = FWWLT + (0.5*(FWSAT+FWFC) - FWWLT)  * MAVAIL 
@@ -1978,7 +1978,7 @@ CONTAINS
      SNOWH= SNOW * CONV_WAT2SNOW          ! Conversion of snow water (mm) to snow depth (m)     
      
      
-     ! Is snow cover now present. The limit is 0.45 mm of water eqivalent or about 2 inches snow depth 
+     ! Is snow cover now present. The limit is 0.45 mm of water equivalent or about 2 inches snow depth
      SNOWC = 0.0
      IF (SNOWH .GT. 0.005) SNOWC = 1.0  
      

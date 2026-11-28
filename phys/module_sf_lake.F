@@ -221,7 +221,7 @@ MODULE module_sf_lake
     INTEGER  :: C,i,j,k
 
 
-      !tempory varibles in:
+      !temporary variables in:
       real(r8)  :: forc_t(1)          ! atmospheric temperature (Kelvin)
       real(r8)  :: forc_pbot(1)       ! atm bottom level pressure (Pa) 
       real(r8)  :: forc_psrf(1)       ! atmospheric surface pressure (Pa)
@@ -387,7 +387,7 @@ MODULE module_sf_lake
             endif
            enddo
 
-! Renew Lake State Varialbes:(14)
+! Renew Lake State Variables:(14)
            do c = 1,column
 
             savedtke12d(i,j)         = savedtke1(c)
@@ -496,7 +496,7 @@ MODULE module_sf_lake
 
 !local output
     
-    real(r8) :: begwb(1)           ! water mass begining of the time step
+    real(r8) :: begwb(1)           ! water mass beginning of the time step
     real(r8) :: t_veg(1)           ! vegetation temperature (Kelvin)
     real(r8) :: eflx_soil_grnd(1)  ! soil heat flux (W/m**2) [+ = into soil]
     real(r8) :: eflx_lh_grnd(1)    ! ground evaporation heat flux (W/m**2) [+ to atm]
@@ -743,7 +743,7 @@ SUBROUTINE ShalLakeFluxes(forc_t,forc_pbot,forc_psrf,forc_hgt,forc_hgt_q,       
     real(r8) :: tksur                   ! thermal conductivity of snow/soil (w/m/kelvin)
     real(r8) :: tsur                    ! top layer temperature
     real(r8) :: tstar                   ! temperature scaling parameter
-    real(r8) :: um(lbp:ubp)             ! wind speed including the stablity effect [m/s]
+    real(r8) :: um(lbp:ubp)             ! wind speed including the stability effect [m/s]
     real(r8) :: ur(lbp:ubp)             ! wind speed at reference height [m/s]
     real(r8) :: ustar(lbp:ubp)          ! friction velocity [m/s]
     real(r8) :: wc                      ! convective velocity [m/s]
@@ -1537,7 +1537,7 @@ SUBROUTINE ShalLakeTemperature(t_grnd,h2osno,sabg,dz,dz_lake,z,zi,           & !
 
           ! Set eta(:), the extinction coefficient, according to L Hakanson, Aquatic Sciences, 1995
           ! (regression of Secchi Depth with lake depth for small glacial basin lakes), and the
-          ! Poole & Atkins expression for extinction coeffient of 1.7 / Secchi Depth (m).
+          ! Poole & Atkins expression for extinction coefficient of 1.7 / Secchi Depth (m).
 #ifndef ETALAKE
           eta(:) = 1.1925_r8*lakedepth(c)**(-0.424)
 #else
@@ -2616,7 +2616,7 @@ SUBROUTINE ShalLakeTemperature(t_grnd,h2osno,sabg,dz,dz_lake,z,zi,           & !
 
 !inout:
 
-    real(r8), intent(inout) :: begwb(1)         ! water mass begining of the time step
+    real(r8), intent(inout) :: begwb(1)         ! water mass beginning of the time step
 
 ! inout: 
 
@@ -4075,7 +4075,7 @@ SUBROUTINE ShalLakeTemperature(t_grnd,h2osno,sabg,dz,dz_lake,z,zi,           & !
     real(r8) :: dzsno(lbc:ubc,nlevsnow) ! Snow layer thickness [m]
     real(r8) :: swice(lbc:ubc,nlevsnow) ! Partial volume of ice [m3/m3]
     real(r8) :: swliq(lbc:ubc,nlevsnow) ! Partial volume of liquid water [m3/m3]
-    real(r8) :: tsno(lbc:ubc ,nlevsnow) ! Nodel temperature [K]
+    real(r8) :: tsno(lbc:ubc ,nlevsnow) ! Nodal temperature [K]
     real(r8) :: zwice                  ! temporary
     real(r8) :: zwliq                  ! temporary
     real(r8) :: propor                 ! temporary
@@ -4271,7 +4271,7 @@ SUBROUTINE ShalLakeTemperature(t_grnd,h2osno,sabg,dz,dz_lake,z,zi,           & !
     real(r8), intent(inout) :: dz    ! nodal thickness of 1 elements being combined [m]
     real(r8), intent(inout) :: wliq  ! liquid water of element 1
     real(r8), intent(inout) :: wice  ! ice of element 1 [kg/m2]
-    real(r8), intent(inout) :: t     ! nodel temperature of elment 1 [K]
+    real(r8), intent(inout) :: t     ! nodal temperature of element 1 [K]
 !
 ! !CALLED FROM:
 ! subroutine CombineSnowLayers in this module
@@ -4422,7 +4422,7 @@ subroutine FrictionVelocity(pgridcell,forc_hgt,forc_hgt_u,        & !i
    real(r8), intent(in)  :: obu(lbp:ubp)     ! monin-obukhov length (m)
    integer,  intent(in)  :: iter             ! iteration number
    real(r8), intent(in)  :: ur(lbp:ubp)      ! wind speed at reference height [m/s]
-   real(r8), intent(in)  :: um(lbp:ubp)      ! wind speed including the stablity effect [m/s]
+   real(r8), intent(in)  :: um(lbp:ubp)      ! wind speed including the stability effect [m/s]
 
 !out:
 

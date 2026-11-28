@@ -2,7 +2,7 @@ subroutine da_get_sat_angles ( lat, lon, sate_index, satzen, satazi )
 !-------------------------------------------------
 ! Purpose: calculate geostationary satellite_zenith_angle
 !
-! Menthod: Yang et al., 2017: Impact of assimilating GOES imager 
+! Method: Yang et al., 2017: Impact of assimilating GOES imager
 !          clear-sky radiance with a rapid refresh assimilation 
 !          system for convection-permitting forecast over Mexico. 
 !          J. Geophys. Res. Atmos., 122, 5472–5490

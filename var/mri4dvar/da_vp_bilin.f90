@@ -5,7 +5,7 @@ program da_vp_bilin
 !                       by using bilinear interpolation
 !
 ! where n  is the grid number in x or y
-!       ns is the refinement ratio between two resulotions
+!       ns is the refinement ratio between two resolutions
 !
 ! Method: follow da_bilin.f90
 !
@@ -312,11 +312,11 @@ contains
   subroutine show_usage()
      Write(*,*) 'Usage :'//trim(appname)// &
      '[-h] [-fg_lores filename] [-an_lores filename] [-fg_hires filename] [-ns n ] [-o outputfile]'
-     Write(*,*) "  -fg_lores    Optional, low resulotion first guess file,                 default - fg"
-     Write(*,*) "  -an_lores    Optional, low resulotion analysis file comes from wrfvar,  default - wrfvar_output"
-     Write(*,*) "  -fg_hires    Optional, high resultion first guess file,                 default - wrfinput_hires"
-     Write(*,*) "  -ns          Optional, the refinement ratio between two resulotions,    default - 3"
-     Write(*,*) "  -o           Optional, output high resulotion analysis file,            default - wrfvar_output_hires"
+     Write(*,*) "  -fg_lores    Optional, low resolution first guess file,                 default - fg"
+     Write(*,*) "  -an_lores    Optional, low resolution analysis file comes from wrfvar,  default - wrfvar_output"
+     Write(*,*) "  -fg_hires    Optional, high resolution first guess file,                 default - wrfinput_hires"
+     Write(*,*) "  -ns          Optional, the refinement ratio between two resolutions,    default - 3"
+     Write(*,*) "  -o           Optional, output high resolution analysis file,            default - wrfvar_output_hires"
      Write(*,*) "  -h           Show this help"
   end subroutine show_usage
 

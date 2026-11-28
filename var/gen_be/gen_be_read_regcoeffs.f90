@@ -27,9 +27,9 @@ program gen_be_read_regcoeffs
 
    integer, allocatable:: bin(:,:,:)                 ! Bin assigned to each 3D point.
    integer, allocatable:: bin2d(:,:)                 ! Bin assigned to each 2D point.
-   real, allocatable   :: regcoeff1(:)               ! psi/chi regression cooefficient.
-   real, allocatable   :: regcoeff2(:,:)             ! psi/ps regression cooefficient.
-   real, allocatable   :: regcoeff3(:,:,:)           ! psi/T regression cooefficient.
+   real, allocatable   :: regcoeff1(:)               ! psi/chi regression coefficient.
+   real, allocatable   :: regcoeff2(:,:)             ! psi/ps regression coefficient.
+   real, allocatable   :: regcoeff3(:,:,:)           ! psi/T regression coefficient.
 
    stderr = 0
    stdout = 6

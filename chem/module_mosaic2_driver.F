@@ -535,7 +535,7 @@ main_it_loop: &
 
 
 !
-!   inititialize some mosaic2 variables
+!   initialize some mosaic2 variables
 !
  	call mosaic2_wrfchem_init( 1, vbs_nbin, vbs_uq_aqsoa, vbs_uq_par )
 
@@ -598,7 +598,7 @@ main_it_loop: &
 
 
 !
-!   inititialize some mosaic2 variables
+!   initialize some mosaic2 variables
 !
  	call mosaic2_wrfchem_init( 2, vbs_nbin, vbs_uq_aqsoa, vbs_uq_par )
 
@@ -839,9 +839,9 @@ main_it_loop: &
 !	avogad       = 6.022e23_r8
 
 !	use_cam5mam_soa_params  = 1  ! use cam5-mam soa/soag parameter values
-!	use_cam5mam_accom_coefs = 1  ! use cam5-mam accomodation coefficient values
+!	use_cam5mam_accom_coefs = 1  ! use cam5-mam accommodation coefficient values
 	use_cam5mam_soa_params  = 0  ! use cam5-mam soa/soag parameter values
-	use_cam5mam_accom_coefs = 0  ! use cam5-mam accomodation coefficient values
+	use_cam5mam_accom_coefs = 0  ! use cam5-mam accommodation coefficient values
 
 ! BSINGH - Initialize other constants which sit in the input file of Mosaic
 ! and are used in the present code(**BALLI Ask Dick about it)

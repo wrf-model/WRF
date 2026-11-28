@@ -71,7 +71,7 @@ SUBROUTINE da_gpseph_rays ( gps_rays, gpseph )
 
       !* rp is a vector along tangent point direction
       !* rn is a vector normal to rp along the meridian
-      !* transform coordiante from sphere to cartesian coordinate
+      !* transform coordinate from sphere to cartesian coordinate
       !* A is an angle from vector to x-y plane,
       !* B is an angle from x-axis to the project of the vector on x-y plane
       !* x=r*cos(A)*cos(B)
@@ -135,7 +135,7 @@ SUBROUTINE da_gpseph_rays ( gps_rays, gpseph )
             do l=1,3
                rx(l)=rp(l)+dst*rr(l)
             end do
-            !* transform coordiante from cartesian to sphere coordinate
+            !* transform coordinate from cartesian to sphere coordinate
             rox=sqrt(rx(1)**2+rx(2)**2)
             glat=rtd*atan(rx(3)/rox)
             glon=rtd*atan2(rx(2),rx(1))
@@ -183,7 +183,7 @@ SUBROUTINE da_gpseph_rays ( gps_rays, gpseph )
                endif
             END IF
          end do ! from left to right
-      END DO !from the begining to the end
+      END DO !from the beginning to the end
 
    end do !nbot,ntop loop
 

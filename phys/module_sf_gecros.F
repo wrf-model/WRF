@@ -203,14 +203,14 @@ IMPLICIT NONE
     REAL :: CSH    !Carbon in living shoot (g C/m2)
     REAL :: NSH    !Nitrogen in living shoot (g N/m2)
     REAL :: DLAI   !LAI of dead leaves still hanging on stem (m2/m2)
-    REAL :: ESD    !DS for end of seed-number determing phase (-)
+    REAL :: ESD    !DS for end of seed-number determining phase (-)
     REAL :: KCRN   !EXtinction coefficient of root nitrogen (m2/g C)
     REAL :: NFIXD  !Crop demand-determined NFIX (g N/2/s)
     REAL :: KR     !Extinction coefficient of root weight density over soil septh (1/cm)
     REAL :: HNCCR  !Critical shoot N concentration ( g N/g)
     REAL :: FVPD   !Slope of linear effect of VPD of intercelluar to ambient CO2 ratio (1/kPa)
     REAL :: NRETS  !Total crop-residue N returned to soil (g N/m2)
-    REAL :: WCUL   !Soil water content in uppler layer (m3/m3)
+    REAL :: WCUL   !Soil water content in upper layer (m3/m3)
     REAL :: DWSUP  !Water supply for evapotranspiration (mm/s)
     REAL :: CSRTN  !N determined CSRT (g C/m2)
     REAL :: NRES   !Estimated vegetative-organ N remobilizable for seed fill (g N/m2)
@@ -223,7 +223,7 @@ IMPLICIT NONE
     REAL :: NTOT   !Total N in living shoots and roots (g N/m2)
     REAL :: WSHH   !Dry weight of shoots organs (excluding shadded leaves) (g/m2)
     REAL :: TSN    !Total seed number (seeds/m2)
-    REAL :: HNC    !Actural N concentration in living shoot (g N/g)
+    REAL :: HNC    !Actual N concentration in living shoot (g N/g)
     REAL :: PSO    !Protein content in storage organs (g protein/m2)
     REAL :: KLN    !Intermediate variable to compute KN (g N/m2 leaf) 
     REAL :: NBK    !Intermediate variable to compute KN (g N/m2 leaf)
@@ -332,7 +332,7 @@ IMPLICIT NONE
     REAL :: FCLV   !Fraction of new shoot C partitioned to leaves (g C/m2/s)
     REAL :: DCDTC  !C demand of structural stem growth at current time step (g C/m2/s)
     REAL :: DCDT   !C demand for the growth of structural stems (g C/m2/s)
-    REAL :: FCRVS  !Fraction of new C paritioned to stem reserves (g C/m2/s)
+    REAL :: FCRVS  !Fraction of new C partitioned to stem reserves (g C/m2/s)
     REAL :: RCLV   !Rate of change in CLV (g C/m2/s)
     REAL :: RCRVS  !Rate of change in CRVS (g C/m2/s)
     REAL :: RDCDTR !Rate of change in DCDTR (g C/m2/s)
@@ -764,7 +764,7 @@ IMPLICIT NONE
     ENDIF
 
     !ji, the MIN function avoids that a situation occurs during which
-    !no assimilates are partioned to the leaves. FCSST max. 85%
+    !no assimilates are partitioned to the leaves. FCSST max. 85%
     IF (CROP==1) THEN
         FCSST  = MIN(.85,INSW(DS-(ESD+0.2), FLWCT/MAX(1E-16,DCSS), 0.))
         !FCSST  = INSW(DS-(ESD+0.2), FLWCT/DCSS, 0.) original version

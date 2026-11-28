@@ -155,7 +155,7 @@
 !   del_h2so4_gasprod - h2so4 change from gas-phase chemistry (ppmv)
 
 !
-!tendencies:dvmrdt_sv13d,dvmrcwdt_sv13d are the tendencies which are passsed on from the CAM-MAM cloud chemistry
+!tendencies:dvmrdt_sv13d,dvmrcwdt_sv13d are the tendencies which are passed on from the CAM-MAM cloud chemistry
 !           to gasaerexch subroutine 
 !
     real, intent(in), dimension( ims:ime, kms:kme, jms:jme, 1:gas_pcnst_pos )   :: dvmrdt_sv13d,dvmrcwdt_sv13d 

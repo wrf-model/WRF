@@ -14,9 +14,9 @@
 !
 !   (1) TRACER_SMOKE: This needs the biomass burning module to also be active. 
 !       It will then use smoke (CO emissions from fire) as tracer. One
-!       variabe only.
+!       variable only.
 !
-!   (2) TRACER_TEST1 and TRACER_TEST2: 8 tracers, the only difference inbetween 
+!   (2) TRACER_TEST1 and TRACER_TEST2: 8 tracers, the only difference between
 !       these options are p_tr17_3 and p_tr17_4, which are also filled with
 !       CO emissions from fire for TRACER_TEST2. The other tracers are defined as:
 !

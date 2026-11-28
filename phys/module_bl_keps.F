@@ -65,12 +65,12 @@ MODULE module_bl_keps
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN   )    ::   psim,psih
 
 ! variable added for urban
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   )    ::a_u_bep        ! Implicit component for the momemtum in X-direction
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   )    ::a_v_bep        ! Implicit component for the momemtum in Y-direction
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   )    ::a_u_bep        ! Implicit component for the momentum in X-direction
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   )    ::a_v_bep        ! Implicit component for the momentum in Y-direction
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   )    ::a_t_bep        ! Implicit component for the Pot. Temp.
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   )    ::a_q_bep        ! Implicit component for Moisture
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   )    ::b_u_bep        ! Explicit component for the momemtum in X-direction
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   )    ::b_v_bep        ! Explicit component for the momemtum in Y-direction
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   )    ::b_u_bep        ! Explicit component for the momentum in X-direction
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   )    ::b_v_bep        ! Explicit component for the momentum in Y-direction
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   )    ::b_t_bep        ! Explicit component for the Pot. Temp.
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   )    ::b_q_bep        ! Explicit component for Moisture
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   )    ::b_e_bep        ! Explicit component for Moisture
@@ -176,7 +176,7 @@ MODULE module_bl_keps
 
 
 !here I fix the value of the reference state equal to the value of the potnetial temperature
-! the only use of this variable in the code is to compute the paramter BETA = g/th0
+! the only use of this variable in the code is to compute the parameter BETA = g/th0
 ! I fix it to 300K. 
          rublten=0.
          rvblten=0.

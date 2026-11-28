@@ -2,7 +2,7 @@
 
       IMPLICIT NONE
       SAVE
-!  Machine dependant constants
+!  Machine dependent constants
       integer kind_io4,kind_io8,kind_phys,kind_rad,kind_evod
       parameter (kind_rad  = selected_real_kind(13,60)) ! the '60' maps to 64-bit real
       parameter (kind_phys = selected_real_kind(13,60)) ! the '60' maps to 64-bit real

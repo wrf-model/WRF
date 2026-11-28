@@ -598,7 +598,7 @@ time_t t;
   name = varTable[ f ]->name;
   narg = varTable[ f ]->maxi;
 
- /*Adi - each Matlab functin requires a separate file*/
+ /*Adi - each Matlab function requires a separate file*/
   sprintf( buf, "%s_%s.m", rootFileName, varTable[ f ]->name );  
   mex_funFile = fopen(buf, "w");
   if( mex_funFile == 0 ) {

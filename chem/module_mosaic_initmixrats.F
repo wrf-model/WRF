@@ -1017,7 +1017,7 @@
 !    ---------     ----------
 !    <=2000        1.0
 !    2000<z<3000   linear transition zone to 0.25
-!    3000<z<5000   linear transision zone to 0.125
+!    3000<z<5000   linear transition zone to 0.125
 !    >=5000        0.125
 !
 ! which translates to:
@@ -1378,7 +1378,7 @@
 !!$!    ---------     ----------
 !!$!    <=2000        1.0
 !!$!    2000<z<3000   linear transition zone to 0.5
-!!$!    3000<z<5000   linear transision zone to 0.25
+!!$!    3000<z<5000   linear transition zone to 0.25
 !!$!    >=5000        0.25
 !!$!
 !!$! which translates to:
@@ -1480,7 +1480,7 @@
 !    ---------     ----------
 !    <=2000        1.0
 !    2000<z<3000   linear transition zone to 0.25
-!    3000<z<5000   linear transision zone to 0.125
+!    3000<z<5000   linear transition zone to 0.125
 !    >=5000        0.125
 !
 ! which translates to:

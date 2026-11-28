@@ -462,7 +462,7 @@ END SUBROUTINE hailcast_diagnostic_driver
 !!!!	 Added check to make sure embryo spends at least some time in 
 !!!!     cloud before returning a positive hail diameter.
 !!!! 16 Dec 2022...................................Becky Adams-Selin AER
-!!!!	 Consolodate a number of bug fixes, including fixing behavior
+!!!!	 Consolidate a number of bug fixes, including fixing behavior
 !!!!     of haildt when tiling is used, and non-SI units errors in 
 !!!!     HEATBUD subroutine.
 !!!!    
@@ -750,7 +750,7 @@ END SUBROUTINE hailcast_diagnostic_driver
          !!!!!!!!!!!!!!!!!!  5. CALCULATE PARAMETERS  !!!!!!!!!!!!!!!!!
          !!!              CALCULATE UPDRAFT PROPERTIES              !!!
          !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-         !Intepolate vertical velocity to our new pressure level
+         !Interpolate vertical velocity to our new pressure level
          CALL INTERP(VUU_pert,VUMAX,P,IFOUT,PA,nz)
          !print *, 'INTERP VU: ', VU, P
          
@@ -814,7 +814,7 @@ END SUBROUTINE hailcast_diagnostic_driver
         !!!  TEST IF DIAMETER OF STONE IS GREATER THAN CRITICAL LIMIT, IF SO  
         !!!  BREAK UP 
         WATER=FW*GM  !KG
-        ! CRTICAL MASS CAPABLE OF BEING "SUPPORTED" ON THE STONE'S SURFACE 
+        ! CRITICAL MASS CAPABLE OF BEING "SUPPORTED" ON THE STONE'S SURFACE
         CRIT = 2.0E-4
         IF (WATER.GT.CRIT)THEN
            CALL BREAKUP(DENSE,D,GM,FW,CRIT)
@@ -1452,7 +1452,7 @@ END SUBROUTINE hailcast_diagnostic_driver
   
   SUBROUTINE BREAKUP(DENSE,D,GM,FW,CRIT)
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  !!!  TEST IF AMOUNT OF WATER ON SURFACE EXCEEDS CRTICAL LIMIT- 
+  !!!  TEST IF AMOUNT OF WATER ON SURFACE EXCEEDS CRITICAL LIMIT-
   !!!  IF SO INVOKE SHEDDING SCHEME 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -1467,7 +1467,7 @@ END SUBROUTINE hailcast_diagnostic_driver
       !GMI=(GM-WATER) !KG
       !REMAIN = CRIT*GM
 
-      ! CALC CRTICAL MASS CAPABLE OF BEING "SUPPORTED" ON THE STONE'S 
+      ! CALC CRITICAL MASS CAPABLE OF BEING "SUPPORTED" ON THE STONE'S
       ! SURFACE 
       !CRIT=0.268+0.1389*GMI 
       !CRIT=0.268*1.E-3 + 0.1389*1.E-3*GMI  !mass now in kg instead of g

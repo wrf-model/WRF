@@ -50,7 +50,7 @@ CONTAINS
       !!--------------------------------------------------------------------
       INTEGER, INTENT(OUT) :: kl_comm       ! local MPI communicator of the model
       !
-      INTEGER       :: jwrf,jext,jfld       ! local loop indicees
+      INTEGER       :: jwrf,jext,jfld       ! local loop indices
       CHARACTER( 3) :: clwrfdom, clextdom   ! d<domain>
       CHARACTER(16) :: clprefix             ! 'WRF_d??_EXT_d??_'
       !!--------------------------------------------------------------------
@@ -68,7 +68,7 @@ CONTAINS
          DO jwrf = 1, max_domains
             
             WRITE(clwrfdom, fmt="('d',i2.2)") jwrf          
-            ! do not change following syntaxe as it is used in routines bellow 
+            ! do not change following syntax as it is used in routines below
             clprefix = 'WRF_'//clwrfdom//'_EXT_'//clextdom//'_' 
             
             ! Variables that can be received by WRF
@@ -120,7 +120,7 @@ CONTAINS
       !!--------------------------------------------------------------------
       TYPE(domain), INTENT(IN), POINTER ::   grid
       !
-      INTEGER :: jwrf,jext,jfld          ! local loop indicees
+      INTEGER :: jwrf,jext,jfld          ! local loop indices
       REAL    :: zmin,zmax               ! min/max of grid*cplmask
       INTEGER :: ips,ipe,jps,jpe,kps,kpe ! domain dimension on 1 processor
       INTEGER :: ims,ime,jms,jme,kms,kme ! memory domain dimension on 1 processor 
@@ -233,7 +233,7 @@ CONTAINS
       INTEGER, INTENT(IN) :: max_edom  ! max number of external model domains
       !
       LOGICAL,DIMENSION(max_edom) :: cpl_tosend
-      INTEGER                     :: jext          ! local loop indicees
+      INTEGER                     :: jext          ! local loop indices
       !!--------------------------------------------------------------------
 
       DO jext = 1, max_edom
@@ -252,7 +252,7 @@ CONTAINS
       CHARACTER(*), INTENT(IN) :: cdsuffix   ! field name suffix
       !
       INTEGER       :: cpl_get_fldid     ! field index
-      INTEGER       :: jfld              ! local loop indicees
+      INTEGER       :: jfld              ! local loop indices
       CHARACTER(16) :: clprefix          ! 'WRF_d01_EXT_d01_'
       !!--------------------------------------------------------------------
       cpl_get_fldid = -1   ! default value
@@ -393,7 +393,7 @@ CONTAINS
       INTEGER,              INTENT(IN) :: kfldid    ! field index
       REAL, DIMENSION(:,:), INTENT(IN) :: pdata     ! data to be sent
       !
-      INTEGER :: jext          ! local loop indicees
+      INTEGER :: jext          ! local loop indices
       !!--------------------------------------------------------------------
 
       DO jext = 1, SIZE(ldtosend)
@@ -468,7 +468,7 @@ CONTAINS
       INTEGER :: ims,ime,jms,jme,kms,kme ! memory domain dimension on 1 processor 
       INTEGER :: ids,ide,jds,jde,kds,kde ! domain dimension
       LOGICAL :: llmust_store
-      INTEGER :: jext          ! local loop indicees     
+      INTEGER :: jext          ! local loop indices
       !!--------------------------------------------------------------------
 
 #if (EM_CORE == 1)

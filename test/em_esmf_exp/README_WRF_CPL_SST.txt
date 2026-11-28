@@ -129,7 +129,7 @@ $WRFDIR/test/em_esmf_exp >> ls -l sstin_d01_000000 namelist.input.jan00.* *.csh
 -rw-r--r--    824 Feb 27 14:52 test4_0_NETCDFSST_wrfexe.lsf.csh
 
   "sstin_d01_000000" contains time-varying SST input data.  
-NOTE:  sstin_d01_000000 also contains LANDMASK fields soley for validation 
+NOTE:  sstin_d01_000000 also contains LANDMASK fields solely for validation
 purposes.  Only the first time-level of LANDMASK is significant.  For
 historical reasons, the other time-levels may differ -- they are ignored 
 (and should eventually be removed).  

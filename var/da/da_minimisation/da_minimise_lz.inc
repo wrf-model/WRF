@@ -171,7 +171,7 @@ subroutine da_minimise_lz(grid, config_flags,            &
       bnds(1:iter) = abs(beta(iter) * eignvec(iter,1:iter))
       neign        = COUNT(bnds(1:iter) <= bndlm)
                
-    ! Print Cost Function and Infomation Content
+    ! Print Cost Function and Information Content
     !-----------------------------------
       j_total = j0_total + 0.5 * da_dot_cv(cv_size,ghat0,xhat,grid,be%cv_mz,be%ncv_mz &
 #if (WRF_CHEM == 1)

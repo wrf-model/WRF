@@ -171,7 +171,7 @@ updated by following the steps below:
          > ln -sf  $WRFDA_DIR/var/build/gen_be_etkf.exe . 
          > ./gen_be_etkf.exe
 
-    e)   Check the output files. etkf_output.* files are updated ensemble pertubations.
+    e)   Check the output files. etkf_output.* files are updated ensemble perturbations.
 
  
 

@@ -335,7 +335,7 @@ CONTAINS
         ycur(i) = scury(i,j)
 
 
- !Wang, calulate height of the first half level
+ !Wang, calculate height of the first half level
  !      use previous u10 v10 to compute wind10, input to MFLUX to compute z0
           wind10(i)=sqrt(u10(i,j)*u10(i,j)+v10(i,j)*v10(i,j))
         !first time step, u10 and v10 may be zero
@@ -421,7 +421,7 @@ CONTAINS
         IF(NTSFLG==1)    then
         tsk(i,j) = tstrc(i)      ! gopal's doing 
 !bugfix 4
-!       bob's doing patch tsk with neigboring values... are grid boundaries
+!       bob's doing patch tsk with neighboring values... are grid boundaries
         if(j.eq.jde) then
          tsk(i,j) = tsk(i,j-1)
          endif
@@ -885,7 +885,7 @@ CONTAINS
      &.2792e+05,.2881e+05,.2971e+05,.3065e+05,.3160e+05,.3257e+05,        &
      &.3357e+05,.3459e+05,.3564e+05,.3669e+05,.3780e+05,.0000e+00/
 !
-! spcify constants needed by MFLUX2
+! specify constants needed by MFLUX2
 !
       real,parameter :: cp    = 1.00464e7
       real,parameter :: g     = 980.6

@@ -21,7 +21,7 @@
 #ifndef LIST_H_
 #define LIST_H_
 
-/* Cast function pointers to function type used as comparision function by
+/* Cast function pointers to function type used as comparison function by
  * inlist and add */
 #define COMP_FUN(fnc) ((int (*)(const void *, const void *))fnc)
 

@@ -72,7 +72,7 @@ C     NAMELIST /HEADIN/ TYPE,FILE,KTUNIT,IDTYPE,
 C    1                  IBACK,NNSP
 C------------------------------------------------------------------------
 C  NALFL : 3DOI INPUT FILE
-C  NVPFL : VERTIAL LEVEL DEF. FILE
+C  NVPFL : VERTICAL LEVEL DEF. FILE
 C  NTPFL : TOPO FILE
 C  NALOT : 3DOI INPUT SAVE FILE
 C  NRSFL : UNPACK INPUT FILE
@@ -647,7 +647,7 @@ C   =================================================================
      O VCODM ,KMM   ,AAM   ,BBM   ,
      O CINF0 )
 C   =================================================================           
-C   >>>   SST ANOMALLY                                            <<<           
+C   >>>   SST ANOMALY                                             <<<
 C   =================================================================           
       DO 1 I=1,NNSP
         READ(NSSTFL0)
@@ -677,9 +677,9 @@ C
       CALL MOVERD(GSST, WRK, IMAX*JMAX)
       CALL WRTDAT
      1(NINFL0 , IDATE , -1    , 'SURF', 'SSTA',
-     2 'SST ANOMALLY                    ', 'K               ',
+     2 'SST ANOMALY                     ', 'K               ',
      3 0     , 0     , WRK   , IMAX  , JMAX  , I2    )
-      WRITE(6,*) '## SST ANOMALLY WAS WRITTEN'
+      WRITE(6,*) '## SST ANOMALY WAS WRITTEN'
 C
       ENDIF
 C                                                                               

@@ -9,7 +9,7 @@ subroutine da_openfile (kunit, cdfile, cdaccess, cdstatus, cdform)
    !   input:
    !   -----
    !      kunit:          logical unit
-   !      cdfile:         name of file for output of discared obs.
+   !      cdfile:         name of file for output of discarded obs.
    !      cda!ess:       a!ess (sequential or),
    !      cdstatus:       status (old, new or unknown)
    !      cdform:         form (formatted or unformatted)

@@ -153,8 +153,8 @@ Efficiency constrains make necessary to introduce a system of compilation in ord
 
 * CDXWRF=2
  - tfog: time of presence of fog [s]
- - fogvisbltymin: minimun visibility inside fog [km]
- - fogvisbltymax: maximun visibility inside fog [km]
+ - fogvisbltymin: minimum visibility inside fog [km]
+ - fogvisbltymax: maximum visibility inside fog [km]
  - fogvisbltymean: mean visibility inside fog [km]
  - tdsmin: minimum 2m dew point temperature [K]
  - tdsmax: maximum 2m dew point temperature [K]
@@ -233,11 +233,11 @@ $ ./clean -a
  psl_diag                   = 1: sea-level pressure diagnostic following hydrostatic Shuell correction
                             = 2: psl diagnostic following a target pressure
                             = 3: psl diagnostic following ECMWF method (default)
- psmooth                    = 5: passes of neighborgh filtering (3x3-grid point mean) of psfc for psl_diag=2 (default 5)
+ psmooth                    = 5: passes of neighbor filtering (3x3-grid point mean) of psfc for psl_diag=2 (default 5)
  ptarget                    = 70000.: pressure [Pa] target to be used by psl_diag=2 (default 70000.)
  output_wb                  = 1: whether water-budget variables have to computed (1) or not (0, default)
  wsgs_diag                  = 1: wind-gust diagnostic following Brasseur, 2001, MWR (default)
-                            = 2: wsgs folllowing heavy precipitation method
+                            = 2: wsgs following heavy precipitation method
  wsz100_diag                = 1: wind extraoplation at z100m_wind using power-law method (default)
                             = 2: wind extraoplation at z100m_wind using Monin-Obukhov theory
  z100_wind                  = 100.: height to extraplate winds (100. default)

@@ -710,7 +710,7 @@ state    real   dtbc            -        misc     -         -       r       "dtb
 
 #-------------------------------------------------------------------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------------------------------------------------------------------
-# Physics Related State Varibles
+# Physics Related State Variables
 
 #-------------------------------------------------------------------------------------------------------------------------------------------
 # SI - start variables from netCDF format from Standard Initialization, most eventually for use in LSM schemes
@@ -2296,7 +2296,7 @@ rconfig   logical interp_theta            namelist,domains	1              .false
 rconfig   integer interp_type             namelist,domains	1              2       irh    "interp_type"  "1=interp in pressure, 2=interp in LOG pressure"  ""
 rconfig   integer rebalance               namelist,domains      1              0       irh    "rebalance"  "0=no; 1=yes (must be 1 if vertical nesting is used)"
 rconfig   integer vert_refine_method      namelist,domains      max_domains    0       irh    "vert_refine_method"  "0=no vertical nesting, 1=integer refinement, 2=use specified eta levels or compute_eta routine" ""
-rconfig   integer vert_refine_fact        namelist,domains      1              1       irh    "vertical refinment factor for ndown, not used for concurrent vertical grid nesting"  "" ""
+rconfig   integer vert_refine_fact        namelist,domains      1              1       irh    "vertical refinement factor for ndown, not used for concurrent vertical grid nesting"  "" ""
 rconfig   integer extrap_type             namelist,domains	1              2       irh    "extrap_type"  "1= use 2 lowest levels, 2=constant"  ""
 rconfig   integer t_extrap_type           namelist,domains	1              2       irh    "t_extrap_type"  "1=isothermal, 2=6.5 K/km, 3=adiabatic"   ""
 rconfig   integer hypsometric_opt         namelist,domains      1              2       irh    "hypsometric_opt"  "Z relates P, 1=linearly, 2=LOG-linearly"  ""
@@ -2322,10 +2322,10 @@ rconfig   logical aggregate_lu            namelist,domains	1              .false
 rconfig   logical rh2qv_wrt_liquid        namelist,domains	1              .true.  irh    "rh2qv_wrt_liquid" "T = rh=>Qv assumes RH wrt liquid water, F = allows ice"
 rconfig   integer rh2qv_method            namelist,domains	1              1       irh    "rh2qv_method" "1=old MM5 method, 2=new WMO method"
 rconfig   logical use_sh_qv               namelist,domains	1              .false. irh    "use_sh_qv" "T/F whether to use SH or mixing ratio in input"
-rconfig   real    qv_max_p_safe           namelist,domains      1              10000   irh    "qv_max_p_safe" "Threshhold pressure, Qv > flag set to value"      "Pa"
+rconfig   real    qv_max_p_safe           namelist,domains      1              10000   irh    "qv_max_p_safe" "Threshold pressure, Qv > flag set to value"      "Pa"
 rconfig   real    qv_max_flag             namelist,domains      1              1.E-5   irh    "qv_max_flag" "Qv flag for max"  "kg kg{-1}"
 rconfig   real    qv_max_value            namelist,domains      1              3.E-6   irh    "qv_max_value" "Qv value for max"  "kg kg{-1}"
-rconfig   real    qv_min_p_safe           namelist,domains      1              110000  irh    "qv_min_p_safe" "Threshhold pressure, Qv < flag set to value"      "Pa"
+rconfig   real    qv_min_p_safe           namelist,domains      1              110000  irh    "qv_min_p_safe" "Threshold pressure, Qv < flag set to value"      "Pa"
 rconfig   real    qv_min_flag             namelist,domains      1              1.E-6   irh    "qv_min_flag" "Qv flag for min"  "kg kg{-1}"
 rconfig   real    qv_min_value            namelist,domains      1              1.E-6   irh    "qv_min_value" "Qv value for min"  "kg kg{-1}"
 rconfig   integer ideal_init_method       namelist,domains	1              1       irh    "ideal_init_method" "inside start_em: 1=alb from phb, 2=alb from t_init" " "
@@ -2425,12 +2425,12 @@ rconfig   logical  write_thompson_mp38table   namelist,physics     1           .
 rconfig   integer     mp_physics          namelist,physics	max_domains    -1     irh       "mp_physics"            ""      ""
 #rconfig   integer     milbrandt_ccntype   namelist,physics      max_domains    0       rh       "milbrandt select maritime(1)/continental(2)"  ""      ""
 rconfig   real     nssl_cccn              namelist,physics      1            0.5e9    rh       "Base CCN concentration for NSSL microphysics"  ""      ""
-rconfig   real     nssl_alphah            namelist,physics      1             0       rh       "Graupel PSD shape paramter"  ""      ""
-rconfig   real     nssl_alphahl           namelist,physics      1             1       rh       "Hail PSD shape paramter"  ""      ""
-rconfig   real     nssl_cnoh              namelist,physics      1            4.e5     rh       "Graupel intercept paramter"  ""      ""
-rconfig   real     nssl_cnohl             namelist,physics      1            4.e4     rh       "Hail intercept paramter"  ""      ""
-rconfig   real     nssl_cnor              namelist,physics      1            8.e5     rh       "Rain intercept paramter"  ""      ""
-rconfig   real     nssl_cnos              namelist,physics      1            3.e6     rh       "Snow intercept paramter"  ""      ""
+rconfig   real     nssl_alphah            namelist,physics      1             0       rh       "Graupel PSD shape parameter"  ""      ""
+rconfig   real     nssl_alphahl           namelist,physics      1             1       rh       "Hail PSD shape parameter"  ""      ""
+rconfig   real     nssl_cnoh              namelist,physics      1            4.e5     rh       "Graupel intercept parameter"  ""      ""
+rconfig   real     nssl_cnohl             namelist,physics      1            4.e4     rh       "Hail intercept parameter"  ""      ""
+rconfig   real     nssl_cnor              namelist,physics      1            8.e5     rh       "Rain intercept parameter"  ""      ""
+rconfig   real     nssl_cnos              namelist,physics      1            3.e6     rh       "Snow intercept parameter"  ""      ""
 rconfig   real     nssl_rho_qh            namelist,physics      1            500.     rh       "Graupel particle density"  ""      ""
 rconfig   real     nssl_rho_qhl           namelist,physics      1            900.     rh       "Hail particle density"  ""      ""
 rconfig   real     nssl_rho_qs            namelist,physics      1            100.     rh       "Snow particle density"  ""      ""
@@ -2530,7 +2530,7 @@ rconfig   integer cldovrlp                namelist,physics      1             2 
 rconfig   integer idcor                   namelist,physics      1             0       irh    "idcor"                         "0=constant decorrelation length, 2500 m, 1=latitude-varying decorrelation length"      ""
 rconfig   integer ideal_xland             namelist,physics	1             1        rh    "IDEAL_XLAND"  "land=1(def), water=2, for ideal cases with no land-use"      ""
 rconfig   real    swrad_scat              namelist,physics	1             1       irh    "SWRAD_SCAT" "SCATTERING FACTOR IN SWRAD"      ""
-rconfig   integer surface_input_source    namelist,physics	1             3       irh    "surface_input_source"          "1=static (fractional), 2=time dependent (dominant), 3=dominant cateogry from metgrid"      ""
+rconfig   integer surface_input_source    namelist,physics	1             3       irh    "surface_input_source"          "1=static (fractional), 2=time dependent (dominant), 3=dominant category from metgrid"      ""
 rconfig   integer num_soil_layers         namelist,physics	1             5       irh    "num_soil_layers"               ""      ""
 rconfig   integer default_soiltype        namelist,physics	1             8        rh    "default_soiltype"              "Soil category used to correct missing values (default 8 : silty clay loam)"      ""
 rconfig   integer num_pft_clm             namelist,physics      1            17       -      "num_pft_clm"                  ""      ""
@@ -2802,7 +2802,7 @@ rconfig   integer     max_obs             namelist,fdda            1            
 rconfig   real        fdda_start          namelist,fdda            max_domains    0       rh       "fdda_start"        "Nudging start time for domain"        "min"
 rconfig   real        fdda_end            namelist,fdda            max_domains    0       rh       "fdda_end"          "Nudging end time for domain"          "min"
 rconfig   integer     obs_nudge_wind      namelist,fdda            max_domains    0       rh       "obs_nudge_wind"    "Wind-nudging flag for domain"         ""
-rconfig   real        obs_coef_wind       namelist,fdda            max_domains    0       rh       "obs_coef_wind"     "Wind-nudging coeficient for domain"   "s-1"
+rconfig   real        obs_coef_wind       namelist,fdda            max_domains    0       rh       "obs_coef_wind"     "Wind-nudging coefficient for domain"   "s-1"
 rconfig   integer     obs_nudge_temp      namelist,fdda            max_domains    0       rh       "obs_nudge_temp"    "Temperature-nudging flag for domain"  ""
 rconfig   real        obs_coef_temp       namelist,fdda            max_domains    0       rh       "obs_coef_temp"     "Temperature-nudging coef for domain"  "s-1"
 rconfig   integer     obs_nudge_mois      namelist,fdda            max_domains    0       rh       "obs_nudge_mois"    "Moisture-nudging flag for domain"     ""

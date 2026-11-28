@@ -5,7 +5,7 @@
 !####################tiedtke scheme#########################
 !   taken from the IPRC IRAM - Yuqing Wang, university of hawaii
 !   added by Chunxi Zhang and Yuqing Wang to wrf3.2, may, 2010
-!   refenrence: Tiedtke (1989, mwr, 117, 1779-1800)
+!   reference: Tiedtke (1989, mwr, 117, 1779-1800)
 !               Nordeng, t.e., (1995), cape closure and organized entrainment/detrainment
 !               Yuqing Wang et al. (2003,j. climate, 16, 1721-1738) for improvements 
 !                                                  for cloud top detrainment 
@@ -710,7 +710,7 @@ contains
 !              (c) recalculate cloud base massflux considering the
 !                  effect of cu-downdrafts
 !        (6) do final cloud ascent in 'cuasc'
-!        (7) do final adjusments to convective fluxes in 'cuflx',
+!        (7) do final adjustments to convective fluxes in 'cuflx',
 !            do evaporation in subcloud layer
 !        (8) calculate increments of t and q in 'cudtdq'
 !        (9) calculate increments of u and v in 'cududv'
@@ -1216,7 +1216,7 @@ contains
       logical  loflag(klon)
 !------------------------------------------------------------
 !*    1.       specify large scale parameters at half levels
-!*             adjust temperature fields if staticly unstable
+!*             adjust temperature fields if statically unstable
 !*             find level of maximum vertical velocity
 ! -----------------------------------------------------------
       zdp=0.5
@@ -1977,7 +1977,7 @@ contains
 !     2.       determine level of free sinking by
 !              doing a scan from top to base of cumulus clouds
 !              for every point and proceed as follows:
-!                (1) detemine wet bulb environmental t and q
+!                (1) determine wet bulb environmental t and q
 !                (2) do mixing with cumulus cloud air
 !                (3) check for negative buoyancy
 !              the assumption is that air of downdrafts is mixture

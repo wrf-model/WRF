@@ -576,7 +576,7 @@ time_different: IF (abs(itfirst) .LT. abs(itsecond)) THEN
                     llfirst  = .FALSE.
                     llsecond = .TRUE.
                 ELSE IF (abs(itfirst) .EQ. abs(itsecond)) THEN
-               ! Two obervations are at exactly time from analysis time but on opposit side
+               ! Two observations are at exactly time from analysis time but on opposite side
                ! Retain the one which is after analysis time
                     IF ( itfirst >= 0.)  THEN
                     llfirst  = .TRUE.
@@ -659,7 +659,7 @@ time_different: IF (abs(itfirst) .LT. abs(itsecond)) THEN
 
          ELSE
 
-         !  Order duplicate soundings by time incresing
+         !  Order duplicate soundings by time increasing
 
          IF (llfirst) THEN
 

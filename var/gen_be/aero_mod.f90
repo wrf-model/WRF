@@ -68,7 +68,7 @@ contains
 ! Chi
    read(24,err=100,end=99)vp
    nrec=nrec+1
-! Fill zero vp fileds with adjacent value
+! Fill zero vp fields with adjacent value
    vp(:,1,:) =2*vp(:,2,:) - vp(:,3,:)
    vp(1,:,:) =2*vp(2,:,:) - vp(3,:,:)
 ! Temp

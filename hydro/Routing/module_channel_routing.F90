@@ -103,7 +103,7 @@ if(abs(z1-z2) .gt. 1.0E5) then
 else
    Sf = ((z1-z2)+(h1-h2))/dx  !-- compute the friction slope
 endif
-!end  modfication
+!end  modification
 
 sgn = SGNf(Sf)             !-- establish sign
 
@@ -134,7 +134,7 @@ subroutine SUBMUSKINGCUNGE(    &
      nCC, depth, ChannK        )
 
 #ifdef HYDRO_D
-use module_RT_data, only: rt_domain  !! JLM: this is only used in a c3 paramter diagnostic print
+use module_RT_data, only: rt_domain  !! JLM: this is only used in a c3 parameter diagnostic print
 #endif
 
         IMPLICIT NONE
@@ -147,8 +147,8 @@ use module_RT_data, only: rt_domain  !! JLM: this is only used in a c3 paramter 
         REAL, intent(IN)       :: ql         ! lateral inflow through reach (m^3/sec)
         REAL, intent(IN)       :: Bw         ! bottom width (meters)
         REAL, intent(IN)       :: Tw         ! top width before bankfull (meters)
-        REAL, intent(IN)       :: TwCC       ! top width of Compund (meters)
-        REAL, intent(IN)       :: nCC        ! mannings of compund
+        REAL, intent(IN)       :: TwCC       ! top width of Compound (meters)
+        REAL, intent(IN)       :: nCC        ! mannings of compound
         REAL, intent(IN)       :: ChannK     ! Channel conductivity (m/s)
         REAL, intent(IN)       :: Cs         ! Channel side slope slope
         REAL, intent(IN)       :: So         ! Channel bottom slope %
@@ -589,7 +589,7 @@ END SUBROUTINE SUBMUSKINGCUNGE
         REAL, INTENT(IN), DIMENSION(NLINKS)       :: CHANLEN
         REAL, INTENT(IN), DIMENSION(NLINKS)       :: So, MannN
         REAL, INTENT(IN), DIMENSION(NLINKS)       :: ChSSlp,Bw,Tw  !--properties of nodes or links
-        REAL, INTENT(IN), DIMENSION(NLINKS)       :: Tw_CC, n_CC  !properties of compund channel
+        REAL, INTENT(IN), DIMENSION(NLINKS)       :: Tw_CC, n_CC  !properties of compound channel
         REAL, INTENT(IN), DIMENSION(NLINKS)       :: ChannK  !--Channel Infiltration
         REAL                                      :: Km, X
         REAL , INTENT(INOUT), DIMENSION(:,:) :: QLINK
@@ -879,7 +879,7 @@ END SUBROUTINE SUBMUSKINGCUNGE
             if(TYPEL(k) .ne. 1) then
                QLINK(k,2) = tmpQLINK(k,2)
             endif
-            QLINK(k,1) = QLINK(k,2)    !assing link flow of current to be previous for next time step
+            QLINK(k,1) = QLINK(k,2)    !assign link flow of current to be previous for next time step
          end do
 
    end do ! nsteps
@@ -1339,7 +1339,7 @@ end subroutine drive_CHANNEL
 
 !=======find flow depth in channel with bisection Chapra pg. 131
     REAL FUNCTION HEAD(idx,AREA,Bw,z)  !-- find the water elevation given wetted area,
-                                         !--bottom widith and side channel.. index was for debuggin
+                                         !--bottom width and side channel.. index was for debugging
      REAL :: Bw,z,AREA,test
      REAL :: hl, hu, hr, hrold
      REAL :: fl, fr,error                !-- function evaluation
@@ -1822,7 +1822,7 @@ else
    tmpQLateral = 0  !! WHY DOES THIS tmp variable EXIST?? Only for accumulations??
    tmpLQLateral = 0
 
-   ! NHDPLUS maping
+   ! NHDPLUS mapping
    if(OVRTSWCRT .eq. 0)      then
       do k = 1, LNUMRSL
          ! get from land grid runoff

@@ -700,7 +700,7 @@ PROGRAM convert_emissions
 #endif
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
-           write(0,*)'now do ash heigt '
+           write(0,*)'now do ash height '
            read(92)ash_height(ids:ide  ,jds:jde  )
        ENDIF
        DM_BCAST_MACRO(ash_height)
@@ -2623,7 +2623,7 @@ PROGRAM convert_emissions
      write(message,FMT='(A)') ' Past reading emissions '
      CALL  wrf_debug ( 100, message ) 
 
-   ! write global atributes into wrf emissions file
+   ! write global attributes into wrf emissions file
 
      write(message,FMT='(A)') ' Output emissions '
      CALL  wrf_debug ( 100, message ) 

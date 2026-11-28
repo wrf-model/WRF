@@ -280,7 +280,7 @@ CC_TOOLS        =      $(SCC)
 #          3. Force the problematic file to be compiled with less optimizations (see examples at the 
 #             end of this file), try -no-ip compiler flag.
 #
-#        This configuration is aimed at accuracy. To improve performance (at the expence of accuracy) you might
+#        This configuration is aimed at accuracy. To improve performance (at the expense of accuracy) you might
 #        consider removing '-fp-model precise' flag from FCBASEOPTS. This enables non value-safe optimizations.
 #        Another option is to add '-ftz' flag, which flushes denormal results to zero when the application is in
 #        the gradual underflow mode. It may improve performance if the denormal values are not critical to the
@@ -454,7 +454,7 @@ CC_TOOLS        =      gcc
 #          3. Force the problematic file to be compiled with less optimizations (see examples at the 
 #             end of this file), try -no-ip compiler flag.
 #
-#        This configuration is aimed at accuracy. To improve performance (at the expence of accuracy) you might
+#        This configuration is aimed at accuracy. To improve performance (at the expense of accuracy) you might
 #        consider removing '-fp-model precise' flag from FCBASEOPTS. This enables non value-safe optimizations.
 #        Another option is to add '-ftz' flag, which flushes denormal results to zero when the application is in
 #        the gradual underflow mode. It may improve performance if the denormal values are not critical to the
@@ -1174,7 +1174,7 @@ BYTESWAPIO      =
 FCBASEOPTS_NO_G =       -w -qspill=81920 -qmaxmem=-1 $(FORMAT_FREE) -qufmt=be $(BYTESWAPIO)  #-qflttrap=zerodivide:invalid:enable -qsigtrap -C # -qinitauto=7FF7FFFF
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     
-TRADFLAG        =       #CONFIGURE_TRADFLAG  # causing troubles with xl cpp on AIX, -traditional removed fom default settings
+TRADFLAG        =       #CONFIGURE_TRADFLAG  # causing troubles with xl cpp on AIX, -traditional removed from default settings
 CPP             =       /lib/cpp CONFIGURE_CPPFLAGS
 AR              =       ar
 ARFLAGS         =       ru
@@ -2231,7 +2231,7 @@ ARCH_LOCAL      =      -DAARCH64_X86_CORRECTNESS_FIX
 CFLAGS_LOCAL    =      -w -O3 -c
 LDFLAGS_LOCAL   =      -fopenmp
 FCOPTIM         =      -Ofast -mcpu=native -funroll-loops -fno-expensive-optimizations -fno-reciprocal-math -fsigned-zeros -fno-unsafe-math-optimizations
-# for graviton 2 use the folowing flag
+# for graviton 2 use the following flag
 #FCOPTIM         =      -Ofast -march=armv8.2-a+fp16+rcpc+dotprod -funroll-loops -fno-expensive-optimizations -fno-reciprocal-math -fsigned-zeros -fno-unsafe-math-optimizations
 FCREDUCEDOPT    =      $(FCOPTIM)
 FCNOOPT         =      -O0 -fopenmp -frecursive

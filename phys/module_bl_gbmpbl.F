@@ -910,7 +910,7 @@ CONTAINS
     enddo
     !NT new
 !     if(ktop(iconv).eq.kte+1 .and. kbot(iconv).eq.kte+1)then
-!	     iconv=iconv-1 !NT don't let the bottome layer be a convective top.
+!	     iconv=iconv-1 !NT don't let the bottom layer be a convective top.
 !     end if
     !NT end
 	      

@@ -202,7 +202,7 @@ MODULE MODULE_CPL_LAND
     subroutine fatal_error_stop(msg)
         character(len=*) :: msg
         integer :: ierr
-        write(error_unit,*) "The job is stoped due to the fatal error. ", trim(msg)
+        write(error_unit,*) "The job is stopped due to the fatal error. ", trim(msg)
         call flush(error_unit)
         CALL MPI_Abort(HYDRO_COMM_WORLD, 1, ierr)
         call MPI_Finalize(ierr)

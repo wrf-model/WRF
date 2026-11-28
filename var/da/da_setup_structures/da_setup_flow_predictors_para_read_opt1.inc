@@ -119,7 +119,7 @@ subroutine da_setup_flow_predictors_para_read_opt1( ix, jy, kz, ne, ep, its, ite
             if ( myproc /= MOD((te-1), num_procs) ) cycle
 
             it = te/ne + 1       ! retrieve time window index from nte
-            ie = mod(te, ne)     ! retrieve ensemble memeber index from nte
+            ie = mod(te, ne)     ! retrieve ensemble member index from nte
             if ( ie == 0 ) then
                it = it - 1
                ie = ne

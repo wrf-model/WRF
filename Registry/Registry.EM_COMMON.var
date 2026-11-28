@@ -230,7 +230,7 @@ state    real   gcx            w         misc     -         -      ir       "gcx
 state    real   dtbc            -        misc     -         -      ir       "dtbc"                 "TIME SINCE BOUNDARY READ"         ""
 
 #-------------------------------------------------------------------------------------------------------------------------------------------
-# Physics Related State Varibles
+# Physics Related State Variables
 
 # lsm State Variables
 

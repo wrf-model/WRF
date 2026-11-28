@@ -245,10 +245,10 @@ subroutine ini_microp_aero
 
    call add_default('CCN3',  1, ' ' )
 
-   call addfld ('NIHF    ','#/m3   ',pver, 'A','Activated Ice Number Concentation due to homogenous freezing',phys_decomp)
-   call addfld ('NIDEP    ','#/m3   ',pver, 'A','Activated Ice Number Concentation due to deposition nucleation',phys_decomp)
-   call addfld ('NIIMM    ','#/m3   ',pver, 'A','Activated Ice Number Concentation due to immersion freezing',phys_decomp)
-   call addfld ('NIMEY    ','#/m3   ',pver, 'A','Activated Ice Number Concentation due to meyers deposition',phys_decomp)
+   call addfld ('NIHF    ','#/m3   ',pver, 'A','Activated Ice Number Concentration due to homogeneous freezing',phys_decomp)
+   call addfld ('NIDEP    ','#/m3   ',pver, 'A','Activated Ice Number Concentration due to deposition nucleation',phys_decomp)
+   call addfld ('NIIMM    ','#/m3   ',pver, 'A','Activated Ice Number Concentration due to immersion freezing',phys_decomp)
+   call addfld ('NIMEY    ','#/m3   ',pver, 'A','Activated Ice Number Concentration due to meyers deposition',phys_decomp)
 
 ! contact freezing due to dust
 ! dust number mean radius (m), Zender et al JGR 2003 assuming number mode radius of 0.6 micron, sigma=2
@@ -482,7 +482,7 @@ subroutine ini_microp_aero
         real(r8) :: lcldo(pcols,pver) ! fractional coverage of old liquid cloud
         real(r8) :: nctend_mixnuc(pcols,pver)
    	real(r8) :: deltat        ! sub-time step (s)
-        real(r8) :: nihf2,niimm2,nidep2,nimey2,dum2 !dummy variables for activated ice nuclei by diffferent processes
+        real(r8) :: nihf2,niimm2,nidep2,nimey2,dum2 !dummy variables for activated ice nuclei by different processes
         real(r8) arg  !variable for CCN number (BAM)
 
 	 integer ftrue  ! integer used to determine cloud depth
@@ -523,7 +523,7 @@ subroutine ini_microp_aero
 
 !output for ice nucleation
           real(r8) :: nimey(pcols,pver) !output number conc of ice nuclei due to meyers deposition (1/m3)
-          real(r8) :: nihf(pcols,pver)  !output number conc of ice nuclei due to heterogenous freezing (1/m3)
+          real(r8) :: nihf(pcols,pver)  !output number conc of ice nuclei due to heterogeneous freezing (1/m3)
           real(r8) :: nidep(pcols,pver) !output number conc of ice nuclei due to deoposion nucleation (hetero nuc) (1/m3)
           real(r8) :: niimm(pcols,pver) !output number conc of ice nuclei due to immersion freezing (hetero nuc) (1/m3)
 
@@ -1022,7 +1022,7 @@ end subroutine microp_aero_ts
       dqsdt=latvap/(rh2o*tair*tair)*qs
       alpha=gravit*(latvap/(cpair*rh2o*tair*tair)-1./(rair*tair))
       gammaloc=(1+latvap/cpair*dqsdt)/(rhoair*qs)
-!     growth coefficent Abdul-Razzak & Ghan 1998 eqn 16
+!     growth coefficient Abdul-Razzak & Ghan 1998 eqn 16
 !     should depend on mean radius of mode to account for gas kinetic effects
       gloc=1./(rhoh2o/(diff0*rhoair*qs)                                    &
           +latvap*rhoh2o/(conduct0*tair)*(latvap/(rh2o*tair)-1.))

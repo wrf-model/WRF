@@ -109,7 +109,7 @@ CONTAINS
 
    LOGICAL :: moisture_init
    LOGICAL :: stretch_grd, dry_sounding
-   LOGICAL :: stretch_hyp, sfc_init           !AK/ak switches for hyperbolic grid streching and surface initialization
+   LOGICAL :: stretch_hyp, sfc_init           !AK/ak switches for hyperbolic grid stretching and surface initialization
 
    INTEGER :: xs , xe , ys , ye
    INTEGER :: mtn_type
@@ -364,7 +364,7 @@ CONTAINS
         !Now set the eta_levels to what we specified in the namelist. We've
         !packed all the domains' eta_levels into a 'vector' and now we need
         !to pull only the section of the vector associated with our domain
-        !of interest, which is between indicies ks and ke.
+        !of interest, which is between indices ks and ke.
      IF (grid%id .EQ. 1) THEN
        ks = 1
        ke = model_config_rec%e_vert(1)

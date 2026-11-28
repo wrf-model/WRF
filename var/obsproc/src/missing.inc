@@ -16,7 +16,7 @@
    REAL    , PARAMETER                            ::  end_data_r    = -777777.
 
 ! The cutoff height for Aircraft data: 
-!     h >  aircraft_cut, to retrive the pressure from standard atmosphere;
+!     h >  aircraft_cut, to retrieve the pressure from standard atmosphere;
 !     h <= aircraft_cut, to keep Aircraft observed height.
 !          
    REAL    , PARAMETER                            ::  aircraft_cut  =    3000.
@@ -42,13 +42,13 @@
                                         ! consistency =>all are set to missing_r
    wrong_t_sign            = 2 ** 11, & ! superadiabatic and inversion 
                                         ! in temperature curve => no action
-   above_model_lid         = 2 ** 10, & ! heigh above model lid
+   above_model_lid         = 2 ** 10, & ! height above model lid
                                         ! =>Datum can be removed
    reference_atmosphere    = 2 **  7, & ! Missing h, p or t
                                         ! =>Datum interpolated from standard atm
    from_background         = 2 **  6, & ! Missing h, p or t
                                         ! =>Datum interpolated from model ref st
-   convective_adjustment   = 2 **  2, & ! convective adjustement check
+   convective_adjustment   = 2 **  2, & ! convective adjustment check
                                         ! =>Apply correction on t, td, rh and qv
    Hydrostatic_recover     = 3      , & ! Height from hydrostaic assumption with
                                         ! the OBS data calibration

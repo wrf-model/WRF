@@ -396,7 +396,7 @@ MODULE qf03
 ! Q = c*rho*u_*^3 over g (1 - u_*t over u_*)(1 + u_*t^2/u_*^2)
 ! qwhite: Streamwise Sand Flux;       [kg m-1 s-1]
 ! c     : 2.6
-! ust   : threhold friction velocity  [m/s]
+! ust   : threshold friction velocity [m/s]
 ! ustar : friction velocity           [m/s]
 !
       real(8) :: c

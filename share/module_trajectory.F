@@ -33,7 +33,7 @@
    real, parameter    :: zero_val    = 0.
    
    integer :: n_dom        ! domain count
-   integer, pointer :: n_vals                         ! wrking count of time points in buffer
+   integer, pointer :: n_vals                         ! working count of time points in buffer
    integer, target  :: n_vals_dm(max_domains)         ! count of time points in buffer per domain
    integer, target  :: n_dchm_dm(max_domains)         ! count of dchm variables in  buffer per domain
    integer, allocatable, target :: num_msc_dm(:)      ! number misc species
@@ -2597,7 +2597,7 @@ include 'netcdf.inc'
    endif
 
 !---------------------------------------------------------------------
-!  allocate wrking array
+!  allocate working array
 !---------------------------------------------------------------------
    allocate( holder(n_traj,n_vals),stat=astat )
    if( astat /= 0 ) then

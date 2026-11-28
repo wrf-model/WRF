@@ -24,7 +24,7 @@
 !       stiffly accurate rosenbrock 3(2), with
 !     stiffly accurate embedded formula for error control.
 !
-!     all the arguments aggree with the kpp syntax.
+!     all the arguments agree with the kpp syntax.
 !
 !  input arguments:
 !     n = number of dependent variables (i.e., time-varying species)

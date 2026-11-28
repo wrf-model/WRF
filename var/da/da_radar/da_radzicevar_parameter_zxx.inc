@@ -2,7 +2,7 @@
   subroutine da_radzicevar_parameter_zxx(p1,para_pdx_dq,para_pdx_df,rhoa,rhox,qx,cx,dx,alphax,   &
                            mm3todBZ,lambda,Kw2,pi,n0x)  
   !----------------------------------------------------------------------
-  ! purpose: calculate the constants for ice speices
+  ! purpose: calculate the constants for ice species
   !----------------------------------------------------------------------
   implicit none
   real :: p1,p2

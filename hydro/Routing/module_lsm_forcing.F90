@@ -1585,7 +1585,7 @@ Contains
 !           "z.asc"
 !        PRCP1 = 0.
 !        CALL READFORC_DMIP(inflnm,IX,JX,PRCP1)
-!          PRCP1 = PRCP1 / 100.0    ! Convert from native hundreths of mm to mm
+!          PRCP1 = PRCP1 / 100.0    ! Convert from native hundredths of mm to mm
 !!       IF (K.LT.34) THEN
 !!        PRCP1 = 5.0/3600.0            ! units mm/s
 !!!       ELSE

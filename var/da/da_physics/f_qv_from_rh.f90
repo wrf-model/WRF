@@ -35,7 +35,7 @@
 !!   REFERENCES:
 !!   -----------
 !!    R. R. ROGERS AND M. K. YAU, 1989: A SHORT COURSE IN CLOUD PHYSICS,
-!!                                      3ND EDITION, PERGAMON PRESS, PAGE 14-19.
+!!                                      3RD EDITION, PERGAMON PRESS, PAGE 14-19.
 !!
 !!   VERIFICATION SET:
 !!   -----------------

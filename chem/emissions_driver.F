@@ -301,7 +301,7 @@ CONTAINS
 
    real, dimension (ims:ime, jms:jme ) ,                               &
         intent(in) ::                                                  &
-        T2, swdown, Q2  ! modifed by renchuanhua
+        T2, swdown, Q2  ! modified by renchuanhua
 
    integer, intent(in) :: current_month
 
@@ -432,7 +432,7 @@ real, save :: freq_industry(24)    = &
 
 !
 ! Setup the timing flags...
-! (methodology is adapated from module_radiation_driver.F)
+! (methodology is adapted from module_radiation_driver.F)
       gmtp=curr_secs/3600.
       curr_hours=curr_secs/3600.
       gmtp=mod(gmt+gmtp,24.)

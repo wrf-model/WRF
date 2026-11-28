@@ -278,7 +278,7 @@ SUBROUTINE gocart_settling_driver(dt,config_flags,t_phy,moist,      &
 !
      vsettl = 4.0/9.0 * g0 * den(k) * (growth_fac*reff(k))**2 / dyn_visc
 !
-! Determine the maximum time-step satisying CFL: dt <= (dz)_min / v_settl
+! Determine the maximum time-step satisfying CFL: dt <= (dz)_min / v_settl
 !
      ntdt = INT(dt)
      dtmax = dzmin / vsettl

@@ -469,7 +469,7 @@ SUBROUTINE camuwshcu_driver(                                  &
            cmfmc(i,k,j)        = cmfmc(i,k,j) + cmfmc2(1,kflip)
         end do !k-loop to kte+1
 
-        !Calculate fractional occurance of shallow convection
+        !Calculate fractional occurrence of shallow convection
         !~Not doing this since it would require adding time averaging ability across output times
 
         !Rain rate for shallow convection
@@ -477,7 +477,7 @@ SUBROUTINE camuwshcu_driver(                                  &
 
         !Get indices of convection top and bottom based on deep+shallow
         !Note: cnt2 and cnb2 have indices decreasing with height, but
-        !      cutop and cubot have indicies increasing with height
+        !      cutop and cubot have indices increasing with height
         kflip = kte - cutop(i,j) + 1
         cnt = kflip
         if( cnt2(1) < kflip ) cnt = cnt2(1)

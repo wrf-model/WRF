@@ -5,7 +5,7 @@
 
 ! PURPOSE.
 ! --------
-!   BIASSELE - TO PERFORM BASIC DATA SELETION FOR BIAS CORRECTION PROGRAMS.
+!   BIASSELE - TO PERFORM BASIC DATA SELECTION FOR BIAS CORRECTION PROGRAMS.
 !
 
   IMPLICIT NONE
@@ -14,7 +14,7 @@
 
   INTEGER :: ntotal, ngood,nreject(5)
 
-! definition of defaut namelist values
+! definition of default namelist values
 !--------------------------------------
   INTEGER :: platform_id, satellite_id, sensor_id
   INTEGER :: isurf,nscan,ierr 
@@ -129,7 +129,7 @@ readloop:&
 
    write(6,'(a,i10)') ' INPUT NUMBER OF OBS :', ntotal
    write(6,'(a,i10)') 'OUTPUT NUMBER OF OBS :', ngood
-   write(6,'(a)')     'Rejected OBS by Cheching '
+   write(6,'(a)')     'Rejected OBS by Checking '
    write(6,'(a)')     'SENSOR_ID SCANPOS  SURFACE/HEIGHT  CLOUD/RAIN  SURF_FLAG'
    write(6,'(5i10)')  nreject   
    

@@ -631,7 +631,7 @@ subroutine da_qc_goesabi (it, isens, nchan, ob, iv)
             nrej_omb_std(k) = nrej_omb_std(k) + 1
          end if
 
-         ! final QC decsion
+         ! final QC decision
          if (iv%instid(isens)%tb_qc(k,n) == qc_bad) then
 !            iv%instid(isens)%tb_error(k,n) = 500.0
             if (iv%instid(isens)%info%proc_domain(1,n)) &

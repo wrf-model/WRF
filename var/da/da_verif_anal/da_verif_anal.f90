@@ -556,7 +556,7 @@ program da_verif_anal !---------------------------------------------------------
         allocate( score_avg_prof(num_scores, 1) )
 
 !---------------------------------------------------------------------
-! Writting the results in grads file
+! Writing the results in grads file
 !---------------------------------------------------------------------
         do iscore = 1, num_scores
 !           grads_file = trim(out_dir)//trim(score_names(iscore))//out_hr
@@ -601,7 +601,7 @@ program da_verif_anal !---------------------------------------------------------
      enddo loop_2d
      print*, ' successful completion of loop_2d '
 !
-!  Writting Latitude and Longitude at the end of the file
+!  Writing Latitude and Longitude at the end of the file
 !
 
            filename = trim(file_string)//hstart
@@ -1245,7 +1245,7 @@ program da_verif_anal !---------------------------------------------------------
 !      enddo
 
 !
-! Information writting for NCL is over
+! Information writing for NCL is over
 !
 !==================================================================================
 

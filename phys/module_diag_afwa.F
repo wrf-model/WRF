@@ -837,7 +837,7 @@ CONTAINS
         CALL wrf_debug ( DEBUG_LEVEL, 'Option icing_diagnostics requires: QC, QR, QNC' )
       END IF
 
-      ! Calculate visiblility diagnostics
+      ! Calculate visibility diagnostics
       ! ---------------------------------
       IF ( config_flags % afwa_vis_opt == 1 ) THEN
    
@@ -2136,7 +2136,7 @@ CONTAINS
         ! Calculate total visibility
         ! Take minimum visibility from hydro/lithometeors and haze
         ! Set alpha to be alpha_haze if haze dominates, or 3.6
-        ! (a Guassian distribution) when hydro/lithometeors dominate
+        ! (a Gaussian distribution) when hydro/lithometeors dominate
         ! ----------------------------------------------------------
         IF (vis_hydlith < vis_haze) THEN
            vis(i,j)=vis_hydlith
@@ -2455,7 +2455,7 @@ CONTAINS
         !  ----------------------------------
         DO n = 1, nlyrs
 
-          !~ Interpolate relevent variables to turbulence layers
+          !~ Interpolate relevant variables to turbulence layers
           !  ---------------------------------------------------
           ugrdtop    = lin_interp (     zagl ( i, kms:kme-1, j )  &
                                    ,   u_phy ( i, kms:kme-1, j )  &

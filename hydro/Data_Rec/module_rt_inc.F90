@@ -86,7 +86,7 @@ module module_rt_inc
   INTEGER,    allocatable, DIMENSION(:)      :: toNodeInd
   INTEGER(kind=int64),    allocatable, DIMENSION(:,:)      :: gtoNode
 
-! temp arrary cwatavail
+! temp array cwatavail
   !real, allocatable, DIMENSION(:,:,:)      :: SMCREFRT  ! SMCREFRT moved to subsurface grid_transform module
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !DJG   VARIABLES FOR GW/Baseflow
@@ -97,7 +97,7 @@ module module_rt_inc
   REAL,    allocatable, DIMENSION(:,:)   :: qinflowbase  !strm inflow/baseflow from GW
   REAL,    allocatable, DIMENSION(:,:)   :: SOLDRAIN     !time-step drainage
   INTEGER, allocatable, DIMENSION(:,:)   :: gw_strm_msk  !GW basin mask grid
-  INTEGER, allocatable, DIMENSION(:,:)   :: gw_strm_msk_lind  !GW basin mask grid tile maping index
+  INTEGER, allocatable, DIMENSION(:,:)   :: gw_strm_msk_lind  !GW basin mask grid tile mapping index
   REAL,    allocatable, DIMENSION(:)     :: z_gwsubbas   !depth in GW bucket
   REAL,    allocatable, DIMENSION(:)     :: qin_gwsubbas !flow to GW bucket
   REAL,    allocatable, DIMENSION(:)     :: qout_gwsubbas!flow from GW bucket
@@ -139,8 +139,8 @@ module module_rt_inc
   INTEGER, allocatable, DIMENSION(:)   :: TYPEL       !type of link Muskingum: 0 strm 1 lake
                                                       !-- Diffusion: 0 edge or pour; 1 interior; 2 lake
   INTEGER, allocatable, DIMENSION(:)   :: TYPEN      !type of link 0 strm 1 lake
-  REAL, allocatable, DIMENSION(:)      :: QLAKEI      !lake inflow in difussion scheme
-  REAL, allocatable, DIMENSION(:)      :: QLAKEO      !lake outflow in difussion scheme
+  REAL, allocatable, DIMENSION(:)      :: QLAKEI      !lake inflow in diffusion scheme
+  REAL, allocatable, DIMENSION(:)      :: QLAKEO      !lake outflow in diffusion scheme
   INTEGER(kind=int64), allocatable, DIMENSION(:)   :: LAKENODE   !which nodes flow into which lakes
   integer(kind=int64), allocatable, dimension(:)   :: LINKID     ! id of links on linked routing
   REAL, allocatable, DIMENSION(:)      :: CVOL       ! channel volume
@@ -166,7 +166,7 @@ module module_rt_inc
   REAL, allocatable, DIMENSION(:)      :: ZELEV      !elevation of nodes for channel
   INTEGER, allocatable, DIMENSION(:)   :: CHANXI,CHANYJ !map chan to fine grid
   REAL,  DIMENSION(50)     :: BOTWID,CHANN_K,TOPWID,HLINK_INIT,CHAN_SS,CHMann !Channel parms from table
-  REAL,  DIMENSION(50)     :: TOPWIDCC, NCC  !topwidth and mannings n of compund
+  REAL,  DIMENSION(50)     :: TOPWIDCC, NCC  !topwidth and mannings n of compound
 
   ! VARIABLES FOR  RESERVOIRS
   REAL, allocatable, DIMENSION(:)      :: RESHT  !reservoir height

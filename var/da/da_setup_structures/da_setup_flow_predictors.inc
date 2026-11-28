@@ -90,7 +90,7 @@ subroutine da_setup_flow_predictors( ix, jy, kz, ne, ep, its, ite, jts, jte, kts
    do te = 1, nte !loop over num_fgat_time*ne
 
       it = te/ne + 1       ! retrieve time window index from nte
-      ie = mod(te, ne)     ! retrieve ensemble memeber index from nte
+      ie = mod(te, ne)     ! retrieve ensemble member index from nte
       if ( ie == 0 ) then
          it = it - 1
          ie = ne

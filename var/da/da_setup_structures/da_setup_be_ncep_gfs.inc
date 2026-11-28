@@ -162,7 +162,7 @@ subroutine da_setup_be_ncep_gfs( grid, be )
    ALLOCATE ( agv_kz(0:nlath*2+1,1:kz,1:kz)                      )
    ALLOCATE ( bv_kz(0:nlath*2+1,1:kz),wgv_kz(0:nlath*2+1,1:kz)   )
 
-!   1.2 for BK STATS inputed from NCEP GFS sigma levels:
+!   1.2 for BK STATS inputted from NCEP GFS sigma levels:
 
   ! Variances for psi(corz), chi_u(cord), t_u(corh), and p-rh(corq)
    ALLOCATE ( corz_avn(1:2*nlath+1,1:nsig),cord_avn(1:2*nlath+1,1:nsig) )
@@ -755,7 +755,7 @@ end if   ! max_ext_its > 1
                vv(k,k)=1.
             enddo
 
-     ! Recursive filter routie applied in vertical with 
+     ! Recursive filter routine applied in vertical with
      ! the vertical scale length be%vz: 
             call da_rfz0(vv,kz,kz,be%ndeg,&
                          be%vz(kts:kte,i,j,n),be%be,be%table,be%nta,be%swidth)
@@ -806,7 +806,7 @@ end if   ! max_ext_its > 1
     enddo
 
     ! Above level ku,the sljy fields are set to a constant 
-    ! for psi and chi, i.e. homogenous:
+    ! for psi and chi, i.e. homogeneous:
     do n=1,2
        do k=max(ku, grid%xp%kpsy), grid%xp%kpey
           slim=1./global_fac(ic,jc)/hwll(ic,jc,k,n)
@@ -839,7 +839,7 @@ end if   ! max_ext_its > 1
    enddo
 
    ! Above level ku,the sljy fields are set to a constant 
-   ! for psi and chi, i.e. homogenous:
+   ! for psi and chi, i.e. homogeneous:
    do n=1,2
       do k=max(ku, grid%xp%kpsx), grid%xp%kpex
          slim=1./global_fac(ic,jc)/hwll(ic,jc,k,n)

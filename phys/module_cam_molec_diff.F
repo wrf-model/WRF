@@ -105,7 +105,7 @@
 
     call ubc_init()
 
-  ! Molecular weight factor in constitutent diffusivity
+  ! Molecular weight factor in constituent diffusivity
   ! ***** FAKE THIS FOR NOW USING MOLECULAR WEIGHT OF DRY AIR FOR ALL TRACERS ****
  
     allocate(mw_fac(ncnst))
@@ -292,7 +292,7 @@
     ! --------------- !
 
     integer                 :: i                     ! Longitude index
-    integer                 :: k, kp1                ! Vertical indicies
+    integer                 :: k, kp1                ! Vertical indices
 
     real(r8)                :: rghd(pcols,pver+1)    ! (1/H_i - 1/H) * (rho*g)^(-1)
     real(r8)                :: kmq(ncol)             ! Molecular diffusivity for constituent

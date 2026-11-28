@@ -897,7 +897,7 @@ END SUBROUTINE wesely_driver
 !     J. W. ERISMAN, A. VAN PUL, AND P. WYERS,
 !     ATMOSPHERIC ENVIRONMENT 28 (1994), 2595-2607
 !     WRITTEN BY  WINFRIED SEIDL, APRIL 1997
-!     MODYFIED BY WINFRIED SEIDL, MARCH 2000
+!     MODIFIED BY WINFRIED SEIDL, MARCH 2000
 !                    FOR MM5 VERSION 3
 !----------------------------------------------------------------------
 
@@ -1137,7 +1137,7 @@ is_so2 : &
           END IF
         END IF
 !--------------------------------------------------
-!       TOTAL SURFACE RESISTENCE
+!       TOTAL SURFACE RESISTANCE
 !--------------------------------------------------
         IF ((iseason/=4) .AND. (ixxxlu(iland)/=1) .AND. (iland/=iswater_temp) .AND. &
             (iland/=isice_temp)) THEN
@@ -1376,7 +1376,7 @@ is_nh3: if( p_nh3 >= param_first_scalar ) then
 !     Variables used:
 !        SCPR23  : (Schmidt #/Prandtl #)**(2/3) Diffusion correction fac
 !        Zr      : Reference Height (m)
-!        Iatmo   : Parameter specifying the stabilty class (Function of
+!        Iatmo   : Parameter specifying the stability class (Function of
 !        Z0      : Surface roughness height (m)
 !        karman  : Von Karman constant (from module_model_constants)
 !--------------------------------------------------
@@ -1431,7 +1431,7 @@ is_nh3: if( p_nh3 >= param_first_scalar ) then
 
 !--------------------------------------------------
 !   Calculate the deposition velocity for each species
-!   and grid cell by looping through all the possibile combinations
+!   and grid cell by looping through all the possible combinations
 !   of the two
 !--------------------------------------------------
         vgp = 1.0/((1.0/vgpart)+(1.0/dvparx))

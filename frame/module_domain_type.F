@@ -189,7 +189,7 @@ MODULE module_domain_type
                     sm31y,  em31y,  sm32y,  em32y,  sm33y,  em33y,        &
                     sm21y,  em21y,  sm22y,  em22y
 
-      ! currently allocated domain dimesions
+      ! currently allocated domain dimensions
       INTEGER    :: alloced_sd31, alloced_ed31, &
                     alloced_sd32, alloced_ed32, &
                     alloced_sd33, alloced_ed33, &

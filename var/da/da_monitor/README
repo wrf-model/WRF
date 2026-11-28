@@ -1,5 +1,5 @@
 
-(1) Outputing radiance diagnostics from WRF-Var
+(1) Outputting radiance diagnostics from WRF-Var
 
    Run WRF-Var with the following namelist variables in record wrfvar14 in namelist.input
 
@@ -15,14 +15,14 @@
       Each processor writes out information of one instrument in one file
       in the WRF-var working directory
 
-(2) Radiance diagnotics data processing
+(2) Radiance diagnostics data processing
 
       A Fortran90 program is used to collect the inv* or oma* files (specified in namelist)
       and write out in netCDF format (one instrument in one file with prefix diags followed 
       by instrument name, analysis date, and suffix .nc)) for easier data viewing, handling 
       and plotting with netCDF utilities and NCL scripts.
 
-(3) Radiance diagnotics plotting
+(3) Radiance diagnostics plotting
 
       NCL scripts are used for plotting. The NCL script can be run from a shell script, 
       or run stand-alone with interactive ncl command (need to edit the NCL script and 
@@ -55,7 +55,7 @@ plotting options, and mapping information). The ksh provided is quite self-expla
 #              (2) inv_* or oma_* from WRF-Var
 #                  (note: da_rad_diags.f90 expects the files are in the date directory
 #                   in the program working directory, therefore, it's necessary to link
-#                   or copy inv_* or oma_* to the required dirctory structure.)
+#                   or copy inv_* or oma_* to the required directory structure.)
 #
 ### plotting                   
 #

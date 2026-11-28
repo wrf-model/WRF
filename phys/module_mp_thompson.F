@@ -5173,7 +5173,7 @@
 !.. and finally hygroscopicity, kappa.
 !.. TO_DO ITEM:  For radiation cooling producing fog, in which case the
 !.. updraft velocity could easily be negative, we could use the temp
-!.. and its tendency to diagnose a pretend postive updraft velocity.
+!.. and its tendency to diagnose a pretend positive updraft velocity.
 !+---+-----------------------------------------------------------------+
       real function activ_ncloud(Tt, Ww, NCCN)
 

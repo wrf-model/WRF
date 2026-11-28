@@ -785,7 +785,7 @@ CONTAINS
    REAL, OPTIONAL, INTENT(IN), DIMENSION(ims:ime,kms:kme,jms:jme) :: PHB,PH,P,PB,QV     ! for ntu3m
    REAL, INTENT(INOUT), DIMENSION(ims:ime,kms:kme,jms:jme) :: QDCN,QTCN,QCCN,QRCN,QNIN  ! for ntu3m
 #endif
-! lake varibles:
+! lake variables:
   real,    dimension(ims:ime,jms:jme ),intent(out)                        :: lakedepth2d,    &
                                                                              savedtke12d
   real,    dimension(ims:ime,jms:jme ),intent(inout)                      :: snowdp2d,       &
@@ -1447,7 +1447,7 @@ CHARACTER(LEN=8) :: name
 
    ! CAM parameterizations specific initializations [Currently incorporates initializations for CAMZM, CAMUWPBL, CAMUWSHCU and CAMMGMP parameterizations]
 
-   !Findout whether CAMMGMP scheme is used used or not in this simulation
+   !Find out whether CAMMGMP scheme is used used or not in this simulation
    is_CAMMGMP_used = .FALSE.
 # if (EM_CORE == 1)
    if(config_flags%mp_physics == CAMMGMPSCHEME) is_CAMMGMP_used = .TRUE.
@@ -1930,7 +1930,7 @@ CHARACTER(LEN=8) :: name
 
    CALL wrf_debug( 100 , 'top of landuse_init' )
 
-   NSN=-1  ! set this to suppress uninitalized data messages from tools
+   NSN=-1  ! set this to suppress uninitialized data messages from tools
 
   if ( fractional_seaice == 0 ) then
      xice_threshold = 0.5
@@ -3135,7 +3135,7 @@ CHARACTER(LEN=8) :: name
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: DLG_BEP 
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme,jms:jme),INTENT(INOUT) :: SF_BEP
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: DL_U_BEP
-! lake varibles:
+! lake variables:
   real,    dimension(ims:ime,jms:jme ),intent(out)                        :: lakedepth2d,    &
                                                                              savedtke12d
   real,    dimension(ims:ime,jms:jme ),intent(inout)                      :: snowdp2d,       &
@@ -3186,7 +3186,7 @@ CHARACTER(LEN=8) :: name
    LOGICAL,  INTENT(IN) :: start_of_simulation
    INTEGER :: i,j,patch
 
-! CLM varaibles
+! CLM variables
    INTEGER , INTENT(IN)        ::     maxpatch
    REAL, OPTIONAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN)    ::  HT
   integer, OPTIONAL,   dimension(ims:ime,jms:jme ),intent(inout) :: numc,nump
@@ -5425,7 +5425,7 @@ subroutine aerosol_in(aerodm,pina,alevsiz,no_months,no_src_types,XLAT,XLONG,   &
                      ims, ime, jms, jme, kms, kme,                  &
                      its, ite, jts, jte, kts, kte)
 !
-! Adaped from oznini in CAM 
+! Adapted from oznini in CAM
 ! It should be replaced by monthly climatology that varies latitudinally and vertically
 !
    IMPLICIT NONE
@@ -6036,11 +6036,11 @@ subroutine interp_vec_cu(locvec,locwant,periodic,loc1,loc2,wght1,wght2)
 ! wbdsrng, wssrng: individual ranges of the wbds-wss residence time
 ! idbg, jdbg: point coordinates of the debugging point
 ! htasbins, hhursbins, ltasbins, lhursbins, wbdsbins, wssbins: bins for the residence time
-! fracsoil10cm: fraction of the verical soil layer to use to compute 10cm depth soil values
+! fracsoil10cm: fraction of the vertical soil layer to use to compute 10cm depth soil values
 
     ! lon, lat debugging point 
     !   L. Fita, UBA-CIMA-IFAECI. This should be done as in share/wrf_timeseries.F, but it uses 
-    !     a lot of aditional modules, that might not be worth to mess with in the phys/ folder ¿?
+    !     a lot of additional modules, that might not be worth to mess with in the phys/ folder ¿?
     ! Minimum grid distance
     ! Filling matrices with absurd numbers
     DO i=ims, ime
@@ -6129,7 +6129,7 @@ subroutine interp_vec_cu(locvec,locwant,periodic,loc1,loc2,wght1,wght2)
       CALL wrf_error_fatal ( diag_message )
     END IF
 
-    ! Fillling up the bins
+    ! Filling up the bins
     htasbins(1:nhtasrng-1) = htasrng(1:nhtasrng-1)
     hhursbins(1:nhhursrng-1) = hhursrng(1:nhhursrng-1)
     ltasbins(1:nltasrng-1) = ltasrng(1:nltasrng-1)

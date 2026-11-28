@@ -72,7 +72,7 @@
 !
 !   07-oct-02 raz - made zx and zm integers in activity coeff subs.
 !   16-sep-02 raz - updated many subrs to treat calcium salts
-!   19-aug-02 raz - inlcude v33com9a in subr aerosolmtc
+!   19-aug-02 raz - include v33com9a in subr aerosolmtc
 !   14-aug-02 rce - '(msectional.eq.0)' changed to '(msectional.le.0)'
 !   07-aug-02 rce - this is rahul's latest version from freshair
 !	after adding 'real mean_molecular_speed' wherever it is used
@@ -473,7 +473,7 @@
 
 
 !***********************************************************************
-! intializes all the mosaic variables to zero or their default values.
+! initializes all the mosaic variables to zero or their default values.
 !
 ! author: rahul a. zaveri
 ! update: jun 2003
@@ -2490,7 +2490,7 @@
 !      include 'v33com9b'
 !     include 'mosaic.h'
 
-! subr. agrument
+! subr. argument
       integer mbin
 ! local variables
       integer ibin
@@ -3028,7 +3028,7 @@
 
 !***********************************************************************
 ! mesa: multicomponent equilibrium solver for aerosols.
-! computes equilibrum solid and liquid phases by integrating
+! computes equilibrium solid and liquid phases by integrating
 ! pseudo-transient dissolution and precipitation reactions
 !
 ! author: rahul a. zaveri
@@ -3502,7 +3502,7 @@
 
 !***********************************************************************
 ! mesa: multicomponent equilibrium solver for aerosol-phase
-! computes equilibrum solid and liquid phases by integrating
+! computes equilibrium solid and liquid phases by integrating
 ! pseudo-transient dissolution and precipitation reactions
 !
 ! author: rahul a. zaveri
@@ -5296,7 +5296,7 @@
             idxfresh(i)=0
             idxaged(i)=0
           enddo
-!     Seperate the fresh and aged species and treat them as 2 different solutions. Note this approach differes from PMCAMx
+!     Separate the fresh and aged species and treat them as 2 different solutions. Note this approach differs from PMCAMx
 !     In PMCAMx if flagsoap(i) was set to zero those species were not considered solution forming.
 
          do i=1,N
@@ -5352,11 +5352,11 @@
          endif
       enddo
 
-!      Caluclate the initial equilibrium partitioning by the bisection method (CMU PMCAMx approach)
+!      Calculate the initial equilibrium partitioning by the bisection method (CMU PMCAMx approach)
 !       If all fresh abd aged species form a solution
 !         call soap(ngas_soa,Ctot,Csat,Caer,Cgas,cpx)
 
-!       if fresh and aged species form seperate solutions
+!       if fresh and aged species form separate solutions
       if (nsolfresh.gt.0)  call soap(nsolfresh,Ctotfresh, &
                     Csatfresh,Caerfresh,Cgasfresh,cpxfresh)
       if (nsolaged.gt.0)  call soap(nsolaged,Ctotaged, &
@@ -5392,7 +5392,7 @@
          do ibin=1,nbin_a
            xsumfresh(ibin)=0.0
            xsumaged(ibin)=0.0
-              xsumaged(ibin)= xsumaged(ibin)+aer(ioc_a,jp,ibin)!Caluclate pre-existing primary in each bin for aged aerosol
+              xsumaged(ibin)= xsumaged(ibin)+aer(ioc_a,jp,ibin)!Calculate pre-existing primary in each bin for aged aerosol
 !         do iv = start_ind, ngas_ioa + ngas_soa
          do iv = start_ind, (start_ind + N - 1)
            if (flagsoap(iv-start_ind+1).eq.2) then
@@ -5420,7 +5420,7 @@
 
 
 ! Calculate dq as (gas concentration) G(t)-G(t+h):
-! Caluclate driving force at previous time step (Cgas,i-XiCsati) for both fresh and aged solutions
+! Calculate driving force at previous time step (Cgas,i-XiCsati) for both fresh and aged solutions
 !          do iv = start_ind, ngas_ioa + ngas_soa
           do iv = start_ind, (start_ind + N - 1)
            if (Ctot(iv-start_ind+1).lt.1d-10) goto 120 ! If a given species concentration is too low skip
@@ -5436,8 +5436,8 @@
            mxkaged=0.0d0
              do ibin=1,nbin_a
 ! fraceq(iv,ibin) is calculated as the rate of mass transfer
-! The weighting fractions frqfresh(ibin) amd frqaged(ibin) are caluclated assuming mole fractions from previous time step
-! This assumtion could be relaxed by iterativetely solving this equation
+! The weighting fractions frqfresh(ibin) amd frqaged(ibin) are calculated assuming mole fractions from previous time step
+! This assumption could be relaxed by iterativetely solving this equation
            if (flagsoap(iv-start_ind+1).eq.2) then
               frqfresh(ibin)= kg(iv,ibin)*(gas(iv) & ! replaced fraceq(iv,ibin) by kg(iv,ibin) on 01/19/10
               -(aer(iv,jtotal,ibin))/xsumfresh(ibin) &
@@ -5546,7 +5546,7 @@
                do ibin=1,nbin_a
                    if (flagsoap(iv-start_ind+1).eq.2) then
 !                   if (flagsoap(iv-ipcg1_b_c_g+1).eq.2) then
-! Cannot evaporate more than whats in the bin ie ratio (aer(iv,jtotal,ibin)/dq*frqfresh(ibin)) should be less than equal to 1
+! Cannot evaporate more than what's in the bin ie ratio (aer(iv,jtotal,ibin)/dq*frqfresh(ibin)) should be less than equal to 1
                  if(frqfresh(ibin).gt.0.0d0) &
          frt=MAX(MIN(aer(iv,jtotal,ibin)/abs(-dq*frqfresh(ibin)),frt),0.0d0)
 !                  elseif(flagsoap(iv-ipcg1_b_c_g+1).eq.1) then
@@ -8552,7 +8552,7 @@
       else
         start_ind = ipcg1_b_c_g
       end if
-      !BSINGH(03/10/2015): Added 2 in the following do-loop to accomodate oh and gly species.
+      !BSINGH(03/10/2015): Added 2 in the following do-loop to accommodate oh and gly species.
       ! *IMPORTANT*:This is a TEMPORARY fix, we need a better fix for this problem.
       do iv = start_ind, ngas_ioa + ngas_soa+2
         speed = mean_molecular_speed(t_k,mw_vol(iv))    ! cm/s
@@ -16629,7 +16629,7 @@
 
       if(d .gt. 0.)then	!	=> 1 real and 2 complex roots
         icase = 1
-      elseif(d .eq. 0.)then !	=> 3 real roots, atleast 2 identical
+      elseif(d .eq. 0.)then !	=> 3 real roots, at least 2 identical
         icase = 2
       else	! d < 0		=> 3 distinct real roots
         icase = 3

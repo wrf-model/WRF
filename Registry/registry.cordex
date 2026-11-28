@@ -4,7 +4,7 @@
 # CORDEX Diagnostics package namelist options
 rconfig   integer output_cordex           namelist,cordex       1              0       rh    "output_cordex"            "CORDEX Diagnostic activation, 1:on"                              ""
 rconfig   integer psl_diag                namelist,cordex       1              3       rh    "psl_diag"                 "psl diagnostic: 1: hydrostatic Shuell correction; 2: pressure target; 3: ECMWF"   ""
-rconfig   integer psmooth                 namelist,cordex       1              5       rh    "psmooth"                  "passes of neighbourgh filtering (mean of 3x3-grid points) of psfc for psl_diag=2"                        ""
+rconfig   integer psmooth                 namelist,cordex       1              5       rh    "psmooth"                  "passes of neighbour filtering (mean of 3x3-grid points) of psfc for psl_diag=2"                        ""
 rconfig   real    ptarget                 namelist,cordex       1          70000.      rh    "ptarget"                  "pressure [Pa] target to be used by psl_diag=2"                        ""
 rconfig   integer wsgs_diag               namelist,cordex       1              1       rh    "wsgs_diag"                "wind-gust diagnostic: 1: Brasseur, 2001, MWR; 2: heavy precipitation"   ""
 rconfig   integer output_wb               namelist,cordex       1              0       rh    "output_wb"                "FF Water-Budget activation, 1:on"                              ""
@@ -18,7 +18,7 @@ rconfig   integer convxtrm_diag           namelist,cordex       1              0
 rconfig   integer fogvisibility_diag      namelist,cordex       1              3       rh    "fogvisibility_diag"       "diagnostic of visibility inside fog: 1: Kunkel (1984), 2: RUC method (Smirnova et al., 2000); 3: FRAML 50% prob Gultepe and Milbrandt, (2010)"   ""
 rconfig   integer fogvars                 namelist,cordex       1              1       rh    "fogvars"                  "variables to use to diagnose fog (1: 3D, 2: sfc)"   ""
 rconfig   integer zmlagen_diag            namelist,cordex       1              2       rh    "zmlagen_diag"             "diagnostic of generic zmla: 1: Nielsen-Gammon et al. (2008), 2: bulk-Richardson (Vogelezang and Holtslag, 1996; Seidel et al., 2004)"   ""
-rconfig   integer timedbg                 namelist,cordex       1            720       rh    "timedbg"                  "frecuency in minutes of time-debugging"   ""
+rconfig   integer timedbg                 namelist,cordex       1            720       rh    "timedbg"                  "frequency in minutes of time-debugging"   ""
 rconfig   real    londbg                  namelist,cordex       1           -999.      rh    "londbg"                   "longitude in degrees of grid-point debugging (-999., not used)"   ""
 rconfig   real    latdbg                  namelist,cordex       1           -999.      rh    "latdbg"                   "latitude in degrees of grid-point debugging (-999., not used)"   ""
 rconfig   integer wgsts_wbdswsstres       namelist,cordex       1              1       rh    "wgsts_wbdswsstres"        "whether wind gusts should be used for wbds-wss residence-time (0: no, 1: yes)"   ""

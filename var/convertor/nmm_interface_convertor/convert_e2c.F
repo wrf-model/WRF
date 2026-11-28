@@ -393,7 +393,7 @@
 !------Attributes for F------------------------------------------
       call ncapt(cdfid,co_fid,'FieldType',NCLONG, 1,104, rcode)
       call ncaptc(cdfid,co_fid,'MemoryOrder',NCCHAR, 2,'XY' , rcode)
-      call ncaptc(cdfid,co_fid,'description',NCCHAR,27,'Coriolis sine latitute term',rcode)
+      call ncaptc(cdfid,co_fid,'description',NCCHAR,27,'Coriolis sine latitude term',rcode)
       call ncaptc(cdfid,co_fid,'units',NCCHAR,3,'s-1',rcode)
       call ncaptc(cdfid,co_fid,'stagger',NCCHAR,0,'',rcode)
       call ncaptc(cdfid,co_fid,'coordinates',NCCHAR,10,'XLONG XLAT',rcode)

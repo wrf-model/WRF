@@ -226,7 +226,7 @@
  rho_rimeMax     = 900.
  inv_rho_rimeMax = 1./rho_rimeMax
 
-! minium allowable prognostic variables
+! minimum allowable prognostic variables
  qsmall = 1.e-14
  nsmall = 1.e-16
  bsmall = qsmall*inv_rho_rimeMax
@@ -847,7 +847,7 @@ END subroutine p3_init
          nc=0.
       endif
 
-     ! note: code for prediction of ssat not currently avaiable, set 2D array to 0
+     ! note: code for prediction of ssat not currently available, set 2D array to 0
       ssat=0.
 
       if (.not. log_3momentIce) then
@@ -1073,10 +1073,10 @@ END subroutine p3_init
          nc=0.
       endif
 
-     ! note: code for prediction of ssat not currently avaiable, set 2D array to 0
+     ! note: code for prediction of ssat not currently available, set 2D array to 0
       ssat=0.
 
-    !contruct full ice arrays from individual category arrays:
+    !construct full ice arrays from individual category arrays:
       qitot(:,:,1) = qi1_3d(:,:,j)
       qirim(:,:,1) = qir1_3d(:,:,j)
       nitot(:,:,1) = qni1_3d(:,:,j)
@@ -1152,7 +1152,7 @@ END subroutine p3_init
 !               diag_rhopo_3d(i,k,j) = 0.
 !            end if
 
-            ! for the combined effective radius, we need to approriately weight by mass and projected area
+            ! for the combined effective radius, we need to appropriately weight by mass and projected area
             if (qitot(i,k,1).ge.qsmall) then
                dum1=qitot(i,k,1)/diag_effi(i,k,1)
             else
@@ -1211,7 +1211,7 @@ END subroutine p3_init
 
  implicit none
 
-!----- input/ouput arguments:  ------------------------------------------------------------!
+!----- input/output arguments:  -----------------------------------------------------------!
 
  integer, intent(in)                    :: ni                    ! number of columns in slab           -
  integer, intent(in)                    :: nk                    ! number of vertical levels           -
@@ -1396,7 +1396,7 @@ END subroutine p3_init
       print*,'  number of MP substeps: ',n_substep
    endif
 
- ! note: code for prediction of ssat not currently avaiable, thus array is to 0
+ ! note: code for prediction of ssat not currently available, thus array is to 0
    ssat = 0.
 
   !air pressure:
@@ -1448,7 +1448,7 @@ END subroutine p3_init
       endwhere
    endif
 
-  !contruct full ice arrays from individual category arrays:
+  !construct full ice arrays from individual category arrays:
    qitot(:,:,1) = qitot_1(:,:)
    qirim(:,:,1) = qirim_1(:,:)
    nitot(:,:,1) = nitot_1(:,:)
@@ -1748,7 +1748,7 @@ END subroutine p3_init
 
  implicit none
 
-!----- input/ouput arguments:  ----------------------------------------------------------!
+!----- input/output arguments:  -----------------------------------------------------------!
  real, intent(in),  dimension(:) :: Qcond     ! Condensates mix.ratio that goes in the "Cloudy fraction"
  real, intent(in),  dimension(:) :: Qprec     ! Condensates mix.ratio that goes in the "Precip fraction"
  real, intent(in),  dimension(:) :: Qv        ! Water vapor mix.ratio (grid mean)
@@ -1769,8 +1769,8 @@ END subroutine p3_init
 
 !----- local variables and parameters: --------------------------------------------------!
  real, dimension(size(Qv,dim=1)) :: C        ! Total cloud cover form top to level k
- real, parameter :: SIG_min = 0.7            ! minimum of sigma level below wich RHoo start to increase
- real, parameter :: SIG_max = 0.9            ! maximum of sigma level below wich RHoo stop  to increase
+ real, parameter :: SIG_min = 0.7            ! minimum of sigma level below which RHoo start to increase
+ real, parameter :: SIG_max = 0.9            ! maximum of sigma level below which RHoo stop  to increase
  real, parameter :: xo      = 1.-1.e-6       ! a number very close but less than 1.
  real            :: RHoo_min                 ! minimum of relative humidity criterion for dx around 12km
  real            :: RHoo_max                 ! maximum of relative humidity criterion for dx around 12km
@@ -1927,7 +1927,7 @@ END subroutine p3_init
 
  implicit none
 
-!----- Input/ouput arguments:  ----------------------------------------------------------!
+!----- Input/output arguments:  ---------------------------------------------------------!
 
  integer, intent(in)                                  :: its,ite    ! array bounds (horizontal)
  integer, intent(in)                                  :: kts,kte    ! array bounds (vertical)
@@ -2160,7 +2160,7 @@ END subroutine p3_init
 
 !-----------------------------------------------------------------------------------!
 ! Note, the array 'diag_3d(ni,nk,n_diag_3d)' provides a placeholder to output 3D diagnostic fields.
-! The entire array array is inialized to zero (below).  Code can be added to store desired fields
+! The entire array array is initialized to zero (below).  Code can be added to store desired fields
 ! by simply adding the appropriate assignment statements.  For example, if one wishs to output the
 ! rain condensation and evaporation rates, simply add assignments in the appropriate locations.
 !  e.g.:
@@ -2178,7 +2178,7 @@ END subroutine p3_init
 !-----------------------------------------------------------------------------------!
 
 !-----------------------------------------------------------------------------------!
-! The following code blocks can be instered for debugging (all within the main i-loop):
+! The following code blocks can be inserted for debugging (all within the main i-loop):
 !
 !    !-- call to s/r 'check_values' WITHIN k loops:
 !     if (debug_on) then
@@ -2895,7 +2895,7 @@ END subroutine p3_init
 
 
 !-----------------------------
-! calcualte total inverse ice relaxation timescale combined for all ice categories
+! calculate total inverse ice relaxation timescale combined for all ice categories
 ! note 'f1pr' values are normalized, so we need to multiply by N
           if (qitot(i,k,iice).ge.qsmall .and. t(i,k).lt.273.15) then
              epsi(iice) = ((f1pr05+f1pr14*sc**thrd*(rhofaci(i,k)*rho(i,k)/mu)**0.5)*2.*pi* &
@@ -2918,7 +2918,7 @@ END subroutine p3_init
      ! very little sensitivity to different assumed values, Milbrandt and Morrison 2012).
 
       ! Compute rime density: (based on parameterization of Cober and List, 1993 [JAS])
-      ! for simplicty use mass-weighted ice and droplet/rain fallspeeds
+      ! for simplicity use mass-weighted ice and droplet/rain fallspeeds
 
         ! if (qitot(i,k,iice).ge.qsmall .and. t(i,k).lt.273.15) then
         !  NOTE:  condition applicable for cloud only; modify when rain is added back
@@ -3086,7 +3086,7 @@ END subroutine p3_init
 !                nimul(iice_dest) = nimul(iice_dest)+dum2/(piov6*900.*(10.e-6)**3)
 
                !rime splintering from riming of large drops (> 25 microns diameter)
-               !for simplicitly it is assumed that all accreted rain contributes to splintering,
+               !for simplicity it is assumed that all accreted rain contributes to splintering,
                !but accreted cloud water does not - hence why the code is commented out above
                 dum1 = 35.e+4*qrcol(iice)*dum*1000. ! 1000 is to convert kg to g
                 dum2 = dum1*piov6*900.*(10.e-6)**3  ! assume 10 micron splinters
@@ -3343,7 +3343,7 @@ END subroutine p3_init
 ! saturation adjustment to get initial cloud water
 
 ! This is only called once at the beginning of the simulation
-! to remove any supersaturation in the intial conditions
+! to remove any supersaturation in the initial conditions
 
        if (it.le.1) then
           dumt   = th(i,k)*(pres(i,k)*1.e-5)**(rd*inv_cp)
@@ -3655,7 +3655,7 @@ END subroutine p3_init
 
        !----  Group 1 process rates (assume mu_i does not change)
        !
-       !   upated value of zitot is computed for these processes
+       !   updated value of zitot is computed for these processes
 
         !-- compute "updated" values of qitot and nitot (used here only)
         ! NOTE: must add qicol in line below for combining 3-moment with multi-cat P3
@@ -3708,7 +3708,7 @@ END subroutine p3_init
        !----  Group 2 (initiation processes, where mu_i for the new ice resulting from that process (only) is assigned
        !              note: mu_i_new is the mu_i associated with the new added ice for that process
 
-        !proceses with rain freezing:
+        !processes with rain freezing:
           tmp2 =  nrhetc(iice) + nrheti(iice)                  !moment_0 tendency
           if (tmp2.ge.qsmall) then
              tmp1 = (qrhetc(iice) + qrheti(iice))*6./(900.*pi) !estimate of moment_3 tendency
@@ -3716,7 +3716,7 @@ END subroutine p3_init
              zitot(i,k,iice) = zitot(i,k,iice) + G_of_mu(mu_i_new)*tmp1**2/tmp2*dt
           endif
 
-        !proceses with cloud freezing:
+        !processes with cloud freezing:
           tmp2 =  nchetc(iice) + ncheti(iice)                  !moment_0 tendency
           if (tmp2.ge.qsmall) then
              tmp1 = (qchetc(iice) + qcheti(iice))*6./(900.*pi) !estimate of moment_3 tendency
@@ -3724,7 +3724,7 @@ END subroutine p3_init
              zitot(i,k,iice) = zitot(i,k,iice) + G_of_mu(mu_i_new)*tmp1**2/tmp2*dt
           endif
 
-        !proceses of deposition nucleation
+        !processes of deposition nucleation
           tmp2 = ninuc(iice)                                   !moment_0 tendency
           if (tmp2.ge.qsmall) then
              tmp1 = qinuc(iice)*6./(900.*pi)                   !estimate of moment_3 tendency
@@ -3944,7 +3944,7 @@ END subroutine p3_init
 
 
     !NOTE: At this point, it is possible to have negative (but small) nc, nr, nitot.  This is not
-    !      a problem; those values get clipped to zero or assigned a minumum value in the sedimentation
+    !      a problem; those values get clipped to zero or assigned a minimum value in the sedimentation
     !      section, immediately below (if necessary).  Similarly, for 3-moment-ice it is possible at this
     !      point to have zitot=0 but qitot slightly larger than qsmall; in sedimentation non-zero zitot
     !      is computed (if necessary) by applying the constraints on mu_i.
@@ -4236,7 +4236,7 @@ END subroutine p3_init
 
           dt_left = dt_left - dt_sub  !update time remaining for sedimentation
           if (k_qxbot.ne.kbot) k_qxbot = k_qxbot - kdir
-          !or, optimzed: k_qxbot = k_qxbot +(k_qxbot.eq.kbot)*kdir
+          !or, optimized: k_qxbot = k_qxbot +(k_qxbot.eq.kbot)*kdir
 
        enddo substep_sedi_r
 
@@ -4362,7 +4362,7 @@ END subroutine p3_init
 
                 dt_left = dt_left - dt_sub  !update time remaining for sedimentation
                 if (k_qxbot.ne.kbot) k_qxbot = k_qxbot - kdir
-                !or, optimzed: k_qxbot = k_qxbot +(k_qxbot.eq.kbot)*kdir
+                !or, optimized: k_qxbot = k_qxbot +(k_qxbot.eq.kbot)*kdir
 
              enddo substep_sedi_i1
 ! .............................................................................................................
@@ -4482,7 +4482,7 @@ END subroutine p3_init
 
                 dt_left = dt_left - dt_sub  !update time remaining for sedimentation
                 if (k_qxbot.ne.kbot) k_qxbot = k_qxbot - kdir
-                !or, optimzed: k_qxbot = k_qxbot +(k_qxbot.eq.kbot)*kdir
+                !or, optimized: k_qxbot = k_qxbot +(k_qxbot.eq.kbot)*kdir
 
               enddo substep_sedi_i2
 
@@ -6900,7 +6900,7 @@ SUBROUTINE access_lookup_table_coll_3mom(dumzz,dumjj,dumii,dumj,dumi,index,dum1,
 ! 'check_consistency' means include trap for inconsistency in moments;
 ! otherwise, only trap for Q, T, and negative Qx, etc.  This option is here
 ! to allow for Q<qsmall.and.N>nsmall or Q>qsmall.and.N<small which can be produced
-! at the leading edges due to sedimentation and whose values are accpetable
+! at the leading edges due to sedimentation and whose values are acceptable
 ! since lambda limiters are later imposed after SEDI (so one does not necessarily
 ! want to trap for inconsistency after sedimentation has been called).
 !
@@ -7161,7 +7161,7 @@ SUBROUTINE access_lookup_table_coll_3mom(dumzz,dumjj,dumii,dumj,dumi,index,dum1,
  !   In GEM, overflows (apparently) result in crashes.  In WRF, no crashes but erroneous
  !   zero values in spots (possibly resulting from over/underflows)
  !  --> Code is kep here for now; however this fields is better computed in 
- !      post-processing.  Eventaully this function will be removed.
+ !      post-processing.  Eventually this function will be removed.
  !--------------------------------------------------------------------------
 
  implicit none
@@ -7177,7 +7177,7 @@ SUBROUTINE access_lookup_table_coll_3mom(dumzz,dumjj,dumii,dumj,dumi,index,dum1,
 ! Local variables:
  real, parameter  :: dD       =   1.e-3  ! diameter bin width [m]
  real, parameter  :: Dmax_psd = 200.e-3  ! maximum diameter in PSD to compute integral  [m]
- real, parameter  :: FrThrs   = 0.75     ! theshold rime fraction to be considered graupel/hail
+ real, parameter  :: FrThrs   = 0.75     ! threshold rime fraction to be considered graupel/hail
 !real, parameter  :: Ncrit    = 1.e-4    ! threshold physically observable number concentration [# m-3]
  real, parameter  :: Rcrit    = 1.e-3/6. ! threshold physically observable number flux          [# m-2 s-1]
  real, parameter  :: ch       = 206.89   ! coefficient in V-D fall speed relation for hail (from MY2006a)

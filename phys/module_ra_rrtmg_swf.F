@@ -300,14 +300,14 @@
 !  name     type     purpose
 ! -----  :  ----   : ----------------------------------------------
 ! xxxliq1 : real   : optical properties (extinction coefficient, single 
-!                    scattering albedo, assymetry factor) from
+!                    scattering albedo, asymmetry factor) from
 !                    Hu & Stamnes, j. clim., 6, 728-742, 1993.  
 ! xxxice2 : real   : optical properties (extinction coefficient, single 
-!                    scattering albedo, assymetry factor) from streamer v3.0,
+!                    scattering albedo, asymmetry factor) from streamer v3.0,
 !                    Key, streamer user's guide, cooperative institude 
 !                    for meteorological studies, 95 pp., 2001.
 ! xxxice3 : real   : optical properties (extinction coefficient, single 
-!                    scattering albedo, assymetry factor) from
+!                    scattering albedo, asymmetry factor) from
 !                    Fu, j. clim., 9, 1996.
 ! xbari   : real   : optical property coefficients for five spectral 
 !                    intervals (2857-4000, 4000-5263, 5263-7692, 7692-14285,
@@ -1914,7 +1914,7 @@
                   taucmc(iplon,lay,ig)   = taucloud_a
                   asmcmc(iplon,lay,ig)   = (asmcmc(iplon,lay,ig)   - ffp) / (ffp1)
 
-! (inflag=2): Separate treatement of ice clouds and water clouds.
+! (inflag=2): Separate treatment of ice clouds and water clouds.
                elseif (inflag .ge. 2) then       
                   radice = reicmc(iplon,lay) 
 
@@ -2148,7 +2148,7 @@
 ! In accordance with the 1996 Fu paper, equation A.3, 
 ! the moments for ice were calculated depending on whether using spheres
 ! or hexagonal ice crystals.
-! Set asymetry parameter to first moment (istr=1)
+! Set asymmetry parameter to first moment (istr=1)
                      istr = 1
                      asmcmc(iplon,lay,ig)   = (1.0 /(scatliq+scatice))* &
                         (scatliq*(gliq**istr - forwliq) / &
@@ -2164,7 +2164,7 @@
 
                   else 
 ! This code is the standard method for delta-m scaling. 
-! Set asymetry parameter to first moment (istr=1)
+! Set asymmetry parameter to first moment (istr=1)
                      istr = 1
                      asmcmc(iplon,lay,ig)   = (scatliq *  &
                         (gliq**istr - forwliq) / &
@@ -6790,10 +6790,10 @@ IKLOOP1_E
 !-----------------------------------------------------------------------
 !
 ! Explanation of the method for each value of INFLAG.  A value of
-!  0 for INFLAG do not distingish being liquid and ice clouds.
+!  0 for INFLAG do not distinguish being liquid and ice clouds.
 !  INFLAG = 2 does distinguish between liquid and ice clouds, and
 !    requires further user input to specify the method to be used to 
-!    compute the aborption due to each.
+!    compute the absorption due to each.
 !  INFLAG = 0:  For each cloudy layer, the cloud fraction, the cloud optical
 !    depth, the cloud single-scattering albedo, and the
 !    moments of the phase function (0:NSTREAM).  Note
@@ -8646,7 +8646,7 @@ IKLOOP1_E
 ! Method:
 !    Adapted from two-stream model of H. Barker;
 !    Two-stream model options (selected with kmodts in rrtmg_sw_reftra.F90):
-!        1: Eddington, 2: PIFM, Zdunkowski et al., 3: discret ordinates
+!        1: Eddington, 2: PIFM, Zdunkowski et al., 3: discrete ordinates
 !
 ! Modifications:
 !
@@ -8656,7 +8656,7 @@ IKLOOP1_E
 ! Revision: Bug fix for use of PALBP and PALBD: MJIacono, AER, Nov 2003
 ! Revision: Bug fix to apply delta scaling to clear sky: AER, Dec 2004
 ! Revision: Code modified so that delta scaling is not done in cloudy profiles
-!           if routine cldprop is used; delta scaling can be applied by swithcing
+!           if routine cldprop is used; delta scaling can be applied by switching
 !           code below if cldprop is not used to get cloud properties. 
 !           AER, Jan 2005
 ! Revision: Modified to use McICA: MJIacono, AER, Nov 2005
@@ -9365,7 +9365,7 @@ real gpu_device  :: zcd(tncol,ngptsw,nlayers+1)  , zcu(tncol,ngptsw,nlayers+1)
 !      lrtchk  = .t. for all layers in clear profile
 !      lrtchk  = .t. for cloudy layers in cloud profile 
 !              = .f. for clear layers in cloud profile
-!      pgg     = assymetry factor
+!      pgg     = asymmetry factor
 !      prmuz   = cosine solar zenith angle
 !      ptau    = optical thickness
 !      pw      = single scattering albedo
@@ -12134,7 +12134,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
       third=1./3.
       rhoh2o=1.e3
       relconst=3/(4.*pi*rhoh2o)
-!     minimun liquid water path to calculate rel
+!     minimum liquid water path to calculate rel
 !     corresponds to optical depth of 1.e-3 for radius 4 microns.
       lwpmin=3.e-5
       do k = kts, kte
@@ -12330,7 +12330,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
            if(ssaaer(icol,k,nb).ge.1.0) ssaaer(icol,k,nb)=1.0
 ! g - linear interpolation;extrapolation
            slope=(gaer600(i,k,j)-gaer400(i,k,j))/.2
-           asmaer(icol,k,nb) = slope*(wavemid(nb)-.6)+gaer600(i,k,j) ! notice reversed varaibles
+           asmaer(icol,k,nb) = slope*(wavemid(nb)-.6)+gaer600(i,k,j) ! notice reversed variables
            if(asmaer(icol,k,nb).lt.0.5) asmaer(icol,k,nb)=0.5
            if(asmaer(icol,k,nb).ge.1.0) asmaer(icol,k,nb)=1.0
         endif
@@ -12707,7 +12707,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 !     species parameters (see taumol.f for definition).  The first 
 !     index in the array, JS, runs from 1 to 9, and corresponds to 
 !     different values of the binary species parameter.  For instance, 
-!     JS=1 refers to dry air, JS = 2 corresponds to the paramter value 1/8, 
+!     JS=1 refers to dry air, JS = 2 corresponds to the parameter value 1/8,
 !     JS = 3 corresponds to the parameter value 2/8, etc.  The second index
 !     in the array, JT, which runs from 1 to 5, corresponds to different
 !     temperatures.  More specifically, JT = 3 means that the data are for
@@ -12793,7 +12793,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 !     species parameters (see taumol.f for definition).  The first 
 !     index in the array, JS, runs from 1 to 9, and corresponds to 
 !     different values of the binary species parameter.  For instance, 
-!     JS=1 refers to dry air, JS = 2 corresponds to the paramter value 1/8, 
+!     JS=1 refers to dry air, JS = 2 corresponds to the parameter value 1/8,
 !     JS = 3 corresponds to the parameter value 2/8, etc.  The second index
 !     in the array, JT, which runs from 1 to 5, corresponds to different
 !     temperatures.  More specifically, JT = 3 means that the data are for
@@ -12879,7 +12879,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 !     species parameters (see taumol.f for definition).  The first 
 !     index in the array, JS, runs from 1 to 9, and corresponds to 
 !     different values of the binary species parameter.  For instance, 
-!     JS=1 refers to dry air, JS = 2 corresponds to the paramter value 1/8, 
+!     JS=1 refers to dry air, JS = 2 corresponds to the parameter value 1/8,
 !     JS = 3 corresponds to the parameter value 2/8, etc.  The second index
 !     in the array, JT, which runs from 1 to 5, corresponds to different
 !     temperatures.  More specifically, JT = 3 means that the data are for
@@ -12965,7 +12965,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 !     species parameters (see taumol.f for definition).  The first 
 !     index in the array, JS, runs from 1 to 9, and corresponds to 
 !     different values of the binary species parameter.  For instance, 
-!     JS=1 refers to dry air, JS = 2 corresponds to the paramter value 1/8, 
+!     JS=1 refers to dry air, JS = 2 corresponds to the parameter value 1/8,
 !     JS = 3 corresponds to the parameter value 2/8, etc.  The second index
 !     in the array, JT, which runs from 1 to 5, corresponds to different
 !     temperatures.  More specifically, JT = 3 means that the data are for
@@ -13054,7 +13054,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 !     species parameters (see taumol.f for definition).  The first 
 !     index in the array, JS, runs from 1 to 9, and corresponds to 
 !     different values of the binary species parameter.  For instance, 
-!     JS=1 refers to dry air, JS = 2 corresponds to the paramter value 1/8, 
+!     JS=1 refers to dry air, JS = 2 corresponds to the parameter value 1/8,
 !     JS = 3 corresponds to the parameter value 2/8, etc.  The second index
 !     in the array, JT, which runs from 1 to 5, corresponds to different
 !     temperatures.  More specifically, JT = 3 means that the data are for
@@ -13140,7 +13140,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 !     species parameters (see taumol.f for definition).  The first 
 !     index in the array, JS, runs from 1 to 9, and corresponds to 
 !     different values of the binary species parameter.  For instance, 
-!     JS=1 refers to dry air, JS = 2 corresponds to the paramter value 1/8, 
+!     JS=1 refers to dry air, JS = 2 corresponds to the parameter value 1/8,
 !     JS = 3 corresponds to the parameter value 2/8, etc.  The second index
 !     in the array, JT, which runs from 1 to 5, corresponds to different
 !     temperatures.  More specifically, JT = 3 means that the data are for
@@ -13226,7 +13226,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 !     species parameters (see taumol.f for definition).  The first 
 !     index in the array, JS, runs from 1 to 9, and corresponds to 
 !     different values of the binary species parameter.  For instance, 
-!     JS=1 refers to dry air, JS = 2 corresponds to the paramter value 1/8, 
+!     JS=1 refers to dry air, JS = 2 corresponds to the parameter value 1/8,
 !     JS = 3 corresponds to the parameter value 2/8, etc.  The second index
 !     in the array, JT, which runs from 1 to 5, corresponds to different
 !     temperatures.  More specifically, JT = 3 means that the data are for
@@ -13314,7 +13314,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 !     species parameters (see taumol.f for definition).  The first 
 !     index in the array, JS, runs from 1 to 9, and corresponds to 
 !     different values of the binary species parameter.  For instance, 
-!     JS=1 refers to dry air, JS = 2 corresponds to the paramter value 1/8, 
+!     JS=1 refers to dry air, JS = 2 corresponds to the parameter value 1/8,
 !     JS = 3 corresponds to the parameter value 2/8, etc.  The second index
 !     in the array, JT, which runs from 1 to 5, corresponds to different
 !     temperatures.  More specifically, JT = 3 means that the data are for
@@ -13392,7 +13392,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 !     species parameters (see taumol.f for definition).  The first 
 !     index in the array, JS, runs from 1 to 9, and corresponds to 
 !     different values of the binary species parameter.  For instance, 
-!     JS=1 refers to dry air, JS = 2 corresponds to the paramter value 1/8, 
+!     JS=1 refers to dry air, JS = 2 corresponds to the parameter value 1/8,
 !     JS = 3 corresponds to the parameter value 2/8, etc.  The second index
 !     in the array, JT, which runs from 1 to 5, corresponds to different
 !     temperatures.  More specifically, JT = 3 means that the data are for
@@ -13485,7 +13485,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 !     species parameters (see taumol.f for definition).  The first 
 !     index in the array, JS, runs from 1 to 9, and corresponds to 
 !     different values of the binary species parameter.  For instance, 
-!     JS=1 refers to dry air, JS = 2 corresponds to the paramter value 1/8, 
+!     JS=1 refers to dry air, JS = 2 corresponds to the parameter value 1/8,
 !     JS = 3 corresponds to the parameter value 2/8, etc.  The second index
 !     in the array, JT, which runs from 1 to 5, corresponds to different
 !     temperatures.  More specifically, JT = 3 means that the data are for
@@ -13584,7 +13584,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 !     species parameters (see taumol.f for definition).  The first 
 !     index in the array, JS, runs from 1 to 9, and corresponds to 
 !     different values of the binary species parameter.  For instance, 
-!     JS=1 refers to dry air, JS = 2 corresponds to the paramter value 1/8, 
+!     JS=1 refers to dry air, JS = 2 corresponds to the parameter value 1/8,
 !     JS = 3 corresponds to the parameter value 2/8, etc.  The second index
 !     in the array, JT, which runs from 1 to 5, corresponds to different
 !     temperatures.  More specifically, JT = 3 means that the data are for
@@ -13656,7 +13656,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 !     species parameters (see taumol.f for definition).  The first 
 !     index in the array, JS, runs from 1 to 9, and corresponds to 
 !     different values of the binary species parameter.  For instance, 
-!     JS=1 refers to dry air, JS = 2 corresponds to the paramter value 1/8, 
+!     JS=1 refers to dry air, JS = 2 corresponds to the parameter value 1/8,
 !     JS = 3 corresponds to the parameter value 2/8, etc.  The second index
 !     in the array, JT, which runs from 1 to 5, corresponds to different
 !     temperatures.  More specifically, JT = 3 means that the data are for
@@ -13733,7 +13733,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 !     species parameters (see taumol.f for definition).  The first 
 !     index in the array, JS, runs from 1 to 9, and corresponds to 
 !     different values of the binary species parameter.  For instance, 
-!     JS=1 refers to dry air, JS = 2 corresponds to the paramter value 1/8, 
+!     JS=1 refers to dry air, JS = 2 corresponds to the parameter value 1/8,
 !     JS = 3 corresponds to the parameter value 2/8, etc.  The second index
 !     in the array, JT, which runs from 1 to 5, corresponds to different
 !     temperatures.  More specifically, JT = 3 means that the data are for

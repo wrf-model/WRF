@@ -17,7 +17,7 @@ class ExternalStatus(object):
     """Class to represent the status of a given source repository or tree.
 
     Individual repositories determine their own status in the
-    Repository objects. This object is just resposible for storing the
+    Repository objects. This object is just responsible for storing the
     information and passing it up to a higher level for reporting or
     global decisions.
 
@@ -25,7 +25,7 @@ class ExternalStatus(object):
 
     * If the repository is in-sync with the externals description file.
 
-    * If the repostiory working copy is clean and there are no pending
+    * If the repository working copy is clean and there are no pending
     transactions (e.g. add, remove, rename, untracked files).
 
     """
@@ -152,7 +152,7 @@ def check_safe_to_update_repos(tree_status):
     the model in an inconsistent state.
 
     Note: if there is an update to do, the repositories will by
-    definiation be out of synce with the externals description, so we
+    definition be out of synce with the externals description, so we
     can't use that as criteria for updating.
 
     """

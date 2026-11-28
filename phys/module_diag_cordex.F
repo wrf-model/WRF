@@ -145,8 +145,8 @@ MODULE module_diag_cordex
 !!! plfcmean: mean Pressure at LFC [Pa]
 !!! lidxmean: mean Lifted index [1]
 !!! tfog: time of presence of fog [s]
-!!! fogvisbltymin: minimun visibility inside fog [km]
-!!! fogvisbltymax: maximun visibility inside fog [km]
+!!! fogvisbltymin: minimum visibility inside fog [km]
+!!! fogvisbltymax: maximum visibility inside fog [km]
 !!! fogvisbltymean: mean visibility inside fog [km]
 !!! tdsmin: minimum 2m dew point temperature [K]
 !!! tdsmax: maximum 2m dew point temperature [K]
@@ -403,9 +403,9 @@ CONTAINS
 ! cdxH: period of time [minute] of calculations between outputs
 ! psl_diag: diagnostic to use to compute sea level pressure
 ! ptarget: pressure target to use for psl_diag=2 (default 70000. Pa)
-! psmooth: number of passses of nearest 3x3 grid-point mean filter on psfc on psl_diag=2 (default 5)
+! psmooth: number of passes of nearest 3x3 grid-point mean filter on psfc on psl_diag=2 (default 5)
 ! wsgs_diag: diagnostic to compute surface windgust
-! wbout: whether Water-Budget terms shoud be computed or not
+! wbout: whether Water-Budget terms should be computed or not
 ! wsz100_diag: extrapolation of wind at 100m
 ! zhgtzw: height at which 100 m winds should be extrapolated [m] (default 100 m)
 ! z50_diag: height at which 50 m variables (wind, ta, qv) should be extrapolated [m] (default 50 m)
@@ -413,7 +413,7 @@ CONTAINS
 ! dtheta: increment in potential temperature [K] to determine zmla [K]
 ! potevap_diag: diagnostic of the potential evapotranspiration
 ! convxtrm_diag: diagnostic of extremes from convection indices
-! visibility_diag: diagnostic of visibilty inside fog
+! visibility_diag: diagnostic of visibility inside fog
 ! fogvars: variables to use to diagnose fog (1: 3D, 2: sfc)
 ! zmlagen_diag: diagnostic of generic boundary layer height, zmla (1: thetae-stability, 2: bulk 
 !   Richardson number [default])
@@ -500,7 +500,7 @@ CONTAINS
 ! br: Bulk Richardson number [-]
 ! zol: Characteristic length (z/L) [-]
 ! fracsoil10cm: fraction of the soil layer used to compute 0-10 vertical accumulations
-! timedbg: frecuency in minutes of time debugging
+! timedbg: frequency in minutes of time debugging
 ! londbg, latdbg: coordinates of the debugging grid point (-999. if not set-up)
 ! idbg, jdbg: grid point coordinates of the debugging grid point
 ! wgsts_wbdswsstres: whether wind gusts should be used for wbds-wss residence-time (0: no, 1: yes)
@@ -627,8 +627,8 @@ CONTAINS
 ! fog: whether point is inside fog (vis < 1km) [1]
 ! visblty: visibility inside fog [km]
 ! tfog: time of presence of fog [s]
-! fogvisbltymin: minimun visibility inside fog [km]
-! fogvisbltymax: maximun visibility inside fog [km]
+! fogvisbltymin: minimum visibility inside fog [km]
+! fogvisbltymax: maximum visibility inside fog [km]
 ! fogvisbltymean: mean visibility inside fog [km]
 ! tdsmin: minimum 2m dew point temperature [K]
 ! tdsmax: maximum 2m dew point temperature [K]
@@ -646,8 +646,8 @@ CONTAINS
 !!!!!!! Structure
 ! 1.: Compute such variables needed for internal accumulations, extremes
 ! 2.: Compute the variables from clouds (only actualized at every radt)
-! 3.: If the time step is the first after writting the auxhist9 file inittialize the variables of (1., 2.)
-! 4.: If the time step is exactly the previous one before the writting of the auxhist9 file:
+! 3.: If the time step is the first after writing the auxhist9 file inittialize the variables of (1., 2.)
+! 4.: If the time step is exactly the previous one before the writing of the auxhist9 file:
 !   a: Compute all other variables 
 !   b: Finish calculation of 1., 2. variables 
 
@@ -1060,7 +1060,7 @@ CONTAINS
           wsgshp(i,j) = SQRT(ugustwind(i,j)*ugustwind(i,j) + vgustwind(i,j)*vgustwind(i,j))
           gustpointhp(i,j) = gustpoint(i,j)
 
-          ! L. Fita, CIMA. 17 Feburary 2018
+          ! L. Fita, CIMA. 17 February 2018
           ! Brasseur (TKE) method accounts for the mechanically-induced wind gusts. 
           ! AFWA (heavy precipitation) accounts for the heavy convectivelly-induced wind gusts
           ! For the total wind-gustiness, might be necessary the sum of both methodologies
@@ -2765,7 +2765,7 @@ CONTAINS
 ! ------- INPUT vars -------
 ! lon: longitude
 ! lat: latitude
-! timedbg: frecuency in minutes of time debugging
+! timedbg: frequency in minutes of time debugging
 ! londbg, latdbg: coordinates of the debugging grid point (-999. if not set-up)
 ! idbg, jdbg: grid point coordinates of the debugging grid point
 ! qr: rain mixing ratio [kgkg-1]
@@ -2784,8 +2784,8 @@ CONTAINS
 !!!!!!! Structure
 ! 1.: Compute such variables needed for internal accumulations, extremes
 ! 2.: Compute the variables from clouds (only actualized at every radt)
-! 3.: If the time step is the first after writting the auxhist8 file inittialize the variables of (1., 2.)
-! 4.: If the time step is exactly the previous one before the writting of the auxhist8 file:
+! 3.: If the time step is the first after writing the auxhist8 file inittialize the variables of (1., 2.)
+! 4.: If the time step is exactly the previous one before the writing of the auxhist8 file:
 !   a: Compute all other variables 
 !   b: Finish calculation of 1., 2. variables 
 

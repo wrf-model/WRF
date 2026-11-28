@@ -5,9 +5,9 @@ PROGRAM KPP_ROOT_Driver
 
   IMPLICIT NONE
       
-!~~~> No. of Stochastic events per simulation snaphot      
+!~~~> No. of Stochastic events per simulation snapshot
       INTEGER :: Nevents
-!~~~> No. of Stochastic tau-steps simulation snaphot      
+!~~~> No. of Stochastic tau-steps simulation snapshot
       INTEGER :: Nsteps
 !~~~> No. of Molecules      
       INTEGER :: NmlcV(NVAR), NmlcF(NFIX)

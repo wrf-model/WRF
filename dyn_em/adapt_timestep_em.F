@@ -83,7 +83,7 @@ RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
 
   !
   ! For nests, if we're not adapting using child nest, we only want to change 
-  !    nests' time steps when the time is conincident with the parent's time.  
+  !    nests' time steps when the time is coincident with the parent's time.
   !    So, if dtbc is not zero, simply return and leave the last time step in 
   !    place.
   !

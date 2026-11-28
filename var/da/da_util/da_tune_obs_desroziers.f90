@@ -446,7 +446,7 @@ subroutine da_count_obs( y_unit, ob )
          end do
 
       elseif ( index( ob_name,'*****') > 0 ) then 
-         print*,' scaned for time ', times
+         print*,' scanned for time ', times
          exit
       else
          print*,' unknown obs type: ',trim(ob_name),' found on unit ',y_unit

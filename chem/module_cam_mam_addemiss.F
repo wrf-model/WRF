@@ -741,7 +741,7 @@ CONTAINS
       		dpdrylo_cm, dpdryhi_cm,	  &
                 emitfact_numb, emitfact_surf, emitfact_mass )
 !c
-!c   computes seasalt emissions factors for a specifed 
+!c   computes seasalt emissions factors for a specified
 !c   dry particle size range
 !c	dpdrylo_cm  = lower dry diameter (cm)
 !c	dpdryhi_cm  = upper dry diameter (cm)

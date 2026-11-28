@@ -987,7 +987,7 @@
    module rrlw_kg11_k
 !-------------------------------------------------------------------------------
 !
-!  abtract : rrtmg_lw ORIGINAL/COMBINED abs. coefficients for interval 11
+!  abstract : rrtmg_lw ORIGINAL/COMBINED abs. coefficients for interval 11
 !  band 11:  1480-1800 cm-1 (low - h2o; high - h2o)
 !
 !  Initial version:  JJMorcrette, ECMWF, jul1998
@@ -1932,7 +1932,7 @@
    function getrandompositiveint(twister)
 !-------------------------------------------------------------------------------
 !
-!  abstact :  Generate a random integer on the interval [0,0x7fffffff]
+!  abstract :  Generate a random integer on the interval [0,0x7fffffff]
 !  or [0,2**31]
 !  Equivalent to genrand_int31 in the C code. 
 !
@@ -2206,7 +2206,7 @@
 !    permuteseed  - if the cloud generator is called multiple times, permute 
 !                   the seed between each call. 
 !                   recommended
-!                   permuteseed differes by 'ngpt'
+!                   permuteseed differs by 'ngpt'
 !    irng         - flag for random number generator
 !                   0 = kissvec
 !                   1 = Mersenne Twister
@@ -2734,10 +2734,10 @@
 ! Definitions
 !
 !     Explanation of the method for each value of INFLAG.  Values of
-!     0 or 1 for INFLAG do not distingish being liquid and ice clouds.
+!     0 or 1 for INFLAG do not distinguish being liquid and ice clouds.
 !     INFLAG = 2 does distinguish between liquid and ice clouds, and
 !     requires further user input to specify the method to be used to 
-!     compute the aborption due to each.
+!     compute the absorption due to each.
 !     INFLAG = 0:  For each cloudy layer, the cloud fraction and (gray)
 !                  optical depth are input.  
 !     INFLAG = 1:  For each cloudy layer, the cloud fraction and cloud
@@ -2821,7 +2821,7 @@
 !          cwp = ciwpmc(ig,lay) + clwpmc(ig,lay)
 !          taucmc(ig,lay) = abscld1 * cwp
 !
-! Separate treatement of ice clouds and water clouds.
+! Separate treatment of ice clouds and water clouds.
 !
          else if (inflag.ge.2) then
            radice = reicmc(lay)
@@ -3589,7 +3589,7 @@
 !    rat_n2oco2(nlayers),rat_n2oco2_1(nlayers)
 !    rat_o3co2(nlayers),rat_o3co2_1(nlayers)
 !
-!  local varialbles :
+!  local variables :
 !-------------------------------------------------------------------------------
 !
 ! Input
@@ -7073,7 +7073,7 @@
 !
 ! Compute the optical depth by interpolating in ln(pressure), 
 ! temperature, and appropriate species.  Below laytrop, the water
-! vapor self-continuum adn foreign continuum is interpolated 
+! vapor self-continuum and foreign continuum is interpolated
 ! (in temperature) separately.  
 !
 ! Lower atmosphere loop
@@ -8165,7 +8165,7 @@
    enddo
 !
 ! Perform g-point reduction from 16 per band (256 total points) to
-! a band dependant number (140 total points) for all absorption
+! a band dependent number (140 total points) for all absorption
 ! coefficient input data and Planck fraction input data.
 ! Compute relative weighting for new g-point combinations.
 !
@@ -11086,7 +11086,7 @@
 !    2) Monte Carlo Independent Column Approximation (McICA, Pincus et al., 
 !       JC, 2003) method is applied to the forward model calculation (imca = 1)
 !
-!  This call to RRTMG_LW must be preceeded by a call to the module
+!  This call to RRTMG_LW must be preceded by a call to the module
 !    mcica_subcol_gen_lw.f90 to run the McICA sub-column cloud generator,
 !    which will provide the cloud physical or cloud optical properties
 !    on the RRTMG quadrature point (ngpt) dimension.

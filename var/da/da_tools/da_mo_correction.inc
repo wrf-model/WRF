@@ -25,7 +25,7 @@ function da_mo_correction (ho, po, to, qo, &
    ! FIX? real :: hdif, rib, rll, hll, zint
    real :: hdif, rib, hll, zint
 
-   ! Height difference (in m) above wich correction is applied
+   ! Height difference (in m) above which correction is applied
 
    real, parameter :: hmax = 10.0, hs_max = 40.0  
 

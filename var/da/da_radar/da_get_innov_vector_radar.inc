@@ -595,7 +595,7 @@ END IF
                      end if
 
                      if (radar_rhv_opt == 2) then
-                       ! backgound-dependent reflectivity retrival scheme (Chen et al. 2020, AR; Chen et al. 2021, QJRMS)
+                       ! backgound-dependent reflectivity retrieval scheme (Chen et al. 2020, AR; Chen et al. 2021, QJRMS)
                        !! get the index of reflectvity
                        z_index = nint(ob_radar_rf/10.+1)
                        z_index = max(z_index, 0)

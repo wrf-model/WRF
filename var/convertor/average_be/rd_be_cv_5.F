@@ -76,7 +76,7 @@ subroutine rd_be_cv_5(be_fname, be)
    read(be_unit)  be%evec_loc
    read(be_unit)  be%eval_loc
    if( be%variable(1)(1:3) /= 'psi') then
-      print*,' Variable mismatch while transfering eigen values from BE file '
+      print*,' Variable mismatch while transferring eigen values from BE file '
       print*,' Expected psi but got ',be%variable
       stop
    endif
@@ -95,7 +95,7 @@ subroutine rd_be_cv_5(be_fname, be)
    read(be_unit)  be%evec_loc
    read(be_unit)  be%eval_loc
    if( be%variable(2)(1:5) /= 'chi_u') then
-      print*,' Variable mismatch while transfering eigen values from BE file '
+      print*,' Variable mismatch while transferring eigen values from BE file '
       print*,' Expected chi_u but got ',be%variable
       stop
    endif
@@ -114,7 +114,7 @@ subroutine rd_be_cv_5(be_fname, be)
    read(be_unit)  be%evec_loc
    read(be_unit)  be%eval_loc
    if( be%variable(3)(1:3) /= 't_u') then
-      print*,' Variable mismatch while transfering eigen values from BE file '
+      print*,' Variable mismatch while transferring eigen values from BE file '
       print*,' Expected t_u but got ',be%variable
       stop
    endif
@@ -133,7 +133,7 @@ subroutine rd_be_cv_5(be_fname, be)
    read(be_unit)  be%evec_loc
    read(be_unit)  be%eval_loc
    if( be%variable(4)(1:3) /= 'rh') then
-      print*,' Variable mismatch while transfering eigen values from BE file '
+      print*,' Variable mismatch while transferring eigen values from BE file '
       print*,' Expected rh but got ',be%variable
       stop
    endif
@@ -157,7 +157,7 @@ subroutine rd_be_cv_5(be_fname, be)
    read(be_unit)  be%evec_loc
    read(be_unit)  be%eval_loc
    if( be%variable(5)(1:4) /= 'ps_u') then
-      print*,' Variable mismatch while transfering eigen values from BE file '
+      print*,' Variable mismatch while transferring eigen values from BE file '
       print*,' Expected ps_u but got ',be%variable
       stop
    endif

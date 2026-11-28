@@ -583,7 +583,7 @@ Version 3.1.1 is released on July 31, 2009.
   Note: it only applied on CRTM in V3.1.1.
 
 - Improved software portability; only NETCDF library is mandatory 
-  if only LITTLE_R formated conventional observational data to be used. 
+  if only LITTLE_R formatted conventional observational data to be used.
   To use Prepbufr observational files, just set environmental variable 
   BUFR equal to 1 before the code is compiled. To use radiance BUFR 
   format data, CRTM or RTTOV is needed.
@@ -616,7 +616,7 @@ Version 3.1 is released on April 9, 2009.
 - Changes to obsproc:
     * the executable is renamed to be obsproc.exe from 3dvar_obs.exe and
       namelist.3dvar_obs is renamed to be namelist.obsproc to reflect
-      its capabilitiy of producing WRFDA-ready observations for 3DVAR, FGAT,
+      its capability of producing WRFDA-ready observations for 3DVAR, FGAT,
       or 4DVAR applications.
       See WRFDA/var/obsproc/README.
     * compilation of obsproc.exe is included in "compile all_wrfvar"
@@ -679,7 +679,7 @@ How to compile and run?
 
 - Type 'compile all_wrfvar' when you are ready:
 
-- If sucessful, this will create da_wrfvar.exe and a set of utilities
+- If successful, this will create da_wrfvar.exe and a set of utilities
   in directory WRFDA/var/build/. 
 
 - cd to the appropriate test or run directory to run WRFDA.

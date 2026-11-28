@@ -263,7 +263,7 @@ subroutine da_read_obs_hdf5amsr2 (iv, infile_tb,infile_clw)
       if(nscan.gt.max_scan)then
          write(unit=stdout,fmt=*)'limit of NumberOfScans = ',max_scan
          call da_warning(__FILE__,__LINE__, &
-              (/"HDF5 lmit error for: max_scan"/))
+              (/"HDF5 limit error for: max_scan"/))
       endif
 
    ! read array: scantime
@@ -365,7 +365,7 @@ subroutine da_read_obs_hdf5amsr2 (iv, infile_tb,infile_clw)
                   (/"HDF5 read error for: Brightness Temperature"/))
          endif
          call H5Dclose_f(dhnd1,iret)
-      ! cutoff overlap & convert to unsignd & change scale
+      ! cutoff overlap & convert to unsigned & change scale
          do j=1,nscan
             do i=1,lo_rez_fov
                tb_low(i,j,k)=tb_low(i,j+ovr,k)
@@ -399,7 +399,7 @@ subroutine da_read_obs_hdf5amsr2 (iv, infile_tb,infile_clw)
             (/"HDF5 read error for: Brightness Temperature (original,89GHz-A,H)"/))
       endif
       call H5Dclose_f(dhnd1,iret)
-   ! cutoff overlap & convert to unsignd & change scale
+   ! cutoff overlap & convert to unsigned & change scale
       do j=1,nscan
          do i=1,hi_rez_fov
             tb89ah(i,j)=tb89ah(i,j+ovr)
@@ -432,7 +432,7 @@ subroutine da_read_obs_hdf5amsr2 (iv, infile_tb,infile_clw)
             (/"HDF5 read error for: Brightness Temperature (original,89GHz-A,V)"/))
       endif
       call H5Dclose_f(dhnd1,iret)
-   ! cutoff overlap & convert to unsignd & change scale
+   ! cutoff overlap & convert to unsigned & change scale
       do j=1,nscan
          do i=1,hi_rez_fov
             tb89av(i,j)=tb89av(i,j+ovr)
@@ -787,7 +787,7 @@ subroutine da_read_obs_hdf5amsr2 (iv, infile_tb,infile_clw)
          end do fov_loop
       end do scan_loop
 
-   ! Dellocate arrays
+   ! Deallocate arrays
       deallocate  (obstime)
 
       write(stdout,fmt='(3a,i7)') ' In file: ',trim(fname_tb(ifile)),' got num_amsr2_file    : ',num_amsr2_file_local

@@ -163,8 +163,8 @@ fi
 
 # We just need to find  nc-config. First, check if NETCDF_C is set; if not, check
 # $NETCDF/bin; otherwise, try `which nc-config`. If all that fails, warn user that WRF
-# may fail to build beacuse of an incomplete NetCDF configuration. It could still be
-# successfull if NetCDF was built statically because the results of `nf-config --flibs`
+# may fail to build because of an incomplete NetCDF configuration. It could still be
+# successful if NetCDF was built statically because the results of `nf-config --flibs`
 # should contain the necessary information for linking as long as NetCDF-Fortran is not
 # version 4.5.3 (see https://github.com/Unidata/netcdf-fortran/issues/270)
 

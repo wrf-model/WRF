@@ -6,7 +6,7 @@ MODULE module_data_megan2
   !
   !  Reference: 
   !
-  !    Estimates of global terrestial isoprene emissions using MEGAN
+  !    Estimates of global terrestrial isoprene emissions using MEGAN
   !    (Model of Emissions of Gases and Aerosols from Nature )
   !    A. Guenther, T. Karl, P. Harley, C. Wiedinmyer, P.I. Palmer, and C. Geron
   !    Atmospheric Chemistry and Physics, 6, 3181-3210, 2006
@@ -23,7 +23,7 @@ MODULE module_data_megan2
   IMPLICIT NONE
 
   !=======================================================================
-  ! The following contains 20 clases of species for MEGAN v2.04
+  ! The following contains 20 classes of species for MEGAN v2.04
   !  Originally from Tan's SPC_MGN.EXT (12/02/2006)
   !=======================================================================
 
@@ -112,7 +112,7 @@ MODULE module_data_megan2
   !=====================================================================
   !  The following contains "temperature dependent" parameter for
   !  non-isoprene species.  This is the parameter "beta" provided in
-  !  Table 2 of MEGAN v2.0 Documentaion.
+  !  Table 2 of MEGAN v2.0 Documentation.
   !  Originally from Tan's TEMPD_PRM.EXT (11/30/2006)
   !  Updated on 08/13/2007 based on Alex Guenther's email.
   !=====================================================================
@@ -143,7 +143,7 @@ MODULE module_data_megan2
   !=====================================================================
   !  The following contains the fraction of total emisssions
   !  for which light-dependency is applied (via GAMMA_P).  This is the
-  !  parameter "LDF" provided in Table 2 of MEGAN v2.0 Documentaion.
+  !  parameter "LDF" provided in Table 2 of MEGAN v2.0 Documentation.
   !  Originally from Tan's LD_FCT.EXT (11/30/2006)
   !  Updated 08/13/2007 based on Alex Guenther's email.
   !=====================================================================

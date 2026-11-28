@@ -100,7 +100,7 @@
       id_ho2    => spc_ids(7)
 #endif
 !-----------------------------------------------------------------
-!       ... get species indicies
+!       ... get species indices
 !-----------------------------------------------------------------
 #if (defined MODAL_AERO)
 #if ( defined MODAL_AERO_7MODE )
@@ -256,12 +256,12 @@
         !
         !       (0) using initial PH to calculate PH
         !           (a) HENRYs law constants
-        !           (b) PARTIONING
+        !           (b) PARTITIONING
         !           (c) PH values
         !
         !       (1) using new PH to repeat
         !           (a) HENRYs law constants
-        !           (b) PARTIONING
+        !           (b) PARTITIONING
         !           (c) REACTION rates
         !           (d) PREDICTION
         !-----------------------------------------------------------------------      
@@ -426,7 +426,7 @@
 #endif
         !-----------------------------------------------------------------
         !       ... NOTE: The press array is in pascals and must be
-        !                 mutiplied by 10 to yield dynes/cm**2.
+        !                 multiplied by 10 to yield dynes/cm**2.
         !-----------------------------------------------------------------
         !==================================================================
         !       ... First set the PH
@@ -590,7 +590,7 @@
                     xe = 1.7e-5_r8*EXP(-4325._r8*work1(i) )
                     henh3(i,k)  = xk*(1._r8 + xe*xph(i,k)/xkw)
                     !-----------------------------------------------------------------
-                    !       ... Partioning and effect of pH 
+                    !       ... Partitioning and effect of pH
                     !-----------------------------------------------------------------
                     pz = .01_r8*press(i,k)       !! pressure in mb
                     tz = tfld(i,k)
@@ -748,7 +748,7 @@
               xh2o2(i,k) = xh2o2(i,k) + r2h2o2*dtime         ! updated h2o2 by het production
 
               !-----------------------------------------------
-              !       ... Partioning 
+              !       ... Partitioning
               !-----------------------------------------------
               !------------------------------------------------------------------------
               !        ... h2o2
@@ -1014,7 +1014,7 @@
 !   knudsen number
         knudsen = 3.0_r8*gasdiffus/(gasspeed*rad_cd)
 
-!   following assumes accomodation coefficient = 0.65
+!   following assumes accommodation coefficient = 0.65
 !   (Adams & Seinfeld, 2002, JGR, and references therein)
 !       fuchs_sutugin = (0.75*accom*(1. + knudsen)) /
 !                       (knudsen*(1.0 + knudsen + 0.283*accom) + 0.75*accom)

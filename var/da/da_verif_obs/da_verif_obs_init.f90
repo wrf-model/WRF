@@ -137,7 +137,7 @@ end subroutine da_change_date
    integer :: i
 
  !
-  ! Initalize Student t table for alpha=0.025
+  ! Initialize Student t table for alpha=0.025
   !
 
   ! Degrees of freedom

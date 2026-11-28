@@ -21,7 +21,7 @@
 ! Email: Jerome.Fast@pnl.gov
 !
 ! Please report any bugs or problems to Jerome Fast, the WRF-chem
-! implmentation team leader for PNNL.
+! implementation team leader for PNNL.
 !
 ! Terms of Use:
 !  1) Users are requested to consult the primary author prior to
@@ -35,7 +35,7 @@
 !     are requested to cite one or more of the references below
 !     (depending on the application) for proper acknowledgement.
 !
-! Note that the aerosol optical properites are currently tied to the use
+! Note that the aerosol optical properties are currently tied to the use
 ! of Fast-J and MOSAIC.  Future modifications will make the calculations
 ! more generic so the code is not tied to the photolysis scheme and the
 ! code can be used  for both modal and sectional treatments.
@@ -139,8 +139,8 @@
 
 !local variables
 	real weighte, weights
-! various bookeeping variables
-	integer ltype ! total number of indicies of refraction
+! various bookkeeping variables
+	integer ltype ! total number of indices of refraction
 	parameter (ltype = 1)  ! bracket refractive indices based on information from Rahul, 2002/11/07
 	real x
 	real thesum ! for normalizing things

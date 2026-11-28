@@ -346,7 +346,7 @@ How to compile and run?
 
       setenv J "-j 1"
 
-- If sucessful, this will create either real.exe or ideal.exe and wrf.exe
+- If successful, this will create either real.exe or ideal.exe and wrf.exe
   in directory main/, and the appropriate executables will be linked into
   the test directoires under test/case_name, or run/.
 

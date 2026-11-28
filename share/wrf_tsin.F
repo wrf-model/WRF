@@ -93,7 +93,7 @@ SUBROUTINE wrf_tsin ( grid , ierr )
                                                                    ! One extra for the line we incorrectly read
                       CALL wrf_message('Error in tslist, line '//trim(errmess))
                       CALL wrf_error_fatal('Error --- Maybe check that the header (I,J) vs (LAT,LON) matches the provided information')
-                      EXIT    ! (technically unecessary, as we will exit the loop anyway)
+                      EXIT    ! (technically unnecessary, as we will exit the loop anyway)
                    END IF
                    IF ( ( grid%ntsloc == 1 ) .and. ( .NOT. grid%tslist_ij ) ) THEN
                       IF ( ( ABS(grid%lattsloc(grid%ntsloc)) <= 0.1 ) .and. &

@@ -49,7 +49,7 @@
 !C  1. [WT]
 !C     DOUBLE PRECISION array of length [8].
 !C     Total concentrations (GAS+AEROSOL) of species, expressed in moles/m3.
-!C     If the foreward probelm is solved (CNTRL(1)=0), array WT is
+!C     If the forward problem is solved (CNTRL(1)=0), array WT is
 !C     identical to array WI.
 !C     WT(1) - total sodium
 !C     WT(2) - total sulfate
@@ -173,7 +173,7 @@
 !liqy-20140513
 
 !C
-!C --- PROBLEM TYPE (0=FOREWARD, 1=REVERSE) ------------------------------
+!C --- PROBLEM TYPE (0=FORWARD, 1=REVERSE) ------------------------------
 !C
       IPROB   = NINT(CNTRL(1))
 !C
@@ -181,7 +181,7 @@
 !C
       METSTBL = NINT(CNTRL(2))
 !C
-!C --- SOLVE FOREWARD PROBLEM ------------------------------------------**
+!C --- SOLVE FORWARD PROBLEM ------------------------------------------**
 !C
 50    IF (IPROB.EQ.0) THEN
          IF (WI(1)+WI(2)+WI(3)+WI(4)+WI(5)+WI(6)+WI(7)+WI(8) .LE. TINY) &
@@ -476,7 +476,7 @@
 !C
 !C *** ISORROPIA CODE
 !C *** SUBROUTINE GETPARM
-!C *** THIS SUBROUTINE OBTAINS THE CURRENT VAULES OF THE SOLUTION 
+!C *** THIS SUBROUTINE OBTAINS THE CURRENT VALUES OF THE SOLUTION
 !C     PARAMETERS OF ISORROPIA
 !C
 !C ======================== ARGUMENTS / USAGE ===========================
@@ -2556,7 +2556,7 @@
 !C *** SUBROUTINE ADJUST
 !C *** ADJUSTS FOR MASS BALANCE BETWEEN VOLATILE SPECIES AND SULFATE
 !C     FIRST CALCULATE THE EXCESS OF EACH PRECURSOR, AND IF IT EXISTS, THEN
-!C     ADJUST SEQUENTIALY AEROSOL PHASE SPECIES WHICH CONTAIN THE EXCESS
+!C     ADJUST SEQUENTIALLY AEROSOL PHASE SPECIES WHICH CONTAIN THE EXCESS
 !C     PRECURSOR.
 !C
 !C *** COPYRIGHT 1996-2006, UNIVERSITY OF MIAMI, CARNEGIE MELLON UNIVERSITY,
@@ -2966,7 +2966,7 @@
 !C     HCL(G) -> HCL(AQ)   AND  HCL(AQ) ->  (H+) + (CL-) 
 !C     EQUILIBRIA, USING (H+) FROM THE SULFATES.
 !C
-!C     THIS IS THE VERSION USED BY THE INVERSE PROBLEM SOVER
+!C     THIS IS THE VERSION USED BY THE INVERSE PROBLEM SOLVER
 !C
 !C *** COPYRIGHT 1996-2006, UNIVERSITY OF MIAMI, CARNEGIE MELLON UNIVERSITY,
 !C *** GEORGIA INSTITUTE OF TECHNOLOGY
@@ -3064,7 +3064,7 @@
 !C     ACID DISSOLVED IS CALCULATED FROM THE HNO3(G) -> HNO3(AQ) AND
 !C     HNO3(AQ) -> (H+) + (CL-) EQUILIBRIA, USING (H+) FROM THE SULFATES.
 !C
-!C     THIS IS THE VERSION USED BY THE INVERSE PROBLEM SOVER
+!C     THIS IS THE VERSION USED BY THE INVERSE PROBLEM SOLVER
 !C
 !C *** COPYRIGHT 1996-2006, UNIVERSITY OF MIAMI, CARNEGIE MELLON UNIVERSITY,
 !C *** GEORGIA INSTITUTE OF TECHNOLOGY
@@ -3134,7 +3134,7 @@
       CC   =-CHI1/A1             
       DIAK = SQRT(BB*BB - 4.D0*CC)   ! Always > 0
       PSI  = 0.5*(-BB + DIAK)        ! One positive root
-      PSI  = MAX(TINY, MIN(PSI,CHI1))! Constrict in acceptible range
+      PSI  = MAX(TINY, MIN(PSI,CHI1))! Constrict in acceptable range
 !C
 !C *** CALCULATE NH3 SPECIATION IN THE GAS PHASE *************************
 !C
@@ -3825,7 +3825,7 @@
          MOLALR(6) = MIN(MOLAL(4), FRNH4)                  ! NH4CL
 !C
 !C *** NA-NH4-SO4-NO3-CL SYSTEM ; SULFATE POOR ; SODIUM RICH CASE
-!C *** RETREIVE DISSOLVED SALTS DIRECTLY FROM COMMON BLOCK /SOLUT/
+!C *** RETRIEVE DISSOLVED SALTS DIRECTLY FROM COMMON BLOCK /SOLUT/
 !C
       ELSE IF (SC.EQ.'H') THEN
          MOLALR(1) = PSI7                                  ! NACL
@@ -3839,7 +3839,7 @@
          MOLALR(6) = MIN(FRCL, FRNH4)                      ! NH4CL
 !C
 !C *** NA-NH4-SO4-NO3-CL SYSTEM ; SULFATE RICH CASE ; NO FREE ACID
-!C *** RETREIVE DISSOLVED SALTS DIRECTLY FROM COMMON BLOCK /SOLUT/
+!C *** RETRIEVE DISSOLVED SALTS DIRECTLY FROM COMMON BLOCK /SOLUT/
 !C
       ELSE IF (SC.EQ.'I') THEN
          MOLALR(04) = PSI5                                 ! (NH4)2SO4
@@ -3871,7 +3871,7 @@
          MOLALR(6) = MIN(MOLAL(4), FRNH4)                  ! NH4CL
 !C
 !C *** NA-NH4-SO4-NO3-CL-CA-K-MG SYSTEM ; SULFATE POOR ; CR+NA RICH; CR POOR CASE
-!C *** RETREIVE DISSOLVED SALTS DIRECTLY FROM COMMON BLOCK /SOLUT/
+!C *** RETRIEVE DISSOLVED SALTS DIRECTLY FROM COMMON BLOCK /SOLUT/
 !C
       ELSE IF (SC.EQ.'M') THEN
          MOLALR(1) = PSI7                                  ! NACL
@@ -3887,7 +3887,7 @@
          MOLALR(21)= PSI10                                 ! MGSO4
 !C
 !C *** NA-NH4-SO4-NO3-CL-CA-K-MG SYSTEM ; SULFATE POOR ; CR+NA RICH; CR RICH CASE
-!C *** RETREIVE DISSOLVED SALTS DIRECTLY FROM COMMON BLOCK /SOLUT/
+!C *** RETRIEVE DISSOLVED SALTS DIRECTLY FROM COMMON BLOCK /SOLUT/
 !C
       ELSE IF (SC.EQ.'P') THEN
          MOLALR(1) = PSI7                                    ! NACL
@@ -15886,7 +15886,7 @@
 !CC  TOOLBOX LIBRARY v.1.0 (May 1995)
 !CC
 !CC  Program unit   : SUBROUTINE RPLSTR
-!CC  Purpose        : REPLACE CHARACTERS OCCURING IN A STRING
+!CC  Purpose        : REPLACE CHARACTERS OCCURRING IN A STRING
 !CC  Author         : Athanasios Nenes
 !CC
 !CC  ======================= ARGUMENTS / USAGE =============================
@@ -15932,7 +15932,7 @@
 10    IP = INDEX(STRING,OLD)      ! SEE IF 'OLD' EXISTS IN 'STRING'
       IF (IP.EQ.0) RETURN         ! 'OLD' DOES NOT EXIST ; RETURN
       STRING(IP:IP+ILO-1) = NEW   ! REPLACE SUBSTRING 'OLD' WITH 'NEW'
-      GOTO 10                     ! GO FOR NEW OCCURANCE OF 'OLD'
+      GOTO 10                     ! GO FOR NEW OCCURRENCE OF 'OLD'
 !C
       END
 
@@ -15951,7 +15951,7 @@
 !CC
 !CC  VAR        is the DOUBLE PRECISION variable which value is to be saved
 !CC  DEF        is a DOUBLE PRECISION variable, with the default value of VAR.
-!CC  PROMPT     is a CHARACTER varible containing the prompt string.
+!CC  PROMPT     is a CHARACTER variable containing the prompt string.
 !CC  PRFMT      is a CHARACTER variable containing the FORMAT specifier
 !CC             for the default value DEF.
 !CC  IERR       is an INTEGER error flag, and has the values:
@@ -16123,7 +16123,7 @@
 !C     MURRAY SPIEGER, McGRAW-HILL, NEW YORK, 1968
 !C     (GREEK TRANSLATION: BY SOTIRIOS PERSIDES, ESPI, ATHENS, 1976)
 !C
-!C     A SPECIAL CASE IS CONSIDERED SEPERATELY ; WHEN A3 = 0, THEN
+!C     A SPECIAL CASE IS CONSIDERED SEPARATELY ; WHEN A3 = 0, THEN
 !C     ONE ROOT IS X=0.0, AND THE OTHER TWO FROM THE SOLUTION OF THE
 !C     QUADRATIC EQUATION X**2 + A1*X + A2 = 0.0
 !C     THIS SPECIAL CASE IS CONSIDERED BECAUSE THE ANALYTICAL FORMULA

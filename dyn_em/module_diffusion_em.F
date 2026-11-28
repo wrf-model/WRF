@@ -2602,7 +2602,7 @@ END SUBROUTINE smag2d_km
     ENDDO
     ENDDO
 
-!-------Length scale limited by bouyancy effect-----
+!-------Length scale limited by buoyancy effect-----
     gtr  = g/300.
     DO j = j_start, j_end
     DO k = kts, ktf
@@ -3823,7 +3823,7 @@ SUBROUTINE horizontal_diffusion_s (tendency, config_flags,                &
       IF ( config_flags%periodic_x ) i_start = its
       IF ( config_flags%periodic_x ) i_end = MIN(ite,ide-1)
 
-! diffusion of the TKE needs mutiple 2
+! diffusion of the TKE needs multiple 2
 
    IF ( doing_tke ) THEN
       DO j = j_start, j_end
@@ -4917,7 +4917,7 @@ END SUBROUTINE vertical_diffusion_s
                                   ims, ime, jms, jme, kms, kme,     &
                                   its, ite, jts, jte, kts, kte      )
 !-----------------------------------------------------------------------
-!This subroutine prescibes the nonlocal heat flux profile based on LES analysis
+!This subroutine prescribes the nonlocal heat flux profile based on LES analysis
 !And compute the nonlocal momentum gamma term 
 !References:
 ! Shin and Hong 2015, MWR

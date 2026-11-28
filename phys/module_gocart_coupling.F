@@ -27,7 +27,7 @@
 ! aero_opt ( convert aerosol mass into aerosol single-scattering properties. )
 !
 !
-! b) Aerosol Indirect Effect (initialize. Call just only once at the beggining.)
+! b) Aerosol Indirect Effect (initialize. Call just only once at the beginning.)
 !
 ! * makelut_ccn_icn (Create CCN and IN candidate look-up table.)
 !    |-ccn_estimate( estimate total number concentrations of CCN, IN )
@@ -47,7 +47,7 @@
 ! 11/2017  Toshi Matsui@NASA GSFC : Removed GOCART read routines. 
 ! 11/2010  Toshi Matsui@NASA GSFC : Developed IN routine. 
 ! 10/2010  Toshi Matsui@NASA GSFC : Developed CCN routine.  
-! 10/2008  Toshi Matsui@NASA GSFC ; Now it reads binary direct acess data with subset domain allocation
+! 10/2008  Toshi Matsui@NASA GSFC ; Now it reads binary direct access data with subset domain allocation
 ! 08/2008  Toshi Matsui@NASA GSFC ; Modified for 3hourly instantenous GOCART data  
 ! 06/2007  Toshi Matsui@NASA GSFC : add LW aerosol optical proproperties 
 ! 02/2007  Toshi Matsui@NASA GSFC ; initial, significant revision from code from H.Yu and M. Chin 
@@ -68,7 +68,7 @@
          makelut_ccn_icn    ! make CCN look-up tables
 ! ##############################################################################
 
- logical,parameter :: gocart_verbose = .true.   !if true, it provides alot of run-time comments. 
+ logical,parameter :: gocart_verbose = .true.   !if true, it provides a lot of run-time comments.
 
 ! ##############################################################################
 
@@ -93,19 +93,19 @@
 
   real,save :: Bex(tgmx,nwl,0:nrmx) ! SW Mass extinction coefficient [m2/g]
   real,save :: w0(tgmx,nwl,0:nrmx)  ! SW single scattering albedo [-]
-  real,save :: g(tgmx,nwl,0:nrmx)   ! SW asymetry factor [-]
+  real,save :: g(tgmx,nwl,0:nrmx)   ! SW asymmetry factor [-]
 
   real,save :: Bex_temp(tgmx,nwl,0:nrmx) ! temporary SW Mass extinction coefficient [m2/g]
   real,save :: w0_temp(tgmx,nwl,0:nrmx)  ! temporary SW single scattering albedo [-]
-  real,save :: g_temp(tgmx,nwl,0:nrmx)   ! temporary SW asymetry factor [-]
+  real,save :: g_temp(tgmx,nwl,0:nrmx)   ! temporary SW asymmetry factor [-]
 
   real,save :: Bex_lw(tgmx,nwl_lw,0:nrmx) ! LW Mass extinction coefficient [m2/g]
   real,save :: w0_lw(tgmx,nwl_lw,0:nrmx)  ! LW single scattering albedo [-]
-  real,save :: g_lw(tgmx,nwl_lw,0:nrmx)   ! LW asymetry factor [-] 
+  real,save :: g_lw(tgmx,nwl_lw,0:nrmx)   ! LW asymmetry factor [-]
 
   real,save :: Bex_lw_temp(tgmx,nwl_lw,0:nrmx) ! temporary LW Mass extinction coefficient [m2/g]
   real,save :: w0_lw_temp(tgmx,nwl_lw,0:nrmx)  ! temporary LW single scattering albedo [-]
-  real,save :: g_lw_temp(tgmx,nwl_lw,0:nrmx)   ! temporary LW asymetry factor [-] 
+  real,save :: g_lw_temp(tgmx,nwl_lw,0:nrmx)   ! temporary LW asymmetry factor [-]
 
   character :: aa*39   ! dummy character
   character :: at*4    ! aerosol types
@@ -115,14 +115,14 @@
 !
 ! OPAC aerosol microphysics parameters
 !
- type particle_opac !OPAC paticle type
+ type particle_opac !OPAC particle type
     real :: inso,waso, soot, ssam, sscm, minm, miam, micm, mitr, suso
  end type particle_opac
 
  type ( particle_opac) :: & !
      std      ,&  ! standard deviation []
      r_mode   ,&  ! mode radius [micron]
-     r_min    ,&  ! minmum radius [micron]
+     r_min    ,&  ! minimum radius [micron]
      r_max    ,&  ! maximum radius [micron]
      rho          ! density [g/cm3]
 
@@ -8921,7 +8921,7 @@
 !
 ! empirical formulae in DeMott 2010 based on starndard atmosphere.
 !
- t_fact = max(0.e0, 273.16e0 - t_air )   ! air temprature in deg celcius [degC]
+ t_fact = max(0.e0, 273.16e0 - t_air )   ! air temperature in deg celsius [degC]
 
  icn_std =  a * (t_fact**b) * (n_025_std**( c*t_fact + d ))  ! total number conc of IN [#/std L]
 
@@ -8973,9 +8973,9 @@
  real :: n_025     ! IN candidate concentration [#/cm3]
  real :: frac_025  ! mass fraction of IN candidate for CN [-]
 
- real :: t_air     ! air temprature [K]
+ real :: t_air     ! air temperature [K]
  real :: vant_fac  ! van't Hoff factor [-]
- real :: mol_wgt   ! molecular weight of the chemical compnent of CN 
+ real :: mol_wgt   ! molecular weight of the chemical component of CN
  real :: s         ! super saturation rate
  integer :: is, it ! for looping
 
@@ -8993,7 +8993,7 @@
  lut_ccn = 0.e0       ! initialize
 
  TEMP_LOOP: do it = 1, mxpts_t
-    t_air = pts_t(it) ! temprature [K]
+    t_air = pts_t(it) ! temperature [K]
 
  SAT_LOOP : do is = 1, mxpts_s
     s = pts_s(is)     ! super saturation rate  [%]
@@ -9096,7 +9096,7 @@
 !------------------------------------------------------------------------
 ! Comments: For given chemical composition, aerosol total mass, size distributions,
 ! this routine estimate total number concentrations of 1) CCN, 2) Giant CCN, and
-! 3) IN-candidate aerosol (D>0.5micron), and correponding mass fractions. 
+! 3) IN-candidate aerosol (D>0.5micron), and corresponding mass fractions.
 ! 
 ! Caution for GCCN user. If you want to use GCCN and CCN simultaneously (e.g., RAMS microphysics)
 ! CCN conc must be corrected in this way. 
@@ -9111,12 +9111,12 @@
 !------------------------------------------------------------------------
  real,intent(in) :: q       ! aerosol mass mixing ratio [g/m3]
  real,intent(in) :: s       ! super saturation rate [%]
- real,intent(in) :: t_air   ! air temprature [K]
+ real,intent(in) :: t_air   ! air temperature [K]
  real,intent(in) :: vant_fac! van't Hoff factor [-]
- real,intent(in) :: mol_wgt ! molecular weight of the chemical compnent of CN 
+ real,intent(in) :: mol_wgt ! molecular weight of the chemical component of CN
  real,intent(in) :: std     ! standard deviation []
  real,intent(in) :: r_mode  ! mode radius [micron]
- real,intent(in) :: r_min   ! minmum radius [micron]
+ real,intent(in) :: r_min   ! minimum radius [micron]
  real,intent(in) :: r_max   ! maximum radius [micron]
  real,intent(in) :: rho     ! density [g/cm3]
 
@@ -9156,7 +9156,7 @@
 !
  call convert_mass2number( q , std, r_mode, r_min, r_max, rho , n_tot )
 
-! Initilize
+! Initialize
  cum_pd = 0.e0
  n_ccn  = 0.e0 ; q_ccn  = 0.e0
  n_gccn = 0.e0 ; q_gccn = 0.e0
@@ -9253,7 +9253,7 @@
  real,intent(in) :: q_in       ! aerosol mass mixing ratio [g/m3]
  real,intent(in) :: std     ! standard deviation []
  real,intent(in) :: r_mode  ! mode radius [micron]
- real,intent(in) :: r_min   ! minmum radius [micron]
+ real,intent(in) :: r_min   ! minimum radius [micron]
  real,intent(in) :: r_max   ! maximum radius [micron]
  real,intent(in) :: rho     ! density [g/cm3]
 
@@ -9345,7 +9345,7 @@
 
 !------------------------------------------------------------------------
 ! Read aerosol mie table & assinge optical properties.
-! Assinged values are saved for global variables at the top of module_gocart_offline.
+! Assigned values are saved for global variables at the top of module_gocart_offline.
 !
 ! History;
 ! 02/2007  Toshi Matsui ; Initial.
@@ -9358,12 +9358,12 @@
  real :: nBex(tgmx,nwl,nrh) ! reasigned Mass extinction coefficient [m2/g]
  real :: mw0(nmt,nwl,nrh)   ! single scattering albedo [-]
  real :: nw0(tgmx,nwl,nrh)  ! reasigned single scattering albedo [-]
- real :: mg(nmt,nwl,nrh)    ! asymetry factor [-]
- real :: ng(tgmx,nwl,nrh)   ! reasigned asymetry factor [-]
+ real :: mg(nmt,nwl,nrh)    ! asymmetry factor [-]
+ real :: ng(tgmx,nwl,nrh)   ! reasigned asymmetry factor [-]
  real :: mRHr(nmt,nrh)      ! relative humidity [-]
  real :: nRHr(tgmx,nrh)     ! reasigned relative humidity [-]
  real :: w1, w2             !weight for pressure interpolation
- real :: wl(nwl)            ! wavelengh interval for SW radiation [um]
+ real :: wl(nwl)            ! wavelength interval for SW radiation [um]
 
 !
 ! Mie table loop
@@ -9502,7 +9502,7 @@
   implicit none
 !------------------------------------------------------------------------
 ! write out aerosol mie table & assinge optical properties.
-! Assinged values are saved for global variables at the top of module_gocart_offline.
+! Assigned values are saved for global variables at the top of module_gocart_offline.
 !
 ! History;
 ! 02/2007  Toshi Matsui ; Initial.
@@ -9538,7 +9538,7 @@
   enddo !ai
 
 !
-! asymetry factor
+! asymmetry factor
 !
   do ai = 1, tgmx !aerosol type
        write(1,22) ai,ai!,nh,nh
@@ -9574,7 +9574,7 @@
 
 !------------------------------------------------------------------------
 ! Read aerosol mie table (LW) & assinge optical properties.
-! Assinged values are saved for global variables at the top of module_gocart_offline.
+! Assigned values are saved for global variables at the top of module_gocart_offline.
 !
 ! History;
 ! 02/2007  Toshi Matsui ; Initial.
@@ -9590,15 +9590,15 @@
   real :: nBex(tgmx,nb,nrh) ! reasigned Mass extinction coefficient [m2/g]
   real :: mw0(nmt,nb,nrh)   ! single scattering albedo [-]
   real :: nw0(tgmx,nb,nrh)  ! reasigned single scattering albedo [-]
-  real :: mg(nmt,nb,nrh)    ! asymetry factor [-]
-  real :: ng(tgmx,nb,nrh)   ! reasigned asymetry factor [-]
+  real :: mg(nmt,nb,nrh)    ! asymmetry factor [-]
+  real :: ng(tgmx,nb,nrh)   ! reasigned asymmetry factor [-]
   real :: mRHr(nmt,nrh)         ! relative humidity [-]
   real :: nRHr(tgmx,nrh)        ! reasigned relative humidity [-]
   real :: w1, w2                ! weight for pressure interpolation
 
   real :: Bext(tgmx,nb,0:nrmx)   ! temporary Mass extinction coefficient [m2/g]
   real :: w0t(tgmx,nb,0:nrmx)    ! temporary single scattering albedo [-]
-  real :: gt(tgmx,nb,0:nrmx)     ! temporary asymetry factor [-]
+  real :: gt(tgmx,nb,0:nrmx)     ! temporary asymmetry factor [-]
   real :: Bex_wn(tgmx,250:4000,0:nrmx)  !temp Bex array for wavenumber 
   real :: w0_wn(tgmx,250:4000,0:nrmx)   !temp w0 array for wavenumber
   real :: g_wn(tgmx,250:4000,0:nrmx)    !temp g array for wavenumber
@@ -9792,7 +9792,7 @@
   implicit none
 !------------------------------------------------------------------------
 ! write out aerosol mie table & assinge optical properties.
-! Assinged values are saved for global variables at the top of module_gocart_offline.
+! Assigned values are saved for global variables at the top of module_gocart_offline.
 !
 ! History;
 ! 02/2007  Toshi Matsui ; Initial.
@@ -9828,7 +9828,7 @@
   enddo !ai
 
 !
-! asymetry factor
+! asymmetry factor
 !
   do ai = 1, tgmx !aerosol type
        write(1,22) ai,ai!,nh,nh
@@ -9888,7 +9888,7 @@
 
 !-----IO variables
  character(len=2), intent(in) :: sw_or_lw   ! character index that determines sw or lw radiation
- integer, intent(in) :: np            !model verical array size
+ integer, intent(in) :: np            !model vertical array size
  integer, intent(in) :: nband         !# of radiation bands
  real, intent(in)    :: aero(np,tgmx) !aerosol mass conc [g/m3]
  real, intent(in)    :: pr(np)        !pressure [mb]
@@ -9897,7 +9897,7 @@
  real, intent(in)    :: dz(np)        !layer thickness [m]
  real, intent(out)   :: tau(np,nband)      !total aerosol optical depth
  real, intent(out)   :: ssa(np,nband)      !total aerosol single scattering albedo
- real, intent(out)   :: asy(np,nband)      !total aerosol asymetry factor
+ real, intent(out)   :: asy(np,nband)      !total aerosol asymmetry factor
 
 !-----Local variables
  integer :: rhi         !RH index
@@ -9934,7 +9934,7 @@
     w2 = (rh(k) - real(rhi)/100.) / 0.01  !weight
     w1 = max(min( 1.-w2,1. ),0.) !weight
 
-    do n = 1,nband  !wavelengh loop
+    do n = 1,nband  !wavelength loop
 
        tau_typ = 0. ; ssa_typ = 0. ; asy_typ = 0.  !initialization
 
@@ -9974,7 +9974,7 @@
               stop 'MSG aero_opt: the option does not exist: sw_or_lw '
          end select rad_select
 
-         ! compute total optical depth single scatterling albedo, asymetry parameters
+         ! compute total optical depth single scatterling albedo, asymmetry parameters
          tau(k,n) = sum( tau_typ(1:tgmx) )
          ssa(k,n) = sum( tau_typ(1:tgmx)*ssa_typ(1:tgmx) ) / max(tau(k,n),1e-08)
          asy(k,n) = sum( tau_typ(1:tgmx)*ssa_typ(1:tgmx)*asy_typ(1:tgmx) ) &

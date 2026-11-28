@@ -7125,7 +7125,7 @@ IMPLICIT NONE
 !     species parameters (see taumol.f for definition).  The first               
 !     index in the array, JS, runs from 1 to 9, and corresponds to               
 !     different values of the binary species parameter.  For instance, &        
-!     JS=1 refers to dry air, JS = 2 corresponds to the paramter value 1/8, &   
+!     JS=1 refers to dry air, JS = 2 corresponds to the parameter value 1/8, &
 !     JS = 3 corresponds to the parameter value 2/8, etc.  The second index      
 !     in the array, JT, which runs from 1 to 5, corresponds to different         
 !     temperatures.  More specifically, JT = 3 means that the data are for       
@@ -7167,7 +7167,7 @@ IMPLICIT NONE
 !     for a range of pressure levels > ~100mb and temperatures.  The first       
 !     index in the array, JT, which runs from 1 to 5, corresponds to             
 !     different temperatures.  More specifically, JT = 3 means that the          
-!     data are for the corresponding TREF for this  pressure level, &           
+!     data are for the corresponding TREF for this  pressure level, &
 !     JT = 2 refers to the temperatureTREF-15, JT = 1 is for TREF-30, &         
 !     JT = 4 is for TREF+15, and JT = 5 is for TREF+30.  The second              
 !     index, JP, runs from 1 to 13 and refers to the corresponding               
@@ -7178,7 +7178,7 @@ IMPLICIT NONE
 !     for a range of pressure levels > ~100mb and temperatures.  The first       
 !     index in the array, JT, which runs from 1 to 5, corresponds to             
 !     different temperatures.  More specifically, JT = 3 means that the          
-!     data are for the cooresponding TREF for this  pressure level, &           
+!     data are for the corresponding TREF for this  pressure level, &
 !     JT = 2 refers to the temperature                                           
 !     TREF-15, JT = 1 is for TREF-30, JT = 4 is for TREF+15, and JT = 5          
 !     is for TREF+30.  The second index, JP, runs from 1 to 13 and refers        
@@ -7214,7 +7214,7 @@ IMPLICIT NONE
 !     species parameters (see taumol.f for definition).  The first               
 !     index in the array, JS, runs from 1 to 11, and corresponds to              
 !     different values of the binary species parameter.  For instance, &        
-!     JS=1 refers to dry air, JS = 2 corresponds to the paramter value 1/8, &   
+!     JS=1 refers to dry air, JS = 2 corresponds to the parameter value 1/8, &
 !     JS = 3 corresponds to the parameter value 2/8, etc.  The second index      
 !     in the array, JT, which runs from 1 to 5, corresponds to different         
 !     temperatures.  More specifically, JT = 3 means that the data are for       
@@ -7327,7 +7327,7 @@ IMPLICIT NONE
 !     species parameters (see taumol.f for definition).  The first               
 !     index in the array, JS, runs from 1 to 9, and corresponds to               
 !     different values of the binary species parameter.  For instance, &        
-!     JS=1 refers to dry air, JS = 2 corresponds to the paramter value 1/8, &   
+!     JS=1 refers to dry air, JS = 2 corresponds to the parameter value 1/8, &
 !     JS = 3 corresponds to the parameter value 2/8, etc.  The second index      
 !     in the array, JT, which runs from 1 to 5, corresponds to different         
 !     temperatures.  More specifically, JT = 3 means that the data are for       
@@ -7356,7 +7356,7 @@ IMPLICIT NONE
 !     species parameters (see taumol.f for definition).  The first               
 !     index in the array, JS, runs from 1 to 9, and corresponds to               
 !     different values of the binary species parameter.  For instance, &        
-!     JS=1 refers to dry air, JS = 2 corresponds to the paramter value 1/8, &   
+!     JS=1 refers to dry air, JS = 2 corresponds to the parameter value 1/8, &
 !     JS = 3 corresponds to the parameter value 2/8, etc.  The second index      
 !     in the array, JT, which runs from 1 to 5, corresponds to different         
 !     temperatures.  More specifically, JT = 3 means that the data are for       
@@ -7424,7 +7424,7 @@ IMPLICIT NONE
 !     species parameters (see taumol.f for definition).  The first               
 !     index in the array, JS, runs from 1 to 9, and corresponds to               
 !     different values of the binary species parameter.  For instance, &        
-!     JS=1 refers to dry air, JS = 2 corresponds to the paramter value 1/8, &   
+!     JS=1 refers to dry air, JS = 2 corresponds to the parameter value 1/8, &
 !     JS = 3 corresponds to the parameter value 2/8, etc.  The second index      
 !     in the array, JT, which runs from 1 to 5, corresponds to different         
 !     temperatures.  More specifically, JT = 3 means that the data are for       
@@ -7453,7 +7453,7 @@ IMPLICIT NONE
 !     species parameters (see taumol.f for definition).  The first               
 !     index in the array, JS, runs from 1 to 9, and corresponds to               
 !     different values of the binary species parameter.  For instance, &        
-!     JS=1 refers to dry air, JS = 2 corresponds to the paramter value 1/8, &   
+!     JS=1 refers to dry air, JS = 2 corresponds to the parameter value 1/8, &
 !     JS = 3 corresponds to the parameter value 2/8, etc.  The second index      
 !     in the array, JT, which runs from 1 to 5, corresponds to different         
 !     temperatures.  More specifically, JT = 3 means that the data are for       
@@ -7520,7 +7520,7 @@ IMPLICIT NONE
  1200 CONTINUE                                                                   
                                                                                  
 !  Perform g-point reduction from 16 per band (256 total points) to              
-!  a band dependant number (140 total points) for all absorption                 
+!  a band dependent number (140 total points) for all absorption
 !  coefficient input data and Planck fraction input data.                        
 !  Compute relative weighting for new g-point combinations.                      
                                                                                  

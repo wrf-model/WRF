@@ -25,7 +25,7 @@ subroutine da_transform_vtox_inv(grid, cv_size, xbx, be, ep, cv, vv, vp)
    end if
 
    !----------------------------------------------------------------------
-   ! [1.0]: Perform inverse of balance tranform: vp = u_p^{-1} dx
+   ! [1.0]: Perform inverse of balance transform: vp = u_p^{-1} dx
    !----------------------------------------------------------------------
 
    if ( cv_options /= 7 ) call da_transform_vptox_inv(grid, vp, be, ep)

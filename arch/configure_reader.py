@@ -13,7 +13,7 @@ kvPair     = re.compile( r"^(\w+)(?:[ \t]*=[ \t]*)(.*?)$",      re.I | re.M )
 # Make this gnarly and complicated since configure.defaults has no standard formatting
 #                            v start  v OS      V typical   v MACOS
 osAndArch     = re.compile( r"^ARCH[ ]+(\w+)[ ]+((?:\w+.*?),|(?:[(].*?[)]))",         re.I )
-# Just grab the first two words, thats what you get
+# Just grab the first two words, that's what you get
 osAndArchAlt  = re.compile( r"^ARCH[ ]+(\w+)[ ]+(\w+)",         re.I )
 
 referenceVar  = re.compile( r"[$]([(])?(\w+)(?(1)[)])", re.I )

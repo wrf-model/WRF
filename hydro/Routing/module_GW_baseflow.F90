@@ -90,7 +90,7 @@ contains
       !! Initialize if not passed in
       qin_gwsubbas = 0.
 
-!Assign local value of runoff2 (drainage) for flux caluclation to buckets...
+!Assign local value of runoff2 (drainage) for flux calculation to buckets...
 
         do J=1,JX
         do I=1,IX
@@ -179,7 +179,7 @@ contains
             z_gw_spill = 0.
 
             !!DJG...convert z_mx to millimeters...for v2 and later...
-            !yw  added by Wei Yu...If block is to accomodate old parameter file...
+            !yw  added by Wei Yu...If block is to accommodate old parameter file...
             !                    if(z_mx(bas) .gt. 5) then
             !                         z_mx(bas) = z_mx(bas) * mm_to_m    ! change from mm to meters
             !                    endif
@@ -196,7 +196,7 @@ contains
                qout_spill = z_gw_spill*(basns_area(bas))/DT  !amount spilled from bucket overflow...units (m^3/s)
 
 !DJG...Maximum estimation of bucket outlfow that is limited by total quantity in bucket...
-               qout_max = z_gwsubbas(bas)*(basns_area(bas))/DT   ! (m^3/s)   ! Estimate max bucket disharge limit to total volume in bucket...(m^3/s)
+               qout_max = z_gwsubbas(bas)*(basns_area(bas))/DT   ! (m^3/s)   ! Estimate max bucket discharge limit to total volume in bucket...(m^3/s)
 
 
 ! Assume exponential relation between z/zmax and Q...
@@ -309,7 +309,7 @@ contains
    qin_gwsubbas_surf = 0.
    z_gwsubbas = z_gwsubbas_tmp
 
-!Assign local value of runoff2 (drainage) for flux caluclation to buckets...
+!Assign local value of runoff2 (drainage) for flux calculation to buckets...
    runoff2x = runoff2x_in
    runoff1x = runoff1x_in
 
@@ -404,7 +404,7 @@ contains
 
 
 !DJG...Maximum estimation of bucket outlfow that is limited by total quantity in bucket...
-     qout_max = z_gwsubbas(bas)/1000.*(ct_bas(bas)*basns_area(bas))/DT   ! Estimate max bucket disharge limit to total volume in bucket...(m^3/s)
+     qout_max = z_gwsubbas(bas)/1000.*(ct_bas(bas)*basns_area(bas))/DT   ! Estimate max bucket discharge limit to total volume in bucket...(m^3/s)
 
 
 ! Assume exponential relation between z/zmax and Q...

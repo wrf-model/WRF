@@ -230,7 +230,7 @@ CONTAINS
             end if
          enddo
          
-         !Set constitutents, which are mixed in CAMMGMP, False
+         !Set constituents, which are mixed in CAMMGMP, False
          do m = 1, ntot_amode
             lnum = numptr_amode(m)
             if( lnum > 0 ) then

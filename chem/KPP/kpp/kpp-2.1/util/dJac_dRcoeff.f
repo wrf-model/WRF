@@ -18,7 +18,7 @@ C NCOEFF - the number of rate coefficients with respect to which we differentiat
 C JCOEFF - a vector of integers containing the indices of reactions (rate
 C          coefficients) with respect to which we differentiate
       INTEGER JCOEFF(NCOEFF)       
-C DFDR  - a matrix containg derivative values; specifically, 
+C DFDR  - a matrix containing derivative values; specifically,
 C         column j contains d Jac(1:NVAR) / d RCT( JCOEFF(j) ) * U
 C                     for each 1 <= j <= NCOEFF
 C         This matrix is stored in a column-wise linearized format

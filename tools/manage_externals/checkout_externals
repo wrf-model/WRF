@@ -2,7 +2,7 @@
 
 """Main driver wrapper around the manic/checkout utility.
 
-Tool to assemble external respositories represented in an externals
+Tool to assemble external repositories represented in an externals
 description file.
 
 """

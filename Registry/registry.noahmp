@@ -15,7 +15,7 @@ state    real   qsnowxy    ij      -       1      -     i02rhd=(interp_mask_fiel
 state    real   qrainxy    ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "qrainxy"    "rainfall on the ground"              "mm/s"
 state    real   wslakexy   ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "wslake"     "lake water storage"                  "mm"
 state    real   zwtxy      ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "zwt"        "water table depth"                   "m"
-state    real   waxy       ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "wa"         "water in the acquifer"               "mm"
+state    real   waxy       ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "wa"         "water in the aquifer"                "mm"
 state    real   wtxy       ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "wt"         "groundwater storage"                 "mm"
 state    real   tsnoxy    i{snly}j -       1      Z     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "tsno"       "snow temperature"                    "K"
 state    real   zsnsoxy   i{snsl}j -       1      Z     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "zsnso"      "layer-bottom depth from snow surf"   "m"

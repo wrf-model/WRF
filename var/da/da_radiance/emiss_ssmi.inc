@@ -41,7 +41,7 @@ subroutine emiss_ssmi(ntype_index,theta,frequency,mv,veg_frac, veg_tp, soil_tp, 
 !                        9: Broadleave Shrubs with Bare Soil
 !                        10: Dwarf Trees & Shrubs with Bare Soil
 !                        11: Bare Soil'
-!                        12: Cultivations (use paramater 7)
+!                        12: Cultivations (use parameter 7)
 !                        13: Glacial
 !      soil_tp     -  Soil type        (GDAS, not used)
 !                        1: Loamy Sand (coarse)

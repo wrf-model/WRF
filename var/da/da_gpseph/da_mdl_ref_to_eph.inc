@@ -63,7 +63,7 @@ SUBROUTINE da_mdl_ref_to_eph (gps_rays, ref_mean_h, model_eph)
             !* calculate S from TP point and integrate to different direction (WRF)
             !* S is asymmetric
             do k=-1,+1,2
-               ! transform coordiante from cartesian to sphere coordinate
+               ! transform coordinate from cartesian to sphere coordinate
                h = gps_rays%ip123(i)%h(k*j)
                if (h <= mean_h(ke-1)) then
                   i1 = gps_rays%ip123(i)%i1(k*j)

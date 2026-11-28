@@ -688,7 +688,7 @@
 
     ENDIF
 
-      ! restore analized hydrometeor and scalar fileds
+      ! restore analyzed hydrometeor and scalar fields
     IF ( grid%dfi_savehydmeteors .EQ. 1 ) then
 !    print *,'In dfi_array_reset - restore initial hydrometeors'
 !      grid%moist(:,:,:,:)      = grid%dfi_moist(:,:,:,:)    !tgs
@@ -1564,7 +1564,7 @@ call wrf_message(mess)
 
    SUBROUTINE rhofil(dt, tauc, norder, nstep, ictype, frow, nosize)
 
-!       RHO = recurssive high order.
+!       RHO = recursive high order.
 !
 !       This routine calculates and returns the
 !       Last Row, FROW, of the FILTER matrix.
@@ -1927,7 +1927,7 @@ call wrf_message(mess)
                    EDGE,FX,WTX,DEVIAT,h )
 
 !      PROGRAM FOR THE DESIGN OF LINEAR PHASE FINITE IMPULSE
-!      REPONSE (FIR) FILTERS USING THE REMEZ EXCHANGE ALGORITHM
+!      RESPONSE (FIR) FILTERS USING THE REMEZ EXCHANGE ALGORITHM
 !
 !************************************************************
 !*  Reference: McClellan, J.H., T.W. Parks and L.R.Rabiner, *
@@ -2266,7 +2266,7 @@ call wrf_message(mess)
       NUT=-NU
       J=1
 !
-!  SEARCH FOR THE EXTERMAL FREQUENCIES OF THE BEST
+!  SEARCH FOR THE EXTREMAL FREQUENCIES OF THE BEST
 !  APPROXIMATION.
 
   200 IF(J.EQ.NZZ) YNZ=COMP

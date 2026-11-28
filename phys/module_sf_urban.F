@@ -370,7 +370,7 @@ use module_model_constants, only :  piconst
    !-------------------------------------------------------------------------------
    ! L: Local variables
    !-------------------------------------------------------------------------------
-   REAL :: TVGP, TTP ! Temperature at Pervious Time Step
+   REAL :: TVGP, TTP ! Temperature at Previous Time Step
    REAL :: ALBGE     ! Effective Surface Albedo of Ground 
    REAL :: XI        ! Tree Shadow Related Variable
    REAL :: ANGLE, TAN1, TAN2               ! Reference Angles Between Tree and Roof 
@@ -391,7 +391,7 @@ use module_model_constants, only :  piconst
    REAL :: SRUN2     ! Subsurface runoff for 2nd soil layer
    REAL :: SRUN3     ! Runoff Within Soil Layers
    REAL, DIMENSION(1:num_road_layers) :: ZSOILG    ! Total Depth of Vegetated Ground (Negative) [m], (Accumulated From Surface)
-   REAL, DIMENSION(1:num_road_layers) :: SMGP      ! Soil Moisture at Each Layer on Vegetated Ground at Pervious Time Step
+   REAL, DIMENSION(1:num_road_layers) :: SMGP      ! Soil Moisture at Each Layer on Vegetated Ground at Previous Time Step
    REAL, DIMENSION(1:num_road_layers) :: ETG       ! Vegetated Canopy Evapotranspiration
    REAL, DIMENSION(1:num_road_layers) :: DZVG      ! Depth of Each Single Layer (Positive)[m]   
    REAL :: QS0VG, DQS0VGDTVG, QS0T, DQS0TDTT       ! Saturation QS and derivative for vegetated ground/tree
@@ -413,7 +413,7 @@ use module_model_constants, only :  piconst
    REAL(Kind = 8) :: DHBDTVG,DHBDTT,DHGDTVG,DHGDTT,DHVGDTB,DHVGDTG,DHVGDTVG,DHVGDTT,DHTDTB,DHTDTG,DHTDTVG,DHTDTT               ! derivatives wrt temperature (sensible heat)
    REAL :: HVG       ! Sensible Heat Flux by Vegetated Ground
    REAL :: HT        ! Sensible Heat Flux by Tree
-   REAL :: RA_LEAF   ! Leaf Boundary Layer Resistent (Empirical Calculated)
+   REAL :: RA_LEAF   ! Leaf Boundary Layer Resistant (Empirical Calculated)
    REAL :: ALPHAT    ! sensible heat transfer coefficient for urban trees
    REAL :: W2        ! Deep Soil Moisture
    REAL :: RS_LEAF   ! Leaf Stomatal Resistance
@@ -668,7 +668,7 @@ use module_model_constants, only :  piconst
    REAL :: FAI        ! Latitude [rad]
    REAL :: CNT,SNT
    REAL :: PS         ! Surface Pressure [hPa]
-   REAL :: TAV        ! Vertial Temperature [K] 
+   REAL :: TAV        ! Vertical Temperature [K]
 
    REAL :: XXX, X, Z0, Z0H, CD, CH
    REAL :: XXX2, PSIM2, PSIH2, XXX10, PSIM10, PSIH10
@@ -2159,7 +2159,7 @@ ENDIF
          RVGT= (SVG+RVG) * 697.7 * 60.
          RCH = RHOO*CPP*CHVG
          RR1 = EPSVG*(TVGP**4) * 6.48E-8 / (PS* CHVG) + 1.0   ! FOLLOWING YANG'S SCHEME, BUT DIFFERENT FROM OSU CODE (urban-nbs)
-         IF (RAIN >  0.0) THEN                                ! May cause some problem sicne we can't use TA to linearize TC, we can do that for TR (urban-nbs)
+         IF (RAIN >  0.0) THEN                                ! May cause some problem since we can't use TA to linearize TC, we can do that for TR (urban-nbs)
                RR2 = RR1 + RAIN / 3600 * 4.218E+3 / RCH
          ELSE
                RR2 = RR1
@@ -2524,7 +2524,7 @@ ENDIF
 
 !   TH2 = TS + (TA-TS)*(PSIT2/PSIT)   ! potential temp at 2 m [K]
 !  TH2 = TS + (TA-TS)*(PSIT2/PSIT)   ! Fei: this seems to be temp (not potential) at 2 m [K]
-!Fei: consistant with M-O theory
+!Fei: consistent with M-O theory
    IF (distributed_aerodynamics_option) THEN       ! comment this in the new version (urban-nbs comment)
      CHS2_LOCAL = 0.4 * UST / (ALOG(2. / Z0H) - PSIH2)
      TH2 = TS + (TA - TS) * (CHS_LOCAL / CHS2_LOCAL)
@@ -3464,7 +3464,7 @@ ENDIF
       ! Lambda_P :: Plan areal fraction, which corresponds to R for a 2-d canyon.
       ! Lambda_F :: Frontal area index, which corresponds to HGT for a 2-d canyon
       ! Cd       :: Drag coefficient ( 1.2 from Grimmond and Oke, 1998 )
-      ! Alpha_macd :: Emperical coefficient ( 4.43 from Macdonald et al., 1998 )
+      ! Alpha_macd :: Empirical coefficient ( 4.43 from Macdonald et al., 1998 )
       ! Beta_macd  :: Correction factor for the drag coefficient ( 1.0 from Macdonald et al., 1998 )
 
       Lambda_P = R_TBL(LC)
@@ -4221,7 +4221,7 @@ SUBROUTINE SFCDIF_URB (ZLM,Z0,THZ0,THLM,SFCSPD,AKANDA,AKMS,AKHS,RLMO,CD,ZT_OUT,V
 ! 1./MONIN-OBUKKHOV LENGTH-SCALE
 ! ----------------------------------------------------------------------
       DO ITR = 1,ITRMX
-         ZETALT = MAX (ZSLT * RLMO,ZTMIN)   ! before each iternation, first calculate ZETALT (which is dimensionless stability parameter, which is ζ=z/L) 
+         ZETALT = MAX (ZSLT * RLMO,ZTMIN)   ! before each iteration, first calculate ZETALT (which is dimensionless stability parameter, which is ζ=z/L)
          RLMO = ZETALT / ZSLT
          ZETALU = ZSLU * RLMO
          ZETAU = ZU * RLMO   ! dimensionless stability parameter for momentum at surface layer, which is ζm=zm/L
@@ -4300,9 +4300,9 @@ SUBROUTINE SFCDIF_URB (ZLM,Z0,THZ0,THLM,SFCSPD,AKANDA,AKMS,AKHS,RLMO,CD,ZT_OUT,V
 !-----------------------------------------------------------------------
 !     IF(ABS((RLMN-RLMO)/RLMA).LT.EPSIT)    GO TO 110
 !-----------------------------------------------------------------------
-         RLMA = RLMO * WOLD+ RLMN * WNEW      !  performe a weighted average of the previous RLMO and the newly calculated RLMN 
+         RLMA = RLMO * WOLD+ RLMN * WNEW      !  perform a weighted average of the previous RLMO and the newly calculated RLMN
 !-----------------------------------------------------------------------
-         RLMO = RLMA     ! assgin to the RLMO and finally get inversed MO length which is 1/L
+         RLMO = RLMA     ! assign to the RLMO and finally get inversed MO length which is 1/L
 
       END DO
 
@@ -4485,7 +4485,7 @@ SUBROUTINE SFCDIF_URB (ZLM,Z0,THZ0,THLM,SFCSPD,AKANDA,AKMS,AKHS,RLMO,CD,ZT_OUT,V
 ! SOIL
 ! ----------------------------------------------------------------------
       IF (EXCESS > CMCMAX) DRIP = EXCESS - CMCMAX
-      PCPDRP = (1. - SHDFAC) * PRCP1 * 0.001 /3600. + DRIP / DT     ! total surfce water influx (urban-nbs)
+      PCPDRP = (1. - SHDFAC) * PRCP1 * 0.001 /3600. + DRIP / DT     ! total surface water influx (urban-nbs)
 
 ! ----------------------------------------------------------------------
 ! CALL SUBROUTINES SRT AND SSTEP TO SOLVE THE SOIL MOISTURE
@@ -4528,7 +4528,7 @@ SUBROUTINE SFCDIF_URB (ZLM,Z0,THZ0,THLM,SFCSPD,AKANDA,AKMS,AKHS,RLMO,CD,ZT_OUT,V
 
 ! ----------------------------------------------------------------------
 ! DETERMINE RAINFALL INFILTRATION RATE AND RUNOFF.  INCLUDE THE
-! INFILTRATION FORMULE FROM SCHAAKE AND KOREN MODEL.
+! INFILTRATION FORMULA FROM SCHAAKE AND KOREN MODEL.
 ! MODIFIED BY Q DUAN
 ! ----------------------------------------------------------------------
          

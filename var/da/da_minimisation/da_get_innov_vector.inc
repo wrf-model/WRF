@@ -220,7 +220,7 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
       !------------------------------------------------------------------------
       ! Compute preconditioning for Variational bias correction
       !------------------------------------------------------------------------
-      !varbc preconditioning shoud be done after get_innov_vector is done for all time slots
+      !varbc preconditioning should be done after get_innov_vector is done for all time slots
       if ( use_varbc .and. it == 1 ) call da_varbc_precond(iv)
 
       !------------------------------------------------------------------------

@@ -36,7 +36,7 @@ subroutine da_transform_xtoy_gpspw_adj(grid, iv, jo_grad_y, jo_grad_x)
       dx  = iv%info(gpspw)%dx(1,n)
       dxm = iv%info(gpspw)%dxm(1,n)
 
-      !  Initialise the varibles
+      !  Initialise the variables
       dpw           = 0.0
       model_q(:)    = 0.0
       model_dq(:)   = 0.0

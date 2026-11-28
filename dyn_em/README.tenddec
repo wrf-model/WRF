@@ -45,6 +45,6 @@ decoupled horizontal and vertical tendencies for only one non-chemistry
 advh_* and advz_* array to the Registry and management them separately.
 
 Only after you have done this should you modify how tenddec is set in
-the scalar loop you are working with.  Use the assignement at the top
+the scalar loop you are working with.  Use the assignment at the top
 of the chemistry tracer loop as an example.
 

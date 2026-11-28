@@ -141,7 +141,7 @@ end subroutine gocart_dust_driver
 ! *         W10m      Velocity at the anemometer level (10meters)   (m/s)
 ! *         u_tresh   Threshold velocity for particule uplifting    (m/s)
 ! *         CH_dust   Constant to fudge the total emission of dust  (s2/m2)
-! *         dz_lowest heigth of the lowest layer                     (m)
+! *         dz_lowest height of the lowest layer                     (m)
 ! *      
 ! *  Output:
 ! *         DSRC      Source of each dust type           (kg/timestep/m2)

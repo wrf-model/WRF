@@ -95,7 +95,7 @@
 
 	real(r8), parameter :: factsafe = 1.00001
 
-! units for local working varibles:
+! units for local working variables:
 !    size = cm
 !    density = g/cm^3
 !    number mixing ratio = #/g-air

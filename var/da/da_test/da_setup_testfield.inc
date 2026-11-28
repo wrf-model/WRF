@@ -1,10 +1,10 @@
 subroutine da_setup_testfield(grid)
 
-   !----------------------------------------------------------------------------
+   !-----------------------------------------------------------------------------
    ! Purpose: produce test increment field based on grid%xb field.
    !
-   ! Method:  pass through x=uv transfom to ensure satisfies boundary conditions
-   !----------------------------------------------------------------------------
+   ! Method:  pass through x=uv transform to ensure satisfies boundary conditions
+   !-----------------------------------------------------------------------------
 
    implicit none
 

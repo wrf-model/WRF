@@ -202,7 +202,7 @@ levels: DO WHILE (ASSOCIATED (current))
       WRITE (0, '(A,I7)') ' SYNOP reports:',nsynops
       WRITE (0, '(A,I7)') ' SHIPS reports:',nshipss
       WRITE (0, '(A,I7)') ' BUOY  reports:',nbuoyss
-      WRITE (0, '(A,I7)') ' BUGUS reports:',nboguss
+      WRITE (0, '(A,I7)') ' BOGUS reports:',nboguss
       WRITE (0, '(A,I7)') ' METAR reports:',nmetars
       WRITE (0, '(A,I7)') ' PILOT reports:',npilots
       WRITE (0, '(A,I7)') ' SOUND reports:',nsounds

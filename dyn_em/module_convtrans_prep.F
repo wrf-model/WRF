@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! original routinte by Georg Grell, adaptive timestepping by William Gustafson Jr. (PNNL), cloud fraction by Georg Grell (based on Stu's previous work wih so2so4 routine
+! original routinte by Georg Grell, adaptive timestepping by William Gustafson Jr. (PNNL), cloud fraction by Georg Grell (based on Stu's previous work with so2so4 routine
 !------------------------------------------------------------------------
 
 Module module_convtrans_prep

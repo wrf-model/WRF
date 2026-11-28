@@ -136,7 +136,7 @@ subroutine da_intpsfc_tem (val, ho, po, to, height, pressure, temp, kts, kte)
 
    dth_sfc = (dhe_sfc2/dhe_obs2) * dth_obs
 
-   ! 4.3 Potentiel temperature brought to model surface
+   ! 4.3 Potential temperature brought to model surface
 
    th_sfc = th_sfc_int - dth_sfc
 

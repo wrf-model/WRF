@@ -1400,7 +1400,7 @@ END MODULE module_quilt_outbuf_ops
 !<PRE>
 ! This routine is a wrapper for C routine add_to_bufsize_for_field_c() that 
 ! is used to accumulate buffer sizes.  Buffer size Nbytes is added to the 
-! curent buffer size for the buffer named VarName.  Any buffer space 
+! current buffer size for the buffer named VarName.  Any buffer space
 ! associated with VarName is freed.  If a buffer named VarName does not exist, 
 ! a new one is assigned and its size is set to Nbytes.  
 !</PRE>

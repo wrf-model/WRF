@@ -43,7 +43,7 @@ subroutine  snwem_amsu(theta,frequency,snow_depth,ts,tba,tbb,esh,esv)
 !               inputs over snow conditions. When All or limited AMSU measurements are
 !               available, one of the subroutines sem_ABTs, sem_ATs, sem_AB, sem_amsua,
 !               sem_BTs and sem_amsub, which are empirically derived from satellite
-!               retrievals and ground-based measurements, are called to simuate snow
+!               retrievals and ground-based measurements, are called to simulate snow
 !               emissivity; when no AMSU measurements are avalaiable, the subroutine
 !               ALandEM_Snow is called where the results over snow conditions in beta
 !               version are adjusted with a bias correction that is obtained using a
@@ -907,7 +907,7 @@ subroutine six_indices(nind,index_in,threshold,tindex)
 !
 ! output argument list:
 !
-!      tindex      - state vaiable to show surface snow emissivity feature
+!      tindex      - state variable to show surface snow emissivity feature
 !              tindex[ ] = .T.: snow emissivity feature matches the
 !                                corresponding threshold for certain snow type
 !              tindex[ ] = .F.: snow emissivity feature doesn't match the

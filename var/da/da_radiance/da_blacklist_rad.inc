@@ -116,7 +116,7 @@ subroutine da_blacklist_rad (platform_name, satid, sensor_name, nchan, iuse)
             !to be checked if ( cdate >= '20090804' .and. cdate < '20091224' ) iuse = -1
          end if   ! end if noaa-18-amsua
       case ( 19 )
-         ! first noaa-19 data to arrive in opearions: 2009040700
+         ! first noaa-19 data to arrive in operations: 2009040700
          if ( cdate < '20090407' ) iuse = -1
          if ( cdate >= '20090407' .and. cdate < '20090501' ) iuse = -1
          if ( cdate >= '20090501' .and. cdate < '20090602' ) iuse = -1

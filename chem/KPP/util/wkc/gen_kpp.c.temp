@@ -3,7 +3,7 @@
  assumed directory name in KPP corresponds to WRF package name
 ..
 
-missuse next4d
+misuse next4d
 */
 
 #include <stdio.h>

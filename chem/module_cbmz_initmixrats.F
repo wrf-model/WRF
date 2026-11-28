@@ -122,7 +122,7 @@
 !    Height(m)     HCl concentration
 !    ---------     -----------------
 !    <=1000        0.4 ppbv
-!    1000<z<2500   linear transision zone
+!    1000<z<2500   linear transition zone
 !    >=2500        0.1 ppbv
 !
 	do j = jts, min(jte,jde-1)

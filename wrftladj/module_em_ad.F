@@ -3240,7 +3240,7 @@ SUBROUTINE a_rk_update_scalar ( scs, sce,                      &
 !
 !</DESCRIPTION>
 
-!  Initilize local adjoint variables
+!  Initialize local adjoint variables
    a_muold = 0.0
    a_r_munew = 0.0
    a_tendency = 0.0
@@ -4052,7 +4052,7 @@ SUBROUTINE a_init_zero_tendency(a_ru_tendf, &
                                                           a_moist_tendf
 
 !  NPan - 05/26/10 {
-!  Uncomment the corresponding definations when chem is needed.   
+!  Uncomment the corresponding definitions when chem is needed.
 !   REAL , DIMENSION(ims:ime, kms:kme, jms:jme, n_chem ),INTENT(INOUT)::&
 !                                                          a_chem_tendf
    REAL , DIMENSION(ims:ime, kms:kme, jms:jme, n_tracer ),INTENT(INOUT)::&

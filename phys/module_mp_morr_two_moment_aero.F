@@ -791,7 +791,7 @@ SUBROUTINE MP_MORR_TWO_MOMENT_AERO(ITIMESTEP,                    &
 ! WVAR - STANDARD DEVIATION OF SUB-GRID VERTICAL VELOCITY (M/S)
 
    IMPLICIT NONE
-   SAVE !TWG  2017 add to avoid memeory issues
+   SAVE !TWG  2017 add to avoid memory issues
 
    INTEGER,      INTENT(IN   )    ::   ids, ide, jds, jde, kds, kde , &
                                        ims, ime, jms, jme, kms, kme , &
@@ -959,7 +959,7 @@ SUBROUTINE MP_MORR_TWO_MOMENT_AERO(ITIMESTEP,                    &
           QV_TEND1D(k)  = 0.
           nc_tend1d(k) = 0. ! wrf-chem
 
-!TWG add Initalize CCN
+!TWG add Initialize CCN
           CCN1_GS(i,k,j) = 0.0
           CCN2_GS(i,k,j) = 0.0
           CCN3_GS(i,k,j) = 0.0
@@ -1247,7 +1247,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT_AERO
 ! DECLARATIONS
 
       IMPLICIT NONE
-      SAVE !TWG 2017 add to avoid memeory issues
+      SAVE !TWG 2017 add to avoid memory issues
 
 !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 ! THESE VARIABLES BELOW MUST BE LINKED WITH THE MAIN MODEL.
@@ -1380,7 +1380,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT_AERO
      REAL, DIMENSION(KTS:KTE) ::  NPRACS    ! CHANGE N RAIN-SNOW COLLECTION
      REAL, DIMENSION(KTS:KTE) ::  PCCN      ! CHANGE Q DROPLET ACTIVATION
      REAL, DIMENSION(KTS:KTE) ::  PSMLT     ! CHANGE Q MELTING SNOW TO RAIN
-     REAL, DIMENSION(KTS:KTE) ::  EVPMS     ! CHNAGE Q MELTING SNOW EVAPORATING
+     REAL, DIMENSION(KTS:KTE) ::  EVPMS     ! CHANGE Q MELTING SNOW EVAPORATING
      REAL, DIMENSION(KTS:KTE) ::  NSMLTS    ! CHANGE N MELTING SNOW
      REAL, DIMENSION(KTS:KTE) ::  NSMLTR    ! CHANGE N MELTING SNOW TO RAIN
 ! HM ADDED 12/13/06
@@ -1512,7 +1512,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT_AERO
      REAL    KEL     ! KELVIN PARAMETER
      REAL    KC2     ! TOTAL ICE NUCLEATION RATE
 ! TWG 2016 Begin
-     REAL    KC2H    ! ICE NUCLEATED FROM HOMOGENOUS FREEZING OF SULFATE
+     REAL    KC2H    ! ICE NUCLEATED FROM HOMOGENEOUS FREEZING OF SULFATE
      REAL    KC2IM   ! ICE NUCLEATED FROM IMMERSION FREEZING
      REAL    KC2D    ! ICE NUCLEATED FROM DEPOSITION NUCLEATION
      REAL    KC2DM   ! ICE NUCLEATED FROM MIXED PHASE DEPOSITION NUCLEATION
@@ -2148,7 +2148,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT_AERO
 !.......................................................................
 ! MELTING OF SNOW
 
-! SNOW MAY PERSITS ABOVE FREEZING, FORMULA FROM RUTLEDGE AND HOBBS, 1984
+! SNOW MAY PERSIST ABOVE FREEZING, FORMULA FROM RUTLEDGE AND HOBBS, 1984
 ! IF WATER SUPERSATURATION, SNOW MELTS TO FORM RAIN
 
           IF (QNI3D(K).GE.1.E-8) THEN
@@ -2188,7 +2188,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT_AERO
 !.......................................................................
 ! MELTING OF GRAUPEL
 
-! GRAUPEL MAY PERSITS ABOVE FREEZING, FORMULA FROM RUTLEDGE AND HOBBS, 1984
+! GRAUPEL MAY PERSIST ABOVE FREEZING, FORMULA FROM RUTLEDGE AND HOBBS, 1984
 ! IF WATER SUPERSATURATION, GRAUPEL MELTS TO FORM RAIN
 
           IF (QG3D(K).GE.1.E-8) THEN
@@ -5450,7 +5450,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT_AERO
                       t1d, p1d, dBZ, kts, kte, ii, jj)
 
       IMPLICIT NONE
-      SAVE !TWG 2017 add to avoid memeory issues
+      SAVE !TWG 2017 add to avoid memory issues
 
 !..Sub arguments
       INTEGER, INTENT(IN):: kts, kte, ii, jj
@@ -5729,7 +5729,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT_AERO
       dqsdt=latvap/(RV*tair*tair)*qs
       alpha_cesm=G*(latvap/(CP*RV*tair*tair)-1./(R*tair))
       gammaloc=(1+latvap/CP*dqsdt)/(rhoair*qs)
-!    growth coefficent Abdul-Razzak & Ghan 1998 eqn 16
+!    growth coefficient Abdul-Razzak & Ghan 1998 eqn 16
 !     should depend on mean radius of mode to account for gas kinetic effects
       gloc=1./(RHOW/(diff0*rhoair*qs)                                    &
           +latvap*RHOW/(conduct0*tair)*(latvap/(RV*tair)-1.))

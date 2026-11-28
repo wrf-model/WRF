@@ -77,7 +77,7 @@ MODULE module_diagvar_cordex
 ! var_potevap_bulk: potential evapotranspiration following simple bulk formulation
 ! var_potevap_Milly92: potential bulk evapotranspiration with Milly 1992 correction
 ! var_potevap_bulkgen: generic potential evapotranspiration following simple bulk formulation
-! var_potevap_Milly92gen: genreic potential bulk evapotranspiration with Milly 1992 correction
+! var_potevap_Milly92gen: generic potential bulk evapotranspiration with Milly 1992 correction
 ! var_press: air pressure [Pa]
 ! var_psl_ecmwf: sea level pressure using ECMWF method
 ! var_psl_ptarget: mean sea level pressure using a target pressure
@@ -128,7 +128,7 @@ MODULE module_diagvar_cordex
 !!!
 ! coefcdrag1D: 1D copmutation of the drag coefficients for momentum, sensible and latent heat fluxs, 
 !   neutral and the Richardson number between the surface and the reference level and the pressure at 
-!   the refernce level
+!   the reference level
 ! SFCDIAGS_ORCHIDEE1D: 1D Surface diagnostics of t2 and q2 from the ORCHIDEE land model
 ! screenc1D: 1D correction to the wind, potential temperature and specific humidity anomalies at the 
 !   reference level zref, and relatively to the first level (for wind) o to the surface (for the 
@@ -144,7 +144,7 @@ MODULE module_diagvar_cordex
 
   SUBROUTINE var_colmax1D(dz, rho, t_phy, qr, qs, qg, refd_max)
   ! Subroutine to compute 1D maximum radar reflectivity
-  !  Folllowing code from phys/module_diag_afwa.F in WRF v4.3.1
+  !  Following code from phys/module_diag_afwa.F in WRF v4.3.1
 
     IMPLICIT NONE
 
@@ -278,7 +278,7 @@ MODULE module_diagvar_cordex
   END SUBROUTINE var_colmax1D
 
   SUBROUTINE Cdrag_0(ust,uas,vas,Cd)
-! Fuction to compute a first order generic approximation of the drag coefficient as
+! Function to compute a first order generic approximation of the drag coefficient as
 !   CD = (ust/wss)**2
 !  after, Garratt, J.R., 1992.: The Atmospheric Boundary Layer. Cambridge Univ. Press, 
 !    Cambridge, U.K., 316 pp
@@ -887,11 +887,11 @@ MODULE module_diagvar_cordex
        prcl =  parcel
     END IF
   
-    !~ Initalize our parcel to be (sort of) surface based.  Because of
+    !~ Initialize our parcel to be (sort of) surface based.  Because of
     !~ issues we've been observing in the WRF model, specifically with
     !~ excessive surface moisture values at the surface, using a true
     !~ surface based parcel is resulting a more unstable environment
-    !~ than is actually occuring.  To address this, our surface parcel
+    !~ than is actually occurring.  To address this, our surface parcel
     !~ is now going to be defined as the parcel between 25-50 hPa
     !~ above the surface. UPDATE - now that this routine is in WRF,
     !~ going to trust surface info. GAC 20140415
@@ -977,7 +977,7 @@ MODULE module_diagvar_cordex
     tlclK = TLCL ( tK(srclev), rh(srclev) )
     plcl  = p(srclev) * ( (tlclK/tK(srclev))**(Cp/Rd) )
       
-    !Add caculation for LCL. Modified by Zhixiao
+    !Add calculation for LCL. Modified by Zhixiao
     lcllev = -1 !Modified by Zhixiao
     flag=.false. !Modified by Zhixiao
     DO k=sfc,nz !zhixiao search the layer of LCL
@@ -1012,7 +1012,7 @@ MODULE module_diagvar_cordex
           !~ Above the LCL, our parcel is now undergoing moist adiabatic
           !~ cooling.  Because of the latent heating being undergone as
           !~ the parcel rises above the LFC, must iterative solve for the
-          !~ parcel temperature using equivalant potential temperature,
+          !~ parcel temperature using equivalent potential temperature,
           !~ which is conserved during both dry adiabatic and
           !~ pseudoadiabatic displacements.
           !  --------------------------------------------------------------
@@ -1054,7 +1054,7 @@ MODULE module_diagvar_cordex
           !  --------------------------------------------------------
           ptK   = srctheta / ( 100000.0/p(k) )**(Rd/Cp)
    
-          !~ Grab the parcel virtual temperture, can use the source
+          !~ Grab the parcel virtual temperature, can use the source
           !~ mixing ratio since we are undergoing dry adiabatic cooling
           !  ----------------------------------------------------------
           ptvK  = VirtualTemperature ( ptK, srcw )
@@ -1080,7 +1080,7 @@ MODULE module_diagvar_cordex
         !  --------------------------------------------------------
         ptK   = srctheta / ( 100000.0/p(k) )**(Rd/Cp)
    
-        !~ Grab the parcel virtual temperture, can use the source
+        !~ Grab the parcel virtual temperature, can use the source
         !~ mixing ratio since we are undergoing dry adiabatic cooling
         !  ----------------------------------------------------------
         ptvK  = VirtualTemperature ( ptK, srcw )
@@ -1108,7 +1108,7 @@ MODULE module_diagvar_cordex
     lfclev = -1
     ellev = -1 !Modified by Zhixiao
     DO k = sfc, nz !Modified by Zhixiao
-      !~ LFC is defiend as the highest level when negative buyancy turns postive.
+      !~ LFC is defined as the highest level when negative buyancy turns positive.
       ! Let us ignore the lower LFCs, and keep the highest LFC as the final result
       !  -----------------------------------
       IF ( .not. flag .and. buoy (k) > REAL (0) .and. p (k) <= plcl ) THEN !Modified by Zhixiao
@@ -1381,7 +1381,7 @@ MODULE module_diagvar_cordex
 
     sfname = 'var_hus'
 
-    ! Specifc humidity
+    ! Specific humidity
     hus = q / (1. + q)
 
     RETURN
@@ -1402,7 +1402,7 @@ MODULE module_diagvar_cordex
 
     sfname = 'var_huss'
 
-    ! Specifc humidity
+    ! Specific humidity
     huss = qas / (1. + qas)
 
     RETURN
@@ -1607,7 +1607,7 @@ MODULE module_diagvar_cordex
       ENDDO loop_kIN
 
       tbotextrap=ta(kupper)*(ps/ptarget)**expon
-      ! L. Fita. iCIMA, Janury 2018
+      ! L. Fita. iCIMA, January 2018
       ! Using AFWA's one
       tvbotextrap=virtualTemperature(tbotextrap,qv(kupper))
       IF (tvbotextrap == 0.) THEN
@@ -2323,7 +2323,7 @@ MODULE module_diagvar_cordex
 ! tpot: potential temperature [K]
 ! z: height above sea level [m]
 ! topo: topographic height [m]
-! dqvar: Pecentage of difference of mixing ratio used to determine Mixed layer depth
+! dqvar: Percentage of difference of mixing ratio used to determine Mixed layer depth
 ! refdt: Change [K] in temperature to determine boundary layer height
 ! zmla: boundary layer height [m]
 
@@ -2528,7 +2528,7 @@ MODULE module_diagvar_cordex
     !!CALL wrf_debug(750,message)
     !!WRITE(message,*)' z1:', zz(1), 'm z2:', zz(2), ' m'
     !!CALL wrf_debug(750,message)
-    !!WRITE(message,*)' alhpa u:', alpha(1), ' alpha 2:', alpha(2)
+    !!WRITE(message,*)' alpha u:', alpha(1), ' alpha 2:', alpha(2)
     !!CALL wrf_debug(750,message)
 
     uvnewz = v1*(newz/zz(1))**alpha
@@ -2663,8 +2663,8 @@ MODULE module_diagvar_cordex
   !    "... In the atmosphere, the temperature gradient usually vanishes at 100 m or so under
   !    unstable conditions, and there is a tendency for this height to decrease with increasing 
   !    instability... Therefore if Eq. (16) describes the correct height dependence for conditions
-  !    approaching and incluing free convection, a new scale has to be introduced to replace u*."
-  !  Therefore, ther is an inherent potential missbehaour of this approximation (L. Fita)
+  !    approaching and including free convection, a new scale has to be introduced to replace u*."
+  !  Therefore, there is an inherent potential missbehaour of this approximation (L. Fita)
 
     IMPLICIT NONE
 
@@ -2711,7 +2711,7 @@ MODULE module_diagvar_cordex
   SUBROUTINE var_ztaqv_MOtheor(dz, ta, qv, z, ust, znt, rmol, topo, newz, taznew, qvznew)
   ! Subroutine of temperature and water vapour extrapolation following Moin-Obukhov Similarity theory
   !   R. B. Stull, 1988, Springer (p376-383)
-  ! NOTE only usefull for newz < 80. m (outside surface layer of the PBL)
+  ! NOTE only useful for newz < 80. m (outside surface layer of the PBL)
   !
   ! Here, the profiles for scalars will be used from Businger 1971.
   ! Model does not provide t*, neither q*, therefore we need to introduce a 4-step methodology to 
@@ -2766,7 +2766,7 @@ MODULE module_diagvar_cordex
     hgt = z(k)-topo
     hgtp1 = z(k+1)-topo
     
-    ! We can only apply the technique within Monin-Obukhov range, therfore
+    ! We can only apply the technique within Monin-Obukhov range, therefore
     IF (hgt*rmol > -2. .AND. hgt*rmol < 1. .AND. hgtp1*rmol > -2. .AND. hgtp1*rmol < 1.) THEN
 
       delta_ta = ta(k+1)-ta(k)
@@ -2834,7 +2834,7 @@ MODULE module_diagvar_cordex
     vznew)
   ! Subroutine of wind extrapolation following Moin-Obukhov theory R. B. Stull, 1988, 
   !   Springer (p376-383)
-  ! NOTE only usefull for newz < 80. m and within turbelence driven layer
+  ! NOTE only useful for newz < 80. m and within turbelence driven layer
   !     newz/L > -2. & newz/L < 1.
 
     IMPLICIT NONE
@@ -2868,7 +2868,7 @@ MODULE module_diagvar_cordex
 ! 
     sfname = 'var_zwind_MOtheor'
 
-        ! We can only apply the technique within Monin-Obukhov range, therfore
+        ! We can only apply the technique within Monin-Obukhov range, therefore
     IF (newz*rmol > -2. .AND. newz*rmol < 1.) THEN
 
       ! Obukhov Length (using the Boussinesq approximation giving Tv from t2)
@@ -2879,7 +2879,7 @@ MODULE module_diagvar_cordex
       wsz = ust/karman*( LOG(newz/znt) + stability)
 
       ! Without taking into account rotation of winds due to Ekman pumping, etc... redistributed by 
-      !   components unsing 10-m wind as reference...
+      !   components using 10-m wind as reference...
       alpha = ATAN2(v10,u10)
       uvnewz(1) = wsz*COS(alpha)
       uvnewz(2) = wsz*SIN(alpha)
@@ -2903,7 +2903,7 @@ MODULE module_diagvar_cordex
   ! WRF seems to have problems with my functions, let'suse subroutine instead
   !REAL FUNCTION stabfunc_businger(z,L)
   SUBROUTINE stabfunc_businger(z,L,stabfunc_busingerv)
-  ! Fucntion of the stability function after Businger et al. (1971), JAS, 28(2), 181–189
+  ! Function of the stability function after Businger et al. (1971), JAS, 28(2), 181–189
 
     IMPLICIT NONE
 
@@ -3071,7 +3071,7 @@ MODULE module_diagvar_cordex
   ! qsol_sat: Saturated air at ts
   qsol_sat = SaturationMixingRatio(ts, ps)
 
-  ! Cd: drag coeffiecient
+  ! Cd: drag coefficient
   CALL Cdrag_0(ust, uas, vas, Cd)
 
   ! qc: surface drag coefficient
@@ -3082,7 +3082,7 @@ MODULE module_diagvar_cordex
   END SUBROUTINE var_potevap_bulkgen
 
   SUBROUTINE var_potevap_Milly92gen(rho1, ust, uas, vas, tsk, ta1, ps, qv1, sfcevap, emiss, potevap)
-! Subroutine to compute the genric potential bulk evapotranspiration with Milly 1992 correction
+! Subroutine to compute the generic potential bulk evapotranspiration with Milly 1992 correction
 !   Milly, P. C. D. (1992): Potential evaporation and soil moisture in general circulation models, 
 !     J. Climate, 5, 209–226
 !      potevap = potevap_bulk*[1./(1.+correction_Milly)]
@@ -3121,7 +3121,7 @@ MODULE module_diagvar_cordex
   ! qsol_sat: Saturated air by tsk
   qsol_sat = SaturationMixingRatio(tsk, ps)
 
-  ! Cd: drag coeffiecient
+  ! Cd: drag coefficient
   CALL Cdrag_0(ust, uas, vas, Cd)
 
   ! qc: surface drag coefficient
@@ -3219,7 +3219,7 @@ MODULE module_diagvar_cordex
   rh = MINVAL((/1.,rhv/))
 
   IF (rh > 0.3) THEN
-    ! From: Gultepe, I., and G. Isaac, 2006: Visbility versus precipitation rate and relative 
+    ! From: Gultepe, I., and G. Isaac, 2006: Visibility versus precipitation rate and relative
     !   humidity. Preprints, 12th Cloud Physics Conf, Madison, WI, Amer. Meteor. Soc., P2.55. 
     !   [Available  online  at  http://ams.confex.com/ams/Madison2006/techprogram/paper_l13177.htm]
     vis = 60.*EXP(-2.5*(rh*100.-15.)/80.)
@@ -3241,7 +3241,7 @@ MODULE module_diagvar_cordex
   ! And visibility following Gultepe, I. and J.A. Milbrandt, 2010: Probabilistic Parameterizations 
   !   of Visibility Using Observations of Rain Precipitation Rate, Relative Humidity, and Visibility. 
   !   J. Appl. Meteor. Climatol., 49, 36-46, https://doi.org/10.1175/2009JAMC1927.1
-  ! Interest is focused on a 'general' fog/visibilty approach, thus the fit at 50 % of probability
+  ! Interest is focused on a 'general' fog/visibility approach, thus the fit at 50 % of probability
   !   is chosen
   ! Effects from precipitation are not considered
 
@@ -3361,7 +3361,7 @@ MODULE module_diagvar_cordex
 
     fname = 'var_residencetime_2var2D'
 
-    ! inicialization
+    ! initialization
     ir1 = -1
     ir2 = -1
     
@@ -3395,7 +3395,7 @@ MODULE module_diagvar_cordex
     ! L. Fita, January 2024. Removed for efficiency
     !   If you encounter problems with the variable, remove it and re-compile without clean -a
 !    IF (ir1 == -1 .OR. ir2 == -1) THEN
-!      PRINT *,'  ' // TRIM(fname) // ': Unsuccesfull allocation of var1:', vals1,' var2:', vals2
+!      PRINT *,'  ' // TRIM(fname) // ': Unsuccessful allocation of var1:', vals1,' var2:', vals2
 !      PRINT *,'    resultant ir1=', ir1, ' ir2=', ir2
 !      PRINT 23,'var1 bins: ', rng1
 !      PRINT 23,'var2 bins:', rng2
@@ -3466,7 +3466,7 @@ MODULE module_diagvar_cordex
 
 !!!!!!! Variables
 ! dorig: Original amount of vertical levels
-! levorig: original values of the levels (centerd into the level) [m]
+! levorig: original values of the levels (centered into the level) [m]
 ! valsorig: original values of the field at the original levels (as density or similar [kgm-3])
 ! dorig1: original amount of vertical levels + 1
 ! btlevorig: bottom, tops of the original cells [m]
@@ -3555,14 +3555,14 @@ MODULE module_diagvar_cordex
           valsdes(kd) = valsdes(kd) + delta_levorig*valsorig(ko)
 
         ELSE IF (orikp1 > deskm1 .AND. levorig(ko) < deskm1) THEN
-          ! We might have only top of the original columns wihtin the range
+          ! We might have only top of the original columns within the range
        
           deltatop_levorig = orikp1 - deskm1
         
           valsdes(kd) = valsdes(kd) + deltatop_levorig*valsorig(ko)      
 
         ELSE IF (orikm1 < deskp1 .AND. levorig(ko) > deskp1) THEN
-          ! We might have only base of the original columns wihtin the range
+          ! We might have only base of the original columns within the range
 
           deltabot_levorig = deskp1 - orikm1
           
@@ -3834,7 +3834,7 @@ MODULE module_diagvar_cordex
       signd = -1
 ! Lest work fast ...
 !      IF (interval(1) < interval(2)) THEN
-!        WRITE(msg,*)'Axis values decrese, thus interval values must too'
+!        WRITE(msg,*)'Axis values decrease, thus interval values must too'
 !        CALL ErrMsg(msg, TRIM(sfname), -1)
 !      END IF
     ELSE
@@ -4110,7 +4110,7 @@ MODULE module_diagvar_cordex
      testar = (cdrah * zdte * speed)/ustar
      qstar = (cdrah * zdq * speed)/ustar
 !
-!----------First aproximation of variables at zref --------------------------
+!----------First approximation of variables at zref --------------------------
      zref = 2.0
      CALL screenp1D(speed, tpot, q1, &
  &                 ts1, qsurf, rugos, lmon, &

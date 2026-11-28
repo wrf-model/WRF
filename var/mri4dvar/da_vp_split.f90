@@ -10,7 +10,7 @@ program da_vp_split
 ! In order to keep the domain size, it needs to match ( n - 1 )*ratio + 1 
 !
 ! where n  is the grid number in x or y
-!       ratio is the refinement ratio between two resulotions
+!       ratio is the refinement ratio between two resolutions
 !
 ! liuz@ucar.edu , 2016-05, NCAR/MMM
 !----------------------------------------------------------------------

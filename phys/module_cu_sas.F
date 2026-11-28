@@ -264,7 +264,7 @@ CONTAINS
          ! Then again, the assumptions of SAS break down when the
          ! gridscale is near the convection scale anyway.  In a large
          ! storm such as a hurricane, there is often no environment to
-         ! detrain into since adjancent gridsquares are also undergoing
+         ! detrain into since adjacent gridsquares are also undergoing
          ! active convection.  Each gridsquare will no longer have many
          ! updrafts and downdrafts.  At sub-convective timescales, you
          ! will find unstable columns for many (say, 5 second length)
@@ -1064,7 +1064,7 @@ CONTAINS
         ENDIF
       ENDDO
 !
-!  CLOUD PROPERTY BELOW CLOUD BASE IS MODIFIED BY THE ENTRAINMENT PROCES
+!  CLOUD PROPERTY BELOW CLOUD BASE IS MODIFIED BY THE ENTRAINMENT PROCESS
 !
       DO K = 2, KM1
         DO I = 1, IM
@@ -1705,7 +1705,7 @@ CONTAINS
       ENDDO
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-!--- THE ABOVE CHANGED ENVIRONMENT IS NOW USED TO CALULATE THE
+!--- THE ABOVE CHANGED ENVIRONMENT IS NOW USED TO CALCULATE THE
 !--- EFFECT THE ARBITRARY CLOUD (WITH UNIT MASS FLUX)
 !--- WOULD HAVE ON THE STABILITY,
 !--- WHICH THEN IS USED TO CALCULATE THE REAL MASS FLUX,
@@ -2029,7 +2029,7 @@ CONTAINS
           ACRTFCT(I) = MIN(ACRTFCT(I),val2)
           ACRTFCT(I) = 1. - ACRTFCT(I)
 !
-!  modify ACRTFCT(I) by colume mean rh if RHBAR(I) is greater than 80 percent
+!  modify ACRTFCT(I) by column mean rh if RHBAR(I) is greater than 80 percent
 !
 !         if(RHBAR(I).ge..8) THEN
 !           ACRTFCT(I) = ACRTFCT(I) * (.9 - min(RHBAR(I),.9)) * 10.
@@ -3858,7 +3858,7 @@ CONTAINS
       enddo
 !c!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !c
-!c--- the above changed environment is now used to calulate the
+!c--- the above changed environment is now used to calculate the
 !c--- effect the arbitrary cloud (with unit mass flux)
 !c--- would have on the stability,
 !c--- which then is used to calculate the real mass flux,
@@ -4158,7 +4158,7 @@ CONTAINS
           acrtfct(i) = min(acrtfct(i),val2)
           acrtfct(i) = 1. - acrtfct(i)
 !c
-!c  modify acrtfct(i) by colume mean rh if rhbar(i) is greater than 80 percent
+!c  modify acrtfct(i) by column mean rh if rhbar(i) is greater than 80 percent
 !c
 !c         if(rhbar(i).ge..8) then
 !c           acrtfct(i) = acrtfct(i) * (.9 - min(rhbar(i),.9)) * 10.

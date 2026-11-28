@@ -8,7 +8,7 @@
 module overland_routing_properties
     implicit none
 
-   ! holds proprties of the the routing grid needed by overland routing algs
+   ! holds properties of the the routing grid needed by overland routing algs
    type overland_routing_properties_struct
       integer :: ixrt                                            ! number of cells in x direction on the routing grid
       integer :: jxrt                                            ! number of cells in y direction on the routing grid
@@ -87,7 +87,7 @@ module overland_routing_properties
 
 subroutine overland_properties_init(this,ix,jx)
     implicit none
-    class(overland_routing_properties_struct), intent(inout) :: this ! the type object being initalized
+    class(overland_routing_properties_struct), intent(inout) :: this ! the type object being initialized
     integer, intent(in) :: ix                     ! x grid size
     integer, intent(in) :: jx                     ! y grid size
 
@@ -156,10 +156,10 @@ subroutine overland_properties_init(this,ix,jx)
 
     if ( allocation_error ) &
         write(0,*) "attempt to allocate data in members of overland properties structure&
-        &that where allready allocated. The allocated members where not changed"
+        &that where already allocated. The allocated members where not changed"
 end subroutine overland_properties_init
 
-! this procedure deallocates and overland_routing_properties structure that was initalized with
+! this procedure deallocates and overland_routing_properties structure that was initialized with
 ! overland_properties_init
 
 subroutine overland_properties_destory(this)

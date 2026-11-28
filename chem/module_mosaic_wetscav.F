@@ -1481,7 +1481,7 @@ end subroutine gasrainscav
 !	    x(i,k) is parameter i, observation k
 !	y - array containing y values
 !	    y(k) is observation
-!	a - array !ontaining the regression coefficients
+!	a - array containing the regression coefficients
 !	n - number of observations
 !	m - number of parameters
 !	mmaxd - first dimension of the x array

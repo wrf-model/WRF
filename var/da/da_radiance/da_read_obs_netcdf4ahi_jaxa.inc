@@ -11,7 +11,7 @@ subroutine da_read_obs_netcdf4ahi_jaxa (iv, infile_tb, infile_tbp)
    !
    !  HISTORY: 2016/10/22 - Creation         Yuanbing Wang, NUIST/CAS, NCAR/NESL/MMM/DAS
    !  HISTORY: 2020/03/01 - Add clear sky cloud detection procedures   Dongmei Xu, NUIST, NCAR/MMM  
-   !  To be devoloped: 1.time information; 2.dimension sequence
+   !  To be developed: 1.time information; 2.dimension sequence
    !------------------------------------------------------------------------------
    
    use netcdf

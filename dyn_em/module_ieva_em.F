@@ -658,7 +658,7 @@ SUBROUTINE advect_ph_implicit( ph, pho, tendency, phb,        &
 
          bt(i,k) =   1.0 + btmp(i)
 
-! 2nd order centered for explict piece of advection  (TURNED OFF AND COMPUTED IN RHS_PH)
+! 2nd order centered for explicit piece of advection  (TURNED OFF AND COMPUTED IN RHS_PH)
 !
 !          weL   = -dt_rk*fzp(k)*0.5*(wwE(i,k-1,j)+wwE(i,k,j)) * rdzw(k-1) * msfty(i,j) / mut(i,j)  
 !          weR   =  dt_rk*fzm(k)*0.5*(wwE(i,k+1,j)+wwE(i,k,j)) * rdzw(k)   * msfty(i,j) / mut(i,j)        

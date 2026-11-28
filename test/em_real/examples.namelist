@@ -593,7 +593,7 @@ flag information into the data stream that is input by real.  The real
 program is able to use the available u, v, T, height fields (each may be on
 a tropopause .OR. the level of max winds) in the vertical interpolation.
 To "tune" the data, the user may select a level below which the max wind 
-inforamtion is ignored.  The default is 300 hPa.  The user may also 
+information is ignored.  The default is 300 hPa.  The user may also
 select the level that when exceeded the trop and maxw fields are ignored
 (due to the horizontal pressure difference detecting a user-defined
 discontinuity, and the metgrid horizontal interpolation across the 

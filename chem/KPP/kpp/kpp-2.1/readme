@@ -18,7 +18,7 @@ To get started with KPP:  Read user's manual (doc/kpp-UserManual.pdf)
 To install KPP:
 ---------------
 
-1. Make sure that FLEX (public domain lexical analizer) is installed
+1. Make sure that FLEX (public domain lexical analyzer) is installed
    on your machine. Type "flex --version" to test this.
 
 2. Note down the exact path name where the FLEX library is installed. The

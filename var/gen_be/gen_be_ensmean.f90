@@ -4,7 +4,7 @@ program gen_be_ensmean
 !  Purpose: Calculate ensemble mean file from input WRF NETCDF input
 !  ensemble members.
 !
-!  Owner: Dale Barker (NCAR/MMM) - WRF wrappper. Thanks to Cindy Bruyere.
+!  Owner: Dale Barker (NCAR/MMM) - WRF wrapper. Thanks to Cindy Bruyere.
 !  Please acknowledge author/institute in work that uses this code.
 !
 !----------------------------------------------------------------------

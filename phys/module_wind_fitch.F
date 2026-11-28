@@ -22,7 +22,7 @@ MODULE module_wind_fitch
 !             - Initialize the wind turbines in this module.
 !             - Introduce z_at_walls to avoid instabilities due to neglecting
 !                the perturbation of the geopotential height.
-!             - User friendly interface to introduce the technical characteritics of
+!             - User friendly interface to introduce the technical characteristics of
 !                the wind turbines.
 !             - Only uses one set of turbine coefficients using the wind speed at hub height
 !             - Two standing coefficients.
@@ -423,7 +423,7 @@ CONTAINS
   ENDIF
   ! END LICENSE
 !
-! ... power coeficient ...
+! ... power coefficient ...
 !
   IF(speed .LE. cispeed .OR. speed .GE. cospeed) THEN
      power=0.

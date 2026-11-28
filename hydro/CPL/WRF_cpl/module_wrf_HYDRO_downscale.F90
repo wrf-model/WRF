@@ -154,7 +154,7 @@ subroutine wrf2l_finemesh(,its,ite,jts,jte, T_PHY0,U_PHY0,V_PHY0,p_hyd_w0,RAINBL
        call wrf2finegrid(p_hyd_w0(its:ite,jts:jte), P8W(:,1,:),ite-its+1,jte-jts+1,finemesh_factor)
        call wrf2finegrid(RAINBL0(its:ite,jts:jte), RAINBL_tmp,ite-its+1,jte-jts+1,finemesh_factor)
        call wrf2finegrid(QV_CURR0(its:ite,jts:jte), QV_CURR(:,1,:),ite-its+1,jte-jts+1,finemesh_factor)
-!  update some varialbes.
+!  update some variables.
        if(finemesh .ne. 1) then   ! update the LAI and VEGFRA for each time step. Note: this is from the WRF grid.
            call wrf2finegrid(albedo0(its:ite,jts:jte), albedo)
            call wrf2finegrid(emiss0(its:ite,jts:jte), emiss)

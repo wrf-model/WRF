@@ -4,7 +4,7 @@ MODULE module_bioemi_megan2
   !
   !  Reference: 
   !
-  !    Estimates of global terrestial isoprene emissions using MEGAN
+  !    Estimates of global terrestrial isoprene emissions using MEGAN
   !    (Model of Emissions of Gases and Aerosols from Nature )
   !    A. Guenther, T. Karl, P. Harley, C. Wiedinmyer, P.I. Palmer, and C. Geron
   !    Atmospheric Chemistry and Physics, 6, 3181-3210, 2006.
@@ -432,8 +432,8 @@ CONTAINS
     CALL wrf_message(mesg)
 
 
-    ! Get the mechanism converstion table
-    ! ( Even though the mechanism converstion table is time-independent,
+    ! Get the mechanism conversion table
+    ! ( Even though the mechanism conversion table is time-independent,
     ! do this for all time steps to be sure there will be no issue with 
     ! restart runs.  This should be edited eventually to reduce 
     ! redundant calculations.)
@@ -492,7 +492,7 @@ CONTAINS
 
     END SELECT GAS_MECH_SELECT1
 
-    ! Calcuate biogenic emissions grid by grid
+    ! Calculate biogenic emissions grid by grid
 
     j_loop: DO j = jts, jte
        i_loop: DO i = its, ite
@@ -503,7 +503,7 @@ CONTAINS
           tsa   = T2(i,j)                     ! air temperature at 2-meter (K)
           pres  = 0.01*p_phy(i,kts,j)         ! surface pressure (mb)
           lat   = xlat(i,j)                   ! latitude (degree) 
-          lon   = xlong(i,j)                  ! longitude (degress)
+          lon   = xlong(i,j)                  ! longitude (degrees)
           swd   = swdown(i,j)                 ! downward solar radiation (W/m2)
           LAIc  = mlai(i,j,current_month)     ! current month leaf area index
           LAIp  = mlai(i,j,previous_month)    ! previous month leaf area index
@@ -559,7 +559,7 @@ CONTAINS
           !
           !  Reference: 
           !
-          !    Estimates of global terrestial isoprene emissions using MEGAN
+          !    Estimates of global terrestrial isoprene emissions using MEGAN
           !    (Model of Emissions of Gases and Aerosols from Nature )
           !    A. Guenther, T. Karl, P. Harley, C. Wiedinmyer, 
           !    P.I. Palmer, and C. Geron
@@ -1848,7 +1848,7 @@ is_mozm_species : &
 
     ! -----------------------------------------------------------------
     !  SUBROUTINE GAMMA_TISOP returns the GAMMA_T value for isoprene
-    !  Orginally from Tan's gamma_etc.F
+    !  Originally from Tan's gamma_etc.F
     ! -----------------------------------------------------------------
 
     SUBROUTINE GAMMA_TISOP( TEMP, D_TEMP, gam_T )
@@ -1860,7 +1860,7 @@ is_mozm_species : &
       !
       !  Reference: 
       !
-      !    Estimates of global terrestial isoprene emissions using MEGAN
+      !    Estimates of global terrestrial isoprene emissions using MEGAN
       !    (Model of Emissions of Gases and Aerosols from Nature )
       !    A. Guenther, T. Karl, P. Harley, C. Wiedinmyer, 
       !    P.I. Palmer, and C. Geron
@@ -1954,7 +1954,7 @@ is_mozm_species : &
       !
       !  Reference: 
       !
-      !    Estimates of global terrestial isoprene emissions using MEGAN
+      !    Estimates of global terrestrial isoprene emissions using MEGAN
       !    (Model of Emissions of Gases and Aerosols from Nature )
       !    A. Guenther, T. Karl, P. Harley, C. Wiedinmyer, 
       !    P.I. Palmer, and C. Geron
@@ -1995,7 +1995,7 @@ is_mozm_species : &
       !
       !  Reference: 
       !
-      !    Estimates of global terrestial isoprene emissions using MEGAN
+      !    Estimates of global terrestrial isoprene emissions using MEGAN
       !    (Model of Emissions of Gases and Aerosols from Nature )
       !    A. Guenther, T. Karl, P. Harley, C. Wiedinmyer, 
       !    P.I. Palmer, and C. Geron
@@ -2112,7 +2112,7 @@ is_mozm_species : &
       !
       !  Reference: 
       !
-      !    Estimates of global terrestial isoprene emissions using MEGAN
+      !    Estimates of global terrestrial isoprene emissions using MEGAN
       !    (Model of Emissions of Gases and Aerosols from Nature )
       !    A. Guenther, T. Karl, P. Harley, C. Wiedinmyer, 
       !    P.I. Palmer, and C. Geron
@@ -2254,7 +2254,7 @@ is_mozm_species : &
 
       ! Time step between LAIp and LAIc (days)
       t = TSTLEN
-      ! Tt is the average ambient air temperature (K) of the preceeding time
+      ! Tt is the average ambient air temperature (K) of the preceding time
       ! interval.  Here, use the monthly-mean surface air temperature
       Tt   = D_TEMP
 

@@ -5418,7 +5418,7 @@ BENCH_END(adj_moist_phys_end_tim)
 BENCH_START(adj_micro_driver_tim)
 
 !Variables need to be saved: th, p, qv_curr, rho, pi_phy, dz8w, rainnc, rainncv
-!!!! Need to replace the variables marked as "!zzma" if other scheme will be added in the furture. (comments from zzma 01/10/2011)
+!!!! Need to replace the variables marked as "!zzma" if other scheme will be added in the future. (comments from zzma 01/10/2011)
 
 ! Consider diaflag when coding the adjoint of nssl_2mom_driver
 !

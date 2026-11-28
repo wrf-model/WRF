@@ -141,7 +141,7 @@ contains
        call wrf_error_fatal('Number of CAM Columns (NCOL) in CAM_MAM_CLOUDCHEM scheme must be 1')
     endif
 
-    !Divide domain in chuncks and map WRF variables into CAM
+    !Divide domain in chunks and map WRF variables into CAM
     !Loop counters are named iw,jw,kw to represent that they index WRF sided variables
     
     itsm1     = its - 1
@@ -158,7 +158,7 @@ contains
           do kw  = kts, kte
              kflip             = ktep1 - kw
              pmid(1,kflip)     = p_phy(iw,kw,jw)                   !Pressure at the mid-points (Pa) [state%pmid in CAM]
-             tfld(1,kflip)     = t_phy(iw,kw,jw)                   !Temprature at the mid points (K) [state%t in CAM]
+             tfld(1,kflip)     = t_phy(iw,kw,jw)                   !Temperature at the mid points (K) [state%t in CAM]
              state_zm(1,kflip) = z_sea_level(iw,kw,jw) - ht(iw,jw) !Height above the ground at the midpoints (m) [state%zm in CAM]
              rlat(1)           = xlat(iw,jw)
 
@@ -195,7 +195,7 @@ contains
                 rprddp(1,kflip)         = rprddp3d(iw,kw,jw)                     !dq/dt due to deep convective rainout (kg/kg/s)
              endif
 
-             !xhnm is air density in molecules/cm3 (Formulated by RCE, codded by balwinder.singh@pnnl.gov)
+             !xhnm is air density in molecules/cm3 (Formulated by RCE, coded by balwinder.singh@pnnl.gov)
              xhnm(1,kflip) = (avogad*1.0e-6_r8)/(mwdry*alt(iw,kw,jw)) !Note that avogad is in kmoles/moles
 
              !invariants array is NEVER used in the computations when state_q is defined. Therefore it is set to nan

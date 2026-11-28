@@ -470,7 +470,7 @@ C ======= Rejected/Accepted Step ============================
  300      CONTINUE
           T = Tplus
 	  IF (.NOT.IsReject) THEN
-	      H = Hnew   ! Do not increase stepsize if previos step was rejected
+	      H = Hnew   ! Do not increase stepsize if previous step was rejected
 	  END IF    
           IsReject = .false.
           Naccept = Naccept+1

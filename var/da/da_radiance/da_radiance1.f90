@@ -172,8 +172,8 @@ module da_radiance1
                                           ! 0:sea     1:sea-ice     2:land     3:snow
                                           ! 4:mix-sea 5:mix-sea-ice 6:mix-land 7:mix-snow
       integer            :: terrain       ! model terrain in m
-      integer            :: soiltyp       ! soil type (MM5/WRF USGS 24 catagories)
-      integer            :: vegtyp        ! vegetation type (MM5/WRF 16 catagories)
+      integer            :: soiltyp       ! soil type (MM5/WRF USGS 24 categories)
+      integer            :: vegtyp        ! vegetation type (MM5/WRF 16 categories)
       real               :: vegfra        ! vegetation fraction
       real               :: soilm         ! soil moisture
       real               :: soilt         ! soil temperature

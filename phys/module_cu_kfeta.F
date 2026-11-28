@@ -283,7 +283,7 @@ CONTAINS
         ENDDO
         ENDDO
         ENDDO
-! boundary value ( all processors will do the following? Or just those processsors handling sub-area including boundary)
+! boundary value ( all processors will do the following? Or just those processors handling sub-area including boundary)
         DO K = kts,kte
            DO J = jts-1,jte+1
             DO I = its-1,ite+1
@@ -504,7 +504,7 @@ CONTAINS
               ENDIF
             ENDIF
 
-!......     QSTEN STORES GRAUPEL TENDENCY IF IT EXISTS, OTHERISE SNOW (V2)
+!......     QSTEN STORES GRAUPEL TENDENCY IF IT EXISTS, OTHERWISE SNOW (V2)
 
 
             IF(PRESENT( rqicuten )) THEN
@@ -801,7 +801,7 @@ CONTAINS
 !  check of different ~50 mb deep groups of adjacent model layers in
 !  the process of identifying updraft source layer (USL).  Note that 
 !  this search is terminated as soon as a buoyant parcel is found and 
-!  this parcel can produce a cloud greater than specifed minimum depth
+!  this parcel can produce a cloud greater than specified minimum depth
 !  (CHMIN)...For now, set interval at 15 mb...
 !
        NCHECK = 1
@@ -967,7 +967,7 @@ usl:   DO
 !     
 !...CHECK TO SEE IF CLOUD IS BUOYANT USING FRITSCH-CHAPPELL TRIGGER
 !...FUNCTION DESCRIBED IN KAIN AND FRITSCH (1992)...W0 IS AN
-!...APROXIMATE VALUE FOR THE RUNNING-MEAN GRID-SCALE VERTICAL
+!...APPROXIMATE VALUE FOR THE RUNNING-MEAN GRID-SCALE VERTICAL
 !...VELOCITY, WHICH GIVES SMOOTHER FIELDS OF CONVECTIVE INITIATION
 !...THAN THE INSTANTANEOUS VALUE...FORMULA RELATING TEMPERATURE
 !...PERTURBATION TO VERTICAL VELOCITY HAS BEEN USED WITH THE MOST
@@ -1887,7 +1887,7 @@ d_mf:   IF(TDER.LT.1.)THEN
        AINC=1.
        IF(AINCMX.LT.AINC)AINC=AINCMX
 !     
-!...SAVE THE RELEVENT VARIABLES FOR A UNIT UPDRAFT AND DOWNDRAFT...THEY WILL 
+!...SAVE THE RELEVANT VARIABLES FOR A UNIT UPDRAFT AND DOWNDRAFT...THEY WILL
 !...BE ITERATIVELY ADJUSTED BY THE FACTOR AINC TO SATISFY THE STABILIZATION
 !...CLOSURE...
 !     
@@ -2835,7 +2835,7 @@ iter:     DO NCOUNT=1,10
       RLF=RLS-RLC
       CPP=1004.5*(1.+0.89*QU)
 !
-!  A = D(es)/DT IS THAT CALCULATED FROM BUCK (1981) EMPERICAL FORMULAS
+!  A = D(es)/DT IS THAT CALCULATED FROM BUCK (1981) EMPIRICAL FORMULAS
 !  FOR SATURATION VAPOR PRESSURE...
 !
       A=(CLIQ-BLIQ*DLIQ)/((TU-DLIQ)*(TU-DLIQ))
@@ -2892,8 +2892,8 @@ iter:     DO NCOUNT=1,10
 !                                                                       
 !  RATIO3 IS THE FRACTION OF LIQUID WATER IN FRESH CONDENSATE, RATIO4 IS
 !  THE FRACTION OF LIQUID WATER IN THE TOTAL AMOUNT OF CONDENSATE INVOLV
-!  IN THE PRECIPITATION PROCESS - NOTE THAT ONLY 60% OF THE FRESH CONDEN
-!  SATE IS IS ALLOWED TO PARTICIPATE IN THE CONVERSION PROCESS...       
+!  IN THE PRECIPITATION PROCESS - NOTE THAT ONLY 60% OF THE FRESH
+!  CONDENSATE IS IS ALLOWED TO PARTICIPATE IN THE CONVERSION PROCESS...
 !                                                                       
       RATIO3=QNEWLQ/(QNEW+1.E-8)                                       
 !     OLDQ=QTOT                                                         
@@ -3287,7 +3287,7 @@ iter:     DO NCOUNT=1,10
 !
 ! lookup table for tlog(emix/aliq)
 !
-! set up intial values for lookup tables
+! set up initial values for lookup tables
 !
        astrt=1.e-3
        ainc=0.075

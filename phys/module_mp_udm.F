@@ -46,12 +46,12 @@
           r0     = .8e-5   ,&    !< threshold radius in autoconversion       [m]
           xncr   = 3.e8    ,&    !< number concentration of cloud droplets [m-3]
           xmyu   = 1.718e-5,&    !< the dynamic viscosity             [kgm-1s-1]
-          dimax  = 500.e-6 ,&    !< maximum cloud-ice diamter                [m]
+          dimax  = 500.e-6 ,&    !< maximum cloud-ice diameter               [m]
           ni0max = 500.e3  ,&    !< maximum ice nuclei particles (inp)     [m-3]
           pfrz1  = 100.    ,&    !< constant in biggs freezing
           pfrz2  = 0.66    ,&    !< constant in biggs freezing
-          qcmin  = 1.e-12  ,&    !< minimun values for qr, qs, and qg   [kgkg-1]
-          qrmin  = 1.e-9   ,&    !< minimun values for qr, qs, and qg   [kgkg-1]
+          qcmin  = 1.e-12  ,&    !< minimum values for qr, qs, and qg   [kgkg-1]
+          qrmin  = 1.e-9   ,&    !< minimum values for qr, qs, and qg   [kgkg-1]
           eacrc  = 1.0     ,&    !< snow/cloud-water collection efficiency
           eachs  = 1.0     ,&    !< hail/snow collection efficiency
           eachg  = 0.5     ,&    !< hail/graupel collection efficiency
@@ -154,7 +154,7 @@
    double precision, dimension(nxaut,numax)        ::  tbaut_qc_tot, tbaut_qc_sub
    double precision, dimension(nxaut,numax)        ::  tbaut_nc_tot, tbaut_nc_sub
 !-------------------------------------------------------------------------------
-! apply temperature dependent ice habbit....based on aspect ratio concept
+! apply temperature dependent ice habit....based on aspect ratio concept
 ! of Um et al. (2015, acp) and Matrosov et al. (2020, jamc)
 !
    real, parameter, private :: &
@@ -168,7 +168,7 @@
           one_1 = 1.0
    logical, parameter, private :: flgzero = .true.
 !-------------------------------------------------------------------------------
-! save the microphysics constants that are initialzed in init driver
+! save the microphysics constants that are initialized in init driver
 !
    real, save ::                                                    &
              qc_ocean,qc_land,qck1,pidnc,bvtr1,bvtr2,bvtr3,bvtr4,bvtr5,        &
@@ -267,7 +267,7 @@ subroutine udm(th, q, qc, qr, qi, qs, qg, qh                                  &
                                                             hail, &
                                                          hailncv
 !
-! for radiation interation
+! for radiation interaction
 !
   integer, intent(in)::                                           &
                                                         has_reqc, &
@@ -453,7 +453,7 @@ subroutine udm2d(t1, q1                                          &
 !! revisions based on literature and accumulated realism. udm MP utilizes
 !! the in-cloud microphysics concept (Kim and Hong 2018) and physically based
 !! autoconversion of Lee and Baik (2017) by solving the stochastic collection
-!! equation. For grauel and hail, the corresponding termimal velocity is updated
+!! equation. For grauel and hail, the corresponding terminal velocity is updated
 !! The semi-lagrangian sedimentation of Juang and Hong (2010) is reconfigured
 !! for computational efficiency and numerical accuracy.
 !! The scheme incorporates aerosol data interacting with cloud condensation
@@ -835,7 +835,7 @@ subroutine udm2d(t1, q1                                          &
    enddo
 !===============================================================================
 !
-! inner loop wih the time step of dtcldcr (default = 180 sec)
+! inner loop with the time step of dtcldcr (default = 180 sec)
 !
 !===============================================================================
 ! compute the sub-cycling time steps.
@@ -983,7 +983,7 @@ subroutine udm2d(t1, q1                                          &
    enddo
 !===============================================================================
 !
-! adjustment of nc and nr according to avaialble size of clouds and rain
+! adjustment of nc and nr according to available size of clouds and rain
 !
 !===============================================================================
    call adjust_number_concent(ktopqr,kdim,qrs(:,i,1),ncr(:,i,3),den(:,i),      &
@@ -1334,7 +1334,7 @@ subroutine udm2d(t1, q1                                          &
        endif
        if(L_qc.and.L_c>1.e-5) then
 !-----------------------------------------
-! for mass concentraion
+! for mass concentration
 !-----------------------------------------
          gamma1(0) = 1.0d0/( lamc)
          do n=1, nu_c
@@ -1347,7 +1347,7 @@ subroutine udm2d(t1, q1                                          &
 !
          qc_aut =(qc_tot-alpha_aut*qc_sub)*(pidnc*8.0)*pi*vt0_c*kc_aut*n0csq
 !-----------------------------------------
-! for number concentraion
+! for number concentration
 !-----------------------------------------
          nc_tot = funct_aut_nc_tot(lamc,nu_c)
          nc_sub = funct_aut_nc_sub(lamc,nu_c)
@@ -3899,7 +3899,7 @@ end subroutine udm_mp_reflectivity
 !
 !  abstract: computes the ratio of fall velocity for mass over number
 !    concentations, vm/vn, as a function of variable shape parameter.
-!    the shape paramter is a diagnosed with respect to diamater of
+!    the shape parameter is a diagnosed with respect to diameter of
 !    drops. exact shape dependent ratio is calculated in subprogram
 !    fshapex. the current implementation computes a table with a length
 !    of 9991 for diameter ranging from 10 micro to 10 mm.
@@ -3937,7 +3937,7 @@ end subroutine udm_mp_reflectivity
 !  abstract : exactly compute velocity ratio from diameter.
 !    vratio = gamma(1+myu)*gamma(4+bvtr+myu)/gamma(1+bvtr+myu)/gamma(4+myu)
 !    where bvtr is the power parameter in terminal velocity, and myu is
-!    the dignosed shape parameter,which is a function of drop size.
+!    the diagnosed shape parameter,which is a function of drop size.
 !    myu = 11.8*[1000D**(1/3)-0.7)**2 + 2, from Milbrandt and
 !    Mctaggart-Cowan (JAS, 2010). D is the unit in  meters.
 !    this function should be expanded inline in the calling routine.
@@ -4059,7 +4059,7 @@ end subroutine udm_mp_reflectivity
    subroutine comp_aut_table(lamc,nu_c,qc_tot,qc_sub,nc_tot,nc_sub)
 !-------------------------------------------------------------------------------
 !
-!  abstract : exactly compute conversoin rate for qc to qr, and nc and nr.
+!  abstract : exactly compute conversion rate for qc to qr, and nc and nr.
 !    this function should be expanded inline in the calling routine.
 !    see equations 15~19 of Lee and Baik (2017)
 !
@@ -4125,7 +4125,7 @@ end subroutine udm_mp_reflectivity
            err2(n) = 1.0d0 - exp(-2.0d0*lamc*r_star)*err2(n)
          end do
 !-----------------------------------------
-! for mass concentraion
+! for mass concentration
 !-----------------------------------------
          qc_tot = 0.0d0
          qc_sub = 0.0d0
@@ -4153,7 +4153,7 @@ end subroutine udm_mp_reflectivity
                            *err1(nu_c+11-n)-temp22))
          end do
 !-----------------------------------------
-! for number concentraion
+! for number concentration
 !-----------------------------------------
          nc_tot = 0.0d0
          nc_sub = 0.0d0

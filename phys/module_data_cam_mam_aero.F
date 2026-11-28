@@ -238,7 +238,7 @@
       integer  :: msectional_mp = -1
       integer  :: modeptr_accum_mp    
       integer  :: modeptr_coarse_mp   
-      integer  :: modeptr_coardust_mp !BSINGH - declared for MAM7 complaince
+      integer  :: modeptr_coardust_mp !BSINGH - declared for MAM7 compliance
       integer  :: modeptr_aitken_mp   
       integer  :: ntot_amode_mp = ntot_amode
 

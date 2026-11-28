@@ -21,7 +21,7 @@ INCLUDE 'missing.inc'
          CHARACTER (LEN= 4) :: abbreviate_name
     END  TYPE station_name
 
-!   Number of stations in thre file
+!   Number of stations in the file
 
     INTEGER, PARAMETER      :: ns = 10      
 

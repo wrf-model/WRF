@@ -10,7 +10,7 @@
 ! Suite 120, San Ramon, CA 94583                                       *
 !
 ! Development of previously available modules are listed at the        *
-! begining of the code of the corresponding module.  Some of these     *
+! beginning of the code of the corresponding module.  Some of these    *
 ! modules may be copyrighted                                           *
 !***********************************************************************
 ! RCS file, release, date & time of last delta, author, state, [and locker]

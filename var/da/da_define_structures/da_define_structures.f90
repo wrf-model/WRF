@@ -52,7 +52,7 @@ module da_define_structures
       integer          :: fft_pad_i          ! Padding to get 2**p 3**q 5**r. (p>=1)
       integer          :: fft_pad_j          ! Padding to get 2**p 3**q 5**r.
 
-      integer          :: pad_num            ! Splitted fft_pad_i on this processor.
+      integer          :: pad_num            ! Split fft_pad_i on this processor.
       integer          :: pad_inc            ! Pad increment (split over v2y).
       integer, pointer :: pad_loc(:)         ! pad location on this processor.
       integer, pointer :: pad_pos(:)         ! pad position beyond ide for this processor.
@@ -154,7 +154,7 @@ module da_define_structures
    type info_type
       character (len = 40)   :: name          ! Station name
       character (len = 12)   :: platform      ! Instrument platform
-      character (len = 40)   :: id            ! 5 digit station identifer
+      character (len = 40)   :: id            ! 5 digit station identifier
       character (len = 19)   :: date_char     ! CCYY-MM-DD_HH:MM:SS date
       integer                :: levels        ! number of levels
       real                   :: lat           ! Latitude in degree
@@ -178,7 +178,7 @@ module da_define_structures
       integer                             :: n2
       character (len = 40) , allocatable  :: name(:)       ! Station name
       character (len = 12), allocatable   :: platform(:)   ! Instrument platform
-      character (len = 40), allocatable   :: id(:)         ! 5 digit station identifer
+      character (len = 40), allocatable   :: id(:)         ! 5 digit station identifier
       character (len = 19), allocatable   :: date_char(:)  ! CCYY-MM-DD_HH:MM:SS date
       integer, allocatable                :: levels(:)     ! number of levels
       real, allocatable                   :: lat(:,:)      ! Latitude in degree
@@ -334,7 +334,7 @@ module da_define_structures
       real                  , pointer :: height   (:) ! Height in m
       integer               , pointer :: height_qc(:) ! Height QC	  
       type (field_type)     , pointer :: w(:)         ! Retrieved vertical velocity from flash rate
-      type (field_type)     , pointer :: div(:)       ! Retrieved convergence fileds from vertical velocity
+      type (field_type)     , pointer :: div(:)       ! Retrieved convergence fields from vertical velocity
       type (field_type)     , pointer :: qv(:)        ! Retrieved vapor mixing ratio from flash rate         
    end type lightning_type
 
@@ -483,12 +483,12 @@ module da_define_structures
       character(len=40)               :: fmt_param    ! Format of parameter table
       integer                         :: nmaxpred     ! Max. No. of predictors
       integer                         :: nphase       ! No. of flight phases
-      integer                         :: nair         ! No. of aircrafts in table
+      integer                         :: nair         ! No. of aircraft in table
       integer                         :: npred        ! No. of predictors
       integer                         :: nmaxobs      ! Max Obs No.
       integer               , pointer :: nobs    (:,:)! Obs No. in proc
       integer               , pointer :: nobs_sum(:,:)! Total Obs No.
-      integer               , pointer :: tail_id   (:)! Tail ID of aircrafts
+      integer               , pointer :: tail_id   (:)! Tail ID of aircraft
       integer               , pointer :: obs_sn(:,:,:)! Serial No. of Obs in proc
       integer               , pointer :: ifuse   (:,:)! run varbc or not
       integer               , pointer :: index (:,:,:)! Index in CV
@@ -594,7 +594,7 @@ module da_define_structures
    end type cv_index_type
 
    type instid_type
-      ! Instrument triplet, follow the convension of RTTOV
+      ! Instrument triplet, follow the convention of RTTOV
       integer              :: platform_id, satellite_id, sensor_id
       integer              :: rad_monitoring ! 0 (monitor_off): assimilating
                                              !    (default in Registry.wrfvar),
@@ -921,8 +921,8 @@ module da_define_structures
 
    type residual_gpsref_type
       real, pointer :: ref(:)         ! GPS Refractivity
-      real, pointer :: p  (:)         ! GPS Retrived p from Refractivity
-      real, pointer :: t  (:)         ! GPS Retrived t from Refractivity
+      real, pointer :: p  (:)         ! GPS Retrieved p from Refractivity
+      real, pointer :: t  (:)         ! GPS Retrieved t from Refractivity
       real, pointer :: q  (:)         ! q from NCEP used by CDAAC in retrieval
    end type residual_gpsref_type
 

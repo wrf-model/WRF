@@ -119,7 +119,7 @@ SUBROUTINE rk_step_prep  ( config_flags, rk_step,           &
 !<DESCRIPTION>
 !
 !  rk_step_prep prepares a number of diagnostic quantities
-!  in preperation for a Runge-Kutta timestep.  subroutines called
+!  in preparation for a Runge-Kutta timestep.  subroutines called
 !  by rk_step_prep calculate
 !
 !  (1) total column dry air mass (mut, call to calculate_full)
@@ -3148,7 +3148,7 @@ FUNCTION iau_coef (iau_time_window_sec, dt, itimestep)  result(wgt_iau)
 
   implicit none
 
-! This function returns the coeficient for IAU
+! This function returns the coefficient for IAU
 
       INTEGER :: itimestep
       INTEGER :: nsteps_iau

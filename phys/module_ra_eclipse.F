@@ -3,7 +3,7 @@ module module_ra_eclipse
 contains
 
 !--------------------------------------------
-! Solar eclipse prediction moduel
+! Solar eclipse prediction module
 !
 ! Alex Montornes and Bernat Codina. University of Barcelona. 2015
 !
@@ -42,7 +42,7 @@ subroutine solar_eclipse(ims,ime,jms,jme,its,ite,jts,jte,    &
 !----------
 ! Input/output vars
 !----------
-! Grid indeces
+! Grid indices
   integer,                             intent(in)    :: ims,ime,jms,jme, &
                                                         its,ite,jts,jte
 ! Temporal variables
@@ -63,7 +63,7 @@ subroutine solar_eclipse(ims,ime,jms,jme,its,ite,jts,jte,    &
 !
 ! Constants
   real,    parameter       :: pi      = 3.1415926535897932384626433
-  real,    parameter       :: epsil   = 0.0818192 ! Earth excentricity
+  real,    parameter       :: epsil   = 0.0818192 ! Earth eccentricity
 !
 ! Besseliam elements from file eclipse_besselian_elements.dat
 !	X, Y         :: coordinates of the eclipse's axis in the fundamental plane
@@ -103,7 +103,7 @@ subroutine solar_eclipse(ims,ime,jms,jme,its,ite,jts,jte,    &
                                              ! from the point observer's plane
   logical              :: eclipse_exist
 !
-! Loop indeces
+! Loop indices
   integer              :: i, j
 !
 ! Internal variables
@@ -191,7 +191,7 @@ subroutine solar_eclipse(ims,ime,jms,jme,its,ite,jts,jte,    &
   elat_track=MISSING
   elon_track=MISSING
 !
-!-- Compute the excentricity correction
+!-- Compute the eccentricity correction
   E         = sqrt(1 - epsil**2)
   E_1       = 1/E
 !-- Get d1

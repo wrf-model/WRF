@@ -231,7 +231,7 @@ SUBROUTINE input_ext_chem_megan2_file (grid)
   !  as input for biogenic emissions model MEGAN version 2. The
   !  variables are:
   !
-  !      Isoprene emissions at referenece tempperature and
+  !      Isoprene emissions at reference temperature and
   !          light conditions [=] moles/km2/hr
   !      Leaf area index (one each month)
   !      Plant functional groups

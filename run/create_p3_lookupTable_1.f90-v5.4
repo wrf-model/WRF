@@ -27,7 +27,7 @@ PROGRAM create_p3_lookuptable_1
 !    'i_rhor_loop' label); for 3momI, the 'i_rhor_loop' needs to be uncomment.
 !    (In the future, a script  will be written to automate this.)
 !
-! 2. Copy the 3 pieces of text below to create indivudual executable shell scripts.
+! 2. Copy the 3 pieces of text below to create individual executable shell scripts.
 
 ! 3. Run script 1 (./go_1-compile.ksh).  This script will recreate several
 !    versions of the full code, concatenating the -top.f90 and the -bottom.90 with
@@ -154,11 +154,11 @@ PROGRAM create_p3_lookuptable_1
  integer            :: i_Drscale       ! index for scaled mean rain size loop   [1 .. n_Drscale]
 
 ! NOTE: n_Znorm (number of i_Znorm values) is currently equal to 80.  It is not actually used herein and therefore not declared.
-!       Rather, the outer (i_Znorm) "loop" is treated by individual complilations/execuations with specified values of i_Znorm,
+!       Rather, the outer (i_Znorm) "loop" is treated by individual complilations/executions with specified values of i_Znorm,
 !       with resulting sub-tables subsequently concatenated.  The same is true for the second (i_rhor) "loop"; however, n_rhor
 !       is used to decare the ranges of other arrays, hence it is declared/initialized here
 
- integer, parameter :: n_Znorm   = 10  ! number of indices for i_Znorm loop           (1nd "loop")  [not used in parallelized version]
+ integer, parameter :: n_Znorm   = 10  ! number of indices for i_Znorm loop           (1st "loop")  [not used in parallelized version]
  integer, parameter :: n_rhor    =  5  ! number of indices for i_rhor  loop           (2nd "loop")
  integer, parameter :: n_Fr      =  4  ! number of indices for i_Fr    loop           (3rd loop)
  integer, parameter :: n_Qnorm   = 50  ! number of indices for i_Qnorm loop           (4th loop)
@@ -182,7 +182,7 @@ PROGRAM create_p3_lookuptable_1
 ! function to compute mu for triple moment
  real :: compute_mu_3moment
 
-! function to return diagnostic value of shape paramter, mu_i
+! function to return diagnostic value of shape parameter, mu_i
  real :: diagnostic_mui
  
 ! outputs from lookup table (i.e. "f1prxx" read by access_lookup_table in s/r p3_main)
@@ -307,7 +307,7 @@ PROGRAM create_p3_lookuptable_1
 ! Brown and Francis (1995)
  ds = 1.9
 !cs = 0.01855 ! original (pre v2.3), based on assumption of Dmax
- cs = 0.0121 ! scaled value based on assumtion of Dmean from Hogan et al. 2012, JAMC
+ cs = 0.0121 ! scaled value based on assumption of Dmean from Hogan et al. 2012, JAMC
 
 !====
 
@@ -875,7 +875,7 @@ PROGRAM create_p3_lookuptable_1
           call intgrl_section(duml,mu_i, ds1,ds,dg,dsr, dcrit,dcrits,dcritr,intgrR1,intgrR2,intgrR3,intgrR4)                    
           n0dum = q/(cs1*intgrR1 + cs*intgrR2 + cgp(i_rhor)*intgrR3 + csr*intgrR4)
 
-        ! find minium N applying the lambda limiter (lower size limit)
+        ! find minimum N applying the lambda limiter (lower size limit)
           dum = n0dum/(duml**(mu_i+1.)/(gamma(mu_i+1.)))
           
         ! calculate the upper limit of normalized Q to use in P3 main
@@ -1463,7 +1463,7 @@ PROGRAM create_p3_lookuptable_1
                 endif
              endif
 
-            ! n0 not included below becuase it is in both numerator and denominator
+            ! n0 not included below because it is in both numerator and denominator
             !cs1  = pi*sxth*917.
             !ds1  = 3.
             !aas1 = pi/4.*2.

@@ -36,10 +36,10 @@ subroutine da_setup_be_global (be)
    real*8, allocatable  :: eval_g(:)  
    real*8, allocatable  :: evec_loc(:,:,:)
    real*8, allocatable  :: eval_loc(:,:)  
-   real, allocatable   :: regcoeff_psi_chi(:)        ! psi/chi    regression cooefficient.
-   real, allocatable   :: regcoeff_psi_t(:,:,:)      ! psi/t   regression cooefficient.
-   real, allocatable   :: regcoeff_psi_ps(:,:)       ! psi/ps     regression cooefficient.
-   real, allocatable   :: regcoeff_psi_rh(:,:,:)     ! psi/rh     regression cooefficient.
+   real, allocatable   :: regcoeff_psi_chi(:)        ! psi/chi    regression coefficient.
+   real, allocatable   :: regcoeff_psi_t(:,:,:)      ! psi/t   regression coefficient.
+   real, allocatable   :: regcoeff_psi_ps(:,:)       ! psi/ps     regression coefficient.
+   real, allocatable   :: regcoeff_psi_rh(:,:,:)     ! psi/rh     regression coefficient.
    real, allocatable   :: regcoeff_chi_u_t(:,:,:)    ! chi_u/t regression coefficient
    real, allocatable   :: regcoeff_chi_u_ps(:,:)     ! chi_u/ps   regression coefficient
    real, allocatable   :: regcoeff_chi_u_rh(:,:,:)   ! chi_u/rh   regression coefficient

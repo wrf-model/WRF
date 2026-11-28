@@ -7,7 +7,7 @@ subroutine da_tbatmos_tl(ifreq,theta,p0,wv,hwv,ta,gamma,lw,zcld,   &
    !-----------------------------------------------------------------
    ! Purpose: TBD
    ! Input  : TGL_p0,TGL_wv,TGL_hwv,TGL_ta,TGL_gamma,TGL_lw,TGL_zcld 
-   !          TGL_theta (somtime theta is a variable)
+   !          TGL_theta (sometime theta is a variable)
    ! Output : TGL_tbup,TGL_tbdn,TGL_tauatm,tbup,tbdn,tauatm
    ! -----------------------------------------------------------------
 
@@ -51,7 +51,7 @@ subroutine da_tbatmos_tl(ifreq,theta,p0,wv,hwv,ta,gamma,lw,zcld,   &
    if (trace_use) call da_trace_entry("da_tbatmos_tl")
 
    ! mu = secant(theta)
-   ! somtime theta is a variable
+   ! sometime theta is a variable
 
    mu     = 1.0/cos(theta*0.0174533)
    TGL_mu = mu*mu*0.0174533*TGL_theta*sin(theta*0.0174533)

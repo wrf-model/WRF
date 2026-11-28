@@ -32,7 +32,7 @@ C TOUT - End Time
 C       L-stable Rosenbrock 3(2), with 
 C     strongly A-stable embedded formula for error control.  
 C
-C     All the arguments aggree with the KPP syntax.
+C     All the arguments agree with the KPP syntax.
 C
 C  INPUT ARGUMENTS:
 C     y = Vector of (NVAR) concentrations, contains the
@@ -249,7 +249,7 @@ C ======= Rejected/Accepted Step ============================
  140      CONTINUE
           T = Tplus
 	  IF (.NOT.IsReject) THEN
-	      H = Hnew   ! Do not increase stepsize if previos step was rejected
+	      H = Hnew   ! Do not increase stepsize if previous step was rejected
 	  END IF    
           IsReject = .false.
           Naccept = Naccept+1

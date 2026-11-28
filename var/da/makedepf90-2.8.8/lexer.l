@@ -136,7 +136,7 @@ $[ \t]*endif    { RETURN(F90PPR_ENDIF); }
 ;|\n             { RETURN(EOSTMT); }
 
 [ \t\r,]         /* Ignore */
-\\[ \t]*\n       /* Ignore line-endings preceeded by \ */
+\\[ \t]*\n       /* Ignore line-endings preceded by \ */
 
 .               { RETURN(*yytext); }
 

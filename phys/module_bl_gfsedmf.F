@@ -666,7 +666,7 @@ CONTAINS
       real(kind=kind_phys) zstblmax,h1,     h2,     qlcr,  actei,   &
      &                     cldtime
 
-!! for aplha
+!! for alpha
      real(kind=kind_phys) WSPM(IM,KM-1), xland1(IM)
      integer kLOC ! RGF
      real :: xDKU, ALPHA    ! RGF
@@ -1338,7 +1338,7 @@ CONTAINS
                   endif
                 endif
              endif  ! endif useshape>1
-!!!! END OF CHAGES , WANG W
+!!!! END OF CHANGES , WANG W
 
 !!If alpha >= 0, this is the only modification of K
 ! if alpha = -1, the above provides the first guess for DKU, based on assumption

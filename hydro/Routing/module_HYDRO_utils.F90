@@ -49,7 +49,7 @@ contains
   end function get2d_real
 
 
-! this module create the distance dx, dy and diagnoal for routing
+! this module create the distance dx, dy and diagonal for routing
 ! 8 direction as the slop:
 ! 1: i,j+1
 ! 2: i+1, j+1
@@ -258,7 +258,7 @@ contains
           endif
 
      else
-           ! mapp projected grid.
+           ! map projected grid.
           if(my_id.eq.IO_id) then
               call get_dxdy_mp(dist,global_nx,global_ny, &
                  nlst(did)%dxrt0*nlst(did)%AGGFACTRT,nlst(did)%dxrt0*nlst(did)%AGGFACTRT)
@@ -273,7 +273,7 @@ contains
         call get_dist_ll(rt_domain(did)%dist_lsm,rt_domain(did)%lat_lsm,rt_domain(did)%lon_lsm,  &
                       rt_domain(did)%ix,rt_domain(did)%jx)
      else
-        ! mapp projected grid.
+        ! map projected grid.
         call get_dxdy_mp(rt_domain(did)%dist_lsm,rt_domain(did)%ix,rt_domain(did)%jx, &
               nlst(did)%dxrt0*nlst(did)%AGGFACTRT,nlst(did)%dxrt0*nlst(did)%AGGFACTRT)
      endif
@@ -292,7 +292,7 @@ contains
         ! using lat and lon grid when channel routing is off
         call get_rt_dxdy_ll(did)
      else
-        ! mapp projected grid.
+        ! map projected grid.
          call get_dxdy_mp(rt_domain(did)%overland%properties%distance_to_neighbor,rt_domain(did)%ixrt,rt_domain(did)%jxrt, &
               nlst(did)%dxrt0,nlst(did)%dxrt0)
 #ifdef MPP_LAND
@@ -314,7 +314,7 @@ contains
 !           call get_dist_ll(rt_domain(did)%overland%properties%distance_to_neighbor,rt_domain(did)%latval,rt_domain(did)%lonval,  &
 !                      rt_domain(did)%ixrt,rt_domain(did)%jxrt)
 !     else
-!        ! mapp projected grid.
+!        ! map projected grid.
 !        if(rt_domain(did)%overland%properties%distance_to_neighbor(1,1,9) .eq. -999)   &
 !           call get_dxdy_mp(rt_domain(did)%overland%properties%distance_to_neighbor,rt_domain(did)%ixrt,rt_domain(did)%jxrt, &
 !              nlst_rt(did)%dxrt0,nlst_rt(did)%dxrt0)

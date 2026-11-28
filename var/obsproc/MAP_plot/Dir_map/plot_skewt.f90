@@ -108,7 +108,7 @@ site_loop:do i = 1, num
                dwpt(k) = badval
            endif
 
-! Wind speed and direction calcultations
+! Wind speed and direction calculations
 !          uu      = sound(i) % each(k) % u % data
 !          vv      = sound(i) % each(k) % v % data
 !          if (sound(i) % each(k) % u % qc < qc0) uu = badval

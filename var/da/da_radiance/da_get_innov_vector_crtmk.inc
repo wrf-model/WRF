@@ -5,7 +5,7 @@ subroutine da_get_innov_vector_crtmk ( it, grid, ob, iv )
    !
    !  METHOD:  d = y - H(x)
    !       1. interpolate grid%xb to obs location
-   !       2. call foreward RTM to get simulated bright temperature 
+   !       2. call forward RTM to get simulated bright temperature
    !       3. obs BT - simulated BT
    !---------------------------------------------------------------------------
 
@@ -51,7 +51,7 @@ subroutine da_get_innov_vector_crtmk ( it, grid, ob, iv )
    real    :: clw(kms:kme), dpf(kms:kme)
    real    :: clwp
 
-   ! CRTM local varaibles and types
+   ! CRTM local variables and types
    integer :: wmo_sensor_id,Error_Status, Allocate_Status
 
    type (CRTM_RTSolution_type), allocatable :: RTSolution(:,:), RTSolution_K(:,:)
@@ -185,7 +185,7 @@ subroutine da_get_innov_vector_crtmk ( it, grid, ob, iv )
 
          ! horizontal interpolate grid%xb pressure to ob position for every grid%xb layer
          ! get CRTM pressure Layers 
-         do k=kts,kte ! from bottem to top
+         do k=kts,kte ! from bottom to top
             v_p(k) = dym*(dxm*grid%xb%p(i,j  ,k) + dx*grid%xb%p(i+1,j  ,k)) &
                 + dy *(dxm*grid%xb%p(i,j+1,k) + dx*grid%xb%p(i+1,j+1,k))
             v_p(k) = 0.01*v_p(k)  ! convert Pa to hPa
@@ -250,7 +250,7 @@ subroutine da_get_innov_vector_crtmk ( it, grid, ob, iv )
                                       Atmosphere(1)%Cloud(4)%Effective_Radius(kte-k+1), &
                                       Atmosphere(1)%Cloud(5)%Effective_Radius(kte-k+1) )
 
-               ! reset the da_cld_eff_radius calcualted effective radius to constants if desired
+               ! reset the da_cld_eff_radius calculated effective radius to constants if desired
 
                Atmosphere(1)%Cloud(1)%Effective_Radius(kte-k+1)=0.01  ! in mm
                Atmosphere(1)%Cloud(2)%Effective_Radius(kte-k+1)=0.03  ! in mm

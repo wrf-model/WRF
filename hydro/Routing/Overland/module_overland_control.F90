@@ -9,7 +9,7 @@ module overland_control
    !type that holds the variables that are inputs to or outputs of the routing code
    ! along with book keeping variables
 
-   !TODO change output integers to variables that are set dependant on the running system
+   !TODO change output integers to variables that are set dependent on the running system
    ! example WCOSS
 
    type overland_control_struct
@@ -67,7 +67,7 @@ module overland_control
 
 subroutine overland_control_init(this,lsm_ix,lsm_jx,rt_ix,rt_jx)
     implicit none
-    class(overland_control_struct), intent(inout) :: this ! the type object being initalized
+    class(overland_control_struct), intent(inout) :: this ! the type object being initialized
     integer, intent(in) :: lsm_ix                    ! land surface x size
     integer, intent(in) :: lsm_jx                    ! land surface y size
     integer, intent(in) :: rt_ix                     ! routing grid x size
@@ -123,11 +123,11 @@ subroutine overland_control_init(this,lsm_ix,lsm_jx,rt_ix,rt_jx)
 
     if ( allocation_error ) &
         write(0,*) "attempt to allocate data in members of overland control structure&
-        &that where allready allocated. The allocated members where not changed"
+        &that where already allocated. The allocated members where not changed"
 
 end subroutine overland_control_init
 
-! this procedure deallocates and overland_control structure that was initalized with
+! this procedure deallocates and overland_control structure that was initialized with
 ! overland_control_init
 
 subroutine overland_control_destroy(this)
@@ -173,6 +173,6 @@ subroutine overland_control_destroy(this)
 
     if ( allocation_error ) &
         write(0,*) "attempt to deallocate data in members of overland control structure&
-        &that where not allready allocated. The unallocated members where not changed"
+        &that where not already allocated. The unallocated members where not changed"
 end subroutine overland_control_destroy
 end module overland_control

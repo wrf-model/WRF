@@ -754,7 +754,7 @@ use_rap_aero_icbc                   = .false.   ! Set to .true. to ingest real-t
                                      = 12, Grenier-Bretherton-McCaa scheme
                                      = 16, TKE+TKE dissipation rate (epsilon) scheme
                                            works with surface layer options 1,91,2,5.
-                                     = 17, TKE+TKE dissipation rate+TPE (temparature variance) scheme
+                                     = 17, TKE+TKE dissipation rate+TPE (temperature variance) scheme
                                      = 99, MRF scheme
 
  bldt (max_dom)                      = 0,       ! minutes between boundary-layer physics calls
@@ -844,7 +844,7 @@ use_rap_aero_icbc                   = .false.   ! Set to .true. to ingest real-t
                                      = 3, Grell-Freitas-Li scheme
                                      = 4, Scale-aware GFS Simplified Arakawa-Schubert (SAS) scheme 
                                      = 5, Grell 3D ensemble scheme
-                                     = 6, Modifed Tiedtke scheme
+                                     = 6, Modified Tiedtke scheme
                                      = 7, Zhang-McFarlane scheme from CAM5 (CESM 1_0_1)
                                      = 10, Modified Kain-Fritsch scheme with trigger function based on PDFs
                                      = 11, Multi-scale Kain-Fritsch scheme
@@ -1101,7 +1101,7 @@ Namelist variables for lake module:
  shalwater_z0                        = 0,       ! Shallow water roughness scheme on (1) or off (0). Only compatible with sf_sfclay_physics = 1.
                                                   Bathymetry dataset from GEBCO Compilation Group. Please acknowledge the following in presentations and 
                                                   publications: GEBCO Compilation Group (2021) GEBCO 2021 Grid (doi:10.5285/c6612cbe-50b3-0cff-e053-6c86abc09f8f)
- shalwater_depth                     = 0.0,     ! Set constant depth [m] (must be positive) for shallow water roughness scheme if no bathymetry data availabile.
+ shalwater_depth                     = 0.0,     ! Set constant depth [m] (must be positive) for shallow water roughness scheme if no bathymetry data available.
                                                   The scheme is intended for depths between 10.0 and 100.0 m. Any depths outside of this range will be
                                                   rounded to the nearest limit value.
  lightning_option (max_dom)                       Lightning parameterization option to allow flash rate prediction without chemistry
@@ -1175,7 +1175,7 @@ Options for wind turbine drag parameterization:
                                                 ! 3 = modified squared superposition
                                                 ! 4 = superposition of the hub-height wind speed (Ma et al. 2022)
  windfarm_deg                       = 0.        ! The rotation degree of the wind farm layout. This is valid only when 'windfarm_opt=2' and 'windfarm_ij=1'
- windfarm_tke_factor                = 0.25      ! Correction factor applied to the TKE coefficient (deafault is 0.25, Archer et al. 2020)
+ windfarm_tke_factor                = 0.25      ! Correction factor applied to the TKE coefficient (default is 0.25, Archer et al. 2020)
 
 
 Stochastic parameterization schemes:
@@ -1527,7 +1527,7 @@ The following are for observation nudging:
  obs_coef_mois (max_dom)             = 0,       ! nudging coefficient for water vapor mixing ratio, unit: s-1
  obs_nudge_pstr (max_dom)            = 0        ! whether to nudge surface pressure (not used)
  obs_coef_pstr (max_dom)             = 0.       ! nudging coefficient for surface pressure, unit: s-1 (not used)
- obs_rinxy (max_dom)                 = 0.       ! horizonal radius of influence in km
+ obs_rinxy (max_dom)                 = 0.       ! horizontal radius of influence in km
  obs_rinsig                          = 0        ! vertical radius of influence in eta
  obs_twindo (max_dom)                = 0.66667  ! half-period time window over which an observation 
                                                   will be used for nudging (hours)

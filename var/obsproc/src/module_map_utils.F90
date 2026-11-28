@@ -67,7 +67,7 @@ MODULE map_utils
 !           positive toward the east, and j is the north-south direction, 
 !           positive toward the north.  
 !       2.  Origin is at (1,1) and is located at the southwest corner,
-!           regardless of hemispere.
+!           regardless of hemisphere.
 !       3.  Grid spacing (dx) is always positive.
 !       4.  Values of true latitudes must be positive for NH domains
 !           and negative for SH domains.
@@ -110,7 +110,7 @@ MODULE map_utils
 ! to declare a variable of the same type to hold your map projection
 ! information.  It also defines some integer parameters that contain
 ! the projection codes so one only has to use those variable names rather
-! than remembering the acutal code when using them.  The basic steps are
+! than remembering the actual code when using them.  The basic steps are
 ! as follows:
 !  
 !   1.  Ensure the "USE map_utils" is in your declarations.
@@ -475,7 +475,7 @@ CONTAINS
 
     IMPLICIT NONE
 
-    ! Delcare input arguments
+    ! Declare input arguments
     REAL, INTENT(IN)               :: lat
     REAL, INTENT(IN)               :: lon
     TYPE(proj_info),INTENT(IN)     :: proj
@@ -676,7 +676,7 @@ CONTAINS
     chi1 = (90. - proj%hemi*proj%truelat1)*rad_per_deg
     chi2 = (90. - proj%hemi*proj%truelat2)*rad_per_deg
 
-    ! See if we are in the southern hemispere and flip the indices
+    ! See if we are in the southern hemisphere and flip the indices
     ! if we are. 
     IF (proj%hemi .EQ. -1.) THEN 
       inew = -i + 2.

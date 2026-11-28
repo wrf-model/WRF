@@ -117,7 +117,7 @@
    write(iunit, '(A)')' '
    write(iunit, '(A)')'  Preditors(1:5): 1.0, w, (optional: Mach, dT/dt, T)'
    write(iunit, '(A)')' '
-   write(iunit, '(A)')'  Number of aircrafts currently involved in this table'
+   write(iunit, '(A)')'  Number of aircraft currently involved in this table'
    write(iunit, '(I5)') iv%varbc_tamdar%nair
    write(iunit, '(A)')'*'
 

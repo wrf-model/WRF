@@ -1042,7 +1042,7 @@
 !CC      CHI1    = 2.D0*WAER(4)        ! Free parameter ; arbitrary value.
       PSI1    = WAER(4)
 !
-! *** The following statment is here to avoid negative NH4+ values in
+! *** The following statement is here to avoid negative NH4+ values in
 !     CALCN? routines that call CALCN1A
 !
       PSI2    = MAX(MIN(WAER(2),0.5d0*(WAER(3)-PSI1)),TINY)

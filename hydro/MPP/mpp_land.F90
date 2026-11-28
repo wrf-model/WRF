@@ -152,7 +152,7 @@ contains
 
    subroutine MPP_LAND_PAR_INI(over_lap,in_global_nx,in_global_ny,AGGFACTRT)
       integer in_global_nx,in_global_ny, AGGFACTRT
-      integer :: over_lap   ! the overlaped grid number. (default is 1)
+      integer :: over_lap   ! the overlapped grid number. (default is 1)
       integer :: i
 
       global_nx = in_global_nx
@@ -878,7 +878,7 @@ contains
 
    subroutine write_IO_RT_real (in_buff,out_buff)
       ! usage: all of the cpu call this subroutine.
-      ! the IO node will recieve data from rest of the node.
+      ! the IO node will receive data from rest of the node.
             real,intent(in), dimension(:,:) :: in_buff
             real,intent(inout), dimension(:,:) :: out_buff
             real, dimension(:), allocatable :: recv_buff
@@ -892,7 +892,7 @@ contains
                ! be careful with the index range if using array prepared for MPI in fortran (offset_vectors)
                allocate(recv_buff(0: sum(size_vectors_rt) -1),stat = ierr)
 
-               ! recieve from each process size_vector(mpi_rank+1) data elements
+               ! receive from each process size_vector(mpi_rank+1) data elements
                ! and store the results in recv_buffer
                call MPI_Gatherv(in_buff, size_vectors_rt(my_id+1), MPI_REAL, &
                                 recv_buff, size_vectors_rt, offset_vectors_rt, MPI_REAL, &
@@ -927,7 +927,7 @@ contains
 
    subroutine write_IO_RT_int (in_buff,out_buff)
       ! usage: all of the cpu call this subroutine.
-      ! the IO node will recieve data from rest of the node.
+      ! the IO node will receive data from rest of the node.
             integer, intent(in), dimension(:,:) :: in_buff
             integer, intent(inout), dimension(:,:) :: out_buff
             integer, dimension(:), allocatable :: recv_buff
@@ -941,7 +941,7 @@ contains
                ! be careful with the index range if using array prepared for MPI in fortran (offset_vectors)
                allocate(recv_buff(0: sum(size_vectors_rt) -1),stat = ierr)
 
-               ! recieve from each process size_vector(mpi_rank+1) data elements
+               ! receive from each process size_vector(mpi_rank+1) data elements
                ! and store the results in recv_buffer
                call MPI_Gatherv(in_buff, size_vectors_rt(my_id+1), MPI_REAL, &
                                 recv_buff, size_vectors_rt, offset_vectors_rt, MPI_REAL, &
@@ -1940,7 +1940,7 @@ contains
                      g_v(node) = tmp_v(k)
                   else
 #ifdef HYDRO_D
-                     write(6,*) "Maping infor k=",k," node=", node
+                     write(6,*) "Mapping infor k=",k," node=", node
 #endif
                   endif
                enddo
@@ -1951,7 +1951,7 @@ contains
                      g_v(node) = v(k)
                   else
 #ifdef HYDRO_D
-                     write(6,*) "local Maping infor k=",k," node=",node
+                     write(6,*) "local Mapping infor k=",k," node=",node
 #endif
                   endif
                enddo
@@ -2014,7 +2014,7 @@ contains
                      g_v(node) = tmp_v(k)
                   else
 #ifdef HYDRO_D
-                     write(6,*) "Maping infor k=",k," node=",tmp_v(k)
+                     write(6,*) "Mapping infor k=",k," node=",tmp_v(k)
 #endif
                   endif
                enddo
@@ -2025,7 +2025,7 @@ contains
                      g_v(node) = v(k)
                   else
 #ifdef HYDRO_D
-                     write(6,*) "Maping infor k=",k," node=",map_l2g(k)
+                     write(6,*) "Mapping infor k=",k," node=",map_l2g(k)
 #endif
                   endif
                enddo
@@ -2087,7 +2087,7 @@ contains
                      g_v(node) = tmp_v(k)
                   else
 #ifdef HYDRO_D
-                     write(6,*) "Maping infor k=",k," node=",tmp_v(k)
+                     write(6,*) "Mapping infor k=",k," node=",tmp_v(k)
 #endif
                   endif
                enddo
@@ -2098,7 +2098,7 @@ contains
                      g_v(node) = v(k)
                   else
 #ifdef HYDRO_D
-                     write(6,*) "Maping infor k=",k," node=",map_l2g(k)
+                     write(6,*) "Mapping infor k=",k," node=",map_l2g(k)
 #endif
                   endif
                enddo

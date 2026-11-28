@@ -24,7 +24,7 @@ real,pointer,dimension(:,:):: dzdxf,dzdyf          ! terrain grad (1)
 real,pointer,dimension(:,:):: bbb,betafl,phiwc,r_0 ! spread formula coefficients
 real,pointer,dimension(:,:):: fgip                 ! init mass of surface fuel (kg/m^2)
 real,pointer,dimension(:,:):: ischap               ! if fuel is chaparral and want rate of spread treated differently
-real,pointer,dimension(:,:):: iboros               ! fire instensity over rate of spread -> avialable fuel x heat of combustion
+real,pointer,dimension(:,:):: iboros               ! fire instensity over rate of spread -> available fuel x heat of combustion
 real,pointer,dimension(:,:):: fuel_time            ! time to burn to 1/e (s) 
 real,pointer,dimension(:,:):: fmc_g                ! fuel moisture contents, ground (1) 
 end type fire_params
@@ -466,7 +466,7 @@ subroutine advance_moisture(    &
     fmc_gc,                     & ! fuel moisture by class, updated
     fmep,                       & ! fuel moisture extended model parameters
     fmc_equi,                   & ! fuel moisture equilibrium by class, for diagnostics only
-    fmc_lag                     & ! fuel moisture tendency by classe, for diagnostics only
+    fmc_lag                     & ! fuel moisture tendency by class, for diagnostics only
     )
 
 implicit none
@@ -579,7 +579,7 @@ do j=jts,jte
             ! saturation vapor pressure [Pa]
             Pws= exp( 54.842763 - 6763.22/T - 4.210 * log(T) + 0.000367*T + &
                 tanh(0.0415*(T - 218.8)) * (53.878 - 1331.22/T - 9.44523 * log(T) + 0.014025*T))
-            !realtive humidity [1]
+            !relative humidity [1]
             RH = Pw/Pws
             rh_fire(i,j)=RH
             rhmax=max(RH,rhmax)         

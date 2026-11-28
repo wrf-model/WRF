@@ -681,12 +681,12 @@ CONTAINS
 !
   ! hcd = moist static energy in downdraft
   ! zd normalized downdraft mass flux
-  ! dby = buoancy term
+  ! dby = buoyancy term
   ! entr = entrainment rate
   ! zd   = downdraft normalized mass flux
   ! entr= entrainment rate
   ! hcd = h in model cloud
-  ! bu = buoancy term
+  ! bu = buoyancy term
   ! zd = normalized downdraft mass flux
   ! gamma_cup = gamma on model cloud levels
   ! mentr_rate = entrainment rate
@@ -707,7 +707,7 @@ CONTAINS
   ! dtime   = dt over which forcing is applied
   ! kbcon       = LFC of parcel from k22
   ! k22         = updraft originating level
-  ! dby = buoancy term
+  ! dby = buoyancy term
   ! ktop = cloud top (output)
   ! xmb    = total base mass flux
   ! hc = cloud moist static energy
@@ -2024,7 +2024,7 @@ is_moz_chm: if( chemopt == MOZCART_KPP .or. chemopt == T1_MOZCART_KPP .or. &
               endif
             else is_moz_chm
             
-            ! Fraction of gas phase species that partions into the liquid phase:
+            ! Fraction of gas phase species that partitions into the liquid phase:
 
             ! tried to be consistent with values and species in module_mozcart_wetscav.F
             if (nv .eq. p_h2o2)    aq_gas_ratio = aq_frac(p(i,k)*100., t(i,k), clw_all(i,k)*dens, 8.33e+04, 7379.)
@@ -2345,7 +2345,7 @@ END subroutine cup_dd_tracer
 ! check whether routine produces negative q's. This can happen, since
 ! tendencies are calculated based on forced q's. This should have no
 ! influence on conservation properties, it scales linear through all
-! tendencies. Use iopt=0 to test for each tracer seperately, iopt=1
+! tendencies. Use iopt=0 to test for each tracer separately, iopt=1
 ! for a more severe limitation...
 !
       thresh=epsilc

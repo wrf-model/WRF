@@ -530,7 +530,7 @@ CONTAINS
 
 !!!!!!! Variables
 ! dorig: Original amount of vertical levels
-! levorig: original values of the levels (centerd into the level) [m]
+! levorig: original values of the levels (centered into the level) [m]
 ! valsorig: original values of the field at the original levels (as density or similar [kgm-3])
 ! dorig1: original amount of vertical levels + 1
 ! btlevorig: bottom, tops of the original cells [m]
@@ -619,14 +619,14 @@ CONTAINS
           valsdes(kd) = valsdes(kd) + delta_levorig*valsorig(ko)
 
         ELSE IF (orikp1 > deskm1 .AND. levorig(ko) < deskm1) THEN
-          ! We might have only top of the original columns wihtin the range
+          ! We might have only top of the original columns within the range
        
           deltatop_levorig = orikp1 - deskm1
         
           valsdes(kd) = valsdes(kd) + deltatop_levorig*valsorig(ko)      
 
         ELSE IF (orikm1 < deskp1 .AND. levorig(ko) > deskp1) THEN
-          ! We might have only base of the original columns wihtin the range
+          ! We might have only base of the original columns within the range
 
           deltabot_levorig = deskp1 - orikm1
           

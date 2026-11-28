@@ -13,9 +13,9 @@ subroutine da_filter_regcoeffs(ni, nj, nk, num_bins, num_bins2d, num_passes, &
    integer, intent(in)    :: num_passes                  ! Number of passes for RF.
    real,    intent(in)    :: rf_scale                    ! Smoothing scale of RF.
    integer, intent(in)    :: bin(1:ni,1:nj,1:nk)         ! Bin assigned to each point.
-   real,    intent(inout) :: regcoeff1(1:num_bins)       ! psi/chi regression cooefficient.
-   real,    intent(inout) :: regcoeff2(1:nk,1:num_bins2d)! psi/ps regression cooefficient.
-   real,    intent(inout) :: regcoeff3(1:nk,1:nk,1:num_bins2d) ! psi/T regression cooefficient.
+   real,    intent(inout) :: regcoeff1(1:num_bins)       ! psi/chi regression coefficient.
+   real,    intent(inout) :: regcoeff2(1:nk,1:num_bins2d)! psi/ps regression coefficient.
+   real,    intent(inout) :: regcoeff3(1:nk,1:nk,1:num_bins2d) ! psi/T regression coefficient.
 
    integer :: i, j, k              ! Loop counters.
    integer :: b                    ! Bin index.

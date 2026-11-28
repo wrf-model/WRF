@@ -42,7 +42,7 @@ C ----- SIGNAL FOR STIFF CASE, FULL JACOBIAN, INTERN (22) or SUPPLIED (21)
      !            JAC_CHEM, MF)
 
       IF (ISTATE.LT.0) THEN
-        print *,'LSODES: Unsucessfull exit at T=',
+        print *,'LSODES: Unsuccessful exit at T=',
      &          TIN,' (ISTATE=',ISTATE,')'
       ENDIF
 
@@ -890,7 +890,7 @@ c                   the default value is 0.  (this lower bound is not
 c                   enforced on the final step before reaching tcrit
 c                   when itask = 4 or 5.)
 c
-c seth    rwork(8)  the element threshhold for sparsity determination
+c seth    rwork(8)  the element threshold for sparsity determination
 c                   when moss = 1 or 2.  if the absolute value of
 c                   an estimated jacobian element is .le. seth, it
 c                   will be assumed to be absent in the structure.
@@ -980,7 +980,7 @@ c                   (this may differ from that given by ia(neq+1)-1
 c                   if moss = 0, because of added diagonal entries.)
 c
 c ngp     iwork(20) the number of groups of column indices, used in
-c                   difference quotient jacobian aproximations if
+c                   difference quotient jacobian approximations if
 c                   miter = 2.  this is also the number of extra f
 c                   evaluations needed for each jacobian evaluation.
 c
@@ -1223,7 +1223,7 @@ c other routines in the lsodes package.
 c
 c in addition to subroutine lsodes, the lsodes package includes the
 c following subroutines and function routines..
-c  iprep    acts as an iterface between lsodes and prep, and also does
+c  iprep    acts as an interface between lsodes and prep, and also does
 c           adjusting of work space pointers and work arrays.
 c  prep     is called by iprep to compute sparsity and do sparse matrix
 c           preprocessing if miter = 1 or 2.
@@ -2549,7 +2549,7 @@ c              -2  take the next step with a new value of h,
 c                    but with other inputs unchanged.
 c          on return, jstart is set to 1 to facilitate continuation.
 c kflag  = a completion code with the following meanings..
-c               0  the step was succesful.
+c               0  the step was successful.
 c              -1  the requested error could not be achieved.
 c              -2  corrector convergence could not be achieved.
 c              -3  fatal error in pjac or slvs.
@@ -2901,7 +2901,7 @@ c-----------------------------------------------------------------------
       iret = 2
       go to 150
 c-----------------------------------------------------------------------
-c control reaches this section if 3 or more failures have occured.
+c control reaches this section if 3 or more failures have occurred.
 c if 10 failures have occurred, exit with kflag = -1.
 c it is assumed that the derivatives that have accumulated in the
 c yh array have errors of the wrong order.  hence the first
@@ -4161,7 +4161,7 @@ c    gaussian elimination is (usually) significantly less.
 c
 c    note.. odrv and its subordinate routines have been modified to
 c    compute orderings for general matrices, not necessarily having any
-c    symmetry.  the miminum degree ordering is computed for the
+c    symmetry.  the minimum degree ordering is computed for the
 c    structure of the symmetric matrix  m + m-transpose.
 c    modifications to the original odrv module have been made in
 c    the coding in subroutine mdi, and in the initial comments in

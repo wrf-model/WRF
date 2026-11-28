@@ -243,7 +243,7 @@ time_window_min, time_window_max, map_projection , missing_flag)
 
       END IF
 
-      ! initialize the vaiable that will be used later for checking
+      ! initialize the variable that will be used later for checking
       ! if the pw info is read or not
       obs(obs_num)%ground%pw%data = missing_r
 
@@ -615,7 +615,7 @@ time_window_min, time_window_max, map_projection , missing_flag)
          !  The previous read ("once only" data) was valid.  
          !  If any of the data is suspicious, the easiest place to clean 
          !  it up is as soon as we read it in, so we do not have to track 
-         !  through the array or accidently hit undefined values that are 
+         !  through the array or accidentally hit undefined values that are
          !   not exactly "our" undefined values.
 
          !  Sometimes the date and time are ingested in a silly way.  
@@ -905,7 +905,7 @@ time_window_min, time_window_max, map_projection , missing_flag)
 
          END IF
 
-         !  We can compare the observation location with the spacial domain 
+         !  We can compare the observation location with the spatial domain
          !  and time window that the analysis will require. 
          !  If we are significantly outside,  we toss out the observation.
 
@@ -1058,7 +1058,7 @@ time_window_min, time_window_max, map_projection , missing_flag)
          ! for gts_from_mmm_archive:
          ! For ship data (FM-13 or FM-18), the elevation is missing and
          ! surface (or station) pressure is set to 1013.01 hPa. This
-         ! value is a flag to indicate a suface report (the elevation of
+         ! value is a flag to indicate a surface report (the elevation of
          ! a ship or buoy does not have to be at sea level as in the case
          ! of Lake Michigan). JFB
 
@@ -1769,7 +1769,7 @@ SUBROUTINE read_measurements (file_num, surface, location, info, bad_data, &
      
       CALL insert_at (surface , current , elevation)
 
-      !  One level has been sucessfuly read
+      !  One level has been successfully read
 
       nlevels = nlevels + 1 
 

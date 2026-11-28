@@ -41,7 +41,7 @@ subroutine da_intpsfc_prs (val, ho, po, hm, tm, qm, to, qo)
 
    tv  = 0.5 * (tvm + tvo)
 
-   ! 2. height difference bewteen model surface and observations
+   ! 2. height difference between model surface and observations
    ! ------------------------------------------------------------
 
    dz = hm - ho

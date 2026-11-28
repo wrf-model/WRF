@@ -114,7 +114,7 @@
 
        if (rootproc) then
            write(unit=varbc_tamdar_unit,fmt='(10X,A,I4)') &
-                    'Number of aircrafts in table : ', nair
+                    'Number of aircraft in table : ', nair
            write(unit=varbc_tamdar_unit,fmt='(10X,A,I4)') &
                     'Max. Obs. number in aircraft : ', iv%varbc_tamdar%nmaxobs
        end if

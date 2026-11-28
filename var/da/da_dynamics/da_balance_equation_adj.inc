@@ -55,7 +55,7 @@ subroutine da_balance_equation_adj(grid, xbx, phi_b, u, v)
       call da_error(__FILE__,__LINE__,message(1:1))
    end if
 
-   ! [1.1] Multiplicative coefficent for conversion RHS->Del**2 phi_b/M**2:
+   ! [1.1] Multiplicative coefficient for conversion RHS->Del**2 phi_b/M**2:
 
    del2phi_b(:,:,:) = 0.0
 

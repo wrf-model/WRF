@@ -1045,8 +1045,8 @@ endif
                 memord = p%MemoryOrder
 
 #if (EM_CORE == 1)
-                !  CF compliancy would have us put the string "minutes since" // simulation_start_date
-                !  as the ouput in the units attribute.  After the WRF p%Units string has the "minutes since"
+                !  CF compliance would have us put the string "minutes since" // simulation_start_date
+                !  as the output in the units attribute.  After the WRF p%Units string has the "minutes since"
                 !  substring, we wipe out the rest of the string and add the model's original (pre-restart)
                 !  starting date.  This is only for the time variable in WRF (XTIME), which is now considered
                 !  the time coordinate in netcdf.
@@ -1453,8 +1453,8 @@ endif
           ELSE IF ( p%Ndim .EQ. 4 .AND. p%scalar_array ) THEN
               IF (switch.EQ.restart_only.OR.p%Ntl/100.EQ.mod(p%Ntl,100)) THEN
 ! Use a different write routine, wrf_ext_write_field_arr, and pass in the
-! tracer indeces so that p%rfield_4d can be passsed in without arguments,
-! avoiding the possiblity of a copy-in/copy-out problem for some compilers.
+! tracer indices so that p%rfield_4d can be passed in without arguments,
+! avoiding the possibility of a copy-in/copy-out problem for some compilers.
 ! JM 20091208
               DO itrace = PARAM_FIRST_SCALAR , p%num_table(grid%id)
                 IF ((p%Restart.AND.switch.EQ.restart_only).OR.on_stream(p%streams_table(grid%id,itrace)%stream,newswitch)) THEN

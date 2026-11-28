@@ -25,7 +25,7 @@ subroutine da_condens_adj(DT,SCR31,SCR42,SCR71,DUM31,PRD,  &
    real, dimension(kts:kte)  :: SCR619
    integer                   :: k
 
-   !  initilization
+   !  initialization
 
    do K=kts,kte
       DUM2129(K) = 0.0

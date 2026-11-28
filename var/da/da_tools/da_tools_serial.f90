@@ -1,8 +1,8 @@
 module da_tools_serial
    
-   !---------------------------------------------------------------------------
-   ! Purpose: Contains serial tools, useable by gen_be which doesn't like parallel
-   !---------------------------------------------------------------------------
+   !-----------------------------------------------------------------------------
+   ! Purpose: Contains serial tools, usable by gen_be which doesn't like parallel
+   !-----------------------------------------------------------------------------
       
    use da_control, only : unit_used, unit_end, unit_start, stdout, num_fft_factors, pi
    use da_reporting, only : da_error

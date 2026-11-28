@@ -761,7 +761,7 @@
            call da_free_unit(vp_unit)
 
          else
-           write(unit=message(1),fmt='(a)') "vp files '"//trim(vpfile)//"' does not exists, initiallizing cvt."
+           write(unit=message(1),fmt='(a)') "vp files '"//trim(vpfile)//"' does not exists, initializing cvt."
            call da_message(message(1:1))
            call da_initialize_cv (cv_size, cvt) ! perhaps better use da_error
          end if
@@ -995,7 +995,7 @@
       cvt = cvt + xhat
       if ( multi_inc == 2 .and. use_interpolate_cvt ) then ! obsolete option
         call da_cv_to_vv( cv_size, cvt, be%cv_mz, be%ncv_mz, grid%vv )
-        call da_write_vp(grid,grid%vv,'vp_output.global') ! wrtie vv to vp file
+        call da_write_vp(grid,grid%vv,'vp_output.global') ! write vv to vp file
       end if
       !------------------------------------------------------------------------
 

@@ -210,7 +210,7 @@ subroutine da_qc_atms (it, i, nchan, ob, iv)
                    nrej_omb_std(k) = nrej_omb_std(k) + 1
             end if
 
-         ! final QC decsion
+         ! final QC decision
             if (iv%instid(i)%tb_qc(k,n) == qc_bad) then
                iv%instid(i)%tb_error(k,n) = 500.0
                if (iv%instid(i)%info%proc_domain(1,n)) &

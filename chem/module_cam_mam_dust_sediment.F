@@ -65,7 +65,7 @@ end subroutine dust_sediment_tend!Balwinder.Singh@pnnl.gov - Added "end subrouti
     implicit none
 
 ! Arguments
-    integer, intent(in) :: ncol                     ! number of colums to process
+    integer, intent(in) :: ncol                     ! number of columns to process
 
     real(r8), intent(in)  :: icefrac (pcols)        ! sea ice fraction (fraction)
     real(r8), intent(in)  :: landfrac(pcols)        ! land fraction (fraction)
@@ -119,7 +119,7 @@ end subroutine dust_sediment_tend!Balwinder.Singh@pnnl.gov - Added "end subrouti
     implicit none
 
 ! Arguments
-    integer,  intent(in)  :: ncol                      ! number of colums to process
+    integer,  intent(in)  :: ncol                      ! number of columns to process
 
     real(r8), intent(in)  :: dtime                     ! time step
     real(r8), intent(in)  :: pint  (pcols,pverp)       ! interfaces pressure (Pa)
@@ -196,7 +196,7 @@ end subroutine dust_sediment_tend!Balwinder.Singh@pnnl.gov - Added "end subrouti
 
     implicit none
 
-    integer ncol                      ! number of colums to process
+    integer ncol                      ! number of columns to process
 
     integer i
     integer k
@@ -263,7 +263,7 @@ end subroutine dust_sediment_tend!Balwinder.Singh@pnnl.gov - Added "end subrouti
     implicit none
 
 ! input
-    integer ncol                      ! number of colums to process
+    integer ncol                      ! number of columns to process
 
     real (r8) x(pcols, pverp)
     real (r8) f(pcols, pverp)
@@ -374,7 +374,7 @@ end subroutine dust_sediment_tend!Balwinder.Singh@pnnl.gov - Added "end subrouti
     implicit none
 
 ! input
-    integer ncol                      ! number of colums to process
+    integer ncol                      ! number of columns to process
 
     real (r8) x(pcols, pverp)
     real (r8) f(pcols, pverp)

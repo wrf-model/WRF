@@ -45,7 +45,7 @@ subroutine da_check_rh_simple (grid)
             p_new  = grid%xb % p(i,j,k) + grid%xa %  p(i,j,k)
             t_new  = grid%xb % t(i,j,k) + grid%xa %  t(i,j,k)
 
-            if ( k > k_tropp(i,j) ) then  ! limit q incement above tropopause
+            if ( k > k_tropp(i,j) ) then  ! limit q increment above tropopause
                grid%xa % q(i,j,k) = 0.0
             else
                call da_tp_to_qs(t_new, p_new, es, q_new)

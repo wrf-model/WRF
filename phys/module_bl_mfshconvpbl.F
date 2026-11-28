@@ -629,7 +629,7 @@ END SUBROUTINE COMPUTE_BL89_ML
 !         #############################################################
 
 !!
-!!***COMPUTE_ENTR_DETR* - calculates caracteristics of the updraft or downdraft
+!!***COMPUTE_ENTR_DETR* - calculates characteristics of the updraft or downdraft
 !!                       using model of the EDMF scheme 
 !!
 !!
@@ -1210,7 +1210,7 @@ END SUBROUTINE COMPUTE_FUNCTION_THERMO_MF
                                  KKLCL,KKETL,KKCTL)
 !     #################################################################
 !!
-!!****  *COMPUTE_UPDRAFT* - calculates caracteristics of the updraft 
+!!****  *COMPUTE_UPDRAFT* - calculates characteristics of the updraft
 !!                         
 !! --------------------------------------------------------------------------
 
@@ -1258,7 +1258,7 @@ INTEGER, DIMENSION(:),  INTENT(OUT)  ::  KKLCL,KKETL,KKCTL! LCL, ETL, CTL
 ! Mean environment variables at t-dt at flux point
 REAL, DIMENSION(SIZE(PTHM,1),SIZE(PTHM,2)) ::    &
                         ZTHM_F,ZRVM_F,ZRCM_F,ZRIM_F   ! Theta,rv,rl,ri of
-                                                      ! updraft environnement
+                                                      ! updraft environment
 REAL, DIMENSION(SIZE(PTHM,1),SIZE(PTHM,2)) ::    &
                         ZRTM_F, ZTHLM_F, ZTKEM_F,&    ! rt, thetal,TKE,pressure,
                         ZUM_F,ZVM_F,ZRHO_F,      &    ! density,momentum
@@ -1402,7 +1402,7 @@ ZW_UP2(:,KK) = MAX(0.0001,(2./3.)*ZTKEM_F(:,KK))
 
 
 ! Computation of non conservative variable for the KK level of the updraft
-! (all or nothing ajustement)
+! (all or nothing adjustment)
 CALL TH_R_FROM_THL_RT_2D(YFRAC_ICE,ZFRAC_ICE(:,KK:KK),ZPRES_F(:,KK:KK), &
              PTHL_UP(:,KK:KK),PRT_UP(:,KK:KK),ZTH_UP(:,KK:KK), &
              PRV_UP(:,KK:KK),PRC_UP(:,KK:KK),PRI_UP(:,KK:KK))
@@ -1497,7 +1497,7 @@ IF (ITEST==0) CYCLE
   ENDWHERE
 
 
-! If the updraft did not stop, compute cons updraft characteritics at jk+1
+! If the updraft did not stop, compute cons updraft characteristics at jk+1
   WHERE(GTEST)     
     ZMIX2(:) = (PZZ(:,JK+1)-PZZ(:,JK))*PENTR(:,JK) !&
     ZMIX3(:) = (PZZ(:,JK+1)-PZZ(:,JK))*PDETR(:,JK) !&                   
@@ -1674,7 +1674,7 @@ REAL, DIMENSION(:,:,:),   INTENT(OUT) ::  PVDT
 ! Tendencies of scalar variables
 
 
-! Updraft characteritics
+! Updraft characteristics
 REAL, DIMENSION(:,:,:), INTENT(IN)   ::  PEMF,PTHL_UP,PTHV_UP,PRT_UP,PU_UP,PV_UP
 ! Fluxes
 REAL, DIMENSION(:,:,:), INTENT(OUT)  ::  PFLXZTHMF,PFLXZTHVMF,PFLXZRMF,PFLXZUMF,PFLXZVMF
@@ -1933,7 +1933,7 @@ ZEXN(:)=(PP(:)/XP00) ** (XRD/XCPD)
 
       ELSEWHERE
              ! cold shallow cloud not yet coded 
-             ! probleme also for the highest level of fire case
+             ! problem also for the highest level of fire case
         PRL(:)=0.
         PRI(:)=0.
         PRV(:)=PRT(:)
@@ -2033,7 +2033,7 @@ ZEXN(:,:)=(PP(:,:)/XP00) ** (XRD/XCPD)
         PTH(:,:)=PTHL(:,:)+ZLOVCPEXN*PRL(:,:)+ZLOSCPEXN(:,:)*PRI(:,:)          
       ELSEWHERE
         ! cold shallow cloud not yet coded 
-        ! probleme also for the highest level of fire case
+        ! problem also for the highest level of fire case
         PRL(:,:)=0.
         PRI(:,:)=0.
         PRV(:,:)=PRT(:,:)
@@ -2446,7 +2446,7 @@ END SUBROUTINE UPDRAFT_SOPE
 !     #################################################################
 !!
 !!****  *COMPUTE_MF_CLOUD* - 
-!!       compute diagnostic subgrid cumulus cloud caracteristics
+!!       compute diagnostic subgrid cumulus cloud characteristics
 !!
 !!    PURPOSE
 !!    -------
@@ -2485,9 +2485,9 @@ IMPLICIT NONE
 !
 INTEGER,                  INTENT(IN)   ::  KRRL         ! number of liquid water var.
                                                         ! scheme
-REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PTHLM ! updraft characteritics
+REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PTHLM ! updraft characteristics
 
-REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRC_UP ! updraft characteritics
+REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRC_UP ! updraft characteristics
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PFRAC_UP          ! Updraft Fraction
 
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PDZZ
@@ -2619,7 +2619,7 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)  :: PZZ
 REAL, DIMENSION(:,:,:),   INTENT(IN)  :: PDZZ
 REAL, DIMENSION(:,:,:),   INTENT(IN)  :: PTHVREF
 REAL, DIMENSION(:,:,:),   INTENT(IN) ::  PTKEM       ! TKE
-!   thermodynamical variables PTHLM=Theta at the begining
+!   thermodynamical variables PTHLM=Theta at the beginning
 REAL, DIMENSION(:,:,:),   INTENT(IN) ::  PTHLM     ! conservative pot. temp.
 REAL, DIMENSION(:,:,:,:), INTENT(IN) ::  PRM       ! water var.                 
 REAL, DIMENSION(:,:,:),   INTENT(OUT) :: PLM       ! Mixing length

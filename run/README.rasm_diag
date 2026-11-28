@@ -43,7 +43,7 @@ Notes:
 Note: The dirunal output is hard coded for three-hourly intervals
 (8 values in a day) and output in monthly files.
 
-Acknoledgement:
+Acknowledgement:
 The RASM Climate Diagnostics for WRF was developed and implemented as a part
 of the Regional Arctic System Model (RASM) project funded by the United States 
 Department of Energy - Regional and Global Climate Modeling Program.

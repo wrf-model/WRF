@@ -49,7 +49,7 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
 !   real                           :: dx,dy,dxm,dym
 
 
-   ! CRTM local varaibles and types
+   ! CRTM local variables and types
    integer :: Allocate_Status
    integer :: n_layers, n_absorbers, n_clouds, n_aerosols
    type (CRTM_RTSolution_type ), allocatable :: RTSolution(:,:),RTSolution_AD(:,:)

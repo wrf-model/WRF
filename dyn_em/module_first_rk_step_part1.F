@@ -166,7 +166,7 @@ CONTAINS
    LOGICAL   :: do_meganfile
 
 #if ( WRF_DFI_RADAR == 1 )
-    INTEGER  do_capsupress   ! =1 do CAP supress, other = don't
+    INTEGER  do_capsupress   ! =1 do CAP suppress, other = don't
 #endif
 
   CALL get_ijk_from_subgrid (  grid ,                   &
@@ -717,10 +717,10 @@ BENCH_START(surf_driver_tim)
      &        ,tofd_factor=config_flags%tofd_factor                                 &
      &        ,VAR2D=grid%var2d                                                     &
 #endif
-! CLM Varaibles
+! CLM Variables
      &        ,NUMC=grid%numc,NUMP=grid%nump,SABV=grid%sabv,SABG=grid%sabg,         &
      &         LWUP=grid%lwup,SNL=grid%snl,                                         &
-     &         HISTORY_INTERVAL=config_flags%history_interval ,                     & !ylu add hist inverval for accumulation T max/min
+     &         HISTORY_INTERVAL=config_flags%history_interval ,                     & !ylu add hist interval for accumulation T max/min
      &         SNOWDP=grid%snowdp, WTC=grid%wtc,WTP=grid%wtp, H2OSNO=grid%h2osno,   &
      &         T_GRND=grid%t_grnd,T_VEG=grid%t_veg,                                 &
      &         H2OCAN=grid%h2ocan, H2OCAN_COL=grid%h2ocan_col,T2M_MAX=grid%t2m_max, &
@@ -1806,8 +1806,8 @@ BENCH_START(shcu_driver_tim)
      &             ,QI_CURR=moist(ims,kms,jms,P_QI)                       &
      &             ,QS_CURR=moist(ims,kms,jms,P_QS)                       &
      &             ,QG_CURR=moist(ims,kms,jms,P_QG)                       &
-     &             ,QNC_CURR=scalar(ims,kms,jms,P_QNC)                    & !BSINGH - Neede for UWSHCU scheme
-     &             ,QNI_CURR=scalar(ims,kms,jms,P_QNI)                    & !BSINGH - Neede for UWSHCU schem 
+     &             ,QNC_CURR=scalar(ims,kms,jms,P_QNC)                    & !BSINGH - Needed for UWSHCU scheme
+     &             ,QNI_CURR=scalar(ims,kms,jms,P_QNI)                    & !BSINGH - Needed for UWSHCU scheme
 #if (WRF_CHEM == 1)
      &             ,CHEM=chem,chem_opt=config_flags%chem_opt              &
 #endif

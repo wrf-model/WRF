@@ -10,7 +10,7 @@ subroutine da_read_obs_netcdf4ahi_geocat (iv, infile_tb, infile_clp)
    !                  and deallocate sequential data structure
    !
    !  HISTORY: 2016/10/22 - Creation         Yuanbing Wang, NUIST/CAS, NCAR/NESL/MMM/DAS
-   !  To be devoloped: 1.time information; 2.dimension sequence
+   !  To be developed: 1.time information; 2.dimension sequence
    !------------------------------------------------------------------------------
 
    use netcdf   

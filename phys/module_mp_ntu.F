@@ -78,11 +78,11 @@
       INTEGER, PRIVATE, PARAMETER :: NTBXA = 25                         ! size of tables for the first guess of Rc
       INTEGER, PRIVATE, DIMENSION(NAER) :: IBAER
       INTEGER, PRIVATE, DIMENSION(NAER) :: NAERN(1:NAER)=(/NAER1,NAER2/)
-      DOUBLE PRECISION, PRIVATE, SAVE, DIMENSION(NTBXA) :: TBLRC        ! table of curresponding R-cut-off
+      DOUBLE PRECISION, PRIVATE, SAVE, DIMENSION(NTBXA) :: TBLRC        ! table of corresponding R-cut-off
       DOUBLE PRECISION, PRIVATE, SAVE, DIMENSION(NTBXA,NAER) :: TBLXF
 !----------------- FOR MICROPHYSICAL PROCESSES -------------------------
-      REAL, PRIVATE, PARAMETER :: DTMIN = 0.01                          ! [sec] mininum dt for cond./evap. calculation
-      REAL, PRIVATE, PARAMETER :: DT20S = 20.                           ! [sec] dt for coalscence and accretion calculation
+      REAL, PRIVATE, PARAMETER :: DTMIN = 0.01                          ! [sec] minimum dt for cond./evap. calculation
+      REAL, PRIVATE, PARAMETER :: DT20S = 20.                           ! [sec] dt for coalescence and accretion calculation
       REAL, PRIVATE, PARAMETER :: PI = 3.1415926535897932384626434
       REAL, PRIVATE, PARAMETER :: SQRTPI = 9.189385332046727417803297E-1
       REAL, PRIVATE, PARAMETER :: SQRT2 = 1.4142135623730950488016887
@@ -471,7 +471,7 @@
 !======================================================================
 
 !======================================================================
-      REAL FUNCTION POLYSVP(T,TYPE)                                    ! IMPLEMETED FROM MORRISON SCHEME
+      REAL FUNCTION POLYSVP(T,TYPE)                                    ! IMPLEMENTED FROM MORRISON SCHEME
 !======================================================================
 !  COMPUTE SATURATION VAPOR PRESSURE POLYSVP RETURNED IN UNITS OF PA. T IS INPUT IN UNITS OF K.
 !  TYPE REFERS TO SATURATION WITH RESPECT TO LIQUID (0) OR ICE (1)
@@ -1316,7 +1316,7 @@
       INTEGER, INTENT(IN) :: CCNTY                                      ! 1.MARINE(WHITBY,1978);2.CLEAN CONTINENTAL(WHITBY,1978);
                                                                         ! 3.AVERAGE CONTINENTAL(WHITBY,1978);
                                                                         ! 4.URBAN(WHITBY,1978); 5.ICE NUECEI
-      INTEGER, PARAMETER :: ID_SENS = 1                                 ! sensetivity test ID
+      INTEGER, PARAMETER :: ID_SENS = 1                                 ! sensitivity test ID
       INTEGER, PARAMETER :: N1 = NCCN, N2 = 5                           ! AEROSOL MODE AND COMPONENT
       INTEGER :: IA,I,K,J,IM,IV,IB
       INTEGER, DIMENSION(NAER) :: IDAER
@@ -1340,7 +1340,7 @@
       DATA CMASX/0.13214,0.13214,0.13214,0.13214,0.13214/               ! MOLAR WEIGHT OF AEROSOL (kg/mol)
       DATA DNASX/1769.,1769.,1769.,1769.,1769./                         ! DENSITY OF SOLID AEROSOL (kg/m^3)
       DATA AVANX/3.,3.,3.,3.,3./                                        ! VAN'T HOFF FACTOR
-      DATA SENX/1.,1.,1.,1.,1.,10.,10.,10.,10.,10.,0.1,0.1,0.1,0.1,0.1/ ! 1st, 2nd, and 3rd set for sensetivity test
+      DATA SENX/1.,1.,1.,1.,1.,10.,10.,10.,10.,10.,0.1,0.1,0.1,0.1,0.1/ ! 1st, 2nd, and 3rd set for sensitivity test
 
       IF (CCNTY.EQ.1) THEN
          DNC0 = 46635.361;  DNC1 = -25567.933
@@ -1411,7 +1411,7 @@
          WRITE(*,'(A30,I1,A8,F6.4,A3)')'MINIMUN R-CUTOFF FOR AEROSOL'  &
                ,J,' IS SET ',RXMIN(J)*1.E6,' um'
          WRITE(*,*)'SENSITIVITY TEST ID:',ID_SENS
-!----------------- FACTOR FOR SENSETIVITY ------------------------------
+!----------------- FACTOR FOR SENSITIVITY ------------------------------
          SENS(J) = SENX(IDAER(J),ID_SENS)
       ENDDO
 
@@ -2092,7 +2092,7 @@
          DTAIR(K) = -W3D(K)*G/CP                                        ! Lagrangian parcel dry adiabatic lapse rate
          DQVAP(K) = 0.
          PRES(K)  = P3D(K)
-         TK0(K)   = TAIR(K)-DTAIR(K)*DT                                 ! diabatically decend parcel
+         TK0(K)   = TAIR(K)-DTAIR(K)*DT                                 ! diabatically descend parcel
          P40(K)   = PRES(K)*(TK0(K)/TAIR(K))**(CP/R)
          TAIR(K)  = TK0(K)
          IV1 = 1
@@ -2112,7 +2112,7 @@
             ENDIF
             IV1 = IV1+NAERN(IV)
          ENDDO
-      ENDDO                                                             ! INITILIZATION LOOPS
+      ENDDO                                                             ! INITIALIZATION LOOPS
 
       SDTL = 0.                                                         ! initial integrated largedt timestep
       DO IT = 1,INT((DT-DT20S*0.01)/DT20S)+1
@@ -2279,8 +2279,8 @@
                     SMLF(K),GMLF(K),HMLF(K))
             ENDIF
             IV0 = 0
-            DO IV = 1,NAER                                              ! for all aerosol compoment
-               IF (NAERN(IV).GE.4) THEN                                 ! with aerosol in cloud/precip. recored
+            DO IV = 1,NAER                                              ! for all aerosol component
+               IF (NAERN(IV).GE.4) THEN                                 ! with aerosol in cloud/precip. recorded
                   IV3 = IV0+3                                           ! aerosols in clouds ll
                   IV4 = IV0+4                                           ! aerosols in rains
                   IF (GQCTR(K).GT.0.) THEN                              ! + from cloud to precip.
@@ -4330,12 +4330,12 @@
       DTSI = -(QVWTEND*ELCLD+QVITEND*ELDLD)                             ! rate of saturation vapor over ice change
       DTSW = -(QVWTEND*ELCLC+QVITEND*ELCLD)                             ! rate of saturation vapor over liquid change 
       IF (ABS(DTSI).LT.RLIMIT) THEN
-         DTSI = 1.E5                                                    ! AN ARBITARY VALUE
+         DTSI = 1.E5                                                    ! AN ARBITRARY VALUE
       ELSE
          DTSI = SSRI*QV1D/((1.+SSRI)*DTSI)                              ! time to reach saturation over ice 
       ENDIF
       IF (ABS(DTSW).LT.RLIMIT) THEN
-         DTSW = 1.E5                                                    ! AN ARBITARY VALUE
+         DTSW = 1.E5                                                    ! AN ARBITRARY VALUE
       ELSE
          DTSW = SSRW*QV1D/((1.+SSRW)*DTSW)                              ! time to reach saturation over liquid 
       ENDIF
@@ -6012,7 +6012,7 @@
                ARMrh = MIN(ARMrh,QR1D*iDT*iAPW/MVDR)
             ENDIF
          ENDIF
-!----------------- ICE-PHASE COLLECTION&CONVERSION*INITILIZATION -------
+!----------------- ICE-PHASE COLLECTION&CONVERSION*INITIALIZATION -------
          IF (QS1D.GE.QSMALL.AND.QI1D.GE.QSMALL.AND.MVDS.GE.MVDI) THEN
 !            EIS1  = MIN(1.,0.05*EXP(0.1*TC1D))                          ! FERRIER ET AL., 1995
             EIS1  = 10.**(3.5E-2*TC1D-0.7)

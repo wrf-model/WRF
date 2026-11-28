@@ -208,7 +208,7 @@
 
     tovs%qc_flag(:) = 1
 !--------------------------------------------------------
-! 2.1 extrem values
+! 2.1 extreme values
 !--------------------------------------------------------
     DO j=1, tovs%nchan    ! Reject silly values
         jv = j
@@ -218,7 +218,7 @@
     ENDDO
 
 !------------------------------------
-! 2.2 departure extrem values test
+! 2.2 departure extreme values test
 !------------------------------------
     DO j=1, tovs%nchan
         jv = j
@@ -244,7 +244,7 @@
  
     tovs%qc_flag(:) = 1
 !--------------------------------------------------------
-! 2.1 extrem values
+! 2.1 extreme values
 !--------------------------------------------------------
     DO j=1, tovs%nchan    ! Reject silly values
         jv = j
@@ -254,7 +254,7 @@
     ENDDO
 
 !------------------------------------
-! 2.2 departure extrem values test
+! 2.2 departure extreme values test
 !------------------------------------
     DO j=1, tovs%nchan
         jv = j
@@ -279,7 +279,7 @@
 
     tovs%qc_flag(:) = 1
 !--------------------------------------------------------
-! 2.1 extrem values
+! 2.1 extreme values
 !--------------------------------------------------------
     DO j=1, tovs%nchan    ! Reject silly values
         jv = j
@@ -289,7 +289,7 @@
     ENDDO
 
 !------------------------------------
-! 2.2 departure extrem values test
+! 2.2 departure extreme values test
 !------------------------------------
     DO j=1, tovs%nchan
         jv = j

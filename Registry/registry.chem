@@ -547,10 +547,10 @@ state   real     -            ikjf     bscat_coef   -         -      -       -  
 state   real  bscof3          ikjf     bscat_coef   1         Z      -     "BSCOF3"                  "Scatter coefficients for .3um"  "km^-1"
 state   real  bscof55         ikjf     bscat_coef   1         Z      -     "BSCOF5"                  "Scatter coefficients for .5um"  "km^-1"
 state   real  bscof106        ikjf     bscat_coef   1         Z      -     "BSCOF106"                "Scatter coefficients for 1.06um"  "km^-1"
-state   real     -            ikjf     asym_par     -         -      -       -                       "assymetry parameter"         ""
-state   real  asympar3        ikjf     asym_par     1         Z      -     "ASYMPAR3"                "assymetry parameter for .3um"  "?"
-state   real  asympar55       ikjf     asym_par     1         Z      -     "ASYMPAR55"               "assymetry parameter for .55um"  "?"
-state   real  asympar106      ikjf     asym_par     1         Z      -     "ASYMPAR106"              "assymetry parameter for 1.06um"  "?"
+state   real     -            ikjf     asym_par     -         -      -       -                       "asymmetry parameter"         ""
+state   real  asympar3        ikjf     asym_par     1         Z      -     "ASYMPAR3"                "asymmetry parameter for .3um"  "?"
+state   real  asympar55       ikjf     asym_par     1         Z      -     "ASYMPAR55"               "asymmetry parameter for .55um"  "?"
+state   real  asympar106      ikjf     asym_par     1         Z      -     "ASYMPAR106"              "asymmetry parameter for 1.06um"  "?"
 
 #for dep outputs
 state    real  ddlen          ijo     misc        1         Z      rh       "DRY_DEP_LEN"       "dry deposition velocity"           "cm/s"
@@ -1445,10 +1445,10 @@ state    real  tauaer1         ikj     misc        1         -      r       "TAU
 state    real  tauaer2         ikj     misc        1         -      r       "TAUAER2"               "bin 2 layer optical thickness" "?"
 state    real  tauaer3         ikj     misc        1         -      r       "TAUAER3"               "bin 3 layer optical thickness" "?"
 state    real  tauaer4         ikj     misc        1         -      r       "TAUAER4"               "bin 4 layer optical thickness" "?"
-state    real  gaer1           ikj     misc        1         -      r       "GAER1"                 "bin 1 layer assymetry parameter" "?"
-state    real  gaer2           ikj     misc        1         -      r       "GAER2"                 "bin 2 layer assymetry parameter" "?"
-state    real  gaer3           ikj     misc        1         -      r       "GAER3"                 "bin 3 layer assymetry parameter" "?"
-state    real  gaer4           ikj     misc        1         -      r       "GAER4"                 "bin 4 layer assymetry parameter" "?"
+state    real  gaer1           ikj     misc        1         -      r       "GAER1"                 "bin 1 layer asymmetry parameter" "?"
+state    real  gaer2           ikj     misc        1         -      r       "GAER2"                 "bin 2 layer asymmetry parameter" "?"
+state    real  gaer3           ikj     misc        1         -      r       "GAER3"                 "bin 3 layer asymmetry parameter" "?"
+state    real  gaer4           ikj     misc        1         -      r       "GAER4"                 "bin 4 layer asymmetry parameter" "?"
 state    real  waer1           ikj     misc        1         -      r       "WAER1"                 "bin 1 layer single-scattering albedo" "?"
 state    real  waer2           ikj     misc        1         -      r       "WAER2"                 "bin 2 layer single-scattering albedo" "?"
 state    real  waer3           ikj     misc        1         -      r       "WAER3"                 "bin 3 layer single-scattering albedo" "?"
@@ -1735,7 +1735,7 @@ state   real   biog4_o       ikjftb   chem        1         -   i0{12}rhusdf=(bd
 state   real   smpa       ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "smpa"         "smpa mixing ratio"        "ppmv"
 state   real   smpbb       ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "smpbb"         "smpbb mixing ratio"        "ppmv"
 
-#RACM has a few more variables to those of RADM2 (ETE is equivilant to OL2 from RADM2)
+#RACM has a few more variables to those of RADM2 (ETE is equivalent to OL2 from RADM2)
 state   real   ete         ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)   "ete"           "ETE mixing ratio"         "ppmv"
 state   real   co2         ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)   "co2"           "CO2 mixing ratio"         "ppmv"
 state   real   ch4         ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)   "ch4"           "CH4 mixing ratio"         "ppmv"
@@ -3936,7 +3936,7 @@ rconfig   real        af_lambda_end       namelist,chem          max_domains    
 # Control for ISORROPIA in MADE/SORGAM schemes
 
 rconfig   logical     do_isorropia        namelist,chem          1              .false. rh    "flag to use ISORROPIA"
-rconfig   logical     do_n2o5het          namelist,chem          1              .false. rh    "flag to do n2o5 heterogenous chemistry via chlorine pathway"
+rconfig   logical     do_n2o5het          namelist,chem          1              .false. rh    "flag to do n2o5 heterogeneous chemistry via chlorine pathway"
 
 # CHEMISTRY PACKAGE DEFINITIONS
 #

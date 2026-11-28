@@ -986,7 +986,7 @@ end subroutine get_albedo12m_netcdf
 
 !!-- no longer find the lakes from the 2-d hi res grid
 !DJG inv       do j=jxrt,1,-1
-! follwoing is modified by Wei Yu 03/24/2017
+! following is modified by Wei Yu 03/24/2017
      if(UDMP_OPT .eq. 0) then
         NLAKES = 0
         do j=1,jxrt
@@ -1031,7 +1031,7 @@ end subroutine get_albedo12m_netcdf
               NLINKSL = get_netcdf_dim(trim(route_link_f), 'feature_id',  &
                                    'READ_ROUTEDIM', fatalErr=.false.)
               if(NLINKSL .eq. -99) then
-                 ! We were unsucessful in getting feature_id, try linkDim
+                 ! We were unsuccessful in getting feature_id, try linkDim
                  NLINKSL = get_netcdf_dim(trim(route_link_f), 'linkDim',  &
                                          'READ_ROUTEDIM', fatalErr=.false.)
               endif
@@ -1361,7 +1361,7 @@ end subroutine get_albedo12m_netcdf
 
     inquire (file=trim(gwbasmskfil), exist=fexist)
     if(.not. fexist) then
-        call hydro_stop("Cound not find file : "//trim(gwbasmskfil))
+        call hydro_stop("Could not find file : "//trim(gwbasmskfil))
     endif
 
     iret = nf90_open(trim(gwbasmskfil), NF90_NOWRITE, ncid)
@@ -1511,7 +1511,7 @@ end subroutine get_albedo12m_netcdf
 #endif
      inquire (file=trim(inFile), exist=fexist)
      if(.not. fexist) then
-        call hydro_stop("Cound not find file : "//trim(inFile))
+        call hydro_stop("Could not find file : "//trim(inFile))
      endif
      iret = nf90_open(trim(inFile), NF90_NOWRITE, ncid)
      if(iret .eq. 0 ) then
@@ -3133,7 +3133,7 @@ subroutine sub_output_gw(igrid, split_output_count, ixrt, jxrt, nsoil, &
      endif
 
 
-!-- output only the higher oder streamflows  and only observation points
+!-- output only the higher order streamflows  and only observation points
      do i=1,nlk
         if(ORDER(i) .ge. order_to_write) nstations = nstations + 1
         if(channel_option .ne. 3) then
@@ -3607,7 +3607,7 @@ subroutine sub_output_gw(igrid, split_output_count, ixrt, jxrt, nsoil, &
     cnt=0
     do i=1,nlk
        if(channel_option .ne. 3) then
-          ! jlm this verry repetitiuos, oh well.
+          ! jlm this very repetitiuos, oh well.
           if(trim(gages(i)) .ne. trim(gageMiss)) then
 
              start_posO = (cnt+1)+(nobs * (output_count-1))
@@ -3674,7 +3674,7 @@ subroutine sub_output_gw(igrid, split_output_count, ixrt, jxrt, nsoil, &
 117          FORMAT(I8,",",A10,1X,A8,",",I7,",",F10.5,",",F8.5,",",F9.3,",",F12.3,",",F6.3)
              !write(55,117) seconds_since,date(1:10),date(12:19),cnt,chlon(i),chlat(i), &
              !     qlink(i,1), qlink(i,1)*35.315,hlink(i)
-             ! JLM: makes more sense to output the value in frxstpts incase they have meaning,
+             ! JLM: makes more sense to output the value in frxstpts in case they have meaning,
              ! as below, but I'm not going to make this change until I'm working with gridded
              ! streamflow again.
              write(55,117) seconds_since, hydroTime(1:10), hydroTime(12:19), &
@@ -3888,7 +3888,7 @@ end subroutine output_chrt
      endif
 
 
-!-- output only the higher oder streamflows  and only observation points
+!-- output only the higher order streamflows  and only observation points
      do i=1,nlk
         if(ORDER(i) .ge. order_to_write) nstations = nstations + 1
         if(channel_option .ne. 3) then
@@ -4351,7 +4351,7 @@ end subroutine output_chrt
     cnt=0
     do i=1,nlk
        if(channel_option .ne. 3) then
-          ! jlm this verry repetitiuos, oh well.
+          ! jlm this very repetitiuos, oh well.
           if(trim(gages(i)) .ne. trim(gageMiss)) then
 
              start_posO = (cnt+1)+(nobs * (output_count-1))
@@ -4418,7 +4418,7 @@ end subroutine output_chrt
 117          FORMAT(I8,",",A10,1X,A8,",",I7,",",F10.5,",",F8.5,",",F9.3,",",F12.3,",",F6.3)
              !write(55,117) seconds_since,date(1:10),date(12:19),cnt,chlon(i),chlat(i), &
              !     qlink(i,1), qlink(i,1)*35.315,hlink(i)
-             ! JLM: makes more sense to output the value in frxstpts incase they have meaning,
+             ! JLM: makes more sense to output the value in frxstpts in case they have meaning,
              ! as below, but I'm not going to make this change until I'm working with gridded
              ! streamflow again.
              write(55,117) seconds_since, hydroTime(1:10), hydroTime(12:19), &
@@ -5337,7 +5337,7 @@ end subroutine mpp_output_chrt
         iret = nf90_put_att(ncid, varid, 'units', sec_valid_date)
 
 
-!-- place prjection information
+!-- place projection information
 
 
       date19(1:19) = "0000-00-00_00:00:00"
@@ -5929,7 +5929,7 @@ end subroutine mpp_output_chrt
              iret = nf90_def_var(ncid, "lake_inflort", NF90_FLOAT, (/dimid_ixrt,dimid_jxrt/), varid)
 
          !! JLM: who wants these? They can be put back if someone cares.
-         !! But just calculate accQLateral locally so the redundant variable isnt held in
+         !! But just calculate accQLateral locally so the redundant variable isn't held in
          !! memory with all the other variables
          !if(nlst_rt(did)%UDMP_OPT .eq. 1) then
          !       iret = nf90_def_var(ncid, "accSfcLatRunoff", NF90_DOUBLE, (/dimid_links/), varid)
@@ -7446,7 +7446,7 @@ integer, intent(INOUT), dimension(:)    :: reservoir_type
 character(len=*), intent(in)            :: reservoir_parameter_file
 real, intent(INOUT),  dimension(:)      :: LATLAKE,LONLAKE,ELEVLAKE
 real, intent(INOUT),  dimension(:)      :: ChSSlp, Bw, Tw
-real, intent(INOUT),  dimension(:)      :: Tw_CC, n_CC, ChannK ! channel properties of compund
+real, intent(INOUT),  dimension(:)      :: Tw_CC, n_CC, ChannK ! channel properties of compound
 
 
 character(len=*  )                           :: geo_finegrid_flnm, route_lake_f
@@ -8409,7 +8409,7 @@ end subroutine read_routelink
         integer :: i
 
         character(len=256) :: route_link_f_r,route_lake_f_r
-        integer :: lenRouteLinkFR,lenRouteLakeFR ! so the preceeding chan be changed without changing code
+        integer :: lenRouteLinkFR,lenRouteLakeFR ! so the preceding chan be changed without changing code
         logical :: routeLinkNetcdf, routeLakeNetcdf
 
 #ifdef MPP_LAND
@@ -8877,7 +8877,7 @@ end subroutine MPP_READ_CHROUTING_new
 
        iret = nf90_create("nodeInfor.nc", OR(NF90_CLOBBER, NF90_NETCDF4), ncid)
        iret = nf90_def_dim(ncid, "node", nodes, dimid_n)  !-- make a decimated grid
-!  define the varialbes
+!  define the variables
        iret = nf90_def_var(ncid, "fromNode", NF90_INT, (/dimid_n/), varid)
        iret = nf90_def_var(ncid, "toNode", NF90_INT, (/dimid_n/), varid)
        iret = nf90_def_var(ncid, "chlat", NF90_FLOAT, (/dimid_n/), varid)
@@ -8901,7 +8901,7 @@ end subroutine MPP_READ_CHROUTING_new
 !===================================================================================================
 ! Program Name: read_route_link_netcdf
 ! Author(s)/Contact(s): James L McCreight <jamesmcc><ucar><edu>
-! Abstract: Read in the "RouteLink.nc" netcdf file specifing the channel topology.
+! Abstract: Read in the "RouteLink.nc" netcdf file specifying the channel topology.
 ! History Log:
 ! 7/17/15 -Created, JLM.
 ! Usage:
@@ -9016,7 +9016,7 @@ end subroutine read_route_link_netcdf
 
 !===================================================================================================
 ! Program Name: read_route_lake_netcdf
-! Abstract: Read in the "LAKEPARM.nc" netcdf file specifing the channel topology.
+! Abstract: Read in the "LAKEPARM.nc" netcdf file specifying the channel topology.
 ! History Log:
 ! 7/17/15 -Created, JLM., then used by DNY
 ! Usage:
@@ -9104,7 +9104,7 @@ end subroutine read_route_lake_netcdf
 ! 7/17/15 -Created, JLM.
 ! Usage:
 ! Parameters: See definitions.
-! Input Files: This file is refered to by it's "ncid" obtained from nc_open
+! Input Files: This file is referred to by it's "ncid" obtained from nc_open
 !              prior to calling this routine.
 ! Output Files: None.
 ! Condition codes: hydro_stop is passed "get_1d_netcdf".
@@ -9890,7 +9890,7 @@ endif
            end if
 
            !! Bucket influx
-           !! In channel_only mode, there are not valie qBtmVertRunoff values
+           !! In channel_only mode, there are not valid qBtmVertRunoff values
            if(nlst(did)%output_channelBucket_influx .eq. 2 .and. &
               nlst(did)%channel_only                .eq. 0         ) then
               iret = nf90_def_var(ncid, "qBtmVertRunoff", NF90_FLOAT, (/stationdim/), varid)
@@ -10291,7 +10291,7 @@ end subroutine output_chrt2
           NLAKES = get_netcdf_dim(trim(route_lake_f), 'feature_id',  &
                                    'read_NSIMLAKES', fatalErr=.false.)
           if (NLAKES .eq. -99) then
-                 ! We were unsucessful in getting feature_id, try linkDim
+                 ! We were unsuccessful in getting feature_id, try linkDim
                  NLAKES = get_netcdf_dim(trim(route_lake_f), 'nlakes',  &
                                    'read_NSIMLAKES', fatalErr=.false.)
           endif
@@ -11274,7 +11274,7 @@ endif
 !! Consistency checks - global att checking.
 if(my_id .eq. io_id) then
 
-   attNotInFileMsg=&  !! lenght fixed above
+   attNotInFileMsg=&  !! length fixed above
         'Fatal error for channel only: the following global attribute not in the forcing file: '
 
    !! 1) overland routing v squeegee??
@@ -11322,7 +11322,7 @@ if(nlst(did)%channel_only       .eq. 1 .or. &
    qBucket_in   = 0.0
    qSfcLatRunoff_in = 0.0
 
-   !! Surface Lateral Fluxes (currenly include exfiltration from subsurface)
+   !! Surface Lateral Fluxes (currently include exfiltration from subsurface)
    call read_rst_crt_reach_nc(ncid, qSfcLatRunoff_in, "qSfcLatRunoff", &
                               rt_domain(did)%GNLINKSL, fatalErr=.true. )
 

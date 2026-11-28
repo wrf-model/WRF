@@ -23,7 +23,7 @@ C     Probably one can improve the stacking of arrays and even get
 C     VLEN=8*KMAX. But not tried yet.
 C
 C
-C     Note we set distinct signs, because we wont to collapse 4
+C     Note we set distinct signs, because we want to collapse 4
 C     different assignments into one
 !CDIR NOVECTOR
       DO K=1,KMAX

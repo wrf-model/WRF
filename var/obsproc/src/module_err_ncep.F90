@@ -239,8 +239,8 @@ upper_level: DO WHILE (ASSOCIATED (current))
 ! 3.  VERTICAL INTERPOLATION OF NCEP OBSERVATIONAL ERROR
 ! ======================================================
 
-! 3.1 WIND DIRECTION FIXE TO 5 DEGREES
-!     --------------------------------
+! 3.1 WIND DIRECTION FIXED TO 5 DEGREES
+!     ---------------------------------
 
       current % meas % direction % error = 5.
 
@@ -488,8 +488,8 @@ upper_level: DO WHILE (ASSOCIATED (current))
       ENDIF
 !
 !
-! 3.  WHEN SPECIFIED: LOGARITHMIC INTERPOLATION COEFICIENTS
-! ---------------------------------------------------------
+! 3.  WHEN SPECIFIED: LOGARITHMIC INTERPOLATION COEFFICIENTS
+! ----------------------------------------------------------
 !
       IF ((CDTYPE (1:5) .EQ. 'LOGAR') .OR. &
           (CDTYPE (1:5) .EQ. 'logar')) THEN
@@ -500,8 +500,8 @@ upper_level: DO WHILE (ASSOCIATED (current))
 !
       ELSE
 !
-! 4.  OR DEFAULT IS LINEAR INTERPOLATION COEFICIENTS
-!     ----------------------------------------------
+! 4.  OR DEFAULT IS LINEAR INTERPOLATION COEFFICIENTS
+!     -----------------------------------------------
 !
            DZINF = -(PZ - ERR_K (IK  ))
            DZSUP =   PZ - ERR_K (IK+1)

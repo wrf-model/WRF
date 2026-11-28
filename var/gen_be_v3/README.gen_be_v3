@@ -14,7 +14,7 @@
           edit makefile
           make
 
-   Option 2: use general lapack lib (see the desciption in gen_be_v3.F90)
+   Option 2: use general lapack lib (see the description in gen_be_v3.F90)
 
  Note about precision:
    For write_ep = .true. application, the code should be compiled with real-4.

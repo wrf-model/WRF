@@ -62,7 +62,7 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, xbx, y, &
          subarea = SUM ( grid%xb%grid_box_area(its:ite,jts:jte) )
          whole_area = wrf_dm_sum_real(subarea)
 
-         ! Multipled by -1.0 because the dnw is negative, multiplied by -1.0 again to revert the direction.
+         ! Multiplied by -1.0 because the dnw is negative, multiplied by -1.0 again to revert the direction.
 
          f_flag = 1.0 ! -1.0*-1.0
 

@@ -1116,7 +1116,7 @@ q_cap = ks * alpha * (aep / Z)**beta
 
 q_darcy = y * q_cap + q_grav ![cm/min]
 
-! limit for exteme gradients with q >> saturated hydraulic conductivity
+! limit for extreme gradients with q >> saturated hydraulic conductivity
 ! if(q_cap > ks) q_cap = ks
 ! if(q_grav < -ks) q_grav = -ks
 

@@ -73,7 +73,7 @@ SUBROUTINE G_ADVECT_U(u, ud, u_old, u_oldd, tendency, tendencyd, ru, rud&
   specified = .false.
   IF (config_flags%specified .OR. config_flags%nested) specified = &
 &      .true.
-!  set order for vertical and horzontal flux operators
+!  set order for vertical and horizontal flux operators
   horz_order = config_flags%h_mom_adv_order
   vert_order = config_flags%v_mom_adv_order
   IF (kte .GT. kde - 1) THEN
@@ -4784,7 +4784,7 @@ j_loop_y_flux_5:DO j=j_start,j_end+1
         END DO
       END DO
     END DO
-! Polar boundary condtions
+! Polar boundary conditions
 ! These won't be covered in the loop above...
     IF (config_flags%polar) THEN
       IF (jts .EQ. jds) THEN
@@ -16954,7 +16954,7 @@ SUBROUTINE G_ADVECT_WENO_U(u, ud, u_old, u_oldd, tendency, tendencyd, ru&
   specified = .false.
   IF (config_flags%specified .OR. config_flags%nested) specified = &
 &      .true.
-!  set order for vertical and horzontal flux operators
+!  set order for vertical and horizontal flux operators
   horz_order = config_flags%h_mom_adv_order
   vert_order = config_flags%v_mom_adv_order
   IF (kte .GT. kde - 1) THEN

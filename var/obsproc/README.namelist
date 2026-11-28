@@ -31,7 +31,7 @@
 
 &record3
 ; max_number_of_obs: Maximum number of observations to be loaded, 
-;                    ie in domain and time window, this is independant of 
+;                    ie in domain and time window, this is independent of
 ;                    the number of obs actually read.
 ; fatal_if_exceed_max_obs: .TRUE.  will stop when more than max_number_of_obs 
 ;                                  are loaded
@@ -42,7 +42,7 @@
 &record4
 ; qc_test_vert_consistency: .TRUE. will perform a vertical consistency
 ;                                  quality control check on sounding 
-; qc_test_convective_adj:   .TRUE. will perform a convective adjustement
+; qc_test_convective_adj:   .TRUE. will perform a convective adjustment
 ;                                  quality control check on sounding 
 ; qc_test_above_lid:        .TRUE. will flag the observation above model lid
 ; remove_above_lid :        .TRUE. will remove the observation above model lid
@@ -74,11 +74,11 @@
 ;                 in file obs_recover_height.diag
 ; print_qc_vert: .TRUE will write diagnostic on the vertical consistency check
 ;                 in file obs_qc1.diag
-; print_qc_conv: .TRUE will write diagnostic on the convective adjustement 
+; print_qc_conv: .TRUE will write diagnostic on the convective adjustment
 ;                 check in file obs_qc1.diag
 ; print_qc_lid : .TRUE. will write diagnostic on the above model lid height 
 ;                 check in file obs_qc2.diag
-; print_uncomplete: .TRUE. will write diagnostic on the uncomplete obs removal
+; print_uncomplete: .TRUE. will write diagnostic on the incomplete obs removal
 ;                    in file obs_uncomplete.diag
 ; user_defined_area: .TRUE. read in the record6: x_left, x_right, 
 ;                           y_top, y_bottom,
@@ -121,7 +121,7 @@
 ; When no first guess as input file:
 ; IPROJ:  Map projection (0 = Cylindrical Equidistance, 1 = Lambert Conformal,
 ;                          2 = Polar stereographic,      3 = Mercator)
-; PHIC:   Central latitude of the doamin
+; PHIC:   Central latitude of the domain
 ; XLONC:  Central longitude of the domain
 ;         For MM5 application, PHIC and XLONC are the central Lat/Lon of the
 ;         coarse domain.
@@ -152,12 +152,12 @@
 ;         geographically located on that domain will be processed.
 ;         For WRF application with XLONC /= STANDARD_LON, set IDD=2,
 ;         otherwise set 1.
-; MAXNES: Maximum numbe of domains as needed. 
+; MAXNES: Maximum number of domains as needed.
 ; NESTIX: The I(y)-direction dimension for each of the domains
 ; NESTJX: The J(x)-direction dimension for each of the domains
 ; DIS:    The grid size for each of the domains
 ;         For WRF application, always set NESTIX(1),NESTJX(1), and DIS(1)
-;         based on the infomation in wrfinput.
+;         based on the information in wrfinput.
 ; NUMC:   The mother domain ID number for each of the domains
 ; NESTI:  The I location in its mother domain of the nest domain's low left
 ;          corner -- point (1,1)

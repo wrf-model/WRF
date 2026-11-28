@@ -151,10 +151,10 @@ subroutine da_setup_be_regional(xb, be, grid)
    character(len=15)           :: write_fmt
    integer                     :: ni, nj, nk, nk_2d, b
    integer                     :: ix, jy, kz, kzs(5), mz, mzs(5)
-   real, allocatable   :: regcoeff_psi_chi(:)        ! psi/chi    regression cooefficient.
-   real, allocatable   :: regcoeff_psi_t(:,:,:)      ! psi/t      regression cooefficient.
-   real, allocatable   :: regcoeff_psi_ps(:,:)       ! psi/ps     regression cooefficient.
-   real, allocatable   :: regcoeff_psi_rh(:,:,:)     ! psi/rh     regression cooefficient.
+   real, allocatable   :: regcoeff_psi_chi(:)        ! psi/chi    regression coefficient.
+   real, allocatable   :: regcoeff_psi_t(:,:,:)      ! psi/t      regression coefficient.
+   real, allocatable   :: regcoeff_psi_ps(:,:)       ! psi/ps     regression coefficient.
+   real, allocatable   :: regcoeff_psi_rh(:,:,:)     ! psi/rh     regression coefficient.
    real, allocatable   :: regcoeff_chi_u_t(:,:,:)    ! chi_u/t    regression coefficient
    real, allocatable   :: regcoeff_chi_u_ps(:,:)     ! chi_u/ps   regression coefficient
    real, allocatable   :: regcoeff_chi_u_rh(:,:,:)   ! chi_u/rh   regression coefficient
@@ -326,7 +326,7 @@ if ( jb_factor > 0.0 ) then
 ! Write out the interpolated CV5 BE:
     if (interpolate_stats) then
  
-! No matter which bin_type BE inputed, after Interpolated, the BE always
+! No matter which bin_type BE inputted, after Interpolated, the BE always
 ! became bin_type = 1 BE, i.e. the global BE.
      bin_type_out   = 5
      num_bins_out   = kz
@@ -2225,7 +2225,7 @@ if ( jb_factor > 0.0 ) then
    read (be_unit)  evec_loc
    read (be_unit)  eval_loc
    if( (trim(adjustl(variable)) /= 'ps_u') .and. (trim(adjustl(variable)) /= 'ps') ) then
-      message(1)=' Variable mismatch while transfering eigen values from BE file '
+      message(1)=' Variable mismatch while transferring eigen values from BE file '
       if (cv_options == 7) then
          write (unit=message(2),fmt='(A,A)') ' Expected ps but got ',trim(adjustl(variable))
       else

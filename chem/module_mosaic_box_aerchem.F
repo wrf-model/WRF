@@ -47,7 +47,7 @@ contains
   !
   !   07-oct-02 raz - made zx and zm integers in activity coeff subs.
   !   16-sep-02 raz - updated many subrs to treat calcium salts
-  !   19-aug-02 raz - inlcude v33com9a in subr aerosolmtc
+  !   19-aug-02 raz - include v33com9a in subr aerosolmtc
   !   14-aug-02 rce - "(msectional.eq.0)" changed to "(msectional.le.0)"
   !   07-aug-02 rce - this is rahul's latest version from freshair
   !       AFTER adding "real mean_molecular_speed" wherever it is used
@@ -929,7 +929,7 @@ contains
 
 
   !***********************************************************************
-  ! intializes all the MOSAIC variables to zero or their default values.
+  ! initializes all the MOSAIC variables to zero or their default values.
   !
   ! author: Rahul A. Zaveri
   ! update: jun 2003
@@ -1082,7 +1082,7 @@ contains
 
     implicit none
 
-    ! subr. agrument
+    ! subr. argument
 
     integer, intent(in)    ::  mbin, isteps_ASTEM
     integer, intent(inout) ::  iprint_input

@@ -15,7 +15,7 @@ subroutine da_llxy (info, loc, outside, outside_all)
    logical      ,         intent(out)   :: outside      !wrt local domain
    logical, optional,     intent(out)   :: outside_all  !wrt all domains
 
-   ! too many return statments to trace
+   ! too many return statements to trace
    ! if (trace_use_frequent) call da_trace_entry("da_llxy")
 
    outside = .false.

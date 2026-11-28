@@ -9,7 +9,7 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
    !
    !      03/04/2005 - Syed RH Rizvi
    !      (a)  AMVs from Geostationary and Polar orbiting satellite are
-   !           seperated & used as profile. Currently there is a provision
+   !           separated & used as profile. Currently there is a provision
    !           to use MODIS winds only.
    !      (b)  MODIS obs error are currently assigned through namelist
    !           parameter (modis_cmv_error)
@@ -952,7 +952,7 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
 !                           platform%loc%pw%error ** 2) / gravity
 
 
-            ! Geostationary ot Polar orbitting Satellite AMVs:
+            ! Geostationary to Polar orbitting Satellite AMVs:
          case (88)    ;
             if (index(platform%info%name, 'MODIS') > 0 .or. &
                 index(platform%info%name, 'modis') > 0 .or. &

@@ -127,7 +127,7 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
       subarea = SUM ( grid%xb%grid_box_area(its:ite,jts:jte) )
       whole_area = wrf_dm_sum_real(subarea)
 
-      ! Multipled by -1.0 because the dnw is negative
+      ! Multiplied by -1.0 because the dnw is negative
 
       do jj = jms, jme
          do k = kms, kme

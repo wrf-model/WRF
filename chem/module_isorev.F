@@ -1344,7 +1344,7 @@
 !CCC      CHI1    = 2.D0*WAER(4)        ! Free parameter ; arbitrary value.
       PSI1    = WAER(4)
 !C
-!C *** The following statment is here to avoid negative NH4+ values in 
+!C *** The following statement is here to avoid negative NH4+ values in
 !C     CALCN? routines that call CALCN1A
 !C
       PSI2    = MAX(MIN(WAER(2),0.5d0*(WAER(3)-PSI1)),TINY)
@@ -7293,7 +7293,7 @@
 !C         SCASE = 'U2 ; SUBCASE 1'
 !C         CALL CALCU2A
 !C         SCASE = 'U2 ; SUBCASE 1'
-!C      ELSE                          ! NO3 NON EXISTANT, WATER NOT POSSIBLE
+!C      ELSE                          ! NO3 NON EXISTENT, WATER NOT POSSIBLE
 !C         SCASE = 'U2 ; SUBCASE 1'
 !C         CALL CALCU1A
 !C         SCASE = 'U2 ; SUBCASE 1'
@@ -10093,13 +10093,13 @@
 !C
       EXTERNAL CALCW1A2p1, CALCW62p1
 !C
-!C *** REGIME DEPENDS ON THE EXISTANCE OF WATER AND OF THE RH ************
+!C *** REGIME DEPENDS ON THE EXISTENCE OF WATER AND OF THE RH ************
 !C
       IF (WAER(4).GT.TINY)   THEN ! NO3 EXIST, WATER POSSIBLE
          SCASE = 'W5 ; SUBCASE 1'
          CALL CALCW5A2p1
          SCASE = 'W5 ; SUBCASE 1'
-      ELSE                                      ! NO3, CL NON EXISTANT
+      ELSE                                      ! NO3, CL NON EXISTENT
          SCASE = 'W1 ; SUBCASE 1'
          CALL CALCW1A2p1
          SCASE = 'W1 ; SUBCASE 1'
@@ -10503,13 +10503,13 @@
       INCLUDE 'module_isrpia_inc.F'
       EXTERNAL CALCW1A2p1, CALCW5A2p1
 !C
-!C *** REGIME DEPENDS ON THE EXISTANCE OF WATER AND OF THE RH ************
+!C *** REGIME DEPENDS ON THE EXISTENCE OF WATER AND OF THE RH ************
 !C
       IF (WAER(4).GT.TINY)   THEN ! NO3 EXIST, WATER POSSIBLE
          SCASE = 'W4 ; SUBCASE 1'
          CALL CALCW4A2p1
          SCASE = 'W4 ; SUBCASE 1'
-      ELSE                                      ! NO3, CL NON EXISTANT
+      ELSE                                      ! NO3, CL NON EXISTENT
          SCASE = 'W1 ; SUBCASE 1'
          CALL CALCW1A2p1
          SCASE = 'W1 ; SUBCASE 1'
@@ -10914,13 +10914,13 @@
       INCLUDE 'module_isrpia_inc.F'
       EXTERNAL CALCW1A2p1, CALCW4A2p1
 !C
-!C *** REGIME DEPENDS ON THE EXISTANCE OF WATER AND OF THE RH ************
+!C *** REGIME DEPENDS ON THE EXISTENCE OF WATER AND OF THE RH ************
 !C
 !C      IF (WAER(4).GT.TINY .AND. WAER(5).GT.TINY) THEN ! NO3,CL EXIST, WATER POSSIBLE
 !C         SCASE = 'W3 ; SUBCASE 1'
 !C         CALL CALCW3A
 !C         SCASE = 'W3 ; SUBCASE 1'
-!C      ELSE                                      ! NO3, CL NON EXISTANT
+!C      ELSE                                      ! NO3, CL NON EXISTENT
 !C         SCASE = 'W1 ; SUBCASE 1'
 !C         CALL CALCW1A
 !C         SCASE = 'W1 ; SUBCASE 1'
@@ -10943,7 +10943,7 @@
             CALL CALCMDRPII2p1 (RH, DRMP3, DRCANO32, CALCW1A2p1, CALCW4A2p1)
             SCASE = 'W3 ; SUBCASE 3'
          ENDIF
-      ELSE                                      ! NO3, CL NON EXISTANT
+      ELSE                                      ! NO3, CL NON EXISTENT
          SCASE = 'W3 ; SUBCASE 1'
          CALL CALCW3A2p1
          SCASE = 'W3 ; SUBCASE 1'

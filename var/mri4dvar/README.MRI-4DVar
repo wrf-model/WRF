@@ -34,12 +34,12 @@ da_thin.exe
 da_vp_bilin.exe
 da_vp_split.exe
 
-2. Domain size requirment
+2. Domain size requirement
 ---------------------------
 
 Only WRF input files at high resolution are required to run MRI-4DVAR. 
 WRF input files at low resolution are thinned from those at high resolution.
-This requires that grid number at high/low resolutions to satify:
+This requires that grid number at high/low resolutions to satisfy:
     ( n - 1 ) mod m = 0
 where n is the grid number of high resolution in x or y direction, m is the
 grid number of low resolution in x or y direction. 

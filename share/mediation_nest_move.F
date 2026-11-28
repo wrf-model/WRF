@@ -499,7 +499,7 @@ call wrf_debug(1,message)
        jmploc = -1
 
        ! find minimum psfc
-       pmin = 99999999.0     ! make this very large to be sure we find a minumum
+       pmin = 99999999.0     ! make this very large to be sure we find a minimum
        DO j = js, je
        DO i = is, ie
          ! adjust approximately to sea level pressure (same as below: ATCF)

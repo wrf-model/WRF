@@ -572,8 +572,8 @@ CONTAINS
 !-- LANDUSEF     Landuse fraction                      ! P-X LSM
 !-- SOILCTOP     Top soil fraction                     ! P-X LSM
 !-- SOILCBOT     Bottom soil fraction                  ! P-X LSM
-!-- RA           Aerodynamic resistence                ! P-X LSM
-!-- RS           Stomatal resistence                   ! P-X LSM, also from Noah lsm, lsm_mosaic, or noahmp
+!-- RA           Aerodynamic resistance                ! P-X LSM
+!-- RS           Stomatal resistance                   ! P-X LSM, also from Noah lsm, lsm_mosaic, or noahmp
 !-- VEGF_PX      PX LSM internal LU-based Veg Fraction ! P-X LSM
 !-- IMPERV       Impervious surface fraction           ! P-X LSM
 !-- CANFRA       Canopy/Tree fraction                  ! P-X LSM
@@ -1057,8 +1057,8 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION( ims:ime, 4, jms:jme ), INTENT(IN)  :: lf_urb2d  !urban
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN)  :: lf_urb2d_s !urban
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN)  :: z0_urb2d !urban
-   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_u_bep   !Implicit momemtum component X-direction
-   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_v_bep   !Implicit momemtum component Y-direction
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_u_bep   !Implicit momentum component X-direction
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_v_bep   !Implicit momentum component Y-direction
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_t_bep   !Implicit component pot. temperature
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_e_bep   !Implicit component TKE
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_q_bep   !Implicit component TKE
@@ -1444,7 +1444,7 @@ CONTAINS
      REAL, DIMENSION( ims:ime, jms:jme ) :: UST_SEA
      REAL, DIMENSION( ims:ime, jms:jme ) :: QZ0_SEA
      REAL, DIMENSION( ims:ime, jms:jme ) :: TSK_LOCAL
-    ! lake varibles ,inout(14)
+    ! lake variables ,inout(14)
     real,    dimension(ims:ime,jms:jme ),intent(inout)                      :: savedtke12d
     real,    dimension(ims:ime,jms:jme ),intent(inout)                      :: snowdp2d,       &
                                                                                h2osno2d,       &
@@ -2025,7 +2025,7 @@ CONTAINS
                 call wrf_message("In order to proceed, for surface calculations, the "// &
                                  "boundary layer time-step"// &
                                  " will be rounded to the nearest minute," )
-                call wrf_message("possibly resulting in innacurate results.")
+                call wrf_message("possibly resulting in inaccurate results.")
              END IF
              DTBL=bldt*60
           else
@@ -5548,7 +5548,7 @@ CONTAINS
      ZNT_HOLD(its:ite,jts:jte)  = ZNT(its:ite,jts:jte)
      ZOL_HOLD(its:ite,jts:jte)  = ZOL(its:ite,jts:jte)
 
-     ! We'll want to save the ouput
+     ! We'll want to save the output
      ! for weighting after the second call to SFCLAY.
 
      ! land/frozen-water call
@@ -7284,7 +7284,7 @@ HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
                                                    !-- (i.e. called from a seaice_wrapper subroutine)
       LOGICAL, INTENT(IN) :: tice2tsk_if2cold      !-- True to set TSK_ICE to TSK.  This may be
                                                    !-- necessary to avoid unphysically low ice
-                                                   !-- temperatures is there is a mis-match between
+                                                   !-- temperatures is there is a mismatch between
                                                    !-- ice fraction and surface temperature.
 
       REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN)    :: XICE        ! Ice fraction

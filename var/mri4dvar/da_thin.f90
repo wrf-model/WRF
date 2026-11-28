@@ -66,7 +66,7 @@ program da_thin
         Write(*,*) "  -i     Optional, input filename,    default - wrfinput_hires"
         Write(*,*) "  -o     Optional, output filename,   default - wrfinput_lores"
         Write(*,*) "  -thin  Optional, decimation factor, default - 3"
-        Write(*,*) "  -h     Shwo this usage"
+        Write(*,*) "  -h     Show this usage"
         call exit(0)
     end select
   END DO
@@ -197,7 +197,7 @@ program da_thin
         case ("XLONG XLAT XTI")
           start=(/offset,offset,1,1/)
         case default
-          print *, "Unkown coordinates : "//coordinates
+          print *, "Unknown coordinates : "//coordinates
           call exit(-1)
       end select
 
@@ -249,11 +249,11 @@ program da_thin
           endif
           deallocate(times, stat=status)
         else
-          print *, "Unkown character variable :"//trim(vNam)
+          print *, "Unknown character variable :"//trim(vNam)
           call exit(-1)  
         endif
       case default
-        print *, "Unkown xtype : ", xtype
+        print *, "Unknown xtype : ", xtype
         call exit(-1)
     end select
   end do

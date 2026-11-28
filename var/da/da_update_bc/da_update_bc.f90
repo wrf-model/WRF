@@ -534,7 +534,7 @@ program da_update_bc
    bdyname(3)='_BYS'
    bdyname(4)='_BYE'
 
-   ! boundary tendancy variables
+   ! boundary tendency variables
    tenname(1)='_BTXS'
    tenname(2)='_BTXE'
    tenname(3)='_BTYS'
@@ -621,7 +621,7 @@ program da_update_bc
          write(unit=stdout,fmt=*) 'It is impossible here. mu, m=', m
       end select
 
-      ! calculate new tendancy 
+      ! calculate new tendency
       do l=1,dims(2)
          do i=1,dims(1)
             tend2d(i,l)=(scnd2d(i,l)-frst2d(i,l))/bdyfrq
@@ -645,7 +645,7 @@ program da_update_bc
       ! output new variable at first time level
       call da_put_var_2d_real_cdf( wrf_bdy_file, trim(var_name), frst2d, &
                                 dims(1), dims(2), 1, debug)
-      ! output new tendancy 
+      ! output new tendency
       call da_put_var_2d_real_cdf( wrf_bdy_file, trim(vbt_name), tend2d, &
                                 dims(1), dims(2), 1, debug)
 
@@ -962,7 +962,7 @@ program da_update_bc
          write(unit=stdout, fmt='(a, i3, 2a)') &
             'cal. tend: bdyname(', m, ')=', trim(vbt_name)
 
-         ! calculate new tendancy 
+         ! calculate new tendency
          do l=1,dims(3)
             do k=1,dims(2)
                do i=1,dims(1)
@@ -1051,7 +1051,7 @@ program da_update_bc
    bdyname(3)='_BYS'
    bdyname(4)='_BYE'
 
-   ! boundary tendancy variables
+   ! boundary tendency variables
    tenname(1)='_BTXS'
    tenname(2)='_BTXE'
    tenname(3)='_BTYS'
@@ -1132,7 +1132,7 @@ program da_update_bc
          write(unit=stdout,fmt=*) 'It is impossible here. mu, m=', m
       end select
 
-      ! calculate new tendancy 
+      ! calculate new tendency
       do l=1,dims(2)
          do i=1,dims(1)
             tend2d(i,l)=(scnd2d(i,l)-frst2d(i,l))/bdyfrq
@@ -1156,7 +1156,7 @@ program da_update_bc
       ! output new variable at first time level
       call da_put_var_2d_real_cdf( wrf_bdy_file, trim(var_name), frst2d, &
                                 dims(1), dims(2), 2, debug)
-      ! output new tendancy 
+      ! output new tendency
       call da_put_var_2d_real_cdf( wrf_bdy_file, trim(vbt_name), tend2d, &
                                 dims(1), dims(2), 2, debug)
 
@@ -1423,7 +1423,7 @@ program da_update_bc
          write(unit=stdout, fmt='(a, i3, 2a)') &
             'cal. tend: bdyname(', m, ')=', trim(vbt_name)
 
-         ! calculate new tendancy 
+         ! calculate new tendency
          do l=1,dims(3)
             do k=1,dims(2)
                do i=1,dims(1)

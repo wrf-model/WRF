@@ -345,7 +345,7 @@ CONTAINS
       ENDDO
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!!  Compute Micromet Scaling variables, not availiable in WRF for ACM
+!!!  Compute Micromet Scaling variables, not available in WRF for ACM
      DO I = its,ite
            CPAIR(I)  = CPD * (1.0 + 0.84 * QVS(I,1))                    ! J/(K KG)
            TMPFX     = HFX(I)  / (cpair(i) * DENSX(I,1))
@@ -851,7 +851,7 @@ CONTAINS
 !-- UST             U* in 1D form
 !-- TST             Theta* in 1D form
 !-- QST             Q* in 1D form
-!-- USTM            U* for computation of momemtum flux 
+!-- USTM            U* for computation of momentum flux
 !-- EDDYZ           eddy diffusivity KZ
 !-- DENSX           dry air density (kg/m^3)
 !-- US              U wind 
@@ -1030,7 +1030,7 @@ CONTAINS
         DTRAT = DTS / DTPBL
         DO NL = 1,NLP           ! LOOP OVER SUB TIME LOOP              
 
-!-- COMPUTE ARRAY ELEMENTS THAT ARE INDEPENDANT OF SPECIES
+!-- COMPUTE ARRAY ELEMENTS THAT ARE INDEPENDENT OF SPECIES
 
           DO K = kts,kte
             AI(K) = 0.0
@@ -1195,7 +1195,7 @@ CONTAINS
 !-- UST             U* in 1D form
 !-- TST             Theta* in 1D form
 !-- QST             Q* in 1D form
-!-- USTM            U* for computation of momemtum flux 
+!-- USTM            U* for computation of momentum flux
 !-- EDDYZM          eddy diffusivity for momentum KM
 !-- DENSX           dry air density (kg/m^3)
 !-- US              U wind 
@@ -1341,7 +1341,7 @@ CONTAINS
         DTRAT = DTS / DTPBL
         DO NL = 1,NLP           ! LOOP OVER SUB TIME LOOP              
 
-!-- COMPUTE ARRAY ELEMENTS THAT ARE INDEPENDANT OF SPECIES
+!-- COMPUTE ARRAY ELEMENTS THAT ARE INDEPENDENT OF SPECIES
 
           DO K = kts,KL
             AI(K) = 0.0

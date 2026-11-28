@@ -1415,7 +1415,7 @@ SUBROUTINE g_init_zero_tendency(ru_tendf,  g_ru_tendf, &
                                                           moist_tendf
 
 !  NPan - 05/26/10 {
-!  Uncomment the corresponding definations when chem is needed.   
+!  Uncomment the corresponding definitions when chem is needed.
 !   REAL , DIMENSION(ims:ime, kms:kme, jms:jme, n_chem ),INTENT(INOUT)::&
 !                                                          g_chem_tendf
 !   REAL , DIMENSION(ims:ime, kms:kme, jms:jme, n_chem ),INTENT(INOUT)::&

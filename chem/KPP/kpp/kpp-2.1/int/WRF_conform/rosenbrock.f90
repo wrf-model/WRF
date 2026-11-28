@@ -331,7 +331,7 @@ SUBROUTINE  KPP_ROOT_Rosenbrock(Y, FIX, RCONST, Tstart,Tend, &
       CALL KPP_ROOT_ros_ErrorMsg(-4,Tstart,ZERO,IERR)
       RETURN
    END IF
-!~~~>   FacRej: Factor to decrease step after 2 succesive rejections
+!~~~>   FacRej: Factor to decrease step after 2 successive rejections
    IF (RCNTRL(6) == ZERO) THEN
       FacRej = 0.1_dp
    ELSEIF (RCNTRL(6) > ZERO) THEN
@@ -662,7 +662,7 @@ Stage: DO istage = 1, ros_S
 
    END DO TimeLoop
 
-!~~~> Succesful exit
+!~~~> Successful exit
    IERR = 1  !~~~> The integration was successful
 
   END SUBROUTINE  KPP_ROOT_ros_Integrator

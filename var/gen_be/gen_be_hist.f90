@@ -232,7 +232,7 @@ program gen_be_hist
    filename = 'hist.'//trim(variable)//'.dat'
    open (ounit, file = filename, form='unformatted')
    write(ounit)nk,num_bins,N_dim_hist
-   ! split until I do find a working NCL script that reads large binairies
+   ! split until I do find a working NCL script that reads large binaries
    do k=1,nk
       write(ounit)class_hist(k,:)
    end do

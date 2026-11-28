@@ -17,7 +17,7 @@ OMP             =       # (compiler dependent option for openmp, e.g. -mp for pg
 SFC             =       (serial fortran compiler)
 SCC             =       (serial C compiler)
 DM_FC           =       (Fortran compile command for mpi, eg: mpif90 -f90=$(SFC))
-DM_CC           =       (C compile comand for mpi, eg: mpicc -cc=$(SCC))
+DM_CC           =       (C compile command for mpi, eg: mpicc -cc=$(SCC))
 FC              =       CONFIGURE_FC    (leave as is: to be filled in by configure depending on parallel option)
 CC              =       CONFIGURE_CC    (leave as is: to be filled in by configure depending on parallel option
 LD              =       $(FC)		(usually leave as is)

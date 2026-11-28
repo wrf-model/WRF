@@ -68,8 +68,8 @@ end module module_mp_SBM_Nucleation
 ! is maintained by Jacob Shpund (email: kobby.shpund@mail.huji.ac.il).
 ! Please feel free to reachout with questions about the scheme.
 
-! Usefull references:
-! -------------------
+! Useful references:
+! ------------------
 !     Khain, A. P., and I. Sednev, 1996: Simulation of precipitation formation in
 ! the Eastern Mediterranean coastal zone using a spectral microphysics cloud
 ! ensemble model. Atmospheric Research, 43: 77-110;
@@ -98,11 +98,11 @@ module module_mp_SBM_BreakUp
 private
 public Spont_Rain_BreakUp,Spontanous_Init,BreakUp_Snow,KR_SNOW_MIN,KR_SNOW_MAX
 
-! Kind paramater
+! Kind parameter
 INTEGER, PARAMETER, PRIVATE:: R8SIZE = 8
 INTEGER, PARAMETER, PRIVATE:: R4SIZE = 4
 
-! ... Spontanous Rain BreakUp
+! ... Spontaneous Rain BreakUp
 INTEGER,PARAMETER :: 		JBreak_Spontanous = 28, &
               					I_Break_Method = 1
 DOUBLE PRECISION,PARAMETER :: COL = 0.23105
@@ -451,7 +451,7 @@ end module module_mp_SBM_BreakUp
         coll_xyz_lwf, coll_xxy_lwf, &
         modkrn_KS, coll_breakup_KS, courant_bott_KS
 
-  ! Kind paramater
+  ! Kind parameter
   INTEGER, PARAMETER, PRIVATE:: R8SIZE = 8
   INTEGER, PARAMETER, PRIVATE:: R4SIZE = 4
   integer,parameter :: kp_flux_max = 44
@@ -1697,7 +1697,7 @@ end module module_mp_SBM_Collision
  public :: POLYSVP, JERRATE_KS, JERTIMESC_KS, JERSUPSAT_KS, &
  		       JERDFUN_KS, JERDFUN_NEW_KS, Relaxation_Time
 
- ! Kind paramater
+ ! Kind parameter
  INTEGER, PARAMETER, PRIVATE:: R8SIZE = 8
  INTEGER, PARAMETER, PRIVATE:: R4SIZE = 4
 
@@ -3017,7 +3017,7 @@ end module module_mp_SBM_Auxiliary
  private
  public JERNUCL01_KS, LogNormal_modes_Aerosol
 
-! Kind paramater
+! Kind parameter
  	INTEGER, PARAMETER, PRIVATE:: R8SIZE = 8
  	INTEGER, PARAMETER, PRIVATE:: R4SIZE = 4
 
@@ -3067,7 +3067,7 @@ end module module_mp_SBM_Auxiliary
 
  	OPER3(AR1,AR2) = AR1*AR2/(0.622D0+0.378D0*AR1)
 
-	! ... Adjust the Imput
+	! ... Adjust the Input
 	PSI1 = PSI1_r
 	PSI2 = PSI2_r
 	FCCNR = FCCNR_r
@@ -3097,7 +3097,7 @@ end module module_mp_SBM_Auxiliary
 			CALL WATER_NUCLEATION (COL, NKR_aerosol, PSI1, FCCNR, xl, TT, QQ, ROR, SUP1, DROPCONCN, &
 							 	   PP, Is_This_CloudBase, Win, RO_SOLUTE, RCCN, IONS,MWAERO)
 		endif
-		! ... Transfer drops to Ice-Crystals via direct homogenous nucleation
+		! ... Transfer drops to Ice-Crystals via direct homogeneous nucleation
 		IF(TPC <= -38.0D0) THEN
 		  SUM_ICE = 0.0D0
 		  DO KR=1,NKR
@@ -3312,7 +3312,7 @@ end module module_mp_SBM_Auxiliary
         endif
         RMASSL_NUCL = RMASSL_NUCL*COL*3.0*RORI
 
-        ! prepering to check if we need to nucleate the next bin
+        ! preparing to check if we need to nucleate the next bin
         IMAX = IMAX-1
 
    ! cycle IMAX>=NCRITI
@@ -3863,7 +3863,7 @@ enddo
 
  PUBLIC FAST_SBM,FAST_HUCMINIT
 
- ! Kind paramater
+ ! Kind parameter
  INTEGER, PARAMETER, PRIVATE:: R8SIZE = 8
  INTEGER, PARAMETER, PRIVATE:: R16SIZE = 16 
  INTEGER, PARAMETER, PRIVATE:: R4SIZE = 4
@@ -4197,8 +4197,8 @@ enddo
   XS_d = XS
 
   if (itimestep.eq.1)then
-    if (iceprocs.eq.1) call wrf_message(" FAST SBM: ICE PROCESES ACTIVE ")
-    if (iceprocs.eq.0) call wrf_message(" FAST SBM: LIQUID PROCESES ONLY")
+    if (iceprocs.eq.1) call wrf_message(" FAST SBM: ICE PROCESSES ACTIVE ")
+    if (iceprocs.eq.0) call wrf_message(" FAST SBM: LIQUID PROCESSES ONLY")
   end if
 
   NCOND = 3
@@ -4235,7 +4235,7 @@ enddo
   		          KRR=KRR+1
    					    chem_new(I,K,J,KR) = chem_new(I,K,J,KR)*RHOCGS(I,K,J)/1000.0
    				  END DO
- 				!  ... Hail or Graupel [same registry adresses]
+ 				!  ... Hail or Graupel [same registry addresses]
            if(hail_opt == 1) then
              KRR=0
              DO KR=p_ff6i01,p_ff6i33
@@ -5354,7 +5354,7 @@ enddo
          TFALL=1.E10
          DO K=kts,kte
           ! [KS] VFALL(K) = VR1(K,KR)*SQRT(1.E6/PCGS(K))
- 		       VFALL(K) = VR1(K,KR) ! ... [KS] : The pressure effect is taken into account at the beggining of the calculations
+ 		       VFALL(K) = VR1(K,KR) ! ... [KS] : The pressure effect is taken into account at the beginning of the calculations
            TFALL=AMIN1(TFALL,ZCGS(K)/(VFALL(K)+1.E-20))
          END DO
          IF(TFALL.GE.1.E10)STOP
@@ -5459,7 +5459,7 @@ enddo
  	  DM_BCAST_MACRO_R8(bin_log)
 #endif
 
-     WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : succesfull reading Table-1'
+     WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : successful reading Table-1'
      CALL wrf_debug(000, errmess)
  ! +-----------------------------------------------------------------------+
 
@@ -5508,7 +5508,7 @@ enddo
      DM_BCAST_MACRO_R4(RHEC)
 #endif
 
-     WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : succesfull reading Table-2'
+     WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : successful reading Table-2'
      CALL wrf_debug(000, errmess)
  ! +----------------------------------------------------------------------+
 
@@ -5557,7 +5557,7 @@ enddo
      DM_BCAST_MACRO_R4(XH)
 #endif
 
-      WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : succesfull reading Table-3'
+      WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : successful reading Table-3'
       CALL wrf_debug(000, errmess)
  ! +-------------------------------------------------------------------------+
 
@@ -5606,7 +5606,7 @@ enddo
      DM_BCAST_MACRO_R4(VR4)
      DM_BCAST_MACRO_R4(VR5)
 #endif
-     WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : succesfull reading Table-4'
+     WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : successful reading Table-4'
      CALL wrf_debug(000, errmess)
  ! +----------------------------------------------------------------------+
 
@@ -5654,7 +5654,7 @@ enddo
     DM_BCAST_MACRO_R4(TLIC)
     DM_BCAST_MACRO_R4(COEFIN)
 #endif
-     WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : succesfull reading Table-5'
+     WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : successful reading Table-5'
      CALL wrf_debug(000, errmess)
  ! +----------------------------------------------------------------------+
 
@@ -5711,7 +5711,7 @@ enddo
      DM_BCAST_MACRO_R4(YWLL_500MB)
 #endif
 
-     WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : succesfull reading Table-6'
+     WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : successful reading Table-6'
      CALL wrf_debug(000, errmess)
  ! +-----------------------------------------------------------------------+
 
@@ -5948,7 +5948,7 @@ enddo
      DM_BCAST_MACRO_R4(YWSS_750MB)
 #endif
 
-     WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : succesfull reading Table-7'
+     WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : successful reading Table-7'
      CALL wrf_debug(000, errmess)
  ! +-----------------------------------------------------------------------+
 
@@ -5996,7 +5996,7 @@ enddo
       DM_BCAST_MACRO_R4(RO4BL)
       DM_BCAST_MACRO_R4(RO5BL)
 #endif
-     WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : succesfull reading Table-8'
+     WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : successful reading Table-8'
      CALL wrf_debug(000, errmess)
  ! +----------------------------------------------------------------------+
 
@@ -6034,7 +6034,7 @@ enddo
 #if (defined(DM_PARALLEL))
        DM_BCAST_MACRO_R4(RADXXO)
 #endif
-     WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : succesfull reading Table-9'
+     WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : successful reading Table-9'
      CALL wrf_debug(000, errmess)
  ! +-----------------------------------------------------------------------+
 
@@ -6067,7 +6067,7 @@ enddo
  ! ### (KS) - Broadcating Usetables array
  	  CALL wrf_dm_bcast_integer ( usetables , size ( usetables ) * IWORDSIZE )
 #endif
-  WRITE(errmess, '(A,I2)') 'module_mp_WRFsbm : succesfull reading Table-10'
+  WRITE(errmess, '(A,I2)') 'module_mp_WRFsbm : successful reading Table-10'
   call wrf_message(errmess)
  ! +-----------------------------------------------------------------------+
 
@@ -6089,7 +6089,7 @@ enddo
    chucm  = 0.0d0
    ima = 0
    CALL courant_bott_KS(xl, nkr, chucm, ima, scal) ! ### (KS) : New courant_bott_KS (without XL_MG(0:nkr))
-   WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : succesfull reading "courant_bott_KS" '
+   WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : successful reading "courant_bott_KS" '
    CALL wrf_debug(000, errmess)
 
   DEG01=1./3.
@@ -6119,7 +6119,7 @@ enddo
  		RCCN = 0.0
  		CALL LogNormal_modes_Aerosol(FCCNR_CON,FCCNR_MAR,NKR_aerosol,COL,XL,XCCN,RCCN,RO_SOLUTE,Scale_CCN_Factor,1)
  		CALL LogNormal_modes_Aerosol(FCCNR_CON,FCCNR_MAR,NKR_aerosol,COL,XL,XCCN,RCCN,RO_SOLUTE,Scale_CCN_Factor,2)
- 		WRITE(errmess, '(A,I2)') 'module_mp_WRFsbm : succesfull reading "LogNormal_modes_Aerosol" '
+ 		WRITE(errmess, '(A,I2)') 'module_mp_WRFsbm : successful reading "LogNormal_modes_Aerosol" '
  		CALL wrf_debug(000, errmess)
  	ENDIF
  ! +-------------------------------------------------------------+
@@ -6132,12 +6132,12 @@ enddo
     QKJ = 0.0e0
     ECOALMASSM = 0.0d0
     BRKWEIGHT = 0.0d0
- 	 CALL BREAKINIT_KS(PKIJ,QKJ,ECOALMASSM,BRKWEIGHT,XL,DROPRADII,BR_MAX,JBREAK,JMAX,NKR,VR1) ! Rain Spontanous Breakup
+ 	 CALL BREAKINIT_KS(PKIJ,QKJ,ECOALMASSM,BRKWEIGHT,XL,DROPRADII,BR_MAX,JBREAK,JMAX,NKR,VR1) ! Rain Spontaneous Breakup
 #if (defined(DM_PARALLEL))
  	 	DM_BCAST_MACRO_R4(PKIJ)
     DM_BCAST_MACRO_R4(QKJ)
 #endif
- 	  WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : succesfull reading BREAKINIT_KS" '
+ 	  WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : successful reading BREAKINIT_KS" '
     CALL wrf_debug(000, errmess)
   ! +--------------------------------------------------------------------------------------------------------------------+
 
@@ -6222,7 +6222,7 @@ enddo
   Gain_Var_New = 0.0
   NND = 0.0
   call Spontanous_Init(dt, XL, DROPRADII, Prob, Gain_Var_New, NND, NKR, ikr_spon_break)
-  WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : succesfull reading "Spontanous_Init" '
+  WRITE(errmess, '(A,I2)') 'FAST_SBM_INIT : successful reading "Spontanous_Init" '
   CALL wrf_debug(000, errmess)
 
   return
@@ -8009,7 +8009,7 @@ enddo
     TIMENEW = TIMENEW + DTNEWL
     DTT = DTNEWL
 
- 		! ... Incase the Anti-Bregeron regime we do not call diffusional-growth
+ 		! ... In case the Anti-Bregeron regime we do not call diffusional-growth
  		PRINT*, "Anti-Bregeron Regime, No DIFFU"
  		PRINT*,  DEL1, DEL2, TT, QQ, Kin
  		GO TO 17

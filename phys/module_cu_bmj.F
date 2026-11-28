@@ -2082,9 +2082,9 @@ CONTAINS
 !   ********************************************************************
 !   *                                                                  *
 !   *  THIS IS A ONE-DIMENSIONAL CUBIC SPLINE FITTING ROUTINE          *
-!   *  PROGRAMED FOR A SMALL SCALAR MACHINE.                           *
+!   *  PROGRAMMED FOR A SMALL SCALAR MACHINE.                          *
 !   *                                                                  *
-!   *  PROGRAMER Z. JANJIC                                             *
+!   *  PROGRAMMER Z. JANJIC                                            *
 !   *                                                                  *
 !   *  NOLD - NUMBER OF GIVEN VALUES OF THE FUNCTION.  MUST BE GE 3.   *
 !   *  XOLD - LOCATIONS OF THE POINTS AT WHICH THE VALUES OF THE       *

@@ -46,8 +46,8 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
    ! variables for computing clwp
    real, allocatable :: dpf(:,:), clw(:,:), pf(:,:)
 
-   real, allocatable :: em_mspps(:)    ! emissivity caluclated using MSPPS algorithm
-   real              :: ts_mspps       ! surface temperature calcualted using MSPPS algorithm
+   real, allocatable :: em_mspps(:)    ! emissivity calculated using MSPPS algorithm
+   real              :: ts_mspps       ! surface temperature calculated using MSPPS algorithm
 
    !For Zhuge and Zou cloud detection
    real, allocatable :: geoht_full(:,:,:)
@@ -179,7 +179,7 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
                if ( iv%instid(inst)%surftype(n) == 0 ) then
                   call da_mspps_ts(ob%instid(inst)%tb(1:nchan,n), nchan,  &
                                    iv%instid(inst)%satzen(n), ts_mspps)
-                  ! ts_mspps is initilaized as negative values in the
+                  ! ts_mspps is initialized as negative values in the
                   ! da_mspps_ts subroutine.  Apply only valid values here.
                   if ( ts_mspps > 0.0 ) then
                      iv%instid(inst)%ts(n) = ts_mspps
@@ -259,7 +259,7 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
 
          allocate(profiles(n2-n1+1))
          do n = n1, n2
-            ! latitude, longitude, surftype are used for retreiving emis from atlas
+            ! latitude, longitude, surftype are used for retrieving emis from atlas
             ! zenangle is used by MW emmisivity atlas
             ! snow_frac is used only by IR emmisivity atlas
             profiles(n-n1+1)%latitude           = iv%instid(inst)%info%lat(1,n)

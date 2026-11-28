@@ -1552,7 +1552,7 @@ DO i = 1, n
 END DO
 
 !     Starting at the end, swap the current last indicator with one
-!     randomly chosen from those preceeding it.
+!     randomly chosen from those preceding it.
 
 DO i = n, 2, -1
   CALL RANDOM_NUMBER(wk)

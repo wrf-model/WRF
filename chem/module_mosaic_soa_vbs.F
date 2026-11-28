@@ -214,7 +214,7 @@
             idxaged(i)=0
           enddo
 
-!     Seperate the fresh and aged species and treat them as 2 different solutions. Note this approach differes from PMCAMx
+!     Separate the fresh and aged species and treat them as 2 different solutions. Note this approach differs from PMCAMx
 !     In PMCAMx if flagsoap(i) was set to zero those species were not considered solution forming.
          do i=1,N
             flagsoap(i)=1 ! Biomass burning(carbon and oxygen species) +traditional soa species
@@ -268,11 +268,11 @@
          endif
       enddo
 
-!      Caluclate the initial equilibrium partitioning by the bisection method (CMU PMCAMx approach)
+!      Calculate the initial equilibrium partitioning by the bisection method (CMU PMCAMx approach)
 !       If all fresh abd aged species form a solution
 !         call soap(ngas_soa,Ctot,Csat,Caer,Cgas,cpx)
 
-!       if fresh and aged species form seperate solutions
+!       if fresh and aged species form separate solutions
       if (nsolfresh.gt.0)  call soap(nsolfresh,Ctotfresh, &
                     Csatfresh,Caerfresh,Cgasfresh,cpxfresh)
       if (nsolaged.gt.0)  call soap(nsolaged,Ctotaged, &
@@ -310,7 +310,7 @@
          do ibin=1,nbin_a
            xsumfresh(ibin)=0.0
            xsumaged(ibin)=0.0
-              xsumaged(ibin)= xsumaged(ibin)+aer(ioc_a,jp,ibin)!Caluclate pre-existing primary in each bin for aged aerosol
+              xsumaged(ibin)= xsumaged(ibin)+aer(ioc_a,jp,ibin)!Calculate pre-existing primary in each bin for aged aerosol
 !         do iv = start_ind, ngas_ioa + ngas_soa
          do iv = start_ind, (start_ind + N - 1)
            if (flagsoap(iv-start_ind+1).eq.2) then
@@ -338,7 +338,7 @@
 
 
 ! Calculate dq as (gas concentration) G(t)-G(t+h):
-! Caluclate driving force at previous time step (Cgas,i-XiCsati) for both fresh and aged solutions
+! Calculate driving force at previous time step (Cgas,i-XiCsati) for both fresh and aged solutions
 !          do iv = start_ind, ngas_ioa + ngas_soa
           do iv = start_ind, (start_ind + N - 1)
            if (Ctot(iv-start_ind+1).lt.1d-10) goto 120 ! If a given species concentration is too low skip
@@ -355,8 +355,8 @@
 
              do ibin=1,nbin_a
 ! fraceq(iv,ibin) is calculated as the rate of mass transfer
-! The weighting fractions frqfresh(ibin) amd frqaged(ibin) are caluclated assuming mole fractions from previous time step
-! This assumtion could be relaxed by iterativetely solving this equation
+! The weighting fractions frqfresh(ibin) amd frqaged(ibin) are calculated assuming mole fractions from previous time step
+! This assumption could be relaxed by iterativetely solving this equation
            if (flagsoap(iv-start_ind+1).eq.2) then
               frqfresh(ibin)= kg(iv,ibin)*(gas(iv) & ! replaced fraceq(iv,ibin) by kg(iv,ibin) on 01/19/10
               -(aer(iv,jtotal,ibin))/xsumfresh(ibin) &
@@ -467,7 +467,7 @@
                do ibin=1,nbin_a
                    if (flagsoap(iv-start_ind+1).eq.2) then
 !                   if (flagsoap(iv-ipcg1_b_c_g+1).eq.2) then
-! Cannot evaporate more than whats in the bin ie ratio (aer(iv,jtotal,ibin)/dq*frqfresh(ibin)) should be less than equal to 1
+! Cannot evaporate more than what's in the bin ie ratio (aer(iv,jtotal,ibin)/dq*frqfresh(ibin)) should be less than equal to 1
                  if(frqfresh(ibin).gt.0.0d0) &
          frt=MAX(MIN(aer(iv,jtotal,ibin)/abs(-dq*frqfresh(ibin)),frt),0.0d0)
 !                  elseif(flagsoap(iv-ipcg1_b_c_g+1).eq.1) then

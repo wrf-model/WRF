@@ -57,7 +57,7 @@ subroutine da_sfc_pre_lin (psfcm_prime, psm_prime, tsm_prime, qsm_prime, psm, ts
    tv_prime = 0.5 * (tvsm_prime + tvo_prime)
    tv  = 0.5 * (tvsm + tvo)
 
-   ! 2. HEIGHT DifFERENCE BEWTEEN MODEL SURFACE AND OBSERVATIONS
+   ! 2. HEIGHT DifFERENCE BETWEEN MODEL SURFACE AND OBSERVATIONS
    ! ------------------------------------------------------------
 
    dz = hsm - ho

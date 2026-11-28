@@ -27,7 +27,7 @@ module da_gen_be
                
 contains
 
-! Stubs to avoid picking up vast ammounts of unnecessary stuff from wrfvar
+! Stubs to avoid picking up vast amounts of unnecessary stuff from wrfvar
 
 subroutine da_trace_entry(name, message, messages, maxnocalls)    
    implicit none

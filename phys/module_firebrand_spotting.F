@@ -951,7 +951,7 @@ END FUNCTION order_val
 !     SUBROUTINE subgrid_fire_property(fire_ij, fuel_frac, grid)
 ! !=============================================================
 
-! ! Not used - may be delted from final code version
+! ! Not used - may be deleted from final code version
 
 !         IMPLICIT NONE
 
@@ -1574,7 +1574,7 @@ END FUNCTION order_val
         REAL,    INTENT(INOUT), DIMENSION(:)    :: fs_p_x, fs_p_y, fs_p_z ! positions are relative to grid edges: particle at grid center point (x,y,z) = (1.5, 1.5, 1.5)
         REAL,    INTENT(INOUT), DIMENSION(:)    :: fs_p_mass, fs_p_diam, fs_p_effd
         REAL,    INTENT(INOUT), DIMENSION(:)    :: fs_p_temp, fs_p_tvel
-        REAL,    INTENT(INOUT), DIMENSION(ims:ime,jms:jme) :: fs_count_landed_all, fs_fire_area, fs_fuel_spotting_risk    ! Use memory bounds so positons match indices
+        REAL,    INTENT(INOUT), DIMENSION(ims:ime,jms:jme) :: fs_count_landed_all, fs_fire_area, fs_fuel_spotting_risk    ! Use memory bounds so positions match indices
         REAL,    INTENT(INOUT), DIMENSION(ims:ime,jms:jme) :: fs_count_landed_hist, fs_spotting_lkhd, fs_frac_landed
         INTEGER, INTENT(INOUT), DIMENSION(ims:ime,jms:jme) :: fs_landing_mask, fs_gen_inst
         REAL,    INTENT(INOUT), DIMENSION(ifps:ifpe,jfps:jfpe)  :: fs_fire_ROSdt
@@ -1696,7 +1696,7 @@ END FUNCTION order_val
         ENDIF
 #else
         IamMaster = .TRUE.  ! initialized with FALSE. It should be TRUE in serial compilation
-        ntiles = 1 ! used to allocate the arrays for incomming mpi comms. ntiles=1 in serial builds
+        ntiles = 1 ! used to allocate the arrays for incoming mpi comms. ntiles=1 in serial builds
         myprocid = 1* 1000000
 #endif
 
@@ -1713,7 +1713,7 @@ END FUNCTION order_val
             fs_fire_ROSdt(ifps:ifpe,jfps:jfpe) =0.0_dp
 
         !===============================================================================
-        ! Reset array after writting history file
+        ! Reset array after writing history file
         !===============================================================================
 
         IF (fs_count_reset) THEN ! if true
@@ -2627,7 +2627,7 @@ END FUNCTION order_val
                 ! CALL wrf_debug (wrfdbg, 'SPFire_lkhd deposits, non fire-point deposits, fire-point deposits: '//msg)
 
                 ALLOCATE(tmp1(ndep))
-                tmp1 = PACK(fs_count_landed_hist(is:ie, js:je), landing_mask(is:ie, js:je)) ! WHERE doest work on memory bounds
+                tmp1 = PACK(fs_count_landed_hist(is:ie, js:je), landing_mask(is:ie, js:je)) ! WHERE doesn't work on memory bounds
                 fs_count_landed_hist(is:ie, js:je) = ZERO_dp
                 fs_count_landed_hist(is:ie, js:je) = UNPACK(tmp1, MASK=landing_mask(is:ie, js:je), FIELD=ZERO_dp)
 

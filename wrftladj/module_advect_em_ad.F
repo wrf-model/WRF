@@ -351,7 +351,7 @@ SUBROUTINE A_ADVECT_U(u, ub0, u_old, u_oldb, tendency, tendencyb, ru, &
   specified = .false.
   IF (config_flags%specified .OR. config_flags%nested) specified = &
 &      .true.
-!  set order for vertical and horzontal flux operators
+!  set order for vertical and horizontal flux operators
   horz_order = config_flags%h_mom_adv_order
   vert_order = config_flags%v_mom_adv_order
   IF (kte .GT. kde - 1) THEN
@@ -7565,7 +7565,7 @@ j_loop_y_flux_5:DO j=ad_from7,j_end+1
     END DO
     CALL PUSHINTEGER4(j - 1)
     CALL PUSHINTEGER4(ad_from32)
-! Polar boundary condtions
+! Polar boundary conditions
 ! These won't be covered in the loop above...
     IF (config_flags%polar) THEN
       IF (jts .EQ. jds) THEN
@@ -30379,7 +30379,7 @@ SUBROUTINE A_ADVECT_WENO_U(u, ub0, u_old, u_oldb, tendency, tendencyb, &
   specified = .false.
   IF (config_flags%specified .OR. config_flags%nested) specified = &
 &      .true.
-!  set order for vertical and horzontal flux operators
+!  set order for vertical and horizontal flux operators
   IF (kte .GT. kde - 1) THEN
     ktf = kde - 1
   ELSE

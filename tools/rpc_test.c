@@ -6,7 +6,7 @@
 #include <rpc/types.h>
 #endif
 
-/* Should confirm type to avoid symlink hack false positivies */
+/* Should confirm type to avoid symlink hack false positives */
 int main()
 {
 #ifdef _RPC_TYPES_H

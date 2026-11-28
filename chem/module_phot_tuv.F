@@ -1540,7 +1540,7 @@ include 'netcdf.inc'
         if( astat /= 0 ) then
           call wrf_error_fatal( 'get_exo_coldens: failed to allocate col_dens' )
         endif
-        write(err_msg,'(''get_exo_coldens: intializing '',i2,'' domains'')') max_dom
+        write(err_msg,'(''get_exo_coldens: initializing '',i2,'' domains'')') max_dom
         call wrf_message( trim(err_msg) )
         col_dens(:)%is_allocated = .false.
       endif
@@ -1557,7 +1557,7 @@ col_dens_allocated : &
             else
               filename = trim( exo_coldens_filename )
             endif
-            err_msg = 'get_exo_coldens: intializing domain ' // id_num
+            err_msg = 'get_exo_coldens: initializing domain ' // id_num
             call wrf_message( trim(err_msg) )
             err_msg = 'get_exo_coldens: failed to open file ' // trim(filename)
             call handle_ncerr( nf_open( trim(filename), nf_noclobber, ncid ), trim(err_msg) )

@@ -208,7 +208,7 @@ subroutine da_count_filtered_obs (ptop, map, ds, phic, xlonc, truelat1, truelat2
             if (.not.use_bogusobs) cycle reports
             nlocal(bogus) = nlocal(bogus) + 1
 
-         case (18,19) ;             ! bouy
+         case (18,19) ;             ! buoy
 
             if (.not.use_buoyobs) cycle reports
             nlocal(buoy)  = nlocal(buoy)  + 1

@@ -1158,7 +1158,7 @@ aa_iqfrm: do iqfrm = 1, nspec_amode(mfrm)
 	pdensac = rhopj * 1.0e+3
 
 !
-!   call interace to binkowski routines
+!   call interface to binkowski routines
 !
 	call bink_coag_rates(   &
           dgatk, dgacc, alnsgi, alnsgj, pdensat, pdensac,   &
@@ -1269,7 +1269,7 @@ aa_iqfrm: do iqfrm = 1, nspec_amode(mfrm)
 !
 !   NXi,  NXj are number concentrations (particles/m3)
 !   M2Xi, M2Xj are 2nd moment (surface/pi)  concentrations (m2/m3)
-!   M3Xi, M3Xj are 2rd moment (volume*6/pi) concentrations (m3/m3)
+!   M3Xi, M3Xj are 3rd moment (volume*6/pi) concentrations (m3/m3)
 !
 !   in the above, mode i is aitken mode, mode j is accumulation mode
 !
@@ -1676,7 +1676,7 @@ aa_iqfrm: do iqfrm = 1, nspec_amode(mfrm)
 !
 !   NX1,  NX2 are number concentrations (particles/m3)
 !   M2X1, M2X2 are 2nd moment (surface/pi)  concentrations (m2/m3)
-!   M3X1, M3X2 are 2rd moment (volume*6/pi) concentrations (m3/m3)
+!   M3X1, M3X2 are 3rd moment (volume*6/pi) concentrations (m3/m3)
 !
 !   in the above, mode 1 is aitken mode, mode 2 is accumulation mode
 !
@@ -2105,7 +2105,7 @@ aa_iqfrm: do iqfrm = 1, nspec_amode(mfrm)
 !   (ntis pb91-161729/as), 1991
 !
 !   2. binkowski, f.s. an u. shankar, the regional particulate matter
-!   model 1. model decsription and preliminary results, journal of
+!   model 1. model description and preliminary results, journal of
 !   geophysical research, 100, d12, pp 26,191-26,209,
 !   december 20, 1995.
 !

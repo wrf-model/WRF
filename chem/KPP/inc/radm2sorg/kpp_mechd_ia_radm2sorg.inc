@@ -7,7 +7,7 @@
 
         if(p_nu0.gt.1)then
 
- !Note: the indices in the equation fiel are currently shifted by one starting
+ !Note: the indices in the equation field are currently shifted by one starting
  ! from eq. 24 or so (check this) 
 
             rxylho =   RCONST(59)     !ARR2(1.89D-11, -116.0_dp, TEMP); 

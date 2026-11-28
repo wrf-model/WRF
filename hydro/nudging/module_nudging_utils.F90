@@ -9,7 +9,7 @@ contains
 !===================================================================================================
 ! NOTE for whichUtilites
 ! whUniLoop was fastest for single index searches.
-! I still havent tested multiple index searches (which and whichLoop)
+! I still haven't tested multiple index searches (which and whichLoop)
 
 
 !===================================================================================================
@@ -18,7 +18,7 @@ contains
 ! Author(s)/Contact(s):
 !   James L McCreight <jamesmcc><ucar><edu>
 ! Abstract:
-!   Identify indices in a vector which are TRUE, reutrns zero length vector
+!   Identify indices in a vector which are TRUE, returns zero length vector
 !   if there are no matches.
 ! History Log:
 !   6/04/15 -Created, JLM.
@@ -29,7 +29,7 @@ contains
 ! Condition codes:
 ! User controllable options: None.
 ! Notes:
-!   JLM: Recent catastrophic failure reported for pack on ifort, with work arround.
+!   JLM: Recent catastrophic failure reported for pack on ifort, with work around.
 !   JLM: https://software.intel.com/en-us/forums/topic/559308#comments
 
 subroutine whichPack(theMask, which, nWhich)

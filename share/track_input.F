@@ -61,7 +61,7 @@ have_input_file : &
                elseif (istatus2 > 0) then
                  WRITE(errmess, FMT='(I4)') grid%track_loc + 1   ! One extra for the header of the file
                  CALL wrf_message('Error in track_input.txt, line '//trim(errmess))
-                 EXIT    ! (technically unecessary, as we will exit the loop anyway)
+                 EXIT    ! (technically unnecessary, as we will exit the loop anyway)
                endif
 
                IF ( grid%track_loc >= grid%track_loc_in ) THEN

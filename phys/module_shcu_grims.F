@@ -285,7 +285,7 @@ contains
 !
    real,parameter    ::  xkzmax = 50., xkzmin = 0.001
 !
-!  maxium distance of a parcel to lcl (m)
+!  maximum distance of a parcel to lcl (m)
 !
    real,parameter    ::  zdiffcr1 = 1000., zdiffcr2 = 1000.
 !
@@ -583,7 +583,7 @@ contains
 ! abstract: this routine solves multiple tridiagonal matrix problems            
 !   with 2 right-hand-side and solution vectors for every matrix.               
 !   the solutions are found by eliminating off-diagonal coefficients,           
-!   marching first foreward then backward along the matrix diagonal.            
+!   marching first forward then backward along the matrix diagonal.
 !   the computations are vectorized around the number of matrices.              
 !   no checks are made for zeroes on the diagonal or singularity.               
 !                                                                               
@@ -679,7 +679,7 @@ contains
 ! program history log:
 !   1983-11-01  phillips
 !   1991-05-07  iredell                arguments changed, code tidied
-!   2000-01-01  song-you hong          physcis options
+!   2000-01-01  song-you hong          physics options
 !   2009-10-01  jung-eun kim           f90 format with standard physics modules
 !   2010-07-01  myung-seo koo          dimension allocatable with namelist input
 !

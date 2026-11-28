@@ -58,7 +58,7 @@
             ips , ipe , jps , jpe , kps , kpe
     INTEGER ij, its, ite, jts, jte
 
-!   Modified to also call in4dob intially, since subr in4dob is no
+!   Modified to also call in4dob initially, since subr in4dob is no
 !   longer called from subr fddaobs_init. Note that itimestep is now
 !   the model step BEFORE the model integration step, because this
 !   routine is now called by med_before_solve_io.
@@ -1706,7 +1706,7 @@ END SUBROUTINE rh2rb
 !*************************************************************************
 ! Purpose: Collect the obs index, obs latitude, obs longitude, obs station
 !          id, and model latitude and longitude values for print
-!          diagnostics. Note that THIS SUBROUTINE IS CALLED INTERATIVELY
+!          diagnostics. Note that THIS SUBROUTINE IS CALLED ITERATIVELY
 !          FROM IN4DOB, WITHIN THE OBS READ LOOP that reads new obser-
 !          vations needed for the new time window. Flag newpass is true
 !          the first time collect_obs_info is called from the read-loop

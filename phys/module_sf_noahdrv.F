@@ -223,7 +223,7 @@ CONTAINS
 !-- RUNOFF2     subsurface runoff (m s-1), drainage out bottom of last
 !                  soil layer (baseflow)
 !  important note: here RUNOFF2 is actually the sum of RUNOFF2 and RUNOFF3
-!-- RUNOFF3     numerical trunctation in excess of porosity (smcmax)
+!-- RUNOFF3     numerical truncation in excess of porosity (smcmax)
 !                  for a given soil layer at the end of a time step (m s-1).
 !SFCRUNOFF     Surface Runoff (mm)
 !UDRUNOFF      Total Underground Runoff (mm), which is the sum of RUNOFF2 and RUNOFF3
@@ -682,15 +682,15 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION( ims:ime, 4, jms:jme ), INTENT(IN) :: lf_urb2d
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: lf_urb2d_s
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: z0_urb2d
-   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_u_bep   !Implicit momemtum component X-direction
-   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_v_bep   !Implicit momemtum component Y-direction
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_u_bep   !Implicit momentum component X-direction
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_v_bep   !Implicit momentum component Y-direction
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_t_bep   !Implicit component pot. temperature
-   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_q_bep   !Implicit momemtum component X-direction
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_q_bep   !Implicit momentum component X-direction
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_e_bep   !Implicit component TKE
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::b_u_bep   !Explicit momentum component X-direction
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::b_v_bep   !Explicit momentum component Y-direction
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::b_t_bep   !Explicit component pot. temperature
-   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::b_q_bep   !Implicit momemtum component Y-direction
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::b_q_bep   !Implicit momentum component Y-direction
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::b_e_bep   !Explicit component TKE
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::vl_bep    !Fraction air volume in grid cell
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::dlg_bep   !Height above ground
@@ -886,7 +886,7 @@ CONTAINS
 	  ENDIF
         ENDIF
 !***
-        IF((XLAND(I,J)-1.5).GE.0.)THEN                                  ! begining of land/sea if block
+        IF((XLAND(I,J)-1.5).GE.0.)THEN                                  ! beginning of land/sea if block
 ! Open water points
           TSK_RURAL(I,J)=TSK(I,J)
           HFX_RURAL(I,J)=HFX(I,J)
@@ -942,7 +942,7 @@ CONTAINS
           IF(SOILTYP.EQ.14.AND.XICE(I,J).EQ.0.)THEN
 #if 0
          IF(IPRINT)PRINT*,' SOIL TYPE FOUND TO BE WATER AT A LAND-POINT'
-         IF(IPRINT)PRINT*,i,j,'RESET SOIL in surfce.F'
+         IF(IPRINT)PRINT*,i,j,'RESET SOIL in surface.F'
 #endif
             SOILTYP=7
           ENDIF
@@ -1542,7 +1542,7 @@ CONTAINS
 
 
 
-! Renew Urban State Varialbes
+! Renew Urban State Variables
 
             TR_URB2D(I,J) = TR_URB
             TB_URB2D(I,J) = TB_URB
@@ -1818,7 +1818,7 @@ CONTAINS
 !------------------------------------------------------
 
 !For MPAS, the below section of the module is moved to module_physics_lsm_noahinit.F in
-!./../core_physics to accomodate differences in the mpi calls between WRF and MPAS.I thought
+!./../core_physics to accommodate differences in the mpi calls between WRF and MPAS.I thought
 !that it would be cleaner to do this instead of adding a lot of #ifdef statements throughout
 !the initialization subroutine.
 
@@ -2061,10 +2061,10 @@ CONTAINS
 !          the monthly green vegetation data
 !             CMXTBL: MAX CNPY Capacity (m)
 !             NROTBL: Rooting depth (layer)
-!              RSMIN: Mimimum stomatal resistance (s m-1)
+!              RSMIN: Minimum stomatal resistance (s m-1)
 !              RSMAX: Max. stomatal resistance (s m-1)
 !                RGL: Parameters used in radiation stress function
-!                 HS: Parameter used in vapor pressure deficit functio
+!                 HS: Parameter used in vapor pressure deficit function
 !               TOPT: Optimum transpiration air temperature. (K)
 !             CMCMAX: Maximum canopy water capacity
 !             CFACTR: Parameter used in the canopy inteception calculati
@@ -2592,7 +2592,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
 !-- RUNOFF2     subsurface runoff (m s-1), drainage out bottom of last
 !                  soil layer (baseflow)
 !  important note: here RUNOFF2 is actually the sum of RUNOFF2 and RUNOFF3
-!-- RUNOFF3     numerical trunctation in excess of porosity (smcmax)
+!-- RUNOFF3     numerical truncation in excess of porosity (smcmax)
 !                  for a given soil layer at the end of a time step (m s-1).
 !SFCRUNOFF     Surface Runoff (mm)
 !UDRUNOFF      Total Underground Runoff (mm), which is the sum of RUNOFF2 and RUNOFF3
@@ -3050,15 +3050,15 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
    REAL, OPTIONAL, DIMENSION( ims:ime, 4, jms:jme ), INTENT(IN) :: lf_urb2d
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: lf_urb2d_s
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: z0_urb2d
-   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_u_bep   !Implicit momemtum component X-direction
-   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_v_bep   !Implicit momemtum component Y-direction
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_u_bep   !Implicit momentum component X-direction
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_v_bep   !Implicit momentum component Y-direction
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_t_bep   !Implicit component pot. temperature
-   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_q_bep   !Implicit momemtum component X-direction
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_q_bep   !Implicit momentum component X-direction
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_e_bep   !Implicit component TKE
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::b_u_bep   !Explicit momentum component X-direction
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::b_v_bep   !Explicit momentum component Y-direction
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::b_t_bep   !Explicit component pot. temperature
-   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::b_q_bep   !Implicit momemtum component Y-direction
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::b_q_bep   !Implicit momentum component Y-direction
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::b_e_bep   !Explicit component TKE
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::vl_bep    !Fraction air volume in grid cell
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::dlg_bep   !Height above ground
@@ -3375,7 +3375,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
       	  ENDIF
               ENDIF
       !***
-              IF((XLAND(I,J)-1.5).GE.0.)THEN                                  ! begining of land/sea if block
+              IF((XLAND(I,J)-1.5).GE.0.)THEN                                  ! beginning of land/sea if block
       ! Open water points
                 TSK_RURAL(I,J)=TSK(I,J)
                 HFX_RURAL(I,J)=HFX(I,J)
@@ -3426,7 +3426,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                 IF(SOILTYP.EQ.14.AND.XICE(I,J).EQ.0.)THEN
 #if 0
                IF(IPRINT)PRINT*,' SOIL TYPE FOUND TO BE WATER AT A LAND-POINT'
-               IF(IPRINT)PRINT*,i,j,'RESET SOIL in surfce.F'
+               IF(IPRINT)PRINT*,i,j,'RESET SOIL in surface.F'
 #endif
                   SOILTYP=7
                 ENDIF
@@ -4036,7 +4036,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
            endif
 #endif
       
-      ! Renew Urban State Varialbes
+      ! Renew Urban State Variables
       
                   TR_URB2D(I,J) = TR_URB
                   TB_URB2D(I,J) = TB_URB
@@ -4353,7 +4353,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
       	  ENDIF
               ENDIF
       !***
-              IF((XLAND(I,J)-1.5).GE.0.)THEN                                  ! begining of land/sea if block
+              IF((XLAND(I,J)-1.5).GE.0.)THEN                                  ! beginning of land/sea if block
       ! Open water points
                 TSK_RURAL(I,J)=TSK(I,J)
                 HFX_RURAL(I,J)=HFX(I,J)
@@ -4404,7 +4404,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                 IF(SOILTYP.EQ.14.AND.XICE(I,J).EQ.0.)THEN
 #if 0
                IF(IPRINT)PRINT*,' SOIL TYPE FOUND TO BE WATER AT A LAND-POINT'
-               IF(IPRINT)PRINT*,i,j,'RESET SOIL in surfce.F'
+               IF(IPRINT)PRINT*,i,j,'RESET SOIL in surface.F'
 #endif
                   SOILTYP=7
                 ENDIF
@@ -4931,7 +4931,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
            endif
 #endif
       
-      ! Renew Urban State Varialbes
+      ! Renew Urban State Variables
       
                   TR_URB2D(I,J) = TR_URB
                   TB_URB2D(I,J) = TB_URB
@@ -5199,7 +5199,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
            
           IF (ICE == 1)   Then         ! sea-ice case , eliminate sea-ice if they are not the dominant ones
 
-          IF (IVGTYP(i,j) == isice)  THEN    ! if this grid cell is dominanted by ice, then do nothing
+          IF (IVGTYP(i,j) == isice)  THEN    ! if this grid cell is dominated by ice, then do nothing
 
           ELSE
 
@@ -5316,7 +5316,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                  CALL wrf_message(message_text)
                  CALL wrf_message("xland > 1.5 but the dominant land use category based on our calculation is not water."// &
                       "however, the dominant land use category based on the geogrid calculation is water")
-                 CALL wrf_message("This is fine. We do not need to do anyting because in the noaddrv, "//&
+                 CALL wrf_message("This is fine. We do not need to do anything because in the noaddrv, "//&
                       "we use xland as a criterion for whether using"// &
                       "mosaic or not when xland > 1.5, no mosaic will be used anyway")
       	             
@@ -5362,7 +5362,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
       ENDDO
       
   !===========================================================================   
-  ! initilize the variables
+  ! initialize the variables
   !===========================================================================   
 
      DO i = its,itf

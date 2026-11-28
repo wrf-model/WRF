@@ -190,7 +190,7 @@ contains
             kt = rt_domain(did)%his_out_counts
         endif
 
-! jump the ouput for the initial time when it has restart file from routing.
+! jump the output for the initial time when it has restart file from routing.
         rtflag = -99
         iniflag = -99
 #ifdef MPP_LAND
@@ -1495,9 +1495,9 @@ contains
 
 #ifdef HYDRO_D
 #ifndef NCEP_WCOSS
-        write(6,*) "finish decomposion"
+        write(6,*) "finish decomposition"
 #else
-        write(78,*) "finish decomposion"
+        write(78,*) "finish decomposition"
 #endif
 #endif
 
@@ -1526,7 +1526,7 @@ contains
         call get_dist_lsm(did) !! always needed (channel_only and channelBucket_only)
         if(nlst(did)%channel_only .ne. 1)  call get_dist_lrt(did) !! needed forchannelBucket_only
 
-! rt model initilization
+! rt model initialization
         call LandRT_ini(did)
 
         if(nlst(did)%GWBASESWCRT .eq. 3 ) then
@@ -1615,7 +1615,7 @@ contains
 !! 1) (this) zero accumulations on restart/init after any t=0 outputs are written.
 !! 2) introduce a variable in the output files which indicates if accumulations are
 !!    reset after this output.
-!! Here we move zeroing to after AFTER outputing the accumulations at the initial time.
+!! Here we move zeroing to after AFTER outputting the accumulations at the initial time.
 !! This was previously done in HYDRO_rst_in and so output accumulations at time
 !! zero were getting zeroed and then writtent to file, which looses information.
 !! Note that nlst_rt(did)%rstrt_swc is not changed at any point in between here and the rst_in.

@@ -105,7 +105,7 @@ subroutine read_timeslice_file(  &
      updateTime,                 &  !! OUT: the time the file was updated.
      sliceResolution,            &  !! OUT: temporal resolution of the file in minutes.
      gageId,                     &  !! OUT: integer, the USGS gage ID.
-     gageTime,                   &  !! OUT: output converted for comparision to model time??
+     gageTime,                   &  !! OUT: output converted for comparison to model time??
      gageQC,                     &  !! OUT: quality control flag for discharge
      gageDischarge,              &  !! OUT: real, the m3/s observed discharge
      fatalErr,                   &  !! IN:  logical, are IO errors fatal?
@@ -209,7 +209,7 @@ end subroutine read_timeslice_file
 ! Author(s)/Contact(s):
 !   James L McCreight <jamesmcc><ucar><edu>
 ! Abstract:
-!   Read the gages column from the "RouteLink.nc" netcdf file specifing the channel topology.
+!   Read the gages column from the "RouteLink.nc" netcdf file specifying the channel topology.
 ! History Log:
 !   7/20/15 -Created, JLM.
 ! Usage:
@@ -230,7 +230,7 @@ character(len=15), dimension(:), intent(out) :: gageIds
 integer               :: ncid , iRet, varId
 logical               :: fatal_if_error
 character(len=256) :: route_link_f_r, route_link_f, varName
-integer :: lenRouteLinkFR ! so the preceeding var chan be changed without changing code
+integer :: lenRouteLinkFR ! so the preceding var chan be changed without changing code
 logical :: routeLinkNetcdf
 
 #ifdef HYDRO_D
@@ -408,7 +408,7 @@ end subroutine read_gridded_nudging_frxst_gage_csv
 subroutine read_nudging_param_file(  &
      paramFile,                      &  !! IN: char, file path/name
      gageId,                         &  !! OUT: integer, the USGS gage ID.
-     gageR,                          &  !! OUT: output converted for comparision to model time??
+     gageR,                          &  !! OUT: output converted for comparison to model time??
      gageG,                          &  !! OUT: quality control flag for discharge
      gageTau,                        &  !! OUT: real the half-window for NN/IDW interp
      gageQThresh,                    &  !! OUT: real the half-window for NN/IDW interp
@@ -536,7 +536,7 @@ subroutine write_nudging_last_obs(lastObsStr, modelTime, g_nudge)
 
 implicit none
 
-!Arugments
+!Arguments
 type(lastObsStructure), intent(in), dimension(:) :: lastObsStr
 character(len=19),      intent(in)               :: modelTime
 real,                   intent(in), dimension(:) :: g_nudge
@@ -576,7 +576,7 @@ iret = nf90_def_dim(ncid, "feature_id",      nFeature,       dimIdNFeature)
 
 !! gageId def var
 iret = nf90_def_var(ncid, "stationId", nf90_char, (/ dimIdStnStr, dimIdNstn /), varid)
-iret = nf90_put_att(ncid, varid, 'long_name', "USGS station identifer of length 15")
+iret = nf90_put_att(ncid, varid, 'long_name', "USGS station identifier of length 15")
 iret = nf90_def_var_deflate(ncid, varid, 0, 1, 2)
 
 !! time def var
@@ -725,7 +725,7 @@ iret = nf90_def_dim(ncid, "feature_id",      nFeature,       dimIdNFeature)
 
 ! gageId def var
 iret = nf90_def_var(ncid, "stationId", nf90_char, (/ dimIdStnStr, dimIdNstn /), varid)
-iret = nf90_put_att(ncid, varid, 'long_name', "USGS station identifer of length 15")
+iret = nf90_put_att(ncid, varid, 'long_name', "USGS station identifier of length 15")
 iret = nf90_def_var_deflate(ncid, varid, 0, 1, 2)
 
 ! time def var
@@ -1262,7 +1262,7 @@ if(my_id .eq. io_id) then
 #endif
 
    !! jlm: check that all the input variables have the same dimensions? Or will that happen
-   !! by defult when trying to write to ncdf?
+   !! by default when trying to write to ncdf?
 
    ! Open the  finemesh static files to obtain projection information
    ! jlm: this seems optional, might be nice if output is used for plotting/GIS.
@@ -1459,7 +1459,7 @@ end subroutine output_chan_connectivity
 ! Parameters:
 !   See definitions.
 ! Input Files:
-!   This file is refered to by it's "ncid" obtained from nc_open
+!   This file is referred to by it's "ncid" obtained from nc_open
 !   prior to calling this routine.
 ! Output Files:
 !   None.

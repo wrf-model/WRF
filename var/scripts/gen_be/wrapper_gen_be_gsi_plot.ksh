@@ -5,7 +5,7 @@
 # Author: Syed RH Rizvi
 #         UCAR/NCAR/ESSL/MMM/DAG Date: 08/12/2009
 #
-# Purpose: Wrapper for ploting background error statistics for GSI
+# Purpose: Wrapper for plotting background error statistics for GSI
 #-----------------------------------------------------------------------
 
 #[1] Define job by overriding default environment variables:

@@ -81,7 +81,7 @@ subroutine da_read_obs_bufriasi (obstype,iv,infile)
 
 ! Set standard parameters
   integer(i_kind),parameter :: ichan=-999  ! fov-based surface code is not channel specific for iasi 
-  real(r_kind),parameter    :: expansion=one         ! exansion factor for fov-based location code.                                                 ! use one for ir sensors.
+  real(r_kind),parameter    :: expansion=one         ! expansion factor for fov-based location code.                                                 ! use one for ir sensors.
   real(r_kind),parameter    :: tbmin  = 50._r_kind
   real(r_kind),parameter    :: tbmax  = 550._r_kind
   real(r_kind),parameter    :: earth_radius = 6371000._r_kind
@@ -397,7 +397,7 @@ subroutine da_read_obs_bufriasi (obstype,iv,infile)
          data_all(9) = allspot(12)            ! solar zenith angle (deg)
          data_all(10)= allspot(13)            ! solar azimuth angle (deg)
          do l=1,nchan
-            data_all(l+nreal) = temperature(l)   ! brightness temerature
+            data_all(l+nreal) = temperature(l)   ! brightness temperature
          end do
 				
 !  4.0   assign information to sequential radiance structure

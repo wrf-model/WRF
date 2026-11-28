@@ -4,7 +4,7 @@ program da_verif_obs
    !
    !  Abstract:  
    !  Program to read diagnostics written in fort.50 by WRFVAR
-   !  and write in proper format to get ploted using PC-XL utility
+   !  and write in proper format to get plotted using PC-XL utility
    !
    !  Author:   Syed RH Rizvi     NCAR/MMM         05/25/2006
    !  Updates:

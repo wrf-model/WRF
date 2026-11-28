@@ -395,7 +395,7 @@ CONTAINS
   ! *         IMX       Number of I points                            (-)
   ! *         JMX       Number of J points                            (-)
   ! *         LMX       Number of L points                            (-)
-  ! *         dz_lowest heigth of the lowest layer                    (m)
+  ! *         dz_lowest height of the lowest layer                    (m)
   ! *
   ! *  Data (see module_data_gocart_dust):
   ! *         SPOINT    Pointer to 3 soil classes                     (-)
@@ -412,7 +412,7 @@ CONTAINS
   ! *         CMB       Constant of proportionality                   (-)
   ! *         MMD_DUST  Mass median diameter of dust                  (m)
   ! *         GSD_DUST  Geometric standard deviation of dust          (-)
-  ! *         LAMBDA    Side crack propogation length                 (m)
+  ! *         LAMBDA    Side crack propagation length                 (m)
   ! *         CV        Normalization constant                        (-)
   ! *         G0        Gravitational acceleration                    (m/s2)
   ! *         G         Gravitational acceleration in cgs             (cm/s2)
@@ -494,7 +494,7 @@ CONTAINS
 
 ! REAL, PARAMETER :: mmd_dust=3.4D-6  ! median mass diameter (m)
 ! REAL, PARAMETER :: gsd_dust=3.0     ! geometric standard deviation
-! REAL, PARAMETER :: lambda=12.0D-6   ! crack propogation length (m)
+! REAL, PARAMETER :: lambda=12.0D-6   ! crack propagation length (m)
 ! REAL, PARAMETER :: cv=12.62D-6      ! normalization constant
 
 ! Calculate saltation surface area distribution from sand, silt, and clay

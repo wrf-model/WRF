@@ -33,7 +33,7 @@ MODULE module_llxy
 !           positive toward the east, and j is the north-south direction,
 !           positive toward the north.
 !       2.  Origin is at (1,1) and is located at the southwest corner,
-!           regardless of hemispere.
+!           regardless of hemisphere.
 !       3.  Grid spacing (dx) is always positive.
 !       4.  Values of true latitudes must be positive for NH domains
 !           and negative for SH domains.
@@ -76,7 +76,7 @@ MODULE module_llxy
 ! to declare a variable of the same type to hold your map projection
 ! information.  It also defines some integer parameters that contain
 ! the projection codes so one only has to use those variable names rather
-! than remembering the acutal code when using them.  The basic steps are
+! than remembering the actual code when using them.  The basic steps are
 ! as follows:
 !
 !   1.  Ensure the "USE map_utils" is in your declarations.
@@ -737,7 +737,7 @@ MODULE module_llxy
   
       IMPLICIT NONE
   
-      ! Delcare input arguments
+      ! Declare input arguments
       REAL, INTENT(IN)               :: lat
       REAL, INTENT(IN)               :: lon
       TYPE(proj_info),INTENT(IN)     :: proj
@@ -1204,7 +1204,7 @@ MODULE module_llxy
       chi1 = (90. - proj%hemi*proj%truelat1)*rad_per_deg
       chi2 = (90. - proj%hemi*proj%truelat2)*rad_per_deg
   
-      ! See if we are in the southern hemispere and flip the indices
+      ! See if we are in the southern hemisphere and flip the indices
       ! if we are. 
       inew = proj%hemi * i
       jnew = proj%hemi * j
@@ -2172,7 +2172,7 @@ MODULE module_llxy
 !         i = proj%ixdim
 !      END IF
  
-      !  Yet another quicky test, can we find bounding values?  If not, then we may be
+      !  Yet another quickie test, can we find bounding values?  If not, then we may be
       !  dealing with putting data to a polar projection, so just give them them maximal
       !  value for the location.  This is an OK assumption for the interpolation across the
       !  top of the pole, given how close the longitude lines are.

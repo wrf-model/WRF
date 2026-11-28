@@ -19,7 +19,7 @@ module module_subsurface_data
         ! this means the result of calling associated(<pointer>)
         ! on a pointer that has not been set is unknown
         ! therefore associated can not be used as a guard
-        ! in inital pointer allocation
+        ! in initial pointer allocation
         logical, private :: pointer_allocation_guard = .false.
 
         contains
@@ -37,7 +37,7 @@ module module_subsurface_data
         integer, intent(in) :: ix                     ! x grid size
         integer, intent(in) :: jx                     ! y grid size
         integer, intent(in) :: nsoil                  ! number of soil layers
-        type(overland_struct), intent(inout) :: overland_data        ! overland data strucuture
+        type(overland_struct), intent(inout) :: overland_data        ! overland data structure
 
     if (this%pointer_allocation_guard .eqv. .false. ) then
         this%pointer_allocation_guard = .true.

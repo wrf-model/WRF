@@ -124,7 +124,7 @@
                                                                 ! If 'true', surface interfacial energy does not contribute to the CL mean
                                                                 !            stbility functions after finishing merging.     For this case,
                                                                 !           'dl2n2_surf' is only used for a merging test based on 'l2n2'
-                                                                ! If 'false',surface interfacial enery explicitly contribute to    CL mean
+                                                                ! If 'false',surface interfacial energy explicitly contribute to    CL mean
                                                                 !            stability functions after finishing merging.    For this case,
                                                                 !           'dl2n2_surf' and 'dl2s2_surf' are directly used for calculating
                                                                 !            surface interfacial layer energetics
@@ -1013,7 +1013,7 @@
              else ! Either qxm < 0 and qxtop > 0 or vice versa
                    sfuh(i,k) = max( qxtop, qxm ) / abs( qxtop - qxm )
              end if
-           ! Combine with sflh(i) (still for layer k-1) to get interfac layer saturation fraction
+           ! Combine with sflh(i) (still for layer k-1) to get interface layer saturation fraction
              sfi(i,k) = 0.5_r8 * ( sflh(i,k-1) + min( sflh(i,k-1), sfuh(i,k) ) )
            ! Update sflh to be for the lower half of layer k.             
              if( ( qxbot .lt. 0._r8 ) .and. ( qxm .lt. 0._r8 ) ) then
@@ -1269,7 +1269,7 @@
     ! The free atmosphere diffusivities are based on standard mixing length !
     ! forms for the neutral diffusivity multiplied by functns of Richardson !
     ! number. K = l^2 * |dV/dz| * f(Ri). The same functions are used for    !
-    ! momentum, potential temperature, and constitutents.                   !
+    ! momentum, potential temperature, and constituents.                    !
     !                                                                       !
     ! The stable Richardson num function (Ri>0) is taken from Holtslag and  !
     ! Beljaars (1989), ECMWF proceedings. f = 1 / (1 + 10*Ri*(1 + 8*Ri))    !
@@ -1781,7 +1781,7 @@
     ! though bflxs <= 0, if 'pver' interface is a CL internal interface (ri(pver)<0),
     ! surface interface is identified as an external interface of CL. If bflxs =< 0 
     ! and ri(pver) >= 0, then surface interface is identified as a stable turbulent
-    ! intereface (STL) as shown at the end of 'caleddy'. Even though a 'minpblh' is
+    ! interface (STL) as shown at the end of 'caleddy'. Even though a 'minpblh' is
     ! passed into 'exacol', it is not used in the 'exacol'.
 
     call exacol( pcols, pver, ncol, ri, bflxs, minpblh, zi, ktop, kbase, ncvfin )
@@ -2321,7 +2321,7 @@
           !   2. Cloud-top radiative cooling                                    !
           !   3. Surface buoyancy flux contribution only when bflxs > 0.        !
           !      Note that master length scale, lbulk, has already been         !
-          !      corrctly defined at the first part of this 'do ncv' loop       !
+          !      correctly defined at the first part of this 'do ncv' loop      !
           !      considering the sign of bflxs.                                 !
           ! This 'wstar3' is used for calculation of entrainment rate.          !
           ! Note that this 'wstar3' formula does not include shear production   !
@@ -2416,7 +2416,7 @@
               end if
               wstar3 = wstar3 / wstar3fact       
           else ! wstar3 == 0
-              wstar3fact = 0._r8 ! This is just for dianostic output
+              wstar3fact = 0._r8 ! This is just for diagnostic output
               cet        = 0._r8
               ceb        = 0._r8
           end if 
@@ -2844,7 +2844,7 @@
        ! except the surface. Note that tke(i,pver+1) and wcap(i,pver+1) are
        ! already calculated in the first part of 'caleddy', kvm(i,pver+1) &
        ! kvh(i,pver+1) were already initialized to be zero, bprod(i,pver+1)
-       ! & sprod(i,pver+1) were direcly calculated from the bflxs and ustar.
+       ! & sprod(i,pver+1) were directly calculated from the bflxs and ustar.
        ! Note transport term is assumed to be negligible at STL interfaces.
            
        do k = 2, pver
@@ -3348,7 +3348,7 @@
        ! are explicitly included while the first approach is not. In this sense,  the !
        ! second approach seems to be more conceptually consistent,   but currently, I !
        ! (Sungsu) will keep the first default approach. There is a switch             !
-       ! 'use_dw_surf' at the first part of eddy_diff.F90 chosing one of              !
+       ! 'use_dw_surf' at the first part of eddy_diff.F90 choosing one of             !
        ! these two options.                                                           !
        ! ---------------------------------------------------------------------------- !
        
@@ -3466,7 +3466,7 @@
            ! values. However, re-set surface interfacial values such  that it can
            ! be used in the merging tests (either based on 'wint' or 'l2n2')  and
            ! in such that surface interfacial energy is not double-counted.
-           ! Note that regardless of the choise of 'use_dw_surf', below should be
+           ! Note that regardless of the choice of 'use_dw_surf', below should be
            ! kept as it is below, for consistent merging test of extending SBCL. 
        
            lint = dlint_surf
@@ -3988,7 +3988,7 @@
        shcl(i,ncv) = sh
        smcl(i,ncv) = sm
 
-       ! Increment counter for next CL. I should check if the increament of 'ncv'
+       ! Increment counter for next CL. I should check if the increment of 'ncv'
        ! below is reasonable or not, since whenever CL is merged during downward
        ! extension process, 'ncv' is lowered down continuously within 'do' loop.
        ! But it seems that below 'ncv = ncv + 1' is perfectly correct.

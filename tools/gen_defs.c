@@ -187,7 +187,7 @@ gen_decls ( FILE * fp , node_t * node , int sw_ranges, int sw_point , int mask ,
 
         if ( !strcmp( dimspec, "" ) && ipass == 1 ) continue ; /* short circuit scalars on 2nd pass  */
         if (  strcmp( dimspec, "" ) && ipass == 0 ) continue ; /* short circuit arrays on 2nd pass   */
-        if ( bdyonly && p->node_kind & FIELD && ! p->boundary_array )  continue ;  /* short circuit all fields except bdy arrrays */
+        if ( bdyonly && p->node_kind & FIELD && ! p->boundary_array )  continue ;  /* short circuit all fields except bdy arrays */
 
         if ( p->boundary_array && sw_new_bdys ) {
           if ( layer == DRIVER_LAYER || associated_with_4d_array(p) ) {

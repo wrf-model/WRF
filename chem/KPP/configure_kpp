@@ -5,8 +5,8 @@
 cat chem/KPP/documentation/wkc_kpp.txt
 
 
-#    The name of your lexical analizer. KPP requires FLEX to be used.
-#    FLEX is a public domain lexical analizer and you can download it from
+#    The name of your lexical analyzer. KPP requires FLEX to be used.
+#    FLEX is a public domain lexical analyzer and you can download it from
 #    http://www.gnu.org/software/flex/ or any other mirror site. If flex
 #    directory is not included in your path use the complete pathname.
 
@@ -63,7 +63,7 @@ fi
 
 #    Platform independent C compiler flags. By default "-O0" is used which 
 #    turns off all optimisation. If you are experiencing problems you may try 
-#    "-g" to include debuging informations.
+#    "-g" to include debugging information.
 
 CC_FLAGS="-O0"
 
@@ -135,8 +135,8 @@ $PSCC
 #  YACC=yacc -d 
 
 
-#    The name of your lexical analizer. KPP requires FLEX to be used.
-#    FLEX is a public domain lexical analizer and you can download it from
+#    The name of your lexical analyzer. KPP requires FLEX to be used.
+#    FLEX is a public domain lexical analyzer and you can download it from
 #    http://www.gnu.org/software/flex/ or any other mirror site. If flex
 #    directory is not included in your path use the complete pathname.
 

@@ -74,7 +74,7 @@ SUBROUTINE da_obs_ref_to_eph ( gps_rays, obs_ref, obs_eph)
                   obs_eph(i)=obs_eph(i)+step*tmp_ref
                END IF
             end do ! from left to right
-         END DO !from the begining to the end
+         END DO !from the beginning to the end
       end if
 
       !if ( obs_eph(i) == 0. .or. gpseph_local ) then

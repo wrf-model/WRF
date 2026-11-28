@@ -10,7 +10,7 @@ subroutine seaem(freqghz,zasat,zlsat,ts5,u10,v10,ehorz,evert)
 !
 !------------------------------------------------------------------------------
 !   input argument list:
-!     freqghz  - microwave freqency
+!     freqghz  - microwave frequency
 !     zasat    - local satellite zenith angle in radians
 !     zlsat    - satellite look angle in radians (not used)
 !     ts5      - skin temperature
@@ -258,13 +258,13 @@ subroutine seaem(freqghz,zasat,zlsat,ts5,u10,v10,ehorz,evert)
 !           dtde=one
 !           call adm_ehv2pem(zlsat(n),polar(kch),dtde, ehorz,evert )
 
-!          calculate corrected emissivity from corrected refectivity
+!          calculate corrected emissivity from corrected reflectivity
 !           ehorzr=ehorz - ffoam5*ehorz
 !           ffoam =-ehorz*ehorzr5 + ehorz
 !           evertr=evert - ffoam5*evert
 !           ffoam =ffoam-evert*evertr5 + evert
 
-!          calculate corrected emissivity from corrected refectivity
+!          calculate corrected emissivity from corrected reflectivity
 !           rhorzs = -ehorzr*xcorr15
 !           xcorr1 = -rhorzs5*ehorzr
 !           xcorr2h = ehorzr

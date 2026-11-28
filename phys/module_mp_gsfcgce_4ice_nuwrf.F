@@ -14,7 +14,7 @@
 !on 12/02/2011
 !EMK
 !
-!implemented 4ice writen by Steve Lang
+!implemented 4ice written by Steve Lang
 !added tervrh.F_v3.0
 !on 08/06/2012
 !
@@ -147,7 +147,7 @@ MODULE module_mp_gsfcgce_4ice_nuwrf
 !..The following 6 variables moved here to facilitate reflectivity
 !.. calculation similar to other MP schemes, because when they get
 !.. declared later in the code (now commented out), it makes things
-!.. more difficult to integreate with the radar code.
+!.. more difficult to integrate with the radar code.
       REAL ::     xnor, xnos, xnoh, xnog
       REAL ::     rhohail, rhograul
 !.. Values will be defined in subroutine fall_flux --- JJS 20150731
@@ -368,7 +368,7 @@ CONTAINS
 
    call consat_s ( itaobraun)
 
-! calculte fallflux and precipiation in MKS system
+! calculate fallflux and precipiation in MKS system
 
    call fall_flux(    dt_in,ql, qr, qi, qs, qg, qh, p,        &
                       rho, th, pii, z, dz8w, ht, rainnc,      &
@@ -611,7 +611,7 @@ CONTAINS
   REAL,    DIMENSION( ims:ime , kms:kme , jms:jme ),                  &
            INTENT(OUT)               :: preci3d, precs3d, precg3d, prech3d, precr3d
 
-! temperary vars
+! temporary vars
  
   REAL,    DIMENSION( kts:kte )           :: fv
   REAL                                    :: tmp1, term0
@@ -711,7 +711,7 @@ CONTAINS
 ! Calculate precipitation fluxes due to terminal velocities.
 !***********************************************************************
 !
-!- Calculate termianl velocity (vt?)  of precipitation q?z
+!- Calculate terminal velocity (vt?)  of precipitation q?z
 !- Find maximum vt? to determine the small delta t
 
 !$OMP PARALLEL DO &
@@ -1172,7 +1172,7 @@ CONTAINS
           endif  !y1
              vti(k)=vti(k) * 0.01                       ! convert back to MKS
 
-! EMK: prevent divsion by zero and underflow value
+! EMK: prevent division by zero and underflow value
           if (vti(k) .gt. 1.e-20) then
             if (k .eq. 1) then
                del_tv=amin1(del_tv,0.9*(zz(k)-topo(i,j))/vti(k))
@@ -2535,7 +2535,7 @@ CONTAINS
            i.eq.its .and. j.eq.jts ) then
          print *,'GSFCGCE 4ice scheme inside satice improve=',improve
          print *,'dx, thresh_evap = ', dx, thresh_evap  
-         print *,'no reduce suprious evaporation adjustment'
+         print *,'no reduce spurious evaporation adjustment'
       endif
 
       Rc=1.e-3               ! cloud droplet radius 10 microns
@@ -3059,7 +3059,7 @@ CONTAINS
                      chem_opt == 302 .or. chem_opt == 303) .and. &
                      (gsfcgce_gocart_coupling == 1) ) then
                   !JJS 20110602 vvvvv
-                  ! Conversion rate of cloud water to ice in the Bergeron porcess based on Meyer + DeMott formulae
+                  ! Conversion rate of cloud water to ice in the Bergeron process based on Meyer + DeMott formulae
                   !
                   ! convert gocart aerosol mass conc to IN
                   !      p0 need to be converted from g*cm/s2/cm2 to mb (hPa)
@@ -3074,7 +3074,7 @@ CONTAINS
                        i,1,k)
 
                   icn_out(i) = min(1.e3, max(0.01e0 ,  icn_out(i)) )
-                  r_nci = icn_out(i) * 1.e-3  !DeMotto's formuale
+                  r_nci = icn_out(i) * 1.e-3  !DeMotto's formulae
                   !JJS 20110602 ^^^^^
                end if ! if (gsfcgce_gocart_coupling == 1)
 #endif
@@ -3728,15 +3728,15 @@ CONTAINS
                       chem_opt == 302 .or. chem_opt == 303) .and. &
                       (gsfcgce_gocart_coupling == 1) ) then
                    !JJS 20110602 vvvvv
-                   ! Conversion rate of cloud water to ice in the Bergeron porcess based on Meyer + DeMott formulae
+                   ! Conversion rate of cloud water to ice in the Bergeron process based on Meyer + DeMott formulae
                    !
                    ! convert gocart aerosol mass conc to IN
                    !      p0 need to be converted from g*cm/s2/cm2 to mb (hPa)
                    !                call mass2icn(p0(i,k)*0.001,tair(i),aero(i,k,:), icn_out)
                    !                icn_cgs(i,k) = max(min_icn, icn_out) * 1.e-3   !IN conc [#/cm3] <-- [#/Litter]
                    !                icn_cgs(i,k) = icn_out * 1.e-3 !IN conc [#/cm3]
-                   !                r_nci = icn_cgs(i,k)  !DeMotto's formuale
-                   r_nci = icn_out(i) * 1.e-3  !DeMotto's formuale
+                   !                r_nci = icn_cgs(i,k)  !DeMotto's formulae
+                   r_nci = icn_out(i) * 1.e-3  !DeMotto's formulae
                    !JJS 20110602 ^^^^^
                 end if
 #endif
@@ -3877,7 +3877,7 @@ CONTAINS
                       chem_opt == 302 .or. chem_opt == 303) .and. &
                       (gsfcgce_gocart_coupling == 1) ) then
                    !JJS 20110602 vvvvv
-                   ! Conversion rate of cloud water to ice in the Bergeron porcess based on Meyer + DeMott formulae
+                   ! Conversion rate of cloud water to ice in the Bergeron process based on Meyer + DeMott formulae
                    !
                    ! convert gocart aerosol mass conc to IN
                    !      p0 need to be converted from g*cm/s2/cm2 to mb (hPa)
@@ -3886,8 +3886,8 @@ CONTAINS
                    !                call mass2icn(p0(i,k)*0.001,tair(i),aero(i,k,:), icn_out,i,k)
                    !                icn_out = min(1.e3, max(0.01e0 ,  icn_out) )
                    !                icn_cgs(i,k) = icn_out * 1.e-3 !IN conc [#/cm3]
-                   !                r_nci = icn_cgs(i,k)  !DeMotto's formuale
-                   r_nci = icn_out(i) * 1.e-3  !DeMotto's formuale
+                   !                r_nci = icn_cgs(i,k)  !DeMotto's formulae
+                   r_nci = icn_out(i) * 1.e-3  !DeMotto's formulae
                    !JJS 20110602 ^^^^^
                 end if
 #endif
@@ -4145,7 +4145,7 @@ CONTAINS
           endif !qr
 
 !!!!
-!!  add processes 30 & 33 fpr pmltg and pmlts
+!!  add processes 30 & 33 for pmltg and pmlts
 !!
 !!!!
 
@@ -4509,7 +4509,7 @@ CONTAINS
   implicit none
 !-----------------------------------------------------------------------------------------------------
 ! Comments:
-!  This subroutine compute auto conversion rate folloing Li and Daum [2004], which account for
+!  This subroutine compute auto conversion rate following Li and Daum [2004], which account for
 !  total cloud liquid water, particle number concentrations, PSD lambda, broadening parameters.
 !
 ! History:
@@ -4533,7 +4533,7 @@ CONTAINS
  real :: R6_thresh ! threshold of  mean radius of the sixth moment [cm]
  real :: R6        ! mean radius of the sixth moment [cm]
  real :: Heaviside_func  ! Heaviside step function (0 or 1)
- real :: lambda    ! slope of gamma size ditribution [1/cm]
+ real :: lambda    ! slope of gamma size distribution [1/cm]
 ! real :: No        ! intercept  [cm-4]
 
  real,parameter :: Rc = 10.e0 * 1.e-4 ! threshold of particle radus (10 micron) [cm]
@@ -4962,7 +4962,7 @@ CONTAINS
 
 !---------------------------------------------------------------------------------------------------
 ! Comments:
-! Compute drop effective radius from slope parameters (lambda) of expoential size distribution.
+! Compute drop effective radius from slope parameters (lambda) of exponential size distribution.
 !
 ! History:
 ! 02/2014  Toshi Matsui@NASA GSFC ; Initial

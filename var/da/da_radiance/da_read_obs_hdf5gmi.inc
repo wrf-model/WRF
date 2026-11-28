@@ -592,7 +592,7 @@ subroutine da_read_obs_hdf5gmi (iv, infile_tb, infile_clw)
          end do fov_loop
       end do scan_loop
 
-   ! Dellocate arrays
+   ! Deallocate arrays
       deallocate  (obstime)
 
       write(stdout,fmt='(3a,i7)') ' In file: ',trim(fname_tb(ifile)),' got num_gmi_file    : ',num_gmi_file_local

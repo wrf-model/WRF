@@ -666,7 +666,7 @@ subroutine LandRT_ini(did)
   integer :: lake_index, NLAKES_total
 
   real,  dimension(50)     :: BOTWID, TOPWID, HLINK_INIT, CHAN_SS, CHMann !Channel parms from table
-  real,  dimension(50)     :: TOPWIDCC, NCC    !channnel params of compound
+  real,  dimension(50)     :: TOPWIDCC, NCC    !channel params of compound
   real,  dimension(50)     :: CHANN_K ! Channel infiltration param
   integer :: i,j,k, ll, count
 
@@ -1413,7 +1413,7 @@ subroutine LandRT_ini(did)
   if (nlst(did)%CHANRTSWCRT.eq.1 .or. nlst(did)%CHANRTSWCRT .eq. 2) then
 
    !---------------------------------------------------------------------
-   !DJG,DNY  Initalize lake and channel heights, this may be overwritten by RESTART
+   !DJG,DNY  Initialize lake and channel heights, this may be overwritten by RESTART
    !--------------------------------------------------------------------
      if (nlst(did)%channel_option .eq. 3) then
 #ifdef MPP_LAND
@@ -1616,7 +1616,7 @@ subroutine LandRT_ini(did)
               rt_domain(did)%HLINK(j) = HLINK_INIT(5)
            endif
 
-           rt_domain(did)%CVOL(j) = (rt_domain(did)%Bw(j)+ 1/rt_domain(did)%ChSSLP(j)*rt_domain(did)%HLINK(j))*rt_domain(did)%HLINK(j)*rt_domain(did)%CHANLEN(j) !-- initalize channel volume
+           rt_domain(did)%CVOL(j) = (rt_domain(did)%Bw(j)+ 1/rt_domain(did)%ChSSLP(j)*rt_domain(did)%HLINK(j))*rt_domain(did)%HLINK(j)*rt_domain(did)%CHANLEN(j) !-- initialize channel volume
         end do
 
      endif  !End if channel option eq 3; else;

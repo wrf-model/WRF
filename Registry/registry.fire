@@ -288,7 +288,7 @@ rconfig   real    hght_perturbation      namelist,fire         max_domains      
 #
 rconfig   logical stretch_grd            namelist,fire         max_domains           .true.  -      "stretch_grd" "vertical grid stretching (on/off)" ""
 rconfig   logical stretch_hyp            namelist,fire         max_domains           .false. -      "stretch_hyp" "hyperbolic tang grid stretching (more levels at the surface)" ""
-rconfig   real    z_grd_scale            namelist,fire         max_domains           0.40    -      "z_grd_scale" "zscale parameter for hyperbolic grid streching" "m"
+rconfig   real    z_grd_scale            namelist,fire         max_domains           0.40    -      "z_grd_scale" "zscale parameter for hyperbolic grid stretching" "m"
 #
 # ------------------------------------------------------------------------------------------------------------------------
 # surface initialization
@@ -330,7 +330,7 @@ rconfig  integer  fire_upwinding_reinit     namelist,fire         max_domains   
 rconfig  logical  fire_is_real_perim        namelist,fire         max_domains         .false.       -     ".false. = point/line ignition, .true. = observed perimeter"
 rconfig  integer  fire_lsm_band_ngp         namelist,fire         max_domains               4       -     "number of grid points around lfn=0 that WENO5/3 is used (ENO1 elsewhere), for fire_upwinding_reinit=4,5 and fire_upwinding=8,9 options"
 rconfig  logical  fire_lsm_zcoupling        namelist,fire         max_domains         .false.       -     "flag to activate reference velocity at a different height from fire_wind_height"
-rconfig  real     fire_lsm_zcoupling_ref    namelist,fire         max_domains             50.       -     "reference height from wich u at fire_wind_hegiht is calculated using a logarithmic profile" "m"
+rconfig  real     fire_lsm_zcoupling_ref    namelist,fire         max_domains             50.       -     "reference height from which u at fire_wind_hegiht is calculated using a logarithmic profile" "m"
 rconfig  real     fire_tracer_smoke         namelist,fire         max_domains            0.02       -     "parts per unit of burned fuel becoming smoke (tracer_opt=3)" "g_smoke/kg_air"
 rconfig  real     fire_viscosity_bg         namelist,fire         max_domains             0.4       -     "fire_viscosity_bg"   "artificial viscosity in the near-front region" "1"
 rconfig  real     fire_viscosity_band       namelist,fire         max_domains             0.5       -     "fire_viscosity_band"   "number of times the hybrid advection band to transition from fire_viscosity_bg to fire_viscosity" "1"
@@ -364,10 +364,10 @@ rconfig   integer fs_firebrand_gen_maxhgt        namelist,fire  1      50       
 rconfig   logical fs_firebrand_gen_levrand       namelist,fire  1    .false.    -      "fs_firebrand_gen_levrand"      "Flag to generate firebrands at random heights between 1m AGL and maxhgt"
 rconfig   integer fs_firebrand_gen_levrand_seed  namelist,fire  1       1       -      "fs_firebrand_gen_levrand_seed" "Seed used for fs_firebrand_gen_levrand"
 rconfig   integer fs_firebrand_gen_mom3d_dt      namelist,fire  1       4       -      "fs_firebrand_gen_mom3d_dt"     "Number of timesteps for firebrands to build 3-D momentum after generation (i.e., massless particle transport)"
-rconfig   real    fs_firebrand_gen_prop_diam     namelist,fire  1      10.0     -      "fs_firebrand_gen_prop_diam"    "Firebrand initial proporty: Diameter [mm]"
-rconfig   real    fs_firebrand_gen_prop_effd     namelist,fire  1      10.0     -      "fs_firebrand_gen_prop_effd"    "Firebrand initial proporty: Effective Diameter [mm]"
-rconfig   real    fs_firebrand_gen_prop_temp     namelist,fire  1     900.0     -      "fs_firebrand_gen_prop_temp"    "Firebrand initial proporty: Temperature [K]"
-rconfig   real    fs_firebrand_gen_prop_tvel     namelist,fire  1       0.0     -      "fs_firebrand_gen_prop_tvel"    "Firebrand initial proporty: Terminal Velocity [m/s] (set to zero for top of trajectory)"
+rconfig   real    fs_firebrand_gen_prop_diam     namelist,fire  1      10.0     -      "fs_firebrand_gen_prop_diam"    "Firebrand initial property: Diameter [mm]"
+rconfig   real    fs_firebrand_gen_prop_effd     namelist,fire  1      10.0     -      "fs_firebrand_gen_prop_effd"    "Firebrand initial property: Effective Diameter [mm]"
+rconfig   real    fs_firebrand_gen_prop_temp     namelist,fire  1     900.0     -      "fs_firebrand_gen_prop_temp"    "Firebrand initial property: Temperature [K]"
+rconfig   real    fs_firebrand_gen_prop_tvel     namelist,fire  1       0.0     -      "fs_firebrand_gen_prop_tvel"    "Firebrand initial property: Terminal Velocity [m/s] (set to zero for top of trajectory)"
 rconfig   real    fs_firebrand_dens              namelist,fire  1  513000.0     -      "fs_firebrand_dens"             "Density of firebrands [g/m3]"
 rconfig   real    fs_firebrand_dens_char         namelist,fire  1  299000.0     -      "fs_firebrand_dens_char"        "Density of char [g/m3]"
 rconfig   integer fs_firebrand_max_life_dt       namelist,fire  1     200       -      "fs_firebrand_max_life_dt"      "Max lifetime of firebrands (multiple of the model timestep - in sec)" 

@@ -1282,7 +1282,7 @@ subroutine rand_filter(y_in,y_sig_in,yo_in,yo_obs_typ_in,yo_typ_in,yo_subtyp_in,
                        yo_prs_ot,yo_tim_ot,idx_in,nobs_in,nobs_ot,nobs_flt,num_mems,iseed)
    implicit none
 !
-! DEFINE INCOMMING/OUTGOING VARIABLES 
+! DEFINE INCOMING/OUTGOING VARIABLES
    integer,intent(in) :: nobs_in,nobs_flt,nobs_ot,num_mems,iseed
    integer,intent(in),dimension(nobs_in,num_mems) :: idx_in   
 
@@ -1304,7 +1304,7 @@ subroutine rand_filter(y_in,y_sig_in,yo_in,yo_obs_typ_in,yo_typ_in,yo_subtyp_in,
 ! SET PARAMETERS
    zscl=1000000.
 !
-! SETUP MAPPING BETWEEN INCOMMING AND PRE_FILTERED INDEXES
+! SETUP MAPPING BETWEEN INCOMING AND PRE_FILTERED INDEXES
    idx=0
    allocate(idx_flt(nobs_flt))
    do i=1,nobs_in

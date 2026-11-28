@@ -23,7 +23,7 @@ MODULE module_aerosols_soa_vbs_het
 !
 !!WARNING! The deposition of organic condensable vapours (cvasoa* and cvbsoa*) are highly uncertain due to lack of observations.
 ! Currently this process is parameterized using modeled dry deposition velocities of HNO3 (multiplied by "depo_fact" for OCVs).
-! Paper by Ahmadov et al. (2012) desribes this approach. The default value for "depo_fact" in WRF-CHEM is 0.25.
+! Paper by Ahmadov et al. (2012) describes this approach. The default value for "depo_fact" in WRF-CHEM is 0.25.
 ! A user can set a different value for "depo_fact" in namelist.input.
 !
 !!WARNING! Another uncertainty is wet removal of OCVs! This is neglected in the current version of the WRF-CHEM code.
@@ -814,7 +814,7 @@ SUBROUTINE     soa_vbs_het_depdriver (id,config_flags,ktau,dtstep,              
       REAL XLM( BLKSIZE )           ! atmospheric mean free path [ m ]
       REAL AMU( BLKSIZE )           ! atmospheric dynamic viscosity [ kg/m s ]
       
-! *** followng is for future version       
+! *** following is for future version
       REAL VSED( BLKSIZE, NASPCSSED) ! sedimentation velocity [ m s**-1 ]
       REAL VDEP( BLKSIZE, NASPCSDEP) ! deposition velocity [ m s**-1 ]
 
@@ -1422,7 +1422,7 @@ SUBROUTINE aeroproc(blksize,nspcsda,numcells,layer,cblk,dt,blkta,blkprs, &
 !     IMPLICIT NONE
 ! dimension of arrays             
       INTEGER blksize
-! number of species in CBLK       
+! number of species in CBLK
       INTEGER nspcsda
 ! actual number of cells in arrays
       INTEGER numcells
@@ -1652,11 +1652,11 @@ SUBROUTINE aeroproc(blksize,nspcsda,numcells,layer,cblk,dt,blkta,blkprs, &
       INTEGER blksize
 ! actual number of cells in arrays
       INTEGER numcells
-! nmber of species in CBLK        
+! number of species in CBLK
       INTEGER nspcsda
       REAL cblk(blksize,nspcsda)
           REAL dt
-! *** Meteorological information in blocked arays:
+! *** Meteorological information in blocked arrays:
       REAL blkta(blksize) ! Air temperature [ K ]                   
       REAL blkrh(blksize) ! Fractional relative humidity            
       REAL dgnuc(blksize) ! nuclei mode geometric mean diamete
@@ -1804,14 +1804,14 @@ SUBROUTINE aeroproc(blksize,nspcsda,numcells,layer,cblk,dt,blkta,blkprs, &
 !                        the error function. Also added coarse mode.
 !       Revised 9/18/97 by FSB to fix mass transfer from Aitken to
 !                       accumulation mode by coagulation
-!       Revised 10/27/97 by FSB to modify code to use primay emissions
+!       Revised 10/27/97 by FSB to modify code to use primary emissions
 !                        and to correct 3rd moment updates.
 !                        Also added coarse mode.
 !       Revised 11/4/97 by FSB to fix error in other anthropogenic PM2.5
 !       Revised  11/5/97 by FSB to fix error in MSTRNSFR
 !       Revised  11/6/97 FSB to correct the expression for FACTRANS to
 !                        remove the 6/pi coefficient. UAS found this.
-!       Revised 12/15/97 by FSB to change equations for mass concentratin
+!       Revised 12/15/97 by FSB to change equations for mass concentration
 !                        to a chemical production form with analytic
 !                        solutions for the Aitken mode and to remove
 !                        time stepping of the 3rd moments. The mass concentration
@@ -1823,7 +1823,7 @@ SUBROUTINE aeroproc(blksize,nspcsda,numcells,layer,cblk,dt,blkta,blkprs, &
 !                        intermodal transfer rate of 3rd moment in place
 !                        of 3rd moment coagulation rate.
 !       Revised 5/5/98   added new renaming criterion based on diameters
-!       Added   3/23/98  by BS condensational groth factors for organics
+!       Added   3/23/98  by BS condensational growth factors for organics
 
 !**********************************************************************
 !     IMPLICIT NONE
@@ -1834,7 +1834,7 @@ SUBROUTINE aeroproc(blksize,nspcsda,numcells,layer,cblk,dt,blkta,blkprs, &
       INTEGER blksize
 ! actual number of cells in arrays
       INTEGER numcells
-! nmber of species in CBLK        
+! number of species in CBLK
       INTEGER nspcsda
 ! model layer                     
       INTEGER layer
@@ -1939,7 +1939,7 @@ SUBROUTINE aeroproc(blksize,nspcsda,numcells,layer,cblk,dt,blkta,blkprs, &
 ! *** Statement function given for error function. Source is
 !     Meng, Z., and J.H.Seinfeld (1994) On the source of the submicromet
 !      droplet mode of urban and regional aerosols. Aerosol Sci. and Tec
-!      20:253-265. They cite Reasearch & Education Asociation (REA), (19
+!      20:253-265. They cite Research & Education Association (REA), (19
 !      Handbook of Mathematical, Scientific, and Engineering Formulas,
 !      Tables, Functions, Graphs, Transforms: REA, Piscataway, NJ. p. 49
 
@@ -2287,7 +2287,7 @@ SUBROUTINE aeroproc(blksize,nspcsda,numcells,layer,cblk,dt,blkta,blkprs, &
 
     cblk(lcell,vnu0) = phnum*cblk(lcell,vnu0)
 
-! *** Rename mass from Aitken mode to acumulation mode. The mass transfe
+! *** Rename mass from Aitken mode to accumulation mode. The mass transfe
 !     to the accumulation mode is proportional to the amount of 3rd mome
 !     transferred, therefore FM3 is used for mass transfer.
 
@@ -2417,7 +2417,7 @@ SUBROUTINE awater(irhx,mso4,mnh4,mno3,wh2o)
 !     In sections 1 through 3, only the sulfates can affect the amount o
 !     on the particles.
 !     In section 4, we have fully neutralized sulfate, and extra ammoniu
-!     allows more nitrate to be present. Thus, the ammount of water is c
+!     allows more nitrate to be present. Thus, the amount of water is c
 !     using ZSR for ammonium sulfate and ammonium nitrate. Crystallizati
 !     assumed to occur in sections 2,3,and 4. See detailed discussion be
 
@@ -2652,7 +2652,7 @@ SUBROUTINE awater(irhx,mso4,mnh4,mno3,wh2o)
 
       INTEGER nspcsda
 
-! nmber of species in CBLK        
+! number of species in CBLK
       REAL cblk(blksize,nspcsda) ! main array of variables         
       REAL blkta(blksize) ! Air temperature [ K ]           
       REAL pdensn(blksize) ! average particel density in Aitk
@@ -2944,10 +2944,10 @@ END SUBROUTINE coagrate
       INTEGER blksize
 ! actual number of cells in arrays
       INTEGER numcells
-! nmber of species in CBLK        
+! number of species in CBLK
       INTEGER nspcsda,igrid,jgrid,kgrid
       REAL cblk(blksize,nspcsda) 
-! *** Meteorological information in blocked arays:
+! *** Meteorological information in blocked arrays:
 
 ! main array of variables         
       REAL blkta(blksize) ! Air temperature [ K ]                   
@@ -3145,7 +3145,7 @@ END SUBROUTINE coagrate
         cblk(lcell,vhno3) = gno3
         cblk(lcell,vhcl) = ghcl
 !        cblk(lcell,vsulf) = epsilc
-!end threatment for the equilibrium for fine mode.              
+!end treatment for the equilibrium for fine mode.
 !**************************************************************************************
       END DO !  end loop on cells
 
@@ -3176,10 +3176,10 @@ END SUBROUTINE coagrate
       INTEGER blksize
 ! actual number of cells in arrays
       INTEGER numcells
-! nmber of species in CBLK        
+! number of species in CBLK
       INTEGER nspcsda
       REAL cblk(blksize,nspcsda) 
-! *** Meteorological information in blocked arays:
+! *** Meteorological information in blocked arrays:
 
 ! main array of variables         
       REAL blkta(blksize) ! Air temperature [ K ]                   
@@ -3724,7 +3724,7 @@ END SUBROUTINE klpnuc
 
       INTEGER nspcsda
 
-! nmber of species in CBLK        
+! number of species in CBLK
       REAL cblk(blksize,nspcsda) ! main array of variables          
       REAL blkta(blksize) ! Air temperature [ K ]            
       REAL blkprs(blksize) 
@@ -3925,7 +3925,7 @@ SUBROUTINE nuclcond(blksize,nspcsda,numcells,cblk,dt,layer,blkta,blkprs, &
 
 ! *** In this version, the method od RPM is followed where
 !     the diffusivity, the average molecular ve3locity, and
-!     the accomodation coefficient for sulfuric acid are used for
+!     the accommodation coefficient for sulfuric acid are used for
 !     the organics. This is for consistency.
 !       Future versions will use the correct values.  FSB 12/12/96
 
@@ -3956,7 +3956,7 @@ SUBROUTINE nuclcond(blksize,nspcsda,numcells,cblk,dt,layer,blkta,blkprs, &
 ! dimension of arrays             
       INTEGER blksize
       INTEGER layer
-! number of species in CBLK       
+! number of species in CBLK
       INTEGER nspcsda
 ! actual number of cells in arrays
       INTEGER numcells
@@ -4132,7 +4132,7 @@ REAL orgbio4rat(blksize)
 ! *** calculate the total change to sulfuric acid vapor from production
 !                      and condensation
 
-        vapor1 = cblk(lcell,vsulf) ! curent sulfuric acid vapor        
+        vapor1 = cblk(lcell,vsulf) ! current sulfuric acid vapor
         vapor2 = cblk(lcell,vsulf) - so4rat(lcell)* & 
           dt
 ! vapor at prev
@@ -4262,7 +4262,7 @@ REAL orgbio4rat(blksize)
         chemrat = max(chemrat,0.0) 
 ! *** Now calculate the rate of condensation on existing particles.
 
-! Prevent CHEMRAT from being negativ
+! Prevent CHEMRAT from being negative
         cgrn3(lcell) = cgrn3(lcell) + chemrat*fconcn(lcell) + &
           chemrat_org*fconcn_org(lcell)
         cgra3(lcell) = chemrat*fconca(lcell) + chemrat_org*fconca_org(lcell)
@@ -4400,7 +4400,7 @@ SUBROUTINE rpmares_old(so4,hno3,no3,nh3,nh4,rh,temp,aso4,ano3,ah2o,anh4, &
 !   F.Binkowski 7/30/97   Changed to Bromley method for multicomponent
 !                         activity coefficients. The binary activity coe
 !                         are the same as the previous version
-!   F.Binkowski 8/1/97    Chenged minimum sulfate from 0.0 to 1.0e-6 i.e
+!   F.Binkowski 8/1/97    Changed minimum sulfate from 0.0 to 1.0e-6 i.e
 !                         1 picogram per cubic meter
 
 !-----------------------------------------------------------------------
@@ -4558,7 +4558,7 @@ SUBROUTINE rpmares_old(so4,hno3,no3,nh3,nh4,rh,temp,aso4,ano3,ah2o,anh4, &
       REAL kan
 ! Variables used for ammonia solubili
       REAL khat
-! Equilibrium constant for nitric aci
+! Equilibrium constant for nitric acid
       REAL kna
 ! Henry's Law Constant for ammonia   
       REAL kph
@@ -4883,7 +4883,7 @@ SUBROUTINE rpmares_old(so4,hno3,no3,nh3,nh4,rh,temp,aso4,ano3,ah2o,anh4, &
             RETURN
           END IF
 
-!...choose minimum positve root
+!...choose minimum positive root
 
           IF ((rr1*rr2)<0.0) THEN
             xno3 = max(rr1,rr2)
@@ -5251,7 +5251,7 @@ END SUBROUTINE rpmares_old
 ! number of species in CBLK ciarev02           
       REAL cblk(blksize,nspcsda) 
 
-! *** Meteorological information in blocked arays:
+! *** Meteorological information in blocked arrays:
 
 ! *** Thermodynamic variables:
 
@@ -5511,8 +5511,8 @@ SUBROUTINE soa_vbs(layer,blkta,blkprs,organt1rat,organt2rat,organt3rat,  &
 !sam Anthro (1000 ug/m3)-    asoa4   Biogenic (1000 ug/m3)-    bsoa4   !
 !bs                                                                    !
 !bs  This code considers two cases:                                    !
-!bs   i) initil absorbing mass is existend in the aerosol phase        !
-!bs  ii) a threshold has to be exeeded before partitioning (even below !
+!bs   i) initil absorbing mass is existent in the aerosol phase        !
+!bs  ii) a threshold has to be exceeded before partitioning (even below !
 !bs      saturation) will take place.                                  !
 !bs                                                                    !
 !bs  The temperature dependence of the saturation concentrations are   !
@@ -5691,7 +5691,7 @@ SUBROUTINE soa_vbs(layer,blkta,blkprs,organt1rat,organt2rat,organt3rat,  &
       ! this is a correction factor to take into account the density of aerosols, from Murphy et al. (2009)
       ! Now it's determined by namelist
 
-      ! in the preliminary version we use alphlowN only to check what would be the maximum yeild
+      ! in the preliminary version we use alphlowN only to check what would be the maximum yield
       ! SAM:  from Murphy et al. 2009
       DATA alphlowN /   &
       0.0000, 0.0750, 0.0000, 0.0000,   & ! ALK4
@@ -5920,7 +5920,7 @@ end do
 ! minit is taken into account
 
 !bs * If MINIT is set to zero partitioning will occur if the pure
-!bs * saturation concentation is exceeded (Pandis et al. 1992).
+!bs * saturation concentration is exceeded (Pandis et al. 1992).
 !bs * If some amount of absorbing organic mass is formed gas/particle
 !bs * partitioning will follow the ideal solution approach.
 !bs
@@ -6345,7 +6345,7 @@ END SUBROUTINE VDVG
 !   Gaussian Quadrature numerical integration over diameter range for each mode.
 ! Quadrature taken from Abramowitz and Stegun (1974), equation 25.4.46 and Table 25.10
 ! Quadrature points are the zeros of Hermite polynomials of order NGAUSdv
-!   Numerical Integration allows more complete discription of the
+!   Numerical Integration allows more complete description of the
 !   Cunningham Slip correction factor, Interception Term (not included previously),
 !   and the correction due to rebound for higher diameter particles.
 !   Sedimentation velocities the same as original Binkowski code, also the
@@ -6482,9 +6482,9 @@ SUBROUTINE VDVG_2( BLKSIZE, NSPCSDA, NUMCELLS,         &
     !       vdplim=.002*UTSCALE
             vdplim=min(vdplim,.02)
             RSURFQ=RA(LCELL)+1./vdplim
-    !       RSURFQ=RA(LCELL)+1./(UTSCALE*(Eff_dif+Eff_imp+Eff_int)*RBcor) ! Total surface resistence
+    !       RSURFQ=RA(LCELL)+1./(UTSCALE*(Eff_dif+Eff_imp+Eff_int)*RBcor) ! Total surface resistance
     !
-!   limit this here to be consisten with the gocart routine, which bases this on Walcek et al. 1986
+!   limit this here to be consistent with the gocart routine, which bases this on Walcek et al. 1986
 !
     !       RSURFQ=max(RSURFQ,50.)
             SUM0=SUM0+WGAUS(N)*(VSEDQ + 1./RSURFQ)  ! Quadrature sum for 0 moment
@@ -6512,9 +6512,9 @@ SUBROUTINE VDVG_2( BLKSIZE, NSPCSDA, NUMCELLS,         &
             vdplim=UTSCALE*(Eff_dif+Eff_imp+Eff_int)*RBcor
             vdplim=min(vdplim,.02)
             RSURFQ=RA(LCELL)+1./vdplim
-!       RSURFQ=RA(LCELL)+1./(UTSCALE*(Eff_dif+Eff_imp+Eff_int)*RBcor) ! Total surface resistence
+!       RSURFQ=RA(LCELL)+1./(UTSCALE*(Eff_dif+Eff_imp+Eff_int)*RBcor) ! Total surface resistance
 !
-!   limit this here to be consisten with the gocart routine, which bases this on Walcek et al. 1986
+!   limit this here to be consistent with the gocart routine, which bases this on Walcek et al. 1986
 !
 !       RSURFQ=max(RSURFQ,50.)
         SUM0=SUM0+WGAUS(N)*(VSEDQ + 1./RSURFQ)  ! Quadrature sum for 0 moment
@@ -6549,9 +6549,9 @@ SUBROUTINE VDVG_2( BLKSIZE, NSPCSDA, NUMCELLS,         &
            vdplim=UTSCALE*(Eff_dif+Eff_imp+Eff_int)*RBcor
            vdplim=min(vdplim,.02)
            RSURFQ=RA(LCELL)+1./vdplim
-!       RSURFQ=RA(LCELL)+1./(UTSCALE*(Eff_dif+Eff_imp+Eff_int)*RBcor) ! Total surface resistence
+!       RSURFQ=RA(LCELL)+1./(UTSCALE*(Eff_dif+Eff_imp+Eff_int)*RBcor) ! Total surface resistance
 !
-!   limit this here to be consisten with the gocart routine, which bases this on Walcek et al. 1986
+!   limit this here to be consistent with the gocart routine, which bases this on Walcek et al. 1986
 !
 !       RSURFQ=max(RSURFQ,50.)
            SUM0=SUM0+WGAUS(N)*(VSEDQ + 1./RSURFQ)  ! Quadrature sum for 0 moment
@@ -7264,7 +7264,7 @@ SUBROUTINE soa_vbs_seasalt_emiss(                                        &
 
 !liqy      
 !comment out the old assumption, i.e. "Apportion seasalt mass emissions
-!assumming that seasalt is pure NaCl".
+!assuming that seasalt is pure NaCl".
 !       fracna = mw_na_aer / (mw_na_aer + mw_cl_aer)
 !       fraccl = 1.0 - fracna
                 fracna = 10.7838/35.171

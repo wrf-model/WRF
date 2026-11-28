@@ -8,7 +8,7 @@ subroutine da_transform_xtoy_gpsztd ( grid, iv, y )
 !
 !      when the receiver below the model surface, a correction,
 !      "dzd" should be subtructed from the observed ZTD;
-!      when the receiver higher than the model suface, a
+!      when the receiver higher than the model surface, a
 !      correction "ztd" should be added to the observed ZTD.
 !          
 !----------------------------------------------------------------

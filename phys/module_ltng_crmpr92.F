@@ -259,7 +259,7 @@
  INTEGER, INTENT(IN   )    ::       ims,ime, jms,jme, kms,kme
  INTEGER, INTENT(IN   )    ::       ips,ipe, jps,jpe, kps,kpe
 
-! Primary inputs and outpus
+! Primary inputs and outputs
  REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) :: total_flashrate   
  REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(  OUT) :: ic_flashrate, cg_flashrate
 

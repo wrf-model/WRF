@@ -427,7 +427,7 @@
        CASE ('Qscat');                                     platform = "QSCAT";
        CASE ('PROFL');                                     platform = "PROFL";
        CASE ('AIRSRET');                                   platform = "AIRSRET";
-       CASE ('UNKNOWN');                                   platform = "UNKONWN";
+       CASE ('UNKNOWN');                                   platform = "UNKNOWN";
 
        END SELECT
      

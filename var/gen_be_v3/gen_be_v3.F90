@@ -2107,7 +2107,7 @@ subroutine compute_pert
 #endif
                if ( myproc == root ) then
                   ! root processor writes out globuf inside the variable loop
-                  write(stdout,'(a,a)') ' Outputing ensemble perturbations for ', trim(varnames(iv))
+                  write(stdout,'(a,a)') ' Outputting ensemble perturbations for ', trim(varnames(iv))
 
                   if ( ep_format == 2 ) then
                      output_file = 'ep.'//trim(outnames(iv))
@@ -2320,9 +2320,9 @@ subroutine compute_regcoeff_unbalanced
    real*8, allocatable :: evec(:,:)                  ! Gridpoint eigenvectors
    real*8, allocatable :: eval(:)                    ! Gridpoint sqrt(eigenvalues)
    real, allocatable   :: LamInvET(:,:)              ! ET/sqrt(Eigenvalue)
-   real, allocatable   :: regcoeff1(:)               ! psi/chi regression cooefficient
-   real, allocatable   :: regcoeff2(:,:)             ! psi/ps regression cooefficient
-   real, allocatable   :: regcoeff3(:,:,:)           ! psi/T regression cooefficient
+   real, allocatable   :: regcoeff1(:)               ! psi/chi regression coefficient
+   real, allocatable   :: regcoeff2(:,:)             ! psi/ps regression coefficient
+   real, allocatable   :: regcoeff3(:,:,:)           ! psi/T regression coefficient
 
    integer :: ic, ie, iv
    integer :: istart_member4cov, iend_member4cov  ! index for covariance loop
@@ -3073,7 +3073,7 @@ subroutine compute_bv_sl
 
          if ( var_dim(iv) == 3 ) then
 
-            ! raed eigenvectors, eigenvalues
+            ! read eigenvectors, eigenvalues
             filename = 'EV_'//trim(varnames(iv))//'.dat'
             open (iunit, file = filename, form='unformatted')
             read(iunit) !varnames(iv)
@@ -4317,7 +4317,7 @@ subroutine da_uv_to_div_c( dim1, dim2, dim3, ds, &
                            u, v, div )
 
 !------------------------------------------------------------------------------
-!  PURPOSE: Calculate divergence on a co-ordinate surface, given an input
+!  PURPOSE: Calculate divergence on a coordinate surface, given an input
 !           wind field on an Arakawa C-grid.
 !
 !  NOTE: No boundary conditions required on the WRF Arakawa C-grid as
@@ -4399,7 +4399,7 @@ subroutine da_uv_to_vor_c( dim1, dim2, dim3, ds, &
                            u, v, vor )
 
 !------------------------------------------------------------------------------
-!  PURPOSE: Calculate vorticity on a co-ordinate surface, given an input
+!  PURPOSE: Calculate vorticity on a coordinate surface, given an input
 !           wind field on an Arakawa C-grid.
 !
 !  NOTE: Zero vorticity boundary conditions.

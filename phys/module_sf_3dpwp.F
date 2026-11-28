@@ -690,7 +690,7 @@ CONTAINS
                om_v(k) = om_v(k)*(1. - dt*ucon)
             enddo
           endif
-! In pwp origional code, Dr. Price turns off the diffusion
+! In pwp original code, Dr. Price turns off the diffusion
 ! To use it, check the diffusion parameter in subroutine first
 !         call diffusion(okms,okme,dt,om_tmp,om_depth)
 !         call diffusion(okms,okme,dt,om_s,om_depth)

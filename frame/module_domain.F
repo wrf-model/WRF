@@ -1315,7 +1315,7 @@ CONTAINS
       ! this argument is a bitmask. First bit is time level 1, second is time level 2, and so on.
       ! e.g. to set both 1st and second time level, use 3
       !      to set only 1st                        use 1
-      !      to set only 2st                        use 2
+      !      to set only 2nd                        use 2
       INTEGER , INTENT(IN)            :: tl_in
   
       ! true if the allocation is for an intermediate domain (for nesting); only certain fields allocated
@@ -1410,7 +1410,7 @@ CONTAINS
       ! this argument is a bitmask. First bit is time level 1, second is time level 2, and so on.
       ! e.g. to set both 1st and second time level, use 3
       !      to set only 1st                        use 1
-      !      to set only 2st                        use 2
+      !      to set only 2nd                        use 2
       INTEGER , INTENT(IN)            :: tl_in
   
       ! true if the allocation is for an intermediate domain (for nesting); only certain fields allocated
@@ -2650,7 +2650,7 @@ CONTAINS
         !
         ! NOTE:  test_adjust_io_timestr() (see below) is a self-test that 
         !        prints PASS/FAIL/ERROR messages in a standard format.  All 
-        !        of the other tests should be strucutred the same way, 
+        !        of the other tests should be structured the same way,
         !        someday.  
         !
         CALL nl_get_self_test_domain( 1, self_test_domain )
@@ -2974,7 +2974,7 @@ END SUBROUTINE get_current_grid_name
    END SUBROUTINE get_ijk_from_grid_id
 
 ! version of this routine that can be called from set_scalar_indices_from_config in
-! module_configure, which can not USE module_domain without creating a circular use assocaition
+! module_configure, which can not USE module_domain without creating a circular use association
    SUBROUTINE modify_io_masks ( id )
      USE module_domain, ONLY : domain, modify_io_masks1, head_grid, find_grid_by_id
      IMPLICIT NONE

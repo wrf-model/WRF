@@ -55,7 +55,7 @@
 
   logical :: global, smoothing
 
-! definition of defaut namelist values
+! definition of default namelist values
 !-----------------------------------------
   integer :: sband =1
   integer :: eband =18

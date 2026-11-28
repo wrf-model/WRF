@@ -13,7 +13,7 @@ MODULE MODULE_VASH_SETTLING
               chem_vash,chem_volc,chem_volc_4bin,p_qc,       &
               num_volc_diags     ! A. Ukhov.
 
-!Vertical grid indeces
+!Vertical grid indices
 !     _
 !i+3 |_| l2-3
 !i+2 |_| l2-2
@@ -200,7 +200,7 @@ subroutine vsettling(imx,jmx, lmx, nmx, g0, &
 
      vsettl = 4.0/9.0 * g0 * den(k) * reff(k)**2 / dyn_visc
 
-     ! Determine the maximum time-step satisying the CFL condition:
+     ! Determine the maximum time-step satisfying the CFL condition:
      ! dt <= (dz)_min / v_settl
      ntdt = INT(dt)
      dtmax = dzmin / vsettl
@@ -764,7 +764,7 @@ REAL*8 :: rwet_priv, rho_priv
 REAL(4),PARAMETER :: onethird = 1.0/3.0
 REAL(4),PARAMETER :: kappa = 1.19
 
-! Determine the maximum time-step satisying CFL: dt <= (dz)_min / v_settl
+! Determine the maximum time-step satisfying CFL: dt <= (dz)_min / v_settl
 dzmin = MINVAL(delz(:,:,:))
 vsettl = 4.0/9.0 * g0 * den * reff**2 / dyn_visc
 

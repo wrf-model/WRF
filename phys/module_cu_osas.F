@@ -957,7 +957,7 @@ CONTAINS
         ENDIF
       ENDDO
 !
-!  CLOUD PROPERTY BELOW CLOUD BASE IS MODIFIED BY THE ENTRAINMENT PROCES
+!  CLOUD PROPERTY BELOW CLOUD BASE IS MODIFIED BY THE ENTRAINMENT PROCESS
 !
       DO K = 2, KM1
         DO I = 1, IM
@@ -1598,7 +1598,7 @@ CONTAINS
       ENDDO
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-!--- THE ABOVE CHANGED ENVIRONMENT IS NOW USED TO CALULATE THE
+!--- THE ABOVE CHANGED ENVIRONMENT IS NOW USED TO CALCULATE THE
 !--- EFFECT THE ARBITRARY CLOUD (WITH UNIT MASS FLUX)
 !--- WOULD HAVE ON THE STABILITY,
 !--- WHICH THEN IS USED TO CALCULATE THE REAL MASS FLUX,
@@ -1922,7 +1922,7 @@ CONTAINS
           ACRTFCT(I) = MIN(ACRTFCT(I),val2)
           ACRTFCT(I) = 1. - ACRTFCT(I)
 !
-!  modify ACRTFCT(I) by colume mean rh if RHBAR(I) is greater than 80 percent
+!  modify ACRTFCT(I) by column mean rh if RHBAR(I) is greater than 80 percent
 !
 !         if(RHBAR(I).ge..8) THEN
 !           ACRTFCT(I) = ACRTFCT(I) * (.9 - min(RHBAR(I),.9)) * 10.

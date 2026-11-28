@@ -71,7 +71,7 @@
    !           positive toward the east, and j is the north-south direction, 
    !           positive toward the north.  
    !       2.  Origin is at (1,1) and is located at the southwest corner,
-   !           regardless of hemispere.
+   !           regardless of hemisphere.
    !       3.  Grid spacing (dx) is always positive.
    !       4.  Values of true latitudes must be positive for NH domains
    !           and negative for SH domains.
@@ -114,7 +114,7 @@
    ! to declare a variable of the same type to hold your map projection
    ! information.  It also defines some integer parameters that contain
    ! the projection codes so one only has to use those variable names rather
-   ! than remembering the acutal code when using them.  The basic steps are
+   ! than remembering the actual code when using them.  The basic steps are
    ! as follows:
    !  
    !   1.  Ensure the "use map_utils" is in your declarations.

@@ -146,7 +146,7 @@ subroutine da_y_facade_to_global( re_slice, template, re_glob_slice )
    !  3) Refactor below...  
    !  4) Optimize performance.  
    ! At the moment this refactoring is relatively low-priority since 
-   ! da_y_facade_to_global() is already well-encapsulated and peformance is not 
+   ! da_y_facade_to_global() is already well-encapsulated and performance is not
    ! (yet) a concern for testing.  
    ! Loop over vector and scalar elements
    

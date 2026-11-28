@@ -362,7 +362,7 @@ integer::oops1,oops2
                   grid%water_depth(i,j) = -2.0
                ELSE ! Water cells:
                   ! Find any water cells with negative (originally positive) values...
-                  ! ... indicative of mis-match of bathymetry and land mask.
+                  ! ... indicative of mismatch of bathymetry and land mask.
                   IF (grid%water_depth(i,j) .LT. 0.1) THEN
                      grid%water_depth(i,j) = 0.1
                   END IF
@@ -1293,7 +1293,7 @@ integer::oops1,oops2
                CALL wrf_error_fatal ( 'p_top_requested < grid%p_top possible from data' )
             END IF
 
-            !  The grid%p_top valus is the max of what is available from the data and the
+            !  The grid%p_top values is the max of what is available from the data and the
             !  requested value.  We have already compared <, so grid%p_top is directly set to
             !  the value in the namelist.
 
@@ -1516,7 +1516,7 @@ integer::oops1,oops2
             !Now set the eta_levels to what we specified in the namelist. We've
             !packed all the domains' eta_levels into a 'vector' and now we need
             !to pull only the section of the vector associated with our domain
-            !of interest, which is between indicies ks and ke.
+            !of interest, which is between indices ks and ke.
             IF (grid%id .EQ. 1) THEN
               ks = 1
               ke = model_config_rec%e_vert(1)
@@ -3688,7 +3688,7 @@ endif
 
       !  From the full level data, we can get the half levels, reciprocals, and layer
       !  thicknesses.  These are all defined at half level locations, so one less level.
-      !  We allow the vertical coordinate to *accidently* come in upside down.  We want
+      !  We allow the vertical coordinate to *accidentally* come in upside down.  We want
       !  the first full level to be the ground surface.
 
       !  Check whether grid%znw (full level) data are truly full levels. If not, we need to adjust them
@@ -3998,7 +3998,7 @@ endif
                END DO
 #endif
 
-               !  Recompute density, simlar to what the model does.
+               !  Recompute density, similar to what the model does.
 
                IF (grid%hypsometric_opt == 1) THEN
                DO k=kts,kte-1
@@ -4257,7 +4257,7 @@ endif
                   END DO
 #endif
 
-                  !  Recompute density, simlar to what the model does.
+                  !  Recompute density, similar to what the model does.
 
                   IF (grid%hypsometric_opt == 1) THEN
                      DO k=kts,kte-1
@@ -5082,7 +5082,7 @@ endif
       !  To define the base state, we call a USER MODIFIED routine to set the three
       !  necessary constants:  p00 (sea level pressure, Pa), t00 (sea level temperature, K),
       !  and A (temperature difference, from 1000 mb to 300 mb, K), and constant stratosphere
-      !  temp (tiso, K) either from input file or from namelist (for backward compatibiliy).
+      !  temp (tiso, K) either from input file or from namelist (for backward compatibility).
 
       IF ( config_flags%use_baseparam_fr_nml ) then
       ! get these from namelist
@@ -5946,7 +5946,7 @@ end subroutine wrf_message
             !  in a few lower eta-levels.
 
             !  Fill in the column from up to the level just below the surface with the input
-            !  presssure and the input field (orig or old, which ever).  For an isobaric input
+            !  pressure and the input field (orig or old, which ever).  For an isobaric input
             !  file, this data is isobaric.
 
             !  How many levels have we skipped in the input column.
@@ -6416,7 +6416,7 @@ print *,'p target= ',target_x
          CALL wrf_message ( 0 , 'At this (i,j), look at the input value of pressure from metgrid' )
          CALL wrf_message ( 0 , 'The surface pressure and the sea-level pressure should be reviewed, also from metgrid' )
          CALL wrf_message ( 0 , 'Finally, ridiculous values of moisture can mess up the vertical pressures, especially aloft' )
-         CALL wrf_message ( 0 , 'The variable type is ' // var_type // '. This is not a unique identifer, but a type of field' )
+         CALL wrf_message ( 0 , 'The variable type is ' // var_type // '. This is not a unique identifier, but a type of field' )
          CALL wrf_message ( 0 , 'Check to see if all time periods with this data fail, or just this one' )
          CALL wrf_error_fatal ( 'This vertical interpolation failure is more typically associated with untested data sources to ungrib' )
       END IF
@@ -7179,7 +7179,7 @@ print *,'p sfc = ',psfc(i,j)
 
       !  This subroutine computes mixing ratio (q, kg/kg) from basic variables
       !  pressure (p, Pa), temperature (t, K) and relative humidity (rh, 0-100%).
-      !  Phase transition, liquid water to ice, occurs over (0,-23) temperature range (Celcius).
+      !  Phase transition, liquid water to ice, occurs over (0,-23) temperature range (Celsius).
       !  Formulation used here is based on:
       !  WMO, General meteorological standards and recommended practices,
       !   Appendix A, WMO Technical Regulations, WMO-No. 49, corrigendum,
@@ -7227,11 +7227,11 @@ print *,'p sfc = ',psfc(i,j)
       REAL,         PARAMETER     :: QV_MIN = 1.e-6
 
       ! Maximum allowed QV is computed under the extreme condition:
-      !            Saturated at 40 degree in Celcius and 1000 hPa
+      !            Saturated at 40 degree in Celsius and 1000 hPa
       REAL,         PARAMETER     :: QV_MAX = 0.045
 
       ! Need to constrain WVP in the stratosphere where pressure
-      ! is low but tempearure is hot (warm)
+      ! is low but temperature is hot (warm)
       ! Maximum ratio of e/p, = q/(0.622+q)
       REAL,         PARAMETER     :: EP_MAX = QV_MAX/(eps+QV_MAX)
 
@@ -9103,7 +9103,7 @@ WRITE (*,FMT='("p_top = ",F7.0," Pa, dzbot = ",F6.1," m, dzstretch_s/u = ",2F6.2
 !.. number concentration from the mean size and mass mixing ratio.
 !.. The mean (radiative effective) diameter is 3./Slope for an inverse
 !.. exponential size distribution.  So, starting with slope, work
-!.. backwords to get number concentration.
+!.. backwards to get number concentration.
 !+---+-----------------------------------------------------------------+
 
       lambda = 3.0 / deice

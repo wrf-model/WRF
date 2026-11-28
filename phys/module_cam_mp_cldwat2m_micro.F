@@ -53,10 +53,10 @@ module cldwat2m_micro
 
    public :: ini_micro, mmicro_pcond,gamma
 
-!constants remaped
+!constants remapped
   real(r8), private::  g              !gravity
   real(r8), private::  r              !Dry air Gas constant
-  real(r8), private::  rv             !water vapor gas contstant
+  real(r8), private::  rv             !water vapor gas constant
   real(r8), private::  cpp            !specific heat of dry air
   real(r8), private::  rhow           !density of liquid water
   real(r8), private::  xxlv           ! latent heat of vaporization
@@ -175,18 +175,18 @@ subroutine ini_micro
    ! diagnostic radar reflectivity, cloud-averaged 
    call addfld ('REFL  ','DBz  ',pver, 'A','94 GHz radar reflectivity'       ,phys_decomp)
    call addfld ('AREFL  ','DBz  ',pver, 'A','Average 94 GHz radar reflectivity'       ,phys_decomp)
-   call addfld ('FREFL  ','fraction  ',pver, 'A','Fractional occurance of radar reflectivity'       ,phys_decomp)
+   call addfld ('FREFL  ','fraction  ',pver, 'A','Fractional occurrence of radar reflectivity'       ,phys_decomp)
    
    call addfld ('CSRFL  ','DBz  ',pver, 'A','94 GHz radar reflectivity (CloudSat thresholds)'       ,phys_decomp)
    call addfld ('ACSRFL  ','DBz  ',pver, 'A','Average 94 GHz radar reflectivity (CloudSat thresholds)'       ,phys_decomp)
-   call addfld ('FCSRFL  ','fraction  ',pver, 'A','Fractional occurance of radar reflectivity (CloudSat thresholds)' &
+   call addfld ('FCSRFL  ','fraction  ',pver, 'A','Fractional occurrence of radar reflectivity (CloudSat thresholds)' &
 	,phys_decomp)
  
    call addfld ('AREFLZ ','mm^6/m^3 ',pver, 'A','Average 94 GHz radar reflectivity'       ,phys_decomp)
 
    ! Aerosol information
-    call addfld ('NCAL    ','#/m3   ',pver, 'A','Number Concentation Activated for Liquid',phys_decomp)
-    call addfld ('NCAI    ','#/m3   ',pver, 'A','Number Concentation Activated for Ice',phys_decomp)
+    call addfld ('NCAL    ','#/m3   ',pver, 'A','Number Concentration Activated for Liquid',phys_decomp)
+    call addfld ('NCAI    ','#/m3   ',pver, 'A','Number Concentration Activated for Ice',phys_decomp)
 
 
    ! Average rain and snow mixing ratio (Q), number (N) and diameter (D), with frequency
@@ -196,8 +196,8 @@ subroutine ini_micro
    call addfld ('ANSNOW   ','m-3     ',pver, 'A','Average snow number conc'         ,phys_decomp)
    call addfld ('ADRAIN   ','Micron  ',pver, 'A','Average rain effective Diameter'         ,phys_decomp)	
    call addfld ('ADSNOW   ','Micron  ',pver, 'A','Average snow effective Diameter'         ,phys_decomp)
-   call addfld ('FREQR  ','fraction  ',pver, 'A','Fractional occurance of rain'       ,phys_decomp)
-   call addfld ('FREQS  ','fraction  ',pver, 'A','Fractional occurance of snow'       ,phys_decomp)
+   call addfld ('FREQR  ','fraction  ',pver, 'A','Fractional occurrence of rain'       ,phys_decomp)
+   call addfld ('FREQS  ','fraction  ',pver, 'A','Fractional occurrence of snow'       ,phys_decomp)
 
    if ( history_microphysics) then
       call add_default ('AQSNOW   ', 1, ' ')
@@ -213,7 +213,7 @@ subroutine ini_micro
 
    g= gravit                  !gravity
    r= rair       	      !Dry air Gas constant: note units(phys_constants are in J/K/kmol)
-   rv= rh2o                   !water vapor gas contstant
+   rv= rh2o                   !water vapor gas constant
    cpp = cpair                 !specific heat of dry air
    rhow = rhoh2o              !density of liquid water
 
@@ -745,14 +745,14 @@ subroutine mmicro_pcond ( sub_column,       &
 	real(r8) :: nrout(pcols,pver) ! rain number concentration (1/m3)
 	real(r8) :: nsout(pcols,pver) ! snow number concentration (1/m3)
 #else
-        !WRF needs nrout and nsout to be the ouput variables
+        !WRF needs nrout and nsout to be the output variables
         real(r8), intent(out) :: nrout(pcols,pver) ! rain number concentration (1/m3)
 	real(r8), intent(out) :: nsout(pcols,pver) ! snow number concentration (1/m3)
 #endif
 	real(r8), intent(out) :: dsout(pcols,pver) ! snow diameter (m)
 	real(r8), intent(out) :: qsout(pcols,pver) ! snow mixing ratio (kg/kg)
 
-!averageed rain/snow for history
+!averaged rain/snow for history
 	real(r8) :: qrout2(pcols,pver)
 	real(r8) :: qsout2(pcols,pver)
 	real(r8) :: nrout2(pcols,pver)
@@ -800,7 +800,7 @@ subroutine mmicro_pcond ( sub_column,       &
 ! used in secondary ice production
         real(r8) ni_secp
 
-! variabels to check for RH after rain evap
+! variables to check for RH after rain evap
 
 	real(r8) :: esn
 	real(r8) :: qsn
@@ -3363,7 +3363,7 @@ subroutine mmicro_pcond ( sub_column,       &
       call outfld('NRAIN',nrout,   pcols, lchnk)
       call outfld('NSNOW',nsout,   pcols, lchnk)
 
-! add snow ouptut
+! add snow output
       do i = 1,ncol
          do k=1,pver
             if (qsout(i,k).gt.1.e-7_r8.and.nsout(i,k).gt.0._r8) then

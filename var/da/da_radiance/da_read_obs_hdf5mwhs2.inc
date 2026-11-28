@@ -226,7 +226,7 @@ subroutine da_read_obs_hdf5mwhs2 (iv, infile_tb)
       if(nscan.gt.max_scan)then
          write(unit=stdout,fmt=*)'limit of NumberOfScans = ',max_scan
          call da_warning(__FILE__,__LINE__, &
-              (/"HDF5 lmit error for: max_scan"/))
+              (/"HDF5 limit error for: max_scan"/))
       endif
 
    ! read array: scantime
@@ -299,7 +299,7 @@ subroutine da_read_obs_hdf5mwhs2 (iv, infile_tb)
       endif
       call h5dclose_f(dhnd1, iret)
 
-   ! cutoff overlap & convert to unsignd & change scale
+   ! cutoff overlap & convert to unsigned & change scale
       !do j=nscan+1,max_scan
       !   tb_low(:,j,:)=0
       !enddo
@@ -595,7 +595,7 @@ subroutine da_read_obs_hdf5mwhs2 (iv, infile_tb)
          end do fov_loop
       end do scan_loop
 
-   ! Dellocate arrays
+   ! Deallocate arrays
 
 	print*,'nscan=',nscan
 	print*,'nfov=',lo_rez_fov

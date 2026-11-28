@@ -28,7 +28,7 @@
       REAL(kind=8), POINTER, DIMENSION(:,:) ::   dbl2d   ! 2d array to store received field 
 #endif
    END TYPE FLD_CPL
-   TYPE(FLD_CPL), DIMENSION(max_domains,max_extdomains,max_cplfld) :: srcv, ssnd   ! Coupling fields informations
+   TYPE(FLD_CPL), DIMENSION(max_domains,max_extdomains,max_cplfld) :: srcv, ssnd   ! Coupling fields information
    INTEGER :: ndm_comm                                                         ! MPI communicator between the computing nodes
    INTEGER :: ncomp_id                                                         ! id returned by oasis_init_comp
    INTEGER :: nlevdbg  = 1                                                     ! verbosity level
@@ -112,7 +112,7 @@ CONTAINS
       INTEGER :: id_part                 ! partition id in oasis
       INTEGER :: iparal(5)               ! OASIS box partition
       INTEGER :: ishape(2,2)             ! shape of arrays passed to PSMILe
-      INTEGER :: jw,je,jf                ! local loop indicees
+      INTEGER :: jw,je,jf                ! local loop indices
       INTEGER :: ips,ipe,jps,jpe,kps,kpe ! domain dimension on 1 processor
       INTEGER :: ims,ime,jms,jme,kms,kme ! memory domain dimension on 1 processor 
       INTEGER :: ids,ide,jds,jde,kds,kde ! domain dimension
@@ -142,7 +142,7 @@ CONTAINS
          ishape(:,1) = (/1, ipe-ips+1 /)
          ishape(:,2) = (/1, jpe-jps+1 /)
          
-         ! ... Define the partition parameteres
+         ! ... Define the partition parameters
          iparal(1) = 2                                      ! box partitioning
          iparal(2) = ide * ( jps - 1 ) + (ips -1)
          iparal(3) = ipe - ips + 1                          ! local extent in i 
@@ -408,7 +408,7 @@ CONTAINS
       !!      MPI communication.
       !!----------------------------------------------------------------------
       INTEGER :: ierror         ! return error code
-      INTEGER :: jw,je,jf       ! local loop indicees
+      INTEGER :: jw,je,jf       ! local loop indices
       !!--------------------------------------------------------------------
       DO jf = 1, max_cplfld
          DO je = 1, max_extdomains

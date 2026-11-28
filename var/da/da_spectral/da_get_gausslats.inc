@@ -22,7 +22,7 @@ subroutine da_get_gausslats( nj, glats, gwgts, sinlat, coslat)
    !  the negative roots(-1 < x < 0) are set by symmetry.
    !  ASin(x) gives the Gaussian latitudes.
    !  This gives slightly better results than finding the roots of Pn(sin(lat))
-   ! (Algorithm from Numerical Recipies(Fortran version), 1989, p 258)
+   ! (Algorithm from Numerical Recipes(Fortran version), 1989, p 258)
 
    integer, intent(in)            :: nj           ! Gridpoints in N-S direction.
    real,    intent(out)           :: glats(1:nj)  ! Gaussian latitudes(S->N, radians).

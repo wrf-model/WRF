@@ -42,7 +42,7 @@ subroutine landem(theta,freq,mv,veg_frac,veg_tp,soil_tp, &
 !                       9: broadleave shrubs with bare soil
 !                       10: dwarf trees & shrubs with bare soil
 !                       11: bare soil'
-!                       12: cultivations (use paramater 7)
+!                       12: cultivations (use parameter 7)
 !                       13: glacial             
 !
 !       soil_tp     -  soil type                 (gdas, not used)
@@ -273,8 +273,8 @@ subroutine snow_optic(frequency,a,h,f,ep_real,ep_imag,gv,gh,&
 !
 !   important internal variables:
 !
-!       ks          -  scattering coeffcient (/mm)
-!       ka          -  absorption coeffient (/mm)
+!       ks          -  scattering coefficient (/mm)
+!       ka          -  absorption coefficient (/mm)
 !       kp          -  eigenvalue of two-stream approximation
 !       y           -  = yr+iyi
 !

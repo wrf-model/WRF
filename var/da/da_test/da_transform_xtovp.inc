@@ -158,7 +158,7 @@ subroutine da_transform_xtovp(grid, xb, xbx, xa, vp, be)
    end if
 
    ! [2.6] Choice of moisture control variable:
-   call da_message((/' calculating psudo rh'/))
+   call da_message((/' calculating pseudo rh'/))
    vp % v4(its:ite,jts:jte,kts:kte) = xa % q  (its:ite,jts:jte,kts:kte) /   &
       xb % qs (its:ite,jts:jte,kts:kte)
 

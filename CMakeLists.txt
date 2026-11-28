@@ -745,7 +745,7 @@ list( APPEND PROJECT_COMPILE_OPTIONS_SUPPRESS_ERRORS
       )
 
 if ( ${PROFILE_COMPILATION} )
-  message( STATUS "Attemping to add compilation profiling..." )
+  message( STATUS "Attempting to add compilation profiling..." )
   list( APPEND PROJECT_COMPILE_OPTIONS_DIAGNOSTICS $<$<COMPILE_LANG_AND_ID:Fortran,GNU>:-ftime-report> )
 endif()
 
@@ -759,7 +759,7 @@ list( APPEND PROJECT_COMPILE_DEFINITIONS_OPTIONS
       RWORDSIZE=${RWORDSIZE}
 
 
-      # Alwasys set
+      # Always set
       NMM_MAX_DIM=2600
       NETCDF
       

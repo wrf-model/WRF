@@ -412,7 +412,7 @@
        call airmas( nz, z, zen, dsdh, nid, colinc, vcol, scol )
 
 !---------------------------------------------------------------
-! ... modification of coefficent of j-vales function of to3 and zenith
+! ... modification of coefficient of j-vales function of to3 and zenith
 !---------------------------------------------------------------
       if( zen <= 20.5_dp ) then
          call setz( nz, to3, tlev, c20, 20, adjcoe )
@@ -932,7 +932,7 @@ WAVE_LENGTH_LOOP : &
       rm_cubic = rm**3
       factor   = 1._dp/(vol_fac * cden * 1.e-12_dp * rm_cubic)
 !-----------------------------------------------------------------------------
-!     Convert volumn mix ratio to mass
+!     Convert volume mix ratio to mass
 !-----------------------------------------------------------------------------
       where( mix(:nzlev-1) >= 1.e-15_dp )
 !===============================================================================
@@ -1057,7 +1057,7 @@ WAVE_LENGTH_LOOP : &
 ! tive processes in meteorology and climatology, elsevier, pp. 62,63, 1976.
 ! fourier coefficients originally from: spencer, j.w., 1971, fourier
 ! series representation of the position of the sun, search, 2:172.
-! note: this approximate program does not account fro changes from year
+! note: this approximate program does not account for changes from year
 ! to year.
 !-----------------------------------------------------------------------------
 ! parameters:
@@ -1573,18 +1573,18 @@ WAVE_LENGTH_LOOP : &
 ! wavelength grid
 ! wl - real(dp), vector of lower limits of wavelength intervals in (i)
 ! working wavelength grid
-! xso3 - real(dp), molecular absoprtion cross section (cm^2) of o3 at (i)
+! xso3 - real(dp), molecular absorption cross section (cm^2) of o3 at (i)
 ! each specified wavelength (wmo value at 273)
-! s226 - real(dp), molecular absoprtion cross section (cm^2) of o3 at (i)
+! s226 - real(dp), molecular absorption cross section (cm^2) of o3 at (i)
 ! each specified wavelength (value from molina and molina at 226k)
-! s263 - real(dp), molecular absoprtion cross section (cm^2) of o3 at (i)
+! s263 - real(dp), molecular absorption cross section (cm^2) of o3 at (i)
 ! each specified wavelength (value from molina and molina at 263k)
-! s298 - real(dp), molecular absoprtion cross section (cm^2) of o3 at (i)
+! s298 - real(dp), molecular absorption cross section (cm^2) of o3 at (i)
 ! each specified wavelength (value from molina and molina at 298k)
 ! tlay - real(dp), temperature (k) at each specified altitude layer (i)
 ! dto3 - real(dp), optical depth due to ozone absorption at each (o)
 ! specified altitude at each specified wavelength
-! to3 - real(dp), totol ozone column (o)
+! to3 - real(dp), total ozone column (o)
 !-----------------------------------------------------------------------------
 
       implicit none
@@ -1744,7 +1744,7 @@ WAVE_LENGTH_LOOP : &
 ! cross sections. still, better than setting dto2 = 0. as was done up to
 ! version 4.0) sm 1/2000
 ! in future could replace with mu2(iz) (but mu2 is also wavelength-depenedent)
-! or imporved chapman function
+! or improved chapman function
 !-----------------------------------------------------------------------------
 !-----------------------------------------------------------------------------
 ! ... slant o2 column
@@ -2430,7 +2430,7 @@ WAVE_LENGTH_LOOP : &
 !-----------------------------------------------------------------------------
 ! ... for calculations of associated legendre polynomials for gama1,2,3,4
 ! in delta-function, modified quadrature, hemispheric constant,
-! hybrid modified eddington-delta function metods, p633,table1.
+! hybrid modified eddington-delta function methods, p633,table1.
 ! w.e.meador and w.r.weaver, gas,1980,v37,p.630
 ! w.j.wiscombe and g.w. grams, gas,1976,v33,p2440,
 ! uncomment the following two lines and the appropriate statements
@@ -3128,7 +3128,7 @@ is_mozart : &
       ngintv = ng - 1
       do i = 1,ngintv
 !-----------------------------------------------------------------------------
-! ... initalize:
+! ... initialize:
 !-----------------------------------------------------------------------------
          area = 0._dp
          xgl = xg(i)
@@ -3278,8 +3278,8 @@ is_mozart : &
 ! the input data are given on a set of bins (representing the integral
 ! of the input quantity over the range of each bin) and are being matched
 ! onto another set of bins (target grid). a typical example would be an
-! input data set spcifying the extra-terrestrial flux on wavelength inter-
-! vals, that has to be matched onto the working wavelength grid.
+! input data set specifying the extra-terrestrial flux on wavelength
+! intervals, that has to be matched onto the working wavelength grid.
 ! the resulting area in a given bin of the target grid is calculated by
 ! simply adding all fractional areas of the input data that cover that
 ! particular target bin.

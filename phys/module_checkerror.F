@@ -30,7 +30,7 @@
 ! b) 'parameter name' can be must be following characters:  
 !
 !   'temperature_K'       This is temperature in Kelvin.
-!   'temperature_degC'    This is temperature in degree Celcius.
+!   'temperature_degC'    This is temperature in degree Celsius.
 !   'pressure_Pa'         This is pressure in Pascal.
 !   'radiationflux_W/m2'  This is radiation flux in Watts per square meter.
 !   'condensate_g/m3'     This is cloud rain condensates in gram per cubic meter.
@@ -52,7 +52,7 @@
 ! Encapsulation control 
 !
  private             ! All parameters and subourtines are non accessible.
- public  checkerror  ! Only this function is accesible.
+ public  checkerror  ! Only this function is accessible.
 
 ! ################################################################################
 ! ############################    Module Interface     ###########################

@@ -303,7 +303,7 @@ contains
     !                                       now. This subroutine serves
     !                                       as a test to check whether
     !                                       the value of pcnst is set
-    !                                       approprately in 
+    !                                       appropriately in
     !                                       module_physics_init.F
     !*NOTE*: As a quick solution, correct value for the Molecular weights 
     !        of the constituents is updated in 'cam_mam_init_other'. In 
@@ -888,7 +888,7 @@ contains
 
     !Balwinder.Singh@pnnl.gov:*NOTE* cnst_cv and cnst_cp are set to 'nan' 
     !as the cpair value for the chemical species is NOT set correctly. 
-    !The 'nan' assigment will produce an error whenever cnst_cv or 
+    !The 'nan' assignment will produce an error whenever cnst_cv or
     !cnst_cp is used for any computation
     
     

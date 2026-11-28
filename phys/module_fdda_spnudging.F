@@ -1062,8 +1062,28 @@ SUBROUTINE spectralnudgingfilterfft2dncar(nx,ny,nwave,fin)
 
   INTEGER :: lensave, ier, nh, n1
   INTEGER :: lot, jump, n, inc, lenr, lensav, lenwrk
-  REAL, DIMENSION(nx+15) :: wsave
-  REAL, DIMENSION(nx,ny) :: work
+
+!  The fftpack5 routines declare their arrays as real(kind=4), which real*8
+!  promotion (configure -r8, -fdefault-real-8) does not change.  The data are
+!  therefore transformed in real(kind=4) arrays; with default REAL of kind 4
+!  the copies to and from fin4 are exact and the results are unchanged.
+  REAL(KIND=4), DIMENSION(nx+15) :: wsave
+  REAL(KIND=4), DIMENSION(nx,ny) :: work, fin4
+
+  INTERFACE
+    SUBROUTINE rfftmi ( n, wsave, lensav, ier )
+      INTEGER(KIND=4) :: n, lensav, ier
+      REAL(KIND=4) :: wsave(lensav)
+    END SUBROUTINE rfftmi
+    SUBROUTINE rfftmf ( lot, jump, n, inc, r, lenr, wsave, lensav, work, lenwrk, ier )
+      INTEGER(KIND=4) :: lot, jump, n, inc, lenr, lensav, lenwrk, ier
+      REAL(KIND=4) :: r(lenr), wsave(lensav), work(lenwrk)
+    END SUBROUTINE rfftmf
+    SUBROUTINE rfftmb ( lot, jump, n, inc, r, lenr, wsave, lensav, work, lenwrk, ier )
+      INTEGER(KIND=4) :: lot, jump, n, inc, lenr, lensav, lenwrk, ier
+      REAL(KIND=4) :: r(lenr), wsave(lensav), work(lenwrk)
+    END SUBROUTINE rfftmb
+  END INTERFACE
   
 
 
@@ -1090,7 +1110,8 @@ SUBROUTINE spectralnudgingfilterfft2dncar(nx,ny,nwave,fin)
 
 !  do the forward transform
 
-  call rfftmf( lot, jump, n, inc, fin, lenr, wsave, lensav, work, lenwrk, ier )
+  fin4 = fin
+  call rfftmf( lot, jump, n, inc, fin4, lenr, wsave, lensav, work, lenwrk, ier )
   IF(ier /= 0) THEN
     write(wrf_err_message,*) ' error in rfftmf ',ier
     CALL wrf_message(TRIM(wrf_err_message))
@@ -1111,17 +1132,19 @@ SUBROUTINE spectralnudgingfilterfft2dncar(nx,ny,nwave,fin)
 
   DO j=1,ny
     DO i=1,nx
-      fin(i,j) = fp(i,j)*fin(i,j)
+      fin4(i,j) = fp(i,j)*fin4(i,j)
     ENDDO
   ENDDO
 
 !  do the backward transform
 
-  call rfftmb( lot, jump, n, inc, fin, lenr, wsave, lensav, work, lenwrk, ier )
+  call rfftmb( lot, jump, n, inc, fin4, lenr, wsave, lensav, work, lenwrk, ier )
   IF(ier /= 0) THEN
     write(wrf_err_message,*) ' error in rfftmb ',ier
     CALL wrf_message(TRIM(wrf_err_message))
   END IF
+
+  fin = fin4
 
 END SUBROUTINE spectralnudgingfilterfft2dncar
 
